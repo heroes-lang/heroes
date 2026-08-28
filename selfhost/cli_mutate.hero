@@ -42,26 +42,33 @@ constant LISTING: str
 
 function run(inv: cli_argv.Invocation) -> cli_table.Exit
     only: str @ cli_argv.value_of(inv, spelling: "--operator").default("")
+
     if only.len() > 0 && !mutate_ops.known(only)
-        cli_io.eprint(text: "error: no operator `" + only + "`\n  the " + mutate_ops.ids().len().to_str() + " are: " + mutate_ops.ids().join(", "))
+        cli_io.eprint(
+            text: "error: no operator `" + only + "`\n  the " + mutate_ops.ids().len().to_str() + " are: " + mutate_ops.ids().join(", ")
+        )
         return .failed_exit
     dir = inv.file.default(DEFAULT_DIR)
     found = corpus(dir)
+
     if found.is_err()
         cli_io.eprint(text: "error: " + why(found))
         return .failed_exit
     sources = found.must()
+
     if sources.len() == 0
         cli_io.eprint(text: "error: no `.hero` files under " + dir)
         return .failed_exit
     library = library_source.text()
     refusal = refuse_a_corpus_that_does_not_compile(sources: sources, library: library)
+
     if !refusal.is_err()
         cli_io.eprint(text: "error: " + refusal.must())
         return .failed_exit
     print("corpus: " + sources.len().to_str() + " programs under " + dir + "\n")
     run_out = mutate_score.scored(sources: sources, only: only, library: library)
     cli_io.print_artifact(text: mutate_score.report(run_out.scores))
+
     if cli_argv.has(inv, spelling: "--survivors")
         cli_io.print_artifact(text: mutate_score.survivor_report(run_out.survivors))
     return .ok_exit
@@ -70,21 +77,28 @@ function run(inv: cli_argv.Invocation) -> cli_table.Exit
 function corpus(dir: str) -> [mutate_score.Program]?
     _ = cli_toolchain.mkdir_all("build")
     line = "find " + cli_shell.sq(dir) + " -type f -name '*.hero' -print0 > " + cli_shell.sq(LISTING)
+
     if cli_shell.shell(command: line) != 0
         return fail("no_corpus", "cannot read " + dir)
     listing = read_file(LISTING)
+
     if listing.is_err()
         return fail("no_corpus", "cannot read the listing at " + LISTING)
     paths: [str] @ []
+
     for piece in split_on_nul(listing.must())
         if piece.len() > 0
             paths @ paths.push(piece)
+
     out: [mutate_score.Program] @ []
+
     for path in paths.sort()
         text = read_file(path)
+
         if text.is_err()
             return fail("no_corpus", "cannot read " + path)
         out @ out.push(mutate_score.Program(name: path, text: text.must()))
+
     return ok(out)
 
 # Every program in the corpus must compile BEFORE anything is mutated. Every
@@ -92,19 +106,25 @@ function corpus(dir: str) -> [mutate_score.Program]?
 # wrong in one way and fixing it one error per run is the slowest possible loop.
 function refuse_a_corpus_that_does_not_compile(sources: [mutate_score.Program], library: str) -> str?
     refused: [str] @ []
+
     for one in sources
         if !mutate_score.base_checks_clean(name: one.name, text: one.text, library: library)
             refused @ refused.push(one.name)
+
     if refused.len() == 0
         return fail("clean", "every program compiles")
     message: str @ "this corpus does not compile, so its kill rate would be meaningless\n  " + refused.len().to_str() + " of " + sources.len().to_str() + " programs are already refused by `heroes check`:\n"
+
     for name in refused
         message @ message + "    " + name + "\n"
-    return ok(message + "  every mutant of a program that is already wrong is killed by the\n  diagnostic that was already there — run `heroes check` on each")
+
+    return ok(
+        message + "  every mutant of a program that is already wrong is killed by the\n  diagnostic that was already there — run `heroes check` on each"
+    )
 
 function why(got: [mutate_score.Program]?) -> str
     return match got
-        .ok _ => ""
+        .ok _  => ""
         .err e => e.msg
 
 # Split on the NUL byte `find -print0` writes. No Heroes literal can spell that
@@ -114,11 +134,13 @@ function split_on_nul(text: str) -> [str]
     pieces: [str] @ []
     start: i64 @ 0
     i: i64 @ 0
+
     while i < text.len()
         if text[i] == 0
             pieces @ pieces.push(text.slice(from: start, to: i))
             start @ i + 1
         i @ i + 1
+
     if start < text.len()
         pieces @ pieces.push(text.slice(from: start, to: text.len()))
     return pieces
@@ -141,6 +163,7 @@ function one_nul() -> str
     line = "printf 'x\\000y' > " + cli_shell.sq(path)
     _ = cli_shell.shell(command: line)
     got = read_file(path)
+
     if got.is_err()
         return ""
     return got.must().slice(from: 1, to: 2)

@@ -65,6 +65,7 @@ function statement(@r: resolve_state.Resolver, a: ast.Ast, s: source.Source, dec
     match a.stmts[id].kind
         .bind b =>
             expr(@r, a, s, decls, b.value)
+
             if !b.ty.is_err()
                 resolve_types.resolve_type(@r, a, s, decls, b.ty.must())
             _ = resolve_state.declare(@r, s, decls, b.name, resolve_binding.bind_binding(ty: b.ty, value: b.value))
@@ -75,14 +76,15 @@ function statement(@r: resolve_state.Resolver, a: ast.Ast, s: source.Source, dec
         # The initialiser above is not counted as a write: a cell that is
         # only ever initialised has been written once by definition, and
         # counting it would blind the unused rule to every cell.
+
         .mutate m =>
             expr(@r, a, s, decls, m.value)
             place(@r, a, s, decls, m.place)
         .return_stmt rv =>
             if !rv.value.is_err()
                 expr(@r, a, s, decls, rv.value.must())
-        .assert_stmt v => expr(@r, a, s, decls, v.value)
-        .expr_stmt v => expr(@r, a, s, decls, v.value)
+        .assert_stmt v                        => expr(@r, a, s, decls, v.value)
+        .expr_stmt v                          => expr(@r, a, s, decls, v.value)
         .break_stmt | .continue_stmt | .error => return
         .while_stmt w =>
             expr(@r, a, s, decls, w.cond)
@@ -104,10 +106,11 @@ function expr(@r: resolve_state.Resolver, a: ast.Ast, s: source.Source, decls: [
         # The module, not a flag: §4.16's suppression is file-wide, so a
         # hole here must not quiet the unused rule in a module nobody is
         # editing.
-        .hole => resolved.note_hole(@r.out, r.module)
+
+        .hole                                                    => resolved.note_hole(@r.out, r.module)
         .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit => return
-        .null_ptr | .error => return
-        .unary u => expr(@r, a, s, decls, u.operand)
+        .null_ptr | .error                                       => return
+        .unary u                                                 => expr(@r, a, s, decls, u.operand)
         .binary b =>
             expr(@r, a, s, decls, b.left)
             expr(@r, a, s, decls, b.right)
@@ -116,6 +119,7 @@ function expr(@r: resolve_state.Resolver, a: ast.Ast, s: source.Source, decls: [
         # UNLESS the base is a module: then the three tokens are one
         # qualified name and not a field at all — `grid.WALL` reads a
         # constant next door.
+
         .field f =>
             if resolve_qualified.qualified(@r, a, s, decls, at: id, receiver: f.base, called: f.name)
                 return
@@ -148,24 +152,29 @@ function expr(@r: resolve_state.Resolver, a: ast.Ast, s: source.Source, decls: [
             for branch in branches.branches
                 expr(@r, a, s, decls, branch.cond)
                 block(@r, a, s, decls, branch.block)
+
             if !branches.otherwise.is_err()
                 block(@r, a, s, decls, branches.otherwise.must())
         .match_expr m =>
             expr(@r, a, s, decls, m.scrutinee)
+
             for arm in m.arms
                 # One scope per arm: the payload bindings and the body live
                 # together, and two arms may bind the same name.
                 resolve_state.open_scope(@r)
+
                 for pattern in arm.patterns
                     match pattern.kind
                         .variant_case c =>
                             if !c.binding.is_err()
                                 bind_payload(@r, s, decls, c.binding.must())
-                        .literal l => expr(@r, a, s, decls, l.value)
+                        .literal l         => expr(@r, a, s, decls, l.value)
                         .wildcard | .error => continue
+
                 match arm.body
                     .one_stmt one => statement(@r, a, s, decls, one.at)
-                    .block bb => statements(@r, a, s, decls, bb.block.stmts)
+                    .block bb     => statements(@r, a, s, decls, bb.block.stmts)
+
                 resolve_state.close_scope(@r)
 
 # Port note: Rust calls this parameter `args`, and Heroes refuses it —
@@ -180,6 +189,7 @@ function arguments(@r: resolve_state.Resolver, a: ast.Ast, s: source.Source, dec
 # two things depending on which case matched.
 function bind_payload(@r: resolve_state.Resolver, s: source.Source, decls: [ast.Decl], binding: token.Span)
     text = source.span_text(s, binding)
+
     if text != "_" && resolve_state.bound_in_current_scope(r, text)
         resolve_state.push_diagnostic(@r, resolve_errors.duplicate_pattern_binding(text, span: binding))
         return
@@ -199,29 +209,37 @@ function place(@r: resolve_state.Resolver, a: ast.Ast, s: source.Source, decls: 
         # globals). Descending to the base would report `grid` as a name
         # that is not in scope, which is wrong twice: the module IS in
         # scope, and the mistake the author made was about `WALL`.
+
         .field f =>
             if !resolve_qualified.module_at(r, a, s, f.base).is_err()
-                resolve_state.push_diagnostic(@r, resolve_errors.no_mutable_globals(name: source.span_text(s, f.name), what: "top-level declaration", span: f.name))
+                resolve_state.push_diagnostic(
+                    @r,
+                    resolve_errors.no_mutable_globals(name: source.span_text(s, f.name), what: "top-level declaration", span: f.name)
+                )
                 return
             place(@r, a, s, decls, f.base)
         .index i =>
             expr(@r, a, s, decls, i.index)
             place(@r, a, s, decls, i.base)
         # Not a place at all — the parser already said so (`not_a_place`).
+
         .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit => expr(@r, a, s, decls, id)
-        .null_ptr | .hole | .unary | .binary | .call => expr(@r, a, s, decls, id)
-        .method | .variant_case | .array | .map | .try_expr => expr(@r, a, s, decls, id)
-        .if_expr | .match_expr | .error => expr(@r, a, s, decls, id)
+        .null_ptr | .hole | .unary | .binary | .call             => expr(@r, a, s, decls, id)
+        .method | .variant_case | .array | .map | .try_expr      => expr(@r, a, s, decls, id)
+        .if_expr | .match_expr | .error                          => expr(@r, a, s, decls, id)
 
 function write_root(@r: resolve_state.Resolver, a: ast.Ast, s: source.Source, id: i64)
     span = a.exprs[id].span
     text = source.span_text(s, span)
     local = resolve_state.lookup_local(r, text)
+
     if !local.is_err()
         at = local.must()
+
         if !r.out.locals[at].mutable
             resolve_state.push_diagnostic(@r, resolve_errors.not_mutable(text, r.out.locals[at].kind, span))
             return
+
         # A write is recorded, and it is NOT a read: `v @ 1` alone leaves
         # `v` unused. Writing through a field or an index is a write to the
         # root for the same reason — with no aliasing anywhere (§4.10), a
@@ -230,9 +248,14 @@ function write_root(@r: resolve_state.Resolver, a: ast.Ast, s: source.Source, id
         r.out.uses[id] @ .local(at: at)
         r.out.locals[at].writes @ r.out.locals[at].writes + 1
         return
+
     if !resolve_state.top_visible(r, text).is_err()
-        resolve_state.push_diagnostic(@r, resolve_errors.no_mutable_globals(name: text, what: "top-level declaration", span: span))
+        resolve_state.push_diagnostic(
+            @r,
+            resolve_errors.no_mutable_globals(name: text, what: "top-level declaration", span: span)
+        )
         return
+
     if !builtins.index_of(text).is_err()
         resolve_state.push_diagnostic(@r, resolve_errors.no_mutable_globals(name: text, what: "built-in", span: span))
         return
@@ -249,22 +272,36 @@ function write_root(@r: resolve_state.Resolver, a: ast.Ast, s: source.Source, id
 function walked(text: str) -> resolve_state.Resolver
     p = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
-    r: resolve_state.Resolver @ resolve_state.new_resolver(expr_count: p.tree.exprs.len(), type_count: p.tree.types.len())
+    r: resolve_state.Resolver @ resolve_state.new_resolver(
+        expr_count: p.tree.exprs.len(),
+        type_count: p.tree.types.len()
+    )
     r.module @ "t"
     i: i64 @ 0
+
     for d in p.decls
         resolved.declare_top(@r.out, module: "t", name: source.span_text(s, d.name), decl: i)
         i @ i + 1
+
     for d in p.decls
         match d.kind
             .function_decl fd =>
                 resolve_state.open_scope(@r)
+
                 for param in fd.value.params
-                    _ = resolve_state.declare(@r, s, p.decls, param.name, resolve_binding.param_binding(ty: param.ty, mutable: param.mutable))
+                    _ = resolve_state.declare(
+                        @r,
+                        s,
+                        p.decls,
+                        param.name,
+                        resolve_binding.param_binding(ty: param.ty, mutable: param.mutable)
+                    )
+
                 if !fd.value.body.is_err()
                     statements(@r, p.tree, s, p.decls, fd.value.body.must().stmts)
                 resolve_state.close_scope(@r)
             .constant_decl | .record_decl | .variant_decl | .test_decl => continue
+
     resolve_state.report_unused(@r, s)
     return r
 
@@ -272,6 +309,7 @@ test "the value is resolved before the name is bound"
     r = walked("function f()\n    x = x + 1\n    print(x)\n")
     assert r.out.diagnostics.len() == 1
     assert r.out.diagnostics[0].code == "unknown_name"
+
     # `f` is one edit from `x`? No — one edit REPLACES the whole name, and
     # a one-letter name affords exactly one edit, so the function's own
     # name is a legitimate candidate. The suggestion is the rule working,
@@ -298,6 +336,7 @@ test "a plain binding refuses the write with the = wording"
 
 test "two patterns of one arm may not bind the same payload name"
     r = walked("function f(t: i64) -> i64\n    return match t\n        .a x | .b x => 1\n")
+
     # Two diagnostics, and both are right: the duplicate, and then the
     # sweep on the FIRST binding — the body `1` never reads it, and one
     # mistake in a pattern does not exempt the arm from the unused rule.

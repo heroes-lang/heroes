@@ -36,36 +36,64 @@ function run_all(scratch: str, compiler: str, dir: str, least: i64) -> report.Re
     # One directory walk answers "does this case have a .fixed?" for every
     # case, where `test -e` would be sixty-five more processes.
     present: {str: bool} @ {}
+
     for entry in shell.list_entries(scratch: scratch, dir: dir)?
         present[entry] @ true
+
     r: report.Report @ report.empty()
     seen: i64 @ 0
+
     for item in cases.collect(scratch: scratch, dir: dir)?
         repaired = strings.without_suffix(text: item.source, suffix: ".hero") + ".fixed"
+
         if present[repaired].is_err()
             continue
         seen @ seen + 1
         want = read_file(repaired)
+
         if want.is_err()
             report.keep_failure(@r, label: "fixes/" + item.name, detail: "  cannot read " + repaired)
             continue
-        applied = shell.run(scratch: scratch, command: shell.sq(compiler) + " check " + shell.sq(item.source) + " --apply")
+        applied = shell.run(
+            scratch: scratch,
+            command: shell.sq(compiler) + " check " + shell.sq(item.source) + " --apply"
+        )
+
         if applied.is_err()
             report.keep_failure(@r, label: "fixes/" + item.name, detail: "  cannot run the compiler on " + item.source)
             continue
+
         if applied.must().out != want.must()
-            report.keep_failure(@r, label: "fixes/" + item.name, detail: report.mismatch(what: item.source + " --apply", expected: want.must(), actual: applied.must().out))
+            report.keep_failure(
+                @r,
+                label: "fixes/" + item.name,
+                detail: report.mismatch(what: item.source + " --apply", expected: want.must(), actual: applied.must().out)
+            )
             continue
-        rechecked = shell.run(scratch: scratch, command: shell.sq(compiler) + " check " + shell.sq(repaired) + " --brief")
+        rechecked = shell.run(
+            scratch: scratch,
+            command: shell.sq(compiler) + " check " + shell.sq(repaired) + " --brief"
+        )
+
         if rechecked.is_err()
             report.keep_failure(@r, label: "fixes/" + item.name, detail: "  cannot run the compiler on " + repaired)
             continue
+
         if rechecked.must().code != 0
-            report.keep_failure(@r, label: "fixes/" + item.name, detail: "  " + repaired + " does not check clean after its fixes — a `certain` fix that leaves the file broken is a `guess` that lied:\n" + rechecked.must().err)
+            report.keep_failure(
+                @r,
+                label: "fixes/" + item.name,
+                detail: "  " + repaired + " does not check clean after its fixes — a `certain` fix that leaves the file broken is a `guess` that lied:\n" + rechecked.must().err
+            )
             continue
         report.keep_pass(@r)
+
     if seen < least
-        report.keep_failure(@r, label: "fixes", detail: "  only " + seen.to_str() + " cases carry a `.fixed`, and there were " + least.to_str() + " — §8's machine-applicable promise is tested by these and nothing else")
+        report.keep_failure(
+            @r,
+            label: "fixes",
+            detail: "  only " + seen.to_str() + " cases carry a `.fixed`, and there were " + least.to_str() + " — §8's machine-applicable promise is tested by these and nothing else"
+        )
     return ok(r)
 
 test "the fixes suite catches a wrong application and a repair that does not check clean"
@@ -73,6 +101,7 @@ test "the fixes suite catches a wrong application and a repair that does not che
     tree = scratch + "/fixes"
     assert !shell.remove_tree(tree).is_err()
     assert !shell.mkdir_all(tree).is_err()
+
     # A real case with a real CERTAIN fix: `0XFF` has one upper-case base
     # prefix, so the repair is unambiguous. The first draft of this test
     # used an unused binding — whose fix is a `guess`, so `--apply` leaves
@@ -86,7 +115,10 @@ test "the fixes suite catches a wrong application and a repair that does not che
 
     # What the compiler actually applies, captured once and stored as the
     # `.fixed` — then the suite must agree with it.
-    applied = shell.run(scratch: scratch, command: shell.sq(compiler) + " check " + shell.sq(tree + "/u.hero") + " --apply")
+    applied = shell.run(
+        scratch: scratch,
+        command: shell.sq(compiler) + " check " + shell.sq(tree + "/u.hero") + " --apply"
+    )
     assert !applied.is_err()
     assert !write_file(path: tree + "/u.fixed", text: applied.must().out).is_err()
     green = run_all(scratch: scratch, compiler: compiler, dir: tree, least: 1)

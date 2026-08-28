@@ -28,8 +28,10 @@ function skip_spaces(@r: Reader)
 # Reads a run of letters and hands it back, leaving the reader after it.
 function word_at(@r: Reader) -> str
     start = r.pos
+
     while !at_end(r) && here(r) >= 'a' && here(r) <= 'z'
         advance(@r)
+
     return r.text.slice(from: start, to: r.pos)
 
 test "the reader walks, and the copy does not"

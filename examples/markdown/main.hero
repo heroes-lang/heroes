@@ -19,9 +19,11 @@ use render
 
 function main()
     given = args()
+
     if len(given) == 0
         print("usage: markdown <file.md> [outline]")
         exit(2)
+
     match read_file(given[0])
         .err e     => stop("cannot read " + given[0] + ": " + e.code)
         .ok source => show(source, given)
@@ -32,6 +34,7 @@ function stop(message: str)
 
 function show(source: str, given: [str])
     document = blocks.read(source)
+
     if len(given) > 1 && given[1] == "outline"
         for line in headings(document)
             print(line)
@@ -46,10 +49,14 @@ function show(source: str, given: [str])
 # stays exhaustive without a case that pretends to compute something.
 function headings(document: [blocks.Block]) -> [str]
     out: [str] @ []
+
     for b in document
         match b
-            .heading h => out @ out.push(repeat("  ", (h.level - 1).to_u64().must()) + h.text)
+            .heading h                                                          => out @ out.push(
+                repeat("  ", (h.level - 1).to_u64().must()) + h.text
+            )
             .paragraph _ | .bullet _ | .numbered _ | .quote _ | .code _ | .rule => continue
+
     return out
 
 # The rendered text, printed exactly once.

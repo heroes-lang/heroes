@@ -48,12 +48,10 @@ extern "stdlib.h"
     record div_t
         quot: i32
         rem: i32
-
     record ldiv_t
         quot: i64
         rem: i64
-
-    function div(numerator: i32, denominator: i32) -> ldiv_t   #~ ffi_return_type
+    function div(numerator: i32, denominator: i32) -> ldiv_t  #~ ffi_return_type
 
 function main()
     print("nothing calls div, and that used to be enough to ship a binary")

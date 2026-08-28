@@ -68,17 +68,25 @@ function declaration(s: source.Source, decls: [ast.Decl], name: str) -> Declared
     for decl in decls
         if source.span_text(s, decl.name) != name
             continue
+
         match decl.kind
             .function_decl fd =>
                 if !fd.value.header.is_err()
-                    return ok(Declared(span: decl.span, header: emit_externs.unquoted(s, span: fd.value.header.must()), is_constant: false))
+                    return ok(
+                        Declared(span: decl.span, header: emit_externs.unquoted(s, span: fd.value.header.must()), is_constant: false)
+                    )
             .constant_decl k =>
                 if !k.header.is_err()
-                    return ok(Declared(span: decl.span, header: emit_externs.unquoted(s, span: k.header.must()), is_constant: true))
+                    return ok(
+                        Declared(span: decl.span, header: emit_externs.unquoted(s, span: k.header.must()), is_constant: true)
+                    )
             .record_decl rec =>
                 if !rec.header.is_err()
-                    return ok(Declared(span: decl.span, header: emit_externs.unquoted(s, span: rec.header.must()), is_constant: false))
+                    return ok(
+                        Declared(span: decl.span, header: emit_externs.unquoted(s, span: rec.header.must()), is_constant: false)
+                    )
             .variant_decl | .test_decl => continue
+
     return fail("none", "no group declares this name")
 
 # The span of the NAME alone, which is what a fix replaces — the
@@ -87,6 +95,7 @@ function name_span(s: source.Source, decls: [ast.Decl], name: str) -> token.Span
     for decl in decls
         if source.span_text(s, decl.name) == name
             return ok(decl.name)
+
     return fail("none", "no declaration has this name")
 
 # The span of the first declaration whose group names this header —
@@ -99,15 +108,19 @@ function name_span(s: source.Source, decls: [ast.Decl], name: str) -> token.Span
 function group_head(s: source.Source, decls: [ast.Decl], header: str) -> token.Span?
     for decl in decls
         named: token.Span? @ fail("none", "no header")
+
         match decl.kind
-            .function_decl fd => named @ fd.value.header
-            .constant_decl k => named @ k.header
-            .record_decl rec => named @ rec.header
+            .function_decl fd          => named @ fd.value.header
+            .constant_decl k           => named @ k.header
+            .record_decl rec           => named @ rec.header
             .variant_decl | .test_decl => continue
+
         if named.is_err()
             continue
+
         if emit_externs.unquoted(s, span: named.must()) == header
             return ok(decl.span)
+
     return fail("none", "no group names this header")
 
 # The span of the first declaration whose group asked about this
@@ -116,18 +129,22 @@ function group_head(s: source.Source, decls: [ast.Decl], header: str) -> token.S
 function package_span(s: source.Source, decls: [ast.Decl], name: str) -> token.Span?
     for decl in decls
         library: ast.Library? @ fail("none", "no library")
+
         match decl.kind
-            .function_decl fd => library @ fd.value.library
-            .constant_decl k => library @ k.library
-            .record_decl rec => library @ rec.library
+            .function_decl fd          => library @ fd.value.library
+            .constant_decl k           => library @ k.library
+            .record_decl rec           => library @ rec.library
             .variant_decl | .test_decl => continue
+
         if library.is_err()
             continue
+
         match library.must()
             .package pk =>
                 if emit_externs.unquoted(s, span: pk.name) == name
                     return ok(decl.span)
             .link => continue
+
     return fail("none", "no group asked for this package")
 
 # One diagnostic per .hero line: clang reports a translation unit, and
@@ -137,6 +154,7 @@ function add_once(found: [diag.Diagnostic], d: diag.Diagnostic) -> [diag.Diagnos
     for old in found
         if old.span == d.span
             return found
+
     return found.push(d)
 
 ## Reading clang's line — one splitter, every reader
@@ -150,22 +168,28 @@ function has(text: str, needle: str) -> bool
 function char_index_of(text: str, needle: str) -> i64?
     cs = text.chars()
     needle_cs = needle.chars()
+
     if needle_cs.len() == 0
         return ok(0)
+
     if needle_cs.len() > cs.len()
         return fail("none", "not found")
     start: i64 @ 0
+
     while start <= cs.len() - needle_cs.len()
         matched: bool @ true
         offset: i64 @ 0
+
         while offset < needle_cs.len()
             if cs[start + offset] != needle_cs[offset]
                 matched @ false
                 break
             offset @ offset + 1
+
         if matched
             return ok(start)
         start @ start + 1
+
     return fail("none", "not found")
 
 # Everything after the FIRST occurrence of marker. The Rust reads
@@ -175,14 +199,17 @@ function char_index_of(text: str, needle: str) -> i64?
 # same tokens.
 function after(text: str, marker: str) -> str?
     at = char_index_of(text: text, needle: marker)
+
     if at.is_err()
         return fail("none", "marker not present")
     cs = text.chars()
     tail: [str] @ []
     index: i64 @ at.must() + marker.chars().len()
+
     while index < cs.len()
         tail @ tail.push(cs[index])
         index @ index + 1
+
     return ok(tail.join(""))
 
 # The lines of a tool's stderr. A trailing newline yields no empty
@@ -190,12 +217,14 @@ function after(text: str, marker: str) -> str?
 function lines(text: str) -> [str]
     out: [str] @ []
     run: [str] @ []
+
     for ch in text.chars()
         if ch == "\n"
             out @ out.push(run.join(""))
             run @ []
         else
             run @ run.push(ch)
+
     if run.len() > 0
         out @ out.push(run.join(""))
     return out
@@ -205,6 +234,7 @@ function lines(text: str) -> [str]
 function words(text: str) -> [str]
     out: [str] @ []
     run: [str] @ []
+
     for ch in text.chars()
         if ch == " " || ch == "\t"
             if run.len() > 0
@@ -212,6 +242,7 @@ function words(text: str) -> [str]
                 run @ []
         else
             run @ run.push(ch)
+
     if run.len() > 0
         out @ out.push(run.join(""))
     return out
@@ -221,10 +252,12 @@ function words(text: str) -> [str]
 # reader that recovers a name from clang's quoting reads it this way.
 function up_to_quote(text: str) -> str
     kept: [str] @ []
+
     for ch in text.chars()
         if ch == "'"
             return kept.join("")
         kept @ kept.push(ch)
+
     return kept.join("")
 
 # A small decimal read whole — clang's row and column numbers. Spaces
@@ -233,19 +266,23 @@ function number(text: str) -> i64?
     ds = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
     value: i64 @ 0
     read: bool @ false
+
     for ch in text.chars()
         if ch == " "
             continue
         matched: bool @ false
         index: i64 @ 0
+
         for one in ds
             if one == ch
                 value @ value * 10 + index
                 matched @ true
                 read @ true
             index @ index + 1
+
         if !matched
             return fail("none", "not a digit")
+
     if !read
         return fail("none", "empty")
     return ok(value)
@@ -254,16 +291,22 @@ function number(text: str) -> i64?
 function trimmed(text: str) -> str
     cs = text.chars()
     head: i64 @ 0
+
     while head < cs.len() && (cs[head] == " " || cs[head] == "\t")
         head @ head + 1
+
     tail: i64 @ cs.len()
+
     while tail > head && (cs[tail - 1] == " " || cs[tail - 1] == "\t")
         tail @ tail - 1
+
     kept: [str] @ []
     index: i64 @ head
+
     while index < tail
         kept @ kept.push(cs[index])
         index @ index + 1
+
     return kept.join("")
 
 ## Tests
@@ -283,9 +326,11 @@ test "declaration finds all three kinds and refuses the rest"
     assert k.must().is_constant
     rec = declaration(s, parsed.decls, name: "Color")
     assert !rec.must().is_constant
+
     # A name this program declares WITHOUT a header is not an extern.
     assert declaration(s, parsed.decls, name: "local_one").is_err()
     assert declaration(s, parsed.decls, name: "sqlite3_open").is_err()
+
     # The group lookups: the head line and the package question.
     assert !group_head(s, parsed.decls, header: "m.h").is_err()
     assert group_head(s, parsed.decls, header: "other.h").is_err()

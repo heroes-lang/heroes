@@ -136,65 +136,65 @@ bb0:
     t1 = ((void *)0);
 #line 39 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     h0_db = t1;
-#line 40 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
+#line 41 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     t2 = HERO_STR_LIT(hero_str_41b4cad0);
-#line 40 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
+#line 41 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     t3 = hero_str_cstr(t2);
-#line 40 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
+#line 41 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     t4 = sqlite3_open(hero_cstr_nonnull(t3), &h0_db);
-#line 40 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
+#line 41 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     t5 = h_ffioutparameterguard_SQLITE_OK();
-#line 40 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
+#line 41 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     t6 = t4 != t5;
-#line 40 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
+#line 41 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     if (t6) goto bb2; else goto bb3;
-#line 40 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
+#line 41 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
 bb1:
-#line 43 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
+#line 44 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     t8 = ((void *)0);
-#line 43 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
+#line 44 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     h1_stmt = t8;
-#line 44 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
+#line 45 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     t9 = ((void *)0);
-#line 44 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
+#line 45 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     h2_tail = t9;
-#line 45 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
+#line 46 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     t10 = h0_db;
-#line 45 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
+#line 46 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     t11 = HERO_STR_LIT(hero_str_5689c81);
-#line 45 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
+#line 46 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     t12 = hero_str_cstr(t11);
-#line 45 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
+#line 46 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     t13 = INT64_C(-1);
-#line 45 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
+#line 46 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     t14 = sqlite3_prepare_v2(t10, hero_cstr_nonnull(t12), t13, &h1_stmt, &h2_tail);
-#line 45 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
+#line 46 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     h3_rc = t14;
-#line 46 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
+#line 47 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     t15 = h3_rc;
-#line 46 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
+#line 47 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     t16 = h_ffioutparameterguard_SQLITE_OK();
-#line 46 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
+#line 47 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     t17 = t15 == t16;
-#line 46 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
+#line 47 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     hero_print_bool(t17);
-#line 46 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
+#line 47 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     hero_print_end();
-#line 46 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
+#line 47 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     return;
-#line 46 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
+#line 47 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
 bb2:
-#line 41 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
+#line 42 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     t7 = HERO_STR_LIT(hero_str_353a8d65);
-#line 41 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
+#line 42 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     hero_print_str(t7);
-#line 41 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
+#line 42 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     hero_print_end();
-#line 41 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
+#line 42 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     return;
-#line 41 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
+#line 42 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
 bb3:
-#line 41 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
+#line 42 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     goto bb1;
 #line 200 "ffioutparameterguard.c"
 }

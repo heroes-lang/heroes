@@ -130,79 +130,79 @@ bb0:
     t1 = INT64_C(0);
 #line 12 "tests/golden/ir/adversarial-diverging-arms.hero"
     h1_seen = t1;
-#line 13 "tests/golden/ir/adversarial-diverging-arms.hero"
+#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
     t2 = h0_xs;
-#line 13 "tests/golden/ir/adversarial-diverging-arms.hero"
+#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
     t18 = h2_xs0;
 #line 138 "adversarialdivergingarms.c"
     hero_array_incref(t2);
-#line 13 "tests/golden/ir/adversarial-diverging-arms.hero"
+#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
     h2_xs0 = t2;
 #line 142 "adversarialdivergingarms.c"
     hero_array_decref(t18);
-#line 13 "tests/golden/ir/adversarial-diverging-arms.hero"
+#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
     t3 = INT64_C(0);
-#line 13 "tests/golden/ir/adversarial-diverging-arms.hero"
+#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
     h3_i0 = t3;
-#line 13 "tests/golden/ir/adversarial-diverging-arms.hero"
+#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
     goto bb1;
-#line 13 "tests/golden/ir/adversarial-diverging-arms.hero"
+#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
 bb1:
-#line 13 "tests/golden/ir/adversarial-diverging-arms.hero"
+#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
     t4 = h3_i0;
-#line 13 "tests/golden/ir/adversarial-diverging-arms.hero"
+#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
     t5 = h2_xs0;
-#line 13 "tests/golden/ir/adversarial-diverging-arms.hero"
+#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
     t6 = hero_array_len(t5);
-#line 13 "tests/golden/ir/adversarial-diverging-arms.hero"
+#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
     t7 = t4 < t6;
-#line 13 "tests/golden/ir/adversarial-diverging-arms.hero"
+#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
     if (t7) goto bb2; else goto bb4;
-#line 13 "tests/golden/ir/adversarial-diverging-arms.hero"
+#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
 bb2:
-#line 13 "tests/golden/ir/adversarial-diverging-arms.hero"
+#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
     t8 = h2_xs0;
-#line 13 "tests/golden/ir/adversarial-diverging-arms.hero"
+#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
     t9 = h3_i0;
-#line 13 "tests/golden/ir/adversarial-diverging-arms.hero"
+#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
     t10 = *(h_adversarialdivergingarms_Step const *)hero_array_at(t8, t9);
-#line 13 "tests/golden/ir/adversarial-diverging-arms.hero"
+#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
     h4_s = t10;
-#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
+#line 15 "tests/golden/ir/adversarial-diverging-arms.hero"
     t11 = h4_s;
-#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
+#line 15 "tests/golden/ir/adversarial-diverging-arms.hero"
     h5_s0 = t11;
-#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
+#line 15 "tests/golden/ir/adversarial-diverging-arms.hero"
     t12 = h5_s0;
-#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
+#line 15 "tests/golden/ir/adversarial-diverging-arms.hero"
     t13 = t12.tag;
-#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
+#line 15 "tests/golden/ir/adversarial-diverging-arms.hero"
     switch (t13) {
-#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
+#line 15 "tests/golden/ir/adversarial-diverging-arms.hero"
         case 0: goto bb6;
-#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
+#line 15 "tests/golden/ir/adversarial-diverging-arms.hero"
         case 1: goto bb7;
-#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
+#line 15 "tests/golden/ir/adversarial-diverging-arms.hero"
         default: hero_unreachable();
-#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
+#line 15 "tests/golden/ir/adversarial-diverging-arms.hero"
     }
-#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
+#line 15 "tests/golden/ir/adversarial-diverging-arms.hero"
 bb3:
-#line 13 "tests/golden/ir/adversarial-diverging-arms.hero"
+#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
     t14 = h3_i0;
-#line 13 "tests/golden/ir/adversarial-diverging-arms.hero"
+#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
     t15 = INT64_C(1);
-#line 13 "tests/golden/ir/adversarial-diverging-arms.hero"
+#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
     if (__builtin_add_overflow(t14, t15, &t16)) hero_panic_overflow();
-#line 13 "tests/golden/ir/adversarial-diverging-arms.hero"
+#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
     h3_i0 = t16;
-#line 13 "tests/golden/ir/adversarial-diverging-arms.hero"
+#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
     goto bb1;
-#line 13 "tests/golden/ir/adversarial-diverging-arms.hero"
+#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
 bb4:
-#line 18 "tests/golden/ir/adversarial-diverging-arms.hero"
+#line 21 "tests/golden/ir/adversarial-diverging-arms.hero"
     t17 = h1_seen;
-#line 18 "tests/golden/ir/adversarial-diverging-arms.hero"
+#line 21 "tests/golden/ir/adversarial-diverging-arms.hero"
     t19 = h2_xs0;
 #line 208 "adversarialdivergingarms.c"
     hero_array_decref(t19);

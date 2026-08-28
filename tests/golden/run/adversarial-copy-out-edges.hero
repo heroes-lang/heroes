@@ -13,8 +13,10 @@ function walk(@n: i64, @steps: i64) -> bool
     while n > 0
         steps @ steps + 1
         n @ n - 1
+
         if steps == 2
             return true
+
     return false
 
 function main()

@@ -121,49 +121,49 @@ bb0:
     hero_print_str(t1);
 #line 21 "tests/golden/run/abort-null-cstr-into-c.hero"
     hero_print_end();
-#line 26 "tests/golden/run/abort-null-cstr-into-c.hero"
+#line 27 "tests/golden/run/abort-null-cstr-into-c.hero"
     t2 = HERO_STR_LIT(hero_str_1998f2);
-#line 26 "tests/golden/run/abort-null-cstr-into-c.hero"
+#line 27 "tests/golden/run/abort-null-cstr-into-c.hero"
     t3 = hero_str_cstr(t2);
-#line 26 "tests/golden/run/abort-null-cstr-into-c.hero"
+#line 27 "tests/golden/run/abort-null-cstr-into-c.hero"
     t4 = HERO_STR_LIT(hero_str_203132);
-#line 26 "tests/golden/run/abort-null-cstr-into-c.hero"
+#line 27 "tests/golden/run/abort-null-cstr-into-c.hero"
     t5 = hero_str_cstr(t4);
-#line 26 "tests/golden/run/abort-null-cstr-into-c.hero"
+#line 27 "tests/golden/run/abort-null-cstr-into-c.hero"
     t6 = (const char *)strstr(hero_cstr_nonnull(t3), hero_cstr_nonnull(t5));
-#line 26 "tests/golden/run/abort-null-cstr-into-c.hero"
+#line 27 "tests/golden/run/abort-null-cstr-into-c.hero"
     h0_absent = t6;
-#line 31 "tests/golden/run/abort-null-cstr-into-c.hero"
+#line 33 "tests/golden/run/abort-null-cstr-into-c.hero"
     t7 = h0_absent;
-#line 31 "tests/golden/run/abort-null-cstr-into-c.hero"
+#line 33 "tests/golden/run/abort-null-cstr-into-c.hero"
     t8 = HERO_STR_LIT(hero_str_79);
-#line 31 "tests/golden/run/abort-null-cstr-into-c.hero"
+#line 33 "tests/golden/run/abort-null-cstr-into-c.hero"
     t9 = hero_str_cstr(t8);
-#line 31 "tests/golden/run/abort-null-cstr-into-c.hero"
+#line 33 "tests/golden/run/abort-null-cstr-into-c.hero"
     t10 = (const char *)strstr(hero_cstr_nonnull(t7), hero_cstr_nonnull(t9));
-#line 31 "tests/golden/run/abort-null-cstr-into-c.hero"
+#line 33 "tests/golden/run/abort-null-cstr-into-c.hero"
     t11 = ((void *)0);
-#line 31 "tests/golden/run/abort-null-cstr-into-c.hero"
+#line 33 "tests/golden/run/abort-null-cstr-into-c.hero"
     t12 = t10 == t11;
-#line 31 "tests/golden/run/abort-null-cstr-into-c.hero"
+#line 33 "tests/golden/run/abort-null-cstr-into-c.hero"
     if (t12) goto bb2; else goto bb3;
-#line 31 "tests/golden/run/abort-null-cstr-into-c.hero"
+#line 33 "tests/golden/run/abort-null-cstr-into-c.hero"
 bb1:
-#line 31 "tests/golden/run/abort-null-cstr-into-c.hero"
+#line 33 "tests/golden/run/abort-null-cstr-into-c.hero"
     return;
-#line 31 "tests/golden/run/abort-null-cstr-into-c.hero"
+#line 33 "tests/golden/run/abort-null-cstr-into-c.hero"
 bb2:
-#line 32 "tests/golden/run/abort-null-cstr-into-c.hero"
+#line 34 "tests/golden/run/abort-null-cstr-into-c.hero"
     t13 = HERO_STR_LIT(hero_str_187ae0ee);
-#line 32 "tests/golden/run/abort-null-cstr-into-c.hero"
+#line 34 "tests/golden/run/abort-null-cstr-into-c.hero"
     hero_print_str(t13);
-#line 32 "tests/golden/run/abort-null-cstr-into-c.hero"
+#line 34 "tests/golden/run/abort-null-cstr-into-c.hero"
     hero_print_end();
-#line 32 "tests/golden/run/abort-null-cstr-into-c.hero"
+#line 34 "tests/golden/run/abort-null-cstr-into-c.hero"
     goto bb1;
-#line 32 "tests/golden/run/abort-null-cstr-into-c.hero"
+#line 34 "tests/golden/run/abort-null-cstr-into-c.hero"
 bb3:
-#line 32 "tests/golden/run/abort-null-cstr-into-c.hero"
+#line 34 "tests/golden/run/abort-null-cstr-into-c.hero"
     goto bb1;
 #line 169 "abortnullcstrintoc.c"
 }

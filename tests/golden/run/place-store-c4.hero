@@ -15,16 +15,21 @@
 function main()
     xs: [i64] @ []
     i: i64 @ 0
+
     while i < 10000
         xs @ xs.push(i)
         i @ i + 1
+
     print(xs.len())
     print(xs[0], " ", xs[9999])
+
     # The pushed value may READ the accumulator: it is computed before
     # the grow, so it sees the pre-push array in both shapes.
     xs @ xs.push(xs.len())
     print(xs[10000])
     total: i64 @ 0
+
     for v in xs
         total @ total + v
+
     print(total)

@@ -22,26 +22,34 @@ constant ERR_NONE_AT_LEVEL: str
 
 function tally(names: [str]) -> {str: i64}
     counts: {str: i64} @ {}
+
     for name in names
         counts[name] @ counts[name].default(0) + 1
+
     return counts
 
 function levels_of(entries: [entry.Entry]) -> [str]
     out: [str] @ []
+
     for one in entries
         out @ out.push(one.level)
+
     return out
 
 function sources_of(entries: [entry.Entry]) -> [str]
     out: [str] @ []
+
     for one in entries
         out @ out.push(one.source)
+
     return out
 
 function hours_of(entries: [entry.Entry]) -> [str]
     out: [str] @ []
+
     for one in entries
         out @ out.push(entry.hour_of(one))
+
     return out
 
 # The keys, most first. A selection over `sort(keys(m))`, so the starting order
@@ -49,27 +57,35 @@ function hours_of(entries: [entry.Entry]) -> [str]
 function ranked(counts: {str: i64}) -> [str]
     left: [str] @ sort(keys(counts))
     out: [str] @ []
+
     while left.len() > 0
         best: i64 @ 0
+
         for i in range(from: 1, to: left.len())
             if counts[left[i]].default(0) > counts[left[best]].default(0)
                 best @ i
+
         out @ out.push(left[best])
         left @ without(left, best)
+
     return out
 
 function without(names: [str], at: i64) -> [str]
     out: [str] @ []
+
     for i in range(from: 0, to: names.len())
         if i != at
             out @ out.push(names[i])
+
     return out
 
 # `name n` per line, in ranked order — the shape every section of the report has.
 function rows(counts: {str: i64}) -> [str]
     out: [str] @ []
+
     for name in ranked(counts)
         out @ out.push("  " + name + " " + counts[name].default(0).to_str())
+
     return out
 
 # The first entry at this level, which is the one a reader opens the log to find.
@@ -77,6 +93,7 @@ function first_at(entries: [entry.Entry], level: str) -> entry.Entry?
     for one in entries
         if one.level == level
             return ok(one)
+
     return fail(ERR_NONE_AT_LEVEL, "no line is " + level)
 
 function how_many_at(entries: [entry.Entry], level: str) -> i64
@@ -100,12 +117,16 @@ test "the ranking is the one sort would get wrong"
     assert rows(counts) == ["  ERROR 3", "  WARN 1"]
 
 test "the first line at a level is the first one, not any one"
-    r = entry.read("2026-08-13T09:00:00 WARN a: one\n2026-08-13T10:00:00 ERROR b: two\n2026-08-13T11:00:00 ERROR c: three\n")
+    r = entry.read(
+        "2026-08-13T09:00:00 WARN a: one\n2026-08-13T10:00:00 ERROR b: two\n2026-08-13T11:00:00 ERROR c: three\n"
+    )
     assert first_at(r.entries, "ERROR").must().source == "b"
     assert first_at(r.entries, "TRACE").is_err()
     assert how_many_at(r.entries, "ERROR") == 2
     assert how_many_at(r.entries, "TRACE") == 0
 
 test "the busiest hour is a rank over the hours"
-    r = entry.read("2026-08-13T09:00:00 INFO a: one\n2026-08-13T22:00:00 INFO a: two\n2026-08-13T22:30:00 INFO a: three\n")
+    r = entry.read(
+        "2026-08-13T09:00:00 INFO a: one\n2026-08-13T22:00:00 INFO a: two\n2026-08-13T22:30:00 INFO a: three\n"
+    )
     assert ranked(tally(hours_of(r.entries)))[0] == "22"

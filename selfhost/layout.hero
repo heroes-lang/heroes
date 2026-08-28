@@ -30,7 +30,7 @@ use diag
 # premise that expires (CLAUDE.md §11) — this one expired the day it was
 # argued, and the constant survives it because naming 13 was never the point.
 constant CR: u8
-    '\r' 
+    '\r'
 
 ## The enders
 
@@ -39,19 +39,19 @@ constant CR: u8
 # postfix `?`, `)`, `]`, or `}`. `?` is the analogue of Go's `++`/`--`.
 function is_line_ender(kind: token.TokenKind) -> bool
     return match kind
-        .ident | .int_lit | .float_lit | .str_lit | .char_lit => true
-        .kw_true | .kw_false | .kw_nullptr => true
-        .kw_return | .kw_break | .kw_continue => true
-        .hole | .question | .rparen | .rbracket | .rbrace => true
-        .kw_constant | .kw_function | .kw_record | .kw_variant => false
-        .kw_match | .kw_if | .kw_else | .kw_for | .kw_while | .kw_in => false
-        .kw_test | .kw_assert | .kw_extern | .kw_use | .kw_fail => false
+        .ident | .int_lit | .float_lit | .str_lit | .char_lit            => true
+        .kw_true | .kw_false | .kw_nullptr                               => true
+        .kw_return | .kw_break | .kw_continue                            => true
+        .hole | .question | .rparen | .rbracket | .rbrace                => true
+        .kw_constant | .kw_function | .kw_record | .kw_variant           => false
+        .kw_match | .kw_if | .kw_else | .kw_for | .kw_while | .kw_in     => false
+        .kw_test | .kw_assert | .kw_extern | .kw_use | .kw_fail          => false
         .eq | .at | .colon | .comma | .dot | .arrow | .fat_arrow | .pipe => false
-        .lparen | .lbracket | .lbrace => false
-        .plus | .minus | .star | .slash | .percent => false
-        .eq_eq | .bang_eq | .lt | .le | .gt | .ge => false
+        .lparen | .lbracket | .lbrace                                    => false
+        .plus | .minus | .star | .slash | .percent                       => false
+        .eq_eq | .bang_eq | .lt | .le | .gt | .ge                        => false
         .and_and | .or_or | .bang | .amp | .caret | .tilde | .shl | .shr => false
-        .comment | .terminator | .indent | .dedent | .eof | .error => false
+        .comment | .terminator | .indent | .dedent | .eof | .error       => false
 
 ## The margin
 
@@ -62,45 +62,62 @@ function line_start(@l: state.LexState, text: str)
     ws_start = l.pos
     spaces: i64 @ 0
     saw_tab: bool @ false
+
     while l.pos < text.len() && (text[l.pos] == ' ' || text[l.pos] == '\t')
         if text[l.pos] == ' '
             spaces @ spaces + 1
         else
             saw_tab @ true
         l.pos @ l.pos + 1
+
     if saw_tab
         span = token.Span(start: ws_start, end: l.pos)
-        l.diagnostics @ l.diagnostics.push(diag.new_diagnostic(code: "tab_in_indentation", message: "a tab in indentation is a compile error — indent with spaces, exactly 4 per level", span: span))
+        l.diagnostics @ l.diagnostics.push(
+            diag.new_diagnostic(code: "tab_in_indentation", message: "a tab in indentation is a compile error — indent with spaces, exactly 4 per level", span: span)
+        )
         return
+
     # Inside brackets the margin is not structural (panel 007).
     if l.open_brackets.len() > 0
         return
+
     # Layout-neutral lines: empty, or comment-only.
     if l.pos >= text.len()
         return
     b = text[l.pos]
+
     if b == '\n' || b == CR || b == '#'
         return
     span = token.Span(start: ws_start, end: l.pos)
+
     # Recovery, and the distinction matters: a wrong margin is always an
     # ERROR — the program never compiles, so nothing is interpreted in the
     # sense §4.15 forbids. What is recovered is only the structure handed
     # downstream: round to the nearest level, and never open more than one
     # level at a time — nothing in the language opens two.
     new_level: i64 @ (spaces + 2) / 4
+
     if spaces % 4 != 0
-        l.diagnostics @ l.diagnostics.push(diag.new_diagnostic(code: "indentation_not_multiple_of_4", message: "indentation must be exactly 4 spaces per level; found " + spaces.to_str(), span: span))
+        l.diagnostics @ l.diagnostics.push(
+            diag.new_diagnostic(code: "indentation_not_multiple_of_4", message: "indentation must be exactly 4 spaces per level; found " + spaces.to_str(), span: span)
+        )
+
     if new_level > l.level + 1
-        l.diagnostics @ l.diagnostics.push(diag.new_diagnostic(code: "indentation_jump", message: "indentation jumps from level " + l.level.to_str() + " to level " + new_level.to_str() + "; a block opens one level at a time", span: span))
+        l.diagnostics @ l.diagnostics.push(
+            diag.new_diagnostic(code: "indentation_jump", message: "indentation jumps from level " + l.level.to_str() + " to level " + new_level.to_str() + "; a block opens one level at a time", span: span)
+        )
         new_level @ l.level + 1
+
     if new_level == l.level + 1
         l.tokens @ l.tokens.push(token.Token(kind: .indent, span: span))
         l.level @ new_level
     else
+
         # A dedent may close several levels at once; each gets its own token
         # so blocks nest and unnest one at a time for the parser.
         for _ in range(from: new_level, to: l.level)
             l.tokens @ l.tokens.push(token.Token(kind: .dedent, span: span))
+
         l.level @ new_level
 
 ## The invisible semicolon
@@ -111,6 +128,7 @@ function line_start(@l: state.LexState, text: str)
 function maybe_terminator(@l: state.LexState)
     if l.last_significant.is_err()
         return
+
     if !is_line_ender(l.last_significant.must())
         return
     span = token.Span(start: l.pos, end: l.pos)

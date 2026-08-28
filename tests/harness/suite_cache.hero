@@ -129,22 +129,38 @@ function write_header(dir: str, value: str) -> ()?
 function a_header_edit_is_not_invisible(@r: report.Report, scratch: str, compiler: str)
     label = "cache/a header edit is not invisible"
     dir = laid_out(scratch: scratch, value: "1")
+
     if dir.is_err()
         report.keep_failure(@r, label: label, detail: "  cannot lay the program out under " + scratch)
         return
     wrong: [str] @ []
+
     for value in ["1", "2", "7", "2"]
         if write_header(dir: dir.must(), value: value).is_err()
             report.keep_failure(@r, label: label, detail: "  cannot write the header")
             return
-        said = shell.run(scratch: scratch, command: shell.patience() + shell.sq(compiler) + " run " + shell.sq(dir.must() + "/prog.hero"))
+        said = shell.run(
+            scratch: scratch,
+            command: shell.patience() + shell.sq(compiler) + " run " + shell.sq(dir.must() + "/prog.hero")
+        )
+
         if said.is_err() || said.must().code != 0
-            wrong @ wrong.push("    the header said " + value + " and the build did not run: " + said.default(shell.Run(code: -1, out: "", err: "cannot run")).err)
+            wrong @ wrong.push(
+                "    the header said " + value + " and the build did not run: " + said.default(shell.Run(code: -1, out: "", err: "cannot run")).err
+            )
             continue
+
         if said.must().out != value + "\n"
-            wrong @ wrong.push("    the header said " + value + " and the program printed " + strings.trimmed(said.must().out) + " — a cached object built against an older header")
+            wrong @ wrong.push(
+                "    the header said " + value + " and the program printed " + strings.trimmed(said.must().out) + " — a cached object built against an older header"
+            )
+
     if wrong.len() > 0
-        report.keep_failure(@r, label: label, detail: wrong.join("\n") + "\n  the key cannot see a header edit by construction (the emitted C is identical), so what stands between this and a wrong answer at exit 0 is `cli_deps`: clang's own dependency listing, recorded per object and re-checked before a warm one is served.")
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: wrong.join("\n") + "\n  the key cannot see a header edit by construction (the emitted C is identical), so what stands between this and a wrong answer at exit 0 is `cli_deps`: clang's own dependency listing, recorded per object and re-checked before a warm one is served."
+        )
     else
         report.keep_pass(@r)
 
@@ -156,19 +172,34 @@ function a_header_edit_is_not_invisible(@r: report.Report, scratch: str, compile
 function an_untouched_build_still_hits(@r: report.Report, scratch: str, compiler: str)
     label = "cache/an untouched build still hits"
     dir = laid_out(scratch: scratch, value: "3")
+
     if dir.is_err()
         report.keep_failure(@r, label: label, detail: "  cannot lay the program out under " + scratch)
         return
-    first = shell.run(scratch: scratch, command: shell.patience() + shell.sq(compiler) + " build " + shell.sq(dir.must() + "/prog.hero"))
+    first = shell.run(
+        scratch: scratch,
+        command: shell.patience() + shell.sq(compiler) + " build " + shell.sq(dir.must() + "/prog.hero")
+    )
+
     if first.is_err() || first.must().code != 0
         report.keep_failure(@r, label: label, detail: "  the first build did not run")
         return
-    moved = objects_newer_than(scratch: scratch, marker: dir.must() + "/marker", command: shell.patience() + shell.sq(compiler) + " build " + shell.sq(dir.must() + "/prog.hero"))
+    moved = objects_newer_than(
+        scratch: scratch,
+        marker: dir.must() + "/marker",
+        command: shell.patience() + shell.sq(compiler) + " build " + shell.sq(dir.must() + "/prog.hero")
+    )
+
     if moved.is_err()
         report.keep_failure(@r, label: label, detail: "  cannot ask the filesystem which objects moved")
         return
+
     if moved.must().len() > 0
-        report.keep_failure(@r, label: label, detail: "  nothing was edited and these objects were rebuilt:\n    " + moved.must().join("\n    ") + "\n  A cache that misses on every build passes the header case above for the worst possible reason.")
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: "  nothing was edited and these objects were rebuilt:\n    " + moved.must().join("\n    ") + "\n  A cache that misses on every build passes the header case above for the worst possible reason."
+        )
     else
         report.keep_pass(@r)
 
@@ -178,26 +209,44 @@ function an_untouched_build_still_hits(@r: report.Report, scratch: str, compiler
 function only_the_module_that_read_it_is_rebuilt(@r: report.Report, scratch: str, compiler: str)
     label = "cache/only the module that read it is rebuilt"
     dir = laid_out(scratch: scratch, value: "4")
+
     if dir.is_err()
         report.keep_failure(@r, label: label, detail: "  cannot lay the program out under " + scratch)
         return
-    first = shell.run(scratch: scratch, command: shell.patience() + shell.sq(compiler) + " build " + shell.sq(dir.must() + "/prog.hero"))
+    first = shell.run(
+        scratch: scratch,
+        command: shell.patience() + shell.sq(compiler) + " build " + shell.sq(dir.must() + "/prog.hero")
+    )
+
     if first.is_err() || first.must().code != 0
         report.keep_failure(@r, label: label, detail: "  the first build did not run")
         return
+
     if write_header(dir: dir.must(), value: "5").is_err()
         report.keep_failure(@r, label: label, detail: "  cannot rewrite the header")
         return
-    moved = objects_newer_than(scratch: scratch, marker: dir.must() + "/marker", command: shell.patience() + shell.sq(compiler) + " build " + shell.sq(dir.must() + "/prog.hero"))
+    moved = objects_newer_than(
+        scratch: scratch,
+        marker: dir.must() + "/marker",
+        command: shell.patience() + shell.sq(compiler) + " build " + shell.sq(dir.must() + "/prog.hero")
+    )
+
     if moved.is_err()
         report.keep_failure(@r, label: label, detail: "  cannot ask the filesystem which objects moved")
         return
     names: [str] @ []
+
     for path in moved.must()
         names @ names.push(strings.base_name(path))
+
     only = names.sort()
+
     if only.len() != 1 || only[0] != "bind.o"
-        report.keep_failure(@r, label: label, detail: "  the header edit should move `bind.o` and nothing else — it moved:\n    " + only.join("\n    ") + "\n  Nothing means the edit was invisible; everything means the header reached translation units that never declared the `extern`.")
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: "  the header edit should move `bind.o` and nothing else — it moved:\n    " + only.join("\n    ") + "\n  Nothing means the edit was invisible; everything means the header reached translation units that never declared the `extern`."
+        )
     else
         report.keep_pass(@r)
 
@@ -218,9 +267,11 @@ function only_the_module_that_read_it_is_rebuilt(@r: report.Report, scratch: str
 function a_reordered_variant_is_not_served_warm(@r: report.Report, scratch: str, compiler: str)
     label = "cache/a reordered variant is not served warm"
     dir = scratch + "/" + TAGS_HOME
+
     if shell.remove_tree(dir).is_err() || shell.mkdir_all(dir).is_err()
         report.keep_failure(@r, label: label, detail: "  cannot lay the program out under " + dir)
         return
+
     if write_file(path: dir + "/caller.hero", text: TAGS_CALLER).is_err()
         report.keep_failure(@r, label: label, detail: "  cannot write the caller")
         return
@@ -230,18 +281,33 @@ function a_reordered_variant_is_not_served_warm(@r: report.Report, scratch: str,
         ["blue", "green", "red"]
         ["green", "blue", "red"]
     ]
+
     for order in orders
         if write_file(path: dir + "/hue.hero", text: hue_module(order)).is_err()
             report.keep_failure(@r, label: label, detail: "  cannot write the variant module")
             return
-        said = shell.run(scratch: scratch, command: shell.patience() + shell.sq(compiler) + " run " + shell.sq(dir + "/caller.hero"))
+        said = shell.run(
+            scratch: scratch,
+            command: shell.patience() + shell.sq(compiler) + " run " + shell.sq(dir + "/caller.hero")
+        )
+
         if said.is_err() || said.must().code != 0
-            wrong @ wrong.push("    with the cases in the order " + order.join(", ") + " the build did not run: " + said.default(shell.Run(code: -1, out: "", err: "cannot run")).err)
+            wrong @ wrong.push(
+                "    with the cases in the order " + order.join(", ") + " the build did not run: " + said.default(shell.Run(code: -1, out: "", err: "cannot run")).err
+            )
             continue
+
         if said.must().out != "blue\n"
-            wrong @ wrong.push("    with the cases in the order " + order.join(", ") + " the program printed " + strings.trimmed(said.must().out) + " where it names `.blue`")
+            wrong @ wrong.push(
+                "    with the cases in the order " + order.join(", ") + " the program printed " + strings.trimmed(said.must().out) + " where it names `.blue`"
+            )
+
     if wrong.len() > 0
-        report.keep_failure(@r, label: label, detail: wrong.join("\n") + "\n  A variant's cases are numbered by position and the caller's `match` is a C `switch` over those numbers, in another translation unit. What keeps them together is that a TU's text carries the tag enum of every type it reaches, so this edit changes the CALLER's own text and therefore its key. A wrong case here is exit 0 with no diagnostic anywhere.")
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: wrong.join("\n") + "\n  A variant's cases are numbered by position and the caller's `match` is a C `switch` over those numbers, in another translation unit. What keeps them together is that a TU's text carries the tag enum of every type it reaches, so this edit changes the CALLER's own text and therefore its key. A wrong case here is exit 0 with no diagnostic anywhere."
+        )
     else
         report.keep_pass(@r)
 
@@ -264,34 +330,62 @@ function a_reordered_variant_is_not_served_warm(@r: report.Report, scratch: str,
 function a_warm_cache_never_turns_a_failure_into_a_pass(@r: report.Report, scratch: str, compiler: str)
     label = "cache/a warm cache never turns a failure into a pass"
     dir = scratch + "/" + FAIL_HOME
+
     if shell.remove_tree(dir).is_err() || shell.mkdir_all(dir).is_err()
         report.keep_failure(@r, label: label, detail: "  cannot lay the program out under " + dir)
         return
+
     if write_file(path: dir + "/failbind.hero", text: FAIL_BIND).is_err() || write_file(path: dir + "/caller.hero", text: FAIL_CALLER).is_err()
         report.keep_failure(@r, label: label, detail: "  cannot write the program")
         return
     wrong: [str] @ []
+
     for attempt in ["first", "second", "third"]
-        said = shell.run(scratch: scratch, command: shell.patience() + shell.sq(compiler) + " build " + shell.sq(dir + "/caller.hero"))
+        said = shell.run(
+            scratch: scratch,
+            command: shell.patience() + shell.sq(compiler) + " build " + shell.sq(dir + "/caller.hero")
+        )
+
         if said.is_err()
             report.keep_failure(@r, label: label, detail: "  the " + attempt + " build could not run at all")
             return
+
         if said.must().code != 1
-            wrong @ wrong.push("    the " + attempt + " build exited " + said.must().code.to_str() + " where the `extern` disagrees with `math.h` — exit 1 is the contract, and a warm cache is not a reason to stop checking")
+            wrong @ wrong.push(
+                "    the " + attempt + " build exited " + said.must().code.to_str() + " where the `extern` disagrees with `math.h` — exit 1 is the contract, and a warm cache is not a reason to stop checking"
+            )
+
         if !strings.contains(text: said.must().err, needle: "error[ffi_return_type]")
-            wrong @ wrong.push("    the " + attempt + " build did not report `ffi_return_type`; it said:\n      " + strings.trimmed(said.must().err))
+            wrong @ wrong.push(
+                "    the " + attempt + " build did not report `ffi_return_type`; it said:\n      " + strings.trimmed(said.must().err)
+            )
+
         if !strings.contains(text: said.must().err, needle: "failbind.hero")
-            wrong @ wrong.push("    the " + attempt + " build blamed something other than the declaring module — the span must land on the author's line, wherever the cache happens to be warm")
+            wrong @ wrong.push(
+                "    the " + attempt + " build blamed something other than the declaring module — the span must land on the author's line, wherever the cache happens to be warm"
+            )
+
     # And it is a refusal rather than a stuck compiler: repair the
     # signature and the same command must run.
     if write_file(path: dir + "/failbind.hero", text: GOOD_BIND).is_err() || write_file(path: dir + "/caller.hero", text: GOOD_CALLER).is_err()
         report.keep_failure(@r, label: label, detail: "  cannot write the repaired program")
         return
-    fixed = shell.run(scratch: scratch, command: shell.patience() + shell.sq(compiler) + " run " + shell.sq(dir + "/caller.hero"))
+    fixed = shell.run(
+        scratch: scratch,
+        command: shell.patience() + shell.sq(compiler) + " run " + shell.sq(dir + "/caller.hero")
+    )
+
     if fixed.is_err() || fixed.must().code != 0 || fixed.must().out != "4.0\n"
-        wrong @ wrong.push("    the repaired program did not run: exit " + fixed.default(shell.Run(code: -1, out: "", err: "cannot run")).code.to_str() + ", printed " + strings.trimmed(fixed.default(shell.Run(code: -1, out: "", err: "")).out) + " where `sqrt` of 16.0 is 4.0\n    Without this the case would pass by refusing every program forever.")
+        wrong @ wrong.push(
+            "    the repaired program did not run: exit " + fixed.default(shell.Run(code: -1, out: "", err: "cannot run")).code.to_str() + ", printed " + strings.trimmed(fixed.default(shell.Run(code: -1, out: "", err: "")).out) + " where `sqrt` of 16.0 is 4.0\n    Without this the case would pass by refusing every program forever."
+        )
+
     if wrong.len() > 0
-        report.keep_failure(@r, label: label, detail: wrong.join("\n") + "\n  Panel 093 R5: every dirty TU compiles before any verdict is rendered, the declaring TU's clang failure maps to exit 1 on the `.hero` line, and a cache hit never converts a failure into a success. A build that goes green on its second run is the worst outcome a build system has, because nobody re-reads a green build.")
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: wrong.join("\n") + "\n  Panel 093 R5: every dirty TU compiles before any verdict is rendered, the declaring TU's clang failure maps to exit 1 on the `.hero` line, and a cache hit never converts a failure into a success. A build that goes green on its second run is the worst outcome a build system has, because nobody re-reads a green build."
+        )
     else
         report.keep_pass(@r)
 
@@ -300,11 +394,15 @@ function a_warm_cache_never_turns_a_failure_into_a_pass(@r: report.Report, scrat
 # by name and the order of the arms is not the order of the tags.
 function hue_module(order: [str]) -> str
     text: str @ "variant Colour\n"
+
     for name in order
         text @ text + "    " + name + "\n"
+
     text @ text + "\nfunction name_of(c: Colour) -> str\n    return match c\n"
+
     for name in order
         text @ text + "        ." + name + " => \"" + name + "\"\n"
+
     return text
 
 # Run `command`, and answer which object files under `build/` came out
@@ -316,18 +414,26 @@ function hue_module(order: [str]) -> str
 # command runs after it, so anything newer was written by the command.
 function objects_newer_than(scratch: str, marker: str, command: str) -> [str]?
     touched = shell.run(scratch: scratch, command: "touch " + shell.sq(marker))
+
     if touched.is_err() || touched.must().code != 0
         return fail("cannot_run", "cannot write the marker at " + marker)
     ran = shell.run(scratch: scratch, command: command)
+
     if ran.is_err() || ran.must().code != 0
-        return fail("cannot_run", "the build did not run: " + ran.default(shell.Run(code: -1, out: "", err: "cannot run")).err)
+        return fail(
+            "cannot_run",
+            "the build did not run: " + ran.default(shell.Run(code: -1, out: "", err: "cannot run")).err
+        )
     listed = shell.run(scratch: scratch, command: "find build -name '*.o' -newer " + shell.sq(marker))
+
     if listed.is_err()
         return fail("cannot_run", "cannot list what moved under build/")
     out: [str] @ []
+
     for row in strings.lines(listed.must().out)
         # The runtime's own object is not in scope: it is keyed on the
         # runtime's contents and nothing here edits those.
         if row.len() > 0 && !strings.starts_with(text: strings.base_name(row), prefix: "runtime-")
             out @ out.push(row)
+
     return ok(out.sort())

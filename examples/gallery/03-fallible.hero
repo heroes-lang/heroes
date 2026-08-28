@@ -15,16 +15,20 @@ function number_of(text: str) -> i64?
     if text.len() == 0
         return fail("empty", "there is nothing to read")
     total: i64 @ 0
+
     for i in range(from: 0, to: text.len())
         total @ total * 10 + digit_of(text[i])?
+
     return ok(total)
 
 # The `?` above is the whole point: three lines, no error handling in sight,
 # and the first bad character stops everything.
 function average_of(parts: [str]) -> i64?
     sum: i64 @ 0
+
     for p in parts
         sum @ sum + number_of(p)?
+
     if parts.len() == 0
         return fail("empty", "no parts to average")
     return ok(sum / parts.len())

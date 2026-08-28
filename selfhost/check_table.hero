@@ -110,23 +110,23 @@ record Types
 # prefix, every argument its own slot, and ids render in decimal.
 function ty_key(t: Ty) -> str
     return match t
-        .int_ty k => "i:" + widths.int_name(k.kind)
-        .float_ty k => "f:" + widths.float_name(k.kind)
-        .bool => "b"
-        .str => "s"
-        .ptr => "p"
-        .cstr => "c"
-        .unit => "u"
-        .array a => "a:" + a.element.to_str()
-        .fixed x => "x:" + x.element.to_str() + ":" + x.length.to_str()
-        .map m => "m:" + m.key.to_str() + ":" + m.value.to_str()
-        .fallible o => "?:" + o.payload.to_str()
+        .int_ty k      => "i:" + widths.int_name(k.kind)
+        .float_ty k    => "f:" + widths.float_name(k.kind)
+        .bool          => "b"
+        .str           => "s"
+        .ptr           => "p"
+        .cstr          => "c"
+        .unit          => "u"
+        .array a       => "a:" + a.element.to_str()
+        .fixed x       => "x:" + x.element.to_str() + ":" + x.length.to_str()
+        .map m         => "m:" + m.key.to_str() + ":" + m.value.to_str()
+        .fallible o    => "?:" + o.payload.to_str()
         .function_ty f => "fn:" + f.params.start.to_str() + ":" + f.params.len.to_str() + ":" + f.result.to_str()
-        .named n => "n:" + n.decl.to_str()
-        .case_ty vc => "vc:" + vc.decl.to_str() + ":" + vc.at.to_str()
-        .failure => "fail"
-        .generic g => "g:" + g.at.to_str()
-        .error => "err"
+        .named n       => "n:" + n.decl.to_str()
+        .case_ty vc    => "vc:" + vc.decl.to_str() + ":" + vc.at.to_str()
+        .failure       => "fail"
+        .generic g     => "g:" + g.at.to_str()
+        .error         => "err"
 
 # The scalars are interned first, in a fixed order, so their ids are
 # constants the whole pass can name without a lookup — and `error` is
@@ -139,13 +139,16 @@ function new_types() -> Types
     runs: {str: i64} = {}
     t: Types @ Types(nodes: nodes, params: params, index: index, runs: runs)
     prelude: [Ty] = [.error, .unit, .int_ty(kind: .i64), .float_ty(kind: .f64), .bool, .str, .ptr, .cstr, .failure]
+
     for ty in prelude
         _ = intern(@t, ty)
+
     # The other seven widths go AFTER the nine above and never among
     # them: the accessors below return hardcoded ids, and the prelude
     # test says so in its failure message.
     for kind in widths.int_kinds()
         _ = intern(@t, .int_ty(kind: kind))
+
     return t
 
 function error_ty(t: Types) -> i64
@@ -182,6 +185,7 @@ function failure_ty(t: Types) -> i64
 function intern(@t: Types, ty: Ty) -> i64
     key = ty_key(ty)
     found = t.index[key]
+
     if !found.is_err()
         return found.must()
     id = t.nodes.len()
@@ -192,17 +196,22 @@ function intern(@t: Types, ty: Ty) -> i64
 # Interns a function type, canonicalising its parameter run first.
 function intern_function(@t: Types, params: [i64], result: i64) -> i64
     rendered: [str] @ []
+
     for p in params
         rendered @ rendered.push(p.to_str())
+
     key = rendered.join(",")
     start: i64 @ 0
     found = t.runs[key]
+
     if !found.is_err()
         start @ found.must()
     else
         start @ t.params.len()
+
         for p in params
             t.params @ t.params.push(p)
+
         t.runs[key] @ start
     return intern(@t, .function_ty(params: Params(start: start, len: params.len()), result: result))
 
@@ -221,9 +230,11 @@ function len_of(t: Types) -> i64
 function params_of(t: Types, params: Params) -> [i64]
     out: [i64] @ []
     i: i64 @ params.start
+
     while i < params.start + params.len
         out @ out.push(t.params[i])
         i @ i + 1
+
     return out
 
 # The types this one holds, one level down — an array's element, a map's
@@ -231,14 +242,14 @@ function params_of(t: Types, params: Params) -> [i64]
 # result. Exists for the emitter's reachability walk.
 function contained(t: Types, id: i64) -> [i64]
     return match get(t, id)
-        .array a => [a.element]
+        .array a    => [a.element]
         .fallible o => [o.payload]
-        .map m => [m.key, m.value]
+        .map m      => [m.key, m.value]
         .function_ty f =>
             out: [i64] @ params_of(t, f.params)
             out @ out.push(f.result)
             out
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr => []
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr                 => []
         .unit | .fixed | .named | .case_ty | .failure | .generic | .error => []
 
 # True where a type is, or contains, `error`. The checker uses it to stay
@@ -246,23 +257,26 @@ function contained(t: Types, id: i64) -> [i64]
 # reported somewhere else.
 function poisoned(t: Types, id: i64) -> bool
     return match get(t, id)
-        .error => true
-        .array a => poisoned(t, a.element)
+        .error      => true
+        .array a    => poisoned(t, a.element)
         .fallible o => poisoned(t, o.payload)
-        .map m => poisoned(t, m.key) || poisoned(t, m.value)
+        .map m      => poisoned(t, m.key) || poisoned(t, m.value)
         .function_ty f =>
             bad: bool @ poisoned(t, f.result)
+
             for p in params_of(t, f.params)
                 if poisoned(t, p)
                     bad @ true
+
             bad
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr => false
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr        => false
         .unit | .fixed | .named | .case_ty | .failure | .generic => false
 
 ## Tests
 
 test "the prelude ids match their accessors, in the fixed order"
     t = new_types()
+
     # A width inserted into the middle of new_types' prelude would
     # silently re-point every accessor: these nine asserts are the guard.
     assert get(t, error_ty(t)) == .error
@@ -282,6 +296,7 @@ test "interning is idempotent and equality of ids is equality of types"
     assert a == b
     c = intern(@t, .array(element: str_ty(t)))
     assert a != c
+
     # The eight widths were interned by the prelude: asking again adds
     # nothing.
     before = t.nodes.len()
@@ -295,16 +310,18 @@ test "a function type canonicalises its parameter run"
     f1 = intern_function(@t, one, result: bool_ty(t))
     f2 = intern_function(@t, two, result: bool_ty(t))
     assert f1 == f2
+
     # Same parameters, different result: a different type, sharing the run.
     f3 = intern_function(@t, one, result: unit_ty(t))
     assert f1 != f3
+
     match get(t, f1)
         .function_ty f =>
             assert params_of(t, f.params).len() == 2
             assert params_of(t, f.params)[0] == int_ty_id(t)
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => assert false
-        .array | .fixed | .map | .fallible | .named | .case_ty => assert false
-        .failure | .generic | .error => assert false
+        .array | .fixed | .map | .fallible | .named | .case_ty    => assert false
+        .failure | .generic | .error                              => assert false
 
 test "contained walks one level down, and poison climbs back up"
     t: Types @ new_types()

@@ -46,12 +46,15 @@ function known(id: str) -> bool
     for one in operators()
         if one.id == id
             return true
+
     return false
 
 function ids() -> [str]
     out: [str] @ []
+
     for one in operators()
         out @ out.push(one.id)
+
     return out
 
 # Every mutant one operator makes from one source.
@@ -64,33 +67,47 @@ function apply(id: str, name: str, text: str) -> [str]
     none: [str] = []
     s = source.new_source(name: name, text: text)
     parsed = parse.parse_source(s)
+
     if parsed.diagnostics.len() > 0
         return none
     a = parsed.tree
+
     if id == "swap-args"
         return mutate_edits.swap_args(a, s)
+
     if id == "drop-case"
         return mutate_edits.drop_case(a, s)
+
     if id == "forget-at-decl"
         return mutate_edits.forget_at_decl(a, s)
+
     if id == "mutate-undeclared"
         return mutate_edits.mutate_undeclared(a, s)
+
     if id == "typo-ident"
         return mutate_typo.typo_ident(a, s)
+
     if id == "typo-code"
         return mutate_typo.typo_code(a, s)
+
     if id == "wildcard-variant"
         return mutate_edits.wildcard_variant(a, s)
+
     if id == "positional-named"
         return mutate_edits.positional_named(a, s)
+
     if id == "mix-int-float"
         return mutate_edits.mix_int_float(a, s)
+
     if id == "shadow"
         return mutate_edits.shadow(a, s)
+
     if id == "drop-question"
         return mutate_edits.drop_question(a, s)
+
     if id == "typo-digit"
         return mutate_typo.typo_digit(a: a, s: s, decls: parsed.decls)
+
     if id == "boolean-twin"
         return mutate_edits.boolean_twin(a, s)
     return none
@@ -114,9 +131,11 @@ test "argument inversion finds the call and swaps label with value"
     mutants = apply(id: "swap-args", name: "x.hero", text: text)
     assert mutants.len() >= 1
     swapped: bool @ false
+
     for one in mutants
         if contains(text: one, needle: "copy(to: 2, from: 1)")
             swapped @ true
+
     assert swapped
 
 test "the one-character slip reaches an identifier and a mutation target"
@@ -137,6 +156,7 @@ test "an implicit-conversion prior appends .0 to a decimal and leaves a base alo
     decimal = apply(id: "mix-int-float", name: "x.hero", text: "function main()\n    print(2 + 3)\n")
     assert decimal.len() == 2
     assert contains(text: decimal[0], needle: "2.0 + 3")
+
     # `0xff.0` would die in the lexer, so the site is not one (panel 041).
     based = apply(id: "mix-int-float", name: "x.hero", text: "function main()\n    print(0xff + 3)\n")
     assert based.len() == 1
@@ -147,11 +167,15 @@ function contains(text: str, needle: str) -> bool
         return false
     limit = text.len() - needle.len()
     at: i64 @ 0
+
     while at <= limit
         k: i64 @ 0
+
         while k < needle.len() && text[at + k] == needle[k]
             k @ k + 1
+
         if k == needle.len()
             return true
         at @ at + 1
+
     return false

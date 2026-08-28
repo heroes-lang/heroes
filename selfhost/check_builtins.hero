@@ -41,24 +41,29 @@ use value_errors
 function expectation(c: check_state.Checker, name: str, first: i64, index: i64) -> i64?
     if index == 0
         return fail("absent", "the first argument is synthesised")
+
     if name == "push" && index == 1
         match check_table.get(c.out.types, first)
-            .array a => return ok(a.element)
+            .array a                                                  => return ok(a.element)
             .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail("absent", "not an array")
-            .fixed | .map | .fallible | .function_ty | .named => return fail("absent", "not an array")
-            .case_ty | .failure | .generic | .error => return fail("absent", "not an array")
+            .fixed | .map | .fallible | .function_ty | .named         => return fail("absent", "not an array")
+            .case_ty | .failure | .generic | .error                   => return fail("absent", "not an array")
+
     if name == "default" && index == 1
         match check_table.get(c.out.types, first)
-            .fallible o => return ok(o.payload)
+            .fallible o                                               => return ok(o.payload)
             .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail("absent", "not fallible")
-            .fixed | .map | .array | .function_ty | .named => return fail("absent", "not fallible")
-            .case_ty | .failure | .generic | .error => return fail("absent", "not fallible")
+            .fixed | .map | .array | .function_ty | .named            => return fail("absent", "not fallible")
+            .case_ty | .failure | .generic | .error                   => return fail("absent", "not fallible")
+
     if name == "join" && index == 1
         return ok(check_table.str_ty(c.out.types))
+
     # repeat's count is a u64, so the literal in `repeat("-", 40)` takes
     # that width from here rather than defaulting to i64 (panel 054).
     if name == "repeat" && index == 1
         return check_table.lookup(c.out.types, .int_ty(kind: .u64))
+
     if name == "slice" && (index == 1 || index == 2)
         return ok(check_table.int_ty_id(c.out.types))
     return fail("absent", "no expectation for this argument")
@@ -68,24 +73,30 @@ function expectation(c: check_state.Checker, name: str, first: i64, index: i64) 
 # fail = this name is not a conversion, go on to the list.
 function conversion_call(@c: check_state.Checker, s: source.Source, decls: [ast.Decl], name: str, given: [i64], span: token.Span) -> i64?
     target_kind = int_width_of(name)
+
     if !target_kind.is_err() && given.len() == 1
         one = given[0]
         kind = target_kind.must()
+
         # Either float width, not just f64 (panel 060 C3): truncation
         # toward zero and the same fallible result — nothing about the
         # rule depends on which width the source was.
         from_float = is_float(c, one) && widths.int_name(kind) == "i64"
+
         if !from_float && !is_int(c, one)
             allowed: str @ "an integer"
+
             if widths.int_name(kind) == "i64"
                 allowed @ "an integer or a float"
             return ok(arg_error(@c, s, decls, name: name, allowed: allowed, got: one, span: span))
         target = check_table.intern(@c.out.types, .int_ty(kind: kind))
+
         # T? at every pair, including the ones that cannot fail (author
         # ratification 2026-08-13): one rule, no invention — Zig's
         # math.cast returns ?T unconditionally — and reversibility said
         # this was the cheap moment.
         return ok(check_table.intern(@c.out.types, .fallible(payload: target)))
+
     # The two float conversions, and both are infallible (panel 060):
     # nothing fails to fit a float — too large is inf, too small a
     # subnormal or zero, and all three are values of the type. Rounding
@@ -95,18 +106,23 @@ function conversion_call(@c: check_state.Checker, s: source.Source, decls: [ast.
         if is_int(c, given[0]) || is_float(c, given[0])
             return ok(check_table.f64_ty(c.out.types))
         return ok(arg_error(@c, s, decls, name: "to_f64", allowed: "an integer or a float", got: given[0], span: span))
+
     if name == "to_f32" && given.len() == 1
         if is_int(c, given[0]) || is_float(c, given[0])
             return ok(check_table.intern(@c.out.types, .float_ty(kind: .f32)))
         return ok(arg_error(@c, s, decls, name: "to_f32", allowed: "an integer or a float", got: given[0], span: span))
+
     if name == "to_str" && given.len() == 1
         # A `cstr` is not here: it aborted where `spec:60` promised it could not (panel 090).
         keeps = match check_table.get(c.out.types, given[0])
             .int_ty | .float_ty | .bool | .str => true
             .cstr | .ptr | .unit | .array | .fixed | .map | .fallible | .function_ty | .named | .case_ty | .failure | .generic | .error => false
+
         if keeps
             return ok(check_table.str_ty(c.out.types))
-        return ok(arg_error(@c, s, decls, name: "to_str", allowed: "an integer, a float, `bool` or `str`", got: given[0], span: span))
+        return ok(
+            arg_error(@c, s, decls, name: "to_str", allowed: "an integer, a float, `bool` or `str`", got: given[0], span: span)
+        )
     return fail("not_a_conversion", "this name is the list's, not the family's")
 
 # The width `to_<name>` converts to, when the suffix names one.
@@ -114,9 +130,11 @@ function int_width_of(name: str) -> widths.IntKind?
     if name.len() <= 3 || name.slice(from: 0, to: 3) != "to_"
         return fail("absent", "not a conversion name")
     suffix = name.slice(from: 3, to: name.len())
+
     for k in widths.int_kinds()
         if widths.int_name(k) == suffix
             return ok(k)
+
     return fail("absent", "no width has this name")
 
 ## The list
@@ -130,9 +148,12 @@ function builtin_call(@c: check_state.Checker, s: source.Source, decls: [ast.Dec
     for arg in given
         if check_table.poisoned(c.out.types, arg)
             return ok(check_state.error_ty_of(c))
+
     converted = conversion_call(@c, s, decls, name: name, given: given, span: span)
+
     if !converted.is_err()
         return converted
+
     if name == "print"
         # Panel 006's contract: any number of arguments, four kinds,
         # canonical rendering. The message names the set the arm actually
@@ -140,22 +161,29 @@ function builtin_call(@c: check_state.Checker, s: source.Source, decls: [ast.Dec
         # measured the stale enumeration in the milestone that added them).
         for arg in given
             printable = match check_table.get(c.out.types, arg)
-                .int_ty | .float_ty | .bool | .str => true
+                .int_ty | .float_ty | .bool | .str            => true
                 .ptr | .cstr | .unit | .array | .fixed | .map => false
-                .fallible | .function_ty | .named | .case_ty => false
-                .failure | .generic | .error => false
+                .fallible | .function_ty | .named | .case_ty  => false
+                .failure | .generic | .error                  => false
+
             if !printable
-                return ok(arg_error(@c, s, decls, name: "print", allowed: "any integer, a float, `bool` or `str`", got: arg, span: span))
+                return ok(
+                    arg_error(@c, s, decls, name: "print", allowed: "any integer, a float, `bool` or `str`", got: arg, span: span)
+                )
+
         return ok(check_table.unit_ty(c.out.types))
+
     if name == "len" && given.len() == 1
         sized = match check_table.get(c.out.types, given[0])
-            .str | .array | .map => true
+            .str | .array | .map                                        => true
             .int_ty | .float_ty | .bool | .ptr | .cstr | .unit | .fixed => false
-            .fallible | .function_ty | .named | .case_ty => false
-            .failure | .generic | .error => false
+            .fallible | .function_ty | .named | .case_ty                => false
+            .failure | .generic | .error                                => false
+
         if sized
             return ok(check_table.int_ty_id(c.out.types))
         return ok(arg_error(@c, s, decls, name: "len", allowed: "`str`, `[T]` or `{K: V}`", got: given[0], span: span))
+
     if name == "push" && given.len() == 2
         match check_table.get(c.out.types, given[0])
             .array a =>
@@ -165,35 +193,58 @@ function builtin_call(@c: check_state.Checker, s: source.Source, decls: [ast.Dec
                 got = check_state.show(c, s, decls, given[1])
                 check_state.push_diagnostic(@c, value_errors.mismatch(expected: want, got: got, span: span))
                 return ok(check_state.error_ty_of(c))
-            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return ok(arg_error(@c, s, decls, name: "push", allowed: "`[T]`", got: given[0], span: span))
-            .fixed | .map | .fallible | .function_ty | .named => return ok(arg_error(@c, s, decls, name: "push", allowed: "`[T]`", got: given[0], span: span))
-            .case_ty | .failure | .generic | .error => return ok(arg_error(@c, s, decls, name: "push", allowed: "`[T]`", got: given[0], span: span))
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return ok(
+                arg_error(@c, s, decls, name: "push", allowed: "`[T]`", got: given[0], span: span)
+            )
+            .fixed | .map | .fallible | .function_ty | .named => return ok(
+                arg_error(@c, s, decls, name: "push", allowed: "`[T]`", got: given[0], span: span)
+            )
+            .case_ty | .failure | .generic | .error => return ok(
+                arg_error(@c, s, decls, name: "push", allowed: "`[T]`", got: given[0], span: span)
+            )
+
     if name == "slice" && given.len() == 3
         int_id = check_table.int_ty_id(c.out.types)
+
         if given[1] != int_id || given[2] != int_id
             offender: i64 @ given[1]
+
             if given[1] == int_id
                 offender @ given[2]
             got = check_state.show(c, s, decls, offender)
-            check_state.push_diagnostic(@c, value_errors.bad_operand(op: "slice", allowed: "`i64` bounds", got: got, span: span))
+            check_state.push_diagnostic(
+                @c,
+                value_errors.bad_operand(op: "slice", allowed: "`i64` bounds", got: got, span: span)
+            )
             return ok(check_state.error_ty_of(c))
+
         sliceable = match check_table.get(c.out.types, given[0])
-            .str | .array => true
+            .str | .array                                               => true
             .int_ty | .float_ty | .bool | .ptr | .cstr | .unit | .fixed => false
-            .map | .fallible | .function_ty | .named | .case_ty => false
-            .failure | .generic | .error => false
+            .map | .fallible | .function_ty | .named | .case_ty         => false
+            .failure | .generic | .error                                => false
+
         if sliceable
             return ok(given[0])
         return ok(arg_error(@c, s, decls, name: "slice", allowed: "`str` or `[T]`", got: given[0], span: span))
+
     if name == "chars" && given.len() == 1 && check_table.get(c.out.types, given[0]) == .str
         str_id = check_table.str_ty(c.out.types)
         return ok(check_table.intern(@c.out.types, .array(element: str_id)))
+
     if name == "keys" && given.len() == 1
         match check_table.get(c.out.types, given[0])
             .map m => return ok(check_table.intern(@c.out.types, .array(element: m.key)))
-            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return ok(arg_error(@c, s, decls, name: "keys", allowed: "`{K: V}`", got: given[0], span: span))
-            .fixed | .array | .fallible | .function_ty | .named => return ok(arg_error(@c, s, decls, name: "keys", allowed: "`{K: V}`", got: given[0], span: span))
-            .case_ty | .failure | .generic | .error => return ok(arg_error(@c, s, decls, name: "keys", allowed: "`{K: V}`", got: given[0], span: span))
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return ok(
+                arg_error(@c, s, decls, name: "keys", allowed: "`{K: V}`", got: given[0], span: span)
+            )
+            .fixed | .array | .fallible | .function_ty | .named => return ok(
+                arg_error(@c, s, decls, name: "keys", allowed: "`{K: V}`", got: given[0], span: span)
+            )
+            .case_ty | .failure | .generic | .error => return ok(
+                arg_error(@c, s, decls, name: "keys", allowed: "`{K: V}`", got: given[0], span: span)
+            )
+
     # repeat(s: str, n: u64) -> str, and the u64 is the decision (panel
     # 054): a negative count cannot be written, so the class does not
     # arise — Rust shipped the unchecked form as CVE-2018-1000810, Go's
@@ -203,18 +254,23 @@ function builtin_call(@c: check_state.Checker, s: source.Source, decls: [ast.Dec
     if name == "repeat" && given.len() == 2
         str_id = check_table.str_ty(c.out.types)
         u64_id = check_table.intern(@c.out.types, .int_ty(kind: .u64))
+
         if given[0] != str_id || given[1] != u64_id
             return ok(arg_error(@c, s, decls, name: "repeat", allowed: "`str` and `u64`", got: given[0], span: span))
         return ok(str_id)
+
     if name == "join" && given.len() == 2
         str_id = check_table.str_ty(c.out.types)
         of_str = check_table.lookup(c.out.types, .array(element: str_id))
         wanted: i64 @ -1
+
         if !of_str.is_err()
             wanted @ of_str.must()
+
         if given[0] != wanted || given[1] != str_id
             return ok(arg_error(@c, s, decls, name: "join", allowed: "`[str]` and `str`", got: given[0], span: span))
         return ok(str_id)
+
     # §4.19's one conversion: a str lent to C for the duration of a call.
     # Free rather than a copy, because every Heroes string allocates len+1
     # and is NUL-terminated — the single highest-return decision in the
@@ -223,6 +279,7 @@ function builtin_call(@c: check_state.Checker, s: source.Source, decls: [ast.Dec
         if check_table.get(c.out.types, given[0]) == .str
             return ok(check_table.intern(@c.out.types, .cstr))
         return ok(arg_error(@c, s, decls, name: "cstr", allowed: "`str`", got: given[0], span: span))
+
     # The element rule is here rather than in the emitter (panel 068 R2):
     # a program the checker accepts must build.
     if name == "sort" && given.len() == 1
@@ -232,12 +289,22 @@ function builtin_call(@c: check_state.Checker, s: source.Source, decls: [ast.Dec
                     shown = check_state.show(c, s, decls, a.element)
                     inside = check_ordering.why_unordered(c, s, decls, ty: a.element)
                     generic = is_generic(c, a.element)
-                    check_state.push_diagnostic(@c, value_errors.unordered_element(element: shown, reached: inside, generic: generic, span: span))
+                    check_state.push_diagnostic(
+                        @c,
+                        value_errors.unordered_element(element: shown, reached: inside, generic: generic, span: span)
+                    )
                     return ok(check_state.error_ty_of(c))
                 return ok(given[0])
-            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return ok(arg_error(@c, s, decls, name: "sort", allowed: "`[T]`", got: given[0], span: span))
-            .fixed | .map | .fallible | .function_ty | .named => return ok(arg_error(@c, s, decls, name: "sort", allowed: "`[T]`", got: given[0], span: span))
-            .case_ty | .failure | .generic | .error => return ok(arg_error(@c, s, decls, name: "sort", allowed: "`[T]`", got: given[0], span: span))
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return ok(
+                arg_error(@c, s, decls, name: "sort", allowed: "`[T]`", got: given[0], span: span)
+            )
+            .fixed | .map | .fallible | .function_ty | .named => return ok(
+                arg_error(@c, s, decls, name: "sort", allowed: "`[T]`", got: given[0], span: span)
+            )
+            .case_ty | .failure | .generic | .error => return ok(
+                arg_error(@c, s, decls, name: "sort", allowed: "`[T]`", got: given[0], span: span)
+            )
+
     # §4.6's three readers of a fallible value.
     if name == "must" || name == "default" || name == "is_err"
         return fallible_builtin(@c, s, decls, name: name, given: given, span: span)
@@ -245,24 +312,24 @@ function builtin_call(@c: check_state.Checker, s: source.Source, decls: [ast.Dec
 
 function is_int(c: check_state.Checker, ty: i64) -> bool
     return match check_table.get(c.out.types, ty)
-        .int_ty => true
+        .int_ty                                                  => true
         .float_ty | .bool | .str | .ptr | .cstr | .unit | .array => false
-        .fixed | .map | .fallible | .function_ty | .named => false
-        .case_ty | .failure | .generic | .error => false
+        .fixed | .map | .fallible | .function_ty | .named        => false
+        .case_ty | .failure | .generic | .error                  => false
 
 function is_float(c: check_state.Checker, ty: i64) -> bool
     return match check_table.get(c.out.types, ty)
-        .float_ty => true
+        .float_ty                                              => true
         .int_ty | .bool | .str | .ptr | .cstr | .unit | .array => false
-        .fixed | .map | .fallible | .function_ty | .named => false
-        .case_ty | .failure | .generic | .error => false
+        .fixed | .map | .fallible | .function_ty | .named      => false
+        .case_ty | .failure | .generic | .error                => false
 
 function is_generic(c: check_state.Checker, ty: i64) -> bool
     return match check_table.get(c.out.types, ty)
-        .generic => true
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
+        .generic                                                   => true
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit  => false
         .array | .fixed | .map | .fallible | .function_ty | .named => false
-        .case_ty | .failure | .error => false
+        .case_ty | .failure | .error                               => false
 
 ## The three T? readers
 
@@ -273,9 +340,16 @@ function fallible_builtin(@c: check_state.Checker, s: source.Source, decls: [ast
     if name == "must" && given.len() == 1
         match check_table.get(c.out.types, given[0])
             .fallible o => return ok(o.payload)
-            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return ok(unwrapping_nothing(@c, s, decls, name: "must", got: given[0], span: span))
-            .array | .fixed | .map | .function_ty | .named => return ok(unwrapping_nothing(@c, s, decls, name: "must", got: given[0], span: span))
-            .case_ty | .failure | .generic | .error => return ok(unwrapping_nothing(@c, s, decls, name: "must", got: given[0], span: span))
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return ok(
+                unwrapping_nothing(@c, s, decls, name: "must", got: given[0], span: span)
+            )
+            .array | .fixed | .map | .function_ty | .named => return ok(
+                unwrapping_nothing(@c, s, decls, name: "must", got: given[0], span: span)
+            )
+            .case_ty | .failure | .generic | .error => return ok(
+                unwrapping_nothing(@c, s, decls, name: "must", got: given[0], span: span)
+            )
+
     if name == "default" && given.len() == 2
         match check_table.get(c.out.types, given[0])
             .fallible o =>
@@ -285,15 +359,28 @@ function fallible_builtin(@c: check_state.Checker, s: source.Source, decls: [ast
                 got = check_state.show(c, s, decls, given[1])
                 check_state.push_diagnostic(@c, value_errors.mismatch(expected: want, got: got, span: span))
                 return ok(check_state.error_ty_of(c))
-            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return ok(unwrapping_nothing(@c, s, decls, name: "default", got: given[0], span: span))
-            .array | .fixed | .map | .function_ty | .named => return ok(unwrapping_nothing(@c, s, decls, name: "default", got: given[0], span: span))
-            .case_ty | .failure | .generic | .error => return ok(unwrapping_nothing(@c, s, decls, name: "default", got: given[0], span: span))
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return ok(
+                unwrapping_nothing(@c, s, decls, name: "default", got: given[0], span: span)
+            )
+            .array | .fixed | .map | .function_ty | .named => return ok(
+                unwrapping_nothing(@c, s, decls, name: "default", got: given[0], span: span)
+            )
+            .case_ty | .failure | .generic | .error => return ok(
+                unwrapping_nothing(@c, s, decls, name: "default", got: given[0], span: span)
+            )
+
     if name == "is_err" && given.len() == 1
         match check_table.get(c.out.types, given[0])
             .fallible => return ok(check_table.bool_ty(c.out.types))
-            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return ok(arg_error(@c, s, decls, name: "is_err", allowed: "a fallible value", got: given[0], span: span))
-            .array | .fixed | .map | .function_ty | .named => return ok(arg_error(@c, s, decls, name: "is_err", allowed: "a fallible value", got: given[0], span: span))
-            .case_ty | .failure | .generic | .error => return ok(arg_error(@c, s, decls, name: "is_err", allowed: "a fallible value", got: given[0], span: span))
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return ok(
+                arg_error(@c, s, decls, name: "is_err", allowed: "a fallible value", got: given[0], span: span)
+            )
+            .array | .fixed | .map | .function_ty | .named => return ok(
+                arg_error(@c, s, decls, name: "is_err", allowed: "a fallible value", got: given[0], span: span)
+            )
+            .case_ty | .failure | .generic | .error => return ok(
+                arg_error(@c, s, decls, name: "is_err", allowed: "a fallible value", got: given[0], span: span)
+            )
     return fail("untypeable", "the arity is wrong")
 
 # .must() or .default(v) on a value that cannot fail, with the repair
@@ -308,12 +395,17 @@ function fallible_builtin(@c: check_state.Checker, s: source.Source, decls: [ast
 function unwrapping_nothing(@c: check_state.Checker, s: source.Source, decls: [ast.Decl], name: str, got: i64, span: token.Span) -> i64
     shown = check_state.show(c, s, decls, got)
     d: diag.Diagnostic @ value_errors.bad_operand(op: name, allowed: "a fallible value", got: shown, span: span)
-    d.notes @ d.notes.push("`" + shown + "` cannot fail, so there is no error case to handle — this is the shape a `fit_<width>` that widens hands back, because a widening cannot fail")
+    d.notes @ d.notes.push(
+        "`" + shown + "` cannot fail, so there is no error case to handle — this is the shape a `fit_<width>` that widens hands back, because a widening cannot fail"
+    )
     text = source.span_text(s, span)
     suffix = "." + name + "("
     at = rfind(haystack: text, needle: suffix)
+
     if !at.is_err() && text.len() > 0 && text[text.len() - 1] == ')'
-        d.fixes @ d.fixes.push(diag.Fix(title: "remove the `." + name + "(…)`", replacement: text.slice(from: 0, to: at.must()), span: span, certainty: .certain))
+        d.fixes @ d.fixes.push(
+            diag.Fix(title: "remove the `." + name + "(…)`", replacement: text.slice(from: 0, to: at.must()), span: span, certainty: .certain)
+        )
     check_state.push_diagnostic(@c, d)
     return check_state.error_ty_of(c)
 
@@ -322,10 +414,12 @@ function rfind(haystack: str, needle: str) -> i64?
     if needle.len() == 0 || needle.len() > haystack.len()
         return fail("absent", "nothing to find")
     at: i64 @ haystack.len() - needle.len()
+
     while at >= 0
         if haystack.slice(from: at, to: at + needle.len()) == needle
             return ok(at)
         at @ at - 1
+
     return fail("absent", "the needle never occurs")
 
 function arg_error(@c: check_state.Checker, s: source.Source, decls: [ast.Decl], name: str, allowed: str, got: i64, span: token.Span) -> i64
@@ -367,7 +461,12 @@ test "print takes any width and refuses the rest with the true set"
     s = plain_source("x\n")
     d: [ast.Decl] = []
     u8_id = check_table.intern(@c.out.types, .int_ty(kind: .u8))
-    four: [i64] = [u8_id, check_table.str_ty(c.out.types), check_table.bool_ty(c.out.types), check_table.f64_ty(c.out.types)]
+    four: [i64] = [
+        u8_id
+        check_table.str_ty(c.out.types)
+        check_table.bool_ty(c.out.types)
+        check_table.f64_ty(c.out.types)
+    ]
     printed = builtin_call(@c, s, d, name: "print", given: four, span: token.Span(start: 0, end: 1)).must()
     assert printed == check_table.unit_ty(c.out.types)
     ptr_in: [i64] = [check_table.intern(@c.out.types, .ptr)]
@@ -401,12 +500,14 @@ test "the list answers by shape: push, slice, keys, repeat, join, sort"
     sort_bad: [i64] = [maps]
     _ = builtin_call(@c, s, d, name: "sort", given: sort_bad, span: token.Span(start: 0, end: 1))
     assert c.out.diagnostics[2].code == "unordered_element"
+
     # An arity miss is nobody's here: the caller reports it once.
     lonely: [i64] = [xs]
     assert builtin_call(@c, s, d, name: "push", given: lonely, span: token.Span(start: 0, end: 1)).is_err()
 
 test "must unwraps, and on a sure value offers the certain removal"
     c: check_state.Checker @ fresh()
+
     # The span's own text is the call: the fix is computed from it.
     s = plain_source("x.must()\n")
     d: [ast.Decl] = []
@@ -420,6 +521,7 @@ test "must unwraps, and on a sure value offers the certain removal"
     assert c.out.diagnostics[0].fixes.len() == 1
     assert c.out.diagnostics[0].fixes[0].replacement == "x"
     assert c.out.diagnostics[0].fixes[0].certainty == .certain
+
     # default's fallback must match the payload.
     str_id = check_table.str_ty(c.out.types)
     mixed: [i64] = [maybe, str_id]

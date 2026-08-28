@@ -68,22 +68,22 @@ function add_node(@t: Tree, node: Node) -> i64
 # stops compiling instead of quietly answering 0.
 function evaluate(t: Tree, at: i64) -> i64
     return match t.nodes[at]
-        .number n => n.value
-        .add a => evaluate(t, a.left) + evaluate(t, a.right)
-        .multiply m => evaluate(t, m.left) * evaluate(t, m.right)
-        .negate n => -evaluate(t, n.operand)
+        .number n    => n.value
+        .add a       => evaluate(t, a.left) + evaluate(t, a.right)
+        .multiply m  => evaluate(t, m.left) * evaluate(t, m.right)
+        .negate n    => -evaluate(t, n.operand)
         .annotated a => evaluate(t, a.operand)
-        .unreadable => 0
+        .unreadable  => 0
 
 # How deep the tree goes under this node.
 function depth(t: Tree, at: i64) -> i64
     return match t.nodes[at]
-        .number _ => 1
-        .add a => 1 + deeper(left: depth(t, a.left), right: depth(t, a.right))
-        .multiply m => 1 + deeper(left: depth(t, m.left), right: depth(t, m.right))
-        .negate n => 1 + depth(t, n.operand)
+        .number _    => 1
+        .add a       => 1 + deeper(left: depth(t, a.left), right: depth(t, a.right))
+        .multiply m  => 1 + deeper(left: depth(t, m.left), right: depth(t, m.right))
+        .negate n    => 1 + depth(t, n.operand)
         .annotated a => 1 + depth(t, a.operand)
-        .unreadable => 1
+        .unreadable  => 1
 
 function deeper(left: i64, right: i64) -> i64
     if left > right
@@ -94,12 +94,12 @@ function deeper(left: i64, right: i64) -> i64
 # tree is what was built, not a pretty-printer with taste.
 function render(t: Tree, at: i64) -> str
     return match t.nodes[at]
-        .number n => n.value.to_str()
-        .add a => "(" + render(t, a.left) + " + " + render(t, a.right) + ")"
-        .multiply m => "(" + render(t, m.left) + " * " + render(t, m.right) + ")"
-        .negate n => "-" + render(t, n.operand)
+        .number n    => n.value.to_str()
+        .add a       => "(" + render(t, a.left) + " + " + render(t, a.right) + ")"
+        .multiply m  => "(" + render(t, m.left) + " * " + render(t, m.right) + ")"
+        .negate n    => "-" + render(t, n.operand)
         .annotated a => render(t, a.operand)
-        .unreadable => "???"
+        .unreadable  => "???"
 
 test "a number is its own value and one level deep"
     t: Tree @ new_tree()

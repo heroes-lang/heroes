@@ -14,6 +14,7 @@ function parsed(s: str) -> i64?
 
 function advance_over(@r: Reader, s: str) -> i64?
     n = parsed(s)?
+
     if n == 0
         return ok(0)
     r.pos @ r.pos + n

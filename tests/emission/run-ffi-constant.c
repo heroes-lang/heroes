@@ -149,23 +149,23 @@ bb0:
     hero_print_f64(t5);
 #line 55 "tests/golden/run/ffi-constant.hero"
     hero_print_end();
-#line 57 "tests/golden/run/ffi-constant.hero"
+#line 58 "tests/golden/run/ffi-constant.hero"
     t6 = h_fficonstant_SEEK_SET();
-#line 57 "tests/golden/run/ffi-constant.hero"
+#line 58 "tests/golden/run/ffi-constant.hero"
     hero_print_int(t6);
-#line 57 "tests/golden/run/ffi-constant.hero"
-    hero_print_end();
 #line 58 "tests/golden/run/ffi-constant.hero"
+    hero_print_end();
+#line 59 "tests/golden/run/ffi-constant.hero"
     t7 = h_fficonstant_SEEK_END();
-#line 58 "tests/golden/run/ffi-constant.hero"
+#line 59 "tests/golden/run/ffi-constant.hero"
     t8 = h_fficonstant_SEEK_SET();
-#line 58 "tests/golden/run/ffi-constant.hero"
+#line 59 "tests/golden/run/ffi-constant.hero"
     if (__builtin_sub_overflow(t7, t8, &t9)) hero_panic_overflow();
-#line 58 "tests/golden/run/ffi-constant.hero"
+#line 59 "tests/golden/run/ffi-constant.hero"
     hero_print_int(t9);
-#line 58 "tests/golden/run/ffi-constant.hero"
+#line 59 "tests/golden/run/ffi-constant.hero"
     hero_print_end();
-#line 58 "tests/golden/run/ffi-constant.hero"
+#line 59 "tests/golden/run/ffi-constant.hero"
     return;
 #line 171 "fficonstant.c"
 }

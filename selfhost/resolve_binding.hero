@@ -31,9 +31,18 @@ function cell_binding(ty: i64, value: i64) -> Binding
 
 # `for x in xs` — the element type comes from the iterable.
 function loop_binding(iterable: i64) -> Binding
-    return Binding(kind: .loop_var, mutable: false, ty: fail("absent", "a loop variable's type comes from the iterable"), value: ok(iterable))
+    return Binding(
+        kind: .loop_var,
+        mutable: false,
+        ty: fail("absent", "a loop variable's type comes from the iterable"),
+        value: ok(iterable)
+    )
 
 # `.num n` — the payload's type comes from the case the pattern names.
 function payload_binding() -> Binding
-    return Binding(kind: .payload, mutable: false, ty: fail("absent", "a payload's type comes from its case"), value: fail("absent", "a payload has no initialiser"))
-
+    return Binding(
+        kind: .payload,
+        mutable: false,
+        ty: fail("absent", "a payload's type comes from its case"),
+        value: fail("absent", "a payload has no initialiser")
+    )

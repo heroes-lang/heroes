@@ -38,7 +38,11 @@ use checker
 # Structural ==, field by field (§4.3).
 function equality_body(@w: emit_writer.Writer, c: check_state.Checked, names: emit_ctype.Names, s: source.Source, at: emit_ctype.Aggregate, fields: [ast.Field])
     emit_writer.at_generated(@w)
-    emit_writer.line(@w, text: "HERO_TU_LOCAL bool " + at.prefix + "_eq(const " + at.c_type + " *a, const " + at.c_type + " *b) {")
+    emit_writer.line(
+        @w,
+        text: "HERO_TU_LOCAL bool " + at.prefix + "_eq(const " + at.c_type + " *a, const " + at.c_type + " *b) {"
+    )
+
     # A partial record's _eq is emitted and ABORTS (panel 061): the
     # checker refuses == on one, so nothing should ever call this — and
     # "should never" is exactly the premise that goes in the loud
@@ -47,10 +51,14 @@ function equality_body(@w: emit_writer.Writer, c: check_state.Checked, names: em
     # is a SEGV with no story. hero_panic is _Noreturn, so
     # -Werror=return-type is satisfied without a return.
     if at.partial
-        emit_writer.line(@w, text: "    hero_panic(\"" + at.prefix + "_eq: a partial record has no structural equality\");")
+        emit_writer.line(
+            @w,
+            text: "    hero_panic(\"" + at.prefix + "_eq: a partial record has no structural equality\");"
+        )
         emit_writer.line(@w, text: "}")
         emit_writer.blank(@w)
         return
+
     if fields.len() == 0
         # record E is error[empty_record] in the checker, so this is
         # belt to those braces — and (void) keeps the parameters used,
@@ -58,17 +66,21 @@ function equality_body(@w: emit_writer.Writer, c: check_state.Checked, names: em
         emit_writer.line(@w, text: "    (void)a;")
         emit_writer.line(@w, text: "    (void)b;")
         emit_writer.line(@w, text: "    return true;")
+
     for field in fields
         ty: i64 @ check_table.error_ty(c.types)
         written = check_state.written_type(c, field.ty)
+
         if !written.is_err()
             ty @ written.must()
         member = emit_mangle.field_of(foreign: at.foreign, name: source.span_text(s, field.name))
         test_expr = field_eq_expr(c, names, ty: ty, member: member)
+
         # One early return per field rather than a chain of &&: the
         # same short circuit, and a clang diagnostic about a field
         # lands on that field's line.
         emit_writer.line(@w, text: "    if (!(" + test_expr + ")) return false;")
+
     if fields.len() > 0
         emit_writer.line(@w, text: "    return true;")
     emit_writer.line(@w, text: "}")
@@ -83,26 +95,31 @@ function field_eq_expr(c: check_state.Checked, names: emit_ctype.Names, ty: i64,
         # hero_unreachable() at exit 134 on a correct program (panel
         # 062's spec-warden).
         .int_ty | .bool | .float_ty | .ptr | .cstr => return "a->" + member + " == b->" + member
-        .str => return "hero_str_eq(a->" + member + ", b->" + member + ")"
-        .array => return "hero_array_eq(a->" + member + ", b->" + member + ")"
+        .str                                       => return "hero_str_eq(a->" + member + ", b->" + member + ")"
+        .array                                     => return "hero_array_eq(a->" + member + ", b->" + member + ")"
         # A C array member is compared ELEMENTWISE: a->f == b->f
         # compiles with zero warnings and is a POINTER comparison — two
         # distinct structs always differ, so == would be false for two
         # identical values, silently. No memcmp shortcut is also
         # correct: padding inside an element would decide the answer.
+
         .fixed x => return "(" + fixed_eq_expr(c, names, member: member, element: x.element, count: x.length) + ")"
         # The three rows the table went without until 2026-08-12.
-        .map => return "hero_map_eq(a->" + member + ", b->" + member + ")"
+
+        .map      => return "hero_map_eq(a->" + member + ", b->" + member + ")"
         .fallible => return emit_ctype.option_of(names, ty: ty) + "_eq(&a->" + member + ", &b->" + member + ")"
         # A function value is a bare C function pointer, and panel 029
         # made its equality pointer identity.
+
         .function_ty => return "a->" + member + " == b->" + member
-        .named n => return emit_ctype.satellite(names, decl: n.decl) + "_eq(&a->" + member + ", &b->" + member + ")"
+        .named n     => return emit_ctype.satellite(names, decl: n.decl) + "_eq(&a->" + member + ", &b->" + member + ")"
         .case_ty vc => return emit_ctype.case_of(names, decl: vc.decl, at: vc.at) + "_eq(&a->" + member + ", &b->" + member + ")"
         # Still loud, and it must stay loud: a failure-typed field has
         # no surface spelling, so it is a compiler bug rather than a
         # program.
+
         .unit | .failure | .generic | .error => return "(hero_unreachable(), false)"
+
     return "(hero_unreachable(), false)"
 
 # N comparisons folded into one expression, without a statement — the
@@ -113,11 +130,13 @@ function field_eq_expr(c: check_state.Checked, names: emit_ctype.Names, ty: i64,
 function fixed_eq_expr(c: check_state.Checked, names: emit_ctype.Names, member: str, element: i64, count: i64) -> str
     parts: [str] @ []
     i: i64 @ 0
+
     while i < count
         a_place = "a->" + member + "[" + i.to_str() + "]"
         b_place = "b->" + member + "[" + i.to_str() + "]"
         parts @ parts.push(element_eq(c, names, a_place: a_place, b_place: b_place, element: element))
         i @ i + 1
+
     return parts.join(" && ")
 
 # The comparison of one element of a fixed array field. The checker
@@ -129,6 +148,7 @@ function element_eq(c: check_state.Checked, names: emit_ctype.Names, a_place: st
         .named n => return emit_ctype.satellite(names, decl: n.decl) + "_eq(&" + a_place + ", &" + b_place + ")"
         .str | .array | .fixed | .map | .fallible | .function_ty => return "(hero_unreachable(), false)"
         .unit | .case_ty | .failure | .generic | .error => return "(hero_unreachable(), false)"
+
     return "(hero_unreachable(), false)"
 
 # A variant's ==: different tags are never equal, same tags compare
@@ -138,18 +158,27 @@ function element_eq(c: check_state.Checked, names: emit_ctype.Names, a_place: st
 # without inventing an answer.
 function variant_equality_body(@w: emit_writer.Writer, names: emit_ctype.Names, s: source.Source, decls: [ast.Decl], decl: i64, at: emit_ctype.Aggregate)
     emit_writer.at_generated(@w)
-    emit_writer.line(@w, text: "HERO_TU_LOCAL bool " + at.prefix + "_eq(const " + at.c_type + " *a, const " + at.c_type + " *b) {")
+    emit_writer.line(
+        @w,
+        text: "HERO_TU_LOCAL bool " + at.prefix + "_eq(const " + at.c_type + " *a, const " + at.c_type + " *b) {"
+    )
     emit_writer.line(@w, text: "    if (a->tag != b->tag) return false;")
     emit_writer.line(@w, text: "    switch (a->tag) {")
     case_at: i64 @ 0
+
     for one_case in emit_types.cases_of(decls, decl: decl)
         case_name = source.span_text(s, one_case.name)
         tag = emit_mangle.tag_of(ty: at.prefix, case_name: case_name)
+
         if one_case.fields.len() == 0
             emit_writer.line(@w, text: "        case " + tag + ": return true;")
         else
-            emit_writer.line(@w, text: "        case " + tag + ": return " + emit_ctype.case_of(names, decl: decl, at: case_at) + "_eq(&a->as." + emit_mangle.case_member(case_name) + ", &b->as." + emit_mangle.case_member(case_name) + ");")
+            emit_writer.line(
+                @w,
+                text: "        case " + tag + ": return " + emit_ctype.case_of(names, decl: decl, at: case_at) + "_eq(&a->as." + emit_mangle.case_member(case_name) + ", &b->as." + emit_mangle.case_member(case_name) + ");"
+            )
         case_at @ case_at + 1
+
     emit_writer.line(@w, text: "    }")
     emit_writer.line(@w, text: "    hero_unreachable();")
     emit_writer.line(@w, text: "}")
@@ -163,44 +192,61 @@ function variant_equality_body(@w: emit_writer.Writer, names: emit_ctype.Names, 
 function hash_body(@w: emit_writer.Writer, c: check_state.Checked, names: emit_ctype.Names, s: source.Source, at: emit_ctype.Aggregate, fields: [ast.Field])
     emit_writer.at_generated(@w)
     emit_writer.line(@w, text: "HERO_TU_LOCAL uint64_t " + at.prefix + "_hash(const void *elem) {")
+
     if at.partial
-        emit_writer.line(@w, text: "    (void)elem; hero_panic(\"" + at.prefix + "_hash: a partial record has no structural hash\");")
+        emit_writer.line(
+            @w,
+            text: "    (void)elem; hero_panic(\"" + at.prefix + "_hash: a partial record has no structural hash\");"
+        )
         emit_writer.line(@w, text: "}")
         emit_writer.blank(@w)
         return
     emit_writer.line(@w, text: "    const " + at.c_type + " *v = elem;")
     emit_writer.line(@w, text: "    uint64_t h = UINT64_C(0xcbf29ce484222325);")
+
     for field in fields
         ty: i64 @ check_table.error_ty(c.types)
         written = check_state.written_type(c, field.ty)
+
         if !written.is_err()
             ty @ written.must()
         member = emit_mangle.field_of(foreign: at.foreign, name: source.span_text(s, field.name))
         is_fixed: bool @ false
         fixed_element: i64 @ 0
         fixed_count: i64 @ 0
+
         match check_table.get(c.types, ty)
             .fixed x =>
                 is_fixed @ true
                 fixed_element @ x.element
                 fixed_count @ x.length
             .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => is_fixed @ is_fixed
-            .array | .map | .fallible | .function_ty | .named => is_fixed @ is_fixed
-            .case_ty | .failure | .generic | .error => is_fixed @ is_fixed
+            .array | .map | .fallible | .function_ty | .named         => is_fixed @ is_fixed
+            .case_ty | .failure | .generic | .error                   => is_fixed @ is_fixed
+
         if is_fixed
             i: i64 @ 0
+
             while i < fixed_count
                 place = "&v->" + member + "[" + i.to_str() + "]"
-                emit_writer.line(@w, text: "    h = (h ^ " + one_hash(c, names, ty: fixed_element, place: place) + ") * UINT64_C(0x100000001b3);")
+                emit_writer.line(
+                    @w,
+                    text: "    h = (h ^ " + one_hash(c, names, ty: fixed_element, place: place) + ") * UINT64_C(0x100000001b3);"
+                )
                 i @ i + 1
         else
-            emit_writer.line(@w, text: "    h = (h ^ " + one_hash(c, names, ty: ty, place: "&v->" + member) + ") * UINT64_C(0x100000001b3);")
+            emit_writer.line(
+                @w,
+                text: "    h = (h ^ " + one_hash(c, names, ty: ty, place: "&v->" + member) + ") * UINT64_C(0x100000001b3);"
+            )
+
     emit_writer.line(@w, text: "    return h;")
     emit_writer.line(@w, text: "}")
     emit_writer.blank(@w)
 
 function one_hash(c: check_state.Checked, names: emit_ctype.Names, ty: i64, place: str) -> str
     found = emit_descriptors.hash_call(c, names, ty: ty, place: place)
+
     if found.is_err()
         return "(hero_unreachable(), UINT64_C(0))"
     return found.must()
@@ -218,14 +264,20 @@ function variant_hash_body(@w: emit_writer.Writer, names: emit_ctype.Names, s: s
     emit_writer.line(@w, text: "        * UINT64_C(0x100000001b3);")
     emit_writer.line(@w, text: "    switch (v->tag) {")
     case_at: i64 @ 0
+
     for one_case in emit_types.cases_of(decls, decl: decl)
         case_name = source.span_text(s, one_case.name)
         tag = emit_mangle.tag_of(ty: at.prefix, case_name: case_name)
+
         if one_case.fields.len() == 0
             emit_writer.line(@w, text: "        case " + tag + ": return h;")
         else
-            emit_writer.line(@w, text: "        case " + tag + ": return (h ^ " + emit_ctype.case_of(names, decl: decl, at: case_at) + "_hash(&v->as." + emit_mangle.case_member(case_name) + ")) * UINT64_C(0x100000001b3);")
+            emit_writer.line(
+                @w,
+                text: "        case " + tag + ": return (h ^ " + emit_ctype.case_of(names, decl: decl, at: case_at) + "_hash(&v->as." + emit_mangle.case_member(case_name) + ")) * UINT64_C(0x100000001b3);"
+            )
         case_at @ case_at + 1
+
     emit_writer.line(@w, text: "    }")
     emit_writer.line(@w, text: "    hero_unreachable();")
     emit_writer.line(@w, text: "}")
@@ -249,7 +301,9 @@ function ready(text: str) -> Setup
     return Setup(c: c, s: s, decls: p.decls, names: names)
 
 test "eq short-circuits per field and hash mixes the same fields"
-    got = ready("record Person\n    name: str\n    age: i64\n\nfunction main()\n    p = Person(name: \"b\", age: 1)\n    _ = p\n")
+    got = ready(
+        "record Person\n    name: str\n    age: i64\n\nfunction main()\n    p = Person(name: \"b\", age: 1)\n    _ = p\n"
+    )
     at = emit_ctype.aggregate(got.names, decl: 0)
     w: emit_writer.Writer @ emit_writer.new_writer("t")
     equality_body(@w, got.c, got.names, got.s, at: at, fields: emit_types.fields_of(got.decls, decl: 0))
@@ -273,7 +327,9 @@ test "a variant compares tags first and mixes the tag into the hash"
     assert hash_text == "#line 2 \"t.c\"\nHERO_TU_LOCAL uint64_t h_t_Coin_hash(const void *elem) {\n    const h_t_Coin *v = elem;\n    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)\n        * UINT64_C(0x100000001b3);\n    switch (v->tag) {\n        case h_t_Coin_tag_heads: return h;\n        case h_t_Coin_tag_tails: return h;\n    }\n    hero_unreachable();\n}\n\n"
 
 test "a fixed member unrolls elementwise, and a partial record aborts loudly"
-    got = ready("extern \"m.h\"\n    record Vec2\n        cells: f32[2]\n    record Font partial\n        size: f64\n\nfunction main()\n    print(1)\n")
+    got = ready(
+        "extern \"m.h\"\n    record Vec2\n        cells: f32[2]\n    record Font partial\n        size: f64\n\nfunction main()\n    print(1)\n"
+    )
     vec = emit_ctype.aggregate(got.names, decl: 0)
     w: emit_writer.Writer @ emit_writer.new_writer("t")
     equality_body(@w, got.c, got.names, got.s, at: vec, fields: emit_types.fields_of(got.decls, decl: 0))

@@ -17,6 +17,8 @@ function kind_of(t: Token) -> i64
 
 function count_of(xs: [i64]) -> i64
     n: i64 @ 0
+
     for _ in xs
         n @ n + 1
+
     return n

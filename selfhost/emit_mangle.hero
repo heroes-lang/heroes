@@ -45,8 +45,10 @@ constant HASH_MODULUS: i64
 # which is a clang error — that is what makes 31 bits enough.
 function instance(rendered: str) -> str
     h: i64 @ 0
+
     for i in range(from: 0, to: len(rendered))
         h @ (h * HASH_BASE + to_i64(rendered[i]).must()) % HASH_MODULUS
+
     return hex(h)
 
 # Lowercase hex, no prefix — what Rust's {hash:x} prints. Zero is "0".
@@ -56,10 +58,12 @@ function hex(number: i64) -> str
     digits = "0123456789abcdef"
     out: str @ ""
     left: i64 @ number
+
     while left > 0
         d = left % 16
         out @ digits.slice(from: d, to: d + 1) + out
         left @ left / 16
+
     return out
 
 # A Heroes function or constant. A function whose name is in the
@@ -133,24 +137,33 @@ function tag_of(ty: str, case_name: str) -> str
 # h5_i.
 function slot(index: i64, name: str) -> str
     kept: str @ ""
+
     for ch in name.chars()
         code = ch[0]
         is_word: bool @ false
+
         if code >= 'a' && code <= 'z'
             is_word @ true
+
         if code >= 'A' && code <= 'Z'
             is_word @ true
+
         if code >= '0' && code <= '9'
             is_word @ true
+
         if ch == "_"
             is_word @ true
+
         if is_word
             kept @ kept + ch
         else
             kept @ kept + "_"
+
     first: i64 @ 0
+
     while first < kept.len() && kept[first] == '_'
         first @ first + 1
+
     return "h" + index.to_str() + "_" + kept.slice(from: first, to: kept.len())
 
 # The pointer a mutable parameter arrives through (§4.8's ABI).
@@ -173,14 +186,17 @@ test "the typehash matches the witness golden, in hex"
     # premise-mangler-hash-in-heroes.hero prints these as decimals; the
     # mangler renders them hex. Both come from one polynomial.
     assert instance("map<i64, str>") == hex(typehash_check("map<i64, str>"))
+
     # The two renderings that would collide under a readable suffix
     # must not collide here.
     assert instance("pair<i64, str_x>") != instance("pair<i64_str, x>")
 
 function typehash_check(rendered: str) -> i64
     h: i64 @ 0
+
     for i in range(from: 0, to: len(rendered))
         h @ (h * 131 + to_i64(rendered[i]).must()) % 2147483647
+
     return h
 
 test "hex renders zero, small, and multi-digit values the way C reads them"
@@ -193,9 +209,11 @@ test "names collide with nothing: library capture, sanitised slots, foreign fiel
     # A built-in name belongs to the library module whatever module asks.
     assert function_name(module: "geom", name: "sort") == "h_" + source.LIBRARY_MODULE + "_sort"
     assert function_name(module: "geom", name: "dist2") == "h_geom_dist2"
+
     # $ drops, the index disambiguates.
     assert slot(index: 5, name: "$i") == "h5_i"
     assert slot(index: 2, name: "cost") == "h2_cost"
+
     # A header's field is spelled as the header spells it.
     assert field("default") == "f_default"
     assert field_of(foreign: true, name: "r") == "r"

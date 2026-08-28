@@ -23,7 +23,7 @@
 # platform has and it returns `div_t` by value.
 
 extern "stdlib.h"
-    function div(numerator: i32, denominator: i32) -> ptr   #~ ffi_return_type
+    function div(numerator: i32, denominator: i32) -> ptr  #~ ffi_return_type
 
 function main()
     print(div(numerator: 7, denominator: 2) == nullptr)

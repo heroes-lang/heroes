@@ -18,43 +18,85 @@ use diag
 # because the message already was: a message that says "remove the `?`"
 # while --apply cannot is asking for the same edit twice.
 function not_fallible(got: str, span: token.Span, inner: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "not_fallible", message: "`?` propagates an error, and `" + got + "` cannot fail — remove the `?`", span: span)
-    d.fixes @ d.fixes.push(diag.Fix(title: "remove the `?`", replacement: "", span: token.Span(start: inner.end, end: span.end), certainty: .certain))
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "not_fallible",
+        message: "`?` propagates an error, and `" + got + "` cannot fail — remove the `?`",
+        span: span
+    )
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "remove the `?`", replacement: "", span: token.Span(start: inner.end, end: span.end), certainty: .certain)
+    )
     return d
 
 function try_in_infallible(result: str, span: token.Span) -> diag.Diagnostic
-    return diag.new_diagnostic(code: "try_in_infallible", message: "`?` hands the error to the caller, so this function's result must be fallible — it is `" + result + "`, not `" + result + "?`", span: span)
+    return diag.new_diagnostic(
+        code: "try_in_infallible",
+        message: "`?` hands the error to the caller, so this function's result must be fallible — it is `" + result + "`, not `" + result + "?`",
+        span: span
+    )
 
 function not_indexable(got: str, span: token.Span) -> diag.Diagnostic
-    return diag.new_diagnostic(code: "not_indexable", message: "`" + got + "` cannot be indexed — `s[i]`, `xs[i]` and `m[k]` are for `str`, `[T]` and `{K: V}`", span: span)
+    return diag.new_diagnostic(
+        code: "not_indexable",
+        message: "`" + got + "` cannot be indexed — `s[i]`, `xs[i]` and `m[k]` are for `str`, `[T]` and `{K: V}`",
+        span: span
+    )
 
 function jump_outside_loop(word: str, span: token.Span) -> diag.Diagnostic
-    return diag.new_diagnostic(code: "jump_outside_loop", message: "`" + word + "` is only meaningful inside a `while` or a `for`", span: span)
+    return diag.new_diagnostic(
+        code: "jump_outside_loop",
+        message: "`" + word + "` is only meaningful inside a `while` or a `for`",
+        span: span
+    )
 
 # Panel 014's value rule, and the llm-ergonomist's finding that made it:
 # an i64-valued `match` whose every arm jumps produces nothing.
 function no_value(what: str, span: token.Span) -> diag.Diagnostic
-    return diag.new_diagnostic(code: "no_value", message: "this `" + what + "` produces no value — every branch jumps, so there is nothing to bind", span: span)
+    return diag.new_diagnostic(
+        code: "no_value",
+        message: "this `" + what + "` produces no value — every branch jumps, so there is nothing to bind",
+        span: span
+    )
 
 # A branch that falls off its end without a value. Distinct from a
 # diverging branch, and the distinction is the point: a jump CANNOT
 # produce a value, a statement simply did not.
 function branch_without_value(span: token.Span) -> diag.Diagnostic
-    return diag.new_diagnostic(code: "no_value", message: "this branch ends on a statement, so it produces no value — its last line has to be the value", span: span)
+    return diag.new_diagnostic(
+        code: "no_value",
+        message: "this branch ends on a statement, so it produces no value — its last line has to be the value",
+        span: span
+    )
 
 function missing_value(result: str, span: token.Span) -> diag.Diagnostic
-    return diag.new_diagnostic(code: "missing_value", message: "this function returns `" + result + "`, so `return` needs a value", span: span)
+    return diag.new_diagnostic(
+        code: "missing_value",
+        message: "this function returns `" + result + "`, so `return` needs a value",
+        span: span
+    )
 
 ## Statements
 
 function returns_nothing(span: token.Span) -> diag.Diagnostic
-    return diag.new_diagnostic(code: "returns_nothing", message: "this function returns nothing, so `return` takes no value", span: span)
+    return diag.new_diagnostic(
+        code: "returns_nothing",
+        message: "this function returns nothing, so `return` takes no value",
+        span: span
+    )
 
 function not_iterable(got: str, span: token.Span) -> diag.Diagnostic
-    return diag.new_diagnostic(code: "not_iterable", message: "`for x in …` walks an array, and this is a `" + got + "` — a string's characters come from `s.chars()`, a count from `range(a, b)`", span: span)
+    return diag.new_diagnostic(
+        code: "not_iterable",
+        message: "`for x in …` walks an array, and this is a `" + got + "` — a string's characters come from `s.chars()`, a count from `range(a, b)`",
+        span: span
+    )
 
 function if_without_else(span: token.Span) -> diag.Diagnostic
-    return diag.new_diagnostic(code: "if_without_else", message: "an `if` used as a value needs an `else`, or it has no value when the condition is false", span: span)
+    return diag.new_diagnostic(
+        code: "if_without_else",
+        message: "an `if` used as a value needs an `else`, or it has no value when the condition is false",
+        span: span
+    )
 
 # A function that can run off its end (§4.7; panel 020). The span is the
 # WRITTEN RESULT TYPE — the promise is what was broken, and the promise is
@@ -63,7 +105,11 @@ function if_without_else(span: token.Span) -> diag.Diagnostic
 # make the last statement the value) and neither is certain — a guess that
 # rewrites control flow is worse than no fix at all.
 function missing_return(name: str, want: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "missing_return", message: "`" + name + "` must return `" + want + "`, and one path through it returns nothing", span: span)
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "missing_return",
+        message: "`" + name + "` must return `" + want + "`, and one path through it returns nothing",
+        span: span
+    )
     d.notes @ d.notes.push("every path must end in a `return`, or the last statement must be the value")
     return d
 

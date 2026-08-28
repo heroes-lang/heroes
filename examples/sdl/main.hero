@@ -54,6 +54,7 @@ function main()
     # and not this program's. What this asserts is that a `cstr` came back across
     # the boundary and became a `str` on this side.
     print("sdl3 named its build: ", len(validated(c: SDL_GetRevision()).default("")) > 0)
+
     # The count is a property of the machine, so the program prints whether there
     # is a way to draw rather than how many — which is the same on a laptop and on
     # a runner with no display.

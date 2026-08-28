@@ -47,26 +47,51 @@ constant LEAST: i64
 function run_all(scratch: str, compiler: str) -> report.Report?
     found = cases.collect(scratch: scratch, dir: RUN_DIR)?
     r: report.Report @ report.empty()
+
     if found.len() < LEAST
-        report.keep_failure(@r, label: "run", detail: "  " + RUN_DIR + " has " + found.len().to_str() + " cases and had " + LEAST.to_str() + " — a golden that stopped running is not a golden")
+        report.keep_failure(
+            @r,
+            label: "run",
+            detail: "  " + RUN_DIR + " has " + found.len().to_str() + " cases and had " + LEAST.to_str() + " — a golden that stopped running is not a golden"
+        )
     binaries = scratch + "/binaries"
     shell.mkdir_all(binaries)?
     skipped: i64 @ 0
+
     for item in found
         text = read_file(item.expected)
+
         if text.is_err()
             report.keep_failure(@r, label: "run/" + item.name, detail: "  cannot read " + item.expected)
         else
             want = expectation.split(text.must())
+
             if want.is_err()
-                report.keep_failure(@r, label: "run/" + item.name, detail: "  " + item.expected + " is not a readable expectation — an ending must be `!panic: <message>` or `!exit: <code>`")
+                report.keep_failure(
+                    @r,
+                    label: "run/" + item.name,
+                    detail: "  " + item.expected + " is not a readable expectation — an ending must be `!panic: <message>` or `!exit: <code>`"
+                )
             else
-                took = one_case(scratch: scratch, compiler: compiler, binaries: binaries, item: item, want: want.must(), r: @r)
+                took = one_case(
+                    scratch: scratch,
+                    compiler: compiler,
+                    binaries: binaries,
+                    item: item,
+                    want: want.must(),
+                    r: @r
+                )
+
                 if took
                     skipped @ skipped + 1
+
     # A skip is not a pass — the same floor the unsupported leg carries.
     if skipped > 0 && skipped * 3 >= found.len()
-        report.keep_failure(@r, label: "run", detail: "  " + skipped.to_str() + " of " + found.len().to_str() + " cases were skipped for a missing library — this machine is not running the corpus")
+        report.keep_failure(
+            @r,
+            label: "run",
+            detail: "  " + skipped.to_str() + " of " + found.len().to_str() + " cases were skipped for a missing library — this machine is not running the corpus"
+        )
     return ok(r)
 
 # One case through the three configurations. Answers whether it was
@@ -75,31 +100,49 @@ function run_all(scratch: str, compiler: str) -> report.Report?
 # verdict on a program that did not build says nothing.
 function one_case(scratch: str, compiler: str, binaries: str, item: cases.Case, want: expectation.Expectation, @r: report.Report) -> bool
     binary = binaries + "/" + item.name
-    built = shell.run(scratch: scratch, command: shell.sq(compiler) + " build " + shell.sq(item.source) + " -o " + shell.sq(binary))
+    built = shell.run(
+        scratch: scratch,
+        command: shell.sq(compiler) + " build " + shell.sq(item.source) + " -o " + shell.sq(binary)
+    )
+
     if built.is_err()
         report.keep_failure(@r, label: "run/" + item.name, detail: "  cannot run the compiler on " + item.source)
         return false
+
     # The machine's own answer, before the case's: a runner with no
     # pkg-config was never given raylib, and that is nobody's defect.
     if shell.machine_lacks_the_library(built.must().err)
         return true
+
     if built.must().code != 0
-        report.keep_failure(@r, label: "run/" + item.name, detail: "  did not build (exit " + built.must().code.to_str() + "):\n" + built.must().err)
+        report.keep_failure(
+            @r,
+            label: "run/" + item.name,
+            detail: "  did not build (exit " + built.must().code.to_str() + "):\n" + built.must().err
+        )
         return false
 
     at_o0 = shell.run(scratch: scratch, command: shell.sq(binary))
+
     if judged(@r, item: item, level: "-O0", want: want, said: at_o0)
         return false
     at_o2 = shell.run(scratch: scratch, command: shell.sq(compiler) + " run " + shell.sq(item.source))
+
     if judged(@r, item: item, level: "-O2", want: want, said: at_o2)
         return false
-    sanitised = shell.run(scratch: scratch, command: shell.sq(compiler) + " run " + shell.sq(item.source) + " --sanitize")
+    sanitised = shell.run(
+        scratch: scratch,
+        command: shell.sq(compiler) + " run " + shell.sq(item.source) + " --sanitize"
+    )
+
     if sanitised.is_err()
         report.keep_failure(@r, label: "run/" + item.name, detail: "  cannot run the compiler on " + item.source)
         return false
+
     if strings.contains(text: sanitised.must().err, needle: "AddressSanitizer") || strings.contains(text: sanitised.must().err, needle: "runtime error:")
         report.keep_failure(@r, label: "run/" + item.name, detail: "  tripped a sanitiser:\n" + sanitised.must().err)
         return false
+
     if judged(@r, item: item, level: "--sanitize", want: want, said: sanitised)
         return false
     report.keep_pass(@r)
@@ -112,6 +155,7 @@ function judged(@r: report.Report, item: cases.Case, level: str, want: expectati
         report.keep_failure(@r, label: "run/" + item.name, detail: "  cannot execute the case at " + level)
         return true
     wrong = expectation.unmet(want, out: said.must().out, err: said.must().err, code: said.must().code)
+
     if wrong.is_err()
         return false
     report.keep_failure(@r, label: "run/" + item.name + " at " + level, detail: "  " + item.source + " " + wrong.must())
@@ -164,6 +208,13 @@ test "a program that does not build is a failure naming clang's words"
     assert !write_file(path: tree + "/b.expected", text: "\n").is_err()
     item = cases.Case(source: tree + "/b.hero", expected: tree + "/b.expected", name: "b")
     r: report.Report @ report.empty()
-    _ = one_case(scratch: scratch, compiler: shell.some_compiler(), binaries: scratch + "/binaries", item: item, want: expectation.split("").must(), r: @r)
+    _ = one_case(
+        scratch: scratch,
+        compiler: shell.some_compiler(),
+        binaries: scratch + "/binaries",
+        item: item,
+        want: expectation.split("").must(),
+        r: @r
+    )
     assert r.failed == 1
     assert strings.contains(text: r.failures[0], needle: "did not build")

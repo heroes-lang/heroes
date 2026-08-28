@@ -119,7 +119,7 @@ bb0:
 #line 120 "abortmapkeynan.c"
 }
 
-#line 33 "tests/golden/run/abort-map-key-nan.hero"
+#line 35 "tests/golden/run/abort-map-key-nan.hero"
 void h_abortmapkeynan_main(void) {
 #line 125 "abortmapkeynan.c"
     HeroArrayHeader * h0_own0 = {0};
@@ -137,57 +137,57 @@ void h_abortmapkeynan_main(void) {
     HeroArrayHeader * t11 = {0};
     goto bb0;
 bb0:
-#line 35 "tests/golden/run/abort-map-key-nan.hero"
+#line 37 "tests/golden/run/abort-map-key-nan.hero"
     t1 = 0x1.8p+0;
-#line 35 "tests/golden/run/abort-map-key-nan.hero"
+#line 37 "tests/golden/run/abort-map-key-nan.hero"
     t2 = 0x1.4p+1;
-#line 35 "tests/golden/run/abort-map-key-nan.hero"
+#line 37 "tests/golden/run/abort-map-key-nan.hero"
     t3 = hero_array_new(&hero_desc_f64, 2);
-#line 35 "tests/golden/run/abort-map-key-nan.hero"
+#line 37 "tests/golden/run/abort-map-key-nan.hero"
     { HeroArrayHeader *grown = hero_array_push(t3, &t1);
-#line 35 "tests/golden/run/abort-map-key-nan.hero"
+#line 37 "tests/golden/run/abort-map-key-nan.hero"
       hero_array_decref(t3); t3 = grown; }
-#line 35 "tests/golden/run/abort-map-key-nan.hero"
+#line 37 "tests/golden/run/abort-map-key-nan.hero"
     { HeroArrayHeader *grown = hero_array_push(t3, &t2);
-#line 35 "tests/golden/run/abort-map-key-nan.hero"
+#line 37 "tests/golden/run/abort-map-key-nan.hero"
       hero_array_decref(t3); t3 = grown; }
-#line 35 "tests/golden/run/abort-map-key-nan.hero"
+#line 37 "tests/golden/run/abort-map-key-nan.hero"
     t8 = h0_own0;
-#line 35 "tests/golden/run/abort-map-key-nan.hero"
+#line 37 "tests/golden/run/abort-map-key-nan.hero"
     h0_own0 = t3;
 #line 159 "abortmapkeynan.c"
     hero_array_decref(t8);
-#line 35 "tests/golden/run/abort-map-key-nan.hero"
+#line 37 "tests/golden/run/abort-map-key-nan.hero"
     t4 = h_abortmapkeynan_count_1ad16c(t3);
-#line 35 "tests/golden/run/abort-map-key-nan.hero"
+#line 37 "tests/golden/run/abort-map-key-nan.hero"
     hero_print_int(t4);
-#line 35 "tests/golden/run/abort-map-key-nan.hero"
+#line 37 "tests/golden/run/abort-map-key-nan.hero"
     hero_print_end();
-#line 37 "tests/golden/run/abort-map-key-nan.hero"
+#line 40 "tests/golden/run/abort-map-key-nan.hero"
     t5 = h_abortmapkeynan_nan();
-#line 37 "tests/golden/run/abort-map-key-nan.hero"
+#line 40 "tests/golden/run/abort-map-key-nan.hero"
     t6 = hero_array_new(&hero_desc_f64, 1);
-#line 37 "tests/golden/run/abort-map-key-nan.hero"
+#line 40 "tests/golden/run/abort-map-key-nan.hero"
     { HeroArrayHeader *grown = hero_array_push(t6, &t5);
-#line 37 "tests/golden/run/abort-map-key-nan.hero"
+#line 40 "tests/golden/run/abort-map-key-nan.hero"
       hero_array_decref(t6); t6 = grown; }
-#line 37 "tests/golden/run/abort-map-key-nan.hero"
+#line 40 "tests/golden/run/abort-map-key-nan.hero"
     t9 = h1_own1;
-#line 37 "tests/golden/run/abort-map-key-nan.hero"
+#line 40 "tests/golden/run/abort-map-key-nan.hero"
     h1_own1 = t6;
 #line 179 "abortmapkeynan.c"
     hero_array_decref(t9);
-#line 37 "tests/golden/run/abort-map-key-nan.hero"
+#line 40 "tests/golden/run/abort-map-key-nan.hero"
     t7 = h_abortmapkeynan_count_1ad16c(t6);
-#line 37 "tests/golden/run/abort-map-key-nan.hero"
+#line 40 "tests/golden/run/abort-map-key-nan.hero"
     hero_print_int(t7);
-#line 37 "tests/golden/run/abort-map-key-nan.hero"
+#line 40 "tests/golden/run/abort-map-key-nan.hero"
     hero_print_end();
-#line 37 "tests/golden/run/abort-map-key-nan.hero"
+#line 40 "tests/golden/run/abort-map-key-nan.hero"
     t10 = h0_own0;
 #line 189 "abortmapkeynan.c"
     hero_array_decref(t10);
-#line 37 "tests/golden/run/abort-map-key-nan.hero"
+#line 40 "tests/golden/run/abort-map-key-nan.hero"
     t11 = h1_own1;
 #line 193 "abortmapkeynan.c"
     hero_array_decref(t11);
@@ -245,79 +245,79 @@ bb0:
     h1_m = t1;
 #line 247 "abortmapkeynan.c"
     hero_map_decref(t19);
-#line 29 "tests/golden/run/abort-map-key-nan.hero"
+#line 30 "tests/golden/run/abort-map-key-nan.hero"
     t2 = h0_ks;
-#line 29 "tests/golden/run/abort-map-key-nan.hero"
+#line 30 "tests/golden/run/abort-map-key-nan.hero"
     t20 = h2_xs0;
 #line 253 "abortmapkeynan.c"
     hero_array_incref(t2);
-#line 29 "tests/golden/run/abort-map-key-nan.hero"
+#line 30 "tests/golden/run/abort-map-key-nan.hero"
     h2_xs0 = t2;
 #line 257 "abortmapkeynan.c"
     hero_array_decref(t20);
-#line 29 "tests/golden/run/abort-map-key-nan.hero"
+#line 30 "tests/golden/run/abort-map-key-nan.hero"
     t3 = INT64_C(0);
-#line 29 "tests/golden/run/abort-map-key-nan.hero"
+#line 30 "tests/golden/run/abort-map-key-nan.hero"
     h3_i0 = t3;
-#line 29 "tests/golden/run/abort-map-key-nan.hero"
+#line 30 "tests/golden/run/abort-map-key-nan.hero"
     goto bb1;
-#line 29 "tests/golden/run/abort-map-key-nan.hero"
+#line 30 "tests/golden/run/abort-map-key-nan.hero"
 bb1:
-#line 29 "tests/golden/run/abort-map-key-nan.hero"
+#line 30 "tests/golden/run/abort-map-key-nan.hero"
     t4 = h3_i0;
-#line 29 "tests/golden/run/abort-map-key-nan.hero"
+#line 30 "tests/golden/run/abort-map-key-nan.hero"
     t5 = h2_xs0;
-#line 29 "tests/golden/run/abort-map-key-nan.hero"
+#line 30 "tests/golden/run/abort-map-key-nan.hero"
     t6 = hero_array_len(t5);
-#line 29 "tests/golden/run/abort-map-key-nan.hero"
+#line 30 "tests/golden/run/abort-map-key-nan.hero"
     t7 = t4 < t6;
-#line 29 "tests/golden/run/abort-map-key-nan.hero"
+#line 30 "tests/golden/run/abort-map-key-nan.hero"
     if (t7) goto bb2; else goto bb4;
-#line 29 "tests/golden/run/abort-map-key-nan.hero"
+#line 30 "tests/golden/run/abort-map-key-nan.hero"
 bb2:
-#line 29 "tests/golden/run/abort-map-key-nan.hero"
+#line 30 "tests/golden/run/abort-map-key-nan.hero"
     t8 = h2_xs0;
-#line 29 "tests/golden/run/abort-map-key-nan.hero"
+#line 30 "tests/golden/run/abort-map-key-nan.hero"
     t9 = h3_i0;
-#line 29 "tests/golden/run/abort-map-key-nan.hero"
+#line 30 "tests/golden/run/abort-map-key-nan.hero"
     t10 = *(double const *)hero_array_at(t8, t9);
-#line 29 "tests/golden/run/abort-map-key-nan.hero"
+#line 30 "tests/golden/run/abort-map-key-nan.hero"
     h4_k = t10;
-#line 30 "tests/golden/run/abort-map-key-nan.hero"
+#line 31 "tests/golden/run/abort-map-key-nan.hero"
     t11 = h4_k;
-#line 30 "tests/golden/run/abort-map-key-nan.hero"
+#line 31 "tests/golden/run/abort-map-key-nan.hero"
     t12 = INT64_C(1);
-#line 30 "tests/golden/run/abort-map-key-nan.hero"
+#line 31 "tests/golden/run/abort-map-key-nan.hero"
     hero_map_set(&(h1_m), &t11, &t12);
-#line 30 "tests/golden/run/abort-map-key-nan.hero"
+#line 31 "tests/golden/run/abort-map-key-nan.hero"
     goto bb3;
-#line 30 "tests/golden/run/abort-map-key-nan.hero"
+#line 31 "tests/golden/run/abort-map-key-nan.hero"
 bb3:
-#line 29 "tests/golden/run/abort-map-key-nan.hero"
+#line 30 "tests/golden/run/abort-map-key-nan.hero"
     t13 = h3_i0;
-#line 29 "tests/golden/run/abort-map-key-nan.hero"
+#line 30 "tests/golden/run/abort-map-key-nan.hero"
     t14 = INT64_C(1);
-#line 29 "tests/golden/run/abort-map-key-nan.hero"
+#line 30 "tests/golden/run/abort-map-key-nan.hero"
     if (__builtin_add_overflow(t13, t14, &t15)) hero_panic_overflow();
-#line 29 "tests/golden/run/abort-map-key-nan.hero"
+#line 30 "tests/golden/run/abort-map-key-nan.hero"
     h3_i0 = t15;
-#line 29 "tests/golden/run/abort-map-key-nan.hero"
+#line 30 "tests/golden/run/abort-map-key-nan.hero"
     goto bb1;
-#line 29 "tests/golden/run/abort-map-key-nan.hero"
+#line 30 "tests/golden/run/abort-map-key-nan.hero"
 bb4:
-#line 31 "tests/golden/run/abort-map-key-nan.hero"
+#line 33 "tests/golden/run/abort-map-key-nan.hero"
     t16 = h1_m;
-#line 31 "tests/golden/run/abort-map-key-nan.hero"
+#line 33 "tests/golden/run/abort-map-key-nan.hero"
     t17 = hero_map_len(t16);
-#line 31 "tests/golden/run/abort-map-key-nan.hero"
+#line 33 "tests/golden/run/abort-map-key-nan.hero"
     t21 = h1_m;
 #line 315 "abortmapkeynan.c"
     hero_map_decref(t21);
-#line 31 "tests/golden/run/abort-map-key-nan.hero"
+#line 33 "tests/golden/run/abort-map-key-nan.hero"
     t22 = h2_xs0;
 #line 319 "abortmapkeynan.c"
     hero_array_decref(t22);
-#line 31 "tests/golden/run/abort-map-key-nan.hero"
+#line 33 "tests/golden/run/abort-map-key-nan.hero"
     t23 = h5_own5;
 #line 323 "abortmapkeynan.c"
     hero_map_decref(t23);

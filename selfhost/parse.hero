@@ -39,17 +39,21 @@ function parse(text: str) -> ParseOutput
 function parse_source(s: source.Source) -> ParseOutput
     lexed = lexer.lex(s)
     comments: [token.Span] @ []
+
     for t in lexed.tokens
         if t.kind == .comment
             comments @ comments.push(t.span)
+
     c: cursor.Cursor @ cursor.bounded_cursor(tokens: lexed.tokens, root_end: source_extent.root_end(s))
     a: ast.Ast @ ast.new_ast()
     decls: [ast.Decl] @ []
     uses: [ast.Use] @ []
     parse_decl.file(@c, @a, @decls, @uses, s.text)
     diagnostics: [diag.Diagnostic] @ lexed.diagnostics
+
     for d in c.diagnostics
         diagnostics @ diagnostics.push(d)
+
     return ParseOutput(decls: decls, uses: uses, comments: comments, diagnostics: diagnostics, tree: a)
 
 # The same parse, told where the author's own text stops — what the CLI
@@ -59,17 +63,21 @@ function parse_source(s: source.Source) -> ParseOutput
 function parse_bounded(text: str, root_end: i64) -> ParseOutput
     lexed = lexer.lex_one(text)
     comments: [token.Span] @ []
+
     for t in lexed.tokens
         if t.kind == .comment
             comments @ comments.push(t.span)
+
     c: cursor.Cursor @ cursor.bounded_cursor(tokens: lexed.tokens, root_end: root_end)
     a: ast.Ast @ ast.new_ast()
     decls: [ast.Decl] @ []
     uses: [ast.Use] @ []
     parse_decl.file(@c, @a, @decls, @uses, text)
     diagnostics: [diag.Diagnostic] @ lexed.diagnostics
+
     for d in c.diagnostics
         diagnostics @ diagnostics.push(d)
+
     return ParseOutput(decls: decls, uses: uses, comments: comments, diagnostics: diagnostics, tree: a)
 
 test "text becomes a tree in one call, comments and all"
@@ -77,6 +85,7 @@ test "text becomes a tree in one call, comments and all"
     p = parse(text)
     assert p.diagnostics.len() == 0
     assert p.decls.len() == 1
+
     # BOTH comments are kept for the formatter; the tree keeps only the doc.
     assert p.comments.len() == 2
     assert p.decls[0].doc.len() == 1

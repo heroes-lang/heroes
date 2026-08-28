@@ -42,6 +42,7 @@ constant FAILURE_FIELDS: [str]
 # declaration, and written_type has it (panel 068 F8).
 function field_type(decls: [ast.Decl], c: check_state.Checked, s: source.Source, owner: i64, name: token.Span) -> i64?
     wanted = source.span_text(s, name)
+
     match check_table.get(c.types, owner)
         .named n =>
             match decls[n.decl].kind
@@ -49,6 +50,7 @@ function field_type(decls: [ast.Decl], c: check_state.Checked, s: source.Source,
                     for field in rec.fields
                         if source.span_text(s, field.name) == wanted
                             return check_state.written_type(c, field.ty)
+
                     return fail("absent", "no such field")
                 .constant_decl | .function_decl | .variant_decl | .test_decl => return fail("absent", "not a record")
         .case_ty vc =>
@@ -57,11 +59,13 @@ function field_type(decls: [ast.Decl], c: check_state.Checked, s: source.Source,
                     for field in v.cases[vc.at].fields
                         if source.span_text(s, field.name) == wanted
                             return check_state.written_type(c, field.ty)
+
                     return fail("absent", "no such payload field")
                 .constant_decl | .function_decl | .record_decl | .test_decl => return fail("absent", "not a variant")
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail("absent", "no fields")
-        .array | .fixed | .map | .fallible | .function_ty => return fail("absent", "no fields")
-        .failure | .generic | .error => return fail("absent", "no fields")
+        .array | .fixed | .map | .fallible | .function_ty         => return fail("absent", "no fields")
+        .failure | .generic | .error                              => return fail("absent", "no fields")
+
     return fail("absent", "unreached")
 
 # The index of a field within the type that holds it, or absent if that
@@ -69,48 +73,60 @@ function field_type(decls: [ast.Decl], c: check_state.Checked, s: source.Source,
 # something and lowering should stay quiet.
 function field_index(decls: [ast.Decl], c: check_state.Checked, s: source.Source, owner: i64, name: token.Span) -> i64?
     wanted = source.span_text(s, name)
+
     match check_table.get(c.types, owner)
         .named n =>
             match decls[n.decl].kind
                 .record_decl rec =>
                     names: [str] @ []
+
                     for field in rec.fields
                         names @ names.push(source.span_text(s, field.name))
+
                     return position(names, wanted)
                 .constant_decl | .function_decl | .variant_decl | .test_decl => return fail("absent", "not a record")
         .case_ty vc =>
             match decls[vc.decl].kind
                 .variant_decl v =>
                     names: [str] @ []
+
                     for field in v.cases[vc.at].fields
                         names @ names.push(source.span_text(s, field.name))
+
                     return position(names, wanted)
                 .constant_decl | .function_decl | .record_decl | .test_decl => return fail("absent", "not a variant")
-        .failure => return position(FAILURE_FIELDS, wanted)
+        .failure                                                  => return position(FAILURE_FIELDS, wanted)
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail("absent", "no fields")
-        .array | .fixed | .map | .fallible | .function_ty => return fail("absent", "no fields")
-        .generic | .error => return fail("absent", "no fields")
+        .array | .fixed | .map | .fallible | .function_ty         => return fail("absent", "no fields")
+        .generic | .error                                         => return fail("absent", "no fields")
+
     return fail("absent", "unreached")
 
 # The index of a variant's case by name: what a switch arm and a `.case`
 # construction both need.
 function case_index(decls: [ast.Decl], s: source.Source, decl: i64, name: token.Span) -> i64?
     wanted = source.span_text(s, name)
+
     match decls[decl].kind
         .variant_decl v =>
             names: [str] @ []
+
             for one_case in v.cases
                 names @ names.push(source.span_text(s, one_case.name))
+
             return position(names, wanted)
         .constant_decl | .function_decl | .record_decl | .test_decl => return fail("absent", "not a variant")
+
     return fail("absent", "unreached")
 
 function position(names: [str], wanted: str) -> i64?
     at: i64 @ 0
+
     for name in names
         if name == wanted
             return ok(at)
         at @ at + 1
+
     return fail("absent", "no such name")
 
 # Whether a value of this type carries a reference the compiler must
@@ -137,6 +153,7 @@ test "a field, a payload field and a failure field all become indices"
     out = resolve.resolve(p.tree, s, p.decls, p.uses)
     c = checker.check(p.tree, out, s, p.decls)
     assert c.diagnostics.len() == 0
+
     # The test program checks clean but never SPEAKS these types in an
     # expression, so their ids may be fresh: every query goes through a
     # Checked carrying the extended table — an id must never be asked of
@@ -147,6 +164,7 @@ test "a field, a payload field and a failure field all become indices"
     failure = check_table.intern(@tbl, .failure)
     widened: check_state.Checked @ c
     widened.types @ tbl
+
     # The span arithmetic is guarded: the test first proves the span
     # says what it thinks it says.
     y_span = token.Span(start: 28, end: 29)
@@ -154,10 +172,12 @@ test "a field, a payload field and a failure field all become indices"
     assert field_index(p.decls, widened, s, owner: point, name: y_span).must() == 1
     ty_of_y = field_type(p.decls, widened, s, owner: point, name: y_span).must()
     assert ty_of_y == check_table.str_ty(c.types)
+
     # The variant case: text's payload inside word.
     text_span = token.Span(start: 65, end: 69)
     assert source.span_text(s, text_span) == "text"
     assert field_index(p.decls, widened, s, owner: word_case, name: text_span).must() == 0
+
     # The built-in failure record: msg is field 1, with no declaration
     # anywhere.
     msg_span = token.Span(start: 109, end: 112)

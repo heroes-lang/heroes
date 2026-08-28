@@ -73,16 +73,22 @@ constant MISMATCHED: str
 function family(line: str) -> str?
     if emit_ffi_lookup.has(text: line, needle: NARROWED)
         return ok(NARROWED)
+
     if emit_ffi_lookup.has(text: line, needle: DEMOTED)
         return ok(DEMOTED)
+
     if emit_ffi_lookup.has(text: line, needle: PROMOTED)
         return ok(PROMOTED)
+
     if emit_ffi_lookup.has(text: line, needle: TRUNCATES)
         return ok(TRUNCATES)
+
     if emit_ffi_lookup.has(text: line, needle: RESIGNED)
         return ok(RESIGNED)
+
     if emit_ffi_lookup.has(text: line, needle: MAY_LOSE)
         return ok(MAY_LOSE)
+
     if emit_ffi_lookup.has(text: line, needle: MISMATCHED)
         return ok(MISMATCHED)
     return fail("none", "not a conversion line")
@@ -103,33 +109,42 @@ function location(s: source.Source, line: str) -> Located?
     cs = line.chars()
     stops: [i64] @ []
     index: i64 @ 0
+
     while index < cs.len() && stops.len() < 3
         if cs[index] == ":"
             stops @ stops.push(index)
         index @ index + 1
+
     if stops.len() < 3
         return fail("none", "not a file:line:col report")
     file_name = slice_chars(cs, from: 0, to: stops[0])
     row = emit_ffi_lookup.number(slice_chars(cs, from: stops[0] + 1, to: stops[1]))
     col = emit_ffi_lookup.number(slice_chars(cs, from: stops[1] + 1, to: stops[2]))
+
     if row.is_err() || col.is_err()
         return fail("none", "the position is not numeric")
     at: i64 @ -1
     counter: i64 @ 0
+
     for entry in s.files
         if entry.name == file_name && !entry.is_library && at == -1
             at @ counter
         counter @ counter + 1
+
     if at == -1
         return fail("none", "not one of this compilation's own files")
-    return ok(Located(file: at, line: row.must(), col: col.must(), rest: slice_chars(cs, from: stops[2] + 1, to: cs.len())))
+    return ok(
+        Located(file: at, line: row.must(), col: col.must(), rest: slice_chars(cs, from: stops[2] + 1, to: cs.len()))
+    )
 
 function slice_chars(cs: [str], from: i64, to: i64) -> str
     kept: [str] @ []
     index: i64 @ from
+
     while index < to
         kept @ kept.push(cs[index])
         index @ index + 1
+
     return kept.join("")
 
 # The extern declared at a file and line — the one the probe's #line
@@ -141,9 +156,11 @@ record ExternAt
 function extern_at_line(p: ir_state.Program, s: source.Source, decls: [ast.Decl], file: i64, at_line: i64) -> ExternAt?
     for f in p.functions
         start = decls[f.decl].name.start
+
         if source.file_of(s, start) != file || source.file_line_of(s, start) != at_line
             continue
         return ok(ExternAt(f: f, name: source.span_text(s, decls[f.decl].name)))
+
     return fail("none", "no extern is declared at that line")
 
 # The content between the LAST two quotes on the line — the header's
@@ -153,6 +170,7 @@ function last_quoted(text: str) -> str?
     close: i64 @ -1
     open: i64 @ -1
     index: i64 @ cs.len() - 1
+
     while index >= 0
         if cs[index] == "'"
             if close == -1
@@ -161,6 +179,7 @@ function last_quoted(text: str) -> str?
                 open @ index
                 break
         index @ index - 1
+
     if close == -1 || open == -1
         return fail("none", "no quoted type on the line")
     return ok(slice_chars(cs, from: open + 1, to: close))
@@ -180,15 +199,19 @@ function parameter_width(s: source.Source, decls: [ast.Decl], p: ir_state.Progra
     if emit_ffi_lookup.has(text: line, needle: emit_ffi_lookup.DISCARDS)
         return fail("none", "the mutable class owns this line")
     sorted = family(line)
+
     if sorted.is_err()
         return fail("none", "not a conversion line")
     kind = sorted.must()
     at = location(s, line: line)
+
     if at.is_err()
         return fail("none", "no usable location")
     c_type = last_quoted(at.must().rest)
+
     if c_type.is_err()
         return fail("none", "no header type on the line")
+
     # The diagnostic fires whether or not the type has a Heroes
     # spelling, and only the Fix consults the table (panel 071's
     # ffi-pragmatist made this a condition): declining when the table
@@ -197,33 +220,47 @@ function parameter_width(s: source.Source, decls: [ast.Decl], p: ir_state.Progra
     # of 1159 entry points by panel 052's count.
     spelled = emit_c_spellings.spelling(c_type: c_type.must(), word_bits: word_bits)
     what: str @ "a different kind of thing from"
+
     if kind == NARROWED || kind == DEMOTED
         what @ "wider than"
+
     if kind == RESIGNED
         what @ "a different sign from"
+
     if kind == PROMOTED
         what @ "narrower than"
+
     if kind == TRUNCATES || kind == MAY_LOSE
         what @ "a different kind of number from"
     found = extern_at_line(p, s, decls, file: at.must().file, at_line: at.must().line)
+
     if found.is_err()
         return fail("none", "no extern is declared at that line")
     f = found.must().f
     name = found.must().name
     parameters = emit_extern_probe.parameter_list(names, c, f)
+
     if parameters.is_err()
         return fail("none", "a parameter with no C spelling")
     arguments = emit_extern_probe.argument_names(count: f.params.len())
     module = source.component_at(s, decls[f.decl].span.start)
     probe = emit_extern_probe.probe_name(module: module, name: name)
-    columns = emit_extern_probe.argument_columns(probe: probe, name: name, parameters: parameters.must(), arguments: arguments)
+    columns = emit_extern_probe.argument_columns(
+        probe: probe,
+        name: name,
+        parameters: parameters.must(),
+        arguments: arguments
+    )
     which: str @ "a parameter"
     index: i64 @ 0
+
     for column in columns
         if column == at.must().col && index < f.params.len()
             which @ "`" + f.slots[f.params[index]].name + "`"
         index @ index + 1
+
     span = decls[f.decl].span
+
     # A width is converted IN SILENCE; a class mismatch is not — clang
     # refuses it outright — so the sentence after the type has to
     # differ or one of the two is false. The float family differs
@@ -232,33 +269,50 @@ function parameter_width(s: source.Source, decls: [ast.Decl], p: ir_state.Progra
     # drops the fraction, an integer into a float rounds only the
     # values a mantissa cannot hold.
     consequence: str @ "and C would convert the value in silence"
+
     if kind == MISMATCHED
         consequence @ "and the two do not convert"
+
     if kind == PROMOTED
         consequence @ "and the precision the header expects is lost before the call"
+
     if kind == TRUNCATES
         consequence @ "and C would drop the fraction in silence"
+
     if kind == MAY_LOSE
         consequence @ "and C would round large values in silence"
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "ffi_parameter_type", message: which + " of `" + name + "` is declared " + what + " the header's `" + c_type.must() + "` — clang read the header, " + consequence, span: span)
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "ffi_parameter_type",
+        message: which + " of `" + name + "` is declared " + what + " the header's `" + c_type.must() + "` — clang read the header, " + consequence,
+        span: span
+    )
+
     if spelled.is_err()
         # No Heroes spelling, and the diagnostic still lands: the note
         # says what the reader must do instead of naming a type that
         # does not exist.
-        d.notes @ d.notes.push("§4.19: a parameter is declared as what the header says. `" + c_type.must() + "` has no name in this language — if it is a struct, declare it as a `record` inside this same `extern` group and the header owns its layout")
+        d.notes @ d.notes.push(
+            "§4.19: a parameter is declared as what the header says. `" + c_type.must() + "` has no name in this language — if it is a struct, declare it as a `record` inside this same `extern` group and the header owns its layout"
+        )
         return ok(d)
     heroes_type = spelled.must().heroes
-    d.notes @ d.notes.push("§4.19: a result may be wider than C's, and a parameter is declared at the header's own width and sign. Declare it `" + heroes_type + "`, and convert at the call where the value is known to fit")
+    d.notes @ d.notes.push(
+        "§4.19: a result may be wider than C's, and a parameter is declared at the header's own width and sign. Declare it `" + heroes_type + "`, and convert at the call where the value is known to fit"
+    )
+
     # A SECOND note rather than a longer first one: the width rule is
     # the same for every C type, and this says something extra about
     # THIS one — that the answer above is this target's.
     if !spelled.must().caveat.is_err()
         d.notes @ d.notes.push(spelled.must().caveat.must())
+
     # A guess, deliberately: for a fixed-width C type the guess is
     # about INTENT (convert at the call instead?), for a word-width
     # type also about the target. Neither may be applied for the
     # author (CLAUDE.md §8).
-    d.fixes @ d.fixes.push(diag.Fix(title: "declare it `" + heroes_type + "`", replacement: heroes_type, span: span, certainty: .guess))
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "declare it `" + heroes_type + "`", replacement: heroes_type, span: span, certainty: .guess)
+    )
     return ok(d)
 
 ## Tests
@@ -272,19 +326,27 @@ test "the width, the sign and the class, gated by the probe's own line"
     assert c.diagnostics.len() == 0
     low = ir_lower.lower(parsed.tree, out, c, s, parsed.decls)
     names = emit_ctype.new_names(s, parsed.decls)
+
     # The column is computed the way the emitter computes it, so the
     # test cannot drift from the contract.
     fs = low.program.functions
     f0: ir_state.Function @ fs[0]
     picked: bool @ false
+
     for f in fs
         if f.name == "narrow" && !picked
             f0 @ f
             picked @ true
+
     parameters = emit_extern_probe.parameter_list(names, c, f0).must()
     arguments = emit_extern_probe.argument_names(count: 1)
     probe = emit_extern_probe.probe_name(module: "t", name: "narrow")
-    columns = emit_extern_probe.argument_columns(probe: probe, name: "narrow", parameters: parameters, arguments: arguments)
+    columns = emit_extern_probe.argument_columns(
+        probe: probe,
+        name: "narrow",
+        parameters: parameters,
+        arguments: arguments
+    )
     line = "t.hero:2:" + columns[0].to_str() + ": error: implicit conversion loses integer precision: 'int64_t' to 'int'"
     d = parameter_width(s, parsed.decls, low.program, c, names, line: line, word_bits: 64)
     assert d.must().code == "ffi_parameter_type"
@@ -292,12 +354,14 @@ test "the width, the sign and the class, gated by the probe's own line"
     assert d.must().fixes.len() == 1
     assert d.must().fixes[0].replacement == "i32"
     assert d.must().fixes[0].certainty == .guess
+
     # The class mismatch: no Heroes spelling for the quoted type, the
     # diagnostic lands anyway, no fix is invented.
     mism = "t.hero:2:" + columns[0].to_str() + ": error: passing 'HeroStr' to parameter of type 'Vector2'"
     k = parameter_width(s, parsed.decls, low.program, c, names, line: mism, word_bits: 64)
     assert k.must().message == "`x` of `narrow` is declared a different kind of thing from the header's `Vector2` — clang read the header, and the two do not convert"
     assert k.must().fixes.len() == 0
+
     # The mutable class owns qualifiers, and a line at no extern's own
     # line stays the compiler's.
     quals = "t.hero:2:9: warning: passing 'const char *' to parameter of type 'char *' discards qualifiers"
@@ -316,31 +380,74 @@ test "the float family: four directions, each with its own sentence"
     fs = low.program.functions
     f0: ir_state.Function @ fs[0]
     picked: bool @ false
+
     for f in fs
         if f.name == "narrow" && !picked
             f0 @ f
             picked @ true
+
     parameters = emit_extern_probe.parameter_list(names, c, f0).must()
     arguments = emit_extern_probe.argument_names(count: 1)
     probe = emit_extern_probe.probe_name(module: "t", name: "narrow")
-    columns = emit_extern_probe.argument_columns(probe: probe, name: "narrow", parameters: parameters, arguments: arguments)
+    columns = emit_extern_probe.argument_columns(
+        probe: probe,
+        name: "narrow",
+        parameters: parameters,
+        arguments: arguments
+    )
     head = "t.hero:2:" + columns[0].to_str() + ": error: "
+
     # f32 where the header says double: the promotion is exact, the
     # loss already happened in the author's own f32 arithmetic.
-    prom = parameter_width(s, parsed.decls, low.program, c, names, line: head + "implicit conversion increases floating-point precision: 'float' to 'double'", word_bits: 64)
+    prom = parameter_width(
+        s,
+        parsed.decls,
+        low.program,
+        c,
+        names,
+        line: head + "implicit conversion increases floating-point precision: 'float' to 'double'",
+        word_bits: 64
+    )
     assert prom.must().message == "`x` of `narrow` is declared narrower than the header's `double` — clang read the header, and the precision the header expects is lost before the call"
     assert prom.must().fixes[0].replacement == "f64"
+
     # f64 where the header says float: the same silent-narrowing shape
     # as the integers, so the same sentence.
-    demo = parameter_width(s, parsed.decls, low.program, c, names, line: head + "implicit conversion loses floating-point precision: 'double' to 'float'", word_bits: 64)
+    demo = parameter_width(
+        s,
+        parsed.decls,
+        low.program,
+        c,
+        names,
+        line: head + "implicit conversion loses floating-point precision: 'double' to 'float'",
+        word_bits: 64
+    )
     assert demo.must().message == "`x` of `narrow` is declared wider than the header's `float` — clang read the header, and C would convert the value in silence"
     assert demo.must().fixes[0].replacement == "f32"
+
     # A float where the header takes an integer: 0.75 becomes 0.
-    trun = parameter_width(s, parsed.decls, low.program, c, names, line: head + "implicit conversion turns floating-point number into integer: 'double' to 'int'", word_bits: 64)
+    trun = parameter_width(
+        s,
+        parsed.decls,
+        low.program,
+        c,
+        names,
+        line: head + "implicit conversion turns floating-point number into integer: 'double' to 'int'",
+        word_bits: 64
+    )
     assert trun.must().message == "`x` of `narrow` is declared a different kind of number from the header's `int` — clang read the header, and C would drop the fraction in silence"
     assert trun.must().fixes[0].replacement == "i32"
+
     # An integer where the header holds a float: exact until the value
     # outgrows the mantissa, then rounded without a word.
-    lose = parameter_width(s, parsed.decls, low.program, c, names, line: head + "implicit conversion from 'int64_t' (aka 'long long') to 'double' may lose precision", word_bits: 64)
+    lose = parameter_width(
+        s,
+        parsed.decls,
+        low.program,
+        c,
+        names,
+        line: head + "implicit conversion from 'int64_t' (aka 'long long') to 'double' may lose precision",
+        word_bits: 64
+    )
     assert lose.must().message == "`x` of `narrow` is declared a different kind of number from the header's `double` — clang read the header, and C would round large values in silence"
     assert lose.must().fixes[0].replacement == "f64"

@@ -52,14 +52,32 @@ constant EXAMPLES: str
 
 function run_all(scratch: str, compiler: str) -> report.Report?
     r: report.Report @ report.empty()
+
     for dir in GOLDEN_DIRS
         for item in cases.collect(scratch: scratch, dir: dir)?
-            judge(@r, scratch: scratch, compiler: compiler, label: "warnings/" + item.name, main: item.source, erases: false)
+            judge(
+                @r,
+                scratch: scratch,
+                compiler: compiler,
+                label: "warnings/" + item.name,
+                main: item.source,
+                erases: false
+            )
+
     for dir in shell.list_directories(scratch: scratch, dir: EXAMPLES)?
         main = dir + "/main.hero"
+
         if read_file(main).is_err()
             continue
-        judge(@r, scratch: scratch, compiler: compiler, label: "warnings/" + strings.base_name(path: dir), main: main, erases: lends_a_ptr(scratch: scratch, dir: dir))
+        judge(
+            @r,
+            scratch: scratch,
+            compiler: compiler,
+            label: "warnings/" + strings.base_name(path: dir),
+            main: main,
+            erases: lends_a_ptr(scratch: scratch, dir: dir)
+        )
+
     return ok(r)
 
 # One program under both verbs. `erases` says whether this program hands
@@ -67,47 +85,73 @@ function run_all(scratch: str, compiler: str) -> report.Report?
 # about — and then must.
 function judge(@r: report.Report, scratch: str, compiler: str, label: str, main: str, erases: bool)
     for verb in ["build", "run"]
-        said = shell.run(scratch: scratch, command: shell.patience() + shell.sq(compiler) + " " + verb + " " + shell.sq(main))
+        said = shell.run(
+            scratch: scratch,
+            command: shell.patience() + shell.sq(compiler) + " " + verb + " " + shell.sq(main)
+        )
+
         if said.is_err()
             report.keep_failure(@r, label: label, detail: "  cannot run the compiler on " + main)
             return
+
         if shell.machine_lacks_the_library(said.must().err)
             return
         noise = warnings_in(said.must().err)
+
         if !erases
             if noise.len() > 0
-                report.keep_failure(@r, label: label + " under `" + verb + "`", detail: "  " + main + " produced clang warnings:\n    " + noise.join("\n    "))
+                report.keep_failure(
+                    @r,
+                    label: label + " under `" + verb + "`",
+                    detail: "  " + main + " produced clang warnings:\n    " + noise.join("\n    ")
+                )
                 return
         else
             if noise.len() == 0
-                report.keep_failure(@r, label: label + " under `" + verb + "`", detail: "  " + main + " lends a `ptr` and no longer warns — if `ptr` stopped erasing the type, delete this exemption instead of widening it")
+                report.keep_failure(
+                    @r,
+                    label: label + " under `" + verb + "`",
+                    detail: "  " + main + " lends a `ptr` and no longer warns — if `ptr` stopped erasing the type, delete this exemption instead of widening it"
+                )
                 return
+
             for one in noise
                 if !strings.contains(text: one, needle: "incompatible pointer types")
-                    report.keep_failure(@r, label: label + " under `" + verb + "`", detail: "  " + main + " warns about something other than `ptr`:\n    " + one)
+                    report.keep_failure(
+                        @r,
+                        label: label + " under `" + verb + "`",
+                        detail: "  " + main + " warns about something other than `ptr`:\n    " + one
+                    )
                     return
+
     report.keep_pass(@r)
 
 function warnings_in(err: str) -> [str]
     found: [str] @ []
+
     for row in strings.lines(err)
         if strings.contains(text: row, needle: "warning:")
             found @ found.push(row)
+
     return found
 
 # Whether a module hands C the address of a `ptr` — an `@` parameter of
 # that type, which is what becomes `void **`.
 function lends_a_ptr(scratch: str, dir: str) -> bool
     listing = shell.list_entries(scratch: scratch, dir: dir)
+
     if listing.is_err()
         return false
+
     for entry in listing.must()
         if strings.ends_with(text: entry, suffix: ".hero")
             text = read_file(entry)
+
             if !text.is_err()
                 for row in strings.lines(text.must())
                     if strings.contains(text: row, needle: "@") && strings.contains(text: row, needle: ": ptr")
                         return true
+
     return false
 
 test "a warning line is found wherever clang puts it, and nothing else is"
@@ -115,6 +159,7 @@ test "a warning line is found wherever clang puts it, and nothing else is"
     assert warnings_in(said).len() == 1
     assert warnings_in("").len() == 0
     assert warnings_in("no warnings here\n").len() == 0
+
     # A `note:` mentioning the word is not a warning line; a real warning
     # line always carries `warning:` itself.
     assert warnings_in("  note: this warning: is quoted\n").len() == 1

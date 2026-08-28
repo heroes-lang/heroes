@@ -34,10 +34,10 @@ use check_state
 # The twelve. Total on Ty by construction: every other case falls through.
 function is_ordered(c: check_state.Checker, ty: i64) -> bool
     return match check_table.get(c.out.types, ty)
-        .int_ty | .float_ty | .str | .bool => true
+        .int_ty | .float_ty | .str | .bool            => true
         .ptr | .cstr | .unit | .array | .fixed | .map => false
-        .fallible | .function_ty | .named | .case_ty => false
-        .failure | .generic | .error => false
+        .fallible | .function_ty | .named | .case_ty  => false
+        .failure | .generic | .error                  => false
 
 # Whether this element type is one the checker may REFUSE — narrower than
 # whether it is ordered: an error's diagnostic was already reported (one
@@ -54,10 +54,11 @@ function is_refusable(c: check_state.Checker, ty: i64) -> bool
 # name and cannot see what is inside it.
 function why_unordered(c: check_state.Checker, s: source.Source, decls: [ast.Decl], ty: i64) -> str?
     is_named = match check_table.get(c.out.types, ty)
-        .named => true
+        .named                                                    => true
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
-        .array | .fixed | .map | .fallible | .function_ty => false
-        .case_ty | .failure | .generic | .error => false
+        .array | .fixed | .map | .fallible | .function_ty         => false
+        .case_ty | .failure | .generic | .error                   => false
+
     if !is_named
         return fail("absent", "the type's own name is the whole answer")
     return within(c, s, decls, ty: ty, depth: 0)
@@ -70,22 +71,24 @@ function why_unordered(c: check_state.Checker, s: source.Source, decls: [ast.Dec
 function within(c: check_state.Checker, s: source.Source, decls: [ast.Decl], ty: i64, depth: i64) -> str?
     if depth > 16
         return fail("absent", "past any nesting worth naming")
+
     match check_table.get(c.out.types, ty)
         # The three that are the answer wherever they are found: addresses
         # are the linker's answer, and a map's order is the order of a
         # walk nobody has fixed.
-        .map => return ok("a map")
+        .map         => return ok("a map")
         .function_ty => return ok("a function value")
         .ptr | .cstr => return ok("a pointer")
         .named n =>
             name = source.span_text(s, decls[n.decl].name)
             return dotted_path(c, s, decls, prefix: name, decl: n.decl, depth: depth)
-        .array => return ok("an array")
-        .fixed => return ok("a fixed array")
-        .fallible => return ok("a fallible value")
-        .unit => return ok("`()`")
-        .int_ty | .float_ty | .bool | .str => return fail("absent", "ordered, nothing to explain")
+        .array                                  => return ok("an array")
+        .fixed                                  => return ok("a fixed array")
+        .fallible                               => return ok("a fallible value")
+        .unit                                   => return ok("`()`")
+        .int_ty | .float_ty | .bool | .str      => return fail("absent", "ordered, nothing to explain")
         .case_ty | .failure | .generic | .error => return fail("absent", "no note for this shape")
+
     return fail("absent", "unreached")
 
 # The first member of this declaration with no order, as ONE dotted path
@@ -96,47 +99,60 @@ function within(c: check_state.Checker, s: source.Source, decls: [ast.Decl], ty:
 function dotted_path(c: check_state.Checker, s: source.Source, decls: [ast.Decl], prefix: str, decl: i64, depth: i64) -> str?
     if depth > 16
         return fail("absent", "past any nesting worth naming")
+
     match decls[decl].kind
         .record_decl rec => return first_unordered(c, s, decls, prefix: prefix, fields: rec.fields, depth: depth)
         # A case payload is not a container in the surface language, which
         # is exactly why a list of container kinds would miss it.
+
         .variant_decl v =>
             for one_case in v.cases
                 found = first_unordered(c, s, decls, prefix: prefix, fields: one_case.fields, depth: depth)
+
                 if !found.is_err()
                     return found
+
             return fail("absent", "every payload is ordered")
         .constant_decl | .function_decl | .test_decl => return fail("absent", "not a data declaration")
+
     return fail("absent", "unreached")
 
 function first_unordered(c: check_state.Checker, s: source.Source, decls: [ast.Decl], prefix: str, fields: [ast.Field], depth: i64) -> str?
     for field in fields
         written = check_state.written_type(c.out, field.ty)
+
         if written.is_err()
             continue
         field_ty = written.must()
+
         if is_ordered(c, field_ty)
             continue
         here = prefix + "." + source.span_text(s, field.name)
+
         # A record or variant field: keep descending under the longer
         # path, so the note ends at a field the reader can actually
         # change; if every field of it is ordered, the record ITSELF is
         # the cause — there is nothing further in to name.
         inner_decl: i64 @ -1
+
         match check_table.get(c.out.types, field_ty)
-            .named inner => inner_decl @ inner.decl
+            .named inner                                              => inner_decl @ inner.decl
             .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => inner_decl @ -1
-            .array | .fixed | .map | .fallible | .function_ty => inner_decl @ -1
-            .case_ty | .failure | .generic | .error => inner_decl @ -1
+            .array | .fixed | .map | .fallible | .function_ty         => inner_decl @ -1
+            .case_ty | .failure | .generic | .error                   => inner_decl @ -1
+
         if inner_decl >= 0
             deeper = dotted_path(c, s, decls, prefix: here, decl: inner_decl, depth: depth + 1)
+
             if !deeper.is_err()
                 return deeper
             return ok("`" + here + "` is `" + check_state.show(c, s, decls, field_ty) + "`, a record")
         described = within(c, s, decls, ty: field_ty, depth: depth + 1)
+
         if !described.is_err()
             return ok("`" + here + "` is " + described.must())
         return ok("`" + here + "` is `" + check_state.show(c, s, decls, field_ty) + "`")
+
     return fail("absent", "every field is ordered")
 
 ## Tests
@@ -147,9 +163,11 @@ function lowered(text: str) -> check_state.Checker
     out = resolve.resolve(p.tree, s, p.decls, p.uses)
     c: check_state.Checker @ check_state.new_checker(out_of: out, expr_count: p.tree.exprs.len())
     i: i64 @ 0
+
     while i < p.tree.types.len()
         _ = check_lower.lower_ty(@c, p.tree, out, i)
         i @ i + 1
+
     return c
 
 test "the twelve are ordered, and only the reported error is exempt"
@@ -164,6 +182,7 @@ test "the twelve are ordered, and only the reported error is exempt"
     assert !is_ordered(c2, xs)
     assert is_refusable(c2, xs)
     assert !is_refusable(c2, check_table.error_ty(c2.out.types))
+
     # Panel 084: a type parameter is refusable — the outlier row is closed.
     a_param = check_table.intern(@c2.out.types, .generic(at: 0))
     assert is_refusable(c2, a_param)
@@ -175,12 +194,15 @@ test "the note threads one dotted path down to the cause"
     out = resolve.resolve(p.tree, s, p.decls, p.uses)
     c: check_state.Checker @ check_state.new_checker(out_of: out, expr_count: p.tree.exprs.len())
     i: i64 @ 0
+
     while i < p.tree.types.len()
         _ = check_lower.lower_ty(@c, p.tree, out, i)
         i @ i + 1
+
     line_ty = check_table.intern(@c.out.types, .named(decl: 1))
     note = why_unordered(c, s, p.decls, ty: line_ty)
     assert note.must() == "`Line.inner.m` is a map"
+
     # A record of numbers has no note: the name is the whole answer.
     flat = check_table.intern(@c.out.types, .named(decl: 0))
     _ = flat
@@ -190,6 +212,7 @@ test "the note threads one dotted path down to the cause"
     c3: check_state.Checker @ only_numbers
     p_ty = check_table.intern(@c3.out.types, .named(decl: 0))
     assert why_unordered(c3, s2, p2.decls, ty: p_ty).is_err()
+
     # And a bare array is not a record: no note, the type prints whole.
     c4: check_state.Checker @ c3
     xs = check_table.intern(@c4.out.types, .array(element: check_table.int_ty_id(c4.out.types)))

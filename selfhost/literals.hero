@@ -23,26 +23,43 @@ use layout
 # every Indent/Dedent that follows (§4.15).
 function escape_step(@l: state.LexState, text: str, ctx: escape.Quoted) -> bool
     backslash = l.pos
+
     if backslash + 1 >= text.len()
         l.pos @ backslash + 1
         return false
     escaped = text.slice(from: backslash + 1, to: text.len()).chars()[0]
+
     if escaped == "\n"
         l.pos @ backslash + 1
         return false
     l.pos @ backslash + 1 + escaped.len()
+
     if !escape.escape_text(escaped, ctx).is_err()
         return true
     span = token.Span(start: backslash, end: l.pos)
+
     # Two different mistakes, two different repairs — both certain.
     if escaped == escape.bare_text(ctx)
-        d: diag.Diagnostic @ diag.new_diagnostic(code: "escape_not_needed", message: "`\\" + escaped + "` is not an escape here — `" + escaped + "` needs no escape inside " + escape.ctx_word(ctx) + ", write it bare", span: span)
-        d.fixes @ d.fixes.push(diag.Fix(title: "drop the backslash: `" + escaped + "`", replacement: escaped, span: span, certainty: .certain))
+        d: diag.Diagnostic @ diag.new_diagnostic(
+            code: "escape_not_needed",
+            message: "`\\" + escaped + "` is not an escape here — `" + escaped + "` needs no escape inside " + escape.ctx_word(ctx) + ", write it bare",
+            span: span
+        )
+        d.fixes @ d.fixes.push(
+            diag.Fix(title: "drop the backslash: `" + escaped + "`", replacement: escaped, span: span, certainty: .certain)
+        )
         l.diagnostics @ l.diagnostics.push(d)
     else
-        d: diag.Diagnostic @ diag.new_diagnostic(code: "unknown_escape", message: "`\\" + escaped + "` is not an escape sequence — the escapes are " + escape.legal(ctx) + "; write `\\\\` for a literal backslash", span: span)
-        d.fixes @ d.fixes.push(diag.Fix(title: "escape the backslash: `\\\\" + escaped + "`", replacement: "\\\\" + escaped, span: span, certainty: .certain))
+        d: diag.Diagnostic @ diag.new_diagnostic(
+            code: "unknown_escape",
+            message: "`\\" + escaped + "` is not an escape sequence — the escapes are " + escape.legal(ctx) + "; write `\\\\` for a literal backslash",
+            span: span
+        )
+        d.fixes @ d.fixes.push(
+            diag.Fix(title: "escape the backslash: `\\\\" + escaped + "`", replacement: "\\\\" + escaped, span: span, certainty: .certain)
+        )
         l.diagnostics @ l.diagnostics.push(d)
+
     # The token keeps its kind: poisoning it to `error` would delete the
     # line's Terminator (error is not an ender, panel 007) and turn one
     # mistake into two.
@@ -64,7 +81,11 @@ function escape_step(@l: state.LexState, text: str, ctx: escape.Quoted) -> bool
 # changed the program's bytes and still compiled.
 function raw_carriage_return(@l: state.LexState, at: i64, ctx: escape.Quoted)
     span = token.Span(start: at, end: at + 1)
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "raw_carriage_return", message: "a carriage return written as itself inside " + escape.ctx_word(ctx) + " — it is invisible on screen, so the next reader deletes it by retyping the line", span: span)
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "raw_carriage_return",
+        message: "a carriage return written as itself inside " + escape.ctx_word(ctx) + " — it is invisible on screen, so the next reader deletes it by retyping the line",
+        span: span
+    )
     d.fixes @ d.fixes.push(diag.Fix(title: "write it as `\\r`", replacement: "\\r", span: span, certainty: .certain))
     l.diagnostics @ l.diagnostics.push(d)
 
@@ -74,25 +95,33 @@ function raw_carriage_return(@l: state.LexState, at: i64, ctx: escape.Quoted)
 function string(@l: state.LexState, text: str)
     start = l.pos
     l.pos @ l.pos + 1
+
     while true
         if l.pos >= text.len() || text[l.pos] == '\n'
             break
         b = text[l.pos]
+
         if b == '"'
             l.pos @ l.pos + 1
             state.emit(@l, .str_lit, start)
             return
+
         if b == '\\'
             if !escape_step(@l, text, .in_str)
                 break
         else
+
             # Not a line ending here: a string is single-line, so this byte is
             # content — invisible content, which is why it is refused (066).
             if b == layout.CR
                 raw_carriage_return(@l, l.pos, .in_str)
             l.pos @ l.pos + 1
+
     span = token.Span(start: start, end: l.pos)
-    state.error_token(@l, diag.new_diagnostic(code: "unterminated_string", message: "this string never closes — strings are single-line, `\"` to `\"`", span: span))
+    state.error_token(
+        @l,
+        diag.new_diagnostic(code: "unterminated_string", message: "this string never closes — strings are single-line, `\"` to `\"`", span: span)
+    )
 
 ## The character
 
@@ -104,6 +133,7 @@ function char_lit(@l: state.LexState, text: str)
     start = l.pos
     content_start = start + 1
     l.pos @ content_start
+
     # One pass to the closing quote, counting units: a unit is one character
     # or one whole escape sequence. Scanning past the closer in one go is what
     # keeps `'ab'` a single diagnostic instead of an unterminated literal
@@ -111,6 +141,7 @@ function char_lit(@l: state.LexState, text: str)
     units: i64 @ 0
     closed: bool @ false
     scanning: bool @ true
+
     while scanning
         if l.pos >= text.len() || text[l.pos] == '\n'
             scanning @ false
@@ -128,25 +159,37 @@ function char_lit(@l: state.LexState, text: str)
             ch = text.slice(from: l.pos, to: text.len()).chars()[0]
             l.pos @ l.pos + ch.len()
             units @ units + 1
+
     if !closed
         unterminated_char(@l, text, start)
         return
     content = text.slice(from: content_start, to: l.pos)
     l.pos @ l.pos + 1
+
     if units == 1 && (starts_with_backslash(content) || all_ascii(content))
         state.emit(@l, .char_lit, start)
     else
         span = token.Span(start: start, end: l.pos)
-        state.error_token(@l, diag.new_diagnostic(code: "char_literal", message: "a character literal holds exactly one character — one ASCII character ('a', '0', ' ') or one escape ('\\n', '\\t') — `'" + content + "'` does not", span: span))
+        state.error_token(
+            @l,
+            diag.new_diagnostic(code: "char_literal", message: "a character literal holds exactly one character — one ASCII character ('a', '0', ' ') or one escape ('\\n', '\\t') — `'" + content + "'` does not", span: span)
+        )
 
 # No closing quote on this line. `l.pos` is already where the scan stopped
 # (on the newline, never past it).
 function unterminated_char(@l: state.LexState, text: str, start: i64)
     span = token.Span(start: start, end: l.pos)
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "unterminated_char", message: "this character literal never closes — write one character between single quotes: 'a'", span: span)
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "unterminated_char",
+        message: "this character literal never closes — write one character between single quotes: 'a'",
+        span: span
+    )
+
     # `'\'` is the classic: the backslash escaped the closing quote.
     if contains_backslash(text.slice(from: start, to: l.pos))
-        d.fixes @ d.fixes.push(diag.Fix(title: "escape the backslash: `'\\\\'`", replacement: "'\\\\'", span: span, certainty: .certain))
+        d.fixes @ d.fixes.push(
+            diag.Fix(title: "escape the backslash: `'\\\\'`", replacement: "'\\\\'", span: span, certainty: .certain)
+        )
     state.error_token(@l, d)
 
 ## Byte questions the scanners ask
@@ -156,18 +199,22 @@ function starts_with_backslash(s: str) -> bool
 
 function all_ascii(s: str) -> bool
     i: i64 @ 0
+
     while i < s.len()
         if s[i] > 127
             return false
         i @ i + 1
+
     return true
 
 function contains_backslash(s: str) -> bool
     i: i64 @ 0
+
     while i < s.len()
         if s[i] == '\\'
             return true
         i @ i + 1
+
     return false
 
 test "a string is one token and a bad escape does not poison it"

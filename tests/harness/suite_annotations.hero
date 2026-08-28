@@ -97,25 +97,43 @@ constant LEAST: i64
 function run_all(scratch: str, compiler: str) -> report.Report?
     r: report.Report @ report.empty()
     annotated: i64 @ 0
+
     for dir in DIRECTORIES
         found = cases.collect(scratch: scratch, dir: dir)?
+
         for item in found
             source = read_file(item.source)
             expectation = read_file(item.expected)
+
             if source.is_err() || expectation.is_err()
-                report.keep_failure(@r, label: "annotations/" + item.name, detail: "  cannot read the case or its expectation")
+                report.keep_failure(
+                    @r,
+                    label: "annotations/" + item.name,
+                    detail: "  cannot read the case or its expectation"
+                )
             else
                 claimed = sorted(claimed_by(source.must()))
                 reported = sorted(reported_by(expectation.must()))
                 annotated @ annotated + reported.len()
+
                 if claimed != reported
-                    report.keep_failure(@r, label: "annotations/" + item.name, detail: "  " + item.source + ": the annotations and the diagnostics disagree\n    annotated: " + claimed.join(" ") + "\n    reported:  " + reported.join(" ") + "\n  `#~ <code>` marks this line, `#~v <code>` the next one")
+                    report.keep_failure(
+                        @r,
+                        label: "annotations/" + item.name,
+                        detail: "  " + item.source + ": the annotations and the diagnostics disagree\n    annotated: " + claimed.join(" ") + "\n    reported:  " + reported.join(" ") + "\n  `#~ <code>` marks this line, `#~v <code>` the next one"
+                    )
                 else
                     report.keep_pass(@r)
+
     for group in groups(scratch)?
         annotated @ annotated + one_group(@r, scratch: scratch, compiler: compiler, group: group)
+
     if annotated < LEAST
-        report.keep_failure(@r, label: "annotations", detail: "  only " + annotated.to_str() + " annotated diagnostics, and there were " + LEAST.to_str() + " — annotations that stop being checked are the shape §9 calls a decoration")
+        report.keep_failure(
+            @r,
+            label: "annotations",
+            detail: "  only " + annotated.to_str() + " annotated diagnostics, and there were " + LEAST.to_str() + " — annotations that stop being checked are the shape §9 calls a decoration"
+        )
     return ok(r)
 
 # Every directory whose cases carry no `.expected`: `fixedbugs/` flat,
@@ -125,15 +143,20 @@ function run_all(scratch: str, compiler: str) -> report.Report?
 # joins this sweep by existing.
 function groups(scratch: str) -> [str]?
     out: [str] @ []
+
     for root in RUN_ROOTS
         holds_cases: bool @ false
+
         for entry in shell.list_entries(scratch: scratch, dir: root)?
             if strings.ends_with(text: entry, suffix: ".hero")
                 holds_cases @ true
+
         if holds_cases
             out @ out.push(root)
+
         for sub in shell.list_directories(scratch: scratch, dir: root)?
             out @ out.push(sub)
+
     return ok(out.sort())
 
 # One group: run every program in it, pool what the compiler said, and
@@ -142,32 +165,48 @@ function groups(scratch: str) -> [str]?
 function one_group(@r: report.Report, scratch: str, compiler: str, group: str) -> i64
     label = "annotations/" + group
     files = shell.list_entries(scratch: scratch, dir: group)
+
     if files.is_err()
         report.keep_failure(@r, label: label, detail: "  cannot list " + group)
         return 0
     claimed: [str] @ []
     said: str @ ""
     ran: i64 @ 0
+
     for path in files.must()
         if !strings.ends_with(text: path, suffix: ".hero")
             continue
         text = read_file(path)
+
         if text.is_err()
             report.keep_failure(@r, label: label, detail: "  cannot read " + path)
             return 0
+
         for mark in claimed_by(text.must())
             claimed @ claimed.push(path + ":" + mark)
+
         if strings.contains(text: text.must(), needle: "function main")
             said @ said + provoked(scratch: scratch, compiler: compiler, path: path)
             ran @ ran + 1
+
     if claimed.len() == 0
         return 0
+
     if ran == 0
-        report.keep_failure(@r, label: label, detail: "  " + claimed.len().to_str() + " annotations here and no program with a `main` to provoke them:\n    " + claimed.join("\n    "))
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: "  " + claimed.len().to_str() + " annotations here and no program with a `main` to provoke them:\n    " + claimed.join("\n    ")
+        )
         return 0
     reported = sorted(reported_with_file(said))
+
     if sorted(claimed) != reported
-        report.keep_failure(@r, label: label, detail: "  the annotations and the diagnostics disagree\n    annotated: " + sorted(claimed).join(" ") + "\n    reported:  " + reported.join(" ") + "\n  `#~ <code>` marks this line, `#~v <code>` the next one. This group has no `.expected`, so what it is compared against is what the compiler printed just now.")
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: "  the annotations and the diagnostics disagree\n    annotated: " + sorted(claimed).join(" ") + "\n    reported:  " + reported.join(" ") + "\n  `#~ <code>` marks this line, `#~v <code>` the next one. This group has no `.expected`, so what it is compared against is what the compiler printed just now."
+        )
         return 0
     report.keep_pass(@r)
     return reported.len()
@@ -177,9 +216,14 @@ function one_group(@r: report.Report, scratch: str, compiler: str, group: str) -
 # build. Measured over all fourteen annotated files at the close.
 function provoked(scratch: str, compiler: str, path: str) -> str
     checked = shell.run(scratch: scratch, command: shell.patience() + shell.sq(compiler) + " check " + shell.sq(path))
+
     if !checked.is_err() && checked.must().code == 1
         return checked.must().err
-    built = shell.run(scratch: scratch, command: shell.patience() + shell.sq(compiler) + " build " + shell.sq(path) + " -o " + shell.sq(scratch + "/annotated.bin"))
+    built = shell.run(
+        scratch: scratch,
+        command: shell.patience() + shell.sq(compiler) + " build " + shell.sq(path) + " -o " + shell.sq(scratch + "/annotated.bin")
+    )
+
     if built.is_err()
         return ""
     return built.must().err
@@ -191,20 +235,25 @@ function provoked(scratch: str, compiler: str, path: str) -> str
 function reported_with_file(text: str) -> [str]
     found: [str] @ []
     pending: str @ ""
+
     for row in strings.lines(text)
         if strings.starts_with(text: row, prefix: "  at ")
             if pending.len() > 0
                 rest = strings.without_prefix(text: row, prefix: "  at ")
                 parts = strings.split_on(text: rest, byte: 58)
+
                 if parts.len() > 2
                     number = strings.to_number(parts[1])
+
                     if !number.is_err()
                         found @ found.push(parts[0] + ":" + number.must().to_str() + ":" + pending)
                 pending @ ""
             continue
         code = code_of(row)
+
         if !code.is_err()
             pending @ code.must()
+
     return found
 
 # Both sides are compared as sorted `<line>:<code>` strings: Heroes sorts
@@ -237,25 +286,33 @@ function claimed_by(text: str) -> [str]
     found: [str] @ []
     rows = strings.lines(text)
     line: i64 @ 0
+
     for row in rows
         line @ line + 1
         opener = strings.trimmed(row)
+
         if strings.starts_with(text: opener, prefix: "#") && !strings.starts_with(text: opener, prefix: "#~")
             continue
         at = strings.index_of(text: row, needle: "#~")
+
         if at.is_err()
             continue
+
         # One comment may carry both forms: `#~ empty_record #~v empty_variant`.
         after = row.slice(from: at.must() + 2, to: row.len())
+
         for chunk in strings.split_text(text: after, separator: "#~")
             body = strings.trimmed(chunk)
             delta: i64 @ 0
             codes: str @ body
+
             if strings.starts_with(text: body, prefix: "v")
                 delta @ 1
                 codes @ strings.without_prefix(text: body, prefix: "v")
+
             for code in strings.words(codes)
                 found @ found.push((line + delta).to_str() + ":" + code)
+
     return found
 
 # Every diagnostic in an expectation, as `<line>:<code>`.
@@ -269,47 +326,60 @@ function claimed_by(text: str) -> [str]
 function reported_by(text: str) -> [str]
     found: [str] @ []
     pending: str @ ""
+
     for row in strings.lines(text)
         if strings.starts_with(text: row, prefix: "  at ")
             if pending.len() > 0
                 rest = strings.without_prefix(text: row, prefix: "  at ")
                 parts = strings.split_on(text: rest, byte: 58)
+
                 if parts.len() > 1
                     number = strings.to_number(parts[1])
+
                     if !number.is_err()
                         found @ found.push(number.must().to_str() + ":" + pending)
                 pending @ ""
             continue
         code = code_of(row)
+
         if code.is_err()
             continue
+
         # The one-line form carries its own location; the rich form's
         # headline does not, so it waits for the `at` line.
         parts = strings.split_on(text: row, byte: 58)
         placed: bool @ false
+
         if parts.len() > 1
             number = strings.to_number(strings.trimmed(parts[1]))
+
             if !number.is_err()
                 found @ found.push(number.must().to_str() + ":" + code.must())
                 placed @ true
+
         if !placed
             pending @ code.must()
+
     return found
 
 # The `<code>` out of `…<kind>[<code>]:…`, for any kind.
 function code_of(row: str) -> str?
     open = strings.index_of(text: row, needle: "[")
+
     if open.is_err()
         return fail("none", "no bracket")
     tail = row.slice(from: open.must(), to: row.len())
     close = strings.index_of(text: tail, needle: "]")
+
     if close.is_err()
         return fail("none", "no closing bracket")
     before = row.slice(from: 0, to: open.must())
     kind = last_word(before)
+
     if kind.len() == 0 || !all_lower(kind)
         return fail("none", "the word before the bracket is not a kind")
     code = row.slice(from: open.must() + 1, to: open.must() + close.must())
+
     # Digits belong: `indentation_not_multiple_of_4` is a code.
     if code.len() == 0 || !all_code(code)
         return fail("none", "the bracket does not hold a code")
@@ -319,16 +389,19 @@ function code_of(row: str) -> str?
 function last_word(text: str) -> str
     start: i64 @ 0
     i: i64 @ 0
+
     while i < text.len()
         if text[i] == 32 || text[i] == 58
             start @ i + 1
         i @ i + 1
+
     return text.slice(from: start, to: text.len())
 
 function all_lower(text: str) -> bool
     for i in range(from: 0, to: text.len())
         if text[i] < 97 || text[i] > 122
             return false
+
     return true
 
 function all_code(text: str) -> bool
@@ -336,8 +409,10 @@ function all_code(text: str) -> bool
         byte = text[i]
         lower = byte >= 97 && byte <= 122
         digit = byte >= 48 && byte <= 57
+
         if !lower && !digit && byte != 95
             return false
+
     return true
 
 test "an annotation is read on its line, and #~v on the next"

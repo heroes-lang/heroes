@@ -31,30 +31,41 @@ function main()
     # previous one every iteration, or the count grows without bound.
     c: Cell @ Cell(tag: "seed", n: 0)
     i: i64 @ 0
+
     while i < 4
         c @ Cell(tag: "n" + to_str(i), n: i)
         i @ i + 1
+
     print(c.tag)
+
     # A counted variant overwritten in a loop, through both cases.
     s: Slot @ .empty
     j: i64 @ 0
+
     while j < 3
         s @ .full(item: Cell(tag: "x" + to_str(j), n: j))
         s @ .empty
         s @ .full(item: Cell(tag: "y" + to_str(j), n: j))
         j @ j + 1
+
     tag1 = match s
         .empty  => "empty"
         .full f => f.item.tag
+
     print(tag1)
+
     # Self-assignment of a counted variant: incref must precede decref.
     s @ s
+
     tag2 = match s
         .empty  => "empty"
         .full f => f.item.tag
+
     print(tag2)
+
     # A place path two levels deep, read as a value.
     n = match s
         .empty  => 0
         .full f => f.item.n
+
     print(n)

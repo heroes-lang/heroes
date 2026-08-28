@@ -71,6 +71,7 @@ function generated(c: check_state.Checked, decls: [ast.Decl], reachable: {i64: b
     queue: [i64] @ []
     count = check_table.len_of(c.types)
     id: i64 @ 0
+
     while id < count
         # A type still carrying a parameter is skipped, as in both
         # sibling walks: monomorphisation deletes the generic FUNCTIONS,
@@ -111,11 +112,13 @@ function generated(c: check_state.Checked, decls: [ast.Decl], reachable: {i64: b
                     # EVERY option entry in the unit whether or not any
                     # instruction builds one, and both take the payload
                     # descriptor's address.
-                    .fallible o => queue @ queue.push(o.payload)
+
+                    .fallible o                                               => queue @ queue.push(o.payload)
                     .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => id @ id
-                    .fixed | .function_ty | .named | .case_ty => id @ id
-                    .failure | .generic | .error => id @ id
+                    .fixed | .function_ty | .named | .case_ty                 => id @ id
+                    .failure | .generic | .error                              => id @ id
         id @ id + 1
+
     # Only a T? field: hash_call sends named and case types straight to
     # their own _hash, and every other field kind reaches one of the
     # runtime's shared rows — pushing them all would generate
@@ -128,29 +131,39 @@ function generated(c: check_state.Checked, decls: [ast.Decl], reachable: {i64: b
         if !emit_synth.wants_decl(want, decl: decl)
             continue
         written_ids: [i64] @ []
+
         for field in emit_types.fields_of(decls, decl: decl)
             written_ids @ written_ids.push(field.ty)
+
         for one_case in emit_types.cases_of(decls, decl: decl)
             for field in one_case.fields
                 written_ids @ written_ids.push(field.ty)
+
         for written in written_ids
             found = check_state.written_type(c, written)
+
             if found.is_err()
                 continue
+
             match check_table.get(c.types, found.must())
-                .fallible => queue @ queue.push(found.must())
+                .fallible                                                 => queue @ queue.push(found.must())
                 .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => continue
-                .array | .fixed | .map | .function_ty | .named => continue
-                .case_ty | .failure | .generic | .error => continue
+                .array | .fixed | .map | .function_ty | .named            => continue
+                .case_ty | .failure | .generic | .error                   => continue
+
     seen: {i64: bool} @ {}
+
     while queue.len() > 0
         next = queue[queue.len() - 1]
         queue @ queue.slice(from: 0, to: queue.len() - 1)
+
         if ir_phases.mentions_generic(c, ty: next)
             continue
+
         if !seen[next].is_err()
             continue
         seen[next] @ true
+
         match check_table.get(c.types, next)
             # The scalars and str are the runtime's, and one shared row
             # serves every array, map and function type — none is
@@ -158,7 +171,7 @@ function generated(c: check_state.Checked, decls: [ast.Decl], reachable: {i64: b
             # through its own _hash, but it still needs a descriptor
             # when it is an element or a payload, and an unused-
             # descriptor warning is cheaper than a missing one.
-            .named => wanted[next] @ true
+            .named   => wanted[next] @ true
             .case_ty => wanted[next] @ true
             .fallible o =>
                 wanted[next] @ true
@@ -168,8 +181,10 @@ function generated(c: check_state.Checked, decls: [ast.Decl], reachable: {i64: b
                 queue @ queue.push(m.key)
                 queue @ queue.push(m.value)
             .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => continue
-            .fixed | .function_ty | .failure | .generic | .error => continue
+            .fixed | .function_ty | .failure | .generic | .error      => continue
+
     out: [i64] @ []
+
     # ORDER: ascending TyId — `definitions` walks this into the emitted
     # `_desc` table, so this order is IN THE C: change it and the same
     # program compiles to different bytes.
@@ -180,6 +195,7 @@ function generated(c: check_state.Checked, decls: [ast.Decl], reachable: {i64: b
     # BTreeMap; the port pays for it here (design.md §4.9).
     for ty in sort(keys(wanted))
         out @ out.push(ty)
+
     return out
 
 ## Tests
@@ -191,15 +207,19 @@ test "the worklist reaches an element, a payload, and expands as it drains"
     out = resolve.resolve(p.tree, s, p.decls, p.uses)
     c: check_state.Checked @ checker.check(p.tree, out, s, p.decls)
     assert c.diagnostics.len() == 0
+
     # Reachable: everything the program's own types mention — built the
     # way the driver will build it, closed under containment.
     reachable: {i64: bool} @ {}
     count = check_table.len_of(c.types)
     id: i64 @ 0
+
     while id < count
         reachable[id] @ true
         id @ id + 1
+
     point = check_table.lookup(c.types, .named(decl: 0)).must()
+
     # Constructed: this program writes `[Point(x: 1)]`, so the array type
     # is in. Marked by hand rather than lowered, which keeps the case
     # about the worklist; the driver fills the same map from the
@@ -209,22 +229,27 @@ test "the worklist reaches an element, a payload, and expands as it drains"
     got = generated(c, p.decls, reachable: reachable, constructed: constructed, want: emit_synth.everything())
     saw_point: bool @ false
     saw_option: bool @ false
+
     for one in got
         if one == point
             saw_point @ true
+
         match check_table.get(c.types, one)
-            .fallible => saw_option @ true
+            .fallible                                                 => saw_option @ true
             .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => continue
-            .array | .fixed | .map | .function_ty | .named => continue
-            .case_ty | .failure | .generic | .error => continue
+            .array | .fixed | .map | .function_ty | .named            => continue
+            .case_ty | .failure | .generic | .error                   => continue
+
     # Point is [Point]'s element AND Point?'s payload. The OPTION
     # descriptor exists only where a T? is an element or a field —
     # Holder's i64? field is the one that buys it; grab's Point? result
     # alone would not (its four functions exist, its _desc does not).
     assert saw_point
     assert saw_option
+
     # Ascending: the key walk is the sort.
     walk: i64 @ 1
+
     while walk < got.len()
         assert got[walk - 1] < got[walk]
         walk @ walk + 1
@@ -246,12 +271,15 @@ test "an array a signature interned and nobody builds gets no descriptor"
     reachable: {i64: bool} @ {}
     count_types = check_table.len_of(c.types)
     id: i64 @ 0
+
     while id < count_types
         reachable[id] @ true
         id @ id + 1
+
     # Nothing constructed: the empty map is the whole point of the case.
     nothing: {i64: bool} @ {}
     assert generated(c, p.decls, reachable: reachable, constructed: nothing, want: emit_synth.everything()).len() == 0
+
     # And the same program WITH the array built asks for Row's
     # descriptor, which is what keeps this from passing for the wrong
     # reason.

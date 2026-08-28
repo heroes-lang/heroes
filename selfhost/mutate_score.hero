@@ -81,14 +81,18 @@ record Run
 # both compilers over the same corpus is what checks it.
 function rate(killed: i64, mutants: i64, excluded: i64) -> i64
     counted = mutants - excluded
+
     if counted <= 0
         return 0
     whole = 100 * killed / counted
     rest = 100 * killed % counted
+
     if 2 * rest > counted
         return whole + 1
+
     if 2 * rest < counted
         return whole
+
     if whole % 2 == 0
         return whole
     return whole + 1
@@ -104,13 +108,16 @@ function rate(killed: i64, mutants: i64, excluded: i64) -> i64
 function fate(name: str, text: str, library: str, permissive: bool) -> Fate
     s = modules.load_text(path: name, root_text: text, library: library)
     parsed = parse.parse_source(s)
+
     if parsed.diagnostics.len() > 0
         # A parse failure is an exclusion, not a kill: it measures the lexer.
         return .excluded
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
     c: check_state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+
     if reports(diagnostics: out.diagnostics, permissive: permissive)
         return .killed
+
     if reports(diagnostics: c.diagnostics, permissive: permissive)
         return .killed
     return .survived
@@ -120,6 +127,7 @@ function reports(diagnostics: [diag.Diagnostic], permissive: bool) -> bool
         if permissive && diag.is_thesis_rule(d)
             continue
         return true
+
     return false
 
 # Whether a corpus program is one this measurement may use: it compiles, today,
@@ -136,7 +144,7 @@ function base_checks_clean(name: str, text: str, library: str) -> bool
 
 function is_survived(f: Fate) -> bool
     return match f
-        .survived => true
+        .survived           => true
         .killed | .excluded => false
 
 # Run every operator over every source, and score them. `only` empty runs all
@@ -144,6 +152,7 @@ function is_survived(f: Fate) -> bool
 function scored(sources: [Program], only: str, library: str) -> Run
     scores: [Score] @ []
     survived: [Survivor] @ []
+
     for operator in mutate_ops.operators()
         if only.len() > 0 && only != operator.id
             continue
@@ -151,23 +160,31 @@ function scored(sources: [Program], only: str, library: str) -> Run
         excluded: i64 @ 0
         strict: i64 @ 0
         permissive: i64 @ 0
+
         for one in sources
             for mutant in mutate_ops.apply(id: operator.id, name: one.name, text: one.text)
                 mutants @ mutants + 1
                 verdict = fate(name: one.name, text: mutant, library: library, permissive: false)
+
                 match verdict
                     .excluded => excluded @ excluded + 1
                     .killed =>
                         strict @ strict + 1
                         control = fate(name: one.name, text: mutant, library: library, permissive: true)
+
                         match control
-                            .killed => permissive @ permissive + 1
+                            .killed               => permissive @ permissive + 1
                             .survived | .excluded => permissive @ permissive
                     .survived =>
                         site = locate(operator: operator.id, file: one.name, original: one.text, mutant: mutant)
+
                         if !site.is_err()
                             survived @ survived.push(site.must())
-        scores @ scores.push(Score(operator: operator.id, mutants: mutants, excluded: excluded, killed_strict: strict, killed_permissive: permissive))
+
+        scores @ scores.push(
+            Score(operator: operator.id, mutants: mutants, excluded: excluded, killed_strict: strict, killed_permissive: permissive)
+        )
+
     return Run(scores: scores, survivors: survived)
 
 # Where the two texts first disagree.
@@ -186,13 +203,18 @@ function locate(operator: str, file: str, original: str, mutant: str) -> Survivo
     before = lines_of(original)
     after = lines_of(mutant)
     longest: i64 @ before.len()
+
     if after.len() > longest
         longest @ after.len()
     at: i64 @ 0
+
     while at < longest
         if at >= before.len() || at >= after.len() || before[at] != after[at]
-            return ok(Survivor(operator: operator, file: file, line: at + 1, before: at_line(lines: before, at: at), after: at_line(lines: after, at: at)))
+            return ok(
+                Survivor(operator: operator, file: file, line: at + 1, before: at_line(lines: before, at: at), after: at_line(lines: after, at: at))
+            )
         at @ at + 1
+
     return fail("identical", "the mutant is the original")
 
 function at_line(lines: [str], at: i64) -> str?
@@ -204,11 +226,13 @@ function lines_of(text: str) -> [str]
     out: [str] @ []
     start: i64 @ 0
     i: i64 @ 0
+
     while i < text.len()
         if text[i] == 10
             out @ out.push(text.slice(from: start, to: i))
             start @ i + 1
         i @ i + 1
+
     if start < text.len()
         out @ out.push(text.slice(from: start, to: text.len()))
     return out
@@ -220,12 +244,14 @@ function report(scores: [Score]) -> str
     excluded: i64 @ 0
     strict: i64 @ 0
     permissive: i64 @ 0
+
     for score in scores
         mutants @ mutants + score.mutants
         excluded @ excluded + score.excluded
         strict @ strict + score.killed_strict
         permissive @ permissive + score.killed_permissive
         out @ out + "| " + score.operator + " | " + score.mutants.to_str() + " | " + score.excluded.to_str() + " | " + score.killed_strict.to_str() + " (" + rate(killed: score.killed_strict, mutants: score.mutants, excluded: score.excluded).to_str() + "%) | " + score.killed_permissive.to_str() + " (" + rate(killed: score.killed_permissive, mutants: score.mutants, excluded: score.excluded).to_str() + "%) |\n"
+
     out @ out + "| **total** | " + mutants.to_str() + " | " + excluded.to_str() + " | " + strict.to_str() + " (" + rate(killed: strict, mutants: mutants, excluded: excluded).to_str() + "%) | " + permissive.to_str() + " (" + rate(killed: permissive, mutants: mutants, excluded: excluded).to_str() + "%) |\n"
     return out + "\nNever pool these into one headline (panel 011): a per-operator rate is\nthe measurement, and `forget-at-decl` is excluded from any summary because\nits catch rate is 100% by construction.\n"
 
@@ -239,24 +265,30 @@ function survivor_report(survivors: [Survivor]) -> str
         return "No surviving mutants: every mistake in this corpus is a compile error.\n"
     out: str @ ""
     operator: str @ ""
+
     for one in survivors
         if one.operator != operator
             operator @ one.operator
             out @ out + "\n" + operator + "\n"
         out @ out + "  " + one.file + ":" + one.line.to_str() + "\n"
+
         match one.before
             .ok text => out @ out + "    - " + trimmed_end(text) + "\n"
-            .err _ => out @ out
+            .err _   => out @ out
+
         match one.after
             .ok text => out @ out + "    + " + trimmed_end(text) + "\n"
-            .err _ => out @ out
+            .err _   => out @ out
+
     return out + "\nEach `+` line is a program this compiler accepts and should not: one\nplausible mistake, made once, that no diagnostic saw (design.md Part 11).\n"
 
 function trimmed_end(text: str) -> str
     cs = text.chars()
     last: i64 @ cs.len()
+
     while last > 0 && (cs[last - 1] == " " || cs[last - 1] == "\t" || cs[last - 1] == "\r")
         last @ last - 1
+
     return cs.slice(from: 0, to: last).join("")
 
 test "the rate rounds the way the bootstrap's printer rounds"
@@ -265,11 +297,14 @@ test "the rate rounds the way the bootstrap's printer rounds"
     assert rate(killed: 2, mutants: 3, excluded: 0) == 67
     assert rate(killed: 3, mutants: 3, excluded: 0) == 100
     assert rate(killed: 0, mutants: 3, excluded: 0) == 0
+
     # Everything excluded: no denominator, and 0 rather than an abort.
     assert rate(killed: 0, mutants: 3, excluded: 3) == 0
+
     # The exact halves, rounded to even as `{:.0}` does: 12.5 → 12, 37.5 → 38.
     assert rate(killed: 1, mutants: 8, excluded: 0) == 12
     assert rate(killed: 3, mutants: 8, excluded: 0) == 38
+
     # Excluded mutants leave the denominator: 1 of (4 - 2) is 50%.
     assert rate(killed: 1, mutants: 4, excluded: 2) == 50
 
@@ -291,6 +326,7 @@ test "a deleted line has a before and no after, and an added one the reverse"
     longer = locate(operator: "shadow", file: "x.hero", original: "one\n", mutant: "one\none\n")
     assert !longer.is_err()
     assert longer.must().before.is_err()
+
     # Identical texts have no site, and say so rather than inventing one.
     assert locate(operator: "shadow", file: "x.hero", original: original, mutant: original).is_err()
 

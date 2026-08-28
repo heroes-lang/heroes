@@ -29,9 +29,11 @@ constant ERR_NO_NUMBER: str
 
 function main()
     given = args()
+
     if len(given) == 0
         print("usage: todo <file> [add TEXT… | done N]")
         exit(2)
+
     match read_file(given[0])
         .err _   => stop("cannot read " + given[0])
         .ok text => run(text, given)
@@ -42,18 +44,19 @@ function stop(message: str)
 
 function run(text: str, given: [str])
     match list.read(text)
-        .err e     => stop(e.code + ": " + e.msg)
-        .ok tasks  => act(tasks, given)
+        .err e    => stop(e.code + ": " + e.msg)
+        .ok tasks => act(tasks, given)
 
 function act(tasks: [list.Task], given: [str])
     if len(given) == 1
         show(tasks)
         return
     command = given[1]
+
     if command == "add"
         match list.add(tasks, rest_of(given, 2))
-            .err e     => stop(e.code + ": " + e.msg)
-            .ok grown  => save(grown, given[0])
+            .err e    => stop(e.code + ": " + e.msg)
+            .ok grown => save(grown, given[0])
     else if command == "done"
         match number_of(rest_of(given, 2))
             .err e => stop(e.code + ": " + e.msg)
@@ -63,8 +66,8 @@ function act(tasks: [list.Task], given: [str])
 
 function finish(tasks: [list.Task], n: i64, path: str)
     match list.complete(tasks, n)
-        .err e     => stop(e.code + ": " + e.msg)
-        .ok after  => save(after, path)
+        .err e    => stop(e.code + ": " + e.msg)
+        .ok after => save(after, path)
 
 # The only line in this program that writes anything.
 function save(tasks: [list.Task], path: str)
@@ -75,24 +78,29 @@ function save(tasks: [list.Task], path: str)
 function show(tasks: [list.Task])
     for line in list.numbered(tasks)
         print(line)
+
     print(list.left_to_do(tasks), " of ", tasks.len(), " left")
 
 # Everything from `at` on, joined by a space — so `add buy milk` is one task and
 # not two arguments the shell happened to split.
 function rest_of(given: [str], at: i64) -> str
     words: [str] @ []
+
     for i in range(from: at, to: len(given))
         words @ words.push(given[i])
+
     return join(words, " ")
 
 function number_of(word: str) -> i64?
     if word.len() == 0
         return fail(ERR_NO_NUMBER, "`done` needs the number of a task")
     v: i64 @ 0
+
     for i in range(from: 0, to: word.len())
         if word[i] < '0' || word[i] > '9'
             return fail(ERR_NO_NUMBER, "`" + word + "` is not a number")
         v @ v * 10 + to_i64(word[i] - '0').must()
+
     return ok(v)
 
 test "the sample lists the way the file reads"

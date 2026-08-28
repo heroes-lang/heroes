@@ -28,15 +28,19 @@ function solve(g: grid.Grid) -> [i64]?
     came[start] @ start
     queue: [i64] @ [start]
     head: i64 @ 0
+
     while head < queue.len()
         here = queue[head]
         head @ head + 1
+
         if here == goal
             return ok(walk_back(came, start: start, goal: goal))
+
         for next in grid.neighbours(g, here)
             if came[next].is_err()
                 came[next] @ here
                 queue @ queue.push(next)
+
     return fail(ERR_NO_PATH, "no way from the start to the goal")
 
 # The path, start first. It is built backwards from the goal and turned round
@@ -44,15 +48,19 @@ function solve(g: grid.Grid) -> [i64]?
 function walk_back(came: {i64: i64}, start: i64, goal: i64) -> [i64]
     backwards: [i64] @ [goal]
     at: i64 @ goal
+
     while at != start
         at @ came[at].must()
         backwards @ backwards.push(at)
+
     return reversed(backwards)
 
 function reversed(xs: [i64]) -> [i64]
     out: [i64] @ []
+
     for i in range(from: 0, to: xs.len())
         out @ out.push(xs[xs.len() - 1 - i])
+
     return out
 
 # How many steps the path takes — one fewer than the squares it visits.
@@ -64,15 +72,18 @@ function steps(path: [i64]) -> i64
 function is_walkable(g: grid.Grid, path: [i64]) -> bool
     if path.len() == 0
         return false
+
     for i in range(from: 1, to: path.len())
         if !contains(grid.neighbours(g, path[i - 1]), path[i])
             return false
+
     return true
 
 function contains(known: [i64], one: i64) -> bool
     for each in known
         if each == one
             return true
+
     return false
 
 test "the shortest way through an open room is the straight one"

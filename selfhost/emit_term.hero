@@ -32,19 +32,28 @@ use emit_writer
 function emit(@w: emit_writer.Writer, f: ir_state.Function, c: check_state.Checked, term: ir.Term)
     match term
         .jump j => emit_writer.line(@w, text: "    goto " + emit_mangle.block(j.to) + ";")
-        .branch br => emit_writer.line(@w, text: "    if (" + emit_mangle.value(br.cond) + ") goto " + emit_mangle.block(br.then_to) + "; else goto " + emit_mangle.block(br.else_to) + ";")
+        .branch br => emit_writer.line(
+            @w,
+            text: "    if (" + emit_mangle.value(br.cond) + ") goto " + emit_mangle.block(br.then_to) + "; else goto " + emit_mangle.block(br.else_to) + ";"
+        )
         .switch_term sw =>
             emit_writer.line(@w, text: "    switch (" + emit_mangle.value(sw.tag) + ") {")
             index: i64 @ 0
+
             for target in sw.cases
-                emit_writer.line(@w, text: "        case " + index.to_str() + ": goto " + emit_mangle.block(target) + ";")
+                emit_writer.line(
+                    @w,
+                    text: "        case " + index.to_str() + ": goto " + emit_mangle.block(target) + ";"
+                )
                 index @ index + 1
+
             emit_writer.line(@w, text: "        default: hero_unreachable();")
             emit_writer.line(@w, text: "    }")
         .return_term ret =>
             if ret.value.is_err()
                 emit_writer.line(@w, text: "    return;")
             else
+
                 # The unit rule from the other side: a function whose
                 # result is () returns nothing, even where the IR names
                 # the unit value.
@@ -55,14 +64,31 @@ function emit(@w: emit_writer.Writer, f: ir_state.Function, c: check_state.Check
         # An abort is something the program DOES; this is something the
         # type system CLAIMS. Reaching it means the compiler is wrong,
         # and finding that out through UB is not acceptable.
+
         .unreachable => emit_writer.line(@w, text: "    hero_unreachable();")
         # The verifier rejects this before any backend sees it.
+
         .open => emit_writer.line(@w, text: "    hero_unreachable(); /* a block was left open */")
 
 ## Tests
 
 test "both branch edges are written, and a switch carries C's default"
-    f = ir_state.Function(name: "t", decl: 0, kind: .function_kind, generics: [], params: [], result: 1, slots: [], blocks: [], values: [1, 5], arguments: [], steps: [], instance: [], call_instances: {}, span: token.Span(start: 0, end: 1))
+    f = ir_state.Function(
+        name: "t",
+        decl: 0,
+        kind: .function_kind,
+        generics: [],
+        params: [],
+        result: 1,
+        slots: [],
+        blocks: [],
+        values: [1, 5],
+        arguments: [],
+        steps: [],
+        instance: [],
+        call_instances: {},
+        span: token.Span(start: 0, end: 1)
+    )
     text = "function t()\n    return\n"
     p = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
@@ -82,7 +108,22 @@ test "returning the unit value is a bare return"
     out = resolve.resolve(p.tree, s, p.decls, p.uses)
     c: check_state.Checked @ checker.check(p.tree, out, s, p.decls)
     unit_id = check_table.unit_ty(c.types)
-    f = ir_state.Function(name: "t", decl: 0, kind: .function_kind, generics: [], params: [], result: unit_id, slots: [], blocks: [], values: [unit_id], arguments: [], steps: [], instance: [], call_instances: {}, span: token.Span(start: 0, end: 1))
+    f = ir_state.Function(
+        name: "t",
+        decl: 0,
+        kind: .function_kind,
+        generics: [],
+        params: [],
+        result: unit_id,
+        slots: [],
+        blocks: [],
+        values: [unit_id],
+        arguments: [],
+        steps: [],
+        instance: [],
+        call_instances: {},
+        span: token.Span(start: 0, end: 1)
+    )
     w: emit_writer.Writer @ emit_writer.new_writer("t")
     emit(@w, f, c, term: .return_term(value: ok(0)))
     assert emit_writer.finish(w) == "    return;\n"

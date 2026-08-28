@@ -38,11 +38,11 @@ function int_kinds() -> [IntKind]
 # with a certain fix to `i64`.
 function int_name(kind: IntKind) -> str
     return match kind
-        .i8 => "i8"
+        .i8  => "i8"
         .i16 => "i16"
         .i32 => "i32"
         .i64 => "i64"
-        .u8 => "u8"
+        .u8  => "u8"
         .u16 => "u16"
         .u32 => "u32"
         .u64 => "u64"
@@ -53,7 +53,7 @@ function int_name(kind: IntKind) -> str
 # to disagree.
 function int_bits(kind: IntKind) -> i64
     return match kind
-        .i8 | .u8 => 8
+        .i8 | .u8   => 8
         .i16 | .u16 => 16
         .i32 | .u32 => 32
         .i64 | .u64 => 64
@@ -81,6 +81,7 @@ function int_article_name(kind: IntKind) -> str
 function int_contains(target: IntKind, source: IntKind) -> bool
     if int_signed(target) == int_signed(source)
         return int_bits(target) >= int_bits(source)
+
     if int_signed(target)
         return int_bits(target) > int_bits(source)
     return false
@@ -89,11 +90,11 @@ function int_contains(target: IntKind, source: IntKind) -> bool
 # says what the Heroes source says and clang checks the rest.
 function int_c_type(kind: IntKind) -> str
     return match kind
-        .i8 => "int8_t"
+        .i8  => "int8_t"
         .i16 => "int16_t"
         .i32 => "int32_t"
         .i64 => "int64_t"
-        .u8 => "uint8_t"
+        .u8  => "uint8_t"
         .u16 => "uint16_t"
         .u32 => "uint32_t"
         .u64 => "uint64_t"
@@ -101,11 +102,11 @@ function int_c_type(kind: IntKind) -> str
 # The largest magnitude a POSITIVE literal of this width may have.
 function int_max_magnitude(kind: IntKind) -> u64
     return match kind
-        .i8 => 127
+        .i8  => 127
         .i16 => 32767
         .i32 => 2147483647
         .i64 => 9223372036854775807
-        .u8 => 255
+        .u8  => 255
         .u16 => 65535
         .u32 => 4294967295
         .u64 => 18446744073709551615
@@ -115,10 +116,10 @@ function int_max_magnitude(kind: IntKind) -> u64
 # zero for the unsigned ones, where only `-0` is writable.
 function int_min_magnitude(kind: IntKind) -> u64
     return match kind
-        .i8 => 128
-        .i16 => 32768
-        .i32 => 2147483648
-        .i64 => 9223372036854775808
+        .i8                      => 128
+        .i16                     => 32768
+        .i32                     => 2147483648
+        .i64                     => 9223372036854775808
         .u8 | .u16 | .u32 | .u64 => 0
 
 # Whether a literal of this sign and magnitude fits the width — the port
@@ -168,8 +169,10 @@ test "one array lists the widths and the names round-trip"
     kinds = int_kinds()
     assert kinds.len() == 8
     names: [str] @ []
+
     for k in kinds
         names @ names.push(int_name(k))
+
     assert names.join(" ") == "i8 i16 i32 i64 u8 u16 u32 u64"
     assert float_kinds().len() == 2
 
@@ -177,9 +180,11 @@ test "containment is asymmetric on purpose"
     # Same signedness: width decides.
     assert int_contains(target: .i64, source: .i32)
     assert !int_contains(target: .i16, source: .i32)
+
     # Unsigned into signed: strictly wider, the sign bit is spent.
     assert int_contains(target: .i64, source: .u32)
     assert !int_contains(target: .i16, source: .u16)
+
     # Signed into unsigned: never, -1 is a value.
     assert !int_contains(target: .u64, source: .i8)
 

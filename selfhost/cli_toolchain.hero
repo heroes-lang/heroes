@@ -50,13 +50,21 @@ record Toolchain
 # turns that silence into `use of undeclared identifier`.
 function locate_toolchain(hint: str, fingerprint: str) -> Toolchain?
     candidates: [str] @ []
+
     if hint.len() > 0
         candidates @ candidates.push(hint)
     candidates @ candidates.push("runtime")
+
     for candidate in candidates
         if !read_file(candidate + "/heroes_runtime.h").is_err() && !read_file(candidate + "/runtime.c").is_err()
-            return ok(Toolchain(runtime: candidate, build: "build", fingerprint: fingerprint, runtime_key: cli_digest.digest(runtime_text(runtime: candidate, build: "build"))))
-    return fail("failed", "cannot find the Heroes runtime (heroes_runtime.h and runtime.c).\n  looked in: the given hint and ./runtime\n  set HEROES_RUNTIME=<dir> to say where it is")
+            return ok(
+                Toolchain(runtime: candidate, build: "build", fingerprint: fingerprint, runtime_key: cli_digest.digest(runtime_text(runtime: candidate, build: "build")))
+            )
+
+    return fail(
+        "failed",
+        "cannot find the Heroes runtime (heroes_runtime.h and runtime.c).\n  looked in: the given hint and ./runtime\n  set HEROES_RUNTIME=<dir> to say where it is"
+    )
 
 # Run one clang line, stderr captured to a file and read back. clang's
 # own words are kept verbatim: a failure here says THE COMPILER is
@@ -68,8 +76,10 @@ function run_clang(line: str, what: str, err_path: str) -> ()?
     status = cli_shell.shell(command: line + " 2> " + cli_shell.sq(err_path))
     noise: str @ ""
     captured = read_file(err_path)
+
     if !captured.is_err()
         noise @ captured.must()
+
     if status == 0
         if trimmed(noise).len() > 0
             cli_io.eprint_raw(text: noise)
@@ -79,11 +89,15 @@ function run_clang(line: str, what: str, err_path: str) -> ()?
 function trimmed(text: str) -> str
     cs = text.chars()
     head: i64 @ 0
+
     while head < cs.len() && (cs[head] == " " || cs[head] == "\t" || cs[head] == "\n")
         head @ head + 1
+
     tail: i64 @ cs.len()
+
     while tail > head && (cs[tail - 1] == " " || cs[tail - 1] == "\t" || cs[tail - 1] == "\n")
         tail @ tail - 1
+
     return cs.slice(from: head, to: tail).join("")
 
 # Whether a path names anything — through the shell, because read_file
@@ -112,8 +126,11 @@ function mkdir_all(path: str) -> ()?
 function runtime_text(runtime: str, build: str) -> str
     gathered = build + "/runtime-sources.txt"
     _ = mkdir_all(build)
-    _ = cli_shell.shell(command: "cat " + cli_shell.sq(runtime) + "/*.c " + cli_shell.sq(runtime) + "/*.h " + cli_shell.sq(runtime) + "/parts/*.c " + cli_shell.sq(runtime) + "/parts/*.h > " + cli_shell.sq(gathered) + " 2>/dev/null")
+    _ = cli_shell.shell(
+        command: "cat " + cli_shell.sq(runtime) + "/*.c " + cli_shell.sq(runtime) + "/*.h " + cli_shell.sq(runtime) + "/parts/*.c " + cli_shell.sq(runtime) + "/parts/*.h > " + cli_shell.sq(gathered) + " 2>/dev/null"
+    )
     found = read_file(gathered)
+
     if found.is_err()
         return ""
     return found.must()
@@ -125,11 +142,15 @@ function runtime_text(runtime: str, build: str) -> str
 # silently reused the first).
 function dir_for(t: Toolchain, source_name: str, text: str, level_key: str, sanitize: bool, search: str) -> str?
     san: str @ ""
+
     if sanitize
         san @ "+san"
-    key = cli_digest.digest(t.fingerprint + "|" + level_key + san + "|" + source_name + "|" + text + "|" + t.runtime_key + search)
+    key = cli_digest.digest(
+        t.fingerprint + "|" + level_key + san + "|" + source_name + "|" + text + "|" + t.runtime_key + search
+    )
     dir = t.build + "/" + key
     made = mkdir_all(dir)
+
     if made.is_err()
         return fail("failed", "cannot create " + dir)
     return ok(dir)
@@ -154,23 +175,34 @@ function dir_for(t: Toolchain, source_name: str, text: str, level_key: str, sani
 function runtime_object(t: Toolchain, level: str, sanitize: bool) -> str?
     key = cli_digest.digest(t.fingerprint + "|" + level + "|" + bool_text(sanitize) + "|" + t.runtime_key)
     made = mkdir_all(t.build)
+
     if made.is_err()
         return fail("failed", "cannot create " + t.build)
     object = t.build + "/runtime-" + key + ".o"
     memo: {str: str} @ {}
+
     if exists(object) && cli_deps.fresh(cli_deps.record_for(object), @memo)
         return ok(object)
     depfile = object + ".d"
     staged = object + ".tmp"
     line: str @ "clang " + words(cli_flags.flags()) + " " + level + " " + words(cli_flags.sanitizers(sanitize: sanitize)) + " -c -MD -MT dep -MF " + cli_shell.sq(depfile) + " " + cli_shell.sq(t.runtime + "/runtime.c") + " -I " + cli_shell.sq(t.runtime) + " -o " + cli_shell.sq(staged)
     ran = run_clang(line: line, what: "compiling the runtime", err_path: t.build + "/clang-stderr.txt")
+
     if ran.is_err()
         ran?
+
     # Recorded before the object is published, so an object on disk is
     # never one this cache cannot justify serving.
-    recorded = cli_deps.record_deps(record_path: cli_deps.record_for(object), depfile: depfile, skip: t.runtime + "/", @memo)
+    recorded = cli_deps.record_deps(
+        record_path: cli_deps.record_for(object),
+        depfile: depfile,
+        skip: t.runtime + "/",
+        @memo
+    )
+
     if recorded.is_err()
         return fail("failed", "cannot record what the runtime's translation unit read")
+
     if cli_shell.shell(command: "mv -f " + cli_shell.sq(staged) + " " + cli_shell.sq(object)) != 0
         return fail("failed", "cannot publish " + object)
     return ok(object)
@@ -182,8 +214,10 @@ function bool_text(value: bool) -> str
 
 function words(list: [str]) -> str
     quoted: [str] @ []
+
     for one in list
         quoted @ quoted.push(cli_shell.sq(one))
+
     return quoted.join(" ")
 
 # Compile one generated unit and link it with the runtime. The unit is
@@ -202,35 +236,49 @@ function link(t: Toolchain, c_file: str, object: str, binary: str, level: str, s
     unit_object = c_file + ".o"
     staged_object = unit_object + ".tmp"
     compile_line: str @ "clang " + words(cli_flags.flags()) + " " + level + " " + words(cli_flags.sanitizers(sanitize: sanitize)) + " -c"
+
     for dir in search_include
         compile_line @ compile_line + " -I " + cli_shell.sq(dir)
+
     for flag in package_flags
         if starts_with(text: flag, prefix: "-I")
             compile_line @ compile_line + " " + cli_shell.sq(flag)
+
     compile_line @ compile_line + " " + cli_shell.sq(c_file) + " -I " + cli_shell.sq(t.runtime)
+
     if source_dir.len() > 0
         compile_line @ compile_line + " -I " + cli_shell.sq(source_dir)
     compile_line @ compile_line + " -o " + cli_shell.sq(staged_object)
     compiled = run_clang(line: compile_line, what: "compiling the generated C", err_path: err_path)
+
     if compiled.is_err()
         compiled?
+
     if cli_shell.shell(command: "mv -f " + cli_shell.sq(staged_object) + " " + cli_shell.sq(unit_object)) != 0
         return fail("failed", "cannot publish " + unit_object)
     link_line: str @ "clang " + words(cli_flags.flags()) + " " + level + " " + words(cli_flags.sanitizers(sanitize: sanitize))
+
     for dir in search_include
         link_line @ link_line + " -I " + cli_shell.sq(dir)
+
     for dir in search_library
         link_line @ link_line + " -L " + cli_shell.sq(dir)
+
     link_line @ link_line + " " + cli_shell.sq(unit_object) + " " + cli_shell.sq(object)
+
     for flag in package_flags
         link_line @ link_line + " " + cli_shell.sq(flag)
+
     for name in link_names
         link_line @ link_line + " " + cli_shell.sq("-l" + name)
+
     staged = binary + ".tmp"
     link_line @ link_line + " -o " + cli_shell.sq(staged)
     linked = run_clang(line: link_line, what: "linking", err_path: err_path)
+
     if linked.is_err()
         linked?
+
     if cli_shell.shell(command: "mv -f " + cli_shell.sq(staged) + " " + cli_shell.sq(binary)) != 0
         return fail("failed", "cannot publish " + binary)
     return ok()
@@ -238,13 +286,16 @@ function link(t: Toolchain, c_file: str, object: str, binary: str, level: str, s
 function starts_with(text: str, prefix: str) -> bool
     cs = text.chars()
     ps = prefix.chars()
+
     if ps.len() > cs.len()
         return false
     index: i64 @ 0
+
     for p in ps
         if cs[index] != p
             return false
         index @ index + 1
+
     return true
 
 ## Tests
@@ -262,6 +313,7 @@ test "the toolchain finds the real runtime and compiles it through system()"
     assert !found.is_err()
     t = found.must()
     assert t.runtime == "runtime"
+
     # The runtime's contents reach the key: a different fingerprint is
     # a different directory.
     d1 = dir_for(t, source_name: "x.hero", text: "a", level_key: "-O0", sanitize: false, search: "")
@@ -269,6 +321,7 @@ test "the toolchain finds the real runtime and compiles it through system()"
     assert !d1.is_err()
     assert d1.must() != d2.must()
     assert is_directory(path: d1.must())
+
     # The real thing: clang compiles the real runtime once, and the
     # second ask is the cache.
     object = runtime_object(t, level: "-O0", sanitize: false)
@@ -276,9 +329,15 @@ test "the toolchain finds the real runtime and compiles it through system()"
     assert exists(path: object.must())
     again = runtime_object(t, level: "-O0", sanitize: false)
     assert again.must() == object.must()
+
     # A broken unit fails with clang's own words carried back.
     _ = write_file(path: "build/selftest_broken.c", text: "int main(void) { return undeclared_name; }\n")
-    bad = run_clang(line: "clang -c 'build/selftest_broken.c' -o 'build/selftest_broken.o'", what: "compiling the generated C", err_path: "build/selftest_err.txt")
+    bad = run_clang(
+        line: "clang -c 'build/selftest_broken.c' -o 'build/selftest_broken.o'",
+        what: "compiling the generated C",
+        err_path: "build/selftest_err.txt"
+    )
+
     match bad
         .ok => assert false
         .err e =>
@@ -288,20 +347,26 @@ test "the toolchain finds the real runtime and compiles it through system()"
 function has_text(text: str, needle: str) -> bool
     cs = text.chars()
     needle_cs = needle.chars()
+
     if needle_cs.len() == 0
         return true
+
     if needle_cs.len() > cs.len()
         return false
     start: i64 @ 0
+
     while start <= cs.len() - needle_cs.len()
         matched: bool @ true
         offset: i64 @ 0
+
         while offset < needle_cs.len()
             if cs[start + offset] != needle_cs[offset]
                 matched @ false
                 break
             offset @ offset + 1
+
         if matched
             return true
         start @ start + 1
+
     return false

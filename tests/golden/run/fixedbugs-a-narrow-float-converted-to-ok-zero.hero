@@ -27,6 +27,7 @@ function main()
     print(to_i64(negative).must())
     huge: f32 @ 100000000000000000000000000000.0
     print(to_i64(huge).is_err())
+
     # The control: the same conversion at the width that always worked, so a
     # regression that breaks both is told apart from one that breaks this width.
     wide: f64 @ 7.9

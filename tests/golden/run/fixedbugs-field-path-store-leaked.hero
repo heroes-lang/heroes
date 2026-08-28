@@ -30,17 +30,21 @@ record Pair
 function main()
     p: Row @ Row(cells: [9])
     print(p.cells[0], len(p.cells))
+
     # The write that leaked: a counted place reached through a field.
     p.cells @ [7, 8]
     print(p.cells[0], len(p.cells))
+
     # Twice over, so a leak would grow rather than sit still.
     p.cells @ [1]
     p.cells @ [2, 3, 4]
     print(len(p.cells))
+
     # Two levels deep, and through a record that holds two of them.
     q: Pair @ Pair(left: Row(cells: [1]), right: Row(cells: [2]))
     q.left @ Row(cells: [5, 6])
     print(q.left.cells[1], q.right.cells[0])
+
     # Assigning a field over itself: the incref must precede the decref.
     q.right @ q.right
     print(len(q.right.cells))

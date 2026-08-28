@@ -74,6 +74,7 @@ function eprint_raw(text: str)
 # and on `--emit-c` that one byte is the fixpoint.
 function print_artifact(text: str)
     cs = text.chars()
+
     if cs.len() > 0 && cs[cs.len() - 1] == "\n"
         print(cs.slice(from: 0, to: cs.len() - 1).join(""))
         return
@@ -112,6 +113,7 @@ test "the error channel takes every shape a diagnostic arrives in"
     eprint_raw(text: "already ends with its own newline\n")
     long: str @ "buffer-crossing ".repeat(count: 512)
     eprint_raw(text: long + "\n")
+
     # The bytes are what the channel is measured in, not the characters
     # — the one place a wrong unit would cut a sequence in half.
     assert "ziggy ★".len() == 9

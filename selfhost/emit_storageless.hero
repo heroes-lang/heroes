@@ -33,49 +33,69 @@ use checker
 # arrays, which the checker refuses today.
 function fixed_text(c: check_state.Checked, s: source.Source, decls: [ast.Decl], f: ir_state.Function, value: i64) -> str?
     is_fixed: bool @ false
+
     match check_table.get(c.types, ir_state.value_type(f, value))
-        .fixed => is_fixed @ true
+        .fixed                                                    => is_fixed @ true
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => is_fixed @ is_fixed
-        .array | .map | .fallible | .function_ty | .named => is_fixed @ is_fixed
-        .case_ty | .failure | .generic | .error => is_fixed @ is_fixed
+        .array | .map | .fallible | .function_ty | .named         => is_fixed @ is_fixed
+        .case_ty | .failure | .generic | .error                   => is_fixed @ is_fixed
+
     if !is_fixed
         return fail("none", "has storage")
+
     for blk in f.blocks
         for inst in blk.insts
             if !inst.dest.is_err() && inst.dest.must() == value
                 match inst.op
                     .construct con =>
                         is_array_shape: bool @ false
+
                         match con.shape
-                            .array_shape => is_array_shape @ true
+                            .array_shape                             => is_array_shape @ true
                             .record_shape | .case_shape | .map_shape => is_array_shape @ is_array_shape
-                            .ok_shape | .fail_shape | .err_shape => is_array_shape @ is_array_shape
+                            .ok_shape | .fail_shape | .err_shape     => is_array_shape @ is_array_shape
+
                         if !is_array_shape
                             return fail("none", "not a producer of a fixed value")
                         parts: [str] @ []
+
                         for arg in ir_state.args_of(f, con.arguments)
                             match arg
                                 .value_arg v =>
                                     inner = fixed_text(c, s, decls, f, value: v.value)
+
                                     if inner.is_err()
                                         parts @ parts.push(emit_mangle.value(v.value))
                                     else
                                         parts @ parts.push(inner.must())
                                 .inout_arg => continue
+
                         return ok("{" + parts.join(", ") + "}")
                     .field fl =>
                         owner = ir_state.value_type(f, fl.base)
                         found = emit_aggregate.field(c, s, decls, owner: owner, index: fl.at)
+
                         if found.is_err()
                             return fail("none", "not a field of this type")
                         base_text: str @ emit_mangle.value(fl.base)
                         inner = fixed_text(c, s, decls, f, value: fl.base)
+
                         if !inner.is_err()
                             base_text @ inner.must()
                         return ok(base_text + "." + found.must().member)
-                    .lit | .load | .store | .push_owned | .unary | .binary | .cast | .call => return fail("none", "not a producer of a fixed value")
-                    .index | .map_get | .len_of | .tag_of | .payload => return fail("none", "not a producer of a fixed value")
-                    .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing => return fail("none", "not a producer of a fixed value")
+                    .lit | .load | .store | .push_owned | .unary | .binary | .cast | .call => return fail(
+                        "none",
+                        "not a producer of a fixed value"
+                    )
+                    .index | .map_get | .len_of | .tag_of | .payload => return fail(
+                        "none",
+                        "not a producer of a fixed value"
+                    )
+                    .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing => return fail(
+                        "none",
+                        "not a producer of a fixed value"
+                    )
+
     return fail("none", "no instruction produces this value")
 
 ## Tests
@@ -92,10 +112,28 @@ test "a fixed literal renders braced at the use site, a field read stays an lval
     vec = check_table.lookup(c.types, .named(decl: 0)).must()
     span = token.Span(start: 0, end: 1)
     run0 = ir.Run(start: 0, length: 2)
-    insts: [ir.Inst] = [ir.Inst(dest: ok(3), op: .construct(shape: .array_shape, arguments: run0), ty: fixed, span: span), ir.Inst(dest: ok(4), op: .field(base: 5, at: 0), ty: fixed, span: span)]
+    insts: [ir.Inst] = [
+        ir.Inst(dest: ok(3), op: .construct(shape: .array_shape, arguments: run0), ty: fixed, span: span)
+        ir.Inst(dest: ok(4), op: .field(base: 5, at: 0), ty: fixed, span: span)
+    ]
     preds: [i64] = []
     blk = ir_state.Block(preds: preds, insts: insts, term: .return_term(value: fail("none", "bare")), note: "t")
-    f = ir_state.Function(name: "t", decl: 1, kind: .function_kind, generics: [], params: [], result: 0, slots: [], blocks: [blk], values: [f32_id, f32_id, f32_id, fixed, fixed, vec], arguments: [.value_arg(value: 1), .value_arg(value: 2)], steps: [], instance: [], call_instances: {}, span: span)
+    f = ir_state.Function(
+        name: "t",
+        decl: 1,
+        kind: .function_kind,
+        generics: [],
+        params: [],
+        result: 0,
+        slots: [],
+        blocks: [blk],
+        values: [f32_id, f32_id, f32_id, fixed, fixed, vec],
+        arguments: [.value_arg(value: 1), .value_arg(value: 2)],
+        steps: [],
+        instance: [],
+        call_instances: {},
+        span: span
+    )
     braced = fixed_text(c, s, p.decls, f, value: 3)
     assert braced.must() == "{t1, t2}"
     member = fixed_text(c, s, p.decls, f, value: 4)

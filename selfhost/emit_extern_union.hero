@@ -61,21 +61,26 @@ record Used
 function union_assertions(@w: emit_writer.Writer, p: ir_state.Program, c: check_state.Checked, names: emit_ctype.Names, s: source.Source, decls: [ast.Decl])
     u = used(p, c, decls)
     wanted: {i64: bool} @ {}
+
     for decl in sort(keys(u.constructed))
         match decls[decl].kind
             .record_decl rec =>
                 if rec.fields.len() >= 2
                     wanted[decl] @ true
             .constant_decl | .function_decl | .variant_decl | .test_decl => continue
+
     for decl in sort(keys(u.operated))
         wanted[decl] @ true
+
     wrote: bool @ false
+
     for decl in sort(keys(wanted))
         match decls[decl].kind
             .record_decl rec =>
                 if rec.header.is_err()
                     continue
                 c_type = emit_ctype.of(names, decl: decl)
+
                 # The marker carries the DECLARATION's name, never
                 # c_type — panel 072 rider 1, which the bootstrap file
                 # broke on the day it was written, one file over from
@@ -83,25 +88,38 @@ function union_assertions(@w: emit_writer.Writer, p: ir_state.Program, c: check_
                 # words, and the mapper reads token 1 as the name.
                 hero_name = source.span_text(s, decls[decl].name)
                 parts: [str] @ []
+
                 for field in rec.fields
                     parts @ parts.push(source.span_text(s, field.name))
+
                 # #line at the declaration's own name: unlike a field
                 # assertion, no one field is at fault — what the author
                 # must change is the declaration or the expression that
                 # builds it.
                 found = source.locate(s, decls[decl].name.start)
                 emit_writer.at_file(@w, file: found.file, at: found.line)
-                emit_writer.line(@w, text: "_Static_assert(__builtin_classify_type(*(" + c_type + " *)0) != 13, \"" + UNION_ASSERTION + " " + hero_name + " " + parts.join(" ") + "\");")
+                emit_writer.line(
+                    @w,
+                    text: "_Static_assert(__builtin_classify_type(*(" + c_type + " *)0) != 13, \"" + UNION_ASSERTION + " " + hero_name + " " + parts.join(" ") + "\");"
+                )
                 wrote @ true
             .constant_decl | .function_decl | .variant_decl | .test_decl => continue
+
     if wrote
         emit_writer.at_generated(@w)
+
         # The control that fires when the premise dies: without these
         # two lines a toolchain that stops separating 12 from 13 turns
         # every union check above into one that silently passes; with
         # them it is a build failure that names what depends on it.
-        emit_writer.line(@w, text: "_Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, \"a union must classify as 13, or every heroes-ffi-union assertion above is vacuous\");")
-        emit_writer.line(@w, text: "_Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, \"a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record\");")
+        emit_writer.line(
+            @w,
+            text: "_Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, \"a union must classify as 13, or every heroes-ffi-union assertion above is vacuous\");"
+        )
+        emit_writer.line(
+            @w,
+            text: "_Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, \"a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record\");"
+        )
         emit_writer.blank(@w)
 
 # Every extern record the program constructs or compares, directly or
@@ -115,6 +133,7 @@ function union_assertions(@w: emit_writer.Writer, p: ir_state.Program, c: check_
 function used(p: ir_state.Program, c: check_state.Checked, decls: [ast.Decl]) -> Used
     constructed: {i64: bool} @ {}
     operated: {i64: bool} @ {}
+
     for f in p.functions
         for blk in f.blocks
             for inst in blk.insts
@@ -131,8 +150,9 @@ function used(p: ir_state.Program, c: check_state.Checked, decls: [ast.Decl]) ->
                         reach(@operated, c, decls, ty: ir_state.value_type(f, mg.map), depth: 0)
                         reach(@operated, c, decls, ty: ir_state.value_type(f, mg.key), depth: 0)
                     .lit | .load | .store | .push_owned | .unary | .cast | .call | .func_ref => continue
-                    .field | .index | .len_of | .tag_of | .payload => continue
-                    .copy_out | .abort_op | .incref | .decref | .hole | .missing => continue
+                    .field | .index | .len_of | .tag_of | .payload                           => continue
+                    .copy_out | .abort_op | .incref | .decref | .hole | .missing             => continue
+
     return Used(constructed: constructed, operated: operated)
 
 # The extern records a type reaches by value, bounded like the
@@ -142,46 +162,55 @@ function used(p: ir_state.Program, c: check_state.Checked, decls: [ast.Decl]) ->
 function reach(@out: {i64: bool}, c: check_state.Checked, decls: [ast.Decl], ty: i64, depth: i64)
     if depth > 16
         return
+
     match check_table.get(c.types, ty)
         .named n =>
             out[n.decl] @ true
+
             match decls[n.decl].kind
                 .record_decl rec =>
                     for field in rec.fields
                         written = check_state.written_type(c, field.ty)
+
                         if !written.is_err()
                             reach(@out, c, decls, ty: written.must(), depth: depth + 1)
                 .constant_decl | .function_decl | .variant_decl | .test_decl => return
-        .array a => reach(@out, c, decls, ty: a.element, depth: depth + 1)
-        .fixed x => reach(@out, c, decls, ty: x.element, depth: depth + 1)
+        .array a     => reach(@out, c, decls, ty: a.element, depth: depth + 1)
+        .fixed x     => reach(@out, c, decls, ty: x.element, depth: depth + 1)
         .fallible fl => reach(@out, c, decls, ty: fl.payload, depth: depth + 1)
         .map m =>
             reach(@out, c, decls, ty: m.key, depth: depth + 1)
             reach(@out, c, decls, ty: m.value, depth: depth + 1)
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return
-        .function_ty | .case_ty | .failure | .generic | .error => return
+        .function_ty | .case_ty | .failure | .generic | .error    => return
 
 ## Tests
 
 function has(text: str, needle: str) -> bool
     cs = text.chars()
     needle_cs = needle.chars()
+
     if needle_cs.len() == 0
         return true
+
     if needle_cs.len() > cs.len()
         return false
     start: i64 @ 0
+
     while start <= cs.len() - needle_cs.len()
         matched: bool @ true
         offset: i64 @ 0
+
         while offset < needle_cs.len()
             if cs[start + offset] != needle_cs[offset]
                 matched @ false
                 break
             offset @ offset + 1
+
         if matched
             return true
         start @ start + 1
+
     return false
 
 test "constructed and compared records are asked, read-only ones are not"
@@ -196,12 +225,18 @@ test "constructed and compared records are asked, read-only ones are not"
     w: emit_writer.Writer @ emit_writer.new_writer("t")
     union_assertions(@w, low.program, c, names, s, parsed.decls)
     got = emit_writer.finish(w)
+
     # Two-field construction is asked, on the declaration's own line.
-    assert has(text: got, needle: "_Static_assert(__builtin_classify_type(*(UDef *)0) != 13, \"heroes-ffi-union UDef i f\");")
+    assert has(
+        text: got,
+        needle: "_Static_assert(__builtin_classify_type(*(UDef *)0) != 13, \"heroes-ffi-union UDef i f\");"
+    )
     assert has(text: got, needle: "#line 2 \"t.hero\"")
+
     # == reaches Cmp at arity one; a read-only record is left alone.
     assert has(text: got, needle: "heroes-ffi-union Cmp a")
     assert !has(text: got, needle: "ReadOnly")
+
     # The premise-death pair rides along whenever anything was asked.
     assert has(text: got, needle: "a union must classify as 13")
     assert has(text: got, needle: "a struct must classify as 12")

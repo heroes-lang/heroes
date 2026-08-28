@@ -66,34 +66,51 @@ function run_all(scratch: str) -> report.Report?
     r: report.Report @ report.empty()
     files = shell.list_entries(scratch: scratch, dir: COMPILER)?
     modules: [str] @ []
+
     for path in files
         if strings.ends_with(text: path, suffix: ".hero")
             modules @ modules.push(path)
+
     unmarked: [str] @ []
     marks: i64 @ 0
     walks: i64 @ 0
+
     for path in modules
         text = read_file(path)
+
         if text.is_err()
             report.keep_failure(@r, label: "order/" + strings.base_name(path: path), detail: "  cannot read " + path)
             continue
         rows = strings.lines(text.must())
         code = outside_tests(rows)
         at: i64 @ 0
+
         while at < rows.len()
             if is_mark(rows[at])
                 marks @ marks + 1
+
             if code[at] && !is_comment(rows[at]) && strings.contains(text: rows[at], needle: WALK)
                 walks @ walks + 1
+
                 if !marked_above(rows, at: at)
                     unmarked @ unmarked.push("    " + path + ":" + (at + 1).to_str() + ": " + strings.trimmed(rows[at]))
             at @ at + 1
+
     if unmarked.len() > 0
-        report.keep_failure(@r, label: "order", detail: "  design.md §4.9: `keys(m)` gives the keys in NO ORDER, so a walk over them owes an explicit `sort` and a `" + MARK + "` mark naming the sort key and what observes the order. These walks carry no mark:\n" + unmarked.join("\n") + "\n  Put the mark above the walk, or in the doc comment of the function that holds it. Where nothing can observe the order, the mark is `" + MARK + " none — <why>`: that is a judgement recorded, not a rule dodged, and it is the only thing that tells the next reader somebody looked.")
+        report.keep_failure(
+            @r,
+            label: "order",
+            detail: "  design.md §4.9: `keys(m)` gives the keys in NO ORDER, so a walk over them owes an explicit `sort` and a `" + MARK + "` mark naming the sort key and what observes the order. These walks carry no mark:\n" + unmarked.join("\n") + "\n  Put the mark above the walk, or in the doc comment of the function that holds it. Where nothing can observe the order, the mark is `" + MARK + " none — <why>`: that is a judgement recorded, not a rule dodged, and it is the only thing that tells the next reader somebody looked."
+        )
     else
         report.keep_pass(@r)
+
     if marks < LEAST_MARKS || walks < LEAST_WALKS
-        report.keep_failure(@r, label: "order", detail: "  the sweep found " + walks.to_str() + " map walks and " + marks.to_str() + " marks across " + modules.len().to_str() + " modules, and had " + LEAST_WALKS.to_str() + " and " + LEAST_MARKS.to_str() + " — it is not reaching the tree")
+        report.keep_failure(
+            @r,
+            label: "order",
+            detail: "  the sweep found " + walks.to_str() + " map walks and " + marks.to_str() + " marks across " + modules.len().to_str() + " modules, and had " + LEAST_WALKS.to_str() + " and " + LEAST_MARKS.to_str() + " — it is not reaching the tree"
+        )
     else
         report.keep_pass(@r)
     return ok(r)
@@ -106,14 +123,17 @@ function run_all(scratch: str) -> report.Report?
 function outside_tests(rows: [str]) -> [bool]
     out: [bool] @ []
     inside: bool @ false
+
     for row in rows
         if strings.starts_with(text: row, prefix: "test \"")
             inside @ true
             out @ out.push(false)
             continue
+
         if inside && row.len() > 0 && !starts_indented(row) && !strings.starts_with(text: row, prefix: "#")
             inside @ false
         out @ out.push(!inside)
+
     return out
 
 # Is the walk at `at` covered by a mark? The search is the mark's own
@@ -125,13 +145,17 @@ function outside_tests(rows: [str]) -> [bool]
 function marked_above(rows: [str], at: i64) -> bool
     crossed: bool @ false
     j: i64 @ at - 1
+
     while j >= 0
         row = rows[j]
+
         if is_mark(row)
             return true
+
         if is_comment(row)
             j @ j - 1
             continue
+
         if strings.trimmed(row).len() == 0
             # A blank line above the header ends the doc comment: what is
             # further up belongs to the previous declaration.
@@ -139,11 +163,13 @@ function marked_above(rows: [str], at: i64) -> bool
                 return false
             j @ j - 1
             continue
+
         if starts_indented(row)
             if crossed
                 return false
             j @ j - 1
             continue
+
         # A column-0 line that is not a comment: this walk's own
         # declaration header. Crossing it reaches the doc block; a second
         # one means the declaration is behind us and carried no mark.
@@ -151,6 +177,7 @@ function marked_above(rows: [str], at: i64) -> bool
             return false
         crossed @ true
         j @ j - 1
+
     return false
 
 function is_mark(row: str) -> bool

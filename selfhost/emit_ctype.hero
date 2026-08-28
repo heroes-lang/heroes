@@ -99,15 +99,21 @@ function new_names(s: source.Source, decls: [ast.Decl]) -> Names
     partial_decls: {i64: bool} @ {}
     cases: {str: str} @ {}
     index: i64 @ 0
+
     for decl in decls
         # Each type is named in its OWN module, never the root's: two
         # modules may each declare Point, and they are two C structs.
-        name = emit_mangle.ty_name(module: source.component_at(s, decl.name.start), name: source.span_text(s, decl.name))
+        name = emit_mangle.ty_name(
+            module: source.component_at(s, decl.name.start),
+            name: source.span_text(s, decl.name)
+        )
+
         match decl.kind
             .record_decl rec =>
                 if rec.partial
                     partial_decls[index] @ true
                 satellites[index] @ name
+
                 # A group's record IS the header's struct, so its C type
                 # name is the one the author wrote, unmangled — and with
                 # `tag` it is two words (panel 074): C keeps struct tags
@@ -115,6 +121,7 @@ function new_names(s: source.Source, decls: [ast.Decl]) -> Names
                 # whole through this string and no site has to ask.
                 if !rec.header.is_err()
                     foreign_decls[index] @ true
+
                     if !rec.tag.is_err()
                         aggregates[index] @ "struct " + source.span_text(s, rec.tag.must())
                     else
@@ -124,9 +131,14 @@ function new_names(s: source.Source, decls: [ast.Decl]) -> Names
             .variant_decl v =>
                 satellites[index] @ name
                 at: i64 @ 0
+
                 for one_case in v.cases
-                    cases[case_key(decl: index, at: at)] @ emit_mangle.case_type(ty: name, case_name: source.span_text(s, one_case.name))
+                    cases[case_key(decl: index, at: at)] @ emit_mangle.case_type(
+                        ty: name,
+                        case_name: source.span_text(s, one_case.name)
+                    )
                     at @ at + 1
+
                 aggregates[index] @ name
             # NOT `continue`: this loop keeps the declaration index
             # itself, and a `continue` in a match arm jumps to the next
@@ -136,11 +148,22 @@ function new_names(s: source.Source, decls: [ast.Decl]) -> Names
             # parse.hero with a `no_size` cycle that does not exist
             # (check_sized carried the same shape); the self-mutation is
             # this language's no-op.
+
             .constant_decl | .function_decl | .test_decl => index @ index
+
         index @ index + 1
+
     empty_options: {i64: str} = {}
     empty_funcs: {i64: str} = {}
-    return Names(aggregates: aggregates, satellites: satellites, foreign_decls: foreign_decls, partial_decls: partial_decls, options: empty_options, cases: cases, funcs: empty_funcs)
+    return Names(
+        aggregates: aggregates,
+        satellites: satellites,
+        foreign_decls: foreign_decls,
+        partial_decls: partial_decls,
+        options: empty_options,
+        cases: cases,
+        funcs: empty_funcs
+    )
 
 # Assigns a C name to every T? the program interned. Walked over the
 # INTERNED ARENA, because a T? reached only through a declared record's
@@ -153,14 +176,17 @@ function with_options(names: Names, c: check_state.Checked, s: source.Source, de
     out: Names @ names
     count = check_table.len_of(c.types)
     id: i64 @ 0
+
     while id < count
         if !ir_phases.mentions_generic(c, ty: id)
             is_fallible: bool @ false
+
             match check_table.get(c.types, id)
-                .fallible => is_fallible @ true
+                .fallible                                                 => is_fallible @ true
                 .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => is_fallible @ is_fallible
-                .array | .fixed | .map | .function_ty | .named => is_fallible @ is_fallible
-                .case_ty | .failure | .generic | .error => is_fallible @ is_fallible
+                .array | .fixed | .map | .function_ty | .named            => is_fallible @ is_fallible
+                .case_ty | .failure | .generic | .error                   => is_fallible @ is_fallible
+
             if is_fallible
                 # CONTENT-NAMED, not walk-numbered (panel 093 R6): the
                 # name is a hash of the type's public rendering, so it is
@@ -174,6 +200,7 @@ function with_options(names: Names, c: check_state.Checked, s: source.Source, de
                 # C definitions of one name in one TU — loud.
                 out.options[id] @ "h_" + SYNTHETIC + "opt_" + emit_mangle.instance(emit_synth.content_key(c, s, decls, ty: id))
         id @ id + 1
+
     return out
 
 # Assigns a typedef to every function type the program USES AS A TYPE —
@@ -188,28 +215,34 @@ function with_options(names: Names, c: check_state.Checked, s: source.Source, de
 function with_functions(names: Names, c: check_state.Checked, s: source.Source, decls: [ast.Decl], p: ir_state.Program) -> Names
     out: Names @ names
     used: {i64: bool} @ {}
+
     for f in p.functions
         for slot in f.slots
             emit_synth.collect(c, ty: slot.ty, into: @used)
+
         for value in f.values
             emit_synth.collect(c, ty: value, into: @used)
+
     # ORDER: none — the name is a function of the TYPE's rendering, not
     # of the walk position, since panel 093 R6; the map insertion order
     # no longer reaches the emitted C.
     for id in keys(used)
         out.funcs[id] @ "h_" + SYNTHETIC + "fn_" + emit_mangle.instance(emit_synth.content_key(c, s, decls, ty: id))
+
     return out
 
 ## Reading the table
 
 function func_of(names: Names, ty: i64) -> str
     found = names.funcs[ty]
+
     # Every function type is named before anything can mention one.
     assert !found.is_err()
     return found.must()
 
 function option_of(names: Names, ty: i64) -> str
     found = names.options[ty]
+
     # Every T? is named before anything can mention one.
     assert !found.is_err()
     return found.must()
@@ -226,6 +259,7 @@ record OptionEntry
 
 function option_entries(names: Names, c: check_state.Checked) -> [OptionEntry]
     out: [OptionEntry] @ []
+
     # ORDER: ascending TyId — the per-option generated functions are
     # emitted in this order, so the order is IN the emitted C.
     #
@@ -239,14 +273,18 @@ function option_entries(names: Names, c: check_state.Checked) -> [OptionEntry]
     # now checked by an instrument rather than remembered (§4.9).
     for id in sort(keys(names.options))
         match check_table.get(c.types, id)
-            .fallible o => out @ out.push(OptionEntry(name: names.options[id].must(), payload: o.payload, at: id))
+            .fallible o                                               => out @ out.push(
+                OptionEntry(name: names.options[id].must(), payload: o.payload, at: id)
+            )
             .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => continue
-            .array | .fixed | .map | .function_ty | .named => continue
-            .case_ty | .failure | .generic | .error => continue
+            .array | .fixed | .map | .function_ty | .named            => continue
+            .case_ty | .failure | .generic | .error                   => continue
+
     return out
 
 function case_of(names: Names, decl: i64, at: i64) -> str
     found = names.cases[case_key(decl: decl, at: at)]
+
     # A case type always names a case of a declared variant.
     assert !found.is_err()
     return found.must()
@@ -255,6 +293,7 @@ function case_of(names: Names, decl: i64, at: i64) -> str
 # a cast writes.
 function of(names: Names, decl: i64) -> str
     found = names.aggregates[decl]
+
     # A named type always names a record or a variant.
     assert !found.is_err()
     return found.must()
@@ -271,7 +310,12 @@ function satellite(names: Names, decl: i64) -> str
     return found.must()
 
 function aggregate(names: Names, decl: i64) -> Aggregate
-    return Aggregate(prefix: satellite(names, decl: decl), c_type: of(names, decl: decl), foreign: !names.foreign_decls[decl].is_err(), partial: !names.partial_decls[decl].is_err())
+    return Aggregate(
+        prefix: satellite(names, decl: decl),
+        c_type: of(names, decl: decl),
+        foreign: !names.foreign_decls[decl].is_err(),
+        partial: !names.partial_decls[decl].is_err()
+    )
 
 # A generated payload type is this compiler's own invention, so both
 # names are the same one — stated rather than left implicit, because
@@ -285,12 +329,13 @@ function generated(name: str) -> Aggregate
 # exists, which the gate has already refused.
 function satellite_name(names: Names, c: check_state.Checked, ty: i64) -> str?
     match check_table.get(c.types, ty)
-        .named n => return ok(satellite(names, decl: n.decl))
-        .case_ty vc => return ok(case_of(names, decl: vc.decl, at: vc.at))
-        .fallible => return ok(option_of(names, ty: ty))
-        .failure => return ok("hero_failure")
+        .named n                                                  => return ok(satellite(names, decl: n.decl))
+        .case_ty vc                                               => return ok(case_of(names, decl: vc.decl, at: vc.at))
+        .fallible                                                 => return ok(option_of(names, ty: ty))
+        .failure                                                  => return ok("hero_failure")
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail("none", "no generated functions")
         .array | .fixed | .map | .function_ty | .generic | .error => return fail("none", "no generated functions")
+
     return fail("none", "unreached")
 
 ## What a type IS in C
@@ -299,35 +344,39 @@ function satellite_name(names: Names, c: check_state.Checked, ty: i64) -> str?
 # fixed array, the unit rule's second instance.
 function c_type(names: Names, c: check_state.Checked, ty: i64) -> str?
     match check_table.get(c.types, ty)
-        .unit => return fail("none", "a unit-typed temporary is never declared")
-        .fixed => return fail("none", "C has no assignable array")
-        .int_ty ik => return ok(widths.int_c_type(ik.kind))
+        .unit        => return fail("none", "a unit-typed temporary is never declared")
+        .fixed       => return fail("none", "C has no assignable array")
+        .int_ty ik   => return ok(widths.int_c_type(ik.kind))
         .float_ty fk => return ok(widths.float_c_type(fk.kind))
-        .bool => return ok("bool")
+        .bool        => return ok("bool")
         # A fat pointer, passed BY VALUE (§4.20): written as a pointer,
         # the wrong str->cstr conversion compiles clean with an explicit
         # cast and hands a refcount word to sqlite3_open; written by
         # value it is inexpressible rather than wrong.
-        .str => return ok("HeroStr")
-        .ptr => return ok("void *")
+
+        .str  => return ok("HeroStr")
+        .ptr  => return ok("void *")
         .cstr => return ok("const char *")
         # A record is a C struct BY VALUE and a variant a tagged union
         # by value. A case is not a type of its own at runtime — it is
         # the whole variant with a known tag — but its PAYLOAD is,
         # because the IR puts one in a temporary.
-        .named n => return ok(of(names, decl: n.decl))
+
+        .named n    => return ok(of(names, decl: n.decl))
         .case_ty vc => return ok(case_of(names, decl: vc.decl, at: vc.at))
         # One pointer, whatever it holds — which is what gives a
         # recursive type a finite size and makes an array field impose
         # no ordering constraint on C.
-        .array => return ok("HeroArrayHeader *")
+
+        .array    => return ok("HeroArrayHeader *")
         .fallible => return ok(option_of(names, ty: ty))
-        .failure => return ok("HeroFailure")
-        .map => return ok("HeroMapHeader *")
+        .failure  => return ok("HeroFailure")
+        .map      => return ok("HeroMapHeader *")
         # A C function pointer and nothing more — no captured
         # environment, because v1 has no closures. A Heroes function
         # value and a C callback are the same eight bytes, which is
         # what makes qsort and every raylib callback expressible.
+
         .function_ty => return ok(func_of(names, ty: ty))
         # The two the checker keeps for its own bookkeeping. Reaching
         # here with one is a compiler bug that must say so loudly: a
@@ -336,18 +385,21 @@ function c_type(names: Names, c: check_state.Checked, ty: i64) -> str?
         # WITHOUT pushing a diagnostic — the poison class §4.5 exists
         # to prevent. Both produced C clang refused at exit 2, blaming
         # the emitter for the checker's mistake.
+
         .generic =>
             assert false
             return fail("bug", "a type parameter survived monomorphisation and reached the emitter")
         .error =>
             assert false
             return fail("bug", "a poisoned type reached the emitter with no diagnostic")
+
     return fail("none", "unreached")
 
 # The type a FUNCTION returns, in C. Unit is void — the one place the
 # absence of a type has a spelling.
 function c_result(names: Names, c: check_state.Checked, ty: i64) -> str
     found = c_type(names, c: c, ty: ty)
+
     if found.is_err()
         return "void"
     return found.must()
@@ -382,14 +434,18 @@ test "options and function typedefs carry the leading digit"
     text = "function pick(ready: bool) -> i64?\n    if ready\n        return ok(1)\n    return fail(\"e\", \"m\")\n\nfunction apply_twice(f: (function(i64) -> i64), x: i64) -> i64\n    return f(f(x))\n\nfunction main()\n    print(pick(true).default(0))\n    print(apply_twice(double_it, 3))\n\nfunction double_it(n: i64) -> i64\n    return n * 2\n"
     names = named_up(text)
     found_opt: bool @ false
+
     for id in keys(names.options)
         if names.options[id].must() == "h_0opt_e201354"
             found_opt @ true
+
     assert found_opt
     found_fn: bool @ false
+
     for id in keys(names.funcs)
         if names.funcs[id].must() == "h_0fn_48ac9712"
             found_fn @ true
+
     assert found_fn
 
 test "the unit rule: no C type for unit or fixed, void only as a result"
@@ -417,6 +473,7 @@ test "fixedbugs: a function before the records does not shift the table"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     names = new_names(s, parsed.decls)
+
     # Point is declaration 1 and Size is 2 — each named for itself.
     assert of(names, decl: 1) == "h_t_Point"
     assert of(names, decl: 2) == "h_t_Size"

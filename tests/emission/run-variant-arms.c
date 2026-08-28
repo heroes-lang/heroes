@@ -297,15 +297,15 @@ bb1:
     h3_m = t6;
 #line 299 "variantarms.c"
     hero_str_decref(t8);
-#line 45 "tests/golden/run/variant-arms.hero"
+#line 46 "tests/golden/run/variant-arms.hero"
     t7 = h3_m;
 #line 303 "variantarms.c"
     hero_str_incref(t7);
-#line 45 "tests/golden/run/variant-arms.hero"
+#line 46 "tests/golden/run/variant-arms.hero"
     t11 = h2_r0;
 #line 307 "variantarms.c"
     hero_str_decref(t11);
-#line 45 "tests/golden/run/variant-arms.hero"
+#line 46 "tests/golden/run/variant-arms.hero"
     t12 = h3_m;
 #line 311 "variantarms.c"
     hero_str_decref(t12);
@@ -336,7 +336,7 @@ bb3:
     goto bb1;
 }
 
-#line 47 "tests/golden/run/variant-arms.hero"
+#line 48 "tests/golden/run/variant-arms.hero"
 void h_variantarms_main(void) {
 #line 342 "variantarms.c"
     h_variantarms_Sign h0_s;
@@ -391,187 +391,187 @@ void h_variantarms_main(void) {
     HeroStr t42 = {0};
     goto bb0;
 bb0:
-#line 48 "tests/golden/run/variant-arms.hero"
+#line 49 "tests/golden/run/variant-arms.hero"
     t1 = INT64_C(-5);
-#line 48 "tests/golden/run/variant-arms.hero"
+#line 49 "tests/golden/run/variant-arms.hero"
     t2 = h_variantarms_classify(t1);
-#line 48 "tests/golden/run/variant-arms.hero"
+#line 49 "tests/golden/run/variant-arms.hero"
     t3 = h_variantarms_word(t2);
-#line 48 "tests/golden/run/variant-arms.hero"
+#line 49 "tests/golden/run/variant-arms.hero"
     t35 = h4_own4;
-#line 48 "tests/golden/run/variant-arms.hero"
+#line 49 "tests/golden/run/variant-arms.hero"
     h4_own4 = t3;
 #line 405 "variantarms.c"
     hero_str_decref(t35);
-#line 48 "tests/golden/run/variant-arms.hero"
+#line 49 "tests/golden/run/variant-arms.hero"
     hero_print_str(t3);
-#line 48 "tests/golden/run/variant-arms.hero"
+#line 49 "tests/golden/run/variant-arms.hero"
     hero_print_end();
-#line 49 "tests/golden/run/variant-arms.hero"
+#line 50 "tests/golden/run/variant-arms.hero"
     t4 = INT64_C(0);
-#line 49 "tests/golden/run/variant-arms.hero"
+#line 50 "tests/golden/run/variant-arms.hero"
     t5 = h_variantarms_classify(t4);
-#line 49 "tests/golden/run/variant-arms.hero"
+#line 50 "tests/golden/run/variant-arms.hero"
     t6 = h_variantarms_word(t5);
-#line 49 "tests/golden/run/variant-arms.hero"
+#line 50 "tests/golden/run/variant-arms.hero"
     t36 = h5_own5;
-#line 49 "tests/golden/run/variant-arms.hero"
+#line 50 "tests/golden/run/variant-arms.hero"
     h5_own5 = t6;
 #line 421 "variantarms.c"
     hero_str_decref(t36);
-#line 49 "tests/golden/run/variant-arms.hero"
+#line 50 "tests/golden/run/variant-arms.hero"
     hero_print_str(t6);
-#line 49 "tests/golden/run/variant-arms.hero"
+#line 50 "tests/golden/run/variant-arms.hero"
     hero_print_end();
-#line 51 "tests/golden/run/variant-arms.hero"
+#line 53 "tests/golden/run/variant-arms.hero"
     t7 = INT64_C(3);
-#line 51 "tests/golden/run/variant-arms.hero"
+#line 53 "tests/golden/run/variant-arms.hero"
     t8 = h_variantarms_classify(t7);
-#line 51 "tests/golden/run/variant-arms.hero"
+#line 53 "tests/golden/run/variant-arms.hero"
     h0_s = t8;
-#line 52 "tests/golden/run/variant-arms.hero"
+#line 55 "tests/golden/run/variant-arms.hero"
     t9 = h0_s;
-#line 52 "tests/golden/run/variant-arms.hero"
+#line 55 "tests/golden/run/variant-arms.hero"
     h1_s0 = t9;
-#line 52 "tests/golden/run/variant-arms.hero"
+#line 55 "tests/golden/run/variant-arms.hero"
     t10 = h1_s0;
-#line 52 "tests/golden/run/variant-arms.hero"
+#line 55 "tests/golden/run/variant-arms.hero"
     t11 = t10.tag;
-#line 52 "tests/golden/run/variant-arms.hero"
+#line 55 "tests/golden/run/variant-arms.hero"
     switch (t11) {
-#line 52 "tests/golden/run/variant-arms.hero"
+#line 55 "tests/golden/run/variant-arms.hero"
         case 0: goto bb2;
-#line 52 "tests/golden/run/variant-arms.hero"
+#line 55 "tests/golden/run/variant-arms.hero"
         case 1: goto bb3;
-#line 52 "tests/golden/run/variant-arms.hero"
+#line 55 "tests/golden/run/variant-arms.hero"
         case 2: goto bb4;
-#line 52 "tests/golden/run/variant-arms.hero"
+#line 55 "tests/golden/run/variant-arms.hero"
         default: hero_unreachable();
-#line 52 "tests/golden/run/variant-arms.hero"
+#line 55 "tests/golden/run/variant-arms.hero"
     }
-#line 52 "tests/golden/run/variant-arms.hero"
+#line 55 "tests/golden/run/variant-arms.hero"
 bb1:
-#line 56 "tests/golden/run/variant-arms.hero"
+#line 60 "tests/golden/run/variant-arms.hero"
     t15 = (h_variantarms_Sign){.tag = h_variantarms_Sign_tag_zero};
-#line 56 "tests/golden/run/variant-arms.hero"
+#line 60 "tests/golden/run/variant-arms.hero"
     t16 = h_variantarms_verdict(t15);
-#line 56 "tests/golden/run/variant-arms.hero"
+#line 60 "tests/golden/run/variant-arms.hero"
     t37 = h6_own6;
-#line 56 "tests/golden/run/variant-arms.hero"
+#line 60 "tests/golden/run/variant-arms.hero"
     h6_own6 = t16;
 #line 463 "variantarms.c"
     hero_str_decref(t37);
-#line 56 "tests/golden/run/variant-arms.hero"
+#line 60 "tests/golden/run/variant-arms.hero"
     hero_print_str(t16);
-#line 56 "tests/golden/run/variant-arms.hero"
+#line 60 "tests/golden/run/variant-arms.hero"
     hero_print_end();
-#line 57 "tests/golden/run/variant-arms.hero"
+#line 61 "tests/golden/run/variant-arms.hero"
     t17 = (h_variantarms_Sign){.tag = h_variantarms_Sign_tag_pos};
-#line 57 "tests/golden/run/variant-arms.hero"
+#line 61 "tests/golden/run/variant-arms.hero"
     t18 = h_variantarms_verdict(t17);
-#line 57 "tests/golden/run/variant-arms.hero"
+#line 61 "tests/golden/run/variant-arms.hero"
     t38 = h7_own7;
-#line 57 "tests/golden/run/variant-arms.hero"
+#line 61 "tests/golden/run/variant-arms.hero"
     h7_own7 = t18;
 #line 477 "variantarms.c"
     hero_str_decref(t38);
-#line 57 "tests/golden/run/variant-arms.hero"
+#line 61 "tests/golden/run/variant-arms.hero"
     hero_print_str(t18);
-#line 57 "tests/golden/run/variant-arms.hero"
+#line 61 "tests/golden/run/variant-arms.hero"
     hero_print_end();
-#line 59 "tests/golden/run/variant-arms.hero"
+#line 64 "tests/golden/run/variant-arms.hero"
     t19 = INT64_C(1);
-#line 59 "tests/golden/run/variant-arms.hero"
+#line 64 "tests/golden/run/variant-arms.hero"
     t20 = 0x1p-1;
-#line 59 "tests/golden/run/variant-arms.hero"
+#line 64 "tests/golden/run/variant-arms.hero"
     t21 = (h_variantarms_P){.f_n = t19, .f_f = t20};
-#line 59 "tests/golden/run/variant-arms.hero"
+#line 64 "tests/golden/run/variant-arms.hero"
     h2_x = t21;
-#line 60 "tests/golden/run/variant-arms.hero"
+#line 65 "tests/golden/run/variant-arms.hero"
     t22 = INT64_C(1);
-#line 60 "tests/golden/run/variant-arms.hero"
+#line 65 "tests/golden/run/variant-arms.hero"
     t23 = 0x1p-1;
-#line 60 "tests/golden/run/variant-arms.hero"
+#line 65 "tests/golden/run/variant-arms.hero"
     t24 = (h_variantarms_P){.f_n = t22, .f_f = t23};
-#line 60 "tests/golden/run/variant-arms.hero"
+#line 65 "tests/golden/run/variant-arms.hero"
     h3_y = t24;
-#line 61 "tests/golden/run/variant-arms.hero"
+#line 66 "tests/golden/run/variant-arms.hero"
     t25 = h2_x;
-#line 61 "tests/golden/run/variant-arms.hero"
+#line 66 "tests/golden/run/variant-arms.hero"
     t26 = h3_y;
-#line 61 "tests/golden/run/variant-arms.hero"
+#line 66 "tests/golden/run/variant-arms.hero"
     t27 = h_variantarms_P_eq(&t25, &t26);
-#line 61 "tests/golden/run/variant-arms.hero"
+#line 66 "tests/golden/run/variant-arms.hero"
     hero_print_bool(t27);
-#line 61 "tests/golden/run/variant-arms.hero"
+#line 66 "tests/golden/run/variant-arms.hero"
     hero_print_end();
-#line 62 "tests/golden/run/variant-arms.hero"
+#line 67 "tests/golden/run/variant-arms.hero"
     t28 = h2_x;
-#line 62 "tests/golden/run/variant-arms.hero"
+#line 67 "tests/golden/run/variant-arms.hero"
     t29 = INT64_C(1);
-#line 62 "tests/golden/run/variant-arms.hero"
+#line 67 "tests/golden/run/variant-arms.hero"
     t30 = 0x1p-2;
-#line 62 "tests/golden/run/variant-arms.hero"
+#line 67 "tests/golden/run/variant-arms.hero"
     t31 = (h_variantarms_P){.f_n = t29, .f_f = t30};
-#line 62 "tests/golden/run/variant-arms.hero"
+#line 67 "tests/golden/run/variant-arms.hero"
     t32 = h_variantarms_P_eq(&t28, &t31);
-#line 62 "tests/golden/run/variant-arms.hero"
+#line 67 "tests/golden/run/variant-arms.hero"
     hero_print_bool(t32);
-#line 62 "tests/golden/run/variant-arms.hero"
+#line 67 "tests/golden/run/variant-arms.hero"
     hero_print_end();
-#line 63 "tests/golden/run/variant-arms.hero"
+#line 68 "tests/golden/run/variant-arms.hero"
     t33 = h2_x;
-#line 63 "tests/golden/run/variant-arms.hero"
+#line 68 "tests/golden/run/variant-arms.hero"
     t34 = t33.f_f;
-#line 63 "tests/golden/run/variant-arms.hero"
+#line 68 "tests/golden/run/variant-arms.hero"
     hero_print_f64(t34);
-#line 63 "tests/golden/run/variant-arms.hero"
+#line 68 "tests/golden/run/variant-arms.hero"
     hero_print_end();
-#line 63 "tests/golden/run/variant-arms.hero"
+#line 68 "tests/golden/run/variant-arms.hero"
     t39 = h4_own4;
 #line 533 "variantarms.c"
     hero_str_decref(t39);
-#line 63 "tests/golden/run/variant-arms.hero"
+#line 68 "tests/golden/run/variant-arms.hero"
     t40 = h5_own5;
 #line 537 "variantarms.c"
     hero_str_decref(t40);
-#line 63 "tests/golden/run/variant-arms.hero"
+#line 68 "tests/golden/run/variant-arms.hero"
     t41 = h6_own6;
 #line 541 "variantarms.c"
     hero_str_decref(t41);
-#line 63 "tests/golden/run/variant-arms.hero"
+#line 68 "tests/golden/run/variant-arms.hero"
     t42 = h7_own7;
 #line 545 "variantarms.c"
     hero_str_decref(t42);
     return;
 bb2:
-#line 53 "tests/golden/run/variant-arms.hero"
+#line 56 "tests/golden/run/variant-arms.hero"
     t12 = HERO_STR_LIT(hero_str_1d01f4);
-#line 53 "tests/golden/run/variant-arms.hero"
+#line 56 "tests/golden/run/variant-arms.hero"
     hero_print_str(t12);
-#line 53 "tests/golden/run/variant-arms.hero"
+#line 56 "tests/golden/run/variant-arms.hero"
     hero_print_end();
-#line 53 "tests/golden/run/variant-arms.hero"
+#line 56 "tests/golden/run/variant-arms.hero"
     goto bb1;
-#line 53 "tests/golden/run/variant-arms.hero"
+#line 56 "tests/golden/run/variant-arms.hero"
 bb3:
-#line 54 "tests/golden/run/variant-arms.hero"
+#line 57 "tests/golden/run/variant-arms.hero"
     t13 = HERO_STR_LIT(hero_str_1073a930);
-#line 54 "tests/golden/run/variant-arms.hero"
+#line 57 "tests/golden/run/variant-arms.hero"
     hero_print_str(t13);
-#line 54 "tests/golden/run/variant-arms.hero"
+#line 57 "tests/golden/run/variant-arms.hero"
     hero_print_end();
-#line 54 "tests/golden/run/variant-arms.hero"
+#line 57 "tests/golden/run/variant-arms.hero"
     goto bb1;
-#line 54 "tests/golden/run/variant-arms.hero"
+#line 57 "tests/golden/run/variant-arms.hero"
 bb4:
-#line 55 "tests/golden/run/variant-arms.hero"
+#line 58 "tests/golden/run/variant-arms.hero"
     t14 = HERO_STR_LIT(hero_str_1d8d30);
-#line 55 "tests/golden/run/variant-arms.hero"
+#line 58 "tests/golden/run/variant-arms.hero"
     hero_print_str(t14);
-#line 55 "tests/golden/run/variant-arms.hero"
+#line 58 "tests/golden/run/variant-arms.hero"
     hero_print_end();
-#line 55 "tests/golden/run/variant-arms.hero"
+#line 58 "tests/golden/run/variant-arms.hero"
     goto bb1;
 #line 577 "variantarms.c"
 }

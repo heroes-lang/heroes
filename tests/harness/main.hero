@@ -84,19 +84,21 @@ use suite_units
 use suite_warnings
 use suite_run
 
-
 constant SCRATCH: str
     "build/harness"
 
 function main()
     given = args()
+
     # No compiler named: ask the machine which one is here (shell.some_compiler
     # — the seed-built one first, the bootstrap last), so the same invocation
     # works before and after `crates/` is archived.
     compiler: str @ shell.some_compiler()
+
     if given.len() > 0
         compiler @ given[0]
     only: str @ ""
+
     if given.len() > 1
         only @ given[1]
 
@@ -104,12 +106,15 @@ function main()
     # listings. It is under build/ because that is the one directory this
     # project already treats as disposable.
     made = shell.mkdir_all(SCRATCH)
+
     if made.is_err()
         print("harness: cannot create " + SCRATCH)
         exit(2)
+
     if compiler.len() == 0
         print("harness: " + shell.no_compiler_anywhere())
         exit(2)
+
     if !shell.exists(compiler)
         print("harness: no compiler at " + compiler)
         print("  build one first, or name it: heroes run tests/harness/main.hero -- <compiler>")
@@ -124,13 +129,17 @@ function main()
 
     total: report.Report @ report.empty()
     ran: i64 @ 0
+
     for form in forms
         if only == "" || only == form.name
             got = suite_golden.run_all(scratch: SCRATCH, compiler: compiler, shape: form)
+
             if got.is_err()
                 print("harness: the " + form.name + "/ suite could not run")
                 exit(2)
-            print("  " + form.name + ": " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
+            print(
+                "  " + form.name + ": " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed"
+            )
             total @ report.tally(one: total, two: got.must())
             ran @ ran + 1
 
@@ -139,6 +148,7 @@ function main()
     # runner rather than a row in the table above.
     if only == "" || only == "run"
         got = suite_run.run_all(scratch: SCRATCH, compiler: compiler)
+
         if got.is_err()
             print("harness: the run/ suite could not run")
             exit(2)
@@ -151,6 +161,7 @@ function main()
     # with themselves.
     if only == "" || only == "annotations"
         got = suite_annotations.run_all(scratch: SCRATCH, compiler: compiler)
+
         if got.is_err()
             print("harness: the annotations sweep could not run")
             exit(2)
@@ -160,6 +171,7 @@ function main()
 
     if only == "" || only == "determinism"
         got = suite_determinism.run_all(scratch: SCRATCH, compiler: compiler)
+
         if got.is_err()
             print("harness: the determinism suite could not run")
             exit(2)
@@ -172,6 +184,7 @@ function main()
     # and nothing else.
     if only == "" || only == "emission"
         got = suite_emission.run_all(scratch: SCRATCH, compiler: compiler)
+
         if got.is_err()
             print("harness: the emission suite could not run")
             exit(2)
@@ -184,6 +197,7 @@ function main()
     # runs no compiler, so it is the cheapest suite here.
     if only == "" || only == "descriptors"
         got = suite_descriptors.run_all(scratch: SCRATCH)
+
         if got.is_err()
             print("harness: the descriptors suite could not run")
             exit(2)
@@ -195,6 +209,7 @@ function main()
     # file edited in between — the one question no golden row can put.
     if only == "" || only == "cache"
         got = suite_cache.run_all(scratch: SCRATCH, compiler: compiler)
+
         if got.is_err()
             print("harness: the cache suite could not run")
             exit(2)
@@ -207,6 +222,7 @@ function main()
     # one asks what the first one produced.
     if only == "" || only == "units"
         got = suite_units.run_all(scratch: SCRATCH, compiler: compiler)
+
         if got.is_err()
             print("harness: the units suite could not run")
             exit(2)
@@ -216,6 +232,7 @@ function main()
 
     if only == "" || only == "fixes"
         got = suite_fixes.run_default(scratch: SCRATCH, compiler: compiler)
+
         if got.is_err()
             print("harness: the fixes suite could not run")
             exit(2)
@@ -225,6 +242,7 @@ function main()
 
     if only == "" || only == "lines"
         got = suite_lines.run_all(scratch: SCRATCH, compiler: compiler)
+
         if got.is_err()
             print("harness: the lines sweep could not run")
             exit(2)
@@ -234,6 +252,7 @@ function main()
 
     if only == "" || only == "corpus"
         got = suite_corpus.run_all(scratch: SCRATCH, compiler: compiler)
+
         if got.is_err()
             print("harness: the corpus suite could not run")
             exit(2)
@@ -243,6 +262,7 @@ function main()
 
     if only == "" || only == "warnings"
         got = suite_warnings.run_all(scratch: SCRATCH, compiler: compiler)
+
         if got.is_err()
             print("harness: the warnings gate could not run")
             exit(2)
@@ -254,6 +274,7 @@ function main()
     # take no compiler at all.
     if only == "" || only == "records"
         got = suite_records.run_all(SCRATCH)
+
         if got.is_err()
             print("harness: the record checks could not run")
             exit(2)
@@ -263,6 +284,7 @@ function main()
 
     if only == "" || only == "surface"
         got = suite_surface.run_all(scratch: SCRATCH, compiler: compiler)
+
         if got.is_err()
             print("harness: the surface suite could not run")
             exit(2)
@@ -272,6 +294,7 @@ function main()
 
     if only == "" || only == "special"
         got = suite_special.run_all(scratch: SCRATCH, compiler: compiler)
+
         if got.is_err()
             print("harness: the special cases could not run")
             exit(2)
@@ -283,6 +306,7 @@ function main()
     # compiler still name the same language.
     if only == "" || only == "spec"
         got = suite_spec.run_all(scratch: SCRATCH, compiler: compiler)
+
         if got.is_err()
             print("harness: the spec checks could not run")
             exit(2)
@@ -292,6 +316,7 @@ function main()
 
     if only == "" || only == "layout"
         got = suite_layout.run_all(SCRATCH)
+
         if got.is_err()
             print("harness: the layout check could not run")
             exit(2)
@@ -303,6 +328,7 @@ function main()
     # no compiler, like `layout` beside it.
     if only == "" || only == "order"
         got = suite_order.run_all(SCRATCH)
+
         if got.is_err()
             print("harness: the order check could not run")
             exit(2)
@@ -313,5 +339,6 @@ function main()
     if ran == 0
         print("harness: no suite named " + only)
         exit(2)
+
     if !report.verdict(total, "harness")
         exit(1)

@@ -47,6 +47,7 @@ function main()
     # Left, accumulator first: ((0-1)-2)-3)-4 = -10. Right would be 2, and a
     # swapped accumulator would be 4.
     print(fold(xs, 0, sub))
+
     # Left: "" + "a" + "b" + "c". Right would print "cba".
     print(fold(["a", "b", "c"], "", glue))
 

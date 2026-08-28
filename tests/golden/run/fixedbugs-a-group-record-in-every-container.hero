@@ -42,13 +42,16 @@ function main()
     a = Color(r: 1, g: 2, b: 3, a: 4)
     b = Color(r: 1, g: 2, b: 3, a: 4)
     c = Color(r: 9, g: 9, b: 9, a: 9)
+
     # `==` walks the fields of the header's struct, through this compiler's `_eq`.
     print(a == b)
     print(a == c)
+
     # An array element reaches `_desc`, whose copy, drop and eq are all generated.
     xs: [Color] = [a, c]
     print(len(xs))
     print(xs[0] == a)
+
     # A map VALUE reaches the same descriptor; a map KEY reaches `_hash` as well.
     m: {i64: Color} @ {}
     m[1] @ a
@@ -56,8 +59,10 @@ function main()
     keyed: {Color: i64} @ {}
     keyed[a] @ 7
     print(keyed[b].must())
+
     # A `T?` payload is a third descriptor route.
     maybe: Color? = ok(c)
     print(maybe.is_err())
+
     # And the value still crosses to C after all of that.
     print(ColorToInt(a))

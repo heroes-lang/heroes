@@ -34,28 +34,37 @@ use mutate_sites
 # **A one-character edit** in an identifier, wherever a bare name is read.
 function typo_ident(a: ast.Ast, s: source.Source) -> [str]
     out: [str] @ []
+
     for e in a.exprs
         if !mutate_sites.is_name(e)
             continue
         name = source.span_text(s, e.span)
+
         if name.len() < 3
             continue
         out @ out.push(mutate_sites.edit(s: s, span: e.span, replacement: mutate_sites.slipped(name)))
+
     return out
 
 # The same slip inside an error **code**: `fail("unknown_char", …)`, and the
 # `e.code == "unknown_char"` that reads it back.
 function typo_code(a: ast.Ast, s: source.Source) -> [str]
     out: [str] @ []
+
     for e in a.exprs
         literal = code_literal(a: a, s: s, e: e)
+
         if literal.is_err()
             continue
         span = a.exprs[literal.must()].span
         code = code_text(s: s, span: span)
+
         if code.is_err()
             continue
-        out @ out.push(mutate_sites.edit(s: s, span: span, replacement: "\"" + mutate_sites.slipped(code.must()) + "\""))
+        out @ out.push(
+            mutate_sites.edit(s: s, span: span, replacement: "\"" + mutate_sites.slipped(code.must()) + "\"")
+        )
+
     return out
 
 # Which expression holds a code literal: the first argument of a `fail` call,
@@ -73,17 +82,17 @@ function code_literal(a: ast.Ast, s: source.Source, e: ast.Expr) -> i64?
             else
                 fail("no_code", "not an equality")
         .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit => fail("no_code", "a literal holds no code")
-        .null_ptr | .name | .hole | .error => fail("no_code", "nothing to read here")
-        .unary | .field | .index => fail("no_code", "nothing to read here")
-        .method | .variant_case => fail("no_code", "nothing to read here")
-        .array | .map | .try_expr | .if_expr | .match_expr => fail("no_code", "nothing to read here")
+        .null_ptr | .name | .hole | .error                       => fail("no_code", "nothing to read here")
+        .unary | .field | .index                                 => fail("no_code", "nothing to read here")
+        .method | .variant_case                                  => fail("no_code", "nothing to read here")
+        .array | .map | .try_expr | .if_expr | .match_expr       => fail("no_code", "nothing to read here")
 
 function is_equality(op: ast.BinaryOp) -> bool
     return match op
-        .eq | .ne => true
-        .add | .sub | .mul | .div | .rem => false
-        .lt | .le | .gt | .ge => false
-        .and | .or => false
+        .eq | .ne                                   => true
+        .add | .sub | .mul | .div | .rem            => false
+        .lt | .le | .gt | .ge                       => false
+        .and | .or                                  => false
         .bit_and | .bit_or | .bit_xor | .shl | .shr => false
 
 # True when `id` is written as the bare name `name` — the only spelling a
@@ -96,28 +105,29 @@ function is_written(a: ast.Ast, s: source.Source, id: i64, name: str) -> bool
 function code_side(a: ast.Ast, s: source.Source, left: i64, right: i64) -> i64?
     if is_str(a.exprs[left]) && reads_code(a: a, s: s, id: right)
         return ok(left)
+
     if is_str(a.exprs[right]) && reads_code(a: a, s: s, id: left)
         return ok(right)
     return fail("no_code", "neither side is a code comparison")
 
 function is_str(e: ast.Expr) -> bool
     return match e.kind
-        .str_lit => true
-        .int_lit | .float_lit | .char_lit | .bool_lit => false
-        .null_ptr | .name | .hole | .error => false
-        .unary | .binary | .field | .index => false
-        .call | .method | .variant_case => false
+        .str_lit                                           => true
+        .int_lit | .float_lit | .char_lit | .bool_lit      => false
+        .null_ptr | .name | .hole | .error                 => false
+        .unary | .binary | .field | .index                 => false
+        .call | .method | .variant_case                    => false
         .array | .map | .try_expr | .if_expr | .match_expr => false
 
 # Whether this expression is `<something>.code`.
 function reads_code(a: ast.Ast, s: source.Source, id: i64) -> bool
     return match a.exprs[id].kind
-        .field f => source.span_text(s, f.name) == "code"
+        .field f                                                 => source.span_text(s, f.name) == "code"
         .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit => false
-        .null_ptr | .name | .hole | .error => false
-        .unary | .binary | .index => false
-        .call | .method | .variant_case => false
-        .array | .map | .try_expr | .if_expr | .match_expr => false
+        .null_ptr | .name | .hole | .error                       => false
+        .unary | .binary | .index                                => false
+        .call | .method | .variant_case                          => false
+        .array | .map | .try_expr | .if_expr | .match_expr       => false
 
 # A code literal's text, without its quotes. Skipped when it carries a
 # backslash — dropping the middle character of an escape measures the lexer,
@@ -125,29 +135,37 @@ function reads_code(a: ast.Ast, s: source.Source, id: i64) -> bool
 # anybody would have typed.
 function code_text(s: source.Source, span: token.Span) -> str?
     written = source.span_text(s, span)
+
     if written.len() < 2 || written[0] != 34 || written[written.len() - 1] != 34
         return fail("not_a_code", "not a quoted literal")
     inner = written.slice(from: 1, to: written.len() - 1)
+
     if inner.len() < 3
         return fail("not_a_code", "too short for a slip")
     i: i64 @ 0
+
     while i < inner.len()
         if inner[i] == 92
             return fail("not_a_code", "an escape measures the lexer")
         i @ i + 1
+
     return ok(inner)
 
 # A `constant`'s value, off by one digit.
 function typo_digit(a: ast.Ast, s: source.Source, decls: [ast.Decl]) -> [str]
     out: [str] @ []
+
     for d in decls
         literal = constant_number(a: a, decl: d)
+
         if literal.is_err()
             continue
         span = a.exprs[literal.must()].span
         slip = neighbouring_digit(source.span_text(s, span))
+
         if !slip.is_err()
             out @ out.push(mutate_sites.edit(s: s, span: span, replacement: slip.must()))
+
     return out
 
 # The single integer literal a `constant` is, or absent.
@@ -161,28 +179,29 @@ function constant_number(a: ast.Ast, decl: ast.Decl) -> i64?
         .constant_decl c =>
             match c.body
                 .ok body => single_int(a: a, body: body)
-                .err _ => fail("no_digit", "an extern constant has no body")
+                .err _   => fail("no_digit", "an extern constant has no body")
         .function_decl | .record_decl | .variant_decl | .test_decl => fail("no_digit", "not a constant")
 
 function single_int(a: ast.Ast, body: ast.Block) -> i64?
     if body.stmts.len() != 1
         return fail("no_digit", "more than one statement")
+
     return match a.stmts[body.stmts[0]].kind
         .expr_stmt only =>
             if is_int_literal(a.exprs[only.value])
                 ok(only.value)
             else
                 fail("no_digit", "not an integer literal")
-        .bind | .declare | .mutate | .return_stmt | .break_stmt => fail("no_digit", "not an expression")
+        .bind | .declare | .mutate | .return_stmt | .break_stmt        => fail("no_digit", "not an expression")
         .continue_stmt | .while_stmt | .for_in | .assert_stmt | .error => fail("no_digit", "not an expression")
 
 function is_int_literal(e: ast.Expr) -> bool
     return match e.kind
-        .int_lit => true
-        .float_lit | .str_lit | .char_lit | .bool_lit => false
-        .null_ptr | .name | .hole | .error => false
-        .unary | .binary | .field | .index => false
-        .call | .method | .variant_case => false
+        .int_lit                                           => true
+        .float_lit | .str_lit | .char_lit | .bool_lit      => false
+        .null_ptr | .name | .hole | .error                 => false
+        .unary | .binary | .field | .index                 => false
+        .call | .method | .variant_case                    => false
         .array | .map | .try_expr | .if_expr | .match_expr => false
 
 # The last digit, moved by one — and the TOP digit of the base goes *down*
@@ -199,6 +218,7 @@ function neighbouring_digit(text: str) -> str?
     cs = text.chars()
     prefix: i64 @ 0
     radix: i64 @ 10
+
     if cs.len() > 2 && cs[0] == "0"
         if cs[1] == "x"
             prefix @ 2
@@ -210,24 +230,30 @@ function neighbouring_digit(text: str) -> str?
             prefix @ 2
             radix @ 2
     at: i64 @ cs.len() - 1
+
     while at >= 0 && cs[at] == "_"
         at @ at - 1
+
     if at < prefix
         return fail("no_digit", "nothing but a prefix and separators")
     value = digit_value(ch: cs[at], radix: radix)
+
     if value.is_err()
         return fail("no_digit", "the last character is not a digit of this base")
     moved: i64 @ value.must() + 1
+
     if value.must() + 1 == radix
         moved @ value.must() - 1
     out: [str] @ []
     i: i64 @ 0
+
     while i < cs.len()
         if i == at
             out @ out.push(digit_char(value: moved))
         else
             out @ out.push(cs[i])
         i @ i + 1
+
     return ok(out.join(""))
 
 function digit_value(ch: str, radix: i64) -> i64?
@@ -235,12 +261,14 @@ function digit_value(ch: str, radix: i64) -> i64?
         return fail("not_a_digit", "not one character")
     b = ch[0].to_i64().must()
     value: i64 @ -1
+
     if b >= 48 && b <= 57
         value @ b - 48
-    # Lowercase only: that is the spelling the lexer accepts, so a mutant built
-    # here is a program the lexer would also accept.
     else if b >= 97 && b <= 102
+        # Lowercase only: that is the spelling the lexer accepts, so a mutant built
+        # here is a program the lexer would also accept.
         value @ b - 97 + 10
+
     if value == -1 || value >= radix
         return fail("not_a_digit", "not a digit of this base")
     return ok(value)
@@ -271,8 +299,10 @@ test "a digit moves by one, and the top digit of the base goes down"
     assert neighbouring_digit("0o37").default("") == "0o36"
     assert neighbouring_digit("0b1011").default("") == "0b1010"
     assert neighbouring_digit("0b1010").default("") == "0b1011"
+
     # A separator is stepped over rather than mutated.
     assert neighbouring_digit("1_000").default("") == "1_001"
+
     # A prefix with nothing after it has no digit to move.
     assert neighbouring_digit("0x").is_err()
     assert neighbouring_digit("").is_err()

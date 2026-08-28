@@ -23,10 +23,13 @@ use cli_io
 # is clean.
 function run_parse(s: source.Source, inv: cli_argv.Invocation) -> cli_table.Exit
     out = parse.parse_source(s)
+
     for d in out.diagnostics
         cli_io.eprint(text: diag.render_line(d, s))
+
     if out.diagnostics.len() > 0
         return .diagnostics_exit
+
     if cli_argv.has(inv, spelling: "--dump-ast")
         cli_io.print_artifact(text: print_dump.dump_ast(out.tree, s, out.uses, out.decls))
     return .ok_exit
@@ -36,23 +39,29 @@ function run_parse(s: source.Source, inv: cli_argv.Invocation) -> cli_table.Exit
 # already-canonical file is NOT rewritten, so its mtime does not move.
 function run_fmt(path: str, s: source.Source, inv: cli_argv.Invocation) -> cli_table.Exit
     out = parse.parse_source(s)
+
     if out.diagnostics.len() > 0
         for d in out.diagnostics
             cli_io.eprint(text: diag.render_line(d, s))
+
         cli_io.eprint(text: "error: refusing to format a file with diagnostics")
         return .diagnostics_exit
     formatted = print_fmt.format_file(out.tree, s, out.comments, out.uses, out.decls)
     refusal = refuse_output_the_formatter_broke(path: path, original: source_extent.user_text(s), formatted: formatted)
+
     if !refusal.is_err()
         cli_io.eprint(text: "error: " + refusal.must())
         cli_io.eprint(text: "error: this is a compiler bug — `" + path + "` was NOT changed")
         return .failed_exit
+
     if !cli_argv.has(inv, spelling: "--in-place")
         cli_io.print_artifact(text: formatted)
         return .ok_exit
+
     if formatted == source_extent.user_text(s)
         return .ok_exit
     written = write_file(path: path, text: formatted)
+
     if written.is_err()
         cli_io.eprint(text: "error: cannot write `" + path + "`")
         return .failed_exit
@@ -93,12 +102,15 @@ function run_fmt(path: str, s: source.Source, inv: cli_argv.Invocation) -> cli_t
 function refuse_output_the_formatter_broke(path: str, original: str, formatted: str) -> str?
     after = source.new_source(name: path, text: formatted)
     reparsed = parse.parse(formatted)
+
     if reparsed.diagnostics.len() > 0
         return ok("`fmt` produced source that does not parse: " + diag.render_line(reparsed.diagnostics[0], after))
     twice = print_fmt.format_file(reparsed.tree, after, reparsed.comments, reparsed.uses, reparsed.decls)
+
     if twice != formatted
         return ok("`fmt` is not a fixpoint on its own output for `" + path + "`")
     before = parse.parse(original)
+
     if before.diagnostics.len() > 0
         # The root file alone does not parse, which `run_fmt` has already
         # ruled out for the whole compilation — so there is no tree to
@@ -106,8 +118,11 @@ function refuse_output_the_formatter_broke(path: str, original: str, formatted: 
         return fail("clean", "the root file alone does not parse")
     was = print_dump.dump_ast(before.tree, source.new_source(name: path, text: original), before.uses, before.decls)
     now = print_dump.dump_ast(reparsed.tree, after, reparsed.uses, reparsed.decls)
+
     if was != now
-        return ok("`fmt` changed the TREE of `" + path + "` — the output parses and is a fixpoint, and it is a DIFFERENT PROGRAM")
+        return ok(
+            "`fmt` changed the TREE of `" + path + "` — the output parses and is a fixpoint, and it is a DIFFERENT PROGRAM"
+        )
     return fail("clean", "the output parses, is a fixpoint, and holds the same tree")
 
 ## Tests
@@ -117,9 +132,11 @@ test "parse checks silently, dumps only a clean tree, and fmt round-trips"
     s = source.new_source(name: "t.hero", text: text)
     inv = cli_argv.Invocation(tag: .parse_cmd, file: ok("t.hero"), program_args: [], flags: [])
     assert run_parse(s, inv) == .ok_exit
+
     # A broken file exits 1 through the same door.
     bad = source.new_source(name: "t.hero", text: "function main(\n    print(1)\n")
     assert run_parse(bad, inv) == .diagnostics_exit
+
     # fmt to a real file: --in-place canonicalises once, then leaves
     # the canonical file alone.
     messy = "function main()\n    print(2 + (3 * 4))\n"
@@ -130,6 +147,7 @@ test "parse checks silently, dumps only a clean tree, and fmt round-trips"
     assert run_fmt(path: "build/selftest_fmt.hero", s: fs, inv: finv) == .ok_exit
     canon = read_file("build/selftest_fmt.hero").must()
     assert canon == "function main()\n    print(2 + 3 * 4)\n"
+
     # And the refusal: a file with diagnostics is not touched.
     _ = write_file(path: "build/selftest_fmt.hero", text: "function main(\n")
     bs = source.new_source(name: "build/selftest_fmt.hero", text: "function main(\n")
@@ -164,6 +182,7 @@ test "fmt refuses output that parses and is a fixpoint and still means something
     rinv = cli_argv.Invocation(tag: .fmt_cmd, file: ok("build/selftest_fmt_tree.hero"), program_args: [], flags: marks)
     assert run_fmt(path: "build/selftest_fmt_tree.hero", s: rs, inv: rinv) == .failed_exit
     assert read_file("build/selftest_fmt_tree.hero").must() == remark
+
     # And the two weaker properties really do hold on that output, which
     # is why this case is the only one that can fail the third check.
     squashed = "record Point\n    x: i64\n    # a remark, not documentation for y\n    y: i64\n"
@@ -179,5 +198,6 @@ test "fmt refuses to write output it cannot parse back, and leaves the file alon
     hits: [cli_argv.FlagHit] = [cli_argv.FlagHit(spelling: "--in-place", value: fail("none", "no value"))]
     ginv = cli_argv.Invocation(tag: .fmt_cmd, file: ok("build/selftest_fmt_guard.hero"), program_args: [], flags: hits)
     assert run_fmt(path: "build/selftest_fmt_guard.hero", s: gs, inv: ginv) == .failed_exit
+
     # The whole point: the author's file is byte-for-byte untouched.
     assert read_file("build/selftest_fmt_guard.hero").must() == unspellable

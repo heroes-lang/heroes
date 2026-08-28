@@ -24,24 +24,30 @@ function content_key(c: check_state.Checked, s: source.Source, decls: [ast.Decl]
     named: {str: bool} @ {}
     seen: {i64: bool} @ {}
     frontier: [i64] @ [ty]
+
     while frontier.len() > 0
         id = frontier[frontier.len() - 1]
         frontier @ frontier.slice(from: 0, to: frontier.len() - 1)
+
         if !seen[id].is_err()
             continue
         seen[id] @ true
+
         match check_table.get(c.types, id)
-            .named n => named[source.component_at(s, decls[n.decl].name.start) + "." + source.span_text(s, decls[n.decl].name)] @ true
+            .named n                                                  => named[source.component_at(s, decls[n.decl].name.start) + "." + source.span_text(s, decls[n.decl].name)] @ true
             .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => named @ named
-            .array | .fixed | .map | .fallible | .function_ty => named @ named
-            .case_ty | .failure | .generic | .error => named @ named
+            .array | .fixed | .map | .fallible | .function_ty         => named @ named
+            .case_ty | .failure | .generic | .error                   => named @ named
+
         for inner in check_table.contained(c.types, id)
             frontier @ frontier.push(inner)
+
     # A type with no declared parts is already canonical, and keeping
     # its key equal to its rendering keeps `i64?`'s hash what every
     # pinned test spells.
     if len(named) == 0
         return rendered
+
     # ORDER: ascending qualified name — the key must not depend on the
     # walk, and sort(keys(…)) is what makes two mentions of one type
     # spell one name.
@@ -56,10 +62,12 @@ function collect(c: check_state.Checked, ty: i64, @into: {i64: bool})
             if !into[ty].is_err()
                 return
             into[ty] @ true
+
             for p in check_table.params_of(c.types, fn_ty.params)
                 collect(c, ty: p, into: @into)
+
             collect(c, ty: fn_ty.result, into: @into)
-        .array arr => collect(c, ty: arr.element, into: @into)
+        .array arr  => collect(c, ty: arr.element, into: @into)
         .fallible o => collect(c, ty: o.payload, into: @into)
         .map m =>
             collect(c, ty: m.key, into: @into)
@@ -98,14 +106,16 @@ function everything() -> Wanted
 # arm carries the declaration index the aggregate walks are keyed by.
 function wanted_of(c: check_state.Checked, reached: {i64: bool}) -> Wanted
     named: {i64: bool} @ {}
+
     # ORDER: none — the walk fills a SET, and both readers below ask it
     # a membership question.
     for id in keys(reached)
         match check_table.get(c.types, id)
-            .named n => named[n.decl] @ true
+            .named n                                                  => named[n.decl] @ true
             .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => named @ named
-            .array | .fixed | .map | .fallible | .function_ty => named @ named
-            .case_ty | .failure | .generic | .error => named @ named
+            .array | .fixed | .map | .fallible | .function_ty         => named @ named
+            .case_ty | .failure | .generic | .error                   => named @ named
+
     return Wanted(types: reached, named: named, every: false)
 
 function wants_type(w: Wanted, ty: i64) -> bool

@@ -34,16 +34,27 @@ use checker
 function extern_record_assertions(@w: emit_writer.Writer, c: check_state.Checked, names: emit_ctype.Names, s: source.Source, decls: [ast.Decl])
     wrote: bool @ false
     index: i64 @ 0
+
     for decl in decls
         match decl.kind
             .record_decl rec =>
                 if !rec.header.is_err()
                     c_type = emit_ctype.of(names, decl: index)
                     hero_name = source.span_text(s, decl.name)
+
                     for field in rec.fields
-                        line = emit_extern_field.assertion(c, names, s, c_type: c_type, hero_name: hero_name, field: field)
+                        line = emit_extern_field.assertion(
+                            c,
+                            names,
+                            s,
+                            c_type: c_type,
+                            hero_name: hero_name,
+                            field: field
+                        )
+
                         if line.is_err()
                             continue
+
                         # #line at the FIELD, so a failure lands on the
                         # author's own line and the mapper can tell
                         # whose mistake it is from the file clang names.
@@ -59,8 +70,11 @@ function extern_record_assertions(@w: emit_writer.Writer, c: check_state.Checked
             # parse.hero with a `no_size` cycle that does not exist
             # (check_sized carried the same shape); the self-mutation is
             # this language's no-op.
+
             .constant_decl | .function_decl | .variant_decl | .test_decl => index @ index
+
         index @ index + 1
+
     if wrote
         emit_writer.at_generated(@w)
         emit_writer.blank(@w)
@@ -78,6 +92,7 @@ function extern_record_assertions(@w: emit_writer.Writer, c: check_state.Checked
 function completeness_probes(@w: emit_writer.Writer, c: check_state.Checked, names: emit_ctype.Names, s: source.Source, decls: [ast.Decl])
     wanted: [i64] @ []
     index: i64 @ 0
+
     for decl in decls
         match decl.kind
             .record_decl rec =>
@@ -91,17 +106,22 @@ function completeness_probes(@w: emit_writer.Writer, c: check_state.Checked, nam
             # parse.hero with a `no_size` cycle that does not exist
             # (check_sized carried the same shape); the self-mutation is
             # this language's no-op.
+
             .constant_decl | .function_decl | .variant_decl | .test_decl => index @ index
+
         index @ index + 1
+
     if wanted.len() == 0
         return
     emit_writer.at_generated(@w)
     emit_writer.line(@w, text: "#pragma clang diagnostic push")
     emit_writer.line(@w, text: "#pragma clang diagnostic error \"-Wmissing-field-initializers\"")
     emit_writer.line(@w, text: "#pragma clang diagnostic ignored \"-Wmissing-braces\"")
+
     for decl_at in wanted
         c_type = emit_ctype.of(names, decl: decl_at)
         probe = emit_extern_field.COMPLETE_PROBE + emit_ctype.satellite(names, decl: decl_at)
+
         # A nested record's slot is {0}, not 0 (brace elision spends a
         # flat list into the inner struct, and clang then reports a
         # field missing on a record that names ALL of its fields — ten
@@ -115,30 +135,40 @@ function completeness_probes(@w: emit_writer.Writer, c: check_state.Checked, nam
         # equal at exit 0. Two characters, measured to leave a union
         # silent and raise no false positive on struct in_addr.
         zeros: [str] @ []
+
         match decls[decl_at].kind
             .record_decl rec =>
                 for field in rec.fields
                     aggregate: bool @ false
                     written = check_state.written_type(c, field.ty)
+
                     if !written.is_err()
                         match check_table.get(c.types, written.must())
-                            .named | .fixed => aggregate @ true
+                            .named | .fixed                                           => aggregate @ true
                             .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => aggregate @ aggregate
-                            .array | .map | .fallible | .function_ty => aggregate @ aggregate
-                            .case_ty | .failure | .generic | .error => aggregate @ aggregate
+                            .array | .map | .fallible | .function_ty                  => aggregate @ aggregate
+                            .case_ty | .failure | .generic | .error                   => aggregate @ aggregate
+
                     if aggregate
                         zeros @ zeros.push("{0}")
                     else
                         zeros @ zeros.push("0")
             .constant_decl | .function_decl | .variant_decl | .test_decl => continue
+
         list: str @ zeros.join(",")
+
         if zeros.len() == 1 && zeros[0] == "0"
             list @ "(0)"
+
         # The declaration's own line, so the verdict lands where the
         # author can act on it.
         found = source.locate(s, decls[decl_at].name.start)
         emit_writer.at_file(@w, file: found.file, at: found.line)
-        emit_writer.line(@w, text: "__attribute__((unused)) static void " + probe + "(void) { " + c_type + " v = {" + list + "}; (void)v; }")
+        emit_writer.line(
+            @w,
+            text: "__attribute__((unused)) static void " + probe + "(void) { " + c_type + " v = {" + list + "}; (void)v; }"
+        )
+
     emit_writer.at_generated(@w)
     emit_writer.line(@w, text: "#pragma clang diagnostic pop")
     emit_writer.blank(@w)
@@ -148,22 +178,28 @@ function completeness_probes(@w: emit_writer.Writer, c: check_state.Checked, nam
 function has(text: str, needle: str) -> bool
     cs = text.chars()
     needle_cs = needle.chars()
+
     if needle_cs.len() == 0
         return true
+
     if needle_cs.len() > cs.len()
         return false
     start: i64 @ 0
+
     while start <= cs.len() - needle_cs.len()
         matched: bool @ true
         offset: i64 @ 0
+
         while offset < needle_cs.len()
             if cs[start + offset] != needle_cs[offset]
                 matched @ false
                 break
             offset @ offset + 1
+
         if matched
             return true
         start @ start + 1
+
     return false
 
 test "assertions land on the field's line, the probe counts positionally"
@@ -177,10 +213,12 @@ test "assertions land on the field's line, the probe counts positionally"
     w: emit_writer.Writer @ emit_writer.new_writer("t")
     extern_record_assertions(@w, c, names, s, parsed.decls)
     got = emit_writer.finish(w)
+
     # The field assertion carries the declaration's name and lands
     # under a #line for t.hero.
     assert has(text: got, needle: "heroes-ffi-field Color r")
     assert has(text: got, needle: "#line 3 \"t.hero\"")
+
     # The probe: Color's nested record slot is {0}, Point's single
     # scalar is parenthesised, and partial Font gets NO probe.
     assert has(text: got, needle: "hero_ffi_complete_h_t_Color(void) { Color v = {0,{0}}; (void)v; }")

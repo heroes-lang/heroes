@@ -25,7 +25,7 @@ variant Shape
 
 function area(s: Shape) -> i64
     return match s
-        .dot => 0
+        .dot   => 0
         .seg g => g.from.x
 
 function shift(@p: Point, by: i64)
@@ -50,15 +50,19 @@ function main()
     p: Point @ Point(x: 1, y: 2)
     shift(@p, by: 3)
     total: i64 @ 0
+
     for k in sort(keys(m))
         total @ total + m[k].must()
+
     i: i64 @ 0
+
     while i < len(xs)
         if xs[i] == 2
             i @ i + 1
             continue
         total @ total + xs[i]
         i @ i + 1
+
     print(total, " ", area(.seg(from: p)), " ", chain(4).default(0 - 1))
     print(xs.len(), " ", join(map(xs, show), ","))
     print(chars("ab")[0], slice("abc", from: 0, to: 2), to_i64(1.9).must(), to_f64(2))

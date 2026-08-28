@@ -20,6 +20,7 @@ function main()
     xs = [3, 1, 2]
     sorted = sort(xs)
     print(sorted[0], sorted[1], sorted[2])
+
     # A new array: the argument kept its order.
     print(xs[0], xs[1], xs[2])
 
@@ -49,6 +50,7 @@ function main()
     word = "caffè"
     print(len(word), " ", len(chars(word)))
     print(join(chars(word), "."))
+
     # The law, stated as a program: the pieces put back together are the string.
     print(join(chars(word), "") == word)
     print(join(chars(""), "") == "")

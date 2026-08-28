@@ -57,9 +57,11 @@ function first_int(db: ptr, sql: str) -> i64
         statement: @statement,
         tail: @tail
     )
+
     if rc != SQLITE_OK
         return 0 - 1
     value: i64 @ 0 - 1
+
     if sqlite3_step(statement) == SQLITE_ROW
         value @ sqlite3_column_int(statement, 0)
     _ = sqlite3_finalize(statement)
@@ -67,6 +69,7 @@ function first_int(db: ptr, sql: str) -> i64
 
 function main()
     db: ptr @ nullptr
+
     if sqlite3_open(":memory:".cstr(), @db) != SQLITE_OK
         print("cannot open the database")
         return

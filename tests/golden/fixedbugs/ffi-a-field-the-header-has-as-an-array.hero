@@ -37,7 +37,7 @@
 
 extern "dirent.h"
     record Dirent tag dirent partial
-        d_name: i8      #~ ffi_field_type
+        d_name: i8  #~ ffi_field_type
 
 function main()
     print(1)

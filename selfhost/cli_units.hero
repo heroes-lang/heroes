@@ -50,13 +50,17 @@ use cli_toolchain
 # itself a function of the program's `use` graph.
 function components(s: source.Source) -> [str]
     out: [str] @ []
+
     for entry in s.files
         already: bool @ false
+
         for one in out
             if one == entry.component
                 already @ true
+
         if !already
             out @ out.push(entry.component)
+
     return out
 
 # One TU compiled to its cached object. The .c and .o live under
@@ -71,17 +75,22 @@ function components(s: source.Source) -> [str]
 # once, hashed once, answered once per TU.
 function tu_object(t: cli_toolchain.Toolchain, module: str, tu_text: str, level: str, sanitize: bool, search: str, package_flags: [str], source_dir: str, search_include: [str], @memo: {str: str}) -> str?
     san: str @ ""
+
     if sanitize
         san @ "+san"
-    key = cli_digest.digest(t.fingerprint + "|tu|" + level + san + "|" + module + "|" + tu_text + "|" + t.runtime_key + "|" + search + "|" + package_flags.join(" "))
+    key = cli_digest.digest(
+        t.fingerprint + "|tu|" + level + san + "|" + module + "|" + tu_text + "|" + t.runtime_key + "|" + search + "|" + package_flags.join(" ")
+    )
     dir = t.build + "/tu-" + key
     made = cli_toolchain.mkdir_all(dir)
+
     if made.is_err()
         return fail("failed", "cannot create " + dir)
     c_file = dir + "/" + module + ".c"
     object = dir + "/" + module + ".o"
     saved = dir + "/warnings.txt"
     depfile = dir + "/" + module + ".d"
+
     if cli_toolchain.exists(object) && cli_deps.fresh(cli_deps.record_for(object), @memo)
         # A warm object REPLAYS the warnings its compile produced: the
         # flag set exists so a warning can falsify something (§7), and
@@ -91,28 +100,36 @@ function tu_object(t: cli_toolchain.Toolchain, module: str, tu_text: str, level:
         # Measured: suite_warnings went red on a warm cache before this
         # existed, on the program whose warnings are the expectation.
         kept = read_file(saved)
+
         if !kept.is_err() && kept.must().len() > 0
             cli_io.eprint_raw(text: kept.must())
         return ok(object)
     written = write_file(path: c_file, text: tu_text)
+
     if written.is_err()
         return fail("failed", "cannot write " + c_file)
     err_path = t.build + "/clang-stderr.txt"
     staged = object + ".tmp"
+
     # `-MT dep` names the listing's target a word rather than a path,
     # so the reader cuts at the first `:` on a fact it chose. The
     # listing rides this compile; no second clang invocation exists.
     line: str @ "clang " + cli_toolchain.words(cli_flags.flags()) + " " + level + " " + cli_toolchain.words(cli_flags.sanitizers(sanitize: sanitize)) + " -c -MD -MT dep -MF " + cli_shell.sq(depfile)
+
     for one in search_include
         line @ line + " -I " + cli_shell.sq(one)
+
     for flag in package_flags
         if cli_toolchain.starts_with(text: flag, prefix: "-I")
             line @ line + " " + cli_shell.sq(flag)
+
     line @ line + " " + cli_shell.sq(c_file) + " -I " + cli_shell.sq(t.runtime)
+
     if source_dir.len() > 0
         line @ line + " -I " + cli_shell.sq(source_dir)
     line @ line + " -o " + cli_shell.sq(staged)
     compiled = cli_toolchain.run_clang(line: line, what: "compiling the generated C", err_path: err_path)
+
     if compiled.is_err()
         # The failing TU's path rides INSIDE the message: emit_ffi's
         # matchers read it line by line and ignore this one, so an
@@ -122,22 +139,26 @@ function tu_object(t: cli_toolchain.Toolchain, module: str, tu_text: str, level:
         # `err_lacks("build/")`, measured on the fixedbugs corpus.
         return fail("clang", failure_note(compiled) + "\nthe generated C is at " + c_file)
     captured = read_file(err_path)
+
     if !captured.is_err() && captured.must().len() > 0
         _ = write_file(path: saved, text: captured.must())
+
     # Recorded BEFORE the object is published: an object on disk with no
     # record beside it would be a hit this cache cannot justify. The
     # order makes the failure direction the loud one — a record with no
     # object is a recompile, an object with no record is a stale answer.
     recorded = cli_deps.record_deps(record_path: cli_deps.record_for(object), depfile: depfile, skip: dir + "/", @memo)
+
     if recorded.is_err()
         return fail("failed", "cannot record what " + module + "'s translation unit read")
+
     if cli_shell.shell(command: "mv -f " + cli_shell.sq(staged) + " " + cli_shell.sq(object)) != 0
         return fail("failed", "cannot publish " + object)
     return ok(object)
 
 function failure_note(failed: ()?) -> str
     match failed
-        .ok => return ""
+        .ok    => return ""
         .err e => return e.msg
 
 # One link over every object. Re-run on every build, deliberately: it
@@ -146,21 +167,29 @@ function failure_note(failed: ()?) -> str
 function link_objects(t: cli_toolchain.Toolchain, objects: [str], binary: str, level: str, sanitize: bool, search_include: [str], search_library: [str], package_flags: [str], link_names: [str]) -> ()?
     err_path = t.build + "/clang-stderr.txt"
     line: str @ "clang " + cli_toolchain.words(cli_flags.flags()) + " " + level + " " + cli_toolchain.words(cli_flags.sanitizers(sanitize: sanitize))
+
     for dir in search_include
         line @ line + " -I " + cli_shell.sq(dir)
+
     for dir in search_library
         line @ line + " -L " + cli_shell.sq(dir)
+
     for object in objects
         line @ line + " " + cli_shell.sq(object)
+
     for flag in package_flags
         line @ line + " " + cli_shell.sq(flag)
+
     for name in link_names
         line @ line + " " + cli_shell.sq("-l" + name)
+
     staged = binary + ".tmp"
     line @ line + " -o " + cli_shell.sq(staged)
     linked = cli_toolchain.run_clang(line: line, what: "linking", err_path: err_path)
+
     if linked.is_err()
         linked?
+
     if cli_shell.shell(command: "mv -f " + cli_shell.sq(staged) + " " + cli_shell.sq(binary)) != 0
         return fail("failed", "cannot publish " + binary)
     return ok()

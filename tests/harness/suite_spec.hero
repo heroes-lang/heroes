@@ -121,6 +121,7 @@ constant ABOVE_ASCII: [str]
 function run_all(scratch: str, compiler: str) -> report.Report?
     r: report.Report @ report.empty()
     text = read_file(SPEC)
+
     if text.is_err()
         report.keep_failure(@r, label: "spec", detail: "  cannot read " + SPEC)
         return ok(r)
@@ -137,23 +138,38 @@ function run_all(scratch: str, compiler: str) -> report.Report?
 # The two gated numbers, and the headroom.
 function budget(@r: report.Report, scratch: str, compiler: str)
     measured = maximum_of(scratch: scratch, compiler: compiler, path: SPEC)
+
     if measured.is_err()
         report.keep_failure(@r, label: "spec/budget", detail: "  cannot measure " + SPEC + " — " + why(measured))
     else if measured.must() != SPEC_TOKENS
-        report.keep_failure(@r, label: "spec/budget", detail: "  the spec measures " + measured.must().to_str() + " and the record says " + SPEC_TOKENS.to_str() + " — a delta of " + (measured.must() - SPEC_TOKENS).to_str() + ".\n  If the change is intended, write the new number into SPEC_TOKENS in the SAME\n  commit, and put the delta plus its payment in the commit body: either a named\n  removal, or a registered falsifiable prediction naming BOTH the instrument that\n  will score it and the milestone it is scored at — and the instrument has to\n  exist today (panel 012, as amended by panel 046). A prediction naming an\n  instrument nobody has built is an observation, not a payment.\n  If it is not intended, the spec grew by accident, which is the case this\n  check exists for.")
+        report.keep_failure(
+            @r,
+            label: "spec/budget",
+            detail: "  the spec measures " + measured.must().to_str() + " and the record says " + SPEC_TOKENS.to_str() + " — a delta of " + (measured.must() - SPEC_TOKENS).to_str() + ".\n  If the change is intended, write the new number into SPEC_TOKENS in the SAME\n  commit, and put the delta plus its payment in the commit body: either a named\n  removal, or a registered falsifiable prediction naming BOTH the instrument that\n  will score it and the milestone it is scored at — and the instrument has to\n  exist today (panel 012, as amended by panel 046). A prediction naming an\n  instrument nobody has built is an observation, not a payment.\n  If it is not intended, the spec grew by accident, which is the case this\n  check exists for."
+        )
     else
         report.keep_pass(@r)
     registry = maximum_of(scratch: scratch, compiler: compiler, path: REGISTRY)
+
     if registry.is_err()
         report.keep_failure(@r, label: "spec/registry", detail: "  cannot measure " + REGISTRY)
     else if registry.must() != REGISTRY_TOKENS
-        report.keep_failure(@r, label: "spec/registry", detail: "  the registry measures " + registry.must().to_str() + " and the record says " + REGISTRY_TOKENS.to_str() + " — write the new number down. It is not in §1.6's budget, and it grew +85 across eight milestones with nobody naming a delta.")
+        report.keep_failure(
+            @r,
+            label: "spec/registry",
+            detail: "  the registry measures " + registry.must().to_str() + " and the record says " + REGISTRY_TOKENS.to_str() + " — write the new number down. It is not in §1.6's budget, and it grew +85 across eight milestones with nobody naming a delta."
+        )
     else
         report.keep_pass(@r)
+
     # The headroom, which is the one thing §1.6 says must survive every
     # raise: it is real, not notional.
     if SPEC_TOKENS + FFI_FLOOR >= CEILING
-        report.keep_failure(@r, label: "spec/headroom", detail: "  the spec plus the FFI floor is " + (SPEC_TOKENS + FFI_FLOOR).to_str() + " against the " + CEILING.to_str() + " ceiling — what is mortgaged no longer fits")
+        report.keep_failure(
+            @r,
+            label: "spec/headroom",
+            detail: "  the spec plus the FFI floor is " + (SPEC_TOKENS + FFI_FLOOR).to_str() + " against the " + CEILING.to_str() + " ceiling — what is mortgaged no longer fits"
+        )
     else
         report.keep_pass(@r)
 
@@ -172,23 +188,44 @@ function budget(@r: report.Report, scratch: str, compiler: str)
 # checks the pin against the row.
 function ledger(@r: report.Report, scratch: str, compiler: str)
     text = read_file(LEDGER)
+
     if text.is_err()
-        report.keep_failure(@r, label: "spec/ledger", detail: "  cannot read " + LEDGER + " — the ledger is the record of every spec amendment, and panel 086 R1 put it there")
+        report.keep_failure(
+            @r,
+            label: "spec/ledger",
+            detail: "  cannot read " + LEDGER + " — the ledger is the record of every spec amendment, and panel 086 R1 put it there"
+        )
         return
     figures = ledger_figures(text.must())
+
     if figures.len() != LEDGER_ROWS
-        report.keep_failure(@r, label: "spec/ledger", detail: "  " + LEDGER + " has " + figures.len().to_str() + " rows and the record says " + LEDGER_ROWS.to_str() + " — a row that vanishes takes an amendment's payment with it")
+        report.keep_failure(
+            @r,
+            label: "spec/ledger",
+            detail: "  " + LEDGER + " has " + figures.len().to_str() + " rows and the record says " + LEDGER_ROWS.to_str() + " — a row that vanishes takes an amendment's payment with it"
+        )
         return
     newest = figures[figures.len() - 1]
+
     if newest != SPEC_TOKENS
-        report.keep_failure(@r, label: "spec/ledger", detail: "  the newest ledger row says " + newest.to_str() + " and SPEC_TOKENS says " + SPEC_TOKENS.to_str() + ".\n  These are the same number in two places, one dated and one checked: an\n  amendment moved one of them and not the other. Fix the one that is wrong in\n  the commit that made it wrong — " + LEDGER + " and this file.")
+        report.keep_failure(
+            @r,
+            label: "spec/ledger",
+            detail: "  the newest ledger row says " + newest.to_str() + " and SPEC_TOKENS says " + SPEC_TOKENS.to_str() + ".\n  These are the same number in two places, one dated and one checked: an\n  amendment moved one of them and not the other. Fix the one that is wrong in\n  the commit that made it wrong — " + LEDGER + " and this file."
+        )
         return
     measured = maximum_of(scratch: scratch, compiler: compiler, path: SPEC)
+
     if measured.is_err()
         report.keep_failure(@r, label: "spec/ledger", detail: "  cannot measure " + SPEC + " — " + why(measured))
         return
+
     if measured.must() != newest
-        report.keep_failure(@r, label: "spec/ledger", detail: "  the ledger's newest row says " + newest.to_str() + " and the compiler measures " + measured.must().to_str() + " — the record and the document disagree")
+        report.keep_failure(
+            @r,
+            label: "spec/ledger",
+            detail: "  the ledger's newest row says " + newest.to_str() + " and the compiler measures " + measured.must().to_str() + " — the record and the document disagree"
+        )
         return
     report.keep_pass(@r)
 
@@ -200,23 +237,27 @@ function ledger(@r: report.Report, scratch: str, compiler: str)
 # first cell is not a number, not because they are counted and subtracted.
 function ledger_figures(text: str) -> [i64]
     found: [i64] @ []
+
     for row in strings.lines(text)
         if !strings.starts_with(text: row, prefix: "| ")
             continue
         rest = strings.without_prefix(text: row, prefix: "| ")
         at = strings.index_of(text: rest, needle: " |")
+
         if at.is_err()
             continue
         value = strings.to_number(strings.trimmed(rest.slice(from: 0, to: at.must())))
+
         if !value.is_err()
             found @ found.push(value.must())
+
     return found
 
 # Why a measurement could not be taken — the compiler's own words, which is
 # what tells a reader whether the tables are missing or the tool is.
 function why(got: i64?) -> str
     return match got
-        .ok _ => ""
+        .ok _  => ""
         .err e => e.msg
 
 # `heroes measure <path>`'s binding number. Exit 1 is a BREACH rather than a
@@ -224,71 +265,122 @@ function why(got: i64?) -> str
 # suite's own.
 function maximum_of(scratch: str, compiler: str, path: str) -> i64?
     said = shell.run(scratch: scratch, command: shell.sq(compiler) + " measure " + shell.sq(path))?
+
     if said.code != 0 && said.code != 1
         return fail("cannot_measure", "`measure` exited " + said.code.to_str() + ": " + said.err)
+
     for row in strings.lines(said.out)
         if strings.contains(text: row, needle: "the binding number")
             words = strings.words(row)
+
             if words.len() >= 2
                 return strings.to_number(words[1])
+
     return fail("cannot_measure", "`measure` printed no binding number")
 
 # Every name the compiler reserves appears in the spec.
 function named(@r: report.Report, spec: str, reserved: [str])
     if reserved.len() < LEAST_BUILTINS
-        report.keep_failure(@r, label: "spec/names", detail: "  " + reserved.len().to_str() + " built-ins read out of " + BUILTIN_SOURCE + " and there were " + LEAST_BUILTINS.to_str() + " — the extractor is reading the wrong shape, and this check was about to pass vacuously")
+        report.keep_failure(
+            @r,
+            label: "spec/names",
+            detail: "  " + reserved.len().to_str() + " built-ins read out of " + BUILTIN_SOURCE + " and there were " + LEAST_BUILTINS.to_str() + " — the extractor is reading the wrong shape, and this check was about to pass vacuously"
+        )
         return
     mentioned: {str: bool} @ {}
+
     for word in spec_text.identifiers_in_code(spec)
         mentioned[word] @ true
+
     missing: [str] @ []
+
     for name in reserved
         if mentioned[name].is_err()
             missing @ missing.push(name)
+
     if missing.len() > 0
-        report.keep_failure(@r, label: "spec/names", detail: "  the compiler reserves these and the spec never mentions them: " + missing.join(" ") + "\n  A name a model cannot see is a name it will redeclare.")
+        report.keep_failure(
+            @r,
+            label: "spec/names",
+            detail: "  the compiler reserves these and the spec never mentions them: " + missing.join(" ") + "\n  A name a model cannot see is a name it will redeclare."
+        )
     else
         report.keep_pass(@r)
 
 # Every name the spec offers exists in the compiler.
 function offered(@r: report.Report, spec: str, reserved: [str])
     listed = spec_text.offered_builtins(spec)
+
     if listed.is_err()
-        report.keep_failure(@r, label: "spec/offered", detail: "  the spec's `Built-ins:` sentence could not be read at all")
+        report.keep_failure(
+            @r,
+            label: "spec/offered",
+            detail: "  the spec's `Built-ins:` sentence could not be read at all"
+        )
         return
     names = listed.must()
+
     if names.len() < 10
-        report.keep_failure(@r, label: "spec/offered", detail: "  the built-in list reads as " + names.len().to_str() + " names, which is truncated: " + names.join(" "))
+        report.keep_failure(
+            @r,
+            label: "spec/offered",
+            detail: "  the built-in list reads as " + names.len().to_str() + " names, which is truncated: " + names.join(" ")
+        )
         return
+
     if names[names.len() - 1] != "range"
-        report.keep_failure(@r, label: "spec/offered", detail: "  the built-in list no longer ends at `range` — the sentence delimiter found the wrong full stop, and every name after it is now unchecked: " + names.join(" "))
+        report.keep_failure(
+            @r,
+            label: "spec/offered",
+            detail: "  the built-in list no longer ends at `range` — the sentence delimiter found the wrong full stop, and every name after it is now unchecked: " + names.join(" ")
+        )
         return
     known: {str: bool} @ {}
+
     for name in reserved
         known[name] @ true
+
     absent: [str] @ []
+
     for name in names
         if known[name].is_err()
             absent @ absent.push(name)
+
     if absent.len() > 0
-        report.keep_failure(@r, label: "spec/offered", detail: "  the spec offers these and the compiler has no such built-in: " + absent.join(" "))
+        report.keep_failure(
+            @r,
+            label: "spec/offered",
+            detail: "  the spec offers these and the compiler has no such built-in: " + absent.join(" ")
+        )
     else
         report.keep_pass(@r)
 
 # No word the lexer refuses appears in the spec's code.
 function rejected(@r: report.Report, spec: str, refused: [str])
     if refused.len() < LEAST_FOREIGN
-        report.keep_failure(@r, label: "spec/rejected", detail: "  " + refused.len().to_str() + " refused words read out of " + KEYWORD_SOURCE + " and there were " + LEAST_FOREIGN.to_str() + " — the extractor is reading the wrong shape")
+        report.keep_failure(
+            @r,
+            label: "spec/rejected",
+            detail: "  " + refused.len().to_str() + " refused words read out of " + KEYWORD_SOURCE + " and there were " + LEAST_FOREIGN.to_str() + " — the extractor is reading the wrong shape"
+        )
         return
     mentioned: {str: bool} @ {}
+
     for word in spec_text.identifiers_in_code(spec)
         mentioned[word] @ true
+
     found: [str] @ []
+
     for word in refused
         if !mentioned[word].is_err()
             found @ found.push(word)
+
     if found.len() > 0
-        report.keep_failure(@r, label: "spec/rejected", detail: "  these appear in the spec's code and the lexer refuses them with a prescribed fix: " + found.join(" ") + "\n  `fn` is the case that happened: the registry called it an error AND the spec used it in the function type, so every function-typed annotation a model wrote from the spec was a compile error — for four milestones.")
+        report.keep_failure(
+            @r,
+            label: "spec/rejected",
+            detail: "  these appear in the spec's code and the lexer refuses them with a prescribed fix: " + found.join(" ") + "\n  `fn` is the case that happened: the registry called it an error AND the spec used it in the function type, so every function-typed annotation a model wrote from the spec was a compile error — for four milestones."
+        )
     else
         report.keep_pass(@r)
 
@@ -296,63 +388,122 @@ function rejected(@r: report.Report, spec: str, refused: [str])
 # pre-tokeniser was written against.
 function inventory(@r: report.Report, spec: str)
     got = spec_text.above_ascii(spec)
+
     if got == ABOVE_ASCII
         report.keep_pass(@r)
         return
-    report.keep_failure(@r, label: "spec/inventory", detail: "  the spec now holds " + got.join(" ") + " above ASCII, and the record says " + ABOVE_ASCII.join(" ") + ".\n  `selfhost/measure_pieces.hero` reads a letter as A-Z a-z and a digit as 0-9\n  where the Rust it ports asks Unicode. Ask of the new character: is it a\n  letter or a digit in any language? If it is, that claim is dead and the\n  token count has quietly drifted. If it is punctuation, add it here.")
+    report.keep_failure(
+        @r,
+        label: "spec/inventory",
+        detail: "  the spec now holds " + got.join(" ") + " above ASCII, and the record says " + ABOVE_ASCII.join(" ") + ".\n  `selfhost/measure_pieces.hero` reads a letter as A-Z a-z and a digit as 0-9\n  where the Rust it ports asks Unicode. Ask of the new character: is it a\n  letter or a digit in any language? If it is, that claim is dead and the\n  token count has quietly drifted. If it is punctuation, add it here."
+    )
 
 # Every quoted name after `marker` on its own line — the compiler's table,
 # read from the compiler's own source.
 function names_in_table(path: str, marker: str) -> [str]
     text = read_file(path)
+
     if text.is_err()
         none: [str] = []
         return none
     found: [str] @ []
+
     for row in strings.lines(text.must())
         at = strings.index_of(text: row, needle: marker)
+
         if at.is_err()
             continue
         quoted = first_quoted(text: row, from: at.must() + marker.len())
+
         if !quoted.is_err()
             found @ found.push(quoted.must())
+
     return found
 
 # Every quoted word BEFORE `marker` on its own line — the match arms, where
 # one arm may carry several words: `"null" | "nil" | "None" =>`.
+# THE MARKER IDENTIFIES THE ARM, AND THE ARROW IS WHERE THE WORD STOPS —
+# and those are two different lines when the formatter breaks the arm.
+#
+# This read `=> ok(ForeignWord(` on ONE line until 2026-08-28. Then
+# `WIDTH` went from 88 to 120, `keywords.hero` was swept, and the same
+# arm became
+#
+#     "int" => ok(
+#         ForeignWord(message: "...", repair: .swap(word: "i64"))
+#     )
+#
+# so nothing matched and this suite reported **0 refused words out of 23**
+# — which is what its own failure message predicted would happen, in
+# those words. It went red honestly, so the premise gets a narrower one
+# rather than a wider marker: `=> ok(` alone would also match every
+# `"record" => ok(.kw_record)` in the same file and report real keywords
+# as foreign, which is a FALSE POSITIVE and worse than the red.
+#
+# What is stable is that the arm's value names `ForeignWord` and the
+# arm's pattern sits before the nearest `=>` at or above it. Both shapes
+# are read: the arrow on this line, or on the line before.
 function words_in_arms(path: str, marker: str) -> [str]
     text = read_file(path)
+
     if text.is_err()
         none: [str] = []
         return none
     found: [str] @ []
+    previous: str @ ""
+
     for row in strings.lines(text.must())
         at = strings.index_of(text: row, needle: marker)
-        if at.is_err()
+        source_row: str @ row
+        arrow: i64 @ -1
+
+        if !at.is_err()
+            arrow @ at.must()
+        else
+
+            # The arm was broken across lines: its value names the type
+            # here and its pattern is on the line above.
+            names_the_type = strings.index_of(text: row, needle: "ForeignWord(")
+            arrow_above = strings.index_of(text: previous, needle: "=>")
+
+            if !names_the_type.is_err() && !arrow_above.is_err()
+                source_row @ previous
+                arrow @ arrow_above.must()
+        previous @ row
+
+        if arrow < 0
             continue
-        head = row.slice(from: 0, to: at.must())
+        head = source_row.slice(from: 0, to: arrow)
         cursor: i64 @ 0
+
         while cursor < head.len()
             quoted = first_quoted(text: head, from: cursor)
+
             if quoted.is_err()
                 cursor @ head.len()
             else
                 found @ found.push(quoted.must())
+
                 # Past the closing quote: two characters for the quotes
                 # themselves plus what they held.
                 cursor @ cursor + advance_past(text: head, from: cursor)
+
     return found
 
 # The text of the first `"…"` at or after `from`.
 function first_quoted(text: str, from: i64) -> str?
     opens: i64 @ from
+
     while opens < text.len() && text[opens] != 34
         opens @ opens + 1
+
     if opens >= text.len()
         return fail("unquoted", "no quoted text here")
     closes: i64 @ opens + 1
+
     while closes < text.len() && text[closes] != 34
         closes @ closes + 1
+
     if closes >= text.len()
         return fail("unquoted", "the quote is not closed")
     return ok(text.slice(from: opens + 1, to: closes))
@@ -362,15 +513,20 @@ function first_quoted(text: str, from: i64) -> str?
 function advance_past(text: str, from: i64) -> i64
     i: i64 @ from
     seen: i64 @ 0
+
     while i < text.len() && seen < 2
         if text[i] == 34
             seen @ seen + 1
         i @ i + 1
+
     return i - from
 
 test "the ledger's rows are read, and only the rows"
-    figures = ledger_figures("| value | when | what moved it |\n|---|---|---|\n| 2231 | panel 023 | the first |\n| 3512 | panel 084 | the newest |\n")
+    figures = ledger_figures(
+        "| value | when | what moved it |\n|---|---|---|\n| 2231 | panel 023 | the first |\n| 3512 | panel 084 | the newest |\n"
+    )
     assert figures == [2231, 3512]
+
     # The real record, which is what the check runs against.
     real = read_file(LEDGER)
     assert !real.is_err()
@@ -381,16 +537,19 @@ test "the ledger's rows are read, and only the rows"
 test "the lock fires when the record and the pin disagree"
     scratch = "build/harness-selftest"
     assert !shell.mkdir_all(scratch).is_err()
+
     # A corrupted newest row — the shape panel 086's warden predicts: 7 passed,
     # 1 failed, and the failure prints both numbers.
     figures = ledger_figures("| 2231 | panel 023 | first |\n| 9999 | panel 084 | newest |\n")
     assert figures[figures.len() - 1] != SPEC_TOKENS
+
     # A dropped row: the count guard, which comparing the newest alone misses.
     assert ledger_figures("| 2231 | panel 023 | only |\n").len() != LEDGER_ROWS
 
 test "the compiler's two lists are read out of its own source"
     reserved = names_in_table(path: BUILTIN_SOURCE, marker: "Builtin(name: ")
     assert reserved.len() >= LEAST_BUILTINS
+
     # Named rather than merely counted: a table read as the wrong shape can
     # still be long.
     joined = reserved.join(" ")
@@ -401,6 +560,7 @@ test "the compiler's two lists are read out of its own source"
     words = refused.join(" ")
     assert strings.contains(text: words, needle: "fn")
     assert strings.contains(text: words, needle: "struct")
+
     # An arm carrying three words gives three, which a one-per-line reader
     # would have missed.
     assert strings.contains(text: words, needle: "nil")
@@ -471,5 +631,6 @@ test "a quoted word is read, and an unquoted line is refused"
     assert first_quoted(text: "a \"word\" here", from: 0).default("") == "word"
     assert first_quoted(text: "nothing quoted", from: 0).is_err()
     assert first_quoted(text: "\"one\" \"two\"", from: 6).default("") == "two"
+
     # An unterminated quote is not half a word.
     assert first_quoted(text: "a \"open", from: 0).is_err()

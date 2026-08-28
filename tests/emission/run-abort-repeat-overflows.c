@@ -112,35 +112,35 @@ bb0:
     hero_print_str(t1);
 #line 22 "tests/golden/run/abort-repeat-overflows.hero"
     hero_print_end();
-#line 24 "tests/golden/run/abort-repeat-overflows.hero"
+#line 25 "tests/golden/run/abort-repeat-overflows.hero"
     t2 = UINT64_C(4611686018427387906);
-#line 24 "tests/golden/run/abort-repeat-overflows.hero"
+#line 25 "tests/golden/run/abort-repeat-overflows.hero"
     h0_n = t2;
-#line 25 "tests/golden/run/abort-repeat-overflows.hero"
+#line 26 "tests/golden/run/abort-repeat-overflows.hero"
     t3 = HERO_STR_LIT(hero_str_d19443a);
-#line 25 "tests/golden/run/abort-repeat-overflows.hero"
+#line 26 "tests/golden/run/abort-repeat-overflows.hero"
     t4 = h0_n;
-#line 25 "tests/golden/run/abort-repeat-overflows.hero"
+#line 26 "tests/golden/run/abort-repeat-overflows.hero"
     t5 = hero_str_repeat(t3, t4);
-#line 25 "tests/golden/run/abort-repeat-overflows.hero"
+#line 26 "tests/golden/run/abort-repeat-overflows.hero"
     t8 = h1_own1;
-#line 25 "tests/golden/run/abort-repeat-overflows.hero"
+#line 26 "tests/golden/run/abort-repeat-overflows.hero"
     h1_own1 = t5;
 #line 130 "abortrepeatoverflows.c"
     hero_str_decref(t8);
-#line 25 "tests/golden/run/abort-repeat-overflows.hero"
+#line 26 "tests/golden/run/abort-repeat-overflows.hero"
     t6 = hero_str_len(t5);
-#line 25 "tests/golden/run/abort-repeat-overflows.hero"
+#line 26 "tests/golden/run/abort-repeat-overflows.hero"
     hero_print_int(t6);
-#line 25 "tests/golden/run/abort-repeat-overflows.hero"
-    hero_print_end();
 #line 26 "tests/golden/run/abort-repeat-overflows.hero"
+    hero_print_end();
+#line 27 "tests/golden/run/abort-repeat-overflows.hero"
     t7 = HERO_STR_LIT(hero_str_187ae0ee);
-#line 26 "tests/golden/run/abort-repeat-overflows.hero"
+#line 27 "tests/golden/run/abort-repeat-overflows.hero"
     hero_print_str(t7);
-#line 26 "tests/golden/run/abort-repeat-overflows.hero"
+#line 27 "tests/golden/run/abort-repeat-overflows.hero"
     hero_print_end();
-#line 26 "tests/golden/run/abort-repeat-overflows.hero"
+#line 27 "tests/golden/run/abort-repeat-overflows.hero"
     t9 = h1_own1;
 #line 146 "abortrepeatoverflows.c"
     hero_str_decref(t9);

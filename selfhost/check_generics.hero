@@ -31,12 +31,15 @@ function bind(@c: check_state.Checker, s: source.Source, decls: [ast.Decl], @bin
         .generic g =>
             if g.at >= bindings.len()
                 return
+
             if bindings[g.at].is_err()
                 bindings[g.at] @ ok(got)
                 return
             bound = bindings[g.at].must()
+
             if bound == got
                 return
+
             if !check_table.poisoned(c.out.types, got)
                 a = check_state.show(c, s, decls, bound)
                 b = check_state.show(c, s, decls, got)
@@ -58,30 +61,42 @@ function bind(@c: check_state.Checker, s: source.Source, decls: [ast.Decl], @bin
         # A fallible parameter meeting a non-fallible argument stays
         # silent HERE, exactly as Rust's arm does: the caller's own
         # argument check owns that message, and two would be the defect.
+
         .fallible wanted =>
             match check_table.get(c.out.types, got)
-                .fallible actual => bind(@c, s, decls, @bindings, param: wanted.payload, got: actual.payload, span: span)
+                .fallible actual => bind(
+                    @c,
+                    s,
+                    decls,
+                    @bindings,
+                    param: wanted.payload,
+                    got: actual.payload,
+                    span: span
+                )
                 .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return
-                .fixed | .map | .array | .function_ty | .named => return
-                .case_ty | .failure | .generic | .error => return
+                .fixed | .map | .array | .function_ty | .named            => return
+                .case_ty | .failure | .generic | .error                   => return
         .map wanted =>
             match check_table.get(c.out.types, got)
                 .map actual =>
                     bind(@c, s, decls, @bindings, param: wanted.key, got: actual.key, span: span)
                     bind(@c, s, decls, @bindings, param: wanted.value, got: actual.value, span: span)
                 .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return
-                .fixed | .array | .fallible | .function_ty | .named => return
-                .case_ty | .failure | .generic | .error => return
+                .fixed | .array | .fallible | .function_ty | .named       => return
+                .case_ty | .failure | .generic | .error                   => return
         .function_ty wanted =>
             match check_table.get(c.out.types, got)
                 .function_ty actual =>
                     ws = check_table.params_of(c.out.types, wanted.params)
                     gs = check_table.params_of(c.out.types, actual.params)
+
                     if ws.len() == gs.len()
                         i: i64 @ 0
+
                         while i < ws.len()
                             bind(@c, s, decls, @bindings, param: ws[i], got: gs[i], span: span)
                             i @ i + 1
+
                         bind(@c, s, decls, @bindings, param: wanted.result, got: actual.result, span: span)
                         return
                     mismatch_shape(@c, s, decls, param: param, got: got, span: span)
@@ -112,6 +127,7 @@ function mismatch_shape(@c: check_state.Checker, s: source.Source, decls: [ast.D
 function substitute(@c: check_state.Checker, ty: i64, bindings: [i64?]) -> i64
     if bindings.len() == 0
         return ty
+
     match check_table.get(c.out.types, ty)
         .generic g =>
             if g.at < bindings.len() && !bindings[g.at].is_err()
@@ -129,12 +145,15 @@ function substitute(@c: check_state.Checker, ty: i64, bindings: [i64?]) -> i64
             return check_table.intern(@c.out.types, .map(key: key, value: value))
         .function_ty f =>
             rebuilt: [i64] @ []
+
             for p in check_table.params_of(c.out.types, f.params)
                 rebuilt @ rebuilt.push(substitute(@c, p, bindings))
+
             result = substitute(@c, f.result, bindings)
             return check_table.intern_function(@c.out.types, rebuilt, result: result)
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return ty
-        .fixed | .named | .case_ty | .failure | .error => return ty
+        .fixed | .named | .case_ty | .failure | .error            => return ty
+
     return ty
 
 ## Tests
@@ -150,6 +169,7 @@ test "a type parameter takes the first type it meets and holds it"
     bindings: [i64?] @ [fail("unbound", "A")]
     bind(@c, s, d, @bindings, param: a_param, got: int_id, span: token.Span(start: 0, end: 1))
     assert bindings[0].must() == int_id
+
     # A second agreeing meeting is silent; a disagreeing one is blamed
     # at the argument.
     bind(@c, s, d, @bindings, param: a_param, got: int_id, span: token.Span(start: 2, end: 3))
@@ -167,6 +187,7 @@ test "binding descends the shapes: array, map, and a function type"
     b_param = check_table.intern(@c.out.types, .generic(at: 1))
     int_id = check_table.int_ty_id(c.out.types)
     str_id = check_table.str_ty(c.out.types)
+
     # map<A, B>(xs: [A], f: (function(A) -> B)) meeting ([i64], f: i64->str)
     xs_param = check_table.intern(@c.out.types, .array(element: a_param))
     xs_got = check_table.intern(@c.out.types, .array(element: int_id))
@@ -180,6 +201,7 @@ test "binding descends the shapes: array, map, and a function type"
     assert c.out.diagnostics.len() == 0
     assert bindings[0].must() == int_id
     assert bindings[1].must() == str_id
+
     # substitute rebuilds [B] as [str] through the interner.
     out_param = check_table.intern(@c.out.types, .array(element: b_param))
     rebuilt = substitute(@c, out_param, bindings)
@@ -191,6 +213,7 @@ test "an unbound generic substitutes to the silent error id"
     a_param = check_table.intern(@c.out.types, .generic(at: 0))
     bindings: [i64?] @ [fail("unbound", "A")]
     assert substitute(@c, a_param, bindings) == 0
+
     # With no bindings at all, substitution is the identity.
     empty: [i64?] = []
     assert substitute(@c, a_param, empty) == a_param

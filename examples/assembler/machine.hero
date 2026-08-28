@@ -34,16 +34,20 @@ record Machine
 function run(code: [i64], fuel: i64) -> [str]?
     m: Machine @ Machine(registers: [0, 0, 0, 0], pc: 0, output: [])
     left: i64 @ fuel
+
     while left > 0
         left @ left - 1
+
         if m.pc < 0 || m.pc + program.WORDS > code.len()
             return fail(ERR_RAN_OFF_THE_END, "the machine stepped past the last instruction")
         opcode = code[m.pc]
         a = code[m.pc + 1]
         b = code[m.pc + 2]
+
         if opcode == program.OP_HALT
             return ok(m.output)
         _ = step(@m, opcode: opcode, a: a, b: b)?
+
     return fail(ERR_OUT_OF_FUEL, "the program ran for " + fuel.to_str() + " steps without halting")
 
 # One instruction. The program counter moves here and nowhere else, so a jump is

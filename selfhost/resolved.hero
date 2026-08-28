@@ -92,15 +92,20 @@ function primitive(name: str) -> Prim?
     for k in widths.int_kinds()
         if widths.int_name(k) == name
             return ok(.int_prim(kind: k))
+
     for k in widths.float_kinds()
         if widths.float_name(k) == name
             return ok(.float_prim(kind: k))
+
     if name == "bool"
         return ok(.bool_prim)
+
     if name == "str"
         return ok(.str_prim)
+
     if name == "ptr"
         return ok(.ptr_prim)
+
     if name == "cstr"
         return ok(.cstr_prim)
     return fail("free", "no primitive has this name")
@@ -191,7 +196,15 @@ function new_resolved() -> Resolved
     module_uses: {str: [str]} = {}
     holes_in: [str] = []
     diagnostics: [diag.Diagnostic] = []
-    return Resolved(uses: uses, type_uses: type_uses, locals: locals, top: top, module_uses: module_uses, holes_in: holes_in, diagnostics: diagnostics)
+    return Resolved(
+        uses: uses,
+        type_uses: type_uses,
+        locals: locals,
+        top: top,
+        module_uses: module_uses,
+        holes_in: holes_in,
+        diagnostics: diagnostics
+    )
 
 ## Lookups
 
@@ -202,11 +215,14 @@ function top_in(r: Resolved, module: str, name: str) -> i64?
 # Does `module` name a module that `from` said `use` about?
 function is_used_module(r: Resolved, from: str, module: str) -> bool
     named = r.module_uses[from]
+
     if named.is_err()
         return false
+
     for m in named.must()
         if m == module
             return true
+
     return false
 
 # Every name one module declares, for the "did you mean" lists and for
@@ -219,6 +235,7 @@ function is_used_module(r: Resolved, from: str, module: str) -> bool
 # `sort` — which is exactly the sentence design.md §4.9 carries.
 function names_in(r: Resolved, module: str) -> [str]
     inner = r.top[module]
+
     if inner.is_err()
         return []
     return sort(keys(inner.must()))
@@ -241,15 +258,19 @@ function names_in(r: Resolved, module: str) -> [str]
 function module_declaring(r: Resolved, from: str, name: str) -> str?
     visible: [str] @ []
     other: [str] @ []
+
     for module in sort(keys(r.top))
         if top_in(r, module: module, name: name).is_err()
             continue
+
         if module == from || is_used_module(r, from: from, module: module)
             visible @ visible.push(module)
         else
             other @ other.push(module)
+
     if visible.len() > 0
         return ok(visible[0])
+
     if other.len() > 0
         return ok(other[0])
     return fail("no_module_declares_it", name)
@@ -260,6 +281,7 @@ function hole_covers(r: Resolved, module: str) -> bool
     for m in r.holes_in
         if m == module
             return true
+
     return false
 
 ## Building it — the writes the resolver makes
@@ -267,6 +289,7 @@ function hole_covers(r: Resolved, module: str) -> bool
 function declare_top(@r: Resolved, module: str, name: str, decl: i64)
     inner: {str: i64} @ {}
     found = r.top[module]
+
     if !found.is_err()
         inner @ found.must()
     inner[name] @ decl
@@ -275,6 +298,7 @@ function declare_top(@r: Resolved, module: str, name: str, decl: i64)
 function declare_use(@r: Resolved, from: str, module: str)
     named: [str] @ []
     found = r.module_uses[from]
+
     if !found.is_err()
         named @ found.must()
     named @ named.push(module)
@@ -306,9 +330,11 @@ test "the preferred module is one the file can see"
     declare_top(@r, module: "alpha", name: "scale", decl: 1)
     declare_top(@r, module: "geom", name: "scale", decl: 2)
     declare_use(@r, from: "main", module: "geom")
+
     # Alphabetically `alpha` wins; visibility must beat it — the defect the
     # Rust comment records, reproduced as a test in the port.
     assert module_declaring(r, from: "main", name: "scale").must() == "geom"
+
     # With no `use` line, the answer is deterministic rather than absent.
     assert module_declaring(r, from: "other", name: "scale").must() == "alpha"
     assert module_declaring(r, from: "main", name: "absent").is_err()
@@ -338,7 +364,17 @@ test "a record is a usable map key, which is finding 1"
     assert len(m) == 1
 
 test "a local carries its optional syntax by value"
-    l: Local @ Local(name: token.Span(start: 0, end: 1), kind: .cell, mutable: true, owner: 0, depth: 1, ty: ok(3), value: fail("none", "no value"), reads: 0, writes: 0)
+    l: Local @ Local(
+        name: token.Span(start: 0, end: 1),
+        kind: .cell,
+        mutable: true,
+        owner: 0,
+        depth: 1,
+        ty: ok(3),
+        value: fail("none", "no value"),
+        reads: 0,
+        writes: 0
+    )
     assert l.ty.must() == 3
     assert l.value.is_err()
     assert l.kind == .cell
@@ -349,13 +385,16 @@ test "a local carries its optional syntax by value"
 
 test "a primitive's name answers with its width inside the case"
     match primitive("u16").must()
-        .int_prim k => assert widths.int_bits(k.kind) == 16 && !widths.int_signed(k.kind)
+        .int_prim k                                                   => assert widths.int_bits(k.kind) == 16 && !widths.int_signed(k.kind)
         .float_prim | .bool_prim | .str_prim | .ptr_prim | .cstr_prim => assert false
+
     match primitive("f32").must()
-        .float_prim k => assert widths.float_bits(k.kind) == 32
+        .float_prim k                                               => assert widths.float_bits(k.kind) == 32
         .int_prim | .bool_prim | .str_prim | .ptr_prim | .cstr_prim => assert false
+
     assert primitive("bool").must() == .bool_prim
     assert primitive("cstr").must() == .cstr_prim
+
     # A user type and a foreign spelling are both free here: the registry
     # refuses `int` at the LEXER, one stage before this table is asked.
     assert primitive("Point").is_err()

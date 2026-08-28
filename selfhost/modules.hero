@@ -44,15 +44,19 @@ function uses_of(text: str) -> [str]
     out = lexer.lex_one(text)
     found: [str] @ []
     previous_was_use: bool @ false
+
     for t in out.tokens
         if t.kind == .comment
             continue
+
         if t.kind == .kw_use
             previous_was_use @ true
             continue
+
         if t.kind == .ident && previous_was_use
             found @ found.push(text.slice(from: t.span.start, to: t.span.end))
         previous_was_use @ false
+
     return found
 
 # The root's own directory TEXT — everything up to and including the
@@ -64,17 +68,21 @@ function directory_text(path: str) -> str
     cs = path.chars()
     cut: i64 @ -1
     index: i64 @ 0
+
     for ch in cs
         if ch == "/" || ch == "\\"
             cut @ index
         index @ index + 1
+
     if cut == -1
         return ""
     kept: [str] @ []
     index @ 0
+
     while index <= cut
         kept @ kept.push(cs[index])
         index @ index + 1
+
     return kept.join("")
 
 # The directory files are OPENED through — the "/" rule alone, which
@@ -83,17 +91,21 @@ function open_directory(path: str) -> str
     cs = path.chars()
     cut: i64 @ -1
     index: i64 @ 0
+
     for ch in cs
         if ch == "/"
             cut @ index
         index @ index + 1
+
     if cut == -1
         return ""
     kept: [str] @ []
     index @ 0
+
     while index <= cut
         kept @ kept.push(cs[index])
         index @ index + 1
+
     return kept.join("")
 
 # Every file of the compilation rooted at path, in load order, with
@@ -113,19 +125,24 @@ function load_text(path: str, root_text: str, library: str) -> source.Source
     files: [source.InputFile] @ [source.user_file(name: path, text: root_text)]
     seen: [str] @ [source.stem_of(path)]
     pending: [i64] @ [0]
+
     while pending.len() > 0
         index = pending[pending.len() - 1]
         pending @ pending.slice(from: 0, to: pending.len() - 1)
         named = uses_of(files[index].text)
         added: [i64] @ []
+
         for module in named
             already: bool @ false
+
             for one in seen
                 if one == module
                     already @ true
+
             if already
                 continue
             found = read_file(open_directory(path) + module + ".hero")
+
             if found.is_err()
                 # Not an error HERE: errors() says so with the caret
                 # on the use line, which is the file the author has
@@ -133,16 +150,23 @@ function load_text(path: str, root_text: str, library: str) -> source.Source
                 seen @ seen.push(module)
                 continue
             seen @ seen.push(module)
-            files @ files.push(source.InputFile(name: directory_text(path) + module + ".hero", module: module, text: found.must(), is_library: false))
+            files @ files.push(
+                source.InputFile(name: directory_text(path) + module + ".hero", module: module, text: found.must(), is_library: false)
+            )
             added @ added.push(files.len() - 1)
+
         # files is in source order; pending is reversed so that
         # popping it scans in source order too. Both orders are
         # output, not bookkeeping.
         at: i64 @ added.len() - 1
+
         while at >= 0
             pending @ pending.push(added[at])
             at @ at - 1
-    files @ files.push(source.InputFile(name: source.LIBRARY_FILE, module: source.LIBRARY_MODULE, text: library, is_library: true))
+
+    files @ files.push(
+        source.InputFile(name: source.LIBRARY_FILE, module: source.LIBRARY_MODULE, text: library, is_library: true)
+    )
     return source.from_files(files)
 
 ## The graph's own errors — against the finished Source
@@ -155,43 +179,59 @@ function errors(s: source.Source, uses: [ast.Use]) -> [diag.Diagnostic]
     out: [diag.Diagnostic] @ []
     out @ unknown_modules(s, uses, found: out)
     out @ collisions(s, found: out)
+
     if out.len() == 0
         out @ cycles(s, uses, found: out)
+
     # Insertion sort by span start — the stable-sort idiom.
     sorted: [diag.Diagnostic] @ []
+
     for d in out
         at: i64 @ sorted.len()
         probe: i64 @ 0
         placed: bool @ false
+
         for old in sorted
             if !placed && old.span.start > d.span.start
                 at @ probe
                 placed @ true
             probe @ probe + 1
+
         head: [diag.Diagnostic] @ sorted.slice(from: 0, to: at)
         head @ head.push(d)
         tail = sorted.slice(from: at, to: sorted.len())
+
         for one in tail
             head @ head.push(one)
+
         sorted @ head
+
     return sorted
 
 # `use geom` with no geom.hero beside the file that says it.
 function unknown_modules(s: source.Source, uses: [ast.Use], found: [diag.Diagnostic]) -> [diag.Diagnostic]
     out: [diag.Diagnostic] @ found
+
     for used in uses
         if source.is_library(s, used.span.start)
             continue
         name = source.span_text(s, used.name)
         present: bool @ false
+
         for f in s.files
             if f.module == name
                 present @ true
+
         if present
             continue
         importer = source.file_at(s, used.span.start)
-        d: diag.Diagnostic @ diag.new_diagnostic(code: "unknown_module", message: "there is no module `" + name + "` — `use " + name + "` reads `" + name + ".hero`, beside `" + importer.name + "`, and that file is not there", span: used.name)
+        d: diag.Diagnostic @ diag.new_diagnostic(
+            code: "unknown_module",
+            message: "there is no module `" + name + "` — `use " + name + "` reads `" + name + ".hero`, beside `" + importer.name + "`, and that file is not there",
+            span: used.name
+        )
         out @ out.push(d)
+
     return out
 
 # Two modules whose names differ and whose C components do not — and
@@ -205,23 +245,42 @@ function unknown_modules(s: source.Source, uses: [ast.Use], found: [diag.Diagnos
 # library" by name.
 function collisions(s: source.Source, found: [diag.Diagnostic]) -> [diag.Diagnostic]
     out: [diag.Diagnostic] @ found
+
     for f in s.files
         if !f.is_library && f.module == source.LIBRARY_MODULE
-            d: diag.Diagnostic @ diag.new_diagnostic(code: "module_name_reserved", message: "`" + f.name + "` would be the module `library`, and that name is the language's own — §1.11's Tier 2 is compiled into every program under it", span: token.Span(start: f.start, end: f.start))
-            d.notes @ d.notes.push("rename the file: any other stem will do, and nothing else in the language is reserved this way")
+            d: diag.Diagnostic @ diag.new_diagnostic(
+                code: "module_name_reserved",
+                message: "`" + f.name + "` would be the module `library`, and that name is the language's own — §1.11's Tier 2 is compiled into every program under it",
+                span: token.Span(start: f.start, end: f.start)
+            )
+            d.notes @ d.notes.push(
+                "rename the file: any other stem will do, and nothing else in the language is reserved this way"
+            )
             out @ out.push(d)
+
     index: i64 @ 0
+
     while index < s.files.len()
         earlier_at: i64 @ 0
+
         while earlier_at < index
             f = s.files[index]
             earlier = s.files[earlier_at]
+
             if earlier.module != f.module && source.module_of(earlier.module) == source.module_of(f.module)
-                d: diag.Diagnostic @ diag.new_diagnostic(code: "module_names_collide", message: "modules `" + earlier.module + "` and `" + f.module + "` are one name to the compiler — every name reaching C is `h_<module>_<name>` with the module reduced to letters and digits, so both become `h_" + source.module_of(f.module) + "_…`", span: token.Span(start: f.start, end: f.start))
-                d.notes @ d.notes.push("rename one of them: `" + earlier.name + "` and `" + f.name + "` differ only where the rule cannot see")
+                d: diag.Diagnostic @ diag.new_diagnostic(
+                    code: "module_names_collide",
+                    message: "modules `" + earlier.module + "` and `" + f.module + "` are one name to the compiler — every name reaching C is `h_<module>_<name>` with the module reduced to letters and digits, so both become `h_" + source.module_of(f.module) + "_…`",
+                    span: token.Span(start: f.start, end: f.start)
+                )
+                d.notes @ d.notes.push(
+                    "rename one of them: `" + earlier.name + "` and `" + f.name + "` differ only where the rule cannot see"
+                )
                 out @ out.push(d)
             earlier_at @ earlier_at + 1
+
         index @ index + 1
+
     return out
 
 # A ring of use lines. Reported once, on the edge that closes it, with
@@ -238,35 +297,50 @@ record Edge
 function cycles(s: source.Source, uses: [ast.Use], found: [diag.Diagnostic]) -> [diag.Diagnostic]
     out: [diag.Diagnostic] @ found
     modules: [str] @ []
+
     for f in s.files
         modules @ modules.push(f.module)
+
     edges: [Edge] @ []
+
     for used in uses
         from_at = source.file_of(s, used.span.start)
         name = source.span_text(s, used.name)
         to_at: i64 @ -1
         probe: i64 @ 0
+
         for m in modules
             if m == name && to_at == -1
                 to_at @ probe
             probe @ probe + 1
+
         if to_at != -1
             edges @ edges.push(Edge(from_at: from_at, to_at: to_at, span: used.name))
+
     # 0 new, 1 open, 2 done.
     state: [i64] @ []
+
     for _ in modules
         state @ state.push(0)
+
     start: i64 @ 0
+
     while start < modules.len()
         if state[start] == 0
             walked = walk(node: start, edges: edges, state: state, stack: [], s: s, modules: modules)
             state @ walked.state
+
             if !walked.ring_span.is_err()
-                d: diag.Diagnostic @ diag.new_diagnostic(code: "module_cycle", message: "modules may not form a cycle, and this `use` closes one: " + walked.ring, span: walked.ring_span.must())
+                d: diag.Diagnostic @ diag.new_diagnostic(
+                    code: "module_cycle",
+                    message: "modules may not form a cycle, and this `use` closes one: " + walked.ring,
+                    span: walked.ring_span.must()
+                )
                 d.notes @ d.notes.push("move what both modules need into a third one that neither uses")
                 out @ out.push(d)
                 return out
         start @ start + 1
+
     return out
 
 record Walked
@@ -280,29 +354,38 @@ function walk(node: i64, edges: [Edge], state: [i64], stack: [i64], s: source.So
     st[node] @ 1
     grown: [i64] @ stack
     grown @ grown.push(node)
+
     for edge in edges
         if edge.from_at != node
             continue
+
         if st[edge.to_at] == 1
             at: i64 @ 0
             probe: i64 @ 0
+
             for n in grown
                 if n == edge.to_at && at == 0
                     at @ probe
                 probe @ probe + 1
+
             ring: [str] @ []
             index: i64 @ at
+
             while index < grown.len()
                 ring @ ring.push(modules[grown[index]])
                 index @ index + 1
+
             ring @ ring.push(modules[edge.to_at])
             span: token.Span? = ok(edge.span)
             return Walked(state: st, ring: ring.join(" uses "), ring_span: span)
+
         if st[edge.to_at] == 0
             inner = walk(node: edge.to_at, edges: edges, state: st, stack: grown, s: s, modules: modules)
             st @ inner.state
+
             if !inner.ring_span.is_err()
                 return Walked(state: st, ring: inner.ring, ring_span: inner.ring_span)
+
     st[node] @ 2
     none: token.Span? = fail("none", "no ring from here")
     return Walked(state: st, ring: "", ring_span: none)
@@ -322,6 +405,7 @@ test "directory text keeps the author's spelling; opening keeps the slash rule"
     assert directory_text("main.hero") == ""
     assert directory_text("a\\b\\main.hero") == "a\\b\\"
     assert open_directory("examples/calc/main.hero") == "examples/calc/"
+
     # The premise, kept visible: a POSIX file whose own name holds a
     # backslash is NAMED wrong and OPENED right.
     assert open_directory("a\\b.hero") == ""
@@ -335,6 +419,7 @@ test "the graph: an absent module, the reserved name, a collision, a ring"
     assert found.len() == 1
     assert found[0].code == "unknown_module"
     assert found[0].message == "there is no module `ghost` — `use ghost` reads `ghost.hero`, beside `t.hero`, and that file is not there"
+
     # A collision: two stems, one C component.
     a = source.user_file(name: "geo_m.hero", text: "function main()\n    print(1)\n")
     b = source.user_file(name: "geom.hero", text: "constant K: i64\n    1\n")
@@ -344,6 +429,7 @@ test "the graph: an absent module, the reserved name, a collision, a ring"
     got2 = errors(s2, none_uses)
     assert got2.len() == 1
     assert got2[0].code == "module_names_collide"
+
     # The reserved stem.
     lib = source.user_file(name: "library.hero", text: "function square(x: i64) -> i64\n    return x * x\n")
     one_lib: [source.InputFile] = [lib]
@@ -351,6 +437,7 @@ test "the graph: an absent module, the reserved name, a collision, a ring"
     got3 = errors(s3, none_uses)
     assert got3.len() == 1
     assert got3[0].code == "module_name_reserved"
+
     # A ring of two, named whole, reported on the edge that closes it.
     fa = source.user_file(name: "a.hero", text: "use b\n\nfunction fa() -> i64\n    return 1\n")
     fb = source.user_file(name: "b.hero", text: "use a\n\nfunction fb() -> i64\n    return 2\n")
@@ -373,6 +460,7 @@ test "load_text walks siblings depth-first and appends the library last"
     assert s.files[1].module == "selftest_mod_leaf"
     assert s.files[1].name == "build/selftest_mod_leaf.hero"
     assert s.files[2].is_library
+
     # A use nobody can read is not an error HERE: discovery skips it
     # and the graph pass owns the caret.
     ghost = "use selftest_mod_ghost\n\nfunction main()\n    print(1)\n"

@@ -61,10 +61,12 @@ record Emitted
 # process and one abort does not hide the tests after it.
 function tests_of(p: ir_state.Program) -> [str]
     out: [str] @ []
+
     for f in p.functions
         match f.kind
-            .test_kind => out @ out.push(f.name)
+            .test_kind                                     => out @ out.push(f.name)
             .function_kind | .constant_kind | .extern_kind => continue
+
     return out
 
 # Where a program's main is, or nothing. A file with no entry point is
@@ -72,14 +74,18 @@ function tests_of(p: ir_state.Program) -> [str]
 # and the difference belongs to the caller.
 function entry_point(p: ir_state.Program) -> i64?
     index: i64 @ 0
+
     for f in p.functions
         is_main: bool @ false
+
         match f.kind
-            .function_kind => is_main @ f.name == "main"
+            .function_kind                             => is_main @ f.name == "main"
             .constant_kind | .extern_kind | .test_kind => is_main @ is_main
+
         if is_main
             return ok(index)
         index @ index + 1
+
     return fail("none", "no main in this program")
 
 # The functions the fused unit shows: the author's, plus exactly the
@@ -89,10 +95,12 @@ function shown_fused(p: ir_state.Program, s: source.Source) -> [i64]
     used = emit_builtins.reachable(p, s)
     shown: [i64] @ []
     index: i64 @ 0
+
     for f in p.functions
         if !source.is_library(s, f.span.start) || !used[f.decl].is_err()
             shown @ shown.push(index)
         index @ index + 1
+
     return shown
 
 # What one unit's type walk found: every type its functions mention —
@@ -114,29 +122,36 @@ record Reach
 function reach_of(p: ir_state.Program, c: check_state.Checked, target: emit_decls.BuildTarget, shown: [i64]) -> Reach
     reached: {i64: bool} @ {}
     constructed: {i64: bool} @ {}
+
     for at in shown
         f = p.functions[at]
         skipped: bool @ false
+
         match f.kind
             .test_kind =>
                 match target
                     .program_build => skipped @ true
-                    .tests_build => skipped @ skipped
+                    .tests_build   => skipped @ skipped
             .function_kind | .constant_kind | .extern_kind => skipped @ skipped
+
         if skipped
             continue
         reached[f.result] @ true
+
         for slot in f.slots
             reached[slot.ty] @ true
+
         for blk in f.blocks
             for inst in blk.insts
                 reached[inst.ty] @ true
+
                 match inst.op
-                    .construct => constructed[inst.ty] @ true
+                    .construct                                                   => constructed[inst.ty] @ true
                     .lit | .load | .field | .payload | .tag_of | .len_of | .call => reached[inst.ty] @ true
-                    .func_ref | .store | .push_owned | .unary | .binary | .cast => reached[inst.ty] @ true
-                    .index | .map_get | .copy_out | .abort_op => reached[inst.ty] @ true
-                    .incref | .decref | .hole | .missing => reached[inst.ty] @ true
+                    .func_ref | .store | .push_owned | .unary | .binary | .cast  => reached[inst.ty] @ true
+                    .index | .map_get | .copy_out | .abort_op                    => reached[inst.ty] @ true
+                    .incref | .decref | .hole | .missing                         => reached[inst.ty] @ true
+
     return Reach(reached: closed_over(c, reached: reached), constructed: constructed)
 
 # A set of types plus everything they contain: naming `[i64?]` declares
@@ -149,18 +164,22 @@ function reach_of(p: ir_state.Program, c: check_state.Checked, target: emit_decl
 # above never sees.
 function closed_over(c: check_state.Checked, reached: {i64: bool}) -> {i64: bool}
     out: {i64: bool} @ reached
+
     # ORDER: none — this is a worklist, and what leaves it is a SET. Every
     # id drained is added to `out`, which two sorted walks read later
     # (emit_ctype, emit_descriptor_set), so the drain order changes how
     # long the loop runs and nothing a reader or clang can see.
     frontier: [i64] @ keys(out)
+
     while frontier.len() > 0
         id = frontier[frontier.len() - 1]
         frontier @ frontier.slice(from: 0, to: frontier.len() - 1)
+
         for inner in check_table.contained(c.types, id)
             if out[inner].is_err()
                 out[inner] @ true
                 frontier @ frontier.push(inner)
+
     return out
 
 function emit(p: ir_state.Program, c: check_state.Checked, s: source.Source, decls: [ast.Decl], version: str) -> Emitted
@@ -185,17 +204,26 @@ function emit_for(target: emit_decls.BuildTarget, p: ir_state.Program, c: check_
 # ARE the artifact path, and R1 says it stays one fused unit.
 function emit_maybe(target: emit_decls.BuildTarget, p: ir_state.Program, c: check_state.Checked, s: source.Source, decls: [ast.Decl], version: str, text: bool) -> Emitted
     refused = emit_gate.refuse(target: target, p: p, c: c, s: s, decls: decls)
+
     if refused.len() > 0
         none_link: [str] = []
         none_pkg: [str] = []
         return Emitted(c: "", diagnostics: refused, link: none_link, packages: none_pkg)
+
     if !text
-        return Emitted(c: "", diagnostics: [], link: emit_externs.libraries(p, s, decls), packages: emit_externs.packages(p, s, decls))
+        return Emitted(
+            c: "",
+            diagnostics: [],
+            link: emit_externs.libraries(p, s, decls),
+            packages: emit_externs.packages(p, s, decls)
+        )
+
     # The ROOT module names exactly two things: the generated .c in a
     # #line directive, and the program-wide types the emitter invents.
     # Every name from a declaration takes that declaration's own
     # module instead (M-module-namespace's whole change here).
     module = source.module_of(s.name)
+
     # The author's functions, plus exactly the library functions they
     # reach — computed BEFORE the type walk, because the types a
     # pruned function mentions are not reachable either: unfiltered,
@@ -208,6 +236,7 @@ function emit_maybe(target: emit_decls.BuildTarget, p: ir_state.Program, c: chec
     names: emit_ctype.Names @ emit_ctype.new_names(s, decls)
     names @ emit_ctype.with_options(names, c: c, s: s, decls: decls)
     names @ emit_ctype.with_functions(names, c: c, s: s, decls: decls, p: p)
+
     # `module`, not `stem_of` — the sanitised name, which is the one the
     # compiler actually WRITES on disk (`build/<key>/whileloop.c`). The
     # comment above already said the root module names the generated .c
@@ -218,50 +247,75 @@ function emit_maybe(target: emit_decls.BuildTarget, p: ir_state.Program, c: chec
     # the bug.
     w: emit_writer.Writer @ emit_writer.new_writer(module)
     emit_decls.prelude(@w, p, target: target, c: c, names: names, s: s, decls: decls, version: version, tu_local: "")
+
     # Types before anything that can mention one: every typedef in one
     # containment order, then every per-type prototype, then the
     # descriptors — an array literal names its element's descriptor,
     # so the object must exist before a function body mentions it.
     emit_typeorder.definitions(@w, c, names, s, decls, want: emit_synth.everything())
     emit_perfn.prototypes(@w, c, names, decls, want: emit_synth.everything())
-    emit_descriptors.definitions(@w, c, names, decls, reachable: reached, constructed: constructed, want: emit_synth.everything())
+    emit_descriptors.definitions(
+        @w,
+        c,
+        names,
+        decls,
+        reachable: reached,
+        constructed: constructed,
+        want: emit_synth.everything()
+    )
+
     for at in shown
         if emit_decls.emitted(p.functions[at], target: target)
             emit_signature.prototype(@w, p.functions[at], c, names, s, decls)
+
     for at in shown
         if emit_decls.emitted(p.functions[at], target: target)
             emit_body.definition(@w, p, c, names, s, decls, f: p.functions[at])
+
     emit_perfn.bodies(@w, c, names, s, decls, want: emit_synth.everything())
+
     match target
         .program_build =>
             entry = entry_point(p)
+
             if !entry.is_err()
                 emit_decls.shim(@w, p.functions[entry.must()], s)
         .tests_build => emit_decls.test_shim(@w, p, s)
-    return Emitted(c: emit_writer.finish(w), diagnostics: [], link: emit_externs.libraries(p, s, decls), packages: emit_externs.packages(p, s, decls))
 
+    return Emitted(
+        c: emit_writer.finish(w),
+        diagnostics: [],
+        link: emit_externs.libraries(p, s, decls),
+        packages: emit_externs.packages(p, s, decls)
+    )
 
 ## Tests
 
 function has(text: str, needle: str) -> bool
     cs = text.chars()
     needle_cs = needle.chars()
+
     if needle_cs.len() == 0
         return true
+
     if needle_cs.len() > cs.len()
         return false
     start: i64 @ 0
+
     while start <= cs.len() - needle_cs.len()
         matched: bool @ true
         offset: i64 @ 0
+
         while offset < needle_cs.len()
             if cs[start + offset] != needle_cs[offset]
                 matched @ false
                 break
             offset @ offset + 1
+
         if matched
             return true
         start @ start + 1
+
     return false
 
 test "one program, one unit: prelude, order, shim — and the same bytes twice"
@@ -283,11 +337,14 @@ test "one program, one unit: prelude, order, shim — and the same bytes twice"
     assert has(text: got.c, needle: "/* Generated by heroes 0.0.0-test from t.hero. Do not edit. */")
     assert has(text: got.c, needle: "int main(")
     assert has(text: got.c, needle: "h_t_main")
+
     # §4.18: an ordinary build ignores the test block entirely.
     assert !has(text: got.c, needle: "grab reads the value")
+
     # The double-emit determinism rule, asserted where it is cheapest.
     again = emit_for(target: .program_build, p: p, c: cc, s: s, decls: parsed.decls, version: "0.0.0-test")
     assert got.c == again.c
+
     # The tests target: the test shim replaces main's, and tests_of
     # hands the runner its titles.
     tests = emit_for(target: .tests_build, p: p, c: cc, s: s, decls: parsed.decls, version: "0.0.0-test")

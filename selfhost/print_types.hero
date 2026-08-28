@@ -12,24 +12,30 @@ use parse
 
 function render_type(tree: ast.Ast, id: i64, s: source.Source) -> str
     node = tree.types[id]
+
     match node.kind
         .named => return source.span_text(s, node.span)
-        .unit => return "()"
+        .unit  => return "()"
         # i32[4] — the length is part of the type, so it is part of
         # the text.
-        .fixed x => return render_type(tree, x.element, s) + "[" + x.length.to_str() + "]"
+
+        .fixed x    => return render_type(tree, x.element, s) + "[" + x.length.to_str() + "]"
         .array_of a => return "[" + render_type(tree, a.element, s) + "]"
-        .map_of m => return "{" + render_type(tree, m.key, s) + ": " + render_type(tree, m.value, s) + "}"
+        .map_of m   => return "{" + render_type(tree, m.key, s) + ": " + render_type(tree, m.value, s) + "}"
         .fallible f => return render_type(tree, f.inner, s) + "?"
         .function_type fn_ty =>
             parts: [str] @ []
+
             for param in fn_ty.params
                 parts @ parts.push(render_type(tree, param, s))
+
             return "(function(" + parts.join(", ") + ") -> " + render_type(tree, fn_ty.result, s) + ")"
         # A type the parser could not read. The diagnostic says why;
         # the dump says WHERE, which is what makes a broken file still
         # readable.
+
         .error => return "<?>"
+
     return "<?>"
 
 ## Tests
@@ -39,11 +45,13 @@ test "one spelling per type, nested shapes included"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     fields: [i64] @ []
+
     match parsed.decls[0].kind
         .function_decl fd =>
             for p in fd.value.params
                 fields @ fields.push(p.ty)
         .constant_decl | .record_decl | .variant_decl | .test_decl => assert false
+
     assert render_type(parsed.tree, fields[0], s) == "i64"
     assert render_type(parsed.tree, fields[1], s) == "[str]"
     assert render_type(parsed.tree, fields[2], s) == "{i64: f64}"

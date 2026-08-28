@@ -127,12 +127,15 @@ function laid_out(scratch: str) -> str?
 # under test is the same for it.
 function tu_sources(scratch: str) -> [str]?
     listed = shell.run(scratch: scratch, command: "find build -name 'unitshape.c' -o -name 'unitprog.c'")
+
     if listed.is_err()
         return fail("cannot_run", "cannot list this program's translation units under build/")
     out: [str] @ []
+
     for row in strings.lines(listed.must().out)
         if row.len() > 0
             out @ out.push(row)
+
     return ok(out.sort())
 
 # Drop the cached objects of this program's modules, so the next build
@@ -141,6 +144,7 @@ function tu_sources(scratch: str) -> [str]?
 function forget_tus(scratch: str) -> ()?
     for path in tu_sources(scratch)?
         shell.remove_tree(parent_of(path))?
+
     return ok()
 
 function parent_of(path: str) -> str
@@ -158,15 +162,28 @@ function parent_of(path: str) -> str
 function emitted(scratch: str, compiler: str, dir: str) -> Emission?
     forget_tus(scratch)?
     left = tu_sources(scratch)?
+
     if left.len() > 0
-        return fail("cannot_run", "the cached translation units survived the forget, so a second build would hit instead of emitting and this suite would compare a file with itself:\n    " + left.join("\n    "))
-    built = shell.run(scratch: scratch, command: shell.patience() + shell.sq(compiler) + " build " + shell.sq(dir + "/unitprog.hero"))
+        return fail(
+            "cannot_run",
+            "the cached translation units survived the forget, so a second build would hit instead of emitting and this suite would compare a file with itself:\n    " + left.join("\n    ")
+        )
+    built = shell.run(
+        scratch: scratch,
+        command: shell.patience() + shell.sq(compiler) + " build " + shell.sq(dir + "/unitprog.hero")
+    )
+
     if built.is_err() || built.must().code != 0
-        return fail("cannot_run", "the build did not run: " + built.default(shell.Run(code: -1, out: "", err: "cannot run")).err)
+        return fail(
+            "cannot_run",
+            "the build did not run: " + built.default(shell.Run(code: -1, out: "", err: "cannot run")).err
+        )
     paths = tu_sources(scratch)?
     texts: [str] @ []
+
     for path in paths
         texts @ texts.push(read_file(path)?)
+
     return ok(Emission(paths: paths, texts: texts))
 
 # **Every TU is emitted identically twice.** Same source, same flags, two
@@ -175,28 +192,50 @@ function emitted(scratch: str, compiler: str, dir: str) -> Emission?
 function every_tu_is_emitted_identically_twice(@r: report.Report, scratch: str, compiler: str)
     label = "units/every translation unit is emitted identically twice"
     dir = laid_out(scratch)
+
     if dir.is_err()
         report.keep_failure(@r, label: label, detail: "  cannot lay the program out under " + scratch)
         return
     one = emitted(scratch: scratch, compiler: compiler, dir: dir.must())
     two = emitted(scratch: scratch, compiler: compiler, dir: dir.must())
+
     if one.is_err() || two.is_err()
-        report.keep_failure(@r, label: label, detail: "  a clean emission did not run twice under " + dir.must() + ":\n    " + why(one) + why(two))
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: "  a clean emission did not run twice under " + dir.must() + ":\n    " + why(one) + why(two)
+        )
         return
     first = one.must()
     second = two.must()
+
     if first.paths.len() != 2
-        report.keep_failure(@r, label: label, detail: "  a two-module program should emit 2 translation units, this emitted " + first.paths.len().to_str() + ":\n    " + first.paths.join("\n    "))
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: "  a two-module program should emit 2 translation units, this emitted " + first.paths.len().to_str() + ":\n    " + first.paths.join("\n    ")
+        )
         return
+
     if first.paths != second.paths
-        report.keep_failure(@r, label: label, detail: "  the two emissions landed under different cache keys, so the emitted text differs:\n    " + first.paths.join("\n    ") + "\n  then\n    " + second.paths.join("\n    ") + "\n  The key is a digest of the TU's own text, so this is the determinism failure seen through the cache: a wobbling emitter means a cache that can never hit.")
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: "  the two emissions landed under different cache keys, so the emitted text differs:\n    " + first.paths.join("\n    ") + "\n  then\n    " + second.paths.join("\n    ") + "\n  The key is a digest of the TU's own text, so this is the determinism failure seen through the cache: a wobbling emitter means a cache that can never hit."
+        )
         return
     wrong: [str] @ []
+
     for i in range(from: 0, to: first.paths.len())
         if first.texts[i] != second.texts[i]
             wrong @ wrong.push("    " + first.paths[i] + " came out with different bytes the second time")
+
     if wrong.len() > 0
-        report.keep_failure(@r, label: label, detail: wrong.join("\n") + "\n  CLAUDE.md §7 says the double-emit determinism test stays green at all times, and panel 093 R1 says the build path owes its own: `suite_determinism` compares the FUSED unit, which the per-module path stopped emitting at step 6.")
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: wrong.join("\n") + "\n  CLAUDE.md §7 says the double-emit determinism test stays green at all times, and panel 093 R1 says the build path owes its own: `suite_determinism` compares the FUSED unit, which the per-module path stopped emitting at step 6."
+        )
     else
         report.keep_pass(@r)
 
@@ -206,34 +245,59 @@ function every_tu_is_emitted_identically_twice(@r: report.Report, scratch: str, 
 function a_caller_compiles_the_prototype_the_definition_sits_beside(@r: report.Report, scratch: str, compiler: str)
     label = "units/a caller compiles the prototype the definition sits beside"
     dir = laid_out(scratch)
+
     if dir.is_err()
         report.keep_failure(@r, label: label, detail: "  cannot lay the program out under " + scratch)
         return
     got = emitted(scratch: scratch, compiler: compiler, dir: dir.must())
+
     if got.is_err()
         report.keep_failure(@r, label: label, detail: "  the program did not emit under " + dir.must())
         return
     declaring = text_of(e: got.must(), name: "unitshape.c")
     calling = text_of(e: got.must(), name: "unitprog.c")
+
     if declaring.len() == 0 || calling.len() == 0
-        report.keep_failure(@r, label: label, detail: "  the two translation units are not both on disk:\n    " + got.must().paths.join("\n    "))
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: "  the two translation units are not both on disk:\n    " + got.must().paths.join("\n    ")
+        )
         return
     exported = prototype_of(text: calling, name: DECLARED)
     kept = prototype_of(text: declaring, name: DECLARED)
     defined = definition_of(text: declaring, name: DECLARED)
     wrong: [str] @ []
+
     if exported.len() == 0
-        wrong @ wrong.push("    the calling TU carries no prototype for " + DECLARED + ", so the call resolves against nothing")
+        wrong @ wrong.push(
+            "    the calling TU carries no prototype for " + DECLARED + ", so the call resolves against nothing"
+        )
+
     if kept.len() == 0
-        wrong @ wrong.push("    the DECLARING TU carries no prototype for " + DECLARED + " — R3's whole mechanism is that it compiles the same text it exports, so clang catches a divergence there")
+        wrong @ wrong.push(
+            "    the DECLARING TU carries no prototype for " + DECLARED + " — R3's whole mechanism is that it compiles the same text it exports, so clang catches a divergence there"
+        )
+
     if defined.len() == 0
         wrong @ wrong.push("    the declaring TU carries no definition of " + DECLARED)
+
     if exported.len() > 0 && kept.len() > 0 && exported != kept
-        wrong @ wrong.push("    the two TUs spell it differently:\n      caller:    " + exported + "\n      declarer:  " + kept)
+        wrong @ wrong.push(
+            "    the two TUs spell it differently:\n      caller:    " + exported + "\n      declarer:  " + kept
+        )
+
     if kept.len() > 0 && defined.len() > 0 && strings.without_suffix(text: kept, suffix: ";") + " {" != defined
-        wrong @ wrong.push("    the prototype and the definition beside it do not agree:\n      prototype:  " + kept + "\n      definition: " + defined)
+        wrong @ wrong.push(
+            "    the prototype and the definition beside it do not agree:\n      prototype:  " + kept + "\n      definition: " + defined
+        )
+
     if wrong.len() > 0
-        report.keep_failure(@r, label: label, detail: wrong.join("\n") + "\n  A caller that believes a signature the definition does not have links, runs, and returns garbage at exit 0 — the shape panel 093's ffi-pragmatist measured, and the reason R3 makes the declaring TU compile its own exported text.")
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: wrong.join("\n") + "\n  A caller that believes a signature the definition does not have links, runs, and returns garbage at exit 0 — the shape panel 093's ffi-pragmatist measured, and the reason R3 makes the declaring TU compile its own exported text."
+        )
     else
         report.keep_pass(@r)
 
@@ -243,27 +307,40 @@ function a_caller_compiles_the_prototype_the_definition_sits_beside(@r: report.R
 function a_tu_names_the_runtime_descriptors_and_defines_none(@r: report.Report, scratch: str, compiler: str)
     label = "units/a translation unit names the runtime's descriptors and defines none"
     dir = laid_out(scratch)
+
     if dir.is_err()
         report.keep_failure(@r, label: label, detail: "  cannot lay the program out under " + scratch)
         return
     got = emitted(scratch: scratch, compiler: compiler, dir: dir.must())
+
     if got.is_err()
         report.keep_failure(@r, label: label, detail: "  the program did not emit under " + dir.must())
         return
     seen = got.must()
     carried: [str] @ []
     named: i64 @ 0
+
     for i in range(from: 0, to: seen.paths.len())
         for row in strings.lines(seen.texts[i])
             if strings.contains(text: row, needle: "HeroDesc " + RUNTIME_DESC)
                 carried @ carried.push("    " + seen.paths[i] + ": " + strings.trimmed(row))
+
             if strings.contains(text: row, needle: "&" + RUNTIME_DESC)
                 named @ named + 1
+
     if carried.len() > 0
-        report.keep_failure(@r, label: label, detail: "  a translation unit declares or defines a descriptor the runtime owns:\n" + carried.join("\n") + "\n  `runtime/heroes_runtime.h` already declares every one of them `extern const HeroDesc`, so a TU may take the address and nothing else. Two descriptors for one type inside one binary is a `==` that can answer no.")
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: "  a translation unit declares or defines a descriptor the runtime owns:\n" + carried.join("\n") + "\n  `runtime/heroes_runtime.h` already declares every one of them `extern const HeroDesc`, so a TU may take the address and nothing else. Two descriptors for one type inside one binary is a `==` that can answer no."
+        )
     else
         if named == 0
-            report.keep_failure(@r, label: label, detail: "  no translation unit took the address of a runtime descriptor, so this check passed without asking anything.\n  The program holds an `i64` field and an array of records, which reach `" + RUNTIME_DESC + "int` — if that stopped being true the case needs rewriting, not deleting.")
+            report.keep_failure(
+                @r,
+                label: label,
+                detail: "  no translation unit took the address of a runtime descriptor, so this check passed without asking anything.\n  The program holds an `i64` field and an array of records, which reach `" + RUNTIME_DESC + "int` — if that stopped being true the case needs rewriting, not deleting."
+            )
         else
             report.keep_pass(@r)
 
@@ -272,7 +349,7 @@ function a_tu_names_the_runtime_descriptors_and_defines_none(@r: report.Report, 
 # which is `report.hero`'s own rule for a test).
 function why(got: Emission?) -> str
     return match got
-        .ok _ => ""
+        .ok _  => ""
         .err e => e.msg
 
 # The text of the TU whose file has this basename, or "" where the build
@@ -281,6 +358,7 @@ function text_of(e: Emission, name: str) -> str
     for i in range(from: 0, to: e.paths.len())
         if strings.base_name(e.paths[i]) == name
             return e.texts[i]
+
     return ""
 
 # The prototype line: it names the function, ends in a semicolon, and
@@ -294,6 +372,7 @@ function prototype_of(text: str, name: str) -> str
     for row in strings.lines(text)
         if strings.contains(text: row, needle: name) && strings.ends_with(text: row, suffix: ";") && !strings.starts_with(text: row, prefix: " ")
             return row
+
     return ""
 
 # The definition's opening line: same name, at column zero, ending in the
@@ -302,6 +381,7 @@ function definition_of(text: str, name: str) -> str
     for row in strings.lines(text)
         if strings.contains(text: row, needle: name) && strings.ends_with(text: row, suffix: "{") && !strings.starts_with(text: row, prefix: " ")
             return row
+
     return ""
 
 test "a prototype is told apart from a call to the same function"
@@ -327,6 +407,7 @@ test "a divergence between two translation units is visible in the two lines"
     assert kept != exported
     assert kept == "int64_t h_m_f(int64_t a);"
     assert exported == "int64_t h_m_f(int32_t a);"
+
     # And the other half: a definition that drifted from the prototype
     # standing right above it.
     drifted = "int64_t h_m_g(int64_t a);\nint64_t h_m_g(int32_t a) {\n"

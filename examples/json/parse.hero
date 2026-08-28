@@ -86,6 +86,7 @@ function is_space(c: u8) -> bool
 # rather than failing.
 function has_word(r: Reader, spelling: str) -> bool
     stop = r.pos + spelling.len()
+
     if stop > r.text.len()
         return false
     return r.text.slice(from: r.pos, to: stop) == spelling
@@ -99,9 +100,11 @@ function skip(@r: Reader, n: i64)
 # this is a dispatch rather than a search.
 function read_value(@r: Reader) -> value.Json?
     skip_space(@r)
+
     if at_end(r)
         return fail(ERR_UNEXPECTED_END, "the document ends where a value was expected")
     c = here(r)
+
     if c == '{'
         return read_object(@r)
     else if c == '['
@@ -129,9 +132,11 @@ function read_value(@r: Reader) -> value.Json?
 function read_string(@r: Reader) -> str?
     advance(@r)
     parts: [str] @ []
+
     while !at_end(r) && here(r) != '"'
         if here(r) == '\\'
             advance(@r)
+
             if at_end(r)
                 return fail(ERR_UNTERMINATED_STRING, "the document ends inside an escape")
             parts @ parts.push(escape_at(r)?)
@@ -139,6 +144,7 @@ function read_string(@r: Reader) -> str?
         else
             parts @ parts.push(r.text.slice(from: r.pos, to: r.pos + 1))
             advance(@r)
+
     if at_end(r)
         return fail(ERR_UNTERMINATED_STRING, "the document ends inside a string")
     advance(@r)
@@ -155,6 +161,7 @@ function read_string(@r: Reader) -> str?
 # document that is wrong in a way nothing downstream could see.
 function escape_at(r: Reader) -> str?
     c = here(r)
+
     if c == '"'
         return ok("\"")
     else if c == '\\'
@@ -166,7 +173,10 @@ function escape_at(r: Reader) -> str?
     else if c == 't'
         return ok("\t")
     else if c == 'r' || c == 'b' || c == 'f' || c == 'u'
-        return fail(ERR_UNSUPPORTED_ESCAPE, "this reader does not decode `\\" + r.text.slice(from: r.pos, to: r.pos + 1) + "`, at " + r.pos.to_str())
+        return fail(
+            ERR_UNSUPPORTED_ESCAPE,
+            "this reader does not decode `\\" + r.text.slice(from: r.pos, to: r.pos + 1) + "`, at " + r.pos.to_str()
+        )
     return fail(ERR_BAD_ESCAPE, "no escape `\\" + r.text.slice(from: r.pos, to: r.pos + 1) + "` at " + r.pos.to_str())
 
 # A number. JSON's numbers are doubles, so this builds an `f64` — digit by
@@ -174,31 +184,39 @@ function escape_at(r: Reader) -> str?
 # parsing can fail, and a conversion that can fail is not a conversion.
 function read_number(@r: Reader) -> f64?
     negative: bool @ false
+
     if here(r) == '-'
         negative @ true
         advance(@r)
     whole: f64 @ 0.0
     digits: i64 @ 0
+
     while !at_end(r) && is_digit(here(r))
         whole @ whole * 10.0 + to_f64(digit_of(here(r)))
         digits @ digits + 1
         advance(@r)
+
     if digits == 0
         return fail(ERR_BAD_NUMBER, "a number needs a digit at " + r.pos.to_str())
+
     if !at_end(r) && here(r) == '.'
         advance(@r)
         scale: f64 @ 1.0
         after: i64 @ 0
+
         while !at_end(r) && is_digit(here(r))
             scale @ scale / 10.0
             whole @ whole + to_f64(digit_of(here(r))) * scale
             after @ after + 1
             advance(@r)
+
         if after == 0
             return fail(ERR_BAD_NUMBER, "a `.` needs a digit after it, at " + r.pos.to_str())
+
     if !at_end(r) && (here(r) == 'e' || here(r) == 'E')
         advance(@r)
         whole @ whole * power_of_ten(read_exponent(@r)?)
+
     if negative
         whole @ -whole
     return ok(whole)
@@ -208,31 +226,40 @@ function read_number(@r: Reader) -> f64?
 # infinite either way, and an uncapped loop would spin on `1e999999999`.
 function read_exponent(@r: Reader) -> i64?
     negative: bool @ false
+
     if !at_end(r) && (here(r) == '+' || here(r) == '-')
         negative @ here(r) == '-'
         advance(@r)
     value: i64 @ 0
     digits: i64 @ 0
+
     while !at_end(r) && is_digit(here(r))
         value @ value * 10 + digit_of(here(r))
         digits @ digits + 1
+
         if value > 400
             return fail(ERR_EXPONENT_OUT_OF_RANGE, "an exponent beyond an f64's range at " + r.pos.to_str())
         advance(@r)
+
     if digits == 0
         return fail(ERR_BAD_NUMBER, "an exponent needs a digit at " + r.pos.to_str())
+
     if negative
         return ok(-value)
     return ok(value)
 
 function power_of_ten(n: i64) -> f64
     out: f64 @ 1.0
+
     if n < 0
         for _ in range(from: n, to: 0)
             out @ out / 10.0
+
         return out
+
     for _ in range(from: 0, to: n)
         out @ out * 10.0
+
     return out
 
 ## The two containers
@@ -243,17 +270,22 @@ function read_array(@r: Reader) -> value.Json?
     advance(@r)
     items: [value.Json] @ []
     skip_space(@r)
+
     if at_end(r)
         return fail(ERR_UNCLOSED_ARRAY, "the document ends inside an array")
+
     if here(r) == ']'
         advance(@r)
         return ok(.array(items: items))
     more: bool @ true
+
     while more
         items @ items.push(read_value(@r)?)
         skip_space(@r)
+
         if at_end(r)
             return fail(ERR_UNCLOSED_ARRAY, "the document ends inside an array")
+
         if here(r) == ','
             advance(@r)
         else if here(r) == ']'
@@ -261,6 +293,7 @@ function read_array(@r: Reader) -> value.Json?
             more @ false
         else
             return fail(ERR_EXPECTED_SEPARATOR, "expected `,` or `]` at " + r.pos.to_str())
+
     return ok(.array(items: items))
 
 # `{` … `}`. A repeated key **replaces**, which is `m[k] @ v`'s own rule and
@@ -269,25 +302,32 @@ function read_object(@r: Reader) -> value.Json?
     advance(@r)
     fields: {str: value.Json} @ {}
     skip_space(@r)
+
     if at_end(r)
         return fail(ERR_UNCLOSED_OBJECT, "the document ends inside an object")
+
     if here(r) == '}'
         advance(@r)
         return ok(.object(fields: fields))
     more: bool @ true
+
     while more
         skip_space(@r)
+
         if at_end(r) || here(r) != '"'
             return fail(ERR_EXPECTED_KEY, "an object's key is a string, at " + r.pos.to_str())
         key = read_string(@r)?
         skip_space(@r)
+
         if at_end(r) || here(r) != ':'
             return fail(ERR_EXPECTED_COLON, "expected `:` after a key, at " + r.pos.to_str())
         advance(@r)
         fields[key] @ read_value(@r)?
         skip_space(@r)
+
         if at_end(r)
             return fail(ERR_UNCLOSED_OBJECT, "the document ends inside an object")
+
         if here(r) == ','
             advance(@r)
         else if here(r) == '}'
@@ -295,6 +335,7 @@ function read_object(@r: Reader) -> value.Json?
             more @ false
         else
             return fail(ERR_EXPECTED_SEPARATOR, "expected `,` or `}` at " + r.pos.to_str())
+
     return ok(.object(fields: fields))
 
 ## The entry point
@@ -305,6 +346,7 @@ function read(text: str) -> value.Json?
     r: Reader @ Reader(text: text, pos: 0)
     j = read_value(@r)?
     skip_space(@r)
+
     if !at_end(r)
         return fail(ERR_TRAILING_INPUT, "the document ends at " + r.pos.to_str() + " and the text does not")
     return ok(j)

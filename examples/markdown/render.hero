@@ -19,28 +19,30 @@ function underline(level: i64, text: str) -> str
 
 function indent(lines: [str], prefix: str) -> [str]
     out: [str] @ []
+
     for line in lines
         out @ out.push(prefix + line)
+
     return out
 
 # One block, as the lines it becomes.
 function lines_of(b: blocks.Block) -> [str]
     return match b
-        .heading h  => [h.text, underline(h.level, h.text)]
+        .heading h   => [h.text, underline(h.level, h.text)]
         .paragraph p => [p.text]
-        .bullet x   => ["  * " + x.text]
-        .numbered x => ["  " + x.n.to_str() + ". " + x.text]
-        .quote q    => ["  | " + q.text]
-        .code c     => indent(c.body, "    ")
-        .rule       => [repeat("-", 60)]
+        .bullet x    => ["  * " + x.text]
+        .numbered x  => ["  " + x.n.to_str() + ". " + x.text]
+        .quote q     => ["  | " + q.text]
+        .code c      => indent(c.body, "    ")
+        .rule        => [repeat("-", 60)]
 
 # Which run of neighbours a block belongs to, as a small number. Zero is "on its
 # own", and it is the answer for every block that is not a list item.
 function run_kind(b: blocks.Block) -> i64
     return match b
-        .bullet _   => 1
-        .numbered _ => 2
-        .quote _    => 3
+        .bullet _                                   => 1
+        .numbered _                                 => 2
+        .quote _                                    => 3
         .heading _ | .paragraph _ | .code _ | .rule => 0
 
 # Whether two neighbours belong to one run, and so take no blank line between
@@ -58,12 +60,16 @@ function runs_on(before: blocks.Block, after: blocks.Block) -> bool
 function render(document: [blocks.Block]) -> str
     out: [str] @ []
     i: i64 @ 0
+
     while i < document.len()
         if i > 0 && !runs_on(before: document[i - 1], after: document[i])
             out @ out.push("")
+
         for line in lines_of(document[i])
             out @ out.push(line)
+
         i @ i + 1
+
     if out.len() == 0
         return ""
     return join(out, "\n") + "\n"

@@ -39,21 +39,25 @@ function has(inv: Invocation, spelling: str) -> bool
     for f in inv.flags
         if f.spelling == spelling
             return true
+
     return false
 
 function value_of(inv: Invocation, spelling: str) -> str?
     for f in inv.flags
         if f.spelling == spelling
             return f.value
+
     return fail("none", "the flag was not given")
 
 # Every value a repeatable flag was given, in the order written —
 # which is the order clang will search, so the order the author chose.
 function values_of(inv: Invocation, spelling: str) -> [str]
     out: [str] @ []
+
     for f in inv.flags
         if f.spelling == spelling && !f.value.is_err()
             out @ out.push(f.value.must())
+
     return out
 
 function bare(tag: cli_table.Tag) -> Invocation
@@ -70,69 +74,97 @@ function parse(given: [str], dir_probe: (function(str) -> bool)) -> Invocation?
     if given.len() == 0
         return ok(bare(tag: .help_cmd))
     word = given[0]
+
     if word == "--version" || word == "-V"
         return ok(bare(tag: .version_cmd))
+
     if word == "--help" || word == "-h" || word == "help"
         return ok(bare(tag: .help_cmd))
     table = cli_table.commands()
     found: i64 @ -1
     index: i64 @ 0
+
     for c in table
         if c.name == word && found == -1
             found @ index
         index @ index + 1
+
     if found == -1
         retired = cli_table.retired(word: word)
+
         if !retired.is_err()
             return fail("bad_usage", "`" + word + "` is no longer a command — use `" + retired.must() + "`")
         names: [str] @ []
+
         for c in table
             names @ names.push(c.name)
+
         return fail("bad_usage", "unknown command `" + word + "` — the commands are " + names.join(", "))
     command = table[found]
     file: str? @ fail("none", "no file")
     flags: [FlagHit] @ []
     program_args: [str] @ []
     at: i64 @ 1
+
     while at < given.len()
         arg = given[at]
+
         if arg == "--"
             # Only run executes anything, so only run has a program to
             # forward to. Anywhere else the separator is a mistake
             # worth naming rather than a no-op that silently drops
             # what follows it.
             take: bool @ false
+
             match command.tag
-                .run_cmd => take @ true
-                .lex_cmd | .parse_cmd | .check_cmd | .build_cmd | .test_cmd => take @ take
+                .run_cmd                                                        => take @ true
+                .lex_cmd | .parse_cmd | .check_cmd | .build_cmd | .test_cmd     => take @ take
                 .fmt_cmd | .doctor_cmd | .mutate_cmd | .measure_cmd | .this_cmd => take @ take
-                .version_cmd | .help_cmd => take @ take
+                .version_cmd | .help_cmd                                        => take @ take
+
             if !take
-                return fail("bad_usage", "`--` passes arguments to the program, and `" + command.name + "` does not run one — only `heroes run` does")
+                return fail(
+                    "bad_usage",
+                    "`--` passes arguments to the program, and `" + command.name + "` does not run one — only `heroes run` does"
+                )
             follow: i64 @ at + 1
+
             while follow < given.len()
                 program_args @ program_args.push(given[follow])
                 follow @ follow + 1
+
             break
+
         if starts_with_dash(arg)
             known: i64 @ -1
             probe: i64 @ 0
+
             for f in command.flags
                 if f.spelling == arg && known == -1
                     known @ probe
                 probe @ probe + 1
+
             if known == -1
                 retired_f = cli_table.retired_flag(command: command.name, arg: arg)
+
                 if !retired_f.is_err()
-                    return fail("bad_usage", "`" + arg + "` is no longer a flag of `" + command.name + "` — use `" + retired_f.must() + "`")
+                    return fail(
+                        "bad_usage",
+                        "`" + arg + "` is no longer a flag of `" + command.name + "` — use `" + retired_f.must() + "`"
+                    )
                 return fail("bad_usage", unknown_flag(command: command, arg: arg))
             wanted = command.flags[known]
             value: str? @ fail("none", "no value")
+
             if wanted.value
                 if at + 1 >= given.len() || starts_with_dash(given[at + 1])
-                    return fail("bad_usage", "`" + arg + "` needs a path: `heroes " + command.name + " <file.hero> " + arg + " <path>`")
+                    return fail(
+                        "bad_usage",
+                        "`" + arg + "` needs a path: `heroes " + command.name + " <file.hero> " + arg + " <path>`"
+                    )
                 value @ ok(given[at + 1])
                 at @ at + 1
+
             # The one place this parser looks at the machine: a search
             # path that names nothing is the failure clang is SILENT
             # about (panel 056), and silence is what makes it survive
@@ -142,7 +174,11 @@ function parse(given: [str], dir_probe: (function(str) -> bool)) -> Invocation?
             # narrowing intact.
             if wanted.directory && !value.is_err()
                 if !dir_probe(value.must())
-                    return fail("bad_usage", "`" + arg + " " + value.must() + "` names no directory on this machine — clang searches it in silence and builds against whatever header it finds elsewhere, so this is refused here rather than discovered as a wrong answer")
+                    return fail(
+                        "bad_usage",
+                        "`" + arg + " " + value.must() + "` names no directory on this machine — clang searches it in silence and builds against whatever header it finds elsewhere, so this is refused here rather than discovered as a wrong answer"
+                    )
+
             # A second -o is dropped in favour of the first — a second
             # output path is a mistake and the first is what the
             # reader meant — where a second --include is ONE MORE
@@ -153,19 +189,25 @@ function parse(given: [str], dir_probe: (function(str) -> bool)) -> Invocation?
             at @ at + 1
             continue
         no_operand: bool @ false
+
         match command.operand
-            .no_operand => no_operand @ true
+            .no_operand                       => no_operand @ true
             .file_operand | .optional_operand => no_operand @ no_operand
+
         if no_operand
             return fail("bad_usage", "`" + command.name + "` takes no file")
+
         if !file.is_err()
             return fail("bad_usage", "`" + command.name + "` takes one file, and two were given")
         file @ ok(arg)
         at @ at + 1
+
     needs_file: bool @ false
+
     match command.operand
-        .file_operand => needs_file @ true
+        .file_operand                   => needs_file @ true
         .no_operand | .optional_operand => needs_file @ needs_file
+
     if needs_file && file.is_err()
         return fail("bad_usage", "`" + command.name + "` needs a file: `heroes " + command.name + " <file.hero>`")
     return ok(Invocation(tag: command.tag, file: file, program_args: program_args, flags: flags))
@@ -176,8 +218,10 @@ function unknown_flag(command: cli_table.Command, arg: str) -> str
     if command.flags.len() == 0
         return "`" + command.name + "` takes no flags, and `" + arg + "` was given"
     accepted: [str] @ []
+
     for f in command.flags
         accepted @ accepted.push(f.spelling)
+
     return "`" + command.name + "` does not accept `" + arg + "` — it accepts " + accepted.join(", ")
 
 ## Tests
@@ -202,20 +246,27 @@ test "strict against the table, and every refusal names what is accepted"
     assert inv.file.must() == "main.hero"
     assert has(inv, spelling: "--emit-c")
     assert value_of(inv, spelling: "-o").must() == "out.c"
+
     # An unknown command enumerates; a retired flag names its heir.
     ghost: [str] = ["explode", "main.hero"]
     bad = parse(ghost, dir_probe: yes_dir)
+
     match bad
-        .ok => assert false
+        .ok    => assert false
         .err e => assert e.msg == "unknown command `explode` — the commands are lex, parse, check, build, run, test, fmt, doctor, mutate, measure, this"
+
     old: [str] = ["fmt", "main.hero", "--write"]
+
     match parse(old, dir_probe: yes_dir)
-        .ok => assert false
+        .ok    => assert false
         .err e => assert e.msg == "`--write` is no longer a flag of `fmt` — use `--in-place`"
+
     wrong: [str] = ["parse", "main.hero", "--emit-c"]
+
     match parse(wrong, dir_probe: yes_dir)
-        .ok => assert false
+        .ok    => assert false
         .err e => assert e.msg == "`parse` does not accept `--emit-c` — it accepts --dump-ast"
+
     two: [str] = ["check", "a.hero", "b.hero"]
     assert parse(two, dir_probe: yes_dir).is_err()
     missing: [str] = ["build"]
@@ -228,13 +279,16 @@ test "repeatable flags accumulate, -o keeps the first, -- feeds run only"
     assert got.len() == 2
     assert got[0] == "/a"
     assert got[1] == "/b"
+
     # The second -o is dropped in favour of the first.
     assert value_of(inv, spelling: "-o").must() == "x"
+
     # The machine probe fires only for a directory-valued flag.
     nodir: [str] = ["build", "m.hero", "--include", "/ghost"]
     assert parse(nodir, dir_probe: no_dir).is_err()
     fine: [str] = ["build", "m.hero", "-o", "/ghost/out"]
     assert !parse(fine, dir_probe: no_dir).is_err()
+
     # `--` forwards to the program for run, and is refused elsewhere.
     fwd: [str] = ["run", "m.hero", "--", "-o", "--weird"]
     ran = parse(fwd, dir_probe: yes_dir).must()

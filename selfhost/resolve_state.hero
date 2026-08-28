@@ -60,6 +60,7 @@ function open_scope(@r: Resolver)
 
 function close_scope(@r: Resolver)
     mark: i64 @ 0
+
     if r.scopes.marks.len() > 0
         mark @ r.scopes.marks[r.scopes.marks.len() - 1]
         r.scopes.marks @ r.scopes.marks.slice(from: 0, to: r.scopes.marks.len() - 1)
@@ -75,23 +76,28 @@ function scope_depth(r: Resolver) -> i64
 # block closed.
 function lookup_local(r: Resolver, name: str) -> i64?
     i: i64 @ r.scopes.entries.len() - 1
+
     while i >= 0
         if r.scopes.entries[i].name == name
             return ok(r.scopes.entries[i].local)
         i @ i - 1
+
     return fail("free", "no open scope binds this name")
 
 # Whether the INNERMOST scope already binds this name. One caller: two
 # patterns of one arm may not bind the same payload name.
 function bound_in_current_scope(r: Resolver, name: str) -> bool
     mark: i64 @ 0
+
     if r.scopes.marks.len() > 0
         mark @ r.scopes.marks[r.scopes.marks.len() - 1]
     i: i64 @ mark
+
     while i < r.scopes.entries.len()
         if r.scopes.entries[i].name == name
             return true
         i @ i + 1
+
     return false
 
 # Every name currently visible, innermost first — the did-you-mean's first
@@ -99,9 +105,11 @@ function bound_in_current_scope(r: Resolver, name: str) -> bool
 function visible_locals(r: Resolver) -> [str]
     out: [str] @ []
     i: i64 @ r.scopes.entries.len() - 1
+
     while i >= 0
         out @ out.push(r.scopes.entries[i].name)
         i @ i - 1
+
     return out
 
 ## The working state
@@ -111,7 +119,6 @@ function visible_locals(r: Resolver) -> [str]
 record GenericParam
     name: str
     position: i64
-
 
 # The pass's working state. It owns everything and takes the tree and the
 # source as parameters — the Cyclone rule kept by a language that never had
@@ -154,21 +161,34 @@ function new_resolver(expr_count: i64, type_count: i64) -> Resolver
     out: resolved.Resolved @ resolved.new_resolved()
     uses: [resolved.Ref] @ []
     i: i64 @ 0
+
     while i < expr_count
         uses @ uses.push(.unresolved)
         i @ i + 1
+
     out.uses @ uses
     type_uses: [resolved.TypeRef] @ []
     j: i64 @ 0
+
     while j < type_count
         type_uses @ type_uses.push(.unresolved)
         j @ j + 1
+
     out.type_uses @ type_uses
     generics: [GenericParam] = []
     fields: {str: {str: bool}} = {}
     suggested: {str: {str: bool}} = {}
     module_reads: {str: {str: bool}} = {}
-    return Resolver(out: out, scopes: new_scopes(), generics: generics, fields: fields, suggested: suggested, owner: 0, module: "", module_reads: module_reads)
+    return Resolver(
+        out: out,
+        scopes: new_scopes(),
+        generics: generics,
+        fields: fields,
+        suggested: suggested,
+        owner: 0,
+        module: "",
+        module_reads: module_reads
+    )
 
 function push_diagnostic(@r: Resolver, d: diag.Diagnostic)
     r.out.diagnostics @ r.out.diagnostics.push(d)
@@ -176,6 +196,7 @@ function push_diagnostic(@r: Resolver, d: diag.Diagnostic)
 # Membership in a module -> name table, shared by fields/suggested/reads.
 function keyed_has(table: {str: {str: bool}}, module: str, name: str) -> bool
     inner = table[module]
+
     if inner.is_err()
         return false
     return !inner.must()[name].is_err()
@@ -183,6 +204,7 @@ function keyed_has(table: {str: {str: bool}}, module: str, name: str) -> bool
 function keyed_add(@table: {str: {str: bool}}, module: str, name: str)
     inner: {str: bool} @ {}
     found = table[module]
+
     if !found.is_err()
         inner @ found.must()
     inner[name] @ true
@@ -195,6 +217,7 @@ function keyed_add(@table: {str: {str: bool}}, module: str, name: str)
 # the language rather than imported by the file.
 function top_visible(r: Resolver, name: str) -> i64?
     own = resolved.top_in(r.out, module: r.module, name: name)
+
     if !own.is_err()
         return own
     return resolved.top_in(r.out, module: source.LIBRARY_MODULE, name: name)
@@ -204,6 +227,7 @@ function top_visible(r: Resolver, name: str) -> i64?
 # BTreeMap gave the order for free; the port pays with one sort (§4.9).
 function used_modules(r: Resolver) -> [str]
     named = r.out.module_uses[r.module]
+
     if named.is_err()
         return []
     return sort(named.must())
@@ -218,6 +242,7 @@ function field_in_reach(r: Resolver, text: str) -> bool
         if keyed_has(r.fields, module: module, name: text)
             if module == r.module || module == source.LIBRARY_MODULE || resolved.is_used_module(r.out, from: r.module, module: module)
                 return true
+
     return false
 
 # The candidates for a name that resolved to nothing, remembered so the
@@ -226,15 +251,18 @@ function field_in_reach(r: Resolver, text: str) -> bool
 # in main.hero (a dropped error, 2026-08-12).
 function near_names(@r: Resolver, name: str, candidates: [str]) -> [str]
     near = resolve_errors.nearest(name, candidates)
+
     for candidate in near
         keyed_add(@r.suggested, module: r.module, name: candidate)
+
     return near
 
 # Records what an occurrence resolved to, and counts the read.
 function record_use(@r: Resolver, at: i64, to: resolved.Ref)
     r.out.uses[at] @ to
+
     match to
-        .local l => r.out.locals[l.at].reads @ r.out.locals[l.at].reads + 1
+        .local l                                => r.out.locals[l.at].reads @ r.out.locals[l.at].reads + 1
         .unresolved | .top | .builtin | .module => return
 
 ## Declaring
@@ -245,14 +273,17 @@ function record_use(@r: Resolver, at: i64, to: resolved.Ref)
 # diagnostic, not a cascade.
 function declare(@r: Resolver, s: source.Source, decls: [ast.Decl], name: token.Span, binding: resolve_binding.Binding) -> i64?
     text = source.span_text(s, name)
+
     if text == "_"
         return fail("wildcard", "`_` never binds")
     previous = lookup_local(r, text)
+
     if !previous.is_err()
         at = r.out.locals[previous.must()].name
         bound_at = source.elsewhere(s, here: name.start, there: at.start)
         push_diagnostic(@r, resolve_errors.shadowed(name: text, bound_at: bound_at, span: name))
         return fail("refused", "shadowing is a compile error")
+
     # A built-in's name is taken everywhere, not only at the top level: a
     # local `ok` makes `ok(x)` on the next line mean the local, which is
     # precisely the bug the shadow ban exists to kill. BEFORE the top-level
@@ -263,6 +294,7 @@ function declare(@r: Resolver, s: source.Source, decls: [ast.Decl], name: token.
         push_diagnostic(@r, resolve_errors.builtin_name_taken(text, span: name))
         return fail("refused", "a built-in's name is taken everywhere")
     top = top_visible(r, text)
+
     if !top.is_err()
         # The library and the author's file cannot shadow each other: they
         # share one Source and therefore one table, but they are two
@@ -270,15 +302,20 @@ function declare(@r: Resolver, s: source.Source, decls: [ast.Decl], name: token.
         # shadowing a library DECLARATION is caught above, because every
         # name the library declares is a reserved built-in.
         declared_at = decls[top.must()].name.start
+
         if source.is_library(s, name.start) == source.is_library(s, declared_at)
             at = source.elsewhere(s, here: name.start, there: declared_at)
             push_diagnostic(@r, resolve_errors.shadows_top_level(name: text, declared_at: at, span: name))
             return fail("refused", "the declaration is in scope everywhere")
     index = r.out.locals.len()
+
     # Through the array rather than through the field, for `new_resolver`'s
     # reason one department over: a field place copies the whole array on
     # every append, and this one runs once per binding in the program.
-    push_local(@r.out.locals, resolved.Local(name: name, kind: binding.kind, mutable: binding.mutable, owner: r.owner, depth: scope_depth(r), ty: binding.ty, value: binding.value, reads: 0, writes: 0))
+    push_local(
+        @r.out.locals,
+        resolved.Local(name: name, kind: binding.kind, mutable: binding.mutable, owner: r.owner, depth: scope_depth(r), ty: binding.ty, value: binding.value, reads: 0, writes: 0)
+    )
     push_entry(@r.scopes.entries, ScopeEntry(name: text, local: index))
     return ok(index)
 
@@ -297,23 +334,28 @@ function push_entry(@entries: [ScopeEntry], one: ScopeEntry)
 # file-wide.
 function report_unused(@r: Resolver, s: source.Source)
     gathered: [diag.Diagnostic] @ []
+
     for local in r.out.locals
         if local.reads > 0
             continue
         module = source.module_at(s, local.name.start)
+
         if resolved.hole_covers(r.out, module)
             continue
+
         # The copy-out of an `@` parameter is observable by the caller
         # (§4.8), so writing one is using it.
         if local.kind == .param && local.mutable && local.writes > 0
             continue
         name = source.span_text(s, local.name)
+
         # Already spoken for: the compiler offered this name as the repair
         # for a name that resolved to nothing, and applying that repair
         # reads it. One typo, one diagnostic.
         if keyed_has(r.suggested, module: module, name: name)
             continue
         gathered @ gathered.push(resolve_errors.unused(name, local.kind, local.writes, local.name))
+
     for d in gathered
         push_diagnostic(@r, d)
 
@@ -333,17 +375,43 @@ test "a sibling scope's binding is invisible, a parent's shadows"
     decls: [ast.Decl] = []
     r: Resolver @ new_resolver(expr_count: 0, type_count: 0)
     open_scope(@r)
-    first = declare(@r, s, decls, span_at(start: 0, end: 1), resolve_binding.bind_binding(ty: fail("absent", "inferred"), value: 0))
+    first = declare(
+        @r,
+        s,
+        decls,
+        span_at(start: 0, end: 1),
+        resolve_binding.bind_binding(ty: fail("absent", "inferred"), value: 0)
+    )
     assert first.must() == 0
+
     # A sibling block: open, bind y, close — then a second block binds y again.
     open_scope(@r)
-    _ = declare(@r, s, decls, span_at(start: 2, end: 3), resolve_binding.bind_binding(ty: fail("absent", "inferred"), value: 0))
+    _ = declare(
+        @r,
+        s,
+        decls,
+        span_at(start: 2, end: 3),
+        resolve_binding.bind_binding(ty: fail("absent", "inferred"), value: 0)
+    )
     close_scope(@r)
     open_scope(@r)
-    again = declare(@r, s, decls, span_at(start: 2, end: 3), resolve_binding.bind_binding(ty: fail("absent", "inferred"), value: 0))
+    again = declare(
+        @r,
+        s,
+        decls,
+        span_at(start: 2, end: 3),
+        resolve_binding.bind_binding(ty: fail("absent", "inferred"), value: 0)
+    )
     assert !again.is_err()
+
     # The parent's x IS in scope: shadowing refused, one diagnostic.
-    inner_x = declare(@r, s, decls, span_at(start: 4, end: 5), resolve_binding.bind_binding(ty: fail("absent", "inferred"), value: 0))
+    inner_x = declare(
+        @r,
+        s,
+        decls,
+        span_at(start: 4, end: 5),
+        resolve_binding.bind_binding(ty: fail("absent", "inferred"), value: 0)
+    )
     assert inner_x.is_err()
     assert r.out.diagnostics.len() == 1
     assert r.out.diagnostics[0].code == "shadowed_binding"
@@ -358,7 +426,13 @@ test "the wildcard never binds and a built-in is taken everywhere"
     assert wild.is_err()
     assert r.out.diagnostics.len() == 0
     assert r.out.locals.len() == 0
-    taken = declare(@r, s, decls, span_at(start: 8, end: 10), resolve_binding.bind_binding(ty: fail("absent", "inferred"), value: 0))
+    taken = declare(
+        @r,
+        s,
+        decls,
+        span_at(start: 8, end: 10),
+        resolve_binding.bind_binding(ty: fail("absent", "inferred"), value: 0)
+    )
     assert taken.is_err()
     assert r.out.diagnostics.len() == 1
     assert r.out.diagnostics[0].code == "builtin_name_taken"
@@ -371,24 +445,45 @@ test "the unused sweep spares the hole's module, the @ write, the suggestion"
     decls: [ast.Decl] = []
     r: Resolver @ new_resolver(expr_count: 0, type_count: 0)
     open_scope(@r)
-    _ = declare(@r, s, decls, span_at(start: 0, end: 1), resolve_binding.bind_binding(ty: fail("absent", "inferred"), value: 0))
+    _ = declare(
+        @r,
+        s,
+        decls,
+        span_at(start: 0, end: 1),
+        resolve_binding.bind_binding(ty: fail("absent", "inferred"), value: 0)
+    )
     _ = declare(@r, s, decls, span_at(start: 2, end: 3), resolve_binding.param_binding(ty: 0, mutable: true))
     r.out.locals[1].writes @ 1
     report_unused(@r, s)
+
     # x is unused; y is an @ parameter that was written, so it is spared.
     assert r.out.diagnostics.len() == 1
     assert r.out.diagnostics[0].code == "unused_binding"
+
     # A hole in the module suspends the rule file-wide.
     quiet: Resolver @ new_resolver(expr_count: 0, type_count: 0)
     open_scope(@quiet)
-    _ = declare(@quiet, s, decls, span_at(start: 0, end: 1), resolve_binding.bind_binding(ty: fail("absent", "inferred"), value: 0))
+    _ = declare(
+        @quiet,
+        s,
+        decls,
+        span_at(start: 0, end: 1),
+        resolve_binding.bind_binding(ty: fail("absent", "inferred"), value: 0)
+    )
     resolved.note_hole(@quiet.out, "t")
     report_unused(@quiet, s)
     assert quiet.out.diagnostics.len() == 0
+
     # A suggested name is already spoken for.
     offered: Resolver @ new_resolver(expr_count: 0, type_count: 0)
     open_scope(@offered)
-    _ = declare(@offered, s, decls, span_at(start: 0, end: 1), resolve_binding.bind_binding(ty: fail("absent", "inferred"), value: 0))
+    _ = declare(
+        @offered,
+        s,
+        decls,
+        span_at(start: 0, end: 1),
+        resolve_binding.bind_binding(ty: fail("absent", "inferred"), value: 0)
+    )
     candidates: [str] = ["x"]
     offered.module @ "t"
     _ = near_names(@offered, "z", candidates)
@@ -397,7 +492,9 @@ test "the unused sweep spares the hole's module, the @ write, the suggestion"
 
 test "a read through record_use counts, and only a local's"
     r: Resolver @ new_resolver(expr_count: 2, type_count: 0)
-    r.out.locals @ r.out.locals.push(resolved.Local(name: span_at(start: 0, end: 1), kind: .bind, mutable: false, owner: 0, depth: 0, ty: fail("absent", "inferred"), value: fail("absent", "none"), reads: 0, writes: 0))
+    r.out.locals @ r.out.locals.push(
+        resolved.Local(name: span_at(start: 0, end: 1), kind: .bind, mutable: false, owner: 0, depth: 0, ty: fail("absent", "inferred"), value: fail("absent", "none"), reads: 0, writes: 0)
+    )
     record_use(@r, at: 0, to: .local(at: 0))
     record_use(@r, at: 1, to: .builtin(at: 18))
     assert r.out.locals[0].reads == 1
@@ -408,18 +505,38 @@ test "what the library declares and what the file declares stay two programs"
     # A two-file source: the root declares `helper` at its offset 9; the
     # library declares `range` at ITS offset. A root local named `helper`
     # is refused (same file); the fields/suggested tables key by module.
-    s = source.with_library(name: "main.hero", user: "function helper()\n    return\n", library: "function range()\n    return\n")
+    s = source.with_library(
+        name: "main.hero",
+        user: "function helper()\n    return\n",
+        library: "function range()\n    return\n"
+    )
     d: [ast.Decl] @ []
     doc: [token.Span] = []
     ps: [ast.Param] = []
     generics: [token.Span] = []
-    f = ast.FunctionDecl(generics: generics, params: ps, result: 0, body: fail("absent", "unused in this test"), is_extern: false, header: fail("absent", "none"), library: fail("absent", "none"))
-    d @ d.push(ast.Decl(name: span_at(start: 9, end: 15), doc: doc, span: span_at(start: 0, end: 15), kind: .function_decl(value: f)))
+    f = ast.FunctionDecl(
+        generics: generics,
+        params: ps,
+        result: 0,
+        body: fail("absent", "unused in this test"),
+        is_extern: false,
+        header: fail("absent", "none"),
+        library: fail("absent", "none")
+    )
+    d @ d.push(
+        ast.Decl(name: span_at(start: 9, end: 15), doc: doc, span: span_at(start: 0, end: 15), kind: .function_decl(value: f))
+    )
     r: Resolver @ new_resolver(expr_count: 0, type_count: 0)
     r.module @ "main"
     resolved.declare_top(@r.out, module: "main", name: "helper", decl: 0)
     open_scope(@r)
-    clash = declare(@r, s, d, span_at(start: 9, end: 15), resolve_binding.bind_binding(ty: fail("absent", "inferred"), value: 0))
+    clash = declare(
+        @r,
+        s,
+        d,
+        span_at(start: 9, end: 15),
+        resolve_binding.bind_binding(ty: fail("absent", "inferred"), value: 0)
+    )
     assert clash.is_err()
     assert r.out.diagnostics.len() == 1
     assert r.out.diagnostics[0].code == "shadowed_binding"

@@ -35,17 +35,25 @@ use ast
 function declaration(@c: cursor.Cursor, @uses: [ast.Use], text: str)
     keyword = cursor.current_span(c)
     _ = cursor.bump(@c)
+
     if cursor.at(c, .str_lit)
         quoted_module(@c, text)
         return
+
     if !cursor.at(c, .ident)
         missing_name(@c, text, keyword)
         return
     name = cursor.bump(@c).span
+
     # `use geom.shapes` and `use shapes/geom`: there is no hierarchy, and the
     # second token is where the author finds that out.
     if cursor.at(c, .dot) || cursor.at(c, .slash)
-        cursor.error(@c, code: "module_path_has_no_parts", message: "a module name is one word — `use " + cursor.slice_of(text, name) + "`. There is no nesting: every `.hero` a program reads sits beside the file that names it", span: cursor.current_span(c))
+        cursor.error(
+            @c,
+            code: "module_path_has_no_parts",
+            message: "a module name is one word — `use " + cursor.slice_of(text, name) + "`. There is no nesting: every `.hero` a program reads sits beside the file that names it",
+            span: cursor.current_span(c)
+        )
         cursor.recover_to_next_decl(@c)
         return
     uses @ uses.push(ast.Use(name: name, span: token.Span(start: keyword.start, end: name.end)))
@@ -60,9 +68,16 @@ function quoted_module(@c: cursor.Cursor, text: str)
     s = cursor.current_span(c)
     quoted = cursor.slice_of(text, s)
     inner = unquote(quoted)
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "use_wants_a_name", message: "a module is named, not quoted — write `use " + inner + "`, and the file `" + inner + ".hero` beside this one is what it reads", span: s)
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "use_wants_a_name",
+        message: "a module is named, not quoted — write `use " + inner + "`, and the file `" + inner + ".hero` beside this one is what it reads",
+        span: s
+    )
+
     if is_module_name(inner)
-        d.fixes @ d.fixes.push(diag.Fix(title: "write `use " + inner + "`", replacement: inner, span: s, certainty: .certain))
+        d.fixes @ d.fixes.push(
+            diag.Fix(title: "write `use " + inner + "`", replacement: inner, span: s, certainty: .certain)
+        )
     c.diagnostics @ c.diagnostics.push(d)
     cursor.recover_to_next_decl(@c)
 
@@ -78,9 +93,11 @@ function missing_name(@c: cursor.Cursor, text: str, keyword: token.Span)
     keyword_line = text_lines.line_col(text, keyword.start).line
     found_line = text_lines.line_col(text, cursor.current_span(c).start).line
     message: str @ "`use` names one module and this line names none — `use geom`, which reads `geom.hero` beside this file"
+
     if keyword_line == found_line
         message @ "expected the module's name after `use`, found " + cursor.found(c, text) + " — `use geom`, which reads `geom.hero` beside this file"
     cursor.error(@c, code: "expected_module_name", message: message, span: keyword)
+
     # Nothing is left of the broken line when the cursor has already crossed
     # onto the next one, and recovering anyway would eat an innocent
     # declaration whole — the failure panel 018's keyword-first shape exists to
@@ -97,14 +114,18 @@ function is_module_name(s: str) -> bool
     if s.len() == 0
         return false
     first = s[0]
-    if !((first >= 'a' && first <= 'z') || (first >= 'A' && first <= 'Z') || first == '_')
+
+    if !(first >= 'a' && first <= 'z' || first >= 'A' && first <= 'Z' || first == '_')
         return false
     i: i64 @ 1
+
     while i < s.len()
         b = s[i]
-        if !((b >= 'a' && b <= 'z') || (b >= 'A' && b <= 'Z') || (b >= '0' && b <= '9') || b == '_')
+
+        if !(b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9' || b == '_')
             return false
         i @ i + 1
+
     return true
 
 # Rust writes `quoted.trim_matches('"')`; the port says it in five lines, which
@@ -113,8 +134,10 @@ function is_module_name(s: str) -> bool
 function unquote(s: str) -> str
     start: i64 @ 0
     end: i64 @ s.len()
+
     if end > start && s[start] == '"'
         start @ start + 1
+
     if end > start && s[end - 1] == '"'
         end @ end - 1
     return s.slice(from: start, to: end)
@@ -136,7 +159,11 @@ test "the happy path is one identifier"
 
 test "a quoted module is met with the repair, not a lecture"
     text = "use \"geom\""
-    stream: [token.Token] = [tok(.kw_use, start: 0, end: 3), tok(.str_lit, start: 4, end: 10), tok(.eof, start: 10, end: 10)]
+    stream: [token.Token] = [
+        tok(.kw_use, start: 0, end: 3)
+        tok(.str_lit, start: 4, end: 10)
+        tok(.eof, start: 10, end: 10)
+    ]
     c: cursor.Cursor @ cursor.new_cursor(stream)
     uses: [ast.Use] @ []
     declaration(@c, @uses, text)
@@ -150,7 +177,11 @@ test "the fix is offered only when applying it would parse"
     # `use "shapes/geom"` — the repair would still not be a module name, so no
     # fix is attached: a fix that leaves the program broken is worse than none.
     text = "use \"shapes/geom\""
-    stream: [token.Token] = [tok(.kw_use, start: 0, end: 3), tok(.str_lit, start: 4, end: 17), tok(.eof, start: 17, end: 17)]
+    stream: [token.Token] = [
+        tok(.kw_use, start: 0, end: 3)
+        tok(.str_lit, start: 4, end: 17)
+        tok(.eof, start: 17, end: 17)
+    ]
     c: cursor.Cursor @ cursor.new_cursor(stream)
     uses: [ast.Use] @ []
     declaration(@c, @uses, text)
@@ -159,13 +190,25 @@ test "the fix is offered only when applying it would parse"
 
 test "there is no nesting, and the second token is where you find out"
     text = "use geom.shapes"
-    stream: [token.Token] = [tok(.kw_use, start: 0, end: 3), tok(.ident, start: 4, end: 8), tok(.dot, start: 8, end: 9), tok(.ident, start: 9, end: 15), tok(.eof, start: 15, end: 15)]
+    stream: [token.Token] = [
+        tok(.kw_use, start: 0, end: 3)
+        tok(.ident, start: 4, end: 8)
+        tok(.dot, start: 8, end: 9)
+        tok(.ident, start: 9, end: 15)
+        tok(.eof, start: 15, end: 15)
+    ]
     c: cursor.Cursor @ cursor.new_cursor(stream)
     uses: [ast.Use] @ []
     declaration(@c, @uses, text)
     assert uses.len() == 0
     assert c.diagnostics[0].code == "module_path_has_no_parts"
-    slashed: [token.Token] = [tok(.kw_use, start: 0, end: 3), tok(.ident, start: 4, end: 10), tok(.slash, start: 10, end: 11), tok(.ident, start: 11, end: 15), tok(.eof, start: 15, end: 15)]
+    slashed: [token.Token] = [
+        tok(.kw_use, start: 0, end: 3)
+        tok(.ident, start: 4, end: 10)
+        tok(.slash, start: 10, end: 11)
+        tok(.ident, start: 11, end: 15)
+        tok(.eof, start: 15, end: 15)
+    ]
     d: cursor.Cursor @ cursor.new_cursor(slashed)
     more: [ast.Use] @ []
     declaration(@d, @more, "use shapes/geom")
@@ -176,19 +219,28 @@ test "a bare use blames its own keyword, never the next line"
     # so the cursor is already on an innocent declaration — the caret must stay
     # on the keyword and recovery must not run.
     text = "use\nfunction f()"
-    stream: [token.Token] = [tok(.kw_use, start: 0, end: 3), tok(.kw_function, start: 4, end: 12), tok(.eof, start: 15, end: 15)]
+    stream: [token.Token] = [
+        tok(.kw_use, start: 0, end: 3)
+        tok(.kw_function, start: 4, end: 12)
+        tok(.eof, start: 15, end: 15)
+    ]
     c: cursor.Cursor @ cursor.new_cursor(stream)
     uses: [ast.Use] @ []
     declaration(@c, @uses, text)
     assert c.diagnostics.len() == 1
     assert c.diagnostics[0].code == "expected_module_name"
     assert c.diagnostics[0].span == token.Span(start: 0, end: 3)
+
     # The innocent declaration is untouched: recovery did not run.
     assert cursor.current_kind(c) == .kw_function
 
 test "a use whose mistake IS on its line quotes what it found"
     text = "use 42"
-    stream: [token.Token] = [tok(.kw_use, start: 0, end: 3), tok(.int_lit, start: 4, end: 6), tok(.eof, start: 6, end: 6)]
+    stream: [token.Token] = [
+        tok(.kw_use, start: 0, end: 3)
+        tok(.int_lit, start: 4, end: 6)
+        tok(.eof, start: 6, end: 6)
+    ]
     c: cursor.Cursor @ cursor.new_cursor(stream)
     uses: [ast.Use] @ []
     declaration(@c, @uses, text)

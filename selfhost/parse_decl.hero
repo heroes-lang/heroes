@@ -60,17 +60,17 @@ variant Linkage
 
 function is_from_c(l: Linkage) -> bool
     return match l
-        .heroes => false
+        .heroes   => false
         .from_c _ => true
 
 function linkage_header(l: Linkage) -> token.Span?
     return match l
-        .heroes => fail("absent", "an ordinary declaration has no header")
+        .heroes   => fail("absent", "an ordinary declaration has no header")
         .from_c x => ok(x.header)
 
 function linkage_library(l: Linkage) -> ast.Library?
     return match l
-        .heroes => fail("absent", "an ordinary declaration names no library")
+        .heroes   => fail("absent", "an ordinary declaration names no library")
         .from_c x => x.library
 
 ## The dispatcher
@@ -79,9 +79,11 @@ function linkage_library(l: Linkage) -> ast.Library?
 # or recovers past one, so this loop always makes progress.
 function file(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], @uses: [ast.Use], text: str)
     done: bool @ false
+
     while !done
         cursor.skip_terminators(@c)
         k = cursor.current_kind(c)
+
         if k == .eof
             done @ true
         else if k == .kw_constant
@@ -103,7 +105,13 @@ function file(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], @uses: [ast.Us
 
 function unexpected_top_level(@c: cursor.Cursor, text: str)
     if !cursor.at_reported_error(c)
-        cursor.error(@c, code: "expected_declaration", message: "expected a declaration, found " + cursor.found(c, text) + " — every top-level line starts with its kind: `use`, `constant`, `function`, `record`, `variant`, `test \"…\"`, or `extern`", span: cursor.current_span(c))
+        cursor.error(
+            @c,
+            code: "expected_declaration",
+            message: "expected a declaration, found " + cursor.found(c, text) + " — every top-level line starts with its kind: `use`, `constant`, `function`, `record`, `variant`, `test \"…\"`, or `extern`",
+            span: cursor.current_span(c)
+        )
+
     # The one arm that has consumed nothing yet, so it consumes here: recovery
     # only drops the REST of a broken line, and the dispatcher must always
     # move. An indented block at top level belongs to no declaration, so it is
@@ -133,9 +141,15 @@ function head(@c: cursor.Cursor, text: str, example: str) -> Head?
     doc = cursor.take_docs(@c, text, keyword)
     kind_text = cursor.found(c, text)
     _ = cursor.bump(@c)
+
     if !cursor.at(c, .ident)
         if !cursor.at_reported_error(c)
-            cursor.error(@c, code: "expected_name", message: "expected the declared name after " + kind_text + ", found " + cursor.found(c, text) + " — `" + example + "`", span: cursor.current_span(c))
+            cursor.error(
+                @c,
+                code: "expected_name",
+                message: "expected the declared name after " + kind_text + ", found " + cursor.found(c, text) + " — `" + example + "`",
+                span: cursor.current_span(c)
+            )
         cursor.recover_to_next_decl(@c)
         return fail("expected_name", "recovered to the next declaration")
     return ok(Head(keyword: keyword, doc: doc, name: cursor.bump(@c).span))
@@ -164,6 +178,7 @@ function here_or(c: cursor.Cursor, fallback: token.Span) -> token.Span
 # SCREAMING_CASE by convention; the parser does not police it.
 function constant_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str)
     h = head(@c, text: text, example: "constant MAX_DEPTH: i64")
+
     if h.is_err()
         return
     hd = h.must()
@@ -181,21 +196,27 @@ function constant_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text:
         cursor.recover_to_next_decl(@c)
         return
     ty = parse_type.parse_type(@c, @a, text)
+
     # An `extern` constant has no body, and an indented one under it is the
     # mistake `body_check` names. Everything else keeps the old shape.
     body: ast.Block? @ fail("absent", "an extern constant's value is the header's")
+
     if is_from_c(linkage)
         body_check(@c, "constant")
     else
         b = grammar_expr.block(@c, @a, text: text, owner: "a `constant`")
+
         if b.is_err()
             cursor.recover_to_next_decl(@c)
             return
         body @ b
     finish: token.Span @ cursor.previous_significant_span(c)
+
     if !body.is_err()
         finish @ body.must().span
-    decls @ decls.push(ast.Decl(name: name, doc: doc, span: token.Span(start: keyword.start, end: finish.end), kind: .constant_decl(ty: ty, body: body, header: linkage_header(linkage), library: linkage_library(linkage))))
+    decls @ decls.push(
+        ast.Decl(name: name, doc: doc, span: token.Span(start: keyword.start, end: finish.end), kind: .constant_decl(ty: ty, body: body, header: linkage_header(linkage), library: linkage_library(linkage)))
+    )
 
 ## function
 
@@ -203,6 +224,7 @@ function constant_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text:
 # list attaches to the name, as at the call site.
 function function_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str)
     h = head(@c, text: text, example: "function dist2(a: Point, b: Point) -> i64")
+
     if h.is_err()
         return
     hd = h.must()
@@ -213,35 +235,54 @@ function function_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl]
 function function_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str, keyword: token.Span, doc: [token.Span], name: token.Span, linkage: Linkage)
     is_extern = is_from_c(linkage)
     generic_names = parse_members.generics(@c, text)
+
     if !cursor.at(c, .lparen)
         # `params` reports the missing `(` with its own message.
         _ = parse_members.params(@c, @a, text)
         cursor.recover_to_next_decl(@c)
         return
     parameters = parse_members.params(@c, @a, text)
+
     # No `->` means no value. The `unit` node is synthesised at the end of the
     # header so later passes never have to ask whether the arrow was written
     # (§4.3: `()` is a type like any other).
     result: i64 @ 0
+
     if cursor.eat(@c, .arrow)
         result @ parse_type.parse_type(@c, @a, text)
     else
         here = cursor.current_span(c)
-        result @ ast.push_type(@a.types, ast.TypeNode(kind: .unit, span: token.Span(start: here.start, end: here.start)))
+        result @ ast.push_type(
+            @a.types,
+            ast.TypeNode(kind: .unit, span: token.Span(start: here.start, end: here.start))
+        )
     body: ast.Block? @ fail("absent", "an extern function's code comes from C")
+
     if is_extern
         body_check(@c, "function")
     else
         b = grammar_expr.block(@c, @a, text: text, owner: "a `function`")
+
         if b.is_err()
             cursor.recover_to_next_decl(@c)
             return
         body @ b
     finish: token.Span @ cursor.previous_significant_span(c)
+
     if !body.is_err()
         finish @ body.must().span
-    f = ast.FunctionDecl(generics: generic_names, params: parameters, result: result, body: body, is_extern: is_extern, header: linkage_header(linkage), library: linkage_library(linkage))
-    decls @ decls.push(ast.Decl(name: name, doc: doc, span: token.Span(start: keyword.start, end: finish.end), kind: .function_decl(value: f)))
+    f = ast.FunctionDecl(
+        generics: generic_names,
+        params: parameters,
+        result: result,
+        body: body,
+        is_extern: is_extern,
+        header: linkage_header(linkage),
+        library: linkage_library(linkage)
+    )
+    decls @ decls.push(
+        ast.Decl(name: name, doc: doc, span: token.Span(start: keyword.start, end: finish.end), kind: .function_decl(value: f))
+    )
 
 ## test
 
@@ -251,18 +292,27 @@ function test_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], te
     keyword = cursor.current_span(c)
     doc = cursor.take_docs(@c, text, keyword)
     _ = cursor.bump(@c)
+
     if !cursor.at(c, .str_lit)
         if !cursor.at_reported_error(c)
-            cursor.error(@c, code: "expected_test_name", message: "expected the test's name as a string, found " + cursor.found(c, text) + " — `test \"3-4-5 triangle\"`", span: cursor.current_span(c))
+            cursor.error(
+                @c,
+                code: "expected_test_name",
+                message: "expected the test's name as a string, found " + cursor.found(c, text) + " — `test \"3-4-5 triangle\"`",
+                span: cursor.current_span(c)
+            )
         cursor.recover_to_next_decl(@c)
         return
     name = cursor.bump(@c).span
     b = grammar_expr.block(@c, @a, text: text, owner: "a `test`")
+
     if b.is_err()
         cursor.recover_to_next_decl(@c)
         return
     body = b.must()
-    decls @ decls.push(ast.Decl(name: name, doc: doc, span: token.Span(start: keyword.start, end: body.span.end), kind: .test_decl(body: body)))
+    decls @ decls.push(
+        ast.Decl(name: name, doc: doc, span: token.Span(start: keyword.start, end: body.span.end), kind: .test_decl(body: body))
+    )
 
 ## record
 
@@ -274,6 +324,7 @@ function test_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], te
 # where the declaration was parsed.
 function record_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str, linkage: Linkage)
     h = head(@c, text: text, example: "record Point")
+
     if h.is_err()
         return
     hd = h.must()
@@ -286,9 +337,15 @@ function record_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], 
 function record_with_doc(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str, doc: [token.Span], linkage: Linkage)
     keyword = cursor.current_span(c)
     _ = cursor.bump(@c)
+
     if !cursor.at(c, .ident)
         if !cursor.at_reported_error(c)
-            cursor.error(@c, code: "expected_name", message: "expected the C struct's name after `record`, found " + cursor.found(c, text) + " — `record Color`", span: cursor.current_span(c))
+            cursor.error(
+                @c,
+                code: "expected_name",
+                message: "expected the C struct's name after `record`, found " + cursor.found(c, text) + " — `record Color`",
+                span: cursor.current_span(c)
+            )
         cursor.skip_line(@c)
         return
     name = cursor.bump(@c).span
@@ -309,8 +366,14 @@ function tag_marker(@c: cursor.Cursor, text: str, in_group: bool) -> token.Span?
     if !in_group || !cursor.at(c, .ident) || cursor.slice_of(text, cursor.current_span(c)) != "tag"
         return fail("absent", "no tag clause")
     keyword = cursor.bump(@c).span
+
     if !cursor.at(c, .ident)
-        cursor.error(@c, code: "expected_declaration", message: "`tag` names the struct tag C uses for this type: `record FileStat tag stat`", span: here_or(c, keyword))
+        cursor.error(
+            @c,
+            code: "expected_declaration",
+            message: "`tag` names the struct tag C uses for this type: `record FileStat tag stat`",
+            span: here_or(c, keyword)
+        )
         return fail("absent", "the tag's name is missing")
     return ok(cursor.bump(@c).span)
 
@@ -332,17 +395,26 @@ function record_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: s
     partial = partial_marker(@c, text, in_group: is_from_c(linkage))
     grammar_expr.eat_python_colon(@c)
     cursor.skip_terminators(@c)
+
     if !cursor.at(c, .indent)
         if !cursor.at_reported_error(c)
-            cursor.error(@c, code: "empty_record", message: "a `record` needs at least one field, indented one level below it", span: here_or(c, keyword))
+            cursor.error(
+                @c,
+                code: "empty_record",
+                message: "a `record` needs at least one field, indented one level below it",
+                span: here_or(c, keyword)
+            )
         cursor.recover_to_next_decl(@c)
         return
     start = cursor.current_span(c)
     fields = parse_members.field_block(@c, @a, text)
     finish: token.Span @ start
+
     if fields.len() > 0
         finish @ fields[fields.len() - 1].name
-    decls @ decls.push(ast.Decl(name: name, doc: doc, span: token.Span(start: keyword.start, end: finish.end), kind: .record_decl(fields: fields, header: linkage_header(linkage), library: linkage_library(linkage), partial: partial, tag: tag)))
+    decls @ decls.push(
+        ast.Decl(name: name, doc: doc, span: token.Span(start: keyword.start, end: finish.end), kind: .record_decl(fields: fields, header: linkage_header(linkage), library: linkage_library(linkage), partial: partial, tag: tag))
+    )
 
 ## variant
 
@@ -350,22 +422,32 @@ function record_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: s
 # a case with fields IS a small record (§4.2).
 function variant_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str)
     h = head(@c, text: text, example: "variant Token")
+
     if h.is_err()
         return
     hd = h.must()
     grammar_expr.eat_python_colon(@c)
     cursor.skip_terminators(@c)
+
     if !cursor.at(c, .indent)
         if !cursor.at_reported_error(c)
-            cursor.error(@c, code: "empty_variant", message: "a `variant` needs at least one case, indented one level below it", span: here_or(c, hd.keyword))
+            cursor.error(
+                @c,
+                code: "empty_variant",
+                message: "a `variant` needs at least one case, indented one level below it",
+                span: here_or(c, hd.keyword)
+            )
         cursor.recover_to_next_decl(@c)
         return
     start = cursor.current_span(c)
     cases = parse_members.case_block(@c, @a, text)
     finish: token.Span @ start
+
     if cases.len() > 0
         finish @ cases[cases.len() - 1].name
-    decls @ decls.push(ast.Decl(name: hd.name, doc: hd.doc, span: token.Span(start: hd.keyword.start, end: finish.end), kind: .variant_decl(cases: cases)))
+    decls @ decls.push(
+        ast.Decl(name: hd.name, doc: hd.doc, span: token.Span(start: hd.keyword.start, end: finish.end), kind: .variant_decl(cases: cases))
+    )
 
 ## The extern group
 
@@ -393,14 +475,21 @@ function extern_group(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: 
     doc = cursor.take_docs(@c, text, keyword)
     _ = cursor.bump(@c)
     h = group_header(@c, text)
+
     if h.is_err()
         return
     header = h.must()
     library = library_clause(@c, text)
     cursor.skip_terminators(@c)
+
     if !cursor.at(c, .indent)
         if !cursor.at_reported_error(c)
-            cursor.error(@c, code: "expected_extern_block", message: "an `extern` group's signatures are indented under it — `extern \"math.h\"` then `    function sqrt(x: f64) -> f64` (§4.19)", span: cursor.current_span(c))
+            cursor.error(
+                @c,
+                code: "expected_extern_block",
+                message: "an `extern` group's signatures are indented under it — `extern \"math.h\"` then `    function sqrt(x: f64) -> f64` (§4.19)",
+                span: cursor.current_span(c)
+            )
         return
     members(@c, @a, @decls, text, group_doc: doc, linkage: .from_c(header: header, library: library))
 
@@ -412,8 +501,10 @@ function group_header(@c: cursor.Cursor, text: str) -> token.Span?
         span = cursor.bump(@c).span
         machine_locked(@c, text: text, span: span, what: "header")
         return ok(span)
+
     if !cursor.at_reported_error(c)
         message: str @ "expected the header's name in quotes after `extern`, found " + cursor.found(c, text) + " — `extern \"sqlite3.h\"`"
+
         if cursor.at(c, .kw_function)
             message @ "an `extern` names the header its signatures come from — `extern \"math.h\"`, then the signatures indented under it. Without the header there is no `#include`, and nothing checks the declaration (§4.19)"
         cursor.error(@c, code: "expected_extern_header", message: message, span: cursor.current_span(c))
@@ -434,22 +525,32 @@ function group_header(@c: cursor.Cursor, text: str) -> token.Span?
 # be a lie.
 function machine_locked(@c: cursor.Cursor, text: str, span: token.Span, what: str)
     value = parse_use.unquote(cursor.slice_of(text, span))
+
     # A leading root, a Windows drive letter, or — for a library only — GNU
     # `ld`'s `-l:filename` form, which is how a `link` string names a FILE
     # rather than a library: refused whatever follows the colon, because the
     # whole point of the form is that the rest is a filename.
     rooted: bool @ false
+
     if value.len() > 0
         first = value[0]
         rooted @ first == '/' || first == '\\' || first == ':'
+
     if !rooted && value.len() > 1
         rooted @ value[1] == ':'
+
     if !rooted
         return
     route: str @ "set `LIBRARY_PATH` to the directory holding it, or name a `package` and let `pkg-config` answer; `link` takes the library's **name**, as `link \"sqlite3\"`"
+
     if what == "header"
         route @ "set `CPATH` to the directory holding it, or name a `package` and let `pkg-config` answer; a header beside this file is written relative, as `sub/foo.h`"
-    cursor.error(@c, code: "machine_locked_path", message: "`" + value + "` names a path, and a " + what + " in a group head says what the machine has, not where this machine keeps it — the next machine keeps it elsewhere\n  " + route, span: span)
+    cursor.error(
+        @c,
+        code: "machine_locked_path",
+        message: "`" + value + "` names a path, and a " + what + " in a group head says what the machine has, not where this machine keeps it — the next machine keeps it elsewhere\n  " + route,
+        span: span
+    )
 
 # `link "sqlite3"` or `package "raylib"` — optional, one or the other, and
 # both matched by text rather than lexed as keywords, for the reason above.
@@ -461,45 +562,57 @@ function machine_locked(@c: cursor.Cursor, text: str, span: token.Span, what: st
 # second is refused with the first one named.
 function library_clause(@c: cursor.Cursor, text: str) -> ast.Library?
     first = one_library(@c, text)
+
     if first.is_err()
         return first
     taken = first.must()
     machine_locked(@c, text: text, span: library_name_span(taken), what: "library")
+
     # A second clause on the same head line. The message names what is
     # already there, because the repair is to delete one and the author must
     # be told which one they wrote first.
     extra = one_library(@c, text)
+
     if !extra.is_err()
         if !cursor.at_reported_error(c)
-            cursor.error(@c, code: "one_library_per_group", message: "this group already says `" + library_word(taken) + "`, so `" + library_word(extra.must()) + "` is a second answer to the same question — a group names a library or asks for a package, never both", span: library_name_span(extra.must()))
+            cursor.error(
+                @c,
+                code: "one_library_per_group",
+                message: "this group already says `" + library_word(taken) + "`, so `" + library_word(extra.must()) + "` is a second answer to the same question — a group names a library or asks for a package, never both",
+                span: library_name_span(extra.must())
+            )
     return ok(taken)
 
 function library_word(l: ast.Library) -> str
     return match l
-        .link => "link"
+        .link    => "link"
         .package => "package"
 
 function library_name_span(l: ast.Library) -> token.Span
     return match l
-        .link x => x.name
+        .link x    => x.name
         .package x => x.name
 
 function one_library(@c: cursor.Cursor, text: str) -> ast.Library?
     if !cursor.at(c, .ident)
         return fail("absent", "no library clause")
     word = cursor.slice_of(text, cursor.current_span(c))
+
     if word != "link" && word != "package"
         return fail("absent", "no library clause")
     is_package = word == "package"
     _ = cursor.bump(@c)
+
     if !cursor.at(c, .str_lit)
         if !cursor.at_reported_error(c)
             message: str @ "expected the library's name in quotes after `link`, found " + cursor.found(c, text) + " — `link \"sqlite3\"`, which is `-lsqlite3` to the linker"
+
             if is_package
                 message @ "expected the package's name in quotes after `package`, found " + cursor.found(c, text) + " — `package \"raylib\"`, which is what the machine is asked about"
             cursor.error(@c, code: "expected_link_name", message: message, span: cursor.current_span(c))
         return fail("absent", "the clause's string is missing")
     span = cursor.bump(@c).span
+
     if is_package
         return ok(.package(name: span))
     return ok(.link(name: span))
@@ -516,9 +629,11 @@ function members(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str, 
     _ = cursor.bump(@c)
     first: bool @ true
     done: bool @ false
+
     while !done
         cursor.skip_terminators(@c)
         k = cursor.current_kind(c)
+
         if k == .dedent
             _ = cursor.bump(@c)
             done @ true
@@ -529,6 +644,7 @@ function members(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str, 
             # takes the group's doc on the first line exactly as they do.
             keyword = cursor.current_span(c)
             doc: [token.Span] @ group_doc
+
             if !first
                 doc @ cursor.take_docs(@c, text, keyword)
             first @ false
@@ -536,29 +652,40 @@ function members(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str, 
         else if k == .kw_function || k == .kw_constant
             is_constant = k == .kw_constant
             keyword = cursor.current_span(c)
+
             # The group's own doc comment documents its first signature; after
             # that each line takes its own, exactly as a record's fields do.
             doc: [token.Span] @ group_doc
+
             if !first
                 doc @ cursor.take_docs(@c, text, keyword)
             first @ false
             _ = cursor.bump(@c)
+
             if !cursor.at(c, .ident)
                 if !cursor.at_reported_error(c)
                     message: str @ "expected the C function's name, found " + cursor.found(c, text) + " — `function sqrt(x: f64) -> f64`"
+
                     if is_constant
                         message @ "expected the C constant's name, found " + cursor.found(c, text) + " — `constant SQLITE_OK: i64`"
                     cursor.error(@c, code: "expected_name", message: message, span: cursor.current_span(c))
                 cursor.skip_line(@c)
                 continue
             name = cursor.bump(@c).span
+
             if is_constant
                 constant_tail(@c, @a, @decls, text, keyword: keyword, doc: doc, name: name, linkage: linkage)
             else
                 function_tail(@c, @a, @decls, text, keyword: keyword, doc: doc, name: name, linkage: linkage)
         else
             if !cursor.at_reported_error(c)
-                cursor.error(@c, code: "expected_extern_signature", message: "expected a `function`, a `constant` or a `record`, found " + cursor.found(c, text) + " — an `extern` group holds what the header declares, one per line", span: cursor.current_span(c))
+                cursor.error(
+                    @c,
+                    code: "expected_extern_signature",
+                    message: "expected a `function`, a `constant` or a `record`, found " + cursor.found(c, text) + " — an `extern` group holds what the header declares, one per line",
+                    span: cursor.current_span(c)
+                )
+
             if cursor.at(c, .indent)
                 _ = cursor.balanced_block(@c)
             else
@@ -574,10 +701,12 @@ function members(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str, 
 # function" sends them looking for a function they never wrote (§4.17).
 function body_check(@c: cursor.Cursor, kind: str)
     cursor.skip_terminators(@c)
+
     if !cursor.at(c, .indent)
         return
     span = cursor.current_span(c)
     what: str @ "an `extern` declaration has no body — it names a C function, and C provides the code"
+
     if kind == "constant"
         what @ "an `extern` declaration has no body — this `constant` names one the header already defines, so the value is the header's and never yours"
     cursor.error(@c, code: "extern_has_body", message: what, span: span)
@@ -610,6 +739,7 @@ test "a constant is a name, a type and an indented value"
     assert p.diagnostics.len() == 0
     assert p.decls.len() == 1
     assert cursor.slice_of(text, p.decls[0].name) == "MAX"
+
     match p.decls[0].kind
         .constant_decl k =>
             assert !k.body.is_err()
@@ -622,6 +752,7 @@ test "a signature without an arrow gets a unit result, synthesised"
     p = parse_source(text)
     assert p.diagnostics.len() == 0
     assert p.decls.len() == 1
+
     match p.decls[0].kind
         .function_decl fd =>
             assert !fd.value.is_extern
@@ -634,12 +765,14 @@ test "record and variant own their members directly"
     p = parse_source(text)
     assert p.diagnostics.len() == 0
     assert p.decls.len() == 2
+
     match p.decls[0].kind
         .record_decl r =>
             assert r.fields.len() == 2
             assert !r.partial
             assert r.tag.is_err()
         .constant_decl | .function_decl | .variant_decl | .test_decl => assert false
+
     match p.decls[1].kind
         .variant_decl v =>
             assert v.cases.len() == 2
@@ -662,15 +795,18 @@ test "the group is flattened here and only here"
     p = parse_source(text)
     assert p.diagnostics.len() == 0
     assert p.decls.len() == 2
+
     match p.decls[0].kind
         .function_decl fd =>
             assert fd.value.is_extern
             assert fd.value.body.is_err()
             assert cursor.slice_of(text, fd.value.header.must()) == "\"m.h\""
+
             match fd.value.library.must()
-                .link l => assert cursor.slice_of(text, l.name) == "\"m\""
+                .link l  => assert cursor.slice_of(text, l.name) == "\"m\""
                 .package => assert false
         .constant_decl | .record_decl | .variant_decl | .test_decl => assert false
+
     match p.decls[1].kind
         .constant_decl k =>
             assert k.body.is_err()
@@ -682,6 +818,7 @@ test "tag then partial, both contextual, both only in a group"
     p = parse_source(text)
     assert p.diagnostics.len() == 0
     assert p.decls.len() == 1
+
     match p.decls[0].kind
         .record_decl r =>
             assert r.partial

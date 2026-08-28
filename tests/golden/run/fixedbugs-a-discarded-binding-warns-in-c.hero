@@ -33,11 +33,14 @@ function main()
     # The scalar discard: the shape that warned.
     v = 41
     _ = v
+
     # The refcounted one: reads through the sweep, so it never warned.
     s = "ziggy"
     _ = s
+
     # The call discard, which was already correct.
     _ = twice(3)
+
     # And a binding that IS used, to prove the attribute is not blanket.
     kept = twice(21)
     print(kept)

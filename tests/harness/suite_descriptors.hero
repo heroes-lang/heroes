@@ -44,15 +44,23 @@ constant SEED: str
 
 function run_all(scratch: str) -> report.Report?
     r: report.Report @ report.empty()
+
     for entry in shell.list_entries(scratch: scratch, dir: EMISSIONS)?
         if !strings.ends_with(text: entry, suffix: ".c")
             continue
         text = read_file(entry)
+
         if text.is_err()
-            report.keep_failure(@r, label: "descriptors/" + strings.base_name(path: entry), detail: "  cannot read " + entry)
+            report.keep_failure(
+                @r,
+                label: "descriptors/" + strings.base_name(path: entry),
+                detail: "  cannot read " + entry
+            )
             continue
         judge(@r, label: "descriptors/" + strings.base_name(path: entry), c: text.must())
+
     seed = read_file(SEED)
+
     if seed.is_err()
         report.keep_failure(@r, label: "descriptors/seed", detail: "  cannot read " + SEED)
     else
@@ -65,14 +73,25 @@ function run_all(scratch: str) -> report.Report?
 function judge(@r: report.Report, label: str, c: str)
     defined = defined_in(c)
     named = named_in(c)
+
     for name in keys(defined)
         if named[name].is_err()
-            report.keep_failure(@r, label: label, detail: "  defines " + name + " and nothing takes its address: clang says -Wunused-const-variable. `emit_descriptor_set.generated` put it in the set and the C disagrees — its `constructed` narrowing is where that is decided")
+            report.keep_failure(
+                @r,
+                label: label,
+                detail: "  defines " + name + " and nothing takes its address: clang says -Wunused-const-variable. `emit_descriptor_set.generated` put it in the set and the C disagrees — its `constructed` narrowing is where that is decided"
+            )
             return
+
     for name in keys(named)
         if defined[name].is_err()
-            report.keep_failure(@r, label: label, detail: "  takes the address of " + name + " and never defines it: this is `use of undeclared identifier` at exit 2, the compiler blaming itself for a correct program. A source of descriptors is missing from `emit_descriptor_set.generated` — the first attempt at its `constructed` narrowing lost an option's own descriptor exactly this way, and examples/tree stopped compiling")
+            report.keep_failure(
+                @r,
+                label: label,
+                detail: "  takes the address of " + name + " and never defines it: this is `use of undeclared identifier` at exit 2, the compiler blaming itself for a correct program. A source of descriptors is missing from `emit_descriptor_set.generated` — the first attempt at its `constructed` narrowing lost an option's own descriptor exactly this way, and examples/tree stopped compiling"
+            )
             return
+
     report.keep_pass(@r)
 
 # Every `&h_…_desc` in the text. Byte reads and no `chars()`: a unit is
@@ -85,19 +104,24 @@ function named_in(c: str) -> {str: bool}
     found: {str: bool} @ {}
     n = c.len()
     at: i64 @ 0
+
     while at < n
         if c[at] != '&'
             at @ at + 1
             continue
         start = at + 1
         end: i64 @ start
+
         while end < n && is_name_byte(c[end])
             end @ end + 1
+
         # `> 5`, not `>= 5`: `&_desc` is a suffix, not a name.
         if end - start > 5 && c.slice(from: end - 5, to: end) == "_desc" && c.slice(from: start, to: start + 2) == "h_"
             found[c.slice(from: start, to: end)] @ true
+
         # `end`, not `at + 1`: one pass over the unit.
         at @ end
+
     return found
 
 # Every `static const HeroDesc <name> = {` in the text. The emitter
@@ -118,6 +142,7 @@ function defined_in(c: str) -> {str: bool}
     n = c.len()
     width = opener.len()
     at: i64 @ 0
+
     while at + width < n
         # `s` is the opener's first byte: the cheap test that keeps this
         # to one comparison per byte. The match itself compares BYTES and
@@ -129,25 +154,30 @@ function defined_in(c: str) -> {str: bool}
             continue
         start = at + width
         end: i64 @ start
+
         while end < n && is_name_byte(c[end])
             end @ end + 1
+
         if end > start
             found[c.slice(from: start, to: end)] @ true
         at @ end
+
     return found
 
 # Whether `needle` sits at `at`, byte for byte. No slice, so no abort on
 # a text whose bytes are not this scanner's business.
 function matches_at(c: str, at: i64, needle: str) -> bool
     k: i64 @ 0
+
     while k < needle.len()
         if at + k >= c.len() || c[at + k] != needle[k]
             return false
         k @ k + 1
+
     return true
 
 function is_name_byte(b: u8) -> bool
-    return (b >= 'a' && b <= 'z') || (b >= 'A' && b <= 'Z') || (b >= '0' && b <= '9') || b == '_'
+    return b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9' || b == '_'
 
 ## Tests
 
@@ -182,6 +212,7 @@ test "the scanners read what the emitter writes"
     assert defined_in(text)["h_t_Row_desc"].must()
     assert named_in(text)["h_t_Row_desc"].must()
     assert defined_in(text)["h_t_Missing_desc"].is_err()
+
     # A `_desc` that is not a name, and one that is not the mangler's.
     assert named_in("&_desc\n").len() == 0
     assert named_in("&hero_desc_str\n").len() == 0

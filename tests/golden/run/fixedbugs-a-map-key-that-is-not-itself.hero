@@ -31,35 +31,43 @@
 function keyed<K>(ks: [K], vs: [i64]) -> i64
     m: {K: i64} @ {}
     i: i64 @ 0
+
     while i < len(ks)
         m[ks[i]] @ vs[i]
         i @ i + 1
+
     return len(m)
 
 function found<K>(ks: [K], vs: [i64], want: K) -> i64
     m: {K: i64} @ {}
     i: i64 @ 0
+
     while i < len(ks)
         m[ks[i]] @ vs[i]
         i @ i + 1
+
     return m[want].default(0)
 
 function missing<K>(ks: [K], vs: [i64], want: K) -> bool
     m: {K: i64} @ {}
     i: i64 @ 0
+
     while i < len(ks)
         m[ks[i]] @ vs[i]
         i @ i + 1
+
     return m[want].is_err()
 
 function same<K>(ks: [K], vs: [i64]) -> bool
     a: {K: i64} @ {}
     b: {K: i64} @ {}
     i: i64 @ 0
+
     while i < len(ks)
         a[ks[i]] @ vs[i]
         b[ks[i]] @ vs[i]
         i @ i + 1
+
     return a == b
 
 function main()

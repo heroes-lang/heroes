@@ -27,29 +27,37 @@ function capture(command: str, build_dir: str) -> str?
     out_path = build_dir + "/doctor-out.txt"
     _ = cli_toolchain.mkdir_all(build_dir)
     status = cli_shell.shell(command: command + " > " + cli_shell.sq(out_path) + " 2>/dev/null")
+
     if status != 0
         return fail("none", "the command could not run")
     said = read_file(out_path)
+
     if said.is_err()
         return fail("none", "nothing was said")
     return ok(first_line(said.must()))
 
 function first_line(text: str) -> str
     run: [str] @ []
+
     for ch in text.chars()
         if ch == "\n"
             break
         run @ run.push(ch)
+
     return trim_ends(run.join(""))
 
 function trim_ends(text: str) -> str
     cs = text.chars()
     head: i64 @ 0
+
     while head < cs.len() && (cs[head] == " " || cs[head] == "\t")
         head @ head + 1
+
     tail: i64 @ cs.len()
+
     while tail > head && (cs[tail - 1] == " " || cs[tail - 1] == "\t")
         tail @ tail - 1
+
     return cs.slice(from: head, to: tail).join("")
 
 # clang, the linker's home, the architecture, the runtime, and a
@@ -62,32 +70,45 @@ function trim_ends(text: str) -> str
 function checks(build_dir: str, runtime_hint: str) -> [Check]
     out: [Check] @ []
     clang = capture(command: "clang --version", build_dir: build_dir)
-    out @ out.push(Check(name: "clang", ok: !clang.is_err(), detail: clang.default("not found — install a C toolchain")))
+    out @ out.push(
+        Check(name: "clang", ok: !clang.is_err(), detail: clang.default("not found — install a C toolchain"))
+    )
     system_name = capture(command: "uname -s", build_dir: build_dir).default("unknown")
+
     if system_name == "Darwin"
         clt = capture(command: "xcode-select -p", build_dir: build_dir)
-        out @ out.push(Check(name: "xcode CLT", ok: !clt.is_err(), detail: clt.default("not found — run `xcode-select --install`")))
+        out @ out.push(
+            Check(name: "xcode CLT", ok: !clt.is_err(), detail: clt.default("not found — run `xcode-select --install`"))
+        )
     else
         cc = capture(command: "cc --version", build_dir: build_dir)
-        out @ out.push(Check(name: "cc", ok: !cc.is_err(), detail: cc.default("not found — install a C toolchain (build-essential, base-devel, …)")))
+        out @ out.push(
+            Check(name: "cc", ok: !cc.is_err(), detail: cc.default("not found — install a C toolchain (build-essential, base-devel, …)"))
+        )
     arch = capture(command: "uname -m", build_dir: build_dir).default("unknown")
     out @ out.push(Check(name: "arch", ok: true, detail: arch))
+
     # The runtime — found by searching, so doctor is the place that
     # says which candidate won.
     found = cli_toolchain.locate_toolchain(hint: runtime_hint, fingerprint: "doctor")
+
     if found.is_err()
         out @ out.push(Check(name: "runtime", ok: false, detail: "not found — set HEROES_RUNTIME=<dir>"))
     else
         out @ out.push(Check(name: "runtime", ok: true, detail: found.must().runtime))
+
     # build/ must be creatable and writable, probed by writing.
     made = cli_toolchain.mkdir_all(build_dir)
     cache_ok: bool @ false
+
     if !made.is_err()
         probe = build_dir + "/.doctor-probe"
+
         if !write_file(path: probe, text: "ok").is_err() && !read_file(probe).is_err()
             cache_ok @ true
             _ = cli_shell.shell(command: "rm -f " + cli_shell.sq(probe))
     detail: str @ "cannot write to " + build_dir + "/"
+
     if cache_ok
         detail @ build_dir + "/ writable"
     out @ out.push(Check(name: "build cache", ok: cache_ok, detail: detail))
@@ -95,13 +116,17 @@ function checks(build_dir: str, runtime_hint: str) -> [Check]
 
 function run_doctor(build_dir: str, runtime_hint: str) -> cli_table.Exit
     all_ok: bool @ true
+
     for c in checks(build_dir: build_dir, runtime_hint: runtime_hint)
         mark: str @ "FAIL"
+
         if c.ok
             mark @ "ok "
         print(mark + "  " + pad_to(c.name, width: 12) + " " + c.detail)
+
         if !c.ok
             all_ok @ false
+
     if all_ok
         return .ok_exit
     return .failed_exit
@@ -109,9 +134,11 @@ function run_doctor(build_dir: str, runtime_hint: str) -> cli_table.Exit
 function pad_to(text: str, width: i64) -> str
     out: str @ text
     count: i64 @ text.chars().len()
+
     while count < width
         out @ out + " "
         count @ count + 1
+
     return out
 
 # The twenty laws, byte-exact — the bootstrap's surface test pins this
@@ -133,37 +160,48 @@ test "doctor finds this machine's toolchain, and the Zen is byte-exact"
     assert got.len() == 5
     assert got[0].name == "clang"
     assert got[0].ok
+
     # The runtime and the cache are both real here.
     assert got[3].name == "runtime"
     assert got[3].ok
     assert got[3].detail == "runtime"
     assert got[4].ok
     assert got[4].detail == "build/ writable"
+
     # The Zen: twenty laws, the first and last pinned.
     lines = zen().chars()
     assert lines.len() > 0
     text = zen()
-    assert has_text(text: text, needle: "The Zen of Heroes\n\n 1. First of all and freely, this language is a tribute to the great David Bowie.\n")
+    assert has_text(
+        text: text,
+        needle: "The Zen of Heroes\n\n 1. First of all and freely, this language is a tribute to the great David Bowie.\n"
+    )
     assert has_text(text: text, needle: "20. We can be heroes, just for one day.\n")
     assert run_this() == .ok_exit
 
 function has_text(text: str, needle: str) -> bool
     cs = text.chars()
     needle_cs = needle.chars()
+
     if needle_cs.len() == 0
         return true
+
     if needle_cs.len() > cs.len()
         return false
     start: i64 @ 0
+
     while start <= cs.len() - needle_cs.len()
         matched: bool @ true
         offset: i64 @ 0
+
         while offset < needle_cs.len()
             if cs[start + offset] != needle_cs[offset]
                 matched @ false
                 break
             offset @ offset + 1
+
         if matched
             return true
         start @ start + 1
+
     return false

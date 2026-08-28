@@ -16,20 +16,38 @@
 # - comments_before/trailing_comment: the comment stream (the one
 #   thing the tree does not keep — a mistake here is MISSING output).
 # - block/statement: the statement walk (fmt_stmt).
-# - valued/broken/broken_args: a head plus its value, the 88-column
+# - valued/broken/broken_args: a head plus its value, the WIDTH-column
 #   break, match arm layout (fmt_break).
+# - block_shape/value_block_shape/comment_waits_before: where the air
+#   goes (panel 095). block_shape is a SECOND dispatch over statement
+#   and expression kinds and it must agree with statement() and
+#   valued() arm for arm — see its own comment.
 # - arm_heads/arm_alignment/close_run: where => goes (fmt_arms).
 # - fits_on_one_line/spans_lines/literal_end_line: the three
 #   measurements (fmt_fits).
 # - render/wrapped/power/args_line/arg_text/render_pattern/binary_op:
 #   minimum parentheses (fmt_expr).
 #
-# Three policies, stated because they are choices: parentheses are
-# MINIMAL (2 + (3 * 4) loses them, (2 + 3) * 4 keeps them); lines
-# break at 88 columns and only inside brackets (panel 007 allows no
-# other continuation); BLANK LINES ARE CONTENT, not layout — one
-# always separates top-level declarations, and inside a body a single
-# blank survives where the author put one.
+# Three policies, stated because they are choices. Parentheses are
+# MINIMAL (2 + (3 * 4) loses them, (2 + 3) * 4 keeps them). Lines break
+# at WIDTH and only inside brackets (panel 007 allows no other
+# continuation); WIDTH is 120 since 2026-08-28, 88 before that.
+#
+# And BLANK LINES ARE STRUCTURE AS WELL AS CONTENT, which reverses half
+# of what this paragraph said until panel 095. A single blank the author
+# wrote inside a body still survives, and one always separates top-level
+# declarations — that is the content half, unchanged. What is new is that
+# the formatter INSERTS them: before a for/while/if/match, after a loop
+# or match block closes (never an `if` — the narrowing is the panel's,
+# and its reason is at the call site), and above a comment run inside a
+# statement body. Never two in a row, which blank_line() has always
+# enforced at the primitive rather than at the call sites, so the
+# insertions cannot double up on each other or on the author's own.
+#
+# The rule that did NOT land is worth recording because no seat defended
+# it: a blank before the `return` that closes a function. Rule 2 already
+# owes that blank whenever a block just closed, so it would have taught a
+# reading it does not support.
 #
 # Port note: the bootstrap keys a group run on (header text, library
 # NAME text), losing the link/package word its own comment says makes
@@ -75,6 +93,7 @@ function blank_line(@f: Fmt)
     if f.out.len() == 0
         return
     n = f.out.len()
+
     if n >= 2 && f.out.slice(from: n - 2, to: n) == "\n\n"
         return
     f.out @ f.out + "\n"
@@ -87,8 +106,10 @@ function comments_before(@f: Fmt, s: source.Source, comments: [token.Span], line
     while f.next_comment < comments.len()
         span = comments[f.next_comment]
         comment_line = source.line_of(s, span.start)
+
         if comment_line >= line
             return
+
         if f.last_line > 0 && comment_line > f.last_line + 1
             blank_line(@f)
         put_line(@f, indent: indent, text: trim_end(source.span_text(s, span)))
@@ -101,10 +122,12 @@ function trailing_comment(@f: Fmt, s: source.Source, comments: [token.Span], lin
     if f.next_comment >= comments.len()
         return
     span = comments[f.next_comment]
+
     if source.line_of(s, span.start) != line
         return
     text = trim_end(source.span_text(s, span))
     n = f.out.len()
+
     if n > 0 && f.out.slice(from: n - 1, to: n) == "\n"
         f.out @ f.out.slice(from: 0, to: n - 1)
     f.out @ f.out + "  " + text + "\n"
@@ -113,16 +136,20 @@ function trailing_comment(@f: Fmt, s: source.Source, comments: [token.Span], lin
 function trim_end(text: str) -> str
     cs = text.chars()
     end: i64 @ cs.len()
+
     while end > 0 && (cs[end - 1] == " " || cs[end - 1] == "\t")
         end @ end - 1
+
     return cs.slice(from: 0, to: end).join("")
 
 function pad_right(text: str, width: i64) -> str
     grown: str @ text
     count: i64 @ text.chars().len()
+
     while count < width
         grown @ grown + " "
         count @ count + 1
+
     return grown
 
 ## The file as a whole
@@ -140,27 +167,36 @@ record Item
 # and can afford to, it has a comment model this one does not.
 function format_file(tree: ast.Ast, s: source.Source, all_comments: [token.Span], uses: [ast.Use], decls: [ast.Decl]) -> str
     f: Fmt @ Fmt(out: "", next_comment: 0, last_line: 0)
+
     # The library's comments go with its declarations, and the
     # author's declarations, never the library's: with --in-place a
     # formatter that walked the whole Source would append the library
     # to their file, once per run (§1.11).
     comments: [token.Span] @ []
+
     for c in all_comments
         if source.is_root(s, c.start)
             comments @ comments.push(c)
+
     items: [Item] @ []
     index: i64 @ 0
+
     for used in uses
         if source.is_root(s, used.span.start)
             items @ items.push(Item(start: used.span.start, is_use: true, at: index))
         index @ index + 1
+
     index @ 0
+
     for decl in decls
         start = decl_start(decl)
+
         if source.is_root(s, start)
             items @ items.push(Item(start: start, is_use: false, at: index))
         index @ index + 1
+
     items @ sorted_items(items)
+
     # The extern group, rebuilt: the parser flattened it (§4.19, panel
     # 036), so the canonical form is a run of consecutive members
     # sharing a head line — the only rule that survives fmt(fmt(x)) ==
@@ -168,35 +204,44 @@ function format_file(tree: ast.Ast, s: source.Source, all_comments: [token.Span]
     open_group: str @ ""
     have_previous: bool @ false
     previous_was_use: bool @ false
+
     for item in items
         line: i64 @ source.line_of(s, item.start)
         group: str @ ""
+
         if !item.is_use
             group @ group_key(s, decl: decls[item.at])
         continues = group.len() > 0 && group == open_group
         open_group @ group
+
         # A group's first member prints under a head line the member's
         # own span does not contain, so the line every comment and
         # blank-line rule keys on is the HEAD's (§4.1: without this,
         # fmt inserted a blank line the author had not written).
         if !item.is_use && !continues
             head_span = extern_header_span(decls[item.at])
+
             if !head_span.is_err()
                 line @ source.line_of(s, head_span.must().start)
+
         # One blank line between top-level declarations — but not
         # between two use lines, which are a block the way a run of
         # fields is.
         after_use = previous_was_use
+
         if have_previous
-            run = (previous_was_use && item.is_use) || continues
+            run = previous_was_use && item.is_use || continues
+
             if !run
                 blank_line(@f)
         have_previous @ true
         previous_was_use @ item.is_use
         indent_for_comments: i64 @ 0
+
         if continues
             indent_for_comments @ 4
         comments_before(@f, s, comments, line: line, indent: indent_for_comments)
+
         if item.is_use
             # §4.1 and it is the file header that needs it: a blank
             # line between a comment and the first use is what makes
@@ -208,6 +253,7 @@ function format_file(tree: ast.Ast, s: source.Source, all_comments: [token.Span]
             f.last_line @ line
             trailing_comment(@f, s, comments, line: line)
         else
+
             # A blank line between the comment group and this
             # declaration is preserved exactly: it makes those
             # comments ordinary remarks rather than documentation
@@ -216,26 +262,33 @@ function format_file(tree: ast.Ast, s: source.Source, all_comments: [token.Span]
             if f.last_line > 0 && line > f.last_line + 1 && !continues
                 blank_line(@f)
             declaration(@f, tree, s, comments, decl: decls[item.at], continues: continues)
+
     # Comments after the last declaration still belong to the file.
     comments_before(@f, s, comments, line: 4611686018427387904, indent: 0)
     return f.out
 
 function sorted_items(items: [Item]) -> [Item]
     out: [Item] @ []
+
     for item in items
         at: i64 @ out.len()
         probe: i64 @ 0
         placed: bool @ false
+
         for old in out
             if !placed && old.start > item.start
                 at @ probe
                 placed @ true
             probe @ probe + 1
+
         head: [Item] @ out.slice(from: 0, to: at)
         head @ head.push(item)
+
         for one in out.slice(from: at, to: out.len())
             head @ head.push(one)
+
         out @ head
+
     return out
 
 # The offset a declaration starts at: its kind keyword, which sits
@@ -254,9 +307,10 @@ function decl_start(decl: ast.Decl) -> i64
 # asks the machine.
 function extern_head(s: source.Source, header: token.Span, library: ast.Library?) -> str
     out: str @ "extern " + source.span_text(s, header)
+
     if !library.is_err()
         match library.must()
-            .link l => out @ out + " link " + source.span_text(s, l.name)
+            .link l     => out @ out + " link " + source.span_text(s, l.name)
             .package pk => out @ out + " package " + source.span_text(s, pk.name)
     return out
 
@@ -273,13 +327,16 @@ record ExternSpans
 function extern_spans(decl: ast.Decl) -> ExternSpans
     none_h: token.Span? = fail("none", "no header")
     none_l: ast.Library? = fail("none", "no library")
+
     match decl.kind
         .function_decl fd => return ExternSpans(header: fd.value.header, library: fd.value.library)
-        .constant_decl k => return ExternSpans(header: k.header, library: k.library)
-        .record_decl rec => return ExternSpans(header: rec.header, library: rec.library)
+        .constant_decl k  => return ExternSpans(header: k.header, library: k.library)
+        .record_decl rec  => return ExternSpans(header: rec.header, library: rec.library)
         # A variant is not a C type and a test is not a declaration a
         # header can make — refused in the parser, stated here.
+
         .variant_decl | .test_decl => return ExternSpans(header: none_h, library: none_l)
+
     return ExternSpans(header: none_h, library: none_l)
 
 # The group key: the whole head line's text, so two groups that differ
@@ -287,6 +344,7 @@ function extern_spans(decl: ast.Decl) -> ExternSpans
 # a declaration outside any group.
 function group_key(s: source.Source, decl: ast.Decl) -> str
     spans = extern_spans(decl)
+
     if spans.header.is_err()
         return ""
     return extern_head(s, header: spans.header.must(), library: spans.library)
@@ -302,6 +360,7 @@ function extern_header_span(decl: ast.Decl) -> token.Span?
 function extern_head_once(@f: Fmt, s: source.Source, comments: [token.Span], decl: ast.Decl, header: token.Span?, library: ast.Library?, continues: bool) -> i64
     if header.is_err()
         return 0
+
     if !continues
         put_line(@f, indent: 0, text: extern_head(s, header: header.must(), library: library))
         f.last_line @ source.line_of(s, header.must().start)
@@ -313,19 +372,38 @@ function extern_head_once(@f: Fmt, s: source.Source, comments: [token.Span], dec
 function declaration(@f: Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span], decl: ast.Decl, continues: bool)
     name = source.span_text(s, decl.name)
     line = source.line_of(s, decl.name.start)
+
     match decl.kind
         .constant_decl k =>
-            indent = extern_head_once(@f, s, comments, decl: decl, header: k.header, library: k.library, continues: continues)
+            indent = extern_head_once(
+                @f,
+                s,
+                comments,
+                decl: decl,
+                header: k.header,
+                library: k.library,
+                continues: continues
+            )
             put_line(@f, indent: indent, text: "constant " + name + ": " + print_types.render_type(tree, k.ty, s))
             f.last_line @ line
             trailing_comment(@f, s, comments, line: line)
+
             if !k.body.is_err()
                 fmt_block(@f, tree, s, comments, block: k.body.must(), indent: 4)
         .function_decl fd =>
-            indent = extern_head_once(@f, s, comments, decl: decl, header: fd.value.header, library: fd.value.library, continues: continues)
+            indent = extern_head_once(
+                @f,
+                s,
+                comments,
+                decl: decl,
+                header: fd.value.header,
+                library: fd.value.library,
+                continues: continues
+            )
             put_line(@f, indent: indent, text: signature(tree, s, name: name, fd: fd.value))
             f.last_line @ line
             trailing_comment(@f, s, comments, line: line)
+
             if !fd.value.body.is_err()
                 fmt_block(@f, tree, s, comments, block: fd.value.body.must(), indent: 4)
         # A record prints exactly like the other two group members;
@@ -334,22 +412,35 @@ function declaration(@f: Fmt, tree: ast.Ast, s: source.Source, comments: [token.
         # 061: without it fmt emitted a DIFFERENT PROGRAM that still
         # parses and now constructs), and tag one marker later, for
         # the same reason.
+
         .record_decl rec =>
-            indent = extern_head_once(@f, s, comments, decl: decl, header: rec.header, library: rec.library, continues: continues)
+            indent = extern_head_once(
+                @f,
+                s,
+                comments,
+                decl: decl,
+                header: rec.header,
+                library: rec.library,
+                continues: continues
+            )
             tag_text: str @ ""
+
             if !rec.tag.is_err()
                 tag_text @ " tag " + source.span_text(s, rec.tag.must())
             marker: str @ ""
+
             if rec.partial
                 marker @ " partial"
             put_line(@f, indent: indent, text: "record " + name + tag_text + marker)
             f.last_line @ line
             trailing_comment(@f, s, comments, line: line)
+
             for field in rec.fields
                 field_line(@f, tree, s, comments, field: field, indent: indent + 4)
         .variant_decl v =>
             put_line(@f, indent: 0, text: "variant " + name)
             f.last_line @ line
+
             for one_case in v.cases
                 case_line(@f, tree, s, comments, one_case: one_case)
         .test_decl t =>
@@ -362,7 +453,11 @@ function declaration(@f: Fmt, tree: ast.Ast, s: source.Source, comments: [token.
 function field_line(@f: Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span], field: ast.Field, indent: i64)
     line = source.line_of(s, field.name.start)
     comments_before(@f, s, comments, line: line, indent: indent)
-    put_line(@f, indent: indent, text: source.span_text(s, field.name) + ": " + print_types.render_type(tree, field.ty, s))
+    put_line(
+        @f,
+        indent: indent,
+        text: source.span_text(s, field.name) + ": " + print_types.render_type(tree, field.ty, s)
+    )
     f.last_line @ line
     trailing_comment(@f, s, comments, line: line)
 
@@ -372,6 +467,7 @@ function case_line(@f: Fmt, tree: ast.Ast, s: source.Source, comments: [token.Sp
     put_line(@f, indent: 4, text: source.span_text(s, one_case.name))
     f.last_line @ line
     trailing_comment(@f, s, comments, line: line)
+
     for field in one_case.fields
         field_line(@f, tree, s, comments, field: field, indent: 8)
 
@@ -380,19 +476,28 @@ function case_line(@f: Fmt, tree: ast.Ast, s: source.Source, comments: [token.Sp
 # spelling.
 function signature(tree: ast.Ast, s: source.Source, name: str, fd: ast.FunctionDecl) -> str
     out: str @ "function " + name
+
     if fd.generics.len() > 0
         parts: [str] @ []
+
         for generic in fd.generics
             parts @ parts.push(source.span_text(s, generic))
+
         out @ out + "<" + parts.join(", ") + ">"
     rendered: [str] @ []
+
     for param in fd.params
         marker: str @ ""
+
         if param.mutable
             marker @ "@"
-        rendered @ rendered.push(marker + source.span_text(s, param.name) + ": " + print_types.render_type(tree, param.ty, s))
+        rendered @ rendered.push(
+            marker + source.span_text(s, param.name) + ": " + print_types.render_type(tree, param.ty, s)
+        )
+
     out @ out + "(" + rendered.join(", ") + ")"
     result = print_types.render_type(tree, fd.result, s)
+
     if result != "()"
         out @ out + " -> " + result
     return out
@@ -425,32 +530,35 @@ constant IF_BLOCK: i64
 function block_shape(tree: ast.Ast, id: i64) -> i64
     match tree.stmts[id].kind
         .while_stmt | .for_in => return LOOP_BLOCK
-        .bind b => return value_block_shape(tree, id: b.value)
-        .declare dc => return value_block_shape(tree, id: dc.value)
-        .mutate m => return value_block_shape(tree, id: m.value)
-        .assert_stmt a => return value_block_shape(tree, id: a.value)
-        .expr_stmt e => return value_block_shape(tree, id: e.value)
+        .bind b               => return value_block_shape(tree, id: b.value)
+        .declare dc           => return value_block_shape(tree, id: dc.value)
+        .mutate m             => return value_block_shape(tree, id: m.value)
+        .assert_stmt a        => return value_block_shape(tree, id: a.value)
+        .expr_stmt e          => return value_block_shape(tree, id: e.value)
         .return_stmt r =>
             if r.value.is_err()
                 return NO_BLOCK
             return value_block_shape(tree, id: r.value.must())
         .break_stmt | .continue_stmt | .error => return NO_BLOCK
+
     return NO_BLOCK
 
 # The value half, and it is `valued()`'s own dispatch: a control form, or
 # a binary whose right edge is one.
 function value_block_shape(tree: ast.Ast, id: i64) -> i64
     match tree.exprs[id].kind
-        .if_expr => return IF_BLOCK
+        .if_expr    => return IF_BLOCK
         .match_expr => return MATCH_BLOCK
         .binary =>
             tail = binary_control_tail(tree, id: id)
+
             if tail.is_err()
                 return NO_BLOCK
             return value_block_shape(tree, id: tail.must())
         .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr => return NO_BLOCK
-        .name | .hole | .unary | .field | .index => return NO_BLOCK
+        .name | .hole | .unary | .field | .index                             => return NO_BLOCK
         .call | .method | .variant_case | .array | .map | .try_expr | .error => return NO_BLOCK
+
     return NO_BLOCK
 
 # Is a comment waiting to be printed above `line`? RULE 4 puts its blank
@@ -463,16 +571,19 @@ function comment_waits_before(f: Fmt, s: source.Source, comments: [token.Span], 
 
 function fmt_block(@f: Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span], block: ast.Block, indent: i64)
     first: bool @ true
+
     # RULE 2's state, and it is the only new state the air rules need: a
     # loop or match block just closed, so the next statement resumes at
     # the outer level and takes air above it. Nothing to thread through
     # the knot — the transition is observable right here, in the parent's
     # own loop.
     closed_a_loop: bool @ false
+
     for id in block.stmts
         stmt = tree.stmts[id]
         line = source.line_of(s, stmt.span.start)
         shape = block_shape(tree, id: id)
+
         # RULE 2, NARROWED to a loop or a match and never an `if` (panel
         # 095, the llm-ergonomist, measured): 7 of the 8 block-close
         # blanks in its sample were an `if`'s dedent that STAYS inside
@@ -482,12 +593,14 @@ function fmt_block(@f: Fmt, tree: ast.Ast, s: source.Source, comments: [token.Sp
         # exception. Fewer marks, each carrying more.
         if closed_a_loop
             blank_line(@f)
+
         # RULE 1: air before a form that opens a block, `if` included.
         # Never before the FIRST statement, which `first` already carries
         # below for the author's own blank and for the same reason: a
         # block does not open on an empty line.
         if !first && shape != NO_BLOCK
             blank_line(@f)
+
         # RULE 4: air above a comment run, and nothing between the
         # comment and what it documents. Statement bodies only — a
         # `record`, `variant` or `extern` body is reached by other
@@ -497,6 +610,7 @@ function fmt_block(@f: Fmt, tree: ast.Ast, s: source.Source, comments: [token.Sp
         if !first && comment_waits_before(f, s, comments, line: line)
             blank_line(@f)
         comments_before(@f, s, comments, line: line, indent: indent)
+
         # A blank line the author left between two statements survives
         # — never before the FIRST statement: a block does not open on
         # an empty line.
@@ -504,6 +618,7 @@ function fmt_block(@f: Fmt, tree: ast.Ast, s: source.Source, comments: [token.Sp
             blank_line(@f)
         first @ false
         statement(@f, tree, s, comments, id: id, indent: indent, head: "")
+
         # A statement that carried a block has already moved last_line
         # past its own body; one that did not ends where it started —
         # UNLESS its value is a literal written down the page. The
@@ -512,8 +627,10 @@ function fmt_block(@f: Fmt, tree: ast.Ast, s: source.Source, comments: [token.Sp
         # trailing_comment steal the following declaration's doc.
         end = literal_end_line(tree, s, id: id)
         stop: i64 @ line
+
         if !end.is_err()
             stop @ end.must()
+
         if f.last_line < stop
             f.last_line @ stop
         trailing_comment(@f, s, comments, line: f.last_line)
@@ -528,19 +645,44 @@ function statement(@f: Fmt, tree: ast.Ast, s: source.Source, comments: [token.Sp
     match tree.stmts[id].kind
         .bind b =>
             annotation: str @ ""
+
             if !b.ty.is_err()
                 annotation @ ": " + print_types.render_type(tree, b.ty.must(), s)
-            valued(@f, tree, s, comments, head: head + source.span_text(s, b.name) + annotation + " = ", value: b.value, indent: indent)
+            valued(
+                @f,
+                tree,
+                s,
+                comments,
+                head: head + source.span_text(s, b.name) + annotation + " = ",
+                value: b.value,
+                indent: indent
+            )
         .declare dc =>
-            valued(@f, tree, s, comments, head: head + source.span_text(s, dc.name) + ": " + print_types.render_type(tree, dc.ty, s) + " @ ", value: dc.value, indent: indent)
+            valued(
+                @f,
+                tree,
+                s,
+                comments,
+                head: head + source.span_text(s, dc.name) + ": " + print_types.render_type(tree, dc.ty, s) + " @ ",
+                value: dc.value,
+                indent: indent
+            )
         .mutate m =>
-            valued(@f, tree, s, comments, head: head + render(tree, s, id: m.place) + " @ ", value: m.value, indent: indent)
+            valued(
+                @f,
+                tree,
+                s,
+                comments,
+                head: head + render(tree, s, id: m.place) + " @ ",
+                value: m.value,
+                indent: indent
+            )
         .return_stmt r =>
             if r.value.is_err()
                 put_line(@f, indent: indent, text: head + "return")
             else
                 valued(@f, tree, s, comments, head: head + "return ", value: r.value.must(), indent: indent)
-        .break_stmt => put_line(@f, indent: indent, text: head + "break")
+        .break_stmt    => put_line(@f, indent: indent, text: head + "break")
         .continue_stmt => put_line(@f, indent: indent, text: head + "continue")
         .assert_stmt a =>
             valued(@f, tree, s, comments, head: head + "assert ", value: a.value, indent: indent)
@@ -549,12 +691,17 @@ function statement(@f: Fmt, tree: ast.Ast, s: source.Source, comments: [token.Sp
             f.last_line @ source.line_of(s, tree.exprs[w.cond].span.end)
             fmt_block(@f, tree, s, comments, block: w.block, indent: indent + 4)
         .for_in fo =>
-            put_line(@f, indent: indent, text: head + "for " + source.span_text(s, fo.name) + " in " + render(tree, s, id: fo.iterable))
+            put_line(
+                @f,
+                indent: indent,
+                text: head + "for " + source.span_text(s, fo.name) + " in " + render(tree, s, id: fo.iterable)
+            )
             f.last_line @ source.line_of(s, tree.exprs[fo.iterable].span.end)
             fmt_block(@f, tree, s, comments, block: fo.block, indent: indent + 4)
         .expr_stmt e =>
             valued(@f, tree, s, comments, head: head, value: e.value, indent: indent)
         # Unreachable: fmt refuses a file with diagnostics.
+
         .error => put_line(@f, indent: indent, text: "???")
 
 ## A head plus its value (fmt_break)
@@ -565,14 +712,17 @@ function valued(@f: Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span]
     match tree.exprs[value].kind
         .if_expr ie =>
             index: i64 @ 0
+
             for branch in ie.branches
                 keyword: str @ "else "
+
                 if index == 0
                     keyword @ head
                 put_line(@f, indent: indent, text: keyword + "if " + render(tree, s, id: branch.cond))
                 f.last_line @ source.line_of(s, tree.exprs[branch.cond].span.end)
                 fmt_block(@f, tree, s, comments, block: branch.block, indent: indent + 4)
                 index @ index + 1
+
             if !ie.otherwise.is_err()
                 put_line(@f, indent: indent, text: "else")
                 fmt_block(@f, tree, s, comments, block: ie.otherwise.must(), indent: indent + 4)
@@ -581,6 +731,7 @@ function valued(@f: Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span]
             f.last_line @ source.line_of(s, tree.exprs[me.scrutinee].span.end)
             lefts = arm_heads(tree, s, arms: me.arms)
             pads = arm_alignment(tree, s, arms: me.arms, lefts: lefts, indent: indent + 4)
+
             # A blank line between arms is content, exactly as between
             # statements — it stops the alignment run, so deleting it
             # would contradict the padding computed above. Tracked
@@ -589,19 +740,32 @@ function valued(@f: Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span]
             # while its head is one.
             previous_end: i64 @ -1
             index: i64 @ 0
+
             for arm in me.arms
                 left = lefts[index]
                 line = source.line_of(s, arm.span.start)
                 comments_before(@f, s, comments, line: line, indent: indent + 4)
+
                 if previous_end >= 0 && line > previous_end + 1
                     blank_line(@f)
                 arm_end: i64 @ arm.span.end - 1
+
                 if arm_end < 0
                     arm_end @ 0
                 previous_end @ source.line_of(s, arm_end)
+
                 match arm.body
                     .one_stmt one =>
-                        statement(@f, tree, s, comments, id: one.at, indent: indent + 4, head: pad_right(left, width: pads[index]) + " => ")
+                        statement(
+                            @f,
+                            tree,
+                            s,
+                            comments,
+                            id: one.at,
+                            indent: indent + 4,
+                            head: pad_right(left, width: pads[index]) + " => "
+                        )
+
                         # Not `arm.span.end`: it reaches the terminator,
                         # and one line too far made trailing_comment
                         # steal the next declaration's doc comment. Not
@@ -612,6 +776,7 @@ function valued(@f: Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span]
                         # the question, and fmt_block already asks it.
                         f.last_line @ line
                         spread = literal_end_line(tree, s, id: one.at)
+
                         if !spread.is_err() && spread.must() > f.last_line
                             f.last_line @ spread.must()
                         trailing_comment(@f, s, comments, line: f.last_line)
@@ -621,23 +786,49 @@ function valued(@f: Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span]
                         put_line(@f, indent: indent + 4, text: left + " =>")
                         f.last_line @ line
                         fmt_block(@f, tree, s, comments, block: blk.block, indent: indent + 8)
+
                 index @ index + 1
-        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr => plain_valued(@f, tree, s, head: head, value: value, indent: indent)
+        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr => plain_valued(
+            @f,
+            tree,
+            s,
+            head: head,
+            value: value,
+            indent: indent
+        )
         # A binary whose RIGHT EDGE is a control form is a head plus a
         # block, not a line. Routed on through plain_valued it reached
         # render(), which returns a control form's header alone — and the
         # body was gone. See binary_control_tail for the defect.
+
         .binary =>
             tail = binary_control_tail(tree, id: value)
+
             if tail.is_err()
                 plain_valued(@f, tree, s, head: head, value: value, indent: indent)
             else
-                valued(@f, tree, s, comments, head: head + binary_prefix(tree, s, id: value), value: tail.must(), indent: indent)
+                valued(
+                    @f,
+                    tree,
+                    s,
+                    comments,
+                    head: head + binary_prefix(tree, s, id: value),
+                    value: tail.must(),
+                    indent: indent
+                )
         .name | .hole | .unary | .field | .index => plain_valued(@f, tree, s, head: head, value: value, indent: indent)
-        .call | .method | .variant_case | .array | .map | .try_expr | .error => plain_valued(@f, tree, s, head: head, value: value, indent: indent)
+        .call | .method | .variant_case | .array | .map | .try_expr | .error => plain_valued(
+            @f,
+            tree,
+            s,
+            head: head,
+            value: value,
+            indent: indent
+        )
 
 function plain_valued(@f: Fmt, tree: ast.Ast, s: source.Source, head: str, value: i64, indent: i64)
     text = head + render(tree, s, id: value)
+
     if indent + text.chars().len() <= WIDTH && !spans_lines(tree, s, value: value)
         put_line(@f, indent: indent, text: text)
         return
@@ -652,31 +843,67 @@ function broken(@f: Fmt, tree: ast.Ast, s: source.Source, head: str, value: i64,
         # §4.9: a multi-line list separates by newline, not by comma.
         .array arr =>
             put_line(@f, indent: indent, text: head + "[")
+
             for item in arr.elements
                 put_line(@f, indent: indent + 4, text: render(tree, s, id: item))
+
             put_line(@f, indent: indent, text: "]")
         .map mp =>
             put_line(@f, indent: indent, text: head + "{")
+
             for entry in mp.entries
-                put_line(@f, indent: indent + 4, text: render(tree, s, id: entry.key) + ": " + render(tree, s, id: entry.value))
+                put_line(
+                    @f,
+                    indent: indent + 4,
+                    text: render(tree, s, id: entry.key) + ": " + render(tree, s, id: entry.value)
+                )
+
             put_line(@f, indent: indent, text: "}")
         # A call keeps its commas: §4.9's newline rule is about
         # literals, and a call written across lines is still a
         # comma-separated list (the parser requires it).
+
         .call cl =>
             broken_args(@f, tree, s, open: head + render(tree, s, id: cl.callee) + "(", given: cl.args, indent: indent)
         .method m =>
-            broken_args(@f, tree, s, open: head + render(tree, s, id: m.receiver) + "." + source.span_text(s, m.name) + "(", given: m.args, indent: indent)
+            broken_args(
+                @f,
+                tree,
+                s,
+                open: head + render(tree, s, id: m.receiver) + "." + source.span_text(s, m.name) + "(",
+                given: m.args,
+                indent: indent
+            )
         .variant_case vc =>
             if vc.args.len() > 0
-                broken_args(@f, tree, s, open: head + "." + source.span_text(s, vc.name) + "(", given: vc.args, indent: indent)
+                broken_args(
+                    @f,
+                    tree,
+                    s,
+                    open: head + "." + source.span_text(s, vc.name) + "(",
+                    given: vc.args,
+                    indent: indent
+                )
             else
                 put_line(@f, indent: indent, text: head + render(tree, s, id: value))
-        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr => put_line(@f, indent: indent, text: head + render(tree, s, id: value))
+        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr => put_line(
+            @f,
+            indent: indent,
+            text: head + render(tree, s, id: value)
+        )
         # A binary reaching here is control-free: valued() intercepts one
         # whose right edge is a control form before this path is taken.
-        .name | .hole | .unary | .binary | .field | .index => put_line(@f, indent: indent, text: head + render(tree, s, id: value))
-        .if_expr | .match_expr | .try_expr | .error => put_line(@f, indent: indent, text: head + render(tree, s, id: value))
+
+        .name | .hole | .unary | .binary | .field | .index => put_line(
+            @f,
+            indent: indent,
+            text: head + render(tree, s, id: value)
+        )
+        .if_expr | .match_expr | .try_expr | .error => put_line(
+            @f,
+            indent: indent,
+            text: head + render(tree, s, id: value)
+        )
 
 # The control form at the right edge of a chain of binary operators, if
 # there is one.
@@ -691,10 +918,17 @@ function broken(@f: Fmt, tree: ast.Ast, s: source.Source, head: str, value: i64,
 function binary_control_tail(tree: ast.Ast, id: i64) -> i64?
     match tree.exprs[id].kind
         .if_expr | .match_expr => return ok(id)
-        .binary b => return binary_control_tail(tree, id: b.right)
-        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr => return fail("none", "not a control form")
+        .binary b              => return binary_control_tail(tree, id: b.right)
+        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr => return fail(
+            "none",
+            "not a control form"
+        )
         .name | .hole | .unary | .field | .index => return fail("none", "not a control form")
-        .call | .method | .variant_case | .array | .map | .try_expr | .error => return fail("none", "not a control form")
+        .call | .method | .variant_case | .array | .map | .try_expr | .error => return fail(
+            "none",
+            "not a control form"
+        )
+
     return fail("none", "not a control form")
 
 # Everything to the LEFT of that control form, rendered as the head it
@@ -705,21 +939,25 @@ function binary_prefix(tree: ast.Ast, s: source.Source, id: i64) -> str
         .binary b =>
             mine = power(tree, id)
             return wrapped(tree, s, id: b.left, needed: mine) + " " + print_bodies.binary_op(b.op) + " " + binary_prefix(tree, s, id: b.right)
-        .if_expr | .match_expr => return ""
+        .if_expr | .match_expr                                               => return ""
         .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr => return ""
-        .name | .hole | .unary | .field | .index => return ""
+        .name | .hole | .unary | .field | .index                             => return ""
         .call | .method | .variant_case | .array | .map | .try_expr | .error => return ""
+
     return ""
 
 function broken_args(@f: Fmt, tree: ast.Ast, s: source.Source, open: str, given: [ast.Arg], indent: i64)
     put_line(@f, indent: indent, text: open)
     index: i64 @ 0
+
     for arg in given
         comma: str @ ","
+
         if index == given.len() - 1
             comma @ ""
         put_line(@f, indent: indent + 4, text: arg_text(tree, s, arg: arg) + comma)
         index @ index + 1
+
     put_line(@f, indent: indent, text: ")")
 
 ## Where => goes (fmt_arms)
@@ -727,11 +965,15 @@ function broken_args(@f: Fmt, tree: ast.Ast, s: source.Source, open: str, given:
 # The left side of every arm — its patterns, joined by |.
 function arm_heads(tree: ast.Ast, s: source.Source, arms: [ast.Arm]) -> [str]
     out: [str] @ []
+
     for arm in arms
         patterns: [str] @ []
+
         for pattern in arm.patterns
             patterns @ patterns.push(print_bodies.render_pattern(tree, s, pattern: pattern))
+
         out @ out.push(patterns.join(" | "))
+
     return out
 
 # One column per RUN of arms, never one per match: a run ends at a
@@ -742,35 +984,45 @@ function arm_heads(tree: ast.Ast, s: source.Source, arms: [ast.Arm]) -> [str]
 # (sweep 001 audit S3).
 function arm_alignment(tree: ast.Ast, s: source.Source, arms: [ast.Arm], lefts: [str], indent: i64) -> [i64]
     pads: [i64] @ []
+
     for _ in arms
         pads @ pads.push(0)
+
     run_index: [i64] @ []
     run_len: [i64] @ []
     previous_end: i64 @ 0
     index: i64 @ 0
+
     for arm in arms
         line = source.line_of(s, arm.span.start)
         arm_end: i64 @ arm.span.end - 1
+
         if arm_end < 0
             arm_end @ 0
         end = source.line_of(s, arm_end)
         inline: bool @ false
+
         match arm.body
             .one_stmt => inline @ true
-            .block => inline @ false
+            .block    => inline @ false
+
         width: i64? @ fail("none", "not inline")
+
         if inline
             width @ fits_on_one_line(tree, s, arm: arm, left: lefts[index].chars().len(), indent: indent)
         joined = run_index.len() > 0 && line == previous_end + 1
+
         if width.is_err() || !joined
             pads @ close_run(run_index: run_index, run_len: run_len, lefts: lefts, indent: indent, pads: pads)
             run_index @ []
             run_len @ []
+
         if !width.is_err()
             run_index @ run_index.push(index)
             run_len @ run_len.push(width.must())
         previous_end @ end
         index @ index + 1
+
     pads @ close_run(run_index: run_index, run_len: run_len, lefts: lefts, indent: indent, pads: pads)
     return pads
 
@@ -781,18 +1033,25 @@ function arm_alignment(tree: ast.Ast, s: source.Source, arms: [ast.Arm], lefts: 
 # down).
 function close_run(run_index: [i64], run_len: [i64], lefts: [str], indent: i64, pads: [i64]) -> [i64]
     widest: i64 @ 0
+
     for i in run_index
         if lefts[i].chars().len() > widest
             widest @ lefts[i].chars().len()
+
     at: i64 @ 0
+
     for i in run_index
         grown = widest - lefts[i].chars().len()
+
         if indent + run_len[at] + grown > WIDTH
             return pads
         at @ at + 1
+
     out: [i64] @ pads
+
     for i in run_index
         out[i] @ widest
+
     return out
 
 ## The three measurements (fmt_fits)
@@ -801,16 +1060,20 @@ function close_run(run_index: [i64], run_len: [i64], lefts: [str], indent: i64, 
 # length that test measured.
 function fits_on_one_line(tree: ast.Ast, s: source.Source, arm: ast.Arm, left: i64, indent: i64) -> i64?
     stmt_at: i64 @ -1
+
     match arm.body
         .one_stmt one => stmt_at @ one.at
-        .block => return fail("none", "a block arm has no one-line form")
+        .block        => return fail("none", "a block arm has no one-line form")
+
     value: i64 @ -1
+
     # THE HEAD THE PRINTER WILL PUT BEFORE THE VALUE. It must be the same
     # string `statement()` puts there, and its width comes from the
     # literal rather than typed, so the two cannot drift in characters.
     # `return ` was missing here: the arm measured short, joined the run,
     # was padded past the margin and then broken (docs/defects/004).
     head: i64 @ 0
+
     match tree.stmts[stmt_at].kind
         .expr_stmt e => value @ e.value
         .return_stmt r =>
@@ -818,16 +1081,19 @@ function fits_on_one_line(tree: ast.Ast, s: source.Source, arm: ast.Arm, left: i
                 value @ r.value.must()
                 head @ "return ".chars().len()
         .bind | .declare | .mutate | .break_stmt | .continue_stmt => value @ value
-        .assert_stmt | .while_stmt | .for_in | .error => value @ value
+        .assert_stmt | .while_stmt | .for_in | .error             => value @ value
+
     if value == -1
         # Any other statement shape prints on its own line by
         # construction, so it is in the run and its length is its
         # head's. NO `indent`: `close_run` adds it, and this path added
         # it twice (docs/defects/004).
         return ok(left + 4)
+
     if spans_lines(tree, s, value: value)
         return fail("none", "the author spread this value")
     measured = left + 4 + head + render(tree, s, id: value).chars().len()
+
     if indent + measured <= WIDTH
         return ok(measured)
     return fail("none", "past the margin")
@@ -845,15 +1111,18 @@ function fits_on_one_line(tree: ast.Ast, s: source.Source, arm: ast.Arm, left: i
 function spans_lines(tree: ast.Ast, s: source.Source, value: i64) -> bool
     node = tree.exprs[value]
     is_control: bool @ false
+
     match node.kind
-        .if_expr | .match_expr => is_control @ true
+        .if_expr | .match_expr                                               => is_control @ true
         .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr => is_control @ is_control
-        .name | .hole | .unary | .binary | .field | .index => is_control @ is_control
+        .name | .hole | .unary | .binary | .field | .index                   => is_control @ is_control
         .call | .method | .variant_case | .array | .map | .try_expr | .error => is_control @ is_control
+
     if is_control
         return false
     first = source.line_of(s, node.span.start)
     last_at: i64 @ node.span.end - 1
+
     if last_at < 0
         last_at @ 0
     return source.line_of(s, last_at) > first
@@ -865,21 +1134,25 @@ function spans_lines(tree: ast.Ast, s: source.Source, value: i64) -> bool
 # made trailing_comment steal the following declaration's doc comment.
 function literal_end_line(tree: ast.Ast, s: source.Source, id: i64) -> i64?
     value: i64 @ -1
+
     match tree.stmts[id].kind
-        .bind b => value @ b.value
+        .bind b     => value @ b.value
         .declare dc => value @ dc.value
-        .mutate m => value @ m.value
+        .mutate m   => value @ m.value
         .return_stmt r =>
             if !r.value.is_err()
                 value @ r.value.must()
-        .assert_stmt a => value @ a.value
-        .expr_stmt e => value @ e.value
+        .assert_stmt a                                                => value @ a.value
+        .expr_stmt e                                                  => value @ e.value
         .break_stmt | .continue_stmt | .while_stmt | .for_in | .error => value @ value
+
     if value == -1
         return fail("none", "no value expression")
+
     if !spans_lines(tree, s, value: value)
         return fail("none", "ends where it started")
     last_at: i64 @ tree.exprs[value].span.end - 1
+
     if last_at < 0
         last_at @ 0
     return ok(source.line_of(s, last_at))
@@ -902,26 +1175,29 @@ function power(tree: ast.Ast, id: i64) -> i64
     match tree.exprs[id].kind
         .binary b =>
             return match b.op
-                .or => 1
-                .and => 2
+                .or                               => 1
+                .and                              => 2
                 .eq | .ne | .lt | .le | .gt | .ge => 3
-                .bit_or => 4
-                .bit_xor => 5
-                .bit_and => 6
-                .shl | .shr => 7
-                .add | .sub => 8
-                .mul | .div | .rem => 9
+                .bit_or                           => 4
+                .bit_xor                          => 5
+                .bit_and                          => 6
+                .shl | .shr                       => 7
+                .add | .sub                       => 8
+                .mul | .div | .rem                => 9
         .unary => return UNARY_POWER
         # A control form spans lines; the loosest thing there is, so a
         # parenthesis is never printed around it.
-        .if_expr | .match_expr => return 0
+
+        .if_expr | .match_expr                                               => return 0
         .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr => return POSTFIX_POWER
-        .name | .hole | .field | .index | .call | .method => return POSTFIX_POWER
-        .variant_case | .array | .map | .try_expr | .error => return POSTFIX_POWER
+        .name | .hole | .field | .index | .call | .method                    => return POSTFIX_POWER
+        .variant_case | .array | .map | .try_expr | .error                   => return POSTFIX_POWER
+
     return POSTFIX_POWER
 
 function render(tree: ast.Ast, s: source.Source, id: i64) -> str
     node = tree.exprs[id]
+
     match node.kind
         # The one literal fmt rewrites, and only in its digits' case:
         # a mask copied from a C header arrives as 0xFF, and §4.15's
@@ -932,13 +1208,16 @@ function render(tree: ast.Ast, s: source.Source, id: i64) -> str
         .hole => return "???"
         .unary u =>
             op: str @ "-"
+
             match u.op
-                .neg => op @ "-"
-                .not => op @ "!"
+                .neg     => op @ "-"
+                .not     => op @ "!"
                 .bit_not => op @ "~"
+
             return op + wrapped(tree, s, id: u.operand, needed: UNARY_POWER)
         .binary b =>
             mine = power(tree, id)
+
             # Left-associative everywhere, so an equally-binding
             # operator on the right DOES need its parentheses:
             # a - (b - c).
@@ -953,16 +1232,21 @@ function render(tree: ast.Ast, s: source.Source, id: i64) -> str
             return "." + source.span_text(s, vc.name) + "(" + args_line(tree, s, given: vc.args) + ")"
         .array arr =>
             rendered: [str] @ []
+
             for item in arr.elements
                 rendered @ rendered.push(render(tree, s, id: item))
+
             return "[" + rendered.join(", ") + "]"
         .map mp =>
             rendered: [str] @ []
+
             for entry in mp.entries
                 rendered @ rendered.push(render(tree, s, id: entry.key) + ": " + render(tree, s, id: entry.value))
+
             return "{" + rendered.join(", ") + "}"
         .try_expr t => return wrapped(tree, s, id: t.value, needed: POSTFIX_POWER) + "?"
         # Headers only: valued() prints the blocks under them.
+
         .if_expr ie =>
             if ie.branches.len() > 0
                 return "if " + render(tree, s, id: ie.branches[0].cond)
@@ -970,33 +1254,41 @@ function render(tree: ast.Ast, s: source.Source, id: i64) -> str
         .match_expr me => return "match " + render(tree, s, id: me.scrutinee)
         # A file with an unreadable expression is not formatted at all
         # (the command refuses on any diagnostic).
+
         .error => return "???"
+
     return "???"
 
 # id rendered, in parentheses only if it binds looser than needed.
 function wrapped(tree: ast.Ast, s: source.Source, id: i64, needed: i64) -> str
     text = render(tree, s, id: id)
     is_control: bool @ false
+
     match tree.exprs[id].kind
-        .if_expr | .match_expr => is_control @ true
+        .if_expr | .match_expr                                               => is_control @ true
         .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr => is_control @ is_control
-        .name | .hole | .unary | .binary | .field | .index => is_control @ is_control
+        .name | .hole | .unary | .binary | .field | .index                   => is_control @ is_control
         .call | .method | .variant_case | .array | .map | .try_expr | .error => is_control @ is_control
+
     if power(tree, id) < needed && !is_control
         return "(" + text + ")"
     return text
 
 function args_line(tree: ast.Ast, s: source.Source, given: [ast.Arg]) -> str
     rendered: [str] @ []
+
     for arg in given
         rendered @ rendered.push(arg_text(tree, s, arg: arg))
+
     return rendered.join(", ")
 
 function arg_text(tree: ast.Ast, s: source.Source, arg: ast.Arg) -> str
     name: str @ ""
+
     if !arg.name.is_err()
         name @ source.span_text(s, arg.name.must()) + ": "
     marker: str @ ""
+
     if arg.mutable
         marker @ "@"
     return name + marker + render(tree, s, id: arg.value)
@@ -1023,6 +1315,7 @@ test "fmt is idempotent on a program with groups, comments and a match"
     s2 = source.new_source(name: "t.hero", text: once)
     twice = format_file(again.tree, s2, again.comments, again.uses, again.decls)
     assert once == twice
+
     # The group survives as one head line, the arms line up.
     assert once == "# A file header remark.\n\nuse geom\n\nextern \"m.h\" link \"m\"\n    function sqrtish(x: f64) -> f64\n    constant K: i64\n\n# Documentation for pick.\nfunction pick(n: i64) -> i64\n    match n\n        0 => return 10\n        1 => return 20\n        _ =>\n            v = n * 2\n            return v\n\nfunction main()\n    print(pick(n: 1))\n"
 

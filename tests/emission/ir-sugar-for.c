@@ -118,71 +118,71 @@ bb0:
     t1 = INT64_C(0);
 #line 5 "tests/golden/ir/sugar-for.hero"
     h1_sum = t1;
-#line 6 "tests/golden/ir/sugar-for.hero"
+#line 7 "tests/golden/ir/sugar-for.hero"
     t2 = h0_xs;
-#line 6 "tests/golden/ir/sugar-for.hero"
+#line 7 "tests/golden/ir/sugar-for.hero"
     t18 = h2_xs0;
 #line 126 "sugarfor.c"
     hero_array_incref(t2);
-#line 6 "tests/golden/ir/sugar-for.hero"
+#line 7 "tests/golden/ir/sugar-for.hero"
     h2_xs0 = t2;
 #line 130 "sugarfor.c"
     hero_array_decref(t18);
-#line 6 "tests/golden/ir/sugar-for.hero"
+#line 7 "tests/golden/ir/sugar-for.hero"
     t3 = INT64_C(0);
-#line 6 "tests/golden/ir/sugar-for.hero"
+#line 7 "tests/golden/ir/sugar-for.hero"
     h3_i0 = t3;
-#line 6 "tests/golden/ir/sugar-for.hero"
+#line 7 "tests/golden/ir/sugar-for.hero"
     goto bb1;
-#line 6 "tests/golden/ir/sugar-for.hero"
+#line 7 "tests/golden/ir/sugar-for.hero"
 bb1:
-#line 6 "tests/golden/ir/sugar-for.hero"
+#line 7 "tests/golden/ir/sugar-for.hero"
     t4 = h3_i0;
-#line 6 "tests/golden/ir/sugar-for.hero"
+#line 7 "tests/golden/ir/sugar-for.hero"
     t5 = h2_xs0;
-#line 6 "tests/golden/ir/sugar-for.hero"
+#line 7 "tests/golden/ir/sugar-for.hero"
     t6 = hero_array_len(t5);
-#line 6 "tests/golden/ir/sugar-for.hero"
+#line 7 "tests/golden/ir/sugar-for.hero"
     t7 = t4 < t6;
-#line 6 "tests/golden/ir/sugar-for.hero"
+#line 7 "tests/golden/ir/sugar-for.hero"
     if (t7) goto bb2; else goto bb4;
-#line 6 "tests/golden/ir/sugar-for.hero"
+#line 7 "tests/golden/ir/sugar-for.hero"
 bb2:
-#line 6 "tests/golden/ir/sugar-for.hero"
+#line 7 "tests/golden/ir/sugar-for.hero"
     t8 = h2_xs0;
-#line 6 "tests/golden/ir/sugar-for.hero"
+#line 7 "tests/golden/ir/sugar-for.hero"
     t9 = h3_i0;
-#line 6 "tests/golden/ir/sugar-for.hero"
+#line 7 "tests/golden/ir/sugar-for.hero"
     t10 = *(int64_t const *)hero_array_at(t8, t9);
-#line 6 "tests/golden/ir/sugar-for.hero"
+#line 7 "tests/golden/ir/sugar-for.hero"
     h4_x = t10;
-#line 7 "tests/golden/ir/sugar-for.hero"
+#line 8 "tests/golden/ir/sugar-for.hero"
     t11 = h1_sum;
-#line 7 "tests/golden/ir/sugar-for.hero"
+#line 8 "tests/golden/ir/sugar-for.hero"
     t12 = h4_x;
-#line 7 "tests/golden/ir/sugar-for.hero"
+#line 8 "tests/golden/ir/sugar-for.hero"
     if (__builtin_add_overflow(t11, t12, &t13)) hero_panic_overflow();
-#line 7 "tests/golden/ir/sugar-for.hero"
+#line 8 "tests/golden/ir/sugar-for.hero"
     h1_sum = t13;
-#line 7 "tests/golden/ir/sugar-for.hero"
+#line 8 "tests/golden/ir/sugar-for.hero"
     goto bb3;
-#line 7 "tests/golden/ir/sugar-for.hero"
+#line 8 "tests/golden/ir/sugar-for.hero"
 bb3:
-#line 6 "tests/golden/ir/sugar-for.hero"
+#line 7 "tests/golden/ir/sugar-for.hero"
     t14 = h3_i0;
-#line 6 "tests/golden/ir/sugar-for.hero"
+#line 7 "tests/golden/ir/sugar-for.hero"
     t15 = INT64_C(1);
-#line 6 "tests/golden/ir/sugar-for.hero"
+#line 7 "tests/golden/ir/sugar-for.hero"
     if (__builtin_add_overflow(t14, t15, &t16)) hero_panic_overflow();
-#line 6 "tests/golden/ir/sugar-for.hero"
+#line 7 "tests/golden/ir/sugar-for.hero"
     h3_i0 = t16;
-#line 6 "tests/golden/ir/sugar-for.hero"
+#line 7 "tests/golden/ir/sugar-for.hero"
     goto bb1;
-#line 6 "tests/golden/ir/sugar-for.hero"
+#line 7 "tests/golden/ir/sugar-for.hero"
 bb4:
-#line 8 "tests/golden/ir/sugar-for.hero"
+#line 10 "tests/golden/ir/sugar-for.hero"
     t17 = h1_sum;
-#line 8 "tests/golden/ir/sugar-for.hero"
+#line 10 "tests/golden/ir/sugar-for.hero"
     t19 = h2_xs0;
 #line 188 "sugarfor.c"
     hero_array_decref(t19);

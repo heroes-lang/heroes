@@ -27,10 +27,10 @@
 # `a float parameter never converts in silence` (suite_surface).
 
 extern "math.h"
-    function pow(x: f32, y: f64) -> f64      #~ ffi_parameter_type
-    function powf(x: f64, y: f32) -> f32     #~ ffi_parameter_type
-    function ldexp(v: f64, n: f32) -> f64    #~ ffi_parameter_type
-    function sqrt(x: i64) -> f64             #~ ffi_parameter_type
+    function pow(x: f32, y: f64) -> f64  #~ ffi_parameter_type
+    function powf(x: f64, y: f32) -> f32  #~ ffi_parameter_type
+    function ldexp(v: f64, n: f32) -> f64  #~ ffi_parameter_type
+    function sqrt(x: i64) -> f64  #~ ffi_parameter_type
 
 function main()
     print(pow(x: to_f32(1.234), y: 45.3))

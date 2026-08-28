@@ -21,9 +21,11 @@ use sheet
 
 function main()
     given = args()
+
     if len(given) == 0
         print("usage: spreadsheet <file.cells>")
         exit(2)
+
     match read_file(given[0])
         .err e   => stop("cannot read " + given[0] + ": " + e.code)
         .ok text => evaluate(text)
@@ -39,6 +41,7 @@ function evaluate(text: str)
 
 function report(s: sheet.Sheet)
     broken: i64 @ 0
+
     for name in sheet.names(s)
         match formula.value_of(s, name, [])
             .ok v =>
@@ -46,7 +49,9 @@ function report(s: sheet.Sheet)
             .err e =>
                 broken @ broken + 1
                 print(padded(name), " ! ", e.code)
+
     print(len(sheet.names(s)).to_str(), " cells, ", broken.to_str(), " broken")
+
     if broken > 0
         exit(1)
 
@@ -55,8 +60,10 @@ function report(s: sheet.Sheet)
 # which is a report being honest rather than a report being wrong.
 function padded(name: str) -> str
     out: str @ name
+
     while out.len() < 4
         out @ out + " "
+
     return out
 
 test "the sample is read, and its one broken cell is the one that is broken"

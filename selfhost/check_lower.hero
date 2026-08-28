@@ -33,7 +33,7 @@ function lower_ty(@c: check_state.Checker, a: ast.Ast, r: resolved.Resolved, id:
 function shape(@c: check_state.Checker, a: ast.Ast, r: resolved.Resolved, id: i64) -> i64
     return match a.types[id].kind
         .named => named(@c, r, id)
-        .unit => check_table.unit_ty(c.out.types)
+        .unit  => check_table.unit_ty(c.out.types)
         .error => check_state.error_ty_of(c)
         .array_of inner =>
             element = lower_ty(@c, a, r, inner.element)
@@ -50,8 +50,10 @@ function shape(@c: check_state.Checker, a: ast.Ast, r: resolved.Resolved, id: i6
             check_table.intern(@c.out.types, .map(key: key, value: value))
         .function_type f =>
             lowered: [i64] @ []
+
             for p in f.params
                 lowered @ lowered.push(lower_ty(@c, a, r, p))
+
             result = lower_ty(@c, a, r, f.result)
             check_table.intern_function(@c.out.types, lowered, result: result)
 
@@ -59,16 +61,18 @@ function named(@c: check_state.Checker, r: resolved.Resolved, id: i64) -> i64
     return match r.type_uses[id]
         .prim p =>
             structure: check_table.Ty = match p.value
-                .int_prim k => .int_ty(kind: k.kind)
+                .int_prim k   => .int_ty(kind: k.kind)
                 .float_prim k => .float_ty(kind: k.kind)
-                .bool_prim => .bool
-                .str_prim => .str
-                .ptr_prim => .ptr
-                .cstr_prim => .cstr
+                .bool_prim    => .bool
+                .str_prim     => .str
+                .ptr_prim     => .ptr
+                .cstr_prim    => .cstr
+
             check_table.intern(@c.out.types, structure)
-        .top t => check_table.intern(@c.out.types, .named(decl: t.at))
+        .top t     => check_table.intern(@c.out.types, .named(decl: t.at))
         .generic g => check_table.intern(@c.out.types, .generic(at: g.at))
         # The resolver already reported it.
+
         .unresolved => check_state.error_ty_of(c)
 
 ## Tests
@@ -80,44 +84,57 @@ function lowered_program(text: str) -> check_state.Checker
     out = resolve.resolve(p.tree, s, p.decls, p.uses)
     c: check_state.Checker @ check_state.new_checker(out_of: out, expr_count: p.tree.exprs.len())
     i: i64 @ 0
+
     while i < p.tree.types.len()
         _ = lower_ty(@c, p.tree, out, i)
         i @ i + 1
+
     return c
 
 test "a type written twice is one id both times"
     c = lowered_program("function f(a: [i64?], b: [i64?]) -> i64\n    return len(a) + len(b)\n")
+
     # The two parameter nodes lowered to the SAME id: interning is the
     # equality. Find the two array ids among the written types.
     ids: [i64] @ []
+
     for id in keys(c.out.written_types)
         got = c.out.written_types[id].must()
+
         found = match check_table.get(c.out.types, got)
-            .array => true
+            .array                                                    => true
             .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
-            .fixed | .map | .fallible | .function_ty | .named => false
-            .case_ty | .failure | .generic | .error => false
+            .fixed | .map | .fallible | .function_ty | .named         => false
+            .case_ty | .failure | .generic | .error                   => false
+
         if found
             ids @ ids.push(got)
+
     assert ids.len() == 2
     assert ids[0] == ids[1]
 
 test "an extern's parameter types are recorded with no local to hang on"
     c = lowered_program("extern \"math.h\"\n    function pow(base: f64, exponent: f64) -> f64\n")
+
     # No locals exist, and still every written node has an answer.
     lowered: i64 @ 0
+
     for id in keys(c.out.written_types)
         _ = id
         lowered @ lowered + 1
+
     assert lowered == 3
     assert c.out.local_types.len() == 0
 
 test "the resolver's silence lowers to the silent error id"
     c = lowered_program("function f(x: Qoint) -> i64\n    _ = x\n    return 1\n")
+
     # Qoint was the resolver's diagnostic; the lowering says nothing and
     # hands back id 0, which every downstream rule stays quiet about.
     poisoned_count: i64 @ 0
+
     for id in keys(c.out.written_types)
         if c.out.written_types[id].must() == 0
             poisoned_count @ poisoned_count + 1
+
     assert poisoned_count == 1

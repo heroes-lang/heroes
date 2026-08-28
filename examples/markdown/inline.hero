@@ -35,6 +35,7 @@ function one(s: Scan) -> str
 # without ever slicing past the end: an out-of-bounds slice **aborts** (§4.14).
 function opens_with(s: Scan, word: str) -> bool
     stop = s.pos + word.len()
+
     if stop > s.text.len()
         return false
     return s.text.slice(from: s.pos, to: stop) == word
@@ -43,6 +44,7 @@ function opens_with(s: Scan, word: str) -> bool
 function plain(text: str) -> str
     s: Scan @ Scan(text: text, pos: 0)
     out: [str] @ []
+
     while !at_end(s)
         if opens_with(s, "**")
             skip(@s, 2)
@@ -53,6 +55,7 @@ function plain(text: str) -> str
         else
             out @ out.push(one(s))
             advance(@s)
+
     return join(out, "")
 
 # `[label](url)` — or, if what follows is not that, the `[` itself.
@@ -65,19 +68,24 @@ function link(@s: Scan) -> str
     opened = s.pos
     advance(@s)
     label: [str] @ []
+
     while !at_end(s) && here(s) != ']'
         label @ label.push(one(s))
         advance(@s)
+
     if at_end(s)
         return give_up(@s, opened)
     advance(@s)
+
     if at_end(s) || here(s) != '('
         return give_up(@s, opened)
     advance(@s)
     target: [str] @ []
+
     while !at_end(s) && here(s) != ')'
         target @ target.push(one(s))
         advance(@s)
+
     if at_end(s)
         return give_up(@s, opened)
     advance(@s)

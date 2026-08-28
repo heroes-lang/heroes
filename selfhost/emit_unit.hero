@@ -69,6 +69,7 @@ function unit(module: str, p: ir_state.Program, c: check_state.Checked, s: sourc
     mine = emit_members.members(module, p, c, s, decls, shown: whole.shown, by_decl: whole.by_decl)
     keep = mine.defined
     tu_p = emit_members.tu_program(p, keep: keep)
+
     # THIS TU's reach, and every whole-program section is filtered by
     # it — typedefs, per-type functions, descriptors. Trimming the
     # descriptors alone left `h_parse_Expr_desc` undeclared under
@@ -77,6 +78,7 @@ function unit(module: str, p: ir_state.Program, c: check_state.Checked, s: sourc
     # compiler's own build went 188 s -> 484 s (measured 2026-08-25).
     # One filter over all four sections is what makes them agree.
     walked = emit.reach_of(tu_p, c, target: .program_build, shown: emit_members.all_of(tu_p))
+
     # A PROTOTYPE names types too, and the body walk above cannot see
     # the ones belonging to another TU's function. So the signatures of
     # everything this TU declares join the reach before the filter is
@@ -84,11 +86,14 @@ function unit(module: str, p: ir_state.Program, c: check_state.Checked, s: sourc
     # than argued from "an argument must be a local anyway", which is
     # true today and is a premise about the world (CLAUDE.md §11).
     reached: {i64: bool} @ walked.reached
+
     for at in mine.needed
         f = p.functions[at]
         reached[f.result] @ true
+
         for slot in f.params
             reached[f.slots[slot].ty] @ true
+
     # ONE set feeds all four sections, and that is the invariant rather
     # than a tidiness. Every time a section got its own answer the TU
     # stopped compiling: descriptors from the whole program against
@@ -102,9 +107,20 @@ function unit(module: str, p: ir_state.Program, c: check_state.Checked, s: sourc
     want = emit_synth.wanted_of(c, reached: declared)
     names = whole.names
     w: emit_writer.Writer @ emit_writer.new_writer(module)
-    emit_decls.prelude(@w, tu_p, target: .program_build, c: c, names: names, s: s, decls: decls, version: version, tu_local: "__attribute__((unused)) static")
+    emit_decls.prelude(
+        @w,
+        tu_p,
+        target: .program_build,
+        c: c,
+        names: names,
+        s: s,
+        decls: decls,
+        version: version,
+        tu_local: "__attribute__((unused)) static"
+    )
     emit_typeorder.definitions(@w, c, names, s, decls, want: want)
     emit_perfn.prototypes(@w, c, names, decls, want: want)
+
     # `declared`, not `walked.reached`: an option this TU prints `_hash`
     # for takes its payload's descriptor address, so the descriptor set
     # has to read the same reach the printer does. `constructed` stays
@@ -112,6 +128,7 @@ function unit(module: str, p: ir_state.Program, c: check_state.Checked, s: sourc
     # keeps a `[Probe]` nobody builds from getting a descriptor nothing
     # points at (-Wunused-const-variable, §7's zero-warning bar).
     emit_descriptors.definitions(@w, c, names, decls, reachable: declared, constructed: walked.constructed, want: want)
+
     # What this TU defines and what it calls, in one ascending walk:
     # a cross-TU call resolves against the callee's prototype, and the
     # DECLARING TU compiles that same text beside its own definition,
@@ -121,10 +138,13 @@ function unit(module: str, p: ir_state.Program, c: check_state.Checked, s: sourc
     # which is right: its definition is in this TU too.
     for at in mine.needed
         f = p.functions[at]
+
         if emit_decls.emitted(f, target: .program_build)
             emit_signature.prototype(@w, f, c, names, s, decls)
+
     for at in keep
         f = p.functions[at]
+
         if emit_decls.emitted(f, target: .program_build)
             # The FULL program, not the TU's slice: a call names its
             # callee by searching p.functions, and a cross-TU call's
@@ -134,9 +154,12 @@ function unit(module: str, p: ir_state.Program, c: check_state.Checked, s: sourc
             # first real per-module build, as three symptoms of this
             # one cause.
             emit_body.definition(@w, p, c, names, s, decls, f: f)
+
     emit_perfn.bodies(@w, c, names, s, decls, want: want)
+
     if is_root
         entry = emit.entry_point(p)
+
         if !entry.is_err()
             emit_decls.shim(@w, p.functions[entry.must()], s)
     return emit_writer.finish(w)

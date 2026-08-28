@@ -16,9 +16,11 @@ use solve
 
 function main()
     given = args()
+
     if len(given) == 0
         print("usage: maze <file.maze>")
         exit(2)
+
     match read_file(given[0])
         .err e   => stop("cannot read " + given[0] + ": " + e.code)
         .ok text => lay_out(text)
@@ -40,27 +42,35 @@ function walk(g: grid.Grid)
 function show(g: grid.Grid, path: [i64])
     for line in drawn(g, path)
         print(line)
+
     print("steps: ", solve.steps(path))
 
 # The maze with the path marked. `S` and `E` keep their own letters — a drawing
 # that overwrote them would be a drawing you cannot check against the file.
 function drawn(g: grid.Grid, path: [i64]) -> [str]
     on: {i64: bool} @ {}
+
     for index in path
         on[index] @ true
+
     out: [str] @ []
+
     for row in range(from: 0, to: g.height)
         pieces: [str] @ []
+
         for column in range(from: 0, to: g.width)
             index = grid.index_of(g, row: row, column: column)
             here = grid.at(g, index)
+
             if here == grid.WALL || here == grid.START || here == grid.GOAL
                 pieces @ pieces.push(grid.one_char(here))
             else if !on[index].is_err()
                 pieces @ pieces.push("*")
             else
                 pieces @ pieces.push(".")
+
         out @ out.push(join(pieces, ""))
+
     return out
 
 test "the sample has one shortest way, and the drawing is on it"

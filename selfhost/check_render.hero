@@ -36,16 +36,20 @@ function render_ty(t: check_table.Types, s: source.Source, decls: [ast.Decl], id
         .fallible o => render_ty(t, s, decls, o.payload, generics) + "?"
         .function_ty f =>
             rendered: [str] @ []
+
             for p in check_table.params_of(t, f.params)
                 rendered @ rendered.push(render_ty(t, s, decls, p, generics))
+
             "(function(" + rendered.join(", ") + ") -> " + render_ty(t, s, decls, f.result, generics) + ")"
         .named n => source.span_text(s, decls[n.decl].name)
         # `Token.num` — a case is not writable as a type, and pretending it
         # is would send the reader looking for a syntax that does not
         # exist.
+
         .case_ty vc => case_name(s, decls, decl: vc.decl, at: vc.at)
-        .failure => "the error (`code`, `msg`)"
+        .failure    => "the error (`code`, `msg`)"
         # A type parameter prints as it was declared: `A`, not `#0`.
+
         .generic g =>
             if g.at < generics.len()
                 generics[g.at]
@@ -55,6 +59,7 @@ function render_ty(t: check_table.Types, s: source.Source, decls: [ast.Decl], id
 
 function case_name(s: source.Source, decls: [ast.Decl], decl: i64, at: i64) -> str
     name = source.span_text(s, decls[decl].name)
+
     return match decls[decl].kind
         .variant_decl v => name + "." + source.span_text(s, v.cases[at].name)
         .constant_decl | .function_decl | .record_decl | .test_decl => name

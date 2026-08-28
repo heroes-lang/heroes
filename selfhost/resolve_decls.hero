@@ -27,9 +27,11 @@ use resolve_binding
 
 function declaration(@r: resolve_state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl], index: i64)
     r.generics @ r.generics.slice(from: 0, to: 0)
+
     match decls[index].kind
         .constant_decl k =>
             resolve_types.resolve_type(@r, a, s, decls, k.ty)
+
             # No body, no scope: an `extern constant` has nothing to resolve
             # below its own type, exactly as an `extern function` has
             # nothing below its signature (§4.19).
@@ -52,19 +54,30 @@ function declaration(@r: resolve_state.Resolver, a: ast.Ast, s: source.Source, d
 
 function function_declaration(@r: resolve_state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl], f: ast.FunctionDecl)
     collect_generics(@r, s, decls, f)
+
     # The signature is resolved before the parameters are bound, so a
     # parameter's type can never accidentally see a parameter's name: types
     # and values are separate namespaces, and this is where that is
     # enforced.
     for param in f.params
         resolve_types.resolve_type(@r, a, s, decls, param.ty)
+
     resolve_types.resolve_type(@r, a, s, decls, f.result)
+
     if f.body.is_err()
         # `extern`: the code is in C, so nothing here binds.
         return
     resolve_state.open_scope(@r)
+
     for param in f.params
-        _ = resolve_state.declare(@r, s, decls, param.name, resolve_binding.param_binding(ty: param.ty, mutable: param.mutable))
+        _ = resolve_state.declare(
+            @r,
+            s,
+            decls,
+            param.name,
+            resolve_binding.param_binding(ty: param.ty, mutable: param.mutable)
+        )
+
     resolve_walk.block(@r, a, s, decls, f.body.must())
     resolve_state.close_scope(@r)
 
@@ -78,28 +91,36 @@ function function_declaration(@r: resolve_state.Resolver, a: ast.Ast, s: source.
 # type in the signature ambiguous to a reader.
 function collect_generics(@r: resolve_state.Resolver, s: source.Source, decls: [ast.Decl], f: ast.FunctionDecl)
     position: i64 @ 0
+
     for span in f.generics
         name = source.span_text(s, span)
         previous = generic_position(r, name)
+
         if !previous.is_err()
             at = source.elsewhere(s, here: span.start, there: f.generics[previous.must()].start)
             resolve_state.push_diagnostic(@r, resolve_errors.shadowed(name: name, bound_at: at, span: span))
             position @ position + 1
             continue
+
         if !resolved.primitive(name).is_err() || !builtins.index_of(name).is_err()
             resolve_state.push_diagnostic(@r, resolve_errors.builtin_name_taken(name, span: span))
             position @ position + 1
             continue
         top = resolve_state.top_visible(r, name)
+
         if !top.is_err()
             # The library and the author's file share one Source and cannot
             # shadow each other (the whole rule lives in resolve_state):
             # the library's `map<A, B>` must not collide with a user's
             # `record A`.
             declared_at = decls[top.must()].name.start
+
             if source.is_library(s, span.start) == source.is_library(s, declared_at)
                 at = source.elsewhere(s, here: span.start, there: declared_at)
-                resolve_state.push_diagnostic(@r, resolve_errors.shadows_top_level(name: name, declared_at: at, span: span))
+                resolve_state.push_diagnostic(
+                    @r,
+                    resolve_errors.shadows_top_level(name: name, declared_at: at, span: span)
+                )
                 position @ position + 1
                 continue
         r.generics @ r.generics.push(resolve_state.GenericParam(name: name, position: position))
@@ -109,6 +130,7 @@ function generic_position(r: resolve_state.Resolver, name: str) -> i64?
     for g in r.generics
         if g.name == name
             return ok(g.position)
+
     return fail("absent", "no generic of this name yet")
 
 ## Tests
@@ -118,28 +140,38 @@ function generic_position(r: resolve_state.Resolver, name: str) -> i64?
 function resolved_program(text: str) -> resolve_state.Resolver
     p = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
-    r: resolve_state.Resolver @ resolve_state.new_resolver(expr_count: p.tree.exprs.len(), type_count: p.tree.types.len())
+    r: resolve_state.Resolver @ resolve_state.new_resolver(
+        expr_count: p.tree.exprs.len(),
+        type_count: p.tree.types.len()
+    )
     r.module @ "t"
     i: i64 @ 0
+
     for d in p.decls
         resolved.declare_top(@r.out, module: "t", name: source.span_text(s, d.name), decl: i)
         i @ i + 1
+
     j: i64 @ 0
+
     for d in p.decls
         _ = d
         declaration(@r, p.tree, s, p.decls, j)
         j @ j + 1
+
     resolve_state.report_unused(@r, s)
     return r
 
 test "a generic is its own namespace, resolved by position"
     r = resolved_program("function id<A>(x: A) -> A\n    return x\n")
     assert r.out.diagnostics.len() == 0
+
     # Both `A` mentions in the signature resolve to position 0.
     generic_uses: i64 @ 0
+
     for u in r.out.type_uses
         if u == .generic(at: 0)
             generic_uses @ generic_uses + 1
+
     assert generic_uses == 2
 
 test "a duplicated generic is shadowing, a reserved one is taken"
@@ -155,13 +187,16 @@ test "a duplicated generic is shadowing, a reserved one is taken"
 
 test "an extern's parameters are types to check, never bindings"
     r = resolved_program("extern \"math.h\"\n    function sqrt(x: f64) -> f64\n")
+
     # No unused-parameter diagnostic: `x` was never bound. Its type WAS
     # resolved, and it is the prim table's f64.
     assert r.out.diagnostics.len() == 0
     prim_uses: i64 @ 0
+
     for u in r.out.type_uses
         if u == .prim(value: .float_prim(kind: .f64))
             prim_uses @ prim_uses + 1
+
     assert prim_uses == 2
 
 test "a record's field types are resolved, and a typo is named"

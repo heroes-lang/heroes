@@ -34,6 +34,7 @@ function line_col(text: str, offset: i64) -> Position
     line: i64 @ 1
     col: i64 @ 1
     i: i64 @ 0
+
     while i < offset && i < text.len()
         if text[i] == '\n'
             line @ line + 1
@@ -41,6 +42,7 @@ function line_col(text: str, offset: i64) -> Position
         else
             col @ col + 1
         i @ i + 1
+
     return Position(line: line, col: col)
 
 ## Distances, which is what adjacency questions actually ask
@@ -50,22 +52,27 @@ function line_col(text: str, offset: i64) -> Position
 function newlines_between(text: str, from: i64, to: i64) -> i64
     count: i64 @ 0
     i: i64 @ from
+
     while i < to && i < text.len()
         if text[i] == '\n'
             count @ count + 1
         i @ i + 1
+
     return count
 
 # The 1-based column of an offset, read BACKWARDS to the line end above it
 # — so the cost is the length of one line rather than of the file.
 function column_of(text: str, offset: i64) -> i64
     i: i64 @ offset
+
     if i > text.len()
         i @ text.len()
     col: i64 @ 1
+
     while i > 0 && text[i - 1] != '\n'
         col @ col + 1
         i @ i - 1
+
     return col
 
 # How many lines above `decl` the offset `comment` sits. A comment at or
@@ -92,6 +99,7 @@ test "the local readings agree with the walk from byte zero, at every offset"
     # agreement is a measurement rather than a sentence.
     text = "\nab\n\ncdef\n"
     i: i64 @ 0
+
     while i <= text.len()
         assert column_of(text, i) == line_col(text, i).col
         assert newlines_between(text: text, from: 0, to: i) == line_col(text, i).line - 1
@@ -99,12 +107,15 @@ test "the local readings agree with the walk from byte zero, at every offset"
 
 test "lines above is a distance, and a comment at or past the declaration is none"
     text = "# far\n\n# near\nfunction f()\n"
+
     # `# near` starts at 7 and `function` at 14: one line end between them,
     # which is the only distance a doc comment may have.
     assert lines_above(text: text, comment: 7, decl: 14) == 1
+
     # `# far` at 0 is THREE line ends up, not two — the blank line counts,
     # and it is exactly the blank line that makes it not documentation.
     assert lines_above(text: text, comment: 0, decl: 14) == 3
+
     # A trailing note sits at or past the declaration's own offset.
     assert lines_above(text: text, comment: 14, decl: 14) == 0
     assert lines_above(text: text, comment: 20, decl: 14) == 0

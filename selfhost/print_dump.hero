@@ -41,18 +41,22 @@ use parse
 # program, so it carries no information about this one.
 function dump_ast(tree: ast.Ast, s: source.Source, uses: [ast.Use], decls: [ast.Decl]) -> str
     out: str @ "file " + s.name + "\n"
+
     for used in uses
         if !source.is_root(s, used.span.start)
             continue
         out @ out + "  use " + source.span_text(s, used.name) + "\n"
+
     for decl in decls
         if !source.is_root(s, decl.name.start)
             continue
         out @ out + declaration(tree, s, decl: decl)
+
     return out
 
 function declaration(tree: ast.Ast, s: source.Source, decl: ast.Decl) -> str
     name = source.span_text(s, decl.name)
+
     match decl.kind
         .constant_decl k =>
             # The group's head line, exactly as a signature carries it:
@@ -60,6 +64,7 @@ function declaration(tree: ast.Ast, s: source.Source, decl: ast.Decl) -> str
             # from one whose value is in this file.
             out: str @ "  " + extern_prefix(s, header: k.header, library: k.library) + "constant " + name + ": " + print_types.render_type(tree, k.ty, s) + "\n"
             out @ out + docs(s, doc: decl.doc)
+
             # An extern constant has no body: the value is in the
             # header (§4.19), exactly as an extern function's code is.
             if !k.body.is_err()
@@ -68,6 +73,7 @@ function declaration(tree: ast.Ast, s: source.Source, decl: ast.Decl) -> str
         .function_decl fd =>
             out: str @ "  " + signature(tree, s, name: name, f: fd.value) + "\n"
             out @ out + docs(s, doc: decl.doc)
+
             if !fd.value.body.is_err()
                 out @ out + print_bodies.write_block(tree, s, block: fd.value.body.must(), indent: 4)
             return out
@@ -76,23 +82,30 @@ function declaration(tree: ast.Ast, s: source.Source, decl: ast.Decl) -> str
         # twice: with `..` restored, the dump of a grouped Font and a
         # top-level Font were the same string, and the canonical guard
         # was blind exactly where it was needed.
+
         .record_decl rec =>
             tag_text: str @ ""
+
             if !rec.tag.is_err()
                 tag_text @ " tag " + source.span_text(s, rec.tag.must())
             marker: str @ ""
+
             if rec.partial
                 marker @ " partial"
             out: str @ "  " + extern_prefix(s, header: rec.header, library: rec.library) + "record " + name + tag_text + marker + "\n"
             out @ out + docs(s, doc: decl.doc)
+
             for field in rec.fields
                 out @ out + field_line(tree, s, field: field, indent: "    ")
+
             return out
         .variant_decl v =>
             out: str @ "  variant " + name + "\n"
             out @ out + docs(s, doc: decl.doc)
+
             for one_case in v.cases
                 out @ out + case_lines(tree, s, one_case: one_case)
+
             return out
         .test_decl t =>
             # name is the string literal, quotes included: a title.
@@ -100,6 +113,7 @@ function declaration(tree: ast.Ast, s: source.Source, decl: ast.Decl) -> str
             out @ out + docs(s, doc: decl.doc)
             out @ out + print_bodies.write_block(tree, s, block: t.body, indent: 4)
             return out
+
     return ""
 
 # `function map<A, B>(xs: [A], f: (function(A) -> B)) -> [B]` — the
@@ -121,32 +135,43 @@ function extern_prefix(s: source.Source, header: token.Span?, library: ast.Libra
     if header.is_err()
         return ""
     out: str @ "extern " + source.span_text(s, header.must())
+
     if !library.is_err()
         match library.must()
-            .link l => out @ out + " link " + source.span_text(s, l.name)
+            .link l     => out @ out + " link " + source.span_text(s, l.name)
             .package pk => out @ out + " package " + source.span_text(s, pk.name)
     return out + " "
 
 function signature(tree: ast.Ast, s: source.Source, name: str, f: ast.FunctionDecl) -> str
     out: str @ extern_prefix(s, header: f.header, library: f.library) + "function " + name
+
     if f.generics.len() > 0
         parts: [str] @ []
+
         for generic in f.generics
             parts @ parts.push(source.span_text(s, generic))
+
         out @ out + "<" + parts.join(", ") + ">"
     rendered: [str] @ []
+
     for param in f.params
         marker: str @ ""
+
         if param.mutable
             marker @ "@"
-        rendered @ rendered.push(marker + source.span_text(s, param.name) + ": " + print_types.render_type(tree, param.ty, s))
+        rendered @ rendered.push(
+            marker + source.span_text(s, param.name) + ": " + print_types.render_type(tree, param.ty, s)
+        )
+
     return out + "(" + rendered.join(", ") + ") -> " + print_types.render_type(tree, f.result, s)
 
 function case_lines(tree: ast.Ast, s: source.Source, one_case: ast.Case) -> str
     out: str @ "    case " + source.span_text(s, one_case.name) + "\n"
     out @ out + docs_at(s, doc: one_case.doc, indent: "      ")
+
     for field in one_case.fields
         out @ out + field_line(tree, s, field: field, indent: "      ")
+
     return out
 
 function field_line(tree: ast.Ast, s: source.Source, field: ast.Field, indent: str) -> str
@@ -161,8 +186,10 @@ function docs(s: source.Source, doc: [token.Span]) -> str
 # and the compiler reuses them in ??? output and outline (§4.1).
 function docs_at(s: source.Source, doc: [token.Span], indent: str) -> str
     out: str @ ""
+
     for span in doc
         out @ out + indent + "doc " + source.span_text(s, span) + "\n"
+
     return out
 
 ## Tests

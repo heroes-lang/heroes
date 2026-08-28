@@ -230,59 +230,59 @@ bb0:
     t12 = (h_fixedbugsafieldwinsthedotoverafreefunction_Step){.tag = h_fixedbugsafieldwinsthedotoverafreefunction_Step_tag_apply, .as.c_apply = {.f_g = t11}};
 #line 55 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
     h1_v = t12;
-#line 56 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
+#line 57 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
     t13 = h1_v;
-#line 56 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
+#line 57 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
     h2_s0 = t13;
-#line 56 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
+#line 57 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
     t14 = h2_s0;
-#line 56 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
+#line 57 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
     t15 = t14.tag;
-#line 56 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
+#line 57 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
     switch (t15) {
-#line 56 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
+#line 57 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
         case 0: goto bb2;
-#line 56 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
+#line 57 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
         case 1: goto bb3;
-#line 56 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
+#line 57 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
         default: hero_unreachable();
-#line 56 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
+#line 57 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
     }
-#line 56 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
+#line 57 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
 bb1:
-#line 56 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
+#line 57 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
     return;
-#line 56 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
+#line 57 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
 bb2:
-#line 57 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
+#line 58 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
     t16 = h2_s0;
-#line 57 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
+#line 58 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
     t17 = t16.as.c_apply;
-#line 57 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
+#line 58 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
     h3_a = t17;
-#line 57 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
+#line 58 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
     t18 = h3_a;
-#line 57 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
+#line 58 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
     t19 = t18.f_g;
-#line 57 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
+#line 58 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
     t20 = INT64_C(50);
-#line 57 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
+#line 58 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
     t21 = t19(t20);
-#line 57 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
+#line 58 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
     hero_print_int(t21);
-#line 57 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
+#line 58 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
     hero_print_end();
-#line 57 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
+#line 58 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
     goto bb1;
-#line 57 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
+#line 58 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
 bb3:
-#line 58 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
+#line 59 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
     t22 = INT64_C(0);
-#line 58 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
+#line 59 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
     hero_print_int(t22);
-#line 58 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
+#line 59 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
     hero_print_end();
-#line 58 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
+#line 59 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
     goto bb1;
 #line 288 "fixedbugsafieldwinsthedotoverafreefunction.c"
 }

@@ -50,15 +50,16 @@ use cli_mutate
 constant VERSION: str
     "0.0.1"
 
-
 function main()
     given = args()
     parsed = cli_argv.parse(given, dir_probe: cli_toolchain.is_directory)
+
     if parsed.is_err()
         cli_io.eprint(text: "error: " + message_of(parsed))
         exit(code: 2)
     inv = parsed.must()
     reading: bool @ false
+
     # The ones that answer without reading a program.
     match inv.tag
         .version_cmd =>
@@ -68,32 +69,53 @@ function main()
             print(cli_help.help())
             exit(code: 0)
         .this_cmd => exit(code: cli_table.exit_code(cli_doctor.run_this()))
-        .doctor_cmd => exit(code: cli_table.exit_code(cli_doctor.run_doctor(build_dir: "build", runtime_hint: runtime_hint())))
+        .doctor_cmd => exit(
+            code: cli_table.exit_code(cli_doctor.run_doctor(build_dir: "build", runtime_hint: runtime_hint()))
+        )
         .measure_cmd => exit(code: cli_table.exit_code(cli_measure.run(inv.file)))
-        .mutate_cmd => exit(code: cli_table.exit_code(cli_mutate.run(inv)))
+        .mutate_cmd  => exit(code: cli_table.exit_code(cli_mutate.run(inv)))
         # The seven that read a program fall through to the walk
         # below. The arm is a no-op MUTATION and not a print: a
         # `print("")` here put a blank line above every diagnostic and
         # every dump — caught by the differential against the
         # bootstrap on 2026-08-17, four inputs out of 257.
+
         .lex_cmd | .parse_cmd | .check_cmd | .build_cmd | .run_cmd | .test_cmd | .fmt_cmd => reading @ true
+
     # Everything left reads a file.
     _ = reading
     path = inv.file.default("")
     library = library_source.text()
     read = cli_input.read_compilation(path: path, library: library)
+
     if read.is_err()
         cli_io.eprint(text: "error: " + message_of_source(read))
         exit(code: 2)
     s: source.Source @ read.must()
     verdict: cli_table.Exit @ .ok_exit
+
     match inv.tag
-        .lex_cmd => verdict @ cli_lex.run(s, inv)
-        .parse_cmd => verdict @ cli_syntax_cmds.run_parse(s, inv)
-        .fmt_cmd => verdict @ cli_syntax_cmds.run_fmt(path: path, s: s, inv: inv)
-        .check_cmd => verdict @ cli_check.run(s, inv)
-        .build_cmd | .run_cmd | .test_cmd => verdict @ compiling(path: path, s: s, inv: inv)
+        .lex_cmd                                                                        => verdict @ cli_lex.run(s, inv)
+        .parse_cmd                                                                      => verdict @ cli_syntax_cmds.run_parse(
+            s,
+            inv
+        )
+        .fmt_cmd                                                                        => verdict @ cli_syntax_cmds.run_fmt(
+            path: path,
+            s: s,
+            inv: inv
+        )
+        .check_cmd                                                                      => verdict @ cli_check.run(
+            s,
+            inv
+        )
+        .build_cmd | .run_cmd | .test_cmd                                               => verdict @ compiling(
+            path: path,
+            s: s,
+            inv: inv
+        )
         .doctor_cmd | .mutate_cmd | .measure_cmd | .this_cmd | .version_cmd | .help_cmd => verdict @ verdict
+
     exit(code: cli_table.exit_code(verdict))
 
 # The three verbs that need the toolchain, and the one place it is
@@ -101,16 +123,19 @@ function main()
 # exit 2 whatever the verb.
 function compiling(path: str, s: source.Source, inv: cli_argv.Invocation) -> cli_table.Exit
     found = cli_toolchain.locate_toolchain(hint: runtime_hint(), fingerprint: VERSION)
+
     if found.is_err()
         cli_io.eprint(text: "error: " + message_of_toolchain(found))
         return .failed_exit
     t = found.must()
+
     match inv.tag
         .build_cmd => return cli_verbs.run_build(path: path, s: s, inv: inv, t: t, version: VERSION)
         .run_cmd => return cli_verbs.run_run(path: path, s: s, inv: inv, t: t, version: VERSION)
         .test_cmd => return cli_verbs.run_test(path: path, s: s, inv: inv, t: t, version: VERSION)
         .lex_cmd | .parse_cmd | .check_cmd | .fmt_cmd | .doctor_cmd => return .ok_exit
         .mutate_cmd | .measure_cmd | .this_cmd | .version_cmd | .help_cmd => return .ok_exit
+
     return .ok_exit
 
 # Where the runtime is, when it is not ./runtime — the REAL environment
@@ -130,15 +155,15 @@ function runtime_hint() -> str
 
 function message_of(failed: cli_argv.Invocation?) -> str
     match failed
-        .ok => return ""
+        .ok    => return ""
         .err e => return e.msg
 
 function message_of_source(failed: source.Source?) -> str
     match failed
-        .ok => return ""
+        .ok    => return ""
         .err e => return e.msg
 
 function message_of_toolchain(failed: cli_toolchain.Toolchain?) -> str
     match failed
-        .ok => return ""
+        .ok    => return ""
         .err e => return e.msg

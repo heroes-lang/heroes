@@ -7,28 +7,34 @@
 # Bytes, not characters: this counts the ASCII spaces.
 function space_count(s: str) -> i64
     seen: i64 @ 0
+
     for i in range(from: 0, to: s.len())
         if s[i] == ' '
             seen @ seen + 1
+
     return seen
 
 # Characters, not bytes: this one is right for text.
 function letters_of(s: str) -> [str]
     out: [str] @ []
+
     for c in s.chars()
         if c != " "
             out @ out.push(c)
+
     return out
 
 # Splitting on a single space, written out. There is no library to hide in.
 function words_of(s: str) -> [str]
     out: [str] @ []
     start: i64 @ 0
+
     for i in range(from: 0, to: s.len())
         if s[i] == ' '
             if i > start
                 out @ out.push(s.slice(from: start, to: i))
             start @ i + 1
+
     if s.len() > start
         out @ out.push(s.slice(from: start, to: s.len()))
     return out
@@ -40,9 +46,11 @@ function sentence_of(words: [str]) -> str
 
 function initials_of(words: [str]) -> str
     out: str @ ""
+
     for w in words
         if w.len() > 0
             out @ out + w.slice(from: 0, to: 1)
+
     return out
 
 test "bytes, characters and words"

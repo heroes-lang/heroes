@@ -23,7 +23,9 @@ function main()
     print(s + s)
     out: str @ ""
     i: i64 @ 0
+
     while i < 200
         out @ out + "x"
         i @ i + 1
+
     print(len(out))

@@ -51,63 +51,66 @@ variant Base
 function from_marker(marker: u8) -> Base?
     if marker == 'b'
         return ok(.binary)
+
     if marker == 'o'
         return ok(.octal)
+
     if marker == 'x'
         return ok(.hexadecimal)
     return fail("no_base_marker", "not a base marker")
 
 function radix(base: Base) -> u64
     return match base
-        .binary => 2
-        .octal => 8
-        .decimal => 10
+        .binary      => 2
+        .octal       => 8
+        .decimal     => 10
         .hexadecimal => 16
 
 function prefix(base: Base) -> str
     return match base
-        .binary => "0b"
-        .octal => "0o"
-        .decimal => ""
+        .binary      => "0b"
+        .octal       => "0o"
+        .decimal     => ""
         .hexadecimal => "0x"
 
 function base_name(base: Base) -> str
     return match base
-        .binary => "binary"
-        .octal => "octal"
-        .decimal => "decimal"
+        .binary      => "binary"
+        .octal       => "octal"
+        .decimal     => "decimal"
         .hexadecimal => "hexadecimal"
 
 # The name with its article, because "a octal digit" is the kind of thing a
 # reader trips over in a message whose whole job is to be read.
 function a_name(base: Base) -> str
     return match base
-        .binary => "a binary"
-        .octal => "an octal"
-        .decimal => "a decimal"
+        .binary      => "a binary"
+        .octal       => "an octal"
+        .decimal     => "a decimal"
         .hexadecimal => "a hexadecimal"
 
 # The digits this base admits, written out for the diagnostic rather than
 # derived, because the reader needs to see them.
 function base_digits(base: Base) -> str
     return match base
-        .binary => "0 and 1"
-        .octal => "0 through 7"
-        .decimal => "0 through 9"
+        .binary      => "0 and 1"
+        .octal       => "0 through 7"
+        .decimal     => "0 through 9"
         .hexadecimal => "0 through 9 and a through f"
 
 function admits(base: Base, b: u8) -> bool
     return match base
-        .binary => b == '0' || b == '1'
-        .octal => b >= '0' && b <= '7'
-        .decimal => b >= '0' && b <= '9'
-        .hexadecimal => (b >= '0' && b <= '9') || (b >= 'a' && b <= 'f') || (b >= 'A' && b <= 'F')
+        .binary      => b == '0' || b == '1'
+        .octal       => b >= '0' && b <= '7'
+        .decimal     => b >= '0' && b <= '9'
+        .hexadecimal => b >= '0' && b <= '9' || b >= 'a' && b <= 'f' || b >= 'A' && b <= 'F'
 
 # One digit's value. Callers guard with `admits` first; a byte that is no
 # digit of any base aborts here, loudly, rather than decoding to something.
 function digit_value(b: u8) -> u64
     if b >= '0' && b <= '9'
         return to_u64(b - '0').must()
+
     if b >= 'a' && b <= 'f'
         return to_u64(b - 'a').must() + 10
     return to_u64(b - 'A').must() + 10
@@ -121,9 +124,11 @@ record Split
 function split_base(text: str) -> Split
     if text.len() > 2 && text[0] == '0'
         marker: u8 @ text[1]
+
         if marker >= 'A' && marker <= 'Z'
             marker @ marker + 32
         found = from_marker(marker)
+
         if !found.is_err()
             return Split(base: found.must(), digits: text.slice(from: 2, to: text.len()))
     return Split(base: .decimal, digits: text)
@@ -140,15 +145,19 @@ function decode_u64(text: str) -> u64?
     r = radix(split.base)
     value: u64 @ 0
     i: i64 @ 0
+
     while i < split.digits.len()
         b = split.digits[i]
         i @ i + 1
+
         if b == '_'
             continue
         d = digit_value(b)
+
         if value > (U64_MAX - d) / r
             return fail(ERR_DOES_NOT_FIT, text)
         value @ value * r + d
+
     return ok(value)
 
 # The value of an `i64` literal, or a failure if the digits do not fit one.
@@ -170,14 +179,17 @@ function decode_int(text: str) -> i64?
 # `slice` picks one. Decimal gets no prefix, exactly as `prefix` says.
 function render_in_base(value: u64, base: Base) -> str
     r = radix(base)
+
     if value == 0
         return prefix(base) + "0"
     out: str @ ""
     v: u64 @ value
+
     while v > 0
         d = to_i64(v % r).must()
         out @ "0123456789abcdef".slice(from: d, to: d + 1) + out
         v @ v / r
+
     return prefix(base) + out
 
 ## The out-of-range diagnostic, built where the decoder lives
@@ -192,8 +204,13 @@ function render_in_base(value: u64, base: Base) -> str
 # same finding with a different number in it.
 function int_out_of_range(text: str, span: token.Span) -> diag.Diagnostic
     split = split_base(text)
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "int_out_of_range", message: "`" + text + "` does not fit an `i64`", span: span)
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "int_out_of_range",
+        message: "`" + text + "` does not fit an `i64`",
+        span: span
+    )
     note: str @ ""
+
     if split.base == .decimal
         note @ "a literal with nothing to take a width from is an `i64`, which holds -9223372036854775808 through 9223372036854775807"
     else
@@ -206,8 +223,14 @@ function int_out_of_range(text: str, span: token.Span) -> diag.Diagnostic
 # the type, so the note names it and says the repair has two ends.
 function int_out_of_range_at(text: str, span: token.Span, kind: widths.IntKind) -> diag.Diagnostic
     a_width = widths.int_article_name(kind)
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "int_out_of_range", message: "`" + text + "` does not fit " + a_width, span: span)
-    d.notes @ d.notes.push(a_width + " holds " + widths.int_low_text(kind) + " through " + widths.int_high_text(kind) + ". Widen the type, or write a number in range — this language never truncates one silently")
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "int_out_of_range",
+        message: "`" + text + "` does not fit " + a_width,
+        span: span
+    )
+    d.notes @ d.notes.push(
+        a_width + " holds " + widths.int_low_text(kind) + " through " + widths.int_high_text(kind) + ". Widen the type, or write a number in range — this language never truncates one silently"
+    )
     return d
 
 ## The canonical spelling
@@ -220,6 +243,7 @@ function int_out_of_range_at(text: str, span: token.Span, kind: widths.IntKind) 
 # where it is written.
 function canonical_int(text: str) -> str
     out: str @ ""
+
     for c in text.chars()
         out @ out + match c
             "A" => "a"
@@ -228,7 +252,8 @@ function canonical_int(text: str) -> str
             "D" => "d"
             "E" => "e"
             "F" => "f"
-            _ => c
+            _   => c
+
     return out
 
 test "one value, four spellings"

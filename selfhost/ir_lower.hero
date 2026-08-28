@@ -51,9 +51,11 @@ use builtins
 function lower(a: ast.Ast, r: resolved.Resolved, c: check_state.Checked, s: source.Source, decls: [ast.Decl]) -> ir_state.Lowered
     b: ir_build.Lowering @ ir_build.new_lowering(r, unit: check_table.unit_ty(c.types))
     index: i64 @ 0
+
     while index < decls.len()
         declaration(@b, a, r, c, s, decls, index)
         index @ index + 1
+
     # The resolver's stable sort, called across the module boundary
     # rather than copied: two sorts that could disagree are two answers
     # to one question.
@@ -71,6 +73,7 @@ function lower(a: ast.Ast, r: resolved.Resolved, c: check_state.Checked, s: sour
 # copy/drop/eq/hash.
 function declaration(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: check_state.Checked, s: source.Source, decls: [ast.Decl], index: i64)
     name = source.span_text(s, decls[index].name)
+
     match decls[index].kind
         .function_decl fd => lower_function(@b, a, r, c, s, decls, f: fd.value, index: index, name: name)
         .constant_decl k =>
@@ -79,30 +82,58 @@ function declaration(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c:
                 # the body against.
                 body = k.body.must()
                 result = block_value_type(a, c, body)
-                ir_build.begin(@b, name: name, decl: index, kind: .constant_kind, result: result, generics: [], span: decls[index].span)
+                ir_build.begin(
+                    @b,
+                    name: name,
+                    decl: index,
+                    kind: .constant_kind,
+                    result: result,
+                    generics: [],
+                    span: decls[index].span
+                )
                 ir_build.entry(@b)
                 value = block(@b, a, r, c, s, decls, body: body, wants_value: true)
+
                 if !ir_build.is_terminated(b)
                     ir_build.terminate(@b, .return_term(value: value))
                 ir_build.end_fn(@b)
             else
+
                 # An extern constant: no body, so no blocks — the same
                 # shape an extern function has. The result type comes
                 # from the checker's table rather than from a body that
                 # does not exist (§4.19, panel 038).
                 result: i64 @ check_table.unit_ty(c.types)
                 found = c.results[index]
+
                 if !found.is_err()
                     result @ found.must()
-                ir_build.begin(@b, name: name, decl: index, kind: .constant_kind, result: result, generics: [], span: decls[index].span)
+                ir_build.begin(
+                    @b,
+                    name: name,
+                    decl: index,
+                    kind: .constant_kind,
+                    result: result,
+                    generics: [],
+                    span: decls[index].span
+                )
                 ir_build.end_fn(@b)
         .test_decl t =>
             # The name is the title, quotes included: it is a string
             # literal, not an identifier, and the dump prints what the
             # author wrote.
-            ir_build.begin(@b, name: name, decl: index, kind: .test_kind, result: check_table.unit_ty(c.types), generics: [], span: decls[index].span)
+            ir_build.begin(
+                @b,
+                name: name,
+                decl: index,
+                kind: .test_kind,
+                result: check_table.unit_ty(c.types),
+                generics: [],
+                span: decls[index].span
+            )
             ir_build.entry(@b)
             _ = block(@b, a, r, c, s, decls, body: t.body, wants_value: false)
+
             if !ir_build.is_terminated(b)
                 ir_build.terminate(@b, .return_term(value: fail("none", "a test returns nothing")))
             ir_build.end_fn(@b)
@@ -111,15 +142,20 @@ function declaration(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c:
 function lower_function(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: check_state.Checked, s: source.Source, decls: [ast.Decl], f: ast.FunctionDecl, index: i64, name: str)
     result: i64 @ check_table.unit_ty(c.types)
     found = c.results[index]
+
     if !found.is_err()
         result @ found.must()
     generics: [str] @ []
+
     for g in f.generics
         generics @ generics.push(source.span_text(s, g))
+
     kind: ir_state.FnKind @ .function_kind
+
     if f.is_extern
         kind @ .extern_kind
     ir_build.begin(@b, name: name, decl: index, kind: kind, result: result, generics: generics, span: decls[index].span)
+
     # Parameters are slots before anything else happens, so a
     # body's first instruction can already load one. The WRITTEN
     # type, not the local's: an extern has no locals (§4.19 — no
@@ -128,12 +164,15 @@ function lower_function(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved,
     for param in f.params
         ty: i64 @ check_table.error_ty(c.types)
         written = check_state.written_type(c, param.ty)
+
         if !written.is_err()
             ty @ written.must()
         slot = ir_build.param(@b, name: source.span_text(s, param.name), ty: ty, mutable: param.mutable)
         local = ir_build.local_at(b, param.name)
+
         if !local.is_err()
             ir_build.bind_local(@b, local: local.must(), slot_id: slot)
+
     if f.body.is_err()
         # An extern keeps its signature and gets no blocks
         # (§4.19): the implementation is in C, and clang
@@ -163,6 +202,7 @@ function close(@b: ir_build.Lowering, c: check_state.Checked)
 # good intentions.
 function copy_out(@b: ir_build.Lowering, c: check_state.Checked)
     unit = check_table.unit_ty(c.types)
+
     for param in ir_build.mutable_params(b)
         span = ir_build.declaration_span(b)
         ir_build.emit_void(@b, op: .copy_out(param: param), ty: unit, span: span)
@@ -177,13 +217,16 @@ function copy_out(@b: ir_build.Lowering, c: check_state.Checked)
 function block(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: check_state.Checked, s: source.Source, decls: [ast.Decl], body: ast.Block, wants_value: bool) -> i64?
     value: i64? @ fail("none", "no value yet")
     index: i64 @ 0
+
     for id in body.stmts
         if ir_build.is_terminated(b)
             break
         produced = statement(@b, a, r, c, s, decls, id)
+
         if wants_value && index == body.stmts.len() - 1
             value @ produced
         index @ index + 1
+
     return value
 
 # The type a block produces: its last statement's, when that statement
@@ -193,15 +236,17 @@ function block_value_type(a: ast.Ast, c: check_state.Checked, body: ast.Block) -
     if body.stmts.len() == 0
         return check_table.unit_ty(c.types)
     last = a.stmts[body.stmts[body.stmts.len() - 1]]
+
     return match last.kind
-        .expr_stmt e => c.expr_types[e.value]
-        .bind | .declare | .mutate | .return_stmt | .break_stmt => check_table.unit_ty(c.types)
+        .expr_stmt e                                                   => c.expr_types[e.value]
+        .bind | .declare | .mutate | .return_stmt | .break_stmt        => check_table.unit_ty(c.types)
         .continue_stmt | .assert_stmt | .while_stmt | .for_in | .error => check_table.unit_ty(c.types)
 
 # Lowers one statement. The fallible is its value, which only an
 # expression statement has.
 function statement(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: check_state.Checked, s: source.Source, decls: [ast.Decl], id: i64) -> i64?
     span = a.stmts[id].span
+
     match a.stmts[id].kind
         .bind bd =>
             bind_stmt(@b, a, r, c, s, decls, name: bd.name, value: bd.value, span: span)
@@ -221,6 +266,7 @@ function statement(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: c
                 ir_build.terminate(@b, .return_term(value: fail("none", "bare return")))
             else
                 produced = expr(@b, a, r, c, s, decls, id: ret.value.must())
+
                 # The copy-out chain goes AFTER the value is computed and
                 # before control leaves: the returned value was read from
                 # the pre-copy-out state, which is what "copy in, copy
@@ -252,15 +298,18 @@ function statement(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: c
             # in either position — the value is simply not used.
             return ok(expr(@b, a, r, c, s, decls, id: e.value))
         .error => return fail("none", "an error lowers to nothing")
+
     return fail("none", "unreached")
 
 # `x = 5` and `v: i64 @ 0` are both slots by here: §4.4's mutation rule
 # was enforced by the resolver, and the IR does not re-litigate it.
 function bind_stmt(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: check_state.Checked, s: source.Source, decls: [ast.Decl], name: token.Span, value: i64, span: token.Span)
     produced = expr(@b, a, r, c, s, decls, id: value)
+
     # `_ = f(x)` binds nothing (§4.7): the resolver made no local for
     # it, so the call happens and the value is dropped.
     local = ir_build.local_at(b, name)
+
     if local.is_err()
         return
     ty = c.local_types[local.must()]
@@ -290,6 +339,7 @@ function walk_place(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: 
             match r.uses[id]
                 .local l =>
                     slot = ir_build.slot_of_local(b, l.at)
+
                     if slot.is_err()
                         return orphan(@b, c, id)
                     return slot.must()
@@ -298,6 +348,7 @@ function walk_place(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: 
             owner = c.expr_types[f.base]
             root = walk_place(@b, a, r, c, s, decls, id: f.base, steps: @steps)
             found = ir_layout.field_index(decls, c, s, owner: owner, name: f.name)
+
             if !found.is_err()
                 steps @ steps.push(.field_step(at: found.must()))
             return root
@@ -312,9 +363,11 @@ function walk_place(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: 
         # binding. A slot is invented rather than aborting, because a
         # pass that aborts on a shape it did not expect is a pass that
         # cannot be trusted with the next one.
+
         .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr => return orphan(@b, c, id)
-        .hole | .unary | .binary | .call | .method | .variant_case => return orphan(@b, c, id)
-        .array | .map | .try_expr | .if_expr | .match_expr | .error => return orphan(@b, c, id)
+        .hole | .unary | .binary | .call | .method | .variant_case           => return orphan(@b, c, id)
+        .array | .map | .try_expr | .if_expr | .match_expr | .error          => return orphan(@b, c, id)
+
     return orphan(@b, c, id)
 
 function orphan(@b: ir_build.Lowering, c: check_state.Checked, id: i64) -> i64
@@ -360,8 +413,14 @@ function for_loop(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: ch
     holder = ir_build.synthetic(@b, prefix: "xs", ty: sequence_ty)
     ir_build.store_slot(@b, slot_id: holder, value: sequence, span: name)
     index = ir_build.synthetic(@b, prefix: "i", ty: int_id)
-    zero = ir_build.emit(@b, op: .lit(value: .int_const(value: check_contextual.LitValue(negative: false, magnitude: 0))), ty: int_id, span: name)
+    zero = ir_build.emit(
+        @b,
+        op: .lit(value: .int_const(value: check_contextual.LitValue(negative: false, magnitude: 0))),
+        ty: int_id,
+        span: name
+    )
     ir_build.store_slot(@b, slot_id: index, value: zero, span: name)
+
     # The loop variable is a real local: the resolver made it and the
     # body reads it by name. `for _ in xs` names nothing (§4.7), so it
     # gets no slot and the body never reads an element — the loop is
@@ -369,6 +428,7 @@ function for_loop(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: ch
     element: i64? @ fail("none", "no loop variable")
     element_ty: i64 @ int_id
     local = ir_build.local_at(b, name)
+
     if !local.is_err()
         element_ty @ c.local_types[local.must()]
         slot = ir_build.slot(@b, name: source.span_text(s, name), ty: element_ty, kind: .local_slot)
@@ -386,11 +446,13 @@ function for_loop(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: ch
     more = ir_build.emit(@b, op: .binary(op: .lt, left: i, right: length), ty: bool_id, span: name)
     ir_build.terminate(@b, .branch(cond: more, then_to: inside, else_to: leave))
     ir_build.switch_to(@b, target: inside)
+
     if !element.is_err()
         xs_again = ir_build.load_slot(@b, slot_id: holder, span: name)
         i_again = ir_build.load_slot(@b, slot_id: index, span: name)
         item = ir_build.emit(@b, op: .index(base: xs_again, at: i_again), ty: element_ty, span: name)
         ir_build.store_slot(@b, slot_id: element.must(), value: item, span: name)
+
     # continue lands on the STEP, not the test: the increment owes
     # itself to that path as much as to the fall-through.
     b.loops @ b.loops.push(ir_build.LoopEdges(break_to: leave, continue_to: step))
@@ -399,7 +461,12 @@ function for_loop(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: ch
     b.loops @ b.loops.slice(from: 0, to: b.loops.len() - 1)
     ir_build.switch_to(@b, target: step)
     i_step = ir_build.load_slot(@b, slot_id: index, span: name)
-    one = ir_build.emit(@b, op: .lit(value: .int_const(value: check_contextual.LitValue(negative: false, magnitude: 1))), ty: int_id, span: name)
+    one = ir_build.emit(
+        @b,
+        op: .lit(value: .int_const(value: check_contextual.LitValue(negative: false, magnitude: 1))),
+        ty: int_id,
+        span: name
+    )
     next = ir_build.emit(@b, op: .binary(op: .add, left: i_step, right: one), ty: int_id, span: name)
     ir_build.store_slot(@b, slot_id: index, value: next, span: name)
     ir_build.terminate(@b, .jump(to: head))
@@ -411,9 +478,11 @@ function for_loop(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: ch
 function if_expr(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: check_state.Checked, s: source.Source, decls: [ast.Decl], branches: [ast.Branch], otherwise: ast.Block?, ty: i64, span: token.Span) -> i64
     wants_value = ty != ir_build.unit_ty(b) && ty != check_table.error_ty(c.types)
     result: i64? @ fail("none", "statement position")
+
     if wants_value
         result @ ok(ir_build.synthetic(@b, prefix: "r", ty: ty))
     meet = ir_build.block(@b, note: "if: join")
+
     for branch in branches
         cond = expr(@b, a, r, c, s, decls, id: branch.cond)
         then_block = ir_build.block(@b, note: "if: then")
@@ -424,6 +493,7 @@ function if_expr(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: che
         store_arm(@b, result: result, value: value, span: span)
         ir_build.terminate(@b, .jump(to: meet))
         ir_build.switch_to(@b, target: next)
+
     # No else means the fall-through IS the missing arm. An if used as a
     # value always has one (§4.7), so that only happens in statement
     # position.
@@ -443,12 +513,15 @@ function short_circuit(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, 
     first = expr(@b, a, r, c, s, decls, id: left)
     ir_build.store_slot(@b, slot_id: result, value: first, span: span)
     is_and: bool @ false
+
     match op
-        .and => is_and @ true
+        .and                                                                 => is_and @ true
         .add | .sub | .mul | .div | .rem | .eq | .ne | .lt | .le | .gt | .ge => is_and @ is_and
-        .or | .bit_and | .bit_or | .bit_xor | .shl | .shr => is_and @ is_and
+        .or | .bit_and | .bit_or | .bit_xor | .shl | .shr                    => is_and @ is_and
+
     rest: i64 @ 0
     meet: i64 @ 0
+
     if is_and
         rest @ ir_build.block(@b, note: "&&: right")
         meet @ ir_build.block(@b, note: "&&: join")
@@ -479,6 +552,7 @@ function seal_join(@b: ir_build.Lowering, meet: i64, result: i64?, span: token.S
     if !ir_build.has_preds(b, target: meet)
         ir_build.terminate(@b, .unreachable)
         return ir_build.unit_value()
+
     if result.is_err()
         return ir_build.unit_value()
     return ir_build.load_slot(@b, slot_id: result.must(), span: span)
@@ -499,6 +573,7 @@ function seal_join(@b: ir_build.Lowering, meet: i64, result: i64?, span: token.S
 function fallible_constructor(name: str) -> ir.Shape?
     if name == "ok"
         return ok(.ok_shape)
+
     if name == "fail"
         return ok(.fail_shape)
     return fail("absent", "not a fallible constructor")
@@ -511,17 +586,25 @@ function is_fallible_operation(name: str) -> bool
 function fallible_operation(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: check_state.Checked, s: source.Source, decls: [ast.Decl], name: str, receiver: i64, given: [ast.Arg], ty: i64, span: token.Span) -> i64
     subject = hold(@b, a, r, c, s, decls, held_expr: receiver, span: span)
     int_id = check_table.int_ty_id(c.types)
+
     if name == "is_err"
         # A tag read and a comparison: no control flow at all, which is
         # why this row of the table is the cheap one.
         tag = read_tag(@b, c, subject: subject, span: span)
-        one = ir_build.emit(@b, op: .lit(value: .int_const(value: check_contextual.LitValue(negative: false, magnitude: 1))), ty: int_id, span: span)
+        one = ir_build.emit(
+            @b,
+            op: .lit(value: .int_const(value: check_contextual.LitValue(negative: false, magnitude: 1))),
+            ty: int_id,
+            span: span
+        )
         return ir_build.emit(@b, op: .binary(op: .eq, left: tag, right: one), ty: ty, span: span)
+
     if name == "must"
         good = ir_build.block(@b, note: "must: ok")
         bad = ir_build.block(@b, note: "must: abort")
         branch_on_ok(@b, c, subject: subject, good: good, bad: bad, span: span)
         ir_build.switch_to(@b, target: bad)
+
         # THE FAILURE TRAVELS WITH THE ABORT. Without it the panic can
         # only say that a .must() failed, which is the one thing the
         # reader already knows; with it, it says the code and msg the
@@ -533,6 +616,7 @@ function fallible_operation(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resol
         ir_build.terminate(@b, .unreachable)
         ir_build.switch_to(@b, target: good)
         return payload_of(@b, subject: subject, at: 0, ty: ty, span: span)
+
     # .default(v): two edges into one slot, the same shape an if with a
     # value has.
     result = ir_build.synthetic(@b, prefix: "r", ty: ty)
@@ -546,6 +630,7 @@ function fallible_operation(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resol
     ir_build.terminate(@b, .jump(to: meet))
     ir_build.switch_to(@b, target: fallback)
     fallback_value: i64 @ 0
+
     if given.len() > 0
         fallback_value @ expr(@b, a, r, c, s, decls, id: given[0].value)
     else
@@ -567,11 +652,17 @@ function try_expr(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: ch
     branch_on_ok(@b, c, subject: subject, good: good, bad: bad, span: span)
     ir_build.switch_to(@b, target: bad)
     failure = payload_of(@b, subject: subject, at: 1, ty: check_table.failure_ty(c.types), span: span)
+
     # The caller's T?, carrying the callee's failure unchanged. The
     # result type is the enclosing function's, which ? already required
     # to be fallible.
     run = ir_build.args_run(@b, [.value_arg(value: failure)])
-    wrapped = ir_build.emit(@b, op: .construct(shape: .err_shape, arguments: run), ty: ir_build.result_type(b), span: span)
+    wrapped = ir_build.emit(
+        @b,
+        op: .construct(shape: .err_shape, arguments: run),
+        ty: ir_build.result_type(b),
+        span: span
+    )
     copy_out(@b, c)
     ir_build.terminate(@b, .return_term(value: ok(wrapped)))
     ir_build.switch_to(@b, target: good)
@@ -594,7 +685,12 @@ function read_tag(@b: ir_build.Lowering, c: check_state.Checked, subject: i64, s
 # The branch all three operations share: tag 0 is ok.
 function branch_on_ok(@b: ir_build.Lowering, c: check_state.Checked, subject: i64, good: i64, bad: i64, span: token.Span)
     tag = read_tag(@b, c, subject: subject, span: span)
-    zero = ir_build.emit(@b, op: .lit(value: .int_const(value: check_contextual.LitValue(negative: false, magnitude: 0))), ty: check_table.int_ty_id(c.types), span: span)
+    zero = ir_build.emit(
+        @b,
+        op: .lit(value: .int_const(value: check_contextual.LitValue(negative: false, magnitude: 0))),
+        ty: check_table.int_ty_id(c.types),
+        span: span
+    )
     fine = ir_build.emit(@b, op: .binary(op: .eq, left: tag, right: zero), ty: check_table.bool_ty(c.types), span: span)
     ir_build.terminate(@b, .branch(cond: fine, then_to: good, else_to: bad))
 
@@ -618,11 +714,13 @@ function payload_of(@b: ir_build.Lowering, subject: i64, at: i64, ty: i64, span:
 # syntax, and what it IS depends on what the callee resolved to.
 function call(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: check_state.Checked, s: source.Source, decls: [ast.Decl], callee: i64, given: [ast.Arg], ty: i64, span: token.Span) -> i64
     is_name: bool @ false
+
     match a.exprs[callee].kind
-        .name => is_name @ true
-        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr => is_name @ is_name
-        .hole | .unary | .binary | .field | .index | .call | .method => is_name @ is_name
+        .name                                                                       => is_name @ true
+        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr        => is_name @ is_name
+        .hole | .unary | .binary | .field | .index | .call | .method                => is_name @ is_name
         .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => is_name @ is_name
+
     if is_name
         match r.uses[callee]
             .top t =>
@@ -632,27 +730,43 @@ function call(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: check_
                 # descriptor pass.
                 if is_record(decls, t.at)
                     run = lower_args(@b, a, r, c, s, decls, given: given)
-                    return ir_build.emit(@b, op: .construct(shape: .record_shape(decl: t.at), arguments: run), ty: ty, span: span)
+                    return ir_build.emit(
+                        @b,
+                        op: .construct(shape: .record_shape(decl: t.at), arguments: run),
+                        ty: ty,
+                        span: span
+                    )
                 run = lower_args(@b, a, r, c, s, decls, given: given)
                 return emit_call(@b, target: callee_of(decls, t.at), run: run, variadic: false, ty: ty, span: span)
             .builtin bt =>
                 builtin_name = builtins.table()[bt.at].name
+
                 # `.cstr()` is a CAST, not a call: §4.3's no-implicit-
                 # conversions rule would be invisible in the dump if the
                 # conversion were hidden inside a call.
                 if builtin_name == "cstr"
                     operand = expr(@b, a, r, c, s, decls, id: given[0].value)
                     return ir_build.emit(@b, op: .cast(kind: .str_to_cstr, operand: operand), ty: ty, span: span)
+
                 # ok/fail build the two sides of a T? (§4.6, panel 002).
                 shape = fallible_constructor(builtin_name)
+
                 if !shape.is_err()
                     run = lower_args(@b, a, r, c, s, decls, given: given)
                     return ir_build.emit(@b, op: .construct(shape: shape.must(), arguments: run), ty: ty, span: span)
                 run = lower_args(@b, a, r, c, s, decls, given: given)
-                return emit_call(@b, target: .builtin_fn(at: bt.at), run: run, variadic: is_variadic(builtin_name), ty: ty, span: span)
+                return emit_call(
+                    @b,
+                    target: .builtin_fn(at: bt.at),
+                    run: run,
+                    variadic: is_variadic(builtin_name),
+                    ty: ty,
+                    span: span
+                )
             # A local holding a function value (§4.13) — and geom(...),
             # which the checker refused, since lowering only runs on a
             # clean program.
+
             .module | .local | .unresolved => is_name @ is_name
     target = expr(@b, a, r, c, s, decls, id: callee)
     run = lower_args(@b, a, r, c, s, decls, given: given)
@@ -660,7 +774,7 @@ function call(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: check_
 
 function is_record(decls: [ast.Decl], decl: i64) -> bool
     return match decls[decl].kind
-        .record_decl => true
+        .record_decl                                                 => true
         .constant_decl | .function_decl | .variant_decl | .test_decl => false
 
 # `.num(v: 12)` — a case construction: the type is the VARIANT, the
@@ -669,13 +783,25 @@ function case_construct(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved,
     match check_table.get(c.types, ty)
         .named n =>
             found = ir_layout.case_index(decls, s, decl: n.decl, name: name)
+
             if found.is_err()
                 return ir_build.emit(@b, op: .missing, ty: ty, span: span)
             run = lower_args(@b, a, r, c, s, decls, given: given)
-            return ir_build.emit(@b, op: .construct(shape: .case_shape(decl: n.decl, at: found.must()), arguments: run), ty: ty, span: span)
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return ir_build.emit(@b, op: .missing, ty: ty, span: span)
+            return ir_build.emit(
+                @b,
+                op: .construct(shape: .case_shape(decl: n.decl, at: found.must()), arguments: run),
+                ty: ty,
+                span: span
+            )
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return ir_build.emit(
+            @b,
+            op: .missing,
+            ty: ty,
+            span: span
+        )
         .array | .fixed | .map | .fallible | .function_ty => return ir_build.emit(@b, op: .missing, ty: ty, span: span)
-        .case_ty | .failure | .generic | .error => return ir_build.emit(@b, op: .missing, ty: ty, span: span)
+        .case_ty | .failure | .generic | .error           => return ir_build.emit(@b, op: .missing, ty: ty, span: span)
+
     return ir_build.emit(@b, op: .missing, ty: ty, span: span)
 
 # A call, with the one thing the C proved: AT MOST ONE DESTINATION.
@@ -696,6 +822,7 @@ function emit_call(@b: ir_build.Lowering, target: ir.Callee, run: ir.Run, variad
 # carries no further meaning.
 function lower_args(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: check_state.Checked, s: source.Source, decls: [ast.Decl], given: [ast.Arg]) -> ir.Run
     lowered_args: [ir.Arg] @ []
+
     for arg in given
         if arg.mutable
             spot = place(@b, a, r, c, s, decls, id: arg.value)
@@ -703,6 +830,7 @@ function lower_args(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: 
         else
             value = expr(@b, a, r, c, s, decls, id: arg.value)
             lowered_args @ lowered_args.push(.value_arg(value: value))
+
     return ir_build.args_run(@b, lowered_args)
 
 # The UFCS shape: the receiver becomes argument zero. §4.11 forbids
@@ -711,6 +839,7 @@ function lower_args(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: 
 function with_receiver(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: check_state.Checked, s: source.Source, decls: [ast.Decl], receiver: i64, given: [ast.Arg]) -> ir.Run
     first = expr(@b, a, r, c, s, decls, id: receiver)
     lowered_args: [ir.Arg] @ [.value_arg(value: first)]
+
     for arg in given
         if arg.mutable
             spot = place(@b, a, r, c, s, decls, id: arg.value)
@@ -718,6 +847,7 @@ function with_receiver(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, 
         else
             value = expr(@b, a, r, c, s, decls, id: arg.value)
             lowered_args @ lowered_args.push(.value_arg(value: value))
+
     return ir_build.args_run(@b, lowered_args)
 
 # The one call shape clang verifies nothing about (§4.19): print today,
@@ -742,42 +872,69 @@ function method(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: chec
     # The qualified form first: the receiver names a module, erased here
     # exactly as it is erased in the C.
     is_qualified: bool @ false
+
     match r.uses[receiver]
-        .module => is_qualified @ true
+        .module                                => is_qualified @ true
         .local | .top | .builtin | .unresolved => is_qualified @ is_qualified
+
     if is_qualified
         match r.uses[at]
             .top t =>
                 run = lower_args(@b, a, r, c, s, decls, given: given)
+
                 # A record is constructed, not called — the same split
                 # call makes.
                 if is_record(decls, t.at)
-                    return ir_build.emit(@b, op: .construct(shape: .record_shape(decl: t.at), arguments: run), ty: ty, span: span)
+                    return ir_build.emit(
+                        @b,
+                        op: .construct(shape: .record_shape(decl: t.at), arguments: run),
+                        ty: ty,
+                        span: span
+                    )
                 return emit_call(@b, target: callee_of(decls, t.at), run: run, variadic: false, ty: ty, span: span)
             .local | .builtin | .module | .unresolved => is_qualified @ is_qualified
+
     # .must(), .default(v) and .is_err() are branches, not calls
     # (Part 5): they read a tag and choose an edge.
     match r.uses[at]
         .builtin bt =>
             if is_fallible_operation(builtins.table()[bt.at].name)
-                return fallible_operation(@b, a, r, c, s, decls, name: builtins.table()[bt.at].name, receiver: receiver, given: given, ty: ty, span: span)
+                return fallible_operation(
+                    @b,
+                    a,
+                    r,
+                    c,
+                    s,
+                    decls,
+                    name: builtins.table()[bt.at].name,
+                    receiver: receiver,
+                    given: given,
+                    ty: ty,
+                    span: span
+                )
         .local | .top | .module | .unresolved => is_qualified @ is_qualified
+
     # §4.11's order, asked HERE too, because this pass used to answer it
     # differently from the checker (panel 079): the field first, and
     # only a field whose type is a function value.
     field_ty = ir_layout.field_type(decls, c, s, owner: c.expr_types[receiver], name: name)
+
     if !field_ty.is_err()
         is_function: bool @ false
+
         match check_table.get(c.types, field_ty.must())
-            .function_ty => is_function @ true
+            .function_ty                                              => is_function @ true
             .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => is_function @ is_function
-            .array | .fixed | .map | .fallible | .named => is_function @ is_function
-            .case_ty | .failure | .generic | .error => is_function @ is_function
+            .array | .fixed | .map | .fallible | .named               => is_function @ is_function
+            .case_ty | .failure | .generic | .error                   => is_function @ is_function
+
         if is_function
             return field_call(@b, a, r, c, s, decls, receiver: receiver, name: name, given: given, ty: ty, span: span)
+
     match r.uses[at]
         .builtin bt =>
             builtin_name = builtins.table()[bt.at].name
+
             # `s.cstr()` — the same cast the plain-call form makes, and
             # the shape every program actually writes. Taken before the
             # arguments are lowered, because a cast has exactly one
@@ -786,7 +943,14 @@ function method(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: chec
                 operand = expr(@b, a, r, c, s, decls, id: receiver)
                 return ir_build.emit(@b, op: .cast(kind: .str_to_cstr, operand: operand), ty: ty, span: span)
             run = with_receiver(@b, a, r, c, s, decls, receiver: receiver, given: given)
-            return emit_call(@b, target: .builtin_fn(at: bt.at), run: run, variadic: is_variadic(builtin_name), ty: ty, span: span)
+            return emit_call(
+                @b,
+                target: .builtin_fn(at: bt.at),
+                run: run,
+                variadic: is_variadic(builtin_name),
+                ty: ty,
+                span: span
+            )
         .top t =>
             run = with_receiver(@b, a, r, c, s, decls, receiver: receiver, given: given)
             return emit_call(@b, target: callee_of(decls, t.at), run: run, variadic: false, ty: ty, span: span)
@@ -794,8 +958,10 @@ function method(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: chec
         # is a FIELD READ, not a receiver (§4.11's first lookup, §4.13).
         # A module receiver never reaches here — the branch above
         # returned.
+
         .module | .local | .unresolved =>
             return field_call(@b, a, r, c, s, decls, receiver: receiver, name: name, given: given, ty: ty, span: span)
+
     return ir_build.emit(@b, op: .missing, ty: ty, span: span)
 
 # h.cb(n): the dot is a field read. Split out (panel 079) so the two
@@ -804,6 +970,7 @@ function method(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: chec
 function field_call(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: check_state.Checked, s: source.Source, decls: [ast.Decl], receiver: i64, name: token.Span, given: [ast.Arg], ty: i64, span: token.Span) -> i64
     owner = c.expr_types[receiver]
     base = expr(@b, a, r, c, s, decls, id: receiver)
+
     # The field's OWN type, read from the declaration that wrote it —
     # this used to be the call's result under an expired premise, and
     # the emitted C blamed itself for a correct program (panel 068 F8).
@@ -811,10 +978,12 @@ function field_call(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: 
     # has already been reported, and lowering stays quiet.
     function_ty: i64 @ ty
     written = ir_layout.field_type(decls, c, s, owner: owner, name: name)
+
     if !written.is_err()
         function_ty @ written.must()
     found = ir_layout.field_index(decls, c, s, owner: owner, name: name)
     target: i64 @ 0
+
     if found.is_err()
         target @ ir_build.emit(@b, op: .missing, ty: function_ty, span: span)
     else
@@ -844,6 +1013,7 @@ function lower_assert(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c
     text = assert_text(@b, c, s, span: span)
     sides: [i64] @ []
     cond = assert_condition(@b, a, r, c, s, decls, asserted: asserted, sides: @sides)
+
     # A COUNTED OPERAND TRAVELS THROUGH A SLOT, NOT ACROSS THE EDGE.
     # The two sides are computed here, in the test block, and read over
     # there, in the failure block. For an i64 that is free. For a str it
@@ -854,25 +1024,30 @@ function lower_assert(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c
     # `assert sentence_of([...]) == "one two"`. A synthetic slot costs
     # two instructions on a path that is about to abort the program.
     carried: [Carried] @ []
+
     for side in sides
         ty = ir_build.value_ty(b, side)
+
         if !ir_layout.is_refcounted(c, ty)
             carried @ carried.push(.direct(value: side))
         else
             slot = ir_build.synthetic(@b, prefix: "assert", ty: ty)
             ir_build.store_slot(@b, slot_id: slot, value: side, span: span)
             carried @ carried.push(.through_slot(slot: slot))
+
     good = ir_build.block(@b, note: "assert: held")
     bad = ir_build.block(@b, note: "assert: failed")
     ir_build.terminate(@b, .branch(cond: cond, then_to: good, else_to: bad))
     ir_build.switch_to(@b, target: bad)
     operands: [ir.Arg] @ [.value_arg(value: text)]
+
     for one in carried
         match one
             .direct d => operands @ operands.push(.value_arg(value: d.value))
             .through_slot t =>
                 loaded = ir_build.load_slot(@b, slot_id: t.slot, span: span)
                 operands @ operands.push(.value_arg(value: loaded))
+
     run = ir_build.args_run(@b, operands)
     ir_build.emit_void(@b, op: .abort_op(why: .assert_abort, arguments: run), ty: ir_build.unit_ty(b), span: span)
     ir_build.terminate(@b, .unreachable)
@@ -885,18 +1060,42 @@ function lower_assert(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c
 # an expression that may have side effects.
 function assert_condition(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: check_state.Checked, s: source.Source, decls: [ast.Decl], asserted: i64, @sides: [i64]) -> i64
     span = a.exprs[asserted].span
+
     match a.exprs[asserted].kind
         .binary bin =>
             cmp = comparison_op(bin.op)
+
             if !cmp.is_err()
                 left = expr(@b, a, r, c, s, decls, id: bin.left)
                 right = expr(@b, a, r, c, s, decls, id: bin.right)
                 sides @ sides.push(left)
                 sides @ sides.push(right)
-                return ir_build.emit(@b, op: .binary(op: cmp.must(), left: left, right: right), ty: check_table.bool_ty(c.types), span: span)
-        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr => return expr(@b, a, r, c, s, decls, id: asserted)
+                return ir_build.emit(
+                    @b,
+                    op: .binary(op: cmp.must(), left: left, right: right),
+                    ty: check_table.bool_ty(c.types),
+                    span: span
+                )
+        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr => return expr(
+            @b,
+            a,
+            r,
+            c,
+            s,
+            decls,
+            id: asserted
+        )
         .name | .hole | .unary | .field | .index | .call | .method => return expr(@b, a, r, c, s, decls, id: asserted)
-        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => return expr(@b, a, r, c, s, decls, id: asserted)
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => return expr(
+            @b,
+            a,
+            r,
+            c,
+            s,
+            decls,
+            id: asserted
+        )
+
     return expr(@b, a, r, c, s, decls, id: asserted)
 
 # The asserted expression AS THE AUTHOR WROTE IT: the statement's own
@@ -910,6 +1109,7 @@ function assert_condition(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolve
 function assert_text(@b: ir_build.Lowering, c: check_state.Checked, s: source.Source, span: token.Span) -> i64
     written = source.span_text(s, span)
     expression: str @ written
+
     if written.len() > 6 && written.slice(from: 0, to: 6) == "assert"
         expression @ written.slice(from: 6, to: written.len())
     expression @ trimmed(expression)
@@ -921,22 +1121,26 @@ function assert_text(@b: ir_build.Lowering, c: check_state.Checked, s: source.So
 function trimmed(text: str) -> str
     first: i64 @ 0
     past: i64 @ text.len()
+
     while first < past && (text[first] == ' ' || text[first] == '\t')
         first @ first + 1
+
     while past > first && (text[past - 1] == ' ' || text[past - 1] == '\t')
         past @ past - 1
+
     return text.slice(from: first, to: past)
 
 function comparison_op(op: ast.BinaryOp) -> ir.BinaryOp?
     match op
-        .eq => return ok(.eq)
-        .ne => return ok(.ne)
-        .lt => return ok(.lt)
-        .le => return ok(.le)
-        .gt => return ok(.gt)
-        .ge => return ok(.ge)
+        .eq                                           => return ok(.eq)
+        .ne                                           => return ok(.ne)
+        .lt                                           => return ok(.lt)
+        .le                                           => return ok(.le)
+        .gt                                           => return ok(.gt)
+        .ge                                           => return ok(.ge)
         .add | .sub | .mul | .div | .rem | .and | .or => return fail("no", "not a comparison")
-        .bit_and | .bit_or | .bit_xor | .shl | .shr => return fail("no", "not a comparison")
+        .bit_and | .bit_or | .bit_xor | .shl | .shr   => return fail("no", "not a comparison")
+
     return fail("no", "unreached")
 
 ## match — the only destructuring construct, and it lowers two ways (§4.7)
@@ -960,17 +1164,20 @@ record Plan
 function lower_match(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: check_state.Checked, s: source.Source, decls: [ast.Decl], scrutinee: i64, arms: [ast.Arm], ty: i64, span: token.Span) -> i64
     subject_ty = c.expr_types[scrutinee]
     value = expr(@b, a, r, c, s, decls, id: scrutinee)
+
     # The subject goes in a slot: every arm that binds a payload reads
     # it again, and a match on a call must not call twice.
     subject = ir_build.synthetic(@b, prefix: "s", ty: subject_ty)
     ir_build.store_slot(@b, slot_id: subject, value: value, span: span)
     wants_value = ty != ir_build.unit_ty(b) && ty != check_table.error_ty(c.types)
     result: i64? @ fail("none", "statement position")
+
     if wants_value
         result @ ok(ir_build.synthetic(@b, prefix: "r", ty: ty))
     meet = ir_build.block(@b, note: "match: join")
     plan = Plan(subject: subject, result: result, meet: meet, wants_value: wants_value, span: span)
     names = cases_of(c, s, decls, subject: subject_ty)
+
     if names.is_err()
         literals(@b, a, r, c, s, decls, plan: plan, arms: arms)
     else
@@ -992,14 +1199,17 @@ function cases_of(c: check_state.Checked, s: source.Source, decls: [ast.Decl], s
             match decls[n.decl].kind
                 .variant_decl v =>
                     names: [str] @ []
+
                     for one_case in v.cases
                         names @ names.push(source.span_text(s, one_case.name))
+
                     return ok(names)
                 .constant_decl | .function_decl | .record_decl | .test_decl => return fail("none", "not a variant")
-        .fallible => return ok(FALLIBLE_CASES)
+        .fallible                                                 => return ok(FALLIBLE_CASES)
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail("none", "no cases")
-        .array | .fixed | .map | .function_ty | .case_ty => return fail("none", "no cases")
-        .failure | .generic | .error => return fail("none", "no cases")
+        .array | .fixed | .map | .function_ty | .case_ty          => return fail("none", "no cases")
+        .failure | .generic | .error                              => return fail("none", "no cases")
+
     return fail("none", "unreached")
 
 # One arm's block, its arm index, and which case's payload it binds.
@@ -1013,25 +1223,32 @@ function tagged(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: chec
     int_id = check_table.int_ty_id(c.types)
     held = ir_build.load_slot(@b, slot_id: plan.subject, span: plan.span)
     tag = ir_build.emit(@b, op: .tag_of(value: held), ty: int_id, span: plan.span)
+
     # One block per arm; a |-joined arm is several tags pointing at one
     # block. -1 is "no edge yet": block ids are indices and never
     # negative, and the sentinel is read exactly once, below.
     edges: [i64] @ []
     i: i64 @ 0
+
     while i < names.len()
         edges @ edges.push(0 - 1)
         i @ i + 1
+
     bodies: [ArmPlan] @ []
     arm_at: i64 @ 0
+
     for arm in arms
         arm_block = ir_build.block(@b, note: "match: arm")
         bound: i64? @ fail("none", "binds nothing")
+
         for pattern in arm.patterns
             match pattern.kind
                 .variant_case vc =>
                     found = case_position(names, s, name: vc.name)
+
                     if !found.is_err()
                         edges[found.must()] @ arm_block
+
                         # `.num _` binds NOTHING (§4.7): no payload read,
                         # no slot — a slot named _ would ask the checker
                         # for the type of a binding it never made.
@@ -1041,39 +1258,52 @@ function tagged(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: chec
                 # _ on a variant is forbidden (§4.7), so this only fires
                 # where it is legal — and it fills every case no arm
                 # claimed.
+
                 .wildcard =>
                     fill: i64 @ 0
+
                     while fill < edges.len()
                         if edges[fill] < 0
                             edges[fill] @ arm_block
                         fill @ fill + 1
                 .literal | .error => continue
+
         bodies @ bodies.push(ArmPlan(block: arm_block, arm_at: arm_at, bound_case: bound))
         arm_at @ arm_at + 1
+
     # Exhaustiveness was proved by the checker, so an unclaimed case
     # cannot happen — and saying so with unreachable is CLAUDE.md §7's
     # rule rather than a safety net.
     unclaimed: bool @ false
+
     for edge in edges
         if edge < 0
             unclaimed @ true
+
     orphan_block: i64? @ fail("none", "every case claimed")
+
     if unclaimed
         orphan_block @ ok(ir_build.block(@b, note: "match: unclaimed"))
     cases: [i64] @ []
+
     for edge in edges
         if edge >= 0
             cases @ cases.push(edge)
         else
             cases @ cases.push(orphan_block.must())
+
     ir_build.terminate(@b, .switch_term(tag: tag, cases: cases))
+
     if !orphan_block.is_err()
         ir_build.switch_to(@b, target: orphan_block.must())
         ir_build.terminate(@b, .unreachable)
+
     for one in bodies
         ir_build.switch_to(@b, target: one.block)
+
         if !one.bound_case.is_err()
             binding = binding_of(arms[one.arm_at])
+
             if !binding.is_err()
                 bind_payload(@b, c, s, plan: plan, case_at: one.bound_case.must(), name: binding.must())
         value = arm_body(@b, a, r, c, s, decls, arm: arms[one.arm_at], wants_value: plan.wants_value)
@@ -1085,10 +1315,12 @@ function bind_payload(@b: ir_build.Lowering, c: check_state.Checked, s: source.S
     held = ir_build.load_slot(@b, slot_id: plan.subject, span: name)
     ty: i64 @ check_table.error_ty(c.types)
     local = ir_build.local_at(b, name)
+
     if !local.is_err()
         ty @ c.local_types[local.must()]
     payload_value = ir_build.emit(@b, op: .payload(base: held, at: case_at), ty: ty, span: name)
     slot = ir_build.slot(@b, name: source.span_text(s, name), ty: ty, kind: .local_slot)
+
     if !local.is_err()
         ir_build.bind_local(@b, local: local.must(), slot_id: slot)
     ir_build.store_slot(@b, slot_id: slot, value: payload_value, span: name)
@@ -1100,32 +1332,43 @@ function literals(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: ch
     blocks: [i64] @ []
     arm_ats: [i64] @ []
     arm_at: i64 @ 0
+
     for arm in arms
         arm_block = ir_build.block(@b, note: "match: arm")
         blocks @ blocks.push(arm_block)
         arm_ats @ arm_ats.push(arm_at)
         arm_at @ arm_at + 1
         is_wild: bool @ false
+
         for pattern in arm.patterns
             match pattern.kind
-                .wildcard => is_wild @ true
+                .wildcard                         => is_wild @ true
                 .variant_case | .literal | .error => continue
+
         if is_wild
             ir_build.terminate(@b, .jump(to: arm_block))
             continue
+
         for pattern in arm.patterns
             match pattern.kind
                 .literal lt =>
                     held = ir_build.load_slot(@b, slot_id: plan.subject, span: plan.span)
                     expected = expr(@b, a, r, c, s, decls, id: lt.value)
-                    same = ir_build.emit(@b, op: .binary(op: .eq, left: held, right: expected), ty: bool_id, span: plan.span)
+                    same = ir_build.emit(
+                        @b,
+                        op: .binary(op: .eq, left: held, right: expected),
+                        ty: bool_id,
+                        span: plan.span
+                    )
                     next = ir_build.block(@b, note: "match: test")
                     ir_build.terminate(@b, .branch(cond: same, then_to: arm_block, else_to: next))
                     ir_build.switch_to(@b, target: next)
                 .variant_case | .wildcard | .error => continue
+
     # Falling past every arm cannot happen: the checker required _.
     ir_build.terminate(@b, .unreachable)
     walk: i64 @ 0
+
     while walk < blocks.len()
         ir_build.switch_to(@b, target: blocks[walk])
         value = arm_body(@b, a, r, c, s, decls, arm: arms[arm_ats[walk]], wants_value: plan.wants_value)
@@ -1139,19 +1382,23 @@ function arm_body(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: ch
     match arm.body
         .one_stmt st =>
             produced = statement(@b, a, r, c, s, decls, id: st.at)
+
             if wants_value
                 return produced
             return fail("none", "statement position")
         .block bl => return block(@b, a, r, c, s, decls, body: bl.block, wants_value: wants_value)
+
     return fail("none", "unreached")
 
 function case_position(names: [str], s: source.Source, name: token.Span) -> i64?
     wanted = source.span_text(s, name)
     at: i64 @ 0
+
     for candidate in names
         if candidate == wanted
             return ok(at)
         at @ at + 1
+
     return fail("absent", "no such case")
 
 # The payload name a single-pattern arm binds, if it binds one. A
@@ -1160,9 +1407,11 @@ function case_position(names: [str], s: source.Source, name: token.Span) -> i64?
 function binding_of(arm: ast.Arm) -> token.Span?
     if arm.patterns.len() != 1
         return fail("none", "joined patterns bind nothing")
+
     match arm.patterns[0].kind
-        .variant_case vc => return vc.binding
+        .variant_case vc              => return vc.binding
         .wildcard | .literal | .error => return fail("none", "not a case pattern")
+
     return fail("none", "unreached")
 
 ## Expressions
@@ -1170,10 +1419,21 @@ function binding_of(arm: ast.Arm) -> token.Span?
 function expr(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: check_state.Checked, s: source.Source, decls: [ast.Decl], id: i64) -> i64
     span = a.exprs[id].span
     ty = c.expr_types[id]
+
     match a.exprs[id].kind
         .int_lit => return emit_int(@b, a, s, id: id, ty: ty, span: span)
-        .float_lit => return ir_build.emit(@b, op: .lit(value: .float_const(text: source.span_text(s, span))), ty: ty, span: span)
-        .bool_lit => return ir_build.emit(@b, op: .lit(value: .bool_const(value: source.span_text(s, span) == "true")), ty: ty, span: span)
+        .float_lit => return ir_build.emit(
+            @b,
+            op: .lit(value: .float_const(text: source.span_text(s, span))),
+            ty: ty,
+            span: span
+        )
+        .bool_lit => return ir_build.emit(
+            @b,
+            op: .lit(value: .bool_const(value: source.span_text(s, span) == "true")),
+            ty: ty,
+            span: span
+        )
         .null_ptr => return ir_build.emit(@b, op: .lit(value: .null_ptr), ty: ty, span: span)
         .str_lit =>
             decoded = escape.unescape(source.span_text(s, span))
@@ -1181,9 +1441,10 @@ function expr(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: check_
             return ir_build.emit(@b, op: .lit(value: .str_const(at: at)), ty: ty, span: span)
         # §4.3: a character literal IS a number — the same decoder the
         # checker used answers for both (panel 008's escapes included).
+
         .char_lit => return emit_int(@b, a, s, id: id, ty: ty, span: span)
-        .name => return name_expr(@b, r, decls, id: id, ty: ty, span: span)
-        .hole => return ir_build.emit(@b, op: .hole, ty: ty, span: span)
+        .name     => return name_expr(@b, r, decls, id: id, ty: ty, span: span)
+        .hole     => return ir_build.emit(@b, op: .hole, ty: ty, span: span)
         .unary u =>
             # A negative literal is a literal, and it is folded HERE.
             # Left as a negation of a positive, -128 against an i8 puts
@@ -1191,36 +1452,59 @@ function expr(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: check_
             # frontend already range-checked the value WITH the sign
             # applied, so folding is what makes the two passes agree.
             folded = fold_negative(@b, a, s, op: u.op, operand: u.operand, ty: ty, span: span)
+
             if !folded.is_err()
                 return folded.must()
             operand = expr(@b, a, r, c, s, decls, id: u.operand)
             un: ir.UnaryOp @ .neg
+
             match u.op
-                .neg => un @ .neg
-                .not => un @ .not_op
+                .neg     => un @ .neg
+                .not     => un @ .not_op
                 .bit_not => un @ .bit_not
+
             return ir_build.emit(@b, op: .unary(op: un, operand: operand), ty: ty, span: span)
         .binary bin =>
             match bin.op
                 .and | .or =>
-                    return short_circuit(@b, a, r, c, s, decls, op: bin.op, left: bin.left, right: bin.right, ty: ty, span: span)
+                    return short_circuit(
+                        @b,
+                        a,
+                        r,
+                        c,
+                        s,
+                        decls,
+                        op: bin.op,
+                        left: bin.left,
+                        right: bin.right,
+                        ty: ty,
+                        span: span
+                    )
                 .add | .sub | .mul | .div | .rem | .eq | .ne | .lt | .le | .gt | .ge | .bit_and | .bit_or | .bit_xor | .shl | .shr =>
                     left = expr(@b, a, r, c, s, decls, id: bin.left)
                     right = expr(@b, a, r, c, s, decls, id: bin.right)
-                    return ir_build.emit(@b, op: .binary(op: binary_op(bin.op), left: left, right: right), ty: ty, span: span)
+                    return ir_build.emit(
+                        @b,
+                        op: .binary(op: binary_op(bin.op), left: left, right: right),
+                        ty: ty,
+                        span: span
+                    )
         .field f =>
             # `grid.WALL` is one qualified name, not a field of a value —
             # decided by the resolver and read back here rather than
             # re-decided.
             qualified: bool @ false
+
             match r.uses[f.base]
-                .module => qualified @ true
+                .module                                => qualified @ true
                 .local | .top | .builtin | .unresolved => qualified @ false
+
             if qualified
                 return name_expr(@b, r, decls, id: id, ty: ty, span: span)
             owner = c.expr_types[f.base]
             base = expr(@b, a, r, c, s, decls, id: f.base)
             found = ir_layout.field_index(decls, c, s, owner: owner, name: f.name)
+
             if found.is_err()
                 return ir_build.emit(@b, op: .missing, ty: ty, span: span)
             return ir_build.emit(@b, op: .field(base: base, at: found.must()), ty: ty, span: span)
@@ -1228,21 +1512,26 @@ function expr(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: check_
             owner = c.expr_types[ix.base]
             base = expr(@b, a, r, c, s, decls, id: ix.base)
             key = expr(@b, a, r, c, s, decls, id: ix.index)
+
             # A map access yields V? and cannot abort; an array index can
             # (§4.9). Same syntax, two instructions.
             is_map: bool @ false
+
             match check_table.get(c.types, owner)
-                .map => is_map @ true
+                .map                                                      => is_map @ true
                 .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => is_map @ is_map
-                .array | .fixed | .fallible | .function_ty | .named => is_map @ is_map
-                .case_ty | .failure | .generic | .error => is_map @ is_map
+                .array | .fixed | .fallible | .function_ty | .named       => is_map @ is_map
+                .case_ty | .failure | .generic | .error                   => is_map @ is_map
+
             if is_map
                 return ir_build.emit(@b, op: .map_get(map: base, key: key), ty: ty, span: span)
             return ir_build.emit(@b, op: .index(base: base, at: key), ty: ty, span: span)
         .array elements =>
             values: [i64] @ []
+
             for e in elements.elements
                 values @ values.push(expr(@b, a, r, c, s, decls, id: e))
+
             run = value_args(@b, values)
             return ir_build.emit(@b, op: .construct(shape: .array_shape, arguments: run), ty: ty, span: span)
         .map entries =>
@@ -1250,15 +1539,30 @@ function expr(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: check_
             # n-ary, and the pairing is positional rather than a second
             # arena.
             values: [i64] @ []
+
             for entry in entries.entries
                 values @ values.push(expr(@b, a, r, c, s, decls, id: entry.key))
                 values @ values.push(expr(@b, a, r, c, s, decls, id: entry.value))
+
             run = value_args(@b, values)
             return ir_build.emit(@b, op: .construct(shape: .map_shape, arguments: run), ty: ty, span: span)
         .call cl =>
             return call(@b, a, r, c, s, decls, callee: cl.callee, given: cl.args, ty: ty, span: span)
         .method m =>
-            return method(@b, a, r, c, s, decls, at: id, receiver: m.receiver, name: m.name, given: m.args, ty: ty, span: span)
+            return method(
+                @b,
+                a,
+                r,
+                c,
+                s,
+                decls,
+                at: id,
+                receiver: m.receiver,
+                name: m.name,
+                given: m.args,
+                ty: ty,
+                span: span
+            )
         .variant_case vc =>
             return case_construct(@b, a, r, c, s, decls, name: vc.name, given: vc.args, ty: ty, span: span)
         .try_expr t =>
@@ -1268,13 +1572,16 @@ function expr(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: check_
         .match_expr mx =>
             return lower_match(@b, a, r, c, s, decls, scrutinee: mx.scrutinee, arms: mx.arms, ty: ty, span: span)
         .error => return ir_build.emit(@b, op: .missing, ty: ty, span: span)
+
     return ir_build.emit(@b, op: .missing, ty: ty, span: span)
 
 # The value-argument run a construct needs.
 function value_args(@b: ir_build.Lowering, values: [i64]) -> ir.Run
     list: [ir.Arg] @ []
+
     for v in values
         list @ list.push(.value_arg(value: v))
+
     return ir_build.args_run(@b, list)
 
 # A bare name: a local, a top-level declaration, or a built-in. The
@@ -1289,6 +1596,7 @@ function name_expr(@b: ir_build.Lowering, r: resolved.Resolved, decls: [ast.Decl
         .module => return ir_build.emit(@b, op: .missing, ty: ty, span: span)
         .local l =>
             slot = ir_build.slot_of_local(b, l.at)
+
             if slot.is_err()
                 return ir_build.emit(@b, op: .missing, ty: ty, span: span)
             return ir_build.load_slot(@b, slot_id: slot.must(), span: span)
@@ -1298,17 +1606,24 @@ function name_expr(@b: ir_build.Lowering, r: resolved.Resolved, decls: [ast.Decl
                 # name is a call (§4.2: there are no mutable globals to
                 # read instead).
                 run = ir_build.args_run(@b, [])
-                return ir_build.emit(@b, op: .call(callee: .heroes_fn(decl: t.at), arguments: run, variadic: false), ty: ty, span: span)
+                return ir_build.emit(
+                    @b,
+                    op: .call(callee: .heroes_fn(decl: t.at), arguments: run, variadic: false),
+                    ty: ty,
+                    span: span
+                )
+
             # A function used as a value (§4.13): a pointer, no
             # environment.
             return ir_build.emit(@b, op: .func_ref(callee: callee_of(decls, t.at)), ty: ty, span: span)
         .builtin bt => return ir_build.emit(@b, op: .func_ref(callee: .builtin_fn(at: bt.at)), ty: ty, span: span)
         .unresolved => return ir_build.emit(@b, op: .missing, ty: ty, span: span)
+
     return ir_build.emit(@b, op: .missing, ty: ty, span: span)
 
 function is_constant(decls: [ast.Decl], decl: i64) -> bool
     return match decls[decl].kind
-        .constant_decl => true
+        .constant_decl                                             => true
         .function_decl | .record_decl | .variant_decl | .test_decl => false
 
 # Which callee a declaration is: an extern's name must not be mangled,
@@ -1320,6 +1635,7 @@ function callee_of(decls: [ast.Decl], decl: i64) -> ir.Callee
                 return .extern_fn(decl: decl)
             return .heroes_fn(decl: decl)
         .constant_decl | .record_decl | .variant_decl | .test_decl => return .heroes_fn(decl: decl)
+
     return .heroes_fn(decl: decl)
 
 # An i64 literal, decoded by the same sign-and-magnitude carrier the
@@ -1329,52 +1645,66 @@ function callee_of(decls: [ast.Decl], decl: i64) -> ir.Callee
 # fired is indistinguishable from no net.
 function emit_int(@b: ir_build.Lowering, a: ast.Ast, s: source.Source, id: i64, ty: i64, span: token.Span) -> i64
     decoded = check_contextual.literal_value(a, s, id)
+
     if decoded.is_err()
         ir_build.push_diagnostic(@b, contextless_errors.int_out_of_range(source.span_text(s, span), span))
-        return ir_build.emit(@b, op: .lit(value: .int_const(value: check_contextual.LitValue(negative: false, magnitude: 0))), ty: ty, span: span)
+        return ir_build.emit(
+            @b,
+            op: .lit(value: .int_const(value: check_contextual.LitValue(negative: false, magnitude: 0))),
+            ty: ty,
+            span: span
+        )
     return ir_build.emit(@b, op: .lit(value: .int_const(value: decoded.must())), ty: ty, span: span)
 
 # The negative-literal fold: `-` directly on an int literal becomes one
 # constant with the sign inside.
 function fold_negative(@b: ir_build.Lowering, a: ast.Ast, s: source.Source, op: ast.UnaryOp, operand: i64, ty: i64, span: token.Span) -> i64?
     is_neg: bool @ false
+
     match op
-        .neg => is_neg @ true
+        .neg            => is_neg @ true
         .not | .bit_not => is_neg @ false
+
     if !is_neg
         return fail("no", "not a negation")
+
     match a.exprs[operand].kind
         .int_lit =>
             inner = check_contextual.literal_value(a, s, operand)
+
             if inner.is_err()
                 return fail("no", "not a plain literal")
             lit = inner.must()
-            return ok(ir_build.emit(@b, op: .lit(value: .int_const(value: check_contextual.LitValue(negative: true, magnitude: lit.magnitude))), ty: ty, span: span))
+            return ok(
+                ir_build.emit(@b, op: .lit(value: .int_const(value: check_contextual.LitValue(negative: true, magnitude: lit.magnitude))), ty: ty, span: span)
+            )
         .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr => return fail("no", "not an int literal")
-        .name | .hole | .unary | .binary | .field | .index => return fail("no", "not an int literal")
-        .call | .method | .variant_case | .array | .map => return fail("no", "not an int literal")
-        .try_expr | .if_expr | .match_expr | .error => return fail("no", "not an int literal")
+        .name | .hole | .unary | .binary | .field | .index        => return fail("no", "not an int literal")
+        .call | .method | .variant_case | .array | .map           => return fail("no", "not an int literal")
+        .try_expr | .if_expr | .match_expr | .error               => return fail("no", "not an int literal")
+
     return fail("no", "unreached")
 
 function binary_op(op: ast.BinaryOp) -> ir.BinaryOp
     return match op
-        .add => .add
-        .sub => .sub
-        .mul => .mul
-        .div => .div
-        .rem => .rem
-        .eq => .eq
-        .ne => .ne
-        .lt => .lt
-        .le => .le
-        .gt => .gt
-        .ge => .ge
+        .add     => .add
+        .sub     => .sub
+        .mul     => .mul
+        .div     => .div
+        .rem     => .rem
+        .eq      => .eq
+        .ne      => .ne
+        .lt      => .lt
+        .le      => .le
+        .gt      => .gt
+        .ge      => .ge
         .bit_and => .bit_and
-        .bit_or => .bit_or
+        .bit_or  => .bit_or
         .bit_xor => .bit_xor
-        .shl => .shl
-        .shr => .shr
+        .shl     => .shl
+        .shr     => .shr
         # Handled one level up: they branch.
+
         .and | .or => .eq
 
 ## Tests
@@ -1393,35 +1723,44 @@ test "a function body flattens: loads, one add, and a return with a value"
     f = got.program.functions[0]
     assert f.name == "add"
     assert f.blocks.len() == 1
+
     # load a, load b, add — three instructions, nothing nested.
     assert f.blocks[0].insts.len() == 3
+
     match f.blocks[0].insts[2].op
         .binary bin =>
             assert bin.left == 1
             assert bin.right == 2
         .lit | .load | .store | .push_owned | .unary | .cast | .call | .construct => assert false
-        .field | .index | .map_get | .len_of | .tag_of | .payload => assert false
-        .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing => assert false
+        .field | .index | .map_get | .len_of | .tag_of | .payload                 => assert false
+        .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing  => assert false
+
     match f.blocks[0].term
-        .return_term ret => assert ret.value.must() == 3
+        .return_term ret                                      => assert ret.value.must() == 3
         .jump | .branch | .switch_term | .unreachable | .open => assert false
 
 test "a constant IS a value, an extern has no blocks, a test returns nothing"
     got = lowered("constant M: i64\n    40 + 2\n\nextern \"m.h\"\n    function f() -> i64\n\ntest \"t\"\n    _ = M\n")
     assert got.program.functions.len() == 3
+
     match got.program.functions[0].kind
-        .constant_kind => assert got.program.functions[0].blocks.len() == 1
+        .constant_kind                             => assert got.program.functions[0].blocks.len() == 1
         .function_kind | .extern_kind | .test_kind => assert false
+
     match got.program.functions[1].kind
-        .extern_kind => assert got.program.functions[1].blocks.len() == 0
+        .extern_kind                                 => assert got.program.functions[1].blocks.len() == 0
         .function_kind | .constant_kind | .test_kind => assert false
+
     match got.program.functions[2].blocks[0].term
-        .return_term ret => assert ret.value.is_err()
+        .return_term ret                                      => assert ret.value.is_err()
         .jump | .branch | .switch_term | .unreachable | .open => assert false
 
 test "a negative literal folds, a mutation stores through a place"
-    got = lowered("record P\n    x: i64\n\nfunction f() -> i64\n    v: i64 @ -128\n    p: P @ P(x: 1)\n    v @ v + 1\n    return v\n")
+    got = lowered(
+        "record P\n    x: i64\n\nfunction f() -> i64\n    v: i64 @ -128\n    p: P @ P(x: 1)\n    v @ v + 1\n    return v\n"
+    )
     f = got.program.functions[0]
+
     # The first instruction is the folded constant: negative inside.
     match f.blocks[0].insts[0].op
         .lit l =>
@@ -1432,8 +1771,8 @@ test "a negative literal folds, a mutation stores through a place"
                     assert ic.value.magnitude == wanted
                 .float_const | .bool_const | .str_const | .null_ptr => assert false
         .load | .store | .push_owned | .unary | .binary | .cast | .call | .construct => assert false
-        .field | .index | .map_get | .len_of | .tag_of | .payload => assert false
-        .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing => assert false
+        .field | .index | .map_get | .len_of | .tag_of | .payload                    => assert false
+        .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing     => assert false
 
 test "string literals intern decoded, and twice is once"
     got = lowered("function f() -> str\n    a = \"he\\nllo\"\n    b = \"he\\nllo\"\n    return a + b\n")
@@ -1441,18 +1780,24 @@ test "string literals intern decoded, and twice is once"
     assert got.program.strings[0] == "he\nllo"
 
 test "a while is three blocks and a for is four, continue landing on the step"
-    got = lowered("function g(xs: [i64]) -> i64\n    total: i64 @ 0\n    for x in xs\n        if x == 0\n            continue\n        total @ total + x\n    return total\n")
+    got = lowered(
+        "function g(xs: [i64]) -> i64\n    total: i64 @ 0\n    for x in xs\n        if x == 0\n            continue\n        total @ total + x\n    return total\n"
+    )
     f = got.program.functions[0]
     step_at: i64 @ 0 - 1
     at: i64 @ 0
+
     for blk in f.blocks
         if blk.note == "for: step"
             step_at @ at
         at @ at + 1
+
     assert step_at >= 0
+
     # The continue arm jumps to the STEP block, not the test: the
     # increment owes itself to that path too.
     jumped: bool @ false
+
     for blk in f.blocks
         if blk.note == "if: then"
             match blk.term
@@ -1460,15 +1805,18 @@ test "a while is three blocks and a for is four, continue landing on the step"
                     if j.to == step_at
                         jumped @ true
                 .branch | .switch_term | .return_term | .unreachable | .open => continue
+
     assert jumped
 
 test "an if in value position stores into $r and the join loads it"
     got = lowered("function h(c: bool) -> i64\n    v = if c\n        1\n    else\n        2\n    return v\n")
     f = got.program.functions[0]
     named: bool @ false
+
     for slot in f.slots
         if slot.name == "$r0"
             named @ true
+
     assert named
 
 test "&& branches with its own polarity and || with the opposite"
@@ -1477,12 +1825,15 @@ test "&& branches with its own polarity and || with the opposite"
     rest_at: i64 @ 0 - 1
     meet_at: i64 @ 0 - 1
     at: i64 @ 0
+
     for blk in f.blocks
         if blk.note == "&&: right"
             rest_at @ at
+
         if blk.note == "&&: join"
             meet_at @ at
         at @ at + 1
+
     match f.blocks[0].term
         .branch br =>
             # && evaluates the right side when the left is TRUE.
@@ -1494,48 +1845,61 @@ test "a join every arm returned past is sealed unreachable"
     got = lowered("function d(c: bool) -> i64\n    if c\n        return 1\n    else\n        return 2\n")
     f = got.program.functions[0]
     sealed: bool @ false
+
     for blk in f.blocks
         if blk.note == "if: join"
             match blk.term
-                .unreachable => sealed @ true
+                .unreachable                                          => sealed @ true
                 .jump | .branch | .switch_term | .return_term | .open => continue
+
     assert sealed
 
 test "? branches on the tag, and the error edge is a real exit edge"
-    got = lowered("function pick(ready: bool) -> i64?\n    if ready\n        return ok(3)\n    return fail(\"empty\", \"nothing here\")\n\nfunction outer(ready: bool) -> i64?\n    v = pick(ready)?\n    return ok(v + 1)\n")
+    got = lowered(
+        "function pick(ready: bool) -> i64?\n    if ready\n        return ok(3)\n    return fail(\"empty\", \"nothing here\")\n\nfunction outer(ready: bool) -> i64?\n    v = pick(ready)?\n    return ok(v + 1)\n"
+    )
     f = got.program.functions[1]
     assert f.name == "outer"
     propagate_at: i64 @ 0 - 1
     at: i64 @ 0
+
     for blk in f.blocks
         if blk.note == "?: propagate"
             propagate_at @ at
         at @ at + 1
+
     assert propagate_at >= 0
+
     # The propagate block reads the failure payload, wraps it UNCHANGED
     # as err, and returns — an exit edge like any return.
     match f.blocks[propagate_at].term
-        .return_term ret => assert !ret.value.is_err()
+        .return_term ret                                      => assert !ret.value.is_err()
         .jump | .branch | .switch_term | .unreachable | .open => assert false
+
     wrapped: bool @ false
+
     for inst in f.blocks[propagate_at].insts
         match inst.op
             .construct con =>
                 match con.shape
-                    .err_shape => wrapped @ true
+                    .err_shape                                 => wrapped @ true
                     .record_shape | .case_shape | .array_shape => continue
-                    .map_shape | .ok_shape | .fail_shape => continue
-            .lit | .load | .store | .push_owned | .unary | .binary | .cast | .call => continue
-            .field | .index | .map_get | .len_of | .tag_of | .payload => continue
+                    .map_shape | .ok_shape | .fail_shape       => continue
+            .lit | .load | .store | .push_owned | .unary | .binary | .cast | .call   => continue
+            .field | .index | .map_get | .len_of | .tag_of | .payload                => continue
             .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing => continue
+
     assert wrapped
 
 test "an @ argument is a place, and a record construction is not a call"
-    got = lowered("record Pt\n    x: i64\n\nfunction bump(@n: i64)\n    n @ n + 1\n\nfunction f() -> i64\n    v: i64 @ 0\n    bump(@v)\n    _ = Pt(x: 2)\n    return v\n")
+    got = lowered(
+        "record Pt\n    x: i64\n\nfunction bump(@n: i64)\n    n @ n + 1\n\nfunction f() -> i64\n    v: i64 @ 0\n    bump(@v)\n    _ = Pt(x: 2)\n    return v\n"
+    )
     f = got.program.functions[1]
     assert f.name == "f"
     passed_place: bool @ false
     built: bool @ false
+
     for blk in f.blocks
         for inst in blk.insts
             match inst.op
@@ -1546,12 +1910,13 @@ test "an @ argument is a place, and a record construction is not a call"
                             .value_arg => continue
                 .construct con =>
                     match con.shape
-                        .record_shape => built @ true
+                        .record_shape                           => built @ true
                         .case_shape | .array_shape | .map_shape => continue
-                        .ok_shape | .fail_shape | .err_shape => continue
-                .lit | .load | .store | .push_owned | .unary | .binary | .cast => continue
-                .field | .index | .map_get | .len_of | .tag_of | .payload => continue
+                        .ok_shape | .fail_shape | .err_shape    => continue
+                .lit | .load | .store | .push_owned | .unary | .binary | .cast           => continue
+                .field | .index | .map_get | .len_of | .tag_of | .payload                => continue
                 .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing => continue
+
     assert passed_place
     assert built
 
@@ -1560,6 +1925,7 @@ test "UFCS puts the receiver first, and print is variadic with no destination"
     f = got.program.functions[1]
     ufcs_two: bool @ false
     printed: bool @ false
+
     for blk in f.blocks
         for inst in blk.insts
             match inst.op
@@ -1574,8 +1940,9 @@ test "UFCS puts the receiver first, and print is variadic with no destination"
                             printed @ true
                         .extern_fn | .indirect => continue
                 .lit | .load | .store | .push_owned | .unary | .binary | .cast | .construct => continue
-                .field | .index | .map_get | .len_of | .tag_of | .payload => continue
-                .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing => continue
+                .field | .index | .map_get | .len_of | .tag_of | .payload                   => continue
+                .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing    => continue
+
     assert ufcs_two
     assert printed
 
@@ -1583,6 +1950,7 @@ test "must branches to the payload or an abort that carries the failure"
     got = lowered("function h(m: {str: i64}) -> i64\n    return m[\"a\"].must()\n")
     f = got.program.functions[0]
     aborted: bool @ false
+
     for blk in f.blocks
         if blk.note == "must: abort"
             for inst in blk.insts
@@ -1591,20 +1959,24 @@ test "must branches to the payload or an abort that carries the failure"
                         assert ab.arguments.length == 1
                         aborted @ true
                     .lit | .load | .store | .push_owned | .unary | .binary | .cast | .call | .construct => continue
-                    .field | .index | .map_get | .len_of | .tag_of | .payload => continue
-                    .func_ref | .copy_out | .incref | .decref | .hole | .missing => continue
+                    .field | .index | .map_get | .len_of | .tag_of | .payload                           => continue
+                    .func_ref | .copy_out | .incref | .decref | .hole | .missing                        => continue
+
             match blk.term
-                .unreachable => continue
+                .unreachable                                          => continue
                 .jump | .branch | .switch_term | .return_term | .open => assert false
+
     assert aborted
 
 test "an assert carries its text and both sides, and a str side rides a slot"
     got = lowered("function f(name: str)\n    assert name == \"bowie\"\n")
     fun = got.program.functions[0]
+
     # The failure block: text + left + right = three operands, and the
     # str sides were parked in $assert slots so nothing counted crosses
     # the block edge.
     carried_three: bool @ false
+
     for blk in fun.blocks
         if blk.note == "assert: failed"
             for inst in blk.insts
@@ -1613,71 +1985,95 @@ test "an assert carries its text and both sides, and a str side rides a slot"
                         if ab.arguments.length == 3
                             carried_three @ true
                     .lit | .load | .store | .push_owned | .unary | .binary | .cast | .call | .construct => continue
-                    .field | .index | .map_get | .len_of | .tag_of | .payload => continue
-                    .func_ref | .copy_out | .incref | .decref | .hole | .missing => continue
+                    .field | .index | .map_get | .len_of | .tag_of | .payload                           => continue
+                    .func_ref | .copy_out | .incref | .decref | .hole | .missing                        => continue
+
     assert carried_three
     slotted: i64 @ 0
+
     for slot in fun.slots
         if slot.name == "$assert0" || slot.name == "$assert1"
             slotted @ slotted + 1
+
     assert slotted == 2
+
     # The interned text is the expression as written, keyword stripped.
     found_text: bool @ false
+
     for text in got.program.strings
         if text == "name == \"bowie\""
             found_text @ true
+
     assert found_text
 
 test "a bare assert carries only its text, and an i64 side rides no slot"
     got = lowered("function g(flag: bool, n: i64)\n    assert flag\n    assert n > 0\n")
     fun = got.program.functions[0]
     counts: [i64] @ []
+
     for blk in fun.blocks
         if blk.note == "assert: failed"
             for inst in blk.insts
                 match inst.op
-                    .abort_op ab => counts @ counts.push(ab.arguments.length)
+                    .abort_op ab                                                                        => counts @ counts.push(
+                        ab.arguments.length
+                    )
                     .lit | .load | .store | .push_owned | .unary | .binary | .cast | .call | .construct => continue
-                    .field | .index | .map_get | .len_of | .tag_of | .payload => continue
-                    .func_ref | .copy_out | .incref | .decref | .hole | .missing => continue
+                    .field | .index | .map_get | .len_of | .tag_of | .payload                           => continue
+                    .func_ref | .copy_out | .incref | .decref | .hole | .missing                        => continue
+
     assert counts.len() == 2
     assert counts[0] == 1
     assert counts[1] == 3
+
     for slot in fun.slots
         assert slot.name != "$assert0"
 
 test "a variant match is a dense switch with no default edge"
-    got = lowered("variant Shape\n    dot\n    square\n        side: i64\n\nfunction area(sh: Shape) -> i64\n    return match sh\n        .dot => 0\n        .square sq => sq.side * sq.side\n")
+    got = lowered(
+        "variant Shape\n    dot\n    square\n        side: i64\n\nfunction area(sh: Shape) -> i64\n    return match sh\n        .dot => 0\n        .square sq => sq.side * sq.side\n"
+    )
     f = got.program.functions[0]
     switched: bool @ false
+
     for blk in f.blocks
         match blk.term
-            .switch_term sw => 
+            .switch_term sw =>
                 assert sw.cases.len() == 2
                 switched @ true
             .jump | .branch | .return_term | .unreachable | .open => continue
+
     assert switched
+
     # The payload binding is a real slot named sq.
     named: bool @ false
+
     for slot in f.slots
         if slot.name == "sq"
             named @ true
+
     assert named
 
 test "a literal match is a chain of tests closed by _, and a T? still switches"
-    got = lowered("function say(n: i64) -> str\n    return match n\n        0 => \"zero\"\n        1 => \"one\"\n        _ => \"many\"\n\nfunction unwrap(v: i64?) -> i64\n    return match v\n        .ok n => n\n        .err => 0 - 1\n")
+    got = lowered(
+        "function say(n: i64) -> str\n    return match n\n        0 => \"zero\"\n        1 => \"one\"\n        _ => \"many\"\n\nfunction unwrap(v: i64?) -> i64\n    return match v\n        .ok n => n\n        .err => 0 - 1\n"
+    )
     chain = got.program.functions[0]
     tests: i64 @ 0
+
     for blk in chain.blocks
         if blk.note == "match: test"
             tests @ tests + 1
+
     assert tests == 2
     wrapped = got.program.functions[1]
     fallible_switch: bool @ false
+
     for blk in wrapped.blocks
         match blk.term
             .switch_term sw =>
                 assert sw.cases.len() == 2
                 fallible_switch @ true
             .jump | .branch | .return_term | .unreachable | .open => continue
+
     assert fallible_switch

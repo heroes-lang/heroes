@@ -25,7 +25,7 @@
 # (suite_surface).
 
 extern "curses.h" link "ncurses"
-    function init_pair(pair: i64, f: i16, b: i16) -> i32    #~ ffi_parameter_type
+    function init_pair(pair: i64, f: i16, b: i16) -> i32  #~ ffi_parameter_type
 
 function main()
     _ = init_pair(pair: 1, f: to_i16(2).must(), b: to_i16(3).must())

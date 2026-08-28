@@ -26,12 +26,15 @@ function nan() -> f64
 
 function count<K>(ks: [K]) -> i64
     m: {K: i64} @ {}
+
     for k in ks
         m[k] @ 1
+
     return len(m)
 
 function main()
     # The route works, and that is why the generic body is not refused.
     print(count([1.5, 2.5]))
+
     # And the same route with a key that is not equal to itself.
     print(count([nan()]))

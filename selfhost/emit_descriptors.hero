@@ -38,10 +38,10 @@ function pointer(c: check_state.Checked, names: emit_ctype.Names, ty: i64) -> st
         .int_ty ik =>
             match ik.kind
                 .i64 => return ok("&hero_desc_int")
-                .i8 => return ok("&hero_desc_i8")
+                .i8  => return ok("&hero_desc_i8")
                 .i16 => return ok("&hero_desc_i16")
                 .i32 => return ok("&hero_desc_i32")
-                .u8 => return ok("&hero_desc_u8")
+                .u8  => return ok("&hero_desc_u8")
                 .u16 => return ok("&hero_desc_u16")
                 .u32 => return ok("&hero_desc_u32")
                 .u64 => return ok("&hero_desc_u64")
@@ -50,21 +50,25 @@ function pointer(c: check_state.Checked, names: emit_ctype.Names, ty: i64) -> st
                 .f32 => return ok("&hero_desc_f32")
                 .f64 => return ok("&hero_desc_f64")
         .bool => return ok("&hero_desc_bool")
-        .str => return ok("&hero_desc_str")
+        .str  => return ok("&hero_desc_str")
         # One for all of them: see the module doc.
+
         .array => return ok("&hero_desc_array")
-        .map => return ok("&hero_desc_map")
+        .map   => return ok("&hero_desc_map")
         # One for every function type, like the array's: a function
         # value owns nothing, so the four operations do not depend on
         # the signature.
+
         .function_ty => return ok("&hero_desc_func")
         # Every T? needs its own, because its payload is by value — and
         # so does the failure side, which the runtime ships.
+
         .fallible => return ok("&" + emit_ctype.option_of(names, ty: ty) + "_desc")
         .failure => return ok("&hero_desc_failure")
         .named n => return ok("&" + emit_ctype.satellite(names, decl: n.decl) + "_desc")
         .case_ty vc => return ok("&" + emit_ctype.case_of(names, decl: vc.decl, at: vc.at) + "_desc")
         .ptr | .cstr | .unit | .fixed | .generic | .error => return fail("none", "no descriptor for this type")
+
     return fail("none", "unreached")
 
 # The C expression that hashes one value at `place`. NOT
@@ -76,19 +80,25 @@ function pointer(c: check_state.Checked, names: emit_ctype.Names, ty: i64) -> st
 # gallery's own second program.
 function hash_call(c: check_state.Checked, names: emit_ctype.Names, ty: i64, place: str) -> str?
     match check_table.get(c.types, ty)
-        .named n => return ok(emit_ctype.satellite(names, decl: n.decl) + "_hash(" + place + ")")
+        .named n    => return ok(emit_ctype.satellite(names, decl: n.decl) + "_hash(" + place + ")")
         .case_ty vc => return ok(emit_ctype.case_of(names, decl: vc.decl, at: vc.at) + "_hash(" + place + ")")
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return through_pointer(c, names, ty: ty, place: place)
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return through_pointer(
+            c,
+            names,
+            ty: ty,
+            place: place
+        )
         .array | .fixed | .map | .fallible | .function_ty => return through_pointer(c, names, ty: ty, place: place)
-        .failure | .generic | .error => return through_pointer(c, names, ty: ty, place: place)
+        .failure | .generic | .error                      => return through_pointer(c, names, ty: ty, place: place)
+
     return fail("none", "unreached")
 
 function through_pointer(c: check_state.Checked, names: emit_ctype.Names, ty: i64, place: str) -> str?
     desc = pointer(c, names, ty: ty)
+
     if desc.is_err()
         return fail("none", "no descriptor for this type")
     return ok("(" + desc.must() + ")->hash(" + place + ")")
-
 
 # One static const HeroDesc per element type the program actually uses.
 # Emitted BEFORE the function definitions: an array literal names its
@@ -112,10 +122,12 @@ function through_pointer(c: check_state.Checked, names: emit_ctype.Names, ty: i6
 # meet.
 function definitions(@w: emit_writer.Writer, c: check_state.Checked, names: emit_ctype.Names, decls: [ast.Decl], reachable: {i64: bool}, constructed: {i64: bool}, want: emit_synth.Wanted)
     wanted = emit_descriptor_set.generated(c, decls, reachable: reachable, constructed: constructed, want: want)
+
     for ty in wanted
         prefix: str @ ""
         c_type: str @ ""
         skip: bool @ false
+
         match check_table.get(c.types, ty)
             .named n =>
                 prefix @ emit_ctype.satellite(names, decl: n.decl)
@@ -126,18 +138,21 @@ function definitions(@w: emit_writer.Writer, c: check_state.Checked, names: emit
             # A T? used as an element needs one too, and its four
             # functions already exist — option_bodies writes them for
             # every T? in the program.
+
             .fallible =>
                 prefix @ emit_ctype.option_of(names, ty: ty)
                 c_type @ prefix
             .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => skip @ true
-            .array | .fixed | .map | .function_ty => skip @ true
-            .failure | .generic | .error => skip @ true
+            .array | .fixed | .map | .function_ty                     => skip @ true
+            .failure | .generic | .error                              => skip @ true
+
         if skip
             continue
         counted = ir_layout.is_refcounted(c, ty)
         emit_writer.at_generated(@w)
         emit_writer.line(@w, text: "static void " + prefix + "_desc_copy(void *dst, const void *src) {")
         emit_writer.line(@w, text: "    *(" + c_type + " *)dst = *(const " + c_type + " *)src;")
+
         if counted
             # Shallow plus incref, never deep (panel 022): copy-on-write
             # is what makes a deep copy unnecessary, because sharing is
@@ -145,13 +160,17 @@ function definitions(@w: emit_writer.Writer, c: check_state.Checked, names: emit
             emit_writer.line(@w, text: "    " + prefix + "_retain((const " + c_type + " *)dst);")
         emit_writer.line(@w, text: "}")
         emit_writer.line(@w, text: "static void " + prefix + "_desc_drop(void *elem) {")
+
         if counted
             emit_writer.line(@w, text: "    " + prefix + "_release((" + c_type + " *)elem);")
         else
             emit_writer.line(@w, text: "    (void)elem;")
         emit_writer.line(@w, text: "}")
         emit_writer.line(@w, text: "static bool " + prefix + "_desc_eq(const void *a, const void *b) {")
-        emit_writer.line(@w, text: "    return " + prefix + "_eq((const " + c_type + " *)a, (const " + c_type + " *)b);")
+        emit_writer.line(
+            @w,
+            text: "    return " + prefix + "_eq((const " + c_type + " *)a, (const " + c_type + " *)b);"
+        )
         emit_writer.line(@w, text: "}")
         emit_writer.line(@w, text: "HERO_TU_QUIET static const HeroDesc " + prefix + "_desc = {")
         emit_writer.line(@w, text: "    sizeof(" + c_type + "),")

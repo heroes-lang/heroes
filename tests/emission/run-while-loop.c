@@ -124,77 +124,77 @@ bb0:
     goto bb1;
 #line 7 "tests/golden/run/while-loop.hero"
 bb1:
-#line 8 "tests/golden/run/while-loop.hero"
+#line 9 "tests/golden/run/while-loop.hero"
     t3 = h0_n;
-#line 8 "tests/golden/run/while-loop.hero"
+#line 9 "tests/golden/run/while-loop.hero"
     t4 = INT64_C(5);
-#line 8 "tests/golden/run/while-loop.hero"
+#line 9 "tests/golden/run/while-loop.hero"
     t5 = t3 < t4;
-#line 8 "tests/golden/run/while-loop.hero"
+#line 9 "tests/golden/run/while-loop.hero"
     if (t5) goto bb2; else goto bb3;
-#line 8 "tests/golden/run/while-loop.hero"
+#line 9 "tests/golden/run/while-loop.hero"
 bb2:
-#line 9 "tests/golden/run/while-loop.hero"
+#line 10 "tests/golden/run/while-loop.hero"
     t6 = h1_total;
-#line 9 "tests/golden/run/while-loop.hero"
+#line 10 "tests/golden/run/while-loop.hero"
     t7 = h0_n;
-#line 9 "tests/golden/run/while-loop.hero"
+#line 10 "tests/golden/run/while-loop.hero"
     t8 = h0_n;
-#line 9 "tests/golden/run/while-loop.hero"
+#line 10 "tests/golden/run/while-loop.hero"
     if (__builtin_mul_overflow(t7, t8, &t9)) hero_panic_overflow();
-#line 9 "tests/golden/run/while-loop.hero"
+#line 10 "tests/golden/run/while-loop.hero"
     if (__builtin_add_overflow(t6, t9, &t10)) hero_panic_overflow();
-#line 9 "tests/golden/run/while-loop.hero"
+#line 10 "tests/golden/run/while-loop.hero"
     h1_total = t10;
-#line 10 "tests/golden/run/while-loop.hero"
+#line 11 "tests/golden/run/while-loop.hero"
     t11 = h0_n;
-#line 10 "tests/golden/run/while-loop.hero"
+#line 11 "tests/golden/run/while-loop.hero"
     t12 = INT64_C(1);
-#line 10 "tests/golden/run/while-loop.hero"
+#line 11 "tests/golden/run/while-loop.hero"
     if (__builtin_add_overflow(t11, t12, &t13)) hero_panic_overflow();
-#line 10 "tests/golden/run/while-loop.hero"
+#line 11 "tests/golden/run/while-loop.hero"
     h0_n = t13;
-#line 10 "tests/golden/run/while-loop.hero"
+#line 11 "tests/golden/run/while-loop.hero"
     goto bb1;
-#line 10 "tests/golden/run/while-loop.hero"
+#line 11 "tests/golden/run/while-loop.hero"
 bb3:
-#line 11 "tests/golden/run/while-loop.hero"
+#line 13 "tests/golden/run/while-loop.hero"
     t14 = h1_total;
-#line 11 "tests/golden/run/while-loop.hero"
+#line 13 "tests/golden/run/while-loop.hero"
     hero_print_int(t14);
-#line 11 "tests/golden/run/while-loop.hero"
+#line 13 "tests/golden/run/while-loop.hero"
     hero_print_end();
-#line 12 "tests/golden/run/while-loop.hero"
+#line 15 "tests/golden/run/while-loop.hero"
     t15 = h1_total;
-#line 12 "tests/golden/run/while-loop.hero"
+#line 15 "tests/golden/run/while-loop.hero"
     t16 = INT64_C(10);
-#line 12 "tests/golden/run/while-loop.hero"
+#line 15 "tests/golden/run/while-loop.hero"
     t17 = t15 > t16;
-#line 12 "tests/golden/run/while-loop.hero"
+#line 15 "tests/golden/run/while-loop.hero"
     if (t17) goto bb5; else goto bb6;
-#line 12 "tests/golden/run/while-loop.hero"
+#line 15 "tests/golden/run/while-loop.hero"
 bb4:
-#line 12 "tests/golden/run/while-loop.hero"
+#line 15 "tests/golden/run/while-loop.hero"
     return;
-#line 12 "tests/golden/run/while-loop.hero"
+#line 15 "tests/golden/run/while-loop.hero"
 bb5:
-#line 13 "tests/golden/run/while-loop.hero"
+#line 16 "tests/golden/run/while-loop.hero"
     t18 = INT64_C(1);
-#line 13 "tests/golden/run/while-loop.hero"
+#line 16 "tests/golden/run/while-loop.hero"
     hero_print_int(t18);
-#line 13 "tests/golden/run/while-loop.hero"
+#line 16 "tests/golden/run/while-loop.hero"
     hero_print_end();
-#line 13 "tests/golden/run/while-loop.hero"
+#line 16 "tests/golden/run/while-loop.hero"
     goto bb4;
-#line 13 "tests/golden/run/while-loop.hero"
+#line 16 "tests/golden/run/while-loop.hero"
 bb6:
-#line 15 "tests/golden/run/while-loop.hero"
+#line 18 "tests/golden/run/while-loop.hero"
     t19 = INT64_C(0);
-#line 15 "tests/golden/run/while-loop.hero"
+#line 18 "tests/golden/run/while-loop.hero"
     hero_print_int(t19);
-#line 15 "tests/golden/run/while-loop.hero"
+#line 18 "tests/golden/run/while-loop.hero"
     hero_print_end();
-#line 15 "tests/golden/run/while-loop.hero"
+#line 18 "tests/golden/run/while-loop.hero"
     goto bb4;
 #line 200 "whileloop.c"
 }

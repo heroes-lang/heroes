@@ -40,21 +40,26 @@ function word(s: Sign) -> str
 
 function verdict(a: Sign) -> str
     m = match a
-        .zero      => "is zero"
+        .zero       => "is zero"
         .neg | .pos => "is nonzero"
+
     return m
 
 function main()
     print(word(classify(-5)))
     print(word(classify(0)))
+
     # a match used as a statement, and a jump as an arm body
     s = classify(3)
+
     match s
         .neg  => print("neg")
         .zero => print("zero")
         .pos  => print("pos")
+
     print(verdict(.zero))
     print(verdict(.pos))
+
     # f64 in a record, compared
     x = P(n: 1, f: 0.5)
     y = P(n: 1, f: 0.5)

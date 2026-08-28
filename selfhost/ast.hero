@@ -468,6 +468,7 @@ function push_stmt(@stmts: [Stmt], node: Stmt) -> i64
 # copied but an `i64`.
 function depth(a: Ast, at: i64) -> i64
     node = a.exprs[at]
+
     # **Every case is named, and that is the point rather than the cost.** `_`
     # is forbidden on a variant (§4.7), so a walk that cares about five shapes
     # still says what it does with the other sixteen — and the day a
@@ -485,7 +486,8 @@ function depth(a: Ast, at: i64) -> i64
         # The compound shapes a depth this simple does not descend into: they
         # carry lists, and a list walk is the parser's own job rather than
         # this measurement's.
-        .call | .method | .variant_case => 1
+
+        .call | .method | .variant_case        => 1
         .array | .map | .if_expr | .match_expr => 1
 
 function max_of(a: i64, b: i64) -> i64
@@ -523,13 +525,17 @@ test "a statement's payload carries a record that carries an array"
     cond = push_expr(@a.exprs, Expr(kind: .bool_lit, span: zero))
     body = push_stmt(@a.stmts, Stmt(kind: .break_stmt, span: zero))
     inner: [i64] = [body]
-    loop_stmt = push_stmt(@a.stmts, Stmt(kind: .while_stmt(cond: cond, block: Block(span: zero, stmts: inner)), span: zero))
+    loop_stmt = push_stmt(
+        @a.stmts,
+        Stmt(kind: .while_stmt(cond: cond, block: Block(span: zero, stmts: inner)), span: zero)
+    )
+
     match a.stmts[loop_stmt].kind
         .while_stmt w =>
             assert w.cond == cond
             assert w.block.stmts.len() == 1
             assert w.block.stmts[0] == body
-        .bind | .declare | .mutate | .return_stmt | .break_stmt => assert false
+        .bind | .declare | .mutate | .return_stmt | .break_stmt       => assert false
         .continue_stmt | .assert_stmt | .for_in | .expr_stmt | .error => assert false
 
 test "an optional payload is a fallible, and absence is a value"
@@ -538,13 +544,15 @@ test "an optional payload is a fallible, and absence is a value"
     value = push_expr(@a.exprs, Expr(kind: .int_lit, span: zero))
     with_value = push_stmt(@a.stmts, Stmt(kind: .return_stmt(value: ok(value)), span: zero))
     bare = push_stmt(@a.stmts, Stmt(kind: .return_stmt(value: fail("bare", "no value")), span: zero))
+
     match a.stmts[with_value].kind
-        .return_stmt r => assert r.value.must() == value
-        .bind | .declare | .mutate | .break_stmt | .continue_stmt => assert false
+        .return_stmt r                                             => assert r.value.must() == value
+        .bind | .declare | .mutate | .break_stmt | .continue_stmt  => assert false
         .assert_stmt | .while_stmt | .for_in | .expr_stmt | .error => assert false
+
     match a.stmts[bare].kind
-        .return_stmt r => assert r.value.is_err()
-        .bind | .declare | .mutate | .break_stmt | .continue_stmt => assert false
+        .return_stmt r                                             => assert r.value.is_err()
+        .bind | .declare | .mutate | .break_stmt | .continue_stmt  => assert false
         .assert_stmt | .while_stmt | .for_in | .expr_stmt | .error => assert false
 
 test "the tree is copied by value, so a walk cannot disturb it"
@@ -563,8 +571,17 @@ test "a declaration owns its members directly, no arena"
     generics: [token.Span] = []
     ps: [Param] = [Param(name: zero, ty: 0, mutable: false)]
     doc: [token.Span] = []
-    f = FunctionDecl(generics: generics, params: ps, result: 0, body: fail("absent", "no body"), is_extern: true, header: ok(zero), library: fail("absent", "none"))
+    f = FunctionDecl(
+        generics: generics,
+        params: ps,
+        result: 0,
+        body: fail("absent", "no body"),
+        is_extern: true,
+        header: ok(zero),
+        library: fail("absent", "none")
+    )
     d = Decl(name: zero, doc: doc, span: zero, kind: .function_decl(value: f))
+
     match d.kind
         .function_decl fd =>
             assert fd.value.is_extern
@@ -576,13 +593,21 @@ test "a declaration owns its members directly, no arena"
 test "a group's record carries what the head line said"
     zero = token.Span(start: 0, end: 1)
     fields: [Field] = []
-    kind: DeclKind = .record_decl(fields: fields, header: ok(zero), library: ok(.link(name: zero)), partial: true, tag: fail("absent", "no tag"))
+    kind: DeclKind = .record_decl(
+        fields: fields,
+        header: ok(zero),
+        library: ok(.link(name: zero)),
+        partial: true,
+        tag: fail("absent", "no tag")
+    )
+
     match kind
         .record_decl r =>
             assert r.partial
             assert r.tag.is_err()
+
             match r.library.must()
-                .link l => assert l.name == zero
+                .link l  => assert l.name == zero
                 .package => assert false
         .constant_decl | .function_decl | .variant_decl | .test_decl => assert false
 

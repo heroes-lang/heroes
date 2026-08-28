@@ -31,6 +31,7 @@ function user_text(s: source.Source) -> str
 # One file's own text, without the blank line that joins it to the next.
 function text_of(s: source.Source, index: i64) -> str
     start = s.files[index].start
+
     if index + 1 < s.files.len()
         return s.text.slice(from: start, to: s.files[index + 1].start - 1)
     return s.text.slice(from: start, to: s.text.len())
@@ -38,8 +39,13 @@ function text_of(s: source.Source, index: i64) -> str
 ## Tests
 
 test "the root's extent stops before the joiner, not at text.len()"
-    s = source.with_library(name: "main.hero", user: "constant A: i64\n    1\n", library: "function range()\n    return\n")
+    s = source.with_library(
+        name: "main.hero",
+        user: "constant A: i64\n    1\n",
+        library: "function range()\n    return\n"
+    )
     assert root_end(s) == s.files[1].start - 1
+
     # What the author wrote comes back exactly, appendix removed.
     assert user_text(s) == "constant A: i64\n    1\n"
 
@@ -49,7 +55,9 @@ test "a file's own text comes back without the joiner"
         source.user_file(name: "b.hero", text: "constant B: i64\n    2\n")
     ]
     s = source.from_files(inputs)
+
     # The LAST file is left exactly as written — nothing appended after it.
     assert text_of(s, 1) == "constant B: i64\n    2\n"
+
     # The closed first file keeps the newline its closer added, joiner removed.
     assert text_of(s, 0) == "constant A: i64\n    1\n"

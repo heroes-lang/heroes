@@ -22,9 +22,11 @@ use value
 
 function main()
     given = args()
+
     if len(given) == 0
         print("usage: json <file> [key]")
         exit(2)
+
     match read_file(given[0])
         .err e   => stop("cannot read " + given[0] + ": " + e.code)
         .ok text => report(text, given)
@@ -43,10 +45,11 @@ function describe(doc: value.Json, given: [str])
     print("values: ", value.size(doc))
     print("depth: ", value.depth(doc))
     print(value.render(doc))
+
     if len(given) > 1
         match value.field(doc, given[1])
-            .err e   => print("field ", given[1], ": ", e.code)
-            .ok got  => print("field ", given[1], ": ", value.render(got))
+            .err e  => print("field ", given[1], ": ", e.code)
+            .ok got => print("field ", given[1], ": ", value.render(got))
 
 test "the report reads its own sample"
     doc = parse.read(read_file("examples/json/sample.json").must()).must()

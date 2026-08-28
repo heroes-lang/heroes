@@ -16,8 +16,14 @@ use diag
 use digits
 
 function cannot_infer_empty(what: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "cannot_infer", message: "the " + what + " is empty, so there is nothing to infer its type from — write the annotation", span: span)
-    d.fixes @ d.fixes.push(diag.Fix(title: "annotate the binding: `xs: [i64] = []`", replacement: "", span: span, certainty: .guess))
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "cannot_infer",
+        message: "the " + what + " is empty, so there is nothing to infer its type from — write the annotation",
+        span: span
+    )
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "annotate the binding: `xs: [i64] = []`", replacement: "", span: span, certainty: .guess)
+    )
     return d
 
 ## Forms that cannot say what they are
@@ -25,23 +31,43 @@ function cannot_infer_empty(what: str, span: token.Span) -> diag.Diagnostic
 # §4.5's ⇐ mode, from the other side: a case name alone has no type until
 # something says which variant is expected.
 function cannot_infer_case(name: str, span: token.Span) -> diag.Diagnostic
-    return diag.new_diagnostic(code: "cannot_infer", message: "`." + name + "` does not say which variant it belongs to — the type has to come from the context (a signature, an annotation, or the value being returned)", span: span)
+    return diag.new_diagnostic(
+        code: "cannot_infer",
+        message: "`." + name + "` does not say which variant it belongs to — the type has to come from the context (a signature, an annotation, or the value being returned)",
+        span: span
+    )
 
 function case_not_expected(name: str, expected: str, span: token.Span) -> diag.Diagnostic
-    return diag.new_diagnostic(code: "type_mismatch", message: "expected `" + expected + "`, found the case `." + name + "`", span: span)
+    return diag.new_diagnostic(
+        code: "type_mismatch",
+        message: "expected `" + expected + "`, found the case `." + name + "`",
+        span: span
+    )
 
 function constructor_not_expected(name: str, expected: str, span: token.Span) -> diag.Diagnostic
-    return diag.new_diagnostic(code: "type_mismatch", message: "`" + name + "(…)` builds a fallible value, and `" + expected + "` is not one — no `T` is ever promoted to a `T?`", span: span)
+    return diag.new_diagnostic(
+        code: "type_mismatch",
+        message: "`" + name + "(…)` builds a fallible value, and `" + expected + "` is not one — no `T` is ever promoted to a `T?`",
+        span: span
+    )
 
 # `ok(x)` and `fail(c, m)` are ⇐-only (panel 002), so in a position with
 # no expectation there is nothing for them to build. The message says
 # which positions DO have one, because "cannot infer" alone sends the
 # reader looking for a type annotation that does not belong on a call.
 function constructor_needs_context(name: str, span: token.Span) -> diag.Diagnostic
-    return diag.new_diagnostic(code: "cannot_infer", message: "`" + name + "(…)` builds a fallible value, and which one comes from the context — return it, bind it with an annotation, or pass it where a `T?` is expected", span: span)
+    return diag.new_diagnostic(
+        code: "cannot_infer",
+        message: "`" + name + "(…)` builds a fallible value, and which one comes from the context — return it, bind it with an annotation, or pass it where a `T?` is expected",
+        span: span
+    )
 
 function record_name_alone(name: str, span: token.Span) -> diag.Diagnostic
-    return diag.new_diagnostic(code: "record_name_alone", message: "`" + name + "` names a record, and a record is built by calling it with every field: `" + name + "(field: value, …)`", span: span)
+    return diag.new_diagnostic(
+        code: "record_name_alone",
+        message: "`" + name + "` names a record, and a record is built by calling it with every field: `" + name + "(field: value, …)`",
+        span: span
+    )
 
 # A built-in used as a value rather than called. Found by the closure-list
 # audit on its first program, silent in the worst way: an error type with
@@ -53,15 +79,29 @@ function record_name_alone(name: str, span: token.Span) -> diag.Diagnostic
 # only the message was missing. The fix is a wrapper, named because the
 # reader would otherwise have to invent the shape.
 function builtin_as_value(name: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "builtin_as_value", message: "`" + name + "` is a built-in of the language, not a function value — several take any number of arguments, or arguments of several types, which no single signature can describe", span: span)
-    d.notes @ d.notes.push("wrap it: `function " + name + "_of(x: …) -> …` with `return " + name + "(x)`, and pass that")
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "builtin_as_value",
+        message: "`" + name + "` is a built-in of the language, not a function value — several take any number of arguments, or arguments of several types, which no single signature can describe",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "wrap it: `function " + name + "_of(x: …) -> …` with `return " + name + "(x)`, and pass that"
+    )
     return d
 
 function variant_not_callable(name: str, span: token.Span) -> diag.Diagnostic
-    return diag.new_diagnostic(code: "variant_not_callable", message: "`" + name + "` is a variant, so a value of it is written `.case`, never `" + name + "(…)`", span: span)
+    return diag.new_diagnostic(
+        code: "variant_not_callable",
+        message: "`" + name + "` is a variant, so a value of it is written `.case`, never `" + name + "(…)`",
+        span: span
+    )
 
 function builtin_shape(name: str, given: i64, span: token.Span) -> diag.Diagnostic
-    return diag.new_diagnostic(code: "builtin_shape", message: "`" + name + "` does not take " + given.to_str() + " argument(s) of those types", span: span)
+    return diag.new_diagnostic(
+        code: "builtin_shape",
+        message: "`" + name + "` does not take " + given.to_str() + " argument(s) of those types",
+        span: span
+    )
 
 # `99999999999999999999` — a literal no `i64` holds. Built beside the
 # lexer's decoder (panel 041), because the frontend and the lowering both

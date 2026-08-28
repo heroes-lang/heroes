@@ -37,17 +37,26 @@ use checker
 # "missing field" from anywhere else finds nothing and stays exit 2.
 function incomplete_record(s: source.Source, decls: [ast.Decl], line: str) -> diag.Diagnostic?
     tail = emit_ffi_lookup.after(text: line, marker: "missing field '")
+
     if tail.is_err()
         return fail("none", "not a missing-field line")
     member = emit_ffi_lookup.up_to_quote(tail.must())
     place = caret_of(line)
+
     if place.is_err()
         return fail("none", "no position on the line")
     found = record_at_line(s, decls, path: place.must().path, row: place.must().row)
+
     if found.is_err()
         return fail("none", "no group record sits on that line")
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "ffi_incomplete_record", message: "`" + found.must().type_name + "` does not name `" + member + "`, and `" + found.must().header + "` says the struct has it — a group's `record` IS the header's struct, so a field left out is a field C fills with zero", span: found.must().span)
-    d.notes @ d.notes.push("the assertions above check every field you DO name and cannot see one you leave out: a `" + found.must().type_name + "` built here would carry a zero `" + member + "` into C, which is a value rather than a crash")
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "ffi_incomplete_record",
+        message: "`" + found.must().type_name + "` does not name `" + member + "`, and `" + found.must().header + "` says the struct has it — a group's `record` IS the header's struct, so a field left out is a field C fills with zero",
+        span: found.must().span
+    )
+    d.notes @ d.notes.push(
+        "the assertions above check every field you DO name and cannot see one you leave out: a `" + found.must().type_name + "` built here would carry a zero `" + member + "` into C, which is a value rather than a crash"
+    )
     return ok(d)
 
 # Where clang's caret sits: `path:row:col: error: …` read from the
@@ -58,12 +67,14 @@ record Caret
 
 function caret_of(line: str) -> Caret?
     head = emit_ffi_lookup.char_index_of(text: line, needle: ": error:")
+
     if head.is_err()
         return fail("none", "not an error line")
     cs = line.chars()
     last: i64 @ -1
     second: i64 @ -1
     index: i64 @ head.must() - 1
+
     while index >= 0
         if cs[index] == ":"
             if last == -1
@@ -72,19 +83,25 @@ function caret_of(line: str) -> Caret?
                 second @ index
                 break
         index @ index - 1
+
     if last == -1 || second == -1
         return fail("none", "no row and column before the message")
     path: [str] @ []
     at: i64 @ 0
+
     while at < second
         path @ path.push(cs[at])
         at @ at + 1
+
     row_text: [str] @ []
     at @ second + 1
+
     while at < last
         row_text @ row_text.push(cs[at])
         at @ at + 1
+
     row = emit_ffi_lookup.number(row_text.join(""))
+
     if row.is_err()
         return fail("none", "the row is not a number")
     return ok(Caret(path: path.join(""), row: row.must()))
@@ -103,10 +120,14 @@ function record_at_line(s: source.Source, decls: [ast.Decl], path: str, row: i64
                 if rec.header.is_err()
                     continue
                 found = source.locate(s, decl.name.start)
+
                 if found.file != path || found.line != row
                     continue
-                return ok(RecordAt(type_name: source.span_text(s, decl.name), header: emit_externs.unquoted(s, span: rec.header.must()), span: decl.name))
+                return ok(
+                    RecordAt(type_name: source.span_text(s, decl.name), header: emit_externs.unquoted(s, span: rec.header.must()), span: decl.name)
+                )
             .constant_decl | .function_decl | .variant_decl | .test_decl => continue
+
     return fail("none", "no group record on that line")
 
 # A group's record over a C UNION, at the two operations that would
@@ -117,48 +138,63 @@ function union_record(s: source.Source, decls: [ast.Decl], line: str) -> diag.Di
     if !emit_ffi_lookup.has(text: line, needle: emit_ffi_lookup.FAILED)
         return fail("none", "not an assertion failure")
     rest = emit_ffi_lookup.after(text: line, marker: emit_extern_union.UNION_ASSERTION)
+
     if rest.is_err()
         return fail("none", "not a union assertion")
     parts = emit_ffi_lookup.words(text: rest.must())
+
     if parts.len() == 0
         return fail("none", "the marker's tail is empty")
     type_name = parts[0]
     members: [str] @ []
     index: i64 @ 1
     fall: bool @ false
+
     while index < parts.len() && !fall
         if emit_ffi_lookup.has(text: parts[index], needle: "\"")
             fall @ true
         else
             members @ members.push(parts[index])
             index @ index + 1
+
     found = record_of(s, decls, type_name: type_name)
+
     if found.is_err()
         return fail("none", "no group declares this record")
+
     # The two cases read differently because they ARE different (panel
     # 077): with one declared member the record is buildable and
     # readable and it is ==/hash that has no answer; with two or more,
     # building it is already wrong, because C keeps the last written.
     d: diag.Diagnostic @ diag.new_diagnostic(code: "ffi_union_field", message: "", span: found.must().span)
+
     if members.len() <= 1
         one: str @ "its member"
+
         if members.len() == 1
             one @ members[0]
         d.message @ "`" + type_name + "` is a `union` in `" + found.must().header + "`, so comparing or hashing one asks about bytes that may hold another member — `" + one + "` is only what was written last"
-        d.notes @ d.notes.push("reading `" + one + "` and building one that names it are both sound and stay legal; what has no answer is `==`, `hash` and being a map key, because two values holding different members are equal whenever the bytes match. Mark the `record` `partial` if you want that refusal stated at the declaration")
+        d.notes @ d.notes.push(
+            "reading `" + one + "` and building one that names it are both sound and stay legal; what has no answer is `==`, `hash` and being a map key, because two values holding different members are equal whenever the bytes match. Mark the `record` `partial` if you want that refusal stated at the declaration"
+        )
     else
         named: str @ ""
+
         if members.len() == 2
             named @ "`" + members[0] + "` and `" + members[1] + "`"
         else
             heads: [str] @ []
             at: i64 @ 0
+
             while at < members.len() - 1
                 heads @ heads.push(members[at])
                 at @ at + 1
+
             named @ "`" + heads.join("`, `") + "` and `" + members[members.len() - 1] + "`"
         d.message @ "`" + type_name + "` is a `union` in `" + found.must().header + "`, so " + named + " are the same bytes — building one or comparing it would answer about whichever was written last"
-        d.notes @ d.notes.push("a `record` over a union may name ONE member, and that binds it soundly: reading through it is correct and construction sets the member it names. Two or more is what has no answer — C keeps the last one written, so `==` and `hash` walk the same bytes twice")
+        d.notes @ d.notes.push(
+            "a `record` over a union may name ONE member, and that binds it soundly: reading through it is correct and construction sets the member it names. Two or more is what has no answer — C keeps the last one written, so `==` and `hash` walk the same bytes twice"
+        )
     return ok(d)
 
 # The declaration's own name span, for a class whose fault is the
@@ -171,11 +207,13 @@ function record_of(s: source.Source, decls: [ast.Decl], type_name: str) -> Recor
     for decl in decls
         if source.span_text(s, decl.name) != type_name
             continue
+
         match decl.kind
             .record_decl rec =>
                 if !rec.header.is_err()
                     return ok(RecordOf(header: emit_externs.unquoted(s, span: rec.header.must()), span: decl.name))
             .constant_decl | .function_decl | .variant_decl | .test_decl => continue
+
     return fail("none", "no group record has this name")
 
 ## Tests
@@ -191,6 +229,7 @@ test "incomplete_record maps the probe's #line back to the declaration"
     d = incomplete_record(s, parsed.decls, line: line)
     assert d.must().code == "ffi_incomplete_record"
     assert d.must().message == "`Color` does not name `b`, and `raylib.h` says the struct has it — a group's `record` IS the header's struct, so a field left out is a field C fills with zero"
+
     # A row where no group record sits, or another file's row, stays
     # the compiler's problem.
     assert incomplete_record(s, parsed.decls, line: "t.hero:6:12: error: missing field 'b' initializer").is_err()
@@ -210,9 +249,11 @@ test "union_record reads its own marker, one member and many apart"
     one = "m.c:9:1: error: static assertion failed due to requirement 'x': heroes-ffi-union One v"
     k = union_record(s, parsed.decls, line: one)
     assert k.must().message == "`One` is a `union` in `m.h`, so comparing or hashing one asks about bytes that may hold another member — `v` is only what was written last"
+
     # The interpolated note names the member — the bootstrap shipped
     # this note with a literal {one} inside it, fixed by this crossing.
     assert k.must().notes[0] == "reading `v` and building one that names it are both sound and stay legal; what has no answer is `==`, `hash` and being a map key, because two values holding different members are equal whenever the bytes match. Mark the `record` `partial` if you want that refusal stated at the declaration"
+
     # The premise-death control's own message contains no marker tail
     # that parses: 'a union must classify as 13…' has no record name.
     control = "m.c:9:1: error: static assertion failed due to requirement 'y': a union must classify as 13, or every heroes-ffi-union assertion above is vacuous"

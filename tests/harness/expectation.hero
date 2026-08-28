@@ -45,18 +45,22 @@ function split(text: str) -> Expectation?
     rows = strings.lines(text)
     ending: Ending @ .silent
     kept: [str] @ rows
+
     if rows.len() > 0
         last = rows[rows.len() - 1]
+
         if strings.starts_with(text: last, prefix: "!panic: ")
             ending @ .panics(message: strings.without_prefix(text: last, prefix: "!panic: "))
             kept @ rows.slice(from: 0, to: rows.len() - 1)
         else if strings.starts_with(text: last, prefix: "!exit: ")
             code = strings.to_number(strings.trimmed(strings.without_prefix(text: last, prefix: "!exit: ")))
+
             if code.is_err()
                 return fail("bad_expectation", "`" + last + "` is not an exit code")
             ending @ .exits(code: code.must())
             kept @ rows.slice(from: 0, to: rows.len() - 1)
     out: str @ kept.join("\n")
+
     if out.len() > 0
         out @ out + "\n"
     return ok(Expectation(stdout: out, ending: ending))
@@ -69,19 +73,28 @@ function split(text: str) -> Expectation?
 # Linux run this project ever had).
 function unmet(e: Expectation, out: str, err: str, code: i64) -> str?
     if out != e.stdout
-        return ok("printed something else\n--- expected ---\n" + e.stdout + "--- actual ---\n" + out + "--- it ended: exit " + code.to_str() + ", and its stderr was ---\n" + err + "--- end ---")
+        return ok(
+            "printed something else\n--- expected ---\n" + e.stdout + "--- actual ---\n" + out + "--- it ended: exit " + code.to_str() + ", and its stderr was ---\n" + err + "--- end ---"
+        )
+
     match e.ending
         .silent =>
             if code != 0
                 return ok("must exit 0, and exited " + code.to_str() + "\n  its stderr was:\n" + err)
         .exits x =>
             if code != x.code
-                return ok("must exit " + x.code.to_str() + ", and exited " + code.to_str() + "\n  its stderr was:\n" + err)
+                return ok(
+                    "must exit " + x.code.to_str() + ", and exited " + code.to_str() + "\n  its stderr was:\n" + err
+                )
         .panics p =>
             if !strings.contains(text: err, needle: p.message)
                 return ok("must abort saying `" + p.message + "`, and said:\n" + err)
+
             if code == 0
-                return ok("must not exit 0: an abort that returns success is the silent wrong answer this case exists to catch")
+                return ok(
+                    "must not exit 0: an abort that returns success is the silent wrong answer this case exists to catch"
+                )
+
     return fail("met", "the run matched its expectation")
 
 test "an expectation with no ending is stdout and exit 0"
@@ -109,12 +122,15 @@ test "!panic asks stderr for the message and refuses a zero exit"
     e = split("half\n!panic: index 5 is out of bounds\n").must()
     assert e.stdout == "half\n"
     assert unmet(e, out: "half\n", err: "hero: index 5 is out of bounds\n", code: 134).is_err()
+
     # The right message at exit 0 — an abort that returned success.
     assert !unmet(e, out: "half\n", err: "hero: index 5 is out of bounds\n", code: 0).is_err()
+
     # Aborted, but about something else.
     assert !unmet(e, out: "half\n", err: "hero: divide by zero\n", code: 134).is_err()
 
 test "a malformed ending is a broken case, not a silent one"
     assert split("x\n!exit: three\n").is_err()
+
     # `!exit` without the space is ordinary output, not an ending.
     assert split("x\n!exit:3\n").must().ending == .silent

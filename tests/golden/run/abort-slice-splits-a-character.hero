@@ -20,7 +20,9 @@
 
 function main()
     word = "caffè"
+
     # In range: 6 bytes, and 4 is a boundary.
     print(slice(word, from: 0, to: 4))
+
     # Also in range — and it splits `è` in half.
     print(slice(word, from: 0, to: 5))

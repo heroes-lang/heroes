@@ -53,6 +53,7 @@ function main()
     print(s.g(50))
     print(g(h: s, n: 50))
     v: Step @ .apply(g: double_it)
+
     match v
         .apply a => print(a.g(50))
         .stop    => print(0)

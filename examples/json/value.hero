@@ -57,14 +57,18 @@ function render(j: Json) -> str
 # expression and a loop is not one.
 function rendered(items: [Json]) -> [str]
     out: [str] @ []
+
     for item in items
         out @ out.push(render(item))
+
     return out
 
 function pairs(fields: {str: Json}) -> [str]
     out: [str] @ []
+
     for k in sort(keys(fields))
         out @ out.push(quote(k) + ":" + render(fields[k].must()))
+
     return out
 
 # A string, with the five escapes JSON needs on the way out.
@@ -74,6 +78,7 @@ function pairs(fields: {str: Json}) -> [str]
 # quadratic, and `join` is linear.
 function quote(s: str) -> str
     out: [str] @ ["\""]
+
     for c in s.chars()
         if c == "\""
             out @ out.push("\\\"")
@@ -85,6 +90,7 @@ function quote(s: str) -> str
             out @ out.push("\\t")
         else
             out @ out.push(c)
+
     out @ out.push("\"")
     return join(out, "")
 
@@ -102,14 +108,18 @@ function size(j: Json) -> i64
 
 function size_of_all(items: [Json]) -> i64
     total: i64 @ 0
+
     for item in items
         total @ total + size(item)
+
     return total
 
 function size_of_fields(fields: {str: Json}) -> i64
     total: i64 @ 0
+
     for k in keys(fields)
         total @ total + size(fields[k].must())
+
     return total
 
 # How deep the tree goes: a leaf is 1.
@@ -124,16 +134,21 @@ function depth(j: Json) -> i64
 
 function deepest(items: [Json]) -> i64
     best: i64 @ 0
+
     for item in items
         d = depth(item)
+
         if d > best
             best @ d
+
     return best
 
 function fields_of(fields: {str: Json}) -> [Json]
     out: [Json] @ []
+
     for k in sort(keys(fields))
         out @ out.push(fields[k].must())
+
     return out
 
 # The value at `key`, for an object — and an error for everything else, because

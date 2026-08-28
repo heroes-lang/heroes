@@ -37,13 +37,19 @@ record Assembled
 function label_table(lines: [program.Line]) -> {str: i64}?
     labels: {str: i64} @ {}
     at: i64 @ 0
+
     for line in lines
         if line.label != ""
             if !labels[line.label].is_err()
-                return fail(ERR_DUPLICATE_LABEL, "line " + line.number.to_str() + ": `" + line.label + "` is defined twice")
+                return fail(
+                    ERR_DUPLICATE_LABEL,
+                    "line " + line.number.to_str() + ": `" + line.label + "` is defined twice"
+                )
             labels[line.label] @ at
+
         if line.mnemonic != ""
             at @ at + 1
+
     return ok(labels)
 
 ## Pass two
@@ -51,11 +57,14 @@ function label_table(lines: [program.Line]) -> {str: i64}?
 function assemble(lines: [program.Line]) -> Assembled?
     labels = label_table(lines)?
     code: [i64] @ []
+
     for line in lines
         if line.mnemonic == ""
             continue
+
         for word in encode(line, labels)?
             code @ code.push(word)
+
     return ok(Assembled(code: code, labels: labels))
 
 # One instruction, as its three words. Every arm checks its own operand count
@@ -63,21 +72,33 @@ function assemble(lines: [program.Line]) -> Assembled?
 # index that aborts.
 function encode(line: program.Line, labels: {str: i64}) -> [i64]?
     m = line.mnemonic
+
     if m == "load"
         _ = expect(line, 2)?
-        return ok([program.OP_LOAD, program.register_of(line.operands[0], line.number)?, program.number_of(line.operands[1], line.number)?])
+        return ok(
+            [program.OP_LOAD, program.register_of(line.operands[0], line.number)?, program.number_of(line.operands[1], line.number)?]
+        )
+
     if m == "copy" || m == "add" || m == "sub"
         _ = expect(line, 2)?
-        return ok([opcode_of(m), program.register_of(line.operands[0], line.number)?, program.register_of(line.operands[1], line.number)?])
+        return ok(
+            [opcode_of(m), program.register_of(line.operands[0], line.number)?, program.register_of(line.operands[1], line.number)?]
+        )
+
     if m == "print"
         _ = expect(line, 1)?
         return ok([program.OP_PRINT, program.register_of(line.operands[0], line.number)?, 0])
+
     if m == "jmpz"
         _ = expect(line, 2)?
-        return ok([program.OP_JMPZ, program.register_of(line.operands[0], line.number)?, target_of(line.operands[1], labels, line.number)?])
+        return ok(
+            [program.OP_JMPZ, program.register_of(line.operands[0], line.number)?, target_of(line.operands[1], labels, line.number)?]
+        )
+
     if m == "jmp"
         _ = expect(line, 1)?
         return ok([program.OP_JMP, target_of(line.operands[0], labels, line.number)?, 0])
+
     if m == "halt"
         _ = expect(line, 0)?
         return ok([program.OP_HALT, 0, 0])
@@ -86,13 +107,17 @@ function encode(line: program.Line, labels: {str: i64}) -> [i64]?
 function opcode_of(m: str) -> i64
     if m == "copy"
         return program.OP_COPY
+
     if m == "add"
         return program.OP_ADD
     return program.OP_SUB
 
 function expect(line: program.Line, wanted: i64) -> i64?
     if line.operands.len() != wanted
-        return fail(ERR_BAD_OPERAND_COUNT, "line " + line.number.to_str() + ": `" + line.mnemonic + "` takes " + wanted.to_str() + ", not " + line.operands.len().to_str())
+        return fail(
+            ERR_BAD_OPERAND_COUNT,
+            "line " + line.number.to_str() + ": `" + line.mnemonic + "` takes " + wanted.to_str() + ", not " + line.operands.len().to_str()
+        )
     return ok(wanted)
 
 # A label becomes the instruction index it stands at — times the width, because

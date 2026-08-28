@@ -52,16 +52,19 @@ record Run
 # one.
 function sq(text: str) -> str
     out: str @ "'"
+
     for ch in text.chars()
         if ch == "'"
             out @ out + "'\\''"
         else
             out @ out + ch
+
     return out + "'"
 
 # waitpid's answer, as the number a shell prints.
 function status_of(raw: i64) -> i64
     signal = raw % 128
+
     if signal != 0 && raw % 256 != 0
         return 128 + signal
     return raw / 256
@@ -76,6 +79,7 @@ function status_of(raw: i64) -> i64
 function run(scratch: str, command: str) -> Run?
     out_path = scratch + "/stdout"
     err_path = scratch + "/stderr"
+
     # THE PARENTHESES ARE THE WHOLE FUNCTION, and they were missing at
     # first. A redirection binds to ONE command, so `a; b > f` sends only
     # b's output to f, and `cd d && touch x > f` resolves f INSIDE d. Both
@@ -96,12 +100,15 @@ function run(scratch: str, command: str) -> Run?
     # rather than those words.
     line = "exec 2>/dev/null; ( " + command + " ) > " + sq(out_path) + " 2> " + sq(err_path)
     raw = system(command: line.cstr()).to_i64().must()
+
     if raw < 0
         return fail("cannot_run", "the shell refused to run: " + command)
     out = read_file(out_path)
+
     if out.is_err()
         return fail("cannot_run", "cannot read the captured stdout at " + out_path)
     err = read_file(err_path)
+
     if err.is_err()
         return fail("cannot_run", "cannot read the captured stderr at " + err_path)
     return ok(Run(code: status_of(raw: raw), out: out.must(), err: err.must()))
@@ -111,15 +118,19 @@ function list_entries(scratch: str, dir: str) -> [str]?
     listing = scratch + "/listing"
     line = "find " + sq(dir) + " -maxdepth 1 -type f -print0 > " + sq(listing)
     raw = system(command: line.cstr()).to_i64().must()
+
     if status_of(raw: raw) != 0
         return fail("cannot_walk", "cannot list " + dir + " (find exited " + status_of(raw: raw).to_str() + ")")
     text = read_file(listing)
+
     if text.is_err()
         return fail("cannot_walk", "cannot read the listing at " + listing)
     entries: [str] @ []
+
     for piece in strings.split_on(text: text.must(), byte: 0)
         if piece.len() > 0
             entries @ entries.push(piece)
+
     return ok(entries.sort())
 
 # Every directory directly inside `dir`, sorted, `dir` itself excluded.
@@ -127,15 +138,19 @@ function list_directories(scratch: str, dir: str) -> [str]?
     listing = scratch + "/listing-dirs"
     line = "find " + sq(dir) + " -maxdepth 1 -type d -print0 > " + sq(listing)
     raw = system(command: line.cstr()).to_i64().must()
+
     if status_of(raw: raw) != 0
         return fail("cannot_walk", "cannot list the directories in " + dir)
     text = read_file(listing)
+
     if text.is_err()
         return fail("cannot_walk", "cannot read the listing at " + listing)
     entries: [str] @ []
+
     for piece in strings.split_on(text: text.must(), byte: 0)
         if piece.len() > 0 && piece != dir
             entries @ entries.push(piece)
+
     return ok(entries.sort())
 
 # Every file this project OWNS — asked of git, which is the only thing that
@@ -165,15 +180,22 @@ function project_files(scratch: str) -> [str]?
     listing = scratch + "/listing-project"
     line = "git ls-files --cached --others --exclude-standard -z > " + sq(listing)
     raw = system(command: line.cstr()).to_i64().must()
+
     if status_of(raw: raw) != 0
-        return fail("cannot_walk", "`git ls-files` could not list this project's files — the record checks ask git what belongs here, and there is no sound fallback: a `find` reported a gitignored TLS key as a milestone identifier, which is why this function exists")
+        return fail(
+            "cannot_walk",
+            "`git ls-files` could not list this project's files — the record checks ask git what belongs here, and there is no sound fallback: a `find` reported a gitignored TLS key as a milestone identifier, which is why this function exists"
+        )
     text = read_file(listing)
+
     if text.is_err()
         return fail("cannot_walk", "cannot read the listing at " + listing)
     entries: [str] @ []
+
     for piece in strings.split_on(text: text.must(), byte: 0)
         if piece.len() > 0
             entries @ entries.push(piece)
+
     return ok(entries.sort())
 
 # Every file under `dir`, recursively, with whole subtrees pruned.
@@ -186,19 +208,25 @@ function project_files(scratch: str) -> [str]?
 function list_tree(scratch: str, dir: str, skip: [str]) -> [str]?
     listing = scratch + "/listing-tree"
     line: str @ "find " + sq(dir) + " -type f"
+
     for name in skip
         line @ line + " -not -path " + sq(dir + "/" + name + "/*") + " -not -path " + sq(dir + "/" + name)
+
     line @ line + " -print0 > " + sq(listing)
     raw = system(command: line.cstr()).to_i64().must()
+
     if status_of(raw: raw) != 0
         return fail("cannot_walk", "cannot walk " + dir)
     text = read_file(listing)
+
     if text.is_err()
         return fail("cannot_walk", "cannot read the listing at " + listing)
     entries: [str] @ []
+
     for piece in strings.split_on(text: text.must(), byte: 0)
         if piece.len() > 0
             entries @ entries.push(piece)
+
     return ok(entries.sort())
 
 # How long a program may take before the harness stops waiting, as a
@@ -227,6 +255,7 @@ function patience() -> str
 # contract, not caution: converting a null `cstr` aborts (spec:229).
 function env(name: str) -> str
     got = getenv(name: name.cstr())
+
     if got == nullptr
         return ""
     return got.validated().default("")
@@ -289,11 +318,14 @@ constant CANDIDATES: [str]
 # says which four it looked at.
 function some_compiler() -> str
     named = env(name: "HEROES_COMPILER")
+
     if named.len() > 0 && exists(named)
         return named
+
     for path in CANDIDATES
         if exists(path)
             return path
+
     return ""
 
 # What to print when there is none — the four places, named.
@@ -342,14 +374,19 @@ test "the directory walk keeps a filename that contains a newline"
     hostile = scratch + "/hostile"
     assert !remove_tree(hostile).is_err()
     assert !mkdir_all(hostile).is_err()
-    made = run(scratch: scratch, command: "cd " + sq(hostile) + " && touch plain.hero 'two\nlines.hero' \"quo'te.hero\"")
+    made = run(
+        scratch: scratch,
+        command: "cd " + sq(hostile) + " && touch plain.hero 'two\nlines.hero' \"quo'te.hero\""
+    )
     assert !made.is_err()
     assert made.must().code == 0
     found = list_entries(scratch: scratch, dir: hostile)
     assert !found.is_err()
     assert found.must().len() == 3
     readable: i64 @ 0
+
     for entry in found.must()
         if !read_file(entry).is_err()
             readable @ readable + 1
+
     assert readable == 3

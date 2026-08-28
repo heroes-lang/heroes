@@ -23,26 +23,45 @@ use diag
 # duplicate declaration — it is a line that does nothing, and saying which
 # of the three it is costs nothing here and a guess to the reader otherwise.
 function used_twice(name: str, span: token.Span) -> diag.Diagnostic
-    return diag.new_diagnostic(code: "used_twice", message: "`" + name + "` is already named by a `use` in this file — one `use` per module is all there is to say", span: span)
+    return diag.new_diagnostic(
+        code: "used_twice",
+        message: "`" + name + "` is already named by a `use` in this file — one `use` per module is all there is to say",
+        span: span
+    )
 
 # `use geom` in a file that also declares `geom`. Spec's shadowing rule,
 # reached because `use` BINDS (panel 031 R3): the module name and the
 # declaration are one name meaning two things.
 function use_shadows_a_declaration(name: str, declared_at: str, span: token.Span) -> diag.Diagnostic
-    return diag.new_diagnostic(code: "shadowed_binding", message: "`use " + name + "` binds `" + name + "`, and this file already declares `" + name + "` at " + declared_at + " — shadowing is an error here, so one of the two has to be renamed", span: span)
+    return diag.new_diagnostic(
+        code: "shadowed_binding",
+        message: "`use " + name + "` binds `" + name + "`, and this file already declares `" + name + "` at " + declared_at + " — shadowing is an error here, so one of the two has to be renamed",
+        span: span
+    )
 
 # A `use` nothing read. The unused rule, reached the same way.
 function unused_use(name: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "unused_binding", message: "`use " + name + "` is never used — nothing in this file names anything from `" + name + "`", span: span)
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "unused_binding",
+        message: "`use " + name + "` is never used — nothing in this file names anything from `" + name + "`",
+        span: span
+    )
     d.notes @ d.notes.push("delete the line: an import that is not read is a dependency that is not real")
     return d
 
 # `geom.f` where `geom` is a module this file `use`s and `f` is not in it.
 function not_in_module(module: str, name: str, near: [str], span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "unknown_in_module", message: "module `" + module + "` declares nothing called `" + name + "`", span: span)
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "unknown_in_module",
+        message: "module `" + module + "` declares nothing called `" + name + "`",
+        span: span
+    )
+
     if near.len() == 1
         d.message @ "module `" + module + "` declares nothing called `" + name + "` — it has `" + near[0] + "`"
-        d.fixes @ d.fixes.push(diag.Fix(title: "write `" + module + "." + near[0] + "`", replacement: near[0], span: span, certainty: .certain))
+        d.fixes @ d.fixes.push(
+            diag.Fix(title: "write `" + module + "." + near[0] + "`", replacement: near[0], span: span, certainty: .certain)
+        )
     else if near.len() > 1
         d.message @ "module `" + module + "` declares nothing called `" + name + "` — it has " + listed(near)
     return d
@@ -53,16 +72,28 @@ function not_in_module(module: str, name: str, near: [str], span: token.Span) ->
 # UFCS across a module boundary because the error says everything, at the
 # call site, with the repair pre-written (CLAUDE.md §8).
 function needs_qualifying(name: str, module: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "needs_qualifying", message: "`" + name + "` is declared in module `" + module + "`, and a name from another module is always written qualified — `" + module + "." + name + "`", span: span)
-    d.fixes @ d.fixes.push(diag.Fix(title: "write `" + module + "." + name + "`", replacement: module + "." + name, span: span, certainty: .certain))
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "needs_qualifying",
+        message: "`" + name + "` is declared in module `" + module + "`, and a name from another module is always written qualified — `" + module + "." + name + "`",
+        span: span
+    )
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "write `" + module + "." + name + "`", replacement: module + "." + name, span: span, certainty: .certain)
+    )
     return d
 
 # The same, for a module the file has not named yet. The fix is NOT
 # certain: it repairs this line and leaves the file needing a `use`, and a
 # machine-applicable fix has to leave a program that checks clean.
 function needs_a_use(name: str, module: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "needs_qualifying", message: "`" + name + "` is declared in module `" + module + "`, which this file does not name — add `use " + module + "` at the top and write `" + module + "." + name + "`", span: span)
-    d.fixes @ d.fixes.push(diag.Fix(title: "write `" + module + "." + name + "` (and add `use " + module + "`)", replacement: module + "." + name, span: span, certainty: .guess))
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "needs_qualifying",
+        message: "`" + name + "` is declared in module `" + module + "`, which this file does not name — add `use " + module + "` at the top and write `" + module + "." + name + "`",
+        span: span
+    )
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "write `" + module + "." + name + "` (and add `use " + module + "`)", replacement: module + "." + name, span: span, certainty: .guess)
+    )
     return d
 
 # An `extern` reached from another module (panel 033 R5, carried by
@@ -78,23 +109,37 @@ function needs_a_use(name: str, module: str, span: token.Span) -> diag.Diagnosti
 # does. The library arm names the route a reader can actually take: its
 # externs are all wrapped, and the wrapper is the Heroes function.
 function extern_across_modules(name: str, module: str, is_library: bool, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "extern_across_modules", message: "`" + name + "` is an `extern` of module `" + module + "` — an extern is never callable across a module boundary, because only `" + module + "` carries the header that checks it", span: span)
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "extern_across_modules",
+        message: "`" + name + "` is an `extern` of module `" + module + "` — an extern is never callable across a module boundary, because only `" + module + "` carries the header that checks it",
+        span: span
+    )
+
     if is_library
         d.message @ "`" + name + "` is the library's own `extern` — an extern is never callable across a module boundary, and the library is a module"
-        d.notes @ d.notes.push("§4.19: every extern the library declares is wrapped by a library function, and the wrapper is the route — it adds the checks the raw extern does not have")
+        d.notes @ d.notes.push(
+            "§4.19: every extern the library declares is wrapped by a library function, and the wrapper is the route — it adds the checks the raw extern does not have"
+        )
     else
-        d.notes @ d.notes.push("§4.19: write a Heroes function beside the `extern` in `" + module + "` and call that — the wrapper is compiled in the module whose header clang checks")
+        d.notes @ d.notes.push(
+            "§4.19: write a Heroes function beside the `extern` in `" + module + "` and call that — the wrapper is compiled in the module whose header clang checks"
+        )
     return d
 
 # A module name standing on its own. It is not a value in any position —
 # only a dot may follow it — and "unknown name" would be a lie about a name
 # the file's own `use` line put there.
 function module_is_not_a_value(name: str, span: token.Span) -> diag.Diagnostic
-    return diag.new_diagnostic(code: "module_is_not_a_value", message: "`" + name + "` names a module, not a value — a module can only be followed by a dot, as in `" + name + ".something`", span: span)
+    return diag.new_diagnostic(
+        code: "module_is_not_a_value",
+        message: "`" + name + "` names a module, not a value — a module can only be followed by a dot, as in `" + name + ".something`",
+        span: span
+    )
 
 # `geom.f` where `geom` is not a module this file names.
 function not_a_module(name: str, known: [str], span: token.Span) -> diag.Diagnostic
     message: str @ "`" + name + "` is not a module this file names, and not a value either"
+
     if known.len() > 0
         message @ message + " — it names " + listed(known)
     return diag.new_diagnostic(code: "not_a_module", message: message, span: span)
@@ -103,13 +148,16 @@ function not_a_module(name: str, known: [str], span: token.Span) -> diag.Diagnos
 function listed(items: [str]) -> str
     if items.len() == 0
         return ""
+
     if items.len() == 1
         return "`" + items[0] + "`"
     head: [str] @ []
     i: i64 @ 0
+
     while i < items.len() - 1
         head @ head.push("`" + items[i] + "`")
         i @ i + 1
+
     return head.join(", ") + " and `" + items[items.len() - 1] + "`"
 
 ## Tests

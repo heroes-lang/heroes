@@ -44,23 +44,43 @@ constant LEAST: i64
 function run_all(scratch: str, compiler: str) -> report.Report?
     r: report.Report @ report.empty()
     found = cases.collect(scratch: scratch, dir: RUN_DIR)?
+
     if found.len() < LEAST
-        report.keep_failure(@r, label: "lines", detail: "  " + RUN_DIR + " has " + found.len().to_str() + " cases and had " + LEAST.to_str())
+        report.keep_failure(
+            @r,
+            label: "lines",
+            detail: "  " + RUN_DIR + " has " + found.len().to_str() + " cases and had " + LEAST.to_str()
+        )
     emitted: i64 @ 0
+
     for item in found
-        said = shell.run(scratch: scratch, command: shell.sq(compiler) + " build " + shell.sq(item.source) + " --emit-c")
+        said = shell.run(
+            scratch: scratch,
+            command: shell.sq(compiler) + " build " + shell.sq(item.source) + " --emit-c"
+        )
+
         if said.is_err() || said.must().code != 0
             # A case this machine cannot emit (a missing library) is not
             # evidence either way.
             continue
         emitted @ emitted + 1
         wrong = offences(c: said.must().out, source: item.source)
+
         if wrong.len() == 0
             report.keep_pass(@r)
         else
-            report.keep_failure(@r, label: "lines/" + item.name, detail: "  " + wrong.len().to_str() + " generated line(s) point at a source line that is blank or absent — `#line` drifted, and a debugger will show the author a line they did not write:\n" + shown(wrong))
+            report.keep_failure(
+                @r,
+                label: "lines/" + item.name,
+                detail: "  " + wrong.len().to_str() + " generated line(s) point at a source line that is blank or absent — `#line` drifted, and a debugger will show the author a line they did not write:\n" + shown(wrong)
+            )
+
     if emitted < LEAST
-        report.keep_failure(@r, label: "lines", detail: "  only " + emitted.to_str() + " of " + found.len().to_str() + " cases emitted — this machine tested nothing")
+        report.keep_failure(
+            @r,
+            label: "lines",
+            detail: "  only " + emitted.to_str() + " of " + found.len().to_str() + " cases emitted — this machine tested nothing"
+        )
     return ok(r)
 
 # Walks emitted C the way C does — `#line N "f"` anchors the NEXT line,
@@ -69,6 +89,7 @@ function offences(c: str, source: str) -> [str]
     found: [str] @ []
     claim_file: str @ ""
     claim_line: i64 @ 0
+
     # A one-entry cache: a case's C alternates between `<heroes library>`
     # (skipped) and the case's own file, so one slot is enough and the
     # cost of a miss is one small file.
@@ -76,39 +97,52 @@ function offences(c: str, source: str) -> [str]
     body: [str] @ []
     readable: bool @ false
     row_number: i64 @ 0
+
     for row in strings.lines(c)
         row_number @ row_number + 1
+
         if strings.starts_with(text: row, prefix: "#line ")
             rest = strings.without_prefix(text: row, prefix: "#line ")
             claim_line @ 0
             claim_file @ ""
             space = strings.index_of(text: rest, needle: " ")
+
             if !space.is_err()
                 number = strings.to_number(rest.slice(from: 0, to: space.must()))
+
                 if !number.is_err()
                     claim_line @ number.must()
                     claim_file @ unquoted(rest.slice(from: space.must() + 1, to: rest.len()))
             continue
+
         if claim_file.len() == 0
             continue
+
         if strings.ends_with(text: claim_file, suffix: ".hero")
             if claim_file != held
                 held @ claim_file
                 text = read_file(claim_file)
                 readable @ !text.is_err()
+
                 if readable
                     body @ strings.lines(text.must())
                 else
                     body @ []
+
             if readable
                 why: str @ ""
+
                 if claim_line < 1 || claim_line > body.len()
                     why @ "past the end (" + body.len().to_str() + " lines)"
                 else if strings.trimmed(body[claim_line - 1]).len() == 0
                     why @ "a blank line"
+
                 if why.len() > 0
-                    found @ found.push("    C:" + row_number.to_str() + " `" + strings.trimmed(row) + "` -> " + claim_file + ":" + claim_line.to_str() + " is " + why + " (from " + source + ")")
+                    found @ found.push(
+                        "    C:" + row_number.to_str() + " `" + strings.trimmed(row) + "` -> " + claim_file + ":" + claim_line.to_str() + " is " + why + " (from " + source + ")"
+                    )
         claim_line @ claim_line + 1
+
     return found
 
 # The first three offences and a count of the rest: a drifted `#line`
@@ -122,10 +156,12 @@ function shown(wrong: [str]) -> str
 # `"file.hero"` as `file.hero`, with C's two escapes undone.
 function unquoted(text: str) -> str
     body: str @ strings.trimmed(text)
+
     if body.len() >= 2 && body[0] == 34 && body[body.len() - 1] == 34
         body @ body.slice(from: 1, to: body.len() - 1)
     out: str @ ""
     i: i64 @ 0
+
     while i < body.len()
         if body[i] == 92 && i + 1 < body.len()
             out @ out + body.slice(from: i + 1, to: i + 2)
@@ -133,6 +169,7 @@ function unquoted(text: str) -> str
         else
             out @ out + body.slice(from: i, to: i + 1)
             i @ i + 1
+
     return out
 
 test "a claim that lands on a real line is no offence, and the two bad shapes are"
@@ -140,6 +177,7 @@ test "a claim that lands on a real line is no offence, and the two bad shapes ar
     tree = scratch + "/lines"
     assert !shell.remove_tree(tree).is_err()
     assert !shell.mkdir_all(tree).is_err()
+
     # Three lines, the middle one blank.
     assert !write_file(path: tree + "/s.hero", text: "function main()\n\n    print(1)\n").is_err()
 
@@ -159,6 +197,7 @@ test "the count advances after the anchor, which is the defect this exists for"
     tree = scratch + "/lines"
     assert !shell.mkdir_all(tree).is_err()
     assert !write_file(path: tree + "/s.hero", text: "function main()\n\n    print(1)\n").is_err()
+
     # One anchor at line 1, then TWO C lines: the second claims line 2,
     # which is blank. This is exactly the shape that shipped for the
     # backend's whole life — the anchor was right and the drift was not.

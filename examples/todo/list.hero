@@ -40,22 +40,28 @@ function is_space(c: u8) -> bool
 
 function trimmed(line: str) -> str
     from: i64 @ 0
+
     while from < line.len() && is_space(line[from])
         from @ from + 1
+
     to: i64 @ line.len()
+
     while to > from && is_space(line[to - 1])
         to @ to - 1
+
     return line.slice(from: from, to: to)
 
 function split_lines(text: str) -> [str]
     out: [str] @ []
     start: i64 @ 0
     i: i64 @ 0
+
     while i < text.len()
         if text[i] == '\n'
             out @ out.push(text.slice(from: start, to: i))
             start @ i + 1
         i @ i + 1
+
     if start < text.len()
         out @ out.push(text.slice(from: start, to: text.len()))
     return out
@@ -65,25 +71,32 @@ function split_lines(text: str) -> [str]
 function read(text: str) -> [Task]?
     out: [Task] @ []
     number: i64 @ 0
+
     for line in split_lines(text)
         number @ number + 1
         head = trimmed(line)
+
         if head == ""
             continue
+
         if head.len() < 4 || head[0] != '[' || head[2] != ']' || head[3] != ' '
             return fail(ERR_BAD_LINE, "line " + number.to_str() + ": a task is `[ ] text` or `[x] text`")
         marker = head[1]
+
         if marker != ' ' && marker != 'x'
             return fail(ERR_BAD_MARKER, "line " + number.to_str() + ": the marker is a space or an `x`")
         out @ out.push(Task(done: marker == 'x', text: trimmed(head.slice(from: 4, to: head.len()))))
+
     return ok(out)
 
 function render(tasks: [Task]) -> str
     if tasks.len() == 0
         return ""
     lines: [str] @ []
+
     for task in tasks
         lines @ lines.push(marker_of(task) + " " + task.text)
+
     return join(lines, "\n") + "\n"
 
 function marker_of(task: Task) -> str
@@ -105,25 +118,31 @@ function complete(tasks: [Task], n: i64) -> [Task]?
     if n < 1 || n > tasks.len()
         return fail(ERR_NO_SUCH_TASK, "there is no task " + n.to_str() + " — the list has " + tasks.len().to_str())
     out: [Task] @ []
+
     for i in range(from: 0, to: tasks.len())
         if i == n - 1
             out @ out.push(Task(done: true, text: tasks[i].text))
         else
             out @ out.push(tasks[i])
+
     return ok(out)
 
 function left_to_do(tasks: [Task]) -> i64
     open: i64 @ 0
+
     for task in tasks
         if !task.done
             open @ open + 1
+
     return open
 
 # `1. [ ] buy milk`, the view a person reads and types a number back at.
 function numbered(tasks: [Task]) -> [str]
     out: [str] @ []
+
     for i in range(from: 0, to: tasks.len())
         out @ out.push((i + 1).to_str() + ". " + marker_of(tasks[i]) + " " + tasks[i].text)
+
     return out
 
 test "a file round-trips through reading and rendering"

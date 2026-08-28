@@ -33,19 +33,24 @@ function build(t: check_table.Types, decls: [ast.Decl], written: {i64: i64}) -> 
     count = check_table.len_of(t)
     answer: [bool] @ []
     i: i64 @ 0
+
     while i < count
         answer @ answer.push(false)
         i @ i + 1
+
     changed: bool @ true
+
     while changed
         changed @ false
         index: i64 @ 0
+
         while index < count
             if !answer[index]
                 if counts(t, decls, written, answer, ty: index)
                     answer[index] @ true
                     changed @ true
             index @ index + 1
+
     return answer
 
 # Every arm listed, never a catch-all: a type added to the language must
@@ -58,27 +63,33 @@ function counts(t: check_table.Types, decls: [ast.Decl], written: {i64: i64}, an
         # Both kinds through fields_of, because reading only records made
         # every variant uncounted: a str payload copied with = and never
         # increfed, found by the test that names one case counted.
+
         .named n =>
             for f in fields_of(decls, written, decl: n.decl)
                 if answer[f]
                     return true
+
             return false
         .case_ty vc =>
             for f in case_fields_of(decls, written, decl: vc.decl, at: vc.at)
                 if answer[f]
                     return true
+
             return false
         .array | .map => return true
         # EVERY T? is counted whatever T is, and a Failure always: it is
         # two strs, so even i64? owns a reference on its error side.
-        .fallible | .failure => return true
+
+        .fallible | .failure                               => return true
         .int_ty | .float_ty | .bool | .unit | .ptr | .cstr => return false
         # A fixed array owns exactly what its element owns: inline bytes,
         # no reference of its own — written as the honest rule rather
         # than as false, because the day a fixed array is permitted
         # outside a group the wrong answer here is a leak.
-        .fixed x => return counts(t, decls, written, answer, ty: x.element)
+
+        .fixed x                         => return counts(t, decls, written, answer, ty: x.element)
         .function_ty | .generic | .error => return false
+
     return false
 
 # Every field a value of this declaration can hold, as interned ids. A
@@ -86,32 +97,39 @@ function counts(t: check_table.Types, decls: [ast.Decl], written: {i64: i64}, an
 # makes the variant counted: the generated drop switches on the tag.
 function fields_of(decls: [ast.Decl], written: {i64: i64}, decl: i64) -> [i64]
     out: [i64] @ []
+
     match decls[decl].kind
         .record_decl rec =>
             for field in rec.fields
                 found = written[field.ty]
+
                 if !found.is_err()
                     out @ out.push(found.must())
         .variant_decl v =>
             for one_case in v.cases
                 for field in one_case.fields
                     found = written[field.ty]
+
                     if !found.is_err()
                         out @ out.push(found.must())
         .constant_decl | .function_decl | .test_decl => return out
+
     return out
 
 # One case's payload fields — the narrower question a case type asks.
 function case_fields_of(decls: [ast.Decl], written: {i64: i64}, decl: i64, at: i64) -> [i64]
     out: [i64] @ []
+
     match decls[decl].kind
         .variant_decl v =>
             if at < v.cases.len()
                 for field in v.cases[at].fields
                     found = written[field.ty]
+
                     if !found.is_err()
                         out @ out.push(found.must())
         .constant_decl | .function_decl | .record_decl | .test_decl => return out
+
     return out
 
 ## Tests
@@ -123,9 +141,11 @@ test "the count is transitive, and a variant's payload makes it so"
     out = resolve.resolve(p.tree, s, p.decls, p.uses)
     c: check_state.Checker @ check_state.new_checker(out_of: out, expr_count: 0)
     i: i64 @ 0
+
     while i < p.tree.types.len()
         _ = check_lower.lower_ty(@c, p.tree, out, i)
         i @ i + 1
+
     plain = check_table.intern(@c.out.types, .named(decl: 0))
     holder = check_table.intern(@c.out.types, .named(decl: 1))
     tok = check_table.intern(@c.out.types, .named(decl: 2))
@@ -138,6 +158,7 @@ test "the count is transitive, and a variant's payload makes it so"
     assert answer[holder]
     assert answer[tok]
     assert answer[deep]
+
     # Even i64? owns a reference on its error side.
     assert answer[int_maybe]
     assert !answer[fixed_ints]

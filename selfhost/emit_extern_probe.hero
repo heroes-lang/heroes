@@ -96,31 +96,41 @@ function probe_name(module: str, name: str) -> str
 # M-header-constants falsified for the sibling walks.
 function extern_probes(@w: emit_writer.Writer, p: ir_state.Program, c: check_state.Checked, names: emit_ctype.Names, s: source.Source, decls: [ast.Decl])
     probes: [Probe] @ []
+
     for f in p.functions
         if emit_externs.extern_spans(decls, f).header.is_err()
             continue
+
         if f.params.len() == 0
             continue
         name = source.span_text(s, decls[f.decl].name)
         parameters = parameter_list(names, c, f)
+
         if parameters.is_err()
             continue
         arguments = argument_names(count: f.params.len())
+
         # The declaration's own file and line, so clang's verdict lands
         # where the author can act on it — and a probe for a library's
         # extern claims the library.
         found = source.locate(s, decls[f.decl].name.start)
         module = source.component_at(s, decls[f.decl].span.start)
-        probes @ probes.push(Probe(file: found.file, line: found.line, text: probe_line(probe: probe_name(module: module, name: name), name: name, parameters: parameters.must(), arguments: arguments)))
+        probes @ probes.push(
+            Probe(file: found.file, line: found.line, text: probe_line(probe: probe_name(module: module, name: name), name: name, parameters: parameters.must(), arguments: arguments))
+        )
+
     if probes.len() == 0
         return
     emit_writer.at_generated(@w)
     emit_writer.line(@w, text: "#pragma clang diagnostic push")
+
     for flag in PROBE_ERRORS
         emit_writer.line(@w, text: "#pragma clang diagnostic error \"" + flag + "\"")
+
     for probe in probes
         emit_writer.at_file(@w, file: probe.file, at: probe.line)
         emit_writer.line(@w, text: probe.text)
+
     emit_writer.at_generated(@w)
     emit_writer.line(@w, text: "#pragma clang diagnostic pop")
     emit_writer.blank(@w)
@@ -160,14 +170,17 @@ function argument_columns(probe: str, name: str, parameters: [str], arguments: [
     line = probe_line(probe: probe, name: name, parameters: parameters, arguments: arguments)
     opens = "(void)(" + name + ")("
     found = find_text(line: line, needle: opens)
+
     if found.is_err()
         none: [i64] = []
         return none
     at: i64 @ found.must() + opens.len()
     out: [i64] @ []
+
     for argument in arguments
         out @ out.push(at + 1)
         at @ at + argument.len() + 2
+
     return out
 
 # The names a probe gives its arguments: positional, so nothing about
@@ -175,9 +188,11 @@ function argument_columns(probe: str, name: str, parameters: [str], arguments: [
 function argument_names(count: i64) -> [str]
     out: [str] @ []
     index: i64 @ 0
+
     while index < count
         out @ out.push("a" + index.to_str())
         index @ index + 1
+
     return out
 
 # The declared parameter types as C, positionally named a0, a1, … — or
@@ -190,26 +205,32 @@ function argument_names(count: i64) -> [str]
 function parameter_list(names: emit_ctype.Names, c: check_state.Checked, f: ir_state.Function) -> [str]?
     out: [str] @ []
     index: i64 @ 0
+
     for slot_id in f.params
         declared = f.slots[slot_id]
         c_type = c_type_of(names, c, ty: declared.ty)
+
         if c_type.is_err()
             return fail("none", "a type the frontend should have stopped")
+
         # An @ parameter is a pointer parameter (§4.8, CLAUDE.md §7),
         # and the probe must declare it the same way the call site
         # passes it or the probe itself would be the thing that does
         # not compile.
         mutable: bool @ false
+
         match declared.kind
             .param_slot ps =>
                 if ps.mutable
                     mutable @ true
             .local_slot | .synthetic_slot => mutable @ mutable
+
         if mutable
             out @ out.push(c_type.must() + " * a" + index.to_str())
         else
             out @ out.push(c_type.must() + " a" + index.to_str())
         index @ index + 1
+
     return ok(out)
 
 # A declared FFI parameter type as C. The set is the boundary rule's
@@ -230,6 +251,7 @@ function c_type_of(names: emit_ctype.Names, c: check_state.Checked, ty: i64) -> 
         .ptr => return ok("void *")
         .unit | .array | .fixed | .map => return fail("none", "no C spelling")
         .fallible | .function_ty | .case_ty | .failure | .generic | .error => return fail("none", "no C spelling")
+
     return fail("none", "unreached")
 
 # Byte offset of the first occurrence of needle, over chars so the scan
@@ -238,22 +260,28 @@ function c_type_of(names: emit_ctype.Names, c: check_state.Checked, ty: i64) -> 
 function find_text(line: str, needle: str) -> i64?
     cs = line.chars()
     needle_cs = needle.chars()
+
     if needle_cs.len() == 0
         return ok(0)
+
     if needle_cs.len() > cs.len()
         return fail("none", "not found")
     start: i64 @ 0
+
     while start <= cs.len() - needle_cs.len()
         matched: bool @ true
         offset: i64 @ 0
+
         while offset < needle_cs.len()
             if cs[start + offset] != needle_cs[offset]
                 matched @ false
                 break
             offset @ offset + 1
+
         if matched
             return ok(start)
         start @ start + 1
+
     return fail("none", "not found")
 
 ## Tests
@@ -273,14 +301,22 @@ test "a probe per extern with parameters, mutables as pointers, columns exact"
     w: emit_writer.Writer @ emit_writer.new_writer("t")
     extern_probes(@w, low.program, c, names, s, parsed.decls)
     got = emit_writer.finish(w)
+
     # The probe's name goes through the mangler; the C name does not.
-    assert has(text: got, needle: "__attribute__((unused)) static void hero_ffi_probe_h_t_narrow(int64_t a0) { (void)(narrow)(a0); }")
+    assert has(
+        text: got,
+        needle: "__attribute__((unused)) static void hero_ffi_probe_h_t_narrow(int64_t a0) { (void)(narrow)(a0); }"
+    )
+
     # An @ parameter is declared the way the call site passes it.
     assert has(text: got, needle: "hero_ffi_probe_h_t_fill(int64_t * a0, int64_t a1) { (void)(fill)(a0, a1); }")
+
     # A zero-parameter extern gets no probe at all.
     assert !has(text: got, needle: "hero_ffi_probe_h_t_version")
+
     # #line at the declaration's own line.
     assert has(text: got, needle: "#line 2 \"t.hero\"")
+
     # The pragma block: every PROBE_ERRORS flag is an error inside it,
     # the push precedes the first probe and the pop follows the last —
     # an error pragma leaking past the block would judge generated
@@ -313,6 +349,7 @@ test "argument columns point at each argument's own token"
     line = probe_line(probe: "hero_ffi_probe_h_t_f", name: "f", parameters: parameters, arguments: arguments)
     columns = argument_columns(probe: "hero_ffi_probe_h_t_f", name: "f", parameters: parameters, arguments: arguments)
     assert columns.len() == 2
+
     # The 1-based column lands on the first character of each argument.
     cs = line.chars()
     assert cs[columns[0] - 1] == "a"

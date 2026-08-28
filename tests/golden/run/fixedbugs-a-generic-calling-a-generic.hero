@@ -51,5 +51,6 @@ function main()
     print(outer(["ziggy", "stardust"]))
     p = outer([P(x: 5), P(x: 6)])
     print(p.x)
+
     # And one generic reaching two different generics, at two types.
     print(both([1, 2, 3]), " ", both(["only"]))

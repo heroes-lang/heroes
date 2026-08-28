@@ -34,6 +34,7 @@ use resolve_binding
 # UFCS, which is the ordinary meaning of a dot.
 function qualified(@r: resolve_state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl], at: i64, receiver: i64, called: token.Span) -> bool
     found_module = module_at(r, a, s, receiver)
+
     if found_module.is_err()
         return false
     module = found_module.must()
@@ -41,10 +42,15 @@ function qualified(@r: resolve_state.Resolver, a: ast.Ast, s: source.Source, dec
     resolve_state.record_use(@r, at: receiver, to: .module)
     text = source.span_text(s, called)
     found = resolved.top_in(r.out, module: module, name: text)
+
     if !found.is_err()
         decl = found.must()
+
         match decls[decl].kind
-            .variant_decl => resolve_state.push_diagnostic(@r, resolve_errors.variant_in_value_position(text, span: called))
+            .variant_decl => resolve_state.push_diagnostic(
+                @r,
+                resolve_errors.variant_in_value_position(text, span: called)
+            )
             .function_decl fd =>
                 # Panel 033 R5, M-separate-compilation row 1: an extern is
                 # never callable across a module boundary. The gate sits on
@@ -55,10 +61,14 @@ function qualified(@r: resolve_state.Resolver, a: ast.Ast, s: source.Source, dec
                 # is compiler-written on both sides, so the header is only
                 # needed where they are declared.
                 if fd.value.is_extern
-                    resolve_state.push_diagnostic(@r, module_errors.extern_across_modules(name: text, module: module, is_library: false, span: called))
+                    resolve_state.push_diagnostic(
+                        @r,
+                        module_errors.extern_across_modules(name: text, module: module, is_library: false, span: called)
+                    )
                 else
                     resolve_state.record_use(@r, at: at, to: .top(at: decl))
             .record_decl | .constant_decl | .test_decl => resolve_state.record_use(@r, at: at, to: .top(at: decl))
+
         return true
     names = resolved.names_in(r.out, module)
     near = resolve_state.near_names(@r, text, names)
@@ -79,8 +89,10 @@ function module_at(r: resolve_state.Resolver, a: ast.Ast, s: source.Source, id: 
     if !is_bare_name(a, id)
         return fail("absent", "only a bare name can name a module")
     name = source.span_text(s, a.exprs[id].span)
+
     if !resolve_state.lookup_local(r, name).is_err()
         return fail("absent", "a local of this name is in scope, so the dot is UFCS")
+
     if !resolved.is_used_module(r.out, from: r.module, module: name)
         return fail("absent", "this file does not use a module of this name")
     return ok(name)
@@ -90,21 +102,24 @@ function module_at(r: resolve_state.Resolver, a: ast.Ast, s: source.Source, id: 
 # from compiling instead of quietly answering false.
 function is_bare_name(a: ast.Ast, id: i64) -> bool
     return match a.exprs[id].kind
-        .name => true
+        .name                                                    => true
         .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit => false
-        .null_ptr | .hole | .unary | .binary | .field => false
-        .index | .call | .method | .variant_case | .array => false
-        .map | .try_expr | .if_expr | .match_expr | .error => false
+        .null_ptr | .hole | .unary | .binary | .field            => false
+        .index | .call | .method | .variant_case | .array        => false
+        .map | .try_expr | .if_expr | .match_expr | .error       => false
 
 # The name is real and lives somewhere else. Panel 031 R5's diagnostic,
 # which is what the spec buys instead of a sentence about qualification.
 function name_declared_elsewhere(@r: resolve_state.Resolver, text: str, span: token.Span) -> diag.Diagnostic?
     found = resolved.module_declaring(r.out, from: r.module, name: text)
+
     if found.is_err()
         return fail("absent", "no other module declares this name")
     module = found.must()
+
     if module == r.module || module == source.LIBRARY_MODULE
         return fail("absent", "its home is already visible from here")
+
     if resolved.is_used_module(r.out, from: r.module, module: module)
         resolve_state.keyed_add(@r.module_reads, module: r.module, name: module)
         return ok(module_errors.needs_qualifying(name: text, module: module, span: span))
@@ -123,7 +138,15 @@ function a_function_decl(name_start: i64, name_end: i64) -> ast.Decl
     doc: [token.Span] = []
     ps: [ast.Param] = []
     gs: [token.Span] = []
-    f = ast.FunctionDecl(generics: gs, params: ps, result: 0, body: fail("absent", "unused"), is_extern: false, header: fail("absent", "none"), library: fail("absent", "none"))
+    f = ast.FunctionDecl(
+        generics: gs,
+        params: ps,
+        result: 0,
+        body: fail("absent", "unused"),
+        is_extern: false,
+        header: fail("absent", "none"),
+        library: fail("absent", "none")
+    )
     span = token.Span(start: name_start, end: name_end)
     return ast.Decl(name: span, doc: doc, span: span, kind: .function_decl(value: f))
 
@@ -131,7 +154,15 @@ function an_extern_decl(name_start: i64, name_end: i64) -> ast.Decl
     doc: [token.Span] = []
     ps: [ast.Param] = []
     gs: [token.Span] = []
-    f = ast.FunctionDecl(generics: gs, params: ps, result: 0, body: fail("absent", "unused"), is_extern: true, header: ok(token.Span(start: 0, end: 4)), library: fail("absent", "none"))
+    f = ast.FunctionDecl(
+        generics: gs,
+        params: ps,
+        result: 0,
+        body: fail("absent", "unused"),
+        is_extern: true,
+        header: ok(token.Span(start: 0, end: 4)),
+        library: fail("absent", "none")
+    )
     span = token.Span(start: name_start, end: name_end)
     return ast.Decl(name: span, doc: doc, span: span, kind: .function_decl(value: f))
 
@@ -175,7 +206,13 @@ test "a local wearing the module's name turns the dot back into UFCS"
     r.module @ "t"
     resolved.declare_use(@r.out, from: "t", module: "geom")
     resolve_state.open_scope(@r)
-    _ = resolve_state.declare(@r, s, decls, token.Span(start: 0, end: 4), resolve_binding.bind_binding(ty: fail("absent", "inferred"), value: 0))
+    _ = resolve_state.declare(
+        @r,
+        s,
+        decls,
+        token.Span(start: 0, end: 4),
+        resolve_binding.bind_binding(ty: fail("absent", "inferred"), value: 0)
+    )
     handled = qualified(@r, a, s, decls, at: 0, receiver: receiver, called: token.Span(start: 5, end: 10))
     assert !handled
 
@@ -199,14 +236,17 @@ test "elsewhere splits on the use line, certain against guess"
     r.module @ "t"
     resolved.declare_top(@r.out, module: "geom", name: "dist2", decl: 0)
     span = token.Span(start: 5, end: 10)
+
     # No use line yet: the fix is a guess, the file still needs the use.
     missing = name_declared_elsewhere(@r, "dist2", span)
     assert missing.must().fixes[0].certainty == .guess
+
     # With the use written, the same name earns the certain rewrite.
     resolved.declare_use(@r.out, from: "t", module: "geom")
     have = name_declared_elsewhere(@r, "dist2", span)
     assert have.must().fixes[0].certainty == .certain
     assert have.must().fixes[0].replacement == "geom.dist2"
+
     # A name only the library declares is not "elsewhere".
     resolved.declare_top(@r.out, module: "library", name: "range", decl: 1)
     quiet = name_declared_elsewhere(@r, "range", span)

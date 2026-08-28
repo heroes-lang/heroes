@@ -47,13 +47,16 @@ function main()
     h = Holder(f: double, label: "double")
     print(h.f(21))
     print(h.label)
+
     # Reassigning the field: the value is a function like any other (§4.13).
     k: Holder @ h
     k.f @ negate
     print(k.f(21))
+
     # The original is untouched — a record is a value (§4.10).
     print(h.f(21))
     s: Step @ .apply(g: double)
+
     match s
         .apply a =>
             call = a.g

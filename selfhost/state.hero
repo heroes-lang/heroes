@@ -58,8 +58,10 @@ function new_state() -> LexState
 # can never touch it.
 function emit(@l: LexState, kind: token.TokenKind, start: i64)
     span = token.Span(start: start, end: l.pos)
+
     if kind == .lparen || kind == .lbracket || kind == .lbrace
         l.open_brackets @ l.open_brackets.push(span)
+
     if kind == .rparen || kind == .rbracket || kind == .rbrace
         # Saturating pop: a stray closer never corrupts the following layout;
         # the parser reports it.
@@ -118,7 +120,10 @@ test "a stray closer saturates instead of corrupting"
 test "error recovery records why and keeps lexing"
     l: LexState @ new_state()
     l.pos @ 3
-    error_token(@l, diag.new_diagnostic(code: "unexpected_character", message: "`€` is not part of the language's syntax", span: token.Span(start: 0, end: 3)))
+    error_token(
+        @l,
+        diag.new_diagnostic(code: "unexpected_character", message: "`€` is not part of the language's syntax", span: token.Span(start: 0, end: 3))
+    )
     assert l.diagnostics.len() == 1
     assert l.tokens[0].kind == .error
     assert l.last_significant.must() == .error

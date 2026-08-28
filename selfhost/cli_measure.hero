@@ -76,29 +76,39 @@ function instruments() -> [Instrument]
 function run(file: str?) -> cli_table.Exit
     path = file.default(SPEC)
     text = read_file(path)
+
     if text.is_err()
         cli_io.eprint(text: "error: cannot read `" + path + "`")
         return .failed_exit
     pieces = measure_pieces.pieces_of(text.must())
     readings: [Reading] @ []
+
     for one in instruments()
         table_path = VENDOR + "/" + one.file
         raw = read_file(table_path)
+
         if raw.is_err()
-            cli_io.eprint(text: "error: cannot read `" + table_path + "` — `measure` reads its vendored tables from the repository root, and the file it measures by default lives there too")
+            cli_io.eprint(
+                text: "error: cannot read `" + table_path + "` — `measure` reads its vendored tables from the repository root, and the file it measures by default lives there too"
+            )
             return .failed_exit
         ranks: measure_bpe.Ranks @ measure_bpe.empty()
+
         if one.json
             ranks @ measure_bpe.from_claude_json(raw.must())
         else
             ranks @ measure_bpe.from_tiktoken(raw.must())
+
         if measure_bpe.size(ranks) == 0
             cli_io.eprint(text: "error: `" + table_path + "` parsed to an empty table")
             return .failed_exit
         total: i64 @ 0
+
         for piece in pieces
             total @ total + measure_bpe.count_piece(r: ranks, piece: piece)
+
         readings @ readings.push(Reading(instrument: one.name, vocabulary: measure_bpe.size(ranks), tokens: total))
+
     return reported(path: path, readings: readings)
 
 # The report, byte for byte the bootstrap's: two readings, the binding
@@ -109,40 +119,57 @@ function reported(path: str, readings: [Reading]) -> cli_table.Exit
     print(path)
     highest: i64 @ 0
     lowest: i64 @ -1
+
     for one in readings
-        print("  " + padded(text: one.instrument, width: 16) + " " + aligned(number: one.tokens, width: 6) + "   (" + one.vocabulary.to_str() + " ranks)")
+        print(
+            "  " + padded(text: one.instrument, width: 16) + " " + aligned(number: one.tokens, width: 6) + "   (" + one.vocabulary.to_str() + " ranks)"
+        )
+
         if one.tokens > highest
             highest @ one.tokens
+
         if lowest == -1 || one.tokens < lowest
             lowest @ one.tokens
+
     if lowest == -1
         lowest @ 0
     spread = highest - lowest
     percent: i64 @ 0
+
     if highest > 0
         percent @ spread * 100 / highest
-    print("  " + padded(text: "maximum", width: 16) + " " + aligned(number: highest, width: 6) + "   the binding number")
-    print("  " + padded(text: "spread", width: 16) + " " + aligned(number: spread, width: 6) + "   the error bar (" + percent.to_str() + "%)")
+    print(
+        "  " + padded(text: "maximum", width: 16) + " " + aligned(number: highest, width: 6) + "   the binding number"
+    )
+    print(
+        "  " + padded(text: "spread", width: 16) + " " + aligned(number: spread, width: 6) + "   the error bar (" + percent.to_str() + "%)"
+    )
     print("")
+
     if highest > CEILING
         print("BREACH: " + highest.to_str() + " over the " + CEILING.to_str() + "-token ceiling (design.md §1.6).")
         print("An amendment must be net-negative, or the ceiling moves — with a")
         print("measurement, a panel, and a named alternative (panel 012).")
         return .diagnostics_exit
+
     if highest > SOFT
         print("Above the soft " + SOFT.to_str() + ": an addition needs a named removal or a")
         print("pre-registered falsifiable prediction (panel 012). Headroom: " + (CEILING - highest).to_str() + ".")
     else
-        print("Under the soft " + SOFT.to_str() + ": Principle 0 alone. Headroom: " + (CEILING - highest).to_str() + ".")
+        print(
+            "Under the soft " + SOFT.to_str() + ": Principle 0 alone. Headroom: " + (CEILING - highest).to_str() + "."
+        )
     return .ok_exit
 
 # Left-aligned in `width` columns, counted in characters.
 function padded(text: str, width: i64) -> str
     out: str @ text
     count: i64 @ text.chars().len()
+
     while count < width
         out @ out + " "
         count @ count + 1
+
     return out
 
 # Right-aligned in `width` columns.
@@ -150,9 +177,11 @@ function aligned(number: i64, width: i64) -> str
     shown = number.to_str()
     out: str @ ""
     count: i64 @ shown.chars().len()
+
     while count < width
         out @ out + " "
         count @ count + 1
+
     return out + shown
 
 test "a reading is laid out in the bootstrap's own columns"
@@ -160,6 +189,7 @@ test "a reading is laid out in the bootstrap's own columns"
         Reading(instrument: "claude-legacy", vocabulary: 64995, tokens: 3440)
         Reading(instrument: "cl100k_base", vocabulary: 100256, tokens: 3512)
     ]
+
     # The verdict is printed, not returned as text — what this pins is the
     # arithmetic and the branch, which is where a port goes wrong.
     verdict = reported(path: "spec/heroes-spec.md", readings: readings)

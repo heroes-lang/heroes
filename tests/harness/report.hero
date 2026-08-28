@@ -38,14 +38,17 @@ function tally(one: Report, two: Report) -> Report
     # `+` joins numbers and strings, never arrays (spec:153), so the
     # failures are pushed one at a time.
     merged: [str] @ one.failures
+
     for failure in two.failures
         merged @ merged.push(failure)
+
     return Report(passed: one.passed + two.passed, failed: one.failed + two.failed, failures: merged)
 
 # Prints every failure, then the count. The bool is the exit verdict.
 function verdict(r: Report, what: str) -> bool
     for failure in r.failures
         print(failure)
+
     print(what + ": " + r.passed.to_str() + " passed, " + r.failed.to_str() + " failed")
     return r.failed == 0
 
