@@ -158,7 +158,7 @@ we can be heroes</code></pre>
   <p>
     One of those deserves a word. <code>heroes fmt</code> prints the one
     canonical form of a file, and there is exactly one: same indentation, same
-    line breaks, same order. All 241 Heroes files in the repository, the compiler
+    line breaks, same order. All 241 Heroes files the formatter covers, the compiler
     and the examples included, come back from it unchanged, byte for byte. So a
     difference between two versions of a file is a difference in what the program
     does, never in how somebody typed it.
@@ -220,13 +220,14 @@ we can be heroes</code></pre>
         The Heroes compiler is written in Heroes: 165 files, 48,342 lines. Ask
         three generations of it to write the same program out and the three
         results match to the byte. The language it was first built in is no use
-        to anyone now and has left the repository.
+        to anyone now: nothing builds it and nothing lints it, and it is kept
+        only as a record.
       </p>
       <a class="more" href="/selfhost/">How it compiles itself</a>
     </li>
   </ul>
 
-  <h2>A small surface, no collector, and no crash</h2>
+  <h2>A small surface, no collector, and no null</h2>
   <p>
     In a Heroes file, a line starting at the left margin can begin with four
     words and no others: <code>constant</code>, <code>function</code>,

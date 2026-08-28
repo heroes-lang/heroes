@@ -191,9 +191,13 @@ graphics, audio, terminal <span class="c">→</span> SDL, raylib, ncurses</code>
     on every run, instead of carrying on with an invented value. And this is not
     asserted, it is measured: with the tools that watch memory while the program
     runs, with a check that reports at exit anything not given back, and with
-    the deliberately damaged programs. One hole remains, and it is declared:
-    when you hand data to a C function, what that function does with it is still
-    C's business.
+    the deliberately damaged programs. Two holes remain, and both are declared. When you hand data to a C
+    function, what that function does with it is still C's business. And a
+    program that recurses deeply enough runs out of stack: measured on this
+    compiler, half a million frames is fine and a million is not, and what you
+    get is the operating system stopping the program rather than a message from
+    it. Build with <code>--sanitize</code> and the sanitizer names the function
+    and the line.
   </p>
 
   <h2>The rules it lives by <span class="nod">· fashion ·</span></h2>
@@ -293,7 +297,8 @@ graphics, audio, terminal <span class="c">→</span> SDL, raylib, ncurses</code>
       Inside a string, some characters are written with a backslash in front:
       <code>\n</code> for a new line, <code>\t</code> for a tab,
       <code>\r</code>, <code>\\</code> for the backslash itself and
-      <code>\"</code> for a quote. There are six in total and no others, so
+      <code>\"</code> for a quote, and <code>\'</code> in place of that last one
+      inside a character literal. There are six in total and no others, so
       every character has exactly one spelling. Any other letter after the
       backslash is a compile error, with the correction attached. That second
       half is the point: before it existed, <code>"a\nb"</code> compiled
@@ -310,7 +315,7 @@ graphics, audio, terminal <span class="c">→</span> SDL, raylib, ncurses</code>
       may modify is marked <code>@</code> at the call as well, and it is copied
       in at the start and copied back out at the end. Point two of them at the
       same variable and the result depends on which copy is written back last,
-      an order nothing specifies. Ada lived with that for thirty-three years and
+      an order nothing specifies. Ada lived with that for three decades and
       then made it illegal in 2012, for the reason this language is built
       around: an answer that changes with the order the machine does things in
       is nearly always a bug. Rejecting it is what makes the promise that a

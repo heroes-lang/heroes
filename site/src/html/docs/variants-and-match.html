@@ -117,7 +117,7 @@ error[non_exhaustive]: this `match` does not cover `.minus`
   <p>
     Three errors, one per place in the file that reads a token, each pointing at
     the <code>match</code> that now has a hole in it. Nothing runs until a human
-    or a model, has decided what a minus sign is called, what its
+    or a model has decided what a minus sign is called, what its
     binding power is, and whether it is an operator. <b>A change to the shape of
     the data breaks the code that reads it, loudly, at build time.</b> With a
     catch-all arm, all three of those questions would have been answered

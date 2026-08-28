@@ -24,7 +24,7 @@
   <p>
     Tre funzioni C, utilizzabili dalla riga dopo in avanti. Il nome
     dell&rsquo;header non è decorazione, ed è lì che gira tutto il progetto:
-    <b>clang legge quell&rsquo;header e controlla contro di lui ogni
+    <b>clang legge quell&rsquo;header e ci confronta ogni
     dichiarazione del gruppo.</b> Un binding è l&rsquo;unico punto in cui un
     programma può arrivare a un indirizzo che nessuno ha controllato, quindi è lì
     che il linguaggio spende le sue attenzioni.
@@ -62,7 +62,7 @@ error[ffi_return_type]: `puts` does not return `cstr` — that is what `stdio.h`
   <p>
     Nella maggior parte dei linguaggi una dichiarazione verso l&rsquo;esterno è
     una promessa che nessuno verifica: sbagliala e il programma compila, gira, e
-    corrompe qualcosa. Qui la promessa viene controllata contro la libreria che
+    corrompe qualcosa. Qui la promessa viene verificata sulla libreria che
     deve mantenerla.
   </p>
 
