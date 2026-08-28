@@ -206,8 +206,14 @@ grafica, audio, terminale     <span class="c">→</span> SDL, raylib, ncurses</c
     non lo diciamo e basta, lo misuriamo: con gli strumenti che sorvegliano la
     memoria mentre il programma gira, con un controllo che a fine esecuzione
     segnala tutto quello che non è stato restituito, e con i programmi guastati
-    apposta. Un buco resta, ed è dichiarato: quando passi un dato a una funzione
-    C, quello che quella funzione ci fa è ancora affare del C.
+    apposta. Restano due buchi, e sono dichiarati tutti e due. Quando passi un dato a
+    una funzione C, quello che quella funzione ci fa è ancora affare del C. E un
+    programma che chiama se stesso abbastanza a fondo esaurisce lo stack, cioè
+    lo spazio che il sistema tiene da parte per le chiamate: misurato su questo
+    compilatore, mezzo milione di chiamate annidate va bene e un milione no, e
+    quello che ottieni è il sistema operativo che ferma il programma invece di
+    un messaggio del programma. Compilando con <code>--sanitize</code> il
+    controllore ti dice la funzione e la riga.
   </p>
 
   <h2>Le regole con cui vive <span class="nod">· fashion ·</span></h2>
@@ -216,7 +222,7 @@ grafica, audio, terminale     <span class="c">→</span> SDL, raylib, ncurses</c
     <li><b>Un modo solo di scrivere ogni cosa.</b> C&rsquo;è un comando che rimette il codice nella sua forma unica, una parola sola per i cicli, nessuna conversione automatica fra tipi, e i nomi degli argomenti obbligatori dove i tipi non bastano a distinguerli. Gli errori che i modelli fanno davvero diventano errori che il compilatore segnala davvero.</li>
     <li><b>Errori scritti per essere letti da una macchina.</b> Ogni messaggio di errore porta tutto quello che serve per sistemare il programma in un colpo solo: che cosa il compilatore si aspettava, dove era stata dichiarata la cosa con cui va in conflitto, e la correzione, marchiata <code>certain</code> quando è sicura e <code>guess</code> quando è un suggerimento. E scrivendo <code>???</code> puoi lasciare un buco dichiarato e farti dire dal compilatore che cosa ci va.</li>
     <li><b>Un programma non deve schiantarsi.</b> Quando due soluzioni sono entrambe accettabili e una delle due si può far crollare, vince l&rsquo;altra, qualunque cosa costi in eleganza o in parole. La sezione qui sopra ha il ragionamento per esteso, e l&rsquo;unico buco che resta aperto.</li>
-    <li><b>Abbastanza piccolo da compilare se stesso.</b> La specifica intera misura 3548 token contro un tetto invalicabile di 4096: cinque pagine, fatte per essere date da leggere a un modello più che per stare in uno scaffale.</li>
+    <li><b>Abbastanza piccolo da compilare se stesso.</b> La specifica intera misura 3592 token contro un tetto invalicabile di 4096: cinque pagine, fatte per essere date da leggere a un modello più che per stare in uno scaffale.</li>
   </ul>
 
   <h2>Le obiezioni ovvie <span class="nod">· quicksand, avoided ·</span></h2>
@@ -312,7 +318,8 @@ grafica, audio, terminale     <span class="c">→</span> SDL, raylib, ncurses</c
       Dentro una stringa, certi caratteri si scrivono con una barra rovesciata
       davanti: <code>\n</code> per andare a capo, <code>\t</code> per un tab,
       <code>\r</code>, <code>\\</code> per la barra stessa e <code>\"</code> per
-      le virgolette. Sono sei in tutto e non ce ne sono altre, così ogni
+      le virgolette, e <code>\'</code> al posto di quest&rsquo;ultima dentro un
+      carattere singolo. Sono sei in tutto e non ce ne sono altre, così ogni
       carattere ha una scrittura sola. Qualunque altra lettera dopo la barra è un
       errore di compilazione, con la correzione allegata. Ed è questa seconda
       metà il punto: prima che esistesse, <code>"a\nb"</code> compilava
@@ -331,7 +338,7 @@ grafica, audio, terminale     <span class="c">→</span> SDL, raylib, ncurses</c
       ricopiato fuori alla fine. Se ne punti due sulla stessa variabile, il
       risultato dipende da quale delle due copie viene riscritta per ultima, e
       quell&rsquo;ordine non lo stabilisce nessuno. Ada ci ha convissuto per
-      trentatré anni e poi nel 2012 l&rsquo;ha reso illegale, per il motivo
+      tre decenni e poi nel 2012 l&rsquo;ha reso illegale, per il motivo
       intorno a cui è costruito questo linguaggio: una risposta che cambia a
       seconda dell&rsquo;ordine in cui il computer fa le cose è quasi sempre un
       guaio. Rifiutarlo è quello che rende vera davvero la promessa che un dato
@@ -344,7 +351,7 @@ grafica, audio, terminale     <span class="c">→</span> SDL, raylib, ncurses</c
     linguaggio aggiunge deve pagarsi l&rsquo;affitto lì dentro, e un linguaggio
     che si spiega per intero in poche pagine è anche un linguaggio che una
     persona sola riesce a implementare: i due vincoli sono lo stesso vincolo
-    travestito. Al momento misura 3548 token, e ne restano 548 da spendere. Il
+    travestito. Al momento misura 3592 token, e ne restano 504 da spendere. Il
     numero è contato, non stimato a occhio, e la differenza è costata due giorni
     al progetto: per un po&rsquo; il tetto è stato difeso guardando il numero di
     parole, finché qualcuno non ha contato per davvero e ha scoperto la specifica

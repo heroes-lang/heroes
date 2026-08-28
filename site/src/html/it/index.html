@@ -162,7 +162,7 @@ we can be heroes</code></pre>
     Su uno di quei comandi vale la pena spendere una riga.
     <code>heroes fmt</code> stampa la forma canonica di un file, e di forma
     canonica ce n&rsquo;è una sola: stessi rientri, stessi punti in cui la riga
-    va a capo, stesso ordine. Tutti i 241 file Heroes del repository, compilatore
+    va a capo, stesso ordine. Tutti i 241 file Heroes su cui passa, compilatore
     ed esempi compresi, tornano da quel comando identici, byte per byte. Così una
     differenza fra due versioni di un file è una differenza in quello che il
     programma fa, mai in come qualcuno l&rsquo;ha battuto.
@@ -226,13 +226,14 @@ we can be heroes</code></pre>
         Il compilatore di Heroes è scritto in Heroes: 165 file, 48.342 righe.
         Chiedi a tre sue generazioni di riscrivere lo stesso programma e i tre
         risultati coincidono byte per byte. Il linguaggio con cui era nato non
-        serve più a nessuno e ha lasciato il repository.
+        serve più a nessuno: nessuno lo compila e nessuno lo controlla, ed è
+        tenuto solo come documento.
       </p>
       <a class="more" href="/it/selfhost/">Come fa a compilarsi da solo</a>
     </li>
   </ul>
 
-  <h2>Una superficie piccola, nessun collector, e nessun crash</h2>
+  <h2>Una superficie piccola, nessun collector, e nessun null</h2>
   <p>
     In un file di Heroes, una riga che comincia da bordo pagina può iniziare
     con quattro parole soltanto: <code>constant</code>, <code>function</code>,
