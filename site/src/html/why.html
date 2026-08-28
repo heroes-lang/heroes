@@ -117,13 +117,16 @@ graphics, audio, terminal <span class="c">→</span> SDL, raylib, ncurses</code>
     nor an excuse in it.
   </p>
 
-  <h2>Four words can begin a top-level line</h2>
+  <h2>Seven words can begin a top-level line</h2>
   <p>
     A file is a list of declarations, one after another, and each starts with
     the word that says what you are declaring: a fixed value with
     <code>constant</code>, a function with <code>function</code>, a group of
     data with named fields with <code>record</code>, a value that comes in
-    several forms with <code>variant</code>. The list ends there. There are no
+    several forms with <code>variant</code>. Three more heads exist and declare
+    nothing about your data: <code>use</code> for another file,
+    <code>test</code> for a test, <code>extern</code> for what comes from C. The
+    list ends there. There are no
     classes, no interfaces, nothing that quietly changes what the next line
     means, and nowhere in the language a global variable anybody can
     modify.
