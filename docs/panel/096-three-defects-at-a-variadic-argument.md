@@ -34,7 +34,7 @@ author's binding.
 | | resolution | why |
 |---|---|---|
 | **Q1** | **does not land** | the compiler-engineer vetoed the mechanism; the ffi-pragmatist would take it only with the emission changed. **Both seats refuse the form that was briefed**, for different reasons. |
-| **Q2** | **lands, REPAIRED not removed**, by the ffi-pragmatist's mechanism | both seats independently refused removal; the ffi seat's construction is strictly cheaper (no ABI bump) and separates the **position** rather than the type. |
+| **Q2** | ~~lands, REPAIRED not removed~~ — **CANNOT LAND AS DESIGNED**, see § Q2's mechanism was built and does not work | both seats refused removal, and that half stands. The repair they preferred was implemented in full on the day of the sitting and **produced a false refusal on a real binding in this tree**. |
 | **Q3** | **goes to the full panel** | the compiler-engineer's call, and it is the conservative one: closing it mints a 21st `ffi_*` code, which is a diagnostic *class* and CLAUDE.md §4 puts that outside this lane. |
 
 **Principle 0's first door is shut on all three**, measured by the engineer:
@@ -181,6 +181,92 @@ mandates the Heroes spelling differ from the header's, so a whole-type compariso
 cannot isolate the ellipsis (4 false fires of 5). `HERO_VARIADIC` spells no type
 at all. The distinction must be in the commit body or the next convener reads a
 re-proposal.
+
+## Q2's mechanism was built and does not work — appended 2026-08-28, after ratification
+
+**This section overturns this sitting's own resolution for Q2**, and it is here
+rather than in a new sitting because the thing that overturned it is a
+measurement on the code the sitting asked for. The rest of the file stands.
+
+`HERO_VARIADIC` was implemented exactly as the ffi-pragmatist specified: added to
+`heroes_runtime.h`, ABI 16 → 17, the promotion table with its one `f32` → `double`
+entry, `probe_line` emitting the `__builtin_choose_expr`, `argument_columns`
+rebuilt, all five consumers updated, 148 emission traces and 6 emit goldens
+re-blessed. 516 selfhost tests passed. **Then the harness net named a real
+binding:**
+
+```
+examples/raylib/main.hero:80
+    function ColorAlpha(color: Color, alpha: f32) -> Color
+  → error[ffi_parameter_type]: `alpha` of `ColorAlpha` is declared wider
+    than the header's `float`
+```
+
+`alpha: f32` against a header that says `float` is **correct**, it is a real
+binding in `examples/raylib/`, and it was accepted before this change.
+
+### The cause, reproduced in nine lines
+
+```c
+#define HERO_VARIADIC(call, f) \
+    (!__builtin_types_compatible_p(__typeof__(f), __typeof__(call) ()))
+extern float takes_float(float x);          /* NOT variadic, header says float */
+#pragma clang diagnostic error "-Wimplicit-float-conversion"
+__attribute__((unused)) static void p(float a0) {
+    (void)__builtin_choose_expr(HERO_VARIADIC((takes_float)(a0), takes_float),
+        (takes_float)((double)a0),          /* the variadic arm's cast */
+        (takes_float)(a0));                 /* the fixed arm, correct */
+}
+```
+
+```
+error: implicit conversion loses floating-point precision: 'double' to 'float'
+       [-Werror,-Wimplicit-float-conversion]
+```
+
+**`__builtin_choose_expr` forms and diagnoses BOTH arms** for clang's conversion
+warnings, which are emitted at expression formation rather than after the choice.
+So the cast the variadic case needs is itself a conversion error against every
+non-variadic callee whose header says `float`. The same file without the
+`choose_expr` compiles at exit 0.
+
+**Moving the cast inside the argument does not help** — measured, three cases in
+one file: `(takes_float)(__builtin_choose_expr(COND, (double)a0, a0))` fires the
+same error. The variadic `printf` case passes and `pow(f32, f32)` is still
+correctly refused, so the construction gets **two of three**, which is the worst
+score available: it looks like it works.
+
+### Why the sitting did not see it
+
+The ffi-pragmatist reported *"adjacent shapes attacked, 7/7"* and the engineer
+reported the same for its own variant. Both attacked `f32` at a **variadic** slot
+and `f32` against a **`double`** header. **Neither attacked `f32` against a
+`float` header on a non-variadic callee** — the correct binding, which is the only
+shape the promotion can break. `examples/raylib/main.hero` holds one and no seat
+opened it.
+
+That is CLAUDE.md §1's fourth rule from the other side: the provoking case is a
+witness and not the class, and here **the class included the case that was already
+right**.
+
+### What survives
+
+- **Removal is still refused**, and that half of the resolution stands on its own
+  measurement: clang's variadic and fixed messages are byte-identical, so dropping
+  `-Wdouble-promotion` would lose `pow(x: f32, y: f32)`.
+- **`HERO_VARIADIC` itself is sound as a predicate** — 9 of 9 correct, 0 false
+  fires on the five panel 094 R6 measured false, re-verified by the coordinator
+  (`printf` 1; `strlen`, `abs`, `puts`, `pow`, `fopen` all 0). What is unsound is
+  using it to select between two *formed* expressions.
+- **What remains for Q2 is the message**, which is what the coordinator originally
+  offered the author and which the investigation then called insufficient: the
+  diagnostic says *"the header's `double`"* where the header says `...`. It is a
+  false premise inside a diagnostic (§8), it is repairable without touching the
+  refusal, and it is now the only sound half.
+
+The implementation was **reverted in full** rather than kept behind a flag: an ABI
+bump and 148 re-blessed traces for a mechanism that refuses a correct program is
+not a partial win. Nothing of it is committed.
 
 ## Q3 — the lane splits, and the conservative reading wins
 
