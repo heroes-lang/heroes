@@ -46,12 +46,23 @@ in the numbers that were re-measured.
 | **Last closed** | **M-separate-compilation**, 2026-08-26, tag `m-separate-compilation` — all four acceptance rows, and the frontend from **88 s to about 8** ([journal 025](journal/025-separate-compilation.md)) |
 | **v1** | **reached** at M-selfhost-fixpoint, 2026-08-18 — the compiler compiles itself |
 | Milestones closed | 26 of 36 · 26 tags |
-| The compiler | **39,739 lines** of Heroes in 165 files, built as **157** translation units |
-| The seed | **793,526** lines of generated C — the whole way in |
+| The compiler | **48,164 lines** of Heroes in 165 files, built as **157** translation units |
+| The seed | **797,529** lines of generated C — the whole way in |
 | The spec | **3592** tokens of a hard 4096 · headroom 504 |
-| Runtime ABI | 15 |
-| Panels held | **92** · journals 26 · measurements 13 · examples 15 |
-| Waiting on the author | **9 decisions** in `DECIDE.md` · 8 assigned in `SCHEDULED.md` · 274 in `LEARN.md` (never a gate) |
+| Runtime ABI | 16 |
+| Panels held | **94** · journals 26 · measurements 13 · examples 15 · defects 4 |
+| Waiting on the author | **11 decisions** in `DECIDE.md` · 8 assigned in `SCHEDULED.md` · 278 in `LEARN.md` (never a gate) |
+
+**Every number above was re-measured on 2026-08-28 and five were wrong.** Two had
+rotted quietly — the runtime ABI said 15 and is 16, and the panel count said 92
+against 94 files in `docs/panel/`. Three moved that day and one of them needs its
+reason said out loud: **the compiler did not grow by 8,425 lines of code.** It went
+from 39,739 to 48,164 because `heroes fmt` swept all 165 files into canonical form
+(panel 095 stage 4), and **+8.8% of that is blank lines** the formatter now inserts
+to make structure visible, with the rest the 120-column break and arm alignment.
+The C it emits is **byte-identical** with `#line` directives stripped, which is the
+gate that sweep had to pass. A reader comparing this row against an older journal
+is comparing two different layouts of the same program.
 
 ---
 

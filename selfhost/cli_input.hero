@@ -28,6 +28,29 @@ function read_compilation(path: str, library: str) -> source.Source?
         return fail("unreadable", "cannot read `" + path + "`")
     return ok(modules.load_text(path: path, root_text: root.must(), library: library))
 
+# THE ROOT FILE ALONE, for `fmt` and only for `fmt`.
+#
+# The doc above says reading the whole compilation here "keeps lex,
+# parse, check, build, run, test and fmt looking at the same text", and
+# `fmt` is now off that list on purpose. It is the one command whose
+# answer cannot depend on another file: `print_fmt.format_file` keeps
+# root-file declarations and root-file comments and discards the rest, so
+# every line the graph contributed was read, lexed and then thrown away.
+#
+# Measured 2026-08-28: formatting all 165 `selfhost` modules cost 188 s
+# through `read_compilation` against 6 s for the 206 files outside
+# `selfhost/`, which have no graph to pull.
+#
+# The library is NOT appended, which is the whole point, and it is also
+# why the refusal narrows: a syntax error in a sibling module no longer
+# stops `fmt` from formatting the file you named.
+function read_root_only(path: str) -> source.Source?
+    root = read_file(path)
+
+    if root.is_err()
+        return fail("unreadable", "cannot read `" + path + "`")
+    return ok(source.new_source(name: path, text: root.must()))
+
 ## Tests
 
 test "the root read fails loud, a missing module stays the graph's"
