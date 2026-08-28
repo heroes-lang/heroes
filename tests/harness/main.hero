@@ -67,6 +67,7 @@ use report
 use shell
 use suite_annotations
 use suite_cache
+use suite_canonical
 use suite_corpus
 use suite_descriptors
 use suite_determinism
@@ -321,6 +322,20 @@ function main()
             print("harness: the layout check could not run")
             exit(2)
         print("  layout: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
+        total @ report.tally(one: total, two: got.must())
+        ran @ ran + 1
+
+    # design.md §4.15's SECOND purpose, which is a property of the
+    # repository rather than of the tool: every source file in canonical
+    # form, so that a textual difference between two versions is semantic.
+    # 12 s for 371 files (2026-08-28).
+    if only == "" || only == "canonical"
+        got = suite_canonical.run_all(scratch: SCRATCH, compiler: compiler)
+
+        if got.is_err()
+            print("harness: the canonical check could not run")
+            exit(2)
+        print("  canonical: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 

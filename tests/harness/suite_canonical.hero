@@ -1,0 +1,164 @@
+# Every `.hero` file the project calls SOURCE is in canonical form.
+#
+# WHY THIS EXISTS, and it is not tidiness. design.md §4.15 makes the
+# formatter mandatory for two stated purposes: it removes all style
+# decisions from the model, and **it makes any textual difference between
+# two versions semantic**. The second one is a property of the
+# REPOSITORY, not of the tool — it is false the moment one file is not
+# canonical, and it was false for this repository until 2026-08-28, when
+# **263 of 454 files** were out of form and nothing anywhere said so.
+#
+# A sweep without this check is a one-time cleanup that rots on the next
+# commit, which is exactly what happened to the numbers in `suite_layout`
+# before it existed. So the sweep and this check are one deliverable.
+#
+# WHAT IT COSTS, measured 2026-08-28: **12 s for all 371 files** — 8 for
+# the 165 in `selfhost/`, 4 for the 206 elsewhere. It cost 194 s the same
+# morning, and the difference is `fmt` reading only the file it was named
+# instead of the whole module graph (`cli_input.read_root_only`). This
+# check is affordable because of that change and would not have been
+# written without it.
+#
+# ## What is NOT source, and why each exclusion is principled
+#
+# `tests/golden/check/` and `tests/golden/unsupported/` are **the test's
+# data, not the project's source** (author decision 2026-08-26). Three
+# reasons, each measured that day:
+#
+#   - **23 of them cannot be parsed by construction.** `indentation.hero`,
+#     `trailing-comma.hero`, `unterminated.hero` exist in order to be
+#     refused, and `fmt` refuses to format a file with diagnostics — as it
+#     must, since formatting a recovery guess rewrites the author's
+#     program into the parser's opinion of it.
+#   - **40 of their `.expected` files cite line, column and a caret run
+#     whose length is the span.** Reformatting the `.hero` moves all
+#     three, and CLAUDE.md §9 forbids regenerating those goldens: it names
+#     `tests/golden/check/` explicitly, and `suite_golden.hero` adds that
+#     `UPDATE_GOLDEN` "is not implemented and must not be".
+#   - **The text IS the fixture.** A program written to provoke a
+#     diagnostic is an input, and canonicalising an input changes what the
+#     test tests.
+#
+# `archive/` is excluded because nothing builds it and CLAUDE.md §5
+# declares the Rust it holds spent. `tests/emission/` and
+# `tests/golden/**/*.expected` hold no `.hero` at all.
+#
+# ## The shape of the check
+#
+# `heroes fmt <file>` to stdout, compared against the file. Not
+# `--in-place`, which would REPAIR what this exists to report; and no new
+# flag, because §10's stopping rule admits a capability only when
+# something must type it, and the harness already runs the binary and
+# reads files. A `--check` flag would be surface bought for nothing.
+
+use report
+use shell
+use strings
+
+# The directories whose `.hero` files are source. Every one of them was
+# swept on 2026-08-28 and every one was 0 files out of form afterwards.
+constant SOURCE_DIRS: [str]
+    [
+        "selfhost"
+        "tests/harness"
+        "examples"
+        "tests/golden/run"
+        "tests/golden/ir"
+        "tests/golden/emit"
+        "tests/golden/fixedbugs"
+    ]
+
+# Measured 2026-08-28: 371 files. The floor is `suite_layout`'s own idea
+# and it exists for the same reason — a walk that finds nothing reports
+# green, and a check that silently stops walking is worse than no check,
+# because it reports the property it has stopped testing.
+constant LEAST: i64
+    340
+
+function run_all(scratch: str, compiler: str) -> report.Report?
+    r: report.Report @ report.empty()
+    seen: i64 @ 0
+    crooked: [str] @ []
+    refused: [str] @ []
+
+    # `list_tree` and not `list_entries`, because `examples/` keeps its
+    # programs one directory down — `gallery/`, `calculator/` and thirteen
+    # more. The first draft of this check used the flat listing and found
+    # **325 files of 371**, which the floor caught: a walk that misses 46
+    # files reports the property it is not testing.
+    for dir in SOURCE_DIRS
+        nothing: [str] = []
+        entries = shell.list_tree(scratch: scratch, dir: dir, skip: nothing)?
+
+        for path in entries
+            if !strings.ends_with(text: path, suffix: ".hero")
+                continue
+            seen @ seen + 1
+            text = read_file(path)
+
+            if text.is_err()
+                refused @ refused.push("    " + path + ": cannot read it")
+                continue
+            run = shell.run(scratch: scratch, command: shell.sq(compiler) + " fmt " + shell.sq(path))?
+
+            # Exit 2 is the formatter accusing ITSELF (§7): its output did
+            # not parse, was not a fixpoint, or held a different tree.
+            # That is a compiler bug and a different report from a file
+            # merely being out of form, so it gets its own list.
+            if run.code == 2
+                refused @ refused.push("    " + path + ": `fmt` refused its own output — " + strings.trimmed(run.err))
+                continue
+
+            if run.code != 0
+                refused @ refused.push("    " + path + ": `fmt` exited " + run.code.to_str())
+                continue
+
+            if run.out != text.must()
+                crooked @ crooked.push("    " + path)
+
+    if seen < LEAST
+        report.keep_failure(
+            @r,
+            label: "canonical",
+            detail: "  the walk found " + seen.to_str() + " files and had " + LEAST.to_str() + " — it is not reaching the tree, so its green means nothing"
+        )
+
+    if refused.len() > 0
+        report.keep_failure(
+            @r,
+            label: "canonical/refused",
+            detail: "  `heroes fmt` could not answer for these files, which is the COMPILER's fault and not the file's (CLAUDE.md §7):\n" + refused.join("\n")
+        )
+
+    if crooked.len() > 0
+        report.keep_failure(
+            @r,
+            label: "canonical",
+            detail: "  design.md §4.15: the canonical formatter exists so that \"any textual difference between two versions\" is SEMANTIC. These files are not in canonical form, so a diff over them is not:\n" + crooked.join("\n") + "\n  Fix: `heroes fmt <file> --in-place`. If the file SHOULD be exempt, it belongs in SOURCE_DIRS' complement with a reason, not in a list of exceptions here — the two exempt directories each have three measured reasons at the top of this file, and that is the bar."
+        )
+    else
+        report.keep_pass(@r)
+    return ok(r)
+
+## Tests
+
+test "the walk names the directories that were swept, and the floor is under the count"
+    # The list is the check: a directory dropped from it is a directory
+    # that silently stops being source, and no other instrument would
+    # notice. Seven, measured 2026-08-28.
+    assert SOURCE_DIRS.len() == 7
+
+    # 371 files were swept that day. The floor sits below it with room for
+    # ordinary growth and shrinkage, and above any plausible partial walk.
+    assert LEAST < 371
+    assert LEAST > 300
+
+test "the two exempt directories are named nowhere in the walk"
+    # tests/golden/check and tests/golden/unsupported are the test's data
+    # rather than the project's source, and the reasons are measured at the
+    # top of this file. This asserts the exemption rather than trusting the
+    # list to stay right: 23 of those files cannot be parsed at all, and
+    # a walk that reached them would report the compiler broken.
+    for dir in SOURCE_DIRS
+        assert dir != "tests/golden/check"
+        assert dir != "tests/golden/unsupported"

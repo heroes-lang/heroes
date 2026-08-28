@@ -60,6 +60,25 @@ function main()
     inv = parsed.must()
     reading: bool @ false
 
+    # `fmt` reads THE FILE IT WAS NAMED and nothing else, where the other
+    # six read the whole compilation. It is the one command that provably
+    # needs no graph: `print_fmt.format_file` keeps root-file
+    # declarations and root-file comments only, and its own comment says
+    # why — with `--in-place`, a formatter that walked the whole Source
+    # would append the library to the author's file once per run (§1.11).
+    #
+    # Measured 2026-08-28, and the reason this stopped being free: `fmt`
+    # over all 165 `selfhost` modules cost **188 s**, against **6 s** for
+    # the 206 files outside it, which have no graph to pull. Each one was
+    # reading and lexing 48000 lines plus the library to print one file.
+    # `lex main.hero` and `parse main.hero` both cost 4 s, so the price
+    # was never the parse — it was upstream, which is why this is a
+    # dispatch change and not a formatter one.
+    #
+    # It also closes a second thing: a syntax error in a SIBLING module
+    # used to refuse to format the file you named.
+    root_only: bool @ false
+
     # The ones that answer without reading a program.
     match inv.tag
         .version_cmd =>
@@ -80,13 +99,21 @@ function main()
         # every dump — caught by the differential against the
         # bootstrap on 2026-08-17, four inputs out of 257.
 
-        .lex_cmd | .parse_cmd | .check_cmd | .build_cmd | .run_cmd | .test_cmd | .fmt_cmd => reading @ true
+        .lex_cmd | .parse_cmd | .check_cmd | .build_cmd | .run_cmd | .test_cmd => reading @ true
+        .fmt_cmd =>
+            reading @ true
+            root_only @ true
 
     # Everything left reads a file.
     _ = reading
     path = inv.file.default("")
     library = library_source.text()
-    read = cli_input.read_compilation(path: path, library: library)
+    read: source.Source? @ fail("unset", "no read yet")
+
+    if root_only
+        read @ cli_input.read_root_only(path: path)
+    else
+        read @ cli_input.read_compilation(path: path, library: library)
 
     if read.is_err()
         cli_io.eprint(text: "error: " + message_of_source(read))
