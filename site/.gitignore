@@ -2,3 +2,18 @@
 # key, it is per-machine, and it expires: three reasons never to commit it.
 # Deleting this directory is how you get a fresh certificate.
 .cache/
+
+# Astro. `node_modules/` is what `npm ci` writes from `package-lock.json`,
+# `dist/` is the built site the deploy uploads, and `.astro/` is the generator's
+# own cache. All three are derived from files that ARE tracked, and all three are
+# large: `node_modules/` alone is hundreds of packages that no reader of this
+# repository ever needs to see.
+node_modules/
+dist/
+.astro/
+
+# Site-level environment. The deploy needs no secret at build time, so these
+# should stay empty; they are listed because a tool that invents one of these
+# names must not be able to commit it.
+.env
+.env.production

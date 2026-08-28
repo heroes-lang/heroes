@@ -1,0 +1,25 @@
+name: Release site
+
+# Publication decided by hand. Tag a commit and the site ships, whatever that
+# commit happens to touch:
+#
+#   git tag site-v1 && git push origin site-v1
+#
+# The `paths:` filter in `deploy-site.yml` covers the ordinary case, a push that
+# changes the site. This covers the other one: republishing an unchanged tree,
+# shipping a change the filter does not watch, or marking a release worth a name
+# in `git tag --list`. `Run workflow` on the Actions tab does the same thing
+# without leaving a tag behind.
+#
+# The tag namespace is `site-v*` and it is deliberately not the milestone one.
+# CLAUDE.md §14 gives milestones names of the form `m-<what-it-delivers>`; a site
+# release delivers no milestone and must not look like one.
+
+on:
+  push:
+    tags: ['site-v*']
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/deploy-site.yml
+    secrets: inherit
