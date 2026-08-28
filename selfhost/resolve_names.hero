@@ -29,12 +29,15 @@ function bare_name(@r: resolve_state.Resolver, a: ast.Ast, s: source.Source, dec
     span = a.exprs[id].span
     text = source.span_text(s, span)
     local = resolve_state.lookup_local(r, text)
+
     if !local.is_err()
         resolve_state.record_use(@r, at: id, to: .local(at: local.must()))
         return
     top = resolve_state.top_visible(r, text)
+
     if !top.is_err()
         decl = top.must()
+
         # A variant names a type, never a value: its cases are the values,
         # written `.case` (§4.5's ⇐ mode).
         match decls[decl].kind
@@ -48,15 +51,21 @@ function bare_name(@r: resolve_state.Resolver, a: ast.Ast, s: source.Source, dec
                 # "declared in the library, mentioned outside it" is
                 # exactly the cross-module case.
                 if fd.value.is_extern && source.is_library(s, decls[decl].name.start) && !source.is_library(s, span.start)
-                    resolve_state.push_diagnostic(@r, module_errors.extern_across_modules(name: text, module: source.LIBRARY_MODULE, is_library: true, span: span))
+                    resolve_state.push_diagnostic(
+                        @r,
+                        module_errors.extern_across_modules(name: text, module: source.LIBRARY_MODULE, is_library: true, span: span)
+                    )
                 else
                     resolve_state.record_use(@r, at: id, to: .top(at: decl))
             .constant_decl | .record_decl | .test_decl => resolve_state.record_use(@r, at: id, to: .top(at: decl))
+
         return
     builtin = builtins.index_of(text)
+
     if !builtin.is_err()
         resolve_state.record_use(@r, at: id, to: .builtin(at: builtin.must()))
         return
+
     # A module name standing alone. It is not a value in any position — it
     # can only be followed by a dot — and saying that is better than
     # "unknown".
@@ -65,6 +74,7 @@ function bare_name(@r: resolve_state.Resolver, a: ast.Ast, s: source.Source, dec
         resolve_state.push_diagnostic(@r, module_errors.module_is_not_a_value(text, span: span))
         return
     elsewhere = resolve_qualified.name_declared_elsewhere(@r, text, span)
+
     if !elsewhere.is_err()
         resolve_state.push_diagnostic(@r, elsewhere.must())
         return
@@ -82,8 +92,10 @@ function bare_name(@r: resolve_state.Resolver, a: ast.Ast, s: source.Source, dec
 function method_name(@r: resolve_state.Resolver, s: source.Source, decls: [ast.Decl], at: i64, called: token.Span)
     text = source.span_text(s, called)
     top = resolve_state.top_visible(r, text)
+
     if !top.is_err()
         decl = top.must()
+
         match decls[decl].kind
             .function_decl fd =>
                 # `"path".hero_file_read(@st)` — UFCS reaches the library's
@@ -91,24 +103,41 @@ function method_name(@r: resolve_state.Resolver, s: source.Source, decls: [ast.D
                 # refuses both for the same reason: the call would be
                 # compiled where the header's checks are not.
                 if fd.value.is_extern && source.is_library(s, decls[decl].name.start) && !source.is_library(s, called.start)
-                    resolve_state.push_diagnostic(@r, module_errors.extern_across_modules(name: text, module: source.LIBRARY_MODULE, is_library: true, span: called))
+                    resolve_state.push_diagnostic(
+                        @r,
+                        module_errors.extern_across_modules(name: text, module: source.LIBRARY_MODULE, is_library: true, span: called)
+                    )
                 else
                     resolve_state.record_use(@r, at: at, to: .top(at: decl))
-            .record_decl => resolve_state.push_diagnostic(@r, resolve_errors.not_a_function(name: text, what: "a record", span: called))
-            .variant_decl => resolve_state.push_diagnostic(@r, resolve_errors.not_a_function(name: text, what: "a variant", span: called))
-            .constant_decl => resolve_state.push_diagnostic(@r, resolve_errors.not_a_function(name: text, what: "a constant", span: called))
+            .record_decl => resolve_state.push_diagnostic(
+                @r,
+                resolve_errors.not_a_function(name: text, what: "a record", span: called)
+            )
+            .variant_decl => resolve_state.push_diagnostic(
+                @r,
+                resolve_errors.not_a_function(name: text, what: "a variant", span: called)
+            )
+            .constant_decl => resolve_state.push_diagnostic(
+                @r,
+                resolve_errors.not_a_function(name: text, what: "a constant", span: called)
+            )
             .test_decl => return
+
         return
     builtin = builtins.index_of(text)
+
     if !builtin.is_err()
         resolve_state.record_use(@r, at: at, to: .builtin(at: builtin.must()))
         return
+
     if resolve_state.field_in_reach(r, text)
         # Could be a function-valued field: the checker decides, with the type.
         return
+
     # `p.dist2(o)` where `dist2` is imported: UFCS finds only this file's
     # functions, and this is the message that says so (panel 031 R5).
     elsewhere = resolve_qualified.name_declared_elsewhere(@r, text, called)
+
     if !elsewhere.is_err()
         resolve_state.push_diagnostic(@r, elsewhere.must())
         return
@@ -121,21 +150,29 @@ function method_name(@r: resolve_state.Resolver, s: source.Source, decls: [ast.D
 # deterministic, capped where printed).
 function value_candidates(r: resolve_state.Resolver) -> [str]
     candidates: [str] @ resolve_state.visible_locals(r)
+
     for name in resolved.names_in(r.out, r.module)
         candidates @ candidates.push(name)
+
     for b in builtins.table()
         candidates @ candidates.push(b.name)
+
     return candidates
 
 function function_candidates(r: resolve_state.Resolver, decls: [ast.Decl]) -> [str]
     candidates: [str] @ []
+
     for name in resolved.names_in(r.out, r.module)
         found = resolved.top_in(r.out, module: r.module, name: name)
+
         is_function = match decls[found.must()].kind
-            .function_decl => true
+            .function_decl                                             => true
             .constant_decl | .record_decl | .variant_decl | .test_decl => false
+
         if is_function
             candidates @ candidates.push(name)
+
     for b in builtins.table()
         candidates @ candidates.push(b.name)
+
     return candidates

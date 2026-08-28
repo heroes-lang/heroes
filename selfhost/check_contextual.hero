@@ -36,15 +36,16 @@ use check_state
 function contextual(a: ast.Ast, id: i64) -> bool
     return match a.exprs[id].kind
         .variant_case | .hole => true
-        .array elements => elements.elements.len() == 0
-        .map entries => entries.entries.len() == 0
+        .array elements       => elements.elements.len() == 0
+        .map entries          => entries.entries.len() == 0
         # `nullptr` joined at panel 053, for the reason the other members
         # share: the value exists and the TYPE does not — C's null inhabits
         # `ptr` and `cstr` alike, so fixing it at `ptr` made `v == nullptr`
         # unwritable for a `cstr`.
-        .null_ptr => true
-        .int_lit | .char_lit | .float_lit | .unary => number_literal(a, id) || float_literal(a, id)
-        .str_lit | .bool_lit | .name | .binary | .field | .index => false
+
+        .null_ptr                                                     => true
+        .int_lit | .char_lit | .float_lit | .unary                    => number_literal(a, id) || float_literal(a, id)
+        .str_lit | .bool_lit | .name | .binary | .field | .index      => false
         .call | .method | .try_expr | .if_expr | .match_expr | .error => false
 
 # Whether this expression IS a number literal, sign included. `-128` is
@@ -63,8 +64,8 @@ function number_literal(a: ast.Ast, id: i64) -> bool
             else
                 false
         .float_lit | .str_lit | .bool_lit | .null_ptr | .name | .hole => false
-        .binary | .field | .index | .call | .method | .variant_case => false
-        .array | .map | .try_expr | .if_expr | .match_expr | .error => false
+        .binary | .field | .index | .call | .method | .variant_case   => false
+        .array | .map | .try_expr | .if_expr | .match_expr | .error   => false
 
 # The same question for a FLOAT literal, which f32 made a real one (panel
 # 060). Separate from number_literal rather than folded in, and the
@@ -79,8 +80,8 @@ function float_literal(a: ast.Ast, id: i64) -> bool
                 float_literal(a, u.operand)
             else
                 false
-        .int_lit | .char_lit | .str_lit | .bool_lit | .null_ptr | .name => false
-        .hole | .binary | .field | .index | .call | .method => false
+        .int_lit | .char_lit | .str_lit | .bool_lit | .null_ptr | .name             => false
+        .hole | .binary | .field | .index | .call | .method                         => false
         .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => false
 
 # Whether a contextual expression will actually take the type offered.
@@ -93,27 +94,30 @@ function float_literal(a: ast.Ast, id: i64) -> bool
 function adopts(c: check_state.Checker, a: ast.Ast, id: i64, offered: i64) -> bool
     if number_literal(a, id)
         return match check_table.get(c.out.types, offered)
-            .int_ty => true
+            .int_ty                                                  => true
             .float_ty | .bool | .str | .ptr | .cstr | .unit | .array => false
-            .fixed | .map | .fallible | .function_ty | .named => false
-            .case_ty | .failure | .generic | .error => false
+            .fixed | .map | .fallible | .function_ty | .named        => false
+            .case_ty | .failure | .generic | .error                  => false
+
     if float_literal(a, id)
         return match check_table.get(c.out.types, offered)
-            .float_ty => true
+            .float_ty                                              => true
             .int_ty | .bool | .str | .ptr | .cstr | .unit | .array => false
-            .fixed | .map | .fallible | .function_ty | .named => false
-            .case_ty | .failure | .generic | .error => false
+            .fixed | .map | .fallible | .function_ty | .named      => false
+            .case_ty | .failure | .generic | .error                => false
+
     is_null = match a.exprs[id].kind
-        .null_ptr => true
-        .int_lit | .char_lit | .float_lit | .str_lit | .bool_lit | .name => false
-        .hole | .unary | .binary | .field | .index | .call | .method => false
+        .null_ptr                                                                   => true
+        .int_lit | .char_lit | .float_lit | .str_lit | .bool_lit | .name            => false
+        .hole | .unary | .binary | .field | .index | .call | .method                => false
         .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => false
+
     if is_null
         return match check_table.get(c.out.types, offered)
-            .ptr | .cstr => true
+            .ptr | .cstr                                        => true
             .int_ty | .float_ty | .bool | .str | .unit | .array => false
-            .fixed | .map | .fallible | .function_ty | .named => false
-            .case_ty | .failure | .generic | .error => false
+            .fixed | .map | .fallible | .function_ty | .named   => false
+            .case_ty | .failure | .generic | .error             => false
     return true
 
 ## The value a literal denotes
@@ -129,16 +133,20 @@ record LitValue
 
 function literal_value(a: ast.Ast, s: source.Source, id: i64) -> LitValue?
     span = a.exprs[id].span
+
     match a.exprs[id].kind
         .int_lit =>
             decoded = digits.decode_u64(digits.canonical_int(source.span_text(s, span)))
+
             if decoded.is_err()
                 return fail("no_value", "the literal does not fit a u64, and the lexer said so")
             return ok(LitValue(negative: false, magnitude: decoded.must()))
         # §4.3: a character literal IS a number, and its value is one ASCII
         # character — so it fits every width and needs no special range.
+
         .char_lit =>
             text = escape.unescape(source.span_text(s, span))
+
             if text.len() == 0
                 return fail("no_value", "an empty character literal was already reported")
             return ok(LitValue(negative: false, magnitude: text[0].to_u64().must()))
@@ -146,13 +154,15 @@ function literal_value(a: ast.Ast, s: source.Source, id: i64) -> LitValue?
             if u.op != .neg
                 return fail("no_value", "not a literal")
             inner = literal_value(a, s, u.operand)
+
             if inner.is_err()
                 return inner
             flipped = inner.must()
             return ok(LitValue(negative: !flipped.negative, magnitude: flipped.magnitude))
         .float_lit | .str_lit | .bool_lit | .null_ptr | .name | .hole => return fail("no_value", "not a number literal")
-        .binary | .field | .index | .call | .method | .variant_case => return fail("no_value", "not a literal")
-        .array | .map | .try_expr | .if_expr | .match_expr | .error => return fail("no_value", "not a literal")
+        .binary | .field | .index | .call | .method | .variant_case   => return fail("no_value", "not a literal")
+        .array | .map | .try_expr | .if_expr | .match_expr | .error   => return fail("no_value", "not a literal")
+
     return fail("no_value", "unreached")
 
 ## Tests
@@ -166,7 +176,10 @@ test "the sign travels with the digits, and the pair holds every width"
     s = source.new_source(name: "t.hero", text: "128 18446744073709551615 'a'\n")
     a: ast.Ast @ ast.new_ast()
     small = lit(@a, kind: .int_lit, start: 0, end: 3)
-    negated = ast.push_expr(@a.exprs, ast.Expr(kind: .unary(op: .neg, operand: small), span: token.Span(start: 0, end: 3)))
+    negated = ast.push_expr(
+        @a.exprs,
+        ast.Expr(kind: .unary(op: .neg, operand: small), span: token.Span(start: 0, end: 3))
+    )
     top = lit(@a, kind: .int_lit, start: 4, end: 24)
     ch = lit(@a, kind: .char_lit, start: 25, end: 28)
     plain = literal_value(a, s, small).must()
@@ -217,8 +230,12 @@ test "the empty literals are contextual and the filled ones are not"
     assert !contextual(a, full)
     hole = ast.push_expr(@a.exprs, ast.Expr(kind: .hole, span: token.Span(start: 0, end: 3)))
     assert contextual(a, hole)
+
     # -x is NOT a literal: nothing under the minus is one.
     named = ast.push_expr(@a.exprs, ast.Expr(kind: .name, span: token.Span(start: 0, end: 1)))
-    neg_name = ast.push_expr(@a.exprs, ast.Expr(kind: .unary(op: .neg, operand: named), span: token.Span(start: 0, end: 2)))
+    neg_name = ast.push_expr(
+        @a.exprs,
+        ast.Expr(kind: .unary(op: .neg, operand: named), span: token.Span(start: 0, end: 2))
+    )
     assert !number_literal(a, neg_name)
     assert !contextual(a, neg_name)

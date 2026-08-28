@@ -56,17 +56,22 @@ function from_tiktoken(text: str) -> Ranks
     r: Ranks @ empty()
     start: i64 @ 0
     i: i64 @ 0
+
     while i <= text.len()
         if i == text.len() || text[i] == 10
             cut: i64 @ start
+
             while cut < i && text[cut] != 32
                 cut @ cut + 1
+
             if cut < i
                 rank = number_in(text: text, from: cut + 1, to: i)
+
                 if !rank.is_err()
                     r.of[text.slice(from: start, to: cut)] @ rank.must()
             start @ i + 1
         i @ i + 1
+
     return r
 
 # Anthropic's `claude-legacy.json`: the `bpe_ranks` field holds every token
@@ -75,6 +80,7 @@ function from_tiktoken(text: str) -> Ranks
 function from_claude_json(text: str) -> Ranks
     r: Ranks @ empty()
     field = string_field(text: text, name: "bpe_ranks")
+
     if field.is_err()
         return r
     span = field.must()
@@ -82,6 +88,7 @@ function from_claude_json(text: str) -> Ranks
     seen: i64 @ 0
     start: i64 @ span.from
     i: i64 @ span.from
+
     while i <= span.to
         if i == span.to || text[i] == 32
             if i > start
@@ -91,6 +98,7 @@ function from_claude_json(text: str) -> Ranks
                 seen @ seen + 1
             start @ i + 1
         i @ i + 1
+
     return r
 
 # Where a JSON string value begins and ends, without a parser: good enough
@@ -116,31 +124,39 @@ function count_piece(r: Ranks, piece: str) -> i64
         return piece.len()
     bounds: [i64] @ []
     i: i64 @ 0
+
     while i <= piece.len()
         bounds @ bounds.push(i)
         i @ i + 1
+
     while bounds.len() > 2
         best_rank: i64 @ -1
         best_at: i64 @ -1
         j: i64 @ 0
+
         while j + 2 < bounds.len()
             found = r.of[spelled(r: r, piece: piece, from: bounds[j], to: bounds[j + 2])]
+
             if !found.is_err() && (best_rank == -1 || found.must() < best_rank)
                 best_rank @ found.must()
                 best_at @ j
             j @ j + 1
+
         if best_at == -1
             break
         bounds @ without(bounds: bounds, at: best_at + 1)
+
     return bounds.len() - 1
 
 function without(bounds: [i64], at: i64) -> [i64]
     out: [i64] @ []
     i: i64 @ 0
+
     while i < bounds.len()
         if i != at
             out @ out.push(bounds[i])
         i @ i + 1
+
     return out
 
 # One byte range of `piece`, in canonical padded base64 — the spelling the
@@ -148,29 +164,35 @@ function without(bounds: [i64], at: i64) -> [i64]
 function spelled(r: Ranks, piece: str, from: i64, to: i64) -> str
     out: [str] @ []
     i: i64 @ from
+
     while i < to
         first = piece[i].to_i64().must()
         have: i64 @ 1
         second: i64 @ 0
         third: i64 @ 0
+
         if i + 1 < to
             second @ piece[i + 1].to_i64().must()
             have @ 2
+
         if i + 2 < to
             third @ piece[i + 2].to_i64().must()
             have @ 3
-        packed = (first << 16) | (second << 8) | third
-        out @ out.push(r.alphabet[(packed >> 18) & 63])
-        out @ out.push(r.alphabet[(packed >> 12) & 63])
+        packed = first << 16 | second << 8 | third
+        out @ out.push(r.alphabet[packed >> 18 & 63])
+        out @ out.push(r.alphabet[packed >> 12 & 63])
+
         if have >= 2
-            out @ out.push(r.alphabet[(packed >> 6) & 63])
+            out @ out.push(r.alphabet[packed >> 6 & 63])
         else
             out @ out.push("=")
+
         if have == 3
             out @ out.push(r.alphabet[packed & 63])
         else
             out @ out.push("=")
         i @ i + 3
+
     return out.join("")
 
 # The digits between two offsets, as a number.
@@ -179,12 +201,15 @@ function number_in(text: str, from: i64, to: i64) -> i64?
         return fail("not_a_number", "no digits")
     value: i64 @ 0
     i: i64 @ from
+
     while i < to
         b = text[i]
+
         if b < 48 || b > 57
             return fail("not_a_number", "not a digit")
         value @ value * 10 + (b.to_i64().must() - 48)
         i @ i + 1
+
     return ok(value)
 
 function index_of(text: str, needle: str) -> i64?
@@ -192,21 +217,27 @@ function index_of(text: str, needle: str) -> i64?
         return fail("absent", "the needle is not there")
     limit = text.len() - needle.len()
     at: i64 @ 0
+
     while at <= limit
         k: i64 @ 0
+
         while k < needle.len() && text[at + k] == needle[k]
             k @ k + 1
+
         if k == needle.len()
             return ok(at)
         at @ at + 1
+
     return fail("absent", "the needle is not there")
 
 function index_of_byte(text: str, byte: u8, from: i64) -> i64?
     i: i64 @ from
+
     while i < text.len()
         if text[i] == byte
             return ok(i)
         i @ i + 1
+
     return fail("absent", "the byte is not there")
 
 test "a byte range is spelled the way the tables spell it"
@@ -214,9 +245,11 @@ test "a byte range is spelled the way the tables spell it"
     assert spelled(r: r, piece: "hello", from: 0, to: 5) == "aGVsbG8="
     assert spelled(r: r, piece: "!", from: 0, to: 1) == "IQ=="
     assert spelled(r: r, piece: "\"", from: 0, to: 1) == "Ig=="
+
     # Three bytes need no padding; four need two characters and one `=`.
     assert spelled(r: r, piece: "abc", from: 0, to: 3) == "YWJj"
     assert spelled(r: r, piece: "abcd", from: 0, to: 4) == "YWJjZA=="
+
     # A range, not the whole string.
     assert spelled(r: r, piece: "xhelloy", from: 1, to: 6) == "aGVsbG8="
 
@@ -231,6 +264,7 @@ test "the claude shape skips its two header fields and ranks by position"
     assert size(r) == 3
     assert r.of["IQ=="].default(-1) == 0
     assert r.of["Iw=="].default(-1) == 2
+
     # A file without the field is an empty table, which the caller reports
     # rather than counting against.
     assert size(from_claude_json("{\"other\": \"1\"}")) == 0
@@ -248,18 +282,22 @@ test "the merge loop counts parts, and merges the lowest rank first"
     assert count_piece(r: r, piece: "ab") == 1
     assert count_piece(r: r, piece: "a") == 1
     assert count_piece(r: r, piece: "") == 0
+
     # Nothing in the table merges `xy`, so it stays two parts.
     assert count_piece(r: r, piece: "xy") == 2
+
     # `bcd` merges nothing at the front (`bc` is there, so it becomes
     # `bc` + `d`): two parts.
     assert count_piece(r: r, piece: "bcd") == 2
 
 test "the merge loop takes the cheapest pair even when a dearer one comes first"
     table: {str: i64} @ {}
+
     # `xy` at rank 9, `yz` at rank 1: the second merge must happen first.
     table[spelled(r: empty(), piece: "xy", from: 0, to: 2)] @ 9
     table[spelled(r: empty(), piece: "yz", from: 0, to: 2)] @ 1
     r = Ranks(of: table, alphabet: ALPHABET.chars())
+
     # `xyz` → `x` + `yz`, and nothing merges those two: two parts.
     assert count_piece(r: r, piece: "xyz") == 2
 

@@ -43,18 +43,22 @@ record Branch
 # the string builtin -- the fifteenth reservation to review its own port.
 function join_branches(@c: check_state.Checker, s: source.Source, decls: [ast.Decl], branches: [Branch]) -> i64?
     result: i64? @ fail("diverges", "no branch has produced a value yet")
+
     for branch in branches
         if branch.value.is_err()
             continue
         ty = branch.value.must()
+
         if result.is_err()
             result @ ok(ty)
             continue
         expected = result.must()
+
         if ty != expected && !check_table.poisoned(c.out.types, ty) && !check_table.poisoned(c.out.types, expected)
             a = check_state.show(c, s, decls, expected)
             b = check_state.show(c, s, decls, ty)
             check_state.push_diagnostic(@c, value_errors.mismatch(expected: a, got: b, span: branch.span))
+
     return result
 
 # The join, where a value is required. `what` names the construct for the
@@ -62,6 +66,7 @@ function join_branches(@c: check_state.Checker, s: source.Source, decls: [ast.De
 # own words.
 function join_for_value(@c: check_state.Checker, s: source.Source, decls: [ast.Decl], branches: [Branch], what: str, span: token.Span) -> i64
     joined = join_branches(@c, s, decls, branches)
+
     if joined.is_err()
         check_state.push_diagnostic(@c, flow_errors.no_value(what, span))
         return check_state.error_ty_of(c)
@@ -89,6 +94,7 @@ test "the first branch sets the type and the disagreement is blamed"
     _ = join_branches(@c, s, d, mixed)
     assert c.out.diagnostics.len() == 1
     assert c.out.diagnostics[0].message == "expected `i64`, found `str`"
+
     # The caret sits on the branch that disagreed, not on the first.
     assert c.out.diagnostics[0].span.start == 2
 
@@ -110,6 +116,7 @@ test "a diverging branch contributes nothing, and all-diverging is legal"
     ]
     assert join_branches(@c, s, d, jumps_only).is_err()
     assert c.out.diagnostics.len() == 0
+
     # Where a value is required, the all-jumps join says so.
     _ = join_for_value(@c, s, d, jumps_only, what: "match", span: token.Span(start: 0, end: 5))
     assert c.out.diagnostics.len() == 1

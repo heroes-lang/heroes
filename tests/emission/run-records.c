@@ -331,51 +331,51 @@ bb0:
     hero_print_bool(t28);
 #line 33 "tests/golden/run/records.hero"
     hero_print_end();
-#line 35 "tests/golden/run/records.hero"
+#line 36 "tests/golden/run/records.hero"
     t29 = h0_p;
-#line 35 "tests/golden/run/records.hero"
+#line 36 "tests/golden/run/records.hero"
     h3_r = t29;
-#line 36 "tests/golden/run/records.hero"
+#line 37 "tests/golden/run/records.hero"
     t30 = h3_r;
-#line 36 "tests/golden/run/records.hero"
+#line 37 "tests/golden/run/records.hero"
     t31 = h_records_moved(t30);
-#line 36 "tests/golden/run/records.hero"
+#line 37 "tests/golden/run/records.hero"
     h3_r = t31;
-#line 40 "tests/golden/run/records.hero"
+#line 42 "tests/golden/run/records.hero"
     t32 = h3_r;
-#line 40 "tests/golden/run/records.hero"
+#line 42 "tests/golden/run/records.hero"
     t33 = t32.f_x;
-#line 40 "tests/golden/run/records.hero"
+#line 42 "tests/golden/run/records.hero"
     hero_print_int(t33);
-#line 40 "tests/golden/run/records.hero"
+#line 42 "tests/golden/run/records.hero"
     hero_print_end();
-#line 41 "tests/golden/run/records.hero"
+#line 43 "tests/golden/run/records.hero"
     t34 = h0_p;
-#line 41 "tests/golden/run/records.hero"
+#line 43 "tests/golden/run/records.hero"
     t35 = t34.f_x;
-#line 41 "tests/golden/run/records.hero"
+#line 43 "tests/golden/run/records.hero"
     hero_print_int(t35);
-#line 41 "tests/golden/run/records.hero"
+#line 43 "tests/golden/run/records.hero"
     hero_print_end();
-#line 44 "tests/golden/run/records.hero"
+#line 47 "tests/golden/run/records.hero"
     t36 = h0_p;
-#line 44 "tests/golden/run/records.hero"
+#line 47 "tests/golden/run/records.hero"
     t37 = h0_p;
-#line 44 "tests/golden/run/records.hero"
+#line 47 "tests/golden/run/records.hero"
     t38 = (h_records_Pair){.f_one = t36, .f_two = t37};
-#line 44 "tests/golden/run/records.hero"
+#line 47 "tests/golden/run/records.hero"
     t39 = h0_p;
-#line 44 "tests/golden/run/records.hero"
+#line 47 "tests/golden/run/records.hero"
     t40 = h1_q;
-#line 44 "tests/golden/run/records.hero"
+#line 47 "tests/golden/run/records.hero"
     t41 = (h_records_Pair){.f_one = t39, .f_two = t40};
-#line 44 "tests/golden/run/records.hero"
+#line 47 "tests/golden/run/records.hero"
     t42 = h_records_Pair_eq(&t38, &t41);
-#line 44 "tests/golden/run/records.hero"
+#line 47 "tests/golden/run/records.hero"
     hero_print_bool(t42);
-#line 44 "tests/golden/run/records.hero"
+#line 47 "tests/golden/run/records.hero"
     hero_print_end();
-#line 44 "tests/golden/run/records.hero"
+#line 47 "tests/golden/run/records.hero"
     return;
 #line 381 "records.c"
 }

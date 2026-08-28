@@ -33,20 +33,26 @@ function render(d: diag.Diagnostic, s: source.Source) -> str
     out @ out + "  " + gutter + " |\n"
     out @ out + "  " + number + " | " + source_line(s, line: absolute) + "\n"
     out @ out + "  " + gutter + " | " + caret(s, d, col: found.col) + "\n"
+
     for note in d.notes
         out @ out + "  note: " + note + "\n"
+
     for fix in d.fixes
         tag: str @ "guess"
+
         if fix.certainty == .certain
             tag @ "certain"
         out @ out + "  fix (" + tag + "): " + fix.title + "\n"
+
     return out
 
 # Every diagnostic, in source order, separated by a blank line.
 function render_all(diagnostics: [diag.Diagnostic], s: source.Source) -> str
     rendered: [str] @ []
+
     for d in diagnostics
         rendered @ rendered.push(render(d, s))
+
     return rendered.join("\n")
 
 # The line as written, in the WHOLE text's numbering, trailing
@@ -54,6 +60,7 @@ function render_all(diagnostics: [diag.Diagnostic], s: source.Source) -> str
 function source_line(s: source.Source, line: i64) -> str
     current: i64 @ 1
     run: [str] @ []
+
     for ch in s.text.chars()
         if ch == "\n"
             if current == line
@@ -62,10 +69,13 @@ function source_line(s: source.Source, line: i64) -> str
         else
             if current == line
                 run @ run.push(ch)
+
     # Rust's trim_end: spaces and tabs off the right.
     end: i64 @ run.len()
+
     while end > 0 && (run[end - 1] == " " || run[end - 1] == "\t")
         end @ end - 1
+
     return run.slice(from: 0, to: end).join("")
 
 # The span, underlined. One CHARACTER is one column — the underline
@@ -84,16 +94,19 @@ function caret(s: source.Source, d: diag.Diagnostic, col: i64) -> str
     end_pos = source.line_col(s, d.span.end)
     start_line = source.line_of(s, d.span.start)
     width: i64 @ 1
+
     if end_pos.line == start_line && end_pos.col > col
         width @ end_pos.col - col
     start = source.line_start_of(s, d.span.start)
     before = s.text.slice(from: start, to: d.span.start)
     padding: [str] @ []
+
     for ch in before.chars()
         if ch == "\t"
             padding @ padding.push("\t")
         else
             padding @ padding.push(" ")
+
     return padding.join("") + "^".repeat(width.to_u64().must())
 
 ## Tests
@@ -101,6 +114,7 @@ function caret(s: source.Source, d: diag.Diagnostic, col: i64) -> str
 test "the rich form: caret on the span, notes and tagged fixes below"
     text = "function half(x: i64) -> i64\n    return \"x\"\n"
     s = source.new_source(name: "t.hero", text: text)
+
     # The span of "x" including quotes: line 2, after `    return `.
     at = token.Span(start: 40, end: 43)
     d: diag.Diagnostic @ diag.new_diagnostic(code: "type_mismatch", message: "expected `i64`, found `str`", span: at)
@@ -108,8 +122,10 @@ test "the rich form: caret on the span, notes and tagged fixes below"
     d.fixes @ d.fixes.push(diag.Fix(title: "rename to `total`", replacement: "total", span: at, certainty: .guess))
     got = render(d, s)
     assert got == "error[type_mismatch]: expected `i64`, found `str`\n  at t.hero:2:12\n    |\n  2 |     return \"x\"\n    |            ^^^\n  note: `half` is declared `-> i64` at line 1\n  fix (guess): rename to `total`\n"
+
     # render_line, the one-line form beside it.
     assert diag.render_line(d, s) == "t.hero:2:12: error[type_mismatch]: expected `i64`, found `str`"
+
     # An unsupported row keeps its own first word.
     u = diag.new_unsupported(code: "map_key", message: "a `{f64: T}` map key is not emitted yet", span: at)
     assert diag.render_line(u, s) == "t.hero:2:12: unsupported[map_key]: a `{f64: T}` map key is not emitted yet"
@@ -117,11 +133,13 @@ test "the rich form: caret on the span, notes and tagged fixes below"
 test "the caret counts characters, and a multi-line span is clamped to one"
     text = "function main()\n    print(\"ààà\")\n"
     s = source.new_source(name: "t.hero", text: text)
+
     # The literal spans five columns and eight bytes.
     lit_start = 26
     d = diag.new_diagnostic(code: "x", message: "m", span: token.Span(start: lit_start, end: lit_start + 8))
     got = render(d, s)
     assert diag_has(text: got, needle: "|           ^^^^^\n")
+
     # A span that crosses lines gets one caret, not forty.
     whole = diag.new_diagnostic(code: "y", message: "m", span: token.Span(start: 0, end: text.len()))
     assert diag_has(text: render(whole, s), needle: "| ^\n")
@@ -129,20 +147,26 @@ test "the caret counts characters, and a multi-line span is clamped to one"
 function diag_has(text: str, needle: str) -> bool
     cs = text.chars()
     needle_cs = needle.chars()
+
     if needle_cs.len() == 0
         return true
+
     if needle_cs.len() > cs.len()
         return false
     start: i64 @ 0
+
     while start <= cs.len() - needle_cs.len()
         matched: bool @ true
         offset: i64 @ 0
+
         while offset < needle_cs.len()
             if cs[start + offset] != needle_cs[offset]
                 matched @ false
                 break
             offset @ offset + 1
+
         if matched
             return true
         start @ start + 1
+
     return false

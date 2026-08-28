@@ -106,7 +106,14 @@ record Program
 
 function run_all(scratch: str, compiler: str) -> report.Report?
     programs = collect(scratch)?
-    return sweep(scratch: scratch, compiler: compiler, store: STORE, programs: programs, update: shell.env("UPDATE_EMISSION") == "1", least: LEAST)
+    return sweep(
+        scratch: scratch,
+        compiler: compiler,
+        store: STORE,
+        programs: programs,
+        update: shell.env("UPDATE_EMISSION") == "1",
+        least: LEAST
+    )
 
 # Every program in the repository that reaches the emitter, with the path
 # its blessed emission lives at.
@@ -117,17 +124,26 @@ function run_all(scratch: str, compiler: str) -> report.Report?
 # can in principle collide, so the sweep asks; it does not assume.
 function collect(scratch: str) -> [Program]?
     found: [Program] @ []
+
     for group in GROUPS
         for entry in shell.list_entries(scratch: scratch, dir: "tests/golden/" + group)?
             if strings.ends_with(text: entry, suffix: ".hero")
                 stem = strings.base_name(path: strings.without_suffix(text: entry, suffix: ".hero"))
-                found @ found.push(Program(source: entry, stored: STORE + "/" + group + "-" + stem + ".c", label: group + "/" + stem))
+                found @ found.push(
+                    Program(source: entry, stored: STORE + "/" + group + "-" + stem + ".c", label: group + "/" + stem)
+                )
+
     for dir in shell.list_directories(scratch: scratch, dir: EXAMPLES)?
         base = strings.base_name(path: dir)
+
         for entry in ENTRIES
             source = dir + "/" + entry + ".hero"
+
             if !read_file(source).is_err()
-                found @ found.push(Program(source: source, stored: STORE + "/examples-" + base + "-" + entry + ".c", label: "examples/" + base + "/" + entry))
+                found @ found.push(
+                    Program(source: source, stored: STORE + "/examples-" + base + "-" + entry + ".c", label: "examples/" + base + "/" + entry)
+                )
+
     return ok(found)
 
 # The sweep itself, with the store, the program list and the floor as
@@ -135,20 +151,40 @@ function collect(scratch: str) -> [Program]?
 # own instead of over the repository.
 function sweep(scratch: str, compiler: str, store: str, programs: [Program], update: bool, least: i64) -> report.Report?
     r: report.Report @ report.empty()
+
     if programs.len() < least
-        report.keep_failure(@r, label: "emission", detail: "  " + programs.len().to_str() + " programs, and there were " + least.to_str() + " — an oracle that quietly stops comparing is worse than no oracle")
+        report.keep_failure(
+            @r,
+            label: "emission",
+            detail: "  " + programs.len().to_str() + " programs, and there were " + least.to_str() + " — an oracle that quietly stops comparing is worse than no oracle"
+        )
     seen: {str: str} @ {}
     skipped: i64 @ 0
+
     for one in programs
         earlier = seen[one.stored]
+
         if !earlier.is_err()
-            report.keep_failure(@r, label: "emission/" + one.label, detail: "  " + one.stored + " is claimed by " + earlier.must() + " as well — two programs, one blessed file, and one of the two would stop being compared")
+            report.keep_failure(
+                @r,
+                label: "emission/" + one.label,
+                detail: "  " + one.stored + " is claimed by " + earlier.must() + " as well — two programs, one blessed file, and one of the two would stop being compared"
+            )
             continue
         seen[one.stored] @ one.label
-        said = shell.run(scratch: scratch, command: shell.patience() + shell.sq(compiler) + " build " + shell.sq(one.source) + " --emit-c")
+        said = shell.run(
+            scratch: scratch,
+            command: shell.patience() + shell.sq(compiler) + " build " + shell.sq(one.source) + " --emit-c"
+        )
+
         if said.is_err()
-            report.keep_failure(@r, label: "emission/" + one.label, detail: "  cannot run the compiler on " + one.source)
+            report.keep_failure(
+                @r,
+                label: "emission/" + one.label,
+                detail: "  cannot run the compiler on " + one.source
+            )
             continue
+
         # THE EXIT CODE FIRST, because a divergence there is the louder
         # finding — the differential's own lesson: three programs got C
         # from the port that does not compile, and comparing only the bytes
@@ -160,11 +196,13 @@ function sweep(scratch: str, compiler: str, store: str, programs: [Program], upd
                 skipped @ skipped + 1
             else
                 blame: str @ "  " + one.source + " emits nothing: exit " + said.must().code.to_str() + "\n"
+
                 if said.must().code == 2
                     blame @ blame + "  exit 2 is the compiler blaming ITSELF — it wrote C it could not compile\n"
                 report.keep_failure(@r, label: "emission/" + one.label, detail: blame + said.must().err)
             continue
         judge(@r, one: one, emitted: said.must().out, update: update)
+
         # The same fresh bytes, asked the descriptor invariant. This is
         # the only place in the harness holding a FRESH emission of every
         # program, so asking here costs one function call and catches a
@@ -174,9 +212,15 @@ function sweep(scratch: str, compiler: str, store: str, programs: [Program], upd
         # this runs it over the bytes just written, and neither owns a
         # copy of the scanner.
         suite_descriptors.judge(@r, label: "emission/" + one.label + " descriptors", c: said.must().out)
+
     orphans(@r, scratch: scratch, store: store, seen: seen)
+
     if skipped > 0 && skipped * 3 >= programs.len()
-        report.keep_failure(@r, label: "emission", detail: "  " + skipped.to_str() + " of " + programs.len().to_str() + " programs were skipped for a missing library — this machine is not comparing emissions")
+        report.keep_failure(
+            @r,
+            label: "emission",
+            detail: "  " + skipped.to_str() + " of " + programs.len().to_str() + " programs were skipped for a missing library — this machine is not comparing emissions"
+        )
     return ok(r)
 
 # One program's emission against its blessed bytes — or, under
@@ -184,17 +228,28 @@ function sweep(scratch: str, compiler: str, store: str, programs: [Program], upd
 function judge(@r: report.Report, one: Program, emitted: str, update: bool)
     if update
         wrote = write_file(path: one.stored, text: emitted)
+
         if wrote.is_err()
             report.keep_failure(@r, label: "emission/" + one.label, detail: "  cannot write " + one.stored)
         else
             report.keep_pass(@r)
         return
     blessed = read_file(one.stored)
+
     if blessed.is_err()
-        report.keep_failure(@r, label: "emission/" + one.label, detail: "  nothing blessed at " + one.stored + " — a new program's emission is blessed on purpose:\n    UPDATE_EMISSION=1 heroes run tests/harness/main.hero -- <compiler> emission")
+        report.keep_failure(
+            @r,
+            label: "emission/" + one.label,
+            detail: "  nothing blessed at " + one.stored + " — a new program's emission is blessed on purpose:\n    UPDATE_EMISSION=1 heroes run tests/harness/main.hero -- <compiler> emission"
+        )
         return
+
     if blessed.must() != emitted
-        report.keep_failure(@r, label: "emission/" + one.label, detail: "  " + one.source + " no longer emits what it was blessed to emit — " + one.stored + "\n" + differences(blessed: blessed.must(), emitted: emitted))
+        report.keep_failure(
+            @r,
+            label: "emission/" + one.label,
+            detail: "  " + one.source + " no longer emits what it was blessed to emit — " + one.stored + "\n" + differences(blessed: blessed.must(), emitted: emitted)
+        )
         return
     report.keep_pass(@r)
 
@@ -206,15 +261,22 @@ function judge(@r: report.Report, one: Program, emitted: str, update: bool)
 # repository is the author's act, not an instrument's.
 function orphans(@r: report.Report, scratch: str, store: str, seen: {str: str})
     listing = shell.list_entries(scratch: scratch, dir: store)
+
     if listing.is_err()
         report.keep_failure(@r, label: "emission/store", detail: "  cannot list " + store)
         return
     stray: [str] @ []
+
     for entry in listing.must()
         if strings.ends_with(text: entry, suffix: ".c") && seen[entry].is_err()
             stray @ stray.push("    " + entry)
+
     if stray.len() > 0
-        report.keep_failure(@r, label: "emission/store", detail: "  a blessed emission no program claims — a renamed or deleted program leaves one behind, and it is then bytes nobody compares:\n" + stray.join("\n") + "\n  delete it in the same commit as the program, or bless the program that should own it")
+        report.keep_failure(
+            @r,
+            label: "emission/store",
+            detail: "  a blessed emission no program claims — a renamed or deleted program leaves one behind, and it is then bytes nobody compares:\n" + stray.join("\n") + "\n  delete it in the same commit as the program, or bless the program that should own it"
+        )
     else
         report.keep_pass(@r)
 
@@ -225,10 +287,14 @@ function differences(blessed: str, emitted: str) -> str
     right = strings.lines(emitted)
     shown: [str] @ []
     i: i64 @ 0
+
     while i < left.len() && i < right.len() && shown.len() < 3
         if left[i] != right[i]
-            shown @ shown.push("  line " + (i + 1).to_str() + ":\n    blessed: " + left[i] + "\n    now:     " + right[i])
+            shown @ shown.push(
+                "  line " + (i + 1).to_str() + ":\n    blessed: " + left[i] + "\n    now:     " + right[i]
+            )
         i @ i + 1
+
     if shown.len() == 0
         return "  every line they share is identical, and they are not the same length: " + blessed.len().to_str() + " bytes blessed, " + emitted.len().to_str() + " now"
     return shown.join("\n") + "\n  (" + left.len().to_str() + " lines blessed, " + right.len().to_str() + " now)"
@@ -241,6 +307,7 @@ function emitter(scratch: str, name: str, says: str) -> str?
     path = scratch + "/" + name
     write_file(path: path, text: "#!/bin/sh\nprintf '%s' " + shell.sq(says) + "\nexit 0\n")?
     made = shell.run(scratch: scratch, command: "chmod +x " + shell.sq(path))?
+
     if made.code != 0
         return fail("cannot_run", "cannot make " + path + " executable")
     return ok(path)
@@ -265,8 +332,16 @@ test "an emission that matches its blessed bytes passes, and a changed one fails
 
     same = emitter(scratch: scratch, name: "stub-emit-same.sh", says: EMITTED)
     assert !same.is_err()
-    green = sweep(scratch: scratch, compiler: same.must(), store: scratch + "/emission-match", programs: programs, update: false, least: 1)
+    green = sweep(
+        scratch: scratch,
+        compiler: same.must(),
+        store: scratch + "/emission-match",
+        programs: programs,
+        update: false,
+        least: 1
+    )
     assert !green.is_err()
+
     # THREE, and the number is named so it explains itself when it moves:
     # `judge` (the bytes), `suite_descriptors.judge` (the descriptor
     # invariant over the same fresh emission) and `orphans` (no blessed
@@ -282,9 +357,20 @@ test "an emission that matches its blessed bytes passes, and a changed one fails
     # One byte of the second line different: the report must name the line
     # and show both sides, because after the archive there is no second
     # compiler to ask what changed.
-    changed = emitter(scratch: scratch, name: "stub-emit-changed.sh", says: "/* Generated by heroes 0.0.1 from x.hero. Do not edit. */\nint main(void) { return 1; }\n")
+    changed = emitter(
+        scratch: scratch,
+        name: "stub-emit-changed.sh",
+        says: "/* Generated by heroes 0.0.1 from x.hero. Do not edit. */\nint main(void) { return 1; }\n"
+    )
     assert !changed.is_err()
-    red = sweep(scratch: scratch, compiler: changed.must(), store: scratch + "/emission-match", programs: programs, update: false, least: 1)
+    red = sweep(
+        scratch: scratch,
+        compiler: changed.must(),
+        store: scratch + "/emission-match",
+        programs: programs,
+        update: false,
+        least: 1
+    )
     assert !red.is_err()
     assert red.must().failed == 1
     assert strings.contains(text: red.must().failures[0], needle: "line 2:")
@@ -298,12 +384,26 @@ test "a program with nothing blessed says how to bless it, and blessing writes t
     stub = emitter(scratch: scratch, name: "stub-emit-new.sh", says: EMITTED)
     assert !stub.is_err()
 
-    red = sweep(scratch: scratch, compiler: stub.must(), store: scratch + "/emission-new", programs: programs, update: false, least: 1)
+    red = sweep(
+        scratch: scratch,
+        compiler: stub.must(),
+        store: scratch + "/emission-new",
+        programs: programs,
+        update: false,
+        least: 1
+    )
     assert !red.is_err()
     assert red.must().failed == 1
     assert strings.contains(text: red.must().failures[0], needle: "UPDATE_EMISSION=1")
 
-    blessed = sweep(scratch: scratch, compiler: stub.must(), store: scratch + "/emission-new", programs: programs, update: true, least: 1)
+    blessed = sweep(
+        scratch: scratch,
+        compiler: stub.must(),
+        store: scratch + "/emission-new",
+        programs: programs,
+        update: true,
+        least: 1
+    )
     assert !blessed.is_err()
     assert blessed.must().failed == 0
     assert read_file(one.must().stored).default("") == EMITTED

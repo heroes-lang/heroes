@@ -34,6 +34,7 @@ function main()
     print(size(.end))
     print(label(.word(text: "hi" + "!")))
     print(label(.end))
+
     # Structural equality: different tags are never equal, same tags compare payloads.
     a: Token = .num(v: 1)
     b: Token = .num(v: 1)
@@ -43,6 +44,7 @@ function main()
     print(a == c)
     print(a == d)
     print(d == d)
+
     # A counted payload compared by value, not by pointer: two separate blocks with
     # the same bytes are equal.
     w1: Token = .word(text: "ab")

@@ -9,22 +9,28 @@
 # `f: function(A) -> B -> [B]` would be a guessing game.
 function each<A, B>(xs: [A], f: (function(A) -> B)) -> [B]
     out: [B] @ []
+
     for x in xs
         out @ out.push(f(x))
+
     return out
 
 function keep_if<A>(xs: [A], ok_for: (function(A) -> bool)) -> [A]
     out: [A] @ []
+
     for x in xs
         if ok_for(x)
             out @ out.push(x)
+
     return out
 
 # Two type parameters, and the accumulator is the one that names the result.
 function combine<A, B>(xs: [A], start: B, step: (function(B, A) -> B)) -> B
     total: B @ start
+
     for x in xs
         total @ step(total, x)
+
     return total
 
 # The functions passed above are ordinary declarations. No lambdas exist.

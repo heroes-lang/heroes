@@ -76,10 +76,12 @@ function record_for(object: str) -> str
 # which is always sixteen hex characters.
 function digest_of(path: str, @memo: {str: str}) -> str
     known = memo[path]
+
     if !known.is_err()
         return known.must()
     text = read_file(path)
     answer: str @ "absent"
+
     if !text.is_err()
         answer @ cli_digest.digest(text.must())
     memo[path] @ answer
@@ -103,20 +105,26 @@ function paths_of(text: str) -> [str]
     start: i64 @ 0
     index: i64 @ 0
     seen_target: bool @ false
+
     while index < text.len() && !seen_target
         if text[index] == 58
             seen_target @ true
         index @ index + 1
+
     start @ index
+
     while index < text.len()
         byte = text[index]
+
         if byte == 92 && index + 1 < text.len() && text[index + 1] == 32
             piece @ piece + text.slice(from: start, to: index) + " "
             index @ index + 2
             start @ index
             continue
+
         if byte == 92 || byte == 32 || byte == 9 || byte == 10 || byte == 13
             piece @ piece + text.slice(from: start, to: index)
+
             if piece.len() > 0
                 out @ out.push(piece)
                 piece @ ""
@@ -124,7 +132,9 @@ function paths_of(text: str) -> [str]
             start @ index
             continue
         index @ index + 1
+
     piece @ piece + text.slice(from: start, to: text.len())
+
     if piece.len() > 0
         out @ out.push(piece)
     return out
@@ -146,13 +156,16 @@ function paths_of(text: str) -> [str]
 # every time instead of being served stale.
 function record_deps(record_path: str, depfile: str, skip: str, @memo: {str: str}) -> ()?
     listing = read_file(depfile)
+
     if listing.is_err()
         return fail("failed", "clang wrote no dependency listing at " + depfile)
     rows: [str] @ []
+
     for path in paths_of(listing.must())
         if under(path: path, prefix: skip)
             continue
         rows @ rows.push(digest_of(path, @memo) + " " + path)
+
     return write_file(path: record_path, text: rows.join("\n"))
 
 # Prefix test by BYTES, never by slicing: a path is arbitrary UTF-8 and
@@ -163,10 +176,12 @@ function under(path: str, prefix: str) -> bool
     if path.len() < prefix.len()
         return false
     index: i64 @ 0
+
     while index < prefix.len()
         if path[index] != prefix[index]
             return false
         index @ index + 1
+
     return true
 
 # Whether every file this object was built from still says the same
@@ -174,11 +189,14 @@ function under(path: str, prefix: str) -> bool
 # all, which is what an object built before this existed looks like.
 function fresh(record_path: str, @memo: {str: str}) -> bool
     kept = read_file(record_path)
+
     if kept.is_err()
         return false
+
     for row in lines(kept.must())
         if row.len() == 0
             continue
+
         # `<16 hex><space><path>`, and the SPACE is checked before
         # anything is sliced. Not tidiness: `slice` aborts where it
         # would split a character (spec:151), so cutting at byte 17 of
@@ -190,19 +208,23 @@ function fresh(record_path: str, @memo: {str: str}) -> bool
         # the loud side: not fresh, recompile.
         if row.len() < 18 || row[16] != 32
             return false
+
         if digest_of(row.slice(from: 17, to: row.len()), @memo) != row.slice(from: 0, to: 16)
             return false
+
     return true
 
 function lines(text: str) -> [str]
     out: [str] @ []
     start: i64 @ 0
     index: i64 @ 0
+
     while index < text.len()
         if text[index] == 10
             out @ out.push(text.slice(from: start, to: index))
             start @ index + 1
         index @ index + 1
+
     out @ out.push(text.slice(from: start, to: text.len()))
     return out
 
@@ -250,6 +272,7 @@ test "no record means not fresh"
 test "a record goes stale when what it recorded changes"
     dir = "build/selftest-deps"
     _ = cli_shell.shell(command: "mkdir -p " + cli_shell.sq(dir))
+
     # OUTSIDE `dir` on purpose: what lives under the key's own
     # directory is deliberately not recorded, so a watched file placed
     # in there would make this case pass for the wrong reason — which
@@ -269,6 +292,7 @@ test "a prefix test on a path with an accent in it does not abort"
     assert under(path: "build/tu-1/x.c", prefix: "build/tu-1/")
     assert !under(path: "build/tu-2/x.c", prefix: "build/tu-1/")
     assert !under(path: "/a", prefix: "/abc")
+
     # A genuine prefix that stops mid-`à`, and two paths that differ
     # INSIDE a multi-byte character. Cutting either with `slice` at the
     # prefix's length would abort (spec:151); comparing bytes answers.
@@ -282,6 +306,7 @@ test "what the key already names is not recorded"
     _ = write_file(path: dir + "/listing.d", text: "dep: " + dir + "/unit.c " + dir + "/watched.h\n")
     memo: {str: str} @ {}
     assert !record_deps(record_path: dir + "/deps.txt", depfile: dir + "/listing.d", skip: dir + "/", @memo).is_err()
+
     # Both paths are inside the keyed directory, so the record is empty
     # and the memo was never asked about either.
     written = read_file(dir + "/deps.txt")
@@ -293,6 +318,7 @@ test "a record line this format did not write is not fresh, and does not abort"
     dir = "build/selftest-deps-shape"
     _ = cli_shell.shell(command: "mkdir -p " + cli_shell.sq(dir))
     memo: {str: str} @ {}
+
     # A path with a newline in it, which is what `lines` would hand
     # back in two pieces — the second piece has no digest and no space
     # at byte 16, and slicing it at 17 would split the `à`.

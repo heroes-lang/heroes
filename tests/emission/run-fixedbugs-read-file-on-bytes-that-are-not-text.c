@@ -184,50 +184,50 @@ bb0:
     t5 = (void *)fopen(hero_cstr_nonnull(t2), hero_cstr_nonnull(t4));
 #line 45 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     h1_handle = t5;
-#line 46 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 47 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t6 = h1_handle;
-#line 46 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 47 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t7 = ((void *)0);
-#line 46 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 47 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t8 = t6 == t7;
-#line 46 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 47 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     if (t8) goto bb2; else goto bb3;
-#line 46 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 47 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
 bb1:
-#line 48 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 49 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t10 = INT64_C(255);
-#line 48 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 49 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t11 = h1_handle;
-#line 48 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 49 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     (void)fputc(t10, t11);
-#line 49 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 50 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t13 = INT64_C(254);
-#line 49 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 50 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t14 = h1_handle;
-#line 49 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 50 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     (void)fputc(t13, t14);
-#line 50 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 51 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t16 = h1_handle;
-#line 50 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 51 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     (void)fclose(t16);
-#line 51 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 52 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t18 = true;
-#line 51 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 52 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     return t18;
-#line 51 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 52 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
 bb2:
-#line 47 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 48 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t9 = false;
-#line 47 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 48 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     return t9;
-#line 47 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 48 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
 bb3:
-#line 47 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 48 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     goto bb1;
 #line 228 "fixedbugsreadfileonbytesthatarenottext.c"
 }
 
-#line 53 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 54 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
 void h_fixedbugsreadfileonbytesthatarenottext_main(void) {
 #line 233 "fixedbugsreadfileonbytesthatarenottext.c"
     h_0opt_f87774a h0_s0 = {0};
@@ -359,137 +359,137 @@ void h_fixedbugsreadfileonbytesthatarenottext_main(void) {
     h_0opt_f87774a t109 = {0};
     goto bb0;
 bb0:
-#line 54 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 55 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t1 = h_fixedbugsreadfileonbytesthatarenottext_NOT_TEXT();
-#line 54 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 55 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t56 = h10_own10;
-#line 54 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 55 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     h10_own10 = t1;
 #line 369 "fixedbugsreadfileonbytesthatarenottext.c"
     hero_str_decref(t56);
-#line 54 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 55 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t2 = h_fixedbugsreadfileonbytesthatarenottext_put_two_bad_bytes(t1);
-#line 54 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 55 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t3 = !t2;
-#line 54 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 55 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     if (t3) goto bb2; else goto bb3;
-#line 54 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 55 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
 bb1:
-#line 61 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 63 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t5 = h_fixedbugsreadfileonbytesthatarenottext_NOT_TEXT();
-#line 61 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 63 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t57 = h11_own11;
-#line 61 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 63 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     h11_own11 = t5;
 #line 385 "fixedbugsreadfileonbytesthatarenottext.c"
     hero_str_decref(t57);
-#line 61 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 63 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t6 = h_library_read_file(t5);
-#line 61 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 63 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t58 = h12_own12;
-#line 61 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 63 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     h12_own12 = t6;
 #line 393 "fixedbugsreadfileonbytesthatarenottext.c"
     h_0opt_f87774a_release(&t58);
-#line 61 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 63 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t59 = h0_s0;
 #line 397 "fixedbugsreadfileonbytesthatarenottext.c"
     h_0opt_f87774a_retain(&t6);
-#line 61 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 63 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     h0_s0 = t6;
 #line 401 "fixedbugsreadfileonbytesthatarenottext.c"
     h_0opt_f87774a_release(&t59);
-#line 61 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 63 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t7 = h0_s0;
-#line 61 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 63 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t8 = t7.tag;
-#line 61 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 63 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     switch (t8) {
-#line 61 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 63 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
         case 0: goto bb5;
-#line 61 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 63 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
         case 1: goto bb6;
-#line 61 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 63 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
         default: hero_unreachable();
-#line 61 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 63 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     }
-#line 61 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 63 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
 bb2:
-#line 55 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 56 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t4 = HERO_STR_LIT(hero_str_2fccf3e5);
-#line 55 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 56 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     hero_print_str(t4);
-#line 55 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 56 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     hero_print_end();
-#line 55 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 56 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t74 = h0_s0;
 #line 427 "fixedbugsreadfileonbytesthatarenottext.c"
     h_0opt_f87774a_release(&t74);
-#line 55 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 56 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t75 = h1_text;
 #line 431 "fixedbugsreadfileonbytesthatarenottext.c"
     hero_str_decref(t75);
-#line 55 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 56 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t76 = h2_e;
 #line 435 "fixedbugsreadfileonbytesthatarenottext.c"
     hero_failure_release(&t76);
-#line 55 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 56 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t77 = h3_s1;
 #line 439 "fixedbugsreadfileonbytesthatarenottext.c"
     h_0opt_a8ea2_release(&t77);
-#line 55 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 56 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t78 = h4_e;
 #line 443 "fixedbugsreadfileonbytesthatarenottext.c"
     hero_failure_release(&t78);
-#line 55 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 56 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t79 = h5_s2;
 #line 447 "fixedbugsreadfileonbytesthatarenottext.c"
     h_0opt_f87774a_release(&t79);
-#line 55 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 56 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t80 = h6_text;
 #line 451 "fixedbugsreadfileonbytesthatarenottext.c"
     hero_str_decref(t80);
-#line 55 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 56 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t81 = h7_e;
 #line 455 "fixedbugsreadfileonbytesthatarenottext.c"
     hero_failure_release(&t81);
-#line 55 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 56 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t82 = h8_s3;
 #line 459 "fixedbugsreadfileonbytesthatarenottext.c"
     h_0opt_f87774a_release(&t82);
-#line 55 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 56 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t83 = h9_e;
 #line 463 "fixedbugsreadfileonbytesthatarenottext.c"
     hero_failure_release(&t83);
-#line 55 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 56 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t84 = h10_own10;
 #line 467 "fixedbugsreadfileonbytesthatarenottext.c"
     hero_str_decref(t84);
-#line 55 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 56 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t85 = h11_own11;
 #line 471 "fixedbugsreadfileonbytesthatarenottext.c"
     hero_str_decref(t85);
-#line 55 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 56 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t86 = h12_own12;
 #line 475 "fixedbugsreadfileonbytesthatarenottext.c"
     h_0opt_f87774a_release(&t86);
-#line 55 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 56 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t87 = h13_own13;
 #line 479 "fixedbugsreadfileonbytesthatarenottext.c"
     hero_str_decref(t87);
-#line 55 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 56 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t88 = h14_own14;
 #line 483 "fixedbugsreadfileonbytesthatarenottext.c"
     h_0opt_a8ea2_release(&t88);
-#line 55 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 56 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t89 = h15_own15;
 #line 487 "fixedbugsreadfileonbytesthatarenottext.c"
     hero_str_decref(t89);
-#line 55 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 56 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t90 = h16_own16;
 #line 491 "fixedbugsreadfileonbytesthatarenottext.c"
     h_0opt_f87774a_release(&t90);
-#line 55 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 56 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t91 = h17_own17;
 #line 495 "fixedbugsreadfileonbytesthatarenottext.c"
     h_0opt_f87774a_release(&t91);
@@ -497,389 +497,389 @@ bb2:
 bb3:
     goto bb1;
 bb4:
-#line 66 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 69 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t20 = h_fixedbugsreadfileonbytesthatarenottext_IS_TEXT();
-#line 66 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 69 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t60 = h13_own13;
-#line 66 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 69 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     h13_own13 = t20;
 #line 507 "fixedbugsreadfileonbytesthatarenottext.c"
     hero_str_decref(t60);
-#line 66 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 69 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t21 = HERO_STR_LIT(hero_str_3a8b665b);
-#line 66 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 69 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t22 = h_library_write_file(t20, t21);
-#line 66 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 69 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t61 = h14_own14;
-#line 66 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 69 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     h14_own14 = t22;
 #line 517 "fixedbugsreadfileonbytesthatarenottext.c"
     h_0opt_a8ea2_release(&t61);
-#line 66 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 69 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t62 = h3_s1;
 #line 521 "fixedbugsreadfileonbytesthatarenottext.c"
     h_0opt_a8ea2_retain(&t22);
-#line 66 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 69 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     h3_s1 = t22;
 #line 525 "fixedbugsreadfileonbytesthatarenottext.c"
     h_0opt_a8ea2_release(&t62);
-#line 66 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 69 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t23 = h3_s1;
-#line 66 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 69 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t24 = t23.tag;
-#line 66 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 69 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     switch (t24) {
-#line 66 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 69 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
         case 0: goto bb8;
-#line 66 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 69 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
         case 1: goto bb9;
-#line 66 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 69 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
         default: hero_unreachable();
-#line 66 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 69 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     }
-#line 66 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 69 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
 bb5:
-#line 62 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 64 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t9 = h0_s0;
-#line 62 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 64 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t10 = t9.as.ok;
-#line 62 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 64 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t63 = h1_text;
 #line 549 "fixedbugsreadfileonbytesthatarenottext.c"
     hero_str_incref(t10);
-#line 62 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 64 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     h1_text = t10;
 #line 553 "fixedbugsreadfileonbytesthatarenottext.c"
     hero_str_decref(t63);
-#line 62 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 64 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t11 = HERO_STR_LIT(hero_str_186b4612);
-#line 62 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 64 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t12 = h1_text;
-#line 62 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 64 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t13 = hero_str_len(t12);
-#line 62 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 64 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t14 = HERO_STR_LIT(hero_str_391e7e27);
-#line 62 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 64 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     hero_print_str(t11);
-#line 62 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 64 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     hero_print_int(t13);
-#line 62 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 64 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     hero_print_str(t14);
-#line 62 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 64 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     hero_print_end();
-#line 62 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 64 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     goto bb4;
-#line 62 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 64 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
 bb6:
-#line 63 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 65 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t15 = h0_s0;
-#line 63 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 65 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t16 = t15.as.err;
-#line 63 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 65 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t64 = h2_e;
 #line 581 "fixedbugsreadfileonbytesthatarenottext.c"
     hero_failure_retain(&t16);
-#line 63 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 65 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     h2_e = t16;
 #line 585 "fixedbugsreadfileonbytesthatarenottext.c"
     hero_failure_release(&t64);
-#line 63 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 65 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t17 = HERO_STR_LIT(hero_str_17f715ea);
-#line 63 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 65 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t18 = h2_e;
-#line 63 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 65 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t19 = t18.code;
-#line 63 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 65 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     hero_print_str(t17);
-#line 63 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 65 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     hero_print_str(t19);
-#line 63 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 65 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     hero_print_end();
-#line 63 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 65 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     goto bb4;
-#line 63 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 65 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
 bb7:
-#line 69 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 73 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t31 = h_fixedbugsreadfileonbytesthatarenottext_IS_TEXT();
-#line 69 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 73 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t65 = h15_own15;
-#line 69 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 73 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     h15_own15 = t31;
 #line 609 "fixedbugsreadfileonbytesthatarenottext.c"
     hero_str_decref(t65);
-#line 69 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 73 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t32 = h_library_read_file(t31);
-#line 69 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 73 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t66 = h16_own16;
-#line 69 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 73 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     h16_own16 = t32;
 #line 617 "fixedbugsreadfileonbytesthatarenottext.c"
     h_0opt_f87774a_release(&t66);
-#line 69 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 73 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t67 = h5_s2;
 #line 621 "fixedbugsreadfileonbytesthatarenottext.c"
     h_0opt_f87774a_retain(&t32);
-#line 69 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 73 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     h5_s2 = t32;
 #line 625 "fixedbugsreadfileonbytesthatarenottext.c"
     h_0opt_f87774a_release(&t67);
-#line 69 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 73 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t33 = h5_s2;
-#line 69 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 73 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t34 = t33.tag;
-#line 69 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 73 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     switch (t34) {
-#line 69 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 73 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
         case 0: goto bb11;
-#line 69 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 73 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
         case 1: goto bb12;
-#line 69 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 73 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
         default: hero_unreachable();
-#line 69 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 73 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     }
-#line 69 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 73 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
 bb8:
-#line 67 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 70 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t25 = HERO_STR_LIT(hero_str_5ee00df1);
-#line 67 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 70 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     hero_print_str(t25);
-#line 67 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 70 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     hero_print_end();
-#line 67 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 70 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     goto bb7;
-#line 67 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 70 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
 bb9:
-#line 68 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 71 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t26 = h3_s1;
-#line 68 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 71 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t27 = t26.as.err;
-#line 68 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 71 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t68 = h4_e;
 #line 659 "fixedbugsreadfileonbytesthatarenottext.c"
     hero_failure_retain(&t27);
-#line 68 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 71 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     h4_e = t27;
 #line 663 "fixedbugsreadfileonbytesthatarenottext.c"
     hero_failure_release(&t68);
-#line 68 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 71 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t28 = HERO_STR_LIT(hero_str_6d2630b3);
-#line 68 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 71 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t29 = h4_e;
-#line 68 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 71 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t30 = t29.code;
-#line 68 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 71 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     hero_print_str(t28);
-#line 68 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 71 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     hero_print_str(t30);
-#line 68 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 71 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     hero_print_end();
-#line 68 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 71 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     goto bb7;
-#line 68 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 71 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
 bb10:
-#line 73 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 78 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t46 = HERO_STR_LIT(hero_str_4e0bb37c);
-#line 73 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 78 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t47 = h_library_read_file(t46);
-#line 73 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 78 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t69 = h17_own17;
-#line 73 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 78 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     h17_own17 = t47;
 #line 689 "fixedbugsreadfileonbytesthatarenottext.c"
     h_0opt_f87774a_release(&t69);
-#line 73 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 78 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t70 = h8_s3;
 #line 693 "fixedbugsreadfileonbytesthatarenottext.c"
     h_0opt_f87774a_retain(&t47);
-#line 73 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 78 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     h8_s3 = t47;
 #line 697 "fixedbugsreadfileonbytesthatarenottext.c"
     h_0opt_f87774a_release(&t70);
-#line 73 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 78 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t48 = h8_s3;
-#line 73 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 78 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t49 = t48.tag;
-#line 73 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 78 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     switch (t49) {
-#line 73 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 78 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
         case 0: goto bb14;
-#line 73 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 78 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
         case 1: goto bb15;
-#line 73 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 78 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
         default: hero_unreachable();
-#line 73 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 78 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     }
-#line 73 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 78 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
 bb11:
-#line 70 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 74 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t35 = h5_s2;
-#line 70 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 74 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t36 = t35.as.ok;
-#line 70 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 74 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t71 = h6_text;
 #line 721 "fixedbugsreadfileonbytesthatarenottext.c"
     hero_str_incref(t36);
-#line 70 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 74 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     h6_text = t36;
 #line 725 "fixedbugsreadfileonbytesthatarenottext.c"
     hero_str_decref(t71);
-#line 70 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 74 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t37 = HERO_STR_LIT(hero_str_750e04cc);
-#line 70 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 74 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t38 = h6_text;
-#line 70 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 74 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t39 = hero_str_len(t38);
-#line 70 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 74 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t40 = HERO_STR_LIT(hero_str_391e7e27);
-#line 70 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 74 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     hero_print_str(t37);
-#line 70 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 74 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     hero_print_int(t39);
-#line 70 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 74 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     hero_print_str(t40);
-#line 70 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 74 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     hero_print_end();
-#line 70 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 74 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     goto bb10;
-#line 70 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 74 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
 bb12:
-#line 71 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 75 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t41 = h5_s2;
-#line 71 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 75 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t42 = t41.as.err;
-#line 71 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 75 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t72 = h7_e;
 #line 753 "fixedbugsreadfileonbytesthatarenottext.c"
     hero_failure_retain(&t42);
-#line 71 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 75 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     h7_e = t42;
 #line 757 "fixedbugsreadfileonbytesthatarenottext.c"
     hero_failure_release(&t72);
-#line 71 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 75 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t43 = HERO_STR_LIT(hero_str_7e87d305);
-#line 71 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 75 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t44 = h7_e;
-#line 71 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 75 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t45 = t44.code;
-#line 71 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 75 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     hero_print_str(t43);
-#line 71 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 75 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     hero_print_str(t45);
-#line 71 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 75 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     hero_print_end();
-#line 71 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 75 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     goto bb10;
-#line 71 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 75 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
 bb13:
-#line 53 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 54 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t92 = h0_s0;
 #line 777 "fixedbugsreadfileonbytesthatarenottext.c"
     h_0opt_f87774a_release(&t92);
-#line 53 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 54 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t93 = h1_text;
 #line 781 "fixedbugsreadfileonbytesthatarenottext.c"
     hero_str_decref(t93);
-#line 53 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 54 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t94 = h2_e;
 #line 785 "fixedbugsreadfileonbytesthatarenottext.c"
     hero_failure_release(&t94);
-#line 53 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 54 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t95 = h3_s1;
 #line 789 "fixedbugsreadfileonbytesthatarenottext.c"
     h_0opt_a8ea2_release(&t95);
-#line 53 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 54 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t96 = h4_e;
 #line 793 "fixedbugsreadfileonbytesthatarenottext.c"
     hero_failure_release(&t96);
-#line 53 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 54 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t97 = h5_s2;
 #line 797 "fixedbugsreadfileonbytesthatarenottext.c"
     h_0opt_f87774a_release(&t97);
-#line 53 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 54 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t98 = h6_text;
 #line 801 "fixedbugsreadfileonbytesthatarenottext.c"
     hero_str_decref(t98);
-#line 53 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 54 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t99 = h7_e;
 #line 805 "fixedbugsreadfileonbytesthatarenottext.c"
     hero_failure_release(&t99);
-#line 53 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 54 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t100 = h8_s3;
 #line 809 "fixedbugsreadfileonbytesthatarenottext.c"
     h_0opt_f87774a_release(&t100);
-#line 53 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 54 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t101 = h9_e;
 #line 813 "fixedbugsreadfileonbytesthatarenottext.c"
     hero_failure_release(&t101);
-#line 53 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 54 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t102 = h10_own10;
 #line 817 "fixedbugsreadfileonbytesthatarenottext.c"
     hero_str_decref(t102);
-#line 53 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 54 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t103 = h11_own11;
 #line 821 "fixedbugsreadfileonbytesthatarenottext.c"
     hero_str_decref(t103);
-#line 53 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 54 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t104 = h12_own12;
 #line 825 "fixedbugsreadfileonbytesthatarenottext.c"
     h_0opt_f87774a_release(&t104);
-#line 53 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 54 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t105 = h13_own13;
 #line 829 "fixedbugsreadfileonbytesthatarenottext.c"
     hero_str_decref(t105);
-#line 53 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 54 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t106 = h14_own14;
 #line 833 "fixedbugsreadfileonbytesthatarenottext.c"
     h_0opt_a8ea2_release(&t106);
-#line 53 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 54 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t107 = h15_own15;
 #line 837 "fixedbugsreadfileonbytesthatarenottext.c"
     hero_str_decref(t107);
-#line 53 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 54 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t108 = h16_own16;
 #line 841 "fixedbugsreadfileonbytesthatarenottext.c"
     h_0opt_f87774a_release(&t108);
-#line 53 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 54 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t109 = h17_own17;
 #line 845 "fixedbugsreadfileonbytesthatarenottext.c"
     h_0opt_f87774a_release(&t109);
     return;
 bb14:
-#line 74 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 79 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t50 = HERO_STR_LIT(hero_str_1418694e);
-#line 74 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 79 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     hero_print_str(t50);
-#line 74 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 79 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     hero_print_end();
-#line 74 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 79 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     goto bb13;
-#line 74 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 79 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
 bb15:
-#line 75 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 80 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t51 = h8_s3;
-#line 75 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 80 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t52 = t51.as.err;
-#line 75 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 80 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t73 = h9_e;
 #line 865 "fixedbugsreadfileonbytesthatarenottext.c"
     hero_failure_retain(&t52);
-#line 75 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 80 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     h9_e = t52;
 #line 869 "fixedbugsreadfileonbytesthatarenottext.c"
     hero_failure_release(&t73);
-#line 75 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 80 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t53 = HERO_STR_LIT(hero_str_180e72b2);
-#line 75 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 80 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t54 = h9_e;
-#line 75 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 80 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t55 = t54.code;
-#line 75 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 80 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     hero_print_str(t53);
-#line 75 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 80 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     hero_print_str(t55);
-#line 75 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 80 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     hero_print_end();
-#line 75 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+#line 80 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     goto bb13;
 #line 885 "fixedbugsreadfileonbytesthatarenottext.c"
 }

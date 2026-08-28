@@ -17,8 +17,10 @@ function main()
     print(s)
     out: str @ ""
     i: i64 @ 0
+
     while i < 50
         out @ out + to_str(i % 10)
         i @ i + 1
+
     print(len(out))
     print(slice(out, from: 0, to: 10))

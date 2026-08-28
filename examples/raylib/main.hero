@@ -133,6 +133,7 @@ test "the binding reaches raylib and comes back with a value in range"
 test "a struct crosses by value, in both directions"
     # 0xFF0000FF as a signed 32-bit integer: opaque red, packed by raylib.
     assert ColorToInt(Color(r: 255, g: 0, b: 0, a: 255)) == -16776961
+
     # Halfway along a segment is the midpoint, and the fields come back exact
     # because 5.0 and 10.0 are representable in binary32.
     mid = GetSplinePointLinear(

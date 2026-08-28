@@ -44,22 +44,28 @@ function is_space(c: u8) -> bool
 
 function trimmed(line: str) -> str
     from: i64 @ 0
+
     while from < line.len() && is_space(line[from])
         from @ from + 1
+
     to: i64 @ line.len()
+
     while to > from && is_space(line[to - 1])
         to @ to - 1
+
     return line.slice(from: from, to: to)
 
 function split_lines(text: str) -> [str]
     out: [str] @ []
     start: i64 @ 0
     i: i64 @ 0
+
     while i < text.len()
         if text[i] == '\n'
             out @ out.push(text.slice(from: start, to: i))
             start @ i + 1
         i @ i + 1
+
     if start < text.len()
         out @ out.push(text.slice(from: start, to: text.len()))
     return out
@@ -72,11 +78,13 @@ function cell_of(name: str) -> Cell?
         return fail(ERR_BAD_CELL_NAME, "`" + name + "` is not a cell: one letter then digits")
     row: i64 @ 0
     i: i64 @ 1
+
     while i < name.len()
         if !is_digit(name[i])
             return fail(ERR_BAD_CELL_NAME, "`" + name + "` is not a cell: one letter then digits")
         row @ row * 10 + to_i64(name[i] - '0').must()
         i @ i + 1
+
     if row == 0
         return fail(ERR_BAD_CELL_NAME, "`" + name + "` has no row: rows start at 1")
     return ok(Cell(column: to_i64(name[0] - 'A').must(), row: row))
@@ -96,22 +104,27 @@ function is_name(word: str) -> bool
 # answer `range(from: 3, to: 1)` gives, so there is one rule to remember.
 function expand(text: str) -> [str]?
     at = index_of(text, ':')
+
     if at < 0
         return fail(ERR_BAD_RANGE, "`" + text + "` is not a range: two cells joined by `:`")
     from = cell_of(trimmed(text.slice(from: 0, to: at)))?
     to = cell_of(trimmed(text.slice(from: at + 1, to: text.len())))?
     out: [str] @ []
+
     for row in range(from: from.row, to: to.row + 1)
         for column in range(from: from.column, to: to.column + 1)
             out @ out.push(name_of(Cell(column: column, row: row)))
+
     return ok(out)
 
 function index_of(text: str, c: u8) -> i64
     i: i64 @ 0
+
     while i < text.len()
         if text[i] == c
             return i
         i @ i + 1
+
     return 0 - 1
 
 ## The file
@@ -119,17 +132,22 @@ function index_of(text: str, c: u8) -> i64
 # `NAME = formula` per line, `#` a comment, blank lines skipped.
 function read(text: str) -> Sheet?
     cells: {str: str} @ {}
+
     for line in split_lines(text)
         head = trimmed(line)
+
         if head == "" || head[0] == '#'
             continue
         at = index_of(head, '=')
+
         if at < 0
             return fail(ERR_NO_ASSIGNMENT, "`" + head + "` is not `NAME = formula`")
         name = trimmed(head.slice(from: 0, to: at))
+
         if !is_name(name)
             return fail(ERR_BAD_CELL_NAME, "`" + name + "` is not a cell name")
         cells[name] @ trimmed(head.slice(from: at + 1, to: head.len()))
+
     return ok(Sheet(cells: cells))
 
 # Every cell the sheet has, in the order a reader expects: down the rows, then
@@ -138,19 +156,24 @@ function read(text: str) -> Sheet?
 function names(s: Sheet) -> [str]
     known = sort(keys(s.cells))
     out: [str] @ []
+
     for row in range(from: 1, to: highest_row(known) + 1)
         for column in range(from: 0, to: 26)
             name = name_of(Cell(column: column, row: row))
+
             if !s.cells[name].is_err()
                 out @ out.push(name)
+
     return out
 
 function highest_row(known: [str]) -> i64
     best: i64 @ 0
+
     for name in known
         match cell_of(name)
             .ok c  => best @ larger(a: best, b: c.row)
             .err _ => continue
+
     return best
 
 function larger(a: i64, b: i64) -> i64

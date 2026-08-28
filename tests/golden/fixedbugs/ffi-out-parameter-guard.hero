@@ -37,6 +37,7 @@ extern "sqlite3.h" link "sqlite3"
 
 function main()
     db: ptr @ nullptr
+
     if sqlite3_open(path: ":memory:".cstr(), db: @db) != SQLITE_OK
         print("no database")
         return

@@ -24,14 +24,17 @@ function main()
     match write_file(path: PATH, text: "one\ntwo\nthree\n")
         .ok _  => print("wrote it")
         .err e => print("write failed: ", e.code)
+
     match read_file(PATH)
         .ok text => print("read ", len(text), " bytes")
         .err e   => print("read failed: ", e.code)
+
     # The error side, which is the half a happy-path test never reaches. The
     # code is a stable snake_case string (§4.6), so it can be asserted.
     match read_file("build/heroes-no-such-file-at-all")
         .ok _  => print("unexpected")
         .err e => print("missing: ", e.code)
+
     # `args()` gives what follows the program's name, and the golden harness
     # runs the binary with none — the off-by-one answered once, in the runtime.
     print("arguments: ", len(args()))

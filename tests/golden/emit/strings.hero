@@ -6,6 +6,7 @@
 
 function greet(name: str, formal: bool) -> str
     prefix: str @ "hi "
+
     if formal
         prefix @ "good day "
     return prefix + name

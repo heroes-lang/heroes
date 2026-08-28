@@ -4,14 +4,18 @@
 # impossible and `_` is what closes it.
 function first_even_after(xs: [i64], floor: i64) -> i64
     i: i64 @ 0
+
     while i < xs.len()
         v = xs[i]
         i @ i + 1
+
         if v <= floor
             continue
+
         if v % 2 == 0
             return v
         break
+
     return 0 - 1
 
 function named(n: i64) -> str

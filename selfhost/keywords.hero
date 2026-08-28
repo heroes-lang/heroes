@@ -36,26 +36,26 @@ function keyword(text: str) -> token.TokenKind?
     return match text
         "constant" => ok(.kw_constant)
         "function" => ok(.kw_function)
-        "record" => ok(.kw_record)
-        "variant" => ok(.kw_variant)
-        "match" => ok(.kw_match)
-        "if" => ok(.kw_if)
-        "else" => ok(.kw_else)
-        "for" => ok(.kw_for)
-        "while" => ok(.kw_while)
-        "in" => ok(.kw_in)
-        "break" => ok(.kw_break)
+        "record"   => ok(.kw_record)
+        "variant"  => ok(.kw_variant)
+        "match"    => ok(.kw_match)
+        "if"       => ok(.kw_if)
+        "else"     => ok(.kw_else)
+        "for"      => ok(.kw_for)
+        "while"    => ok(.kw_while)
+        "in"       => ok(.kw_in)
+        "break"    => ok(.kw_break)
         "continue" => ok(.kw_continue)
-        "return" => ok(.kw_return)
-        "test" => ok(.kw_test)
-        "assert" => ok(.kw_assert)
-        "extern" => ok(.kw_extern)
-        "nullptr" => ok(.kw_nullptr)
-        "use" => ok(.kw_use)
-        "true" => ok(.kw_true)
-        "false" => ok(.kw_false)
-        "fail" => ok(.kw_fail)
-        _ => fail(ERR_NOT_A_KEYWORD, text)
+        "return"   => ok(.kw_return)
+        "test"     => ok(.kw_test)
+        "assert"   => ok(.kw_assert)
+        "extern"   => ok(.kw_extern)
+        "nullptr"  => ok(.kw_nullptr)
+        "use"      => ok(.kw_use)
+        "true"     => ok(.kw_true)
+        "false"    => ok(.kw_false)
+        "fail"     => ok(.kw_fail)
+        _          => fail(ERR_NOT_A_KEYWORD, text)
 
 ## The foreign words
 
@@ -74,23 +74,57 @@ record ForeignWord
 # machine-applicable fix (design.md §4.17).
 function foreign_word(text: str) -> ForeignWord?
     return match text
-        "int" => ok(ForeignWord(message: "`int` is not a word in this language — an integer says its width: `i64`, and also `i8` `i16` `i32` `u8` `u16` `u32` `u64`", repair: .swap(word: "i64")))
-        "struct" => ok(ForeignWord(message: "`struct` is not a word in this language — use `record`: `record Point`", repair: .swap(word: "record")))
-        "enum" => ok(ForeignWord(message: "`enum` is not a word in this language — use `variant`: `variant Token`", repair: .swap(word: "variant")))
-        "union" => ok(ForeignWord(message: "`union` is not a word in this language — use `variant`: `variant Token`", repair: .swap(word: "variant")))
-        "class" => ok(ForeignWord(message: "`class` is not a word in this language — use `record` (there is no inheritance)", repair: .guidance))
-        "fn" => ok(ForeignWord(message: "`fn` is not a word in this language — use `function`: `function f(x: i64) -> i64`", repair: .swap(word: "function")))
-        "func" => ok(ForeignWord(message: "`func` is not a word in this language — use `function`", repair: .swap(word: "function")))
-        "def" => ok(ForeignWord(message: "`def` is not a word in this language — use `function`", repair: .swap(word: "function")))
-        "let" => ok(ForeignWord(message: "`let` is not a word in this language — bind with `=`: `x = 5`", repair: .guidance))
-        "var" => ok(ForeignWord(message: "`var` is not a word in this language — declare a mutable with `@`: `v: i64 @ 0`", repair: .guidance))
-        "const" => ok(ForeignWord(message: "`const` is not a word in this language — use `constant`: `constant MAX: i64`", repair: .swap(word: "constant")))
-        "elif" => ok(ForeignWord(message: "`elif` is not a word in this language — write `else if`", repair: .swap(word: "else if")))
-        "switch" => ok(ForeignWord(message: "`switch` is not a word in this language — use `match`", repair: .swap(word: "match")))
-        "case" => ok(ForeignWord(message: "`case` is not a word in this language — a `match` arm is `.name => expr`", repair: .guidance))
-        "null" | "nil" | "None" => ok(ForeignWord(message: "there is no null in this language — absence is a fallible type: `i64?`, and a C pointer's zero is `nullptr`", repair: .guidance))
-        "try" | "catch" | "throw" | "raise" => ok(ForeignWord(message: "there are no exceptions in this language — errors are values: `fail(code, msg)`, propagate with `?`", repair: .guidance))
-        "import" | "include" => ok(ForeignWord(message: "`import` and `include` are not words in this language — a module is named with `use`: `use geom`", repair: .swap(word: "use")))
+        "int" => ok(
+            ForeignWord(message: "`int` is not a word in this language — an integer says its width: `i64`, and also `i8` `i16` `i32` `u8` `u16` `u32` `u64`", repair: .swap(word: "i64"))
+        )
+        "struct" => ok(
+            ForeignWord(message: "`struct` is not a word in this language — use `record`: `record Point`", repair: .swap(word: "record"))
+        )
+        "enum" => ok(
+            ForeignWord(message: "`enum` is not a word in this language — use `variant`: `variant Token`", repair: .swap(word: "variant"))
+        )
+        "union" => ok(
+            ForeignWord(message: "`union` is not a word in this language — use `variant`: `variant Token`", repair: .swap(word: "variant"))
+        )
+        "class" => ok(
+            ForeignWord(message: "`class` is not a word in this language — use `record` (there is no inheritance)", repair: .guidance)
+        )
+        "fn" => ok(
+            ForeignWord(message: "`fn` is not a word in this language — use `function`: `function f(x: i64) -> i64`", repair: .swap(word: "function"))
+        )
+        "func" => ok(
+            ForeignWord(message: "`func` is not a word in this language — use `function`", repair: .swap(word: "function"))
+        )
+        "def" => ok(
+            ForeignWord(message: "`def` is not a word in this language — use `function`", repair: .swap(word: "function"))
+        )
+        "let" => ok(
+            ForeignWord(message: "`let` is not a word in this language — bind with `=`: `x = 5`", repair: .guidance)
+        )
+        "var" => ok(
+            ForeignWord(message: "`var` is not a word in this language — declare a mutable with `@`: `v: i64 @ 0`", repair: .guidance)
+        )
+        "const" => ok(
+            ForeignWord(message: "`const` is not a word in this language — use `constant`: `constant MAX: i64`", repair: .swap(word: "constant"))
+        )
+        "elif" => ok(
+            ForeignWord(message: "`elif` is not a word in this language — write `else if`", repair: .swap(word: "else if"))
+        )
+        "switch" => ok(
+            ForeignWord(message: "`switch` is not a word in this language — use `match`", repair: .swap(word: "match"))
+        )
+        "case" => ok(
+            ForeignWord(message: "`case` is not a word in this language — a `match` arm is `.name => expr`", repair: .guidance)
+        )
+        "null" | "nil" | "None" => ok(
+            ForeignWord(message: "there is no null in this language — absence is a fallible type: `i64?`, and a C pointer's zero is `nullptr`", repair: .guidance)
+        )
+        "try" | "catch" | "throw" | "raise" => ok(
+            ForeignWord(message: "there are no exceptions in this language — errors are values: `fail(code, msg)`, propagate with `?`", repair: .guidance)
+        )
+        "import" | "include" => ok(
+            ForeignWord(message: "`import` and `include` are not words in this language — a module is named with `use`: `use geom`", repair: .swap(word: "use"))
+        )
         _ => fail(ERR_NOT_FOREIGN, text)
 
 test "every keyword resolves and an identifier does not"
@@ -103,8 +137,9 @@ test "every keyword resolves and an identifier does not"
 test "a foreign word arrives with its repair"
     fw = foreign_word("int").must()
     assert fw.repair == .swap(word: "i64")
+
     match foreign_word("let").must().repair
-        .swap _ => assert false
+        .swap _   => assert false
         .guidance => assert true
 
 test "the three spellings of null share one answer"

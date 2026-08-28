@@ -11,6 +11,7 @@ function count_down(@n: i64, @seen: i64)
     while n > 0
         seen @ seen + 1
         n @ n - 1
+
         if seen > 2
             return
 

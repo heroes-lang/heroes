@@ -18,44 +18,55 @@ use cli_io
 
 function run(s: source.Source, inv: cli_argv.Invocation) -> cli_table.Exit
     out = lexer.lex(s)
+
     if cli_argv.has(inv, spelling: "--dump-tokens")
         if cli_argv.has(inv, spelling: "--json")
             cli_io.print_artifact(text: json(out.tokens, s))
         else
             cli_io.print_artifact(text: text_dump(out.tokens, s))
+
     for d in out.diagnostics
         cli_io.eprint(text: diag.render_line(d, s))
+
     if out.diagnostics.len() == 0
         return .ok_exit
     return .diagnostics_exit
 
 function json(tokens: [token.Token], s: source.Source) -> str
     shown_tokens: [token.Token] @ []
+
     for t in tokens
         if source.is_root(s, t.span.start)
             shown_tokens @ shown_tokens.push(t)
+
     out: str @ "[\n"
     index: i64 @ 0
+
     for t in shown_tokens
         found = source.locate(s, t.span.start)
         comma: str @ ","
+
         if index == shown_tokens.len() - 1
             comma @ ""
         out @ out + "  {\"kind\": \"" + token.kind_name(t.kind) + "\", \"text\": \"" + escape(shown(t, s)) + "\", \"line\": " + found.line.to_str() + ", \"col\": " + found.col.to_str() + "}" + comma + "\n"
         index @ index + 1
+
     return out + "]\n"
 
 function text_dump(tokens: [token.Token], s: source.Source) -> str
     out: str @ ""
+
     for t in tokens
         if !source.is_root(s, t.span.start)
             continue
         found = source.locate(s, t.span.start)
         word = shown(t, s)
+
         if word.len() == 0
             out @ out + found.line.to_str() + ":" + found.col.to_str() + " " + token.kind_name(t.kind) + "\n"
         else
             out @ out + found.line.to_str() + ":" + found.col.to_str() + " " + token.kind_name(t.kind) + " " + word + "\n"
+
     return out
 
 # Layout tokens carry no text, so printing their (empty) slice would
@@ -67,6 +78,7 @@ function shown(t: token.Token, s: source.Source) -> str
 
 function escape(text: str) -> str
     out: str @ ""
+
     for ch in text.chars()
         if ch == "\\"
             out @ out + "\\\\"
@@ -78,6 +90,7 @@ function escape(text: str) -> str
                     out @ out + "\\n"
                 else
                     out @ out + ch
+
     return out
 
 ## Tests
@@ -90,8 +103,10 @@ test "the dump is root-only, layout tokens stay wordless, json escapes"
     assert has_text(text: dumped, needle: "1:1 kw_constant constant\n")
     assert has_text(text: dumped, needle: "1:11 colon :\n")
     assert has_text(text: dumped, needle: "2:5 int 1\n")
+
     # The library's tokens never appear.
     assert !has_text(text: dumped, needle: "HIDDEN")
+
     # Layout rows carry the kind alone.
     assert has_text(text: dumped, needle: " indent\n")
     j = json(out.tokens, s)
@@ -101,20 +116,26 @@ test "the dump is root-only, layout tokens stay wordless, json escapes"
 function has_text(text: str, needle: str) -> bool
     cs = text.chars()
     needle_cs = needle.chars()
+
     if needle_cs.len() == 0
         return true
+
     if needle_cs.len() > cs.len()
         return false
     start: i64 @ 0
+
     while start <= cs.len() - needle_cs.len()
         matched: bool @ true
         offset: i64 @ 0
+
         while offset < needle_cs.len()
             if cs[start + offset] != needle_cs[offset]
                 matched @ false
                 break
             offset @ offset + 1
+
         if matched
             return true
         start @ start + 1
+
     return false

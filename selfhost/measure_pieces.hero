@@ -47,30 +47,39 @@ function pieces_of(text: str) -> [str]
     cs = text.chars()
     out: [str] @ []
     i: i64 @ 0
+
     while i < cs.len()
         taken: i64 @ contraction(cs: cs, at: i)
+
         if taken == 0
             taken @ run_of(cs: cs, at: i, kind: is_letter)
+
         if taken == 0
             taken @ run_of(cs: cs, at: i, kind: is_digit)
+
         if taken == 0
             taken @ run_of(cs: cs, at: i, kind: is_other)
+
         if taken == 0
             taken @ whitespace(cs: cs, at: i)
+
         # Nothing matched at all: take one character rather than loop
         # forever. The Rust says `unwrap_or(1)` for the same reason.
         if taken == 0
             taken @ 1
         out @ out.push(cs.slice(from: i, to: i + taken).join(""))
         i @ i + taken
+
     return out
 
 # How many characters of a contraction start here, or 0.
 function contraction(cs: [str], at: i64) -> i64
     for want in CONTRACTIONS
         wanted = want.chars()
+
         if at + wanted.len() <= cs.len() && cs.slice(from: at, to: at + wanted.len()) == wanted
             return wanted.len()
+
     return 0
 
 # ` ?<class>+` — an optional leading space, then one or more of the class.
@@ -82,13 +91,17 @@ function contraction(cs: [str], at: i64) -> i64
 # optional space to be subtly wrong.
 function run_of(cs: [str], at: i64, kind: (function(str) -> bool)) -> i64
     start: i64 @ at
+
     if cs[at] == " " && at + 1 < cs.len() && kind(cs[at + 1])
         start @ at + 1
+
     if start >= cs.len() || !kind(cs[start])
         return 0
     last: i64 @ start
+
     while last < cs.len() && kind(cs[last])
         last @ last + 1
+
     return last - at
 
 # `\s+(?!\S)|\s+` — a whitespace run, giving back its last character when
@@ -97,11 +110,15 @@ function whitespace(cs: [str], at: i64) -> i64
     if !is_space(cs[at])
         return 0
     last: i64 @ at
+
     while last < cs.len() && is_space(cs[last])
         last @ last + 1
+
     stop: i64 @ last
+
     if last < cs.len() && last > at
         stop @ last - 1
+
     if stop > at
         return stop - at
     return last - at
@@ -110,7 +127,7 @@ function is_letter(ch: str) -> bool
     if ch.len() != 1
         return false
     b = ch[0]
-    return (b >= 65 && b <= 90) || (b >= 97 && b <= 122)
+    return b >= 65 && b <= 90 || b >= 97 && b <= 122
 
 function is_digit(ch: str) -> bool
     if ch.len() != 1
@@ -123,7 +140,7 @@ function is_space(ch: str) -> bool
     if ch.len() != 1
         return false
     b = ch[0]
-    return b == 32 || (b >= 9 && b <= 13)
+    return b == 32 || b >= 9 && b <= 13
 
 # Neither letter, digit, nor whitespace — the third `run` class, and where
 # every character above ASCII lands. See the module doc's claim.
@@ -139,6 +156,7 @@ test "pre-tokenisation is lossless"
 test "the space before a word belongs to the word"
     assert pieces_of("hello world") == ["hello", " world"]
     assert pieces_of("a  b") == ["a", " ", " b"]
+
     # A trailing whitespace run has nothing after it, so it keeps its last
     # character: `\s+(?!\S)` fails and `\s+` takes the lot.
     assert pieces_of("a  ") == ["a", "  "]

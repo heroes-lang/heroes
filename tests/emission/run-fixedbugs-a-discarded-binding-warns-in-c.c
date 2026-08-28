@@ -129,34 +129,34 @@ bb0:
 #line 34 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
     h0_v = t1;
 #line 35 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
-#line 37 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
+#line 38 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
     t3 = HERO_STR_LIT(hero_str_6bb5e50a);
-#line 37 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
+#line 38 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
     t10 = h1_s;
 #line 137 "fixedbugsadiscardedbindingwarnsinc.c"
     hero_str_incref(t3);
-#line 37 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
+#line 38 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
     h1_s = t3;
 #line 141 "fixedbugsadiscardedbindingwarnsinc.c"
     hero_str_decref(t10);
-#line 38 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
-#line 40 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
+#line 39 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
+#line 42 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
     t5 = INT64_C(3);
-#line 40 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
+#line 42 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
     h_fixedbugsadiscardedbindingwarnsinc_twice(t5);
-#line 42 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
+#line 45 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
     t7 = INT64_C(21);
-#line 42 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
+#line 45 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
     t8 = h_fixedbugsadiscardedbindingwarnsinc_twice(t7);
-#line 42 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
+#line 45 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
     h2_kept = t8;
-#line 43 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
+#line 46 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
     t9 = h2_kept;
-#line 43 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
+#line 46 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
     hero_print_int(t9);
-#line 43 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
+#line 46 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
     hero_print_end();
-#line 43 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
+#line 46 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
     t11 = h1_s;
 #line 162 "fixedbugsadiscardedbindingwarnsinc.c"
     hero_str_decref(t11);

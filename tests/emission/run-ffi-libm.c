@@ -144,19 +144,19 @@ bb0:
     hero_print_int(t9);
 #line 35 "tests/golden/run/ffi-libm.hero"
     hero_print_end();
-#line 38 "tests/golden/run/ffi-libm.hero"
+#line 39 "tests/golden/run/ffi-libm.hero"
     t10 = 0x1.8p+1;
-#line 38 "tests/golden/run/ffi-libm.hero"
+#line 39 "tests/golden/run/ffi-libm.hero"
     t11 = 0x1p+2;
-#line 38 "tests/golden/run/ffi-libm.hero"
+#line 39 "tests/golden/run/ffi-libm.hero"
     t12 = pow(t10, t11);
-#line 38 "tests/golden/run/ffi-libm.hero"
+#line 39 "tests/golden/run/ffi-libm.hero"
     t13 = sqrt(t12);
-#line 38 "tests/golden/run/ffi-libm.hero"
+#line 39 "tests/golden/run/ffi-libm.hero"
     hero_print_f64(t13);
-#line 38 "tests/golden/run/ffi-libm.hero"
+#line 39 "tests/golden/run/ffi-libm.hero"
     hero_print_end();
-#line 38 "tests/golden/run/ffi-libm.hero"
+#line 39 "tests/golden/run/ffi-libm.hero"
     return;
 #line 162 "ffilibm.c"
 }

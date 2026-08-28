@@ -28,24 +28,41 @@ function wrong_type(s: source.Source, decls: [ast.Decl], line: str) -> diag.Diag
     if !emit_ffi_lookup.has(text: line, needle: emit_ffi_lookup.FAILED)
         return fail("none", "not an assertion failure")
     rest = emit_ffi_lookup.after(text: line, marker: emit_assert_spelling.ASSERTION)
+
     if rest.is_err()
         return fail("none", "not a return assertion")
+
     # `<name> <type>` — written by the emitter, so the split is on its
     # own format rather than on a guess about clang's.
     parts = emit_ffi_lookup.words(text: rest.must())
+
     if parts.len() < 2
         return fail("none", "the marker's tail is not ours")
     name = parts[0]
     declared = parts[1]
     found = emit_ffi_lookup.declaration(s, decls, name: name)
+
     if found.is_err()
         return fail("none", "no group declares this name")
+
     if found.must().is_constant
-        d: diag.Diagnostic @ diag.new_diagnostic(code: "ffi_constant_type", message: "`" + name + "` is not `" + declared + "` in `" + found.must().header + "` — clang read the header and the types disagree", span: found.must().span)
-        d.notes @ d.notes.push("an `extern constant` takes its value from the header (§4.19), so its type is the header's too: correct the declared type, or name the header that spells `" + name + "` as `" + declared + "`")
+        d: diag.Diagnostic @ diag.new_diagnostic(
+            code: "ffi_constant_type",
+            message: "`" + name + "` is not `" + declared + "` in `" + found.must().header + "` — clang read the header and the types disagree",
+            span: found.must().span
+        )
+        d.notes @ d.notes.push(
+            "an `extern constant` takes its value from the header (§4.19), so its type is the header's too: correct the declared type, or name the header that spells `" + name + "` as `" + declared + "`"
+        )
         return ok(d)
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "ffi_return_type", message: "`" + name + "` does not return `" + declared + "` — that is what `" + found.must().header + "` says, and clang read it", span: found.must().span)
-    d.notes @ d.notes.push("an `extern` is checked against the real header (§4.19): correct the result type, or name the header that declares this `" + name + "`")
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "ffi_return_type",
+        message: "`" + name + "` does not return `" + declared + "` — that is what `" + found.must().header + "` says, and clang read it",
+        span: found.must().span
+    )
+    d.notes @ d.notes.push(
+        "an `extern` is checked against the real header (§4.19): correct the result type, or name the header that declares this `" + name + "`"
+    )
     return ok(d)
 
 # _Static_assert(__builtin_constant_p(stdout), "heroes-ffi-const
@@ -58,17 +75,26 @@ function not_constant(s: source.Source, decls: [ast.Decl], line: str) -> diag.Di
     if !emit_ffi_lookup.has(text: line, needle: emit_ffi_lookup.FAILED)
         return fail("none", "not an assertion failure")
     rest = emit_ffi_lookup.after(text: line, marker: emit_assert_spelling.CONSTANCY)
+
     if rest.is_err()
         return fail("none", "not a constancy assertion")
     parts = emit_ffi_lookup.words(text: rest.must())
+
     if parts.len() == 0
         return fail("none", "the marker's tail is empty")
     name = trim_trailing(parts[0])
     found = emit_ffi_lookup.declaration(s, decls, name: name)
+
     if found.is_err()
         return fail("none", "no group declares this name")
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "ffi_not_constant", message: "`" + found.must().header + "` has `" + name + "`, but not as a constant — clang cannot read its value while compiling", span: found.must().span)
-    d.notes @ d.notes.push("a `constant` names one value forever (§4.4), and `" + name + "` is an object or a macro that expands to one — reading it twice could give two answers, which is the mutable global §4.2 forbids. A C object is reached through an `extern function` that returns it")
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "ffi_not_constant",
+        message: "`" + found.must().header + "` has `" + name + "`, but not as a constant — clang cannot read its value while compiling",
+        span: found.must().span
+    )
+    d.notes @ d.notes.push(
+        "a `constant` names one value forever (§4.4), and `" + name + "` is an object or a macro that expands to one — reading it twice could give two answers, which is the mutable global §4.2 forbids. A C object is reached through an `extern function` that returns it"
+    )
     return ok(d)
 
 # The header has no such name at all. A different mistake from the one
@@ -81,9 +107,11 @@ function unknown_name(s: source.Source, decls: [ast.Decl], line: str, stderr: st
     quoted: str @ ""
     caught: bool @ false
     call_form = emit_ffi_lookup.after(text: line, marker: "call to undeclared function '")
+
     if !call_form.is_err()
         quoted @ call_form.must()
         caught @ true
+
     # A THIRD MARKER, because clang has three words for one mistake and we
     # knew two (found 2026-08-25, by a test that declared `strstr` under
     # `stdlib.h` by accident). For a function clang recognises as a C library
@@ -97,17 +125,22 @@ function unknown_name(s: source.Source, decls: [ast.Decl], line: str, stderr: st
     # one word in clang's output.
     if !caught
         library_form = emit_ffi_lookup.after(text: line, marker: "call to undeclared library function '")
+
         if !library_form.is_err()
             quoted @ library_form.must()
             caught @ true
+
     if !caught
         value_form = emit_ffi_lookup.after(text: line, marker: "use of undeclared identifier '")
+
         if !value_form.is_err()
             quoted @ value_form.must()
             caught @ true
+
     if !caught
         return fail("none", "not an undeclared-name line")
     name = emit_ffi_lookup.up_to_quote(quoted)
+
     # A tag-only struct is not an ABSENT one, and clang says both
     # things about it (panel 074): "must use 'struct' tag" AND "use of
     # undeclared identifier", at two different spans — so the
@@ -119,18 +152,30 @@ function unknown_name(s: source.Source, decls: [ast.Decl], line: str, stderr: st
     if emit_ffi_lookup.has(text: stderr, needle: "must use 'struct' tag to refer to type '" + name + "'")
         return fail("none", "the tag class owns this name")
     found = emit_ffi_lookup.declaration(s, decls, name: name)
+
     if found.is_err()
         return fail("none", "no group declares this name")
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "ffi_unknown_name", message: "`" + found.must().header + "` declares no `" + name + "` — clang read the header and could not find it", span: found.must().span)
-    d.notes @ d.notes.push("an `extern` names what the header already has (§4.19): check the spelling, or name the header that does declare `" + name + "`")
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "ffi_unknown_name",
+        message: "`" + found.must().header + "` declares no `" + name + "` — clang read the header and could not find it",
+        span: found.must().span
+    )
+    d.notes @ d.notes.push(
+        "an `extern` names what the header already has (§4.19): check the spelling, or name the header that does declare `" + name + "`"
+    )
+
     # clang's own typo correction, when it offered one. A GUESS: it is
     # a suggestion from a search over the header's names, not a fact
     # about this program, so --apply must not take it (CLAUDE.md §8).
     meant = did_you_mean(stderr: stderr, name: name)
+
     if !meant.is_err()
         at = emit_ffi_lookup.name_span(s, decls, name: name)
+
         if !at.is_err()
-            d.fixes @ d.fixes.push(diag.Fix(title: "the header declares `" + meant.must() + "`", replacement: meant.must(), span: at.must(), certainty: .guess))
+            d.fixes @ d.fixes.push(
+                diag.Fix(title: "the header declares `" + meant.must() + "`", replacement: meant.must(), span: at.must(), certainty: .guess)
+            )
     return ok(d)
 
 # The name clang suggested instead. Read from the whole of stderr
@@ -141,11 +186,14 @@ function did_you_mean(stderr: str, name: str) -> str?
         if !emit_ffi_lookup.has(text: one, needle: "'" + name + "'") && !emit_ffi_lookup.has(text: one, needle: "did you mean")
             continue
         rest = emit_ffi_lookup.after(text: one, marker: "did you mean '")
+
         if rest.is_err()
             continue
         meant = emit_ffi_lookup.up_to_quote(rest.must())
+
         if meant != name
             return ok(meant)
+
     return fail("none", "clang offered no correction")
 
 # What clang's echo can leave stuck to a token: quotes and the
@@ -154,17 +202,22 @@ function trim_trailing(name: str) -> str
     cs = name.chars()
     end: i64 @ cs.len()
     fall: bool @ false
+
     while end > 0 && !fall
         last = cs[end - 1]
+
         if last == "\"" || last == "," || last == ")" || last == "'"
             end @ end - 1
         else
             fall @ true
+
     kept: [str] @ []
     index: i64 @ 0
+
     while index < end
         kept @ kept.push(cs[index])
         index @ index + 1
+
     return kept.join("")
 
 ## Tests
@@ -182,9 +235,11 @@ test "wrong_type splits the emitter's own tail into the two codes"
     assert d.must().message == "`sqrt` does not return `f64` — that is what `math.h` says, and clang read it"
     k = wrong_type(s, parsed.decls, line: "e: static assertion failed: heroes-ffi-return M_PI f64")
     assert k.must().code == "ffi_constant_type"
+
     # The echo line carries the marker without FAILED, and is refused.
     echo = "_Static_assert(HERO_RET_F64(sqrt((double)0)), \"heroes-ffi-return sqrt f64\");"
     assert wrong_type(s, parsed.decls, line: echo).is_err()
+
     # A name no group declares stays the compiler's problem.
     assert wrong_type(s, parsed.decls, line: "e: static assertion failed: heroes-ffi-return puts i64").is_err()
 
@@ -215,6 +270,7 @@ test "unknown_name reads both clang spellings and takes the guess"
     assert d.must().fixes.len() == 1
     assert d.must().fixes[0].replacement == "sqrt"
     assert d.must().fixes[0].certainty == .guess
+
     # A name this program never declared is refused: clang's line
     # stays a statement about the compiler.
     other = "m.c:1:1: error: use of undeclared identifier 'h_t_ghost'"

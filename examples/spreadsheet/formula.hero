@@ -64,6 +64,7 @@ function contains(known: [str], name: str) -> bool
     for one in known
         if one == name
             return true
+
     return false
 
 ## Cells
@@ -74,11 +75,13 @@ function value_of(s: sheet.Sheet, name: str, visiting: [str]) -> f64?
     if contains(visiting, name)
         return fail(ERR_CIRCULAR_REFERENCE, "cell " + name + " is defined in terms of itself")
     source = s.cells[name].default("")
+
     if source == ""
         return ok(0.0)
     p: Parse @ Parse(text: source, pos: 0)
     v = expression(@p, s, visiting.push(name))?
     skip_space(@p)
+
     if !at_end(p)
         return fail(ERR_TRAILING_INPUT, name + ": the formula does not end at " + p.pos.to_str())
     return ok(v)
@@ -88,8 +91,10 @@ function value_of(s: sheet.Sheet, name: str, visiting: [str]) -> f64?
 function expression(@p: Parse, s: sheet.Sheet, visiting: [str]) -> f64?
     total: f64 @ term(@p, s, visiting)?
     more: bool @ true
+
     while more
         skip_space(@p)
+
         if !at_end(p) && here(p) == '+'
             advance(@p)
             total @ total + term(@p, s, visiting)?
@@ -98,44 +103,55 @@ function expression(@p: Parse, s: sheet.Sheet, visiting: [str]) -> f64?
             total @ total - term(@p, s, visiting)?
         else
             more @ false
+
     return ok(total)
 
 function term(@p: Parse, s: sheet.Sheet, visiting: [str]) -> f64?
     total: f64 @ factor(@p, s, visiting)?
     more: bool @ true
+
     while more
         skip_space(@p)
+
         if !at_end(p) && here(p) == '*'
             advance(@p)
             total @ total * factor(@p, s, visiting)?
         else if !at_end(p) && here(p) == '/'
             advance(@p)
             divisor = factor(@p, s, visiting)?
+
             if divisor == 0.0
                 return fail(ERR_DIVISION_BY_ZERO, "a formula divides by zero")
             total @ total / divisor
         else
             more @ false
+
     return ok(total)
 
 function factor(@p: Parse, s: sheet.Sheet, visiting: [str]) -> f64?
     skip_space(@p)
+
     if at_end(p)
         return fail(ERR_UNEXPECTED_END, "the formula ends where a value was expected")
     c = here(p)
+
     if c == '('
         advance(@p)
         inner = expression(@p, s, visiting)?
         skip_space(@p)
+
         if at_end(p) || here(p) != ')'
             return fail(ERR_UNCLOSED_PAREN, "expected `)` at " + p.pos.to_str())
         advance(@p)
         return ok(inner)
+
     if c == '-'
         advance(@p)
         return ok(-factor(@p, s, visiting)?)
+
     if sheet.is_digit(c)
         return ok(number(@p))
+
     if sheet.is_letter(c)
         return named(@p, s, visiting)
     return fail(ERR_UNEXPECTED_CHARACTER, "no value starts at " + p.pos.to_str())
@@ -144,12 +160,15 @@ function factor(@p: Parse, s: sheet.Sheet, visiting: [str]) -> f64?
 # to a number, on purpose, because parsing can fail and a conversion may not.
 function number(@p: Parse) -> f64
     whole: f64 @ 0.0
+
     while !at_end(p) && sheet.is_digit(here(p))
         whole @ whole * 10.0 + to_f64(to_i64(here(p) - '0').must())
         advance(@p)
+
     if !at_end(p) && here(p) == '.'
         advance(@p)
         scale: f64 @ 1.0
+
         while !at_end(p) && sheet.is_digit(here(p))
             scale @ scale / 10.0
             whole @ whole + to_f64(to_i64(here(p) - '0').must()) * scale
@@ -159,35 +178,44 @@ function number(@p: Parse) -> f64
 # A name: either `SUM(` and a range, or a cell.
 function named(@p: Parse, s: sheet.Sheet, visiting: [str]) -> f64?
     word = word_at(@p)
+
     if word == "SUM"
         return sum_of(@p, s, visiting)
+
     if !sheet.is_name(word)
         return fail(ERR_UNKNOWN_NAME, "`" + word + "` is neither a cell nor `SUM`")
     return value_of(s, word, visiting)
 
 function word_at(@p: Parse) -> str
     start = p.pos
+
     while !at_end(p) && (sheet.is_letter(here(p)) || sheet.is_digit(here(p)))
         advance(@p)
+
     return p.text.slice(from: start, to: p.pos)
 
 # `SUM(A1:C2)` — the one function this language has, and enough to make ranges
 # worth having at all.
 function sum_of(@p: Parse, s: sheet.Sheet, visiting: [str]) -> f64?
     skip_space(@p)
+
     if at_end(p) || here(p) != '('
         return fail(ERR_EXPECTED_PAREN, "`SUM` needs a range in parentheses")
     advance(@p)
     start = p.pos
+
     while !at_end(p) && here(p) != ')'
         advance(@p)
+
     if at_end(p)
         return fail(ERR_UNCLOSED_PAREN, "`SUM(` is never closed")
     inside = p.text.slice(from: start, to: p.pos)
     advance(@p)
     total: f64 @ 0.0
+
     for name in sheet.expand(inside)?
         total @ total + value_of(s, name, visiting)?
+
     return ok(total)
 
 test "arithmetic, with the usual precedence"

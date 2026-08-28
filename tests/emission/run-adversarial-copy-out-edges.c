@@ -138,17 +138,17 @@ bb2:
     if (__builtin_sub_overflow(t7, t8, &t9)) hero_panic_overflow();
 #line 15 "tests/golden/run/adversarial-copy-out-edges.hero"
     h0_n = t9;
-#line 16 "tests/golden/run/adversarial-copy-out-edges.hero"
+#line 17 "tests/golden/run/adversarial-copy-out-edges.hero"
     t10 = h1_steps;
-#line 16 "tests/golden/run/adversarial-copy-out-edges.hero"
+#line 17 "tests/golden/run/adversarial-copy-out-edges.hero"
     t11 = INT64_C(2);
-#line 16 "tests/golden/run/adversarial-copy-out-edges.hero"
+#line 17 "tests/golden/run/adversarial-copy-out-edges.hero"
     t12 = t10 == t11;
-#line 16 "tests/golden/run/adversarial-copy-out-edges.hero"
+#line 17 "tests/golden/run/adversarial-copy-out-edges.hero"
     if (t12) goto bb5; else goto bb6;
-#line 16 "tests/golden/run/adversarial-copy-out-edges.hero"
+#line 17 "tests/golden/run/adversarial-copy-out-edges.hero"
 bb3:
-#line 18 "tests/golden/run/adversarial-copy-out-edges.hero"
+#line 20 "tests/golden/run/adversarial-copy-out-edges.hero"
     t14 = false;
 #line 154 "adversarialcopyoutedges.c"
     *ph0_n = h0_n;
@@ -157,7 +157,7 @@ bb3:
 bb4:
     goto bb1;
 bb5:
-#line 17 "tests/golden/run/adversarial-copy-out-edges.hero"
+#line 18 "tests/golden/run/adversarial-copy-out-edges.hero"
     t13 = true;
 #line 163 "adversarialcopyoutedges.c"
     *ph0_n = h0_n;
@@ -167,7 +167,7 @@ bb6:
     goto bb4;
 }
 
-#line 20 "tests/golden/run/adversarial-copy-out-edges.hero"
+#line 22 "tests/golden/run/adversarial-copy-out-edges.hero"
 void h_adversarialcopyoutedges_main(void) {
 #line 173 "adversarialcopyoutedges.c"
     int64_t h0_n;
@@ -188,63 +188,63 @@ void h_adversarialcopyoutedges_main(void) {
     int64_t t11;
     goto bb0;
 bb0:
-#line 21 "tests/golden/run/adversarial-copy-out-edges.hero"
+#line 23 "tests/golden/run/adversarial-copy-out-edges.hero"
     t1 = INT64_C(5);
-#line 21 "tests/golden/run/adversarial-copy-out-edges.hero"
+#line 23 "tests/golden/run/adversarial-copy-out-edges.hero"
     h0_n = t1;
-#line 22 "tests/golden/run/adversarial-copy-out-edges.hero"
+#line 24 "tests/golden/run/adversarial-copy-out-edges.hero"
     t2 = INT64_C(0);
-#line 22 "tests/golden/run/adversarial-copy-out-edges.hero"
+#line 24 "tests/golden/run/adversarial-copy-out-edges.hero"
     h1_steps = t2;
-#line 23 "tests/golden/run/adversarial-copy-out-edges.hero"
+#line 25 "tests/golden/run/adversarial-copy-out-edges.hero"
     t3 = h_adversarialcopyoutedges_walk(&h0_n, &h1_steps);
-#line 23 "tests/golden/run/adversarial-copy-out-edges.hero"
+#line 25 "tests/golden/run/adversarial-copy-out-edges.hero"
     h2_hit = t3;
-#line 24 "tests/golden/run/adversarial-copy-out-edges.hero"
+#line 26 "tests/golden/run/adversarial-copy-out-edges.hero"
     t4 = h2_hit;
-#line 24 "tests/golden/run/adversarial-copy-out-edges.hero"
+#line 26 "tests/golden/run/adversarial-copy-out-edges.hero"
     hero_print_bool(t4);
-#line 24 "tests/golden/run/adversarial-copy-out-edges.hero"
+#line 26 "tests/golden/run/adversarial-copy-out-edges.hero"
     hero_print_end();
-#line 25 "tests/golden/run/adversarial-copy-out-edges.hero"
+#line 27 "tests/golden/run/adversarial-copy-out-edges.hero"
     t5 = h0_n;
-#line 25 "tests/golden/run/adversarial-copy-out-edges.hero"
+#line 27 "tests/golden/run/adversarial-copy-out-edges.hero"
     hero_print_int(t5);
-#line 25 "tests/golden/run/adversarial-copy-out-edges.hero"
+#line 27 "tests/golden/run/adversarial-copy-out-edges.hero"
     hero_print_end();
-#line 26 "tests/golden/run/adversarial-copy-out-edges.hero"
+#line 28 "tests/golden/run/adversarial-copy-out-edges.hero"
     t6 = h1_steps;
-#line 26 "tests/golden/run/adversarial-copy-out-edges.hero"
+#line 28 "tests/golden/run/adversarial-copy-out-edges.hero"
     hero_print_int(t6);
-#line 26 "tests/golden/run/adversarial-copy-out-edges.hero"
+#line 28 "tests/golden/run/adversarial-copy-out-edges.hero"
     hero_print_end();
-#line 27 "tests/golden/run/adversarial-copy-out-edges.hero"
+#line 29 "tests/golden/run/adversarial-copy-out-edges.hero"
     t7 = INT64_C(0);
-#line 27 "tests/golden/run/adversarial-copy-out-edges.hero"
+#line 29 "tests/golden/run/adversarial-copy-out-edges.hero"
     h3_m = t7;
-#line 28 "tests/golden/run/adversarial-copy-out-edges.hero"
+#line 30 "tests/golden/run/adversarial-copy-out-edges.hero"
     t8 = INT64_C(0);
-#line 28 "tests/golden/run/adversarial-copy-out-edges.hero"
+#line 30 "tests/golden/run/adversarial-copy-out-edges.hero"
     h4_taken = t8;
-#line 29 "tests/golden/run/adversarial-copy-out-edges.hero"
+#line 31 "tests/golden/run/adversarial-copy-out-edges.hero"
     t9 = h_adversarialcopyoutedges_walk(&h3_m, &h4_taken);
-#line 29 "tests/golden/run/adversarial-copy-out-edges.hero"
+#line 31 "tests/golden/run/adversarial-copy-out-edges.hero"
     hero_print_bool(t9);
-#line 29 "tests/golden/run/adversarial-copy-out-edges.hero"
+#line 31 "tests/golden/run/adversarial-copy-out-edges.hero"
     hero_print_end();
-#line 30 "tests/golden/run/adversarial-copy-out-edges.hero"
+#line 32 "tests/golden/run/adversarial-copy-out-edges.hero"
     t10 = h3_m;
-#line 30 "tests/golden/run/adversarial-copy-out-edges.hero"
+#line 32 "tests/golden/run/adversarial-copy-out-edges.hero"
     hero_print_int(t10);
-#line 30 "tests/golden/run/adversarial-copy-out-edges.hero"
+#line 32 "tests/golden/run/adversarial-copy-out-edges.hero"
     hero_print_end();
-#line 31 "tests/golden/run/adversarial-copy-out-edges.hero"
+#line 33 "tests/golden/run/adversarial-copy-out-edges.hero"
     t11 = h4_taken;
-#line 31 "tests/golden/run/adversarial-copy-out-edges.hero"
+#line 33 "tests/golden/run/adversarial-copy-out-edges.hero"
     hero_print_int(t11);
-#line 31 "tests/golden/run/adversarial-copy-out-edges.hero"
+#line 33 "tests/golden/run/adversarial-copy-out-edges.hero"
     hero_print_end();
-#line 31 "tests/golden/run/adversarial-copy-out-edges.hero"
+#line 33 "tests/golden/run/adversarial-copy-out-edges.hero"
     return;
 #line 250 "adversarialcopyoutedges.c"
 }

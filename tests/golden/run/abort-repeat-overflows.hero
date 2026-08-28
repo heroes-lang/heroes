@@ -20,6 +20,7 @@
 
 function main()
     print("before")
+
     # 2^62 + 2, times four bytes: the product wraps to 8.
     n: u64 @ 4611686018427387906
     print(len(repeat("abcd", n)))

@@ -30,7 +30,7 @@
 # same header shape bound correctly runs at exit 0.
 
 extern "ffi-const-pointer.h"
-    function get_blob() -> cstr                     #~ ffi_return_type
+    function get_blob() -> cstr  #~ ffi_return_type
 
 function main()
     print(get_blob().validated().must())

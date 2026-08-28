@@ -68,14 +68,20 @@ function room_at(w: World, name: str) -> Room?
 # which is the whole difference between a game and a guessing game.
 function through(w: World, here: str, direction: str) -> str?
     room = room_at(w, here)?
+
     match room.exits[direction]
         .ok there => return ok(there)
-        .err _    => return fail(ERR_NO_WAY, "there is no way " + direction + " — try " + join(sort(keys(room.exits)), ", "))
+        .err _ => return fail(
+            ERR_NO_WAY,
+            "there is no way " + direction + " — try " + join(sort(keys(room.exits)), ", ")
+        )
 
 test "every exit leads to a room that exists, and comes back"
     w = make()
+
     for name in sort(keys(w.rooms))
         room = room_at(w, name).must()
+
         for direction in sort(keys(room.exits))
             there = room.exits[direction].must()
             assert !room_at(w, there).is_err()
@@ -88,8 +94,9 @@ test "the world is connected: every room is reachable from the start"
 test "a direction that is not there names the ones that are"
     w = make()
     assert through(w, here: "gate", direction: "north").must() == "yard"
+
     match through(w, here: "gate", direction: "west")
-        .ok _  => assert false
+        .ok _ => assert false
         .err e =>
             assert e.code == ERR_NO_WAY
             assert e.msg == "there is no way west — try north"
@@ -107,15 +114,19 @@ function reachable(w: World) -> [str]
     seen[w.start] @ true
     queue: [str] @ [w.start]
     head: i64 @ 0
+
     while head < queue.len()
         here = queue[head]
         head @ head + 1
+
         match room_at(w, here)
             .err _ => continue
             .ok room =>
                 for direction in sort(keys(room.exits))
                     there = room.exits[direction].must()
+
                     if seen[there].is_err()
                         seen[there] @ true
                         queue @ queue.push(there)
+
     return sort(keys(seen))

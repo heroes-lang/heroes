@@ -67,18 +67,22 @@ record Source
 function stem_of(path: str) -> str
     start: i64 @ 0
     i: i64 @ 0
+
     while i < path.len()
         if path[i] == '/' || path[i] == '\\'
             start @ i + 1
         i @ i + 1
+
     end: i64 @ path.len()
     j: i64 @ start
     scanning: bool @ true
+
     while scanning && j < path.len()
         if path[j] == '.'
             end @ j
             scanning @ false
         j @ j + 1
+
     return path.slice(from: start, to: end)
 
 # The same stem as a C identifier component, `[A-Za-z0-9]` only — the one
@@ -92,10 +96,12 @@ function module_of(path: str) -> str
     stem = stem_of(path)
     kept: str @ ""
     i: i64 @ 0
+
     while i < stem.len()
         if bytes.is_alnum(stem[i])
             kept @ kept + stem.slice(from: i, to: i + 1)
         i @ i + 1
+
     if kept.len() == 0
         # A file called `.hero` or `---.hero`. It has to become SOMETHING,
         # and one fixed word is better than an empty component, which would
@@ -148,6 +154,7 @@ function from_files(inputs: [InputFile]) -> Source
     name = inputs[0].name
     text: str @ ""
     table: [FileEntry] @ []
+
     # `lines_before` is the newline count of the accumulated text, kept
     # incrementally: the first shape of this line re-ran starts_of over
     # the WHOLE concatenation once per file, which read every byte of an
@@ -156,6 +163,7 @@ function from_files(inputs: [InputFile]) -> Source
     # (docs/measurements/012). Counting only what each step appends is
     # the same number read once.
     newlines: i64 @ 0
+
     for input in inputs
         if table.len() > 0
             if text[text.len() - 1] != '\n'
@@ -163,9 +171,12 @@ function from_files(inputs: [InputFile]) -> Source
                 newlines @ newlines + 1
             text @ text + "\n"
             newlines @ newlines + 1
-        table @ table.push(FileEntry(name: input.name, module: input.module, component: module_of(input.module), start: text.len(), lines_before: newlines, is_library: input.is_library))
+        table @ table.push(
+            FileEntry(name: input.name, module: input.module, component: module_of(input.module), start: text.len(), lines_before: newlines, is_library: input.is_library)
+        )
         text @ text + input.text
         newlines @ newlines + newlines_in(input.text)
+
     return Source(name: name, text: text, line_starts: starts_of(text), files: table)
 
 # The '\n' count of one segment — what `starts_of(text).len() - 1` answers
@@ -173,10 +184,12 @@ function from_files(inputs: [InputFile]) -> Source
 function newlines_in(text: str) -> i64
     count: i64 @ 0
     i: i64 @ 0
+
     while i < text.len()
         if text[i] == '\n'
             count @ count + 1
         i @ i + 1
+
     return count
 
 # Byte offset of the first byte of each line. starts[0] == 0, and the length
@@ -184,10 +197,12 @@ function newlines_in(text: str) -> i64
 function starts_of(text: str) -> [i64]
     starts: [i64] @ [0]
     i: i64 @ 0
+
     while i < text.len()
         if text[i] == '\n'
             starts @ starts.push(i + 1)
         i @ i + 1
+
     return starts
 
 ## Which file — the index that makes concatenation reversible
@@ -197,18 +212,23 @@ function starts_of(text: str) -> [i64]
 function floor_start(starts: [i64], offset: i64) -> i64
     lo: i64 @ 0
     hi: i64 @ starts.len() - 1
+
     while lo < hi
         mid = (lo + hi + 1) / 2
+
         if starts[mid] <= offset
             lo @ mid
         else
             hi @ mid - 1
+
     return lo
 
 function file_of(s: Source, offset: i64) -> i64
     starts: [i64] @ []
+
     for f in s.files
         starts @ starts.push(f.start)
+
     return floor_start(starts, offset)
 
 function file_at(s: Source, offset: i64) -> FileEntry
@@ -259,6 +279,7 @@ function line_of(s: Source, offset: i64) -> i64
 function file_line_of(s: Source, offset: i64) -> i64
     p = line_col(s, offset)
     line: i64 @ p.line - file_at(s, offset).lines_before
+
     if line < 1
         line @ 1
     return line
@@ -284,6 +305,7 @@ function locate(s: Source, offset: i64) -> Location
 # when that is the file already on screen, naming it is noise.
 function elsewhere(s: Source, here: i64, there: i64) -> str
     at = locate(s, there)
+
     if file_of(s, here) == file_of(s, there)
         return "line " + at.line.to_str()
     return at.file + ":" + at.line.to_str()
@@ -308,6 +330,7 @@ test "a module is the stem however the path was written"
 test "the component is alphanumeric and that is not injective"
     assert module_of("print_inst.hero") == "printinst"
     assert module_of("printinst.hero") == "printinst"
+
     # The collision is real, which is why a program containing both files is
     # refused where the module table is built.
     assert module_of("print_inst.hero") == module_of("printinst.hero")
@@ -322,14 +345,17 @@ test "two files, one text, and the table makes it reversible"
         user_file(name: "geom.hero", text: "constant B: i64\n    2\n")
     ]
     s = from_files(inputs)
+
     # The joiner is one blank line: file 2 starts one past it, on a line start.
     assert s.files.len() == 2
     assert s.files[1].start == 23
     assert is_root(s, 0)
     assert !is_root(s, s.files[1].start)
+
     # Offsets on the boundary belong to the file that starts there.
     assert file_of(s, s.files[1].start) == 1
     assert file_of(s, s.files[1].start - 1) == 0
+
     # The second file's first line is ITS line 1, not the text's line 4.
     assert line_of(s, s.files[1].start) == 4
     assert file_line_of(s, s.files[1].start) == 1
@@ -341,8 +367,10 @@ test "elsewhere names the file only when it is not already on screen"
         user_file(name: "geom.hero", text: "constant B: i64\n    2\n")
     ]
     s = from_files(inputs)
+
     # Both ends in the root: the short form.
     assert elsewhere(s, here: 0, there: 16) == "line 2"
+
     # The other end in geom.hero: the long form, with GEOM's own line number.
     assert elsewhere(s, here: 0, there: s.files[1].start) == "geom.hero:1"
 
@@ -359,6 +387,7 @@ test "a file without a trailing newline is closed before the joiner"
         user_file(name: "b.hero", text: "constant B: i64\n    2\n")
     ]
     s = from_files(inputs)
+
     # a.hero's 21 bytes, the added closer, the blank line: b starts at 23.
     assert s.files[1].start == 23
 
@@ -370,10 +399,13 @@ test "lines_before is the newline count of everything before the file"
     ]
     s = from_files(inputs)
     assert s.files[0].lines_before == 0
+
     # a.hero's two lines, then the blank joiner line.
     assert s.files[1].lines_before == 3
+
     # b.hero's own newline, the closer its missing one costs, the joiner.
     assert s.files[2].lines_before == 6
+
     # And the numbers agree with what locate answers through them.
     assert file_line_of(s, s.files[2].start) == 1
 
@@ -382,6 +414,7 @@ test "the column counts characters, not bytes"
     s = new_source(name: "x.hero", text: "è = 1\n")
     assert line_col(s, 3).col == 3
     assert line_col(s, 3).line == 1
+
     # Position arithmetic across lines still holds.
     t = new_source(name: "y.hero", text: "a\nbc\n")
     assert line_col(t, 2).line == 2

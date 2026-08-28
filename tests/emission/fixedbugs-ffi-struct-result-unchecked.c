@@ -13,9 +13,9 @@ _Static_assert(HERO_RUNTIME_ABI == 16, "heroes_runtime.h is from another compile
 _Static_assert(__builtin_classify_type(((div_t *)0)->quot) == 1 && sizeof(((div_t *)0)->quot) == sizeof(int32_t) && (_Generic(((div_t *)0)->quot, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field div_t quot");
 #line 50 "tests/golden/fixedbugs/ffi-struct-result-unchecked.hero"
 _Static_assert(__builtin_classify_type(((div_t *)0)->rem) == 1 && sizeof(((div_t *)0)->rem) == sizeof(int32_t) && (_Generic(((div_t *)0)->rem, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field div_t rem");
-#line 53 "tests/golden/fixedbugs/ffi-struct-result-unchecked.hero"
+#line 52 "tests/golden/fixedbugs/ffi-struct-result-unchecked.hero"
 _Static_assert(__builtin_classify_type(((ldiv_t *)0)->quot) == 1 && sizeof(((ldiv_t *)0)->quot) == sizeof(int64_t) && (_Generic(((ldiv_t *)0)->quot, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field ldiv_t quot");
-#line 54 "tests/golden/fixedbugs/ffi-struct-result-unchecked.hero"
+#line 53 "tests/golden/fixedbugs/ffi-struct-result-unchecked.hero"
 _Static_assert(__builtin_classify_type(((ldiv_t *)0)->rem) == 1 && sizeof(((ldiv_t *)0)->rem) == sizeof(int64_t) && (_Generic(((ldiv_t *)0)->rem, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field ldiv_t rem");
 #line 21 "ffistructresultunchecked.c"
 
@@ -24,7 +24,7 @@ _Static_assert(__builtin_classify_type(((ldiv_t *)0)->rem) == 1 && sizeof(((ldiv
 #pragma clang diagnostic ignored "-Wmissing-braces"
 #line 48 "tests/golden/fixedbugs/ffi-struct-result-unchecked.hero"
 __attribute__((unused)) static void hero_ffi_complete_h_ffistructresultunchecked_div_t(void) { div_t v = {0,0}; (void)v; }
-#line 52 "tests/golden/fixedbugs/ffi-struct-result-unchecked.hero"
+#line 51 "tests/golden/fixedbugs/ffi-struct-result-unchecked.hero"
 __attribute__((unused)) static void hero_ffi_complete_h_ffistructresultunchecked_ldiv_t(void) { ldiv_t v = {0,0}; (void)v; }
 #line 30 "ffistructresultunchecked.c"
 #pragma clang diagnostic pop
@@ -67,7 +67,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ff
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
-#line 56 "tests/golden/fixedbugs/ffi-struct-result-unchecked.hero"
+#line 54 "tests/golden/fixedbugs/ffi-struct-result-unchecked.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_ffistructresultunchecked_div(int32_t a0, int32_t a1) { (void)(div)(a0, a1); }
 #line 111 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, a1); }
@@ -116,19 +116,19 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_ffistructresultunchecked_main(void);
 
-#line 58 "tests/golden/fixedbugs/ffi-struct-result-unchecked.hero"
+#line 56 "tests/golden/fixedbugs/ffi-struct-result-unchecked.hero"
 void h_ffistructresultunchecked_main(void) {
 #line 122 "ffistructresultunchecked.c"
     HeroStr t1 = {0};
     goto bb0;
 bb0:
-#line 59 "tests/golden/fixedbugs/ffi-struct-result-unchecked.hero"
+#line 57 "tests/golden/fixedbugs/ffi-struct-result-unchecked.hero"
     t1 = HERO_STR_LIT(hero_str_32446647);
-#line 59 "tests/golden/fixedbugs/ffi-struct-result-unchecked.hero"
+#line 57 "tests/golden/fixedbugs/ffi-struct-result-unchecked.hero"
     hero_print_str(t1);
-#line 59 "tests/golden/fixedbugs/ffi-struct-result-unchecked.hero"
+#line 57 "tests/golden/fixedbugs/ffi-struct-result-unchecked.hero"
     hero_print_end();
-#line 59 "tests/golden/fixedbugs/ffi-struct-result-unchecked.hero"
+#line 57 "tests/golden/fixedbugs/ffi-struct-result-unchecked.hero"
     return;
 #line 134 "ffistructresultunchecked.c"
 }

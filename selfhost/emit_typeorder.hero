@@ -42,48 +42,66 @@ use emit_ffi_lookup
 # two-pass form, and the double-emit determinism test still covers it.
 function definitions(@w: emit_writer.Writer, c: check_state.Checked, names: emit_ctype.Names, s: source.Source, decls: [ast.Decl], want: emit_synth.Wanted)
     seeds: [i64] @ []
+
     for decl in emit_types.aggregates(c, decls)
         if emit_synth.wants_decl(w: want, decl: decl)
             seeds @ seeds.push(decl * 2)
+
     count = check_table.len_of(c.types)
     id: i64 @ 0
+
     while id < count
         if !ir_phases.mentions_generic(c, ty: id)
             wanted: bool @ false
+
             match check_table.get(c.types, id)
                 .fallible => wanted @ true
                 .function_ty =>
                     if !names.funcs[id].is_err()
                         wanted @ true
                 .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => wanted @ wanted
-                .array | .fixed | .map | .named => wanted @ wanted
-                .case_ty | .failure | .generic | .error => wanted @ wanted
+                .array | .fixed | .map | .named                           => wanted @ wanted
+                .case_ty | .failure | .generic | .error                   => wanted @ wanted
+
             if wanted && emit_synth.wants_type(w: want, ty: id)
                 seeds @ seeds.push(id * 2 + 1)
         id @ id + 1
+
     state: Ordered @ Ordered(done: {}, out: [])
+
     for seed in seeds
         state @ visit(state, c, names, decls, item: seed)
+
     # A struct typedef ends with its own blank line and a
     # function-pointer typedef does not, so the group owes one exactly
     # when the last thing written was the latter.
     owed_blank: bool @ false
+
     for item in state.out
         if item % 2 == 0
             emit_types.declared(@w, c, names, s, decls, decl: item / 2)
             owed_blank @ false
         else
             ty = item / 2
+
             match check_table.get(c.types, ty)
                 .fallible o =>
                     emit_types.option(@w, c, names, name: emit_ctype.option_of(names, ty: ty), payload: o.payload)
                     owed_blank @ false
                 .function_ty fn_ty =>
-                    emit_types.function_type(@w, c, names, name: names.funcs[ty].must(), params: fn_ty.params, result: fn_ty.result)
+                    emit_types.function_type(
+                        @w,
+                        c,
+                        names,
+                        name: names.funcs[ty].must(),
+                        params: fn_ty.params,
+                        result: fn_ty.result
+                    )
                     owed_blank @ true
                 .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => continue
-                .array | .fixed | .map | .named => continue
-                .case_ty | .failure | .generic | .error => continue
+                .array | .fixed | .map | .named                           => continue
+                .case_ty | .failure | .generic | .error                   => continue
+
     if owed_blank
         emit_writer.blank(@w)
 
@@ -98,8 +116,10 @@ function visit(state: Ordered, c: check_state.Checked, names: emit_ctype.Names, 
         return state
     st: Ordered @ state
     st.done[item] @ true
+
     for need in needs(c, names, decls, item: item)
         st @ visit(st, c, names, decls, item: need)
+
     st.out @ st.out.push(item)
     return st
 
@@ -107,14 +127,18 @@ function visit(state: Ordered, c: check_state.Checked, names: emit_ctype.Names, 
 # which is exactly what C needs a complete type for.
 function needs(c: check_state.Checked, names: emit_ctype.Names, decls: [ast.Decl], item: i64) -> [i64]
     written: [i64] @ []
+
     if item % 2 == 0
         for field in emit_types.fields_of(decls, decl: item / 2)
             found = check_state.written_type(c, field.ty)
+
             if !found.is_err()
                 written @ written.push(found.must())
+
         for one_case in emit_types.cases_of(decls, decl: item / 2)
             for field in one_case.fields
                 found = check_state.written_type(c, field.ty)
+
                 if !found.is_err()
                     written @ written.push(found.must())
     else
@@ -123,21 +147,24 @@ function needs(c: check_state.Checked, names: emit_ctype.Names, decls: [ast.Decl
             .function_ty fn_ty =>
                 for p in check_table.params_of(c.types, fn_ty.params)
                     written @ written.push(p)
+
                 written @ written.push(fn_ty.result)
             .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => written @ written
-            .array | .fixed | .map | .named => written @ written
-            .case_ty | .failure | .generic | .error => written @ written
+            .array | .fixed | .map | .named                           => written @ written
+            .case_ty | .failure | .generic | .error                   => written @ written
     out: [i64] @ []
+
     for ty in written
         match check_table.get(c.types, ty)
-            .named n => out @ out.push(n.decl * 2)
+            .named n    => out @ out.push(n.decl * 2)
             .case_ty ct => out @ out.push(ct.decl * 2)
-            .fallible => out @ out.push(ty * 2 + 1)
+            .fallible   => out @ out.push(ty * 2 + 1)
             .function_ty =>
                 if !names.funcs[ty].is_err()
                     out @ out.push(ty * 2 + 1)
             .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => continue
-            .array | .fixed | .map | .failure | .generic | .error => continue
+            .array | .fixed | .map | .failure | .generic | .error     => continue
+
     return out
 
 ## Tests
@@ -156,6 +183,7 @@ test "cross-kind containment lands each typedef after what it holds"
     w: emit_writer.Writer @ emit_writer.new_writer("t")
     definitions(@w, c, names, s, parsed.decls, want: emit_synth.everything())
     got = emit_writer.finish(w)
+
     # Box holds an i64? by value, so the option's typedef must come
     # first; grab returns Box?, so that option must follow Box.
     i64_opt = emit_ffi_lookup.char_index_of(text: got, needle: "0opt")

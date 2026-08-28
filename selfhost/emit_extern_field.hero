@@ -41,11 +41,13 @@ constant COMPLETE_PROBE: str
 # own error.
 function assertion(c: check_state.Checked, names: emit_ctype.Names, s: source.Source, c_type: str, hero_name: str, field: ast.Field) -> str?
     written = check_state.written_type(c, field.ty)
+
     if written.is_err()
         return fail("none", "the checker already refused this field")
     ty = written.must()
     member = emit_mangle.field_of(foreign: true, name: source.span_text(s, field.name))
     place = "((" + c_type + " *)0)->" + member
+
     # A ptr field asks IS THIS A POINTER, not "is it spelled void *"
     # (139 fields of all 35 raylib structs swept): the exact-identity
     # form refused Rectangle * for a ptr field, and there is no other
@@ -58,13 +60,18 @@ function assertion(c: check_state.Checked, names: emit_ctype.Names, s: source.So
     # void * round-tripping is POSIX's promise and this makes it a
     # CHECKED assumption.
     is_ptr: bool @ false
+
     match check_table.get(c.types, ty)
-        .ptr => is_ptr @ true
-        .int_ty | .float_ty | .bool | .str | .cstr | .unit => is_ptr @ is_ptr
+        .ptr                                                       => is_ptr @ true
+        .int_ty | .float_ty | .bool | .str | .cstr | .unit         => is_ptr @ is_ptr
         .array | .fixed | .map | .fallible | .function_ty | .named => is_ptr @ is_ptr
-        .case_ty | .failure | .generic | .error => is_ptr @ is_ptr
+        .case_ty | .failure | .generic | .error                    => is_ptr @ is_ptr
+
     if is_ptr
-        return ok("_Static_assert(__builtin_classify_type(" + place + ") == 5 && _Generic(" + place + ", __typeof__(" + place + "): 1, default: 0) && sizeof(" + place + ") == sizeof(void *), \"" + FIELD_ASSERTION + " " + hero_name + " " + member + "\");")
+        return ok(
+            "_Static_assert(__builtin_classify_type(" + place + ") == 5 && _Generic(" + place + ", __typeof__(" + place + "): 1, default: 0) && sizeof(" + place + ") == sizeof(void *), \"" + FIELD_ASSERTION + " " + hero_name + " " + member + "\");"
+        )
+
     # An array field is a BRANCH, not a row (panel 062's veto): C's
     # pointer-to-array declarator is T (*)[N], which composes with no
     # suffixed string — so this once arrived as "a None nobody chose"
@@ -80,25 +87,30 @@ function assertion(c: check_state.Checked, names: emit_ctype.Names, s: source.So
     is_fixed: bool @ false
     fixed_elem: i64 @ 0
     fixed_len: i64 @ 0
+
     match check_table.get(c.types, ty)
         .fixed x =>
             is_fixed @ true
             fixed_elem @ x.element
             fixed_len @ x.length
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => is_fixed @ is_fixed
-        .array | .map | .fallible | .function_ty | .named => is_fixed @ is_fixed
-        .case_ty | .failure | .generic | .error => is_fixed @ is_fixed
+        .array | .map | .fallible | .function_ty | .named         => is_fixed @ is_fixed
+        .case_ty | .failure | .generic | .error                   => is_fixed @ is_fixed
+
     if is_fixed
         elem = c_spelling(c, names, ty: fixed_elem)
+
         if elem.is_err()
             return fail("none", "an element with no C spelling")
         flex_line = "_Static_assert(sizeof(" + c_type + ") - __builtin_offsetof(" + c_type + ", " + member + ") != 0, \"" + FLEX_ASSERTION + " " + hero_name + " " + member + "\");"
         elem_is_int: bool @ false
+
         match check_table.get(c.types, fixed_elem)
-            .int_ty => elem_is_int @ true
-            .float_ty | .bool | .str | .ptr | .cstr | .unit => elem_is_int @ elem_is_int
+            .int_ty                                                    => elem_is_int @ true
+            .float_ty | .bool | .str | .ptr | .cstr | .unit            => elem_is_int @ elem_is_int
             .array | .fixed | .map | .fallible | .function_ty | .named => elem_is_int @ elem_is_int
-            .case_ty | .failure | .generic | .error => elem_is_int @ elem_is_int
+            .case_ty | .failure | .generic | .error                    => elem_is_int @ elem_is_int
+
         if elem_is_int
             # The length stays exact, asked of the field's OWN element
             # type — __typeof__(place[0])[n] — so the count is decided
@@ -136,10 +148,19 @@ function assertion(c: check_state.Checked, names: emit_ctype.Names, s: source.So
             # association as `(*)[N]`, so a right element at a wrong count lands
             # on `default: 0` like anything else.
             rows: [str] @ []
+
             for c_int in emit_assert_spelling.C_INTEGER_TYPES
-                rows @ rows.push(c_int + " (*)[" + fixed_len.to_str() + "]: (sizeof(" + c_int + ") == sizeof(" + elem.must() + ") && (((" + c_int + ")-1 < 0) == ((" + elem.must() + ")-1 < 0)))")
-            return ok(flex_line + "\n             _Static_assert(_Generic(&" + place + ", " + rows.join(", ") + ", default: 0), \"" + FIELD_ASSERTION + " " + hero_name + " " + member + "\");")
-        return ok(flex_line + "\n             _Static_assert(_Generic(&" + place + ", " + elem.must() + " (*)[" + fixed_len.to_str() + "]: 1, default: 0) && sizeof(" + c_type + ") - __builtin_offsetof(" + c_type + ", " + member + ") >= sizeof(" + elem.must() + "[" + fixed_len.to_str() + "]), \"" + FIELD_ASSERTION + " " + hero_name + " " + member + "\");")
+                rows @ rows.push(
+                    c_int + " (*)[" + fixed_len.to_str() + "]: (sizeof(" + c_int + ") == sizeof(" + elem.must() + ") && (((" + c_int + ")-1 < 0) == ((" + elem.must() + ")-1 < 0)))"
+                )
+
+            return ok(
+                flex_line + "\n             _Static_assert(_Generic(&" + place + ", " + rows.join(", ") + ", default: 0), \"" + FIELD_ASSERTION + " " + hero_name + " " + member + "\");"
+            )
+        return ok(
+            flex_line + "\n             _Static_assert(_Generic(&" + place + ", " + elem.must() + " (*)[" + fixed_len.to_str() + "]: 1, default: 0) && sizeof(" + c_type + ") - __builtin_offsetof(" + c_type + ", " + member + ") >= sizeof(" + elem.must() + "[" + fixed_len.to_str() + "]), \"" + FIELD_ASSERTION + " " + hero_name + " " + member + "\");"
+        )
+
     # An integer field asks WIDTH AND SIGN, never type identity (panel
     # 064): C's integer ABI is width and sign and nothing else, while
     # its type identity is finer — on Darwin int64_t is long long and
@@ -167,22 +188,28 @@ function assertion(c: check_state.Checked, names: emit_ctype.Names, s: source.So
     # The spellings are `emit_assert_spelling.CSTR_SPELLINGS`, shared with
     # `HERO_RET_CSTR` so the set cannot drift between the two positions.
     is_cstr: bool @ false
+
     match check_table.get(c.types, ty)
-        .cstr => is_cstr @ true
-        .int_ty | .float_ty | .bool | .str | .ptr | .unit => is_cstr @ is_cstr
+        .cstr                                                      => is_cstr @ true
+        .int_ty | .float_ty | .bool | .str | .ptr | .unit          => is_cstr @ is_cstr
         .array | .fixed | .map | .fallible | .function_ty | .named => is_cstr @ is_cstr
-        .case_ty | .failure | .generic | .error => is_cstr @ is_cstr
+        .case_ty | .failure | .generic | .error                    => is_cstr @ is_cstr
+
     if is_cstr
-        return ok("_Static_assert(_Generic(" + place + ", " + emit_assert_spelling.CSTR_SPELLINGS + ", default:0) && sizeof(" + place + ") == sizeof(char *), \"" + FIELD_ASSERTION + " " + c_type + " " + member + "\");")
+        return ok(
+            "_Static_assert(_Generic(" + place + ", " + emit_assert_spelling.CSTR_SPELLINGS + ", default:0) && sizeof(" + place + ") == sizeof(char *), \"" + FIELD_ASSERTION + " " + c_type + " " + member + "\");"
+        )
     is_int: bool @ false
     int_kind: widths.IntKind @ .i64
+
     match check_table.get(c.types, ty)
         .int_ty ik =>
             is_int @ true
             int_kind @ ik.kind
-        .float_ty | .bool | .str | .ptr | .cstr | .unit => is_int @ is_int
+        .float_ty | .bool | .str | .ptr | .cstr | .unit            => is_int @ is_int
         .array | .fixed | .map | .fallible | .function_ty | .named => is_int @ is_int
-        .case_ty | .failure | .generic | .error => is_int @ is_int
+        .case_ty | .failure | .generic | .error                    => is_int @ is_int
+
     # The sign test goes through HERO_C_UNSIGNED and not through a cast,
     # and the difference is a whole exit code (panel 085 R7). The cast
     # form `((__typeof__(place))-1 < 0)` is ILL-FORMED, not false, when
@@ -199,13 +226,19 @@ function assertion(c: check_state.Checked, names: emit_ctype.Names, s: source.So
     if is_int
         spelling = widths.int_c_type(int_kind)
         declared: str @ "0"
+
         if !widths.int_signed(int_kind)
             declared @ "1"
-        return ok("_Static_assert(__builtin_classify_type(" + place + ") == 1 && sizeof(" + place + ") == sizeof(" + spelling + ") && (" + unsignedness_of(place: place) + " == " + declared + "), \"" + FIELD_ASSERTION + " " + hero_name + " " + member + "\");")
+        return ok(
+            "_Static_assert(__builtin_classify_type(" + place + ") == 1 && sizeof(" + place + ") == sizeof(" + spelling + ") && (" + unsignedness_of(place: place) + " == " + declared + "), \"" + FIELD_ASSERTION + " " + hero_name + " " + member + "\");"
+        )
     found = c_spelling(c, names, ty: ty)
+
     if found.is_err()
         return fail("none", "a type with no header layout")
-    return ok("_Static_assert(_Generic(&" + place + ", " + found.must() + " *: 1, default: 0) && sizeof(" + place + ") == sizeof(" + found.must() + "), \"" + FIELD_ASSERTION + " " + hero_name + " " + member + "\");")
+    return ok(
+        "_Static_assert(_Generic(&" + place + ", " + found.must() + " *: 1, default: 0) && sizeof(" + place + ") == sizeof(" + found.must() + "), \"" + FIELD_ASSERTION + " " + hero_name + " " + member + "\");"
+    )
 
 # Whether a member's own C type is unsigned, as a constant expression
 # that is WELL-FORMED whatever that type turns out to be.
@@ -234,17 +267,19 @@ function unsignedness_of(place: str) -> str
 # chose.
 function c_spelling(c: check_state.Checked, names: emit_ctype.Names, ty: i64) -> str?
     match check_table.get(c.types, ty)
-        .int_ty ik => return ok(widths.int_c_type(ik.kind))
+        .int_ty ik   => return ok(widths.int_c_type(ik.kind))
         .float_ty fk => return ok(widths.float_c_type(fk.kind))
-        .bool => return ok("bool")
-        .ptr => return ok("void *")
-        .cstr => return ok("const char *")
-        .named n => return ok(emit_ctype.of(names, decl: n.decl))
+        .bool        => return ok("bool")
+        .ptr         => return ok("void *")
+        .cstr        => return ok("const char *")
+        .named n     => return ok(emit_ctype.of(names, decl: n.decl))
         # str, [T], {K: V}, T? and () have no header layout, and the
         # checker refuses each as a group record's field. Reaching here
         # means the frontend let one through.
-        .str | .unit | .array | .fixed | .map => return fail("none", "no header layout")
+
+        .str | .unit | .array | .fixed | .map                              => return fail("none", "no header layout")
         .fallible | .function_ty | .case_ty | .failure | .generic | .error => return fail("none", "no header layout")
+
     return fail("none", "unreached")
 
 ## Tests
@@ -266,16 +301,20 @@ test "a cstr field accepts every spelling C gives a string, not just const char 
     assert c.diagnostics.len() == 0
     names = emit_ctype.new_names(s, parsed.decls)
     fields: [ast.Field] @ []
+
     match parsed.decls[0].kind
-        .record_decl rec => fields @ rec.fields
+        .record_decl rec                                             => fields @ rec.fields
         .constant_decl | .function_decl | .variant_decl | .test_decl => assert false
+
     line = assertion(c, names, s, c_type: "Probe", hero_name: "Probe", field: fields[0])
     got = line.must()
+
     # all six, and the plain `char *` first — the one the old form refused
     assert strings_has(text: got, needle: "char *:1")
     assert strings_has(text: got, needle: "const char *:1")
     assert strings_has(text: got, needle: "signed char *:1")
     assert strings_has(text: got, needle: "unsigned char *:1")
+
     # and NOT the address-identity form the fallback writes
     assert !strings_has(text: got, needle: "const char * *:")
     assert !strings_has(text: got, needle: "&((Probe *)0)->name")
@@ -286,10 +325,12 @@ function strings_has(text: str, needle: str) -> bool
     if needle.len() > text.len()
         return false
     at: i64 @ 0
+
     while at + needle.len() <= text.len()
         if text.slice(from: at, to: at + needle.len()) == needle
             return true
         at @ at + 1
+
     return false
 
 test "the four branches: pointer, char array, integer by width+sign, float by identity"
@@ -301,15 +342,18 @@ test "the four branches: pointer, char array, integer by width+sign, float by id
     assert c.diagnostics.len() == 0
     names = emit_ctype.new_names(s, parsed.decls)
     fields: [ast.Field] @ []
+
     match parsed.decls[0].kind
-        .record_decl rec => fields @ rec.fields
+        .record_decl rec                                             => fields @ rec.fields
         .constant_decl | .function_decl | .variant_decl | .test_decl => assert false
+
     p_line = assertion(c, names, s, c_type: "Probe", hero_name: "Probe", field: fields[0])
     assert p_line.must() == "_Static_assert(__builtin_classify_type(((Probe *)0)->p) == 5 && _Generic(((Probe *)0)->p, __typeof__(((Probe *)0)->p): 1, default: 0) && sizeof(((Probe *)0)->p) == sizeof(void *), \"heroes-ffi-field Probe p\");"
     count_line = assertion(c, names, s, c_type: "Probe", hero_name: "Probe", field: fields[2])
     assert count_line.must() == "_Static_assert(__builtin_classify_type(((Probe *)0)->count) == 1 && sizeof(((Probe *)0)->count) == sizeof(int64_t) && (_Generic(((Probe *)0)->count, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), \"heroes-ffi-field Probe count\");"
     ratio_line = assertion(c, names, s, c_type: "Probe", hero_name: "Probe", field: fields[3])
     assert ratio_line.must() == "_Static_assert(_Generic(&((Probe *)0)->ratio, float *: 1, default: 0) && sizeof(((Probe *)0)->ratio) == sizeof(float), \"heroes-ffi-field Probe ratio\");"
+
     # The integer-element array: flex tail first, then class+size+sign
     # and the exact count asked of the field's own element type.
     name_line = assertion(c, names, s, c_type: "Probe", hero_name: "Probe", field: fields[1])

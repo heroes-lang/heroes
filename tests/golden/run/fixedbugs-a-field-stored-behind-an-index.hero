@@ -32,18 +32,22 @@ record Row
 
 function main()
     rows: [Row] @ [Row(cells: [Cell(n: 1, tag: "x")], label: "a")]
+
     # The witness: index then trailing field, scalar and counted.
     rows[0].label @ "b"
     rows[0].cells[0].n @ 9
+
     # The leak shape: a heap str into the field, then overwritten.
     rows[0].cells[0].tag @ "aa" + "bb"
     rows[0].cells[0].tag @ "cc" + "dd"
+
     # The aliasing trap panel 022 measured, through the fixed path: the
     # write must unshare the spine, so the copy keeps what it saw.
     kept = rows
     rows[0].cells[0].n @ 10
     assert kept[0].cells[0].n == 9
     assert rows[0].cells[0].n == 10
+
     # Two array levels, plain element store, and the map insert unmoved.
     rows[0].cells[0] @ Cell(n: 7, tag: "z")
     m: {str: i64} @ {}

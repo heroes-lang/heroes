@@ -15,7 +15,11 @@ use diag
 # The message names what the boundary DOES carry, because the repair is
 # almost always a different signature rather than a different design.
 function ffi_type(name: str, what: str, span: token.Span) -> diag.Diagnostic
-    return diag.new_diagnostic(code: "ffi_type", message: "`" + name + "` cannot cross the FFI boundary, and it is " + what + " — a C header can declare a number, `bool`, `str`, `ptr`, `cstr`, and a `record` declared in this same group (§4.19)", span: span)
+    return diag.new_diagnostic(
+        code: "ffi_type",
+        message: "`" + name + "` cannot cross the FFI boundary, and it is " + what + " — a C header can declare a number, `bool`, `str`, `ptr`, `cstr`, and a `record` declared in this same group (§4.19)",
+        span: span
+    )
 
 # A type that CAN cross the boundary but cannot be a value a header holds
 # (§4.19, panel 038). Separate from ffi_type because the reader did not
@@ -23,7 +27,11 @@ function ffi_type(name: str, what: str, span: token.Span) -> diag.Diagnostic
 # perfectly in a signature — so the message carries the reason rather
 # than the list: the list would say the type is allowed.
 function ffi_constant_type(name: str, why: str, span: token.Span) -> diag.Diagnostic
-    return diag.new_diagnostic(code: "ffi_constant_type", message: "an `extern constant` cannot be declared `" + name + "` — " + why, span: span)
+    return diag.new_diagnostic(
+        code: "ffi_constant_type",
+        message: "an `extern constant` cannot be declared `" + name + "` — " + why,
+        span: span
+    )
 
 # A type that can cross in a RESULT and cannot be an ARGUMENT (§4.19,
 # panel 062's follow-up). It reuses ffi_parameter_type deliberately
@@ -32,13 +40,21 @@ function ffi_constant_type(name: str, why: str, span: token.Span) -> diag.Diagno
 # and a new diagnostic CLASS is a panel path which a second name for one
 # question would be.
 function ffi_parameter_position(parameter: str, function_name: str, name: str, why: str, span: token.Span) -> diag.Diagnostic
-    return diag.new_diagnostic(code: "ffi_parameter_type", message: "`" + parameter + "` of `" + function_name + "` cannot be declared `" + name + "` — " + why, span: span)
+    return diag.new_diagnostic(
+        code: "ffi_parameter_type",
+        message: "`" + parameter + "` of `" + function_name + "` cannot be declared `" + name + "` — " + why,
+        span: span
+    )
 
 # A field of a group's record whose type no C header can hold (§4.19,
 # panel 060). The author has written a Heroes type inside what is really
 # a C struct, and the repair depends on which one — carried in the note.
 function ffi_field_type(name: str, why: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "ffi_field_type", message: "`" + name + "` cannot be a field of a `record` in an `extern` group — the header owns the layout, and it can hold a number, `bool`, `ptr`, `cstr`, or another record of the group (§4.19)", span: span)
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "ffi_field_type",
+        message: "`" + name + "` cannot be a field of a `record` in an `extern` group — the header owns the layout, and it can hold a number, `bool`, `ptr`, `cstr`, or another record of the group (§4.19)",
+        span: span
+    )
     d.notes @ d.notes.push(why)
     return d
 
@@ -51,29 +67,50 @@ function ffi_field_type(name: str, why: str, span: token.Span) -> diag.Diagnosti
 # word, so the port says `holder`.
 function partial_operation(holder: str, shown: str, what: str, span: token.Span) -> diag.Diagnostic
     through: str @ ""
+
     if holder != shown
         through @ " — reached through `" + shown + "`"
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "ffi_partial_operation", message: "`" + holder + "` is `partial`, so it cannot be " + what + through + ": the fields it does not name are part of the answer, and this program cannot see them", span: span)
-    d.notes @ d.notes.push("a `partial` record may be read, copied, passed to C and returned from it — what it gives up is `==`, `hash` and being a map key. Name every field of the header's struct to get them back, and drop `partial` from `" + holder + "`")
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "ffi_partial_operation",
+        message: "`" + holder + "` is `partial`, so it cannot be " + what + through + ": the fields it does not name are part of the answer, and this program cannot see them",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "a `partial` record may be read, copied, passed to C and returned from it — what it gives up is `==`, `hash` and being a map key. Name every field of the header's struct to get them back, and drop `partial` from `" + holder + "`"
+    )
     return d
 
 # A literal built for a fixed array whose length it does not match (panel
 # 062). BOTH numbers are in the message, because the reader's mistake is
 # a count and a count is invisible in a type name.
 function fixed_array_length(want: str, expected: i64, got: i64, span: token.Span) -> diag.Diagnostic
-    return diag.new_diagnostic(code: "fixed_array_length", message: "`" + want + "` holds exactly " + expected.to_str() + ", and this literal has " + got.to_str() + " — a fixed array's length is part of its type, so the two must agree (§4.19)", span: span)
+    return diag.new_diagnostic(
+        code: "fixed_array_length",
+        message: "`" + want + "` holds exactly " + expected.to_str() + ", and this literal has " + got.to_str() + " — a fixed array's length is part of its type, so the two must agree (§4.19)",
+        span: span
+    )
 
 # A literal index past the end of a fixed array (panel 062). A compile
 # error and not an abort — the one place a fixed array is SAFER than [T]
 # rather than merely different: the length is in the type, so the mistake
 # is visible without running the program.
 function fixed_index_out_of_range(shown: str, length: i64, got_text: str, span: token.Span) -> diag.Diagnostic
-    return diag.new_diagnostic(code: "fixed_index_out_of_range", message: "`" + shown + "` holds " + length.to_str() + ", so its last index is " + (length - 1).to_str() + ", and this is " + got_text + " — a fixed array's length is part of its type, so the index is checked here rather than at run time", span: span)
+    return diag.new_diagnostic(
+        code: "fixed_index_out_of_range",
+        message: "`" + shown + "` holds " + length.to_str() + ", so its last index is " + (length - 1).to_str() + ", and this is " + got_text + " — a fixed array's length is part of its type, so the index is checked here rather than at run time",
+        span: span
+    )
 
 # `i32[4]` in an ordinary record (panel 062).
 function fixed_outside_a_group(name: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "fixed_outside_a_group", message: "`" + name + "` is a C array member, so it belongs to a `record` inside an `extern` group — this record's layout is this language's, and a fixed array exists to match one a C compiler chose (§4.19)", span: span)
-    d.notes @ d.notes.push("use `[T]` here: it grows, it is compared and hashed like any other value, and it is what every Heroes record holds")
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "fixed_outside_a_group",
+        message: "`" + name + "` is a C array member, so it belongs to a `record` inside an `extern` group — this record's layout is this language's, and a fixed array exists to match one a C compiler chose (§4.19)",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "use `[T]` here: it grows, it is compared and hashed like any other value, and it is what every Heroes record holds"
+    )
     return d
 
 # A map key that reaches a float (panel 069 R4). A compile error where
@@ -89,10 +126,17 @@ function fixed_outside_a_group(name: str, span: token.Span) -> diag.Diagnostic
 # member that is one — the reader's next act differs.
 function float_map_key(key: str, reached: str, span: token.Span) -> diag.Diagnostic
     because: str @ "it is a float"
+
     if reached.len() > 0
         because @ "`" + reached + "` is a float"
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "float_map_key", message: "`" + key + "` cannot be a map key, because " + because, span: span)
-    d.notes @ d.notes.push("a `nan` is not equal to itself, so it can be stored and never found again. Key the map on something exact — an `i64` of the value scaled to the precision you need, or a `str` — and keep the float in the value. Reached through a type parameter this cannot be checked, and the runtime aborts instead")
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "float_map_key",
+        message: "`" + key + "` cannot be a map key, because " + because,
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "a `nan` is not equal to itself, so it can be stored and never found again. Key the map on something exact — an `i64` of the value scaled to the precision you need, or a `str` — and keep the float in the value. Reached through a type parameter this cannot be checked, and the runtime aborts instead"
+    )
     return d
 
 ## Tests

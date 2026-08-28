@@ -54,16 +54,20 @@ constant ERR_UNKNOWN_NAME: str
 
 function apply<A, B>(xs: [A], f: (function(A) -> B)) -> [B]
     out: [B] @ []
+
     for x in xs
         out @ out.push(f(x))
+
     return out
 
 # Reduces the sequence to one value, from the left. `fold` is a built-in name
 # too, so this one is `reduce`.
 function reduce<A, B>(xs: [A], initial: B, f: (function(B, A) -> B)) -> B
     acc: B @ initial
+
     for x in xs
         acc @ f(acc, x)
+
     return acc
 
 function plus(a: i64, b: i64) -> i64
@@ -111,16 +115,20 @@ function is_letter(c: u8) -> bool
 # Reads an integer, consuming it.
 function read_number(@l: Lex) -> i64
     v: i64 @ 0
+
     while !l.at_end() && l.here().is_digit()
         v @ v * 10 + to_i64(l.here() - '0').must()
         advance(@l)
+
     return v
 
 # Reads an identifier, consuming it.
 function read_name(@l: Lex) -> str
     start = l.pos
+
     while !l.at_end() && l.here().is_letter()
         advance(@l)
+
     return l.text.slice(from: start, to: l.pos)
 
 # Splits the text into tokens. Fails on the first unknown character.
@@ -217,8 +225,10 @@ function factor(@p: Parse) -> Expr?
 # An expression followed by its closing paren.
 function group(@p: Parse) -> Expr?
     inner = expression(@p)?
+
     if p.parse_at_end()
         return fail(ERR_UNCLOSED_PAREN, "missing closing paren")
+
     if p.parse_here() != .rparen
         return fail(ERR_UNCLOSED_PAREN, "missing closing paren")
     parse_advance(@p)
@@ -260,14 +270,18 @@ function lookup(env: {str: i64}, name: str) -> i64?
 
 function sum_of(children: [Expr], env: {str: i64}) -> i64?
     tot: i64 @ 0
+
     for c in children
         tot @ tot + evaluate(c, env)?
+
     return ok(tot)
 
 function product_of(children: [Expr], env: {str: i64}) -> i64?
     tot: i64 @ 1
+
     for c in children
         tot @ tot * evaluate(c, env)?
+
     return ok(tot)
 
 # The value of the tree. Fails on the first unknown name.
@@ -288,9 +302,11 @@ function names_used(e: Expr) -> [str]
 
 function names_of(children: [Expr]) -> [str]
     out: [str] @ []
+
     for c in children
         for n in c.names_used()
             out @ out.push(n)
+
     return out
 
 ## Interface
@@ -300,6 +316,7 @@ function calculate(text: str, env: {str: i64}) -> i64?
     ts = tokenize(text)?
     p: Parse @ Parse(ts: ts, pos: 0)
     tree = expression(@p)?
+
     if !p.parse_at_end()
         return fail(ERR_TRAILING_TOKENS, "leftover input at the end")
     return evaluate(tree, env)
@@ -316,12 +333,15 @@ test "variables from the environment"
 
 test "errors reach the top"
     empty: {str: i64} = {}
+
     match calculate("2 +", empty)
         .ok _  => assert false
         .err e => assert e.code == ERR_UNEXPECTED_END
+
     match calculate("z + 1", empty)
         .ok _  => assert false
         .err e => assert e.code == ERR_UNKNOWN_NAME
+
     match calculate("(2 + 3", empty)
         .ok _  => assert false
         .err e => assert e.code == ERR_UNCLOSED_PAREN
@@ -351,19 +371,25 @@ function simplify(e: Expr) -> Expr
 # dropped because adding one changes nothing.
 function keep_sum(children: [Expr]) -> [Expr]
     out: [Expr] @ []
+
     for child in children
         one = simplify(child)
+
         if !is_literal(e: one, v: 0)
             out @ out.push(one)
+
     return out
 
 # The same for a product, dropping the ones.
 function keep_product(children: [Expr]) -> [Expr]
     out: [Expr] @ []
+
     for child in children
         one = simplify(child)
+
         if !is_literal(e: one, v: 1)
             out @ out.push(one)
+
     return out
 
 # Is this node exactly the literal `v`?
@@ -378,10 +404,12 @@ function is_literal(e: Expr, v: i64) -> bool
 function rebuild(kept: [Expr], zero: bool) -> Expr
     if kept.len() == 1
         return kept[0]
+
     if kept.len() == 0
         if zero
             return .num(v: 0)
         return .num(v: 1)
+
     if zero
         return .sum(children: kept)
     return .product(children: kept)

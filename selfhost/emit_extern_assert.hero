@@ -39,23 +39,36 @@ function extern_assertions(@w: emit_writer.Writer, p: ir_state.Program, c: check
     # Everything a header owns, whichever kind it lowered to: the
     # question both answer is "does a header declare this".
     externs: [ir_state.Function] @ []
+
     for f in p.functions
         if !emit_externs.extern_spans(decls, f).header.is_err()
             externs @ externs.push(f)
+
     if externs.len() == 0
         return
+
     # The macro family. HERO_RET_INT's set is every signed C integer
     # plus every unsigned one narrower than 64 bits — a fact about
     # i64's range and nothing else; a second width must never reuse it
     # (panel 042).
-    emit_writer.line(@w, text: "#define HERO_RET_INT(c) _Generic((c), signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, default:0)")
+    emit_writer.line(
+        @w,
+        text: "#define HERO_RET_INT(c) _Generic((c), signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, default:0)"
+    )
+
     # The seven other widths: fundamental types never typedefs (size_t
     # and uintptr_t in one _Generic is a hard error where they alias);
     # sizeof is load-bearing (i386 and wasm32 ACCEPT a 32-bit unsigned
     # long as u64 without it — _Generic can say what kind a type is and
     # not how wide); char's signedness is asked, not assumed.
-    emit_writer.line(@w, text: "#define HERO_C_INTEGER(c) _Generic((c), " + emit_assert_spelling.C_INTEGER_TYPES.join(":1, ") + ":1, default:0)")
-    emit_writer.line(@w, text: "#define HERO_C_UNSIGNED(c) _Generic((c), unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0)")
+    emit_writer.line(
+        @w,
+        text: "#define HERO_C_INTEGER(c) _Generic((c), " + emit_assert_spelling.C_INTEGER_TYPES.join(":1, ") + ":1, default:0)"
+    )
+    emit_writer.line(
+        @w,
+        text: "#define HERO_C_UNSIGNED(c) _Generic((c), unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0)"
+    )
     emit_writer.line(@w, text: "#define HERO_RET_I8(c) (HERO_C_INTEGER(c) && !HERO_C_UNSIGNED(c) && sizeof(c) == 1)")
     emit_writer.line(@w, text: "#define HERO_RET_I16(c) (HERO_C_INTEGER(c) && !HERO_C_UNSIGNED(c) && sizeof(c) == 2)")
     emit_writer.line(@w, text: "#define HERO_RET_I32(c) (HERO_C_INTEGER(c) && !HERO_C_UNSIGNED(c) && sizeof(c) == 4)")
@@ -63,6 +76,7 @@ function extern_assertions(@w: emit_writer.Writer, p: ir_state.Program, c: check
     emit_writer.line(@w, text: "#define HERO_RET_U16(c) (HERO_C_INTEGER(c) && HERO_C_UNSIGNED(c) && sizeof(c) == 2)")
     emit_writer.line(@w, text: "#define HERO_RET_U32(c) (HERO_C_INTEGER(c) && HERO_C_UNSIGNED(c) && sizeof(c) == 4)")
     emit_writer.line(@w, text: "#define HERO_RET_U64(c) (HERO_C_INTEGER(c) && HERO_C_UNSIGNED(c) && sizeof(c) == 8)")
+
     # f32 accepts float and NOTHING else, where f64 accepts all three:
     # the spec's "a result may be wider than C's" read in the one
     # direction it can be read — f64 for a C float widens exactly, f32
@@ -71,42 +85,54 @@ function extern_assertions(@w: emit_writer.Writer, p: ir_state.Program, c: check
     emit_writer.line(@w, text: "#define HERO_RET_F64(c) _Generic((c), float:1, double:1, long double:1, default:0)")
     emit_writer.line(@w, text: "#define HERO_RET_BOOL(c) _Generic((c), _Bool:1, default:0)")
     emit_writer.line(@w, text: "#define HERO_RET_STR(c) _Generic((c), HeroStr:1, default:0)")
+
     # void cannot be a _Generic association (C11 6.5.1.1p2: complete
     # object type) — one clang accepted it silently for two milestones
     # and the FIRST CI run that compared two machines failed on both.
     # __builtin_types_compatible_p takes void and stays unevaluated.
     emit_writer.line(@w, text: "#define HERO_RET_UNIT(c) __builtin_types_compatible_p(__typeof__(c), void)")
+
     # A pointer asked DIRECTLY: the negative _Generic list could not
     # see a struct, which fell to default:1 and passed — 356 of 1159
     # entry points across three real headers return one by value, the
     # ordinary case and not a corner (panel 052).
     emit_writer.line(@w, text: "#define HERO_RET_PTR(c) (__builtin_classify_type(c) == 5)")
+
     # Conditional, both of them, for panel 063's golden-churn reason.
     any_record: bool @ false
     any_cstr: bool @ false
+
     for f in externs
         match check_table.get(c.types, f.result)
-            .named => any_record @ true
-            .cstr => any_cstr @ true
+            .named                                            => any_record @ true
+            .cstr                                             => any_cstr @ true
             .int_ty | .float_ty | .bool | .str | .ptr | .unit => continue
             .array | .fixed | .map | .fallible | .function_ty => continue
-            .case_ty | .failure | .generic | .error => continue
+            .case_ty | .failure | .generic | .error           => continue
+
     if any_record
         emit_writer.line(@w, text: "#define HERO_RET_RECORD(c, T) __builtin_types_compatible_p(__typeof__(c), T)")
+
     if any_cstr
         # A cstr is a pointer to characters, and only that (panel 083):
         # six spellings, because C's char is distinct from both signed
         # and unsigned char and real headers return all three. const
         # void * is refused — the whole repair.
-        emit_writer.line(@w, text: "#define HERO_RET_CSTR(c) _Generic((c), " + emit_assert_spelling.CSTR_SPELLINGS + ", default:0)")
+        emit_writer.line(
+            @w,
+            text: "#define HERO_RET_CSTR(c) _Generic((c), " + emit_assert_spelling.CSTR_SPELLINGS + ", default:0)"
+        )
+
     for f in externs
         extern_name = source.span_text(s, decls[f.decl].name)
         check_macro = emit_assert_spelling.return_check(c, ty: f.result)
+
         if check_macro.is_err()
             continue
         none: [str] = []
         declared_type = check_render.render_ty(c.types, s, decls, f.result, none)
         type_argument = emit_assert_spelling.return_argument(names, c, ty: f.result)
+
         # A constant is a TOKEN, not a call: the same _Generic asks the
         # same question with no argument list, plus one assertion
         # nothing else needs — that the header gives it a VALUE at all.
@@ -114,32 +140,48 @@ function extern_assertions(@w: emit_writer.Writer, p: ir_state.Program, c: check
         # over one would return two answers on two calls: §4.2's
         # mutable global through the back door.
         if emit_externs.is_extern_constant(decls, f)
-            emit_writer.line(@w, text: "_Static_assert(" + check_macro.must() + "(" + extern_name + type_argument + "), \"" + emit_assert_spelling.ASSERTION + extern_name + " " + declared_type + "\");")
+            emit_writer.line(
+                @w,
+                text: "_Static_assert(" + check_macro.must() + "(" + extern_name + type_argument + "), \"" + emit_assert_spelling.ASSERTION + extern_name + " " + declared_type + "\");"
+            )
+
             # A struct constant is not asked whether it is a value
             # (panel 063): __builtin_constant_p answers 0 for every
             # struct, and asking would newly refuse raylib's 26
             # CLITERAL(Color) macros that bind and run today.
             if emit_assert_spelling.asks_for_a_value(c, ty: f.result)
-                emit_writer.line(@w, text: "_Static_assert(__builtin_constant_p(" + extern_name + "), \"" + emit_assert_spelling.CONSTANCY + extern_name + "\");")
+                emit_writer.line(
+                    @w,
+                    text: "_Static_assert(__builtin_constant_p(" + extern_name + "), \"" + emit_assert_spelling.CONSTANCY + extern_name + "\");"
+                )
             continue
         zeros: [str] @ []
+
         for slot_id in f.params
             declared = f.slots[slot_id]
+
             # An @ parameter is a pointer parameter (§4.8), so its zero
             # is a null of that pointer type — the value's own zero was
             # -Wint-conversion, a warning that survived a green run
             # until the goldens were read.
             mutable: bool @ false
+
             match declared.kind
                 .param_slot ps =>
                     if ps.mutable
                         mutable @ true
                 .local_slot | .synthetic_slot => mutable @ mutable
+
             zeros @ zeros.push(emit_assert_spelling.zero_of(names, c, ty: declared.ty, mutable: mutable))
+
         # The message is a CONTRACT with the error mapper, not prose:
         # marker + C name + declared Heroes type, so a failure maps back
         # to the author's line instead of printing generated C.
-        emit_writer.line(@w, text: "_Static_assert(" + check_macro.must() + "(" + extern_name + "(" + zeros.join(", ") + ")" + type_argument + "), \"" + emit_assert_spelling.ASSERTION + extern_name + " " + declared_type + "\");")
+        emit_writer.line(
+            @w,
+            text: "_Static_assert(" + check_macro.must() + "(" + extern_name + "(" + zeros.join(", ") + ")" + type_argument + "), \"" + emit_assert_spelling.ASSERTION + extern_name + " " + declared_type + "\");"
+        )
+
     emit_writer.line(@w, text: "")
 
 ## Tests
@@ -147,22 +189,28 @@ function extern_assertions(@w: emit_writer.Writer, p: ir_state.Program, c: check
 function has(text: str, needle: str) -> bool
     cs = text.chars()
     needle_cs = needle.chars()
+
     if needle_cs.len() == 0
         return true
+
     if needle_cs.len() > cs.len()
         return false
     start: i64 @ 0
+
     while start <= cs.len() - needle_cs.len()
         matched: bool @ true
         offset: i64 @ 0
+
         while offset < needle_cs.len()
             if cs[start + offset] != needle_cs[offset]
                 matched @ false
                 break
             offset @ offset + 1
+
         if matched
             return true
         start @ start + 1
+
     return false
 
 test "an extern function gets its zero-cost call, a constant its token and value"
@@ -177,11 +225,14 @@ test "an extern function gets its zero-cost call, a constant its token and value
     w: emit_writer.Writer @ emit_writer.new_writer("t")
     extern_assertions(@w, low.program, c, names, s, parsed.decls)
     got = emit_writer.finish(w)
+
     # The function: a call with a zero argument, never evaluated.
     assert has(text: got, needle: "_Static_assert(HERO_RET_F64(sqrt((double)0)), \"heroes-ffi-return sqrt f64\");")
+
     # The constant: a token, and the constancy question after it.
     assert has(text: got, needle: "_Static_assert(HERO_RET_F64(M_PI), \"heroes-ffi-return M_PI f64\");")
     assert has(text: got, needle: "_Static_assert(__builtin_constant_p(M_PI), \"heroes-ffi-const M_PI\");")
+
     # The conditional macros stay out when nothing needs them.
     assert !has(text: got, needle: "HERO_RET_RECORD")
     assert !has(text: got, needle: "HERO_RET_CSTR")

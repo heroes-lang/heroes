@@ -12,9 +12,11 @@
 
 function extend(@s: str, times: i64)
     i: i64 @ 0
+
     while i < times
         s @ s + "!"
         i @ i + 1
+
         if i == 2
             return
 

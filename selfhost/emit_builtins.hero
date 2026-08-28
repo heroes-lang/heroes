@@ -32,7 +32,28 @@ use checker
 # with a C entry point and a to_<width> has none: it builds a T?, a
 # union generated for that result type — ops writes it inline.
 constant EMITTED: [str]
-    ["chars", "join", "keys", "len", "print", "push", "repeat", "slice", "sort", "to_f32", "to_f64", "to_i64", "to_str", "to_i8", "to_i16", "to_i32", "to_u8", "to_u16", "to_u32", "to_u64"]
+    [
+        "chars"
+        "join"
+        "keys"
+        "len"
+        "print"
+        "push"
+        "repeat"
+        "slice"
+        "sort"
+        "to_f32"
+        "to_f64"
+        "to_i64"
+        "to_str"
+        "to_i8"
+        "to_i16"
+        "to_i32"
+        "to_u8"
+        "to_u16"
+        "to_u32"
+        "to_u64"
+    ]
 
 # The type of a call's first argument, where there is one and it is a
 # value. Absent covers a zero-argument call and an @ argument — neither
@@ -41,11 +62,14 @@ constant EMITTED: [str]
 # anything else.
 function first_type(f: ir_state.Function, c: check_state.Checked, run: ir.Run) -> check_table.Ty?
     given = ir_state.args_of(f, run)
+
     if given.len() == 0
         return fail("none", "no arguments")
+
     match given[0]
         .value_arg v => return ok(check_table.get(c.types, ir_state.value_type(f, v.value)))
-        .inout_arg => return fail("none", "an @ argument")
+        .inout_arg   => return fail("none", "an @ argument")
+
     return fail("none", "unreached")
 
 # The C function this call becomes. Exhaustive over EMITTED minus
@@ -55,30 +79,34 @@ function first_type(f: ir_state.Function, c: check_state.Checked, run: ir.Run) -
 # guess.
 function entry(name: str, f: ir_state.Function, c: check_state.Checked, run: ir.Run) -> str
     first = first_type(f, c, run: run)
+
     if name == "len"
         if !first.is_err()
             match first.must()
-                .map => return "hero_map_len"
-                .array => return "hero_array_len"
+                .map                                                      => return "hero_map_len"
+                .array                                                    => return "hero_array_len"
                 .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return "hero_str_len"
-                .fixed | .fallible | .function_ty | .named => return "hero_str_len"
-                .case_ty | .failure | .generic | .error => return "hero_str_len"
+                .fixed | .fallible | .function_ty | .named                => return "hero_str_len"
+                .case_ty | .failure | .generic | .error                   => return "hero_str_len"
         return "hero_str_len"
+
     # keys(m) hands back a fresh array whose keys are copied through
     # the key descriptor, so it owns them and may outlive the map.
     if name == "keys"
         return "hero_map_keys"
+
     # The two halves that did not land together (panel 025): slice on
     # an array type-checked and emitted hero_str_slice, which clang
     # rejected at exit 2. Both halves are here now.
     if name == "slice"
         if !first.is_err()
             match first.must()
-                .array => return "hero_array_slice"
+                .array                                                    => return "hero_array_slice"
                 .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return "hero_str_slice"
-                .fixed | .map | .fallible | .function_ty | .named => return "hero_str_slice"
-                .case_ty | .failure | .generic | .error => return "hero_str_slice"
+                .fixed | .map | .fallible | .function_ty | .named         => return "hero_str_slice"
+                .case_ty | .failure | .generic | .error                   => return "hero_str_slice"
         return "hero_str_slice"
+
     # push hands back a NEW array, always: value semantics has no
     # reading in which the argument is consumed. sort is the same shape
     # for the same reason; its comparison is chosen inside the runtime
@@ -88,16 +116,22 @@ function entry(name: str, f: ir_state.Function, c: check_state.Checked, run: ir.
     # carry a NULL and SEGV with no type name.
     if name == "push"
         return "hero_array_push"
+
     if name == "sort"
         return "hero_array_sort"
+
     if name == "chars"
         return "hero_str_chars"
+
     if name == "join"
         return "hero_str_join"
+
     if name == "repeat"
         return "hero_str_repeat"
+
     if name == "to_i64"
         return "hero_f64_to_int"
+
     # Dispatched on the SOURCE, like to_str below: one Heroes name
     # covers two C conversions once there are two float widths. An f32
     # source reaching hero_int_to_f64 would be C converting a float to
@@ -106,19 +140,21 @@ function entry(name: str, f: ir_state.Function, c: check_state.Checked, run: ir.
     if name == "to_f64"
         if !first.is_err()
             match first.must()
-                .float_ty => return "hero_f32_to_f64"
-                .int_ty | .bool | .str | .ptr | .cstr | .unit => return "hero_int_to_f64"
+                .float_ty                                                  => return "hero_f32_to_f64"
+                .int_ty | .bool | .str | .ptr | .cstr | .unit              => return "hero_int_to_f64"
                 .array | .fixed | .map | .fallible | .function_ty | .named => return "hero_int_to_f64"
-                .case_ty | .failure | .generic | .error => return "hero_int_to_f64"
+                .case_ty | .failure | .generic | .error                    => return "hero_int_to_f64"
         return "hero_int_to_f64"
+
     if name == "to_f32"
         if !first.is_err()
             match first.must()
-                .float_ty => return "hero_f64_to_f32"
-                .int_ty | .bool | .str | .ptr | .cstr | .unit => return "hero_int_to_f32"
+                .float_ty                                                  => return "hero_f64_to_f32"
+                .int_ty | .bool | .str | .ptr | .cstr | .unit              => return "hero_int_to_f32"
                 .array | .fixed | .map | .fallible | .function_ty | .named => return "hero_int_to_f32"
-                .case_ty | .failure | .generic | .error => return "hero_int_to_f32"
+                .case_ty | .failure | .generic | .error                    => return "hero_int_to_f32"
         return "hero_int_to_f32"
+
     # to_str is one Heroes name over five C entry points. cstr is the
     # fifth, and it is the boundary's return path (§4.19): .cstr()
     # lends a str to C; this copies one back — predicted by panel 036's
@@ -127,6 +163,7 @@ function entry(name: str, f: ir_state.Function, c: check_state.Checked, run: ir.
     if name == "to_str"
         if first.is_err()
             return "hero_unreachable"
+
         # The `cstr` branch was HERE and is gone (panel 090). The checker
         # refuses a `cstr` before lowering reaches this line, so a branch
         # for one would be unreachable code claiming to be a route.
@@ -134,6 +171,7 @@ function entry(name: str, f: ir_state.Function, c: check_state.Checked, run: ir.
         # `hero_args_at` is its other caller — but nothing the emitter
         # writes reaches it any more.
         found = to_str_entry(first.must())
+
         if found.is_err()
             return "hero_unreachable"
         return found.must()
@@ -147,20 +185,25 @@ function entry(name: str, f: ir_state.Function, c: check_state.Checked, run: ir.
 function reachable(p: ir_state.Program, s: source.Source) -> {i64: bool}
     seen: {i64: bool} @ {}
     work: [i64] @ []
+
     for f in p.functions
         if !source.is_library(s, f.span.start)
             for callee in calls_of(f)
                 work @ work.push(callee)
+
     while work.len() > 0
         decl = work[work.len() - 1]
         work @ work.slice(from: 0, to: work.len() - 1)
+
         if !seen[decl].is_err()
             continue
         seen[decl] @ true
+
         for f in p.functions
             if f.decl == decl
                 for callee in calls_of(f)
                     work @ work.push(callee)
+
     return seen
 
 # Every Heroes function this one NAMES — not calls. FuncRef is the
@@ -170,20 +213,22 @@ function reachable(p: ir_state.Program, s: source.Source) -> {i64: bool}
 # exit 2 on a legal program, root-dependent as well as wrong.
 function calls_of(f: ir_state.Function) -> [i64]
     found: [i64] @ []
+
     for blk in f.blocks
         for inst in blk.insts
             match inst.op
                 .call cl =>
                     match cl.callee
-                        .heroes_fn h => found @ found.push(h.decl)
+                        .heroes_fn h                         => found @ found.push(h.decl)
                         .extern_fn | .builtin_fn | .indirect => continue
                 .func_ref fr =>
                     match fr.callee
-                        .heroes_fn h => found @ found.push(h.decl)
+                        .heroes_fn h                         => found @ found.push(h.decl)
                         .extern_fn | .builtin_fn | .indirect => continue
                 .lit | .load | .store | .push_owned | .unary | .binary | .cast | .construct => continue
-                .field | .index | .map_get | .len_of | .tag_of | .payload => continue
-                .copy_out | .abort_op | .incref | .decref | .hole | .missing => continue
+                .field | .index | .map_get | .len_of | .tag_of | .payload                   => continue
+                .copy_out | .abort_op | .incref | .decref | .hole | .missing                => continue
+
     return found
 
 # Which runtime entry point turns a value of this type into a str.
@@ -199,17 +244,18 @@ function to_str_entry(ty: check_table.Ty) -> str?
     match ty
         .int_ty ik =>
             match ik.kind
-                .u64 => return ok("hero_uint_to_str")
+                .u64                                         => return ok("hero_uint_to_str")
                 .i8 | .i16 | .i32 | .i64 | .u8 | .u16 | .u32 => return ok("hero_int_to_str")
         .float_ty fk =>
             match fk.kind
                 .f32 => return ok("hero_f32_to_str")
                 .f64 => return ok("hero_f64_to_str")
-        .bool => return ok("hero_bool_to_str")
-        .str => return ok("hero_str_identity")
+        .bool                                         => return ok("hero_bool_to_str")
+        .str                                          => return ok("hero_str_identity")
         .ptr | .cstr | .unit | .array | .fixed | .map => return fail("none", "no rendering")
-        .fallible | .function_ty | .named | .case_ty => return fail("none", "no rendering")
-        .failure | .generic | .error => return fail("none", "no rendering")
+        .fallible | .function_ty | .named | .case_ty  => return fail("none", "no rendering")
+        .failure | .generic | .error                  => return fail("none", "no rendering")
+
     return fail("none", "unreached")
 
 ## Tests
@@ -225,7 +271,22 @@ test "one name, many entry points, always chosen by the first argument's type"
     str_id = check_table.str_ty(c.types)
     arr = check_table.lookup(c.types, .array(element: int_id)).must()
     mp = check_table.lookup(c.types, .map(key: str_id, value: int_id)).must()
-    f: ir_state.Function @ ir_state.Function(name: "t", decl: 0, kind: .function_kind, generics: [], params: [], result: 0, slots: [], blocks: [], values: [arr, mp, str_id], arguments: [.value_arg(value: 0), .value_arg(value: 1), .value_arg(value: 2)], steps: [], instance: [], call_instances: {}, span: token.Span(start: 0, end: 1))
+    f: ir_state.Function @ ir_state.Function(
+        name: "t",
+        decl: 0,
+        kind: .function_kind,
+        generics: [],
+        params: [],
+        result: 0,
+        slots: [],
+        blocks: [],
+        values: [arr, mp, str_id],
+        arguments: [.value_arg(value: 0), .value_arg(value: 1), .value_arg(value: 2)],
+        steps: [],
+        instance: [],
+        call_instances: {},
+        span: token.Span(start: 0, end: 1)
+    )
     assert entry(name: "len", f: f, c: c, run: ir.Run(start: 0, length: 1)) == "hero_array_len"
     assert entry(name: "len", f: f, c: c, run: ir.Run(start: 1, length: 1)) == "hero_map_len"
     assert entry(name: "len", f: f, c: c, run: ir.Run(start: 2, length: 1)) == "hero_str_len"

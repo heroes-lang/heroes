@@ -23,13 +23,16 @@
 
 function typehash(rendered: str) -> i64
     h: i64 @ 0
+
     for i in range(from: 0, to: len(rendered))
         h @ (h * 131 + to_i64(rendered[i]).must()) % 2147483647
+
     return h
 
 function main()
     print(typehash("map<i64, str>"))
     print(typehash("fold<i64, i64>"))
+
     # The two renderings that would collide under a readable suffix — the reason
     # `instance` is a hash at all (panel 029 R5). They must not collide here.
     print(typehash("pair<i64, str_x>"))

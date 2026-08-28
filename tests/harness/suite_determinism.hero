@@ -54,10 +54,15 @@ function run_all(scratch: str, compiler: str) -> report.Report?
         total @ total + 1
         first = dumped(scratch: scratch, compiler: compiler, item: item, flag: "--dump-ir", into: "")
         second = dumped(scratch: scratch, compiler: compiler, item: item, flag: "--dump-ir", into: "")
+
         if first.is_err() || second.is_err()
             report.keep_failure(@r, label: "determinism/ir/" + item.name, detail: "  cannot dump " + item.source)
         else if first.must() != second.must()
-            report.keep_failure(@r, label: "determinism/ir/" + item.name, detail: "  " + item.source + " dumps differently twice — the one promise panel 019 made about this artifact")
+            report.keep_failure(
+                @r,
+                label: "determinism/ir/" + item.name,
+                detail: "  " + item.source + " dumps differently twice — the one promise panel 019 made about this artifact"
+            )
         else
             report.keep_pass(@r)
 
@@ -65,6 +70,7 @@ function run_all(scratch: str, compiler: str) -> report.Report?
         for item in cases.collect(scratch: scratch, dir: dir)?
             total @ total + 1
             first = dumped(scratch: scratch, compiler: compiler, item: item, flag: "--emit-c", into: "")
+
             if first.is_err()
                 # A case this machine cannot emit because a header is
                 # missing is the machine's answer, not the compiler's —
@@ -72,27 +78,54 @@ function run_all(scratch: str, compiler: str) -> report.Report?
                 if shell.machine_lacks_the_library(last_error(scratch))
                     skipped @ skipped + 1
                 else
-                    report.keep_failure(@r, label: "determinism/c/" + item.name, detail: "  cannot emit " + item.source + ":\n" + last_error(scratch))
+                    report.keep_failure(
+                        @r,
+                        label: "determinism/c/" + item.name,
+                        detail: "  cannot emit " + item.source + ":\n" + last_error(scratch)
+                    )
                 continue
             second = dumped(scratch: scratch, compiler: compiler, item: item, flag: "--emit-c", into: "")
+
             if second.is_err() || first.must() != second.must()
-                report.keep_failure(@r, label: "determinism/c/" + item.name, detail: "  " + item.source + " emits differently twice — §7 says this stays green at all times")
+                report.keep_failure(
+                    @r,
+                    label: "determinism/c/" + item.name,
+                    detail: "  " + item.source + " emits differently twice — §7 says this stays green at all times"
+                )
                 continue
             target = written + "/" + item.name + ".c"
             through = dumped(scratch: scratch, compiler: compiler, item: item, flag: "--emit-c", into: target)
+
             if through.is_err()
-                report.keep_failure(@r, label: "determinism/c/" + item.name, detail: "  cannot emit " + item.source + " through -o")
+                report.keep_failure(
+                    @r,
+                    label: "determinism/c/" + item.name,
+                    detail: "  cannot emit " + item.source + " through -o"
+                )
                 continue
             kept = read_file(target)
+
             if kept.is_err()
-                report.keep_failure(@r, label: "determinism/c/" + item.name, detail: "  -o wrote nothing readable at " + target)
+                report.keep_failure(
+                    @r,
+                    label: "determinism/c/" + item.name,
+                    detail: "  -o wrote nothing readable at " + target
+                )
             else if kept.must() != first.must()
-                report.keep_failure(@r, label: "determinism/c/" + item.name, detail: "  " + item.source + " differs between stdout and -o: the C mentions its own output path")
+                report.keep_failure(
+                    @r,
+                    label: "determinism/c/" + item.name,
+                    detail: "  " + item.source + " differs between stdout and -o: the C mentions its own output path"
+                )
             else
                 report.keep_pass(@r)
 
     if skipped > 0 && skipped * 3 >= total
-        report.keep_failure(@r, label: "determinism", detail: "  " + skipped.to_str() + " of " + total.to_str() + " cases were skipped for a missing library — this machine is not checking determinism")
+        report.keep_failure(
+            @r,
+            label: "determinism",
+            detail: "  " + skipped.to_str() + " of " + total.to_str() + " cases were skipped for a missing library — this machine is not checking determinism"
+        )
     return ok(r)
 
 # One emission, as text. `into` empty means stdout, which is what the
@@ -100,9 +133,11 @@ function run_all(scratch: str, compiler: str) -> report.Report?
 # is read from the file instead.
 function dumped(scratch: str, compiler: str, item: cases.Case, flag: str, into: str) -> str?
     line: str @ shell.sq(compiler) + " build " + shell.sq(item.source) + " " + flag
+
     if into.len() > 0
         line @ line + " -o " + shell.sq(into)
     said = shell.run(scratch: scratch, command: line)?
+
     if said.code != 0
         return fail("cannot_emit", said.err)
     return ok(said.out)
@@ -112,6 +147,7 @@ function dumped(scratch: str, compiler: str, item: cases.Case, flag: str, into: 
 # `Run` away — and a skip decision needs the compiler's own words.
 function last_error(scratch: str) -> str
     got = read_file(scratch + "/stderr")
+
     if got.is_err()
         return ""
     return got.must()

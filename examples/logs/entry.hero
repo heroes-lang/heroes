@@ -38,32 +38,40 @@ function is_space(c: u8) -> bool
 
 function trimmed(line: str) -> str
     from: i64 @ 0
+
     while from < line.len() && is_space(line[from])
         from @ from + 1
+
     to: i64 @ line.len()
+
     while to > from && is_space(line[to - 1])
         to @ to - 1
+
     return line.slice(from: from, to: to)
 
 function split_lines(text: str) -> [str]
     out: [str] @ []
     start: i64 @ 0
     i: i64 @ 0
+
     while i < text.len()
         if text[i] == '\n'
             out @ out.push(text.slice(from: start, to: i))
             start @ i + 1
         i @ i + 1
+
     if start < text.len()
         out @ out.push(text.slice(from: start, to: text.len()))
     return out
 
 function index_of(text: str, c: u8) -> i64
     i: i64 @ 0
+
     while i < text.len()
         if text[i] == c
             return i
         i @ i + 1
+
     return 0 - 1
 
 # The first `n` space-separated words, and everything left over as one piece.
@@ -71,14 +79,17 @@ function index_of(text: str, c: u8) -> i64
 function first_words(text: str, n: i64) -> [str]
     out: [str] @ []
     rest: str @ trimmed(text)
+
     for _ in range(from: 0, to: n)
         at = index_of(rest, ' ')
+
         if at < 0
             out @ out.push(rest)
             rest @ ""
         else
             out @ out.push(rest.slice(from: 0, to: at))
             rest @ trimmed(rest.slice(from: at + 1, to: rest.len()))
+
     out @ out.push(rest)
     return out
 
@@ -87,10 +98,13 @@ function first_words(text: str, n: i64) -> [str]
 # `stamp LEVEL source: message`, or an error saying which part was missing.
 function read_line(text: str) -> Entry?
     parts = first_words(text, 3)
+
     if parts[0] == "" || parts[1] == "" || parts[2] == ""
         return fail(ERR_SHORT_LINE, "a line is `stamp LEVEL source: message`")
+
     if parts[2][parts[2].len() - 1] != ':'
         return fail(ERR_NO_SOURCE, "the third word must end in `:`")
+
     if index_of(parts[0], 'T') < 0
         return fail(ERR_NO_STAMP, "the first word must be a timestamp, `DATEThh:mm:ss`")
     source = parts[2].slice(from: 0, to: parts[2].len() - 1)
@@ -101,19 +115,24 @@ function read(text: str) -> Reading
     entries: [Entry] @ []
     skipped: [i64] @ []
     number: i64 @ 0
+
     for line in split_lines(text)
         number @ number + 1
+
         if trimmed(line) == ""
             continue
+
         match read_line(line)
             .ok entry => entries @ entries.push(entry)
             .err _    => skipped @ skipped.push(number)
+
     return Reading(entries: entries, skipped: skipped)
 
 # The hour a stamp names — `2026-08-13T22:04:11` is `22`. The two characters
 # after the `T`, which is why `read_line` insists there is one.
 function hour_of(entry: Entry) -> str
     at = index_of(entry.stamp, 'T')
+
     if at < 0 || at + 3 > entry.stamp.len()
         return "??"
     return entry.stamp.slice(from: at + 1, to: at + 3)

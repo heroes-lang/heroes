@@ -103,7 +103,7 @@ HERO_TU_LOCAL int64_t h_generics_last_1b9a87(HeroArrayHeader * h0_xs);
 HERO_TU_LOCAL HeroArrayHeader * h_generics_convert_37fb3fcc(HeroArrayHeader * h0_xs, h_0fn_4a13fb08 h1_f);
 HERO_TU_LOCAL HeroArrayHeader * h_generics_first_4ce7463f(HeroArrayHeader * h0_xs);
 
-#line 29 "tests/golden/run/generics.hero"
+#line 31 "tests/golden/run/generics.hero"
 HeroStr h_generics_label(int64_t h0_n) {
 #line 109 "generics.c"
     HeroStr h1_own1 = {0};
@@ -118,41 +118,41 @@ HeroStr h_generics_label(int64_t h0_n) {
     HeroStr t8 = {0};
     goto bb0;
 bb0:
-#line 30 "tests/golden/run/generics.hero"
+#line 32 "tests/golden/run/generics.hero"
     t1 = HERO_STR_LIT(hero_str_23);
-#line 30 "tests/golden/run/generics.hero"
+#line 32 "tests/golden/run/generics.hero"
     t2 = h0_n;
-#line 30 "tests/golden/run/generics.hero"
+#line 32 "tests/golden/run/generics.hero"
     t3 = hero_int_to_str(t2);
-#line 30 "tests/golden/run/generics.hero"
+#line 32 "tests/golden/run/generics.hero"
     t5 = h1_own1;
-#line 30 "tests/golden/run/generics.hero"
+#line 32 "tests/golden/run/generics.hero"
     h1_own1 = t3;
 #line 132 "generics.c"
     hero_str_decref(t5);
-#line 30 "tests/golden/run/generics.hero"
+#line 32 "tests/golden/run/generics.hero"
     t4 = hero_str_concat(t1, t3);
-#line 30 "tests/golden/run/generics.hero"
+#line 32 "tests/golden/run/generics.hero"
     t6 = h2_own2;
-#line 30 "tests/golden/run/generics.hero"
+#line 32 "tests/golden/run/generics.hero"
     h2_own2 = t4;
 #line 140 "generics.c"
     hero_str_decref(t6);
-#line 30 "tests/golden/run/generics.hero"
+#line 32 "tests/golden/run/generics.hero"
 #line 143 "generics.c"
     hero_str_incref(t4);
-#line 30 "tests/golden/run/generics.hero"
+#line 32 "tests/golden/run/generics.hero"
     t7 = h1_own1;
 #line 147 "generics.c"
     hero_str_decref(t7);
-#line 30 "tests/golden/run/generics.hero"
+#line 32 "tests/golden/run/generics.hero"
     t8 = h2_own2;
 #line 151 "generics.c"
     hero_str_decref(t8);
     return t4;
 }
 
-#line 32 "tests/golden/run/generics.hero"
+#line 34 "tests/golden/run/generics.hero"
 void h_generics_main(void) {
 #line 158 "generics.c"
     HeroArrayHeader * h0_rows = {0};
@@ -260,405 +260,405 @@ void h_generics_main(void) {
     HeroStr t85 = {0};
     goto bb0;
 bb0:
-#line 34 "tests/golden/run/generics.hero"
+#line 36 "tests/golden/run/generics.hero"
     t1 = HERO_STR_LIT(hero_str_6bb5e50a);
-#line 34 "tests/golden/run/generics.hero"
+#line 36 "tests/golden/run/generics.hero"
     t2 = HERO_STR_LIT(hero_str_5a47bc97);
-#line 34 "tests/golden/run/generics.hero"
+#line 36 "tests/golden/run/generics.hero"
     t3 = hero_array_new(&hero_desc_str, 2);
-#line 34 "tests/golden/run/generics.hero"
+#line 36 "tests/golden/run/generics.hero"
     { HeroArrayHeader *grown = hero_array_push(t3, &t1);
-#line 34 "tests/golden/run/generics.hero"
+#line 36 "tests/golden/run/generics.hero"
       hero_array_decref(t3); t3 = grown; }
-#line 34 "tests/golden/run/generics.hero"
+#line 36 "tests/golden/run/generics.hero"
     { HeroArrayHeader *grown = hero_array_push(t3, &t2);
-#line 34 "tests/golden/run/generics.hero"
+#line 36 "tests/golden/run/generics.hero"
       hero_array_decref(t3); t3 = grown; }
-#line 34 "tests/golden/run/generics.hero"
+#line 36 "tests/golden/run/generics.hero"
     t50 = h1_own1;
-#line 34 "tests/golden/run/generics.hero"
+#line 36 "tests/golden/run/generics.hero"
     h1_own1 = t3;
 #line 282 "generics.c"
     hero_array_decref(t50);
-#line 34 "tests/golden/run/generics.hero"
+#line 36 "tests/golden/run/generics.hero"
     t4 = h_generics_first_1e58d9(t3);
-#line 34 "tests/golden/run/generics.hero"
+#line 36 "tests/golden/run/generics.hero"
     t51 = h2_own2;
-#line 34 "tests/golden/run/generics.hero"
+#line 36 "tests/golden/run/generics.hero"
     h2_own2 = t4;
 #line 290 "generics.c"
     hero_str_decref(t51);
-#line 34 "tests/golden/run/generics.hero"
+#line 36 "tests/golden/run/generics.hero"
     t5 = HERO_STR_LIT(hero_str_20);
-#line 34 "tests/golden/run/generics.hero"
+#line 36 "tests/golden/run/generics.hero"
     t6 = INT64_C(1);
-#line 34 "tests/golden/run/generics.hero"
+#line 36 "tests/golden/run/generics.hero"
     t7 = INT64_C(2);
-#line 34 "tests/golden/run/generics.hero"
+#line 36 "tests/golden/run/generics.hero"
     t8 = INT64_C(3);
-#line 34 "tests/golden/run/generics.hero"
+#line 36 "tests/golden/run/generics.hero"
     t9 = hero_array_new(&hero_desc_int, 3);
-#line 34 "tests/golden/run/generics.hero"
+#line 36 "tests/golden/run/generics.hero"
     { HeroArrayHeader *grown = hero_array_push(t9, &t6);
-#line 34 "tests/golden/run/generics.hero"
+#line 36 "tests/golden/run/generics.hero"
       hero_array_decref(t9); t9 = grown; }
-#line 34 "tests/golden/run/generics.hero"
+#line 36 "tests/golden/run/generics.hero"
     { HeroArrayHeader *grown = hero_array_push(t9, &t7);
-#line 34 "tests/golden/run/generics.hero"
+#line 36 "tests/golden/run/generics.hero"
       hero_array_decref(t9); t9 = grown; }
-#line 34 "tests/golden/run/generics.hero"
+#line 36 "tests/golden/run/generics.hero"
     { HeroArrayHeader *grown = hero_array_push(t9, &t8);
-#line 34 "tests/golden/run/generics.hero"
+#line 36 "tests/golden/run/generics.hero"
       hero_array_decref(t9); t9 = grown; }
-#line 34 "tests/golden/run/generics.hero"
+#line 36 "tests/golden/run/generics.hero"
     t52 = h3_own3;
-#line 34 "tests/golden/run/generics.hero"
+#line 36 "tests/golden/run/generics.hero"
     h3_own3 = t9;
 #line 318 "generics.c"
     hero_array_decref(t52);
-#line 34 "tests/golden/run/generics.hero"
+#line 36 "tests/golden/run/generics.hero"
     t10 = h_generics_first_1b9a87(t9);
-#line 34 "tests/golden/run/generics.hero"
+#line 36 "tests/golden/run/generics.hero"
     hero_print_str(t4);
-#line 34 "tests/golden/run/generics.hero"
+#line 36 "tests/golden/run/generics.hero"
     hero_print_str(t5);
-#line 34 "tests/golden/run/generics.hero"
+#line 36 "tests/golden/run/generics.hero"
     hero_print_int(t10);
-#line 34 "tests/golden/run/generics.hero"
+#line 36 "tests/golden/run/generics.hero"
     hero_print_end();
-#line 35 "tests/golden/run/generics.hero"
+#line 37 "tests/golden/run/generics.hero"
     t11 = HERO_STR_LIT(hero_str_6bb5e50a);
-#line 35 "tests/golden/run/generics.hero"
+#line 37 "tests/golden/run/generics.hero"
     t12 = HERO_STR_LIT(hero_str_5a47bc97);
-#line 35 "tests/golden/run/generics.hero"
+#line 37 "tests/golden/run/generics.hero"
     t13 = hero_array_new(&hero_desc_str, 2);
-#line 35 "tests/golden/run/generics.hero"
+#line 37 "tests/golden/run/generics.hero"
     { HeroArrayHeader *grown = hero_array_push(t13, &t11);
-#line 35 "tests/golden/run/generics.hero"
+#line 37 "tests/golden/run/generics.hero"
       hero_array_decref(t13); t13 = grown; }
-#line 35 "tests/golden/run/generics.hero"
+#line 37 "tests/golden/run/generics.hero"
     { HeroArrayHeader *grown = hero_array_push(t13, &t12);
-#line 35 "tests/golden/run/generics.hero"
+#line 37 "tests/golden/run/generics.hero"
       hero_array_decref(t13); t13 = grown; }
-#line 35 "tests/golden/run/generics.hero"
+#line 37 "tests/golden/run/generics.hero"
     t53 = h4_own4;
-#line 35 "tests/golden/run/generics.hero"
+#line 37 "tests/golden/run/generics.hero"
     h4_own4 = t13;
 #line 348 "generics.c"
     hero_array_decref(t53);
-#line 35 "tests/golden/run/generics.hero"
+#line 37 "tests/golden/run/generics.hero"
     t14 = h_generics_last_1e58d9(t13);
-#line 35 "tests/golden/run/generics.hero"
+#line 37 "tests/golden/run/generics.hero"
     t54 = h5_own5;
-#line 35 "tests/golden/run/generics.hero"
+#line 37 "tests/golden/run/generics.hero"
     h5_own5 = t14;
 #line 356 "generics.c"
     hero_str_decref(t54);
-#line 35 "tests/golden/run/generics.hero"
+#line 37 "tests/golden/run/generics.hero"
     t15 = HERO_STR_LIT(hero_str_20);
-#line 35 "tests/golden/run/generics.hero"
+#line 37 "tests/golden/run/generics.hero"
     t16 = INT64_C(1);
-#line 35 "tests/golden/run/generics.hero"
+#line 37 "tests/golden/run/generics.hero"
     t17 = INT64_C(2);
-#line 35 "tests/golden/run/generics.hero"
+#line 37 "tests/golden/run/generics.hero"
     t18 = INT64_C(3);
-#line 35 "tests/golden/run/generics.hero"
+#line 37 "tests/golden/run/generics.hero"
     t19 = hero_array_new(&hero_desc_int, 3);
-#line 35 "tests/golden/run/generics.hero"
+#line 37 "tests/golden/run/generics.hero"
     { HeroArrayHeader *grown = hero_array_push(t19, &t16);
-#line 35 "tests/golden/run/generics.hero"
+#line 37 "tests/golden/run/generics.hero"
       hero_array_decref(t19); t19 = grown; }
-#line 35 "tests/golden/run/generics.hero"
+#line 37 "tests/golden/run/generics.hero"
     { HeroArrayHeader *grown = hero_array_push(t19, &t17);
-#line 35 "tests/golden/run/generics.hero"
+#line 37 "tests/golden/run/generics.hero"
       hero_array_decref(t19); t19 = grown; }
-#line 35 "tests/golden/run/generics.hero"
+#line 37 "tests/golden/run/generics.hero"
     { HeroArrayHeader *grown = hero_array_push(t19, &t18);
-#line 35 "tests/golden/run/generics.hero"
+#line 37 "tests/golden/run/generics.hero"
       hero_array_decref(t19); t19 = grown; }
-#line 35 "tests/golden/run/generics.hero"
+#line 37 "tests/golden/run/generics.hero"
     t55 = h6_own6;
-#line 35 "tests/golden/run/generics.hero"
+#line 37 "tests/golden/run/generics.hero"
     h6_own6 = t19;
 #line 384 "generics.c"
     hero_array_decref(t55);
-#line 35 "tests/golden/run/generics.hero"
+#line 37 "tests/golden/run/generics.hero"
     t20 = h_generics_last_1b9a87(t19);
-#line 35 "tests/golden/run/generics.hero"
+#line 37 "tests/golden/run/generics.hero"
     hero_print_str(t14);
-#line 35 "tests/golden/run/generics.hero"
+#line 37 "tests/golden/run/generics.hero"
     hero_print_str(t15);
-#line 35 "tests/golden/run/generics.hero"
+#line 37 "tests/golden/run/generics.hero"
     hero_print_int(t20);
-#line 35 "tests/golden/run/generics.hero"
+#line 37 "tests/golden/run/generics.hero"
     hero_print_end();
-#line 38 "tests/golden/run/generics.hero"
+#line 40 "tests/golden/run/generics.hero"
     t21 = INT64_C(1);
-#line 38 "tests/golden/run/generics.hero"
+#line 40 "tests/golden/run/generics.hero"
     t22 = INT64_C(2);
-#line 38 "tests/golden/run/generics.hero"
+#line 40 "tests/golden/run/generics.hero"
     t23 = INT64_C(3);
-#line 38 "tests/golden/run/generics.hero"
+#line 40 "tests/golden/run/generics.hero"
     t24 = hero_array_new(&hero_desc_int, 3);
-#line 38 "tests/golden/run/generics.hero"
+#line 40 "tests/golden/run/generics.hero"
     { HeroArrayHeader *grown = hero_array_push(t24, &t21);
-#line 38 "tests/golden/run/generics.hero"
+#line 40 "tests/golden/run/generics.hero"
       hero_array_decref(t24); t24 = grown; }
-#line 38 "tests/golden/run/generics.hero"
+#line 40 "tests/golden/run/generics.hero"
     { HeroArrayHeader *grown = hero_array_push(t24, &t22);
-#line 38 "tests/golden/run/generics.hero"
+#line 40 "tests/golden/run/generics.hero"
       hero_array_decref(t24); t24 = grown; }
-#line 38 "tests/golden/run/generics.hero"
+#line 40 "tests/golden/run/generics.hero"
     { HeroArrayHeader *grown = hero_array_push(t24, &t23);
-#line 38 "tests/golden/run/generics.hero"
+#line 40 "tests/golden/run/generics.hero"
       hero_array_decref(t24); t24 = grown; }
-#line 38 "tests/golden/run/generics.hero"
+#line 40 "tests/golden/run/generics.hero"
     t56 = h7_own7;
-#line 38 "tests/golden/run/generics.hero"
+#line 40 "tests/golden/run/generics.hero"
     h7_own7 = t24;
 #line 420 "generics.c"
     hero_array_decref(t56);
-#line 38 "tests/golden/run/generics.hero"
+#line 40 "tests/golden/run/generics.hero"
     t25 = h_generics_label;
-#line 38 "tests/golden/run/generics.hero"
+#line 40 "tests/golden/run/generics.hero"
     t26 = h_generics_convert_37fb3fcc(t24, t25);
-#line 38 "tests/golden/run/generics.hero"
+#line 40 "tests/golden/run/generics.hero"
     t57 = h8_own8;
-#line 38 "tests/golden/run/generics.hero"
+#line 40 "tests/golden/run/generics.hero"
     h8_own8 = t26;
 #line 430 "generics.c"
     hero_array_decref(t57);
-#line 38 "tests/golden/run/generics.hero"
+#line 40 "tests/golden/run/generics.hero"
     t27 = HERO_STR_LIT(hero_str_2d);
-#line 38 "tests/golden/run/generics.hero"
+#line 40 "tests/golden/run/generics.hero"
     t28 = hero_str_join(t26, t27);
-#line 38 "tests/golden/run/generics.hero"
+#line 40 "tests/golden/run/generics.hero"
     t58 = h9_own9;
-#line 38 "tests/golden/run/generics.hero"
+#line 40 "tests/golden/run/generics.hero"
     h9_own9 = t28;
 #line 440 "generics.c"
     hero_str_decref(t58);
-#line 38 "tests/golden/run/generics.hero"
+#line 40 "tests/golden/run/generics.hero"
     hero_print_str(t28);
-#line 38 "tests/golden/run/generics.hero"
+#line 40 "tests/golden/run/generics.hero"
     hero_print_end();
-#line 41 "tests/golden/run/generics.hero"
+#line 43 "tests/golden/run/generics.hero"
     t29 = INT64_C(10);
-#line 41 "tests/golden/run/generics.hero"
+#line 43 "tests/golden/run/generics.hero"
     t30 = INT64_C(20);
-#line 41 "tests/golden/run/generics.hero"
+#line 43 "tests/golden/run/generics.hero"
     t31 = hero_array_new(&hero_desc_int, 2);
-#line 41 "tests/golden/run/generics.hero"
+#line 43 "tests/golden/run/generics.hero"
     { HeroArrayHeader *grown = hero_array_push(t31, &t29);
-#line 41 "tests/golden/run/generics.hero"
+#line 43 "tests/golden/run/generics.hero"
       hero_array_decref(t31); t31 = grown; }
-#line 41 "tests/golden/run/generics.hero"
+#line 43 "tests/golden/run/generics.hero"
     { HeroArrayHeader *grown = hero_array_push(t31, &t30);
-#line 41 "tests/golden/run/generics.hero"
+#line 43 "tests/golden/run/generics.hero"
       hero_array_decref(t31); t31 = grown; }
-#line 41 "tests/golden/run/generics.hero"
+#line 43 "tests/golden/run/generics.hero"
     t59 = h10_own10;
-#line 41 "tests/golden/run/generics.hero"
+#line 43 "tests/golden/run/generics.hero"
     h10_own10 = t31;
 #line 464 "generics.c"
     hero_array_decref(t59);
-#line 41 "tests/golden/run/generics.hero"
+#line 43 "tests/golden/run/generics.hero"
     t32 = h_generics_first_1b9a87(t31);
-#line 41 "tests/golden/run/generics.hero"
+#line 43 "tests/golden/run/generics.hero"
     t33 = INT64_C(30);
-#line 41 "tests/golden/run/generics.hero"
+#line 43 "tests/golden/run/generics.hero"
     t34 = INT64_C(40);
-#line 41 "tests/golden/run/generics.hero"
+#line 43 "tests/golden/run/generics.hero"
     t35 = hero_array_new(&hero_desc_int, 2);
-#line 41 "tests/golden/run/generics.hero"
+#line 43 "tests/golden/run/generics.hero"
     { HeroArrayHeader *grown = hero_array_push(t35, &t33);
-#line 41 "tests/golden/run/generics.hero"
+#line 43 "tests/golden/run/generics.hero"
       hero_array_decref(t35); t35 = grown; }
-#line 41 "tests/golden/run/generics.hero"
+#line 43 "tests/golden/run/generics.hero"
     { HeroArrayHeader *grown = hero_array_push(t35, &t34);
-#line 41 "tests/golden/run/generics.hero"
+#line 43 "tests/golden/run/generics.hero"
       hero_array_decref(t35); t35 = grown; }
-#line 41 "tests/golden/run/generics.hero"
+#line 43 "tests/golden/run/generics.hero"
     t60 = h11_own11;
-#line 41 "tests/golden/run/generics.hero"
+#line 43 "tests/golden/run/generics.hero"
     h11_own11 = t35;
 #line 486 "generics.c"
     hero_array_decref(t60);
-#line 41 "tests/golden/run/generics.hero"
+#line 43 "tests/golden/run/generics.hero"
     t36 = h_generics_first_1b9a87(t35);
-#line 41 "tests/golden/run/generics.hero"
+#line 43 "tests/golden/run/generics.hero"
     hero_print_int(t32);
-#line 41 "tests/golden/run/generics.hero"
+#line 43 "tests/golden/run/generics.hero"
     hero_print_int(t36);
-#line 41 "tests/golden/run/generics.hero"
+#line 43 "tests/golden/run/generics.hero"
     hero_print_end();
-#line 45 "tests/golden/run/generics.hero"
+#line 47 "tests/golden/run/generics.hero"
     t37 = HERO_STR_LIT(hero_str_61);
-#line 45 "tests/golden/run/generics.hero"
+#line 47 "tests/golden/run/generics.hero"
     t38 = HERO_STR_LIT(hero_str_62);
-#line 45 "tests/golden/run/generics.hero"
+#line 47 "tests/golden/run/generics.hero"
     t39 = hero_array_new(&hero_desc_str, 2);
-#line 45 "tests/golden/run/generics.hero"
+#line 47 "tests/golden/run/generics.hero"
     { HeroArrayHeader *grown = hero_array_push(t39, &t37);
-#line 45 "tests/golden/run/generics.hero"
+#line 47 "tests/golden/run/generics.hero"
       hero_array_decref(t39); t39 = grown; }
-#line 45 "tests/golden/run/generics.hero"
+#line 47 "tests/golden/run/generics.hero"
     { HeroArrayHeader *grown = hero_array_push(t39, &t38);
-#line 45 "tests/golden/run/generics.hero"
+#line 47 "tests/golden/run/generics.hero"
       hero_array_decref(t39); t39 = grown; }
-#line 45 "tests/golden/run/generics.hero"
+#line 47 "tests/golden/run/generics.hero"
     t61 = h12_own12;
-#line 45 "tests/golden/run/generics.hero"
+#line 47 "tests/golden/run/generics.hero"
     h12_own12 = t39;
 #line 514 "generics.c"
     hero_array_decref(t61);
-#line 45 "tests/golden/run/generics.hero"
+#line 47 "tests/golden/run/generics.hero"
     t40 = HERO_STR_LIT(hero_str_63);
-#line 45 "tests/golden/run/generics.hero"
+#line 47 "tests/golden/run/generics.hero"
     t41 = hero_array_new(&hero_desc_str, 1);
-#line 45 "tests/golden/run/generics.hero"
+#line 47 "tests/golden/run/generics.hero"
     { HeroArrayHeader *grown = hero_array_push(t41, &t40);
-#line 45 "tests/golden/run/generics.hero"
+#line 47 "tests/golden/run/generics.hero"
       hero_array_decref(t41); t41 = grown; }
-#line 45 "tests/golden/run/generics.hero"
+#line 47 "tests/golden/run/generics.hero"
     t62 = h13_own13;
-#line 45 "tests/golden/run/generics.hero"
+#line 47 "tests/golden/run/generics.hero"
     h13_own13 = t41;
 #line 528 "generics.c"
     hero_array_decref(t62);
-#line 45 "tests/golden/run/generics.hero"
+#line 47 "tests/golden/run/generics.hero"
     t42 = hero_array_new(&hero_desc_array, 2);
-#line 45 "tests/golden/run/generics.hero"
+#line 47 "tests/golden/run/generics.hero"
     { HeroArrayHeader *grown = hero_array_push(t42, &t39);
-#line 45 "tests/golden/run/generics.hero"
+#line 47 "tests/golden/run/generics.hero"
       hero_array_decref(t42); t42 = grown; }
-#line 45 "tests/golden/run/generics.hero"
+#line 47 "tests/golden/run/generics.hero"
     { HeroArrayHeader *grown = hero_array_push(t42, &t41);
-#line 45 "tests/golden/run/generics.hero"
+#line 47 "tests/golden/run/generics.hero"
       hero_array_decref(t42); t42 = grown; }
-#line 45 "tests/golden/run/generics.hero"
+#line 47 "tests/golden/run/generics.hero"
     t63 = h14_own14;
-#line 45 "tests/golden/run/generics.hero"
+#line 47 "tests/golden/run/generics.hero"
     h14_own14 = t42;
 #line 544 "generics.c"
     hero_array_decref(t63);
-#line 45 "tests/golden/run/generics.hero"
+#line 47 "tests/golden/run/generics.hero"
     t64 = h0_rows;
 #line 548 "generics.c"
     hero_array_incref(t42);
-#line 45 "tests/golden/run/generics.hero"
+#line 47 "tests/golden/run/generics.hero"
     h0_rows = t42;
 #line 552 "generics.c"
     hero_array_decref(t64);
-#line 46 "tests/golden/run/generics.hero"
+#line 48 "tests/golden/run/generics.hero"
     t43 = h0_rows;
-#line 46 "tests/golden/run/generics.hero"
+#line 48 "tests/golden/run/generics.hero"
     t44 = h_generics_first_4ce7463f(t43);
-#line 46 "tests/golden/run/generics.hero"
+#line 48 "tests/golden/run/generics.hero"
     t65 = h15_own15;
-#line 46 "tests/golden/run/generics.hero"
+#line 48 "tests/golden/run/generics.hero"
     h15_own15 = t44;
 #line 562 "generics.c"
     hero_array_decref(t65);
-#line 46 "tests/golden/run/generics.hero"
+#line 48 "tests/golden/run/generics.hero"
     t45 = hero_array_len(t44);
-#line 46 "tests/golden/run/generics.hero"
+#line 48 "tests/golden/run/generics.hero"
     t46 = HERO_STR_LIT(hero_str_20);
-#line 46 "tests/golden/run/generics.hero"
+#line 48 "tests/golden/run/generics.hero"
     t47 = h0_rows;
-#line 46 "tests/golden/run/generics.hero"
+#line 48 "tests/golden/run/generics.hero"
     t48 = h_generics_first_4ce7463f(t47);
-#line 46 "tests/golden/run/generics.hero"
+#line 48 "tests/golden/run/generics.hero"
     t66 = h16_own16;
-#line 46 "tests/golden/run/generics.hero"
+#line 48 "tests/golden/run/generics.hero"
     h16_own16 = t48;
 #line 576 "generics.c"
     hero_array_decref(t66);
-#line 46 "tests/golden/run/generics.hero"
+#line 48 "tests/golden/run/generics.hero"
     t49 = h_generics_first_1e58d9(t48);
-#line 46 "tests/golden/run/generics.hero"
+#line 48 "tests/golden/run/generics.hero"
     t67 = h17_own17;
-#line 46 "tests/golden/run/generics.hero"
+#line 48 "tests/golden/run/generics.hero"
     h17_own17 = t49;
 #line 584 "generics.c"
     hero_str_decref(t67);
-#line 46 "tests/golden/run/generics.hero"
+#line 48 "tests/golden/run/generics.hero"
     hero_print_int(t45);
-#line 46 "tests/golden/run/generics.hero"
+#line 48 "tests/golden/run/generics.hero"
     hero_print_str(t46);
-#line 46 "tests/golden/run/generics.hero"
+#line 48 "tests/golden/run/generics.hero"
     hero_print_str(t49);
-#line 46 "tests/golden/run/generics.hero"
+#line 48 "tests/golden/run/generics.hero"
     hero_print_end();
-#line 46 "tests/golden/run/generics.hero"
+#line 48 "tests/golden/run/generics.hero"
     t68 = h0_rows;
 #line 596 "generics.c"
     hero_array_decref(t68);
-#line 46 "tests/golden/run/generics.hero"
+#line 48 "tests/golden/run/generics.hero"
     t69 = h1_own1;
 #line 600 "generics.c"
     hero_array_decref(t69);
-#line 46 "tests/golden/run/generics.hero"
+#line 48 "tests/golden/run/generics.hero"
     t70 = h2_own2;
 #line 604 "generics.c"
     hero_str_decref(t70);
-#line 46 "tests/golden/run/generics.hero"
+#line 48 "tests/golden/run/generics.hero"
     t71 = h3_own3;
 #line 608 "generics.c"
     hero_array_decref(t71);
-#line 46 "tests/golden/run/generics.hero"
+#line 48 "tests/golden/run/generics.hero"
     t72 = h4_own4;
 #line 612 "generics.c"
     hero_array_decref(t72);
-#line 46 "tests/golden/run/generics.hero"
+#line 48 "tests/golden/run/generics.hero"
     t73 = h5_own5;
 #line 616 "generics.c"
     hero_str_decref(t73);
-#line 46 "tests/golden/run/generics.hero"
+#line 48 "tests/golden/run/generics.hero"
     t74 = h6_own6;
 #line 620 "generics.c"
     hero_array_decref(t74);
-#line 46 "tests/golden/run/generics.hero"
+#line 48 "tests/golden/run/generics.hero"
     t75 = h7_own7;
 #line 624 "generics.c"
     hero_array_decref(t75);
-#line 46 "tests/golden/run/generics.hero"
+#line 48 "tests/golden/run/generics.hero"
     t76 = h8_own8;
 #line 628 "generics.c"
     hero_array_decref(t76);
-#line 46 "tests/golden/run/generics.hero"
+#line 48 "tests/golden/run/generics.hero"
     t77 = h9_own9;
 #line 632 "generics.c"
     hero_str_decref(t77);
-#line 46 "tests/golden/run/generics.hero"
+#line 48 "tests/golden/run/generics.hero"
     t78 = h10_own10;
 #line 636 "generics.c"
     hero_array_decref(t78);
-#line 46 "tests/golden/run/generics.hero"
+#line 48 "tests/golden/run/generics.hero"
     t79 = h11_own11;
 #line 640 "generics.c"
     hero_array_decref(t79);
-#line 46 "tests/golden/run/generics.hero"
+#line 48 "tests/golden/run/generics.hero"
     t80 = h12_own12;
 #line 644 "generics.c"
     hero_array_decref(t80);
-#line 46 "tests/golden/run/generics.hero"
+#line 48 "tests/golden/run/generics.hero"
     t81 = h13_own13;
 #line 648 "generics.c"
     hero_array_decref(t81);
-#line 46 "tests/golden/run/generics.hero"
+#line 48 "tests/golden/run/generics.hero"
     t82 = h14_own14;
 #line 652 "generics.c"
     hero_array_decref(t82);
-#line 46 "tests/golden/run/generics.hero"
+#line 48 "tests/golden/run/generics.hero"
     t83 = h15_own15;
 #line 656 "generics.c"
     hero_array_decref(t83);
-#line 46 "tests/golden/run/generics.hero"
+#line 48 "tests/golden/run/generics.hero"
     t84 = h16_own16;
 #line 660 "generics.c"
     hero_array_decref(t84);
-#line 46 "tests/golden/run/generics.hero"
+#line 48 "tests/golden/run/generics.hero"
     t85 = h17_own17;
 #line 664 "generics.c"
     hero_str_decref(t85);
@@ -821,91 +821,91 @@ bb0:
     h2_out = t1;
 #line 823 "generics.c"
     hero_array_decref(t21);
-#line 25 "tests/golden/run/generics.hero"
+#line 26 "tests/golden/run/generics.hero"
     t2 = h0_xs;
-#line 25 "tests/golden/run/generics.hero"
+#line 26 "tests/golden/run/generics.hero"
     t22 = h3_xs0;
 #line 829 "generics.c"
     hero_array_incref(t2);
-#line 25 "tests/golden/run/generics.hero"
+#line 26 "tests/golden/run/generics.hero"
     h3_xs0 = t2;
 #line 833 "generics.c"
     hero_array_decref(t22);
-#line 25 "tests/golden/run/generics.hero"
+#line 26 "tests/golden/run/generics.hero"
     t3 = INT64_C(0);
-#line 25 "tests/golden/run/generics.hero"
+#line 26 "tests/golden/run/generics.hero"
     h4_i0 = t3;
-#line 25 "tests/golden/run/generics.hero"
+#line 26 "tests/golden/run/generics.hero"
     goto bb1;
-#line 25 "tests/golden/run/generics.hero"
+#line 26 "tests/golden/run/generics.hero"
 bb1:
-#line 25 "tests/golden/run/generics.hero"
+#line 26 "tests/golden/run/generics.hero"
     t4 = h4_i0;
-#line 25 "tests/golden/run/generics.hero"
+#line 26 "tests/golden/run/generics.hero"
     t5 = h3_xs0;
-#line 25 "tests/golden/run/generics.hero"
+#line 26 "tests/golden/run/generics.hero"
     t6 = hero_array_len(t5);
-#line 25 "tests/golden/run/generics.hero"
+#line 26 "tests/golden/run/generics.hero"
     t7 = t4 < t6;
-#line 25 "tests/golden/run/generics.hero"
+#line 26 "tests/golden/run/generics.hero"
     if (t7) goto bb2; else goto bb4;
-#line 25 "tests/golden/run/generics.hero"
+#line 26 "tests/golden/run/generics.hero"
 bb2:
-#line 25 "tests/golden/run/generics.hero"
+#line 26 "tests/golden/run/generics.hero"
     t8 = h3_xs0;
-#line 25 "tests/golden/run/generics.hero"
+#line 26 "tests/golden/run/generics.hero"
     t9 = h4_i0;
-#line 25 "tests/golden/run/generics.hero"
+#line 26 "tests/golden/run/generics.hero"
     t10 = *(int64_t const *)hero_array_at(t8, t9);
-#line 25 "tests/golden/run/generics.hero"
+#line 26 "tests/golden/run/generics.hero"
     h5_x = t10;
-#line 26 "tests/golden/run/generics.hero"
+#line 27 "tests/golden/run/generics.hero"
     t12 = h1_f;
-#line 26 "tests/golden/run/generics.hero"
+#line 27 "tests/golden/run/generics.hero"
     t13 = h5_x;
-#line 26 "tests/golden/run/generics.hero"
+#line 27 "tests/golden/run/generics.hero"
     t14 = t12(t13);
-#line 26 "tests/golden/run/generics.hero"
+#line 27 "tests/golden/run/generics.hero"
     t23 = h7_own7;
-#line 26 "tests/golden/run/generics.hero"
+#line 27 "tests/golden/run/generics.hero"
     h7_own7 = t14;
 #line 873 "generics.c"
     hero_str_decref(t23);
-#line 26 "tests/golden/run/generics.hero"
-    hero_array_push_owned(&h2_out, &t14);
-#line 26 "tests/golden/run/generics.hero"
-    goto bb3;
-#line 26 "tests/golden/run/generics.hero"
-bb3:
-#line 25 "tests/golden/run/generics.hero"
-    t16 = h4_i0;
-#line 25 "tests/golden/run/generics.hero"
-    t17 = INT64_C(1);
-#line 25 "tests/golden/run/generics.hero"
-    if (__builtin_add_overflow(t16, t17, &t18)) hero_panic_overflow();
-#line 25 "tests/golden/run/generics.hero"
-    h4_i0 = t18;
-#line 25 "tests/golden/run/generics.hero"
-    goto bb1;
-#line 25 "tests/golden/run/generics.hero"
-bb4:
 #line 27 "tests/golden/run/generics.hero"
+    hero_array_push_owned(&h2_out, &t14);
+#line 27 "tests/golden/run/generics.hero"
+    goto bb3;
+#line 27 "tests/golden/run/generics.hero"
+bb3:
+#line 26 "tests/golden/run/generics.hero"
+    t16 = h4_i0;
+#line 26 "tests/golden/run/generics.hero"
+    t17 = INT64_C(1);
+#line 26 "tests/golden/run/generics.hero"
+    if (__builtin_add_overflow(t16, t17, &t18)) hero_panic_overflow();
+#line 26 "tests/golden/run/generics.hero"
+    h4_i0 = t18;
+#line 26 "tests/golden/run/generics.hero"
+    goto bb1;
+#line 26 "tests/golden/run/generics.hero"
+bb4:
+#line 29 "tests/golden/run/generics.hero"
     t19 = h2_out;
 #line 895 "generics.c"
     hero_array_incref(t19);
-#line 27 "tests/golden/run/generics.hero"
+#line 29 "tests/golden/run/generics.hero"
     t24 = h2_out;
 #line 899 "generics.c"
     hero_array_decref(t24);
-#line 27 "tests/golden/run/generics.hero"
+#line 29 "tests/golden/run/generics.hero"
     t25 = h3_xs0;
 #line 903 "generics.c"
     hero_array_decref(t25);
-#line 27 "tests/golden/run/generics.hero"
+#line 29 "tests/golden/run/generics.hero"
     t26 = h6_own6;
 #line 907 "generics.c"
     hero_array_decref(t26);
-#line 27 "tests/golden/run/generics.hero"
+#line 29 "tests/golden/run/generics.hero"
     t27 = h7_own7;
 #line 911 "generics.c"
     hero_str_decref(t27);

@@ -27,8 +27,10 @@ use checker
 
 function call(@w: emit_writer.Writer, p: ir_state.Program, f: ir_state.Function, c: check_state.Checked, names: emit_ctype.Names, s: source.Source, decls: [ast.Decl], callee: ir.Callee, run: ir.Run, arguments: [str], target: str?, instance: [i64])
     assign: str @ ""
+
     if !target.is_err()
         assign @ target.must() + " = "
+
     match callee
         .heroes_fn h =>
             # THE INSTANCE, NOT THE TEMPLATE: monomorphisation deleted
@@ -39,57 +41,82 @@ function call(@w: emit_writer.Writer, p: ir_state.Program, f: ir_state.Function,
             # handed to a zero-argument _Noreturn, exit 2, the compiler
             # blaming itself (panel 084's class).
             found: str? @ fail("none", "no instance")
+
             for candidate in p.functions
                 if candidate.decl == h.decl && candidate.instance == instance
                     found @ ok(emit_signature.instance_name(candidate, c, s, decls))
+
             if found.is_err()
                 emit_writer.line(@w, text: "    hero_unreachable(); /* no instance for this call — compiler bug */")
             else
                 emit_writer.line(@w, text: "    " + assign + found.must() + "(" + arguments.join(", ") + ");")
         .builtin_fn bt =>
             builtin_name = builtins.table()[bt.at].name
+
             if builtin_name == "print"
                 print_call(@w, f, c, run: run, arguments: arguments)
                 return
+
             # to_<width> is not a call: it builds a T? generated for
             # this result type, which no runtime function can return.
             if builtin_name.len() > 3 && builtin_name.slice(from: 0, to: 3) == "to_" && !target.is_err()
                 if !emit_convert.kind_named(builtin_name.slice(from: 3, to: builtin_name.len())).is_err()
-                    emit_convert.width(@w, c, names, f, name: builtin_name, run: run, arguments: arguments, into: target.must())
+                    emit_convert.width(
+                        @w,
+                        c,
+                        names,
+                        f,
+                        name: builtin_name,
+                        run: run,
+                        arguments: arguments,
+                        into: target.must()
+                    )
                     return
             in_emitted: bool @ false
+
             for one in emit_builtins.EMITTED
                 if one == builtin_name
                     in_emitted @ true
+
             if in_emitted
                 entry = emit_builtins.entry(name: builtin_name, f: f, c: c, run: run)
+
                 # push's second argument is a PLACE, not a value: the
                 # runtime copies through the element descriptor, the
                 # only way one function can append an i64 and a Point.
                 written: [str] @ []
                 at: i64 @ 0
+
                 for text in arguments
                     if builtin_name == "push" && at == 1
                         written @ written.push("&" + text)
                     else
                         written @ written.push(text)
                     at @ at + 1
+
                 emit_writer.line(@w, text: "    " + assign + entry + "(" + written.join(", ") + ");")
                 return
+
             # Refused by the gate; the arm exists so a new callee kind
             # breaks this module.
             emit_writer.line(@w, text: "    hero_unreachable(); /* the gate refuses this callee */")
         # A call through a function value: C's own indirect call — no
         # dereference, no cast, and clang type-checks the arguments
         # against the typedef's parameter list.
+
         .indirect ind =>
-            emit_writer.line(@w, text: "    " + assign + emit_mangle.value(ind.value) + "(" + arguments.join(", ") + ");")
+            emit_writer.line(
+                @w,
+                text: "    " + assign + emit_mangle.value(ind.value) + "(" + arguments.join(", ") + ");"
+            )
         # UNMANGLED, BY DESIGN (CLAUDE.md §7): the name in the .hero
         # file is the C function's own name, and the #include is what
         # declares it — the call is checked against the real header.
+
         .extern_fn e =>
             extern_name = source.span_text(s, decls[e.decl].name)
             guarded = guard_cstr_arguments(p, c, decl: e.decl, arguments: arguments)
+
             # The result half of the const cast: sqlite3_column_blob
             # returns const void *, and without the cast the assignment
             # violates C11 6.5.16.1 at exit 2 on ladder rung 3's own
@@ -110,16 +137,19 @@ function call(@w: emit_writer.Writer, p: ir_state.Program, f: ir_state.Function,
             # and the compiler's own warning must never be routed to the
             # author, under any option this sitting weighed.
             cast: str @ ""
+
             if assign.len() == 0
                 cast @ "(void)"
+
             for candidate in p.functions
                 if candidate.decl == e.decl && assign.len() > 0
                     match check_table.get(c.types, candidate.result)
-                        .ptr => cast @ "(void *)"
-                        .cstr => cast @ "(const char *)"
-                        .int_ty | .float_ty | .bool | .str | .unit => cast @ cast
+                        .ptr                                                       => cast @ "(void *)"
+                        .cstr                                                      => cast @ "(const char *)"
+                        .int_ty | .float_ty | .bool | .str | .unit                 => cast @ cast
                         .array | .fixed | .map | .fallible | .function_ty | .named => cast @ cast
-                        .case_ty | .failure | .generic | .error => cast @ cast
+                        .case_ty | .failure | .generic | .error                    => cast @ cast
+
             emit_writer.line(@w, text: "    " + assign + cast + extern_name + "(" + guarded.join(", ") + ");")
 
 # print is a compiler form, not a function value (panel 006): one
@@ -130,13 +160,15 @@ function call(@w: emit_writer.Writer, p: ir_state.Program, f: ir_state.Function,
 # surface on every FFI program.
 function print_call(@w: emit_writer.Writer, f: ir_state.Function, c: check_state.Checked, run: ir.Run, arguments: [str])
     at: i64 @ 0
+
     for arg in ir_state.args_of(f, run)
         match arg
             .value_arg v =>
                 printer: str @ ""
+
                 match check_table.get(c.types, ir_state.value_type(f, v.value))
                     .bool => printer @ "hero_print_bool"
-                    .str => printer @ "hero_print_str"
+                    .str  => printer @ "hero_print_str"
                     .float_ty fk =>
                         match fk.kind
                             .f32 => printer @ "hero_print_f32"
@@ -145,24 +177,33 @@ function print_call(@w: emit_writer.Writer, f: ir_state.Function, c: check_state
                     # 2^64-1 read as signed is -1, which is precisely
                     # what print(SIZE_MAX) produced when panel 042
                     # measured it. The other seven widen losslessly.
+
                     .int_ty ik =>
                         match ik.kind
-                            .u64 => printer @ "hero_print_uint"
+                            .u64                                         => printer @ "hero_print_uint"
                             .i8 | .i16 | .i32 | .i64 | .u8 | .u16 | .u32 => printer @ "hero_print_int"
                     # The loud direction: this was a catch-all to
                     # hero_print_int, covering nothing but a future
                     # mistake — the checker accepts exactly these.
+
                     .ptr | .cstr | .unit | .array | .fixed | .map => printer @ printer
-                    .fallible | .function_ty | .named | .case_ty => printer @ printer
-                    .failure | .generic | .error => printer @ printer
+                    .fallible | .function_ty | .named | .case_ty  => printer @ printer
+                    .failure | .generic | .error                  => printer @ printer
+
                 if printer == ""
-                    emit_writer.line(@w, text: "    hero_unreachable(); /* print accepts an integer, a float, bool or str */")
+                    emit_writer.line(
+                        @w,
+                        text: "    hero_unreachable(); /* print accepts an integer, a float, bool or str */"
+                    )
                 else
                     emit_writer.line(@w, text: "    " + printer + "(" + arguments[at] + ");")
             # print(@x) cannot be written: §4.8's marker is for declared
             # parameters, and print declares none.
+
             .inout_arg => emit_writer.line(@w, text: "    hero_unreachable(); /* print declares no @ parameter */")
+
         at @ at + 1
+
     emit_writer.line(@w, text: "    hero_print_end();")
 
 # Every cstr argument of an extern call, wrapped in the runtime's null
@@ -180,33 +221,41 @@ function print_call(@w: emit_writer.Writer, f: ir_state.Function, c: check_state
 # protection that is there (author decision 2026-08-15).
 function guard_cstr_arguments(p: ir_state.Program, c: check_state.Checked, decl: i64, arguments: [str]) -> [str]
     callee: ir_state.Function? @ fail("none", "not lowered")
+
     for candidate in p.functions
         if candidate.decl == decl
             callee @ ok(candidate)
+
     if callee.is_err()
         return arguments
     out: [str] @ []
     index: i64 @ 0
+
     for argument in arguments
         is_cstr: bool @ false
         is_out: bool @ false
+
         if index < callee.must().params.len()
             slot = callee.must().slots[callee.must().params[index]]
+
             match check_table.get(c.types, slot.ty)
-                .cstr => is_cstr @ true
-                .int_ty | .float_ty | .bool | .str | .ptr | .unit => is_cstr @ is_cstr
+                .cstr                                                      => is_cstr @ true
+                .int_ty | .float_ty | .bool | .str | .ptr | .unit          => is_cstr @ is_cstr
                 .array | .fixed | .map | .fallible | .function_ty | .named => is_cstr @ is_cstr
-                .case_ty | .failure | .generic | .error => is_cstr @ is_cstr
+                .case_ty | .failure | .generic | .error                    => is_cstr @ is_cstr
+
             match slot.kind
                 .param_slot ps =>
                     if ps.mutable
                         is_out @ true
                 .local_slot | .synthetic_slot => is_out @ is_out
+
         if is_cstr && !is_out
             out @ out.push("hero_cstr_nonnull(" + argument + ")")
         else
             out @ out.push(argument)
         index @ index + 1
+
     return out
 
 ## Tests
@@ -220,7 +269,22 @@ test "print composes monomorphic printers, and u64 gets its own"
     assert c.diagnostics.len() == 0
     u64_id = check_table.lookup(c.types, .int_ty(kind: .u64)).must()
     str_id = check_table.str_ty(c.types)
-    f = ir_state.Function(name: "t", decl: 0, kind: .function_kind, generics: [], params: [], result: 0, slots: [], blocks: [], values: [u64_id, str_id], arguments: [.value_arg(value: 0), .value_arg(value: 1)], steps: [], instance: [], call_instances: {}, span: token.Span(start: 0, end: 1))
+    f = ir_state.Function(
+        name: "t",
+        decl: 0,
+        kind: .function_kind,
+        generics: [],
+        params: [],
+        result: 0,
+        slots: [],
+        blocks: [],
+        values: [u64_id, str_id],
+        arguments: [.value_arg(value: 0), .value_arg(value: 1)],
+        steps: [],
+        instance: [],
+        call_instances: {},
+        span: token.Span(start: 0, end: 1)
+    )
     w: emit_writer.Writer @ emit_writer.new_writer("t")
     print_call(@w, f, c, run: ir.Run(start: 0, length: 2), arguments: ["t0", "t1"])
     got = emit_writer.finish(w)
@@ -237,14 +301,88 @@ test "a Heroes call names the copy, an extern stays bare with its cstr guarded"
     int_id = check_table.int_ty_id(c.types)
     cstr_id = check_table.lookup(c.types, .cstr).must()
     heroes_slots: [ir_state.Slot] = [ir_state.Slot(name: "n", ty: int_id, kind: .param_slot(mutable: false))]
-    heroes_f = ir_state.Function(name: "double_it", decl: 1, kind: .function_kind, generics: [], params: [0], result: int_id, slots: heroes_slots, blocks: [], values: [], arguments: [], steps: [], instance: [], call_instances: {}, span: token.Span(start: 40, end: 41))
-    extern_slots: [ir_state.Slot] = [ir_state.Slot(name: "haystack", ty: cstr_id, kind: .param_slot(mutable: false)), ir_state.Slot(name: "needle", ty: cstr_id, kind: .param_slot(mutable: false))]
-    extern_f = ir_state.Function(name: "strstr", decl: 0, kind: .extern_kind, generics: [], params: [0, 1], result: cstr_id, slots: extern_slots, blocks: [], values: [], arguments: [], steps: [], instance: [], call_instances: {}, span: token.Span(start: 0, end: 1))
+    heroes_f = ir_state.Function(
+        name: "double_it",
+        decl: 1,
+        kind: .function_kind,
+        generics: [],
+        params: [0],
+        result: int_id,
+        slots: heroes_slots,
+        blocks: [],
+        values: [],
+        arguments: [],
+        steps: [],
+        instance: [],
+        call_instances: {},
+        span: token.Span(start: 40, end: 41)
+    )
+    extern_slots: [ir_state.Slot] = [
+        ir_state.Slot(name: "haystack", ty: cstr_id, kind: .param_slot(mutable: false))
+        ir_state.Slot(name: "needle", ty: cstr_id, kind: .param_slot(mutable: false))
+    ]
+    extern_f = ir_state.Function(
+        name: "strstr",
+        decl: 0,
+        kind: .extern_kind,
+        generics: [],
+        params: [0, 1],
+        result: cstr_id,
+        slots: extern_slots,
+        blocks: [],
+        values: [],
+        arguments: [],
+        steps: [],
+        instance: [],
+        call_instances: {},
+        span: token.Span(start: 0, end: 1)
+    )
     p = ir_state.Program(phase: .lowered, functions: [extern_f, heroes_f], strings: [])
-    caller = ir_state.Function(name: "main", decl: 2, kind: .function_kind, generics: [], params: [], result: 0, slots: [], blocks: [], values: [int_id], arguments: [], steps: [], instance: [], call_instances: {}, span: token.Span(start: 60, end: 61))
+    caller = ir_state.Function(
+        name: "main",
+        decl: 2,
+        kind: .function_kind,
+        generics: [],
+        params: [],
+        result: 0,
+        slots: [],
+        blocks: [],
+        values: [int_id],
+        arguments: [],
+        steps: [],
+        instance: [],
+        call_instances: {},
+        span: token.Span(start: 60, end: 61)
+    )
     empty_instance: [i64] = []
     w: emit_writer.Writer @ emit_writer.new_writer("t")
-    call(@w, p, caller, c, names, s, parsed.decls, callee: .heroes_fn(decl: 1), run: ir.Run(start: 0, length: 0), arguments: ["t1"], target: ok("t2"), instance: empty_instance)
-    call(@w, p, caller, c, names, s, parsed.decls, callee: .extern_fn(decl: 0), run: ir.Run(start: 0, length: 0), arguments: ["t3", "t4"], target: ok("t5"), instance: empty_instance)
+    call(
+        @w,
+        p,
+        caller,
+        c,
+        names,
+        s,
+        parsed.decls,
+        callee: .heroes_fn(decl: 1),
+        run: ir.Run(start: 0, length: 0),
+        arguments: ["t1"],
+        target: ok("t2"),
+        instance: empty_instance
+    )
+    call(
+        @w,
+        p,
+        caller,
+        c,
+        names,
+        s,
+        parsed.decls,
+        callee: .extern_fn(decl: 0),
+        run: ir.Run(start: 0, length: 0),
+        arguments: ["t3", "t4"],
+        target: ok("t5"),
+        instance: empty_instance
+    )
     got = emit_writer.finish(w)
     assert got == "    t2 = h_t_double_it(t1);\n    t5 = (const char *)strstr(hero_cstr_nonnull(t3), hero_cstr_nonnull(t4));\n"

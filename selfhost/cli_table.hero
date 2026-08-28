@@ -143,12 +143,15 @@ function retired(word: str) -> str?
 function retired_flag(command: str, arg: str) -> str?
     if command == "fmt" && (arg == "--write" || arg == "-w")
         return ok("--in-place")
+
     if command == "lex" && arg == "--tokens"
         return ok("--dump-tokens")
-    if command == "build" && arg == "--no-line"
-        return ok("--emit-c` alone (the `#line` directives are the artifact; the emitter's own tests are what read C without them")
-    return fail("none", "not a retired flag")
 
+    if command == "build" && arg == "--no-line"
+        return ok(
+            "--emit-c` alone (the `#line` directives are the artifact; the emitter's own tests are what read C without them"
+        )
+    return fail("none", "not a retired flag")
 
 ## The exit contract
 
@@ -173,10 +176,10 @@ variant Exit
 
 function exit_code(e: Exit) -> i64
     return match e
-        .ok_exit => 0
+        .ok_exit          => 0
         .diagnostics_exit => 1
-        .failed_exit => 2
-        .program_exit p => p.status
+        .failed_exit      => 2
+        .program_exit p   => p.status
 
 ## Tests
 
@@ -185,26 +188,32 @@ test "the table is the pipeline's order and the flags carry their shapes"
     assert table.len() == 11
     assert table[0].name == "lex"
     assert table[3].name == "build"
+
     # -o takes a value; --include repeats and names a directory.
     o_found: bool @ false
     inc_found: bool @ false
+
     for f in table[3].flags
         if f.spelling == "-o"
             assert f.value
             assert !f.repeatable
             o_found @ true
+
         if f.spelling == "--include"
             assert f.value
             assert f.repeatable
             assert f.directory
             inc_found @ true
+
     assert o_found
     assert inc_found
+
     # The retirements: the language's own treatment of a foreign word.
     assert retired(word: "run").is_err()
     assert retired_flag(command: "fmt", arg: "--write").must() == "--in-place"
     assert retired_flag(command: "lex", arg: "--tokens").must() == "--dump-tokens"
     assert retired_flag(command: "build", arg: "--sanitize").is_err()
+
     # The contract, in numbers.
     assert exit_code(.ok_exit) == 0
     assert exit_code(.diagnostics_exit) == 1

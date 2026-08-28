@@ -46,19 +46,26 @@ use ir_lower
 # name is not, so the macro cannot eat its own definition).
 function is_extern_constant(decls: [ast.Decl], f: ir_state.Function) -> bool
     match decls[f.decl].kind
-        .constant_decl k => return !k.header.is_err()
+        .constant_decl k                                           => return !k.header.is_err()
         .function_decl | .record_decl | .variant_decl | .test_decl => return false
+
     return false
 
 function definition(@w: emit_writer.Writer, p: ir_state.Program, c: check_state.Checked, names: emit_ctype.Names, s: source.Source, decls: [ast.Decl], f: ir_state.Function)
     emit_writer.blank(@w)
+
     # The signature is pointed at the author's declaration: a clang
     # error about a parameter type lands on the line that wrote it.
     emit_writer.at_span(@w, s, offset: f.span.start)
+
     # The instance's types, above it: the hash in the name does not
     # carry them and a reader of --emit-c needs them (panel 029 R5).
     if f.instance.len() > 0
-        emit_writer.line(@w, text: "/* " + f.name + "<" + emit_signature.render_instance(c, s, decls, bound: f.instance) + "> */")
+        emit_writer.line(
+            @w,
+            text: "/* " + f.name + "<" + emit_signature.render_instance(c, s, decls, bound: f.instance) + "> */"
+        )
+
     if is_extern_constant(decls, f)
         extern_name = source.span_text(s, decls[f.decl].name)
         emit_writer.line(@w, text: emit_signature.signature(f, c, names, s, decls) + " {")
@@ -73,13 +80,17 @@ function definition(@w: emit_writer.Writer, p: ir_state.Program, c: check_state.
     prologue(@w, c, names, f, live: live, read: read)
     emit_writer.line(@w, text: "    goto " + emit_mangle.block(0) + ";")
     index: i64 @ 0
+
     for blk in f.blocks
         if live[index]
             emit_writer.line(@w, text: emit_mangle.block(index) + ":")
+
             for one in blk.insts
                 emit_inst.emit(@w, p, c, names, s, decls, f, inst: one, live_values: read)
+
             emit_term.emit(@w, f, c, term: blk.term)
         index @ index + 1
+
     emit_writer.at_generated(@w)
     emit_writer.line(@w, text: "}")
 
@@ -88,76 +99,107 @@ function definition(@w: emit_writer.Writer, p: ir_state.Program, c: check_state.
 function reachable(f: ir_state.Function) -> [bool]
     live: [bool] @ []
     index: i64 @ 0
+
     for blk in f.blocks
         live @ live.push(index == 0 || blk.preds.len() > 0)
         index @ index + 1
+
     return live
 
 function prologue(@w: emit_writer.Writer, c: check_state.Checked, names: emit_ctype.Names, f: ir_state.Function, live: [bool], read: {i64: bool})
     index: i64 @ 0
+
     for slot in f.slots
         # A parameter is already declared by the signature. A mutable
         # one is declared here instead: the pointer is the parameter,
         # and the slot is the local copy §4.8 says the callee works on.
         is_param: bool @ false
+
         for param in f.params
             if param == index
                 is_param @ true
+
         mutable: bool @ false
+
         match slot.kind
             .param_slot ps =>
                 if ps.mutable
                     mutable @ true
             .local_slot | .synthetic_slot => mutable @ mutable
+
         if is_param && !mutable
             index @ index + 1
             continue
         spelled = emit_ctype.c_type(names, c: c, ty: slot.ty)
+
         if !spelled.is_err()
             initialiser: str @ ""
+
             if ir_layout.is_refcounted(c, slot.ty)
                 initialiser @ " = {0}"
+
             # A binding the author discarded is told to C that it was on
             # purpose: `_ = v` is the only way to reach a written-never-
             # read slot, so the attribute says the silence is deliberate.
             # A refcounted slot never gets it, and that FALLS OUT: the
             # exit sweep loads it to decref, so it is read.
             deliberate: str @ ""
+
             if !emit_unread.slot_is_read(f, live, read: read, slot: index)
                 deliberate @ "__attribute__((unused)) "
-            emit_writer.line(@w, text: "    " + deliberate + spelled.must() + " " + emit_mangle.slot(index: index, name: slot.name) + initialiser + ";")
+            emit_writer.line(
+                @w,
+                text: "    " + deliberate + spelled.must() + " " + emit_mangle.slot(index: index, name: slot.name) + initialiser + ";"
+            )
         index @ index + 1
+
     value_at: i64 @ 0
+
     for ty in f.values
         keep: bool @ true
+
         if emit_ctype.is_unit(c, ty: ty)
             keep @ false
+
         if keep && !emit_unread.assigned(f, live, value: value_at)
             keep @ false
+
         # A discarded result is never assigned either, so declaring it
         # would be the unused variable this rule exists to stop. The two
         # decisions agree by reading the same set.
         if keep && emit_unread.discarded(f, live, value: value_at, read: read)
             keep @ false
+
         if keep
             spelled = emit_ctype.c_type(names, c: c, ty: ty)
+
             if !spelled.is_err()
                 initialiser: str @ ""
+
                 if ir_layout.is_refcounted(c, ty)
                     initialiser @ " = {0}"
-                emit_writer.line(@w, text: "    " + spelled.must() + " " + emit_mangle.value(value_at) + initialiser + ";")
+                emit_writer.line(
+                    @w,
+                    text: "    " + spelled.must() + " " + emit_mangle.value(value_at) + initialiser + ";"
+                )
         value_at @ value_at + 1
+
     # Copy-in, after every declaration: §4.8's first half.
     for param in f.params
         declared = f.slots[param]
         mutable: bool @ false
+
         match declared.kind
             .param_slot ps =>
                 if ps.mutable
                     mutable @ true
             .local_slot | .synthetic_slot => mutable @ mutable
+
         if mutable
-            emit_writer.line(@w, text: "    " + emit_mangle.slot(index: param, name: declared.name) + " = *" + emit_mangle.out_param(index: param, name: declared.name) + ";")
+            emit_writer.line(
+                @w,
+                text: "    " + emit_mangle.slot(index: param, name: declared.name) + " = *" + emit_mangle.out_param(index: param, name: declared.name) + ";"
+            )
 
 ## Tests
 
@@ -166,10 +208,12 @@ function has(text: str, needle: str) -> bool
         return true
     stop = text.len() - needle.len()
     at: i64 @ 0
+
     while at <= stop
         if text.slice(from: at, to: at + needle.len()) == needle
             return true
         at @ at + 1
+
     return false
 
 test "a whole function prints: signature, prologue, goto bb0, blocks, close"
@@ -193,6 +237,7 @@ test "a whole function prints: signature, prologue, goto bb0, blocks, close"
     assert has(text: got, needle: "bb0:")
     assert has(text: got, needle: "    if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow();")
     assert has(text: got, needle: "    return t3;")
+
     # Deterministic: the same input prints the same bytes.
     again: emit_writer.Writer @ emit_writer.new_writer("t")
     definition(@again, low.program, c, names, s, parsed.decls, low.program.functions[0])
@@ -207,10 +252,17 @@ test "an unreachable join is omitted entirely, label and all"
     assert c.diagnostics.len() == 0
     low = ir_lower.lower(parsed.tree, out, c, s, parsed.decls)
     names0 = emit_ctype.new_names(s, parsed.decls)
-    names = emit_ctype.with_functions(emit_ctype.with_options(names0, c: c, s: s, decls: parsed.decls), c: c, s: s, decls: parsed.decls, p: low.program)
+    names = emit_ctype.with_functions(
+        emit_ctype.with_options(names0, c: c, s: s, decls: parsed.decls),
+        c: c,
+        s: s,
+        decls: parsed.decls,
+        p: low.program
+    )
     w: emit_writer.Writer @ emit_writer.new_writer("t")
     definition(@w, low.program, c, names, s, parsed.decls, low.program.functions[0])
     got = emit_writer.finish(w)
+
     # The join block (bb1, created before the arms) has no preds: its
     # label must not appear.
     assert !has(text: got, needle: "bb1:")

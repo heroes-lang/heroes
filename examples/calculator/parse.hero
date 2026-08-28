@@ -71,8 +71,10 @@ function factor(@p: Parse) -> Expr?
 # An expression followed by its closing paren.
 function group(@p: Parse) -> Expr?
     inner = expression(@p)?
+
     if p.parse_at_end()
         return fail(ERR_UNCLOSED_PAREN, "missing closing paren")
+
     if p.parse_here() != .rparen
         return fail(ERR_UNCLOSED_PAREN, "missing closing paren")
     parse_advance(@p)

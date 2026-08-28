@@ -29,7 +29,7 @@ record Point
 function dist2(a: Point, b: Point) -> i64
     dx = b.x - a.x
     dy = b.y - a.y
-    return dx*dx + dy*dy
+    return dx * dx + dy * dy
 
 test "3-4-5 triangle"
     assert dist2(a: Point(x: 0, y: 0), b: Point(x: 3, y: 4)) == 25

@@ -24,7 +24,7 @@
 # `.hero` line, and the parameter named as the author named it.
 
 extern "stdio.h"
-    function putchar(c: i64) -> i64      #~ ffi_parameter_type
+    function putchar(c: i64) -> i64  #~ ffi_parameter_type
 
 function main()
     print(putchar(65))

@@ -191,63 +191,63 @@ bb0:
     t1 = INT64_C(0);
 #line 19 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     h1_n = t1;
-#line 20 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
+#line 21 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     t2 = h0_xs;
-#line 20 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
+#line 21 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     t15 = h2_xs0;
 #line 199 "regressionwildcardbindsnothing.c"
     hero_array_incref(t2);
-#line 20 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
+#line 21 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     h2_xs0 = t2;
 #line 203 "regressionwildcardbindsnothing.c"
     hero_array_decref(t15);
-#line 20 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
+#line 21 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     t3 = INT64_C(0);
-#line 20 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
+#line 21 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     h3_i0 = t3;
-#line 20 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
+#line 21 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     goto bb1;
-#line 20 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
+#line 21 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
 bb1:
-#line 20 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
+#line 21 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     t4 = h3_i0;
-#line 20 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
+#line 21 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     t5 = h2_xs0;
-#line 20 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
+#line 21 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     t6 = hero_array_len(t5);
-#line 20 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
+#line 21 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     t7 = t4 < t6;
-#line 20 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
+#line 21 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     if (t7) goto bb2; else goto bb4;
-#line 20 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
+#line 21 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
 bb2:
-#line 21 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
+#line 22 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     t8 = h1_n;
-#line 21 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
+#line 22 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     t9 = INT64_C(1);
-#line 21 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
+#line 22 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     if (__builtin_add_overflow(t8, t9, &t10)) hero_panic_overflow();
-#line 21 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
+#line 22 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     h1_n = t10;
-#line 21 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
+#line 22 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     goto bb3;
-#line 21 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
+#line 22 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
 bb3:
-#line 20 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
+#line 21 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     t11 = h3_i0;
-#line 20 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
+#line 21 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     t12 = INT64_C(1);
-#line 20 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
+#line 21 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     if (__builtin_add_overflow(t11, t12, &t13)) hero_panic_overflow();
-#line 20 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
+#line 21 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     h3_i0 = t13;
-#line 20 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
+#line 21 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     goto bb1;
-#line 20 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
+#line 21 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
 bb4:
-#line 22 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
+#line 24 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     t14 = h1_n;
-#line 22 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
+#line 24 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     t16 = h2_xs0;
 #line 253 "regressionwildcardbindsnothing.c"
     hero_array_decref(t16);

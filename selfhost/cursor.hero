@@ -86,6 +86,7 @@ function bounded_cursor(tokens: [token.Token], root_end: i64) -> Cursor
 # less dependency.
 function here_or(c: Cursor, fallback: token.Span) -> token.Span
     here = current_span(c)
+
     if c.root_end >= 0 && here.start >= c.root_end
         return fallback
     return here
@@ -113,10 +114,13 @@ function at(c: Cursor, kind: token.TokenKind) -> bool
 function peek(c: Cursor, ahead: i64) -> token.TokenKind
     left: i64 @ ahead
     i: i64 @ c.pos
+
     while i + 1 < c.tokens.len() && left > 0
         i @ i + 1
+
         if c.tokens[i].kind != .comment
             left @ left - 1
+
     return c.tokens[i].kind
 
 # The kind of the token just consumed. One caller, one reason: a statement that
@@ -137,10 +141,13 @@ function previous_kind(c: Cursor) -> token.TokenKind
 # of the message that says WHERE pointed at something the author cannot fix.
 function previous_significant_span(c: Cursor) -> token.Span
     i: i64 @ 0
+
     if c.pos > 0
         i @ c.pos - 1
+
     while i > 0 && is_invisible(c.tokens[i].kind)
         i @ i - 1
+
     return c.tokens[i].span
 
 function is_invisible(kind: token.TokenKind) -> bool
@@ -156,6 +163,7 @@ function at_reported_error(c: Cursor) -> bool
 # recovery loop can then be written without an end-of-file arm.
 function bump(@c: Cursor) -> token.Token
     t = c.tokens[c.pos]
+
     if t.kind != .eof
         c.pos @ c.pos + 1
         pass_comments(@c)
@@ -172,6 +180,7 @@ function eat(@c: Cursor, kind: token.TokenKind) -> bool
 function expect(@c: Cursor, text: str, kind: token.TokenKind, code: str, what: str) -> bool
     if eat(@c, kind)
         return true
+
     if !at_reported_error(c)
         error(@c, code: code, message: "expected " + what + ", found " + found(c, text), span: current_span(c))
     return false
@@ -199,22 +208,27 @@ function take_docs(@c: Cursor, text: str, decl: token.Span) -> [token.Span]
     wanted: i64 @ 1
     docs: [token.Span] @ []
     i: i64 @ c.comments.len() - 1
+
     while i >= 0
         s = c.comments[i]
         above = text_lines.lines_above(text: text, comment: s.start, decl: decl.start)
+
         if above == 0
             # A trailing comment on the declaration's own line.
             i @ i - 1
             continue
+
         if above != wanted || text_lines.column_of(text, s.start) != decl_col
             i @ -1
             continue
+
         if starts_a_section(slice_of(text, s))
             i @ -1
             continue
         docs @ docs.push(s)
         wanted @ wanted + 1
         i @ i - 1
+
     empty: [token.Span] = []
     c.comments @ empty
     return reversed(docs)
@@ -225,9 +239,11 @@ function starts_a_section(comment: str) -> bool
 function reversed(spans: [token.Span]) -> [token.Span]
     out: [token.Span] @ []
     i: i64 @ spans.len() - 1
+
     while i >= 0
         out @ out.push(spans[i])
         i @ i - 1
+
     return out
 
 ## Failing
@@ -246,6 +262,7 @@ function error(@c: Cursor, code: str, message: str, span: token.Span)
 # already, and layout tokens have none at all.
 function found(c: Cursor, text: str) -> str
     t = c.tokens[c.pos]
+
     if describe.carries_text(t.kind)
         return describe.describe(t.kind) + " (`" + slice_of(text, t.span) + "`)"
     return describe.describe(t.kind)
@@ -284,8 +301,10 @@ test "expect reports what it found, and says nothing at an error token"
     assert !ok_taken
     assert c.diagnostics.len() == 1
     assert c.diagnostics[0].message == "expected `(`, found a name (`abc`)"
+
     # The position did not move: the caller decides what to do.
     assert c.pos == 0
+
     # At an error token the lexer already spoke.
     quiet: [token.Token] = [
         token.Token(kind: .error, span: token.Span(start: 0, end: 1))
@@ -333,6 +352,7 @@ test "a doc comment is the run directly above, in the same column"
     assert docs.len() == 2
     assert slice_of(text, docs[0]) == "# one"
     assert slice_of(text, docs[1]) == "# two"
+
     # The run is consumed once.
     assert c.comments.len() == 0
 
@@ -348,9 +368,6 @@ test "a section heading ends the run rather than documenting the declaration"
     docs = take_docs(@c, text, token.Span(start: 17, end: 25))
     assert docs.len() == 1
     assert slice_of(text, docs[0]) == "# doc"
-
-
-
 
 ## Recovery — what to drop after a mistake
 
@@ -371,18 +388,22 @@ function balanced_block(@c: Cursor) -> token.Span
     open = bump(@c)
     depth: i64 @ 1
     last: token.Span @ open.span
+
     while depth > 0 && !at(c, .eof)
         k = current_kind(c)
+
         if k == .indent
             depth @ depth + 1
             last @ bump(@c).span
         else if k == .dedent
             depth @ depth - 1
             closer = bump(@c)
+
             if depth > 0
                 last @ closer.span
         else
             last @ bump(@c).span
+
     return token.Span(start: open.span.end, end: last.end)
 
 # Drop the rest of a broken line, stopping before whatever ends or nests the
@@ -402,14 +423,18 @@ function skip_line(@c: Cursor)
 # keyword-first shape made the token stream carry it.
 function recover_to_next_decl(@c: Cursor)
     fresh_line: bool @ c.pos == 0
+
     if c.pos > 0
         k = c.tokens[c.pos - 1].kind
         fresh_line @ k == .terminator || k == .indent || k == .dedent
+
     if !fresh_line
         scanning: bool @ true
+
         while scanning && !at(c, .eof) && !at(c, .indent)
             if bump(@c).kind == .terminator
                 scanning @ false
+
     if at(c, .indent)
         _ = balanced_block(@c)
 
@@ -422,12 +447,15 @@ function recover_to_next_decl(@c: Cursor)
 # mistake, which is the failure mode §4.17 exists to prevent.
 function recover_past_closer(@c: Cursor, opener: token.TokenKind, closer: token.TokenKind)
     depth: i64 @ 1
+
     while !at(c, .eof)
         k = bump(@c).kind
+
         if k == opener
             depth @ depth + 1
         else if k == closer
             depth @ depth - 1
+
             if depth == 0
                 return
 
@@ -444,6 +472,7 @@ test "a balanced block takes its nested blocks with it"
     ]
     c: Cursor @ new_cursor(tokens)
     _ = balanced_block(@c)
+
     # It resumes on the next line of the ENCLOSING block, not inside.
     assert current_kind(c) == .kw_function
 
@@ -459,6 +488,7 @@ test "a broken line is dropped without leaving the block"
     skip_line(@c)
     assert current_kind(c) == .ident
     assert c.pos == 3
+
     # A dedent stops it: the block ends here and the caller must see that.
     stopping: [token.Token] = [
         token.Token(kind: .ident, span: token.Span(start: 0, end: 1))
@@ -501,10 +531,12 @@ test "a bracket is the landmark recovery cannot misread"
         token.Token(kind: .eof, span: token.Span(start: 6, end: 6))
     ]
     c: Cursor @ new_cursor(tokens)
+
     # The opener is already consumed by the caller, so nesting starts at 1.
     _ = bump(@c)
     _ = bump(@c)
     recover_past_closer(@c, opener: .lparen, closer: .rparen)
+
     # It stopped after the closer that matches, not the first one it saw.
     assert current_kind(c) == .rparen
 
@@ -521,9 +553,11 @@ test "fixedbugs: past the boundary, the fallback is what the caret gets"
         token.Token(kind: .eof, span: token.Span(start: 40, end: 40))
     ]
     keyword = token.Span(start: 0, end: 8)
+
     # Unbounded: the current token answers, whatever it is.
     plain: Cursor @ new_cursor(tokens)
     assert here_or(plain, keyword).start == current_span(plain).start
+
     # Bounded: a token at or past the author's end yields the fallback.
     bounded: Cursor @ bounded_cursor(tokens: tokens, root_end: 20)
     _ = bump(@bounded)

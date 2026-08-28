@@ -43,6 +43,7 @@ constant IS_TEXT: str
 # cannot say them.
 function put_two_bad_bytes(path: str) -> bool
     handle = fopen(path: path.cstr(), mode: "wb".cstr())
+
     if handle == nullptr
         return false
     _ = fputc(c: 255, stream: handle)
@@ -54,6 +55,7 @@ function main()
     if !put_two_bad_bytes(path: NOT_TEXT)
         print("cannot build the fixture")
         return
+
     # The arm that was unreachable. Its code is `read_failed` and not something
     # sharper because the Tier-2 wrapper collapses the status on purpose — panel
     # 087's two compiling seats disagreed about naming it, and `DECIDE.md` holds
@@ -61,14 +63,17 @@ function main()
     match read_file(NOT_TEXT)
         .ok text => print("unexpected: ", len(text), " bytes")
         .err e   => print("not text: ", e.code)
+
     # The good path, in the same case, because a guard that rejects everything
     # would pass a test that only checks the rejection.
     match write_file(path: IS_TEXT, text: "caffè\n")
         .ok _  => print("wrote the text one")
         .err e => print("write failed: ", e.code)
+
     match read_file(IS_TEXT)
         .ok text => print("text: ", len(text), " bytes")
         .err e   => print("text failed: ", e.code)
+
     # And the third state stays distinguishable: absent is not unreadable.
     match read_file("build/heroes-golden-no-such-file")
         .ok _  => print("unexpected")

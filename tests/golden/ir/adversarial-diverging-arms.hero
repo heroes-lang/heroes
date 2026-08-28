@@ -10,9 +10,12 @@ variant Step
 
 function walk(xs: [Step]) -> i64
     seen: i64 @ 0
+
     for s in xs
         match s
             .stop => break
             .skip => continue
+
         seen @ seen + 1
+
     return seen

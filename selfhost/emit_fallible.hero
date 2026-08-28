@@ -25,22 +25,27 @@ use checker
 # literal each.
 function construct_option(names: emit_ctype.Names, result: i64, shape: ir.Shape, arguments: [str]) -> str?
     name = emit_ctype.option_of(names, ty: result)
+
     match shape
         .ok_shape =>
             if arguments.len() > 0
                 return ok("(" + name + "){.tag = INT64_C(0), .as.ok = " + arguments[0] + "}")
+
             # ok(()) — a unit payload has no member at all, so the tag
             # is the whole value.
             return ok("(" + name + "){.tag = INT64_C(0)}")
         .fail_shape =>
             if arguments.len() < 2
                 return fail("none", "a fail without both sides")
-            return ok("(" + name + "){.tag = INT64_C(1), .as.err = {.code = " + arguments[0] + ", .msg = " + arguments[1] + "}}")
+            return ok(
+                "(" + name + "){.tag = INT64_C(1), .as.err = {.code = " + arguments[0] + ", .msg = " + arguments[1] + "}}"
+            )
         .err_shape =>
             if arguments.len() < 1
                 return fail("none", "an err without its failure")
             return ok("(" + name + "){.tag = INT64_C(1), .as.err = " + arguments[0] + "}")
         .record_shape | .case_shape | .array_shape | .map_shape => return fail("none", "not an option shape")
+
     return fail("none", "unreached")
 
 # t16 = t15.tag; for a T?, the same member a variant uses.
@@ -50,6 +55,7 @@ function option_tag(base: i64) -> str
 # .as.ok for case 0 and .as.err for case 1 — the IR's own numbering.
 function option_payload(base: i64, at: i64) -> str
     member: str @ "err"
+
     if at == 0
         member @ "ok"
     return emit_mangle.value(base) + ".as." + member
@@ -65,8 +71,10 @@ test "the tag is written even where C would zero it, and err is one assignment"
     names0 = emit_ctype.new_names(s, p.decls)
     names = emit_ctype.with_options(names0, c: c, s: s, decls: p.decls)
     opt: i64 @ 0 - 1
+
     for id in keys(names.options)
         opt @ id
+
     assert opt >= 0
     built = construct_option(names, result: opt, shape: .ok_shape, arguments: ["t3"])
     assert built.must() == "(h_0opt_e201354){.tag = INT64_C(0), .as.ok = t3}"

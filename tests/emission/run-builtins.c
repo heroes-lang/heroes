@@ -474,883 +474,883 @@ bb0:
     hero_print_int(t15);
 #line 22 "tests/golden/run/builtins.hero"
     hero_print_end();
-#line 24 "tests/golden/run/builtins.hero"
+#line 25 "tests/golden/run/builtins.hero"
     t16 = h0_xs;
-#line 24 "tests/golden/run/builtins.hero"
+#line 25 "tests/golden/run/builtins.hero"
     t17 = INT64_C(0);
-#line 24 "tests/golden/run/builtins.hero"
+#line 25 "tests/golden/run/builtins.hero"
     t18 = *(int64_t const *)hero_array_at(t16, t17);
-#line 24 "tests/golden/run/builtins.hero"
+#line 25 "tests/golden/run/builtins.hero"
     t19 = h0_xs;
-#line 24 "tests/golden/run/builtins.hero"
+#line 25 "tests/golden/run/builtins.hero"
     t20 = INT64_C(1);
-#line 24 "tests/golden/run/builtins.hero"
+#line 25 "tests/golden/run/builtins.hero"
     t21 = *(int64_t const *)hero_array_at(t19, t20);
-#line 24 "tests/golden/run/builtins.hero"
+#line 25 "tests/golden/run/builtins.hero"
     t22 = h0_xs;
-#line 24 "tests/golden/run/builtins.hero"
+#line 25 "tests/golden/run/builtins.hero"
     t23 = INT64_C(2);
-#line 24 "tests/golden/run/builtins.hero"
+#line 25 "tests/golden/run/builtins.hero"
     t24 = *(int64_t const *)hero_array_at(t22, t23);
-#line 24 "tests/golden/run/builtins.hero"
+#line 25 "tests/golden/run/builtins.hero"
     hero_print_int(t18);
-#line 24 "tests/golden/run/builtins.hero"
+#line 25 "tests/golden/run/builtins.hero"
     hero_print_int(t21);
-#line 24 "tests/golden/run/builtins.hero"
+#line 25 "tests/golden/run/builtins.hero"
     hero_print_int(t24);
-#line 24 "tests/golden/run/builtins.hero"
+#line 25 "tests/golden/run/builtins.hero"
     hero_print_end();
-#line 26 "tests/golden/run/builtins.hero"
+#line 27 "tests/golden/run/builtins.hero"
     t25 = HERO_STR_LIT(hero_str_3ba202d1);
-#line 26 "tests/golden/run/builtins.hero"
+#line 27 "tests/golden/run/builtins.hero"
     t26 = HERO_STR_LIT(hero_str_47b33001);
-#line 26 "tests/golden/run/builtins.hero"
+#line 27 "tests/golden/run/builtins.hero"
     t27 = HERO_STR_LIT(hero_str_f827bb9);
-#line 26 "tests/golden/run/builtins.hero"
+#line 27 "tests/golden/run/builtins.hero"
     t28 = HERO_STR_LIT(hero_str_47b33001);
-#line 26 "tests/golden/run/builtins.hero"
+#line 27 "tests/golden/run/builtins.hero"
     t29 = hero_array_new(&hero_desc_str, 4);
-#line 26 "tests/golden/run/builtins.hero"
+#line 27 "tests/golden/run/builtins.hero"
     { HeroArrayHeader *grown = hero_array_push(t29, &t25);
-#line 26 "tests/golden/run/builtins.hero"
+#line 27 "tests/golden/run/builtins.hero"
       hero_array_decref(t29); t29 = grown; }
-#line 26 "tests/golden/run/builtins.hero"
+#line 27 "tests/golden/run/builtins.hero"
     { HeroArrayHeader *grown = hero_array_push(t29, &t26);
-#line 26 "tests/golden/run/builtins.hero"
+#line 27 "tests/golden/run/builtins.hero"
       hero_array_decref(t29); t29 = grown; }
-#line 26 "tests/golden/run/builtins.hero"
+#line 27 "tests/golden/run/builtins.hero"
     { HeroArrayHeader *grown = hero_array_push(t29, &t27);
-#line 26 "tests/golden/run/builtins.hero"
+#line 27 "tests/golden/run/builtins.hero"
       hero_array_decref(t29); t29 = grown; }
-#line 26 "tests/golden/run/builtins.hero"
+#line 27 "tests/golden/run/builtins.hero"
     { HeroArrayHeader *grown = hero_array_push(t29, &t28);
-#line 26 "tests/golden/run/builtins.hero"
+#line 27 "tests/golden/run/builtins.hero"
       hero_array_decref(t29); t29 = grown; }
-#line 26 "tests/golden/run/builtins.hero"
+#line 27 "tests/golden/run/builtins.hero"
     t164 = h14_own14;
-#line 26 "tests/golden/run/builtins.hero"
+#line 27 "tests/golden/run/builtins.hero"
     h14_own14 = t29;
 #line 534 "builtins.c"
     hero_array_decref(t164);
-#line 26 "tests/golden/run/builtins.hero"
+#line 27 "tests/golden/run/builtins.hero"
     t165 = h2_names;
 #line 538 "builtins.c"
     hero_array_incref(t29);
-#line 26 "tests/golden/run/builtins.hero"
+#line 27 "tests/golden/run/builtins.hero"
     h2_names = t29;
 #line 542 "builtins.c"
     hero_array_decref(t165);
-#line 27 "tests/golden/run/builtins.hero"
+#line 28 "tests/golden/run/builtins.hero"
     t30 = h2_names;
-#line 27 "tests/golden/run/builtins.hero"
+#line 28 "tests/golden/run/builtins.hero"
     t31 = hero_array_sort(t30);
-#line 27 "tests/golden/run/builtins.hero"
+#line 28 "tests/golden/run/builtins.hero"
     t166 = h15_own15;
-#line 27 "tests/golden/run/builtins.hero"
+#line 28 "tests/golden/run/builtins.hero"
     h15_own15 = t31;
 #line 552 "builtins.c"
     hero_array_decref(t166);
-#line 27 "tests/golden/run/builtins.hero"
+#line 28 "tests/golden/run/builtins.hero"
     t32 = HERO_STR_LIT(hero_str_7c);
-#line 27 "tests/golden/run/builtins.hero"
+#line 28 "tests/golden/run/builtins.hero"
     t33 = hero_str_join(t31, t32);
-#line 27 "tests/golden/run/builtins.hero"
+#line 28 "tests/golden/run/builtins.hero"
     t167 = h16_own16;
-#line 27 "tests/golden/run/builtins.hero"
+#line 28 "tests/golden/run/builtins.hero"
     h16_own16 = t33;
 #line 562 "builtins.c"
     hero_str_decref(t167);
-#line 27 "tests/golden/run/builtins.hero"
+#line 28 "tests/golden/run/builtins.hero"
     hero_print_str(t33);
-#line 27 "tests/golden/run/builtins.hero"
+#line 28 "tests/golden/run/builtins.hero"
     hero_print_end();
-#line 29 "tests/golden/run/builtins.hero"
+#line 30 "tests/golden/run/builtins.hero"
     t34 = 0x1.4p+1;
-#line 29 "tests/golden/run/builtins.hero"
+#line 30 "tests/golden/run/builtins.hero"
     t35 = 0x1p-1;
-#line 29 "tests/golden/run/builtins.hero"
+#line 30 "tests/golden/run/builtins.hero"
     t36 = 0x1.8p+0;
-#line 29 "tests/golden/run/builtins.hero"
+#line 30 "tests/golden/run/builtins.hero"
     t37 = hero_array_new(&hero_desc_f64, 3);
-#line 29 "tests/golden/run/builtins.hero"
+#line 30 "tests/golden/run/builtins.hero"
     { HeroArrayHeader *grown = hero_array_push(t37, &t34);
-#line 29 "tests/golden/run/builtins.hero"
+#line 30 "tests/golden/run/builtins.hero"
       hero_array_decref(t37); t37 = grown; }
-#line 29 "tests/golden/run/builtins.hero"
+#line 30 "tests/golden/run/builtins.hero"
     { HeroArrayHeader *grown = hero_array_push(t37, &t35);
-#line 29 "tests/golden/run/builtins.hero"
+#line 30 "tests/golden/run/builtins.hero"
       hero_array_decref(t37); t37 = grown; }
-#line 29 "tests/golden/run/builtins.hero"
+#line 30 "tests/golden/run/builtins.hero"
     { HeroArrayHeader *grown = hero_array_push(t37, &t36);
-#line 29 "tests/golden/run/builtins.hero"
+#line 30 "tests/golden/run/builtins.hero"
       hero_array_decref(t37); t37 = grown; }
-#line 29 "tests/golden/run/builtins.hero"
+#line 30 "tests/golden/run/builtins.hero"
     t168 = h17_own17;
-#line 29 "tests/golden/run/builtins.hero"
+#line 30 "tests/golden/run/builtins.hero"
     h17_own17 = t37;
 #line 592 "builtins.c"
     hero_array_decref(t168);
-#line 29 "tests/golden/run/builtins.hero"
+#line 30 "tests/golden/run/builtins.hero"
     t169 = h3_fs;
 #line 596 "builtins.c"
     hero_array_incref(t37);
-#line 29 "tests/golden/run/builtins.hero"
+#line 30 "tests/golden/run/builtins.hero"
     h3_fs = t37;
 #line 600 "builtins.c"
     hero_array_decref(t169);
-#line 30 "tests/golden/run/builtins.hero"
+#line 31 "tests/golden/run/builtins.hero"
     t38 = h3_fs;
-#line 30 "tests/golden/run/builtins.hero"
+#line 31 "tests/golden/run/builtins.hero"
     t39 = hero_array_sort(t38);
-#line 30 "tests/golden/run/builtins.hero"
+#line 31 "tests/golden/run/builtins.hero"
     t170 = h18_own18;
-#line 30 "tests/golden/run/builtins.hero"
+#line 31 "tests/golden/run/builtins.hero"
     h18_own18 = t39;
 #line 610 "builtins.c"
     hero_array_decref(t170);
-#line 30 "tests/golden/run/builtins.hero"
+#line 31 "tests/golden/run/builtins.hero"
     t40 = INT64_C(0);
-#line 30 "tests/golden/run/builtins.hero"
+#line 31 "tests/golden/run/builtins.hero"
     t41 = *(double const *)hero_array_at(t39, t40);
-#line 30 "tests/golden/run/builtins.hero"
+#line 31 "tests/golden/run/builtins.hero"
     t42 = HERO_STR_LIT(hero_str_20);
-#line 30 "tests/golden/run/builtins.hero"
+#line 31 "tests/golden/run/builtins.hero"
     t43 = h3_fs;
-#line 30 "tests/golden/run/builtins.hero"
+#line 31 "tests/golden/run/builtins.hero"
     t44 = hero_array_sort(t43);
-#line 30 "tests/golden/run/builtins.hero"
+#line 31 "tests/golden/run/builtins.hero"
     t171 = h19_own19;
-#line 30 "tests/golden/run/builtins.hero"
+#line 31 "tests/golden/run/builtins.hero"
     h19_own19 = t44;
 #line 626 "builtins.c"
     hero_array_decref(t171);
-#line 30 "tests/golden/run/builtins.hero"
+#line 31 "tests/golden/run/builtins.hero"
     t45 = INT64_C(2);
-#line 30 "tests/golden/run/builtins.hero"
+#line 31 "tests/golden/run/builtins.hero"
     t46 = *(double const *)hero_array_at(t44, t45);
-#line 30 "tests/golden/run/builtins.hero"
+#line 31 "tests/golden/run/builtins.hero"
     hero_print_f64(t41);
-#line 30 "tests/golden/run/builtins.hero"
+#line 31 "tests/golden/run/builtins.hero"
     hero_print_str(t42);
-#line 30 "tests/golden/run/builtins.hero"
+#line 31 "tests/golden/run/builtins.hero"
     hero_print_f64(t46);
-#line 30 "tests/golden/run/builtins.hero"
+#line 31 "tests/golden/run/builtins.hero"
     hero_print_end();
-#line 34 "tests/golden/run/builtins.hero"
+#line 35 "tests/golden/run/builtins.hero"
     t47 = true;
-#line 34 "tests/golden/run/builtins.hero"
+#line 35 "tests/golden/run/builtins.hero"
     t48 = false;
-#line 34 "tests/golden/run/builtins.hero"
+#line 35 "tests/golden/run/builtins.hero"
     t49 = true;
-#line 34 "tests/golden/run/builtins.hero"
+#line 35 "tests/golden/run/builtins.hero"
     t50 = false;
-#line 34 "tests/golden/run/builtins.hero"
+#line 35 "tests/golden/run/builtins.hero"
     t51 = true;
-#line 34 "tests/golden/run/builtins.hero"
+#line 35 "tests/golden/run/builtins.hero"
     t52 = hero_array_new(&hero_desc_bool, 5);
-#line 34 "tests/golden/run/builtins.hero"
+#line 35 "tests/golden/run/builtins.hero"
     { HeroArrayHeader *grown = hero_array_push(t52, &t47);
-#line 34 "tests/golden/run/builtins.hero"
+#line 35 "tests/golden/run/builtins.hero"
       hero_array_decref(t52); t52 = grown; }
-#line 34 "tests/golden/run/builtins.hero"
+#line 35 "tests/golden/run/builtins.hero"
     { HeroArrayHeader *grown = hero_array_push(t52, &t48);
-#line 34 "tests/golden/run/builtins.hero"
+#line 35 "tests/golden/run/builtins.hero"
       hero_array_decref(t52); t52 = grown; }
-#line 34 "tests/golden/run/builtins.hero"
+#line 35 "tests/golden/run/builtins.hero"
     { HeroArrayHeader *grown = hero_array_push(t52, &t49);
-#line 34 "tests/golden/run/builtins.hero"
+#line 35 "tests/golden/run/builtins.hero"
       hero_array_decref(t52); t52 = grown; }
-#line 34 "tests/golden/run/builtins.hero"
+#line 35 "tests/golden/run/builtins.hero"
     { HeroArrayHeader *grown = hero_array_push(t52, &t50);
-#line 34 "tests/golden/run/builtins.hero"
+#line 35 "tests/golden/run/builtins.hero"
       hero_array_decref(t52); t52 = grown; }
-#line 34 "tests/golden/run/builtins.hero"
+#line 35 "tests/golden/run/builtins.hero"
     { HeroArrayHeader *grown = hero_array_push(t52, &t51);
-#line 34 "tests/golden/run/builtins.hero"
+#line 35 "tests/golden/run/builtins.hero"
       hero_array_decref(t52); t52 = grown; }
-#line 34 "tests/golden/run/builtins.hero"
+#line 35 "tests/golden/run/builtins.hero"
     t172 = h20_own20;
-#line 34 "tests/golden/run/builtins.hero"
+#line 35 "tests/golden/run/builtins.hero"
     h20_own20 = t52;
 #line 676 "builtins.c"
     hero_array_decref(t172);
-#line 34 "tests/golden/run/builtins.hero"
+#line 35 "tests/golden/run/builtins.hero"
     t173 = h4_flags;
 #line 680 "builtins.c"
     hero_array_incref(t52);
-#line 34 "tests/golden/run/builtins.hero"
+#line 35 "tests/golden/run/builtins.hero"
     h4_flags = t52;
 #line 684 "builtins.c"
     hero_array_decref(t173);
-#line 35 "tests/golden/run/builtins.hero"
+#line 36 "tests/golden/run/builtins.hero"
     t53 = h4_flags;
-#line 35 "tests/golden/run/builtins.hero"
+#line 36 "tests/golden/run/builtins.hero"
     t54 = hero_array_sort(t53);
-#line 35 "tests/golden/run/builtins.hero"
+#line 36 "tests/golden/run/builtins.hero"
     t174 = h21_own21;
-#line 35 "tests/golden/run/builtins.hero"
+#line 36 "tests/golden/run/builtins.hero"
     h21_own21 = t54;
 #line 694 "builtins.c"
     hero_array_decref(t174);
-#line 35 "tests/golden/run/builtins.hero"
+#line 36 "tests/golden/run/builtins.hero"
     t175 = h5_ordered;
 #line 698 "builtins.c"
     hero_array_incref(t54);
-#line 35 "tests/golden/run/builtins.hero"
+#line 36 "tests/golden/run/builtins.hero"
     h5_ordered = t54;
 #line 702 "builtins.c"
     hero_array_decref(t175);
-#line 36 "tests/golden/run/builtins.hero"
+#line 37 "tests/golden/run/builtins.hero"
     t55 = h5_ordered;
-#line 36 "tests/golden/run/builtins.hero"
+#line 37 "tests/golden/run/builtins.hero"
     t56 = INT64_C(0);
-#line 36 "tests/golden/run/builtins.hero"
+#line 37 "tests/golden/run/builtins.hero"
     t57 = *(bool const *)hero_array_at(t55, t56);
-#line 36 "tests/golden/run/builtins.hero"
+#line 37 "tests/golden/run/builtins.hero"
     t58 = h5_ordered;
-#line 36 "tests/golden/run/builtins.hero"
+#line 37 "tests/golden/run/builtins.hero"
     t59 = INT64_C(1);
-#line 36 "tests/golden/run/builtins.hero"
+#line 37 "tests/golden/run/builtins.hero"
     t60 = *(bool const *)hero_array_at(t58, t59);
-#line 36 "tests/golden/run/builtins.hero"
+#line 37 "tests/golden/run/builtins.hero"
     t61 = h5_ordered;
-#line 36 "tests/golden/run/builtins.hero"
+#line 37 "tests/golden/run/builtins.hero"
     t62 = INT64_C(2);
-#line 36 "tests/golden/run/builtins.hero"
+#line 37 "tests/golden/run/builtins.hero"
     t63 = *(bool const *)hero_array_at(t61, t62);
-#line 36 "tests/golden/run/builtins.hero"
+#line 37 "tests/golden/run/builtins.hero"
     t64 = h5_ordered;
-#line 36 "tests/golden/run/builtins.hero"
+#line 37 "tests/golden/run/builtins.hero"
     t65 = INT64_C(3);
-#line 36 "tests/golden/run/builtins.hero"
+#line 37 "tests/golden/run/builtins.hero"
     t66 = *(bool const *)hero_array_at(t64, t65);
-#line 36 "tests/golden/run/builtins.hero"
+#line 37 "tests/golden/run/builtins.hero"
     t67 = h5_ordered;
-#line 36 "tests/golden/run/builtins.hero"
+#line 37 "tests/golden/run/builtins.hero"
     t68 = INT64_C(4);
-#line 36 "tests/golden/run/builtins.hero"
+#line 37 "tests/golden/run/builtins.hero"
     t69 = *(bool const *)hero_array_at(t67, t68);
-#line 36 "tests/golden/run/builtins.hero"
+#line 37 "tests/golden/run/builtins.hero"
     hero_print_bool(t57);
-#line 36 "tests/golden/run/builtins.hero"
+#line 37 "tests/golden/run/builtins.hero"
     hero_print_bool(t60);
-#line 36 "tests/golden/run/builtins.hero"
+#line 37 "tests/golden/run/builtins.hero"
     hero_print_bool(t63);
-#line 36 "tests/golden/run/builtins.hero"
+#line 37 "tests/golden/run/builtins.hero"
     hero_print_bool(t66);
-#line 36 "tests/golden/run/builtins.hero"
+#line 37 "tests/golden/run/builtins.hero"
     hero_print_bool(t69);
-#line 36 "tests/golden/run/builtins.hero"
+#line 37 "tests/golden/run/builtins.hero"
     hero_print_end();
-#line 39 "tests/golden/run/builtins.hero"
+#line 40 "tests/golden/run/builtins.hero"
     t70 = h2_names;
-#line 39 "tests/golden/run/builtins.hero"
+#line 40 "tests/golden/run/builtins.hero"
     t71 = INT64_C(1);
-#line 39 "tests/golden/run/builtins.hero"
+#line 40 "tests/golden/run/builtins.hero"
     t72 = INT64_C(3);
-#line 39 "tests/golden/run/builtins.hero"
+#line 40 "tests/golden/run/builtins.hero"
     t73 = hero_array_slice(t70, t71, t72);
-#line 39 "tests/golden/run/builtins.hero"
+#line 40 "tests/golden/run/builtins.hero"
     t176 = h22_own22;
-#line 39 "tests/golden/run/builtins.hero"
+#line 40 "tests/golden/run/builtins.hero"
     h22_own22 = t73;
 #line 758 "builtins.c"
     hero_array_decref(t176);
-#line 39 "tests/golden/run/builtins.hero"
+#line 40 "tests/golden/run/builtins.hero"
     t177 = h6_tail;
 #line 762 "builtins.c"
     hero_array_incref(t73);
-#line 39 "tests/golden/run/builtins.hero"
+#line 40 "tests/golden/run/builtins.hero"
     h6_tail = t73;
 #line 766 "builtins.c"
     hero_array_decref(t177);
-#line 40 "tests/golden/run/builtins.hero"
+#line 41 "tests/golden/run/builtins.hero"
     t74 = h6_tail;
-#line 40 "tests/golden/run/builtins.hero"
+#line 41 "tests/golden/run/builtins.hero"
     t75 = hero_array_len(t74);
-#line 40 "tests/golden/run/builtins.hero"
+#line 41 "tests/golden/run/builtins.hero"
     t76 = h6_tail;
-#line 40 "tests/golden/run/builtins.hero"
+#line 41 "tests/golden/run/builtins.hero"
     t77 = HERO_STR_LIT(hero_str_2d);
-#line 40 "tests/golden/run/builtins.hero"
+#line 41 "tests/golden/run/builtins.hero"
     t78 = hero_str_join(t76, t77);
-#line 40 "tests/golden/run/builtins.hero"
+#line 41 "tests/golden/run/builtins.hero"
     t178 = h23_own23;
-#line 40 "tests/golden/run/builtins.hero"
+#line 41 "tests/golden/run/builtins.hero"
     h23_own23 = t78;
 #line 782 "builtins.c"
     hero_str_decref(t178);
-#line 40 "tests/golden/run/builtins.hero"
+#line 41 "tests/golden/run/builtins.hero"
     hero_print_int(t75);
-#line 40 "tests/golden/run/builtins.hero"
+#line 41 "tests/golden/run/builtins.hero"
     hero_print_str(t78);
-#line 40 "tests/golden/run/builtins.hero"
+#line 41 "tests/golden/run/builtins.hero"
     hero_print_end();
-#line 41 "tests/golden/run/builtins.hero"
+#line 42 "tests/golden/run/builtins.hero"
     t79 = h2_names;
-#line 41 "tests/golden/run/builtins.hero"
+#line 42 "tests/golden/run/builtins.hero"
     t80 = INT64_C(0);
-#line 41 "tests/golden/run/builtins.hero"
+#line 42 "tests/golden/run/builtins.hero"
     t81 = INT64_C(0);
-#line 41 "tests/golden/run/builtins.hero"
+#line 42 "tests/golden/run/builtins.hero"
     t82 = hero_array_slice(t79, t80, t81);
-#line 41 "tests/golden/run/builtins.hero"
+#line 42 "tests/golden/run/builtins.hero"
     t179 = h24_own24;
-#line 41 "tests/golden/run/builtins.hero"
+#line 42 "tests/golden/run/builtins.hero"
     h24_own24 = t82;
 #line 802 "builtins.c"
     hero_array_decref(t179);
-#line 41 "tests/golden/run/builtins.hero"
+#line 42 "tests/golden/run/builtins.hero"
     t83 = hero_array_len(t82);
-#line 41 "tests/golden/run/builtins.hero"
+#line 42 "tests/golden/run/builtins.hero"
     t84 = h2_names;
-#line 41 "tests/golden/run/builtins.hero"
+#line 42 "tests/golden/run/builtins.hero"
     t85 = INT64_C(4);
-#line 41 "tests/golden/run/builtins.hero"
+#line 42 "tests/golden/run/builtins.hero"
     t86 = INT64_C(4);
-#line 41 "tests/golden/run/builtins.hero"
+#line 42 "tests/golden/run/builtins.hero"
     t87 = hero_array_slice(t84, t85, t86);
-#line 41 "tests/golden/run/builtins.hero"
+#line 42 "tests/golden/run/builtins.hero"
     t180 = h25_own25;
-#line 41 "tests/golden/run/builtins.hero"
+#line 42 "tests/golden/run/builtins.hero"
     h25_own25 = t87;
 #line 818 "builtins.c"
     hero_array_decref(t180);
-#line 41 "tests/golden/run/builtins.hero"
+#line 42 "tests/golden/run/builtins.hero"
     t88 = hero_array_len(t87);
-#line 41 "tests/golden/run/builtins.hero"
+#line 42 "tests/golden/run/builtins.hero"
     hero_print_int(t83);
-#line 41 "tests/golden/run/builtins.hero"
+#line 42 "tests/golden/run/builtins.hero"
     hero_print_int(t88);
-#line 41 "tests/golden/run/builtins.hero"
+#line 42 "tests/golden/run/builtins.hero"
     hero_print_end();
-#line 44 "tests/golden/run/builtins.hero"
+#line 45 "tests/golden/run/builtins.hero"
     t89 = hero_array_new(&hero_desc_str, 1);
-#line 44 "tests/golden/run/builtins.hero"
+#line 45 "tests/golden/run/builtins.hero"
     t181 = h26_own26;
-#line 44 "tests/golden/run/builtins.hero"
+#line 45 "tests/golden/run/builtins.hero"
     h26_own26 = t89;
 #line 834 "builtins.c"
     hero_array_decref(t181);
-#line 44 "tests/golden/run/builtins.hero"
+#line 45 "tests/golden/run/builtins.hero"
     t182 = h7_empty;
 #line 838 "builtins.c"
     hero_array_incref(t89);
-#line 44 "tests/golden/run/builtins.hero"
+#line 45 "tests/golden/run/builtins.hero"
     h7_empty = t89;
 #line 842 "builtins.c"
     hero_array_decref(t182);
-#line 45 "tests/golden/run/builtins.hero"
+#line 46 "tests/golden/run/builtins.hero"
     t90 = HERO_STR_LIT(hero_str_5b);
-#line 45 "tests/golden/run/builtins.hero"
+#line 46 "tests/golden/run/builtins.hero"
     t91 = h7_empty;
-#line 45 "tests/golden/run/builtins.hero"
+#line 46 "tests/golden/run/builtins.hero"
     t92 = HERO_STR_LIT(hero_str_2c);
-#line 45 "tests/golden/run/builtins.hero"
+#line 46 "tests/golden/run/builtins.hero"
     t93 = hero_str_join(t91, t92);
-#line 45 "tests/golden/run/builtins.hero"
+#line 46 "tests/golden/run/builtins.hero"
     t183 = h27_own27;
-#line 45 "tests/golden/run/builtins.hero"
+#line 46 "tests/golden/run/builtins.hero"
     h27_own27 = t93;
 #line 856 "builtins.c"
     hero_str_decref(t183);
-#line 45 "tests/golden/run/builtins.hero"
+#line 46 "tests/golden/run/builtins.hero"
     t94 = HERO_STR_LIT(hero_str_5d);
-#line 45 "tests/golden/run/builtins.hero"
+#line 46 "tests/golden/run/builtins.hero"
     hero_print_str(t90);
-#line 45 "tests/golden/run/builtins.hero"
+#line 46 "tests/golden/run/builtins.hero"
     hero_print_str(t93);
-#line 45 "tests/golden/run/builtins.hero"
+#line 46 "tests/golden/run/builtins.hero"
     hero_print_str(t94);
-#line 45 "tests/golden/run/builtins.hero"
+#line 46 "tests/golden/run/builtins.hero"
     hero_print_end();
-#line 46 "tests/golden/run/builtins.hero"
+#line 47 "tests/golden/run/builtins.hero"
     t95 = HERO_STR_LIT(hero_str_5b);
-#line 46 "tests/golden/run/builtins.hero"
+#line 47 "tests/golden/run/builtins.hero"
     t96 = HERO_STR_LIT(hero_str_efcabd0);
-#line 46 "tests/golden/run/builtins.hero"
+#line 47 "tests/golden/run/builtins.hero"
     t97 = hero_array_new(&hero_desc_str, 1);
-#line 46 "tests/golden/run/builtins.hero"
+#line 47 "tests/golden/run/builtins.hero"
     { HeroArrayHeader *grown = hero_array_push(t97, &t96);
-#line 46 "tests/golden/run/builtins.hero"
+#line 47 "tests/golden/run/builtins.hero"
       hero_array_decref(t97); t97 = grown; }
-#line 46 "tests/golden/run/builtins.hero"
+#line 47 "tests/golden/run/builtins.hero"
     t184 = h28_own28;
-#line 46 "tests/golden/run/builtins.hero"
+#line 47 "tests/golden/run/builtins.hero"
     h28_own28 = t97;
 #line 882 "builtins.c"
     hero_array_decref(t184);
-#line 46 "tests/golden/run/builtins.hero"
+#line 47 "tests/golden/run/builtins.hero"
     t98 = HERO_STR_LIT(hero_str_2c);
-#line 46 "tests/golden/run/builtins.hero"
+#line 47 "tests/golden/run/builtins.hero"
     t99 = hero_str_join(t97, t98);
-#line 46 "tests/golden/run/builtins.hero"
+#line 47 "tests/golden/run/builtins.hero"
     t185 = h29_own29;
-#line 46 "tests/golden/run/builtins.hero"
+#line 47 "tests/golden/run/builtins.hero"
     h29_own29 = t99;
 #line 892 "builtins.c"
     hero_str_decref(t185);
-#line 46 "tests/golden/run/builtins.hero"
+#line 47 "tests/golden/run/builtins.hero"
     t100 = HERO_STR_LIT(hero_str_5d);
-#line 46 "tests/golden/run/builtins.hero"
+#line 47 "tests/golden/run/builtins.hero"
     hero_print_str(t95);
-#line 46 "tests/golden/run/builtins.hero"
+#line 47 "tests/golden/run/builtins.hero"
     hero_print_str(t99);
-#line 46 "tests/golden/run/builtins.hero"
+#line 47 "tests/golden/run/builtins.hero"
     hero_print_str(t100);
-#line 46 "tests/golden/run/builtins.hero"
+#line 47 "tests/golden/run/builtins.hero"
     hero_print_end();
-#line 49 "tests/golden/run/builtins.hero"
+#line 50 "tests/golden/run/builtins.hero"
     t101 = HERO_STR_LIT(hero_str_78a14ef2);
-#line 49 "tests/golden/run/builtins.hero"
+#line 50 "tests/golden/run/builtins.hero"
     t186 = h8_word;
 #line 908 "builtins.c"
     hero_str_incref(t101);
-#line 49 "tests/golden/run/builtins.hero"
+#line 50 "tests/golden/run/builtins.hero"
     h8_word = t101;
 #line 912 "builtins.c"
     hero_str_decref(t186);
-#line 50 "tests/golden/run/builtins.hero"
+#line 51 "tests/golden/run/builtins.hero"
     t102 = h8_word;
-#line 50 "tests/golden/run/builtins.hero"
+#line 51 "tests/golden/run/builtins.hero"
     t103 = hero_str_len(t102);
-#line 50 "tests/golden/run/builtins.hero"
+#line 51 "tests/golden/run/builtins.hero"
     t104 = HERO_STR_LIT(hero_str_20);
-#line 50 "tests/golden/run/builtins.hero"
+#line 51 "tests/golden/run/builtins.hero"
     t105 = h8_word;
-#line 50 "tests/golden/run/builtins.hero"
+#line 51 "tests/golden/run/builtins.hero"
     t106 = hero_str_chars(t105);
-#line 50 "tests/golden/run/builtins.hero"
+#line 51 "tests/golden/run/builtins.hero"
     t187 = h30_own30;
-#line 50 "tests/golden/run/builtins.hero"
+#line 51 "tests/golden/run/builtins.hero"
     h30_own30 = t106;
 #line 928 "builtins.c"
     hero_array_decref(t187);
-#line 50 "tests/golden/run/builtins.hero"
+#line 51 "tests/golden/run/builtins.hero"
     t107 = hero_array_len(t106);
-#line 50 "tests/golden/run/builtins.hero"
+#line 51 "tests/golden/run/builtins.hero"
     hero_print_int(t103);
-#line 50 "tests/golden/run/builtins.hero"
+#line 51 "tests/golden/run/builtins.hero"
     hero_print_str(t104);
-#line 50 "tests/golden/run/builtins.hero"
+#line 51 "tests/golden/run/builtins.hero"
     hero_print_int(t107);
-#line 50 "tests/golden/run/builtins.hero"
+#line 51 "tests/golden/run/builtins.hero"
     hero_print_end();
-#line 51 "tests/golden/run/builtins.hero"
+#line 52 "tests/golden/run/builtins.hero"
     t108 = h8_word;
-#line 51 "tests/golden/run/builtins.hero"
+#line 52 "tests/golden/run/builtins.hero"
     t109 = hero_str_chars(t108);
-#line 51 "tests/golden/run/builtins.hero"
+#line 52 "tests/golden/run/builtins.hero"
     t188 = h31_own31;
-#line 51 "tests/golden/run/builtins.hero"
+#line 52 "tests/golden/run/builtins.hero"
     h31_own31 = t109;
 #line 948 "builtins.c"
     hero_array_decref(t188);
-#line 51 "tests/golden/run/builtins.hero"
+#line 52 "tests/golden/run/builtins.hero"
     t110 = HERO_STR_LIT(hero_str_2e);
-#line 51 "tests/golden/run/builtins.hero"
+#line 52 "tests/golden/run/builtins.hero"
     t111 = hero_str_join(t109, t110);
-#line 51 "tests/golden/run/builtins.hero"
+#line 52 "tests/golden/run/builtins.hero"
     t189 = h32_own32;
-#line 51 "tests/golden/run/builtins.hero"
+#line 52 "tests/golden/run/builtins.hero"
     h32_own32 = t111;
 #line 958 "builtins.c"
     hero_str_decref(t189);
-#line 51 "tests/golden/run/builtins.hero"
+#line 52 "tests/golden/run/builtins.hero"
     hero_print_str(t111);
-#line 51 "tests/golden/run/builtins.hero"
+#line 52 "tests/golden/run/builtins.hero"
     hero_print_end();
-#line 53 "tests/golden/run/builtins.hero"
+#line 55 "tests/golden/run/builtins.hero"
     t112 = h8_word;
-#line 53 "tests/golden/run/builtins.hero"
+#line 55 "tests/golden/run/builtins.hero"
     t113 = hero_str_chars(t112);
-#line 53 "tests/golden/run/builtins.hero"
+#line 55 "tests/golden/run/builtins.hero"
     t190 = h33_own33;
-#line 53 "tests/golden/run/builtins.hero"
+#line 55 "tests/golden/run/builtins.hero"
     h33_own33 = t113;
 #line 972 "builtins.c"
     hero_array_decref(t190);
-#line 53 "tests/golden/run/builtins.hero"
+#line 55 "tests/golden/run/builtins.hero"
     t114 = HERO_STR_LIT(hero_str_0);
-#line 53 "tests/golden/run/builtins.hero"
+#line 55 "tests/golden/run/builtins.hero"
     t115 = hero_str_join(t113, t114);
-#line 53 "tests/golden/run/builtins.hero"
+#line 55 "tests/golden/run/builtins.hero"
     t191 = h34_own34;
-#line 53 "tests/golden/run/builtins.hero"
+#line 55 "tests/golden/run/builtins.hero"
     h34_own34 = t115;
 #line 982 "builtins.c"
     hero_str_decref(t191);
-#line 53 "tests/golden/run/builtins.hero"
+#line 55 "tests/golden/run/builtins.hero"
     t116 = h8_word;
-#line 53 "tests/golden/run/builtins.hero"
+#line 55 "tests/golden/run/builtins.hero"
     t117 = hero_str_eq(t115, t116);
-#line 53 "tests/golden/run/builtins.hero"
+#line 55 "tests/golden/run/builtins.hero"
     hero_print_bool(t117);
-#line 53 "tests/golden/run/builtins.hero"
+#line 55 "tests/golden/run/builtins.hero"
     hero_print_end();
-#line 54 "tests/golden/run/builtins.hero"
+#line 56 "tests/golden/run/builtins.hero"
     t118 = HERO_STR_LIT(hero_str_0);
-#line 54 "tests/golden/run/builtins.hero"
+#line 56 "tests/golden/run/builtins.hero"
     t119 = hero_str_chars(t118);
-#line 54 "tests/golden/run/builtins.hero"
+#line 56 "tests/golden/run/builtins.hero"
     t192 = h35_own35;
-#line 54 "tests/golden/run/builtins.hero"
+#line 56 "tests/golden/run/builtins.hero"
     h35_own35 = t119;
 #line 1000 "builtins.c"
     hero_array_decref(t192);
-#line 54 "tests/golden/run/builtins.hero"
+#line 56 "tests/golden/run/builtins.hero"
     t120 = HERO_STR_LIT(hero_str_0);
-#line 54 "tests/golden/run/builtins.hero"
+#line 56 "tests/golden/run/builtins.hero"
     t121 = hero_str_join(t119, t120);
-#line 54 "tests/golden/run/builtins.hero"
+#line 56 "tests/golden/run/builtins.hero"
     t193 = h36_own36;
-#line 54 "tests/golden/run/builtins.hero"
+#line 56 "tests/golden/run/builtins.hero"
     h36_own36 = t121;
 #line 1010 "builtins.c"
     hero_str_decref(t193);
-#line 54 "tests/golden/run/builtins.hero"
+#line 56 "tests/golden/run/builtins.hero"
     t122 = HERO_STR_LIT(hero_str_0);
-#line 54 "tests/golden/run/builtins.hero"
+#line 56 "tests/golden/run/builtins.hero"
     t123 = hero_str_eq(t121, t122);
-#line 54 "tests/golden/run/builtins.hero"
+#line 56 "tests/golden/run/builtins.hero"
     hero_print_bool(t123);
-#line 54 "tests/golden/run/builtins.hero"
+#line 56 "tests/golden/run/builtins.hero"
     hero_print_end();
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     t124 = 0x1.f333333333333p+1;
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     if (hero_f64_fits_int(t124)) {
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
         t125 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = hero_f64_to_int(t124)};
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     } else {
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
         t125 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     }
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     t194 = h37_own37;
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     h37_own37 = t125;
 #line 1036 "builtins.c"
     h_0opt_e201354_release(&t194);
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     t195 = h9_f0;
 #line 1040 "builtins.c"
     h_0opt_e201354_retain(&t125);
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     h9_f0 = t125;
 #line 1044 "builtins.c"
     h_0opt_e201354_release(&t195);
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     t126 = h9_f0;
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     t127 = t126.tag;
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     t128 = INT64_C(0);
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     t129 = t127 == t128;
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     if (t129) goto bb1; else goto bb2;
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
 bb1:
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     t132 = h9_f0;
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     t133 = t132.as.ok;
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     t134 = 0x1.f333333333333p+1;
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     t135 = -t134;
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     if (hero_f64_fits_int(t135)) {
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
         t136 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = hero_f64_to_int(t135)};
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     } else {
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
         t136 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     }
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     t196 = h38_own38;
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     h38_own38 = t136;
 #line 1080 "builtins.c"
     h_0opt_e201354_release(&t196);
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     t197 = h10_f1;
 #line 1084 "builtins.c"
     h_0opt_e201354_retain(&t136);
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     h10_f1 = t136;
 #line 1088 "builtins.c"
     h_0opt_e201354_release(&t197);
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     t137 = h10_f1;
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     t138 = t137.tag;
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     t139 = INT64_C(0);
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     t140 = t138 == t139;
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     if (t140) goto bb3; else goto bb4;
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
 bb2:
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     t130 = h9_f0;
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     t131 = t130.as.err;
 #line 1106 "builtins.c"
     hero_panic_must(t131);
     hero_unreachable();
 bb3:
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     t143 = h10_f1;
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     t144 = t143.as.ok;
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     t145 = 0x0p+0;
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     if (hero_f64_fits_int(t145)) {
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
         t146 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = hero_f64_to_int(t145)};
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     } else {
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
         t146 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     }
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     t198 = h39_own39;
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     h39_own39 = t146;
 #line 1130 "builtins.c"
     h_0opt_e201354_release(&t198);
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     t199 = h11_f2;
 #line 1134 "builtins.c"
     h_0opt_e201354_retain(&t146);
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     h11_f2 = t146;
 #line 1138 "builtins.c"
     h_0opt_e201354_release(&t199);
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     t147 = h11_f2;
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     t148 = t147.tag;
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     t149 = INT64_C(0);
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     t150 = t148 == t149;
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     if (t150) goto bb5; else goto bb6;
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
 bb4:
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     t141 = h10_f1;
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     t142 = t141.as.err;
 #line 1156 "builtins.c"
     hero_panic_must(t142);
     hero_unreachable();
 bb5:
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     t153 = h11_f2;
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     t154 = t153.as.ok;
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     hero_print_int(t133);
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     hero_print_int(t144);
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     hero_print_int(t154);
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     hero_print_end();
-#line 57 "tests/golden/run/builtins.hero"
+#line 59 "tests/golden/run/builtins.hero"
     t155 = INT64_C(3);
-#line 57 "tests/golden/run/builtins.hero"
+#line 59 "tests/golden/run/builtins.hero"
     t156 = hero_int_to_f64(t155);
-#line 57 "tests/golden/run/builtins.hero"
+#line 59 "tests/golden/run/builtins.hero"
     t157 = HERO_STR_LIT(hero_str_20);
-#line 57 "tests/golden/run/builtins.hero"
+#line 59 "tests/golden/run/builtins.hero"
     t158 = INT64_C(-1);
-#line 57 "tests/golden/run/builtins.hero"
+#line 59 "tests/golden/run/builtins.hero"
     t159 = hero_int_to_f64(t158);
-#line 57 "tests/golden/run/builtins.hero"
+#line 59 "tests/golden/run/builtins.hero"
     hero_print_f64(t156);
-#line 57 "tests/golden/run/builtins.hero"
+#line 59 "tests/golden/run/builtins.hero"
     hero_print_str(t157);
-#line 57 "tests/golden/run/builtins.hero"
+#line 59 "tests/golden/run/builtins.hero"
     hero_print_f64(t159);
-#line 57 "tests/golden/run/builtins.hero"
+#line 59 "tests/golden/run/builtins.hero"
     hero_print_end();
-#line 57 "tests/golden/run/builtins.hero"
+#line 59 "tests/golden/run/builtins.hero"
     t200 = h0_xs;
 #line 1192 "builtins.c"
     hero_array_decref(t200);
-#line 57 "tests/golden/run/builtins.hero"
+#line 59 "tests/golden/run/builtins.hero"
     t201 = h1_sorted;
 #line 1196 "builtins.c"
     hero_array_decref(t201);
-#line 57 "tests/golden/run/builtins.hero"
+#line 59 "tests/golden/run/builtins.hero"
     t202 = h2_names;
 #line 1200 "builtins.c"
     hero_array_decref(t202);
-#line 57 "tests/golden/run/builtins.hero"
+#line 59 "tests/golden/run/builtins.hero"
     t203 = h3_fs;
 #line 1204 "builtins.c"
     hero_array_decref(t203);
-#line 57 "tests/golden/run/builtins.hero"
+#line 59 "tests/golden/run/builtins.hero"
     t204 = h4_flags;
 #line 1208 "builtins.c"
     hero_array_decref(t204);
-#line 57 "tests/golden/run/builtins.hero"
+#line 59 "tests/golden/run/builtins.hero"
     t205 = h5_ordered;
 #line 1212 "builtins.c"
     hero_array_decref(t205);
-#line 57 "tests/golden/run/builtins.hero"
+#line 59 "tests/golden/run/builtins.hero"
     t206 = h6_tail;
 #line 1216 "builtins.c"
     hero_array_decref(t206);
-#line 57 "tests/golden/run/builtins.hero"
+#line 59 "tests/golden/run/builtins.hero"
     t207 = h7_empty;
 #line 1220 "builtins.c"
     hero_array_decref(t207);
-#line 57 "tests/golden/run/builtins.hero"
+#line 59 "tests/golden/run/builtins.hero"
     t208 = h8_word;
 #line 1224 "builtins.c"
     hero_str_decref(t208);
-#line 57 "tests/golden/run/builtins.hero"
+#line 59 "tests/golden/run/builtins.hero"
     t209 = h9_f0;
 #line 1228 "builtins.c"
     h_0opt_e201354_release(&t209);
-#line 57 "tests/golden/run/builtins.hero"
+#line 59 "tests/golden/run/builtins.hero"
     t210 = h10_f1;
 #line 1232 "builtins.c"
     h_0opt_e201354_release(&t210);
-#line 57 "tests/golden/run/builtins.hero"
+#line 59 "tests/golden/run/builtins.hero"
     t211 = h11_f2;
 #line 1236 "builtins.c"
     h_0opt_e201354_release(&t211);
-#line 57 "tests/golden/run/builtins.hero"
+#line 59 "tests/golden/run/builtins.hero"
     t212 = h12_own12;
 #line 1240 "builtins.c"
     hero_array_decref(t212);
-#line 57 "tests/golden/run/builtins.hero"
+#line 59 "tests/golden/run/builtins.hero"
     t213 = h13_own13;
 #line 1244 "builtins.c"
     hero_array_decref(t213);
-#line 57 "tests/golden/run/builtins.hero"
+#line 59 "tests/golden/run/builtins.hero"
     t214 = h14_own14;
 #line 1248 "builtins.c"
     hero_array_decref(t214);
-#line 57 "tests/golden/run/builtins.hero"
+#line 59 "tests/golden/run/builtins.hero"
     t215 = h15_own15;
 #line 1252 "builtins.c"
     hero_array_decref(t215);
-#line 57 "tests/golden/run/builtins.hero"
+#line 59 "tests/golden/run/builtins.hero"
     t216 = h16_own16;
 #line 1256 "builtins.c"
     hero_str_decref(t216);
-#line 57 "tests/golden/run/builtins.hero"
+#line 59 "tests/golden/run/builtins.hero"
     t217 = h17_own17;
 #line 1260 "builtins.c"
     hero_array_decref(t217);
-#line 57 "tests/golden/run/builtins.hero"
+#line 59 "tests/golden/run/builtins.hero"
     t218 = h18_own18;
 #line 1264 "builtins.c"
     hero_array_decref(t218);
-#line 57 "tests/golden/run/builtins.hero"
+#line 59 "tests/golden/run/builtins.hero"
     t219 = h19_own19;
 #line 1268 "builtins.c"
     hero_array_decref(t219);
-#line 57 "tests/golden/run/builtins.hero"
+#line 59 "tests/golden/run/builtins.hero"
     t220 = h20_own20;
 #line 1272 "builtins.c"
     hero_array_decref(t220);
-#line 57 "tests/golden/run/builtins.hero"
+#line 59 "tests/golden/run/builtins.hero"
     t221 = h21_own21;
 #line 1276 "builtins.c"
     hero_array_decref(t221);
-#line 57 "tests/golden/run/builtins.hero"
+#line 59 "tests/golden/run/builtins.hero"
     t222 = h22_own22;
 #line 1280 "builtins.c"
     hero_array_decref(t222);
-#line 57 "tests/golden/run/builtins.hero"
+#line 59 "tests/golden/run/builtins.hero"
     t223 = h23_own23;
 #line 1284 "builtins.c"
     hero_str_decref(t223);
-#line 57 "tests/golden/run/builtins.hero"
+#line 59 "tests/golden/run/builtins.hero"
     t224 = h24_own24;
 #line 1288 "builtins.c"
     hero_array_decref(t224);
-#line 57 "tests/golden/run/builtins.hero"
+#line 59 "tests/golden/run/builtins.hero"
     t225 = h25_own25;
 #line 1292 "builtins.c"
     hero_array_decref(t225);
-#line 57 "tests/golden/run/builtins.hero"
+#line 59 "tests/golden/run/builtins.hero"
     t226 = h26_own26;
 #line 1296 "builtins.c"
     hero_array_decref(t226);
-#line 57 "tests/golden/run/builtins.hero"
+#line 59 "tests/golden/run/builtins.hero"
     t227 = h27_own27;
 #line 1300 "builtins.c"
     hero_str_decref(t227);
-#line 57 "tests/golden/run/builtins.hero"
+#line 59 "tests/golden/run/builtins.hero"
     t228 = h28_own28;
 #line 1304 "builtins.c"
     hero_array_decref(t228);
-#line 57 "tests/golden/run/builtins.hero"
+#line 59 "tests/golden/run/builtins.hero"
     t229 = h29_own29;
 #line 1308 "builtins.c"
     hero_str_decref(t229);
-#line 57 "tests/golden/run/builtins.hero"
+#line 59 "tests/golden/run/builtins.hero"
     t230 = h30_own30;
 #line 1312 "builtins.c"
     hero_array_decref(t230);
-#line 57 "tests/golden/run/builtins.hero"
+#line 59 "tests/golden/run/builtins.hero"
     t231 = h31_own31;
 #line 1316 "builtins.c"
     hero_array_decref(t231);
-#line 57 "tests/golden/run/builtins.hero"
+#line 59 "tests/golden/run/builtins.hero"
     t232 = h32_own32;
 #line 1320 "builtins.c"
     hero_str_decref(t232);
-#line 57 "tests/golden/run/builtins.hero"
+#line 59 "tests/golden/run/builtins.hero"
     t233 = h33_own33;
 #line 1324 "builtins.c"
     hero_array_decref(t233);
-#line 57 "tests/golden/run/builtins.hero"
+#line 59 "tests/golden/run/builtins.hero"
     t234 = h34_own34;
 #line 1328 "builtins.c"
     hero_str_decref(t234);
-#line 57 "tests/golden/run/builtins.hero"
+#line 59 "tests/golden/run/builtins.hero"
     t235 = h35_own35;
 #line 1332 "builtins.c"
     hero_array_decref(t235);
-#line 57 "tests/golden/run/builtins.hero"
+#line 59 "tests/golden/run/builtins.hero"
     t236 = h36_own36;
 #line 1336 "builtins.c"
     hero_str_decref(t236);
-#line 57 "tests/golden/run/builtins.hero"
+#line 59 "tests/golden/run/builtins.hero"
     t237 = h37_own37;
 #line 1340 "builtins.c"
     h_0opt_e201354_release(&t237);
-#line 57 "tests/golden/run/builtins.hero"
+#line 59 "tests/golden/run/builtins.hero"
     t238 = h38_own38;
 #line 1344 "builtins.c"
     h_0opt_e201354_release(&t238);
-#line 57 "tests/golden/run/builtins.hero"
+#line 59 "tests/golden/run/builtins.hero"
     t239 = h39_own39;
 #line 1348 "builtins.c"
     h_0opt_e201354_release(&t239);
     return;
 bb6:
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     t151 = h11_f2;
-#line 56 "tests/golden/run/builtins.hero"
+#line 58 "tests/golden/run/builtins.hero"
     t152 = t151.as.err;
 #line 1356 "builtins.c"
     hero_panic_must(t152);

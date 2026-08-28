@@ -20,8 +20,10 @@ function main()
     print(len(xs), xs[0], xs[3])
 
     total: i64 @ 0
+
     for i in range(from: 1, to: 6)
         total @ total + i
+
     print(total)
 
     # Both empty forms, and neither aborts.
@@ -35,6 +37,8 @@ function main()
 
 function map_str(xs: [i64]) -> [str]
     out: [str] @ []
+
     for x in xs
         out @ push(out, to_str(x))
+
     return out

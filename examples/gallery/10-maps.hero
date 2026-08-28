@@ -14,6 +14,7 @@ function known(scores: {str: i64}, name: str) -> bool
 # `.is_err()` asks without extracting; the `match` extracts without aborting.
 function report(scores: {str: i64}, name: str) -> str
     got = scores[name]
+
     if got.is_err()
         return name + " has no score"
     return name + " scored " + got.must().to_str()
@@ -31,8 +32,10 @@ function table() -> {str: i64}
 
 function total_of(scores: {str: i64}, names: [str]) -> i64
     sum: i64 @ 0
+
     for name in names
         sum @ sum + score_of(scores, name)
+
     return sum
 
 test "a missing key is a type, not a crash"
@@ -48,6 +51,7 @@ test "the four readings agree about presence and disagree about absence"
     assert report(scores, "alan") == "alan scored 8"
     assert report(scores, "nobody") == "nobody has no score"
     assert describe(scores, "alan") == "8"
+
     # The spec names it now — `m[k]` returns a `V?` with code `missing_key` — so
     # this asserts it. It used to say the code was unspecified and assert only
     # that *something* came back, which was right on the day it was written and

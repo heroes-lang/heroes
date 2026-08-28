@@ -12,8 +12,10 @@ record Entry
 # Written, tested, done.
 function total_calories(entries: [Entry]) -> i64
     total: i64 @ 0
+
     for e in entries
         total @ total + e.calories
+
     return total
 
 # Next up: the compiler will name the expected type and list `entries`,

@@ -60,6 +60,7 @@ function order_and_cycles(a: ast.Ast, r: resolved.Resolved, s: source.Source, de
 function collect(a: ast.Ast, r: resolved.Resolved, decls: [ast.Decl]) -> [Edge]
     edges: [Edge] @ []
     index: i64 @ 0
+
     for decl in decls
         match decl.kind
             .record_decl rec =>
@@ -67,6 +68,7 @@ function collect(a: ast.Ast, r: resolved.Resolved, decls: [ast.Decl]) -> [Edge]
                     push_edge(@edges, a, r, from: index, name: field.name, ty: field.ty)
             # A case with fields IS a small record (§4.2), so its payload
             # carries edges exactly as a record's fields do.
+
             .variant_decl v =>
                 for one_case in v.cases
                     for field in one_case.fields
@@ -80,12 +82,16 @@ function collect(a: ast.Ast, r: resolved.Resolved, decls: [ast.Decl]) -> [Edge]
             # itself`, because the shifted `from` collided with the
             # resolver's correct `to`. The self-mutation is the no-op
             # this language has (docs/work/DECIDE.md's item).
+
             .constant_decl | .function_decl | .test_decl => index @ index
+
         index @ index + 1
+
     return edges
 
 function push_edge(@edges: [Edge], a: ast.Ast, r: resolved.Resolved, from: i64, name: token.Span, ty: i64)
     target = by_value_target(a, r, ty)
+
     if !target.is_err()
         edges @ edges.push(Edge(from: from, to: target.must(), name: name, field: a.types[ty].span))
 
@@ -97,22 +103,27 @@ function by_value_target(a: ast.Ast, r: resolved.Resolved, ty: i64) -> i64?
         # The only edge: a bare name that resolves to a record or variant.
         .named =>
             match r.type_uses[ty]
-                .top t => return ok(t.at)
+                .top t                         => return ok(t.at)
                 .prim | .generic | .unresolved => return fail("leaf", "a primitive or parameter carries no edge")
         # Transparent: a T? is a by-value struct, so it carries T inside
         # it — the row the proposal got wrong and two judges found
         # independently.
+
         .fallible o => return by_value_target(a, r, o.inner)
         # The indirections: one pointer wide whatever they hold, so
         # neither lands its contents here — measured, three records
         # mutually recursive through arrays compile in the worst order.
+
         .array_of | .map_of => return fail("leaf", "a pointer breaks the edge")
         # A fixed array is sized, and its size is the element's times N —
         # the OPPOSITE of [T], so this descends rather than stopping.
+
         .fixed x => return by_value_target(a, r, x.element)
         # A function value is a C function pointer.
+
         .function_type => return fail("leaf", "a function pointer breaks the edge")
         .unit | .error => return fail("leaf", "no bytes here")
+
     return fail("leaf", "unreached")
 
 # Iterative depth-first search: a post-order for the acyclic part, one
@@ -124,38 +135,46 @@ function by_value_target(a: ast.Ast, r: resolved.Resolved, ty: i64) -> i64?
 function walk(s: source.Source, decls: [ast.Decl], edges: [Edge]) -> SizeAnswer
     colour: [i64] @ []
     i: i64 @ 0
+
     while i < decls.len()
         colour @ colour.push(0)
         i @ i + 1
+
     order: [i64] @ []
     seen: {str: bool} @ {}
     diagnostics: [diag.Diagnostic] @ []
     path: [i64] @ []
     root: i64 @ 0
+
     while root < decls.len()
         if colour[root] != 0 || !is_aggregate(decls, root)
             root @ root + 1
             continue
         stack: [PathStep] @ [PathStep(node: root, taken: 0)]
         colour[root] @ 1
+
         while stack.len() > 0
             top = stack[stack.len() - 1]
             stack @ stack.slice(from: 0, to: stack.len() - 1)
             out = out_edges(edges, node: top.node)
+
             if top.taken >= out.len()
                 colour[top.node] @ 2
                 order @ order.push(top.node)
+
                 if path.len() > 0
                     path @ path.slice(from: 0, to: path.len() - 1)
                 continue
             edge = out[top.taken]
             stack @ stack.push(PathStep(node: top.node, taken: top.taken + 1))
             target = edges[edge].to
+
             if colour[target] == 1
                 # A back edge: the cycle is this edge plus the suffix of
                 # the path that starts at target.
                 cycle = cycle_from(edges, path: path, closing: edge, target: target)
                 key = cycle_nodes_key(edges, cycle)
+
                 if seen[key].is_err()
                     seen[key] @ true
                     diagnostics @ diagnostics.push(report(s, decls, edges, cycle))
@@ -163,7 +182,9 @@ function walk(s: source.Source, decls: [ast.Decl], edges: [Edge]) -> SizeAnswer
                 colour[target] @ 1
                 path @ path.push(edge)
                 stack @ stack.push(PathStep(node: target, taken: 0))
+
         root @ root + 1
+
     if diagnostics.len() > 0
         empty: [i64] = []
         order @ empty
@@ -175,22 +196,26 @@ record PathStep
 
 function is_aggregate(decls: [ast.Decl], decl: i64) -> bool
     return match decls[decl].kind
-        .record_decl | .variant_decl => true
+        .record_decl | .variant_decl                 => true
         .constant_decl | .function_decl | .test_decl => false
 
 function out_edges(edges: [Edge], node: i64) -> [i64]
     out: [i64] @ []
     index: i64 @ 0
+
     for edge in edges
         if edge.from == node
             out @ out.push(index)
         index @ index + 1
+
     return out
 
 function cycle_nodes_key(edges: [Edge], cycle: [i64]) -> str
     rendered: [str] @ []
+
     for e in cycle
         rendered @ rendered.push(edges[e].from.to_str())
+
     return rendered.join("/")
 
 ## Which cycle the author is shown
@@ -202,29 +227,38 @@ function cycle_nodes_key(edges: [Edge], cycle: [i64]) -> str
 function cycle_from(edges: [Edge], path: [i64], closing: i64, target: i64) -> [i64]
     cycle: [i64] @ []
     found: bool @ false
+
     for e in path
         if edges[e].from == target
             found @ true
+
         if found
             cycle @ cycle.push(e)
+
     # A self-edge: the path holds nothing, the closing edge is the whole
     # cycle.
     cycle @ cycle.push(closing)
     lowest_at: i64 @ 0
     i: i64 @ 0
+
     while i < cycle.len()
         if edges[cycle[i]].from < edges[cycle[lowest_at]].from
             lowest_at @ i
         i @ i + 1
+
     rotated: [i64] @ []
     j: i64 @ lowest_at
+
     while j < cycle.len()
         rotated @ rotated.push(cycle[j])
         j @ j + 1
+
     k: i64 @ 0
+
     while k < lowest_at
         rotated @ rotated.push(cycle[k])
         k @ k + 1
+
     return rotated
 
 # One diagnostic per cycle, at the field that closes it, with the path
@@ -234,18 +268,31 @@ function cycle_from(edges: [Edge], path: [i64], closing: i64, target: i64) -> [i
 function report(s: source.Source, decls: [ast.Decl], edges: [Edge], cycle: [i64]) -> diag.Diagnostic
     last = cycle[cycle.len() - 1]
     steps: [str] @ []
+
     for e in cycle
         # `A.b: B (line 5)` rather than prose: the colon form is the one
         # the author wrote, and the step is located from the diagnostic's
         # own caret so a cross-module cycle names the file only where it
         # is elsewhere.
         at = source.elsewhere(s, here: edges[last].field.start, there: edges[e].field.start)
-        steps @ steps.push(decl_name(s, decls, edges[e].from) + "." + source.span_text(s, edges[e].name) + ": " + decl_name(s, decls, edges[e].to) + " (" + at + ")")
+        steps @ steps.push(
+            decl_name(s, decls, edges[e].from) + "." + source.span_text(s, edges[e].name) + ": " + decl_name(s, decls, edges[e].to) + " (" + at + ")"
+        )
+
     kind: str @ "record"
+
     match decls[edges[last].from].kind
-        .variant_decl => kind @ "variant"
+        .variant_decl                                               => kind @ "variant"
         .record_decl | .constant_decl | .function_decl | .test_decl => kind @ kind
-    return size_errors.no_size(kind: kind, holder: decl_name(s, decls, edges[last].from), through: decl_name(s, decls, edges[last].to), direct: cycle.len() == 1, steps: steps, span: edges[last].field)
+
+    return size_errors.no_size(
+        kind: kind,
+        holder: decl_name(s, decls, edges[last].from),
+        through: decl_name(s, decls, edges[last].to),
+        direct: cycle.len() == 1,
+        steps: steps,
+        span: edges[last].field
+    )
 
 function decl_name(s: source.Source, decls: [ast.Decl], decl: i64) -> str
     return source.span_text(s, decls[decl].name)
@@ -298,7 +345,10 @@ test "a T? is transparent and a variant payload carries edges"
 # small and collided with the resolver's correct `to`. Found
 # 2026-08-17 by the selfhost compiler refusing its own parse.hero.
 test "fixedbugs: a function before two same-typed fields is not a cycle"
-    got = sized_file("function first() -> i64\n    return 1\n\nrecord Thing\n    n: i64\n\nrecord Holder\n    a: Thing\n    b: Thing\n")
+    got = sized_file(
+        "function first() -> i64\n    return 1\n\nrecord Thing\n    n: i64\n\nrecord Holder\n    a: Thing\n    b: Thing\n"
+    )
     assert got.diagnostics.len() == 0
+
     # The order still names both aggregates, dependency first.
     assert got.order.len() == 2

@@ -36,11 +36,13 @@ function env(name: str) -> str
 # the shell an unquoted word.
 function sq(text: str) -> str
     out: str @ "'"
+
     for ch in text.chars()
         if ch == "'"
             out @ out + "'\\''"
         else
             out @ out + ch
+
     return out + "'"
 
 ## Tests
@@ -48,6 +50,7 @@ function sq(text: str) -> str
 test "quoting survives the quote itself, and the wrappers answer"
     assert sq("plain") == "'plain'"
     assert sq("we'ird") == "'we'\\''ird'"
+
     # A command that exists answers 0; an unset variable answers "".
     assert shell(command: "true") == 0
     assert env(name: "HEROES_NO_SUCH_VARIABLE_EXISTS") == ""

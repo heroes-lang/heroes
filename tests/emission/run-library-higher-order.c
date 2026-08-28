@@ -570,353 +570,353 @@ bb0:
     hero_print_int(t25);
 #line 49 "tests/golden/run/library-higher-order.hero"
     hero_print_end();
-#line 51 "tests/golden/run/library-higher-order.hero"
+#line 52 "tests/golden/run/library-higher-order.hero"
     t26 = HERO_STR_LIT(hero_str_61);
-#line 51 "tests/golden/run/library-higher-order.hero"
+#line 52 "tests/golden/run/library-higher-order.hero"
     t27 = HERO_STR_LIT(hero_str_62);
-#line 51 "tests/golden/run/library-higher-order.hero"
+#line 52 "tests/golden/run/library-higher-order.hero"
     t28 = HERO_STR_LIT(hero_str_63);
-#line 51 "tests/golden/run/library-higher-order.hero"
+#line 52 "tests/golden/run/library-higher-order.hero"
     t29 = hero_array_new(&hero_desc_str, 3);
-#line 51 "tests/golden/run/library-higher-order.hero"
+#line 52 "tests/golden/run/library-higher-order.hero"
     { HeroArrayHeader *grown = hero_array_push(t29, &t26);
-#line 51 "tests/golden/run/library-higher-order.hero"
+#line 52 "tests/golden/run/library-higher-order.hero"
       hero_array_decref(t29); t29 = grown; }
-#line 51 "tests/golden/run/library-higher-order.hero"
+#line 52 "tests/golden/run/library-higher-order.hero"
     { HeroArrayHeader *grown = hero_array_push(t29, &t27);
-#line 51 "tests/golden/run/library-higher-order.hero"
+#line 52 "tests/golden/run/library-higher-order.hero"
       hero_array_decref(t29); t29 = grown; }
-#line 51 "tests/golden/run/library-higher-order.hero"
+#line 52 "tests/golden/run/library-higher-order.hero"
     { HeroArrayHeader *grown = hero_array_push(t29, &t28);
-#line 51 "tests/golden/run/library-higher-order.hero"
+#line 52 "tests/golden/run/library-higher-order.hero"
       hero_array_decref(t29); t29 = grown; }
-#line 51 "tests/golden/run/library-higher-order.hero"
+#line 52 "tests/golden/run/library-higher-order.hero"
     t97 = h13_own13;
-#line 51 "tests/golden/run/library-higher-order.hero"
+#line 52 "tests/golden/run/library-higher-order.hero"
     h13_own13 = t29;
 #line 598 "libraryhigherorder.c"
     hero_array_decref(t97);
-#line 51 "tests/golden/run/library-higher-order.hero"
+#line 52 "tests/golden/run/library-higher-order.hero"
     t30 = HERO_STR_LIT(hero_str_0);
-#line 51 "tests/golden/run/library-higher-order.hero"
+#line 52 "tests/golden/run/library-higher-order.hero"
     t31 = h_libraryhigherorder_glue;
-#line 51 "tests/golden/run/library-higher-order.hero"
+#line 52 "tests/golden/run/library-higher-order.hero"
     t32 = h_library_fold_f720dcd(t29, t30, t31);
-#line 51 "tests/golden/run/library-higher-order.hero"
+#line 52 "tests/golden/run/library-higher-order.hero"
     t98 = h14_own14;
-#line 51 "tests/golden/run/library-higher-order.hero"
+#line 52 "tests/golden/run/library-higher-order.hero"
     h14_own14 = t32;
 #line 610 "libraryhigherorder.c"
     hero_str_decref(t98);
-#line 51 "tests/golden/run/library-higher-order.hero"
+#line 52 "tests/golden/run/library-higher-order.hero"
     hero_print_str(t32);
-#line 51 "tests/golden/run/library-higher-order.hero"
+#line 52 "tests/golden/run/library-higher-order.hero"
     hero_print_end();
-#line 53 "tests/golden/run/library-higher-order.hero"
+#line 54 "tests/golden/run/library-higher-order.hero"
     t33 = h0_xs;
-#line 53 "tests/golden/run/library-higher-order.hero"
+#line 54 "tests/golden/run/library-higher-order.hero"
     t34 = h_libraryhigherorder_odd;
-#line 53 "tests/golden/run/library-higher-order.hero"
+#line 54 "tests/golden/run/library-higher-order.hero"
     t35 = h_library_find_1b9a87(t33, t34);
-#line 53 "tests/golden/run/library-higher-order.hero"
+#line 54 "tests/golden/run/library-higher-order.hero"
     t99 = h15_own15;
-#line 53 "tests/golden/run/library-higher-order.hero"
+#line 54 "tests/golden/run/library-higher-order.hero"
     h15_own15 = t35;
 #line 626 "libraryhigherorder.c"
     h_0opt_e201354_release(&t99);
-#line 53 "tests/golden/run/library-higher-order.hero"
+#line 54 "tests/golden/run/library-higher-order.hero"
     t100 = h1_f0;
 #line 630 "libraryhigherorder.c"
     h_0opt_e201354_retain(&t35);
-#line 53 "tests/golden/run/library-higher-order.hero"
+#line 54 "tests/golden/run/library-higher-order.hero"
     h1_f0 = t35;
 #line 634 "libraryhigherorder.c"
     h_0opt_e201354_release(&t100);
-#line 53 "tests/golden/run/library-higher-order.hero"
+#line 54 "tests/golden/run/library-higher-order.hero"
     t36 = h1_f0;
-#line 53 "tests/golden/run/library-higher-order.hero"
+#line 54 "tests/golden/run/library-higher-order.hero"
     t37 = t36.tag;
-#line 53 "tests/golden/run/library-higher-order.hero"
+#line 54 "tests/golden/run/library-higher-order.hero"
     t38 = INT64_C(0);
-#line 53 "tests/golden/run/library-higher-order.hero"
+#line 54 "tests/golden/run/library-higher-order.hero"
     t39 = t37 == t38;
-#line 53 "tests/golden/run/library-higher-order.hero"
+#line 54 "tests/golden/run/library-higher-order.hero"
     if (t39) goto bb1; else goto bb2;
-#line 53 "tests/golden/run/library-higher-order.hero"
+#line 54 "tests/golden/run/library-higher-order.hero"
 bb1:
-#line 53 "tests/golden/run/library-higher-order.hero"
+#line 54 "tests/golden/run/library-higher-order.hero"
     t40 = h1_f0;
-#line 53 "tests/golden/run/library-higher-order.hero"
+#line 54 "tests/golden/run/library-higher-order.hero"
     t41 = t40.as.ok;
-#line 53 "tests/golden/run/library-higher-order.hero"
+#line 54 "tests/golden/run/library-higher-order.hero"
     h2_r0 = t41;
-#line 53 "tests/golden/run/library-higher-order.hero"
+#line 54 "tests/golden/run/library-higher-order.hero"
     goto bb3;
-#line 53 "tests/golden/run/library-higher-order.hero"
+#line 54 "tests/golden/run/library-higher-order.hero"
 bb2:
-#line 53 "tests/golden/run/library-higher-order.hero"
+#line 54 "tests/golden/run/library-higher-order.hero"
     t42 = INT64_C(0);
-#line 53 "tests/golden/run/library-higher-order.hero"
+#line 54 "tests/golden/run/library-higher-order.hero"
     t43 = INT64_C(1);
-#line 53 "tests/golden/run/library-higher-order.hero"
+#line 54 "tests/golden/run/library-higher-order.hero"
     if (__builtin_sub_overflow(t42, t43, &t44)) hero_panic_overflow();
-#line 53 "tests/golden/run/library-higher-order.hero"
+#line 54 "tests/golden/run/library-higher-order.hero"
     h2_r0 = t44;
-#line 53 "tests/golden/run/library-higher-order.hero"
+#line 54 "tests/golden/run/library-higher-order.hero"
     goto bb3;
-#line 53 "tests/golden/run/library-higher-order.hero"
+#line 54 "tests/golden/run/library-higher-order.hero"
 bb3:
-#line 53 "tests/golden/run/library-higher-order.hero"
+#line 54 "tests/golden/run/library-higher-order.hero"
     t45 = h2_r0;
-#line 53 "tests/golden/run/library-higher-order.hero"
+#line 54 "tests/golden/run/library-higher-order.hero"
     t46 = h0_xs;
-#line 53 "tests/golden/run/library-higher-order.hero"
+#line 54 "tests/golden/run/library-higher-order.hero"
     t47 = h_libraryhigherorder_big;
-#line 53 "tests/golden/run/library-higher-order.hero"
+#line 54 "tests/golden/run/library-higher-order.hero"
     t48 = h_library_find_1b9a87(t46, t47);
-#line 53 "tests/golden/run/library-higher-order.hero"
+#line 54 "tests/golden/run/library-higher-order.hero"
     t101 = h16_own16;
-#line 53 "tests/golden/run/library-higher-order.hero"
+#line 54 "tests/golden/run/library-higher-order.hero"
     h16_own16 = t48;
 #line 682 "libraryhigherorder.c"
     h_0opt_e201354_release(&t101);
-#line 53 "tests/golden/run/library-higher-order.hero"
+#line 54 "tests/golden/run/library-higher-order.hero"
     t102 = h3_f1;
 #line 686 "libraryhigherorder.c"
     h_0opt_e201354_retain(&t48);
-#line 53 "tests/golden/run/library-higher-order.hero"
+#line 54 "tests/golden/run/library-higher-order.hero"
     h3_f1 = t48;
 #line 690 "libraryhigherorder.c"
     h_0opt_e201354_release(&t102);
-#line 53 "tests/golden/run/library-higher-order.hero"
+#line 54 "tests/golden/run/library-higher-order.hero"
     t49 = h3_f1;
-#line 53 "tests/golden/run/library-higher-order.hero"
+#line 54 "tests/golden/run/library-higher-order.hero"
     t50 = t49.tag;
-#line 53 "tests/golden/run/library-higher-order.hero"
+#line 54 "tests/golden/run/library-higher-order.hero"
     t51 = INT64_C(0);
-#line 53 "tests/golden/run/library-higher-order.hero"
+#line 54 "tests/golden/run/library-higher-order.hero"
     t52 = t50 == t51;
-#line 53 "tests/golden/run/library-higher-order.hero"
+#line 54 "tests/golden/run/library-higher-order.hero"
     if (t52) goto bb4; else goto bb5;
-#line 53 "tests/golden/run/library-higher-order.hero"
+#line 54 "tests/golden/run/library-higher-order.hero"
 bb4:
-#line 53 "tests/golden/run/library-higher-order.hero"
+#line 54 "tests/golden/run/library-higher-order.hero"
     t53 = h3_f1;
-#line 53 "tests/golden/run/library-higher-order.hero"
+#line 54 "tests/golden/run/library-higher-order.hero"
     t54 = t53.as.ok;
-#line 53 "tests/golden/run/library-higher-order.hero"
+#line 54 "tests/golden/run/library-higher-order.hero"
     h4_r1 = t54;
-#line 53 "tests/golden/run/library-higher-order.hero"
+#line 54 "tests/golden/run/library-higher-order.hero"
     goto bb6;
-#line 53 "tests/golden/run/library-higher-order.hero"
+#line 54 "tests/golden/run/library-higher-order.hero"
 bb5:
-#line 53 "tests/golden/run/library-higher-order.hero"
+#line 54 "tests/golden/run/library-higher-order.hero"
     t55 = INT64_C(0);
-#line 53 "tests/golden/run/library-higher-order.hero"
+#line 54 "tests/golden/run/library-higher-order.hero"
     t56 = INT64_C(1);
-#line 53 "tests/golden/run/library-higher-order.hero"
+#line 54 "tests/golden/run/library-higher-order.hero"
     if (__builtin_sub_overflow(t55, t56, &t57)) hero_panic_overflow();
-#line 53 "tests/golden/run/library-higher-order.hero"
+#line 54 "tests/golden/run/library-higher-order.hero"
     h4_r1 = t57;
-#line 53 "tests/golden/run/library-higher-order.hero"
+#line 54 "tests/golden/run/library-higher-order.hero"
     goto bb6;
-#line 53 "tests/golden/run/library-higher-order.hero"
+#line 54 "tests/golden/run/library-higher-order.hero"
 bb6:
-#line 53 "tests/golden/run/library-higher-order.hero"
+#line 54 "tests/golden/run/library-higher-order.hero"
     t58 = h4_r1;
-#line 53 "tests/golden/run/library-higher-order.hero"
+#line 54 "tests/golden/run/library-higher-order.hero"
     hero_print_int(t45);
-#line 53 "tests/golden/run/library-higher-order.hero"
+#line 54 "tests/golden/run/library-higher-order.hero"
     hero_print_int(t58);
-#line 53 "tests/golden/run/library-higher-order.hero"
-    hero_print_end();
 #line 54 "tests/golden/run/library-higher-order.hero"
+    hero_print_end();
+#line 55 "tests/golden/run/library-higher-order.hero"
     t59 = h0_xs;
-#line 54 "tests/golden/run/library-higher-order.hero"
+#line 55 "tests/golden/run/library-higher-order.hero"
     t60 = h_libraryhigherorder_odd;
-#line 54 "tests/golden/run/library-higher-order.hero"
+#line 55 "tests/golden/run/library-higher-order.hero"
     t61 = h_library_any_1b9a87(t59, t60);
-#line 54 "tests/golden/run/library-higher-order.hero"
+#line 55 "tests/golden/run/library-higher-order.hero"
     t62 = h0_xs;
-#line 54 "tests/golden/run/library-higher-order.hero"
+#line 55 "tests/golden/run/library-higher-order.hero"
     t63 = h_libraryhigherorder_odd;
-#line 54 "tests/golden/run/library-higher-order.hero"
+#line 55 "tests/golden/run/library-higher-order.hero"
     t64 = h_library_all_1b9a87(t62, t63);
-#line 54 "tests/golden/run/library-higher-order.hero"
+#line 55 "tests/golden/run/library-higher-order.hero"
     t65 = h0_xs;
-#line 54 "tests/golden/run/library-higher-order.hero"
+#line 55 "tests/golden/run/library-higher-order.hero"
     t66 = h_libraryhigherorder_big;
-#line 54 "tests/golden/run/library-higher-order.hero"
+#line 55 "tests/golden/run/library-higher-order.hero"
     t67 = h_library_any_1b9a87(t65, t66);
-#line 54 "tests/golden/run/library-higher-order.hero"
+#line 55 "tests/golden/run/library-higher-order.hero"
     hero_print_bool(t61);
-#line 54 "tests/golden/run/library-higher-order.hero"
+#line 55 "tests/golden/run/library-higher-order.hero"
     hero_print_bool(t64);
-#line 54 "tests/golden/run/library-higher-order.hero"
+#line 55 "tests/golden/run/library-higher-order.hero"
     hero_print_bool(t67);
-#line 54 "tests/golden/run/library-higher-order.hero"
+#line 55 "tests/golden/run/library-higher-order.hero"
     hero_print_end();
-#line 58 "tests/golden/run/library-higher-order.hero"
+#line 59 "tests/golden/run/library-higher-order.hero"
     t68 = hero_array_new(&hero_desc_int, 1);
-#line 58 "tests/golden/run/library-higher-order.hero"
+#line 59 "tests/golden/run/library-higher-order.hero"
     t103 = h17_own17;
-#line 58 "tests/golden/run/library-higher-order.hero"
+#line 59 "tests/golden/run/library-higher-order.hero"
     h17_own17 = t68;
 #line 766 "libraryhigherorder.c"
     hero_array_decref(t103);
-#line 58 "tests/golden/run/library-higher-order.hero"
+#line 59 "tests/golden/run/library-higher-order.hero"
     t104 = h5_empty;
 #line 770 "libraryhigherorder.c"
     hero_array_incref(t68);
-#line 58 "tests/golden/run/library-higher-order.hero"
+#line 59 "tests/golden/run/library-higher-order.hero"
     h5_empty = t68;
 #line 774 "libraryhigherorder.c"
     hero_array_decref(t104);
-#line 59 "tests/golden/run/library-higher-order.hero"
+#line 60 "tests/golden/run/library-higher-order.hero"
     t69 = h5_empty;
-#line 59 "tests/golden/run/library-higher-order.hero"
+#line 60 "tests/golden/run/library-higher-order.hero"
     t70 = h_libraryhigherorder_double;
-#line 59 "tests/golden/run/library-higher-order.hero"
+#line 60 "tests/golden/run/library-higher-order.hero"
     t71 = h_library_map_37f8817a(t69, t70);
-#line 59 "tests/golden/run/library-higher-order.hero"
+#line 60 "tests/golden/run/library-higher-order.hero"
     t105 = h18_own18;
-#line 59 "tests/golden/run/library-higher-order.hero"
+#line 60 "tests/golden/run/library-higher-order.hero"
     h18_own18 = t71;
 #line 786 "libraryhigherorder.c"
     hero_array_decref(t105);
-#line 59 "tests/golden/run/library-higher-order.hero"
+#line 60 "tests/golden/run/library-higher-order.hero"
     t72 = hero_array_len(t71);
-#line 59 "tests/golden/run/library-higher-order.hero"
+#line 60 "tests/golden/run/library-higher-order.hero"
     t73 = h5_empty;
-#line 59 "tests/golden/run/library-higher-order.hero"
+#line 60 "tests/golden/run/library-higher-order.hero"
     t74 = INT64_C(7);
-#line 59 "tests/golden/run/library-higher-order.hero"
+#line 60 "tests/golden/run/library-higher-order.hero"
     t75 = h_libraryhigherorder_add;
-#line 59 "tests/golden/run/library-higher-order.hero"
+#line 60 "tests/golden/run/library-higher-order.hero"
     t76 = h_library_fold_37f8817a(t73, t74, t75);
-#line 59 "tests/golden/run/library-higher-order.hero"
+#line 60 "tests/golden/run/library-higher-order.hero"
     hero_print_int(t72);
-#line 59 "tests/golden/run/library-higher-order.hero"
+#line 60 "tests/golden/run/library-higher-order.hero"
     hero_print_int(t76);
-#line 59 "tests/golden/run/library-higher-order.hero"
+#line 60 "tests/golden/run/library-higher-order.hero"
     hero_print_end();
-#line 60 "tests/golden/run/library-higher-order.hero"
+#line 61 "tests/golden/run/library-higher-order.hero"
     t77 = h5_empty;
-#line 60 "tests/golden/run/library-higher-order.hero"
+#line 61 "tests/golden/run/library-higher-order.hero"
     t78 = h_libraryhigherorder_odd;
-#line 60 "tests/golden/run/library-higher-order.hero"
+#line 61 "tests/golden/run/library-higher-order.hero"
     t79 = h_library_any_1b9a87(t77, t78);
-#line 60 "tests/golden/run/library-higher-order.hero"
+#line 61 "tests/golden/run/library-higher-order.hero"
     t80 = h5_empty;
-#line 60 "tests/golden/run/library-higher-order.hero"
+#line 61 "tests/golden/run/library-higher-order.hero"
     t81 = h_libraryhigherorder_odd;
-#line 60 "tests/golden/run/library-higher-order.hero"
+#line 61 "tests/golden/run/library-higher-order.hero"
     t82 = h_library_all_1b9a87(t80, t81);
-#line 60 "tests/golden/run/library-higher-order.hero"
+#line 61 "tests/golden/run/library-higher-order.hero"
     t83 = h5_empty;
-#line 60 "tests/golden/run/library-higher-order.hero"
+#line 61 "tests/golden/run/library-higher-order.hero"
     t84 = h_libraryhigherorder_odd;
-#line 60 "tests/golden/run/library-higher-order.hero"
+#line 61 "tests/golden/run/library-higher-order.hero"
     t85 = h_library_find_1b9a87(t83, t84);
-#line 60 "tests/golden/run/library-higher-order.hero"
+#line 61 "tests/golden/run/library-higher-order.hero"
     t106 = h19_own19;
-#line 60 "tests/golden/run/library-higher-order.hero"
+#line 61 "tests/golden/run/library-higher-order.hero"
     h19_own19 = t85;
 #line 826 "libraryhigherorder.c"
     h_0opt_e201354_release(&t106);
-#line 60 "tests/golden/run/library-higher-order.hero"
+#line 61 "tests/golden/run/library-higher-order.hero"
     t107 = h6_f2;
 #line 830 "libraryhigherorder.c"
     h_0opt_e201354_retain(&t85);
-#line 60 "tests/golden/run/library-higher-order.hero"
+#line 61 "tests/golden/run/library-higher-order.hero"
     h6_f2 = t85;
 #line 834 "libraryhigherorder.c"
     h_0opt_e201354_release(&t107);
-#line 60 "tests/golden/run/library-higher-order.hero"
+#line 61 "tests/golden/run/library-higher-order.hero"
     t86 = h6_f2;
-#line 60 "tests/golden/run/library-higher-order.hero"
+#line 61 "tests/golden/run/library-higher-order.hero"
     t87 = t86.tag;
-#line 60 "tests/golden/run/library-higher-order.hero"
+#line 61 "tests/golden/run/library-higher-order.hero"
     t88 = INT64_C(1);
-#line 60 "tests/golden/run/library-higher-order.hero"
+#line 61 "tests/golden/run/library-higher-order.hero"
     t89 = t87 == t88;
-#line 60 "tests/golden/run/library-higher-order.hero"
+#line 61 "tests/golden/run/library-higher-order.hero"
     hero_print_bool(t79);
-#line 60 "tests/golden/run/library-higher-order.hero"
+#line 61 "tests/golden/run/library-higher-order.hero"
     hero_print_bool(t82);
-#line 60 "tests/golden/run/library-higher-order.hero"
+#line 61 "tests/golden/run/library-higher-order.hero"
     hero_print_bool(t89);
-#line 60 "tests/golden/run/library-higher-order.hero"
+#line 61 "tests/golden/run/library-higher-order.hero"
     hero_print_end();
-#line 60 "tests/golden/run/library-higher-order.hero"
+#line 61 "tests/golden/run/library-higher-order.hero"
     t108 = h0_xs;
 #line 854 "libraryhigherorder.c"
     hero_array_decref(t108);
-#line 60 "tests/golden/run/library-higher-order.hero"
+#line 61 "tests/golden/run/library-higher-order.hero"
     t109 = h1_f0;
 #line 858 "libraryhigherorder.c"
     h_0opt_e201354_release(&t109);
-#line 60 "tests/golden/run/library-higher-order.hero"
+#line 61 "tests/golden/run/library-higher-order.hero"
     t110 = h3_f1;
 #line 862 "libraryhigherorder.c"
     h_0opt_e201354_release(&t110);
-#line 60 "tests/golden/run/library-higher-order.hero"
+#line 61 "tests/golden/run/library-higher-order.hero"
     t111 = h5_empty;
 #line 866 "libraryhigherorder.c"
     hero_array_decref(t111);
-#line 60 "tests/golden/run/library-higher-order.hero"
+#line 61 "tests/golden/run/library-higher-order.hero"
     t112 = h6_f2;
 #line 870 "libraryhigherorder.c"
     h_0opt_e201354_release(&t112);
-#line 60 "tests/golden/run/library-higher-order.hero"
+#line 61 "tests/golden/run/library-higher-order.hero"
     t113 = h7_own7;
 #line 874 "libraryhigherorder.c"
     hero_array_decref(t113);
-#line 60 "tests/golden/run/library-higher-order.hero"
+#line 61 "tests/golden/run/library-higher-order.hero"
     t114 = h8_own8;
 #line 878 "libraryhigherorder.c"
     hero_array_decref(t114);
-#line 60 "tests/golden/run/library-higher-order.hero"
+#line 61 "tests/golden/run/library-higher-order.hero"
     t115 = h9_own9;
 #line 882 "libraryhigherorder.c"
     hero_str_decref(t115);
-#line 60 "tests/golden/run/library-higher-order.hero"
+#line 61 "tests/golden/run/library-higher-order.hero"
     t116 = h10_own10;
 #line 886 "libraryhigherorder.c"
     hero_array_decref(t116);
-#line 60 "tests/golden/run/library-higher-order.hero"
+#line 61 "tests/golden/run/library-higher-order.hero"
     t117 = h11_own11;
 #line 890 "libraryhigherorder.c"
     hero_array_decref(t117);
-#line 60 "tests/golden/run/library-higher-order.hero"
+#line 61 "tests/golden/run/library-higher-order.hero"
     t118 = h12_own12;
 #line 894 "libraryhigherorder.c"
     hero_str_decref(t118);
-#line 60 "tests/golden/run/library-higher-order.hero"
+#line 61 "tests/golden/run/library-higher-order.hero"
     t119 = h13_own13;
 #line 898 "libraryhigherorder.c"
     hero_array_decref(t119);
-#line 60 "tests/golden/run/library-higher-order.hero"
+#line 61 "tests/golden/run/library-higher-order.hero"
     t120 = h14_own14;
 #line 902 "libraryhigherorder.c"
     hero_str_decref(t120);
-#line 60 "tests/golden/run/library-higher-order.hero"
+#line 61 "tests/golden/run/library-higher-order.hero"
     t121 = h15_own15;
 #line 906 "libraryhigherorder.c"
     h_0opt_e201354_release(&t121);
-#line 60 "tests/golden/run/library-higher-order.hero"
+#line 61 "tests/golden/run/library-higher-order.hero"
     t122 = h16_own16;
 #line 910 "libraryhigherorder.c"
     h_0opt_e201354_release(&t122);
-#line 60 "tests/golden/run/library-higher-order.hero"
+#line 61 "tests/golden/run/library-higher-order.hero"
     t123 = h17_own17;
 #line 914 "libraryhigherorder.c"
     hero_array_decref(t123);
-#line 60 "tests/golden/run/library-higher-order.hero"
+#line 61 "tests/golden/run/library-higher-order.hero"
     t124 = h18_own18;
 #line 918 "libraryhigherorder.c"
     hero_array_decref(t124);
-#line 60 "tests/golden/run/library-higher-order.hero"
+#line 61 "tests/golden/run/library-higher-order.hero"
     t125 = h19_own19;
 #line 922 "libraryhigherorder.c"
     h_0opt_e201354_release(&t125);

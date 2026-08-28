@@ -56,10 +56,12 @@ function lex(s: source.Source) -> LexOutput
     tokens: [token.Token] @ []
     diagnostics: [diag.Diagnostic] @ []
     index: i64 @ 0
+
     for entry in s.files
         _ = entry
         offset = s.files[index].start
         one = lex_one(source_extent.text_of(s, index))
+
         for t in one.tokens
             # Each file's own eof is dropped; the compilation gets one,
             # below, at the root's end. The `continue` here belongs to
@@ -67,16 +69,25 @@ function lex(s: source.Source) -> LexOutput
             # keeps `index` — the trap that cost five sites today.
             if t.kind == .eof
                 continue
-            tokens @ tokens.push(token.Token(kind: t.kind, span: token.Span(start: t.span.start + offset, end: t.span.end + offset)))
+            tokens @ tokens.push(
+                token.Token(kind: t.kind, span: token.Span(start: t.span.start + offset, end: t.span.end + offset))
+            )
+
         for d in one.diagnostics
             moved: diag.Diagnostic @ d
             moved.span @ token.Span(start: d.span.start + offset, end: d.span.end + offset)
             fixes: [diag.Fix] @ []
+
             for fix in d.fixes
-                fixes @ fixes.push(diag.Fix(title: fix.title, replacement: fix.replacement, span: token.Span(start: fix.span.start + offset, end: fix.span.end + offset), certainty: fix.certainty))
+                fixes @ fixes.push(
+                    diag.Fix(title: fix.title, replacement: fix.replacement, span: token.Span(start: fix.span.start + offset, end: fix.span.end + offset), certainty: fix.certainty)
+                )
+
             moved.fixes @ fixes
             diagnostics @ diagnostics.push(moved)
+
         index @ index + 1
+
     at = source_extent.root_end(s)
     tokens @ tokens.push(token.Token(kind: .eof, span: token.Span(start: at, end: at)))
     return LexOutput(tokens: tokens, diagnostics: diagnostics)
@@ -87,21 +98,30 @@ function lex(s: source.Source) -> LexOutput
 # in `diagnostics`, and the token stream is always complete through eof.
 function lex_one(text: str) -> LexOutput
     l: state.LexState @ state.new_state()
+
     while true
         layout.line_start(@l, text)
+
         if l.pos >= text.len()
             break
         scan.line_body(@l, text)
+
     # EOF: terminate the last line if the file ended without a newline,
     # report every opener that never closed (panel 007: otherwise one missing
     # `)` silently swallows the rest of the file's layout), then close every
     # block still open.
     layout.maybe_terminator(@l)
+
     for span in l.open_brackets
-        l.diagnostics @ l.diagnostics.push(diag.new_diagnostic(code: "unclosed_bracket", message: "`" + text.slice(from: span.start, to: span.end) + "` opened here is never closed", span: span))
+        l.diagnostics @ l.diagnostics.push(
+            diag.new_diagnostic(code: "unclosed_bracket", message: "`" + text.slice(from: span.start, to: span.end) + "` opened here is never closed", span: span)
+        )
+
     end = token.Span(start: l.pos, end: l.pos)
+
     for _ in range(from: 0, to: l.level)
         l.tokens @ l.tokens.push(token.Token(kind: .dedent, span: end))
+
     l.tokens @ l.tokens.push(token.Token(kind: .eof, span: end))
     return LexOutput(tokens: l.tokens, diagnostics: l.diagnostics)
 
@@ -111,8 +131,10 @@ function lex_one(text: str) -> LexOutput
 # tests' rendering, and what keeps every end-to-end assertion readable.
 function kind_line(tokens: [token.Token]) -> str
     names: [str] @ []
+
     for t in tokens
         names @ names.push(token.kind_name(t.kind))
+
     return names.join(" ")
 
 test "a whole program lexes to the stream the parser expects"
@@ -142,6 +164,7 @@ test "blank and comment-only lines are layout-neutral"
 
 test "dedents close one level at a time and eof closes the rest"
     out = lex_one("if a\n    if b\n        x = 1\n")
+
     # A block header line ends in an ident, which IS a line ender — the
     # terminator lands before the indent, and the parser reads both.
     assert kind_line(out.tokens) == "kw_if ident terminator indent kw_if ident terminator indent ident eq int terminator dedent dedent eof"
@@ -150,8 +173,10 @@ test "dedents close one level at a time and eof closes the rest"
 test "an error never stops the lexer"
     out = lex_one("let x = 0700 € \"open\n")
     codes: [str] @ []
+
     for d in out.diagnostics
         codes @ codes.push(d.code)
+
     assert codes == ["reserved_word", "leading_zero", "unexpected_character", "unterminated_string"]
     assert out.tokens[out.tokens.len() - 1].kind == .eof
 
@@ -223,11 +248,13 @@ test "fixedbugs: a file's brackets and indent do not cross into the next"
     ]
     s = source.from_files(inputs)
     out = lex(s)
+
     # The unclosed bracket is reported once, inside broken.hero.
     assert out.diagnostics.len() == 1
     assert out.diagnostics[0].code == "unclosed_bracket"
     assert source.is_root(s, out.diagnostics[0].span.start) == false
     assert source.file_at(s, out.diagnostics[0].span.start).name == "broken.hero"
+
     # The one eof sits at the ROOT's end, never in the library.
     last = out.tokens[out.tokens.len() - 1]
     assert last.kind == .eof

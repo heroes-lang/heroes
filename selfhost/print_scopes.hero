@@ -23,6 +23,7 @@ function dump_scopes(r: resolved.Resolved, s: source.Source, decls: [ast.Decl]) 
     out: str @ "file " + s.name + "\n"
     here = source.module_at(s, 0)
     out @ out + "module " + here + "\n"
+
     # What this file may write qualified, and what each module offers
     # it — the half of the question the symbol table cannot show,
     # because those names are not in it.
@@ -31,47 +32,62 @@ function dump_scopes(r: resolved.Resolved, s: source.Source, decls: [ast.Decl]) 
     # `uses` block of --dump-scopes prints in exactly this order, so a
     # golden reads it (design.md §4.9, paid here with one sort).
     named = r.module_uses[here]
+
     if !named.is_err() && named.must().len() > 0
         out @ out + "uses\n"
+
         for module in sort(named.must())
             out @ out + "  " + module + "\n"
+
             for name in resolved.names_in(r, module: module)
                 decl = resolved.top_in(r, module: module, name: name)
+
                 if decl.is_err()
                     continue
+
                 # locate, not line_col: the second is the line in the
                 # concatenated text, which is a real file and a line
                 # nobody can find in it.
                 found = source.locate(s, decls[decl.must()].name.start)
                 out @ out + "    " + entity(decls, decl: decl.must()) + " " + module + "." + name + " (" + found.file + ":" + found.line.to_str() + ")\n"
     out @ out + "symbols\n"
+
     for name in resolved.names_in(r, module: here)
         decl = resolved.top_in(r, module: here, name: name)
+
         if decl.is_err()
             continue
+
         if !source.is_root(s, decls[decl.must()].name.start)
             continue
         line = source.line_of(s, decls[decl.must()].name.start)
         out @ out + "  " + entity(decls, decl: decl.must()) + " " + name + " (line " + line.to_str() + ")\n"
+
     out @ out + "scopes\n"
     index: i64 @ 0
+
     for decl in decls
         if !source.is_root(s, decl.name.start)
             index @ index + 1
             continue
         section: str @ ""
+
         for local in r.locals
             if local.owner != index
                 continue
+
             # Two spaces per scope, like every other dump here.
             indent = "  ".repeat((1 + local.depth).to_u64().must())
             marker: str @ ""
+
             if local.mutable
                 marker @ " @"
             section @ section + "  " + indent + kind_word(local.kind) + " " + source.span_text(s, local.name) + marker + " (reads " + local.reads.to_str() + ", writes " + local.writes.to_str() + ")\n"
+
         if section.len() > 0
             out @ out + "  " + entity(decls, decl: index) + " " + source.span_text(s, decl.name) + "\n" + section
         index @ index + 1
+
     # Named rather than counted: the suppression is file-wide (§4.16),
     # so "holes present" without saying where would describe a rule
     # the compiler no longer has.
@@ -79,6 +95,7 @@ function dump_scopes(r: resolved.Resolved, s: source.Source, decls: [ast.Decl]) 
     # by a golden, so the sort is the golden's stability (§4.9).
     for module in sort(r.holes_in)
         out @ out + "holes in `" + module + "`: unused bindings are not reported there\n"
+
     return out
 
 function entity(decls: [ast.Decl], decl: i64) -> str
@@ -95,18 +112,19 @@ function entity(decls: [ast.Decl], decl: i64) -> str
             if fd.value.is_extern
                 return "extern"
             return "function"
-        .record_decl => return "record"
+        .record_decl  => return "record"
         .variant_decl => return "variant"
-        .test_decl => return "test"
+        .test_decl    => return "test"
+
     return "declaration"
 
 function kind_word(kind: resolved.LocalKind) -> str
     return match kind
-        .param => "param"
-        .bind => "bind"
-        .cell => "cell"
+        .param    => "param"
+        .bind     => "bind"
+        .cell     => "cell"
         .loop_var => "loop"
-        .payload => "payload"
+        .payload  => "payload"
 
 ## Tests
 

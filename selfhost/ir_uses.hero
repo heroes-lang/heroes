@@ -19,9 +19,10 @@ use ir_state
 # forgets to list its operands fails the exhaustiveness check.
 function operands(f: ir_state.Function, op: ir.OpKind) -> [i64]
     out: [i64] @ []
+
     match op
         .lit | .hole | .missing | .copy_out | .func_ref => return out
-        .load ld => return path_values(f, ld.place)
+        .load ld                                        => return path_values(f, ld.place)
         .store st =>
             out @ path_values(f, st.place)
             out @ out.push(st.value)
@@ -35,6 +36,7 @@ function operands(f: ir_state.Function, op: ir.OpKind) -> [i64]
         # A refcount operation reads the value it adjusts. Saying so
         # here is what makes the dominance check cover the ownership
         # pass's own output.
+
         .incref rc => out @ out.push(rc.value)
         .decref rc => out @ out.push(rc.value)
         .binary bin =>
@@ -42,8 +44,9 @@ function operands(f: ir_state.Function, op: ir.OpKind) -> [i64]
             out @ out.push(bin.right)
         .call cl =>
             match cl.callee
-                .indirect ind => out @ out.push(ind.value)
+                .indirect ind                         => out @ out.push(ind.value)
                 .heroes_fn | .extern_fn | .builtin_fn => out @ out
+
             for v in arg_values(f, cl.arguments)
                 out @ out.push(v)
         .construct con =>
@@ -52,7 +55,7 @@ function operands(f: ir_state.Function, op: ir.OpKind) -> [i64]
         .abort_op ab =>
             for v in arg_values(f, ab.arguments)
                 out @ out.push(v)
-        .field fl => out @ out.push(fl.base)
+        .field fl   => out @ out.push(fl.base)
         .payload pl => out @ out.push(pl.base)
         .index ix =>
             out @ out.push(ix.base)
@@ -62,39 +65,48 @@ function operands(f: ir_state.Function, op: ir.OpKind) -> [i64]
             out @ out.push(mg.key)
         .len_of ln => out @ out.push(ln.value)
         .tag_of tg => out @ out.push(tg.value)
+
     return out
 
 function terminator_operands(term: ir.Term) -> [i64]
     out: [i64] @ []
+
     match term
-        .branch br => out @ out.push(br.cond)
+        .branch br      => out @ out.push(br.cond)
         .switch_term sw => out @ out.push(sw.tag)
         .return_term ret =>
             if !ret.value.is_err()
                 out @ out.push(ret.value.must())
         .jump | .unreachable | .open => return out
+
     return out
 
 function arg_values(f: ir_state.Function, run: ir.Run) -> [i64]
     out: [i64] @ []
+
     if run.start + run.length > f.arguments.len()
         return out
+
     for arg in ir_state.args_of(f, run)
         match arg
             .value_arg v => out @ out.push(v.value)
             .inout_arg io =>
                 for v in path_values(f, io.place)
                     out @ out.push(v)
+
     return out
 
 function path_values(f: ir_state.Function, place: ir.Place) -> [i64]
     out: [i64] @ []
+
     if place.path.start + place.path.length > f.steps.len()
         return out
+
     for step in ir_state.steps_of(f, place.path)
         match step
             .index_step ix => out @ out.push(ix.value)
-            .field_step => continue
+            .field_step    => continue
+
     return out
 
 # The slots an operation names. The Rust version carries the function
@@ -102,20 +114,37 @@ function path_values(f: ir_state.Function, place: ir.Place) -> [i64]
 # parameter, so the honest signature is the one without it.
 function slots_of(op: ir.OpKind) -> [i64]
     out: [i64] @ []
+
     match op
-        .load ld => out @ out.push(ld.place.root)
-        .store st => out @ out.push(st.place.root)
-        .push_owned pg => out @ out.push(pg.place.root)
-        .copy_out co => out @ out.push(co.param)
-        .lit | .unary | .binary | .cast | .call | .construct => return out
-        .field | .index | .map_get | .len_of | .tag_of | .payload => return out
+        .load ld                                                     => out @ out.push(ld.place.root)
+        .store st                                                    => out @ out.push(st.place.root)
+        .push_owned pg                                               => out @ out.push(pg.place.root)
+        .copy_out co                                                 => out @ out.push(co.param)
+        .lit | .unary | .binary | .cast | .call | .construct         => return out
+        .field | .index | .map_get | .len_of | .tag_of | .payload    => return out
         .func_ref | .abort_op | .incref | .decref | .hole | .missing => return out
+
     return out
 
 ## Tests
 
 function scaffold() -> ir_state.Function
-    return ir_state.Function(name: "t", decl: 0, kind: .function_kind, generics: [], params: [], result: 0, slots: [], blocks: [], values: [0, 1, 2, 3, 4], arguments: [.value_arg(value: 3), .inout_arg(place: ir.Place(root: 0, path: ir.Run(start: 0, length: 1)))], steps: [.index_step(value: 4)], instance: [], call_instances: {}, span: token.Span(start: 0, end: 1))
+    return ir_state.Function(
+        name: "t",
+        decl: 0,
+        kind: .function_kind,
+        generics: [],
+        params: [],
+        result: 0,
+        slots: [],
+        blocks: [],
+        values: [0, 1, 2, 3, 4],
+        arguments: [.value_arg(value: 3), .inout_arg(place: ir.Place(root: 0, path: ir.Run(start: 0, length: 1)))],
+        steps: [.index_step(value: 4)],
+        instance: [],
+        call_instances: {},
+        span: token.Span(start: 0, end: 1)
+    )
 
 test "a store reads its path and its value, a call reads its pointer first"
     f = scaffold()
@@ -124,6 +153,7 @@ test "a store reads its path and its value, a call reads its pointer first"
     assert st[0] == 4
     assert st[1] == 2
     cl = operands(f, .call(callee: .indirect(value: 1), arguments: ir.Run(start: 0, length: 2), variadic: false))
+
     # The pointer, the value argument, then the @ place's index value.
     assert cl.len() == 3
     assert cl[0] == 1

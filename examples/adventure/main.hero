@@ -24,9 +24,11 @@ use world
 
 function main()
     given = args()
+
     if len(given) == 0
         print("usage: adventure <walkthrough.txt>")
         return
+
     match read_file(given[0])
         .err e     => print("cannot read ", given[0], ": ", e.code)
         .ok script => run(script)
@@ -35,8 +37,10 @@ function run(script: str)
     w = world.make()
     lines = commands(script)
     turn = game.play_all(w, lines)
+
     for said in turn.said
         print(said)
+
     print("")
     print(turn.next.moves, " moves, ", ending_of(turn.next))
 
@@ -50,11 +54,14 @@ function ending_of(g: game.Game) -> str
 # of them.
 function commands(script: str) -> [str]
     out: [str] @ []
+
     for line in split_lines(script)
         head = trimmed(line)
+
         if head == "" || head[0] == '#'
             continue
         out @ out.push(head)
+
     return out
 
 function is_space(c: u8) -> bool
@@ -62,22 +69,28 @@ function is_space(c: u8) -> bool
 
 function trimmed(line: str) -> str
     from: i64 @ 0
+
     while from < line.len() && is_space(line[from])
         from @ from + 1
+
     to: i64 @ line.len()
+
     while to > from && is_space(line[to - 1])
         to @ to - 1
+
     return line.slice(from: from, to: to)
 
 function split_lines(text: str) -> [str]
     out: [str] @ []
     start: i64 @ 0
     i: i64 @ 0
+
     while i < text.len()
         if text[i] == '\n'
             out @ out.push(text.slice(from: start, to: i))
             start @ i + 1
         i @ i + 1
+
     if start < text.len()
         out @ out.push(text.slice(from: start, to: text.len()))
     return out

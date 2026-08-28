@@ -52,37 +52,90 @@ record Shape
 # the four, and at hand-written numbers (20, 3, 3); a floor at the real
 # count is the same rule with the slack taken out.
 function shape_check() -> Shape
-    return Shape(name: "check", dir: "tests/golden/check", verb: "check", flag: "--brief", on_stderr: true, want_code: 1, least: 65, silent_stdout: false, library_skip: false)
+    return Shape(
+        name: "check",
+        dir: "tests/golden/check",
+        verb: "check",
+        flag: "--brief",
+        on_stderr: true,
+        want_code: 1,
+        least: 65,
+        silent_stdout: false,
+        library_skip: false
+    )
 
 function shape_ir() -> Shape
-    return Shape(name: "ir", dir: "tests/golden/ir", verb: "build", flag: "--dump-ir", on_stderr: false, want_code: 0, least: 20, silent_stdout: false, library_skip: false)
+    return Shape(
+        name: "ir",
+        dir: "tests/golden/ir",
+        verb: "build",
+        flag: "--dump-ir",
+        on_stderr: false,
+        want_code: 0,
+        least: 20,
+        silent_stdout: false,
+        library_skip: false
+    )
 
 function shape_emit() -> Shape
-    return Shape(name: "emit", dir: "tests/golden/emit", verb: "build", flag: "--emit-c", on_stderr: false, want_code: 0, least: 6, silent_stdout: false, library_skip: false)
+    return Shape(
+        name: "emit",
+        dir: "tests/golden/emit",
+        verb: "build",
+        flag: "--emit-c",
+        on_stderr: false,
+        want_code: 0,
+        least: 6,
+        silent_stdout: false,
+        library_skip: false
+    )
 
 # `unsupported/` runs a plain `build`: the case is a program the backend
 # REFUSES, so the artifact is the refusal on stderr and there must be
 # nothing on stdout at all.
 function shape_unsupported() -> Shape
-    return Shape(name: "unsupported", dir: "tests/golden/unsupported", verb: "build", flag: "", on_stderr: true, want_code: 1, least: 11, silent_stdout: true, library_skip: true)
+    return Shape(
+        name: "unsupported",
+        dir: "tests/golden/unsupported",
+        verb: "build",
+        flag: "",
+        on_stderr: true,
+        want_code: 1,
+        least: 11,
+        silent_stdout: true,
+        library_skip: true
+    )
 
 function run_all(scratch: str, compiler: str, shape: Shape) -> report.Report?
     found = cases.collect(scratch: scratch, dir: shape.dir)?
     r: report.Report @ report.empty()
+
     if found.len() < shape.least
-        report.keep_failure(@r, label: shape.name, detail: "  " + shape.dir + " has " + found.len().to_str() + " cases and had " + shape.least.to_str() + " — a golden that stopped running is not a golden")
+        report.keep_failure(
+            @r,
+            label: shape.name,
+            detail: "  " + shape.dir + " has " + found.len().to_str() + " cases and had " + shape.least.to_str() + " — a golden that stopped running is not a golden"
+        )
     skipped: i64 @ 0
+
     for item in found
         expectation = read_file(item.expected)
+
         if expectation.is_err()
             report.keep_failure(@r, label: shape.name + "/" + item.name, detail: "  cannot read " + item.expected)
         else
             line: str @ shell.sq(compiler) + " " + shape.verb + " " + shell.sq(item.source)
+
             if shape.flag.len() > 0
                 line @ line + " " + shape.flag
             said = shell.run(scratch: scratch, command: line)
+
             if said.is_err()
-                report.keep_failure(@r, label: shape.name + "/" + item.name, detail: "  cannot run the compiler on " + item.source)
+                report.keep_failure(
+                    @r,
+                    label: shape.name + "/" + item.name,
+                    detail: "  cannot run the compiler on " + item.source
+                )
             else if shape.library_skip && said.must().err != expectation.must() && shell.machine_lacks_the_library(said.must().err)
                 # The comparison comes FIRST and the skip only applies
                 # where the two disagree: a case whose expectation IS a
@@ -92,8 +145,13 @@ function run_all(scratch: str, compiler: str, shape: Shape) -> report.Report?
                 skipped @ skipped + 1
             else
                 verdict(@r, shape: shape, item: item, expected: expectation.must(), said: said.must())
+
     if skipped > 0 && skipped * 3 >= found.len()
-        report.keep_failure(@r, label: shape.name, detail: "  " + skipped.to_str() + " of " + found.len().to_str() + " cases were skipped for a missing library — this machine is not testing the refusals")
+        report.keep_failure(
+            @r,
+            label: shape.name,
+            detail: "  " + skipped.to_str() + " of " + found.len().to_str() + " cases were skipped for a missing library — this machine is not testing the refusals"
+        )
     return ok(r)
 
 # One case's questions, in the order a reader wants them: what it
@@ -102,16 +160,32 @@ function run_all(scratch: str, compiler: str, shape: Shape) -> report.Report?
 function verdict(@r: report.Report, shape: Shape, item: cases.Case, expected: str, said: shell.Run)
     label = shape.name + "/" + item.name
     actual: str @ said.out
+
     if shape.on_stderr
         actual @ said.err
+
     if actual != expected
-        report.keep_failure(@r, label: label, detail: report.mismatch(what: item.source, expected: expected, actual: actual))
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: report.mismatch(what: item.source, expected: expected, actual: actual)
+        )
         return
+
     if shape.silent_stdout && said.out.len() > 0
-        report.keep_failure(@r, label: label, detail: "  " + item.source + " is refused, so there is no artifact — it wrote " + said.out.len().to_str() + " bytes to stdout")
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: "  " + item.source + " is refused, so there is no artifact — it wrote " + said.out.len().to_str() + " bytes to stdout"
+        )
         return
+
     if said.code != shape.want_code
-        report.keep_failure(@r, label: label, detail: "  " + item.source + " must exit " + shape.want_code.to_str() + " — it exited " + said.code.to_str())
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: "  " + item.source + " must exit " + shape.want_code.to_str() + " — it exited " + said.code.to_str()
+        )
         return
     report.keep_pass(@r)
 
@@ -125,10 +199,12 @@ function verdict(@r: report.Report, shape: Shape, item: cases.Case, expected: st
 function stub(scratch: str, name: str, says: str, on_stderr: bool, ends: i64) -> str?
     path = scratch + "/" + name
     stream: str @ ""
+
     if on_stderr
         stream @ " 1>&2"
     write_file(path: path, text: "#!/bin/sh\nprintf '%s' " + shell.sq(says) + stream + "\nexit " + ends.to_str() + "\n")?
     made = shell.run(scratch: scratch, command: "chmod +x " + shell.sq(path))?
+
     if made.code != 0
         return fail("cannot_run", "cannot make " + path + " executable")
     return ok(path)
@@ -149,7 +225,17 @@ test "a diagnostics suite passes on a match and fails on either half"
     scratch = "build/harness-selftest"
     tree = one_case_tree(scratch: scratch, name: "check", expectation: SAID)
     assert !tree.is_err()
-    form = Shape(name: "check", dir: tree.must(), verb: "check", flag: "--brief", on_stderr: true, want_code: 1, least: 1, silent_stdout: false, library_skip: false)
+    form = Shape(
+        name: "check",
+        dir: tree.must(),
+        verb: "check",
+        flag: "--brief",
+        on_stderr: true,
+        want_code: 1,
+        least: 1,
+        silent_stdout: false,
+        library_skip: false
+    )
 
     right = stub(scratch: scratch, name: "stub-right.sh", says: SAID, on_stderr: true, ends: 1)
     assert !right.is_err()
@@ -158,7 +244,13 @@ test "a diagnostics suite passes on a match and fails on either half"
     assert green.must().passed == 1
     assert green.must().failed == 0
 
-    wrong = stub(scratch: scratch, name: "stub-wrong.sh", says: "x.hero:1:1: error[other]: something else\n", on_stderr: true, ends: 1)
+    wrong = stub(
+        scratch: scratch,
+        name: "stub-wrong.sh",
+        says: "x.hero:1:1: error[other]: something else\n",
+        on_stderr: true,
+        ends: 1
+    )
     assert !wrong.is_err()
     red = run_all(scratch: scratch, compiler: wrong.must(), shape: form)
     assert !red.is_err()
@@ -177,7 +269,17 @@ test "an artifact suite reads stdout, and a diagnostic on stderr does not save i
     scratch = "build/harness-selftest"
     tree = one_case_tree(scratch: scratch, name: "ir", expectation: "fn main:\n  bb0:\n")
     assert !tree.is_err()
-    form = Shape(name: "ir", dir: tree.must(), verb: "build", flag: "--dump-ir", on_stderr: false, want_code: 0, least: 1, silent_stdout: false, library_skip: false)
+    form = Shape(
+        name: "ir",
+        dir: tree.must(),
+        verb: "build",
+        flag: "--dump-ir",
+        on_stderr: false,
+        want_code: 0,
+        least: 1,
+        silent_stdout: false,
+        library_skip: false
+    )
 
     right = stub(scratch: scratch, name: "stub-dump.sh", says: "fn main:\n  bb0:\n", on_stderr: false, ends: 0)
     assert !right.is_err()
@@ -197,7 +299,17 @@ test "a refusal that writes an artifact fails, and so does a suite below its flo
     scratch = "build/harness-selftest"
     tree = one_case_tree(scratch: scratch, name: "unsupported", expectation: SAID)
     assert !tree.is_err()
-    refuse = Shape(name: "unsupported", dir: tree.must(), verb: "build", flag: "", on_stderr: true, want_code: 1, least: 1, silent_stdout: true, library_skip: true)
+    refuse = Shape(
+        name: "unsupported",
+        dir: tree.must(),
+        verb: "build",
+        flag: "",
+        on_stderr: true,
+        want_code: 1,
+        least: 1,
+        silent_stdout: true,
+        library_skip: true
+    )
 
     # Says the right refusal on stderr, exits 1 — and leaves a byte on
     # stdout, which means it half-built something.
@@ -210,7 +322,17 @@ test "a refusal that writes an artifact fails, and so does a suite below its flo
     assert leaky.must().failed == 1
 
     # The floor: the same one-case tree, told to expect two.
-    floored = Shape(name: "unsupported", dir: tree.must(), verb: "build", flag: "", on_stderr: true, want_code: 1, least: 2, silent_stdout: true, library_skip: true)
+    floored = Shape(
+        name: "unsupported",
+        dir: tree.must(),
+        verb: "build",
+        flag: "",
+        on_stderr: true,
+        want_code: 1,
+        least: 2,
+        silent_stdout: true,
+        library_skip: true
+    )
     right = stub(scratch: scratch, name: "stub-refuse.sh", says: SAID, on_stderr: true, ends: 1)
     assert !right.is_err()
     short = run_all(scratch: scratch, compiler: right.must(), shape: floored)
@@ -222,11 +344,28 @@ test "a machine missing the library skips, but a machine missing every library f
     scratch = "build/harness-selftest"
     tree = one_case_tree(scratch: scratch, name: "skipping", expectation: SAID)
     assert !tree.is_err()
-    refuse = Shape(name: "unsupported", dir: tree.must(), verb: "build", flag: "", on_stderr: true, want_code: 1, least: 1, silent_stdout: true, library_skip: true)
-    absent = stub(scratch: scratch, name: "stub-nolib.sh", says: "x.hero:1:1: error[ffi_package]: pkg-config does not know raylib\n", on_stderr: true, ends: 1)
+    refuse = Shape(
+        name: "unsupported",
+        dir: tree.must(),
+        verb: "build",
+        flag: "",
+        on_stderr: true,
+        want_code: 1,
+        least: 1,
+        silent_stdout: true,
+        library_skip: true
+    )
+    absent = stub(
+        scratch: scratch,
+        name: "stub-nolib.sh",
+        says: "x.hero:1:1: error[ffi_package]: pkg-config does not know raylib\n",
+        on_stderr: true,
+        ends: 1
+    )
     assert !absent.is_err()
     got = run_all(scratch: scratch, compiler: absent.must(), shape: refuse)
     assert !got.is_err()
+
     # One case, one skip: that is 100% skipped, which the floor refuses.
     assert got.must().passed == 0
     assert got.must().failed == 1

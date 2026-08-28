@@ -164,158 +164,158 @@ bb0:
     t1 = INT64_C(0);
 #line 25 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     h1_h = t1;
-#line 26 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t2 = INT64_C(0);
-#line 26 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t3 = h0_rendered;
-#line 26 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t4 = hero_str_len(t3);
-#line 26 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t5 = h_library_range(t2, t4);
-#line 26 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t36 = h6_own6;
-#line 26 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     h6_own6 = t5;
 #line 180 "premisemanglerhashinheroes.c"
     hero_array_decref(t36);
-#line 26 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t37 = h2_xs0;
 #line 184 "premisemanglerhashinheroes.c"
     hero_array_incref(t5);
-#line 26 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     h2_xs0 = t5;
 #line 188 "premisemanglerhashinheroes.c"
     hero_array_decref(t37);
-#line 26 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t6 = INT64_C(0);
-#line 26 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     h3_i0 = t6;
-#line 26 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     goto bb1;
-#line 26 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
 bb1:
-#line 26 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t7 = h3_i0;
-#line 26 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t8 = h2_xs0;
-#line 26 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t9 = hero_array_len(t8);
-#line 26 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t10 = t7 < t9;
-#line 26 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     if (t10) goto bb2; else goto bb4;
-#line 26 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
 bb2:
-#line 26 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t11 = h2_xs0;
-#line 26 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t12 = h3_i0;
-#line 26 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t13 = *(int64_t const *)hero_array_at(t11, t12);
-#line 26 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     h4_i = t13;
-#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 28 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t14 = h1_h;
-#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 28 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t15 = INT64_C(131);
-#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 28 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     if (__builtin_mul_overflow(t14, t15, &t16)) hero_panic_overflow();
-#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 28 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t17 = h0_rendered;
-#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 28 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t18 = h4_i;
-#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 28 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t19 = hero_str_byte(t17, t18);
-#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 28 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t20 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t19};
-#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 28 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t38 = h7_own7;
-#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 28 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     h7_own7 = t20;
 #line 236 "premisemanglerhashinheroes.c"
     h_0opt_e201354_release(&t38);
-#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 28 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t39 = h5_f0;
 #line 240 "premisemanglerhashinheroes.c"
     h_0opt_e201354_retain(&t20);
-#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 28 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     h5_f0 = t20;
 #line 244 "premisemanglerhashinheroes.c"
     h_0opt_e201354_release(&t39);
-#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 28 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t21 = h5_f0;
-#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 28 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t22 = t21.tag;
-#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 28 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t23 = INT64_C(0);
-#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 28 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t24 = t22 == t23;
-#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 28 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     if (t24) goto bb5; else goto bb6;
-#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 28 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
 bb3:
-#line 26 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t32 = h3_i0;
-#line 26 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t33 = INT64_C(1);
-#line 26 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     if (__builtin_add_overflow(t32, t33, &t34)) hero_panic_overflow();
-#line 26 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     h3_i0 = t34;
-#line 26 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     goto bb1;
-#line 26 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
 bb4:
-#line 28 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 30 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t35 = h1_h;
-#line 28 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 30 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t40 = h2_xs0;
 #line 274 "premisemanglerhashinheroes.c"
     hero_array_decref(t40);
-#line 28 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 30 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t41 = h5_f0;
 #line 278 "premisemanglerhashinheroes.c"
     h_0opt_e201354_release(&t41);
-#line 28 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 30 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t42 = h6_own6;
 #line 282 "premisemanglerhashinheroes.c"
     hero_array_decref(t42);
-#line 28 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 30 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t43 = h7_own7;
 #line 286 "premisemanglerhashinheroes.c"
     h_0opt_e201354_release(&t43);
     return t35;
 bb5:
-#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 28 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t27 = h5_f0;
-#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 28 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t28 = t27.as.ok;
-#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 28 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     if (__builtin_add_overflow(t16, t28, &t29)) hero_panic_overflow();
-#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 28 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t30 = INT64_C(2147483647);
-#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 28 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     if (t30 == 0) hero_panic("division by zero");
-#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 28 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     if (t29 == INT64_MIN && t30 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64");
-#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 28 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t31 = t29 % t30;
-#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 28 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     h1_h = t31;
-#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 28 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     goto bb3;
-#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 28 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
 bb6:
-#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 28 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t25 = h5_f0;
-#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 28 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t26 = t25.as.err;
 #line 314 "premisemanglerhashinheroes.c"
     hero_panic_must(t26);
     hero_unreachable();
 }
 
-#line 30 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 32 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
 void h_premisemanglerhashinheroes_main(void) {
 #line 321 "premisemanglerhashinheroes.c"
     HeroStr t1 = {0};
@@ -328,39 +328,39 @@ void h_premisemanglerhashinheroes_main(void) {
     int64_t t8;
     goto bb0;
 bb0:
-#line 31 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 33 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t1 = HERO_STR_LIT(hero_str_1afbd0d1);
-#line 31 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 33 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t2 = h_premisemanglerhashinheroes_typehash(t1);
-#line 31 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 33 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     hero_print_int(t2);
-#line 31 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 33 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     hero_print_end();
-#line 32 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 34 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t3 = HERO_STR_LIT(hero_str_38777701);
-#line 32 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 34 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t4 = h_premisemanglerhashinheroes_typehash(t3);
-#line 32 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 34 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     hero_print_int(t4);
-#line 32 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 34 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     hero_print_end();
-#line 35 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 38 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t5 = HERO_STR_LIT(hero_str_642c20d9);
-#line 35 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 38 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t6 = h_premisemanglerhashinheroes_typehash(t5);
-#line 35 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 38 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     hero_print_int(t6);
-#line 35 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 38 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     hero_print_end();
-#line 36 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 39 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t7 = HERO_STR_LIT(hero_str_1343f73c);
-#line 36 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 39 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t8 = h_premisemanglerhashinheroes_typehash(t7);
-#line 36 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 39 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     hero_print_int(t8);
-#line 36 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 39 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     hero_print_end();
-#line 36 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
+#line 39 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     return;
 #line 366 "premisemanglerhashinheroes.c"
 }

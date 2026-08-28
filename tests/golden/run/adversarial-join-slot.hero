@@ -36,7 +36,9 @@ function main()
     print(nested(a: true, b: true), nested(a: true, b: false), nested(a: false, b: false))
     i: i64 @ 0
     total: i64 @ 0
+
     while i < 4
         total @ total + pick(i % 2 == 0)
         i @ i + 1
+
     print(total)

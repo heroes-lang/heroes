@@ -37,6 +37,7 @@ function main()
     print(both.one.name, both.two.name)
     print(both == Pair(one: p, two: q))
     print(both.one == both.two)
+
     # The same record assigned over itself: the incref must precede the decref, or
     # the block is freed and then retained.
     q @ q

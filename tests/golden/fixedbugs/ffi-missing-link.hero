@@ -54,7 +54,7 @@
 # Bulk regression case.
 
 extern "sqlite3.h"
-    function sqlite3_libversion_number() -> i64      #~ ffi_missing_link
+    function sqlite3_libversion_number() -> i64  #~ ffi_missing_link
 
 function main()
     print("sqlite ", sqlite3_libversion_number())

@@ -24,24 +24,31 @@ record Case
 
 function collect(scratch: str, dir: str) -> [Case]?
     entries = shell.list_entries(scratch: scratch, dir: dir)?
+
     # Membership is asked of the listing rather than of the filesystem:
     # one walk answers every question, and a `test -e` per case would be
     # 200 more processes for an answer already in hand.
     present: {str: bool} @ {}
+
     for entry in entries
         present[entry] @ true
+
     cases: [Case] @ []
+
     for entry in entries
         if strings.ends_with(text: entry, suffix: ".hero")
             stem = strings.without_suffix(text: entry, suffix: ".hero")
             expectation = stem + ".expected"
+
             if present[expectation].is_err()
                 return fail("half_pair", "golden case " + entry + " is missing its .expected file")
             cases @ cases.push(Case(source: entry, expected: expectation, name: strings.base_name(path: stem)))
         else if strings.ends_with(text: entry, suffix: ".expected")
             owner = strings.without_suffix(text: entry, suffix: ".expected") + ".hero"
+
             if present[owner].is_err()
                 return fail("orphan", "orphan expectation: " + entry + " has no .hero source")
+
     return ok(cases)
 
 test "the collector pairs, orders and refuses a half pair"
@@ -49,11 +56,15 @@ test "the collector pairs, orders and refuses a half pair"
     tree = scratch + "/cases"
     assert !shell.remove_tree(tree).is_err()
     assert !shell.mkdir_all(tree).is_err()
-    made = shell.run(scratch: scratch, command: "cd " + shell.sq(tree) + " && touch b.hero b.expected a.hero a.expected a.fixed .gitkeep")
+    made = shell.run(
+        scratch: scratch,
+        command: "cd " + shell.sq(tree) + " && touch b.hero b.expected a.hero a.expected a.fixed .gitkeep"
+    )
     assert !made.is_err()
     found = collect(scratch: scratch, dir: tree)
     assert !found.is_err()
     assert found.must().len() == 2
+
     # Sorted, so a failure names the same case on every machine.
     assert found.must()[0].name == "a"
     assert found.must()[1].name == "b"
@@ -67,9 +78,11 @@ test "a source with no expectation stops the harness by name"
     made = shell.run(scratch: scratch, command: "cd " + shell.sq(tree) + " && touch lonely.hero")
     assert !made.is_err()
     found = collect(scratch: scratch, dir: tree)
+
     code = match found
-        .ok _ => "ok"
+        .ok _  => "ok"
         .err e => e.code
+
     assert code == "half_pair"
 
 test "an expectation with no source stops the harness by name"
@@ -80,7 +93,9 @@ test "an expectation with no source stops the harness by name"
     made = shell.run(scratch: scratch, command: "cd " + shell.sq(tree) + " && touch ghost.expected")
     assert !made.is_err()
     found = collect(scratch: scratch, dir: tree)
+
     code = match found
-        .ok _ => "ok"
+        .ok _  => "ok"
         .err e => e.code
+
     assert code == "orphan"

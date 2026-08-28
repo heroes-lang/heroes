@@ -123,99 +123,99 @@ bb0:
     t1 = INT64_C(0);
 #line 8 "tests/golden/ir/adversarial-continue-steps.hero"
     h1_count = t1;
-#line 9 "tests/golden/ir/adversarial-continue-steps.hero"
+#line 10 "tests/golden/ir/adversarial-continue-steps.hero"
     t2 = h0_xs;
-#line 9 "tests/golden/ir/adversarial-continue-steps.hero"
+#line 10 "tests/golden/ir/adversarial-continue-steps.hero"
     t23 = h2_xs0;
 #line 131 "adversarialcontinuesteps.c"
     hero_array_incref(t2);
-#line 9 "tests/golden/ir/adversarial-continue-steps.hero"
+#line 10 "tests/golden/ir/adversarial-continue-steps.hero"
     h2_xs0 = t2;
 #line 135 "adversarialcontinuesteps.c"
     hero_array_decref(t23);
-#line 9 "tests/golden/ir/adversarial-continue-steps.hero"
+#line 10 "tests/golden/ir/adversarial-continue-steps.hero"
     t3 = INT64_C(0);
-#line 9 "tests/golden/ir/adversarial-continue-steps.hero"
+#line 10 "tests/golden/ir/adversarial-continue-steps.hero"
     h3_i0 = t3;
-#line 9 "tests/golden/ir/adversarial-continue-steps.hero"
+#line 10 "tests/golden/ir/adversarial-continue-steps.hero"
     goto bb1;
-#line 9 "tests/golden/ir/adversarial-continue-steps.hero"
+#line 10 "tests/golden/ir/adversarial-continue-steps.hero"
 bb1:
-#line 9 "tests/golden/ir/adversarial-continue-steps.hero"
+#line 10 "tests/golden/ir/adversarial-continue-steps.hero"
     t4 = h3_i0;
-#line 9 "tests/golden/ir/adversarial-continue-steps.hero"
+#line 10 "tests/golden/ir/adversarial-continue-steps.hero"
     t5 = h2_xs0;
-#line 9 "tests/golden/ir/adversarial-continue-steps.hero"
+#line 10 "tests/golden/ir/adversarial-continue-steps.hero"
     t6 = hero_array_len(t5);
-#line 9 "tests/golden/ir/adversarial-continue-steps.hero"
+#line 10 "tests/golden/ir/adversarial-continue-steps.hero"
     t7 = t4 < t6;
-#line 9 "tests/golden/ir/adversarial-continue-steps.hero"
+#line 10 "tests/golden/ir/adversarial-continue-steps.hero"
     if (t7) goto bb2; else goto bb4;
-#line 9 "tests/golden/ir/adversarial-continue-steps.hero"
+#line 10 "tests/golden/ir/adversarial-continue-steps.hero"
 bb2:
-#line 9 "tests/golden/ir/adversarial-continue-steps.hero"
+#line 10 "tests/golden/ir/adversarial-continue-steps.hero"
     t8 = h2_xs0;
-#line 9 "tests/golden/ir/adversarial-continue-steps.hero"
+#line 10 "tests/golden/ir/adversarial-continue-steps.hero"
     t9 = h3_i0;
-#line 9 "tests/golden/ir/adversarial-continue-steps.hero"
+#line 10 "tests/golden/ir/adversarial-continue-steps.hero"
     t10 = *(int64_t const *)hero_array_at(t8, t9);
-#line 9 "tests/golden/ir/adversarial-continue-steps.hero"
+#line 10 "tests/golden/ir/adversarial-continue-steps.hero"
     h4_x = t10;
-#line 10 "tests/golden/ir/adversarial-continue-steps.hero"
+#line 11 "tests/golden/ir/adversarial-continue-steps.hero"
     t11 = h4_x;
-#line 10 "tests/golden/ir/adversarial-continue-steps.hero"
+#line 11 "tests/golden/ir/adversarial-continue-steps.hero"
     t12 = INT64_C(2);
-#line 10 "tests/golden/ir/adversarial-continue-steps.hero"
+#line 11 "tests/golden/ir/adversarial-continue-steps.hero"
     if (t12 == 0) hero_panic("division by zero");
-#line 10 "tests/golden/ir/adversarial-continue-steps.hero"
+#line 11 "tests/golden/ir/adversarial-continue-steps.hero"
     if (t11 == INT64_MIN && t12 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64");
-#line 10 "tests/golden/ir/adversarial-continue-steps.hero"
+#line 11 "tests/golden/ir/adversarial-continue-steps.hero"
     t13 = t11 % t12;
-#line 10 "tests/golden/ir/adversarial-continue-steps.hero"
+#line 11 "tests/golden/ir/adversarial-continue-steps.hero"
     t14 = INT64_C(1);
-#line 10 "tests/golden/ir/adversarial-continue-steps.hero"
+#line 11 "tests/golden/ir/adversarial-continue-steps.hero"
     t15 = t13 == t14;
-#line 10 "tests/golden/ir/adversarial-continue-steps.hero"
+#line 11 "tests/golden/ir/adversarial-continue-steps.hero"
     if (t15) goto bb6; else goto bb7;
-#line 10 "tests/golden/ir/adversarial-continue-steps.hero"
+#line 11 "tests/golden/ir/adversarial-continue-steps.hero"
 bb3:
-#line 9 "tests/golden/ir/adversarial-continue-steps.hero"
+#line 10 "tests/golden/ir/adversarial-continue-steps.hero"
     t19 = h3_i0;
-#line 9 "tests/golden/ir/adversarial-continue-steps.hero"
+#line 10 "tests/golden/ir/adversarial-continue-steps.hero"
     t20 = INT64_C(1);
-#line 9 "tests/golden/ir/adversarial-continue-steps.hero"
+#line 10 "tests/golden/ir/adversarial-continue-steps.hero"
     if (__builtin_add_overflow(t19, t20, &t21)) hero_panic_overflow();
-#line 9 "tests/golden/ir/adversarial-continue-steps.hero"
+#line 10 "tests/golden/ir/adversarial-continue-steps.hero"
     h3_i0 = t21;
-#line 9 "tests/golden/ir/adversarial-continue-steps.hero"
+#line 10 "tests/golden/ir/adversarial-continue-steps.hero"
     goto bb1;
-#line 9 "tests/golden/ir/adversarial-continue-steps.hero"
+#line 10 "tests/golden/ir/adversarial-continue-steps.hero"
 bb4:
-#line 13 "tests/golden/ir/adversarial-continue-steps.hero"
+#line 15 "tests/golden/ir/adversarial-continue-steps.hero"
     t22 = h1_count;
-#line 13 "tests/golden/ir/adversarial-continue-steps.hero"
+#line 15 "tests/golden/ir/adversarial-continue-steps.hero"
     t24 = h2_xs0;
 #line 199 "adversarialcontinuesteps.c"
     hero_array_decref(t24);
     return t22;
 bb5:
-#line 12 "tests/golden/ir/adversarial-continue-steps.hero"
+#line 13 "tests/golden/ir/adversarial-continue-steps.hero"
     t16 = h1_count;
-#line 12 "tests/golden/ir/adversarial-continue-steps.hero"
+#line 13 "tests/golden/ir/adversarial-continue-steps.hero"
     t17 = INT64_C(1);
-#line 12 "tests/golden/ir/adversarial-continue-steps.hero"
+#line 13 "tests/golden/ir/adversarial-continue-steps.hero"
     if (__builtin_add_overflow(t16, t17, &t18)) hero_panic_overflow();
-#line 12 "tests/golden/ir/adversarial-continue-steps.hero"
+#line 13 "tests/golden/ir/adversarial-continue-steps.hero"
     h1_count = t18;
-#line 12 "tests/golden/ir/adversarial-continue-steps.hero"
+#line 13 "tests/golden/ir/adversarial-continue-steps.hero"
     goto bb3;
-#line 12 "tests/golden/ir/adversarial-continue-steps.hero"
+#line 13 "tests/golden/ir/adversarial-continue-steps.hero"
 bb6:
-#line 12 "tests/golden/ir/adversarial-continue-steps.hero"
+#line 13 "tests/golden/ir/adversarial-continue-steps.hero"
     goto bb3;
-#line 12 "tests/golden/ir/adversarial-continue-steps.hero"
+#line 13 "tests/golden/ir/adversarial-continue-steps.hero"
 bb7:
-#line 12 "tests/golden/ir/adversarial-continue-steps.hero"
+#line 13 "tests/golden/ir/adversarial-continue-steps.hero"
     goto bb5;
 #line 221 "adversarialcontinuesteps.c"
 }

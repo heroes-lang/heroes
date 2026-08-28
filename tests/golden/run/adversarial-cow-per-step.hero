@@ -46,6 +46,7 @@ function main()
     g.rows[0].cells[0] @ 7
     print(g.rows[0].cells[0])
     print(h.rows[0].cells[0])
+
     # And the untouched neighbour, so a copy that loses data would show.
     print(g.rows[0].cells[1], h.rows[0].cells[1])
 

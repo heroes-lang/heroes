@@ -31,10 +31,12 @@ use checker
 # Every aggregate the program declares, in the order C can accept them.
 function aggregates(c: check_state.Checked, decls: [ast.Decl]) -> [i64]
     out: [i64] @ []
+
     for decl in c.type_order
         match decls[decl].kind
-            .record_decl | .variant_decl => out @ out.push(decl)
+            .record_decl | .variant_decl                 => out @ out.push(decl)
             .constant_decl | .function_decl | .test_decl => continue
+
     return out
 
 function fields_of(decls: [ast.Decl], decl: i64) -> [ast.Field]
@@ -43,6 +45,7 @@ function fields_of(decls: [ast.Decl], decl: i64) -> [ast.Field]
         .constant_decl | .function_decl | .variant_decl | .test_decl =>
             none: [ast.Field] = []
             return none
+
     empty: [ast.Field] = []
     return empty
 
@@ -52,12 +55,13 @@ function cases_of(decls: [ast.Decl], decl: i64) -> [ast.Case]
         .constant_decl | .function_decl | .record_decl | .test_decl =>
             none: [ast.Case] = []
             return none
+
     empty: [ast.Case] = []
     return empty
 
 function is_variant(decls: [ast.Decl], decl: i64) -> bool
     return match decls[decl].kind
-        .variant_decl => true
+        .variant_decl                                               => true
         .constant_decl | .function_decl | .record_decl | .test_decl => false
 
 # One field, as a C member declaration. C puts an array's brackets
@@ -68,28 +72,33 @@ function is_variant(decls: [ast.Decl], decl: i64) -> bool
 function member(c: check_state.Checked, names: emit_ctype.Names, s: source.Source, field: ast.Field) -> str
     ty: i64 @ check_table.error_ty(c.types)
     written = check_state.written_type(c, field.ty)
+
     if !written.is_err()
         ty @ written.must()
     name = emit_mangle.field(source.span_text(s, field.name))
     is_fixed: bool @ false
     fixed_elem: i64 @ 0
     fixed_len: i64 @ 0
+
     match check_table.get(c.types, ty)
         .fixed x =>
             is_fixed @ true
             fixed_elem @ x.element
             fixed_len @ x.length
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => is_fixed @ is_fixed
-        .array | .map | .fallible | .function_ty | .named => is_fixed @ is_fixed
-        .case_ty | .failure | .generic | .error => is_fixed @ is_fixed
+        .array | .map | .fallible | .function_ty | .named         => is_fixed @ is_fixed
+        .case_ty | .failure | .generic | .error                   => is_fixed @ is_fixed
+
     if is_fixed
         elem: str @ "void"
         inner = emit_ctype.c_type(names, c: c, ty: fixed_elem)
+
         if !inner.is_err()
             elem @ inner.must()
         return "    " + elem + " " + name + "[" + fixed_len.to_str() + "];"
     spelling: str @ "void"
     found = emit_ctype.c_type(names, c: c, ty: ty)
+
     if !found.is_err()
         spelling @ found.must()
     return "    " + spelling + " " + name + ";"
@@ -103,24 +112,30 @@ function member(c: check_state.Checked, names: emit_ctype.Names, s: source.Sourc
 # layout wrong that it never states.
 function declared(@w: emit_writer.Writer, c: check_state.Checked, names: emit_ctype.Names, s: source.Source, decls: [ast.Decl], decl: i64)
     skip: bool @ false
+
     match decls[decl].kind
         .record_decl rec =>
             if !rec.header.is_err()
                 skip @ true
         .constant_decl | .function_decl | .variant_decl | .test_decl => skip @ skip
+
     if skip
         return
     name = emit_ctype.of(names, decl: decl)
     emit_writer.at_generated(@w)
+
     if is_variant(decls, decl: decl)
         variant_definition(@w, c, names, s, decls, decl: decl, name: name)
         return
+
     # The struct tag repeats the typedef name. C keeps tags in their
     # own namespace, so this is legal — and it makes a clang diagnostic
     # name something the reader can grep for.
     emit_writer.line(@w, text: "typedef struct " + name + " {")
+
     for field in fields_of(decls, decl: decl)
         emit_writer.line(@w, text: member(c, names, s, field))
+
     emit_writer.line(@w, text: "} " + name + ";")
     emit_writer.blank(@w)
 
@@ -132,17 +147,24 @@ function declared(@w: emit_writer.Writer, c: check_state.Checked, names: emit_ct
 # thing "clang type-checks every call" exists to prevent.
 function function_type(@w: emit_writer.Writer, c: check_state.Checked, names: emit_ctype.Names, name: str, params: check_table.Params, result: i64)
     spelled: [str] @ []
+
     for p in check_table.params_of(c.types, params)
         one: str @ "void"
         found = emit_ctype.c_type(names, c: c, ty: p)
+
         if !found.is_err()
             one @ found.must()
         spelled @ spelled.push(one)
+
     list: str @ "void"
+
     if spelled.len() > 0
         list @ spelled.join(", ")
     emit_writer.at_generated(@w)
-    emit_writer.line(@w, text: "typedef " + emit_ctype.c_result(names, c: c, ty: result) + " (*" + name + ")(" + list + ");")
+    emit_writer.line(
+        @w,
+        text: "typedef " + emit_ctype.c_result(names, c: c, ty: result) + " (*" + name + ")(" + list + ");"
+    )
 
 # One T?, as a by-value tagged union — exactly like a variant with two
 # cases, but generated from a TYPE rather than a declaration. The tag
@@ -156,6 +178,7 @@ function option(@w: emit_writer.Writer, c: check_state.Checked, names: emit_ctyp
     emit_writer.line(@w, text: "typedef struct " + name + " {")
     emit_writer.line(@w, text: "    int64_t tag;")
     emit_writer.line(@w, text: "    union {")
+
     # A unit payload has no declaration (the unit rule), so ()? carries
     # nothing on its ok side and the union holds the failure alone.
     if !spelling.is_err()
@@ -177,31 +200,47 @@ function variant_definition(@w: emit_writer.Writer, c: check_state.Checked, name
     tag = emit_mangle.tag_type(name)
     emit_writer.line(@w, text: "typedef enum " + tag + " {")
     at: i64 @ 0
+
     for one_case in cases
-        emit_writer.line(@w, text: "    " + emit_mangle.tag_of(ty: name, case_name: source.span_text(s, one_case.name)) + " = " + at.to_str() + ",")
+        emit_writer.line(
+            @w,
+            text: "    " + emit_mangle.tag_of(ty: name, case_name: source.span_text(s, one_case.name)) + " = " + at.to_str() + ","
+        )
         at @ at + 1
+
     emit_writer.line(@w, text: "} " + tag + ";")
     emit_writer.blank(@w)
+
     for one_case in cases
         if one_case.fields.len() > 0
             payload = emit_mangle.case_type(ty: name, case_name: source.span_text(s, one_case.name))
             emit_writer.line(@w, text: "typedef struct " + payload + " {")
+
             for field in one_case.fields
                 emit_writer.line(@w, text: member(c, names, s, field))
+
             emit_writer.line(@w, text: "} " + payload + ";")
             emit_writer.blank(@w)
+
     emit_writer.line(@w, text: "typedef struct " + name + " {")
     emit_writer.line(@w, text: "    " + tag + " tag;")
     carrying: i64 @ 0
+
     for one_case in cases
         if one_case.fields.len() > 0
             carrying @ carrying + 1
+
     if carrying > 0
         emit_writer.line(@w, text: "    union {")
+
         for one_case in cases
             if one_case.fields.len() > 0
                 case_name = source.span_text(s, one_case.name)
-                emit_writer.line(@w, text: "        " + emit_mangle.case_type(ty: name, case_name: case_name) + " " + emit_mangle.case_member(case_name) + ";")
+                emit_writer.line(
+                    @w,
+                    text: "        " + emit_mangle.case_type(ty: name, case_name: case_name) + " " + emit_mangle.case_member(case_name) + ";"
+                )
+
         emit_writer.line(@w, text: "    } as;")
     emit_writer.line(@w, text: "} " + name + ";")
     emit_writer.blank(@w)
@@ -224,7 +263,9 @@ function ready(text: str) -> Setup
     return Setup(c: c, s: s, decls: p.decls, names: names)
 
 test "a record is a struct, and the order puts a dependency first"
-    got = ready("record Inner\n    n: i64\n\nrecord Outer\n    kid: Inner\n    label: str\n\nfunction main()\n    _ = Outer(kid: Inner(n: 1), label: \"x\")\n")
+    got = ready(
+        "record Inner\n    n: i64\n\nrecord Outer\n    kid: Inner\n    label: str\n\nfunction main()\n    _ = Outer(kid: Inner(n: 1), label: \"x\")\n"
+    )
     order = aggregates(got.c, got.decls)
     assert order.len() == 2
     assert order[0] == 0
@@ -235,31 +276,39 @@ test "a record is a struct, and the order puts a dependency first"
     assert text == "#line 2 \"t.c\"\ntypedef struct h_t_Outer {\n    h_t_Inner f_kid;\n    HeroStr f_label;\n} h_t_Outer;\n\n"
 
 test "a variant is enum, payload structs, and a union that skips bare cases"
-    got = ready("variant Tok\n    word\n        text: str\n    plus\n\nfunction main()\n    t: Tok = .plus\n    _ = t\n")
+    got = ready(
+        "variant Tok\n    word\n        text: str\n    plus\n\nfunction main()\n    t: Tok = .plus\n    _ = t\n"
+    )
     w: emit_writer.Writer @ emit_writer.new_writer("t")
     declared(@w, got.c, got.names, got.s, got.decls, decl: 0)
     text = emit_writer.finish(w)
     assert text == "#line 2 \"t.c\"\ntypedef enum h_t_Tok_tag {\n    h_t_Tok_tag_word = 0,\n    h_t_Tok_tag_plus = 1,\n} h_t_Tok_tag;\n\ntypedef struct h_t_Tok_c_word {\n    HeroStr f_text;\n} h_t_Tok_c_word;\n\ntypedef struct h_t_Tok {\n    h_t_Tok_tag tag;\n    union {\n        h_t_Tok_c_word c_word;\n    } as;\n} h_t_Tok;\n\n"
 
 test "an all-bare variant has no union, and a group's record no definition"
-    got = ready("variant Coin\n    heads\n    tails\n\nextern \"m.h\"\n    record Color\n        r: i64\n\nfunction main()\n    c: Coin = .heads\n    _ = c\n")
+    got = ready(
+        "variant Coin\n    heads\n    tails\n\nextern \"m.h\"\n    record Color\n        r: i64\n\nfunction main()\n    c: Coin = .heads\n    _ = c\n"
+    )
     w: emit_writer.Writer @ emit_writer.new_writer("t")
     declared(@w, got.c, got.names, got.s, got.decls, decl: 0)
     bare = emit_writer.finish(w)
     no_union: bool @ true
     walk: i64 @ 0
     stop = bare.len() - 5
+
     while walk <= stop
         if bare.slice(from: walk, to: walk + 5) == "union"
             no_union @ false
         walk @ walk + 1
+
     assert no_union
     quiet: emit_writer.Writer @ emit_writer.new_writer("t")
     declared(@quiet, got.c, got.names, got.s, got.decls, decl: 1)
     assert emit_writer.finish(quiet) == ""
 
 test "an option carries ok and err, a unit option only err, and (void) guards arity"
-    got = ready("function pick(ready_flag: bool) -> i64?\n    if ready_flag\n        return ok(1)\n    return fail(\"e\", \"m\")\n\nfunction main()\n    print(pick(true).default(0))\n")
+    got = ready(
+        "function pick(ready_flag: bool) -> i64?\n    if ready_flag\n        return ok(1)\n    return fail(\"e\", \"m\")\n\nfunction main()\n    print(pick(true).default(0))\n"
+    )
     w: emit_writer.Writer @ emit_writer.new_writer("t")
     option(@w, got.c, got.names, name: "h_0opt_e201354", payload: check_table.int_ty_id(got.c.types))
     with_ok = emit_writer.finish(w)
@@ -270,8 +319,10 @@ test "an option carries ok and err, a unit option only err, and (void) guards ar
     has_ok: bool @ false
     walk: i64 @ 0
     stop = unit_text.len() - 3
+
     while walk <= stop
         if unit_text.slice(from: walk, to: walk + 3) == "ok;"
             has_ok @ true
         walk @ walk + 1
+
     assert !has_ok

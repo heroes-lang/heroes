@@ -18,7 +18,7 @@ record Pair
 function dist2(a: Point, b: Point) -> i64
     dx = a.x - b.x
     dy = a.y - b.y
-    return dx*dx + dy*dy
+    return dx * dx + dy * dy
 
 function moved(p: Point) -> Point
     return Point(x: p.x + 10, y: p.y)
@@ -31,14 +31,17 @@ function main()
     both = Pair(one: p, two: q)
     print(both.two.y)
     print(both == Pair(one: p, two: q))
+
     # A copy is independent, so mutating the copy leaves the original alone.
     r: Point @ p
     r @ moved(r)
+
     # Two prints, not one: `print(r.x, p.x)` writes `100`, which a golden cannot
     # tell from `(1, 0, 0)` — the spec's no-separator rule is right and makes an
     # assertion on two numbers ambiguous.
     print(r.x)
     print(p.x)
+
     # Nesting, twice deep, compared field by field — never by bytes, which is why
     # `Point`'s two ints padding differently could not make these disagree.
     print(Pair(one: p, two: p) == Pair(one: p, two: q))

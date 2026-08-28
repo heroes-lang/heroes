@@ -28,17 +28,23 @@ function is_space(c: u8) -> bool
 
 function trimmed(line: str) -> str
     from: i64 @ 0
+
     while from < line.len() && is_space(line[from])
         from @ from + 1
+
     to: i64 @ line.len()
+
     while to > from && is_space(line[to - 1])
         to @ to - 1
+
     return line.slice(from: from, to: to)
 
 function first_word(line: str) -> str
     i: i64 @ 0
+
     while i < line.len() && line[i] != ' '
         i @ i + 1
+
     return line.slice(from: 0, to: i)
 
 function rest_after(line: str, word: str) -> str
@@ -50,6 +56,7 @@ function carrying(g: Game, what: str) -> bool
     for one in g.carrying
         if one == what
             return true
+
     return false
 
 ## The turn
@@ -57,16 +64,22 @@ function carrying(g: Game, what: str) -> bool
 function play(w: world.World, g: Game, line: str) -> Turn
     command = trimmed(line)
     verb = first_word(command)
+
     if verb == "look"
         return same(g, describe(w, g))
+
     if verb == "go"
         return go(w, g, rest_after(line: command, word: "go"))
+
     if verb == "take"
         return take(w, g)
+
     if verb == "bag"
         return same(g, [bag_of(g)])
+
     if verb == "open"
         return open(g)
+
     if verb == ""
         return same(g, [])
     return same(g, ["I do not know how to " + verb + "."])
@@ -76,9 +89,10 @@ function same(g: Game, said: [str]) -> Turn
 
 function describe(w: world.World, g: Game) -> [str]
     match world.room_at(w, g.here)
-        .err _   => return ["You are nowhere, which should not be possible."]
+        .err _ => return ["You are nowhere, which should not be possible."]
         .ok room =>
             lines: [str] @ [room.description]
+
             if room.item != "" && g.taken[room.item].is_err()
                 lines @ lines.push("There is a " + room.item + " here.")
             return lines
@@ -86,8 +100,9 @@ function describe(w: world.World, g: Game) -> [str]
 function go(w: world.World, g: Game, direction: str) -> Turn
     if direction == ""
         return same(g, ["Go where?"])
+
     match world.through(w, here: g.here, direction: direction)
-        .err e    => return same(g, [e.msg])
+        .err e => return same(g, [e.msg])
         .ok there =>
             moved = Game(
                 here: there,
@@ -100,7 +115,7 @@ function go(w: world.World, g: Game, direction: str) -> Turn
 
 function take(w: world.World, g: Game) -> Turn
     match world.room_at(w, g.here)
-        .err _   => return same(g, ["There is nothing here."])
+        .err _ => return same(g, ["There is nothing here."])
         .ok room =>
             if room.item == "" || !g.taken[room.item].is_err()
                 return same(g, ["There is nothing to take."])
@@ -128,6 +143,7 @@ function bag_of(g: Game) -> str
 function open(g: Game) -> Turn
     if g.here != "vault"
         return same(g, ["There is nothing here to open."])
+
     if !carrying(g, "key")
         return same(g, ["The door is locked, and you have no key."])
     won = Game(
@@ -144,11 +160,15 @@ function open(g: Game) -> Turn
 function play_all(w: world.World, lines: [str]) -> Turn
     g: Game @ begin(w)
     said: [str] @ []
+
     for line in lines
         turn = play(w, g, line)
+
         for one in turn.said
             said @ said.push(one)
+
         g @ turn.next
+
     return Turn(said: said, next: g)
 
 test "a new game starts at the start, empty-handed"

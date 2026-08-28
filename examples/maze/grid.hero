@@ -48,26 +48,32 @@ function split_lines(text: str) -> [str]
     out: [str] @ []
     start: i64 @ 0
     i: i64 @ 0
+
     while i < text.len()
         if text[i] == '\n'
             out @ out.push(text.slice(from: start, to: i))
             start @ i + 1
         i @ i + 1
+
     if start < text.len()
         out @ out.push(text.slice(from: start, to: text.len()))
     return out
 
 function read(text: str) -> Grid?
     rows: [str] @ []
+
     for line in split_lines(text)
         if line != ""
             rows @ rows.push(line)
+
     if rows.len() == 0
         return fail(ERR_EMPTY_MAZE, "the file has no rows")
     width = rows[0].len()
+
     for line in rows
         if line.len() != width
             return fail(ERR_RAGGED_MAZE, "every row must be " + width.to_str() + " wide")
+
     g = Grid(rows: rows, width: width, height: rows.len())
     _ = locate(g, START)?
     _ = locate(g, GOAL)?
@@ -97,13 +103,16 @@ function is_open(g: Grid, index: i64) -> bool
 # a maze whose answer depends on which one the reader meant.
 function locate(g: Grid, mark: u8) -> i64?
     found: i64 @ 0 - 1
+
     for row in range(from: 0, to: g.height)
         for column in range(from: 0, to: g.width)
             index = index_of(g, row: row, column: column)
+
             if at(g, index) == mark
                 if found >= 0
                     return fail(ERR_REPEATED_MARK, "the maze has more than one `" + one_char(mark) + "`")
                 found @ index
+
     if found < 0
         return fail(ERR_MISSING_MARK, "the maze has no `" + one_char(mark) + "`")
     return ok(found)
@@ -113,6 +122,7 @@ function locate(g: Grid, mark: u8) -> i64?
 function one_char(mark: u8) -> str
     if mark == START
         return "S"
+
     if mark == GOAL
         return "E"
     return "#"
@@ -132,6 +142,7 @@ function step(g: Grid, out: [i64], row: i64, column: i64) -> [i64]
     if !inside(g, row: row, column: column)
         return out
     index = index_of(g, row: row, column: column)
+
     if !is_open(g, index)
         return out
     return out.push(index)

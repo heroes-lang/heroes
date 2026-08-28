@@ -39,11 +39,12 @@ record ExternSpans
 function extern_spans(decls: [ast.Decl], f: ir_state.Function) -> ExternSpans
     match decls[f.decl].kind
         .function_decl fd => return ExternSpans(header: fd.value.header, library: fd.value.library)
-        .constant_decl k => return ExternSpans(header: k.header, library: k.library)
+        .constant_decl k  => return ExternSpans(header: k.header, library: k.library)
         .record_decl | .variant_decl | .test_decl =>
             none_h: token.Span? = fail("none", "no header")
             none_l: ast.Library? = fail("none", "no library")
             return ExternSpans(header: none_h, library: none_l)
+
     none_h2: token.Span? = fail("none", "no header")
     none_l2: ast.Library? = fail("none", "no library")
     return ExternSpans(header: none_h2, library: none_l2)
@@ -52,13 +53,15 @@ function extern_spans(decls: [ast.Decl], f: ir_state.Function) -> ExternSpans
 # function, which is called, or an ordinary constant, which has a body.
 function is_extern_constant(decls: [ast.Decl], f: ir_state.Function) -> bool
     match decls[f.decl].kind
-        .constant_decl k => return k.body.is_err() && !k.header.is_err()
+        .constant_decl k                                           => return k.body.is_err() && !k.header.is_err()
         .function_decl | .record_decl | .variant_decl | .test_decl => return false
+
     return false
 
 # The quotes stripped from a span's text.
 function unquoted(s: source.Source, span: token.Span) -> str
     text = source.span_text(s, span)
+
     if text.len() >= 2 && text.slice(from: 0, to: 1) == "\"" && text.slice(from: text.len() - 1, to: text.len()) == "\""
         return text.slice(from: 1, to: text.len() - 1)
     return text
@@ -71,17 +74,22 @@ function unquoted(s: source.Source, span: token.Span) -> str
 # not include it twice.
 function headers(p: ir_state.Program, s: source.Source, decls: [ast.Decl]) -> [str]
     seen: [str] @ ["math.h", "hero_os.h"]
+
     for f in p.functions
         spans = extern_spans(decls, f)
+
         if spans.header.is_err()
             continue
         header = unquoted(s, span: spans.header.must())
         already: bool @ false
+
         for one in seen
             if one == header
                 already @ true
+
         if !already
             seen @ seen.push(header)
+
     # The record-only group (panel 061): walked over the DECLARATIONS,
     # because that is where the answer is.
     for decl in decls
@@ -90,12 +98,15 @@ function headers(p: ir_state.Program, s: source.Source, decls: [ast.Decl]) -> [s
                 if !rec.header.is_err()
                     header = unquoted(s, span: rec.header.must())
                     already: bool @ false
+
                     for one in seen
                         if one == header
                             already @ true
+
                     if !already
                         seen @ seen.push(header)
             .constant_decl | .function_decl | .variant_decl | .test_decl => continue
+
     return seen
 
 # Every library a group named directly, and every package it asked for
@@ -110,20 +121,26 @@ function packages(p: ir_state.Program, s: source.Source, decls: [ast.Decl]) -> [
 
 function named(p: ir_state.Program, s: source.Source, decls: [ast.Decl], want_package: bool) -> [str]
     seen: [str] @ []
+
     for f in p.functions
         spans = extern_spans(decls, f)
+
         if spans.library.is_err()
             continue
         wanted = library_span(spans.library.must(), want_package: want_package)
+
         if wanted.is_err()
             continue
         name = unquoted(s, span: wanted.must())
         already: bool @ false
+
         for one in seen
             if one == name
                 already @ true
+
         if !already
             seen @ seen.push(name)
+
     # The record-only group again, one level further on (panel 061):
     # one defect, two walks, and the second was invisible until the
     # first was fixed.
@@ -132,16 +149,20 @@ function named(p: ir_state.Program, s: source.Source, decls: [ast.Decl], want_pa
             .record_decl rec =>
                 if !rec.library.is_err()
                     wanted = library_span(rec.library.must(), want_package: want_package)
+
                     if wanted.is_err()
                         continue
                     name = unquoted(s, span: wanted.must())
                     already: bool @ false
+
                     for one in seen
                         if one == name
                             already @ true
+
                     if !already
                         seen @ seen.push(name)
             .constant_decl | .function_decl | .variant_decl | .test_decl => continue
+
     return seen
 
 function library_span(library: ast.Library, want_package: bool) -> token.Span?
@@ -154,6 +175,7 @@ function library_span(library: ast.Library, want_package: bool) -> token.Span?
             if !want_package
                 return fail("none", "a package, not a link")
             return ok(pk.name)
+
     return fail("none", "unreached")
 
 ## Tests

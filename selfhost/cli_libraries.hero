@@ -41,51 +41,69 @@ function filter_words(package: str, said: str) -> [str]?
     flags: [str] @ []
     parts = split_whitespace(said)
     index: i64 @ 0
+
     while index < parts.len()
         word = parts[index]
+
         if word == "-framework" || word == "-F"
             if index + 1 >= parts.len()
-                return fail("failed", "heroes-ffi-package `" + package + "` answered with `" + word + "` and nothing after it")
+                return fail(
+                    "failed",
+                    "heroes-ffi-package `" + package + "` answered with `" + word + "` and nothing after it"
+                )
             flags @ flags.push(word)
             flags @ flags.push(parts[index + 1])
             index @ index + 2
             continue
+
         if allowed_prefixed(word)
             flags @ flags.push(word)
             index @ index + 1
             continue
         rpath = tail_after(word: word, prefix: "-Wl,-rpath,")
+
         if !rpath.is_err() && clean_tail(rpath.must())
             flags @ flags.push("-Wl,-rpath," + rpath.must())
             index @ index + 1
             continue
         framed = tail_after(word: word, prefix: "-Wl,-framework,")
+
         if !framed.is_err() && clean_tail(framed.must())
             flags @ flags.push("-framework")
             flags @ flags.push(framed.must())
             index @ index + 1
             continue
-        return fail("failed", "heroes-ffi-package `" + package + "` answered with `" + word + "`, which this compiler does not pass on\n  only `-D`, `-U`, `-I`, `-L`, `-l`, `-F`, `-framework`, `-Wl,-framework,<name>` and `-Wl,-rpath,<dir>` are accepted: everything else is a flag a package file could use to run code during the build (Go's CVE-2018-6574)\n  name the library directly with `link` if you need it")
+        return fail(
+            "failed",
+            "heroes-ffi-package `" + package + "` answered with `" + word + "`, which this compiler does not pass on\n  only `-D`, `-U`, `-I`, `-L`, `-l`, `-F`, `-framework`, `-Wl,-framework,<name>` and `-Wl,-rpath,<dir>` are accepted: everything else is a flag a package file could use to run code during the build (Go's CVE-2018-6574)\n  name the library directly with `link` if you need it"
+        )
+
     return ok(flags)
 
 function allowed_prefixed(word: str) -> bool
     prefixes = ["-D", "-U", "-I", "-L", "-l"]
+
     for prefix in prefixes
         rest = tail_after(word: word, prefix: prefix)
+
         if !rest.is_err() && rest.must().len() > 0
             return true
+
     return false
 
 function tail_after(word: str, prefix: str) -> str?
     ws = word.chars()
     ps = prefix.chars()
+
     if ps.len() > ws.len()
         return fail("none", "shorter than the prefix")
     index: i64 @ 0
+
     for p in ps
         if ws[index] != p
             return fail("none", "not this prefix")
         index @ index + 1
+
     return ok(ws.slice(from: ps.len(), to: ws.len()).join(""))
 
 # The tail of a whole-checked -Wl form: non-empty, no further comma,
@@ -93,14 +111,17 @@ function tail_after(word: str, prefix: str) -> str?
 function clean_tail(rest: str) -> bool
     if rest.len() == 0
         return false
+
     for ch in rest.chars()
         if ch == ","
             return false
+
     return rest.chars()[0] != "-"
 
 function split_whitespace(text: str) -> [str]
     out: [str] @ []
     run: [str] @ []
+
     for ch in text.chars()
         if ch == " " || ch == "\t" || ch == "\n"
             if run.len() > 0
@@ -108,6 +129,7 @@ function split_whitespace(text: str) -> [str]
                 run @ []
         else
             run @ run.push(ch)
+
     if run.len() > 0
         out @ out.push(run.join(""))
     return out
@@ -120,32 +142,47 @@ function split_whitespace(text: str) -> [str]
 # contract: the one class whose text this compiler writes itself.
 function resolve_packages(packages: [str], build_dir: str) -> [str]?
     flags: [str] @ []
+
     for package in packages
         _ = cli_toolchain.mkdir_all(build_dir)
         answer_path = build_dir + "/pkg-config-out.txt"
         err_path = build_dir + "/pkg-config-err.txt"
-        status = cli_shell.shell(command: "pkg-config --cflags --libs " + cli_shell.sq(package) + " > " + cli_shell.sq(answer_path) + " 2> " + cli_shell.sq(err_path))
+        status = cli_shell.shell(
+            command: "pkg-config --cflags --libs " + cli_shell.sq(package) + " > " + cli_shell.sq(answer_path) + " 2> " + cli_shell.sq(err_path)
+        )
+
         if status != 0
             said: str @ ""
             captured = read_file(err_path)
+
             if !captured.is_err()
                 said @ cli_toolchain.trimmed(captured.must())
-            return fail("failed", "heroes-ffi-package `" + package + "` is not installed on this machine\n  pkg-config said: " + said + "\n  install its development files, or name the library directly with `link`")
+            return fail(
+                "failed",
+                "heroes-ffi-package `" + package + "` is not installed on this machine\n  pkg-config said: " + said + "\n  install its development files, or name the library directly with `link`"
+            )
         said: str @ ""
         answered = read_file(answer_path)
+
         if !answered.is_err()
             said @ answered.must()
         filtered = filter_words(package: package, said: said)
+
         if filtered.is_err()
             _ = filtered?
+
         for flag in filtered.must()
             flags @ flags.push(flag)
+
     return ok(flags)
 
 ## Tests
 
 test "the allow-list: the safe words pass, the plugin is refused whole"
-    good = filter_words(package: "sdl2", said: "-I/opt/include -D_THREAD_SAFE -L/opt/lib -lSDL2 -framework Cocoa -Wl,-framework,CoreAudio -Wl,-rpath,/opt/homebrew/lib\n")
+    good = filter_words(
+        package: "sdl2",
+        said: "-I/opt/include -D_THREAD_SAFE -L/opt/lib -lSDL2 -framework Cocoa -Wl,-framework,CoreAudio -Wl,-rpath,/opt/homebrew/lib\n"
+    )
     assert !good.is_err()
     flags = good.must()
     assert flags.len() == 9
@@ -156,18 +193,23 @@ test "the allow-list: the safe words pass, the plugin is refused whole"
     assert flags[6] == "-framework"
     assert flags[7] == "CoreAudio"
     assert flags[8] == "-Wl,-rpath,/opt/homebrew/lib"
+
     # The vector itself: a plugin flag stops the build and names the
     # precedent.
     evil = filter_words(package: "trap", said: "-I/x -fplugin=attack.so")
+
     match evil
-        .ok => assert false
+        .ok    => assert false
         .err e => assert has_text(text: e.msg, needle: "CVE-2018-6574")
+
     # A bare -Wl, is NOT a spelling of anything on the list.
     blanket = filter_words(package: "trap", said: "-Wl,-e,evil_entry")
     assert blanket.is_err()
+
     # -framework at the end with nothing after it is named, not read.
     hanging = filter_words(package: "trap", said: "-framework")
     assert hanging.is_err()
+
     # A bare -D with no name is not a flag, it is two characters.
     assert filter_words(package: "trap", said: "-D").is_err()
     assert !in_the_c_runtime(library: "m")
@@ -175,20 +217,26 @@ test "the allow-list: the safe words pass, the plugin is refused whole"
 function has_text(text: str, needle: str) -> bool
     cs = text.chars()
     needle_cs = needle.chars()
+
     if needle_cs.len() == 0
         return true
+
     if needle_cs.len() > cs.len()
         return false
     start: i64 @ 0
+
     while start <= cs.len() - needle_cs.len()
         matched: bool @ true
         offset: i64 @ 0
+
         while offset < needle_cs.len()
             if cs[start + offset] != needle_cs[offset]
                 matched @ false
                 break
             offset @ offset + 1
+
         if matched
             return true
         start @ start + 1
+
     return false

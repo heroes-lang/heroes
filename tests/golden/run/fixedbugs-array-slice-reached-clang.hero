@@ -35,5 +35,6 @@ function main()
     ys = slice(xs, from: 1, to: 3)
     print(len(ys))
     print(ys[0], ys[1])
+
     # The `str` half stays in the file, so the two are provably one built-in.
     print(slice("abcde", from: 1, to: 3))

@@ -22,8 +22,10 @@ function last<T>(xs: [T]) -> T
 # Two type parameters, and the second appears only in the function's result.
 function convert<A, B>(xs: [A], f: (function(A) -> B)) -> [B]
     out: [B] @ []
+
     for x in xs
         out @ push(out, f(x))
+
     return out
 
 function label(n: i64) -> str

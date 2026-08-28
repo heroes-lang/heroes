@@ -45,15 +45,18 @@ function byte_at(text: str, i: i64) -> u8
 # float only when a digit follows — UFCS must keep working on numbers.
 function number(@l: state.LexState, text: str)
     start = l.pos
+
     if byte_at(text, l.pos) == '0'
         marker = byte_at(text, l.pos + 1)
         lowered_marker = digits.from_marker(bytes.lower(marker))
+
         if !lowered_marker.is_err()
             if !digits.from_marker(marker).is_err()
                 # 0x / 0o / 0b.
                 l.pos @ l.pos + 2
                 based(@l, text, lowered_marker.must(), start)
                 return
+
             # 0X / 0O / 0B. Refused rather than accepted: §4.15 wants one
             # spelling, and of the three uppercase markers `0O` is genuinely
             # misreadable as `00`. The digits themselves stay case-blind — a
@@ -65,9 +68,17 @@ function number(@l: state.LexState, text: str)
             span = token.Span(start: start, end: l.pos)
             written = text.slice(from: start, to: l.pos)
             lowered = digits.prefix(base) + text.slice(from: start + 2, to: l.pos)
-            d: diag.Diagnostic @ diag.new_diagnostic(code: "base_prefix_case", message: "`" + written + "` writes the base in uppercase — this language spells it `" + digits.prefix(base) + "`", span: span)
-            d.notes @ d.notes.push("there is exactly one way to write any program (§4.15). The " + digits.base_name(base) + " digits themselves may be either case, so `" + lowered + "` is the same value written correctly")
-            d.fixes @ d.fixes.push(diag.Fix(title: "write the prefix as `" + digits.prefix(base) + "`", replacement: lowered, span: span, certainty: .certain))
+            d: diag.Diagnostic @ diag.new_diagnostic(
+                code: "base_prefix_case",
+                message: "`" + written + "` writes the base in uppercase — this language spells it `" + digits.prefix(base) + "`",
+                span: span
+            )
+            d.notes @ d.notes.push(
+                "there is exactly one way to write any program (§4.15). The " + digits.base_name(base) + " digits themselves may be either case, so `" + lowered + "` is the same value written correctly"
+            )
+            d.fixes @ d.fixes.push(
+                diag.Fix(title: "write the prefix as `" + digits.prefix(base) + "`", replacement: lowered, span: span, certainty: .certain)
+            )
             state.error_token(@l, d)
             return
     run = digit_run(@l, text, .decimal)
@@ -78,14 +89,25 @@ function number(@l: state.LexState, text: str)
     # `700` before the rule existed (panel 041 § D1). The reading is genuinely
     # ambiguous, so NEITHER fix is certain — the note names both.
     leading_zero = run.count > 1 && !run.faulted && text[start] == '0' && byte_at(text, l.pos) != '.'
+
     if leading_zero
         span = token.Span(start: start, end: l.pos)
         written = text.slice(from: start, to: l.pos)
         stripped = strip_leading_zeros(written)
-        d: diag.Diagnostic @ diag.new_diagnostic(code: "leading_zero", message: "`" + written + "` starts with a zero, and this language reads no meaning into that", span: span)
-        d.notes @ d.notes.push("C, and every language that copied it, reads a leading zero as octal — so `" + written + "` is a number a reader will size wrong. Write `0o" + stripped + "` for the octal value, or `" + stripped + "` for the decimal one")
-        d.fixes @ d.fixes.push(diag.Fix(title: "octal: `0o" + stripped + "`", replacement: "0o" + stripped, span: span, certainty: .guess))
-        d.fixes @ d.fixes.push(diag.Fix(title: "decimal: `" + stripped + "`", replacement: stripped, span: span, certainty: .guess))
+        d: diag.Diagnostic @ diag.new_diagnostic(
+            code: "leading_zero",
+            message: "`" + written + "` starts with a zero, and this language reads no meaning into that",
+            span: span
+        )
+        d.notes @ d.notes.push(
+            "C, and every language that copied it, reads a leading zero as octal — so `" + written + "` is a number a reader will size wrong. Write `0o" + stripped + "` for the octal value, or `" + stripped + "` for the decimal one"
+        )
+        d.fixes @ d.fixes.push(
+            diag.Fix(title: "octal: `0o" + stripped + "`", replacement: "0o" + stripped, span: span, certainty: .guess)
+        )
+        d.fixes @ d.fixes.push(
+            diag.Fix(title: "decimal: `" + stripped + "`", replacement: stripped, span: span, certainty: .guess)
+        )
         state.error_token(@l, d)
         return
 
@@ -101,18 +123,25 @@ function number(@l: state.LexState, text: str)
     # digit — never on what the parser is expecting.
     e = byte_at(text, l.pos)
     after = byte_at(text, l.pos + 1)
-    exponent = (e == 'e' || e == 'E') && (bytes.is_digit(after) || ((after == '+' || after == '-') && bytes.is_digit(byte_at(text, l.pos + 2))))
+    exponent = (e == 'e' || e == 'E') && (bytes.is_digit(after) || (after == '+' || after == '-') && bytes.is_digit(byte_at(text, l.pos + 2)))
+
     if exponent
         digits_written = text.slice(from: start, to: l.pos)
         l.pos @ l.pos + 1
         sign = byte_at(text, l.pos)
+
         if sign == '+' || sign == '-'
             l.pos @ l.pos + 1
+
         while bytes.is_digit(byte_at(text, l.pos))
             l.pos @ l.pos + 1
+
         span = token.Span(start: start, end: l.pos)
         written = text.slice(from: start, to: l.pos)
-        state.error_token(@l, diag.new_diagnostic(code: "exponent_literal", message: "`" + written + "` is not a number in this language — there are no exponents. Write the digits out, or compute it: `" + digits_written + " * pow(base: 10.0, exponent: …)` through the FFI (§4.19)", span: span))
+        state.error_token(
+            @l,
+            diag.new_diagnostic(code: "exponent_literal", message: "`" + written + "` is not a number in this language — there are no exponents. Write the digits out, or compute it: `" + digits_written + " * pow(base: 10.0, exponent: …)` through the FFI (§4.19)", span: span)
+        )
         return
 
     if run.faulted
@@ -126,14 +155,22 @@ function number(@l: state.LexState, text: str)
 function based(@l: state.LexState, text: str, base: digits.Base, start: i64)
     run = digit_run(@l, text, base)
     span = token.Span(start: start, end: l.pos)
+
     if run.count == 0
         if !run.faulted
-            d: diag.Diagnostic @ diag.new_diagnostic(code: "empty_base_literal", message: "`" + text.slice(from: start, to: l.pos) + "` names a base and then stops — a number needs digits", span: span)
-            d.notes @ d.notes.push(digits.a_name(base) + " literal is written `" + digits.prefix(base) + "` followed by " + digits.base_digits(base))
+            d: diag.Diagnostic @ diag.new_diagnostic(
+                code: "empty_base_literal",
+                message: "`" + text.slice(from: start, to: l.pos) + "` names a base and then stops — a number needs digits",
+                span: span
+            )
+            d.notes @ d.notes.push(
+                digits.a_name(base) + " literal is written `" + digits.prefix(base) + "` followed by " + digits.base_digits(base)
+            )
             state.error_token(@l, d)
         else
             state.error_token_at(@l, start)
         return
+
     if run.faulted
         state.error_token_at(@l, start)
         return
@@ -150,46 +187,68 @@ function based(@l: state.LexState, text: str, base: digits.Base, start: i64)
 # `1e300` belongs to the exponent refusal above and `1.str()` belongs to UFCS.
 function digit_run(@l: state.LexState, text: str, base: digits.Base) -> Run
     run: Run @ Run(count: 0, faulted: false)
+
     while true
         b = byte_at(text, l.pos)
+
         if digits.admits(base, b)
             l.pos @ l.pos + 1
             run.count @ run.count + 1
         else if b == '_'
             after_digit = run.count > 0 && digits.admits(base, byte_at(text, l.pos - 1))
             before_digit = digits.admits(base, byte_at(text, l.pos + 1))
+
             if after_digit && before_digit
                 l.pos @ l.pos + 1
                 continue
             bad_start = l.pos
+
             while byte_at(text, l.pos) == '_'
                 l.pos @ l.pos + 1
+
             span = token.Span(start: bad_start, end: l.pos)
+
             if !run.faulted
-                d: diag.Diagnostic @ diag.new_diagnostic(code: "misplaced_separator", message: "`_` groups digits, so it goes between two of them", span: span)
-                d.notes @ d.notes.push("`1_000_000` and `0xff_ff` are the shape; a separator that leads, trails or doubles is a typo rather than a grouping")
+                d: diag.Diagnostic @ diag.new_diagnostic(
+                    code: "misplaced_separator",
+                    message: "`_` groups digits, so it goes between two of them",
+                    span: span
+                )
+                d.notes @ d.notes.push(
+                    "`1_000_000` and `0xff_ff` are the shape; a separator that leads, trails or doubles is a typo rather than a grouping"
+                )
                 l.diagnostics @ l.diagnostics.push(d)
             run.faulted @ true
         else if base != .decimal && bytes.is_alnum(b)
             bad_start = l.pos
+
             while bytes.is_alnum(byte_at(text, l.pos)) || byte_at(text, l.pos) == '_'
                 l.pos @ l.pos + 1
+
             span = token.Span(start: bad_start, end: l.pos)
+
             if !run.faulted
-                d: diag.Diagnostic @ diag.new_diagnostic(code: "digit_not_in_base", message: "`" + text.slice(from: bad_start, to: l.pos) + "` is not " + digits.a_name(base) + " digit", span: span)
+                d: diag.Diagnostic @ diag.new_diagnostic(
+                    code: "digit_not_in_base",
+                    message: "`" + text.slice(from: bad_start, to: l.pos) + "` is not " + digits.a_name(base) + " digit",
+                    span: span
+                )
                 d.notes @ d.notes.push(digits.a_name(base) + " literal admits " + digits.base_digits(base))
                 l.diagnostics @ l.diagnostics.push(d)
             run.faulted @ true
         else
             return run
+
     return run
 
 ## Helpers
 
 function strip_leading_zeros(s: str) -> str
     i: i64 @ 0
+
     while i < s.len() && s[i] == '0'
         i @ i + 1
+
     if i >= s.len()
         return "0"
     return s.slice(from: i, to: s.len())
@@ -222,6 +281,7 @@ test "an uppercase prefix is refused and only the prefix is lowered"
     number(@l, "0X1F")
     assert l.tokens[0].kind == .error
     assert l.diagnostics[0].code == "base_prefix_case"
+
     # The digits stay as written — they are case-blind by design; only the
     # marker had one spelling (§4.15). The Rust original does exactly this.
     assert l.diagnostics[0].fixes[0].replacement == "0x1F"

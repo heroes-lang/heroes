@@ -31,6 +31,7 @@ constant SUGGESTIONS: i64
 function report(tree: ast.Ast, r: resolved.Resolved, c: check_state.Checked, s: source.Source, decls: [ast.Decl]) -> str
     out: str @ ""
     none: [str] = []
+
     for hole in c.holes
         # locate, never line_col plus s.name: the hole report is not a
         # Diagnostic, which is how it survived a sweep still naming
@@ -38,26 +39,32 @@ function report(tree: ast.Ast, r: resolved.Resolved, c: check_state.Checked, s: 
         found = source.locate(s, hole.span.start)
         out @ out + "hole at " + found.file + ":" + found.line.to_str() + ":" + found.col.to_str() + "\n"
         is_error: bool @ false
+
         match check_table.get(c.types, hole.expected)
-            .error => is_error @ true
-            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => is_error @ is_error
+            .error                                                     => is_error @ true
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit  => is_error @ is_error
             .array | .fixed | .map | .fallible | .function_ty | .named => is_error @ is_error
-            .case_ty | .failure | .generic => is_error @ is_error
+            .case_ty | .failure | .generic                             => is_error @ is_error
+
         if is_error
             # A hole in statement position: nothing is expected of it,
             # and "expected `?`" would be worse than saying nothing.
             # What the model needs is what the FUNCTION owes.
             out @ out + "  position: statement — any type, or none\n"
             owner = owner_of(decls, at: hole.span.start)
+
             if !owner.is_err()
                 result = check_state.result_type(c, owner.must())
+
                 if !result.is_err()
                     is_unit: bool @ false
+
                     match check_table.get(c.types, result.must())
-                        .unit => is_unit @ true
+                        .unit                                                      => is_unit @ true
                         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .error => is_unit @ is_unit
                         .array | .fixed | .map | .fallible | .function_ty | .named => is_unit @ is_unit
-                        .case_ty | .failure | .generic => is_unit @ is_unit
+                        .case_ty | .failure | .generic                             => is_unit @ is_unit
+
                     if !is_unit
                         out @ out + "  this function returns: " + check_render.render_ty(c.types, s, decls, result.must(), none) + "\n"
         else
@@ -65,6 +72,7 @@ function report(tree: ast.Ast, r: resolved.Resolved, c: check_state.Checked, s: 
         out @ out + in_scope(r, c, s, decls, at: hole.span.start)
         out @ out + fields_of(tree, c, s, decls, expected: hole.expected)
         out @ out + nearby(tree, r, c, s, decls, expected: hole.expected, at: hole.span.start)
+
     return out
 
 # The locals visible at the hole, with their types. "Visible" is
@@ -73,27 +81,33 @@ function report(tree: ast.Ast, r: resolved.Resolved, c: check_state.Checked, s: 
 # cannot be read outside the declaration that binds it.
 function in_scope(r: resolved.Resolved, c: check_state.Checked, s: source.Source, decls: [ast.Decl], at: i64) -> str
     owner = owner_of(decls, at: at)
+
     if owner.is_err()
         return ""
     none: [str] = []
     shown: [str] @ []
     index: i64 @ 0
+
     for local in r.locals
         if local.owner == owner.must() && local.name.start <= at
             rendered = check_render.render_ty(c.types, s, decls, check_state.local_type(c, index), none)
             marker: str @ ""
+
             if local.mutable
                 marker @ " (mutable)"
             shown @ shown.push(source.span_text(s, local.name) + ": " + rendered + marker)
         index @ index + 1
+
     if shown.len() == 0
         return ""
     out: str @ "  in scope:\n"
     kept: i64 @ 0
+
     for line in shown
         if kept < SUGGESTIONS
             out @ out + "    " + line + "\n"
         kept @ kept + 1
+
     if shown.len() > SUGGESTIONS
         out @ out + "    … and " + (shown.len() - SUGGESTIONS).to_str() + " more\n"
     return out
@@ -103,25 +117,33 @@ function in_scope(r: resolved.Resolved, c: check_state.Checked, s: source.Source
 # is built from (§4.9: every field named, always).
 function fields_of(tree: ast.Ast, c: check_state.Checked, s: source.Source, decls: [ast.Decl], expected: i64) -> str
     decl_at: i64 @ -1
+
     match check_table.get(c.types, expected)
-        .named n => decl_at @ n.decl
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => decl_at @ decl_at
+        .named n                                                   => decl_at @ n.decl
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit  => decl_at @ decl_at
         .array | .fixed | .map | .fallible | .function_ty | .error => decl_at @ decl_at
-        .case_ty | .failure | .generic => decl_at @ decl_at
+        .case_ty | .failure | .generic                             => decl_at @ decl_at
+
     if decl_at == -1
         return ""
+
     match decls[decl_at].kind
         .record_decl rec =>
             shown: [str] @ []
+
             for f in rec.fields
                 shown @ shown.push(source.span_text(s, f.name) + ": " + print_types.render_type(tree, f.ty, s))
+
             return "  fields of " + source.span_text(s, decls[decl_at].name) + ": " + shown.join(", ") + "\n"
         .variant_decl v =>
             shown: [str] @ []
+
             for one_case in v.cases
                 shown @ shown.push("." + source.span_text(s, one_case.name))
+
             return "  cases of " + source.span_text(s, decls[decl_at].name) + ": " + shown.join(", ") + "\n"
         .constant_decl | .function_decl | .test_decl => return ""
+
     return ""
 
 # Functions whose result is the expected type, with their
@@ -134,76 +156,100 @@ function fields_of(tree: ast.Ast, c: check_state.Checked, s: source.Source, decl
 function nearby(tree: ast.Ast, r: resolved.Resolved, c: check_state.Checked, s: source.Source, decls: [ast.Decl], expected: i64, at: i64) -> str
     here = source.module_at(s, at)
     is_error: bool @ false
+
     match check_table.get(c.types, expected)
-        .error => is_error @ true
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => is_error @ is_error
+        .error                                                     => is_error @ true
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit  => is_error @ is_error
         .array | .fixed | .map | .fallible | .function_ty | .named => is_error @ is_error
-        .case_ty | .failure | .generic => is_error @ is_error
+        .case_ty | .failure | .generic                             => is_error @ is_error
+
     if is_error
         return ""
     shown: [str] @ []
+
     # ORDER: ascending (module, name) — deterministic whatever the
     # layout, and the cap picks WHICH five; the port pays the sort the
     # bootstrap's BTreeMap gave for free (design.md §4.9).
     fall: bool @ false
+
     for module in sort(keys(r.top))
         if fall
             break
+
         for name in resolved.names_in(r, module: module)
             if fall
                 continue
             found = resolved.top_in(r, module: module, name: name)
+
             if found.is_err()
                 continue
             decl = found.must()
             params: [str] @ []
             is_function: bool @ false
+
             match decls[decl].kind
                 .function_decl fd =>
                     is_function @ true
+
                     for p in fd.value.params
                         marker: str @ ""
+
                         if p.mutable
                             marker @ "@"
-                        params @ params.push(marker + source.span_text(s, p.name) + ": " + print_types.render_type(tree, p.ty, s))
+                        params @ params.push(
+                            marker + source.span_text(s, p.name) + ": " + print_types.render_type(tree, p.ty, s)
+                        )
                 .constant_decl | .record_decl | .variant_decl | .test_decl => is_function @ is_function
+
             if !is_function
                 continue
             result = check_state.result_type(c, decl)
+
             if result.is_err() || result.must() != expected
                 continue
             reachable: bool @ module == here || module == source.LIBRARY_MODULE
+
             if !reachable
                 used = r.module_uses[here]
+
                 if !used.is_err()
                     for one in used.must()
                         if one == module
                             reachable @ true
+
             if !reachable
                 continue
             written: str @ name
+
             if module != here
                 written @ module + "." + name
             line: str @ written + "(" + params.join(", ") + ")"
+
             if decls[decl].doc.len() > 0
                 line @ line + "\n      " + source.span_text(s, decls[decl].doc[0])
             shown @ shown.push(line)
+
             if shown.len() == SUGGESTIONS
                 fall @ true
+
     if shown.len() == 0
         return ""
     out: str @ "  functions that return it:\n"
+
     for line in shown
         out @ out + "    " + line + "\n"
+
     return out
 
 # Which declaration a byte offset falls inside.
 function owner_of(decls: [ast.Decl], at: i64) -> i64?
     index: i64 @ 0
+
     for decl in decls
         if decl.span.start <= at && at < decl.span.end
             return ok(index)
         index @ index + 1
+
     return fail("none", "no declaration holds this offset")
 
 ## Tests
@@ -226,20 +272,26 @@ test "a hole reports the expected type, the scope, the fields and the makers"
 function has_text(text: str, needle: str) -> bool
     cs = text.chars()
     needle_cs = needle.chars()
+
     if needle_cs.len() == 0
         return true
+
     if needle_cs.len() > cs.len()
         return false
     start: i64 @ 0
+
     while start <= cs.len() - needle_cs.len()
         matched: bool @ true
         offset: i64 @ 0
+
         while offset < needle_cs.len()
             if cs[start + offset] != needle_cs[offset]
                 matched @ false
                 break
             offset @ offset + 1
+
         if matched
             return true
         start @ start + 1
+
     return false

@@ -24,11 +24,13 @@ function digest(text: str) -> str
     a: i64 @ 0
     b: i64 @ 0
     index: i64 @ 0
+
     while index < text.len()
         v = text[index].to_i64().must()
         a @ (a * 131 + v) % m
         b @ (b * 137 + v) % m
         index @ index + 1
+
     return hex8(a) + hex8(b)
 
 function hex8(number: i64) -> str
@@ -36,11 +38,13 @@ function hex8(number: i64) -> str
     out: str @ ""
     value: i64 @ number
     count: i64 @ 0
+
     while count < 8
         d = value % 16
         out @ ds.slice(from: d, to: d + 1) + out
         value @ value / 16
         count @ count + 1
+
     return out
 
 test "the digest is a function of the bytes, and always sixteen wide"
@@ -48,6 +52,7 @@ test "the digest is a function of the bytes, and always sixteen wide"
     assert digest(text: "abc") != digest(text: "abd")
     assert digest(text: "").len() == 16
     assert digest(text: "abc").len() == 16
+
     # A one-byte difference at the END moves it too: a hash that only
     # looked at a prefix would pass the line above and let a cache serve
     # yesterday's object for a file edited on its last line.

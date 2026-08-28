@@ -75,32 +75,40 @@ function is_space(c: u8) -> bool
 
 function trimmed(line: str) -> str
     from: i64 @ 0
+
     while from < line.len() && is_space(line[from])
         from @ from + 1
+
     to: i64 @ line.len()
+
     while to > from && is_space(line[to - 1])
         to @ to - 1
+
     return line.slice(from: from, to: to)
 
 function split_lines(text: str) -> [str]
     out: [str] @ []
     start: i64 @ 0
     i: i64 @ 0
+
     while i < text.len()
         if text[i] == '\n'
             out @ out.push(text.slice(from: start, to: i))
             start @ i + 1
         i @ i + 1
+
     if start < text.len()
         out @ out.push(text.slice(from: start, to: text.len()))
     return out
 
 function index_of(text: str, c: u8) -> i64
     i: i64 @ 0
+
     while i < text.len()
         if text[i] == c
             return i
         i @ i + 1
+
     return 0 - 1
 
 # Split at `c`, with the empty pieces dropped. `add r0, r1` and `add r0,r1` are
@@ -109,13 +117,16 @@ function split_on(text: str, c: u8) -> [str]
     out: [str] @ []
     start: i64 @ 0
     i: i64 @ 0
+
     while i <= text.len()
         if i == text.len() || text[i] == c
             piece = trimmed(text.slice(from: start, to: i))
+
             if piece != ""
                 out @ out.push(piece)
             start @ i + 1
         i @ i + 1
+
     return out
 
 ## Lines
@@ -126,17 +137,21 @@ function split_on(text: str, c: u8) -> [str]
 function read_line(text: str, number: i64) -> Line
     body: str @ text
     at = index_of(body, ';')
+
     if at >= 0
         body @ body.slice(from: 0, to: at)
     body @ trimmed(body)
     label: str @ ""
     colon = index_of(body, ':')
+
     if colon >= 0
         label @ trimmed(body.slice(from: 0, to: colon))
         body @ trimmed(body.slice(from: colon + 1, to: body.len()))
+
     if body == ""
         return Line(label: label, mnemonic: "", operands: [], number: number)
     space = index_of(body, ' ')
+
     if space < 0
         return Line(label: label, mnemonic: body, operands: [], number: number)
     mnemonic = body.slice(from: 0, to: space)
@@ -146,9 +161,11 @@ function read_line(text: str, number: i64) -> Line
 function read(text: str) -> [Line]
     out: [Line] @ []
     number: i64 @ 0
+
     for line in split_lines(text)
         number @ number + 1
         out @ out.push(read_line(line, number))
+
     return out
 
 ## Operands
@@ -159,6 +176,7 @@ function register_of(word: str, number: i64) -> i64?
     if word.len() != 2 || word[0] != 'r'
         return fail(ERR_BAD_REGISTER, "line " + number.to_str() + ": `" + word + "` is not a register — r0 to r3")
     n = to_i64(word[1] - '0').must()
+
     if n < 0 || n >= REGISTERS
         return fail(ERR_BAD_REGISTER, "line " + number.to_str() + ": `" + word + "` is not a register — r0 to r3")
     return ok(n)
@@ -166,16 +184,20 @@ function register_of(word: str, number: i64) -> i64?
 function number_of(word: str, number: i64) -> i64?
     body: str @ word
     negative: bool @ false
+
     if body.len() > 0 && body[0] == '-'
         negative @ true
         body @ body.slice(from: 1, to: body.len())
+
     if body.len() == 0
         return fail(ERR_BAD_NUMBER, "line " + number.to_str() + ": `" + word + "` is not a number")
     v: i64 @ 0
+
     for i in range(from: 0, to: body.len())
         if body[i] < '0' || body[i] > '9'
             return fail(ERR_BAD_NUMBER, "line " + number.to_str() + ": `" + word + "` is not a number")
         v @ v * 10 + to_i64(body[i] - '0').must()
+
     if negative
         return ok(-v)
     return ok(v)

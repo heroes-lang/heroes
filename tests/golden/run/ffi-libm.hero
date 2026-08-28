@@ -33,6 +33,7 @@ function main()
     print(sqrt(16.0))
     print(pow(base: 2.0, exponent: 10.0))
     print(llabs(0 - 7))
+
     # The C call composes with the language's own arithmetic, which is the
     # whole point of §1.11: there is no seam at the call site.
     print(sqrt(pow(base: 3.0, exponent: 4.0)))

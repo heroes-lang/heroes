@@ -35,6 +35,7 @@ function identifiers_in_code(text: str) -> [str]
     in_span: bool @ false
     word: [str] @ []
     i: i64 @ 0
+
     while i < cs.len()
         if fence_at(cs: cs, at: i)
             in_block @ !in_block
@@ -43,6 +44,7 @@ function identifiers_in_code(text: str) -> [str]
             word @ word.slice(from: 0, to: 0)
             i @ i + 3
             continue
+
         if cs[i] == "`"
             if !in_block
                 in_span @ !in_span
@@ -50,12 +52,14 @@ function identifiers_in_code(text: str) -> [str]
             word @ word.slice(from: 0, to: 0)
             i @ i + 1
             continue
+
         if (in_block || in_span) && is_word_char(cs[i])
             word @ word.push(cs[i])
         else
             found @ flushed(found: found, word: word)
             word @ word.slice(from: 0, to: 0)
         i @ i + 1
+
     return flushed(found: found, word: word)
 
 function flushed(found: [str], word: [str]) -> [str]
@@ -77,10 +81,13 @@ function is_word_char(ch: str) -> bool
     if ch.len() != 1
         return false
     b = ch[0]
+
     if b >= 65 && b <= 90
         return true
+
     if b >= 97 && b <= 122
         return true
+
     if b >= 48 && b <= 57
         return true
     return b == 95
@@ -100,6 +107,7 @@ function is_word_char(ch: str) -> bool
 function offered_builtins(text: str) -> [str]?
     cs = text.chars()
     opens = at_marker(cs: cs, needle: "Built-ins:")
+
     if opens.is_err()
         return fail("no_list", "the spec has no `Built-ins:` sentence")
     from = opens.must()
@@ -110,11 +118,13 @@ function offered_builtins(text: str) -> [str]?
     inside: bool @ false
     piece: [str] @ []
     i: i64 @ 0
+
     while i < kept.len()
         if kept[i] == "`"
             if inside
                 name = strings.trimmed(piece.join(""))
                 bare = strings.without_suffix(text: name, suffix: "(...)")
+
                 if bare.len() > 0 && !strings.contains(text: bare, needle: " ")
                     names @ names.push(bare)
                 piece @ piece.slice(from: 0, to: 0)
@@ -122,19 +132,23 @@ function offered_builtins(text: str) -> [str]?
         else if inside
             piece @ piece.push(kept[i])
         i @ i + 1
+
     return ok(names)
 
 # Where `needle` starts, in characters.
 function at_marker(cs: [str], needle: str) -> i64?
     wanted = needle.chars()
+
     if wanted.len() == 0 || wanted.len() > cs.len()
         return fail("absent", "the marker is not there")
     limit = cs.len() - wanted.len()
     at: i64 @ 0
+
     while at <= limit
         if cs.slice(from: at, to: at + wanted.len()) == wanted
             return ok(at)
         at @ at + 1
+
     return fail("absent", "the marker is not there")
 
 # How many characters this sentence runs to, counting only full stops OUTSIDE
@@ -144,6 +158,7 @@ function at_marker(cs: [str], needle: str) -> i64?
 function end_of_sentence(cs: [str]) -> i64
     in_span: bool @ false
     i: i64 @ 0
+
     while i < cs.len()
         if cs[i] == "`"
             in_span @ !in_span
@@ -151,9 +166,11 @@ function end_of_sentence(cs: [str]) -> i64
             if i + 1 >= cs.len()
                 return i
             after = cs[i + 1]
+
             if after == " " || after == "\n" || after == "\t" || after == "\r"
                 return i
         i @ i + 1
+
     return cs.len()
 
 # Every `(…)` group that is not inside a code span, dropped. The
@@ -165,21 +182,27 @@ function without_prose_parentheses(cs: [str]) -> [str]
     in_code: bool @ false
     depth: i64 @ 0
     i: i64 @ 0
+
     while i < cs.len()
         ch = cs[i]
+
         if ch == "`"
             in_code @ !in_code
+
         if !in_code && ch == "("
             depth @ depth + 1
             i @ i + 1
             continue
+
         if !in_code && ch == ")" && depth > 0
             depth @ depth - 1
             i @ i + 1
             continue
+
         if depth == 0
             out @ out.push(ch)
         i @ i + 1
+
     return out
 
 # Every distinct character above ASCII in `text`, sorted, one entry each.
@@ -191,29 +214,36 @@ function without_prose_parentheses(cs: [str]) -> [str]
 # rather than the count, because another em dash is not news and a letter is.
 function above_ascii(text: str) -> [str]
     seen: {str: bool} @ {}
+
     for ch in text.chars()
         if ch.len() > 1
             seen[ch] @ true
+
     return keys(seen).sort()
 
 test "identifiers are read out of code spans and fences, never out of prose"
     assert identifiers_in_code("plain words only").len() == 0
     assert identifiers_in_code("a `len` and a `push`") == ["len", "push"]
+
     # A fenced block: every identifier inside it, and the fence itself is
     # not one.
     fenced = "text\n```\nx = len(xs)\n```\nmore text\n"
     assert identifiers_in_code(fenced) == ["x", "len", "xs"]
+
     # `to_str` keeps its underscore; a dotted call is two names.
     assert identifiers_in_code("`a.to_str()`") == ["a", "to_str"]
+
     # The em dash that killed the byte-slicing draft, in a code span.
     assert identifiers_in_code("`a — b`") == ["a", "b"]
 
 test "a sentence ends at its own full stop, not inside a code span"
     assert end_of_sentence("one. two".chars()) == 3
     assert end_of_sentence("`a.b` then. rest".chars()) == 10
+
     # A decimal point ends nothing: no whitespace follows it.
     assert end_of_sentence("1.33 and 2.5 end. here".chars()) == 16
     assert end_of_sentence("no stop at all".chars()) == 14
+
     # A full stop after a multi-byte character is still found, and counted
     # in characters rather than in bytes.
     assert end_of_sentence("a — b. c".chars()) == 5
@@ -229,6 +259,7 @@ test "the built-in sentence is read out of the real spec"
     offered = offered_builtins(text.must())
     assert !offered.is_err()
     names = offered.must()
+
     # The list is long, and it ENDS at `range` by construction — the pin
     # that makes a shortened sentence loud instead of merely smaller.
     assert names.len() > 10

@@ -129,96 +129,96 @@ bb0:
     goto bb1;
 #line 6 "tests/golden/ir/core-blocks.hero"
 bb1:
-#line 7 "tests/golden/ir/core-blocks.hero"
+#line 8 "tests/golden/ir/core-blocks.hero"
     t2 = h2_i;
-#line 7 "tests/golden/ir/core-blocks.hero"
+#line 8 "tests/golden/ir/core-blocks.hero"
     t3 = h0_xs;
-#line 7 "tests/golden/ir/core-blocks.hero"
+#line 8 "tests/golden/ir/core-blocks.hero"
     t4 = hero_array_len(t3);
-#line 7 "tests/golden/ir/core-blocks.hero"
+#line 8 "tests/golden/ir/core-blocks.hero"
     t5 = t2 < t4;
-#line 7 "tests/golden/ir/core-blocks.hero"
+#line 8 "tests/golden/ir/core-blocks.hero"
     if (t5) goto bb2; else goto bb3;
-#line 7 "tests/golden/ir/core-blocks.hero"
+#line 8 "tests/golden/ir/core-blocks.hero"
 bb2:
-#line 8 "tests/golden/ir/core-blocks.hero"
+#line 9 "tests/golden/ir/core-blocks.hero"
     t6 = h0_xs;
-#line 8 "tests/golden/ir/core-blocks.hero"
+#line 9 "tests/golden/ir/core-blocks.hero"
     t7 = h2_i;
-#line 8 "tests/golden/ir/core-blocks.hero"
+#line 9 "tests/golden/ir/core-blocks.hero"
     t8 = *(int64_t const *)hero_array_at(t6, t7);
-#line 8 "tests/golden/ir/core-blocks.hero"
+#line 9 "tests/golden/ir/core-blocks.hero"
     h3_v = t8;
-#line 9 "tests/golden/ir/core-blocks.hero"
+#line 10 "tests/golden/ir/core-blocks.hero"
     t9 = h2_i;
-#line 9 "tests/golden/ir/core-blocks.hero"
+#line 10 "tests/golden/ir/core-blocks.hero"
     t10 = INT64_C(1);
-#line 9 "tests/golden/ir/core-blocks.hero"
+#line 10 "tests/golden/ir/core-blocks.hero"
     if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow();
-#line 9 "tests/golden/ir/core-blocks.hero"
+#line 10 "tests/golden/ir/core-blocks.hero"
     h2_i = t11;
-#line 10 "tests/golden/ir/core-blocks.hero"
+#line 12 "tests/golden/ir/core-blocks.hero"
     t12 = h3_v;
-#line 10 "tests/golden/ir/core-blocks.hero"
+#line 12 "tests/golden/ir/core-blocks.hero"
     t13 = h1_floor;
-#line 10 "tests/golden/ir/core-blocks.hero"
+#line 12 "tests/golden/ir/core-blocks.hero"
     t14 = t12 <= t13;
-#line 10 "tests/golden/ir/core-blocks.hero"
+#line 12 "tests/golden/ir/core-blocks.hero"
     if (t14) goto bb5; else goto bb6;
-#line 10 "tests/golden/ir/core-blocks.hero"
+#line 12 "tests/golden/ir/core-blocks.hero"
 bb3:
-#line 15 "tests/golden/ir/core-blocks.hero"
+#line 19 "tests/golden/ir/core-blocks.hero"
     t21 = INT64_C(0);
-#line 15 "tests/golden/ir/core-blocks.hero"
+#line 19 "tests/golden/ir/core-blocks.hero"
     t22 = INT64_C(1);
-#line 15 "tests/golden/ir/core-blocks.hero"
+#line 19 "tests/golden/ir/core-blocks.hero"
     if (__builtin_sub_overflow(t21, t22, &t23)) hero_panic_overflow();
-#line 15 "tests/golden/ir/core-blocks.hero"
+#line 19 "tests/golden/ir/core-blocks.hero"
     return t23;
-#line 15 "tests/golden/ir/core-blocks.hero"
+#line 19 "tests/golden/ir/core-blocks.hero"
 bb4:
-#line 12 "tests/golden/ir/core-blocks.hero"
+#line 15 "tests/golden/ir/core-blocks.hero"
     t15 = h3_v;
-#line 12 "tests/golden/ir/core-blocks.hero"
+#line 15 "tests/golden/ir/core-blocks.hero"
     t16 = INT64_C(2);
-#line 12 "tests/golden/ir/core-blocks.hero"
+#line 15 "tests/golden/ir/core-blocks.hero"
     if (t16 == 0) hero_panic("division by zero");
-#line 12 "tests/golden/ir/core-blocks.hero"
+#line 15 "tests/golden/ir/core-blocks.hero"
     if (t15 == INT64_MIN && t16 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64");
-#line 12 "tests/golden/ir/core-blocks.hero"
+#line 15 "tests/golden/ir/core-blocks.hero"
     t17 = t15 % t16;
-#line 12 "tests/golden/ir/core-blocks.hero"
+#line 15 "tests/golden/ir/core-blocks.hero"
     t18 = INT64_C(0);
-#line 12 "tests/golden/ir/core-blocks.hero"
+#line 15 "tests/golden/ir/core-blocks.hero"
     t19 = t17 == t18;
-#line 12 "tests/golden/ir/core-blocks.hero"
+#line 15 "tests/golden/ir/core-blocks.hero"
     if (t19) goto bb8; else goto bb9;
-#line 12 "tests/golden/ir/core-blocks.hero"
+#line 15 "tests/golden/ir/core-blocks.hero"
 bb5:
-#line 12 "tests/golden/ir/core-blocks.hero"
+#line 15 "tests/golden/ir/core-blocks.hero"
     goto bb1;
-#line 12 "tests/golden/ir/core-blocks.hero"
+#line 15 "tests/golden/ir/core-blocks.hero"
 bb6:
-#line 12 "tests/golden/ir/core-blocks.hero"
+#line 15 "tests/golden/ir/core-blocks.hero"
     goto bb4;
-#line 12 "tests/golden/ir/core-blocks.hero"
+#line 15 "tests/golden/ir/core-blocks.hero"
 bb7:
-#line 12 "tests/golden/ir/core-blocks.hero"
+#line 15 "tests/golden/ir/core-blocks.hero"
     goto bb3;
-#line 12 "tests/golden/ir/core-blocks.hero"
+#line 15 "tests/golden/ir/core-blocks.hero"
 bb8:
-#line 13 "tests/golden/ir/core-blocks.hero"
+#line 16 "tests/golden/ir/core-blocks.hero"
     t20 = h3_v;
-#line 13 "tests/golden/ir/core-blocks.hero"
+#line 16 "tests/golden/ir/core-blocks.hero"
     return t20;
-#line 13 "tests/golden/ir/core-blocks.hero"
+#line 16 "tests/golden/ir/core-blocks.hero"
 bb9:
-#line 13 "tests/golden/ir/core-blocks.hero"
+#line 16 "tests/golden/ir/core-blocks.hero"
     goto bb7;
 #line 219 "coreblocks.c"
 }
 
-#line 17 "tests/golden/ir/core-blocks.hero"
+#line 21 "tests/golden/ir/core-blocks.hero"
 HeroStr h_coreblocks_named(int64_t h0_n) {
 #line 224 "coreblocks.c"
     int64_t h1_s0;
@@ -240,59 +240,59 @@ HeroStr h_coreblocks_named(int64_t h0_n) {
     HeroStr t15 = {0};
     goto bb0;
 bb0:
-#line 18 "tests/golden/ir/core-blocks.hero"
+#line 22 "tests/golden/ir/core-blocks.hero"
     t1 = h0_n;
-#line 18 "tests/golden/ir/core-blocks.hero"
+#line 22 "tests/golden/ir/core-blocks.hero"
     h1_s0 = t1;
-#line 18 "tests/golden/ir/core-blocks.hero"
+#line 22 "tests/golden/ir/core-blocks.hero"
     t2 = h1_s0;
-#line 19 "tests/golden/ir/core-blocks.hero"
+#line 23 "tests/golden/ir/core-blocks.hero"
     t3 = INT64_C(0);
-#line 18 "tests/golden/ir/core-blocks.hero"
+#line 22 "tests/golden/ir/core-blocks.hero"
     t4 = t2 == t3;
-#line 18 "tests/golden/ir/core-blocks.hero"
+#line 22 "tests/golden/ir/core-blocks.hero"
     if (t4) goto bb2; else goto bb3;
-#line 18 "tests/golden/ir/core-blocks.hero"
+#line 22 "tests/golden/ir/core-blocks.hero"
 bb1:
-#line 18 "tests/golden/ir/core-blocks.hero"
+#line 22 "tests/golden/ir/core-blocks.hero"
     t11 = h2_r0;
 #line 260 "coreblocks.c"
     hero_str_incref(t11);
-#line 18 "tests/golden/ir/core-blocks.hero"
+#line 22 "tests/golden/ir/core-blocks.hero"
     t15 = h2_r0;
 #line 264 "coreblocks.c"
     hero_str_decref(t15);
     return t11;
 bb2:
-#line 19 "tests/golden/ir/core-blocks.hero"
+#line 23 "tests/golden/ir/core-blocks.hero"
     t8 = HERO_STR_LIT(hero_str_1073a930);
-#line 18 "tests/golden/ir/core-blocks.hero"
+#line 22 "tests/golden/ir/core-blocks.hero"
     t12 = h2_r0;
 #line 272 "coreblocks.c"
     hero_str_incref(t8);
-#line 18 "tests/golden/ir/core-blocks.hero"
+#line 22 "tests/golden/ir/core-blocks.hero"
     h2_r0 = t8;
 #line 276 "coreblocks.c"
     hero_str_decref(t12);
     goto bb1;
 bb3:
-#line 18 "tests/golden/ir/core-blocks.hero"
+#line 22 "tests/golden/ir/core-blocks.hero"
     t5 = h1_s0;
-#line 20 "tests/golden/ir/core-blocks.hero"
+#line 24 "tests/golden/ir/core-blocks.hero"
     t6 = INT64_C(1);
-#line 18 "tests/golden/ir/core-blocks.hero"
+#line 22 "tests/golden/ir/core-blocks.hero"
     t7 = t5 == t6;
-#line 18 "tests/golden/ir/core-blocks.hero"
+#line 22 "tests/golden/ir/core-blocks.hero"
     if (t7) goto bb4; else goto bb5;
-#line 18 "tests/golden/ir/core-blocks.hero"
+#line 22 "tests/golden/ir/core-blocks.hero"
 bb4:
-#line 20 "tests/golden/ir/core-blocks.hero"
+#line 24 "tests/golden/ir/core-blocks.hero"
     t9 = HERO_STR_LIT(hero_str_1d4996);
-#line 18 "tests/golden/ir/core-blocks.hero"
+#line 22 "tests/golden/ir/core-blocks.hero"
     t13 = h2_r0;
 #line 294 "coreblocks.c"
     hero_str_incref(t9);
-#line 18 "tests/golden/ir/core-blocks.hero"
+#line 22 "tests/golden/ir/core-blocks.hero"
     h2_r0 = t9;
 #line 298 "coreblocks.c"
     hero_str_decref(t13);
@@ -300,13 +300,13 @@ bb4:
 bb5:
     goto bb6;
 bb6:
-#line 21 "tests/golden/ir/core-blocks.hero"
+#line 25 "tests/golden/ir/core-blocks.hero"
     t10 = HERO_STR_LIT(hero_str_eb4aa2b);
-#line 18 "tests/golden/ir/core-blocks.hero"
+#line 22 "tests/golden/ir/core-blocks.hero"
     t14 = h2_r0;
 #line 308 "coreblocks.c"
     hero_str_incref(t10);
-#line 18 "tests/golden/ir/core-blocks.hero"
+#line 22 "tests/golden/ir/core-blocks.hero"
     h2_r0 = t10;
 #line 312 "coreblocks.c"
     hero_str_decref(t14);

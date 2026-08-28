@@ -10,6 +10,8 @@ function numbers() -> [i64]
 
 function total() -> i64
     sum: i64 @ 0
+
     for n in numbers()
         sum @ sum + n
+
     return sum

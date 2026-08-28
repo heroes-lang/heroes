@@ -45,16 +45,20 @@ function is_letter(c: u8) -> bool
 # Reads an integer, consuming it.
 function read_number(@l: Lex) -> i64
     v: i64 @ 0
+
     while !l.at_end() && l.here().is_digit()
         v @ v * 10 + to_i64(l.here() - '0').must()
         advance(@l)
+
     return v
 
 # Reads an identifier, consuming it.
 function read_name(@l: Lex) -> str
     start = l.pos
+
     while !l.at_end() && l.here().is_letter()
         advance(@l)
+
     return l.text.slice(from: start, to: l.pos)
 
 # Splits the text into tokens. Fails on the first unknown character.

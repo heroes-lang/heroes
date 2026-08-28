@@ -293,57 +293,57 @@ bb0:
     goto bb1;
 #line 38 "tests/golden/run/adversarial-join-slot.hero"
 bb1:
-#line 39 "tests/golden/run/adversarial-join-slot.hero"
+#line 40 "tests/golden/run/adversarial-join-slot.hero"
     t16 = h0_i;
-#line 39 "tests/golden/run/adversarial-join-slot.hero"
+#line 40 "tests/golden/run/adversarial-join-slot.hero"
     t17 = INT64_C(4);
-#line 39 "tests/golden/run/adversarial-join-slot.hero"
+#line 40 "tests/golden/run/adversarial-join-slot.hero"
     t18 = t16 < t17;
-#line 39 "tests/golden/run/adversarial-join-slot.hero"
+#line 40 "tests/golden/run/adversarial-join-slot.hero"
     if (t18) goto bb2; else goto bb3;
-#line 39 "tests/golden/run/adversarial-join-slot.hero"
+#line 40 "tests/golden/run/adversarial-join-slot.hero"
 bb2:
-#line 40 "tests/golden/run/adversarial-join-slot.hero"
+#line 41 "tests/golden/run/adversarial-join-slot.hero"
     t19 = h1_total;
-#line 40 "tests/golden/run/adversarial-join-slot.hero"
+#line 41 "tests/golden/run/adversarial-join-slot.hero"
     t20 = h0_i;
-#line 40 "tests/golden/run/adversarial-join-slot.hero"
+#line 41 "tests/golden/run/adversarial-join-slot.hero"
     t21 = INT64_C(2);
-#line 40 "tests/golden/run/adversarial-join-slot.hero"
+#line 41 "tests/golden/run/adversarial-join-slot.hero"
     if (t21 == 0) hero_panic("division by zero");
-#line 40 "tests/golden/run/adversarial-join-slot.hero"
+#line 41 "tests/golden/run/adversarial-join-slot.hero"
     if (t20 == INT64_MIN && t21 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64");
-#line 40 "tests/golden/run/adversarial-join-slot.hero"
+#line 41 "tests/golden/run/adversarial-join-slot.hero"
     t22 = t20 % t21;
-#line 40 "tests/golden/run/adversarial-join-slot.hero"
+#line 41 "tests/golden/run/adversarial-join-slot.hero"
     t23 = INT64_C(0);
-#line 40 "tests/golden/run/adversarial-join-slot.hero"
+#line 41 "tests/golden/run/adversarial-join-slot.hero"
     t24 = t22 == t23;
-#line 40 "tests/golden/run/adversarial-join-slot.hero"
+#line 41 "tests/golden/run/adversarial-join-slot.hero"
     t25 = h_adversarialjoinslot_pick(t24);
-#line 40 "tests/golden/run/adversarial-join-slot.hero"
+#line 41 "tests/golden/run/adversarial-join-slot.hero"
     if (__builtin_add_overflow(t19, t25, &t26)) hero_panic_overflow();
-#line 40 "tests/golden/run/adversarial-join-slot.hero"
+#line 41 "tests/golden/run/adversarial-join-slot.hero"
     h1_total = t26;
-#line 41 "tests/golden/run/adversarial-join-slot.hero"
+#line 42 "tests/golden/run/adversarial-join-slot.hero"
     t27 = h0_i;
-#line 41 "tests/golden/run/adversarial-join-slot.hero"
+#line 42 "tests/golden/run/adversarial-join-slot.hero"
     t28 = INT64_C(1);
-#line 41 "tests/golden/run/adversarial-join-slot.hero"
+#line 42 "tests/golden/run/adversarial-join-slot.hero"
     if (__builtin_add_overflow(t27, t28, &t29)) hero_panic_overflow();
-#line 41 "tests/golden/run/adversarial-join-slot.hero"
+#line 42 "tests/golden/run/adversarial-join-slot.hero"
     h0_i = t29;
-#line 41 "tests/golden/run/adversarial-join-slot.hero"
+#line 42 "tests/golden/run/adversarial-join-slot.hero"
     goto bb1;
-#line 41 "tests/golden/run/adversarial-join-slot.hero"
+#line 42 "tests/golden/run/adversarial-join-slot.hero"
 bb3:
-#line 42 "tests/golden/run/adversarial-join-slot.hero"
+#line 44 "tests/golden/run/adversarial-join-slot.hero"
     t30 = h1_total;
-#line 42 "tests/golden/run/adversarial-join-slot.hero"
+#line 44 "tests/golden/run/adversarial-join-slot.hero"
     hero_print_int(t30);
-#line 42 "tests/golden/run/adversarial-join-slot.hero"
+#line 44 "tests/golden/run/adversarial-join-slot.hero"
     hero_print_end();
-#line 42 "tests/golden/run/adversarial-join-slot.hero"
+#line 44 "tests/golden/run/adversarial-join-slot.hero"
     return;
 #line 349 "adversarialjoinslot.c"
 }

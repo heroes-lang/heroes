@@ -24,10 +24,11 @@ function main()
     part = slice(xs, from: 1, to: 3)
     xs[1] @ 99
     xs[2] @ 98
-    print(part[0], " ", part[1])          # 20 30, not 99 98
+    print(part[0], " ", part[1])  # 20 30, not 99 98
+
     # And the other direction: growing the source must not reach the slice.
     xs @ push(xs, 50)
-    print(len(part), " ", len(xs))        # 2 5
+    print(len(part), " ", len(xs))  # 2 5
 
     # A string, the same question. `str` is the one carrying a heap buffer that
     # `.cstr()` hands to C, so a shared slice would be visible from outside the
@@ -35,4 +36,4 @@ function main()
     s = "abcdef"
     mid = slice(s, from: 2, to: 4)
     joined = s + "!"
-    print(mid, " ", joined)               # cd abcdef!
+    print(mid, " ", joined)  # cd abcdef!

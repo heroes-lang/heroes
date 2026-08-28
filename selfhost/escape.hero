@@ -40,7 +40,7 @@ variant Quoted
 # The escapes legal here, for the diagnostic that lists them.
 function legal(ctx: Quoted) -> str
     return match ctx
-        .in_str => "\\n \\t \\r \\\\ \\\""
+        .in_str  => "\\n \\t \\r \\\\ \\\""
         .in_char => "\\n \\t \\r \\\\ \\'"
 
 # The character that needs no escape here because it is not the delimiter — the
@@ -56,13 +56,13 @@ function legal(ctx: Quoted) -> str
 # nothing but a test to notice. Deleted rather than kept in sync.
 function bare_text(ctx: Quoted) -> str
     return match ctx
-        .in_str => "'"
+        .in_str  => "'"
         .in_char => "\""
 
 # The context, named the way the diagnostic says it.
 function ctx_word(ctx: Quoted) -> str
     return match ctx
-        .in_str => "a string"
+        .in_str  => "a string"
         .in_char => "a character literal"
 
 ## The one table
@@ -73,14 +73,19 @@ function ctx_word(ctx: Quoted) -> str
 function escape_text(after_backslash: str, ctx: Quoted) -> str?
     if after_backslash == "n"
         return ok("\n")
+
     if after_backslash == "t"
         return ok("\t")
+
     if after_backslash == "r"
         return ok("\r")
+
     if after_backslash == "\\"
         return ok("\\")
+
     if after_backslash == "\"" && ctx == .in_str
         return ok("\"")
+
     if after_backslash == "'" && ctx == .in_char
         return ok("'")
     return fail(ERR_NOT_AN_ESCAPE, after_backslash)
@@ -95,31 +100,38 @@ function escape_text(after_backslash: str, ctx: Quoted) -> str?
 # pass.
 function unescape(text: str) -> str
     ctx: Quoted @ .in_str
+
     if text.len() > 0 && text[0] == '\''
         ctx @ .in_char
+
     if text.len() <= 1
         return ""
     inner = text.slice(from: 1, to: text.len() - 1)
     cs = inner.chars()
     out: str @ ""
     i: i64 @ 0
+
     while i < cs.len()
         c = cs[i]
+
         if c != "\\"
             out @ out + c
             i @ i + 1
             continue
+
         if i + 1 >= cs.len()
             out @ out + "\\"
             i @ i + 1
             continue
         decoded = escape_text(cs[i + 1], ctx)
+
         if decoded.is_err()
             out @ out + "\\"
             i @ i + 1
             continue
         out @ out + decoded.must()
         i @ i + 2
+
     return out
 
 test "the six escapes decode and the split is by context"

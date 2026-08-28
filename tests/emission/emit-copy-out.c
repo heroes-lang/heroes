@@ -136,15 +136,15 @@ bb2:
     if (__builtin_sub_overflow(t7, t8, &t9)) hero_panic_overflow();
 #line 13 "tests/golden/emit/copy-out.hero"
     h0_n = t9;
-#line 14 "tests/golden/emit/copy-out.hero"
+#line 15 "tests/golden/emit/copy-out.hero"
     t10 = h1_seen;
-#line 14 "tests/golden/emit/copy-out.hero"
+#line 15 "tests/golden/emit/copy-out.hero"
     t11 = INT64_C(2);
-#line 14 "tests/golden/emit/copy-out.hero"
+#line 15 "tests/golden/emit/copy-out.hero"
     t12 = t10 > t11;
-#line 14 "tests/golden/emit/copy-out.hero"
+#line 15 "tests/golden/emit/copy-out.hero"
     if (t12) goto bb5; else goto bb6;
-#line 14 "tests/golden/emit/copy-out.hero"
+#line 15 "tests/golden/emit/copy-out.hero"
 bb3:
 #line 150 "copyout.c"
     *ph0_n = h0_n;
@@ -160,7 +160,7 @@ bb6:
     goto bb4;
 }
 
-#line 17 "tests/golden/emit/copy-out.hero"
+#line 18 "tests/golden/emit/copy-out.hero"
 void h_copyout_main(void) {
 #line 166 "copyout.c"
     int64_t h0_n;
@@ -171,29 +171,29 @@ void h_copyout_main(void) {
     int64_t t4;
     goto bb0;
 bb0:
-#line 18 "tests/golden/emit/copy-out.hero"
+#line 19 "tests/golden/emit/copy-out.hero"
     t1 = INT64_C(10);
-#line 18 "tests/golden/emit/copy-out.hero"
+#line 19 "tests/golden/emit/copy-out.hero"
     h0_n = t1;
-#line 19 "tests/golden/emit/copy-out.hero"
-    t2 = INT64_C(0);
-#line 19 "tests/golden/emit/copy-out.hero"
-    h1_seen = t2;
 #line 20 "tests/golden/emit/copy-out.hero"
+    t2 = INT64_C(0);
+#line 20 "tests/golden/emit/copy-out.hero"
+    h1_seen = t2;
+#line 21 "tests/golden/emit/copy-out.hero"
     h_copyout_count_down(&h0_n, &h1_seen);
-#line 21 "tests/golden/emit/copy-out.hero"
+#line 22 "tests/golden/emit/copy-out.hero"
     t3 = h0_n;
-#line 21 "tests/golden/emit/copy-out.hero"
+#line 22 "tests/golden/emit/copy-out.hero"
     hero_print_int(t3);
-#line 21 "tests/golden/emit/copy-out.hero"
-    hero_print_end();
 #line 22 "tests/golden/emit/copy-out.hero"
+    hero_print_end();
+#line 23 "tests/golden/emit/copy-out.hero"
     t4 = h1_seen;
-#line 22 "tests/golden/emit/copy-out.hero"
+#line 23 "tests/golden/emit/copy-out.hero"
     hero_print_int(t4);
-#line 22 "tests/golden/emit/copy-out.hero"
+#line 23 "tests/golden/emit/copy-out.hero"
     hero_print_end();
-#line 22 "tests/golden/emit/copy-out.hero"
+#line 23 "tests/golden/emit/copy-out.hero"
     return;
 #line 199 "copyout.c"
 }

@@ -48,58 +48,77 @@ use ir_lower
 function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl], c: check_state.Checked, p: ir_state.Program, word_bits: i64) -> [diag.Diagnostic]
     names = emit_ctype.new_names(s, decls)
     found: [diag.Diagnostic] @ []
+
     for line in emit_ffi_lookup.lines(text: stderr)
         wrong = emit_ffi_declared.wrong_type(s, decls, line: line)
+
         if !wrong.is_err()
             found @ emit_ffi_lookup.add_once(found, d: wrong.must())
         not_const = emit_ffi_declared.not_constant(s, decls, line: line)
+
         if !not_const.is_err()
             found @ emit_ffi_lookup.add_once(found, d: not_const.must())
         incomplete = emit_ffi_record.incomplete_record(s, decls, line: line)
+
         if !incomplete.is_err()
             found @ emit_ffi_lookup.add_once(found, d: incomplete.must())
         unknown_f = emit_ffi_field.unknown_field(s, decls, line: line)
+
         if !unknown_f.is_err()
             found @ emit_ffi_lookup.add_once(found, d: unknown_f.must())
         flex = emit_ffi_field.flexible_array_member(s, tree, decls, line: line)
+
         if !flex.is_err()
             found @ emit_ffi_lookup.add_once(found, d: flex.must())
         field = emit_ffi_field.field_type(s, tree, decls, line: line)
+
         if !field.is_err()
             found @ emit_ffi_lookup.add_once(found, d: field.must())
         union_r = emit_ffi_record.union_record(s, decls, line: line)
+
         if !union_r.is_err()
             found @ emit_ffi_lookup.add_once(found, d: union_r.must())
         m_tag = emit_ffi_tag.missing_tag(s, decls, line: line)
+
         if !m_tag.is_err()
             found @ emit_ffi_lookup.add_once(found, d: m_tag.must())
         u_tag = emit_ffi_tag.unknown_tag(s, decls, line: line)
+
         if !u_tag.is_err()
             found @ emit_ffi_lookup.add_once(found, d: u_tag.must())
         tag_u = emit_ffi_tag.tag_is_a_union(s, decls, line: line)
+
         if !tag_u.is_err()
             found @ emit_ffi_lookup.add_once(found, d: tag_u.must())
         unknown_n = emit_ffi_declared.unknown_name(s, decls, line: line, stderr: stderr)
+
         if !unknown_n.is_err()
             found @ emit_ffi_lookup.add_once(found, d: unknown_n.must())
         m_link = emit_ffi_build.missing_link(s, decls, line: line)
+
         if !m_link.is_err()
             found @ emit_ffi_lookup.add_once(found, d: m_link.must())
         m_lib = emit_ffi_build.missing_library(s, decls, line: line)
+
         if !m_lib.is_err()
             found @ emit_ffi_lookup.add_once(found, d: m_lib.must())
         m_hdr = emit_ffi_build.missing_header(s, decls, line: line)
+
         if !m_hdr.is_err()
             found @ emit_ffi_lookup.add_once(found, d: m_hdr.must())
         pkg = emit_ffi_build.package_problem(s, decls, stderr: stderr, line: line)
+
         if !pkg.is_err()
             found @ emit_ffi_lookup.add_once(found, d: pkg.must())
         width = emit_ffi_narrowed.parameter_width(s, decls, p, c, names, line: line, word_bits: word_bits)
+
         if !width.is_err()
             found @ emit_ffi_lookup.add_once(found, d: width.must())
         writable = emit_ffi_mutable.writable_parameter(s, decls, p, c, names, line: line)
+
         if !writable.is_err()
             found @ emit_ffi_lookup.add_once(found, d: writable.must())
+
     return found
 
 ## Tests
@@ -112,6 +131,7 @@ test "one mistake, several lines, one diagnostic — and the order is the messag
     c: check_state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
     assert c.diagnostics.len() == 0
     low = ir_lower.lower(parsed.tree, out, c, s, parsed.decls)
+
     # The return assertion's message line, then clang's echo of the
     # same source line: one diagnostic survives, by matching rather
     # than by luck of ordering.
@@ -119,6 +139,7 @@ test "one mistake, several lines, one diagnostic — and the order is the messag
     found = explain(two_lines, s, parsed.tree, parsed.decls, c, low.program, word_bits: 64)
     assert found.len() == 1
     assert found[0].code == "ffi_return_type"
+
     # A flexible array member fails BOTH field assertions; flex runs
     # first and add_once keeps it, so the author is not told to
     # correct a length that cannot exist.
@@ -126,6 +147,7 @@ test "one mistake, several lines, one diagnostic — and the order is the messag
     kept = explain(both, s, parsed.tree, parsed.decls, c, low.program, word_bits: 64)
     assert kept.len() == 1
     assert kept[0].code == "ffi_flexible_array_member"
+
     # Any other clang failure explains nothing: still the compiler's.
     other = "m.c:1:1: error: expected ';' after top level declarator\n"
     assert explain(other, s, parsed.tree, parsed.decls, c, low.program, word_bits: 64).len() == 0

@@ -48,6 +48,7 @@ extern "curl/curl.h" link "curl"
 function main()
     print("libcurl: ", validated(c: curl_version()).default("<unnamed>"))
     handle = curl_easy_init()
+
     # The variadic call. `CURLOPT_URL` takes a string, and that is a fact about
     # this option rather than about the function — which is exactly what a
     # variadic means and why the boundary cannot check it for you.
@@ -59,11 +60,16 @@ function main()
     # i32` and passed the constant straight through until 2026-08-25, when
     # panel 092's repair to the probe made clang able to see it at last.
     rc = curl_easy_setopt(handle, CURLOPT_URL.to_u32().must(), "https://example.invalid/".cstr())
+
     if rc == CURLE_OK
         print("the url was accepted")
     else
         print("setopt refused it: ", validated(c: curl_easy_strerror(rc.to_u32().must())).default("<unnamed>"))
+
     # A code the library knows and this program never provokes: the point is
     # that the message comes from libcurl, not from a table written here.
-    print("code 1 means: ", validated(c: curl_easy_strerror(CURLE_UNSUPPORTED_PROTOCOL.to_u32().must())).default("<unnamed>"))
+    print(
+        "code 1 means: ",
+        validated(c: curl_easy_strerror(CURLE_UNSUPPORTED_PROTOCOL.to_u32().must())).default("<unnamed>")
+    )
     curl_easy_cleanup(handle)

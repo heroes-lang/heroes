@@ -36,23 +36,44 @@ function run_all(scratch: str, compiler: str) -> report.Report?
 # than no message.
 function built_binary_runs(@r: report.Report, scratch: str, compiler: str)
     said = shell.run(scratch: scratch, command: shell.sq(compiler) + " build examples/gallery/00-first.hero")
+
     if said.is_err() || said.must().code != 0
         report.keep_failure(@r, label: "special/build says where", detail: "  the build did not run")
         return
+
     if said.must().out.len() > 0
-        report.keep_failure(@r, label: "special/build says where", detail: "  a build's artifact is the binary, so stdout must be empty — it held:\n" + said.must().out)
+        report.keep_failure(
+            @r,
+            label: "special/build says where",
+            detail: "  a build's artifact is the binary, so stdout must be empty — it held:\n" + said.must().out
+        )
         return
     rows = strings.lines(said.must().err)
+
     if rows.len() == 0 || !strings.starts_with(text: rows[0], prefix: "wrote build/")
-        report.keep_failure(@r, label: "special/build says where", detail: "  stderr does not open with `wrote build/`:\n" + said.must().err)
+        report.keep_failure(
+            @r,
+            label: "special/build says where",
+            detail: "  stderr does not open with `wrote build/`:\n" + said.must().err
+        )
         return
     binary = strings.trimmed(strings.without_prefix(text: rows[0], prefix: "wrote "))
+
     if !strings.ends_with(text: binary, suffix: "/00first")
-        report.keep_failure(@r, label: "special/build says where", detail: "  the binary is not named after the file: " + binary)
+        report.keep_failure(
+            @r,
+            label: "special/build says where",
+            detail: "  the binary is not named after the file: " + binary
+        )
         return
     ran = shell.run(scratch: scratch, command: shell.sq(binary))
+
     if ran.is_err() || ran.must().out != "20\n"
-        report.keep_failure(@r, label: "special/build says where", detail: "  the binary it named does not print 20:\n" + ran.default(shell.Run(code: -1, out: "", err: "cannot run")).out)
+        report.keep_failure(
+            @r,
+            label: "special/build says where",
+            detail: "  the binary it named does not print 20:\n" + ran.default(shell.Run(code: -1, out: "", err: "cannot run")).out
+        )
         return
     report.keep_pass(@r)
 
@@ -63,15 +84,27 @@ function a_retired_flag_leaves_the_file_alone(@r: report.Report, scratch: str, c
     before = read_file("examples/gallery/00-first.hero")
     said = shell.run(scratch: scratch, command: shell.sq(compiler) + " fmt --write examples/gallery/00-first.hero")
     after = read_file("examples/gallery/00-first.hero")
+
     if said.is_err() || before.is_err() || after.is_err()
         report.keep_failure(@r, label: "special/a retired flag", detail: "  cannot run the compiler or read the file")
         return
+
     if said.must().code != 2
-        report.keep_failure(@r, label: "special/a retired flag", detail: "  a retired flag is exit 2, and it exited " + said.must().code.to_str())
+        report.keep_failure(
+            @r,
+            label: "special/a retired flag",
+            detail: "  a retired flag is exit 2, and it exited " + said.must().code.to_str()
+        )
         return
+
     if before.must() != after.must()
-        report.keep_failure(@r, label: "special/a retired flag", detail: "  the file changed under a refused flag — a refusal that half-ran")
+        report.keep_failure(
+            @r,
+            label: "special/a retired flag",
+            detail: "  the file changed under a refused flag — a refusal that half-ran"
+        )
         return
+
     if !strings.contains(text: after.must(), needle: "print((2 + 3) * 4)")
         report.keep_failure(@r, label: "special/a retired flag", detail: "  the file no longer holds what it held")
         return
@@ -84,14 +117,25 @@ function a_retired_flag_leaves_the_file_alone(@r: report.Report, scratch: str, c
 function the_split_program_prints_what_the_whole_one_prints(@r: report.Report, scratch: str, compiler: str)
     split = shell.run(scratch: scratch, command: shell.sq(compiler) + " run examples/calculator/main.hero")
     whole = shell.run(scratch: scratch, command: shell.sq(compiler) + " run examples/calculator/whole.hero")
+
     if split.is_err() || whole.is_err()
         report.keep_failure(@r, label: "special/split and whole", detail: "  cannot run the compiler")
         return
+
     if split.must().code != 0
-        report.keep_failure(@r, label: "special/split and whole", detail: "  the split program exited " + split.must().code.to_str())
+        report.keep_failure(
+            @r,
+            label: "special/split and whole",
+            detail: "  the split program exited " + split.must().code.to_str()
+        )
         return
+
     if split.must().out != whole.must().out
-        report.keep_failure(@r, label: "special/split and whole", detail: report.mismatch(what: "examples/calculator/{main,whole}.hero", expected: whole.must().out, actual: split.must().out))
+        report.keep_failure(
+            @r,
+            label: "special/split and whole",
+            detail: report.mismatch(what: "examples/calculator/{main,whole}.hero", expected: whole.must().out, actual: split.must().out)
+        )
         return
     report.keep_pass(@r)
 
@@ -101,11 +145,17 @@ function the_split_program_prints_what_the_whole_one_prints(@r: report.Report, s
 function the_bare_invocation_is_the_help(@r: report.Report, scratch: str, compiler: str)
     asked = shell.run(scratch: scratch, command: shell.sq(compiler) + " --help")
     bare = shell.run(scratch: scratch, command: shell.sq(compiler))
+
     if asked.is_err() || bare.is_err()
         report.keep_failure(@r, label: "special/the bare invocation", detail: "  cannot run the compiler")
         return
+
     if asked.must().out != bare.must().out
-        report.keep_failure(@r, label: "special/the bare invocation", detail: "  `heroes` and `heroes --help` print different text, so there are two help texts")
+        report.keep_failure(
+            @r,
+            label: "special/the bare invocation",
+            detail: "  `heroes` and `heroes --help` print different text, so there are two help texts"
+        )
         return
     report.keep_pass(@r)
 
@@ -116,14 +166,21 @@ function the_bare_invocation_is_the_help(@r: report.Report, scratch: str, compil
 function the_levels_are_not_the_same_build(@r: report.Report, scratch: str, compiler: str)
     at_o2 = shell.run(scratch: scratch, command: shell.sq(compiler) + " build examples/gallery/00-first.hero -O2")
     at_o0 = shell.run(scratch: scratch, command: shell.sq(compiler) + " build examples/gallery/00-first.hero -O0")
+
     if at_o2.is_err() || at_o0.is_err()
         report.keep_failure(@r, label: "special/the levels differ", detail: "  cannot run the compiler")
         return
+
     if at_o2.must().code != 0 || at_o0.must().code != 0
         report.keep_failure(@r, label: "special/the levels differ", detail: "  a level did not build")
         return
+
     if at_o2.must().err == at_o0.must().err
-        report.keep_failure(@r, label: "special/the levels differ", detail: "  -O0 and -O2 say the same thing, so the level reaches nothing:\n" + at_o0.must().err)
+        report.keep_failure(
+            @r,
+            label: "special/the levels differ",
+            detail: "  -O0 and -O2 say the same thing, so the level reaches nothing:\n" + at_o0.must().err
+        )
         return
     report.keep_pass(@r)
 
@@ -135,35 +192,50 @@ function the_levels_are_not_the_same_build(@r: report.Report, scratch: str, comp
 function a_failing_test_says_what_and_where(@r: report.Report, scratch: str, compiler: str)
     path = scratch + "/failing.hero"
     body = "function twice(n: i64) -> i64\n    return n * 2\n\ntest \"holds\"\n    assert twice(2) == 4\n\ntest \"fails\"\n    assert twice(2) == 5\n\ntest \"brackets\"\n    assert (1 == 1) == (1 == 2)\n\ntest \"after the failure\"\n    assert true\n"
+
     if write_file(path: path, text: body).is_err()
         report.keep_failure(@r, label: "special/a failing test", detail: "  cannot write " + path)
         return
     said = shell.run(scratch: scratch, command: shell.sq(compiler) + " test " + shell.sq(path))
+
     if said.is_err()
         report.keep_failure(@r, label: "special/a failing test", detail: "  cannot run the compiler")
         return
     wrong: [str] @ []
+
     if said.must().code != 1
         wrong @ wrong.push("    a failing test is exit 1, and it exited " + said.must().code.to_str())
+
     if !strings.contains(text: said.must().out, needle: "ok   \"holds\"")
         wrong @ wrong.push("    the passing test is not reported")
+
     if !strings.contains(text: said.must().out, needle: "FAIL \"fails\"")
         wrong @ wrong.push("    the failing test is not named")
+
     # The tests after a failure still run: a harness that stops at the
     # first failure hides every defect behind the first one.
     if !strings.contains(text: said.must().out, needle: "ok   \"after the failure\"")
         wrong @ wrong.push("    a test after the failure did not run")
+
     # The expression, and both sides, and the author's own brackets.
     if !strings.contains(text: said.must().err, needle: "assert failed: twice(2) == 5")
         wrong @ wrong.push("    the failing expression is not shown")
+
     if !strings.contains(text: said.must().err, needle: "left:  4")
         wrong @ wrong.push("    the left side is not shown")
+
     if !strings.contains(text: said.must().err, needle: "right: 5")
         wrong @ wrong.push("    the right side is not shown")
+
     if !strings.contains(text: said.must().err, needle: "assert failed: (1 == 1) == (1 == 2)")
         wrong @ wrong.push("    the brackets the author typed are not kept")
+
     if wrong.len() > 0
-        report.keep_failure(@r, label: "special/a failing test", detail: wrong.join("\n") + "\n  its stdout was:\n" + said.must().out + "  its stderr was:\n" + said.must().err)
+        report.keep_failure(
+            @r,
+            label: "special/a failing test",
+            detail: wrong.join("\n") + "\n  its stdout was:\n" + said.must().out + "  its stderr was:\n" + said.must().err
+        )
     else
         report.keep_pass(@r)
 
@@ -175,36 +247,52 @@ function a_failing_test_says_what_and_where(@r: report.Report, scratch: str, com
 # to trust.
 function the_specs_own_example_opens_a_database(@r: report.Report, scratch: str, compiler: str)
     spec = read_file("spec/heroes-spec.md")
+
     if spec.is_err()
         report.keep_failure(@r, label: "special/the spec's example", detail: "  cannot read spec/heroes-spec.md")
         return
     after = strings.index_of(text: spec.must(), needle: "## FFI")
+
     if after.is_err()
         report.keep_failure(@r, label: "special/the spec's example", detail: "  the spec has no `## FFI` section")
         return
     rest = spec.must().slice(from: after.must(), to: spec.must().len())
     blocks = strings.split_text(text: rest, separator: "```")
+
     if blocks.len() < 2
         report.keep_failure(@r, label: "special/the spec's example", detail: "  the FFI section has no fenced block")
         return
     block = blocks[1]
+
     if !strings.contains(text: block, needle: "extern \"sqlite3.h\"")
-        report.keep_failure(@r, label: "special/the spec's example", detail: "  the FFI section's first block is not the sqlite example any more:\n" + block)
+        report.keep_failure(
+            @r,
+            label: "special/the spec's example",
+            detail: "  the FFI section's first block is not the sqlite example any more:\n" + block
+        )
         return
     path = scratch + "/spec-ffi.hero"
     program = block + "\nfunction main()\n    db: ptr @ nullptr\n    rc = sqlite3_open(path: \":memory:\".cstr(), @db)\n    print(rc)\n    _ = sqlite3_close(db)\n"
+
     if write_file(path: path, text: program).is_err()
         report.keep_failure(@r, label: "special/the spec's example", detail: "  cannot write " + path)
         return
     said = shell.run(scratch: scratch, command: shell.patience() + shell.sq(compiler) + " run " + shell.sq(path))
+
     if said.is_err()
         report.keep_failure(@r, label: "special/the spec's example", detail: "  cannot run the compiler")
         return
+
     if shell.machine_lacks_the_library(said.must().err)
         report.keep_pass(@r)
         return
+
     if said.must().code != 0 || said.must().out != "0\n"
-        report.keep_failure(@r, label: "special/the spec's example", detail: "  the spec's own example did not open a database: exit " + said.must().code.to_str() + ", stdout `" + said.must().out + "`\n" + said.must().err)
+        report.keep_failure(
+            @r,
+            label: "special/the spec's example",
+            detail: "  the spec's own example did not open a database: exit " + said.must().code.to_str() + ", stdout `" + said.must().out + "`\n" + said.must().err
+        )
         return
     report.keep_pass(@r)
 
@@ -217,22 +305,38 @@ function the_specs_own_example_opens_a_database(@r: report.Report, scratch: str,
 function a_search_path_is_one_word(@r: report.Report, scratch: str, compiler: str)
     hostile = scratch + "/inc; touch heroes-shell-escaped"
     witness = "heroes-shell-escaped"
+
     if shell.remove_tree(hostile).is_err() || shell.mkdir_all(hostile).is_err()
         report.keep_failure(@r, label: "special/one argv word", detail: "  cannot build the hostile directory")
         return
+
     # The witness is removed first, so its ABSENCE afterwards means
     # something. A test that never removed it would pass on a machine
     # where it was never created.
     _ = shell.run(scratch: scratch, command: "rm -f " + shell.sq(witness))
-    said = shell.run(scratch: scratch, command: shell.sq(compiler) + " build examples/gallery/00-first.hero --include " + shell.sq(hostile))
+    said = shell.run(
+        scratch: scratch,
+        command: shell.sq(compiler) + " build examples/gallery/00-first.hero --include " + shell.sq(hostile)
+    )
+
     if said.is_err()
         report.keep_failure(@r, label: "special/one argv word", detail: "  cannot run the compiler")
         return
+
     if said.must().code != 0
-        report.keep_failure(@r, label: "special/one argv word", detail: "  the build failed with a legal (if hostile) directory name:\n" + said.must().err)
+        report.keep_failure(
+            @r,
+            label: "special/one argv word",
+            detail: "  the build failed with a legal (if hostile) directory name:\n" + said.must().err
+        )
         return
+
     if shell.exists(witness)
-        report.keep_failure(@r, label: "special/one argv word", detail: "  `" + witness + "` exists: the search path was split by a shell somewhere between argv and clang")
+        report.keep_failure(
+            @r,
+            label: "special/one argv word",
+            detail: "  `" + witness + "` exists: the search path was split by a shell somewhere between argv and clang"
+        )
         _ = shell.run(scratch: scratch, command: "rm -f " + shell.sq(witness))
         return
     report.keep_pass(@r)
@@ -243,25 +347,49 @@ function a_search_path_is_one_word(@r: report.Report, scratch: str, compiler: st
 # the diagnostic would be about a name instead of about a path.
 function a_search_path_that_names_nothing(@r: report.Report, scratch: str, compiler: str)
     for flag in ["--include", "--library"]
-        said = shell.run(scratch: scratch, command: shell.sq(compiler) + " build examples/gallery/00-first.hero " + flag + " /no/such/directory")
+        said = shell.run(
+            scratch: scratch,
+            command: shell.sq(compiler) + " build examples/gallery/00-first.hero " + flag + " /no/such/directory"
+        )
+
         if said.is_err()
             report.keep_failure(@r, label: "special/a path that names nothing", detail: "  cannot run the compiler")
             return
+
         if said.must().code != 2
-            report.keep_failure(@r, label: "special/a path that names nothing", detail: "  " + flag + " /no/such/directory exited " + said.must().code.to_str() + ", not 2")
+            report.keep_failure(
+                @r,
+                label: "special/a path that names nothing",
+                detail: "  " + flag + " /no/such/directory exited " + said.must().code.to_str() + ", not 2"
+            )
             return
+
         if !strings.contains(text: said.must().err, needle: "names no directory") || !strings.contains(text: said.must().err, needle: "in silence")
-            report.keep_failure(@r, label: "special/a path that names nothing", detail: "  " + flag + " does not say what would happen in silence:\n" + said.must().err)
+            report.keep_failure(
+                @r,
+                label: "special/a path that names nothing",
+                detail: "  " + flag + " does not say what would happen in silence:\n" + said.must().err
+            )
             return
+
     # An existing but empty directory is fine: the refusal is about a
     # path that is not there, never about one that is unhelpful.
     empty = scratch + "/empty-search-path"
+
     if shell.mkdir_all(empty).is_err()
         report.keep_failure(@r, label: "special/a path that names nothing", detail: "  cannot create " + empty)
         return
-    fine = shell.run(scratch: scratch, command: shell.sq(compiler) + " build examples/gallery/00-first.hero --include " + shell.sq(empty))
+    fine = shell.run(
+        scratch: scratch,
+        command: shell.sq(compiler) + " build examples/gallery/00-first.hero --include " + shell.sq(empty)
+    )
+
     if fine.is_err() || fine.must().code != 0
-        report.keep_failure(@r, label: "special/a path that names nothing", detail: "  an existing but empty search path was refused")
+        report.keep_failure(
+            @r,
+            label: "special/a path that names nothing",
+            detail: "  an existing but empty search path was refused"
+        )
         return
     report.keep_pass(@r)
 
@@ -324,37 +452,57 @@ test "the expectation module reads what a special case needs"
 function one_bad_argument_does_not_kill_the_other_two(@r: report.Report, scratch: str, compiler: str)
     label = "special/one bad argument does not kill the other two"
     dir = scratch + "/argv-checked"
+
     if shell.remove_tree(dir).is_err() || shell.mkdir_all(dir).is_err()
         report.keep_failure(@r, label: label, detail: "  cannot lay the program out under " + dir)
         return
+
     if write_file(path: dir + "/checked.hero", text: CHECKED_PROGRAM).is_err() || write_file(path: dir + "/plain.hero", text: PLAIN_PROGRAM).is_err()
         report.keep_failure(@r, label: label, detail: "  cannot write the two programs")
         return
+
     if built(scratch: scratch, compiler: compiler, source: dir + "/checked.hero", binary: dir + "/checked").is_err() || built(scratch: scratch, compiler: compiler, source: dir + "/plain.hero", binary: dir + "/plain").is_err()
         report.keep_failure(@r, label: label, detail: "  the two programs did not build")
         return
     wrong: [str] @ []
     bad = " one $(printf '\\377\\376') three"
     checked = shell.run(scratch: scratch, command: shell.patience() + shell.sq(dir + "/checked") + bad)
+
     if checked.is_err()
         report.keep_failure(@r, label: label, detail: "  the checked program could not run at all")
         return
+
     if checked.must().code != 0
-        wrong @ wrong.push("    `args_checked` exited " + checked.must().code.to_str() + " where the whole point is that it does not: one argument the shell chose must not end the program")
+        wrong @ wrong.push(
+            "    `args_checked` exited " + checked.must().code.to_str() + " where the whole point is that it does not: one argument the shell chose must not end the program"
+        )
+
     if checked.must().out != "1 one\n2 not text\n3 three\n"
-        wrong @ wrong.push("    `args_checked` printed:\n      " + strings.trimmed(checked.must().out) + "\n    where it should keep arguments 1 and 3 and name 2 by position")
+        wrong @ wrong.push(
+            "    `args_checked` printed:\n      " + strings.trimmed(checked.must().out) + "\n    where it should keep arguments 1 and 3 and name 2 by position"
+        )
+
     # The other half: `args()` ABORTS, which is the specified behaviour
     # and the whole reason the checked spelling had to be bought. If this
     # ever becomes 0 the two spellings have collapsed into one and the
     # +11 tokens bought nothing.
     plain = shell.run(scratch: scratch, command: shell.patience() + shell.sq(dir + "/plain") + bad)
+
     if plain.is_err()
         report.keep_failure(@r, label: label, detail: "  the plain program could not run at all")
         return
+
     if plain.must().code != 134
-        wrong @ wrong.push("    `args()` exited " + plain.must().code.to_str() + " where spec:186 says it aborts on an argument that is not UTF-8")
+        wrong @ wrong.push(
+            "    `args()` exited " + plain.must().code.to_str() + " where spec:186 says it aborts on an argument that is not UTF-8"
+        )
+
     if wrong.len() > 0
-        report.keep_failure(@r, label: label, detail: wrong.join("\n") + "\n  `docs/measurements/010-spec-budget-ledger.md` row 3541 spent +11 spec tokens on the sentence `args_checked() -> [str?]`, paid by the prediction this case is. A budget whose additions are paid by promises is only as honest as the promises somebody comes back for.")
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: wrong.join("\n") + "\n  `docs/measurements/010-spec-budget-ledger.md` row 3541 spent +11 spec tokens on the sentence `args_checked() -> [str?]`, paid by the prediction this case is. A budget whose additions are paid by promises is only as honest as the promises somebody comes back for."
+        )
     else
         report.keep_pass(@r)
 
@@ -370,7 +518,11 @@ constant PLAIN_PROGRAM: str
 # One program built to a named path, so the harness can run the binary
 # with a command line of its own choosing.
 function built(scratch: str, compiler: str, source: str, binary: str) -> ()?
-    made = shell.run(scratch: scratch, command: shell.patience() + shell.sq(compiler) + " build " + shell.sq(source) + " -o " + shell.sq(binary))
+    made = shell.run(
+        scratch: scratch,
+        command: shell.patience() + shell.sq(compiler) + " build " + shell.sq(source) + " -o " + shell.sq(binary)
+    )
+
     if made.is_err() || made.must().code != 0
         return fail("cannot_run", "cannot build " + source)
     return ok()

@@ -179,81 +179,81 @@ bb0:
     t1 = INT64_C(0);
 #line 12 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     h0_sum = t1;
-#line 13 "tests/golden/ir/adversarial-for-evaluates-once.hero"
+#line 14 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     t2 = h_adversarialforevaluatesonce_numbers();
-#line 13 "tests/golden/ir/adversarial-for-evaluates-once.hero"
+#line 14 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     t18 = h4_own4;
-#line 13 "tests/golden/ir/adversarial-for-evaluates-once.hero"
+#line 14 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     h4_own4 = t2;
 #line 189 "adversarialforevaluatesonce.c"
     hero_array_decref(t18);
-#line 13 "tests/golden/ir/adversarial-for-evaluates-once.hero"
+#line 14 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     t19 = h1_xs0;
 #line 193 "adversarialforevaluatesonce.c"
     hero_array_incref(t2);
-#line 13 "tests/golden/ir/adversarial-for-evaluates-once.hero"
+#line 14 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     h1_xs0 = t2;
 #line 197 "adversarialforevaluatesonce.c"
     hero_array_decref(t19);
-#line 13 "tests/golden/ir/adversarial-for-evaluates-once.hero"
+#line 14 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     t3 = INT64_C(0);
-#line 13 "tests/golden/ir/adversarial-for-evaluates-once.hero"
+#line 14 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     h2_i0 = t3;
-#line 13 "tests/golden/ir/adversarial-for-evaluates-once.hero"
+#line 14 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     goto bb1;
-#line 13 "tests/golden/ir/adversarial-for-evaluates-once.hero"
+#line 14 "tests/golden/ir/adversarial-for-evaluates-once.hero"
 bb1:
-#line 13 "tests/golden/ir/adversarial-for-evaluates-once.hero"
+#line 14 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     t4 = h2_i0;
-#line 13 "tests/golden/ir/adversarial-for-evaluates-once.hero"
+#line 14 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     t5 = h1_xs0;
-#line 13 "tests/golden/ir/adversarial-for-evaluates-once.hero"
+#line 14 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     t6 = hero_array_len(t5);
-#line 13 "tests/golden/ir/adversarial-for-evaluates-once.hero"
+#line 14 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     t7 = t4 < t6;
-#line 13 "tests/golden/ir/adversarial-for-evaluates-once.hero"
+#line 14 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     if (t7) goto bb2; else goto bb4;
-#line 13 "tests/golden/ir/adversarial-for-evaluates-once.hero"
+#line 14 "tests/golden/ir/adversarial-for-evaluates-once.hero"
 bb2:
-#line 13 "tests/golden/ir/adversarial-for-evaluates-once.hero"
+#line 14 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     t8 = h1_xs0;
-#line 13 "tests/golden/ir/adversarial-for-evaluates-once.hero"
+#line 14 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     t9 = h2_i0;
-#line 13 "tests/golden/ir/adversarial-for-evaluates-once.hero"
+#line 14 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     t10 = *(int64_t const *)hero_array_at(t8, t9);
-#line 13 "tests/golden/ir/adversarial-for-evaluates-once.hero"
+#line 14 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     h3_n = t10;
-#line 14 "tests/golden/ir/adversarial-for-evaluates-once.hero"
+#line 15 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     t11 = h0_sum;
-#line 14 "tests/golden/ir/adversarial-for-evaluates-once.hero"
+#line 15 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     t12 = h3_n;
-#line 14 "tests/golden/ir/adversarial-for-evaluates-once.hero"
+#line 15 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     if (__builtin_add_overflow(t11, t12, &t13)) hero_panic_overflow();
-#line 14 "tests/golden/ir/adversarial-for-evaluates-once.hero"
+#line 15 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     h0_sum = t13;
-#line 14 "tests/golden/ir/adversarial-for-evaluates-once.hero"
+#line 15 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     goto bb3;
-#line 14 "tests/golden/ir/adversarial-for-evaluates-once.hero"
+#line 15 "tests/golden/ir/adversarial-for-evaluates-once.hero"
 bb3:
-#line 13 "tests/golden/ir/adversarial-for-evaluates-once.hero"
+#line 14 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     t14 = h2_i0;
-#line 13 "tests/golden/ir/adversarial-for-evaluates-once.hero"
+#line 14 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     t15 = INT64_C(1);
-#line 13 "tests/golden/ir/adversarial-for-evaluates-once.hero"
+#line 14 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     if (__builtin_add_overflow(t14, t15, &t16)) hero_panic_overflow();
-#line 13 "tests/golden/ir/adversarial-for-evaluates-once.hero"
+#line 14 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     h2_i0 = t16;
-#line 13 "tests/golden/ir/adversarial-for-evaluates-once.hero"
+#line 14 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     goto bb1;
-#line 13 "tests/golden/ir/adversarial-for-evaluates-once.hero"
+#line 14 "tests/golden/ir/adversarial-for-evaluates-once.hero"
 bb4:
-#line 15 "tests/golden/ir/adversarial-for-evaluates-once.hero"
+#line 17 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     t17 = h0_sum;
-#line 15 "tests/golden/ir/adversarial-for-evaluates-once.hero"
+#line 17 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     t20 = h1_xs0;
 #line 255 "adversarialforevaluatesonce.c"
     hero_array_decref(t20);
-#line 15 "tests/golden/ir/adversarial-for-evaluates-once.hero"
+#line 17 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     t21 = h4_own4;
 #line 259 "adversarialforevaluatesonce.c"
     hero_array_decref(t21);

@@ -149,27 +149,27 @@ bb0:
     t2 = hero_str_cstr(t1);
 #line 19 "tests/golden/run/ffi-cstr.hero"
     (void)puts(hero_cstr_nonnull(t2));
-#line 23 "tests/golden/run/ffi-cstr.hero"
+#line 24 "tests/golden/run/ffi-cstr.hero"
     t4 = HERO_STR_LIT(hero_str_5cc08313);
-#line 23 "tests/golden/run/ffi-cstr.hero"
+#line 24 "tests/golden/run/ffi-cstr.hero"
     t5 = h_fficstr_shout(t4);
-#line 23 "tests/golden/run/ffi-cstr.hero"
+#line 24 "tests/golden/run/ffi-cstr.hero"
     t9 = h0_own0;
-#line 23 "tests/golden/run/ffi-cstr.hero"
+#line 24 "tests/golden/run/ffi-cstr.hero"
     h0_own0 = t5;
 #line 161 "fficstr.c"
     hero_str_decref(t9);
-#line 23 "tests/golden/run/ffi-cstr.hero"
+#line 24 "tests/golden/run/ffi-cstr.hero"
     t6 = hero_str_cstr(t5);
-#line 23 "tests/golden/run/ffi-cstr.hero"
+#line 24 "tests/golden/run/ffi-cstr.hero"
     (void)puts(hero_cstr_nonnull(t6));
-#line 24 "tests/golden/run/ffi-cstr.hero"
+#line 25 "tests/golden/run/ffi-cstr.hero"
     t8 = HERO_STR_LIT(hero_str_6251eb62);
-#line 24 "tests/golden/run/ffi-cstr.hero"
+#line 25 "tests/golden/run/ffi-cstr.hero"
     hero_print_str(t8);
-#line 24 "tests/golden/run/ffi-cstr.hero"
+#line 25 "tests/golden/run/ffi-cstr.hero"
     hero_print_end();
-#line 24 "tests/golden/run/ffi-cstr.hero"
+#line 25 "tests/golden/run/ffi-cstr.hero"
     t10 = h0_own0;
 #line 175 "fficstr.c"
     hero_str_decref(t10);

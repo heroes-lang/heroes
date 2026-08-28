@@ -24,10 +24,12 @@ function ends_with(text: str, suffix: str) -> bool
         return false
     offset = text.len() - suffix.len()
     i: i64 @ 0
+
     while i < suffix.len()
         if text[offset + i] != suffix[i]
             return false
         i @ i + 1
+
     return true
 
 # `text` with `suffix` removed.
@@ -54,16 +56,19 @@ function split_on(text: str, byte: u8) -> [str]
     pieces: [str] @ []
     start: i64 @ 0
     i: i64 @ 0
+
     while i < text.len()
         if text[i] == byte
             pieces @ pieces.push(text.slice(from: start, to: i))
             start @ i + 1
         i @ i + 1
+
     return pieces.push(text.slice(from: start, to: text.len()))
 
 # The lines of `text`, with no trailing empty piece for a final newline.
 function lines(text: str) -> [str]
     pieces = split_on(text: text, byte: 10)
+
     if pieces.len() > 0 && pieces[pieces.len() - 1].len() == 0
         return pieces.slice(from: 0, to: pieces.len() - 1)
     return pieces
@@ -72,20 +77,26 @@ function lines(text: str) -> [str]
 function base_name(path: str) -> str
     cut: i64 @ 0
     i: i64 @ 0
+
     while i < path.len()
         if path[i] == 47
             cut @ i + 1
         i @ i + 1
+
     return path.slice(from: cut, to: path.len())
 
 # `text` without leading or trailing spaces, tabs, newlines or returns.
 function trimmed(text: str) -> str
     head: i64 @ 0
+
     while head < text.len() && is_space(byte: text[head])
         head @ head + 1
+
     tail: i64 @ text.len()
+
     while tail > head && is_space(byte: text[tail - 1])
         tail @ tail - 1
+
     return text.slice(from: head, to: tail)
 
 function is_space(byte: u8) -> bool
@@ -101,18 +112,22 @@ function contains(text: str, needle: str) -> bool
     if needle.len() > text.len()
         return false
     start: i64 @ 0
+
     while start + needle.len() <= text.len()
         i: i64 @ 0
         hit: bool @ true
+
         while i < needle.len()
             if text[start + i] != needle[i]
                 hit @ false
                 i @ needle.len()
             else
                 i @ i + 1
+
         if hit
             return true
         start @ start + 1
+
     return false
 
 # Whether `text` starts with `prefix`, and the rest of it if so.
@@ -120,10 +135,12 @@ function starts_with(text: str, prefix: str) -> bool
     if prefix.len() > text.len()
         return false
     i: i64 @ 0
+
     while i < prefix.len()
         if text[i] != prefix[i]
             return false
         i @ i + 1
+
     return true
 
 function without_prefix(text: str, prefix: str) -> str
@@ -141,19 +158,24 @@ function without_prefix(text: str, prefix: str) -> str
 function to_number(text: str) -> i64?
     body: str @ text
     negative: bool @ false
+
     if starts_with(text: text, prefix: "-")
         negative @ true
         body @ without_prefix(text: text, prefix: "-")
+
     if body.len() == 0
         return fail("not_a_number", "`" + text + "` has no digits")
     value: i64 @ 0
     i: i64 @ 0
+
     while i < body.len()
         digit = body[i]
+
         if digit < 48 || digit > 57
             return fail("not_a_number", "`" + text + "` is not a decimal integer")
         value @ value * 10 + (digit - 48).to_i64().must()
         i @ i + 1
+
     if negative
         return ok(0 - value)
     return ok(value)
@@ -163,18 +185,22 @@ function index_of(text: str, needle: str) -> i64?
     if needle.len() > text.len()
         return fail("absent", "`" + needle + "` is not in the text")
     start: i64 @ 0
+
     while start + needle.len() <= text.len()
         i: i64 @ 0
         hit: bool @ true
+
         while i < needle.len()
             if text[start + i] != needle[i]
                 hit @ false
                 i @ needle.len()
             else
                 i @ i + 1
+
         if hit
             return ok(start)
         start @ start + 1
+
     return fail("absent", "`" + needle + "` is not in the text")
 
 # Split on a multi-byte separator, keeping empty pieces. `split_on`
@@ -182,14 +208,18 @@ function index_of(text: str, needle: str) -> i64?
 function split_text(text: str, separator: str) -> [str]
     pieces: [str] @ []
     rest: str @ text
+
     if separator.len() == 0
         return pieces.push(text)
+
     while true
         at = index_of(text: rest, needle: separator)
+
         if at.is_err()
             return pieces.push(rest)
         pieces @ pieces.push(rest.slice(from: 0, to: at.must()))
         rest @ rest.slice(from: at.must() + separator.len(), to: rest.len())
+
     return pieces
 
 # The words of `text`, with runs of spaces, tabs and newlines dropped.
@@ -197,15 +227,19 @@ function words(text: str) -> [str]
     out: [str] @ []
     start: i64 @ 0
     i: i64 @ 0
+
     while i <= text.len()
         boundary: bool @ i == text.len()
+
         if !boundary
             boundary @ is_space(byte: text[i])
+
         if boundary
             if i > start
                 out @ out.push(text.slice(from: start, to: i))
             start @ i + 1
         i @ i + 1
+
     return out
 
 test "index_of, split_text and words"

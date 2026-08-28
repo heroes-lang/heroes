@@ -43,6 +43,7 @@ extern "stdlib.h"
 function main()
     first = strerror(code: 1).validated().must()
     second = strerror(code: 2).validated().must()
+
     # `false` here is the whole point: a borrow would make these one string.
     print(first == second)
     print(len(first) > 0)
@@ -53,6 +54,7 @@ function main()
     # because ill-formed bytes abort too. `validated` answers both as a `str?`,
     # so the branch is where it belongs: on the value, not before it.
     absent = getenv(name: "HEROES_NO_SUCH_VARIABLE_059".cstr())
+
     match absent.validated()
         .ok text => print(text)
-        .err e => print("absent: ", e.code)
+        .err e   => print("absent: ", e.code)

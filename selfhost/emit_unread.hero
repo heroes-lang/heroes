@@ -37,10 +37,10 @@ use checker
 # Missing never reach a backend.
 function may_lose_its_destination(op: ir.OpKind) -> bool
     return match op
-        .lit | .load | .field | .payload | .tag_of | .len_of | .call => true
+        .lit | .load | .field | .payload | .tag_of | .len_of | .call             => true
         .func_ref | .store | .push_owned | .unary | .binary | .cast | .construct => false
-        .index | .map_get | .copy_out | .abort_op => false
-        .incref | .decref | .hole | .missing => false
+        .index | .map_get | .copy_out | .abort_op                                => false
+        .incref | .decref | .hole | .missing                                     => false
 
 # Whether the instruction disappears ENTIRELY when its result is unread
 # — the narrower half, and the one the fixpoint iterates over. A
@@ -51,24 +51,27 @@ function may_lose_its_destination(op: ir.OpKind) -> bool
 function vanishes_when_unread(op: ir.OpKind) -> bool
     if !may_lose_its_destination(op)
         return false
+
     return match op
-        .call => false
-        .lit | .load | .field | .payload | .tag_of | .len_of => true
+        .call                                                                    => false
+        .lit | .load | .field | .payload | .tag_of | .len_of                     => true
         .func_ref | .store | .push_owned | .unary | .binary | .cast | .construct => true
-        .index | .map_get | .copy_out | .abort_op => true
-        .incref | .decref | .hole | .missing => true
+        .index | .map_get | .copy_out | .abort_op                                => true
+        .incref | .decref | .hole | .missing                                     => true
 
 # Whether any EMITTED instruction assigns this temporary: value 0 (the
 # unit) is assigned by nothing, and a temporary that only exists inside
 # a block nobody reaches would be an unused variable.
 function assigned(f: ir_state.Function, live: [bool], value: i64) -> bool
     index: i64 @ 0
+
     for blk in f.blocks
         if live[index]
             for one in blk.insts
                 if !one.dest.is_err() && one.dest.must() == value
                     return true
         index @ index + 1
+
     return false
 
 # A temporary that a safe op writes and nothing reads: `_ = f(x)`, and
@@ -79,12 +82,14 @@ function discarded(f: ir_state.Function, live: [bool], value: i64, read: {i64: b
     if !read[value].is_err()
         return false
     index: i64 @ 0
+
     for blk in f.blocks
         if live[index]
             for one in blk.insts
                 if !one.dest.is_err() && one.dest.must() == value
                     return may_lose_its_destination(one.op)
         index @ index + 1
+
     return false
 
 # What the EMITTED C reads, which is not what the IR references: an
@@ -97,21 +102,27 @@ function discarded(f: ir_state.Function, live: [bool], value: i64, read: {i64: b
 # and is bounded by the number of values, so the loop ends.
 function emitted_reads(f: ir_state.Function, c: check_state.Checked) -> {i64: bool}
     gone: {i64: bool} @ {}
+
     while true
         read = reads_given(f, c, gone: gone)
         grew: bool @ false
+
         for blk in f.blocks
             for one in blk.insts
                 if one.dest.is_err()
                     continue
                 dest = one.dest.must()
+
                 if !gone[dest].is_err() || !read[dest].is_err()
                     continue
+
                 if vanishes_when_unread(one.op)
                     gone[dest] @ true
                     grew @ true
+
         if !grew
             return read
+
     empty: {i64: bool} = {}
     return empty
 
@@ -119,28 +130,37 @@ function emitted_reads(f: ir_state.Function, c: check_state.Checked) -> {i64: bo
 # print nothing.
 function reads_given(f: ir_state.Function, c: check_state.Checked, gone: {i64: bool}) -> {i64: bool}
     read: {i64: bool} @ {}
+
     for blk in f.blocks
         for one in blk.insts
             # A pure op with a unit result prints nothing, so it reads
             # nothing — the case that produced this rule is ()?.
             silent: bool @ false
+
             if !one.dest.is_err() && emit_ctype.is_unit(c, ty: one.ty)
                 is_effect: bool @ false
+
                 match one.op
-                    .call | .abort_op => is_effect @ true
+                    .call | .abort_op                                                           => is_effect @ true
                     .lit | .load | .store | .push_owned | .unary | .binary | .cast | .construct => is_effect @ is_effect
-                    .field | .index | .map_get | .len_of | .tag_of | .payload => is_effect @ is_effect
-                    .func_ref | .copy_out | .incref | .decref | .hole | .missing => is_effect @ is_effect
+                    .field | .index | .map_get | .len_of | .tag_of | .payload                   => is_effect @ is_effect
+                    .func_ref | .copy_out | .incref | .decref | .hole | .missing                => is_effect @ is_effect
+
                 if !is_effect
                     silent @ true
+
             if !one.dest.is_err() && !gone[one.dest.must()].is_err()
                 silent @ true
+
             if silent
                 continue
+
             for value in ir_uses.operands(f, one.op)
                 read[value] @ true
+
         for value in ir_uses.terminator_operands(blk.term)
             read[value] @ true
+
     return read
 
 # Whether anything in this function READS the slot — the question
@@ -155,6 +175,7 @@ function reads_given(f: ir_state.Function, c: check_state.Checked, gone: {i64: b
 # means MAY be unused, so an over-count silences nothing.
 function slot_is_read(f: ir_state.Function, live: [bool], read: {i64: bool}, slot: i64) -> bool
     index: i64 @ 0
+
     for blk in f.blocks
         if live[index]
             for inst in blk.insts
@@ -170,23 +191,27 @@ function slot_is_read(f: ir_state.Function, live: [bool], read: {i64: bool}, slo
                     # A store THROUGH A PATH reads the root on the way
                     # (copy-on-write walks it); a store straight to the
                     # slot is the write this asks about.
+
                     .store st =>
                         if st.place.root == slot && st.place.path.length > 0
                             return true
                     # The place store reads the slot it grows: the old
                     # elements survive into the result.
+
                     .push_owned pg =>
                         if pg.place.root == slot
                             return true
                     # §4.8's copy-out reads the local and writes it back
                     # through the pointer.
+
                     .copy_out co =>
                         if co.param == slot
                             return true
-                    .lit | .unary | .binary | .cast | .call | .construct => continue
-                    .field | .index | .map_get | .len_of | .tag_of | .payload => continue
+                    .lit | .unary | .binary | .cast | .call | .construct         => continue
+                    .field | .index | .map_get | .len_of | .tag_of | .payload    => continue
                     .func_ref | .abort_op | .incref | .decref | .hole | .missing => continue
         index @ index + 1
+
     return false
 
 ## Tests
@@ -204,11 +229,29 @@ test "the fixpoint: a unit payload silences its own feeding load"
     int_id = check_table.int_ty_id(c.types)
     span = token.Span(start: 0, end: 1)
     place = ir.Place(root: 0, path: ir.Run(start: 0, length: 0))
-    insts: [ir.Inst] = [ir.Inst(dest: ok(1), op: .load(place: place), ty: int_id, span: span), ir.Inst(dest: ok(2), op: .payload(base: 1, at: 0), ty: unit_id, span: span)]
+    insts: [ir.Inst] = [
+        ir.Inst(dest: ok(1), op: .load(place: place), ty: int_id, span: span)
+        ir.Inst(dest: ok(2), op: .payload(base: 1, at: 0), ty: unit_id, span: span)
+    ]
     preds: [i64] = []
     blk = ir_state.Block(preds: preds, insts: insts, term: .return_term(value: fail("none", "bare")), note: "t")
     slots: [ir_state.Slot] = [ir_state.Slot(name: "r", ty: int_id, kind: .local_slot)]
-    f = ir_state.Function(name: "t", decl: 0, kind: .function_kind, generics: [], params: [], result: unit_id, slots: slots, blocks: [blk], values: [unit_id, int_id, unit_id], arguments: [], steps: [], instance: [], call_instances: {}, span: span)
+    f = ir_state.Function(
+        name: "t",
+        decl: 0,
+        kind: .function_kind,
+        generics: [],
+        params: [],
+        result: unit_id,
+        slots: slots,
+        blocks: [blk],
+        values: [unit_id, int_id, unit_id],
+        arguments: [],
+        steps: [],
+        instance: [],
+        call_instances: {},
+        span: span
+    )
     read = emitted_reads(f, c)
     assert read[1].is_err()
     live: [bool] = [true]
@@ -216,11 +259,14 @@ test "the fixpoint: a unit payload silences its own feeding load"
     assert discarded(f, live, value: 1, read: read)
     assert assigned(f, live, value: 1)
     assert !assigned(f, live, value: 0)
+
     # The slot is read in the IR and not in the C: `_ = v`'s shape.
     assert !slot_is_read(f, live, read: read, slot: 0)
 
 test "the op table: pure reads and calls may lose, aborters may not"
-    assert may_lose_its_destination(.call(callee: .builtin_fn(at: 0), arguments: ir.Run(start: 0, length: 0), variadic: false))
+    assert may_lose_its_destination(
+        .call(callee: .builtin_fn(at: 0), arguments: ir.Run(start: 0, length: 0), variadic: false)
+    )
     assert may_lose_its_destination(.load(place: ir.Place(root: 0, path: ir.Run(start: 0, length: 0))))
     assert may_lose_its_destination(.payload(base: 1, at: 0))
     assert !may_lose_its_destination(.binary(op: .add, left: 1, right: 2))

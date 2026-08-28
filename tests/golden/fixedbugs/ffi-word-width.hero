@@ -41,11 +41,11 @@
 # `a_word_width_parameter_is_the_authors_error_not_the_compilers`.
 
 extern "stdlib.h"
-    function malloc(size: i64) -> ptr    #~ ffi_parameter_type
+    function malloc(size: i64) -> ptr  #~ ffi_parameter_type
     function free(p: ptr)
 
 extern "stdio.h"
-    function fseek(stream: ptr, offset: u64, whence: i32) -> i32   #~ ffi_parameter_type
+    function fseek(stream: ptr, offset: u64, whence: i32) -> i32  #~ ffi_parameter_type
 
 function main()
     p = malloc(8)

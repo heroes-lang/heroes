@@ -38,25 +38,36 @@ function writable_parameter(s: source.Source, decls: [ast.Decl], p: ir_state.Pro
     if !emit_ffi_lookup.has(text: line, needle: emit_ffi_lookup.DISCARDS)
         return fail("none", "not a qualifier line")
     at = emit_ffi_narrowed.location(s, line: line)
+
     if at.is_err()
         return fail("none", "no usable location")
+
     # 'const char *' to parameter of type 'char *' — the header's type
     # is the last quoted name, the same shape ffi_narrowed reads.
     c_type = emit_ffi_narrowed.last_quoted(at.must().rest)
+
     if c_type.is_err()
         return fail("none", "no header type on the line")
     found = emit_ffi_narrowed.extern_at_line(p, s, decls, file: at.must().file, at_line: at.must().line)
+
     if found.is_err()
         return fail("none", "no extern is declared at that line")
     f = found.must().f
     name = found.must().name
     parameters = emit_extern_probe.parameter_list(names, c, f)
+
     if parameters.is_err()
         return fail("none", "a parameter with no C spelling")
     arguments = emit_extern_probe.argument_names(count: f.params.len())
     module = source.component_at(s, decls[f.decl].span.start)
     probe = emit_extern_probe.probe_name(module: module, name: name)
-    columns = emit_extern_probe.argument_columns(probe: probe, name: name, parameters: parameters.must(), arguments: arguments)
+    columns = emit_extern_probe.argument_columns(
+        probe: probe,
+        name: name,
+        parameters: parameters.must(),
+        arguments: arguments
+    )
+
     # The parameter's own declared type, READ FROM THE VALUE rather
     # than asserted to be cstr (CLAUDE.md §11 — a narrowing asks the
     # value): a future Heroes type that also lowers to a pointer would
@@ -64,20 +75,30 @@ function writable_parameter(s: source.Source, decls: [ast.Decl], p: ir_state.Pro
     which: str @ "a parameter"
     declared: str @ "cstr"
     index: i64 @ 0
+
     for column in columns
         if column == at.must().col && index < f.params.len()
             which @ "`" + f.slots[f.params[index]].name + "`"
             none: [str] = []
             declared @ check_render.render_ty(c.types, s, decls, f.slots[f.params[index]].ty, none)
         index @ index + 1
+
     span = decls[f.decl].span
+
     # "does not promise to leave it alone", not "would write through
     # it" (author decision 2026-08-15, from panel 059): free(void *)
     # does not WRITE through its argument, it deallocates it — both
     # are the same defect for this program and neither is "writing",
     # so the message states what the header actually declares.
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "ffi_writable_parameter", message: which + " of `" + name + "` is declared `" + declared + "`, and the header says `" + c_type.must() + "` — C does not promise to leave it alone", span: span)
-    d.notes @ d.notes.push("§4.20: `s.cstr()` lends the string's own bytes, and they may be shared with other values — a C write through them changes values this program never passed to C, and on a literal it aborts")
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "ffi_writable_parameter",
+        message: which + " of `" + name + "` is declared `" + declared + "`, and the header says `" + c_type.must() + "` — C does not promise to leave it alone",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "§4.20: `s.cstr()` lends the string's own bytes, and they may be shared with other values — a C write through them changes values this program never passed to C, and on a literal it aborts"
+    )
+
     # The repair is not "add const", which is the header's to choose
     # and not this program's. It is to stop lending and start owning.
     d.notes @ d.notes.push("declare it `ptr` and give `" + name + "` a buffer C owns, then read the result back")
@@ -98,14 +119,21 @@ test "a writable char * names the lent parameter and the owning repair"
     fs = low.program.functions
     f0: ir_state.Function @ fs[0]
     picked: bool @ false
+
     for f in fs
         if f.name == "strtok" && !picked
             f0 @ f
             picked @ true
+
     parameters = emit_extern_probe.parameter_list(names, c, f0).must()
     arguments = emit_extern_probe.argument_names(count: 2)
     probe = emit_extern_probe.probe_name(module: "t", name: "strtok")
-    columns = emit_extern_probe.argument_columns(probe: probe, name: "strtok", parameters: parameters, arguments: arguments)
+    columns = emit_extern_probe.argument_columns(
+        probe: probe,
+        name: "strtok",
+        parameters: parameters,
+        arguments: arguments
+    )
     line = "t.hero:2:" + columns[0].to_str() + ": warning: passing 'const char *' to parameter of type 'char *' discards qualifiers"
     d = writable_parameter(s, parsed.decls, low.program, c, names, line: line)
     assert d.must().code == "ffi_writable_parameter"
@@ -113,9 +141,11 @@ test "a writable char * names the lent parameter and the owning repair"
     assert d.must().fixes.len() == 1
     assert d.must().fixes[0].replacement == "ptr"
     assert d.must().fixes[0].certainty == .guess
+
     # A line without the qualifier phrase is not this class.
     plain = "t.hero:2:9: error: implicit conversion loses integer precision: 'int64_t' to 'int'"
     assert writable_parameter(s, parsed.decls, low.program, c, names, line: plain).is_err()
+
     # A caret that misses every argument column still lands, with the
     # parameter unnamed — the rule is the rule, only the name is lost.
     off = "t.hero:2:1: warning: passing 'const char *' to parameter of type 'char *' discards qualifiers"

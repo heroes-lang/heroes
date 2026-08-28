@@ -102,7 +102,7 @@ HERO_TU_LOCAL int64_t h_fixedbugsamapkeythatisnotitself_found_1ad16c(HeroArrayHe
 HERO_TU_LOCAL bool h_fixedbugsamapkeythatisnotitself_missing_1ad16c(HeroArrayHeader * h0_ks, HeroArrayHeader * h1_vs, double h2_want);
 HERO_TU_LOCAL bool h_fixedbugsamapkeythatisnotitself_same_1ad16c(HeroArrayHeader * h0_ks, HeroArrayHeader * h1_vs);
 
-#line 65 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 73 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
 void h_fixedbugsamapkeythatisnotitself_main(void) {
 #line 108 "fixedbugsamapkeythatisnotitself.c"
     HeroArrayHeader * h0_ks = {0};
@@ -149,151 +149,151 @@ void h_fixedbugsamapkeythatisnotitself_main(void) {
     HeroArrayHeader * t38 = {0};
     goto bb0;
 bb0:
-#line 80 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 88 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t1 = 0x1.8p+0;
-#line 80 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 88 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t2 = 0x0p+0;
-#line 80 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 88 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t3 = 0x0p+0;
-#line 80 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 88 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t4 = 0x1p+0;
-#line 80 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 88 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t5 = t3 - t4;
-#line 80 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 88 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t6 = t2 * t5;
-#line 80 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 88 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t7 = 0x1.4p+1;
-#line 80 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 88 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t8 = hero_array_new(&hero_desc_f64, 3);
-#line 80 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 88 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     { HeroArrayHeader *grown = hero_array_push(t8, &t1);
-#line 80 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 88 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
       hero_array_decref(t8); t8 = grown; }
-#line 80 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 88 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     { HeroArrayHeader *grown = hero_array_push(t8, &t6);
-#line 80 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 88 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
       hero_array_decref(t8); t8 = grown; }
-#line 80 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 88 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     { HeroArrayHeader *grown = hero_array_push(t8, &t7);
-#line 80 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 88 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
       hero_array_decref(t8); t8 = grown; }
-#line 80 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 88 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t31 = h2_own2;
-#line 80 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 88 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     h2_own2 = t8;
 #line 185 "fixedbugsamapkeythatisnotitself.c"
     hero_array_decref(t31);
-#line 80 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 88 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t32 = h0_ks;
 #line 189 "fixedbugsamapkeythatisnotitself.c"
     hero_array_incref(t8);
-#line 80 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 88 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     h0_ks = t8;
 #line 193 "fixedbugsamapkeythatisnotitself.c"
     hero_array_decref(t32);
-#line 81 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 89 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t9 = INT64_C(1);
-#line 81 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 89 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t10 = INT64_C(2);
-#line 81 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 89 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t11 = INT64_C(3);
-#line 81 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 89 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t12 = hero_array_new(&hero_desc_int, 3);
-#line 81 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 89 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     { HeroArrayHeader *grown = hero_array_push(t12, &t9);
-#line 81 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 89 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
       hero_array_decref(t12); t12 = grown; }
-#line 81 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 89 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     { HeroArrayHeader *grown = hero_array_push(t12, &t10);
-#line 81 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 89 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
       hero_array_decref(t12); t12 = grown; }
-#line 81 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 89 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     { HeroArrayHeader *grown = hero_array_push(t12, &t11);
-#line 81 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 89 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
       hero_array_decref(t12); t12 = grown; }
-#line 81 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 89 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t33 = h3_own3;
-#line 81 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 89 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     h3_own3 = t12;
 #line 219 "fixedbugsamapkeythatisnotitself.c"
     hero_array_decref(t33);
-#line 81 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 89 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t34 = h1_vs;
 #line 223 "fixedbugsamapkeythatisnotitself.c"
     hero_array_incref(t12);
-#line 81 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 89 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     h1_vs = t12;
 #line 227 "fixedbugsamapkeythatisnotitself.c"
     hero_array_decref(t34);
-#line 82 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 90 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t13 = h0_ks;
-#line 82 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 90 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t14 = h1_vs;
-#line 82 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 90 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t15 = h_fixedbugsamapkeythatisnotitself_keyed_1ad16c(t13, t14);
-#line 82 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 90 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     hero_print_int(t15);
-#line 82 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 90 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     hero_print_end();
-#line 87 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 95 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t16 = h0_ks;
-#line 87 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 95 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t17 = h1_vs;
-#line 87 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 95 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t18 = 0x0p+0;
-#line 87 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 95 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t19 = h_fixedbugsamapkeythatisnotitself_found_1ad16c(t16, t17, t18);
-#line 87 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 95 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     hero_print_int(t19);
-#line 87 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 95 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     hero_print_end();
-#line 88 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 96 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t20 = h0_ks;
-#line 88 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 96 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t21 = h1_vs;
-#line 88 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 96 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t22 = 0x1.8p+0;
-#line 88 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 96 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t23 = h_fixedbugsamapkeythatisnotitself_found_1ad16c(t20, t21, t22);
-#line 88 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 96 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     hero_print_int(t23);
-#line 88 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 96 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     hero_print_end();
-#line 89 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 97 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t24 = h0_ks;
-#line 89 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 97 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t25 = h1_vs;
-#line 89 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 97 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t26 = 0x1.3p+3;
-#line 89 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 97 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t27 = h_fixedbugsamapkeythatisnotitself_missing_1ad16c(t24, t25, t26);
-#line 89 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 97 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     hero_print_bool(t27);
-#line 89 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 97 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     hero_print_end();
-#line 92 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 100 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t28 = h0_ks;
-#line 92 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 100 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t29 = h1_vs;
-#line 92 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 100 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t30 = h_fixedbugsamapkeythatisnotitself_same_1ad16c(t28, t29);
-#line 92 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 100 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     hero_print_bool(t30);
-#line 92 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 100 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     hero_print_end();
-#line 92 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 100 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t35 = h0_ks;
 #line 287 "fixedbugsamapkeythatisnotitself.c"
     hero_array_decref(t35);
-#line 92 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 100 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t36 = h1_vs;
 #line 291 "fixedbugsamapkeythatisnotitself.c"
     hero_array_decref(t36);
-#line 92 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 100 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t37 = h2_own2;
 #line 295 "fixedbugsamapkeythatisnotitself.c"
     hero_array_decref(t37);
-#line 92 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 100 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t38 = h3_own3;
 #line 299 "fixedbugsamapkeythatisnotitself.c"
     hero_array_decref(t38);
@@ -355,62 +355,62 @@ bb0:
     goto bb1;
 #line 33 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
 bb1:
-#line 34 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 35 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t3 = h3_i;
-#line 34 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 35 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t4 = h0_ks;
-#line 34 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 35 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t5 = hero_array_len(t4);
-#line 34 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 35 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t6 = t3 < t5;
-#line 34 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 35 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     if (t6) goto bb2; else goto bb3;
-#line 34 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 35 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
 bb2:
-#line 35 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 36 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t7 = h0_ks;
-#line 35 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 36 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t8 = h3_i;
-#line 35 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 36 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t9 = *(double const *)hero_array_at(t7, t8);
-#line 35 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 36 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t10 = h1_vs;
-#line 35 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 36 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t11 = h3_i;
-#line 35 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 36 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t12 = *(int64_t const *)hero_array_at(t10, t11);
-#line 35 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 36 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     hero_map_set(&(h2_m), &t9, &t12);
-#line 36 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 37 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t13 = h3_i;
-#line 36 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 37 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t14 = INT64_C(1);
-#line 36 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 37 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     if (__builtin_add_overflow(t13, t14, &t15)) hero_panic_overflow();
-#line 36 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 37 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     h3_i = t15;
-#line 36 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 37 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     goto bb1;
-#line 36 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 37 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
 bb3:
-#line 37 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 39 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t16 = h2_m;
-#line 37 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 39 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t17 = hero_map_len(t16);
-#line 37 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 39 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t20 = h2_m;
 #line 403 "fixedbugsamapkeythatisnotitself.c"
     hero_map_decref(t20);
-#line 37 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 39 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t21 = h4_own4;
 #line 407 "fixedbugsamapkeythatisnotitself.c"
     hero_map_decref(t21);
     return t17;
 }
 
-#line 39 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 41 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
 /* found<f64> */
-#line 39 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 41 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
 HERO_TU_LOCAL int64_t h_fixedbugsamapkeythatisnotitself_found_1ad16c(HeroArrayHeader * h0_ks, HeroArrayHeader * h1_vs, double h2_want) {
 #line 416 "fixedbugsamapkeythatisnotitself.c"
     HeroMapHeader * h3_m = {0};
@@ -455,158 +455,158 @@ HERO_TU_LOCAL int64_t h_fixedbugsamapkeythatisnotitself_found_1ad16c(HeroArrayHe
     h_0opt_e201354 t34 = {0};
     goto bb0;
 bb0:
-#line 40 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 42 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t1 = hero_map_new(&hero_desc_f64, &hero_desc_int, 0);
-#line 40 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 42 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t27 = h7_own7;
-#line 40 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 42 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     h7_own7 = t1;
 #line 465 "fixedbugsamapkeythatisnotitself.c"
     hero_map_decref(t27);
-#line 40 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 42 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t28 = h3_m;
 #line 469 "fixedbugsamapkeythatisnotitself.c"
     hero_map_incref(t1);
-#line 40 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 42 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     h3_m = t1;
 #line 473 "fixedbugsamapkeythatisnotitself.c"
     hero_map_decref(t28);
-#line 41 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 43 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t2 = INT64_C(0);
-#line 41 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 43 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     h4_i = t2;
-#line 41 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 43 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     goto bb1;
-#line 41 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 43 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
 bb1:
-#line 42 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t3 = h4_i;
-#line 42 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t4 = h0_ks;
-#line 42 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t5 = hero_array_len(t4);
-#line 42 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t6 = t3 < t5;
-#line 42 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     if (t6) goto bb2; else goto bb3;
-#line 42 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
 bb2:
-#line 43 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 46 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t7 = h0_ks;
-#line 43 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 46 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t8 = h4_i;
-#line 43 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 46 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t9 = *(double const *)hero_array_at(t7, t8);
-#line 43 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 46 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t10 = h1_vs;
-#line 43 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 46 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t11 = h4_i;
-#line 43 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 46 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t12 = *(int64_t const *)hero_array_at(t10, t11);
-#line 43 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 46 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     hero_map_set(&(h3_m), &t9, &t12);
-#line 44 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 47 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t13 = h4_i;
-#line 44 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 47 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t14 = INT64_C(1);
-#line 44 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 47 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     if (__builtin_add_overflow(t13, t14, &t15)) hero_panic_overflow();
-#line 44 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 47 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     h4_i = t15;
-#line 44 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 47 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     goto bb1;
-#line 44 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 47 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
 bb3:
-#line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 49 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t16 = h3_m;
-#line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 49 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t17 = h2_want;
-#line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 49 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     {
-#line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 49 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
       const void *found = hero_map_find(t16, &t17);
-#line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 49 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
       if (found == NULL) {
-#line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 49 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
         t18 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 49 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
       } else {
-#line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 49 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
         t18.tag = INT64_C(0);
-#line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 49 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
         (&hero_desc_int)->copy(&t18.as.ok, found);
-#line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 49 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
       }
-#line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 49 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     }
-#line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 49 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t29 = h8_own8;
-#line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 49 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     h8_own8 = t18;
 #line 547 "fixedbugsamapkeythatisnotitself.c"
     h_0opt_e201354_release(&t29);
-#line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 49 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t30 = h5_f0;
 #line 551 "fixedbugsamapkeythatisnotitself.c"
     h_0opt_e201354_retain(&t18);
-#line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 49 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     h5_f0 = t18;
 #line 555 "fixedbugsamapkeythatisnotitself.c"
     h_0opt_e201354_release(&t30);
-#line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 49 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t19 = h5_f0;
-#line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 49 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t20 = t19.tag;
-#line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 49 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t21 = INT64_C(0);
-#line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 49 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t22 = t20 == t21;
-#line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 49 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     if (t22) goto bb4; else goto bb5;
-#line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 49 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
 bb4:
-#line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 49 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t23 = h5_f0;
-#line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 49 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t24 = t23.as.ok;
-#line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 49 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     h6_r0 = t24;
-#line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 49 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     goto bb6;
-#line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 49 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
 bb5:
-#line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 49 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t25 = INT64_C(0);
-#line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 49 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     h6_r0 = t25;
-#line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 49 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     goto bb6;
-#line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 49 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
 bb6:
-#line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 49 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t26 = h6_r0;
-#line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 49 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t31 = h3_m;
 #line 591 "fixedbugsamapkeythatisnotitself.c"
     hero_map_decref(t31);
-#line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 49 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t32 = h5_f0;
 #line 595 "fixedbugsamapkeythatisnotitself.c"
     h_0opt_e201354_release(&t32);
-#line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 49 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t33 = h7_own7;
 #line 599 "fixedbugsamapkeythatisnotitself.c"
     hero_map_decref(t33);
-#line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 49 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t34 = h8_own8;
 #line 603 "fixedbugsamapkeythatisnotitself.c"
     h_0opt_e201354_release(&t34);
     return t26;
 }
 
-#line 47 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 51 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
 /* missing<f64> */
-#line 47 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 51 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
 HERO_TU_LOCAL bool h_fixedbugsamapkeythatisnotitself_missing_1ad16c(HeroArrayHeader * h0_ks, HeroArrayHeader * h1_vs, double h2_want) {
 #line 612 "fixedbugsamapkeythatisnotitself.c"
     HeroMapHeader * h3_m = {0};
@@ -646,134 +646,134 @@ HERO_TU_LOCAL bool h_fixedbugsamapkeythatisnotitself_missing_1ad16c(HeroArrayHea
     h_0opt_e201354 t30 = {0};
     goto bb0;
 bb0:
-#line 48 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 52 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t1 = hero_map_new(&hero_desc_f64, &hero_desc_int, 0);
-#line 48 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 52 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t23 = h6_own6;
-#line 48 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 52 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     h6_own6 = t1;
 #line 656 "fixedbugsamapkeythatisnotitself.c"
     hero_map_decref(t23);
-#line 48 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 52 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t24 = h3_m;
 #line 660 "fixedbugsamapkeythatisnotitself.c"
     hero_map_incref(t1);
-#line 48 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 52 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     h3_m = t1;
 #line 664 "fixedbugsamapkeythatisnotitself.c"
     hero_map_decref(t24);
-#line 49 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 53 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t2 = INT64_C(0);
-#line 49 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 53 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     h4_i = t2;
-#line 49 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 53 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     goto bb1;
-#line 49 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 53 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
 bb1:
-#line 50 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 55 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t3 = h4_i;
-#line 50 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 55 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t4 = h0_ks;
-#line 50 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 55 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t5 = hero_array_len(t4);
-#line 50 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 55 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t6 = t3 < t5;
-#line 50 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 55 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     if (t6) goto bb2; else goto bb3;
-#line 50 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 55 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
 bb2:
-#line 51 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 56 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t7 = h0_ks;
-#line 51 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 56 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t8 = h4_i;
-#line 51 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 56 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t9 = *(double const *)hero_array_at(t7, t8);
-#line 51 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 56 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t10 = h1_vs;
-#line 51 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 56 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t11 = h4_i;
-#line 51 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 56 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t12 = *(int64_t const *)hero_array_at(t10, t11);
-#line 51 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 56 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     hero_map_set(&(h3_m), &t9, &t12);
-#line 52 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 57 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t13 = h4_i;
-#line 52 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 57 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t14 = INT64_C(1);
-#line 52 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 57 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     if (__builtin_add_overflow(t13, t14, &t15)) hero_panic_overflow();
-#line 52 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 57 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     h4_i = t15;
-#line 52 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 57 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     goto bb1;
-#line 52 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 57 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
 bb3:
-#line 53 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 59 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t16 = h3_m;
-#line 53 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 59 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t17 = h2_want;
-#line 53 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 59 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     {
-#line 53 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 59 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
       const void *found = hero_map_find(t16, &t17);
-#line 53 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 59 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
       if (found == NULL) {
-#line 53 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 59 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
         t18 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 53 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 59 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
       } else {
-#line 53 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 59 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
         t18.tag = INT64_C(0);
-#line 53 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 59 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
         (&hero_desc_int)->copy(&t18.as.ok, found);
-#line 53 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 59 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
       }
-#line 53 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 59 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     }
-#line 53 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 59 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t25 = h7_own7;
-#line 53 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 59 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     h7_own7 = t18;
 #line 738 "fixedbugsamapkeythatisnotitself.c"
     h_0opt_e201354_release(&t25);
-#line 53 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 59 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t26 = h5_f0;
 #line 742 "fixedbugsamapkeythatisnotitself.c"
     h_0opt_e201354_retain(&t18);
-#line 53 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 59 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     h5_f0 = t18;
 #line 746 "fixedbugsamapkeythatisnotitself.c"
     h_0opt_e201354_release(&t26);
-#line 53 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 59 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t19 = h5_f0;
-#line 53 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 59 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t20 = t19.tag;
-#line 53 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 59 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t21 = INT64_C(1);
-#line 53 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 59 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t22 = t20 == t21;
-#line 53 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 59 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t27 = h3_m;
 #line 758 "fixedbugsamapkeythatisnotitself.c"
     hero_map_decref(t27);
-#line 53 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 59 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t28 = h5_f0;
 #line 762 "fixedbugsamapkeythatisnotitself.c"
     h_0opt_e201354_release(&t28);
-#line 53 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 59 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t29 = h6_own6;
 #line 766 "fixedbugsamapkeythatisnotitself.c"
     hero_map_decref(t29);
-#line 53 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 59 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t30 = h7_own7;
 #line 770 "fixedbugsamapkeythatisnotitself.c"
     h_0opt_e201354_release(&t30);
     return t22;
 }
 
-#line 55 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 61 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
 /* same<f64> */
-#line 55 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 61 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
 HERO_TU_LOCAL bool h_fixedbugsamapkeythatisnotitself_same_1ad16c(HeroArrayHeader * h0_ks, HeroArrayHeader * h1_vs) {
 #line 779 "fixedbugsamapkeythatisnotitself.c"
     HeroMapHeader * h2_a = {0};
@@ -816,117 +816,117 @@ HERO_TU_LOCAL bool h_fixedbugsamapkeythatisnotitself_same_1ad16c(HeroArrayHeader
     HeroMapHeader * t33 = {0};
     goto bb0;
 bb0:
-#line 56 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 62 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t1 = hero_map_new(&hero_desc_f64, &hero_desc_int, 0);
-#line 56 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 62 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t26 = h5_own5;
-#line 56 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 62 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     h5_own5 = t1;
 #line 826 "fixedbugsamapkeythatisnotitself.c"
     hero_map_decref(t26);
-#line 56 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 62 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t27 = h2_a;
 #line 830 "fixedbugsamapkeythatisnotitself.c"
     hero_map_incref(t1);
-#line 56 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 62 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     h2_a = t1;
 #line 834 "fixedbugsamapkeythatisnotitself.c"
     hero_map_decref(t27);
-#line 57 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 63 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t2 = hero_map_new(&hero_desc_f64, &hero_desc_int, 0);
-#line 57 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 63 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t28 = h6_own6;
-#line 57 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 63 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     h6_own6 = t2;
 #line 842 "fixedbugsamapkeythatisnotitself.c"
     hero_map_decref(t28);
-#line 57 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 63 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t29 = h3_b;
 #line 846 "fixedbugsamapkeythatisnotitself.c"
     hero_map_incref(t2);
-#line 57 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 63 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     h3_b = t2;
 #line 850 "fixedbugsamapkeythatisnotitself.c"
     hero_map_decref(t29);
-#line 58 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 64 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t3 = INT64_C(0);
-#line 58 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 64 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     h4_i = t3;
-#line 58 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 64 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     goto bb1;
-#line 58 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 64 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
 bb1:
-#line 59 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 66 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t4 = h4_i;
-#line 59 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 66 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t5 = h0_ks;
-#line 59 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 66 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t6 = hero_array_len(t5);
-#line 59 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 66 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t7 = t4 < t6;
-#line 59 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 66 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     if (t7) goto bb2; else goto bb3;
-#line 59 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 66 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
 bb2:
-#line 60 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 67 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t8 = h0_ks;
-#line 60 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 67 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t9 = h4_i;
-#line 60 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 67 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t10 = *(double const *)hero_array_at(t8, t9);
-#line 60 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 67 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t11 = h1_vs;
-#line 60 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 67 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t12 = h4_i;
-#line 60 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 67 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t13 = *(int64_t const *)hero_array_at(t11, t12);
-#line 60 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 67 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     hero_map_set(&(h2_a), &t10, &t13);
-#line 61 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 68 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t14 = h0_ks;
-#line 61 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 68 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t15 = h4_i;
-#line 61 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 68 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t16 = *(double const *)hero_array_at(t14, t15);
-#line 61 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 68 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t17 = h1_vs;
-#line 61 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 68 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t18 = h4_i;
-#line 61 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 68 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t19 = *(int64_t const *)hero_array_at(t17, t18);
-#line 61 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 68 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     hero_map_set(&(h3_b), &t16, &t19);
-#line 62 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 69 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t20 = h4_i;
-#line 62 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 69 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t21 = INT64_C(1);
-#line 62 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 69 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     if (__builtin_add_overflow(t20, t21, &t22)) hero_panic_overflow();
-#line 62 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 69 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     h4_i = t22;
-#line 62 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 69 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     goto bb1;
-#line 62 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 69 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
 bb3:
-#line 63 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 71 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t23 = h2_a;
-#line 63 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 71 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t24 = h3_b;
-#line 63 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 71 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t25 = hero_map_eq(t23, t24);
-#line 63 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 71 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t30 = h2_a;
 #line 920 "fixedbugsamapkeythatisnotitself.c"
     hero_map_decref(t30);
-#line 63 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 71 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t31 = h3_b;
 #line 924 "fixedbugsamapkeythatisnotitself.c"
     hero_map_decref(t31);
-#line 63 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 71 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t32 = h5_own5;
 #line 928 "fixedbugsamapkeythatisnotitself.c"
     hero_map_decref(t32);
-#line 63 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+#line 71 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t33 = h6_own6;
 #line 932 "fixedbugsamapkeythatisnotitself.c"
     hero_map_decref(t33);

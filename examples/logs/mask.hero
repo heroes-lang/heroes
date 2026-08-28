@@ -49,12 +49,16 @@ constant ERR_NO_SUCH_LEVEL: str
 function bit_of(level: str) -> i64
     if level == "TRACE"
         return BIT_TRACE
+
     if level == "DEBUG"
         return BIT_DEBUG
+
     if level == "INFO"
         return BIT_INFO
+
     if level == "WARN"
         return BIT_WARN
+
     if level == "ERROR"
         return BIT_ERROR
     return 0
@@ -89,40 +93,49 @@ function toggled(mask: i64, level: str) -> i64
 function how_many(mask: i64) -> i64
     left: i64 @ mask
     n: i64 @ 0
+
     while left != 0
         n @ n + (left & 1)
         left @ left >> 1
+
     return n
 
 # The names in the set, in the order the levels are declared — which is the order
 # of severity, and the one a reader expects a level list in.
 function names_of(mask: i64) -> [str]
     out: [str] @ []
+
     for level in ["TRACE", "DEBUG", "INFO", "WARN", "ERROR"]
         if holds(mask, level)
             out @ out.push(level)
+
     return out
 
 # `ERROR,WARN` — a comma-separated list of level names, as one mask.
 function read(text: str) -> i64?
     mask: i64 @ 0
+
     for name in split_on(text, ',')
         if bit_of(name) == 0
             return fail(ERR_NO_SUCH_LEVEL, "`" + name + "` is not a level — try " + join(names_of(EVERY), ", "))
         mask @ added(mask, name)
+
     return ok(mask)
 
 function split_on(text: str, c: u8) -> [str]
     out: [str] @ []
     start: i64 @ 0
     i: i64 @ 0
+
     while i <= text.len()
         if i == text.len() || text[i] == c
             piece = text.slice(from: start, to: i)
+
             if piece != ""
                 out @ out.push(piece)
             start @ i + 1
         i @ i + 1
+
     return out
 
 test "a bit is a level, and a name that is not a level is no bits at all"
@@ -161,8 +174,9 @@ test "a list of names is a mask, and a name that is not a level says so"
     assert read("ERROR").must() == BIT_ERROR
     assert read("WARN,ERROR").must() == PROBLEMS
     assert read("ERROR,,WARN").must() == PROBLEMS
+
     match read("ERROR,SHOUT")
-        .ok _  => assert false
+        .ok _ => assert false
         .err e =>
             assert e.code == ERR_NO_SUCH_LEVEL
             assert e.msg == "`SHOUT` is not a level — try TRACE, DEBUG, INFO, WARN, ERROR"

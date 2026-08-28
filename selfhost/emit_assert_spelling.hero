@@ -83,10 +83,10 @@ function return_check(c: check_state.Checked, ty: i64) -> str?
         .int_ty ik =>
             match ik.kind
                 .i64 => return ok("HERO_RET_INT")
-                .i8 => return ok("HERO_RET_I8")
+                .i8  => return ok("HERO_RET_I8")
                 .i16 => return ok("HERO_RET_I16")
                 .i32 => return ok("HERO_RET_I32")
-                .u8 => return ok("HERO_RET_U8")
+                .u8  => return ok("HERO_RET_U8")
                 .u16 => return ok("HERO_RET_U16")
                 .u32 => return ok("HERO_RET_U32")
                 .u64 => return ok("HERO_RET_U64")
@@ -94,18 +94,23 @@ function return_check(c: check_state.Checked, ty: i64) -> str?
             match fk.kind
                 .f32 => return ok("HERO_RET_F32")
                 .f64 => return ok("HERO_RET_F64")
-        .bool => return ok("HERO_RET_BOOL")
-        .str => return ok("HERO_RET_STR")
-        .unit => return ok("HERO_RET_UNIT")
-        .ptr => return ok("HERO_RET_PTR")
-        .cstr => return ok("HERO_RET_CSTR")
+        .bool  => return ok("HERO_RET_BOOL")
+        .str   => return ok("HERO_RET_STR")
+        .unit  => return ok("HERO_RET_UNIT")
+        .ptr   => return ok("HERO_RET_PTR")
+        .cstr  => return ok("HERO_RET_CSTR")
         .named => return ok("HERO_RET_RECORD")
         # The loud direction: everything else is refused by the
         # checker's boundary rule before a program can reach the
         # emitter, so a new FFI type arrives as a decision here instead
         # of silently getting no assertion.
-        .array | .fixed | .map | .fallible | .function_ty => return fail("bug", "this type does not cross the FFI boundary")
+
+        .array | .fixed | .map | .fallible | .function_ty => return fail(
+            "bug",
+            "this type does not cross the FFI boundary"
+        )
         .case_ty | .failure | .generic | .error => return fail("bug", "this type does not cross the FFI boundary")
+
     return fail("bug", "unreached")
 
 # The SECOND argument a return check takes, or "" for the eight that
@@ -116,10 +121,11 @@ function return_check(c: check_state.Checked, ty: i64) -> str?
 # spelling.
 function return_argument(names: emit_ctype.Names, c: check_state.Checked, ty: i64) -> str
     match check_table.get(c.types, ty)
-        .named n => return ", " + emit_ctype.of(names, decl: n.decl)
+        .named n                                                  => return ", " + emit_ctype.of(names, decl: n.decl)
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return ""
-        .array | .fixed | .map | .fallible | .function_ty => return ""
-        .case_ty | .failure | .generic | .error => return ""
+        .array | .fixed | .map | .fallible | .function_ty         => return ""
+        .case_ty | .failure | .generic | .error                   => return ""
+
     return ""
 
 # Whether a result type can be asked __builtin_constant_p — FALSE for a
@@ -133,10 +139,10 @@ function return_argument(names: emit_ctype.Names, c: check_state.Checked, ty: i6
 # bootstrap's suite.
 function asks_for_a_value(c: check_state.Checked, ty: i64) -> bool
     return match check_table.get(c.types, ty)
-        .named => false
+        .named                                                    => false
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => true
-        .array | .fixed | .map | .fallible | .function_ty => true
-        .case_ty | .failure | .generic | .error => true
+        .array | .fixed | .map | .fallible | .function_ty         => true
+        .case_ty | .failure | .generic | .error                   => true
 
 # A zero of the declared parameter type, cast so the call type-checks —
 # never evaluated, it exists only to make the expression well-formed.
@@ -160,16 +166,20 @@ function asks_for_a_value(c: check_state.Checked, ty: i64) -> bool
 # a catch-all.
 function zero_of(names: emit_ctype.Names, c: check_state.Checked, ty: i64, mutable: bool) -> str
     is_cstr: bool @ false
+
     match check_table.get(c.types, ty)
-        .cstr => is_cstr @ true
-        .int_ty | .float_ty | .bool | .str | .ptr | .unit => is_cstr @ is_cstr
+        .cstr                                                      => is_cstr @ true
+        .int_ty | .float_ty | .bool | .str | .ptr | .unit          => is_cstr @ is_cstr
         .array | .fixed | .map | .fallible | .function_ty | .named => is_cstr @ is_cstr
-        .case_ty | .failure | .generic | .error => is_cstr @ is_cstr
+        .case_ty | .failure | .generic | .error                    => is_cstr @ is_cstr
+
     if is_cstr
         return "0"
+
     match check_table.get(c.types, ty)
         .named n =>
             c_type = emit_ctype.of(names, decl: n.decl)
+
             if mutable
                 return "(" + c_type + " *)0"
             return "(" + c_type + "){0}"
@@ -193,10 +203,11 @@ function zero_of(names: emit_ctype.Names, c: check_state.Checked, ty: i64, mutab
             if mutable
                 return "(void * *)0"
             return "(void *)0"
-        .unit => return "(void *)0"
-        .cstr => return "0"
+        .unit                                             => return "(void *)0"
+        .cstr                                             => return "0"
         .array | .fixed | .map | .fallible | .function_ty => return "(void *)0"
-        .case_ty | .failure | .generic | .error => return "(void *)0"
+        .case_ty | .failure | .generic | .error           => return "(void *)0"
+
     return "(void *)0"
 
 ## Tests
@@ -221,6 +232,7 @@ test "the spelling table: widths, the bare cstr zero, the struct pair"
     assert !asks_for_a_value(c, ty: color)
     assert asks_for_a_value(c, ty: int_id)
     cstr_id = check_table.lookup(c.types, .cstr)
+
     if !cstr_id.is_err()
         assert zero_of(names, c, ty: cstr_id.must(), mutable: false) == "0"
     assert zero_of(names, c, ty: int_id, mutable: false) == "(int64_t)0"

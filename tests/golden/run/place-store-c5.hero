@@ -35,26 +35,31 @@ function main()
     ys = xs
     xs @ xs.push(3)
     print(xs.len(), " ", ys.len())
+
     # 2: push as a value.
     zs = xs.push(4)
     print(xs.len(), " ", zs.len())
+
     # 3: the self-snapshot on a bare place.
     hs: [Node] @ []
     hs @ hs.push(Node(kids: []))
     root = Node(kids: hs)
     hs @ hs.push(root)
     print(hs.len(), " ", root.kids.len(), " ", hs[1].kids.len())
+
     # 3b: the same through a field path (not the pattern; the classic
     # shape must keep its snapshot too).
     holder: Node @ Node(kids: [])
     holder.kids @ holder.kids.push(Node(kids: []))
     holder.kids @ holder.kids.push(holder)
     print(holder.kids.len(), " ", holder.kids[1].kids.len())
+
     # 4: the value borrows from inside the array being grown.
     ws: [str] @ []
     ws @ ws.push("a")
     ws @ ws.push(ws[0])
     print(ws.len(), " ", ws[1])
+
     # 5: the @ escape — classic order, receiver first.
     qs: [i64] @ []
     qs @ qs.push(1)

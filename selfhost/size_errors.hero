@@ -26,14 +26,20 @@ use diag
 # recursive type T2` for a mutual pair was filed as a bug.
 function no_size(kind: str, holder: str, through: str, direct: bool, steps: [str], span: token.Span) -> diag.Diagnostic
     message: str @ "`" + kind + " " + holder + "` contains itself through `" + through + "`, so it has no size"
+
     if direct
         message @ "`" + kind + " " + holder + "` contains itself, so it has no size"
     d: diag.Diagnostic @ diag.new_diagnostic(code: "no_size", message: message, span: span)
+
     if !direct
         d.notes @ d.notes.push("the cycle is: " + steps.join(", then "))
-    d.notes @ d.notes.push("every value is an independent copy, so `" + holder + "` holding one more `" + holder + "` would need one at every depth")
+    d.notes @ d.notes.push(
+        "every value is an independent copy, so `" + holder + "` holding one more `" + holder + "` would need one at every depth"
+    )
     d.notes @ d.notes.push("`[T]` holds its contents elsewhere, so it is how a type contains itself")
-    d.fixes @ d.fixes.push(diag.Fix(title: "hold them in an array: `[" + through + "]`", replacement: "", span: span, certainty: .guess))
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "hold them in an array: `[" + through + "]`", replacement: "", span: span, certainty: .guess)
+    )
     return d
 
 ## Tests

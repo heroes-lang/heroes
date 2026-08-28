@@ -27,14 +27,18 @@ function lookup(env: {str: i64}, name: str) -> i64?
 
 function sum_of(children: [parse.Expr], env: {str: i64}) -> i64?
     tot: i64 @ 0
+
     for c in children
         tot @ tot + evaluate(c, env)?
+
     return ok(tot)
 
 function product_of(children: [parse.Expr], env: {str: i64}) -> i64?
     tot: i64 @ 1
+
     for c in children
         tot @ tot * evaluate(c, env)?
+
     return ok(tot)
 
 # The value of the tree. Fails on the first unknown name.
@@ -55,9 +59,11 @@ function names_used(e: parse.Expr) -> [str]
 
 function names_of(children: [parse.Expr]) -> [str]
     out: [str] @ []
+
     for c in children
         for n in c.names_used()
             out @ out.push(n)
+
     return out
 
 ## Interface
@@ -67,6 +73,7 @@ function calculate(text: str, env: {str: i64}) -> i64?
     ts = lex.tokenize(text)?
     p: parse.Parse @ parse.Parse(ts: ts, pos: 0)
     tree = parse.expression(@p)?
+
     if !parse.parse_at_end(p)
         return fail(ERR_TRAILING_TOKENS, "leftover input at the end")
     return evaluate(tree, env)
@@ -83,12 +90,15 @@ test "variables from the environment"
 
 test "errors reach the top"
     empty: {str: i64} = {}
+
     match calculate("2 +", empty)
         .ok _  => assert false
         .err e => assert e.code == parse.ERR_UNEXPECTED_END
+
     match calculate("z + 1", empty)
         .ok _  => assert false
         .err e => assert e.code == ERR_UNKNOWN_NAME
+
     match calculate("(2 + 3", empty)
         .ok _  => assert false
         .err e => assert e.code == parse.ERR_UNCLOSED_PAREN
@@ -120,19 +130,25 @@ function simplify(e: parse.Expr) -> parse.Expr
 # dropped because adding one changes nothing.
 function keep_sum(children: [parse.Expr]) -> [parse.Expr]
     out: [parse.Expr] @ []
+
     for child in children
         one = simplify(child)
+
         if !is_literal(e: one, v: 0)
             out @ out.push(one)
+
     return out
 
 # The same for a product, dropping the ones.
 function keep_product(children: [parse.Expr]) -> [parse.Expr]
     out: [parse.Expr] @ []
+
     for child in children
         one = simplify(child)
+
         if !is_literal(e: one, v: 1)
             out @ out.push(one)
+
     return out
 
 # Is this node exactly the literal `v`?
@@ -147,10 +163,12 @@ function is_literal(e: parse.Expr, v: i64) -> bool
 function rebuild(kept: [parse.Expr], zero: bool) -> parse.Expr
     if kept.len() == 1
         return kept[0]
+
     if kept.len() == 0
         if zero
             return .num(v: 0)
         return .num(v: 1)
+
     if zero
         return .sum(children: kept)
     return .product(children: kept)

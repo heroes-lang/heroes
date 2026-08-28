@@ -100,17 +100,21 @@ record Function
 function args_of(f: Function, run: ir.Run) -> [ir.Arg]
     out: [ir.Arg] @ []
     i: i64 @ run.start
+
     while i < run.start + run.length
         out @ out.push(f.arguments[i])
         i @ i + 1
+
     return out
 
 function steps_of(f: Function, run: ir.Run) -> [ir.PathStep]
     out: [ir.PathStep] @ []
     i: i64 @ run.start
+
     while i < run.start + run.length
         out @ out.push(f.steps[i])
         i @ i + 1
+
     return out
 
 function value_type(f: Function, value: i64) -> i64
@@ -132,16 +136,16 @@ variant Phase
 function phase_rank(p: Phase) -> i64
     return match p
         .lowered => 0
-        .mono => 1
-        .owned => 2
+        .mono    => 1
+        .owned   => 2
 
 # What the verifier's failures name, so a message says which pass to
 # suspect.
 function phase_name(p: Phase) -> str
     return match p
         .lowered => "after lowering"
-        .mono => "after monomorphisation"
-        .owned => "after the ownership pass"
+        .mono    => "after monomorphisation"
+        .owned   => "after the ownership pass"
 
 record Program
     # Which passes have run. Only advance_to may change it.
@@ -174,12 +178,29 @@ record Lowered
 ## Tests
 
 test "a run slices its pool, and the phase only moves forward"
-    f = Function(name: "f", decl: 0, kind: .function_kind, generics: [], params: [], result: 0, slots: [], blocks: [], values: [7, 8, 9], arguments: [.value_arg(value: 4), .value_arg(value: 5), .inout_arg(place: ir.Place(root: 0, path: ir.Run(start: 0, length: 0)))], steps: [], instance: [], call_instances: {}, span: token.Span(start: 0, end: 1))
+    f = Function(
+        name: "f",
+        decl: 0,
+        kind: .function_kind,
+        generics: [],
+        params: [],
+        result: 0,
+        slots: [],
+        blocks: [],
+        values: [7, 8, 9],
+        arguments: [.value_arg(value: 4), .value_arg(value: 5), .inout_arg(place: ir.Place(root: 0, path: ir.Run(start: 0, length: 0)))],
+        steps: [],
+        instance: [],
+        call_instances: {},
+        span: token.Span(start: 0, end: 1)
+    )
     two = args_of(f, ir.Run(start: 1, length: 2))
     assert two.len() == 2
+
     match two[0]
         .value_arg v => assert v.value == 5
-        .inout_arg => assert false
+        .inout_arg   => assert false
+
     assert value_type(f, 2) == 9
     p: Program @ Program(phase: .lowered, functions: [], strings: [])
     advance_to(@p, .mono)

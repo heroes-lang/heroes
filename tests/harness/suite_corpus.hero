@@ -45,28 +45,51 @@ constant LEAST: i64
 function run_all(scratch: str, compiler: str) -> report.Report?
     r: report.Report @ report.empty()
     programs = program_directories(scratch)?
+
     if programs.len() < LEAST
-        report.keep_failure(@r, label: "corpus", detail: "  " + EXAMPLES + " has " + programs.len().to_str() + " program directories and had " + LEAST.to_str())
+        report.keep_failure(
+            @r,
+            label: "corpus",
+            detail: "  " + EXAMPLES + " has " + programs.len().to_str() + " program directories and had " + LEAST.to_str()
+        )
     binaries = scratch + "/corpus"
     shell.mkdir_all(binaries)?
     skipped: i64 @ 0
     crossing: i64 @ 0
+
     for dir in programs
         modules = module_texts(scratch: scratch, dir: dir)?
+
         if !declares_any(modules: modules, opening: "test \"") && !declares_any(modules: modules, opening: "extern \"")
-            report.keep_failure(@r, label: "corpus/" + strings.base_name(path: dir), detail: "  " + dir + " neither tests itself nor binds a C library — design.md's \"asserts its own behaviour in `test` blocks\", asked of each directory")
+            report.keep_failure(
+                @r,
+                label: "corpus/" + strings.base_name(path: dir),
+                detail: "  " + dir + " neither tests itself nor binds a C library — design.md's \"asserts its own behaviour in `test` blocks\", asked of each directory"
+            )
+
         if !holds(modules: modules, needle: "exit(")
             crossing @ crossing + 1
         took = one_program(scratch: scratch, compiler: compiler, binaries: binaries, dir: dir, r: @r)
+
         if took
             skipped @ skipped + 1
+
     if crossing == 0
-        report.keep_failure(@r, label: "corpus", detail: "  every corpus program calls `exit`, so nothing crosses the leak gate — and on Darwin arm64 hero_runtime_check_leaks() is the only leak instrument there is")
+        report.keep_failure(
+            @r,
+            label: "corpus",
+            detail: "  every corpus program calls `exit`, so nothing crosses the leak gate — and on Darwin arm64 hero_runtime_check_leaks() is the only leak instrument there is"
+        )
+
     # A machine may be missing a library; it may not be missing most of
     # them. Without this, a runner with no C libraries at all reports the
     # corpus green by testing none of it.
     if skipped > 0 && skipped * 3 > programs.len()
-        report.keep_failure(@r, label: "corpus", detail: "  " + skipped.to_str() + " of " + programs.len().to_str() + " programs were skipped for want of a library — this machine is not testing the corpus")
+        report.keep_failure(
+            @r,
+            label: "corpus",
+            detail: "  " + skipped.to_str() + " of " + programs.len().to_str() + " programs were skipped for want of a library — this machine is not testing the corpus"
+        )
     return ok(r)
 
 # One program: its tests in three configurations, then what it prints.
@@ -74,22 +97,40 @@ function run_all(scratch: str, compiler: str) -> report.Report?
 function one_program(scratch: str, compiler: str, binaries: str, dir: str, @r: report.Report) -> bool
     name = strings.base_name(path: dir)
     main = dir + "/main.hero"
+
     for level in configurations()
-        said = shell.run(scratch: scratch, command: shell.patience() + shell.sq(compiler) + " test " + shell.sq(main) + " " + level)
+        said = shell.run(
+            scratch: scratch,
+            command: shell.patience() + shell.sq(compiler) + " test " + shell.sq(main) + " " + level
+        )
+
         if said.is_err()
             report.keep_failure(@r, label: "corpus/" + name, detail: "  cannot run the compiler on " + main)
             return false
+
         if shell.machine_lacks_the_library(said.must().err)
             return true
+
         if said.must().code != 0
-            report.keep_failure(@r, label: "corpus/" + name + " at " + level, detail: "  `heroes test` exited " + said.must().code.to_str() + ":\n" + said.must().out + said.must().err)
+            report.keep_failure(
+                @r,
+                label: "corpus/" + name + " at " + level,
+                detail: "  `heroes test` exited " + said.must().code.to_str() + ":\n" + said.must().out + said.must().err
+            )
             return false
+
         if strings.contains(text: said.must().out, needle: "FAIL ")
-            report.keep_failure(@r, label: "corpus/" + name + " at " + level, detail: "  a test failed:\n" + said.must().out)
+            report.keep_failure(
+                @r,
+                label: "corpus/" + name + " at " + level,
+                detail: "  a test failed:\n" + said.must().out
+            )
             return false
+
         if level == "--sanitize" && (strings.contains(text: said.must().err, needle: "AddressSanitizer") || strings.contains(text: said.must().err, needle: "runtime error:"))
             report.keep_failure(@r, label: "corpus/" + name, detail: "  tripped a sanitiser:\n" + said.must().err)
             return false
+
     prints(scratch: scratch, compiler: compiler, binaries: binaries, dir: dir, r: @r)
     return false
 
@@ -100,32 +141,57 @@ function prints(scratch: str, compiler: str, binaries: str, dir: str, @r: report
     name = strings.base_name(path: dir)
     main = dir + "/main.hero"
     text = read_file(dir + "/main.expected")
+
     if text.is_err()
         report.keep_pass(@r)
         return
     want = expectation.split(text.must())
+
     if want.is_err()
-        report.keep_failure(@r, label: "corpus/" + name, detail: "  " + dir + "/main.expected is not a readable expectation")
+        report.keep_failure(
+            @r,
+            label: "corpus/" + name,
+            detail: "  " + dir + "/main.expected is not a readable expectation"
+        )
         return
     passed = shell_arguments(dir)
     binary = binaries + "/" + name
-    built = shell.run(scratch: scratch, command: shell.patience() + shell.sq(compiler) + " build " + shell.sq(main) + " -o " + shell.sq(binary))
+    built = shell.run(
+        scratch: scratch,
+        command: shell.patience() + shell.sq(compiler) + " build " + shell.sq(main) + " -o " + shell.sq(binary)
+    )
+
     if built.is_err() || built.must().code != 0
-        report.keep_failure(@r, label: "corpus/" + name, detail: "  did not build:\n" + built.default(shell.Run(code: -1, out: "", err: "cannot run the compiler")).err)
+        report.keep_failure(
+            @r,
+            label: "corpus/" + name,
+            detail: "  did not build:\n" + built.default(shell.Run(code: -1, out: "", err: "cannot run the compiler")).err
+        )
         return
     at_o0 = shell.run(scratch: scratch, command: shell.patience() + shell.sq(binary) + passed)
+
     if judged(@r, name: name, level: "-O0", want: want.must(), said: at_o0)
         return
-    at_o2 = shell.run(scratch: scratch, command: shell.patience() + shell.sq(compiler) + " run " + shell.sq(main) + passed_after_dashes(dir))
+    at_o2 = shell.run(
+        scratch: scratch,
+        command: shell.patience() + shell.sq(compiler) + " run " + shell.sq(main) + passed_after_dashes(dir)
+    )
+
     if judged(@r, name: name, level: "-O2", want: want.must(), said: at_o2)
         return
-    sanitised = shell.run(scratch: scratch, command: shell.patience() + shell.sq(compiler) + " run " + shell.sq(main) + " --sanitize" + passed_after_dashes(dir))
+    sanitised = shell.run(
+        scratch: scratch,
+        command: shell.patience() + shell.sq(compiler) + " run " + shell.sq(main) + " --sanitize" + passed_after_dashes(dir)
+    )
+
     if sanitised.is_err()
         report.keep_failure(@r, label: "corpus/" + name, detail: "  cannot run the compiler on " + main)
         return
+
     if strings.contains(text: sanitised.must().err, needle: "AddressSanitizer") || strings.contains(text: sanitised.must().err, needle: "runtime error:")
         report.keep_failure(@r, label: "corpus/" + name, detail: "  tripped a sanitiser:\n" + sanitised.must().err)
         return
+
     if judged(@r, name: name, level: "--sanitize", want: want.must(), said: sanitised)
         return
     report.keep_pass(@r)
@@ -135,6 +201,7 @@ function judged(@r: report.Report, name: str, level: str, want: expectation.Expe
         report.keep_failure(@r, label: "corpus/" + name, detail: "  cannot execute at " + level)
         return true
     wrong = expectation.unmet(want, out: said.must().out, err: said.must().err, code: said.must().code)
+
     if wrong.is_err()
         return false
     report.keep_failure(@r, label: "corpus/" + name + " at " + level, detail: "  " + wrong.must())
@@ -152,35 +219,44 @@ function configurations() -> [str]
 # `main.args`, one argument per line, each quoted for the shell.
 function shell_arguments(dir: str) -> str
     text = read_file(dir + "/main.args")
+
     if text.is_err()
         return ""
     out: str @ ""
+
     for row in strings.lines(text.must())
         if row.len() > 0
             out @ out + " " + shell.sq(row)
+
     return out
 
 # The same arguments, behind the `--` that `heroes run` requires.
 function passed_after_dashes(dir: str) -> str
     passed = shell_arguments(dir)
+
     if passed.len() == 0
         return ""
     return " --" + passed
 
 function program_directories(scratch: str) -> [str]?
     found: [str] @ []
+
     for dir in shell.list_directories(scratch: scratch, dir: EXAMPLES)?
         if !read_file(dir + "/main.hero").is_err()
             found @ found.push(dir)
+
     return ok(found)
 
 function module_texts(scratch: str, dir: str) -> [str]?
     texts: [str] @ []
+
     for entry in shell.list_entries(scratch: scratch, dir: dir)?
         if strings.ends_with(text: entry, suffix: ".hero")
             text = read_file(entry)
+
             if !text.is_err()
                 texts @ texts.push(text.must())
+
     return ok(texts)
 
 # Whether any module has a TOP-LEVEL declaration with this opening — a
@@ -191,18 +267,21 @@ function declares_any(modules: [str], opening: str) -> bool
         for row in strings.lines(text)
             if strings.starts_with(text: row, prefix: opening)
                 return true
+
     return false
 
 function holds(modules: [str], needle: str) -> bool
     for text in modules
         if strings.contains(text: text, needle: needle)
             return true
+
     return false
 
 test "a directory that neither tests itself nor binds C is caught"
     tested = ["function main()\n    print(1)\n\ntest \"a\"\n    assert true\n"]
     binding = ["extern \"curl.h\"\n    function go() -> i64\n"]
     neither = ["function main()\n    print(1)\n"]
+
     # A `test "` inside a comment or a string is not a declaration.
     pretending = ["# test \"not really\"\nfunction main()\n    print(\"test \\\"nope\\\"\")\n"]
     assert declares_any(modules: tested, opening: "test \"")

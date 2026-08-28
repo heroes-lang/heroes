@@ -21,7 +21,7 @@
 # line, at exit 1, with no generated C in the message.
 
 extern "math.h"
-    function sqrt(x: f64) -> i64                     #~ ffi_return_type
+    function sqrt(x: f64) -> i64  #~ ffi_return_type
 
 function main()
     print(sqrt(2.0))

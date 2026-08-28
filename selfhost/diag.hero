@@ -29,7 +29,7 @@ variant Kind
 # so it is the thing that has to be true.
 function word(k: Kind) -> str
     return match k
-        .error_kind => "error"
+        .error_kind       => "error"
         .unsupported_kind => "unsupported"
 
 ## Certainty
@@ -85,10 +85,27 @@ function new_unsupported(code: str, message: str, span: token.Span) -> Diagnosti
 # about the types is wrong, and C would take the program on exactly
 # one machine.
 function is_thesis_rule(d: Diagnostic) -> bool
-    codes = ["unused_binding", "shadowed_binding", "builtin_name_taken", "discarded_value", "bound_unit", "wildcard_on_variant", "marker_mismatch", "ufcs_on_mutable", "declaration_in_arm", "missing_label", "needs_label", "wrong_label", "declared_twice", "machine_locked_path"]
+    codes = [
+        "unused_binding"
+        "shadowed_binding"
+        "builtin_name_taken"
+        "discarded_value"
+        "bound_unit"
+        "wildcard_on_variant"
+        "marker_mismatch"
+        "ufcs_on_mutable"
+        "declaration_in_arm"
+        "missing_label"
+        "needs_label"
+        "wrong_label"
+        "declared_twice"
+        "machine_locked_path"
+    ]
+
     for one in codes
         if d.code == one
             return true
+
     return false
 
 # `file:line:col: <kind>[code]: message` — the one-line form the
@@ -99,7 +116,11 @@ function render_line(d: Diagnostic, s: source.Source) -> str
     return found.file + ":" + found.line.to_str() + ":" + found.col.to_str() + ": " + word(d.kind) + "[" + d.code + "]: " + d.message
 
 test "a diagnostic starts empty and grows by mutation"
-    d: Diagnostic @ new_diagnostic(code: "tab_in_line", message: "a tab is a compile error — use spaces", span: token.Span(start: 3, end: 4))
+    d: Diagnostic @ new_diagnostic(
+        code: "tab_in_line",
+        message: "a tab is a compile error — use spaces",
+        span: token.Span(start: 3, end: 4)
+    )
     assert d.code == "tab_in_line"
     assert d.fixes.len() == 0
     d.fixes @ d.fixes.push(Fix(title: "t", replacement: "r", span: d.span, certainty: .certain))

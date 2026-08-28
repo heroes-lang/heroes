@@ -121,51 +121,51 @@ bb0:
     h0_word = t1;
 #line 123 "abortslicesplitsacharacter.c"
     hero_str_decref(t10);
-#line 24 "tests/golden/run/abort-slice-splits-a-character.hero"
+#line 25 "tests/golden/run/abort-slice-splits-a-character.hero"
     t2 = h0_word;
-#line 24 "tests/golden/run/abort-slice-splits-a-character.hero"
+#line 25 "tests/golden/run/abort-slice-splits-a-character.hero"
     t3 = INT64_C(0);
-#line 24 "tests/golden/run/abort-slice-splits-a-character.hero"
+#line 25 "tests/golden/run/abort-slice-splits-a-character.hero"
     t4 = INT64_C(4);
-#line 24 "tests/golden/run/abort-slice-splits-a-character.hero"
+#line 25 "tests/golden/run/abort-slice-splits-a-character.hero"
     t5 = hero_str_slice(t2, t3, t4);
-#line 24 "tests/golden/run/abort-slice-splits-a-character.hero"
+#line 25 "tests/golden/run/abort-slice-splits-a-character.hero"
     t11 = h1_own1;
-#line 24 "tests/golden/run/abort-slice-splits-a-character.hero"
+#line 25 "tests/golden/run/abort-slice-splits-a-character.hero"
     h1_own1 = t5;
 #line 137 "abortslicesplitsacharacter.c"
     hero_str_decref(t11);
-#line 24 "tests/golden/run/abort-slice-splits-a-character.hero"
+#line 25 "tests/golden/run/abort-slice-splits-a-character.hero"
     hero_print_str(t5);
-#line 24 "tests/golden/run/abort-slice-splits-a-character.hero"
+#line 25 "tests/golden/run/abort-slice-splits-a-character.hero"
     hero_print_end();
-#line 26 "tests/golden/run/abort-slice-splits-a-character.hero"
+#line 28 "tests/golden/run/abort-slice-splits-a-character.hero"
     t6 = h0_word;
-#line 26 "tests/golden/run/abort-slice-splits-a-character.hero"
+#line 28 "tests/golden/run/abort-slice-splits-a-character.hero"
     t7 = INT64_C(0);
-#line 26 "tests/golden/run/abort-slice-splits-a-character.hero"
+#line 28 "tests/golden/run/abort-slice-splits-a-character.hero"
     t8 = INT64_C(5);
-#line 26 "tests/golden/run/abort-slice-splits-a-character.hero"
+#line 28 "tests/golden/run/abort-slice-splits-a-character.hero"
     t9 = hero_str_slice(t6, t7, t8);
-#line 26 "tests/golden/run/abort-slice-splits-a-character.hero"
+#line 28 "tests/golden/run/abort-slice-splits-a-character.hero"
     t12 = h2_own2;
-#line 26 "tests/golden/run/abort-slice-splits-a-character.hero"
+#line 28 "tests/golden/run/abort-slice-splits-a-character.hero"
     h2_own2 = t9;
 #line 155 "abortslicesplitsacharacter.c"
     hero_str_decref(t12);
-#line 26 "tests/golden/run/abort-slice-splits-a-character.hero"
+#line 28 "tests/golden/run/abort-slice-splits-a-character.hero"
     hero_print_str(t9);
-#line 26 "tests/golden/run/abort-slice-splits-a-character.hero"
+#line 28 "tests/golden/run/abort-slice-splits-a-character.hero"
     hero_print_end();
-#line 26 "tests/golden/run/abort-slice-splits-a-character.hero"
+#line 28 "tests/golden/run/abort-slice-splits-a-character.hero"
     t13 = h0_word;
 #line 163 "abortslicesplitsacharacter.c"
     hero_str_decref(t13);
-#line 26 "tests/golden/run/abort-slice-splits-a-character.hero"
+#line 28 "tests/golden/run/abort-slice-splits-a-character.hero"
     t14 = h1_own1;
 #line 167 "abortslicesplitsacharacter.c"
     hero_str_decref(t14);
-#line 26 "tests/golden/run/abort-slice-splits-a-character.hero"
+#line 28 "tests/golden/run/abort-slice-splits-a-character.hero"
     t15 = h2_own2;
 #line 171 "abortslicesplitsacharacter.c"
     hero_str_decref(t15);

@@ -12,6 +12,7 @@ function main()
     else
         print(0)
     n: i64 @ 0
+
     if n != 0 && 10 / n > 1
         print(9)
     else

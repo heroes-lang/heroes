@@ -204,29 +204,29 @@ bb3:
     hero_print_bool(t14);
 #line 56 "examples/sdl/main.hero"
     hero_print_end();
-#line 60 "examples/sdl/main.hero"
+#line 61 "examples/sdl/main.hero"
     t15 = HERO_STR_LIT(hero_str_43f12da5);
-#line 60 "examples/sdl/main.hero"
+#line 61 "examples/sdl/main.hero"
     t16 = SDL_GetNumVideoDrivers();
-#line 60 "examples/sdl/main.hero"
+#line 61 "examples/sdl/main.hero"
     t17 = INT64_C(0);
-#line 60 "examples/sdl/main.hero"
+#line 61 "examples/sdl/main.hero"
     t18 = t16 > t17;
-#line 60 "examples/sdl/main.hero"
+#line 61 "examples/sdl/main.hero"
     hero_print_str(t15);
-#line 60 "examples/sdl/main.hero"
+#line 61 "examples/sdl/main.hero"
     hero_print_bool(t18);
-#line 60 "examples/sdl/main.hero"
+#line 61 "examples/sdl/main.hero"
     hero_print_end();
-#line 60 "examples/sdl/main.hero"
+#line 61 "examples/sdl/main.hero"
     t23 = h0_f0;
 #line 224 "main.c"
     h_0opt_f87774a_release(&t23);
-#line 60 "examples/sdl/main.hero"
+#line 61 "examples/sdl/main.hero"
     t24 = h1_r0;
 #line 228 "main.c"
     hero_str_decref(t24);
-#line 60 "examples/sdl/main.hero"
+#line 61 "examples/sdl/main.hero"
     t25 = h2_own2;
 #line 232 "main.c"
     h_0opt_f87774a_release(&t25);

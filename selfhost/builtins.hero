@@ -71,15 +71,9 @@ function table() -> [Builtin]
         Builtin(name: "push", tier: .runtime)
         Builtin(name: "range", tier: .heroes)
         Builtin(name: "read_file", tier: .heroes)
-        # The banner, and only the banner (panel 054): the one program
-        # measurement 007 found NO route to without it.
         Builtin(name: "repeat", tier: .runtime)
         Builtin(name: "slice", tier: .runtime)
         Builtin(name: "sort", tier: .runtime)
-        # Eight width conversions sharing the one scheme (panel 017's rule,
-        # author decision 2026-08-13): `to_<T>` is fallible exactly when
-        # converting TO `T` can fail, so `to_str`/`to_f32`/`to_f64` hand
-        # back a plain value and `to_i8` … `to_u64` hand back a `T?`.
         Builtin(name: "to_f32", tier: .runtime)
         Builtin(name: "to_f64", tier: .runtime)
         Builtin(name: "to_i16", tier: .runtime)
@@ -94,16 +88,26 @@ function table() -> [Builtin]
         Builtin(name: "write_file", tier: .heroes)
     ]
 
+# The banner, and only the banner (panel 054): the one program
+# measurement 007 found NO route to without it.
+
+# Eight width conversions sharing the one scheme (panel 017's rule,
+# author decision 2026-08-13): `to_<T>` is fallible exactly when
+# converting TO `T` can fail, so `to_str`/`to_f32`/`to_f64` hand
+# back a plain value and `to_i8` … `to_u64` hand back a `T?`.
+
 # The table index a `Ref`'s builtin case carries, or absent when the name is
 # free. Linear search: the table needs no index of its own, and every list
 # the compiler shows stays in the table's one deterministic order.
 function index_of(name: str) -> i64?
     entries = table()
     i: i64 @ 0
+
     while i < entries.len()
         if entries[i].name == name
             return ok(i)
         i @ i + 1
+
     return fail("free", "no built-in has this name")
 
 ## Tests
@@ -118,6 +122,7 @@ test "a reserved name answers with its index, a free one with absence"
 test "the inventory is thirty-seven names and the order is identity"
     entries = table()
     assert entries.len() == 37
+
     # The two deliberate departures from alphabetical order, pinned so a
     # helpful future sort is caught: the index is meaning, not presentation.
     assert entries[1].name == "args"

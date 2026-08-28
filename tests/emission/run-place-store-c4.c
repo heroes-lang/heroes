@@ -170,159 +170,159 @@ bb0:
     goto bb1;
 #line 17 "tests/golden/run/place-store-c4.hero"
 bb1:
-#line 18 "tests/golden/run/place-store-c4.hero"
+#line 19 "tests/golden/run/place-store-c4.hero"
     t3 = h1_i;
-#line 18 "tests/golden/run/place-store-c4.hero"
+#line 19 "tests/golden/run/place-store-c4.hero"
     t4 = INT64_C(10000);
-#line 18 "tests/golden/run/place-store-c4.hero"
+#line 19 "tests/golden/run/place-store-c4.hero"
     t5 = t3 < t4;
-#line 18 "tests/golden/run/place-store-c4.hero"
+#line 19 "tests/golden/run/place-store-c4.hero"
     if (t5) goto bb2; else goto bb3;
-#line 18 "tests/golden/run/place-store-c4.hero"
+#line 19 "tests/golden/run/place-store-c4.hero"
 bb2:
-#line 19 "tests/golden/run/place-store-c4.hero"
+#line 20 "tests/golden/run/place-store-c4.hero"
     t7 = h1_i;
-#line 19 "tests/golden/run/place-store-c4.hero"
+#line 20 "tests/golden/run/place-store-c4.hero"
     hero_array_push_owned(&h0_xs, &t7);
-#line 20 "tests/golden/run/place-store-c4.hero"
+#line 21 "tests/golden/run/place-store-c4.hero"
     t9 = h1_i;
-#line 20 "tests/golden/run/place-store-c4.hero"
+#line 21 "tests/golden/run/place-store-c4.hero"
     t10 = INT64_C(1);
-#line 20 "tests/golden/run/place-store-c4.hero"
+#line 21 "tests/golden/run/place-store-c4.hero"
     if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow();
-#line 20 "tests/golden/run/place-store-c4.hero"
+#line 21 "tests/golden/run/place-store-c4.hero"
     h1_i = t11;
-#line 20 "tests/golden/run/place-store-c4.hero"
+#line 21 "tests/golden/run/place-store-c4.hero"
     goto bb1;
-#line 20 "tests/golden/run/place-store-c4.hero"
+#line 21 "tests/golden/run/place-store-c4.hero"
 bb3:
-#line 21 "tests/golden/run/place-store-c4.hero"
+#line 23 "tests/golden/run/place-store-c4.hero"
     t12 = h0_xs;
-#line 21 "tests/golden/run/place-store-c4.hero"
+#line 23 "tests/golden/run/place-store-c4.hero"
     t13 = hero_array_len(t12);
-#line 21 "tests/golden/run/place-store-c4.hero"
+#line 23 "tests/golden/run/place-store-c4.hero"
     hero_print_int(t13);
-#line 21 "tests/golden/run/place-store-c4.hero"
+#line 23 "tests/golden/run/place-store-c4.hero"
     hero_print_end();
-#line 22 "tests/golden/run/place-store-c4.hero"
+#line 24 "tests/golden/run/place-store-c4.hero"
     t14 = h0_xs;
-#line 22 "tests/golden/run/place-store-c4.hero"
+#line 24 "tests/golden/run/place-store-c4.hero"
     t15 = INT64_C(0);
-#line 22 "tests/golden/run/place-store-c4.hero"
+#line 24 "tests/golden/run/place-store-c4.hero"
     t16 = *(int64_t const *)hero_array_at(t14, t15);
-#line 22 "tests/golden/run/place-store-c4.hero"
+#line 24 "tests/golden/run/place-store-c4.hero"
     t17 = HERO_STR_LIT(hero_str_20);
-#line 22 "tests/golden/run/place-store-c4.hero"
+#line 24 "tests/golden/run/place-store-c4.hero"
     t18 = h0_xs;
-#line 22 "tests/golden/run/place-store-c4.hero"
+#line 24 "tests/golden/run/place-store-c4.hero"
     t19 = INT64_C(9999);
-#line 22 "tests/golden/run/place-store-c4.hero"
+#line 24 "tests/golden/run/place-store-c4.hero"
     t20 = *(int64_t const *)hero_array_at(t18, t19);
-#line 22 "tests/golden/run/place-store-c4.hero"
+#line 24 "tests/golden/run/place-store-c4.hero"
     hero_print_int(t16);
-#line 22 "tests/golden/run/place-store-c4.hero"
+#line 24 "tests/golden/run/place-store-c4.hero"
     hero_print_str(t17);
-#line 22 "tests/golden/run/place-store-c4.hero"
+#line 24 "tests/golden/run/place-store-c4.hero"
     hero_print_int(t20);
-#line 22 "tests/golden/run/place-store-c4.hero"
+#line 24 "tests/golden/run/place-store-c4.hero"
     hero_print_end();
-#line 25 "tests/golden/run/place-store-c4.hero"
+#line 28 "tests/golden/run/place-store-c4.hero"
     t22 = h0_xs;
-#line 25 "tests/golden/run/place-store-c4.hero"
+#line 28 "tests/golden/run/place-store-c4.hero"
     t23 = hero_array_len(t22);
-#line 25 "tests/golden/run/place-store-c4.hero"
+#line 28 "tests/golden/run/place-store-c4.hero"
     hero_array_push_owned(&h0_xs, &t23);
-#line 26 "tests/golden/run/place-store-c4.hero"
+#line 29 "tests/golden/run/place-store-c4.hero"
     t25 = h0_xs;
-#line 26 "tests/golden/run/place-store-c4.hero"
+#line 29 "tests/golden/run/place-store-c4.hero"
     t26 = INT64_C(10000);
-#line 26 "tests/golden/run/place-store-c4.hero"
+#line 29 "tests/golden/run/place-store-c4.hero"
     t27 = *(int64_t const *)hero_array_at(t25, t26);
-#line 26 "tests/golden/run/place-store-c4.hero"
+#line 29 "tests/golden/run/place-store-c4.hero"
     hero_print_int(t27);
-#line 26 "tests/golden/run/place-store-c4.hero"
+#line 29 "tests/golden/run/place-store-c4.hero"
     hero_print_end();
-#line 27 "tests/golden/run/place-store-c4.hero"
+#line 30 "tests/golden/run/place-store-c4.hero"
     t28 = INT64_C(0);
-#line 27 "tests/golden/run/place-store-c4.hero"
+#line 30 "tests/golden/run/place-store-c4.hero"
     h2_total = t28;
-#line 28 "tests/golden/run/place-store-c4.hero"
+#line 32 "tests/golden/run/place-store-c4.hero"
     t29 = h0_xs;
-#line 28 "tests/golden/run/place-store-c4.hero"
+#line 32 "tests/golden/run/place-store-c4.hero"
     t47 = h3_xs0;
 #line 254 "placestorec4.c"
     hero_array_incref(t29);
-#line 28 "tests/golden/run/place-store-c4.hero"
+#line 32 "tests/golden/run/place-store-c4.hero"
     h3_xs0 = t29;
 #line 258 "placestorec4.c"
     hero_array_decref(t47);
-#line 28 "tests/golden/run/place-store-c4.hero"
+#line 32 "tests/golden/run/place-store-c4.hero"
     t30 = INT64_C(0);
-#line 28 "tests/golden/run/place-store-c4.hero"
+#line 32 "tests/golden/run/place-store-c4.hero"
     h4_i0 = t30;
-#line 28 "tests/golden/run/place-store-c4.hero"
+#line 32 "tests/golden/run/place-store-c4.hero"
     goto bb4;
-#line 28 "tests/golden/run/place-store-c4.hero"
+#line 32 "tests/golden/run/place-store-c4.hero"
 bb4:
-#line 28 "tests/golden/run/place-store-c4.hero"
+#line 32 "tests/golden/run/place-store-c4.hero"
     t31 = h4_i0;
-#line 28 "tests/golden/run/place-store-c4.hero"
+#line 32 "tests/golden/run/place-store-c4.hero"
     t32 = h3_xs0;
-#line 28 "tests/golden/run/place-store-c4.hero"
+#line 32 "tests/golden/run/place-store-c4.hero"
     t33 = hero_array_len(t32);
-#line 28 "tests/golden/run/place-store-c4.hero"
+#line 32 "tests/golden/run/place-store-c4.hero"
     t34 = t31 < t33;
-#line 28 "tests/golden/run/place-store-c4.hero"
+#line 32 "tests/golden/run/place-store-c4.hero"
     if (t34) goto bb5; else goto bb7;
-#line 28 "tests/golden/run/place-store-c4.hero"
+#line 32 "tests/golden/run/place-store-c4.hero"
 bb5:
-#line 28 "tests/golden/run/place-store-c4.hero"
+#line 32 "tests/golden/run/place-store-c4.hero"
     t35 = h3_xs0;
-#line 28 "tests/golden/run/place-store-c4.hero"
+#line 32 "tests/golden/run/place-store-c4.hero"
     t36 = h4_i0;
-#line 28 "tests/golden/run/place-store-c4.hero"
+#line 32 "tests/golden/run/place-store-c4.hero"
     t37 = *(int64_t const *)hero_array_at(t35, t36);
-#line 28 "tests/golden/run/place-store-c4.hero"
+#line 32 "tests/golden/run/place-store-c4.hero"
     h5_v = t37;
-#line 29 "tests/golden/run/place-store-c4.hero"
+#line 33 "tests/golden/run/place-store-c4.hero"
     t38 = h2_total;
-#line 29 "tests/golden/run/place-store-c4.hero"
+#line 33 "tests/golden/run/place-store-c4.hero"
     t39 = h5_v;
-#line 29 "tests/golden/run/place-store-c4.hero"
+#line 33 "tests/golden/run/place-store-c4.hero"
     if (__builtin_add_overflow(t38, t39, &t40)) hero_panic_overflow();
-#line 29 "tests/golden/run/place-store-c4.hero"
+#line 33 "tests/golden/run/place-store-c4.hero"
     h2_total = t40;
-#line 29 "tests/golden/run/place-store-c4.hero"
+#line 33 "tests/golden/run/place-store-c4.hero"
     goto bb6;
-#line 29 "tests/golden/run/place-store-c4.hero"
+#line 33 "tests/golden/run/place-store-c4.hero"
 bb6:
-#line 28 "tests/golden/run/place-store-c4.hero"
+#line 32 "tests/golden/run/place-store-c4.hero"
     t41 = h4_i0;
-#line 28 "tests/golden/run/place-store-c4.hero"
+#line 32 "tests/golden/run/place-store-c4.hero"
     t42 = INT64_C(1);
-#line 28 "tests/golden/run/place-store-c4.hero"
+#line 32 "tests/golden/run/place-store-c4.hero"
     if (__builtin_add_overflow(t41, t42, &t43)) hero_panic_overflow();
-#line 28 "tests/golden/run/place-store-c4.hero"
+#line 32 "tests/golden/run/place-store-c4.hero"
     h4_i0 = t43;
-#line 28 "tests/golden/run/place-store-c4.hero"
+#line 32 "tests/golden/run/place-store-c4.hero"
     goto bb4;
-#line 28 "tests/golden/run/place-store-c4.hero"
+#line 32 "tests/golden/run/place-store-c4.hero"
 bb7:
-#line 30 "tests/golden/run/place-store-c4.hero"
+#line 35 "tests/golden/run/place-store-c4.hero"
     t44 = h2_total;
-#line 30 "tests/golden/run/place-store-c4.hero"
+#line 35 "tests/golden/run/place-store-c4.hero"
     hero_print_int(t44);
-#line 30 "tests/golden/run/place-store-c4.hero"
+#line 35 "tests/golden/run/place-store-c4.hero"
     hero_print_end();
-#line 30 "tests/golden/run/place-store-c4.hero"
+#line 35 "tests/golden/run/place-store-c4.hero"
     t48 = h0_xs;
 #line 320 "placestorec4.c"
     hero_array_decref(t48);
-#line 30 "tests/golden/run/place-store-c4.hero"
+#line 35 "tests/golden/run/place-store-c4.hero"
     t49 = h3_xs0;
 #line 324 "placestorec4.c"
     hero_array_decref(t49);
-#line 30 "tests/golden/run/place-store-c4.hero"
+#line 35 "tests/golden/run/place-store-c4.hero"
     t50 = h6_own6;
 #line 328 "placestorec4.c"
     hero_array_decref(t50);

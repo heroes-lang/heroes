@@ -17,6 +17,7 @@ function shout(text: str) -> str
 
 function main()
     _ = puts("hello from C".cstr())
+
     # Built, not literal: a computed string has a heap block behind it, so this
     # is the case where the NUL terminator has to have been allocated rather
     # than merely present in the source text.

@@ -45,29 +45,37 @@ function definitions(f: ir_state.Function, label: str, @problems: [str]) -> [i64
     home: [i64] @ []
     defined: [bool] @ []
     i: i64 @ 0
+
     while i < f.values.len()
         home @ home.push(0 - 1)
         defined @ defined.push(i == 0)
         i @ i + 1
+
     index: i64 @ 0
+
     for blk in f.blocks
         for inst in blk.insts
             if !inst.dest.is_err()
                 dest = inst.dest.must()
+
                 if dest < defined.len()
                     if defined[dest]
                         problems @ problems.push(label + "$" + dest.to_str() + " is assigned twice")
                     defined[dest] @ true
                     home[dest] @ index
+
         index @ index + 1
+
     for blk in f.blocks
         for inst in blk.insts
             for value in ir_uses.operands(f, inst.op)
                 if value < defined.len() && !defined[value]
                     problems @ problems.push(label + "$" + value.to_str() + " is used and never produced")
+
         for value in ir_uses.terminator_operands(blk.term)
             if value < defined.len() && !defined[value]
                 problems @ problems.push(label + "$" + value.to_str() + " is used and never produced")
+
     return home
 
 # A DEFINITION DOMINATES EVERY USE OF IT (panel 020 R4.10). The
@@ -76,24 +84,34 @@ function definitions(f: ir_state.Function, label: str, @problems: [str]) -> [i64
 function dominance(f: ir_state.Function, homes: [i64], label: str, @problems: [str])
     dom = dominators(f.blocks)
     index: i64 @ 0
+
     for blk in f.blocks
         read: [i64] @ []
+
         for inst in blk.insts
             for v in ir_uses.operands(f, inst.op)
                 read @ read.push(v)
+
         for v in ir_uses.terminator_operands(blk.term)
             read @ read.push(v)
+
         for value in read
             # Value 0 is the unit, defined by the function rather than
             # by a block.
             if value == 0
                 continue
+
             if value >= homes.len()
                 continue
+
             if homes[value] < 0
                 continue
+
             if !dom[index][homes[value]]
-                problems @ problems.push(label + "bb" + index.to_str() + " reads $" + value.to_str() + ", defined in bb" + homes[value].to_str() + ", which does not dominate it")
+                problems @ problems.push(
+                    label + "bb" + index.to_str() + " reads $" + value.to_str() + ", defined in bb" + homes[value].to_str() + ", which does not dominate it"
+                )
+
         index @ index + 1
 
 # dominators[b][d] — whether block d dominates block b. The entry is
@@ -103,42 +121,55 @@ function dominators(blocks: [ir_state.Block]) -> [[bool]]
     count = blocks.len()
     dom: [[bool]] @ []
     i: i64 @ 0
+
     while i < count
         row: [bool] @ []
         j: i64 @ 0
+
         while j < count
             if i == 0
                 row @ row.push(j == 0)
             else
                 row @ row.push(true)
             j @ j + 1
+
         dom @ dom.push(row)
         i @ i + 1
+
     changed: bool @ true
+
     while changed
         changed @ false
         index: i64 @ 1
+
         while index < count
             next: [bool] @ []
             k: i64 @ 0
+
             while k < count
                 next @ next.push(blocks[index].preds.len() == 0)
                 k @ k + 1
+
             position: i64 @ 0
+
             for pred in blocks[index].preds
                 if position == 0
                     next @ dom[pred]
                 else
                     m: i64 @ 0
+
                     while m < count
                         next[m] @ next[m] && dom[pred][m]
                         m @ m + 1
                 position @ position + 1
+
             next[index] @ true
+
             if next != dom[index]
                 dom[index] @ next
                 changed @ true
             index @ index + 1
+
     return dom
 
 ## Tests
@@ -154,7 +185,22 @@ test "assigned twice and never produced are both named"
     reads_ghost = ir.Inst(dest: ok(2), op: .unary(op: .not_op, operand: 3), ty: 0, span: span)
     blk: ir_state.Block @ empty_block(.return_term(value: fail("none", "no value")))
     blk.insts @ [twice, twice, reads_ghost]
-    f = ir_state.Function(name: "bad", decl: 0, kind: .function_kind, generics: [], params: [], result: 0, slots: [], blocks: [blk], values: [0, 1, 2, 3], arguments: [], steps: [], instance: [], call_instances: {}, span: span)
+    f = ir_state.Function(
+        name: "bad",
+        decl: 0,
+        kind: .function_kind,
+        generics: [],
+        params: [],
+        result: 0,
+        slots: [],
+        blocks: [blk],
+        values: [0, 1, 2, 3],
+        arguments: [],
+        steps: [],
+        instance: [],
+        call_instances: {},
+        span: span
+    )
     problems: [str] @ []
     check(f, label: "bad: ", problems: @problems)
     assert problems.len() == 2
@@ -172,11 +218,28 @@ test "a sibling block's definition does not dominate, the entry's does"
     right: ir_state.Block @ empty_block(.return_term(value: fail("none", "no value")))
     right.preds @ [0]
     right.insts @ [read]
-    f: ir_state.Function @ ir_state.Function(name: "ok_fn", decl: 0, kind: .function_kind, generics: [], params: [], result: 0, slots: [], blocks: [entry_blk, left, right], values: [0, 1, 2], arguments: [], steps: [], instance: [], call_instances: {}, span: span)
+    f: ir_state.Function @ ir_state.Function(
+        name: "ok_fn",
+        decl: 0,
+        kind: .function_kind,
+        generics: [],
+        params: [],
+        result: 0,
+        slots: [],
+        blocks: [entry_blk, left, right],
+        values: [0, 1, 2],
+        arguments: [],
+        steps: [],
+        instance: [],
+        call_instances: {},
+        span: span
+    )
     problems: [str] @ []
     check(f, label: "", problems: @problems)
+
     # The entry defines $1; both arms read nothing undominated.
     assert problems.len() == 0
+
     # Now move the definition into the LEFT arm: the right arm's read
     # is no longer dominated — the exact shape the C prologue makes
     # dangerous.

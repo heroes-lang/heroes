@@ -24,19 +24,34 @@ use parse_type
 # non-generic function.
 function generics(@c: cursor.Cursor, text: str) -> [token.Span]
     names: [token.Span] @ []
+
     if !cursor.eat(@c, .lt)
         return names
     reading: bool @ true
+
     while reading
         if !cursor.at(c, .ident)
             if !cursor.at_reported_error(c)
-                cursor.error(@c, code: "expected_type_parameter", message: "expected a type parameter name, found " + cursor.found(c, text) + " — generics carry no constraints, only names", span: cursor.current_span(c))
+                cursor.error(
+                    @c,
+                    code: "expected_type_parameter",
+                    message: "expected a type parameter name, found " + cursor.found(c, text) + " — generics carry no constraints, only names",
+                    span: cursor.current_span(c)
+                )
             reading @ false
         else
             names @ names.push(cursor.bump(@c).span)
+
             if !cursor.eat(@c, .comma)
                 reading @ false
-    _ = cursor.expect(@c, text: text, kind: .gt, code: "expected_generics_close", what: "`>` to close the type parameters")
+
+    _ = cursor.expect(
+        @c,
+        text: text,
+        kind: .gt,
+        code: "expected_generics_close",
+        what: "`>` to close the type parameters"
+    )
     return names
 
 ## Value parameters
@@ -44,30 +59,43 @@ function generics(@c: cursor.Cursor, text: str) -> [token.Span]
 # `(a: i64, @l: Lex)` — always parenthesised, `()` when empty.
 function params(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Param]
     out: [ast.Param] @ []
+
     if !cursor.expect(@c, text: text, kind: .lparen, code: "expected_params", what: "`(` — a signature always has a parameter list, `()` when it takes nothing")
         return out
     cursor.skip_terminators(@c)
+
     if cursor.eat(@c, .rparen)
         return out
     reading: bool @ true
+
     while reading
         cursor.skip_terminators(@c)
         mutable = cursor.eat(@c, .at)
+
         if !cursor.at(c, .ident)
             if !cursor.at_reported_error(c)
-                cursor.error(@c, code: "expected_parameter", message: "expected a parameter name, found " + cursor.found(c, text) + " — a parameter is `name: type`, or `@name: type` when the callee may change it", span: cursor.current_span(c))
+                cursor.error(
+                    @c,
+                    code: "expected_parameter",
+                    message: "expected a parameter name, found " + cursor.found(c, text) + " — a parameter is `name: type`, or `@name: type` when the callee may change it",
+                    span: cursor.current_span(c)
+                )
             reading @ false
         else
             name = cursor.bump(@c).span
+
             if !cursor.expect(@c, text: text, kind: .colon, code: "expected_parameter_type", what: "`:` and the parameter's type — signatures are always explicit")
                 reading @ false
             else
                 ty = parse_type.parse_type(@c, @a, text)
                 out @ out.push(ast.Param(name: name, ty: ty, mutable: mutable))
                 cursor.skip_terminators(@c)
+
                 if !cursor.eat(@c, .comma)
                     reading @ false
+
     cursor.skip_terminators(@c)
+
     if !cursor.expect(@c, text: text, kind: .rparen, code: "expected_params_close", what: "`)`, or `,` and another parameter")
         # The signature's own closer is the landmark: resume just past it, so
         # the result type and the body are still read (one mistake, one
@@ -83,9 +111,11 @@ function field_block(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Field]
     fields: [ast.Field] @ []
     _ = cursor.bump(@c)
     reading: bool @ true
+
     while reading
         cursor.skip_terminators(@c)
         k = cursor.current_kind(c)
+
         if k == .dedent
             _ = cursor.bump(@c)
             reading @ false
@@ -95,6 +125,7 @@ function field_block(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Field]
             name = cursor.current_span(c)
             doc = cursor.take_docs(@c, text, name)
             _ = cursor.bump(@c)
+
             if !cursor.expect(@c, text: text, kind: .colon, code: "expected_field_type", what: "`:` and the field's type")
                 cursor.skip_line(@c)
             else
@@ -102,12 +133,23 @@ function field_block(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Field]
                 fields @ fields.push(ast.Field(name: name, ty: ty, doc: doc))
         else if k == .indent
             if !cursor.at_reported_error(c)
-                cursor.error(@c, code: "unexpected_block", message: "a field takes no indented block — a field is one line, `name: type`", span: cursor.current_span(c))
+                cursor.error(
+                    @c,
+                    code: "unexpected_block",
+                    message: "a field takes no indented block — a field is one line, `name: type`",
+                    span: cursor.current_span(c)
+                )
             _ = cursor.balanced_block(@c)
         else
             if !cursor.at_reported_error(c)
-                cursor.error(@c, code: "expected_field", message: "expected a field name, found " + cursor.found(c, text) + " — one field per line, `name: type`", span: cursor.current_span(c))
+                cursor.error(
+                    @c,
+                    code: "expected_field",
+                    message: "expected a field name, found " + cursor.found(c, text) + " — one field per line, `name: type`",
+                    span: cursor.current_span(c)
+                )
             cursor.skip_line(@c)
+
     return fields
 
 # The cases of a `variant`: a name on its own line, optionally followed by an
@@ -116,9 +158,11 @@ function case_block(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Case]
     cases: [ast.Case] @ []
     _ = cursor.bump(@c)
     reading: bool @ true
+
     while reading
         cursor.skip_terminators(@c)
         k = cursor.current_kind(c)
+
         if k == .dedent
             _ = cursor.bump(@c)
             reading @ false
@@ -130,6 +174,7 @@ function case_block(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Case]
             _ = cursor.bump(@c)
             cursor.skip_terminators(@c)
             fields: [ast.Field] @ []
+
             if cursor.at(c, .indent)
                 fields @ field_block(@c, @a, text)
             cases @ cases.push(ast.Case(name: name, fields: fields, doc: doc))
@@ -144,8 +189,14 @@ function case_block(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Case]
             _ = cursor.balanced_block(@c)
         else
             if !cursor.at_reported_error(c)
-                cursor.error(@c, code: "expected_case", message: "expected a case name, found " + cursor.found(c, text) + " — a variant case is a name on its own line, with its fields indented below it", span: cursor.current_span(c))
+                cursor.error(
+                    @c,
+                    code: "expected_case",
+                    message: "expected a case name, found " + cursor.found(c, text) + " — a variant case is a name on its own line, with its fields indented below it",
+                    span: cursor.current_span(c)
+                )
             cursor.skip_line(@c)
+
     return cases
 
 ## Tests
@@ -154,11 +205,19 @@ function tok(kind: token.TokenKind, start: i64, end: i64) -> token.Token
     return token.Token(kind: kind, span: token.Span(start: start, end: end))
 
 test "generics are names and nothing else"
-    stream: [token.Token] = [tok(.lt, start: 0, end: 1), tok(.ident, start: 1, end: 2), tok(.comma, start: 2, end: 3), tok(.ident, start: 4, end: 5), tok(.gt, start: 5, end: 6), tok(.eof, start: 6, end: 6)]
+    stream: [token.Token] = [
+        tok(.lt, start: 0, end: 1)
+        tok(.ident, start: 1, end: 2)
+        tok(.comma, start: 2, end: 3)
+        tok(.ident, start: 4, end: 5)
+        tok(.gt, start: 5, end: 6)
+        tok(.eof, start: 6, end: 6)
+    ]
     c: cursor.Cursor @ cursor.new_cursor(stream)
     names = generics(@c, "<A, B>")
     assert names.len() == 2
     assert c.diagnostics.len() == 0
+
     # No `<` means no generics, and nothing is consumed.
     plain: [token.Token] = [tok(.lparen, start: 0, end: 1), tok(.eof, start: 1, end: 1)]
     d: cursor.Cursor @ cursor.new_cursor(plain)
@@ -194,6 +253,7 @@ test "an empty parameter list is () and not nothing"
     a: ast.Ast @ ast.new_ast()
     assert params(@c, @a, "()").len() == 0
     assert c.diagnostics.len() == 0
+
     # A missing `(` says so rather than guessing.
     missing: [token.Token] = [tok(.arrow, start: 0, end: 2), tok(.eof, start: 2, end: 2)]
     d: cursor.Cursor @ cursor.new_cursor(missing)

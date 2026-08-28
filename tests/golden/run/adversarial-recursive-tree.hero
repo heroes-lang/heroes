@@ -40,8 +40,10 @@ function value_of(e: Expr) -> i64
 
 function sum_of(parts: [Expr]) -> i64
     total: i64 @ 0
+
     for part in parts
         total @ total + value_of(part)
+
     return total
 
 function depth_of(e: Expr) -> i64
@@ -52,35 +54,43 @@ function depth_of(e: Expr) -> i64
 
 function deepest(parts: [Expr]) -> i64
     best: i64 @ 0
+
     for part in parts
         d = depth_of(part)
+
         if d > best
             best @ d
+
     return best
 
 function main()
     leaf: Expr = .number(v: 7)
     print(value_of(leaf))
     print(depth_of(leaf))
+
     # Two levels, one array each.
     inner: Expr = .add(parts: [.number(v: 2), .number(v: 3)])
     tree: Expr = .add(parts: [.number(v: 1), inner])
     print(value_of(tree))
     print(depth_of(tree))
+
     # Three levels, through a different case.
     deep: Expr = .negate(inner: [tree])
     print(value_of(deep))
     print(depth_of(deep))
+
     # The empty boundary: an annotated empty literal, and a drop loop that runs zero
     # times.
     none: [Expr] = []
     empty: Expr = .add(parts: none)
     print(value_of(empty))
     print(depth_of(empty))
+
     # Structural equality all the way down, on two trees built separately.
     same: Expr = .add(parts: [.number(v: 1), .add(parts: [.number(v: 2), .number(v: 3)])])
     print(tree == same)
     print(tree == deep)
+
     # And a shared subtree: `inner` is inside `tree` and still its own binding, so the
     # array it holds has two owners and exactly one release each.
     print(value_of(inner))

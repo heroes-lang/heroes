@@ -127,17 +127,17 @@ bb1:
     t10 = INT64_C(0);
 #line 14 "tests/golden/run/adversarial-short-circuit.hero"
     h1_n = t10;
-#line 15 "tests/golden/run/adversarial-short-circuit.hero"
+#line 16 "tests/golden/run/adversarial-short-circuit.hero"
     t11 = h1_n;
-#line 15 "tests/golden/run/adversarial-short-circuit.hero"
+#line 16 "tests/golden/run/adversarial-short-circuit.hero"
     t12 = INT64_C(0);
-#line 15 "tests/golden/run/adversarial-short-circuit.hero"
+#line 16 "tests/golden/run/adversarial-short-circuit.hero"
     t13 = t11 != t12;
-#line 15 "tests/golden/run/adversarial-short-circuit.hero"
+#line 16 "tests/golden/run/adversarial-short-circuit.hero"
     h2_b1 = t13;
-#line 15 "tests/golden/run/adversarial-short-circuit.hero"
+#line 16 "tests/golden/run/adversarial-short-circuit.hero"
     if (t13) goto bb7; else goto bb8;
-#line 15 "tests/golden/run/adversarial-short-circuit.hero"
+#line 16 "tests/golden/run/adversarial-short-circuit.hero"
 bb2:
 #line 10 "tests/golden/run/adversarial-short-circuit.hero"
     t2 = INT64_C(1);
@@ -189,49 +189,49 @@ bb6:
     return;
 #line 13 "tests/golden/run/adversarial-short-circuit.hero"
 bb7:
-#line 15 "tests/golden/run/adversarial-short-circuit.hero"
+#line 16 "tests/golden/run/adversarial-short-circuit.hero"
     t14 = INT64_C(10);
-#line 15 "tests/golden/run/adversarial-short-circuit.hero"
+#line 16 "tests/golden/run/adversarial-short-circuit.hero"
     t15 = h1_n;
-#line 15 "tests/golden/run/adversarial-short-circuit.hero"
+#line 16 "tests/golden/run/adversarial-short-circuit.hero"
     if (t15 == 0) hero_panic("division by zero");
-#line 15 "tests/golden/run/adversarial-short-circuit.hero"
+#line 16 "tests/golden/run/adversarial-short-circuit.hero"
     if (t14 == INT64_MIN && t15 == INT64_C(-1)) hero_panic_overflow();
-#line 15 "tests/golden/run/adversarial-short-circuit.hero"
+#line 16 "tests/golden/run/adversarial-short-circuit.hero"
     t16 = t14 / t15;
-#line 15 "tests/golden/run/adversarial-short-circuit.hero"
+#line 16 "tests/golden/run/adversarial-short-circuit.hero"
     t17 = INT64_C(1);
-#line 15 "tests/golden/run/adversarial-short-circuit.hero"
+#line 16 "tests/golden/run/adversarial-short-circuit.hero"
     t18 = t16 > t17;
-#line 15 "tests/golden/run/adversarial-short-circuit.hero"
+#line 16 "tests/golden/run/adversarial-short-circuit.hero"
     h2_b1 = t18;
-#line 15 "tests/golden/run/adversarial-short-circuit.hero"
+#line 16 "tests/golden/run/adversarial-short-circuit.hero"
     goto bb8;
-#line 15 "tests/golden/run/adversarial-short-circuit.hero"
+#line 16 "tests/golden/run/adversarial-short-circuit.hero"
 bb8:
-#line 15 "tests/golden/run/adversarial-short-circuit.hero"
+#line 16 "tests/golden/run/adversarial-short-circuit.hero"
     t19 = h2_b1;
-#line 15 "tests/golden/run/adversarial-short-circuit.hero"
+#line 16 "tests/golden/run/adversarial-short-circuit.hero"
     if (t19) goto bb9; else goto bb10;
-#line 15 "tests/golden/run/adversarial-short-circuit.hero"
+#line 16 "tests/golden/run/adversarial-short-circuit.hero"
 bb9:
-#line 16 "tests/golden/run/adversarial-short-circuit.hero"
+#line 17 "tests/golden/run/adversarial-short-circuit.hero"
     t20 = INT64_C(9);
-#line 16 "tests/golden/run/adversarial-short-circuit.hero"
+#line 17 "tests/golden/run/adversarial-short-circuit.hero"
     hero_print_int(t20);
-#line 16 "tests/golden/run/adversarial-short-circuit.hero"
+#line 17 "tests/golden/run/adversarial-short-circuit.hero"
     hero_print_end();
-#line 16 "tests/golden/run/adversarial-short-circuit.hero"
+#line 17 "tests/golden/run/adversarial-short-circuit.hero"
     goto bb6;
-#line 16 "tests/golden/run/adversarial-short-circuit.hero"
+#line 17 "tests/golden/run/adversarial-short-circuit.hero"
 bb10:
-#line 18 "tests/golden/run/adversarial-short-circuit.hero"
+#line 19 "tests/golden/run/adversarial-short-circuit.hero"
     t21 = INT64_C(1);
-#line 18 "tests/golden/run/adversarial-short-circuit.hero"
+#line 19 "tests/golden/run/adversarial-short-circuit.hero"
     hero_print_int(t21);
-#line 18 "tests/golden/run/adversarial-short-circuit.hero"
+#line 19 "tests/golden/run/adversarial-short-circuit.hero"
     hero_print_end();
-#line 18 "tests/golden/run/adversarial-short-circuit.hero"
+#line 19 "tests/golden/run/adversarial-short-circuit.hero"
     goto bb6;
 #line 237 "adversarialshortcircuit.c"
 }

@@ -84,6 +84,7 @@ function line(@w: Writer, text: str)
     needs_restore: bool @ false
     restore_file: str @ ""
     restore_line: i64 @ 1
+
     match w.intent
         .at intended =>
             if intended.file != w.generated && w.claim != w.intent
@@ -91,6 +92,7 @@ function line(@w: Writer, text: str)
                 restore_file @ intended.file
                 restore_line @ intended.line
         .no_claim => needs_restore @ needs_restore
+
     if needs_restore
         restore(@w, file: restore_file, at: restore_line)
     push_line(@w, text: text)
@@ -100,13 +102,15 @@ function line(@w: Writer, text: str)
 # builtin, hence the longer name.)
 function push_line(@w: Writer, text: str)
     w.chunk @ w.chunk.push(text + "\n")
+
     if len(w.chunk) == CHUNK_LINES
         w.chunks @ w.chunks.push(join(w.chunk, ""))
         w.chunk @ []
     w.pushed @ w.pushed + 1
+
     match w.claim
         .at believed => w.claim @ .at(file: believed.file, line: believed.line + 1)
-        .no_claim => return
+        .no_claim    => return
 
 # Re-state a claim the auto-increment has aged out from under. Same
 # bytes as directive, without touching intent — the intent is what is
@@ -129,14 +133,17 @@ function blank(@w: Writer)
 # emits nothing here, and nothing at all if no line follows.
 function at_file(@w: Writer, file: str, at: i64)
     wanted: i64 @ at
+
     if wanted < 1
         wanted @ 1
     already: bool @ false
+
     match w.intent
         .at intended =>
             if intended.file == file && intended.line == wanted
                 already @ true
         .no_claim => already @ already
+
     if already
         return
     directive(@w, file: file, at: wanted)
@@ -145,13 +152,16 @@ function at_file(@w: Writer, file: str, at: i64)
 # copy-out, the shim: code no user line is responsible for.
 function at_generated(@w: Writer)
     settled: bool @ false
+
     match w.claim
         .at believed =>
             if believed.file == w.generated
                 settled @ true
         .no_claim => settled @ settled
+
     if settled
         return
+
     # This directive occupies one line first, so the next content line
     # is pushed + 2.
     next = w.pushed + 2
@@ -178,6 +188,7 @@ function finish(w: Writer) -> str
 # paths the backslash is the separator, so this is not hypothetical.
 function escaped_path(path: str) -> str
     out: str @ ""
+
     for ch in path.chars()
         if ch == "\""
             out @ out + "\\\""
@@ -185,6 +196,7 @@ function escaped_path(path: str) -> str
             out @ out + "\\\\"
         else
             out @ out + ch
+
     return out
 
 # Point the next line at whichever source a span actually came from.
@@ -209,6 +221,7 @@ test "a claim on the generated file rides auto-increment for free"
     at_generated(@w)
     line(@w, text: "int a;")
     line(@w, text: "int b;")
+
     # One directive, no restores: m.c really does advance a line per line.
     assert finish(w) == "#line 2 \"m.c\"\nint a;\nint b;\n"
 
@@ -218,6 +231,7 @@ test "asking for what is already intended emits nothing"
     at_file(@w, file: "a.hero", at: 5)
     line(@w, text: "z;")
     assert finish(w) == "#line 5 \"a.hero\"\nz;\n"
+
     # A different line IS a new directive.
     again: Writer @ new_writer("m")
     at_file(@again, file: "a.hero", at: 5)
@@ -232,10 +246,12 @@ test "a path with quotes or backslashes cannot end the directive early"
 test "the chunk flush loses no line and adds none"
     w: Writer @ new_writer("m")
     n: i64 @ 0
+
     while n < CHUNK_LINES + 3
         line(@w, text: "x;")
         blank(@w)
         n @ n + 1
+
     # Crosses the flush boundary twice and ends on a ragged chunk; the
     # blank lines would expose a separator smuggled in by a join.
     assert finish(w) == repeat("x;\n\n", (CHUNK_LINES + 3).to_u64().must())
@@ -243,7 +259,9 @@ test "the chunk flush loses no line and adds none"
 test "a writer that ends exactly on a chunk boundary adds nothing"
     w: Writer @ new_writer("m")
     n: i64 @ 0
+
     while n < CHUNK_LINES
         line(@w, text: "y;")
         n @ n + 1
+
     assert finish(w) == repeat("y;\n", CHUNK_LINES.to_u64().must())
