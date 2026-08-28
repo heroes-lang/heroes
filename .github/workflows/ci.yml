@@ -46,6 +46,25 @@ on:
     # the tag's full one — because `concurrency` keys on `github.ref` and a
     # branch is not its tag. That duplicate is one Linux job per milestone.
     tags: ['m-*']
+    # The showcase site compiles nothing. `site/` holds HTML, a stylesheet and
+    # an Astro build; no file under it is read by the compiler, by the golden
+    # harness or by the net, and `heroes` has no site subcommand by §10's
+    # stopping rule. So a commit that only touches it was starting a full run of
+    # the corpus for no question — measured at roughly seven minutes each.
+    #
+    # **This is a paths-ignore and not a paths list**, which is the safe
+    # direction of the two: a new directory of real code is covered by default
+    # and only has to be thought about if somebody wants it skipped. The other
+    # spelling fails silently the first time the compiler grows a tree nobody
+    # remembered to add.
+    #
+    # `site/` still has its own gate: `.github/workflows/deploy-site.yml` runs
+    # `npm run build` on every push that touches it, so a site that does not
+    # build is a red workflow rather than a bad deploy.
+    paths-ignore:
+      - 'site/**'
+      - '.github/workflows/deploy-site.yml'
+      - '.github/workflows/release-site.yml'
   pull_request:
   workflow_dispatch:
 
