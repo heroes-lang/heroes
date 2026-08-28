@@ -94,7 +94,7 @@
 
   <ul class="figures">
     <li>
-      <span class="n">231</span>
+      <span class="n">233</span>
       <span class="what">lines: the whole language</span>
       <span class="how">The specification, the document that defines the
       language in full, is a few pages. Hand it to a model and there is room to
@@ -199,6 +199,40 @@ we can be heroes</code></pre>
     <code>mutate</code>, <code>measure</code>, <code>this</code>. Every example
     on this site is a file in <code>examples/</code>, waiting to be changed.
   </p>
+  <p>
+    One of those deserves a word. <code>heroes fmt</code> prints the one
+    canonical form of a file, and there is exactly one: same indentation, same
+    line breaks, same order. All 241 Heroes files in the repository, the compiler
+    and the examples included, come back from it unchanged, byte for byte. So a
+    difference between two versions of a file is a difference in what the program
+    does, never in how somebody typed it.
+  </p>
+
+  <h2>How long it takes <span class="nod">&middot; speed of life &middot;</span></h2>
+  <p>
+    The largest Heroes program in existence is the compiler: 165 files, 48,342
+    lines. It reads all of that, ties every name to its declaration and checks
+    every type, in <b>5.3 seconds</b>. Building it from the C file in the
+    repository, the command above, takes <b>3.9 seconds</b>. Building it out of
+    Heroes takes <b>59</b> from an empty build folder and <b>45</b> with the
+    folder already there. All of that on one laptop, an Apple M3, which is where
+    every number on this site comes from.
+  </p>
+  <p>
+    Checking used to take a minute and a half. One small function was answering
+    the question <i>which line am I on</i> by counting from the top of the file,
+    and it was being asked once per declaration and once per comment. Nothing
+    about the design changed. The question did.
+  </p>
+  <p>
+    And a build no longer writes one enormous C file. Each of your files becomes
+    its own C file, compiled on its own, and the result is kept under
+    <code>build/</code> so the next build can reuse it. What decides whether it
+    can be reused is not the clock: it is the text of the file, the C headers it
+    read and the libraries it links. Borrow a number from a C header, edit the
+    header, and what depends on it is built again. That is the case where a build
+    system usually hands you yesterday&rsquo;s answer with no warning at all.
+  </p>
 
   <h2>Three things that make it different</h2>
   <ul class="cards">
@@ -227,7 +261,7 @@ we can be heroes</code></pre>
     <li>
       <h3>It compiles itself</h3>
       <p>
-        The Heroes compiler is written in Heroes: 155 files, 38,004 lines. Ask
+        The Heroes compiler is written in Heroes: 165 files, 48,342 lines. Ask
         three generations of it to write the same program out and the three
         results match to the byte. The language it was first built in is no use
         to anyone now and has left the repository.
@@ -281,11 +315,11 @@ we can be heroes</code></pre>
     case left out, a name reused) and counts how many the compiler stops. Then
     it does the same run with the thesis rules switched off, and the distance
     between the two runs is the result, kept mistake by mistake: some only
-    Heroes catches, some any language would catch, and one nothing catches yet.
+    Heroes catches, some any language would catch, and two nothing catches yet.
     An average would hide exactly that, so there is none.
   </p>
   <p>
-    <a href="errors.html">The whole table, re-run 2026-08-25, is on the errors
+    <a href="errors.html">The whole table, over 49 programs, is on the errors
     page &rarr;</a>
   </p>
 

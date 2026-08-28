@@ -107,14 +107,14 @@ error[shadowed_binding]: `start` is already in scope, bound at line 30 — shado
   </p>
 
   <h3>Ogni valore è una copia</h3>
-  <figure class="example" data-src="examples/gallery/05-mutation.hero" data-lines="44-49">
+  <figure class="example" data-src="examples/gallery/05-mutation.hero" data-lines="46-51">
 <pre><code><span class="k">test</span> <span class="s">"values are copies"</span>
     a = [<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>]
     b: [<span class="t">i64</span>] @ a
     b @ b.push(<span class="n">4</span>)
     <span class="k">assert</span> a.len() == <span class="n">3</span>
     <span class="k">assert</span> b.len() == <span class="n">4</span></code></pre>
-    <figcaption>examples/gallery/05-mutation.hero, righe 44&ndash;49</figcaption>
+    <figcaption>examples/gallery/05-mutation.hero, righe 46&ndash;51</figcaption>
   </figure>
   <p>
     <code>b</code> parte come copia di <code>a</code>, e aggiungerci un elemento
@@ -174,14 +174,16 @@ error[marker_mismatch]: `advance` changes this argument, so the call site writes
     funzione finisce. Succede a ogni uscita, <code>return</code> anticipati
     compresi, quindi non esiste una strada in cui arriva metà delle modifiche.
   </p>
-  <figure class="example" data-src="examples/gallery/05-mutation.hero" data-lines="28-33">
+  <figure class="example" data-src="examples/gallery/05-mutation.hero" data-lines="28-35">
 <pre><code><span class="c"># Reads a run of letters and hands it back, leaving the reader after it.</span>
 <span class="k">function</span> word_at(@r: Reader) -&gt; <span class="t">str</span>
     start = r.pos
+
     <span class="k">while</span> !at_end(r) &amp;&amp; here(r) &gt;= <span class="s">'a'</span> &amp;&amp; here(r) &lt;= <span class="s">'z'</span>
         advance(@r)
+
     <span class="k">return</span> r.text.slice(from: start, to: r.pos)</code></pre>
-    <figcaption>examples/gallery/05-mutation.hero, righe 28&ndash;33</figcaption>
+    <figcaption>examples/gallery/05-mutation.hero, righe 28&ndash;35</figcaption>
   </figure>
   <p>
     Una funzione può cambiare il suo argomento <i>e</i> restituire qualcosa, come
@@ -195,9 +197,9 @@ error[marker_mismatch]: `advance` changes this argument, so the call site writes
   <h3>Un nome che nessuno legge è un errore</h3>
   <pre><code>$ heroes check mutation.hero
 error[unused_binding]: `spare` is bound and never read — remove the binding, or read it
-  at mutation.hero:53:5
+  at mutation.hero:55:5
      |
-  53 |     spare = 5
+  55 |     spare = 5
      |     ^^^^^</code></pre>
   <p>
     Un nome inutilizzato di solito è un avanzo di una modifica, oppure una riga
@@ -208,11 +210,11 @@ error[unused_binding]: `spare` is bound and never read — remove the binding, o
   </p>
 
   <h3>Il programma</h3>
-  <figure class="example" data-src="examples/gallery/05-mutation.hero" data-lines="51-53">
+  <figure class="example" data-src="examples/gallery/05-mutation.hero" data-lines="53-55">
 <pre><code><span class="k">function</span> main()
     r: Reader @ Reader(text: <span class="s">"one two"</span>, pos: <span class="n">0</span>)
     print(word_at(@r))</code></pre>
-    <figcaption>examples/gallery/05-mutation.hero, righe 51&ndash;53</figcaption>
+    <figcaption>examples/gallery/05-mutation.hero, righe 53&ndash;55</figcaption>
   </figure>
   <pre><code>$ heroes run examples/gallery/05-mutation.hero
 one</code></pre>

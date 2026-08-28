@@ -64,9 +64,9 @@
   </p>
   <pre><code>$ heroes check loops.hero
 error[not_bool]: an `if` condition must be `bool`, found `i64` — there is no truthiness in this language
-  at loops.hero:12:12
+  at loops.hero:13:12
      |
-  12 |         if x
+  13 |         if x
      |            ^</code></pre>
   <p>
     <code>if</code>, <code>else if</code> and <code>else</code> are the whole
@@ -77,16 +77,18 @@ error[not_bool]: an `if` condition must be `bool`, found `i64` — there is no t
   </p>
 
   <h3><code>for x in xs</code>: walking a sequence</h3>
-  <figure class="example" data-src="examples/gallery/04-loops.hero" data-lines="7-14">
+  <figure class="example" data-src="examples/gallery/04-loops.hero" data-lines="7-16">
 <pre><code><span class="c"># The largest element. Fails on nothing: an empty array has no largest, so</span>
 <span class="c"># the caller is asked for a floor instead.</span>
 <span class="k">function</span> largest_or(xs: [<span class="t">i64</span>], floor: <span class="t">i64</span>) -&gt; <span class="t">i64</span>
     best: <span class="t">i64</span> @ floor
+
     <span class="k">for</span> x <span class="k">in</span> xs
         <span class="k">if</span> x &gt; best
             best @ x
+
     <span class="k">return</span> best</code></pre>
-    <figcaption>examples/gallery/04-loops.hero, lines 7&ndash;14</figcaption>
+    <figcaption>examples/gallery/04-loops.hero, lines 7&ndash;16</figcaption>
   </figure>
   <p>
     There is no index, no counter and no end condition to get wrong: the loop
@@ -102,29 +104,33 @@ error[not_bool]: an `if` condition must be `bool`, found `i64` — there is no t
   </p>
 
   <h3>Leaving early: <code>break</code></h3>
-  <figure class="example" data-src="examples/gallery/04-loops.hero" data-lines="16-23">
+  <figure class="example" data-src="examples/gallery/04-loops.hero" data-lines="18-27">
 <pre><code><span class="c"># Sums until the running total would pass a limit, then stops.</span>
 <span class="k">function</span> sum_until(xs: [<span class="t">i64</span>], limit: <span class="t">i64</span>) -&gt; <span class="t">i64</span>
     total: <span class="t">i64</span> @ <span class="n">0</span>
+
     <span class="k">for</span> x <span class="k">in</span> xs
         <span class="k">if</span> total + x &gt; limit
             <span class="k">break</span>
         total @ total + x
+
     <span class="k">return</span> total</code></pre>
-    <figcaption>examples/gallery/04-loops.hero, lines 16&ndash;23</figcaption>
+    <figcaption>examples/gallery/04-loops.hero, lines 18&ndash;27</figcaption>
   </figure>
 
   <h3>Skipping one: <code>continue</code></h3>
-  <figure class="example" data-src="examples/gallery/04-loops.hero" data-lines="25-32">
+  <figure class="example" data-src="examples/gallery/04-loops.hero" data-lines="29-38">
 <pre><code><span class="c"># Counts the even ones, and shows `continue` earning its keep.</span>
 <span class="k">function</span> even_count(xs: [<span class="t">i64</span>]) -&gt; <span class="t">i64</span>
     seen: <span class="t">i64</span> @ <span class="n">0</span>
+
     <span class="k">for</span> x <span class="k">in</span> xs
         <span class="k">if</span> x % <span class="n">2</span> != <span class="n">0</span>
             <span class="k">continue</span>
         seen @ seen + <span class="n">1</span>
+
     <span class="k">return</span> seen</code></pre>
-    <figcaption>examples/gallery/04-loops.hero, lines 25&ndash;32</figcaption>
+    <figcaption>examples/gallery/04-loops.hero, lines 29&ndash;38</figcaption>
   </figure>
   <p>
     Both jumps apply to the loop they are written in. There are no labels to
@@ -134,17 +140,19 @@ error[not_bool]: an `if` condition must be `bool`, found `i64` — there is no t
   </p>
 
   <h3><code>while</code>: repeating on a condition</h3>
-  <figure class="example" data-src="examples/gallery/04-loops.hero" data-lines="34-42">
+  <figure class="example" data-src="examples/gallery/04-loops.hero" data-lines="40-50">
 <pre><code><span class="c"># The conditional loop, with the counter visible: `while cond` has no header</span>
 <span class="c"># that hides where the index changes.</span>
 <span class="k">function</span> digits_in(n: <span class="t">i64</span>) -&gt; <span class="t">i64</span>
     left: <span class="t">i64</span> @ n
     digits: <span class="t">i64</span> @ <span class="n">1</span>
+
     <span class="k">while</span> left &gt;= <span class="n">10</span>
         left @ left / <span class="n">10</span>
         digits @ digits + <span class="n">1</span>
+
     <span class="k">return</span> digits</code></pre>
-    <figcaption>examples/gallery/04-loops.hero, lines 34&ndash;42</figcaption>
+    <figcaption>examples/gallery/04-loops.hero, lines 40&ndash;50</figcaption>
   </figure>
   <p>
     A <code>while</code> takes a condition and nothing else. The classic
@@ -154,15 +162,17 @@ error[not_bool]: an `if` condition must be `bool`, found `i64` — there is no t
   </p>
 
   <h3>Counting: a range is a function call</h3>
-  <figure class="example" data-src="examples/gallery/04-loops.hero" data-lines="44-50">
+  <figure class="example" data-src="examples/gallery/04-loops.hero" data-lines="52-60">
 <pre><code><span class="c"># The loop variable is not needed, so it is `_` — the same wildcard a pattern</span>
 <span class="c"># uses, and the reason an unused name is never an accident here.</span>
 <span class="k">function</span> repeat_dash(times: <span class="t">i64</span>) -&gt; <span class="t">str</span>
     out: <span class="t">str</span> @ <span class="s">""</span>
+
     <span class="k">for</span> _ <span class="k">in</span> range(from: <span class="n">0</span>, to: times)
         out @ out + <span class="s">"-"</span>
+
     <span class="k">return</span> out</code></pre>
-    <figcaption>examples/gallery/04-loops.hero, lines 44&ndash;50</figcaption>
+    <figcaption>examples/gallery/04-loops.hero, lines 52&ndash;60</figcaption>
   </figure>
   <p>
     <code>range</code> is not syntax. It is an ordinary function that returns a
@@ -181,11 +191,11 @@ error[not_bool]: an `if` condition must be `bool`, found `i64` — there is no t
   </p>
 
   <h3>All of it, running</h3>
-  <figure class="example" data-src="examples/gallery/04-loops.hero" data-lines="60-62">
+  <figure class="example" data-src="examples/gallery/04-loops.hero" data-lines="70-72">
 <pre><code><span class="k">function</span> main()
     print(repeat_dash(<span class="n">20</span>))
     print(<span class="s">"digits in 2026: "</span>, digits_in(<span class="n">2026</span>))</code></pre>
-    <figcaption>examples/gallery/04-loops.hero, lines 60&ndash;62</figcaption>
+    <figcaption>examples/gallery/04-loops.hero, lines 70&ndash;72</figcaption>
   </figure>
   <pre><code>$ heroes run examples/gallery/04-loops.hero
 --------------------

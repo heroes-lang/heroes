@@ -8,6 +8,31 @@ all**. Verbatim compiler output and code blocks are the one exception — they
 are evidence, and evidence is never edited. `site/README.md` keeps the site's
 structural rules; this file is about the writing.
 
+## No dates on the page
+
+Author instruction 2026-08-28: *"tutte le volte che nel sito dici alla data del
+ventisei agosto duemilaventisei è stato fatto questo, è stato misurato questo,
+non mi piace per niente ... mi sembra un log e nel sito non mi interessa avere
+questo livello di dettaglio. Puoi dire ad oggi, oppure darlo in assoluto come un
+fatto finito. Cerca su tutto il sito occorrenze di data, non le voglio le date.
+Non le voglio assolutamente."*
+
+- **A measurement never carries a date.** Not *"measured 2026-08-25"*, not
+  *"re-run on 2026-08-28"*, not *"counted on"*. Write the number as a finished
+  fact. Where a sentence needs a horizon, *today* or *so far* is the whole of it.
+- **The build log carries none either.** `log.html` held 27 dated entries and now
+  holds 27 named ones: the order of the list is the chronology and the milestone
+  name is the label. Whoever wants the calendar has the repository.
+- **What this does not relax**: CLAUDE.md §1 still binds, so every number on the
+  page is re-measured in the session that writes it. The date leaves the *page*,
+  not the practice; the commit body is where it goes instead. § Numbers on the
+  site are re-run in `README.md` is the same rule with its dating clause dropped.
+- **Three kinds of date are not measurements and stay.** The book's release
+  wording, which the author's own brief fixes (`README.md` § The author and the
+  book, rule 2); the copyright year in the footer; and years that belong to
+  somebody else's history, which is Bowie's 1973 and 1977 and the language dates
+  on `thanks.html`.
+
 ## The reader is never assumed to be an expert
 
 Author instruction 2026-08-26: *"metti come regola che chi capita sul sito non

@@ -55,7 +55,34 @@
 
   <ol class="log">
     <li>
-      <span class="when">2026-08-19 · M-bootstrap-archive: in soffitta</span>
+      <span class="when">M-separate-compilation: la cache che non può mentire</span>
+      <b>Costruire il compilatore voleva dire riscrivere ogni volta un unico file C enorme, quasi ottocentomila righe, anche solo per aver cambiato una virgola.</b>
+      Il lavoro era spezzarlo in un pezzo per modulo, così che toccare un file
+      ne faccia ricostruire uno. Il primo tentativo è fallito con venti
+      lamentele del compilatore C, e quel fallimento è valso più di quanto
+      sarebbe valso un successo: ogni <i>sezione</i> di un pezzo stava decidendo
+      per conto proprio che cosa le serviva, e quattro sezioni che decidono
+      separatamente non possono condividere un file. Poi è arrivato il problema
+      vero, quello per cui questo pezzo di strada esisteva. Riusare il lavoro di
+      ieri è sicuro solo se sai dire che niente di ciò da cui dipendeva è
+      cambiato, e a dirlo si stava usando il testo che il compilatore aveva
+      generato. Ma quando un programma prende un numero dall&rsquo;header di una
+      libreria C, il compilatore scrive il <i>nome</i> e lascia che sia il C a
+      metterci il valore dopo: quindi cambiare l&rsquo;header cambia la risposta
+      e non cambia un carattere del testo. Un programma stampava 1 mentre il
+      file sul disco diceva 2, e poi stampava ancora 1 mentre diceva 7, tutte e
+      due le volte con codice di uscita zero. La riparazione è stata smettere di
+      indovinare e chiedere al compilatore C stesso, mentre lavora, quali file
+      ha aperto davvero. E poi, quasi per caso, si è scoperto dove finiva tutto
+      il tempo: controllare il codice del compilatore prendeva un minuto e
+      mezzo, e quasi tutto era una funzioncina che rispondeva &ldquo;su quale
+      riga sono&rdquo; contando dall&rsquo;inizio di un file di oltre un milione
+      di caratteri. Il numero di riga non serviva a nessuno. Chiedere la
+      distanza, invece, ha portato quel tempo a circa cinque secondi.
+      <a class="more" href="selfhost.html">Un file C per modulo</a>
+    </li>
+    <li>
+      <span class="when">M-bootstrap-archive: in soffitta</span>
       <b>Il vecchio compilatore è finito in soffitta, e si è scoperto che dentro ci abitava metà degli strumenti del progetto.</b>
       Non i test del linguaggio: gli strumenti che parlano <i>del</i>
       linguaggio. Quello che conta quanto è grande la specifica, quello che
@@ -75,7 +102,7 @@
       <a class="more" href="selfhost.html">Il terzo linguaggio è morto</a>
     </li>
     <li>
-      <span class="when">2026-08-18 · M-harness-port: la rete, in Heroes</span>
+      <span class="when">M-harness-port: la rete, in Heroes</span>
       <b>Tutto quello che controlla il compilatore era scritto nel linguaggio che stava per andare in pensione, così la rete è stata riscritta nel linguaggio stesso.</b>
       Un programma che usa il compilatore come lo userebbe una persona,
       in 688 controlli: scrive un comando, legge quello che torna, lo
@@ -91,7 +118,7 @@
       d&rsquo;accordo.
     </li>
     <li>
-      <span class="when">2026-08-18 · M-selfhost-fixpoint: il seme</span>
+      <span class="when">M-selfhost-fixpoint: il seme</span>
       <b>La porta d&rsquo;ingresso è diventata un solo comando clang, e togliere la scala ha colto il compilatore in fallo.</b>
       Il repository adesso porta con sé il compilatore come un unico file C
       generato, quindi una macchina che non ha mai sentito nominare questo
@@ -107,7 +134,7 @@
       risposta è 127 su 127.
     </li>
     <li>
-      <span class="when">2026-08-17 · M-selfhost-port: il punto fisso</span>
+      <span class="when">M-selfhost-port: il punto fisso</span>
       <b>Il compilatore passa nel proprio linguaggio, e il figlio corregge il padre.</b>
       53.013 righe di Rust sono diventate 34.812 righe di Heroes, test compresi da
       entrambe le parti, perché in Heroes i test vivono nel file che provano,
@@ -122,7 +149,7 @@
       <a class="more" href="selfhost.html">Il punto fisso</a>
     </li>
     <li>
-      <span class="when">2026-08-15 · M-selfhost-probe: il muro che non c&rsquo;era</span>
+      <span class="when">M-selfhost-probe: il muro che non c&rsquo;era</span>
       <b>Porta un file, aspettati di fallire, e scrivi che cosa il linguaggio non riesce a dire.</b>
       Il muro era stato tolto in silenzio tre giorni prima da una milestone che
       parlava di altro, e nessuno era tornato a rileggere la premessa del piano:
@@ -137,7 +164,7 @@
       stessi costruttori avevano fatto la prima volta.
     </li>
     <li>
-      <span class="when">2026-08-15 · M-complete-structs: un rifiuto è un&rsquo;affermazione</span>
+      <span class="when">M-complete-structs: un rifiuto è un&rsquo;affermazione</span>
       <b>Da 191 dichiarazioni C collegabili a 349, e nemmeno un passo era una nuova funzionalità.</b>
       Ognuno era un rifiuto senza via d&rsquo;uscita. Uno diceva all&rsquo;autore
       che a una descrizione mancava un pezzo, e quel pezzo lui l&rsquo;aveva
@@ -150,7 +177,7 @@
       severo nel modo giusto.
     </li>
     <li>
-      <span class="when">2026-08-15 · M-struct-passing: la stessa dimensione non è la stessa cosa</span>
+      <span class="when">M-struct-passing: la stessa dimensione non è la stessa cosa</span>
       <b>Un terzo di tutto quello che offre una libreria C vera era fuori portata.</b>
       I gruppi di valori che viaggiano come una cosa sola non riuscivano ad
       attraversare il confine. La soluzione ovvia (descrivi il gruppo da
@@ -164,7 +191,7 @@
       invece di <i>è della stessa dimensione</i>.
     </li>
     <li>
-      <span class="when">2026-08-14 · M-binding-fidelity: metà di una promessa</span>
+      <span class="when">M-binding-fidelity: metà di una promessa</span>
       <b>Dichiara male una funzione esterna e il programma non si costruisce. Era vero in una sola direzione.</b>
       Quello che una funzione C <i>restituisce</i> era controllato da quando esiste
       il confine; quello che <i>prende</i> non era controllato affatto, e due
@@ -177,7 +204,7 @@
       sulla riga che ha scritto l&rsquo;autore.
     </li>
     <li>
-      <span class="when">2026-08-13 · M-program-corpus: i programmi come strumento di misura</span>
+      <span class="when">M-program-corpus: i programmi come strumento di misura</span>
       <b>Sette programmi veri scritti, e sono saltati fuori sei difetti del compilatore.</b>
       Un lettore di JSON, un convertitore Markdown, un foglio di calcolo, un
       risolutore di labirinti, un piccolo assemblatore con la sua macchina, un
@@ -191,7 +218,7 @@
       perfettamente.
     </li>
     <li>
-      <span class="when">2026-08-12 · M-sized-integers: la cosa temuta, lunga un paragrafo</span>
+      <span class="when">M-sized-integers: la cosa temuta, lunga un paragrafo</span>
       <b>Arrivano otto larghezze, e la parola <i>int</i> smette di essere una parola.</b>
       Il documento di progetto aveva rifiutato questa cosa nei termini più forti:
       mai in questa versione, la cosa più rischiosa che potremmo aggiungere. Poi è
@@ -203,7 +230,7 @@
       quasi niente da scrivere.
     </li>
     <li>
-      <span class="when">2026-08-12 · M-literal-bases: che cosa significa 0700</span>
+      <span class="when">M-literal-bases: che cosa significa 0700</span>
       <b>Un revisore ha scritto i permessi di un file come li scrivono tutti, e ha chiesto che cosa volesse dire.</b>
       Non l&rsquo;aveva chiesto mai nessuno. Significava settecento. In tutti i
       linguaggi da cui questo prende in prestito significa quattrocentoquarantotto,
@@ -216,7 +243,7 @@
       esserci cascato.
     </li>
     <li>
-      <span class="when">2026-08-12 · M-header-constants: nessuna cifra che si possa ancora sbagliare</span>
+      <span class="when">M-header-constants: nessuna cifra che si possa ancora sbagliare</span>
       <b>Le impostazioni di una libreria hanno nomi e numeri, e il linguaggio sapeva dire solo i numeri.</b>
       Per nominare un&rsquo;opzione, un programma doveva scrivere 10002, con un
       commento sopra che spiegava che la documentazione della libreria somma due a
@@ -230,7 +257,7 @@
       non si può controllare sparisce quando si può.
     </li>
     <li>
-      <span class="when">2026-08-12 · M-ffi-ladder: 1, dove doveva stampare 1.41</span>
+      <span class="when">M-ffi-ladder: 1, dove doveva stampare 1.41</span>
       <b>La promessa intorno a cui era organizzato tutto il linguaggio era falsa proprio per la coppia usata dal suo stesso secondo esempio.</b>
       L&rsquo;organizzazione era questa: quando un programma prende in prestito una
       funzione C, il compilatore non la descrive, punta alla descrizione della
@@ -244,7 +271,7 @@
       mai fare quella chiamata.
     </li>
     <li>
-      <span class="when">2026-08-12 · M-module-namespace: il cambiamento più economico era un verbo</span>
+      <span class="when">M-module-namespace: il cambiamento più economico era un verbo</span>
       <b>I programmi si dividono in file, e undici decisioni su tredici sono costate zero.</b>
       Più file hanno bisogno di regole: che succede quando il nome di un file va in
       conflitto con uno che importa, che succede quando un import non viene mai
@@ -256,7 +283,7 @@
       aggiungere niente.
     </li>
     <li>
-      <span class="when">2026-08-11 · M-generics-library: tre veti, nessuno per argomentazione</span>
+      <span class="when">M-generics-library: tre veti, nessuno per argomentazione</span>
       <b>Il linguaggio arriva a essere completo, e ogni disputa aperta viene chiusa da un compilatore invece che da un dibattito.</b>
       La descrizione per tipo del runtime doveva guadagnare una sesta voce? Un
       giudice ha scritto l&rsquo;header, ha compilato il runtime invariato contro
@@ -271,7 +298,7 @@
       nome. Niente di tutto questo era raggiungibile leggendo.
     </li>
     <li>
-      <span class="when">2026-08-10 · M-optional-map: gli ultimi due tipi, intrecciati</span>
+      <span class="when">M-optional-map: gli ultimi due tipi, intrecciati</span>
       <b>I valori che possono fallire e le mappe non si potevano costruire in nessuno dei due ordini.</b>
       Cercare una chiave in una mappa restituisce il valore oppure un errore,
       quindi prima della mappa serviva quel tipo. E quel tipo, si è scoperto,
@@ -285,7 +312,7 @@
       in anticipo.
     </li>
     <li>
-      <span class="when">2026-08-10 · M-value-aggregates: un albero che contiene se stesso</span>
+      <span class="when">M-value-aggregates: un albero che contiene se stesso</span>
       <b>Dati ricorsivi, in un linguaggio il cui modello dei dati non ha né puntatori né un tipo riferimento.</b>
       Non c&rsquo;è niente da mettere in un campo che significhi &ldquo;da
       qualche altra parte&rdquo;, e però l&rsquo;esempio intorno a cui è stato
@@ -300,7 +327,7 @@
       contatore che libera a zero è completo.
     </li>
     <li>
-      <span class="when">2026-08-05 · M-strings-ownership: il controllo che ha smentito il proprio progetto</span>
+      <span class="when">M-strings-ownership: il controllo che ha smentito il proprio progetto</span>
       <b>Il compilatore ha imparato a contare i riferimenti, e il cane da guardia ha abbaiato due volte in un&rsquo;ora.</b>
       La regola era: un valore che possiede una stringa viene rilasciato alla fine
       del blocco che l&rsquo;ha creato. La prima smentita è stata istruttiva: un
@@ -316,7 +343,7 @@
       prima.
     </li>
     <li>
-      <span class="when">2026-08-04 · M-scalars-run: il primo binario nativo</span>
+      <span class="when">M-scalars-run: il primo binario nativo</span>
       <b>Un programma diventa un eseguibile, e la discussione più lunga è stata su un numero fra zero e due.</b>
       Quando un programma è corretto e il compilatore semplicemente non è ancora
       finito, quale codice di uscita bisogna usare? Il due dice &ldquo;lo strumento
@@ -332,7 +359,7 @@
       sembrava sostenere il due ha chiuso la questione sull&rsquo;uno.
     </li>
     <li>
-      <span class="when">2026-08-04 · M-ir-lowering: lo zucchero che sparisce, e il centro del compilatore</span>
+      <span class="when">M-ir-lowering: lo zucchero che sparisce, e il centro del compilatore</span>
       <b>La rappresentazione da manuale ha perso contro dieci anni di prove che nessuno era andato a cercare.</b>
       LLVM, la cui esistenza intera è la forma a singolo assegnamento, dice agli
       autori dei linguaggi nuovi di non costruirla: usa slot sullo stack con
@@ -344,7 +371,7 @@
       l&rsquo;unica cosa a cui questo progetto ha formalmente rinunciato.
     </li>
     <li>
-      <span class="when">2026-08-04 · M-typed-frontend: il frontend, e la tesi ottiene il suo primo numero</span>
+      <span class="when">M-typed-frontend: il frontend, e la tesi ottiene il suo primo numero</span>
       <b>Nomi, tipi, esaustività, e la prima misura, la cui metà utile è la colonna che non mostra niente.</b>
       379 errori deliberati iniettati in programmi funzionanti, il 94% preso. Ma lo
       stesso compilatore con le regole della tesi disattivate ne prende il 76%, ed è
@@ -356,7 +383,7 @@
       altro posto: un fatto che sarebbe stato molto facile non scrivere.
     </li>
     <li>
-      <span class="when">2026-08-04 · M-name-resolution: il resolver</span>
+      <span class="when">M-name-resolution: il resolver</span>
       <b>Una calcolatrice da 317 righe non ha superato la risoluzione dei nomi, esattamente su due righe.</b>
       Dichiara i propri <code>map</code> e <code>fold</code>, e il linguaggio si
       riserva entrambi i nomi. Era la terza volta che quello stesso programma
@@ -370,7 +397,7 @@
       provato.
     </li>
     <li>
-      <span class="when">2026-08-04 · M-syntax-tree: il parser, l&rsquo;albero, il formatter</span>
+      <span class="when">M-syntax-tree: il parser, l&rsquo;albero, il formatter</span>
       <b>Il primo atto del parser è stato scoprire che il linguaggio non riusciva a scrivere il tipo di una funzione.</b>
       <code>fn</code> stava nel registro delle parole straniere (un errore
       con la riparazione già scritta) e stava anche nella sintassi che la
@@ -385,7 +412,7 @@
       per cui il panel esiste.
     </li>
     <li>
-      <span class="when">2026-08-04 · M-token-stream: il lexer</span>
+      <span class="when">M-token-stream: il lexer</span>
       <b>Il primo codice vero, e tre cose che ha trovato solo perché è stato scritto.</b>
       Il testo sorgente adesso diventa token. I rientri sono rigidi, e un tab è
       un errore invece che una cosa da interpretare. La fine di
@@ -400,7 +427,7 @@
       stato contato. Era un terzo più grande di quanto credessero tutti.
     </li>
     <li>
-      <span class="when">2026-08-03 · M-day-zero</span>
+      <span class="when">M-day-zero</span>
       <b>Le fondazioni, e quattro programmi scritti prima del compilatore.</b>
       Git, un workspace Rust, un&rsquo;infrastruttura per i test golden, verde con zero
       test, e la specifica del linguaggio congelata come base della misura (budget:
@@ -413,7 +440,7 @@
       cambiato il modo in cui inizierà ogni funzione generata.
     </li>
     <li>
-      <span class="when">2026-08-03 · prima del codice</span>
+      <span class="when">prima del codice</span>
       <b>Il piano incontra cinque esperti ostili.</b>
       Prima che un singolo token passasse dal lexer, il piano di costruzione è stato
       esaminato da cinque revisori ostili: progettazione di linguaggi, ingegneria
@@ -424,7 +451,7 @@
       velocità. Il piano che è sopravvissuto è la revisione 2.
     </li>
     <li>
-      <span class="when">2026-08-03 · l&rsquo;inizio</span>
+      <span class="when">l&rsquo;inizio</span>
       <b>Un documento di progetto da 2000 righe e una domanda.</b>
       Il linguaggio è arrivato come una lunga conversazione di progetto: un
       linguaggio compilato senza libreria standard, costruito per il lettore che non

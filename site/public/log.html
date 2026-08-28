@@ -53,7 +53,32 @@
 
   <ol class="log">
     <li>
-      <span class="when">2026-08-19 · M-bootstrap-archive: the attic</span>
+      <span class="when">M-separate-compilation: the cache that cannot lie</span>
+      <b>Building the compiler used to mean writing out one enormous C file, nearly eight hundred thousand lines of it, even after changing a comma.</b>
+      The job was to split that into one piece per module, so that touching one
+      file rebuilds one piece. The first attempt failed with twenty complaints
+      from the C compiler, and that failure was worth more than a success would
+      have been: every <i>section</i> of a piece had been deciding for itself
+      what it needed, and four sections deciding separately cannot share one
+      file. Then came the deeper problem, the one this whole milestone existed to
+      find. Reusing yesterday&rsquo;s work is safe only if you can tell that
+      nothing it depended on has changed, and what was being used to tell was the
+      text the compiler had generated. But when a program borrows a number from a
+      C header, the compiler writes down the <i>name</i> and lets C fill in the
+      value later, so editing the header changes the answer and changes not one
+      character of the text. A program printed 1 while the file on disk said 2,
+      then printed 1 again while it said 7, both times at exit code zero. The
+      repair was to stop guessing and ask the C compiler itself, as it works,
+      which files it had actually opened. Then, almost by accident, the milestone
+      found where all the time had been going: checking the compiler&rsquo;s own
+      source took a minute and a half, and almost all of it was one small
+      function answering &ldquo;which line is this&rdquo; by counting from the top
+      of a file over a million characters long. Nobody wanted the line. Asking
+      for the distance instead took it to about five seconds.
+      <a class="more" href="selfhost.html">One C file per module</a>
+    </li>
+    <li>
+      <span class="when">M-bootstrap-archive: the attic</span>
       <b>The old compiler went into the attic, and half the project&rsquo;s instruments turned out to be living in it.</b>
       Not the tests of the language: the instruments <i>about</i> it. The thing
       that counts how big the specification is, the thing that injects one
@@ -71,7 +96,7 @@
       <a class="more" href="selfhost.html">The third language dies</a>
     </li>
     <li>
-      <span class="when">2026-08-18 · M-harness-port: the net, in Heroes</span>
+      <span class="when">M-harness-port: the net, in Heroes</span>
       <b>Everything that checks the compiler was written in the language being retired, so the net was rewritten in the language itself.</b>
       A program that uses the compiler the way a person does, in 688 checks:
       type a command, read what comes back, compare it to what was promised. Pointed at the new compiler testing itself, it went red on
@@ -84,7 +109,7 @@
       second implementation disagreeing.
     </li>
     <li>
-      <span class="when">2026-08-18 · M-selfhost-fixpoint: the seed</span>
+      <span class="when">M-selfhost-fixpoint: the seed</span>
       <b>The way in became one clang command, and taking the ladder away caught the compiler cheating.</b>
       The repository now carries the compiler as one generated C file, so a
       machine that has never heard of this language builds it with nothing but
@@ -98,7 +123,7 @@
       programs, 26 agreed. Three faults later the answer is 127 out of 127.
     </li>
     <li>
-      <span class="when">2026-08-17 · M-selfhost-port: the fixpoint</span>
+      <span class="when">M-selfhost-port: the fixpoint</span>
       <b>The compiler crosses into its own language, and the child corrects the parent.</b>
       53,013 lines of Rust became 34,812 lines of Heroes, tests included on
       both sides, since in Heroes they live in the file they test, module by
@@ -112,7 +137,7 @@
       <a class="more" href="selfhost.html">The fixpoint</a>
     </li>
     <li>
-      <span class="when">2026-08-15 · M-selfhost-probe: the wall that was not there</span>
+      <span class="when">M-selfhost-probe: the wall that was not there</span>
       <b>Port one file, expect to fail, write down what the language cannot say.</b>
       The wall had been quietly removed three days earlier by a milestone about
       something else, and nobody had gone back to re-read the plan's premise,
@@ -125,7 +150,7 @@
       mistake its own builders had made the first time.
     </li>
     <li>
-      <span class="when">2026-08-15 · M-complete-structs: a refusal is a claim</span>
+      <span class="when">M-complete-structs: a refusal is a claim</span>
       <b>From 191 bindable C declarations to 349, and not one step was a new capability.</b>
       Each was a refusal with no way out. One told the author a description was
       missing a part they had in fact written down; another told them to correct
@@ -136,7 +161,7 @@
       from the inside, because everything looks correctly strict.
     </li>
     <li>
-      <span class="when">2026-08-15 · M-struct-passing: the same size is not the same thing</span>
+      <span class="when">M-struct-passing: the same size is not the same thing</span>
       <b>A third of everything a real C library offers had been out of reach.</b>
       Bundles of values travelling as one thing could not cross the boundary. The
       obvious fix, describe the bundle on both sides, then check the sizes and
@@ -149,7 +174,7 @@
       the same kind of thing</i> rather than <i>is it the same size</i>.
     </li>
     <li>
-      <span class="when">2026-08-14 · M-binding-fidelity, half a promise</span>
+      <span class="when">M-binding-fidelity, half a promise</span>
       <b>Declare a foreign function wrongly and the program will not build. It was true in one direction only.</b>
       What a C function <i>hands back</i> had been checked since the boundary
       existed; what it <i>takes</i> had never been checked at all. Two
@@ -161,7 +186,7 @@
       number pointed at the line the author wrote.
     </li>
     <li>
-      <span class="when">2026-08-13 · M-program-corpus, programs as an instrument</span>
+      <span class="when">M-program-corpus, programs as an instrument</span>
       <b>Seven real programs written, six compiler faults fell out.</b>
       A JSON reader, a Markdown converter, a spreadsheet, a maze solver, a small
       assembler with its own machine, a log summariser, a game. No existing test
@@ -173,7 +198,7 @@
       still reads perfectly.
     </li>
     <li>
-      <span class="when">2026-08-12 · M-sized-integers: the feared thing, one paragraph long</span>
+      <span class="when">M-sized-integers: the feared thing, one paragraph long</span>
       <b>Eight widths arrive, and the word <i>int</i> stops being a word.</b>
       The design document had refused this in its strongest terms: never in this
       version, the highest-risk thing we could add. Then it was asked for anyway
@@ -184,7 +209,7 @@
       nothing left to write down.
     </li>
     <li>
-      <span class="when">2026-08-12 · M-literal-bases: what 0700 means</span>
+      <span class="when">M-literal-bases: what 0700 means</span>
       <b>A reviewer wrote down the way everyone writes file permissions and asked what it meant.</b>
       Nobody had ever asked. It meant seven hundred. In every language this one
       borrows from it means four hundred and forty-eight, and a program using it
@@ -196,7 +221,7 @@
       bitten.
     </li>
     <li>
-      <span class="when">2026-08-12 · M-header-constants: no digit left to be wrong</span>
+      <span class="when">M-header-constants: no digit left to be wrong</span>
       <b>A library's settings have names and numbers, and the language could only say the numbers.</b>
       To name one option a program had to write 10002, with a comment above it
       explaining that the library's documentation adds two to ten thousand:
@@ -209,7 +234,7 @@
       only because something cannot be checked disappears when it can.
     </li>
     <li>
-      <span class="when">2026-08-12 · M-ffi-ladder, 1, where it should print 1.41</span>
+      <span class="when">M-ffi-ladder, 1, where it should print 1.41</span>
       <b>The promise the whole language was arranged around was false for the pair its own second example uses.</b>
       The arrangement: when a program borrows a C function, the compiler does not
       describe that function, it points at the library's description and lets
@@ -222,7 +247,7 @@
       type, without ever making the call.
     </li>
     <li>
-      <span class="when">2026-08-12 · M-module-namespace: the cheapest change was a verb</span>
+      <span class="when">M-module-namespace: the cheapest change was a verb</span>
       <b>Programs split into files, and eleven of thirteen decisions cost nothing.</b>
       Multiple files need rules: what happens when a file's name collides with
       one it imports, what happens when an import is never used. Both were
@@ -233,7 +258,7 @@
       covered both cases with nothing added.
     </li>
     <li>
-      <span class="when">2026-08-11 · M-generics-library: three vetoes, none by argument</span>
+      <span class="when">M-generics-library: three vetoes, none by argument</span>
       <b>The language reaches feature-complete, and every open dispute is settled by a compiler rather than a debate.</b>
       Should the runtime's per-type description gain a sixth entry? A judge wrote
       the header, compiled the unchanged runtime against it, and found that C
@@ -247,7 +272,7 @@
       reading.
     </li>
     <li>
-      <span class="when">2026-08-10 · M-optional-map: the last two types, entangled</span>
+      <span class="when">M-optional-map: the last two types, entangled</span>
       <b>Fallible values and maps could not be built in either order.</b>
       Looking a key up in a map returns the value or an error, so the map needed
       that type first. And that type, it turned out, has to count holders even
@@ -260,7 +285,7 @@
       advance.
     </li>
     <li>
-      <span class="when">2026-08-10 · M-value-aggregates: a tree that contains itself</span>
+      <span class="when">M-value-aggregates: a tree that contains itself</span>
       <b>Recursive data, in a language whose data model has no pointer and no reference type.</b>
       There is nothing to put in a field that stands for &ldquo;somewhere
       else&rdquo;, and yet the example the design was written around is a tree
@@ -274,7 +299,7 @@
       frees at zero is complete.
     </li>
     <li>
-      <span class="when">2026-08-05 · M-strings-ownership: the check that refuted its own design</span>
+      <span class="when">M-strings-ownership: the check that refuted its own design</span>
       <b>The compiler learned to count references, and the watchdog fired twice in an hour.</b>
       The rule was: a value that owns a string is released at the end of the
       block that created it. The first refutation was instructive: an assertion
@@ -288,7 +313,7 @@
       milestone earlier had been for.
     </li>
     <li>
-      <span class="when">2026-08-04 · M-scalars-run: the first native binary</span>
+      <span class="when">M-scalars-run: the first native binary</span>
       <b>A program becomes an executable, and the longest argument was about a number between zero and two.</b>
       When a program is correct and the compiler simply is not finished yet, what
       exit code should it use? Two says &ldquo;the tool could not do its
@@ -303,7 +328,7 @@
       settled the question at one.
     </li>
     <li>
-      <span class="when">2026-08-04 · M-ir-lowering, desugaring, and the middle of the compiler</span>
+      <span class="when">M-ir-lowering, desugaring, and the middle of the compiler</span>
       <b>The textbook representation lost to a decade of evidence nobody had gone looking for.</b>
       LLVM, whose whole existence is single-assignment form, tells the authors
       of new languages not to build it: use stack slots and loads and stores, and
@@ -314,7 +339,7 @@
       one thing this project has formally renounced.
     </li>
     <li>
-      <span class="when">2026-08-04 · M-typed-frontend: the frontend, and the thesis gets a number</span>
+      <span class="when">M-typed-frontend: the frontend, and the thesis gets a number</span>
       <b>Names, types, exhaustiveness, and the first measurement, whose useful half is the column that shows nothing.</b>
       379 deliberate mistakes injected into working programs, 94% caught. But the
       same compiler with the thesis rules switched off catches 76%, and
@@ -326,7 +351,7 @@
       not to write down.
     </li>
     <li>
-      <span class="when">2026-08-04 · M-name-resolution: the resolver</span>
+      <span class="when">M-name-resolution: the resolver</span>
       <b>A 317-line calculator refused to resolve, at exactly two lines.</b>
       It declares its own <code>map</code> and <code>fold</code>, and the
       language reserves both names. That was the third time this one program
@@ -339,7 +364,7 @@
       nobody had tried.
     </li>
     <li>
-      <span class="when">2026-08-04 · M-syntax-tree: the parser, the tree, the formatter</span>
+      <span class="when">M-syntax-tree: the parser, the tree, the formatter</span>
       <b>The parser's first act was to discover the language could not write down the type of a function.</b>
       <code>fn</code> was in the registry of foreign words: an error with the
       repair pre-written, and also in the spec's own syntax for a function type,
@@ -352,7 +377,7 @@
       recommendation lost to the evidence, which is what the panel is for.
     </li>
     <li>
-      <span class="when">2026-08-04 · M-token-stream: the lexer</span>
+      <span class="when">M-token-stream: the lexer</span>
       <b>The first real code, and three things it found by being written.</b>
       Source text now becomes tokens. Indentation is rigid, and a tab is an
       error rather than something to interpret. The end of a statement is
@@ -366,7 +391,7 @@
       everyone believed.
     </li>
     <li>
-      <span class="when">2026-08-03 · M-day-zero</span>
+      <span class="when">M-day-zero</span>
       <b>Foundations, and four programs written before the compiler.</b>
       Git, a Rust workspace, a golden-test harness green with zero tests, and the
       language spec frozen as the measurement baseline (budget: 1500 tokens,
@@ -378,7 +403,7 @@
       generated function will begin.
     </li>
     <li>
-      <span class="when">2026-08-03 · before the code</span>
+      <span class="when">before the code</span>
       <b>The plan meets five hostile experts.</b>
       Before a single token was lexed, the build plan was reviewed by five
       adversarial reviewers, language design, compiler engineering, simplicity,
@@ -388,7 +413,7 @@
       plan that survived is revision 2.
     </li>
     <li>
-      <span class="when">2026-08-03 · the beginning</span>
+      <span class="when">the beginning</span>
       <b>A 2000-line design document and one question.</b>
       The language arrived as a long design conversation: a compiled language
       with no standard library, built for the reader that isn't human. The first

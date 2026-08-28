@@ -108,9 +108,11 @@ error[indentation_not_multiple_of_4]: indentation must be exactly 4 spaces per l
   <p>
     Un tab è un errore a parte, con un messaggio suo. Il senso della regola è
     che esiste un modo solo di scrivere un programma: due file che fanno la
-    stessa cosa si somigliano, e una differenza in un diff è una differenza di
-    significato. Se ti capita di allontanartene, <code>heroes fmt</code> ti
-    stampa quella forma unica.
+    stessa cosa si somigliano, e una differenza fra due versioni di un file è una
+    differenza di significato, non di battitura. Se ti capita di allontanartene,
+    <code>heroes fmt</code> ti stampa quella forma unica. E non è un auspicio:
+    tutti i 241 file Heroes del repository, compilatore compreso, tornano da quel
+    comando identici, byte per byte.
   </p>
 
   <h3>La documentazione sta nei commenti</h3>
