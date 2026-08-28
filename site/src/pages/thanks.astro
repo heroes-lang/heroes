@@ -2,6 +2,6 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import content from '../html/thanks.html?raw';
 ---
-<BaseLayout path="/thanks.html" title={'Thanks: the people Heroes borrowed from'} description={'Every idea in Heroes was worked out by somebody else first. The designers of C, Hylo, Swift, Cyclone, Go, Nim, Zig, Ada, Pascal, ML, Erlang, APL, Idris, Agda and the rest, named one by one.'} current="thanks">
+<BaseLayout url="/thanks/" title={'Thanks: the people Heroes borrowed from'} description={'Every idea in Heroes was worked out by somebody else first. The designers of C, Hylo, Swift, Cyclone, Go, Nim, Zig, Ada, Pascal, ML, Erlang, APL, Idris, Agda and the rest, named one by one.'} current="thanks">
 <Fragment set:html={content} />
 </BaseLayout>

@@ -2,6 +2,6 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import content from '../../html/docs/values-all-the-way-down.html?raw';
 ---
-<BaseLayout path="/docs/values-all-the-way-down.html" title={'Values all the way down, Heroes documentation'} description={'Heroes has no pointer and no reference type, and a tree still contains itself. The array is the only indirection there is, which is why the whole structure keeps copying like a value.'} current="docs">
+<BaseLayout url="/docs/values-all-the-way-down/" title={'Values all the way down, Heroes documentation'} description={'Heroes has no pointer and no reference type, and a tree still contains itself. The array is the only indirection there is, which is why the whole structure keeps copying like a value.'} current="docs">
 <Fragment set:html={content} />
 </BaseLayout>

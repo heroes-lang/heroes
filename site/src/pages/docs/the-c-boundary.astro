@@ -2,6 +2,6 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import content from '../../html/docs/the-c-boundary.html?raw';
 ---
-<BaseLayout path="/docs/the-c-boundary.html" title={'The C boundary, Heroes documentation'} description={"There is no standard library, permanently. Everything else comes from C through extern, and clang checks every declaration against the library's own header, so a wrong type is a compile error, not a crash."} current="docs">
+<BaseLayout url="/docs/the-c-boundary/" title={'The C boundary, Heroes documentation'} description={"There is no standard library, permanently. Everything else comes from C through extern, and clang checks every declaration against the library's own header, so a wrong type is a compile error, not a crash."} current="docs">
 <Fragment set:html={content} />
 </BaseLayout>

@@ -1,0 +1,7 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import content from '../../html/it/index.html?raw';
+---
+<BaseLayout url="/it/" title={'Heroes: un linguaggio di programmazione fatto per gli LLM'} description={'Heroes è un piccolo linguaggio compilato che sta in un prompt e si compila da solo. Binari nativi, nessun GC, nessuna libreria standard, tutto passa dalla FFI verso il C. E ogni errore plausibile di un LLM è un errore di compilazione.'} mainClass="home">
+<Fragment set:html={content} />
+</BaseLayout>

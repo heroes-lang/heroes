@@ -2,6 +2,6 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import content from '../html/why.html?raw';
 ---
-<BaseLayout path="/why.html" title={'Why Heroes: the thesis, and the founding constraint'} description={'Heroes started from a refusal: no standard library, ever. Everything comes from C through one FFI that clang verifies. And every plausible LLM mistake is a compile error.'} current="why">
+<BaseLayout url="/why/" title={'Why Heroes: the thesis, and the founding constraint'} description={'Heroes started from a refusal: no standard library, ever. Everything comes from C through one FFI that clang verifies. And every plausible LLM mistake is a compile error.'} current="why">
 <Fragment set:html={content} />
 </BaseLayout>
