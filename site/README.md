@@ -49,19 +49,54 @@ keeps them out: a capability enters that surface only if the fixpoint invocation
 the golden harness or the Part 11 harness must type it, or it has a measured
 Part 11 effect. Building a website is none of those.
 
-**One quirk of the build, written here because it fails quietly.** Astro's
-`format: 'file'` turns `pages/docs/index.astro` into the route `/docs` and writes
-`dist/docs.html`. This site needs `dist/docs/index.html`, so those pages live one
-directory deeper, at `pages/docs/index/index.astro`, whose route ends in `/index`.
-The site root is the exception and needs no such thing. The first build without
-this put the whole Italian edition's landing at `/it.html`, which is a dead link
-from the language switch of every Italian page, and nothing in the build log said
-so — the count was still 44.
+## The URLs, and why they end in a slash
 
-The pages, named by the URL they answer at. Each one is a fragment in
-`src/html/` and a four-line `.astro` beside it in `src/pages/`.
+Every page of this site answers at a path with a trailing slash: `/`, `/why/`,
+`/docs/`, `/docs/maps/`, `/it/`, `/it/docs/maps/`. That is `build.format:
+'directory'` plus `trailingSlash: 'always'`, the same pair the author's other
+site uses, and it is not a preference. **The host decides this, and it was
+measured live against this project's own deployment**:
 
-| page | what it is |
+| asked for | Cloudflare Pages answers |
+|---|---|
+| `/why/`, `/docs/`, `/docs/maps/`, `/it/` | **200** |
+| `/why.html`, `/index.html`, `/docs/index.html` | **308**, to the extensionless form |
+| `/why`, `/docs`, `/it` | **308**, to the slashed form |
+
+Pages strips a `.html` extension whether the site wants it to or not. A site
+that advertises `.html` therefore advertises URLs that redirect, and the
+`canonical` on each page points at the URL that redirects away from it, which is
+a page arguing with itself in front of a search engine.
+
+**The port got this wrong first.** It ran at `format: 'file'` precisely to keep
+the hand-written `.html` URLs unchanged, which looked like the careful choice and
+was the opposite: it preserved names the host refuses to serve. The mistake cost
+nothing only because the site had never been published — no external link, no
+search index, no bookmark. After a launch the same change costs redirects
+forever, which is the argument for having found it now.
+
+Two consequences worth knowing:
+
+- **Internal links are absolute** (`/docs/maps/`, `/style.css`), not relative.
+  Relative links and directory URLs are a bad pair, because every page sits one
+  level deeper than its file did and every `../` would be off by one. An
+  absolute path has no depth to get wrong, and it removed the site's most
+  confusing detail: there used to be TWO different depths to keep straight, one
+  for the stylesheet and one for the nav, because `/it/` is one directory below
+  the root and at the top of its own edition at the same time.
+- **`format: 'directory'` needs no special case.** `pages/why.astro` writes
+  `dist/why/index.html` and `pages/docs/index.astro` writes `dist/docs/index.html`.
+  The earlier `format: 'file'` did need one, and getting it wrong put the whole
+  Italian edition's landing at `/it.html` with the build log still reporting 44
+  pages — a dead link from the language switch of all 22 Italian pages, and
+  nothing anywhere said so.
+
+The pages, by the name of their source file. Each one is a fragment in
+`src/html/` and a four-line `.astro` beside it in `src/pages/`; the URL each
+answers at drops the extension and gains a slash, so `why.html` is `/why/` and
+`docs/maps.html` is `/docs/maps/` (§ The URLs, and why they end in a slash).
+
+| source file | what it is |
 |---|---|
 | `index.html` | the landing: hero, one sample, three cards, the claim. Short on purpose. |
 | | The hero says **&ldquo;a compiled programming language&rdquo;** above the name, because a visitor who has never heard of Heroes should not have to infer the category (author instruction 2026-08-17). Its code panel shows **working code, never a diagnostic** — *&ldquo;aprire un sito di un linguaggio con un errore è brutto&rdquo;*, same date. The errors have their own page. In that panel the `bar` names the file, so the figure carries no second caption. |

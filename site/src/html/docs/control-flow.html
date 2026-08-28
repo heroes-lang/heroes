@@ -1,5 +1,5 @@
 
-  <p class="crumb"><a href="../index.html">Heroes</a> / <a href="index.html">Docs</a> / chapter 5</p>
+  <p class="crumb"><a href="/">Heroes</a> / <a href="/docs/">Docs</a> / chapter 5</p>
 
   <h1 class="chapter">Control flow</h1>
   <p class="tagline">Two loops, one conditional, and no clever forms.</p>
@@ -52,7 +52,7 @@ error[not_bool]: an `if` condition must be `bool`, found `i64` — there is no t
   </p>
   <p>
     The <code>@</code> on <code>best</code> is the other half of this chapter and
-    gets <a href="bindings-and-mutation.html">the next chapter</a> to itself. In one line:
+    gets <a href="/docs/bindings-and-mutation/">the next chapter</a> to itself. In one line:
     <code>best: i64 @ floor</code> declares a name that is allowed to change,
     and <code>best @ x</code> changes it. A name bound with <code>=</code>
     cannot change, ever, so the mutable parts of a program are exactly the lines
@@ -134,7 +134,7 @@ error[not_bool]: an `if` condition must be `bool`, found `i64` — there is no t
     <code>range</code> is not syntax. It is an ordinary function that returns a
     list of numbers, <code>from</code> included and <code>to</code> excluded, and
     both arguments are named for the reason
-    <a href="records-and-functions.html">chapter 2</a> gave: they are both
+    <a href="/docs/records-and-functions/">chapter 2</a> gave: they are both
     <code>i64</code>, so the compiler cannot tell them apart and makes you say
     which is which. The off-by-one you would normally reread twice is written
     down.
@@ -160,15 +160,15 @@ digits in 2026: 4</code></pre>
     One honest note about that first line. Adding to a string in a loop copies
     the whole string every time, so it costs more the longer it gets;
     <code>repeat</code> and <code>join</code> build in one pass and are the right
-    tools when the loop is long. Twenty dashes will never notice. The <a href="strings.html">strings chapter</a> comes back to this.
+    tools when the loop is long. Twenty dashes will never notice. The <a href="/docs/strings/">strings chapter</a> comes back to this.
   </p>
 
   <p class="next">
-    Next: <b><a href="bindings-and-mutation.html">Bindings and mutation</a></b>,
+    Next: <b><a href="/docs/bindings-and-mutation/">Bindings and mutation</a></b>,
     where <code>=</code> and <code>@</code> get the page they deserve, and
     shadowing a name turns out to be an error.
-    <a href="index.html">Back to the chapter list</a>.
-    <span class="back">&larr; Previous: <a href="failure-is-a-value.html">Failure is a value</a></span>
+    <a href="/docs/">Back to the chapter list</a>.
+    <span class="back">&larr; Previous: <a href="/docs/failure-is-a-value/">Failure is a value</a></span>
   </p>
 
   <footer>
@@ -177,7 +177,7 @@ digits in 2026: 4</code></pre>
     diagnostic is that file with one condition replaced, checked as
     <code>loops.hero</code>.</p>
     <p>Built by Giuseppe Arici, CTO at Codermine, Brescia. Author of
-    <a href="../author.html"><i>Heroes of code</i></a>. Standing on
-    <a href="../thanks.html">a lot of other people&rsquo;s work</a>.</p>
+    <a href="/author/"><i>Heroes of code</i></a>. Standing on
+    <a href="/thanks/">a lot of other people&rsquo;s work</a>.</p>
     <p>&copy; 2026 Giuseppe Arici &middot; heroes-lang.org</p>
   </footer>

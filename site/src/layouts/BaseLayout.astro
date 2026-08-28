@@ -6,7 +6,16 @@
 // 176 absolute URLs maintained by copying, and a wrong one is invisible: a
 // canonical pointing at the wrong page still renders, still validates, and
 // quietly tells a search engine that this page is a duplicate of another. Here
-// they are computed once, from `path`, and cannot disagree with each other.
+// they are computed once, from `url`, and cannot disagree with each other.
+//
+// EVERY URL ENDS IN A SLASH, and that is the host's rule rather than a taste.
+// Measured live against this project's own Cloudflare Pages deployment on
+// 2026-08-28: `/why.html` answers **308** and so does `/docs`, while `/why/`
+// and `/docs/` answer 200. Pages strips the extension whether you want it to or
+// not, so a site that advertises `.html` advertises URLs that redirect, and a
+// canonical pointing at a redirect is a page arguing with itself. The site now
+// spells its URLs the way its host serves them, which is also the spelling the
+// author's other site uses: `trailingSlash: 'always'`.
 //
 // The `<footer>` is NOT here, and that is deliberate rather than unfinished.
 // Measured across the English edition: six distinct footers among eleven pages,
@@ -23,8 +32,8 @@
 import SiteNav from '../components/SiteNav.astro';
 
 interface Props {
-  /** The page's canonical path, absolute, ending in .html. The one input. */
-  path: string;
+  /** The URL this page answers at, absolute, ending in `/`. The one input. */
+  url: string;
   title: string;
   description: string;
   /** Which nav entry to mark as current. Omitted on the two home pages. */
@@ -33,17 +42,17 @@ interface Props {
   mainClass?: string;
 }
 
-const { path, title, description, current, mainClass } = Astro.props;
+const { url, title, description, current, mainClass } = Astro.props;
 
 const ORIGIN = 'https://heroes-lang.org';
 
-const lang = path.startsWith('/it/') ? 'it' : 'en';
+const lang = url.startsWith('/it/') || url === '/it/' ? 'it' : 'en';
 
 // The English twin of this page, and its Italian one. Mirrored paths are what
 // make this two lines; `x-default` points at the English, as it did before.
-const en = lang === 'it' ? path.slice(3) : path;
+const en = lang === 'it' ? url.slice(3) : url;
 const it = `/it${en}`;
-const canonical = ORIGIN + path;
+const canonical = ORIGIN + url;
 
 // SELF FIRST, then the other edition, then x-default. Measured across the site
 // this replaces: all 22 English pages listed `en, it, x-default` and all 22
@@ -54,10 +63,6 @@ const canonical = ORIGIN + path;
 const alternates = lang === 'it'
   ? [['it', it], ['en', en], ['x-default', en]]
   : [['en', en], ['it', it], ['x-default', en]];
-
-// Depth in the FILE SYSTEM, which is not the depth the nav uses: `/it/index.html`
-// is one directory down here and at the top of its edition there.
-const up = '../'.repeat(path.split('/').length - 2);
 
 const favicon =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cpath fill='%23e5393e' d='M 14 0 L2 18 h8 L7 32 L22 12 h-9 z'/%3E%3C/svg%3E";
@@ -83,10 +88,10 @@ const favicon =
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content={title}>
 <meta name="twitter:description" content={description}>
-<link rel="stylesheet" href={`${up}style.css`}>
+<link rel="stylesheet" href="/style.css">
 </head>
 <body>
-<SiteNav path={path} current={current} />
+<SiteNav url={url} current={current} />
 <main class={mainClass}>
 <slot />
 </main>

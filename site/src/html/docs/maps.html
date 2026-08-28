@@ -1,5 +1,5 @@
 
-  <p class="crumb"><a href="../index.html">Heroes</a> / <a href="index.html">Docs</a> / chapter 9</p>
+  <p class="crumb"><a href="/">Heroes</a> / <a href="/docs/">Docs</a> / chapter 9</p>
 
   <h1 class="chapter">Maps</h1>
   <p class="tagline">A lookup hands you a value <i>or</i> an error, and never a surprise.</p>
@@ -25,7 +25,7 @@ error[type_mismatch]: expected `i64`, found `i64?`
   fix (guess): `.must()` — abort on the error case, giving `i64`</code></pre>
   <p>
     <code>i64?</code> is the fallible type from
-    <a href="failure-is-a-value.html">chapter 4</a>: a number, or an error
+    <a href="/docs/failure-is-a-value/">chapter 4</a>: a number, or an error
     saying why there isn&rsquo;t one. For a missing key that error always has
     the code <code>missing_key</code>. So the question <i>what if it is not
     there</i> is not a thing you might forget to ask: it is in the type of
@@ -123,7 +123,7 @@ error[type_mismatch]: expected `i64`, found `i64?`
     same rule caught out this project&rsquo;s own compiler: three lists that came
     out in map order made two builds of the same program differ, and the fix was
     three <code>sort</code> calls somebody had written a note about long
-    before. <a href="../selfhost.html">The story is on the self-hosting
+    before. <a href="/selfhost/">The story is on the self-hosting
     page</a>. Comparison, on the other hand, ignores order entirely: two maps
     with the same pairs are <code>==</code> however they were built.
   </p>
@@ -163,10 +163,10 @@ error[type_mismatch]: expected `i64`, found `i64?`
   </p>
 
   <p class="next">
-    Next: <b><a href="values-all-the-way-down.html">Values all the way down</a></b>,
+    Next: <b><a href="/docs/values-all-the-way-down/">Values all the way down</a></b>,
     where a tree contains itself in a language with no pointers.
-    <a href="index.html">Back to the chapter list</a>.
-    <span class="back">&larr; Previous: <a href="strings.html">Strings</a></span>
+    <a href="/docs/">Back to the chapter list</a>.
+    <span class="back">&larr; Previous: <a href="/docs/strings/">Strings</a></span>
   </p>
 
   <footer>
@@ -176,7 +176,7 @@ error[type_mismatch]: expected `i64`, found `i64?`
     is the first file with one call removed, checked as
     <code>maps.hero</code>.</p>
     <p>Built by Giuseppe Arici, CTO at Codermine, Brescia. Author of
-    <a href="../author.html"><i>Heroes of code</i></a>. Standing on
-    <a href="../thanks.html">a lot of other people&rsquo;s work</a>.</p>
+    <a href="/author/"><i>Heroes of code</i></a>. Standing on
+    <a href="/thanks/">a lot of other people&rsquo;s work</a>.</p>
     <p>&copy; 2026 Giuseppe Arici &middot; heroes-lang.org</p>
   </footer>
