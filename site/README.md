@@ -228,6 +228,20 @@ Two things that are easy to get wrong and are therefore rules:
 - **No timeline or duration claims anywhere** (author decision 2026-08-17):
   not how long a milestone took, not how long the project has run. Dates in
   the build log are records; a duration is a boast.
+- **Never a bare capital `M` immediately followed by a digit** — the shape
+  `M<n>`, with or without a trailing letter. CLAUDE.md §14 says a milestone id
+  never reaches user-visible output, and the net enforces it over every living
+  file (`tests/harness/suite_records.hero`, `records/numbered`). This is not a
+  spelling rule with a lint bolted on: the lowercase form really is one of this
+  repository's twelve legacy tags, so nothing reading the token alone can tell
+  the milestone from Apple's chip of the same name. That collision is the one
+  that will keep arriving, and the answer is to name the **machine**, *a MacBook
+  Air*, which tells a reader what the numbers were measured on better than a
+  chip name does. Found 2026-08-28, on the page's own hardware sentence — and
+  then a second time, three minutes later, because the first draft of this rule
+  quoted the very shape it forbids. The check reads a backtick as a word
+  boundary, so a living file cannot spell the token even to ban it. That is why
+  this bullet describes the shape instead of showing it.
 - Nods spent so far: sound and vision · fashion · quicksand, avoided ·
   changes · station to station · rebel rebel · always crashing in the same
   car · a new career in a new town · oh! you pretty things · hunky dory ·

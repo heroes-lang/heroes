@@ -317,7 +317,7 @@ test "the tables are what this module is, so they are counted"
     assert help_probes().len() == 4
     assert render_probes().len() == 9
     assert ffi_probes().len() == 17
-    assert verb_probes().len() == 29
+    assert verb_probes().len() == 32
 
 test "a probe holds when everything it asks for is true"
     scratch = "build/harness-selftest"
