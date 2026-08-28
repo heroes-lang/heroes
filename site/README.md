@@ -874,7 +874,8 @@ commit body, where the next session looks for it.
 And **never pool the mutation rates into one headline** — `heroes mutate` prints
 the prohibition (panel 011) every time it runs, and the site shipped the pooled
 number anyway for a full round. Per-operator or nothing. `forget-at-decl` is
-excluded from any summary because its catch rate is 100% by construction.
+excluded from any summary because the mistakes it plants are caught by
+construction: the ones it misses are mutations that changed nothing.
 
 ## One thing the publication gate owns
 

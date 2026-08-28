@@ -229,12 +229,14 @@ we can be heroes</code></pre>
 
   <h2>A small surface, no collector, and no null</h2>
   <p>
-    In a Heroes file, a line starting at the left margin can begin with four
-    words and no others: <code>constant</code>, <code>function</code>,
-    <code>record</code>, <code>variant</code>. Those are a fixed value, a
-    function, a group of data with named fields, and a value that can take
-    several forms. The list ends there: no classes, no interfaces, no global
-    variables anybody can change. And the order you write declarations in never
+    In a Heroes file, a line starting at the left margin can begin with seven
+    words and no others. Four of them declare what your program is made of:
+    <code>constant</code>, <code>function</code>, <code>record</code>,
+    <code>variant</code>, which are a fixed value, a function, a group of data
+    with named fields, and a value that can take several forms. The other three
+    are <code>use</code> to bring in another file, <code>test</code> for a test,
+    and <code>extern</code> for something that comes from C. The list ends
+    there: no classes, no interfaces, no global variables anybody can change. And the order you write declarations in never
     matters, so two functions can call each other with nothing announced in
     advance. Further down, what the compiler really handles is seven
     constructs: everything else reduces to those before the compiler is done

@@ -236,11 +236,14 @@ we can be heroes</code></pre>
   <h2>Una superficie piccola, nessun collector, e nessun null</h2>
   <p>
     In un file di Heroes, una riga che comincia da bordo pagina può iniziare
-    con quattro parole soltanto: <code>constant</code>, <code>function</code>,
-    <code>record</code>, <code>variant</code>. Sono un valore fisso, una
-    funzione, un gruppo di dati con dei campi e un dato che può avere più forme.
-    L&rsquo;elenco finisce qui: niente classi, niente interfacce, niente
-    variabili globali che chiunque può cambiare. E l&rsquo;ordine in cui scrivi
+    con sette parole soltanto. Quattro dichiarano di che cosa è fatto il tuo
+    programma: <code>constant</code>, <code>function</code>, <code>record</code>,
+    <code>variant</code>, cioè un valore fisso, una funzione, un gruppo di dati
+    con dei campi e un dato che può avere più forme. Le altre tre sono
+    <code>use</code> per tirare dentro un altro file, <code>test</code> per un
+    test e <code>extern</code> per quello che arriva dal C. L&rsquo;elenco
+    finisce qui: niente classi, niente interfacce, niente variabili globali che
+    chiunque può cambiare. E l&rsquo;ordine in cui scrivi
     le dichiarazioni non conta mai, quindi due funzioni possono chiamarsi a
     vicenda senza doverle annunciare prima. Più sotto, quello che il compilatore
     tratta davvero sono sette costrutti: tutto il resto si riduce a quelli prima

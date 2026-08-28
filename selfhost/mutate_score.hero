@@ -253,7 +253,7 @@ function report(scores: [Score]) -> str
         out @ out + "| " + score.operator + " | " + score.mutants.to_str() + " | " + score.excluded.to_str() + " | " + score.killed_strict.to_str() + " (" + rate(killed: score.killed_strict, mutants: score.mutants, excluded: score.excluded).to_str() + "%) | " + score.killed_permissive.to_str() + " (" + rate(killed: score.killed_permissive, mutants: score.mutants, excluded: score.excluded).to_str() + "%) |\n"
 
     out @ out + "| **total** | " + mutants.to_str() + " | " + excluded.to_str() + " | " + strict.to_str() + " (" + rate(killed: strict, mutants: mutants, excluded: excluded).to_str() + "%) | " + permissive.to_str() + " (" + rate(killed: permissive, mutants: mutants, excluded: excluded).to_str() + "%) |\n"
-    return out + "\nNever pool these into one headline (panel 011): a per-operator rate is\nthe measurement, and `forget-at-decl` is excluded from any summary because\nits catch rate is 100% by construction.\n"
+    return out + "\nNever pool these into one headline (panel 011): a per-operator rate is\nthe measurement, and `forget-at-decl` is excluded from any summary because the\nmistakes it plants are caught by construction: the ones it misses are\nmutations that changed nothing.\n"
 
 # The survivors as text, grouped by operator — written to be pasted into a
 # `docs/measurements/NNN.md` beside the table that raised the question.
