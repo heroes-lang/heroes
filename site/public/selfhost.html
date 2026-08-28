@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Self-hosted, Heroes compiles Heroes, and the fixpoint holds</title>
-<meta name="description" content="The Heroes compiler is written in Heroes: 155 modules, 38,004 lines. Three generations of it emit the same C file, byte for byte. One hash, and the bootstrap compiler is gone.">
+<meta name="description" content="The Heroes compiler is written in Heroes: 165 modules, 48,342 lines. Asked to compile itself, it writes out the very C file the repository ships, byte for byte.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cpath fill='%23e5393e' d='M 14 0 L2 18 h8 L7 32 L22 12 h-9 z'/%3E%3C/svg%3E">
 <link rel="canonical" href="https://heroes-lang.org/selfhost.html">
 <link rel="alternate" hreflang="en" href="https://heroes-lang.org/selfhost.html">
@@ -14,11 +14,11 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Heroes">
 <meta property="og:title" content="Self-hosted, Heroes compiles Heroes, and the fixpoint holds">
-<meta property="og:description" content="The Heroes compiler is written in Heroes: 155 modules, 38,004 lines. Three generations of it emit the same C file, byte for byte. One hash, and the bootstrap compiler is gone.">
+<meta property="og:description" content="The Heroes compiler is written in Heroes: 165 modules, 48,342 lines. Asked to compile itself, it writes out the very C file the repository ships, byte for byte.">
 <meta property="og:url" content="https://heroes-lang.org/selfhost.html">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Self-hosted, Heroes compiles Heroes, and the fixpoint holds">
-<meta name="twitter:description" content="The Heroes compiler is written in Heroes: 155 modules, 38,004 lines. Three generations of it emit the same C file, byte for byte. One hash, and the bootstrap compiler is gone.">
+<meta name="twitter:description" content="The Heroes compiler is written in Heroes: 165 modules, 48,342 lines. Asked to compile itself, it writes out the very C file the repository ships, byte for byte.">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -60,27 +60,41 @@
     first day.
   </p>
   <p>
-    The test is not a suite of tests: ask both compilers to translate the same
-    program into C, then compare the two results letter by letter. Then compile
-    what the new compiler wrote, and ask <i>that</i> compiler to translate the
-    program a third time.
+    The test is not a suite of tests. The repository ships the compiler as one
+    generated C file, <code>seed/heroes.c</code>, which is how a machine with no
+    Heroes on it gets a first compiler. Build that, then ask the compiler it
+    gives you to translate its own source into C, and compare the two files:
   </p>
-  <pre class="fixpoint"><code>sha256  <span class="hash">373f454482831a9fc23942b8675cfc68e450a61cb49f34f45b7dbeac81173e63</span>
+  <pre><code>$ clang -I runtime seed/heroes.c runtime/runtime.c -o heroes
+$ ./heroes build selfhost/main.hero --emit-c -o out.c
+$ cmp out.c seed/heroes.c</code></pre>
+  <pre class="fixpoint"><code>sha256  <span class="hash">aec9ad05df71cb017660ffe9b884802e81757c334528680b51f30872d18b7fc3</span>
 
-  gen1b.c   the bootstrap, written in Rust
-  gen3.c    heroes, written in Heroes
-  gen4.c    the compiler that came out of gen3.c
+  seed/heroes.c   the C the repository ships: the way in
+  out.c           what the compiler writes when it compiles itself
 
-<span class="c">  20,886,539 bytes · 724,245 lines · three compilers · one hash</span></code></pre>
+<span class="c">  23,248,564 bytes · 798,556 lines · not one byte between them</span></code></pre>
   <p>
-    Read the three names as a chain: the C the bootstrap emits, the C emitted by
-    the compiler that C built, and the C emitted by the compiler built from
-    <i>that</i>. It is a thing that reproduces itself exactly, twice over. What it
-    took, measured:
+    <code>cmp</code> prints nothing, which is how it says the two files are the
+    same. So the C in the repository is not a copy somebody keeps up to date by
+    hand: it is what the compiler writes, and the compiler built from it writes
+    it again. Those three lines are the whole proof, and they are three lines
+    anybody can run.
+  </p>
+  <p>
+    It was first proved with three compilers rather than two, and that was the
+    crossing: the C written by the original compiler, the C written by the
+    compiler that C built, and the C written by the compiler built from
+    <i>that</i>. Three generations, one hash, not a letter between them. The
+    first of the three was written in another language and is gone now, which is
+    why the check that runs today is the two-file one above.
+  </p>
+  <p>
+    What it is, and what getting here cost:
   </p>
   <ul class="stats">
-    <li><span class="n">155</span><span class="what">modules of Heroes</span></li>
-    <li><span class="n">38,004</span><span class="what">lines</span></li>
+    <li><span class="n">165</span><span class="what">modules of Heroes</span></li>
+    <li><span class="n">48,342</span><span class="what">lines</span></li>
     <li><span class="n">0</span><span class="what">workarounds left in the ported code</span></li>
     <li><span class="n">2,570</span><span class="what">program outputs compared, never a difference</span></li>
   </ul>
@@ -107,7 +121,7 @@
   </p>
   <p>
     A compiler pointed at its own source is a corpus no test suite reproduces:
-    38,004 lines holding every shape the language has, in the proportions real
+    48,342 lines holding every shape the language has, in the proportions real
     code has them. That corpus is how five of the port's faults were found, and
     they were one trap worn five ways: a loop jump inside a <code>match</code>
     arm skipped the line that keeps a hand-maintained index up to date. The Rust
@@ -141,6 +155,47 @@
     is in the same table and is the reason the port was possible at all: a comment
     ratio of 0.51, comment lines against code lines, nearly double the next
     highest of them.
+  </p>
+
+  <h2>One C file per module <span class="nod">· repetition ·</span></h2>
+  <p>
+    For a long time, building the compiler meant writing out one enormous C file,
+    798,556 lines of it, every single time, even after changing a comma. Now each
+    module becomes its own C file, compiled on its own, and the compiled piece is
+    kept so the next build can reuse it.
+  </p>
+  <p>
+    The hard part was not the splitting. It was deciding when a kept piece may be
+    reused, and the obvious answers are both wrong. A timestamp is not evidence.
+    Neither is the generated C on its own, and that one is worth spelling out.
+    When a program borrows a number from a C library&rsquo;s header, the compiler
+    does not write the number down: it writes the <i>name</i>, and lets C fill it
+    in later. So editing the header changes the answer and does not change one
+    character of the generated text. Before the repair, a program printed
+    <code>1</code> while the file on disk said <code>2</code>, then printed
+    <code>1</code> again while it said <code>7</code>. Exit code zero, no
+    complaint, nothing to see. <b>A wrong answer wearing the face of a right one
+    is the worst thing a build system can hand you</b>, because nobody re-reads a
+    green build.
+  </p>
+  <p>
+    So the compiler stopped guessing. It asks clang, as clang works, which files
+    it actually opened, and then checks that every one of them still says what it
+    said. The same hole turned out to exist in a second place nobody had looked
+    at, where it was worse: it would have let one binary be built half against
+    one version of the system&rsquo;s own libraries and half against another.
+  </p>
+  <p>
+    Hunting for the time led somewhere else entirely. Checking the compiler&rsquo;s
+    own source took a minute and a half, and almost all of it sat inside one small
+    function whose job was to answer <i>which line is this</i>. It answered by
+    counting from the top of the file, and it was asked once for every declaration
+    and once for every comment, on a file over a million characters long. But
+    nobody wanted a line number. The question was only ever whether a comment sits
+    directly above a declaration, and that is a question about two lines next to
+    each other. Asking for the distance instead of the position, plus three more
+    copies of one related habit, took the minute and a half down to
+    <b>5.3 seconds</b>. No design changed.
   </p>
 
   <h2>Then the third language died <span class="nod">· ashes to ashes ·</span></h2>

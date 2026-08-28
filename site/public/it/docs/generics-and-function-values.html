@@ -59,15 +59,17 @@
   </p>
 
   <h3>Una funzione con un buco nei tipi</h3>
-  <figure class="example" data-src="examples/gallery/06-generics.hero" data-lines="8-14">
+  <figure class="example" data-src="examples/gallery/06-generics.hero" data-lines="8-16">
 <pre><code><span class="c"># The parentheses around a function type are mandatory: without them</span>
 <span class="c"># `f: function(A) -&gt; B -&gt; [B]` would be a guessing game.</span>
 <span class="k">function</span> each&lt;A, B&gt;(xs: [A], f: (<span class="k">function</span>(A) -&gt; B)) -&gt; [B]
     out: [B] @ []
+
     <span class="k">for</span> x <span class="k">in</span> xs
         out @ out.push(f(x))
+
     <span class="k">return</span> out</code></pre>
-    <figcaption>examples/gallery/06-generics.hero, righe 8&ndash;14</figcaption>
+    <figcaption>examples/gallery/06-generics.hero, righe 8&ndash;16</figcaption>
   </figure>
   <p>
     <code>&lt;A, B&gt;</code> dopo il nome mette in campo due tipi che la
@@ -99,7 +101,7 @@
   </p>
 
   <h3>Le funzioni sono valori, e hanno un nome</h3>
-  <figure class="example" data-src="examples/gallery/06-generics.hero" data-lines="30-41">
+  <figure class="example" data-src="examples/gallery/06-generics.hero" data-lines="36-47">
 <pre><code><span class="c"># The functions passed above are ordinary declarations. No lambdas exist.</span>
 <span class="k">function</span> double(n: <span class="t">i64</span>) -&gt; <span class="t">i64</span>
     <span class="k">return</span> n * <span class="n">2</span>
@@ -112,7 +114,7 @@
 
 <span class="k">function</span> label(n: <span class="t">i64</span>) -&gt; <span class="t">str</span>
     <span class="k">return</span> n.to_str()</code></pre>
-    <figcaption>examples/gallery/06-generics.hero, righe 30&ndash;41</figcaption>
+    <figcaption>examples/gallery/06-generics.hero, righe 36&ndash;47</figcaption>
   </figure>
   <p>
     Una funzione di primo livello, scritta senza parentesi, è un valore che puoi
@@ -132,20 +134,22 @@
   </p>
   <pre><code>$ heroes check generics.hero
 error[expected_type]: expected a type, found `function` — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`
-  at generics.hero:16:38
+  at generics.hero:18:38
      |
-  16 | function keep_if&lt;A&gt;(xs: [A], ok_for: function(A) -&gt; bool) -&gt; [A]
+  18 | function keep_if&lt;A&gt;(xs: [A], ok_for: function(A) -&gt; bool) -&gt; [A]
      |                                      ^^^^^^^^</code></pre>
 
   <h3>Filtrare, e mettere insieme</h3>
-  <figure class="example" data-src="examples/gallery/06-generics.hero" data-lines="16-21">
+  <figure class="example" data-src="examples/gallery/06-generics.hero" data-lines="18-25">
 <pre><code><span class="k">function</span> keep_if&lt;A&gt;(xs: [A], ok_for: (<span class="k">function</span>(A) -&gt; <span class="t">bool</span>)) -&gt; [A]
     out: [A] @ []
+
     <span class="k">for</span> x <span class="k">in</span> xs
         <span class="k">if</span> ok_for(x)
             out @ out.push(x)
+
     <span class="k">return</span> out</code></pre>
-    <figcaption>examples/gallery/06-generics.hero, righe 16&ndash;21</figcaption>
+    <figcaption>examples/gallery/06-generics.hero, righe 18&ndash;25</figcaption>
   </figure>
   <p>
     Qui un parametro di tipo solo, perché filtrare non cambia il tipo degli
@@ -154,18 +158,20 @@ error[expected_type]: expected a type, found `function` — a type is `i64`, `f6
   </p>
   <pre><code>$ heroes check generics.hero
 error[type_mismatch]: expected `bool`, found `i64`
-  at generics.hero:46:36
+  at generics.hero:52:36
      |
-  46 |     assert keep_if([-1, 2, -3, 4], double) == [2, 4]
+  52 |     assert keep_if([-1, 2, -3, 4], double) == [2, 4]
      |                                    ^^^^^^</code></pre>
-  <figure class="example" data-src="examples/gallery/06-generics.hero" data-lines="23-28">
+  <figure class="example" data-src="examples/gallery/06-generics.hero" data-lines="27-34">
 <pre><code><span class="c"># Two type parameters, and the accumulator is the one that names the result.</span>
 <span class="k">function</span> combine&lt;A, B&gt;(xs: [A], start: B, step: (<span class="k">function</span>(B, A) -&gt; B)) -&gt; B
     total: B @ start
+
     <span class="k">for</span> x <span class="k">in</span> xs
         total @ step(total, x)
+
     <span class="k">return</span> total</code></pre>
-    <figcaption>examples/gallery/06-generics.hero, righe 23&ndash;28</figcaption>
+    <figcaption>examples/gallery/06-generics.hero, righe 27&ndash;34</figcaption>
   </figure>
   <p>
     <code>combine</code> è quella generale: percorre una lista di
@@ -175,13 +181,13 @@ error[type_mismatch]: expected `bool`, found `i64`
   </p>
 
   <h3>Un generico solo, tre tipi di elemento</h3>
-  <figure class="example" data-src="examples/gallery/06-generics.hero" data-lines="43-47">
+  <figure class="example" data-src="examples/gallery/06-generics.hero" data-lines="49-53">
 <pre><code><span class="k">test</span> <span class="s">"one generic, three element types"</span>
     <span class="k">assert</span> each([<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>], double) == [<span class="n">2</span>, <span class="n">4</span>, <span class="n">6</span>]
     <span class="k">assert</span> each([<span class="n">1</span>, <span class="n">2</span>], label) == [<span class="s">"1"</span>, <span class="s">"2"</span>]
     <span class="k">assert</span> keep_if([-<span class="n">1</span>, <span class="n">2</span>, -<span class="n">3</span>, <span class="n">4</span>], is_positive) == [<span class="n">2</span>, <span class="n">4</span>]
     <span class="k">assert</span> combine([<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>, <span class="n">4</span>], <span class="n">0</span>, add) == <span class="n">10</span></code></pre>
-    <figcaption>examples/gallery/06-generics.hero, righe 43&ndash;47</figcaption>
+    <figcaption>examples/gallery/06-generics.hero, righe 49&ndash;53</figcaption>
   </figure>
   <p>
     La seconda riga è quella che conta: allo stesso <code>each</code>, se gli
@@ -189,10 +195,10 @@ error[type_mismatch]: expected `bool`, found `i64`
     stringhe. Nessuno dei due punti di chiamata lo dice, e tutti e due
     sono controllati per intero.
   </p>
-  <figure class="example" data-src="examples/gallery/06-generics.hero" data-lines="49-50">
+  <figure class="example" data-src="examples/gallery/06-generics.hero" data-lines="55-56">
 <pre><code><span class="k">function</span> main()
     print(combine([<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>, <span class="n">4</span>], <span class="n">0</span>, add))</code></pre>
-    <figcaption>examples/gallery/06-generics.hero, righe 49&ndash;50</figcaption>
+    <figcaption>examples/gallery/06-generics.hero, righe 55&ndash;56</figcaption>
   </figure>
   <pre><code>$ heroes run examples/gallery/06-generics.hero
 10</code></pre>

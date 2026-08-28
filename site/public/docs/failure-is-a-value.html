@@ -93,16 +93,18 @@
     and simply wants to stop and pass it along. That is what <code>?</code>
     does, and it does it <i>visibly, on the line where it happens</i>:
   </p>
-  <figure class="example" data-src="examples/gallery/03-fallible.hero" data-lines="13-20">
+  <figure class="example" data-src="examples/gallery/03-fallible.hero" data-lines="13-22">
 <pre><code><span class="c"># Reads a whole non-negative number. Empty input is an error, not a zero.</span>
 <span class="k">function</span> number_of(text: <span class="t">str</span>) -&gt; <span class="t">i64</span>?
     <span class="k">if</span> text.len() == <span class="n">0</span>
         <span class="k">return</span> <span class="k">fail</span>(<span class="s">"empty"</span>, <span class="s">"there is nothing to read"</span>)
     total: <span class="t">i64</span> @ <span class="n">0</span>
+
     <span class="k">for</span> i <span class="k">in</span> range(from: <span class="n">0</span>, to: text.len())
         total @ total * <span class="n">10</span> + digit_of(text[i])?
+
     <span class="k">return</span> ok(total)</code></pre>
-    <figcaption>examples/gallery/03-fallible.hero, lines 13&ndash;20</figcaption>
+    <figcaption>examples/gallery/03-fallible.hero, lines 13&ndash;22</figcaption>
   </figure>
   <p>
     Read the loop body. <code>digit_of(text[i])?</code> means: call it, and if
@@ -143,15 +145,17 @@
     were impossible. Here it is again in a function that averages a list, where the
     first bad character anywhere in the input stops everything:
   </p>
-  <figure class="example" data-src="examples/gallery/03-fallible.hero" data-lines="24-30">
+  <figure class="example" data-src="examples/gallery/03-fallible.hero" data-lines="26-34">
 <pre><code><span class="k">function</span> average_of(parts: [<span class="t">str</span>]) -&gt; <span class="t">i64</span>?
     sum: <span class="t">i64</span> @ <span class="n">0</span>
+
     <span class="k">for</span> p <span class="k">in</span> parts
         sum @ sum + number_of(p)?
+
     <span class="k">if</span> parts.len() == <span class="n">0</span>
         <span class="k">return</span> <span class="k">fail</span>(<span class="s">"empty"</span>, <span class="s">"no parts to average"</span>)
     <span class="k">return</span> ok(sum / parts.len())</code></pre>
-    <figcaption>examples/gallery/03-fallible.hero, lines 24&ndash;30</figcaption>
+    <figcaption>examples/gallery/03-fallible.hero, lines 26&ndash;34</figcaption>
   </figure>
 
   <h3>Looking inside: <code>match</code></h3>
@@ -160,13 +164,13 @@
     looks with <code>match</code>: the one construct in the language for taking
     a value apart:
   </p>
-  <figure class="example" data-src="examples/gallery/03-fallible.hero" data-lines="32-36">
+  <figure class="example" data-src="examples/gallery/03-fallible.hero" data-lines="36-40">
 <pre><code><span class="c"># Four ways to read a fallible value, in the order you reach for them.</span>
 <span class="k">function</span> report(text: <span class="t">str</span>) -&gt; <span class="t">str</span>
     <span class="k">match</span> number_of(text)
         .ok v  =&gt; <span class="k">return</span> <span class="s">"read "</span> + v.to_str()
         .err e =&gt; <span class="k">return</span> <span class="s">"failed: "</span> + e.code + <span class="s">" ("</span> + e.msg + <span class="s">")"</span></code></pre>
-    <figcaption>examples/gallery/03-fallible.hero, lines 32&ndash;36</figcaption>
+    <figcaption>examples/gallery/03-fallible.hero, lines 36&ndash;40</figcaption>
   </figure>
   <p>
     An arm names the case with a leading dot and binds its payload to the name
@@ -186,10 +190,10 @@
     Sometimes a failure really does have an obvious answer, and writing a
     <code>match</code> for it is noise. Two shorthands exist:
   </p>
-  <figure class="example" data-src="examples/gallery/03-fallible.hero" data-lines="38-39">
+  <figure class="example" data-src="examples/gallery/03-fallible.hero" data-lines="42-43">
 <pre><code><span class="k">function</span> first_or_zero(parts: [<span class="t">str</span>]) -&gt; <span class="t">i64</span>
     <span class="k">return</span> number_of(parts[<span class="n">0</span>]).default(<span class="n">0</span>)</code></pre>
-    <figcaption>examples/gallery/03-fallible.hero, lines 38&ndash;39</figcaption>
+    <figcaption>examples/gallery/03-fallible.hero, lines 42&ndash;43</figcaption>
   </figure>
   <p>
     <code>.default(0)</code> says: the value, or this if it failed. The result
@@ -198,13 +202,13 @@
     failure cannot happen here and <b>stops the program</b> if it does. Use it
     where you have already proved the value is good, and in tests:
   </p>
-  <figure class="example" data-src="examples/gallery/03-fallible.hero" data-lines="41-45">
+  <figure class="example" data-src="examples/gallery/03-fallible.hero" data-lines="45-49">
 <pre><code><span class="k">test</span> <span class="s">"a good number and a bad one"</span>
     <span class="k">assert</span> number_of(<span class="s">"120"</span>).must() == <span class="n">120</span>
     <span class="k">assert</span> number_of(<span class="s">"12x"</span>).is_err()
     <span class="k">assert</span> report(<span class="s">"7"</span>) == <span class="s">"read 7"</span>
     <span class="k">assert</span> first_or_zero([<span class="s">"oops"</span>]) == <span class="n">0</span></code></pre>
-    <figcaption>examples/gallery/03-fallible.hero, lines 41&ndash;45</figcaption>
+    <figcaption>examples/gallery/03-fallible.hero, lines 45&ndash;49</figcaption>
   </figure>
   <p>
     <code>test</code> is part of the language, not a library, and a test lives
@@ -219,12 +223,12 @@
     <code>.must()</code>), are all in one fifty-line file. Its
     <code>main</code>:
   </p>
-  <figure class="example" data-src="examples/gallery/03-fallible.hero" data-lines="47-50">
+  <figure class="example" data-src="examples/gallery/03-fallible.hero" data-lines="51-54">
 <pre><code><span class="k">function</span> main()
     print(report(<span class="s">"42"</span>))
     print(report(<span class="s">"4b2"</span>))
     print(average_of([<span class="s">"10"</span>, <span class="s">"20"</span>, <span class="s">"30"</span>]).default(-<span class="n">1</span>))</code></pre>
-    <figcaption>examples/gallery/03-fallible.hero, lines 47&ndash;50</figcaption>
+    <figcaption>examples/gallery/03-fallible.hero, lines 51&ndash;54</figcaption>
   </figure>
   <p>And what it prints:</p>
   <pre><code>$ heroes run examples/gallery/03-fallible.hero

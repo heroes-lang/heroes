@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Scritto in se stesso: il punto fisso di Heroes</title>
-<meta name="description" content="Il compilatore di Heroes è scritto in Heroes: 155 moduli, 38.004 righe, e tre generazioni che producono lo stesso file C byte per byte. Un solo hash, e i nove difetti che il confronto ha trovato.">
+<meta name="description" content="Il compilatore di Heroes è scritto in Heroes: 165 moduli, 48.342 righe. Gli chiedi di compilare se stesso e riscrive esattamente il file C che il repository porta con sé, byte per byte.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cpath fill='%23e5393e' d='M 14 0 L2 18 h8 L7 32 L22 12 h-9 z'/%3E%3C/svg%3E">
 <link rel="canonical" href="https://heroes-lang.org/it/selfhost.html">
 <link rel="alternate" hreflang="it" href="https://heroes-lang.org/it/selfhost.html">
@@ -14,11 +14,11 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Heroes">
 <meta property="og:title" content="Scritto in se stesso: il punto fisso di Heroes">
-<meta property="og:description" content="Il compilatore di Heroes è scritto in Heroes: 155 moduli, 38.004 righe, e tre generazioni che producono lo stesso file C byte per byte. Un solo hash, e i nove difetti che il confronto ha trovato.">
+<meta property="og:description" content="Il compilatore di Heroes è scritto in Heroes: 165 moduli, 48.342 righe. Gli chiedi di compilare se stesso e riscrive esattamente il file C che il repository porta con sé, byte per byte.">
 <meta property="og:url" content="https://heroes-lang.org/it/selfhost.html">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Scritto in se stesso: il punto fisso di Heroes">
-<meta name="twitter:description" content="Il compilatore di Heroes è scritto in Heroes: 155 moduli, 38.004 righe, e tre generazioni che producono lo stesso file C byte per byte. Un solo hash, e i nove difetti che il confronto ha trovato.">
+<meta name="twitter:description" content="Il compilatore di Heroes è scritto in Heroes: 165 moduli, 48.342 righe. Gli chiedi di compilare se stesso e riscrive esattamente il file C che il repository porta con sé, byte per byte.">
 <link rel="stylesheet" href="../style.css">
 </head>
 <body>
@@ -60,28 +60,43 @@
     vero è chiusa. Era il traguardo dal primo giorno.
   </p>
   <p>
-    La prova non è una batteria di test: è chiedere a tutti e due i compilatori
-    di tradurre in C lo stesso programma, e poi confrontare i due risultati
-    lettera per lettera. Poi si compila quello che ha scritto il compilatore
-    nuovo, e si chiede a <i>quel</i> compilatore di tradurre il programma una
-    terza volta.
+    La prova non è una batteria di test. Il repository porta con sé il
+    compilatore come un unico file C generato, <code>seed/heroes.c</code>: è così
+    che una macchina che non ha Heroes si ritrova un primo compilatore. Costruisci
+    quello, poi chiedi al compilatore che ne è uscito di tradurre in C il proprio
+    codice, e confronta i due file:
   </p>
-  <pre class="fixpoint"><code>sha256  <span class="hash">373f454482831a9fc23942b8675cfc68e450a61cb49f34f45b7dbeac81173e63</span>
+  <pre><code>$ clang -I runtime seed/heroes.c runtime/runtime.c -o heroes
+$ ./heroes build selfhost/main.hero --emit-c -o out.c
+$ cmp out.c seed/heroes.c</code></pre>
+  <pre class="fixpoint"><code>sha256  <span class="hash">aec9ad05df71cb017660ffe9b884802e81757c334528680b51f30872d18b7fc3</span>
 
-  gen1b.c   il bootstrap, scritto in Rust
-  gen3.c    heroes, scritto in Heroes
-  gen4.c    il compilatore uscito da gen3.c
+  seed/heroes.c   il C che sta nel repository: la via d&rsquo;ingresso
+  out.c           quello che il compilatore scrive compilando se stesso
 
-<span class="c">  20.886.539 byte · 724.245 righe · tre compilatori · un hash</span></code></pre>
+<span class="c">  23.248.564 byte · 798.556 righe · non un byte di differenza</span></code></pre>
   <p>
-    Quei tre nomi si leggono come una catena: il C che emette il bootstrap, il C
-    emesso dal compilatore che quel C ha costruito, e il C emesso dal
-    compilatore costruito da <i>quest&rsquo;ultimo</i>. È una cosa che si riproduce
-    identica, due volte di fila. Quanto è costato, misurato:
+    <code>cmp</code> non stampa niente, ed è il suo modo di dire che i due file
+    sono lo stesso file. Quindi il C che sta nel repository non è una copia che
+    qualcuno tiene aggiornata a mano: è quello che scrive il compilatore, e il
+    compilatore costruito da lì lo riscrive uguale. Quelle tre righe sono tutta la
+    dimostrazione, e sono tre righe che può lanciare chiunque.
+  </p>
+  <p>
+    La prima volta la dimostrazione fu fatta con tre compilatori invece di due, e
+    quello fu il passaggio: il C scritto dal compilatore originale, il C scritto
+    dal compilatore che quel C aveva costruito, e il C scritto dal compilatore
+    costruito da <i>quest&rsquo;ultimo</i>. Tre generazioni, un hash, nemmeno una
+    lettera in mezzo. Il primo dei tre era scritto in un altro linguaggio e ora
+    non c&rsquo;è più, ed è per questo che il controllo che si lancia oggi è
+    quello a due file qui sopra.
+  </p>
+  <p>
+    Che cos&rsquo;è, e quanto è costato arrivarci:
   </p>
   <ul class="stats">
-    <li><span class="n">155</span><span class="what">moduli di Heroes</span></li>
-    <li><span class="n">38.004</span><span class="what">righe</span></li>
+    <li><span class="n">165</span><span class="what">moduli di Heroes</span></li>
+    <li><span class="n">48.342</span><span class="what">righe</span></li>
     <li><span class="n">0</span><span class="what">workaround rimasti nel codice portato</span></li>
     <li><span class="n">2.570</span><span class="what">output di programmi confrontati, mai una differenza</span></li>
   </ul>
@@ -109,7 +124,7 @@
   </p>
   <p>
     Un compilatore puntato sul proprio sorgente è un corpus che nessuna
-    suite di test riproduce: 38.004 righe che contengono ogni forma del
+    suite di test riproduce: 48.342 righe che contengono ogni forma del
     linguaggio, nelle proporzioni in cui il codice vero le usa. È con quel
     materiale che sono venuti fuori cinque difetti della traduzione, ed erano
     poi lo stesso inganno ripetuto cinque volte: un salto di ciclo dentro un ramo
@@ -148,6 +163,49 @@
     sta nella stessa tabella, ed è il motivo per cui il porting è
     stato possibile: un rapporto di commenti di 0,51, righe di commento contro
     righe di codice, quasi il doppio del secondo classificato.
+  </p>
+
+  <h2>Un file C per modulo <span class="nod">· repetition ·</span></h2>
+  <p>
+    Per molto tempo costruire il compilatore voleva dire riscrivere ogni volta un
+    unico file C enorme, 798.556 righe, anche solo per aver cambiato una virgola.
+    Ora ogni modulo diventa un file C a sé, compilato per conto suo, e il pezzo
+    compilato resta lì perché la build dopo lo riusi.
+  </p>
+  <p>
+    La parte difficile non era spezzare il file. Era decidere quando un pezzo
+    tenuto da parte si può riusare, e le due risposte più ovvie sono sbagliate
+    entrambe. La data di modifica non è una prova. E non lo è nemmeno il testo C
+    generato, e su questo vale la pena fermarsi. Quando un programma prende un
+    numero dall&rsquo;header di una libreria C, il compilatore quel numero non lo
+    scrive: scrive il <i>nome</i>, e lascia che sia il C a metterci il valore
+    dopo. Quindi cambiare l&rsquo;header cambia la risposta e non cambia un
+    carattere del testo generato. Prima della riparazione, un programma stampava
+    <code>1</code> mentre il file sul disco diceva <code>2</code>, e poi stampava
+    ancora <code>1</code> mentre diceva <code>7</code>. Codice di uscita zero,
+    nessuna lamentela, niente da vedere. <b>Una risposta sbagliata con la faccia
+    di una giusta è la cosa peggiore che un sistema di build possa darti</b>,
+    perché una build verde nessuno la rilegge.
+  </p>
+  <p>
+    Così il compilatore ha smesso di indovinare. Chiede a clang, mentre clang
+    lavora, quali file ha aperto davvero, e poi controlla che ognuno di quelli
+    dica ancora quello che diceva. Lo stesso buco c&rsquo;era anche in un secondo
+    punto dove nessuno aveva guardato, e lì era peggio: avrebbe permesso a un
+    binario di essere costruito metà contro una versione delle librerie di sistema
+    e metà contro un&rsquo;altra.
+  </p>
+  <p>
+    E cercando dove finiva il tempo si è finiti da un&rsquo;altra parte. Controllare
+    il codice del compilatore prendeva un minuto e mezzo, e quasi tutto stava
+    dentro una funzioncina il cui compito era rispondere <i>su quale riga sono</i>.
+    Rispondeva contando dall&rsquo;inizio del file, e le veniva chiesto una volta
+    per ogni dichiarazione e una volta per ogni commento, su un file di oltre un
+    milione di caratteri. Ma il numero di riga non serviva a nessuno. La domanda
+    era sempre e solo se un commento sta subito sopra una dichiarazione, e quella
+    è una domanda su due righe vicine. Chiedere la distanza invece della posizione,
+    più tre copie della stessa abitudine, ha portato quel minuto e mezzo a
+    <b>5,3 secondi</b>. Del progetto non è cambiato niente.
   </p>
 
   <h2>E poi il terzo linguaggio è morto <span class="nod">· ashes to ashes ·</span></h2>

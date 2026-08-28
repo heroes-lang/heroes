@@ -232,7 +232,8 @@ Two things that are easy to get wrong and are therefore rules:
   changes · station to station · rebel rebel · always crashing in the same
   car · a new career in a new town · oh! you pretty things · hunky dory ·
   under pressure · five years · look back in anger · absolute beginners ·
-  moonage daydream · lady stardust · sons of the silent age · ashes to ashes.
+  moonage daydream · lady stardust · sons of the silent age · ashes to ashes ·
+  speed of life · repetition.
 - **"Ashes to Ashes" is spent** (2026-08-19), on the section of `selfhost.html`
   that reports the bootstrap's retirement — which is the event the bank was
   holding it for. M-bootstrap-archive closed the same day, so the section that
@@ -454,9 +455,12 @@ Three rules follow, and they bind every later edit:
   for absence is the **language's own infobox**: Wikipedia links a designer who
   has an article, so an unlinked name there is the encyclopedia's answer rather
   than ours.
-- **The date on the page is part of the claim.** *"looked up and found, on
-  2026-08-18"* is in the copy. Re-run the checks before changing it, and change
-  it only after re-running them.
+- **The checks are re-run before the page is touched, and the page no longer
+  says when.** The copy used to carry *"looked up and found, on 2026-08-18"* and
+  the date came out with every other date on the site (`CLAUDE.md` § No dates on
+  the page). What the date was buying is still owed: re-run every lookup in the
+  session that edits an entry, because a page that names people has no other
+  guard.
 - **Nobody on the page was asked, and the page says so.** No characterisation of
   a living person beyond the borrowing itself, and no claim that anyone endorses
   this language.
@@ -483,8 +487,10 @@ Three rules follow, and they bind every later edit:
   `ls docs/panel/[0-9]*.md | wc -l` (83, and note the highest *number* is 085 —
   the sequence has gaps, so the count and the last id are different questions),
   and the runtime is `find runtime -name '*.c' -o -name '*.h' | xargs wc -l`
-  (3,139 lines, which includes `runtime/parts/`; a glob of `runtime/*.c` alone
-  gives 695 and answers nothing).
+  (3,417 lines, which includes `runtime/parts/`; a glob of `runtime/*.c` alone
+  answers nothing). The compiler is
+  `find selfhost -name '*.hero' | wc -l` (165) and `| xargs wc -l` (48,342), and
+  the seed is `wc -l -c seed/heroes.c` (798,556 lines, 23,248,564 bytes).
 - **Compiler output shown on the page is verbatim**, path and test annotations
   included. A trimmed-for-looks diagnostic is a fabricated diagnostic: the
   first draft of this refresh shortened one and got the caret width, the line
@@ -506,6 +512,22 @@ reproduced them byte for byte, which is also the check that its token classes
 match the lexer's own tables. Anything that regenerates a block later has the
 same obligation: `.k` is `keyword` in `selfhost/keywords.hero`, `.t` is the
 spec's type list, and a user's own type stays uncoloured.
+
+**The whole set was regenerated once, and how it was done is the procedure for
+next time.** `heroes fmt --in-place` swept every `.hero` file in the repository
+into canonical form (panel 095 stage 4), which moved line numbers in ten of the
+files the site slices — **88 of 152 figures drifted**, and the drift was entirely
+the formatter's: all 152 still matched the file as it stood at the sweep's parent
+commit, which is what proves no figure had been hand-edited. So the fix was
+mechanical rather than editorial: diff each file against its pre-sweep self,
+carry each figure's `data-lines` through that map, take the new slice, and pull
+the boundary inward off any blank line the formatter had just inserted. Two
+checks make it safe to trust. Every figure now matches its `data-src` slice, and
+**all 152 round-trip through the highlighter byte for byte** — including the 64
+that had not drifted, which is the gate: a highlighter that reproduces an
+untouched block exactly is one that can be let near a changed one. The
+`figcaption` is rewritten in the same pass as the block, in either language, so
+the caption and the attribute cannot disagree.
 
 **Every diagnostic on a chapter page is real output, produced in the session
 that wrote the page**, by copying the gallery file and making one edit — the
@@ -555,10 +577,29 @@ postcard register, distilled from `docs/book/beats.md`, not from the commit log)
 re-check `why.html`'s objections against design.md's current state; re-run every
 number; re-check each code block against its `data-src` anchor.
 
+**And re-run every diagnostic whose file moved, because a code block and a
+diagnostic drift for the same reason and only one of them is checkable.** The
+`data-src` check catches a stale block. Nothing catches a stale `line:column`
+inside a `<pre class="diag">`, and after the `fmt` sweep **nine of them were
+wrong** across two editions: the hole on `errors.html` said line 26 and the
+compiler says 28, `mutation.hero:53` is 55, `generics.hero:16` and `:46` are 18
+and 52, `strings.hero:11` and `:39` are 12 and 45, `loops.hero:12` is 13,
+`trees.hero:73` is 81, and both holes on `tests-and-holes.html` moved. Each
+chapter's footer names the edit that produced its diagnostic, which is what makes
+this mechanical: copy the current gallery file, make that one edit, run the
+command in the transcript, paste. Two things learned doing it. The FFI
+misspelling has to be made **at the call site as well as the declaration**, or
+`unknown_name` fires first and the page's `ffi_unknown_name` never appears. And
+the diagnostics over `tests/golden/check/` need nothing: that directory was
+excluded from the sweep by author decision, so its line numbers are the same ones
+the page was written with.
+
 `log.html` is the one page exempt from the invariant that no living file names a
-numbered milestone (`crates/heroes-cli/tests/milestones.rs`), because its entries
-are dated records and keep the identifiers they were written with — the same
-footing as `docs/journal/` and `docs/panel/`. Every other page is watched.
+numbered milestone, because its entries are records and keep the identifiers they
+were written with — the same footing as `docs/journal/` and `docs/panel/`. Every
+other page is watched. The entries carry **no dates** (`CLAUDE.md` § No dates on
+the page): the order of the list is the chronology, so a new entry goes on top
+and nothing else moves.
 
 ## Launch order — the repository goes public first
 
@@ -575,8 +616,10 @@ than assuming it.
 
 The measurement pages had figures from `docs/measurements/002-metric-3.md`
 (2026-08-04) presented as "the last full run" while `heroes mutate` gave
-different numbers on 2026-08-18. Re-run the tool before publishing any of them,
-and **date the result on the page**.
+different numbers on 2026-08-18. Re-run the tool before publishing any of them.
+**The result is not dated on the page** (2026-08-28, author instruction; the rule
+and its reasons live in `CLAUDE.md` § No dates on the page) — it is dated in the
+commit body, where the next session looks for it.
 
 And **never pool the mutation rates into one headline** — `heroes mutate` prints
 the prohibition (panel 011) every time it runs, and the site shipped the pooled

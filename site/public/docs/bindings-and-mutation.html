@@ -106,14 +106,14 @@ error[shadowed_binding]: `start` is already in scope, bound at line 30 — shado
   </p>
 
   <h3>Every value is a copy</h3>
-  <figure class="example" data-src="examples/gallery/05-mutation.hero" data-lines="44-49">
+  <figure class="example" data-src="examples/gallery/05-mutation.hero" data-lines="46-51">
 <pre><code><span class="k">test</span> <span class="s">"values are copies"</span>
     a = [<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>]
     b: [<span class="t">i64</span>] @ a
     b @ b.push(<span class="n">4</span>)
     <span class="k">assert</span> a.len() == <span class="n">3</span>
     <span class="k">assert</span> b.len() == <span class="n">4</span></code></pre>
-    <figcaption>examples/gallery/05-mutation.hero, lines 44&ndash;49</figcaption>
+    <figcaption>examples/gallery/05-mutation.hero, lines 46&ndash;51</figcaption>
   </figure>
   <p>
     <code>b</code> starts as a copy of <code>a</code>, and pushing onto it leaves
@@ -171,14 +171,16 @@ error[marker_mismatch]: `advance` changes this argument, so the call site writes
     exit, early <code>return</code> included, so there is no path where half the
     changes arrive.
   </p>
-  <figure class="example" data-src="examples/gallery/05-mutation.hero" data-lines="28-33">
+  <figure class="example" data-src="examples/gallery/05-mutation.hero" data-lines="28-35">
 <pre><code><span class="c"># Reads a run of letters and hands it back, leaving the reader after it.</span>
 <span class="k">function</span> word_at(@r: Reader) -&gt; <span class="t">str</span>
     start = r.pos
+
     <span class="k">while</span> !at_end(r) &amp;&amp; here(r) &gt;= <span class="s">'a'</span> &amp;&amp; here(r) &lt;= <span class="s">'z'</span>
         advance(@r)
+
     <span class="k">return</span> r.text.slice(from: start, to: r.pos)</code></pre>
-    <figcaption>examples/gallery/05-mutation.hero, lines 28&ndash;33</figcaption>
+    <figcaption>examples/gallery/05-mutation.hero, lines 28&ndash;35</figcaption>
   </figure>
   <p>
     A function may change its argument <i>and</i> return something, as this one
@@ -191,9 +193,9 @@ error[marker_mismatch]: `advance` changes this argument, so the call site writes
   <h3>A binding nobody reads is an error</h3>
   <pre><code>$ heroes check mutation.hero
 error[unused_binding]: `spare` is bound and never read — remove the binding, or read it
-  at mutation.hero:53:5
+  at mutation.hero:55:5
      |
-  53 |     spare = 5
+  55 |     spare = 5
      |     ^^^^^</code></pre>
   <p>
     An unused name is usually a leftover from an edit, or a line whose result was
@@ -204,11 +206,11 @@ error[unused_binding]: `spare` is bound and never read — remove the binding, o
   </p>
 
   <h3>The program</h3>
-  <figure class="example" data-src="examples/gallery/05-mutation.hero" data-lines="51-53">
+  <figure class="example" data-src="examples/gallery/05-mutation.hero" data-lines="53-55">
 <pre><code><span class="k">function</span> main()
     r: Reader @ Reader(text: <span class="s">"one two"</span>, pos: <span class="n">0</span>)
     print(word_at(@r))</code></pre>
-    <figcaption>examples/gallery/05-mutation.hero, lines 51&ndash;53</figcaption>
+    <figcaption>examples/gallery/05-mutation.hero, lines 53&ndash;55</figcaption>
   </figure>
   <pre><code>$ heroes run examples/gallery/05-mutation.hero
 one</code></pre>

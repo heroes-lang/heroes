@@ -138,7 +138,7 @@ tests/golden/check/deleted-int.hero:23:8: <span class="k">error</span>[reserved_
     no binary, and it exits <b>zero</b>, because a skeleton under construction
     is not an error:
   </p>
-  <pre><code>hole at examples/gallery/09-holes.hero:26:74
+  <pre><code>hole at examples/gallery/09-holes.hero:28:74
   expected type: str
   in scope:
     entries: [Entry]
@@ -168,25 +168,24 @@ tests/golden/check/deleted-int.hero:23:8: <span class="k">error</span>[reserved_
     only part that means anything.
   </p>
   <p>
-    Measured over the twelve gallery programs, and last re-run on 2026-08-25,
-    which returned this table unchanged. Every operator the tool generates is
-    here, including the ones where the design does nothing and the one it fails
-    at:
+    Measured over the 49 programs in <code>examples/</code>, which come to 6,254
+    injected mistakes. Every operator the tool generates is here, including the
+    ones where the design does nothing and the two it fails at:
   </p>
   <pre class="table"><code><span class="c">mistake injected                   mutants   caught   without the rules</span>
-a dropped argument label                46      91%          0%
-a shadowed name                         19     100%          0%
-a lazy catch-all on a variant           28     100%         39%
-two same-typed arguments swapped        56      80%         43%
-a forgotten @ on a declaration          24      92%         92%
-a dropped variant case                   8     100%        100%
-a dropped ?                              2     100%        100%
-a swapped pair of booleans               4     100%        100%
-a name that was never declared          23     100%        100%
-a typo in a name                       276     100%        100%
-mixed integer and float arithmetic      49     100%        100%
-<span class="hi">a typo in an error code</span>                  3       0%          0%
-a typo in a digit                        0        &ndash;           &ndash;</code></pre>
+a dropped argument label               313      76%          0%
+a shadowed name                        285      94%          0%
+a lazy catch-all on a variant          219     100%         63%
+two same-typed arguments swapped       671      74%         61%
+a forgotten @ on a declaration         234      90%         90%
+a dropped variant case                  78     100%        100%
+a dropped ?                             64      86%         86%
+a swapped pair of booleans             132     100%        100%
+a name that was never declared         255     100%        100%
+a typo in a name                      3611     100%        100%
+mixed integer and float arithmetic     376     100%        100%
+<span class="hi">a typo in an error code</span>                  4       0%          0%
+<span class="hi">a typo in a digit</span>                       12       0%          0%</code></pre>
   <p>
     <b>The project refuses to average these into one figure</b>, and the tool
     prints the refusal every time it runs. The reason is in the table. The top
@@ -199,12 +198,14 @@ a typo in a digit                        0        &ndash;           &ndash;</cod
     cent by construction.
   </p>
   <p>
-    Two rows are worth reading against the site&rsquo;s own headline. Swapped
-    same-typed arguments are caught 80 per cent of the time, not 100: where a
+    Three rows are worth reading against the site&rsquo;s own headline. Swapped
+    same-typed arguments are caught 74 per cent of the time, not 100: where a
     label is optional because the types already differ, nothing is looking. And
-    a typo inside an error code is caught <b>none</b> of the time, in either
-    arm, because a code is a string and no rule constrains its spelling. The
-    last row generated nothing to test, so it has no rate at all.
+    the last two rows are caught <b>none</b> of the time, in either arm. A typo
+    inside an error code is a string with a letter changed, and no rule
+    constrains how a string is spelled. A typo inside a number is a number, and
+    <code>10</code> is as legal as <code>100</code>. Those two are the honest
+    edge of the whole design: nothing in a type system can see them.
   </p>
   <p>
     That is what the measurement is for. A number that only ever flattered the

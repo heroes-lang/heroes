@@ -145,7 +145,7 @@ tests/golden/check/deleted-int.hero:23:8: <span class="k">error</span>[reserved_
     funzioni restituiscono quel tipo. Non produce nessun binario, ed esce con
     codice <b>zero</b>, perché uno scheletro in costruzione non è un errore:
   </p>
-  <pre><code>hole at examples/gallery/09-holes.hero:26:74
+  <pre><code>hole at examples/gallery/09-holes.hero:28:74
   expected type: str
   in scope:
     entries: [Entry]
@@ -176,25 +176,24 @@ tests/golden/check/deleted-int.hero:23:8: <span class="k">error</span>[reserved_
     colonne è l&rsquo;unica parte che significa qualcosa.
   </p>
   <p>
-    Misurato sui dodici programmi della galleria, e rilanciato l&rsquo;ultima
-    volta il 2026-08-25, che ha restituito questa tabella identica. Qui c&rsquo;è
-    ogni operatore che lo strumento genera, compresi quelli dove il design non fa
-    niente e quello dove fallisce:
+    Misurato sui 49 programmi che stanno in <code>examples/</code>, che fanno
+    6.254 errori iniettati. Qui c&rsquo;è ogni operatore che lo strumento genera,
+    compresi quelli dove il design non fa niente e i due dove fallisce:
   </p>
   <pre class="table"><code><span class="c">errore iniettato                            mutanti  presi   senza regole</span>
-etichetta di argomento saltata                   46      91%           0%
-nome che ne nasconde un altro                    19     100%           0%
-catch-all pigro su un variant                    28     100%          39%
-due argomenti dello stesso tipo scambiati        56      80%          43%
-@ dimenticata su una dichiarazione               24      92%          92%
-caso di variant saltato                           8     100%         100%
-? saltato                                         2     100%         100%
-coppia di booleani scambiata                      4     100%         100%
-nome mai dichiarato                              23     100%         100%
-errore di battitura in un nome                  276     100%         100%
-aritmetica mista fra interi e float              49     100%         100%
-<span class="hi">errore di battitura in un codice d’errore</span>         3       0%           0%
-errore di battitura in una cifra                  0        –            –</code></pre>
+etichetta di argomento saltata                  313      76%           0%
+nome che ne nasconde un altro                   285      94%           0%
+catch-all pigro su un variant                   219     100%          63%
+due argomenti dello stesso tipo scambiati       671      74%          61%
+@ dimenticata su una dichiarazione              234      90%          90%
+caso di variant saltato                          78     100%         100%
+? saltato                                        64      86%          86%
+coppia di booleani scambiata                    132     100%         100%
+nome mai dichiarato                             255     100%         100%
+errore di battitura in un nome                 3611     100%         100%
+aritmetica mista fra interi e float             376     100%         100%
+<span class="hi">errore di battitura in un codice d’errore</span>         4       0%           0%
+<span class="hi">errore di battitura in una cifra</span>                 12       0%           0%</code></pre>
   <p>
     <b>Il progetto si rifiuta di fare la media di questi numeri in una cifra
     sola</b>, e lo strumento stampa quel rifiuto ogni volta che gira. Il motivo
@@ -208,15 +207,16 @@ errore di battitura in una cifra                  0        –            –</c
     costruzione.
   </p>
   <p>
-    Due righe vanno lette contro quello che questo stesso sito dichiara in prima
-    pagina. Gli
-    argomenti dello stesso tipo scambiati vengono presi l&rsquo;80 per cento delle
-    volte, non il 100: dove l&rsquo;etichetta è facoltativa perché i tipi già
-    differiscono, non li sta cercando nessuno. E un errore di battitura dentro un
-    codice d&rsquo;errore non viene preso <b>mai</b>, in nessuno dei due casi,
-    perché un codice è una stringa e nessuna regola vincola come si scrive.
-    L&rsquo;ultima riga non ha generato niente da provare, quindi non ha nessun
-    tasso.
+    Tre righe vanno lette contro quello che questo stesso sito dichiara in prima
+    pagina. Gli argomenti dello stesso tipo scambiati vengono presi il 74 per
+    cento delle volte, non il 100: dove l&rsquo;etichetta è facoltativa perché i
+    tipi già differiscono, non li sta cercando nessuno. E le ultime due righe non
+    vengono prese <b>mai</b>, in nessuno dei due casi. Un errore di battitura
+    dentro un codice d&rsquo;errore è una stringa con una lettera cambiata, e
+    nessuna regola vincola come si scrive una stringa. Un errore di battitura
+    dentro un numero è un numero, e <code>10</code> è legale esattamente come
+    <code>100</code>. Quelle due righe sono il bordo onesto di tutto il design:
+    non c&rsquo;è sistema di tipi che le possa vedere.
   </p>
   <p>
     Questo è il senso di misurare. Un numero che facesse solo bella figura non

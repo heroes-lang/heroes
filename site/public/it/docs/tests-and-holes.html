@@ -55,11 +55,11 @@
   </p>
 
   <h3><code>test</code> è una dichiarazione</h3>
-  <figure class="example" data-src="examples/gallery/09-holes.hero" data-lines="28-30">
+  <figure class="example" data-src="examples/gallery/09-holes.hero" data-lines="30-32">
 <pre><code><span class="k">test</span> <span class="s">"the part that exists, works"</span>
     lunch = [Entry(name: <span class="s">"soup"</span>, calories: <span class="n">120</span>), Entry(name: <span class="s">"bread"</span>, calories: <span class="n">250</span>)]
     <span class="k">assert</span> total_calories(lunch) == <span class="n">370</span></code></pre>
-    <figcaption>examples/gallery/09-holes.hero, righe 28&ndash;30</figcaption>
+    <figcaption>examples/gallery/09-holes.hero, righe 30&ndash;32</figcaption>
   </figure>
   <p>
     Un <code>test</code> ha per nome una frase e per corpo quello che sta
@@ -94,36 +94,38 @@ ok   "a rectangle keeps its size when it moves"
     tutto quello che sta intorno al buco viene verificato come sempre, e il
     compilatore ti dice che cosa ci va dentro.
   </p>
-  <figure class="example" data-src="examples/gallery/09-holes.hero" data-lines="12-17">
+  <figure class="example" data-src="examples/gallery/09-holes.hero" data-lines="12-19">
 <pre><code><span class="c"># Written, tested, done.</span>
 <span class="k">function</span> total_calories(entries: [Entry]) -&gt; <span class="t">i64</span>
     total: <span class="t">i64</span> @ <span class="n">0</span>
+
     <span class="k">for</span> e <span class="k">in</span> entries
         total @ total + e.calories
+
     <span class="k">return</span> total</code></pre>
-    <figcaption>examples/gallery/09-holes.hero, righe 12&ndash;17</figcaption>
+    <figcaption>examples/gallery/09-holes.hero, righe 12&ndash;19</figcaption>
   </figure>
-  <figure class="example" data-src="examples/gallery/09-holes.hero" data-lines="19-22">
+  <figure class="example" data-src="examples/gallery/09-holes.hero" data-lines="21-24">
 <pre><code><span class="c"># Next up: the compiler will name the expected type and list `entries`,</span>
 <span class="c"># `total_calories` and the fields of `Entry` when it reaches this.</span>
 <span class="k">function</span> heaviest(entries: [Entry]) -&gt; Entry
     ???</code></pre>
-    <figcaption>examples/gallery/09-holes.hero, righe 19&ndash;22</figcaption>
+    <figcaption>examples/gallery/09-holes.hero, righe 21&ndash;24</figcaption>
   </figure>
-  <figure class="example" data-src="examples/gallery/09-holes.hero" data-lines="24-26">
+  <figure class="example" data-src="examples/gallery/09-holes.hero" data-lines="26-28">
 <pre><code><span class="c"># The hole can be one argument of an otherwise finished line.</span>
 <span class="k">function</span> summary_of(entries: [Entry]) -&gt; <span class="t">str</span>
     <span class="k">return</span> <span class="s">"total "</span> + total_calories(entries).to_str() + <span class="s">", heaviest "</span> + ???</code></pre>
-    <figcaption>examples/gallery/09-holes.hero, righe 24&ndash;26</figcaption>
+    <figcaption>examples/gallery/09-holes.hero, righe 26&ndash;28</figcaption>
   </figure>
   <p>Chiedi al compilatore di quel file e ti risponde:</p>
   <pre><code>$ heroes check holes.hero
-hole at holes.hero:22:5
+hole at holes.hero:24:5
   position: statement — any type, or none
   this function returns: Entry
   in scope:
     entries: [Entry]
-hole at holes.hero:26:74
+hole at holes.hero:28:74
   expected type: str
   in scope:
     entries: [Entry]
@@ -149,12 +151,12 @@ hole at holes.hero:26:74
   </p>
   <pre><code>$ heroes test holes.hero
 no binary: 2 holes in holes.hero
-hole at holes.hero:22:5
+hole at holes.hero:24:5
   position: statement — any type, or none
   this function returns: Entry
   in scope:
     entries: [Entry]
-hole at holes.hero:26:74
+hole at holes.hero:28:74
   expected type: str
   in scope:
     entries: [Entry]
@@ -181,10 +183,10 @@ hole at holes.hero:26:74
     E quei tre caratteri segnano il punto nel file, così nessuno si dimentica
     che lì c&rsquo;era una domanda.
   </p>
-  <figure class="example" data-src="examples/gallery/09-holes.hero" data-lines="32-33">
+  <figure class="example" data-src="examples/gallery/09-holes.hero" data-lines="34-35">
 <pre><code><span class="k">function</span> main()
     print(summary_of([Entry(name: <span class="s">"tea"</span>, calories: <span class="n">2</span>)]))</code></pre>
-    <figcaption>examples/gallery/09-holes.hero, righe 32&ndash;33</figcaption>
+    <figcaption>examples/gallery/09-holes.hero, righe 34&ndash;35</figcaption>
   </figure>
   <p>
     Riempi i due buchi e quel <code>main</code> parte. Fino ad allora, la parte

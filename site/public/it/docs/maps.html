@@ -100,14 +100,15 @@ error[type_mismatch]: expected `i64`, found `i64?`
     tirare fuori il valore. È il test &ldquo;lo contiene?&rdquo;, ed è la stessa
     chiamata che useresti su qualunque valore fallibile.
   </p>
-  <figure class="example" data-src="examples/gallery/10-maps.hero" data-lines="14-19">
+  <figure class="example" data-src="examples/gallery/10-maps.hero" data-lines="14-20">
 <pre><code><span class="c"># `.is_err()` asks without extracting; the `match` extracts without aborting.</span>
 <span class="k">function</span> report(scores: {<span class="t">str</span>: <span class="t">i64</span>}, name: <span class="t">str</span>) -&gt; <span class="t">str</span>
     got = scores[name]
+
     <span class="k">if</span> got.is_err()
         <span class="k">return</span> name + <span class="s">" has no score"</span>
     <span class="k">return</span> name + <span class="s">" scored "</span> + got.must().to_str()</code></pre>
-    <figcaption>examples/gallery/10-maps.hero, righe 14&ndash;19</figcaption>
+    <figcaption>examples/gallery/10-maps.hero, righe 14&ndash;20</figcaption>
   </figure>
   <p>
     <b><code>.must()</code></b>: prendi il valore, e ferma il programma se
@@ -115,13 +116,13 @@ error[type_mismatch]: expected `i64`, found `i64?`
     questa la forma in cui va usato: <code>.must()</code> dopo una prova, mai come
     scorciatoia per aggirare il tipo.
   </p>
-  <figure class="example" data-src="examples/gallery/10-maps.hero" data-lines="21-25">
+  <figure class="example" data-src="examples/gallery/10-maps.hero" data-lines="22-26">
 <pre><code><span class="c"># The general way, and the only one that names the error: `match` on `.ok`/`.err`.</span>
 <span class="k">function</span> describe(scores: {<span class="t">str</span>: <span class="t">i64</span>}, name: <span class="t">str</span>) -&gt; <span class="t">str</span>
     <span class="k">return</span> <span class="k">match</span> scores[name]
         .ok v  =&gt; v.to_str()
         .err e =&gt; e.code</code></pre>
-    <figcaption>examples/gallery/10-maps.hero, righe 21&ndash;25</figcaption>
+    <figcaption>examples/gallery/10-maps.hero, righe 22&ndash;26</figcaption>
   </figure>
   <p>
     <b><code>match</code></b>: quella generale, e l&rsquo;unica che ti
@@ -130,12 +131,12 @@ error[type_mismatch]: expected `i64`, found `i64?`
   </p>
 
   <h3>Come se ne costruisce una</h3>
-  <figure class="example" data-src="examples/gallery/10-maps.hero" data-lines="27-30">
+  <figure class="example" data-src="examples/gallery/10-maps.hero" data-lines="28-31">
 <pre><code><span class="c"># A map is built as a literal. There is no insert in the built-in inventory</span>
 <span class="c"># (§4.20) — `push` is for arrays — so this table is written, not accumulated.</span>
 <span class="k">function</span> table() -&gt; {<span class="t">str</span>: <span class="t">i64</span>}
     <span class="k">return</span> {<span class="s">"ada"</span>: <span class="n">10</span>, <span class="s">"grace"</span>: <span class="n">9</span>, <span class="s">"alan"</span>: <span class="n">8</span>}</code></pre>
-    <figcaption>examples/gallery/10-maps.hero, righe 27&ndash;30</figcaption>
+    <figcaption>examples/gallery/10-maps.hero, righe 28&ndash;31</figcaption>
   </figure>
   <p>
     Scriverla tutta in una volta è una delle due strade. L&rsquo;altra è
@@ -151,13 +152,15 @@ error[type_mismatch]: expected `i64`, found `i64?`
     e non è una clausola scritta in piccolo nella documentazione: due
     esecuzioni possono restituirtele in ordini diversi. Quando l&rsquo;ordine conta, lo devi chiedere:
   </p>
-  <figure class="example" data-src="examples/adventure/world.hero" data-lines="76-80">
+  <figure class="example" data-src="examples/adventure/world.hero" data-lines="80-86">
 <pre><code>    w = make()
+
     <span class="k">for</span> name <span class="k">in</span> sort(keys(w.rooms))
         room = room_at(w, name).must()
+
         <span class="k">for</span> direction <span class="k">in</span> sort(keys(room.exits))
             there = room.exits[direction].must()</code></pre>
-    <figcaption>examples/adventure/world.hero, righe 76&ndash;80</figcaption>
+    <figcaption>examples/adventure/world.hero, righe 80&ndash;86</figcaption>
   </figure>
   <p>
     Quello è un test vero, preso da un esempio più grande: percorre ogni stanza e
@@ -174,7 +177,7 @@ error[type_mismatch]: expected `i64`, found `i64?`
   </p>
 
   <h3>Tutto quanto, in esecuzione</h3>
-  <figure class="example" data-src="examples/gallery/10-maps.hero" data-lines="38-44">
+  <figure class="example" data-src="examples/gallery/10-maps.hero" data-lines="41-47">
 <pre><code><span class="k">test</span> <span class="s">"a missing key is a type, not a crash"</span>
     scores = table()
     <span class="k">assert</span> score_of(scores, <span class="s">"ada"</span>) == <span class="n">10</span>
@@ -182,20 +185,22 @@ error[type_mismatch]: expected `i64`, found `i64?`
     <span class="k">assert</span> known(scores, <span class="s">"grace"</span>)
     <span class="k">assert</span> known(scores, <span class="s">"nobody"</span>) == <span class="k">false</span>
     <span class="k">assert</span> scores.len() == <span class="n">3</span></code></pre>
-    <figcaption>examples/gallery/10-maps.hero, righe 38&ndash;44</figcaption>
+    <figcaption>examples/gallery/10-maps.hero, righe 41&ndash;47</figcaption>
   </figure>
-  <figure class="example" data-src="examples/gallery/10-maps.hero" data-lines="32-36">
+  <figure class="example" data-src="examples/gallery/10-maps.hero" data-lines="33-39">
 <pre><code><span class="k">function</span> total_of(scores: {<span class="t">str</span>: <span class="t">i64</span>}, names: [<span class="t">str</span>]) -&gt; <span class="t">i64</span>
     sum: <span class="t">i64</span> @ <span class="n">0</span>
+
     <span class="k">for</span> name <span class="k">in</span> names
         sum @ sum + score_of(scores, name)
+
     <span class="k">return</span> sum</code></pre>
-    <figcaption>examples/gallery/10-maps.hero, righe 32&ndash;36</figcaption>
+    <figcaption>examples/gallery/10-maps.hero, righe 33&ndash;39</figcaption>
   </figure>
-  <figure class="example" data-src="examples/gallery/10-maps.hero" data-lines="58-59">
+  <figure class="example" data-src="examples/gallery/10-maps.hero" data-lines="62-63">
 <pre><code><span class="k">function</span> main()
     print(total_of(table(), [<span class="s">"ada"</span>, <span class="s">"grace"</span>, <span class="s">"nobody"</span>]))</code></pre>
-    <figcaption>examples/gallery/10-maps.hero, righe 58&ndash;59</figcaption>
+    <figcaption>examples/gallery/10-maps.hero, righe 62&ndash;63</figcaption>
   </figure>
   <pre><code>$ heroes run examples/gallery/10-maps.hero
 19</code></pre>

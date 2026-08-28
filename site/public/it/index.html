@@ -94,7 +94,7 @@
 
   <ul class="figures">
     <li>
-      <span class="n">231</span>
+      <span class="n">233</span>
       <span class="what">righe: tutto il linguaggio</span>
       <span class="how">La specifica, cioè il documento che definisce il
       linguaggio per intero, sta in una manciata di pagine. Le dai da leggere a
@@ -202,6 +202,41 @@ we can be heroes</code></pre>
     <code>measure</code>, <code>this</code>. E ogni esempio di questo sito è un
     file dentro <code>examples/</code>, che aspetta solo che tu lo cambi.
   </p>
+  <p>
+    Su uno di quei comandi vale la pena spendere una riga.
+    <code>heroes fmt</code> stampa la forma canonica di un file, e di forma
+    canonica ce n&rsquo;è una sola: stessi rientri, stessi punti in cui la riga
+    va a capo, stesso ordine. Tutti i 241 file Heroes del repository, compilatore
+    ed esempi compresi, tornano da quel comando identici, byte per byte. Così una
+    differenza fra due versioni di un file è una differenza in quello che il
+    programma fa, mai in come qualcuno l&rsquo;ha battuto.
+  </p>
+
+  <h2>Quanto tempo ci vuole <span class="nod">&middot; speed of life &middot;</span></h2>
+  <p>
+    Il programma Heroes più grande che esiste è il compilatore: 165 file, 48.342
+    righe. Legge tutto, lega ogni nome alla sua dichiarazione e controlla ogni
+    tipo, in <b>5,3 secondi</b>. Costruirlo dal file C che sta nel repository, il
+    comando qui sopra, ne prende <b>3,9</b>. Costruirlo partendo da Heroes ne
+    prende <b>59</b> con la cartella <code>build/</code> vuota e <b>45</b> con la
+    cartella già lì. Tutto questo su un portatile, un Apple M3, che è la macchina
+    da cui viene ogni numero di questo sito.
+  </p>
+  <p>
+    Il controllo prima ci metteva un minuto e mezzo. C&rsquo;era una funzioncina
+    che rispondeva alla domanda <i>su quale riga sono</i> contando dall&rsquo;inizio
+    del file, e le veniva chiesto una volta per ogni dichiarazione e una volta per
+    ogni commento. Del progetto non è cambiato niente. È cambiata la domanda.
+  </p>
+  <p>
+    E una build non scrive più un unico file C enorme. Ogni tuo file diventa un
+    file C a sé, compilato per conto suo, e quello che ne esce resta sotto
+    <code>build/</code> perché la build dopo lo riusi. A decidere se può riusarlo
+    non è l&rsquo;orologio: è il testo del file, gli header C che ha letto e le
+    librerie a cui si lega. Prendi un numero da un header C, cambia l&rsquo;header,
+    e quello che ne dipende viene rifatto. È il caso in cui di solito un sistema
+    di build ti restituisce la risposta di ieri senza dirti niente.
+  </p>
 
   <h2>Tre cose che lo rendono diverso</h2>
   <ul class="cards">
@@ -232,7 +267,7 @@ we can be heroes</code></pre>
     <li>
       <h3>Si compila da solo</h3>
       <p>
-        Il compilatore di Heroes è scritto in Heroes: 155 file, 38.004 righe.
+        Il compilatore di Heroes è scritto in Heroes: 165 file, 48.342 righe.
         Chiedi a tre sue generazioni di riscrivere lo stesso programma e i tre
         risultati coincidono byte per byte. Il linguaggio con cui era nato non
         serve più a nessuno e ha lasciato il repository.
@@ -290,12 +325,12 @@ we can be heroes</code></pre>
     e conta quanti ne ferma il compilatore. Poi rifà lo stesso giro con le
     regole della tesi spente, e la distanza fra le due prove è il risultato,
     tenuto sbaglio per sbaglio: alcuni li ferma solo Heroes, altri li fermerebbe
-    qualunque linguaggio, e uno non lo ferma ancora nessuno. Una media
+    qualunque linguaggio, e due non li ferma ancora nessuno. Una media
     nasconderebbe proprio questo, e infatti non c&rsquo;è.
   </p>
   <p>
-    <a href="errors.html">La tabella intera, rilanciata il 2026-08-25, è nella
-    pagina degli errori &rarr;</a>
+    <a href="errors.html">La tabella intera, su 49 programmi, è nella pagina
+    degli errori &rarr;</a>
   </p>
 
   <footer>

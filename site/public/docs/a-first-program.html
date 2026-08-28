@@ -105,9 +105,12 @@ error[indentation_not_multiple_of_4]: indentation must be exactly 4 spaces per l
   <p>
     A tab is its own error with its own message. The point of the rule is that
     there is exactly one way to write any program, so two files that do the same
-    thing look the same, and a difference in a diff is a difference in meaning.
+    thing look the same, and a difference between two versions of a file is a
+    difference in meaning rather than in typing.
     <code>heroes fmt</code> prints that one form for you if you ever drift from
-    it.
+    it, and it is not an aspiration: all 241 Heroes files in the repository, the
+    compiler itself included, come back from that command unchanged, byte for
+    byte.
   </p>
 
   <h3>Comments are where the documentation lives</h3>

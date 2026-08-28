@@ -224,7 +224,7 @@ graphics, audio, terminal <span class="c">→</span> SDL, raylib, ncurses</code>
     Freeing is not guesswork either: the compiler writes the counting into the
     program as real instructions, and each function has a single exit path for
     cleanup, so whichever route the code takes, what it took is given back.
-    Everything underneath this is 3,388 lines of C, measured 2026-08-25.
+    Everything underneath this is 3,417 lines of C.
   </p>
   <p>
     On top of all this sits a promise the language set itself as a goal, not
@@ -246,7 +246,7 @@ graphics, audio, terminal <span class="c">→</span> SDL, raylib, ncurses</code>
     <li><b>One way to write anything.</b> A command that puts code back into its single canonical shape, one word for loops, no automatic conversion between types, and argument names required where types are not enough to tell them apart. The mistakes models actually make become errors the compiler actually raises.</li>
     <li><b>Errors written to be read by a machine.</b> Every message carries everything needed to fix the program in one go: what the compiler expected, where the thing it clashes with was declared, and the repair, tagged <code>certain</code> when it is sure and <code>guess</code> when it is a suggestion. And writing <code>???</code> leaves a declared gap and asks the compiler what belongs in it.</li>
     <li><b>A program must not crash.</b> Where two designs are both acceptable and one of them can be made to fall over, the other wins, whatever it costs in elegance or in words. The section above has the argument and the one hole it leaves open.</li>
-    <li><b>Small enough to compile itself.</b> The whole specification measures 3548 tokens against a hard ceiling of 4096: five pages, written to be handed to a model rather than shelved.</li>
+    <li><b>Small enough to compile itself.</b> The whole specification measures 3592 tokens against a hard ceiling of 4096: five pages, written to be handed to a model rather than shelved.</li>
   </ul>
 
   <h2>The obvious objections <span class="nod">· quicksand, avoided ·</span></h2>
@@ -366,7 +366,7 @@ graphics, audio, terminal <span class="c">→</span> SDL, raylib, ncurses</code>
     program, and space in a prompt runs out. Everything the language adds has to
     pay rent in there, and a language whose whole definition fits in a few pages
     is also a language one person can implement: the two constraints are
-    secretly the same one. It currently measures 3548 tokens, leaving 548 to
+    secretly the same one. It currently measures 3592 tokens, leaving 504 to
     spend. The number is counted, not eyeballed, and the difference cost the
     project two days: for a while the ceiling was defended by watching the word
     count, until somebody counted properly and found the spec a third larger

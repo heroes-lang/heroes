@@ -120,19 +120,23 @@ error[no_size]: `variant Expr` contains itself, so it has no size
         .negate g   =&gt; <span class="n">0</span> - first_value(g.inner)</code></pre>
     <figcaption>examples/gallery/11-trees.hero, righe 18&ndash;25</figcaption>
   </figure>
-  <figure class="example" data-src="examples/gallery/11-trees.hero" data-lines="27-37">
+  <figure class="example" data-src="examples/gallery/11-trees.hero" data-lines="27-41">
 <pre><code><span class="k">function</span> sum_of(parts: [Expr]) -&gt; <span class="t">i64</span>
     total: <span class="t">i64</span> @ <span class="n">0</span>
+
     <span class="k">for</span> part <span class="k">in</span> parts
         total @ total + value_of(part)
+
     <span class="k">return</span> total
 
 <span class="k">function</span> product_of(parts: [Expr]) -&gt; <span class="t">i64</span>
     total: <span class="t">i64</span> @ <span class="n">1</span>
+
     <span class="k">for</span> part <span class="k">in</span> parts
         total @ total * value_of(part)
+
     <span class="k">return</span> total</code></pre>
-    <figcaption>examples/gallery/11-trees.hero, righe 27&ndash;37</figcaption>
+    <figcaption>examples/gallery/11-trees.hero, righe 27&ndash;41</figcaption>
   </figure>
   <p>
     <code>value_of</code> e <code>sum_of</code> si chiamano a vicenda, e nessuna
@@ -149,14 +153,14 @@ error[no_size]: `variant Expr` contains itself, so it has no size
   </p>
 
   <h3>Come se ne costruisce uno</h3>
-  <figure class="example" data-src="examples/gallery/11-trees.hero" data-lines="69-74">
+  <figure class="example" data-src="examples/gallery/11-trees.hero" data-lines="77-82">
 <pre><code><span class="c"># The annotation on the binding is not decoration: a leading-dot case takes its</span>
 <span class="c"># variant from the context, and a bare `=` gives it none (§4.5). Written without</span>
 <span class="c"># it, the compiler says so and names the three places the type could come from.</span>
 <span class="k">function</span> two_plus_three_times_four() -&gt; Expr
     three_times_four: Expr = .multiply(parts: [.number(v: <span class="n">3</span>), .number(v: <span class="n">4</span>)])
     <span class="k">return</span> .add(parts: [.number(v: <span class="n">2</span>), three_times_four])</code></pre>
-    <figcaption>examples/gallery/11-trees.hero, righe 69&ndash;74</figcaption>
+    <figcaption>examples/gallery/11-trees.hero, righe 77&ndash;82</figcaption>
   </figure>
   <p>
     La riga del <code>return</code> non ha bisogno di annotazione, perché la
@@ -166,13 +170,13 @@ error[no_size]: `variant Expr` contains itself, so it has no size
   </p>
   <pre><code>$ heroes check trees.hero
 error[cannot_infer]: `.multiply` does not say which variant it belongs to — the type has to come from the context (a signature, an annotation, or the value being returned)
-  at trees.hero:73:24
+  at trees.hero:81:24
      |
-  73 |     three_times_four = .multiply(parts: [.number(v: 3), .number(v: 4)])
+  81 |     three_times_four = .multiply(parts: [.number(v: 3), .number(v: 4)])
      |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^</code></pre>
 
   <h3>Quello che i test inchiodano</h3>
-  <figure class="example" data-src="examples/gallery/11-trees.hero" data-lines="76-87">
+  <figure class="example" data-src="examples/gallery/11-trees.hero" data-lines="84-95">
 <pre><code><span class="k">test</span> <span class="s">"the tree evaluates and measures itself"</span>
     e = two_plus_three_times_four()
     <span class="k">assert</span> value_of(e) == <span class="n">14</span>
@@ -185,7 +189,7 @@ error[cannot_infer]: `.multiply` does not say which variant it belongs to — th
     <span class="k">assert</span> value_of(.add(parts: [])) == <span class="n">0</span>
     <span class="k">assert</span> value_of(.multiply(parts: [])) == <span class="n">1</span>
     <span class="k">assert</span> value_of(.negate(inner: [])) == <span class="n">0</span></code></pre>
-    <figcaption>examples/gallery/11-trees.hero, righe 76&ndash;87</figcaption>
+    <figcaption>examples/gallery/11-trees.hero, righe 84&ndash;95</figcaption>
   </figure>
   <p>
     Il secondo test è quello da copiare nel tuo codice. Ogni struttura che
@@ -195,19 +199,19 @@ error[cannot_infer]: `.multiply` does not say which variant it belongs to — th
     <code>value_of</code> si accorge subito se l&rsquo;ha cambiata per
     sbaglio.
   </p>
-  <figure class="example" data-src="examples/gallery/11-trees.hero" data-lines="62-67">
+  <figure class="example" data-src="examples/gallery/11-trees.hero" data-lines="70-75">
 <pre><code><span class="c"># Two cases share one answer, so their patterns share one arm (`|`).</span>
 <span class="k">function</span> is_combination(e: Expr) -&gt; <span class="t">bool</span>
     <span class="k">return</span> <span class="k">match</span> e
         .add _ | .multiply _ =&gt; <span class="k">true</span>
         .number _            =&gt; <span class="k">false</span>
         .negate _            =&gt; <span class="k">false</span></code></pre>
-    <figcaption>examples/gallery/11-trees.hero, righe 62&ndash;67</figcaption>
+    <figcaption>examples/gallery/11-trees.hero, righe 70&ndash;75</figcaption>
   </figure>
-  <figure class="example" data-src="examples/gallery/11-trees.hero" data-lines="89-90">
+  <figure class="example" data-src="examples/gallery/11-trees.hero" data-lines="97-98">
 <pre><code><span class="k">function</span> main()
     print(value_of(two_plus_three_times_four()))</code></pre>
-    <figcaption>examples/gallery/11-trees.hero, righe 89&ndash;90</figcaption>
+    <figcaption>examples/gallery/11-trees.hero, righe 97&ndash;98</figcaption>
   </figure>
   <pre><code>$ heroes run examples/gallery/11-trees.hero
 14</code></pre>
