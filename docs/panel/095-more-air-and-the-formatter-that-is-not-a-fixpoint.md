@@ -311,7 +311,39 @@ reading of the code, not a seat's measurement. Shapes (b) and (c) stand open.
 
 ## Author's verdict
 
-**Pending.** Queued as an open item in `docs/work/DECIDE.md` naming `panel 095`.
+**RATIFIED 2026-08-28** (`/decide`, answer `1a`), after the four stages had
+landed and the author had read the result on real files.
+
+The ratification covers the resolution as adopted, not the proposal as tabled,
+and the difference is what the sitting bought:
+
+- **Blank lines are structure as well as content.** The reversal of
+  `DESIGN-LOG:46`'s stated principle stands for the named cases; the content half
+  is untouched, so a blank the author wrote inside a body still survives.
+- **Rule 3 does not exist.** Dropped by the author on the sitting's evidence: no
+  seat defended it, the llm-ergonomist showed it teaches a reading rule 2 already
+  owes, and the compiler-engineer showed it was the only one of the four needing
+  a new parameter threaded to eight call sites.
+- **Rule 2 is narrowed** to a dedent closing a `for`/`while`/`match`, never an
+  `if` — the llm-ergonomist's condition, and the one that kept the tight blocks
+  tight.
+- **Rule 4 is scoped to statement bodies**, excluded from `record`, `variant` and
+  `extern` bodies, on the remark-becomes-documentation evidence.
+- **The order of work stands as stages 1-4**, and all four landed in that order:
+  `aa8a372`, `a0ab809`, `8584d18`, `9944209`.
+
+**What the author decided that this file could not**: the canonical line width
+moved 88 → 120 in the same session (`95a0214`), which no seat had been asked
+about. It very nearly cancels the air: the canonical form was 47,964 lines
+without air at 88 and is 48,096 with air at 120 — **132 lines apart on 48,000**.
+
+**What the ratification does NOT settle, and both were answered outside it**: the
+spec owes no enforcement sentence (the coordinator's call on the spec-warden's
+argument — the spec names no tool at all, so its silence on `fmt` is consistent
+rather than inaccurate, and a sentence would be its first tool sentence), and the
+llm-ergonomist's cheaper alternative was **refused after measurement**: all four
+of its clauses were already the behaviour, so it was not an alternative but the
+status quo the author had said was hard to read.
 
 **What a yes settles.** That blank lines become **structure** rather than content
 for the named cases — the reversal of `DESIGN-LOG:46`'s stated principle, which is

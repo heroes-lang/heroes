@@ -148,10 +148,48 @@ function binary_op(kind: token.TokenKind) -> Operator?
 function parse_expr(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     return binary(@c, @a, text, 0)
 
+# Does this operand carry a block, so that the expression ends with it?
+#
+# ENUMERATED, never a catch-all: the day a new expression kind carries a
+# block, this must answer for it, and a `_ => false` would answer "no"
+# silently — which is the shape panel 060 paid for in the formatter.
+function ends_the_expression(a: ast.Ast, id: i64) -> bool
+    return match a.exprs[id].kind
+        .if_expr | .match_expr                                               => true
+        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr => false
+        .name | .hole | .unary | .binary | .field | .index                   => false
+        .call | .method | .variant_case | .array | .map | .try_expr | .error => false
+
 # Everything at `min_power` or tighter. All of Heroes' binary operators are
 # left-associative, so the recursive call asks for `power + 1`.
 function binary(@c: cursor.Cursor, @a: ast.Ast, text: str, min_power: i64) -> i64
     left: i64 @ unary(@c, @a, text)
+
+    # A CONTROL FORM ENDS THE EXPRESSION, and this is panel 007's rule
+    # enforced instead of remembered: *"at bracket depth zero every line's
+    # indentation is structural — a long expression is broken inside
+    # parentheses or not at all"* (Amendment B, and `design.md:1794` in
+    # the same words).
+    #
+    # An `if` or a `match` in expression position carries a BLOCK, and
+    # parsing that block consumes the dedent that closes it — so the next
+    # token looks adjacent to the operand when it is on a different line,
+    # at a shallower indent, and belongs to the next statement. Climbing
+    # from there builds a continuation the language does not have.
+    #
+    # Measured before the guard (docs/defects/005): `return match c` with
+    # arms, then `+ "x"` at the function's own indent, parsed as
+    # `return (match … + "x")` and the program PRINTED `bx` at exit 0.
+    # `heroes fmt` refused that file for a week and was right to — there
+    # is no canonical spelling of a form that should not exist, which is
+    # how the defect was found.
+    #
+    # `out + match c` is untouched: there `left` is `out` and the control
+    # form is the RIGHT operand, which is the only side its block can be
+    # on (`print_fmt.hero`'s `binary_control_tail` says the same thing
+    # from the printer's side).
+    if ends_the_expression(a, left)
+        return left
     climbing: bool @ true
 
     while climbing

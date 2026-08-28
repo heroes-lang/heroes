@@ -51,7 +51,40 @@ constant VERSION: str
     "0.0.1"
 
 function main()
-    given = args()
+    # `args_checked()` and not `args()`, and this is the compiler refusing
+    # to die on input it was only asked to carry.
+    #
+    # `args()` ABORTS on an argument that is not UTF-8 (spec:184-186), and
+    # the abort names a runtime function: `panic: hero_str_from_bytes: not
+    # well-formed UTF-8`, exit 134. Measured, and the shape of it is the
+    # problem — the COMPILER dying, not the program, on an argument the
+    # shell chose and `heroes run` was only passing along.
+    #
+    # It cannot be carried instead of refused: a Heroes `str` IS UTF-8
+    # (spec:52), so there is no value the compiler could hold that
+    # argument in. Refusing with the position named is the most `run` can
+    # honestly do, and it is exit 2 because the tool could not run rather
+    # than because the program is wrong (§10's contract). A program that
+    # needs such an argument reaches it through `args_checked()` itself,
+    # from a binary built with `heroes build`.
+    #
+    # `/decide` answer `6a`, 2026-08-28. The same shape one department
+    # over is panels 089 and 090: the compiler could be killed by an
+    # environment variable.
+    raw = args_checked()
+    given: [str] @ []
+    at: i64 @ 0
+
+    for one in raw
+        if one.is_err()
+            cli_io.eprint(
+                text: "error: argument " + (at + 1).to_str() + " is not UTF-8, and a Heroes `str` cannot hold it (spec:52)"
+            )
+            cli_io.eprint(text: "note: build the program with `heroes build` and read it with `args_checked()`")
+            exit(code: 2)
+        given @ given.push(one.must())
+        at @ at + 1
+
     parsed = cli_argv.parse(given, dir_probe: cli_toolchain.is_directory)
 
     if parsed.is_err()
