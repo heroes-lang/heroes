@@ -1,0 +1,7 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import content from '../../../html/it/docs/values-all-the-way-down.html?raw';
+---
+<BaseLayout path="/it/docs/values-all-the-way-down.html" title={'Valori fino in fondo, documentazione di Heroes'} description={"Heroes non ha puntatori né un tipo riferimento, e un albero contiene se stesso lo stesso. L'array è l'unica indirezione che esiste, ed è per questo che tutta la struttura continua a copiarsi come un valore."} current="docs">
+<Fragment set:html={content} />
+</BaseLayout>

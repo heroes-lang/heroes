@@ -1,0 +1,7 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import content from '../html/errors.html?raw';
+---
+<BaseLayout path="/errors.html" title={'Errors, Heroes diagnostics are a deliverable'} description={'Every Heroes diagnostic carries the span, the other end of the story and the repair, tagged certain or guess. Holes report what belongs in the gap, at exit code zero.'} current="docs">
+<Fragment set:html={content} />
+</BaseLayout>

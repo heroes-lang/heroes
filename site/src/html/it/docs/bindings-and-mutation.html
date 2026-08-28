@@ -1,0 +1,195 @@
+
+  <p class="crumb"><a href="../index.html">Heroes</a> / <a href="index.html">Docs</a> / capitolo 6</p>
+
+  <h1 class="chapter">Nomi e modifiche</h1>
+  <p class="tagline">Un simbolo solo marca tutto quello che in un programma può cambiare.</p>
+
+  <p>
+    In quasi tutto il codice, due righe su tre non cambiano niente. Il guaio è
+    che sono identiche a quelle che invece cambiano qualcosa, quindi per trovare
+    la parte di un programma che si muove bisogna leggerlo tutto. Qui le parti
+    che si muovono hanno un marchio, ed è uno solo.
+  </p>
+
+  <h3><code>=</code> lega una volta. <code>@</code> dichiara qualcosa che cambia</h3>
+  <pre><code>x = 5              <span class="c"># un nome per un valore, per sempre</span>
+v: i64 @ 0         <span class="c"># una cella che può cambiare — il tipo è obbligatorio</span>
+v @ v + 1          <span class="c"># la si cambia</span></code></pre>
+  <p>
+    <code>=</code> dà un nome a un valore, e finisce lì. <code>@</code> fa tre
+    lavori con un simbolo solo: dichiara una cella, marca ogni riga che ci
+    scrive dentro e, più avanti in questa pagina, marca una
+    funzione che cambia quello che le dai. Non esiste un operatore di
+    assegnamento a parte, quindi una riga che cambia qualcosa non può mai essere
+    scambiata per una riga che introduce qualcosa.
+  </p>
+  <p>
+    Il tipo su una cella non è facoltativo, ed è voluto: un nome il cui valore
+    cambierà nel tempo è un nome di cui chi legge non può dedurre il tipo da una
+    riga sola. Prova a cambiare un nome legato normalmente e il compilatore ti
+    spiega la differenza:
+  </p>
+  <pre><code>$ heroes check mutation.hero
+error[not_mutable]: `start` was bound with `=`, which binds once, forever — a cell is declared with its type: `start: &lt;type&gt; @ &lt;value&gt;`
+  at mutation.hero:31:5
+     |
+  31 |     start @ start + 1
+     |     ^^^^^
+  fix (guess): declare `start` as a cell: `start: &lt;type&gt; @ &lt;value&gt;`</code></pre>
+  <p>
+    Quella riparazione è marcata <code>guess</code> e non <code>certain</code>,
+    perché il compilatore non può sapere quale delle due cose intendevi: forse
+    volevi una cella, o forse hai scritto sul nome sbagliato. Solo le
+    riparazioni <code>certain</code> possono essere applicate al posto tuo.
+  </p>
+
+  <h3>Un nome vuol dire una cosa sola finché lo vedi</h3>
+  <p>
+    Un nome già usato lì intorno non si può riusare, nemmeno se la cosa nuova
+    non c&rsquo;entra niente con la vecchia:
+  </p>
+  <pre><code>$ heroes check mutation.hero
+error[shadowed_binding]: `start` is already in scope, bound at line 30 — shadowing is an error here: a name means one thing for as long as it is visible
+  at mutation.hero:31:5
+     |
+  31 |     start = r.pos + 1
+     |     ^^^^^</code></pre>
+  <p>
+    Nascondere un nome è lo sbaglio che non dà nessun sintomo: il codice compila,
+    gira, e usa in silenzio quella sbagliata fra due cose che si chiamano
+    uguale. Ed è anche in cima alla lista di quello che sbaglia un modello che
+    scrive codice: per questo il compilatore lo tratta come un errore e non come
+    un avvertimento che nessuno legge.
+  </p>
+
+  <h3>Ogni valore è una copia</h3>
+  <figure class="example" data-src="examples/gallery/05-mutation.hero" data-lines="46-51">
+<pre><code><span class="k">test</span> <span class="s">"values are copies"</span>
+    a = [<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>]
+    b: [<span class="t">i64</span>] @ a
+    b @ b.push(<span class="n">4</span>)
+    <span class="k">assert</span> a.len() == <span class="n">3</span>
+    <span class="k">assert</span> b.len() == <span class="n">4</span></code></pre>
+    <figcaption>examples/gallery/05-mutation.hero, righe 46&ndash;51</figcaption>
+  </figure>
+  <p>
+    <code>b</code> parte come copia di <code>a</code>, e aggiungerci un elemento
+    lascia <code>a</code> in pace. Vale allo stesso modo per array, mappe,
+    stringhe e record, a qualsiasi profondità: in questo linguaggio niente è un
+    altro nome per qualcos&rsquo;altro, quindi una modifica fatta di qua non può
+    spuntare di là. Sotto il cofano il compilatore condivide la memoria finché
+    qualcuno non scrive, e copia solo allora. Ma è un dettaglio
+    implementativo a cui non ti viene mai chiesto di pensare.
+  </p>
+  <p>
+    Guarda anche <code>b @ b.push(4)</code>. <code>push</code> restituisce un
+    array nuovo invece di modificarne uno sul posto, quindi il risultato va messo
+    da qualche parte, e la <code>@</code> è dove va.
+  </p>
+
+  <h3>Quando una funzione deve davvero cambiare il suo argomento</h3>
+  <p>
+    Con le copie dappertutto un cursore che scorre un testo sarebbe impossibile
+    da scrivere, quindi c&rsquo;è un&rsquo;eccezione, ed è dichiarata da tutte e
+    due le parti della chiamata. Un parametro marcato <code>@</code> viene
+    cambiato dalla funzione:
+  </p>
+  <figure class="example" data-src="examples/gallery/05-mutation.hero" data-lines="19-21">
+<pre><code><span class="c"># The `@` is the whole signature's news: this one moves.</span>
+<span class="k">function</span> advance(@r: Reader)
+    r.pos @ r.pos + <span class="n">1</span></code></pre>
+    <figcaption>examples/gallery/05-mutation.hero, righe 19&ndash;21</figcaption>
+  </figure>
+  <p>
+    E anche chi chiama lo dice, altrimenti non compila:
+  </p>
+  <figure class="example" data-src="examples/gallery/05-mutation.hero" data-lines="23-26">
+<pre><code><span class="c"># Consumes spaces. The caller sees `@r` and knows the reader moved.</span>
+<span class="k">function</span> skip_spaces(@r: Reader)
+    <span class="k">while</span> !at_end(r) &amp;&amp; here(r) == <span class="s">' '</span>
+        advance(@r)</code></pre>
+    <figcaption>examples/gallery/05-mutation.hero, righe 23&ndash;26</figcaption>
+  </figure>
+  <pre><code>$ heroes check mutation.hero
+error[marker_mismatch]: `advance` changes this argument, so the call site writes `@` too
+  at mutation.hero:26:17
+     |
+  26 |         advance(r)
+     |                 ^
+  fix (certain): mark the argument: `@x`</code></pre>
+  <p>
+    Qui sta la differenza fra leggere una chiamata e leggere una funzione. In
+    quasi tutti i linguaggi, se <code>advance(r)</code> modifichi
+    <code>r</code> dipende da <code>advance</code>, dal tipo di <code>r</code>, e
+    a volte dalla piattaforma. Qui la risposta è nel carattere che stai
+    guardando.
+  </p>
+  <p>
+    Il significato è <b>copia dentro, copia fuori</b>: la funzione lavora sulla
+    propria copia, e il valore di chi ha chiamato viene sostituito quando la
+    funzione finisce. Succede a ogni uscita, <code>return</code> anticipati
+    compresi, quindi non esiste una strada in cui arriva metà delle modifiche.
+  </p>
+  <figure class="example" data-src="examples/gallery/05-mutation.hero" data-lines="28-35">
+<pre><code><span class="c"># Reads a run of letters and hands it back, leaving the reader after it.</span>
+<span class="k">function</span> word_at(@r: Reader) -&gt; <span class="t">str</span>
+    start = r.pos
+
+    <span class="k">while</span> !at_end(r) &amp;&amp; here(r) &gt;= <span class="s">'a'</span> &amp;&amp; here(r) &lt;= <span class="s">'z'</span>
+        advance(@r)
+
+    <span class="k">return</span> r.text.slice(from: start, to: r.pos)</code></pre>
+    <figcaption>examples/gallery/05-mutation.hero, righe 28&ndash;35</figcaption>
+  </figure>
+  <p>
+    Una funzione può cambiare il suo argomento <i>e</i> restituire qualcosa, come
+    fa questa: il cursore si sposta oltre la parola, e la parola torna indietro.
+    Una cosa che non può fare è essere chiamata come metodo:
+    <code>r.word_at()</code> non è ammesso quando il primo parametro è
+    <code>@</code>, perché quella scrittura nasconderebbe proprio il marchio di
+    cui parla tutto questo capitolo.
+  </p>
+
+  <h3>Un nome che nessuno legge è un errore</h3>
+  <pre><code>$ heroes check mutation.hero
+error[unused_binding]: `spare` is bound and never read — remove the binding, or read it
+  at mutation.hero:55:5
+     |
+  55 |     spare = 5
+     |     ^^^^^</code></pre>
+  <p>
+    Un nome inutilizzato di solito è un avanzo di una modifica, oppure una riga
+    il cui risultato doveva essere usato e non lo è. Vale la pena fermarsi per
+    entrambi. Quando invece vuoi davvero buttare via un risultato, dillo con
+    <code>_ = f(x)</code>: la rinuncia è scritta invece che sottintesa, e
+    <code>_</code> non lega niente, quindi si può ripetere.
+  </p>
+
+  <h3>Il programma</h3>
+  <figure class="example" data-src="examples/gallery/05-mutation.hero" data-lines="53-55">
+<pre><code><span class="k">function</span> main()
+    r: Reader @ Reader(text: <span class="s">"one two"</span>, pos: <span class="n">0</span>)
+    print(word_at(@r))</code></pre>
+    <figcaption>examples/gallery/05-mutation.hero, righe 53&ndash;55</figcaption>
+  </figure>
+  <pre><code>$ heroes run examples/gallery/05-mutation.hero
+one</code></pre>
+
+  <p class="next">
+    Poi: <b><a href="generics-and-function-values.html">Generici e valori
+    funzione</a></b>: una forma sola che funziona per tanti tipi, e le funzioni
+    passate in giro come valori.
+    <a href="index.html">Torna all&rsquo;elenco dei capitoli</a>.
+    <span class="back">&larr; Prima: <a href="control-flow.html">Il flusso di controllo</a></span>
+  </p>
+
+  <footer>
+    <p>Ogni blocco di codice di questa pagina è una fetta di
+    <code>examples/gallery/05-mutation.hero</code> nel repository. Le quattro
+    diagnostiche sono quello stesso file con una riga cambiata o aggiunta ogni
+    volta, controllato come <code>mutation.hero</code>.</p>
+    <p>Fatto da Giuseppe Arici, CTO di Codermine, Brescia. Autore di
+    <a href="../author.html"><i>Gli eroi del codice</i></a>. Sulle spalle
+    <a href="../thanks.html">di un sacco di altre persone</a>.</p>
+    <p>&copy; 2026 Giuseppe Arici &middot; heroes-lang.org</p>
+  </footer>

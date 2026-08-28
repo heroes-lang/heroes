@@ -1,0 +1,7 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import content from '../../html/it/log.html?raw';
+---
+<BaseLayout path="/it/log.html" title={'Il diario di costruzione di Heroes'} description={'Una cartolina per milestone, dalla più recente: che cosa è stato costruito, che cosa si è rotto, e che cosa hanno trovato i giudici. Il diario completo sta nel repository.'} current="log">
+<Fragment set:html={content} />
+</BaseLayout>

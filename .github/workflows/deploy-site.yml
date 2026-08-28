@@ -2,9 +2,11 @@ name: Deploy site
 
 # The site's only deploy path.
 #
-# There is no build step yet: `site/public/` is hand-written static HTML and
-# wrangler uploads it as it stands. That changes when the site becomes an Astro
-# project, and this comment changes with it rather than after it.
+# The site is an Astro project: `npm run build` turns `site/src/` into
+# `site/dist/`, and wrangler uploads that. `site/public/` still exists and is
+# still deployed, but it holds the assets alone now — the stylesheet, the
+# portrait, robots.txt, llms.txt and the parking page — and Astro copies it into
+# `dist/` on its way.
 #
 # What reaches Cloudflare is a DIRECT UPLOAD: the files are finished before they
 # leave here, so the deploy spends none of the 500 builds a month the Pages Free
@@ -51,6 +53,24 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # Node 22 rather than the newest: it is Astro's current LTS target and the
+      # version the other site in this account builds under, so a break here is
+      # a break in the site rather than in the runner's Node.
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+
+      # `npm ci`, never `npm install`: it installs exactly the lockfile and
+      # fails if package.json and the lockfile disagree, which is the whole
+      # reason the lockfile is committed.
+      - run: npm ci
+      - run: npm run build
+
+      # No artifact upload. The deploy step below reads site/dist straight from
+      # the workspace, so a second copy in Actions storage would buy nothing.
+
       # Requires two repository secrets:
       #   CLOUDFLARE_API_TOKEN   a custom token carrying Cloudflare Pages: Edit
       #   CLOUDFLARE_ACCOUNT_ID  the account that owns the Pages project
@@ -73,6 +93,6 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          npx --yes wrangler@4 pages deploy public \
+          npx --yes wrangler@4 pages deploy dist \
             --project-name=heroes-lang-site \
             --branch=main

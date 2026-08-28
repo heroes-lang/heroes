@@ -1,0 +1,94 @@
+---
+// The shell every page of both editions is served in.
+//
+// What this replaces: the head block was written out by hand on all 44 pages,
+// eighteen tags each, and SEVEN of those tags carry an absolute URL. That is
+// 176 absolute URLs maintained by copying, and a wrong one is invisible: a
+// canonical pointing at the wrong page still renders, still validates, and
+// quietly tells a search engine that this page is a duplicate of another. Here
+// they are computed once, from `path`, and cannot disagree with each other.
+//
+// The `<footer>` is NOT here, and that is deliberate rather than unfinished.
+// Measured across the English edition: six distinct footers among eleven pages,
+// because the documentation chapters, `thanks` and `author` each carry their
+// own closing paragraphs. Pulling them into a component means deciding by eye
+// which sentences are furniture and which are content, which is exactly how a
+// sentence goes missing. Each page keeps its own footer, copied unchanged,
+// until the build comparison is green and the extraction can be checked instead
+// of trusted.
+//
+// In the source these pages come from, `<footer>` sits INSIDE `<main>`. The CSS
+// is written against that, so the slot has to be inside `<main>` too.
+
+import SiteNav from '../components/SiteNav.astro';
+
+interface Props {
+  /** The page's canonical path, absolute, ending in .html. The one input. */
+  path: string;
+  title: string;
+  description: string;
+  /** Which nav entry to mark as current. Omitted on the two home pages. */
+  current?: string;
+  /** `home` on the two landings, absent everywhere else. */
+  mainClass?: string;
+}
+
+const { path, title, description, current, mainClass } = Astro.props;
+
+const ORIGIN = 'https://heroes-lang.org';
+
+const lang = path.startsWith('/it/') ? 'it' : 'en';
+
+// The English twin of this page, and its Italian one. Mirrored paths are what
+// make this two lines; `x-default` points at the English, as it did before.
+const en = lang === 'it' ? path.slice(3) : path;
+const it = `/it${en}`;
+const canonical = ORIGIN + path;
+
+// SELF FIRST, then the other edition, then x-default. Measured across the site
+// this replaces: all 22 English pages listed `en, it, x-default` and all 22
+// Italian ones listed `it, en, x-default`, without a single exception. The
+// order carries no meaning to a crawler, and reproducing it costs one line;
+// spending that line is what lets the build comparison report a real difference
+// instead of forty-four false ones.
+const alternates = lang === 'it'
+  ? [['it', it], ['en', en], ['x-default', en]]
+  : [['en', en], ['it', it], ['x-default', en]];
+
+// Depth in the FILE SYSTEM, which is not the depth the nav uses: `/it/index.html`
+// is one directory down here and at the top of its edition there.
+const up = '../'.repeat(path.split('/').length - 2);
+
+const favicon =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cpath fill='%23e5393e' d='M 14 0 L2 18 h8 L7 32 L22 12 h-9 z'/%3E%3C/svg%3E";
+---
+<!doctype html>
+<html lang={lang}>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{title}</title>
+<meta name="description" content={description}>
+<link rel="icon" href={favicon}>
+<link rel="canonical" href={canonical}>
+{alternates.map(([code, href]) => (
+<link rel="alternate" hreflang={code} href={ORIGIN + href}>
+))}
+<meta name="theme-color" content="#0d0d12">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Heroes">
+<meta property="og:title" content={title}>
+<meta property="og:description" content={description}>
+<meta property="og:url" content={canonical}>
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content={title}>
+<meta name="twitter:description" content={description}>
+<link rel="stylesheet" href={`${up}style.css`}>
+</head>
+<body>
+<SiteNav path={path} current={current} />
+<main class={mainClass}>
+<slot />
+</main>
+</body>
+</html>

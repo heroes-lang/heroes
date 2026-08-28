@@ -1,0 +1,189 @@
+
+  <p class="crumb"><a href="../index.html">Heroes</a> / <a href="index.html">Docs</a> / capitolo 8</p>
+
+  <h1 class="chapter">Le stringhe</h1>
+  <p class="tagline">Byte e caratteri sono due lavori, e il sistema dei tipi non ti lascia confonderli.</p>
+
+  <p>
+    Uno <code>str</code> è testo UTF-8 che, una volta creato, non cambia più.
+    <code>len()</code> conta <b>byte</b>, non lettere, e lo stesso fa
+    <code>slice</code>. È la risposta onesta per l&rsquo;UTF-8, dove una lettera
+    può occupare un byte o quattro, e far finta del contrario è il modo in cui
+    nascono i bug sulle stringhe.
+  </p>
+
+  <h3>L&rsquo;indice ti dà un byte</h3>
+  <figure class="example" data-src="examples/gallery/07-strings.hero" data-lines="7-15">
+<pre><code><span class="c"># Bytes, not characters: this counts the ASCII spaces.</span>
+<span class="k">function</span> space_count(s: <span class="t">str</span>) -&gt; <span class="t">i64</span>
+    seen: <span class="t">i64</span> @ <span class="n">0</span>
+
+    <span class="k">for</span> i <span class="k">in</span> range(from: <span class="n">0</span>, to: s.len())
+        <span class="k">if</span> s[i] == <span class="s">' '</span>
+            seen @ seen + <span class="n">1</span>
+
+    <span class="k">return</span> seen</code></pre>
+    <figcaption>examples/gallery/07-strings.hero, righe 7&ndash;15</figcaption>
+  </figure>
+  <p>
+    <code>s[i]</code> ti dà un <code>u8</code>, cioè un numero da 0 a 255,
+    perché un byte è quello. Viene confrontato con <code>' '</code> fra apici
+    singoli, che è il modo di scrivere un carattere singolo e vale anche lui come
+    numero. Con le virgolette doppie avresti una stringa, e le due cose non si
+    mescolano:
+  </p>
+  <pre><code>$ heroes check strings.hero
+error[type_mismatch]: expected `u8`, found `str`
+  at strings.hero:12:12
+     |
+  12 |         if s[i] == " "
+     |            ^^^^^^^^^^^</code></pre>
+  <p>
+    In un linguaggio con un tipo stringa solo e le conversioni implicite, quella
+    riga compila e confronta un numero con una stringa secondo una regola che ti
+    devi ricordare. Qui i due lavori hanno due tipi, e lo sbaglio ferma la
+    compilazione.
+  </p>
+
+  <h3><code>chars()</code> ti dà i caratteri</h3>
+  <figure class="example" data-src="examples/gallery/07-strings.hero" data-lines="17-25">
+<pre><code><span class="c"># Characters, not bytes: this one is right for text.</span>
+<span class="k">function</span> letters_of(s: <span class="t">str</span>) -&gt; [<span class="t">str</span>]
+    out: [<span class="t">str</span>] @ []
+
+    <span class="k">for</span> c <span class="k">in</span> s.chars()
+        <span class="k">if</span> c != <span class="s">" "</span>
+            out @ out.push(c)
+
+    <span class="k">return</span> out</code></pre>
+    <figcaption>examples/gallery/07-strings.hero, righe 17&ndash;25</figcaption>
+  </figure>
+  <p>
+    <code>chars()</code> percorre caratteri interi e te li restituisce uno per
+    uno come <code>str</code> di un carattere: ecco perché questa funzione
+    confronta con <code>" "</code> fra virgolette doppie mentre quella di prima
+    usava <code>' '</code>. Il ciclo sui byte va bene per un protocollo o per uno
+    scanner; <code>chars()</code> va bene per qualunque cosa leggerà una persona.
+    Scegliere quello sbagliato adesso è una decisione che prendi tu apposta,
+    invece di una che prende il linguaggio al posto tuo.
+  </p>
+  <p>
+    Nemmeno tagliare in mezzo a un carattere passa in silenzio: il programma si
+    ferma, invece di produrre testo che non è più UTF-8 valido.
+  </p>
+
+  <h3>Dividere, senza una libreria dietro cui nascondersi</h3>
+  <figure class="example" data-src="examples/gallery/07-strings.hero" data-lines="27-40">
+<pre><code><span class="c"># Splitting on a single space, written out. There is no library to hide in.</span>
+<span class="k">function</span> words_of(s: <span class="t">str</span>) -&gt; [<span class="t">str</span>]
+    out: [<span class="t">str</span>] @ []
+    start: <span class="t">i64</span> @ <span class="n">0</span>
+
+    <span class="k">for</span> i <span class="k">in</span> range(from: <span class="n">0</span>, to: s.len())
+        <span class="k">if</span> s[i] == <span class="s">' '</span>
+            <span class="k">if</span> i &gt; start
+                out @ out.push(s.slice(from: start, to: i))
+            start @ i + <span class="n">1</span>
+
+    <span class="k">if</span> s.len() &gt; start
+        out @ out.push(s.slice(from: start, to: s.len()))
+    <span class="k">return</span> out</code></pre>
+    <figcaption>examples/gallery/07-strings.hero, righe 27&ndash;40</figcaption>
+  </figure>
+  <p>
+    Uno <code>split</code> predefinito non c&rsquo;è, perché non c&rsquo;è
+    proprio nessuna libreria standard: è il vincolo di partenza, non una
+    dimenticanza. Dodici righe è quello che costa davvero dividere sugli spazi, e
+    quell&rsquo;<code>if i &gt; start</code> è il pezzo che una libreria avrebbe
+    deciso al posto tuo: qui due spazi di fila non producono una parola vuota, e
+    questa scelta si vede nel codice invece che nella documentazione di qualcun
+    altro.
+  </p>
+  <p>
+    <code>slice(from:, to:)</code> lavora in byte, con <code>to</code> escluso, e
+    nomina tutti e due gli estremi perché sono dello stesso tipo, la
+    stessa regola per cui <code>range</code> nomina i suoi.
+  </p>
+
+  <h3>Rimetterle insieme</h3>
+  <figure class="example" data-src="examples/gallery/07-strings.hero" data-lines="42-45">
+<pre><code><span class="c"># `join` is the other direction, and the separator is an argument, not a</span>
+<span class="c"># convention.</span>
+<span class="k">function</span> sentence_of(words: [<span class="t">str</span>]) -&gt; <span class="t">str</span>
+    <span class="k">return</span> words.join(<span class="s">" "</span>)</code></pre>
+    <figcaption>examples/gallery/07-strings.hero, righe 42&ndash;45</figcaption>
+  </figure>
+  <figure class="example" data-src="examples/gallery/07-strings.hero" data-lines="47-54">
+<pre><code><span class="k">function</span> initials_of(words: [<span class="t">str</span>]) -&gt; <span class="t">str</span>
+    out: <span class="t">str</span> @ <span class="s">""</span>
+
+    <span class="k">for</span> w <span class="k">in</span> words
+        <span class="k">if</span> w.len() &gt; <span class="n">0</span>
+            out @ out + w.slice(from: <span class="n">0</span>, to: <span class="n">1</span>)
+
+    <span class="k">return</span> out</code></pre>
+    <figcaption>examples/gallery/07-strings.hero, righe 47&ndash;54</figcaption>
+  </figure>
+  <p>
+    Queste due fanno lo stesso tipo di lavoro a prezzi molto diversi.
+    <code>join</code> percorre la lista una volta e costruisce la risposta in una
+    passata. Il ciclo qui sotto invece costruisce una stringa nuova a ogni giro,
+    perché uno <code>str</code> non cambia mai e <code>+</code> può solo farne
+    una terza a partire da due: quindi una lista lunga costa la somma di tutti i
+    risultati intermedi. <code>join</code> e <code>repeat</code> esistono
+    esattamente per questo, e quattro iniziali non se ne accorgeranno mai.
+  </p>
+
+  <h3>Sei escape, e nemmeno uno di più</h3>
+  <p>
+    Dentro una stringa: <code>\n</code>, <code>\t</code>, <code>\r</code>,
+    <code>\\</code>, <code>\"</code>. Dentro un letterale di carattere,
+    <code>\'</code> prende il posto dell&rsquo;ultimo. La lista è tutta qui, e
+    qualunque altra cosa viene respinta sul posto con la riparazione allegata:
+  </p>
+  <pre><code>$ heroes check strings.hero
+error[unknown_escape]: `\d` is not an escape sequence — the escapes are \n \t \r \\ \"; write `\\` for a literal backslash
+  at strings.hero:45:24
+     |
+  45 |     return words.join("\d")
+     |                        ^^
+  fix (certain): escape the backslash: `\\d`</code></pre>
+  <p>
+    Quasi tutti i linguaggi lasciano passare un escape sconosciuto come se fosse
+    la lettera stessa: vuol dire che un&rsquo;espressione regolare incollata
+    dentro una stringa continua a funzionare fino al giorno in cui uno dei suoi
+    escape va a sbattere contro uno vero. Qui quello scontro è impossibile, e la
+    riparazione è applicabile da sola: il compilatore può scrivere
+    <code>\\d</code> dentro il tuo file al posto tuo.
+  </p>
+
+  <h3>Il programma</h3>
+  <figure class="example" data-src="examples/gallery/07-strings.hero" data-lines="63-66">
+<pre><code><span class="k">function</span> main()
+    words = words_of(<span class="s">"the quick brown fox"</span>)
+    print(sentence_of(words))
+    print(initials_of(words))</code></pre>
+    <figcaption>examples/gallery/07-strings.hero, righe 63&ndash;66</figcaption>
+  </figure>
+  <pre><code>$ heroes run examples/gallery/07-strings.hero
+the quick brown fox
+tqbf</code></pre>
+
+  <p class="next">
+    Poi: <b><a href="maps.html">Le mappe</a></b>, dove cercare una chiave ti
+    restituisce un valore <i>oppure</i> un errore, e non c&rsquo;è nessun null
+    da dimenticare.
+    <a href="index.html">Torna all&rsquo;elenco dei capitoli</a>.
+    <span class="back">&larr; Prima: <a href="generics-and-function-values.html">Generici e valori funzione</a></span>
+  </p>
+
+  <footer>
+    <p>Ogni blocco di codice di questa pagina è una fetta di
+    <code>examples/gallery/07-strings.hero</code> nel repository. Le due
+    diagnostiche sono quello stesso file con un confronto e un separatore
+    cambiati, controllato come <code>strings.hero</code>.</p>
+    <p>Fatto da Giuseppe Arici, CTO di Codermine, Brescia. Autore di
+    <a href="../author.html"><i>Gli eroi del codice</i></a>. Sulle spalle
+    <a href="../thanks.html">di un sacco di altre persone</a>.</p>
+    <p>&copy; 2026 Giuseppe Arici &middot; heroes-lang.org</p>
+  </footer>

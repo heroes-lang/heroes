@@ -1,0 +1,170 @@
+
+  <p class="crumb"><a href="../index.html">Heroes</a> / <a href="index.html">Docs</a> / capitolo 11</p>
+
+  <h1 class="chapter">Test e buchi</h1>
+  <p class="tagline">Test che non devi installare, e un modo per chiedere al compilatore che cosa ci va qui.</p>
+
+  <p>
+    Due cose in una pagina sola, perché sono la stessa idea detta due volte: gli
+    attrezzi per scrivere un programma che non è ancora finito fanno parte del
+    linguaggio, invece di essere qualcosa che ci aggiungi sopra.
+  </p>
+
+  <h3><code>test</code> è una dichiarazione</h3>
+  <figure class="example" data-src="examples/gallery/09-holes.hero" data-lines="30-32">
+<pre><code><span class="k">test</span> <span class="s">"the part that exists, works"</span>
+    lunch = [Entry(name: <span class="s">"soup"</span>, calories: <span class="n">120</span>), Entry(name: <span class="s">"bread"</span>, calories: <span class="n">250</span>)]
+    <span class="k">assert</span> total_calories(lunch) == <span class="n">370</span></code></pre>
+    <figcaption>examples/gallery/09-holes.hero, righe 30&ndash;32</figcaption>
+  </figure>
+  <p>
+    Un <code>test</code> ha per nome una frase e per corpo quello che sta
+    indentato sotto. Vive accanto al codice di cui parla, nello stesso file, e
+    una compilazione normale lo ignora del tutto: nell&rsquo;eseguibile che
+    consegni dei test non arriva niente. Non devi scegliere nessuna libreria per
+    scriverli, non serve marcarli in qualche modo, non c&rsquo;è una cartella a
+    parte e non ci sono nomi di file da rispettare.
+  </p>
+  <p>
+    <code>assert</code> vuole un <code>bool</code>. Quando uno fallisce ti mostra
+    l&rsquo;espressione che gli avevi dato e tutti e due i lati del confronto,
+    così non devi quasi mai aggiungere una stampa e rilanciare:
+  </p>
+  <pre><code>$ heroes test points.hero
+assert failed: dist2(a: Point(x: 0, y: 0), b: Point(x: 3, y: 4)) == 24
+  left:  25
+  right: 24
+FAIL "the 3-4-5 triangle"
+ok   "a rectangle keeps its size when it moves"
+2 tests, 1 failed</code></pre>
+  <p>
+    Gli altri test girano lo stesso e riportano lo stesso. Il codice di uscita
+    non è zero, quindi la cosa funziona dentro uno script senza che nessuno
+    debba leggersi l&rsquo;output.
+  </p>
+
+  <h3><code>???</code> è un&rsquo;espressione legale</h3>
+  <p>
+    E adesso l&rsquo;altra metà. Scrivi <code>???</code> in qualunque punto dove
+    ci vuole un valore e il programma passa lo stesso il controllo dei tipi:
+    tutto quello che sta intorno al buco viene verificato come sempre, e il
+    compilatore ti dice che cosa ci va dentro.
+  </p>
+  <figure class="example" data-src="examples/gallery/09-holes.hero" data-lines="12-19">
+<pre><code><span class="c"># Written, tested, done.</span>
+<span class="k">function</span> total_calories(entries: [Entry]) -&gt; <span class="t">i64</span>
+    total: <span class="t">i64</span> @ <span class="n">0</span>
+
+    <span class="k">for</span> e <span class="k">in</span> entries
+        total @ total + e.calories
+
+    <span class="k">return</span> total</code></pre>
+    <figcaption>examples/gallery/09-holes.hero, righe 12&ndash;19</figcaption>
+  </figure>
+  <figure class="example" data-src="examples/gallery/09-holes.hero" data-lines="21-24">
+<pre><code><span class="c"># Next up: the compiler will name the expected type and list `entries`,</span>
+<span class="c"># `total_calories` and the fields of `Entry` when it reaches this.</span>
+<span class="k">function</span> heaviest(entries: [Entry]) -&gt; Entry
+    ???</code></pre>
+    <figcaption>examples/gallery/09-holes.hero, righe 21&ndash;24</figcaption>
+  </figure>
+  <figure class="example" data-src="examples/gallery/09-holes.hero" data-lines="26-28">
+<pre><code><span class="c"># The hole can be one argument of an otherwise finished line.</span>
+<span class="k">function</span> summary_of(entries: [Entry]) -&gt; <span class="t">str</span>
+    <span class="k">return</span> <span class="s">"total "</span> + total_calories(entries).to_str() + <span class="s">", heaviest "</span> + ???</code></pre>
+    <figcaption>examples/gallery/09-holes.hero, righe 26&ndash;28</figcaption>
+  </figure>
+  <p>Chiedi al compilatore di quel file e ti risponde:</p>
+  <pre><code>$ heroes check holes.hero
+hole at holes.hero:24:5
+  position: statement — any type, or none
+  this function returns: Entry
+  in scope:
+    entries: [Entry]
+hole at holes.hero:28:74
+  expected type: str
+  in scope:
+    entries: [Entry]
+  functions that return it:
+    summary_of(entries: [Entry])
+      # The hole can be one argument of an otherwise finished line.
+    library.hero_args_at(index: i64)
+    library.hero_file_read(path: cstr, @status: i64)
+    library.hero_str_try_from_cstr(p: cstr, @status: i64)</code></pre>
+  <p>
+    Leggi il secondo. Il compilatore ha capito che lì ci vuole uno
+    <code>str</code>. Poi ha elencato che cosa hai a disposizione in quel punto,
+    e quali funzioni restituiscono proprio uno <code>str</code>, ognuna con la
+    prima riga del suo commento: quella è la documentazione. È la risposta a &ldquo;che cosa ci potrebbe stare qui?&rdquo;, che è la
+    domanda che hai davvero, non un messaggio di errore travestito da aiuto.
+  </p>
+
+  <h3>Tutto il resto viene controllato lo stesso</h3>
+  <p>
+    Un file con dei buchi viene controllato per intero: esce con 0, e con le
+    diagnostiche di qualunque cosa sia davvero sbagliata. Quello che non fa è
+    produrre un binario, e lo strumento dice quale riga glielo ha impedito:
+  </p>
+  <pre><code>$ heroes test holes.hero
+no binary: 2 holes in holes.hero
+hole at holes.hero:24:5
+  position: statement — any type, or none
+  this function returns: Entry
+  in scope:
+    entries: [Entry]
+hole at holes.hero:28:74
+  expected type: str
+  in scope:
+    entries: [Entry]
+  functions that return it:
+    summary_of(entries: [Entry])
+      # The hole can be one argument of an otherwise finished line.
+    library.hero_args_at(index: i64)
+    library.hero_file_read(path: cstr, @status: i64)
+    library.hero_str_try_from_cstr(p: cstr, @status: i64)</code></pre>
+  <p>
+    Questo è lo scambio, ed è buono: un programma scritto a metà è un programma
+    di cui il compilatore ti parla, e non può mai essere scambiato per uno
+    finito. Un buco non può scappare dentro qualcosa che gira.
+  </p>
+
+  <h3>Perché sta nel linguaggio e non dentro un editor</h3>
+  <p>
+    Chi legge un programma Heroes spesso è un modello linguistico, e un modello
+    che scrive codice ha esattamente questo problema: ha bisogno di sapere che
+    cosa è disponibile in un punto di un file che non ha finito. Scritta come
+    buco, quella domanda si fa con tre caratteri e riceve dal compilatore una
+    risposta in una forma leggibile sia da una persona sia da un modello,
+    senza un editor, senza un&rsquo;estensione e senza un language server acceso.
+    E quei tre caratteri segnano il punto nel file, così nessuno si dimentica
+    che lì c&rsquo;era una domanda.
+  </p>
+  <figure class="example" data-src="examples/gallery/09-holes.hero" data-lines="34-35">
+<pre><code><span class="k">function</span> main()
+    print(summary_of([Entry(name: <span class="s">"tea"</span>, calories: <span class="n">2</span>)]))</code></pre>
+    <figcaption>examples/gallery/09-holes.hero, righe 34&ndash;35</figcaption>
+  </figure>
+  <p>
+    Riempi i due buchi e quel <code>main</code> parte. Fino ad allora, la parte
+    finita del file ha un test che passa e la parte non finita ha una domanda con
+    una risposta.
+  </p>
+
+  <p class="next">
+    Poi: <b><a href="the-c-boundary.html">Il confine con il C</a></b>, da dove
+    arriva tutto quello che il linguaggio non ha.
+    <a href="index.html">Torna all&rsquo;elenco dei capitoli</a>.
+    <span class="back">&larr; Prima: <a href="values-all-the-way-down.html">Valori fino in fondo</a></span>
+  </p>
+
+  <footer>
+    <p>Ogni blocco di codice di questa pagina è una fetta di
+    <code>examples/gallery/09-holes.hero</code> nel repository, controllato come
+    <code>holes.hero</code>. Il test che fallisce è
+    <code>examples/gallery/01-points.hero</code> con un valore atteso
+    cambiato.</p>
+    <p>Fatto da Giuseppe Arici, CTO di Codermine, Brescia. Autore di
+    <a href="../author.html"><i>Gli eroi del codice</i></a>. Sulle spalle
+    <a href="../thanks.html">di un sacco di altre persone</a>.</p>
+    <p>&copy; 2026 Giuseppe Arici &middot; heroes-lang.org</p>
+  </footer>

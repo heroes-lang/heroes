@@ -5,12 +5,63 @@ page (author instruction 2026-08-17: *"più a forma di siti di linguaggi, guarda
 go, rust — non voglio una mega scroll page"*). Every page carries the same nav,
 so no page is a dead end:
 
-Everything that ships lives in **`site/public/`** — that directory is the whole
-deployable site, so Pages publishing it can never leak this README or the
-panel's briefs. Beside it, **`site/.claude/skills/site-panel/`** holds the
-five-seat review panel as a directory-scoped skill.
+**The site is built.** `npm run build` turns `site/src/` into **`site/dist/`**,
+and `dist/` is the whole deployable artifact: nothing outside it is uploaded, so
+publishing can never leak this README or the panel's briefs. Three directories
+hold the source, and each answers a different question:
 
-| file (in `public/`) | what it is |
+| directory | what is in it |
+|---|---|
+| `src/html/` | the pages themselves, one HTML fragment each: the inside of `<main>`, prose and code and footer, exactly as it has always been written |
+| `src/pages/` | one tiny `.astro` per page, carrying four facts and no content: its path, its title, its description, which nav entry is current |
+| `src/layouts/`, `src/components/` | the head and the nav, written **once** |
+| `public/` | the assets, copied into `dist/` untouched: `style.css`, `images/`, `robots.txt`, `llms.txt`, `CNAME`, and the pre-launch parking page |
+
+Beside them, **`site/.claude/skills/site-panel/`** holds the five-seat review
+panel as a directory-scoped skill.
+
+**Why the pages are HTML fragments and not markup inside the `.astro` files.**
+In an `.astro` template `{` opens a JavaScript expression, and these pages are
+full of code examples in Heroes and in C where `{` is a brace. Pasting the
+markup in would make the compiler read `{str: i64}` as an expression. Keeping
+the content in HTML files and injecting it with `set:html` removes the whole
+class of accident, and it has a second effect worth as much: the prose stays in
+plain HTML files that anyone can open and edit without knowing anything about
+Astro.
+
+## Commands
+
+```
+cd site
+npm ci                  # exactly the lockfile, and fails if it disagrees with package.json
+npm run build           # src/ -> dist/, 44 pages
+npm run dev             # the fast loop, on localhost
+npm run preview         # dist/ over plain HTTP, as Astro serves it
+
+sudo python3 serve.py --host heroes-lang.org    # dist/ over HTTPS, under the REAL name
+```
+
+The last one catches what the others cannot, and § Looking at it before it is
+published says why. It needs `npm run build` to have run first.
+
+None of these is a `heroes` subcommand, and CLAUDE.md §10's stopping rule is what
+keeps them out: a capability enters that surface only if the fixpoint invocation,
+the golden harness or the Part 11 harness must type it, or it has a measured
+Part 11 effect. Building a website is none of those.
+
+**One quirk of the build, written here because it fails quietly.** Astro's
+`format: 'file'` turns `pages/docs/index.astro` into the route `/docs` and writes
+`dist/docs.html`. This site needs `dist/docs/index.html`, so those pages live one
+directory deeper, at `pages/docs/index/index.astro`, whose route ends in `/index`.
+The site root is the exception and needs no such thing. The first build without
+this put the whole Italian edition's landing at `/it.html`, which is a dead link
+from the language switch of every Italian page, and nothing in the build log said
+so — the count was still 44.
+
+The pages, named by the URL they answer at. Each one is a fragment in
+`src/html/` and a four-line `.astro` beside it in `src/pages/`.
+
+| page | what it is |
 |---|---|
 | `index.html` | the landing: hero, one sample, three cards, the claim. Short on purpose. |
 | | The hero says **&ldquo;a compiled programming language&rdquo;** above the name, because a visitor who has never heard of Heroes should not have to infer the category (author instruction 2026-08-17). Its code panel shows **working code, never a diagnostic** — *&ldquo;aprire un sito di un linguaggio con un errore è brutto&rdquo;*, same date. The errors have their own page. In that panel the `bar` names the file, so the figure carries no second caption. |
@@ -28,17 +79,36 @@ five-seat review panel as a directory-scoped skill.
 | `style.css` | the only cross-page *stylesheet* |
 | `images/` | the one binary asset the site has: `giuseppe-arici.jpg`, the author's portrait, used by both editions of `author.html` |
 
-Still no build step, no JavaScript, no external assets; light/dark via
-`prefers-color-scheme`. The domain (heroes-lang.org) is already owned by the
-author.
+**No JavaScript and no external assets**, on any page, still: light and dark come
+from `prefers-color-scheme` alone. There IS a build step now, and it is the one
+thing the move to Astro changed about what a visitor receives — which is nothing.
+Astro ships no JavaScript unless a page asks for one, and no page here asks. The
+domain (heroes-lang.org) is already owned by the author.
 
-The stylesheet is a file rather than a `<style>` block per page for one reason:
-there is no build step to keep copies honest, and a duplicated palette drifts
-invisibly — one page's dark mode goes stale and nothing fails. The bolt stays
-inline SVG in every page, because it is markup.
+**No Tailwind either, and that is a deliberate difference from the author's other
+site**, which uses it. This site has its own hand-written 45 KB `style.css` and
+that stylesheet *is* the art direction; a utility framework beside it would be a
+second design system earning nothing.
 
-**The nav is duplicated in each page's markup**, which is the one repetition the
-no-JavaScript rule forces. Nine items in a fixed order — Why Heroes · Docs ·
+The stylesheet is a file rather than a `<style>` block per page because a
+duplicated palette drifts invisibly — one page's dark mode goes stale and nothing
+fails. The bolt stays inline SVG in every page, because it is markup.
+
+**The nav is written once, in `src/components/SiteNav.astro`.** It used to be
+duplicated in each page's markup, and the cost of that was measured on the day
+it ended: **44 pages, 44 distinct nav blocks, no two identical.** They differed
+by exactly three mechanical things and nothing else, which is why one component
+reproduces all 44: `class="here"` on the current entry, how many `../` the links
+climb, and the link to the other edition. Adding a nav item was editing 44 files;
+it is now editing one list.
+
+Two depths, and they are not the same number: `/it/index.html` is one directory
+below the site root, so its stylesheet is `../style.css`, but it is the TOP of
+the Italian edition, so its nav links carry no `../` at all. The stylesheet depth
+belongs to the layout and the nav depth to the component, and conflating them is
+how the language switch breaks on exactly the Italian pages.
+
+Nine items in a fixed order — Why Heroes · Docs ·
 Self-hosted · Zen · Panel · Thanks · Author · Log · GitHub — and the current page
 marks itself `class="here"`. At nine items the row no longer fits a phone, so
 under **800px** the list becomes **one horizontally scrolling line** with the mark
@@ -78,9 +148,17 @@ chapter all still link it.
 
 The current page is marked twice, in colour **and** with a
 rule under it: colour alone is a signal a large minority of readers receive less
-of. Adding a page means editing that block everywhere; if that ever
-gets painful, the answer is a generator behind a `heroes` subcommand, not a
-script (CLAUDE.md §10).
+of. Adding an entry is now a line in `SiteNav.astro`'s list, and the 44 copies it
+used to mean are gone.
+
+**This paragraph used to end differently**, and the sentence it ended with is
+worth keeping as a record of how the decision was actually made: *"Adding a page
+means editing that block everywhere; if that ever gets painful, the answer is a
+generator behind a `heroes` subcommand, not a script (CLAUDE.md §10)."* It got
+painful, and the answer was neither — it was Astro, which is a third option that
+sentence did not have in view. §10's stopping rule is what rules out the
+subcommand and it still does: serving or generating a static site is not a
+property of the language, and `heroes build-site` would be the actual breach.
 
 **Syntax colouring is spans in the markup**, for the same reason. The token
 classes are the lexer's own tables rather than a guess — `.k` is
@@ -104,6 +182,9 @@ browser accepts without a word:
 **Why the real name and not localhost.** Every absolute URL on these pages is
 `https://heroes-lang.org/...`: the `canonical` of all 44 pages, the three
 `hreflang` alternates on each of them, the `og:url`, the sitemap's 44 entries.
+Those are generated from one path per page now rather than typed out, which is
+what the move to a layout bought: 176 absolute URLs that cannot disagree with
+each other.
 Under `localhost` none of that is exercised — the canonical points somewhere
 else than the page you are reading, and the language switch crosses an origin.
 Served under the real name, a mistake in any of it shows up here rather than
@@ -128,10 +209,16 @@ once. If `mkcert` made the certificate but its CA is **not** in the trust store,
 the script says so and prints the one command that fixes it, because that state
 is indistinguishable from a broken server if nobody tells you.
 
-Everything else it does is in service of not lying to you: it serves `public/`
+Everything else it does is in service of not lying to you: it serves `dist/`
 and nothing else, sends `Cache-Control: no-store` so a reload can never show
-yesterday's CSS, logs one line per request, and lives outside `public/` so it
+yesterday's CSS, logs one line per request, and lives outside `dist/` so it
 can never be deployed with the site.
+
+**It serves `dist/` and not the sources**, so what is read here is the artifact
+the deploy uploads. Run `npm run build` first; without it the script stops and
+prints the two commands rather than serving an empty directory. `npm run dev` is
+the faster loop, and it does not replace this one: the dev server does not answer
+on the site's real name over HTTPS, which is the only reason this script exists.
 
 **Why it is a script and not a `heroes` subcommand.** CLAUDE.md §10 says every
 capability is a subcommand of the one binary, and §10's own stopping rule is
@@ -147,12 +234,112 @@ missing page answers 404; the no-store header is present; the key is mode 0600;
 and asking for port 443 without root exits with the two commands that work
 instead of a stack trace.
 
-Not deployed yet. Cheapest route when wanted: GitHub Pages publishing
-`site/public/` (`CNAME` is already in it) + two DNS records at the registrar.
-**Ask before wiring any of it — publishing is an outward-facing act**, one
-of the process's few remaining hard stops.
+Re-verified against `dist/` after the build landed: both landings, both
+documentation landings, a nested chapter in each edition, the stylesheet, the
+portrait, `robots.txt`, `llms.txt` and both sitemap files answer 200 with the
+right content type, and a missing page answers 404. `sitemap.xml` is the one
+name in the paragraph above that no longer exists: the sitemap is generated, and
+it is `sitemap-index.xml` plus `sitemap-0.xml`.
 
-## The Italian edition — `site/public/it/`
+## Deployment — Cloudflare Pages, behind a gate
+
+The route is **Cloudflare Pages, by Direct Upload from GitHub Actions**, and it
+is the same one the author's other site runs on. Its only home is this section.
+
+**The site is deployed and it is not published.** Those are two different acts
+here, and keeping them apart is the whole design. CLAUDE.md §14 makes publishing
+a hard stop only the author lifts, and § Launch order below says why it is not
+lifted: `llms.txt` and every *check me* link on these pages points at a
+repository that answers 404 while it is private.
+
+### The gate
+
+`site/functions/[[path]].js` is a Pages Function that matches every URL.
+Cloudflare evaluates Functions **before** static assets, so that one file
+shadows the entire site: the real pages are uploaded underneath, complete and
+warm, and simply unreachable. `/` answers **200** with the holding page,
+everything else answers **404** with the same body, and both carry
+`x-robots-tag: noindex`.
+
+**Opening the site is deleting two files**, `site/functions/[[path]].js` and
+`site/public/_routes.json`. No rebuild of anything else, no domain to move
+between projects, no setting to find in a dashboard.
+
+To read the real site before then, visit any URL with `?preview=starman` once:
+it plants a cookie and redirects to the clean URL, so the token stops riding in
+the address bar. The token is written in a public file on purpose — it is a
+speed bump, not protection, and calling it one stops anybody relying on it.
+
+`public/_parking.html` is self-contained, and that is not tidiness.
+`_routes.json` excludes that one path from the Function, so a request for
+`/style.css` reaches the Function like every other and comes back as the holding
+page. A stylesheet link in it would render unstyled.
+
+### The workflows
+
+| file | what it does |
+|---|---|
+| `.github/workflows/deploy-site.yml` | on push to `main` touching `site/**`, and on demand: `npm ci`, `npm run build`, `wrangler pages deploy dist` |
+| `.github/workflows/release-site.yml` | `git tag site-v1 && git push origin site-v1` ships the tree by hand |
+
+Three details in there are load-bearing and each one fails **silently** if moved:
+
+- **`CF_DEPLOY` is computed at job level**, not on the step, because a step's
+  own `env` is not visible to that step's `if`. A clone without the secrets
+  stays green and skips the deploy rather than failing on a credential it never
+  had.
+- **The deploy step runs from `site/`** and hands wrangler `dist`. Wrangler
+  collects Functions from a `functions/` directory in the working directory it
+  is run from, never from inside the output directory it is given. Move
+  `site/functions/` without moving the step's `working-directory` and the deploy
+  still succeeds, with every URL of the site open and nothing in the log to say
+  so.
+- **`--branch=main`** marks the upload as production even when the run came from
+  a tag.
+
+Direct Upload rather than Cloudflare's native git integration: the native one
+spends one of the Free plan's 500 monthly builds on every push to `main`, and
+most pushes here touch only the compiler. This path spends none of them, and
+about a minute of Actions against 2,000. **Use one path or the other**; the git
+integration stays off.
+
+### The credentials
+
+Two repository secrets, `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`.
+Their shape, the exact permissions and the traps are documented in `.env.example`
+at the repository root, which is the one place they are written down; `.env`
+beside it is gitignored and holds the real values for a `wrangler` run started
+by hand.
+
+For a deploy that stops at `pages.dev`, the token needs one policy: resource
+**Entire Account**, `Cloudflare Pages: Edit` and `Account Settings: Read`. Give
+it a short expiry.
+
+### The domain, which has not moved
+
+The Pages project is `heroes-lang-site` and the site answers on
+`heroes-lang-site.pages.dev`. **`heroes-lang.org` is not on Cloudflare**:
+measured against the `.org` registry, resolver `1.1.1.1`, resolver `8.8.8.8` and
+whois, it is served by `dns106.ovh.net` and `ns106.ovh.net` and still points at
+OVH's parking address. `public/CNAME` records which domain the site expects;
+Cloudflare Pages ignores it.
+
+Attaching the real domain needs the nameservers moved, because **a `CNAME`
+cannot exist at the apex of a zone** and Pages is reached by `CNAME`. OVH's DNS
+has no `ALIAS` to work around it; Cloudflare's own zone flattens the apex
+natively. Two things in that order, and the first one is easy to forget:
+**DNSSEC comes off at OVH first** — the domain is signed today, and switching
+nameservers while the `DS` record is still published in the registry takes the
+domain off the network until the signatures agree again. Then add the zone at
+Cloudflare, check the imported records, verify the new nameservers answer
+correctly before delegating to them, switch at OVH, wait for **Active**, and
+only then attach the custom domain to the Pages project. Attaching while the
+zone is still Pending writes no DNS record *and* makes Pages choose HTTP
+validation, which parks in a circular stall.
+
+None of that is done, and none of it is owed until the author asks.
+
+## The Italian edition — `site/src/html/it/`
 
 The site ships in two languages (author instruction 2026-08-18: *"traduci tutto
 il sito anche in italiano … lascia in inglese i termini tecnici"*). This extends
@@ -162,9 +349,10 @@ the other**, and where they diverge the Italian is fixed to read better rather
 than the English to read more literally, because the author studies from the
 Italian.
 
-Mechanics, all of them chosen so there is still no build step:
+Mechanics. They were chosen when there was no build step, and the build did not
+change one of them, which is the argument for having kept them this simple:
 
-- The Italian edition lives in **`site/public/it/`, same basenames**
+- The Italian edition lives in **`site/src/html/it/`, same basenames**
   (`it/why.html` is `why.html`), so the two trees map one to one and a missing
   page is obvious. Italian pages link `../style.css` — one stylesheet for both.
 - **`lang="it"`** on the root element, and every page carries the three
@@ -510,7 +698,7 @@ Three rules follow, and they bind every later edit:
   first draft of this refresh shortened one and got the caret width, the line
   content and the fix text wrong in the process.
 
-## `site/public/docs/` — twelve chapters, written
+## `site/src/html/docs/` — twelve chapters, written
 
 The landing page lists all twelve chapters and links `errors.html` above them,
 which lives at the site root but belongs to this section. **All twelve are

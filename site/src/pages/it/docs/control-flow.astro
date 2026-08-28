@@ -1,0 +1,7 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import content from '../../../html/it/docs/control-flow.html?raw';
+---
+<BaseLayout path="/it/docs/control-flow.html" title={'Il flusso di controllo, documentazione di Heroes'} description={'Due cicli e una condizione. if vuole solo bool perché non esiste la verità implicita, for percorre una sequenza, while ripete su una condizione, e un intervallo è una normale chiamata di funzione.'} current="docs">
+<Fragment set:html={content} />
+</BaseLayout>

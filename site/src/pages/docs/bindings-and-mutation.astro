@@ -1,0 +1,7 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import content from '../../html/docs/bindings-and-mutation.html?raw';
+---
+<BaseLayout path="/docs/bindings-and-mutation.html" title={'Bindings and mutation, Heroes documentation'} description={'= binds a name once and forever, @ declares a cell that may change, and a function that changes its argument says so in the signature and at the call site. Shadowing a name is a compile error.'} current="docs">
+<Fragment set:html={content} />
+</BaseLayout>

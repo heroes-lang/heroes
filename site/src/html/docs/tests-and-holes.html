@@ -1,0 +1,167 @@
+
+  <p class="crumb"><a href="../index.html">Heroes</a> / <a href="index.html">Docs</a> / chapter 11</p>
+
+  <h1 class="chapter">Tests and holes</h1>
+  <p class="tagline">Tests you do not install, and a way to ask the compiler what goes here.</p>
+
+  <p>
+    Two features on one page, because they are the same idea twice: the tools
+    for writing a program that is not finished yet are part of the language
+    rather than something you add to it.
+  </p>
+
+  <h3><code>test</code> is a declaration</h3>
+  <figure class="example" data-src="examples/gallery/09-holes.hero" data-lines="30-32">
+<pre><code><span class="k">test</span> <span class="s">"the part that exists, works"</span>
+    lunch = [Entry(name: <span class="s">"soup"</span>, calories: <span class="n">120</span>), Entry(name: <span class="s">"bread"</span>, calories: <span class="n">250</span>)]
+    <span class="k">assert</span> total_calories(lunch) == <span class="n">370</span></code></pre>
+    <figcaption>examples/gallery/09-holes.hero, lines 30&ndash;32</figcaption>
+  </figure>
+  <p>
+    A <code>test</code> has a sentence for a name and whatever is indented
+    below it for a body. It sits next to the code it is about, in the same file,
+    and an ordinary build ignores it entirely: nothing about tests reaches the
+    executable you ship. There is no library to choose for writing them, nothing
+    to mark them with, no separate directory, and no file names to obey.
+  </p>
+  <p>
+    <code>assert</code> takes a <code>bool</code>. When one fails it shows the
+    expression it was given and both sides of the comparison, so you almost
+    never have to add a print and run it again:
+  </p>
+  <pre><code>$ heroes test points.hero
+assert failed: dist2(a: Point(x: 0, y: 0), b: Point(x: 3, y: 4)) == 24
+  left:  25
+  right: 24
+FAIL "the 3-4-5 triangle"
+ok   "a rectangle keeps its size when it moves"
+2 tests, 1 failed</code></pre>
+  <p>
+    The other tests still run and still report. The exit status is non-zero, so
+    this works in a script without anyone parsing the output.
+  </p>
+
+  <h3><code>???</code> is a legal expression</h3>
+  <p>
+    Now the other half. Write <code>???</code> anywhere a value belongs and the
+    program still type-checks: everything around the hole is verified as
+    usual, and the compiler tells you what belongs in it.
+  </p>
+  <figure class="example" data-src="examples/gallery/09-holes.hero" data-lines="12-19">
+<pre><code><span class="c"># Written, tested, done.</span>
+<span class="k">function</span> total_calories(entries: [Entry]) -&gt; <span class="t">i64</span>
+    total: <span class="t">i64</span> @ <span class="n">0</span>
+
+    <span class="k">for</span> e <span class="k">in</span> entries
+        total @ total + e.calories
+
+    <span class="k">return</span> total</code></pre>
+    <figcaption>examples/gallery/09-holes.hero, lines 12&ndash;19</figcaption>
+  </figure>
+  <figure class="example" data-src="examples/gallery/09-holes.hero" data-lines="21-24">
+<pre><code><span class="c"># Next up: the compiler will name the expected type and list `entries`,</span>
+<span class="c"># `total_calories` and the fields of `Entry` when it reaches this.</span>
+<span class="k">function</span> heaviest(entries: [Entry]) -&gt; Entry
+    ???</code></pre>
+    <figcaption>examples/gallery/09-holes.hero, lines 21&ndash;24</figcaption>
+  </figure>
+  <figure class="example" data-src="examples/gallery/09-holes.hero" data-lines="26-28">
+<pre><code><span class="c"># The hole can be one argument of an otherwise finished line.</span>
+<span class="k">function</span> summary_of(entries: [Entry]) -&gt; <span class="t">str</span>
+    <span class="k">return</span> <span class="s">"total "</span> + total_calories(entries).to_str() + <span class="s">", heaviest "</span> + ???</code></pre>
+    <figcaption>examples/gallery/09-holes.hero, lines 26&ndash;28</figcaption>
+  </figure>
+  <p>Ask the compiler about that file and it answers:</p>
+  <pre><code>$ heroes check holes.hero
+hole at holes.hero:24:5
+  position: statement — any type, or none
+  this function returns: Entry
+  in scope:
+    entries: [Entry]
+hole at holes.hero:28:74
+  expected type: str
+  in scope:
+    entries: [Entry]
+  functions that return it:
+    summary_of(entries: [Entry])
+      # The hole can be one argument of an otherwise finished line.
+    library.hero_args_at(index: i64)
+    library.hero_file_read(path: cstr, @status: i64)
+    library.hero_str_try_from_cstr(p: cstr, @status: i64)</code></pre>
+  <p>
+    Read the second one. The compiler worked out that a <code>str</code>
+    belongs there. Then it listed what you have to hand at that point, and which
+    functions return a <code>str</code>, each with the first line of its comment:
+    that is the documentation.
+    It is the answer to &ldquo;what could go here?&rdquo;, which is the
+    question you actually have, not an error message dressed up as help.
+  </p>
+
+  <h3>Everything else still gets checked</h3>
+  <p>
+    A file with holes is checked completely: exit 0, and diagnostics for
+    anything genuinely wrong. What it does not do is produce a binary, and the
+    tool says which line stopped it:
+  </p>
+  <pre><code>$ heroes test holes.hero
+no binary: 2 holes in holes.hero
+hole at holes.hero:24:5
+  position: statement — any type, or none
+  this function returns: Entry
+  in scope:
+    entries: [Entry]
+hole at holes.hero:28:74
+  expected type: str
+  in scope:
+    entries: [Entry]
+  functions that return it:
+    summary_of(entries: [Entry])
+      # The hole can be one argument of an otherwise finished line.
+    library.hero_args_at(index: i64)
+    library.hero_file_read(path: cstr, @status: i64)
+    library.hero_str_try_from_cstr(p: cstr, @status: i64)</code></pre>
+  <p>
+    That is the trade, and it is a good one: a half-written program is a program
+    the compiler will talk to you about, and it can never be mistaken for a
+    finished one. A hole cannot escape into something that runs.
+  </p>
+
+  <h3>Why this is in the language rather than in an editor</h3>
+  <p>
+    The reader of a Heroes program is often a language model, and a model
+    writing code has exactly this problem: it needs to know what is available at
+    a point in a file it has not finished. Written as a hole, that question is
+    asked with three characters and answered by the compiler in a form both a
+    person and a model can read, without an editor, an extension, or a
+    running language server. The same three characters mark the place in the
+    file, so nobody forgets there was a question.
+  </p>
+  <figure class="example" data-src="examples/gallery/09-holes.hero" data-lines="34-35">
+<pre><code><span class="k">function</span> main()
+    print(summary_of([Entry(name: <span class="s">"tea"</span>, calories: <span class="n">2</span>)]))</code></pre>
+    <figcaption>examples/gallery/09-holes.hero, lines 34&ndash;35</figcaption>
+  </figure>
+  <p>
+    Fill both holes and that <code>main</code> runs. Until then, the finished
+    part of the file has a test that passes and the unfinished part has a
+    question with an answer.
+  </p>
+
+  <p class="next">
+    Next: <b><a href="the-c-boundary.html">The C boundary</a></b>, where
+    everything the language does not have comes from.
+    <a href="index.html">Back to the chapter list</a>.
+    <span class="back">&larr; Previous: <a href="values-all-the-way-down.html">Values all the way down</a></span>
+  </p>
+
+  <footer>
+    <p>Every code block on this page is a slice of
+    <code>examples/gallery/09-holes.hero</code> in the repository, checked as
+    <code>holes.hero</code>. The failing test is
+    <code>examples/gallery/01-points.hero</code> with one expected value
+    changed.</p>
+    <p>Built by Giuseppe Arici, CTO at Codermine, Brescia. Author of
+    <a href="../author.html"><i>Heroes of code</i></a>. Standing on
+    <a href="../thanks.html">a lot of other people&rsquo;s work</a>.</p>
+    <p>&copy; 2026 Giuseppe Arici &middot; heroes-lang.org</p>
+  </footer>

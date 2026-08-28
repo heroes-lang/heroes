@@ -1,0 +1,7 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import content from '../../html/it/author.html?raw';
+---
+<BaseLayout path="/it/author.html" title={"L'autore: Giuseppe Arici, e il libro da cui nasce il linguaggio"} description={"Giuseppe Arici, partner e CTO di Codermine a Brescia, scrive software da oltre vent'anni e non aveva mai scritto un compilatore prima di questo. Autore di Gli eroi del codice, una storia dei linguaggi di programmazione, in uscita il 20 settembre 2026."} current="author">
+<Fragment set:html={content} />
+</BaseLayout>

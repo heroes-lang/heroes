@@ -1,0 +1,192 @@
+
+  <p class="crumb"><a href="../index.html">Heroes</a> / <a href="index.html">Docs</a> / chapter 10</p>
+
+  <h1 class="chapter">Values all the way down</h1>
+  <p class="tagline">A tree that contains itself, in a language with no pointers.</p>
+
+  <p>
+    Every value here is an independent copy and nothing points at anything.
+    That raises an obvious question, and it is the one this chapter answers: how
+    does a tree hold its own branches, when a branch is the same type as the
+    tree?
+  </p>
+
+  <h3>First, why the obvious way cannot work</h3>
+  <p>
+    Write a case that holds one more of itself and the compiler stops you,
+    explains the arithmetic, and offers the way through:
+  </p>
+  <pre><code>$ heroes check trees.hero
+error[no_size]: `variant Expr` contains itself, so it has no size
+  at trees.hero:16:16
+     |
+  16 |         inner: Expr
+     |                ^^^^
+  note: every value is an independent copy, so `Expr` holding one more `Expr` would need one at every depth
+  note: `[T]` holds its contents elsewhere, so it is how a type contains itself
+  fix (guess): hold them in an array: `[Expr]`</code></pre>
+  <p>
+    A record or a variant holds its fields <i>inside itself</i>. If one of those
+    fields were another <code>Expr</code>, that one would hold another, and the
+    size of the type would be infinite. In a language with pointers you would
+    reach for one here without noticing you were making a decision. There are
+    none, so the decision is visible.
+  </p>
+
+  <h3>The array is the indirection</h3>
+  <figure class="example" data-src="examples/gallery/11-trees.hero" data-lines="8-16">
+<pre><code><span class="k">variant</span> Expr
+    number
+        v: <span class="t">i64</span>
+    add
+        parts: [Expr]
+    multiply
+        parts: [Expr]
+    negate
+        inner: [Expr]</code></pre>
+    <figcaption>examples/gallery/11-trees.hero, lines 8&ndash;16</figcaption>
+  </figure>
+  <p>
+    <code>[Expr]</code> has a fixed size whatever it contains, because an array
+    keeps its elements elsewhere. So <code>Expr</code> is finite, the tree is as
+    deep as you like, and none of it is a pointer you can hold, compare or leave
+    dangling. <code>negate</code> takes a list of one, which looks odd for a
+    moment and then stops mattering: the shape of the data says exactly what the
+    language can express.
+  </p>
+  <p>
+    There is a second thing this buys, and it is the reason value semantics
+    survive at all. Because nothing can hold a reference, <b>no cycle can be
+    built</b>. That is what lets the memory underneath be reference-counted with
+    no collector, no cycle detector and no <code>weak</code> annotations to get
+    right.
+  </p>
+
+  <h3>Walking it is one <code>match</code> and one <code>for</code></h3>
+  <figure class="example" data-src="examples/gallery/11-trees.hero" data-lines="18-25">
+<pre><code><span class="c"># Recursion over a variant is one `match` and one `for` — and the `match` is</span>
+<span class="c"># exhaustive or it does not compile.</span>
+<span class="k">function</span> value_of(e: Expr) -&gt; <span class="t">i64</span>
+    <span class="k">return</span> <span class="k">match</span> e
+        .number n   =&gt; n.v
+        .add a      =&gt; sum_of(a.parts)
+        .multiply m =&gt; product_of(m.parts)
+        .negate g   =&gt; <span class="n">0</span> - first_value(g.inner)</code></pre>
+    <figcaption>examples/gallery/11-trees.hero, lines 18&ndash;25</figcaption>
+  </figure>
+  <figure class="example" data-src="examples/gallery/11-trees.hero" data-lines="27-41">
+<pre><code><span class="k">function</span> sum_of(parts: [Expr]) -&gt; <span class="t">i64</span>
+    total: <span class="t">i64</span> @ <span class="n">0</span>
+
+    <span class="k">for</span> part <span class="k">in</span> parts
+        total @ total + value_of(part)
+
+    <span class="k">return</span> total
+
+<span class="k">function</span> product_of(parts: [Expr]) -&gt; <span class="t">i64</span>
+    total: <span class="t">i64</span> @ <span class="n">1</span>
+
+    <span class="k">for</span> part <span class="k">in</span> parts
+        total @ total * value_of(part)
+
+    <span class="k">return</span> total</code></pre>
+    <figcaption>examples/gallery/11-trees.hero, lines 27&ndash;41</figcaption>
+  </figure>
+  <p>
+    <code>value_of</code> and <code>sum_of</code> call each other, and neither is
+    declared before the other. Declaration order never matters, so mutual
+    recursion needs no announcement, no header and no forward declaration.
+  </p>
+  <p>
+    Notice the two starting values: <code>0</code> for a sum and <code>1</code>
+    for a product. That is why <code>value_of(.add(parts: []))</code> is
+    <code>0</code> and <code>value_of(.multiply(parts: []))</code> is
+    <code>1</code>, which the tests below pin down rather than leave to
+    folklore.
+  </p>
+
+  <h3>Building one</h3>
+  <figure class="example" data-src="examples/gallery/11-trees.hero" data-lines="77-82">
+<pre><code><span class="c"># The annotation on the binding is not decoration: a leading-dot case takes its</span>
+<span class="c"># variant from the context, and a bare `=` gives it none (§4.5). Written without</span>
+<span class="c"># it, the compiler says so and names the three places the type could come from.</span>
+<span class="k">function</span> two_plus_three_times_four() -&gt; Expr
+    three_times_four: Expr = .multiply(parts: [.number(v: <span class="n">3</span>), .number(v: <span class="n">4</span>)])
+    <span class="k">return</span> .add(parts: [.number(v: <span class="n">2</span>), three_times_four])</code></pre>
+    <figcaption>examples/gallery/11-trees.hero, lines 77&ndash;82</figcaption>
+  </figure>
+  <p>
+    The <code>return</code> line needs no annotation, because the function
+    signature already says <code>Expr</code>. The binding above it does, and
+    leaving it out gets an error that names where the type could have come from:
+  </p>
+  <pre><code>$ heroes check trees.hero
+error[cannot_infer]: `.multiply` does not say which variant it belongs to — the type has to come from the context (a signature, an annotation, or the value being returned)
+  at trees.hero:81:24
+     |
+  81 |     three_times_four = .multiply(parts: [.number(v: 3), .number(v: 4)])
+     |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^</code></pre>
+
+  <h3>What the tests fix in place</h3>
+  <figure class="example" data-src="examples/gallery/11-trees.hero" data-lines="84-95">
+<pre><code><span class="k">test</span> <span class="s">"the tree evaluates and measures itself"</span>
+    e = two_plus_three_times_four()
+    <span class="k">assert</span> value_of(e) == <span class="n">14</span>
+    <span class="k">assert</span> depth_of(e) == <span class="n">3</span>
+    <span class="k">assert</span> is_combination(e)
+    <span class="k">assert</span> is_combination(.number(v: <span class="n">1</span>)) == <span class="k">false</span>
+
+<span class="k">test</span> <span class="s">"negation nests, and an empty child list is neutral"</span>
+    <span class="k">assert</span> value_of(.negate(inner: [.number(v: <span class="n">7</span>)])) == <span class="n">0</span> - <span class="n">7</span>
+    <span class="k">assert</span> value_of(.add(parts: [])) == <span class="n">0</span>
+    <span class="k">assert</span> value_of(.multiply(parts: [])) == <span class="n">1</span>
+    <span class="k">assert</span> value_of(.negate(inner: [])) == <span class="n">0</span></code></pre>
+    <figcaption>examples/gallery/11-trees.hero, lines 84&ndash;95</figcaption>
+  </figure>
+  <p>
+    The second test is the one to copy into your own code. Every shape that
+    contains itself has an empty case, and what it should mean there is a
+    decision somebody has to make. Writing it down as four assertions means the
+    next person to touch <code>value_of</code> finds out at once if they changed
+    it by accident.
+  </p>
+  <figure class="example" data-src="examples/gallery/11-trees.hero" data-lines="70-75">
+<pre><code><span class="c"># Two cases share one answer, so their patterns share one arm (`|`).</span>
+<span class="k">function</span> is_combination(e: Expr) -&gt; <span class="t">bool</span>
+    <span class="k">return</span> <span class="k">match</span> e
+        .add _ | .multiply _ =&gt; <span class="k">true</span>
+        .number _            =&gt; <span class="k">false</span>
+        .negate _            =&gt; <span class="k">false</span></code></pre>
+    <figcaption>examples/gallery/11-trees.hero, lines 70&ndash;75</figcaption>
+  </figure>
+  <figure class="example" data-src="examples/gallery/11-trees.hero" data-lines="97-98">
+<pre><code><span class="k">function</span> main()
+    print(value_of(two_plus_three_times_four()))</code></pre>
+    <figcaption>examples/gallery/11-trees.hero, lines 97&ndash;98</figcaption>
+  </figure>
+  <pre><code>$ heroes run examples/gallery/11-trees.hero
+14</code></pre>
+  <p>
+    Two plus three times four. That is a compiler&rsquo;s smallest interesting
+    data structure, in ninety lines, with no pointer anywhere in it. And
+    the same shape scaled up is what this project&rsquo;s own compiler uses to
+    hold the programs it reads.
+  </p>
+
+  <p class="next">
+    Next: <b><a href="tests-and-holes.html">Tests and holes</a></b>, where an
+    unfinished program is still a program the compiler will talk to you about.
+    <a href="index.html">Back to the chapter list</a>.
+    <span class="back">&larr; Previous: <a href="maps.html">Maps</a></span>
+  </p>
+
+  <footer>
+    <p>Every code block on this page is a slice of
+    <code>examples/gallery/11-trees.hero</code> in the repository. The two
+    diagnostics are that file with one field type changed and one annotation
+    removed, checked as <code>trees.hero</code>.</p>
+    <p>Built by Giuseppe Arici, CTO at Codermine, Brescia. Author of
+    <a href="../author.html"><i>Heroes of code</i></a>. Standing on
+    <a href="../thanks.html">a lot of other people&rsquo;s work</a>.</p>
+    <p>&copy; 2026 Giuseppe Arici &middot; heroes-lang.org</p>
+  </footer>

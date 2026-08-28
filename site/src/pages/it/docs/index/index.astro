@@ -1,0 +1,7 @@
+---
+import BaseLayout from '../../../../layouts/BaseLayout.astro';
+import content from '../../../../html/it/docs/index.html?raw';
+---
+<BaseLayout path="/it/docs/index.html" title={'Documentazione di Heroes: il linguaggio pagina per pagina'} description={"Il linguaggio Heroes spiegato un'idea alla volta, in ordine di lettura e non di consultazione. Ogni blocco di codice è una fetta di un file del repository che compila e gira."} current="docs">
+<Fragment set:html={content} />
+</BaseLayout>
