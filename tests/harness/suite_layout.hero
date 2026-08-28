@@ -237,7 +237,12 @@ test "a comment inside a test block does not close it"
     assert code_lines(program) == 2
 
 test "the ceiling is per file, and a decided file keeps its own"
-    assert ceiling_for("selfhost/ir_lower.hero") == 1389
-    assert ceiling_for("selfhost/source.hero") == 304
+    # The two witnesses are DECIDED's extremes, and they are chosen rather
+    # than picked: the top entry, and the entry nearest CEILING. The second
+    # is what makes this a test at all — 308 against a fallback of 300 is
+    # eight apart, so a lookup that quietly returned CEILING would still
+    # be caught. Both numbers track the table above and move with it.
+    assert ceiling_for("selfhost/check_walk.hero") == 1583
+    assert ceiling_for("selfhost/resolve_state.hero") == 308
     assert ceiling_for("selfhost/anything-else.hero") == CEILING
     assert DECIDED.len() == 16
