@@ -24,3 +24,18 @@ stage[0-9]
 
 # Scratch git worktrees created by panel judges (never project content).
 .claude/worktrees/
+
+# Secrets. The Cloudflare API token that deploys the site lives in `.env` at the
+# repository root, and nothing that runs here reads it: the deploy reads it from
+# GitHub's secret store instead. `.env.example` is the documented shape, carries
+# no value, and is the one name this pattern lets back in. The `.env.*` line is
+# not redundant — it is what catches `.env.local` and `.env.production`, which
+# are the names a tool invents when nobody was looking.
+.env
+.env.*
+!.env.example
+
+# Wrangler's local state: a cached `request.cf` object and miniflare's cache.
+# Derived, per-machine, and written by a `wrangler` invocation rather than by
+# anybody. Never project content.
+.wrangler/
