@@ -12,9 +12,13 @@
   </p>
 
   <h3><code>=</code> lega una volta. <code>@</code> dichiara qualcosa che cambia</h3>
-  <pre><code>x = 5              <span class="c"># un nome per un valore, per sempre</span>
-v: i64 @ 0         <span class="c"># una cella che può cambiare — il tipo è obbligatorio</span>
-v @ v + 1          <span class="c"># la si cambia</span></code></pre>
+  <!-- Two spaces before a trailing comment, because that is what `heroes fmt`
+       produces: the column alignment this block used to carry is a style the
+       formatter undoes the moment anybody runs it, and a page teaching the
+       language must not teach a shape the language reformats. -->
+  <pre><code>x = 5  <span class="c"># un nome per un valore, per sempre</span>
+v: i64 @ 0  <span class="c"># una cella che può cambiare, e il tipo è obbligatorio</span>
+v @ v + 1  <span class="c"># la si cambia</span></code></pre>
   <p>
     <code>=</code> dà un nome a un valore, e finisce lì. <code>@</code> fa tre
     lavori con un simbolo solo: dichiara una cella, marca ogni riga che ci

@@ -12,9 +12,13 @@
   </p>
 
   <h3><code>=</code> binds once. <code>@</code> declares something that changes</h3>
-  <pre><code>x = 5              <span class="c"># a name for a value, forever</span>
-v: i64 @ 0         <span class="c"># a cell that may change — the type is required</span>
-v @ v + 1          <span class="c"># changing it</span></code></pre>
+  <!-- Two spaces before a trailing comment, because that is what `heroes fmt`
+       produces: the column alignment this block used to carry is a style the
+       formatter undoes the moment anybody runs it, and a page teaching the
+       language must not teach a shape the language reformats. -->
+  <pre><code>x = 5  <span class="c"># a name for a value, forever</span>
+v: i64 @ 0  <span class="c"># a cell that may change, and the type is required</span>
+v @ v + 1  <span class="c"># changing it</span></code></pre>
   <p>
     <code>=</code> gives a value a name and that is the end of it. <code>@</code>
     does three jobs with one symbol: it declares a cell, it marks every line
