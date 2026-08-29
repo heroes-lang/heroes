@@ -28,16 +28,18 @@
       "name": "comment.line.number-sign.hero"
     },
     "foreign": {
-      "comment": "spec/reserved-words.md — keywords imported from another language. Marked INVALID on purpose: the editor shows the mistake before the compiler does.",
-      "match": "\\b(struct|enum|union|class|fn|func|def|let|var|const|elif|switch|case|null|nil|None|try|catch|throw|raise|import|use|include)\\b",
+      "comment": "spec/reserved-words.md — keywords imported from another language. Marked INVALID on purpose: the editor shows the mistake before the compiler does. `use` was in this list and is a Heroes keyword, so every module line in every file showed as an error; it now sits in #keyword, where the spec puts it (`a module is named with use`). The list is otherwise the spec's own table, word for word.",
+      "match": "\\b(struct|enum|union|class|fn|func|def|let|var|const|elif|switch|case|null|nil|None|try|catch|throw|raise|import|include)\\b",
       "name": "invalid.illegal.foreign-keyword.hero"
     },
     "keyword": {
-      "match": "\\b(constant|function|record|variant|match|if|else|for|while|in|break|continue|return|test|assert|extern|fail)\\b",
+      "comment": "spec/reserved-words.md's closing paragraph, and selfhost/keywords.hero::keyword. `true` and `false` were filed under #builtin-type, which is where a value is not: both tables call them keywords.",
+      "match": "\\b(constant|function|record|variant|match|if|else|for|while|in|break|continue|return|test|assert|extern|nullptr|use|true|false|fail)\\b",
       "name": "keyword.control.hero"
     },
     "builtin-type": {
-      "match": "\\b(int|f64|bool|str|ptr|cstr|true|false)\\b",
+      "comment": "spec/heroes-spec.md § Types, the whole table. This read `int|f64|bool|str|ptr|cstr` and so coloured a word the language does not have while leaving every sized integer plain: `i64` is what a program actually writes, and it was the one type never highlighted. `[T]`, `{K: V}` and `T?` are shapes rather than words and are built out of these.",
+      "match": "\\b(i8|i16|i32|i64|u8|u16|u32|u64|f32|f64|bool|str|ptr|cstr)\\b",
       "name": "support.type.hero"
     },
     "hole": {
