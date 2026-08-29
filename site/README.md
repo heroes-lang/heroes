@@ -455,9 +455,10 @@ Two things that are easy to get wrong and are therefore rules:
   characters, and the first Italian mutation table was written straight over the
   English column stops and did not line up.
 - **The book is named in Italian**: *Gli eroi del codice* is the edition of
-  record. The release wording rule in § The author and the book applies
-  unchanged in Italian: before 20 September 2026, *"in uscita il 20 settembre
-  2026"* — never *pubblicato*, *disponibile*, *in vendita*, *acquista*.
+  record, and its twenty-one chapter titles on `it/author.html` are the book's
+  own, copied from the manuscript rather than back-translated from the English
+  page. The release wording rule in § The author and the book applies unchanged
+  in Italian: *"pubblicato su Amazon"*, no day, and never *in libreria*.
 
 ## Style guide — the site's register: 70s-glam Bowie, with discipline
 
@@ -631,11 +632,21 @@ copy could be wrong later:
    journey with Bowie as the guide. Never write copy implying a Bowie book and a
    separate history book. The Italian is the edition of record; the English is
    the author's own translation.
-2. **Wording on the release.** Before **20 September 2026**: *"out on 20
-   September 2026"*. Never "published", "available", "on sale", "buy now". From
-   that date onward "published" is correct and an Amazon link by ISBN may go
-   live. An ISBN existing is not evidence a book is on sale: KDP issues them
-   when a listing is created, drafts included.
+2. **Wording on the release: the book is published, and the date is off the
+   page** (author decision 2026-08-29, superseding the dated rule this line used
+   to carry). The copy says *"published on Amazon"* and names no day. Two things
+   made the old rule expire at once. The site sits behind the holding page with
+   the same preview token as the author's own site (`starman`), so both are
+   written in their finished state and open together, which is what removes the
+   risk the dated wording existed to cover. And § No dates on the page in
+   `CLAUDE.md` had already taken every other date off the site; the release
+   wording was its one standing exception, and it no longer needs to be one.
+   What survives from the old rule is the reason under it: **an ISBN existing is
+   not evidence a book is on sale** (KDP issues them when a listing is created,
+   drafts included), so *"published"* rests on the author's decision to open the
+   two sites together, not on the ISBN. Say **Amazon**, never "in bookshops":
+   the A5 trim with a free KDP ISBN is outside Expanded Distribution
+   (`printing/kdp/form-en.md`), so Amazon is the whole of it.
 3. **Never link or mention the book's repository.** It is private. No URL, no
    `sameAs` in any structured data, and no phrasing implying openness: not "open
    source", not "written in the open", not "source available". The *personal*
@@ -667,20 +678,31 @@ copy could be wrong later:
 
 **The book has one domain per edition** (author instruction 2026-08-18):
 `glieroidelcodice.it` for the Italian, `heroesofcode.com` for the English, each
-linked from its own edition's `author.html` on the title. **Both 301 to
-`giuseppearici.com` pages that returned 404 when this was written**, measured the
-same day, so today they are dead ends the way the parking pages below are. They
-are in the markup on the author's instruction, which outranks the rule under it;
-what that costs is a pre-publication check: **the two book domains must resolve
-before the site goes public**, and if they do not, the two links come out again.
+linked from its own edition's `author.html` on the title. **Both still 301 to
+`giuseppearici.com` pages that answer 404**, re-measured 2026-08-29, and the
+pre-publication check that used to hang on that is answered rather than pending:
+the 404 is the other site's own holding page, not a missing page, and the two
+sites open together. The redirects themselves are live and correct, measured the
+same day: `glieroidelcodice.it` and `heroesofcode.com` each land on their
+edition's book page in one hop.
 
-**Other author links are omitted on purpose.** `giuseppearici.com/en/` and
-`giuseppearici.com/en/books/heroes-of-code/` both returned **404** on
-2026-08-18, and `heroesofcode.com` 301s to the second of them, so the site is
-still parked. The brief's own condition applies: omit rather than send visitors
-to a parking page. When the launch commit ships, add them to `author.html` and
-to the footer line. Test the URL first, the way the marketing seat tested the
-repository's.
+**The author's own site is linked, and that is what closed the condition above**
+(author decision 2026-08-29). It used to be omitted because
+`giuseppearici.com/en/` answered **404**, and the rule was to omit rather than
+send visitors to a parking page. What changed is not the status code, which is
+still 404 today, measured: it is that **both sites are behind the same holding
+page with the same preview token** (`starman`), so they are written finished and
+open together, and a link between two sites that open on the same day is not a
+dead end, it is a link that has not been switched on yet. The two places are the
+ones the old rule named: the *Elsewhere / Altrove* line on `author.html`, and
+the byline in the footer, where the name itself is the link on all **44** pages
+(22 per edition, one occurrence each, two sentence shapes in total, which is why
+one substitution per edition does the job). Two rules on those links. Each
+edition points at its own locale (`/en/`, `/it/`), because
+`giuseppearici.com`'s bilingual splash sits at `/` and would make the reader
+choose a language twice. And **no `?preview=` in the markup, ever**: the token
+belongs to a browser session, and a preview URL committed to a page is a private
+door written into a public file.
 
 ## The thanks page — why every link on it was fetched
 
