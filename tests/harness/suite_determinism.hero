@@ -170,8 +170,18 @@ test "the determinism suite passes identical emissions and catches a wobbling on
 
     # A stand-in that answers differently every time — a compiler with a
     # hash seed, an address in a comment, a timestamp. It must be caught.
+    #
+    # **The stand-in read the clock until 2026-08-30, and on the CI's macOS it
+    # stood still.** `date +%s%N` asks for nanoseconds, `%N` is a GNU coreutils
+    # extension, and BSD `date` prints the letter instead: the Darwin leg failed
+    # with `left: 1788126203N` and `right: 1788126203N`, two calls inside one
+    # second answering the same string, so the wobbler this test exists to catch
+    # was not wobbling. It passed on the author's machine because Darwin 25's
+    # `date` does support `%N` — a defect a newer laptop hides from the runner
+    # that finds it. Eight bytes of `/dev/urandom` ask no calendar and no
+    # platform: 200 calls, 200 distinct answers, measured.
     wobbler = scratch + "/stub-wobble.sh"
-    assert !write_file(path: wobbler, text: "#!/bin/sh\ndate +%s%N\n").is_err()
+    assert !write_file(path: wobbler, text: "#!/bin/sh\nod -An -N8 -tx1 /dev/urandom\n").is_err()
     assert !shell.run(scratch: scratch, command: "chmod +x " + shell.sq(wobbler)).is_err()
     a = dumped(scratch: scratch, compiler: wobbler, item: item, flag: "--emit-c", into: "")
     b = dumped(scratch: scratch, compiler: wobbler, item: item, flag: "--emit-c", into: "")
