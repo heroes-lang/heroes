@@ -10,23 +10,29 @@ than asserted; where the measurement is missing, this file says so.
 
 ```
 function main()
-    scores: {str: int} = {"ziggy": 12, "aladdin": 9}
+    scores: {str: i64} = {"ziggy": 12, "aladdin": 9}
+
     for name in sort(keys(scores))
         print(name, " scored ", scores[name].must())
 ```
 
-## Status: pre-v1
+## Status: v1 is reached, and the chain continues
 
-The language is finished and compiles itself only in the sense that the
-*acceptance program* runs — a calculator with seven passing tests. It does not
-yet compile its own compiler; that is the v1 finish line.
+**The compiler compiles itself.** That was the definition of v1 and it was
+reached at M-selfhost-fixpoint on 2026-08-18: `selfhost/` is this compiler
+written in Heroes, and the C it emits for its own source is `seed/heroes.c`,
+byte for byte. **26 of 36 milestones are closed**, and the acceptance program
+still runs — a calculator with seven passing tests, now four modules rather
+than one file.
 
 | working today | not yet |
 |---|---|
-| lexer, parser, formatter, resolver, bidirectional type checker | modules |
-| three-address IR with basic blocks, ownership pass, C11 emission | the FFI (`extern` is refused by the backend until the header verifies it) |
-| value semantics with copy-on-write, refcounted `str`/`[T]`/`{K: V}` | file I/O, `args()`, `exit(code)` |
-| generics by monomorphisation, function values, `T?`, `test`/`assert` | self-hosting, and the fixpoint that defines v1 |
+| lexer, parser, formatter, resolver, bidirectional type checker | packages: `use` paths, and where a program's files live |
+| three-address IR with basic blocks, ownership pass, C11 emission, one `.c` per module behind a build cache | threads |
+| value semantics with copy-on-write, refcounted `str`/`[T]`/`{K: V}` | a second backend — the proof that the IR is not C in disguise |
+| generics by monomorphisation, function values, `T?`, `test`/`assert` | an LSP server, and the editor extension |
+| modules, and an FFI that binds raylib, SDL, SQLite and curl with no shim | the rewrite rate — the thesis's third instrument, below |
+| `read_file`/`write_file`, `args()`, `exit(code)` | the two books, and the site |
 
 The chain from here is `docs/ROADMAP.md` § The chain. What is already built has
 one journal each, indexed at `docs/journal/README.md`.
@@ -38,16 +44,16 @@ written in C — what it emits when it compiles itself — so there is no chicke
 egg and no Rust:
 
 ```sh
-clang -I runtime seed/heroes.c runtime/runtime.c -o heroes   # 3.4 s, measured
+clang -I runtime seed/heroes.c runtime/runtime.c -o heroes   # 3.6 s, measured
 ./heroes doctor                                             # what this machine has
 ./heroes run examples/gallery/00-first.hero
-./heroes test examples/calculator.hero
+./heroes test examples/calculator/main.hero
 ```
 
 The compiler you get is the real one: it compiles `selfhost/` — its own source,
-**37,137 lines of Heroes across 153 files**, 30,569 of them before the first test
+**48,342 lines of Heroes across 165 files**, 39,572 of them before the first test
 block — and what it emits for that is `seed/heroes.c` again, byte
-for byte. `seed/README.md` is that ritual, including how to get a compiler back if
+for byte, in 38 s. `seed/README.md` is that ritual, including how to get a compiler back if
 the seed ever stops building today's source.
 
 Every capability is a subcommand or a flag of the one binary — never a second
@@ -57,18 +63,21 @@ surface. The Rust bootstrap that used to be the way in is
 exception that let `cargo` build the compiler had an expiry date written into it,
 and this is it.
 
-Tested on macOS arm64 and Linux x86-64 (CI runs the whole net on both). Windows
-runs the same steps at every tag as of 2026-08-24 — the compiler stopped binding
-`unistd.h`, so there is no POSIX header in `seed/heroes.c` any more — **and the
-first tag run after that date is what confirms it**, because nobody in this
-project has a Windows machine to try it on.
+Developed on macOS arm64; CI runs every push on Linux x86-64, and widens to all
+three platforms at a tag. Windows was added on 2026-08-24, when the compiler
+stopped binding `unistd.h` and the last POSIX header left `seed/heroes.c`,
+**and the tag that was supposed to confirm it did the opposite**: the
+`m-separate-compilation` run of 2026-08-26 was red on all three platforms at
+three different steps, Windows at `heroes doctor`. None of the three has been
+diagnosed yet. This file says so rather than letting the last green push, which
+is Linux and a subset of the steps, imply otherwise.
 
 ## The thesis, and how much of it is measured
 
 The design rule is a cost formula: a construct's cost is its token count times
 one plus the rate at which a model rewrites it wrongly. Two of its three
-instruments have run — the spec's measured size (**3506** tokens of a hard 4096
-ceiling as of 2026-08-24, counted by two vendored BPE tables so that neither can
+instruments have run — the spec's measured size (**3592** tokens of a hard 4096
+ceiling, 504 of headroom, counted by two vendored BPE tables so that neither can
 hide its own drift, with every amendment's cost in
 `docs/measurements/010-spec-budget-ledger.md`) and a mutation-based check over the compiler's own corpus. **The third,
 the rewrite rate, has not run**, so the formula remains the design rule it always
