@@ -152,9 +152,13 @@ measurement over this whole analysis."*
 
 ## Author's verdict
 
-**Pending.** Queued as an open item in `docs/work/DECIDE.md` naming `panel 097`.
+**Ratified 2026-08-30** (author instruction, *"ratifica tutto, tutti i panel, fai
+adesso il milestone di Windows"*). The sitting's resolution stands as written, all
+seven conditions binding, and the wider question it flagged is answered too: the
+work is taken **now**, and at the size panel 098 measured rather than at the size
+this sitting was briefed on. The milestone is **M-argv-execution**.
 
-**What a yes settles**: the briefed proposal does not land in any form —
+**What the yes settles**: the briefed proposal does not land in any form —
 `extern "sys/stat.h"` and `extern "direct.h"` never appear in `selfhost/`, and
 `seed/heroes.c` gains no POSIX header. The five filesystem operations, if they
 are taken at all, go behind `hero_os.h` in `runtime/parts/fs.c` under the seven
