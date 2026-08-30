@@ -46,12 +46,12 @@ in the numbers that were re-measured.
 | **Last closed** | **M-separate-compilation**, 2026-08-26, tag `m-separate-compilation` — all four acceptance rows, and the frontend from **88 s to about 8** ([journal 025](journal/025-separate-compilation.md)) |
 | **v1** | **reached** at M-selfhost-fixpoint, 2026-08-18 — the compiler compiles itself |
 | Milestones closed | 26 of 36 · 26 tags |
-| The compiler | **48,164 lines** of Heroes in 165 files, built as **157** translation units |
-| The seed | **797,529** lines of generated C — the whole way in |
+| The compiler | **48,342 lines** of Heroes in 165 files, built as 157 translation units |
+| The seed | **798,556** lines of generated C — the whole way in |
 | The spec | **3592** tokens of a hard 4096 · headroom 504 |
 | Runtime ABI | 16 |
-| Panels held | **94** · journals 26 · measurements 13 · examples 15 · defects 4 |
-| Waiting on the author | **11 decisions** in `DECIDE.md` · 8 assigned in `SCHEDULED.md` · 278 in `LEARN.md` (never a gate) |
+| Panels held | **95** · journals 26 · measurements 13 · examples 15 · defects 5 |
+| Waiting on the author | **6 decisions** in `DECIDE.md` · 8 assigned in `SCHEDULED.md` · 278 in `LEARN.md` (never a gate) |
 
 **Every number above was re-measured on 2026-08-28 and five were wrong.** Two had
 rotted quietly — the runtime ABI said 15 and is 16, and the panel count said 92
@@ -63,6 +63,15 @@ to make structure visible, with the rest the 120-column break and arm alignment.
 The C it emits is **byte-identical** with `#line` directives stripped, which is the
 gate that sweep had to pass. A reader comparing this row against an older journal
 is comparing two different layouts of the same program.
+
+**Re-measured again on 2026-08-30, and the seed row had been wrong on the day the
+paragraph above was written.** It said 797,529 lines and the file was already
+798,556 at the commit that touched it that same day — a number carried rather than
+run, inside the sentence claiming every number had been run. Six moved and one is
+this correction: the compiler 48,164 to **48,342**, the seed to **798,556**, panels
+94 to **95**, defects 4 to **5**, and the decisions waiting on the author 11 to
+**6**. The one number in the compiler row that was NOT re-measured is the 157
+translation units, which is `journal 025`'s and is left in plain type to say so.
 
 ---
 

@@ -849,8 +849,11 @@ exceptions to explain later.
 The `in progress` tag and its `.todo` row are kept in the stylesheet although
 no chapter uses them now: a thirteenth chapter would be listed that way, with a
 dim tag and **no link** — never a dead one. The same rule governed the twelve
-while they were being written, and it is why `check.py`'s dead-link pass has
-never had anything to report.
+while they were being written. **Nothing enforces it.** This paragraph credited
+a `check.py` dead-link pass for having never had anything to report, and there
+is no `check.py` in this repository — the rule has been kept by hand, and a
+sentence naming an instrument that does not exist is the more expensive half of
+that, because it stops anybody from writing the instrument.
 
 ## Keeping it current — on demand, not per milestone
 
