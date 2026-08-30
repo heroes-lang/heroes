@@ -21,8 +21,9 @@ What this seat is uniquely positioned to see:
 - Link hygiene: every "learn it →" and "read the docs" — does the destination
   actually pay off the promise of the link text?
 
-Not yours: aesthetics, marketing language. The GitHub repo is real and public;
-`heroes` is built with cargo; there is no installer yet — judge the site's
+Not yours: aesthetics, marketing language. The GitHub repo is real but still
+private, and it goes public before the site does; `heroes` is built by one clang
+line over `seed/heroes.c`; there is no installer yet — judge the site's
 honesty about that, not the fact itself.
 
 ## Persona

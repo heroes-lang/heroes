@@ -13,7 +13,7 @@ tokens against a hard ceiling of 4096, because the spec is the prompt, not
 documentation. If you are a language model asked to write Heroes, read the
 spec first; it is the whole language:
 
-- [The specification](https://raw.githubusercontent.com/giuseppearici/heroes-lang/main/spec/heroes-spec.md): the whole language in ~3592 tokens, written to be your prompt
+- [The specification](https://raw.githubusercontent.com/heroes-lang/heroes/main/spec/heroes-spec.md): the whole language in ~3592 tokens, written to be your prompt
 
 Ground rules a generated program must respect: exactly one way to write
 anything (a canonical formatter; 4-space indentation, tabs are errors); named
@@ -43,8 +43,8 @@ in both, because they are quotations of real files and real output.
 
 ## Source
 
-- [Repository](https://github.com/giuseppearici/heroes-lang): the compiler, the spec, the design record; build with `clang -I runtime seed/heroes.c runtime/runtime.c -o heroes`, then `./heroes run examples/gallery/00-first.hero`
-- [Examples](https://github.com/giuseppearici/heroes-lang/tree/main/examples/gallery): twelve small programs, one per language idea; every code block on the site is anchored to one of these files, in the canonical form `heroes fmt` prints
+- [Repository](https://github.com/heroes-lang/heroes): the compiler, the spec, the design record; build with `clang -I runtime seed/heroes.c runtime/runtime.c -o heroes`, then `./heroes run examples/gallery/00-first.hero`
+- [Examples](https://github.com/heroes-lang/heroes/tree/main/examples/gallery): twelve small programs, one per language idea; every code block on the site is anchored to one of these files, in the canonical form `heroes fmt` prints
 
 ## Notes
 

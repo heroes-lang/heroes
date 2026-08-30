@@ -887,14 +887,24 @@ and nothing else moves.
 
 ## Launch order — the repository goes public first
 
-`github.com/giuseppearici/heroes-lang` returned **404** on 2026-08-18. Every
+`github.com/heroes-lang/heroes` returned **404** to an unauthenticated request on
+2026-08-30, because the repository is private. Every
 verification path on the site runs through it: the `git clone` line, the GitHub
 link in all eight navs, the twelve chapter file links, llms.txt's raw spec link,
 and the footer sentence saying the record "is public in the repository". This
 site's whole mechanism is *check me*; shipping it while the check 404s turns the
 project's best asset into its most visible broken promise. **Repo public first,
 site second.** Found by the panel's marketing seat, which tested the URL rather
-than assuming it.
+than assuming it, when the address was still `giuseppearici/heroes-lang` and the
+measurement was the same.
+
+**The address moved on 2026-08-30**, to the organisation, and the site's 20 links
+plus llms.txt's raw link were repointed in the same commit. GitHub redirects the
+old address, but **the redirect is not something this site can lean on**: to an
+unauthenticated request a private repository is a 404 either way, measured at both
+addresses that day. So the rule above is unchanged, and one line is added to it:
+the old name is **never recreated** (`CLAUDE.md` §14), because creating a
+repository there is the single act that deletes those redirects permanently.
 
 ## Numbers on the site are re-run, never quoted from a record
 
