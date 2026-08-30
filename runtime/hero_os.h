@@ -131,4 +131,54 @@ _Noreturn void hero_exit(int64_t code);
  * machine. */
 int64_t hero_word_bits(void);
 
+/* THE FILESYSTEM, AND WHY IT IS NOT AN `extern` IN `selfhost/`.
+ *
+ * The compiler used to create a directory by writing `mkdir -p 'build/x'` for a
+ * shell. Panel 097 vetoed the obvious repair — binding `mkdir` from
+ * `sys/stat.h` and `_mkdir` from `direct.h` — because it cannot be written:
+ * `direct.h` is `ffi_missing_header` off Windows, this language has no `#if`,
+ * and `struct stat`'s `st_mode` is two bytes on Darwin against four on glibc,
+ * so no `record` spelling passes both. The platform arm lives in
+ * `parts/fs.c`; `selfhost/` sees these six names and no platform word.
+ *
+ * Each answers HERO_OS_OK or HERO_OS_FAILED, and each is the shell utility's
+ * meaning rather than the C call's: an existing directory is a successful
+ * `mkdir_all`, an absent file is a successful `remove`. The difference matters
+ * because `mkdir`'s errno says EEXIST for a directory that is already there AND
+ * for a file sitting where the directory should be, so the runtime asks
+ * `hero_fs_is_directory` rather than trusting the code. */
+#define HERO_FS_PATH_MAX 4096
+
+int64_t hero_fs_exists(const char *path);
+int64_t hero_fs_is_directory(const char *path);
+int64_t hero_fs_mkdir_all(const char *path);
+int64_t hero_fs_remove(const char *path);
+
+/* Replace `to` with `from`. Atomic on POSIX, and the cache depends on that: an
+ * object is published by renaming it into place after its dependencies are
+ * recorded, so a reader never sees it absent. The Windows arm asks
+ * `MoveFileEx` for the same guarantee and `parts/fs.c` records that it is NOT
+ * VERIFIED there. */
+int64_t hero_fs_rename(const char *from, const char *to);
+
+/* RUNNING A PROGRAM, BY ARGUMENT LIST RATHER THAN BY SENTENCE.
+ *
+ * Three calls because one is not writable: `argv: [str]` is `error[ffi_type]`
+ * and a NUL-packed string is `error[unknown_escape]`, so there is no Heroes
+ * value that can carry an argument list (panel 098). Push the words, run, reset.
+ * `hero_run_words[0]` is argv[0] by convention, so the program's own name is
+ * pushed first like every other word.
+ *
+ * An empty `out_path` or `err_path` discards that stream — "discard" is spelled
+ * in the runtime, never as `/dev/null` in `selfhost/`.
+ *
+ * READ `*status` BEFORE THE RETURN VALUE. HERO_OS_OK means the program ran and
+ * the return value is its exit code (or 128 + the signal that killed it);
+ * HERO_OS_NOT_FOUND means it never started, which `system()` could not
+ * distinguish from a program that legitimately exits 127. */
+void hero_run_reset(void);
+void hero_run_arg(HeroStr word);
+int64_t hero_run_go(const char *program, const char *out_path,
+                    const char *err_path, int64_t *status);
+
 #endif /* HERO_OS_H */
