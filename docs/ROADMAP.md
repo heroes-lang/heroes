@@ -42,16 +42,16 @@ in the numbers that were re-measured.
 
 | | |
 |---|---|
-| **Current milestone** | **M-package-layout** — next, not yet opened |
+| **Current milestone** | **M-argv-execution** — open 2026-08-30, panels 097 and 098 ratified |
 | **Last closed** | **M-separate-compilation**, 2026-08-26, tag `m-separate-compilation` — all four acceptance rows, and the frontend from **88 s to about 8** ([journal 025](journal/025-separate-compilation.md)) |
 | **v1** | **reached** at M-selfhost-fixpoint, 2026-08-18 — the compiler compiles itself |
-| Milestones closed | 26 of 36 · 26 tags |
+| Milestones closed | 26 of 37 · 26 tags |
 | The compiler | **48,342 lines** of Heroes in 165 files, built as 157 translation units |
 | The seed | **798,556** lines of generated C — the whole way in |
 | The spec | **3592** tokens of a hard 4096 · headroom 504 |
 | Runtime ABI | 16 |
 | Panels held | **95** · journals 26 · measurements 13 · examples 15 · defects 5 |
-| Waiting on the author | **6 decisions** in `DECIDE.md` · 8 assigned in `SCHEDULED.md` · 278 in `LEARN.md` (never a gate) |
+| Waiting on the author | **5 decisions** in `DECIDE.md` · 8 assigned in `SCHEDULED.md` · 278 in `LEARN.md` (never a gate) |
 
 **Every number above was re-measured on 2026-08-28 and five were wrong.** Two had
 rotted quietly — the runtime ABI said 15 and is 16, and the panel count said 92
@@ -161,16 +161,17 @@ it), **§1.1** (comprehension is the objective), or **scheduled, no warrant**.
 | 24 | **M-harness-port** | done 2026-08-18 | `m-harness-port` | [023](journal/023-harness-port.md) | the net in Heroes · closure list |
 | 25 | **M-bootstrap-archive** | done 2026-08-19 | `m-bootstrap-archive` | [024](journal/024-bootstrap-archive.md) | the third language dies · v1's last clause (design.md:82) |
 | 26 | **M-separate-compilation** | done 2026-08-26 | `m-separate-compilation` | [025](journal/025-separate-compilation.md) | one `.c` per module, prototypes across TUs, the cache · closure list |
-| 27 | **M-package-layout** | **OPEN** | — | — | `use` paths, the qualifier, where a program's files live · **scheduled by author decision 2026-08-25** |
-| 28 | **M-isolated-threads** | scheduled | — | — | Part 7.13 concurrency · **moved ahead of packages by author instruction, 2026-08-25** |
-| 29 | **M-package-manager** | scheduled | — | — | `heroes add`/`heroes fetch`; bindings instead of a standard library |
-| 30 | **M-qbe-backend** | scheduled | — | — | Part 7.14 — the proof that the IR is not C in disguise |
-| 31 | **M-lsp-server** | scheduled | — | — | `heroes lsp` |
-| 32 | **M-vscode-extension** | scheduled | — | — | the extension, complete |
-| 33 | **M-documentation-site** | scheduled | — | — | the site, anchored to programs that run |
-| 34 | **M-journey-book** | scheduled | — | — | the journey — how this language came to be |
-| 35 | **M-guide-book** | scheduled | — | — | the guide, as a book you would find in a shop · **§1.1** |
-| 36 | **M-publication-gate** | scheduled | — | — | the last gate before anything goes outward · CLAUDE.md §14 |
+| 27 | **M-argv-execution** | **OPEN** | — | — | the compiler runs programs by argument list; `sq()` is deleted, the shell stops being the boundary, and Windows goes green · **panels 097 and 098, ratified 2026-08-30** |
+| 28 | **M-package-layout** | **OPEN** | — | — | `use` paths, the qualifier, where a program's files live · **scheduled by author decision 2026-08-25** |
+| 29 | **M-isolated-threads** | scheduled | — | — | Part 7.13 concurrency · **moved ahead of packages by author instruction, 2026-08-25** |
+| 30 | **M-package-manager** | scheduled | — | — | `heroes add`/`heroes fetch`; bindings instead of a standard library |
+| 31 | **M-qbe-backend** | scheduled | — | — | Part 7.14 — the proof that the IR is not C in disguise |
+| 32 | **M-lsp-server** | scheduled | — | — | `heroes lsp` |
+| 33 | **M-vscode-extension** | scheduled | — | — | the extension, complete |
+| 34 | **M-documentation-site** | scheduled | — | — | the site, anchored to programs that run |
+| 35 | **M-journey-book** | scheduled | — | — | the journey — how this language came to be |
+| 36 | **M-guide-book** | scheduled | — | — | the guide, as a book you would find in a shop · **§1.1** |
+| 37 | **M-publication-gate** | scheduled | — | — | the last gate before anything goes outward · CLAUDE.md §14 |
 
 Three closed milestones have no tag of their own because they were parents or
 sub-steps: **M-checker-core**, **M-data-declarations** and **M-rich-diagnostics**
@@ -667,6 +668,7 @@ So a number met in the record resolves here, and only here.
 | `M-documentation-site` | M15 | — | the site |
 | `M-journey-book` | M16 | — | the journey |
 | `M-guide-book` | M17 | — | the guide |
+| `M-argv-execution` | — | — | the compiler runs programs by argument list, and the shell stops being the boundary |
 | `M-publication-gate` | M18 | — | the last gate before anything goes outward |
 
 **`M8` has no row, because it meant three different things.** It was an umbrella

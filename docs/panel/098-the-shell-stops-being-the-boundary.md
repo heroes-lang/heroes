@@ -147,9 +147,16 @@ one that was wrong.
 
 ## Author's verdict
 
-**Pending.** Queued as an open item in `docs/work/DECIDE.md` naming `panel 098`.
+**Ratified 2026-08-30** (author instruction, *"fai adesso il milestone di
+Windows"*). All thirteen conditions across the two seats are binding. The size
+question the sitting put to the author is answered **wide**: `tests/harness/` is
+in scope, so the 121 `sq(` uses there and `shell.hero`'s own `system()` and
+wait-status decode ship in the same milestone — the engineer's prediction is
+therefore scored against a milestone that was told to cover them, not against one
+that stopped at `selfhost/`. `docs/work/DONE.md:766`'s revocable clause is
+answered **confirm**. The milestone is **M-argv-execution**.
 
-**What a yes settles**: the compiler stops building command lines. The route out
+**What the yes settles**: the compiler stops building command lines. The route out
 is `hero_run_reset` / `hero_run_arg` / `hero_run_go` behind `hero_os.h`, in its own
 runtime part, with the Windows arm in C beside it; `sq()` is deleted from
 `selfhost/`; the cache-key glob is replaced by a readdir that returns a status;

@@ -327,7 +327,25 @@ that and it is honoured.
 
 ## Author's verdict
 
-**Pending.** Queued as an open item in `docs/work/DECIDE.md` naming `panel 096`.
+**Ratified 2026-08-28, and the residue ratified 2026-08-30** (author instruction,
+*"ratifica tutto, tutti i panel"*). The first ratification was overturned in part
+by a measurement on the code it asked for — `HERO_VARIADIC` was built in full and
+reverted in full, because `__builtin_choose_expr` diagnoses both arms and so
+refused `ColorAlpha(color: Color, alpha: f32)` against raylib's own `float alpha`,
+a correct binding accepted since it was written. § *Q2's mechanism was built and
+does not work* carries that in full.
+
+**What this second yes settles**: what survives of Q2 is the **message** — *"the
+header's `double`"* where the header says `...` — which is the half the
+coordinator first offered and the investigation then called insufficient, and
+which is now the only sound half. Removal of the flag stays refused on its own
+measurement. Q1 does not land. Q3 goes to the full panel with the 20 existing
+codes on the page.
+
+**What it still does not settle**: the open question below stands unanswered and
+is not closed by this yes — whether *"this expression is `.cstr()` applied to a
+literal"* is a fact about the value or a premise about provenance. It returns
+when Q1 does.
 
 **What a yes settles**: Q2 lands by `HERO_VARIADIC`, with `-Wdouble-promotion`
 kept in `PROBE_ERRORS` and the panel-094-R6 distinction written into the commit;

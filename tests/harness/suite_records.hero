@@ -148,7 +148,7 @@ constant REFUSED: [str]
 # would not. It fired on the row that added it, which is the intended
 # direction: a new milestone reaches this number before it reaches a tag.
 constant ROWS: i64
-    40
+    41
 
 # The two documents whose citations are checked. They are the two a reader is sent
 # to for a rule, and the only two this project rewrites rather than appends to.
