@@ -149,3 +149,11 @@
  * same way it checks a binding against `<sqlite3.h>`. */
 #include "hero_os.h"
 #include "parts/os.c"
+
+/* The filesystem and the process, added at M-argv-execution. They are last
+ * because they need `str`, `hero_alloc` and the panic path, and nothing needs
+ * them. They are also the only two files here that are allowed to know what
+ * machine they are on: `parts/fs.c` and `parts/run.c` carry the `#if
+ * defined(_WIN32)` arms that panel 097 refused to let `selfhost/` express. */
+#include "parts/fs.c"
+#include "parts/run.c"
