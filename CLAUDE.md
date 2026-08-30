@@ -499,7 +499,10 @@ with no file of code, spec or design modified: a note in `docs/reasoning/`
 (its rules, its template and what does *not* qualify live in that directory's
 README, their only copy) + its own commit. The milestone-close checklist lives
 in `/step` — its only copy. The repo pushes to `origin`
-(github.com/giuseppearici/heroes-lang). Hard stops that remain: publishing the
+(github.com/heroes-lang/heroes, moved there from github.com/giuseppearici/heroes-lang
+on 2026-08-30 — every old link redirects, and the one act that would kill those
+redirects permanently is creating a repository at the old name, so that name is
+never reused). Hard stops that remain: publishing the
 site or anything else outward-facing, and destructive ops.
 
 **Milestone identifiers are names, not numbers** (author instruction 2026-08-12;
