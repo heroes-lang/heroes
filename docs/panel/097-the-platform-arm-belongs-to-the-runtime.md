@@ -150,6 +150,30 @@ measurement over this whole analysis."*
 | ffi-pragmatist | `extern "sys/stat.h"` in `selfhost/` puts `#include <sys/stat.h>` into `seed/heroes.c` and kills the Windows leg at the 3.5 s seed build | the first tag run after any such change |
 | ffi-pragmatist | any `record … tag stat` naming `st_mode` at any width is `ffi_field_type` on exactly one of {Darwin, glibc} — never zero, never both | today, no Windows needed |
 
+## Author's verdict
+
+**Pending.** Queued as an open item in `docs/work/DECIDE.md` naming `panel 097`.
+
+**What a yes settles**: the briefed proposal does not land in any form —
+`extern "sys/stat.h"` and `extern "direct.h"` never appear in `selfhost/`, and
+`seed/heroes.c` gains no POSIX header. The five filesystem operations, if they
+are taken at all, go behind `hero_os.h` in `runtime/parts/fs.c` under the seven
+conditions above, with `HERO_RUNTIME_ABI` 16 → 17.
+
+**What a yes does NOT settle, and it is the sitting's own open question**:
+whether the work is taken *at all*, and at which milestone. Condition 7 makes
+that unavoidable — the twelve filesystem calls are not what keeps Windows red on
+their own, and a milestone that repairs only them ships a green `doctor` over a
+red `build`. So the real question the author is being asked is wider than the one
+briefed: does the compiler stop speaking to the operating system through a shell
+altogether, `sq()` and the wait-status decode and the cache-key glob included?
+This sitting did not rule on that and its judges were not briefed to.
+
+**What a no compels**: the engineer withdraws its veto only on all four of its
+conditions, and it named the measurement that would move it — *"a run on a
+Windows machine showing `heroes build` green with `sq()` unchanged. I would take
+that measurement over this whole analysis."*
+
 ## Two findings that outlive the decision
 
 **The thesis worked, on a machine nobody has.** Cross-compiling the all-extern
