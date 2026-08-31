@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 228" width="900" height="228" role="img" aria-label="A real diagnostic: error[unknown_name]: nothing named totl is in scope, did you mean total? The message points at the typo, quotes the line, underlines the span, and ends with fix (certain): rename to total.">
+  <!-- The daylight twin. A real diagnostic, in the site's own code-block furniture
+       (site/public/style.css § code: comments dim, keywords red, the base text
+       in the code colour). The card is a picture of the compiler's own output
+       and nothing else: the text below is byte for byte what
+       `heroes check tests/golden/check/typo-not-a-new-binding.hero` printed on
+       2026-08-31, which is why the em dash in the message stays (site/CLAUDE.md
+       exempts verbatim output, because evidence is never edited).
+
+       Twin of error-dark.svg: the two files differ ONLY in the palette block
+       below, so a change to the layout is made twice or not at all.
+
+       Every line is one <text> with `xml:space="preserve"`, and the coloured
+       runs are tspans with no x of their own, so the glyphs flow and the caret
+       row stays under the span it marks whatever monospace font the reader has. -->
+  <style>
+    .plate { fill: #f1ebdd; stroke: #dbd2be; stroke-width: 1; }
+    .bar   { fill: #f6efe0; }
+    .rule  { stroke: #e7e0d0; stroke-width: 1; }
+    .code  { fill: #23345a; }
+    .dim   { fill: #6a6559; }
+    .red   { fill: #c2262b; }
+    .mono  { font-family: ui-monospace,'SF Mono',Menlo,monospace; }
+    .diag  { font-size: 15px; }
+    .cmd   { font-size: 12px; }
+  </style>
+
+  <path class="plate" d="M 10.5 0.5 h879 a10 10 0 0 1 10 10 v207 a10 10 0 0 1 -10 10 h-879 a10 10 0 0 1 -10 -10 v-207 a10 10 0 0 1 10 -10 z"/>
+  <path class="bar" d="M 10.5 0.5 h879 a10 10 0 0 1 10 10 v29 h-899 v-29 a10 10 0 0 1 10 -10 z"/>
+  <line class="rule" x1="0.5" y1="40" x2="899.5" y2="40"/>
+  <text class="mono cmd dim" x="24" y="25">$ heroes check tests/golden/check/typo-not-a-new-binding.hero</text>
+
+  <g class="mono diag">
+    <text x="24" y="76" xml:space="preserve"><tspan class="red">error[unknown_name]</tspan><tspan class="code">: nothing named `totl` is in scope &#8212; did you mean `total`?</tspan></text>
+    <text x="24" y="101" xml:space="preserve" class="dim">  at tests/golden/check/typo-not-a-new-binding.hero:10:9</text>
+    <text x="24" y="126" xml:space="preserve" class="dim">     |</text>
+    <text x="24" y="151" xml:space="preserve"><tspan class="dim">  10 | </tspan><tspan class="code">        totl @ total + x  </tspan><tspan class="dim">#~ unknown_name</tspan></text>
+    <text x="24" y="176" xml:space="preserve"><tspan class="dim">     | </tspan><tspan class="red">        ^^^^</tspan></text>
+    <text x="24" y="201" xml:space="preserve" class="code">  fix (certain): rename to `total`</text>
+  </g>
+</svg>

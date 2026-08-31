@@ -1,4 +1,19 @@
-# Heroes
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/banner-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="docs/assets/banner-light.svg">
+    <img src="docs/assets/banner-light.svg" alt="Heroes, a compiled programming language. Small enough to fit in a prompt, real enough to compile itself. 233 lines: the whole language. 3592 of 4096 tokens of the spec budget. 48,690 lines that compile themselves. 0 bytes of difference.">
+  </picture>
+</p>
+
+<p align="center">
+  <a href="spec/heroes-spec.md">The spec</a> &nbsp;&middot;&nbsp;
+  <a href="design.md">The design</a> &nbsp;&middot;&nbsp;
+  <a href="docs/ROADMAP.md">The chain</a> &nbsp;&middot;&nbsp;
+  <a href="docs/journal/README.md">The journals</a> &nbsp;&middot;&nbsp;
+  <a href="docs/panel/">The panels</a> &nbsp;&middot;&nbsp;
+  <a href="examples/">The examples</a>
+</p>
 
 A small compiled language designed so that **every plausible mistake an LLM
 makes is a compile error**.
@@ -16,14 +31,42 @@ function main()
         print(name, " scored ", scores[name].must())
 ```
 
+The mistake a model makes most often is a name that is almost right. Where
+assignment declares, as in Python or JavaScript, a typo quietly becomes a second
+variable and the wrong answer leaves at exit 0. Here `@` writes only to a name
+that was already declared, so the typo has nowhere to land:
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/error-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="docs/assets/error-light.svg">
+    <img src="docs/assets/error-light.svg" alt="error[unknown_name]: nothing named `totl` is in scope, did you mean `total`? The message names the file, line and column, quotes the line, underlines the four characters that are wrong, and ends with: fix (certain): rename to `total`.">
+  </picture>
+</p>
+
+Every diagnostic carries three things: the place that is wrong, the other end of
+the story, and the repair. A fix tagged `certain` was worked out rather than
+guessed, so `heroes check --apply` can write it for you.
+
 ## Status: v1 is reached, and the chain continues
 
 **The compiler compiles itself.** That was the definition of v1 and it was
 reached at M-selfhost-fixpoint on 2026-08-18: `selfhost/` is this compiler
 written in Heroes, and the C it emits for its own source is `seed/heroes.c`,
-byte for byte. **26 of 36 milestones are closed**, and the acceptance program
-still runs — a calculator with seven passing tests, now four modules rather
-than one file.
+byte for byte.
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/fixpoint-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="docs/assets/fixpoint-light.svg">
+    <img src="docs/assets/fixpoint-light.svg" alt="The fixpoint: clang compiles seed/heroes.c into the heroes binary in 3.7 s; that binary compiles the 167 files of selfhost/ in 37.8 s; the C it emits for its own source is identical to seed/heroes.c, byte for byte.">
+  </picture>
+</p>
+
+**26 of 37 milestones are closed**, the one in flight is `M-argv-execution` (the
+compiler starts a program by argument list, and the shell stops being the
+boundary), and the acceptance program still runs — a calculator with seven
+passing tests, now four modules rather than one file.
 
 | working today | not yet |
 |---|---|
@@ -44,14 +87,14 @@ written in C — what it emits when it compiles itself — so there is no chicke
 egg and no Rust:
 
 ```sh
-clang -I runtime seed/heroes.c runtime/runtime.c -o heroes   # 3.6 s, measured
+clang -I runtime seed/heroes.c runtime/runtime.c -o heroes   # 3.7 s, measured
 ./heroes doctor                                             # what this machine has
 ./heroes run examples/gallery/00-first.hero
 ./heroes test examples/calculator/main.hero
 ```
 
 The compiler you get is the real one: it compiles `selfhost/` — its own source,
-**48,342 lines of Heroes across 165 files**, 39,572 of them before the first test
+**48,690 lines of Heroes across 167 files**, 39,873 of them before the first test
 block — and what it emits for that is `seed/heroes.c` again, byte
 for byte, in 38 s. `seed/README.md` is that ritual, including how to get a compiler back if
 the seed ever stops building today's source.
@@ -63,14 +106,15 @@ surface. The Rust bootstrap that used to be the way in is
 exception that let `cargo` build the compiler had an expiry date written into it,
 and this is it.
 
-Developed on macOS arm64; CI runs every push on Linux x86-64, and widens to all
-three platforms at a tag. Windows was added on 2026-08-24, when the compiler
-stopped binding `unistd.h` and the last POSIX header left `seed/heroes.c`,
-**and the tag that was supposed to confirm it did the opposite**: the
-`m-separate-compilation` run of 2026-08-26 was red on all three platforms at
-three different steps, Windows at `heroes doctor`. None of the three has been
-diagnosed yet. This file says so rather than letting the last green push, which
-is Linux and a subset of the steps, imply otherwise.
+> [!NOTE]
+> Developed on macOS arm64; CI runs every push on Linux x86-64, and widens to all
+> three platforms at a tag. Windows was added on 2026-08-24, when the compiler
+> stopped binding `unistd.h` and the last POSIX header left `seed/heroes.c`,
+> **and the tag that was supposed to confirm it did the opposite**: the
+> `m-separate-compilation` run of 2026-08-26 was red on all three platforms at
+> three different steps, Windows at `heroes doctor`. This file says so rather
+> than letting the last green push, which is Linux and a subset of the steps,
+> imply otherwise.
 
 ## The thesis, and how much of it is measured
 
@@ -112,3 +156,8 @@ This is one person learning compilers, on a deliberately unusual set of rules �
 so issues and questions are welcome, and pull requests are not being accepted
 yet. The rules are not decoration: they are in `CLAUDE.md`, and the reason each
 exists is in `design.md` or in a panel session.
+
+<p align="center">
+  <sub>The name is an homage to David Bowie's <i>&ldquo;Heroes&rdquo;</i> (1977), and the
+  quotation marks are his. The bolt is borrowed from 1973.</sub>
+</p>
