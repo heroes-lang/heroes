@@ -47,6 +47,9 @@ extern "hero_os.h"
     function hero_fs_rename(from: cstr, to: cstr) -> i64
 
 extern "stdlib.h"
+    function hero_dir_scan(root: cstr, want: i64, recursive: i64) -> i64
+    function hero_dir_at(index: i64) -> str
+    function hero_dir_release()
     function getenv(name: cstr) -> cstr
 
 # What a finished program answered.
@@ -140,6 +143,24 @@ function rename_over(from: str, to: str) -> ()?
 # doctor` was exit 134 (panel 089). `validated` subsumes both cases,
 # and "" is right for both because every call site asks only whether
 # the string is empty.
+# Every FILE under `dir`, recursively, relative paths joined with `/` on
+# every platform. The runtime holds the listing until it is read, and this
+# releases it on the way out — the leak gate panics at exit otherwise.
+function files_under(dir: str) -> [str]?
+    found = hero_dir_scan(root: dir.cstr(), want: 0, recursive: 1)
+
+    if found < 0
+        return fail("cannot_walk", "cannot read " + dir)
+    out: [str] @ []
+    at: i64 @ 0
+
+    while at < found
+        out @ out.push(dir + "/" + hero_dir_at(index: at))
+        at @ at + 1
+
+    hero_dir_release()
+    return ok(out)
+
 function env(name: str) -> str
     return validated(c: getenv(name: name.cstr())).default("")
 

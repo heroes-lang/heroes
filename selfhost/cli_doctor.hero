@@ -36,7 +36,7 @@ record Check
 # report about the machine.
 function capture(program: str, words: [str], build_dir: str) -> str?
     out_path = build_dir + "/doctor-out.txt"
-    _ = cli_toolchain.mkdir_all(build_dir)
+    _ = cli_process.mkdir_all(build_dir)
     ran = cli_process.run(program: program, words: words, out: out_path, err: cli_process.discard())
 
     if !ran.started
@@ -112,7 +112,7 @@ function checks(build_dir: str, runtime_hint: str) -> [Check]
         out @ out.push(Check(name: "runtime", ok: true, detail: found.must().runtime))
 
     # build/ must be creatable and writable, probed by writing.
-    made = cli_toolchain.mkdir_all(build_dir)
+    made = cli_process.mkdir_all(build_dir)
     cache_ok: bool @ false
 
     if !made.is_err()

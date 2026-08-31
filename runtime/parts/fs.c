@@ -126,10 +126,29 @@ int64_t hero_fs_newer_than(const char *path, const char *reference) {
 #endif
 }
 
-/* `rm -f`: gone afterwards, and a path that was never there is success. */
+/* `rm -f`: gone afterwards, and a path that was never there is success.
+ *
+ * **WINDOWS RETRIES, because a file there can be busy for reasons that are
+ * nobody's bug and last milliseconds.** A just-exited .exe keeps its image
+ * mapped for a beat after the process is gone, and Defender opens every fresh
+ * binary the moment it appears — so a delete that raced either one answered
+ * "cannot remove" for a file that was deletable forty milliseconds later.
+ * Measured 2026-08-31 on the net's own suites: five checks red as `cannot lay
+ * the program out under build/harness` and `cannot remove build/tu-…`, on
+ * paths a retry-by-hand then removed cleanly. Ten tries over ~1.3 s is far
+ * past both causes; a file still held after that is genuinely held, and the
+ * caller hears it. POSIX never retries: a busy file there deletes anyway
+ * (the name goes, the inode lingers), so the loop would be dead code. */
 int64_t hero_fs_remove(const char *path) {
     if (remove(path) == 0) return HERO_OS_OK;
     if (!hero_fs_exists(path)) return HERO_OS_OK;
+#if defined(_WIN32)
+    for (int wait_ms = 5; wait_ms <= 320; wait_ms *= 2) {
+        Sleep((DWORD)wait_ms);
+        if (remove(path) == 0) return HERO_OS_OK;
+        if (!hero_fs_exists(path)) return HERO_OS_OK;
+    }
+#endif
     return HERO_OS_FAILED;
 }
 
