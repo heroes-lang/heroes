@@ -400,7 +400,14 @@ function env(name: str) -> str
 # missing every library would otherwise report green having tested
 # nothing.
 function machine_lacks_the_library(text: str) -> bool
-    return strings.contains(text: text, needle: "error[ffi_package]") || strings.contains(text: text, needle: "error[ffi_missing_header]")
+    # Three spellings of one answer, and all three are the MACHINE's rather
+    # than the program's: a package the machine cannot find, a header it does
+    # not have, and a `pkg-config` that is not installed at all — the third is
+    # `cli_libraries.hero:187`'s own wording, and it was missing here until
+    # the Windows VPS answered it for four `run/` cases that name raylib
+    # (measured 2026-08-31: 4 failed as "did not build" on a machine that
+    # simply has no pkg-config).
+    return strings.contains(text: text, needle: "error[ffi_package]") || strings.contains(text: text, needle: "error[ffi_missing_header]") || strings.contains(text: text, needle: "pkg-config is not on this machine")
 
 # The compilers this harness's own test blocks may use, in the order they are
 # tried. Read as: whatever the caller named, then the binary in the repository
