@@ -417,6 +417,54 @@ jobs:
           find build -name '*.c' -newer build/probe/tiny.hero 2>/dev/null | head -5 || true
           echo "--- end ---"
 
+      # **The bisection.** Measured on run 33375990716, under bash so the exit
+      # code is the process's own and not PowerShell's `$?`:
+      #
+      #   heroes test build/probe/tiny.hero          exit 0, "1 test, all passed"
+      #   heroes check selfhost/lexer.hero           exit 0
+      #   heroes build selfhost/lexer.hero --emit-c  exit 127, no file, both streams empty
+      #
+      # So `test` works as a verb on this platform — it emits, calls clang, links
+      # and runs a binary — and `build` on a COMPILER MODULE dies at 127 while
+      # `check` on the same file passes. Nothing in this compiler returns 127
+      # deliberately: its codes are 0, 1 and 2.
+      #
+      # Three candidates and this splits them instead of arguing: the emitter
+      # (`--dump-ir` stops one stage earlier), multi-module input (`tiny.hero`
+      # imports nothing, `lexer.hero` does), and sheer size. Each step reports
+      # its own code and neither fails the job, so all four answers arrive in one
+      # round.
+      - name: Where in the pipeline does a compiler module die?
+        if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
+        shell: bash
+        run: |
+          mkdir -p build/probe
+          probe () {
+            set +e
+            out=$("$@" 2>&1)
+            code=$?
+            set -e
+            echo "  exit $code  <-  $*"
+            if [ -n "$out" ]; then echo "$out" | head -4 | sed 's/^/      /'; fi
+          }
+          C=./heroes-from-seed${{ matrix.exe }}
+          echo "--- calibration: the binary runs at all ---"
+          probe $C --version
+          echo "--- one module, three stages deep ---"
+          probe $C check selfhost/lexer.hero
+          probe $C build selfhost/lexer.hero --dump-ir
+          probe $C build selfhost/lexer.hero --emit-c -o build/probe/e1.c
+          echo "--- is it the `use`, or the size? two programs that separate them ---"
+          printf 'function twice(n: i64) -> i64\n    return n * 2\n' > build/probe/lib.hero
+          printf 'use lib\n\nfunction main()\n    print(lib.twice(n: 21))\n' > build/probe/two.hero
+          probe $C build build/probe/two.hero --emit-c -o build/probe/e2.c
+          probe $C build selfhost/cli_process.hero --emit-c -o build/probe/e3.c
+          probe $C build selfhost/strings.hero --emit-c -o build/probe/e4.c
+          echo "--- and what a panic looks like here, so 127 has a scale ---"
+          printf 'function main()\n    xs: [i64] = []\n    print(xs[3])\n' > build/probe/boom.hero
+          probe $C run build/probe/boom.hero
+          echo "--- end ---"
+
       - name: One module's tests, before the whole compiler's
         if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
         # `shell: bash` so the shell matches the steps that work. It ran under
