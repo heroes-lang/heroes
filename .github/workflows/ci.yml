@@ -361,31 +361,76 @@ jobs:
         # FILE, so the previous round may have been throwing away the very
         # output it was asking for. `-o` sends the C to a path and leaves both
         # streams alone.
-        # Both streams, merged, under a shell where the merge is unambiguous.
-        # Three rounds of this probe came back with an exit code and an empty
-        # log, and PowerShell's stream handling is one of the things that could
-        # explain it — so this removes that variable rather than reasoning about
-        # it. `cmd`'s `2>&1` puts stderr into stdout and the step prints it.
         # **Everything this probe writes goes under build/, which is
         # gitignored.** The first version wrote `emitted.c` into the repository
         # root and `records/c` caught it on all three legs — that check exists
         # to keep a C file out of a directory that does not own C, and a probe
         # is not an exception to it. The net runs on the same tree a step later,
         # so a probe that litters breaks the run it was meant to diagnose.
+        #
+        # **And the probe before this one asked the wrong question.** It printed
+        # stdout and stderr and both were empty on ALL THREE platforms — because
+        # `--emit-c -o path` writes to the path and says nothing. An empty log
+        # meant nothing at all, and it was read as evidence. So this one asks
+        # for the exit code and the FILE, which are the two things the answer
+        # can be read off.
         shell: bash
         run: |
           mkdir -p build/probe
+          set +e
           ./heroes-from-seed${{ matrix.exe }} build selfhost/lexer.hero --emit-c \
-            -o build/probe/emitted.c > build/probe/out.txt 2> build/probe/err.txt || true
-          echo "--- stdout, first 5 lines ---"
-          head -5 build/probe/out.txt || true
-          echo "--- stderr, all of it ---"
-          cat build/probe/err.txt || true
+            -o build/probe/emitted.c > build/probe/out.txt 2> build/probe/err.txt
+          code=$?
+          set -e
+          echo "--- exit $code ---"
+          echo "--- the file it was asked to write ---"
+          ls -l build/probe/emitted.c 2>&1 || echo "  it is not there"
+          echo "--- stdout ---"; head -3 build/probe/out.txt || true
+          echo "--- stderr ---"; cat build/probe/err.txt || true
+          echo "--- end ---"
+
+      # **`heroes test` is the one verb that has never worked on Windows, and
+      # the log says nothing.** Measured on run 33373996112: `heroes run` prints
+      # `20` there — so the frontend, clang, the link and executing a binary all
+      # work — and `heroes test selfhost/lexer.hero` exits 1 in 1.2 s with both
+      # streams empty. That is the difference between two link paths
+      # (`cli_toolchain.link` for a fused test unit, `cli_units.link_objects`
+      # for a program), and every failure path in both of them PRINTS.
+      #
+      # So the smallest question first, on a program with three lines instead of
+      # a compiler module: is `test` broken as a verb, or is it broken on this
+      # input? Both answers are useful and the round costs nothing.
+      - name: Does `heroes test` work at all on this platform?
+        if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
+        shell: bash
+        run: |
+          mkdir -p build/probe
+          printf 'function twice(n: i64) -> i64\n    return n * 2\n\ntest "it doubles"\n    assert twice(n: 21) == 42\n' > build/probe/tiny.hero
+          set +e
+          ./heroes-from-seed${{ matrix.exe }} test build/probe/tiny.hero > build/probe/t.out 2> build/probe/t.err
+          code=$?
+          set -e
+          echo "--- exit $code ---"
+          echo "--- stdout ---"; cat build/probe/t.out || true
+          echo "--- stderr ---"; cat build/probe/t.err || true
+          echo "--- what landed in the cache ---"
+          find build -name '*.c' -newer build/probe/tiny.hero 2>/dev/null | head -5 || true
           echo "--- end ---"
 
       - name: One module's tests, before the whole compiler's
         if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
-        run: ./heroes-from-seed${{ matrix.exe }} test selfhost/lexer.hero
+        # `shell: bash` so the shell matches the steps that work. It ran under
+        # PowerShell for three rounds, which left "does pwsh eat the streams?"
+        # alive as an explanation for an empty log. It is removed as a variable
+        # rather than argued about.
+        shell: bash
+        run: |
+          set +e
+          ./heroes-from-seed${{ matrix.exe }} test selfhost/lexer.hero
+          code=$?
+          set -e
+          echo "--- exit $code ---"
+          exit $code
 
       - name: The compiler's own tests
         if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
