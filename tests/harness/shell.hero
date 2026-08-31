@@ -331,13 +331,37 @@ function patience() -> [str]
     if probe.is_err() || !probe.must().started
         return []
 
-    # coreutils uses 124 for a timeout it enforced and 125/126/127 for its
-    # own failures, so 1 can only be the child's. That is the whole contract
-    # this harness needs from it.
-    if probe.must().code != 1
+    # **THE EXIT CODE ALONE WAS NOT ENOUGH, and that is measured.** This
+    # asked for `code == 1` first, on the grounds that coreutils uses 124 for
+    # a timeout it enforced and 125/126/127 for its own failures, so a 1
+    # could only be the child's. Windows' `TIMEOUT.EXE` rejects this argument
+    # list and **also exits 1**, so the net came back with the identical 271
+    # failures and the identical numbers in every suite — run 33384859776
+    # against 33383228293, 686 passed / 357 failed both times. A fix that
+    # changes nothing measurable did not fix anything.
+    #
+    # So the probe asks for the one thing a pause utility cannot fake: **the
+    # child's own words coming back.** coreutils runs `clang` and passes its
+    # stderr through, so `unknown argument` arrives here; `TIMEOUT.EXE` never
+    # launches clang at all and says `Invalid syntax` about itself. No exit
+    # code can stand in for that, because an error and a forwarded 1 are the
+    # same number.
+    if !is_a_watchdog(started: probe.must().started, code: probe.must().code, err: probe.must().err)
         return []
 
     return ["timeout", "120"]
+
+# The decision above, as a function of what the probe saw — so a case can put
+# the real Windows output in front of it without a Windows machine. `fixedbugs`
+# in shape and in reason (CLAUDE.md §9): the defect it names shipped twice.
+function is_a_watchdog(started: bool, code: i64, err: str) -> bool
+    if !started
+        return false
+
+    if code != 1
+        return false
+
+    return strings.contains(text: err, needle: "unknown argument")
 
 # Every file under `dir`, recursively, whose name ends in `suffix` and
 # which is newer than `reference`. What `find -name … -newer` answered,
@@ -573,3 +597,22 @@ test "the directory walk keeps a filename that contains a newline"
             readable @ readable + 1
 
     assert readable == 3
+
+test "fixedbugs: the watchdog probe reads the child's words, not just its exit code"
+    # Symptom: 271 of 357 net checks failed on the Windows leg with
+    # `ERROR: Invalid syntax`, every one of them the compiler never launched.
+    # Cause: `patience()` asked whether a program called `timeout` STARTS, and
+    # Windows ships a `TIMEOUT.EXE` that pauses for N seconds. Date:
+    # 2026-08-31, runs 33383228293 and 33384859776 — the second is the one
+    # that matters, because the first repair asked for `code == 1` and
+    # `TIMEOUT.EXE` also exits 1, so the numbers came back IDENTICAL.
+    coreutils = "clang: error: unknown argument: '--heroes-no-such-flag'\nclang: error: no input files\n"
+    assert is_a_watchdog(started: true, code: 1, err: coreutils)
+
+    # Verbatim from the Windows log. It started, and it exited 1.
+    pause_utility = "ERROR: Invalid syntax. Default option is not allowed more than '1' time(s).\nType \"TIMEOUT /?\" for usage.\n"
+    assert !is_a_watchdog(started: true, code: 1, err: pause_utility)
+
+    # And the two answers the old probe did get right stay right.
+    assert !is_a_watchdog(started: false, code: -1, err: "")
+    assert !is_a_watchdog(started: true, code: 0, err: coreutils)
