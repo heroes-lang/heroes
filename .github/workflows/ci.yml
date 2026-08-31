@@ -356,10 +356,26 @@ jobs:
       # this asks for a diagnostic on purpose: `arm-pattern.hero` is a golden
       # case that cannot compile, and its message must appear here. Nothing
       # printed means the channel is the defect and not what is written to it.
+      # **Asserted, not ignored.** This step used `continue-on-error: true`,
+      # which let the deliberate exit 1 through — and stamped every green run
+      # with three "Process completed with exit code 1" annotations, one per
+      # leg, that read as errors on a page saying Success (author question,
+      # 2026-08-31). Ignoring the failure was also weaker than the step's own
+      # claim: what it exists to prove is that the diagnostic ARRIVES, so it
+      # now demands exactly that — exit 1, the code named on stderr — and a
+      # channel that eats the message is a red step instead of a shrug.
       - name: A diagnostic reaches the log
         if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
-        continue-on-error: true
-        run: ./heroes-from-seed${{ matrix.exe }} check tests/golden/check/arm-pattern.hero
+        shell: bash
+        run: |
+          mkdir -p build
+          set +e
+          ./heroes-from-seed${{ matrix.exe }} check tests/golden/check/arm-pattern.hero 2> build/diag.txt
+          code=$?
+          set -e
+          cat build/diag.txt
+          test "$code" -eq 1
+          grep -q 'error\[' build/diag.txt
 
       # **The same module, checked rather than tested.** Three hypotheses about
       # the silent failure of `heroes test` on Windows are already dead by
