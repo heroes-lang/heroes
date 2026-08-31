@@ -439,13 +439,18 @@ jobs:
         shell: bash
         run: |
           mkdir -p build/probe
+          # **No pipe inside this function.** The first version ended in
+          # `echo "$out" | head -4`, and `head` closing the pipe gave `echo` a
+          # broken pipe — which `pipefail` plus `-e` turned into a dead step on
+          # Darwin, where the compiler works. A probe must not be able to fail
+          # the leg it is only observing.
           probe () {
             set +e
-            out=$("$@" 2>&1)
+            "$@" > build/probe/p.txt 2>&1
             code=$?
             set -e
             echo "  exit $code  <-  $*"
-            if [ -n "$out" ]; then echo "$out" | head -4 | sed 's/^/      /'; fi
+            head -4 build/probe/p.txt 2>/dev/null | sed 's/^/      /' || true
           }
           C=./heroes-from-seed${{ matrix.exe }}
           echo "--- calibration: the binary runs at all ---"

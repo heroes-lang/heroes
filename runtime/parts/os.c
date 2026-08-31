@@ -37,6 +37,40 @@ static void hero_stdout_is_bytes(void) {}
 #include <stdio.h>
 #include <stdlib.h>
 
+/* **A PANIC'S MESSAGE IS ON THE WIRE BEFORE THE PROCESS CAN DIE**, whatever the
+ * platform buffers. Every panic path in this runtime is `fprintf(stderr, ...)`
+ * followed by `abort()`, and C11 7.22.4.1p2 leaves it implementation-defined
+ * whether `abort` flushes an open stream. On glibc and on Darwin it does not
+ * matter: 7.21.3p7 says stderr is "not fully buffered", both make it unbuffered,
+ * and the text is already gone by the time `abort` runs.
+ *
+ * **Measured on Windows 2026-08-31, and it is the other half of that sentence.**
+ * "Not fully buffered" permits LINE buffering, and a line-buffered stderr with a
+ * message still in it loses the message when `abort` terminates the process:
+ * `heroes run` on a program with a deliberate out-of-range index gave **exit 127
+ * with both streams empty**, where the same program on Darwin prints
+ * `panic: an index is out of range` at exit 134. Four rounds of CI went into
+ * finding out what a compiler module was dying of, and the compiler had been
+ * saying so all along into a buffer nobody drained.
+ *
+ * `parts/os.c:204` says of `hero_write_err` that no `fflush` is needed and that
+ * this was measured rather than assumed. That measurement was right and its
+ * platform was Darwin — and the instrument it names, 141 golden checks over the
+ * diagnostic text, runs there too. A premise true where it was taken and false
+ * one platform over is CLAUDE.md §11's exact shape, so the sentence keeps its
+ * date and gains this one.
+ *
+ * `_IONBF` rather than an `fflush` at each of the six abort sites: a call that
+ * has to be remembered at every exit is a call that will be forgotten at the
+ * seventh. This runs once, before a program's first line. */
+static void hero_err_unbuffered(void) {
+    static int done = 0;
+    if (!done) {
+        done = 1;
+        setvbuf(stderr, NULL, _IONBF, 0);
+    }
+}
+
 /* The arguments, as the generated `main` received them. Static, like every other
  * piece of runtime state, so a decoy runtime linked beside this one cannot reach
  * them (runtime.c's own reason for one translation unit). */
@@ -45,6 +79,7 @@ static char **hero_argv = NULL;
 
 void hero_args_set(int argc, char **argv) {
     hero_stdout_is_bytes();
+    hero_err_unbuffered();
     hero_argc = argc;
     hero_argv = argv;
 }
