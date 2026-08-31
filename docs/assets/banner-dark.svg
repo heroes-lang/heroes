@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 460" width="1200" height="460" role="img" aria-label="Heroes, a compiled programming language">
+  <!-- The README's marquee, in the site's own art direction (site/README.md
+       § Style guide and § The visual system): one light source (the red and blue
+       wash), one motif (the Aladdin Sane bolt of 1973, red over blue at a jaunty
+       angle), one quotation colour (gold, on Bowie's own quotation marks).
+       Everything else is paper and ink.
+
+       Twin of banner-light.svg: the two files differ ONLY in the palette block
+       below, so a change to the layout is made twice or not at all.
+
+       Every number in the fact row was measured on 2026-08-31 (CLAUDE.md §1):
+       `wc -l spec/heroes-spec.md`, `heroes measure`, `find selfhost -name
+       '*.hero'` piped to `wc`, and `cmp` of the emitted C against seed/heroes.c.
+
+       Path data is written `M 14 0`, with the space, because a bare capital M
+       followed by a digit is the milestone shape the net refuses in a living
+       file (tests/harness/suite_records.hero, records/numbered). -->
+  <style>
+    .plate  { fill: #0b0b10; stroke: #262633; stroke-width: 1.5; }
+    .fg     { fill: #efece4; }
+    .dim    { fill: #9d998f; }
+    .blue   { fill: #3f7bff; }
+    .red    { fill: #ef4a52; }
+    .gold   { fill: #e8b552; }
+    .rule   { stroke: #262633; stroke-width: 1; }
+    .rule-blue { stroke: #3f7bff; }
+    .cond   { font-family: 'Avenir Next Condensed','HelveticaNeue-CondensedBold','Helvetica Neue','Roboto Condensed','Arial Narrow',sans-serif; font-weight: 700; }
+    .mono   { font-family: ui-monospace,'SF Mono',Menlo,monospace; }
+    .serif  { font-family: Georgia,'Iowan Old Style','Times New Roman',serif; font-weight: 700; }
+    .kicker { font-size: 15px; letter-spacing: 3.4px; }
+    .title  { font-size: 112px; letter-spacing: 1px; }
+    .quote  { font-size: 92px; }
+    .promise{ font-size: 27px; }
+    .figure { font-size: 34px; }
+    .label  { font-size: 11.5px; letter-spacing: 1.5px; }
+  </style>
+
+  <defs>
+    <clipPath id="plateClip"><rect x="1" y="1" width="1198" height="458" rx="16"/></clipPath>
+    <radialGradient id="washRed"><stop offset="0" stop-color="#ef4a52" stop-opacity="0.30"/><stop offset="1" stop-color="#ef4a52" stop-opacity="0"/></radialGradient>
+    <radialGradient id="washBlue"><stop offset="0" stop-color="#3f7bff" stop-opacity="0.24"/><stop offset="1" stop-color="#3f7bff" stop-opacity="0"/></radialGradient>
+    <linearGradient id="beam" x1="0" y1="0.04" x2="1" y2="0.13">
+      <stop offset="0.34" stop-color="#ef4a52" stop-opacity="0"/>
+      <stop offset="0.47" stop-color="#ef4a52" stop-opacity="0.09"/>
+      <stop offset="0.53" stop-color="#3f7bff" stop-opacity="0.09"/>
+      <stop offset="0.66" stop-color="#3f7bff" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" stitchTiles="stitch"/></filter>
+    <filter id="glow" x="-70%" y="-70%" width="240%" height="240%">
+      <feGaussianBlur stdDeviation="9" result="b"/>
+      <feColorMatrix in="b" type="matrix" values="1 0 0 0 0  0 0.29 0 0 0  0 0 0.32 0 0  0 0 0 0.75 0"/>
+    </filter>
+  </defs>
+
+  <rect class="plate" x="0.75" y="0.75" width="1198.5" height="458.5" rx="16"/>
+
+  <g clip-path="url(#plateClip)">
+    <!-- one light, raked along the bolt's own angle -->
+    <ellipse cx="300" cy="120" rx="560" ry="330" fill="url(#washRed)"/>
+    <ellipse cx="910" cy="360" rx="500" ry="300" fill="url(#washBlue)"/>
+    <rect x="0" y="0" width="1200" height="460" fill="url(#beam)"/>
+    <rect x="0" y="0" width="1200" height="460" filter="url(#grain)" opacity="0.035"/>
+  </g>
+
+  <!-- the 1973 bolt: blue plate a hair off the red one, worn at eight degrees -->
+  <g transform="translate(568 33) rotate(8) scale(1.5)">
+    <path class="red" d="M 30 2 L8 36 h14 L16 62 L44 24 h-16 z" filter="url(#glow)" opacity="1"/>
+    <path class="blue" d="M 30 2 L8 36 h14 L16 62 L44 24 h-16 z" transform="translate(3.5 3)"/>
+    <path class="red" d="M 30 2 L8 36 h14 L16 62 L44 24 h-16 z"/>
+  </g>
+
+  <line x1="320" y1="171" x2="386" y2="171" stroke-width="1" opacity="0.85" class="rule-blue"/>
+  <line x1="814" y1="171" x2="880" y2="171" stroke-width="1" opacity="0.85" class="rule-blue"/>
+  <text class="mono kicker blue" x="600" y="176" text-anchor="middle">A COMPILED PROGRAMMING LANGUAGE</text>
+
+  <text class="cond title fg" x="600" y="278" text-anchor="middle"><tspan class="gold quote">&#8220;</tspan>HEROES<tspan class="gold quote">&#8221;</tspan></text>
+
+  <text class="serif promise fg" x="600" y="330" text-anchor="middle">Small enough to fit in a prompt, real enough to <tspan class="red">compile itself</tspan>.</text>
+
+  <!-- the fact row: four numbers, each one measured, hairline separated -->
+  <line class="rule" x1="72" y1="378" x2="1128" y2="378"/>
+  <line class="rule" x1="336" y1="392" x2="336" y2="444"/>
+  <line class="rule" x1="600" y1="392" x2="600" y2="444"/>
+  <line class="rule" x1="864" y1="392" x2="864" y2="444"/>
+
+  <text class="cond figure fg" x="204" y="418" text-anchor="middle">233</text>
+  <text class="mono label dim" x="204" y="438" text-anchor="middle">LINES: THE WHOLE LANGUAGE</text>
+
+  <text class="cond figure fg" x="468" y="418" text-anchor="middle">3592<tspan class="dim"> / 4096</tspan></text>
+  <text class="mono label dim" x="468" y="438" text-anchor="middle">TOKENS OF THE SPEC BUDGET</text>
+
+  <text class="cond figure fg" x="732" y="418" text-anchor="middle">48,690</text>
+  <text class="mono label dim" x="732" y="438" text-anchor="middle">LINES THAT COMPILE THEMSELVES</text>
+
+  <text class="cond figure fg" x="996" y="418" text-anchor="middle">0</text>
+  <text class="mono label dim" x="996" y="438" text-anchor="middle">BYTES OF DIFFERENCE</text>
+</svg>
