@@ -357,7 +357,11 @@ jobs:
       # compiling it. Green here narrows the defect to the C compile itself.
       - name: The same module, emitted
         if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
-        run: ./heroes-from-seed${{ matrix.exe }} build selfhost/lexer.hero --emit-c > NUL
+        # No redirection: `> NUL` is cmd's black hole and PowerShell's ordinary
+        # FILE, so the previous round may have been throwing away the very
+        # output it was asking for. `-o` sends the C to a path and leaves both
+        # streams alone.
+        run: ./heroes-from-seed${{ matrix.exe }} build selfhost/lexer.hero --emit-c -o emitted.c
 
       - name: One module's tests, before the whole compiler's
         if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
