@@ -145,27 +145,60 @@ function env(name: str) -> str
 
 ## Tests
 
+# Whether `text` holds `needle` anywhere. **Written here rather than imported,
+# and the reason is the language.** `cli_toolchain.has_text` is the same
+# predicate, and `cli_toolchain` imports THIS module — so `use cli_toolchain`
+# here is `module_cycle`, whatever the edge carries (CLAUDE.md §11's knot
+# clause). Six lines in a test section is the cheaper half of that trade.
+function holds(text: str, needle: str) -> bool
+    if needle.len() > text.len()
+        return false
+    at: i64 @ 0
+
+    while at + needle.len() <= text.len()
+        if text.slice(from: at, to: at + needle.len()) == needle
+            return true
+        at @ at + 1
+
+    return false
+
+# **`clang` is the witness on all three platforms, and it is not a shell.**
+# These two cases used to name `/bin/echo` and `/bin/sh`, which is 2 of 520
+# red on the Windows leg (measured 2026-08-31, run 33381701823) for a reason
+# that has nothing to do with what they were testing: those paths do not
+# exist there, and `echo` on Windows is a `cmd` builtin rather than a program.
+#
+# Replacing them with `cmd /c echo` would have thrown the case away — the
+# claim is that a word survives WITHOUT a shell, so proving it through one
+# proves nothing. `clang` reprints an argument it cannot use, verbatim, and
+# exits 1; it is present wherever these tests run at all, because `heroes
+# doctor` refuses a machine without it.
 test "an argument survives what a shell would have eaten"
     # The three characters `sq()` existed to defend against. Through an
     # argument list they need no defending: the word arrives whole.
     tricky = "a b 'c' $HOME"
-    ran = run(program: "/bin/echo", words: ["/bin/echo", tricky], out: "build/argv-probe.txt", err: "")
+    ran = run(program: "clang", words: ["clang", tricky], out: "", err: "build/argv-probe.txt")
 
     assert ran.started
-    assert ran.code == 0
 
     back = read_file("build/argv-probe.txt")
     assert !back.is_err()
-    assert back.must() == tricky + "\n"
+
+    # clang says `no such file or directory: '<the argument>'`, so the word
+    # comes back through a second process's own diagnostic — spaces, quotes,
+    # dollar sign and all. A shell would have split it into four words and
+    # expanded the last one.
+    assert holds(text: back.must(), needle: tricky)
 
 test "a program that never started is not a program that failed"
     absent = run(program: "heroes-no-such-program", words: ["heroes-no-such-program"], out: "", err: "")
     assert !absent.started
 
-    # And one that ran and failed says so the other way round.
-    failed = run(program: "/bin/sh", words: ["/bin/sh", "-c", "exit 3"], out: "", err: "")
+    # And one that ran and failed says so the other way round. The number is
+    # not the point and never was — `started` against `code` is.
+    failed = run(program: "clang", words: ["clang", "--heroes-no-such-flag"], out: "", err: "build/argv-refused.txt")
     assert failed.started
-    assert failed.code == 3
+    assert failed.code != 0
 
 test "the filesystem answers the shell utility's question, not C's"
     root = "build/argv-fs"
