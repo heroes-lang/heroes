@@ -39,6 +39,7 @@ extern "hero_os.h"
     function hero_run_reset()
     function hero_run_arg(word: str)
     function hero_run_limit(seconds: i64)
+    function hero_run_exe_suffix() -> str
     function hero_run_go(program: cstr, out_path: cstr, err_path: cstr, @status: i64) -> i64
     function hero_run_discard_path() -> str
     function hero_fs_exists(path: cstr) -> i64
@@ -320,6 +321,16 @@ function skipped(name: str, skip: [str]) -> bool
 # a performance budget in disguise (CLAUDE.md §13).
 constant WATCHDOG_SECONDS: i64
     120
+
+# **What an executable is CALLED on this machine** — "" on POSIX, ".exe" on
+# Windows. The harness needs it wherever it names a binary with `-o` and then
+# runs it: clang honours `-o` to the letter, and `CreateProcess` given a name
+# with no extension looks for `<name>.exe` — which then does not exist. That
+# was `run/`'s entire 0-of-91 on the Windows leg (every case "exit -1", never
+# started), measured 2026-08-31. The answer comes from the runtime, which is
+# the one place allowed to know what machine this is.
+function exe_suffix() -> str
+    return hero_run_exe_suffix()
 
 # Kept as its own name because 40 call sites read it, and because it says at
 # the call what `run` now guarantees everywhere: this will come back.
