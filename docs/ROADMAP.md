@@ -42,6 +42,34 @@ in the numbers that were re-measured.
 
 | | |
 |---|---|
+| **Current milestone** | **M-argv-execution** — open 2026-08-30, ten steps landed; **Windows green is the acceptance criterion and it is not met** |
+| **Last closed** | **M-separate-compilation**, 2026-08-26, tag `m-separate-compilation` · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
+| Milestones closed | 26 of 37 · 26 tags |
+| The compiler | **48,690 lines** of Heroes in 167 files · the seed **797,015** lines of generated C |
+| The spec | **3592** tokens of a hard 4096 · headroom 504 · runtime ABI **17** |
+| Records | panels **97** · journals 27 · measurements 13 · examples 15 · defects 5 |
+| Waiting on the author | **5 decisions** in `DECIDE.md` · 8 assigned in `SCHEDULED.md` · 278 in `LEARN.md` (never a gate) |
+
+Every number re-measured 2026-08-31. One platform is left: on Windows `heroes run`
+prints the right answer and `heroes test` exits 1 in silence.
+
+---|---|
+| **Current milestone** | **M-argv-execution** — open 2026-08-30, ten steps landed; **Windows green is the acceptance criterion and it is not met** |
+| **Last closed** | **M-separate-compilation**, 2026-08-26, tag `m-separate-compilation` |
+| **v1** | **reached** at M-selfhost-fixpoint, 2026-08-18 — the compiler compiles itself |
+| Milestones closed | 26 of 37 · 26 tags |
+| The compiler | **48,690 lines** of Heroes in 167 files |
+| The seed | **797,015** lines of generated C — the whole way in |
+| The spec | **3592** tokens of a hard 4096 · headroom 504 |
+| Runtime ABI | 17 |
+| Panels held | **97** · journals 27 · measurements 13 · examples 15 · defects 5 |
+| Waiting on the author | **5 decisions** in `DECIDE.md` · 8 assigned in `SCHEDULED.md` · 278 in `LEARN.md` (never a gate) |
+
+Every number re-measured 2026-08-31. What is left of M-argv-execution is one
+platform: `heroes run` prints the right answer on Windows and `heroes test` exits
+1 there in silence. The history of these rows lives in the journals.
+
+---|---|
 | **Current milestone** | **M-argv-execution** — open 2026-08-30, panels 097 and 098 ratified |
 | **Last closed** | **M-separate-compilation**, 2026-08-26, tag `m-separate-compilation` — all four acceptance rows, and the frontend from **88 s to about 8** ([journal 025](journal/025-separate-compilation.md)) |
 | **v1** | **reached** at M-selfhost-fixpoint, 2026-08-18 — the compiler compiles itself |
