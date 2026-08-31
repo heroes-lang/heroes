@@ -244,4 +244,13 @@ test "the ceiling is per file, and a decided file keeps its own"
     assert ceiling_for("selfhost/check_walk.hero") == 1583
     assert ceiling_for("selfhost/resolve_state.hero") == 308
     assert ceiling_for("selfhost/anything-else.hero") == CEILING
-    assert DECIDED.len() == 16
+
+    # **15 since M-argv-execution, and the direction is the point.** The table
+    # shrinks when a file is FIXED: `cli_verbs.hero` was in it at 358, the
+    # milestone split the produce pipeline out to `cli_produce.hero`, and 207
+    # code lines needs no entry. A row leaving is the ratchet working. A row
+    # arriving is a file nobody could cut, and that is the author's to allow.
+    #
+    # This count exists so neither direction happens quietly — it went red the
+    # moment the row was removed, which is exactly the notice it owes.
+    assert DECIDED.len() == 15
