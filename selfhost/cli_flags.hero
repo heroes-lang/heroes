@@ -78,7 +78,20 @@ function link_flags() -> [str]
     if cli_process.exe_suffix() != ".exe"
         return none
 
-    return ["-Wl,/STACK:67108864"]
+    # **`/INCREMENTAL:NO` because this compiler stages and renames.** Every
+    # binary is linked to `<name>.tmp` and then published with a rename, so
+    # MSVC's incremental linker never finds the previous output it is looking
+    # for and says so ON STDOUT:
+    #
+    #     LINK : build\7163f9e162a1ca14\prog.exe.tmp not found or not built
+    #            by the last incremental link; performing full link
+    #
+    # Measured on the Windows leg 2026-08-31 (run 33386236619) inside
+    # `cache/a header edit is not invisible`, where it arrived in the middle of
+    # a program's output and the harness compares that byte for byte. The link
+    # is always full here by construction, so saying so costs nothing and buys
+    # a clean stream.
+    return ["-Wl,/STACK:67108864", "-Wl,/INCREMENTAL:NO"]
 
 # What --sanitize adds — NOT a leak detector: ASan's is missing on
 # Darwin arm64, and leaks are hero_runtime_check_leaks()'s job in the
@@ -107,8 +120,9 @@ test "the link flags are one platform's, and the platform is asked not assumed"
     got = link_flags()
 
     if cli_process.exe_suffix() == ".exe"
-        assert got.len() == 1
+        assert got.len() == 2
         assert got[0] == "-Wl,/STACK:67108864"
+        assert got[1] == "-Wl,/INCREMENTAL:NO"
     else
         assert got.len() == 0
 
