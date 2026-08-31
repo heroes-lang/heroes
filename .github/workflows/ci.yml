@@ -67,6 +67,21 @@ on:
       - '.github/workflows/release-site.yml'
   pull_request:
   workflow_dispatch:
+    # **One leg at a time, when one leg is what is being fixed.** A full run is
+    # three legs and ~7 minutes, and Darwin is billed at ten Linux minutes to
+    # the minute — so a session repairing Windows was paying for two legs it
+    # had already read, fifteen times over. `all` stays the default, because
+    # the reason the three exist is that no platform's failure hides another's.
+    inputs:
+      only:
+        description: 'Which legs to run'
+        type: choice
+        default: all
+        options:
+          - all
+          - windows
+          - darwin
+          - linux
 
 # One run per ref: a second push cancels the first, because a red result about
 # code nobody has any more is a red result nobody reads.
@@ -128,7 +143,13 @@ jobs:
       matrix:
         include: >-
           ${{ fromJSON(
-          (github.ref_type == 'tag' || github.event_name == 'workflow_dispatch')
+          (github.event_name == 'workflow_dispatch' && inputs.only == 'windows')
+          && '[{"name":"Windows x86-64","os":"windows-latest","exe":".exe"}]'
+          || (github.event_name == 'workflow_dispatch' && inputs.only == 'darwin')
+          && '[{"name":"Darwin arm64","os":"macos-14","exe":""}]'
+          || (github.event_name == 'workflow_dispatch' && inputs.only == 'linux')
+          && '[{"name":"Linux x86-64","os":"ubuntu-latest","exe":""}]'
+          || (github.ref_type == 'tag' || github.event_name == 'workflow_dispatch')
           && '[{"name":"Linux x86-64","os":"ubuntu-latest","exe":""},{"name":"Darwin arm64","os":"macos-14","exe":""},{"name":"Windows x86-64","os":"windows-latest","exe":".exe"}]'
           || '[{"name":"Linux x86-64","os":"ubuntu-latest","exe":""}]'
           ) }}
