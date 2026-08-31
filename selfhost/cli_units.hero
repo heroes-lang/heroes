@@ -82,7 +82,7 @@ function tu_object(t: cli_toolchain.Toolchain, module: str, tu_text: str, level:
         t.fingerprint + "|tu|" + level + san + "|" + module + "|" + tu_text + "|" + t.runtime_key + "|" + search + "|" + package_flags.join(" ")
     )
     dir = t.build + "/tu-" + key
-    made = cli_toolchain.mkdir_all(dir)
+    made = cli_process.mkdir_all(dir)
 
     if made.is_err()
         return fail("failed", "cannot create " + dir)
@@ -91,7 +91,7 @@ function tu_object(t: cli_toolchain.Toolchain, module: str, tu_text: str, level:
     saved = dir + "/warnings.txt"
     depfile = dir + "/" + module + ".d"
 
-    if cli_toolchain.exists(object) && cli_deps.fresh(cli_deps.record_for(object), @memo)
+    if cli_process.path_exists(object) && cli_deps.fresh(cli_deps.record_for(object), @memo)
         # A warm object REPLAYS the warnings its compile produced: the
         # flag set exists so a warning can falsify something (§7), and
         # a cache that swallows one on every hit after the first makes

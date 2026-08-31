@@ -85,7 +85,7 @@ function main()
         given @ given.push(one.must())
         at @ at + 1
 
-    parsed = cli_argv.parse(given, dir_probe: cli_toolchain.is_directory)
+    parsed = cli_argv.parse(given, dir_probe: cli_process.is_directory)
 
     if parsed.is_err()
         cli_io.eprint(text: "error: " + message_of(parsed))

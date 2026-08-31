@@ -168,7 +168,7 @@ function resolve_packages(packages: [str], build_dir: str) -> [str]?
     flags: [str] @ []
 
     for package in packages
-        _ = cli_toolchain.mkdir_all(build_dir)
+        _ = cli_process.mkdir_all(build_dir)
         answer_path = build_dir + "/pkg-config-out.txt"
         err_path = build_dir + "/pkg-config-err.txt"
         ran = cli_process.run(

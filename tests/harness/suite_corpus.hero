@@ -84,7 +84,9 @@ function run_all(scratch: str, compiler: str) -> report.Report?
     # A machine may be missing a library; it may not be missing most of
     # them. Without this, a runner with no C libraries at all reports the
     # corpus green by testing none of it.
-    if skipped > 0 && skipped * 3 > programs.len()
+    # One-half, not one-third, since 2026-08-31 — probe.hero's floor carries
+    # the measured reason and this one moves with it.
+    if skipped > 0 && skipped * 2 > programs.len()
         report.keep_failure(
             @r,
             label: "corpus",

@@ -26,7 +26,6 @@
 use cli_argv
 use cli_io
 use cli_table
-use cli_toolchain
 use cli_process
 use library_source
 use mutate_ops
@@ -34,11 +33,6 @@ use mutate_score
 
 constant DEFAULT_DIR: str
     "examples"
-
-# Under `build/`, which is the one directory this project already treats as
-# disposable — the same place `doctor` writes what it captures.
-constant LISTING: str
-    "build/mutate-listing"
 
 function run(inv: cli_argv.Invocation) -> cli_table.Exit
     only: str @ cli_argv.value_of(inv, spelling: "--operator").default("")
@@ -74,31 +68,25 @@ function run(inv: cli_argv.Invocation) -> cli_table.Exit
     return .ok_exit
 
 # Every `.hero` file under `dir`, sorted, with its text.
+#
+# **This was the last `find` in `selfhost/`, and Windows is why it is gone.**
+# `FIND.EXE` there is a text-search tool that happens to share the name — the
+# same two-meanings shape as `TIMEOUT.EXE`, measured the same day — so
+# `heroes mutate` answered `cannot read examples/gallery` on a directory it
+# was standing in. The runtime's own walk answers on every platform, needs no
+# `-print0` (a name never becomes text on its way here, so there is no
+# separator to be confused by), and the listing file under `build/` goes with
+# it.
 function corpus(dir: str) -> [mutate_score.Program]?
-    _ = cli_toolchain.mkdir_all("build")
+    walked = cli_process.files_under(dir: dir)
 
-    # `*.hero` is passed to `find` as a LITERAL word, which is what it
-    # always had to be. Through a shell it survived only because the
-    # quotes were remembered; through an argument list there is nobody
-    # left to expand it.
-    ran = cli_process.run(
-        program: "find",
-        words: ["find", dir, "-type", "f", "-name", "*.hero", "-print0"],
-        out: LISTING,
-        err: cli_process.discard()
-    )
-
-    if !ran.started || ran.code != 0
+    if walked.is_err()
         return fail("no_corpus", "cannot read " + dir)
-    listing = read_file(LISTING)
-
-    if listing.is_err()
-        return fail("no_corpus", "cannot read the listing at " + LISTING)
     paths: [str] @ []
 
-    for piece in split_on_nul(listing.must())
-        if piece.len() > 0
-            paths @ paths.push(piece)
+    for path in walked.must()
+        if ends_hero(path)
+            paths @ paths.push(path)
 
     out: [mutate_score.Program] @ []
 
@@ -110,6 +98,16 @@ function corpus(dir: str) -> [mutate_score.Program]?
         out @ out.push(mutate_score.Program(name: path, text: text.must()))
 
     return ok(out)
+
+# `.hero` at the end, byte-walked so a multibyte name neither matches nor
+# aborts.
+function ends_hero(path: str) -> bool
+    tail = ".hero"
+
+    if path.len() < tail.len()
+        return false
+
+    return path.slice(from: path.len() - tail.len(), to: path.len()) == tail
 
 # Every program in the corpus must compile BEFORE anything is mutated. Every
 # offending file is listed rather than the first, because a corpus is usually
@@ -136,55 +134,6 @@ function why(got: [mutate_score.Program]?) -> str
     return match got
         .ok _  => ""
         .err e => e.msg
-
-# Split on the NUL byte `find -print0` writes. No Heroes literal can spell that
-# byte — the language has six escapes and `\0` is not one (spec:68) — so the
-# comparison is against the number.
-function split_on_nul(text: str) -> [str]
-    pieces: [str] @ []
-    start: i64 @ 0
-    i: i64 @ 0
-
-    while i < text.len()
-        if text[i] == 0
-            pieces @ pieces.push(text.slice(from: start, to: i))
-            start @ i + 1
-        i @ i + 1
-
-    if start < text.len()
-        pieces @ pieces.push(text.slice(from: start, to: text.len()))
-    return pieces
-
-test "the NUL split keeps a name that holds a newline whole"
-    # The falsifier panel 085 R4 measured, kept as a test: this is the case
-    # `ls` splits in two at exit 0.
-    joined = "a.hero" + one_nul() + "two\nlines.hero" + one_nul()
-    pieces = split_on_nul(joined)
-    assert pieces.len() == 2
-    assert pieces[0] == "a.hero"
-    assert pieces[1] == "two\nlines.hero"
-    assert split_on_nul("").len() == 0
-
-# One NUL byte, built through the only door the language leaves open: a `cstr`
-# that C wrote. `read_file` carries the byte, and this makes one without a file.
-function one_nul() -> str
-    _ = cli_toolchain.mkdir_all("build")
-    path = "build/mutate-nul-selftest"
-
-    # `printf` rather than `write_file`, because a Heroes `str` cannot
-    # hold the byte this function exists to produce: `"\\000"` is not
-    # among the six escapes the language admits (spec:70).
-    _ = cli_process.run(
-        program: "printf",
-        words: ["printf", "x\\000y"],
-        out: path,
-        err: cli_process.discard()
-    )
-    got = read_file(path)
-
-    if got.is_err()
-        return ""
-    return got.must().slice(from: 1, to: 2)
 
 test "an unknown operator names the ones there are"
     # The count is read off the table, never written: it said "twelve" in the
