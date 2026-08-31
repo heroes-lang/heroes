@@ -314,6 +314,20 @@ jobs:
           ./heroes-from-seed${{ matrix.exe }} run examples/gallery/00-first.hero
           echo "exit was $?"
 
+      # **One small module's tests, before the whole compiler's.** Windows now
+      # compiles and runs a program (the step above is green there) and then
+      # dies at 12 seconds with exit 127 and an empty log on
+      # `test selfhost/main.hero`, which is 165 modules and a recursive-descent
+      # parser. A silent death after real work is the shape of an exhausted
+      # stack, and Windows gives a main thread 1 MB where POSIX gives 8.
+      #
+      # This step tells the two apart rather than guessing: `lexer.hero` is one
+      # module with the same machinery. Green here and red below means depth;
+      # red here means something the size has nothing to do with.
+      - name: One module's tests, before the whole compiler's
+        if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
+        run: ./heroes-from-seed${{ matrix.exe }} test selfhost/lexer.hero
+
       - name: The compiler's own tests
         if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
         shell: bash
