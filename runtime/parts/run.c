@@ -91,6 +91,29 @@ void hero_run_arg(HeroStr word) {
 #define HERO_RUN_DISCARD "/dev/null"
 #endif
 
+/* What an executable is called on this machine: `.exe` on Windows, nothing
+ * elsewhere.
+ *
+ * **This is not cosmetic and it is not the linker's habit.** clang honours `-o`
+ * exactly, so a binary named `prog` is a file named `prog` on every platform.
+ * But `CreateProcess` with a NULL application name — which is what makes a bare
+ * `clang` resolve against PATH — runs the documented search, and that search
+ * appends the executable extensions rather than trying the bare name. So a
+ * binary with no extension is built successfully and then cannot be started:
+ * `error: cannot execute build/405f1a3d19a003e7/00first`, measured on the CI's
+ * Windows leg.
+ *
+ * The driver asks this and names its output accordingly, which is
+ * DESIGN-LOG:282's rule — a fact about the machine, measured on the machine,
+ * rather than a word the compiler has to know. */
+HeroStr hero_run_exe_suffix(void) {
+#if defined(_WIN32)
+    return hero_str_from_bytes(".exe", 4);
+#else
+    return hero_str_from_bytes("", 0);
+#endif
+}
+
 HeroStr hero_run_discard_path(void) {
     return hero_str_from_bytes(HERO_RUN_DISCARD, (int64_t)strlen(HERO_RUN_DISCARD));
 }
