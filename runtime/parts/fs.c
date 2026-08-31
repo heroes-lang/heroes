@@ -143,9 +143,18 @@ int64_t hero_fs_remove(const char *path) {
     if (remove(path) == 0) return HERO_OS_OK;
     if (!hero_fs_exists(path)) return HERO_OS_OK;
 #if defined(_WIN32)
+    /* **MSVC's `remove()` does not remove a DIRECTORY** — C11 leaves it
+     * unspecified and POSIX's does, so the difference hid until a suite
+     * deleted a tree it had built earlier in the same run: on a fresh
+     * `build/` every earlier remove_tree hit the path-was-never-there exit,
+     * and the first delete-then-recreate (`cache/`, `units/`) was the first
+     * time a directory unlink actually executed. Measured 2026-08-31: five
+     * checks red as `cannot lay the program out`, all of them this line. */
+    if (hero_fs_is_directory(path) && RemoveDirectoryA(path)) return HERO_OS_OK;
     for (int wait_ms = 5; wait_ms <= 320; wait_ms *= 2) {
         Sleep((DWORD)wait_ms);
-        if (remove(path) == 0) return HERO_OS_OK;
+        if (hero_fs_is_directory(path) ? RemoveDirectoryA(path) != 0
+                                       : remove(path) == 0) return HERO_OS_OK;
         if (!hero_fs_exists(path)) return HERO_OS_OK;
     }
 #endif

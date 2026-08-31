@@ -39,19 +39,25 @@
 # register classes.
 #
 # This file must NOT compile. `div` returns `div_t` by value from a header every
-# platform has, and `ldiv_t` is a real struct of the same header with a different
+# platform has, and `lldiv_t` is a real struct of the same header with a different
 # tag — so the assertion is refusing a **type identity**, not a layout, which is
 # the whole point. Nothing calls `div`: the uncalled case is the one that used to
 # be exit 0, and it is the one this pins.
+#
+# `lldiv_t` and not `ldiv_t`, since 2026-08-31: `ldiv_t`'s fields are `long`,
+# which is 8 bytes on LP64 and 4 on Windows, so `quot: i64` earned two honest
+# `ffi_field_type` there that this case never meant to ask about — panel 097's
+# `st_mode` class exactly. `long long` is i64 on all three platforms, and the
+# identity refusal this file exists for is untouched.
 
 extern "stdlib.h"
     record div_t
         quot: i32
         rem: i32
-    record ldiv_t
+    record lldiv_t
         quot: i64
         rem: i64
-    function div(numerator: i32, denominator: i32) -> ldiv_t  #~ ffi_return_type
+    function div(numerator: i32, denominator: i32) -> lldiv_t  #~ ffi_return_type
 
 function main()
     print("nothing calls div, and that used to be enough to ship a binary")
