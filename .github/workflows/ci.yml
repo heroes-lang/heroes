@@ -361,7 +361,20 @@ jobs:
         # FILE, so the previous round may have been throwing away the very
         # output it was asking for. `-o` sends the C to a path and leaves both
         # streams alone.
-        run: ./heroes-from-seed${{ matrix.exe }} build selfhost/lexer.hero --emit-c -o emitted.c
+        # Both streams, merged, under a shell where the merge is unambiguous.
+        # Three rounds of this probe came back with an exit code and an empty
+        # log, and PowerShell's stream handling is one of the things that could
+        # explain it — so this removes that variable rather than reasoning about
+        # it. `cmd`'s `2>&1` puts stderr into stdout and the step prints it.
+        shell: bash
+        run: |
+          ./heroes-from-seed${{ matrix.exe }} build selfhost/lexer.hero --emit-c -o emitted.c > out.txt 2> err.txt || true
+          echo "--- exit was $? ---"
+          echo "--- stdout, first 5 lines ---"
+          head -5 out.txt || true
+          echo "--- stderr, all of it ---"
+          cat err.txt || true
+          echo "--- end ---"
 
       - name: One module's tests, before the whole compiler's
         if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
