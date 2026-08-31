@@ -266,7 +266,19 @@ int64_t hero_run_go(const char *program, const char *out_path,
     PROCESS_INFORMATION child;
     memset(&child, 0, sizeof child);
 
-    BOOL started = CreateProcessA(program, (char *)line.ptr, NULL, NULL, TRUE,
+    /* **`NULL` for the application name, and the program is the command
+     * line's first word instead.** Passing it as `lpApplicationName` makes
+     * Windows look for that exact path: no PATH search and no `.exe` appended,
+     * so `clang` is not found on a machine that has `clang.exe` on its PATH —
+     * which is precisely how the first Windows run of this file failed, with
+     * `heroes doctor` reporting no C toolchain on a runner that ships one.
+     * With NULL, the documented search runs: the working directory, the
+     * system directories, then PATH, with the executable extensions applied.
+     *
+     * `hero_run_win_command_line` already puts the program first, because
+     * argv[0] is a pushed word like every other. */
+    (void)program;
+    BOOL started = CreateProcessA(NULL, (char *)line.ptr, NULL, NULL, TRUE,
                                   0, NULL, NULL, &startup, &child);
     if (!hero_run_inherits(out_path)) CloseHandle(out);
     if (!hero_run_inherits(err_path)) CloseHandle(err);
