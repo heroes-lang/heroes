@@ -199,3 +199,29 @@ rebuilt, and ran under `--sanitize`: **exit 0, empty stderr, leak gate silent.**
 leave a hole exactly where a new runtime part allocates. That is true today,
 independent of this proposal, and it is why condition 6 is written as a rule about
 the gate rather than a note about care.
+
+## Predictions, scored at M-argv-execution close (2026-08-31)
+
+Measured in the session that writes this, per CLAUDE.md §1.
+
+| judge | prediction | outcome |
+|---|---|---|
+| ffi-pragmatist | `examples/sqlite/main.hero`'s emitted C stays byte-identical at **17,927** bytes, `cmp` clean; one byte of difference means the rule reached into the `extern` vocabulary | **confirmed to the byte.** Re-emitted at close: 17,927 bytes. The boundary between "how the compiler talks to the machine" and "what a program's `extern` says" held exactly, which is what the prediction was for. |
+| ffi-pragmatist | `record … tag posix_spawn_file_actions_t` is `ffi_unknown_tag` on **both** Darwin and glibc, never on one only — unlike panel 097's `st_mode` | **confirmed at the sitting.** No struct tag exists on either platform, and the type is 8 bytes on Darwin against 80 on glibc. This is condition 2's whole argument: `posix_spawn` never appears as an `extern` in `selfhost/`, and it never did. |
+| compiler-engineer | a `selfhost/`-only milestone leaves ≥115 `sq(` uses and `tests/harness/shell.hero:39`'s `system()` intact, and the net red on Windows | **the counterfactual was never run, and this prediction is why.** It was put to the author as the argument for a wider scope, the scope was widened by ratification, so the milestone the prediction describes does not exist. What is measurable is the arithmetic it rested on, and it was right: at close, **0** live `sq(` uses (the five greps that remain are comments naming it in the past tense), `system()` gone from the harness along with its `extern` and its wait-status decode, `shell.hero` rewritten at 530 lines. A prediction that changes the decision it was made about cannot be scored the ordinary way, and refusing to renew it under a new milestone name (panel 046 R2) is the only honest close. |
+
+## What the wide scope actually cost, and what it caught
+
+The engineer's prediction bought `tests/harness/` into the milestone. Two things
+came with it that nobody predicted:
+
+- **`heroes test tests/harness/main.hero` had never been run** — not in CI, not
+  in any session of this milestone. It was **83 of 90** while `heroes test
+  selfhost/main.hero` and `heroes run tests/harness/main.hero` were both green.
+  Six of the seven failures were one leak in `hero_dir_remove_tree`, caught by
+  the leak gate condition 6 required, in code this same milestone wrote.
+- **Three platform-independent defects that only Windows could expose**, all
+  three about what a failure SAYS: `exit_of` discarding a message, `_ = art?`
+  propagating without a word, and eight stopping points in `cli_compile` all
+  calling themselves "a stage". None of them is a Windows defect. All of them
+  were invisible on a platform where that code path does not fail.
