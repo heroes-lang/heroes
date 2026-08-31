@@ -99,7 +99,9 @@ function run_all(scratch: str, compiler: str) -> report.Report?
 # the spot and stops this case, because the second configuration's
 # verdict on a program that did not build says nothing.
 function one_case(scratch: str, compiler: str, binaries: str, item: cases.Case, want: expectation.Expectation, @r: report.Report) -> bool
-    binary = binaries + "/" + item.name
+    # `.exe` where the machine wants one: clang writes exactly what `-o` says,
+    # and Windows will not start a file without the extension (shell.exe_suffix).
+    binary = binaries + "/" + item.name + shell.exe_suffix()
     built = shell.run(
         scratch: scratch,
         program: compiler,

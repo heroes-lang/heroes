@@ -155,7 +155,7 @@ function prints(scratch: str, compiler: str, binaries: str, dir: str, @r: report
         )
         return
     passed = program_arguments(dir)
-    binary = binaries + "/" + name
+    binary = binaries + "/" + name + shell.exe_suffix()
     built = shell.run_guarded(
         scratch: scratch,
         words: [compiler, "build", main, "-o", binary]
