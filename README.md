@@ -2,8 +2,15 @@
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/assets/banner-dark.svg">
     <source media="(prefers-color-scheme: light)" srcset="docs/assets/banner-light.svg">
-    <img src="docs/assets/banner-light.svg" alt="Heroes, a compiled programming language. Small enough to fit in a prompt, real enough to compile itself. 233 lines: the whole language. 3592 of 4096 tokens of the spec budget. 48,690 lines that compile themselves. 0 bytes of difference.">
+    <img src="docs/assets/banner-light.svg" alt="Heroes, a compiled programming language. Small enough to fit in a prompt, real enough to compile itself.">
   </picture>
+</p>
+
+<p align="center">
+  <b>233</b> lines: the whole language &nbsp;&middot;&nbsp;
+  <b>3592 / 4096</b> tokens of the spec budget<br>
+  <b>48,690</b> lines of Heroes that compile themselves &nbsp;&middot;&nbsp;
+  <b>0</b> bytes of difference at the fixpoint
 </p>
 
 <p align="center">
