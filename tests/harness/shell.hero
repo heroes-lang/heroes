@@ -481,6 +481,14 @@ function some_compiler() -> str
         if exists(path)
             return path
 
+        # The same name as the machine spells it: `./heroes` here is
+        # `./heroes.exe` on Windows, and a list that forgets the suffix
+        # answers "" on a machine with a perfectly good compiler in the
+        # root — measured 2026-08-31, four self-tests red on the VPS while
+        # CI passed them only because its leg names HEROES_COMPILER.
+        if exists(path + exe_suffix())
+            return path + exe_suffix()
+
     return ""
 
 # What to print when there is none — the four places, named.
