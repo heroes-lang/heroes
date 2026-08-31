@@ -145,26 +145,26 @@ function to_unit(s: source.Source, options: Options, version: str) -> Artifact?
     stop = stage(parsed.diagnostics, s)
 
     if !stop.is_err()
-        return leave(stop.must())
+        return leave(stop.must(), stage_name: "parsing")
     stop_g = stage(modules.errors(s, parsed.uses), s)
 
     if !stop_g.is_err()
-        return leave(stop_g.must())
+        return leave(stop_g.must(), stage_name: "the module graph")
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
     stop_r = stage(out.diagnostics, s)
 
     if !stop_r.is_err()
-        return leave(stop_r.must())
+        return leave(stop_r.must(), stage_name: "name resolution")
     c: check_state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
     stop_c = stage(c.diagnostics, s)
 
     if !stop_c.is_err()
-        return leave(stop_c.must())
+        return leave(stop_c.must(), stage_name: "type checking")
     low = ir_lower.lower(parsed.tree, out, c, s, parsed.decls)
     stop_l = stage(low.diagnostics, s)
 
     if !stop_l.is_err()
-        return leave(stop_l.must())
+        return leave(stop_l.must(), stage_name: "lowering")
     p: ir_state.Program @ low.program
     problems = ir_verify.verify(p, c, parsed.decls)
 
@@ -180,7 +180,7 @@ function to_unit(s: source.Source, options: Options, version: str) -> Artifact?
     stop_m = stage(mono_problems, s)
 
     if !stop_m.is_err()
-        return leave(stop_m.must())
+        return leave(stop_m.must(), stage_name: "monomorphisation")
     problems_m = ir_verify.verify(p, c, parsed.decls)
 
     if problems_m.len() > 0
@@ -248,7 +248,7 @@ function to_unit(s: source.Source, options: Options, version: str) -> Artifact?
     stop_e = stage(emitted.diagnostics, s)
 
     if !stop_e.is_err()
-        return leave(stop_e.must())
+        return leave(stop_e.must(), stage_name: "the FFI check")
 
     if options.emit_c
         if options.output.is_err()
@@ -289,15 +289,21 @@ function to_unit(s: source.Source, options: Options, version: str) -> Artifact?
         stop_n = stage(one, s)
 
         if !stop_n.is_err()
-            return leave(stop_n.must())
+            return leave(stop_n.must(), stage_name: "the C emission")
     return ok(
         Artifact(c: emitted.c, tests: emit.tests_of(p), link: emitted.link, packages: emitted.packages, stopped: false, tree: parsed.tree, decls: parsed.decls, checked: c, program: p)
     )
 
-function leave(verdict: cli_table.Exit) -> Artifact?
+# **A stage that stops names itself.** This used to answer "a stage
+# reported" whatever had happened, so a failure carried no way back to
+# where it came from — and on a platform where the diagnostics do not
+# reach the reader, that leaves a bare exit code and nothing else. Five
+# CI rounds went into finding out which of these five stages was
+# stopping on Windows; the name costs one parameter.
+function leave(verdict: cli_table.Exit, stage_name: str) -> Artifact?
     if verdict == .failed_exit
-        return fail("failed", "a stage could not run")
-    return fail("diagnostics", "a stage reported")
+        return fail("failed", stage_name + " could not run")
+    return fail("diagnostics", stage_name + " reported")
 
 function broken(problems: [str], what: str) -> Artifact?
     cli_io.eprint(text: "internal error: " + what)
