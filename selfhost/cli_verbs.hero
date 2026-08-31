@@ -162,12 +162,23 @@ function run_test(path: str, s: source.Source, inv: cli_argv.Invocation, t: cli_
     # worked.
     return .diagnostics_exit
 
+# **A failure carries a message, and this used to throw it away.**
+# `produce` fails with an `e.msg` explaining what went wrong — clang's
+# own words, a missing library, a path that could not be written — and
+# every caller here turned that into a bare exit code. On Darwin and
+# Linux nobody noticed, because `produce` does not fail there. On
+# Windows it does, and `heroes test` exited 1 in total silence: the
+# compiler knew exactly what had happened and said nothing.
+#
+# `diagnostics` is the one code that stays quiet, because those were
+# already printed where they were found, with their source lines.
 function exit_of(failed: cli_produce.Produced?) -> cli_table.Exit
     match failed
         .ok => return .ok_exit
         .err e =>
             if e.code == "diagnostics"
                 return .diagnostics_exit
+            cli_io.eprint(text: "error: " + e.msg)
             return .failed_exit
 
 ## Tests
