@@ -24,11 +24,35 @@ use cli_process
 # Whether this platform's C runtime already contains a library, so
 # naming it is correct and passing it on would be an error (Zig's
 # isLibCLibName precedent; the case that forced it is MSVC's LNK1181
-# for -lm). The port runs on POSIX until the fixpoint, where the
-# answer is: nothing is folded in, every name passes through.
+# for -lm).
+#
+# **THIS WAS A STUB THAT NAMED ITS OWN DEFECT.** It answered `false` for
+# everything, under a comment saying *"the port runs on POSIX until the
+# fixpoint"* — a premise that expired the day Windows became a leg, while
+# the sentence went on reading as correct. CLAUDE.md §11's exact shape,
+# and the failure it predicted is the one that arrived, measured on the
+# Windows leg 2026-08-31 (run 33386236619):
+#
+#     LNK1104: cannot open file 'm.lib'
+#
+# On POSIX the maths functions live in a separate `libm`, so a program
+# that calls `sqrt` must say `link "m"` and the flag must reach clang. On
+# MSVC there is no `m.lib` at all — the maths is inside the C runtime —
+# so the same correct program cannot link. The `link` group in the
+# `.hero` file is right on both; what differs is the machine.
+#
+# **`c` and `m` only, because those are the two that were measured.**
+# Zig's list is longer (`pthread`, `dl`, `rt`, `util`, `resolv`), and a
+# name added here is a name silently DROPPED from a link line — the
+# loudest possible failure mode if it is wrong. So this grows one
+# measurement at a time, and the platform is read off `exe_suffix()`,
+# the runtime answering about the machine it is on (DESIGN-LOG:282's
+# rule) rather than a `#if` this language does not have.
 function in_the_c_runtime(library: str) -> bool
-    _ = library
-    return false
+    if cli_process.exe_suffix() != ".exe"
+        return false
+
+    return library == "m" || library == "c"
 
 # The words a package may hand back, and nothing else. -framework and
 # -F take a following argument, so they match as a pair; -D and -U
@@ -224,7 +248,24 @@ test "the allow-list: the safe words pass, the plugin is refused whole"
 
     # A bare -D with no name is not a flag, it is two characters.
     assert filter_words(package: "trap", said: "-D").is_err()
-    assert !in_the_c_runtime(library: "m")
+
+# **The fold-in is asked of the machine, so the case asks the same question.**
+# `-lm` is REQUIRED on POSIX and impossible on MSVC (`LNK1104: cannot open
+# file 'm.lib'`, measured on the Windows leg 2026-08-31), and a program that
+# says `link "m"` is correct on both — so this asserts the rule rather than a
+# platform's answer, and asserts that a name nobody measured still passes
+# through, which is the direction that cannot silently drop a library.
+test "the C runtime's own libraries are folded in where the machine folds them"
+    windows = cli_process.exe_suffix() == ".exe"
+    assert in_the_c_runtime(library: "m") == windows
+    assert in_the_c_runtime(library: "c") == windows
+
+    # Never folded anywhere: a real third-party library must always reach the
+    # link line, and an unmeasured name is not on this list by design.
+    assert !in_the_c_runtime(library: "sqlite3")
+    assert !in_the_c_runtime(library: "curl")
+    assert !in_the_c_runtime(library: "pthread")
+    assert !in_the_c_runtime(library: "")
 
 function has_text(text: str, needle: str) -> bool
     cs = text.chars()
