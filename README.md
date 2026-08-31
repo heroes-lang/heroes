@@ -14,6 +14,7 @@
 </p>
 
 <p align="center">
+  <a href="https://heroes-lang.org"><b>heroes-lang.org</b></a> &nbsp;&middot;&nbsp;
   <a href="spec/heroes-spec.md">The spec</a> &nbsp;&middot;&nbsp;
   <a href="design.md">The design</a> &nbsp;&middot;&nbsp;
   <a href="docs/ROADMAP.md">The chain</a> &nbsp;&middot;&nbsp;
@@ -165,6 +166,9 @@ yet. The rules are not decoration: they are in `CLAUDE.md`, and the reason each
 exists is in `design.md` or in a panel session.
 
 <p align="center">
-  <sub>The name is an homage to David Bowie's <i>&ldquo;Heroes&rdquo;</i> (1977), and the
+  <sub><a href="https://heroes-lang.org">heroes-lang.org</a> is where this language will live, in
+  English and Italian; today the domain holds one page that says <i>work in progress</i>, and
+  the pages behind it land at <code>M-documentation-site</code>.<br>
+  The name is an homage to David Bowie's <i>&ldquo;Heroes&rdquo;</i> (1977), and the
   quotation marks are his. The bolt is borrowed from 1973.</sub>
 </p>
