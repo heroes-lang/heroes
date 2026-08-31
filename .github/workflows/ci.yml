@@ -470,6 +470,46 @@ jobs:
           probe $C run build/probe/boom.hero
           echo "--- end ---"
 
+      # **The stack hypothesis, measured rather than believed.** Windows gives
+      # the main thread 1 MB where POSIX gives 8. The bisection fits it exactly:
+      # `cli_process.hero` (193 lines) builds, `lexer.hero` does not, and it dies
+      # at `--dump-ir` — one stage before the emitter, in a recursive-descent
+      # frontend. It dies with NO message, which a `hero_panic` would have
+      # printed: stderr reaches this log (the diagnostic step above proves it),
+      # so the process is not panicking, it is being killed.
+      #
+      # The clang here targets `x86_64-pc-windows-msvc`, so the flag is
+      # `/STACK:<reserve>` through the linker. One extra seed build, 3.5 s, and
+      # the same module through the same stage. Green with the flag and red
+      # without it is the answer; red both ways and the stack is innocent.
+      - name: Is it the 1 MB Windows stack?
+        if: (github.ref_type == 'tag' || github.event_name == 'workflow_dispatch') && runner.os == 'Windows'
+        shell: bash
+        run: |
+          mkdir -p build/probe
+          echo "--- a seed built with a 64 MB stack reserve ---"
+          clang -I runtime seed/heroes.c runtime/runtime.c \
+            -Wl,/STACK:67108864 -o build/probe/big-stack.exe 2>&1 | tail -3 || true
+          for exe in ./heroes-from-seed.exe build/probe/big-stack.exe; do
+            for stage in --dump-ir --emit-c; do
+              set +e
+              "$exe" build selfhost/lexer.hero $stage -o build/probe/s.c > build/probe/s.txt 2>&1
+              code=$?
+              set -e
+              echo "  exit $code  <-  $exe build selfhost/lexer.hero $stage"
+              head -3 build/probe/s.txt 2>/dev/null | sed 's/^/      /' || true
+            done
+          done
+          echo "--- and the whole compiler, with the big stack ---"
+          set +e
+          build/probe/big-stack.exe build selfhost/main.hero --emit-c -o build/probe/whole.c > build/probe/m.txt 2>&1
+          code=$?
+          set -e
+          echo "  exit $code  <-  big-stack build selfhost/main.hero --emit-c"
+          ls -l build/probe/whole.c 2>&1 | sed 's/^/      /' || echo "      no file"
+          head -3 build/probe/m.txt 2>/dev/null | sed 's/^/      /' || true
+          echo "--- end ---"
+
       - name: One module's tests, before the whole compiler's
         if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
         # `shell: bash` so the shell matches the steps that work. It ran under
