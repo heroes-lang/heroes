@@ -154,6 +154,10 @@ function last_error(scratch: str) -> str
     return got.must()
 
 test "the determinism suite passes identical emissions and catches a wobbling one"
+    # POSIX is this case's subject, and this machine answers for itself
+    # (can_run_scripts carries the measurement).
+    if !shell.can_run_scripts()
+        return
     scratch = "build/harness-selftest"
     tree = scratch + "/determinism-case"
     assert !shell.remove_tree(tree).is_err()

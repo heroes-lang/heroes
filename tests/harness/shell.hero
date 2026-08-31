@@ -332,6 +332,25 @@ constant WATCHDOG_SECONDS: i64
 function exe_suffix() -> str
     return hero_run_exe_suffix()
 
+# **Whether this machine runs POSIX shell scripts, asked by running one.**
+# Twelve of the harness's own tests build stub compilers as `#!/bin/sh`
+# scripts, ask `/bin/sh` for two streams, or write a filename with a newline
+# in it — POSIX facts, and their SUBJECT, not their plumbing: the newline
+# case exists because `ls` splits such a name, the stub cases because a fake
+# tool must be cheap to write. On Windows `CreateProcess` reads no shebang
+# and NTFS refuses the filename, so the premise these cases test is absent —
+# measured 2026-08-31, 12 of 92 self-tests red on the CI leg, every one of
+# them in this class, while the NET ITSELF was green there. Each such case
+# asks this and steps aside where the answer is no; the net's own suites
+# never call it, so nothing the compiler is judged on can hide behind it.
+function can_run_scripts() -> bool
+    said = run(scratch: "build/harness-selftest", program: "/bin/sh", words: ["/bin/sh", "-c", "exit 0"])
+
+    if said.is_err()
+        return false
+
+    return said.must().started && said.must().code == 0
+
 # Kept as its own name because 40 call sites read it, and because it says at
 # the call what `run` now guarantees everywhere: this will come back.
 function run_guarded(scratch: str, words: [str]) -> Run?
@@ -485,6 +504,10 @@ function remove_tree(path: str) -> ()?
     return ok()
 
 test "a status is decoded the way a shell prints it"
+    # POSIX is this case's subject, and this machine answers for itself
+    # (shell.hero::can_run_scripts carries the measurement).
+    if !can_run_scripts()
+        return
     # 1 << 8 is `exit 1`; 134 is the shape panel 070's hardcoded number
     # got wrong — SIGABRT is 6, so waitpid says 6 and a shell says 134.
     # **`status_of` is gone and the runtime answers instead.** It decoded
@@ -510,6 +533,10 @@ test "a status is decoded the way a shell prints it"
     assert !absent.must().started
 
 test "a command's two streams come back apart, with its status"
+    # POSIX is this case's subject, and this machine answers for itself
+    # (shell.hero::can_run_scripts carries the measurement).
+    if !can_run_scripts()
+        return
     scratch = "build/harness-selftest"
     assert !mkdir_all(scratch).is_err()
 
@@ -532,6 +559,10 @@ test "a command's two streams come back apart, with its status"
     assert said.must().code == 3
 
 test "the directory walk keeps a filename that contains a newline"
+    # POSIX is this case's subject, and this machine answers for itself
+    # (shell.hero::can_run_scripts carries the measurement).
+    if !can_run_scripts()
+        return
     # Panel 085 R4's falsifier, kept as a test: this is the case `ls`
     # splits in two at exit 0. If the NUL route ever stops working, this
     # is what fires, and the harness stops trusting its own case list.
