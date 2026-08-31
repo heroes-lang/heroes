@@ -200,8 +200,25 @@ function zero_of(names: emit_ctype.Names, c: check_state.Checked, ty: i64, mutab
                 return "(bool *)0"
             return "(bool)0"
         .ptr =>
+            # **A BARE ZERO for the mutable case, and the cast was a real
+            # warning.** C lets `void *` convert to any object pointer and
+            # back, and that privilege stops at one level: `void **` does NOT
+            # convert to `sqlite3 **`. So `(void * *)0` handed to
+            # `sqlite3_open`'s second parameter is `incompatible pointer
+            # types`, measured 2026-08-31 on a cold cache:
+            #
+            #     main.c:31:45: warning: incompatible pointer types passing
+            #     'void **' to parameter of type 'sqlite3 **'
+            #
+            # It had been invisible because a warm cache never re-runs clang,
+            # and it broke `special/build says where` — the warning reaches
+            # stderr AHEAD of the line that test reads. A null pointer
+            # CONSTANT converts to every pointer type silently, which is why
+            # `.cstr` below has always been a bare `0`. The probe still asks
+            # the same question of the header: only the spelling of the
+            # nothing it passes changes.
             if mutable
-                return "(void * *)0"
+                return "0"
             return "(void *)0"
         .unit                                             => return "(void *)0"
         .cstr                                             => return "0"
@@ -235,6 +252,14 @@ test "the spelling table: widths, the bare cstr zero, the struct pair"
 
     if !cstr_id.is_err()
         assert zero_of(names, c, ty: cstr_id.must(), mutable: false) == "0"
+
+    # A mutable `ptr` is a bare zero for the same reason a `cstr` is: a null
+    # pointer constant reaches `sqlite3 **`, and `(void **)0` does not.
+    ptr_id = check_table.lookup(c.types, .ptr)
+
+    if !ptr_id.is_err()
+        assert zero_of(names, c, ty: ptr_id.must(), mutable: true) == "0"
+        assert zero_of(names, c, ty: ptr_id.must(), mutable: false) == "(void *)0"
     assert zero_of(names, c, ty: int_id, mutable: false) == "(int64_t)0"
     assert zero_of(names, c, ty: int_id, mutable: true) == "(int64_t *)0"
     assert zero_of(names, c, ty: str_id, mutable: false) == "(HeroStr){0}"

@@ -213,6 +213,12 @@ int64_t hero_dir_remove_tree(const char *path);
 
 void hero_run_reset(void);
 void hero_run_arg(HeroStr word);
+
+/* Seconds after which the next `hero_run_go` kills its child and answers 124 —
+ * coreutils' `timeout` code, on purpose, so a caller that used to read that
+ * program's answer reads the same number. 0 is no limit and is the default.
+ * `parts/run.c` carries the reason this is a runtime call and not a program. */
+void hero_run_limit(int64_t seconds);
 int64_t hero_run_go(const char *program, const char *out_path,
                     const char *err_path, int64_t *status);
 

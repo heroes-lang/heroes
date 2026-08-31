@@ -5,7 +5,7 @@
 #include <sqlite3.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 17, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 18, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -28,8 +28,8 @@ _Static_assert(HERO_RUNTIME_ABI == 17, "heroes_runtime.h is from another compile
 #define HERO_RET_CSTR(c) _Generic((c), char *:1, const char *:1, signed char *:1, const signed char *:1, unsigned char *:1, const unsigned char *:1, default:0)
 _Static_assert(HERO_RET_INT(SQLITE_OK), "heroes-ffi-return SQLITE_OK i64");
 _Static_assert(__builtin_constant_p(SQLITE_OK), "heroes-ffi-const SQLITE_OK");
-_Static_assert(HERO_RET_INT(sqlite3_open(0, (void * *)0)), "heroes-ffi-return sqlite3_open i64");
-_Static_assert(HERO_RET_INT(sqlite3_prepare_v2((void *)0, 0, (int32_t)0, (void * *)0, 0)), "heroes-ffi-return sqlite3_prepare_v2 i64");
+_Static_assert(HERO_RET_INT(sqlite3_open(0, 0)), "heroes-ffi-return sqlite3_open i64");
+_Static_assert(HERO_RET_INT(sqlite3_prepare_v2((void *)0, 0, (int32_t)0, 0, 0)), "heroes-ffi-return sqlite3_prepare_v2 i64");
 _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");

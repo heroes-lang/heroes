@@ -38,6 +38,7 @@ use strings
 extern "hero_os.h"
     function hero_run_reset()
     function hero_run_arg(word: str)
+    function hero_run_limit(seconds: i64)
     function hero_run_go(program: cstr, out_path: cstr, err_path: cstr, @status: i64) -> i64
     function hero_run_discard_path() -> str
     function hero_fs_exists(path: cstr) -> i64
@@ -104,6 +105,12 @@ function run(scratch: str, program: str, words: [str]) -> Run?
     out_path = scratch + "/stdout"
     err_path = scratch + "/stderr"
     hero_run_reset()
+
+    # **Every call is guarded, and there is no way to ask for less.** The old
+    # shape had `run` and `run_guarded`, the second prefixing coreutils'
+    # `timeout 120`. Nothing this harness runs should be allowed to hang
+    # forever, so the limit is not a parameter: it is what `run` means.
+    hero_run_limit(seconds: WATCHDOG_SECONDS)
 
     for word in words
         hero_run_arg(word: word)
@@ -286,82 +293,38 @@ function skipped(name: str, skip: [str]) -> bool
 # when it cannot load SDL3, and two processes sat at 0% CPU for ninety
 # minutes waiting for a click nobody could give them. This harness runs
 # unattended, in three configurations: a program that never returns burns
-# the whole job rather than one case.
+# **THE WATCHDOG IS THE RUNTIME'S NOW, and `timeout` is gone from this
+# project.** `patience()` used to answer the words to put in front of a
+# program — coreutils' `timeout 120` — and `is_a_watchdog` used to work out
+# whether this machine's `timeout` was that program at all.
+#
+# Both are deleted, and the reason is that the question could not be answered
+# well enough. Windows ships a `TIMEOUT.EXE` that PAUSES for N seconds and
+# launches nothing: it starts (so the first probe said yes, and 271 of the
+# net's checks died), and it exits 1 on a bad argument list (so the second
+# probe said yes too, and the numbers came back identical). The third probe
+# finally read the child's own words and said no — correctly — and left
+# Windows with **no watchdog**, which showed inside one run: two orphan
+# `heroes.exe` and a `clang.exe` held `build/harness/stdout` open, and Windows
+# refuses to delete a file a handle still holds, so the next run could not
+# clear its own build directory.
+#
+# A limit is not a program. `WaitForSingleObject` already takes a deadline and
+# POSIX gets one by waiting in small steps, so `hero_run_limit` is the whole
+# of it — one runtime call, both platforms, no probe and nothing to be wrong
+# about. It answers **124** on a kill, which is the number coreutils used, so
+# every caller that read that answer reads the same one.
 #
 # Two minutes is the line between *slow* and *never*, chosen against the
-# slowest thing the corpus actually does — seconds, not minutes — so it is
-# not a performance budget in disguise (CLAUDE.md §13). `timeout` is
-# coreutils rather than POSIX, so its absence is asked of the machine
-# rather than assumed from the platform's name, and a machine without it
-# runs the corpus unguarded rather than not at all.
-# **The question is asked by RUNNING it, not by `command -v`.** With an
-# argument list there is nothing to prefix a command with, so `patience`
-# answers the words to put in front of a program's own.
-#
-# **AND THE QUESTION IT USED TO ASK WAS THE WRONG ONE.** The probe was
-# `timeout --help`, and the answer it read was *"did a program by that name
-# start?"* — which is a premise about the world (a program called `timeout`
-# is coreutils' `timeout`) dressed as a measurement. Windows ships a
-# `TIMEOUT.EXE` that PAUSES for N seconds and takes no program at all. It
-# starts, so the old probe said yes, and the net then ran
-# `timeout 120 heroes …` into it:
-#
-#     ERROR: Invalid syntax. Default option is not allowed more than '1' time(s).
-#     Type "TIMEOUT /?" for usage.
-#
-# **271 of 357 failed checks on the Windows leg, measured 2026-08-31** (run
-# 33383228293) — `run` 0 of 91, `emission` 1 of 150, `cache` 0 of 5, `units`
-# 0 of 3 — every one of them the compiler never being launched at all.
-#
-# So the probe asks for the BEHAVIOUR that is actually wanted: does
-# `timeout N <program>` run the program and hand back the program's own exit
-# code? `clang --heroes-no-such-flag` refuses with exit 1 and clang is
-# present wherever this harness runs (`heroes doctor` refuses a machine
-# without it). A `timeout` that passes the code through answers 1. Anything
-# else — a pause utility, a missing program, a wrapper with its own ideas —
-# does not, and the corpus runs unguarded rather than not at all, exactly as
-# before.
-function patience() -> [str]
-    probe = run(
-        scratch: "build",
-        program: "timeout",
-        words: ["timeout", "10", "clang", "--heroes-no-such-flag"]
-    )
+# slowest thing the corpus actually does — seconds, not minutes — so it is not
+# a performance budget in disguise (CLAUDE.md §13).
+constant WATCHDOG_SECONDS: i64
+    120
 
-    if probe.is_err() || !probe.must().started
-        return []
-
-    # **THE EXIT CODE ALONE WAS NOT ENOUGH, and that is measured.** This
-    # asked for `code == 1` first, on the grounds that coreutils uses 124 for
-    # a timeout it enforced and 125/126/127 for its own failures, so a 1
-    # could only be the child's. Windows' `TIMEOUT.EXE` rejects this argument
-    # list and **also exits 1**, so the net came back with the identical 271
-    # failures and the identical numbers in every suite — run 33384859776
-    # against 33383228293, 686 passed / 357 failed both times. A fix that
-    # changes nothing measurable did not fix anything.
-    #
-    # So the probe asks for the one thing a pause utility cannot fake: **the
-    # child's own words coming back.** coreutils runs `clang` and passes its
-    # stderr through, so `unknown argument` arrives here; `TIMEOUT.EXE` never
-    # launches clang at all and says `Invalid syntax` about itself. No exit
-    # code can stand in for that, because an error and a forwarded 1 are the
-    # same number.
-    if !is_a_watchdog(started: probe.must().started, code: probe.must().code, err: probe.must().err)
-        return []
-
-    return ["timeout", "120"]
-
-# The decision above, as a function of what the probe saw — so a case can put
-# the real Windows output in front of it without a Windows machine. `fixedbugs`
-# in shape and in reason (CLAUDE.md §9): the defect it names shipped twice.
-function is_a_watchdog(started: bool, code: i64, err: str) -> bool
-    if !started
-        return false
-
-    if code != 1
-        return false
-
-    return strings.contains(text: err, needle: "unknown argument")
+# Kept as its own name because 40 call sites read it, and because it says at
+# the call what `run` now guarantees everywhere: this will come back.
+function run_guarded(scratch: str, words: [str]) -> Run?
+    return run(scratch: scratch, program: words[0], words: words)
 
 # Every file under `dir`, recursively, whose name ends in `suffix` and
 # which is newer than `reference`. What `find -name … -newer` answered,
@@ -405,26 +368,6 @@ function both(first: [str], second: [str]) -> [str]
         out @ out.push(one)
 
     return out
-
-# Run a program under the watchdog, where this machine has one.
-#
-# `patience` used to answer a command PREFIX — the string `"timeout 120 "`
-# glued in front of a command line — and there is no line to glue it to
-# any more. So it answers words, and this decides which program actually
-# starts: `timeout` with the real program as its argument, or the real
-# program itself.
-function run_guarded(scratch: str, words: [str]) -> Run?
-    guard = patience()
-
-    if guard.len() > 0
-        together: [str] @ guard
-
-        for one in words
-            together @ together.push(one)
-
-        return run(scratch: scratch, program: guard[0], words: together)
-
-    return run(scratch: scratch, program: words[0], words: words)
 
 # One environment variable, or "" where it is unset. The null test is the
 # contract, not caution: converting a null `cstr` aborts (spec:229).
@@ -598,21 +541,31 @@ test "the directory walk keeps a filename that contains a newline"
 
     assert readable == 3
 
-test "fixedbugs: the watchdog probe reads the child's words, not just its exit code"
+test "fixedbugs: the watchdog is a runtime limit, because no probe could name the program"
     # Symptom: 271 of 357 net checks failed on the Windows leg with
     # `ERROR: Invalid syntax`, every one of them the compiler never launched.
-    # Cause: `patience()` asked whether a program called `timeout` STARTS, and
-    # Windows ships a `TIMEOUT.EXE` that pauses for N seconds. Date:
-    # 2026-08-31, runs 33383228293 and 33384859776 — the second is the one
-    # that matters, because the first repair asked for `code == 1` and
-    # `TIMEOUT.EXE` also exits 1, so the numbers came back IDENTICAL.
-    coreutils = "clang: error: unknown argument: '--heroes-no-such-flag'\nclang: error: no input files\n"
-    assert is_a_watchdog(started: true, code: 1, err: coreutils)
+    # Cause: the harness prefixed every invocation with coreutils' `timeout
+    # 120`, and Windows ships a `TIMEOUT.EXE` that pauses for N seconds and
+    # launches nothing. Date: 2026-08-31.
+    #
+    # **Three probes, and the reason this case now asserts an absence.** The
+    # first asked whether a program called `timeout` STARTS — TIMEOUT.EXE
+    # starts. The second asked whether it exits 1 on a refused argument —
+    # TIMEOUT.EXE exits 1, and the net came back with numbers identical to the
+    # round before, 686/357 both times. The third read the child's own words
+    # and said no, correctly, which left Windows with no watchdog at all: two
+    # orphan `heroes.exe` and a `clang.exe` held `build/harness/stdout` open,
+    # and Windows will not delete a file a handle holds, so the next run could
+    # not clear its build directory.
+    #
+    # A limit is not a program, so it stopped being one. What this case can
+    # assert is that the number every caller relies on is still the number
+    # coreutils used, and that the guard is asked for rather than assumed.
+    assert WATCHDOG_SECONDS == 120
 
-    # Verbatim from the Windows log. It started, and it exited 1.
-    pause_utility = "ERROR: Invalid syntax. Default option is not allowed more than '1' time(s).\nType \"TIMEOUT /?\" for usage.\n"
-    assert !is_a_watchdog(started: true, code: 1, err: pause_utility)
-
-    # And the two answers the old probe did get right stay right.
-    assert !is_a_watchdog(started: false, code: -1, err: "")
-    assert !is_a_watchdog(started: true, code: 0, err: coreutils)
+    # It really runs a program and really gets its code back, with a limit
+    # nothing here comes near.
+    quick = run(scratch: "build/harness-selftest", program: "clang", words: ["clang", "--heroes-no-such-flag"])
+    assert !quick.is_err()
+    assert quick.must().started
+    assert quick.must().code == 1
