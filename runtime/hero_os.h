@@ -184,6 +184,11 @@ int64_t hero_fs_rename(const char *from, const char *to);
  * HERO_OS_NOT_FOUND means it never started, which `system()` could not
  * distinguish from a program that legitimately exits 127. */
 HeroStr hero_run_discard_path(void);
+
+/* `.exe` on Windows, "" elsewhere. A binary built without it is created fine
+ * and then cannot be started, because CreateProcess's search appends the
+ * executable extensions rather than trying the bare name. */
+HeroStr hero_run_exe_suffix(void);
 /* LISTING A DIRECTORY, AND REMOVING A TREE.
  *
  * The test harness reached these through `find … -print0` and `rm -rf`, which

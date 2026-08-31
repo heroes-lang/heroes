@@ -36,6 +36,7 @@
 
 extern "hero_os.h"
     function hero_run_discard_path() -> str
+    function hero_run_exe_suffix() -> str
     function hero_run_reset()
     function hero_run_arg(word: str)
     function hero_run_go(program: cstr, out_path: cstr, err_path: cstr, @status: i64) -> i64
@@ -92,6 +93,13 @@ function run(program: str, words: [str], out: str, err: str) -> Ran
 # the program writes where this process writes.
 function discard() -> str
     return hero_run_discard_path()
+
+# What an executable is called here: `.exe` on Windows, "" elsewhere.
+# Asked of the runtime rather than known, because this file is not
+# allowed to know what platform it is on — and a binary built without it
+# is created successfully and then cannot be started.
+function exe_suffix() -> str
+    return hero_run_exe_suffix()
 
 # The five filesystem questions, each carrying the shell utility's
 # meaning rather than the C call's: an existing directory is a

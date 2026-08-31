@@ -16,6 +16,7 @@ use emit_ffi
 use cli_io
 use cli_compile
 use cli_toolchain
+use cli_process
 use cli_units
 use emit_unit
 use emit_members
@@ -79,7 +80,7 @@ function produce(path: str, s: source.Source, options: cli_compile.Options, t: c
     if object.is_err()
         cli_io.eprint(text: "internal error: the runtime did not compile")
         return fail("failed", "no runtime object")
-    binary: str @ dir.must() + "/" + module
+    binary: str @ dir.must() + "/" + module + cli_process.exe_suffix()
 
     if !options.output.is_err()
         binary @ options.output.must()
