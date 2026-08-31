@@ -164,7 +164,7 @@ static HeroStr hero_run_win_command_line(void) {
         hero_run_win_quote(hero_run_words[i], line, &at);
     }
     line[at] = '\0';
-    HeroStr built = hero_str_from_bytes(line, at);
+    HeroStr built = hero_str_from_bytes(line, (int64_t)at);
     hero_release(line);
     return built;
 }
