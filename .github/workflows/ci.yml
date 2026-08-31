@@ -349,6 +349,16 @@ jobs:
         if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
         run: ./heroes-from-seed${{ matrix.exe }} check selfhost/lexer.hero
 
+      # **Emitting, which check does not do.** `check` is green on this module
+      # and `test` fails silently, and the gap between them is the backend:
+      # `check` stops after the frontend, so clang never sees the `extern`
+      # declarations. Emitting C exercises the whole pipeline up to the point
+      # where clang is invoked, and `--emit-c` prints the result rather than
+      # compiling it. Green here narrows the defect to the C compile itself.
+      - name: The same module, emitted
+        if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
+        run: ./heroes-from-seed${{ matrix.exe }} build selfhost/lexer.hero --emit-c > NUL
+
       - name: One module's tests, before the whole compiler's
         if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
         run: ./heroes-from-seed${{ matrix.exe }} test selfhost/lexer.hero
