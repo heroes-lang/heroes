@@ -97,7 +97,13 @@ static int hero_dir_walk(const char *root, const char *prefix, int64_t want,
 int64_t hero_dir_scan(const char *root, int64_t want, int64_t recursive) {
     hero_dir_reset();
     if (!hero_dir_walk(root, "", want, recursive)) {
-        hero_dir_reset();
+        /* **-1 means the runtime holds NOTHING**, array included, and that is an
+         * invariant rather than a tidiness: a caller that gets -1 returns its
+         * own failure, and it has no listing to release. Five call sites in
+         * `tests/harness/shell.hero` are written exactly that way. This used to
+         * be `hero_dir_reset()`, which frees the names and keeps the block that
+         * holds them — one live scratch buffer, and the leak gate said so. */
+        hero_dir_release();
         return -1;
     }
     return hero_dir_count;
@@ -138,7 +144,7 @@ int64_t hero_dir_remove_tree(const char *path) {
      * Windows, and the bug it makes is the worst kind: it deletes some of the
      * entries and reports success. */
     int64_t found = hero_dir_scan(path, HERO_DIR_FILES, 1);
-    if (found < 0) return HERO_OS_FAILED;
+    if (found < 0) return HERO_OS_FAILED;   /* a failed scan holds nothing */
 
     size_t room = strlen(path) + 2 + HERO_FS_PATH_MAX;
     char *full = hero_alloc(room);
@@ -161,7 +167,13 @@ int64_t hero_dir_remove_tree(const char *path) {
         if (hero_fs_remove(full) != HERO_OS_OK) failed = 1;
     }
     hero_release(full);
-    hero_dir_reset();
+
+    /* **`hero_dir_release`, not `hero_dir_reset`.** Reset frees the names and
+     * keeps the block that holds them, so this function leaked exactly one
+     * scratch buffer per call — invisible to a caller, and caught by the leak
+     * gate this milestone added hours earlier. Nothing here is read after this
+     * point, so the listing goes whole. */
+    hero_dir_release();
 
     if (hero_fs_remove(path) != HERO_OS_OK) failed = 1;
     return failed ? HERO_OS_FAILED : HERO_OS_OK;
