@@ -10,7 +10,35 @@ clang -I runtime seed/heroes.c runtime/runtime.c -o heroes
 ```
 
 That is the whole of it: one command, no flags beyond the include path, no
-configure, no make. Measured on Apple clang 21.0.0, arm64-darwin: **3.4 s at no
+configure, no make — **on POSIX. Windows needs one more flag, and it is not a
+preference**:
+
+```sh
+clang -I runtime seed/heroes.c runtime/runtime.c -Wl,/STACK:67108864 -o heroes
+```
+
+Windows gives a process's main thread **1 MB** of stack where Darwin and Linux
+give 8, and a recursive-descent grammar with a recursive lowering pass is the
+shape that spends it. Without the flag the compiler builds, runs, prints its
+version, compiles a small program and runs it — and is then **killed** the first
+time it is pointed at a module of its own, with exit 127 and nothing on either
+stream, because a killed process never reaches `hero_panic`'s `fprintf`.
+
+Measured on the CI's Windows leg 2026-08-31, two seeds from this same file
+minutes apart:
+
+| stack | `build selfhost/lexer.hero --dump-ir` | `--emit-c` | `build selfhost/main.hero --emit-c` |
+|---|---|---|---|
+| 1 MB (default) | exit 127, silent | exit 127, silent | — |
+| 64 MB | exit 0 | exit 0 | **exit 0** |
+
+64 MB is the number that was run; 8 (POSIX parity) and 16 were not. On a 64-bit
+target `/STACK:` reserves address space rather than committing memory, so a
+large reserve costs nothing real, and bringing it down owes its own measurement.
+The flag is MSVC-linker spelling because that is what `clang` targets on Windows
+(`x86_64-pc-windows-msvc`); it is the same number
+`selfhost/cli_flags.hero::link_flags()` puts on every binary the compiler links
+there. Measured on Apple clang 21.0.0, arm64-darwin: **3.4 s at no
 optimisation level** (2026-08-19, on the 22,025,792-byte seed this milestone
 regenerated; it was 3.7 s on the 21 MB one), 27 s at `-O2`. Any C11 compiler should do — the file was
 compiled clean under `-std=c11`, `gnu11`, `c17`, `gnu17`, `c23`, `gnu23`, under

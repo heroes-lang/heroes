@@ -255,11 +255,15 @@ jobs:
       # the cargo legs and says what it covers.
       - name: Build the compiler from the seed — no cargo, no Rust
         shell: bash
-        # The command is `seed/README.md`'s own line, unchanged. If the real
-        # build ever needs a flag that file does not print, this goes red — the
-        # same pin `the_seed_builds_from_a_clean_checkout` puts on it.
+        # The command is `seed/README.md`'s own line, unchanged — **including
+        # the Windows flag, which that file now prints for the same reason it
+        # prints the include path.** A 1 MB main-thread stack against POSIX's 8
+        # kills this compiler the first time it is pointed at a module of its
+        # own: exit 127, both streams empty, measured here 2026-08-31 and
+        # answered by one extra seed build in the same run.
         run: |
-          clang -I runtime seed/heroes.c runtime/runtime.c -o heroes-from-seed${{ matrix.exe }}
+          if [ "$RUNNER_OS" = "Windows" ]; then STACK="-Wl,/STACK:67108864"; else STACK=""; fi
+          clang -I runtime seed/heroes.c runtime/runtime.c $STACK -o heroes-from-seed${{ matrix.exe }}
           ./heroes-from-seed${{ matrix.exe }} --version
 
       # **One step that exists to score a prediction**, which is the only way a

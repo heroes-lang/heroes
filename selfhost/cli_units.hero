@@ -173,6 +173,11 @@ function link_objects(t: cli_toolchain.Toolchain, objects: [str], binary: str, l
     line @ line.push(level)
     line @ cli_toolchain.with_all(list: line, more: cli_flags.sanitizers(sanitize: sanitize))
 
+    # The link's own flags, which on Windows is the stack reserve a
+    # recursive frontend needs (cli_flags.link_flags carries the
+    # measurement). Empty everywhere else.
+    line @ cli_toolchain.with_all(list: line, more: cli_flags.link_flags())
+
     for dir in search_include
         line @ cli_toolchain.with_all(list: line, more: ["-I", dir])
 
