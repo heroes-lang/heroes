@@ -88,6 +88,19 @@ record Run
 # a harness that merged them could not tell a diagnostic from a program's
 # output.
 function run(scratch: str, program: str, words: [str]) -> Run?
+    # **The scratch directory is this function's to make, not its caller's.**
+    # The two streams are files opened under it, so a missing directory makes
+    # the child fail to start — and `started: false` then means "the program is
+    # not there", which is a lie about the program.
+    #
+    # Measured 2026-08-31 on the Linux CI leg: `a status is decoded the way a
+    # shell prints it` asserted `started` on `/bin/sh -c 'exit 0'` and failed,
+    # because the test three cases below it is the one that calls `mkdir_all`.
+    # It passed here and on Darwin because `build/harness-selftest` was left
+    # over from an earlier run. A test that passes on the strength of another
+    # test's side effect passes for the wrong reason, and 28 call sites share
+    # that directory — so the fix is the one place none of them can forget.
+    _ = mkdir_all(scratch)
     out_path = scratch + "/stdout"
     err_path = scratch + "/stderr"
     hero_run_reset()
