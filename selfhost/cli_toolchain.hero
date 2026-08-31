@@ -263,6 +263,7 @@ function link(t: Toolchain, c_file: str, object: str, binary: str, level: str, s
     link_line: [str] @ with_all(list: ["clang"], more: cli_flags.flags())
     link_line @ link_line.push(level)
     link_line @ with_all(list: link_line, more: cli_flags.sanitizers(sanitize: sanitize))
+    link_line @ with_all(list: link_line, more: cli_flags.link_flags())
 
     for dir in search_include
         link_line @ with_all(list: link_line, more: ["-I", dir])
