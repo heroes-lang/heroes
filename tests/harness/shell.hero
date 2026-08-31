@@ -296,13 +296,45 @@ function skipped(name: str, skip: [str]) -> bool
 # runs the corpus unguarded rather than not at all.
 # **The question is asked by RUNNING it, not by `command -v`.** With an
 # argument list there is nothing to prefix a command with, so `patience`
-# answers the words to put in front of a program's own, and the probe is
-# `timeout --help`: if the runtime says the program never started, this
-# machine has no `timeout` and the corpus runs unguarded.
+# answers the words to put in front of a program's own.
+#
+# **AND THE QUESTION IT USED TO ASK WAS THE WRONG ONE.** The probe was
+# `timeout --help`, and the answer it read was *"did a program by that name
+# start?"* — which is a premise about the world (a program called `timeout`
+# is coreutils' `timeout`) dressed as a measurement. Windows ships a
+# `TIMEOUT.EXE` that PAUSES for N seconds and takes no program at all. It
+# starts, so the old probe said yes, and the net then ran
+# `timeout 120 heroes …` into it:
+#
+#     ERROR: Invalid syntax. Default option is not allowed more than '1' time(s).
+#     Type "TIMEOUT /?" for usage.
+#
+# **271 of 357 failed checks on the Windows leg, measured 2026-08-31** (run
+# 33383228293) — `run` 0 of 91, `emission` 1 of 150, `cache` 0 of 5, `units`
+# 0 of 3 — every one of them the compiler never being launched at all.
+#
+# So the probe asks for the BEHAVIOUR that is actually wanted: does
+# `timeout N <program>` run the program and hand back the program's own exit
+# code? `clang --heroes-no-such-flag` refuses with exit 1 and clang is
+# present wherever this harness runs (`heroes doctor` refuses a machine
+# without it). A `timeout` that passes the code through answers 1. Anything
+# else — a pause utility, a missing program, a wrapper with its own ideas —
+# does not, and the corpus runs unguarded rather than not at all, exactly as
+# before.
 function patience() -> [str]
-    probe = run(scratch: "build", program: "timeout", words: ["timeout", "--help"])
+    probe = run(
+        scratch: "build",
+        program: "timeout",
+        words: ["timeout", "10", "clang", "--heroes-no-such-flag"]
+    )
 
     if probe.is_err() || !probe.must().started
+        return []
+
+    # coreutils uses 124 for a timeout it enforced and 125/126/127 for its
+    # own failures, so 1 can only be the child's. That is the whole contract
+    # this harness needs from it.
+    if probe.must().code != 1
         return []
 
     return ["timeout", "120"]
