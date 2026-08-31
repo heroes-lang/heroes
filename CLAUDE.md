@@ -125,6 +125,19 @@ on screen and a preamble long enough to make it answerable. Learn-first (questio
 explicitly asks before a step. The executable protocol lives in `/step` —
 its only home. Lessons stay impersonal: shapes and rules, never scores.
 
+**NEVER LET THREE MINUTES PASS WITHOUT TELLING THE AUTHOR WHERE YOU ARE**
+(author instruction 2026-08-31, categorical, given after a day of long silent
+waits: *"non far passare mai più di tre minuti senza aggiornarmi in parole
+chiave"*). This binds EVERY working session, not only a `/loop`: whatever is
+happening — a measurement running, a CI leg in flight, a remote machine
+building, a diagnosis mid-thought — the author hears it in plain Italian
+keywords before three minutes are up: what is running, what is being waited
+on, what was just found. A wait longer than that is split into short probes
+with a one-line report between them, never one long blocking call. The recap
+is the point: an unattended stretch is a stretch of decisions the author
+could not redirect, and the author was reduced to shouting in caps to get a
+status line. That is this rule's origin and its reason.
+
 **In a `/loop`, a wakeup is at most three minutes and every one of them writes
 a recap** (author instruction 2026-08-12). The recap is the point, not the
 schedule: an unattended session that works for an hour and then reports once has
