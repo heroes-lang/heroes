@@ -302,6 +302,18 @@ jobs:
       # in-module assertions; the net below stays on every push and drives the
       # same compiler over 845 checks. The local loop is untouched: `heroes test`
       # through an already-built binary is the 13 s number again.
+      # **The smallest thing the compiler can do, run before the big ones.**
+      # Windows reached this point for the first time on 2026-08-31, and the
+      # step below it exited 127 with no output at all — which says the process
+      # died early and says nothing about where. One program, compiled and run,
+      # separates "the compile-and-run cycle is broken on this platform" from
+      # "one of 519 tests fails", and those need opposite repairs.
+      - name: One program, compiled and run
+        if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
+        run: |
+          ./heroes-from-seed${{ matrix.exe }} run examples/gallery/00-first.hero
+          echo "exit was $?"
+
       - name: The compiler's own tests
         if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
         shell: bash
