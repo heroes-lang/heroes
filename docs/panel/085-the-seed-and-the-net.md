@@ -501,3 +501,26 @@ predictions are scored in `docs/journal/025-separate-compilation.md`
 could not be scored are marked **lapsed** there, and the clause each one bought
 is back in `docs/work/DECIDE.md` to be re-argued under the removal branch, never
 renewed under a new milestone name (panel 046 R2).
+
+## The instrumented prediction, scored — 2026-08-31
+
+The table above left the ffi-pragmatist's `-std=c11` row *"instrumented, not
+yet scored"*, and the instrument then answered on every Linux run for a week
+without anybody carrying the answer back here. Carried now, and the step
+retires with this entry:
+
+**FALSIFIED.** `-std=c11 -I runtime seed/heroes.c runtime/runtime.c` builds on
+glibc — the CI step's own `::notice::` line, emitted on every dispatch since it
+existed, most recently run 33418003602. The predicted failure at the seed's
+`unistd.h` extern never happened, because by the time the seed could be built
+at all its only raw POSIX extern was gone (`hero_write_err` replaced the
+`write(2)` binding, author decision 2026-08-24). Panel 092 closed the other
+half separately: `__typeof__` and `__builtin_types_compatible_p` are clang
+extensions that work under `-std=c11` too, so the `gnu11` choice rests on
+`__STRICT_ANSI__` hiding `M_PI` and friends (panel 047's ground) and on
+nothing else.
+
+**The step leaves the workflow with this score.** A prediction is scored once;
+an instrument that re-announces a settled answer on every run is noise on a
+green page — and it was the last annotation standing when the author asked why
+a Success page carried badges (2026-08-31).

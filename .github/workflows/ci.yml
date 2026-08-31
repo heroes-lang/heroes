@@ -293,25 +293,6 @@ jobs:
           clang -I runtime seed/heroes.c runtime/runtime.c $STACK -o heroes-from-seed${{ matrix.exe }}
           ./heroes-from-seed${{ matrix.exe }} --version
 
-      # **One step that exists to score a prediction**, which is the only way a
-      # prediction pays (panel 046 R1). Panel 085's ffi-pragmatist predicted that
-      # `-std=c11` on **glibc** fails at the seed's `unistd.h` extern for want of
-      # a feature-test macro, and named *the first CI run of the seed on Linux*
-      # as the instrument. This is it. Measured on Darwin the same day: `-std=c11`
-      # builds the seed in 3.6 s and produces a working binary, which is what
-      # panel 047 predicts — `__STRICT_ANSI__` hides `strdup`, `fileno` and
-      # `M_PI` **on glibc**, not on Darwin's headers. The seed's own documented
-      # command passes no `-std` at all, so nothing here gates on the answer: the
-      # step reports it, loudly enough to read in the log.
-      - name: Score panel 085 — does `-std=c11` build the seed on glibc?
-        if: runner.os == 'Linux'
-        run: |
-          if clang -std=c11 -I runtime seed/heroes.c runtime/runtime.c -o /tmp/heroes-c11; then
-            echo "::notice::panel 085 ffi-pragmatist FALSIFIED: -std=c11 builds the seed on glibc"
-          else
-            echo "::notice::panel 085 ffi-pragmatist HELD: -std=c11 fails on glibc, as predicted"
-          fi
-
       # The toolchain check as a machine with no Rust would run it. `doctor`
       # names clang, the linker's home, the architecture, the runtime and a
       # writable cache — and it has never asked about cargo, which is what makes
