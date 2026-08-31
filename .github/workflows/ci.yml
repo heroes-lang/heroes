@@ -414,126 +414,19 @@ jobs:
           echo "--- stderr ---"; cat build/probe/err.txt || true
           echo "--- end ---"
 
-      # **`heroes test` is the one verb that has never worked on Windows, and
-      # the log says nothing.** Measured on run 33373996112: `heroes run` prints
-      # `20` there — so the frontend, clang, the link and executing a binary all
-      # work — and `heroes test selfhost/lexer.hero` exits 1 in 1.2 s with both
-      # streams empty. That is the difference between two link paths
-      # (`cli_toolchain.link` for a fused test unit, `cli_units.link_objects`
-      # for a program), and every failure path in both of them PRINTS.
-      #
-      # So the smallest question first, on a program with three lines instead of
-      # a compiler module: is `test` broken as a verb, or is it broken on this
-      # input? Both answers are useful and the round costs nothing.
-      - name: Does `heroes test` work at all on this platform?
-        if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
-        shell: bash
-        run: |
-          mkdir -p build/probe
-          printf 'function twice(n: i64) -> i64\n    return n * 2\n\ntest "it doubles"\n    assert twice(n: 21) == 42\n' > build/probe/tiny.hero
-          set +e
-          ./heroes-from-seed${{ matrix.exe }} test build/probe/tiny.hero > build/probe/t.out 2> build/probe/t.err
-          code=$?
-          set -e
-          echo "--- exit $code ---"
-          echo "--- stdout ---"; cat build/probe/t.out || true
-          echo "--- stderr ---"; cat build/probe/t.err || true
-          echo "--- what landed in the cache ---"
-          find build -name '*.c' -newer build/probe/tiny.hero 2>/dev/null | head -5 || true
-          echo "--- end ---"
-
-      # **The bisection.** Measured on run 33375990716, under bash so the exit
-      # code is the process's own and not PowerShell's `$?`:
-      #
-      #   heroes test build/probe/tiny.hero          exit 0, "1 test, all passed"
-      #   heroes check selfhost/lexer.hero           exit 0
-      #   heroes build selfhost/lexer.hero --emit-c  exit 127, no file, both streams empty
-      #
-      # So `test` works as a verb on this platform — it emits, calls clang, links
-      # and runs a binary — and `build` on a COMPILER MODULE dies at 127 while
-      # `check` on the same file passes. Nothing in this compiler returns 127
-      # deliberately: its codes are 0, 1 and 2.
-      #
-      # Three candidates and this splits them instead of arguing: the emitter
-      # (`--dump-ir` stops one stage earlier), multi-module input (`tiny.hero`
-      # imports nothing, `lexer.hero` does), and sheer size. Each step reports
-      # its own code and neither fails the job, so all four answers arrive in one
-      # round.
-      - name: Where in the pipeline does a compiler module die?
-        if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
-        shell: bash
-        run: |
-          mkdir -p build/probe
-          # **No pipe inside this function.** The first version ended in
-          # `echo "$out" | head -4`, and `head` closing the pipe gave `echo` a
-          # broken pipe — which `pipefail` plus `-e` turned into a dead step on
-          # Darwin, where the compiler works. A probe must not be able to fail
-          # the leg it is only observing.
-          probe () {
-            set +e
-            "$@" > build/probe/p.txt 2>&1
-            code=$?
-            set -e
-            echo "  exit $code  <-  $*"
-            head -4 build/probe/p.txt 2>/dev/null | sed 's/^/      /' || true
-          }
-          C=./heroes-from-seed${{ matrix.exe }}
-          echo "--- calibration: the binary runs at all ---"
-          probe $C --version
-          echo "--- one module, three stages deep ---"
-          probe $C check selfhost/lexer.hero
-          probe $C build selfhost/lexer.hero --dump-ir
-          probe $C build selfhost/lexer.hero --emit-c -o build/probe/e1.c
-          echo "--- is it the `use`, or the size? two programs that separate them ---"
-          printf 'function twice(n: i64) -> i64\n    return n * 2\n' > build/probe/lib.hero
-          printf 'use lib\n\nfunction main()\n    print(lib.twice(n: 21))\n' > build/probe/two.hero
-          probe $C build build/probe/two.hero --emit-c -o build/probe/e2.c
-          probe $C build selfhost/cli_process.hero --emit-c -o build/probe/e3.c
-          probe $C build selfhost/strings.hero --emit-c -o build/probe/e4.c
-          echo "--- and what a panic looks like here, so 127 has a scale ---"
-          printf 'function main()\n    xs: [i64] = []\n    print(xs[3])\n' > build/probe/boom.hero
-          probe $C run build/probe/boom.hero
-          echo "--- end ---"
-
-      # **The stack hypothesis, measured rather than believed.** Windows gives
-      # the main thread 1 MB where POSIX gives 8. The bisection fits it exactly:
-      # `cli_process.hero` (193 lines) builds, `lexer.hero` does not, and it dies
-      # at `--dump-ir` — one stage before the emitter, in a recursive-descent
-      # frontend. It dies with NO message, which a `hero_panic` would have
-      # printed: stderr reaches this log (the diagnostic step above proves it),
-      # so the process is not panicking, it is being killed.
-      #
-      # The clang here targets `x86_64-pc-windows-msvc`, so the flag is
-      # `/STACK:<reserve>` through the linker. One extra seed build, 3.5 s, and
-      # the same module through the same stage. Green with the flag and red
-      # without it is the answer; red both ways and the stack is innocent.
-      - name: Is it the 1 MB Windows stack?
+      # **--sanitize needs clang's own ASan DLL on PATH, and only Windows asks.**
+      # A sanitised binary there loads clang_rt.asan_dynamic-x86_64.dll at start
+      # and dies 0xC0000135 (DLL not found) without it — 91 of run/'s 91 checks,
+      # measured on the VPS 2026-08-31, and 87 of them green the moment the DLL
+      # directory is on PATH. It ships inside clang's resource dir, so clang
+      # itself says where it is; nothing is downloaded.
+      - name: Put clang's sanitizer runtime on PATH
         if: (github.ref_type == 'tag' || github.event_name == 'workflow_dispatch') && runner.os == 'Windows'
         shell: bash
         run: |
-          mkdir -p build/probe
-          echo "--- a seed built with a 64 MB stack reserve ---"
-          clang -I runtime seed/heroes.c runtime/runtime.c \
-            -Wl,/STACK:67108864 -o build/probe/big-stack.exe 2>&1 | tail -3 || true
-          for exe in ./heroes-from-seed.exe build/probe/big-stack.exe; do
-            for stage in --dump-ir --emit-c; do
-              set +e
-              "$exe" build selfhost/lexer.hero $stage -o build/probe/s.c > build/probe/s.txt 2>&1
-              code=$?
-              set -e
-              echo "  exit $code  <-  $exe build selfhost/lexer.hero $stage"
-              head -3 build/probe/s.txt 2>/dev/null | sed 's/^/      /' || true
-            done
-          done
-          echo "--- and the whole compiler, with the big stack ---"
-          set +e
-          build/probe/big-stack.exe build selfhost/main.hero --emit-c -o build/probe/whole.c > build/probe/m.txt 2>&1
-          code=$?
-          set -e
-          echo "  exit $code  <-  big-stack build selfhost/main.hero --emit-c"
-          ls -l build/probe/whole.c 2>&1 | sed 's/^/      /' || echo "      no file"
-          head -3 build/probe/m.txt 2>/dev/null | sed 's/^/      /' || true
-          echo "--- end ---"
+          D="$(clang -print-resource-dir)/lib/windows"
+          ls "$D"/clang_rt.asan_dynamic-x86_64.dll
+          echo "$D" >> "$GITHUB_PATH"
 
       - name: One module's tests, before the whole compiler's
         if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'

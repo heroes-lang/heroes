@@ -311,11 +311,32 @@ int64_t hero_run_go(const char *program, const char *out_path,
         return -1;
     }
 
+    /* **A std handle can be DEAD, and inheriting a dead one kills the launch.**
+     * A detached compiler — `nohup` on a build server, an ssh session that
+     * ended, a CI daemon — keeps the VALUE GetStdHandle answers while the
+     * console behind it is gone, and CreateProcess refuses to inherit it:
+     * the child never starts, the error file stays empty, and the caller
+     * reports "the runtime did not compile" with nothing to read. Measured
+     * 2026-08-31 on the Windows VPS: the same net run works in a live ssh
+     * session and dies at the FIRST clang the moment the session that
+     * spawned it is gone. GetFileType is the probe — a live handle has a
+     * type, a dead one answers UNKNOWN with an error — and the stand-in is
+     * NUL, which is what a detached process's stdin honestly is. */
+    HANDLE in = GetStdHandle(STD_INPUT_HANDLE);
+    HANDLE nul_in = INVALID_HANDLE_VALUE;
+    SetLastError(0);
+    if (in == NULL || in == INVALID_HANDLE_VALUE ||
+        (GetFileType(in) == FILE_TYPE_UNKNOWN && GetLastError() != 0)) {
+        nul_in = CreateFileA("NUL", GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE,
+                             &inherit, OPEN_EXISTING, 0, NULL);
+        in = nul_in;
+    }
+
     STARTUPINFOA startup;
     memset(&startup, 0, sizeof startup);
     startup.cb = sizeof startup;
     startup.dwFlags = STARTF_USESTDHANDLES;
-    startup.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
+    startup.hStdInput = in;
     startup.hStdOutput = out;
     startup.hStdError = err;
 
@@ -338,6 +359,7 @@ int64_t hero_run_go(const char *program, const char *out_path,
                                   0, NULL, NULL, &startup, &child);
     if (!hero_run_inherits(out_path)) CloseHandle(out);
     if (!hero_run_inherits(err_path)) CloseHandle(err);
+    if (nul_in != INVALID_HANDLE_VALUE) CloseHandle(nul_in);
     hero_str_decref(line);
     if (!started) {
         *status = HERO_OS_NOT_FOUND;
