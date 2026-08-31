@@ -324,6 +324,18 @@ jobs:
       # This step tells the two apart rather than guessing: `lexer.hero` is one
       # module with the same machinery. Green here and red below means depth;
       # red here means something the size has nothing to do with.
+      # **Does the error channel reach the log on this platform?** Everything
+      # green on Windows so far prints to stdout: `doctor`'s five lines, and the
+      # `20` a compiled program printed. Every failure so far has been silent —
+      # exit 1 or 127 with an empty log — and a diagnostic goes to stderr. So
+      # this asks for a diagnostic on purpose: `arm-pattern.hero` is a golden
+      # case that cannot compile, and its message must appear here. Nothing
+      # printed means the channel is the defect and not what is written to it.
+      - name: A diagnostic reaches the log
+        if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
+        continue-on-error: true
+        run: ./heroes-from-seed${{ matrix.exe }} check tests/golden/check/arm-pattern.hero
+
       - name: One module's tests, before the whole compiler's
         if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
         run: ./heroes-from-seed${{ matrix.exe }} test selfhost/lexer.hero
