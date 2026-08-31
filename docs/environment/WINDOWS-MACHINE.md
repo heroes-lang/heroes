@@ -15,7 +15,11 @@ on when CI says so.
 ## It is billed by the hour, so it may be off
 
 The machine is an [appOnFly](https://apponfly.com) Windows VPS and **the author
-pays for the hours it is awake**. Expect it to be off.
+pays for the hours it is awake**. **It is off between sessions — that is the
+resting state, not an accident** (author instruction 2026-08-31, given while
+turning it off after the milestone closed). Every session that needs it starts
+by asking the author to power it on, in so many words, and does the
+machine-free parts of the work while waiting.
 
 - **The symptom of "off"** is an SSH connect timeout, or the Tailscale row reading
   `offline` instead of `idle`. It is not an authentication error — a key failure
@@ -111,17 +115,14 @@ Measured 2026-08-31, all via `winget`:
 | LLVM / clang | 22.1.8 | **target `x86_64-pc-windows-msvc`** |
 | GitHub CLI | 2.98.0 | present, not logged in |
 | Windows SDK | 10.0.26100.0 | `Program Files (x86)\Windows Kits\10` |
-| MSVC toolset | **NOT CONFIRMED** | see the paragraph below before trusting a compile |
+| MSVC toolset | 14.44.35207 | confirmed 2026-08-31: `clang t.c -o t.exe` links and the binary runs |
 
-**The MSVC toolset is the one row here that was never confirmed present**, and the
-reason is written down rather than left as a gap: the install was launched, and
-**the machine went offline while it was running** (Tailscale `offline, last seen
-1m ago`, 2026-08-31 11:17 local). A Visual Studio installer restarts the machine
-in some configurations even under `--norestart`, and this box may equally have
-been powered off — the two look identical from here. So the first act of the next
-session that needs to compile on Windows is to check the toolset with the one-line
-command below and, if it is missing, run the bootstrapper again. Nothing in this
-file depends on that being already done.
+**The MSVC toolset row above was `NOT CONFIRMED` for half a day**, because the
+first install was cut short when the machine went offline mid-run. The second
+attempt (same bootstrapper line, launched detached over SSH) completed on
+2026-08-31 and was believed only after the check that matters: a three-line C
+program compiled, linked and ran. If a compile ever fails with the `libcmt.lib`
+error below, re-run the one-line check further down before trusting this table.
 
 **clang's target is the same one CI uses**, which is what makes this box a
 faithful instrument rather than an approximation. It also means clang needs the
@@ -151,6 +152,36 @@ Check the toolset in one line, and believe the check rather than this table:
 ssh win 'ls -d "/c/Program Files/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/"*/'
 ```
 
+## What `~/.bashrc` adds, and why each line is load-bearing
+
+Non-interactive SSH (`ssh win '<command>'`) reads `~/.bashrc`, not
+`.bash_profile` — measured, the first PATH attempt landed in the wrong file and
+`clang` stayed invisible. The file adds two directories, both required:
+
+```
+export PATH="/c/Program Files/LLVM/bin:$PATH"
+export PATH="/c/Program Files/LLVM/lib/clang/22/lib/windows:$PATH"
+```
+
+The first is clang itself. The second is **the ASan runtime DLL**
+(`clang_rt.asan_dynamic-x86_64.dll`): a `--sanitize` binary loads it at start
+and dies `0xC0000135` (DLL not found) without it — that was `run/`'s entire 0
+of 91 on this box before the line existed. The CI leg gets the same directory
+through `clang -print-resource-dir` in the workflow; here the clang version is
+in the path, so a clang upgrade must update this line.
+
+## Two lessons about sessions, paid for on this box
+
+- **Windows sshd kills every process of a session when the session closes** —
+  `nohup` does not save them. A run longer than the SSH command that started it
+  must be started from a session that is KEPT ALIVE (a backgrounded `ssh` from
+  the Mac that simply stays connected), or it dies mid-write.
+- **A killed run leaves orphans, and orphans hold files.** Two `heroes.exe` and
+  a `clang.exe` survived one interrupt, held `build/harness/stdout` open, and
+  Windows refuses to delete a file a handle still holds — so the NEXT run could
+  not clear `build/` (`Device or resource busy`). The sweep is
+  `taskkill //F //IM heroes.exe //T` (note `//` under MSYS) before any cleanup.
+
 ## The one line that builds the compiler here
 
 From `CLAUDE.md` § Commands, plus the `/STACK:` reserve that M-argv-execution
@@ -164,10 +195,14 @@ clang -I runtime seed/heroes.c runtime/runtime.c \
 
 Without the reserve, `heroes build selfhost/lexer.hero --dump-ir` exits **127**
 with both streams empty — a killed process, not a panic. With it, exit 0, and so
-does `--emit-c` on the whole compiler. That flag now lives in
-`selfhost/cli_flags.hero::link_flags()` for every binary the compiler links, so a
-seed built by the line above passes it on.
+does `--emit-c` on the whole compiler. That flag lives in
+`selfhost/cli_flags.hero::link_flags()` for every binary the compiler links —
+alongside `-Wl,/INCREMENTAL:NO`, added after MSVC's incremental linker printed
+its full-link notice into program stdout the harness compares byte for byte —
+so a seed built by the line above passes both on.
 
-**The seed build time on this machine has not been measured** and is not guessed
-here; on the Mac it is 3.5 s, and a 2-CPU VPS will not match that. Measure it in
-the session that needs the number (`CLAUDE.md` §1).
+**Seed build time here: 7.7 s**, measured 2026-08-31 (`real 0m7.715s`, first
+build after a clone) against 3.5 s on the Mac. A full cold net run is roughly
+12 minutes. The sync loop that matters: a delta `git push win main:main` from
+the Mac is ~9–14 s once the bare repository has refs — the first 80 MiB push is
+the only slow one.
