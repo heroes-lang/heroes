@@ -516,6 +516,7 @@ test "a status is decoded the way a shell prints it"
     # (shell.hero::can_run_scripts carries the measurement).
     if !can_run_scripts()
         return
+
     # 1 << 8 is `exit 1`; 134 is the shape panel 070's hardcoded number
     # got wrong — SIGABRT is 6, so waitpid says 6 and a shell says 134.
     # **`status_of` is gone and the runtime answers instead.** It decoded
@@ -571,6 +572,7 @@ test "the directory walk keeps a filename that contains a newline"
     # (shell.hero::can_run_scripts carries the measurement).
     if !can_run_scripts()
         return
+
     # Panel 085 R4's falsifier, kept as a test: this is the case `ls`
     # splits in two at exit 0. If the NUL route ever stops working, this
     # is what fires, and the harness stops trusting its own case list.
