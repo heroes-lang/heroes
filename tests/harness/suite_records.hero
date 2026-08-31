@@ -158,6 +158,11 @@ constant WATCHED: [str]
         "CLAUDE.md"
     ]
 
+# `/step`'s milestone-close number for § Where we are. A threshold with an
+# instrument behind it, which is the only kind that holds.
+constant WHERE_CEILING: i64
+    15
+
 function run_all(scratch: str) -> report.Report?
     r: report.Report @ report.empty()
 
@@ -187,6 +192,7 @@ function run_all(scratch: str) -> report.Report?
     expectations(@r, scratch: scratch)
     boundary(@r)
     verdicts(@r, present: walked)
+    where_we_are(@r)
     return ok(r)
 
 # Whether this path is one of the dated records — the pruning `find` used to do
@@ -787,6 +793,61 @@ function opens_pending(text: str) -> bool
 
     return true
 
+# **`docs/ROADMAP.md` § Where we are, held to its own ceiling.**
+#
+# The rule is `/step`'s milestone-close checklist: that section says what is
+# NEXT, and a closed milestone's record is its journal, so the section stays at
+# 15 lines. It was written with its reason — the file reached 935 lines, growing
+# ~66 per close, and a reader met 512 lines about the past before the first line
+# about the future.
+#
+# **It had no executor, and it was broken by 16 lines.** Measured 2026-08-31 at
+# M-argv-execution: 31 lines, two long paragraphs of re-measurement history that
+# belong to the journals. CLAUDE.md §3 names this exact shape — a rule written in
+# three documents that no skill performed, which is how `DECIDE.md` grew to
+# 391 KB. A number in a checklist is a wish; a number an instrument reads is a
+# rule.
+#
+# The count is every line from the heading to the `---` that ends the section,
+# blank lines included, because a blank line costs a reader the same scroll as
+# any other.
+function where_we_are(@r: report.Report)
+    text = read_file("docs/ROADMAP.md")
+
+    if text.is_err()
+        report.keep_failure(@r, label: "records/roadmap", detail: "  docs/ROADMAP.md cannot be read")
+        return
+    counted: i64 @ 0
+    inside: bool @ false
+    closed: bool @ false
+
+    for row in strings.lines(text.must())
+        if strings.starts_with(text: row, prefix: "## Where we are")
+            inside @ true
+
+        if inside && !closed
+            if strings.starts_with(text: row, prefix: "---")
+                closed @ true
+            else
+                counted @ counted + 1
+
+    if !inside
+        report.keep_failure(
+            @r,
+            label: "records/roadmap",
+            detail: "  docs/ROADMAP.md has no `## Where we are` section, and /step's checklist names one"
+        )
+        return
+
+    if counted > WHERE_CEILING
+        report.keep_failure(
+            @r,
+            label: "records/roadmap",
+            detail: "  § Where we are is " + counted.to_str() + " lines and the ceiling is " + WHERE_CEILING.to_str() + " — the ROADMAP says what is NEXT, and a closed milestone's record is its journal (/step, milestone close)"
+        )
+    else
+        report.keep_pass(@r)
+
 function boundary(@r: report.Report)
     caught: [str] @ ["scheduled for M8c", "at M5b the increfs", "M0 was day zero", "(M6+)"]
     clean: [str] @ [
@@ -1019,3 +1080,13 @@ test "a citation that names a member is checked at its file, and that is the hol
     assert anchored(token: without_member("commands/flags.rs::FLAGS"), roots: roots)
     assert !anchored(token: "commands/flags.rs::FLAGS", roots: roots)
     assert anchored(token: without_member("selfhost/cli_flags.hero::flags()"), roots: roots)
+
+test "the ROADMAP's § Where we are is counted to its own ceiling"
+    # The real file, which is the point: this check exists because the section
+    # was 31 lines against a 15-line rule nobody measured.
+    r: report.Report @ report.empty()
+    where_we_are(@r)
+    assert r.failed == 0
+
+    # And the ceiling is a number this file states rather than one it remembers.
+    assert WHERE_CEILING == 15
