@@ -194,16 +194,22 @@ jobs:
           # runner that already carries it answers *"pkgconf 2.5.1 is already
           # installed and up-to-date"*. The warning was the formula name aging
           # out from under a check that was asking the wrong question.
+          # The runner image taps `aws/tap`, which Homebrew reports as untrusted
+          # and — its own words — is "currently ignoring". Nothing this step
+          # installs comes from it, so the honest repair is to remove the tap,
+          # not to trust it and not HOMEBREW_NO_REQUIRE_TAP_TRUST, which
+          # Homebrew itself calls "not recommended". **FIRST, because order is
+          # the whole fix**: this line sat AFTER the installs until 2026-08-31,
+          # so every brew above it had already preached the warning into the
+          # run's annotations — on Actions, brew emits its warnings as
+          # ::warning:: lines, which is exactly the badge the author asked
+          # about on an all-green run. Both streams silenced on the untap
+          # itself, since brew loads the untrusted-tap notice before acting.
+          brew untap aws/tap >/dev/null 2>&1 || true
           command -v pkg-config >/dev/null || brew install pkgconf
           # And `pkg-config --exists raylib` is the question `package "raylib"`
           # itself asks, rather than *is the formula present*.
           pkg-config --exists raylib || brew install raylib
-          # The runner taps `aws/tap`, which Homebrew reports as untrusted and —
-          # its own words — is "currently ignoring". Nothing installed above
-          # comes from it, so the honest repair is to remove the tap rather than
-          # to trust it or to set HOMEBREW_NO_REQUIRE_TAP_TRUST, which Homebrew
-          # itself calls "not recommended".
-          brew untap aws/tap 2>/dev/null || true
           # **`|| true` used to swallow all of this, and that is the defect this
           # step's own neighbour warns about**: the note on the Linux step above
           # records `lldb_breaks_on_a_hero_line` *skipping* here for a milestone,
