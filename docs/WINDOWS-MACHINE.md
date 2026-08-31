@@ -111,7 +111,17 @@ Measured 2026-08-31, all via `winget`:
 | LLVM / clang | 22.1.8 | **target `x86_64-pc-windows-msvc`** |
 | GitHub CLI | 2.98.0 | present, not logged in |
 | Windows SDK | 10.0.26100.0 | `Program Files (x86)\Windows Kits\10` |
-| MSVC toolset | see below | `Microsoft.VisualStudio.Component.VC.Tools.x86.x64` |
+| MSVC toolset | **NOT CONFIRMED** | see the paragraph below before trusting a compile |
+
+**The MSVC toolset is the one row here that was never confirmed present**, and the
+reason is written down rather than left as a gap: the install was launched, and
+**the machine went offline while it was running** (Tailscale `offline, last seen
+1m ago`, 2026-08-31 11:17 local). A Visual Studio installer restarts the machine
+in some configurations even under `--norestart`, and this box may equally have
+been powered off — the two look identical from here. So the first act of the next
+session that needs to compile on Windows is to check the toolset with the one-line
+command below and, if it is missing, run the bootstrapper again. Nothing in this
+file depends on that being already done.
 
 **clang's target is the same one CI uses**, which is what makes this box a
 faithful instrument rather than an approximation. It also means clang needs the
