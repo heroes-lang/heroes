@@ -366,14 +366,21 @@ jobs:
         # log, and PowerShell's stream handling is one of the things that could
         # explain it — so this removes that variable rather than reasoning about
         # it. `cmd`'s `2>&1` puts stderr into stdout and the step prints it.
+        # **Everything this probe writes goes under build/, which is
+        # gitignored.** The first version wrote `emitted.c` into the repository
+        # root and `records/c` caught it on all three legs — that check exists
+        # to keep a C file out of a directory that does not own C, and a probe
+        # is not an exception to it. The net runs on the same tree a step later,
+        # so a probe that litters breaks the run it was meant to diagnose.
         shell: bash
         run: |
-          ./heroes-from-seed${{ matrix.exe }} build selfhost/lexer.hero --emit-c -o emitted.c > out.txt 2> err.txt || true
-          echo "--- exit was $? ---"
+          mkdir -p build/probe
+          ./heroes-from-seed${{ matrix.exe }} build selfhost/lexer.hero --emit-c \
+            -o build/probe/emitted.c > build/probe/out.txt 2> build/probe/err.txt || true
           echo "--- stdout, first 5 lines ---"
-          head -5 out.txt || true
+          head -5 build/probe/out.txt || true
           echo "--- stderr, all of it ---"
-          cat err.txt || true
+          cat build/probe/err.txt || true
           echo "--- end ---"
 
       - name: One module's tests, before the whole compiler's
