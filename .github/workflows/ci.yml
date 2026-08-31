@@ -336,6 +336,19 @@ jobs:
         continue-on-error: true
         run: ./heroes-from-seed${{ matrix.exe }} check tests/golden/check/arm-pattern.hero
 
+      # **The same module, checked rather than tested.** Three hypotheses about
+      # the silent failure of `heroes test` on Windows are already dead by
+      # measurement: stack depth (one module fails too), non-inheritable handles
+      # (a compiled program printed `20`), and a mute error channel (the step
+      # above prints a full diagnostic with its underline). What is left is the
+      # verb itself, and this narrows it one more notch: `check` runs the whole
+      # frontend over the same file. Green here means the defect is in what
+      # `test` does after the frontend — compiling the test binary and running
+      # it once per case.
+      - name: The same module, checked
+        if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
+        run: ./heroes-from-seed${{ matrix.exe }} check selfhost/lexer.hero
+
       - name: One module's tests, before the whole compiler's
         if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
         run: ./heroes-from-seed${{ matrix.exe }} test selfhost/lexer.hero
