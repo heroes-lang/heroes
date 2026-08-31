@@ -34,6 +34,8 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/wait.h>
+#include <signal.h>
+#include <time.h>
 #endif
 
 /* The argument list being built. Bounded rather than grown: the longest line
@@ -235,6 +237,37 @@ static void hero_run_child(const char *program, int report,
 }
 #endif
 
+/* **THE WATCHDOG LIVES HERE, and it used to be a program called `timeout`.**
+ *
+ * A program that never returns burns a whole unattended run rather than one
+ * case — measured 2026-08-14, when an `examples/sdl/` binding opened a MODAL
+ * DIALOG on a machine with no SDL3 and two processes sat at 0% CPU for ninety
+ * minutes waiting for a click nobody could give them.
+ *
+ * The harness used to buy that protection by prefixing every invocation with
+ * coreutils' `timeout 120`. Windows ships a `TIMEOUT.EXE` that PAUSES for N
+ * seconds and launches nothing, so on that platform the prefix broke 271 of
+ * the net's checks (2026-08-31) — and once the probe was taught to reject it,
+ * Windows had no watchdog at all. It showed within one run: two orphan
+ * `heroes.exe` and a `clang.exe` held `build/harness/stdout` open, and Windows
+ * will not let anybody delete a file a handle still holds, so the NEXT run
+ * could not even clear its build directory.
+ *
+ * So the limit stops being an external program with two meanings and becomes
+ * what this milestone made everything else: a runtime call. `WaitForSingleObject`
+ * already takes a deadline on Windows, and POSIX gets one by waiting in small
+ * steps instead of forever. Both answer **124** on a kill, which is coreutils'
+ * own code — chosen so the callers that used to read `timeout`'s answer read the
+ * same number here.
+ *
+ * Zero means no limit, which is the default and what every existing caller
+ * gets. */
+static int64_t hero_run_limit_seconds = 0;
+
+void hero_run_limit(int64_t seconds) {
+    hero_run_limit_seconds = seconds > 0 ? seconds : 0;
+}
+
 /* Run the program with the words pushed so far, `hero_run_words[0]` included as
  * argv[0] by convention. Returns the exit code; `*status` is HERO_OS_OK when the
  * program ran at all, HERO_OS_NOT_FOUND when it could not be started, and
@@ -311,7 +344,19 @@ int64_t hero_run_go(const char *program, const char *out_path,
         return -1;
     }
 
-    WaitForSingleObject(child.hProcess, INFINITE);
+    DWORD waited = WaitForSingleObject(
+        child.hProcess,
+        hero_run_limit_seconds > 0 ? (DWORD)(hero_run_limit_seconds * 1000) : INFINITE);
+    if (waited == WAIT_TIMEOUT) {
+        /* 124 is what the caller is told, whatever the kill reports: the child
+         * is gone by our hand, so its own code would be a fiction. */
+        TerminateProcess(child.hProcess, 124);
+        WaitForSingleObject(child.hProcess, 5000);
+        CloseHandle(child.hProcess);
+        CloseHandle(child.hThread);
+        *status = HERO_OS_OK;
+        return 124;
+    }
     DWORD code = 0;
     GetExitCodeProcess(child.hProcess, &code);
     CloseHandle(child.hProcess);
@@ -349,11 +394,61 @@ int64_t hero_run_go(const char *program, const char *out_path,
     close(report[0]);
 
     int wait_status = 0;
-    while (waitpid(child, &wait_status, 0) < 0) {
-        if (errno != EINTR) {
-            *status = HERO_OS_FAILED;
-            return -1;
+    int killed = 0;
+
+    if (hero_run_limit_seconds > 0) {
+        /* Polling rather than `alarm` plus EINTR, because `alarm` reaches into a
+         * signal disposition this runtime does not own and a program that binds
+         * C may have its own SIGALRM.
+         *
+         * **THE STEP DOUBLES, and that is a measurement rather than a
+         * flourish.** A flat 20 ms step was written first, on the reasoning
+         * that 20 ms is under a frame and 120 s is only 6,000 polls. That
+         * reasoning is about the LIMIT and the cost is paid by the COMMON CASE:
+         * the net starts thousands of processes, most of which live a few
+         * milliseconds, and a flat step adds up to a full step of latency to
+         * every one of them. The net went past 600 s where it had been ~300.
+         *
+         * So the first check is free (WNOHANG, no sleep at all), and the step
+         * starts at 1 ms and doubles to a 50 ms ceiling. A child that exits in
+         * 5 ms is reaped after ~3 polls and under 7 ms of sleeping; a child
+         * that hangs costs 12 polls to reach a second and then one every 50 ms,
+         * which is nothing beside the thing it is waiting for. */
+        int64_t slept_ms = 0;
+        int64_t step_ms = 1;
+        int64_t limit_ms = hero_run_limit_seconds * 1000;
+        for (;;) {
+            pid_t seen = waitpid(child, &wait_status, WNOHANG);
+            if (seen == child) break;
+            if (seen < 0 && errno != EINTR) {
+                *status = HERO_OS_FAILED;
+                return -1;
+            }
+            if (slept_ms >= limit_ms) {
+                kill(child, SIGKILL);
+                while (waitpid(child, &wait_status, 0) < 0 && errno == EINTR) { }
+                killed = 1;
+                break;
+            }
+            struct timespec step;
+            step.tv_sec = 0;
+            step.tv_nsec = step_ms * 1000L * 1000L;
+            nanosleep(&step, NULL);
+            slept_ms += step_ms;
+            if (step_ms < 50) step_ms *= 2;
         }
+    } else {
+        while (waitpid(child, &wait_status, 0) < 0) {
+            if (errno != EINTR) {
+                *status = HERO_OS_FAILED;
+                return -1;
+            }
+        }
+    }
+
+    if (killed) {
+        *status = HERO_OS_OK;
+        return 124;
     }
 
     if (got == (ssize_t)sizeof failure) {
