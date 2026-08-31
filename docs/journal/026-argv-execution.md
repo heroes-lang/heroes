@@ -1,7 +1,10 @@
 # 026 — M-argv-execution: the shell stops being the boundary
 
 Opened 2026-08-30 on the ratification of panels 097 and 098, closed
-2026-08-31. Eight steps plus the two commits that opened it. The one-line
+2026-08-31. Twenty-six steps plus the two commits that opened it — eight to
+take the shell out of the compiler, and eighteen more to make Windows true,
+almost all of them in one sitting once an hourly VPS shrank the loop from a
+five-minute CI dispatch to seconds. The one-line
 version: the compiler used to talk to the operating system by composing a
 sentence for `/bin/sh`, and now it hands the operating system a list of
 words.
@@ -27,7 +30,7 @@ What that buys, measured at close:
 | `sq()` — the POSIX quoter, maintained by hand | 189 uses repo-wide | **0** (the 5 remaining greps are comments naming it in the past tense) |
 | `shell()` calls in `selfhost/` | 20 across 7 modules | **0** |
 | `system()` in `tests/harness/shell.hero` | its own `extern`, its own quoter, its own wait-status decode | **0** — all three gone |
-| Windows CI | dies at step 8 of 18 | passes `doctor`, compiles, runs, diagnoses, checks, **emits** |
+| Windows CI | dies at step 8 of 18 | **green end to end** — the net 1166/0, the harness self-tests 92/92 |
 
 ## What surprised
 
@@ -56,11 +59,14 @@ first word, quoted by the CRT's own rules (doubled backslashes before a
 quote). That is why `win_quote` exists and why panel 098 made it ship with a
 round-trip test: it replaces a function that had one.
 
-**A bootstrap ABI bump propagates over two generations.** Raising
-`HERO_RUNTIME_ABI` before regenerating the seed locks the compiler out of its
-own build. And the fix is not "reverse the order" — a compiler that knows how
-to *write* the new number still carries the old one on its own forehead, so
-the number moves through the seed in two passes, not one. It sits at 17.
+**A bootstrap ABI bump propagates over THREE generations, and the day proved
+it twice.** Raising `HERO_RUNTIME_ABI` before regenerating the seed locks the
+compiler out of its own build; a compiler that knows how to *write* the new
+number still carries the old one on its own forehead; and the seed it emits
+carries the new number but is itself built by the old — so the header moves,
+then the seed, then the seed again. Done for 16→17 (the runtime gains its
+process route) and again for 17→18 (`hero_run_limit`, the watchdog). It sits
+at 18.
 
 **Windows has no argv at the operating-system level.** A process receives one
 string and parses it itself. Every language that looks like it passes a list
@@ -131,8 +137,49 @@ became `cli_process.hero`, `cli_verbs.hero` shed 164 lines to a new
 `cli_produce.hero`, and `cli_toolchain.hero` gave up its cache-key reader to
 `cli_runtime_key.hero`.
 
-What carried forward is the one thing nobody here can measure: **nobody on
-this project has a Windows machine.** Every Windows fact in this journal came
-from a `workflow_dispatch`, and the loop is minutes long rather than seconds.
-That is the cost of the platform, not of the design, and it is the reason the
-milestone's last step is a CI run rather than a local one.
+**The paragraph that used to close this journal said nobody here has a
+Windows machine, and it expired the same day it was written.** An hourly VPS
+arrived on 2026-08-31 (`docs/WINDOWS-MACHINE.md`), the loop fell from a
+five-minute CI dispatch to a nine-second push and an eight-second build, and
+eighteen more steps happened in one sitting because of it. What those steps
+found is the real record of this milestone, because every one of them was
+invisible from POSIX:
+
+- **1 MB of main-thread stack** against POSIX's 8 killed the compiler on its
+  own modules with exit 127 and silence — a killed process never reaches
+  `hero_panic`'s `fprintf`. Two seeds from the same file, one flag apart,
+  answered it: `-Wl,/STACK:67108864`, in the seed line and in `link_flags()`.
+- **Three probes could not tell coreutils' `timeout` from Windows'
+  `TIMEOUT.EXE`** — it starts, and it exits 1 on a refused argument — until
+  the probe asked for the child's own words. Then the honest answer left
+  Windows unguarded, and the watchdog became what everything else already
+  was: a runtime call (`hero_run_limit`, 124 on a kill, ABI 17→18 — which
+  took THREE generations, not two: gen1 writes the new number while carrying
+  the old on its own forehead).
+- **clang.exe ends lines `\r\n`**, and the `\r` rode a diagnostic into
+  `` `i64\r` `` and unmatched `heroes-ffi-const`'s marker entirely.
+- **MSVC's `remove()` does not remove directories**, and it hid until the
+  first suite that deleted a tree it had built in the same run.
+- **A depfile backslash is a byte of the path** on the platform whose
+  separator it is: `C:\Program Files\LLVM` shattered at every `\`, every
+  fragment digested `absent`, and the cache never hit once — caught by
+  `cache/an untouched build still hits`, the check written for exactly this.
+- **A dead ssh stdin is inheritable**, and `CreateProcess` refuses it: a
+  detached compiler died at its first clang. `GetFileType` probes the
+  handle; `NUL` stands in.
+- `ldiv_t`'s fields are `long` — panel 097's `st_mode` prediction arrived in
+  this project's own test data, and `lldiv_t` (i64 on all three) keeps the
+  case's real subject, a type-identity refusal.
+- Twelve harness self-tests whose SUBJECT is POSIX (`#!/bin/sh` stubs, two
+  streams from a shell, a newline in a filename NTFS refuses) ask the
+  machine (`can_run_scripts`, a probe that runs one) and step aside on no.
+
+And two lessons about instruments, paid in full: a probe whose silence is
+indistinguishable from success measures nothing (three rounds were spent on
+one), and a verification that runs two suites out of three has a hole
+exactly the size of the third — `heroes test tests/harness/main.hero` was
+83/90 while everything watched was green, and the leak gate built that same
+morning caught this milestone's own `remove_tree` within hours.
+
+Windows green at close: the net 1166/0 and the self-tests 92/92 on the VPS,
+and the CI leg alongside Darwin and Linux on the same commit.

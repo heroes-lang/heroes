@@ -42,16 +42,16 @@ in the numbers that were re-measured.
 
 | | |
 |---|---|
-| **Current milestone** | **M-argv-execution** — open 2026-08-30, ten steps landed; **Windows green is the acceptance criterion and it is not met** |
-| **Last closed** | **M-separate-compilation**, 2026-08-26, tag `m-separate-compilation` · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
-| Milestones closed | 26 of 37 · 26 tags |
+| **Current milestone** | **M-package-layout** — next in the chain, not yet opened |
+| **Last closed** | **M-argv-execution**, 2026-08-31, tag `m-argv-execution` · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
+| Milestones closed | 27 of 37 · 27 tags |
 | The compiler | **48,690 lines** of Heroes in 167 files · the seed **797,015** lines of generated C |
 | The spec | **3592** tokens of a hard 4096 · headroom 504 · runtime ABI **17** |
 | Records | panels **97** · journals 27 · measurements 13 · examples 15 · defects 5 |
 | Waiting on the author | **5 decisions** in `DECIDE.md` · 8 assigned in `SCHEDULED.md` · 278 in `LEARN.md` (never a gate) |
 
-Every number re-measured 2026-08-31. One platform is left: on Windows `heroes run`
-prints the right answer and `heroes test` exits 1 in silence.
+Every number re-measured 2026-08-31 at the close. Windows is a first-class
+leg: the net 1166/0 and the self-tests 92/92 there, all three CI legs green.
 
 ---|---|
 | **Current milestone** | **M-argv-execution** — open 2026-08-30, ten steps landed; **Windows green is the acceptance criterion and it is not met** |
@@ -189,7 +189,7 @@ it), **§1.1** (comprehension is the objective), or **scheduled, no warrant**.
 | 24 | **M-harness-port** | done 2026-08-18 | `m-harness-port` | [023](journal/023-harness-port.md) | the net in Heroes · closure list |
 | 25 | **M-bootstrap-archive** | done 2026-08-19 | `m-bootstrap-archive` | [024](journal/024-bootstrap-archive.md) | the third language dies · v1's last clause (design.md:82) |
 | 26 | **M-separate-compilation** | done 2026-08-26 | `m-separate-compilation` | [025](journal/025-separate-compilation.md) | one `.c` per module, prototypes across TUs, the cache · closure list |
-| 27 | **M-argv-execution** | **OPEN** | — | — | the compiler runs programs by argument list; `sq()` is deleted, the shell stops being the boundary, and Windows goes green · **panels 097 and 098, ratified 2026-08-30** |
+| 27 | **M-argv-execution** | done 2026-08-31 | `m-argv-execution` | [026](journal/026-argv-execution.md) | the compiler runs programs by argument list; `sq()` is deleted, the shell stops being the boundary, and Windows goes green · **panels 097 and 098, ratified 2026-08-30** |
 | 28 | **M-package-layout** | **OPEN** | — | — | `use` paths, the qualifier, where a program's files live · **scheduled by author decision 2026-08-25** |
 | 29 | **M-isolated-threads** | scheduled | — | — | Part 7.13 concurrency · **moved ahead of packages by author instruction, 2026-08-25** |
 | 30 | **M-package-manager** | scheduled | — | — | `heroes add`/`heroes fetch`; bindings instead of a standard library |
