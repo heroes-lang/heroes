@@ -192,3 +192,25 @@ is load-bearing: `cli_toolchain.hero:129-135` builds the runtime cache key with
 `""` on failure. The key becomes `digest("")`. CLAUDE.md §7 names that key as the
 one thing that catches a decoy runtime, since the `HERO_RUNTIME_ABI` stamp cannot.
 A Windows port that stops at the twelve ships that protection void.
+
+## Predictions, scored at M-argv-execution close (2026-08-31)
+
+Measured in the session that writes this, per CLAUDE.md §1.
+
+| judge | prediction | outcome |
+|---|---|---|
+| compiler-engineer | `runtime/parts/os.c` crosses 300 lines if the five operations land there (245 today) | **confirmed by avoidance.** `os.c` is still **245** lines, unchanged, because this sitting's file rule sent the arm elsewhere: `runtime/parts/fs.c` 160, `runtime/parts/run.c` 367, `runtime/parts/dir.c` 227. The prediction is what made the file rule a condition, so it earns the seat its point — the number it named was never allowed to happen. |
+| ffi-pragmatist | `extern "sys/stat.h"` in `selfhost/` puts `#include <sys/stat.h>` into `seed/heroes.c` and kills the Windows leg at the seed build | **honoured by construction.** Condition 9 held: `grep` over `selfhost/` finds `sys/stat.h` only inside test fixtures written as string literals in `emit_ffi_tag.hero` and `emit_ffi_declared.hero` — test *inputs*, not declarations the compiler makes. `seed/heroes.c` gains no POSIX header, and the Windows seed build passes in every run of this milestone. |
+| ffi-pragmatist | any `record … tag stat` naming `st_mode` at any width is `ffi_field_type` on exactly one of {Darwin, glibc} — never zero, never both | **confirmed at the sitting**, and it needed no milestone: `st_mode` is 2 bytes on Darwin against 4 on glibc, so one platform refuses whatever width is written. |
+| compiler-engineer | the proposal as written leaves the Windows leg red, failing at `cc`/`clang` not found rather than at a directory named `-p` | **lapsed, not renewed** (panel 046 R2). It was made about *the briefed proposal* — the narrow FFI-only route — and that route was refused by this sitting's own verdict, so there is no run to score it against. What it was pointing at was answered anyway: `CreateProcess` finds `clang.exe` only when `lpApplicationName` is `NULL` and the documented PATH search runs, which is M-argv-execution step 3 and exists because of this line. |
+
+## The one thing this sitting could not have known
+
+Condition 7 — *"the harness ships in the same milestone or the milestone does not
+claim Windows"* — was written about `sq()` and the wait-status decode. It bought
+something else: `tests/harness/` came into scope, and with it
+`heroes test tests/harness/main.hero`, a suite that had never been run in this
+project's CI or in any session of this milestone. It was **83 of 90** while the
+other two suites were green, and it held the leak this milestone's own leak gate
+existed to catch (step 9, DESIGN-LOG 2026-08-31). A condition written to make a
+port complete found a defect instead.
