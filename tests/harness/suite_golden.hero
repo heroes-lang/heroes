@@ -124,11 +124,11 @@ function run_all(scratch: str, compiler: str, shape: Shape) -> report.Report?
         if expectation.is_err()
             report.keep_failure(@r, label: shape.name + "/" + item.name, detail: "  cannot read " + item.expected)
         else
-            line: str @ shell.sq(compiler) + " " + shape.verb + " " + shell.sq(item.source)
+            line: [str] @ [compiler, shape.verb, item.source]
 
             if shape.flag.len() > 0
-                line @ line + " " + shape.flag
-            said = shell.run(scratch: scratch, command: line)
+                line @ line.push(shape.flag)
+            said = shell.run(scratch: scratch, program: compiler, words: line)
 
             if said.is_err()
                 report.keep_failure(
@@ -202,8 +202,8 @@ function stub(scratch: str, name: str, says: str, on_stderr: bool, ends: i64) ->
 
     if on_stderr
         stream @ " 1>&2"
-    write_file(path: path, text: "#!/bin/sh\nprintf '%s' " + shell.sq(says) + stream + "\nexit " + ends.to_str() + "\n")?
-    made = shell.run(scratch: scratch, command: "chmod +x " + shell.sq(path))?
+    write_file(path: path, text: "#!/bin/sh\nprintf '%s' " + inside_a_script(says) + stream + "\nexit " + ends.to_str() + "\n")?
+    made = shell.run(scratch: scratch, program: "chmod", words: ["chmod", "+x", path])?
 
     if made.code != 0
         return fail("cannot_run", "cannot make " + path + " executable")
@@ -314,8 +314,8 @@ test "a refusal that writes an artifact fails, and so does a suite below its flo
     # Says the right refusal on stderr, exits 1 — and leaves a byte on
     # stdout, which means it half-built something.
     path = scratch + "/stub-leaky.sh"
-    assert !write_file(path: path, text: "#!/bin/sh\nprintf '%s' " + shell.sq(SAID) + " 1>&2\nprintf 'x'\nexit 1\n").is_err()
-    made = shell.run(scratch: scratch, command: "chmod +x " + shell.sq(path))
+    assert !write_file(path: path, text: "#!/bin/sh\nprintf '%s' " + inside_a_script(SAID) + " 1>&2\nprintf 'x'\nexit 1\n").is_err()
+    made = shell.run(scratch: scratch, program: "chmod", words: ["chmod", "+x", path])
     assert !made.is_err()
     leaky = run_all(scratch: scratch, compiler: path, shape: refuse)
     assert !leaky.is_err()
@@ -370,3 +370,20 @@ test "a machine missing the library skips, but a machine missing every library f
     assert got.must().passed == 0
     assert got.must().failed == 1
     assert strings.contains(text: got.must().failures[0], needle: "not testing the refusals")
+
+# Quoting for the CONTENT of a shell script this test writes, which is
+# not the same job `shell.sq` had. That one wrapped a filename on its way
+# to a command line the harness was composing; this wraps a word inside a
+# file that a shell will read later, on its own. The harness composes no
+# command lines any more, so the function went with them — but a script
+# is still a script, and its text still has to be well formed.
+function inside_a_script(text: str) -> str
+    out: str @ "'"
+
+    for ch in text.chars()
+        if ch == "'"
+            out @ out + "'\\''"
+        else
+            out @ out + ch
+
+    return out + "'"

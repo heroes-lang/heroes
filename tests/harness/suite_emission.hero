@@ -172,9 +172,9 @@ function sweep(scratch: str, compiler: str, store: str, programs: [Program], upd
             )
             continue
         seen[one.stored] @ one.label
-        said = shell.run(
+        said = shell.run_guarded(
             scratch: scratch,
-            command: shell.patience() + shell.sq(compiler) + " build " + shell.sq(one.source) + " --emit-c"
+            words: [compiler, "build", one.source, "--emit-c"]
         )
 
         if said.is_err()
@@ -305,8 +305,8 @@ function differences(blessed: str, emitted: str) -> str
 # ./target/debug/heroes would die on the day this harness matters most.
 function emitter(scratch: str, name: str, says: str) -> str?
     path = scratch + "/" + name
-    write_file(path: path, text: "#!/bin/sh\nprintf '%s' " + shell.sq(says) + "\nexit 0\n")?
-    made = shell.run(scratch: scratch, command: "chmod +x " + shell.sq(path))?
+    write_file(path: path, text: "#!/bin/sh\nprintf '%s' " + inside_a_script(says) + "\nexit 0\n")?
+    made = shell.run(scratch: scratch, program: "chmod", words: ["chmod", "+x", path])?
 
     if made.code != 0
         return fail("cannot_run", "cannot make " + path + " executable")
@@ -441,3 +441,20 @@ test "two emissions of different lengths report the lengths rather than a line"
     assert strings.contains(text: grown, needle: "4 bytes blessed")
     shifted = differences(blessed: "a\nb\n", emitted: "a\nz\n")
     assert strings.contains(text: shifted, needle: "line 2:")
+
+# Quoting for the CONTENT of a shell script this test writes, which is
+# not the same job `shell.sq` had. That one wrapped a filename on its way
+# to a command line the harness was composing; this wraps a word inside a
+# file that a shell will read later, on its own. The harness composes no
+# command lines any more, so the function went with them — but a script
+# is still a script, and its text still has to be well formed.
+function inside_a_script(text: str) -> str
+    out: str @ "'"
+
+    for ch in text.chars()
+        if ch == "'"
+            out @ out + "'\\''"
+        else
+            out @ out + ch
+
+    return out + "'"

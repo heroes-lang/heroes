@@ -85,9 +85,9 @@ function run_all(scratch: str, compiler: str) -> report.Report?
 # about — and then must.
 function judge(@r: report.Report, scratch: str, compiler: str, label: str, main: str, erases: bool)
     for verb in ["build", "run"]
-        said = shell.run(
+        said = shell.run_guarded(
             scratch: scratch,
-            command: shell.patience() + shell.sq(compiler) + " " + verb + " " + shell.sq(main)
+            words: [compiler, verb, main]
         )
 
         if said.is_err()

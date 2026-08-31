@@ -264,7 +264,7 @@ function why(got: i64?) -> str
 # failure to run, so the number is read either way and the verdict is this
 # suite's own.
 function maximum_of(scratch: str, compiler: str, path: str) -> i64?
-    said = shell.run(scratch: scratch, command: shell.sq(compiler) + " measure " + shell.sq(path))?
+    said = shell.run(scratch: scratch, program: compiler, words: [compiler, "measure", path])?
 
     if said.code != 0 && said.code != 1
         return fail("cannot_measure", "`measure` exited " + said.code.to_str() + ": " + said.err)
@@ -613,18 +613,18 @@ test "the binding number is read off `measure`, whatever the compiler is"
     assert !shell.mkdir_all(scratch).is_err()
     path = scratch + "/stub-measure.sh"
     assert !write_file(path: path, text: "#!/bin/sh\necho 'spec/heroes-spec.md'\necho '  maximum            9999   the binding number'\n").is_err()
-    assert !shell.run(scratch: scratch, command: "chmod +x " + shell.sq(path)).is_err()
+    assert !shell.run(scratch: scratch, program: "chmod", words: ["chmod", "+x", path]).is_err()
     assert maximum_of(scratch: scratch, compiler: path, path: SPEC).default(-1) == 9999
 
     mute = scratch + "/stub-mute.sh"
     assert !write_file(path: mute, text: "#!/bin/sh\necho 'nothing useful'\n").is_err()
-    assert !shell.run(scratch: scratch, command: "chmod +x " + shell.sq(mute)).is_err()
+    assert !shell.run(scratch: scratch, program: "chmod", words: ["chmod", "+x", mute]).is_err()
     assert maximum_of(scratch: scratch, compiler: mute, path: SPEC).is_err()
 
     # Exit 2 is the tool unable to run, and it must not be read as a number.
     broken = scratch + "/stub-broken.sh"
     assert !write_file(path: broken, text: "#!/bin/sh\necho 'error: no tables' 1>&2\nexit 2\n").is_err()
-    assert !shell.run(scratch: scratch, command: "chmod +x " + shell.sq(broken)).is_err()
+    assert !shell.run(scratch: scratch, program: "chmod", words: ["chmod", "+x", broken]).is_err()
     assert maximum_of(scratch: scratch, compiler: broken, path: SPEC).is_err()
 
 test "a quoted word is read, and an unquoted line is refused"

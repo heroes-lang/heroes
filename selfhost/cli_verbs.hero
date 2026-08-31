@@ -14,265 +14,15 @@
 # because the verdicts are the artifact.
 
 use source
-use modules
-use emit_ffi
 use cli_table
 use cli_argv
 use cli_io
 use cli_compile
 use cli_toolchain
-use cli_units
-use emit_unit
-use emit_members
-use cli_shell
-use cli_libraries
+use cli_process
 use cli_input
 use library_source
-
-record Produced
-    binary: str
-    tests: [str]
-    stopped: bool
-
-# The glue from a translation unit to a binary on disk: the cache
-# directory, the C written beside its object, the runtime object, the
-# link — and on a link failure, THE ONE DECISION §7 names: emit_ffi
-# explains the stderr, and a verdict about the author's extern exits 1
-# on their line where everything else stays internal error at 2.
-function produce(path: str, s: source.Source, options: cli_compile.Options, t: cli_toolchain.Toolchain, version: str) -> Produced?
-    art = cli_compile.to_unit(s, options, version: version)
-
-    if art.is_err()
-        _ = art?
-
-    if art.must().stopped
-        none_t: [str] = []
-        return ok(Produced(binary: "", tests: none_t, stopped: true))
-    module = source.module_of(s.name)
-    level_key: str @ options.level
-    is_tests: bool @ false
-
-    match options.target
-        .tests_build =>
-            level_key @ options.level + "+tests"
-            is_tests @ true
-        .program_build => is_tests @ is_tests
-
-    dir = cli_toolchain.dir_for(
-        t,
-        source_name: s.name,
-        text: s.text,
-        level_key: level_key,
-        sanitize: options.sanitize,
-        search: cli_compile.search_key(headers_from: options.headers_from, library: options.library)
-    )
-
-    if dir.is_err()
-        cli_io.eprint(text: "error: cannot create the build directory")
-        return fail("failed", "no build directory")
-    c_file = dir.must() + "/" + module + ".c"
-
-    # Written only where it is compiled: the fused unit is the test
-    # binary's, and a program build writes one .c per module instead
-    # (cli_units.tu_object). It used to be written on both paths, which
-    # put 785,323 dead lines on disk for every build of the compiler.
-    if is_tests
-        written = write_file(path: c_file, text: art.must().c)
-
-        if written.is_err()
-            cli_io.eprint(text: "error: cannot write " + c_file)
-            return fail("failed", "cannot write the unit")
-    object = cli_toolchain.runtime_object(t, level: options.level, sanitize: options.sanitize)
-
-    if object.is_err()
-        cli_io.eprint(text: "internal error: the runtime did not compile")
-        return fail("failed", "no runtime object")
-    binary: str @ dir.must() + "/" + module
-
-    if !options.output.is_err()
-        binary @ options.output.must()
-
-    # Asked before clang runs, so a package that is not installed is
-    # reported as itself rather than as a header clang could not find.
-    package_flags = cli_libraries.resolve_packages(art.must().packages, build_dir: t.build)
-
-    if package_flags.is_err()
-        # **A package failure is the AUTHOR's, so it goes through the same
-        # ffi mapping a clang failure does.** The bootstrap asks
-        # `resolve_packages` from INSIDE toolchain::link, so its marker
-        # text arrives at `explain` with everything else; the port asks it
-        # here, one call earlier, and the message used to be printed raw.
-        # Measured 2026-08-18 by tests/harness on
-        # `unsupported/ffi-records-only-group-cannot-claim-its-package`:
-        # the terminal got `heroes-ffi-package ...` and four bare lines —
-        # no code, no `at file:line:col`, no source snippet, no notes,
-        # which is every part of §4.17 at once, in the one class where the
-        # compiler is allowed to blame the author's own `extern` (§7).
-        message = failure_text(package_flags)
-        theirs = emit_ffi.explain(
-            message,
-            s,
-            art.must().tree,
-            art.must().decls,
-            art.must().checked,
-            art.must().program,
-            word_bits: cli_io.word_bits()
-        )
-
-        if theirs.len() > 0
-            _ = cli_compile.stage(theirs, s)
-            return fail("diagnostics", "the package could not answer")
-        cli_io.eprint(text: message)
-        return fail("diagnostics", "the package could not answer")
-    names: [str] @ []
-
-    for name in art.must().link
-        if !cli_libraries.in_the_c_runtime(library: name)
-            names @ names.push(name)
-
-    # The source's own directory, so extern "mylib.h" finds a header
-    # beside the .hero file — the unit lives under build/<hash>/ and
-    # an angled include never searches the source's directory. An
-    # empty parent is the current directory, not the absence of one.
-    source_dir: str @ modules.open_directory(path)
-
-    if source_dir.len() == 0
-        source_dir @ "."
-    linked: ()? @ ok()
-
-    if is_tests
-        # A test binary keeps the fused unit: `heroes test` compiles
-        # once and runs per block, and the fused path is the artifact
-        # path the blessed emissions pin.
-        linked @ cli_toolchain.link(
-            t,
-            c_file: c_file,
-            object: object.must(),
-            binary: binary,
-            level: options.level,
-            sanitize: options.sanitize,
-            source_dir: source_dir,
-            search_include: options.headers_from,
-            search_library: options.library,
-            package_flags: package_flags.must(),
-            link_names: names
-        )
-    else
-
-        # One .c per module (panel 093): each TU compiled to its own
-        # cached object, every dirty TU before any verdict (R5), one
-        # link over all of them re-run every build.
-        root = source.module_of(s.name)
-        objects: [str] @ [object.must()]
-        stopped: ()? @ ok()
-
-        # The whole-program tables, built once for the whole build
-        # rather than once per TU. They are functions of the program,
-        # so 157 modules used to buy 157 identical answers — and the
-        # arena walk and the content hashing behind them is what made
-        # the per-module self-build take longer than the fused one.
-        whole = emit_members.whole_of(art.must().program, c: art.must().checked, s: s, decls: art.must().decls)
-
-        # One build's answers about files on disk. Every TU asks whether
-        # the headers it read still say the same thing, and 157 of them
-        # share almost all of those headers — so the map is threaded
-        # through the loop rather than rebuilt per unit.
-        memo: {str: str} @ {}
-
-        for component in cli_units.components(s)
-            tu_text = emit_unit.unit(
-                module: component,
-                p: art.must().program,
-                c: art.must().checked,
-                s: s,
-                decls: art.must().decls,
-                version: version,
-                is_root: component == root,
-                whole: whole
-            )
-            made = cli_units.tu_object(
-                t,
-                module: component,
-                tu_text: tu_text,
-                level: options.level,
-                sanitize: options.sanitize,
-                search: cli_compile.search_key(headers_from: options.headers_from, library: options.library),
-                package_flags: package_flags.must(),
-                source_dir: source_dir,
-                search_include: options.headers_from,
-                @memo
-            )
-
-            if made.is_err()
-                if stopped.is_err()
-                    stopped @ stopped
-                else
-                    stopped @ carry_failure(made)
-            else
-                objects @ objects.push(made.must())
-
-        if stopped.is_err()
-            linked @ stopped
-        else
-            linked @ cli_units.link_objects(
-                t,
-                objects: objects,
-                binary: binary,
-                level: options.level,
-                sanitize: options.sanitize,
-                search_include: options.headers_from,
-                search_library: options.library,
-                package_flags: package_flags.must(),
-                link_names: names
-            )
-
-    if linked.is_err()
-        # Some clang failures are the AUTHOR's, and the ffi mapping is
-        # the only place that decides which (panel 036 rider 3). The
-        # pipeline pieces ride in the Artifact for exactly this call.
-        message = unit_failure_text(linked)
-        theirs = emit_ffi.explain(
-            message,
-            s,
-            art.must().tree,
-            art.must().decls,
-            art.must().checked,
-            art.must().program,
-            word_bits: cli_io.word_bits()
-        )
-
-        if theirs.len() > 0
-            _ = cli_compile.stage(theirs, s)
-            return fail("diagnostics", "the author's extern disagrees with the header")
-        cli_io.eprint(text: "internal error: " + message)
-
-        if is_tests
-            # The per-module branch carries the failing TU's own path
-            # inside the message; only the fused test build still needs
-            # this line, and pointing at the fused unit after a TU
-            # failure would name a file clang never refused.
-            cli_io.eprint(text: "the generated C is at " + c_file)
-        return fail("failed", "clang refused the generated C")
-    return ok(Produced(binary: binary, tests: art.must().tests, stopped: false))
-
-# The failure's message, out of a fallible that is known to be err.
-function failure_text(failed: [str]?) -> str
-    match failed
-        .ok    => return ""
-        .err e => return e.msg
-
-function unit_failure_text(failed: ()?) -> str
-    match failed
-        .ok    => return ""
-        .err e => return e.msg
-
-# A TU object's failure, re-shaped for the link result the caller
-# reads: same code (the exit), same message (clang's words, which the
-# ffi mapping reads).
-function carry_failure(failed: str?) -> ()?
-    match failed
-        .ok    => return ok()
-        .err e => return fail(e.code, e.msg)
+use cli_produce
 
 function run_build(path: str, s: source.Source, inv: cli_argv.Invocation, t: cli_toolchain.Toolchain, version: str) -> cli_table.Exit
     if cli_argv.has(inv, spelling: "--dump-ir") && cli_argv.has(inv, spelling: "--emit-c")
@@ -292,7 +42,7 @@ function run_build(path: str, s: source.Source, inv: cli_argv.Invocation, t: cli
         headers_from: cli_argv.values_of(inv, spelling: "--include"),
         library: cli_argv.values_of(inv, spelling: "--library")
     )
-    made = produce(path: path, s: s, options: options, t: t, version: version)
+    made = cli_produce.produce(path: path, s: s, options: options, t: t, version: version)
 
     if made.is_err()
         return exit_of(made)
@@ -317,7 +67,7 @@ function run_run(path: str, s: source.Source, inv: cli_argv.Invocation, t: cli_t
         headers_from: cli_argv.values_of(inv, spelling: "--include"),
         library: cli_argv.values_of(inv, spelling: "--library")
     )
-    made = produce(path: path, s: s, options: options, t: t, version: version)
+    made = cli_produce.produce(path: path, s: s, options: options, t: t, version: version)
 
     if made.is_err()
         return exit_of(made)
@@ -327,27 +77,29 @@ function run_run(path: str, s: source.Source, inv: cli_argv.Invocation, t: cli_t
 
     # No line of our own before the program's output: stdout is the
     # program's from here.
-    line: str @ cli_shell.sq(made.must().binary)
+    words: [str] @ [made.must().binary]
 
     for arg in inv.program_args
-        line @ line + " " + cli_shell.sq(arg)
+        words @ words.push(arg)
 
-    raw = cli_shell.shell(command: line).to_i64().must()
+    # The streams are INHERITED: this program's output is the point of
+    # the command, so it goes where the compiler's own output goes.
+    ran = cli_process.run(program: made.must().binary, words: words, out: "", err: "")
 
-    if raw < 0
+    if !ran.started
         cli_io.eprint(text: "error: cannot execute " + made.must().binary)
         return .failed_exit
 
-    # system() answers in waitpid's format: the exit code rides the
-    # high byte, a signal death the low seven bits. 128+signal is the
-    # convention every shell prints (panel 070: the hardcoded 134
-    # reported a SIGSEGV as an abort, and the instrument hid the
-    # defect from the person holding it).
-    sig = raw % 128
-
-    if sig != 0 && raw % 256 != 0
-        return .program_exit(status: 128 + sig)
-    return .program_exit(status: raw / 256)
+    # **The decode used to live here and it is the runtime's now.** It
+    # read waitpid's format by hand — the exit code in the high byte, a
+    # signal in the low seven bits — which is a premise about the world
+    # rather than a fact about the value, and it was wrong on Windows,
+    # where `system()` answers the exit code directly. 128+signal is
+    # still the number a caller sees (panel 070: a hardcoded 134 once
+    # reported a SIGSEGV as an abort, and the instrument hid the defect
+    # from the person holding it), but the runtime computes it now, on
+    # the platform that knows.
+    return .program_exit(status: ran.code)
 
 function run_test(path: str, s: source.Source, inv: cli_argv.Invocation, t: cli_toolchain.Toolchain, version: str) -> cli_table.Exit
     level = cli_compile.level_from(inv, default_level: "-O0")
@@ -365,7 +117,7 @@ function run_test(path: str, s: source.Source, inv: cli_argv.Invocation, t: cli_
         headers_from: cli_argv.values_of(inv, spelling: "--include"),
         library: cli_argv.values_of(inv, spelling: "--library")
     )
-    made = produce(path: path, s: s, options: options, t: t, version: version)
+    made = cli_produce.produce(path: path, s: s, options: options, t: t, version: version)
 
     if made.is_err()
         return exit_of(made)
@@ -381,9 +133,14 @@ function run_test(path: str, s: source.Source, inv: cli_argv.Invocation, t: cli_
     index: i64 @ 0
 
     for title in titles
-        raw = cli_shell.shell(command: cli_shell.sq(made.must().binary) + " " + index.to_str()).to_i64().must()
+        one = cli_process.run(
+            program: made.must().binary,
+            words: [made.must().binary, index.to_str()],
+            out: "",
+            err: ""
+        )
 
-        if raw == 0
+        if one.started && one.code == 0
             print("ok   " + title)
         else
             print("FAIL " + title)
@@ -405,7 +162,7 @@ function run_test(path: str, s: source.Source, inv: cli_argv.Invocation, t: cli_
     # worked.
     return .diagnostics_exit
 
-function exit_of(failed: Produced?) -> cli_table.Exit
+function exit_of(failed: cli_produce.Produced?) -> cli_table.Exit
     match failed
         .ok => return .ok_exit
         .err e =>

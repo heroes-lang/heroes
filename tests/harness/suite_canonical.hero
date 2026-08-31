@@ -99,7 +99,7 @@ function run_all(scratch: str, compiler: str) -> report.Report?
             if text.is_err()
                 refused @ refused.push("    " + path + ": cannot read it")
                 continue
-            run = shell.run(scratch: scratch, command: shell.sq(compiler) + " fmt " + shell.sq(path))?
+            run = shell.run(scratch: scratch, program: compiler, words: [compiler, "fmt", path])?
 
             # Exit 2 is the formatter accusing ITSELF (§7): its output did
             # not parse, was not a fixpoint, or held a different tree.

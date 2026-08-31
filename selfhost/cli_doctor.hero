@@ -13,22 +13,36 @@
 use cli_table
 use cli_io
 use cli_toolchain
-use cli_shell
+use cli_process
 
 record Check
     name: str
     ok: bool
     detail: str
 
-# The first line of what a command said, or absent when it could not
-# run — the port's run_capture, through the shell because the language
-# has no process capture of its own.
-function capture(command: str, build_dir: str) -> str?
+# The first line of what a program said, or absent when it could not
+# run.
+#
+# **It took a command LINE until M-argv-execution and takes a word list
+# now**, which is what lets it answer a question it could not answer
+# before: `system()` said 127 both for a program that is not installed
+# and for one that ran and exited 127, so "no clang on this machine"
+# and "clang is angry" were the same reply. `started` separates them,
+# and the caller is the one command whose whole job is to tell an
+# author which of the two they are looking at.
+#
+# stderr is discarded rather than shown: a `--version` probe that
+# complains is a probe that failed, and its complaint is noise on a
+# report about the machine.
+function capture(program: str, words: [str], build_dir: str) -> str?
     out_path = build_dir + "/doctor-out.txt"
     _ = cli_toolchain.mkdir_all(build_dir)
-    status = cli_shell.shell(command: command + " > " + cli_shell.sq(out_path) + " 2>/dev/null")
+    ran = cli_process.run(program: program, words: words, out: out_path, err: cli_process.discard())
 
-    if status != 0
+    if !ran.started
+        return fail("none", "the program is not on this machine")
+
+    if ran.code != 0
         return fail("none", "the command could not run")
     said = read_file(out_path)
 
@@ -69,23 +83,23 @@ function trim_ends(text: str) -> str
 # the machine in hand, not a premise about which platforms exist.
 function checks(build_dir: str, runtime_hint: str) -> [Check]
     out: [Check] @ []
-    clang = capture(command: "clang --version", build_dir: build_dir)
+    clang = capture(program: "clang", words: ["clang", "--version"], build_dir: build_dir)
     out @ out.push(
         Check(name: "clang", ok: !clang.is_err(), detail: clang.default("not found — install a C toolchain"))
     )
-    system_name = capture(command: "uname -s", build_dir: build_dir).default("unknown")
+    system_name = capture(program: "uname", words: ["uname", "-s"], build_dir: build_dir).default("unknown")
 
     if system_name == "Darwin"
-        clt = capture(command: "xcode-select -p", build_dir: build_dir)
+        clt = capture(program: "xcode-select", words: ["xcode-select", "-p"], build_dir: build_dir)
         out @ out.push(
             Check(name: "xcode CLT", ok: !clt.is_err(), detail: clt.default("not found — run `xcode-select --install`"))
         )
     else
-        cc = capture(command: "cc --version", build_dir: build_dir)
+        cc = capture(program: "cc", words: ["cc", "--version"], build_dir: build_dir)
         out @ out.push(
             Check(name: "cc", ok: !cc.is_err(), detail: cc.default("not found — install a C toolchain (build-essential, base-devel, …)"))
         )
-    arch = capture(command: "uname -m", build_dir: build_dir).default("unknown")
+    arch = capture(program: "uname", words: ["uname", "-m"], build_dir: build_dir).default("unknown")
     out @ out.push(Check(name: "arch", ok: true, detail: arch))
 
     # The runtime — found by searching, so doctor is the place that
@@ -106,7 +120,7 @@ function checks(build_dir: str, runtime_hint: str) -> [Check]
 
         if !write_file(path: probe, text: "ok").is_err() && !read_file(probe).is_err()
             cache_ok @ true
-            _ = cli_shell.shell(command: "rm -f " + cli_shell.sq(probe))
+            _ = cli_process.remove_file(probe)
     detail: str @ "cannot write to " + build_dir + "/"
 
     if cache_ok

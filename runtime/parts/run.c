@@ -74,19 +74,29 @@ void hero_run_arg(HeroStr word) {
     hero_run_count += 1;
 }
 
-/* Where a stream goes when the caller does not want it. "Discard" is spelled
+/* Where a stream goes when the caller wants it thrown away. The word is spelled
  * here and nowhere else: `selfhost/` never writes `/dev/null`, which is a
- * platform word panel 097 keeps out of the compiler (condition 7). */
+ * platform word panel 097 keeps out of the compiler (condition 7). A caller
+ * that wants to discard asks `hero_run_discard_path()` for the local spelling
+ * and passes it back as an ordinary path.
+ *
+ * **An empty path means INHERIT, and that is the safer default of the two.**
+ * `heroes run` hands the program the terminal it was called from: its output is
+ * the point of the command, and a stream that vanishes by default would be a
+ * silence nobody asked for. Discarding is the exception and says so at the call
+ * site. */
 #if defined(_WIN32)
 #define HERO_RUN_DISCARD "NUL"
 #else
 #define HERO_RUN_DISCARD "/dev/null"
 #endif
 
-/* An empty path means discard; any other path is created or truncated. */
-static const char *hero_run_target(const char *path) {
-    if (path == NULL || path[0] == '\0') return HERO_RUN_DISCARD;
-    return path;
+HeroStr hero_run_discard_path(void) {
+    return hero_str_from_bytes(HERO_RUN_DISCARD, (int64_t)strlen(HERO_RUN_DISCARD));
+}
+
+static int hero_run_inherits(const char *path) {
+    return path == NULL || path[0] == '\0';
 }
 
 #if defined(_WIN32)
@@ -165,18 +175,30 @@ static HeroStr hero_run_win_command_line(void) {
  * down the pipe before dying. Never returns. */
 static void hero_run_child(const char *program, int report,
                            const char *out_path, const char *err_path) {
-    int out = open(hero_run_target(out_path), O_WRONLY | O_CREAT | O_TRUNC, 0644);
-    int err = open(hero_run_target(err_path), O_WRONLY | O_CREAT | O_TRUNC, 0644);
-    if (out < 0 || err < 0) {
-        int failure = errno;
-        ssize_t ignored = write(report, &failure, sizeof failure);
-        (void)ignored;
-        _exit(126);
+    /* An empty path leaves the stream alone, so the child writes to whatever
+     * this process was writing to. */
+    if (!hero_run_inherits(out_path)) {
+        int out = open(out_path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+        if (out < 0) {
+            int failure = errno;
+            ssize_t ignored = write(report, &failure, sizeof failure);
+            (void)ignored;
+            _exit(126);
+        }
+        dup2(out, 1);
+        if (out > 2) close(out);
     }
-    dup2(out, 1);
-    dup2(err, 2);
-    if (out > 2) close(out);
-    if (err > 2) close(err);
+    if (!hero_run_inherits(err_path)) {
+        int err = open(err_path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+        if (err < 0) {
+            int failure = errno;
+            ssize_t ignored = write(report, &failure, sizeof failure);
+            (void)ignored;
+            _exit(126);
+        }
+        dup2(err, 2);
+        if (err > 2) close(err);
+    }
 
     execvp(program, hero_run_words);
 
@@ -217,13 +239,17 @@ int64_t hero_run_go(const char *program, const char *out_path,
     inherit.lpSecurityDescriptor = NULL;
     inherit.bInheritHandle = TRUE;
 
-    HANDLE out = CreateFileA(hero_run_target(out_path), GENERIC_WRITE, FILE_SHARE_READ,
-                             &inherit, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-    HANDLE err = CreateFileA(hero_run_target(err_path), GENERIC_WRITE, FILE_SHARE_READ,
-                             &inherit, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    HANDLE out = hero_run_inherits(out_path)
+        ? GetStdHandle(STD_OUTPUT_HANDLE)
+        : CreateFileA(out_path, GENERIC_WRITE, FILE_SHARE_READ, &inherit,
+                      CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    HANDLE err = hero_run_inherits(err_path)
+        ? GetStdHandle(STD_ERROR_HANDLE)
+        : CreateFileA(err_path, GENERIC_WRITE, FILE_SHARE_READ, &inherit,
+                      CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
     if (out == INVALID_HANDLE_VALUE || err == INVALID_HANDLE_VALUE) {
-        if (out != INVALID_HANDLE_VALUE) CloseHandle(out);
-        if (err != INVALID_HANDLE_VALUE) CloseHandle(err);
+        if (out != INVALID_HANDLE_VALUE && !hero_run_inherits(out_path)) CloseHandle(out);
+        if (err != INVALID_HANDLE_VALUE && !hero_run_inherits(err_path)) CloseHandle(err);
         hero_str_decref(line);
         *status = HERO_OS_FAILED;
         return -1;
@@ -242,8 +268,8 @@ int64_t hero_run_go(const char *program, const char *out_path,
 
     BOOL started = CreateProcessA(program, (char *)line.ptr, NULL, NULL, TRUE,
                                   0, NULL, NULL, &startup, &child);
-    CloseHandle(out);
-    CloseHandle(err);
+    if (!hero_run_inherits(out_path)) CloseHandle(out);
+    if (!hero_run_inherits(err_path)) CloseHandle(err);
     hero_str_decref(line);
     if (!started) {
         *status = HERO_OS_NOT_FOUND;

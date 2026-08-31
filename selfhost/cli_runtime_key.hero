@@ -1,0 +1,81 @@
+# What the runtime is made of, as the text its cache key is taken from.
+#
+# Split out of `cli_toolchain` at M-argv-execution, along a seam that
+# names a concern rather than at a line count: the toolchain owns WHAT
+# to run and WHERE the artifacts live, and this owns the one question
+# *what exactly is the runtime this build is about to link*. That
+# question grew its own answer when the shell went away — the old one
+# was a `cat` glob and a single line, the new one reads `runtime.c` and
+# follows what it includes — and a concern that grows a body of its own
+# is a concern that wants a file.
+#
+# It depends on nothing in `cli_toolchain`, which is why the split is
+# possible at all: Heroes refuses module cycles whatever the edge
+# carries, so a seam only exists where the arrows already point one way.
+
+# The runtime's whole contents — EVERY file, not the two entry points:
+# runtime.c is assembled from parts/, so hashing only the file clang
+# is handed would let a part be edited with the cached object still
+# used.
+#
+# **THE FILE LIST COMES FROM `runtime.c` ITSELF, NOT FROM A GLOB**
+# (panel 098 condition 4). It used to be `cat runtime/*.c … 2>/dev/null`
+# through a shell, which has three problems and only one of them is
+# Windows. There is no glob without a shell; the redirect swallowed the
+# status and the caller discarded it with `_ =`, so an unreadable
+# runtime produced `digest("")` in silence — and CLAUDE.md §7 names
+# that digest as the only guard against a decoy runtime, since the ABI
+# stamp cannot see one. Reading `runtime.c` and following its
+# `#include "…"` lines answers all three: no shell, no `readdir` order
+# to depend on, and a failure that is a failure.
+#
+# It is also exact rather than approximate. `runtime.c` names all
+# sixteen other files — two headers and fourteen parts — so the set it
+# yields IS the set the old glob collected, and a part that stops being
+# included stops being compiled, which is the property the key is
+# supposed to track.
+function runtime_text(runtime: str) -> str?
+    entry = runtime + "/runtime.c"
+    root = read_file(entry)?
+    gathered: str @ root
+
+    for name in included_names(text: root)
+        gathered @ gathered + read_file(runtime + "/" + name)?
+
+    return ok(gathered)
+
+# Every `#include "…"` target in the text, in the order written. The
+# quoted form only: `<stdio.h>` is the platform's and is not ours to
+# hash.
+#
+# Scanned by hand rather than through a split-and-search helper,
+# because this module is the toolchain's and may not `use` a text
+# module that would `use` it back — the language refuses module cycles
+# whatever the edge carries.
+function included_names(text: str) -> [str]
+    found: [str] @ []
+    head = "#include \""
+    cs = text.chars()
+    at: i64 @ 0
+
+    while at < cs.len()
+        stop: i64 @ at
+
+        while stop < cs.len() && cs[stop] != "\n"
+            stop @ stop + 1
+
+        if stop - at > head.len()
+            line = cs.slice(from: at, to: stop).join("")
+
+            if line.slice(from: 0, to: head.len()) == head
+                shut: i64 @ head.len()
+
+                while shut < line.len() && line.slice(from: shut, to: shut + 1) != "\""
+                    shut @ shut + 1
+
+                if shut < line.len()
+                    found @ found.push(line.slice(from: head.len(), to: shut))
+
+        at @ stop + 1
+
+    return found

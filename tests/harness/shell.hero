@@ -35,74 +35,77 @@
 
 use strings
 
+extern "hero_os.h"
+    function hero_run_reset()
+    function hero_run_arg(word: str)
+    function hero_run_go(program: cstr, out_path: cstr, err_path: cstr, @status: i64) -> i64
+    function hero_run_discard_path() -> str
+    function hero_fs_exists(path: cstr) -> i64
+    function hero_fs_is_directory(path: cstr) -> i64
+    function hero_fs_mkdir_all(path: cstr) -> i64
+    function hero_fs_remove(path: cstr) -> i64
+    function hero_fs_newer_than(path: cstr, reference: cstr) -> i64
+    function hero_dir_scan(root: cstr, want: i64, recursive: i64) -> i64
+    function hero_dir_at(index: i64) -> str
+    function hero_dir_release()
+    function hero_dir_remove_tree(path: cstr) -> i64
+
 extern "stdlib.h"
-    function system(command: cstr) -> i32
     function getenv(name: cstr) -> cstr
 
-# One finished command: what a shell would report, and both streams.
+# What `hero_dir_scan` is looking for.
+constant DIR_FILES: i64
+    0
+
+constant DIR_DIRECTORIES: i64
+    1
+
+# One finished program: its exit status, and both streams.
+#
+# `started` is separate from `code` and must be read first. A program
+# that never ran has no exit code, and the number that used to stand in
+# for one — 127 — is also a code a program can legitimately exit with.
 record Run
     code: i64
     out: str
     err: str
+    started: bool
 
-# One argv word, quoted for the POSIX shell — single quotes, with every
-# embedded quote spelled '\''. Same function as
-# selfhost/cli_toolchain.hero:61, and it is here rather than shared
-# because a module is bound by file (spec:7) and this program is not that
-# one.
-function sq(text: str) -> str
-    out: str @ "'"
-
-    for ch in text.chars()
-        if ch == "'"
-            out @ out + "'\\''"
-        else
-            out @ out + ch
-
-    return out + "'"
-
-# waitpid's answer, as the number a shell prints.
-function status_of(raw: i64) -> i64
-    signal = raw % 128
-
-    if signal != 0 && raw % 256 != 0
-        return 128 + signal
-    return raw / 256
-
-# Run one command line with both streams captured to files under
-# `scratch`, and read them back.
+# Run `program` with `words` (its own name first), both streams captured
+# to files under `scratch`, and read them back.
 #
-# The two streams are separate files because that is the distinction the
+# **THIS TOOK A COMMAND LINE UNTIL M-argv-execution**, and the comment
+# that stood here explained how to wrap it in a subshell so a redirection
+# would bind to the whole line, and how to silence the shell's own
+# announcements so that thirteen deliberately-aborting cases would not
+# print thirteen lines looking like failures. All of that was the cost of
+# handing a sentence to a parser. There is no sentence now: the words go
+# to the operating system as a list, the streams are files this call
+# opens, and a shell has no opinion about any of it.
+#
+# The two streams stay separate files because that is the distinction the
 # goldens are about: `check/` diffs stderr while `run/` diffs stdout, and
 # a harness that merged them could not tell a diagnostic from a program's
 # output.
-function run(scratch: str, command: str) -> Run?
+function run(scratch: str, program: str, words: [str]) -> Run?
     out_path = scratch + "/stdout"
     err_path = scratch + "/stderr"
+    hero_run_reset()
 
-    # THE PARENTHESES ARE THE WHOLE FUNCTION, and they were missing at
-    # first. A redirection binds to ONE command, so `a; b > f` sends only
-    # b's output to f, and `cd d && touch x > f` resolves f INSIDE d. Both
-    # showed up the moment this ran: a captured stream arrived on the
-    # terminal instead of in the file, and a listing command wrote its
-    # capture into the directory it had just entered ("No such file or
-    # directory", exit 1). The subshell takes the redirection for the
-    # whole line, in the working directory the harness started in, and
-    # `exit 3` inside it still answers 3.
-    # **`exec 2>/dev/null` silences the SHELL, not the program.** A child
-    # killed by a signal makes sh announce it — `Abort trap: 6` — on its
-    # own stderr, which is the harness's, and `run/` has thirteen cases
-    # whose whole point is to abort: a green run printed thirteen lines
-    # that looked like failures. Measured: with the guard, stdout and
-    # stderr of the program are byte-identical, the status is still 134,
-    # and a command that does not exist still answers 127. The shell's own
-    # words are the only thing lost, and the harness reports the status
-    # rather than those words.
-    line = "exec 2>/dev/null; ( " + command + " ) > " + sq(out_path) + " 2> " + sq(err_path)
-    raw = system(command: line.cstr()).to_i64().must()
+    for word in words
+        hero_run_arg(word: word)
 
-    if raw < 0
-        return fail("cannot_run", "the shell refused to run: " + command)
+    status: i64 @ 0
+    code = hero_run_go(
+        program: program.cstr(),
+        out_path: out_path.cstr(),
+        err_path: err_path.cstr(),
+        @status
+    )
+    hero_run_reset()
+
+    if status != 0
+        return ok(Run(code: -1, out: "", err: "", started: false))
     out = read_file(out_path)
 
     if out.is_err()
@@ -111,45 +114,57 @@ function run(scratch: str, command: str) -> Run?
 
     if err.is_err()
         return fail("cannot_run", "cannot read the captured stderr at " + err_path)
-    return ok(Run(code: status_of(raw: raw), out: out.must(), err: err.must()))
+    return ok(Run(code: code, out: out.must(), err: err.must(), started: true))
+
+# The names `hero_dir_scan` just found, as a list — and the listing is
+# let go on the way out. The runtime holds those names in memory it
+# allocated, so a caller that reads them and walks away leaks; the leak
+# gate turns that into a panic at exit rather than a silence, which is
+# how this line came to be written at all.
+function scanned(count: i64) -> [str]
+    found: [str] @ []
+    at: i64 @ 0
+
+    while at < count
+        found @ found.push(hero_dir_at(index: at))
+        at @ at + 1
+
+    hero_dir_release()
+
+    return found
 
 # Every file directly inside `dir`, sorted, whatever its name holds.
+#
+# **The newline in a filename is why this used to run `find -print0`.**
+# Panel 085 R4 measured `ls > file` + `read_file` splitting such a name
+# into two entries at exit 0 — silently wrong — and named `readdir` as one
+# of the two sound routes. The runtime takes that route now: a name never
+# becomes text on its way here, so there is no separator to be confused
+# by, not even the NUL the `-print0` trick was borrowing.
 function list_entries(scratch: str, dir: str) -> [str]?
-    listing = scratch + "/listing"
-    line = "find " + sq(dir) + " -maxdepth 1 -type f -print0 > " + sq(listing)
-    raw = system(command: line.cstr()).to_i64().must()
+    _ = scratch
+    found = hero_dir_scan(root: dir.cstr(), want: DIR_FILES, recursive: 0)
 
-    if status_of(raw: raw) != 0
-        return fail("cannot_walk", "cannot list " + dir + " (find exited " + status_of(raw: raw).to_str() + ")")
-    text = read_file(listing)
-
-    if text.is_err()
-        return fail("cannot_walk", "cannot read the listing at " + listing)
+    if found < 0
+        return fail("cannot_walk", "cannot list " + dir)
     entries: [str] @ []
 
-    for piece in strings.split_on(text: text.must(), byte: 0)
-        if piece.len() > 0
-            entries @ entries.push(piece)
+    for name in scanned(count: found)
+        entries @ entries.push(dir + "/" + name)
 
     return ok(entries.sort())
 
 # Every directory directly inside `dir`, sorted, `dir` itself excluded.
 function list_directories(scratch: str, dir: str) -> [str]?
-    listing = scratch + "/listing-dirs"
-    line = "find " + sq(dir) + " -maxdepth 1 -type d -print0 > " + sq(listing)
-    raw = system(command: line.cstr()).to_i64().must()
+    _ = scratch
+    found = hero_dir_scan(root: dir.cstr(), want: DIR_DIRECTORIES, recursive: 0)
 
-    if status_of(raw: raw) != 0
+    if found < 0
         return fail("cannot_walk", "cannot list the directories in " + dir)
-    text = read_file(listing)
-
-    if text.is_err()
-        return fail("cannot_walk", "cannot read the listing at " + listing)
     entries: [str] @ []
 
-    for piece in strings.split_on(text: text.must(), byte: 0)
-        if piece.len() > 0 && piece != dir
-            entries @ entries.push(piece)
+    for name in scanned(count: found)
+        entries @ entries.push(dir + "/" + name)
 
     return ok(entries.sort())
 
@@ -178,21 +193,23 @@ function list_directories(scratch: str, dir: str) -> [str]?
 # Paths come back WITHOUT a leading `./`, unlike `list_tree`.
 function project_files(scratch: str) -> [str]?
     listing = scratch + "/listing-project"
-    line = "git ls-files --cached --others --exclude-standard -z > " + sq(listing)
-    raw = system(command: line.cstr()).to_i64().must()
+    ran = run(scratch: scratch, program: "git", words: ["git", "ls-files", "--cached", "--others", "--exclude-standard", "-z"])?
 
-    if status_of(raw: raw) != 0
+    if !ran.started
+        return fail(
+            "cannot_walk",
+            "git is not on this machine, and the record checks ask git what belongs to this project"
+        )
+
+    if ran.code != 0
         return fail(
             "cannot_walk",
             "`git ls-files` could not list this project's files — the record checks ask git what belongs here, and there is no sound fallback: a `find` reported a gitignored TLS key as a milestone identifier, which is why this function exists"
         )
-    text = read_file(listing)
-
-    if text.is_err()
-        return fail("cannot_walk", "cannot read the listing at " + listing)
+    _ = write_file(path: listing, text: ran.out)
     entries: [str] @ []
 
-    for piece in strings.split_on(text: text.must(), byte: 0)
+    for piece in strings.split_on(text: ran.out, byte: 0)
         if piece.len() > 0
             entries @ entries.push(piece)
 
@@ -206,28 +223,46 @@ function project_files(scratch: str) -> [str]?
 # throw 99.7% of it away would be a listing measured in megabytes for an
 # answer measured in kilobytes.
 function list_tree(scratch: str, dir: str, skip: [str]) -> [str]?
-    listing = scratch + "/listing-tree"
-    line: str @ "find " + sq(dir) + " -type f"
+    _ = scratch
+    found = walk_into(dir: dir, skip: skip)?
 
-    for name in skip
-        line @ line + " -not -path " + sq(dir + "/" + name + "/*") + " -not -path " + sq(dir + "/" + name)
+    return ok(found.sort())
 
-    line @ line + " -print0 > " + sq(listing)
-    raw = system(command: line.cstr()).to_i64().must()
+# One level, then down into the directories that survive the prune.
+#
+# **The prune happens before the descent, and that is a measurement and
+# not a style.** This repository holds 343,010 files, of which 1,186 are
+# outside `target/`, `build/` and `.git/`. Walking everything and
+# filtering afterwards would read megabytes to answer in kilobytes,
+# which is what `find -not -path` was buying and what this has to keep.
+function walk_into(dir: str, skip: [str]) -> [str]?
+    files = hero_dir_scan(root: dir.cstr(), want: DIR_FILES, recursive: 0)
 
-    if status_of(raw: raw) != 0
-        return fail("cannot_walk", "cannot walk " + dir)
-    text = read_file(listing)
+    if files < 0
+        return fail("cannot_walk", "cannot list " + dir)
+    found: [str] @ []
 
-    if text.is_err()
-        return fail("cannot_walk", "cannot read the listing at " + listing)
-    entries: [str] @ []
+    for name in scanned(count: files)
+        found @ found.push(dir + "/" + name)
 
-    for piece in strings.split_on(text: text.must(), byte: 0)
-        if piece.len() > 0
-            entries @ entries.push(piece)
+    dirs = hero_dir_scan(root: dir.cstr(), want: DIR_DIRECTORIES, recursive: 0)
 
-    return ok(entries.sort())
+    if dirs < 0
+        return fail("cannot_walk", "cannot list the directories in " + dir)
+
+    for name in scanned(count: dirs)
+        if !skipped(name: name, skip: skip)
+            for deeper in walk_into(dir: dir + "/" + name, skip: skip)?
+                found @ found.push(deeper)
+
+    return ok(found)
+
+function skipped(name: str, skip: [str]) -> bool
+    for one in skip
+        if one == name
+            return true
+
+    return false
 
 # How long a program may take before the harness stops waiting, as a
 # command prefix — or "" where this machine has no `timeout`.
@@ -246,10 +281,81 @@ function list_tree(scratch: str, dir: str, skip: [str]) -> [str]?
 # coreutils rather than POSIX, so its absence is asked of the machine
 # rather than assumed from the platform's name, and a machine without it
 # runs the corpus unguarded rather than not at all.
-function patience() -> str
-    if status_of(raw: system(command: "command -v timeout > /dev/null 2>&1".cstr()).to_i64().must()) == 0
-        return "timeout 120 "
-    return ""
+# **The question is asked by RUNNING it, not by `command -v`.** With an
+# argument list there is nothing to prefix a command with, so `patience`
+# answers the words to put in front of a program's own, and the probe is
+# `timeout --help`: if the runtime says the program never started, this
+# machine has no `timeout` and the corpus runs unguarded.
+function patience() -> [str]
+    probe = run(scratch: "build", program: "timeout", words: ["timeout", "--help"])
+
+    if probe.is_err() || !probe.must().started
+        return []
+
+    return ["timeout", "120"]
+
+# Every file under `dir`, recursively, whose name ends in `suffix` and
+# which is newer than `reference`. What `find -name … -newer` answered,
+# without a `find`.
+#
+# An empty `suffix` matches everything; an empty `reference` drops the
+# age question. The two are separate because the callers ask them
+# separately, and joining them would make one of the two a premise.
+function found_under(dir: str, suffix: str, reference: str) -> [str]?
+    count = hero_dir_scan(root: dir.cstr(), want: DIR_FILES, recursive: 1)
+
+    if count < 0
+        return fail("cannot_walk", "cannot walk " + dir)
+    out: [str] @ []
+
+    for name in scanned(count: count)
+        full = dir + "/" + name
+
+        if suffix.len() > 0 && !ends_with(text: name, tail: suffix)
+            continue
+
+        if reference.len() > 0 && hero_fs_newer_than(path: full.cstr(), reference: reference.cstr()) != 1
+            continue
+        out @ out.push(full)
+
+    return ok(out.sort())
+
+function ends_with(text: str, tail: str) -> bool
+    if tail.len() > text.len()
+        return false
+
+    return text.slice(from: text.len() - tail.len(), to: text.len()) == tail
+
+# One list after another. `+` joins two `str`s and this language does
+# not overload it onto arrays, which is why this exists rather than
+# being written inline at six call sites.
+function both(first: [str], second: [str]) -> [str]
+    out: [str] @ first
+
+    for one in second
+        out @ out.push(one)
+
+    return out
+
+# Run a program under the watchdog, where this machine has one.
+#
+# `patience` used to answer a command PREFIX — the string `"timeout 120 "`
+# glued in front of a command line — and there is no line to glue it to
+# any more. So it answers words, and this decides which program actually
+# starts: `timeout` with the real program as its argument, or the real
+# program itself.
+function run_guarded(scratch: str, words: [str]) -> Run?
+    guard = patience()
+
+    if guard.len() > 0
+        together: [str] @ guard
+
+        for one in words
+            together @ together.push(one)
+
+        return run(scratch: scratch, program: guard[0], words: together)
+
+    return run(scratch: scratch, program: words[0], words: words)
 
 # One environment variable, or "" where it is unset. The null test is the
 # contract, not caution: converting a null `cstr` aborts (spec:229).
@@ -333,34 +439,63 @@ function no_compiler_anywhere() -> str
     return "no compiler found: set HEROES_COMPILER, or build one at " + CANDIDATES.join(" / ")
 
 function exists(path: str) -> bool
-    return status_of(raw: system(command: ("test -e " + sq(path)).cstr()).to_i64().must()) == 0
+    return hero_fs_exists(path: path.cstr()) == 1
 
 function is_directory(path: str) -> bool
-    return status_of(raw: system(command: ("test -d " + sq(path)).cstr()).to_i64().must()) == 0
+    return hero_fs_is_directory(path: path.cstr()) == 1
 
 function mkdir_all(path: str) -> ()?
-    if status_of(raw: system(command: ("mkdir -p " + sq(path)).cstr()).to_i64().must()) != 0
+    if hero_fs_mkdir_all(path: path.cstr()) != 0
         return fail("cannot_run", "cannot create the directory " + path)
     return ok()
 
 function remove_tree(path: str) -> ()?
-    if status_of(raw: system(command: ("rm -rf " + sq(path)).cstr()).to_i64().must()) != 0
+    if hero_dir_remove_tree(path: path.cstr()) != 0
         return fail("cannot_run", "cannot remove " + path)
     return ok()
 
 test "a status is decoded the way a shell prints it"
     # 1 << 8 is `exit 1`; 134 is the shape panel 070's hardcoded number
     # got wrong — SIGABRT is 6, so waitpid says 6 and a shell says 134.
-    assert status_of(raw: 0) == 0
-    assert status_of(raw: 256) == 1
-    assert status_of(raw: 512) == 2
-    assert status_of(raw: 6) == 134
-    assert status_of(raw: 11) == 139
+    # **`status_of` is gone and the runtime answers instead.** It decoded
+    # waitpid's format by hand — the exit code in the high byte, a signal
+    # in the low seven bits — which was right on POSIX and wrong on
+    # Windows, where the same call answers the exit code directly. These
+    # assertions are now about what a program really did.
+    quiet = run(scratch: "build/harness-selftest", program: "/bin/sh", words: ["/bin/sh", "-c", "exit 0"])
+    assert !quiet.is_err()
+    assert quiet.must().started
+    assert quiet.must().code == 0
+
+    angry = run(scratch: "build/harness-selftest", program: "/bin/sh", words: ["/bin/sh", "-c", "exit 2"])
+    assert !angry.is_err()
+    assert angry.must().code == 2
+
+    absent = run(
+        scratch: "build/harness-selftest",
+        program: "heroes-no-such-program",
+        words: ["heroes-no-such-program"]
+    )
+    assert !absent.is_err()
+    assert !absent.must().started
 
 test "a command's two streams come back apart, with its status"
     scratch = "build/harness-selftest"
     assert !mkdir_all(scratch).is_err()
-    said = run(scratch: scratch, command: "printf 'to out'; printf 'to err' 1>&2; exit 3")
+
+    # **`/bin/sh` is the PROGRAM here, and that is the honest shape.** The
+    # case needs something that writes to both streams and exits 3, and a
+    # shell is a perfectly ordinary program to ask for that — what is gone
+    # is the harness handing a sentence to a shell it did not name. On a
+    # machine with no `/bin/sh` this one test reports `started: false`
+    # rather than a wrong answer, and the same case written in Heroes and
+    # compiled would cost this module a dependency on the compiler under
+    # test, which is the one thing a self-test may not have.
+    said = run(
+        scratch: scratch,
+        program: "/bin/sh",
+        words: ["/bin/sh", "-c", "printf 'to out'; printf 'to err' 1>&2; exit 3"]
+    )
     assert !said.is_err()
     assert said.must().out == "to out"
     assert said.must().err == "to err"
@@ -374,12 +509,15 @@ test "the directory walk keeps a filename that contains a newline"
     hostile = scratch + "/hostile"
     assert !remove_tree(hostile).is_err()
     assert !mkdir_all(hostile).is_err()
-    made = run(
-        scratch: scratch,
-        command: "cd " + sq(hostile) + " && touch plain.hero 'two\nlines.hero' \"quo'te.hero\""
-    )
-    assert !made.is_err()
-    assert made.must().code == 0
+
+    # **The files are written by the language, not by `touch` inside a
+    # subshell.** `write_file` carries an apostrophe and a newline in a
+    # path the same way it carries any other byte, so the case that used
+    # to need a shell — and a quoting function to survive it — is now
+    # four ordinary calls.
+    assert !write_file(path: hostile + "/plain.hero", text: "").is_err()
+    assert !write_file(path: hostile + "/two\nlines.hero", text: "").is_err()
+    assert !write_file(path: hostile + "/quo'te.hero", text: "").is_err()
     found = list_entries(scratch: scratch, dir: hostile)
     assert !found.is_err()
     assert found.must().len() == 3

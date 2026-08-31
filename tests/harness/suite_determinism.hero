@@ -132,11 +132,12 @@ function run_all(scratch: str, compiler: str) -> report.Report?
 # comparison uses; a non-empty `into` writes through `-o` and the answer
 # is read from the file instead.
 function dumped(scratch: str, compiler: str, item: cases.Case, flag: str, into: str) -> str?
-    line: str @ shell.sq(compiler) + " build " + shell.sq(item.source) + " " + flag
+    line: [str] @ [compiler, "build", item.source, flag]
 
     if into.len() > 0
-        line @ line + " -o " + shell.sq(into)
-    said = shell.run(scratch: scratch, command: line)?
+        line @ line.push("-o")
+        line @ line.push(into)
+    said = shell.run(scratch: scratch, program: compiler, words: line)?
 
     if said.code != 0
         return fail("cannot_emit", said.err)
@@ -182,7 +183,7 @@ test "the determinism suite passes identical emissions and catches a wobbling on
     # platform: 200 calls, 200 distinct answers, measured.
     wobbler = scratch + "/stub-wobble.sh"
     assert !write_file(path: wobbler, text: "#!/bin/sh\nod -An -N8 -tx1 /dev/urandom\n").is_err()
-    assert !shell.run(scratch: scratch, command: "chmod +x " + shell.sq(wobbler)).is_err()
+    assert !shell.run(scratch: scratch, program: "chmod", words: ["chmod", "+x", wobbler]).is_err()
     a = dumped(scratch: scratch, compiler: wobbler, item: item, flag: "--emit-c", into: "")
     b = dumped(scratch: scratch, compiler: wobbler, item: item, flag: "--emit-c", into: "")
     assert !a.is_err()

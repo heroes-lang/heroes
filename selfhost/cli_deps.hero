@@ -56,7 +56,7 @@
 # hit.
 
 use cli_digest
-use cli_shell
+use cli_process
 
 # What a record is called, given the object it stands beside. One line
 # per dependency, `<digest> <path>`.
@@ -271,7 +271,7 @@ test "no record means not fresh"
 # listing is hand-written, because what is under test is the record.
 test "a record goes stale when what it recorded changes"
     dir = "build/selftest-deps"
-    _ = cli_shell.shell(command: "mkdir -p " + cli_shell.sq(dir))
+    _ = cli_process.mkdir_all(dir)
 
     # OUTSIDE `dir` on purpose: what lives under the key's own
     # directory is deliberately not recorded, so a watched file placed
@@ -301,7 +301,7 @@ test "a prefix test on a path with an accent in it does not abort"
 
 test "what the key already names is not recorded"
     dir = "build/selftest-deps-own"
-    _ = cli_shell.shell(command: "mkdir -p " + cli_shell.sq(dir))
+    _ = cli_process.mkdir_all(dir)
     _ = write_file(path: dir + "/watched.h", text: "#define X 1\n")
     _ = write_file(path: dir + "/listing.d", text: "dep: " + dir + "/unit.c " + dir + "/watched.h\n")
     memo: {str: str} @ {}
@@ -316,7 +316,7 @@ test "what the key already names is not recorded"
 
 test "a record line this format did not write is not fresh, and does not abort"
     dir = "build/selftest-deps-shape"
-    _ = cli_shell.shell(command: "mkdir -p " + cli_shell.sq(dir))
+    _ = cli_process.mkdir_all(dir)
     memo: {str: str} @ {}
 
     # A path with a newline in it, which is what `lines` would hand

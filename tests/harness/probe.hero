@@ -69,10 +69,35 @@ function probe(name: str, argv: str, code: i64) -> Probe
         library_skip: false
     )
 
+# One sentence, as the words a shell would have made of it — separated by
+# runs of spaces, with none of the quoting rules, because the table has
+# nothing to quote.
+function words_of(line: str) -> [str]
+    out: [str] @ []
+    word: str @ ""
+
+    for ch in line.chars()
+        if ch == " "
+            if word.len() > 0
+                out @ out.push(word)
+                word @ ""
+        else
+            word @ word + ch
+
+    if word.len() > 0
+        out @ out.push(word)
+
+    return out
+
 # Run one probe. Answers "" where it held, the failure text where it did
 # not, and "SKIP" where the machine lacks the library.
 function unmet(scratch: str, compiler: str, p: Probe) -> str
-    said = shell.run(scratch: scratch, command: shell.patience() + shell.sq(compiler) + " " + p.argv)
+    # **`argv` is a sentence and the runtime wants words**, so it is split
+    # here, on spaces, once. The table's 91 rows were checked: not one of
+    # them carries an argument with a space inside it, so the split is
+    # exact rather than a guess — and it is a fact about the table, which
+    # this file can see, rather than a premise about arguments in general.
+    said = shell.run_guarded(scratch: scratch, words: shell.both(first: [compiler], second: words_of(p.argv)))
 
     if said.is_err()
         return "  cannot run: " + p.argv

@@ -126,15 +126,17 @@ function laid_out(scratch: str) -> str?
 # there is no name that picks out THIS program's copy. The mechanism
 # under test is the same for it.
 function tu_sources(scratch: str) -> [str]?
-    listed = shell.run(scratch: scratch, command: "find build -name 'unitshape.c' -o -name 'unitprog.c'")
+    # The scratch directory is no longer used: the listing came from a
+    # `find` whose output had to be captured to a file under it, and it
+    # comes from the runtime now. The parameter stays because two call
+    # sites pass it and the harness's shape is uniform.
+    _ = scratch
+    shapes = shell.found_under(dir: "build", suffix: "unitshape.c", reference: "")?
+    progs = shell.found_under(dir: "build", suffix: "unitprog.c", reference: "")?
+    out: [str] @ shapes
 
-    if listed.is_err()
-        return fail("cannot_run", "cannot list this program's translation units under build/")
-    out: [str] @ []
-
-    for row in strings.lines(listed.must().out)
-        if row.len() > 0
-            out @ out.push(row)
+    for one in progs
+        out @ out.push(one)
 
     return ok(out.sort())
 
@@ -168,15 +170,15 @@ function emitted(scratch: str, compiler: str, dir: str) -> Emission?
             "cannot_run",
             "the cached translation units survived the forget, so a second build would hit instead of emitting and this suite would compare a file with itself:\n    " + left.join("\n    ")
         )
-    built = shell.run(
+    built = shell.run_guarded(
         scratch: scratch,
-        command: shell.patience() + shell.sq(compiler) + " build " + shell.sq(dir + "/unitprog.hero")
+        words: [compiler, "build", dir + "/unitprog.hero"]
     )
 
     if built.is_err() || built.must().code != 0
         return fail(
             "cannot_run",
-            "the build did not run: " + built.default(shell.Run(code: -1, out: "", err: "cannot run")).err
+            "the build did not run: " + built.default(shell.Run(code: -1, out: "", err: "cannot run", started: false)).err
         )
     paths = tu_sources(scratch)?
     texts: [str] @ []

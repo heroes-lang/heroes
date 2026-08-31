@@ -56,11 +56,13 @@ test "the collector pairs, orders and refuses a half pair"
     tree = scratch + "/cases"
     assert !shell.remove_tree(tree).is_err()
     assert !shell.mkdir_all(tree).is_err()
-    made = shell.run(
-        scratch: scratch,
-        command: "cd " + shell.sq(tree) + " && touch b.hero b.expected a.hero a.expected a.fixed .gitkeep"
-    )
-    assert !made.is_err()
+
+    # Six files, written rather than `touch`ed through a shell. The
+    # names are the point of the test: the collector has to pair `a`
+    # with `a.expected`, order them, and ignore what is neither.
+    for name in ["b.hero", "b.expected", "a.hero", "a.expected", "a.fixed", ".gitkeep"]
+        assert !write_file(path: tree + "/" + name, text: "").is_err()
+
     found = collect(scratch: scratch, dir: tree)
     assert !found.is_err()
     assert found.must().len() == 2
@@ -75,8 +77,7 @@ test "a source with no expectation stops the harness by name"
     tree = scratch + "/half"
     assert !shell.remove_tree(tree).is_err()
     assert !shell.mkdir_all(tree).is_err()
-    made = shell.run(scratch: scratch, command: "cd " + shell.sq(tree) + " && touch lonely.hero")
-    assert !made.is_err()
+    assert !write_file(path: tree + "/lonely.hero", text: "").is_err()
     found = collect(scratch: scratch, dir: tree)
 
     code = match found
@@ -90,8 +91,7 @@ test "an expectation with no source stops the harness by name"
     tree = scratch + "/orphan"
     assert !shell.remove_tree(tree).is_err()
     assert !shell.mkdir_all(tree).is_err()
-    made = shell.run(scratch: scratch, command: "cd " + shell.sq(tree) + " && touch ghost.expected")
-    assert !made.is_err()
+    assert !write_file(path: tree + "/ghost.expected", text: "").is_err()
     found = collect(scratch: scratch, dir: tree)
 
     code = match found

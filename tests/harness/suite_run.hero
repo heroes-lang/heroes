@@ -102,7 +102,8 @@ function one_case(scratch: str, compiler: str, binaries: str, item: cases.Case, 
     binary = binaries + "/" + item.name
     built = shell.run(
         scratch: scratch,
-        command: shell.sq(compiler) + " build " + shell.sq(item.source) + " -o " + shell.sq(binary)
+        program: compiler,
+        words: [compiler, "build", item.source, "-o", binary]
     )
 
     if built.is_err()
@@ -122,17 +123,18 @@ function one_case(scratch: str, compiler: str, binaries: str, item: cases.Case, 
         )
         return false
 
-    at_o0 = shell.run(scratch: scratch, command: shell.sq(binary))
+    at_o0 = shell.run(scratch: scratch, program: binary, words: [binary])
 
     if judged(@r, item: item, level: "-O0", want: want, said: at_o0)
         return false
-    at_o2 = shell.run(scratch: scratch, command: shell.sq(compiler) + " run " + shell.sq(item.source))
+    at_o2 = shell.run(scratch: scratch, program: compiler, words: [compiler, "run", item.source])
 
     if judged(@r, item: item, level: "-O2", want: want, said: at_o2)
         return false
     sanitised = shell.run(
         scratch: scratch,
-        command: shell.sq(compiler) + " run " + shell.sq(item.source) + " --sanitize"
+        program: compiler,
+        words: [compiler, "run", item.source, "--sanitize"]
     )
 
     if sanitised.is_err()

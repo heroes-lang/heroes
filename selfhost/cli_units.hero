@@ -40,7 +40,7 @@ use cli_io
 use cli_deps
 use cli_digest
 use cli_flags
-use cli_shell
+use cli_process
 use cli_toolchain
 
 # The distinct components of a compilation, in file-table order: the
@@ -114,20 +114,23 @@ function tu_object(t: cli_toolchain.Toolchain, module: str, tu_text: str, level:
     # `-MT dep` names the listing's target a word rather than a path,
     # so the reader cuts at the first `:` on a fact it chose. The
     # listing rides this compile; no second clang invocation exists.
-    line: str @ "clang " + cli_toolchain.words(cli_flags.flags()) + " " + level + " " + cli_toolchain.words(cli_flags.sanitizers(sanitize: sanitize)) + " -c -MD -MT dep -MF " + cli_shell.sq(depfile)
+    line: [str] @ cli_toolchain.with_all(list: ["clang"], more: cli_flags.flags())
+    line @ line.push(level)
+    line @ cli_toolchain.with_all(list: line, more: cli_flags.sanitizers(sanitize: sanitize))
+    line @ cli_toolchain.with_all(list: line, more: ["-c", "-MD", "-MT", "dep", "-MF", depfile])
 
     for one in search_include
-        line @ line + " -I " + cli_shell.sq(one)
+        line @ cli_toolchain.with_all(list: line, more: ["-I", one])
 
     for flag in package_flags
         if cli_toolchain.starts_with(text: flag, prefix: "-I")
-            line @ line + " " + cli_shell.sq(flag)
+            line @ line.push(flag)
 
-    line @ line + " " + cli_shell.sq(c_file) + " -I " + cli_shell.sq(t.runtime)
+    line @ cli_toolchain.with_all(list: line, more: [c_file, "-I", t.runtime])
 
     if source_dir.len() > 0
-        line @ line + " -I " + cli_shell.sq(source_dir)
-    line @ line + " -o " + cli_shell.sq(staged)
+        line @ cli_toolchain.with_all(list: line, more: ["-I", source_dir])
+    line @ cli_toolchain.with_all(list: line, more: ["-o", staged])
     compiled = cli_toolchain.run_clang(line: line, what: "compiling the generated C", err_path: err_path)
 
     if compiled.is_err()
@@ -152,7 +155,7 @@ function tu_object(t: cli_toolchain.Toolchain, module: str, tu_text: str, level:
     if recorded.is_err()
         return fail("failed", "cannot record what " + module + "'s translation unit read")
 
-    if cli_shell.shell(command: "mv -f " + cli_shell.sq(staged) + " " + cli_shell.sq(object)) != 0
+    if cli_process.rename_over(from: staged, to: object).is_err()
         return fail("failed", "cannot publish " + object)
     return ok(object)
 
@@ -166,30 +169,32 @@ function failure_note(failed: ()?) -> str
 # effect on a fully warm cache.
 function link_objects(t: cli_toolchain.Toolchain, objects: [str], binary: str, level: str, sanitize: bool, search_include: [str], search_library: [str], package_flags: [str], link_names: [str]) -> ()?
     err_path = t.build + "/clang-stderr.txt"
-    line: str @ "clang " + cli_toolchain.words(cli_flags.flags()) + " " + level + " " + cli_toolchain.words(cli_flags.sanitizers(sanitize: sanitize))
+    line: [str] @ cli_toolchain.with_all(list: ["clang"], more: cli_flags.flags())
+    line @ line.push(level)
+    line @ cli_toolchain.with_all(list: line, more: cli_flags.sanitizers(sanitize: sanitize))
 
     for dir in search_include
-        line @ line + " -I " + cli_shell.sq(dir)
+        line @ cli_toolchain.with_all(list: line, more: ["-I", dir])
 
     for dir in search_library
-        line @ line + " -L " + cli_shell.sq(dir)
+        line @ cli_toolchain.with_all(list: line, more: ["-L", dir])
 
     for object in objects
-        line @ line + " " + cli_shell.sq(object)
+        line @ line.push(object)
 
     for flag in package_flags
-        line @ line + " " + cli_shell.sq(flag)
+        line @ line.push(flag)
 
     for name in link_names
-        line @ line + " " + cli_shell.sq("-l" + name)
+        line @ line.push("-l" + name)
 
     staged = binary + ".tmp"
-    line @ line + " -o " + cli_shell.sq(staged)
+    line @ cli_toolchain.with_all(list: line, more: ["-o", staged])
     linked = cli_toolchain.run_clang(line: line, what: "linking", err_path: err_path)
 
     if linked.is_err()
         linked?
 
-    if cli_shell.shell(command: "mv -f " + cli_shell.sq(staged) + " " + cli_shell.sq(binary)) != 0
+    if cli_process.rename_over(from: staged, to: binary).is_err()
         return fail("failed", "cannot publish " + binary)
     return ok()
