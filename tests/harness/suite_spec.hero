@@ -609,6 +609,10 @@ test "every check here can fire — CLAUDE.md §9, a check nobody has seen fail 
     assert strings.contains(text: starved.failures[0], needle: "vacuously")
 
 test "the binding number is read off `measure`, whatever the compiler is"
+    # POSIX is this case's subject, and this machine answers for itself
+    # (can_run_scripts carries the measurement).
+    if !shell.can_run_scripts()
+        return
     scratch = "build/harness-selftest"
     assert !shell.mkdir_all(scratch).is_err()
     path = scratch + "/stub-measure.sh"

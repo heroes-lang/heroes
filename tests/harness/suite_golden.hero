@@ -222,6 +222,10 @@ constant SAID: str
     "x.hero:1:1: error[boom]: a diagnostic\n"
 
 test "a diagnostics suite passes on a match and fails on either half"
+    # POSIX is this case's subject, and this machine answers for itself
+    # (can_run_scripts carries the measurement).
+    if !shell.can_run_scripts()
+        return
     scratch = "build/harness-selftest"
     tree = one_case_tree(scratch: scratch, name: "check", expectation: SAID)
     assert !tree.is_err()
@@ -266,6 +270,10 @@ test "a diagnostics suite passes on a match and fails on either half"
     assert silent.must().failed == 1
 
 test "an artifact suite reads stdout, and a diagnostic on stderr does not save it"
+    # POSIX is this case's subject, and this machine answers for itself
+    # (can_run_scripts carries the measurement).
+    if !shell.can_run_scripts()
+        return
     scratch = "build/harness-selftest"
     tree = one_case_tree(scratch: scratch, name: "ir", expectation: "fn main:\n  bb0:\n")
     assert !tree.is_err()
@@ -296,6 +304,10 @@ test "an artifact suite reads stdout, and a diagnostic on stderr does not save i
     assert red.must().failed == 1
 
 test "a refusal that writes an artifact fails, and so does a suite below its floor"
+    # POSIX is this case's subject, and this machine answers for itself
+    # (can_run_scripts carries the measurement).
+    if !shell.can_run_scripts()
+        return
     scratch = "build/harness-selftest"
     tree = one_case_tree(scratch: scratch, name: "unsupported", expectation: SAID)
     assert !tree.is_err()
@@ -341,6 +353,10 @@ test "a refusal that writes an artifact fails, and so does a suite below its flo
     assert short.must().failed == 1
 
 test "a machine missing the library skips, but a machine missing every library fails"
+    # POSIX is this case's subject, and this machine answers for itself
+    # (can_run_scripts carries the measurement).
+    if !shell.can_run_scripts()
+        return
     scratch = "build/harness-selftest"
     tree = one_case_tree(scratch: scratch, name: "skipping", expectation: SAID)
     assert !tree.is_err()
