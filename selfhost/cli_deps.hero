@@ -122,6 +122,20 @@ function paths_of(text: str) -> [str]
             start @ index
             continue
 
+        # `\` followed by a line end is make's fold; followed by anything
+        # else it is a BYTE OF THE PATH — which is every separator in
+        # `C:\Program Files\LLVM\…`. This branch treated a bare backslash
+        # as a break until 2026-08-31, and the measured cost was a cache
+        # that never hit on Windows: clang's depfile paths shattered at
+        # every `\` into fragments (`C:`, `Program Files`, `LLVM`, …), each
+        # digest came back `absent`, and `fresh()` refused every record —
+        # three objects rebuilt on a build where nothing was edited, every
+        # build, exactly what `cache/an untouched build still hits` exists
+        # to catch.
+        if byte == 92 && index + 1 < text.len() && text[index + 1] != 10 && text[index + 1] != 13
+            index @ index + 1
+            continue
+
         if byte == 92 || byte == 32 || byte == 9 || byte == 10 || byte == 13
             piece @ piece + text.slice(from: start, to: index)
 
@@ -227,6 +241,19 @@ function lines(text: str) -> [str]
 
     out @ out.push(text.slice(from: start, to: text.len()))
     return out
+
+test "a Windows depfile keeps its backslashes and its escaped spaces"
+    # clang targeting msvc writes exactly this shape, and the old walk split
+    # it at every backslash: the first fragment in the broken record was the
+    # bare drive letter `C:`, measured 2026-08-31 on the VPS.
+    got = paths_of("dep: C:\\Program\\ Files\\LLVM\\lib\\clang\\22\\include\\stddef.h D:\\w\\x.h\n")
+    assert got.len() == 2
+    assert got[0] == "C:\\Program Files\\LLVM\\lib\\clang\\22\\include\\stddef.h"
+    assert got[1] == "D:\\w\\x.h"
+
+    # And the fold is still a fold on both line endings.
+    folded = paths_of("dep: a.h \\\n b.h\n")
+    assert folded == ["a.h", "b.h"]
 
 test "a dependency listing gives up its paths, target dropped"
     got = paths_of("dep: /a/tu.c /usr/include/stdio.h\n")
