@@ -35,7 +35,7 @@ function run_all(scratch: str, compiler: str) -> report.Report?
 # and then executed: a message naming a file that does not work is worse
 # than no message.
 function built_binary_runs(@r: report.Report, scratch: str, compiler: str)
-    said = shell.run(scratch: scratch, command: shell.sq(compiler) + " build examples/gallery/00-first.hero")
+    said = shell.run(scratch: scratch, program: compiler, words: [compiler, "build", "examples/gallery/00-first.hero"])
 
     if said.is_err() || said.must().code != 0
         report.keep_failure(@r, label: "special/build says where", detail: "  the build did not run")
@@ -66,13 +66,13 @@ function built_binary_runs(@r: report.Report, scratch: str, compiler: str)
             detail: "  the binary is not named after the file: " + binary
         )
         return
-    ran = shell.run(scratch: scratch, command: shell.sq(binary))
+    ran = shell.run(scratch: scratch, program: binary, words: [binary])
 
     if ran.is_err() || ran.must().out != "20\n"
         report.keep_failure(
             @r,
             label: "special/build says where",
-            detail: "  the binary it named does not print 20:\n" + ran.default(shell.Run(code: -1, out: "", err: "cannot run")).out
+            detail: "  the binary it named does not print 20:\n" + ran.default(shell.Run(code: -1, out: "", err: "cannot run", started: false)).out
         )
         return
     report.keep_pass(@r)
@@ -82,7 +82,11 @@ function built_binary_runs(@r: report.Report, scratch: str, compiler: str)
 # file, so a refusal that half-ran would be the worst outcome available.
 function a_retired_flag_leaves_the_file_alone(@r: report.Report, scratch: str, compiler: str)
     before = read_file("examples/gallery/00-first.hero")
-    said = shell.run(scratch: scratch, command: shell.sq(compiler) + " fmt --write examples/gallery/00-first.hero")
+    said = shell.run(
+        scratch: scratch,
+        program: compiler,
+        words: [compiler, "fmt", "--write", "examples/gallery/00-first.hero"]
+    )
     after = read_file("examples/gallery/00-first.hero")
 
     if said.is_err() || before.is_err() || after.is_err()
@@ -115,8 +119,8 @@ function a_retired_flag_leaves_the_file_alone(@r: report.Report, scratch: str, c
 # recorded answer, and a recorded answer cannot notice that splitting a
 # program changed it.
 function the_split_program_prints_what_the_whole_one_prints(@r: report.Report, scratch: str, compiler: str)
-    split = shell.run(scratch: scratch, command: shell.sq(compiler) + " run examples/calculator/main.hero")
-    whole = shell.run(scratch: scratch, command: shell.sq(compiler) + " run examples/calculator/whole.hero")
+    split = shell.run(scratch: scratch, program: compiler, words: [compiler, "run", "examples/calculator/main.hero"])
+    whole = shell.run(scratch: scratch, program: compiler, words: [compiler, "run", "examples/calculator/whole.hero"])
 
     if split.is_err() || whole.is_err()
         report.keep_failure(@r, label: "special/split and whole", detail: "  cannot run the compiler")
@@ -143,8 +147,8 @@ function the_split_program_prints_what_the_whole_one_prints(@r: report.Report, s
 # says something else has two help texts, and one of them is the one
 # nobody maintains.
 function the_bare_invocation_is_the_help(@r: report.Report, scratch: str, compiler: str)
-    asked = shell.run(scratch: scratch, command: shell.sq(compiler) + " --help")
-    bare = shell.run(scratch: scratch, command: shell.sq(compiler))
+    asked = shell.run(scratch: scratch, program: compiler, words: [compiler, "--help"])
+    bare = shell.run(scratch: scratch, program: compiler, words: [compiler])
 
     if asked.is_err() || bare.is_err()
         report.keep_failure(@r, label: "special/the bare invocation", detail: "  cannot run the compiler")
@@ -164,8 +168,16 @@ function the_bare_invocation_is_the_help(@r: report.Report, scratch: str, compil
 # the command line, and a stronger one than trusting that a flag with a
 # name is a flag with an effect.
 function the_levels_are_not_the_same_build(@r: report.Report, scratch: str, compiler: str)
-    at_o2 = shell.run(scratch: scratch, command: shell.sq(compiler) + " build examples/gallery/00-first.hero -O2")
-    at_o0 = shell.run(scratch: scratch, command: shell.sq(compiler) + " build examples/gallery/00-first.hero -O0")
+    at_o2 = shell.run(
+        scratch: scratch,
+        program: compiler,
+        words: [compiler, "build", "examples/gallery/00-first.hero", "-O2"]
+    )
+    at_o0 = shell.run(
+        scratch: scratch,
+        program: compiler,
+        words: [compiler, "build", "examples/gallery/00-first.hero", "-O0"]
+    )
 
     if at_o2.is_err() || at_o0.is_err()
         report.keep_failure(@r, label: "special/the levels differ", detail: "  cannot run the compiler")
@@ -196,7 +208,7 @@ function a_failing_test_says_what_and_where(@r: report.Report, scratch: str, com
     if write_file(path: path, text: body).is_err()
         report.keep_failure(@r, label: "special/a failing test", detail: "  cannot write " + path)
         return
-    said = shell.run(scratch: scratch, command: shell.sq(compiler) + " test " + shell.sq(path))
+    said = shell.run(scratch: scratch, program: compiler, words: [compiler, "test", path])
 
     if said.is_err()
         report.keep_failure(@r, label: "special/a failing test", detail: "  cannot run the compiler")
@@ -277,7 +289,7 @@ function the_specs_own_example_opens_a_database(@r: report.Report, scratch: str,
     if write_file(path: path, text: program).is_err()
         report.keep_failure(@r, label: "special/the spec's example", detail: "  cannot write " + path)
         return
-    said = shell.run(scratch: scratch, command: shell.patience() + shell.sq(compiler) + " run " + shell.sq(path))
+    said = shell.run_guarded(scratch: scratch, words: [compiler, "run", path])
 
     if said.is_err()
         report.keep_failure(@r, label: "special/the spec's example", detail: "  cannot run the compiler")
@@ -313,10 +325,11 @@ function a_search_path_is_one_word(@r: report.Report, scratch: str, compiler: st
     # The witness is removed first, so its ABSENCE afterwards means
     # something. A test that never removed it would pass on a machine
     # where it was never created.
-    _ = shell.run(scratch: scratch, command: "rm -f " + shell.sq(witness))
+    _ = shell.run(scratch: scratch, program: "rm", words: ["rm", "-f", witness])
     said = shell.run(
         scratch: scratch,
-        command: shell.sq(compiler) + " build examples/gallery/00-first.hero --include " + shell.sq(hostile)
+        program: compiler,
+        words: [compiler, "build", "examples/gallery/00-first.hero", "--include", hostile]
     )
 
     if said.is_err()
@@ -337,7 +350,7 @@ function a_search_path_is_one_word(@r: report.Report, scratch: str, compiler: st
             label: "special/one argv word",
             detail: "  `" + witness + "` exists: the search path was split by a shell somewhere between argv and clang"
         )
-        _ = shell.run(scratch: scratch, command: "rm -f " + shell.sq(witness))
+        _ = shell.run(scratch: scratch, program: "rm", words: ["rm", "-f", witness])
         return
     report.keep_pass(@r)
 
@@ -349,7 +362,8 @@ function a_search_path_that_names_nothing(@r: report.Report, scratch: str, compi
     for flag in ["--include", "--library"]
         said = shell.run(
             scratch: scratch,
-            command: shell.sq(compiler) + " build examples/gallery/00-first.hero " + flag + " /no/such/directory"
+            program: compiler,
+            words: [compiler, "build", "examples/gallery/00-first.hero", flag, "/no/such/directory"]
         )
 
         if said.is_err()
@@ -381,7 +395,8 @@ function a_search_path_that_names_nothing(@r: report.Report, scratch: str, compi
         return
     fine = shell.run(
         scratch: scratch,
-        command: shell.sq(compiler) + " build examples/gallery/00-first.hero --include " + shell.sq(empty)
+        program: compiler,
+        words: [compiler, "build", "examples/gallery/00-first.hero", "--include", empty]
     )
 
     if fine.is_err() || fine.must().code != 0
@@ -465,8 +480,25 @@ function one_bad_argument_does_not_kill_the_other_two(@r: report.Report, scratch
         report.keep_failure(@r, label: label, detail: "  the two programs did not build")
         return
     wrong: [str] @ []
-    bad = " one $(printf '\\377\\376') three"
-    checked = shell.run(scratch: scratch, command: shell.patience() + shell.sq(dir + "/checked") + bad)
+
+    # **THIS CASE CANNOT BE BUILT WITH AN ARGUMENT LIST, AND THAT IS A
+    # FACT ABOUT THE LANGUAGE RATHER THAN A GAP IN THE RUNTIME.** The
+    # argument has to be bytes that are NOT text — `\377\376` — because
+    # what is under test is a program receiving exactly that. But
+    # `hero_run_arg` takes a `str`, and a `str` is UTF-8 by definition
+    # (spec:52), so there is no Heroes value that can carry the argument
+    # this test needs. A shell can, because it deals in bytes.
+    #
+    # So `/bin/sh` is the program here, deliberately, and the words are
+    # its own: this is the one place in the harness where a shell is the
+    # subject rather than an accident. On a machine without one the case
+    # reports `started: false` instead of a wrong answer.
+    bad_args = "$(printf '\\377\\376')"
+    checked = shell.run(
+        scratch: scratch,
+        program: "/bin/sh",
+        words: ["/bin/sh", "-c", dir + "/checked one " + bad_args + " three"]
+    )
 
     if checked.is_err()
         report.keep_failure(@r, label: label, detail: "  the checked program could not run at all")
@@ -486,7 +518,11 @@ function one_bad_argument_does_not_kill_the_other_two(@r: report.Report, scratch
     # and the whole reason the checked spelling had to be bought. If this
     # ever becomes 0 the two spellings have collapsed into one and the
     # +11 tokens bought nothing.
-    plain = shell.run(scratch: scratch, command: shell.patience() + shell.sq(dir + "/plain") + bad)
+    plain = shell.run(
+        scratch: scratch,
+        program: "/bin/sh",
+        words: ["/bin/sh", "-c", dir + "/plain one " + bad_args + " three"]
+    )
 
     if plain.is_err()
         report.keep_failure(@r, label: label, detail: "  the plain program could not run at all")
@@ -518,9 +554,9 @@ constant PLAIN_PROGRAM: str
 # One program built to a named path, so the harness can run the binary
 # with a command line of its own choosing.
 function built(scratch: str, compiler: str, source: str, binary: str) -> ()?
-    made = shell.run(
+    made = shell.run_guarded(
         scratch: scratch,
-        command: shell.patience() + shell.sq(compiler) + " build " + shell.sq(source) + " -o " + shell.sq(binary)
+        words: [compiler, "build", source, "-o", binary]
     )
 
     if made.is_err() || made.must().code != 0

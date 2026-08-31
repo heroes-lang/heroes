@@ -97,7 +97,6 @@ constant DECIDED: [str]
         "selfhost/check_builtins.hero 374"
         "selfhost/ir_mono.hero 367"
         "selfhost/emit_ctype.hero 365"
-        "selfhost/cli_verbs.hero 358"
         "selfhost/emit_gate.hero 341"
         "selfhost/resolve_cycles.hero 331"
         "selfhost/emit_inst.hero 324"

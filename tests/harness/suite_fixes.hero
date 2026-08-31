@@ -56,7 +56,8 @@ function run_all(scratch: str, compiler: str, dir: str, least: i64) -> report.Re
             continue
         applied = shell.run(
             scratch: scratch,
-            command: shell.sq(compiler) + " check " + shell.sq(item.source) + " --apply"
+            program: compiler,
+            words: [compiler, "check", item.source, "--apply"]
         )
 
         if applied.is_err()
@@ -72,7 +73,8 @@ function run_all(scratch: str, compiler: str, dir: str, least: i64) -> report.Re
             continue
         rechecked = shell.run(
             scratch: scratch,
-            command: shell.sq(compiler) + " check " + shell.sq(repaired) + " --brief"
+            program: compiler,
+            words: [compiler, "check", repaired, "--brief"]
         )
 
         if rechecked.is_err()
@@ -117,7 +119,8 @@ test "the fixes suite catches a wrong application and a repair that does not che
     # `.fixed` — then the suite must agree with it.
     applied = shell.run(
         scratch: scratch,
-        command: shell.sq(compiler) + " check " + shell.sq(tree + "/u.hero") + " --apply"
+        program: compiler,
+        words: [compiler, "check", tree + "/u.hero", "--apply"]
     )
     assert !applied.is_err()
     assert !write_file(path: tree + "/u.fixed", text: applied.must().out).is_err()

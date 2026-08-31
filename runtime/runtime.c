@@ -14,14 +14,14 @@
  * runtime would void the "clang type-checks every call" property. So this whole
  * directory holds only what the language cannot express.
  *
- * ONE TRANSLATION UNIT, ELEVEN FILES, and the arrangement is deliberate.
+ * ONE TRANSLATION UNIT, SEVENTEEN FILES, and the arrangement is deliberate.
  *
  * The runtime passed 1200 lines at M-generics-library step 3, four times CLAUDE.md §11's ceiling
  * — "the author must be able to open any file and read it without drowning".
  * `runtime/parts/` is that file split by concern, and this file includes them in
  * dependency order so the result is still exactly one translation unit.
  *
- * Why not eleven translation units, which is what a C programmer expects:
+ * Why not seventeen translation units, which is what a C programmer expects:
  *
  *   - `hero_live_blocks` is `static`, and it is the leak gate's whole
  *     foundation (panel 021: ASan has no leak detector on Darwin arm64, so this
@@ -32,7 +32,7 @@
  *     nobody outside. Splitting into TUs promotes all of them to public symbols
  *     and turns an internal contract into an ABI.
  *   - `Toolchain::runtime_object` compiles the runtime to ONE `.o` and caches it
- *     (`crates/heroes-cli/src/commands/toolchain.rs`). Eleven objects would need
+ *     (`selfhost/cli_toolchain.hero`). Eleven objects would need
  *     an archive or `ld -r`, which is build machinery CLAUDE.md §10 does not
  *     want and this project does not need.
  *
@@ -156,4 +156,5 @@
  * machine they are on: `parts/fs.c` and `parts/run.c` carry the `#if
  * defined(_WIN32)` arms that panel 097 refused to let `selfhost/` express. */
 #include "parts/fs.c"
+#include "parts/dir.c"
 #include "parts/run.c"

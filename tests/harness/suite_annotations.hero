@@ -215,13 +215,13 @@ function one_group(@r: report.Report, scratch: str, compiler: str, group: str) -
 # when check is silent, because an FFI diagnostic only reaches clang on a
 # build. Measured over all fourteen annotated files at the close.
 function provoked(scratch: str, compiler: str, path: str) -> str
-    checked = shell.run(scratch: scratch, command: shell.patience() + shell.sq(compiler) + " check " + shell.sq(path))
+    checked = shell.run_guarded(scratch: scratch, words: [compiler, "check", path])
 
     if !checked.is_err() && checked.must().code == 1
         return checked.must().err
-    built = shell.run(
+    built = shell.run_guarded(
         scratch: scratch,
-        command: shell.patience() + shell.sq(compiler) + " build " + shell.sq(path) + " -o " + shell.sq(scratch + "/annotated.bin")
+        words: [compiler, "build", path, "-o", scratch + "/annotated.bin"]
     )
 
     if built.is_err()

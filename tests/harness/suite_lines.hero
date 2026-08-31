@@ -56,7 +56,8 @@ function run_all(scratch: str, compiler: str) -> report.Report?
     for item in found
         said = shell.run(
             scratch: scratch,
-            command: shell.sq(compiler) + " build " + shell.sq(item.source) + " --emit-c"
+            program: compiler,
+            words: [compiler, "build", item.source, "--emit-c"]
         )
 
         if said.is_err() || said.must().code != 0

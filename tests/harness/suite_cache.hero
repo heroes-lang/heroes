@@ -139,14 +139,14 @@ function a_header_edit_is_not_invisible(@r: report.Report, scratch: str, compile
         if write_header(dir: dir.must(), value: value).is_err()
             report.keep_failure(@r, label: label, detail: "  cannot write the header")
             return
-        said = shell.run(
+        said = shell.run_guarded(
             scratch: scratch,
-            command: shell.patience() + shell.sq(compiler) + " run " + shell.sq(dir.must() + "/prog.hero")
+            words: [compiler, "run", dir.must() + "/prog.hero"]
         )
 
         if said.is_err() || said.must().code != 0
             wrong @ wrong.push(
-                "    the header said " + value + " and the build did not run: " + said.default(shell.Run(code: -1, out: "", err: "cannot run")).err
+                "    the header said " + value + " and the build did not run: " + said.default(shell.Run(code: -1, out: "", err: "cannot run", started: false)).err
             )
             continue
 
@@ -176,9 +176,9 @@ function an_untouched_build_still_hits(@r: report.Report, scratch: str, compiler
     if dir.is_err()
         report.keep_failure(@r, label: label, detail: "  cannot lay the program out under " + scratch)
         return
-    first = shell.run(
+    first = shell.run_guarded(
         scratch: scratch,
-        command: shell.patience() + shell.sq(compiler) + " build " + shell.sq(dir.must() + "/prog.hero")
+        words: [compiler, "build", dir.must() + "/prog.hero"]
     )
 
     if first.is_err() || first.must().code != 0
@@ -187,7 +187,7 @@ function an_untouched_build_still_hits(@r: report.Report, scratch: str, compiler
     moved = objects_newer_than(
         scratch: scratch,
         marker: dir.must() + "/marker",
-        command: shell.patience() + shell.sq(compiler) + " build " + shell.sq(dir.must() + "/prog.hero")
+        words: [compiler, "build", dir.must() + "/prog.hero"]
     )
 
     if moved.is_err()
@@ -213,9 +213,9 @@ function only_the_module_that_read_it_is_rebuilt(@r: report.Report, scratch: str
     if dir.is_err()
         report.keep_failure(@r, label: label, detail: "  cannot lay the program out under " + scratch)
         return
-    first = shell.run(
+    first = shell.run_guarded(
         scratch: scratch,
-        command: shell.patience() + shell.sq(compiler) + " build " + shell.sq(dir.must() + "/prog.hero")
+        words: [compiler, "build", dir.must() + "/prog.hero"]
     )
 
     if first.is_err() || first.must().code != 0
@@ -228,7 +228,7 @@ function only_the_module_that_read_it_is_rebuilt(@r: report.Report, scratch: str
     moved = objects_newer_than(
         scratch: scratch,
         marker: dir.must() + "/marker",
-        command: shell.patience() + shell.sq(compiler) + " build " + shell.sq(dir.must() + "/prog.hero")
+        words: [compiler, "build", dir.must() + "/prog.hero"]
     )
 
     if moved.is_err()
@@ -286,14 +286,14 @@ function a_reordered_variant_is_not_served_warm(@r: report.Report, scratch: str,
         if write_file(path: dir + "/hue.hero", text: hue_module(order)).is_err()
             report.keep_failure(@r, label: label, detail: "  cannot write the variant module")
             return
-        said = shell.run(
+        said = shell.run_guarded(
             scratch: scratch,
-            command: shell.patience() + shell.sq(compiler) + " run " + shell.sq(dir + "/caller.hero")
+            words: [compiler, "run", dir + "/caller.hero"]
         )
 
         if said.is_err() || said.must().code != 0
             wrong @ wrong.push(
-                "    with the cases in the order " + order.join(", ") + " the build did not run: " + said.default(shell.Run(code: -1, out: "", err: "cannot run")).err
+                "    with the cases in the order " + order.join(", ") + " the build did not run: " + said.default(shell.Run(code: -1, out: "", err: "cannot run", started: false)).err
             )
             continue
 
@@ -341,9 +341,9 @@ function a_warm_cache_never_turns_a_failure_into_a_pass(@r: report.Report, scrat
     wrong: [str] @ []
 
     for attempt in ["first", "second", "third"]
-        said = shell.run(
+        said = shell.run_guarded(
             scratch: scratch,
-            command: shell.patience() + shell.sq(compiler) + " build " + shell.sq(dir + "/caller.hero")
+            words: [compiler, "build", dir + "/caller.hero"]
         )
 
         if said.is_err()
@@ -370,14 +370,14 @@ function a_warm_cache_never_turns_a_failure_into_a_pass(@r: report.Report, scrat
     if write_file(path: dir + "/failbind.hero", text: GOOD_BIND).is_err() || write_file(path: dir + "/caller.hero", text: GOOD_CALLER).is_err()
         report.keep_failure(@r, label: label, detail: "  cannot write the repaired program")
         return
-    fixed = shell.run(
+    fixed = shell.run_guarded(
         scratch: scratch,
-        command: shell.patience() + shell.sq(compiler) + " run " + shell.sq(dir + "/caller.hero")
+        words: [compiler, "run", dir + "/caller.hero"]
     )
 
     if fixed.is_err() || fixed.must().code != 0 || fixed.must().out != "4.0\n"
         wrong @ wrong.push(
-            "    the repaired program did not run: exit " + fixed.default(shell.Run(code: -1, out: "", err: "cannot run")).code.to_str() + ", printed " + strings.trimmed(fixed.default(shell.Run(code: -1, out: "", err: "")).out) + " where `sqrt` of 16.0 is 4.0\n    Without this the case would pass by refusing every program forever."
+            "    the repaired program did not run: exit " + fixed.default(shell.Run(code: -1, out: "", err: "cannot run", started: false)).code.to_str() + ", printed " + strings.trimmed(fixed.default(shell.Run(code: -1, out: "", err: "", started: false)).out) + " where `sqrt` of 16.0 is 4.0\n    Without this the case would pass by refusing every program forever."
         )
 
     if wrong.len() > 0
@@ -412,25 +412,25 @@ function hue_module(order: [str]) -> str
 # has no clock, and the question is a comparison between two files
 # rather than a moment in time. The marker is written first and the
 # command runs after it, so anything newer was written by the command.
-function objects_newer_than(scratch: str, marker: str, command: str) -> [str]?
-    touched = shell.run(scratch: scratch, command: "touch " + shell.sq(marker))
+function objects_newer_than(scratch: str, marker: str, words: [str]) -> [str]?
+    touched = shell.run(scratch: scratch, program: "touch", words: ["touch", marker])
 
     if touched.is_err() || touched.must().code != 0
         return fail("cannot_run", "cannot write the marker at " + marker)
-    ran = shell.run(scratch: scratch, command: command)
+    ran = shell.run_guarded(scratch: scratch, words: words)
 
     if ran.is_err() || ran.must().code != 0
         return fail(
             "cannot_run",
-            "the build did not run: " + ran.default(shell.Run(code: -1, out: "", err: "cannot run")).err
+            "the build did not run: " + ran.default(shell.Run(code: -1, out: "", err: "cannot run", started: false)).err
         )
-    listed = shell.run(scratch: scratch, command: "find build -name '*.o' -newer " + shell.sq(marker))
+    listed = shell.found_under(dir: "build", suffix: ".o", reference: marker)
 
     if listed.is_err()
         return fail("cannot_run", "cannot list what moved under build/")
     out: [str] @ []
 
-    for row in strings.lines(listed.must().out)
+    for row in listed.must()
         # The runtime's own object is not in scope: it is keyed on the
         # runtime's contents and nothing here edits those.
         if row.len() > 0 && !strings.starts_with(text: strings.base_name(row), prefix: "runtime-")

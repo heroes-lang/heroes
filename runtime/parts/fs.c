@@ -94,6 +94,38 @@ int64_t hero_fs_mkdir_all(const char *path) {
     return hero_fs_mkdir_one(work);
 }
 
+/* Is `path` newer than `reference`? The question `find -newer` asked, and the
+ * one a build cache asks constantly: did this object get rebuilt after that
+ * marker was dropped.
+ *
+ * -1 when either path cannot be stat'd, so a caller can tell "older" from
+ * "not there" — which `find -newer` could not, because a missing file simply
+ * did not appear in its output. */
+int64_t hero_fs_newer_than(const char *path, const char *reference) {
+#if defined(_WIN32)
+    WIN32_FILE_ATTRIBUTE_DATA a;
+    WIN32_FILE_ATTRIBUTE_DATA b;
+    if (!GetFileAttributesExA(path, GetFileExInfoStandard, &a)) return -1;
+    if (!GetFileAttributesExA(reference, GetFileExInfoStandard, &b)) return -1;
+    return CompareFileTime(&a.ftLastWriteTime, &b.ftLastWriteTime) > 0 ? 1 : 0;
+#else
+    struct stat mine;
+    struct stat theirs;
+    if (stat(path, &mine) != 0) return -1;
+    if (stat(reference, &theirs) != 0) return -1;
+    if (mine.st_mtime != theirs.st_mtime) return mine.st_mtime > theirs.st_mtime ? 1 : 0;
+    /* Same second: the sub-second field decides, where the platform has one.
+     * A build can produce two files inside one second and often does. */
+#if defined(__APPLE__)
+    return mine.st_mtimespec.tv_nsec > theirs.st_mtimespec.tv_nsec ? 1 : 0;
+#elif defined(st_mtime)
+    return mine.st_mtim.tv_nsec > theirs.st_mtim.tv_nsec ? 1 : 0;
+#else
+    return 0;
+#endif
+#endif
+}
+
 /* `rm -f`: gone afterwards, and a path that was never there is success. */
 int64_t hero_fs_remove(const char *path) {
     if (remove(path) == 0) return HERO_OS_OK;

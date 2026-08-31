@@ -154,6 +154,10 @@ int64_t hero_fs_is_directory(const char *path);
 int64_t hero_fs_mkdir_all(const char *path);
 int64_t hero_fs_remove(const char *path);
 
+/* 1 when `path` is newer than `reference`, 0 when it is not, -1 when either is
+ * not there — a distinction `find -newer` could not make. */
+int64_t hero_fs_newer_than(const char *path, const char *reference);
+
 /* Replace `to` with `from`. Atomic on POSIX, and the cache depends on that: an
  * object is published by renaming it into place after its dependencies are
  * recorded, so a reader never sees it absent. The Windows arm asks
@@ -169,13 +173,39 @@ int64_t hero_fs_rename(const char *from, const char *to);
  * `hero_run_words[0]` is argv[0] by convention, so the program's own name is
  * pushed first like every other word.
  *
- * An empty `out_path` or `err_path` discards that stream — "discard" is spelled
- * in the runtime, never as `/dev/null` in `selfhost/`.
+ * An empty `out_path` or `err_path` INHERITS that stream, so the child writes
+ * where this process writes — the right default for `heroes run`, whose whole
+ * point is the program's own output. To throw a stream away, ask
+ * `hero_run_discard_path()` for the local spelling and pass it as the path:
+ * "discard" is a word the runtime knows and `selfhost/` does not.
  *
  * READ `*status` BEFORE THE RETURN VALUE. HERO_OS_OK means the program ran and
  * the return value is its exit code (or 128 + the signal that killed it);
  * HERO_OS_NOT_FOUND means it never started, which `system()` could not
  * distinguish from a program that legitimately exits 127. */
+HeroStr hero_run_discard_path(void);
+/* LISTING A DIRECTORY, AND REMOVING A TREE.
+ *
+ * The test harness reached these through `find … -print0` and `rm -rf`, which
+ * are POSIX utilities and die on cmd.exe. The listing cannot be returned as a
+ * `[str]` for the reason the argument list cannot be passed as one, so it is
+ * built here and read back a name at a time.
+ *
+ * `want` is HERO_DIR_FILES or HERO_DIR_DIRECTORIES; `recursive` walks down.
+ * Names come back RELATIVE to the directory scanned, joined with `/`, and
+ * neither `.` nor `..` is ever among them. -1 means the directory could not be
+ * read — a failure the shell's `2>/dev/null` used to hide. */
+#define HERO_DIR_FILES 0
+#define HERO_DIR_DIRECTORIES 1
+
+int64_t hero_dir_scan(const char *root, int64_t want, int64_t recursive);
+HeroStr hero_dir_at(int64_t index);
+
+/* Release the listing once its names have been read. A listing nobody releases
+ * is a leak the gate reports at exit. */
+void hero_dir_release(void);
+int64_t hero_dir_remove_tree(const char *path);
+
 void hero_run_reset(void);
 void hero_run_arg(HeroStr word);
 int64_t hero_run_go(const char *program, const char *out_path,

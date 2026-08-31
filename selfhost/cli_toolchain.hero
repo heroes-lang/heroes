@@ -31,7 +31,8 @@ use cli_io
 use cli_deps
 use cli_digest
 use cli_flags
-use cli_shell
+use cli_process
+use cli_runtime_key
 
 record Toolchain
     runtime: str
@@ -57,8 +58,10 @@ function locate_toolchain(hint: str, fingerprint: str) -> Toolchain?
 
     for candidate in candidates
         if !read_file(candidate + "/heroes_runtime.h").is_err() && !read_file(candidate + "/runtime.c").is_err()
+            gathered = cli_runtime_key.runtime_text(candidate)?
+
             return ok(
-                Toolchain(runtime: candidate, build: "build", fingerprint: fingerprint, runtime_key: cli_digest.digest(runtime_text(runtime: candidate, build: "build")))
+                Toolchain(runtime: candidate, build: "build", fingerprint: fingerprint, runtime_key: cli_digest.digest(gathered))
             )
 
     return fail(
@@ -72,15 +75,26 @@ function locate_toolchain(hint: str, fingerprint: str) -> Toolchain?
 # exits 2. A WARNING is forwarded rather than swallowed, and that is
 # the whole point of the flag set: a warning nobody sees cannot
 # falsify anything.
-function run_clang(line: str, what: str, err_path: str) -> ()?
-    status = cli_shell.shell(command: line + " 2> " + cli_shell.sq(err_path))
+function run_clang(line: [str], what: str, err_path: str) -> ()?
+    ran = cli_process.run(program: "clang", words: line, out: "", err: err_path)
     noise: str @ ""
     captured = read_file(err_path)
 
     if !captured.is_err()
         noise @ captured.must()
 
-    if status == 0
+    # **Never started is not the same as ran and failed**, and until
+    # M-argv-execution this line could not tell them apart: `system()`
+    # answers 127 for a missing program and for one that exits 127
+    # alike, so a machine with no clang was reported as the compiler's
+    # own bug — *"internal error: the runtime did not compile"*.
+    if !ran.started
+        return fail(
+            "clang",
+            "clang is not on this machine's PATH, so " + what + " could not run.\n  `heroes doctor` says what this machine has"
+        )
+
+    if ran.code == 0
         if trimmed(noise).len() > 0
             cli_io.eprint_raw(text: noise)
         return ok()
@@ -100,40 +114,18 @@ function trimmed(text: str) -> str
 
     return cs.slice(from: head, to: tail).join("")
 
-# Whether a path names anything — through the shell, because read_file
-# refuses a directory and chokes on a binary's bytes; `test -e` is the
-# one honest probe the port has.
+# Whether a path names anything. It asked `test -e` through a shell
+# until M-argv-execution, because `read_file` refuses a directory and
+# chokes on a binary's bytes; the runtime answers it now, on every
+# platform, without a utility having to exist.
 function exists(path: str) -> bool
-    return cli_shell.shell(command: "test -e " + cli_shell.sq(path)) == 0
+    return cli_process.path_exists(path)
 
 function is_directory(path: str) -> bool
-    return cli_shell.shell(command: "test -d " + cli_shell.sq(path)) == 0
+    return cli_process.is_directory(path)
 
 function mkdir_all(path: str) -> ()?
-    if cli_shell.shell(command: "mkdir -p " + cli_shell.sq(path)) != 0
-        return fail("failed", "cannot create " + path)
-    return ok()
-
-# The runtime's whole contents — EVERY file, not the two entry points:
-# runtime.c is assembled from parts/, so hashing only the file clang
-# is handed would let a part be edited with the cached object still
-# used. The shell's glob order is sorted, so the key is a function of
-# the contents and not of readdir order.
-#
-# It takes the two strings rather than the Toolchain because it is what
-# BUILDS one: `locate_toolchain` calls it to fill `runtime_key`, and
-# every other caller reads that field instead.
-function runtime_text(runtime: str, build: str) -> str
-    gathered = build + "/runtime-sources.txt"
-    _ = mkdir_all(build)
-    _ = cli_shell.shell(
-        command: "cat " + cli_shell.sq(runtime) + "/*.c " + cli_shell.sq(runtime) + "/*.h " + cli_shell.sq(runtime) + "/parts/*.c " + cli_shell.sq(runtime) + "/parts/*.h > " + cli_shell.sq(gathered) + " 2>/dev/null"
-    )
-    found = read_file(gathered)
-
-    if found.is_err()
-        return ""
-    return found.must()
+    return cli_process.mkdir_all(path)
 
 # Where this program's artifacts live: build/<hash>/. The hash is what
 # makes two files with the same stem, or the same file at two levels,
@@ -185,7 +177,13 @@ function runtime_object(t: Toolchain, level: str, sanitize: bool) -> str?
         return ok(object)
     depfile = object + ".d"
     staged = object + ".tmp"
-    line: str @ "clang " + words(cli_flags.flags()) + " " + level + " " + words(cli_flags.sanitizers(sanitize: sanitize)) + " -c -MD -MT dep -MF " + cli_shell.sq(depfile) + " " + cli_shell.sq(t.runtime + "/runtime.c") + " -I " + cli_shell.sq(t.runtime) + " -o " + cli_shell.sq(staged)
+    line: [str] @ with_all(list: ["clang"], more: cli_flags.flags())
+    line @ line.push(level)
+    line @ with_all(list: line, more: cli_flags.sanitizers(sanitize: sanitize))
+    line @ with_all(
+        list: line,
+        more: ["-c", "-MD", "-MT", "dep", "-MF", depfile, t.runtime + "/runtime.c", "-I", t.runtime, "-o", staged]
+    )
     ran = run_clang(line: line, what: "compiling the runtime", err_path: t.build + "/clang-stderr.txt")
 
     if ran.is_err()
@@ -203,7 +201,7 @@ function runtime_object(t: Toolchain, level: str, sanitize: bool) -> str?
     if recorded.is_err()
         return fail("failed", "cannot record what the runtime's translation unit read")
 
-    if cli_shell.shell(command: "mv -f " + cli_shell.sq(staged) + " " + cli_shell.sq(object)) != 0
+    if cli_process.rename_over(from: staged, to: object).is_err()
         return fail("failed", "cannot publish " + object)
     return ok(object)
 
@@ -212,13 +210,16 @@ function bool_text(value: bool) -> str
         return "true"
     return "false"
 
-function words(list: [str]) -> str
-    quoted: [str] @ []
+# One list after another. It replaces `words()`, which quoted every
+# element for a POSIX shell and joined them with spaces — the whole
+# reason a filename with a space in it was ever a question here.
+function with_all(list: [str], more: [str]) -> [str]
+    out: [str] @ list
 
-    for one in list
-        quoted @ quoted.push(cli_shell.sq(one))
+    for one in more
+        out @ out.push(one)
 
-    return quoted.join(" ")
+    return out
 
 # Compile one generated unit and link it with the runtime. The unit is
 # compiled to an object THAT SURVIVES (the Darwin N_OSO repair: the
@@ -235,51 +236,56 @@ function link(t: Toolchain, c_file: str, object: str, binary: str, level: str, s
     err_path = t.build + "/clang-stderr.txt"
     unit_object = c_file + ".o"
     staged_object = unit_object + ".tmp"
-    compile_line: str @ "clang " + words(cli_flags.flags()) + " " + level + " " + words(cli_flags.sanitizers(sanitize: sanitize)) + " -c"
+    compile_line: [str] @ with_all(list: ["clang"], more: cli_flags.flags())
+    compile_line @ compile_line.push(level)
+    compile_line @ with_all(list: compile_line, more: cli_flags.sanitizers(sanitize: sanitize))
+    compile_line @ compile_line.push("-c")
 
     for dir in search_include
-        compile_line @ compile_line + " -I " + cli_shell.sq(dir)
+        compile_line @ with_all(list: compile_line, more: ["-I", dir])
 
     for flag in package_flags
         if starts_with(text: flag, prefix: "-I")
-            compile_line @ compile_line + " " + cli_shell.sq(flag)
+            compile_line @ compile_line.push(flag)
 
-    compile_line @ compile_line + " " + cli_shell.sq(c_file) + " -I " + cli_shell.sq(t.runtime)
+    compile_line @ with_all(list: compile_line, more: [c_file, "-I", t.runtime])
 
     if source_dir.len() > 0
-        compile_line @ compile_line + " -I " + cli_shell.sq(source_dir)
-    compile_line @ compile_line + " -o " + cli_shell.sq(staged_object)
+        compile_line @ with_all(list: compile_line, more: ["-I", source_dir])
+    compile_line @ with_all(list: compile_line, more: ["-o", staged_object])
     compiled = run_clang(line: compile_line, what: "compiling the generated C", err_path: err_path)
 
     if compiled.is_err()
         compiled?
 
-    if cli_shell.shell(command: "mv -f " + cli_shell.sq(staged_object) + " " + cli_shell.sq(unit_object)) != 0
+    if cli_process.rename_over(from: staged_object, to: unit_object).is_err()
         return fail("failed", "cannot publish " + unit_object)
-    link_line: str @ "clang " + words(cli_flags.flags()) + " " + level + " " + words(cli_flags.sanitizers(sanitize: sanitize))
+    link_line: [str] @ with_all(list: ["clang"], more: cli_flags.flags())
+    link_line @ link_line.push(level)
+    link_line @ with_all(list: link_line, more: cli_flags.sanitizers(sanitize: sanitize))
 
     for dir in search_include
-        link_line @ link_line + " -I " + cli_shell.sq(dir)
+        link_line @ with_all(list: link_line, more: ["-I", dir])
 
     for dir in search_library
-        link_line @ link_line + " -L " + cli_shell.sq(dir)
+        link_line @ with_all(list: link_line, more: ["-L", dir])
 
-    link_line @ link_line + " " + cli_shell.sq(unit_object) + " " + cli_shell.sq(object)
+    link_line @ with_all(list: link_line, more: [unit_object, object])
 
     for flag in package_flags
-        link_line @ link_line + " " + cli_shell.sq(flag)
+        link_line @ link_line.push(flag)
 
     for name in link_names
-        link_line @ link_line + " " + cli_shell.sq("-l" + name)
+        link_line @ link_line.push("-l" + name)
 
     staged = binary + ".tmp"
-    link_line @ link_line + " -o " + cli_shell.sq(staged)
+    link_line @ with_all(list: link_line, more: ["-o", staged])
     linked = run_clang(line: link_line, what: "linking", err_path: err_path)
 
     if linked.is_err()
         linked?
 
-    if cli_shell.shell(command: "mv -f " + cli_shell.sq(staged) + " " + cli_shell.sq(binary)) != 0
+    if cli_process.rename_over(from: staged, to: binary).is_err()
         return fail("failed", "cannot publish " + binary)
     return ok()
 
@@ -333,7 +339,7 @@ test "the toolchain finds the real runtime and compiles it through system()"
     # A broken unit fails with clang's own words carried back.
     _ = write_file(path: "build/selftest_broken.c", text: "int main(void) { return undeclared_name; }\n")
     bad = run_clang(
-        line: "clang -c 'build/selftest_broken.c' -o 'build/selftest_broken.o'",
+        line: ["clang", "-c", "build/selftest_broken.c", "-o", "build/selftest_broken.o"],
         what: "compiling the generated C",
         err_path: "build/selftest_err.txt"
     )

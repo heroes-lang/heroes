@@ -27,7 +27,7 @@ use cli_argv
 use cli_io
 use cli_table
 use cli_toolchain
-use cli_shell
+use cli_process
 use library_source
 use mutate_ops
 use mutate_score
@@ -76,9 +76,19 @@ function run(inv: cli_argv.Invocation) -> cli_table.Exit
 # Every `.hero` file under `dir`, sorted, with its text.
 function corpus(dir: str) -> [mutate_score.Program]?
     _ = cli_toolchain.mkdir_all("build")
-    line = "find " + cli_shell.sq(dir) + " -type f -name '*.hero' -print0 > " + cli_shell.sq(LISTING)
 
-    if cli_shell.shell(command: line) != 0
+    # `*.hero` is passed to `find` as a LITERAL word, which is what it
+    # always had to be. Through a shell it survived only because the
+    # quotes were remembered; through an argument list there is nobody
+    # left to expand it.
+    ran = cli_process.run(
+        program: "find",
+        words: ["find", dir, "-type", "f", "-name", "*.hero", "-print0"],
+        out: LISTING,
+        err: cli_process.discard()
+    )
+
+    if !ran.started || ran.code != 0
         return fail("no_corpus", "cannot read " + dir)
     listing = read_file(LISTING)
 
@@ -160,8 +170,16 @@ test "the NUL split keeps a name that holds a newline whole"
 function one_nul() -> str
     _ = cli_toolchain.mkdir_all("build")
     path = "build/mutate-nul-selftest"
-    line = "printf 'x\\000y' > " + cli_shell.sq(path)
-    _ = cli_shell.shell(command: line)
+
+    # `printf` rather than `write_file`, because a Heroes `str` cannot
+    # hold the byte this function exists to produce: `"\\000"` is not
+    # among the six escapes the language admits (spec:70).
+    _ = cli_process.run(
+        program: "printf",
+        words: ["printf", "x\\000y"],
+        out: path,
+        err: cli_process.discard()
+    )
     got = read_file(path)
 
     if got.is_err()
