@@ -118,11 +118,13 @@ and this is it.
 > Developed on macOS arm64; CI runs every push on Linux x86-64, and widens to all
 > three platforms at a tag. Windows was added on 2026-08-24, when the compiler
 > stopped binding `unistd.h` and the last POSIX header left `seed/heroes.c`,
-> **and the tag that was supposed to confirm it did the opposite**: the
+> and the first tag that was supposed to confirm it did the opposite: the
 > `m-separate-compilation` run of 2026-08-26 was red on all three platforms at
-> three different steps, Windows at `heroes doctor`. This file says so rather
-> than letting the last green push, which is Linux and a subset of the steps,
-> imply otherwise.
+> three different steps, Windows at `heroes doctor`. **Confirmed since:** after
+> the M-argv-execution CI repairs, the full dispatch of 2026-08-31 (run
+> 33419946408) is green on all three platforms — Windows x86-64 in 20m28s.
+> This file said the red out loud rather than letting a partial green imply
+> otherwise, and it says the green the same way: by run id.
 
 ## The thesis, and how much of it is measured
 
