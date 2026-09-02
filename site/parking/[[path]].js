@@ -1,4 +1,7 @@
-// Catch-all: holds every URL of the site on the parking page until launch.
+// Catch-all: holds every URL of the site on the parking page while it is armed.
+//
+// THIS FILE IS DORMANT. It sits outside the deploy path, so it shadows nothing;
+// `README.md` beside it holds the three paths that arm it and the two traps.
 //
 // Cloudflare Pages evaluates Functions BEFORE static assets, and falls back to
 // a static asset only when no Function matched. So this one file shadows the
@@ -6,10 +9,11 @@
 // site is deployed underneath the whole time, complete and warm; it is simply
 // unreachable until this file goes away.
 //
-// LAUNCH = delete this file and `public/_routes.json`. Nothing else: no rebuild
-// of anything, no domain to move between projects, no deploy setting to find.
-// That is the point of doing it this way rather than with a password or a
-// separate staging project, and it is why the gate costs nothing to keep.
+// ARMING AND DISARMING is moving this file and `_routes.json` between
+// `site/parking/` and the deploy path. Nothing else: no rebuild of anything, no
+// domain to move between projects, no deploy setting to find. That is the point
+// of doing it this way rather than with a password or a separate staging
+// project, and it is why the gate costs nothing to keep.
 //
 // It lives beside the site because wrangler collects Functions from a
 // `functions/` directory in the WORKING DIRECTORY it is run from, never from
@@ -18,10 +22,10 @@
 // decision: move one without the other and the deploy still succeeds, silently,
 // with every URL of the site open and nothing in the log to say so.
 //
-// Rules this file is under: CLAUDE.md §14 makes publishing the site a hard stop
-// that only the author lifts, and `site/README.md` § Launch order adds the
-// reason it is not lifted yet, which is that every "check me" link on these
-// pages points at a repository that answers 404 while it is private.
+// The gate was lifted by the author, who publishes the site ahead of the
+// repository and says so on the pages that promise a download. Why that is the
+// order, and what it obliges the copy to state, is `site/README.md`
+// § Launch order.
 
 // Opens the real site for one browser: visit any URL with `?preview=starman`
 // once. The token is a speed bump and not a secret. All it is asked to do is

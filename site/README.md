@@ -276,39 +276,43 @@ right content type, and a missing page answers 404. `sitemap.xml` is the one
 name in the paragraph above that no longer exists: the sitemap is generated, and
 it is `sitemap-index.xml` plus `sitemap-0.xml`.
 
-## Deployment — Cloudflare Pages, behind a gate
+## Deployment — Cloudflare Pages
 
 The route is **Cloudflare Pages, by Direct Upload from GitHub Actions**, and it
 is the same one the author's other site runs on. Its only home is this section.
 
-**The site is deployed and it is not published.** Those are two different acts
-here, and keeping them apart is the whole design. CLAUDE.md §14 makes publishing
-a hard stop only the author lifts, and § Launch order below says why it is not
-lifted: `llms.txt` and every *check me* link on these pages points at a
-repository that answers 404 while it is private.
+**The site is published.** It was deployed and shut for the whole time before
+that, and keeping those two acts apart is what let every page be written
+finished. CLAUDE.md §14 made publishing a hard stop only the author lifts, and
+the author lifted it: the site goes out ahead of the repository, with the
+private repository stated on the pages that promise a download. § Launch order
+below is the record of that decision and of what it obliges the copy to say.
 
-### The gate
+### The gate, disarmed
 
-`site/functions/[[path]].js` is a Pages Function that matches every URL.
-Cloudflare evaluates Functions **before** static assets, so that one file
-shadows the entire site: the real pages are uploaded underneath, complete and
-warm, and simply unreachable. `/` answers **200** with the holding page,
-everything else answers **404** with the same body, and both carry
-`x-robots-tag: noindex`.
+The gate that held the site shut is three files, and they are **dormant in
+`site/parking/`** rather than deleted. That directory's own README holds the
+three paths, how to re-arm them and the two ways the move fails silently; the
+mechanism is worth keeping, because the next thing written before it is meant to
+be read gets the same door for free. It is also what the author's other site did
+at its own launch, and `giuseppearici.com`'s `site/parking/` holds the same three
+files for the same reason.
 
-**Opening the site is deleting two files**, `site/functions/[[path]].js` and
-`site/public/_routes.json`. No rebuild of anything else, no domain to move
-between projects, no setting to find in a dashboard.
+How it worked while it was armed, because § The workflows below rests on it.
+`parking/[[path]].js` is a Pages Function matching every URL, and Cloudflare
+evaluates Functions **before** static assets, so that one file shadowed the
+entire site: the real pages were uploaded underneath, complete and warm, and
+simply unreachable. `/` answered **200** with the holding page, everything else
+**404** with the same body, and both carried `x-robots-tag: noindex`. Any URL
+visited once with `?preview=starman` planted a cookie and redirected to the
+clean URL, so the token stopped riding in the address bar. The token is written
+in the clear on purpose: it is a speed bump, not protection, and calling it one
+is what stops anybody relying on it.
 
-To read the real site before then, visit any URL with `?preview=starman` once:
-it plants a cookie and redirects to the clean URL, so the token stops riding in
-the address bar. The token is written in a public file on purpose — it is a
-speed bump, not protection, and calling it one stops anybody relying on it.
-
-`public/_parking.html` is self-contained, and that is not tidiness.
-`_routes.json` excludes that one path from the Function, so a request for
-`/style.css` reaches the Function like every other and comes back as the holding
-page. A stylesheet link in it would render unstyled.
+**Arming and disarming is moving files, and nothing else.** No rebuild of
+anything, no domain to move between projects, no setting to find in a dashboard.
+That is the whole reason the gate was built this way rather than as a password or
+a separate staging project.
 
 ### The workflows
 
@@ -325,10 +329,11 @@ Three details in there are load-bearing and each one fails **silently** if moved
   had.
 - **The deploy step runs from `site/`** and hands wrangler `dist`. Wrangler
   collects Functions from a `functions/` directory in the working directory it
-  is run from, never from inside the output directory it is given. Move
-  `site/functions/` without moving the step's `working-directory` and the deploy
-  still succeeds, with every URL of the site open and nothing in the log to say
-  so.
+  is run from, never from inside the output directory it is given. That is what
+  makes the gate a file move, and it is the trap on the day it is re-armed: put
+  the catch-all anywhere but `site/functions/`, or move this step's
+  `working-directory` away from it, and the deploy still succeeds with every URL
+  of the site open and nothing in the log to say so.
 - **`--branch=main`** marks the upload as production even when the run came from
   a tag.
 
@@ -346,9 +351,10 @@ compiler from seed and running the net to answer a question no file under
 ignore list is safe by default, and a new directory of real code stays covered
 without anybody remembering to add it.
 
-The site keeps its own gate either way. `deploy-site.yml` runs `npm run build`
-on every push that touches `site/`, so a site that does not build is a red
-workflow rather than a bad deploy.
+`deploy-site.yml` runs `npm run build` on every push that touches `site/`, so a
+site that does not build is a red workflow rather than a bad deploy. Now that the
+site is public that is the only thing standing between a bad commit and a live
+page, which is worth knowing before editing a template.
 
 ### The credentials
 
@@ -394,10 +400,16 @@ Four things learned doing it, each of which cost time:
   "/.well-known/")`**, or Universal SSL cannot complete its challenge and parks
   in `Pending Validation` for good.
 
-Verified live once it was up, against four independent public resolvers: `/`
-answers 200 with the holding page, every other path answers 404, both carry
-`x-robots-tag: noindex`, `?preview=` opens the real site in both editions, `www`
-answers 301 to the apex, and the certificate is issued to `heroes-lang.org`.
+Verified live once it was up, while the gate was still armed, against four
+independent public resolvers: `/` answered 200 with the holding page, every
+other path 404, both with `x-robots-tag: noindex`, `?preview=` opened the real
+site in both editions, `www` answered 301 to the apex, and the certificate was
+issued to `heroes-lang.org`. **Three of those six facts were about the gate and
+are gone with it.** What still has to be true after a publish, and is worth
+re-running rather than assuming: both landings and a nested chapter in each
+edition answer 200, a missing page answers 404, `robots.txt` and
+`sitemap-index.xml` answer 200, no response carries `noindex`, `www` still
+answers 301 to the apex, and the certificate still names the apex.
 
 ## The Italian edition — `site/src/html/it/`
 
@@ -638,10 +650,11 @@ copy could be wrong later:
    (author, 2026-09-02), which turns the copy this rule already required into a
    plain statement of fact rather than a bet on a launch day. The copy says
    *"published on Amazon"* and names no day. Two things made the old rule expire
-   at once. The site sits behind the holding page with
-   the same preview token as the author's own site (`starman`), so both are
-   written in their finished state and open together, which is what removes the
-   risk the dated wording existed to cover. And § No dates on the page in
+   at once. The site sat behind a holding page with
+   the same preview token as the author's own site (`starman`), so both were
+   written in their finished state and opened within days of each other, which is
+   what removed the risk the dated wording existed to cover; the author confirmed
+   on 2026-09-03 that both editions are on sale. And § No dates on the page in
    `CLAUDE.md` had already taken every other date off the site; the release
    wording was its one standing exception, and it no longer needs to be one.
    What survives from the old rule is the reason under it: **an ISBN existing is
@@ -694,23 +707,25 @@ copy could be wrong later:
 
 **The book has one domain per edition** (author instruction 2026-08-18):
 `glieroidelcodice.it` for the Italian, `heroesofcode.com` for the English, each
-linked from its own edition's `author.html` on the title. **Both still 301 to
-`giuseppearici.com` pages that answer 404**, re-measured 2026-08-29, and the
-pre-publication check that used to hang on that is answered rather than pending:
-the 404 is the other site's own holding page, not a missing page, and the two
-sites open together. The redirects themselves are live and correct, measured the
-same day: `glieroidelcodice.it` and `heroesofcode.com` each land on their
-edition's book page in one hop.
+linked from its own edition's `author.html` on the title. **Both are live end to end, and the caveat this sentence used to carry is
+spent** (re-measured 2026-09-03). It said the two domains 301 to
+`giuseppearici.com` pages answering **404**, which was true while that site sat
+behind its own holding page. That site is published now, and the books are on
+sale on Amazon (author, 2026-09-03). One hop each, and a **200** at the end:
+`glieroidelcodice.it` to `/it/libri/eroi-del-codice/` and `heroesofcode.com` to
+`/en/books/heroes-of-code/`.
 
-**The author's own site is linked, and that is what closed the condition above**
+**The author's own site is linked, and the bet that link was is now settled**
 (author decision 2026-08-29). It used to be omitted because
 `giuseppearici.com/en/` answered **404**, and the rule was to omit rather than
-send visitors to a parking page. What changed is not the status code, which is
-still 404 today, measured: it is that **both sites are behind the same holding
-page with the same preview token** (`starman`), so they are written finished and
-open together, and a link between two sites that open on the same day is not a
-dead end, it is a link that has not been switched on yet. The two places are the
-ones the old rule named: the *Elsewhere / Altrove* line on `author.html`, and
+send visitors to a parking page. The decision to link it anyway rested on both
+sites being behind the same holding page with the same preview token
+(`starman`), written finished and opening together, which makes a link between
+them not a dead end but a door not yet open. **That site opened first, and both
+locales answer 200**, measured 2026-09-03: `/it/` and `/en/`. So those links now
+point at live pages, and the reasoning above survives as the precedent this site
+leans on for its own GitHub links in § Launch order. The two places are the ones
+the old rule named: the *Elsewhere / Altrove* line on `author.html`, and
 the byline in the footer, where the name itself is the link on all **44** pages
 (22 per edition, one occurrence each, two sentence shapes in total, which is why
 one substitution per edition does the job). Two rules on those links. Each
@@ -911,7 +926,33 @@ other page is watched. The entries carry **no dates** (`CLAUDE.md` § No dates o
 the page): the order of the list is the chronology, so a new entry goes on top
 and nothing else moves.
 
-## Launch order — the repository goes public first
+## Launch order — the site went first, and says so
+
+**The author reversed this section on 2026-09-03 and the site is published with
+the repository still private**, because consolidation work has to finish before
+the code can be public and the site does not have to wait for it. The finding
+below is not deleted, because it was right and it is what the reversal has to
+pay for: the site's whole mechanism is *check me*, and every check still 404s.
+
+**What the site owes in exchange, and this is the whole of the price.** The
+pages that promise something reachable say plainly that it is not reachable yet:
+a standing notice at the head of § Run it on both landings, one on both
+documentation landings where the specification link and the per-chapter file
+links sit, and a paragraph in `llms.txt` above the spec link it offers a model.
+Every sentence claiming the record *is public* was rewritten to say it is kept
+there and opens with the code, in all four places it appeared: the two home
+footers and both editions of `panel.html`. Measured unauthenticated the day of
+the decision, and the reason the notice is not optional:
+`github.com/heroes-lang/heroes` **404**, `raw.githubusercontent.com/...
+/spec/heroes-spec.md` **404**, the old `giuseppearici/heroes-lang` **404**.
+
+**The links stay clickable** (author decision, same day). The addresses are
+final and open with the code, so a live link is a door that is not open rather
+than a wrong address, and the day the repository opens there is nothing to put
+back. That is the same reasoning that put the author's own site in the footer
+while it was still shut, one section above.
+
+The finding that stood here, and its measurement, unchanged:
 
 `github.com/heroes-lang/heroes` returned **404** to an unauthenticated request on
 2026-08-30, because the repository is private. Every

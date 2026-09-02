@@ -5,8 +5,9 @@ name: Deploy site
 # The site is an Astro project: `npm run build` turns `site/src/` into
 # `site/dist/`, and wrangler uploads that. `site/public/` still exists and is
 # still deployed, but it holds the assets alone now — the stylesheet, the
-# portrait, robots.txt, llms.txt and the parking page — and Astro copies it into
-# `dist/` on its way.
+# portrait, robots.txt, llms.txt — and Astro copies it into `dist/` on its way.
+# The holding page left it when the site was published: it is dormant in
+# `site/parking/`, whose README says how to re-arm it.
 #
 # What reaches Cloudflare is a DIRECT UPLOAD: the files are finished before they
 # leave here, so the deploy spends none of the 500 builds a month the Pages Free
@@ -80,10 +81,12 @@ jobs:
       # This step runs from `site/`, like every other step in the job. Wrangler
       # collects Pages Functions from a `functions/` directory in the working
       # directory it is run from, never from inside the output directory it is
-      # handed, so this step's `working-directory` and the location of
-      # `site/functions/[[path]].js` are one decision. Move one without the
-      # other and the deploy still succeeds, silently, with every URL of the
-      # site open months early and nothing in the log to say so.
+      # handed. There is no `site/functions/` today, because the pre-launch gate
+      # was disarmed by moving it to `site/parking/`, and that is exactly why
+      # this comment stays: the day it is re-armed, this step's
+      # `working-directory` and the catch-all's location are one decision. Get
+      # them apart and the deploy still succeeds, silently, with every URL of
+      # the site open and nothing in the log to say so.
       #
       # `--branch=main` marks the upload as PRODUCTION, including when the run
       # was started by a tag rather than by a push to main.
