@@ -246,3 +246,35 @@ than the compiler's behaviour.
 What it does **not** settle: anything this file keys to a measurement that has not
 been taken. Those stay open on their own terms, listed in `docs/debrief/QUEUE.md`,
 and a blanket yes cannot make a number arrive.
+
+## Scoring — 2026-09-02, appended at panel 099 (M-package-layout opening)
+
+**The ergonomist's second prediction is scored; nothing else on this page moves.**
+
+> under D **as tabled**, ≥50% of `use` lines from a subdirectory to a peer take
+> the root-relative spelling; if the compiler is file-relative, a 6-file
+> 3-directory program first-try-compiles ~0% of the time
+
+**Both halves confirmed, at n=1 seat.** Panel 099 ran the experiment this
+prediction was waiting for: its llm-ergonomist designed a 6-file 3-directory
+program from a spec carrying only R4's line — this file's own +26 form, whose
+measurement re-confirmed at **3618** today — with the base deliberately unsaid,
+and wrote its answer to disk before seeing either candidate. The one
+subdirectory-to-peer `use` line it produced was `use lex/token` from
+`syntax/parse.hero`: **root-relative, 1 of 1**. Under the file-relative reading
+its program is illegal in **two** `use` lines, a 0% first try, and both failures
+are loud (a missing module) rather than silent.
+
+**The sample is one seat and is recorded as one.** Panel 099 registers the
+harness-scale version of the same prediction rather than treating this as the
+question's close, and its own resolution R1 adopts the root base — provisionally,
+pending the author — for reasons that do not rest on this score alone.
+
+**Two of this file's other numbers had already moved** and were corrected in
+`docs/work/SCHEDULED.md` and `DESIGN-LOG:435` on 2026-08-25, not here: the
+spec-warden's *≥40 of 119 renames* costs **zero** on today's tree (167
+`selfhost/` modules, no basename collisions — re-measured 2026-09-02), and the
+compiler-engineer's *≤45 files at M8b close* was **143** at the tag and is
+**167** now, falsified by more than 3×. **R5 was re-measured and holds**: over a
+plausible directory layout of today's tree, last parts collide in **13 groups
+over 32 modules** and whole paths **zero** times (panel 099, ffi-pragmatist).
