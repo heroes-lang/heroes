@@ -9,6 +9,114 @@
 
   <ol class="log">
     <li>
+      <span class="when">M-documentation-site: where the files go</span>
+      <b>This site had thirteen chapters and not one of them said where a program&rsquo;s files go.</b>
+      That is the part of the language that had changed most recently. A program
+      can now spread over folders, a line naming another file means the same
+      thing wherever you copy it to, and there is deliberately no way to reach
+      upward out of your own project. A reader arriving here could learn how
+      numbers work, how errors work, how to talk to C, and would leave with no
+      idea how to write a program in more than one file. So there is a
+      fourteenth chapter, in both languages, and the interesting part is what it
+      is built out of. Every piece of code on it is a slice of one real program
+      in the repository, quoted with the file name and the line numbers, and
+      checked automatically against the file so that documentation going stale
+      becomes a failing test rather than an embarrassment somebody notices
+      later. That buys something nobody planned: the program prints one number
+      for the folder at the top and a different one for the folder underneath,
+      so if the rule about where files are found ever changes, the program&rsquo;s
+      expected output changes, the tests go red, and the page cannot quietly
+      become a lie. The three error messages on it are real output, produced by
+      taking the working program and breaking it three ways on purpose, and one
+      of the three is a rule the compiler learned the same afternoon.
+      <a class="more" href="/docs/modules/">Read the chapter</a>
+    </li>
+    <li>
+      <span class="when">M-corpus-coverage: the library nobody called</span>
+      <b>The job was twenty more programs, chosen so that between them they use every part of the language. The first one found a hole in the compiler.</b>
+      Not a subtle hole: a program the checker said was fine, which then refused
+      to build, with the compiler blaming itself rather than the person who wrote
+      it. The program was three lines of the most ordinary thing anybody does
+      with a list, take each item, turn it into a number, add the numbers up,
+      written the way the language&rsquo;s own one-page description teaches it.
+      And that spelling had never once been written down in this project. The six
+      little helpers the language ships for exactly this work were called by a
+      single test file, one of them by nothing at all, and the shorthand the
+      documentation uses to explain them appeared in zero programs. What was
+      wrong underneath only shows in a chain. Writing
+      <code>list.transform(f).total(g)</code>, the compiler recorded what each of
+      those two calls works on by remembering <i>where in the file it starts</i>,
+      and a chain like that starts, for both of them, at the same character. Two
+      different files in the compiler each carried a comment asserting this could
+      not happen, and the second one blessed the first. The repair rests on the
+      same asymmetry that caused it: a chained call starts where its receiver
+      starts, and it <i>ends</i> at its own closing bracket, so the ends are
+      always different. Then nineteen more programs, and the language corrected
+      the person writing them seven times.
+      <a class="more" href="/docs/">The chapters</a>
+    </li>
+    <li>
+      <span class="when">M-selfhost-nesting: the prefixes were load-bearing</span>
+      <b>The compiler&rsquo;s own hundred and seventy files were named like a filing cabinet nobody had bought, and the job was to buy the cabinet.</b>
+      Put them in folders, let the names get short. It is the most boring change
+      imaginable and it found three things. The first is that the long names had
+      been doing a job nobody wrote down: nobody ever calls a variable
+      <code>emit_decls</code>, everybody calls one <code>decls</code>, so the
+      prefixes had been holding the module names apart from the ordinary words
+      for values, silently and for free. Taking them off let the two collide in
+      twenty-three places at once. The second is what the collisions were hiding.
+      A file that borrows a module called <code>state</code> and also has a
+      variable called <code>state</code> can write <code>state.value</code> twice
+      and mean two different things, and the compiler said nothing at all: it
+      printed one number on one line and a different one on the next and exited
+      happily. And the rule forbidding that had been decided months earlier, in
+      writing, and approved. The compiler simply never did it. Two of its own
+      comments claimed it did, and a test written on purpose asserted the wrong
+      behaviour was correct, so the contradiction sat in the repository with a
+      green tick on it.
+      <a class="more" href="/selfhost/">The compiler in its own language</a>
+    </li>
+    <li>
+      <span class="when">M-package-layout: a module may be a path</span>
+      <b>For a month the language had one rule about where files live: a module is one word, and every file a program reads sits beside the file that names it.</b>
+      Breaking that rule took three review sittings in one day. The third was
+      called because the author looked at the answer the first two had given and
+      asked whether the name could not simply be the folder and the file joined
+      together. It could, and it was better on almost every number anybody
+      measured: a hundred and twenty-seven of the compiler&rsquo;s own modules
+      would have kept the exact name their four thousand call sites already
+      wrote, the collisions would have gone to zero, and the specification would
+      have got shorter. Four of the five judges approved it. It was refused
+      anyway, on the one argument nobody else had made: the rule already shipped
+      can be widened later, and this one could only be swapped, and swapping it
+      rewrites every program ever written in the language. What the day actually
+      taught is smaller and lives in the formatter. A new word entered the
+      language and reached six different pieces of the compiler one at a time,
+      and the sixth was the tool that rewrites your file for you: it did not know
+      the new word, so it deleted it, silently, from a program that worked. The
+      guard that exists to catch exactly that was looking through the same broken
+      window, so it saw two identical pictures and said nothing.
+      <a class="more" href="/docs/modules/">Modules and files</a>
+    </li>
+    <li>
+      <span class="when">M-argv-execution: the shell stops being the boundary</span>
+      <b>The compiler used to talk to the machine by writing a sentence and handing it to a shell.</b>
+      On Windows the shell reads a different language, so the very first sentence
+      made a directory named after one of its own options, and everything after
+      that was downstream of the mistake. The fix was not to learn the other
+      shell&rsquo;s grammar. It was to stop writing sentences: a program is now
+      handed a list of words, the platform difference lives in twenty lines of C
+      where a platform difference is an ordinary thing to write, and a
+      hand-maintained quoting function with a hundred and eighty-nine uses has
+      none. What the work actually taught is smaller and worse. Three defects
+      were sitting in code that runs on this machine every day, and only Windows
+      could see them, because all three were about what a failure <i>says</i> and
+      nothing ever failed. A message thrown away, an error passed up without a
+      word, eight different stopping points all calling themselves the same
+      thing. Windows was not the bug. Windows was the first reader.
+      <a class="more" href="/why/">Why the language is shaped this way</a>
+    </li>
+    <li>
       <span class="when">M-separate-compilation: the cache that cannot lie</span>
       <b>Building the compiler used to mean writing out one enormous C file, nearly eight hundred thousand lines of it, even after changing a comma.</b>
       The job was to split that into one piece per module, so that touching one
