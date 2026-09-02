@@ -732,6 +732,13 @@ checked rather than recalled (CLAUDE.md §1):
 
 Three rules follow, and they bind every later edit:
 
+- **One name links to a project rather than to a person, on purpose** (author
+  instruction: *"linka anche il sito di nim sul nome di rumpf"*). Andreas Rumpf
+  is the trap named above, so there is no biography to point at, and the link on
+  his name goes to `nim-lang.org`, the language's official site, verified live in
+  the session that added it. It is the only link of this shape on the page.
+  Do not remove it as a mistake, and do not repoint it at the Wikipedia title,
+  which is the archaeologist.
 - **A missing link is written as a failed search, never as an impossibility.**
   The page says the search came up empty; it never says the person has no
   article. That is §1's negative-claim rule, and the reason it matters here is
