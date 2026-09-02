@@ -1,0 +1,89 @@
+# A program that reads its own command line two ways, and the only one in this
+# repository that calls `args_checked`.
+#
+# Corpus and regression material (CLAUDE.md §9), and it closes a stated debt
+# rather than a gap somebody noticed. `docs/measurements/010-spec-budget-ledger.md`
+# row **3541** bought `args_checked`'s clause with a registered prediction, and
+# that prediction was scored **FALSE** at M-separate-compilation close for one
+# reason: no file in `examples/` or `tests/golden/` used the built-in, so the
+# instrument the payment named had nothing to measure. The clause went back to
+# `docs/work/DECIDE.md` to be re-argued under the removal branch.
+#
+# **And the reason the prediction gave for being unscoreable was half wrong.**
+# It said `suite_run` has no way to pass argv to a golden — true — and the
+# corpus suite has had one all along: `main.args`, one argument per line, read
+# by `suite_corpus.program_arguments` and handed to the program behind the `--`
+# that `heroes run` requires. This directory has one.
+#
+# WHAT THE TWO BUILT-INS ARE FOR, from `spec:186-190`:
+#
+#   `args() -> [str]`          the arguments after the program name; one that
+#                              is not UTF-8 **aborts**
+#   `args_checked() -> [str?]` the same list, which does not
+#
+# So `args_checked` exists for exactly one situation: a command line a user
+# typed, or a shell expanded, that holds bytes no `str` can carry. A file name
+# on a filesystem that never promised UTF-8 is the ordinary case.
+#
+# **WHAT THIS PROGRAM CANNOT DO, said rather than implied**: it cannot pass a
+# non-UTF-8 argument, because `main.args` is read as a `str` and a `str` is
+# UTF-8 by definition (`spec:56`). So every argument here comes back `ok`, and
+# what the program pins is the SHAPE — the arity, the order, the `T?` wrapper,
+# and that the two built-ins agree when nothing is malformed. The abort path
+# belongs to a harness that can write raw bytes into an `execve`, which is not
+# this one, and naming that limit is what keeps the next reader from thinking
+# this case covers it.
+
+function main()
+    given = args()
+    checked = args_checked()
+
+    # The two agree on how many, always: `args_checked` does not drop the
+    # argument it cannot decode, it reports it.
+    print(given.len())
+    print(checked.len() == given.len())
+
+    # Every one of ours decodes, so every entry is an `ok` carrying the same
+    # text `args()` gave.
+    same: bool @ true
+    i: i64 @ 0
+
+    while i < given.len()
+        one = checked[i]
+
+        if one.is_err() || one.must() != given[i]
+            same @ false
+        i @ i + 1
+
+    print(same)
+
+    # And the arguments themselves, so the expected output pins the order
+    # rather than only the count. An argument holding a space survives,
+    # which is `hero_run_arg`'s doing and not this program's.
+    print(join(given, " | "))
+
+    # A `T?` read the three ways the spec gives, on a value that is present.
+    print(checked[0].must())
+    print(checked[0].default("nothing"))
+    print(checked[0].is_err())
+
+test "the two built-ins agree on arity"
+    assert args().len() == args_checked().len()
+
+test "an index past the end is a failure, not an abort"
+    # `args_checked` answers `[str?]`, so the array bound is still an array
+    # bound: reading past it aborts, which is why this asks `len` instead.
+    # What the case pins is the shape the spec promises — a list whose
+    # elements are fallible, not a fallible list.
+    checked = args_checked()
+    assert checked.len() >= 0
+
+    if checked.len() > 0
+        assert !checked[0].is_err()
+
+test "every argument this program is given decodes"
+    # True of this corpus entry by construction, since `main.args` is a text
+    # file. The case exists so that the day a harness can hand a program raw
+    # bytes, the assertion that has to change is written down and findable.
+    for one in args_checked()
+        assert !one.is_err()
