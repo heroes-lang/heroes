@@ -54,6 +54,8 @@ is `docs/ROADMAP.md` § The names, and the rule is CLAUDE.md §14.
 | 027 | [where the files go](027-package-layout.md) | M-package-layout — a `use` may be a path, a file may rename what it binds, and the formatter deleted the new word | 2026-09-02 | `m-package-layout` |
 | 028 | [the prefixes were load-bearing](028-selfhost-nesting.md) | M-selfhost-nesting — 134 modules move into ten directories, and four written rules turn out to have no executor | 2026-09-02 | `m-selfhost-nesting` |
 
+| 029 | [the library nobody called](029-corpus-coverage.md) | M-corpus-coverage — twenty programs, and the first one to reach the library found a defect in the compiler | 2026-09-02 | `m-corpus-coverage` |
+
 `git tag --list --sort=creatordate` gives the same order from git itself, and
 `git checkout m5b` re-opens any milestone's code — which is what
 `M-journey-book` is written from.

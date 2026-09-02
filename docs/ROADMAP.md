@@ -42,12 +42,12 @@ in the numbers that were re-measured.
 
 | | |
 |---|---|
-| **Current milestone** | **M-corpus-coverage** — open 2026-09-02: twenty-plus programs for `examples/`, ordered by a measured coverage gap rather than by invention |
-| **Last closed** | **M-selfhost-nesting**, 2026-09-02, tag `m-selfhost-nesting` ([028](journal/028-selfhost-nesting.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
-| Milestones closed | 29 of 39 · 29 tags |
+| **Current milestone** | **M-documentation-site** — open 2026-09-02: the site has no modules page at all, so the one part of the language a reader cannot learn from the site is where their files go |
+| **Last closed** | **M-corpus-coverage**, 2026-09-02, tag `m-corpus-coverage` ([029](journal/029-corpus-coverage.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
+| Milestones closed | 30 of 39 · 30 tags |
 | The compiler | **50,063 lines** of Heroes in **170** modules across **10 directories** and 37 flat files · the seed **803,134** lines of generated C |
 | The spec | **3685** tokens of a hard 4096 · headroom **411** · runtime ABI **18** |
-| Records | sittings **101** · journals 28 · measurements 13 · examples 16 · defects 5 |
+| Records | sittings **101** · journals 29 · measurements 13 · examples **35** · defects 5 |
 | Waiting on the author | **11 decisions** · 10 in `SCHEDULED.md` · 289 in `LEARN.md` (never a gate) · an **outstanding veto** of the rule that stands (`docs/panel/101` R3) · and a **live heap-use-after-free** the spec already forbids, filed with its cause located (`docs/work/DECIDE.md`) |
 
 Every number re-measured 2026-09-02. **This section held three stale tables from
@@ -144,7 +144,7 @@ it), **§1.1** (comprehension is the objective), or **scheduled, no warrant**.
 | 27 | **M-argv-execution** | done 2026-08-31 | `m-argv-execution` | [026](journal/026-argv-execution.md) | the compiler runs programs by argument list; `sq()` is deleted, the shell stops being the boundary, and Windows goes green · **panels 097 and 098, ratified 2026-08-30** |
 | 28 | **M-package-layout** | done 2026-09-02 | `m-package-layout` | [027](journal/027-package-layout.md) | `use` paths, the qualifier, `as`, and where a program's files live · **panels 099, 100 and 101, all three ratified the same day** |
 | 29 | **M-selfhost-nesting** | done 2026-09-02 | `m-selfhost-nesting` | [028](journal/028-selfhost-nesting.md) | 134 modules move into ten directories, and the prefixes turn out to have been holding module names out of the value namespace · **panel 102, ratified the same day** |
-| 30 | **M-corpus-coverage** | **OPEN** | — | — | every language form has a program that runs it · **scheduled by author instruction 2026-09-02**, ordered after the nesting so the new programs are written against the final layout |
+| 30 | **M-corpus-coverage** | done 2026-09-02 | `m-corpus-coverage` | [029](journal/029-corpus-coverage.md) | every language form has a program that runs it · **scheduled by author instruction 2026-09-02**, ordered after the nesting so the new programs are written against the final layout |
 | 31 | **M-isolated-threads** | scheduled | — | — | Part 7.13 concurrency · **moved ahead of packages by author instruction, 2026-08-25** |
 | 32 | **M-package-manager** | scheduled | — | — | `heroes add`/`heroes fetch`; bindings instead of a standard library |
 | 33 | **M-qbe-backend** | scheduled | — | — | Part 7.14 — the proof that the IR is not C in disguise |
@@ -642,7 +642,7 @@ So a number met in the record resolves here, and only here.
 | `M-bootstrap-archive` | M8c, in part | `m-bootstrap-archive` | `crates/` → `archive/bootstrap-rs/`. **The clause M8c was carrying and could not pay**: the port read its standard library from the directory being archived, so the compiler failed outside this repository, and `heroes measure` was still not in the port |
 | `M-separate-compilation` | M9 | — | one `.c` per module, prototypes across TUs, the cache |
 | `M-package-layout` | — | — | `use` paths, the qualifier, where a program's files live. **A new id rather than an area annexed** (§14, author decision 2026-08-25): M-separate-compilation delivers the build architecture and M-package-manager delivers `heroes add`, so the directories question — which had been scheduled inside the latter since 2026-08-12 — is a third deliverable and takes a name of its own |
-| `M-corpus-coverage` | — | — | every language form has a program that runs it. **A new id rather than a reopening of `M-program-corpus`** (§14, author instruction 2026-09-02): that milestone delivered *many whole programs, all of them run* and closed 2026-08-13; this one delivers *no form is unexercised*, which is a different claim about the same directory. Measured on the day it was scheduled: of 46 forms probed over the corpus's 15 programs, **39 are exercised and 7 are not**, five of them the library functions the spec says are written in Heroes |
+| `M-corpus-coverage` | — | `m-corpus-coverage` | every language form has a program that runs it. **A new id rather than a reopening of `M-program-corpus`** (§14, author instruction 2026-09-02), which closed 2026-08-13 delivering *many whole programs, all of them run*; this one delivered *every language form has a program*. **Done 2026-09-02**: twenty programs, `examples/` 15 → 35, and the first program written to close the measured library gap found a compiler defect on its first run |
 | `M-selfhost-nesting` | — | `m-selfhost-nesting` | the compiler's own modules move into directories by subsystem. **Done 2026-09-02**, and the row keeps its scheduling note because two of its numbers were wrong and the record should say so: it said **169** modules where the tree held **170**, and it said nesting puts 32 files into 13 last-part collision groups that `module_last_parts_collide` refuses — true of the program-wide rule, which panel 100 R3 replaced with a per-file one before this milestone ran. Under the rule that actually landed the number is **41 files needing 43 bindings disambiguated**, of which 10 modules took `as` and 3 locals were renamed. The block it named — panel 100's verdict on the alias — was real and was lifted. What no version of this row foresaw is panel 102: the prefixes had been holding module names out of the namespace where values live, so the collisions that mattered were **local-vs-module**, 0 flat and 23 nested |
 | `M-package-manager` | M10 | — | `heroes add`/`heroes fetch`, bindings in place of a standard library |
 | `M-isolated-threads` | M11 | — | Part 7.13: per-thread heaps, copying at the boundaries, no scheduler |
