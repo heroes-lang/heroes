@@ -249,7 +249,7 @@ function format_file(tree: ast.Ast, s: source.Source, all_comments: [token.Span]
             # documentation for the line under it.
             if !after_use && f.last_line > 0 && line > f.last_line + 1
                 blank_line(@f)
-            put_line(@f, indent: 0, text: "use " + source.span_text(s, uses[item.at].name))
+            put_line(@f, indent: 0, text: use_line(s, used: uses[item.at]))
             f.last_line @ line
             trailing_comment(@f, s, comments, line: line)
         else
@@ -297,6 +297,28 @@ function decl_start(decl: ast.Decl) -> i64
     if decl.span.start < decl.name.start
         return decl.span.start
     return decl.name.start
+
+# `use geom` and `use render/scale as near_scale` — the whole line, alias and
+# all.
+#
+# **THE ALIAS WAS DROPPED HERE FOR ONE COMMIT AND IT CHANGED A PROGRAM'S
+# MEANING** (found 2026-09-02 by the corpus, hours after `as` landed). This
+# printed `"use " + name`, so `heroes fmt --in-place` deleted `as near_scale`
+# from `examples/shapes/main.hero` and the next build could not find the
+# module. design.md §4.15 is what makes that the worst possible defect in this
+# file: the canonical formatter exists so that *"any textual difference between
+# two versions is SEMANTIC"*, and this one silently made a semantic difference
+# of its own.
+#
+# The test for an alias is the same fact-about-the-value the resolver uses: the
+# binding is the path's own tail exactly when nobody wrote `as`, so its `end`
+# is the path's `end`.
+function use_line(s: source.Source, used: ast.Use) -> str
+    named = source.span_text(s, used.name)
+
+    if used.binding.end == used.name.end
+        return "use " + named
+    return "use " + named + " as " + source.span_text(s, used.binding)
 
 ## The extern group, rebuilt (fmt_extern)
 
@@ -1412,3 +1434,15 @@ test "a control form at a binary's right edge keeps its body"
     sb = source.new_source(name: "t.hero", text: branchy)
     gb = format_file(pb.tree, sb, pb.comments, pb.uses, pb.decls)
     assert gb == "function f(c: str) -> str\n    out: str @ \"\"\n\n    out @ out + if c == \"a\"\n        \"b\"\n    else\n        c\n    return out\n"
+
+test "fmt keeps an alias, and this is a fixed defect"
+    # **The formatter deleted `as` for one commit** (2026-09-02): it printed
+    # `"use " + name`, so `heroes fmt --in-place` silently changed what a
+    # program means — the worst thing this file can do, since §4.15's whole
+    # claim is that a textual difference is a semantic one. Found by the corpus
+    # rather than by a unit test, which is why one lives here now.
+    for text in ["use geom\n\nfunction main()\n    print(0)\n", "use render/scale\n\nfunction main()\n    print(0)\n", "use render/scale as near_scale\n\nfunction main()\n    print(0)\n"]
+        parsed = parse.parse(text)
+        assert parsed.diagnostics.len() == 0
+        s = source.new_source(name: "t.hero", text: text)
+        assert format_file(parsed.tree, s, parsed.comments, parsed.uses, parsed.decls) == text

@@ -160,3 +160,33 @@ test "a module that is a path: the whole path in C, the last part as the name"
     # `module_of` still answers for a PATH, which is what the root file's
     # own name is: the compiled file's module is its stem, never a path.
     assert module_of("shapes/geom.hero") == "geom"
+
+test "the premise the whole naming scheme rests on, with its dependants named"
+    # **`_` AND `/` ARE ONE CHARACTER TO THE C COMPONENT, AND THAT IS LOAD
+    # BEARING IN TWO DIRECTIONS** (panel 101's compiler-engineer's condition 1;
+    # its own words: *"the joined name is unambiguous only because the mangler
+    # erases `_` and `/` alike. That is a premise, and the spec never states
+    # it."*).
+    #
+    # Who depends on it:
+    # - `modules.collisions`, which refuses two modules whose COMPONENTS match.
+    #   That refusal is what makes `aa_bb.hero` beside `aa/bb.hero` a compile
+    #   error rather than an ambiguity — measured: exit 1 today.
+    # - panel 101's whole comfort with a joined binding, if it ever lands: the
+    #   spec-warden's theorem is `component = alnum_filter(joined)`, so every
+    #   joined collision is already a component collision, and the
+    #   ffi-pragmatist found zero counterexamples in 162,165 pairs.
+    #
+    # So the day somebody makes `component_of` injective instead of refusing
+    # collisions — keeping a separator, say — the program namespace silently
+    # gains an ambiguity nobody refuses. This test fires on that day, which is
+    # what CLAUDE.md §11 asks of a premise that cannot be removed.
+    assert component_of("aa/bb") == component_of("aa_bb")
+    assert component_of("a/b/c") == component_of("a_b_c")
+    assert component_of("a_b/c") == component_of("a/b_c")
+
+    # And the other half: the BINDING keeps them apart, which is why the two
+    # namespaces are two namespaces.
+    assert binding_of("aa/bb") != binding_of("aa_bb")
+    assert binding_of("aa/bb") == "bb"
+    assert binding_of("aa_bb") == "aa_bb"

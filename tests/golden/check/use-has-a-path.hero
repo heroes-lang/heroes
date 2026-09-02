@@ -15,11 +15,17 @@
 #   `..`, `./x` and `../x` alike — four spellings of one intent.
 # - a SEPARATOR WITH NOTHING AFTER IT names the two modules it sits between.
 #
-# Not here, and deliberately: `use a / b`, which lexes as the same three tokens
-# as `use a/b` and is legal — it is one `use` of `a`, and what refuses it is the
-# unused-binding rule rather than the grammar. Adjacency is the rule, and
-# `selfhost/module_paths.hero` carries the test that keeps the compiler's two
-# readers of it agreeing.
+# **A CORRECTION, 2026-09-02, and it was written into this file the same day.**
+# These lines said `use a / b` *"is legal — one `use` of `a`, and what refuses
+# it is the unused-binding rule rather than the grammar"*. That was read off
+# the parser rather than run, and panel 101's compiler-engineer ran it:
+# `error[expected_declaration]` at column 7, because the path loop stops at the
+# non-adjacent `/` and the top level then meets a `/` where a declaration
+# belongs. So adjacency IS enforced, by the grammar, one token later than the
+# claim said — and the comment that got it wrong is corrected here rather than
+# deleted, because the class matters more than the case: a sentence whose truth
+# comes from reading code is an inference, and this file's whole subject is
+# refusals that were run.
 use geom.shapes  #~ module_path_has_no_parts
 
 use ../token  #~ module_path_climbs

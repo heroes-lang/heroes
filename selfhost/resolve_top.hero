@@ -142,7 +142,7 @@ function read_uses(@r: resolve_state.Resolver, s: source.Source, decls: [ast.Dec
         if !taken.is_err()
             resolve_state.push_diagnostic(
                 @r,
-                module_errors.module_binding_taken(binding: binding, first: taken.must(), second: named, span: used.binding)
+                module_errors.module_binding_taken(binding: binding, first: taken.must(), second: named, has_alias: used.binding.end != used.name.end, span: used.binding)
             )
             continue
         already = resolved.top_in(r.out, module: from, name: binding)

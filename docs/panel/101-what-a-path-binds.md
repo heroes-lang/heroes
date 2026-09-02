@@ -39,12 +39,14 @@ touched, against 4623 edits plus five renames under the last-part rule.
 | spec-warden | **object to the tabled wording** · approve (B)'s direction | proved a **theorem** and then ran the instrument on it: because panel 032 R5 sanitises the whole path to `[A-Za-z0-9]`, any joined collision is already a **component** collision, so under (B) the uniqueness sentence and `as` become unnecessary and the spec **shrinks to 3624, −39**. Verified `a_b/c` vs `a/b_c` is already `module_names_collide`, exit 1 |
 | ffi-pragmatist | **approve (B)** | enumerated **162,165** path pairs: joined-collides-while-component-does-not, **zero**; last-part-collides-while-component-does-not, **1970**. Three surface spellings of one SQLite binding emit **one md5**. And packages decide it: under (A) the collision fires *"on code the consumer did not write and cannot rename"* |
 | historian (advisory) | **object to (B)** · support (A) with one condition | found **no language-level precedent for literal (B)** — the only instance is Dune's `Wmo__Cumulus`, a build system, with a **double** separator. Ada and Haskell bind the whole path and **both spent the uniqueness on renaming**: Ada ships `Text_IO renames Ada.Text_IO` in its **obsolescent** annex, and Haskell was offered implicit last-part aliasing in 2001 and **declined** |
-| compiler-engineer | **not reported when this was written** | its brief asked it to prototype (B) and nest a real family; the seat was still running at the synthesis. **Blank rather than guessed** — panel 100 records what happened the one time this convener filled such a row from expectation. Appended verbatim when it lands |
+| compiler-engineer | **approve (B)** (reported after the synthesis and after the author's decision; appended verbatim) | *"I went looking for a veto and the measurements went the other way: the joined default makes the compiler SMALLER."* Prototyped it: **three files of 169, +14 lines and −3 CODE lines**, because `module_errors.suggestion` already computed the joined name as its `as` suggestion — §1.7's subtraction test passed literally. Nested `resolve/` for real: **62 changed lines, every one a `use`, 0 of 245 qualified mentions**, and over the whole emitted C **21,514 differing lines of which 0 are C**. And it solved the span problem with no new field: the binding has no `as` exactly when `used.binding.end == used.name.end` |
 
 ## The disagreement, and it is a real one
 
-**Three seats for (B), one against, and the one against has the argument no
-other seat touched: (A) is reversible and (B) is not.** Adding Idris-style
+**FOUR seats for (B), one against, and the one against has the argument no
+other seat touched: (A) is reversible and (B) is not.** (The compiler-engineer
+reported last, after the decision, and made it four — it says in its own words
+that it went looking for a veto and the measurements went the other way.) Adding Idris-style
 *"an unambiguous suffix is enough"* on top of (A) later is **additive**; changing
 the default afterwards rewrites every call site in every program ever written.
 The historian put that beside a search that came back empty — no language binds a
@@ -83,7 +85,7 @@ against. Its own lift condition is a measurement, not an argument: *"P2 measures
 0/20 silent wrong-module programs on a tree with three same-basename modules each
 declaring the called function"*.
 
-**The three seats for (B) are not wrong about anything they measured.** Nothing
+**The four seats for (B) are not wrong about anything they measured.** Nothing
 in this resolution disputes the 100%, the zero collisions, the 162,165 pairs or
 the −39 tokens. What the decision says is that a **reversible** rule with a
 measured hazard beats an **irreversible** rule with a measured saving, when the
@@ -100,7 +102,7 @@ as written.
 figure, and no ledger row is owed: nothing moved.
 
 **R3 — the refusal is CONDITIONAL and its return conditions are named**, because
-three seats measured real costs and a refusal that pretends they do not exist
+four seats measured real costs and a refusal that pretends they do not exist
 will be re-litigated from scratch. (B) returns if any one of these arrives:
 - **the ergonomist's P2 measures a non-zero silent rate under (A)** — models
   writing the wrong module and compiling, on a tree with three same-basename
@@ -154,6 +156,35 @@ killed *hierarchy whose tooling did not understand it* — Erlang packages alrea
 had the short form, so that precedent does not adjudicate (A) against (B) and
 should stop being cited as if it did.
 
+**R7 — the compiler-engineer's three conditions are landed in this milestone,
+and all three were defects in work that had already shipped rather than
+consequences of the proposal.** They are here because a refusal is not a reason
+to drop what the sitting found. (1) `module_binding_taken`'s **`guess` fix did
+not parse** on the shape where the second `use` already said `as`: the
+replacement was built for a line with no alias, so it produced `as state as
+ir_state`. It now branches on the seat's own exact predicate — the binding has
+no alias exactly when `used.binding.end == used.name.end` — and is withheld
+entirely where it would change nothing, which the corpus provoked while
+`examples/shapes/` was being written. (2) **The premise nothing had ever tested**
+now has a test that names its dependants: `component_of` erases `_` and `/`
+alike, which is what makes `aa_bb.hero` beside `aa/bb.hero` a compile error and
+what the warden's theorem rests on. (3) **Two comments written the same day were
+already false** and are corrected in place rather than deleted:
+`examples/shapes/main.hero` said *"last parts are unique across a program"*
+hours after panel 100 repealed it, and
+`tests/golden/check/use-has-a-path.hero` claimed `use a / b` *"is legal"* — read
+off the parser rather than run, and it is `error[expected_declaration]` at
+column 7.
+
+**R8 — a briefing error of the convener's, recorded because it cost measurements.**
+The brief told the engineer and the ffi-pragmatist that panels 099 and 100 were
+*"both in HEAD"*. Panel 100's implementation was **uncommitted** at that moment,
+so `git archive HEAD` gave both seats a compiler without `as`; both found it,
+both re-copied from the working tree, and both said so. The rule this breaks is
+the one about briefs carrying facts rather than intentions — the work was
+committed an hour later, which is exactly why the sentence read as true when it
+was written.
+
 ## Predictions to score
 
 | judge | prediction | checkable at |
@@ -163,7 +194,7 @@ should stop being cited as if it did.
 | spec-warden | if (B) ever lands in its own form, `module_binding_taken` becomes **unreachable** — zero programs can provoke it — and `SPEC_TOKENS` moves to 3624 | the milestone that lands it |
 | ffi-pragmatist | no path pair exists with joined(P)==joined(Q) and component(P)≠component(Q) — **zero in 162,165 enumerated pairs plus the real 169-module tree**, so one counterexample kills the theorem this sitting rests part of its comfort on | standing |
 | historian | if (B) ships, **more than half** the `use` lines naming a path in `selfhost/` carry an `as` within one milestone — Ada's style guide's instruction and Haskell's community outcome. Falsified under 50% | the milestone that lands it |
-| compiler-engineer | *appended when the seat lands* | — |
+| compiler-engineer | at M-selfhost-nesting close the diff over `selfhost/` holds **0** changed lines that are neither `^use ` nor a comment, and `--emit-c` before/after differs in **0** non-`#line` lines. Falsified by one qualified mention needing an edit | M-selfhost-nesting |
 
 ## What a veto would compel
 
@@ -185,6 +216,6 @@ including the 3-1 split and the ergonomist's veto.
 reversed, and (B) is refused **conditionally** on R3's three return conditions.
 
 **What it does not settle**: the ergonomist's veto, which stays outstanding with
-its falsifier registered; the compiler-engineer's row, still owed; and whether
+its falsifier registered; and whether
 `M-selfhost-nesting` nests at all — which remains panel 100 R6's three-road
 choice, now with the fourth road (the joined rule) priced and refused.
