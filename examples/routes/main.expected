@@ -1,0 +1,7 @@
+kings -> angel -> highgate
+2
+highgate -> angel -> kings
+camden -> highgate -> angel
+0
+true
+true

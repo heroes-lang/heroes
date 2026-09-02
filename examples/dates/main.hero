@@ -1,0 +1,260 @@
+# Days between two dates, and the four rules that make a year long — the
+# program written where off-by-one actually lives.
+#
+# Corpus and regression material (CLAUDE.md §9). This one closes no measured
+# form gap: with `examples/readings`, `filestat`, `argv`, `palette`,
+# `pipeline`, `deck`, `words`, `widths`, `floats` and `board` the count of
+# language forms `examples/` does not exercise reached zero, over 56 probed.
+# What it adds is a SHAPE the corpus lacks — arithmetic whose correctness a
+# reader can check against a calendar they already own, rather than against
+# the program's own claims.
+#
+# That matters for the thesis rather than for coverage. `heroes mutate`
+# introduces one plausible mistake and counts whether the compiler catches it,
+# and the mistakes it can introduce are only as interesting as the code it has
+# to work on. A program whose every line is a boundary — 28, 29, 30, 31, the
+# century rule, the year zero that does not exist — gives a mutation
+# somewhere to hide that a string-building program does not.
+#
+# WHAT IS DELIBERATELY NOT HERE: any notion of a timezone, a clock, or the
+# calendar's own history. The Gregorian rules are applied to every year,
+# including the ones before anybody used them, and that is stated rather than
+# smoothed — a program that quietly pretends 1500 was Gregorian is a program
+# whose answers nobody can check.
+
+record Date
+    year: i64
+    month: i64
+    day: i64
+
+# The rule, all four clauses of it. Most programs get the first two and stop,
+# which is why 1900 and 2000 are both in the tests below: they disagree.
+function is_leap(year: i64) -> bool
+    if year % 400 == 0
+        return true
+
+    if year % 100 == 0
+        return false
+
+    return year % 4 == 0
+
+function days_in_month(year: i64, month: i64) -> i64
+    if month == 2
+        return if is_leap(year)
+            29
+        else
+            28
+
+    return match month
+        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31
+        4 | 6 | 9 | 11              => 30
+        _                           => 0
+
+function days_in_year(year: i64) -> i64
+    return if is_leap(year)
+        366
+    else
+        365
+
+function valid(d: Date) -> bool
+    if d.month < 1 || d.month > 12
+        return false
+
+    if d.day < 1
+        return false
+
+    return d.day <= days_in_month(year: d.year, month: d.month)
+
+# The day of the year, counting 1 January as 1 — which is the convention
+# every calendar uses and the one an index-from-zero habit gets wrong.
+function day_of_year(d: Date) -> i64?
+    if !valid(d)
+        return fail("bad_date", "no such date")
+    total: i64 @ d.day
+    month: i64 @ 1
+
+    while month < d.month
+        total @ total + days_in_month(year: d.year, month: month)
+        month @ month + 1
+
+    return ok(total)
+
+# Days from 1 January of year 1 to this date, exclusive of the date itself.
+# Written as a fold over whole years plus the day of the year, because
+# counting month by month across two thousand years is the version that is
+# slow enough to notice.
+function days_before(d: Date) -> i64?
+    inside = day_of_year(d)?
+    years = d.year - 1
+
+    # The count of leap years strictly before this one, by inclusion and
+    # exclusion. This is the line the whole program rests on and the one a
+    # mutation would most like to change by one.
+    leaps = years / 4 - years / 100 + years / 400
+    return ok(years * 365 + leaps + inside - 1)
+
+function between(from: Date, to: Date) -> i64?
+    first = days_before(from)?
+    second = days_before(to)?
+    return ok(second - first)
+
+# Which weekday a date falls on, 0 for Monday. 1 January of year 1 was a
+# Monday under the proleptic Gregorian calendar, which is the one arbitrary
+# fact in this file and is why it is named rather than folded into a constant.
+function weekday(d: Date) -> i64?
+    return ok(days_before(d)? % 7)
+
+function weekday_name(d: Date) -> str?
+    # The `match` is bound and then returned, rather than written inside
+    # `ok(...)`: a multi-line `match` wants its arms one level below itself,
+    # and inside a call there is no such level. `error[missing_match_arms]`
+    # said so on the first draft.
+    day = weekday(d)?
+
+    name = match day
+        0 => "Monday"
+        1 => "Tuesday"
+        2 => "Wednesday"
+        3 => "Thursday"
+        4 => "Friday"
+        5 => "Saturday"
+        _ => "Sunday"
+
+    return ok(name)
+
+function shown(d: Date) -> str
+    return d.year.to_str() + "-" + padded(d.month) + "-" + padded(d.day)
+
+function padded(n: i64) -> str
+    return if n < 10
+        "0" + n.to_str()
+    else
+        n.to_str()
+
+function main()
+    # The four clauses of the leap rule, on the four years that separate them.
+    print(is_leap(2024))
+    print(is_leap(1900))
+    print(is_leap(2000))
+    print(is_leap(2023))
+
+    print(days_in_month(year: 2024, month: 2))
+    print(days_in_month(year: 1900, month: 2))
+    print(days_in_year(2024))
+    print(days_in_year(1900))
+
+    landing = Date(year: 1969, month: 7, day: 20)
+    print(shown(landing))
+    print(day_of_year(landing).must())
+    print(weekday_name(landing).must())
+
+    # Two dates a reader can check: the moon landing and the millennium.
+    millennium = Date(year: 2000, month: 1, day: 1)
+    print(between(from: landing, to: millennium).must())
+
+    # A day either side of a leap day, which is where an off-by-one shows.
+    print(between(from: Date(year: 2024, month: 2, day: 28), to: Date(year: 2024, month: 3, day: 1)).must())
+    print(between(from: Date(year: 2023, month: 2, day: 28), to: Date(year: 2023, month: 3, day: 1)).must())
+
+    # And a date that does not exist.
+    print(day_of_year(Date(year: 2023, month: 2, day: 29)).is_err())
+    print(day_of_year(Date(year: 2024, month: 2, day: 29)).is_err())
+
+test "the leap rule has four clauses and the tests name all four"
+    # Divisible by 4: leap.
+    assert is_leap(2024)
+    assert is_leap(2020)
+
+    # Divisible by 100: not leap, which is the clause most programs omit.
+    assert !is_leap(1900)
+    assert !is_leap(2100)
+
+    # Divisible by 400: leap after all, which is the clause that makes 2000
+    # and 1900 disagree.
+    assert is_leap(2000)
+    assert is_leap(1600)
+
+    # And an ordinary year.
+    assert !is_leap(2023)
+    assert !is_leap(2025)
+
+test "February is the only month whose length is a question"
+    assert days_in_month(year: 2024, month: 2) == 29
+    assert days_in_month(year: 2023, month: 2) == 28
+    assert days_in_month(year: 1900, month: 2) == 28
+    assert days_in_month(year: 2000, month: 2) == 29
+
+    # The long months and the short ones, all twelve, because "thirty days
+    # hath September" is exactly the kind of list a mutation can shorten.
+    assert days_in_month(year: 2023, month: 1) == 31
+    assert days_in_month(year: 2023, month: 3) == 31
+    assert days_in_month(year: 2023, month: 4) == 30
+    assert days_in_month(year: 2023, month: 5) == 31
+    assert days_in_month(year: 2023, month: 6) == 30
+    assert days_in_month(year: 2023, month: 7) == 31
+    assert days_in_month(year: 2023, month: 8) == 31
+    assert days_in_month(year: 2023, month: 9) == 30
+    assert days_in_month(year: 2023, month: 10) == 31
+    assert days_in_month(year: 2023, month: 11) == 30
+    assert days_in_month(year: 2023, month: 12) == 31
+
+test "a month outside one to twelve has no length and no date"
+    assert days_in_month(year: 2023, month: 0) == 0
+    assert days_in_month(year: 2023, month: 13) == 0
+    assert !valid(Date(year: 2023, month: 0, day: 1))
+    assert !valid(Date(year: 2023, month: 13, day: 1))
+
+test "the day of the year counts from one, not from zero"
+    assert day_of_year(Date(year: 2023, month: 1, day: 1)).must() == 1
+    assert day_of_year(Date(year: 2023, month: 12, day: 31)).must() == 365
+    assert day_of_year(Date(year: 2024, month: 12, day: 31)).must() == 366
+
+    # The day after the leap day, which is 60 in a leap year and 60 in an
+    # ordinary one for a DIFFERENT date — the pair that catches a shift.
+    assert day_of_year(Date(year: 2024, month: 2, day: 29)).must() == 60
+    assert day_of_year(Date(year: 2024, month: 3, day: 1)).must() == 61
+    assert day_of_year(Date(year: 2023, month: 3, day: 1)).must() == 60
+
+test "a date that does not exist is a failure and not an answer"
+    assert day_of_year(Date(year: 2023, month: 2, day: 29)).is_err()
+    assert !day_of_year(Date(year: 2024, month: 2, day: 29)).is_err()
+    assert day_of_year(Date(year: 2023, month: 4, day: 31)).is_err()
+    assert day_of_year(Date(year: 2023, month: 1, day: 0)).is_err()
+    assert day_of_year(Date(year: 2023, month: 1, day: 32)).is_err()
+
+test "a date is zero days from itself, and one from the next day"
+    one = Date(year: 2023, month: 6, day: 15)
+    assert between(from: one, to: one).must() == 0
+    assert between(from: one, to: Date(year: 2023, month: 6, day: 16)).must() == 1
+    assert between(from: Date(year: 2023, month: 6, day: 16), to: one).must() == 0 - 1
+
+test "a leap day is counted exactly once"
+    # Across a leap February the gap is one day longer than across an
+    # ordinary one, which is the property the whole leap rule exists for.
+    leap = between(from: Date(year: 2024, month: 2, day: 28), to: Date(year: 2024, month: 3, day: 1)).must()
+    plain = between(from: Date(year: 2023, month: 2, day: 28), to: Date(year: 2023, month: 3, day: 1)).must()
+    assert leap == 2
+    assert plain == 1
+    assert leap - plain == 1
+
+test "a whole year is a whole year, and a century is not four hundred leaps"
+    assert between(from: Date(year: 2023, month: 1, day: 1), to: Date(year: 2024, month: 1, day: 1)).must() == 365
+    assert between(from: Date(year: 2024, month: 1, day: 1), to: Date(year: 2025, month: 1, day: 1)).must() == 366
+
+    # 1900 was not a leap year, so this century is one day shorter than the
+    # naive count.
+    assert between(from: Date(year: 1800, month: 1, day: 1), to: Date(year: 1900, month: 1, day: 1)).must() == 36524
+    assert between(from: Date(year: 1900, month: 1, day: 1), to: Date(year: 2000, month: 1, day: 1)).must() == 36524
+    assert between(from: Date(year: 2000, month: 1, day: 1), to: Date(year: 2100, month: 1, day: 1)).must() == 36525
+
+test "the weekday agrees with a calendar anybody can check"
+    # Three dates whose weekday is a matter of public record.
+    assert weekday_name(Date(year: 1969, month: 7, day: 20)).must() == "Sunday"
+    assert weekday_name(Date(year: 2000, month: 1, day: 1)).must() == "Saturday"
+    assert weekday_name(Date(year: 2024, month: 2, day: 29)).must() == "Thursday"
+    assert weekday_name(Date(year: 1, month: 1, day: 1)).must() == "Monday"
+
+test "the printed form pads a single digit and never the year"
+    assert shown(Date(year: 2024, month: 2, day: 29)) == "2024-02-29"
+    assert shown(Date(year: 2024, month: 12, day: 1)) == "2024-12-01"
+    assert shown(Date(year: 1, month: 1, day: 1)) == "1-01-01"
