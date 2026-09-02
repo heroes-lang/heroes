@@ -456,6 +456,28 @@ dl.why dd {
   dl.why dt::before { position: static; display: block; margin-bottom: 0.3rem; }
 }
 
+/* The standing notice: the one place on the site where a page says that
+   something it promises is not reachable yet. It sits above the section whose
+   promise it qualifies, never at the top of a page, because a caveat divorced
+   from the sentence it modifies reads as a banner and gets skipped.
+
+   It borrows the gold bar from the pull quote rather than the red, and this is
+   the whole of the decision. Red is the bolt's colour and the site spends it on
+   the marquee and on the section bullets; a red-barred box would read as an
+   error, and nothing here is broken. Gold already means "somebody is speaking"
+   on this site, which is what a notice is. No icon, no background wash, no
+   uppercase label: the difference from a paragraph is a rule and a measure, and
+   that is enough to stop the eye. */
+.notice {
+  margin: 1.6rem 0;
+  padding: 0.1rem 0 0.1rem 1.2rem;
+  border-left: 2px solid var(--gold);
+  color: color-mix(in srgb, var(--fg) 86%, var(--dim));
+  text-wrap: pretty;
+}
+.notice p { margin: 0.7rem 0; }
+.notice b { color: var(--fg); }
+
 /* == 7. code ============================================================== */
 
 pre {
