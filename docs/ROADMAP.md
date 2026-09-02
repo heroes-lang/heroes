@@ -42,13 +42,13 @@ in the numbers that were re-measured.
 
 | | |
 |---|---|
-| **Current milestone** | **M-documentation-site** — open 2026-09-02: the site has no modules page at all, so the one part of the language a reader cannot learn from the site is where their files go |
-| **Last closed** | **M-corpus-coverage**, 2026-09-02, tag `m-corpus-coverage` ([029](journal/029-corpus-coverage.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
-| Milestones closed | 30 of 39 · 30 tags |
+| **Current milestone** | **M-isolated-threads** — next in the chain: Part 7.13 concurrency, per-thread heaps, copying at the boundaries, no scheduler |
+| **Last closed** | **M-documentation-site**, 2026-09-02, tag `m-documentation-site` ([030](journal/030-documentation-site.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
+| Milestones closed | 31 of 40 · 31 tags |
 | The compiler | **50,100 lines** of Heroes in **170** modules across **10 directories** and 37 flat files · the seed **803,134** lines of generated C |
 | The spec | **3685** tokens of a hard 4096 · headroom **411** · runtime ABI **18** |
-| Records | sittings **101** · journals 29 · measurements 13 · examples **35** · defects 5 |
-| Waiting on the author | **11 decisions** · 10 in `SCHEDULED.md` · 289 in `LEARN.md` (never a gate) · an **outstanding veto** of the rule that stands (`docs/panel/101` R3) · and a **live heap-use-after-free** the spec already forbids, filed with its cause located (`docs/work/DECIDE.md`) |
+| Records | sittings **101** · journals 30 · measurements 13 · examples **35** · defects 5 · the site **46** pages, 13 doc chapters per edition |
+| Waiting on the author | **11 decisions** · 9 in `SCHEDULED.md` · 289 in `LEARN.md` (never a gate) · an **outstanding veto** of the rule that stands (`docs/panel/101` R3) · and a **live heap-use-after-free** the spec already forbids, filed with its cause located (`docs/work/DECIDE.md`) |
 
 Every number re-measured 2026-09-02. **This section held three stale tables from
 three closes until that day** — 64 lines against a ceiling of 15, caught here.
@@ -150,10 +150,11 @@ it), **§1.1** (comprehension is the objective), or **scheduled, no warrant**.
 | 33 | **M-qbe-backend** | scheduled | — | — | Part 7.14 — the proof that the IR is not C in disguise |
 | 34 | **M-lsp-server** | scheduled | — | — | `heroes lsp` |
 | 35 | **M-vscode-extension** | scheduled | — | — | the extension, complete |
-| 36 | **M-documentation-site** | scheduled | — | — | the site, anchored to programs that run |
-| 37 | **M-journey-book** | scheduled | — | — | the journey — how this language came to be |
-| 38 | **M-guide-book** | scheduled | — | — | the guide, as a book you would find in a shop · **§1.1** |
-| 39 | **M-publication-gate** | scheduled | — | — | the last gate before anything goes outward · CLAUDE.md §14 |
+| 36 | **M-documentation-site** | done 2026-09-02 | `m-documentation-site` | [030](journal/030-documentation-site.md) | the site, anchored to programs that run · **taken OUT OF CHAIN ORDER by author instruction 2026-09-02**, in the same breath as the nesting and the corpus, because the feature it documents had just landed and the site was silent on it. Rows 31 to 35 keep their positions and their turn; the chain records what was planned as well as what happened, and this row is where they differ |
+| 37 | **M-interpolation-verdict** | scheduled | — | — | the ruling on design.md Part 7 item 7, string interpolation: the measured token cost and Part 11 effect that would let it in, or the Part 6 row that refuses it with the falsifier §12 demands · **scheduled by author instruction 2026-09-02** |
+| 38 | **M-journey-book** | scheduled | — | — | the journey — how this language came to be |
+| 39 | **M-guide-book** | scheduled | — | — | the guide, as a book you would find in a shop · **§1.1** |
+| 40 | **M-publication-gate** | scheduled | — | — | the last gate before anything goes outward · CLAUDE.md §14 |
 
 Three closed milestones have no tag of their own because they were parents or
 sub-steps: **M-checker-core**, **M-data-declarations** and **M-rich-diagnostics**
@@ -468,6 +469,94 @@ the substrate).
 - **Publishing stays a hard stop** (CLAUDE.md §14): the site is built here and
   goes outward only when the author says so.
 
+### M-interpolation-verdict — the ruling on string interpolation
+
+**Scheduled by author instruction 2026-09-02**, and what it delivers is a
+**decision**, not a feature: design.md Part 7 item 7 — *"String interpolation —
+deferred; `print` takes multiple arguments"* — evaluated for the first time, against
+the shape every other language spells `f"{name}"`, `$"{name}"`, `\(name)` or
+`${name}`.
+
+**Why it is admissible now, and was not before.** Part 7's preamble is categorical:
+*"Nothing on this list is considered until the Principle 0 closure list (§1.0)
+compiles itself"*, and CLAUDE.md §13 repeats it as a place not to go. That condition
+has been met since M-selfhost-fixpoint, 2026-08-18. So the bar this item has never
+been held to is Principle 0's own, and **it is not on the closure list** — the
+compiler self-hosts today with none of it — which leaves the whole warrant to a
+**measured Part 11 effect**. A sitting that cannot produce one closes with a
+refusal, and that is a legitimate close for this milestone rather than a failure of
+it.
+
+**A refusal costs the same as a feature** (CLAUDE.md §12, author decision
+2026-08-12): if the answer is no, what lands is a design.md Part 6 row naming the
+program or the compiler fact that would make it wrong — not a second deferral. Part
+7 item 7 has been one line with no argument since the day it was written, and this
+milestone exists to end that either way.
+
+**What the sitting must not re-derive: the trade was already made, in the other
+direction.** `design.md:1403` — `print`'s variadic-looking form is *"compiler-known,
+not a function value"* and *"was bought by trading away string interpolation (Part 7
+item 7)"*, panel 006 (`docs/panel/006-map-order-print.md`), with Pascal's `WriteLn`
+as the fifty-year precedent. The question is therefore not *may we add sugar*, it is
+**may we buy back something already sold**, and whoever proposes it owes the other
+side of that trade in spec tokens and says what `print` becomes afterwards.
+
+**The whole repository says two things about interpolation and both are in
+design.md** — measured 2026-09-02 with `grep -rn -i interpolat` over `docs/panel/`,
+`docs/journal/` and `docs/measurements/`: **zero hits**. There is no ruling to read
+forward from (CLAUDE.md §1), which is why this is a milestone and not a footnote.
+
+**What its absence costs today, every number measured 2026-09-02.**
+
+- **945** lines of `selfhost/` hold the sequence `" + ` — a string literal
+  concatenated to something — and **146** hold a `to_str()` call. That is this
+  compiler's own diagnostics being assembled by hand, and it is the largest single
+  body of evidence in the repository.
+- **118** `print(` calls in `examples/` carry a comma: the multi-argument form
+  panel 006 bought instead.
+- `examples/template/main.hero` (**235** lines) **already interpolates at run
+  time**, and it is the witness the sitting must hold rather than imagine. It picks
+  `{key}` with `{{` as the escape for a literal brace, refuses an unknown key
+  instead of leaving the hole, and its module doc defends both choices in writing.
+  A corpus program found a defect in exactly that escape rule
+  ([029](journal/029-corpus-coverage.md): `{{name}}` was refused because the rule
+  protected `{{` and not `}}`), which is the cheapest available demonstration that
+  the rule is not free.
+- The spec stands at **3685** tokens of a hard 4096, headroom **411**, spread 79
+  (`heroes measure`, this session). Headroom exists; §1.2 still prices the addition
+  against a named removal or a pre-registered prediction.
+
+**The three questions, in the order they bite — the spelling is the last of them.**
+
+1. **What may stand inside a hole**: a name, an expression, a call? A bare name is
+   the cheapest rule to write and to lex, and it is the one that reads worst on the
+   day somebody wants `{count + 1}`.
+2. **How a value renders.** This half is already normative and costs nothing: every
+   type has a canonical `to_str`, and design.md fixes `f64`'s as round-trip-exact
+   rather than shortest. An interpolation that rendered differently would introduce
+   a **second** rendering rule, which is the expensive answer.
+3. **The spelling, and the escape it forces.** `spec:74` fixes the escape set, and
+   panel 008 (`docs/panel/008-escape-sequences.md`, ratified 2026-08-04) reserved
+   the backslash — *"any other character after `\` is a compile error"* — with R3
+   stating that a new escape **reconvenes that panel**. So Swift's `\(name)` is not
+   a free spelling: it reopens 008. And `{` already means a map in this language
+   (`{K: V}`), so the brace spelling owes the doubling rule
+   `examples/template/main.hero` already implements, or an argument against it.
+
+**Full five seats, not the soundness lane** (`/panel`): the form has surface, a spec
+token cost and at least one diagnostic class. The llm-ergonomist's seat is the one
+that decides it, because the thesis is the only warrant available — and it receives
+`spec/heroes-spec.md` and sample programs only, never this section.
+
+**The cost of ordering it here is declared rather than discovered.** It sits after
+the tools and before the two books because a book is the expensive consumer: a
+surface form that lands after M-guide-book rewrites chapters in two languages, while
+one that lands after M-vscode-extension adds a rule to a grammar file. CLAUDE.md §9
+is the bill a new form arrives with — the formatter, every `--dump-<stage>` printer,
+`heroes mutate`, the diagnostics that quote a program back, and `heroes measure`
+where the form has spec text — and it was written the day `as` reached six consumers
+one at a time, with the formatter silently deleting it from a working program.
+
 ### M-journey-book — the journey
 
 **Scheduled, no warrant.** The narrative book: the itch, the design that met five
@@ -649,7 +738,8 @@ So a number met in the record resolves here, and only here.
 | `M-qbe-backend` | M12 | — | Part 7.14: the proof that the IR is not C in disguise |
 | `M-lsp-server` | M13 | — | `heroes lsp` |
 | `M-vscode-extension` | M14 | — | the extension, complete |
-| `M-documentation-site` | M15 | — | the site |
+| `M-documentation-site` | M15 | `m-documentation-site` | the site. **Done 2026-09-02, out of chain order by author instruction**: the module system had just landed and the site had no page about it, so a reader could learn how numbers, errors and the C boundary work and leave with no idea how to write a program in more than one file |
+| `M-interpolation-verdict` | — | — | the ruling on string interpolation — design.md Part 7 item 7, evaluated for the first time since the fixpoint made Part 7 admissible at all. **The verdict is the deliverable and the name says so** (§14, author instruction 2026-09-02): the milestone has to be able to close with a refusal, so an id naming the feature would claim the very thing the sitting exists to decide, and a later milestone could falsify it |
 | `M-journey-book` | M16 | — | the journey |
 | `M-guide-book` | M17 | — | the guide |
 | `M-argv-execution` | — | — | the compiler runs programs by argument list, and the shell stops being the boundary |
