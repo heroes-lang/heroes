@@ -8,8 +8,8 @@
     Quasi tutti i linguaggi chiedono un po&rsquo; di cerimoniale prima che la
     tua prima riga possa girare: l&rsquo;import della cosa che stampa, una
     classe che contenga la funzione, un file di progetto che dica quali file
-    esistono. Heroes non chiede niente di tutto questo. Un programma è un file,
-    e un file che può girare è quello che dichiara <code>main</code>.
+    esistono. Heroes non chiede niente di tutto questo. Un programma sta in un
+    file e può partire quando dichiara <code>main</code>.
   </p>
 
   <h3>Il programma, tutto quanto</h3>
@@ -62,13 +62,12 @@ error[indentation_not_multiple_of_4]: indentation must be exactly 4 spaces per l
   2 |   print("hi")
     | ^^</code></pre>
   <p>
-    Un tab è un errore a parte, con un messaggio suo. Il senso della regola è
-    che esiste un modo solo di scrivere un programma: due file che fanno la
+    Un tab è un errore a parte, con un messaggio suo. La regola lascia un solo
+    modo di scrivere un programma: due file che fanno la
     stessa cosa si somigliano, e una differenza fra due versioni di un file è una
     differenza di significato, non di battitura. Se ti capita di allontanartene,
-    <code>heroes fmt</code> ti stampa quella forma unica. E non è un auspicio:
-    tutti i 241 file Heroes su cui passa, compilatore compreso, tornano da quel
-    comando identici, byte per byte.
+    <code>heroes fmt</code> ti stampa quella forma unica. Ogni file Heroes su cui
+    passa, compilatore compreso, torna da quel comando identico, byte per byte.
   </p>
 
   <h3>La documentazione sta nei commenti</h3>
@@ -109,13 +108,12 @@ error[indentation_not_multiple_of_4]: indentation must be exactly 4 spaces per l
   </figure>
   <p>
     Quella riga lega <code>eval.hero</code>, nella stessa cartella, al nome
-    <code>eval</code>, e da lì in poi tutto quello che quel file dichiara si
+    <code>eval</code>. Da lì in poi tutto quello che quel file dichiara si
     scrive con quel nome davanti: <code>eval.calculate(text, env)</code>. Non
     esistono alias e non esiste l&rsquo;import con l&rsquo;asterisco, quindi un
     nome qualificato dice sempre da dove arriva, e ogni modulo che usi vuole la
-    sua riga <code>use</code>. Per capire da dove viene un nome ti basta
-    leggere la riga in cui compare: non devi mai metterti a cercarlo per tutto
-    il progetto.
+    sua riga <code>use</code>. Quando incontri un nome che non conosci, il
+    prefisso ti dice quale file aprire.
   </p>
 
   <h3>I verbi</h3>
@@ -129,8 +127,8 @@ $ heroes build program.hero    <span class="c"># compila e basta</span>
 $ heroes test program.hero     <span class="c"># esegue i test del file</span>
 $ heroes fmt program.hero      <span class="c"># stampa la forma canonica</span></code></pre>
   <p>
-    Quello interessante è <code>test</code>, perché i test fanno parte del
-    linguaggio e non sono una libreria che scegli tu. Il file dei punti qui
+    I test fanno parte del linguaggio, non di una libreria da scegliere. Il
+    file dei punti qui
     sopra ne porta due:
   </p>
   <pre><code>$ heroes test examples/gallery/01-points.hero

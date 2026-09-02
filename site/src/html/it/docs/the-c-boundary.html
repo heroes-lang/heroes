@@ -7,10 +7,9 @@
   <p>
     Heroes non ha una libreria standard, e non l&rsquo;avrà mai. Tutto quello che
     hai visto in questi capitoli (numeri, stringhe, array, mappe, la
-    stampa) è l&rsquo;inventario completo. File, socket, JSON, database,
-    grafica, matematica oltre l&rsquo;aritmetica: niente di tutto questo manca, e
-    niente di tutto questo arriverà. Arriva dal C, attraverso un meccanismo solo,
-    e questo capitolo è quel meccanismo.
+    stampa) è l&rsquo;inventario completo. File, socket, JSON, database, grafica e
+    matematica oltre l&rsquo;aritmetica non sono incorporati in Heroes: arrivano dal
+    C attraverso il solo meccanismo spiegato in questo capitolo.
   </p>
 
   <h3>Un gruppo nomina il suo header</h3>
@@ -22,18 +21,17 @@
     <figcaption>examples/gallery/08-ffi.hero, righe 12&ndash;15</figcaption>
   </figure>
   <p>
-    Tre funzioni C, utilizzabili dalla riga dopo in avanti. Il nome
-    dell&rsquo;header non è decorazione, ed è lì che gira tutto il progetto:
-    <b>clang legge quell&rsquo;header e ci confronta ogni
-    dichiarazione del gruppo.</b> Un binding è l&rsquo;unico punto in cui un
-    programma può arrivare a un indirizzo che nessuno ha controllato, quindi è lì
-    che il linguaggio spende le sue attenzioni.
+    Queste tre funzioni C si possono usare dalla riga successiva. L&rsquo;header è il file
+    che descrive l&rsquo;interfaccia della libreria. <b>Clang lo legge e confronta
+    ogni dichiarazione del gruppo.</b> Un binding, cioè il collegamento tra
+    Heroes e una funzione C, è l&rsquo;unico punto in cui un programma può
+    raggiungere un indirizzo esterno: per questo il controllo avviene qui.
   </p>
 
   <h3>Che cosa prende, quel controllo</h3>
   <p>
-    Sbaglia a scrivere un nome e non ti becchi un errore del linker alla fine di
-    una compilazione lunga. Ti becchi questo, sulla tua riga, con allegata la
+    Sbaglia a scrivere un nome e non devi aspettare un errore del linker alla
+    fine di una compilazione lunga. Ricevi questo sulla tua riga, con allegata la
     risposta dell&rsquo;header stesso:
   </p>
   <pre><code>$ heroes build ffi.hero
@@ -60,10 +58,9 @@ error[ffi_return_type]: `puts` does not return `cstr` — that is what `stdio.h`
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   note: an `extern` is checked against the real header (§4.19): correct the result type, or name the header that declares this `puts`</code></pre>
   <p>
-    Nella maggior parte dei linguaggi una dichiarazione verso l&rsquo;esterno è
-    una promessa che nessuno verifica: sbagliala e il programma compila, gira, e
-    corrompe qualcosa. Qui la promessa viene verificata sulla libreria che
-    deve mantenerla.
+    In molti linguaggi nessuno verifica una dichiarazione verso l&rsquo;esterno:
+    sbagliala e il programma può compilare, partire e corrompere qualcosa. Qui
+    viene confrontata con la libreria vera.
   </p>
 
   <h3>Il confine si vede nei tipi</h3>

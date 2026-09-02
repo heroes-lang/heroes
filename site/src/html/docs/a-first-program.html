@@ -7,8 +7,8 @@
   <p>
     Most languages ask for some ceremony before your first line runs: an import
     of the thing that prints, a class to hold the function, a project file that
-    says which files exist. Heroes asks for none of it. A program is a file, and
-    a file that can run is one that declares <code>main</code>.
+    says which files exist. Heroes asks for none of it. A program lives in one
+    file and can run when it declares <code>main</code>.
   </p>
 
   <h3>The whole program</h3>
@@ -36,7 +36,7 @@
   </p>
   <ul>
     <li>No import or include line. <code>print</code>, <code>len</code> and the
-    rest of the built-ins are simply there.</li>
+    rest of the built-ins are always available.</li>
     <li>No class and no namespace block. A file is already the unit.</li>
     <li>No semicolons and no braces. A line ends at the end of the line, and a
     block is what is indented under it.</li>
@@ -59,14 +59,13 @@ error[indentation_not_multiple_of_4]: indentation must be exactly 4 spaces per l
   2 |   print("hi")
     | ^^</code></pre>
   <p>
-    A tab is its own error with its own message. The point of the rule is that
-    there is exactly one way to write any program, so two files that do the same
+    A tab is its own error with its own message. The rule leaves exactly one
+    way to write any program, so two files that do the same
     thing look the same, and a difference between two versions of a file is a
     difference in meaning rather than in typing.
     <code>heroes fmt</code> prints that one form for you if you ever drift from
-    it, and it is not an aspiration: all 241 Heroes files the formatter covers, the
-    compiler itself included, come back from that command unchanged, byte for
-    byte.
+    it. Every Heroes file the formatter covers, including the compiler, comes
+    back from that command unchanged, byte for byte.
   </p>
 
   <h3>Comments are where the documentation lives</h3>
@@ -106,11 +105,11 @@ error[indentation_not_multiple_of_4]: indentation must be exactly 4 spaces per l
   </figure>
   <p>
     That binds <code>eval.hero</code>, in the same directory, to the name
-    <code>eval</code>, and everything it declares is then written with that name
+    <code>eval</code>. Everything it declares is then written with that name
     in front: <code>eval.calculate(text, env)</code>. There are no aliases and
     no wildcard import, so a qualified name always says where it came from, and
-    every module you use needs its own <code>use</code> line. Looking up an
-    unfamiliar name is reading, never searching.
+    every module you use needs its own <code>use</code> line. When you meet an
+    unfamiliar name, its prefix tells you which file to open.
   </p>
 
   <h3>The verbs</h3>
@@ -124,8 +123,8 @@ $ heroes build program.hero    <span class="c"># compile only</span>
 $ heroes test program.hero     <span class="c"># run the file's tests</span>
 $ heroes fmt program.hero      <span class="c"># print the canonical form</span></code></pre>
   <p>
-    <code>test</code> is the interesting one, because tests are part of the
-    language rather than a library you choose. The points file above carries two
+    Tests are part of the language, not a library you choose. The points file
+    above carries two
     of them:
   </p>
   <pre><code>$ heroes test examples/gallery/01-points.hero

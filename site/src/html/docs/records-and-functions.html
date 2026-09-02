@@ -59,9 +59,8 @@ error[missing_label]: `Point`'s fields are always named — this one is `x`
   <p>
     The cost is four characters at the call site. What it buys is that
     <code>Point(y: 4, x: 3)</code> and <code>Point(x: 3, y: 4)</code> are the
-    same point and neither can quietly become the other. This is the whole
-    argument of the language in miniature: pay a few tokens where a mistake is
-    plausible, and stop paying attention there forever.
+    same point and neither can quietly become the other. The few extra tokens
+    sit exactly where a mistake is plausible.
   </p>
 
   <h3>Functions, and where the names become mandatory</h3>
@@ -82,8 +81,7 @@ error[missing_label]: `Point`'s fields are always named — this one is `x`
     comes out.
   </p>
   <p>
-    The rule that makes this chapter worth its own page: <b>when two
-    parameters of one function share a type, the call site must name
+    <b>When two parameters of one function share a type, the call site must name
     them.</b> <code>dist2</code> takes two <code>Point</code>s, so it does:
   </p>
   <pre><code>$ heroes check points.hero
@@ -134,8 +132,8 @@ error[needs_label]: two of `dist2`'s parameters are `Point`, so every one of the
   </figure>
   <p>
     <code>test</code> is a top-level declaration like any other, and an ordinary
-    build ignores it. The second test is the interesting one: it says that
-    moving a rectangle does not resize it, which is a property rather than a
+    build ignores it. The second test says that moving a rectangle does not
+    resize it. That is a property rather than a
     number, and it reads as one sentence because of the call syntax above.
   </p>
   <pre><code>$ heroes test examples/gallery/01-points.hero

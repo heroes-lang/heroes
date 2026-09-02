@@ -5,9 +5,9 @@
   <p class="tagline">Un albero che contiene se stesso, in un linguaggio senza puntatori.</p>
 
   <p>
-    Qui ogni valore è una copia indipendente e niente punta a niente. Il che fa
-    venire in mente una domanda ovvia, ed è quella a cui risponde questo
-    capitolo: come fa un albero a tenersi i propri rami, se un ramo è dello
+    Qui ogni valore è una copia indipendente e niente punta a niente. Questo
+    capitolo risponde a una domanda: come fa un albero a tenersi i propri rami,
+    se un ramo è dello
     stesso tipo dell&rsquo;albero?
   </p>
 
@@ -51,13 +51,11 @@ error[no_size]: `variant Expr` contains itself, so it has no size
     un array tiene i suoi elementi da un&rsquo;altra parte. Quindi
     <code>Expr</code> è finito, l&rsquo;albero è profondo quanto ti pare, e
     niente di tutto questo è un puntatore che puoi tenere in mano, confrontare o
-    lasciare a penzoloni. <code>negate</code> prende una lista di uno, il che per
-    un attimo sembra strano e poi smette di contare: la forma dei dati dice
-    esattamente quello che il linguaggio sa esprimere.
+    lasciare a penzoloni. <code>negate</code> prende una lista con un solo
+    elemento perché è questa la forma ricorsiva che il linguaggio sa esprimere.
   </p>
   <p>
-    Da qui si guadagna anche una seconda cosa, ed è il motivo per cui la
-    semantica a valori regge. Siccome niente può tenere un riferimento,
+    Siccome niente può tenere un riferimento,
     <b>non si può costruire nessun ciclo</b>. Ed è quello che permette alla
     memoria sotto di essere gestita contando i riferimenti, senza collector,
     senza rilevatore di cicli e senza annotazioni <code>weak</code> da
@@ -101,7 +99,7 @@ error[no_size]: `variant Expr` contains itself, so it has no size
     annuncio, nessun header e nessuna dichiarazione anticipata.
   </p>
   <p>
-    Guarda i due valori di partenza: <code>0</code> per una somma e
+    I due valori di partenza sono <code>0</code> per una somma e
     <code>1</code> per un prodotto. È per questo che
     <code>value_of(.add(parts: []))</code> fa <code>0</code> e
     <code>value_of(.multiply(parts: []))</code> fa <code>1</code>, cosa che i
@@ -148,8 +146,8 @@ error[cannot_infer]: `.multiply` does not say which variant it belongs to — th
     <figcaption>examples/gallery/11-trees.hero, righe 84&ndash;95</figcaption>
   </figure>
   <p>
-    Il secondo test è quello da copiare nel tuo codice. Ogni struttura che
-    contiene se stessa ha un caso vuoto, e che cosa debba valere in quel caso
+    Ogni struttura che contiene se stessa ha un caso vuoto, e che cosa debba
+    valere in quel caso
     è una decisione che qualcuno deve prendere. Scriverla come quattro
     <code>assert</code> vuol dire che il prossimo che mette mano a
     <code>value_of</code> si accorge subito se l&rsquo;ha cambiata per

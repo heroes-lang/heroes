@@ -48,8 +48,8 @@
   <h3>Passare un fallimento verso l&rsquo;alto: <code>?</code></h3>
   <p>
     Il più delle volte una funzione che incontra un fallimento non ha niente di
-    utile da aggiungere e vuole solo fermarsi e passarlo avanti. È quello che fa
-    <code>?</code>, e lo fa <i>in modo visibile, sulla riga in cui succede</i>:
+    utile da aggiungere: vuole fermarsi e passarlo avanti. <code>?</code> fa
+    proprio questo e resta <i>visibile sulla riga in cui succede</i>:
   </p>
   <figure class="example" data-src="examples/gallery/03-fallible.hero" data-lines="13-22">
 <pre><code><span class="c"># Reads a whole non-negative number. Empty input is an error, not a zero.</span>
@@ -98,8 +98,7 @@
     funzione attaccata al tipo.
   </p>
   <p>
-    Nota anche quello che <i>non</i> c&rsquo;è: nessun <code>try</code>, nessun
-    <code>catch</code>, nessun annidamento, nessuna variabile d&rsquo;errore
+    Non servono <code>try</code>, <code>catch</code>, annidamenti o variabili d&rsquo;errore
     infilata a mano da una funzione all&rsquo;altra. Il percorso del fallimento
     costa un carattere e il percorso buono si legge come se fallire fosse
     impossibile. Eccolo di nuovo in una funzione che fa la media di una lista,
@@ -137,8 +136,8 @@
     Un ramo nomina il caso con un punto davanti e lega il suo contenuto al nome
     che segue: <code>.ok v</code> ti dà il valore come <code>v</code>, e
     <code>_</code> butta via un contenuto che non ti serve. Entrambi i rami sono
-    obbligatori. Un <code>match</code> che dimentica un caso non compila. E questa
-    è la parte che conta per la tesi: <b>qui un ramo catch-all è vietato</b>.
+    obbligatori. Un <code>match</code> che dimentica un caso non compila.
+    <b>Qui un ramo catch-all è vietato</b>.
     Non puoi scrivere il ramo che significa &ldquo;qualunque altra
     cosa&rdquo;, perché è proprio quel ramo il modo in cui un caso dimenticato
     diventa in silenzio un caso gestito. Se un giorno il linguaggio acquisisse una
@@ -148,9 +147,9 @@
     momento della build.
   </p>
 
-  <h3>Quando davvero non ti interessa</h3>
+  <h3>Quando il fallimento ha già una risposta</h3>
   <p>
-    A volte un fallimento ha per davvero una risposta ovvia, e scriverci un
+    A volte un fallimento ha una risposta ovvia, e scriverci un
     <code>match</code> è solo rumore. Esistono due scorciatoie:
   </p>
   <figure class="example" data-src="examples/gallery/03-fallible.hero" data-lines="42-43">
@@ -208,7 +207,7 @@ failed: not_a_digit (expected 0-9)
     <code>?</code> sulla riga dove succede.
   </p>
 
-  <h3>Che cosa ci si guadagna</h3>
+  <h3>Che cosa cambia nel codice</h3>
   <p>
     La firma di ogni funzione ti dice se può fallire. Ogni punto in cui un
     fallimento cambia il flusso è segnato su quella riga. Ogni modo di gestirne

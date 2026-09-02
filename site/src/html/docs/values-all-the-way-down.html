@@ -6,8 +6,8 @@
 
   <p>
     Every value here is an independent copy and nothing points at anything.
-    That raises an obvious question, and it is the one this chapter answers: how
-    does a tree hold its own branches, when a branch is the same type as the
+    This chapter answers one question: how does a tree hold its own branches
+    when a branch is the same type as the
     tree?
   </p>
 
@@ -50,13 +50,11 @@ error[no_size]: `variant Expr` contains itself, so it has no size
     <code>[Expr]</code> has a fixed size whatever it contains, because an array
     keeps its elements elsewhere. So <code>Expr</code> is finite, the tree is as
     deep as you like, and none of it is a pointer you can hold, compare or leave
-    dangling. <code>negate</code> takes a list of one, which looks odd for a
-    moment and then stops mattering: the shape of the data says exactly what the
-    language can express.
+    dangling. <code>negate</code> takes a one-element list because that is the
+    recursive shape the language can express.
   </p>
   <p>
-    There is a second thing this buys, and it is the reason value semantics
-    survive at all. Because nothing can hold a reference, <b>no cycle can be
+    Because nothing can hold a reference, <b>no cycle can be
     built</b>. That is what lets the memory underneath be reference-counted with
     no collector, no cycle detector and no <code>weak</code> annotations to get
     right.
@@ -98,7 +96,7 @@ error[no_size]: `variant Expr` contains itself, so it has no size
     recursion needs no announcement, no header and no forward declaration.
   </p>
   <p>
-    Notice the two starting values: <code>0</code> for a sum and <code>1</code>
+    The two starting values are <code>0</code> for a sum and <code>1</code>
     for a product. That is why <code>value_of(.add(parts: []))</code> is
     <code>0</code> and <code>value_of(.multiply(parts: []))</code> is
     <code>1</code>, which the tests below pin down rather than leave to
@@ -144,8 +142,8 @@ error[cannot_infer]: `.multiply` does not say which variant it belongs to — th
     <figcaption>examples/gallery/11-trees.hero, lines 84&ndash;95</figcaption>
   </figure>
   <p>
-    The second test is the one to copy into your own code. Every shape that
-    contains itself has an empty case, and what it should mean there is a
+    Every shape that contains itself has an empty case, and what it should mean
+    there is a
     decision somebody has to make. Writing it down as four assertions means the
     next person to touch <code>value_of</code> finds out at once if they changed
     it by accident.

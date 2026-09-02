@@ -8,12 +8,13 @@
       </svg>
       <p class="kicker">Un linguaggio di programmazione compilato</p>
       <h1><span class="q">&ldquo;</span>Heroes<span class="q">&rdquo;</span></h1>
-      <p class="promise">Così piccolo da stare in un prompt, così vero da <em>compilare se stesso</em>.</p>
-      <p class="tagline">Fatto per le macchine che scrivono codice, e chiaro
-      per le persone che lo leggono. Tutto il linguaggio sta in cinque pagine:
-      le dai a un modello, e gli resta spazio per il programma. Quello che
-      scrivi diventa un eseguibile, senza installare altro. E gli sbagli che i
-      modelli fanno più spesso, qui, non compilano.</p>
+      <p class="promise">Così piccolo da stare in un prompt, abbastanza completo da <em>compilarsi da solo</em>.</p>
+      <p class="tagline">Fatto per i modelli che scrivono codice e per le
+      persone che lo leggono. Tutto il linguaggio sta in cinque pagine: le
+      pagine entrano nel prompt, cioè nelle istruzioni e nel contesto dati a un modello, e
+      resta spazio per il programma. Quello che scrivi diventa un eseguibile,
+      senza installare altro. Gli sbagli che i modelli fanno più spesso qui
+      non compilano.</p>
       <div class="cta">
         <a class="primary" href="/it/docs/">Leggi i docs</a>
         <a class="ghost" href="/it/zen/">Venti righe di Zen</a>
@@ -50,7 +51,7 @@
 
   <ul class="figures">
     <li>
-      <span class="n">233</span>
+      <span class="n">235</span>
       <span class="what">righe: tutto il linguaggio</span>
       <span class="how">La specifica, cioè il documento che definisce il
       linguaggio per intero, sta in una manciata di pagine. Le dai da leggere a
@@ -60,9 +61,10 @@
     <li>
       <span class="n">0</span>
       <span class="what">null, eccezioni, garbage collector</span>
-      <span class="how">Le tre cose che di solito fanno cadere un programma
-      mentre gira qui non esistono. Un valore che manca e un&rsquo;operazione
-      andata male si dichiarano nel codice, e li vedi sulla riga.
+      <span class="how">Non ci sono null, eccezioni né un garbage collector,
+      il programma che recupera la memoria mentre il codice gira. Un valore
+      che manca e un&rsquo;operazione fallita si dichiarano nel codice e si vedono
+      sulla riga.
       <a href="/it/docs/failure-is-a-value/">come funziona il fallimento &rarr;</a></span>
     </li>
     <li>
@@ -98,6 +100,10 @@
     <figcaption>examples/gallery/11-trees.hero, righe 8&ndash;25</figcaption>
   </figure>
   <p>
+    Il runtime è il software di supporto che serve mentre un programma gira.
+    Heroes lo include nel binario, quindi non devi installarlo a parte.
+  </p>
+  <p>
     Quello è un albero che contiene se stesso. E lo fa in un linguaggio dove
     <b>non esistono i puntatori</b>: quei valori che non contengono un dato, ma
     dicono soltanto dove sta. Qui l&rsquo;unico modo per rimandare a
@@ -125,9 +131,9 @@ read 42
 failed: not_a_digit (expected 0-9)
 20</code></pre>
   <p>
-    Quel file C non l&rsquo;ha scritto nessuno a mano: è Heroes che, compilando
-    se stesso, si è tradotto in C. Quindi quel comando qui sopra costruisce
-    Heroes usando soltanto Heroes: non serve installare altro, e non c&rsquo;è
+    Quel file C viene generato da Heroes quando compila se stesso. Il comando
+    qui sopra costruisce quindi Heroes usando soltanto Heroes: non serve
+    installare altro e non c&rsquo;è
     nessuna catena di strumenti da mettere in piedi prima. Se qualcosa non va,
     <code>./heroes doctor</code> ti dice quale pezzo manca sulla tua
     macchina.
@@ -159,18 +165,18 @@ we can be heroes</code></pre>
     file dentro <code>examples/</code>, che aspetta solo che tu lo cambi.
   </p>
   <p>
-    Su uno di quei comandi vale la pena spendere una riga.
     <code>heroes fmt</code> stampa la forma canonica di un file, e di forma
     canonica ce n&rsquo;è una sola: stessi rientri, stessi punti in cui la riga
-    va a capo, stesso ordine. Tutti i 241 file Heroes su cui passa, compilatore
-    ed esempi compresi, tornano da quel comando identici, byte per byte. Così una
+    va a capo, stesso ordine. Ogni file Heroes su cui passa, compresi il
+    compilatore e gli esempi, torna da quel comando identico, byte per byte. Così
+    una
     differenza fra due versioni di un file è una differenza in quello che il
     programma fa, mai in come qualcuno l&rsquo;ha battuto.
   </p>
 
   <h2>Quanto tempo ci vuole <span class="nod">&middot; speed of life &middot;</span></h2>
   <p>
-    Il programma Heroes più grande che esiste è il compilatore: 165 file, 48.342
+    Il programma Heroes più grande che esiste è il compilatore: 169 file, 49.637
     righe. Legge tutto, lega ogni nome alla sua dichiarazione e controlla ogni
     tipo, in <b>5,3 secondi</b>. Costruirlo dal file C che sta nel repository, il
     comando qui sopra, ne prende <b>3,9</b>. Costruirlo partendo da Heroes ne
@@ -185,11 +191,11 @@ we can be heroes</code></pre>
     ogni commento. Del progetto non è cambiato niente. È cambiata la domanda.
   </p>
   <p>
-    E una build non scrive più un unico file C enorme. Ogni tuo file diventa un
+    Una build non scrive più un unico file C enorme. Ogni tuo file diventa un
     file C a sé, compilato per conto suo, e quello che ne esce resta sotto
-    <code>build/</code> perché la build dopo lo riusi. A decidere se può riusarlo
-    non è l&rsquo;orologio: è il testo del file, gli header C che ha letto e le
-    librerie a cui si lega. Prendi un numero da un header C, cambia l&rsquo;header,
+    <code>build/</code> perché la build dopo lo riusi. Il riuso dipende dal testo
+    del file, dagli header C che ha letto e dalle librerie a cui si lega. Prendi
+    un numero da un header C, cambia l&rsquo;header,
     e quello che ne dipende viene rifatto. È il caso in cui di solito un sistema
     di build ti restituisce la risposta di ieri senza dirti niente.
   </p>
@@ -223,7 +229,7 @@ we can be heroes</code></pre>
     <li>
       <h3>Si compila da solo</h3>
       <p>
-        Il compilatore di Heroes è scritto in Heroes: 165 file, 48.342 righe.
+        Il compilatore di Heroes è scritto in Heroes: 169 file, 49.637 righe.
         Chiedi a tre sue generazioni di riscrivere lo stesso programma e i tre
         risultati coincidono byte per byte. Il linguaggio con cui era nato non
         serve più a nessuno: nessuno lo compila e nessuno lo controlla, ed è
@@ -278,8 +284,8 @@ we can be heroes</code></pre>
     Un token è il pezzetto di testo con cui si misura quanto costa far lavorare
     un modello, più o meno una parola. La tesi dice che con Heroes ne spendi
     meno in tutto, anche se il singolo programma è più lungo da scrivere, perché
-    non passi il tempo a correggerlo. È una tesi, non uno slogan, quindi si
-    misura. Il comando <code>heroes mutate</code> prende programmi che
+    non passi il tempo a correggerlo. La tesi si può misurare. Il comando
+    <code>heroes mutate</code> prende programmi che
     funzionano, ci pianta dentro uno sbaglio realistico alla volta (due
     argomenti dello stesso tipo scambiati, un caso dimenticato, un nome riusato)
     e conta quanti ne ferma il compilatore. Poi rifà lo stesso giro con le
@@ -289,7 +295,7 @@ we can be heroes</code></pre>
     nasconderebbe proprio questo, e infatti non c&rsquo;è.
   </p>
   <p>
-    <a href="/it/errors/">La tabella intera, su 49 programmi, è nella pagina
+    <a href="/it/errors/">La tabella misurata su 49 programmi è nella pagina
     degli errori &rarr;</a>
   </p>
 

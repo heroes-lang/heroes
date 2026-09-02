@@ -7,8 +7,8 @@
   <p>
     A <code>str</code> is UTF-8 text that never changes once it exists.
     <code>len()</code> counts <b>bytes</b>, not letters, and so does
-    <code>slice</code>. That is the honest answer for UTF-8, where a letter can
-    take one byte or four, and pretending otherwise is how string bugs are made.
+    <code>slice</code>. In UTF-8 a letter can take between one and four bytes;
+    ignoring that produces string bugs.
   </p>
 
   <h3>Indexing gives you a byte</h3>
@@ -61,9 +61,8 @@ error[type_mismatch]: expected `u8`, found `str`
     one-character <code>str</code>, which is why this function compares against
     <code>" "</code> in double quotes while the previous one used
     <code>' '</code>. Use the byte loop for a protocol or a scanner; use
-    <code>chars()</code> for anything a person will read. Choosing wrongly is
-    now a decision you make on purpose instead of one the language makes for
-    you.
+    <code>chars()</code> for anything a person will read. The syntax makes the
+    choice between bytes and characters explicit.
   </p>
   <p>
     Slicing in the middle of a character is not silently allowed either: it
@@ -89,9 +88,8 @@ error[type_mismatch]: expected `u8`, found `str`
     <figcaption>examples/gallery/07-strings.hero, lines 27&ndash;40</figcaption>
   </figure>
   <p>
-    There is no <code>split</code> built in, because there is no standard
-    library at all: that is the founding constraint, not an oversight.
-    Twelve lines is what splitting on a space actually costs, and the
+    There is no built-in <code>split</code> because Heroes has no standard
+    library. This example splits on spaces in twelve lines, and the
     <code>if i &gt; start</code> is the part a library would have decided for
     you: two spaces in a row produce no empty word here, and that is a choice
     visible in the code rather than in someone&rsquo;s documentation.

@@ -2,6 +2,6 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import content from '../html/log.html?raw';
 ---
-<BaseLayout url="/log/" title={'The build log, Heroes, milestone by milestone'} description={'Every milestone of the Heroes language, newest first: what landed, and what it found by being built. The postcard version of the project diary.'} current="log">
+<BaseLayout url="/log/" title={'The build log, Heroes, milestone by milestone'} description={'Every milestone in a few lines, newest first: what was built, what broke and what the reviewers found.'} current="log">
 <Fragment set:html={content} />
 </BaseLayout>

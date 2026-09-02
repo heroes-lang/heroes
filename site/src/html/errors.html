@@ -14,8 +14,7 @@
     and has to fix the program with that and nothing else, or spend a whole
     round re-reading files, which is the most expensive thing that can happen.
     So every error message carries three things: the exact place that is wrong,
-    the other end of the story, meaning where the thing it clashes with was
-    declared, and the repair.
+    the declaration it clashes with and the repair.
   </p>
 
   <h2>The classic inversion</h2>
@@ -44,7 +43,7 @@
     argument is pointed at rather than described.
   </p>
 
-  <h2>Two kinds of fix, and only one is machine-applicable</h2>
+  <h2>Two kinds of fix, only one applied automatically</h2>
   <p>
     A fix tagged <code>certain</code> is one the compiler worked out rather
     than guessed: the type it just inferred itself, the one similar name that
@@ -114,18 +113,19 @@ tests/golden/check/deleted-int.hero:23:8: <span class="k">error</span>[reserved_
     every other argument.
   </p>
 
-  <h2>How this gets measured</h2>
+  <h2>How it is measured</h2>
   <p>
-    None of the above is worth anything as an assertion, so it is a number.
-    <code>heroes mutate</code> takes working programs, injects one plausible
+    <code>heroes mutate</code> measures these claims. It takes working programs
+    and injects one plausible
     mistake at a time, and counts how many the compiler turns into compile
     errors. Then it runs the same corpus against the same compiler with the
     thesis rules switched off. The difference between the two columns is the
     only part that means anything.
   </p>
   <p>
-    Measured over the 49 programs in <code>examples/</code>, which come to 6,254
-    injected mistakes. Every operator the tool generates is here, including the
+    The table below records a completed run over 49 programs in
+    <code>examples/</code>, with 6,254 injected mistakes. Every operator used in
+    that run is here, including the
     ones where the design does nothing and the two it fails at:
   </p>
   <pre class="table"><code><span class="c">mistake injected                   mutants   caught   without the rules</span>
@@ -165,8 +165,7 @@ mixed integer and float arithmetic     376     100%        100%
     edge of the whole design: nothing in a type system can see them.
   </p>
   <p>
-    That is what the measurement is for. A number that only ever flattered the
-    design would not be worth printing.
+    A number that only flattered the design would be useless.
   </p>
 
   <p class="next">
