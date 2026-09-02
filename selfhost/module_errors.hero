@@ -123,15 +123,40 @@ function needs_a_use(name: str, module: str, span: token.Span) -> diag.Diagnosti
 # may never have opened, with no repair they could apply there. This one
 # fires on the `use` line that made the name ambiguous, in the file being
 # edited, and its repair is one clause: `as`.
-function module_binding_taken(binding: str, first: str, second: str, span: token.Span) -> diag.Diagnostic
+function module_binding_taken(binding: str, first: str, second: str, has_alias: bool, span: token.Span) -> diag.Diagnostic
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "module_binding_taken",
         message: "this file already calls `" + first + "` by the name `" + binding + "`, so `" + second + "` cannot have it too — a file may not bind one name twice",
         span: span
     )
-    d.fixes @ d.fixes.push(
-        diag.Fix(title: "write `use " + second + " as " + suggestion(second) + "`", replacement: binding + " as " + suggestion(second), span: span, certainty: .guess)
-    )
+
+    # **A fix is offered only where it would CHANGE something.** The suggestion
+    # closes up a path's separators, so for a path with none — a root module
+    # colliding with a nested one's last part — it is the taken name again and
+    # `use scale as scale` repairs nothing. Found by the corpus:
+    # `examples/shapes/` provoked exactly that while it was being written. The
+    # rule is `use_wants_a_name`'s, one department over — a fix that leaves the
+    # program where it was is worse than a message with no fix, because the
+    # author reads it as the answer.
+    suggested = suggestion(second)
+
+    # **The replacement depends on whether the line ALREADY says `as`, and
+    # getting that wrong shipped a fix that does not parse.** The span is the
+    # binding, so on `use ir/state` it must become `state as ir_state`, and on
+    # `use ir/state as state` it must become just `ir_state` — the first form
+    # applied to the second line gives `as state as ir_state`. Measured by
+    # panel 101's compiler-engineer on the build that had shipped hours
+    # earlier; it was invisible because §8 makes CI apply only `certain` fixes,
+    # and this one is a guess.
+    replacement: str @ binding + " as " + suggested
+
+    if has_alias
+        replacement @ suggested
+
+    if suggested != binding
+        d.fixes @ d.fixes.push(
+            diag.Fix(title: "write `use " + second + " as " + suggested + "`", replacement: replacement, span: span, certainty: .guess)
+        )
     d.notes @ d.notes.push(
         "the two modules may both exist and both be used — `as` says what THIS file calls each one, and two files may name the same module differently"
     )

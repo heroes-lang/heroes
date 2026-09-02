@@ -6,6 +6,11 @@
 # neighbouring file is the correct move here rather than the classic mistake.
 use geom/point
 
+# `use scale` — and there is a `render/scale.hero` BESIDE this file. This line
+# reaches the ROOT's `scale.hero`, because every `use` starts at the directory
+# of the file you compile. `scale.hero`'s own doc is where that is explained.
+use scale
+
 function bar(width: i64) -> str
     origin = point.Point(x: 0, y: 0)
     tip = point.Point(x: width, y: 0)
@@ -25,3 +30,10 @@ test "a bar is as wide as the span it is given, and a frame repeats it"
     assert bar(width: 3) == "###"
     assert bar(width: 0) == ""
     assert frame(width: 2, height: 2) == "##\n##"
+
+# The root's factor, reached from a subdirectory by a bare `use`.
+function scaled(width: i64) -> i64
+    return width * scale.factor()
+
+test "the bare use reached the root, so the factor is ten"
+    assert scaled(width: 2) == 20

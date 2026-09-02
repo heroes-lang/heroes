@@ -12,10 +12,15 @@
 #
 # The qualifier is the path's last part: `use geom/point` binds `point`, so
 # every call below reads `point.something`. The directory is not part of the
-# name a call writes — which is why last parts are unique across a program.
+# name a call writes, so two modules can end in the same word — and then a
+# FILE that wants both renames one with `as`, which is what happens below.
+# (These lines said *"last parts are unique across a program"* until panel 100
+# repealed that rule the same day, hours after they were written.)
 use geom/point
 use geom/area
 use render/ascii
+use render/scale as near_scale
+use scale
 
 function main()
     corner = point.Point(x: 0, y: 0)
@@ -25,8 +30,22 @@ function main()
     print(ascii.bar(width: point.span(from: corner, to: far)))
     print(ascii.frame(width: 3, height: 2))
 
+    # The two `scale`s in one file, which is what `as` is for: `use scale`
+    # takes the root's and `use render/scale as near_scale` renames the
+    # neighbour, because a file may not bind one name twice (panel 100). The
+    # compiler refuses the version without `as` on the second `use` line and
+    # offers the rename there — measured while writing this program.
+    print(scale.factor())
+    print(near_scale.factor())
+
 test "the area and the perimeter of the 3-4-5 rectangle"
     origin = point.Point(x: 0, y: 0)
     tip = point.Point(x: 4, y: 3)
     assert area.rect(a: origin, b: tip) == 12
     assert area.perimeter(a: origin, b: tip) == 14
+
+test "a bare use is the root's, and the neighbour needs its path plus a rename"
+    # The rule's sharp edge, asserted rather than described: both modules are
+    # live in this file and they answer differently.
+    assert scale.factor() == 10
+    assert near_scale.factor() == 3

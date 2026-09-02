@@ -1,0 +1,23 @@
+# A root module with a name a subdirectory also uses — deliberately.
+#
+# **This file exists to pin the sharp edge of the rule, in a program that
+# runs** (panels 099 R1, 100 R5, 101 R5). `render/ascii.hero` says
+# `use scale`, and there is a `render/scale.hero` sitting right beside it.
+# The `use` reaches THIS file, because every `use` starts at the directory of
+# the file you compile — never beside the file that writes the line.
+#
+# It is correct and it is silent: no diagnostic fires, because the program is
+# exactly what the rule says it is. The loud half exists too — delete this
+# file and the same line becomes `unknown_module`, naming the directory it
+# looked in — so the compiler teaches the rule the moment it can. What it
+# cannot do is guess which file you meant, and a refusal here would leave a
+# file inside `render/` with no way at all to name the root's `scale`.
+#
+# The number is 10 rather than 1 so a wrong resolution changes the program's
+# output instead of hiding inside it.
+
+function factor() -> i64
+    return 10
+
+test "the root's scale is ten"
+    assert factor() == 10
