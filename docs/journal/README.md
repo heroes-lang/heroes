@@ -50,6 +50,10 @@ is `docs/ROADMAP.md` § The names, and the rule is CLAUDE.md §14.
 | 024 | [the attic](024-bootstrap-archive.md) | M-bootstrap-archive — the third language dies, and five instruments get successors first | 2026-08-19 | `m-bootstrap-archive` |
 | 025 | [the pieces](025-separate-compilation.md) | M-separate-compilation — one `.c` per module, a cache that cannot lie, and a frontend that was one function | 2026-08-26 | `m-separate-compilation` |
 
+| 026 | [the argument list](026-argv-execution.md) | M-argv-execution — the shell stops being the boundary, and Windows turns out to be the first reader | 2026-08-31 | `m-argv-execution` |
+| 027 | [where the files go](027-package-layout.md) | M-package-layout — a `use` may be a path, a file may rename what it binds, and the formatter deleted the new word | 2026-09-02 | `m-package-layout` |
+| 028 | [the prefixes were load-bearing](028-selfhost-nesting.md) | M-selfhost-nesting — 134 modules move into ten directories, and four written rules turn out to have no executor | 2026-09-02 | `m-selfhost-nesting` |
+
 `git tag --list --sort=creatordate` gives the same order from git itself, and
 `git checkout m5b` re-opens any milestone's code — which is what
 `M-journey-book` is written from.
