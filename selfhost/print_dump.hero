@@ -45,7 +45,13 @@ function dump_ast(tree: ast.Ast, s: source.Source, uses: [ast.Use], decls: [ast.
     for used in uses
         if !source.is_root(s, used.span.start)
             continue
-        out @ out + "  use " + source.span_text(s, used.name) + "\n"
+
+        # The alias too, and it was missing here for the same reason it was
+        # missing from the formatter: a `use` line was printed as its NAME.
+        # `--dump-ast` is a window onto the tree, so a field the tree carries
+        # and the window does not is a window that lies — measured 2026-09-02,
+        # `use render/scale as near_scale` dumped as `use render/scale`.
+        out @ out + "  use " + source.span_text(s, used.name) + alias_of(s, used: used) + "\n"
 
     for decl in decls
         if !source.is_root(s, decl.name.start)
@@ -191,6 +197,14 @@ function docs_at(s: source.Source, doc: [token.Span], indent: str) -> str
         out @ out + indent + "doc " + source.span_text(s, span) + "\n"
 
     return out
+
+# ` as near_scale`, or nothing where the file wrote no alias. The test is the
+# one the resolver and the formatter both use: the binding is the path's own
+# tail exactly when nobody wrote `as`.
+function alias_of(s: source.Source, used: ast.Use) -> str
+    if used.binding.end == used.name.end
+        return ""
+    return " as " + source.span_text(s, used.binding)
 
 ## Tests
 

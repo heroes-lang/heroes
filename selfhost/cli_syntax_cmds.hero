@@ -255,3 +255,49 @@ test "the parse and fixpoint checks fire, and the input's own errors are not bla
     # The whole point either way: the author's file is byte-for-byte
     # untouched.
     assert read_file("build/selftest_fmt_guard.hero").must() == refused_input
+
+test "the tree guard sees an alias, and it was blind to one for a day"
+    # **THE GUARD WAS BLIND IN EXACTLY THE PLACE OF THE BUG** (2026-09-02).
+    # `fmt` dropped `as near_scale` when it printed a `use` line, and this
+    # guard compares the two trees by DUMPING them — with `print_dump`, which
+    # dropped the alias too. Both renderings therefore agreed and the guard
+    # reported *"the same tree"* while the formatter was deleting a word.
+    #
+    # One omission, two consumers, and the second is the instrument watching
+    # the first: a self-check that compares two RENDERINGS can only see what
+    # the renderer carries. That is the general shape, and it is why
+    # CLAUDE.md §9's rule about a new form reaching every tool names the
+    # printers explicitly.
+    #
+    # This test hands the guard the exact pair the defect produced — the
+    # original with the alias, the "formatted" output without it — and asserts
+    # it REFUSES. It fails the day the dump stops carrying the alias, which is
+    # the day the guard would go blind again.
+    original = "use render/scale as near_scale\n\nfunction main()\n    print(0)\n"
+    stripped = "use render/scale\n\nfunction main()\n    print(0)\n"
+    caught = refuse_output_the_formatter_broke(path: "t.hero", original: original, formatted: stripped)
+    assert !caught.is_err()
+    assert strings_has(haystack: caught.must(), needle: "changed the TREE")
+
+    # And it stays quiet on the real thing: the formatter's own output for a
+    # file that already carries an alias.
+    parsed = parse.parse(original)
+    s = source.new_source(name: "t.hero", text: original)
+    formatted = print_fmt.format_file(parsed.tree, s, parsed.comments, parsed.uses, parsed.decls)
+    assert formatted == original
+    quiet = refuse_output_the_formatter_broke(path: "t.hero", original: original, formatted: formatted)
+    assert quiet.is_err()
+
+# Does the haystack hold the needle? One line, local to the test above,
+# because the harness's `strings` module is not reachable from `selfhost/`.
+function strings_has(haystack: str, needle: str) -> bool
+    if needle.len() > haystack.len()
+        return false
+    at: i64 @ 0
+
+    while at + needle.len() <= haystack.len()
+        if haystack.slice(from: at, to: at + needle.len()) == needle
+            return true
+        at @ at + 1
+
+    return false
