@@ -1,0 +1,161 @@
+# Which words a passage uses, and how often — the program that walks a map's
+# keys and pays for the order.
+#
+# Corpus and regression material (CLAUDE.md §9). What it adds to the corpus is
+# not a feature nobody had written but a DISCIPLINE nobody had demonstrated:
+# `spec:91` says `keys(m) -> [K]` gives the keys **in no order**, and
+# design.md §4.9 makes any walk whose order somebody can see owe an explicit
+# `sort` and a `# ORDER:` mark naming what observes it. `selfhost/` carries 23
+# of those marks. `examples/` carried none, because no corpus program printed
+# a map.
+#
+# So the interesting line in this file is not the counting. It is the walk.
+#
+# It also puts `chars()` to work on the job it exists for. Measured
+# 2026-09-02: `chars()` appeared twice in all of `examples/` and 102 times in
+# `selfhost/`, which is the ratio you get when the corpus has no text
+# processing in it.
+
+# A word is a run of letters. Everything else — space, punctuation, a digit —
+# ends one. That rule is crude on purpose: the program is about the map and
+# the order, and a real tokeniser would put the interesting part somewhere
+# else.
+function words_of(text: str) -> [str]
+    out: [str] @ []
+    piece: str @ ""
+
+    for ch in text.chars()
+        if is_letter(ch)
+            piece @ piece + lowered(ch)
+        else
+            if piece.len() > 0
+                out @ out.push(piece)
+            piece @ ""
+
+    if piece.len() > 0
+        out @ out.push(piece)
+
+    return out
+
+function is_letter(ch: str) -> bool
+    if ch.len() != 1
+        # A multi-byte character is not a letter as far as this program is
+        # concerned, and saying so is cheaper than being wrong about Unicode.
+        return false
+    b = ch[0]
+    return b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z'
+
+function lowered(ch: str) -> str
+    if ch.len() != 1
+        return ch
+    b = ch[0]
+
+    if b >= 'A' && b <= 'Z'
+        return to_str_of_byte(b + 32)
+    return ch
+
+# One byte back to a single-character `str`. The alphabet is written out
+# because `spec:56` indexes a `str` in BYTES and gives no byte-to-str
+# built-in: this is what a program does instead, and it is 26 characters
+# rather than a dependency.
+function to_str_of_byte(b: u8) -> str
+    lower = "abcdefghijklmnopqrstuvwxyz"
+    i: i64 @ 0
+
+    while i < 26
+        if lower[i] == b
+            return lower.slice(from: i, to: i + 1)
+        i @ i + 1
+
+    return "?"
+
+function counted(text: str) -> {str: i64}
+    tally: {str: i64} @ {}
+
+    for one in words_of(text)
+        tally[one] @ tally[one].default(0) + 1
+
+    return tally
+
+# The tally as lines, one word per line, most frequent first and alphabetical
+# within a count.
+#
+# ORDER: sort(keys(tally)) — the report is PRINTED, so the order is observed
+# by every reader of `main.expected` and by every diff over it. Without the
+# sort this function returns a different string on a map built in a different
+# order, which `spec:91` explicitly permits and `spec:78` confirms does not
+# affect equality: two `==`-equal maps may walk differently.
+function report(text: str) -> str
+    tally = counted(text)
+    rows: [str] @ []
+    most: i64 @ 0
+
+    for word in sort(keys(tally))
+        n = tally[word].must()
+
+        if n > most
+            most @ n
+
+    # Counted down from the highest, so the primary key is the count and the
+    # secondary key is the sorted walk above. Two nested walks rather than a
+    # comparison function, because `sort` takes no comparator (`spec:179`).
+    at: i64 @ most
+
+    while at > 0
+        for word in sort(keys(tally))
+            if tally[word].must() == at
+                rows @ rows.push(at.to_str() + " " + word)
+
+        at @ at - 1
+
+    return join(rows, "\n")
+
+constant PASSAGE: str
+    "the quick brown fox jumps over the lazy dog. The dog barks; the fox runs."
+
+function main()
+    print(words_of(PASSAGE).len())
+    print(keys(counted(PASSAGE)).len())
+    print(report(PASSAGE))
+    print(report(""))
+
+test "a passage splits into words on everything that is not a letter"
+    assert words_of("a b") == ["a", "b"]
+    assert words_of("a,b;c") == ["a", "b", "c"]
+    assert words_of("  a  ") == ["a"]
+    assert words_of("") == []
+    assert words_of("...") == []
+    assert words_of("trailing") == ["trailing"]
+
+test "case is folded, so The and the are one word"
+    assert words_of("The the THE") == ["the", "the", "the"]
+    assert counted("The the")["the"].must() == 2
+
+test "a digit ends a word rather than joining it"
+    assert words_of("a1b") == ["a", "b"]
+
+test "the tally counts what the splitter produced"
+    tally = counted(PASSAGE)
+    assert tally["the"].must() == 4
+    assert tally["fox"].must() == 2
+    assert tally["dog"].must() == 2
+    assert tally["quick"].must() == 1
+    assert tally["missing"].is_err()
+
+test "the report is sorted, so it is the same string every time"
+    # The property the ORDER mark exists for: build the same tally twice from
+    # different insertion orders and the report must not move.
+    one = report("b a a")
+    two = report("a a b")
+    assert one == two
+    assert one == "2 a\n1 b"
+
+test "an empty passage reports nothing rather than failing"
+    assert report("") == ""
+    assert counted("").len() == 0
+
+test "a word appearing once and a word appearing many sort by count first"
+    assert report("z z z y y x") == "3 z\n2 y\n1 x"
+
+test "within one count the words are alphabetical"
+    assert report("b a c") == "1 a\n1 b\n1 c"
