@@ -611,3 +611,18 @@ lived in `docs/ROADMAP.md`'s verify block, which nothing obliges anybody to open
 It is in `/step`'s § 2 as well now. **The third suite is the one that goes red
 when an instrument's pinned number stops matching what the instrument reads** —
 the other two test the language; this one tests the tests.
+
+**And the three platforms are measured from this Mac, BEFORE the commit**
+(author instruction 2026-09-03, after the program that is now `examples/ctime/`
+— it was called filestat until that day, and the directory of that name is
+gone — shipped a comment that named three platforms and had checked one, and
+the Windows leg of CI was the instrument that read it). macOS is this machine. Windows is a real box,
+`docs/environment/windows/WINDOWS-MACHINE.md`. Linux is a container of the CI
+leg's own architecture, `docs/environment/linux/LINUX-MACHINE.md`, built from
+the `Dockerfile` beside it — one directory per platform, by author instruction
+the same day. Neither file was cited
+anywhere alive until this paragraph — the Windows one sat orphaned for three
+days and a memory pointing at it carried a dead path — which is why they are
+named here, where the dead-citation check reads. **CI stays the judge; these two
+are the hunt**, and a platform fact that has not been run on one of them is an
+inference (§1), whatever the comment around it says.

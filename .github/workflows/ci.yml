@@ -106,7 +106,11 @@ jobs:
       #     cheapest leg and the only one whose ASan carries a leak detector, so
       #     it reads `hero_runtime_check_leaks()` (panel 021) against a second
       #     instrument; `INT64_MIN % -1` raises SIGFPE here while arm64 returns
-      #     0 at exit 0. Same source, two behaviours.
+      #     0 at exit 0. Same source, two behaviours. **The local instrument
+      #     for this leg is `docs/environment/linux/LINUX-MACHINE.md`**: the same
+      #     architecture in a container on the author's Mac, so a Linux fact is
+      #     measured before the commit rather than read here seven minutes
+      #     after it. This leg stays the judge; that file is the hunt.
       #   - **Darwin arm64 — tags and `workflow_dispatch`.** Not narrowed for
       #     being less informative but for being *already read*: it is the
       #     author's machine, so a local run of the net is this job, and it is
@@ -130,6 +134,12 @@ jobs:
       #     **UNTESTED ON WINDOWS FROM HERE, and that is stated rather than
       #     implied**: nobody has a Windows machine in this project, so the first
       #     tag run after 2026-08-24 is the instrument for this whole paragraph.
+      #     **That stopped being true on 2026-08-31 and the sentence is
+      #     corrected rather than deleted**: there is a real Windows box now,
+      #     `docs/environment/windows/WINDOWS-MACHINE.md`, reachable in seconds, and it
+      #     is where a Windows fact is measured before it reaches this leg. The
+      #     leg is still the judge — a green run on that box is evidence, never
+      #     the criterion.
       #     Two platform differences are predicted and handled rather than
       #     discovered — `shell: bash` on every step, because `windows-latest`
       #     defaults to `pwsh` and these are bash scripts, and
