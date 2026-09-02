@@ -87,13 +87,22 @@ record Function
     # hashes.
     instance: [i64]
     # Which instance each inner call reaches, IN THIS COPY — keyed by
-    # the call's span start, substituted rather than inherited. The
-    # checker's own table is keyed by span too, and that is right for
-    # it: at check time a span occurs once. After monomorphisation it
-    # occurs once PER COPY of the enclosing body — the emitter read the
-    # checker's table directly and, for a generic calling a generic,
-    # passed arguments to a zero-argument _Noreturn (panel 084's filed
-    # defect).
+    # the call's span END, substituted rather than inherited. After
+    # monomorphisation a span occurs once PER COPY of the enclosing body —
+    # the emitter read the checker's table directly and, for a generic
+    # calling a generic, passed arguments to a zero-argument _Noreturn
+    # (panel 084's filed defect).
+    #
+    # **This comment used to say "the checker's own table is keyed by span
+    # too, and that is right for it: at check time a span occurs once."** It
+    # occurs twice, and the sentence blessed the defect it was standing next
+    # to: a UFCS chain gives its outer and inner call the same span START,
+    # because the parser anchors a method call's start at its receiver. Both
+    # tables are keyed by the END now, and `check/state.hero`'s field carries
+    # the claim that makes that sound, written as a falsifiable one.
+    #
+    # Two documents asserting one premise is not two witnesses. It is one
+    # premise, and the second copy is what makes the first look checked.
     call_instances: {i64: [i64]}
     span: token.Span
 

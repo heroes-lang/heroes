@@ -1,0 +1,38 @@
+# Tenths of a degree, printed the way an instrument prints them.
+#
+# Its own module for one reason worth stating: it is the only thing in this
+# program that does not take a `Reading`, so keeping it here is what lets
+# `main.hero` be read as a list of library calls and nothing else.
+#
+# It also carries this program's `use` path — `examples/readings/` is flat, so
+# `use scale` is the bare form, and the path form lives in `examples/shapes/`.
+
+# `182` becomes `18.2`, and a negative one keeps its sign in front of the
+# whole number rather than inside it. Integer division truncates toward zero
+# (spec § Failure), so the two halves are computed from the absolute value and
+# the sign is put back by hand — which is the whole reason this is a function
+# and not an expression at the call site.
+function tenths(value: i64) -> str
+    if value < 0
+        return "-" + tenths(0 - value)
+    whole = value / 10
+    part = value % 10
+    return whole.to_str() + "." + part.to_str()
+
+test "a reading prints as tenths"
+    assert tenths(182) == "18.2"
+    assert tenths(221) == "22.1"
+    assert tenths(981) == "98.1"
+
+test "a whole number keeps its point, and zero is 0.0"
+    assert tenths(200) == "20.0"
+    assert tenths(0) == "0.0"
+
+test "a value under one tenth keeps the leading zero"
+    assert tenths(7) == "0.7"
+
+test "the sign goes in front of the number, not inside it"
+    # `-0.7` and not `-0.-7`, which is what a single expression over a
+    # negative value produces once `%` truncates toward zero.
+    assert tenths(0 - 7) == "-0.7"
+    assert tenths(0 - 182) == "-18.2"

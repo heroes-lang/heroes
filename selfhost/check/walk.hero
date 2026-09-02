@@ -1514,7 +1514,7 @@ function user_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
                     else
                         resolved_args @ resolved_args.push(b.must())
 
-                c.out.instantiations[span.start] @ resolved_args
+                c.out.instantiations[span.end] @ resolved_args
             return check_generics.substitute(@c, result, bindings)
         .constant_decl | .record_decl | .variant_decl | .test_decl => return state.error_ty_of(c)
 

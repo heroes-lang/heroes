@@ -1,0 +1,82 @@
+# A fixed defect, named after it (CLAUDE.md §9; Go's `test/fixedbugs`), and
+# the test that fires if the premise behind the instantiation key dies again
+# (CLAUDE.md §11 — `selfhost/check/state.hero`'s `instantiations` field names
+# this file).
+#
+# SYMPTOM, 2026-09-02: `heroes check` was exit 0 and `heroes run` was exit 2,
+# the compiler blaming itself, on this program:
+#
+#     print(xs.map(to_n).fold(0, add))
+#
+# clang refused the generated C with `incompatible function pointer types
+# passing 'long long (*)(struct R)' to parameter of type 'long long
+# (*)(long long)'` — the emitter had monomorphised `map` as `map<i64, i64>`
+# and handed it a function taking an `R`.
+#
+# CAUSE: the checker recorded each generic call's type arguments in a table
+# keyed by the call's span **start**, on a premise its own comment stated —
+# *"a span is a byte range and two calls cannot share one"* — and repeated in
+# `selfhost/ir/containers.hero` as *"at check time a span occurs once"*. Both
+# false, and false at the parser: `grammar_expr.hero` gives a method-call node
+# its span START from its RECEIVER, so in a UFCS chain the inner call and the
+# outer call begin on the same byte. `fold`'s bindings overwrote `map`'s.
+#
+# The three variants that made the class exact, all measured that day, all
+# working before the fix: `xs.map(to_n).len()` (only one generic, so no
+# collision), `ns = xs.map(to_n)` then `ns.fold(0, add)` (the binding gives
+# the calls different starts), and `fold(map(xs, to_n), 0, add)` (the same
+# chain without UFCS, also different starts). And the case that hid it for as
+# long as it existed: when both calls instantiate at the SAME types, the
+# overwrite is invisible — `[i64]` mapped by an `i64 -> i64` and folded prints
+# the right answer either way, which is why the compiler's own 536 tests never
+# caught it.
+#
+# FIX: both tables are keyed by the span's END. A call node ends at its own
+# closing parenthesis, so an outer call ends strictly after the inner one it
+# contains — a property of how the parser CLOSES a call rather than of where
+# it opens one.
+#
+# FOUND BY: the first program in `examples/` that called the library
+# (`examples/readings/`), on its first run, at M-corpus-coverage. The
+# milestone's own scheduling item had said that a corpus which does not reach
+# the library cannot find a defect in the library.
+
+record R
+    n: i64
+
+function to_n(r: R) -> i64
+    return r.n
+
+function times_ten(n: i64) -> i64
+    return n * 10
+
+function shown(r: R) -> str
+    return r.n.to_str()
+
+function add(a: i64, b: i64) -> i64
+    return a + b
+
+function glue(so_far: str, one: str) -> str
+    return so_far + one
+
+function main()
+    xs: [R] = [R(n: 1), R(n: 2), R(n: 3)]
+
+    # The chain that was broken: one generic straight into another, and the
+    # two type parameters differ, so a collision cannot hide.
+    print(xs.map(to_n).fold(0, add))
+
+    # The same shape where B is a `str`, so the overwritten binding would be
+    # a different KIND of type rather than a different width.
+    print(xs.map(shown).fold("", glue))
+
+    # Three deep, which is the shape next to the one that provoked it: the
+    # middle call is both an outer and an inner one.
+    print(xs.map(to_n).map(times_ten).fold(0, add))
+
+    # And the three spellings that worked before the fix, so a repair that
+    # broke them instead would be caught here too.
+    print(xs.map(to_n).len())
+    ns = xs.map(to_n)
+    print(ns.fold(0, add))
+    print(fold(map(xs, to_n), 0, add))

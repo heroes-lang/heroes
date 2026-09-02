@@ -110,12 +110,12 @@ function members(module: str, p: containers.Program, c: state.Checked, s: source
                 match inst.op
                     .call cl =>
                         instance: [i64] @ []
-                        on_copy = f.call_instances[inst.span.start]
+                        on_copy = f.call_instances[inst.span.end]
 
                         if !on_copy.is_err()
                             instance @ on_copy.must()
                         else
-                            recorded = c.instantiations[inst.span.start]
+                            recorded = c.instantiations[inst.span.end]
 
                             if !recorded.is_err()
                                 instance @ recorded.must()

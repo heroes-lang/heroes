@@ -167,7 +167,7 @@ function calls_in(f: containers.Function, generic: {i64: bool}, c: state.Checked
                         .heroes_fn h =>
                             if generic[h.decl].is_err()
                                 continue
-                            recorded = c.instantiations[inst.span.start]
+                            recorded = c.instantiations[inst.span.end]
 
                             if recorded.is_err()
                                 continue
@@ -294,7 +294,7 @@ function substituted_calls(template: containers.Function, bound: [i64], @c: stat
 
     for blk in template.blocks
         for inst in blk.insts
-            recorded = c.instantiations[inst.span.start]
+            recorded = c.instantiations[inst.span.end]
 
             if recorded.is_err()
                 continue
@@ -303,7 +303,7 @@ function substituted_calls(template: containers.Function, bound: [i64], @c: stat
             for t in recorded.must()
                 reached @ reached.push(apply(@c, ty: t, bound: bound))
 
-            out[inst.span.start] @ reached
+            out[inst.span.end] @ reached
 
     return out
 
