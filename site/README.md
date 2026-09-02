@@ -634,8 +634,11 @@ copy could be wrong later:
    the author's own translation.
 2. **Wording on the release: the book is published, and the date is off the
    page** (author decision 2026-08-29, superseding the dated rule this line used
-   to carry). The copy says *"published on Amazon"* and names no day. Two things
-   made the old rule expire at once. The site sits behind the holding page with
+   to carry). **Both editions are now on sale on Amazon, Italian and English**
+   (author, 2026-09-02), which turns the copy this rule already required into a
+   plain statement of fact rather than a bet on a launch day. The copy says
+   *"published on Amazon"* and names no day. Two things made the old rule expire
+   at once. The site sits behind the holding page with
    the same preview token as the author's own site (`starman`), so both are
    written in their finished state and open together, which is what removes the
    risk the dated wording existed to cover. And § No dates on the page in
@@ -675,6 +678,19 @@ copy could be wrong later:
    describes the photograph and names the cap, because the lede's own line is
    *"a cap for every language"* and a reader who cannot see the picture should
    still get the joke.
+
+8. **No page count and no word count for the book, anywhere on the site**
+   (author instruction 2026-09-02: *"togli i numeri sulle parole e pagine del
+   libro perché sono in evoluzione"*). The book keeps being revised, and a
+   figure that changes with the next print is a figure the site cannot keep
+   true, which is CLAUDE.md §11's expiring-premise rule applied to somebody
+   else's manuscript. The `.stats` block on `author.html` carried **599 pages**
+   in English and **593** in Italian, two numbers for one book, which is the
+   tell on its own. They are gone; the A5 trim moved into the prose beside the
+   imprint, because the format is fixed and § The author and the book rule 2
+   leans on it to explain why Amazon is the whole distribution. What stays in
+   that block is what does not move: 21 chapters, 2 editions, 1 night. The
+   ISBNs stay too, for the same reason: an identifier is not a measurement.
 
 **The book has one domain per edition** (author instruction 2026-08-18):
 `glieroidelcodice.it` for the Italian, `heroesofcode.com` for the English, each
