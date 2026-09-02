@@ -1,0 +1,192 @@
+# The two float values that are not numbers, and the one comparison that
+# still works on them — the program for `inf` and `nan`.
+#
+# Corpus and regression material (CLAUDE.md §9). Measured 2026-09-02 over
+# every `.hero` in the repository: `nan` appears 4 times in `selfhost/` and
+# **zero** times in `examples/`; `inf` appears **zero times anywhere**. They
+# are in the spec twice — `spec:78` for equality and `spec:185` for printing —
+# and nothing ran them.
+#
+# WHAT MAKES THIS DELICATE, and why the corpus had none:
+#
+# `spec:162` says `<`, `<=`, `>` and `>=` take a number only, **and a `nan`
+# aborts**. So the ordinary way to ask about a strange float — compare it —
+# ends the process. A corpus program must not abort (an abort belongs in
+# `tests/golden/run/`, where the harness can expect one), which means every
+# question this file asks has to be asked with `==` and `!=` alone.
+#
+# That is not a restriction worked around. It is the language's own idiom, and
+# `spec:78` states it: *"a `nan` equals nothing, itself included, so `x != x`
+# asks whether it is one"*. This program is that sentence executed.
+#
+# `sort` has the same rule (`spec:179`: a `nan` aborts), so the sorted report
+# at the bottom filters first and sorts second — which is the order any
+# program handling real measurements has to use.
+
+# Zero over zero is the standard way to make a `nan`, and it is legal here
+# because `spec:155`'s abort is on INTEGER division by zero. A float division
+# answers rather than stopping.
+function a_nan() -> f64
+    return 0.0 / 0.0
+
+function an_infinity() -> f64
+    return 1.0 / 0.0
+
+function a_negative_infinity() -> f64
+    return 0.0 - 1.0 / 0.0
+
+# The one question that is safe to ask, and the only one this file uses.
+function is_nan(x: f64) -> bool
+    return x != x
+
+# An infinity is finite-free but ordinary under `==`, so it can be recognised
+# without a comparison operator at all.
+function is_infinite(x: f64) -> bool
+    return x == an_infinity() || x == a_negative_infinity()
+
+function is_a_number(x: f64) -> bool
+    return !is_nan(x) && !is_infinite(x)
+
+# A reading that a sensor may not have answered, kept as a float because that
+# is how a real one arrives: the failure is in the VALUE and not beside it.
+function usable(readings: [f64]) -> [f64]
+    out: [f64] @ []
+
+    for one in readings
+        if is_a_number(one)
+            out @ out.push(one)
+
+    return out
+
+# The mean of what is usable, or a `nan` when nothing is — which is what the
+# rest of the numerical world does and is why the caller must ask `is_nan`
+# rather than reading a sentinel.
+function mean(readings: [f64]) -> f64
+    good = usable(readings)
+
+    if good.len() == 0
+        return a_nan()
+    total: f64 @ 0.0
+
+    for one in good
+        total @ total + one
+
+    return total / good.len().to_f64()
+
+# The report, sorted — AFTER the filter, because `sort` aborts on a `nan` and
+# the filter is what guarantees there is none left.
+#
+# ORDER: sort(usable(readings)) — the report is printed, so its order is
+# observed by every reader of `main.expected`. Sorting floats is total here
+# only because `is_a_number` removed the values on which it is not.
+function report(readings: [f64]) -> str
+    rows: [str] @ []
+
+    for one in sort(usable(readings))
+        rows @ rows.push(one.to_str())
+
+    return join(rows, " ")
+
+function main()
+    n = a_nan()
+    up = an_infinity()
+    down = a_negative_infinity()
+
+    # `spec:185`: a float prints a point or an exponent, or `inf`, `-inf`,
+    # `nan`. Four lines that pin all three of the special spellings.
+    print(n.to_str())
+    print(up.to_str())
+    print(down.to_str())
+    print(1.0.to_str())
+
+    # The identity that is false, which is the whole of `spec:78`.
+    print(n == n)
+    print(n != n)
+    print(is_nan(n))
+    print(is_nan(1.0))
+
+    # An infinity IS equal to itself, so it needs no special idiom.
+    print(up == up)
+    print(up == down)
+    print(is_infinite(up))
+    print(is_infinite(down))
+    print(is_infinite(1.0))
+
+    # Arithmetic on them, which is where the surprises live: an infinity
+    # minus an infinity is a `nan`, and anything with a `nan` in it stays one.
+    print(is_nan(up - up))
+    print(is_nan(n + 1.0))
+    print(up + 1.0 == up)
+    print(is_nan(up + down))
+
+    # And the program's actual job.
+    readings: [f64] = [2.5, 0.0 / 0.0, 1.5, 1.0 / 0.0, 3.5]
+    print(usable(readings).len())
+    print(mean(readings).to_str())
+    print(report(readings))
+    empty: [f64] = []
+    print(is_nan(mean(empty)))
+
+test "a nan is equal to nothing, itself included"
+    n = a_nan()
+    assert !(n == n)
+    assert n != n
+    assert is_nan(n)
+    assert !is_nan(0.0)
+    assert !is_nan(1.0)
+    assert !is_nan(an_infinity())
+
+test "an infinity is equal to itself, and the two are not equal to each other"
+    up = an_infinity()
+    down = a_negative_infinity()
+    assert up == up
+    assert down == down
+    assert up != down
+    assert is_infinite(up)
+    assert is_infinite(down)
+    assert !is_infinite(0.0)
+    assert !is_infinite(a_nan())
+
+test "the three special spellings are what the spec says they are"
+    assert a_nan().to_str() == "nan"
+    assert an_infinity().to_str() == "inf"
+    assert a_negative_infinity().to_str() == "-inf"
+
+test "arithmetic keeps a nan and can make one out of two infinities"
+    up = an_infinity()
+    assert is_nan(up - up)
+    assert is_nan(up + a_negative_infinity())
+    assert is_nan(a_nan() + 1.0)
+    assert is_nan(a_nan() * 0.0)
+    assert up + 1.0 == up
+    assert up * 2.0 == up
+
+test "the filter removes exactly the values sort would abort on"
+    readings: [f64] = [2.5, 0.0 / 0.0, 1.5, 1.0 / 0.0, 3.5]
+    good = usable(readings)
+    assert good.len() == 3
+
+    for one in good
+        assert !is_nan(one)
+        assert !is_infinite(one)
+
+test "the mean is of what was usable, and is a nan when nothing was"
+    readings: [f64] = [1.0, 0.0 / 0.0, 3.0]
+    assert mean(readings) == 2.0
+    empty: [f64] = []
+    assert is_nan(mean(empty))
+    only_bad: [f64] = [0.0 / 0.0, 1.0 / 0.0]
+    assert is_nan(mean(only_bad))
+
+test "the report sorts what is left and drops the rest"
+    readings: [f64] = [3.5, 0.0 / 0.0, 1.5, 1.0 / 0.0, 2.5]
+    assert report(readings) == "1.5 2.5 3.5"
+    empty: [f64] = []
+    assert report(empty) == ""
+
+test "zero over zero and one over zero are the two ways in"
+    # Integer division by zero aborts (`spec:155`); float division does not,
+    # and that difference is what makes this file writable at all.
+    assert is_nan(0.0 / 0.0)
+    assert is_infinite(1.0 / 0.0)
+    assert is_infinite(0.0 - 1.0 / 0.0)

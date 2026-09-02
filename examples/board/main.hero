@@ -1,0 +1,295 @@
+# A grid of cells that grow and die, and a scoreboard keyed twice — the
+# program for the four forms the corpus never wrote.
+#
+# Corpus and regression material (CLAUDE.md §9). Measured 2026-09-02 over
+# every `.hero` in `examples/`, and every one of these is a ZERO against a
+# non-zero in `selfhost/`:
+#
+#   nested arrays, `[[i64]]`            examples 0   selfhost 10
+#   nested maps, `{str: {str: i64}}`    examples 0   selfhost 12
+#   `if` as an EXPRESSION               examples 0   selfhost 7
+#   `_` as a catch-all arm              examples 0   selfhost 3
+#
+# The last two are `spec:167` and `spec:126`, and both are easy to miss for
+# opposite reasons. `if` being an expression is easy to miss because there is
+# **no ternary** — a reader from C looks for `?:`, does not find it, and
+# writes a statement. And `_` is easy to over-use: it is FORBIDDEN on a
+# variant, where exhaustiveness is the point, and allowed on `i64` and `str`,
+# where exhaustiveness is impossible. This file uses it only where it is
+# allowed, which is the distinction worth a program.
+#
+# WHY A GRID. Nested arrays want a shape where the nesting is the subject
+# rather than an accident, and a board is the smallest honest one: a row is a
+# list, a board is a list of rows, and every rule reads two dimensions at
+# once. The scoreboard then nests maps for the same reason — a tally per
+# generation per state is naturally `{str: {str: i64}}` and awkward as
+# anything else.
+
+constant DEAD: i64
+    0
+
+constant ALIVE: i64
+    1
+
+# The board, small enough that the whole run fits in `main.expected` and big
+# enough that the neighbour count has interior cells to be interesting about.
+function starting_board() -> [[i64]]
+    return [
+        [0, 1, 0, 0, 0]
+        [0, 0, 1, 0, 0]
+        [1, 1, 1, 0, 0]
+        [0, 0, 0, 0, 0]
+        [0, 0, 0, 0, 0]
+    ]
+
+function height(board: [[i64]]) -> i64
+    return board.len()
+
+function width(board: [[i64]]) -> i64
+    # **`if` AS AN EXPRESSION, and it is a BLOCK and not a line.** The first
+    # draft of this file wrote `if c a else b` on one line, the way a
+    # language with a ternary would, and the compiler answered
+    # `error[missing_body]: an if needs an indented body`. So `spec:167`'s
+    # *"there is no ternary; `if` is an expression"* says something stronger
+    # than it looks: there is no inline conditional either. The expression
+    # form is the statement form with a value in each branch.
+    return if board.len() == 0
+        0
+    else
+        board[0].len()
+
+# Whether a coordinate is on the board at all. Written as one expression on
+# purpose: this is the guard every neighbour read goes through, and a reader
+# who has to hold four `if`s in their head will get one of them wrong.
+function inside(board: [[i64]], row: i64, column: i64) -> bool
+    return row >= 0 && row < height(board) && column >= 0 && column < width(board)
+
+function cell(board: [[i64]], row: i64, column: i64) -> i64
+    # The other use of `if` as an expression: a default for a read that would
+    # otherwise abort on an out-of-range index (`spec:154`).
+    return if inside(board, row: row, column: column)
+        board[row][column]
+    else
+        DEAD
+
+function living_neighbours(board: [[i64]], row: i64, column: i64) -> i64
+    total: i64 @ 0
+
+    for dr in [0 - 1, 0, 1]
+        for dc in [0 - 1, 0, 1]
+            if dr != 0 || dc != 0
+                total @ total + cell(board, row: row + dr, column: column + dc)
+
+    return total
+
+# The rule, and the reason this program has a `match` with a `_` in it.
+#
+# `spec:126` allows `_` on `i64` because exhaustiveness over the integers is
+# impossible — a neighbour count is 0 through 8 and the arms that matter are
+# two of them. On a VARIANT the same arm would be a compile error, which is
+# the distinction the corpus had no program for.
+function next_state(here: i64, neighbours: i64) -> i64
+    if here == ALIVE
+        return match neighbours
+            2 | 3 => ALIVE
+            _     => DEAD
+
+    return match neighbours
+        3 => ALIVE
+        _ => DEAD
+
+function step(board: [[i64]]) -> [[i64]]
+    out: [[i64]] @ []
+    row: i64 @ 0
+
+    while row < height(board)
+        line: [i64] @ []
+        column: i64 @ 0
+
+        while column < width(board)
+            line @ line.push(
+                next_state(here: cell(board, row: row, column: column), neighbours: living_neighbours(board, row: row, column: column))
+            )
+            column @ column + 1
+
+        out @ out.push(line)
+        row @ row + 1
+
+    return out
+
+function living(board: [[i64]]) -> i64
+    total: i64 @ 0
+
+    for line in board
+        for one in line
+            total @ total + one
+
+    return total
+
+# One cell as a character. Its own function because an `if` expression is a
+# block, so it cannot sit inside the `+` above — which is the second thing
+# the block form costs and the reason a program like this grows small named
+# helpers rather than long lines.
+function glyph(one: i64) -> str
+    return if one == ALIVE
+        "#"
+    else
+        "."
+
+function drawn(board: [[i64]]) -> str
+    rows: [str] @ []
+
+    for line in board
+        piece: str @ ""
+
+        for one in line
+            piece @ piece + glyph(one)
+
+        rows @ rows.push(piece)
+
+    return join(rows, "\n")
+
+# The scoreboard: how many cells were alive and dead, per generation. A map
+# of maps, because the natural key is a pair and the language has no tuple —
+# so the outer key is the generation and the inner one is the state.
+#
+# ORDER: sort(keys(tally)) at both levels — the report is printed, so both
+# walks are observed. Generations are keyed as text so the outer sort is the
+# same sort as the inner one, and a two-digit generation would need padding;
+# five generations is one digit and the limit is stated rather than met.
+function tallied(board: [[i64]], generations: i64) -> {str: {str: i64}}
+    tally: {str: {str: i64}} @ {}
+    current: [[i64]] @ board
+    at: i64 @ 0
+
+    while at < generations
+        alive = living(current)
+        inner: {str: i64} @ {}
+        inner["alive"] @ alive
+        inner["dead"] @ height(current) * width(current) - alive
+        tally[at.to_str()] @ inner
+        current @ step(current)
+        at @ at + 1
+
+    return tally
+
+function scoreboard(board: [[i64]], generations: i64) -> str
+    tally = tallied(board, generations: generations)
+    rows: [str] @ []
+
+    for generation in sort(keys(tally))
+        inner = tally[generation].must()
+        piece: str @ "gen " + generation
+
+        for state in sort(keys(inner))
+            piece @ piece + " " + state + "=" + inner[state].must().to_str()
+
+        rows @ rows.push(piece)
+
+    return join(rows, "\n")
+
+function main()
+    board = starting_board()
+    print(height(board))
+    print(width(board))
+    print(living(board))
+    print(drawn(board))
+
+    once = step(board)
+    print(living(once))
+    print(drawn(once))
+
+    print(scoreboard(board, generations: 4))
+
+    # The out-of-range read that `if` as an expression turns into a value.
+    print(cell(board, row: 0 - 1, column: 0))
+    print(cell(board, row: 99, column: 99))
+
+    # An empty board, which is where `width`'s guard earns its keep.
+    empty: [[i64]] = []
+    print(width(empty))
+    print(living(empty))
+
+test "the board is read in two dimensions and its edges are dead"
+    board = starting_board()
+    assert height(board) == 5
+    assert width(board) == 5
+    assert cell(board, row: 0, column: 1) == ALIVE
+    assert cell(board, row: 0, column: 0) == DEAD
+
+    # Every way off the board answers DEAD rather than aborting.
+    assert cell(board, row: 0 - 1, column: 0) == DEAD
+    assert cell(board, row: 0, column: 0 - 1) == DEAD
+    assert cell(board, row: 5, column: 0) == DEAD
+    assert cell(board, row: 0, column: 5) == DEAD
+
+test "an empty board has no width and no cells"
+    empty: [[i64]] = []
+    assert height(empty) == 0
+    assert width(empty) == 0
+    assert living(empty) == 0
+    assert cell(empty, row: 0, column: 0) == DEAD
+    assert drawn(empty) == ""
+
+test "the neighbour count reads all eight and never itself"
+    board = starting_board()
+
+    # The cell at 1,1 has neighbours at 0,1 and 2,0 and 2,1 and 2,2.
+    assert living_neighbours(board, row: 1, column: 1) == 5
+    assert cell(board, row: 1, column: 1) == DEAD
+
+    # A corner has three neighbours to look at and none of them alive.
+    assert living_neighbours(board, row: 4, column: 4) == 0
+
+test "the rule is the rule, at every count"
+    # Alive stays alive on two or three and dies otherwise; dead comes alive
+    # on exactly three. The `_` arm is what makes those two sentences four
+    # lines instead of eighteen.
+    assert next_state(here: ALIVE, neighbours: 2) == ALIVE
+    assert next_state(here: ALIVE, neighbours: 3) == ALIVE
+    assert next_state(here: ALIVE, neighbours: 1) == DEAD
+    assert next_state(here: ALIVE, neighbours: 4) == DEAD
+    assert next_state(here: ALIVE, neighbours: 0) == DEAD
+    assert next_state(here: ALIVE, neighbours: 8) == DEAD
+    assert next_state(here: DEAD, neighbours: 3) == ALIVE
+    assert next_state(here: DEAD, neighbours: 2) == DEAD
+    assert next_state(here: DEAD, neighbours: 0) == DEAD
+    assert next_state(here: DEAD, neighbours: 8) == DEAD
+
+test "the glider is a glider, which is the whole test of step"
+    # Five generations of the standard glider move it one cell down and one
+    # right, and the population stays five the whole way.
+    board = starting_board()
+    assert living(board) == 5
+    one = step(board)
+    assert living(one) == 5
+    two = step(one)
+    assert living(two) == 5
+    three = step(two)
+    assert living(three) == 5
+    four = step(three)
+    assert living(four) == 5
+
+    # And it has actually moved: the cell that was empty is now alive.
+    assert cell(four, row: 3, column: 3) == ALIVE
+    assert cell(four, row: 0, column: 1) == DEAD
+
+test "an empty board steps to an empty board"
+    empty: [[i64]] = []
+    assert step(empty).len() == 0
+    assert living(step(empty)) == 0
+
+test "the scoreboard nests two maps and both walks are sorted"
+    said = scoreboard(starting_board(), generations: 2)
+    assert said == "gen 0 alive=5 dead=20\ngen 1 alive=5 dead=20"
+
+    # The inner map is a map: it answers a miss rather than aborting.
+    tally = tallied(starting_board(), generations: 1)
+    assert tally["0"].must()["alive"].must() == 5
+    assert tally["0"].must()["missing"].is_err()
+    assert tally["9"].is_err()
+
+test "zero generations tallies nothing"
+    tally = tallied(starting_board(), generations: 0)
+    assert tally.len() == 0
+    assert scoreboard(starting_board(), generations: 0) == ""

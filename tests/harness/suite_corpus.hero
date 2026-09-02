@@ -40,16 +40,16 @@ constant EXAMPLES: str
     "examples"
 
 # Measured 2026-09-02, twice on the same day: fifteen directories held a
-# `main.hero` in the morning and **21** hold one by the evening
+# `main.hero` in the morning and **25** hold one by the evening
 # (`examples/gallery/` still does not, which is why the floor is one under
 # the directory count). corpus.rs floors at 3; this floor was 14 until
 # `examples/shapes/` landed at M-package-layout, and 16 until
-# M-corpus-coverage wrote the six programs that close the measured coverage
+# M-corpus-coverage wrote the ten programs that close the measured coverage
 # gaps. The floor moves with the corpus rather than staying where it was
 # measured, because its whole job is to notice a program that quietly stops
 # being found.
 constant LEAST: i64
-    21
+    25
 
 function run_all(scratch: str, compiler: str) -> report.Report?
     r: report.Report @ report.empty()

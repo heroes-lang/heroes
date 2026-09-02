@@ -1,0 +1,185 @@
+# Numbers changing width, and what the change is allowed to cost — the
+# program for the seven conversions the corpus never called.
+#
+# Corpus and regression material (CLAUDE.md §9), and the gap was measured
+# rather than guessed. On 2026-09-02, over every `.hero` in `examples/`:
+#
+#   to_i8 to_i16 to_i32 to_u8 to_u16 to_f32      ZERO uses
+#   to_u32 to_u64 to_f64                          4, 4 and 5 uses
+#   the types u16 u64 i8 i16 declared             ZERO
+#
+# Five of those six had no use in `selfhost/` either. So of the twelve
+# conversions `spec:62-68` gives, more than half had no program behind them at
+# all — in exactly the department where a mistake is easiest to make and
+# hardest to see, because a wrong width is a right-looking number.
+#
+# WHAT THE SPEC PROMISES, AND WHICH HALF THIS PROGRAM CAN PIN:
+#
+#   - no implicit conversions, widths included, so `a + b` needs one type
+#   - the NAME says whether it can fail: `to_str`, `to_f32` and `to_f64`
+#     cannot and give a value; `to_i8` … `to_u64` give a `T?`
+#   - `to_i64` takes a float too, truncating TOWARD ZERO
+#   - nothing fails to fit a float: too large is `inf`, and `to_f32` rounds
+#   - a literal takes the type its context asks for; overflow ABORTS at every
+#     width
+#
+# The last clause is the one a corpus program must NOT exercise. An abort ends
+# the process, so it belongs in `tests/golden/run/`, where the harness can
+# expect one — and it lives there already. Everything above it is here.
+
+# One byte, and the value that will not fit in one.
+constant BYTE_MAX: i64
+    255
+
+constant TOO_BIG_FOR_A_BYTE: i64
+    256
+
+# A signed byte's range, which is the asymmetry people get wrong: -128 fits
+# and +128 does not.
+constant I8_MIN: i64
+    0 - 128
+
+constant I8_MAX: i64
+    127
+
+# Whether a value survives the trip down to a byte and back up again. A
+# conversion that CAN fail answers a `T?`, so this is the shape every caller
+# of `to_u8` has to write.
+function fits_a_byte(value: i64) -> bool
+    return !value.to_u8().is_err()
+
+function through_a_byte(value: i64) -> i64?
+    small = value.to_u8()?
+
+    # Widening back is infallible in mathematics and fallible in this
+    # language, because the NAME carries the promise and `to_i64` keeps one
+    # name for every argument. `.must()` is what a caller writes when the
+    # argument makes the failure unreachable — and `spec` §1.4 calls that
+    # redundancy spent where an error cannot occur.
+    return ok(small.to_i64().must())
+
+# The float side. `to_f64` cannot fail, so it needs no `?`; `to_i64` of a
+# float truncates toward zero, which is NOT the same as rounding and not the
+# same as flooring for a negative number.
+function truncated(value: f64) -> i64
+    return value.to_i64().must()
+
+function main()
+    # A conversion that fits, one that does not, and the boundary between
+    # them — printed rather than only asserted, so `main.expected` carries
+    # the shape of the answer.
+    print(fits_a_byte(0))
+    print(fits_a_byte(BYTE_MAX))
+    print(fits_a_byte(TOO_BIG_FOR_A_BYTE))
+    print(fits_a_byte(0 - 1))
+
+    print(through_a_byte(200).must())
+    print(through_a_byte(TOO_BIG_FOR_A_BYTE).is_err())
+
+    # The signed byte's asymmetry, which is the one line of this program a
+    # reader is most likely to have wrong in their head.
+    print(!I8_MIN.to_i8().is_err())
+    print(!I8_MAX.to_i8().is_err())
+    print((0 - 129).to_i8().is_err())
+    print(128.to_i8().is_err())
+
+    # Truncation toward zero, on both signs. A language that floored would
+    # print -3 on the second line.
+    print(truncated(2.7))
+    print(truncated(0.0 - 2.7))
+    print(truncated(0.0))
+
+    # `to_f32` rounds rather than failing, so a value with more precision
+    # than a `f32` holds comes back changed and not refused.
+    wide = 16777217.0
+    narrow = wide.to_f32()
+    print(narrow.to_f64() == wide)
+
+    # And nothing fails to fit a float: the largest `i64` becomes a float
+    # that no longer equals it.
+    biggest = 9223372036854775807
+    print(biggest.to_f64().to_i64().is_err())
+
+    # `to_str` cannot fail either, at any width, which is why every message
+    # in this file could be built without a single `.must()`.
+    b: u8 @ 200
+    print(b.to_str())
+    print((0 - 1).to_str())
+    print(2.5.to_str())
+
+test "a byte holds 0 through 255 and nothing else"
+    assert fits_a_byte(0)
+    assert fits_a_byte(1)
+    assert fits_a_byte(254)
+    assert fits_a_byte(BYTE_MAX)
+    assert !fits_a_byte(TOO_BIG_FOR_A_BYTE)
+    assert !fits_a_byte(0 - 1)
+    assert !fits_a_byte(1000000)
+
+test "a signed byte is asymmetric, and that is the whole point of the case"
+    assert !I8_MIN.to_i8().is_err()
+    assert !I8_MAX.to_i8().is_err()
+    assert (0 - 129).to_i8().is_err()
+    assert 128.to_i8().is_err()
+
+test "every signed width refuses one past its own top"
+    assert !32767.to_i16().is_err()
+    assert 32768.to_i16().is_err()
+    assert !2147483647.to_i32().is_err()
+    assert 2147483648.to_i32().is_err()
+
+test "every unsigned width refuses a negative and one past its top"
+    assert !65535.to_u16().is_err()
+    assert 65536.to_u16().is_err()
+    assert (0 - 1).to_u16().is_err()
+    assert !4294967295.to_u32().is_err()
+    assert 4294967296.to_u32().is_err()
+    assert (0 - 1).to_u32().is_err()
+    assert !0.to_u64().is_err()
+    assert (0 - 1).to_u64().is_err()
+
+test "a round trip through a byte is the identity where it fits at all"
+    for one in [0, 1, 127, 128, 254, 255]
+        assert through_a_byte(one).must() == one
+
+test "a round trip refuses rather than wrapping"
+    # The property that separates this language from C: 256 does not become 0.
+    assert through_a_byte(256).is_err()
+    assert through_a_byte(257).is_err()
+    assert through_a_byte(0 - 1).is_err()
+
+test "to_i64 of a float truncates toward zero, on both signs"
+    assert truncated(2.9) == 2
+    assert truncated(2.1) == 2
+    assert truncated(0.0 - 2.9) == 0 - 2
+    assert truncated(0.0 - 2.1) == 0 - 2
+    assert truncated(0.0) == 0
+
+    # Not flooring: a language that floored would answer -3 here.
+    assert truncated(0.0 - 2.9) != 0 - 3
+
+test "to_f32 rounds rather than refusing"
+    # 16777217 is the first integer an f32 cannot hold: it has 24 bits of
+    # mantissa, so 2^24 + 1 comes back as 2^24.
+    wide = 16777217.0
+    assert wide.to_f32().to_f64() != wide
+    assert wide.to_f32().to_f64() == 16777216.0
+
+    # And a value inside the range survives exactly.
+    assert 1.5.to_f32().to_f64() == 1.5
+    assert 0.0.to_f32().to_f64() == 0.0
+
+test "to_str and to_f64 cannot fail, so they hand back a value"
+    b: u8 @ 200
+    assert b.to_str() == "200"
+    assert (0 - 1).to_str() == "-1"
+    assert 255.to_f64() == 255.0
+    assert (0 - 1).to_f64() == 0.0 - 1.0
+
+test "a literal takes the type its context asks for"
+    # `200` is a `u8` here because the cell says so, and an `i64` two lines
+    # down because nothing else says otherwise.
+    small: u8 @ 200
+    plain = 200
+    assert small.to_i64().must() == plain
+    assert small.to_str() == plain.to_str()
