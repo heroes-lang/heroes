@@ -351,7 +351,11 @@ forge, which panel 020's historian already refused for `unsupported`.
 **And never a second binary** — which is what CLAUDE.md §6's retired *"a separate
 package binary"* clause was reaching for, without the false premise it carried
 (nimble ships *with* Nim, so it was never the contrast that clause claimed).
-`heroes add`/`heroes fetch` are subcommands when they arrive (design.md:637).
+`heroes add`/`heroes fetch` are subcommands when they arrive (design.md:772 — it
+said `:637` until 2026-09-02, when a panel 099 judge checked it and found the
+control-flow-as-blocks bullet there instead; §11's expiring premise, in the one
+shape the dead-citation instrument cannot see, because a line number is not a
+path).
 
 ## 11. Language and conventions
 **Everything written is English** — code, comments, docs, commits, verdicts.
