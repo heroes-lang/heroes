@@ -92,7 +92,7 @@ the normal case while hunting, since what is being tested is usually not committ
 yet:
 
 ```
-scp selfhost/cli_flags.hero win:/c/w/heroes/selfhost/cli_flags.hero
+scp selfhost/cli/flags.hero win:/c/w/heroes/selfhost/cli/flags.hero
 ```
 
 **A deploy key was tried first and GitHub refused it**: `HTTP 422 — Deploy keys
@@ -195,8 +195,21 @@ clang -I runtime seed/heroes.c runtime/runtime.c \
 
 Without the reserve, `heroes build selfhost/lexer.hero --dump-ir` exits **127**
 with both streams empty — a killed process, not a panic. With it, exit 0, and so
-does `--emit-c` on the whole compiler. That flag lives in
-`selfhost/cli_flags.hero::link_flags()` for every binary the compiler links —
+does `--emit-c` on the whole compiler.
+
+**And 127 is the wrong number to die with, because the runtime already means
+something by it.** `hero_run_go` decodes a program that could not be started as
+127, so a silent stack death and a missing `clang` wear the same exit code. On
+2026-09-03 that cost eight diagnostic steps: a compiler built from the bare seed
+line passed `heroes check` on `examples/ctime/main.hero`, died 127 on `build
+--dump-ir` with `build/` left empty, and every half of the program's `extern`
+group passed alone — so the chase went to `pkg-config`, `uname` and
+`xcode-select` before it went to the stack. The tell is the pair: **`check`
+passes and `build --dump-ir` dies with nothing written**. No spawn happens
+between those two on the IR path, so a 127 there cannot be a missing program.
+Read it as the stack first, rebuild with the line above, and only then look for
+a spawn. That flag lives in
+`selfhost/cli/flags.hero::link_flags()` for every binary the compiler links —
 alongside `-Wl,/INCREMENTAL:NO`, added after MSVC's incremental linker printed
 its full-link notice into program stdout the harness compares byte for byte —
 so a seed built by the line above passes both on.
