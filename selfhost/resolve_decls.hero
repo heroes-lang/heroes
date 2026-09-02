@@ -17,6 +17,7 @@
 use ast
 use source
 use resolved
+use resolve_vocab
 use builtins
 use parse
 use resolve_state
@@ -102,7 +103,7 @@ function collect_generics(@r: resolve_state.Resolver, s: source.Source, decls: [
             position @ position + 1
             continue
 
-        if !resolved.primitive(name).is_err() || !builtins.index_of(name).is_err()
+        if !resolve_vocab.primitive(name).is_err() || !builtins.index_of(name).is_err()
             resolve_state.push_diagnostic(@r, resolve_errors.builtin_name_taken(name, span: span))
             position @ position + 1
             continue

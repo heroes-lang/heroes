@@ -12,7 +12,6 @@
 
 use ast
 use source
-use module_names
 use resolved
 use parse
 use resolve
@@ -37,8 +36,11 @@ function dump_scopes(r: resolved.Resolved, s: source.Source, decls: [ast.Decl]) 
     if !named.is_err() && named.must().len() > 0
         out @ out + "uses\n"
 
-        for module in sort(named.must())
-            out @ out + "  " + module + "\n"
+        inner = named.must()
+
+        for binding in sort(keys(inner))
+            module = inner[binding].must()
+            out @ out + "  " + binding + shown_path(binding: binding, module: module) + "\n"
 
             for name in resolved.names_in(r, module: module)
                 decl = resolved.top_in(r, module: module, name: name)
@@ -55,7 +57,7 @@ function dump_scopes(r: resolved.Resolved, s: source.Source, decls: [ast.Decl]) 
                 # written from here and a path is not written at a call
                 # site (panel 099 R3). Which directory it came from is in
                 # the `file:line` on the same line, so nothing is lost.
-                out @ out + "    " + entity(decls, decl: decl.must()) + " " + module_names.binding_of(module) + "." + name + " (" + found.file + ":" + found.line.to_str() + ")\n"
+                out @ out + "    " + entity(decls, decl: decl.must()) + " " + binding + "." + name + " (" + found.file + ":" + found.line.to_str() + ")\n"
     out @ out + "symbols\n"
 
     for name in resolved.names_in(r, module: here)
@@ -131,6 +133,15 @@ function kind_word(kind: resolved.LocalKind) -> str
         .cell     => "cell"
         .loop_var => "loop"
         .payload  => "payload"
+
+# `sd -> syntax/decl` on a dump line, and just `geom` where the two are the
+# same word. The dump shows what this file CALLS a module and, when they
+# differ, which module that is — a reader of `--dump-scopes` cannot recover
+# the second from the first (panel 100).
+function shown_path(binding: str, module: str) -> str
+    if binding == module
+        return ""
+    return " -> " + module
 
 ## Tests
 

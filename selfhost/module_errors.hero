@@ -51,7 +51,11 @@ function unused_use(name: str, span: token.Span) -> diag.Diagnostic
     return d
 
 # `geom.f` where `geom` is a module this file `use`s and `f` is not in it.
-function not_in_module(module: str, name: str, near: [str], span: token.Span) -> diag.Diagnostic
+#
+# `qualifier` is what the author WROTE before the dot and `module` is the
+# module's own name; since `as` exists they differ, and the fix has to carry
+# the first one (panel 101 — this fix was `certain` and did not compile).
+function not_in_module(module: str, qualifier: str, name: str, near: [str], span: token.Span) -> diag.Diagnostic
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "unknown_in_module",
         message: "module `" + module + "` declares nothing called `" + name + "`",
@@ -61,7 +65,7 @@ function not_in_module(module: str, name: str, near: [str], span: token.Span) ->
     if near.len() == 1
         d.message @ "module `" + module + "` declares nothing called `" + name + "` — it has `" + near[0] + "`"
         d.fixes @ d.fixes.push(
-            diag.Fix(title: "write `" + module_names.binding_of(module) + "." + near[0] + "`", replacement: near[0], span: span, certainty: .certain)
+            diag.Fix(title: "write `" + qualifier + "." + near[0] + "`", replacement: near[0], span: span, certainty: .certain)
         )
     else if near.len() > 1
         d.message @ "module `" + module + "` declares nothing called `" + name + "` — it has " + listed(near)
@@ -72,14 +76,14 @@ function not_in_module(module: str, name: str, near: [str], span: token.Span) ->
 # CERTAIN fix, and that is the whole trade — the spec says nothing about
 # UFCS across a module boundary because the error says everything, at the
 # call site, with the repair pre-written (CLAUDE.md §8).
-# **The qualifier is the module's BINDING, not its whole name** (spec
-# § Files and layout: `use syntax/decl` binds `decl`; panel 099 R3). Where
-# a module is a path the two differ, and the fix has to carry the one a
-# call site writes — a `.certain` fix that inserted `syntax/decl.foo` would
-# be machine-applied into a program that does not parse, which is the one
-# thing §4.17 says a certain fix may never do.
-function needs_qualifying(name: str, module: str, span: token.Span) -> diag.Diagnostic
-    binding = module_names.binding_of(module)
+# **The qualifier is what the IMPORTING FILE calls the module** (spec
+# § Files and layout; panels 099 R3, 100). It is passed in rather than
+# derived here, because since `as` exists only the caller knows it: the
+# module's own name answers a different question, and a `.certain` fix built
+# from it would be machine-applied into a program that does not parse, which
+# is the one thing §4.17 says a certain fix may never do.
+function needs_qualifying(name: str, qualifier: str, module: str, span: token.Span) -> diag.Diagnostic
+    binding = qualifier
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "needs_qualifying",
         message: "`" + name + "` is declared in module `" + module + "`, and a name from another module is always written qualified — `" + binding + "." + name + "`",
@@ -93,6 +97,12 @@ function needs_qualifying(name: str, module: str, span: token.Span) -> diag.Diag
 # The same, for a module the file has not named yet. The fix is NOT
 # certain: it repairs this line and leaves the file needing a `use`, and a
 # machine-applicable fix has to leave a program that checks clean.
+# **The one site that legitimately derives the binding rather than reading
+# it**: this file does not `use` the module yet, so there is no per-file name
+# to read — the message tells the author to add the `use`, and the qualifier it
+# offers must therefore be what that `use` WOULD bind. That is the language's
+# default rule, and `module_names.binding_of` is where the rule lives. Every
+# other site asks `resolved.binding_in`, because every other site has a file.
 function needs_a_use(name: str, module: str, span: token.Span) -> diag.Diagnostic
     binding = module_names.binding_of(module)
     d: diag.Diagnostic @ diag.new_diagnostic(
@@ -104,6 +114,46 @@ function needs_a_use(name: str, module: str, span: token.Span) -> diag.Diagnosti
         diag.Fix(title: "write `" + binding + "." + name + "` (and add `use " + module + "`)", replacement: binding + "." + name, span: span, certainty: .guess)
     )
     return d
+
+# `use check/state` beside `use ir/state`: one file, one name, two modules.
+#
+# **Panel 100 R3's diagnostic, and it replaced a program-wide one.** The
+# deleted `module_last_parts_collide` refused the two modules ANYWHERE in a
+# program and put its caret on a module's own first line — a file the author
+# may never have opened, with no repair they could apply there. This one
+# fires on the `use` line that made the name ambiguous, in the file being
+# edited, and its repair is one clause: `as`.
+function module_binding_taken(binding: str, first: str, second: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "module_binding_taken",
+        message: "this file already calls `" + first + "` by the name `" + binding + "`, so `" + second + "` cannot have it too — a file may not bind one name twice",
+        span: span
+    )
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "write `use " + second + " as " + suggestion(second) + "`", replacement: binding + " as " + suggestion(second), span: span, certainty: .guess)
+    )
+    d.notes @ d.notes.push(
+        "the two modules may both exist and both be used — `as` says what THIS file calls each one, and two files may name the same module differently"
+    )
+    return d
+
+# A name for the second module that is unlikely to be taken: its whole path
+# with the separators closed up, which is the same shape its C component
+# already has. A GUESS rather than a certain fix — the author knows a better
+# word than the compiler does, and §4.17 says a certain fix must be the one
+# repair, not the first one that parses.
+function suggestion(module: str) -> str
+    out: str @ ""
+    i: i64 @ 0
+
+    while i < module.len()
+        if module[i] == '/'
+            out @ out + "_"
+        else
+            out @ out + module.slice(from: i, to: i + 1)
+        i @ i + 1
+
+    return out
 
 # An `extern` reached from another module (panel 033 R5, carried by
 # M-separate-compilation acceptance row 1). clang verifies an extern
@@ -174,18 +224,18 @@ function listed(items: [str]) -> str
 test "one candidate rewrites the line, several stay prose"
     span = token.Span(start: 0, end: 4)
     one: [str] = ["dist2"]
-    d = not_in_module(module: "geom", name: "dist", near: one, span: span)
+    d = not_in_module(module: "geom", qualifier: "geom", name: "dist", near: one, span: span)
     assert d.message == "module `geom` declares nothing called `dist` — it has `dist2`"
     assert d.fixes.len() == 1
     assert d.fixes[0].certainty == .certain
     three: [str] = ["a", "b", "c"]
-    e = not_in_module(module: "geom", name: "dist", near: three, span: span)
+    e = not_in_module(module: "geom", qualifier: "geom", name: "dist", near: three, span: span)
     assert e.fixes.len() == 0
     assert e.message == "module `geom` declares nothing called `dist` — it has `a`, `b` and `c`"
 
 test "the qualification pair splits exactly at the missing use"
     span = token.Span(start: 0, end: 5)
-    have = needs_qualifying(name: "dist2", module: "geom", span: span)
+    have = needs_qualifying(name: "dist2", qualifier: "geom", module: "geom", span: span)
     assert have.fixes[0].certainty == .certain
     assert have.fixes[0].replacement == "geom.dist2"
     missing = needs_a_use(name: "dist2", module: "geom", span: span)

@@ -33,8 +33,7 @@
 
 use token
 use diag
-use widths
-use module_names
+use resolve_vocab
 
 ## The compound key that a map cannot sort
 
@@ -66,63 +65,6 @@ variant Ref
     # dot is qualification and not UFCS — the same three tokens with two
     # meanings, so the answer is recorded once.
     module
-
-## What a written type refers to
-
-# A primitive as the resolver knows it. The width rides INSIDE the case,
-# exactly as the Rust side's does (types/widths.rs' measured argument: eight
-# unit variants left 18 silent sites; with the width inside, every dispatch
-# is an exhaustive match and a new width is a compile error there).
-#
-# Port note: Rust keeps `Prim` in resolve/types.rs beside the type walker;
-# it lives here because `TypeRef` names it and the walker is a later file.
-variant Prim
-    int_prim
-        kind: widths.IntKind
-    float_prim
-        kind: widths.FloatKind
-    bool_prim
-    str_prim
-    ptr_prim
-    cstr_prim
-
-# The name -> primitive lookup, from the one array that lists each width
-# family — so this table and the width table cannot disagree about what
-# exists. A width added there is writable here with no second edit.
-function primitive(name: str) -> Prim?
-    for k in widths.int_kinds()
-        if widths.int_name(k) == name
-            return ok(.int_prim(kind: k))
-
-    for k in widths.float_kinds()
-        if widths.float_name(k) == name
-            return ok(.float_prim(kind: k))
-
-    if name == "bool"
-        return ok(.bool_prim)
-
-    if name == "str"
-        return ok(.str_prim)
-
-    if name == "ptr"
-        return ok(.ptr_prim)
-
-    if name == "cstr"
-        return ok(.cstr_prim)
-    return fail("free", "no primitive has this name")
-
-# What a written type name refers to. Dense over the type arena, same
-# reasons as `Ref`.
-variant TypeRef
-    unresolved
-    prim
-        value: Prim
-    # A `record` or `variant` declaration: index into the declarations.
-    top
-        at: i64
-    # A type parameter of the enclosing function: index into its generics.
-    generic
-        at: i64
 
 ## Where a local came from
 
@@ -173,12 +115,20 @@ record Local
 record Resolved
     uses: [Ref]
     # One entry per node in the type arena.
-    type_uses: [TypeRef]
+    type_uses: [resolve_vocab.TypeRef]
     locals: [Local]
     # module -> (name -> declaration index)
     top: {str: {str: i64}}
-    # the module that wrote the `use` -> the modules it names
-    module_uses: {str: [str]}
+    # the file that wrote the `use` -> what it CALLS each module -> the
+    # module's whole name.
+    #
+    # **Two levels, and the outer one is the file** (panel 100 R1/R3). This
+    # was `{str: [str]}` with the binding derived from each name's last part,
+    # which made uniqueness a property of the PROGRAM and unrepresentable per
+    # file. With the local name as the key, `use syntax/decl as sd` is one
+    # entry and the collision is a map hit — Modula-3's per-file rule as the
+    # shape of the data rather than a check bolted beside it.
+    module_uses: {str: {str: str}}
     # Every module that contains a `???`. While one does, unused bindings are
     # not reported IN THAT MODULE (§4.16, normative: the suppression is
     # file-wide). A set rather than a flag, and the difference is a fixed
@@ -191,10 +141,10 @@ record Resolved
 
 function new_resolved() -> Resolved
     uses: [Ref] = []
-    type_uses: [TypeRef] = []
+    type_uses: [resolve_vocab.TypeRef] = []
     locals: [Local] = []
     top: {str: {str: i64}} = {}
-    module_uses: {str: [str]} = {}
+    module_uses: {str: {str: str}} = {}
     holes_in: [str] = []
     diagnostics: [diag.Diagnostic] = []
     return Resolved(
@@ -222,9 +172,13 @@ function is_used_module(r: Resolved, from: str, module: str) -> bool
 
     if named.is_err()
         return false
+    inner = named.must()
 
-    for m in named.must()
-        if m == module
+    # ORDER: none — an existence test, so every order gives one answer. The
+    # `sort` stays because §4.9's rule is about the walk, not the answer: an
+    # unsorted `keys` walk is nondeterministic even where its result is not.
+    for key in sort(keys(inner))
+        if inner[key].must() == module
             return true
 
     return false
@@ -238,23 +192,42 @@ function is_used_module(r: Resolved, from: str, module: str) -> bool
 # Under a flat name the two are one string and this answers exactly what
 # `is_used_module` did.
 #
-# **It may answer with the first match and that is a fact about the program,
-# not a shortcut**: `module_paths.last_parts_collide` refuses two modules
-# whose last parts match anywhere in a compilation, so at most one used
-# module can carry any binding. The day that check is weakened this becomes
-# a silent choice between two files, which is why the rule and this lookup
-# cite each other.
+# **It cannot answer ambiguously, and the reason moved with panel 100.** The
+# old shape took the FIRST module whose last part matched, sound only because
+# `last_parts_collide` refused two such modules ANYWHERE in a program. That
+# rule is gone; a file's bindings are a MAP, so two modules cannot share a
+# local name by construction and `read_uses` refuses the second `use`. There
+# is no first match to take.
 function used_module_named(r: Resolved, from: str, binding: str) -> str?
     named = r.module_uses[from]
 
     if named.is_err()
         return fail("absent", binding)
+    return named.must()[binding]
 
-    for m in named.must()
-        if module_names.binding_of(m) == binding
-            return ok(m)
+# What THIS FILE calls a module — the reverse of the lookup above, and what
+# every diagnostic that prints a qualified name has to ask.
+#
+# Fallible on purpose: the library (§1.11) is in every compilation and no file
+# `use`s it, so asking what it is called here is an error rather than a panic.
+# Panel 100's engineer found that by writing `.must()` in a diagnostic printer
+# and getting `panic: .must() on an error: absent: library` from `check`.
+function binding_in(r: Resolved, from: str, module: str) -> str?
+    named = r.module_uses[from]
 
-    return fail("absent", binding)
+    if named.is_err()
+        return fail("absent", module)
+    inner = named.must()
+
+    # ORDER: none, as a fact rather than a shrug — a module has at most one
+    # binding per file, so there is at most one hit. `read_uses` is what makes
+    # that true (`used_twice` on the module, `module_binding_taken` on the
+    # name); relax either and this becomes a silent choice.
+    for key in sort(keys(inner))
+        if inner[key].must() == module
+            return ok(key)
+
+    return fail("absent", module)
 
 # Every name one module declares, for the "did you mean" lists and for
 # `--dump-scopes`.
@@ -326,14 +299,17 @@ function declare_top(@r: Resolved, module: str, name: str, decl: i64)
     inner[name] @ decl
     r.top[module] @ inner
 
-function declare_use(@r: Resolved, from: str, module: str)
-    named: [str] @ []
+# `from` calls `module` by the name `binding`. A caller that has no alias
+# passes the path's last part, which the parser has already put in the `use`
+# node — so this function never derives a name and never has to know the rule.
+function declare_use(@r: Resolved, from: str, binding: str, module: str)
+    inner: {str: str} @ {}
     found = r.module_uses[from]
 
     if !found.is_err()
-        named @ found.must()
-    named @ named.push(module)
-    r.module_uses[from] @ named
+        inner @ found.must()
+    inner[binding] @ module
+    r.module_uses[from] @ inner
 
 function note_hole(@r: Resolved, module: str)
     if !hole_covers(r, module)
@@ -360,7 +336,7 @@ test "the preferred module is one the file can see"
     r: Resolved @ new_resolved()
     declare_top(@r, module: "alpha", name: "scale", decl: 1)
     declare_top(@r, module: "geom", name: "scale", decl: 2)
-    declare_use(@r, from: "main", module: "geom")
+    declare_use(@r, from: "main", binding: "geom", module: "geom")
 
     # Alphabetically `alpha` wins; visibility must beat it — the defect the
     # Rust comment records, reproduced as a test in the port.
@@ -380,7 +356,7 @@ test "a hole is recorded per module, never program-wide"
 
 test "a use line is remembered for the module that wrote it"
     r: Resolved @ new_resolved()
-    declare_use(@r, from: "main", module: "geom")
+    declare_use(@r, from: "main", binding: "geom", module: "geom")
     assert is_used_module(r, from: "main", module: "geom")
     assert !is_used_module(r, from: "geom", module: "main")
     assert !is_used_module(r, from: "absent", module: "geom")
@@ -413,29 +389,3 @@ test "a local carries its optional syntax by value"
     copy.reads @ 5
     assert l.reads == 0
     assert copy.reads == 5
-
-test "a primitive's name answers with its width inside the case"
-    match primitive("u16").must()
-        .int_prim k                                                   => assert widths.int_bits(k.kind) == 16 && !widths.int_signed(k.kind)
-        .float_prim | .bool_prim | .str_prim | .ptr_prim | .cstr_prim => assert false
-
-    match primitive("f32").must()
-        .float_prim k                                               => assert widths.float_bits(k.kind) == 32
-        .int_prim | .bool_prim | .str_prim | .ptr_prim | .cstr_prim => assert false
-
-    assert primitive("bool").must() == .bool_prim
-    assert primitive("cstr").must() == .cstr_prim
-
-    # A user type and a foreign spelling are both free here: the registry
-    # refuses `int` at the LEXER, one stage before this table is asked.
-    assert primitive("Point").is_err()
-    assert primitive("double").is_err()
-
-test "type references compare structurally, dense over the arena"
-    a: TypeRef @ .prim(value: .bool_prim)
-    b: TypeRef @ .prim(value: .bool_prim)
-    assert a == b
-    assert a != .unresolved
-    c: TypeRef @ .top(at: 3)
-    assert c == .top(at: 3)
-    assert c != .generic(at: 3)

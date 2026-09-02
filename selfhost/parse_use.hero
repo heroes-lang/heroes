@@ -64,6 +64,11 @@ function declaration(@c: cursor.Cursor, @uses: [ast.Use], text: str)
         return
     name: token.Span @ cursor.bump(@c).span
 
+    # The path's LAST part, tracked as the loop grows the path: it is the
+    # binding when no `as` follows, and a span rather than a slice so a
+    # diagnostic can point at it.
+    last: token.Span @ name
+
     # `use geom.shapes` — a dot is not the separator, and the second token
     # is where the author finds that out. The message names the spelling
     # that works rather than the absence of one: a path exists now, and it
@@ -110,8 +115,29 @@ function declaration(@c: cursor.Cursor, @uses: [ast.Use], text: str)
             return
         _ = cursor.bump(@c)
         name @ token.Span(start: name.start, end: part.end)
+        last @ part
 
-    uses @ uses.push(ast.Use(name: name, span: token.Span(start: keyword.start, end: name.end)))
+    # `as sd` — what THIS FILE calls the module (panel 100). The default is
+    # the path's last part, which is why `ast.Use.binding` is a real span and
+    # never an `Option`: an optional makes that record non-POD and costs 84 of
+    # 170 translation units a refcount for two integers (R8, measured).
+    #
+    # **`as` is an ordinary identifier, not a keyword**: zero C identifiers
+    # named `as` in 3120 SDK headers, but panel 060 spells a group record's
+    # fields as its header does, so an unmeasured platform could have one.
+    binding: token.Span @ last
+
+    if cursor.at(c, .ident) && cursor.slice_of(text, cursor.current_span(c)) == "as"
+        word = cursor.current_span(c)
+        _ = cursor.bump(@c)
+
+        if !cursor.at(c, .ident)
+            alias_missing(@c, text, word: word)
+            return
+        binding @ cursor.bump(@c).span
+    uses @ uses.push(
+        ast.Use(name: name, binding: binding, span: token.Span(start: keyword.start, end: binding.end))
+    )
 
 ## The three refusals
 
@@ -159,6 +185,22 @@ function part_missing(@c: cursor.Cursor, text: str, name: token.Span, slash: tok
     )
     c.diagnostics @ c.diagnostics.push(d)
     skip_rest_of_line(@c, text, from: name)
+
+# `use syntax/decl as` — the word is there and the name is not. The caret
+# stays on `as` for `missing_name`'s reason about this same line: the cursor
+# may already be on the next declaration, and naming it blames an innocent
+# line.
+function alias_missing(@c: cursor.Cursor, text: str, word: token.Span)
+    word_line = text_lines.line_col(text, word.start).line
+    found_line = text_lines.line_col(text, cursor.current_span(c).start).line
+    message: str @ "`as` renames the module and this line names nothing — `use syntax/decl as sd`, and then this file calls it `sd`"
+
+    if word_line == found_line
+        message @ "expected a name after `as`, found " + cursor.found(c, text) + " — `use syntax/decl as sd`, and then this file calls it `sd`"
+    cursor.error(@c, code: "expected_alias_name", message: message, span: word)
+
+    if word_line == found_line
+        skip_rest_of_line(@c, text, from: word)
 
 # Everything still on the line the `use` started on, dropped — and then the
 # cursor is on the next declaration's own first token.

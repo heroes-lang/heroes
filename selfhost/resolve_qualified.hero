@@ -72,7 +72,20 @@ function qualified(@r: resolve_state.Resolver, a: ast.Ast, s: source.Source, dec
         return true
     names = resolved.names_in(r.out, module)
     near = resolve_state.near_names(@r, text, names)
-    resolve_state.push_diagnostic(@r, module_errors.not_in_module(module: module, name: text, near: near, span: called))
+
+    # The qualifier is read off the RECEIVER, which is the name the author
+    # actually wrote — their `as` name where they gave one. Deriving it from
+    # the module instead is how this diagnostic offered `sqlite.open_db` to a
+    # file that calls the module `s`, and offered it as a **certain** fix
+    # (panel 101's ffi-pragmatist, measured on the working tree: applying it
+    # verbatim gave exit 1 and two new errors). §8 says only `certain` is
+    # machine-applicable, so a certain fix that does not compile is the one
+    # thing a fix may never be.
+    wrote = source.span_text(s, a.exprs[receiver].span)
+    resolve_state.push_diagnostic(
+        @r,
+        module_errors.not_in_module(module: module, qualifier: wrote, name: text, near: near, span: called)
+    )
     return true
 
 # The module this expression names, if it names one.
@@ -124,9 +137,18 @@ function name_declared_elsewhere(@r: resolve_state.Resolver, text: str, span: to
     if module == r.module || module == source.LIBRARY_MODULE
         return fail("absent", "its home is already visible from here")
 
-    if resolved.is_used_module(r.out, from: r.module, module: module)
+    local = resolved.binding_in(r.out, from: r.module, module: module)
+
+    if !local.is_err()
         resolve_state.keyed_add(@r.module_reads, module: r.module, name: module)
-        return ok(module_errors.needs_qualifying(name: text, module: module, span: span))
+
+        # The qualifier is what THIS FILE calls the module, which is its `as`
+        # name where it has one (panel 100). Getting this from the module's
+        # own name is how panel 100's engineer produced a diagnostic that
+        # said *"`use main` binds `main`"* about a line reading
+        # `use shapes/other as main` — a message describing a line the author
+        # never wrote.
+        return ok(module_errors.needs_qualifying(name: text, qualifier: local.must(), module: module, span: span))
     return ok(module_errors.needs_a_use(name: text, module: module, span: span))
 
 ## Tests
@@ -178,7 +200,7 @@ test "a module in receiver position is decided before values are"
     decls: [ast.Decl] @ [a_function_decl(name_start: 5, name_end: 10)]
     r: resolve_state.Resolver @ resolve_state.new_resolver(expr_count: 2, type_count: 0)
     r.module @ "t"
-    resolved.declare_use(@r.out, from: "t", module: "geom")
+    resolved.declare_use(@r.out, from: "t", binding: "geom", module: "geom")
     resolved.declare_top(@r.out, module: "geom", name: "dist2", decl: 0)
     handled = qualified(@r, a, s, decls, at: call_node, receiver: receiver, called: token.Span(start: 5, end: 10))
     assert handled
@@ -194,7 +216,7 @@ test "a qualified extern is refused — the reference, so call and value alike"
     decls: [ast.Decl] @ [an_extern_decl(name_start: 5, name_end: 10)]
     r: resolve_state.Resolver @ resolve_state.new_resolver(expr_count: 2, type_count: 0)
     r.module @ "t"
-    resolved.declare_use(@r.out, from: "t", module: "geom")
+    resolved.declare_use(@r.out, from: "t", binding: "geom", module: "geom")
     resolved.declare_top(@r.out, module: "geom", name: "dist2", decl: 0)
     handled = qualified(@r, a, s, decls, at: call_node, receiver: receiver, called: token.Span(start: 5, end: 10))
     assert handled
@@ -208,7 +230,7 @@ test "a local wearing the module's name turns the dot back into UFCS"
     decls: [ast.Decl] = []
     r: resolve_state.Resolver @ resolve_state.new_resolver(expr_count: 1, type_count: 0)
     r.module @ "t"
-    resolved.declare_use(@r.out, from: "t", module: "geom")
+    resolved.declare_use(@r.out, from: "t", binding: "geom", module: "geom")
     resolve_state.open_scope(@r)
     _ = resolve_state.declare(
         @r,
@@ -228,7 +250,7 @@ test "a name the module does not declare earns the module's own list"
     decls: [ast.Decl] @ [a_function_decl(name_start: 5, name_end: 10)]
     r: resolve_state.Resolver @ resolve_state.new_resolver(expr_count: 2, type_count: 0)
     r.module @ "t"
-    resolved.declare_use(@r.out, from: "t", module: "geom")
+    resolved.declare_use(@r.out, from: "t", binding: "geom", module: "geom")
     resolved.declare_top(@r.out, module: "geom", name: "dist2", decl: 0)
     handled = qualified(@r, a, s, decls, at: call_node, receiver: receiver, called: token.Span(start: 11, end: 12))
     assert handled
@@ -246,7 +268,7 @@ test "elsewhere splits on the use line, certain against guess"
     assert missing.must().fixes[0].certainty == .guess
 
     # With the use written, the same name earns the certain rewrite.
-    resolved.declare_use(@r.out, from: "t", module: "geom")
+    resolved.declare_use(@r.out, from: "t", binding: "geom", module: "geom")
     have = name_declared_elsewhere(@r, "dist2", span)
     assert have.must().fixes[0].certainty == .certain
     assert have.must().fixes[0].replacement == "geom.dist2"

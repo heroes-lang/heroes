@@ -34,9 +34,6 @@
 use token
 use lexer
 use parse
-use diag
-use source
-use module_names
 
 ## Reading a path off a use line
 
@@ -88,53 +85,30 @@ function path_at(tokens: [token.Token], text: str, at: i64) -> str?
 
     return ok(text.slice(from: start, to: end))
 
-## The rule that makes a qualifier a program-wide key
+## The rule that USED to make a qualifier a program-wide key
 
-# Two modules whose LAST PARTS match — `syntax/decl` and `ir/decl`, both of
-# which a file would call `decl`.
+# **`last_parts_collide` was here and is deleted** (panel 100 R3, 2026-09-02).
+# It refused two modules whose last parts matched anywhere in one compilation —
+# `syntax/decl` beside `ir/decl` — which is what made a binding a program-wide
+# key and what made the compiler's own tree unnestable: measured, 13 to 15
+# collision groups over 32 to 36 of its 169 modules depending on the mapping.
 #
-# **The spec's own clause, and it is load-bearing rather than tidy**: a
-# module's binding is its last part, so without program-wide uniqueness the
-# same qualifier would name two modules and which one a call reached would
-# depend on the file it was written in. That is the ambiguity panel 032's
-# ergonomist measured as the reason it could not predict the qualifier at
-# all, and refusing it here is what lets every later pass look a binding up
-# by one string.
+# The rule did not weaken, it MOVED, and where it moved is the point:
+# `resolve_top.read_uses` refuses a second `use` that binds a name this FILE
+# already binds (`module_binding_taken`), which is Modula-3's scope — per
+# compilation unit — and the shape panel 100's ffi-pragmatist and historian
+# reached independently, one by implementing the tabled sentence and finding it
+# uncheckable here, one from precedent.
 #
-# **It is NOT the C collision check** (`modules.hero`'s `collisions`), and
-# the difference is worth stating because the two look alike: that one
-# compares COMPONENTS and protects the linker, where `ir/decl` and
-# `syntax/decl` differ; this one compares BINDINGS and protects the program,
-# where they do not. Panel 099's ffi-pragmatist measured both directions on
-# today's tree — 13 last-part collision groups over 32 modules in a
-# plausible layout, zero whole-path collisions — so each check catches
-# exactly what the other cannot see.
-function last_parts_collide(s: source.Source, found: [diag.Diagnostic]) -> [diag.Diagnostic]
-    out: [diag.Diagnostic] @ found
-    index: i64 @ 0
-
-    while index < s.files.len()
-        earlier_at: i64 @ 0
-
-        while earlier_at < index
-            f = s.files[index]
-            earlier = s.files[earlier_at]
-
-            if earlier.module != f.module && module_names.binding_of(earlier.module) == module_names.binding_of(f.module)
-                d: diag.Diagnostic @ diag.new_diagnostic(
-                    code: "module_last_parts_collide",
-                    message: "modules `" + earlier.module + "` and `" + f.module + "` would both be called `" + module_names.binding_of(f.module) + "` — a path binds its last part, and last parts are unique across a program",
-                    span: token.Span(start: f.start, end: f.start)
-                )
-                d.notes @ d.notes.push(
-                    "rename one of the files: the directory is not part of the name a call writes, so two `" + module_names.binding_of(f.module) + "`s cannot be told apart at a call site"
-                )
-                out @ out.push(d)
-            earlier_at @ earlier_at + 1
-
-        index @ index + 1
-
-    return out
+# **Two things got better rather than one**, and both were measured by the
+# sitting. The caret now lands on the `use` line in the file being edited
+# instead of on a module's own first line in a file the author may never have
+# opened, and the repair is one clause (`as`) instead of renaming a file and
+# every importer. What got worse is honest and recorded: two files may now call
+# different modules by one name, so *find every use of this module* has no
+# single search string. Every ecosystem that allows renames answers that with a
+# consistency rule rather than a prohibition, and the historian predicts this
+# one will too.
 
 ## Tests
 
@@ -193,32 +167,6 @@ test "the two readers of one adjacency rule agree, and this test is why"
         while at < scanned.len()
             assert scanned[at] == parsed[at]
             at @ at + 1
-
-test "last parts are unique across a program, whatever the directories say"
-    a = source.user_file(name: "syntax/decl.hero", text: "function fa() -> i64\n    return 1\n")
-    b = source.user_file(name: "ir/decl.hero", text: "function fb() -> i64\n    return 2\n")
-
-    # `user_file` names a module by its STEM, which is what a root file's
-    # own module is; the table these files reach carries the path, so the
-    # test builds the entries the way discovery does.
-    files: [source.InputFile] = [
-        source.InputFile(name: "syntax/decl.hero", module: "syntax/decl", text: a.text, is_library: false)
-        source.InputFile(name: "ir/decl.hero", module: "ir/decl", text: b.text, is_library: false)
-    ]
-    s = source.from_files(files)
-    none: [diag.Diagnostic] = []
-    got = last_parts_collide(s, found: none)
-    assert got.len() == 1
-    assert got[0].code == "module_last_parts_collide"
-    assert got[0].notes.len() == 1
-
-    # Different last parts, one directory: nothing to refuse.
-    fine: [source.InputFile] = [
-        source.InputFile(name: "syntax/decl.hero", module: "syntax/decl", text: a.text, is_library: false)
-        source.InputFile(name: "syntax/expr.hero", module: "syntax/expr", text: b.text, is_library: false)
-    ]
-    quiet = last_parts_collide(source.from_files(fine), found: none)
-    assert quiet.len() == 0
 
 test "a refused use line does not eat the next one, and this is a fixed defect"
     # **The defect, dated 2026-09-02 (M-package-layout step 2).** A use line

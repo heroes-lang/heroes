@@ -20,7 +20,6 @@
 
 use ast
 use source
-use module_names
 use resolved
 use builtins
 use parse
@@ -124,21 +123,38 @@ function read_uses(@r: resolve_state.Resolver, s: source.Source, decls: [ast.Dec
             resolve_state.push_diagnostic(@r, module_errors.used_twice(named, span: used.name))
             continue
 
-        # What a `use` introduces into this file is its BINDING — the last
-        # part of a path — so a declaration that clashes is a declaration
-        # named `decl`, never one named `syntax/decl`, which is not a name
-        # anything can declare (panel 099 R3).
-        binding = module_names.binding_of(named)
+        # What a `use` introduces into this file is its BINDING — the name
+        # after `as`, or the path's last part where there is no `as`. The
+        # PARSER decides it and puts it in the node (`ast.Use.binding`), so
+        # nothing here derives a name or has to know the rule (panel 100 R8).
+        binding = source.span_text(s, used.binding)
+
+        # **THE PER-FILE UNIQUENESS RULE, and it lives here because this is
+        # where the `use` lines are** (panel 100 R3, replacing the program-wide
+        # `module_paths.last_parts_collide`). `use check/state` beside
+        # `use ir/state` binds `state` twice in one file and neither is more
+        # right than the other, so the second is refused — with the caret on
+        # the name the author can fix, which the deleted check could not do:
+        # it pointed at a module's own first line, in a file the author may
+        # never have opened.
+        taken = resolved.used_module_named(r.out, from: from, binding: binding)
+
+        if !taken.is_err()
+            resolve_state.push_diagnostic(
+                @r,
+                module_errors.module_binding_taken(binding: binding, first: taken.must(), second: named, span: used.binding)
+            )
+            continue
         already = resolved.top_in(r.out, module: from, name: binding)
 
         if !already.is_err()
-            at = source.elsewhere(s, here: used.name.start, there: decls[already.must()].name.start)
+            at = source.elsewhere(s, here: used.binding.start, there: decls[already.must()].name.start)
             resolve_state.push_diagnostic(
                 @r,
-                module_errors.use_shadows_a_declaration(name: binding, declared_at: at, span: used.name)
+                module_errors.use_shadows_a_declaration(name: binding, declared_at: at, span: used.binding)
             )
             continue
-        resolved.declare_use(@r.out, from: from, module: named)
+        resolved.declare_use(@r.out, from: from, binding: binding, module: named)
 
 # What no expression and no written type ever named. Runs after every
 # body, because a `use` may be read anywhere in its file.
@@ -297,6 +313,53 @@ test "a path binds its last part, and the sweep key cannot be ambiguous"
             unread @ unread + 1
 
     assert unread == 2
+
+test "a file may not bind one name twice, and `as` is the repair"
+    # **Panel 100 R3's check, and the test §9 asks of every verifier rule.**
+    # Two modules whose paths differ and whose last parts do not: one file
+    # naming both binds `state` twice, and the second `use` is refused ON
+    # THAT LINE — which is what the deleted program-wide check could not do,
+    # since it pointed at a module's own first line.
+    files: [source.InputFile] = [
+        source.InputFile(name: "main.hero", module: "main", text: "use check/state\nuse ir/state\n\nfunction main()\n    print(state.tag())\n", is_library: false)
+        source.InputFile(name: "check/state.hero", module: "check/state", text: "function tag() -> i64\n    return 1\n", is_library: false)
+        source.InputFile(name: "ir/state.hero", module: "ir/state", text: "function tag() -> i64\n    return 2\n", is_library: false)
+    ]
+    s = source.from_files(files)
+    p = parse.parse(s.text)
+    r: resolve_state.Resolver @ resolve_state.new_resolver(
+        expr_count: p.tree.exprs.len(),
+        type_count: p.tree.types.len()
+    )
+    collect(@r, s, p.decls, p.uses)
+    taken: i64 @ 0
+
+    for d in r.out.diagnostics
+        if d.code == "module_binding_taken"
+            taken @ taken + 1
+            assert d.fixes.len() == 1
+            assert d.fixes[0].certainty == .guess
+            assert d.fixes[0].replacement == "state as ir_state"
+
+    assert taken == 1
+
+    # With `as` on the second line, both are bound and nothing is refused —
+    # the program the old rule made unwritable.
+    fixed: [source.InputFile] = [
+        source.InputFile(name: "main.hero", module: "main", text: "use check/state\nuse ir/state as ir_state\n\nfunction main()\n    print(state.tag() + ir_state.tag())\n", is_library: false)
+        source.InputFile(name: "check/state.hero", module: "check/state", text: "function tag() -> i64\n    return 1\n", is_library: false)
+        source.InputFile(name: "ir/state.hero", module: "ir/state", text: "function tag() -> i64\n    return 2\n", is_library: false)
+    ]
+    s2 = source.from_files(fixed)
+    p2 = parse.parse(s2.text)
+    r2: resolve_state.Resolver @ resolve_state.new_resolver(
+        expr_count: p2.tree.exprs.len(),
+        type_count: p2.tree.types.len()
+    )
+    collect(@r2, s2, p2.decls, p2.uses)
+
+    for d in r2.out.diagnostics
+        assert d.code != "module_binding_taken"
 
 test "an unread use is reported, and a hole in the file suspends it"
     unread = resolved_file("use geom\nconstant M: i64\n    1\n")

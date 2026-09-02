@@ -85,6 +85,23 @@ constant CEILING: i64
 # question again over six lines of comment. `grammar_expr.hero` went
 # 954 -> **1000** in the same commit, for `ends_the_expression` and the
 # paragraph naming panel 007's Amendment B as the rule it enforces.
+#
+# **Three numbers moved on 2026-09-02, for a ratified language feature and
+# not for creep** (panels 099 and 100: `use` paths, then `as` and per-file
+# uniqueness). `ast.hero` 449 -> **455** for one field on `record Use` plus
+# the two lines that say why it is total and not an `Option` — an AST is
+# mutually recursive by construction, so §11's knot clause applies and there
+# is no cut. `resolve_state.hero` 308 -> **315** for a did-you-mean list that
+# now offers local names. `parse_use.hero` is a NEW entry at **310** against
+# §11's 300: that file is one declaration and its five refusals, and the
+# refusals are its stated subject rather than an appendix, so the only cut
+# available would move the message away from the cursor that recovers from it.
+#
+# Each is raised with room rather than to the measured line, which is the
+# lesson `print_fmt.hero` paid for twice: a ceiling set at today's exact count
+# asks the same question again over six lines of comment. If panel 101 removes
+# the `as` clause, these fall on their own and the table should be re-measured
+# rather than left generous.
 constant DECIDED: [str]
     [
         "selfhost/check_walk.hero 1583"
@@ -93,7 +110,7 @@ constant DECIDED: [str]
         "selfhost/grammar_expr.hero 1000"
         "selfhost/parse_decl.hero 638"
         "selfhost/ir_print.hero 460"
-        "selfhost/ast.hero 449"
+        "selfhost/ast.hero 455"
         "selfhost/check_builtins.hero 374"
         "selfhost/ir_mono.hero 367"
         "selfhost/emit_ctype.hero 365"
@@ -101,7 +118,8 @@ constant DECIDED: [str]
         "selfhost/resolve_cycles.hero 331"
         "selfhost/emit_inst.hero 324"
         "selfhost/modules.hero 320"
-        "selfhost/resolve_state.hero 308"
+        "selfhost/resolve_state.hero 315"
+        "selfhost/parse_use.hero 310"
     ]
 
 # Measured 2026-08-18: 144 modules. The floor is the Rust's own idea —

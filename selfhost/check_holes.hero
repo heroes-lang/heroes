@@ -13,7 +13,6 @@
 
 use ast
 use source
-use module_names
 use resolved
 use check_table
 use check_state
@@ -211,23 +210,31 @@ function nearby(tree: ast.Ast, r: resolved.Resolved, c: check_state.Checked, s: 
             reachable: bool @ module == here || module == source.LIBRARY_MODULE
 
             if !reachable
-                used = r.module_uses[here]
-
-                if !used.is_err()
-                    for one in used.must()
-                        if one == module
-                            reachable @ true
+                reachable @ !resolved.binding_in(r, from: here, module: module).is_err()
 
             if !reachable
                 continue
             written: str @ name
 
             if module != here
-                # The form the author would TYPE, which is the module's
-                # binding — its last part where it is a path (panel 099 R3).
-                # A hole's whole job is to hand back lines that can be
-                # pasted; `syntax/decl.foo(...)` cannot.
-                written @ module_names.binding_of(module) + "." + name
+                # The form the author would TYPE, which is what THIS FILE
+                # calls the module — its `as` name where it has one, and the
+                # path's last part where it does not (panel 100). A hole's
+                # whole job is to hand back lines that can be pasted, and
+                # `syntax/decl.foo(...)` cannot be.
+                #
+                # **No `.must()` here, and that is panel 100's engineer's own
+                # defect**: it wrote one and `heroes check` answered
+                # `panic: .must() on an error: absent: library`, because the
+                # library is in every compilation and no file `use`s it. The
+                # reachability test above is the same question, so a miss here
+                # cannot happen — and the loud `continue` is what makes that
+                # true rather than hoped.
+                local = resolved.binding_in(r, from: here, module: module)
+
+                if local.is_err()
+                    continue
+                written @ local.must() + "." + name
             line: str @ written + "(" + params.join(", ") + ")"
 
             if decls[decl].doc.len() > 0

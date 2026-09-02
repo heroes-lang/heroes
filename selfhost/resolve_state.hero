@@ -33,6 +33,7 @@ use ast
 use diag
 use source
 use resolved
+use resolve_vocab
 use resolve_binding
 use builtins
 use resolve_errors
@@ -167,7 +168,7 @@ function new_resolver(expr_count: i64, type_count: i64) -> Resolver
         i @ i + 1
 
     out.uses @ uses
-    type_uses: [resolved.TypeRef] @ []
+    type_uses: [resolve_vocab.TypeRef] @ []
     j: i64 @ 0
 
     while j < type_count
@@ -222,15 +223,19 @@ function top_visible(r: Resolver, name: str) -> i64?
         return own
     return resolved.top_in(r.out, module: source.LIBRARY_MODULE, name: name)
 
-# The modules the file being resolved names, for a did-you-mean over it.
-# ORDER: ascending named module — `not_a_module` lists these, and the Rust
-# BTreeMap gave the order for free; the port pays with one sort (§4.9).
+# The names this file calls the modules it `use`s, for a did-you-mean over
+# them.
+#
+# **The local names, not the module names** (panel 100): they appear beside a
+# qualifier the author wrote, so a candidate must be writable there.
+#
+# ORDER: ascending, because `not_a_module` prints it and a golden reads it.
 function used_modules(r: Resolver) -> [str]
     named = r.out.module_uses[r.module]
 
     if named.is_err()
         return []
-    return sort(named.must())
+    return sort(keys(named.must()))
 
 # Is `text` a field name this file could legitimately be reaching? Its own
 # module's fields, the library's, and every module it `use`s — this file may
