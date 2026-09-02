@@ -11,6 +11,125 @@
 
   <ol class="log">
     <li>
+      <span class="when">M-documentation-site: dove vanno i file</span>
+      <b>Questo sito aveva tredici capitoli e nessuno diceva dove vanno i file di un programma.</b>
+      Ed è la parte del linguaggio cambiata più di recente. Un programma ora può
+      spargersi su più cartelle, una riga che nomina un altro file vuol dire la
+      stessa cosa in qualunque punto la copi, e non c&rsquo;è nessun modo, di
+      proposito, di allungare la mano verso l&rsquo;alto fuori dal tuo progetto.
+      Chi arrivava qui poteva imparare come funzionano i numeri, come funzionano
+      gli errori, come si parla con il C, e se ne andava senza avere idea di come
+      si scrive un programma in più di un file. Quindi c&rsquo;è un
+      quattordicesimo capitolo, in entrambe le lingue, e la parte interessante è
+      di che cosa è fatto. Ogni pezzo di codice che c&rsquo;è dentro è una fetta
+      di un programma vero del repository, citato con il nome del file e i numeri
+      di riga, e controllato in automatico contro il file: così una
+      documentazione che invecchia diventa un test che fallisce invece di un
+      imbarazzo che qualcuno nota dopo. E questo compra una cosa che nessuno
+      aveva pianificato: quel programma stampa un numero per la cartella in cima
+      e un numero diverso per quella sotto, quindi se la regola su dove si
+      trovano i file cambiasse, cambierebbe l&rsquo;output atteso del programma,
+      i test diventerebbero rossi, e la pagina non potrebbe diventare una bugia
+      in silenzio. I tre messaggi di errore che ci sono dentro sono output vero,
+      ottenuto prendendo il programma che funziona e rompendolo in tre modi di
+      proposito, e uno dei tre è una regola che il compilatore ha imparato lo
+      stesso pomeriggio.
+      <a class="more" href="/it/docs/modules/">Leggi il capitolo</a>
+    </li>
+    <li>
+      <span class="when">M-corpus-coverage: la libreria che nessuno chiamava</span>
+      <b>Il compito erano venti programmi in più, scelti perché insieme usassero ogni parte del linguaggio. Il primo ha trovato un buco nel compilatore.</b>
+      Non un buco sottile: un programma che il controllore diceva a posto, che
+      poi si rifiutava di costruirsi, con il compilatore che dava la colpa a sé
+      stesso invece che a chi l&rsquo;aveva scritto. Il programma erano tre righe
+      della cosa più ordinaria che si fa con una lista, prendi ogni elemento,
+      trasformalo in un numero, somma i numeri, scritte nel modo in cui la
+      descrizione del linguaggio, quella di una pagina, le insegna. E quella
+      scrittura non era mai stata messa per iscritto in tutto il progetto. I sei
+      piccoli aiutanti che il linguaggio porta con sé esattamente per questo
+      lavoro erano chiamati da un solo file di test, uno di loro da niente del
+      tutto, e la forma abbreviata che la documentazione usa per spiegarli
+      compariva in zero programmi. Quello che c&rsquo;era di sbagliato sotto si
+      vede solo in una catena. Scrivendo
+      <code>lista.trasforma(f).totale(g)</code>, il compilatore si segnava su che
+      cosa lavora ciascuna delle due chiamate ricordandosi <i>dove comincia nel
+      file</i>, e una catena così comincia, per entrambe, sullo stesso carattere.
+      Due file diversi del compilatore portavano ognuno un commento che diceva
+      che questo non poteva capitare, e il secondo benediceva il primo. La
+      riparazione sta sulla stessa asimmetria che l&rsquo;aveva causato: una
+      chiamata in catena comincia dove comincia il suo ricevente, e
+      <i>finisce</i> alla propria parentesi di chiusura, quindi le fini sono
+      sempre diverse. Poi altri diciannove programmi, e il linguaggio ha corretto
+      chi li scriveva sette volte.
+      <a class="more" href="/it/docs/">I capitoli</a>
+    </li>
+    <li>
+      <span class="when">M-selfhost-nesting: i prefissi tenevano su il muro</span>
+      <b>I centosettanta file del compilatore stesso erano nominati come un archivio che nessuno aveva comprato, e il lavoro era comprare l&rsquo;archivio.</b>
+      Metterli in cartelle, lasciare che i nomi si accorcino. È la modifica più
+      noiosa che si possa immaginare e ha trovato tre cose. La prima è che i nomi
+      lunghi facevano un lavoro che nessuno aveva scritto da nessuna parte:
+      nessuno chiama mai una variabile <code>emit_decls</code>, tutti ne chiamano
+      una <code>decls</code>, quindi i prefissi tenevano i nomi dei moduli
+      separati dalle parole ordinarie dei valori, in silenzio e gratis.
+      Toglierli ha fatto scontrare le due cose in ventitré punti in un colpo. La
+      seconda è che cosa nascondevano quelle collisioni. Un file che prende in
+      prestito un modulo chiamato <code>state</code> e ha anche una variabile
+      chiamata <code>state</code> può scrivere <code>state.value</code> due volte
+      e voler dire due cose diverse, e il compilatore non diceva niente: stampava
+      un numero su una riga e un numero diverso su quella dopo e finiva
+      contento. E la regola che lo vieta era stata decisa mesi prima, per
+      iscritto, e approvata. Il compilatore semplicemente non l&rsquo;ha mai
+      fatto. Due suoi commenti dicevano di sì, e un test scritto di proposito
+      asseriva che il comportamento sbagliato era quello giusto, così la
+      contraddizione stava nel repository con la spunta verde accanto.
+      <a class="more" href="/it/selfhost/">Il compilatore nella sua lingua</a>
+    </li>
+    <li>
+      <span class="when">M-package-layout: un modulo può essere un percorso</span>
+      <b>Per un mese il linguaggio aveva una regola sola su dove vivono i file: un modulo è una parola, e ogni file che un programma legge sta accanto al file che lo nomina.</b>
+      Rompere quella regola ha richiesto tre sedute di revisione in un giorno. La
+      terza è stata convocata perché l&rsquo;autore ha guardato la risposta che
+      le prime due avevano dato e ha chiesto se il nome non potesse
+      semplicemente essere la cartella e il file uniti insieme. Poteva, ed era
+      meglio su quasi ogni numero che qualcuno abbia misurato: centoventisette
+      dei moduli del compilatore stesso avrebbero tenuto esattamente il nome che
+      i loro quattromila punti di chiamata già scrivevano, le collisioni
+      sarebbero andate a zero, e la specifica si sarebbe accorciata. Quattro
+      giudici su cinque hanno approvato. È stata rifiutata comunque, sull&rsquo;unico
+      argomento che nessun altro aveva portato: la regola già spedita si può
+      allargare dopo, questa si poteva solo scambiare, e scambiarla riscrive ogni
+      programma mai scritto nel linguaggio. Quello che la giornata ha insegnato
+      davvero è più piccolo e vive nel formattatore. Una parola nuova è entrata
+      nel linguaggio e ha raggiunto sei pezzi diversi del compilatore uno alla
+      volta, e il sesto era lo strumento che ti riscrive il file: non conosceva
+      la parola nuova, quindi l&rsquo;ha cancellata, in silenzio, da un programma
+      che funzionava. E la guardia che esiste per prendere esattamente quello
+      guardava dalla stessa finestra rotta, quindi ha visto due fotografie
+      identiche e non ha detto niente.
+      <a class="more" href="/it/docs/modules/">I moduli e i file</a>
+    </li>
+    <li>
+      <span class="when">M-argv-execution: la shell smette di essere il confine</span>
+      <b>Il compilatore parlava con la macchina scrivendo una frase e passandola a una shell.</b>
+      Su Windows la shell legge un&rsquo;altra lingua, quindi la primissima frase
+      ha creato una cartella col nome di una delle proprie opzioni, e tutto
+      quello che veniva dopo stava a valle di quello sbaglio. La riparazione non
+      è stata imparare la grammatica dell&rsquo;altra shell. È stata smettere di
+      scrivere frasi: a un programma ora si passa una lista di parole, la
+      differenza fra le piattaforme vive in venti righe di C dove una differenza
+      fra piattaforme è una cosa ordinaria da scrivere, e una funzione di
+      quoting mantenuta a mano che aveva centottantanove usi non ne ha più
+      nessuno. Quello che il lavoro ha insegnato davvero è più piccolo e
+      peggiore. Tre difetti stavano in codice che gira su questa macchina ogni
+      giorno, e solo Windows riusciva a vederli, perché tutti tre riguardavano
+      che cosa <i>dice</i> un fallimento e niente falliva mai. Un messaggio
+      buttato via, un errore passato su senza una parola, otto punti di arresto
+      diversi che si chiamavano tutti nello stesso modo. Windows non era il bug.
+      Windows era il primo lettore.
+      <a class="more" href="/it/why/">Perché il linguaggio ha questa forma</a>
+    </li>
+    <li>
       <span class="when">M-separate-compilation: la cache che non può mentire</span>
       <b>Costruire il compilatore voleva dire riscrivere ogni volta un unico file C enorme, quasi ottocentomila righe, anche solo per aver cambiato una virgola.</b>
       Il lavoro era spezzarlo in un pezzo per modulo, così che toccare un file
