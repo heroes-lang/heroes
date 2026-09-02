@@ -160,7 +160,6 @@ function errors(s: source.Source, uses: [ast.Use]) -> [diag.Diagnostic]
     out: [diag.Diagnostic] @ []
     out @ unknown_modules(s, uses, found: out)
     out @ collisions(s, found: out)
-    out @ module_paths.last_parts_collide(s, found: out)
 
     if out.len() == 0
         out @ cycles(s, uses, found: out)

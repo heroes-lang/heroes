@@ -1,0 +1,25 @@
+# UNVERIFIED — pending debrief
+# Adversarial case, M-package-layout step 3 (panel 100).
+#
+# What a single file can pin about `as` is the refusal and the promise; the
+# happy path needs two modules whose last parts collide, so it lives in
+# `selfhost/resolve_top.hero`'s own test and in `examples/`.
+#
+# **`as` is an ordinary identifier, not a keyword** — measured at panel 100:
+# zero C identifiers named `as` across 3120 SDK headers, so a keyword would
+# have cost nothing there, and a group record's fields are spelled exactly as
+# the header spells them, so a platform nobody measured could still have one.
+# The function below is that promise executed: it is called `as`, it is
+# called, and the file's only error is the one on the `use` line.
+#
+# A parse error stops the module graph from running, which is why the
+# `unknown_module` shape a renamed missing module produces is NOT here: it
+# would never fire beside this line. That is the harness's own rule about
+# pooling diagnostics, met rather than worked around.
+use other as  #~ expected_alias_name
+
+function as() -> i64
+    return 7
+
+function main()
+    print(as())

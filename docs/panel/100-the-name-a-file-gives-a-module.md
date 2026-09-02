@@ -394,6 +394,39 @@ is a self-test pinning the behaviour so it cannot change in silence, and one
 sentence on the site's modules page. The ergonomist's ≥25% prediction on it is
 registered above rather than answered.
 
+## Two measurements the author's next question produced, before the next sitting opens
+
+The author asked, minutes after ratifying this one, whether the binding could be
+**the whole path joined** — `use check/state` binding `check_state` rather than
+`state` — and named the collision that idea has to survive: a file `aa_bb.hero`
+beside a directory `aa/` holding `bb.hero`. Both are recorded here rather than in
+the next brief, because both were run with the compiler this sitting built and a
+brief should inherit measurements rather than re-derive them.
+
+**The collision is real and it is ALREADY REFUSED, by a check that exists for a
+different reason.** `aa_bb.hero` beside `aa/bb.hero`, one program naming both:
+`error[module_names_collide]`, exit 1 — *"every name reaching C is
+`h_<module>_<name>` with the module reduced to letters and digits, so both become
+`h_aabb_…`"*. So a `_`-joined binding would inherit that protection for free; a
+program in which the ambiguity could arise does not compile today.
+
+**The author's own proposed fix — join with `/` — cannot be the WRITTEN
+qualifier, and the compiler says why.** `aa/bb.tag()` is
+`error[unknown_name]: nothing named 'aa' is in scope`: the grammar reads the
+slash as division, which it is. And the constraint generalises past the slash —
+a character forbidden in filenames on all three platforms is still a character
+the lexer must accept in an expression, and Heroes is ASCII-only with its
+punctuation already spoken for. The one separator already used for qualification
+is `.`, which is panel 032 R4's explicitly rejected `syntax.decl` form.
+
+So the next sitting's real choice is between `_` (works, its one ambiguity
+already refused) and re-litigating the dotted form 032 struck. **What makes the
+question worth a sitting at all** is measured on this tree: under a joined
+binding, **127 of 169 modules would bind exactly the name their call sites
+already write — 100% of them — and zero bindings would collide**, so nesting the
+compiler becomes a 558-line `use` edit with **none** of the 4065 qualified
+mentions touched.
+
 ## Author's verdict
 
 **RATIFIED 2026-09-02, by author instruction, overruling the spec-warden's veto —

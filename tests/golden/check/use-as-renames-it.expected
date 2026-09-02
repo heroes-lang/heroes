@@ -1,0 +1,1 @@
+tests/golden/check/use-as-renames-it.hero:19:11: error[expected_alias_name]: expected a name after `as`, found end of line — `use syntax/decl as sd`, and then this file calls it `sd`

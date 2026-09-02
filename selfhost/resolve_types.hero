@@ -18,6 +18,7 @@ use token
 use ast
 use source
 use resolved
+use resolve_vocab
 use widths
 use resolve_state
 use resolve_errors
@@ -49,7 +50,7 @@ function resolve_type(@r: resolve_state.Resolver, a: ast.Ast, s: source.Source, 
 function named(@r: resolve_state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl], id: i64)
     span = a.types[id].span
     name = source.span_text(s, span)
-    prim = resolved.primitive(name)
+    prim = resolve_vocab.primitive(name)
 
     if !prim.is_err()
         r.out.type_uses[id] @ .prim(value: prim.must())
@@ -111,7 +112,13 @@ function first_dot(name: str) -> i64?
 function qualified_type(@r: resolve_state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl], id: i64, split_at: i64)
     span = a.types[id].span
     name = source.span_text(s, span)
-    module: str @ name.slice(from: 0, to: split_at)
+
+    # The qualifier as WRITTEN, kept under its own name: `module` below is
+    # overwritten with the module this resolves to, and the two differ the
+    # moment a file says `as` (panel 101 — the diagnostic at the bottom of
+    # this function offered a name the file does not bind, as a CERTAIN fix).
+    wrote = name.slice(from: 0, to: split_at)
+    module: str @ wrote
     type_name = name.slice(from: split_at + 1, to: name.len())
 
     # A written type is qualified by the module's BINDING, exactly as a
@@ -140,7 +147,7 @@ function qualified_type(@r: resolve_state.Resolver, a: ast.Ast, s: source.Source
         near = resolve_state.near_names(@r, type_name, names)
         resolve_state.push_diagnostic(
             @r,
-            module_errors.not_in_module(module: module, name: type_name, near: near, span: span)
+            module_errors.not_in_module(module: module, qualifier: wrote, name: type_name, near: near, span: span)
         )
         return
     decl = found.must()
@@ -277,7 +284,7 @@ test "a qualified type reaches next door, and only through a use"
     decls: [ast.Decl] @ [record_decl_named(name_start: 19, name_end: 24)]
     r: resolve_state.Resolver @ resolve_state.new_resolver(expr_count: 0, type_count: 2)
     r.module @ "t"
-    resolved.declare_use(@r.out, from: "t", module: "geom")
+    resolved.declare_use(@r.out, from: "t", binding: "geom", module: "geom")
     resolved.declare_top(@r.out, module: "geom", name: "Point", decl: 0)
     resolve_type(@r, a, s, decls, good)
     assert r.out.type_uses[good] == .top(at: 0)
