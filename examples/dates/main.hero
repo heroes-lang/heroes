@@ -2,7 +2,7 @@
 # program written where off-by-one actually lives.
 #
 # Corpus and regression material (CLAUDE.md §9). This one closes no measured
-# form gap: with `examples/readings`, `filestat`, `argv`, `palette`,
+# form gap: with `examples/readings`, `ctime`, `argv`, `palette`,
 # `pipeline`, `deck`, `words`, `widths`, `floats` and `board` the count of
 # language forms `examples/` does not exercise reached zero, over 56 probed.
 # What it adds is a SHAPE the corpus lacks — arithmetic whose correctness a

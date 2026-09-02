@@ -1,0 +1,168 @@
+# A calendar date taken apart, and the two words that make a C struct
+# reachable from Heroes.
+#
+# Corpus and regression material (CLAUDE.md §9). It is the only program in
+# this repository that writes `tag` or `partial`, and the spec names this pair
+# as its own illustration at `spec:228-231`.
+#
+# **THIS FILE REPLACES ONE THAT WAS WRONG, AND THE REASON IS THE POINT.** Its
+# first version bound `struct stat` and declared `st_size: i64`, on a comment
+# that said in one paragraph *"this program must run on Darwin, Linux and
+# Windows alike"* and in the next *"`st_size` is the one field whose type is
+# the same on every platform this project builds for: `off_t` is 64-bit on
+# Darwin and on 64-bit Linux"*. Three platforms named, two checked. Windows
+# refused it:
+#
+#     error[ffi_field_type]: `FileStat.st_size` is not `i64` in `sys/stat.h`
+#
+# Measured afterwards on the real machine: `st_size` is **4 bytes** there,
+# because `off_t` is `long` and `long` is 32-bit on Windows. That is CLAUDE.md
+# §1's first shape, an inference presented as a measurement, written into the
+# very comment that warned about the hazard.
+#
+# WHY `struct tm` IS THE RIGHT STRUCT AND `struct stat` IS NOT. The C standard
+# fixes every field of `struct tm` as an `int`, and fixes nothing about
+# `struct stat` at all. Measured on both machines this project builds on:
+#
+#     struct tm       Windows 36 bytes    macOS 56 bytes
+#     tm_year etc.    Windows  4 bytes    macOS  4 bytes
+#
+# **Different total size, identical field widths.** That pair is exactly what
+# `partial` is for, and it is a better demonstration than the program it
+# replaces: `spec:231` says a `partial` record keeps C's size rather than the
+# field list's, and the twenty bytes between those two numbers are what the
+# rule is protecting.
+#
+# WHAT `tag` DOES: C's type is `struct tm` and the record here is `Broken`, so
+# without `tag tm` the emitter would look for a type named `Broken` in
+# `<time.h>` and clang would refuse the group.
+#
+# WHAT `partial` COSTS, and it is stated rather than discovered: a `partial`
+# record may not be compared and may not be a map key, for it and for any
+# value holding it (`spec:231`). This program needs neither.
+#
+# NO CLOCK IS READ. A corpus program's output is compared byte for byte, so a
+# program that asked the machine what time it is could not have an expected
+# output at all. Every value here is written down.
+
+extern "time.h"
+    # `struct tm` under a Heroes name, naming four fields of the nine.
+    #
+    # Every one is an `int` by the C standard, which is what makes `i32`
+    # the header's own width on all three platforms rather than a guess.
+    record Broken tag tm partial
+        tm_year: i32
+        tm_mon: i32
+        tm_mday: i32
+        tm_hour: i32
+
+    # Seconds between two times, which is the one `<time.h>` function whose
+    # answer does not depend on a clock, a timezone, or a field this record
+    # does not name. `time_t` is 8 bytes on all three, measured.
+    function difftime(later: i64, earlier: i64) -> f64
+
+# The year as people write it. C counts from 1900, which is the one piece of
+# arithmetic every program binding this struct has to remember.
+constant C_EPOCH_YEAR: i64
+    1900
+
+function year_of(b: Broken) -> i64
+    return b.tm_year.to_i64().must() + C_EPOCH_YEAR
+
+# The month as people count it. C counts from zero, unlike the day.
+function month_of(b: Broken) -> i64
+    return b.tm_mon.to_i64().must() + 1
+
+function day_of(b: Broken) -> i64
+    return b.tm_mday.to_i64().must()
+
+function hour_of(b: Broken) -> i64
+    return b.tm_hour.to_i64().must()
+
+function made(year: i64, month: i64, day: i64, hour: i64) -> Broken?
+    y = (year - C_EPOCH_YEAR).to_i32()?
+    m = (month - 1).to_i32()?
+    d = day.to_i32()?
+    h = hour.to_i32()?
+    return ok(Broken(tm_year: y, tm_mon: m, tm_mday: d, tm_hour: h))
+
+function shown(b: Broken) -> str
+    return year_of(b).to_str() + "-" + padded(month_of(b)) + "-" + padded(day_of(b)) + " " + padded(hour_of(b)) + ":00"
+
+function padded(n: i64) -> str
+    return if n < 10
+        "0" + n.to_str()
+    else
+        n.to_str()
+
+function main()
+    # The moon landing, written down rather than read off a clock.
+    landing = made(year: 1969, month: 7, day: 20, hour: 20).must()
+    print(shown(landing))
+    print(year_of(landing))
+    print(month_of(landing))
+    print(day_of(landing))
+
+    # The two off-by-ones C's struct carries, printed as the raw fields so a
+    # reader can see what the header actually holds.
+    print(landing.tm_year)
+    print(landing.tm_mon)
+    print(landing.tm_mday)
+
+    millennium = made(year: 2000, month: 1, day: 1, hour: 0).must()
+    print(shown(millennium))
+
+    # An hour, in seconds, through C.
+    print(difftime(later: 3600, earlier: 0))
+    print(difftime(later: 0, earlier: 3600))
+    print(difftime(later: 0, earlier: 0))
+
+    # A year that will not fit in an `int` once 1900 is taken off it.
+    print(made(year: 3000000000, month: 1, day: 1, hour: 0).is_err())
+
+test "the two off-by-ones are both there and both the right way round"
+    # C counts years from 1900 and months from zero, and days from one. Getting
+    # either of the first two backwards is the classic mistake with this struct.
+    landing = made(year: 1969, month: 7, day: 20, hour: 20).must()
+    assert landing.tm_year == 69
+    assert landing.tm_mon == 6
+    assert landing.tm_mday == 20
+    assert year_of(landing) == 1969
+    assert month_of(landing) == 7
+    assert day_of(landing) == 20
+
+test "a round trip through the struct is the identity"
+    for year in [1900, 1969, 2000, 2026, 2100]
+        b = made(year: year, month: 12, day: 31, hour: 23).must()
+        assert year_of(b) == year
+        assert month_of(b) == 12
+        assert day_of(b) == 31
+        assert hour_of(b) == 23
+
+test "the printed form pads and never pads the year"
+    assert shown(made(year: 2026, month: 9, day: 3, hour: 7).must()) == "2026-09-03 07:00"
+    assert shown(made(year: 2026, month: 12, day: 25, hour: 18).must()) == "2026-12-25 18:00"
+    assert shown(made(year: 1900, month: 1, day: 1, hour: 0).must()) == "1900-01-01 00:00"
+
+test "a year outside an int is refused rather than wrapped"
+    # The conversion is fallible because the field is an `i32` and the argument
+    # is an `i64`, which is the language refusing to guess (spec:62-68).
+    assert made(year: 3000000000, month: 1, day: 1, hour: 0).is_err()
+    assert made(year: 0 - 3000000000, month: 1, day: 1, hour: 0).is_err()
+    assert !made(year: 1900, month: 1, day: 1, hour: 0).is_err()
+
+test "difftime is C's answer and it is signed"
+    assert difftime(later: 3600, earlier: 0) == 3600.0
+    assert difftime(later: 0, earlier: 3600) == 0.0 - 3600.0
+    assert difftime(later: 0, earlier: 0) == 0.0
+    assert difftime(later: 86400, earlier: 0) == 86400.0
+
+test "a partial record keeps C's size, which differs by twenty bytes across platforms"
+    # Nothing here reads a field this record does not name, and that is the
+    # whole discipline `partial` asks for: the five unnamed fields exist in
+    # memory, at C's own layout, and this program never looks at them.
+    b = made(year: 2026, month: 1, day: 1, hour: 0).must()
+    assert b.tm_year == 126
+    assert b.tm_mon == 0
+    assert b.tm_mday == 1
+    assert b.tm_hour == 0
