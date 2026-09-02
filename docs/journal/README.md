@@ -56,6 +56,8 @@ is `docs/ROADMAP.md` § The names, and the rule is CLAUDE.md §14.
 
 | 029 | [the library nobody called](029-corpus-coverage.md) | M-corpus-coverage — twenty programs, and the first one to reach the library found a defect in the compiler | 2026-09-02 | `m-corpus-coverage` |
 
+| 030 | [where the files go](030-documentation-site.md) | M-documentation-site — a modules chapter in both editions, and a page with a running program under it | 2026-09-02 | `m-documentation-site` |
+
 `git tag --list --sort=creatordate` gives the same order from git itself, and
 `git checkout m5b` re-opens any milestone's code — which is what
 `M-journey-book` is written from.
