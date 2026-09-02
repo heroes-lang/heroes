@@ -295,6 +295,47 @@ reads them in `/learn`; bulk regression cases are labelled as such. The marker
 keeps its wording — it is in 39 files and CLAUDE.md §14 does not rewrite a
 record.
 
+**A NEW SURFACE FORM LANDS IN EVERY TOOL THAT READS THE LANGUAGE, AND THE
+FORMATTER IS THE ONE THAT LIES QUIETEST** (author instruction 2026-09-02, after
+`as` shipped into six consumers one at a time and every miss was found by an
+instrument rather than by the assistant). A form is not landed when the parser
+accepts it. The tools that re-write or re-print a program each hold their own
+copy of what the language is, and one that has not learned the new form does not
+error — it **drops it**. Measured the day the rule was written: `heroes fmt`
+printed a `use` line as `"use " + name`, so `fmt --in-place` deleted
+`as near_scale` from a working program and the next build could not find the
+module; `--dump-ast` did the same thing an hour later, and the token dump — one
+layer down — was fine all along. **design.md §4.15 is what makes the formatter
+the worst of them**: the canonical form exists so that *"any textual difference
+between two versions is SEMANTIC"*, so a formatter that quietly normalises a form
+away is not a bug in a tool, it is the one instrument in this repository whose
+failure makes every diff untrustworthy.
+
+**AND THE GUARD THAT WATCHES THE FORMATTER WAS BLIND IN THE SAME PLACE**, which
+is the finding worth more than the rule above it. `heroes fmt` already refuses
+its own output when that output *"holds a different tree"* — and it compares the
+two trees by **dumping** them, with the very printer that had also not learned
+`as`. Both renderings dropped the word, so they agreed, and the guard reported
+the same tree while the formatter was deleting one. One omission, two consumers,
+and the second was the instrument watching the first. **A self-check that
+compares two RENDERINGS can only see what the renderer carries**, so the printer
+walked above is not one item on the list among five: it is the item the list's
+own enforcement rests on. `selfhost/cli_syntax_cmds.hero` now hands that guard
+the exact pair the defect produced and asserts it refuses, which fails on the day
+the dump goes quiet again.
+
+The list to walk, and it is short enough that there is no excuse: **the
+formatter** (`selfhost/print_fmt.hero`), **every `--dump-<stage>` printer**
+(`selfhost/print_dump.hero` and the IR and scope printers), **`heroes mutate`**
+(a form it cannot re-print is a form it silently declines to mutate, so the rate
+flatters itself), **the diagnostics that quote a program back** (§8's `Fix`
+replacements above all — a `certain` fix built from the wrong half of a new form
+is machine-applied into a program that does not parse), and **`heroes measure`**
+where the form has spec text. What the walk owes each one is a test, not a
+reading: the formatter's is a round trip — `format(parse(text)) == text` for the
+form and for the shape beside it — and the printers' is one line of expected
+output.
+
 **Every diagnostic is annotated in the source that provokes it** — `#~ <code>`
 for this line, `#~v <code>` for the next — *in addition to* the `.expected`
 snapshot. rustc's rule and rustc's reason: the redundancy exists because
