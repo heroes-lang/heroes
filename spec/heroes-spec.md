@@ -4,9 +4,11 @@ Heroes is a small compiled language. This document is the whole language.
 
 ## Files and layout
 - One file is one module; the file you compile holds `function main()`.
-- `use geom` binds `geom` to `geom.hero`'s declarations, beside this file,
-  written qualified: `geom.dist2(a: p, b: q)`, `p: geom.Point`. Every
+- `use geom` binds `geom` to `geom.hero`'s declarations, written
+  qualified: `geom.dist2(a: p, b: q)`, `p: geom.Point`. Every
   module you name needs its own `use`. No aliases, no wildcard.
+- A `use` may be a path: `use syntax/decl` binds `decl`. Last parts are unique.
+  Every `use` starts at the directory of the file you compile.
 - `#` comments to end of line, markdown inside. A comment directly above a
   declaration documents it; `##` is a section heading.
 - Indentation is significant and rigid: exactly 4 spaces per level; a tab is a
