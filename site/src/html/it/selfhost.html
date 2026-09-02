@@ -25,12 +25,12 @@
   <pre><code>$ clang -I runtime seed/heroes.c runtime/runtime.c -o heroes
 $ ./heroes build selfhost/main.hero --emit-c -o out.c
 $ cmp out.c seed/heroes.c</code></pre>
-  <pre class="fixpoint"><code>sha256  <span class="hash">03075edd6a7cf785b804c8be637fc9f87e203ace60a20bd322da0f0953c08f4c</span>
+  <pre class="fixpoint"><code>sha256  <span class="hash">c7c0b384190e9ca43027e17aec5dfdb357f729fd0186c4eb66addbd727860a3e</span>
 
   seed/heroes.c   il C che sta nel repository: la via d&rsquo;ingresso
   out.c           quello che il compilatore scrive compilando se stesso
 
-<span class="c">  23.327.212 byte · 800.433 righe · non un byte di differenza</span></code></pre>
+<span class="c">  23.391.616 byte · 802.624 righe · non un byte di differenza</span></code></pre>
   <p>
     <code>cmp</code> non stampa niente, ed è il suo modo di dire che i due file
     sono lo stesso file. Quindi il C che sta nel repository non è una copia che
@@ -51,8 +51,8 @@ $ cmp out.c seed/heroes.c</code></pre>
     Che cos&rsquo;è, e quanto è costato arrivarci:
   </p>
   <ul class="stats">
-    <li><span class="n">169</span><span class="what">moduli di Heroes</span></li>
-    <li><span class="n">49.637</span><span class="what">righe</span></li>
+    <li><span class="n">170</span><span class="what">moduli di Heroes</span></li>
+    <li><span class="n">49.988</span><span class="what">righe</span></li>
     <li><span class="n">0</span><span class="what">workaround rimasti nel codice portato</span></li>
     <li><span class="n">2.570</span><span class="what">output di programmi confrontati, mai una differenza</span></li>
   </ul>
@@ -80,7 +80,7 @@ $ cmp out.c seed/heroes.c</code></pre>
   </p>
   <p>
     Un compilatore puntato sul proprio sorgente è un corpus che nessuna
-    suite di test riproduce: 49.637 righe che contengono ogni forma del
+    suite di test riproduce: 49.988 righe che contengono ogni forma del
     linguaggio, nelle proporzioni in cui il codice vero le usa. È con quel
     materiale che sono venuti fuori cinque difetti della traduzione, ed erano
     poi lo stesso inganno ripetuto cinque volte: un salto di ciclo dentro un ramo

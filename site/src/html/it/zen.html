@@ -8,32 +8,56 @@
   <code>heroes this</code>.</p>
 
   <p>
-    Sono in inglese perché sono esattamente quello che stampa il binario. Che
-    cosa dicono, e quali regole del compilatore ci stanno dietro, è spiegato
-    sotto.
+    Prima trovi l&rsquo;output inglese esatto del comando. Subito sotto c&rsquo;è la
+    traduzione italiana; le sezioni successive spiegano quali regole del
+    compilatore stanno dietro a ogni riga.
   </p>
 
   <ol class="zen" lang="en">
-    <li>First of all and freely, this language is a tribute to the great David Bowie.</li>
-    <li>A modern language made for LLMs, yet plain to human eyes.</li>
-    <li>The machine has read everything, yet sees only the page before it.</li>
-    <li>What the eye can see is all there is, nothing but sound and vision.</li>
-    <li>One way to say each thing, and every program sings it in the same voice.</li>
-    <li>Although that way is not obvious at first, the Starman waiting in the sky already knows it.</li>
-    <li>The semantics you already know, a syntax nobody has seen before.</li>
-    <li>Turn and face the strange, for every strangeness here is deliberate.</li>
-    <li>Nothing changes behind your back, every change signs its name where it happens.</li>
-    <li>Every plausible mistake becomes a compile error before the program ever runs.</li>
-    <li>Unless you confess it honestly and write ??? in its place.</li>
-    <li>An honest hole in the program beats a confident guess every time.</li>
-    <li>A compile time error is an answer, a run time error is an ambush.</li>
-    <li>An error tells you how to fix the program, anything less is a complaint.</li>
-    <li>A repeated word is cheap, a forgotten one costs the whole program.</li>
-    <li>The specification is small and lives under pressure, every word must earn its place.</li>
-    <li>Nothing crashes and nothing leaks, ashes to ashes, what it takes it returns.</li>
-    <li>Where the pretty things and the robust disagree, the robust wins every time.</li>
-    <li>There is no standard library, everything comes from C, the man who sold the world.</li>
+    <li>This language begins with a tribute to David Bowie.</li>
+    <li>It is made for language models; people can read it too.</li>
+    <li>A model may have read everything; each page must still explain itself.</li>
+    <li>What the eye can see is all there is: sound and vision.</li>
+    <li>There is one way to say each thing; every program sings in the same voice.</li>
+    <li>That way may not be obvious at first; the Starman already knows it.</li>
+    <li>The semantics are familiar; the syntax is new.</li>
+    <li>Turn and face the strange: every strange choice here is deliberate.</li>
+    <li>Nothing changes behind your back; every change signs its name.</li>
+    <li>Every plausible mistake must become a compile error before the program runs.</li>
+    <li>Unless you mark the unfinished place with ???.</li>
+    <li>An honest hole beats a confident guess.</li>
+    <li>A compile-time error is an answer; a runtime error is an ambush.</li>
+    <li>An error should tell you how to fix the program. Anything less is a complaint.</li>
+    <li>Repeating a word is cheap; forgetting one can cost the whole program.</li>
+    <li>The specification stays small under pressure; every word must earn its place.</li>
+    <li>Crashes and leaks are bugs. Ashes to ashes: what Heroes takes, it returns.</li>
+    <li>When pretty code and safe code disagree, safe code wins.</li>
+    <li>There is no standard library; C is the man who sold the world.</li>
     <li>We can be heroes, just for one day.</li>
+  </ol>
+
+  <h2>La traduzione italiana</h2>
+  <ol class="zen" lang="it">
+    <li>Questo linguaggio comincia con un omaggio a David Bowie.</li>
+    <li>È fatto per i modelli linguistici; anche le persone possono leggerlo.</li>
+    <li>Un modello può aver letto tutto; ogni pagina deve comunque spiegarsi da sola.</li>
+    <li>Ciò che l&rsquo;occhio vede è tutto quello che c&rsquo;è: suono e visione.</li>
+    <li>C&rsquo;è un solo modo per dire ogni cosa; ogni programma canta con la stessa voce.</li>
+    <li>Quel modo può non essere ovvio all&rsquo;inizio; lo Starman lo conosce già.</li>
+    <li>La semantica è familiare; la sintassi è nuova.</li>
+    <li>Voltati e affronta ciò che è strano: qui ogni scelta insolita è voluta.</li>
+    <li>Niente cambia alle tue spalle; ogni cambiamento porta la propria firma.</li>
+    <li>Ogni errore plausibile va fermato in compilazione, prima che il programma parta.</li>
+    <li>A meno che tu non dichiari il punto incompleto con ???.</li>
+    <li>Un buco dichiarato batte una risposta inventata.</li>
+    <li>Un errore in compilazione è una risposta; un errore a runtime è un&rsquo;imboscata.</li>
+    <li>Un errore deve dirti come correggere il programma. Altrimenti è solo una lamentela.</li>
+    <li>Ripetere una parola costa poco; dimenticarne una può costare l&rsquo;intero programma.</li>
+    <li>La specifica resta piccola sotto pressione; ogni parola deve meritare il proprio posto.</li>
+    <li>Crash e perdite di memoria sono bug. Cenere alla cenere: Heroes restituisce ciò che prende.</li>
+    <li>Quando eleganza e sicurezza si scontrano, vince la sicurezza.</li>
+    <li>Non c&rsquo;è una libreria standard; il C è l&rsquo;uomo che vendette il mondo.</li>
+    <li>Possiamo essere eroi, anche solo per un giorno.</li>
   </ol>
 
   <h2>Arriva insieme al compilatore</h2>
@@ -69,12 +93,12 @@
   </p>
   <p>
     La riga 15 è la formula del costo: ripetere una parola costa poco,
-    dimenticarne una costa tutto il programma. La 16 è il budget dei token:
+    dimenticarne una può costare tutto il programma. La 16 è il budget dei token:
     la specifica si misura, non si stima, e ogni aggiunta deve dire che cosa
-    toglie. La 18 è un criterio con i denti: dove eleganza e
-    robustezza non vanno d&rsquo;accordo, il linguaggio rinuncia
-    all&rsquo;eleganza. E la 19 è il vincolo di partenza, che è
-    anche il motivo per cui il compilatore emette C.
+    toglie. La 17 dichiara un obiettivo: crash e perdite di memoria sono bug,
+    non comportamenti accettati. La 18 risolve un conflitto: quando eleganza e
+    sicurezza non sono d&rsquo;accordo, vince la sicurezza. La 19 è il vincolo di
+    partenza, ed è anche il motivo per cui il compilatore emette C.
   </p>
   <p>
     La riga 1 è l&rsquo;unica che non ha bisogno di difendersi, e la 20
