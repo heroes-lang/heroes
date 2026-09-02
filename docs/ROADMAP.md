@@ -45,7 +45,7 @@ in the numbers that were re-measured.
 | **Current milestone** | **M-documentation-site** — open 2026-09-02: the site has no modules page at all, so the one part of the language a reader cannot learn from the site is where their files go |
 | **Last closed** | **M-corpus-coverage**, 2026-09-02, tag `m-corpus-coverage` ([029](journal/029-corpus-coverage.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
 | Milestones closed | 30 of 39 · 30 tags |
-| The compiler | **50,063 lines** of Heroes in **170** modules across **10 directories** and 37 flat files · the seed **803,134** lines of generated C |
+| The compiler | **50,100 lines** of Heroes in **170** modules across **10 directories** and 37 flat files · the seed **803,134** lines of generated C |
 | The spec | **3685** tokens of a hard 4096 · headroom **411** · runtime ABI **18** |
 | Records | sittings **101** · journals 29 · measurements 13 · examples **35** · defects 5 |
 | Waiting on the author | **11 decisions** · 10 in `SCHEDULED.md` · 289 in `LEARN.md` (never a gate) · an **outstanding veto** of the rule that stands (`docs/panel/101` R3) · and a **live heap-use-after-free** the spec already forbids, filed with its cause located (`docs/work/DECIDE.md`) |

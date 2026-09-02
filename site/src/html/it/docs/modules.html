@@ -1,0 +1,195 @@
+  <p class="crumb"><a href="/it/">Heroes</a> / <a href="/it/docs/">Docs</a> / capitolo 13</p>
+
+  <h1 class="chapter">I moduli e i file</h1>
+  <p class="tagline">Un file è un modulo, e il percorso che scrivi vuol dire la stessa cosa da qualunque punto.</p>
+
+  <p>
+    Un programma più grande di un file deve rispondere a due domande, e molti
+    linguaggi rispondono così male che poi la gente impara le risposte a forza
+    di sbagliare. Dove va a cercare il compilatore un file? E come si chiamano
+    le cose che ci sono dentro, una volta trovato?
+  </p>
+  <p>
+    Heroes risponde a entrambe in tre frasi. Un file è un modulo.
+    <code>use geom/point</code> legge <code>geom/point.hero</code> partendo
+    dalla cartella del file che compili. E il nome che quella riga ti dà è
+    l&rsquo;ultimo pezzo del percorso, quindi tutto quello che viene da quel
+    modulo si scrive <code>point.qualcosa</code>.
+  </p>
+
+  <h3>Il percorso parte da dove sei partito tu</h3>
+  <p>
+    È la regola da tenere a mente, perché tutto il resto viene da lei. Lanci
+    <code>heroes run shapes/main.hero</code>, quindi <code>shapes/</code> è la
+    radice, e ogni <code>use</code> di ogni file di quel programma si scrive a
+    partire da lì.
+  </p>
+  <figure class="example" data-src="examples/shapes/main.hero" data-lines="19-23">
+<pre><code><span class="k">use</span> geom/point
+<span class="k">use</span> geom/area
+<span class="k">use</span> render/ascii
+<span class="k">use</span> render/scale <span class="k">as</span> near_scale
+<span class="k">use</span> scale</code></pre>
+    <figcaption>examples/shapes/main.hero, righe 19&ndash;23</figcaption>
+  </figure>
+  <p>
+    Sei moduli in tre cartelle. Fin qui niente di strano. Vale la pena
+    fermarsi sul file che sta due cartelle sotto e che raggiunge il modulo
+    appoggiato lì accanto a lui:
+  </p>
+  <figure class="example" data-src="examples/shapes/geom/area.hero" data-lines="8-11">
+<pre><code><span class="k">use</span> geom/point
+
+<span class="k">function</span> rect(a: point.Point, b: point.Point) -&gt; <span class="t">i64</span>
+    <span class="k">return</span> point.span(from: a, to: b) * height(a: a, b: b)</code></pre>
+    <figcaption>examples/shapes/geom/area.hero, righe 8&ndash;11</figcaption>
+  </figure>
+  <p>
+    <code>area.hero</code> e <code>point.hero</code> stanno nella stessa
+    cartella, e <code>area.hero</code> scrive comunque il percorso intero. Un
+    vicino non ha una scrittura più corta di un estraneo. Sembra un costo,
+    finché non vedi cosa compra: la riga <code>use geom/point</code> è la
+    stessa riga in <code>main.hero</code>, in <code>geom/area.hero</code> e in
+    <code>render/ascii.hero</code>. Puoi copiarla, spostare il file che la
+    contiene, leggerla al telefono a qualcuno che non ha l&rsquo;albero delle
+    cartelle davanti, e vuol dire sempre un file solo.
+  </p>
+
+  <h3>Non si può salire</h3>
+  <p>
+    Nessun <code>..</code>, nessuna barra iniziale, nessun modo di uscire dalla
+    radice. Se ci provi, il compilatore ti dice qual è la regola invece di
+    dirti solo che la sintassi è sbagliata:
+  </p>
+  <pre><code>$ heroes check shapes/main.hero
+error[module_path_climbs]: a `use` path cannot climb — every `use` starts at the directory of the file you compile, so write the path from there: `use lex/token`, wherever the file that writes it sits
+  at shapes/geom/area.hero:8:5
+    |
+  8 | use ../geom/point
+    |     ^
+  note: a module above that directory belongs to a different program: give this one its own root, or move the file in</code></pre>
+  <p>
+    La nota in fondo è la metà interessante. Un file sopra la tua radice non è
+    un file che ti sei dimenticato di raggiungere: fa parte di un altro
+    programma, e tirarlo dentro vorrebbe dire che due programmi si dividono un
+    modulo e nessuno dei due ne è il proprietario. Se ti serve, spostalo dentro
+    oppure dai a tutto quanto una radice più larga. Sono entrambi un comando, e
+    ti lasciano un albero di cartelle che qualcun altro riesce a leggere.
+  </p>
+
+  <h3>Il nome è l&rsquo;ultimo pezzo</h3>
+  <p>
+    <code>use geom/point</code> lega <code>point</code>. Non
+    <code>geom_point</code>, non <code>geom.point</code>: solo l&rsquo;ultimo
+    pezzo, così il punto in cui chiami resta corto e la cartella ne sta fuori.
+  </p>
+  <figure class="example" data-src="examples/shapes/main.hero" data-lines="26-31">
+<pre><code>    corner = point.Point(x: <span class="n">0</span>, y: <span class="n">0</span>)
+    far = point.Point(x: <span class="n">4</span>, y: <span class="n">3</span>)
+    print(area.rect(a: corner, b: far))
+    print(area.perimeter(a: corner, b: far))
+    print(ascii.bar(width: point.span(from: corner, to: far)))
+    print(ascii.frame(width: <span class="n">3</span>, height: <span class="n">2</span>))</code></pre>
+    <figcaption>examples/shapes/main.hero, righe 26&ndash;31</figcaption>
+  </figure>
+  <p>
+    Un nome che viene da un altro modulo si scrive sempre con il suo
+    qualificatore davanti. Non c&rsquo;è modo di staccare <code>Point</code> da
+    <code>point</code> e usarlo nudo, e non c&rsquo;è nessun asterisco che lo
+    faccia per te. Così quando leggi <code>point.span(...)</code> sai due cose
+    senza uscire dalla riga: viene da un altro file, e il blocco di
+    <code>use</code> in cima a questo dice esattamente da quale.
+  </p>
+
+  <h3>Due moduli possono finire con la stessa parola</h3>
+  <p>
+    Siccome il qualificatore è solo l&rsquo;ultimo pezzo,
+    <code>scale.hero</code> nella radice e <code>render/scale.hero</code>
+    vogliono chiamarsi entrambi <code>scale</code>. Niente impedisce che
+    esistano tutti e due. Quello che viene rifiutato è un <em>file</em> che si
+    prende quel nome due volte:
+  </p>
+  <pre><code>$ heroes check shapes/main.hero
+error[module_binding_taken]: this file already calls `render/scale` by the name `scale`, so `scale` cannot have it too — a file may not bind one name twice
+  at shapes/main.hero:23:5
+     |
+  23 | use scale
+     |     ^^^^^
+  note: the two modules may both exist and both be used — `as` says what THIS file calls each one, and two files may name the same module differently</code></pre>
+  <p>
+    La riparazione sta sulla riga che il compilatore ti ha indicato, ed è una
+    clausola sola:
+  </p>
+  <figure class="example" data-src="examples/shapes/main.hero" data-lines="38-39">
+<pre><code>    print(scale.factor())
+    print(near_scale.factor())</code></pre>
+    <figcaption>examples/shapes/main.hero, righe 38&ndash;39</figcaption>
+  </figure>
+  <p>
+    <code>use render/scale as near_scale</code> dice come
+    <em>questo file</em> chiama quel modulo. Un altro file dello stesso
+    programma può chiamarlo <code>scale</code> e non nominare mai quello della
+    radice. Il rinomino è locale, e questo è il punto: una collisione la puoi
+    sempre risolvere nel file in cui capita, senza toccare un modulo che non
+    hai scritto tu. Il programma stampa <code>10</code> per lo scale della
+    radice e <code>3</code> per quello del vicino, quindi i due sono davvero
+    due.
+  </p>
+
+  <h3>Il nome di un modulo è un nome</h3>
+  <p>
+    <code>use geom/point</code> mette <code>point</code> dentro il file come
+    farebbe qualunque altra cosa, quindi nient&rsquo;altro in quel file può
+    prenderselo. Una variabile chiamata <code>point</code> lì accanto è lo
+    stesso errore di ombreggiatura che ti ha già mostrato il
+    <a href="/it/docs/bindings-and-mutation/">capitolo 6</a>:
+  </p>
+  <pre><code>$ heroes check shapes/main.hero
+error[shadowed_binding]: `point` is what this file calls the module `geom/point`, so a local may not take it — shadowing is an error here
+  at shapes/main.hero:26:5
+     |
+  26 |     point = point.Point(x: 0, y: 0)
+     |     ^^^^^
+  note: rename the module for this file with `use geom/point as <other>`, which clears every collision in it at once, or rename this binding</code></pre>
+  <p>
+    Senza quella regola, <code>point.x</code> in una funzione potrebbe voler
+    dire il modulo e in un&rsquo;altra funzione la variabile, nello stesso
+    file, e le due cose compilerebbero entrambe. La nota offre le due
+    riparazioni perché sono entrambe difendibili: rinominare il modulo sistema
+    tutte le collisioni del file in un colpo, rinominare la variabile ne
+    sistema una.
+  </p>
+
+  <h3>Cosa manca, di proposito</h3>
+  <p>
+    Nessun <code>public</code> e nessun <code>private</code>: tutto quello che
+    un modulo dichiara è raggiungibile da qualunque file lo nomini. Nessun
+    import con l&rsquo;asterisco, quindi il qualificatore non è mai
+    facoltativo. Nessun import circolare, e il compilatore lo rifiuta sulla
+    riga <code>use</code> stessa invece che al momento del linker (il passo che
+    cuce insieme i pezzi compilati). E nessun file di progetto, nessun
+    manifest, nessuna configurazione: l&rsquo;albero delle cartelle sul disco è
+    tutta la disposizione, e il comando che scrivi è quello che decide la
+    radice.
+  </p>
+
+  <p class="next">
+    <a href="/it/docs/">Torna all&rsquo;elenco dei capitoli</a> &middot;
+    <a href="/it/errors/">la pagina degli errori</a>, che è l&rsquo;altra metà
+    di questa documentazione &middot; <a href="/it/why/">perché il linguaggio
+    è fatto così</a>.
+    <span class="back">&larr; Precedente: <a href="/it/docs/the-c-boundary/">Il confine con il C</a></span>
+  </p>
+
+  <footer>
+    <p>Ogni blocco di codice di questa pagina è una fetta di
+    <code>examples/shapes/</code> nel repository, un programma di sei moduli in
+    tre cartelle che compila, gira e passa i suoi test. Le tre diagnostiche
+    sono quello stesso programma con una modifica ciascuna: una riga
+    <code>use</code> che sale, la clausola <code>as</code> tolta, e una
+    variabile rinominata in <code>point</code>.</p>
+    <p>Fatto da <a href="https://giuseppearici.com/it/">Giuseppe Arici</a>, CTO di Codermine, Brescia. Autore di
+    <a href="/it/author/"><i>Gli eroi del codice</i></a>. Sulle spalle
+    <a href="/it/thanks/">di un sacco di altre persone</a>.</p>
+    <p>&copy; 2026 Giuseppe Arici &middot; heroes-lang.org</p>
+  </footer>
