@@ -1,0 +1,193 @@
+# A comma-separated table read properly — quotes, commas inside them, and
+# the doubled quote that means one.
+#
+# Corpus and regression material (CLAUDE.md §9). It closes no measured form
+# gap; what it adds is the shape everybody asks for and almost nobody gets
+# right on the first try. The naive version is `text.split(",")`, and it is
+# wrong on the first row that quotes a field containing a comma — which is
+# every real file.
+#
+# THE FOUR RULES, and they are the whole program:
+#   1. a field ends at a comma, unless the comma is inside quotes
+#   2. a row ends at a newline, unless the newline is inside quotes
+#   3. inside quotes, `""` is one literal quote
+#   4. a field that starts with a quote must end with one, or the row is bad
+#
+# Rule 4 is the one that makes this a `T?` and not a total function: an
+# unterminated quote is a broken file, and answering an empty table would tell
+# the caller nothing.
+
+record Table
+    rows: [[str]]
+
+function parse(text: str) -> Table?
+    rows: [[str]] @ []
+    row: [str] @ []
+    field: str @ ""
+    quoted: bool @ false
+    pending_quote: bool @ false
+    started: bool @ false
+
+    for ch in text.chars()
+        if pending_quote
+            pending_quote @ false
+
+            if ch == "\""
+                # Rule 3: a doubled quote inside quotes is one quote.
+                field @ field + "\""
+                continue
+            quoted @ false
+
+        if quoted
+            if ch == "\""
+                # Might close the field, might be the first of a pair — the
+                # next character decides, which is why this needs a flag and
+                # not a lookahead.
+                pending_quote @ true
+            else
+                field @ field + ch
+            continue
+
+        if ch == "\""
+            quoted @ true
+            started @ true
+            continue
+
+        if ch == ","
+            row @ row.push(field)
+            field @ ""
+            started @ true
+            continue
+
+        if ch == "\n"
+            row @ row.push(field)
+            rows @ rows.push(row)
+            row @ []
+            field @ ""
+            started @ false
+            continue
+        field @ field + ch
+        started @ true
+
+    if quoted && !pending_quote
+        return fail("unterminated_quote", "a quoted field never closes")
+
+    # A last row with no trailing newline is still a row; an empty tail is
+    # not. `started` is what tells the two apart.
+    if started || field.len() > 0 || row.len() > 0
+        row @ row.push(field)
+        rows @ rows.push(row)
+
+    return ok(Table(rows: rows))
+
+function width(t: Table) -> i64
+    return if t.rows.len() == 0
+        0
+    else
+        t.rows[0].len()
+
+# Whether every row has the same number of fields, which is the one property
+# a caller almost always wants and the file format never promises.
+function rectangular(t: Table) -> bool
+    for one in t.rows
+        if one.len() != width(t)
+            return false
+
+    return true
+
+function column(t: Table, at: i64) -> [str]?
+    if at < 0 || at >= width(t)
+        return fail("no_such_column", "the table has no column at that index")
+    out: [str] @ []
+
+    for one in t.rows
+        if at < one.len()
+            out @ out.push(one[at])
+
+    return ok(out)
+
+constant SAMPLE: str
+    "name,role,note\nada,engineer,\"first, and by some distance\"\ngrace,admiral,\"said \"\"debugging\"\" first\"\nalan,logician,\n"
+
+function main()
+    table = parse(SAMPLE).must()
+    print(table.rows.len())
+    print(width(table))
+    print(rectangular(table))
+
+    print(join(table.rows[1], " | "))
+    print(join(table.rows[2], " | "))
+    print(join(column(table, at: 0).must(), ","))
+    print(column(table, at: 9).is_err())
+
+    # The failure the format actually produces.
+    print(parse("a,\"unclosed").is_err())
+    print(parse("").must().rows.len())
+
+test "the ordinary case is the ordinary case"
+    t = parse("a,b\nc,d\n").must()
+    assert t.rows.len() == 2
+    assert t.rows[0] == ["a", "b"]
+    assert t.rows[1] == ["c", "d"]
+    assert width(t) == 2
+    assert rectangular(t)
+
+test "a comma inside quotes is not a separator"
+    t = parse("a,\"b,c\",d\n").must()
+    assert t.rows[0].len() == 3
+    assert t.rows[0][1] == "b,c"
+
+test "a newline inside quotes is not a row break"
+    t = parse("a,\"two\nlines\"\n").must()
+    assert t.rows.len() == 1
+    assert t.rows[0][1] == "two\nlines"
+
+test "a doubled quote inside quotes is one quote"
+    t = parse("\"said \"\"hello\"\"\"\n").must()
+    assert t.rows[0][0] == "said \"hello\""
+
+test "an empty field is a field, wherever it sits"
+    t = parse("a,,c\n").must()
+    assert t.rows[0] == ["a", "", "c"]
+    trailing = parse("a,b,\n").must()
+    assert trailing.rows[0] == ["a", "b", ""]
+    leading = parse(",b,c\n").must()
+    assert leading.rows[0] == ["", "b", "c"]
+
+test "a last row without a newline is still a row"
+    t = parse("a,b\nc,d").must()
+    assert t.rows.len() == 2
+    assert t.rows[1] == ["c", "d"]
+
+test "an unterminated quote is a broken file and says so"
+    assert parse("a,\"unclosed").is_err()
+    assert parse("\"").is_err()
+    assert !parse("a,\"closed\"").is_err()
+
+test "an empty input is an empty table rather than one empty row"
+    t = parse("").must()
+    assert t.rows.len() == 0
+    assert width(t) == 0
+    assert rectangular(t)
+    assert column(t, at: 0).is_err()
+
+test "a ragged table is read and reported as ragged"
+    # The format permits it, so the parser must not refuse it — but a caller
+    # that assumes a rectangle needs to be able to ask.
+    t = parse("a,b,c\nd,e\n").must()
+    assert t.rows.len() == 2
+    assert !rectangular(t)
+    assert width(t) == 3
+
+test "a column is read down, and a missing one fails"
+    t = parse(SAMPLE).must()
+    assert column(t, at: 0).must() == ["name", "ada", "grace", "alan"]
+    assert column(t, at: 1).must() == ["role", "engineer", "admiral", "logician"]
+    assert column(t, at: 0 - 1).is_err()
+    assert column(t, at: 3).is_err()
+
+test "the sample's awkward fields survive the trip"
+    t = parse(SAMPLE).must()
+    assert t.rows[1][2] == "first, and by some distance"
+    assert t.rows[2][2] == "said \"debugging\" first"
+    assert t.rows[3][2] == ""

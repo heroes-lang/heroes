@@ -1,0 +1,235 @@
+# Text with holes in it, filled from a map — and the three ways filling one
+# can go wrong.
+#
+# Corpus and regression material (CLAUDE.md §9). It closes no measured form
+# gap; what it adds is the shape a person reaches for when they want a
+# message, and the reason it is worth a program is that the naive version
+# silently produces nonsense. A substitution that cannot find its key has
+# three defensible answers — leave the hole, drop it, or refuse — and a
+# library that picks one without saying so is the source of every
+# "Hello, {name}" anybody has ever received in an email.
+#
+# THIS ONE REFUSES, and says why in the code: `spec:141`'s `T?` makes refusing
+# cost one character at the call site, so the cheapest thing is also the
+# loudest. `render_or` is there for the caller who genuinely wants a default,
+# and it is a different function rather than a flag, so the choice is visible
+# at the call site instead of buried in an argument.
+#
+# THE ESCAPE IS DOUBLING, as in the CSV program next door: `{{` is one `{`.
+# That is the rule with the fewest cases — no backslash, no lookbehind — and
+# it is the same rule the format strings of four other languages use.
+
+function render(template: str, values: {str: str}) -> str?
+    out: str @ ""
+    key: str @ ""
+    inside: bool @ false
+    pending: bool @ false
+    closing: bool @ false
+
+    for ch in template.chars()
+        if pending
+            pending @ false
+
+            if ch == "{"
+                # `{{` is one literal brace.
+                out @ out + "{"
+                continue
+            inside @ true
+            key @ ""
+
+        # The character after a single `{` is the first of the key, so it
+        # falls through to the `inside` branch below rather than being
+        # dropped — which is the bug the first draft of this had.
+        if inside
+            if ch == "}"
+                inside @ false
+
+                if key.len() == 0
+                    return fail("empty_key", "`{}` names nothing")
+                found = values[key]
+
+                if found.is_err()
+                    return fail("unknown_key", "the template wants `" + key + "` and it was not given")
+                out @ out + found.must()
+            else
+                key @ key + ch
+            continue
+
+        if ch == "{"
+            pending @ true
+            continue
+
+        if ch == "}"
+            if closing
+                # `}}` is one literal brace, symmetrically with `{{`. The
+                # first draft handled only the opening half and refused
+                # `{{name}}`, which is what a writer types when they mean a
+                # literal `{name}` — a rule that escapes one delimiter and
+                # not the other is a rule with a hole in it.
+                closing @ false
+                out @ out + "}"
+                continue
+            closing @ true
+            continue
+
+        if closing
+            return fail("stray_brace", "a `}` with no `{` before it")
+        out @ out + ch
+
+    if closing
+        return fail("stray_brace", "a `}` with no `{` before it")
+
+    if inside || pending
+        return fail("unterminated", "a `{` that never closes")
+
+    return ok(out)
+
+# The same, with a default for every key the map does not hold. A separate
+# function and not a flag: the caller who wants this is making a different
+# decision, and `spec` has no default arguments to hide it in.
+function render_or(template: str, values: {str: str}, missing: str) -> str?
+    filled: {str: str} @ values
+
+    for key in needed(template)
+        if filled[key].is_err()
+            filled[key] @ missing
+
+    return render(template, values: filled)
+
+# Every key a template asks for, in the order it asks. Its own function
+# because a caller often wants to know before it has the values — which is
+# what turns a runtime failure into a check.
+#
+# ORDER: none — the order is the TEMPLATE's, read left to right, not a map
+# walk. Stated rather than left out, because a reader who sees a list of keys
+# beside a map is right to ask.
+function needed(template: str) -> [str]
+    out: [str] @ []
+    key: str @ ""
+    inside: bool @ false
+    pending: bool @ false
+
+    for ch in template.chars()
+        if pending
+            pending @ false
+
+            if ch == "{"
+                continue
+            inside @ true
+            key @ ""
+
+        if inside
+            if ch == "}"
+                inside @ false
+
+                if key.len() > 0
+                    out @ out.push(key)
+            else
+                key @ key + ch
+            continue
+
+        if ch == "{"
+            pending @ true
+
+    return out
+
+function sample_values() -> {str: str}
+    values: {str: str} @ {}
+    values["name"] @ "Ada"
+    values["role"] @ "engineer"
+    return values
+
+function main()
+    values = sample_values()
+
+    print(render("Hello, {name}.", values: values).must())
+    print(render("{name} the {role}", values: values).must())
+    print(render("no holes here", values: values).must())
+    print(render("a {{literal}} brace", values: values).must())
+    print(render("{{name}}", values: values).must())
+    print(join(needed("{name} and {role} and {name}"), ","))
+
+    # The four refusals, each a different code for a different repair.
+    print(render("Hello, {nobody}.", values: values).is_err())
+    print(render("Hello, {name", values: values).is_err())
+    print(render("Hello, {}.", values: values).is_err())
+    print(render("Hello, name}.", values: values).is_err())
+
+    # And the caller who would rather have a placeholder than a failure.
+    print(render_or(template: "Hello, {nobody}.", values: values, missing: "friend").must())
+
+test "a hole is filled and the text around it is untouched"
+    values = sample_values()
+    assert render("Hello, {name}.", values: values).must() == "Hello, Ada."
+    assert render("{name}", values: values).must() == "Ada"
+    assert render("{name}{role}", values: values).must() == "Adaengineer"
+    assert render("a{name}b", values: values).must() == "aAdab"
+
+test "a template with no holes is itself"
+    values = sample_values()
+    assert render("plain", values: values).must() == "plain"
+    assert render("", values: values).must() == ""
+
+test "a doubled brace is one brace, on both sides"
+    # Both halves, because the first draft escaped only the opening one and
+    # `{{name}}` — which is what a writer types for a literal `{name}` — came
+    # back as `error[stray_brace]`.
+    values = sample_values()
+    assert render("{{name}}", values: values).must() == "{name}"
+    assert render("{{}}", values: values).must() == "{}"
+    assert render("a {{ b", values: values).must() == "a { b"
+
+test "the four refusals are four different codes"
+    values = sample_values()
+
+    # A key nobody gave.
+    assert render("{nobody}", values: values).is_err()
+
+    # A brace that never closes.
+    assert render("{name", values: values).is_err()
+    assert render("{", values: values).is_err()
+
+    # A hole with no name in it.
+    assert render("{}", values: values).is_err()
+
+    # A closing brace with nothing open.
+    assert render("}", values: values).is_err()
+    assert render("name}", values: values).is_err()
+
+test "the keys a template needs are read in the template's own order"
+    assert needed("{name} and {role}") == ["name", "role"]
+    assert needed("{role} and {name}") == ["role", "name"]
+    assert needed("{name} twice {name}") == ["name", "name"]
+    assert needed("no holes") == []
+    assert needed("{{literal}}") == []
+
+test "the keys can be checked before the values exist"
+    # The property that makes `needed` worth its own function: a caller can
+    # refuse a template before it has anything to fill it with.
+    values = sample_values()
+    wanted = needed("Hello, {name} the {nobody}")
+    unknown: [str] @ []
+
+    for key in wanted
+        if values[key].is_err()
+            unknown @ unknown.push(key)
+
+    assert unknown == ["nobody"]
+    assert render("Hello, {name} the {nobody}", values: values).is_err()
+
+test "render_or fills what is missing and leaves what is not"
+    values = sample_values()
+    assert render_or(template: "{name} and {nobody}", values: values, missing: "?").must() == "Ada and ?"
+    assert render_or(template: "{name}", values: values, missing: "?").must() == "Ada"
+    assert render_or(template: "plain", values: values, missing: "?").must() == "plain"
+
+    # It fills a missing key and still refuses a broken template, which is
+    # the line between "a value I do not have" and "a template I cannot read".
+    assert render_or(template: "{name", values: values, missing: "?").is_err()
+    assert render_or(template: "{}", values: values, missing: "?").is_err()
+
+test "an empty map is not an error until a hole asks for something"
+    empty: {str: str} = {}
+    assert render("plain", values: empty).must() == "plain"
+    assert render("{anything}", values: empty).is_err()
+    assert render_or(template: "{anything}", values: empty, missing: "x").must() == "x"

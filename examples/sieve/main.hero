@@ -1,0 +1,185 @@
+# Primes by crossing out — the smallest program here whose answer somebody
+# else already wrote down.
+#
+# Corpus and regression material (CLAUDE.md §9). It closes no measured form
+# gap. What it adds is a body of code whose correctness is checkable against
+# a published sequence rather than against the program's own claims: there
+# are 25 primes below 100, 168 below 1000, and 1229 below 10000, and those
+# three numbers are not this program's opinion.
+#
+# That is the property this corpus is short of. Most of `examples/` asserts
+# what its own functions produce, which catches a change and not a mistake.
+# A program checked against arithmetic nobody in this repository invented
+# catches both.
+#
+# WHY THE SIEVE AND NOT TRIAL DIVISION. The sieve is the one where the
+# INDICES are the subject — `at * at` as the starting point, stepping by
+# `at`, and stopping at the square root — and every one of those three is a
+# place to be wrong by one. Trial division has one loop and nothing to say.
+
+# Whether each number up to `limit` is prime, indexed by the number itself,
+# so `flags[7]` answers about 7 and there is nothing to translate.
+function sieve(limit: i64) -> [bool]
+    flags: [bool] @ []
+    i: i64 @ 0
+
+    while i <= limit
+        flags @ flags.push(i >= 2)
+        i @ i + 1
+
+    at: i64 @ 2
+
+    # `at * at <= limit` and not `at <= limit`: everything below `at * at`
+    # has already been crossed out by a smaller factor, which is the whole
+    # reason this is faster than trial division.
+    while at * at <= limit
+        if flags[at]
+            multiple: i64 @ at * at
+
+            while multiple <= limit
+                flags[multiple] @ false
+                multiple @ multiple + at
+        at @ at + 1
+
+    return flags
+
+function primes_below(limit: i64) -> [i64]
+    if limit < 2
+        empty: [i64] = []
+        return empty
+    flags = sieve(limit - 1)
+    out: [i64] @ []
+    i: i64 @ 0
+
+    while i < flags.len()
+        if flags[i]
+            out @ out.push(i)
+        i @ i + 1
+
+    return out
+
+function is_prime(n: i64) -> bool
+    if n < 2
+        return false
+
+    return sieve(n)[n]
+
+# The gaps between consecutive primes, which is where the sequence stops
+# being obvious: 2 and 3 are one apart and nothing else ever is again.
+function gaps(limit: i64) -> [i64]
+    found = primes_below(limit)
+    out: [i64] @ []
+    i: i64 @ 1
+
+    while i < found.len()
+        out @ out.push(found[i] - found[i - 1])
+        i @ i + 1
+
+    return out
+
+function main()
+    print(primes_below(30).len())
+    print(join(shown(primes_below(30)), " "))
+    print(primes_below(100).len())
+    print(primes_below(1000).len())
+    print(primes_below(10000).len())
+
+    print(join(shown(gaps(30)), " "))
+    print(is_prime(97))
+    print(is_prime(91))
+    print(is_prime(1))
+    print(is_prime(2))
+
+function shown(numbers: [i64]) -> [str]
+    out: [str] @ []
+
+    for one in numbers
+        out @ out.push(one.to_str())
+
+    return out
+
+test "the counts are the published ones, which this program did not invent"
+    assert primes_below(10).len() == 4
+    assert primes_below(100).len() == 25
+    assert primes_below(1000).len() == 168
+    assert primes_below(10000).len() == 1229
+
+test "the first primes are the first primes"
+    assert primes_below(30) == [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]
+
+test "the boundary is exclusive, and it is the one everybody gets wrong"
+    # `primes_below(7)` does not include 7. That is a choice the NAME makes,
+    # and the pair below is what stops it drifting.
+    assert primes_below(7) == [2, 3, 5]
+    assert primes_below(8) == [2, 3, 5, 7]
+    assert primes_below(2) == []
+    assert primes_below(3) == [2]
+
+test "nothing below two is prime, including the negatives"
+    assert primes_below(0).len() == 0
+    assert primes_below(1).len() == 0
+    assert primes_below(0 - 5).len() == 0
+    assert !is_prime(0)
+    assert !is_prime(1)
+    assert !is_prime(0 - 7)
+
+test "a square and a product of two primes are both crossed out"
+    # The two shapes the sieve must catch: `at * at` itself, and a composite
+    # whose smallest factor is not its only one.
+    assert !is_prime(4)
+    assert !is_prime(9)
+    assert !is_prime(25)
+    assert !is_prime(49)
+    assert !is_prime(91)
+    assert !is_prime(9409)
+
+test "the primes near a hundred are what a table says"
+    assert is_prime(97)
+    assert is_prime(89)
+    assert is_prime(101)
+    assert !is_prime(99)
+    assert !is_prime(100)
+
+test "two and three are the only primes one apart"
+    said = gaps(100)
+    assert said[0] == 1
+    ones: i64 @ 0
+
+    for one in said
+        if one == 1
+            ones @ ones + 1
+
+    assert ones == 1
+
+test "every gap after the first is even, because every prime after two is odd"
+    said = gaps(200)
+    odd_gaps: i64 @ 0
+    i: i64 @ 1
+
+    while i < said.len()
+        if said[i] % 2 != 0
+            odd_gaps @ odd_gaps + 1
+        i @ i + 1
+
+    assert odd_gaps == 0
+
+test "the sieve and a trial division agree, which is two implementations of one answer"
+    # The strongest check available without leaving the program: a second,
+    # slower algorithm that shares no line with the first.
+    i: i64 @ 0
+
+    while i <= 200
+        assert is_prime(i) == by_division(i)
+        i @ i + 1
+
+function by_division(n: i64) -> bool
+    if n < 2
+        return false
+    d: i64 @ 2
+
+    while d * d <= n
+        if n % d == 0
+            return false
+        d @ d + 1
+
+    return true
