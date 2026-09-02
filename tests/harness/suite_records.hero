@@ -154,8 +154,14 @@ constant REFUSED: [str]
 # them both as *a name with no row in the alias table* in the same run that
 # filed them. A milestone reaches this number before it reaches a tag, and
 # now before it reaches a step.
+#
+# **43 → 44 on 2026-09-02**, `M-interpolation-verdict`, scheduled by author
+# instruction: a milestone whose deliverable is a RULING rather than a feature
+# reaches this number the same way any other does. This one arrives before it
+# has a step, a tag or a line of code, which is the direction the count was
+# written for.
 constant ROWS: i64
-    43
+    44
 
 # The two documents whose citations are checked. They are the two a reader is sent
 # to for a rule, and the only two this project rewrites rather than appends to.
