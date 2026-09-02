@@ -44,7 +44,7 @@ constant EXAMPLES: str
 # rather than staying where it was measured, because its whole job is to
 # notice a program that quietly stops being found.
 constant LEAST: i64
-    15
+    16
 
 function run_all(scratch: str, compiler: str) -> report.Report?
     r: report.Report @ report.empty()

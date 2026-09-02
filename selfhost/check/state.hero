@@ -53,8 +53,36 @@ record Checked
     # it is used by value, and Heroes' top level is order-free (panel 023).
     type_order: [i64]
     # What each call to a GENERIC function instantiated it at, keyed by
-    # the call's span start (§4.12; panel 029 R2: recorded, never
-    # recomputed — a span is a byte range and two calls cannot share one).
+    # the call's span END (§4.12; panel 029 R2: recorded, never recomputed).
+    #
+    # **THE KEY WAS `span.start` AND THAT WAS A DEFECT**, found 2026-09-02 by
+    # the first program in `examples/` that called the library. The comment
+    # here used to justify it with *"a span is a byte range and two calls
+    # cannot share one"* — false, and false at the parser:
+    # `grammar_expr.hero`'s method-call node takes its span START from its
+    # RECEIVER, so in `xs.map(to_n).fold(0, add)` the `map` node and the
+    # `fold` node begin on the same byte. The second write won, `map` was
+    # monomorphised at `fold`'s bindings, and clang refused the emitted C at
+    # exit 2 — the compiler blaming itself for a program `check` had accepted.
+    #
+    # **THE CLAIM THE END RESTS ON, written as a falsifiable one** (CLAUDE.md
+    # §11): a call node's span ends at its own closing parenthesis, so an
+    # outer call always ends strictly after the inner one it contains, and two
+    # calls at different places in a file cannot end on the same byte. Unlike
+    # the start, this is a property of how the parser closes a call rather
+    # than of where it opens one. The test that fires when it dies is
+    # `tests/golden/run/fixedbugs-a-ufcs-chain-gave-two-calls-one-key.hero`,
+    # which names this field, was verified to FAIL on the compiler that had
+    # the old key, and carries the three spellings that worked before the fix
+    # so a repair that broke those instead is caught in the same case.
+    #
+    # **AND THE GENERAL RULE, from sweeping the adjacent shapes** (CLAUDE.md
+    # §1): the other two span-keyed tables in this compiler —
+    # `locals_by_span` below and `by_span` in `ir/build.hero` — key on a
+    # `name.start`, and they are sound. The start of a TOKEN is a fact: one
+    # identifier occurs at one place. The start of an EXPRESSION is not,
+    # because a composite expression inherits its start from a child. Any
+    # future table keyed by a span belongs on the first side of that line.
     instantiations: {i64: [i64]}
     # One entry per interned type: does a value of it own a reference the
     # compiler must count. Built by the counted pass after checking.

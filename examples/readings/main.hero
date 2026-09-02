@@ -1,0 +1,132 @@
+# A week of sensor readings, summarised — and the only program in this
+# repository that calls the library through UFCS.
+#
+# Corpus and regression material (CLAUDE.md §9), and the gap it closes was
+# measured rather than guessed. On 2026-09-02, over `examples/`, `selfhost/`
+# and `tests/`: `map`, `filter`, `fold`, `find`, `any` and `all` — the six the
+# spec's own § Built-ins calls *"written in Heroes"* — were called by exactly
+# ONE program in the repository, `tests/golden/run/library-higher-order.hero`,
+# and by nothing in `examples/` at all. `all` was called by nothing anywhere.
+#
+# **And the UFCS form was called by nothing, full stop: zero uses of
+# `xs.map(f)` in every `.hero` file in the repository.** The spec illustrates
+# the library with exactly that spelling — *"Top-level functions are values:
+# `xs.fold(0, add)`"* — so the form the document teaches the feature with had
+# no program behind it. This file writes every call that way on purpose.
+#
+# What the program does is ordinary, which is the point: read a week of
+# readings, drop the ones the sensor did not answer, total and average them,
+# look one up, and ask three questions about the whole set.
+
+use scale
+
+record Reading
+    day: str
+    raw: i64
+
+# A sensor that failed answers -1 rather than a temperature in tenths.
+constant MISSING: i64
+    0 - 1
+
+function week() -> [Reading]
+    return [
+        Reading(day: "mon", raw: 182)
+        Reading(day: "tue", raw: 197)
+        Reading(day: "wed", raw: MISSING)
+        Reading(day: "thu", raw: 203)
+        Reading(day: "fri", raw: 178)
+        Reading(day: "sat", raw: 221)
+        Reading(day: "sun", raw: MISSING)
+    ]
+
+function answered(r: Reading) -> bool
+    return r.raw != MISSING
+
+function too_warm(r: Reading) -> bool
+    return r.raw > 200
+
+function blazing(r: Reading) -> bool
+    return r.raw > 400
+
+function plausible(r: Reading) -> bool
+    return r.raw > 0 && r.raw < 500
+
+function tenths_of(r: Reading) -> i64
+    return r.raw
+
+function add(total: i64, one: i64) -> i64
+    return total + one
+
+function label(r: Reading) -> str
+    return r.day + " " + scale.tenths(r.raw)
+
+function main()
+    all_week = week()
+
+    # `filter` then `map`, both through the dot, which is the shape the spec
+    # writes and nothing in this repository had.
+    good = all_week.filter(answered)
+    print(good.len())
+
+    total = good.map(tenths_of).fold(0, add)
+    print(scale.tenths(total))
+    print(scale.tenths(total / good.len()))
+
+    # `find` gives a `T?`, so both sides are written out: a hit, and a miss
+    # that no reading in the week can satisfy.
+    print(label(good.find(too_warm).must()))
+    print(good.find(blazing).is_err())
+
+    # The three questions about the whole set, which is where `any` and `all`
+    # earn their names — and the third is the one that fails, on purpose.
+    print(good.any(too_warm))
+    print(good.all(plausible))
+    print(all_week.all(answered))
+
+    # `map` over a function returning `str`, so B is not A.
+    print(join(good.map(label), ", "))
+
+    # `range` builds the indices, and `fold` over them sums the ones the
+    # sensor answered — the same total by a different road.
+    days = range(from: 0, to: all_week.len())
+    print(days.fold(0, plus_if_answered))
+
+function plus_if_answered(total: i64, i: i64) -> i64
+    one = week()[i]
+
+    if answered(one)
+        return total + one.raw
+    return total
+
+test "the six agree with the answers computed by hand"
+    good = week().filter(answered)
+    assert good.len() == 5
+    assert good.map(tenths_of).fold(0, add) == 981
+    assert good.any(too_warm)
+    assert good.all(plausible)
+    assert !week().all(answered)
+    assert !good.any(blazing)
+
+test "find answers a T? on both sides"
+    good = week().filter(answered)
+    assert good.find(too_warm).must().day == "thu"
+    assert good.find(blazing).is_err()
+    assert good.find(blazing).default(Reading(day: "none", raw: 0)).day == "none"
+
+test "map may change the element type, and every one of the six survives an empty array"
+    good = week().filter(answered)
+    assert good.map(label).len() == 5
+    empty: [Reading] = []
+    assert empty.map(tenths_of).fold(0, add) == 0
+    assert empty.filter(answered).len() == 0
+    assert !empty.any(too_warm)
+
+    # Vacuously true, and that is the edge worth pinning: `all` over nothing
+    # answers true even for a predicate no element could satisfy.
+    assert empty.all(blazing)
+    assert empty.find(too_warm).is_err()
+
+test "the two roads to the total agree"
+    good = week().filter(answered)
+    days = range(from: 0, to: week().len())
+    assert days.fold(0, plus_if_answered) == good.map(tenths_of).fold(0, add)

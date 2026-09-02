@@ -179,12 +179,12 @@ function emit(@w: writer.Writer, p: containers.Program, c: state.Checked, names:
 
             # This copy first: call_instances is substituted per copy.
             instance: [i64] @ []
-            on_copy = f.call_instances[inst.span.start]
+            on_copy = f.call_instances[inst.span.end]
 
             if !on_copy.is_err()
                 instance @ on_copy.must()
             else
-                recorded = c.instantiations[inst.span.start]
+                recorded = c.instantiations[inst.span.end]
 
                 if !recorded.is_err()
                     instance @ recorded.must()
