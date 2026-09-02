@@ -36,6 +36,22 @@ Nothing was dropped, and this time that is a **measurement** — the word freque
 table of the file before and after differs only in the headings that changed and
 in the numbers that were re-measured.
 
+**Reordered a third time 2026-09-03 by author instruction** — *"riordina roadmap
+con tutto quello che è stato fatto prima di quello che deve essere fatto, in più
+tutte le note spostale dalla tabella … la tabella la voglio pulita"*. Two
+changes, and neither drops a word. **The chain now runs closed-then-scheduled**:
+the one closed milestone that sat below five open ones — M-documentation-site,
+taken out of order the day it landed — moves up to the end of the closed run, so
+a reader meets the whole past before the first line of the future. That is the
+same rule the journal split already applies to this file's prose, applied to its
+table. And **the table carries the order and nothing else**: every scheduling
+note, panel ratification and author decision that lived inside a cell is now a
+line under it, keyed by name rather than by row number, because a reorder moves a
+number and never a name (CLAUDE.md §14). Two sections whose milestone had closed
+while they went on describing future work — M-package-layout and
+M-documentation-site — now say so in their headings, the way
+M-separate-compilation already did.
+
 ---
 
 ## Where we are
@@ -109,9 +125,14 @@ heroes test selfhost/main.hero                 # the compiler's own tests
 
 ## The chain
 
-One table, one row per milestone. `warrant` is why it exists: **v1** (the
-self-hosting finish line), **closure list** (design.md §1.0 — the compiler needs
-it), **§1.1** (comprehension is the objective), or **scheduled, no warrant**.
+One table, one row per milestone, **closed first and scheduled after**: rows 1–31
+are done, in the order they closed, and rows 32–40 are what is next, in the order
+they will be taken. `warrant` is why a milestone exists: **v1** (the self-hosting
+finish line), **closure list** (design.md §1.0 — the compiler needs it), **§1.1**
+(comprehension is the objective), or **scheduled, no warrant**.
+
+**The cells hold no prose.** Who scheduled a milestone, which panel ratified it,
+and why one overtook another are under the table, in § Who scheduled what.
 
 | # | milestone | state | tag | journal | what it delivers · warrant |
 |---|---|---|---|---|---|
@@ -141,17 +162,17 @@ it), **§1.1** (comprehension is the objective), or **scheduled, no warrant**.
 | 24 | **M-harness-port** | done 2026-08-18 | `m-harness-port` | [023](journal/023-harness-port.md) | the net in Heroes · closure list |
 | 25 | **M-bootstrap-archive** | done 2026-08-19 | `m-bootstrap-archive` | [024](journal/024-bootstrap-archive.md) | the third language dies · v1's last clause (design.md:82) |
 | 26 | **M-separate-compilation** | done 2026-08-26 | `m-separate-compilation` | [025](journal/025-separate-compilation.md) | one `.c` per module, prototypes across TUs, the cache · closure list |
-| 27 | **M-argv-execution** | done 2026-08-31 | `m-argv-execution` | [026](journal/026-argv-execution.md) | the compiler runs programs by argument list; `sq()` is deleted, the shell stops being the boundary, and Windows goes green · **panels 097 and 098, ratified 2026-08-30** |
-| 28 | **M-package-layout** | done 2026-09-02 | `m-package-layout` | [027](journal/027-package-layout.md) | `use` paths, the qualifier, `as`, and where a program's files live · **panels 099, 100 and 101, all three ratified the same day** |
-| 29 | **M-selfhost-nesting** | done 2026-09-02 | `m-selfhost-nesting` | [028](journal/028-selfhost-nesting.md) | 134 modules move into ten directories, and the prefixes turn out to have been holding module names out of the value namespace · **panel 102, ratified the same day** |
-| 30 | **M-corpus-coverage** | done 2026-09-02 | `m-corpus-coverage` | [029](journal/029-corpus-coverage.md) | every language form has a program that runs it · **scheduled by author instruction 2026-09-02**, ordered after the nesting so the new programs are written against the final layout |
-| 31 | **M-isolated-threads** | scheduled | — | — | Part 7.13 concurrency · **moved ahead of packages by author instruction, 2026-08-25** |
-| 32 | **M-package-manager** | scheduled | — | — | `heroes add`/`heroes fetch`; bindings instead of a standard library |
-| 33 | **M-qbe-backend** | scheduled | — | — | Part 7.14 — the proof that the IR is not C in disguise |
-| 34 | **M-lsp-server** | scheduled | — | — | `heroes lsp` |
-| 35 | **M-vscode-extension** | scheduled | — | — | the extension, complete |
-| 36 | **M-documentation-site** | done 2026-09-02 | `m-documentation-site` | [030](journal/030-documentation-site.md) | the site, anchored to programs that run · **taken OUT OF CHAIN ORDER by author instruction 2026-09-02**, in the same breath as the nesting and the corpus, because the feature it documents had just landed and the site was silent on it. Rows 31 to 35 keep their positions and their turn; the chain records what was planned as well as what happened, and this row is where they differ |
-| 37 | **M-interpolation-verdict** | scheduled | — | — | the ruling on design.md Part 7 item 7, string interpolation: the measured token cost and Part 11 effect that would let it in, or the Part 6 row that refuses it with the falsifier §12 demands · **scheduled by author instruction 2026-09-02** |
+| 27 | **M-argv-execution** | done 2026-08-31 | `m-argv-execution` | [026](journal/026-argv-execution.md) | the compiler runs programs by argument list, and the shell stops being the boundary |
+| 28 | **M-package-layout** | done 2026-09-02 | `m-package-layout` | [027](journal/027-package-layout.md) | `use` paths, the qualifier, `as`, and where a program's files live |
+| 29 | **M-selfhost-nesting** | done 2026-09-02 | `m-selfhost-nesting` | [028](journal/028-selfhost-nesting.md) | the compiler's own modules move into ten directories |
+| 30 | **M-corpus-coverage** | done 2026-09-02 | `m-corpus-coverage` | [029](journal/029-corpus-coverage.md) | every language form has a program that runs it |
+| 31 | **M-documentation-site** | done 2026-09-02 | `m-documentation-site` | [030](journal/030-documentation-site.md) | the site, anchored to programs that run |
+| 32 | **M-isolated-threads** | scheduled | — | — | Part 7.13 concurrency: per-thread heaps, copying at the boundaries, no scheduler |
+| 33 | **M-package-manager** | scheduled | — | — | `heroes add`/`heroes fetch`; bindings instead of a standard library |
+| 34 | **M-qbe-backend** | scheduled | — | — | Part 7.14 — the proof that the IR is not C in disguise |
+| 35 | **M-lsp-server** | scheduled | — | — | `heroes lsp` |
+| 36 | **M-vscode-extension** | scheduled | — | — | the extension, complete |
+| 37 | **M-interpolation-verdict** | scheduled | — | — | the ruling on design.md Part 7 item 7, string interpolation — a decision, not a feature |
 | 38 | **M-journey-book** | scheduled | — | — | the journey — how this language came to be |
 | 39 | **M-guide-book** | scheduled | — | — | the guide, as a book you would find in a shop · **§1.1** |
 | 40 | **M-publication-gate** | scheduled | — | — | the last gate before anything goes outward · CLAUDE.md §14 |
@@ -163,21 +184,57 @@ milestones and was never tagged. § The names carries them.
 
 `git tag --list --sort=creatordate` gives the same chronology from git itself.
 
+### Who scheduled what, and what ratified it
+
+Every sentence here stood **inside a cell** until 2026-09-03, where it hid the
+order the table exists to carry: the longest cell measured **383 characters**
+against the 91 the table's widest now runs to. They are keyed by **name**, not by
+row number, because a reorder moves a number and never a name (CLAUDE.md §14).
+
+- **M-argv-execution** — **panels 097 and 098, ratified 2026-08-30.** `sq()` is
+  deleted with it, and the Windows leg of CI goes green.
+- **M-package-layout** — **panels 099, 100 and 101, all three ratified the same
+  day**, 2026-09-02.
+- **M-selfhost-nesting** — **panel 102, ratified the same day.** What the
+  milestone found was not in its own plan: the flat prefixes had been holding
+  module names out of the namespace where values live, so the collisions that
+  mattered were local-against-module — 0 flat and 23 nested.
+- **M-corpus-coverage** — **scheduled by author instruction 2026-09-02**, and
+  ordered after the nesting so that the new programs are written against the
+  final layout.
+- **M-documentation-site** — **taken out of chain order by author instruction
+  2026-09-02**, in the same breath as the nesting and the corpus, because the
+  feature it documents had just landed and the site was silent on it. It was
+  planned at position 36, after M-vscode-extension. It stands at 31 because the
+  table runs closed-then-scheduled since 2026-09-03; the five milestones it
+  overtook keep their turn and their order among themselves. **What the table no
+  longer records is the plan** — that a milestone moved is here, in a sentence,
+  rather than in a row's position, which is what the author's *"la tabella la
+  voglio pulita"* decided.
+- **M-isolated-threads** — **moved ahead of packages by author instruction,
+  2026-08-25.**
+- **M-interpolation-verdict** — **scheduled by author instruction 2026-09-02.**
+
 ---
 
 ## The milestones, one by one
 
 One section per milestone that still has something to say, **in the order of the
-table above** — the table carries the numbers, the sections carry the order, and
-neither repeats the other (CLAUDE.md §14: order lives in one place).
+table above** — so the **seven closed** ones come first and the **nine
+scheduled** ones after (CLAUDE.md §14: the table carries the numbers, the
+sections carry the order, and neither repeats the other).
 
 **Rows 1–21 have no section here**, and that is the rule rather than an omission:
 a closed milestone's record is its journal, indexed at `docs/journal/README.md`.
-The four closed ones that do appear are here for one reason — their records are
-the journals; what is kept here is the reasoning a future milestone still has to
-honour.
+The seven closed ones that do appear say **(closed …)** in their heading and are
+here for one reason — their record is still the journal; what is kept here is the
+reasoning a future milestone has to honour. **Two of them said nothing of the
+kind until 2026-09-03** and went on describing their own work in the future
+tense a day after it had shipped: M-package-layout and M-documentation-site,
+both closed 2026-09-02. A closed milestone that reads as a plan is the one shape
+this section's own split exists to prevent.
 
-### M-selfhost-port — the port
+### M-selfhost-port — the port *(closed 2026-08-17)*
 
 Rust → Heroes into `selfhost/` (the directory was born here), file by file, **the
 goldens and M-program-corpus's corpus as the net**, the `PORT-DEBT` count as the
@@ -193,7 +250,7 @@ debugging a Heroes compiler written in Heroes is where the source mapping stops
 being a nicety. A golden runs lldb in batch mode and asserts that a breakpoint on
 a `.hero` line is hit (CLAUDE.md §9: every claim gets a test that makes it fire).
 
-### M-selfhost-fixpoint — the fixpoint and the seed · **v1**
+### M-selfhost-fixpoint — the fixpoint and the seed · **v1** *(closed 2026-08-18)*
 
 A builds `B.c`, B builds `C.c`, `diff B.c C.c` empty — generated C, not binaries,
 with the clang version pinned and recorded. The seed came with it:
@@ -209,7 +266,7 @@ expectation, so archiving it removes the only thing that can ask whether the two
 compilers agree; and `heroes measure` was not in the port, while design.md §1.6
 cited the bootstrap's `measure/gate.rs` as the spec budget's live enforcer.
 
-### M-harness-port — the net, in Heroes
+### M-harness-port — the net, in Heroes *(closed 2026-08-18)*
 
 The 4,279 lines of Rust harness (`golden` 1,095 · `surface` 2,105 · `corpus` 544
 · `milestones` 310 · `layout` 116 · `expectation` 109) became a Heroes program
@@ -227,7 +284,7 @@ entries at exit 0**, measured, which §1.12 forbids — so it is
 `popen`/`fgets`/`pclose`, measured working on both compilers, with the wait
 status from `pclose`.
 
-### M-bootstrap-archive — the third language dies
+### M-bootstrap-archive — the third language dies *(closed 2026-08-19)*
 
 `crates/` → `archive/bootstrap-rs/`, and the move was the last commit rather than
 the first, because five things died with the bootstrap and each needed a
@@ -296,7 +353,19 @@ that computes its own key.** The frontend is now ~18% of a build where the open
 item measured 83%, so an incremental frontend is the smaller half; the emission
 is the larger one. Both numbers are in `docs/work/SCHEDULED.md` with their dates.
 
-### M-package-layout — `use` paths, the qualifier, and where a program's files live
+### M-package-layout — `use` paths, the qualifier, and where a program's files live *(closed 2026-09-02)*
+
+**The record is [journal 027](journal/027-package-layout.md), and the rulings are
+panels 099, 100 and 101.** Everything below this line is the section **as it read
+the day the milestone opened**, kept rather than deleted for two reasons: a later
+milestone on modules inherits the same constraints, and a brief that outlives its
+own milestone is the only way to see what a sitting was not allowed to re-derive.
+**So read the tenses as 2026-08-25's.** The paragraph that begins *"Today a module
+name is one word"* describes the state this milestone **ended**: `use syntax/decl`
+compiles today. Its diagnostic did not die with it and is the one thing in that
+paragraph still live — measured 2026-09-03, `module_path_has_no_parts` now refuses
+the **dotted** spelling, `use geom.shapes` (`tests/golden/check/use-has-a-path.hero`),
+which is the form the ruling did not take.
 
 **Scheduled by author decision 2026-08-25** (`/decide`), taken mid-M-separate-compilation
 and recorded because the expectation came first: the author expected this
@@ -367,6 +436,30 @@ compiler's own source, and from the corpus, **without** a distributed package in
 hand. That is the trade the author took; if the sitting finds it cannot rule
 without that case, the honest outcome is a conservative default and a return
 condition, not an invented one.
+
+### M-documentation-site — the whole language, anchored to programs that run *(closed 2026-09-02)*
+
+**The record is [journal 030](journal/030-documentation-site.md).** The four
+bullets below were the milestone's **brief**, written while it was scheduled;
+what landed is the journal's to say, and the site's own register rules live in
+`site/README.md` § Style guide. Two of the four bind **any later work on the
+site** and are why this section is kept rather than folded into the journal: a
+code block comes from `examples/`, and publishing is a hard stop.
+
+- **The language documented in full**, page by page, for someone who has not read
+  `spec/heroes-spec.md` — the spec is the control instrument, not the teaching
+  text, and it is budgeted precisely so that it can never become one.
+- **Every code block on the site is a file in `examples/`**, not a snippet typed
+  into HTML. M-program-corpus is what makes this possible, and it converts
+  documentation drift into a test failure: a check asserts that each block
+  matches a program in the repository that compiles and runs. Documentation that
+  cannot rot is worth more than documentation that is merely current.
+- **A history of the language**, distilled from `DESIGN-LOG.md`, `docs/panel/`
+  and the journals: what was decided, what was refused, and the U-turns —
+  including the ones that look bad in retrospect, which are the ones worth
+  reading.
+- **Publishing stays a hard stop** (CLAUDE.md §14): the site is built here and
+  goes outward only when the author says so.
 
 ### M-isolated-threads — concurrency
 
@@ -446,28 +539,6 @@ extension somebody could install and forget about.
   smuggle it in.
 - **Packaging**: a `.vsix` that installs, with `heroes doctor` as the extension's
   own health check.
-
-### M-documentation-site — the whole language, anchored to programs that run
-
-**Scheduled, no warrant.** `site/` exists (`index.html`, its CNAME, and the
-register rules in `site/README.md` § Style guide, which stay in force — song
-titles as section nods, never lyrics; personality in the packaging, precision in
-the substrate).
-
-- **The language documented in full**, page by page, for someone who has not read
-  `spec/heroes-spec.md` — the spec is the control instrument, not the teaching
-  text, and it is budgeted precisely so that it can never become one.
-- **Every code block on the site is a file in `examples/`**, not a snippet typed
-  into HTML. M-program-corpus is what makes this possible, and it converts
-  documentation drift into a test failure: a check asserts that each block
-  matches a program in the repository that compiles and runs. Documentation that
-  cannot rot is worth more than documentation that is merely current.
-- **A history of the language**, distilled from `DESIGN-LOG.md`, `docs/panel/`
-  and the journals: what was decided, what was refused, and the U-turns —
-  including the ones that look bad in retrospect, which are the ones worth
-  reading.
-- **Publishing stays a hard stop** (CLAUDE.md §14): the site is built here and
-  goes outward only when the author says so.
 
 ### M-interpolation-verdict — the ruling on string interpolation
 

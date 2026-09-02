@@ -32,16 +32,16 @@ use ast
 
 ## The declaration
 
-# `use geom` — the module named, and nothing else on the line (panel 031).
+# `use geom`, `use syntax/decl as tree` — the module named, and the four
+# shapes that are not it (panels 031, 032, 099).
 #
-# The whole of it is one identifier, and the two rejections are why the panel
-# chose that spelling over a quoted path. A **string** is the shape four other
-# languages use and the shape a model on autopilot writes, so it is met with a
-# machine-applicable fix rather than a lecture: the repair is deleting two
-# characters, which is as certain as a fix gets. A **dotted or slashed path** is
-# the design space the bare identifier forecloses — there is no nesting, and
-# saying so at the point of the attempt is cheaper than a spec sentence nobody
-# reads twice.
+# A **string** is what four other languages spell and what a model on
+# autopilot writes, so it is met with a machine-applicable fix rather than a
+# lecture: the repair deletes two characters. A **dot** is the separator from
+# those same languages, and it is met with the spelling that works rather
+# than with an absence — this sentence read "there is no nesting" until
+# 2026-09-03, one day after the slash landed, which is CLAUDE.md §11's
+# premise expiring while the comment around it still reads as correct.
 function declaration(@c: cursor.Cursor, @uses: [ast.Use], text: str)
     keyword = cursor.current_span(c)
     _ = cursor.bump(@c)
