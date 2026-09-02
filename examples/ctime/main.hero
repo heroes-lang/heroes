@@ -22,10 +22,10 @@
 #
 # WHY `struct tm` IS THE RIGHT STRUCT AND `struct stat` IS NOT. The C standard
 # fixes every field of `struct tm` as an `int`, and fixes nothing about
-# `struct stat` at all. Measured on both machines this project builds on:
+# `struct stat` at all. Measured on all three platforms this project builds on:
 #
-#     struct tm       Windows 36 bytes    macOS 56 bytes
-#     tm_year etc.    Windows  4 bytes    macOS  4 bytes
+#     struct tm       Windows 36 bytes    macOS 56 bytes    Linux 56 bytes
+#     tm_year etc.    Windows  4 bytes    macOS  4 bytes    Linux  4 bytes
 #
 # **Different total size, identical field widths.** That pair is exactly what
 # `partial` is for, and it is a better demonstration than the program it
