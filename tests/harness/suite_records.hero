@@ -147,8 +147,15 @@ constant REFUSED: [str]
 # that makes a SILENTLY DROPPED row fail, which a set comparison alone
 # would not. It fired on the row that added it, which is the intended
 # direction: a new milestone reaches this number before it reaches a tag.
+#
+# **41 → 43 on 2026-09-02**, and it fired again exactly as designed: two
+# milestones were scheduled in `docs/work/SCHEDULED.md` (`M-corpus-coverage`
+# and `M-selfhost-nesting`, both by author instruction) and this check named
+# them both as *a name with no row in the alias table* in the same run that
+# filed them. A milestone reaches this number before it reaches a tag, and
+# now before it reaches a step.
 constant ROWS: i64
-    41
+    43
 
 # The two documents whose citations are checked. They are the two a reader is sent
 # to for a rule, and the only two this project rewrites rather than appends to.
