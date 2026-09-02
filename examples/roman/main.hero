@@ -1,0 +1,168 @@
+# Roman numerals, both ways — the program whose boundaries are famous.
+#
+# Corpus and regression material (CLAUDE.md §9), and it closes no measured
+# form gap: the ten programs before it took `examples/`'s unexercised-form
+# count to zero over 56 probed. What it adds is a body of code where the
+# ordinary case is trivial and every INTERESTING case is a subtraction — IV,
+# IX, XL, XC, CD, CM — so a mutation that shifts a boundary by one has
+# somewhere to hide and a test that names all six catches it.
+#
+# It is also the shortest honest demonstration of a table-driven loop in this
+# language: two parallel arrays walked in step, which is what a program writes
+# when it has no tuple and does not want a record for two fields.
+#
+# WHAT IS NOT HERE: any numeral above 3999, because the Romans had no
+# standard notation for it and inventing one would make the answers
+# uncheckable. The upper bound is refused rather than truncated.
+
+constant LARGEST: i64
+    3999
+
+# The values, largest first, with the six subtractive pairs in their places.
+# Two arrays rather than one array of records: the pairing is positional and
+# the loop below reads them in step, which is the whole shape this file is
+# for.
+function values() -> [i64]
+    return [1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1]
+
+function letters() -> [str]
+    return ["M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"]
+
+function to_roman(value: i64) -> str?
+    if value < 1
+        return fail("out_of_range", "there is no Roman numeral below I")
+
+    if value > LARGEST
+        return fail("out_of_range", "the Romans wrote nothing standard above MMMCMXCIX")
+    out: str @ ""
+    left: i64 @ value
+    at: i64 @ 0
+    all_values = values()
+    all_letters = letters()
+
+    while at < all_values.len()
+        # A while rather than an if: MMM is three thousands, so each entry
+        # may be used more than once — except the subtractive pairs, which
+        # cannot repeat because their own value forbids it.
+        while left >= all_values[at]
+            out @ out + all_letters[at]
+            left @ left - all_values[at]
+
+        at @ at + 1
+
+    return ok(out)
+
+function value_of_letter(letter: str) -> i64?
+    return match letter
+        "I" => ok(1)
+        "V" => ok(5)
+        "X" => ok(10)
+        "L" => ok(50)
+        "C" => ok(100)
+        "D" => ok(500)
+        "M" => ok(1000)
+        _   => fail("not_a_numeral", "`" + letter + "` is not a Roman letter")
+
+# Reading is the harder direction, and the rule is one sentence: a letter
+# worth less than the one after it is SUBTRACTED. Everything else adds.
+function from_roman(text: str) -> i64?
+    if text.len() == 0
+        return fail("empty", "there is no numeral in an empty string")
+    total: i64 @ 0
+    previous: i64 @ 0
+
+    # Walked backwards, so "the one after it" is the one already seen. The
+    # forward version needs a lookahead and gets the last letter wrong.
+    letters_here = characters(text)
+    i: i64 @ letters_here.len() - 1
+
+    while i >= 0
+        here = value_of_letter(letters_here[i])?
+
+        if here < previous
+            total @ total - here
+        else
+            total @ total + here
+            previous @ here
+        i @ i - 1
+
+    return ok(total)
+
+function characters(text: str) -> [str]
+    out: [str] @ []
+
+    for ch in text.chars()
+        out @ out.push(ch)
+
+    return out
+
+function main()
+    for one in [1, 4, 9, 14, 40, 90, 400, 900, 1994, 2024, LARGEST]
+        print(one.to_str() + " = " + to_roman(one).must())
+
+    print(from_roman("MCMXCIV").must())
+    print(from_roman("MMXXIV").must())
+    print(from_roman("MMMCMXCIX").must())
+
+    # The three ways there is no numeral.
+    print(to_roman(0).is_err())
+    print(to_roman(4000).is_err())
+    print(from_roman("MMQX").is_err())
+
+test "the six subtractive pairs are all written and all read"
+    assert to_roman(4).must() == "IV"
+    assert to_roman(9).must() == "IX"
+    assert to_roman(40).must() == "XL"
+    assert to_roman(90).must() == "XC"
+    assert to_roman(400).must() == "CD"
+    assert to_roman(900).must() == "CM"
+    assert from_roman("IV").must() == 4
+    assert from_roman("IX").must() == 9
+    assert from_roman("XL").must() == 40
+    assert from_roman("XC").must() == 90
+    assert from_roman("CD").must() == 400
+    assert from_roman("CM").must() == 900
+
+test "the neighbours of every pair are the ordinary case"
+    # 3 and 5 either side of 4, and so on: a boundary shifted by one shows
+    # here rather than in the pair itself.
+    assert to_roman(3).must() == "III"
+    assert to_roman(5).must() == "V"
+    assert to_roman(8).must() == "VIII"
+    assert to_roman(10).must() == "X"
+    assert to_roman(39).must() == "XXXIX"
+    assert to_roman(41).must() == "XLI"
+    assert to_roman(399).must() == "CCCXCIX"
+    assert to_roman(401).must() == "CDI"
+
+test "a round trip is the identity, on every value that has a numeral"
+    for one in [1, 2, 3, 4, 5, 9, 10, 14, 19, 40, 44, 49, 90, 99, 100, 400, 444, 500, 900, 999, 1000, 1994, 2024, 3888, 3999]
+        assert from_roman(to_roman(one).must()).must() == one
+
+test "the famous ones are what everybody knows them to be"
+    assert to_roman(1994).must() == "MCMXCIV"
+    assert to_roman(2024).must() == "MMXXIV"
+    assert to_roman(LARGEST).must() == "MMMCMXCIX"
+    assert from_roman("MCMLXIX").must() == 1969
+
+test "outside the range there is no numeral rather than a wrong one"
+    assert to_roman(0).is_err()
+    assert to_roman(0 - 1).is_err()
+    assert to_roman(4000).is_err()
+    assert to_roman(LARGEST + 1).is_err()
+    assert !to_roman(LARGEST).is_err()
+    assert !to_roman(1).is_err()
+
+test "a letter that is not a numeral fails, and so does nothing at all"
+    assert from_roman("MMQX").is_err()
+    assert from_roman("hello").is_err()
+    assert from_roman("").is_err()
+    assert from_roman("i").is_err()
+
+test "reading is lenient where writing is canonical, and that is stated"
+    # `IIII` is not what `to_roman` produces, and `from_roman` still reads it:
+    # the two directions are not inverses on non-canonical input. That is a
+    # choice, and naming it here is the point of the case.
+    assert from_roman("IIII").must() == 4
+    assert to_roman(4).must() == "IV"
+    assert to_roman(4).must() != "IIII"

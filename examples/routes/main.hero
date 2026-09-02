@@ -1,0 +1,168 @@
+# The shortest way between two stations — a breadth-first search over a map
+# of arrays.
+#
+# Corpus and regression material (CLAUDE.md §9). It closes no measured form
+# gap: with the ten programs before it, the count of language forms
+# `examples/` does not exercise is zero over 56 probed. What it adds is a
+# SHAPE — a graph as `{str: [str]}`, a frontier as an array used as a queue,
+# and a visited set as `{str: bool}` — which is the data-structure vocabulary
+# a person reaches for most often and which the corpus had only inside the
+# compiler's own source.
+#
+# WHY BREADTH-FIRST AND NOT DEPTH. A depth-first walk finds A path; only a
+# breadth-first one finds a SHORTEST path, and the difference is invisible
+# until the graph has two routes of different lengths. This one does, on
+# purpose, and the tests name both.
+#
+# THE FRONTIER IS AN ARRAY AND THE HEAD MOVES, rather than the array
+# shrinking. `spec:79` gives every value copy semantics, so removing the front
+# of an array copies the rest of it — an index that walks forward is the same
+# algorithm without the copy, and saying so is why this file does it that way.
+
+# A small network with two routes between the ends, one of them longer.
+function network() -> {str: [str]}
+    lines: {str: [str]} @ {}
+    lines["kings"] @ ["euston", "angel"]
+    lines["euston"] @ ["kings", "camden"]
+    lines["camden"] @ ["euston", "highgate"]
+    lines["angel"] @ ["kings", "highgate"]
+    lines["highgate"] @ ["camden", "angel"]
+    lines["isolated"] @ []
+    return lines
+
+function neighbours(lines: {str: [str]}, station: str) -> [str]
+    empty: [str] = []
+    return lines[station].default(empty)
+
+# The shortest route from `from` to `to`, as the stations along it. Absent
+# when there is none — which is a real answer and not a failure of the search,
+# so it is a `T?` rather than an empty array.
+function route(lines: {str: [str]}, from: str, to: str) -> [str]?
+    if lines[from].is_err() || lines[to].is_err()
+        return fail("no_such_station", "the network has no station by that name")
+
+    if from == to
+        return ok([from])
+    frontier: [str] @ [from]
+    came_from: {str: str} @ {}
+    seen: {str: bool} @ {}
+    seen[from] @ true
+    at: i64 @ 0
+
+    while at < frontier.len()
+        here = frontier[at]
+        at @ at + 1
+
+        for next in neighbours(lines, station: here)
+            if seen[next].default(false)
+                continue
+            seen[next] @ true
+            came_from[next] @ here
+
+            if next == to
+                return ok(walked_back(came_from, from: from, to: to))
+            frontier @ frontier.push(next)
+
+    return fail("unreachable", "no route from " + from + " to " + to)
+
+# The path, read backwards from the destination and then turned round. The
+# reversal is the reason `came_from` maps a station to the one BEFORE it and
+# not the other way: a station has one predecessor in a breadth-first tree
+# and may have many successors.
+function walked_back(came_from: {str: str}, from: str, to: str) -> [str]
+    backwards: [str] @ [to]
+    here: str @ to
+
+    while here != from
+        previous = came_from[here].default(from)
+        backwards @ backwards.push(previous)
+        here @ previous
+
+    forwards: [str] @ []
+    i: i64 @ backwards.len() - 1
+
+    while i >= 0
+        forwards @ forwards.push(backwards[i])
+        i @ i - 1
+
+    return forwards
+
+function stops(lines: {str: [str]}, from: str, to: str) -> i64?
+    return ok(route(lines, from: from, to: to)?.len() - 1)
+
+function main()
+    lines = network()
+
+    print(join(route(lines, from: "kings", to: "highgate").must(), " -> "))
+    print(stops(lines, from: "kings", to: "highgate").must())
+
+    # The longer way round, asked for from the other end — a shortest path is
+    # symmetric in an undirected graph, which is worth printing rather than
+    # only asserting.
+    print(join(route(lines, from: "highgate", to: "kings").must(), " -> "))
+
+    print(join(route(lines, from: "camden", to: "angel").must(), " -> "))
+    print(stops(lines, from: "kings", to: "kings").must())
+
+    # The two ways there is no answer, which are different answers.
+    print(route(lines, from: "kings", to: "isolated").is_err())
+    print(route(lines, from: "kings", to: "nowhere").is_err())
+
+test "the shortest route is the shortest, not merely a route"
+    lines = network()
+
+    # Two routes exist from kings to highgate: through angel, two stops, and
+    # through euston and camden, three. Breadth-first must find the short one.
+    assert route(lines, from: "kings", to: "highgate").must() == ["kings", "angel", "highgate"]
+    assert stops(lines, from: "kings", to: "highgate").must() == 2
+
+test "a route is symmetric in an undirected network"
+    lines = network()
+    there = route(lines, from: "kings", to: "highgate").must()
+    back = route(lines, from: "highgate", to: "kings").must()
+    assert there.len() == back.len()
+    assert back == ["highgate", "angel", "kings"]
+
+test "a station is zero stops from itself"
+    lines = network()
+    assert route(lines, from: "kings", to: "kings").must() == ["kings"]
+    assert stops(lines, from: "kings", to: "kings").must() == 0
+
+test "a neighbour is one stop away"
+    lines = network()
+    assert route(lines, from: "kings", to: "euston").must() == ["kings", "euston"]
+    assert stops(lines, from: "kings", to: "euston").must() == 1
+
+test "an unreachable station and an unknown one fail differently"
+    lines = network()
+
+    # `isolated` is in the network and has no lines: unreachable.
+    assert route(lines, from: "kings", to: "isolated").is_err()
+
+    # `nowhere` is not in the network at all: a different code, because a
+    # caller repairs the two differently.
+    assert route(lines, from: "kings", to: "nowhere").is_err()
+    assert route(lines, from: "nowhere", to: "kings").is_err()
+
+test "every station on a route is a neighbour of the one before it"
+    # The property that makes the answer a route and not a list of names.
+    lines = network()
+    path = route(lines, from: "kings", to: "camden").must()
+    i: i64 @ 1
+    linked: i64 @ 0
+
+    while i < path.len()
+        for one in neighbours(lines, station: path[i - 1])
+            if one == path[i]
+                linked @ linked + 1
+
+        i @ i + 1
+
+    assert linked == path.len() - 1
+    assert path.len() == 3
+
+test "a station absent from the map answers no neighbours rather than aborting"
+    lines = network()
+    assert neighbours(lines, station: "nowhere").len() == 0
+    assert neighbours(lines, station: "isolated").len() == 0
+    assert neighbours(lines, station: "kings").len() == 2
