@@ -211991,7 +211991,7 @@ bb0:
     return t20;
 }
 
-#line 66 "selfhost/check/state.hero"
+#line 94 "selfhost/check/state.hero"
 int64_t h_checkstate_local_type(h_checkstate_Checked h0_out, int64_t h1_index) {
 #line 211997 "main.c"
     int64_t t1;
@@ -212006,44 +212006,44 @@ int64_t h_checkstate_local_type(h_checkstate_Checked h0_out, int64_t h1_index) {
     int64_t t10;
     goto bb0;
 bb0:
-#line 67 "selfhost/check/state.hero"
+#line 95 "selfhost/check/state.hero"
     t1 = h1_index;
-#line 67 "selfhost/check/state.hero"
+#line 95 "selfhost/check/state.hero"
     t2 = h0_out;
-#line 67 "selfhost/check/state.hero"
+#line 95 "selfhost/check/state.hero"
     t3 = t2.f_local_types;
-#line 67 "selfhost/check/state.hero"
+#line 95 "selfhost/check/state.hero"
     t4 = hero_array_len(t3);
-#line 67 "selfhost/check/state.hero"
+#line 95 "selfhost/check/state.hero"
     t5 = t1 < t4;
-#line 67 "selfhost/check/state.hero"
+#line 95 "selfhost/check/state.hero"
     if (t5) goto bb2; else goto bb3;
-#line 67 "selfhost/check/state.hero"
+#line 95 "selfhost/check/state.hero"
 bb1:
-#line 69 "selfhost/check/state.hero"
+#line 97 "selfhost/check/state.hero"
     t10 = INT64_C(0);
-#line 69 "selfhost/check/state.hero"
+#line 97 "selfhost/check/state.hero"
     return t10;
-#line 69 "selfhost/check/state.hero"
+#line 97 "selfhost/check/state.hero"
 bb2:
-#line 68 "selfhost/check/state.hero"
+#line 96 "selfhost/check/state.hero"
     t6 = h0_out;
-#line 68 "selfhost/check/state.hero"
+#line 96 "selfhost/check/state.hero"
     t7 = t6.f_local_types;
-#line 68 "selfhost/check/state.hero"
+#line 96 "selfhost/check/state.hero"
     t8 = h1_index;
-#line 68 "selfhost/check/state.hero"
+#line 96 "selfhost/check/state.hero"
     t9 = *(int64_t const *)hero_array_at(t7, t8);
-#line 68 "selfhost/check/state.hero"
+#line 96 "selfhost/check/state.hero"
     return t9;
-#line 68 "selfhost/check/state.hero"
+#line 96 "selfhost/check/state.hero"
 bb3:
-#line 68 "selfhost/check/state.hero"
+#line 96 "selfhost/check/state.hero"
     goto bb1;
 #line 212044 "main.c"
 }
 
-#line 73 "selfhost/check/state.hero"
+#line 101 "selfhost/check/state.hero"
 h_0opt_e201354 h_checkstate_result_type(h_checkstate_Checked h0_out, int64_t h1_decl) {
 #line 212049 "main.c"
     h_0opt_e201354 h2_own2 = {0};
@@ -212055,47 +212055,47 @@ h_0opt_e201354 h_checkstate_result_type(h_checkstate_Checked h0_out, int64_t h1_
     h_0opt_e201354 t6 = {0};
     goto bb0;
 bb0:
-#line 74 "selfhost/check/state.hero"
+#line 102 "selfhost/check/state.hero"
     t1 = h0_out;
-#line 74 "selfhost/check/state.hero"
+#line 102 "selfhost/check/state.hero"
     t2 = t1.f_results;
-#line 74 "selfhost/check/state.hero"
+#line 102 "selfhost/check/state.hero"
     t3 = h1_decl;
-#line 74 "selfhost/check/state.hero"
+#line 102 "selfhost/check/state.hero"
     {
-#line 74 "selfhost/check/state.hero"
+#line 102 "selfhost/check/state.hero"
       const void *found = hero_map_find(t2, &t3);
-#line 74 "selfhost/check/state.hero"
+#line 102 "selfhost/check/state.hero"
       if (found == NULL) {
-#line 74 "selfhost/check/state.hero"
+#line 102 "selfhost/check/state.hero"
         t4 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 74 "selfhost/check/state.hero"
+#line 102 "selfhost/check/state.hero"
       } else {
-#line 74 "selfhost/check/state.hero"
+#line 102 "selfhost/check/state.hero"
         t4.tag = INT64_C(0);
-#line 74 "selfhost/check/state.hero"
+#line 102 "selfhost/check/state.hero"
         (&hero_desc_int)->copy(&t4.as.ok, found);
-#line 74 "selfhost/check/state.hero"
+#line 102 "selfhost/check/state.hero"
       }
-#line 74 "selfhost/check/state.hero"
+#line 102 "selfhost/check/state.hero"
     }
-#line 74 "selfhost/check/state.hero"
+#line 102 "selfhost/check/state.hero"
     t5 = h2_own2;
-#line 74 "selfhost/check/state.hero"
+#line 102 "selfhost/check/state.hero"
     h2_own2 = t4;
 #line 212087 "main.c"
     h_0opt_e201354_release(&t5);
-#line 74 "selfhost/check/state.hero"
+#line 102 "selfhost/check/state.hero"
 #line 212090 "main.c"
     h_0opt_e201354_retain(&t4);
-#line 74 "selfhost/check/state.hero"
+#line 102 "selfhost/check/state.hero"
     t6 = h2_own2;
 #line 212094 "main.c"
     h_0opt_e201354_release(&t6);
     return t4;
 }
 
-#line 77 "selfhost/check/state.hero"
+#line 105 "selfhost/check/state.hero"
 h_0opt_e201354 h_checkstate_written_type(h_checkstate_Checked h0_out, int64_t h1_id) {
 #line 212101 "main.c"
     h_0opt_e201354 h2_own2 = {0};
@@ -212107,47 +212107,47 @@ h_0opt_e201354 h_checkstate_written_type(h_checkstate_Checked h0_out, int64_t h1
     h_0opt_e201354 t6 = {0};
     goto bb0;
 bb0:
-#line 78 "selfhost/check/state.hero"
+#line 106 "selfhost/check/state.hero"
     t1 = h0_out;
-#line 78 "selfhost/check/state.hero"
+#line 106 "selfhost/check/state.hero"
     t2 = t1.f_written_types;
-#line 78 "selfhost/check/state.hero"
+#line 106 "selfhost/check/state.hero"
     t3 = h1_id;
-#line 78 "selfhost/check/state.hero"
+#line 106 "selfhost/check/state.hero"
     {
-#line 78 "selfhost/check/state.hero"
+#line 106 "selfhost/check/state.hero"
       const void *found = hero_map_find(t2, &t3);
-#line 78 "selfhost/check/state.hero"
+#line 106 "selfhost/check/state.hero"
       if (found == NULL) {
-#line 78 "selfhost/check/state.hero"
+#line 106 "selfhost/check/state.hero"
         t4 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 78 "selfhost/check/state.hero"
+#line 106 "selfhost/check/state.hero"
       } else {
-#line 78 "selfhost/check/state.hero"
+#line 106 "selfhost/check/state.hero"
         t4.tag = INT64_C(0);
-#line 78 "selfhost/check/state.hero"
+#line 106 "selfhost/check/state.hero"
         (&hero_desc_int)->copy(&t4.as.ok, found);
-#line 78 "selfhost/check/state.hero"
+#line 106 "selfhost/check/state.hero"
       }
-#line 78 "selfhost/check/state.hero"
+#line 106 "selfhost/check/state.hero"
     }
-#line 78 "selfhost/check/state.hero"
+#line 106 "selfhost/check/state.hero"
     t5 = h2_own2;
-#line 78 "selfhost/check/state.hero"
+#line 106 "selfhost/check/state.hero"
     h2_own2 = t4;
 #line 212139 "main.c"
     h_0opt_e201354_release(&t5);
-#line 78 "selfhost/check/state.hero"
+#line 106 "selfhost/check/state.hero"
 #line 212142 "main.c"
     h_0opt_e201354_retain(&t4);
-#line 78 "selfhost/check/state.hero"
+#line 106 "selfhost/check/state.hero"
     t6 = h2_own2;
 #line 212146 "main.c"
     h_0opt_e201354_release(&t6);
     return t4;
 }
 
-#line 107 "selfhost/check/state.hero"
+#line 135 "selfhost/check/state.hero"
 h_checkstate_Checker h_checkstate_new_checker(h_resolved_Resolved h0_out_of, int64_t h1_expr_count) {
 #line 212153 "main.c"
     h_checktable_Types h2_types = {0};
@@ -212308,559 +212308,559 @@ h_checkstate_Checker h_checkstate_new_checker(h_resolved_Resolved h0_out_of, int
     h_checkstate_Checker t128 = {0};
     goto bb0;
 bb0:
-#line 108 "selfhost/check/state.hero"
+#line 136 "selfhost/check/state.hero"
     t1 = h_checktable_new_types();
-#line 108 "selfhost/check/state.hero"
+#line 136 "selfhost/check/state.hero"
     t71 = h19_own19;
-#line 108 "selfhost/check/state.hero"
+#line 136 "selfhost/check/state.hero"
     h19_own19 = t1;
 #line 212318 "main.c"
     h_checktable_Types_release(&t71);
-#line 108 "selfhost/check/state.hero"
+#line 136 "selfhost/check/state.hero"
     t72 = h2_types;
 #line 212322 "main.c"
     h_checktable_Types_retain(&t1);
-#line 108 "selfhost/check/state.hero"
+#line 136 "selfhost/check/state.hero"
     h2_types = t1;
 #line 212326 "main.c"
     h_checktable_Types_release(&t72);
-#line 109 "selfhost/check/state.hero"
+#line 137 "selfhost/check/state.hero"
     t2 = hero_array_new(&hero_desc_int, 1);
-#line 109 "selfhost/check/state.hero"
+#line 137 "selfhost/check/state.hero"
     t73 = h20_own20;
-#line 109 "selfhost/check/state.hero"
+#line 137 "selfhost/check/state.hero"
     h20_own20 = t2;
 #line 212334 "main.c"
     hero_array_decref(t73);
-#line 109 "selfhost/check/state.hero"
+#line 137 "selfhost/check/state.hero"
     t74 = h3_local_types;
 #line 212338 "main.c"
     hero_array_incref(t2);
-#line 109 "selfhost/check/state.hero"
+#line 137 "selfhost/check/state.hero"
     h3_local_types = t2;
 #line 212342 "main.c"
     hero_array_decref(t74);
-#line 110 "selfhost/check/state.hero"
+#line 138 "selfhost/check/state.hero"
     t3 = INT64_C(0);
-#line 110 "selfhost/check/state.hero"
+#line 138 "selfhost/check/state.hero"
     h4_i = t3;
-#line 110 "selfhost/check/state.hero"
+#line 138 "selfhost/check/state.hero"
     goto bb1;
-#line 110 "selfhost/check/state.hero"
+#line 138 "selfhost/check/state.hero"
 bb1:
-#line 112 "selfhost/check/state.hero"
+#line 140 "selfhost/check/state.hero"
     t4 = h4_i;
-#line 112 "selfhost/check/state.hero"
+#line 140 "selfhost/check/state.hero"
     t5 = h0_out_of;
-#line 112 "selfhost/check/state.hero"
+#line 140 "selfhost/check/state.hero"
     t6 = t5.f_locals;
-#line 112 "selfhost/check/state.hero"
+#line 140 "selfhost/check/state.hero"
     t7 = hero_array_len(t6);
-#line 112 "selfhost/check/state.hero"
+#line 140 "selfhost/check/state.hero"
     t8 = t4 < t7;
-#line 112 "selfhost/check/state.hero"
+#line 140 "selfhost/check/state.hero"
     if (t8) goto bb2; else goto bb3;
-#line 112 "selfhost/check/state.hero"
+#line 140 "selfhost/check/state.hero"
 bb2:
-#line 113 "selfhost/check/state.hero"
+#line 141 "selfhost/check/state.hero"
     t10 = INT64_C(0);
-#line 113 "selfhost/check/state.hero"
+#line 141 "selfhost/check/state.hero"
     hero_array_push_owned(&h3_local_types, &t10);
-#line 114 "selfhost/check/state.hero"
+#line 142 "selfhost/check/state.hero"
     t12 = h4_i;
-#line 114 "selfhost/check/state.hero"
+#line 142 "selfhost/check/state.hero"
     t13 = INT64_C(1);
-#line 114 "selfhost/check/state.hero"
+#line 142 "selfhost/check/state.hero"
     if (__builtin_add_overflow(t12, t13, &t14)) hero_panic_overflow();
-#line 114 "selfhost/check/state.hero"
+#line 142 "selfhost/check/state.hero"
     h4_i = t14;
-#line 114 "selfhost/check/state.hero"
+#line 142 "selfhost/check/state.hero"
     goto bb1;
-#line 114 "selfhost/check/state.hero"
+#line 142 "selfhost/check/state.hero"
 bb3:
-#line 116 "selfhost/check/state.hero"
+#line 144 "selfhost/check/state.hero"
     t15 = hero_array_new(&hero_desc_int, 1);
-#line 116 "selfhost/check/state.hero"
+#line 144 "selfhost/check/state.hero"
     t75 = h21_own21;
-#line 116 "selfhost/check/state.hero"
+#line 144 "selfhost/check/state.hero"
     h21_own21 = t15;
 #line 212388 "main.c"
     hero_array_decref(t75);
-#line 116 "selfhost/check/state.hero"
+#line 144 "selfhost/check/state.hero"
     t76 = h5_expr_types;
 #line 212392 "main.c"
     hero_array_incref(t15);
-#line 116 "selfhost/check/state.hero"
+#line 144 "selfhost/check/state.hero"
     h5_expr_types = t15;
 #line 212396 "main.c"
     hero_array_decref(t76);
-#line 117 "selfhost/check/state.hero"
+#line 145 "selfhost/check/state.hero"
     t16 = INT64_C(0);
-#line 117 "selfhost/check/state.hero"
+#line 145 "selfhost/check/state.hero"
     h6_j = t16;
-#line 117 "selfhost/check/state.hero"
+#line 145 "selfhost/check/state.hero"
     goto bb4;
-#line 117 "selfhost/check/state.hero"
+#line 145 "selfhost/check/state.hero"
 bb4:
-#line 119 "selfhost/check/state.hero"
+#line 147 "selfhost/check/state.hero"
     t17 = h6_j;
-#line 119 "selfhost/check/state.hero"
+#line 147 "selfhost/check/state.hero"
     t18 = h1_expr_count;
-#line 119 "selfhost/check/state.hero"
+#line 147 "selfhost/check/state.hero"
     t19 = t17 < t18;
-#line 119 "selfhost/check/state.hero"
+#line 147 "selfhost/check/state.hero"
     if (t19) goto bb5; else goto bb6;
-#line 119 "selfhost/check/state.hero"
+#line 147 "selfhost/check/state.hero"
 bb5:
-#line 120 "selfhost/check/state.hero"
+#line 148 "selfhost/check/state.hero"
     t21 = INT64_C(0);
-#line 120 "selfhost/check/state.hero"
+#line 148 "selfhost/check/state.hero"
     hero_array_push_owned(&h5_expr_types, &t21);
-#line 121 "selfhost/check/state.hero"
+#line 149 "selfhost/check/state.hero"
     t23 = h6_j;
-#line 121 "selfhost/check/state.hero"
+#line 149 "selfhost/check/state.hero"
     t24 = INT64_C(1);
-#line 121 "selfhost/check/state.hero"
+#line 149 "selfhost/check/state.hero"
     if (__builtin_add_overflow(t23, t24, &t25)) hero_panic_overflow();
-#line 121 "selfhost/check/state.hero"
+#line 149 "selfhost/check/state.hero"
     h6_j = t25;
-#line 121 "selfhost/check/state.hero"
+#line 149 "selfhost/check/state.hero"
     goto bb4;
-#line 121 "selfhost/check/state.hero"
+#line 149 "selfhost/check/state.hero"
 bb6:
-#line 123 "selfhost/check/state.hero"
+#line 151 "selfhost/check/state.hero"
     t26 = hero_map_new(&hero_desc_int, &hero_desc_int, 0);
-#line 123 "selfhost/check/state.hero"
+#line 151 "selfhost/check/state.hero"
     t77 = h22_own22;
-#line 123 "selfhost/check/state.hero"
+#line 151 "selfhost/check/state.hero"
     h22_own22 = t26;
 #line 212438 "main.c"
     hero_map_decref(t77);
-#line 123 "selfhost/check/state.hero"
+#line 151 "selfhost/check/state.hero"
     t78 = h7_results;
 #line 212442 "main.c"
     hero_map_incref(t26);
-#line 123 "selfhost/check/state.hero"
+#line 151 "selfhost/check/state.hero"
     h7_results = t26;
 #line 212446 "main.c"
     hero_map_decref(t78);
-#line 124 "selfhost/check/state.hero"
+#line 152 "selfhost/check/state.hero"
     t27 = hero_map_new(&hero_desc_int, &hero_desc_int, 0);
-#line 124 "selfhost/check/state.hero"
+#line 152 "selfhost/check/state.hero"
     t79 = h23_own23;
-#line 124 "selfhost/check/state.hero"
+#line 152 "selfhost/check/state.hero"
     h23_own23 = t27;
 #line 212454 "main.c"
     hero_map_decref(t79);
-#line 124 "selfhost/check/state.hero"
+#line 152 "selfhost/check/state.hero"
     t80 = h8_written_types;
 #line 212458 "main.c"
     hero_map_incref(t27);
-#line 124 "selfhost/check/state.hero"
+#line 152 "selfhost/check/state.hero"
     h8_written_types = t27;
 #line 212462 "main.c"
     hero_map_decref(t80);
-#line 125 "selfhost/check/state.hero"
+#line 153 "selfhost/check/state.hero"
     t28 = hero_array_new(&h_checkstate_Hole_desc, 1);
-#line 125 "selfhost/check/state.hero"
+#line 153 "selfhost/check/state.hero"
     t81 = h24_own24;
-#line 125 "selfhost/check/state.hero"
+#line 153 "selfhost/check/state.hero"
     h24_own24 = t28;
 #line 212470 "main.c"
     hero_array_decref(t81);
-#line 125 "selfhost/check/state.hero"
+#line 153 "selfhost/check/state.hero"
     t82 = h9_holes;
 #line 212474 "main.c"
     hero_array_incref(t28);
-#line 125 "selfhost/check/state.hero"
+#line 153 "selfhost/check/state.hero"
     h9_holes = t28;
 #line 212478 "main.c"
     hero_array_decref(t82);
-#line 126 "selfhost/check/state.hero"
+#line 154 "selfhost/check/state.hero"
     t29 = hero_array_new(&hero_desc_int, 1);
-#line 126 "selfhost/check/state.hero"
+#line 154 "selfhost/check/state.hero"
     t83 = h25_own25;
-#line 126 "selfhost/check/state.hero"
+#line 154 "selfhost/check/state.hero"
     h25_own25 = t29;
 #line 212486 "main.c"
     hero_array_decref(t83);
-#line 126 "selfhost/check/state.hero"
+#line 154 "selfhost/check/state.hero"
     t84 = h10_type_order;
 #line 212490 "main.c"
     hero_array_incref(t29);
-#line 126 "selfhost/check/state.hero"
+#line 154 "selfhost/check/state.hero"
     h10_type_order = t29;
 #line 212494 "main.c"
     hero_array_decref(t84);
-#line 127 "selfhost/check/state.hero"
+#line 155 "selfhost/check/state.hero"
     t30 = hero_map_new(&hero_desc_int, &hero_desc_array, 0);
-#line 127 "selfhost/check/state.hero"
+#line 155 "selfhost/check/state.hero"
     t85 = h26_own26;
-#line 127 "selfhost/check/state.hero"
+#line 155 "selfhost/check/state.hero"
     h26_own26 = t30;
 #line 212502 "main.c"
     hero_map_decref(t85);
-#line 127 "selfhost/check/state.hero"
+#line 155 "selfhost/check/state.hero"
     t86 = h11_instantiations;
 #line 212506 "main.c"
     hero_map_incref(t30);
-#line 127 "selfhost/check/state.hero"
+#line 155 "selfhost/check/state.hero"
     h11_instantiations = t30;
 #line 212510 "main.c"
     hero_map_decref(t86);
-#line 128 "selfhost/check/state.hero"
+#line 156 "selfhost/check/state.hero"
     t31 = hero_array_new(&hero_desc_bool, 1);
-#line 128 "selfhost/check/state.hero"
+#line 156 "selfhost/check/state.hero"
     t87 = h27_own27;
-#line 128 "selfhost/check/state.hero"
+#line 156 "selfhost/check/state.hero"
     h27_own27 = t31;
 #line 212518 "main.c"
     hero_array_decref(t87);
-#line 128 "selfhost/check/state.hero"
+#line 156 "selfhost/check/state.hero"
     t88 = h12_counted;
 #line 212522 "main.c"
     hero_array_incref(t31);
-#line 128 "selfhost/check/state.hero"
+#line 156 "selfhost/check/state.hero"
     h12_counted = t31;
 #line 212526 "main.c"
     hero_array_decref(t88);
-#line 129 "selfhost/check/state.hero"
+#line 157 "selfhost/check/state.hero"
     t32 = hero_array_new(&h_diag_Diagnostic_desc, 1);
-#line 129 "selfhost/check/state.hero"
+#line 157 "selfhost/check/state.hero"
     t89 = h28_own28;
-#line 129 "selfhost/check/state.hero"
+#line 157 "selfhost/check/state.hero"
     h28_own28 = t32;
 #line 212534 "main.c"
     hero_array_decref(t89);
-#line 129 "selfhost/check/state.hero"
+#line 157 "selfhost/check/state.hero"
     t90 = h13_diagnostics;
 #line 212538 "main.c"
     hero_array_incref(t32);
-#line 129 "selfhost/check/state.hero"
+#line 157 "selfhost/check/state.hero"
     h13_diagnostics = t32;
 #line 212542 "main.c"
     hero_array_decref(t90);
-#line 131 "selfhost/check/state.hero"
+#line 159 "selfhost/check/state.hero"
     t33 = h2_types;
-#line 132 "selfhost/check/state.hero"
+#line 160 "selfhost/check/state.hero"
     t34 = h3_local_types;
-#line 133 "selfhost/check/state.hero"
+#line 161 "selfhost/check/state.hero"
     t35 = h7_results;
-#line 134 "selfhost/check/state.hero"
+#line 162 "selfhost/check/state.hero"
     t36 = h8_written_types;
-#line 135 "selfhost/check/state.hero"
+#line 163 "selfhost/check/state.hero"
     t37 = h5_expr_types;
-#line 136 "selfhost/check/state.hero"
+#line 164 "selfhost/check/state.hero"
     t38 = h9_holes;
-#line 137 "selfhost/check/state.hero"
+#line 165 "selfhost/check/state.hero"
     t39 = h10_type_order;
-#line 138 "selfhost/check/state.hero"
+#line 166 "selfhost/check/state.hero"
     t40 = h11_instantiations;
-#line 139 "selfhost/check/state.hero"
+#line 167 "selfhost/check/state.hero"
     t41 = h12_counted;
-#line 140 "selfhost/check/state.hero"
+#line 168 "selfhost/check/state.hero"
     t42 = h13_diagnostics;
-#line 130 "selfhost/check/state.hero"
+#line 158 "selfhost/check/state.hero"
 #line 212565 "main.c"
     h_checktable_Types_retain(&t33);
-#line 130 "selfhost/check/state.hero"
+#line 158 "selfhost/check/state.hero"
 #line 212568 "main.c"
     hero_array_incref(t34);
-#line 130 "selfhost/check/state.hero"
+#line 158 "selfhost/check/state.hero"
 #line 212571 "main.c"
     hero_map_incref(t35);
-#line 130 "selfhost/check/state.hero"
+#line 158 "selfhost/check/state.hero"
 #line 212574 "main.c"
     hero_map_incref(t36);
-#line 130 "selfhost/check/state.hero"
+#line 158 "selfhost/check/state.hero"
 #line 212577 "main.c"
     hero_array_incref(t37);
-#line 130 "selfhost/check/state.hero"
+#line 158 "selfhost/check/state.hero"
 #line 212580 "main.c"
     hero_array_incref(t38);
-#line 130 "selfhost/check/state.hero"
+#line 158 "selfhost/check/state.hero"
 #line 212583 "main.c"
     hero_array_incref(t39);
-#line 130 "selfhost/check/state.hero"
+#line 158 "selfhost/check/state.hero"
 #line 212586 "main.c"
     hero_map_incref(t40);
-#line 130 "selfhost/check/state.hero"
+#line 158 "selfhost/check/state.hero"
 #line 212589 "main.c"
     hero_array_incref(t41);
-#line 130 "selfhost/check/state.hero"
+#line 158 "selfhost/check/state.hero"
 #line 212592 "main.c"
     hero_array_incref(t42);
-#line 130 "selfhost/check/state.hero"
+#line 158 "selfhost/check/state.hero"
     t43 = (h_checkstate_Checked){.f_types = t33, .f_local_types = t34, .f_results = t35, .f_written_types = t36, .f_expr_types = t37, .f_holes = t38, .f_type_order = t39, .f_instantiations = t40, .f_counted = t41, .f_diagnostics = t42};
-#line 130 "selfhost/check/state.hero"
+#line 158 "selfhost/check/state.hero"
     t91 = h29_own29;
-#line 130 "selfhost/check/state.hero"
+#line 158 "selfhost/check/state.hero"
     h29_own29 = t43;
 #line 212600 "main.c"
     h_checkstate_Checked_release(&t91);
-#line 130 "selfhost/check/state.hero"
+#line 158 "selfhost/check/state.hero"
     t92 = h14_out;
 #line 212604 "main.c"
     h_checkstate_Checked_retain(&t43);
-#line 130 "selfhost/check/state.hero"
+#line 158 "selfhost/check/state.hero"
     h14_out = t43;
 #line 212608 "main.c"
     h_checkstate_Checked_release(&t92);
-#line 142 "selfhost/check/state.hero"
+#line 170 "selfhost/check/state.hero"
     t44 = hero_map_new(&hero_desc_int, &hero_desc_int, 0);
-#line 142 "selfhost/check/state.hero"
+#line 170 "selfhost/check/state.hero"
     t93 = h30_own30;
-#line 142 "selfhost/check/state.hero"
+#line 170 "selfhost/check/state.hero"
     h30_own30 = t44;
 #line 212616 "main.c"
     hero_map_decref(t93);
-#line 142 "selfhost/check/state.hero"
+#line 170 "selfhost/check/state.hero"
     t94 = h15_locals_by_span;
 #line 212620 "main.c"
     hero_map_incref(t44);
-#line 142 "selfhost/check/state.hero"
+#line 170 "selfhost/check/state.hero"
     h15_locals_by_span = t44;
 #line 212624 "main.c"
     hero_map_decref(t94);
-#line 143 "selfhost/check/state.hero"
+#line 171 "selfhost/check/state.hero"
     t45 = INT64_C(0);
-#line 143 "selfhost/check/state.hero"
+#line 171 "selfhost/check/state.hero"
     h16_k = t45;
-#line 143 "selfhost/check/state.hero"
+#line 171 "selfhost/check/state.hero"
     goto bb7;
-#line 143 "selfhost/check/state.hero"
+#line 171 "selfhost/check/state.hero"
 bb7:
-#line 145 "selfhost/check/state.hero"
+#line 173 "selfhost/check/state.hero"
     t46 = h16_k;
-#line 145 "selfhost/check/state.hero"
+#line 173 "selfhost/check/state.hero"
     t47 = h0_out_of;
-#line 145 "selfhost/check/state.hero"
+#line 173 "selfhost/check/state.hero"
     t48 = t47.f_locals;
-#line 145 "selfhost/check/state.hero"
+#line 173 "selfhost/check/state.hero"
     t49 = hero_array_len(t48);
-#line 145 "selfhost/check/state.hero"
+#line 173 "selfhost/check/state.hero"
     t50 = t46 < t49;
-#line 145 "selfhost/check/state.hero"
+#line 173 "selfhost/check/state.hero"
     if (t50) goto bb8; else goto bb9;
-#line 145 "selfhost/check/state.hero"
+#line 173 "selfhost/check/state.hero"
 bb8:
-#line 146 "selfhost/check/state.hero"
+#line 174 "selfhost/check/state.hero"
     t51 = h0_out_of;
-#line 146 "selfhost/check/state.hero"
+#line 174 "selfhost/check/state.hero"
     t52 = t51.f_locals;
-#line 146 "selfhost/check/state.hero"
+#line 174 "selfhost/check/state.hero"
     t53 = h16_k;
-#line 146 "selfhost/check/state.hero"
+#line 174 "selfhost/check/state.hero"
     t54 = *(h_resolved_Local const *)hero_array_at(t52, t53);
-#line 146 "selfhost/check/state.hero"
+#line 174 "selfhost/check/state.hero"
     t55 = t54.f_name;
-#line 146 "selfhost/check/state.hero"
+#line 174 "selfhost/check/state.hero"
     t56 = t55.f_start;
-#line 146 "selfhost/check/state.hero"
+#line 174 "selfhost/check/state.hero"
     t57 = h16_k;
-#line 146 "selfhost/check/state.hero"
+#line 174 "selfhost/check/state.hero"
     hero_map_set(&(h15_locals_by_span), &t56, &t57);
-#line 147 "selfhost/check/state.hero"
+#line 175 "selfhost/check/state.hero"
     t58 = h16_k;
-#line 147 "selfhost/check/state.hero"
+#line 175 "selfhost/check/state.hero"
     t59 = INT64_C(1);
-#line 147 "selfhost/check/state.hero"
+#line 175 "selfhost/check/state.hero"
     if (__builtin_add_overflow(t58, t59, &t60)) hero_panic_overflow();
-#line 147 "selfhost/check/state.hero"
+#line 175 "selfhost/check/state.hero"
     h16_k = t60;
-#line 147 "selfhost/check/state.hero"
+#line 175 "selfhost/check/state.hero"
     goto bb7;
-#line 147 "selfhost/check/state.hero"
+#line 175 "selfhost/check/state.hero"
 bb9:
-#line 149 "selfhost/check/state.hero"
+#line 177 "selfhost/check/state.hero"
     t61 = hero_array_new(&hero_desc_str, 1);
-#line 149 "selfhost/check/state.hero"
+#line 177 "selfhost/check/state.hero"
     t95 = h31_own31;
-#line 149 "selfhost/check/state.hero"
+#line 177 "selfhost/check/state.hero"
     h31_own31 = t61;
 #line 212682 "main.c"
     hero_array_decref(t95);
-#line 149 "selfhost/check/state.hero"
+#line 177 "selfhost/check/state.hero"
     t96 = h17_generic_names;
 #line 212686 "main.c"
     hero_array_incref(t61);
-#line 149 "selfhost/check/state.hero"
+#line 177 "selfhost/check/state.hero"
     h17_generic_names = t61;
 #line 212690 "main.c"
     hero_array_decref(t96);
-#line 150 "selfhost/check/state.hero"
+#line 178 "selfhost/check/state.hero"
     t62 = hero_array_new(&h_diag_Diagnostic_desc, 1);
-#line 150 "selfhost/check/state.hero"
+#line 178 "selfhost/check/state.hero"
     t97 = h32_own32;
-#line 150 "selfhost/check/state.hero"
+#line 178 "selfhost/check/state.hero"
     h32_own32 = t62;
 #line 212698 "main.c"
     hero_array_decref(t97);
-#line 150 "selfhost/check/state.hero"
+#line 178 "selfhost/check/state.hero"
     t98 = h18_missing_returns;
 #line 212702 "main.c"
     hero_array_incref(t62);
-#line 150 "selfhost/check/state.hero"
+#line 178 "selfhost/check/state.hero"
     h18_missing_returns = t62;
 #line 212706 "main.c"
     hero_array_decref(t98);
-#line 152 "selfhost/check/state.hero"
+#line 180 "selfhost/check/state.hero"
     t63 = h14_out;
-#line 153 "selfhost/check/state.hero"
+#line 181 "selfhost/check/state.hero"
     t64 = INT64_C(0);
-#line 154 "selfhost/check/state.hero"
+#line 182 "selfhost/check/state.hero"
     t65 = false;
-#line 155 "selfhost/check/state.hero"
+#line 183 "selfhost/check/state.hero"
     t66 = INT64_C(0);
-#line 156 "selfhost/check/state.hero"
+#line 184 "selfhost/check/state.hero"
     t67 = h15_locals_by_span;
-#line 157 "selfhost/check/state.hero"
+#line 185 "selfhost/check/state.hero"
     t68 = h17_generic_names;
-#line 158 "selfhost/check/state.hero"
+#line 186 "selfhost/check/state.hero"
     t69 = h18_missing_returns;
-#line 151 "selfhost/check/state.hero"
+#line 179 "selfhost/check/state.hero"
 #line 212723 "main.c"
     h_checkstate_Checked_retain(&t63);
-#line 151 "selfhost/check/state.hero"
+#line 179 "selfhost/check/state.hero"
 #line 212726 "main.c"
     hero_map_incref(t67);
-#line 151 "selfhost/check/state.hero"
+#line 179 "selfhost/check/state.hero"
 #line 212729 "main.c"
     hero_array_incref(t68);
-#line 151 "selfhost/check/state.hero"
+#line 179 "selfhost/check/state.hero"
 #line 212732 "main.c"
     hero_array_incref(t69);
-#line 151 "selfhost/check/state.hero"
+#line 179 "selfhost/check/state.hero"
     t70 = (h_checkstate_Checker){.f_out = t63, .f_result = t64, .f_fallible = t65, .f_loops = t66, .f_locals_by_span = t67, .f_generic_names = t68, .f_missing_returns = t69};
-#line 151 "selfhost/check/state.hero"
+#line 179 "selfhost/check/state.hero"
     t99 = h33_own33;
-#line 151 "selfhost/check/state.hero"
+#line 179 "selfhost/check/state.hero"
     h33_own33 = t70;
 #line 212740 "main.c"
     h_checkstate_Checker_release(&t99);
-#line 151 "selfhost/check/state.hero"
+#line 179 "selfhost/check/state.hero"
 #line 212743 "main.c"
     h_checkstate_Checker_retain(&t70);
-#line 151 "selfhost/check/state.hero"
+#line 179 "selfhost/check/state.hero"
     t100 = h2_types;
 #line 212747 "main.c"
     h_checktable_Types_release(&t100);
-#line 151 "selfhost/check/state.hero"
+#line 179 "selfhost/check/state.hero"
     t101 = h3_local_types;
 #line 212751 "main.c"
     hero_array_decref(t101);
-#line 151 "selfhost/check/state.hero"
+#line 179 "selfhost/check/state.hero"
     t102 = h5_expr_types;
 #line 212755 "main.c"
     hero_array_decref(t102);
-#line 151 "selfhost/check/state.hero"
+#line 179 "selfhost/check/state.hero"
     t103 = h7_results;
 #line 212759 "main.c"
     hero_map_decref(t103);
-#line 151 "selfhost/check/state.hero"
+#line 179 "selfhost/check/state.hero"
     t104 = h8_written_types;
 #line 212763 "main.c"
     hero_map_decref(t104);
-#line 151 "selfhost/check/state.hero"
+#line 179 "selfhost/check/state.hero"
     t105 = h9_holes;
 #line 212767 "main.c"
     hero_array_decref(t105);
-#line 151 "selfhost/check/state.hero"
+#line 179 "selfhost/check/state.hero"
     t106 = h10_type_order;
 #line 212771 "main.c"
     hero_array_decref(t106);
-#line 151 "selfhost/check/state.hero"
+#line 179 "selfhost/check/state.hero"
     t107 = h11_instantiations;
 #line 212775 "main.c"
     hero_map_decref(t107);
-#line 151 "selfhost/check/state.hero"
+#line 179 "selfhost/check/state.hero"
     t108 = h12_counted;
 #line 212779 "main.c"
     hero_array_decref(t108);
-#line 151 "selfhost/check/state.hero"
+#line 179 "selfhost/check/state.hero"
     t109 = h13_diagnostics;
 #line 212783 "main.c"
     hero_array_decref(t109);
-#line 151 "selfhost/check/state.hero"
+#line 179 "selfhost/check/state.hero"
     t110 = h14_out;
 #line 212787 "main.c"
     h_checkstate_Checked_release(&t110);
-#line 151 "selfhost/check/state.hero"
+#line 179 "selfhost/check/state.hero"
     t111 = h15_locals_by_span;
 #line 212791 "main.c"
     hero_map_decref(t111);
-#line 151 "selfhost/check/state.hero"
+#line 179 "selfhost/check/state.hero"
     t112 = h17_generic_names;
 #line 212795 "main.c"
     hero_array_decref(t112);
-#line 151 "selfhost/check/state.hero"
+#line 179 "selfhost/check/state.hero"
     t113 = h18_missing_returns;
 #line 212799 "main.c"
     hero_array_decref(t113);
-#line 151 "selfhost/check/state.hero"
+#line 179 "selfhost/check/state.hero"
     t114 = h19_own19;
 #line 212803 "main.c"
     h_checktable_Types_release(&t114);
-#line 151 "selfhost/check/state.hero"
+#line 179 "selfhost/check/state.hero"
     t115 = h20_own20;
 #line 212807 "main.c"
     hero_array_decref(t115);
-#line 151 "selfhost/check/state.hero"
+#line 179 "selfhost/check/state.hero"
     t116 = h21_own21;
 #line 212811 "main.c"
     hero_array_decref(t116);
-#line 151 "selfhost/check/state.hero"
+#line 179 "selfhost/check/state.hero"
     t117 = h22_own22;
 #line 212815 "main.c"
     hero_map_decref(t117);
-#line 151 "selfhost/check/state.hero"
+#line 179 "selfhost/check/state.hero"
     t118 = h23_own23;
 #line 212819 "main.c"
     hero_map_decref(t118);
-#line 151 "selfhost/check/state.hero"
+#line 179 "selfhost/check/state.hero"
     t119 = h24_own24;
 #line 212823 "main.c"
     hero_array_decref(t119);
-#line 151 "selfhost/check/state.hero"
+#line 179 "selfhost/check/state.hero"
     t120 = h25_own25;
 #line 212827 "main.c"
     hero_array_decref(t120);
-#line 151 "selfhost/check/state.hero"
+#line 179 "selfhost/check/state.hero"
     t121 = h26_own26;
 #line 212831 "main.c"
     hero_map_decref(t121);
-#line 151 "selfhost/check/state.hero"
+#line 179 "selfhost/check/state.hero"
     t122 = h27_own27;
 #line 212835 "main.c"
     hero_array_decref(t122);
-#line 151 "selfhost/check/state.hero"
+#line 179 "selfhost/check/state.hero"
     t123 = h28_own28;
 #line 212839 "main.c"
     hero_array_decref(t123);
-#line 151 "selfhost/check/state.hero"
+#line 179 "selfhost/check/state.hero"
     t124 = h29_own29;
 #line 212843 "main.c"
     h_checkstate_Checked_release(&t124);
-#line 151 "selfhost/check/state.hero"
+#line 179 "selfhost/check/state.hero"
     t125 = h30_own30;
 #line 212847 "main.c"
     hero_map_decref(t125);
-#line 151 "selfhost/check/state.hero"
+#line 179 "selfhost/check/state.hero"
     t126 = h31_own31;
 #line 212851 "main.c"
     hero_array_decref(t126);
-#line 151 "selfhost/check/state.hero"
+#line 179 "selfhost/check/state.hero"
     t127 = h32_own32;
 #line 212855 "main.c"
     hero_array_decref(t127);
-#line 151 "selfhost/check/state.hero"
+#line 179 "selfhost/check/state.hero"
     t128 = h33_own33;
 #line 212859 "main.c"
     h_checkstate_Checker_release(&t128);
     return t70;
 }
 
-#line 161 "selfhost/check/state.hero"
+#line 189 "selfhost/check/state.hero"
 int64_t h_checkstate_error_ty_of(h_checkstate_Checker h0_c) {
 #line 212866 "main.c"
     h_checkstate_Checker t1 = {0};
@@ -212869,20 +212869,20 @@ int64_t h_checkstate_error_ty_of(h_checkstate_Checker h0_c) {
     int64_t t4;
     goto bb0;
 bb0:
-#line 162 "selfhost/check/state.hero"
+#line 190 "selfhost/check/state.hero"
     t1 = h0_c;
-#line 162 "selfhost/check/state.hero"
+#line 190 "selfhost/check/state.hero"
     t2 = t1.f_out;
-#line 162 "selfhost/check/state.hero"
+#line 190 "selfhost/check/state.hero"
     t3 = t2.f_types;
-#line 162 "selfhost/check/state.hero"
+#line 190 "selfhost/check/state.hero"
     t4 = h_checktable_error_ty(t3);
-#line 162 "selfhost/check/state.hero"
+#line 190 "selfhost/check/state.hero"
     return t4;
 #line 212883 "main.c"
 }
 
-#line 164 "selfhost/check/state.hero"
+#line 192 "selfhost/check/state.hero"
 void h_checkstate_push_diagnostic(h_checkstate_Checker *ph0_c, h_diag_Diagnostic h1_d) {
 #line 212888 "main.c"
     h_checkstate_Checker h0_c = {0};
@@ -212898,39 +212898,39 @@ void h_checkstate_push_diagnostic(h_checkstate_Checker *ph0_c, h_diag_Diagnostic
     h0_c = *ph0_c;
     goto bb0;
 bb0:
-#line 165 "selfhost/check/state.hero"
+#line 193 "selfhost/check/state.hero"
     t1 = h0_c;
-#line 165 "selfhost/check/state.hero"
+#line 193 "selfhost/check/state.hero"
     t2 = t1.f_out;
-#line 165 "selfhost/check/state.hero"
+#line 193 "selfhost/check/state.hero"
     t3 = t2.f_diagnostics;
-#line 165 "selfhost/check/state.hero"
+#line 193 "selfhost/check/state.hero"
     t4 = h1_d;
-#line 165 "selfhost/check/state.hero"
+#line 193 "selfhost/check/state.hero"
     t5 = hero_array_push(t3, &t4);
-#line 165 "selfhost/check/state.hero"
+#line 193 "selfhost/check/state.hero"
     t6 = h2_own2;
-#line 165 "selfhost/check/state.hero"
+#line 193 "selfhost/check/state.hero"
     h2_own2 = t5;
 #line 212916 "main.c"
     hero_array_decref(t6);
-#line 165 "selfhost/check/state.hero"
+#line 193 "selfhost/check/state.hero"
     t7 = h0_c.f_out.f_diagnostics;
 #line 212920 "main.c"
     hero_array_incref(t5);
-#line 165 "selfhost/check/state.hero"
+#line 193 "selfhost/check/state.hero"
     h0_c.f_out.f_diagnostics = t5;
 #line 212924 "main.c"
     hero_array_decref(t7);
     *ph0_c = h0_c;
-#line 164 "selfhost/check/state.hero"
+#line 192 "selfhost/check/state.hero"
     t8 = h2_own2;
 #line 212929 "main.c"
     hero_array_decref(t8);
     return;
 }
 
-#line 169 "selfhost/check/state.hero"
+#line 197 "selfhost/check/state.hero"
 HeroStr h_checkstate_show(h_checkstate_Checker h0_c, h_source_Source h1_s, HeroArrayHeader * h2_decls, int64_t h3_id) {
 #line 212936 "main.c"
     HeroStr h4_own4 = {0};
@@ -212947,41 +212947,41 @@ HeroStr h_checkstate_show(h_checkstate_Checker h0_c, h_source_Source h1_s, HeroA
     HeroStr t11 = {0};
     goto bb0;
 bb0:
-#line 170 "selfhost/check/state.hero"
+#line 198 "selfhost/check/state.hero"
     t1 = h0_c;
-#line 170 "selfhost/check/state.hero"
+#line 198 "selfhost/check/state.hero"
     t2 = t1.f_out;
-#line 170 "selfhost/check/state.hero"
+#line 198 "selfhost/check/state.hero"
     t3 = t2.f_types;
-#line 170 "selfhost/check/state.hero"
+#line 198 "selfhost/check/state.hero"
     t4 = h1_s;
-#line 170 "selfhost/check/state.hero"
+#line 198 "selfhost/check/state.hero"
     t5 = h2_decls;
-#line 170 "selfhost/check/state.hero"
+#line 198 "selfhost/check/state.hero"
     t6 = h3_id;
-#line 170 "selfhost/check/state.hero"
+#line 198 "selfhost/check/state.hero"
     t7 = h0_c;
-#line 170 "selfhost/check/state.hero"
+#line 198 "selfhost/check/state.hero"
     t8 = t7.f_generic_names;
-#line 170 "selfhost/check/state.hero"
+#line 198 "selfhost/check/state.hero"
     t9 = h_checkrender_render_ty(t3, t4, t5, t6, t8);
-#line 170 "selfhost/check/state.hero"
+#line 198 "selfhost/check/state.hero"
     t10 = h4_own4;
-#line 170 "selfhost/check/state.hero"
+#line 198 "selfhost/check/state.hero"
     h4_own4 = t9;
 #line 212973 "main.c"
     hero_str_decref(t10);
-#line 170 "selfhost/check/state.hero"
+#line 198 "selfhost/check/state.hero"
 #line 212976 "main.c"
     hero_str_incref(t9);
-#line 170 "selfhost/check/state.hero"
+#line 198 "selfhost/check/state.hero"
     t11 = h4_own4;
 #line 212980 "main.c"
     hero_str_decref(t11);
     return t9;
 }
 
-#line 175 "selfhost/check/state.hero"
+#line 203 "selfhost/check/state.hero"
 void h_checkstate_bind_local(h_checkstate_Checker *ph0_c, h_token_Span h1_name, int64_t h2_ty) {
 #line 212987 "main.c"
     h_checkstate_Checker h0_c = {0};
@@ -213021,138 +213021,138 @@ void h_checkstate_bind_local(h_checkstate_Checker *ph0_c, h_token_Span h1_name, 
     h0_c = *ph0_c;
     goto bb0;
 bb0:
-#line 176 "selfhost/check/state.hero"
+#line 204 "selfhost/check/state.hero"
     t1 = h0_c;
-#line 176 "selfhost/check/state.hero"
+#line 204 "selfhost/check/state.hero"
     t2 = t1.f_locals_by_span;
-#line 176 "selfhost/check/state.hero"
+#line 204 "selfhost/check/state.hero"
     t3 = h1_name;
-#line 176 "selfhost/check/state.hero"
+#line 204 "selfhost/check/state.hero"
     t4 = t3.f_start;
-#line 176 "selfhost/check/state.hero"
+#line 204 "selfhost/check/state.hero"
     {
-#line 176 "selfhost/check/state.hero"
+#line 204 "selfhost/check/state.hero"
       const void *found = hero_map_find(t2, &t4);
-#line 176 "selfhost/check/state.hero"
+#line 204 "selfhost/check/state.hero"
       if (found == NULL) {
-#line 176 "selfhost/check/state.hero"
+#line 204 "selfhost/check/state.hero"
         t5 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 176 "selfhost/check/state.hero"
+#line 204 "selfhost/check/state.hero"
       } else {
-#line 176 "selfhost/check/state.hero"
+#line 204 "selfhost/check/state.hero"
         t5.tag = INT64_C(0);
-#line 176 "selfhost/check/state.hero"
+#line 204 "selfhost/check/state.hero"
         (&hero_desc_int)->copy(&t5.as.ok, found);
-#line 176 "selfhost/check/state.hero"
+#line 204 "selfhost/check/state.hero"
       }
-#line 176 "selfhost/check/state.hero"
+#line 204 "selfhost/check/state.hero"
     }
-#line 176 "selfhost/check/state.hero"
+#line 204 "selfhost/check/state.hero"
     t22 = h6_own6;
-#line 176 "selfhost/check/state.hero"
+#line 204 "selfhost/check/state.hero"
     h6_own6 = t5;
 #line 213055 "main.c"
     h_0opt_e201354_release(&t22);
-#line 176 "selfhost/check/state.hero"
+#line 204 "selfhost/check/state.hero"
     t23 = h3_found;
 #line 213059 "main.c"
     h_0opt_e201354_retain(&t5);
-#line 176 "selfhost/check/state.hero"
+#line 204 "selfhost/check/state.hero"
     h3_found = t5;
 #line 213063 "main.c"
     h_0opt_e201354_release(&t23);
-#line 178 "selfhost/check/state.hero"
+#line 206 "selfhost/check/state.hero"
     t6 = h3_found;
-#line 178 "selfhost/check/state.hero"
+#line 206 "selfhost/check/state.hero"
     t24 = h4_f0;
 #line 213069 "main.c"
     h_0opt_e201354_retain(&t6);
-#line 178 "selfhost/check/state.hero"
+#line 206 "selfhost/check/state.hero"
     h4_f0 = t6;
 #line 213073 "main.c"
     h_0opt_e201354_release(&t24);
-#line 178 "selfhost/check/state.hero"
+#line 206 "selfhost/check/state.hero"
     t7 = h4_f0;
-#line 178 "selfhost/check/state.hero"
+#line 206 "selfhost/check/state.hero"
     t8 = t7.tag;
-#line 178 "selfhost/check/state.hero"
+#line 206 "selfhost/check/state.hero"
     t9 = INT64_C(1);
-#line 178 "selfhost/check/state.hero"
+#line 206 "selfhost/check/state.hero"
     t10 = t8 == t9;
-#line 178 "selfhost/check/state.hero"
+#line 206 "selfhost/check/state.hero"
     t11 = !t10;
-#line 178 "selfhost/check/state.hero"
+#line 206 "selfhost/check/state.hero"
     if (t11) goto bb2; else goto bb3;
-#line 178 "selfhost/check/state.hero"
+#line 206 "selfhost/check/state.hero"
 bb1:
 #line 213089 "main.c"
     *ph0_c = h0_c;
-#line 175 "selfhost/check/state.hero"
+#line 203 "selfhost/check/state.hero"
     t26 = h3_found;
 #line 213093 "main.c"
     h_0opt_e201354_release(&t26);
-#line 175 "selfhost/check/state.hero"
+#line 203 "selfhost/check/state.hero"
     t27 = h4_f0;
 #line 213097 "main.c"
     h_0opt_e201354_release(&t27);
-#line 175 "selfhost/check/state.hero"
+#line 203 "selfhost/check/state.hero"
     t28 = h5_f1;
 #line 213101 "main.c"
     h_0opt_e201354_release(&t28);
-#line 175 "selfhost/check/state.hero"
+#line 203 "selfhost/check/state.hero"
     t29 = h6_own6;
 #line 213105 "main.c"
     h_0opt_e201354_release(&t29);
     return;
 bb2:
-#line 179 "selfhost/check/state.hero"
+#line 207 "selfhost/check/state.hero"
     t12 = h3_found;
-#line 179 "selfhost/check/state.hero"
+#line 207 "selfhost/check/state.hero"
     t25 = h5_f1;
 #line 213113 "main.c"
     h_0opt_e201354_retain(&t12);
-#line 179 "selfhost/check/state.hero"
+#line 207 "selfhost/check/state.hero"
     h5_f1 = t12;
 #line 213117 "main.c"
     h_0opt_e201354_release(&t25);
-#line 179 "selfhost/check/state.hero"
+#line 207 "selfhost/check/state.hero"
     t13 = h5_f1;
-#line 179 "selfhost/check/state.hero"
+#line 207 "selfhost/check/state.hero"
     t14 = t13.tag;
-#line 179 "selfhost/check/state.hero"
+#line 207 "selfhost/check/state.hero"
     t15 = INT64_C(0);
-#line 179 "selfhost/check/state.hero"
+#line 207 "selfhost/check/state.hero"
     t16 = t14 == t15;
-#line 179 "selfhost/check/state.hero"
+#line 207 "selfhost/check/state.hero"
     if (t16) goto bb4; else goto bb5;
-#line 179 "selfhost/check/state.hero"
+#line 207 "selfhost/check/state.hero"
 bb3:
-#line 179 "selfhost/check/state.hero"
+#line 207 "selfhost/check/state.hero"
     goto bb1;
-#line 179 "selfhost/check/state.hero"
+#line 207 "selfhost/check/state.hero"
 bb4:
-#line 179 "selfhost/check/state.hero"
+#line 207 "selfhost/check/state.hero"
     t19 = h5_f1;
-#line 179 "selfhost/check/state.hero"
+#line 207 "selfhost/check/state.hero"
     t20 = t19.as.ok;
-#line 179 "selfhost/check/state.hero"
+#line 207 "selfhost/check/state.hero"
     t21 = h2_ty;
-#line 179 "selfhost/check/state.hero"
+#line 207 "selfhost/check/state.hero"
     hero_array_set(&(h0_c.f_out.f_local_types), t20, &t21);
-#line 179 "selfhost/check/state.hero"
+#line 207 "selfhost/check/state.hero"
     goto bb1;
-#line 179 "selfhost/check/state.hero"
+#line 207 "selfhost/check/state.hero"
 bb5:
-#line 179 "selfhost/check/state.hero"
+#line 207 "selfhost/check/state.hero"
     t17 = h5_f1;
-#line 179 "selfhost/check/state.hero"
+#line 207 "selfhost/check/state.hero"
     t18 = t17.as.err;
 #line 213151 "main.c"
     hero_panic_must(t18);
     hero_unreachable();
 }
 
-#line 183 "selfhost/check/state.hero"
+#line 211 "selfhost/check/state.hero"
 int64_t h_checkstate_record_expr(h_checkstate_Checker *ph0_c, int64_t h1_at, int64_t h2_ty) {
 #line 213158 "main.c"
     h_checkstate_Checker h0_c = {0};
@@ -213162,13 +213162,13 @@ int64_t h_checkstate_record_expr(h_checkstate_Checker *ph0_c, int64_t h1_at, int
     h0_c = *ph0_c;
     goto bb0;
 bb0:
-#line 184 "selfhost/check/state.hero"
+#line 212 "selfhost/check/state.hero"
     t1 = h1_at;
-#line 184 "selfhost/check/state.hero"
+#line 212 "selfhost/check/state.hero"
     t2 = h2_ty;
-#line 184 "selfhost/check/state.hero"
+#line 212 "selfhost/check/state.hero"
     hero_array_set(&(h0_c.f_out.f_expr_types), t1, &t2);
-#line 185 "selfhost/check/state.hero"
+#line 213 "selfhost/check/state.hero"
     t3 = h2_ty;
 #line 213174 "main.c"
     *ph0_c = h0_c;
@@ -330096,7 +330096,7 @@ bb83:
 #line 1517 "selfhost/check/walk.hero"
     t422 = h8_span;
 #line 1517 "selfhost/check/walk.hero"
-    t423 = t422.f_start;
+    t423 = t422.f_end;
 #line 1517 "selfhost/check/walk.hero"
     t424 = h54_resolved_args;
 #line 330103 "main.c"
@@ -416866,7 +416866,7 @@ bb3:
     return t11;
 }
 
-#line 100 "selfhost/ir/containers.hero"
+#line 109 "selfhost/ir/containers.hero"
 HeroArrayHeader * h_ircontainers_args_of(h_ircontainers_Function h0_f, h_ir_Run h1_run) {
 #line 416872 "main.c"
     HeroArrayHeader * h2_out = {0};
@@ -416896,88 +416896,88 @@ HeroArrayHeader * h_ircontainers_args_of(h_ircontainers_Function h0_f, h_ir_Run 
     HeroArrayHeader * t24 = {0};
     goto bb0;
 bb0:
-#line 101 "selfhost/ir/containers.hero"
+#line 110 "selfhost/ir/containers.hero"
     t1 = hero_array_new(&h_ir_Arg_desc, 1);
-#line 101 "selfhost/ir/containers.hero"
+#line 110 "selfhost/ir/containers.hero"
     t21 = h4_own4;
-#line 101 "selfhost/ir/containers.hero"
+#line 110 "selfhost/ir/containers.hero"
     h4_own4 = t1;
 #line 416906 "main.c"
     hero_array_decref(t21);
-#line 101 "selfhost/ir/containers.hero"
+#line 110 "selfhost/ir/containers.hero"
     t22 = h2_out;
 #line 416910 "main.c"
     hero_array_incref(t1);
-#line 101 "selfhost/ir/containers.hero"
+#line 110 "selfhost/ir/containers.hero"
     h2_out = t1;
 #line 416914 "main.c"
     hero_array_decref(t22);
-#line 102 "selfhost/ir/containers.hero"
+#line 111 "selfhost/ir/containers.hero"
     t2 = h1_run;
-#line 102 "selfhost/ir/containers.hero"
+#line 111 "selfhost/ir/containers.hero"
     t3 = t2.f_start;
-#line 102 "selfhost/ir/containers.hero"
+#line 111 "selfhost/ir/containers.hero"
     h3_i = t3;
-#line 102 "selfhost/ir/containers.hero"
+#line 111 "selfhost/ir/containers.hero"
     goto bb1;
-#line 102 "selfhost/ir/containers.hero"
+#line 111 "selfhost/ir/containers.hero"
 bb1:
-#line 104 "selfhost/ir/containers.hero"
+#line 113 "selfhost/ir/containers.hero"
     t4 = h3_i;
-#line 104 "selfhost/ir/containers.hero"
+#line 113 "selfhost/ir/containers.hero"
     t5 = h1_run;
-#line 104 "selfhost/ir/containers.hero"
+#line 113 "selfhost/ir/containers.hero"
     t6 = t5.f_start;
-#line 104 "selfhost/ir/containers.hero"
+#line 113 "selfhost/ir/containers.hero"
     t7 = h1_run;
-#line 104 "selfhost/ir/containers.hero"
+#line 113 "selfhost/ir/containers.hero"
     t8 = t7.f_length;
-#line 104 "selfhost/ir/containers.hero"
+#line 113 "selfhost/ir/containers.hero"
     if (__builtin_add_overflow(t6, t8, &t9)) hero_panic_overflow();
-#line 104 "selfhost/ir/containers.hero"
+#line 113 "selfhost/ir/containers.hero"
     t10 = t4 < t9;
-#line 104 "selfhost/ir/containers.hero"
+#line 113 "selfhost/ir/containers.hero"
     if (t10) goto bb2; else goto bb3;
-#line 104 "selfhost/ir/containers.hero"
+#line 113 "selfhost/ir/containers.hero"
 bb2:
-#line 105 "selfhost/ir/containers.hero"
+#line 114 "selfhost/ir/containers.hero"
     t12 = h0_f;
-#line 105 "selfhost/ir/containers.hero"
+#line 114 "selfhost/ir/containers.hero"
     t13 = t12.f_arguments;
-#line 105 "selfhost/ir/containers.hero"
+#line 114 "selfhost/ir/containers.hero"
     t14 = h3_i;
-#line 105 "selfhost/ir/containers.hero"
+#line 114 "selfhost/ir/containers.hero"
     t15 = *(h_ir_Arg const *)hero_array_at(t13, t14);
-#line 105 "selfhost/ir/containers.hero"
+#line 114 "selfhost/ir/containers.hero"
     hero_array_push_owned(&h2_out, &t15);
-#line 106 "selfhost/ir/containers.hero"
+#line 115 "selfhost/ir/containers.hero"
     t17 = h3_i;
-#line 106 "selfhost/ir/containers.hero"
+#line 115 "selfhost/ir/containers.hero"
     t18 = INT64_C(1);
-#line 106 "selfhost/ir/containers.hero"
+#line 115 "selfhost/ir/containers.hero"
     if (__builtin_add_overflow(t17, t18, &t19)) hero_panic_overflow();
-#line 106 "selfhost/ir/containers.hero"
+#line 115 "selfhost/ir/containers.hero"
     h3_i = t19;
-#line 106 "selfhost/ir/containers.hero"
+#line 115 "selfhost/ir/containers.hero"
     goto bb1;
-#line 106 "selfhost/ir/containers.hero"
+#line 115 "selfhost/ir/containers.hero"
 bb3:
-#line 108 "selfhost/ir/containers.hero"
+#line 117 "selfhost/ir/containers.hero"
     t20 = h2_out;
 #line 416968 "main.c"
     hero_array_incref(t20);
-#line 108 "selfhost/ir/containers.hero"
+#line 117 "selfhost/ir/containers.hero"
     t23 = h2_out;
 #line 416972 "main.c"
     hero_array_decref(t23);
-#line 108 "selfhost/ir/containers.hero"
+#line 117 "selfhost/ir/containers.hero"
     t24 = h4_own4;
 #line 416976 "main.c"
     hero_array_decref(t24);
     return t20;
 }
 
-#line 110 "selfhost/ir/containers.hero"
+#line 119 "selfhost/ir/containers.hero"
 HeroArrayHeader * h_ircontainers_steps_of(h_ircontainers_Function h0_f, h_ir_Run h1_run) {
 #line 416983 "main.c"
     HeroArrayHeader * h2_out = {0};
@@ -417007,88 +417007,88 @@ HeroArrayHeader * h_ircontainers_steps_of(h_ircontainers_Function h0_f, h_ir_Run
     HeroArrayHeader * t24 = {0};
     goto bb0;
 bb0:
-#line 111 "selfhost/ir/containers.hero"
+#line 120 "selfhost/ir/containers.hero"
     t1 = hero_array_new(&h_ir_PathStep_desc, 1);
-#line 111 "selfhost/ir/containers.hero"
+#line 120 "selfhost/ir/containers.hero"
     t21 = h4_own4;
-#line 111 "selfhost/ir/containers.hero"
+#line 120 "selfhost/ir/containers.hero"
     h4_own4 = t1;
 #line 417017 "main.c"
     hero_array_decref(t21);
-#line 111 "selfhost/ir/containers.hero"
+#line 120 "selfhost/ir/containers.hero"
     t22 = h2_out;
 #line 417021 "main.c"
     hero_array_incref(t1);
-#line 111 "selfhost/ir/containers.hero"
+#line 120 "selfhost/ir/containers.hero"
     h2_out = t1;
 #line 417025 "main.c"
     hero_array_decref(t22);
-#line 112 "selfhost/ir/containers.hero"
+#line 121 "selfhost/ir/containers.hero"
     t2 = h1_run;
-#line 112 "selfhost/ir/containers.hero"
+#line 121 "selfhost/ir/containers.hero"
     t3 = t2.f_start;
-#line 112 "selfhost/ir/containers.hero"
+#line 121 "selfhost/ir/containers.hero"
     h3_i = t3;
-#line 112 "selfhost/ir/containers.hero"
+#line 121 "selfhost/ir/containers.hero"
     goto bb1;
-#line 112 "selfhost/ir/containers.hero"
+#line 121 "selfhost/ir/containers.hero"
 bb1:
-#line 114 "selfhost/ir/containers.hero"
+#line 123 "selfhost/ir/containers.hero"
     t4 = h3_i;
-#line 114 "selfhost/ir/containers.hero"
+#line 123 "selfhost/ir/containers.hero"
     t5 = h1_run;
-#line 114 "selfhost/ir/containers.hero"
+#line 123 "selfhost/ir/containers.hero"
     t6 = t5.f_start;
-#line 114 "selfhost/ir/containers.hero"
+#line 123 "selfhost/ir/containers.hero"
     t7 = h1_run;
-#line 114 "selfhost/ir/containers.hero"
+#line 123 "selfhost/ir/containers.hero"
     t8 = t7.f_length;
-#line 114 "selfhost/ir/containers.hero"
+#line 123 "selfhost/ir/containers.hero"
     if (__builtin_add_overflow(t6, t8, &t9)) hero_panic_overflow();
-#line 114 "selfhost/ir/containers.hero"
+#line 123 "selfhost/ir/containers.hero"
     t10 = t4 < t9;
-#line 114 "selfhost/ir/containers.hero"
+#line 123 "selfhost/ir/containers.hero"
     if (t10) goto bb2; else goto bb3;
-#line 114 "selfhost/ir/containers.hero"
+#line 123 "selfhost/ir/containers.hero"
 bb2:
-#line 115 "selfhost/ir/containers.hero"
+#line 124 "selfhost/ir/containers.hero"
     t12 = h0_f;
-#line 115 "selfhost/ir/containers.hero"
+#line 124 "selfhost/ir/containers.hero"
     t13 = t12.f_steps;
-#line 115 "selfhost/ir/containers.hero"
+#line 124 "selfhost/ir/containers.hero"
     t14 = h3_i;
-#line 115 "selfhost/ir/containers.hero"
+#line 124 "selfhost/ir/containers.hero"
     t15 = *(h_ir_PathStep const *)hero_array_at(t13, t14);
-#line 115 "selfhost/ir/containers.hero"
+#line 124 "selfhost/ir/containers.hero"
     hero_array_push_owned(&h2_out, &t15);
-#line 116 "selfhost/ir/containers.hero"
+#line 125 "selfhost/ir/containers.hero"
     t17 = h3_i;
-#line 116 "selfhost/ir/containers.hero"
+#line 125 "selfhost/ir/containers.hero"
     t18 = INT64_C(1);
-#line 116 "selfhost/ir/containers.hero"
+#line 125 "selfhost/ir/containers.hero"
     if (__builtin_add_overflow(t17, t18, &t19)) hero_panic_overflow();
-#line 116 "selfhost/ir/containers.hero"
+#line 125 "selfhost/ir/containers.hero"
     h3_i = t19;
-#line 116 "selfhost/ir/containers.hero"
+#line 125 "selfhost/ir/containers.hero"
     goto bb1;
-#line 116 "selfhost/ir/containers.hero"
+#line 125 "selfhost/ir/containers.hero"
 bb3:
-#line 118 "selfhost/ir/containers.hero"
+#line 127 "selfhost/ir/containers.hero"
     t20 = h2_out;
 #line 417079 "main.c"
     hero_array_incref(t20);
-#line 118 "selfhost/ir/containers.hero"
+#line 127 "selfhost/ir/containers.hero"
     t23 = h2_out;
 #line 417083 "main.c"
     hero_array_decref(t23);
-#line 118 "selfhost/ir/containers.hero"
+#line 127 "selfhost/ir/containers.hero"
     t24 = h4_own4;
 #line 417087 "main.c"
     hero_array_decref(t24);
     return t20;
 }
 
-#line 120 "selfhost/ir/containers.hero"
+#line 129 "selfhost/ir/containers.hero"
 int64_t h_ircontainers_value_type(h_ircontainers_Function h0_f, int64_t h1_value) {
 #line 417094 "main.c"
     h_ircontainers_Function t1 = {0};
@@ -417097,20 +417097,20 @@ int64_t h_ircontainers_value_type(h_ircontainers_Function h0_f, int64_t h1_value
     int64_t t4;
     goto bb0;
 bb0:
-#line 121 "selfhost/ir/containers.hero"
+#line 130 "selfhost/ir/containers.hero"
     t1 = h0_f;
-#line 121 "selfhost/ir/containers.hero"
+#line 130 "selfhost/ir/containers.hero"
     t2 = t1.f_values;
-#line 121 "selfhost/ir/containers.hero"
+#line 130 "selfhost/ir/containers.hero"
     t3 = h1_value;
-#line 121 "selfhost/ir/containers.hero"
+#line 130 "selfhost/ir/containers.hero"
     t4 = *(int64_t const *)hero_array_at(t2, t3);
-#line 121 "selfhost/ir/containers.hero"
+#line 130 "selfhost/ir/containers.hero"
     return t4;
 #line 417111 "main.c"
 }
 
-#line 136 "selfhost/ir/containers.hero"
+#line 145 "selfhost/ir/containers.hero"
 int64_t h_ircontainers_phase_rank(h_ircontainers_Phase h0_p) {
 #line 417116 "main.c"
     h_ircontainers_Phase h1_s0;
@@ -417124,60 +417124,60 @@ int64_t h_ircontainers_phase_rank(h_ircontainers_Phase h0_p) {
     int64_t t7;
     goto bb0;
 bb0:
-#line 137 "selfhost/ir/containers.hero"
+#line 146 "selfhost/ir/containers.hero"
     t1 = h0_p;
-#line 137 "selfhost/ir/containers.hero"
+#line 146 "selfhost/ir/containers.hero"
     h1_s0 = t1;
-#line 137 "selfhost/ir/containers.hero"
+#line 146 "selfhost/ir/containers.hero"
     t2 = h1_s0;
-#line 137 "selfhost/ir/containers.hero"
+#line 146 "selfhost/ir/containers.hero"
     t3 = t2.tag;
-#line 137 "selfhost/ir/containers.hero"
+#line 146 "selfhost/ir/containers.hero"
     switch (t3) {
-#line 137 "selfhost/ir/containers.hero"
+#line 146 "selfhost/ir/containers.hero"
         case 0: goto bb2;
-#line 137 "selfhost/ir/containers.hero"
+#line 146 "selfhost/ir/containers.hero"
         case 1: goto bb3;
-#line 137 "selfhost/ir/containers.hero"
+#line 146 "selfhost/ir/containers.hero"
         case 2: goto bb4;
-#line 137 "selfhost/ir/containers.hero"
+#line 146 "selfhost/ir/containers.hero"
         default: hero_unreachable();
-#line 137 "selfhost/ir/containers.hero"
+#line 146 "selfhost/ir/containers.hero"
     }
-#line 137 "selfhost/ir/containers.hero"
+#line 146 "selfhost/ir/containers.hero"
 bb1:
-#line 137 "selfhost/ir/containers.hero"
+#line 146 "selfhost/ir/containers.hero"
     t7 = h2_r0;
-#line 137 "selfhost/ir/containers.hero"
+#line 146 "selfhost/ir/containers.hero"
     return t7;
-#line 137 "selfhost/ir/containers.hero"
+#line 146 "selfhost/ir/containers.hero"
 bb2:
-#line 138 "selfhost/ir/containers.hero"
+#line 147 "selfhost/ir/containers.hero"
     t4 = INT64_C(0);
-#line 137 "selfhost/ir/containers.hero"
+#line 146 "selfhost/ir/containers.hero"
     h2_r0 = t4;
-#line 137 "selfhost/ir/containers.hero"
+#line 146 "selfhost/ir/containers.hero"
     goto bb1;
-#line 137 "selfhost/ir/containers.hero"
+#line 146 "selfhost/ir/containers.hero"
 bb3:
-#line 139 "selfhost/ir/containers.hero"
+#line 148 "selfhost/ir/containers.hero"
     t5 = INT64_C(1);
-#line 137 "selfhost/ir/containers.hero"
+#line 146 "selfhost/ir/containers.hero"
     h2_r0 = t5;
-#line 137 "selfhost/ir/containers.hero"
+#line 146 "selfhost/ir/containers.hero"
     goto bb1;
-#line 137 "selfhost/ir/containers.hero"
+#line 146 "selfhost/ir/containers.hero"
 bb4:
-#line 140 "selfhost/ir/containers.hero"
+#line 149 "selfhost/ir/containers.hero"
     t6 = INT64_C(2);
-#line 137 "selfhost/ir/containers.hero"
+#line 146 "selfhost/ir/containers.hero"
     h2_r0 = t6;
-#line 137 "selfhost/ir/containers.hero"
+#line 146 "selfhost/ir/containers.hero"
     goto bb1;
 #line 417178 "main.c"
 }
 
-#line 144 "selfhost/ir/containers.hero"
+#line 153 "selfhost/ir/containers.hero"
 HeroStr h_ircontainers_phase_name(h_ircontainers_Phase h0_p) {
 #line 417183 "main.c"
     h_ircontainers_Phase h1_s0;
@@ -417195,76 +417195,76 @@ HeroStr h_ircontainers_phase_name(h_ircontainers_Phase h0_p) {
     HeroStr t11 = {0};
     goto bb0;
 bb0:
-#line 145 "selfhost/ir/containers.hero"
+#line 154 "selfhost/ir/containers.hero"
     t1 = h0_p;
-#line 145 "selfhost/ir/containers.hero"
+#line 154 "selfhost/ir/containers.hero"
     h1_s0 = t1;
-#line 145 "selfhost/ir/containers.hero"
+#line 154 "selfhost/ir/containers.hero"
     t2 = h1_s0;
-#line 145 "selfhost/ir/containers.hero"
+#line 154 "selfhost/ir/containers.hero"
     t3 = t2.tag;
-#line 145 "selfhost/ir/containers.hero"
+#line 154 "selfhost/ir/containers.hero"
     switch (t3) {
-#line 145 "selfhost/ir/containers.hero"
+#line 154 "selfhost/ir/containers.hero"
         case 0: goto bb2;
-#line 145 "selfhost/ir/containers.hero"
+#line 154 "selfhost/ir/containers.hero"
         case 1: goto bb3;
-#line 145 "selfhost/ir/containers.hero"
+#line 154 "selfhost/ir/containers.hero"
         case 2: goto bb4;
-#line 145 "selfhost/ir/containers.hero"
+#line 154 "selfhost/ir/containers.hero"
         default: hero_unreachable();
-#line 145 "selfhost/ir/containers.hero"
+#line 154 "selfhost/ir/containers.hero"
     }
-#line 145 "selfhost/ir/containers.hero"
+#line 154 "selfhost/ir/containers.hero"
 bb1:
-#line 145 "selfhost/ir/containers.hero"
+#line 154 "selfhost/ir/containers.hero"
     t7 = h2_r0;
 #line 417223 "main.c"
     hero_str_incref(t7);
-#line 145 "selfhost/ir/containers.hero"
+#line 154 "selfhost/ir/containers.hero"
     t11 = h2_r0;
 #line 417227 "main.c"
     hero_str_decref(t11);
     return t7;
 bb2:
-#line 146 "selfhost/ir/containers.hero"
+#line 155 "selfhost/ir/containers.hero"
     t4 = HERO_STR_LIT(hero_str_5220dcf8);
-#line 145 "selfhost/ir/containers.hero"
+#line 154 "selfhost/ir/containers.hero"
     t8 = h2_r0;
 #line 417235 "main.c"
     hero_str_incref(t4);
-#line 145 "selfhost/ir/containers.hero"
+#line 154 "selfhost/ir/containers.hero"
     h2_r0 = t4;
 #line 417239 "main.c"
     hero_str_decref(t8);
     goto bb1;
 bb3:
-#line 147 "selfhost/ir/containers.hero"
+#line 156 "selfhost/ir/containers.hero"
     t5 = HERO_STR_LIT(hero_str_24f025b4);
-#line 145 "selfhost/ir/containers.hero"
+#line 154 "selfhost/ir/containers.hero"
     t9 = h2_r0;
 #line 417247 "main.c"
     hero_str_incref(t5);
-#line 145 "selfhost/ir/containers.hero"
+#line 154 "selfhost/ir/containers.hero"
     h2_r0 = t5;
 #line 417251 "main.c"
     hero_str_decref(t9);
     goto bb1;
 bb4:
-#line 148 "selfhost/ir/containers.hero"
+#line 157 "selfhost/ir/containers.hero"
     t6 = HERO_STR_LIT(hero_str_5d1db9a0);
-#line 145 "selfhost/ir/containers.hero"
+#line 154 "selfhost/ir/containers.hero"
     t10 = h2_r0;
 #line 417259 "main.c"
     hero_str_incref(t6);
-#line 145 "selfhost/ir/containers.hero"
+#line 154 "selfhost/ir/containers.hero"
     h2_r0 = t6;
 #line 417263 "main.c"
     hero_str_decref(t10);
     goto bb1;
 }
 
-#line 166 "selfhost/ir/containers.hero"
+#line 175 "selfhost/ir/containers.hero"
 void h_ircontainers_advance_to(h_ircontainers_Program *ph0_p, h_ircontainers_Phase h1_phase) {
 #line 417270 "main.c"
     h_ircontainers_Program h0_p = {0};
@@ -417279,33 +417279,33 @@ void h_ircontainers_advance_to(h_ircontainers_Program *ph0_p, h_ircontainers_Pha
     h0_p = *ph0_p;
     goto bb0;
 bb0:
-#line 167 "selfhost/ir/containers.hero"
+#line 176 "selfhost/ir/containers.hero"
     t1 = HERO_STR_LIT(hero_str_13af18f9);
-#line 167 "selfhost/ir/containers.hero"
+#line 176 "selfhost/ir/containers.hero"
     t2 = h1_phase;
-#line 167 "selfhost/ir/containers.hero"
+#line 176 "selfhost/ir/containers.hero"
     t3 = h_ircontainers_phase_rank(t2);
-#line 167 "selfhost/ir/containers.hero"
+#line 176 "selfhost/ir/containers.hero"
     t4 = h0_p;
-#line 167 "selfhost/ir/containers.hero"
+#line 176 "selfhost/ir/containers.hero"
     t5 = t4.f_phase;
-#line 167 "selfhost/ir/containers.hero"
+#line 176 "selfhost/ir/containers.hero"
     t6 = h_ircontainers_phase_rank(t5);
-#line 167 "selfhost/ir/containers.hero"
+#line 176 "selfhost/ir/containers.hero"
     t7 = t3 > t6;
-#line 167 "selfhost/ir/containers.hero"
+#line 176 "selfhost/ir/containers.hero"
     if (t7) goto bb1; else goto bb2;
-#line 167 "selfhost/ir/containers.hero"
+#line 176 "selfhost/ir/containers.hero"
 bb1:
-#line 168 "selfhost/ir/containers.hero"
+#line 177 "selfhost/ir/containers.hero"
     t8 = h1_phase;
-#line 168 "selfhost/ir/containers.hero"
+#line 177 "selfhost/ir/containers.hero"
     h0_p.f_phase = t8;
 #line 417305 "main.c"
     *ph0_p = h0_p;
     return;
 bb2:
-#line 167 "selfhost/ir/containers.hero"
+#line 176 "selfhost/ir/containers.hero"
 #line 417310 "main.c"
     hero_panic_assert_sides(t1, hero_int_to_str(t3), hero_int_to_str(t6));
     hero_unreachable();
@@ -460260,7 +460260,7 @@ bb17:
 #line 170 "selfhost/ir/mono.hero"
     t45 = t44.f_span;
 #line 170 "selfhost/ir/mono.hero"
-    t46 = t45.f_start;
+    t46 = t45.f_end;
 #line 170 "selfhost/ir/mono.hero"
     {
 #line 170 "selfhost/ir/mono.hero"
@@ -462613,7 +462613,7 @@ bb6:
 #line 297 "selfhost/ir/mono.hero"
     t25 = t24.f_span;
 #line 297 "selfhost/ir/mono.hero"
-    t26 = t25.f_start;
+    t26 = t25.f_end;
 #line 297 "selfhost/ir/mono.hero"
     {
 #line 297 "selfhost/ir/mono.hero"
@@ -462807,7 +462807,7 @@ bb17:
 #line 306 "selfhost/ir/mono.hero"
     t60 = t59.f_span;
 #line 306 "selfhost/ir/mono.hero"
-    t61 = t60.f_start;
+    t61 = t60.f_end;
 #line 306 "selfhost/ir/mono.hero"
     t62 = h12_reached;
 #line 462814 "main.c"
@@ -636242,7 +636242,7 @@ bb100:
 #line 182 "selfhost/emit/inst.hero"
     t389 = t388.f_span;
 #line 182 "selfhost/emit/inst.hero"
-    t390 = t389.f_start;
+    t390 = t389.f_end;
 #line 182 "selfhost/emit/inst.hero"
     {
 #line 182 "selfhost/emit/inst.hero"
@@ -636432,7 +636432,7 @@ bb106:
 #line 187 "selfhost/emit/inst.hero"
     t410 = t409.f_span;
 #line 187 "selfhost/emit/inst.hero"
-    t411 = t410.f_start;
+    t411 = t410.f_end;
 #line 187 "selfhost/emit/inst.hero"
     {
 #line 187 "selfhost/emit/inst.hero"
@@ -713222,7 +713222,7 @@ bb22:
 #line 113 "selfhost/emit/members.hero"
     t92 = t91.f_span;
 #line 113 "selfhost/emit/members.hero"
-    t93 = t92.f_start;
+    t93 = t92.f_end;
 #line 113 "selfhost/emit/members.hero"
     {
 #line 113 "selfhost/emit/members.hero"
@@ -713380,7 +713380,7 @@ bb29:
 #line 118 "selfhost/emit/members.hero"
     t113 = t112.f_span;
 #line 118 "selfhost/emit/members.hero"
-    t114 = t113.f_start;
+    t114 = t113.f_end;
 #line 118 "selfhost/emit/members.hero"
     {
 #line 118 "selfhost/emit/members.hero"
