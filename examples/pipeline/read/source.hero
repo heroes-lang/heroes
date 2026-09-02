@@ -1,0 +1,62 @@
+# Where a record comes FROM. One of two modules in this program whose path
+# ends in `source`, which is the whole reason `main.hero` writes `as`.
+#
+# A reader hands out lines and remembers how far it has got. Nothing here
+# touches a file: the text arrives as a `str` so the program is the same on
+# every platform and the corpus can run it three ways.
+
+record Reader
+    lines: [str]
+    at: i64
+
+function new_reader(text: str) -> Reader
+    rows: [str] @ []
+    piece: str @ ""
+
+    for ch in text.chars()
+        if ch == "\n"
+            rows @ rows.push(piece)
+            piece @ ""
+        else
+            piece @ piece + ch
+
+    if piece.len() > 0
+        rows @ rows.push(piece)
+
+    return Reader(lines: rows, at: 0)
+
+# The next line, or a failure once there are none — which is what makes the
+# drive loop in `main.hero` a `while` over a `T?` rather than over an index.
+function next_line(@r: Reader) -> str?
+    if r.at >= r.lines.len()
+        return fail("at_end", "the reader is past its last line")
+    one = r.lines[r.at]
+    r.at @ r.at + 1
+    return ok(one)
+
+function remaining(r: Reader) -> i64
+    return r.lines.len() - r.at
+
+test "a reader walks its lines once and then fails"
+    r: Reader @ new_reader("a\nb\n")
+    assert r.remaining() == 2
+    assert next_line(@r).must() == "a"
+    assert next_line(@r).must() == "b"
+    assert next_line(@r).is_err()
+    assert r.remaining() == 0
+
+test "a last line with no newline is still a line"
+    r: Reader @ new_reader("only")
+    assert r.remaining() == 1
+    assert next_line(@r).must() == "only"
+
+test "empty text has no lines at all"
+    r: Reader @ new_reader("")
+    assert r.remaining() == 0
+    assert next_line(@r).is_err()
+
+test "a blank line in the middle is kept"
+    r: Reader @ new_reader("a\n\nb\n")
+    assert r.remaining() == 3
+    _ = next_line(@r)
+    assert next_line(@r).must() == ""

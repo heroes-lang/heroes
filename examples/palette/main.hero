@@ -1,0 +1,179 @@
+# Colours packed into one integer, taken apart and put back — and the only
+# program in this repository that writes a hexadecimal, octal or binary
+# literal.
+#
+# Corpus and regression material (CLAUDE.md §9), and the gap was measured
+# rather than guessed. On 2026-09-02, over every `.hero` in `examples/`:
+# `0x`, `0o` and `0b` appeared exactly **once between them, inside a comment**
+# — `examples/raylib/main.hero:134` explaining a colour it then wrote in
+# decimal. `selfhost/` has 57 hex, 6 octal and 7 binary literals; `examples/`
+# had none, so the three bases the spec gives at `spec:72` had no program.
+#
+# The program is the ordinary reason anybody writes them: a colour is four
+# bytes in one word, a mask is easier to read in hex, a bit position is
+# easier to read in binary, and a file mode is the one thing in computing
+# that is still octal.
+#
+# WHAT THE SPEC PROMISES AND THIS PINS (`spec:72-73`):
+#   - `0x1f` `0o37` `0b11111` and `31` are the same value
+#   - `_` may sit between any two digits, in every base
+#   - a leading zero is an ERROR and never octal, which is why `0o` exists
+#   - every base writes a value, so a literal must fit its type
+#
+# `spec:164` gives the operators: `& | ^ ~ << >>`, `i64` only, and a shift
+# count outside 0..63 aborts. The last of those is not exercised here on
+# purpose — an abort belongs in `tests/golden/run/`, where the harness can
+# expect one, and it already lives there.
+#
+# **AND THE FORMATTER TAUGHT THIS PROGRAM SOMETHING WHILE IT WAS BEING
+# WRITTEN.** Every bitwise expression below was first written with the
+# parentheses a C programmer's fingers put there — `(mode & MASK) == 0` — and
+# `heroes fmt` deleted them, because `spec:166` binds `&` TIGHTER than a
+# comparison. In C it is the other way round: `x & MASK == 0` parses as
+# `x & (MASK == 0)`, which is the oldest bug in the language and the reason
+# every C style guide tells you to parenthesise. Heroes' precedence makes the
+# reading a person wants the reading they get, and the canonical form says so
+# by refusing to keep the armour. The lines below are what the formatter
+# produced, kept rather than reverted.
+
+# Opaque red, the way a graphics header would write it: red, green, blue,
+# alpha, one byte each, most significant first.
+constant OPAQUE_RED: i64
+    0xff_00_00_ff
+
+# The same number, so the program can say so.
+constant OPAQUE_RED_DECIMAL: i64
+    4278190335
+
+# One byte's worth of ones, three ways.
+constant BYTE_HEX: i64
+    0xff
+
+constant BYTE_OCTAL: i64
+    0o377
+
+constant BYTE_BINARY: i64
+    0b1111_1111
+
+# Where each channel sits, counted in bits from the bottom.
+constant ALPHA_SHIFT: i64
+    0
+
+constant BLUE_SHIFT: i64
+    8
+
+constant GREEN_SHIFT: i64
+    16
+
+constant RED_SHIFT: i64
+    24
+
+# The mode a directory gets when a program makes one: `rwxr-xr-x`, which is
+# the one number nobody writes in any other base.
+constant DIRECTORY_MODE: i64
+    0o755
+
+record Colour
+    red: i64
+    green: i64
+    blue: i64
+    alpha: i64
+
+function unpack(packed: i64) -> Colour
+    return Colour(
+        red: packed >> RED_SHIFT & BYTE_HEX,
+        green: packed >> GREEN_SHIFT & BYTE_HEX,
+        blue: packed >> BLUE_SHIFT & BYTE_HEX,
+        alpha: packed >> ALPHA_SHIFT & BYTE_HEX
+    )
+
+function pack(c: Colour) -> i64
+    return c.red << RED_SHIFT | c.green << GREEN_SHIFT | c.blue << BLUE_SHIFT | c.alpha << ALPHA_SHIFT
+
+# The channels swapped, which is what a program does when a library wants
+# them the other way round. `^` on the two positions is the shortest way to
+# say it without a temporary.
+function swap_red_and_blue(packed: i64) -> i64
+    c = unpack(packed)
+    return pack(Colour(red: c.blue, green: c.green, blue: c.red, alpha: c.alpha))
+
+# Which bits of a mode are set, read out in binary because that is the only
+# base in which a bit position is legible.
+function readable(mode: i64) -> bool
+    return !(mode & 0b100_000_000 == 0)
+
+function hex_of(value: i64) -> str
+    digits = "0123456789abcdef"
+    out: str @ ""
+    i: i64 @ 7
+
+    while i >= 0
+        nibble = value >> i * 4 & 0xf
+        out @ out + digits.slice(from: nibble, to: nibble + 1)
+        i @ i - 1
+
+    return out
+
+function main()
+    # The three bases and decimal are one value.
+    print(BYTE_HEX == BYTE_OCTAL)
+    print(BYTE_OCTAL == BYTE_BINARY)
+    print(BYTE_BINARY == 255)
+    print(OPAQUE_RED == OPAQUE_RED_DECIMAL)
+
+    red = unpack(OPAQUE_RED)
+    print(red.red)
+    print(red.green)
+    print(red.blue)
+    print(red.alpha)
+
+    # Taken apart and put back is the same word — the property worth a
+    # program rather than a comment.
+    print(pack(red) == OPAQUE_RED)
+    print(hex_of(OPAQUE_RED))
+    print(hex_of(swap_red_and_blue(OPAQUE_RED)))
+
+    # Octal earns its keep exactly once.
+    print(DIRECTORY_MODE)
+    print(readable(DIRECTORY_MODE))
+    print(readable(0o077))
+
+    # `~` and `^`, the two the other programs never write.
+    print(~0 == 0 - 1)
+    print(0xf0 ^ 0xff == 0x0f)
+
+test "the four spellings of one byte agree"
+    assert BYTE_HEX == 255
+    assert BYTE_OCTAL == 255
+    assert BYTE_BINARY == 255
+    assert 0x1f == 31
+    assert 0o37 == 31
+    assert 0b11111 == 31
+
+test "the separator may sit between any two digits, in every base"
+    assert 0xff_00_00_ff == OPAQUE_RED
+    assert 0b1111_1111 == 0xff
+    assert 0o7_5_5 == 0o755
+    assert 1_000_000 == 1000000
+
+test "unpacking and packing is a round trip on every channel"
+    for one in [OPAQUE_RED, 0x00ff00ff, 0x0000ffff, 0x12345678, 0]
+        assert pack(unpack(one)) == one
+
+test "swapping twice is the identity"
+    assert swap_red_and_blue(swap_red_and_blue(OPAQUE_RED)) == OPAQUE_RED
+    assert swap_red_and_blue(OPAQUE_RED) == 0x0000ffff
+
+test "the bitwise operators mean what the spec says"
+    assert 0xf0 & 0x3c == 0x30
+    assert 0xf0 | 0x0f == 0xff
+    assert 0xff ^ 0x0f == 0xf0
+    assert ~0 == 0 - 1
+    assert 1 << 8 == 0x100
+    assert 0x100 >> 8 == 1
+
+test "a mode is read in the base it was written in"
+    assert readable(0o755)
+    assert readable(0o400)
+    assert !readable(0o077)
+    assert !readable(0)

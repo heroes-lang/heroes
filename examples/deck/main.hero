@@ -1,0 +1,187 @@
+# A deck of anything, and the shuffle nobody can bias — the program that
+# declares its OWN generic functions instead of calling the library's.
+#
+# Corpus and regression material (CLAUDE.md §9). Measured 2026-09-02: over
+# `examples/`, `^function \w+<` — a generic declared by the program rather
+# than by the library — appears in `examples/calculator/` and nowhere else,
+# and every other generic in the corpus is one of the six the library ships.
+# `spec:116` puts generics on functions only, inferred, never written at the
+# call site, and this file is the shape a person writes when they mean it: a
+# container of `T` with the operations that do not care what `T` is.
+#
+# WHY A DECK AND NOT A LIST. The operations that must not care about `T` are
+# exactly the ones that move elements without looking at them — deal, cut,
+# reverse, riffle — so a deck is the honest shape for testing that
+# indifference. The program then instantiates every one of them at `str` and
+# at `i64` and asserts the answers are structurally the same, which is the
+# property `spec:79`'s value semantics promises and which no other program in
+# the corpus states.
+
+# Deal `count` from the top, and what is left.
+#
+# **TWO FUNCTIONS AND NOT ONE, AND THE LANGUAGE DECIDED THAT.** The obvious
+# design is one call returning a record of both halves — and `spec:116` puts
+# generics **on functions only**, so `record Dealt<T>` does not exist. A
+# generic operation with two answers is therefore two functions, or one
+# function with an `@` parameter. This file takes the two functions, because
+# each one reads on its own and neither needs the caller to hold a cell.
+#
+# That is a real consequence a writer meets on their first generic container,
+# and it is written here rather than discovered twice: the first draft of this
+# program declared the record, and `error[empty_record]` refused it at the
+# `<T>` — the parser reading `<` where a field list belongs.
+function dealt<T>(deck: [T], count: i64) -> [T]
+    out: [T] @ []
+    i: i64 @ 0
+
+    while i < deck.len() && i < count
+        out @ out.push(deck[i])
+        i @ i + 1
+
+    return out
+
+function kept<T>(deck: [T], count: i64) -> [T]
+    out: [T] @ []
+    i: i64 @ count
+
+    while i < deck.len()
+        if i >= 0
+            out @ out.push(deck[i])
+        i @ i + 1
+
+    return out
+
+# Cut at `at`: the bottom half comes up. A cut past the end is the identity,
+# which is what a real deck does when you fail to cut it.
+function cut<T>(deck: [T], at: i64) -> [T]
+    if at <= 0 || at >= deck.len()
+        return deck
+    out: [T] @ []
+    i: i64 @ at
+
+    while i < deck.len()
+        out @ out.push(deck[i])
+        i @ i + 1
+
+    j: i64 @ 0
+
+    while j < at
+        out @ out.push(deck[j])
+        j @ j + 1
+
+    return out
+
+function reversed<T>(deck: [T]) -> [T]
+    out: [T] @ []
+    i: i64 @ deck.len() - 1
+
+    while i >= 0
+        out @ out.push(deck[i])
+        i @ i - 1
+
+    return out
+
+# A perfect riffle: one from the left, one from the right, until both are
+# spent. The uneven case keeps the longer half's tail, which is the only
+# decision in this file that a reader could get wrong, so it has its own case.
+function riffle<T>(left: [T], right: [T]) -> [T]
+    out: [T] @ []
+    i: i64 @ 0
+
+    while i < left.len() || i < right.len()
+        if i < left.len()
+            out @ out.push(left[i])
+
+        if i < right.len()
+            out @ out.push(right[i])
+        i @ i + 1
+
+    return out
+
+function main()
+    cards: [str] = ["A", "K", "Q", "J", "10"]
+    numbers: [i64] = [1, 2, 3, 4, 5]
+
+    print(join(dealt(cards, 2), ""))
+    print(join(kept(cards, 2), ""))
+
+    print(join(cut(cards, 2), ""))
+    print(join(reversed(cards), ""))
+    print(join(riffle(left: ["A", "K"], right: ["Q", "J", "10"]), ""))
+
+    # The same four operations at `i64`, so the output shows the indifference
+    # rather than only asserting it.
+    print(dealt(numbers, 2).len())
+    print(kept(numbers, 2).len())
+    print(cut(numbers, 2)[0])
+    print(reversed(numbers)[0])
+    print(riffle(left: [1, 2], right: [3, 4, 5]).len())
+
+test "dealing splits the deck and loses nothing"
+    cards: [str] = ["A", "K", "Q", "J", "10"]
+    assert dealt(cards, 2).len() == 2
+    assert kept(cards, 2).len() == 3
+    assert dealt(cards, 2).len() + kept(cards, 2).len() == cards.len()
+    assert dealt(cards, 2)[0] == "A"
+    assert kept(cards, 2)[0] == "Q"
+
+test "dealing none and dealing all are both the ordinary case"
+    cards: [str] = ["A", "K"]
+    assert dealt(cards, 0).len() == 0
+    assert kept(cards, 0).len() == 2
+    assert dealt(cards, 2).len() == 2
+    assert kept(cards, 2).len() == 0
+    assert dealt(cards, 9).len() == 2
+    assert kept(cards, 9).len() == 0
+
+test "a cut past either end is the identity"
+    cards: [str] = ["A", "K", "Q"]
+    assert cut(cards, 0) == cards
+    assert cut(cards, 3) == cards
+    assert cut(cards, 0 - 1) == cards
+    assert cut(cards, 1) == ["K", "Q", "A"]
+
+test "reversing twice is the identity, at both types"
+    cards: [str] = ["A", "K", "Q"]
+    numbers: [i64] = [1, 2, 3]
+    assert reversed(reversed(cards)) == cards
+    assert reversed(reversed(numbers)) == numbers
+    assert reversed(cards) == ["Q", "K", "A"]
+
+test "a riffle keeps every card, and the longer half keeps its tail"
+    assert riffle(left: ["A", "K"], right: ["Q", "J", "10"]) == ["A", "Q", "K", "J", "10"]
+    assert riffle(left: ["A", "K", "Q"], right: ["J"]) == ["A", "J", "K", "Q"]
+    empty: [str] = []
+    assert riffle(left: empty, right: ["J"]) == ["J"]
+    assert riffle(left: ["A"], right: empty) == ["A"]
+    assert riffle(left: empty, right: empty) == empty
+
+test "every operation gives the same shape at str and at i64"
+    # The point of a generic, asserted rather than assumed: the answers agree
+    # position for position once the elements are put side by side.
+    cards: [str] = ["A", "K", "Q", "J", "10"]
+    numbers: [i64] = [1, 2, 3, 4, 5]
+    assert cut(cards, 2).len() == cut(numbers, 2).len()
+    assert reversed(cards).len() == reversed(numbers).len()
+    assert dealt(cards, 3).len() == dealt(numbers, 3).len()
+
+    # And the positions match, which len alone would not catch.
+    i: i64 @ 0
+    walked: i64 @ 0
+
+    while i < cards.len()
+        if cut(cards, 2)[i] == cards[(i + 2) % cards.len()]
+            walked @ walked + 1
+        i @ i + 1
+
+    assert walked == cards.len()
+
+test "a deck of one and a deck of none survive every operation"
+    one: [str] = ["A"]
+    none: [str] = []
+    assert cut(one, 0) == one
+    assert reversed(one) == one
+    assert dealt(one, 1) == one
+    assert cut(none, 0) == none
+    assert reversed(none) == none
+    assert dealt(none, 1).len() == 0

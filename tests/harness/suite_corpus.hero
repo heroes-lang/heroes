@@ -7,8 +7,10 @@
 # WHAT THIS CORPUS IS FOR, and why it is not the golden tree again: a
 # golden case is written to provoke one thing, and a program is written to
 # do a job. design.md wart 17 owes a falsifier, and the corpus is it —
-# fourteen programs that must keep working while the language changes
-# underneath them.
+# programs that must keep working while the language changes underneath
+# them. How many is `LEAST` below, which is measured rather than written
+# twice: this sentence said "fourteen" for two milestones after the number
+# stopped being fourteen.
 #
 # Four checks:
 #   1. `heroes test` green in every configuration — the acceptance
@@ -37,14 +39,17 @@ use strings
 constant EXAMPLES: str
     "examples"
 
-# Measured 2026-09-02: fifteen directories hold a `main.hero`
-# (`examples/gallery/` does not). corpus.rs floors at 3, and this floor was
-# 14 until `examples/shapes/` landed at M-package-layout — the first program
-# here whose modules sit in subdirectories. The floor moves with the corpus
-# rather than staying where it was measured, because its whole job is to
-# notice a program that quietly stops being found.
+# Measured 2026-09-02, twice on the same day: fifteen directories held a
+# `main.hero` in the morning and **21** hold one by the evening
+# (`examples/gallery/` still does not, which is why the floor is one under
+# the directory count). corpus.rs floors at 3; this floor was 14 until
+# `examples/shapes/` landed at M-package-layout, and 16 until
+# M-corpus-coverage wrote the six programs that close the measured coverage
+# gaps. The floor moves with the corpus rather than staying where it was
+# measured, because its whole job is to notice a program that quietly stops
+# being found.
 constant LEAST: i64
-    16
+    21
 
 function run_all(scratch: str, compiler: str) -> report.Report?
     r: report.Report @ report.empty()

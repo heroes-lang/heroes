@@ -1,0 +1,112 @@
+# Lines in, a report out — and the program that shows what `as` is FOR.
+#
+# Corpus and regression material (CLAUDE.md §9). The gap was measured on
+# 2026-09-02: `use ... as` appeared **once** in all of `examples/`, in
+# `examples/shapes/main.hero`, where it renames a module that did not have to
+# be renamed. That use is real and it is not the feature's warrant.
+#
+# **THIS ONE CANNOT BE WRITTEN WITHOUT IT.** The program reads from
+# `read/source` and writes to `write/source`. Both paths end in `source`, so
+# both would bind `source` in this file, and `spec:11` refuses a file that
+# binds one name twice. There is no single rename that fixes it, because the
+# collision is between two modules and not between a module and a local: one
+# of them must be called something else HERE, which is exactly the case panel
+# 100 recorded as the alias's justification — *"two published modules ending
+# in `client`, whose authors own neither the other's files nor a manifest to
+# put a rename in"*. The two directories here stand in for those two
+# packages.
+#
+# Panel 101 then refused binding the whole joined path (`read_source` and
+# `write_source`, which would need no alias) on the one argument no other seat
+# made: the last-part rule is reversible and the joined rule is not. This
+# program is what the refusal costs, written out — one `as` clause — and that
+# is the trade the record says was taken deliberately.
+#
+# What it also pins, since a program that exists may as well earn twice: a
+# drive loop over a `T?` rather than over an index, `break` on a condition
+# inside it, and `chars()` doing the splitting in the reader.
+
+use read/source as input
+use write/source as output
+
+# The report: how many lines, how long the longest was, and the first line
+# that looked like a heading.
+function report(text: str) -> str
+    r: input.Reader @ input.new_reader(text)
+    s: output.Sink @ output.new_sink()
+    longest: i64 @ 0
+    lines: i64 @ 0
+    heading: str @ ""
+
+    while true
+        one = input.next_line(@r)
+
+        if one.is_err()
+            # The only way out: the reader said it is past its last line.
+            break
+        row = one.must()
+        lines @ lines + 1
+
+        if row.len() > longest
+            longest @ row.len()
+
+        if heading.len() == 0 && looks_like_heading(row)
+            heading @ row
+
+    output.emit(@s, "lines: " + lines.to_str())
+    output.emit(@s, "longest: " + longest.to_str())
+
+    if heading.len() > 0
+        output.emit(@s, "heading: " + heading)
+    else
+        output.emit(@s, "heading: none")
+
+    return output.rendered(s)
+
+# A heading is a line whose first character is `#`, which is the one
+# convention this program invents and the only one it needs.
+function looks_like_heading(row: str) -> bool
+    if row.len() == 0
+        return false
+    first: str @ ""
+
+    for ch in row.chars()
+        if first.len() == 0
+            first @ ch
+
+    return first == "#"
+
+# A `str` is single-line (`spec:18`), so the sample is one literal with its
+# newlines escaped rather than a block. That is not a limitation worked
+# around: it is why `\n` is one of the six escapes the spec allows.
+constant SAMPLE: str
+    "# A short note\n\nIt has a blank line in it, and a line longer than all the others.\nThen a short one.\n"
+
+function main()
+    print(report(SAMPLE))
+    print(report(""))
+
+test "the report counts what the reader hands over"
+    said = report("a\nbb\nccc\n")
+    assert said == "lines: 3\nlongest: 3\nheading: none"
+
+test "a heading is found once and the first one wins"
+    said = report("# one\n# two\n")
+    assert said == "lines: 2\nlongest: 5\nheading: # one"
+
+test "empty text reports nothing rather than failing"
+    assert report("") == "lines: 0\nlongest: 0\nheading: none"
+
+test "a blank line counts as a line and is not a heading"
+    said = report("\n\n")
+    assert said == "lines: 2\nlongest: 0\nheading: none"
+
+test "the two modules are two modules, and this file calls them by two names"
+    # The aliases are not cosmetic: `input.Reader` and `output.Sink` are
+    # different types from different files whose paths end in the same word.
+    r: input.Reader @ input.new_reader("x\n")
+    s: output.Sink @ output.new_sink()
+    assert input.remaining(r) == 1
+    assert output.count(s) == 0
+    output.emit(@s, input.next_line(@r).must())
+    assert output.rendered(s) == "x"
