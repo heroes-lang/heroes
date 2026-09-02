@@ -5,9 +5,8 @@
   <p class="tagline">Test che non devi installare, e un modo per chiedere al compilatore che cosa ci va qui.</p>
 
   <p>
-    Due cose in una pagina sola, perché sono la stessa idea detta due volte: gli
-    attrezzi per scrivere un programma che non è ancora finito fanno parte del
-    linguaggio, invece di essere qualcosa che ci aggiungi sopra.
+    Entrambe servono mentre il programma è ancora incompleto e fanno parte del
+    linguaggio: non devi aggiungere strumenti esterni.
   </p>
 
   <h3><code>test</code> è una dichiarazione</h3>
@@ -38,7 +37,7 @@ FAIL "the 3-4-5 triangle"
 ok   "a rectangle keeps its size when it moves"
 2 tests, 1 failed</code></pre>
   <p>
-    Gli altri test girano lo stesso e riportano lo stesso. Il codice di uscita
+    Gli altri test continuano a girare e mostrano il loro risultato. Il codice di uscita
     non è zero, quindi la cosa funziona dentro uno script senza che nessuno
     debba leggersi l&rsquo;output.
   </p>
@@ -74,7 +73,7 @@ ok   "a rectangle keeps its size when it moves"
     <span class="k">return</span> <span class="s">"total "</span> + total_calories(entries).to_str() + <span class="s">", heaviest "</span> + ???</code></pre>
     <figcaption>examples/gallery/09-holes.hero, righe 26&ndash;28</figcaption>
   </figure>
-  <p>Chiedi al compilatore di quel file e ti risponde:</p>
+  <p>Controlla quel file e il compilatore risponde:</p>
   <pre><code>$ heroes check holes.hero
 hole at holes.hero:24:5
   position: statement — any type, or none
@@ -101,7 +100,7 @@ hole at holes.hero:28:74
 
   <h3>Tutto il resto viene controllato lo stesso</h3>
   <p>
-    Un file con dei buchi viene controllato per intero: esce con 0, e con le
+    Un file con dei buchi viene controllato per intero: restituisce il codice 0 e mostra le
     diagnostiche di qualunque cosa sia davvero sbagliata. Quello che non fa è
     produrre un binario, e lo strumento dice quale riga glielo ha impedito:
   </p>
@@ -123,9 +122,8 @@ hole at holes.hero:28:74
     library.hero_file_read(path: cstr, @status: i64)
     library.hero_str_try_from_cstr(p: cstr, @status: i64)</code></pre>
   <p>
-    Questo è lo scambio, ed è buono: un programma scritto a metà è un programma
-    di cui il compilatore ti parla, e non può mai essere scambiato per uno
-    finito. Un buco non può scappare dentro qualcosa che gira.
+    Il compilatore può quindi controllare un programma scritto a metà senza
+    scambiarlo per uno finito. Un buco non può finire in un eseguibile.
   </p>
 
   <h3>Perché sta nel linguaggio e non dentro un editor</h3>

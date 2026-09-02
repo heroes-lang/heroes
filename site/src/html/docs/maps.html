@@ -5,15 +5,14 @@
   <p class="tagline">A lookup hands you a value <i>or</i> an error, and never a surprise.</p>
 
   <p>
-    A map is written <code>{K: V}</code> and holds values under keys. The
-    interesting part is what happens when you ask for a key that is not
-    there. In most languages that is where <code>null</code>
+    A map is written <code>{K: V}</code> and holds values under keys. When you
+    ask for a key that is not there, most languages introduce <code>null</code>,
     gets in, or an exception, or a silently invented zero. Here it is a type.
   </p>
 
   <h3><code>m[k]</code> is a <code>V?</code>, not a <code>V</code></h3>
   <p>
-    Write the lookup on its own and the compiler tells you what you actually
+    Write the lookup on its own and the compiler tells you what you
     have:
   </p>
   <pre><code>$ heroes check maps.hero
@@ -27,10 +26,9 @@ error[type_mismatch]: expected `i64`, found `i64?`
     <code>i64?</code> is the fallible type from
     <a href="/docs/failure-is-a-value/">chapter 4</a>: a number, or an error
     saying why there isn&rsquo;t one. For a missing key that error always has
-    the code <code>missing_key</code>. So the question <i>what if it is not
-    there</i> is not a thing you might forget to ask: it is in the type of
-    the thing you are holding, and you cannot use the number until you have
-    answered it.
+    the code <code>missing_key</code>. The question <i>what if it is not there</i>
+    is therefore part of the result&rsquo;s type. You cannot use the number until
+    you answer it.
   </p>
 
   <h3>Four answers, one line each</h3>
@@ -101,10 +99,10 @@ error[type_mismatch]: expected `i64`, found `i64?`
     <code>m: {str: i64} @ {}</code>.
   </p>
 
-  <h3>A map has no order, and the language means it</h3>
+  <h3>A map has no order</h3>
   <p>
-    <code>keys(m)</code> gives you the keys in <b>no particular order</b>, and
-    that is not a hedge in the documentation: two runs may differ. When
+    <code>keys(m)</code> gives you the keys in <b>no particular order</b>: two
+    runs may differ. When
     the order matters, ask for it:
   </p>
   <figure class="example" data-src="examples/adventure/world.hero" data-lines="80-86">

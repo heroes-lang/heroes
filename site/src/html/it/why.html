@@ -3,11 +3,11 @@
     <h1 class="page">Perché Heroes</h1>
     <span class="nod">· rebel rebel ·</span>
   </div>
-  <p class="lede">Due vincoli, decisi prima ancora della grammatica: chi legge
-  è una macchina, e il linguaggio non si porta dietro nessuna libreria
+  <p class="lede">Due vincoli, decisi prima ancora della grammatica: il codice
+  deve essere leggibile da un modello, e il linguaggio non si porta dietro nessuna libreria
   standard.</p>
 
-  <h2>Chi legge è una macchina <span class="nod">· sound and vision ·</span></h2>
+  <h2>Il codice deve essere leggibile da un modello <span class="nod">· sound and vision ·</span></h2>
   <p>
     Il codice lo scrivono sempre di più i modelli linguistici, gli LLM, e i
     modelli sbagliano in modi precisi, catalogati, che si ripetono: scambiano due
@@ -24,8 +24,8 @@
   </blockquote>
   <p>
     Un token è il pezzetto di testo con cui si misura quanto costa far
-    lavorare un modello, più o meno una parola. Questa è una tesi, e si giudica
-    con i numeri e non a naso: si prendono programmi che funzionano, si mette in
+    lavorare un modello, più o meno una parola. La tesi si misura così: si
+    prendono programmi che funzionano, si mette in
     ognuno un errore plausibile, e si conta quanti diventano un <i>errore di
     compilazione</i> invece di un programma che parte e fa una cosa diversa
     senza dirlo. Poi si ripassa lo stesso mucchio di programmi a una versione
@@ -87,7 +87,7 @@ grafica, audio, terminale     <span class="c">→</span> SDL, raylib, ncurses</c
     due argomenti si paga più caro.
   </p>
   <p>
-    Quel &ldquo;nient&rsquo;altro&rdquo; va precisato, per onestà: il
+    Quel &ldquo;nient&rsquo;altro&rdquo; va precisato: il
     linguaggio si porta dietro una trentina di nomi e basta, sempre gli stessi.
     Sono <code>print</code>, <code>len</code>, <code>push</code>,
     <code>slice</code>, <code>sort</code>, le conversioni fra tipi e
@@ -97,8 +97,8 @@ grafica, audio, terminale     <span class="c">→</span> SDL, raylib, ncurses</c
     decisione messa a verbale, mai per accumulo.
   </p>
   <p>
-    La pigrizia non c&rsquo;entra niente: appoggiarsi a tutto il C già scritto
-    è quello che rende fattibile un linguaggio fatto da una persona sola, e ha
+    Appoggiarsi a tutto il C già scritto rende fattibile un linguaggio fatto da
+    una persona sola e ha
     una conseguenza che tutto il resto del progetto rispetta.
     <b>Quanto è comodo il collegamento con il C conta quanto la chiarezza del
     linguaggio, non meno.</b> Una libreria che Heroes non riesce a collegare è
@@ -106,7 +106,7 @@ grafica, audio, terminale     <span class="c">→</span> SDL, raylib, ncurses</c
     esattamente la cosa che questo rifiuto vuole evitare.
   </p>
 
-  <h2>Ed è per questo che il compilatore emette C</h2>
+  <h2>Perché il compilatore emette C</h2>
   <p>
     Heroes non produce direttamente il linguaggio della macchina: traduce
     prima il tuo programma in C, e poi lascia che sia un compilatore C a farne
@@ -121,8 +121,8 @@ grafica, audio, terminale     <span class="c">→</span> SDL, raylib, ncurses</c
     partenza aveva già deciso la questione.
   </p>
   <p>
-    Non è una decisione sulla velocità, che in questo progetto non è né un
-    obiettivo né una scusa.
+    La velocità non ha deciso questa scelta: nel progetto non è un obiettivo né
+    una scusa.
   </p>
 
   <h2>Sette parole possono aprire una riga al primo livello</h2>
@@ -195,12 +195,11 @@ grafica, audio, terminale     <span class="c">→</span> SDL, raylib, ncurses</c
     E la memoria non si libera per caso: il conteggio lo scrive il compilatore
     dentro il programma come istruzioni vere, e ogni funzione ha una sola via di
     uscita per la pulizia, così qualunque strada prenda il codice, quello che
-    aveva preso viene restituito. Tutto quello che sta sotto sono 3.417 righe di
+    aveva preso viene restituito. Tutto quello che sta sotto sono 4.500 righe di
     C.
   </p>
   <p>
-    Sopra tutto questo sta una promessa che il linguaggio si è dato come
-    obiettivo, non come fortuna: <b>un programma non deve schiantarsi e non deve
+    Il linguaggio ha un obiettivo esplicito: <b>un programma non deve schiantarsi e non deve
     rovinare la memoria</b>. Le operazioni che in C vanno male in silenzio, qui
     vanno male ad alta voce. Un numero che sfora il suo spazio viene sempre
     controllato, il resto della divisione è protetto come la divisione, un
@@ -225,7 +224,7 @@ grafica, audio, terminale     <span class="c">→</span> SDL, raylib, ncurses</c
     <li><b>Un modo solo di scrivere ogni cosa.</b> C&rsquo;è un comando che rimette il codice nella sua forma unica, una parola sola per i cicli, nessuna conversione automatica fra tipi, e i nomi degli argomenti obbligatori dove i tipi non bastano a distinguerli. Gli errori che i modelli fanno davvero diventano errori che il compilatore segnala davvero.</li>
     <li><b>Errori scritti per essere letti da una macchina.</b> Ogni messaggio di errore porta tutto quello che serve per sistemare il programma in un colpo solo: che cosa il compilatore si aspettava, dove era stata dichiarata la cosa con cui va in conflitto, e la correzione, marchiata <code>certain</code> quando è sicura e <code>guess</code> quando è un suggerimento. E scrivendo <code>???</code> puoi lasciare un buco dichiarato e farti dire dal compilatore che cosa ci va.</li>
     <li><b>Un programma non deve schiantarsi.</b> Quando due soluzioni sono entrambe accettabili e una delle due si può far crollare, vince l&rsquo;altra, qualunque cosa costi in eleganza o in parole. La sezione qui sopra ha il ragionamento per esteso, e l&rsquo;unico buco che resta aperto.</li>
-    <li><b>Abbastanza piccolo da compilare se stesso.</b> La specifica intera misura 3592 token contro un tetto invalicabile di 4096: cinque pagine, fatte per essere date da leggere a un modello più che per stare in uno scaffale.</li>
+    <li><b>Abbastanza piccolo da compilare se stesso.</b> La specifica intera misura 3.630 token contro un tetto invalicabile di 4.096: cinque pagine, fatte per essere date da leggere a un modello più che per stare in uno scaffale.</li>
   </ul>
 
   <h2>Le obiezioni ovvie <span class="nod">· quicksand, avoided ·</span></h2>
@@ -324,8 +323,8 @@ grafica, audio, terminale     <span class="c">→</span> SDL, raylib, ncurses</c
       le virgolette, e <code>\'</code> al posto di quest&rsquo;ultima dentro un
       carattere singolo. Sono sei in tutto e non ce ne sono altre, così ogni
       carattere ha una scrittura sola. Qualunque altra lettera dopo la barra è un
-      errore di compilazione, con la correzione allegata. Ed è questa seconda
-      metà il punto: prima che esistesse, <code>"a\nb"</code> compilava
+      errore di compilazione, con la correzione allegata. Prima che esistesse
+      questo controllo, <code>"a\nb"</code> compilava
       tranquillo e stampava una barra rovesciata, che è esattamente il tipo di
       guaio silenzioso che questo linguaggio vuole rendere impossibile. Un limite
       resta, e lo diciamo: <code>"C:\temp"</code> contiene ancora un tab, perché
@@ -353,12 +352,10 @@ grafica, audio, terminale     <span class="c">→</span> SDL, raylib, ncurses</c
     chiedergli un programma, e in un prompt lo spazio è finito. Ogni cosa che il
     linguaggio aggiunge deve pagarsi l&rsquo;affitto lì dentro, e un linguaggio
     che si spiega per intero in poche pagine è anche un linguaggio che una
-    persona sola riesce a implementare: i due vincoli sono lo stesso vincolo
-    travestito. Al momento misura 3592 token, e ne restano 504 da spendere. Il
-    numero è contato, non stimato a occhio, e la differenza è costata due giorni
-    al progetto: per un po&rsquo; il tetto è stato difeso guardando il numero di
-    parole, finché qualcuno non ha contato per davvero e ha scoperto la specifica
-    un terzo più grande di quanto tutti credessero. Adesso a contarla sono due
+    persona sola riesce a implementare. Al momento misura 3.630 token, e ne
+    restano 466 da spendere. Il numero è contato, non stimato a occhio: il
+    vecchio conteggio delle parole faceva sembrare la specifica un terzo più
+    piccola. Adesso a contarla sono due
     programmi diversi, e dove non vanno d&rsquo;accordo vale il numero più
     grande.</dd>
   </dl>

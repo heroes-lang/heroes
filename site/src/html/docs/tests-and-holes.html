@@ -5,9 +5,8 @@
   <p class="tagline">Tests you do not install, and a way to ask the compiler what goes here.</p>
 
   <p>
-    Two features on one page, because they are the same idea twice: the tools
-    for writing a program that is not finished yet are part of the language
-    rather than something you add to it.
+    Both are useful while a program is unfinished, and both are part of the
+    language: no external tools need to be added.
   </p>
 
   <h3><code>test</code> is a declaration</h3>
@@ -121,9 +120,8 @@ hole at holes.hero:28:74
     library.hero_file_read(path: cstr, @status: i64)
     library.hero_str_try_from_cstr(p: cstr, @status: i64)</code></pre>
   <p>
-    That is the trade, and it is a good one: a half-written program is a program
-    the compiler will talk to you about, and it can never be mistaken for a
-    finished one. A hole cannot escape into something that runs.
+    The compiler can therefore check a half-written program without mistaking
+    it for a finished one. A hole cannot reach an executable.
   </p>
 
   <h3>Why this is in the language rather than in an editor</h3>

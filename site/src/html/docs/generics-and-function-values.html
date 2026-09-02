@@ -5,12 +5,11 @@
   <p class="tagline">One shape for many types, and no anonymous functions anywhere.</p>
 
   <p>
-    Writing the same loop once for lists of numbers, once for lists of words
-    and once for everything else is the best way to throw away an afternoon.
-    Building a type system that can express every imaginable condition on that
-    loop is the best way to throw away the next ten years. Heroes takes the smallest
-    thing that works: a function may leave the type it works on open, and that
-    is the whole feature.
+    Rewriting the same loop for lists of numbers, lists of words and everything
+    else wastes an afternoon. A type system that can express every imaginable
+    condition on that loop can consume the next ten years. Heroes chooses the
+    smallest form that works: a function may leave the type it works on open.
+    The feature ends there.
   </p>
 
   <h3>A function with a hole in its types</h3>
@@ -35,7 +34,7 @@
     <code>[]</code> to work it out from.
   </p>
 
-  <h3>Three rules, and they are all absences</h3>
+  <h3>Three rules keep it small</h3>
   <ul>
     <li><b>Only functions can leave a type open.</b> A <code>record</code> or a
     <code>variant</code> always has its types settled. When you need a container
@@ -50,9 +49,8 @@
     has.</li>
   </ul>
   <p>
-    The third one is the surprising one and it follows from the second: with no
-    constraints there is nothing to disambiguate, so a type argument would only
-    ever repeat what the compiler already knows.
+    With no constraints there is nothing to disambiguate. A type argument would
+    only repeat what the compiler already knows.
   </p>
 
   <h3>Functions are values, and they have names</h3>
@@ -144,8 +142,8 @@ error[type_mismatch]: expected `bool`, found `i64`
     <figcaption>examples/gallery/06-generics.hero, lines 49&ndash;53</figcaption>
   </figure>
   <p>
-    The second line is the whole point: the same <code>each</code>, given a
-    function that returns <code>str</code>, returns a <code>[str]</code>. Nothing
+    The same <code>each</code>, given a function that returns <code>str</code>,
+    returns a <code>[str]</code>. Nothing
     at either call site says so, and both are checked completely.
   </p>
   <figure class="example" data-src="examples/gallery/06-generics.hero" data-lines="55-56">

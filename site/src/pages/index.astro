@@ -2,6 +2,6 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import content from '../html/index.html?raw';
 ---
-<BaseLayout url="/" title={'Heroes: a programming language made for LLMs'} description={'Heroes is a small compiled language that fits in a prompt and compiles itself. Native binaries, no GC, no standard library, everything through the C FFI. And every plausible LLM mistake is a compile error.'} mainClass="home">
+<BaseLayout url="/" title={'Heroes: a programming language made for LLMs'} description={'Heroes is a small compiled language that fits in a prompt and compiles itself. It produces native executables, uses C libraries and turns common model mistakes into compile errors.'} mainClass="home">
 <Fragment set:html={content} />
 </BaseLayout>

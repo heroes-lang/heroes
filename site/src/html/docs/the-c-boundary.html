@@ -7,9 +7,9 @@
   <p>
     Heroes has no standard library, and it never will. Everything you have seen
     in these chapters (numbers, strings, arrays, maps, printing) is
-    the whole inventory. Files, sockets, JSON, databases, graphics, maths beyond
-    arithmetic: none of that is missing, and none of it is coming. It arrives
-    from C, through one mechanism, and this chapter is that mechanism.
+    the whole inventory. Files, sockets, JSON, databases, graphics and maths
+    beyond arithmetic are not built into Heroes. They come from C through the
+    one mechanism explained in this chapter.
   </p>
 
   <h3>A group names its header</h3>
@@ -21,17 +21,17 @@
     <figcaption>examples/gallery/08-ffi.hero, lines 12&ndash;15</figcaption>
   </figure>
   <p>
-    Three C functions, usable from the next line on. The header name is not
-    decoration and the whole design turns on it: <b>clang reads that header and
-    checks every declaration in the group against it.</b> A binding is the one
-    place a program can reach an address nobody checked, so this is the place
-    the language spends its care.
+    These three C functions are usable from the next line on. A header is the file that
+    describes a library&rsquo;s interface. <b>Clang reads it and checks every
+    declaration in the group.</b> A binding connects Heroes to a C function and
+    is the one place a program can reach an external address, so the check
+    happens here.
   </p>
 
   <h3>What that check catches</h3>
   <p>
-    Misspell a name and you do not get a link error at the end of a long build.
-    You get this, on your line, with the header&rsquo;s own answer attached:
+    Misspell a name and you do not have to wait for a link error at the end of a
+    long build. You get this on your line, with the header&rsquo;s own answer attached:
   </p>
   <pre><code>$ heroes build ffi.hero
 error[ffi_unknown_name]: `math.h` declares no `flooor` — clang read the header and could not find it
@@ -57,9 +57,9 @@ error[ffi_return_type]: `puts` does not return `cstr` — that is what `stdio.h`
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   note: an `extern` is checked against the real header (§4.19): correct the result type, or name the header that declares this `puts`</code></pre>
   <p>
-    In most languages a foreign declaration is a promise nobody verifies: get it
-    wrong and the program builds, runs, and corrupts something. Here the promise
-    is checked against the library that has to keep it.
+    In many languages nobody verifies a foreign declaration: get it wrong and
+    the program may build, run and corrupt something. Here it is checked against
+    the real library.
   </p>
 
   <h3>The boundary is visible in the types</h3>

@@ -6,15 +6,15 @@
 
   <p>
     Una mappa si scrive <code>{K: V}</code> e tiene dei valori sotto delle
-    chiavi. La parte interessante è quello che succede quando
-    chiedi una chiave che non c&rsquo;è. Nella maggior parte dei linguaggi è lì
+    chiavi. Quando chiedi una chiave che non c&rsquo;è, nella maggior parte dei
+    linguaggi è lì
     che entra il <code>null</code>, o un&rsquo;eccezione, o uno zero inventato in
     silenzio. Qui è un tipo.
   </p>
 
   <h3><code>m[k]</code> è un <code>V?</code>, non un <code>V</code></h3>
   <p>
-    Scrivi la ricerca da sola e il compilatore ti dice che cosa hai davvero in
+    Scrivi la ricerca da sola e il compilatore ti dice che cosa hai in
     mano:
   </p>
   <pre><code>$ heroes check maps.hero
@@ -28,9 +28,8 @@ error[type_mismatch]: expected `i64`, found `i64?`
     <code>i64?</code> è il tipo fallibile del
     <a href="/it/docs/failure-is-a-value/">capitolo 4</a>: un numero, oppure un errore
     che dice perché non c&rsquo;è. Per una chiave mancante quell&rsquo;errore ha
-    sempre il codice <code>missing_key</code>. Quindi la domanda <i>e se non
-    c&rsquo;è?</i> non è una cosa che ti puoi dimenticare di fare: sta nel tipo
-    di quello che hai in mano, e il numero non lo puoi usare finché non le hai
+    sempre il codice <code>missing_key</code>. La domanda <i>e se non c&rsquo;è?</i>
+    sta quindi nel tipo del risultato. Non puoi usare il numero finché non hai
     risposto.
   </p>
 
@@ -102,11 +101,11 @@ error[type_mismatch]: expected `i64`, found `i64?`
     tipo, come ogni contenitore vuoto: <code>m: {str: i64} @ {}</code>.
   </p>
 
-  <h3>Una mappa non ha un ordine, e il linguaggio lo intende sul serio</h3>
+  <h3>Una mappa non ha un ordine</h3>
   <p>
-    <code>keys(m)</code> ti dà le chiavi in <b>nessun ordine particolare</b>, e
-    non è una clausola scritta in piccolo nella documentazione: due
-    esecuzioni possono restituirtele in ordini diversi. Quando l&rsquo;ordine conta, lo devi chiedere:
+    <code>keys(m)</code> ti dà le chiavi in <b>nessun ordine particolare</b>: due
+    esecuzioni possono restituirtele in ordini diversi. Quando l&rsquo;ordine conta,
+    lo devi chiedere:
   </p>
   <figure class="example" data-src="examples/adventure/world.hero" data-lines="80-86">
 <pre><code>    w = make()

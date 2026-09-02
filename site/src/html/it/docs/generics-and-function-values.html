@@ -5,13 +5,11 @@
   <p class="tagline">Una forma sola per tanti tipi, e nessuna funzione anonima da nessuna parte.</p>
 
   <p>
-    Riscrivere lo stesso ciclo una volta per le liste di numeri, una per le
-    liste di parole e una per tutte le altre è il modo migliore per buttare via
-    un pomeriggio. Costruire un sistema di tipi capace di esprimere ogni
-    condizione immaginabile su quel ciclo è il modo migliore per buttare via i
-    dieci anni successivi. Heroes prende la cosa più piccola che
-    funziona: una funzione può lasciare in sospeso il tipo su cui lavora, e la
-    faccenda finisce lì.
+    Riscrivere lo stesso ciclo per le liste di numeri, per quelle di parole e
+    poi per tutte le altre fa perdere un pomeriggio. Un sistema di tipi capace di
+    esprimere ogni condizione immaginabile può costare i dieci anni successivi.
+    Heroes sceglie la forma più piccola che funziona: una funzione può lasciare
+    in sospeso il tipo su cui lavora. Non c&rsquo;è altro.
   </p>
 
   <h3>Una funzione con un buco nei tipi</h3>
@@ -36,7 +34,7 @@
     <code>[]</code> non c&rsquo;è niente da cui capirlo.
   </p>
 
-  <h3>Tre regole, e sono tutte delle assenze</h3>
+  <h3>Tre regole la tengono piccola</h3>
   <ul>
     <li><b>Il tipo si può lasciare in sospeso solo nelle funzioni.</b> Un
     <code>record</code> o un <code>variant</code> ha sempre tipi decisi. Se ti
@@ -51,9 +49,8 @@
     <code>each&lt;i64, str&gt;(…)</code> non è una scrittura che esiste.</li>
   </ul>
   <p>
-    La terza è quella che sorprende, e viene dalla seconda: senza vincoli non
-    c&rsquo;è niente da disambiguare, quindi un argomento di tipo non farebbe
-    altro che ripetere quello che il compilatore sa già.
+    Senza vincoli non c&rsquo;è niente da disambiguare. Scrivere un argomento di
+    tipo ripeterebbe solo quello che il compilatore sa già.
   </p>
 
   <h3>Le funzioni sono valori, e hanno un nome</h3>
@@ -146,10 +143,9 @@ error[type_mismatch]: expected `bool`, found `i64`
     <figcaption>examples/gallery/06-generics.hero, righe 49&ndash;53</figcaption>
   </figure>
   <p>
-    La seconda riga è quella che conta: allo stesso <code>each</code>, se gli
-    passi una funzione che restituisce una stringa, torna indietro una lista di
-    stringhe. Nessuno dei due punti di chiamata lo dice, e tutti e due
-    sono controllati per intero.
+    Lo stesso <code>each</code> restituisce una lista di stringhe se gli passi
+    una funzione che restituisce una stringa. Nessuno dei due punti di chiamata
+    lo dice, e tutti e due sono controllati per intero.
   </p>
   <figure class="example" data-src="examples/gallery/06-generics.hero" data-lines="55-56">
 <pre><code><span class="k">function</span> main()

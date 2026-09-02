@@ -61,9 +61,7 @@ error[missing_label]: `Point`'s fields are always named — this one is `x`
     Costa quattro caratteri al punto di chiamata. In cambio,
     <code>Point(y: 4, x: 3)</code> e <code>Point(x: 3, y: 4)</code> sono lo
     stesso punto, e nessuno dei due può diventare l&rsquo;altro di nascosto.
-    Qui c&rsquo;è tutto l&rsquo;argomento del linguaggio in piccolo: paghi
-    qualche token dove uno sbaglio è probabile, e lì non devi più stare
-    attento.
+    I pochi token in più stanno esattamente dove uno sbaglio è probabile.
   </p>
 
   <h3>Le funzioni, e dove i nomi diventano obbligatori</h3>
@@ -84,9 +82,8 @@ error[missing_label]: `Point`'s fields are always named — this one is `x`
     restituisce non devi leggere il corpo.
   </p>
   <p>
-    La regola per cui questo capitolo esiste: <b>quando due parametri
-    della stessa funzione hanno lo stesso tipo, chi chiama deve
-    nominarli.</b> <code>dist2</code> prende due <code>Point</code>, quindi
+    <b>Quando due parametri della stessa funzione hanno lo stesso tipo, chi
+    chiama deve nominarli.</b> <code>dist2</code> prende due <code>Point</code>, quindi
     tocca a lui:
   </p>
   <pre><code>$ heroes check points.hero
@@ -138,8 +135,8 @@ error[needs_label]: two of `dist2`'s parameters are `Point`, so every one of the
   </figure>
   <p>
     <code>test</code> è una dichiarazione di primo livello come le altre, e una
-    compilazione normale la ignora. Il secondo test è quello interessante: dice
-    che spostare un rettangolo non lo ridimensiona, che è una proprietà e non un
+    compilazione normale la ignora. Il secondo test dice che spostare un
+    rettangolo non lo ridimensiona. È una proprietà, non un
     numero, e grazie alla scrittura col punto vista qui sopra si legge tutto
     d&rsquo;un fiato.
   </p>

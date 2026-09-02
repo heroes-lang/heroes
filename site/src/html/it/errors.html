@@ -14,8 +14,8 @@
     deve sistemare il programma con quello e nient&rsquo;altro, oppure spendere
     un giro intero a rileggersi i file, che è la cosa più cara che possa
     capitare. Per questo ogni messaggio di errore porta tre cose: il punto esatto
-    che è sbagliato, l&rsquo;altro capo della storia, cioè dove era stata
-    dichiarata la cosa con cui va in conflitto, e la correzione.
+    che è sbagliato, il punto in cui è stata dichiarata la cosa con cui va in
+    conflitto e la correzione.
   </p>
 
   <h2>L&rsquo;inversione classica</h2>
@@ -47,7 +47,7 @@
     di essere descritto.
   </p>
 
-  <h2>Due tipi di riparazione, e uno solo lo può applicare una macchina</h2>
+  <h2>Due tipi di riparazione, uno solo applicabile in automatico</h2>
   <p>
     Una correzione marchiata <code>certain</code> è una correzione che il
     compilatore ha <i>calcolato</i>, non tirato a indovinare: il tipo che ha
@@ -122,19 +122,19 @@ tests/golden/check/deleted-int.hero:23:8: <span class="k">error</span>[reserved_
     nominato al punto della chiamata come ogni altro argomento.
   </p>
 
-  <h2>Come viene misurato tutto questo</h2>
+  <h2>Come si misura</h2>
   <p>
-    Niente di quello che sta qui sopra vale qualcosa come affermazione, quindi
-    diventa un numero. <code>heroes mutate</code> prende programmi che funzionano,
+    <code>heroes mutate</code> misura queste affermazioni. Prende programmi che funzionano,
     inietta un errore plausibile alla volta, e conta quanti il compilatore
     trasforma in errori di compilazione. Poi passa lo stesso corpus allo stesso
     compilatore con le regole della tesi disattivate. La differenza fra le due
     colonne è l&rsquo;unica parte che significa qualcosa.
   </p>
   <p>
-    Misurato sui 49 programmi che stanno in <code>examples/</code>, che fanno
-    6.254 errori iniettati. Qui c&rsquo;è ogni operatore che lo strumento genera,
-    compresi quelli dove il design non fa niente e i due dove fallisce:
+    La tabella qui sotto riporta una misurazione completata su 49 programmi in
+    <code>examples/</code>, con 6.254 errori iniettati. Contiene ogni operatore
+    usato in quella prova, compresi quelli dove il design non fa niente e i due
+    dove fallisce:
   </p>
   <pre class="table"><code><span class="c">errore iniettato                            mutanti  presi   senza regole</span>
 etichetta di argomento saltata                  313      76%           0%
@@ -175,8 +175,7 @@ aritmetica mista fra interi e float             376     100%         100%
     non c&rsquo;è sistema di tipi che le possa vedere.
   </p>
   <p>
-    Questo è il senso di misurare. Un numero che facesse solo bella figura non
-    varrebbe la pena di stamparlo.
+    Un numero che facesse solo bella figura non servirebbe a niente.
   </p>
 
   <p class="next">

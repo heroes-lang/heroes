@@ -59,11 +59,10 @@ error[shadowed_binding]: `start` is already in scope, bound at line 30 — shado
   31 |     start = r.pos + 1
      |     ^^^^^</code></pre>
   <p>
-    Nascondere un nome è lo sbaglio che non dà nessun sintomo: il codice compila,
-    gira, e usa in silenzio quella sbagliata fra due cose che si chiamano
-    uguale. Ed è anche in cima alla lista di quello che sbaglia un modello che
-    scrive codice: per questo il compilatore lo tratta come un errore e non come
-    un avvertimento che nessuno legge.
+    Nascondere un nome non dà sintomi: il codice compila, gira e usa in silenzio
+    quella sbagliata fra due cose con lo stesso nome. È anche uno degli errori
+    più comuni dei modelli che scrivono codice. Per questo il compilatore lo
+    tratta come un errore, non come un avvertimento.
   </p>
 
   <h3>Ogni valore è una copia</h3>
@@ -82,8 +81,8 @@ error[shadowed_binding]: `start` is already in scope, bound at line 30 — shado
     stringhe e record, a qualsiasi profondità: in questo linguaggio niente è un
     altro nome per qualcos&rsquo;altro, quindi una modifica fatta di qua non può
     spuntare di là. Sotto il cofano il compilatore condivide la memoria finché
-    qualcuno non scrive, e copia solo allora. Ma è un dettaglio
-    implementativo a cui non ti viene mai chiesto di pensare.
+    qualcuno non scrive e copia solo allora. È un dettaglio
+    dell&rsquo;implementazione che non cambia il modo in cui scrivi il programma.
   </p>
   <p>
     Guarda anche <code>b @ b.push(4)</code>. <code>push</code> restituisce un
@@ -163,8 +162,8 @@ error[unused_binding]: `spare` is bound and never read — remove the binding, o
      |     ^^^^^</code></pre>
   <p>
     Un nome inutilizzato di solito è un avanzo di una modifica, oppure una riga
-    il cui risultato doveva essere usato e non lo è. Vale la pena fermarsi per
-    entrambi. Quando invece vuoi davvero buttare via un risultato, dillo con
+    il cui risultato doveva essere usato e non lo è. In entrambi i casi il
+    compilatore si ferma. Quando vuoi buttare via un risultato, dillo con
     <code>_ = f(x)</code>: la rinuncia è scritta invece che sottintesa, e
     <code>_</code> non lega niente, quindi si può ripetere.
   </p>

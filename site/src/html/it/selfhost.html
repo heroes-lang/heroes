@@ -25,12 +25,12 @@
   <pre><code>$ clang -I runtime seed/heroes.c runtime/runtime.c -o heroes
 $ ./heroes build selfhost/main.hero --emit-c -o out.c
 $ cmp out.c seed/heroes.c</code></pre>
-  <pre class="fixpoint"><code>sha256  <span class="hash">aec9ad05df71cb017660ffe9b884802e81757c334528680b51f30872d18b7fc3</span>
+  <pre class="fixpoint"><code>sha256  <span class="hash">03075edd6a7cf785b804c8be637fc9f87e203ace60a20bd322da0f0953c08f4c</span>
 
   seed/heroes.c   il C che sta nel repository: la via d&rsquo;ingresso
   out.c           quello che il compilatore scrive compilando se stesso
 
-<span class="c">  23.248.564 byte · 798.556 righe · non un byte di differenza</span></code></pre>
+<span class="c">  23.327.212 byte · 800.433 righe · non un byte di differenza</span></code></pre>
   <p>
     <code>cmp</code> non stampa niente, ed è il suo modo di dire che i due file
     sono lo stesso file. Quindi il C che sta nel repository non è una copia che
@@ -51,8 +51,8 @@ $ cmp out.c seed/heroes.c</code></pre>
     Che cos&rsquo;è, e quanto è costato arrivarci:
   </p>
   <ul class="stats">
-    <li><span class="n">165</span><span class="what">moduli di Heroes</span></li>
-    <li><span class="n">48.342</span><span class="what">righe</span></li>
+    <li><span class="n">169</span><span class="what">moduli di Heroes</span></li>
+    <li><span class="n">49.637</span><span class="what">righe</span></li>
     <li><span class="n">0</span><span class="what">workaround rimasti nel codice portato</span></li>
     <li><span class="n">2.570</span><span class="what">output di programmi confrontati, mai una differenza</span></li>
   </ul>
@@ -67,7 +67,7 @@ $ cmp out.c seed/heroes.c</code></pre>
     comando.
   </p>
 
-  <h2>La parte più bella è quello che è andato storto</h2>
+  <h2>Che cosa ha trovato il self-hosting</h2>
   <p>
     Puntato sul proprio codice sorgente, il compilatore nuovo <b>l&rsquo;ha
     rifiutato</b>, sostenendo che un pezzo della sua struttura contenesse se
@@ -80,7 +80,7 @@ $ cmp out.c seed/heroes.c</code></pre>
   </p>
   <p>
     Un compilatore puntato sul proprio sorgente è un corpus che nessuna
-    suite di test riproduce: 48.342 righe che contengono ogni forma del
+    suite di test riproduce: 49.637 righe che contengono ogni forma del
     linguaggio, nelle proporzioni in cui il codice vero le usa. È con quel
     materiale che sono venuti fuori cinque difetti della traduzione, ed erano
     poi lo stesso inganno ripetuto cinque volte: un salto di ciclo dentro un ramo
@@ -129,10 +129,9 @@ $ cmp out.c seed/heroes.c</code></pre>
     compilato resta lì perché la build dopo lo riusi.
   </p>
   <p>
-    La parte difficile non era spezzare il file. Era decidere quando un pezzo
-    tenuto da parte si può riusare, e le due risposte più ovvie sono sbagliate
-    entrambe. La data di modifica non è una prova. E non lo è nemmeno il testo C
-    generato, e su questo vale la pena fermarsi. Quando un programma prende un
+    La difficoltà era decidere quando un pezzo tenuto da parte si può riusare.
+    Le due risposte più ovvie sono sbagliate: la data di modifica non è una
+    prova, e nemmeno il testo C generato. Quando un programma prende un
     numero dall&rsquo;header di una libreria C, il compilatore quel numero non lo
     scrive: scrive il <i>nome</i>, e lascia che sia il C a metterci il valore
     dopo. Quindi cambiare l&rsquo;header cambia la risposta e non cambia un

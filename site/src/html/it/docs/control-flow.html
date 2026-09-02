@@ -5,7 +5,7 @@
   <p class="tagline">Due cicli, una condizione, e nessuna forma furba.</p>
 
   <p>
-    C&rsquo;è un modo solo di fare una domanda e due modi di ripetere qualcosa.
+    C&rsquo;è un modo solo di scegliere e due modi di ripetere qualcosa.
     Niente <code>do…while</code>, niente <code>for(;;)</code> con
     l&rsquo;intestazione in tre pezzi, niente <code>switch</code> che cade da un
     caso all&rsquo;altro, niente operatore ternario, niente etichette sui cicli.
@@ -136,13 +136,13 @@ error[not_bool]: an `if` condition must be `bool`, found `i64` — there is no t
     <figcaption>examples/gallery/04-loops.hero, righe 52&ndash;60</figcaption>
   </figure>
   <p>
-    <code>range</code> non è sintassi. È una normale funzione che restituisce una
+    <code>range</code> è una normale funzione che restituisce una
     lista di numeri, con <code>from</code> incluso e <code>to</code> escluso, e i
     due argomenti sono nominati per il motivo che ha dato il
     <a href="/it/docs/records-and-functions/">capitolo 2</a>: sono tutti e due
     <code>i64</code>, quindi il compilatore non riesce a distinguerli e ti fa
-    dire qual è quale. Il classico errore di uno (incluso o escluso?)
-    qui non si tiene a mente: sta scritto sulla riga.
+    dire qual è quale. Così non devi ricordare se l&rsquo;estremo finale è
+    incluso: sta scritto sulla riga.
   </p>
   <p>
     <code>_</code> è la variabile del ciclo quando non c&rsquo;è niente a cui
@@ -163,7 +163,7 @@ error[not_bool]: an `if` condition must be `bool`, found `i64` — there is no t
 --------------------
 digits in 2026: 4</code></pre>
   <p>
-    Una nota onesta su quella prima riga. Aggiungere a una stringa dentro un
+    Aggiungere a una stringa dentro un
     ciclo ricopia tutta la stringa ogni volta, quindi costa sempre di più man
     mano che cresce; <code>repeat</code> e <code>join</code> la costruiscono in
     una passata sola e sono gli attrezzi giusti quando il ciclo è lungo. Venti

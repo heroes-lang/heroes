@@ -46,8 +46,8 @@
   <h3>Handing a failure upwards: <code>?</code></h3>
   <p>
     Most of the time a function that hits a failure has nothing useful to add
-    and simply wants to stop and pass it along. That is what <code>?</code>
-    does, and it does it <i>visibly, on the line where it happens</i>:
+    and wants to stop and pass it along. <code>?</code> does that <i>visibly, on
+    the line where it happens</i>:
   </p>
   <figure class="example" data-src="examples/gallery/03-fallible.hero" data-lines="13-22">
 <pre><code><span class="c"># Reads a whole non-negative number. Empty input is an error, not a zero.</span>
@@ -95,8 +95,8 @@
     type.
   </p>
   <p>
-    Notice also what <i>isn't</i> there: no <code>try</code>, no
-    <code>catch</code>, no nesting, no error variable threaded through by hand.
+    There is no <code>try</code>, <code>catch</code>, nesting or error variable
+    threaded through by hand.
     The failure path costs one character and the happy path reads as if failure
     were impossible. Here it is again in a function that averages a list, where the
     first bad character anywhere in the input stops everything:
@@ -132,8 +132,8 @@
     An arm names the case with a leading dot and binds its payload to the name
     after it: <code>.ok v</code> gives you the value as <code>v</code>, and
     <code>_</code> discards a payload you do not need. Both arms are required. A
-    <code>match</code> that forgets a case does not compile. And this is the part
-    that matters for the thesis: <b>a catch-all arm is forbidden here</b>. You cannot write the arm that means "anything
+    <code>match</code> that forgets a case does not compile. <b>A catch-all arm
+    is forbidden here</b>. You cannot write the arm that means "anything
     else", because that arm is how a forgotten case silently becomes a handled
     one. If the language ever gains a third possibility, every
     <code>match</code> in every program stops compiling until somebody has
@@ -141,9 +141,9 @@
     break the code that reads it, loudly, at build time.
   </p>
 
-  <h3>When you genuinely don't care</h3>
+  <h3>When failure already has an answer</h3>
   <p>
-    Sometimes a failure really does have an obvious answer, and writing a
+    Sometimes a failure has an obvious answer, and writing a
     <code>match</code> for it is noise. Two shorthands exist:
   </p>
   <figure class="example" data-src="examples/gallery/03-fallible.hero" data-lines="42-43">
@@ -200,7 +200,7 @@ failed: not_a_digit (expected 0-9)
     where it happens.
   </p>
 
-  <h3>What this buys</h3>
+  <h3>What changes in the code</h3>
   <p>
     Every function's signature tells you whether it can fail. Every place a
     failure changes the control flow is marked on that line. Every way of

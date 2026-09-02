@@ -7,9 +7,8 @@
   <p>
     Uno <code>str</code> è testo UTF-8 che, una volta creato, non cambia più.
     <code>len()</code> conta <b>byte</b>, non lettere, e lo stesso fa
-    <code>slice</code>. È la risposta onesta per l&rsquo;UTF-8, dove una lettera
-    può occupare un byte o quattro, e far finta del contrario è il modo in cui
-    nascono i bug sulle stringhe.
+    <code>slice</code>. In UTF-8 una lettera può occupare da uno a quattro byte;
+    ignorarlo produce bug sulle stringhe.
   </p>
 
   <h3>L&rsquo;indice ti dà un byte</h3>
@@ -64,8 +63,7 @@ error[type_mismatch]: expected `u8`, found `str`
     confronta con <code>" "</code> fra virgolette doppie mentre quella di prima
     usava <code>' '</code>. Il ciclo sui byte va bene per un protocollo o per uno
     scanner; <code>chars()</code> va bene per qualunque cosa leggerà una persona.
-    Scegliere quello sbagliato adesso è una decisione che prendi tu apposta,
-    invece di una che prende il linguaggio al posto tuo.
+    La sintassi rende esplicita la scelta tra byte e caratteri.
   </p>
   <p>
     Nemmeno tagliare in mezzo a un carattere passa in silenzio: il programma si
@@ -91,9 +89,8 @@ error[type_mismatch]: expected `u8`, found `str`
     <figcaption>examples/gallery/07-strings.hero, righe 27&ndash;40</figcaption>
   </figure>
   <p>
-    Uno <code>split</code> predefinito non c&rsquo;è, perché non c&rsquo;è
-    proprio nessuna libreria standard: è il vincolo di partenza, non una
-    dimenticanza. Dodici righe è quello che costa davvero dividere sugli spazi, e
+    Uno <code>split</code> predefinito non c&rsquo;è perché Heroes non ha una
+    libreria standard. L&rsquo;esempio divide il testo sugli spazi in dodici righe, e
     quell&rsquo;<code>if i &gt; start</code> è il pezzo che una libreria avrebbe
     deciso al posto tuo: qui due spazi di fila non producono una parola vuota, e
     questa scelta si vede nel codice invece che nella documentazione di qualcun

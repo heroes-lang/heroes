@@ -62,7 +62,7 @@ error[shadowed_binding]: `start` is already in scope, bound at line 30 — shado
     Shadowing is the mistake that produces no symptom: the code compiles, runs,
     and quietly uses the wrong one of two things with the same name. It is also
     near the top of what a model writing code gets wrong, which is why the
-    compiler treats it as an error rather than a warning nobody reads.
+    compiler treats it as an error rather than a warning.
   </p>
 
   <h3>Every value is a copy</h3>
@@ -80,8 +80,8 @@ error[shadowed_binding]: `start` is already in scope, bound at line 30 — shado
     <code>a</code> alone. This holds for arrays, maps, strings and records alike,
     at any depth: nothing in this language aliases anything, so no change made
     over here can appear over there. Under the surface the compiler shares the
-    memory until somebody writes, and copies only then. But that is an
-    implementation detail you are never asked to think about.
+    memory until somebody writes, and copies only then. That implementation
+    detail does not change how you write the program.
   </p>
   <p>
     Note also <code>b @ b.push(4)</code>. <code>push</code> hands back a new
@@ -159,7 +159,7 @@ error[unused_binding]: `spare` is bound and never read — remove the binding, o
      |     ^^^^^</code></pre>
   <p>
     An unused name is usually a leftover from an edit, or a line whose result was
-    supposed to be used and is not. Both are worth stopping for. When you really
+    supposed to be used and is not. The compiler stops in both cases. When you
     do want to throw a result away, say so with <code>_ = f(x)</code>: the
     discard is written down rather than implied, and <code>_</code> binds
     nothing so it can be repeated.

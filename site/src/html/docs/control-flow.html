@@ -5,7 +5,7 @@
   <p class="tagline">Two loops, one conditional, and no clever forms.</p>
 
   <p>
-    There is one way to ask a question and two ways to repeat something. No
+    There is one way to choose and two ways to repeat something. No
     <code>do…while</code>, no three-part <code>for(;;)</code> header, no
     <code>switch</code> with fall-through, no ternary operator, no loop labels.
     Each of those is a second way to write something the language already has,
@@ -131,7 +131,7 @@ error[not_bool]: an `if` condition must be `bool`, found `i64` — there is no t
     <figcaption>examples/gallery/04-loops.hero, lines 52&ndash;60</figcaption>
   </figure>
   <p>
-    <code>range</code> is not syntax. It is an ordinary function that returns a
+    <code>range</code> is an ordinary function that returns a
     list of numbers, <code>from</code> included and <code>to</code> excluded, and
     both arguments are named for the reason
     <a href="/docs/records-and-functions/">chapter 2</a> gave: they are both
@@ -157,7 +157,7 @@ error[not_bool]: an `if` condition must be `bool`, found `i64` — there is no t
 --------------------
 digits in 2026: 4</code></pre>
   <p>
-    One honest note about that first line. Adding to a string in a loop copies
+    Adding to a string in a loop copies
     the whole string every time, so it costs more the longer it gets;
     <code>repeat</code> and <code>join</code> build in one pass and are the right
     tools when the loop is long. Twenty dashes will never notice. The <a href="/docs/strings/">strings chapter</a> comes back to this.

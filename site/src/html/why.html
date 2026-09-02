@@ -3,10 +3,10 @@
     <h1 class="page">Why Heroes</h1>
     <span class="nod">· rebel rebel ·</span>
   </div>
-  <p class="lede">Two constraints, settled before the grammar was: the reader
-  is a machine, and the language carries no standard library.</p>
+  <p class="lede">Two constraints, settled before the grammar was: the code
+  must be readable by a model, and the language carries no standard library.</p>
 
-  <h2>The reader is a machine <span class="nod">· sound and vision ·</span></h2>
+  <h2>The code must be readable by a model <span class="nod">· sound and vision ·</span></h2>
   <p>
     Code is increasingly written by language models, by LLMs, and models fail
     in specific, catalogued, repeating ways: they swap two arguments of the same
@@ -21,8 +21,8 @@
   </blockquote>
   <p>
     A token is the scrap of text that measures what it costs to put a model to
-    work, roughly a word. This is a claim, and it is settled with numbers rather
-    than taste: take working programs, put one plausible mistake in each, and
+    work, roughly a word. The claim is measured like this: take working
+    programs, put one plausible mistake in each, and
     count how many turn into a <i>compile error</i> rather than a program that
     runs and quietly does something else. Then pass the same pile of programs to
     a build of the compiler with the thesis rules switched off, which serves as
@@ -81,7 +81,7 @@ graphics, audio, terminal <span class="c">→</span> SDL, raylib, ncurses</code>
     too, which is where swapping two arguments costs the most.
   </p>
   <p>
-    That &ldquo;nothing else&rdquo; needs one honest qualification: the
+    That &ldquo;nothing else&rdquo; needs one qualification: the
     language does carry about thirty names, always the same ones. They are
     <code>print</code>, <code>len</code>, <code>push</code>, <code>slice</code>,
     <code>sort</code>, the conversions between types, and <code>map</code>,
@@ -91,15 +91,15 @@ graphics, audio, terminal <span class="c">→</span> SDL, raylib, ncurses</code>
     accumulation.
   </p>
   <p>
-    Laziness has nothing to do with it. Leaning on all the C that is already
-    written is what makes a one-person language workable, and it has a
+    Leaning on all the C that is already written makes a one-person language
+    workable, and it has a
     consequence the rest of the design obeys. <b>How comfortable the C boundary
     is ranks alongside how clear the language is, not below it.</b> A library
     Heroes cannot connect to is C code its author has to keep writing by hand,
     which is exactly what this refusal exists to prevent.
   </p>
 
-  <h2>Which is why the compiler emits C</h2>
+  <h2>Why the compiler emits C</h2>
   <p>
     Heroes does not produce machine language directly: it translates your
     program into C first, and lets a C compiler turn that into an executable.
@@ -113,8 +113,8 @@ graphics, audio, terminal <span class="c">→</span> SDL, raylib, ncurses</code>
     decided the question.
   </p>
   <p>
-    It is not a decision about speed, which is neither a goal of this project
-    nor an excuse in it.
+    Speed did not decide this choice: it is neither a goal of this project nor
+    an excuse in it.
   </p>
 
   <h2>Seven words can begin a top-level line</h2>
@@ -183,11 +183,11 @@ graphics, audio, terminal <span class="c">→</span> SDL, raylib, ncurses</code>
     Freeing is not guesswork either: the compiler writes the counting into the
     program as real instructions, and each function has a single exit path for
     cleanup, so whichever route the code takes, what it took is given back.
-    Everything underneath this is 3,417 lines of C.
+    Everything underneath this is 4,500 lines of C.
   </p>
   <p>
-    On top of all this sits a promise the language set itself as a goal, not
-    as good luck: <b>a program must not crash and must not wreck memory</b>. The
+    The language has one explicit goal: <b>a program must not crash and must not
+    wreck memory</b>. The
     operations that go wrong quietly in C go wrong loudly here. A number that
     overflows its space is always checked, remainder is guarded like division,
     an index past the end of a list stops the program: always at the same place,
@@ -209,7 +209,7 @@ graphics, audio, terminal <span class="c">→</span> SDL, raylib, ncurses</code>
     <li><b>One way to write anything.</b> A command that puts code back into its single canonical shape, one word for loops, no automatic conversion between types, and argument names required where types are not enough to tell them apart. The mistakes models actually make become errors the compiler actually raises.</li>
     <li><b>Errors written to be read by a machine.</b> Every message carries everything needed to fix the program in one go: what the compiler expected, where the thing it clashes with was declared, and the repair, tagged <code>certain</code> when it is sure and <code>guess</code> when it is a suggestion. And writing <code>???</code> leaves a declared gap and asks the compiler what belongs in it.</li>
     <li><b>A program must not crash.</b> Where two designs are both acceptable and one of them can be made to fall over, the other wins, whatever it costs in elegance or in words. The section above has the argument and the one hole it leaves open.</li>
-    <li><b>Small enough to compile itself.</b> The whole specification measures 3592 tokens against a hard ceiling of 4096: five pages, written to be handed to a model rather than shelved.</li>
+    <li><b>Small enough to compile itself.</b> The whole specification measures 3,630 tokens against a hard ceiling of 4,096: five pages, written to be handed to a model rather than shelved.</li>
   </ul>
 
   <h2>The obvious objections <span class="nod">· quicksand, avoided ·</span></h2>
@@ -303,8 +303,8 @@ graphics, audio, terminal <span class="c">→</span> SDL, raylib, ncurses</code>
       <code>\"</code> for a quote, and <code>\'</code> in place of that last one
       inside a character literal. There are six in total and no others, so
       every character has exactly one spelling. Any other letter after the
-      backslash is a compile error, with the correction attached. That second
-      half is the point: before it existed, <code>"a\nb"</code> compiled
+      backslash is a compile error, with the correction attached. Before this
+      check existed, <code>"a\nb"</code> compiled
       happily and printed a backslash, which is exactly the sort of quiet wrong
       answer this language exists to make impossible. One limit remains, and we
       say so: <code>"C:\temp"</code> still contains a tab, because
@@ -329,12 +329,10 @@ graphics, audio, terminal <span class="c">→</span> SDL, raylib, ncurses</code>
     <dd>Because the spec is the text you hand a model before asking it for a
     program, and space in a prompt runs out. Everything the language adds has to
     pay rent in there, and a language whose whole definition fits in a few pages
-    is also a language one person can implement: the two constraints are
-    secretly the same one. It currently measures 3592 tokens, leaving 504 to
-    spend. The number is counted, not eyeballed, and the difference cost the
-    project two days: for a while the ceiling was defended by watching the word
-    count, until somebody counted properly and found the spec a third larger
-    than everyone believed. Two separate programs count it now, and where they
+    is also a language one person can implement. It currently measures 3,630
+    tokens, leaving 466 to spend. The number is counted, not eyeballed: the old
+    word count made the specification look one-third smaller. Two separate
+    programs count it now, and where they
     disagree the larger number binds.</dd>
   </dl>
 
