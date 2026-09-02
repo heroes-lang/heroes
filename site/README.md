@@ -34,7 +34,7 @@ Astro.
 ```
 cd site
 npm ci                  # exactly the lockfile, and fails if it disagrees with package.json
-npm run build           # src/ -> dist/, 44 pages
+npm run build           # src/ -> dist/, 46 pages
 npm run dev             # the fast loop, on localhost
 npm run preview         # dist/ over plain HTTP, as Astro serves it
 
@@ -131,7 +131,7 @@ fails. The bolt stays inline SVG in every page, because it is markup.
 
 **The nav is written once, in `src/components/SiteNav.astro`.** It used to be
 duplicated in each page's markup, and the cost of that was measured on the day
-it ended: **44 pages, 44 distinct nav blocks, no two identical.** They differed
+it ended: **46 pages, 44 distinct nav blocks, no two identical.** They differed
 by exactly three mechanical things and nothing else, which is why one component
 reproduces all 44: `class="here"` on the current entry, how many `../` the links
 climb, and the link to the other edition. Adding a nav item was editing 44 files;
@@ -215,7 +215,7 @@ browser accepts without a word:
     python3 site/serve.py --it                             # opens the Italian edition
 
 **Why the real name and not localhost.** Every absolute URL on these pages is
-`https://heroes-lang.org/...`: the `canonical` of all 44 pages, the three
+`https://heroes-lang.org/...`: the `canonical` of all 46 pages, the three
 `hreflang` alternates on each of them, the `og:url`, the sitemap's 44 entries.
 Those are generated from one path per page now rather than typed out, which is
 what the move to a layout bought: 176 absolute URLs that cannot disagree with

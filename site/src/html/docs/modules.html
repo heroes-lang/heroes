@@ -1,0 +1,185 @@
+  <p class="crumb"><a href="/">Heroes</a> / <a href="/docs/">Docs</a> / chapter 13</p>
+
+  <h1 class="chapter">Modules and files</h1>
+  <p class="tagline">One file is one module, and the path you write means the same thing from everywhere.</p>
+
+  <p>
+    A program bigger than one file has to answer two questions, and most
+    languages answer them badly enough that people learn the answers by
+    accident. Where does the compiler look for a file? And what do you call
+    the things inside it once you have found them?
+  </p>
+  <p>
+    Heroes answers both in three sentences. One file is one module.
+    <code>use geom/point</code> reads <code>geom/point.hero</code>, starting
+    from the directory of the file you compile. And the name that line gives
+    you is the path&rsquo;s last part, so everything from that module reads
+    <code>point.something</code>.
+  </p>
+
+  <h3>The path starts where you started</h3>
+  <p>
+    This is the one rule to hold on to, because everything else follows from
+    it. You run <code>heroes run shapes/main.hero</code>, so
+    <code>shapes/</code> is the root, and every <code>use</code> in every file
+    of that program is written from there.
+  </p>
+  <figure class="example" data-src="examples/shapes/main.hero" data-lines="19-23">
+<pre><code><span class="k">use</span> geom/point
+<span class="k">use</span> geom/area
+<span class="k">use</span> render/ascii
+<span class="k">use</span> render/scale <span class="k">as</span> near_scale
+<span class="k">use</span> scale</code></pre>
+    <figcaption>examples/shapes/main.hero, lines 19&ndash;23</figcaption>
+  </figure>
+  <p>
+    Six modules in three directories. Nothing there is surprising yet. What is
+    worth stopping on is the file two directories down, which reaches the
+    module sitting right next to it:
+  </p>
+  <figure class="example" data-src="examples/shapes/geom/area.hero" data-lines="8-11">
+<pre><code><span class="k">use</span> geom/point
+
+<span class="k">function</span> rect(a: point.Point, b: point.Point) -&gt; <span class="t">i64</span>
+    <span class="k">return</span> point.span(from: a, to: b) * height(a: a, b: b)</code></pre>
+    <figcaption>examples/shapes/geom/area.hero, lines 8&ndash;11</figcaption>
+  </figure>
+  <p>
+    <code>area.hero</code> and <code>point.hero</code> are in the same
+    directory, and <code>area.hero</code> still writes the whole path. A
+    neighbour gets no shorter spelling than a stranger. That looks like a cost
+    until you notice what it buys: the line <code>use geom/point</code> is the
+    same line in <code>main.hero</code>, in <code>geom/area.hero</code> and in
+    <code>render/ascii.hero</code>. You can copy it, move the file that holds
+    it, and read it out loud to somebody who does not have the tree in front of
+    them, and it still means one file.
+  </p>
+
+  <h3>There is no way up</h3>
+  <p>
+    No <code>..</code>, no leading slash, no way to leave the root. Try it and
+    the compiler tells you what the rule is rather than what the syntax was:
+  </p>
+  <pre><code>$ heroes check shapes/main.hero
+error[module_path_climbs]: a `use` path cannot climb — every `use` starts at the directory of the file you compile, so write the path from there: `use lex/token`, wherever the file that writes it sits
+  at shapes/geom/area.hero:8:5
+    |
+  8 | use ../geom/point
+    |     ^
+  note: a module above that directory belongs to a different program: give this one its own root, or move the file in</code></pre>
+  <p>
+    The note is the interesting half. A file above your root is not a file you
+    forgot to reach: it is part of some other program, and pulling it in would
+    mean two programs share a module and neither owns it. If you want it,
+    move it in or give the whole thing a bigger root. Both of those are one
+    command, and both leave you with a tree somebody else can read.
+  </p>
+
+  <h3>The name is the last part</h3>
+  <p>
+    <code>use geom/point</code> binds <code>point</code>. Not
+    <code>geom_point</code>, not <code>geom.point</code>: just the last part,
+    so the call site stays short and the directory stays out of it.
+  </p>
+  <figure class="example" data-src="examples/shapes/main.hero" data-lines="26-31">
+<pre><code>    corner = point.Point(x: <span class="n">0</span>, y: <span class="n">0</span>)
+    far = point.Point(x: <span class="n">4</span>, y: <span class="n">3</span>)
+    print(area.rect(a: corner, b: far))
+    print(area.perimeter(a: corner, b: far))
+    print(ascii.bar(width: point.span(from: corner, to: far)))
+    print(ascii.frame(width: <span class="n">3</span>, height: <span class="n">2</span>))</code></pre>
+    <figcaption>examples/shapes/main.hero, lines 26&ndash;31</figcaption>
+  </figure>
+  <p>
+    A name from another module is always written with its qualifier. There is
+    no way to pull <code>Point</code> loose from <code>point</code> and use it
+    bare, and no wildcard that does it for you. So when you read
+    <code>point.span(...)</code> you know two things without leaving the line:
+    it comes from somewhere else, and the <code>use</code> block at the top of
+    this file says exactly where.
+  </p>
+
+  <h3>Two modules can end in the same word</h3>
+  <p>
+    Because the qualifier is only the last part, <code>scale.hero</code> at the
+    root and <code>render/scale.hero</code> both want to be called
+    <code>scale</code>. Nothing stops them existing. What is refused is one
+    <em>file</em> claiming the name twice:
+  </p>
+  <pre><code>$ heroes check shapes/main.hero
+error[module_binding_taken]: this file already calls `render/scale` by the name `scale`, so `scale` cannot have it too — a file may not bind one name twice
+  at shapes/main.hero:23:5
+     |
+  23 | use scale
+     |     ^^^^^
+  note: the two modules may both exist and both be used — `as` says what THIS file calls each one, and two files may name the same module differently</code></pre>
+  <p>
+    The repair is on the line the compiler pointed at, and it is one clause:
+  </p>
+  <figure class="example" data-src="examples/shapes/main.hero" data-lines="38-39">
+<pre><code>    print(scale.factor())
+    print(near_scale.factor())</code></pre>
+    <figcaption>examples/shapes/main.hero, lines 38&ndash;39</figcaption>
+  </figure>
+  <p>
+    <code>use render/scale as near_scale</code> says what <em>this file</em>
+    calls that module. Another file in the same program can call it
+    <code>scale</code> and never mention the root&rsquo;s. The rename is local,
+    which is the whole point: you can always fix a collision in the file where
+    it happens, without touching a module you did not write. The program prints
+    <code>10</code> for the root&rsquo;s scale and <code>3</code> for the
+    neighbour&rsquo;s, so the two really are two.
+  </p>
+
+  <h3>A module&rsquo;s name is a name</h3>
+  <p>
+    <code>use geom/point</code> introduces <code>point</code> into the file the
+    way anything else does, so nothing else in that file may take it. A
+    variable called <code>point</code> beside it is the same shadowing error
+    <a href="/docs/bindings-and-mutation/">chapter 6</a> already showed you:
+  </p>
+  <pre><code>$ heroes check shapes/main.hero
+error[shadowed_binding]: `point` is what this file calls the module `geom/point`, so a local may not take it — shadowing is an error here
+  at shapes/main.hero:26:5
+     |
+  26 |     point = point.Point(x: 0, y: 0)
+     |     ^^^^^
+  note: rename the module for this file with `use geom/point as <other>`, which clears every collision in it at once, or rename this binding</code></pre>
+  <p>
+    Without that rule, <code>point.x</code> in one function could mean the
+    module and in another function the variable, in the same file, and both
+    would compile. The note offers both repairs because either is defensible:
+    renaming the module fixes every collision in the file at once, renaming the
+    variable fixes one.
+  </p>
+
+  <h3>What this leaves out on purpose</h3>
+  <p>
+    No <code>public</code> and no <code>private</code>: everything a module
+    declares is reachable from any file that names it. No wildcard import, so a
+    qualifier is never optional. No circular imports, which the compiler
+    refuses on the <code>use</code> line itself rather than at link time. And
+    no project file, no manifest, no configuration: the tree on disk is the
+    whole of the layout, and the command you type is what fixes the root.
+  </p>
+
+  <p class="next">
+    <a href="/docs/">Back to the chapter list</a> &middot;
+    <a href="/errors/">the errors page</a>, which is the other half of
+    this documentation &middot; <a href="/why/">why the language is shaped
+    this way</a>.
+    <span class="back">&larr; Previous: <a href="/docs/the-c-boundary/">The C boundary</a></span>
+  </p>
+
+  <footer>
+    <p>Every code block on this page is a slice of
+    <code>examples/shapes/</code> in the repository, a program of six modules
+    in three directories that compiles, runs and passes its own tests. The
+    three diagnostics are that program with one edit each: a
+    <code>use</code> line that climbs, the <code>as</code> clause removed, and
+    a variable renamed to <code>point</code>.</p>
+    <p>Built by <a href="https://giuseppearici.com/en/">Giuseppe Arici</a>, CTO at Codermine, Brescia. Author of
+    <a href="/author/"><i>Heroes of code</i></a>. Standing on
+    <a href="/thanks/">a lot of other people&rsquo;s work</a>.</p>
+    <p>&copy; 2026 Giuseppe Arici &middot; heroes-lang.org</p>
+  </footer>

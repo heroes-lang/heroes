@@ -1,0 +1,7 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import content from '../../html/docs/modules.html?raw';
+---
+<BaseLayout url="/docs/modules/" title={'Modules and files, Heroes documentation'} description={'One file is one module. A use path starts at the directory of the file you compile, so the same line means the same file from anywhere in the program.'} current="docs">
+<Fragment set:html={content} />
+</BaseLayout>
