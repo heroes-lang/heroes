@@ -111,13 +111,22 @@ function first_dot(name: str) -> i64?
 function qualified_type(@r: resolve_state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl], id: i64, split_at: i64)
     span = a.types[id].span
     name = source.span_text(s, span)
-    module = name.slice(from: 0, to: split_at)
+    module: str @ name.slice(from: 0, to: split_at)
     type_name = name.slice(from: split_at + 1, to: name.len())
 
-    if !resolved.is_used_module(r.out, from: r.module, module: module)
+    # A written type is qualified by the module's BINDING, exactly as a
+    # call is: `p: geom.Point` where the file says `use shapes/geom`
+    # (panel 099 R3). This lookup answers with the module's whole name,
+    # which is the key `top_in` and the mangler are both built from — the
+    # same trade `resolve_qualified.module_at` makes for the value side, in
+    # the one other place where a qualifier is read off written text.
+    reached = resolved.used_module_named(r.out, from: r.module, binding: module)
+
+    if reached.is_err()
         known = resolve_state.used_modules(r)
         resolve_state.push_diagnostic(@r, module_errors.not_a_module(name: module, known: known, span: span))
         return
+    module @ reached.must()
     resolve_state.keyed_add(@r.module_reads, module: r.module, name: module)
     found = resolved.top_in(r.out, module: module, name: type_name)
 

@@ -2,7 +2,14 @@
 # text (design.md §1.11, §4.1, §4.17; panels 031, 032).
 # Port of crates/heroes/src/source/{mod,files,locate,build}.rs — four files,
 # 511 lines; one module here NOT because of a cycle but because the record
-# and its questions are one concern, and the port is under §11's threshold.
+# and its questions are one concern.
+#
+# **What a path and a module NAME stand for left this file at
+# M-package-layout** and is `module_names.hero`. It was here while it was
+# three short answers about a stem; panel 099 R3 gave two of them rules (the
+# C component is the whole path, the qualifier is the last part), this file
+# measured 302 code lines against §11's 300, and the seam the check named is
+# the honest one — nothing in that vocabulary knows what a `Source` is.
 #
 # **Why one text rather than a file id in every Span** (panel 031 R7,
 # measured rather than preferred): concatenation changed none of the Rust
@@ -19,7 +26,7 @@
 # nothing that hands a program back may print it.
 
 use token
-use bytes
+use module_names
 
 ## The two tables
 
@@ -59,56 +66,6 @@ record Source
     # construction, which is what lets `file_of` binary-search it.
     files: [FileEntry]
 
-## Names: what a path stands for
-
-# The module a source path stands for, AS THE AUTHOR TYPED IT — the stem,
-# with its underscores, before any sanitising. Deterministic from the path
-# as given: `./x.hero`, `x.hero` and `/tmp/x.hero` all yield `x`.
-function stem_of(path: str) -> str
-    start: i64 @ 0
-    i: i64 @ 0
-
-    while i < path.len()
-        if path[i] == '/' || path[i] == '\\'
-            start @ i + 1
-        i @ i + 1
-
-    end: i64 @ path.len()
-    j: i64 @ start
-    scanning: bool @ true
-
-    while scanning && j < path.len()
-        if path[j] == '.'
-            end @ j
-            scanning @ false
-        j @ j + 1
-
-    return path.slice(from: start, to: end)
-
-# The same stem as a C identifier component, `[A-Za-z0-9]` only — the one
-# line that makes `h_<module>_<name>` injective: with the module
-# alphanumeric, the first `_` after `h_` ends it. Residual and reachable:
-# `print_inst` and `printinst` are one component, so two such modules in one
-# program collide — refused where the module table is built, not here,
-# because the collision is a property of a SET of files and this function
-# knows about one.
-function module_of(path: str) -> str
-    stem = stem_of(path)
-    kept: str @ ""
-    i: i64 @ 0
-
-    while i < stem.len()
-        if bytes.is_alnum(stem[i])
-            kept @ kept + stem.slice(from: i, to: i + 1)
-        i @ i + 1
-
-    if kept.len() == 0
-        # A file called `.hero` or `---.hero`. It has to become SOMETHING,
-        # and one fixed word is better than an empty component, which would
-        # make `h__main` collide with a module named `_`.
-        return "anon"
-    return kept
-
 # The module component the library's own functions get, whatever is being
 # compiled: `range` is `h_library_range` in every program (panel 028 R3b —
 # one definition, many prototypes, so the definition's name cannot vary).
@@ -125,7 +82,7 @@ constant LIBRARY_FILE: str
 
 # An ordinary Heroes file, its module taken from its path — the RAW stem.
 function user_file(name: str, text: str) -> InputFile
-    return InputFile(name: name, module: stem_of(name), text: text, is_library: false)
+    return InputFile(name: name, module: module_names.stem_of(name), text: text, is_library: false)
 
 # One file on its own, with nothing else attached.
 function new_source(name: str, text: str) -> Source
@@ -172,7 +129,7 @@ function from_files(inputs: [InputFile]) -> Source
             text @ text + "\n"
             newlines @ newlines + 1
         table @ table.push(
-            FileEntry(name: input.name, module: input.module, component: module_of(input.module), start: text.len(), lines_before: newlines, is_library: input.is_library)
+            FileEntry(name: input.name, module: input.module, component: module_names.component_of(input.module), start: text.len(), lines_before: newlines, is_library: input.is_library)
         )
         text @ text + input.text
         newlines @ newlines + newlines_in(input.text)
@@ -319,25 +276,6 @@ function line_start_of(s: Source, offset: i64) -> i64
     return s.line_starts[floor_start(s.line_starts, offset)]
 
 ## Tests
-
-test "a module is the stem however the path was written"
-    assert module_of("geom.hero") == "geom"
-    assert module_of("./geom.hero") == "geom"
-    assert module_of("/tmp/sub/geom.hero") == "geom"
-    assert module_of("geom") == "geom"
-    assert stem_of("a_b.hero") == "a_b"
-
-test "the component is alphanumeric and that is not injective"
-    assert module_of("print_inst.hero") == "printinst"
-    assert module_of("printinst.hero") == "printinst"
-
-    # The collision is real, which is why a program containing both files is
-    # refused where the module table is built.
-    assert module_of("print_inst.hero") == module_of("printinst.hero")
-
-test "a path with no alphanumerics still becomes a name"
-    assert module_of("---.hero") == "anon"
-    assert module_of(".hero") == "anon"
 
 test "two files, one text, and the table makes it reversible"
     inputs: [InputFile] = [

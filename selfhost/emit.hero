@@ -14,6 +14,7 @@
 
 use ast
 use source
+use module_names
 use diag
 use check_table
 use check_state
@@ -222,7 +223,7 @@ function emit_maybe(target: emit_decls.BuildTarget, p: ir_state.Program, c: chec
     # #line directive, and the program-wide types the emitter invents.
     # Every name from a declaration takes that declaration's own
     # module instead (M-module-namespace's whole change here).
-    module = source.module_of(s.name)
+    module = module_names.module_of(s.name)
 
     # The author's functions, plus exactly the library functions they
     # reach — computed BEFORE the type walk, because the types a

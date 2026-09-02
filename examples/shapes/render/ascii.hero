@@ -1,0 +1,27 @@
+# Drawing, in a different directory from the geometry it draws.
+#
+# The `use` line below is character for character the one in `main.hero` and
+# in `geom/area.hero`. Three files at two depths, one spelling: that is the
+# whole of what the root base buys, and it is why copying an import from a
+# neighbouring file is the correct move here rather than the classic mistake.
+use geom/point
+
+function bar(width: i64) -> str
+    origin = point.Point(x: 0, y: 0)
+    tip = point.Point(x: width, y: 0)
+    return "#".repeat(point.span(from: origin, to: tip).to_u64().must())
+
+function frame(width: i64, height: i64) -> str
+    rows: [str] @ [bar(width: width)]
+    at: i64 @ 1
+
+    while at < height
+        rows @ rows.push(bar(width: width))
+        at @ at + 1
+
+    return rows.join("\n")
+
+test "a bar is as wide as the span it is given, and a frame repeats it"
+    assert bar(width: 3) == "###"
+    assert bar(width: 0) == ""
+    assert frame(width: 2, height: 2) == "##\n##"

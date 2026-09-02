@@ -18,6 +18,7 @@
 
 use token
 use diag
+use module_names
 
 # One module named twice in one file. Not a shadowing error and not a
 # duplicate declaration — it is a line that does nothing, and saying which
@@ -60,7 +61,7 @@ function not_in_module(module: str, name: str, near: [str], span: token.Span) ->
     if near.len() == 1
         d.message @ "module `" + module + "` declares nothing called `" + name + "` — it has `" + near[0] + "`"
         d.fixes @ d.fixes.push(
-            diag.Fix(title: "write `" + module + "." + near[0] + "`", replacement: near[0], span: span, certainty: .certain)
+            diag.Fix(title: "write `" + module_names.binding_of(module) + "." + near[0] + "`", replacement: near[0], span: span, certainty: .certain)
         )
     else if near.len() > 1
         d.message @ "module `" + module + "` declares nothing called `" + name + "` — it has " + listed(near)
@@ -71,14 +72,21 @@ function not_in_module(module: str, name: str, near: [str], span: token.Span) ->
 # CERTAIN fix, and that is the whole trade — the spec says nothing about
 # UFCS across a module boundary because the error says everything, at the
 # call site, with the repair pre-written (CLAUDE.md §8).
+# **The qualifier is the module's BINDING, not its whole name** (spec
+# § Files and layout: `use syntax/decl` binds `decl`; panel 099 R3). Where
+# a module is a path the two differ, and the fix has to carry the one a
+# call site writes — a `.certain` fix that inserted `syntax/decl.foo` would
+# be machine-applied into a program that does not parse, which is the one
+# thing §4.17 says a certain fix may never do.
 function needs_qualifying(name: str, module: str, span: token.Span) -> diag.Diagnostic
+    binding = module_names.binding_of(module)
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "needs_qualifying",
-        message: "`" + name + "` is declared in module `" + module + "`, and a name from another module is always written qualified — `" + module + "." + name + "`",
+        message: "`" + name + "` is declared in module `" + module + "`, and a name from another module is always written qualified — `" + binding + "." + name + "`",
         span: span
     )
     d.fixes @ d.fixes.push(
-        diag.Fix(title: "write `" + module + "." + name + "`", replacement: module + "." + name, span: span, certainty: .certain)
+        diag.Fix(title: "write `" + binding + "." + name + "`", replacement: binding + "." + name, span: span, certainty: .certain)
     )
     return d
 
@@ -86,13 +94,14 @@ function needs_qualifying(name: str, module: str, span: token.Span) -> diag.Diag
 # certain: it repairs this line and leaves the file needing a `use`, and a
 # machine-applicable fix has to leave a program that checks clean.
 function needs_a_use(name: str, module: str, span: token.Span) -> diag.Diagnostic
+    binding = module_names.binding_of(module)
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "needs_qualifying",
-        message: "`" + name + "` is declared in module `" + module + "`, which this file does not name — add `use " + module + "` at the top and write `" + module + "." + name + "`",
+        message: "`" + name + "` is declared in module `" + module + "`, which this file does not name — add `use " + module + "` at the top and write `" + binding + "." + name + "`",
         span: span
     )
     d.fixes @ d.fixes.push(
-        diag.Fix(title: "write `" + module + "." + name + "` (and add `use " + module + "`)", replacement: module + "." + name, span: span, certainty: .guess)
+        diag.Fix(title: "write `" + binding + "." + name + "` (and add `use " + module + "`)", replacement: binding + "." + name, span: span, certainty: .guess)
     )
     return d
 

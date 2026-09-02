@@ -12,6 +12,7 @@
 
 use ast
 use source
+use module_names
 use resolved
 use parse
 use resolve
@@ -49,7 +50,12 @@ function dump_scopes(r: resolved.Resolved, s: source.Source, decls: [ast.Decl]) 
                 # concatenated text, which is a real file and a line
                 # nobody can find in it.
                 found = source.locate(s, decls[decl.must()].name.start)
-                out @ out + "    " + entity(decls, decl: decl.must()) + " " + module + "." + name + " (" + found.file + ":" + found.line.to_str() + ")\n"
+
+                # The BINDING, because this line shows how the name is
+                # written from here and a path is not written at a call
+                # site (panel 099 R3). Which directory it came from is in
+                # the `file:line` on the same line, so nothing is lost.
+                out @ out + "    " + entity(decls, decl: decl.must()) + " " + module_names.binding_of(module) + "." + name + " (" + found.file + ":" + found.line.to_str() + ")\n"
     out @ out + "symbols\n"
 
     for name in resolved.names_in(r, module: here)

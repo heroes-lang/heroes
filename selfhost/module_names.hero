@@ -1,0 +1,162 @@
+# What a path and a module name stand for (spec § Files and layout; panels
+# 031, 032 R5, 099 R3).
+#
+# **Its own module since M-package-layout, and the split is §11's seam
+# rather than a line count.** These four functions were the top of
+# `source.hero`, where they fitted while they were three short answers
+# about a stem. This milestone gave two of them rules — the C component is
+# the WHOLE path, the qualifier is the LAST part — and at that point they
+# stopped being about the source record at all: nothing here knows what a
+# `Source` is, and the callers are the discovery, the emitter, the resolver
+# and the CLI. `source.hero` measured 302 code lines against §11's 300 the
+# moment the second rule landed, and the check that said so named the cut.
+#
+# THREE VOCABULARIES MEET HERE AND THEY ARE NOT ONE VOCABULARY:
+# - a **path** is what the machine opens: `shapes/geom.hero`;
+# - a **module** is what a `use` line spells and what identifies a file
+#   inside one compilation: `shapes/geom`, the whole path, because under
+#   panel 099 R1 every `use` starts at the directory of the file you
+#   compile, so the text as written is already canonical;
+# - a **component** is what reaches C — `shapesgeom` — and a **binding** is
+#   what the program itself calls the module: `geom`.
+#
+# Reading a value from the wrong one of those is a defect class rather than
+# a slip: panel 032 D1 recorded it (`h_print_inst_value_name`) and panel
+# 099's ffi-pragmatist compiled two more shapes of it. So every function
+# here says which vocabulary it answers in, and none of them guesses.
+
+use bytes
+
+# The module a source path stands for, AS THE AUTHOR TYPED IT — the stem,
+# with its underscores, before any sanitising. Deterministic from the path
+# as given: `./x.hero`, `x.hero` and `/tmp/x.hero` all yield `x`.
+function stem_of(path: str) -> str
+    start: i64 @ 0
+    i: i64 @ 0
+
+    while i < path.len()
+        if path[i] == '/' || path[i] == '\\'
+            start @ i + 1
+        i @ i + 1
+
+    end: i64 @ path.len()
+    j: i64 @ start
+    scanning: bool @ true
+
+    while scanning && j < path.len()
+        if path[j] == '.'
+            end @ j
+            scanning @ false
+        j @ j + 1
+
+    return path.slice(from: start, to: end)
+
+# The same stem as a C identifier component, `[A-Za-z0-9]` only — the one
+# line that makes `h_<module>_<name>` injective: with the module
+# alphanumeric, the first `_` after `h_` ends it. Residual and reachable:
+# `print_inst` and `printinst` are one component, so two such modules in one
+# program collide — refused where the module table is built, not here,
+# because the collision is a property of a SET of files and this function
+# knows about one.
+#
+# **This one takes a PATH and answers for its stem**, which is what the root
+# file's own name needs (`cli_produce.hero`, `emit.hero`): the root's module
+# is its stem, never a path, because it is the file you compile rather than
+# a file some `use` line reached.
+function module_of(path: str) -> str
+    return component_of(stem_of(path))
+
+# The C component of a MODULE NAME, which since M-package-layout may be a
+# path: `syntax/decl` becomes `syntaxdecl`.
+#
+# **The whole path, and not the last part** — panel 032 R5, compiled by its
+# ffi-pragmatist over the port's 169 real paths and re-measured by panel
+# 099's over today's 167 modules: last parts collide (22-way on `mod` then,
+# 13 groups over 32 modules in a plausible layout now) and whole paths
+# collide **zero** times, both times. The concatenation is free rather than
+# clever: `/` is not alphanumeric, so the same alnum filter that makes the
+# scheme injective erases the separator on its way past.
+#
+# It is NOT the module's binding name — that is `binding_of`, the last part.
+# Two namespaces (C's and the program's) and this is C's.
+function component_of(module: str) -> str
+    kept: str @ ""
+    i: i64 @ 0
+
+    while i < module.len()
+        if bytes.is_alnum(module[i])
+            kept @ kept + module.slice(from: i, to: i + 1)
+        i @ i + 1
+
+    if kept.len() == 0
+        # A file called `.hero` or `---.hero`. It has to become SOMETHING,
+        # and one fixed word is better than an empty component, which would
+        # make `h__main` collide with a module named `_`.
+        return "anon"
+    return kept
+
+# What a module name BINDS in the file that uses it — the last part of a
+# path, and the whole name when there is no path (spec § Files and layout:
+# *"`use syntax/decl` binds `decl`"*, panel 032 R4).
+#
+# The two namespaces this file's header names meet here: `syntax/decl` is
+# one module whose C component is `syntaxdecl` and whose qualifier is
+# `decl`. What makes the qualifier unambiguous program-wide is the spec's
+# other clause — *"Last parts are unique"* — refused where the module table
+# is built (`modules.hero`), for the same reason a component collision is
+# refused there: it is a property of a SET of files.
+function binding_of(module: str) -> str
+    start: i64 @ 0
+    i: i64 @ 0
+
+    while i < module.len()
+        if module[i] == '/'
+            start @ i + 1
+        i @ i + 1
+
+    return module.slice(from: start, to: module.len())
+
+## Tests
+
+test "a module is the stem however the path was written"
+    assert module_of("geom.hero") == "geom"
+    assert module_of("./geom.hero") == "geom"
+    assert module_of("/tmp/sub/geom.hero") == "geom"
+    assert module_of("geom") == "geom"
+    assert stem_of("a_b.hero") == "a_b"
+
+test "the component is alphanumeric and that is not injective"
+    assert module_of("print_inst.hero") == "printinst"
+    assert module_of("printinst.hero") == "printinst"
+
+    # The collision is real, which is why a program containing both files is
+    # refused where the module table is built.
+    assert module_of("print_inst.hero") == module_of("printinst.hero")
+
+test "a path with no alphanumerics still becomes a name"
+    assert module_of("---.hero") == "anon"
+    assert module_of(".hero") == "anon"
+
+test "a module that is a path: the whole path in C, the last part as the name"
+    # Panel 032 R5 and 099 R3. The separator is not alphanumeric, so the
+    # filter that makes the scheme injective erases it on its way past.
+    assert component_of("syntax/decl") == "syntaxdecl"
+    assert component_of("a/b/c") == "abc"
+    assert component_of("geom") == "geom"
+    assert component_of("print_inst") == "printinst"
+
+    # The qualifier is the last part, and a bare name is its own last part.
+    assert binding_of("syntax/decl") == "decl"
+    assert binding_of("a/b/c") == "c"
+    assert binding_of("geom") == "geom"
+
+    # The two namespaces are not one namespace: `ir/decl` and `syntax/decl`
+    # bind the same qualifier and reach C as different components. The
+    # first is why *"Last parts are unique"* is a rule; the second is why
+    # the rule is not needed to keep C injective.
+    assert binding_of("ir/decl") == binding_of("syntax/decl")
+    assert component_of("ir/decl") != component_of("syntax/decl")
+
+    # `module_of` still answers for a PATH, which is what the root file's
+    # own name is: the compiled file's module is its stem, never a path.
+    assert module_of("shapes/geom.hero") == "geom"

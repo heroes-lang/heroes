@@ -37,10 +37,14 @@ use strings
 constant EXAMPLES: str
     "examples"
 
-# Measured 2026-08-18: fourteen directories hold a `main.hero`
-# (`examples/gallery/` does not). corpus.rs floors at 3.
+# Measured 2026-09-02: fifteen directories hold a `main.hero`
+# (`examples/gallery/` does not). corpus.rs floors at 3, and this floor was
+# 14 until `examples/shapes/` landed at M-package-layout — the first program
+# here whose modules sit in subdirectories. The floor moves with the corpus
+# rather than staying where it was measured, because its whole job is to
+# notice a program that quietly stops being found.
 constant LEAST: i64
-    14
+    15
 
 function run_all(scratch: str, compiler: str) -> report.Report?
     r: report.Report @ report.empty()

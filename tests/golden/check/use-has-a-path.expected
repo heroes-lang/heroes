@@ -1,2 +1,4 @@
-tests/golden/check/use-has-a-path.hero:8:9: error[module_path_has_no_parts]: a module name is one word — `use geom`. There is no nesting: every `.hero` a program reads sits beside the file that names it
-tests/golden/check/use-has-a-path.hero:10:11: error[module_path_has_no_parts]: a module name is one word — `use shapes`. There is no nesting: every `.hero` a program reads sits beside the file that names it
+tests/golden/check/use-has-a-path.hero:23:9: error[module_path_has_no_parts]: a module path is written with `/`, not `.` — `use geom/…`, and every `use` starts at the directory of the file you compile
+tests/golden/check/use-has-a-path.hero:25:5: error[module_path_climbs]: a `use` path cannot climb — every `use` starts at the directory of the file you compile, so write the path from there: `use lex/token`, wherever the file that writes it sits
+tests/golden/check/use-has-a-path.hero:27:9: error[module_path_climbs]: a `use` path cannot climb — every `use` starts at the directory of the file you compile, so write the path from there: `use lex/token`, wherever the file that writes it sits
+tests/golden/check/use-has-a-path.hero:29:11: error[module_path_wants_a_part]: a `/` in a `use` joins two names with nothing between them — `use shapes/decl` names one module, and `use shapes` names another

@@ -1,13 +1,32 @@
 # UNVERIFIED — pending debrief
-# Adversarial case, M8a step 1 (panel 031).
-# The design space a bare identifier forecloses, refused at the point of the
-# attempt rather than in a spec sentence (panel 031 R5's principle applied to
-# syntax). Two spellings, one message: a dotted name and a slashed one.
-# Neither carries a fix — a `Certain` fix must leave a program that parses, and
-# there is no module name to fall back to that the author would recognise.
+# Adversarial case, M-package-layout (panel 099; was M8a step 1, panel 031).
+#
+# **THIS CASE CHANGED SIDES.** It used to pin the refusal of `use shapes/geom`
+# itself: a path was the design space a bare identifier forecloses, and both a
+# dotted and a slashed name got one message. Panel 099 landed the path, so what
+# is left to pin is what a path may NOT be — and each of these is refused for a
+# reason that would otherwise be a silence:
+#
+# - a DOT is not the separator. The message names the spelling that works,
+#   because the author who writes `geom.shapes` knows exactly what they meant.
+# - a CLIMB has no spelling at all, and that is a design decision rather than a
+#   slip (R4): every `use` starts at the directory of the file you compile, so a
+#   module above it belongs to a different program. One message answers `.`,
+#   `..`, `./x` and `../x` alike — four spellings of one intent.
+# - a SEPARATOR WITH NOTHING AFTER IT names the two modules it sits between.
+#
+# Not here, and deliberately: `use a / b`, which lexes as the same three tokens
+# as `use a/b` and is legal — it is one `use` of `a`, and what refuses it is the
+# unused-binding rule rather than the grammar. Adjacency is the rule, and
+# `selfhost/module_paths.hero` carries the test that keeps the compiler's two
+# readers of it agreeing.
 use geom.shapes  #~ module_path_has_no_parts
 
-use shapes/geom  #~ module_path_has_no_parts
+use ../token  #~ module_path_climbs
+
+use lex/..  #~ module_path_climbs
+
+use shapes/  #~ module_path_wants_a_part
 
 function main()
     print(0)

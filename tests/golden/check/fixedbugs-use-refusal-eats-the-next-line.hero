@@ -1,0 +1,48 @@
+# A FIXED DEFECT, named after it (Go's `test/fixedbugs`), M-package-layout
+# step 2, 2026-09-02 (panel 099).
+#
+# It lives in `check/` rather than `fixedbugs/` and the reason is measured:
+# `fixedbugs/` is walked by the canonical-form check, and a case whose whole
+# point is a SYNTAX error cannot be formatted — `heroes fmt` exits 1 on it,
+# correctly. Every one of that directory's eighteen cases is an FFI case,
+# valid syntax with a semantic mistake. `check/` is where a case with a parse
+# error belongs, and six `fixedbugs-*` cases already sit here.
+#
+# SYMPTOM: two broken `use` lines, **one diagnostic**. This exact text gave
+# `module_path_climbs` for line 12 and said nothing at all about line 14 —
+# and `heroes check --json` confirmed the second was never produced rather
+# than merely not printed. Worse than a missing message: the parser also
+# reached **zero** `use` declarations and, on the first shape of the repair,
+# could swallow a `function` below them, so a file could lose a declaration
+# to a mistake three lines above it.
+#
+# CAUSE: `use` is not in panel 007's ender list, so the lexer closes a use
+# line with a `terminator` only when its last token could END a statement.
+# `use lex/..` and `use shapes/` end in punctuation, so **no terminator is
+# emitted** — and both new refusals recovered with
+# `cursor.recover_to_next_decl`, which scans forward until it consumes one.
+# With none on the line, it ran past the end and ate whatever came next. The
+# old dot refusal had the same bug and never showed it: `use geom.shapes`
+# ends in an identifier, so a terminator existed and the scan stopped in the
+# right place. `missing_name` in the same file had already reasoned about
+# this hazard by comparing LINE NUMBERS, for exactly this reason, and said so
+# in a comment — the repair generalises that reasoning instead of adding a
+# third special case.
+#
+# FIX: `parse_use.skip_rest_of_line` drops the tokens whose line is the use
+# line's, so the cursor lands on the next declaration's own first token. A
+# line exists whatever the last token on it was, which is what makes it a
+# landmark and a terminator not one. Applied to all three punctuation
+# refusals at once — the climb, the dangling separator, and the dot form that
+# provoked none of it (CLAUDE.md §1: a repair is attacked at the shapes next
+# to the one that provoked it).
+#
+# The unit test that pins the same defect is in `selfhost/module_paths.hero`,
+# which is where the parser can be called: `parse_use.hero` cannot reach it,
+# because `parse` uses `parse_use` and Heroes refuses module cycles.
+use lex/..  #~ module_path_climbs
+
+use shapes/  #~ module_path_wants_a_part
+
+function main()
+    print(0)

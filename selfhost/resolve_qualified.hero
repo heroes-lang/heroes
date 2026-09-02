@@ -93,9 +93,13 @@ function module_at(r: resolve_state.Resolver, a: ast.Ast, s: source.Source, id: 
     if !resolve_state.lookup_local(r, name).is_err()
         return fail("absent", "a local of this name is in scope, so the dot is UFCS")
 
-    if !resolved.is_used_module(r.out, from: r.module, module: name)
-        return fail("absent", "this file does not use a module of this name")
-    return ok(name)
+    # The name written at the call site is a BINDING, which for a path is
+    # its last part — `use syntax/decl` then `decl.foo()`. What leaves here
+    # is the module's whole name, because that is the identity every later
+    # lookup uses: `top_in`'s key and the mangler's component are both built
+    # from it (panel 099 R3, and `module_paths.last_parts_collide` is what
+    # makes the answer unique).
+    return resolved.used_module_named(r.out, from: r.module, binding: name)
 
 # `_` is forbidden on a variant, so the twenty other cases are named — the
 # price §4.7 charges so that a twenty-second ExprKind stops this function

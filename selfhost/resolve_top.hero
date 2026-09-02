@@ -20,6 +20,7 @@
 
 use ast
 use source
+use module_names
 use resolved
 use builtins
 use parse
@@ -122,13 +123,19 @@ function read_uses(@r: resolve_state.Resolver, s: source.Source, decls: [ast.Dec
         if resolved.is_used_module(r.out, from: from, module: named)
             resolve_state.push_diagnostic(@r, module_errors.used_twice(named, span: used.name))
             continue
-        already = resolved.top_in(r.out, module: from, name: named)
+
+        # What a `use` introduces into this file is its BINDING — the last
+        # part of a path — so a declaration that clashes is a declaration
+        # named `decl`, never one named `syntax/decl`, which is not a name
+        # anything can declare (panel 099 R3).
+        binding = module_names.binding_of(named)
+        already = resolved.top_in(r.out, module: from, name: binding)
 
         if !already.is_err()
             at = source.elsewhere(s, here: used.name.start, there: decls[already.must()].name.start)
             resolve_state.push_diagnostic(
                 @r,
-                module_errors.use_shadows_a_declaration(name: named, declared_at: at, span: used.name)
+                module_errors.use_shadows_a_declaration(name: binding, declared_at: at, span: used.name)
             )
             continue
         resolved.declare_use(@r.out, from: from, module: named)
@@ -144,8 +151,18 @@ function unused_uses(@r: resolve_state.Resolver, s: source.Source, uses: [ast.Us
     # Rust iterates the table's KEYS; this walk iterates the LINES, so a
     # duplicated `use` — one key, two lines — must not be reported unread
     # twice: the second line already got `used_twice`, and the sweep
-    # answers per binding, not per occurrence. The key's `/` cannot occur
-    # in a module name (an identifier), so the join is injective.
+    # answers per binding, not per occurrence.
+    #
+    # **THE SEPARATOR WAS `/` AND THAT PREMISE DIED AT M-PACKAGE-LAYOUT**
+    # (panel 099 R6). It said in so many words *"the key's `/` cannot occur
+    # in a module name (an identifier), so the join is injective"* — true
+    # until a module name became a path, and then `a` + `b/c` and `a/b` +
+    # `c` are one key, so one file's unused `use` could silence another's.
+    # A space cannot occur in either half: a module name is identifiers
+    # joined by `/`, and a file's own module name comes from its path the
+    # same way. The test at the bottom of this file is what fires if that
+    # ever stops being true, which is what §11 asks of a premise nobody can
+    # remove.
     seen: {str: bool} @ {}
 
     for used in uses
@@ -154,7 +171,7 @@ function unused_uses(@r: resolve_state.Resolver, s: source.Source, uses: [ast.Us
 
         if from == named
             continue
-        key = from + "/" + named
+        key = from + " " + named
 
         if !seen[key].is_err()
             continue
@@ -234,6 +251,52 @@ test "a use is a binding: twice is noise, a declared name is a clash"
             found @ true
 
     assert found
+
+test "a path binds its last part, and the sweep key cannot be ambiguous"
+    # `use syntax/decl` introduces `decl` into this file, so the clash is
+    # with a declaration called `decl` — the path itself is not a name
+    # anything can declare (panel 099 R3).
+    clash = resolved_file("use syntax/decl\nconstant decl: i64\n    1\n")
+    found: bool @ false
+
+    for d in clash.out.diagnostics
+        if d.code == "shadowed_binding"
+            found @ true
+
+    assert found
+
+    # **THE PREMISE THIS TEST EXISTS FOR** (panel 099 R6). The unused-use
+    # sweep joins the writing module and the used one into one key, and its
+    # separator was `/` under a comment saying a module name could not
+    # contain one. Both of these files use a module and neither reads it,
+    # so BOTH owe a diagnostic — and under the old separator `a` + `b/c`
+    # and `a/b` + `c` are one key, so the second file's message would be
+    # swallowed by the first's. Two diagnostics is the whole assertion.
+    #
+    # The pair is chosen so the keys collide exactly: writing module `a`
+    # using `b/c`, and writing module `a/b` using `c`.
+    files: [source.InputFile] = [
+        source.InputFile(name: "a.hero", module: "a", text: "use b/c\nfunction fa() -> i64\n    return 1\n", is_library: false)
+        source.InputFile(name: "a/b.hero", module: "a/b", text: "use c\nfunction fb() -> i64\n    return 2\n", is_library: false)
+        source.InputFile(name: "b/c.hero", module: "b/c", text: "function fc() -> i64\n    return 3\n", is_library: false)
+        source.InputFile(name: "c.hero", module: "c", text: "function fd() -> i64\n    return 4\n", is_library: false)
+    ]
+    s = source.from_files(files)
+    p = parse.parse(s.text)
+    r: resolve_state.Resolver @ resolve_state.new_resolver(
+        expr_count: p.tree.exprs.len(),
+        type_count: p.tree.types.len()
+    )
+    collect(@r, s, p.decls, p.uses)
+    unused_uses(@r, s, p.uses)
+    resolve_state.report_unused(@r, s)
+    unread: i64 @ 0
+
+    for d in r.out.diagnostics
+        if d.code == "unused_binding"
+            unread @ unread + 1
+
+    assert unread == 2
 
 test "an unread use is reported, and a hole in the file suspends it"
     unread = resolved_file("use geom\nconstant M: i64\n    1\n")

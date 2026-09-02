@@ -1,0 +1,32 @@
+# Six modules in three directories — the first program in this corpus whose
+# files do not all sit beside each other (M-package-layout, panel 099).
+#
+# **What it is FOR is the line `use geom/point`, written three times from
+# three different depths and meaning the same file every time.** A `use` path
+# starts at the directory of the file you compile, so `render/ascii.hero`
+# reaches the point module by exactly the spelling `main.hero` uses, and so
+# does `geom/area.hero` — which sits in the SAME directory as its target and
+# still names it from the root. That last one is the rule's real bite: there
+# is no shorter spelling for a neighbour, and there is no `..` for anything
+# else, because a module above the root belongs to a different program.
+#
+# The qualifier is the path's last part: `use geom/point` binds `point`, so
+# every call below reads `point.something`. The directory is not part of the
+# name a call writes — which is why last parts are unique across a program.
+use geom/point
+use geom/area
+use render/ascii
+
+function main()
+    corner = point.Point(x: 0, y: 0)
+    far = point.Point(x: 4, y: 3)
+    print(area.rect(a: corner, b: far))
+    print(area.perimeter(a: corner, b: far))
+    print(ascii.bar(width: point.span(from: corner, to: far)))
+    print(ascii.frame(width: 3, height: 2))
+
+test "the area and the perimeter of the 3-4-5 rectangle"
+    origin = point.Point(x: 0, y: 0)
+    tip = point.Point(x: 4, y: 3)
+    assert area.rect(a: origin, b: tip) == 12
+    assert area.perimeter(a: origin, b: tip) == 14

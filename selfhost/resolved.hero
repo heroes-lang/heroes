@@ -34,6 +34,7 @@
 use token
 use diag
 use widths
+use module_names
 
 ## The compound key that a map cannot sort
 
@@ -212,7 +213,10 @@ function new_resolved() -> Resolved
 function top_in(r: Resolved, module: str, name: str) -> i64?
     return r.top[module]?[name]
 
-# Does `module` name a module that `from` said `use` about?
+# Does `module` name a module that `from` said `use` about? Asked with the
+# module's WHOLE name, which for a path is the path: `use syntax/decl` is a
+# `use` of `syntax/decl`, and asking about `decl` is a different question —
+# `used_module_named` below.
 function is_used_module(r: Resolved, from: str, module: str) -> bool
     named = r.module_uses[from]
 
@@ -224,6 +228,33 @@ function is_used_module(r: Resolved, from: str, module: str) -> bool
             return true
 
     return false
+
+# The module this file `use`s under the name a CALL SITE writes — the other
+# side of `is_used_module`, and the one every qualified name goes through.
+#
+# `use syntax/decl` binds `decl` (spec § Files and layout), so `decl.foo()`
+# arrives here as the binding `decl` and leaves as the module `syntax/decl`,
+# which is the key `top_in` and the mangler's component are both built from.
+# Under a flat name the two are one string and this answers exactly what
+# `is_used_module` did.
+#
+# **It may answer with the first match and that is a fact about the program,
+# not a shortcut**: `module_paths.last_parts_collide` refuses two modules
+# whose last parts match anywhere in a compilation, so at most one used
+# module can carry any binding. The day that check is weakened this becomes
+# a silent choice between two files, which is why the rule and this lookup
+# cite each other.
+function used_module_named(r: Resolved, from: str, binding: str) -> str?
+    named = r.module_uses[from]
+
+    if named.is_err()
+        return fail("absent", binding)
+
+    for m in named.must()
+        if module_names.binding_of(m) == binding
+            return ok(m)
+
+    return fail("absent", binding)
 
 # Every name one module declares, for the "did you mean" lists and for
 # `--dump-scopes`.
