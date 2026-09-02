@@ -163,3 +163,33 @@ that can run it against a corpus this size rather than the 15-program one —
 because adding an operator moves the denominator of the thesis's own score and
 that discontinuity should be spent once. It is in `docs/work/SCHEDULED.md` with
 the reason.
+
+## Appended the next morning: one of the twenty was wrong on Windows, and the mistake was the one this journal warns about
+
+`examples/filestat/` failed the Windows leg of the three-platform CI, which had
+never run on this milestone's work because the tags were not pushed and an
+ordinary push runs Linux alone. `error[ffi_field_type]: FileStat.st_size is not
+i64 in sys/stat.h`. Measured afterwards on the real machine: `st_size` is **4
+bytes** on Windows, because `off_t` is `long` and `long` is 32-bit there.
+
+**The program's own comment named the trap and the same comment walked into
+it.** One paragraph said *"this program must run on Darwin, Linux and Windows
+alike"*; the next justified the field's type with *"`off_t` is 64-bit on Darwin
+and on 64-bit Linux"*. Three platforms named, two checked. That is CLAUDE.md
+§1's first shape, an inference presented as a measurement, and this journal's
+own § What surprised had just finished praising re-measurement for finding the
+real gaps.
+
+It is replaced by `examples/ctime/`, which binds `struct tm` instead: every
+field of that struct is an `int` by the C standard, and the whole struct is
+**36 bytes on Windows against 56 on macOS**, both measured. Different total
+size, identical field widths, which is a better demonstration of `partial`
+than the program it replaces — `spec:231` says a `partial` record keeps C's
+size rather than the field list's, and the twenty bytes between those two
+numbers are what the rule protects. The program reads no clock, so its output
+is fixed, and it was run on the Windows machine in all three configurations
+before it was committed, which is the step the first version skipped.
+
+The count stands at twenty programs. The lesson is added to the seven above
+as an eighth, and it is the only one of the eight the compiler could not have
+caught on the machine that wrote it.
