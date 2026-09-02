@@ -40,6 +40,23 @@ function use_shadows_a_declaration(name: str, declared_at: str, span: token.Span
         span: span
     )
 
+# The mirror of the one above: a LOCAL, a parameter or an `@` cell taking a
+# name a `use` already bound. Same rule, same code, and the direction nobody
+# wrote until panel 102 found what it let through — `state.value` meaning a
+# record field in one function and a module function in another, exit 0.
+# The fix stays a **`guess`** for panel 101 R4's reason: either name may give
+# way, and §8 makes `certain` machine-applicable.
+function local_shadows_a_use(name: str, module: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "shadowed_binding",
+        message: "`" + name + "` is what this file calls the module `" + module + "`, so a local may not take it — shadowing is an error here",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "rename the module for this file with `use " + module + " as <other>`, which clears every collision in it at once, or rename this binding"
+    )
+    return d
+
 # A `use` nothing read. The unused rule, reached the same way.
 function unused_use(name: str, span: token.Span) -> diag.Diagnostic
     d: diag.Diagnostic @ diag.new_diagnostic(

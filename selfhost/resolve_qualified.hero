@@ -223,7 +223,19 @@ test "a qualified extern is refused — the reference, so call and value alike"
     assert r.out.diagnostics.len() == 1
     assert r.out.diagnostics[0].code == "extern_across_modules"
 
-test "a local wearing the module's name turns the dot back into UFCS"
+test "a local wearing the module's name turns the dot back into UFCS — in a program already refused"
+    # **THIS TEST ASSERTED A DEFECT** until 2026-09-02, under the first half
+    # of the name above and no second half. Its assertions are untouched and
+    # still hold; what was wrong was the silence around them. It builds the
+    # shape by hand — a `use` binding `geom` beside a local `geom` — throws
+    # away the answer `declare` gives it, and pins the fallback as correct.
+    # It IS correct, and it is now only ever reached in a program the
+    # compiler has already refused at the binding, which is the sentence
+    # this case was missing (panel 102).
+    #
+    # Read with the comment at :93-97 above, which asserted the missing
+    # refusal as an accomplished fact while nothing reported it: the rule
+    # was designed, written down, and never given an executor.
     s = fixture()
     a: ast.Ast @ ast.new_ast()
     receiver = name_expr(@a, start: 0, end: 4)

@@ -593,8 +593,21 @@ home; `docs/ROADMAP.md` § The names carries the map and cites this.
 ```
 clang -I runtime seed/heroes.c runtime/runtime.c -o heroes   # the compiler, from C alone (3.5 s)
 ./heroes build selfhost/main.hero -o heroes-next             # the compiler, from Heroes
-./heroes test selfhost/main.hero                             # its own tests (492, 3m19s, 2026-08-24)
-./heroes run tests/harness/main.hero -- ./heroes             # the net (1146 checks, 2026-08-24)
+./heroes test selfhost/main.hero                             # its own tests (536, 2026-09-02)
+./heroes run tests/harness/main.hero -- ./heroes             # the net (1200 checks, 2026-09-02)
+./heroes test tests/harness/main.hero                        # THE NET'S OWN TESTS (92, 17 s) — the third suite
+
 ./heroes doctor                                              # toolchain check
 ./heroes <cmd>                                               # the one command
 ```
+
+**There are THREE suites and this block named two until 2026-09-02**, when the
+third was found red at `d08062f` and had been red for six commits —
+`suite_layout`'s ceiling assert reading 308 against a table that said 315, after
+`9599d97` re-baselined it and stated both new numbers in its own diff two screens
+above the assert. `DESIGN-LOG` recorded the identical failure on 2026-08-31,
+*"a suite that had never been run"*, and left it with no caller: the command
+lived in `docs/ROADMAP.md`'s verify block, which nothing obliges anybody to open.
+It is in `/step`'s § 2 as well now. **The third suite is the one that goes red
+when an instrument's pinned number stops matching what the instrument reads** —
+the other two test the language; this one tests the tests.

@@ -102,6 +102,21 @@ constant CEILING: i64
 # asks the same question again over six lines of comment. If panel 101 removes
 # the `as` clause, these fall on their own and the table should be re-measured
 # rather than left generous.
+#
+# **A fourth moved the same day, for a ratified REFUSAL rather than a feature**
+# (panel 102, ratified: a local may not take a module's name).
+# `resolve_state.hero` 315 -> **330** against a measured 325, for a fourth arm
+# on `declare`, which already had three of the same shape — a name refused
+# because another local holds it, because a built-in does, because a top-level
+# declaration does, and now because a `use` bound it. **The seat that priced
+# the change made this argument rather than the knot argument**, and it also
+# corrected the brief: this file's own module doc says it is one module
+# *"WITHOUT a cycle forcing it"*, so §11's language-forbids-the-seam clause does
+# not reach it. What reaches it is the plainer half — a reader holding the first
+# three arms holds the fourth for free, which is what the ~300 protects and what
+# this addition does not spend. The whole diagnostic is 8 lines of comment and
+# 3 of code; its argument lives on `docs/panel/102` instead, which is CLAUDE.md's
+# preamble applied to a comment for once.
 constant DECIDED: [str]
     [
         "selfhost/check_walk.hero 1583"
@@ -116,9 +131,9 @@ constant DECIDED: [str]
         "selfhost/emit_ctype.hero 365"
         "selfhost/emit_gate.hero 341"
         "selfhost/resolve_cycles.hero 331"
+        "selfhost/resolve_state.hero 330"
         "selfhost/emit_inst.hero 324"
         "selfhost/modules.hero 320"
-        "selfhost/resolve_state.hero 315"
         "selfhost/parse_use.hero 310"
     ]
 
@@ -256,19 +271,42 @@ test "a comment inside a test block does not close it"
 test "the ceiling is per file, and a decided file keeps its own"
     # The two witnesses are DECIDED's extremes, and they are chosen rather
     # than picked: the top entry, and the entry nearest CEILING. The second
-    # is what makes this a test at all — 308 against a fallback of 300 is
-    # eight apart, so a lookup that quietly returned CEILING would still
+    # is what makes this a test at all — 310 against a fallback of 300 is
+    # ten apart, so a lookup that quietly returned CEILING would still
     # be caught. Both numbers track the table above and move with it.
+    #
+    # **AND THEY DID NOT, FOR SIX COMMITS.** This assert read `resolve_state`
+    # at 308 while the table said 315, so `heroes test tests/harness/main.hero`
+    # was 92/1 from `9599d97` to `d08062f` — and that commit's own diff says
+    # what it was doing, in the comment above DECIDED: *"`resolve_state.hero`
+    # 308 -> 315 ... `parse_use.hero` is a NEW entry at 310"*. The knowledge was
+    # written down two screens up. What was missing is a caller: this suite is
+    # in `docs/ROADMAP.md`'s verify block and was in neither CLAUDE.md
+    # § Commands nor `/step`'s close checklist, both of which named two suites.
+    # It is in both now, which is the actual repair — the numbers below are only
+    # the symptom. `DESIGN-LOG` had recorded the same failure on 2026-08-31
+    # (*"a suite that had never been run"*, 83 of 90) and left it without one.
+    #
+    # The witness is now the entry nearest CEILING **by lookup rather than by
+    # name**, which is what the sentence above always claimed it was.
     assert ceiling_for("selfhost/check_walk.hero") == 1583
-    assert ceiling_for("selfhost/resolve_state.hero") == 308
+    assert ceiling_for("selfhost/parse_use.hero") == 310
     assert ceiling_for("selfhost/anything-else.hero") == CEILING
 
-    # **15 since M-argv-execution, and the direction is the point.** The table
+    # **16 since M-package-layout, and the direction is the point.** The table
     # shrinks when a file is FIXED: `cli_verbs.hero` was in it at 358, the
     # milestone split the produce pipeline out to `cli_produce.hero`, and 207
-    # code lines needs no entry. A row leaving is the ratchet working. A row
-    # arriving is a file nobody could cut, and that is the author's to allow.
+    # code lines needs no entry — that took it to 15. A row leaving is the
+    # ratchet working. A row arriving is a file nobody could cut, and that is
+    # the author's to allow: `parse_use.hero` arrived at 310 in `9599d97`, when
+    # `use` learned to be a path.
     #
     # This count exists so neither direction happens quietly — it went red the
     # moment the row was removed, which is exactly the notice it owes.
-    assert DECIDED.len() == 15
+    #
+    # **It was also red for six commits and nobody saw it**, because the assert
+    # above it fails first and Heroes stops a case at its first failed assert.
+    # One stale number hid a second one. Two lessons and both are cheap: a case
+    # that pins several independent facts hides all but the first, and the
+    # suite that holds it needs a caller (see above).
+    assert DECIDED.len() == 16

@@ -1,0 +1,32 @@
+# A fixed defect, named after it (CLAUDE.md §9; Go's `test/fixedbugs`).
+#
+# SYMPTOM, 2026-09-02: this program compiled at exit 0 and printed `7` then
+# `101`. `state.value` is written twice and meant two different things — the
+# local record's FIELD in `main`, the module's FUNCTION in `elsewhere` — with
+# no diagnostic anywhere. Both readings type-check, because a field of `i64`
+# and a function returning `i64` are indistinguishable at the use site.
+#
+# CAUSE: `selfhost/resolve_state.hero`'s `declare` ran three name-is-taken
+# stages — another local, a built-in, a top-level declaration — and never
+# consulted the file's `use` table. The declaration direction was refused
+# (`use_shadows_a_declaration`); the local direction was not. spec:99 plus
+# `use` BINDS already forbade it: panel 031 R3 chose that verb for exactly
+# this coverage, at `DESIGN-LOG:185`, and the compiler never delivered it.
+# So CLAUDE.md §12 — the spec was right and the compiler had the bug.
+#
+# FIX: a fourth stage, first of the three, because a `use` line is in this
+# file and always openable. Found by M-selfhost-nesting, whose whole job was
+# to drop the prefixes that had been hiding the class: nobody names a local
+# `check_state`, everybody names one `state`.
+use state
+
+record Box
+    value: i64
+
+function elsewhere() -> i64
+    return state.value(1)
+
+function main()
+    state = Box(value: 7)  #~ shadowed_binding
+    print(to_str(state.value))
+    print(to_str(elsewhere()))

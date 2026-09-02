@@ -96,7 +96,7 @@ All bindings are initialised. An unused binding or parameter is a compile
 error; a read is a use and a write is not, except through an `@` parameter.
 A line that computes a value must use it: bind it, or discard it on purpose with
 `_ = f(x)`.
-Shadowing is a compile error.
+Shadowing is a compile error: a `use` binds its name for the whole file, so nothing else in the file may take it.
 
 ## Functions and calls
 - Record construction is a call with field names, always mandatory:

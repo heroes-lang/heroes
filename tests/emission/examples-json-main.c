@@ -6342,7 +6342,7 @@ h_0opt_e201354 h_parse_read_exponent(h_parse_Reader *ph0_r) {
     bool h1_negative;
     bool h2_b0;
     bool h3_b1;
-    int64_t h4_value;
+    int64_t h4_exponent;
     int64_t h5_digits;
     bool h6_b2;
     HeroStr h7_own7 = {0};
@@ -6490,7 +6490,7 @@ bb1:
 #line 233 "examples/json/parse.hero"
     t19 = INT64_C(0);
 #line 233 "examples/json/parse.hero"
-    h4_value = t19;
+    h4_exponent = t19;
 #line 234 "examples/json/parse.hero"
     t20 = INT64_C(0);
 #line 234 "examples/json/parse.hero"
@@ -6574,7 +6574,7 @@ bb8:
 #line 236 "examples/json/parse.hero"
 bb9:
 #line 237 "examples/json/parse.hero"
-    t28 = h4_value;
+    t28 = h4_exponent;
 #line 237 "examples/json/parse.hero"
     t29 = INT64_C(10);
 #line 237 "examples/json/parse.hero"
@@ -6588,7 +6588,7 @@ bb9:
 #line 237 "examples/json/parse.hero"
     if (__builtin_add_overflow(t30, t33, &t34)) hero_panic_overflow();
 #line 237 "examples/json/parse.hero"
-    h4_value = t34;
+    h4_exponent = t34;
 #line 238 "examples/json/parse.hero"
     t35 = h5_digits;
 #line 238 "examples/json/parse.hero"
@@ -6598,7 +6598,7 @@ bb9:
 #line 238 "examples/json/parse.hero"
     h5_digits = t37;
 #line 240 "examples/json/parse.hero"
-    t38 = h4_value;
+    t38 = h4_exponent;
 #line 240 "examples/json/parse.hero"
     t39 = INT64_C(400);
 #line 240 "examples/json/parse.hero"
@@ -6832,7 +6832,7 @@ bb18:
     goto bb16;
 bb19:
 #line 249 "examples/json/parse.hero"
-    t62 = h4_value;
+    t62 = h4_exponent;
 #line 249 "examples/json/parse.hero"
     t63 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t62};
 #line 249 "examples/json/parse.hero"
@@ -6888,7 +6888,7 @@ bb19:
     return t63;
 bb20:
 #line 248 "examples/json/parse.hero"
-    t59 = h4_value;
+    t59 = h4_exponent;
 #line 248 "examples/json/parse.hero"
     if (__builtin_sub_overflow(INT64_C(0), t59, &t60)) hero_panic_overflow();
 #line 248 "examples/json/parse.hero"

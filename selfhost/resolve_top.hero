@@ -268,6 +268,38 @@ test "a use is a binding: twice is noise, a declared name is a clash"
 
     assert found
 
+test "a local may not take a name a `use` bound, and a field still may"
+    # The mirror of the test above, beside it because reading the two
+    # together is the whole rule. `use` BINDS (panel 031 R3), so a LOCAL
+    # taking that name is the same shadowing the declaration direction has
+    # always been refused for — and this direction was never written. What
+    # it let through was not a refusal that failed to fire but a program
+    # that RAN: `geom.x` meaning the local record's field on one line and
+    # the module's function on another, at exit 0 (panel 102).
+    local = resolved_file("use geom\n\nfunction main()\n    geom = 1\n    print(to_str(geom))\n")
+    refused: bool @ false
+
+    for d in local.out.diagnostics
+        if d.code == "shadowed_binding"
+            refused @ true
+
+    assert refused
+
+    # **And the reservation stops at the binding namespace.** A FIELD named
+    # after a module is legal and has to stay legal: `b.geom` is decided by
+    # `b`'s declared type, and a module never appears to the right of a
+    # dot. This half is panel 102's llm-ergonomist condition made
+    # executable — it approved the rule only if fields were out, because
+    # refusing a field name would make adding one `use` line edit every
+    # other file that builds the record: locality of reading bought by
+    # destroying locality of repair.
+    field = resolved_file(
+        "use geom\n\nrecord Box\n    geom: i64\n\nfunction main()\n    b = Box(geom: 1)\n    print(to_str(b.geom))\n"
+    )
+
+    for d in field.out.diagnostics
+        assert d.code != "shadowed_binding"
+
 test "a path binds its last part, and the sweep key cannot be ambiguous"
     # `use syntax/decl` introduces `decl` into this file, so the clash is
     # with a declaration called `decl` — the path itself is not a name
