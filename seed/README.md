@@ -37,7 +37,7 @@ target `/STACK:` reserves address space rather than committing memory, so a
 large reserve costs nothing real, and bringing it down owes its own measurement.
 The flag is MSVC-linker spelling because that is what `clang` targets on Windows
 (`x86_64-pc-windows-msvc`); it is the same number
-`selfhost/cli_flags.hero::link_flags()` puts on every binary the compiler links
+`selfhost/cli/flags.hero::link_flags()` puts on every binary the compiler links
 there. Measured on Apple clang 21.0.0, arm64-darwin: **3.4 s at no
 optimisation level** (2026-08-19, on the 22,025,792-byte seed this milestone
 regenerated; it was 3.7 s on the 21 MB one), 27 s at `-O2`. Any C11 compiler should do — the file was

@@ -1,0 +1,576 @@
+# The dump: what --dump-ir prints (design.md §3.5; panel 019 point 7).
+# Port of crates/heroes/src/ir/{print,print_inst,print_names}.rs — one
+# module, because the instruction printer and the name recovery call
+# each other: the seventh knot, and a small one.
+#
+# THIS IS AN ARTIFACT, NOT DEBUG OUTPUT — deterministic and
+# golden-tested, and explicitly NOT version-stable (LLVM's own stance
+# on .ll, rustc's on MIR dumps). Determinism is not compatibility.
+#
+# Five notation rules, each one bought by a reader getting it wrong:
+# 1. the destination is always LEFT of = or <- (LLVM's store is
+#    value-first, so a reader who has seen LLVM guesses wrong);
+# 2. $ on every temporary and synthetic slot — the character is not in
+#    the language, so nothing the author wrote can collide, and R1
+#    stays greppable: no $ may appear in a diagnostic;
+# 3. polarity in the text: `branch $t -> bb2 else bb4`;
+# 4. preds on every block, or "what is this block's role" costs a pass
+#    over the whole function;
+# 5. ! on every instruction that can abort — add! also distinguishes
+#    i64 arithmetic from f64, which cannot.
+#
+# The IR holds INDICES (no pass after the checker compares strings);
+# the dump turns every index back into the author's name at the last
+# possible moment. One rendering is load-bearing rather than cosmetic:
+# the callee's linkage is spelled out — heroes/extern/builtin/indirect
+# — because a dump that did not say which kind of call this is would
+# hide exactly the difference that silently replaces libc's open.
+
+use ast
+use source
+use check/table
+use check/state
+use check/render
+use inventory
+use ir
+use ir/containers
+use ir/layout
+use parse
+use resolve
+use checker
+use ir/lower
+
+# The whole program, in source order. The strings section lists only
+# the literals the SHOWN functions read — the table is program-wide, so
+# the library's own literals live in it, and a dump that listed them
+# would be answering about a file the author cannot open. Indices are
+# the real ones: this filters the list, it does not renumber it.
+function dump(p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> str
+    live: [bool] @ []
+    i: i64 @ 0
+
+    while i < p.strings.len()
+        live @ live.push(false)
+        i @ i + 1
+
+    for f in p.functions
+        if source.is_root(s, f.span.start)
+            for blk in f.blocks
+                for inst in blk.insts
+                    match inst.op
+                        .lit lt =>
+                            match lt.value
+                                .str_const sc                                       => live[sc.at] @ true
+                                .int_const | .float_const | .bool_const | .null_ptr => continue
+                        .load | .store | .push_owned | .unary | .binary | .cast | .call | .construct => continue
+                        .field | .index | .map_get | .len_of | .tag_of | .payload                    => continue
+                        .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing     => continue
+
+    out: str @ ""
+    any_live: bool @ false
+
+    for used in live
+        if used
+            any_live @ true
+
+    if any_live
+        out @ out + "strings\n"
+
+        # ORDER: ascending string index — the dense walk IS the sort.
+        at: i64 @ 0
+
+        while at < live.len()
+            if live[at]
+                out @ out + "    " + at.to_str() + "  \"" + escaped(p.strings[at]) + "\"\n"
+            at @ at + 1
+
+        out @ out + "\n"
+
+    # The library is part of every compilation and part of no dump: a
+    # --dump-<stage> answers "what does the compiler know about the
+    # file I named" (CLAUDE.md §10), and the library is identical in
+    # every program.
+    shown: i64 @ 0
+
+    for f in p.functions
+        if source.is_root(s, f.span.start)
+            if shown > 0
+                out @ out + "\n"
+            out @ out + one(f, c, s, decls)
+            shown @ shown + 1
+
+    return out
+
+function one(f: containers.Function, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> str
+    out: str @ header(f, c, s, decls)
+    is_extern: bool @ false
+
+    match f.kind
+        .extern_kind                                 => is_extern @ true
+        .function_kind | .constant_kind | .test_kind => is_extern @ is_extern
+
+    if is_extern
+        # No blocks at all: the implementation is C's, and clang
+        # type-checks the call against the real header (§4.19).
+        out @ out + "    no body — C provides it\n"
+        return out
+    locals = slot_line(f, c, s, decls)
+
+    if locals != ""
+        out @ out + "    slots  " + locals + "\n"
+    index: i64 @ 0
+
+    for blk in f.blocks
+        out @ out + block_header(id: index, note: blk.note, preds: blk.preds)
+
+        for inst in blk.insts
+            out @ out + "        " + instruction(f, inst, c, s, decls) + "\n"
+
+        out @ out + "        " + terminator(blk.term) + "\n"
+        index @ index + 1
+
+    return out
+
+# The signature, spelled the way the author wrote it — the same shape
+# `heroes fmt` prints, so the two artifacts agree about what a
+# function is.
+function header(f: containers.Function, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> str
+    match f.kind
+        .constant_kind => return "constant " + f.name + ": " + render.render_ty(c.types, s, decls, f.result, f.generics) + "\n"
+        .test_kind => return "test " + f.name + "\n"
+        .function_kind | .extern_kind =>
+            generics: str @ ""
+
+            if f.generics.len() > 0
+                generics @ "<" + f.generics.join(", ") + ">"
+            params: [str] @ []
+
+            for slot_id in f.params
+                marker: str @ ""
+
+                match f.slots[slot_id].kind
+                    .param_slot ps =>
+                        if ps.mutable
+                            marker @ "@"
+                    .local_slot | .synthetic_slot => continue
+
+                params @ params.push(
+                    marker + f.slots[slot_id].name + ": " + render.render_ty(c.types, s, decls, f.slots[slot_id].ty, f.generics)
+                )
+
+            result: str @ ""
+
+            if f.result != table.unit_ty(c.types)
+                result @ " -> " + render.render_ty(c.types, s, decls, f.result, f.generics)
+            word: str @ "function"
+
+            match f.kind
+                .extern_kind                                 => word @ "extern function"
+                .function_kind | .constant_kind | .test_kind => word @ word
+
+            return word + " " + f.name + generics + "(" + params.join(", ") + ")" + result + "\n"
+
+    return ""
+
+# Every slot that is not a parameter — the parameters are in the
+# signature, and repeating them would make the line that matters
+# harder to find.
+function slot_line(f: containers.Function, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> str
+    rendered: [str] @ []
+    index: i64 @ 0
+
+    for slot in f.slots
+        is_param: bool @ false
+
+        for p in f.params
+            if p == index
+                is_param @ true
+
+        if !is_param
+            rendered @ rendered.push(slot.name + ": " + render.render_ty(c.types, s, decls, slot.ty, f.generics))
+        index @ index + 1
+
+    return rendered.join(" · ")
+
+# `bb1  while: test    preds bb0, bb3`
+function block_header(id: i64, note: str, preds: [i64]) -> str
+    line: str @ "    bb" + id.to_str() + "  " + note
+
+    if preds.len() > 0
+        names: [str] @ []
+
+        for p in preds
+            names @ names.push("bb" + p.to_str())
+
+        line @ line + "    preds " + names.join(", ")
+    return line + "\n"
+
+function terminator(term: ir.Term) -> str
+    match term
+        .jump j => return "jump bb" + j.to.to_str()
+        .branch br => return "branch " + value_name(br.cond) + " -> bb" + br.then_to.to_str() + " else bb" + br.else_to.to_str()
+        .switch_term sw =>
+            edges: [str] @ []
+            case_at: i64 @ 0
+
+            for edge_to in sw.cases
+                edges @ edges.push("case " + case_at.to_str() + " -> bb" + edge_to.to_str())
+                case_at @ case_at + 1
+
+            return "switch " + value_name(sw.tag) + " " + edges.join(", ")
+        .return_term ret =>
+            if ret.value.is_err()
+                return "return"
+            return "return " + value_name(ret.value.must())
+        .unreachable => return "unreachable"
+        # The verifier rejects this, so it can only appear in a dump
+        # taken of a function that is still being built — never.
+
+        .open => return "OPEN"
+
+    return ""
+
+## One instruction, as one line
+
+function value_name(value: i64) -> str
+    return "$t" + value.to_str()
+
+function instruction(f: containers.Function, inst: ir.Inst, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> str
+    body = operation(f, inst, c, s, decls)
+
+    if inst.dest.is_err()
+        return body
+    return value_name(inst.dest.must()) + ": " + render.render_ty(c.types, s, decls, inst.ty, f.generics) + " = " + body
+
+function operation(f: containers.Function, inst: ir.Inst, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> str
+    int_id = table.int_ty_id(c.types)
+
+    match inst.op
+        .lit lt        => return "const " + constant_text(lt.value)
+        .load ld       => return "load " + written(f, ld.place, c, s, decls)
+        .store st      => return "store " + written(f, st.place, c, s, decls) + " <- " + value_name(st.value)
+        .push_owned pg => return "push_owned " + written(f, pg.place, c, s, decls) + " <- " + value_name(pg.value)
+        .unary u =>
+            word: str @ "neg"
+            bang: str @ ""
+
+            match u.op
+                .neg =>
+                    if inst.ty == int_id
+                        bang @ "!"
+                .not_op  => word @ "not"
+                .bit_not => word @ "bitnot"
+
+            return word + bang + " " + value_name(u.operand)
+        .binary bin =>
+            bang: str @ ""
+
+            if aborts(bin.op, operands: containers.value_type(f, bin.left), int_id: int_id)
+                bang @ "!"
+            return word_of(bin.op) + bang + " " + value_name(bin.left) + ", " + value_name(bin.right)
+        .cast ca =>
+            match ca.kind
+                .str_to_cstr => return "cast str_to_cstr " + value_name(ca.operand)
+        .call cl =>
+            tail: str @ ""
+
+            if cl.variadic
+                tail @ " variadic"
+            return "call " + target(cl.callee, s, decls) + "(" + argument_list(f, cl.arguments, c, s, decls) + ")" + tail
+        .construct con => return "construct " + shape_name(con.shape, s, decls) + "(" + argument_list(f, con.arguments, c, s, decls) + ")"
+        .field fl => return "field " + value_name(fl.base) + "." + name_of_field(c, s, decls, owner: containers.value_type(f, fl.base), at: fl.at)
+        # §4.9: an out-of-bounds index aborts, which is the whole reason
+        # for the mark.
+
+        .index ix   => return "index! " + value_name(ix.base) + ", " + value_name(ix.at)
+        .map_get mg => return "mapget " + value_name(mg.map) + ", " + value_name(mg.key)
+        .len_of ln  => return "len " + value_name(ln.value)
+        .tag_of tg  => return "tag " + value_name(tg.value)
+        .payload pl => return "payload " + value_name(pl.base) + " " + case_name(c, s, decls, owner: containers.value_type(f, pl.base), at: pl.at)
+        .func_ref fr => return "funcref " + target(fr.callee, s, decls)
+        .copy_out co => return "copyout " + f.slots[co.param].name
+        .abort_op ab =>
+            word: str @ "must"
+
+            match ab.why
+                .assert_abort => word @ "assert"
+                .must_abort   => word @ word
+
+            operands = argument_list(f, ab.arguments, c, s, decls)
+
+            if operands == ""
+                return "abort " + word
+            return "abort " + word + "(" + operands + ")"
+        .incref rc => return "incref " + value_name(rc.value)
+        .decref rc => return "decref " + value_name(rc.value)
+        .hole      => return "???"
+        .missing   => return "MISSING"
+
+    return ""
+
+# A place, in the surface's own notation: `l.pos`, `xs[$t2]`, `total`.
+function written(f: containers.Function, place: ir.Place, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> str
+    out: str @ f.slots[place.root].name
+    ty: i64 @ f.slots[place.root].ty
+
+    for step in containers.steps_of(f, place.path)
+        match step
+            .field_step fs =>
+                out @ out + "." + name_of_field(c, s, decls, owner: ty, at: fs.at)
+
+                # Carry the field's own type, or the next step in the
+                # path has nothing to look a name up in — g.rows[$t1]
+                # printed `.0` past the first step without this.
+                ty @ field_ty_of(c, decls, owner: ty, at: fs.at)
+            .index_step ix =>
+                out @ out + "[" + value_name(ix.value) + "]"
+
+                match table.get(c.types, ty)
+                    .array arr                                                => ty @ arr.element
+                    .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => ty @ table.error_ty(c.types)
+                    .fixed | .map | .fallible | .function_ty | .named         => ty @ table.error_ty(c.types)
+                    .case_ty | .failure | .generic | .error                   => ty @ table.error_ty(c.types)
+
+    return out
+
+function argument_list(f: containers.Function, run: ir.Run, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> str
+    rendered: [str] @ []
+
+    for arg in containers.args_of(f, run)
+        match arg
+            .value_arg v => rendered @ rendered.push(value_name(v.value))
+            # §4.8's marker, repeated here for the same reason it is
+            # repeated at the call site: the mutation is visible on the
+            # line.
+
+            .inout_arg io => rendered @ rendered.push("@" + written(f, io.place, c, s, decls))
+
+    return rendered.join(", ")
+
+function constant_text(value: ir.IntConst) -> str
+    match value
+        .int_const ic =>
+            sign: str @ ""
+
+            if ic.value.negative
+                sign @ "-"
+            return sign + ic.value.magnitude.to_str()
+        # The spelled literal, unchanged: the port carries the text.
+
+        .float_const fc => return fc.text
+        .bool_const bc =>
+            if bc.value
+                return "true"
+            return "false"
+        .null_ptr     => return "nullptr"
+        .str_const sc => return "str " + sc.at.to_str()
+
+    return ""
+
+function word_of(op: ir.BinaryOp) -> str
+    return match op
+        .add     => "add"
+        .sub     => "sub"
+        .mul     => "mul"
+        .div     => "div"
+        .rem     => "rem"
+        .eq      => "eq"
+        .ne      => "ne"
+        .lt      => "lt"
+        .le      => "le"
+        .gt      => "gt"
+        .ge      => "ge"
+        .bit_and => "and"
+        .bit_or  => "or"
+        .bit_xor => "xor"
+        .shl     => "shl"
+        .shr     => "shr"
+
+# Whether this operation can stop the program. i64 arithmetic can
+# (overflow aborts, division by zero aborts); f64 arithmetic cannot; a
+# comparison never can.
+function aborts(op: ir.BinaryOp, operands: i64, int_id: i64) -> bool
+    if operands != int_id
+        return false
+
+    return match op
+        .add | .sub | .mul | .div | .rem            => true
+        .eq | .ne | .lt | .le | .gt | .ge           => false
+        .bit_and | .bit_or | .bit_xor | .shl | .shr => false
+
+## Recovering a name for the reader
+
+# The linkage, spelled out — panel 019's most expensive finding made
+# visible: heroes names are mangled, extern names are not, and a dump
+# that did not say which would hide the difference.
+function target(callee: ir.Callee, s: source.Source, decls: [ast.Decl]) -> str
+    match callee
+        .heroes_fn h   => return "heroes " + source.span_text(s, decls[h.decl].name)
+        .extern_fn e   => return "extern " + source.span_text(s, decls[e.decl].name)
+        .builtin_fn bt => return "builtin " + inventory.table()[bt.at].name
+        .indirect ind  => return "indirect " + value_name(ind.value)
+
+    return ""
+
+function shape_name(shape: ir.Shape, s: source.Source, decls: [ast.Decl]) -> str
+    match shape
+        .record_shape rs => return source.span_text(s, decls[rs.decl].name)
+        .case_shape cs =>
+            holder = source.span_text(s, decls[cs.decl].name)
+
+            match decls[cs.decl].kind
+                .variant_decl v => return holder + "." + source.span_text(s, v.cases[cs.at].name)
+                .constant_decl | .function_decl | .record_decl | .test_decl => return holder
+        .array_shape => return "array"
+        .map_shape   => return "map"
+        .ok_shape    => return "ok"
+        .fail_shape  => return "fail"
+        .err_shape   => return "err"
+
+    return ""
+
+function name_of_field(c: state.Checked, s: source.Source, decls: [ast.Decl], owner: i64, at: i64) -> str
+    match table.get(c.types, owner)
+        .named n =>
+            match decls[n.decl].kind
+                .record_decl rec =>
+                    if at < rec.fields.len()
+                        return source.span_text(s, rec.fields[at].name)
+                    return at.to_str()
+                .constant_decl | .function_decl | .variant_decl | .test_decl => return at.to_str()
+        .case_ty vc =>
+            match decls[vc.decl].kind
+                .variant_decl v =>
+                    if at < v.cases[vc.at].fields.len()
+                        return source.span_text(s, v.cases[vc.at].fields[at].name)
+                    return at.to_str()
+                .constant_decl | .function_decl | .record_decl | .test_decl => return at.to_str()
+        .failure =>
+            if at < layout.FAILURE_FIELDS.len()
+                return layout.FAILURE_FIELDS[at]
+            return at.to_str()
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return at.to_str()
+        .array | .fixed | .map | .fallible | .function_ty         => return at.to_str()
+        .generic | .error                                         => return at.to_str()
+
+    return at.to_str()
+
+# The type a field HOLDS, so a path can keep naming its steps past the
+# first one.
+function field_ty_of(c: state.Checked, decls: [ast.Decl], owner: i64, at: i64) -> i64
+    written_id: i64? @ fail("none", "no field")
+
+    match table.get(c.types, owner)
+        .named n =>
+            match decls[n.decl].kind
+                .record_decl rec =>
+                    if at < rec.fields.len()
+                        written_id @ ok(rec.fields[at].ty)
+                .constant_decl | .function_decl | .variant_decl | .test_decl => written_id @ written_id
+        .case_ty vc =>
+            match decls[vc.decl].kind
+                .variant_decl v =>
+                    if at < v.cases[vc.at].fields.len()
+                        written_id @ ok(v.cases[vc.at].fields[at].ty)
+                .constant_decl | .function_decl | .record_decl | .test_decl => written_id @ written_id
+        # The two str fields of a failure (§4.6).
+
+        .failure                                                  => return table.str_ty(c.types)
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => written_id @ written_id
+        .array | .fixed | .map | .fallible | .function_ty         => written_id @ written_id
+        .generic | .error                                         => written_id @ written_id
+
+    if written_id.is_err()
+        return table.error_ty(c.types)
+    found = state.written_type(c, written_id.must())
+
+    if found.is_err()
+        return table.error_ty(c.types)
+    return found.must()
+
+# `.num`, `.ok` — the case a payload read narrows to.
+function case_name(c: state.Checked, s: source.Source, decls: [ast.Decl], owner: i64, at: i64) -> str
+    match table.get(c.types, owner)
+        .named n =>
+            match decls[n.decl].kind
+                .variant_decl v => return "." + source.span_text(s, v.cases[at].name)
+                .constant_decl | .function_decl | .record_decl | .test_decl => return "case " + at.to_str()
+        # §4.6's two built-in cases.
+
+        .fallible =>
+            if at == 0
+                return ".ok"
+            return ".err"
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return "case " + at.to_str()
+        .array | .fixed | .map | .function_ty | .case_ty          => return "case " + at.to_str()
+        .failure | .generic | .error                              => return "case " + at.to_str()
+
+    return "case " + at.to_str()
+
+# A string literal, back in the source's own notation: the six escapes
+# of panel 008 as amended by 066, and no others, so a dumped literal is
+# one line however it was written. \r is here for the reason it entered
+# the language: without the arm, a str holding a carriage return — which
+# any C binding can hand back — put a raw invisible byte into every
+# dump.
+function escaped(text: str) -> str
+    out: str @ ""
+
+    for ch in text.chars()
+        if ch == "\n"
+            out @ out + "\\n"
+        else if ch == "\t"
+            out @ out + "\\t"
+        else if ch == "\r"
+            out @ out + "\\r"
+        else if ch == "\\"
+            out @ out + "\\\\"
+        else if ch == "\""
+            out @ out + "\\\""
+        else
+            out @ out + ch
+
+    return out
+
+## Tests
+
+# str has no substring builtin — find is the array one, taking a
+# predicate — so the tests scan by slice. Local to the tests: the dump
+# itself never searches its own output.
+function has(text: str, needle: str) -> bool
+    if needle.len() == 0
+        return true
+    stop = text.len() - needle.len()
+    at: i64 @ 0
+
+    while at <= stop
+        if text.slice(from: at, to: at + needle.len()) == needle
+            return true
+        at @ at + 1
+
+    return false
+
+function dumped(text: str) -> str
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    c = checker.check(p.tree, out, s, p.decls)
+    assert c.diagnostics.len() == 0
+    low = lower.lower(p.tree, out, c, s, p.decls)
+    return dump(low.program, c, s, p.decls)
+
+test "the dump is deterministic, dest-left, and marks what can abort"
+    text = "function add(a: i64, b: i64) -> i64\n    return a + b\n"
+    first = dumped(text)
+    again = dumped(text)
+    assert first == again
+    assert has(text: first, needle: "function add(a: i64, b: i64) -> i64")
+    assert has(text: first, needle: "bb0  entry")
+    assert has(text: first, needle: "$t3: i64 = add! $t1, $t2")
+    assert has(text: first, needle: "return $t3")
+
+test "strings are escaped and listed once, and the linkage is spelled"
+    got = dumped("function greet()\n    print(\"line one\\nline two\")\n")
+    assert has(text: got, needle: "strings")
+    assert has(text: got, needle: "\"line one\\nline two\"")
+    assert has(text: got, needle: "call builtin print($t1) variadic")

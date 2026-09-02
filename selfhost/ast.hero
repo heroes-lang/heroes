@@ -318,7 +318,7 @@ variant TypeKind
 # declarations because a `use` lowers to nothing (panel 031).
 # `use syntax/decl as sd`: `name` is the whole path and the module's identity,
 # `binding` is what THIS file calls it — total and never an `Option`, for the
-# measured reason `parse_use.hero` carries beside the code that fills it.
+# measured reason `use_line.hero` carries beside the code that fills it.
 record Use
     name: token.Span
     binding: token.Span

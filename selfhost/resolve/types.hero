@@ -1,0 +1,310 @@
+# Written types, against the three things a type name can be: a primitive,
+# a declaration, or a type parameter of the enclosing function (design.md
+# §4.3, §4.12).
+# Port of crates/heroes/src/resolve/types.rs. `Prim` and `primitive()` live
+# in resolved.hero beside the `TypeRef` that names them — the one departure
+# from Rust's layout, recorded there.
+#
+# The recursion is over the type arena the parser already built, so
+# `[{str: Point}?]` costs one walk and five entries in `type_uses`. A later
+# pass never reads the written form again: it asks the table.
+#
+# Types are a separate namespace from values, and this file is where that
+# is true rather than merely intended: `Point` names both a type and its
+# constructor, and those are two questions asked in two places — here, and
+# in the expression walk.
+
+use token
+use ast
+use source
+use resolved
+use resolve/vocab
+use widths
+use resolve/state
+use resolve/errors
+use module/diagnostics
+
+function resolve_type(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl], id: i64)
+    match a.types[id].kind
+        .named => named(@r, a, s, decls, id)
+        # `()` needs no resolution, and a type the parser could not read has
+        # already been reported: saying more would be a second diagnostic
+        # for one mistake.
+
+        .unit | .error  => return
+        .array_of inner => resolve_type(@r, a, s, decls, inner.element)
+        .fallible inner => resolve_type(@r, a, s, decls, inner.inner)
+        # The length is a literal the parser already read, so only the
+        # element type is a name anything can resolve.
+
+        .fixed inner => resolve_type(@r, a, s, decls, inner.element)
+        .map_of entry =>
+            resolve_type(@r, a, s, decls, entry.key)
+            resolve_type(@r, a, s, decls, entry.value)
+        .function_type f =>
+            for param in f.params
+                resolve_type(@r, a, s, decls, param)
+
+            resolve_type(@r, a, s, decls, f.result)
+
+function named(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl], id: i64)
+    span = a.types[id].span
+    name = source.span_text(s, span)
+    prim = vocab.primitive(name)
+
+    if !prim.is_err()
+        r.out.type_uses[id] @ .prim(value: prim.must())
+        return
+
+    for g in r.generics
+        if g.name == name
+            r.out.type_uses[id] @ .generic(at: g.position)
+            return
+
+    # A qualified type: `geom.Point`. The module has to be one this file
+    # names, exactly as for a value — there is no privacy and no re-export,
+    # so being reachable through some other module's `use` is not being
+    # reachable here.
+    dot = first_dot(name)
+
+    if !dot.is_err()
+        qualified_type(@r, a, s, decls, id: id, split_at: dot.must())
+        return
+    top = state.top_visible(r, name)
+
+    if !top.is_err()
+        decl = top.must()
+
+        match decls[decl].kind
+            .record_decl | .variant_decl => r.out.type_uses[id] @ .top(at: decl)
+            # A function or a constant in type position: the name exists, so
+            # "unknown type" would be a lie and a did-you-mean noise.
+
+            .function_decl fd =>
+                what: str @ "a function"
+
+                if fd.value.is_extern
+                    what @ "an extern function"
+                state.push_diagnostic(@r, errors.not_a_type(name: name, what: what, span: span))
+            .constant_decl => state.push_diagnostic(
+                @r,
+                errors.not_a_type(name: name, what: "a constant", span: span)
+            )
+            .test_decl => return
+
+        return
+    candidates = type_candidates(r, decls)
+    near = state.near_names(@r, name, candidates)
+    state.push_diagnostic(@r, errors.unknown_type(name, near, span))
+
+# The byte offset of the first `.`, or absent — Rust's `split_once` in the
+# shape a language without tuples writes it.
+function first_dot(name: str) -> i64?
+    i: i64 @ 0
+
+    while i < name.len()
+        if name[i] == '.'
+            return ok(i)
+        i @ i + 1
+
+    return fail("absent", "no dot in this name")
+
+function qualified_type(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl], id: i64, split_at: i64)
+    span = a.types[id].span
+    name = source.span_text(s, span)
+
+    # The qualifier as WRITTEN, kept under its own name: `module` below is
+    # overwritten with the module this resolves to, and the two differ the
+    # moment a file says `as` (panel 101 — the diagnostic at the bottom of
+    # this function offered a name the file does not bind, as a CERTAIN fix).
+    wrote = name.slice(from: 0, to: split_at)
+    module: str @ wrote
+    type_name = name.slice(from: split_at + 1, to: name.len())
+
+    # A written type is qualified by the module's BINDING, exactly as a
+    # call is: `p: geom.Point` where the file says `use shapes/geom`
+    # (panel 099 R3). This lookup answers with the module's whole name,
+    # which is the key `top_in` and the mangler are both built from — the
+    # same trade `qualified.module_at` makes for the value side, in
+    # the one other place where a qualifier is read off written text.
+    reached = resolved.used_module_named(r.out, from: r.module, binding: module)
+
+    if reached.is_err()
+        known = state.used_modules(r)
+        state.push_diagnostic(@r, diagnostics.not_a_module(name: module, known: known, span: span))
+        return
+    module @ reached.must()
+    state.keyed_add(@r.module_reads, module: r.module, name: module)
+    found = resolved.top_in(r.out, module: module, name: type_name)
+
+    if found.is_err()
+        names: [str] @ []
+
+        for candidate in resolved.names_in(r.out, module)
+            if is_type_decl(decls, resolved.top_in(r.out, module: module, name: candidate).must())
+                names @ names.push(candidate)
+
+        near = state.near_names(@r, type_name, names)
+        state.push_diagnostic(
+            @r,
+            diagnostics.not_in_module(module: module, qualifier: wrote, name: type_name, near: near, span: span)
+        )
+        return
+    decl = found.must()
+
+    if is_type_decl(decls, decl)
+        r.out.type_uses[id] @ .top(at: decl)
+        return
+
+    # Port note, kept byte for byte on purpose: the Rust side hands `what:
+    # "not a type"` into a template that already ends `, not a type`, so the
+    # message reads "`geom.f` is not a type, not a type". A fixpoint diff
+    # would catch a silent improvement, so the wart crosses as it is and the
+    # repair belongs to the Rust side first.
+    state.push_diagnostic(@r, errors.not_a_type(name: name, what: "not a type", span: span))
+
+function is_type_decl(decls: [ast.Decl], at: i64) -> bool
+    return match decls[at].kind
+        .record_decl | .variant_decl                 => true
+        .constant_decl | .function_decl | .test_decl => false
+
+# Everything that could have been meant, nearest namespace first: the type
+# parameters in hand (position order), then the file's own types (names_in
+# is sorted — the ORDER mark's rule), then the primitives from the one
+# array that lists them.
+function type_candidates(r: state.Resolver, decls: [ast.Decl]) -> [str]
+    candidates: [str] @ []
+
+    for g in r.generics
+        candidates @ candidates.push(g.name)
+
+    for name in resolved.names_in(r.out, r.module)
+        if is_type_decl(decls, resolved.top_in(r.out, module: r.module, name: name).must())
+            candidates @ candidates.push(name)
+
+    for k in widths.int_kinds()
+        candidates @ candidates.push(widths.int_name(k))
+
+    for prim in ["f32", "f64", "bool", "str", "ptr", "cstr"]
+        candidates @ candidates.push(prim)
+
+    return candidates
+
+## Tests
+
+# The text is the name table: offsets hand out spans below.
+#  0123456789012345678901234567890123456789
+# "i64 A Point f geom.Point nope.X flot\n"
+function fixture() -> source.Source
+    return source.new_source(name: "t.hero", text: "i64 A Point f geom.Point nope.X flot\n")
+
+function typed(@a: ast.Ast, start: i64, end: i64) -> i64
+    return ast.push_type(@a.types, ast.TypeNode(kind: .named, span: token.Span(start: start, end: end)))
+
+function empty_decls() -> [ast.Decl]
+    return []
+
+function record_decl_named(name_start: i64, name_end: i64) -> ast.Decl
+    doc: [token.Span] = []
+    fields: [ast.Field] = []
+    span = token.Span(start: name_start, end: name_end)
+    return ast.Decl(
+        name: span,
+        doc: doc,
+        span: span,
+        kind: .record_decl(fields: fields, header: fail("absent", "plain"), library: fail("absent", "plain"), partial: false, tag: fail("absent", "plain"))
+    )
+
+test "the three namespaces answer in order: primitive, generic, declaration"
+    s = fixture()
+    a: ast.Ast @ ast.new_ast()
+    prim_node = typed(@a, start: 0, end: 3)
+    generic_node = typed(@a, start: 4, end: 5)
+    top_node = typed(@a, start: 6, end: 11)
+    r: state.Resolver @ state.new_resolver(expr_count: 0, type_count: 3)
+    r.module @ "t"
+    r.generics @ r.generics.push(state.GenericParam(name: "A", position: 0))
+    decls: [ast.Decl] @ [record_decl_named(name_start: 6, name_end: 11)]
+    resolved.declare_top(@r.out, module: "t", name: "Point", decl: 0)
+    resolve_type(@r, a, s, decls, prim_node)
+    resolve_type(@r, a, s, decls, generic_node)
+    resolve_type(@r, a, s, decls, top_node)
+    assert r.out.diagnostics.len() == 0
+    assert r.out.type_uses[prim_node] == .prim(value: .int_prim(kind: .i64))
+    assert r.out.type_uses[generic_node] == .generic(at: 0)
+    assert r.out.type_uses[top_node] == .top(at: 0)
+
+test "a compound type is one walk over the arena"
+    s = fixture()
+    a: ast.Ast @ ast.new_ast()
+    element = typed(@a, start: 0, end: 3)
+    array_node = ast.push_type(
+        @a.types,
+        ast.TypeNode(kind: .array_of(element: element), span: token.Span(start: 0, end: 3))
+    )
+    r: state.Resolver @ state.new_resolver(expr_count: 0, type_count: 2)
+    r.module @ "t"
+    resolve_type(@r, a, s, empty_decls(), array_node)
+    assert r.out.type_uses[element] == .prim(value: .int_prim(kind: .i64))
+
+    # The compound node itself stays unresolved: only names resolve.
+    assert r.out.type_uses[array_node] == .unresolved
+
+test "a value in type position is named for what it is"
+    s = fixture()
+    a: ast.Ast @ ast.new_ast()
+    fn_node = typed(@a, start: 12, end: 13)
+    doc: [token.Span] = []
+    ps: [ast.Param] = []
+    gs: [token.Span] = []
+    f = ast.FunctionDecl(
+        generics: gs,
+        params: ps,
+        result: 0,
+        body: fail("absent", "unused"),
+        is_extern: false,
+        header: fail("absent", "none"),
+        library: fail("absent", "none")
+    )
+    fspan = token.Span(start: 12, end: 13)
+    decls: [ast.Decl] @ [ast.Decl(name: fspan, doc: doc, span: fspan, kind: .function_decl(value: f))]
+    r: state.Resolver @ state.new_resolver(expr_count: 0, type_count: 1)
+    r.module @ "t"
+    resolved.declare_top(@r.out, module: "t", name: "f", decl: 0)
+    resolve_type(@r, a, s, decls, fn_node)
+    assert r.out.diagnostics.len() == 1
+    assert r.out.diagnostics[0].code == "not_a_type"
+    assert r.out.diagnostics[0].message == "`f` is a function, not a type"
+
+test "a qualified type reaches next door, and only through a use"
+    s = fixture()
+    a: ast.Ast @ ast.new_ast()
+    good = typed(@a, start: 14, end: 24)
+    bad = typed(@a, start: 25, end: 31)
+    decls: [ast.Decl] @ [record_decl_named(name_start: 19, name_end: 24)]
+    r: state.Resolver @ state.new_resolver(expr_count: 0, type_count: 2)
+    r.module @ "t"
+    resolved.declare_use(@r.out, from: "t", binding: "geom", module: "geom")
+    resolved.declare_top(@r.out, module: "geom", name: "Point", decl: 0)
+    resolve_type(@r, a, s, decls, good)
+    assert r.out.type_uses[good] == .top(at: 0)
+    assert r.out.diagnostics.len() == 0
+    resolve_type(@r, a, s, decls, bad)
+    assert r.out.diagnostics.len() == 1
+    assert r.out.diagnostics[0].code == "not_a_module"
+
+test "an unknown type earns the nearest names, generics ranked first"
+    s = fixture()
+    a: ast.Ast @ ast.new_ast()
+    typo = typed(@a, start: 32, end: 36)
+    r: state.Resolver @ state.new_resolver(expr_count: 0, type_count: 1)
+    r.module @ "t"
+    r.generics @ r.generics.push(state.GenericParam(name: "flob", position: 0))
+    resolve_type(@r, a, s, empty_decls(), typo)
+    assert r.out.diagnostics.len() == 1
+    assert r.out.diagnostics[0].code == "unknown_type"
+
+    # `flot` is one edit from the generic `flob` AND from the primitive
+    # `f32`? No — two from f32; one from flob and one from... nothing else.
+    # The single candidate becomes the certain rename.
+    assert r.out.diagnostics[0].message == "no type named `flot` — did you mean `flob`?"

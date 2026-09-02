@@ -1,0 +1,360 @@
+# What ONE FIELD asserts about the header, as C (design.md §4.19;
+# panels 060, 062, 064, 071, 079, 081). Port of
+# crates/heroes/src/emit/extern_field.rs.
+#
+# Every branch answers the same question in the same shape — is the
+# header's member this type — asked with _Generic on the ADDRESS,
+# because & does not decay: a float[4] field decays to float * in the
+# value form and binds 16 bytes as an 8-byte ptr; &field has type
+# float (*)[4], which matches no association, so the array case is
+# refused by construction.
+#
+# The three markers are the contract with the error mapper: FIELD says
+# the field disagrees, FLEX says this field cannot be a member at all
+# (a message naming a repair that does not exist is what §4.17
+# forbids), COMPLETE rides the probe's function name.
+
+use ast
+use source
+use check/table
+use check/state
+use widths
+use emit/mangle
+use emit/ctype
+use emit/assert_spelling
+use parse
+use resolve
+use checker
+
+constant FIELD_ASSERTION: str
+    "heroes-ffi-field"
+
+constant FLEX_ASSERTION: str
+    "heroes-ffi-flex"
+
+constant COMPLETE_PROBE: str
+    "hero_ffi_complete_"
+
+# One field's assertion, or absent for a field whose type the checker
+# already refused — the program does not reach a binary, and an
+# assertion naming a type with no C spelling would be the compiler's
+# own error.
+function assertion(c: state.Checked, names: ctype.Names, s: source.Source, c_type: str, hero_name: str, field: ast.Field) -> str?
+    written = state.written_type(c, field.ty)
+
+    if written.is_err()
+        return fail("none", "the checker already refused this field")
+    ty = written.must()
+    member = mangle.field_of(foreign: true, name: source.span_text(s, field.name))
+    place = "((" + c_type + " *)0)->" + member
+
+    # A ptr field asks IS THIS A POINTER, not "is it spelled void *"
+    # (139 fields of all 35 raylib structs swept): the exact-identity
+    # form refused Rectangle * for a ptr field, and there is no other
+    # spelling the author could write — 28 typed-pointer fields across
+    # ten structs unbindable for that alone. Nothing checkable is lost:
+    # Heroes' ptr is opaque, so the pointee carries no obligation. The
+    # _Generic conjunct is what still refuses an array (its controlling
+    # expression decays, so an array type can never match); the sizeof
+    # conjunct decides the one case left — a function pointer, where
+    # void * round-tripping is POSIX's promise and this makes it a
+    # CHECKED assumption.
+    is_ptr: bool @ false
+
+    match table.get(c.types, ty)
+        .ptr                                                       => is_ptr @ true
+        .int_ty | .float_ty | .bool | .str | .cstr | .unit         => is_ptr @ is_ptr
+        .array | .fixed | .map | .fallible | .function_ty | .named => is_ptr @ is_ptr
+        .case_ty | .failure | .generic | .error                    => is_ptr @ is_ptr
+
+    if is_ptr
+        return ok(
+            "_Static_assert(__builtin_classify_type(" + place + ") == 5 && _Generic(" + place + ", __typeof__(" + place + "): 1, default: 0) && sizeof(" + place + ") == sizeof(void *), \"" + FIELD_ASSERTION + " " + hero_name + " " + member + "\");"
+        )
+
+    # An array field is a BRANCH, not a row (panel 062's veto): C's
+    # pointer-to-array declarator is T (*)[N], which composes with no
+    # suffixed string — so this once arrived as "a None nobody chose"
+    # and leftLensCenter went unchecked at exit 0. Two assertions,
+    # because one message cannot answer two questions (panel 079): the
+    # FLEX tail measurement first (a flexible array member sits at
+    # tail 0 and has NO correct length — sizeof of it is a hard error
+    # that defeats §7's exception), then the length. An integer ELEMENT
+    # asks width and sign too (panel 081 R4): C's char is a THIRD type,
+    # so char[N] matched int8_t (*)[N] at none of the eight widths —
+    # 26 of 81 fixed-array fields across eleven headers are char[N],
+    # and uname() was unreachable at any price.
+    is_fixed: bool @ false
+    fixed_elem: i64 @ 0
+    fixed_len: i64 @ 0
+
+    match table.get(c.types, ty)
+        .fixed x =>
+            is_fixed @ true
+            fixed_elem @ x.element
+            fixed_len @ x.length
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => is_fixed @ is_fixed
+        .array | .map | .fallible | .function_ty | .named         => is_fixed @ is_fixed
+        .case_ty | .failure | .generic | .error                   => is_fixed @ is_fixed
+
+    if is_fixed
+        elem = c_spelling(c, names, ty: fixed_elem)
+
+        if elem.is_err()
+            return fail("none", "an element with no C spelling")
+        flex_line = "_Static_assert(sizeof(" + c_type + ") - __builtin_offsetof(" + c_type + ", " + member + ") != 0, \"" + FLEX_ASSERTION + " " + hero_name + " " + member + "\");"
+        elem_is_int: bool @ false
+
+        match table.get(c.types, fixed_elem)
+            .int_ty                                                    => elem_is_int @ true
+            .float_ty | .bool | .str | .ptr | .cstr | .unit            => elem_is_int @ elem_is_int
+            .array | .fixed | .map | .fallible | .function_ty | .named => elem_is_int @ elem_is_int
+            .case_ty | .failure | .generic | .error                    => elem_is_int @ elem_is_int
+
+        if elem_is_int
+            # The length stays exact, asked of the field's OWN element
+            # type — __typeof__(place[0])[n] — so the count is decided
+            # and the element never re-litigated.
+            # THE ELEMENT IS ASKED THROUGH THE MEMBER'S ADDRESS, NEVER THROUGH
+            # A SUBSCRIPT, and that is what stops this branch blaming the
+            # compiler for the author's `extern` (§7; the mirror panel 085 R7
+            # left open, repaired 2026-08-24).
+            #
+            # The old form subscripted — `place[0]` — and a header whose member
+            # is a SCALAR made every one of those subscripts ill-formed:
+            # `i8[4]` against `struct dirent`'s `unsigned char d_type` was
+            # `error: subscripted value is not an array`, three times, and so
+            # `internal error: compiling the generated C failed` at **exit 2**
+            # for a declaration the author wrote. C's `&&` does not save it —
+            # every operand is type-checked whether or not an earlier one is
+            # false — which is the same fact that moved the SIGN test off a cast
+            # at panel 085 R7 and the same fact again one position over.
+            #
+            # `&place` is `T (*)[N]` for an array member and `T *` for a scalar,
+            # and both are well-formed. Each association's expression is a
+            # constant over a C TYPE NAME rather than over the member, so it is
+            # well-formed no matter what the member turns out to be, and a
+            # scalar lands on `default: 0` — the assertion FAILS, at exit 1, on
+            # the author's own line, where it used to break the build.
+            #
+            # **Width and sign, never type identity** (panel 064): C's integer
+            # ABI is those two and nothing else, so all twelve of C's integer
+            # types are enumerated and each row asks whether ITS width and sign
+            # match the declared element's. The twelve are the set
+            # `HERO_C_INTEGER` already lists, kept in step by
+            # `assert_spelling.C_INTEGER_TYPES`.
+            #
+            # The LENGTH needs no separate conjunct any more: it is inside every
+            # association as `(*)[N]`, so a right element at a wrong count lands
+            # on `default: 0` like anything else.
+            rows: [str] @ []
+
+            for c_int in assert_spelling.C_INTEGER_TYPES
+                rows @ rows.push(
+                    c_int + " (*)[" + fixed_len.to_str() + "]: (sizeof(" + c_int + ") == sizeof(" + elem.must() + ") && (((" + c_int + ")-1 < 0) == ((" + elem.must() + ")-1 < 0)))"
+                )
+
+            return ok(
+                flex_line + "\n             _Static_assert(_Generic(&" + place + ", " + rows.join(", ") + ", default: 0), \"" + FIELD_ASSERTION + " " + hero_name + " " + member + "\");"
+            )
+        return ok(
+            flex_line + "\n             _Static_assert(_Generic(&" + place + ", " + elem.must() + " (*)[" + fixed_len.to_str() + "]: 1, default: 0) && sizeof(" + c_type + ") - __builtin_offsetof(" + c_type + ", " + member + ") >= sizeof(" + elem.must() + "[" + fixed_len.to_str() + "]), \"" + FIELD_ASSERTION + " " + hero_name + " " + member + "\");"
+        )
+
+    # An integer field asks WIDTH AND SIGN, never type identity (panel
+    # 064): C's integer ABI is width and sign and nothing else, while
+    # its type identity is finer — on Darwin int64_t is long long and
+    # time_t is long, same width, same sign, distinct types. The
+    # identity form refused 9 of 24 POSIX fields and all of z_stream's
+    # counters: not bound wrongly, NOT BINDABLE. The relaxation is
+    # strictly monotone (identity implies class+size+sign), and what
+    # refuses a wrong enum field is the SIGN conjunct — the "an enum
+    # (3)" sentence was false, clang promotes the classify operand and
+    # an enum answers 1 (panel 071, measured against SDL3).
+    # A `cstr` FIELD asks the same question a `cstr` RESULT does, and until
+    # 2026-08-24 it asked a stricter one: the fallback below wants the member's
+    # ADDRESS to be `const char **`, so a header whose member is a plain `char *`
+    # — `struct passwd`'s `pw_name`, `pw_dir`, `pw_shell` — was refused with
+    # `ffi_field_type`, a field the author had spelled correctly. Reproduced
+    # before the repair; panel 089's ffi-pragmatist compiled the repair.
+    #
+    # **Widening here is sound because `cstr` is read-only from the Heroes side.**
+    # `const` on the pointee restricts WRITES, and the language offers none
+    # through a `cstr`: a program can compare it to `nullptr`, hand it onward, or
+    # copy it in with `validated`. Where a write could reach C — a parameter the
+    # header declares `char *` — `ffi_writable_parameter` is the guard, and it is
+    # untouched by this.
+    #
+    # The spellings are `assert_spelling.CSTR_SPELLINGS`, shared with
+    # `HERO_RET_CSTR` so the set cannot drift between the two positions.
+    is_cstr: bool @ false
+
+    match table.get(c.types, ty)
+        .cstr                                                      => is_cstr @ true
+        .int_ty | .float_ty | .bool | .str | .ptr | .unit          => is_cstr @ is_cstr
+        .array | .fixed | .map | .fallible | .function_ty | .named => is_cstr @ is_cstr
+        .case_ty | .failure | .generic | .error                    => is_cstr @ is_cstr
+
+    if is_cstr
+        return ok(
+            "_Static_assert(_Generic(" + place + ", " + assert_spelling.CSTR_SPELLINGS + ", default:0) && sizeof(" + place + ") == sizeof(char *), \"" + FIELD_ASSERTION + " " + c_type + " " + member + "\");"
+        )
+    is_int: bool @ false
+    int_kind: widths.IntKind @ .i64
+
+    match table.get(c.types, ty)
+        .int_ty ik =>
+            is_int @ true
+            int_kind @ ik.kind
+        .float_ty | .bool | .str | .ptr | .cstr | .unit            => is_int @ is_int
+        .array | .fixed | .map | .fallible | .function_ty | .named => is_int @ is_int
+        .case_ty | .failure | .generic | .error                    => is_int @ is_int
+
+    # The sign test goes through HERO_C_UNSIGNED and not through a cast,
+    # and the difference is a whole exit code (panel 085 R7). The cast
+    # form `((__typeof__(place))-1 < 0)` is ILL-FORMED, not false, when
+    # the header's field is an array or a struct: `d_name: i8` against
+    # `char d_name[1024]` gave "used type 'char[1024]' where arithmetic
+    # or pointer type is required" — a clang error that is not this
+    # assertion failing, so the ffi mapping could not recognise it and
+    # the compiler took the blame for the author's extern at exit 2.
+    # C's && does not save it, because every operand is type-checked
+    # whether or not an earlier one is false. HERO_C_UNSIGNED is
+    # _Generic over a controlling expression, which lvalue-converts, so
+    # an array decays and lands on `default: 0` and the assertion FAILS
+    # where it used to break the build.
+    if is_int
+        spelling = widths.int_c_type(int_kind)
+        declared: str @ "0"
+
+        if !widths.int_signed(int_kind)
+            declared @ "1"
+        return ok(
+            "_Static_assert(__builtin_classify_type(" + place + ") == 1 && sizeof(" + place + ") == sizeof(" + spelling + ") && (" + unsignedness_of(place: place) + " == " + declared + "), \"" + FIELD_ASSERTION + " " + hero_name + " " + member + "\");"
+        )
+    found = c_spelling(c, names, ty: ty)
+
+    if found.is_err()
+        return fail("none", "a type with no header layout")
+    return ok(
+        "_Static_assert(_Generic(&" + place + ", " + found.must() + " *: 1, default: 0) && sizeof(" + place + ") == sizeof(" + found.must() + "), \"" + FIELD_ASSERTION + " " + hero_name + " " + member + "\");"
+    )
+
+# Whether a member's own C type is unsigned, as a constant expression
+# that is WELL-FORMED whatever that type turns out to be.
+#
+# This is emit_extern_assert's HERO_C_UNSIGNED written out rather than
+# called, and the duplication is deliberate: that macro is emitted
+# CONDITIONALLY, only where an extern FUNCTION has a result that needs
+# it, and a group holding nothing but a record emits no such preamble at
+# all. A field assertion that called it compiled in one program and
+# failed with "call to undeclared function HERO_C_UNSIGNED" in the next
+# — measured on a dirent.h group with one record and no function, which
+# is the shape a struct-only binding has. The rows keep the macro's own
+# order so a reader can diff the two by eye.
+#
+# _Generic lvalue-converts its controlling expression, so an array
+# member decays to a pointer and a struct member matches nothing: both
+# reach `default` instead of being a hard error, which is the whole
+# reason this replaced ((__typeof__(place))-1 < 0).
+function unsignedness_of(place: str) -> str
+    return "_Generic(" + place + ", unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0)"
+
+# The C type a field is declared as, for the association list. A nested
+# record is the header's OWN name — measured missing through a
+# catch-all that read as "a type with no spelling" and meant "a type I
+# forgot"; the arms are written out so the next type is a None somebody
+# chose.
+function c_spelling(c: state.Checked, names: ctype.Names, ty: i64) -> str?
+    match table.get(c.types, ty)
+        .int_ty ik   => return ok(widths.int_c_type(ik.kind))
+        .float_ty fk => return ok(widths.float_c_type(fk.kind))
+        .bool        => return ok("bool")
+        .ptr         => return ok("void *")
+        .cstr        => return ok("const char *")
+        .named n     => return ok(ctype.of(names, decl: n.decl))
+        # str, [T], {K: V}, T? and () have no header layout, and the
+        # checker refuses each as a group record's field. Reaching here
+        # means the frontend let one through.
+
+        .str | .unit | .array | .fixed | .map                              => return fail("none", "no header layout")
+        .fallible | .function_ty | .case_ty | .failure | .generic | .error => return fail("none", "no header layout")
+
+    return fail("none", "unreached")
+
+## Tests
+
+# A `cstr` field asks the six spellings, not the address's identity — the
+# branch added 2026-08-24 (panel 089's rider 1). The assertion below is what
+# makes `struct passwd`'s `pw_name` bindable: a plain `char *` member, which
+# the fallback's `_Generic(&place, const char **: 1, ...)` refused.
+#
+# **This test fires if the branch is removed**, which is the point: without it
+# a `cstr` field falls through to the fallback and the emitted text is the
+# address form, so the equality below fails rather than the compile.
+test "a cstr field accepts every spelling C gives a string, not just const char *"
+    text = "extern \"m.h\"\n    record Probe\n        name: cstr\n\nfunction touch(p: Probe) -> i64\n    return 1\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    names = ctype.new_names(s, parsed.decls)
+    fields: [ast.Field] @ []
+
+    match parsed.decls[0].kind
+        .record_decl rec                                             => fields @ rec.fields
+        .constant_decl | .function_decl | .variant_decl | .test_decl => assert false
+
+    line = assertion(c, names, s, c_type: "Probe", hero_name: "Probe", field: fields[0])
+    got = line.must()
+
+    # all six, and the plain `char *` first — the one the old form refused
+    assert strings_has(text: got, needle: "char *:1")
+    assert strings_has(text: got, needle: "const char *:1")
+    assert strings_has(text: got, needle: "signed char *:1")
+    assert strings_has(text: got, needle: "unsigned char *:1")
+
+    # and NOT the address-identity form the fallback writes
+    assert !strings_has(text: got, needle: "const char * *:")
+    assert !strings_has(text: got, needle: "&((Probe *)0)->name")
+
+# A substring test, local because this module has no strings dependency and
+# one `use` for one predicate is a worse trade than six lines.
+function strings_has(text: str, needle: str) -> bool
+    if needle.len() > text.len()
+        return false
+    at: i64 @ 0
+
+    while at + needle.len() <= text.len()
+        if text.slice(from: at, to: at + needle.len()) == needle
+            return true
+        at @ at + 1
+
+    return false
+
+test "the four branches: pointer, char array, integer by width+sign, float by identity"
+    text = "extern \"m.h\"\n    record Probe\n        p: ptr\n        name: u8[4]\n        count: i64\n        ratio: f32\n\nfunction touch(x: Probe)\n    _ = x\n\nfunction main()\n    print(1)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    names = ctype.new_names(s, parsed.decls)
+    fields: [ast.Field] @ []
+
+    match parsed.decls[0].kind
+        .record_decl rec                                             => fields @ rec.fields
+        .constant_decl | .function_decl | .variant_decl | .test_decl => assert false
+
+    p_line = assertion(c, names, s, c_type: "Probe", hero_name: "Probe", field: fields[0])
+    assert p_line.must() == "_Static_assert(__builtin_classify_type(((Probe *)0)->p) == 5 && _Generic(((Probe *)0)->p, __typeof__(((Probe *)0)->p): 1, default: 0) && sizeof(((Probe *)0)->p) == sizeof(void *), \"heroes-ffi-field Probe p\");"
+    count_line = assertion(c, names, s, c_type: "Probe", hero_name: "Probe", field: fields[2])
+    assert count_line.must() == "_Static_assert(__builtin_classify_type(((Probe *)0)->count) == 1 && sizeof(((Probe *)0)->count) == sizeof(int64_t) && (_Generic(((Probe *)0)->count, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), \"heroes-ffi-field Probe count\");"
+    ratio_line = assertion(c, names, s, c_type: "Probe", hero_name: "Probe", field: fields[3])
+    assert ratio_line.must() == "_Static_assert(_Generic(&((Probe *)0)->ratio, float *: 1, default: 0) && sizeof(((Probe *)0)->ratio) == sizeof(float), \"heroes-ffi-field Probe ratio\");"
+
+    # The integer-element array: flex tail first, then class+size+sign
+    # and the exact count asked of the field's own element type.
+    name_line = assertion(c, names, s, c_type: "Probe", hero_name: "Probe", field: fields[1])
+    assert !name_line.is_err()

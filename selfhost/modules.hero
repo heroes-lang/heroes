@@ -35,8 +35,8 @@
 use token
 use diag
 use source
-use module_names
-use module_paths
+use module/names as module_names
+use module/paths
 use ast
 use parse
 
@@ -110,7 +110,7 @@ function load_text(path: str, root_text: str, library: str) -> source.Source
     while pending.len() > 0
         index = pending[pending.len() - 1]
         pending @ pending.slice(from: 0, to: pending.len() - 1)
-        named = module_paths.uses_of(files[index].text)
+        named = paths.uses_of(files[index].text)
         added: [i64] @ []
 
         for module in named

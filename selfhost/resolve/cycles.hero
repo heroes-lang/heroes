@@ -1,0 +1,459 @@
+# What a constant's body may contain, and whether the bodies are circular
+# (design.md §4.2, §4.16; panel 039).
+# Port of crates/heroes/src/resolve/{constbody,cycles}.rs — two files in
+# Rust, split by §11's threshold and held together by `super::`; one module
+# here because each calls the other (report → bodies, bodies → owner and
+# is_valued_constant) and Heroes refuses the cycle. The knot is small, but
+# the rule is the same one that shaped grammar_expr and decl.
+#
+# ## Why a body may contain no call
+#
+# Because without that rule a constant is not constant, measured
+# 2026-08-12: `constant ARGC: i64` with body `len(args())` printed 3 under
+# one command line and 0 under another — the same binary, two values. The
+# rule is SYNTACTIC on purpose: a purity analysis would admit `len("abc")`
+# and refuse `len(args())`, which is a better rule and a whole new pass;
+# the syntactic rule buys the property outright, because a call-free body
+# reads only literals and other constants, and the cycle check proves
+# those are not circular.
+#
+# ## Why a cycle is an error only where a constant is on it
+#
+# `constant A` defined as `B` and `B` as `A` used to pass every gate and
+# died by SIGSEGV at -O0 and a hang at -O2 — one program, two failure
+# modes, chosen by a flag nobody typed. Functions may recur freely (§4.2):
+# a recursive function has arguments and a base case; a constant's
+# accessor takes nothing, so nothing about the second call can differ from
+# the first. The walk is ITERATIVE like the Rust side's, and not by
+# coincidence: the check that prevents a hang is the one that historically
+# hangs (rustc #84611, Nim #13715, Zig #21436).
+#
+# The two checks stay coupled through one value — the set of constants
+# whose bodies were already refused — because a cycle through a refused
+# body is a consequence, not a finding, and reporting both is the
+# two-diagnostics-for-one-mistake defect.
+
+use token
+use diag
+use ast
+use source
+use resolved
+use parse
+use resolve/state
+use resolve/top
+use resolve/decls as resolve_decls
+
+## Both checks, in the order a reader wants them
+
+function report(@out: resolved.Resolved, a: ast.Ast, s: source.Source, decls: [ast.Decl])
+    extent = extents(decls)
+    refused = bodies(@out, a, s, decls, extent)
+    adjacent = edges(out, a, decls, extent)
+
+    for cycle in walk(decls, adjacent)
+        # A cycle through a body that was already refused is a consequence:
+        # the body rule is the primary one — it names the line the author
+        # wrote.
+        tainted: bool @ false
+
+        for member in cycle
+            if contains(refused, member)
+                tainted @ true
+
+        if !tainted
+            out.diagnostics @ out.diagnostics.push(diagnose(a, s, decls, cycle))
+
+## Which declaration an offset falls inside
+
+record Extent
+    start: i64
+    end: i64
+    decl: i64
+
+# Sorted by start. The declarations arrive in source order, which is
+# already ascending — but that is a fact about the parser, not about this
+# value, so the sort is explicit: an insertion sort, because `sort` orders
+# numbers and strings, never records.
+function extents(decls: [ast.Decl]) -> [Extent]
+    out: [Extent] @ []
+    index: i64 @ 0
+
+    for decl in decls
+        entry = Extent(start: decl.span.start, end: decl.span.end, decl: index)
+        at: i64 @ out.len()
+
+        while at > 0 && out[at - 1].start > entry.start
+            at @ at - 1
+
+        before = out.slice(from: 0, to: at)
+        after = out.slice(from: at, to: out.len())
+        grown: [Extent] @ before.push(entry)
+
+        for e in after
+            grown @ grown.push(e)
+
+        out @ grown
+        index @ index + 1
+
+    return out
+
+function owner(extent: [Extent], offset: i64) -> i64?
+    lo: i64 @ 0
+    hi: i64 @ extent.len() - 1
+
+    if extent.len() == 0
+        return fail("outside", "no declarations at all")
+
+    while lo < hi
+        mid = (lo + hi + 1) / 2
+
+        if extent[mid].start <= offset
+            lo @ mid
+        else
+            hi @ mid - 1
+
+    if extent[lo].start <= offset && offset < extent[lo].end
+        return ok(extent[lo].decl)
+    return fail("outside", "between declarations")
+
+# Is this declaration a constant WITH a body — the thing that cannot recur?
+function is_valued_constant(decls: [ast.Decl], decl: i64) -> bool
+    return match decls[decl].kind
+        .constant_decl k                                           => !k.body.is_err()
+        .function_decl | .record_decl | .variant_decl | .test_decl => false
+
+function contains(xs: [i64], x: i64) -> bool
+    for it in xs
+        if it == x
+            return true
+
+    return false
+
+## What a constant's body may contain
+
+record Offender
+    span: token.Span
+    what: str
+    holder: i64
+
+function bodies(@out: resolved.Resolved, a: ast.Ast, s: source.Source, decls: [ast.Decl], extent: [Extent]) -> [i64]
+    found: [Offender] @ []
+
+    for expr in a.exprs
+        # Everything a definition may be — literals, the containers built
+        # from them, names, operators, a field or element of one, and the
+        # two constructs that choose between values — walks on; the four
+        # kinds that make a computation are named.
+        what = match expr.kind
+            .call                                                    => "a call"
+            .method                                                  => "a call written with `.`"
+            .try_expr                                                => "a `?`"
+            .hole                                                    => "a `???`"
+            .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit => continue
+            .null_ptr | .name | .unary | .binary | .field            => continue
+            .index | .variant_case | .array | .map                   => continue
+            .if_expr | .match_expr | .error                          => continue
+
+        holder = owner(extent, expr.span.start)
+
+        if holder.is_err()
+            continue
+
+        if !is_valued_constant(decls, holder.must())
+            continue
+        found @ found.push(Offender(span: expr.span, what: what, holder: holder.must()))
+
+    # **The outermost offender only.** `len(args())` is two calls and one
+    # mistake, and two diagnostics for one mistake is a defect this project
+    # has fixed three times over. An expression strictly inside another
+    # offender is that one's inside.
+    refused: [i64] @ []
+
+    for offender in found
+        inside: bool @ false
+
+        for other in found
+            if other.span.start <= offender.span.start && offender.span.end < other.span.end
+                inside @ true
+
+        if inside
+            continue
+        name = source.span_text(s, decls[offender.holder].name)
+        out.diagnostics @ out.diagnostics.push(body_diagnostic(name: name, what: offender.what, span: offender.span))
+
+        if !contains(refused, offender.holder)
+            refused @ refused.push(offender.holder)
+
+    return refused
+
+# The message names the constant, because the caret is on the call and the
+# rule is about the declaration around it.
+function body_diagnostic(name: str, what: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "constant_body",
+        message: "`constant " + name + "`'s body may not contain " + what + " — it may only read literals and other constants",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "a `constant` is read by calling its accessor, so a body that can call anything is re-evaluated on every read — and `len(args())` made one whose value depended on the command line (panel 039)"
+    )
+    d.notes @ d.notes.push("for a value that is computed, write a `function` and call it where the value is wanted")
+    return d
+
+## The edges, and the walk over them
+
+# Every "the body of `from` reads `to`" edge, deduplicated — the dedup is
+# what keeps a constant read fifty times from being fifty edges.
+# ORDER: each adjacency list ascending — adjacency order drives the DFS,
+# which decides the rotation the diagnostic names (the Rust BTreeSet gave
+# this for free; the port pays with one sort per list, §4.9's sentence).
+function edges(out: resolved.Resolved, a: ast.Ast, decls: [ast.Decl], extent: [Extent]) -> [[i64]]
+    adjacent: [[i64]] @ []
+    i: i64 @ 0
+
+    while i < decls.len()
+        empty: [i64] = []
+        adjacent @ adjacent.push(empty)
+        i @ i + 1
+
+    count = a.exprs.len()
+    idx: i64 @ 0
+
+    while idx < count
+        here = idx
+        idx @ idx + 1
+
+        to = match out.uses[here]
+            .top t                                    => t.at
+            .unresolved | .local | .builtin | .module => continue
+
+        from = owner(extent, a.exprs[here].span.start)
+
+        if !from.is_err()
+            home = from.must()
+
+            if !contains(adjacent[home], to)
+                adjacent[home] @ adjacent[home].push(to)
+
+    sorted: [[i64]] @ []
+
+    for list in adjacent
+        sorted @ sorted.push(sort(list))
+
+    return sorted
+
+record PathStep
+    node: i64
+    taken: i64
+
+# Iterative depth-first search; one cycle per distinct set of declarations.
+# Colours rather than a visited flag: grey means "on the current path",
+# and that is what tells a back edge from a diamond — two constants that
+# both read a third are not a cycle.
+function walk(decls: [ast.Decl], adjacent: [[i64]]) -> [[i64]]
+    colour: [i64] @ []
+    i: i64 @ 0
+
+    while i < decls.len()
+        colour @ colour.push(0)
+        i @ i + 1
+
+    found: [[i64]] @ []
+    seen: {str: bool} @ {}
+    root: i64 @ 0
+
+    while root < decls.len()
+        if colour[root] != 0
+            root @ root + 1
+            continue
+        path: [PathStep] @ [PathStep(node: root, taken: 0)]
+        colour[root] @ 1
+
+        while path.len() > 0
+            frame = path[path.len() - 1]
+            path @ path.slice(from: 0, to: path.len() - 1)
+
+            if frame.taken >= adjacent[frame.node].len()
+                colour[frame.node] @ 2
+                continue
+            next = adjacent[frame.node][frame.taken]
+            path @ path.push(PathStep(node: frame.node, taken: frame.taken + 1))
+
+            if colour[next] == 1
+                # The cycle is the suffix of the path from `next` on — no
+                # second search, because the path IS the reconstruction.
+                at: i64 @ 0
+                j: i64 @ 0
+
+                for step in path
+                    if step.node == next
+                        at @ j
+                    j @ j + 1
+
+                cycle: [i64] @ []
+                k: i64 @ at
+
+                while k < path.len()
+                    cycle @ cycle.push(path[k].node)
+                    k @ k + 1
+
+                constant_on_it: bool @ false
+
+                for member in cycle
+                    if is_valued_constant(decls, member)
+                        constant_on_it @ true
+
+                if constant_on_it
+                    key = cycle_key(cycle)
+
+                    if seen[key].is_err()
+                        seen[key] @ true
+                        found @ found.push(cycle)
+            else if colour[next] == 0
+                colour[next] @ 1
+                path @ path.push(PathStep(node: next, taken: 0))
+
+        root @ root + 1
+
+    return found
+
+# One cycle per SET: the key sorts the members, so two rotations of one
+# cycle collapse. `/` cannot occur in a rendered index.
+function cycle_key(cycle: [i64]) -> str
+    rendered: [str] @ []
+
+    for member in sort(cycle)
+        rendered @ rendered.push(member.to_str())
+
+    return rendered.join("/")
+
+## The message, anchored at the constant nearest the top of the file
+
+# Deterministic on purpose: the traversal decides which ROTATION of a
+# cycle it finds, and a diagnostic that moved between runs would move a
+# `#~ constant_cycle` annotation with it. The set is what the traversal
+# cannot change, so the anchor is chosen from the set.
+function diagnose(a: ast.Ast, s: source.Source, decls: [ast.Decl], cycle: [i64]) -> diag.Diagnostic
+    _ = a
+    anchor: i64 @ cycle[0]
+    best: i64 @ -1
+
+    for member in cycle
+        if is_valued_constant(decls, member)
+            start = decls[member].name.start
+
+            if best < 0 || start < best
+                best @ start
+                anchor @ member
+
+    span = decls[anchor].name
+    holder = source.span_text(s, span)
+    direct = cycle.len() == 1
+    message: str @ "`constant " + holder + "` is defined as itself, so it has no value"
+
+    if !direct
+        through: [str] @ []
+
+        for member in cycle
+            if member != anchor
+                through @ through.push(source.span_text(s, decls[member].name))
+
+        message @ "`constant " + holder + "` is defined in terms of itself through `" + through.join("`, `") + "`, so it has no value"
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "constant_cycle", message: message, span: span)
+
+    if !direct
+        # Printed from the anchor round to the anchor, whatever rotation
+        # the walk found it in, so the note reads as the reader's own file
+        # does.
+        at: i64 @ 0
+        j: i64 @ 0
+
+        for member in cycle
+            if member == anchor
+                at @ j
+            j @ j + 1
+
+        steps: [str] @ []
+        k: i64 @ at
+
+        while k < cycle.len()
+            steps @ steps.push(source.span_text(s, decls[cycle[k]].name))
+            k @ k + 1
+
+        m: i64 @ 0
+
+        while m < at
+            steps @ steps.push(source.span_text(s, decls[cycle[m]].name))
+            m @ m + 1
+
+        steps @ steps.push(holder)
+        d.notes @ d.notes.push("the cycle is: " + steps.join(" reads "))
+    d.notes @ d.notes.push(
+        "a `constant`'s value is computed by reading it, and its accessor takes no arguments — so nothing about the second call could differ from the first"
+    )
+    d.notes @ d.notes.push("functions may recur freely (§4.2); a cycle is an error only where a `constant` is on it")
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "give `" + holder + "` a value that does not read the others", replacement: "", span: span, certainty: .guess)
+    )
+    return d
+
+## Tests
+
+function checked_file(text: str) -> state.Resolver
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    r: state.Resolver @ state.new_resolver(
+        expr_count: p.tree.exprs.len(),
+        type_count: p.tree.types.len()
+    )
+    r.module @ "t"
+    top.collect(@r, s, p.decls, p.uses)
+    index: i64 @ 0
+
+    for d in p.decls
+        _ = d
+        resolve_decls.declaration(@r, p.tree, s, p.decls, index)
+        index @ index + 1
+
+    report(@r.out, p.tree, s, p.decls)
+    return r
+
+test "a call in a constant's body is refused once, at the outermost"
+    r = checked_file("constant ARGC: i64\n    len(args())\n")
+    assert r.out.diagnostics.len() == 1
+    assert r.out.diagnostics[0].code == "constant_body"
+    assert r.out.diagnostics[0].message == "`constant ARGC`'s body may not contain a call — it may only read literals and other constants"
+    dotted = checked_file("constant N: i64\n    \"abc\".len()\n")
+    assert dotted.out.diagnostics.len() == 1
+    assert dotted.out.diagnostics[0].message == "`constant N`'s body may not contain a call written with `.` — it may only read literals and other constants"
+
+test "a constant defined as itself has no value"
+    r = checked_file("constant A: i64\n    A\n")
+    assert r.out.diagnostics.len() == 1
+    assert r.out.diagnostics[0].code == "constant_cycle"
+    assert r.out.diagnostics[0].message == "`constant A` is defined as itself, so it has no value"
+
+test "a mutual cycle is one finding, anchored at the first constant"
+    r = checked_file("constant A: i64\n    B\n\nconstant B: i64\n    A\n")
+    assert r.out.diagnostics.len() == 1
+    assert r.out.diagnostics[0].message == "`constant A` is defined in terms of itself through `B`, so it has no value"
+    assert r.out.diagnostics[0].notes[0] == "the cycle is: A reads B reads A"
+    assert r.out.diagnostics[0].fixes[0].certainty == .guess
+
+test "a cycle may leave the constants and come back"
+    # `A` reads `f` as a VALUE (no call, so constbody stays quiet), and
+    # `f`'s body reads `A`: the same defect wearing a function.
+    r = checked_file("constant A: i64\n    f\n\nfunction f() -> i64\n    return A\n")
+    assert r.out.diagnostics.len() == 1
+    assert r.out.diagnostics[0].code == "constant_cycle"
+
+test "functions recur freely, and a diamond is not a cycle"
+    free = checked_file("function f(n: i64) -> i64\n    return g(n)\n\nfunction g(n: i64) -> i64\n    return f(n)\n")
+    assert free.out.diagnostics.len() == 0
+    diamond = checked_file("constant C: i64\n    1\n\nconstant A: i64\n    C\n\nconstant B: i64\n    C\n")
+    assert diamond.out.diagnostics.len() == 0
+
+test "a cycle through a refused body is a consequence, not a finding"
+    r = checked_file("constant T: i64\n    depends()\n\nfunction depends() -> i64\n    return T\n")
+    assert r.out.diagnostics.len() == 1
+    assert r.out.diagnostics[0].code == "constant_body"

@@ -461,7 +461,7 @@ function path_tokens(text: str, roots: {str: bool}) -> [str]
 
     return found
 
-# A citation may name what is IN the file — `selfhost/cli_flags.hero::flags()` —
+# A citation may name what is IN the file — `selfhost/cli/flags.hero::flags()` —
 # and the path claim is the half before the `::`. Cutting it is not cosmetic:
 # **it is what would have caught the citation that provoked this** (panel 092).
 # `CLAUDE.md` cited `commands/flags.rs::FLAGS` for months and this check never
@@ -1076,8 +1076,8 @@ test "a citation that names a member is checked at its file, and that is the hol
     # this check never looked, because neither half of `anchored` fired — the
     # first component is not a repo directory and `::FLAGS` is not an extension.
     assert without_member("commands/flags.rs::FLAGS") == "commands/flags.rs"
-    assert without_member("selfhost/cli_flags.hero::flags()") == "selfhost/cli_flags.hero"
-    assert without_member("selfhost/cli_flags.hero") == "selfhost/cli_flags.hero"
+    assert without_member("selfhost/cli/flags.hero::flags()") == "selfhost/cli/flags.hero"
+    assert without_member("selfhost/cli/flags.hero") == "selfhost/cli/flags.hero"
     assert without_member("no colons here") == "no colons here"
 
     # And with the member cut, the dead one anchors on its extension — which is
@@ -1086,7 +1086,7 @@ test "a citation that names a member is checked at its file, and that is the hol
     roots["selfhost"] @ true
     assert anchored(token: without_member("commands/flags.rs::FLAGS"), roots: roots)
     assert !anchored(token: "commands/flags.rs::FLAGS", roots: roots)
-    assert anchored(token: without_member("selfhost/cli_flags.hero::flags()"), roots: roots)
+    assert anchored(token: without_member("selfhost/cli/flags.hero::flags()"), roots: roots)
 
 test "the ROADMAP's § Where we are is counted to its own ceiling"
     # The real file, which is the point: this check exists because the section

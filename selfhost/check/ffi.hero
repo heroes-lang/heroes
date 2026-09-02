@@ -1,0 +1,375 @@
+# What may cross the FFI boundary, asked of a declaration — and where a
+# boundary type may STAND, which is a different question (design.md
+# §4.19; panels 036, 038, 060, 062).
+# Port of crates/heroes/src/types/{ffi_decls,ffi_position}.rs — two Rust
+# files, one Heroes module: position is asked only by the signature
+# check, and the two questions read together.
+#
+# All four declaration checks refuse in the LOUD direction (CLAUDE.md
+# §11): a container or a record with no header behind it has no C
+# counterpart, so leaving it to clang costs an internal error naming
+# generated C at exit 2 — the compiler blaming itself for a mistake in a
+# .hero file, which is the failure §4.19's own guarantee exists to
+# prevent.
+#
+# The position file's own history rides along: the argument-refusal list
+# was two entries for about a minute, and the second (`str`) was refuted
+# BY THIS REPOSITORY on its first run — hero_os.h takes a HeroStr by
+# value. A premise about which headers exist cannot see a header written
+# for this language; `()` survives because its premise is about C's
+# GRAMMAR, and a grammar does not acquire new headers.
+
+use token
+use ast
+use source
+use parse
+use resolve
+use check/table
+use check/state
+use check/lower
+use ffi_errors
+
+## The vocabulary — can a C header spell this at all?
+
+# What a C header can spell: the scalars, §4.19's two opaque types, (),
+# and — since panel 060 — a record THE HEADER ITSELF declares. The
+# narrowing asks the declaration, never where the type was mentioned:
+# "this record carries a header" is a fact about the value in hand.
+function crosses_the_boundary(c: state.Checker, decls: [ast.Decl], ty: i64) -> bool
+    match table.get(c.out.types, ty)
+        .named n =>
+            match decls[n.decl].kind
+                .record_decl rec                                             => return !rec.header.is_err()
+                .constant_decl | .function_decl | .variant_decl | .test_decl => return false
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit | .error => return true
+        .array | .fixed | .map | .fallible | .function_ty                  => return false
+        .case_ty | .failure | .generic                                     => return false
+
+    return false
+
+# Every type in an extern's signature must be one a C header can declare.
+# Where each may STAND is the position check's question, asked after this
+# one so a type refused at both gets one message.
+function ffi_signature(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl], f: ast.FunctionDecl, result: i64, declared_name: token.Span)
+    if !crosses_the_boundary(c, decls, result)
+        shown = state.show(c, s, decls, result)
+        state.push_diagnostic(
+            @c,
+            ffi_errors.ffi_type(name: shown, what: "an `extern`'s result", span: a.types[f.result].span)
+        )
+
+    for param in f.params
+        written = state.written_type(c.out, param.ty)
+
+        if written.is_err()
+            continue
+
+        if !crosses_the_boundary(c, decls, written.must())
+            shown = state.show(c, s, decls, written.must())
+            state.push_diagnostic(
+                @c,
+                ffi_errors.ffi_type(name: shown, what: "an `extern`'s parameter", span: a.types[param.ty].span)
+            )
+
+    arguments_may_stand(@c, a, s, decls, f: f, declared_name: declared_name)
+
+# The type of an extern constant — a narrower question (panel 038). Two
+# of the seven boundary types cannot be a VALUE a header holds, and both
+# refusals are facts about Heroes rather than about C headers. `bool` is
+# deliberately NOT refused here: "no c11 header constant is _Bool" is a
+# premise about the world, and the per-constant assertion asks the token
+# in hand instead.
+function ffi_constant(@c: state.Checker, s: source.Source, decls: [ast.Decl], declared: i64, span: token.Span)
+    if !crosses_the_boundary(c, decls, declared)
+        shown = state.show(c, s, decls, declared)
+        state.push_diagnostic(@c, ffi_errors.ffi_type(name: shown, what: "an `extern constant`", span: span))
+        return
+    why: str @ ""
+
+    match table.get(c.out.types, declared)
+        .str                                                       => why @ "a `str` is built by this runtime, so no C header holds one: declare it `cstr` and read it with `validated`, which copies and may fail (§4.20)"
+        .unit                                                      => why @ "a `constant` names a value, and `()` is a type rather than a value"
+        .int_ty | .float_ty | .bool | .ptr | .cstr | .error        => return
+        .array | .fixed | .map | .fallible | .function_ty | .named => return
+        .case_ty | .failure | .generic                             => return
+
+    shown = state.show(c, s, decls, declared)
+    state.push_diagnostic(@c, ffi_errors.ffi_constant_type(name: shown, why: why, span: span))
+
+# What a group's record may hold — deliberately NARROWER than the
+# signature vocabulary, and the two omissions are the whole difference
+# between a signature and a struct: a str crosses as an ARGUMENT to a
+# function that knows what it is, and no C header declares one as a
+# member; () is a legal result and cannot be a field.
+function ffi_field(@c: state.Checker, s: source.Source, decls: [ast.Decl], ty: i64, span: token.Span)
+    fine = match table.get(c.out.types, ty)
+        .int_ty | .float_ty | .bool | .ptr | .cstr | .error => true
+        # i32[4] — a C array member, and its element is the same question
+        # again (panel 062: it is the last field form raylib needs, and
+        # the element is asked recursively because Matrix projection[2]
+        # is an array OF a group record).
+
+        .fixed x => fixed_element_fine(c, decls, x.element)
+        # A nested record is fine exactly when it is also the header's —
+        # RenderTexture holds two Textures by value, and both are raylib's.
+
+        .named n                                                => header_owned(decls, n.decl)
+        .str | .unit | .array | .map | .fallible | .function_ty => false
+        .case_ty | .failure | .generic                          => false
+
+    if fine
+        return
+
+    # The note is chosen by the type, because the repair is (§4.17): a
+    # note about str's reference count printed under an [i64] field sends
+    # the reader to the wrong repair with full confidence.
+    why = match table.get(c.out.types, ty)
+        .str => "a `str` is this runtime's own value, with a reference count before its bytes, so no C struct holds one: declare the field `cstr` and read it with `validated`, which copies and may fail"
+        .array | .map => "a C struct holds a pointer to its elements, never the elements: declare the field `ptr` and reach them through the header's own accessors"
+        .fallible => "`T?` is this language's own two-word value and no header declares one: a C function reports failure in its result or an out-parameter (§4.19)"
+        .unit => "`()` is a type rather than a value, so nothing can hold one — drop the field"
+        .named => "a record can hold another only if the header declares that one too: move it into this `extern` group, or declare the field `ptr` if C holds a pointer to it"
+        # Was "no C header can declare a field of this type" — §11's false
+        # claim about the world; tiffio.h has float d_mat[3][3] (panel 081).
+
+        .int_ty | .float_ty | .bool | .ptr | .cstr | .error => "this group has no spelling for that: a field is a number, `bool`, `ptr`, `cstr`, another record of the group, or a fixed array of one"
+        .fixed | .function_ty | .case_ty | .failure | .generic => "this group has no spelling for that: a field is a number, `bool`, `ptr`, `cstr`, another record of the group, or a fixed array of one"
+
+    shown = state.show(c, s, decls, ty)
+    state.push_diagnostic(@c, ffi_errors.ffi_field_type(name: shown, why: why, span: span))
+
+function fixed_element_fine(c: state.Checker, decls: [ast.Decl], element: i64) -> bool
+    return match table.get(c.out.types, element)
+        .int_ty | .float_ty | .bool | .ptr | .cstr | .error              => true
+        .named n                                                         => header_owned(decls, n.decl)
+        .str | .unit | .array | .fixed | .map | .fallible | .function_ty => false
+        .case_ty | .failure | .generic                                   => false
+
+function header_owned(decls: [ast.Decl], decl: i64) -> bool
+    return match decls[decl].kind
+        .record_decl rec                                             => !rec.header.is_err()
+        .constant_decl | .function_decl | .variant_decl | .test_decl => false
+
+# A fixed array where no header owns the layout (panel 062).
+function fixed_outside_group(@c: state.Checker, s: source.Source, decls: [ast.Decl], ty: i64, span: token.Span)
+    is_fixed = match table.get(c.out.types, ty)
+        .fixed                                                    => true
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
+        .array | .map | .fallible | .function_ty | .named         => false
+        .case_ty | .failure | .generic | .error                   => false
+
+    if !is_fixed
+        return
+    shown = state.show(c, s, decls, ty)
+    state.push_diagnostic(@c, ffi_errors.fixed_outside_a_group(shown, span))
+
+## The file-wide sweep — the rule at every position, not one
+
+# A fixed array may appear in exactly one place — as the declared type of
+# a field of a record inside an extern group — because that is the only
+# place a C compiler chose the layout. Panel 062 wired the rule to one
+# call site and three other positions SHIPPED: two aborted a built binary
+# at 134 under a #line pointing at the author's source, one died at exit
+# 2. It asks the value, not the world: the legal set is built by reading
+# the declarations in hand, so a position added later is refused by
+# default. And it walks written_types, never the syntax — panel 061's
+# map_keys walked TypeKind nodes and missed every type a literal interned.
+function fixed_only_in_a_group(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl])
+    owned: {i64: bool} @ {}
+
+    for decl in decls
+        match decl.kind
+            .record_decl rec =>
+                if !rec.header.is_err()
+                    for field in rec.fields
+                        claim(a, field.ty, @owned)
+            .constant_decl | .function_decl | .variant_decl | .test_decl => continue
+
+    # ORDER: ascending type-node id — span.start ties on nested fixed
+    # arrays, so a span sort cannot replace this key: it decides which
+    # diagnostic prints first. The Rust BTreeMap gave the order free; the
+    # port pays with one sort over the map's keys (§4.9).
+    for node in sort(keys(c.out.written_types))
+        if !owned[node].is_err()
+            continue
+        ty = c.out.written_types[node].must()
+
+        is_fixed = match table.get(c.out.types, ty)
+            .fixed                                                    => true
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
+            .array | .map | .fallible | .function_ty | .named         => false
+            .case_ty | .failure | .generic | .error                   => false
+
+        if !is_fixed
+            continue
+
+        # An ordinary record's field is already refused on the same rule,
+        # and reporting one mistake twice is the thing this compiler
+        # never does.
+        span = a.types[node].span
+        already: bool @ false
+
+        for d in c.out.diagnostics
+            if d.span == span
+                already @ true
+
+        if already
+            continue
+        shown = state.show(c, s, decls, ty)
+        state.push_diagnostic(@c, ffi_errors.fixed_outside_a_group(shown, span))
+
+# A group record's field type AND EVERYTHING WRITTEN INSIDE IT — the
+# whole node, not just its root: claiming only the outer one left the
+# sweep reporting `i32[2]` inside an already-refused `i32[2][3]`, one
+# mistake with two messages. Leaves are enumerated rather than caught
+# with `_`, so a type form added later is a compile error here instead of
+# a silently unclaimed child.
+function claim(a: ast.Ast, id: i64, @owned: {i64: bool})
+    owned[id] @ true
+
+    match a.types[id].kind
+        .fixed x        => claim(a, x.element, @owned)
+        .array_of inner => claim(a, inner.element, @owned)
+        .fallible o     => claim(a, o.inner, @owned)
+        .map_of m =>
+            claim(a, m.key, @owned)
+            claim(a, m.value, @owned)
+        .function_type f =>
+            for p in f.params
+                claim(a, p, @owned)
+
+            claim(a, f.result, @owned)
+        .named | .unit | .error => return
+
+## The position — may it stand here?
+
+# Refuse every parameter whose declared type cannot stand in a C argument
+# list. Runs AFTER the vocabulary check, so a type that can cross at
+# neither position produces one message rather than two. Exactly one
+# type is refused, and the test for whether a refusal belongs in the
+# frontend at all is: is the fact about C's GRAMMAR, or about some
+# header? A parameter list has no spelling for void; a ptr parameter is
+# ordinary C only clang can judge against the header in front of it.
+function arguments_may_stand(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl], f: ast.FunctionDecl, declared_name: token.Span)
+    function_name = source.span_text(s, declared_name)
+
+    for param in f.params
+        written = state.written_type(c.out, param.ty)
+
+        if written.is_err()
+            continue
+        is_unit = table.get(c.out.types, written.must()) == .unit
+
+        if !is_unit
+            continue
+        shown = state.show(c, s, decls, written.must())
+        state.push_diagnostic(
+            @c,
+            ffi_errors.ffi_parameter_position(parameter: source.span_text(s, param.name), function_name: function_name, name: shown, why: "`()` names no value, so there is no argument to pass: as a *result* it is C's `void`, which a parameter list has no spelling for. Drop the parameter, or declare the type the header uses", span: a.types[param.ty].span)
+        )
+
+## Tests
+
+function prepared(text: str) -> state.Checker
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    c: state.Checker @ state.new_checker(out_of: out, expr_count: p.tree.exprs.len())
+    i: i64 @ 0
+
+    while i < p.tree.types.len()
+        _ = lower.lower_ty(@c, p.tree, out, i)
+        i @ i + 1
+
+    return c
+
+test "the vocabulary admits the seven and the group's own records"
+    text = "extern \"r.h\"\n    record Color\n        r: u8\n    function tint(c: Color) -> Color\n\nrecord Mine\n    n: i64\n"
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    c: state.Checker @ state.new_checker(out_of: out, expr_count: 0)
+    i: i64 @ 0
+
+    while i < p.tree.types.len()
+        _ = lower.lower_ty(@c, p.tree, out, i)
+        i @ i + 1
+
+    color = table.intern(@c.out.types, .named(decl: 0))
+    mine = table.intern(@c.out.types, .named(decl: 2))
+    assert crosses_the_boundary(c, p.decls, color)
+    assert !crosses_the_boundary(c, p.decls, mine)
+    assert crosses_the_boundary(c, p.decls, table.str_ty(c.out.types))
+    xs = table.intern(@c.out.types, .array(element: table.int_ty_id(c.out.types)))
+    assert !crosses_the_boundary(c, p.decls, xs)
+
+test "an extern constant refuses the two Heroes-only values with reasons"
+    c: state.Checker @ prepared("record P\n    x: i64\n")
+    s = source.new_source(name: "t.hero", text: "record P\n    x: i64\n")
+    d: [ast.Decl] = []
+    span = token.Span(start: 0, end: 3)
+    ffi_constant(@c, s, d, declared: table.str_ty(c.out.types), span: span)
+    assert c.out.diagnostics.len() == 1
+    assert c.out.diagnostics[0].code == "ffi_constant_type"
+    ffi_constant(@c, s, d, declared: table.int_ty_id(c.out.types), span: span)
+    assert c.out.diagnostics.len() == 1
+
+test "a group field takes a fixed array of scalars, and a str is routed"
+    c: state.Checker @ prepared("record P\n    x: i64\n")
+    s = source.new_source(name: "t.hero", text: "record P\n    x: i64\n")
+    d: [ast.Decl] = []
+    span = token.Span(start: 0, end: 3)
+    f32_id = table.intern(@c.out.types, .float_ty(kind: .f32))
+    lens = table.intern(@c.out.types, .fixed(element: f32_id, length: 4))
+    ffi_field(@c, s, d, ty: lens, span: span)
+    assert c.out.diagnostics.len() == 0
+    ffi_field(@c, s, d, ty: table.str_ty(c.out.types), span: span)
+    assert c.out.diagnostics.len() == 1
+    assert c.out.diagnostics[0].code == "ffi_field_type"
+    assert c.out.diagnostics[0].notes[0] == "a `str` is this runtime's own value, with a reference count before its bytes, so no C struct holds one: declare the field `cstr` and read it with `validated`, which copies and may fail"
+
+test "a unit parameter cannot stand, though a unit result may"
+    text = "extern \"m.h\"\n    function odd(n: ()) -> i32\n"
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    c: state.Checker @ state.new_checker(out_of: out, expr_count: 0)
+    i: i64 @ 0
+
+    while i < p.tree.types.len()
+        _ = lower.lower_ty(@c, p.tree, out, i)
+        i @ i + 1
+
+    match p.decls[0].kind
+        .function_decl fd =>
+            result = state.written_type(c.out, fd.value.result).must()
+            ffi_signature(@c, p.tree, s, p.decls, f: fd.value, result: result, declared_name: p.decls[0].name)
+        .constant_decl | .record_decl | .variant_decl | .test_decl => assert false
+
+    assert c.out.diagnostics.len() == 1
+    assert c.out.diagnostics[0].code == "ffi_parameter_type"
+
+test "the file-wide sweep catches the three positions that shipped"
+    c: state.Checker @ prepared("function f()\n    xs: [i64] @ []\n    _ = xs\n")
+    _ = c
+    swept = prepared("record Holder\n    grid: i64\n\nfunction f(v: i32)\n    _ = v\n")
+    _ = swept
+
+    # A fixed array written OUTSIDE any group field: the sweep names it.
+    text = "function f(v: i64)\n    _ = v\n\nrecord Plain\n    cells: i32\n"
+    with_fixed = prepared("function g(m: {str: i64})\n    _ = m\n")
+    _ = with_fixed
+    p = parse.parse("extern \"r.h\"\n    record Color\n        parts: u8[4]\n")
+    s = source.new_source(name: "t.hero", text: "extern \"r.h\"\n    record Color\n        parts: u8[4]\n")
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    c2: state.Checker @ state.new_checker(out_of: out, expr_count: 0)
+    i: i64 @ 0
+
+    while i < p.tree.types.len()
+        _ = lower.lower_ty(@c2, p.tree, out, i)
+        i @ i + 1
+
+    # Claimed by the group field: the sweep stays quiet.
+    fixed_only_in_a_group(@c2, p.tree, s, p.decls)
+    assert c2.out.diagnostics.len() == 0
+    _ = text

@@ -1,0 +1,178 @@
+# How a mention finds its declaration: a bare name in value position, the
+# name after a dot, and the candidate lists their did-you-means rank
+# (design.md §4.9 calls, §4.11 UFCS, §4.16 holes; panels 015, 031, 033).
+# Split out of resolve_walk at M-separate-compilation step 5, along the
+# seam CLAUDE.md §11 asks for: the walk owns the TREE (statements,
+# expressions, places), this module owns the LOOKUP — the two entry
+# points below are called from the walk and never call back into it.
+#
+# The order both lookups share is the language's own: locals (bare names
+# only — a dot cannot reach a local), then top_visible's two homes (this
+# module's declarations, then the library's), then the built-ins. One
+# top_visible instead of a flat lookup is where "always qualified" is
+# enforced, and the extern gate below is where panel 033 R5 reaches the
+# library: its names are visible unqualified, so without the gate its
+# extern declarations were too — `hero_args_count()` from any user module
+# was check-clean at exit 0, measured 2026-08-25, zero users in the tree.
+
+use token
+use ast
+use source
+use inventory
+use resolved
+use resolve/state
+use resolve/errors
+use resolve/qualified
+use module/diagnostics
+
+function bare_name(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl], id: i64)
+    span = a.exprs[id].span
+    text = source.span_text(s, span)
+    local = state.lookup_local(r, text)
+
+    if !local.is_err()
+        state.record_use(@r, at: id, to: .local(at: local.must()))
+        return
+    top = state.top_visible(r, text)
+
+    if !top.is_err()
+        decl = top.must()
+
+        # A variant names a type, never a value: its cases are the values,
+        # written `.case` (§4.5's ⇐ mode).
+        match decls[decl].kind
+            .variant_decl =>
+                state.push_diagnostic(@r, errors.variant_in_value_position(text, span: span))
+                return
+            .function_decl fd =>
+                # Panel 033 R5: an extern is unreachable across a module
+                # boundary, the library included. Own-module externs pass:
+                # top_visible answers only this file and the library, so
+                # "declared in the library, mentioned outside it" is
+                # exactly the cross-module case.
+                if fd.value.is_extern && source.is_library(s, decls[decl].name.start) && !source.is_library(s, span.start)
+                    state.push_diagnostic(
+                        @r,
+                        diagnostics.extern_across_modules(name: text, module: source.LIBRARY_MODULE, is_library: true, span: span)
+                    )
+                else
+                    state.record_use(@r, at: id, to: .top(at: decl))
+            .constant_decl | .record_decl | .test_decl => state.record_use(@r, at: id, to: .top(at: decl))
+
+        return
+    builtin = inventory.index_of(text)
+
+    if !builtin.is_err()
+        state.record_use(@r, at: id, to: .builtin(at: builtin.must()))
+        return
+
+    # A module name standing alone. It is not a value in any position — it
+    # can only be followed by a dot — and saying that is better than
+    # "unknown".
+    if resolved.is_used_module(r.out, from: r.module, module: text)
+        state.keyed_add(@r.module_reads, module: r.module, name: text)
+        state.push_diagnostic(@r, diagnostics.module_is_not_a_value(text, span: span))
+        return
+    elsewhere = qualified.name_declared_elsewhere(@r, text, span)
+
+    if !elsewhere.is_err()
+        state.push_diagnostic(@r, elsewhere.must())
+        return
+    candidates = value_candidates(r)
+    near = state.near_names(@r, text, candidates)
+    state.push_diagnostic(@r, errors.unknown_name(text, near, span))
+
+# The name in `x.f(y)`. Locals are deliberately not consulted: a local
+# cannot be reached through a dot, so `f` is a top-level function, a
+# built-in, or — the case that makes this walk interesting — a FIELD of
+# the receiver holding a function value (§4.13). That third case is why
+# the entry stays unresolved rather than reported when the name is a field
+# somewhere in reach: the checker finishes the job with the receiver's
+# type in hand, and §4.17 gets the whole answer in one message.
+function method_name(@r: state.Resolver, s: source.Source, decls: [ast.Decl], at: i64, called: token.Span)
+    text = source.span_text(s, called)
+    top = state.top_visible(r, text)
+
+    if !top.is_err()
+        decl = top.must()
+
+        match decls[decl].kind
+            .function_decl fd =>
+                # `"path".hero_file_read(@st)` — UFCS reaches the library's
+                # externs exactly as a bare name does, and panel 033 R5
+                # refuses both for the same reason: the call would be
+                # compiled where the header's checks are not.
+                if fd.value.is_extern && source.is_library(s, decls[decl].name.start) && !source.is_library(s, called.start)
+                    state.push_diagnostic(
+                        @r,
+                        diagnostics.extern_across_modules(name: text, module: source.LIBRARY_MODULE, is_library: true, span: called)
+                    )
+                else
+                    state.record_use(@r, at: at, to: .top(at: decl))
+            .record_decl => state.push_diagnostic(
+                @r,
+                errors.not_a_function(name: text, what: "a record", span: called)
+            )
+            .variant_decl => state.push_diagnostic(
+                @r,
+                errors.not_a_function(name: text, what: "a variant", span: called)
+            )
+            .constant_decl => state.push_diagnostic(
+                @r,
+                errors.not_a_function(name: text, what: "a constant", span: called)
+            )
+            .test_decl => return
+
+        return
+    builtin = inventory.index_of(text)
+
+    if !builtin.is_err()
+        state.record_use(@r, at: at, to: .builtin(at: builtin.must()))
+        return
+
+    if state.field_in_reach(r, text)
+        # Could be a function-valued field: the checker decides, with the type.
+        return
+
+    # `p.dist2(o)` where `dist2` is imported: UFCS finds only this file's
+    # functions, and this is the message that says so (panel 031 R5).
+    elsewhere = qualified.name_declared_elsewhere(@r, text, called)
+
+    if !elsewhere.is_err()
+        state.push_diagnostic(@r, elsewhere.must())
+        return
+    candidates = function_candidates(r, decls)
+    near = state.near_names(@r, text, candidates)
+    state.push_diagnostic(@r, errors.unknown_function(text, near, span: called))
+
+# Innermost first: the locals in scope, then the file's own declarations,
+# then the built-ins. The order is the did-you-mean's ranking (§4.16:
+# deterministic, capped where printed).
+function value_candidates(r: state.Resolver) -> [str]
+    candidates: [str] @ state.visible_locals(r)
+
+    for name in resolved.names_in(r.out, r.module)
+        candidates @ candidates.push(name)
+
+    for b in inventory.table()
+        candidates @ candidates.push(b.name)
+
+    return candidates
+
+function function_candidates(r: state.Resolver, decls: [ast.Decl]) -> [str]
+    candidates: [str] @ []
+
+    for name in resolved.names_in(r.out, r.module)
+        found = resolved.top_in(r.out, module: r.module, name: name)
+
+        is_function = match decls[found.must()].kind
+            .function_decl                                             => true
+            .constant_decl | .record_decl | .variant_decl | .test_decl => false
+
+        if is_function
+            candidates @ candidates.push(name)
+
+    for b in inventory.table()
+        candidates @ candidates.push(b.name)
+
+    return candidates

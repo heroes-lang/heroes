@@ -1,0 +1,540 @@
+# The built-ins' type rules, the conversions, and the three T? readers
+# (design.md §4.20, §4.3, §4.6; panels 006, 042, 043, 044, 054, 060, 068).
+# Port of crates/heroes/src/types/{builtins,conversions,fallible_ops}.rs —
+# three Rust files held together by super:: (both satellites call
+# builtins::arg_error), one Heroes module because the language refuses
+# the cycle. Fourth time the module rule draws a boundary.
+#
+# Hand-written rather than driven by a signature table, and that is the
+# honest shape: `print` takes any number of arguments of four kinds,
+# `len` works on three, `must` is generic over one. A signature table
+# would need a type language richer than Heroes has — which is precisely
+# why these are BUILT-INS and not library declarations. Tier 2 has no
+# rules here at all: range and the six higher-order ones are declarations
+# in the library, checked like anything else.
+#
+# Port note on the contract: Rust's conversions return
+# Option<Option<TyId>> — and `T??` is the one nesting Heroes' parser
+# refuses. Measured before reshaping: the INNER None is never produced
+# (an arity miss falls to the not-a-conversion arm), so the port is two
+# plain fallibles — fail means "not mine, caller continues", ok carries
+# the answer, the silent error id included.
+
+use token
+use ast
+use source
+use diag
+use resolved
+use widths
+use check/table
+use check/state
+use check/ordering
+use value_errors
+
+## What a built-in expects of an argument
+
+# What a built-in expects of its index-th argument, given the type of its
+# first — absent where the rule has nothing to say and the argument must
+# be synthesised instead. This exists so the ⇐-only forms are writable
+# inside a built-in call: `out.push(.num(v: 1))` is the shape design.md's
+# own appendix uses six times.
+function expectation(c: state.Checker, name: str, first: i64, index: i64) -> i64?
+    if index == 0
+        return fail("absent", "the first argument is synthesised")
+
+    if name == "push" && index == 1
+        match table.get(c.out.types, first)
+            .array a                                                  => return ok(a.element)
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail("absent", "not an array")
+            .fixed | .map | .fallible | .function_ty | .named         => return fail("absent", "not an array")
+            .case_ty | .failure | .generic | .error                   => return fail("absent", "not an array")
+
+    if name == "default" && index == 1
+        match table.get(c.out.types, first)
+            .fallible o                                               => return ok(o.payload)
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail("absent", "not fallible")
+            .fixed | .map | .array | .function_ty | .named            => return fail("absent", "not fallible")
+            .case_ty | .failure | .generic | .error                   => return fail("absent", "not fallible")
+
+    if name == "join" && index == 1
+        return ok(table.str_ty(c.out.types))
+
+    # repeat's count is a u64, so the literal in `repeat("-", 40)` takes
+    # that width from here rather than defaulting to i64 (panel 054).
+    if name == "repeat" && index == 1
+        return table.lookup(c.out.types, .int_ty(kind: .u64))
+
+    if name == "slice" && (index == 1 || index == 2)
+        return ok(table.int_ty_id(c.out.types))
+    return fail("absent", "no expectation for this argument")
+
+## The conversions — the family whose result type is a function of the name
+
+# fail = this name is not a conversion, go on to the list.
+function conversion_call(@c: state.Checker, s: source.Source, decls: [ast.Decl], name: str, given: [i64], span: token.Span) -> i64?
+    target_kind = int_width_of(name)
+
+    if !target_kind.is_err() && given.len() == 1
+        one = given[0]
+        kind = target_kind.must()
+
+        # Either float width, not just f64 (panel 060 C3): truncation
+        # toward zero and the same fallible result — nothing about the
+        # rule depends on which width the source was.
+        from_float = is_float(c, one) && widths.int_name(kind) == "i64"
+
+        if !from_float && !is_int(c, one)
+            allowed: str @ "an integer"
+
+            if widths.int_name(kind) == "i64"
+                allowed @ "an integer or a float"
+            return ok(arg_error(@c, s, decls, name: name, allowed: allowed, got: one, span: span))
+        target = table.intern(@c.out.types, .int_ty(kind: kind))
+
+        # T? at every pair, including the ones that cannot fail (author
+        # ratification 2026-08-13): one rule, no invention — Zig's
+        # math.cast returns ?T unconditionally — and reversibility said
+        # this was the cheap moment.
+        return ok(table.intern(@c.out.types, .fallible(payload: target)))
+
+    # The two float conversions, and both are infallible (panel 060):
+    # nothing fails to fit a float — too large is inf, too small a
+    # subnormal or zero, and all three are values of the type. Rounding
+    # is NOT a failure, and that is the honest cost: to_f32 loses
+    # precision silently, exactly as C's (float) does.
+    if name == "to_f64" && given.len() == 1
+        if is_int(c, given[0]) || is_float(c, given[0])
+            return ok(table.f64_ty(c.out.types))
+        return ok(arg_error(@c, s, decls, name: "to_f64", allowed: "an integer or a float", got: given[0], span: span))
+
+    if name == "to_f32" && given.len() == 1
+        if is_int(c, given[0]) || is_float(c, given[0])
+            return ok(table.intern(@c.out.types, .float_ty(kind: .f32)))
+        return ok(arg_error(@c, s, decls, name: "to_f32", allowed: "an integer or a float", got: given[0], span: span))
+
+    if name == "to_str" && given.len() == 1
+        # A `cstr` is not here: it aborted where `spec:60` promised it could not (panel 090).
+        keeps = match table.get(c.out.types, given[0])
+            .int_ty | .float_ty | .bool | .str => true
+            .cstr | .ptr | .unit | .array | .fixed | .map | .fallible | .function_ty | .named | .case_ty | .failure | .generic | .error => false
+
+        if keeps
+            return ok(table.str_ty(c.out.types))
+        return ok(
+            arg_error(@c, s, decls, name: "to_str", allowed: "an integer, a float, `bool` or `str`", got: given[0], span: span)
+        )
+    return fail("not_a_conversion", "this name is the list's, not the family's")
+
+# The width `to_<name>` converts to, when the suffix names one.
+function int_width_of(name: str) -> widths.IntKind?
+    if name.len() <= 3 || name.slice(from: 0, to: 3) != "to_"
+        return fail("absent", "not a conversion name")
+    suffix = name.slice(from: 3, to: name.len())
+
+    for k in widths.int_kinds()
+        if widths.int_name(k) == suffix
+            return ok(k)
+
+    return fail("absent", "no width has this name")
+
+## The list
+
+# The rule for one built-in call. fail means "this built-in cannot be
+# checked with these arguments" — the CALLER reports the arity, so that
+# "how many arguments" is answered in one place.
+function builtin_call(@c: state.Checker, s: source.Source, decls: [ast.Decl], name: str, given: [i64], span: token.Span) -> i64?
+    # Any poisoned argument means a mistake was already reported: produce
+    # a poisoned result and add nothing.
+    for arg in given
+        if table.poisoned(c.out.types, arg)
+            return ok(state.error_ty_of(c))
+
+    converted = conversion_call(@c, s, decls, name: name, given: given, span: span)
+
+    if !converted.is_err()
+        return converted
+
+    if name == "print"
+        # Panel 006's contract: any number of arguments, four kinds,
+        # canonical rendering. The message names the set the arm actually
+        # tests — "any integer", because all eight widths print (panel 043
+        # measured the stale enumeration in the milestone that added them).
+        for arg in given
+            printable = match table.get(c.out.types, arg)
+                .int_ty | .float_ty | .bool | .str            => true
+                .ptr | .cstr | .unit | .array | .fixed | .map => false
+                .fallible | .function_ty | .named | .case_ty  => false
+                .failure | .generic | .error                  => false
+
+            if !printable
+                return ok(
+                    arg_error(@c, s, decls, name: "print", allowed: "any integer, a float, `bool` or `str`", got: arg, span: span)
+                )
+
+        return ok(table.unit_ty(c.out.types))
+
+    if name == "len" && given.len() == 1
+        sized = match table.get(c.out.types, given[0])
+            .str | .array | .map                                        => true
+            .int_ty | .float_ty | .bool | .ptr | .cstr | .unit | .fixed => false
+            .fallible | .function_ty | .named | .case_ty                => false
+            .failure | .generic | .error                                => false
+
+        if sized
+            return ok(table.int_ty_id(c.out.types))
+        return ok(arg_error(@c, s, decls, name: "len", allowed: "`str`, `[T]` or `{K: V}`", got: given[0], span: span))
+
+    if name == "push" && given.len() == 2
+        match table.get(c.out.types, given[0])
+            .array a =>
+                if a.element == given[1]
+                    return ok(given[0])
+                want = state.show(c, s, decls, a.element)
+                got = state.show(c, s, decls, given[1])
+                state.push_diagnostic(@c, value_errors.mismatch(expected: want, got: got, span: span))
+                return ok(state.error_ty_of(c))
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return ok(
+                arg_error(@c, s, decls, name: "push", allowed: "`[T]`", got: given[0], span: span)
+            )
+            .fixed | .map | .fallible | .function_ty | .named => return ok(
+                arg_error(@c, s, decls, name: "push", allowed: "`[T]`", got: given[0], span: span)
+            )
+            .case_ty | .failure | .generic | .error => return ok(
+                arg_error(@c, s, decls, name: "push", allowed: "`[T]`", got: given[0], span: span)
+            )
+
+    if name == "slice" && given.len() == 3
+        int_id = table.int_ty_id(c.out.types)
+
+        if given[1] != int_id || given[2] != int_id
+            offender: i64 @ given[1]
+
+            if given[1] == int_id
+                offender @ given[2]
+            got = state.show(c, s, decls, offender)
+            state.push_diagnostic(
+                @c,
+                value_errors.bad_operand(op: "slice", allowed: "`i64` bounds", got: got, span: span)
+            )
+            return ok(state.error_ty_of(c))
+
+        sliceable = match table.get(c.out.types, given[0])
+            .str | .array                                               => true
+            .int_ty | .float_ty | .bool | .ptr | .cstr | .unit | .fixed => false
+            .map | .fallible | .function_ty | .named | .case_ty         => false
+            .failure | .generic | .error                                => false
+
+        if sliceable
+            return ok(given[0])
+        return ok(arg_error(@c, s, decls, name: "slice", allowed: "`str` or `[T]`", got: given[0], span: span))
+
+    if name == "chars" && given.len() == 1 && table.get(c.out.types, given[0]) == .str
+        str_id = table.str_ty(c.out.types)
+        return ok(table.intern(@c.out.types, .array(element: str_id)))
+
+    if name == "keys" && given.len() == 1
+        match table.get(c.out.types, given[0])
+            .map m => return ok(table.intern(@c.out.types, .array(element: m.key)))
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return ok(
+                arg_error(@c, s, decls, name: "keys", allowed: "`{K: V}`", got: given[0], span: span)
+            )
+            .fixed | .array | .fallible | .function_ty | .named => return ok(
+                arg_error(@c, s, decls, name: "keys", allowed: "`{K: V}`", got: given[0], span: span)
+            )
+            .case_ty | .failure | .generic | .error => return ok(
+                arg_error(@c, s, decls, name: "keys", allowed: "`{K: V}`", got: given[0], span: span)
+            )
+
+    # repeat(s: str, n: u64) -> str, and the u64 is the decision (panel
+    # 054): a negative count cannot be written, so the class does not
+    # arise — Rust shipped the unchecked form as CVE-2018-1000810, Go's
+    # panics in a shipped crash. A computed count aborts at the
+    # subtraction that went negative rather than inside repeat: §1.12's
+    # test, a defensive check surfaces a defect rather than hiding it.
+    if name == "repeat" && given.len() == 2
+        str_id = table.str_ty(c.out.types)
+        u64_id = table.intern(@c.out.types, .int_ty(kind: .u64))
+
+        if given[0] != str_id || given[1] != u64_id
+            return ok(arg_error(@c, s, decls, name: "repeat", allowed: "`str` and `u64`", got: given[0], span: span))
+        return ok(str_id)
+
+    if name == "join" && given.len() == 2
+        str_id = table.str_ty(c.out.types)
+        of_str = table.lookup(c.out.types, .array(element: str_id))
+        wanted: i64 @ -1
+
+        if !of_str.is_err()
+            wanted @ of_str.must()
+
+        if given[0] != wanted || given[1] != str_id
+            return ok(arg_error(@c, s, decls, name: "join", allowed: "`[str]` and `str`", got: given[0], span: span))
+        return ok(str_id)
+
+    # §4.19's one conversion: a str lent to C for the duration of a call.
+    # Free rather than a copy, because every Heroes string allocates len+1
+    # and is NUL-terminated — the single highest-return decision in the
+    # string design.
+    if name == "cstr" && given.len() == 1
+        if table.get(c.out.types, given[0]) == .str
+            return ok(table.intern(@c.out.types, .cstr))
+        return ok(arg_error(@c, s, decls, name: "cstr", allowed: "`str`", got: given[0], span: span))
+
+    # The element rule is here rather than in the emitter (panel 068 R2):
+    # a program the checker accepts must build.
+    if name == "sort" && given.len() == 1
+        match table.get(c.out.types, given[0])
+            .array a =>
+                if ordering.is_refusable(c, a.element)
+                    shown = state.show(c, s, decls, a.element)
+                    inside = ordering.why_unordered(c, s, decls, ty: a.element)
+                    generic = is_generic(c, a.element)
+                    state.push_diagnostic(
+                        @c,
+                        value_errors.unordered_element(element: shown, reached: inside, generic: generic, span: span)
+                    )
+                    return ok(state.error_ty_of(c))
+                return ok(given[0])
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return ok(
+                arg_error(@c, s, decls, name: "sort", allowed: "`[T]`", got: given[0], span: span)
+            )
+            .fixed | .map | .fallible | .function_ty | .named => return ok(
+                arg_error(@c, s, decls, name: "sort", allowed: "`[T]`", got: given[0], span: span)
+            )
+            .case_ty | .failure | .generic | .error => return ok(
+                arg_error(@c, s, decls, name: "sort", allowed: "`[T]`", got: given[0], span: span)
+            )
+
+    # §4.6's three readers of a fallible value.
+    if name == "must" || name == "default" || name == "is_err"
+        return fallible_builtin(@c, s, decls, name: name, given: given, span: span)
+    return fail("untypeable", "the arity is wrong, or this name is not typed here")
+
+function is_int(c: state.Checker, ty: i64) -> bool
+    return match table.get(c.out.types, ty)
+        .int_ty                                                  => true
+        .float_ty | .bool | .str | .ptr | .cstr | .unit | .array => false
+        .fixed | .map | .fallible | .function_ty | .named        => false
+        .case_ty | .failure | .generic | .error                  => false
+
+function is_float(c: state.Checker, ty: i64) -> bool
+    return match table.get(c.out.types, ty)
+        .float_ty                                              => true
+        .int_ty | .bool | .str | .ptr | .cstr | .unit | .array => false
+        .fixed | .map | .fallible | .function_ty | .named      => false
+        .case_ty | .failure | .generic | .error                => false
+
+function is_generic(c: state.Checker, ty: i64) -> bool
+    return match table.get(c.out.types, ty)
+        .generic                                                   => true
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit  => false
+        .array | .fixed | .map | .fallible | .function_ty | .named => false
+        .case_ty | .failure | .error                               => false
+
+## The three T? readers
+
+# must, default and is_err: the three built-ins whose whole rule is the
+# same one — the argument must be fallible — and the diagnostic for when
+# it is not belongs with them.
+function fallible_builtin(@c: state.Checker, s: source.Source, decls: [ast.Decl], name: str, given: [i64], span: token.Span) -> i64?
+    if name == "must" && given.len() == 1
+        match table.get(c.out.types, given[0])
+            .fallible o => return ok(o.payload)
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return ok(
+                unwrapping_nothing(@c, s, decls, name: "must", got: given[0], span: span)
+            )
+            .array | .fixed | .map | .function_ty | .named => return ok(
+                unwrapping_nothing(@c, s, decls, name: "must", got: given[0], span: span)
+            )
+            .case_ty | .failure | .generic | .error => return ok(
+                unwrapping_nothing(@c, s, decls, name: "must", got: given[0], span: span)
+            )
+
+    if name == "default" && given.len() == 2
+        match table.get(c.out.types, given[0])
+            .fallible o =>
+                if o.payload == given[1]
+                    return ok(o.payload)
+                want = state.show(c, s, decls, o.payload)
+                got = state.show(c, s, decls, given[1])
+                state.push_diagnostic(@c, value_errors.mismatch(expected: want, got: got, span: span))
+                return ok(state.error_ty_of(c))
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return ok(
+                unwrapping_nothing(@c, s, decls, name: "default", got: given[0], span: span)
+            )
+            .array | .fixed | .map | .function_ty | .named => return ok(
+                unwrapping_nothing(@c, s, decls, name: "default", got: given[0], span: span)
+            )
+            .case_ty | .failure | .generic | .error => return ok(
+                unwrapping_nothing(@c, s, decls, name: "default", got: given[0], span: span)
+            )
+
+    if name == "is_err" && given.len() == 1
+        match table.get(c.out.types, given[0])
+            .fallible => return ok(table.bool_ty(c.out.types))
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return ok(
+                arg_error(@c, s, decls, name: "is_err", allowed: "a fallible value", got: given[0], span: span)
+            )
+            .array | .fixed | .map | .function_ty | .named => return ok(
+                arg_error(@c, s, decls, name: "is_err", allowed: "a fallible value", got: given[0], span: span)
+            )
+            .case_ty | .failure | .generic | .error => return ok(
+                arg_error(@c, s, decls, name: "is_err", allowed: "a fallible value", got: given[0], span: span)
+            )
+    return fail("untypeable", "the arity is wrong")
+
+# .must() or .default(v) on a value that cannot fail, with the repair
+# attached (panel 043's load-bearing condition, worth more now than when
+# it was written: every such call is a §1.2 round-trip left as a bare
+# diagnostic, or a machine-applied repair instead).
+#
+# The replacement is computed FROM THE CHARACTERS IN HAND — the call's
+# own source text, minus a trailing `.name(…)` — never from a premise
+# about what the caller looks like (CLAUDE.md §11). Where the text does
+# not end that way, UFCS was not used and nothing certain is offered.
+function unwrapping_nothing(@c: state.Checker, s: source.Source, decls: [ast.Decl], name: str, got: i64, span: token.Span) -> i64
+    shown = state.show(c, s, decls, got)
+    d: diag.Diagnostic @ value_errors.bad_operand(op: name, allowed: "a fallible value", got: shown, span: span)
+    d.notes @ d.notes.push(
+        "`" + shown + "` cannot fail, so there is no error case to handle — this is the shape a `fit_<width>` that widens hands back, because a widening cannot fail"
+    )
+    text = source.span_text(s, span)
+    suffix = "." + name + "("
+    at = rfind(haystack: text, needle: suffix)
+
+    if !at.is_err() && text.len() > 0 && text[text.len() - 1] == ')'
+        d.fixes @ d.fixes.push(
+            diag.Fix(title: "remove the `." + name + "(…)`", replacement: text.slice(from: 0, to: at.must()), span: span, certainty: .certain)
+        )
+    state.push_diagnostic(@c, d)
+    return state.error_ty_of(c)
+
+# The LAST occurrence of `needle` in `haystack`, byte offset.
+function rfind(haystack: str, needle: str) -> i64?
+    if needle.len() == 0 || needle.len() > haystack.len()
+        return fail("absent", "nothing to find")
+    at: i64 @ haystack.len() - needle.len()
+
+    while at >= 0
+        if haystack.slice(from: at, to: at + needle.len()) == needle
+            return ok(at)
+        at @ at - 1
+
+    return fail("absent", "the needle never occurs")
+
+function arg_error(@c: state.Checker, s: source.Source, decls: [ast.Decl], name: str, allowed: str, got: i64, span: token.Span) -> i64
+    shown = state.show(c, s, decls, got)
+    state.push_diagnostic(@c, value_errors.bad_operand(op: name, allowed: allowed, got: shown, span: span))
+    return state.error_ty_of(c)
+
+## Tests
+
+function fresh() -> state.Checker
+    r: resolved.Resolved @ resolved.new_resolved()
+    return state.new_checker(out_of: r, expr_count: 0)
+
+function plain_source(text: str) -> source.Source
+    return source.new_source(name: "t.hero", text: text)
+
+test "the conversions answer by name: fallible to a width, plain to a float"
+    c: state.Checker @ fresh()
+    s = plain_source("x\n")
+    d: [ast.Decl] = []
+    int_id = table.int_ty_id(c.out.types)
+    one: [i64] = [int_id]
+    narrowed = builtin_call(@c, s, d, name: "to_u8", given: one, span: token.Span(start: 0, end: 1)).must()
+    u8_id = table.intern(@c.out.types, .int_ty(kind: .u8))
+    assert table.get(c.out.types, narrowed) == .fallible(payload: u8_id)
+    f32_in: [i64] = [table.intern(@c.out.types, .float_ty(kind: .f32))]
+    absorbed = builtin_call(@c, s, d, name: "to_i64", given: f32_in, span: token.Span(start: 0, end: 1)).must()
+    assert table.get(c.out.types, absorbed) == .fallible(payload: int_id)
+    widened = builtin_call(@c, s, d, name: "to_f32", given: one, span: token.Span(start: 0, end: 1)).must()
+    assert table.get(c.out.types, widened) == .float_ty(kind: .f32)
+    assert c.out.diagnostics.len() == 0
+    str_in: [i64] = [table.str_ty(c.out.types)]
+    _ = builtin_call(@c, s, d, name: "to_u8", given: str_in, span: token.Span(start: 0, end: 1))
+    assert c.out.diagnostics.len() == 1
+    assert c.out.diagnostics[0].message == "`to_u8` takes an integer, found `str`"
+
+test "print takes any width and refuses the rest with the true set"
+    c: state.Checker @ fresh()
+    s = plain_source("x\n")
+    d: [ast.Decl] = []
+    u8_id = table.intern(@c.out.types, .int_ty(kind: .u8))
+    four: [i64] = [
+        u8_id
+        table.str_ty(c.out.types)
+        table.bool_ty(c.out.types)
+        table.f64_ty(c.out.types)
+    ]
+    printed = builtin_call(@c, s, d, name: "print", given: four, span: token.Span(start: 0, end: 1)).must()
+    assert printed == table.unit_ty(c.out.types)
+    ptr_in: [i64] = [table.intern(@c.out.types, .ptr)]
+    _ = builtin_call(@c, s, d, name: "print", given: ptr_in, span: token.Span(start: 0, end: 1))
+    assert c.out.diagnostics[0].message == "`print` takes any integer, a float, `bool` or `str`, found `ptr`"
+
+test "the list answers by shape: push, slice, keys, repeat, join, sort"
+    c: state.Checker @ fresh()
+    s = plain_source("x\n")
+    d: [ast.Decl] = []
+    int_id = table.int_ty_id(c.out.types)
+    str_id = table.str_ty(c.out.types)
+    xs = table.intern(@c.out.types, .array(element: int_id))
+    push_ok: [i64] = [xs, int_id]
+    assert builtin_call(@c, s, d, name: "push", given: push_ok, span: token.Span(start: 0, end: 1)).must() == xs
+    push_bad: [i64] = [xs, str_id]
+    _ = builtin_call(@c, s, d, name: "push", given: push_bad, span: token.Span(start: 0, end: 1))
+    assert c.out.diagnostics[0].message == "expected `i64`, found `str`"
+    keys_in: [i64] = [table.intern(@c.out.types, .map(key: str_id, value: int_id))]
+    keyed = builtin_call(@c, s, d, name: "keys", given: keys_in, span: token.Span(start: 0, end: 1)).must()
+    assert table.get(c.out.types, keyed) == .array(element: str_id)
+    u64_id = table.intern(@c.out.types, .int_ty(kind: .u64))
+    rep_ok: [i64] = [str_id, u64_id]
+    assert builtin_call(@c, s, d, name: "repeat", given: rep_ok, span: token.Span(start: 0, end: 1)).must() == str_id
+    rep_bad: [i64] = [str_id, int_id]
+    _ = builtin_call(@c, s, d, name: "repeat", given: rep_bad, span: token.Span(start: 0, end: 1))
+    assert c.out.diagnostics[1].message == "`repeat` takes `str` and `u64`, found `str`"
+    sorted_ok: [i64] = [xs]
+    assert builtin_call(@c, s, d, name: "sort", given: sorted_ok, span: token.Span(start: 0, end: 1)).must() == xs
+    maps = table.intern(@c.out.types, .array(element: keys_in[0]))
+    sort_bad: [i64] = [maps]
+    _ = builtin_call(@c, s, d, name: "sort", given: sort_bad, span: token.Span(start: 0, end: 1))
+    assert c.out.diagnostics[2].code == "unordered_element"
+
+    # An arity miss is nobody's here: the caller reports it once.
+    lonely: [i64] = [xs]
+    assert builtin_call(@c, s, d, name: "push", given: lonely, span: token.Span(start: 0, end: 1)).is_err()
+
+test "must unwraps, and on a sure value offers the certain removal"
+    c: state.Checker @ fresh()
+
+    # The span's own text is the call: the fix is computed from it.
+    s = plain_source("x.must()\n")
+    d: [ast.Decl] = []
+    int_id = table.int_ty_id(c.out.types)
+    maybe = table.intern(@c.out.types, .fallible(payload: int_id))
+    good: [i64] = [maybe]
+    assert builtin_call(@c, s, d, name: "must", given: good, span: token.Span(start: 0, end: 8)).must() == int_id
+    sure: [i64] = [int_id]
+    _ = builtin_call(@c, s, d, name: "must", given: sure, span: token.Span(start: 0, end: 8))
+    assert c.out.diagnostics.len() == 1
+    assert c.out.diagnostics[0].fixes.len() == 1
+    assert c.out.diagnostics[0].fixes[0].replacement == "x"
+    assert c.out.diagnostics[0].fixes[0].certainty == .certain
+
+    # default's fallback must match the payload.
+    str_id = table.str_ty(c.out.types)
+    mixed: [i64] = [maybe, str_id]
+    _ = builtin_call(@c, s, d, name: "default", given: mixed, span: token.Span(start: 0, end: 8))
+    assert c.out.diagnostics[1].message == "expected `i64`, found `str`"
+
+test "an expectation is handed down where the ⇐-only forms need one"
+    c: state.Checker @ fresh()
+    int_id = table.int_ty_id(c.out.types)
+    xs = table.intern(@c.out.types, .array(element: int_id))
+    assert expectation(c, "push", first: xs, index: 1).must() == int_id
+    assert expectation(c, "push", first: xs, index: 0).is_err()
+    assert expectation(c, "slice", first: xs, index: 2).must() == int_id
+    u64_id = table.intern(@c.out.types, .int_ty(kind: .u64))
+    assert expectation(c, "repeat", first: table.str_ty(c.out.types), index: 1).must() == u64_id
+    assert expectation(c, "len", first: xs, index: 1).is_err()

@@ -26,7 +26,7 @@
 # nothing that hands a program back may print it.
 
 use token
-use module_names
+use module/names as module_names
 
 ## The two tables
 

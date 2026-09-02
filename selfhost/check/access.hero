@@ -1,0 +1,261 @@
+# Reaching inside a value: a field, an index, and `?` (§4.3, §4.6, §4.9).
+# Port of crates/heroes/src/types/access.rs.
+#
+# Three rules, and each one is a place where the language's shape shows:
+# a FIELD belongs to a record, to a CASE of a variant (a case with fields
+# is a small record), or to the error payload — and to nothing else; an
+# INDEX is str -> u8, [T] -> T, and {K: V} -> V?, which is what makes a
+# missing key a value rather than a crash; and `?` needs two things, each
+# with its own message: the value must be fallible, and the enclosing
+# function must be able to fail.
+
+use token
+use ast
+use source
+use resolved
+use parse
+use resolve
+use check/table
+use check/state
+use check/lower
+use value_errors
+use data_errors
+use flow_errors
+
+# `p.x` — a field of a record, of a variant's case, or of the error
+# payload.
+function field_type(@c: state.Checker, a: ast.Ast, s: source.Source, r: resolved.Resolved, decls: [ast.Decl], base: i64, field: token.Span) -> i64
+    name = source.span_text(s, field)
+
+    if table.poisoned(c.out.types, base)
+        return state.error_ty_of(c)
+
+    match table.get(c.out.types, base)
+        .named n =>
+            match decls[n.decl].kind
+                .record_decl rec =>
+                    for candidate in rec.fields
+                        if source.span_text(s, candidate.name) == name
+                            return lower.lower_ty(@c, a, r, candidate.ty)
+
+                    known: [str] @ []
+
+                    for f in rec.fields
+                        known @ known.push(source.span_text(s, f.name))
+
+                    holder = source.span_text(s, decls[n.decl].name)
+                    state.push_diagnostic(
+                        @c,
+                        data_errors.no_such_field(holder: holder, field: name, known: known, span: field)
+                    )
+                    return state.error_ty_of(c)
+                # A variant's fields belong to its CASES: `t.v` is not a
+                # thing, `match t` then `.num n => n.v` is.
+
+                .variant_decl | .constant_decl | .function_decl | .test_decl =>
+                    holder = state.show(c, s, decls, base)
+                    state.push_diagnostic(
+                        @c,
+                        data_errors.field_of_variant(holder: holder, field: name, span: field)
+                    )
+                    return state.error_ty_of(c)
+        .case_ty vc =>
+            match decls[vc.decl].kind
+                .variant_decl v =>
+                    one_case = v.cases[vc.at]
+
+                    for candidate in one_case.fields
+                        if source.span_text(s, candidate.name) == name
+                            return lower.lower_ty(@c, a, r, candidate.ty)
+
+                    known: [str] @ []
+
+                    for f in one_case.fields
+                        known @ known.push(source.span_text(s, f.name))
+
+                    holder = state.show(c, s, decls, base)
+                    state.push_diagnostic(
+                        @c,
+                        data_errors.no_such_field(holder: holder, field: name, known: known, span: field)
+                    )
+                .constant_decl | .function_decl | .record_decl | .test_decl => return state.error_ty_of(c)
+
+            return state.error_ty_of(c)
+        # §4.6 states the error's two fields and nothing more.
+
+        .failure =>
+            if name == "code" || name == "msg"
+                return table.str_ty(c.out.types)
+            known: [str] = ["code", "msg"]
+            state.push_diagnostic(
+                @c,
+                data_errors.no_such_field(holder: "the error", field: name, known: known, span: field)
+            )
+            return state.error_ty_of(c)
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit =>
+            got = state.show(c, s, decls, base)
+            state.push_diagnostic(@c, data_errors.not_a_record(got: got, field: name, span: field))
+            return state.error_ty_of(c)
+        .array | .fixed | .map | .fallible | .function_ty | .generic | .error =>
+            got = state.show(c, s, decls, base)
+            state.push_diagnostic(@c, data_errors.not_a_record(got: got, field: name, span: field))
+            return state.error_ty_of(c)
+
+    return state.error_ty_of(c)
+
+function index_type(@c: state.Checker, s: source.Source, decls: [ast.Decl], base: i64, index: i64, span: token.Span) -> i64
+    if table.poisoned(c.out.types, base)
+        return state.error_ty_of(c)
+    int_id = table.int_ty_id(c.out.types)
+
+    match table.get(c.out.types, base)
+        # `s[i]` is a u8 — a byte, and a byte is a type (§4.3, author
+        # ruling: a value takes the type that DESCRIBES it, not the widest
+        # that holds it). This is what gives [u8] a producer. The INDEX
+        # stays an i64 and deliberately not narrowed: Rust's `as usize`
+        # tax was the most-complained-of integer decision in the
+        # historian's whole survey.
+        .str =>
+            expect_index(@c, s, decls, got: index, want: int_id, span: span)
+            return table.intern(@c.out.types, .int_ty(kind: .u8))
+        .array arr =>
+            expect_index(@c, s, decls, got: index, want: int_id, span: span)
+            return arr.element
+        # A fixed array is indexed like any other, and its bound is known
+        # (panel 062): a CONSTANT index out of range is a compile error
+        # rather than an abort — wrong the moment it is written.
+
+        .fixed x =>
+            expect_index(@c, s, decls, got: index, want: int_id, span: span)
+            return x.element
+        # §4.9: map access yields V?, which is what makes a missing key a
+        # value rather than a crash.
+
+        .map m =>
+            expect_index(@c, s, decls, got: index, want: m.key, span: span)
+            return table.intern(@c.out.types, .fallible(payload: m.value))
+        .int_ty | .float_ty | .bool | .ptr | .cstr | .unit =>
+            got = state.show(c, s, decls, base)
+            state.push_diagnostic(@c, flow_errors.not_indexable(got, span))
+            return state.error_ty_of(c)
+        .fallible | .function_ty | .named | .case_ty | .failure | .generic | .error =>
+            got = state.show(c, s, decls, base)
+            state.push_diagnostic(@c, flow_errors.not_indexable(got, span))
+            return state.error_ty_of(c)
+
+    return state.error_ty_of(c)
+
+function expect_index(@c: state.Checker, s: source.Source, decls: [ast.Decl], got: i64, want: i64, span: token.Span)
+    if got != want && !table.poisoned(c.out.types, got)
+        a = state.show(c, s, decls, want)
+        b = state.show(c, s, decls, got)
+        state.push_diagnostic(@c, value_errors.mismatch(expected: a, got: b, span: span))
+
+# `e?` — hand the error to the caller (§4.6). Two conditions, and both
+# are worth their own message: the value must be fallible, and the
+# function must be able to fail.
+function try_type(@c: state.Checker, s: source.Source, decls: [ast.Decl], inner: i64, span: token.Span, operand: token.Span) -> i64
+    if table.poisoned(c.out.types, inner)
+        return state.error_ty_of(c)
+
+    payload = match table.get(c.out.types, inner)
+        .fallible o => o.payload
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit =>
+            got = state.show(c, s, decls, inner)
+            state.push_diagnostic(@c, flow_errors.not_fallible(got: got, span: span, inner: operand))
+            return state.error_ty_of(c)
+        .array | .fixed | .map | .function_ty | .named | .case_ty =>
+            got = state.show(c, s, decls, inner)
+            state.push_diagnostic(@c, flow_errors.not_fallible(got: got, span: span, inner: operand))
+            return state.error_ty_of(c)
+        .failure | .generic | .error =>
+            got = state.show(c, s, decls, inner)
+            state.push_diagnostic(@c, flow_errors.not_fallible(got: got, span: span, inner: operand))
+            return state.error_ty_of(c)
+
+    if !c.fallible
+        result = state.show(c, s, decls, c.result)
+        state.push_diagnostic(@c, flow_errors.try_in_infallible(result, span))
+    return payload
+
+## Tests
+
+function ready(text: str) -> state.Checker
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    return state.new_checker(out_of: out, expr_count: p.tree.exprs.len())
+
+test "a field is found on a record, and the miss lists what exists"
+    text = "record P\n    x: i64\n    y: str\n"
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    c: state.Checker @ state.new_checker(out_of: out, expr_count: 0)
+    base = table.intern(@c.out.types, .named(decl: 0))
+
+    # `x` sits at offset 13, `y` at 24 in the text above.
+    found = field_type(@c, p.tree, s, out, p.decls, base: base, field: token.Span(start: 13, end: 14))
+    assert found == table.int_ty_id(c.out.types)
+    missing = field_type(@c, p.tree, s, out, p.decls, base: base, field: token.Span(start: 7, end: 8))
+    assert missing == 0
+    assert c.out.diagnostics.len() == 1
+    assert c.out.diagnostics[0].message == "`P` has no field `P` — `P` has `x`, `y`"
+
+test "the error payload has exactly two fields, both str"
+    text = "record P\n    x: i64\n"
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    c: state.Checker @ state.new_checker(out_of: out, expr_count: 0)
+    fail_ty = table.failure_ty(c.out.types)
+
+    # Reuse the `x` span for a name that exists nowhere on the error.
+    code_ty = field_type(@c, p.tree, s, out, p.decls, base: fail_ty, field: token.Span(start: 13, end: 14))
+    assert code_ty == 0
+    assert c.out.diagnostics[0].message == "`the error` has no field `x` — `the error` has `code`, `msg`"
+
+test "indexing answers by shape: u8, T, V?, and the refusals"
+    c: state.Checker @ ready("record P\n    x: i64\n")
+    s = source.new_source(name: "t.hero", text: "record P\n    x: i64\n")
+    d: [ast.Decl] = []
+    int_id = table.int_ty_id(c.out.types)
+    str_id = table.str_ty(c.out.types)
+    got_byte = index_type(@c, s, d, base: str_id, index: int_id, span: token.Span(start: 0, end: 1))
+    assert table.get(c.out.types, got_byte) == .int_ty(kind: .u8)
+    xs = table.intern(@c.out.types, .array(element: str_id))
+    assert index_type(@c, s, d, base: xs, index: int_id, span: token.Span(start: 0, end: 1)) == str_id
+    m = table.intern(@c.out.types, .map(key: str_id, value: int_id))
+    got_maybe = index_type(@c, s, d, base: m, index: str_id, span: token.Span(start: 0, end: 1))
+    assert table.get(c.out.types, got_maybe) == .fallible(payload: int_id)
+    assert c.out.diagnostics.len() == 0
+
+    # A map indexed with the wrong key type names both.
+    _ = index_type(@c, s, d, base: m, index: int_id, span: token.Span(start: 0, end: 1))
+    assert c.out.diagnostics.len() == 1
+    assert c.out.diagnostics[0].message == "expected `str`, found `i64`"
+    _ = index_type(@c, s, d, base: int_id, index: int_id, span: token.Span(start: 0, end: 1))
+    assert c.out.diagnostics[1].code == "not_indexable"
+
+test "the try operator wants a fallible value inside a fallible function"
+    c: state.Checker @ ready("record P\n    x: i64\n")
+    s = source.new_source(name: "t.hero", text: "record P\n    x: i64\n")
+    d: [ast.Decl] = []
+    int_id = table.int_ty_id(c.out.types)
+    maybe = table.intern(@c.out.types, .fallible(payload: int_id))
+    c.fallible @ true
+    got = try_type(@c, s, d, inner: maybe, span: token.Span(start: 0, end: 3), operand: token.Span(start: 0, end: 2))
+    assert got == int_id
+    assert c.out.diagnostics.len() == 0
+
+    # Outside a fallible function, the second condition speaks.
+    c.fallible @ false
+    c.result @ int_id
+    _ = try_type(@c, s, d, inner: maybe, span: token.Span(start: 0, end: 3), operand: token.Span(start: 0, end: 2))
+    assert c.out.diagnostics.len() == 1
+    assert c.out.diagnostics[0].code == "try_in_infallible"
+
+    # And on a value that cannot fail, the first does, with its certain fix.
+    _ = try_type(@c, s, d, inner: int_id, span: token.Span(start: 0, end: 3), operand: token.Span(start: 0, end: 2))
+    assert c.out.diagnostics[1].code == "not_fallible"
+    assert c.out.diagnostics[1].fixes[0].certainty == .certain

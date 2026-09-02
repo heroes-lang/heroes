@@ -25,21 +25,21 @@
 # nobody having tried, not about the language: it is one extern.
 
 use source
-use cli_table
-use cli_argv
-use cli_io
-use cli_toolchain
-use cli_process
-use cli_input
+use cli/table as cli_table
+use cli/argv
+use cli/io
+use cli/toolchain
+use cli/process
+use cli/input
 use library_source
-use cli_lex
-use cli_syntax_cmds
-use cli_check
-use cli_verbs
-use cli_doctor
-use cli_help
-use cli_measure
-use cli_mutate
+use cli/lex
+use cli/syntax_cmds
+use cli/check
+use cli/verbs
+use cli/doctor
+use cli/help
+use cli/measure
+use cli/mutate
 
 # The stamp the generated C carries, and it must MATCH THE BOOTSTRAP'S
 # for the fixpoint to be a comparison rather than a diff of two version
@@ -77,25 +77,25 @@ function main()
 
     for one in raw
         if one.is_err()
-            cli_io.eprint(
+            io.eprint(
                 text: "error: argument " + (at + 1).to_str() + " is not UTF-8, and a Heroes `str` cannot hold it (spec:52)"
             )
-            cli_io.eprint(text: "note: build the program with `heroes build` and read it with `args_checked()`")
+            io.eprint(text: "note: build the program with `heroes build` and read it with `args_checked()`")
             exit(code: 2)
         given @ given.push(one.must())
         at @ at + 1
 
-    parsed = cli_argv.parse(given, dir_probe: cli_process.is_directory)
+    parsed = argv.parse(given, dir_probe: process.is_directory)
 
     if parsed.is_err()
-        cli_io.eprint(text: "error: " + message_of(parsed))
+        io.eprint(text: "error: " + message_of(parsed))
         exit(code: 2)
     inv = parsed.must()
     reading: bool @ false
 
     # `fmt` reads THE FILE IT WAS NAMED and nothing else, where the other
     # six read the whole compilation. It is the one command that provably
-    # needs no graph: `print_fmt.format_file` keeps root-file
+    # needs no graph: `fmt.format_file` keeps root-file
     # declarations and root-file comments only, and its own comment says
     # why — with `--in-place`, a formatter that walked the whole Source
     # would append the library to the author's file once per run (§1.11).
@@ -118,14 +118,14 @@ function main()
             print("heroes " + VERSION)
             exit(code: 0)
         .help_cmd =>
-            print(cli_help.help())
+            print(help.help())
             exit(code: 0)
-        .this_cmd => exit(code: cli_table.exit_code(cli_doctor.run_this()))
+        .this_cmd => exit(code: cli_table.exit_code(doctor.run_this()))
         .doctor_cmd => exit(
-            code: cli_table.exit_code(cli_doctor.run_doctor(build_dir: "build", runtime_hint: runtime_hint()))
+            code: cli_table.exit_code(doctor.run_doctor(build_dir: "build", runtime_hint: runtime_hint()))
         )
-        .measure_cmd => exit(code: cli_table.exit_code(cli_measure.run(inv.file)))
-        .mutate_cmd  => exit(code: cli_table.exit_code(cli_mutate.run(inv)))
+        .measure_cmd => exit(code: cli_table.exit_code(measure.run(inv.file)))
+        .mutate_cmd  => exit(code: cli_table.exit_code(mutate.run(inv)))
         # The seven that read a program fall through to the walk
         # below. The arm is a no-op MUTATION and not a print: a
         # `print("")` here put a blank line above every diagnostic and
@@ -144,28 +144,28 @@ function main()
     read: source.Source? @ fail("unset", "no read yet")
 
     if root_only
-        read @ cli_input.read_root_only(path: path)
+        read @ input.read_root_only(path: path)
     else
-        read @ cli_input.read_compilation(path: path, library: library)
+        read @ input.read_compilation(path: path, library: library)
 
     if read.is_err()
-        cli_io.eprint(text: "error: " + message_of_source(read))
+        io.eprint(text: "error: " + message_of_source(read))
         exit(code: 2)
     s: source.Source @ read.must()
     verdict: cli_table.Exit @ .ok_exit
 
     match inv.tag
-        .lex_cmd                                                                        => verdict @ cli_lex.run(s, inv)
-        .parse_cmd                                                                      => verdict @ cli_syntax_cmds.run_parse(
+        .lex_cmd                                                                        => verdict @ lex.run(s, inv)
+        .parse_cmd                                                                      => verdict @ syntax_cmds.run_parse(
             s,
             inv
         )
-        .fmt_cmd                                                                        => verdict @ cli_syntax_cmds.run_fmt(
+        .fmt_cmd                                                                        => verdict @ syntax_cmds.run_fmt(
             path: path,
             s: s,
             inv: inv
         )
-        .check_cmd                                                                      => verdict @ cli_check.run(
+        .check_cmd                                                                      => verdict @ check.run(
             s,
             inv
         )
@@ -181,18 +181,18 @@ function main()
 # The three verbs that need the toolchain, and the one place it is
 # located: a missing runtime is the tool being unable to run, which is
 # exit 2 whatever the verb.
-function compiling(path: str, s: source.Source, inv: cli_argv.Invocation) -> cli_table.Exit
-    found = cli_toolchain.locate_toolchain(hint: runtime_hint(), fingerprint: VERSION)
+function compiling(path: str, s: source.Source, inv: argv.Invocation) -> cli_table.Exit
+    found = toolchain.locate_toolchain(hint: runtime_hint(), fingerprint: VERSION)
 
     if found.is_err()
-        cli_io.eprint(text: "error: " + message_of_toolchain(found))
+        io.eprint(text: "error: " + message_of_toolchain(found))
         return .failed_exit
     t = found.must()
 
     match inv.tag
-        .build_cmd => return cli_verbs.run_build(path: path, s: s, inv: inv, t: t, version: VERSION)
-        .run_cmd => return cli_verbs.run_run(path: path, s: s, inv: inv, t: t, version: VERSION)
-        .test_cmd => return cli_verbs.run_test(path: path, s: s, inv: inv, t: t, version: VERSION)
+        .build_cmd => return verbs.run_build(path: path, s: s, inv: inv, t: t, version: VERSION)
+        .run_cmd => return verbs.run_run(path: path, s: s, inv: inv, t: t, version: VERSION)
+        .test_cmd => return verbs.run_test(path: path, s: s, inv: inv, t: t, version: VERSION)
         .lex_cmd | .parse_cmd | .check_cmd | .fmt_cmd | .doctor_cmd => return .ok_exit
         .mutate_cmd | .measure_cmd | .this_cmd | .version_cmd | .help_cmd => return .ok_exit
 
@@ -211,9 +211,9 @@ function compiling(path: str, s: source.Source, inv: cli_argv.Invocation) -> cli
 # environment variable, and under the port that route did nothing
 # (panel 085 R8, measured both ways).
 function runtime_hint() -> str
-    return cli_process.env(name: "HEROES_RUNTIME")
+    return process.env(name: "HEROES_RUNTIME")
 
-function message_of(failed: cli_argv.Invocation?) -> str
+function message_of(failed: argv.Invocation?) -> str
     match failed
         .ok    => return ""
         .err e => return e.msg
@@ -223,7 +223,7 @@ function message_of_source(failed: source.Source?) -> str
         .ok    => return ""
         .err e => return e.msg
 
-function message_of_toolchain(failed: cli_toolchain.Toolchain?) -> str
+function message_of_toolchain(failed: toolchain.Toolchain?) -> str
     match failed
         .ok    => return ""
         .err e => return e.msg

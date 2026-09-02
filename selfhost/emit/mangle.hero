@@ -1,0 +1,223 @@
+# Every name that reaches C, in one place (design.md §3.1, CLAUDE.md §7).
+# Port of crates/heroes/src/emit/mangle.rs.
+#
+# The rule is h_<module>_<name>[_<typehash>], and the reason is
+# collisions in two directions: a Heroes identifier can be a C keyword
+# (default, register) or a libc symbol (index, y1) — and, the direction
+# panel 019 found by compiling it, an UNMANGLED Heroes `function open`
+# silently replaces libc's. The prefix answers both at once, which is
+# why extern names, and only they, pass through untouched.
+#
+# The module component is sanitised to [A-Za-z0-9], and that one line
+# is what makes the scheme injective: module `print` with name
+# `inst_value_name` and module `print_inst` with name `value_name` are
+# otherwise one symbol — this compiler's own file names, so the
+# collision was met immediately. With the module alphanumeric, the
+# first `_` after `h_` ends it.
+#
+# THE TYPEHASH WAS DESIGNED FOR THIS FILE. It was FNV-1a, whose three
+# ingredients are all inexpressible here (the offset basis overflows
+# i64, wrapping_mul is an abort under §4.3, and ^ is reserved) — so it
+# became a polynomial hash mod 2^31-1, written the way this port writes
+# it, and tests/golden/run/premise-mangler-hash-in-heroes.hero has
+# computed the same values since the day of the decision. This module
+# is that premise, cashed.
+
+use source
+use inventory
+
+# The two numbers the golden witness copies.
+constant HASH_BASE: i64
+    131
+
+constant HASH_MODULUS: i64
+    2147483647
+
+# The suffix a monomorphised instance carries: a hash of the
+# CANONICALLY RENDERED type arguments (panel 029 R5). Not a readable
+# suffix (not injective: pair<i64, str_x> and pair<i64_str, x> would
+# collide, and clang would refuse a legal program); not a hash of the
+# TyId sequence (an interning-order artifact — the fixpoint compares C
+# byte for byte, and the bootstrap and this port need not intern in the
+# same order); a hash of the rendering, reproducible by any
+# implementation from the same public spelling. A collision is LOUD:
+# two instances mangling alike are two C definitions of one name,
+# which is a clang error — that is what makes 31 bits enough.
+function instance(rendered: str) -> str
+    h: i64 @ 0
+
+    for i in range(from: 0, to: len(rendered))
+        h @ (h * HASH_BASE + to_i64(rendered[i]).must()) % HASH_MODULUS
+
+    return hex(h)
+
+# Lowercase hex, no prefix — what Rust's {hash:x} prints. Zero is "0".
+function hex(number: i64) -> str
+    if number == 0
+        return "0"
+    digits = "0123456789abcdef"
+    out: str @ ""
+    left: i64 @ number
+
+    while left > 0
+        d = left % 16
+        out @ digits.slice(from: d, to: d + 1) + out
+        left @ left / 16
+
+    return out
+
+# A Heroes function or constant. A function whose name is in the
+# built-in inventory belongs to the library, and that is not a
+# heuristic: the resolver refuses a user declaration of any reserved
+# name, and the library declares nothing else.
+function function_name(module: str, name: str) -> str
+    if !inventory.index_of(name).is_err()
+        return "h_" + source.LIBRARY_MODULE + "_" + name
+    return "h_" + module + "_" + name
+
+# The same, for one monomorphised instance: the base name plus the hash
+# of what it was instantiated at.
+function instance_of(module: str, name: str, rendered: str) -> str
+    return function_name(module: module, name: name) + "_" + instance(rendered)
+
+# One test block, by its position in the file. BY INDEX, NOT BY TITLE:
+# a title is a string literal — spaces, leading digits, any UTF-8 —
+# and sanitising it would need a second escape scheme that still would
+# not be injective. The index is already unique and stable.
+function test_name(module: str, index: i64) -> str
+    return "h_" + module + "_test" + index.to_str()
+
+# A record or variant type, as a C struct tag and typedef name. Same
+# scheme as a function, deliberately in the same namespace: C has one
+# ordinary identifier namespace for both, so `record print` and
+# `function print` collide HERE, at compile time, rather than at link
+# time.
+function ty_name(module: str, name: str) -> str
+    return "h_" + module + "_" + name
+
+# A field, as a C struct member. Mangled too, because a field may be
+# spelled `default` or `register`.
+function field(name: str) -> str
+    return field_of(foreign: false, name: name)
+
+# A field's C member name, given whether the record it belongs to is
+# the HEADER's (panel 060): a group's record is a struct this compiler
+# never declared, so its members are spelled exactly as the header
+# spells them — `.r`, not `.f_r`. `foreign` is asked of the
+# declaration, never inferred from the field name: "a field with no f_
+# is a header's" would be a premise about the world (CLAUDE.md §11).
+function field_of(foreign: bool, name: str) -> str
+    if foreign
+        return name
+    return "f_" + name
+
+# One of a variant's cases: the union member that carries its payload.
+function case_member(name: str) -> str
+    return "c_" + name
+
+# The payload of one case, as a C type of its own. It needs a name
+# rather than an anonymous struct inside the union, because a case type
+# is a real type in the IR — a payload read puts one in a temporary,
+# and a temporary needs a declaration.
+function case_type(ty: str, case_name: str) -> str
+    return ty + "_" + case_member(case_name)
+
+# The enum a variant's tag is drawn from.
+function tag_type(ty: str) -> str
+    return ty + "_tag"
+
+# One enumerator of that enum.
+function tag_of(ty: str, case_name: str) -> str
+    return tag_type(ty) + "_" + case_name
+
+# A slot: a parameter, a local, a mutable cell, or one lowering
+# invented. The index is in the name because two slots may share a
+# spelling — a synthetic $i beside a user i — and because a C keyword
+# must not be reachable by accident. $ is dropped: $i in slot 5 becomes
+# h5_i.
+function slot(index: i64, name: str) -> str
+    kept: str @ ""
+
+    for ch in name.chars()
+        code = ch[0]
+        is_word: bool @ false
+
+        if code >= 'a' && code <= 'z'
+            is_word @ true
+
+        if code >= 'A' && code <= 'Z'
+            is_word @ true
+
+        if code >= '0' && code <= '9'
+            is_word @ true
+
+        if ch == "_"
+            is_word @ true
+
+        if is_word
+            kept @ kept + ch
+        else
+            kept @ kept + "_"
+
+    first: i64 @ 0
+
+    while first < kept.len() && kept[first] == '_'
+        first @ first + 1
+
+    return "h" + index.to_str() + "_" + kept.slice(from: first, to: kept.len())
+
+# The pointer a mutable parameter arrives through (§4.8's ABI).
+function out_param(index: i64, name: str) -> str
+    return "p" + slot(index, name)
+
+# A temporary. Assigned once by construction, so the name needs no
+# scope.
+function value(index: i64) -> str
+    return "t" + index.to_str()
+
+# A basic block's label. Not a user name, but it goes through here
+# anyway so that "every name that reaches C" has exactly one home.
+function block(index: i64) -> str
+    return "bb" + index.to_str()
+
+## Tests
+
+test "the typehash matches the witness golden, in hex"
+    # premise-mangler-hash-in-heroes.hero prints these as decimals; the
+    # mangler renders them hex. Both come from one polynomial.
+    assert instance("map<i64, str>") == hex(typehash_check("map<i64, str>"))
+
+    # The two renderings that would collide under a readable suffix
+    # must not collide here.
+    assert instance("pair<i64, str_x>") != instance("pair<i64_str, x>")
+
+function typehash_check(rendered: str) -> i64
+    h: i64 @ 0
+
+    for i in range(from: 0, to: len(rendered))
+        h @ (h * 131 + to_i64(rendered[i]).must()) % 2147483647
+
+    return h
+
+test "hex renders zero, small, and multi-digit values the way C reads them"
+    assert hex(0) == "0"
+    assert hex(10) == "a"
+    assert hex(255) == "ff"
+    assert hex(4096) == "1000"
+
+test "names collide with nothing: library capture, sanitised slots, foreign fields"
+    # A built-in name belongs to the library module whatever module asks.
+    assert function_name(module: "geom", name: "sort") == "h_" + source.LIBRARY_MODULE + "_sort"
+    assert function_name(module: "geom", name: "dist2") == "h_geom_dist2"
+
+    # $ drops, the index disambiguates.
+    assert slot(index: 5, name: "$i") == "h5_i"
+    assert slot(index: 2, name: "cost") == "h2_cost"
+
+    # A header's field is spelled as the header spells it.
+    assert field("default") == "f_default"
+    assert field_of(foreign: true, name: "r") == "r"
+    assert tag_of(ty: "h_m_Tok", case_name: "plus") == "h_m_Tok_tag_plus"
+    assert case_type(ty: "h_m_Tok", case_name: "word") == "h_m_Tok_c_word"
+    assert out_param(index: 0, name: "l") == "ph0_l"
+    assert test_name(module: "geom", index: 2) == "h_geom_test2"

@@ -1,0 +1,288 @@
+# WHO is in a translation unit, and WHAT it must declare — the
+# selection half of the per-module path (panel 093; split out of
+# emit_unit at M-separate-compilation step 6, when the two answers it
+# owes took that file past §11's 300 lines).
+#
+# Nothing here writes a byte of output. It answers three questions and
+# the printer beside it asks all three:
+#
+#   whole_of      the tables every TU shares, built once per BUILD
+#   members       what this TU defines, and what it must prototype
+#   declared_reach  the types those two make C spell
+#
+# The split is the one §11 asks for: a reader who wants to know why a
+# TU contains what it contains reads this file, and a reader who wants
+# to know what a TU looks like reads unit.
+
+use ast
+use source
+use check/table
+use check/state
+use ir/containers
+use emit
+use emit/ctype
+use emit/types
+
+# The tables every TU shares, built ONCE for the whole build.
+#
+# Every field here is a function of the PROGRAM and not of the module,
+# so a per-TU rebuild computes the same answer 157 times for the
+# compiler's own source. That is not a small waste: `with_options`
+# walks the whole interned type arena and hashes a content key per
+# fallible type, `with_functions` walks every slot and every value of
+# every function, and `shown_fused` walks the program again for the
+# library's reachable half. Panel 093 R6 is what makes the sharing
+# literally true rather than approximately: a synthetic name is a hash
+# of its type's content, so it does not merely happen to agree across
+# TUs, it cannot differ.
+record Whole
+    names: ctype.Names
+    # The fused unit's own selection, whole-program: `members` filters
+    # it per module rather than recomputing it.
+    shown: [i64]
+    # Declaration index -> function index, for ORDINARY functions only.
+    # A call names its callee by declaration; a TU has to turn that into
+    # the function whose prototype it owes, and a linear search per call
+    # is what `instance_index` already costs for the generic ones.
+    by_decl: {i64: i64}
+
+function whole_of(p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> Whole
+    names: ctype.Names @ ctype.new_names(s, decls)
+    names @ ctype.with_options(names, c: c, s: s, decls: decls)
+    names @ ctype.with_functions(names, c: c, s: s, decls: decls, p: p)
+    by_decl: {i64: i64} @ {}
+    index: i64 @ 0
+
+    for f in p.functions
+        if f.instance.len() == 0
+            by_decl[f.decl] @ index
+        index @ index + 1
+
+    return Whole(names: names, shown: emit.shown_fused(p, s), by_decl: by_decl)
+
+# What one TU emits, and what it merely declares.
+#
+# `defined` is this module's own functions plus the instances they
+# reach — its bodies. `needed` is `defined` plus every ordinary
+# function it CALLS or takes the address of: exactly the prototypes it
+# owes and no more.
+#
+# The first draft prototyped every function in the program, which is
+# the shape panel 093 R3 is written about — and a prototype names
+# TYPES: the root TU carried `h_source_open(h_source_InputFile ...)`
+# beside no typedef for `InputFile`, 20 errors and exit 2 on a correct
+# program (measured 2026-08-25, the first per-module self-build after
+# the type sections were trimmed). R3's guarantee survives untouched,
+# because it rests on the DECLARING TU compiling its own prototype
+# beside its own definition — and every function a TU defines is in
+# `needed` by construction.
+record Members
+    defined: [i64]
+    needed: [i64]
+
+# The function indices a module's TU defines: its own, then the
+# instances they reach. `taken` is keyed by function index; the
+# frontier carries indices whose calls are still to be walked.
+function members(module: str, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], shown: [i64], by_decl: {i64: i64}) -> Members
+    taken: {i64: bool} @ {}
+    declared: {i64: bool} @ {}
+    frontier: [i64] @ []
+
+    # Seeded from the FUSED unit's own selection, filtered to this
+    # module: for an author module that is exactly its functions, and
+    # for the library it is the functions the program reaches — the
+    # same pruning the fused unit applies, so the library TU defines
+    # what the program calls and not its whole catalogue.
+    for at in shown
+        f = p.functions[at]
+
+        if f.instance.len() == 0 && source.component_at(s, decls[f.decl].name.start) == module
+            taken[at] @ true
+            frontier @ frontier.push(at)
+
+    while frontier.len() > 0
+        at = frontier[frontier.len() - 1]
+        frontier @ frontier.slice(from: 0, to: frontier.len() - 1)
+        f = p.functions[at]
+
+        for blk in f.blocks
+            for inst in blk.insts
+                match inst.op
+                    .call cl =>
+                        instance: [i64] @ []
+                        on_copy = f.call_instances[inst.span.start]
+
+                        if !on_copy.is_err()
+                            instance @ on_copy.must()
+                        else
+                            recorded = c.instantiations[inst.span.start]
+
+                            if !recorded.is_err()
+                                instance @ recorded.must()
+
+                        match cl.callee
+                            .heroes_fn hf =>
+                                if instance.len() > 0
+                                    found = instance_index(p, decl: hf.decl, instance: instance)
+
+                                    if !found.is_err() && taken[found.must()].is_err()
+                                        taken[found.must()] @ true
+                                        frontier @ frontier.push(found.must())
+                                else
+
+                                    # An ordinary callee: its body is
+                                    # another TU's, its prototype is this
+                                    # TU's.
+                                    ordinary = by_decl[hf.decl]
+
+                                    if !ordinary.is_err()
+                                        declared[ordinary.must()] @ true
+                            .extern_fn | .builtin_fn | .indirect => instance @ instance
+                    # A function VALUE names its target without calling
+                    # it, and C needs the name declared just the same —
+                    # `xs.fold(0, add)` puts `&h_m_add` in a temporary.
+                    # The checker refuses a generic function as a value,
+                    # so a target here is always an ordinary one.
+
+                    .func_ref fr =>
+                        match fr.callee
+                            .heroes_fn hf =>
+                                ordinary = by_decl[hf.decl]
+
+                                if !ordinary.is_err()
+                                    declared[ordinary.must()] @ true
+                            .extern_fn | .builtin_fn | .indirect => continue
+                    .lit | .load | .store | .push_owned | .unary | .binary | .cast         => continue
+                    .field | .index | .map_get | .len_of | .tag_of | .payload | .construct => continue
+                    .copy_out | .abort_op | .incref | .decref | .hole | .missing           => continue
+
+    # ORDER: ascending function index — the emitted order must be a
+    # function of the program, not of the worklist, and the double-emit
+    # check on the build path reads it.
+    for at in keys(taken)
+        declared[at] @ true
+
+    return Members(defined: sort(keys(taken)), needed: sort(keys(declared)))
+
+# The instance of `decl` at exactly these type arguments, if the mono
+# pass created one.
+function instance_index(p: containers.Program, decl: i64, instance: [i64]) -> i64?
+    index: i64 @ 0
+
+    for f in p.functions
+        if f.decl == decl && same_list(a: f.instance, b: instance)
+            return ok(index)
+        index @ index + 1
+
+    return fail("none", "no such instance")
+
+function same_list(a: [i64], b: [i64]) -> bool
+    if a.len() != b.len()
+        return false
+    at: i64 @ 0
+
+    while at < a.len()
+        if a[at] != b[at]
+            return false
+        at @ at + 1
+
+    return true
+
+# The types a TU must DECLARE, closed the way C reads them rather than
+# the way the arena holds them.
+#
+# `table.contained` stops at a declared type on purpose: it
+# answers what a type HOLDS — `[Point]` holds a `Point` — and a
+# `Point` holds nothing further as far as the arena is concerned. C
+# disagrees twice over. `struct h_m_Point` SPELLS its fields, so the
+# field's own typedef must be there; and the generated `h_m_Point_hash`
+# CALLS `h_diag_Kind_hash` for a `Kind` field, so the field's per-type
+# functions must be there too. Measured the other way first: 14 errors
+# in `clilex.c`, `call to undeclared function 'h_diag_Kind_hash'`
+# (2026-08-25, the per-module self-build).
+#
+# So a wanted declaration drags its fields, its cases' fields, and
+# whatever those contain — to a fixpoint, because a field is a
+# declaration with fields of its own.
+function declared_reach(c: state.Checked, decls: [ast.Decl], seed: {i64: bool}) -> {i64: bool}
+    out: {i64: bool} @ seed
+
+    # ORDER: none — a worklist whose output is a SET, and every reader
+    # below asks it a membership question.
+    frontier: [i64] @ keys(out)
+
+    while frontier.len() > 0
+        id = frontier[frontier.len() - 1]
+        frontier @ frontier.slice(from: 0, to: frontier.len() - 1)
+        next: [i64] @ table.contained(c.types, id)
+        written_ids: [i64] @ []
+
+        match table.get(c.types, id)
+            .named n    => written_ids @ fields_written(decls, decl: n.decl)
+            .case_ty vc => written_ids @ fields_written(decls, decl: vc.decl)
+            # `contained` answers [] for a FIXED array, deliberately —
+            # `i32[4]` is one C member and the arena has nothing to walk
+            # into. C reads it the other way: `Matrix projection[2]`
+            # spells `Matrix`, and the aggregate's `_hash` calls
+            # `h_x_Matrix_hash(&v->projection[0])` per element. Measured
+            # the other way first, on the FFI corpus: `call to undeclared
+            # function 'h_ffiacarraymember_Matrix_hash'`, 6 errors
+            # (2026-08-25, the net's `ffi-a-c-array-member`).
+
+            .fixed fx                                                 => next @ next.push(fx.element)
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => written_ids @ written_ids
+            .array | .map | .fallible | .function_ty                  => written_ids @ written_ids
+            .failure | .generic | .error                              => written_ids @ written_ids
+
+        for written in written_ids
+            found = state.written_type(c, written)
+
+            if !found.is_err()
+                next @ next.push(found.must())
+
+        for ty in next
+            if out[ty].is_err()
+                out[ty] @ true
+                frontier @ frontier.push(ty)
+
+    return out
+
+# Every type a declaration writes down: a record's fields, and every
+# field of every case of a variant. Written-type indices, which the
+# caller resolves — the same two-step `emit_descriptor_set` takes.
+function fields_written(decls: [ast.Decl], decl: i64) -> [i64]
+    out: [i64] @ []
+
+    for field in types.fields_of(decls, decl: decl)
+        out @ out.push(field.ty)
+
+    for one_case in types.cases_of(decls, decl: decl)
+        for field in one_case.fields
+            out @ out.push(field.ty)
+
+    return out
+
+# A program filtered to one TU's members. Declarations, types and the
+# string table stay whole — every index a kept function carries still
+# resolves — and only `functions` shrinks.
+function tu_program(p: containers.Program, keep: [i64]) -> containers.Program
+    out: containers.Program @ p
+    kept: [containers.Function] @ []
+
+    for at in keep
+        kept @ kept.push(p.functions[at])
+
+    out.functions @ kept
+    return out
+
+# Every function index in a program — the per-TU walk's own list, since
+# a TU's program IS its members.
+function all_of(p: containers.Program) -> [i64]
+    out: [i64] @ []
+    index: i64 @ 0
+
+    for _ in p.functions
+        out @ out.push(index)
+        index @ index + 1
+
+    return out

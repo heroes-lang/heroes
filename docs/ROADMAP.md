@@ -306,7 +306,7 @@ so under CLAUDE.md §14 it is a different milestone rather than an area annexed 
 one that already exists.
 
 **What it delivers.** Today a module name is one word and nesting is refused by
-name: `selfhost/parse_use.hero:47`, `error[module_path_has_no_parts]` — *"there
+name: `selfhost/parse/use_line.hero:47`, `error[module_path_has_no_parts]` — *"there
 is no nesting: every `.hero` a program reads sits beside the file that names
 it"*. This milestone decides what replaces that refusal — the spelling of a
 `use` that names a path, **the qualifier it binds** (from `use shapes/geom`, is

@@ -1,0 +1,111 @@
+# A type, written the way the author would have written it.
+# Port of crates/heroes/src/types/render.rs.
+#
+# Every mismatch message goes through this, and it prints SURFACE syntax —
+# `[{str: Point}?]`, not a tree. design.md §4.17: an error carries what is
+# needed to fix the program, and a type spelled in a notation the language
+# does not have fails that test.
+#
+# A `record` or `variant` prints its declared name, which is why this
+# needs the declarations: nominal types are names, and the name lives in
+# the declaration list.
+
+use source
+use ast
+use parse
+use widths
+use check/table
+
+# `generics` names the type parameters of the function the message is
+# about (§4.12 keeps generics on functions, and a message is always about
+# one), so `A` prints as `A`. An empty list is legal and prints `#0`,
+# which only happens where a caller outside the checker has no function
+# in hand.
+function render_ty(t: table.Types, s: source.Source, decls: [ast.Decl], id: i64, generics: [str]) -> str
+    return match table.get(t, id)
+        .int_ty k => widths.int_name(k.kind)
+        .float_ty k => widths.float_name(k.kind)
+        .bool => "bool"
+        .str => "str"
+        .ptr => "ptr"
+        .cstr => "cstr"
+        .unit => "()"
+        .fixed x => render_ty(t, s, decls, x.element, generics) + "[" + x.length.to_str() + "]"
+        .array a => "[" + render_ty(t, s, decls, a.element, generics) + "]"
+        .map m => "{" + render_ty(t, s, decls, m.key, generics) + ": " + render_ty(t, s, decls, m.value, generics) + "}"
+        .fallible o => render_ty(t, s, decls, o.payload, generics) + "?"
+        .function_ty f =>
+            rendered: [str] @ []
+
+            for p in table.params_of(t, f.params)
+                rendered @ rendered.push(render_ty(t, s, decls, p, generics))
+
+            "(function(" + rendered.join(", ") + ") -> " + render_ty(t, s, decls, f.result, generics) + ")"
+        .named n => source.span_text(s, decls[n.decl].name)
+        # `Token.num` — a case is not writable as a type, and pretending it
+        # is would send the reader looking for a syntax that does not
+        # exist.
+
+        .case_ty vc => case_name(s, decls, decl: vc.decl, at: vc.at)
+        .failure    => "the error (`code`, `msg`)"
+        # A type parameter prints as it was declared: `A`, not `#0`.
+
+        .generic g =>
+            if g.at < generics.len()
+                generics[g.at]
+            else
+                "#" + g.at.to_str()
+        .error => "?"
+
+function case_name(s: source.Source, decls: [ast.Decl], decl: i64, at: i64) -> str
+    name = source.span_text(s, decls[decl].name)
+
+    return match decls[decl].kind
+        .variant_decl v => name + "." + source.span_text(s, v.cases[at].name)
+        .constant_decl | .function_decl | .record_decl | .test_decl => name
+
+## Tests
+
+# The fixture's text is the name table; parse builds the real decls so
+# the nominal names come from a genuine tree.
+function fixture(text: str) -> parse.ParseOutput
+    return parse.parse(text)
+
+test "a compound type prints as the author would write it"
+    p = fixture("record Point\n    x: i64\n")
+    s = source.new_source(name: "t.hero", text: "record Point\n    x: i64\n")
+    t: table.Types @ table.new_types()
+    point = table.intern(@t, .named(decl: 0))
+    keyed = table.intern(@t, .map(key: table.str_ty(t), value: point))
+    maybe = table.intern(@t, .fallible(payload: keyed))
+    xs = table.intern(@t, .array(element: maybe))
+    none: [str] = []
+    assert render_ty(t, s, p.decls, xs, none) == "[{str: Point}?]"
+    assert render_ty(t, s, p.decls, table.unit_ty(t), none) == "()"
+    fixed = table.intern(@t, .fixed(element: table.int_ty_id(t), length: 4))
+    assert render_ty(t, s, p.decls, fixed, none) == "i64[4]"
+
+test "a function type keeps its mandatory parentheses"
+    p = fixture("record Point\n    x: i64\n")
+    s = source.new_source(name: "t.hero", text: "record Point\n    x: i64\n")
+    t: table.Types @ table.new_types()
+    ps: [i64] = [table.int_ty_id(t), table.str_ty(t)]
+    f = table.intern_function(@t, ps, result: table.bool_ty(t))
+    none: [str] = []
+    assert render_ty(t, s, p.decls, f, none) == "(function(i64, str) -> bool)"
+
+test "a case prints its variant's dot spelling, a generic its own name"
+    text = "variant Token\n    num\n        v: i64\n    plus\n"
+    p = fixture(text)
+    s = source.new_source(name: "t.hero", text: text)
+    t: table.Types @ table.new_types()
+    num = table.intern(@t, .case_ty(decl: 0, at: 0))
+    plus = table.intern(@t, .case_ty(decl: 0, at: 1))
+    none: [str] = []
+    assert render_ty(t, s, p.decls, num, none) == "Token.num"
+    assert render_ty(t, s, p.decls, plus, none) == "Token.plus"
+    a = table.intern(@t, .generic(at: 0))
+    names: [str] = ["A", "B"]
+    assert render_ty(t, s, p.decls, a, names) == "A"
+    assert render_ty(t, s, p.decls, a, none) == "#0"
+    assert render_ty(t, s, p.decls, table.error_ty(t), none) == "?"

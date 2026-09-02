@@ -27,13 +27,13 @@ use source
 use parse
 use diag
 use resolved
-use resolve_state
-use resolve_top
-use resolve_decls
-use resolve_cycles
+use resolve/state
+use resolve/top
+use resolve/decls as resolve_decls
+use resolve/cycles
 
 function resolve(a: ast.Ast, s: source.Source, decls: [ast.Decl], uses: [ast.Use]) -> resolved.Resolved
-    r: resolve_state.Resolver @ resolve_state.new_resolver(expr_count: a.exprs.len(), type_count: a.types.len())
+    r: state.Resolver @ state.new_resolver(expr_count: a.exprs.len(), type_count: a.types.len())
 
     # A flat scan of the arena, not a walk: a hole suspends the unused rule
     # wherever it is, including inside a construct the walk gives up on.
@@ -49,7 +49,7 @@ function resolve(a: ast.Ast, s: source.Source, decls: [ast.Decl], uses: [ast.Use
         if is_hole
             resolved.note_hole(@r.out, source.module_at(s, expr.span.start))
 
-    resolve_top.collect(@r, s, decls, uses)
+    top.collect(@r, s, decls, uses)
     index: i64 @ 0
 
     for decl in decls
@@ -62,13 +62,13 @@ function resolve(a: ast.Ast, s: source.Source, decls: [ast.Decl], uses: [ast.Use
         resolve_decls.declaration(@r, a, s, decls, index)
         index @ index + 1
 
-    resolve_top.unused_uses(@r, s, uses)
-    resolve_state.report_unused(@r, s)
+    top.unused_uses(@r, s, uses)
+    state.report_unused(@r, s)
 
     # Last, because it reads `uses` and `uses` is only complete once every
     # body has been walked: a definitional cycle is a fact about the
     # finished table, not about any one declaration.
-    resolve_cycles.report(@r.out, a, s, decls)
+    cycles.report(@r.out, a, s, decls)
 
     # Within the pass, source order. Diagnostics from earlier stages stay
     # ahead of these (parse's rule): grouped by the stage that can explain

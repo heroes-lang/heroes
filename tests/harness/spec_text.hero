@@ -207,7 +207,7 @@ function without_prose_parentheses(cs: [str]) -> [str]
 
 # Every distinct character above ASCII in `text`, sorted, one entry each.
 #
-# This exists for one claim in one file: `selfhost/measure_pieces.hero` reads
+# This exists for one claim in one file: `selfhost/measure/pieces.hero` reads
 # a letter as `A-Z a-z` and a digit as `0-9`, where the Rust it ports asks
 # Unicode. The two agree only while the spec's non-ASCII characters are
 # punctuation, so this is that premise's falsifier — and it pins the SET

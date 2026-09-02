@@ -1,0 +1,292 @@
+# A constant value as C text: the macro its width asks for (design.md
+# §3.1, §4.14; panels 020, 042). Port of crates/heroes/src/emit/literal.rs.
+#
+# Everything here turns a value the compiler already knows into the
+# characters clang will read; nothing here can abort, branch or
+# allocate.
+#
+# A bare -9223372036854775808 warns because C parses it as a negation
+# of an out-of-range positive, and a bare decimal above INT32_MAX is
+# only long on LP64 — so a macro is both the portable and the
+# warning-free spelling, and the macro has to match the width.
+# UINT64_C for the unsigned widths is not tidiness:
+# 18446744073709551615 through INT64_C is a constant C cannot
+# represent.
+#
+# THE FLOAT DIVERGENCE IS CLOSED, and the way out was a FOURTH one the
+# filed item had not listed (panel 085 R6; DECIDE.md's entry of
+# 2026-08-17 offered three: implement decimal->binary64 in Heroes over
+# i64 arithmetic, keep selfhost float-free, or make both emitters pass
+# the text through).
+#
+# The fourth is the one this language is built on: §1.11 says everything
+# comes from C, and C already owns a correctly-rounded decimal->binary64
+# — `atof`. So the port does not parse the digits and does not
+# reinterpret any bytes. It asks C for the VALUE, then derives `%a`'s
+# three fields from that value with f64 arithmetic that is exact at
+# every step: halving a normal, doubling a subnormal, `m - 1.0` for
+# `m` in [1,2) (Sterbenz), and a mantissa scaled by a power of two
+# below 2^52.
+#
+# Measured before and after, bootstrap C against port C over 127
+# programs: 19 differed on float spelling, and the whole class is one
+# after this file. The two compilers now write `0x1.4p+1` for 2.5 on
+# both sides.
+
+use check/contextual
+use widths
+use ir
+use emit/mangle
+
+extern "stdlib.h"
+    function atof(text: cstr) -> f64
+
+# A constant, in the C spelling its own width asks for. The width comes
+# from the caller (the instruction's own type, which the checker
+# recorded) — the constant emitter cannot know it and must not guess.
+function constant_text(value: ir.IntConst, kind: widths.IntKind?, strings: [str]) -> str
+    match value
+        .int_const ic =>
+            # INT64_MIN by name: the macro route warns.
+            if ic.value.negative
+                min_magnitude: u64 = 9223372036854775808
+
+                if ic.value.magnitude == min_magnitude
+                    return "INT64_MIN"
+            unsigned: bool @ false
+
+            if !kind.is_err()
+                match kind.must()
+                    .u8 | .u16 | .u32 | .u64 => unsigned @ true
+                    .i8 | .i16 | .i32 | .i64 => unsigned @ unsigned
+            sign: str @ ""
+
+            if ic.value.negative
+                sign @ "-"
+
+            if unsigned
+                return "UINT64_C(" + sign + ic.value.magnitude.to_str() + ")"
+            return "INT64_C(" + sign + ic.value.magnitude.to_str() + ")"
+        .bool_const bc =>
+            if bc.value
+                return "true"
+            return "false"
+        # NULL would need a header; the cast needs none and is the same
+        # value.
+
+        .null_ptr => return "((void *)0)"
+        # Hex, per the header — never the spelled text.
+
+        .float_const fc => return hex_float(fc.text)
+        # A static block, laid out by clang: refcount -1 means "never
+        # freed", so a literal costs no allocation and decrefing one is
+        # a no-op. CONTENT-NAMED since panel 093 R6, like the synthetic
+        # typedefs: hero_str_<hash of the text>, so the name is a
+        # function of the literal alone — stable across TUs and builds,
+        # where the old program-wide index shifted whenever an earlier
+        # module gained a literal. Two different texts hashing alike
+        # are two static definitions of one name — loud.
+
+        .str_const sc => return "HERO_STR_LIT(hero_str_" + mangle.instance(strings[sc.at]) + ")"
+
+    return ""
+
+# 2^52, the scale that turns a normal's fraction into its mantissa field.
+constant TWO_52: f64
+    4503599627370496.0
+
+# `_` is a digit separator on both sides of the point (`lexer/number.hero`
+# accepts one between any two digits), and C's `atof` stops at the first
+# one — so it comes off before the value is asked for. The bootstrap paid
+# for this in the other direction on the same day: Rust's parser does not
+# take a separator either, and `unwrap_or(0.0)` made `x: f64 @ 1_0.5`
+# print **0.0** at exit 0 (`ir/exprs.rs`, repaired 2026-08-18).
+function separatorless(text: str) -> str
+    out: str @ ""
+
+    for c in text.chars()
+        if c != "_"
+            out @ out + c
+
+    return out
+
+# Thirteen hex digits, which hold all 52 mantissa bits exactly.
+function hex13(mantissa: i64) -> str
+    out: str @ ""
+    v: i64 @ mantissa
+    k: i64 @ 0
+
+    while k < 13
+        d = v % 16
+        out @ "0123456789abcdef".slice(from: d, to: d + 1) + out
+        v @ v / 16
+        k @ k + 1
+
+    return out
+
+function without_trailing_zeros(digits: str) -> str
+    last: i64 @ digits.len()
+
+    while last > 0 && digits.slice(from: last - 1, to: last) == "0"
+        last @ last - 1
+
+    return digits.slice(from: 0, to: last)
+
+# A double as a C11 hexadecimal floating literal. Exact, warning-free,
+# and independent of every decimal-rendering question — the bootstrap's
+# own words for the same routine.
+#
+# The order of the tests is forced by the language and not by taste:
+# `nan` first, because `<` on one ABORTS (spec:155), and `1.0 / x` for
+# the sign of a zero, because that is the only test this language has
+# for it — `+0.0` and `-0.0` are `==`.
+function hex_float(text: str) -> str
+    x = atof(text: separatorless(text).cstr())
+
+    if x != x
+        return "(0.0 / 0.0)"
+
+    if x == 0.0
+        if 1.0 / x < 0.0
+            return "-0x0p+0"
+        return "0x0p+0"
+    negative: bool @ false
+    mag: f64 @ x
+
+    if x < 0.0
+        negative @ true
+        mag @ 0.0 - x
+    sign: str @ ""
+
+    if negative
+        sign @ "-"
+
+    # An infinity: doubling and halving both leave it alone. A literal
+    # can reach one — enough digits and `atof` says so, exactly as the
+    # bootstrap's parser does.
+    if mag * 0.5 == mag
+        if negative
+            return "(-HUGE_VAL)"
+        return "HUGE_VAL"
+
+    # |x| = m * 2^e with m in [1, 2). Halving a normal is exact and
+    # doubling a subnormal is exact, so neither loop loses a bit.
+    e: i64 @ 0
+    m: f64 @ mag
+
+    while m >= 2.0
+        m @ m * 0.5
+        e @ e + 1
+
+    while m < 1.0
+        m @ m * 2.0
+        e @ e - 1
+
+    lead: str @ "1"
+    exponent: i64 @ e
+    mantissa: i64 @ 0
+
+    if e < 0 - 1022
+        # Subnormal: the field is the value scaled to 2^-1074, and `%a`
+        # writes it with a zero lead at the fixed exponent -1022.
+        lead @ "0"
+        exponent @ 0 - 1022
+        scale: f64 @ 1.0
+        k: i64 @ 0
+
+        while k < e + 1074
+            scale @ scale * 2.0
+            k @ k + 1
+
+        mantissa @ to_i64(m * scale).must()
+    else
+        mantissa @ to_i64((m - 1.0) * TWO_52).must()
+    fraction: str @ ""
+    trimmed = without_trailing_zeros(hex13(mantissa))
+
+    if trimmed.len() > 0
+        fraction @ "." + trimmed
+    exponent_sign: str @ "+"
+    exponent_size: i64 @ exponent
+
+    if exponent < 0
+        exponent_sign @ "-"
+        exponent_size @ 0 - exponent
+    return sign + "0x" + lead + fraction + "p" + exponent_sign + exponent_size.to_str()
+
+## Tests
+
+test "the macro matches the width, and the minimum is spelled by name"
+    none: widths.IntKind? = fail("none", "no width")
+    no_strings: [str] = []
+    ziggy_strings: [str] = ["a", "b", "c", "ziggy"]
+    plain = constant_text(
+        .int_const(value: contextual.LitValue(negative: false, magnitude: 42)),
+        kind: none,
+        strings: no_strings
+    )
+    assert plain == "INT64_C(42)"
+    negative = constant_text(
+        .int_const(value: contextual.LitValue(negative: true, magnitude: 5)),
+        kind: none,
+        strings: no_strings
+    )
+    assert negative == "INT64_C(-5)"
+    min_mag: u64 = 9223372036854775808
+    lowest = constant_text(
+        .int_const(value: contextual.LitValue(negative: true, magnitude: min_mag)),
+        kind: none,
+        strings: no_strings
+    )
+    assert lowest == "INT64_MIN"
+    big: u64 = 18446744073709551615
+    top = constant_text(
+        .int_const(value: contextual.LitValue(negative: false, magnitude: big)),
+        kind: ok(.u64),
+        strings: no_strings
+    )
+    assert top == "UINT64_C(18446744073709551615)"
+    assert constant_text(.bool_const(value: true), kind: none, strings: no_strings) == "true"
+    assert constant_text(.null_ptr, kind: none, strings: no_strings) == "((void *)0)"
+    assert constant_text(.str_const(at: 3), kind: none, strings: ziggy_strings) == "HERO_STR_LIT(hero_str_6bb5e50a)"
+
+test "a float literal is hex, and the bootstrap's own rows are reproduced"
+    # Every expectation here was read off the bootstrap's emitted C for
+    # the same literal, not derived on paper (panel 085 R6).
+    assert hex_float("0.0") == "0x0p+0"
+    assert hex_float("2.5") == "0x1.4p+1"
+    assert hex_float("0.5") == "0x1p-1"
+    assert hex_float("1.0") == "0x1p+0"
+    assert hex_float("1.5") == "0x1.8p+0"
+    assert hex_float("0.25") == "0x1p-2"
+    assert hex_float("16.0") == "0x1p+4"
+    assert hex_float("2.0") == "0x1p+1"
+    assert hex_float("0.1") == "0x1.999999999999ap-4"
+    assert hex_float("1.9") == "0x1.e666666666666p+0"
+    assert hex_float("7.9") == "0x1.f99999999999ap+2"
+    assert hex_float("10.0") == "0x1.4p+3"
+    assert hex_float("0.133793") == "0x1.1202107b78466p-3"
+    assert hex_float("0.0669") == "0x1.1205bc01a36e3p-4"
+
+test "the separator comes off, so the value is the number that was written"
+    # The shape that printed 0.0 in the bootstrap for four days.
+    assert hex_float("1_0.5") == hex_float("10.5")
+    assert hex_float("1.5_5") == hex_float("1.55")
+    assert hex_float("1_000.000_1") == hex_float("1000.0001")
+
+test "the signed zero and the subnormal, which are where a hex renderer dies"
+    # A `.hero` literal can be neither — the minus is an operator and
+    # there are no exponents — but the RENDERER is handed values, and
+    # the bootstrap has a row for each, so each is checked here directly.
+    assert hex_float("-0.0") == "-0x0p+0"
+
+    # 2^-1074, the smallest subnormal: exponent field 0, mantissa field
+    # 1, which `%a` writes with a zero lead at the fixed exponent -1022.
+    assert hex_float("4.9406564584124654e-324") == "0x0.0000000000001p-1022"
+
+    # 2^-1022, the smallest NORMAL, is the row right beside it and takes
+    # the other branch.
+    assert hex_float("2.2250738585072014e-308") == "0x1p-1022"
+
+    # And an infinity, which a long enough literal really can reach.
+    assert hex_float("1" + "0".repeat(400) + ".0") == "HUGE_VAL"

@@ -1,0 +1,303 @@
+# heroes parse and heroes fmt — the two commands whose whole input is
+# the tree (design.md §3.5, §4.15). Port of
+# crates/heroes-cli/src/commands/{parse,fmt}.rs, one module because
+# each is a page and they share the refusal that matters.
+#
+# BOTH REFUSE A FILE WITH DIAGNOSTICS before doing their work: a tree
+# built out of recovery guesses reads like a fact and is not one, and
+# a formatter that proceeds rewrites the author's program into the
+# parser's guess about it — the one thing a formatter must never do.
+
+use source
+use source_extent
+use diag
+use parse
+use print/dump
+use print/fmt
+use cli/table as cli_table
+use cli/argv
+use cli/io
+
+# heroes parse <file.hero> [--dump-ast]: without the flag a syntax
+# check, silent on success; with it the tree — but only when the file
+# is clean.
+function run_parse(s: source.Source, inv: argv.Invocation) -> cli_table.Exit
+    out = parse.parse_source(s)
+
+    for d in out.diagnostics
+        io.eprint(text: diag.render_line(d, s))
+
+    if out.diagnostics.len() > 0
+        return .diagnostics_exit
+
+    if argv.has(inv, spelling: "--dump-ast")
+        io.print_artifact(text: dump.dump_ast(out.tree, s, out.uses, out.decls))
+    return .ok_exit
+
+# heroes fmt <file.hero> [--in-place]: stdout by default like gofmt;
+# --in-place rewrites the file and prints nothing — and an
+# already-canonical file is NOT rewritten, so its mtime does not move.
+function run_fmt(path: str, s: source.Source, inv: argv.Invocation) -> cli_table.Exit
+    out = parse.parse_source(s)
+
+    if out.diagnostics.len() > 0
+        for d in out.diagnostics
+            io.eprint(text: diag.render_line(d, s))
+
+        io.eprint(text: "error: refusing to format a file with diagnostics")
+        return .diagnostics_exit
+    formatted = fmt.format_file(out.tree, s, out.comments, out.uses, out.decls)
+    refusal = refuse_output_the_formatter_broke(path: path, original: source_extent.user_text(s), formatted: formatted)
+
+    if !refusal.is_err()
+        io.eprint(text: "error: " + refusal.must())
+        io.eprint(text: "error: this is a compiler bug — `" + path + "` was NOT changed")
+        return .failed_exit
+
+    if !argv.has(inv, spelling: "--in-place")
+        io.print_artifact(text: formatted)
+        return .ok_exit
+
+    if formatted == source_extent.user_text(s)
+        return .ok_exit
+    written = write_file(path: path, text: formatted)
+
+    if written.is_err()
+        io.eprint(text: "error: cannot write `" + path + "`")
+        return .failed_exit
+    return .ok_exit
+
+# THE OUTPUT GUARD. `fmt` checked that its INPUT parsed and never looked
+# at what it wrote, so it deleted seven arms out of a compiler source
+# file at exit 0 (docs/defects/003, the third instance of this class
+# after panels 014 and 060/061 — every one found by a person).
+#
+# THREE CHECKS, and they are three different properties. The output must
+# PARSE, because a formatter that emits source the parser refuses has
+# produced a non-program. Formatting it again must give the same TEXT,
+# because a canonical form that is not a fixpoint is not canonical. And
+# it must hold the same TREE — which is the one the other two cannot do:
+# output that parses and is a fixpoint can still mean something else.
+# Panel 061's deleted `partial`, panel 060's hoisted `record`, and a
+# record-field remark promoted to documentation are all of that kind.
+#
+# The third check is `assert_canonical` — `dump(text) == dump(fmt(text))`
+# — which the Rust bootstrap had, the port never brought over, and
+# `dump.hero` went on claiming as live for a week. It is here now.
+#
+# HOW THE TWO TREES ARE MADE COMPARABLE, because they are not by default:
+# the input reaches `run_fmt` parsed with the WHOLE module graph plus the
+# library appended, while the output is one file. So this re-parses the
+# ROOT FILE'S OWN TEXT standalone and compares that against the output
+# parsed standalone — one file against one file, both named `path` so
+# `dump_ast`'s first line agrees.
+#
+# Two things make the dump invariant under legitimate formatting, both
+# measured rather than assumed: `bodies.hero:130` runs an integer
+# literal through `canonical_int`, so `fmt`'s one literal rewrite
+# (`0xFF` -> `0xff`) dumps identically; and the dump carries names,
+# structure and doc comments, never spans or columns.
+#
+# Every failure is the COMPILER's (§7): exit 2, author's file untouched.
+function refuse_output_the_formatter_broke(path: str, original: str, formatted: str) -> str?
+    after = source.new_source(name: path, text: formatted)
+    reparsed = parse.parse(formatted)
+
+    if reparsed.diagnostics.len() > 0
+        return ok("`fmt` produced source that does not parse: " + diag.render_line(reparsed.diagnostics[0], after))
+    twice = fmt.format_file(reparsed.tree, after, reparsed.comments, reparsed.uses, reparsed.decls)
+
+    if twice != formatted
+        return ok("`fmt` is not a fixpoint on its own output for `" + path + "`")
+    before = parse.parse(original)
+
+    if before.diagnostics.len() > 0
+        # The root file alone does not parse, which `run_fmt` has already
+        # ruled out for the whole compilation — so there is no tree to
+        # compare against and the two checks above stand on their own.
+        return fail("clean", "the root file alone does not parse")
+    was = dump.dump_ast(before.tree, source.new_source(name: path, text: original), before.uses, before.decls)
+    now = dump.dump_ast(reparsed.tree, after, reparsed.uses, reparsed.decls)
+
+    if was != now
+        return ok(
+            "`fmt` changed the TREE of `" + path + "` — the output parses and is a fixpoint, and it is a DIFFERENT PROGRAM"
+        )
+    return fail("clean", "the output parses, is a fixpoint, and holds the same tree")
+
+## Tests
+
+test "parse checks silently, dumps only a clean tree, and fmt round-trips"
+    text = "function main()\n    print(2 + (3 * 4))\n"
+    s = source.new_source(name: "t.hero", text: text)
+    inv = argv.Invocation(tag: .parse_cmd, file: ok("t.hero"), program_args: [], flags: [])
+    assert run_parse(s, inv) == .ok_exit
+
+    # A broken file exits 1 through the same door.
+    bad = source.new_source(name: "t.hero", text: "function main(\n    print(1)\n")
+    assert run_parse(bad, inv) == .diagnostics_exit
+
+    # fmt to a real file: --in-place canonicalises once, then leaves
+    # the canonical file alone.
+    messy = "function main()\n    print(2 + (3 * 4))\n"
+    _ = write_file(path: "build/selftest_fmt.hero", text: messy)
+    fs = source.new_source(name: "build/selftest_fmt.hero", text: messy)
+    in_place: [argv.FlagHit] = [argv.FlagHit(spelling: "--in-place", value: fail("none", "no value"))]
+    finv = argv.Invocation(tag: .fmt_cmd, file: ok("build/selftest_fmt.hero"), program_args: [], flags: in_place)
+    assert run_fmt(path: "build/selftest_fmt.hero", s: fs, inv: finv) == .ok_exit
+    canon = read_file("build/selftest_fmt.hero").must()
+    assert canon == "function main()\n    print(2 + 3 * 4)\n"
+
+    # And the refusal: a file with diagnostics is not touched.
+    _ = write_file(path: "build/selftest_fmt.hero", text: "function main(\n")
+    bs = source.new_source(name: "build/selftest_fmt.hero", text: "function main(\n")
+    assert run_fmt(path: "build/selftest_fmt.hero", s: bs, inv: finv) == .diagnostics_exit
+    assert read_file("build/selftest_fmt.hero").must() == "function main(\n"
+
+# §9: a verifier check gets a test that makes it FIRE, and this one
+# fires on a shape the printer still cannot spell — a `match` as the
+# LEFT operand with the expression continuing after its block. That
+# program is legal Heroes (`heroes check` exits 0 on it), so this is the
+# printer's hole and not the author's mistake. Before the guard, `fmt`
+# wrote the header alone at exit 0 and destroyed the file. When the
+# printer learns the shape, the expectation here becomes `.ok_exit` and
+# the guard keeps its job over everything else.
+# §9, and it is the case the other two guards cannot make fire. SYMPTOM:
+# `heroes fmt` deleted the blank line under a remark inside a `record`,
+# and `--dump-ast` showed a `doc` appear on the field below it — an
+# ordinary remark promoted to that field's DOCUMENTATION, which the
+# compiler reuses in `???` output, error messages and `outline`. CAUSE:
+# design.md §4.1 makes that blank line the discriminator
+# (`selfhost/cursor.hero:194-220`, `take_docs`, where `above != wanted`
+# ends the run) and `comments_before` did not know it. DATE: 2026-08-26,
+# found by panel 095's compiler-engineer.
+#
+# The point of the case is what it proves about the OTHER guards: this
+# output PARSES and IS a fixpoint. Only the tree comparison sees it.
+test "the tree check fires on output that parses and is a fixpoint and means something else"
+    # THE GUARD IS TESTED AS A PREDICATE, not through `run_fmt`, and the
+    # reason is worth writing down. This case used to hand `fmt` a
+    # `record` with a remark in it and assert the REFUSAL, because
+    # `comments_before` deleted the blank line below the comment and §4.1
+    # makes that blank the difference between a remark and the next
+    # field's documentation. That defect is fixed (`/decide` answer `4a`,
+    # `fmt.hero`'s `field_line`), so the shape no longer trips the
+    # guard — and a firing test that depends on a live defect stops firing
+    # the day the defect is repaired, which is the day it stops being a
+    # test (§9 asks for a check that FIRES, permanently).
+    #
+    # So the pair is built by hand: the same program with the blank line
+    # and without it. Both parse, both are fixpoints, and their trees
+    # differ by one `doc` — which is exactly what the third check exists
+    # to see and what the first two cannot.
+    remark = "record Point\n    x: i64\n    # a remark, not documentation for y\n\n    y: i64\n"
+    squashed = "record Point\n    x: i64\n    # a remark, not documentation for y\n    y: i64\n"
+    caught = refuse_output_the_formatter_broke(path: "t.hero", original: remark, formatted: squashed)
+    assert !caught.is_err()
+
+    # The two weaker properties really do hold on that output, which is
+    # what makes this case the only kind the third check can catch.
+    reparsed = parse.parse(squashed)
+    assert reparsed.diagnostics.len() == 0
+    ss = source.new_source(name: "t.hero", text: squashed)
+    assert fmt.format_file(reparsed.tree, ss, reparsed.comments, reparsed.uses, reparsed.decls) == squashed
+
+    # And it does NOT fire when the tree is the same: the formatter is
+    # allowed to change text, only not meaning. `0xFF` -> `0xff` is the
+    # one literal rewrite `fmt` makes, and `bodies.hero`'s
+    # `canonical_int` is why both dump identically.
+    upper = "constant MASK: i64\n    0xFF\n"
+    lower = "constant MASK: i64\n    0xff\n"
+    quiet = refuse_output_the_formatter_broke(path: "t.hero", original: upper, formatted: lower)
+    assert quiet.is_err()
+
+    # And the real command formats that record now instead of refusing it.
+    _ = write_file(path: "build/selftest_fmt_tree.hero", text: remark)
+    rs = source.new_source(name: "build/selftest_fmt_tree.hero", text: remark)
+    marks: [argv.FlagHit] = [argv.FlagHit(spelling: "--in-place", value: fail("none", "no value"))]
+    rinv = argv.Invocation(tag: .fmt_cmd, file: ok("build/selftest_fmt_tree.hero"), program_args: [], flags: marks)
+    assert run_fmt(path: "build/selftest_fmt_tree.hero", s: rs, inv: rinv) == .ok_exit
+    assert read_file("build/selftest_fmt_tree.hero").must() == remark
+
+test "the parse and fixpoint checks fire, and the input's own errors are not blamed on the compiler"
+    # A PREDICATE TEST, for the same reason as the one above. This case
+    # used to hand `fmt` a `match` as the LEFT operand with the expression
+    # continuing after its block — a form the printer could not spell —
+    # and assert exit 2. `/decide` answer `5a` settled which artifact was
+    # wrong: panel 007's Amendment B and design.md:1794 both say a long
+    # expression is broken inside brackets or not at all, so the PARSER
+    # was accepting a continuation the language does not have, and
+    # `grammar_expr.hero`'s `ends_the_expression` now refuses it. The
+    # printer owed nothing all along.
+    #
+    # So the two checks get hand-built inputs instead of a live defect.
+    good = "function f() -> i64\n    return 1\n"
+    torn = "function f() -> i64\n    return\n        1 +\n"
+    broken = refuse_output_the_formatter_broke(path: "t.hero", original: good, formatted: torn)
+    assert !broken.is_err()
+
+    # Not a fixpoint: text that parses, and that `fmt` would print
+    # differently — the parentheses come off.
+    parens = "function f() -> i64\n    return (1 + 2)\n"
+    unstable = refuse_output_the_formatter_broke(path: "t.hero", original: good, formatted: parens)
+    assert !unstable.is_err()
+
+    # And the honest attribution, which is what `5a` bought: the file the
+    # PARSER refuses is exit 1 with the diagnostic on the author's line,
+    # not exit 2 with the compiler accusing itself.
+    refused_input = "function f(c: str) -> str\n    return match c\n        \"a\" => \"b\"\n        _ => c\n    + \"x\"\n"
+    _ = write_file(path: "build/selftest_fmt_guard.hero", text: refused_input)
+    gs = source.new_source(name: "build/selftest_fmt_guard.hero", text: refused_input)
+    hits: [argv.FlagHit] = [argv.FlagHit(spelling: "--in-place", value: fail("none", "no value"))]
+    ginv = argv.Invocation(tag: .fmt_cmd, file: ok("build/selftest_fmt_guard.hero"), program_args: [], flags: hits)
+    assert run_fmt(path: "build/selftest_fmt_guard.hero", s: gs, inv: ginv) == .diagnostics_exit
+
+    # The whole point either way: the author's file is byte-for-byte
+    # untouched.
+    assert read_file("build/selftest_fmt_guard.hero").must() == refused_input
+
+test "the tree guard sees an alias, and it was blind to one for a day"
+    # **THE GUARD WAS BLIND IN EXACTLY THE PLACE OF THE BUG** (2026-09-02).
+    # `fmt` dropped `as near_scale` when it printed a `use` line, and this
+    # guard compares the two trees by DUMPING them — with `print_dump`, which
+    # dropped the alias too. Both renderings therefore agreed and the guard
+    # reported *"the same tree"* while the formatter was deleting a word.
+    #
+    # One omission, two consumers, and the second is the instrument watching
+    # the first: a self-check that compares two RENDERINGS can only see what
+    # the renderer carries. That is the general shape, and it is why
+    # CLAUDE.md §9's rule about a new form reaching every tool names the
+    # printers explicitly.
+    #
+    # This test hands the guard the exact pair the defect produced — the
+    # original with the alias, the "formatted" output without it — and asserts
+    # it REFUSES. It fails the day the dump stops carrying the alias, which is
+    # the day the guard would go blind again.
+    original = "use render/scale as near_scale\n\nfunction main()\n    print(0)\n"
+    stripped = "use render/scale\n\nfunction main()\n    print(0)\n"
+    caught = refuse_output_the_formatter_broke(path: "t.hero", original: original, formatted: stripped)
+    assert !caught.is_err()
+    assert strings_has(haystack: caught.must(), needle: "changed the TREE")
+
+    # And it stays quiet on the real thing: the formatter's own output for a
+    # file that already carries an alias.
+    parsed = parse.parse(original)
+    s = source.new_source(name: "t.hero", text: original)
+    formatted = fmt.format_file(parsed.tree, s, parsed.comments, parsed.uses, parsed.decls)
+    assert formatted == original
+    quiet = refuse_output_the_formatter_broke(path: "t.hero", original: original, formatted: formatted)
+    assert quiet.is_err()
+
+# Does the haystack hold the needle? One line, local to the test above,
+# because the harness's `strings` module is not reachable from `selfhost/`.
+function strings_has(haystack: str, needle: str) -> bool
+    if needle.len() > haystack.len()
+        return false
+    at: i64 @ 0
+
+    while at + needle.len() <= haystack.len()
+        if haystack.slice(from: at, to: at + needle.len()) == needle
+            return true
+        at @ at + 1
+
+    return false

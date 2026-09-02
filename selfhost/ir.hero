@@ -27,7 +27,7 @@
 # distinction was compile-time-only and Heroes indices are honest i64s.
 
 use token
-use check_contextual
+use check/contextual
 
 # A run inside a function's args or steps arena: start and length.
 record Run
@@ -119,7 +119,7 @@ variant AbortWhy
 # 64-bit integer holds both ends.
 variant IntConst
     int_const
-        value: check_contextual.LitValue
+        value: contextual.LitValue
     # The SPELLED literal, not a decoded double: the bootstrap parses
     # f64 only to reprint it into C, and Heroes deliberately has no
     # str-to-float (everything comes from C, §1.11) — carrying the text
@@ -183,7 +183,7 @@ variant OpKind
     store
         place: Place
         value: i64
-    push_owned  # the place store: `p @ p.push(v)`, one growing instruction — ir_place_store.hero teaches it (panels 037/088)
+    push_owned  # the place store: `p @ p.push(v)`, one growing instruction — place_store.hero teaches it (panels 037/088)
         place: Place
         value: i64
     unary

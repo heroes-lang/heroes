@@ -1,0 +1,395 @@
+# The pipeline from a .hero file to a translation unit, shared by
+# build, run and test (design.md §3.1; panels 019, 020, 021, 029).
+# Port of crates/heroes-cli/src/commands/{compile,contract}.rs — the
+# halves that decide WHAT is built and how the command talks; handing
+# the C to clang is cli_toolchain's, the next crossing.
+#
+# Every stage runs only on the one before it having said nothing.
+# Two stages are stops: --dump-ir prints the IR and returns, --emit-c
+# prints the C and returns — neither needs an entry point, because a
+# file with no main is a perfectly good translation unit. A HOLED
+# FILE EXITS 1: §4.16 says a hole is not an error and that such a
+# file produces no binary; exit 0 was measured sending the
+# llm-ergonomist's `&&` to yesterday's binary. The verifier runs at
+# all three phases, unconditionally: the cost is linear and the thing
+# it catches is a wrong compiler.
+
+use token
+use ast
+use source
+use source_extent
+use diag
+use diag_render
+use parse
+use modules
+use resolve
+use checker
+use check/state
+use check/holes
+use ir/containers
+use ir/lower
+use ir/verify
+use ir/mono
+use ir/own
+use ir/place_store
+use ir/print
+use emit/decls as emit_decls
+use emit
+use cli/table as cli_table
+use cli/argv
+use cli/io
+
+record Options
+    # The clang optimisation level — part of the cache key, because
+    # two levels sharing one directory is one configuration
+    # pretending to be two. So are sanitize, the target, and the
+    # search paths (measured: --include /old and /new on unchanged
+    # source hashed identically and the second build reused the first).
+    level: str
+    dump_ir: bool
+    emit_c: bool
+    output: str?
+    sanitize: bool
+    target: emit_decls.BuildTarget
+    headers_from: [str]
+    library: [str]
+
+# The optimisation level this invocation asked for, or the verb's
+# default. TWO LEVELS AND NO OTHERS (§10's stopping rule on a flag:
+# the run/ harness types -O0 and -O2, nothing types -O1). Both at
+# once is refused rather than resolved by precedence: an invocation
+# that asked two questions gets an error, not an answer to one.
+function level_from(inv: argv.Invocation, default_level: str) -> str?
+    zero = argv.has(inv, spelling: "-O0")
+    two = argv.has(inv, spelling: "-O2")
+
+    if zero && two
+        io.eprint(text: "error: `-O0` and `-O2` are one choice — ask for one level at a time")
+        return fail("failed", "two levels")
+
+    if zero
+        return ok("-O0")
+
+    if two
+        return ok("-O2")
+    return ok(default_level)
+
+# The part of the cache key the search paths contribute — empty when
+# neither was given, so every existing build directory keeps its name.
+function search_key(headers_from: [str], library: [str]) -> str
+    if headers_from.len() == 0 && library.len() == 0
+        return ""
+    return "I" + headers_from.join(":") + "L" + library.join(":")
+
+# §4.17's rich form on stderr, and the diagnostics exit — build and
+# run take no diagnostic-shaping flags: check already answers every
+# question about how a diagnostic prints. Absent means silence, carry
+# on. A diagnostic pointing into the library is the COMPILER wrong at
+# exit 2 (panel 028 R5).
+function stage(diagnostics: [diag.Diagnostic], s: source.Source) -> cli_table.Exit?
+    if diagnostics.len() == 0
+        return fail("none", "silence, carry on")
+
+    for d in diagnostics
+        if source.is_library(s, d.span.start)
+            io.eprint(
+                text: "internal error: a diagnostic landed inside the Heroes library, at its line " + source.file_line_of(s, d.span.start).to_str() + ": [" + d.code + "] " + d.message
+            )
+            return ok(.failed_exit)
+
+    rendered: [str] @ []
+
+    for d in diagnostics
+        rendered @ rendered.push(diag_render.render(d, s))
+
+    io.eprint_raw(text: rendered.join("\n"))
+    return ok(.diagnostics_exit)
+
+# What the pipeline hands the toolchain: the C, the test titles, and
+# the link line's two lists. stopped means a dump already answered.
+record Artifact
+    c: str
+    tests: [str]
+    link: [str]
+    packages: [str]
+    stopped: bool
+    # The pipeline pieces the link-failure explanation needs (panel
+    # 036 rider 3): the ffi mapping rebuilds probe lines and asks
+    # declaration(), so the tree, the declarations, the checked types
+    # and the program ride along. COW makes the copies cheap.
+    tree: ast.Ast
+    decls: [ast.Decl]
+    checked: state.Checked
+    program: containers.Program
+
+function halted(tree: ast.Ast, decls: [ast.Decl], c: state.Checked, p: containers.Program) -> Artifact
+    none_c: [str] = []
+    none_p: [str] = []
+    none_t: [str] = []
+    return Artifact(
+        c: "",
+        tests: none_t,
+        link: none_c,
+        packages: none_p,
+        stopped: true,
+        tree: tree,
+        decls: decls,
+        checked: c,
+        program: p
+    )
+
+# The pipeline to a translation unit. The failure's code carries the
+# exit: "diagnostics" is 1, "failed" is 2 — the caller maps e.code.
+function to_unit(s: source.Source, options: Options, version: str) -> Artifact?
+    parsed = parse.parse_source(s)
+    stop = stage(parsed.diagnostics, s)
+
+    if !stop.is_err()
+        return leave(stop.must(), stage_name: "parsing")
+    stop_g = stage(modules.errors(s, parsed.uses), s)
+
+    if !stop_g.is_err()
+        return leave(stop_g.must(), stage_name: "the module graph")
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    stop_r = stage(out.diagnostics, s)
+
+    if !stop_r.is_err()
+        return leave(stop_r.must(), stage_name: "name resolution")
+    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    stop_c = stage(c.diagnostics, s)
+
+    if !stop_c.is_err()
+        return leave(stop_c.must(), stage_name: "type checking")
+    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+    stop_l = stage(low.diagnostics, s)
+
+    if !stop_l.is_err()
+        return leave(stop_l.must(), stage_name: "lowering")
+    p: containers.Program @ low.program
+    problems = verify.verify(p, c, parsed.decls)
+
+    if problems.len() > 0
+        return broken(problems, what: "the lowered program is not well formed")
+
+    # Monomorphisation FIRST, and the order is forced (panel 029 R1):
+    # the ownership pass asks is_refcounted, which answers false for a
+    # type parameter — right for T = int and a leak for T = str — and
+    # the verifier cannot catch it because released_on_return asks the
+    # same predicate.
+    mono_problems = mono.run(@p, @c, s, parsed.decls)
+    stop_m = stage(mono_problems, s)
+
+    if !stop_m.is_err()
+        return leave(stop_m.must(), stage_name: "monomorphisation")
+    problems_m = verify.verify(p, c, parsed.decls)
+
+    if problems_m.len() > 0
+        return broken(problems_m, what: "monomorphisation produced an ill-formed program")
+    place_store.run(@p)
+    own.run(@p, c)
+    problems_o = verify.verify(p, c, parsed.decls)
+
+    if problems_o.len() > 0
+        return broken(problems_o, what: "the ownership pass produced an ill-formed program")
+
+    if options.dump_ir
+        io.print_artifact(text: print.dump(p, c, s, parsed.decls))
+
+        if c.holes.len() > 0
+            io.print_artifact(text: holes.report(parsed.tree, out, c, s, parsed.decls))
+        return ok(halted(parsed.tree, parsed.decls, c: c, p: p))
+
+    # §4.16: the hole is not an error, and there is still no binary.
+    # Both halves — and the files named are the ones the holes are IN,
+    # not the file named on the command line.
+    if c.holes.len() > 0
+        io.print_artifact(text: holes.report(parsed.tree, out, c, s, parsed.decls))
+        files: [str] @ []
+
+        for hole in c.holes
+            found = source.locate(s, hole.span.start)
+            already: bool @ false
+
+            for one in files
+                if one == found.file
+                    already @ true
+
+            if !already
+                files @ files.push(found.file)
+
+        unit: str @ "holes"
+
+        if c.holes.len() == 1
+            unit @ "hole"
+        io.eprint(text: "no binary: " + c.holes.len().to_str() + " " + unit + " in " + files.join(", "))
+        return fail("diagnostics", "holes produce no binary")
+
+    # The fused text is the ARTIFACT, and only three invocations want
+    # it: `--emit-c`, which prints it; `heroes test`, whose binary is
+    # one unit by design; and through those two, the seed and the 297
+    # blessed emissions. `heroes build` of a program emits one .c per
+    # module instead, so asking for the fused text there is 785,323
+    # lines printed and dropped (measured on the compiler's own source).
+    wants_text: bool @ options.emit_c
+
+    match options.target
+        .tests_build   => wants_text @ true
+        .program_build => wants_text @ wants_text
+
+    emitted = emit.emit_maybe(
+        target: options.target,
+        p: p,
+        c: c,
+        s: s,
+        decls: parsed.decls,
+        version: version,
+        text: wants_text
+    )
+    stop_e = stage(emitted.diagnostics, s)
+
+    if !stop_e.is_err()
+        return leave(stop_e.must(), stage_name: "the FFI check")
+
+    if options.emit_c
+        if options.output.is_err()
+            io.print_artifact(text: emitted.c)
+        else
+            written = write_file(path: options.output.must(), text: emitted.c)
+
+            if written.is_err()
+                io.eprint(text: "error: cannot write " + options.output.must())
+                return fail("failed", "cannot write the artifact")
+        return ok(halted(parsed.tree, parsed.decls, c: c, p: p))
+
+    # A test build needs no main: the test blocks are the program.
+    needs_main: bool @ false
+
+    match options.target
+        .program_build => needs_main @ true
+        .tests_build   => needs_main @ needs_main
+
+    if needs_main && emit.entry_point(p).is_err()
+        # The ROOT file's end, never the whole text's: the library is
+        # appended, so text.len() lands inside it and the misplaced
+        # rule would turn the user's own mistake into internal error
+        # exit 2 — the message panel 020 measured sending an agent to
+        # reinstall its toolchain.
+        end = source_extent.root_end(s)
+        at: i64 @ end - 1
+
+        if at < 0
+            at @ 0
+        d: diag.Diagnostic @ diag.new_diagnostic(
+            code: "no_entry_point",
+            message: "this file declares no `function main()`, so it cannot become a binary",
+            span: token.Span(start: at, end: end)
+        )
+        d.notes @ d.notes.push("add `function main()`, or use `--emit-c` to produce C for another program to compile")
+        one: [diag.Diagnostic] = [d]
+        stop_n = stage(one, s)
+
+        if !stop_n.is_err()
+            return leave(stop_n.must(), stage_name: "the C emission")
+    return ok(
+        Artifact(c: emitted.c, tests: emit.tests_of(p), link: emitted.link, packages: emitted.packages, stopped: false, tree: parsed.tree, decls: parsed.decls, checked: c, program: p)
+    )
+
+# **A stage that stops names itself.** This used to answer "a stage
+# reported" whatever had happened, so a failure carried no way back to
+# where it came from — and on a platform where the diagnostics do not
+# reach the reader, that leaves a bare exit code and nothing else. Five
+# CI rounds went into finding out which of these five stages was
+# stopping on Windows; the name costs one parameter.
+function leave(verdict: cli_table.Exit, stage_name: str) -> Artifact?
+    if verdict == .failed_exit
+        return fail("failed", stage_name + " could not run")
+    return fail("diagnostics", stage_name + " reported")
+
+function broken(problems: [str], what: str) -> Artifact?
+    io.eprint(text: "internal error: " + what)
+
+    for problem in problems
+        io.eprint(text: "  " + problem)
+
+    return fail("failed", "the verifier refused")
+
+## Tests
+
+test "the two stops, the hole refusal, and the missing main"
+    no_flags: [str] = []
+    options = Options(
+        level: "-O0",
+        dump_ir: false,
+        emit_c: true,
+        output: fail("none", "stdout"),
+        sanitize: false,
+        target: .program_build,
+        headers_from: no_flags,
+        library: no_flags
+    )
+    s = source.new_source(name: "t.hero", text: "function main()\n    print(1)\n")
+    got = to_unit(s, options, version: "0.0.0-test")
+    assert !got.is_err()
+    assert got.must().stopped
+
+    # A holed file: diagnostics exit, no unit.
+    hs = source.new_source(name: "t.hero", text: "function main()\n    n: i64 @ ???\n    print(n)\n")
+    hopt = Options(
+        level: "-O0",
+        dump_ir: false,
+        emit_c: false,
+        output: fail("none", "no"),
+        sanitize: false,
+        target: .program_build,
+        headers_from: no_flags,
+        library: no_flags
+    )
+    holed = to_unit(hs, hopt, version: "0.0.0-test")
+
+    match holed
+        .ok    => assert false
+        .err e => assert e.code == "diagnostics"
+
+    # No main, Program target: refused on the root's last byte.
+    ns = source.new_source(name: "t.hero", text: "function helper() -> i64\n    return 1\n")
+    named = to_unit(ns, hopt, version: "0.0.0-test")
+
+    match named
+        .ok    => assert false
+        .err e => assert e.code == "diagnostics"
+
+    # The same file as a TEST build is legitimate: no main asked for.
+    topt = Options(
+        level: "-O0",
+        dump_ir: false,
+        emit_c: false,
+        output: fail("none", "no"),
+        sanitize: false,
+        target: .tests_build,
+        headers_from: no_flags,
+        library: no_flags
+    )
+    ts = source.new_source(
+        name: "t.hero",
+        text: "function helper() -> i64\n    return 1\n\ntest \"helper answers\"\n    assert helper() == 1\n"
+    )
+    unit = to_unit(ts, topt, version: "0.0.0-test")
+    assert !unit.is_err()
+    assert !unit.must().stopped
+    assert unit.must().tests.len() == 1
+
+    # level_from: the double ask is refused.
+    both: [argv.FlagHit] = [
+        argv.FlagHit(spelling: "-O0", value: fail("none", "n"))
+        argv.FlagHit(spelling: "-O2", value: fail("none", "n"))
+    ]
+    inv = argv.Invocation(tag: .build_cmd, file: ok("t.hero"), program_args: [], flags: both)
+    assert level_from(inv, default_level: "-O0").is_err()
+    empty = argv.Invocation(tag: .build_cmd, file: ok("t.hero"), program_args: [], flags: [])
+    assert level_from(empty, default_level: "-O2").must() == "-O2"
+
+    # The search key: empty stays empty, so existing directories keep
+    # their names.
+    assert search_key(headers_from: no_flags, library: no_flags) == ""
+    one_dir: [str] = ["/a"]
+    assert search_key(headers_from: one_dir, library: no_flags) != ""
