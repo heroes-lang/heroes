@@ -1,0 +1,358 @@
+# Whose mistake a clang line is allowed to become (design.md §4.19;
+# CLAUDE.md §7's named exception; panels 048, 062, 074). Port of the
+# lookup half of crates/heroes/src/emit/ffi.rs — the driver's explain()
+# walk lives in emit_ffi, a leaf module ABOVE the readers; these are
+# the functions every reader shares, split out so the knot the Rust
+# module tree hides never forms.
+#
+# THE NARROWING IS declaration(). Every class recovers a name from the
+# tool's output and then asks whether THIS PROGRAM declared that name
+# in an extern group. A name no group declares is refused, and clang's
+# line stays what it was: a statement about this compiler. The doc
+# once said the narrowing was "only the assertion messages this
+# emitter writes" — already false when written (unknown_name matches
+# clang's own text), and the stronger rule was the true one all along.
+#
+# The text tools live here for the same one-writer reason the markers
+# do: every reader splits clang's line the same way, and two copies of
+# "after the marker" would be two chances to disagree about it.
+
+use token
+use ast
+use source
+use diag
+use emit/externs as emit_externs
+use parse
+use resolve
+use checker
+
+# The marker the driver puts on a verdict about a PACKAGE — one this
+# compiler wrote itself, unlike the clang and linker lines the other
+# classes read. Held with the lookups so the file that decides whose
+# mistake this is holds every marker it matches.
+constant PACKAGE: str
+    "heroes-ffi-package "
+
+# What clang prints on the line of a _Static_assert that failed.
+# Required before a line is read as one of ours, because clang ECHOES
+# THE SOURCE LINE under its diagnostic — and that echo contains the
+# assertion's message verbatim, marker and all. Without this the echo
+# parsed as a second, malformed report of the same failure, invisible
+# only because the message line came first: right by ordering rather
+# than by matching (panel 038's ffi-pragmatist, compiling).
+constant FAILED: str
+    "static assertion failed"
+
+# What clang calls handing a `const char *` to a `char *`, matched
+# whole. It is ffi_mutable's class, and ffi_narrowed names it to step
+# aside — the wider "to parameter of" family would otherwise swallow
+# panel 058's whole class and tell an author who already declared
+# `cstr` to declare it again.
+constant DISCARDS: str
+    "discards qualifiers"
+
+# The extern declaration with this C name: where it is, which header
+# it was declared under, and whether it is a constant.
+record Declared
+    span: token.Span
+    header: str
+    is_constant: bool
+
+# Absent for a name no group declares — which is how a message that
+# only LOOKS like one of ours is refused. A record reaches clang by
+# name too, and that arm was missing in the bootstrap for one
+# milestone (panel 074, both seats): a type the author DID declare in
+# a group came back as exit 2, the compiler blaming itself for the
+# author's line.
+function declaration(s: source.Source, decls: [ast.Decl], name: str) -> Declared?
+    for decl in decls
+        if source.span_text(s, decl.name) != name
+            continue
+
+        match decl.kind
+            .function_decl fd =>
+                if !fd.value.header.is_err()
+                    return ok(
+                        Declared(span: decl.span, header: emit_externs.unquoted(s, span: fd.value.header.must()), is_constant: false)
+                    )
+            .constant_decl k =>
+                if !k.header.is_err()
+                    return ok(
+                        Declared(span: decl.span, header: emit_externs.unquoted(s, span: k.header.must()), is_constant: true)
+                    )
+            .record_decl rec =>
+                if !rec.header.is_err()
+                    return ok(
+                        Declared(span: decl.span, header: emit_externs.unquoted(s, span: rec.header.must()), is_constant: false)
+                    )
+            .variant_decl | .test_decl => continue
+
+    return fail("none", "no group declares this name")
+
+# The span of the NAME alone, which is what a fix replaces — the
+# declaration's own span covers the whole signature.
+function name_span(s: source.Source, decls: [ast.Decl], name: str) -> token.Span?
+    for decl in decls
+        if source.span_text(s, decl.name) == name
+            return ok(decl.name)
+
+    return fail("none", "no declaration has this name")
+
+# The span of the first declaration whose group names this header —
+# the extern line the author must look at. The same gate as
+# everywhere: a header no group in THIS program names is not this
+# program's business. A record is a group member here too (panel 062's
+# audit, finding 7): left out, a group whose members are only records
+# could not claim its own failure, and the author saw internal error
+# at exit 2 for a library that is simply not installed.
+function group_head(s: source.Source, decls: [ast.Decl], header: str) -> token.Span?
+    for decl in decls
+        named: token.Span? @ fail("none", "no header")
+
+        match decl.kind
+            .function_decl fd          => named @ fd.value.header
+            .constant_decl k           => named @ k.header
+            .record_decl rec           => named @ rec.header
+            .variant_decl | .test_decl => continue
+
+        if named.is_err()
+            continue
+
+        if emit_externs.unquoted(s, span: named.must()) == header
+            return ok(decl.span)
+
+    return fail("none", "no group names this header")
+
+# The span of the first declaration whose group asked about this
+# package — the reason a stray line mentioning a package name cannot
+# become a diagnostic about a program that never asked for it.
+function package_span(s: source.Source, decls: [ast.Decl], name: str) -> token.Span?
+    for decl in decls
+        library: ast.Library? @ fail("none", "no library")
+
+        match decl.kind
+            .function_decl fd          => library @ fd.value.library
+            .constant_decl k           => library @ k.library
+            .record_decl rec           => library @ rec.library
+            .variant_decl | .test_decl => continue
+
+        if library.is_err()
+            continue
+
+        match library.must()
+            .package pk =>
+                if emit_externs.unquoted(s, span: pk.name) == name
+                    return ok(decl.span)
+            .link => continue
+
+    return fail("none", "no group asked for this package")
+
+# One diagnostic per .hero line: clang reports a translation unit, and
+# one mistake in it can produce several lines that all mean the same
+# thing. Named add_once because push is the builtin's name everywhere.
+function add_once(found: [diag.Diagnostic], d: diag.Diagnostic) -> [diag.Diagnostic]
+    for old in found
+        if old.span == d.span
+            return found
+
+    return found.push(d)
+
+## Reading clang's line — one splitter, every reader
+
+# Whether needle occurs in text, walked over chars so the scan never
+# splits a character.
+function has(text: str, needle: str) -> bool
+    return !char_index_of(text: text, needle: needle).is_err()
+
+# The char index of needle's first occurrence.
+function char_index_of(text: str, needle: str) -> i64?
+    cs = text.chars()
+    needle_cs = needle.chars()
+
+    if needle_cs.len() == 0
+        return ok(0)
+
+    if needle_cs.len() > cs.len()
+        return fail("none", "not found")
+    start: i64 @ 0
+
+    while start <= cs.len() - needle_cs.len()
+        matched: bool @ true
+        offset: i64 @ 0
+
+        while offset < needle_cs.len()
+            if cs[start + offset] != needle_cs[offset]
+                matched @ false
+                break
+            offset @ offset + 1
+
+        if matched
+            return ok(start)
+        start @ start + 1
+
+    return fail("none", "not found")
+
+# Everything after the FIRST occurrence of marker. The Rust reads
+# split(marker).nth(1) — between the first and second occurrence — but
+# every caller then takes the first one or two whitespace words, and a
+# marker cannot recur inside a C identifier, so the two forms read the
+# same tokens.
+function after(text: str, marker: str) -> str?
+    at = char_index_of(text: text, needle: marker)
+
+    if at.is_err()
+        return fail("none", "marker not present")
+    cs = text.chars()
+    tail: [str] @ []
+    index: i64 @ at.must() + marker.chars().len()
+
+    while index < cs.len()
+        tail @ tail.push(cs[index])
+        index @ index + 1
+
+    return ok(tail.join(""))
+
+# The lines of a tool's stderr. A trailing newline yields no empty
+# last line, matching what Rust's lines() gives the bootstrap.
+function lines(text: str) -> [str]
+    out: [str] @ []
+    run: [str] @ []
+
+    for ch in text.chars()
+        if ch == "\n"
+            out @ out.push(run.join(""))
+            run @ []
+        else
+            run @ run.push(ch)
+
+    if run.len() > 0
+        out @ out.push(run.join(""))
+    return out
+
+# The whitespace-separated words of a line, empty runs skipped — what
+# Rust's split_whitespace gives.
+function words(text: str) -> [str]
+    out: [str] @ []
+    run: [str] @ []
+
+    for ch in text.chars()
+        if ch == " " || ch == "\t"
+            if run.len() > 0
+                out @ out.push(run.join(""))
+                run @ []
+        else
+            run @ run.push(ch)
+
+    if run.len() > 0
+        out @ out.push(run.join(""))
+    return out
+
+# The token up to the first single quote — the whole token when no
+# quote follows, which is what Rust's split('\'').next() gives. Every
+# reader that recovers a name from clang's quoting reads it this way.
+function up_to_quote(text: str) -> str
+    kept: [str] @ []
+
+    for ch in text.chars()
+        if ch == "'"
+            return kept.join("")
+        kept @ kept.push(ch)
+
+    return kept.join("")
+
+# A small decimal read whole — clang's row and column numbers. Spaces
+# at either end are skipped, as Rust's trim().parse() skips them.
+function number(text: str) -> i64?
+    ds = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+    value: i64 @ 0
+    read: bool @ false
+
+    for ch in text.chars()
+        if ch == " "
+            continue
+        matched: bool @ false
+        index: i64 @ 0
+
+        for one in ds
+            if one == ch
+                value @ value * 10 + index
+                matched @ true
+                read @ true
+            index @ index + 1
+
+        if !matched
+            return fail("none", "not a digit")
+
+    if !read
+        return fail("none", "empty")
+    return ok(value)
+
+# Rust's .trim(): spaces and tabs off both ends.
+function trimmed(text: str) -> str
+    cs = text.chars()
+    head: i64 @ 0
+
+    while head < cs.len() && (cs[head] == " " || cs[head] == "\t")
+        head @ head + 1
+
+    tail: i64 @ cs.len()
+
+    while tail > head && (cs[tail - 1] == " " || cs[tail - 1] == "\t")
+        tail @ tail - 1
+
+    kept: [str] @ []
+    index: i64 @ head
+
+    while index < tail
+        kept @ kept.push(cs[index])
+        index @ index + 1
+
+    return kept.join("")
+
+## Tests
+
+test "declaration finds all three kinds and refuses the rest"
+    text = "extern \"m.h\" package \"raylib\"\n    function draw(x: i64)\n    constant LIMIT: i64\n    record Color\n        r: i64\n\nfunction local_one() -> i64\n    return 1\n\nfunction main()\n    draw(x: LIMIT + local_one() + Color(r: 1).r)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c = checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    fd = declaration(s, parsed.decls, name: "draw")
+    assert !fd.is_err()
+    assert fd.must().header == "m.h"
+    assert !fd.must().is_constant
+    k = declaration(s, parsed.decls, name: "LIMIT")
+    assert k.must().is_constant
+    rec = declaration(s, parsed.decls, name: "Color")
+    assert !rec.must().is_constant
+
+    # A name this program declares WITHOUT a header is not an extern.
+    assert declaration(s, parsed.decls, name: "local_one").is_err()
+    assert declaration(s, parsed.decls, name: "sqlite3_open").is_err()
+
+    # The group lookups: the head line and the package question.
+    assert !group_head(s, parsed.decls, header: "m.h").is_err()
+    assert group_head(s, parsed.decls, header: "other.h").is_err()
+    assert !package_span(s, parsed.decls, name: "raylib").is_err()
+    assert package_span(s, parsed.decls, name: "sdl3").is_err()
+
+test "add_once keeps one diagnostic per span, and the splitter reads clang's shapes"
+    a = diag.new_diagnostic(code: "x", message: "first", span: token.Span(start: 3, end: 7))
+    b = diag.new_diagnostic(code: "y", message: "second, same span", span: token.Span(start: 3, end: 7))
+    z = diag.new_diagnostic(code: "z", message: "elsewhere", span: token.Span(start: 9, end: 12))
+    found: [diag.Diagnostic] @ []
+    found @ add_once(found, d: a)
+    found @ add_once(found, d: b)
+    found @ add_once(found, d: z)
+    assert found.len() == 2
+    assert found[0].code == "x"
+    line = "main.c:3:1: error: static assertion failed due to requirement 'x': heroes-ffi-return sqrt f64"
+    assert has(text: line, needle: FAILED)
+    rest = after(text: line, marker: "heroes-ffi-return ")
+    assert rest.must() == "sqrt f64"
+    parts = words(text: rest.must())
+    assert parts.len() == 2
+    assert parts[0] == "sqrt"
+    assert parts[1] == "f64"
+    assert words(text: "  a\t b ").len() == 2

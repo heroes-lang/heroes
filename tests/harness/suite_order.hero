@@ -64,7 +64,16 @@ constant LEAST_WALKS: i64
 
 function run_all(scratch: str) -> report.Report?
     r: report.Report @ report.empty()
-    files = shell.list_entries(scratch: scratch, dir: COMPILER)?
+
+    # **`list_tree`, not `list_entries`** — see `suite_layout`'s note at the
+    # same call. `list_entries` is `recursive: 0`, and M-selfhost-nesting put
+    # 133 of 170 modules a directory down. Measured before the change: of the
+    # 23 `# ORDER:` marks in 15 files, only **5 in 2 files** are in files that
+    # stayed flat, against a floor of 14 — so this suite would have gone red
+    # rather than quiet. Recursing is still the repair, because a floor tells
+    # you the sweep shrank and not which files it stopped reading.
+    nothing: [str] = []
+    files = shell.list_tree(scratch: scratch, dir: COMPILER, skip: nothing)?
     modules: [str] @ []
 
     for path in files

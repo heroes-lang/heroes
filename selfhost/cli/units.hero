@@ -1,0 +1,205 @@
+# The per-module build pipeline (panel 093 R1/R4; M-separate-compilation
+# step 6): each module's translation unit compiled to its own cached
+# object, then one link over all of them. The fused single unit stays
+# the artifact path (--emit-c, the seed, the blessed emissions); this
+# file is what `heroes build` and `heroes run` walk instead.
+#
+# THE KEY, per TU (panel 093 R4): the compiler fingerprint, the level,
+# the sanitizer bit, the module name, the TU's own emitted text, the
+# runtime's whole contents, the search paths, and the RESOLVED package
+# cflags — machine state that changes with no source edit, so the name
+# is not enough. Link names deliberately do NOT enter it: the link line
+# is re-run on every build (it is one clang call over cached objects),
+# so a `link` edit takes effect without a recompile — which is the
+# 093 ffi-pragmatist's falsifier answered by construction.
+#
+# THE HEADERS ARE THE OTHER HALF, and they are checked rather than
+# named (acceptance row 2's second half; `deps.hero` carries the
+# reasoning). A `constant` an `extern` group takes from a header emits
+# as `return CONF_LIMIT;` whatever the header says, so the key cannot
+# see a header edit by construction — measured 2026-08-26 as a program
+# printing `1` at exit 0 with the header on disk saying `2`. So every
+# TU compile asks clang for its dependency listing and records what it
+# read; a warm object is served only when every one of those files
+# still hashes the same.
+#
+# **The comment that stood here said the fused path had the same gap
+# and it was FALSE, measured both ways on the same witness**: the fused
+# path never caches its unit object (`toolchain.link` recompiles the
+# `.c` on every call), so it caught the edit and only this path missed
+# it. An untested "nothing regresses here" is CLAUDE.md §1's inference
+# presented as a measurement.
+#
+# THE VERDICT ORDER (panel 093 R5): every dirty TU is compiled before
+# any verdict is rendered, so a failure in the declaring module's TU is
+# reported wherever the cache happens to be warm, and a cache hit can
+# never convert a failing build into a passing one.
+
+use source
+use cli/io
+use cli/deps
+use cli/digest
+use cli/flags
+use cli/process
+use cli/toolchain
+
+# The distinct components of a compilation, in file-table order: the
+# root first, then each `use`d module, then the library. The order is
+# a function of the source table, so the link line is deterministic.
+# ORDER: file-table order — s.files is built in load order, which is
+# itself a function of the program's `use` graph.
+function components(s: source.Source) -> [str]
+    out: [str] @ []
+
+    for entry in s.files
+        already: bool @ false
+
+        for one in out
+            if one == entry.component
+                already @ true
+
+        if !already
+            out @ out.push(entry.component)
+
+    return out
+
+# One TU compiled to its cached object. The .c and .o live under
+# build/<key>/, so a text or configuration change is a different
+# directory and a hit is `test -e` on the object PLUS the headers it
+# read still saying what they said (`deps.fresh`).
+#
+# `@memo` is one build's answers about files on disk, threaded through
+# the whole loop: the 39 headers a trivial program reaches are 797 KB,
+# and asking 157 translation units separately would be 125 MB of
+# hashing — about 104 s at this compiler's measured 1.2 MB/s. Read
+# once, hashed once, answered once per TU.
+function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str, sanitize: bool, search: str, package_flags: [str], source_dir: str, search_include: [str], @memo: {str: str}) -> str?
+    san: str @ ""
+
+    if sanitize
+        san @ "+san"
+    key = digest.digest(
+        t.fingerprint + "|tu|" + level + san + "|" + module + "|" + tu_text + "|" + t.runtime_key + "|" + search + "|" + package_flags.join(" ")
+    )
+    dir = t.build + "/tu-" + key
+    made = process.mkdir_all(dir)
+
+    if made.is_err()
+        return fail("failed", "cannot create " + dir)
+    c_file = dir + "/" + module + ".c"
+    object = dir + "/" + module + ".o"
+    saved = dir + "/warnings.txt"
+    depfile = dir + "/" + module + ".d"
+
+    if process.path_exists(object) && deps.fresh(deps.record_for(object), @memo)
+        # A warm object REPLAYS the warnings its compile produced: the
+        # flag set exists so a warning can falsify something (§7), and
+        # a cache that swallows one on every hit after the first makes
+        # the `ptr` lends-a-pointer warning — kept deliberately as the
+        # type's declared limit — visible exactly once per edit.
+        # Measured: suite_warnings went red on a warm cache before this
+        # existed, on the program whose warnings are the expectation.
+        kept = read_file(saved)
+
+        if !kept.is_err() && kept.must().len() > 0
+            io.eprint_raw(text: kept.must())
+        return ok(object)
+    written = write_file(path: c_file, text: tu_text)
+
+    if written.is_err()
+        return fail("failed", "cannot write " + c_file)
+    err_path = t.build + "/clang-stderr.txt"
+    staged = object + ".tmp"
+
+    # `-MT dep` names the listing's target a word rather than a path,
+    # so the reader cuts at the first `:` on a fact it chose. The
+    # listing rides this compile; no second clang invocation exists.
+    line: [str] @ toolchain.with_all(list: ["clang"], more: flags.flags())
+    line @ line.push(level)
+    line @ toolchain.with_all(list: line, more: flags.sanitizers(sanitize: sanitize))
+    line @ toolchain.with_all(list: line, more: ["-c", "-MD", "-MT", "dep", "-MF", depfile])
+
+    for one in search_include
+        line @ toolchain.with_all(list: line, more: ["-I", one])
+
+    for flag in package_flags
+        if toolchain.starts_with(text: flag, prefix: "-I")
+            line @ line.push(flag)
+
+    line @ toolchain.with_all(list: line, more: [c_file, "-I", t.runtime])
+
+    if source_dir.len() > 0
+        line @ toolchain.with_all(list: line, more: ["-I", source_dir])
+    line @ toolchain.with_all(list: line, more: ["-o", staged])
+    compiled = toolchain.run_clang(line: line, what: "compiling the generated C", err_path: err_path)
+
+    if compiled.is_err()
+        # The failing TU's path rides INSIDE the message: emit_ffi's
+        # matchers read it line by line and ignore this one, so an
+        # author-error still maps to their .hero line with no build/
+        # path on screen — printing the path here unconditionally sent
+        # `build/tu-…` into diagnostics the surface rows pin as
+        # `err_lacks("build/")`, measured on the fixedbugs corpus.
+        return fail("clang", failure_note(compiled) + "\nthe generated C is at " + c_file)
+    captured = read_file(err_path)
+
+    if !captured.is_err() && captured.must().len() > 0
+        _ = write_file(path: saved, text: captured.must())
+
+    # Recorded BEFORE the object is published: an object on disk with no
+    # record beside it would be a hit this cache cannot justify. The
+    # order makes the failure direction the loud one — a record with no
+    # object is a recompile, an object with no record is a stale answer.
+    recorded = deps.record_deps(record_path: deps.record_for(object), depfile: depfile, skip: dir + "/", @memo)
+
+    if recorded.is_err()
+        return fail("failed", "cannot record what " + module + "'s translation unit read")
+
+    if process.rename_over(from: staged, to: object).is_err()
+        return fail("failed", "cannot publish " + object)
+    return ok(object)
+
+function failure_note(failed: ()?) -> str
+    match failed
+        .ok    => return ""
+        .err e => return e.msg
+
+# One link over every object. Re-run on every build, deliberately: it
+# is one clang call, and it is what lets a `link` name change take
+# effect on a fully warm cache.
+function link_objects(t: toolchain.Toolchain, objects: [str], binary: str, level: str, sanitize: bool, search_include: [str], search_library: [str], package_flags: [str], link_names: [str]) -> ()?
+    err_path = t.build + "/clang-stderr.txt"
+    line: [str] @ toolchain.with_all(list: ["clang"], more: flags.flags())
+    line @ line.push(level)
+    line @ toolchain.with_all(list: line, more: flags.sanitizers(sanitize: sanitize))
+
+    # The link's own flags, which on Windows is the stack reserve a
+    # recursive frontend needs (flags.link_flags carries the
+    # measurement). Empty everywhere else.
+    line @ toolchain.with_all(list: line, more: flags.link_flags())
+
+    for dir in search_include
+        line @ toolchain.with_all(list: line, more: ["-I", dir])
+
+    for dir in search_library
+        line @ toolchain.with_all(list: line, more: ["-L", dir])
+
+    for object in objects
+        line @ line.push(object)
+
+    for flag in package_flags
+        line @ line.push(flag)
+
+    for name in link_names
+        line @ line.push("-l" + name)
+
+    staged = binary + ".tmp"
+    line @ toolchain.with_all(list: line, more: ["-o", staged])
+    linked = toolchain.run_clang(line: line, what: "linking", err_path: err_path)
+
+    if linked.is_err()
+        linked?
+
+    if process.rename_over(from: staged, to: binary).is_err()
+        return fail("failed", "cannot publish " + binary)
+    return ok()

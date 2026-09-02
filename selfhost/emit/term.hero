@@ -1,0 +1,129 @@
+# How a block ends (design.md §3.1, CLAUDE.md §7).
+# Port of crates/heroes/src/emit/term.rs.
+#
+# ONE GOTO OR ONE RETURN PER BLOCK, ALWAYS. The IR guarantees exactly
+# one terminator, which is what makes the emitted C never fall through
+# a label — the failure that would be invisible in the source and
+# obvious only in the output. A branch writes BOTH edges out, so
+# physical adjacency carries no meaning and unreachable blocks can be
+# skipped entirely.
+#
+# The switch's labels are integers, not the tag enum's enumerators:
+# this terminator does not know which variant it switches on — the tag
+# read's result is an i64, so the declaration is not reachable from
+# here. The enum in the typedef is the legend, and the indices are
+# dense. C needs the default edge the IR does not have, and
+# hero_unreachable() is the honest spelling: a tag outside the range is
+# the compiler being wrong, not the program.
+
+use token
+use check/table
+use check/state
+use source
+use parse
+use resolve
+use checker
+use ir
+use ir/containers
+use emit/mangle
+use emit/ctype
+use emit/writer
+
+function emit(@w: writer.Writer, f: containers.Function, c: state.Checked, term: ir.Term)
+    match term
+        .jump j => writer.line(@w, text: "    goto " + mangle.block(j.to) + ";")
+        .branch br => writer.line(
+            @w,
+            text: "    if (" + mangle.value(br.cond) + ") goto " + mangle.block(br.then_to) + "; else goto " + mangle.block(br.else_to) + ";"
+        )
+        .switch_term sw =>
+            writer.line(@w, text: "    switch (" + mangle.value(sw.tag) + ") {")
+            index: i64 @ 0
+
+            for target in sw.cases
+                writer.line(
+                    @w,
+                    text: "        case " + index.to_str() + ": goto " + mangle.block(target) + ";"
+                )
+                index @ index + 1
+
+            writer.line(@w, text: "        default: hero_unreachable();")
+            writer.line(@w, text: "    }")
+        .return_term ret =>
+            if ret.value.is_err()
+                writer.line(@w, text: "    return;")
+            else
+
+                # The unit rule from the other side: a function whose
+                # result is () returns nothing, even where the IR names
+                # the unit value.
+                if ctype.is_unit(c, ty: containers.value_type(f, ret.value.must()))
+                    writer.line(@w, text: "    return;")
+                else
+                    writer.line(@w, text: "    return " + mangle.value(ret.value.must()) + ";")
+        # An abort is something the program DOES; this is something the
+        # type system CLAIMS. Reaching it means the compiler is wrong,
+        # and finding that out through UB is not acceptable.
+
+        .unreachable => writer.line(@w, text: "    hero_unreachable();")
+        # The verifier rejects this before any backend sees it.
+
+        .open => writer.line(@w, text: "    hero_unreachable(); /* a block was left open */")
+
+## Tests
+
+test "both branch edges are written, and a switch carries C's default"
+    f = containers.Function(
+        name: "t",
+        decl: 0,
+        kind: .function_kind,
+        generics: [],
+        params: [],
+        result: 1,
+        slots: [],
+        blocks: [],
+        values: [1, 5],
+        arguments: [],
+        steps: [],
+        instance: [],
+        call_instances: {},
+        span: token.Span(start: 0, end: 1)
+    )
+    text = "function t()\n    return\n"
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    c: state.Checked @ checker.check(p.tree, out, s, p.decls)
+    w: writer.Writer @ writer.new_writer("t")
+    emit(@w, f, c, term: .branch(cond: 1, then_to: 2, else_to: 4))
+    emit(@w, f, c, term: .switch_term(tag: 1, cases: [3, 5]))
+    emit(@w, f, c, term: .return_term(value: fail("none", "bare")))
+    got = writer.finish(w)
+    assert got == "    if (t1) goto bb2; else goto bb4;\n    switch (t1) {\n        case 0: goto bb3;\n        case 1: goto bb5;\n        default: hero_unreachable();\n    }\n    return;\n"
+
+test "returning the unit value is a bare return"
+    text = "function t()\n    return\n"
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    c: state.Checked @ checker.check(p.tree, out, s, p.decls)
+    unit_id = table.unit_ty(c.types)
+    f = containers.Function(
+        name: "t",
+        decl: 0,
+        kind: .function_kind,
+        generics: [],
+        params: [],
+        result: unit_id,
+        slots: [],
+        blocks: [],
+        values: [unit_id],
+        arguments: [],
+        steps: [],
+        instance: [],
+        call_instances: {},
+        span: token.Span(start: 0, end: 1)
+    )
+    w: writer.Writer @ writer.new_writer("t")
+    emit(@w, f, c, term: .return_term(value: ok(0)))
+    assert writer.finish(w) == "    return;\n"

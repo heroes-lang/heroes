@@ -1,8 +1,9 @@
 # CLAUDE.md §11's per-file ceiling, enforced instead of remembered.
 #
 # NOT a port. `layout.rs` walks `crates/**/*.rs`; the compiler is
-# `selfhost/*.hero` now, and three things about it change the check
-# itself. This is the rewrite panel 085 R4 said it would have to be.
+# `selfhost/**/*.hero` now — flat until M-selfhost-nesting, ten directories
+# after it — and three things about it change the check itself. This is the
+# rewrite panel 085 R4 said it would have to be.
 #
 # 1. **A Heroes module holds its own tests.** The Rust excluded whole
 #    FILES — anything under a `tests/` directory, and any `tests.rs` —
@@ -119,22 +120,22 @@ constant CEILING: i64
 # preamble applied to a comment for once.
 constant DECIDED: [str]
     [
-        "selfhost/check_walk.hero 1583"
-        "selfhost/ir_lower.hero 1483"
-        "selfhost/print_fmt.hero 1150"
+        "selfhost/check/walk.hero 1583"
+        "selfhost/ir/lower.hero 1483"
+        "selfhost/print/fmt.hero 1150"
         "selfhost/grammar_expr.hero 1000"
-        "selfhost/parse_decl.hero 638"
-        "selfhost/ir_print.hero 460"
+        "selfhost/parse/decl.hero 638"
+        "selfhost/ir/print.hero 460"
         "selfhost/ast.hero 455"
-        "selfhost/check_builtins.hero 374"
-        "selfhost/ir_mono.hero 367"
-        "selfhost/emit_ctype.hero 365"
-        "selfhost/emit_gate.hero 341"
-        "selfhost/resolve_cycles.hero 331"
-        "selfhost/resolve_state.hero 330"
-        "selfhost/emit_inst.hero 324"
+        "selfhost/check/builtins.hero 374"
+        "selfhost/ir/mono.hero 367"
+        "selfhost/emit/ctype.hero 365"
+        "selfhost/emit/gate.hero 341"
+        "selfhost/resolve/cycles.hero 331"
+        "selfhost/resolve/state.hero 330"
+        "selfhost/emit/inst.hero 324"
         "selfhost/modules.hero 320"
-        "selfhost/parse_use.hero 310"
+        "selfhost/parse/use_line.hero 310"
     ]
 
 # Measured 2026-08-18: 144 modules. The floor is the Rust's own idea —
@@ -145,7 +146,18 @@ constant LEAST: i64
 
 function run_all(scratch: str) -> report.Report?
     r: report.Report @ report.empty()
-    files = shell.list_entries(scratch: scratch, dir: COMPILER)?
+
+    # **`list_tree`, not `list_entries`, and the difference is 133 files.**
+    # `list_entries` scans with `recursive: 0`, which was the whole tree until
+    # M-selfhost-nesting put 133 of 170 modules into ten directories. The
+    # ratchet would then have measured the 37 that stayed flat — including
+    # none of the four largest files in the table below. It does not fail
+    # quietly, because `LEAST` is a floor on the COUNT and 37 is under it, and
+    # that floor is the Rust's own idea for exactly this reason. But a check
+    # that survives a layout change by going red is a check somebody has to
+    # repair under pressure; this one recurses instead.
+    nothing: [str] = []
+    files = shell.list_tree(scratch: scratch, dir: COMPILER, skip: nothing)?
     modules: [str] @ []
 
     for path in files
@@ -289,8 +301,8 @@ test "the ceiling is per file, and a decided file keeps its own"
     #
     # The witness is now the entry nearest CEILING **by lookup rather than by
     # name**, which is what the sentence above always claimed it was.
-    assert ceiling_for("selfhost/check_walk.hero") == 1583
-    assert ceiling_for("selfhost/parse_use.hero") == 310
+    assert ceiling_for("selfhost/check/walk.hero") == 1583
+    assert ceiling_for("selfhost/parse/use_line.hero") == 310
     assert ceiling_for("selfhost/anything-else.hero") == CEILING
 
     # **16 since M-package-layout, and the direction is the point.** The table

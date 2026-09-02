@@ -26,36 +26,36 @@ use source
 use parse
 use resolved
 use resolve
-use check_state
-use check_sized
-use check_decls
-use check_map_keys
-use check_ffi
-use check_counted
+use check/state
+use check/sized
+use check/decls as check_decls
+use check/map_keys
+use check/ffi
+use check/counted
 
 # Check one resolved program. The resolver ran first and its answers are
 # inputs, never recomputed.
-function check(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl]) -> check_state.Checked
-    c: check_state.Checker @ check_state.new_checker(out_of: r, expr_count: a.exprs.len())
+function check(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl]) -> state.Checked
+    c: state.Checker @ state.new_checker(out_of: r, expr_count: a.exprs.len())
 
     # Sizes first, and it needs no expression types.
-    sizes = check_sized.order_and_cycles(a, r, s, decls)
+    sizes = sized.order_and_cycles(a, r, s, decls)
     c.out.type_order @ sizes.order
 
     for d in sizes.diagnostics
-        check_state.push_diagnostic(@c, d)
+        state.push_diagnostic(@c, d)
 
     check_decls.file(@c, a, r, s, decls)
 
     # After the declarations, because it reads written_type — the table
     # the lowering fills. Asking first is silent: it finds nothing and
     # passes.
-    check_map_keys.check(@c, a, s, decls)
+    map_keys.check(@c, a, s, decls)
 
     # Same reason, same table, and the same defect one milestone apart:
     # panel 062 wired its rule to one call site and three other positions
     # shipped.
-    check_ffi.fixed_only_in_a_group(@c, a, s, decls)
+    ffi.fixed_only_in_a_group(@c, a, s, decls)
 
     # §4.16's FILE-WIDE hole exemption, the same one the unused rule
     # takes: a body that is ??? falls off its end by construction — that
@@ -69,7 +69,7 @@ function check(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.D
 
     for d in c.missing_returns
         if held[source.module_at(s, d.span.start)].is_err()
-            check_state.push_diagnostic(@c, d)
+            state.push_diagnostic(@c, d)
 
     # Within the pass, source order — the same stable sort the resolver
     # uses, called across the module boundary rather than copied: two
@@ -78,12 +78,12 @@ function check(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.D
 
     # Last, because it is dense over the interner and nothing may intern
     # a type after it without saying so.
-    c.out.counted @ check_counted.build(c.out.types, decls, c.out.written_types)
+    c.out.counted @ counted.build(c.out.types, decls, c.out.written_types)
     return c.out
 
 ## Tests
 
-function checked(text: str) -> check_state.Checked
+function checked(text: str) -> state.Checked
     p = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(p.tree, s, p.decls, p.uses)

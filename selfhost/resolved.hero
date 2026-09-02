@@ -33,7 +33,7 @@
 
 use token
 use diag
-use resolve_vocab
+use resolve/vocab
 
 ## The compound key that a map cannot sort
 
@@ -115,7 +115,7 @@ record Local
 record Resolved
     uses: [Ref]
     # One entry per node in the type arena.
-    type_uses: [resolve_vocab.TypeRef]
+    type_uses: [vocab.TypeRef]
     locals: [Local]
     # module -> (name -> declaration index)
     top: {str: {str: i64}}
@@ -141,7 +141,7 @@ record Resolved
 
 function new_resolved() -> Resolved
     uses: [Ref] = []
-    type_uses: [resolve_vocab.TypeRef] = []
+    type_uses: [vocab.TypeRef] = []
     locals: [Local] = []
     top: {str: {str: i64}} = {}
     module_uses: {str: {str: str}} = {}

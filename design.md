@@ -1540,7 +1540,7 @@ M-selfhost-probe to measure whether anything needs it.
 
 **Landed 2026-08-24** (author decision closing panels 037/088; the probe had
 closed without the measurement, docs/measurements/012 finally took it):
-`selfhost/ir_place_store.hero` rewrites the bare-place pattern between mono
+`selfhost/ir/place_store.hero` rewrites the bare-place pattern between mono
 and own, `hero_array_push_owned(**slot, value)` grows on a true refcount of 1
 with doubling, and the accumulator paragraph above stays as the record of why
 the count had to come from the place. What honest counts exposed on the way —

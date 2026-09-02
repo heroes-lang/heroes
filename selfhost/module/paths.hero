@@ -1,0 +1,197 @@
+# What a `use` PATH adds to the module graph (spec § Files and layout;
+# panels 032 R4/R5, 099 R1/R3).
+#
+# Two things live here and they are the two halves of one sentence in the
+# specification — *"A `use` may be a path: `use syntax/decl` binds `decl`.
+# Last parts are unique."*:
+#
+# - **reading the path off a use line**, which discovery does before there is
+#   a tree to walk;
+# - **refusing two modules whose last parts match**, which is what makes the
+#   qualifier a program-wide key rather than a per-file one.
+#
+# **Its own module because `modules.hero` may not grow** (the layout check's
+# per-file ceiling: 320 code lines, measured when that check was written, and
+# a file already over §11's 300 may not grow further). That is the
+# instrument pushing in the right direction rather than an obstacle routed
+# around: a path is a different concern from *which files a compilation is
+# made of*, and the sentence above is the only thing these two functions
+# share with each other.
+#
+# **THE ADJACENCY RULE IS IMPLEMENTED TWICE IN THIS COMPILER, AND THAT IS A
+# PREMISE WITH A TEST UNDER IT.** `use_line.hero` reads a path through the
+# cursor, with diagnostics; `path_at` below reads one off the raw token
+# array, silently, because discovery runs before any diagnostic can point
+# anywhere (panel 031 R8: discovery re-uses the real LEXER, and a prefix
+# scanner would be a second grammar for the same text). Two readers of one
+# rule can disagree — `use a / b` is one path to a reader that ignores
+# adjacency and two names to one that does not — so
+# `tests/harness/suite_surface.hero` is not what protects this: the test at
+# the bottom of this file runs BOTH readers over the same texts and asserts
+# they agree, and it fails the day either one learns something the other
+# does not.
+
+use token
+use lexer
+use parse
+
+## Reading a path off a use line
+
+# The module names a file's use lines name, in source order. Scanned from
+# the TOKEN STREAM rather than the tree: discovery runs before there is a
+# Source to parse against, and the lexer has already settled the shape of
+# every token on the line. A malformed use is skipped here and diagnosed by
+# the parser later, once.
+function uses_of(text: str) -> [str]
+    out = lexer.lex_one(text)
+    found: [str] @ []
+    at: i64 @ 0
+
+    while at < out.tokens.len()
+        if out.tokens[at].kind == .kw_use
+            named = path_at(tokens: out.tokens, text: text, at: at + 1)
+
+            if !named.is_err()
+                found @ found.push(named.must())
+        at @ at + 1
+
+    return found
+
+# The whole path starting at `at`, or an error where there is no path there.
+#
+# `ident (/ ident)*`, every token ADJACENT to the one before it. Adjacency is
+# the rule rather than the token sequence: the lexer gives `use a/b` and
+# `use a / b` the same three tokens, and only the first is one module.
+# A comment cannot sit inside a path for the same reason — its span would
+# push the parts apart — so nothing here has to skip one.
+function path_at(tokens: [token.Token], text: str, at: i64) -> str?
+    if at >= tokens.len() || tokens[at].kind != .ident
+        return fail("no_path", "a use line whose name is missing or not a name")
+    start = tokens[at].span.start
+    end: i64 @ tokens[at].span.end
+    probe: i64 @ at + 1
+
+    while probe + 1 < tokens.len()
+        slash = tokens[probe]
+        part = tokens[probe + 1]
+
+        if slash.kind != .slash || part.kind != .ident
+            return ok(text.slice(from: start, to: end))
+
+        if slash.span.start != end || part.span.start != slash.span.end
+            return ok(text.slice(from: start, to: end))
+        end @ part.span.end
+        probe @ probe + 2
+
+    return ok(text.slice(from: start, to: end))
+
+## The rule that USED to make a qualifier a program-wide key
+
+# **`last_parts_collide` was here and is deleted** (panel 100 R3, 2026-09-02).
+# It refused two modules whose last parts matched anywhere in one compilation —
+# `syntax/decl` beside `ir/decl` — which is what made a binding a program-wide
+# key and what made the compiler's own tree unnestable: measured, 13 to 15
+# collision groups over 32 to 36 of its 169 modules depending on the mapping.
+#
+# The rule did not weaken, it MOVED, and where it moved is the point:
+# `top.read_uses` refuses a second `use` that binds a name this FILE
+# already binds (`module_binding_taken`), which is Modula-3's scope — per
+# compilation unit — and the shape panel 100's ffi-pragmatist and historian
+# reached independently, one by implementing the tabled sentence and finding it
+# uncheckable here, one from precedent.
+#
+# **Two things got better rather than one**, and both were measured by the
+# sitting. The caret now lands on the `use` line in the file being edited
+# instead of on a module's own first line in a file the author may never have
+# opened, and the repair is one clause (`as`) instead of renaming a file and
+# every importer. What got worse is honest and recorded: two files may now call
+# different modules by one name, so *find every use of this module* has no
+# single search string. Every ecosystem that allows renames answers that with a
+# consistency rule rather than a prohibition, and the historian predicts this
+# one will too.
+
+## Tests
+
+test "a use line's path is read whole, and adjacency is what makes it one"
+    assert uses_of("use geom\n")[0] == "geom"
+    assert uses_of("use syntax/decl\n")[0] == "syntax/decl"
+    assert uses_of("use a/b/c\n")[0] == "a/b/c"
+
+    # `use a / b` is not a path: the parts do not touch.
+    assert uses_of("use a / b\n")[0] == "a"
+
+    # In source order, and a comment on the line does not join the path.
+    two = uses_of("# first\nuse lex/token\nuse util\n\nfunction main()\n    print(1)\n")
+    assert two.len() == 2
+    assert two[0] == "lex/token"
+    assert two[1] == "util"
+    assert uses_of("function main()\n    print(1)\n").len() == 0
+
+    # A malformed use is skipped rather than guessed at: the parser owns
+    # the caret, and discovery's job is to terminate.
+    assert uses_of("use 42\n").len() == 0
+    assert uses_of("use\n").len() == 0
+    assert uses_of("use syntax/\n")[0] == "syntax"
+
+# The parser's answer for the same text, as a list of module names — the
+# other side of the agreement test below.
+function parse_of(text: str) -> [str]
+    parsed = parse.parse(text)
+    out: [str] @ []
+
+    for u in parsed.uses
+        out @ out.push(text.slice(from: u.name.start, to: u.name.end))
+
+    return out
+
+test "the two readers of one adjacency rule agree, and this test is why"
+    # `use_line.hero` reads a path through the cursor with diagnostics;
+    # `path_at` reads one off the token array in silence. The rule is one
+    # rule, so the answers are one answer — and the day either reader
+    # learns something the other does not, this fails instead of a program
+    # loading a file nobody named.
+    texts: [str] = [
+        "use geom\n"
+        "use syntax/decl\n"
+        "use a/b/c\n"
+        "use a / b\n"
+        "use lex/token\nuse util\n"
+    ]
+
+    for text in texts
+        scanned = uses_of(text)
+        parsed = parse_of(text)
+        assert scanned.len() == parsed.len()
+        at: i64 @ 0
+
+        while at < scanned.len()
+            assert scanned[at] == parsed[at]
+            at @ at + 1
+
+test "a refused use line does not eat the next one, and this is a fixed defect"
+    # **The defect, dated 2026-09-02 (M-package-layout step 2).** A use line
+    # whose last token is punctuation — `use lex/..`, `use shapes/` — closes
+    # with NO terminator, because `use` is not in panel 007's ender list. The
+    # first shape of both refusals recovered by scanning for one, so it ran
+    # off the end of the line and swallowed whole declarations: this exact
+    # text produced ONE diagnostic and zero uses, the second `use` gone.
+    # `use_line.skip_rest_of_line` recovers by LINE instead, which is a
+    # landmark that exists whatever the last token was.
+    #
+    # It lives here rather than in `use_line.hero` because that module
+    # cannot reach the parser: `parse` uses it, and Heroes refuses module
+    # cycles.
+    p = parse.parse("use lex/..\n\nuse shapes/\n\nfunction main()\n    print(0)\n")
+    assert p.diagnostics.len() == 2
+    assert p.diagnostics[0].code == "module_path_climbs"
+    assert p.diagnostics[1].code == "module_path_wants_a_part"
+
+    # The innocent declaration below them is untouched: one `function main`
+    # reached the tree.
+    assert p.decls.len() == 1
+
+    # And the dot form, the neighbouring shape, recovers the same way.
+    dotted = parse.parse("use geom.\n\nuse also/\n\nfunction main()\n    print(0)\n")
+    assert dotted.diagnostics.len() == 2
+    assert dotted.diagnostics[0].code == "module_path_has_no_parts"
+    assert dotted.diagnostics[1].code == "module_path_wants_a_part"

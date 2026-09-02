@@ -1,0 +1,408 @@
+# The top level, collected before any body is looked at — which is the
+# whole of "declaration order never matters" (§4.2).
+# Port of crates/heroes/src/resolve/top.rs.
+#
+# Mutual recursion needs no forward declarations because of this file: by
+# the time `factor` is resolved, `group` is already in the table, and vice
+# versa. Nothing else in the compiler ever needs a two-pass trick again.
+#
+# One namespace, not two. A `record` puts its name in the table AND gives
+# the language its constructor (`Point(x: 3, y: 4)` is a call, §4.9),
+# while a `variant` name is only ever a type — its cases are written
+# `.num`, and which variant they belong to comes from context. Keeping
+# both in one table is what makes `variant Token` and `record Token` in
+# one file a collision instead of a puzzle.
+#
+# Port note: Rust's `module_uses` maps to the use line's INDEX; the
+# ported table keeps only the names (resolved.hero's two-level shape), so
+# `unused_uses` finds the line by scanning the uses list — a handful of
+# entries, and the diagnostic order is the driver's sort anyway.
+
+use ast
+use source
+use resolved
+use inventory
+use parse
+use resolve/state
+use resolve/decls as resolve_decls
+use resolve/errors
+use module/diagnostics
+
+function collect(@r: state.Resolver, s: source.Source, decls: [ast.Decl], uses: [ast.Use])
+    index: i64 @ 0
+
+    for decl in decls
+        collect_fields(@r, s, decl)
+        enter(@r, s, decls, index)
+        index @ index + 1
+
+    read_uses(@r, s, decls, uses)
+
+# The same walk collects every FIELD name in the program — record fields
+# and variant payload fields alike, keyed by module. One narrow job: keep
+# the unknown-function error off a field that holds a function value
+# (§4.13; the rule lives with method_name in resolve_walk).
+function collect_fields(@r: state.Resolver, s: source.Source, decl: ast.Decl)
+    match decl.kind
+        .record_decl rec =>
+            for field in rec.fields
+                state.keyed_add(
+                    @r.fields,
+                    module: source.module_at(s, field.name.start),
+                    name: source.span_text(s, field.name)
+                )
+        .variant_decl v =>
+            for one_case in v.cases
+                for field in one_case.fields
+                    state.keyed_add(
+                        @r.fields,
+                        module: source.module_at(s, field.name.start),
+                        name: source.span_text(s, field.name)
+                    )
+        .constant_decl | .function_decl | .test_decl => return
+
+function enter(@r: state.Resolver, s: source.Source, decls: [ast.Decl], index: i64)
+    # A `test`'s name is its title — a string literal, quotes included
+    # (§4.18). It names nothing, and nothing can refer to it.
+    is_test = match decls[index].kind
+        .test_decl                                                     => true
+        .constant_decl | .function_decl | .record_decl | .variant_decl => false
+
+    if is_test
+        return
+    name_span = decls[index].name
+    name = source.span_text(s, name_span)
+    module = source.module_at(s, name_span.start)
+    in_library = source.is_library(s, name_span.start)
+
+    # Every built-in name is taken, in both of §1.11's tiers — the tier
+    # says where the implementation comes from, not whether the name is
+    # free. …except in the library itself, which is where those names get
+    # their implementations: it declares `range` because `range` is its
+    # job.
+    #
+    # **This runs BEFORE the duplicate check, and the order is the
+    # message**: reported as a duplicate, a user's `range` would name a
+    # line in a file the author cannot open. The table keeps the library's
+    # entry rather than the author's, so every CALL in the file still
+    # resolves to something with the right signature: one mistake, one
+    # diagnostic.
+    if !inventory.index_of(name).is_err() && !in_library
+        state.push_diagnostic(@r, errors.builtin_name_taken(name, span: name_span))
+        return
+
+    # Keyed by module: two modules may each declare `Point`, and they are
+    # two types. Only a SECOND declaration in the SAME module is the
+    # duplicate the spec refuses.
+    previous = resolved.top_in(r.out, module: module, name: name)
+
+    if !previous.is_err()
+        at = source.elsewhere(s, here: name_span.start, there: decls[previous.must()].name.start)
+        state.push_diagnostic(@r, errors.declared_twice(name: name, first: at, span: name_span))
+        return
+    resolved.declare_top(@r.out, module: module, name: name, decl: index)
+
+# Every `use` line, and the two things that make one wrong on its own.
+#
+# **`use` binds** (panel 031 R3), so a module name is an ordinary name in
+# its file: declaring something with that name is the shadowing error the
+# spec already has, and never reading it is the unused error it already
+# has. Neither needed a word of specification; both need a table.
+function read_uses(@r: state.Resolver, s: source.Source, decls: [ast.Decl], uses: [ast.Use])
+    for used in uses
+        from = source.module_at(s, used.span.start)
+        named = source.span_text(s, used.name)
+
+        if from == named
+            # A module using itself. The module graph calls it a cycle,
+            # which it is; a second message would be a second diagnostic
+            # for one mistake.
+            continue
+
+        if resolved.is_used_module(r.out, from: from, module: named)
+            state.push_diagnostic(@r, diagnostics.used_twice(named, span: used.name))
+            continue
+
+        # What a `use` introduces into this file is its BINDING — the name
+        # after `as`, or the path's last part where there is no `as`. The
+        # PARSER decides it and puts it in the node (`ast.Use.binding`), so
+        # nothing here derives a name or has to know the rule (panel 100 R8).
+        binding = source.span_text(s, used.binding)
+
+        # **THE PER-FILE UNIQUENESS RULE, and it lives here because this is
+        # where the `use` lines are** (panel 100 R3, replacing the program-wide
+        # `paths.last_parts_collide`). `use check/state` beside
+        # `use ir/state` binds `state` twice in one file and neither is more
+        # right than the other, so the second is refused — with the caret on
+        # the name the author can fix, which the deleted check could not do:
+        # it pointed at a module's own first line, in a file the author may
+        # never have opened.
+        taken = resolved.used_module_named(r.out, from: from, binding: binding)
+
+        if !taken.is_err()
+            state.push_diagnostic(
+                @r,
+                diagnostics.module_binding_taken(binding: binding, first: taken.must(), second: named, has_alias: used.binding.end != used.name.end, span: used.binding)
+            )
+            continue
+        already = resolved.top_in(r.out, module: from, name: binding)
+
+        if !already.is_err()
+            at = source.elsewhere(s, here: used.binding.start, there: decls[already.must()].name.start)
+            state.push_diagnostic(
+                @r,
+                diagnostics.use_shadows_a_declaration(name: binding, declared_at: at, span: used.binding)
+            )
+            continue
+        resolved.declare_use(@r.out, from: from, binding: binding, module: named)
+
+# What no expression and no written type ever named. Runs after every
+# body, because a `use` may be read anywhere in its file.
+#
+# §4.16's exemption applies here for the same reason it applies to a
+# binding: a `???` is a program that is not finished, and the module it
+# was going to reach may be the one the hole would have used. Asked per
+# WRITING module, because the suppression is file-wide.
+function unused_uses(@r: state.Resolver, s: source.Source, uses: [ast.Use])
+    # Rust iterates the table's KEYS; this walk iterates the LINES, so a
+    # duplicated `use` — one key, two lines — must not be reported unread
+    # twice: the second line already got `used_twice`, and the sweep
+    # answers per binding, not per occurrence.
+    #
+    # **THE SEPARATOR WAS `/` AND THAT PREMISE DIED AT M-PACKAGE-LAYOUT**
+    # (panel 099 R6). It said in so many words *"the key's `/` cannot occur
+    # in a module name (an identifier), so the join is injective"* — true
+    # until a module name became a path, and then `a` + `b/c` and `a/b` +
+    # `c` are one key, so one file's unused `use` could silence another's.
+    # A space cannot occur in either half: a module name is identifiers
+    # joined by `/`, and a file's own module name comes from its path the
+    # same way. The test at the bottom of this file is what fires if that
+    # ever stops being true, which is what §11 asks of a premise nobody can
+    # remove.
+    seen: {str: bool} @ {}
+
+    for used in uses
+        from = source.module_at(s, used.span.start)
+        named = source.span_text(s, used.name)
+
+        if from == named
+            continue
+        key = from + " " + named
+
+        if !seen[key].is_err()
+            continue
+        seen[key] @ true
+
+        if state.keyed_has(r.module_reads, module: from, name: named)
+            continue
+
+        if resolved.hole_covers(r.out, from)
+            continue
+
+        if source.is_library(s, used.span.start)
+            continue
+
+        # A refused use (duplicate, shadowing) never entered the table and
+        # already has its one diagnostic.
+        if !resolved.is_used_module(r.out, from: from, module: named)
+            continue
+        state.push_diagnostic(@r, diagnostics.unused_use(named, span: used.name))
+
+## Tests
+
+# Collect, resolve every declaration, close the sweeps — the driver's
+# shape, local to the tests until the driver file owns it.
+function resolved_file(text: str) -> state.Resolver
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    r: state.Resolver @ state.new_resolver(
+        expr_count: p.tree.exprs.len(),
+        type_count: p.tree.types.len()
+    )
+    r.module @ "t"
+    collect(@r, s, p.decls, p.uses)
+    index: i64 @ 0
+
+    for d in p.decls
+        _ = d
+        resolve_decls.declaration(@r, p.tree, s, p.decls, index)
+        index @ index + 1
+
+    unused_uses(@r, s, p.uses)
+    state.report_unused(@r, s)
+    return r
+
+test "mutual recursion needs no forward declarations"
+    r = resolved_file(
+        "function even(n: i64) -> bool\n    if n == 0\n        return true\n    return odd(n - 1)\n\nfunction odd(n: i64) -> bool\n    if n == 0\n        return false\n    return even(n - 1)\n"
+    )
+    assert r.out.diagnostics.len() == 0
+
+test "a built-in's name is refused before the duplicate check can lie"
+    r = resolved_file("function range(n: i64) -> i64\n    return n\n")
+    assert r.out.diagnostics.len() == 1
+    assert r.out.diagnostics[0].code == "builtin_name_taken"
+
+test "a second declaration in the same module is the duplicate"
+    r = resolved_file("constant M: i64\n    1\n\nconstant M: i64\n    2\n")
+    assert r.out.diagnostics.len() == 1
+    assert r.out.diagnostics[0].code == "declared_twice"
+    assert r.out.diagnostics[0].message == "`M` is already declared at line 1 — one file is one module, and a name means one thing in it"
+
+test "a use is a binding: twice is noise, a declared name is a clash"
+    # Two diagnostics and both are honest: the second use is noise, and
+    # the FIRST is then never read — one line, one message, each.
+    twice = resolved_file("use geom\nuse geom\nconstant M: i64\n    1\n")
+    assert twice.out.diagnostics.len() == 2
+    assert twice.out.diagnostics[0].code == "used_twice"
+    assert twice.out.diagnostics[1].code == "unused_binding"
+    clash = resolved_file("use geom\nconstant geom: i64\n    1\n")
+
+    # The use wins the table; the declaration arrives second and clashes —
+    # and the unread use stays quiet, refused names keep their one message.
+    found: bool @ false
+
+    for d in clash.out.diagnostics
+        if d.code == "shadowed_binding"
+            found @ true
+
+    assert found
+
+test "a local may not take a name a `use` bound, and a field still may"
+    # The mirror of the test above, beside it because reading the two
+    # together is the whole rule. `use` BINDS (panel 031 R3), so a LOCAL
+    # taking that name is the same shadowing the declaration direction has
+    # always been refused for — and this direction was never written. What
+    # it let through was not a refusal that failed to fire but a program
+    # that RAN: `geom.x` meaning the local record's field on one line and
+    # the module's function on another, at exit 0 (panel 102).
+    local = resolved_file("use geom\n\nfunction main()\n    geom = 1\n    print(to_str(geom))\n")
+    refused: bool @ false
+
+    for d in local.out.diagnostics
+        if d.code == "shadowed_binding"
+            refused @ true
+
+    assert refused
+
+    # **And the reservation stops at the binding namespace.** A FIELD named
+    # after a module is legal and has to stay legal: `b.geom` is decided by
+    # `b`'s declared type, and a module never appears to the right of a
+    # dot. This half is panel 102's llm-ergonomist condition made
+    # executable — it approved the rule only if fields were out, because
+    # refusing a field name would make adding one `use` line edit every
+    # other file that builds the record: locality of reading bought by
+    # destroying locality of repair.
+    field = resolved_file(
+        "use geom\n\nrecord Box\n    geom: i64\n\nfunction main()\n    b = Box(geom: 1)\n    print(to_str(b.geom))\n"
+    )
+
+    for d in field.out.diagnostics
+        assert d.code != "shadowed_binding"
+
+test "a path binds its last part, and the sweep key cannot be ambiguous"
+    # `use syntax/decl` introduces `decl` into this file, so the clash is
+    # with a declaration called `decl` — the path itself is not a name
+    # anything can declare (panel 099 R3).
+    clash = resolved_file("use syntax/decl\nconstant decl: i64\n    1\n")
+    found: bool @ false
+
+    for d in clash.out.diagnostics
+        if d.code == "shadowed_binding"
+            found @ true
+
+    assert found
+
+    # **THE PREMISE THIS TEST EXISTS FOR** (panel 099 R6). The unused-use
+    # sweep joins the writing module and the used one into one key, and its
+    # separator was `/` under a comment saying a module name could not
+    # contain one. Both of these files use a module and neither reads it,
+    # so BOTH owe a diagnostic — and under the old separator `a` + `b/c`
+    # and `a/b` + `c` are one key, so the second file's message would be
+    # swallowed by the first's. Two diagnostics is the whole assertion.
+    #
+    # The pair is chosen so the keys collide exactly: writing module `a`
+    # using `b/c`, and writing module `a/b` using `c`.
+    files: [source.InputFile] = [
+        source.InputFile(name: "a.hero", module: "a", text: "use b/c\nfunction fa() -> i64\n    return 1\n", is_library: false)
+        source.InputFile(name: "a/b.hero", module: "a/b", text: "use c\nfunction fb() -> i64\n    return 2\n", is_library: false)
+        source.InputFile(name: "b/c.hero", module: "b/c", text: "function fc() -> i64\n    return 3\n", is_library: false)
+        source.InputFile(name: "c.hero", module: "c", text: "function fd() -> i64\n    return 4\n", is_library: false)
+    ]
+    s = source.from_files(files)
+    p = parse.parse(s.text)
+    r: state.Resolver @ state.new_resolver(
+        expr_count: p.tree.exprs.len(),
+        type_count: p.tree.types.len()
+    )
+    collect(@r, s, p.decls, p.uses)
+    unused_uses(@r, s, p.uses)
+    state.report_unused(@r, s)
+    unread: i64 @ 0
+
+    for d in r.out.diagnostics
+        if d.code == "unused_binding"
+            unread @ unread + 1
+
+    assert unread == 2
+
+test "a file may not bind one name twice, and `as` is the repair"
+    # **Panel 100 R3's check, and the test §9 asks of every verifier rule.**
+    # Two modules whose paths differ and whose last parts do not: one file
+    # naming both binds `state` twice, and the second `use` is refused ON
+    # THAT LINE — which is what the deleted program-wide check could not do,
+    # since it pointed at a module's own first line.
+    files: [source.InputFile] = [
+        source.InputFile(name: "main.hero", module: "main", text: "use check/state\nuse ir/state\n\nfunction main()\n    print(state.tag())\n", is_library: false)
+        source.InputFile(name: "check/state.hero", module: "check/state", text: "function tag() -> i64\n    return 1\n", is_library: false)
+        source.InputFile(name: "ir/state.hero", module: "ir/state", text: "function tag() -> i64\n    return 2\n", is_library: false)
+    ]
+    s = source.from_files(files)
+    p = parse.parse(s.text)
+    r: state.Resolver @ state.new_resolver(
+        expr_count: p.tree.exprs.len(),
+        type_count: p.tree.types.len()
+    )
+    collect(@r, s, p.decls, p.uses)
+    taken: i64 @ 0
+
+    for d in r.out.diagnostics
+        if d.code == "module_binding_taken"
+            taken @ taken + 1
+            assert d.fixes.len() == 1
+            assert d.fixes[0].certainty == .guess
+            assert d.fixes[0].replacement == "state as ir_state"
+
+    assert taken == 1
+
+    # With `as` on the second line, both are bound and nothing is refused —
+    # the program the old rule made unwritable.
+    fixed: [source.InputFile] = [
+        source.InputFile(name: "main.hero", module: "main", text: "use check/state\nuse ir/state as ir_state\n\nfunction main()\n    print(state.tag() + containers.tag())\n", is_library: false)
+        source.InputFile(name: "check/state.hero", module: "check/state", text: "function tag() -> i64\n    return 1\n", is_library: false)
+        source.InputFile(name: "ir/state.hero", module: "ir/state", text: "function tag() -> i64\n    return 2\n", is_library: false)
+    ]
+    s2 = source.from_files(fixed)
+    p2 = parse.parse(s2.text)
+    r2: state.Resolver @ state.new_resolver(
+        expr_count: p2.tree.exprs.len(),
+        type_count: p2.tree.types.len()
+    )
+    collect(@r2, s2, p2.decls, p2.uses)
+
+    for d in r2.out.diagnostics
+        assert d.code != "module_binding_taken"
+
+test "an unread use is reported, and a hole in the file suspends it"
+    unread = resolved_file("use geom\nconstant M: i64\n    1\n")
+    assert unread.out.diagnostics.len() == 1
+    assert unread.out.diagnostics[0].code == "unused_binding"
+    assert unread.out.diagnostics[0].notes.len() == 1
+    quiet = resolved_file("use geom\nfunction f() -> i64\n    return ???\n")
+    assert quiet.out.diagnostics.len() == 0
+
+test "a variant's payload fields reach the field set, keyed by module"
+    r = resolved_file("variant Token\n    num\n        v: i64\n    plus\n")
+    assert r.out.diagnostics.len() == 0
+    assert state.keyed_has(r.fields, module: "t", name: "v")
+    assert !state.keyed_has(r.fields, module: "geom", name: "v")

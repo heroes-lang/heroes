@@ -1,0 +1,385 @@
+# The place store (design.md §4.10; panels 037 and 088; landed by author
+# decision 2026-08-24): `p @ p.push(v)` on a BARE place becomes one growing
+# instruction, `push_owned(place, value)`, in place of load-call-store —
+# the shape that copied every element on every push and cost the compiler
+# most of its own build (docs/measurements/012).
+#
+# An IR-to-IR pass between mono and own, NOT a lowering case, for two
+# reasons. First, ir_lower is at its frozen ceiling and this decision
+# deserves its own module. Second — the real one — on the IR the safety
+# argument is a fact about the value in hand (CLAUDE.md §11): the rewrite
+# fires only when `load p` and `store p` sit in ONE block with no write to
+# p's root between them, so anything that could mutate p while the pushed
+# value is computed (`f(@p)` in an argument, a block re-entering p) simply
+# breaks the pattern and keeps the classic shape. Reads between the two
+# are safe unrewritten AND rewritten: the value is computed before the
+# grow either way, so it sees the pre-push array in both shapes.
+#
+# Why the pass runs BEFORE the ownership pass: rule 5 gives a call's
+# result a synthetic owning slot, so after own every accumulator push
+# reads refcount 2 and uniqueness is invisible — panel 037 measured the
+# in-place gate firing on 0 of 100,000 pushes for exactly this reason.
+# push_owned takes the place itself (`**` in the runtime), the count it
+# sees is the true one, and the ownership pass adds NOTHING around it:
+# the runtime copies the value in (borrowed, like hero_array_push) and
+# owns the old header's release.
+#
+# What ir_verify holds (via verify below, panel 088 R4 condition 4): the
+# path is empty — uniqueness comes from the place, and a path step would
+# put a container between the slot and the header, which is the exact
+# corruption panel 037 measured — and the place is an array.
+
+use token
+use ir
+use ir/containers
+use ir/uses
+use inventory
+use check/state
+use check/table
+
+function run(@p: containers.Program)
+    rewritten: [containers.Function] @ []
+
+    for f in p.functions
+        rewritten @ rewritten.push(rewrite(f))
+
+    p.functions @ rewritten
+
+function rewrite(f: containers.Function) -> containers.Function
+    worked: containers.Function @ f
+    reads = counts(worked)
+    bi: i64 @ 0
+
+    while bi < worked.blocks.len()
+        worked.blocks[bi].insts @ block_rewrite(worked, insts: worked.blocks[bi].insts, reads: reads)
+        bi @ bi + 1
+
+    return worked
+
+# How many instructions or terminators read each value. The pattern
+# requires the load and the call to be read EXACTLY once — by the call
+# and the store being rewritten — or some third reader would observe a
+# value the rewrite deletes.
+function counts(f: containers.Function) -> {i64: i64}
+    reads: {i64: i64} @ {}
+
+    for blk in f.blocks
+        for one in blk.insts
+            for v in uses.operands(f, one.op)
+                reads[v] @ reads[v].default(0) + 1
+
+        for v in uses.terminator_operands(blk.term)
+            reads[v] @ reads[v].default(0) + 1
+
+    return reads
+
+function block_rewrite(f: containers.Function, insts: [ir.Inst], reads: {i64: i64}) -> [ir.Inst]
+    defs: {i64: i64} @ {}
+    at: i64 @ 0
+
+    for one in insts
+        match one.dest
+            .ok d => defs[d] @ at
+            .err  => defs @ defs
+
+        at @ at + 1
+
+    drop: {i64: bool} @ {}
+    grow: {i64: ir.OpKind} @ {}
+    si: i64 @ 0
+
+    for one in insts
+        match one.op
+            .store st =>
+                found = pattern(f, insts, defs: defs, reads: reads, store_at: si, place: st.place, value: st.value)
+
+                if !found.is_err()
+                    pair = found.must()
+                    drop[pair.load_at] @ true
+                    drop[pair.call_at] @ true
+                    grow[si] @ .push_owned(place: st.place, value: pair.pushed)
+            .lit | .load | .push_owned | .unary | .binary | .cast | .call | .construct => si @ si
+            .field | .index | .map_get | .len_of | .tag_of | .payload                  => si @ si
+            .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing   => si @ si
+
+        si @ si + 1
+
+    out: [ir.Inst] @ []
+    oi: i64 @ 0
+
+    for one in insts
+        if drop[oi].default(false)
+            oi @ oi + 1
+            continue
+        rewritten = grow[oi]
+
+        if rewritten.is_err()
+            out @ out.push(one)
+        else
+            out @ out.push(ir.Inst(dest: one.dest, op: rewritten.must(), ty: one.ty, span: one.span))
+        oi @ oi + 1
+
+    return out
+
+record Match
+    load_at: i64
+    call_at: i64
+    pushed: i64
+
+# The whole recognition, as facts about THIS block: the stored value is a
+# push call read once; its receiver is a load of the SAME bare place read
+# once; both sit before the store in this block; nothing between the load
+# and the store writes the root.
+function pattern(f: containers.Function, insts: [ir.Inst], defs: {i64: i64}, reads: {i64: i64}, store_at: i64, place: ir.Place, value: i64) -> Match?
+    if place.path.length != 0
+        return fail("not_bare", "the place has a path")
+    call_at = defs[value]?
+
+    if reads[value].default(0) != 1
+        return fail("shared", "the pushed result has another reader")
+    given: [ir.Arg] @ []
+
+    match insts[call_at].op
+        .call cl =>
+            match cl.callee
+                .builtin_fn bt =>
+                    if inventory.table()[bt.at].name != "push"
+                        return fail("not_push", "another builtin")
+                .heroes_fn | .extern_fn | .indirect => return fail("not_push", "not a builtin")
+
+            given @ containers.args_of(f, cl.arguments)
+        .lit | .load | .store | .push_owned | .unary | .binary | .cast | .construct => return fail(
+            "not_push",
+            "not a call"
+        )
+        .field | .index | .map_get | .len_of | .tag_of | .payload => return fail("not_push", "not a call")
+        .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing => return fail(
+            "not_push",
+            "not a call"
+        )
+
+    if given.len() != 2
+        return fail("not_push", "wrong arity")
+    receiver: i64 @ 0
+    pushed: i64 @ 0
+
+    match given[0]
+        .value_arg v => receiver @ v.value
+        .inout_arg   => return fail("not_push", "an inout receiver")
+
+    match given[1]
+        .value_arg v => pushed @ v.value
+        .inout_arg   => return fail("not_push", "an inout element")
+
+    load_at = defs[receiver]?
+
+    if reads[receiver].default(0) != 1
+        return fail("shared", "the receiver has another reader")
+
+    match insts[load_at].op
+        .load ld =>
+            if ld.place.root != place.root || ld.place.path.length != 0
+                return fail("other_place", "the load reads another place")
+        .lit | .store | .push_owned | .unary | .binary | .cast | .call | .construct => return fail(
+            "not_load",
+            "the receiver is not a load"
+        )
+        .field | .index | .map_get | .len_of | .tag_of | .payload => return fail(
+            "not_load",
+            "the receiver is not a load"
+        )
+        .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing => return fail(
+            "not_load",
+            "the receiver is not a load"
+        )
+
+    if load_at >= call_at || call_at >= store_at
+        return fail("order", "the pattern is not in load-call-store order")
+    between: i64 @ load_at + 1
+
+    while between < store_at
+        if between != call_at
+            if writes_root(f, insts[between].op, root: place.root)
+                return fail("written", "the root is written while the value is computed")
+        between @ between + 1
+
+    return ok(Match(load_at: load_at, call_at: call_at, pushed: pushed))
+
+# Does this load's value outlive a write to its own root — an `@` call
+# on the slot, a push_owned, a store? Classic lowering never asked: rule
+# 5's synthetic slots kept every accumulator at refcount 2 by accident,
+# so the header under a borrowed load could not die. The place store
+# makes the count honest, which is exactly when the load needs a
+# reference of its own (ir_own gives it one; place-store-c5 case 5 is
+# the program that dies without this).
+function load_survives_write(f: containers.Function, insts: [ir.Inst], term: ir.Term, load_at: i64, root: i64, value: i64) -> bool
+    written: bool @ false
+    at: i64 @ load_at + 1
+
+    while at < insts.len()
+        if written
+            for v in uses.operands(f, insts[at].op)
+                if v == value
+                    return true
+        else
+            if writes_root(f, insts[at].op, root: root)
+                written @ true
+        at @ at + 1
+
+    if written
+        for v in uses.terminator_operands(term)
+            if v == value
+                return true
+    return false
+
+# Could this operation change what the root slot holds? `@` arguments
+# and stores are the only writers the IR has; copy_out is kept out of
+# caution — it writes a caller's place through a parameter.
+function writes_root(f: containers.Function, op: ir.OpKind, root: i64) -> bool
+    match op
+        .store st => return st.place.root == root
+        .push_owned pg => return pg.place.root == root
+        .copy_out => return true
+        .call cl => return inout_hits(f, over: cl.arguments, root: root)
+        .construct con => return inout_hits(f, over: con.arguments, root: root)
+        .abort_op ab => return inout_hits(f, over: ab.arguments, root: root)
+        .lit | .load | .unary | .binary | .cast => return false
+        .field | .index | .map_get | .len_of | .tag_of | .payload => return false
+        .func_ref | .incref | .decref | .hole | .missing => return false
+
+    return false
+
+function inout_hits(f: containers.Function, over: ir.Run, root: i64) -> bool
+    for arg in containers.args_of(f, over)
+        match arg
+            .inout_arg io =>
+                if io.place.root == root
+                    return true
+            .value_arg => continue
+
+    return false
+
+# The verifier's half (panel 088 R4 condition 4), called from ir_verify:
+# a push_owned whose path is not empty, or whose place is not an array,
+# is the pass being wrong, loudly.
+function verify(blk: containers.Block, f: containers.Function, c: state.Checked, label: str, @problems: [str])
+    for one in blk.insts
+        match one.op
+            .push_owned pg =>
+                path_problem(pg.place, label: label, problems: @problems)
+                is_array: bool @ false
+
+                match table.get(c.types, f.slots[pg.place.root].ty)
+                    .array                                                    => is_array @ true
+                    .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => is_array @ is_array
+                    .fixed | .map | .fallible | .function_ty | .named         => is_array @ is_array
+                    .case_ty | .failure | .generic | .error                   => is_array @ is_array
+
+                if !is_array
+                    problems @ problems.push(label + "a push_owned into a place that is not an array")
+            .lit | .load | .store | .unary | .binary | .cast | .call | .construct    => continue
+            .field | .index | .map_get | .len_of | .tag_of | .payload                => continue
+            .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing => continue
+
+# The path half, on its own so the test below can fire it without a
+# Checked in hand; the array half above is defensive — from source the
+# pattern can only arise from a `push` the checker typed `[T]` — and is
+# exercised by every real build through phases.
+function path_problem(place: ir.Place, label: str, @problems: [str])
+    if place.path.length != 0
+        problems @ problems.push(label + "a push_owned with a path — uniqueness comes from a bare place")
+
+## Tests
+
+test "the canonical accumulator is rewritten to one growing instruction"
+    f = accumulator()
+    done = rewrite(f)
+    ops = op_names(done)
+    assert ops == ["lit", "push_owned"]
+
+test "a receiver with a second reader keeps the classic shape"
+    f: containers.Function @ accumulator()
+
+    # A second use of the loaded receiver: len_of reads it too.
+    f.blocks[0].insts @ f.blocks[0].insts.push(inst(dest: ok(4), op: .len_of(value: 1), ty: 0))
+    done = rewrite(f)
+    assert op_names(done) == ["lit", "load", "call", "store", "len_of"]
+
+test "the verifier fires on a push_owned with a path"
+    problems: [str] @ []
+    path_problem(ir.Place(root: 0, path: ir.Run(start: 0, length: 1)), label: "t: ", problems: @problems)
+    assert problems.len() == 1
+
+    # And stays quiet on the bare place the pass is allowed to emit.
+    path_problem(bare(0), label: "t: ", problems: @problems)
+    assert problems.len() == 1
+
+test "a write to the root between load and store keeps the classic shape"
+    f: containers.Function @ accumulator()
+
+    # Insert a store to the same root between the call and the store.
+    grown: [ir.Inst] @ []
+    at: i64 @ 0
+
+    for one in f.blocks[0].insts
+        if at == 2
+            grown @ grown.push(inst(dest: fail("none", "void"), op: .store(place: bare(0), value: 0), ty: 0))
+        grown @ grown.push(one)
+        at @ at + 1
+
+    f.blocks[0].insts @ grown
+    done = rewrite(f)
+    assert op_names(done) == ["lit", "load", "store", "call", "store"]
+
+function bare(root: i64) -> ir.Place
+    return ir.Place(root: root, path: ir.Run(start: 0, length: 0))
+
+function inst(dest: i64?, op: ir.OpKind, ty: i64) -> ir.Inst
+    return ir.Inst(dest: dest, op: op, ty: ty, span: token.Span(start: 0, end: 1))
+
+# One block: t0 = lit; t1 = load xs; t2 = call push(t1, t0); store xs <- t2.
+function accumulator() -> containers.Function
+    f: containers.Function @ uses.scaffold()
+    f.slots @ [containers.Slot(name: "xs", ty: 0, kind: .local_slot)]
+    f.values @ [0, 0, 0, 0, 0]
+    f.arguments @ [.value_arg(value: 1), .value_arg(value: 0)]
+    body: [ir.Inst] @ [
+        inst(dest: ok(0), op: .lit(value: .bool_const(value: false)), ty: 0)
+        inst(dest: ok(1), op: .load(place: bare(0)), ty: 0)
+        inst(dest: ok(2), op: .call(callee: .builtin_fn(at: push_index()), arguments: ir.Run(start: 0, length: 2), variadic: false), ty: 0)
+        inst(dest: fail("none", "void"), op: .store(place: bare(0), value: 2), ty: 0)
+    ]
+    f.blocks @ [containers.Block(preds: [], insts: body, term: .return_term(value: fail("none", "bare")), note: "test")]
+    return f
+
+function push_index() -> i64
+    at: i64 @ 0
+    found: i64 @ 0
+
+    for b in inventory.table()
+        if b.name == "push"
+            found @ at
+        at @ at + 1
+
+    return found
+
+function op_names(f: containers.Function) -> [str]
+    out: [str] @ []
+
+    for blk in f.blocks
+        for one in blk.insts
+            out @ out.push(op_name(one.op))
+
+    return out
+
+function op_name(op: ir.OpKind) -> str
+    return match op
+        .lit                                                    => "lit"
+        .load                                                   => "load"
+        .store                                                  => "store"
+        .push_owned                                             => "push_owned"
+        .call                                                   => "call"
+        .len_of                                                 => "len_of"
+        .unary | .binary | .cast | .construct | .field | .index => "other"
+        .map_get | .tag_of | .payload | .func_ref | .copy_out   => "other"
+        .abort_op | .incref | .decref | .hole | .missing        => "other"

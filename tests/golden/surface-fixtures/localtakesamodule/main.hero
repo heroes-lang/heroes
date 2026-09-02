@@ -6,7 +6,7 @@
 # no diagnostic anywhere. Both readings type-check, because a field of `i64`
 # and a function returning `i64` are indistinguishable at the use site.
 #
-# CAUSE: `selfhost/resolve_state.hero`'s `declare` ran three name-is-taken
+# CAUSE: `selfhost/resolve/state.hero`'s `declare` ran three name-is-taken
 # stages — another local, a built-in, a top-level declaration — and never
 # consulted the file's `use` table. The declaration direction was refused
 # (`use_shadows_a_declaration`); the local direction was not. spec:99 plus

@@ -37,7 +37,7 @@
 # provoked none of it (CLAUDE.md §1: a repair is attacked at the shapes next
 # to the one that provoked it).
 #
-# The unit test that pins the same defect is in `selfhost/module_paths.hero`,
+# The unit test that pins the same defect is in `selfhost/module/paths.hero`,
 # which is where the parser can be called: `parse_use.hero` cannot reach it,
 # because `parse` uses `parse_use` and Heroes refuses module cycles.
 use lex/..  #~ module_path_climbs

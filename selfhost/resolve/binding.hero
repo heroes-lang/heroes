@@ -1,0 +1,48 @@
+# What a name is being bound TO, as one value.
+#
+# Split out of `state.hero` on 2026-08-26 along the seam §11 asks
+# for: every function here is pure and none of them touches the resolver.
+# Five constructors, one per way a name enters scope, so the call sites
+# read as what the author wrote — `param_binding`, `cell_binding` — rather
+# than as four fields somebody has to get right each time.
+
+use resolved
+
+# What is being bound, as one value: its kind, whether it may be written,
+# and the syntax the checker will want back.
+record Binding
+    kind: resolved.LocalKind
+    mutable: bool
+    ty: i64?
+    value: i64?
+
+# A parameter. Its type is always written (§4.4), and `@` makes it in-out.
+function param_binding(ty: i64, mutable: bool) -> Binding
+    return Binding(kind: .param, mutable: mutable, ty: ok(ty), value: fail("absent", "a parameter has no initialiser"))
+
+# `x = e`, or `xs: [i64] = []` where the empty literal needs the annotation.
+function bind_binding(ty: i64?, value: i64) -> Binding
+    return Binding(kind: .bind, mutable: false, ty: ty, value: ok(value))
+
+# `v: i64 @ 0` — the type is mandatory, which is what makes the third line
+# shape distinguishable from a mutation (§4.4).
+function cell_binding(ty: i64, value: i64) -> Binding
+    return Binding(kind: .cell, mutable: true, ty: ok(ty), value: ok(value))
+
+# `for x in xs` — the element type comes from the iterable.
+function loop_binding(iterable: i64) -> Binding
+    return Binding(
+        kind: .loop_var,
+        mutable: false,
+        ty: fail("absent", "a loop variable's type comes from the iterable"),
+        value: ok(iterable)
+    )
+
+# `.num n` — the payload's type comes from the case the pattern names.
+function payload_binding() -> Binding
+    return Binding(
+        kind: .payload,
+        mutable: false,
+        ty: fail("absent", "a payload's type comes from its case"),
+        value: fail("absent", "a payload has no initialiser")
+    )

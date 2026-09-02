@@ -57,7 +57,7 @@ use token
 use diag
 use ast
 use cursor
-use parse_type
+use parse/type
 
 ## The precedence table — §4.14, read from the bottom up
 
@@ -186,7 +186,7 @@ function binary(@c: cursor.Cursor, @a: ast.Ast, text: str, min_power: i64) -> i6
     #
     # `out + match c` is untouched: there `left` is `out` and the control
     # form is the RIGHT operand, which is the only side its block can be
-    # on (`print_fmt.hero`'s `binary_control_tail` says the same thing
+    # on (`fmt.hero`'s `binary_control_tail` says the same thing
     # from the printer's side).
     if ends_the_expression(a, left)
         return left
@@ -823,7 +823,7 @@ function bind_stmt(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
 function annotated(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
     name = cursor.bump(@c).span
     _ = cursor.bump(@c)
-    ty = parse_type.parse_type(@c, @a, text)
+    ty = type.parse_type(@c, @a, text)
 
     if cursor.eat(@c, .at)
         return .declare(name: name, ty: ty, value: parse_expr(@c, @a, text))

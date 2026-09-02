@@ -1,0 +1,244 @@
+# to_<width> as C: the one built-in that builds its own T? inline
+# (spec § Types; design.md §4.3; panels 042-045, 060). Port of
+# crates/heroes/src/emit/convert.rs.
+#
+# It sits apart from the other built-ins for the reason its own body
+# states: entry answers with the NAME of a C entry point, and a
+# conversion has to build a tagged union generated for this result
+# type, which no runtime function can return.
+#
+# Two rules, both paid for by a defect:
+# - THE RANGE TESTS COME FROM THE TWO RANGES, never from the two
+#   shapes: a version derived by hand from signed() and bits() let
+#   to_i8(-129) through — the low test was emitted only when the floor
+#   was zero, and a signed narrower target's floor is -128.
+# - A TEST THAT IS ALWAYS TRUE IS OMITTED, never emitted: `true &&`
+#   turns every widening into a tautological-compare error under §7's
+#   flags.
+#
+# Port note: Rust compares i128 range endpoints; Heroes has no i128, so
+# the same two questions are asked in sign-and-magnitude — "can the
+# source go below the target's floor" and "above its ceiling" — against
+# the widths tables, and the emitted TEXT comes from int_low_text/
+# int_high_text, the same strings the diagnostics print.
+
+use check/table
+use check/state
+use ir
+use ir/containers
+use widths
+use emit/ctype
+use emit/writer
+use token
+use source
+use parse
+use resolve
+use checker
+
+# Emit into = to_<width>(value) — a T?, always, at every width (the
+# uniform rule the author ratified on 2026-08-13).
+function width(@w: writer.Writer, c: state.Checked, names: ctype.Names, f: containers.Function, name: str, run: ir.Run, arguments: [str], into: str)
+    # The loud direction: a conversion takes exactly one value argument
+    # — the checker fixed the arity, and @ marks a parameter, of which
+    # a built-in has none. Returning silently here once left a
+    # zero-initialised T? whose tag = 0 is OK (the f32 defect one cause
+    # up).
+    given = containers.args_of(f, run)
+    source_value: i64 @ 0 - 1
+
+    if given.len() > 0
+        match given[0]
+            .value_arg v => source_value @ v.value
+            .inout_arg   => source_value @ source_value
+
+    if source_value < 0
+        writer.line(@w, text: "    hero_unreachable(); /* a conversion lost its argument */")
+        return
+    result_ty = containers.value_type(f, source_value)
+    to = kind_named(name.slice(from: 3, to: name.len()))
+
+    if to.is_err()
+        writer.line(@w, text: "    hero_unreachable(); /* not a width conversion */")
+        return
+
+    # lookup, not intern: the checker already made this T? when it
+    # typed the call — a miss means the two passes disagree, so it is
+    # loud.
+    inner = table.lookup(c.types, .int_ty(kind: to.must()))
+
+    if inner.is_err()
+        writer.line(@w, text: "    hero_unreachable(); /* the checker never interned the target width */")
+        return
+    option_id = table.lookup(c.types, .fallible(payload: inner.must()))
+
+    if option_id.is_err()
+        writer.line(@w, text: "    hero_unreachable(); /* the checker never interned the result T? */")
+        return
+    union_name = ctype.option_of(names, ty: option_id.must())
+
+    # The f64 source is to_i64's alone and takes its own path: its
+    # range question is hero_f64_fits_int, written in the runtime. An
+    # f32 reaches it through ONE widening call — a second predicate
+    # would be two spellings of one range test, two chances to
+    # disagree. (The arm that matched only f64 made an f32 fall through
+    # and produce ok(0) at exit 0 — panel 060.)
+    is_float: bool @ false
+    float_value: str @ arguments[0]
+
+    match table.get(c.types, result_ty)
+        .float_ty fk =>
+            is_float @ true
+
+            match fk.kind
+                .f32 => float_value @ "hero_f32_to_f64(" + arguments[0] + ")"
+                .f64 => float_value @ float_value
+        .int_ty                                                    => is_float @ is_float
+        .bool | .str | .ptr | .cstr | .unit                        => is_float @ is_float
+        .array | .fixed | .map | .fallible | .function_ty | .named => is_float @ is_float
+        .case_ty | .failure | .generic | .error                    => is_float @ is_float
+
+    if is_float
+        writer.line(@w, text: "    if (hero_f64_fits_int(" + float_value + ")) {")
+        writer.line(
+            @w,
+            text: "        " + into + " = (" + union_name + "){.tag = INT64_C(0), .as.ok = hero_f64_to_int(" + float_value + ")};"
+        )
+        writer.line(@w, text: "    } else {")
+        writer.line(
+            @w,
+            text: "        " + into + " = (" + union_name + "){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};"
+        )
+        writer.line(@w, text: "    }")
+        return
+    from: widths.IntKind @ .i64
+    is_int: bool @ false
+
+    match table.get(c.types, result_ty)
+        .int_ty ik =>
+            from @ ik.kind
+            is_int @ true
+        .float_ty | .bool | .str | .ptr | .cstr | .unit            => is_int @ is_int
+        .array | .fixed | .map | .fallible | .function_ty | .named => is_int @ is_int
+        .case_ty | .failure | .generic | .error                    => is_int @ is_int
+
+    if !is_int
+        writer.line(@w, text: "    hero_unreachable(); /* a conversion's source is an integer or a float */")
+        return
+
+    # Both bounds asked of the two RANGES: a bound is tested when the
+    # source can reach past it, and omitted when it cannot. In
+    # sign-and-magnitude: the source goes below the target's floor iff
+    # the source is signed and (the target is unsigned, or the source's
+    # min magnitude exceeds the target's); it goes above the ceiling
+    # iff its max magnitude does.
+    value = arguments[0]
+    suffix: str @ "ULL"
+
+    if widths.int_signed(from)
+        suffix @ "LL"
+    tests: [str] @ []
+    goes_below: bool @ false
+
+    if widths.int_signed(from)
+        if !widths.int_signed(to.must())
+            goes_below @ true
+        else
+            if widths.int_min_magnitude(from) > widths.int_min_magnitude(to.must())
+                goes_below @ true
+
+    if goes_below
+        tests @ tests.push(value + " >= " + widths.int_low_text(to.must()) + suffix)
+
+    if widths.int_max_magnitude(from) > widths.int_max_magnitude(to.must())
+        tests @ tests.push(value + " <= " + widths.int_high_text(to.must()) + suffix)
+
+    # An empty test list is the widening case, and it emits no branch
+    # at all — no condition, no else, and in particular no if (1).
+    if tests.len() == 0
+        writer.line(
+            @w,
+            text: "    " + into + " = (" + union_name + "){.tag = INT64_C(0), .as.ok = (" + widths.int_c_type(to.must()) + ")" + arguments[0] + "};"
+        )
+        return
+    writer.line(@w, text: "    if (" + tests.join(" && ") + ") {")
+    writer.line(
+        @w,
+        text: "        " + into + " = (" + union_name + "){.tag = INT64_C(0), .as.ok = (" + widths.int_c_type(to.must()) + ")" + value + "};"
+    )
+    writer.line(@w, text: "    } else {")
+    writer.line(
+        @w,
+        text: "        " + into + " = (" + union_name + "){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};"
+    )
+    writer.line(@w, text: "    }")
+
+function kind_named(short: str) -> widths.IntKind?
+    if short == "i8"
+        return ok(.i8)
+
+    if short == "i16"
+        return ok(.i16)
+
+    if short == "i32"
+        return ok(.i32)
+
+    if short == "i64"
+        return ok(.i64)
+
+    if short == "u8"
+        return ok(.u8)
+
+    if short == "u16"
+        return ok(.u16)
+
+    if short == "u32"
+        return ok(.u32)
+
+    if short == "u64"
+        return ok(.u64)
+    return fail("none", "not a width name")
+
+## Tests
+
+test "narrowing tests both bounds, widening emits none, u64 tests only the floor"
+    text = "function main()\n    n: i64 @ 200\n    small = n.to_i8()\n    big = n.to_u64()\n    _ = small\n    _ = big\n    print(n)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    names0 = ctype.new_names(s, parsed.decls)
+    names = ctype.with_options(names0, c: c, s: s, decls: parsed.decls)
+    int_id = table.int_ty_id(c.types)
+    f = containers.Function(
+        name: "t",
+        decl: 0,
+        kind: .function_kind,
+        generics: [],
+        params: [],
+        result: 0,
+        slots: [],
+        blocks: [],
+        values: [int_id],
+        arguments: [.value_arg(value: 0)],
+        steps: [],
+        instance: [],
+        call_instances: {},
+        span: token.Span(start: 0, end: 1)
+    )
+    w: writer.Writer @ writer.new_writer("t")
+    width(@w, c, names, f, name: "to_i8", run: ir.Run(start: 0, length: 1), arguments: ["t0"], into: "t7")
+    got = writer.finish(w)
+    i8_opt = table.lookup(c.types, .fallible(payload: table.lookup(c.types, .int_ty(kind: .i8)).must())).must(
+    )
+    i8_union = ctype.option_of(names, ty: i8_opt)
+    assert got == "    if (t0 >= -128LL && t0 <= 127LL) {\n        t7 = (" + i8_union + "){.tag = INT64_C(0), .as.ok = (int8_t)t0};\n    } else {\n        t7 = (" + i8_union + "){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};\n    }\n"
+
+    # i64 -> u64: only the floor can be crossed.
+    uw: writer.Writer @ writer.new_writer("t")
+    width(@uw, c, names, f, name: "to_u64", run: ir.Run(start: 0, length: 1), arguments: ["t0"], into: "t8")
+    u64_got = writer.finish(uw)
+    u64_opt = table.lookup(c.types, .fallible(payload: table.lookup(c.types, .int_ty(kind: .u64)).must())).must(
+    )
+    u64_union = ctype.option_of(names, ty: u64_opt)
+    assert u64_got == "    if (t0 >= 0LL) {\n        t8 = (" + u64_union + "){.tag = INT64_C(0), .as.ok = (uint64_t)t0};\n    } else {\n        t8 = (" + u64_union + "){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};\n    }\n"

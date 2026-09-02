@@ -1,0 +1,242 @@
+# The half of §4.19 that asks whether a header's type is a UNION, and
+# stops the two operations that would answer wrongly (panels 073, 077).
+# Port of crates/heroes/src/emit/extern_union.rs.
+#
+# A C union gives every member the same address. Bound as a record,
+# construction writes every field into one place and C's last
+# initialiser wins — UDef(i: 1, f: 1.0) printed 1065353216, the bits of
+# 1.0f, at exit 0 — and the generated eq and hash read the same bytes
+# twice under two types. READING IS NOT ONE OF THEM and this file must
+# not touch it: panel 073 compiled three SDL3 programs that read a
+# union's members, all correct, and the four-arm event loop is what a
+# binding to SDL_Event actually looks like.
+#
+# The predicate asks C what the type IS: __builtin_classify_type
+# answers 13 for a union and 12 for a struct, in an unevaluated
+# operand, against the real header. Panel 073 shipped sizeof(T) >= the
+# fields' sum and panel 077 refuted it three hours later on the case
+# the sitting was about: a PADDED union has room, and SDL_Event is a
+# padded union. The sum form is also blind at one declared field —
+# the shape a binding to a single arm actually has.
+#
+# A premise-death control ships with it (CLAUDE.md §11): clang
+# answered 12 for unions before 2019, so two assertions state the
+# 13/12 split directly and a toolchain regression becomes a build
+# failure rather than a silence.
+
+use ast
+use source
+use check/table
+use check/state
+use ir/containers
+use emit/ctype
+use emit/writer
+use parse
+use resolve
+use checker
+use ir/lower
+
+# The marker the assertion carries, so the error mapper recognises one
+# of ours in clang's output without matching prose. One writer, one
+# reader — the contract FIELD_ASSERTION already keeps.
+constant UNION_ASSERTION: str
+    "heroes-ffi-union"
+
+# What the program does to each extern record, split the way the rule
+# splits: construction is refused only at two or more fields (a
+# one-field designated initialiser is the SOUND binding to one arm —
+# C zeroes the rest); ==, hash and a map key are refused at ANY arity,
+# because one declared member still reads one arm's bytes out of a
+# value that may hold another.
+record Used
+    constructed: {i64: bool}
+    operated: {i64: bool}
+
+# One assertion per extern record the program constructs or compares.
+#
+# ORDER: ascending declaration index, three times — the assertions land in
+# the emitted C in this order, so an unsorted walk is a different program's
+# bytes for the same source. The Rust BTreeMap gave it free; the port pays
+# with one `sort` per walk (design.md §4.9).
+function union_assertions(@w: writer.Writer, p: containers.Program, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl])
+    u = used(p, c, decls)
+    wanted: {i64: bool} @ {}
+
+    for decl in sort(keys(u.constructed))
+        match decls[decl].kind
+            .record_decl rec =>
+                if rec.fields.len() >= 2
+                    wanted[decl] @ true
+            .constant_decl | .function_decl | .variant_decl | .test_decl => continue
+
+    for decl in sort(keys(u.operated))
+        wanted[decl] @ true
+
+    wrote: bool @ false
+
+    for decl in sort(keys(wanted))
+        match decls[decl].kind
+            .record_decl rec =>
+                if rec.header.is_err()
+                    continue
+                c_type = ctype.of(names, decl: decl)
+
+                # The marker carries the DECLARATION's name, never
+                # c_type — panel 072 rider 1, which the bootstrap file
+                # broke on the day it was written, one file over from
+                # where that defect was fixed. With tag, c_type is two
+                # words, and the mapper reads token 1 as the name.
+                hero_name = source.span_text(s, decls[decl].name)
+                parts: [str] @ []
+
+                for field in rec.fields
+                    parts @ parts.push(source.span_text(s, field.name))
+
+                # #line at the declaration's own name: unlike a field
+                # assertion, no one field is at fault — what the author
+                # must change is the declaration or the expression that
+                # builds it.
+                found = source.locate(s, decls[decl].name.start)
+                writer.at_file(@w, file: found.file, at: found.line)
+                writer.line(
+                    @w,
+                    text: "_Static_assert(__builtin_classify_type(*(" + c_type + " *)0) != 13, \"" + UNION_ASSERTION + " " + hero_name + " " + parts.join(" ") + "\");"
+                )
+                wrote @ true
+            .constant_decl | .function_decl | .variant_decl | .test_decl => continue
+
+    if wrote
+        writer.at_generated(@w)
+
+        # The control that fires when the premise dies: without these
+        # two lines a toolchain that stops separating 12 from 13 turns
+        # every union check above into one that silently passes; with
+        # them it is a build failure that names what depends on it.
+        writer.line(
+            @w,
+            text: "_Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, \"a union must classify as 13, or every heroes-ffi-union assertion above is vacuous\");"
+        )
+        writer.line(
+            @w,
+            text: "_Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, \"a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record\");"
+        )
+        writer.blank(@w)
+
+# Every extern record the program constructs or compares, directly or
+# through a type that contains one. The reach is not decoration: == on
+# a Heroes record calls its generated eq, which calls its fields', so
+# a union one level down is compared by the same wrong walk. Panel 061
+# established the same transitivity for partial; this is that rule one
+# type over. And a map key hashes: refusing == while hash stays
+# reachable is WORSE than refusing neither, because the wrong answer
+# moves from a comparison the author wrote to a bucket they never see.
+function used(p: containers.Program, c: state.Checked, decls: [ast.Decl]) -> Used
+    constructed: {i64: bool} @ {}
+    operated: {i64: bool} @ {}
+
+    for f in p.functions
+        for blk in f.blocks
+            for inst in blk.insts
+                match inst.op
+                    .construct co =>
+                        match co.shape
+                            .record_shape r => constructed[r.decl] @ true
+                            .map_shape => reach(@operated, c, decls, ty: inst.ty, depth: 0)
+                            .case_shape | .array_shape | .ok_shape | .fail_shape | .err_shape => continue
+                    .binary b =>
+                        if b.op == .eq || b.op == .ne
+                            reach(@operated, c, decls, ty: containers.value_type(f, b.left), depth: 0)
+                    .map_get mg =>
+                        reach(@operated, c, decls, ty: containers.value_type(f, mg.map), depth: 0)
+                        reach(@operated, c, decls, ty: containers.value_type(f, mg.key), depth: 0)
+                    .lit | .load | .store | .push_owned | .unary | .cast | .call | .func_ref => continue
+                    .field | .index | .len_of | .tag_of | .payload                           => continue
+                    .copy_out | .abort_op | .incref | .decref | .hole | .missing             => continue
+
+    return Used(constructed: constructed, operated: operated)
+
+# The extern records a type reaches by value, bounded like the
+# bootstrap's partial walk and for its reason: a generic type in the
+# arena can still be cyclic through a type parameter, and a depth-16
+# nest of extern records does not exist.
+function reach(@out: {i64: bool}, c: state.Checked, decls: [ast.Decl], ty: i64, depth: i64)
+    if depth > 16
+        return
+
+    match table.get(c.types, ty)
+        .named n =>
+            out[n.decl] @ true
+
+            match decls[n.decl].kind
+                .record_decl rec =>
+                    for field in rec.fields
+                        written = state.written_type(c, field.ty)
+
+                        if !written.is_err()
+                            reach(@out, c, decls, ty: written.must(), depth: depth + 1)
+                .constant_decl | .function_decl | .variant_decl | .test_decl => return
+        .array a     => reach(@out, c, decls, ty: a.element, depth: depth + 1)
+        .fixed x     => reach(@out, c, decls, ty: x.element, depth: depth + 1)
+        .fallible fl => reach(@out, c, decls, ty: fl.payload, depth: depth + 1)
+        .map m =>
+            reach(@out, c, decls, ty: m.key, depth: depth + 1)
+            reach(@out, c, decls, ty: m.value, depth: depth + 1)
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return
+        .function_ty | .case_ty | .failure | .generic | .error    => return
+
+## Tests
+
+function has(text: str, needle: str) -> bool
+    cs = text.chars()
+    needle_cs = needle.chars()
+
+    if needle_cs.len() == 0
+        return true
+
+    if needle_cs.len() > cs.len()
+        return false
+    start: i64 @ 0
+
+    while start <= cs.len() - needle_cs.len()
+        matched: bool @ true
+        offset: i64 @ 0
+
+        while offset < needle_cs.len()
+            if cs[start + offset] != needle_cs[offset]
+                matched @ false
+                break
+            offset @ offset + 1
+
+        if matched
+            return true
+        start @ start + 1
+
+    return false
+
+test "constructed and compared records are asked, read-only ones are not"
+    text = "extern \"m.h\"\n    record UDef\n        i: i64\n        f: i64\n    record Cmp\n        a: i64\n    record ReadOnly\n        x: i64\n\nfunction touch(r: ReadOnly) -> i64\n    return r.x\n\nfunction main()\n    u = UDef(i: 1, f: 2)\n    print(u.i)\n    c1 = Cmp(a: 1)\n    c2 = Cmp(a: 2)\n    if c1 == c2\n        print(0)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+    names = ctype.new_names(s, parsed.decls)
+    w: writer.Writer @ writer.new_writer("t")
+    union_assertions(@w, low.program, c, names, s, parsed.decls)
+    got = writer.finish(w)
+
+    # Two-field construction is asked, on the declaration's own line.
+    assert has(
+        text: got,
+        needle: "_Static_assert(__builtin_classify_type(*(UDef *)0) != 13, \"heroes-ffi-union UDef i f\");"
+    )
+    assert has(text: got, needle: "#line 2 \"t.hero\"")
+
+    # == reaches Cmp at arity one; a read-only record is left alone.
+    assert has(text: got, needle: "heroes-ffi-union Cmp a")
+    assert !has(text: got, needle: "ReadOnly")
+
+    # The premise-death pair rides along whenever anything was asked.
+    assert has(text: got, needle: "a union must classify as 13")
+    assert has(text: got, needle: "a struct must classify as 12")

@@ -218,7 +218,7 @@ finding), a label **only where an edge targets it**, all locals hoisted to the
 prologue, and a unit-typed temporary never declared at all (`void t0;` is a
 hard error). An `@` parameter is a pointer parameter (§4.8's copy-out is
 `*p_l = l;`). `hero_unreachable()` at every type-system-proven-unreachable
-point. Compile flags: **the list in `selfhost/cli_flags.hero::flags()`, and this sentence names
+point. Compile flags: **the list in `selfhost/cli/flags.hero::flags()`, and this sentence names
 one of them** — `-std=gnu11`, **named and not inherited**, `gnu11` rather than `c11`
 because the two differ by one predefined macro, `__STRICT_ANSI__`, whose only effect
 on glibc is to hide `M_PI`, `strdup`, `fileno` and nine more of what §1.11 says a
@@ -320,13 +320,13 @@ the same tree while the formatter was deleting one. One omission, two consumers,
 and the second was the instrument watching the first. **A self-check that
 compares two RENDERINGS can only see what the renderer carries**, so the printer
 walked above is not one item on the list among five: it is the item the list's
-own enforcement rests on. `selfhost/cli_syntax_cmds.hero` now hands that guard
+own enforcement rests on. `selfhost/cli/syntax_cmds.hero` now hands that guard
 the exact pair the defect produced and asserts it refuses, which fails on the day
 the dump goes quiet again.
 
 The list to walk, and it is short enough that there is no excuse: **the
-formatter** (`selfhost/print_fmt.hero`), **every `--dump-<stage>` printer**
-(`selfhost/print_dump.hero` and the IR and scope printers), **`heroes mutate`**
+formatter** (`selfhost/print/fmt.hero`), **every `--dump-<stage>` printer**
+(`selfhost/print/dump.hero` and the IR and scope printers), **`heroes mutate`**
 (a form it cannot re-print is a form it silently declines to mutate, so the rate
 flatters itself), **the diagnostics that quote a program back** (§8's `Fix`
 replacements above all — a `certain` fix built from the wrong half of a new form

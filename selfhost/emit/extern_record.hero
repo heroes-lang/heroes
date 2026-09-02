@@ -1,0 +1,227 @@
+# Where a group record's assertions GO, and the probe that asks about
+# the fields the program did NOT name (design.md §4.19; panels 060,
+# 061, 062, 072, 077). Port of
+# crates/heroes/src/emit/{extern_record,extern_complete}.rs — one file
+# again, as they were before the ceiling split: the walker and the
+# probe walk the same declarations.
+#
+# The field assertions ask, of every field the program NAMES, whether
+# the header agrees — and say nothing about a field left out. record
+# Color with three of raylib's four members compiled with every
+# assertion green at exit 0 and returned a transparent colour where
+# the program asked for an opaque one (panel 061). The probe is the
+# missing half: one never-called function per record whose body is a
+# POSITIONAL initialiser — the one form C obliges the compiler to
+# count — under a locally-armed -Wmissing-field-initializers.
+
+use ast
+use source
+use check/table
+use check/state
+use emit/ctype
+use emit/extern_field
+use emit/writer
+use parse
+use resolve
+use checker
+
+# One assertion per field of every record a group declares. The
+# narrowing is header-present — a fact about the declaration in hand.
+# The marker carries the DECLARATION's name, never the C type's (panel
+# 072 rider 1): with tag, the C type is two words — struct stat — and
+# the error mapper splits on whitespace; the declaration's name is one
+# token by construction.
+function extern_record_assertions(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl])
+    wrote: bool @ false
+    index: i64 @ 0
+
+    for decl in decls
+        match decl.kind
+            .record_decl rec =>
+                if !rec.header.is_err()
+                    c_type = ctype.of(names, decl: index)
+                    hero_name = source.span_text(s, decl.name)
+
+                    for field in rec.fields
+                        line = extern_field.assertion(
+                            c,
+                            names,
+                            s,
+                            c_type: c_type,
+                            hero_name: hero_name,
+                            field: field
+                        )
+
+                        if line.is_err()
+                            continue
+
+                        # #line at the FIELD, so a failure lands on the
+                        # author's own line and the mapper can tell
+                        # whose mistake it is from the file clang names.
+                        found = source.locate(s, field.name.start)
+                        writer.at_file(@w, file: found.file, at: found.line)
+                        writer.line(@w, text: line.must())
+                        wrote @ true
+            # NOT `continue`: this loop keeps the declaration index
+            # itself, and a `continue` in a match arm jumps to the next
+            # iteration — skipping the increment below and shifting
+            # every later declaration by one. The class was found
+            # 2026-08-17 when the selfhost compiler refused its own
+            # parse.hero with a `no_size` cycle that does not exist
+            # (check_sized carried the same shape); the self-mutation is
+            # this language's no-op.
+
+            .constant_decl | .function_decl | .variant_decl | .test_decl => index @ index
+
+        index @ index + 1
+
+    if wrote
+        writer.at_generated(@w)
+        writer.blank(@w)
+    completeness_probes(@w, c, names, s, decls)
+
+# One never-called function per group record: positional zeros under a
+# locally-armed warning. partial IS exactly the absence of this probe —
+# everything else the word does is a refusal, so without this it would
+# cost and give nothing. Local pragmas rather than a flag in FLAGS: the
+# emitter writes = {0} for every refcounted slot, and a global warning
+# fires on all of them. -Wmissing-braces is silenced because a nested
+# record's 0 is C's brace elision — legal, and it says nothing about
+# completeness. A union gives no signal, CORRECTLY: naming one member
+# of a union is naming all of it, so SDL_Event passes.
+function completeness_probes(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl])
+    wanted: [i64] @ []
+    index: i64 @ 0
+
+    for decl in decls
+        match decl.kind
+            .record_decl rec =>
+                if !rec.header.is_err() && !rec.partial && rec.fields.len() > 0
+                    wanted @ wanted.push(index)
+            # NOT `continue`: this loop keeps the declaration index
+            # itself, and a `continue` in a match arm jumps to the next
+            # iteration — skipping the increment below and shifting
+            # every later declaration by one. The class was found
+            # 2026-08-17 when the selfhost compiler refused its own
+            # parse.hero with a `no_size` cycle that does not exist
+            # (check_sized carried the same shape); the self-mutation is
+            # this language's no-op.
+
+            .constant_decl | .function_decl | .variant_decl | .test_decl => index @ index
+
+        index @ index + 1
+
+    if wanted.len() == 0
+        return
+    writer.at_generated(@w)
+    writer.line(@w, text: "#pragma clang diagnostic push")
+    writer.line(@w, text: "#pragma clang diagnostic error \"-Wmissing-field-initializers\"")
+    writer.line(@w, text: "#pragma clang diagnostic ignored \"-Wmissing-braces\"")
+
+    for decl_at in wanted
+        c_type = ctype.of(names, decl: decl_at)
+        probe = extern_field.COMPLETE_PROBE + ctype.satellite(names, decl: decl_at)
+
+        # A nested record's slot is {0}, not 0 (brace elision spends a
+        # flat list into the inner struct, and clang then reports a
+        # field missing on a record that names ALL of its fields — ten
+        # of raylib's thirty-five structs unbindable, with a note
+        # naming a repair that does not exist). A fixed array joined
+        # the day the rule existed: both are aggregates. And the outer
+        # single-zero is PARENTHESISED (panel 077, two seats
+        # independently): clang exempts the literal token {0}, so a
+        # one-field record's probe was silently off — panel 061's
+        # defect reborn one field down, two files with different inodes
+        # equal at exit 0. Two characters, measured to leave a union
+        # silent and raise no false positive on struct in_addr.
+        zeros: [str] @ []
+
+        match decls[decl_at].kind
+            .record_decl rec =>
+                for field in rec.fields
+                    aggregate: bool @ false
+                    written = state.written_type(c, field.ty)
+
+                    if !written.is_err()
+                        match table.get(c.types, written.must())
+                            .named | .fixed                                           => aggregate @ true
+                            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => aggregate @ aggregate
+                            .array | .map | .fallible | .function_ty                  => aggregate @ aggregate
+                            .case_ty | .failure | .generic | .error                   => aggregate @ aggregate
+
+                    if aggregate
+                        zeros @ zeros.push("{0}")
+                    else
+                        zeros @ zeros.push("0")
+            .constant_decl | .function_decl | .variant_decl | .test_decl => continue
+
+        list: str @ zeros.join(",")
+
+        if zeros.len() == 1 && zeros[0] == "0"
+            list @ "(0)"
+
+        # The declaration's own line, so the verdict lands where the
+        # author can act on it.
+        found = source.locate(s, decls[decl_at].name.start)
+        writer.at_file(@w, file: found.file, at: found.line)
+        writer.line(
+            @w,
+            text: "__attribute__((unused)) static void " + probe + "(void) { " + c_type + " v = {" + list + "}; (void)v; }"
+        )
+
+    writer.at_generated(@w)
+    writer.line(@w, text: "#pragma clang diagnostic pop")
+    writer.blank(@w)
+
+## Tests
+
+function has(text: str, needle: str) -> bool
+    cs = text.chars()
+    needle_cs = needle.chars()
+
+    if needle_cs.len() == 0
+        return true
+
+    if needle_cs.len() > cs.len()
+        return false
+    start: i64 @ 0
+
+    while start <= cs.len() - needle_cs.len()
+        matched: bool @ true
+        offset: i64 @ 0
+
+        while offset < needle_cs.len()
+            if cs[start + offset] != needle_cs[offset]
+                matched @ false
+                break
+            offset @ offset + 1
+
+        if matched
+            return true
+        start @ start + 1
+
+    return false
+
+test "assertions land on the field's line, the probe counts positionally"
+    text = "extern \"m.h\"\n    record Color\n        r: i64\n        inner: Point\n    record Point\n        x: f64\n    record Font partial\n        size: f64\n\nfunction touch(a: Color, b: Point, f: Font)\n    _ = a\n    _ = b\n    _ = f\n\nfunction main()\n    print(1)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    names = ctype.new_names(s, parsed.decls)
+    w: writer.Writer @ writer.new_writer("t")
+    extern_record_assertions(@w, c, names, s, parsed.decls)
+    got = writer.finish(w)
+
+    # The field assertion carries the declaration's name and lands
+    # under a #line for t.hero.
+    assert has(text: got, needle: "heroes-ffi-field Color r")
+    assert has(text: got, needle: "#line 3 \"t.hero\"")
+
+    # The probe: Color's nested record slot is {0}, Point's single
+    # scalar is parenthesised, and partial Font gets NO probe.
+    assert has(text: got, needle: "hero_ffi_complete_h_t_Color(void) { Color v = {0,{0}}; (void)v; }")
+    assert has(text: got, needle: "hero_ffi_complete_h_t_Point(void) { Point v = {(0)}; (void)v; }")
+    assert !has(text: got, needle: "hero_ffi_complete_h_t_Font")
+    assert has(text: got, needle: "#pragma clang diagnostic error \"-Wmissing-field-initializers\"")

@@ -117,7 +117,7 @@ jobs:
       #     and it ran the cargo legs, because `runtime/parts/f64.c` compiles
       #     under a Windows target — the 18 errors panel 049 measured were all in
       #     that one file. Those legs left with `crates/`, and for five days the
-      #     Heroes legs could not replace them: `selfhost/cli_io.hero` bound
+      #     Heroes legs could not replace them: `selfhost/cli/io.hero` bound
       #     `extern "unistd.h"`, so there was no self-hosted compiler on a
       #     platform without POSIX headers, and what was left was a toolchain
       #     report that gated nothing. **That was written down as a loss rather
@@ -275,7 +275,7 @@ jobs:
       # file becomes empty.
       #
       # NOT ON WINDOWS, and the reason is the compiler's own source rather than
-      # this file's convenience: `selfhost/cli_io.hero` binds `extern
+      # this file's convenience: `selfhost/cli/io.hero` binds `extern
       # "unistd.h"`, so there is no self-hosted compiler on a platform without
       # POSIX headers — the same condition `crates/heroes-cli/tests/
       # differential.rs` asks of the machine, asked the same way. Windows keeps

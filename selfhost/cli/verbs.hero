@@ -1,0 +1,207 @@
+# heroes build, run and test — the three verbs that compile (design.md
+# §3.5, §4.18; panels 016, 020, 021, 070). Port of
+# crates/heroes-cli/src/commands/{build,run,test}.rs plus the
+# toolchain glue their shared pipeline ends in.
+#
+# build says `wrote build/<hash>/f` on STDERR because the measurement
+# chose it: given silence the llm-ergonomist wrote ./f, guaranteed
+# wrong under a hash it cannot predict. run's exit status is the
+# program's — the program is the artifact, so its verdict is the
+# answer — and a signal death is 128+signal, never a hardcoded 134
+# (panel 070: SIGSEGV reported as an abort hid a crash from the very
+# sitting convened about it). test runs ONE PROCESS PER TEST, so one
+# abort cannot hide the tests after it, with the report on stdout
+# because the verdicts are the artifact.
+
+use source
+use cli/table as cli_table
+use cli/argv
+use cli/io
+use cli/compile
+use cli/toolchain
+use cli/process
+use cli/input
+use library_source
+use cli/produce
+
+function run_build(path: str, s: source.Source, inv: argv.Invocation, t: toolchain.Toolchain, version: str) -> cli_table.Exit
+    if argv.has(inv, spelling: "--dump-ir") && argv.has(inv, spelling: "--emit-c")
+        io.eprint(text: "error: `--dump-ir` and `--emit-c` are both stops — ask for one artifact at a time")
+        return .failed_exit
+    level = compile.level_from(inv, default_level: "-O0")
+
+    if level.is_err()
+        return .failed_exit
+    options = compile.Options(
+        level: level.must(),
+        dump_ir: argv.has(inv, spelling: "--dump-ir"),
+        emit_c: argv.has(inv, spelling: "--emit-c"),
+        output: argv.value_of(inv, spelling: "-o"),
+        sanitize: argv.has(inv, spelling: "--sanitize"),
+        target: .program_build,
+        headers_from: argv.values_of(inv, spelling: "--include"),
+        library: argv.values_of(inv, spelling: "--library")
+    )
+    made = produce.produce(path: path, s: s, options: options, t: t, version: version)
+
+    if made.is_err()
+        return exit_of(made)
+
+    if made.must().stopped
+        return .ok_exit
+    io.eprint(text: "wrote " + made.must().binary)
+    return .ok_exit
+
+function run_run(path: str, s: source.Source, inv: argv.Invocation, t: toolchain.Toolchain, version: str) -> cli_table.Exit
+    level = compile.level_from(inv, default_level: "-O2")
+
+    if level.is_err()
+        return .failed_exit
+    options = compile.Options(
+        level: level.must(),
+        dump_ir: false,
+        emit_c: false,
+        output: argv.value_of(inv, spelling: "-o"),
+        sanitize: argv.has(inv, spelling: "--sanitize"),
+        target: .program_build,
+        headers_from: argv.values_of(inv, spelling: "--include"),
+        library: argv.values_of(inv, spelling: "--library")
+    )
+    made = produce.produce(path: path, s: s, options: options, t: t, version: version)
+
+    if made.is_err()
+        return exit_of(made)
+
+    if made.must().stopped
+        return .ok_exit
+
+    # No line of our own before the program's output: stdout is the
+    # program's from here.
+    words: [str] @ [made.must().binary]
+
+    for arg in inv.program_args
+        words @ words.push(arg)
+
+    # The streams are INHERITED: this program's output is the point of
+    # the command, so it goes where the compiler's own output goes.
+    ran = process.run(program: made.must().binary, words: words, out: "", err: "")
+
+    if !ran.started
+        io.eprint(text: "error: cannot execute " + made.must().binary)
+        return .failed_exit
+
+    # **The decode used to live here and it is the runtime's now.** It
+    # read waitpid's format by hand — the exit code in the high byte, a
+    # signal in the low seven bits — which is a premise about the world
+    # rather than a fact about the value, and it was wrong on Windows,
+    # where `system()` answers the exit code directly. 128+signal is
+    # still the number a caller sees (panel 070: a hardcoded 134 once
+    # reported a SIGSEGV as an abort, and the instrument hid the defect
+    # from the person holding it), but the runtime computes it now, on
+    # the platform that knows.
+    return .program_exit(status: ran.code)
+
+function run_test(path: str, s: source.Source, inv: argv.Invocation, t: toolchain.Toolchain, version: str) -> cli_table.Exit
+    level = compile.level_from(inv, default_level: "-O0")
+
+    if level.is_err()
+        return .failed_exit
+    none_out: str? = fail("none", "no -o")
+    options = compile.Options(
+        level: level.must(),
+        dump_ir: false,
+        emit_c: false,
+        output: none_out,
+        sanitize: argv.has(inv, spelling: "--sanitize"),
+        target: .tests_build,
+        headers_from: argv.values_of(inv, spelling: "--include"),
+        library: argv.values_of(inv, spelling: "--library")
+    )
+    made = produce.produce(path: path, s: s, options: options, t: t, version: version)
+
+    if made.is_err()
+        return exit_of(made)
+
+    if made.must().stopped
+        return .ok_exit
+    titles = made.must().tests
+
+    if titles.len() == 0
+        print("no tests in " + path)
+        return .ok_exit
+    failed: i64 @ 0
+    index: i64 @ 0
+
+    for title in titles
+        one = process.run(
+            program: made.must().binary,
+            words: [made.must().binary, index.to_str()],
+            out: "",
+            err: ""
+        )
+
+        if one.started && one.code == 0
+            print("ok   " + title)
+        else
+            print("FAIL " + title)
+            failed @ failed + 1
+        index @ index + 1
+
+    unit: str @ "tests"
+
+    if titles.len() == 1
+        unit @ "test"
+
+    if failed == 0
+        print(titles.len().to_str() + " " + unit + ", all passed")
+        return .ok_exit
+    print(titles.len().to_str() + " " + unit + ", " + failed.to_str() + " failed")
+
+    # A failing test is the PROGRAM being wrong, which is exit 1 — the
+    # same code a diagnostic gets, and for the same reason: the tool
+    # worked.
+    return .diagnostics_exit
+
+# **A failure carries a message, and this used to throw it away.**
+# `produce` fails with an `e.msg` explaining what went wrong — clang's
+# own words, a missing library, a path that could not be written — and
+# every caller here turned that into a bare exit code. On Darwin and
+# Linux nobody noticed, because `produce` does not fail there. On
+# Windows it does, and `heroes test` exited 1 in total silence: the
+# compiler knew exactly what had happened and said nothing.
+#
+# `diagnostics` is the one code that stays quiet, because those were
+# already printed where they were found, with their source lines.
+function exit_of(failed: produce.Produced?) -> cli_table.Exit
+    match failed
+        .ok => return .ok_exit
+        .err e =>
+            if e.code == "diagnostics"
+                return .diagnostics_exit
+            io.eprint(text: "error: " + e.msg)
+            return .failed_exit
+
+## Tests
+
+test "end to end: the port compiles a Heroes program and runs it"
+    library = library_source.text()
+    program = "function double_it(n: i64) -> i64\n    return n * 2\n\ntest \"doubling\"\n    assert double_it(n: 21) == 42\n\nfunction main()\n    print(double_it(n: 21))\n"
+    _ = write_file(path: "build/selftest_e2e.hero", text: program)
+    s = input.read_compilation(path: "build/selftest_e2e.hero", library: library).must()
+    t = toolchain.locate_toolchain(hint: "", fingerprint: "port-e2e").must()
+    empty: [argv.FlagHit] = []
+    inv = argv.Invocation(tag: .run_cmd, file: ok("build/selftest_e2e.hero"), program_args: [], flags: empty)
+
+    # run: compiled by the port's own pipeline, linked by its own
+    # toolchain, executed through system() — the program prints 42 and
+    # exits 0, and that verdict is the command's.
+    verdict = run_run(path: "build/selftest_e2e.hero", s: s, inv: inv, t: t, version: "0.0.0-port")
+    assert verdict == .program_exit(status: 0)
+
+    # test: one process per title, the report on stdout.
+    tinv = argv.Invocation(tag: .test_cmd, file: ok("build/selftest_e2e.hero"), program_args: [], flags: empty)
+    assert run_test(path: "build/selftest_e2e.hero", s: s, inv: tinv, t: t, version: "0.0.0-port") == .ok_exit
+
+    # build: the artifact line names the hash the reader cannot guess.
+    binv = argv.Invocation(tag: .build_cmd, file: ok("build/selftest_e2e.hero"), program_args: [], flags: empty)
+    assert run_build(path: "build/selftest_e2e.hero", s: s, inv: binv, t: t, version: "0.0.0-port") == .ok_exit

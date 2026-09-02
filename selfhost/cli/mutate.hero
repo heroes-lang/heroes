@@ -1,0 +1,142 @@
+# heroes mutate [dir] — metric 3, offline (design.md Part 11).
+#
+# Port of crates/heroes-cli/src/commands/mutate.rs. Takes every program in the
+# corpus that checks clean, makes **one plausible mistake per site**, and counts
+# how many the compiler catches — in two arms, so the number means something. A
+# language that rejects everything would score 100% and prove nothing, which is
+# why the control arm (`--permissive`, the same compiler with the thesis rules
+# dropped) is printed beside it.
+#
+# THE CORPUS IS THE CLEAN PROGRAMS. Mutating a program that is already wrong
+# measures nothing, because the compiler would reject the mutant for the mistake
+# that was already there — so a corpus that does not compile is **refused at
+# exit 2** rather than quietly narrowed (author decision 2026-08-12, after
+# `heroes mutate` reported 77 sites and 100% killed over a directory `heroes
+# check` refuses).
+#
+# THE DIRECTORY WALK IS `find -print0`, AND THAT IS MEASURED RATHER THAN
+# PREFERRED. Heroes has no directory API (§1.11 — everything comes from C), and
+# the cheap route is unsound: `ls > file` plus `read_file` **splits a filename
+# containing a newline into two entries at exit 0**, which CLAUDE.md §12's
+# robustness rule forbids. NUL is the one byte a filename cannot hold, a Heroes
+# `str` carries it through `read_file` and byte indexing without trouble, and
+# `tests/harness/shell.hero` measured the same route on both compilers
+# (DESIGN-LOG:389).
+
+use cli/argv
+use cli/io
+use cli/table as cli_table
+use cli/process
+use library_source
+use mutate/ops
+use mutate/score
+
+constant DEFAULT_DIR: str
+    "examples"
+
+function run(inv: argv.Invocation) -> cli_table.Exit
+    only: str @ argv.value_of(inv, spelling: "--operator").default("")
+
+    if only.len() > 0 && !ops.known(only)
+        io.eprint(
+            text: "error: no operator `" + only + "`\n  the " + ops.ids().len().to_str() + " are: " + ops.ids().join(", ")
+        )
+        return .failed_exit
+    dir = inv.file.default(DEFAULT_DIR)
+    found = corpus(dir)
+
+    if found.is_err()
+        io.eprint(text: "error: " + why(found))
+        return .failed_exit
+    sources = found.must()
+
+    if sources.len() == 0
+        io.eprint(text: "error: no `.hero` files under " + dir)
+        return .failed_exit
+    library = library_source.text()
+    refusal = refuse_a_corpus_that_does_not_compile(sources: sources, library: library)
+
+    if !refusal.is_err()
+        io.eprint(text: "error: " + refusal.must())
+        return .failed_exit
+    print("corpus: " + sources.len().to_str() + " programs under " + dir + "\n")
+    run_out = score.scored(sources: sources, only: only, library: library)
+    io.print_artifact(text: score.report(run_out.scores))
+
+    if argv.has(inv, spelling: "--survivors")
+        io.print_artifact(text: score.survivor_report(run_out.survivors))
+    return .ok_exit
+
+# Every `.hero` file under `dir`, sorted, with its text.
+#
+# **This was the last `find` in `selfhost/`, and Windows is why it is gone.**
+# `FIND.EXE` there is a text-search tool that happens to share the name — the
+# same two-meanings shape as `TIMEOUT.EXE`, measured the same day — so
+# `heroes mutate` answered `cannot read examples/gallery` on a directory it
+# was standing in. The runtime's own walk answers on every platform, needs no
+# `-print0` (a name never becomes text on its way here, so there is no
+# separator to be confused by), and the listing file under `build/` goes with
+# it.
+function corpus(dir: str) -> [score.Program]?
+    walked = process.files_under(dir: dir)
+
+    if walked.is_err()
+        return fail("no_corpus", "cannot read " + dir)
+    paths: [str] @ []
+
+    for path in walked.must()
+        if ends_hero(path)
+            paths @ paths.push(path)
+
+    out: [score.Program] @ []
+
+    for path in paths.sort()
+        text = read_file(path)
+
+        if text.is_err()
+            return fail("no_corpus", "cannot read " + path)
+        out @ out.push(score.Program(name: path, text: text.must()))
+
+    return ok(out)
+
+# `.hero` at the end, byte-walked so a multibyte name neither matches nor
+# aborts.
+function ends_hero(path: str) -> bool
+    tail = ".hero"
+
+    if path.len() < tail.len()
+        return false
+
+    return path.slice(from: path.len() - tail.len(), to: path.len()) == tail
+
+# Every program in the corpus must compile BEFORE anything is mutated. Every
+# offending file is listed rather than the first, because a corpus is usually
+# wrong in one way and fixing it one error per run is the slowest possible loop.
+function refuse_a_corpus_that_does_not_compile(sources: [score.Program], library: str) -> str?
+    refused: [str] @ []
+
+    for one in sources
+        if !score.base_checks_clean(name: one.name, text: one.text, library: library)
+            refused @ refused.push(one.name)
+
+    if refused.len() == 0
+        return fail("clean", "every program compiles")
+    message: str @ "this corpus does not compile, so its kill rate would be meaningless\n  " + refused.len().to_str() + " of " + sources.len().to_str() + " programs are already refused by `heroes check`:\n"
+
+    for name in refused
+        message @ message + "    " + name + "\n"
+
+    return ok(
+        message + "  every mutant of a program that is already wrong is killed by the\n  diagnostic that was already there — run `heroes check` on each"
+    )
+
+function why(got: [score.Program]?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.msg
+
+test "an unknown operator names the ones there are"
+    # The count is read off the table, never written: it said "twelve" in the
+    # bootstrap's help while there were thirteen (CLAUDE.md §11).
+    assert ops.ids().len() == 13
+    assert !ops.known("swapargs")

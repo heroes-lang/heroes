@@ -11,7 +11,7 @@ use source
 use source_extent
 use cursor
 use lexer
-use parse_decl
+use parse/decl
 
 record ParseOutput
     decls: [ast.Decl]
@@ -48,7 +48,7 @@ function parse_source(s: source.Source) -> ParseOutput
     a: ast.Ast @ ast.new_ast()
     decls: [ast.Decl] @ []
     uses: [ast.Use] @ []
-    parse_decl.file(@c, @a, @decls, @uses, s.text)
+    decl.file(@c, @a, @decls, @uses, s.text)
     diagnostics: [diag.Diagnostic] @ lexed.diagnostics
 
     for d in c.diagnostics
@@ -72,7 +72,7 @@ function parse_bounded(text: str, root_end: i64) -> ParseOutput
     a: ast.Ast @ ast.new_ast()
     decls: [ast.Decl] @ []
     uses: [ast.Use] @ []
-    parse_decl.file(@c, @a, @decls, @uses, text)
+    decl.file(@c, @a, @decls, @uses, text)
     diagnostics: [diag.Diagnostic] @ lexed.diagnostics
 
     for d in c.diagnostics

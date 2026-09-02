@@ -14,30 +14,30 @@
 
 use ast
 use source
-use module_names
+use module/names as module_names
 use diag
-use check_table
-use check_state
-use ir_state
-use emit_ctype
-use emit_synth
-use emit_writer
-use emit_decls
-use emit_gate
-use emit_typeorder
-use emit_perfn
-use emit_descriptors
-use emit_signature
-use emit_body
-use emit_builtins
-use emit_externs
+use check/table
+use check/state
+use ir/containers
+use emit/ctype
+use emit/synth
+use emit/writer
+use emit/decls as emit_decls
+use emit/gate
+use emit/typeorder
+use emit/perfn
+use emit/descriptors
+use emit/signature
+use emit/body
+use emit/builtins
+use emit/externs as emit_externs
 use parse
 use resolve
 use checker
-use ir_lower
-use ir_mono
-use ir_own
-use ir_place_store
+use ir/lower
+use ir/mono
+use ir/own
+use ir/place_store
 
 # What came out. Exactly one of the two is interesting: with any
 # diagnostic the C is empty, because a translation unit missing the
@@ -60,7 +60,7 @@ record Emitted
 # heroes test needs the list before it runs anything: it compiles once
 # and runs the binary once per test, so each failure is its own
 # process and one abort does not hide the tests after it.
-function tests_of(p: ir_state.Program) -> [str]
+function tests_of(p: containers.Program) -> [str]
     out: [str] @ []
 
     for f in p.functions
@@ -73,7 +73,7 @@ function tests_of(p: ir_state.Program) -> [str]
 # Where a program's main is, or nothing. A file with no entry point is
 # a perfectly good translation unit — it just cannot become a binary,
 # and the difference belongs to the caller.
-function entry_point(p: ir_state.Program) -> i64?
+function entry_point(p: containers.Program) -> i64?
     index: i64 @ 0
 
     for f in p.functions
@@ -92,8 +92,8 @@ function entry_point(p: ir_state.Program) -> i64?
 # The functions the fused unit shows: the author's, plus exactly the
 # library functions the program reaches. The per-TU path (panel 093 R1)
 # passes its own list to the same walk instead.
-function shown_fused(p: ir_state.Program, s: source.Source) -> [i64]
-    used = emit_builtins.reachable(p, s)
+function shown_fused(p: containers.Program, s: source.Source) -> [i64]
+    used = builtins.reachable(p, s)
     shown: [i64] @ []
     index: i64 @ 0
 
@@ -120,7 +120,7 @@ record Reach
     reached: {i64: bool}
     constructed: {i64: bool}
 
-function reach_of(p: ir_state.Program, c: check_state.Checked, target: emit_decls.BuildTarget, shown: [i64]) -> Reach
+function reach_of(p: containers.Program, c: state.Checked, target: emit_decls.BuildTarget, shown: [i64]) -> Reach
     reached: {i64: bool} @ {}
     constructed: {i64: bool} @ {}
 
@@ -163,7 +163,7 @@ function reach_of(p: ir_state.Program, c: check_state.Checked, target: emit_decl
 # Its own function because the per-module path closes a SECOND set: the
 # signature types of the functions a TU prototypes, which the body walk
 # above never sees.
-function closed_over(c: check_state.Checked, reached: {i64: bool}) -> {i64: bool}
+function closed_over(c: state.Checked, reached: {i64: bool}) -> {i64: bool}
     out: {i64: bool} @ reached
 
     # ORDER: none — this is a worklist, and what leaves it is a SET. Every
@@ -176,21 +176,21 @@ function closed_over(c: check_state.Checked, reached: {i64: bool}) -> {i64: bool
         id = frontier[frontier.len() - 1]
         frontier @ frontier.slice(from: 0, to: frontier.len() - 1)
 
-        for inner in check_table.contained(c.types, id)
+        for inner in table.contained(c.types, id)
             if out[inner].is_err()
                 out[inner] @ true
                 frontier @ frontier.push(inner)
 
     return out
 
-function emit(p: ir_state.Program, c: check_state.Checked, s: source.Source, decls: [ast.Decl], version: str) -> Emitted
+function emit(p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], version: str) -> Emitted
     return emit_for(target: .program_build, p: p, c: c, s: s, decls: decls, version: version)
 
 # Emit one lowered program. The gate runs first and TO COMPLETION:
 # every unsupported form is reported, sorted by span, because a
 # message that carries the list is one round trip and three
 # invocations is three.
-function emit_for(target: emit_decls.BuildTarget, p: ir_state.Program, c: check_state.Checked, s: source.Source, decls: [ast.Decl], version: str) -> Emitted
+function emit_for(target: emit_decls.BuildTarget, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], version: str) -> Emitted
     return emit_maybe(target: target, p: p, c: c, s: s, decls: decls, version: version, text: true)
 
 # The same walk with the TEXT made optional, because the per-module
@@ -203,8 +203,8 @@ function emit_for(target: emit_decls.BuildTarget, p: ir_state.Program, c: check_
 #
 # `--emit-c`, `heroes test` and the seed still take `text: true`: they
 # ARE the artifact path, and R1 says it stays one fused unit.
-function emit_maybe(target: emit_decls.BuildTarget, p: ir_state.Program, c: check_state.Checked, s: source.Source, decls: [ast.Decl], version: str, text: bool) -> Emitted
-    refused = emit_gate.refuse(target: target, p: p, c: c, s: s, decls: decls)
+function emit_maybe(target: emit_decls.BuildTarget, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], version: str, text: bool) -> Emitted
+    refused = gate.refuse(target: target, p: p, c: c, s: s, decls: decls)
 
     if refused.len() > 0
         none_link: [str] = []
@@ -234,9 +234,9 @@ function emit_maybe(target: emit_decls.BuildTarget, p: ir_state.Program, c: chec
     walked = reach_of(p, c, target: target, shown: shown)
     reached: {i64: bool} @ walked.reached
     constructed: {i64: bool} @ walked.constructed
-    names: emit_ctype.Names @ emit_ctype.new_names(s, decls)
-    names @ emit_ctype.with_options(names, c: c, s: s, decls: decls)
-    names @ emit_ctype.with_functions(names, c: c, s: s, decls: decls, p: p)
+    names: ctype.Names @ ctype.new_names(s, decls)
+    names @ ctype.with_options(names, c: c, s: s, decls: decls)
+    names @ ctype.with_functions(names, c: c, s: s, decls: decls, p: p)
 
     # `module`, not `stem_of` — the sanitised name, which is the one the
     # compiler actually WRITES on disk (`build/<key>/whileloop.c`). The
@@ -246,34 +246,34 @@ function emit_maybe(target: emit_decls.BuildTarget, p: ir_state.Program, c: chec
     # (panel 085 R6). Internally inconsistent rather than merely
     # different from the bootstrap, which is what settled which side had
     # the bug.
-    w: emit_writer.Writer @ emit_writer.new_writer(module)
+    w: writer.Writer @ writer.new_writer(module)
     emit_decls.prelude(@w, p, target: target, c: c, names: names, s: s, decls: decls, version: version, tu_local: "")
 
     # Types before anything that can mention one: every typedef in one
     # containment order, then every per-type prototype, then the
     # descriptors — an array literal names its element's descriptor,
     # so the object must exist before a function body mentions it.
-    emit_typeorder.definitions(@w, c, names, s, decls, want: emit_synth.everything())
-    emit_perfn.prototypes(@w, c, names, decls, want: emit_synth.everything())
-    emit_descriptors.definitions(
+    typeorder.definitions(@w, c, names, s, decls, want: synth.everything())
+    perfn.prototypes(@w, c, names, decls, want: synth.everything())
+    descriptors.definitions(
         @w,
         c,
         names,
         decls,
         reachable: reached,
         constructed: constructed,
-        want: emit_synth.everything()
+        want: synth.everything()
     )
 
     for at in shown
         if emit_decls.emitted(p.functions[at], target: target)
-            emit_signature.prototype(@w, p.functions[at], c, names, s, decls)
+            signature.prototype(@w, p.functions[at], c, names, s, decls)
 
     for at in shown
         if emit_decls.emitted(p.functions[at], target: target)
-            emit_body.definition(@w, p, c, names, s, decls, f: p.functions[at])
+            body.definition(@w, p, c, names, s, decls, f: p.functions[at])
 
-    emit_perfn.bodies(@w, c, names, s, decls, want: emit_synth.everything())
+    perfn.bodies(@w, c, names, s, decls, want: synth.everything())
 
     match target
         .program_build =>
@@ -284,7 +284,7 @@ function emit_maybe(target: emit_decls.BuildTarget, p: ir_state.Program, c: chec
         .tests_build => emit_decls.test_shim(@w, p, s)
 
     return Emitted(
-        c: emit_writer.finish(w),
+        c: writer.finish(w),
         diagnostics: [],
         link: emit_externs.libraries(p, s, decls),
         packages: emit_externs.packages(p, s, decls)
@@ -324,15 +324,15 @@ test "one program, one unit: prelude, order, shim — and the same bytes twice"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
-    c: check_state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
     assert c.diagnostics.len() == 0
-    low = ir_lower.lower(parsed.tree, out, c, s, parsed.decls)
-    p: ir_state.Program @ low.program
-    cc: check_state.Checked @ c
-    mono_diags = ir_mono.run(@p, @cc, s, parsed.decls)
+    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+    p: containers.Program @ low.program
+    cc: state.Checked @ c
+    mono_diags = mono.run(@p, @cc, s, parsed.decls)
     assert mono_diags.len() == 0
-    ir_place_store.run(@p)
-    ir_own.run(@p, cc)
+    place_store.run(@p)
+    own.run(@p, cc)
     got = emit_for(target: .program_build, p: p, c: cc, s: s, decls: parsed.decls, version: "0.0.0-test")
     assert got.diagnostics.len() == 0
     assert has(text: got.c, needle: "/* Generated by heroes 0.0.0-test from t.hero. Do not edit. */")

@@ -28,7 +28,7 @@
 #               reads and the compiler lacks is a call to nothing;
 #   rejected    no word the lexer refuses appears in the spec's code;
 #   inventory   the spec's characters above ASCII are punctuation, which is
-#               the premise `selfhost/measure_pieces.hero` is written on.
+#               the premise `selfhost/measure/pieces.hero` is written on.
 #
 # WHERE THE COMPILER'S SIDE COMES FROM. The two lists — what it reserves and
 # what it refuses — are read out of `selfhost/`'s own source, not copied
@@ -95,7 +95,7 @@ constant FFI_FLOOR: i64
     60
 
 constant BUILTIN_SOURCE: str
-    "selfhost/builtins.hero"
+    "selfhost/inventory.hero"
 
 constant KEYWORD_SOURCE: str
     "selfhost/keywords.hero"
@@ -395,7 +395,7 @@ function inventory(@r: report.Report, spec: str)
     report.keep_failure(
         @r,
         label: "spec/inventory",
-        detail: "  the spec now holds " + got.join(" ") + " above ASCII, and the record says " + ABOVE_ASCII.join(" ") + ".\n  `selfhost/measure_pieces.hero` reads a letter as A-Z a-z and a digit as 0-9\n  where the Rust it ports asks Unicode. Ask of the new character: is it a\n  letter or a digit in any language? If it is, that claim is dead and the\n  token count has quietly drifted. If it is punctuation, add it here."
+        detail: "  the spec now holds " + got.join(" ") + " above ASCII, and the record says " + ABOVE_ASCII.join(" ") + ".\n  `selfhost/measure/pieces.hero` reads a letter as A-Z a-z and a digit as 0-9\n  where the Rust it ports asks Unicode. Ask of the new character: is it a\n  letter or a digit in any language? If it is, that claim is dead and the\n  token count has quietly drifted. If it is punctuation, add it here."
     )
 
 # Every quoted name after `marker` on its own line — the compiler's table,

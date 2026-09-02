@@ -1,0 +1,330 @@
+# The classes where THE MACHINE DOES NOT HAVE what the group named
+# (design.md §4.19; panels 048, 049, 050, 055). Port of
+# crates/heroes/src/emit/ffi_build.rs.
+#
+# These four are not about the author's types at all — the declaration
+# may be perfect and the header still absent, the symbol still
+# unresolved, the package still unknown to pkg-config. Two read a
+# LINKER's output rather than a compiler's, and one reads this
+# compiler's own PACKAGE marker, so the file that groups them is the
+# one that knows a build has more tools in it than clang.
+
+use token
+use ast
+use source
+use diag
+use emit/externs as emit_externs
+use emit/ffi_lookup
+use parse
+use resolve
+use checker
+
+# A symbol the linker could not find, which this program declared
+# extern — the author forgot `link`, and until panel 048 the compiler
+# answered internal error at exit 2. The gate is declaration() and it
+# is doing real work: an undefined symbol no extern group declares is
+# a symbol the EMITTER failed to define — a generated hash prototyped
+# and never written is a recorded instance — and that stays exit 2.
+# NO FIX IS OFFERED, deliberately: the repair is `link "<name>"` and
+# the compiler does not know the name — a table mapping math.h to m
+# would be a premise about the world with an entry for every library
+# anyone ever binds (panel 048 declined a spec clause on four judges'
+# evidence).
+function missing_link(s: source.Source, decls: [ast.Decl], line: str) -> diag.Diagnostic?
+    name = undefined_symbol(line)
+
+    if name.is_err()
+        return fail("none", "not an undefined-symbol line")
+    found = ffi_lookup.declaration(s, decls, name: name.must())
+
+    if found.is_err()
+        return fail("none", "no group declares this symbol")
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "ffi_missing_link",
+        message: "the linker cannot find `" + name.must() + "`, and no group in this program says which library has it",
+        span: found.must().span
+    )
+    d.notes @ d.notes.push(
+        "`" + found.must().header + "` declares `" + name.must() + "`, and a header is not a library: write `extern \"" + found.must().header + "\" link \"<library>\"` — `math.h` needs `link \"m\"` on Linux and the BSDs, where it is a separate library"
+    )
+    return ok(d)
+
+# A library the group DID name and the linker cannot find (panel 055).
+# The third face of one mistake and the last of them: the group is
+# right, the machine is short. The narrowing is link's own list — the
+# analogue of declaration(): a library name this program wrote is the
+# author's business, and one it did not write is the driver's own -l
+# and stays exit 2.
+function missing_library(s: source.Source, decls: [ast.Decl], line: str) -> diag.Diagnostic?
+    # `ld: library 'X' not found` (ld64) and `cannot find -lX` (GNU
+    # ld / lld).
+    name: str @ ""
+    caught: bool @ false
+    apple = ffi_lookup.after(text: line, marker: "library '")
+
+    if !apple.is_err()
+        name @ ffi_lookup.up_to_quote(apple.must())
+        caught @ true
+
+    if !caught
+        gnu = ffi_lookup.after(text: line, marker: "cannot find -l")
+
+        if !gnu.is_err()
+            parts = ffi_lookup.words(text: gnu.must())
+
+            if parts.len() == 0
+                return fail("none", "no library name after -l")
+            name @ strip_colons(parts[0])
+            caught @ true
+
+    if !caught
+        return fail("none", "not a missing-library line")
+    span = link_head(s, decls, name: name)
+
+    if span.is_err()
+        return fail("none", "no group names this library")
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "ffi_missing_library",
+        message: "this machine has no library called `" + name + "` — the group names it, and the linker looked",
+        span: span.must()
+    )
+    d.notes @ d.notes.push(
+        "install its development files, or pass `--library <dir>`; where the library ships a `.pc`, `package \"" + name + "\"` asks the machine for both its headers and its libraries"
+    )
+    return ok(d)
+
+# The group head that wrote `link "<name>"` — the narrowing that keeps
+# a library the DRIVER passed from being blamed on the author. A
+# record is a group member here too (panel 062's audit, finding 6).
+function link_head(s: source.Source, decls: [ast.Decl], name: str) -> token.Span?
+    for decl in decls
+        library: ast.Library? @ fail("none", "no library")
+
+        match decl.kind
+            .function_decl fd          => library @ fd.value.library
+            .constant_decl k           => library @ k.library
+            .record_decl rec           => library @ rec.library
+            .variant_decl | .test_decl => continue
+
+        if library.is_err()
+            continue
+
+        match library.must()
+            .link l =>
+                if emit_externs.unquoted(s, span: l.name) == name
+                    return ok(l.name)
+            .package => continue
+
+    return fail("none", "no group names this library")
+
+# The symbol out of a linker's complaint, in the spellings the two
+# platforms produce. GNU ld and lld write "undefined reference to
+# `sqrt'"; Apple's ld64 writes '"_sqrt", referenced from:' on its own
+# line. THE LEADING UNDERSCORE IS MACH-O'S, not the program's, and
+# stripping it is what lets one declaration() lookup serve both.
+function undefined_symbol(line: str) -> str?
+    gnu = ffi_lookup.after(text: line, marker: "undefined reference to `")
+
+    if !gnu.is_err()
+        return ok(ffi_lookup.up_to_quote(gnu.must()))
+
+    if ffi_lookup.has(text: line, needle: "referenced from:")
+        opened = ffi_lookup.after(text: line, marker: "\"")
+
+        if opened.is_err()
+            return fail("none", "no quoted symbol")
+        quoted: str @ ""
+
+        for ch in opened.must().chars()
+            if ch == "\""
+                break
+            quoted @ quoted + ch
+
+        cs = quoted.chars()
+
+        if cs.len() > 0 && cs[0] == "_"
+            return ok(quoted.slice(from: 1, to: quoted.len()))
+        return ok(quoted)
+    return fail("none", "not an undefined-symbol line")
+
+function strip_colons(text: str) -> str
+    cs = text.chars()
+    head: i64 @ 0
+
+    while head < cs.len() && cs[head] == ":"
+        head @ head + 1
+
+    tail: i64 @ cs.len()
+
+    while tail > head && cs[tail - 1] == ":"
+        tail @ tail - 1
+
+    kept: [str] @ []
+    index: i64 @ head
+
+    while index < tail
+        kept @ kept.push(cs[index])
+        index @ index + 1
+
+    return kept.join("")
+
+# A header the preprocessor could not find, named by an extern group
+# in this program — the class that stops §4.19's ladder one directory
+# before the linker (panel 049: a real raylib binding died at exit 2
+# for a missing -I on the author's own machine). The class does not
+# repair the gap — the language still has no way to SAY where a header
+# is — it repairs the BLAME.
+function missing_header(s: source.Source, decls: [ast.Decl], line: str) -> diag.Diagnostic?
+    if !ffi_lookup.has(text: line, needle: "file not found")
+        return fail("none", "not a missing-header line")
+    opened = ffi_lookup.after(text: line, marker: "'")
+
+    if opened.is_err()
+        return fail("none", "no quoted header")
+    header = ffi_lookup.up_to_quote(opened.must())
+    span = ffi_lookup.group_head(s, decls, header: header)
+
+    if span.is_err()
+        return fail("none", "no group names this header")
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "ffi_missing_header",
+        message: "`" + header + "` is not on this machine's include path — clang looked and did not find it",
+        span: span.must()
+    )
+    d.notes @ d.notes.push(
+        "the group names a header the preprocessor must be able to open: install the library's development files, or pass `--include <dir>` — `package` finds it for you where the library ships a `.pc`, and `CPATH` works too"
+    )
+    return ok(d)
+
+# A package this program asked about, and the machine could not answer
+# — not installed, or answering with a flag the allow-list refuses.
+# The only class whose text this compiler wrote itself: the driver
+# marks it, and the marker is matched here so one file holds every
+# rule about whose mistake a build failure is. The driver's message is
+# already written for a reader; the whole of it is carried, minus the
+# marker, because its later lines are the repair and §4.17 says an
+# error carries what is needed to fix it.
+function package_problem(s: source.Source, decls: [ast.Decl], stderr: str, line: str) -> diag.Diagnostic?
+    rest = ffi_lookup.after(text: line, marker: ffi_lookup.PACKAGE)
+
+    if rest.is_err()
+        return fail("none", "not a package line")
+    opened = ffi_lookup.after(text: rest.must(), marker: "`")
+
+    if opened.is_err()
+        return fail("none", "no package name on the line")
+    name: str @ ""
+
+    for ch in opened.must().chars()
+        if ch == "`"
+            break
+        name @ name + ch
+
+    span = ffi_lookup.package_span(s, decls, name: name)
+
+    if span.is_err()
+        return fail("none", "no group asked for this package")
+    kept: [str] @ []
+    seen: bool @ false
+
+    for one in ffi_lookup.lines(text: stderr)
+        if !seen && ffi_lookup.has(text: one, needle: ffi_lookup.PACKAGE)
+            seen @ true
+
+        if seen
+            kept @ kept.push(one)
+
+    headline: str @ rest.must()
+
+    if kept.len() > 0
+        headline @ replace_all(text: kept[0], marker: ffi_lookup.PACKAGE, with_text: "the package ")
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "ffi_package", message: headline, span: span.must())
+    index: i64 @ 0
+
+    for one in kept
+        if index > 0
+            note = ffi_lookup.trimmed(one)
+
+            if note.len() > 0
+                d.notes @ d.notes.push(note)
+        index @ index + 1
+
+    return ok(d)
+
+function replace_all(text: str, marker: str, with_text: str) -> str
+    out: str @ ""
+    remaining: str @ text
+    fall: bool @ false
+
+    while !fall
+        at = ffi_lookup.char_index_of(text: remaining, needle: marker)
+
+        if at.is_err()
+            fall @ true
+        else
+            cs = remaining.chars()
+            head: [str] @ []
+            index: i64 @ 0
+
+            while index < at.must()
+                head @ head.push(cs[index])
+                index @ index + 1
+
+            out @ out + head.join("") + with_text
+            tail: [str] @ []
+            index @ at.must() + marker.chars().len()
+
+            while index < cs.len()
+                tail @ tail.push(cs[index])
+                index @ index + 1
+
+            remaining @ tail.join("")
+
+    return out + remaining
+
+## Tests
+
+test "the linker's two spellings, the library, the header, the package"
+    text = "extern \"math.h\"\n    function sqrt(x: f64) -> f64\n\nextern \"SDL.h\" link \"sdl2\"\n    function SDL_Init(flags: u32) -> i64\n\nextern \"raylib.h\" package \"raylib\"\n    record Color\n        r: i64\n\nfunction touch(c: Color)\n    _ = c\n\nfunction main()\n    print(sqrt(2.0) + SDL_Init(flags: 1).to_f64())\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c = checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+
+    # Mach-O: the underscore is the platform's, not the program's.
+    mach = "  \"_sqrt\", referenced from:"
+    d = missing_link(s, parsed.decls, line: mach)
+    assert d.must().code == "ffi_missing_link"
+    assert d.must().message == "the linker cannot find `sqrt`, and no group in this program says which library has it"
+
+    # GNU spelling finds the same declaration.
+    gnu = "main.o: in function `h_t_main': undefined reference to `sqrt'"
+    assert !missing_link(s, parsed.decls, line: gnu).is_err()
+
+    # A symbol nobody declared stays the compiler's own failure.
+    ours = "  \"_h_t_Point_hash\", referenced from:"
+    assert missing_link(s, parsed.decls, line: ours).is_err()
+
+    # The library, in both linker spellings, lands on the quoted name.
+    lib = missing_library(s, parsed.decls, line: "ld: library 'sdl2' not found")
+    assert lib.must().code == "ffi_missing_library"
+    assert source.span_text(s, lib.must().span) == "\"sdl2\""
+    assert !missing_library(s, parsed.decls, line: "/usr/bin/ld: cannot find -lsdl2").is_err()
+    assert missing_library(s, parsed.decls, line: "ld: library 'curl' not found").is_err()
+
+    # The header the preprocessor could not open.
+    hdr = missing_header(s, parsed.decls, line: "main.c:3:10: fatal error: 'raylib.h' file not found")
+    assert hdr.must().code == "ffi_missing_header"
+    assert missing_header(s, parsed.decls, line: "main.c:3:10: fatal error: 'ghost.h' file not found").is_err()
+
+    # The package: headline keeps its sentence, later lines become
+    # notes, the marker becomes plain words.
+    stderr = "heroes-ffi-package `raylib` is not installed on this machine\n  install raylib with your package manager\n  or pass --library and --include yourself\n"
+    line = "heroes-ffi-package `raylib` is not installed on this machine"
+    pk = package_problem(s, parsed.decls, stderr: stderr, line: line)
+    assert pk.must().code == "ffi_package"
+    assert pk.must().message == "the package `raylib` is not installed on this machine"
+    assert pk.must().notes.len() == 2
+    assert pk.must().notes[0] == "install raylib with your package manager"
+    assert package_problem(s, parsed.decls, stderr: stderr, line: "heroes-ffi-package `sdl3` missing").is_err()

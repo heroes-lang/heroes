@@ -1,0 +1,215 @@
+# heroes doctor and heroes this — the two commands with no file
+# (panels 016, 080). Port of crates/heroes-cli/src/commands/
+# {doctor,this}.rs, one module because each is a page and both answer
+# without reading a program.
+#
+# doctor verifies the toolchain the compiler depends on, and it is the
+# only place $HEROES_RUNTIME is visible — an input channel outside the
+# argv table, and a channel nobody can discover is one that will be
+# discovered by reading the source. this prints the Zen, the surface's
+# one author-ratified exception to §10's stopping rule, admitted in
+# the class --version occupies: zero input, constant output, exit 0.
+
+use cli/table as cli_table
+use cli/io
+use cli/toolchain
+use cli/process
+
+record Check
+    name: str
+    ok: bool
+    detail: str
+
+# The first line of what a program said, or absent when it could not
+# run.
+#
+# **It took a command LINE until M-argv-execution and takes a word list
+# now**, which is what lets it answer a question it could not answer
+# before: `system()` said 127 both for a program that is not installed
+# and for one that ran and exited 127, so "no clang on this machine"
+# and "clang is angry" were the same reply. `started` separates them,
+# and the caller is the one command whose whole job is to tell an
+# author which of the two they are looking at.
+#
+# stderr is discarded rather than shown: a `--version` probe that
+# complains is a probe that failed, and its complaint is noise on a
+# report about the machine.
+function capture(program: str, words: [str], build_dir: str) -> str?
+    out_path = build_dir + "/doctor-out.txt"
+    _ = process.mkdir_all(build_dir)
+    ran = process.run(program: program, words: words, out: out_path, err: process.discard())
+
+    if !ran.started
+        return fail("none", "the program is not on this machine")
+
+    if ran.code != 0
+        return fail("none", "the command could not run")
+    said = read_file(out_path)
+
+    if said.is_err()
+        return fail("none", "nothing was said")
+    return ok(first_line(said.must()))
+
+function first_line(text: str) -> str
+    run: [str] @ []
+
+    for ch in text.chars()
+        if ch == "\n"
+            break
+        run @ run.push(ch)
+
+    return trim_ends(run.join(""))
+
+function trim_ends(text: str) -> str
+    cs = text.chars()
+    head: i64 @ 0
+
+    while head < cs.len() && (cs[head] == " " || cs[head] == "\t")
+        head @ head + 1
+
+    tail: i64 @ cs.len()
+
+    while tail > head && (cs[tail - 1] == " " || cs[tail - 1] == "\t")
+        tail @ tail - 1
+
+    return cs.slice(from: head, to: tail).join("")
+
+# clang, the linker's home, the architecture, the runtime, and a
+# writable cache. The linker check is named after WHAT IT IS FOR and
+# asked in the platform's own words: it used to ask xcode-select
+# everywhere, which made doctor exit 1 on Linux — found the day CI
+# first ran on two platforms, which is the whole reason that CI exists.
+# The port asks `uname -s` rather than carrying a cfg: a fact about
+# the machine in hand, not a premise about which platforms exist.
+function checks(build_dir: str, runtime_hint: str) -> [Check]
+    out: [Check] @ []
+    clang = capture(program: "clang", words: ["clang", "--version"], build_dir: build_dir)
+    out @ out.push(
+        Check(name: "clang", ok: !clang.is_err(), detail: clang.default("not found — install a C toolchain"))
+    )
+    system_name = capture(program: "uname", words: ["uname", "-s"], build_dir: build_dir).default("unknown")
+
+    if system_name == "Darwin"
+        clt = capture(program: "xcode-select", words: ["xcode-select", "-p"], build_dir: build_dir)
+        out @ out.push(
+            Check(name: "xcode CLT", ok: !clt.is_err(), detail: clt.default("not found — run `xcode-select --install`"))
+        )
+    else
+        cc = capture(program: "cc", words: ["cc", "--version"], build_dir: build_dir)
+        out @ out.push(
+            Check(name: "cc", ok: !cc.is_err(), detail: cc.default("not found — install a C toolchain (build-essential, base-devel, …)"))
+        )
+    arch = capture(program: "uname", words: ["uname", "-m"], build_dir: build_dir).default("unknown")
+    out @ out.push(Check(name: "arch", ok: true, detail: arch))
+
+    # The runtime — found by searching, so doctor is the place that
+    # says which candidate won.
+    found = toolchain.locate_toolchain(hint: runtime_hint, fingerprint: "doctor")
+
+    if found.is_err()
+        out @ out.push(Check(name: "runtime", ok: false, detail: "not found — set HEROES_RUNTIME=<dir>"))
+    else
+        out @ out.push(Check(name: "runtime", ok: true, detail: found.must().runtime))
+
+    # build/ must be creatable and writable, probed by writing.
+    made = process.mkdir_all(build_dir)
+    cache_ok: bool @ false
+
+    if !made.is_err()
+        probe = build_dir + "/.doctor-probe"
+
+        if !write_file(path: probe, text: "ok").is_err() && !read_file(probe).is_err()
+            cache_ok @ true
+            _ = process.remove_file(probe)
+    detail: str @ "cannot write to " + build_dir + "/"
+
+    if cache_ok
+        detail @ build_dir + "/ writable"
+    out @ out.push(Check(name: "build cache", ok: cache_ok, detail: detail))
+    return out
+
+function run_doctor(build_dir: str, runtime_hint: str) -> cli_table.Exit
+    all_ok: bool @ true
+
+    for c in checks(build_dir: build_dir, runtime_hint: runtime_hint)
+        mark: str @ "FAIL"
+
+        if c.ok
+            mark @ "ok "
+        print(mark + "  " + pad_to(c.name, width: 12) + " " + c.detail)
+
+        if !c.ok
+            all_ok @ false
+
+    if all_ok
+        return .ok_exit
+    return .failed_exit
+
+function pad_to(text: str, width: i64) -> str
+    out: str @ text
+    count: i64 @ text.chars().len()
+
+    while count < width
+        out @ out + " "
+        count @ count + 1
+
+    return out
+
+# The twenty laws, byte-exact — the test below pins this text verbatim,
+# so a change is deliberate in two places (CLAUDE.md §9's redundancy
+# rule, and law 15's). Python stores its
+# Zen ROT13-encoded; this one is plain text, because law 4 says what
+# the eye can see is all there is.
+function zen() -> str
+    return "The Zen of Heroes\n\n 1. This language begins with a tribute to David Bowie.\n 2. It is made for language models; people can read it too.\n 3. A model may have read everything; each page must still explain itself.\n 4. What the eye can see is all there is: sound and vision.\n 5. There is one way to say each thing; every program sings in the same voice.\n 6. That way may not be obvious at first; the Starman already knows it.\n 7. The semantics are familiar; the syntax is new.\n 8. Turn and face the strange: every strange choice here is deliberate.\n 9. Nothing changes behind your back; every change signs its name.\n10. Every plausible mistake must become a compile error before the program runs.\n11. Unless you mark the unfinished place with ???.\n12. An honest hole beats a confident guess.\n13. A compile-time error is an answer; a runtime error is an ambush.\n14. An error should tell you how to fix the program. Anything less is a complaint.\n15. Repeating a word is cheap; forgetting one can cost the whole program.\n16. The specification stays small under pressure; every word must earn its place.\n17. Crashes and leaks are bugs. Ashes to ashes: what Heroes takes, it returns.\n18. When pretty code and safe code disagree, safe code wins.\n19. There is no standard library; C is the man who sold the world.\n20. We can be heroes, just for one day.\n"
+
+function run_this() -> cli_table.Exit
+    io.print_artifact(text: zen())
+    return .ok_exit
+
+## Tests
+
+test "doctor finds this machine's toolchain, and the Zen is byte-exact"
+    got = checks(build_dir: "build", runtime_hint: "")
+    assert got.len() == 5
+    assert got[0].name == "clang"
+    assert got[0].ok
+
+    # The runtime and the cache are both real here.
+    assert got[3].name == "runtime"
+    assert got[3].ok
+    assert got[3].detail == "runtime"
+    assert got[4].ok
+    assert got[4].detail == "build/ writable"
+
+    # The Zen: twenty laws, pinned byte for byte.
+    expected = "The Zen of Heroes\n\n 1. This language begins with a tribute to David Bowie.\n 2. It is made for language models; people can read it too.\n 3. A model may have read everything; each page must still explain itself.\n 4. What the eye can see is all there is: sound and vision.\n 5. There is one way to say each thing; every program sings in the same voice.\n 6. That way may not be obvious at first; the Starman already knows it.\n 7. The semantics are familiar; the syntax is new.\n 8. Turn and face the strange: every strange choice here is deliberate.\n 9. Nothing changes behind your back; every change signs its name.\n10. Every plausible mistake must become a compile error before the program runs.\n11. Unless you mark the unfinished place with ???.\n12. An honest hole beats a confident guess.\n13. A compile-time error is an answer; a runtime error is an ambush.\n14. An error should tell you how to fix the program. Anything less is a complaint.\n15. Repeating a word is cheap; forgetting one can cost the whole program.\n16. The specification stays small under pressure; every word must earn its place.\n17. Crashes and leaks are bugs. Ashes to ashes: what Heroes takes, it returns.\n18. When pretty code and safe code disagree, safe code wins.\n19. There is no standard library; C is the man who sold the world.\n20. We can be heroes, just for one day.\n"
+    assert zen() == expected
+    assert run_this() == .ok_exit
+
+function has_text(text: str, needle: str) -> bool
+    cs = text.chars()
+    needle_cs = needle.chars()
+
+    if needle_cs.len() == 0
+        return true
+
+    if needle_cs.len() > cs.len()
+        return false
+    start: i64 @ 0
+
+    while start <= cs.len() - needle_cs.len()
+        matched: bool @ true
+        offset: i64 @ 0
+
+        while offset < needle_cs.len()
+            if cs[start + offset] != needle_cs[offset]
+                matched @ false
+                break
+            offset @ offset + 1
+
+        if matched
+            return true
+        start @ start + 1
+
+    return false

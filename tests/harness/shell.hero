@@ -7,7 +7,7 @@
 # this file exists at all — Heroes has no standard library, so a process
 # and a directory arrive through C, and C's own `system()` is the one
 # entry point every platform this project builds on already has
-# (selfhost/cli_toolchain.hero:14 made the same call for clang).
+# (selfhost/cli/toolchain.hero:14 made the same call for clang).
 #
 # THREE THINGS HERE ARE MEASURED, NOT ASSUMED.
 #

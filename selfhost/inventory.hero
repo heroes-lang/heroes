@@ -1,0 +1,137 @@
+# The names no file may declare — design.md §4.20's consolidated inventory,
+# which is also Principle 0's library closure list (§1.0), split by §1.11's
+# two tiers.
+# Port of crates/heroes/src/resolve/inventory.rs.
+#
+# **The tier says where the implementation comes from, not whether the name
+# is taken.** Every name here is reserved everywhere: at the top level, as a
+# parameter, as a local (panel 015 — one tier of reservation, one rule, zero
+# spec tokens).
+#
+# Two names are deliberately ABSENT, and their absence is a rejection that
+# can be relaxed later rather than an acceptance that cannot be withdrawn:
+# `panic` (Part 5 desugars `assert` into it; the spec offers the user
+# `assert`) and `Builder` (a runtime type behind `join`, not surface).
+#
+# `fail` is here because `fail("code", "msg")` has to resolve to something,
+# but its RESERVATION is enforced one stage earlier: it is a lexer keyword,
+# so a declaration named `fail` never reaches the resolver.
+#
+# ## Port finding: the order is identity, and the Rust comment lied twice
+#
+# `Ref`'s builtin case carries an INDEX into this table, so the order is
+# meaning and the port copies it verbatim — including its two departures
+# from alphabetical order (`args` before `any`, `keys` before `is_err`).
+# The Rust doc said "sorted by name" above a table that is not, and
+# "thirty-five entries" above thirty-seven: two counts in prose that expired
+# in silence, which is CLAUDE.md §11's own class. The claims are deleted on
+# both sides rather than corrected; `index_of` searches linearly, so nothing
+# ever depended on the sorting.
+
+## The two tiers
+
+# Where a built-in's implementation lives (§1.11). Not a permission level:
+# both tiers are equally reserved.
+variant Tier
+    # Tier 1 — the C runtime. The language cannot express these: `print`
+    # takes any number of arguments and renders them canonically, and the
+    # emitter recognises it by name.
+    runtime
+    # Tier 2 — written in Heroes itself, the payoff from generics (§4.12).
+    # Real source in one prelude; a USER file still may not redeclare them.
+    heroes
+
+record Builtin
+    name: str
+    tier: Tier
+
+## The inventory
+
+function table() -> [Builtin]
+    return [
+        Builtin(name: "all", tier: .heroes)
+        Builtin(name: "args", tier: .heroes)
+        Builtin(name: "any", tier: .heroes)
+        Builtin(name: "chars", tier: .runtime)
+        Builtin(name: "cstr", tier: .runtime)
+        Builtin(name: "default", tier: .heroes)
+        Builtin(name: "exit", tier: .heroes)
+        Builtin(name: "fail", tier: .runtime)
+        Builtin(name: "filter", tier: .heroes)
+        Builtin(name: "find", tier: .heroes)
+        Builtin(name: "fold", tier: .heroes)
+        Builtin(name: "keys", tier: .runtime)
+        Builtin(name: "is_err", tier: .heroes)
+        Builtin(name: "join", tier: .runtime)
+        Builtin(name: "len", tier: .runtime)
+        Builtin(name: "map", tier: .heroes)
+        Builtin(name: "must", tier: .heroes)
+        Builtin(name: "ok", tier: .runtime)
+        Builtin(name: "print", tier: .runtime)
+        Builtin(name: "push", tier: .runtime)
+        Builtin(name: "range", tier: .heroes)
+        Builtin(name: "read_file", tier: .heroes)
+        Builtin(name: "repeat", tier: .runtime)
+        Builtin(name: "slice", tier: .runtime)
+        Builtin(name: "sort", tier: .runtime)
+        Builtin(name: "to_f32", tier: .runtime)
+        Builtin(name: "to_f64", tier: .runtime)
+        Builtin(name: "to_i16", tier: .runtime)
+        Builtin(name: "to_i32", tier: .runtime)
+        Builtin(name: "to_i64", tier: .runtime)
+        Builtin(name: "to_i8", tier: .runtime)
+        Builtin(name: "to_str", tier: .runtime)
+        Builtin(name: "to_u16", tier: .runtime)
+        Builtin(name: "to_u32", tier: .runtime)
+        Builtin(name: "to_u64", tier: .runtime)
+        Builtin(name: "to_u8", tier: .runtime)
+        Builtin(name: "write_file", tier: .heroes)
+    ]
+
+# The banner, and only the banner (panel 054): the one program
+# measurement 007 found NO route to without it.
+
+# Eight width conversions sharing the one scheme (panel 017's rule,
+# author decision 2026-08-13): `to_<T>` is fallible exactly when
+# converting TO `T` can fail, so `to_str`/`to_f32`/`to_f64` hand
+# back a plain value and `to_i8` … `to_u64` hand back a `T?`.
+
+# The table index a `Ref`'s builtin case carries, or absent when the name is
+# free. Linear search: the table needs no index of its own, and every list
+# the compiler shows stays in the table's one deterministic order.
+function index_of(name: str) -> i64?
+    entries = table()
+    i: i64 @ 0
+
+    while i < entries.len()
+        if entries[i].name == name
+            return ok(i)
+        i @ i + 1
+
+    return fail("free", "no built-in has this name")
+
+## Tests
+
+test "a reserved name answers with its index, a free one with absence"
+    assert index_of("print").must() == 18
+    assert index_of("to_u8").must() == 35
+    assert index_of("panic").is_err()
+    assert index_of("Builder").is_err()
+    assert index_of("banner").is_err()
+
+test "the inventory is thirty-seven names and the order is identity"
+    entries = table()
+    assert entries.len() == 37
+
+    # The two deliberate departures from alphabetical order, pinned so a
+    # helpful future sort is caught: the index is meaning, not presentation.
+    assert entries[1].name == "args"
+    assert entries[2].name == "any"
+    assert entries[11].name == "keys"
+    assert entries[12].name == "is_err"
+
+test "the tier says where the implementation lives"
+    entries = table()
+    assert entries[index_of("print").must()].tier == .runtime
+    assert entries[index_of("map").must()].tier == .heroes
+    assert entries[index_of("fail").must()].tier == .runtime

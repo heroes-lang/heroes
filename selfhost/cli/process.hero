@@ -1,0 +1,247 @@
+# The process boundary: how the compiler reaches the machine.
+#
+# **This module was `cli_shell.hero` until M-argv-execution, and the
+# rename is the point.** It used to build a command LINE as a string
+# and hand it to C's `system()`, quoting every filename on the way
+# with `sq()` — single quotes, POSIX rules, maintained by hand across
+# 189 call sites in this repository. There is no shell here any more.
+# A program is named, its arguments are pushed one at a time, and the
+# runtime hands them to the operating system as a list.
+#
+# WHY THE PUSH IS ONE WORD AT A TIME, and it is not a style choice.
+# `function hero_run(program: cstr, argv: [str])` cannot be declared:
+# `[str]` is `error[ffi_type]`, and packing the words into one
+# NUL-separated string is `error[unknown_escape]`. There is no Heroes
+# value that can carry an argument list across the C boundary, which
+# panel 098 measured with a compiler rather than argued. So the list is
+# built in the runtime, one call per word, and `run` below is the
+# Heroes-side wrapper that makes that invisible to every caller — a
+# `[str]` is perfectly ordinary between two Heroes functions.
+#
+# WHAT IT BOUGHT, measured at panel 098. The argument `a b 'c' $HOME`
+# arrives as **14 bytes, untouched**, where a shell without `sq()`
+# delivered **20** — `a b c /Users/joseph`, three words, the quotes
+# eaten and the variable expanded. That class is deleted rather than
+# defended.
+#
+# AND THE ANSWER GAINED A CHANNEL. `system()` says 127 both for a
+# program that does not exist and for one that ran and exited 127, and
+# a program killed by a signal decodes to zero, reading as success.
+# `Ran.started` is that distinction, and every caller must ask it
+# before reading `code` (panel 098 condition 3).
+#
+# Panel 033 R5 is still why the wrappers exist: an extern is never
+# callable across a module boundary, so these are the route every other
+# module takes.
+
+extern "hero_os.h"
+    function hero_run_discard_path() -> str
+    function hero_run_exe_suffix() -> str
+    function hero_run_reset()
+    function hero_run_arg(word: str)
+    function hero_run_go(program: cstr, out_path: cstr, err_path: cstr, @status: i64) -> i64
+    function hero_fs_exists(path: cstr) -> i64
+    function hero_fs_is_directory(path: cstr) -> i64
+    function hero_fs_mkdir_all(path: cstr) -> i64
+    function hero_fs_remove(path: cstr) -> i64
+    function hero_fs_rename(from: cstr, to: cstr) -> i64
+
+extern "stdlib.h"
+    function hero_dir_scan(root: cstr, want: i64, recursive: i64) -> i64
+    function hero_dir_at(index: i64) -> str
+    function hero_dir_release()
+    function getenv(name: cstr) -> cstr
+
+# What a finished program answered.
+#
+# `started` first, `code` second — the order is the rule. A program
+# that never ran has no exit code, and `-1` is not one either: reading
+# `code` without asking `started` is how `system()`'s 127 used to be
+# mistaken for a program's own answer.
+record Ran
+    code: i64
+    started: bool
+
+# The runtime's status words. `0` is OK; `1` is "could not be started".
+constant RUN_OK: i64
+    0
+
+# Run `program` with `words`, which must include the program's own name
+# as its first word — argv[0] is a word like any other.
+#
+# An empty `out` or `err` discards that stream. The spelling of
+# "discard" lives in the runtime, because `/dev/null` is a platform
+# word and this file is not allowed to know what platform it is on.
+function run(program: str, words: [str], out: str, err: str) -> Ran
+    hero_run_reset()
+
+    for word in words
+        hero_run_arg(word: word)
+
+    status: i64 @ 0
+    code = hero_run_go(
+        program: program.cstr(),
+        out_path: out.cstr(),
+        err_path: err.cstr(),
+        @status
+    )
+    hero_run_reset()
+
+    return Ran(code: code, started: status == RUN_OK)
+
+# Where a stream goes to be thrown away, spelled the way this machine
+# spells it. Asked of the runtime rather than written here, because
+# `/dev/null` is a platform word and panel 097 keeps those out of the
+# compiler. An empty path is the other thing entirely: it INHERITS, so
+# the program writes where this process writes.
+function discard() -> str
+    return hero_run_discard_path()
+
+# What an executable is called here: `.exe` on Windows, "" elsewhere.
+# Asked of the runtime rather than known, because this file is not
+# allowed to know what platform it is on — and a binary built without it
+# is created successfully and then cannot be started.
+function exe_suffix() -> str
+    return hero_run_exe_suffix()
+
+# The five filesystem questions, each carrying the shell utility's
+# meaning rather than the C call's: an existing directory is a
+# successful `mkdir_all`, and a file that is not there is a successful
+# `remove`. The runtime's C explains why `mkdir` cannot be trusted to
+# say which of those it is looking at.
+function mkdir_all(path: str) -> ()?
+    if hero_fs_mkdir_all(path: path.cstr()) != RUN_OK
+        return fail("mkdir_failed", "could not create the directory " + path)
+    return ok()
+
+function path_exists(path: str) -> bool
+    return hero_fs_exists(path: path.cstr()) == 1
+
+function is_directory(path: str) -> bool
+    return hero_fs_is_directory(path: path.cstr()) == 1
+
+function remove_file(path: str) -> ()?
+    if hero_fs_remove(path: path.cstr()) != RUN_OK
+        return fail("remove_failed", "could not remove " + path)
+    return ok()
+
+# Replace `to` with `from`, atomically where the platform allows it.
+# The cache depends on that: an object is published by renaming it into
+# place *after* its dependencies are recorded, so a reader never sees
+# it half-written or absent.
+function rename_over(from: str, to: str) -> ()?
+    if hero_fs_rename(from: from.cstr(), to: to.cstr()) != RUN_OK
+        return fail("rename_failed", "could not move " + from + " to " + to)
+    return ok()
+
+# One environment variable, or "" where it is unset OR unreadable.
+#
+# **This killed the compiler until 2026-08-24, and the null test
+# everybody looked at was not the reason**: `getenv` also answers a
+# pointer to whatever bytes the environment holds, and `to_str` aborts
+# on bytes that are not UTF-8. `HEROES_RUNTIME=$'\xff\xfe' heroes
+# doctor` was exit 134 (panel 089). `validated` subsumes both cases,
+# and "" is right for both because every call site asks only whether
+# the string is empty.
+# Every FILE under `dir`, recursively, relative paths joined with `/` on
+# every platform. The runtime holds the listing until it is read, and this
+# releases it on the way out — the leak gate panics at exit otherwise.
+function files_under(dir: str) -> [str]?
+    found = hero_dir_scan(root: dir.cstr(), want: 0, recursive: 1)
+
+    if found < 0
+        return fail("cannot_walk", "cannot read " + dir)
+    out: [str] @ []
+    at: i64 @ 0
+
+    while at < found
+        out @ out.push(dir + "/" + hero_dir_at(index: at))
+        at @ at + 1
+
+    hero_dir_release()
+    return ok(out)
+
+function env(name: str) -> str
+    return validated(c: getenv(name: name.cstr())).default("")
+
+## Tests
+
+# Whether `text` holds `needle` anywhere. **Written here rather than imported,
+# and the reason is the language.** `toolchain.has_text` is the same
+# predicate, and `cli_toolchain` imports THIS module — so `use cli_toolchain`
+# here is `module_cycle`, whatever the edge carries (CLAUDE.md §11's knot
+# clause). Six lines in a test section is the cheaper half of that trade.
+function holds(text: str, needle: str) -> bool
+    if needle.len() > text.len()
+        return false
+    at: i64 @ 0
+
+    while at + needle.len() <= text.len()
+        if text.slice(from: at, to: at + needle.len()) == needle
+            return true
+        at @ at + 1
+
+    return false
+
+# **`clang` is the witness on all three platforms, and it is not a shell.**
+# These two cases used to name `/bin/echo` and `/bin/sh`, which is 2 of 520
+# red on the Windows leg (measured 2026-08-31, run 33381701823) for a reason
+# that has nothing to do with what they were testing: those paths do not
+# exist there, and `echo` on Windows is a `cmd` builtin rather than a program.
+#
+# Replacing them with `cmd /c echo` would have thrown the case away — the
+# claim is that a word survives WITHOUT a shell, so proving it through one
+# proves nothing. `clang` reprints an argument it cannot use, verbatim, and
+# exits 1; it is present wherever these tests run at all, because `heroes
+# doctor` refuses a machine without it.
+test "an argument survives what a shell would have eaten"
+    # The three characters `sq()` existed to defend against. Through an
+    # argument list they need no defending: the word arrives whole.
+    tricky = "a b 'c' $HOME"
+    ran = run(program: "clang", words: ["clang", tricky], out: "", err: "build/argv-probe.txt")
+
+    assert ran.started
+
+    back = read_file("build/argv-probe.txt")
+    assert !back.is_err()
+
+    # clang says `no such file or directory: '<the argument>'`, so the word
+    # comes back through a second process's own diagnostic — spaces, quotes,
+    # dollar sign and all. A shell would have split it into four words and
+    # expanded the last one.
+    assert holds(text: back.must(), needle: tricky)
+
+test "a program that never started is not a program that failed"
+    absent = run(program: "heroes-no-such-program", words: ["heroes-no-such-program"], out: "", err: "")
+    assert !absent.started
+
+    # And one that ran and failed says so the other way round. The number is
+    # not the point and never was — `started` against `code` is.
+    failed = run(program: "clang", words: ["clang", "--heroes-no-such-flag"], out: "", err: "build/argv-refused.txt")
+    assert failed.started
+    assert failed.code != 0
+
+test "the filesystem answers the shell utility's question, not C's"
+    root = "build/argv-fs"
+    _ = remove_file(root + "/deep/here")
+    assert !mkdir_all(root + "/deep/here").is_err()
+
+    # Twice is success, which is what `mkdir -p` meant.
+    assert !mkdir_all(root + "/deep/here").is_err()
+    assert is_directory(root + "/deep/here")
+    assert path_exists(root + "/deep/here")
+    assert !path_exists(root + "/deep/nowhere")
+
+    # Removing what is not there is success, which is what `rm -f` meant.
+    assert !remove_file(root + "/deep/nowhere").is_err()
+
+    assert !write_file(path: root + "/from", text: "NEW").is_err()
+    assert !write_file(path: root + "/to", text: "OLD").is_err()
+    assert !rename_over(from: root + "/from", to: root + "/to").is_err()
+
+    landed = read_file(root + "/to")
+    assert !landed.is_err()
+    assert landed.must() == "NEW"
+
+test "an unset variable is empty"
+    assert env(name: "HEROES_NO_SUCH_VARIABLE_EXISTS") == ""

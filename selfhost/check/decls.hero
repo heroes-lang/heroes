@@ -1,0 +1,214 @@
+# One declaration at a time: what its body is FOR, and what `return`
+# owes it (design.md §4.2, §4.7, §4.18, §4.19; panels 020, 035, 060, 062).
+# Port of crates/heroes/src/types/decls.rs.
+#
+# Three shapes, and the difference between them is the whole reason Want
+# exists: a CONSTANT's body IS its value, so its last statement is
+# checked against the declared type; a FUNCTION's body is run for effect
+# and hands its value back through `return`, so the body wants nothing
+# and the checker's result field carries the signature's promise; a
+# TEST's body is run for effect and returns nothing at all.
+#
+# record and variant declare types, not values, so there is no body to
+# check — but their field types are INTERNED HERE, eagerly, and that is
+# not bookkeeping: "does this record own a counted reference" is
+# answered over its fields' ids, and lowering them lazily made the
+# answer depend on whether the program happened to read the field — a
+# leak whose cause was a field nobody touched.
+
+use ast
+use source
+use parse
+use resolve
+use resolved
+use check/table
+use check/state
+use check/lower
+use check/walk
+use check/ffi
+use value_errors
+use flow_errors
+
+function file(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl])
+    index: i64 @ 0
+
+    for decl in decls
+        match decl.kind
+            .constant_decl k =>
+                declared = lower.lower_ty(@c, a, r, k.ty)
+                c.result @ declared
+                c.fallible @ is_fallible_ty(c, declared)
+                clear_generics(@c)
+
+                if !k.body.is_err()
+                    # A constant's body IS its value: its last statement
+                    # produces it, unlike a function, which returns.
+                    got = walk.block(@c, a, r, s, decls, body: k.body.must(), want: .value(ty: declared))
+
+                    if got.value.is_err()
+                        want = state.show(c, s, decls, declared)
+                        state.push_diagnostic(@c, flow_errors.no_value(want, k.body.must().span))
+                else
+                    if !k.header.is_err()
+                        # No body: the value is the header's. What IS
+                        # checkable here is whether a header could produce
+                        # this type at all; the rest is clang's.
+                        ffi.ffi_constant(@c, s, decls, declared: declared, span: a.types[k.ty].span)
+
+                        # The result type reaches lowering through this
+                        # table rather than through the body, which no
+                        # longer exists.
+                        c.out.results[index] @ declared
+            .function_decl fd =>
+                names: [str] @ []
+
+                for g in fd.value.generics
+                    names @ names.push(source.span_text(s, g))
+
+                c.generic_names @ names
+                result = lower.lower_ty(@c, a, r, fd.value.result)
+
+                # `main` produces nothing, and that is ENFORCED rather than
+                # assumed: `main() -> i64?` returning fail(…) compiled,
+                # printed nothing and exited 0 — the only failure in this
+                # language with no instrument at all (panel 035).
+                if source.is_root(s, decl.name.start) && source.span_text(s, decl.name) == "main" && result != table.unit_ty(c.out.types)
+                    want = state.show(c, s, decls, result)
+                    state.push_diagnostic(@c, value_errors.main_returns(want, a.types[fd.value.result].span))
+                c.out.results[index] @ result
+                c.result @ result
+                c.fallible @ is_fallible_ty(c, result)
+
+                for param in fd.value.params
+                    ty = lower.lower_ty(@c, a, r, param.ty)
+                    state.bind_local(@c, param.name, ty: ty)
+
+                # AFTER the parameters are lowered, never before: the check
+                # reads written_type, and that table is what the lowering
+                # fills. Asking first is silent — it finds nothing and
+                # passes — which is how a Point parameter went unreported
+                # while the result beside it fired.
+                if fd.value.is_extern
+                    ffi.ffi_signature(@c, a, s, decls, f: fd.value, result: result, declared_name: decl.name)
+
+                if !fd.value.body.is_err()
+                    got = walk.block(@c, a, r, s, decls, body: fd.value.body.must(), want: .nothing)
+
+                    # §4.7's flow promise: a body is checked with want
+                    # nothing because its value comes from `return`, so
+                    # nothing here ever compared the TAIL with the declared
+                    # result — a function that runs off its end checked
+                    # clean for three milestones. Held back rather than
+                    # pushed, so §4.16's file-wide hole exemption can apply
+                    # at the driver.
+                    if !got.jumps && result != table.unit_ty(c.out.types)
+                        want = state.show(c, s, decls, result)
+                        name = source.span_text(s, decl.name)
+                        c.missing_returns @ c.missing_returns.push(
+                            flow_errors.missing_return(name: name, want: want, span: a.types[fd.value.result].span)
+                        )
+            .test_decl t =>
+                clear_generics(@c)
+                c.result @ table.unit_ty(c.out.types)
+                c.fallible @ false
+                _ = walk.block(@c, a, r, s, decls, body: t.body, want: .nothing)
+            # No body, and no Want: only the field types, interned so that
+            # the counted pass and the descriptor pass can read them
+            # whether or not the program touches the field.
+
+            .record_decl rec =>
+                clear_generics(@c)
+
+                for field in rec.fields
+                    ty = lower.lower_ty(@c, a, r, field.ty)
+
+                    if !rec.header.is_err()
+                        # A group's record is the header's struct, so its
+                        # fields are what a header can hold (panel 060) —
+                        # refused here because a str field has no C
+                        # spelling at all, so the assertion could not even
+                        # be written.
+                        ffi.ffi_field(@c, s, decls, ty: ty, span: a.types[field.ty].span)
+                    else
+
+                        # A fixed array exists at the C boundary and
+                        # nowhere else (panel 062): an ordinary record has
+                        # no header to inherit a layout from. Refused here
+                        # rather than left inert — a type with no
+                        # constructor and no operation is worse than an
+                        # error.
+                        ffi.fixed_outside_group(@c, s, decls, ty: ty, span: a.types[field.ty].span)
+            .variant_decl v =>
+                clear_generics(@c)
+
+                for one_case in v.cases
+                    for field in one_case.fields
+                        _ = lower.lower_ty(@c, a, r, field.ty)
+
+        index @ index + 1
+
+function clear_generics(@c: state.Checker)
+    empty: [str] = []
+    c.generic_names @ empty
+
+function is_fallible_ty(c: state.Checker, ty: i64) -> bool
+    return match table.get(c.out.types, ty)
+        .fallible                                                 => true
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
+        .array | .fixed | .map | .function_ty | .named            => false
+        .case_ty | .failure | .generic | .error                   => false
+
+## Tests
+
+function checked_file(text: str) -> state.Checker
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    c: state.Checker @ state.new_checker(out_of: out, expr_count: p.tree.exprs.len())
+    file(@c, p.tree, out, s, p.decls)
+    return c
+
+test "the three body shapes: a constant IS, a function returns, a test acts"
+    c = checked_file(
+        "constant M: i64\n    40 + 2\n\nfunction double(n: i64) -> i64\n    return n * 2\n\ntest \"doubling\"\n    assert double(21) == 42\n"
+    )
+    assert c.out.diagnostics.len() == 0
+    assert c.missing_returns.len() == 0
+    wrong = checked_file("constant M: i64\n    \"forty-two\"\n")
+    assert wrong.out.diagnostics.len() == 1
+    assert wrong.out.diagnostics[0].code == "type_mismatch"
+
+test "main produces nothing, and the promise line takes the caret"
+    c = checked_file("function main() -> i64\n    return 3\n")
+    assert c.out.diagnostics.len() == 1
+    assert c.out.diagnostics[0].code == "main_returns"
+
+test "a path off the end is held back, not yet reported"
+    c = checked_file("function sign(n: i64) -> i64\n    if n > 0\n        return 1\n")
+
+    # The if has no else, so the function CAN fall off its end — and the
+    # diagnostic waits in missing_returns for the driver's hole exemption.
+    assert c.missing_returns.len() == 1
+    held: bool @ false
+
+    for d in c.out.diagnostics
+        if d.code == "missing_return"
+            held @ true
+
+    assert !held
+
+test "the extern hooks fire from the declaration walk"
+    bad_sig = checked_file("extern \"m.h\"\n    function take(xs: [i64]) -> i64\n")
+    found: bool @ false
+
+    for d in bad_sig.out.diagnostics
+        if d.code == "ffi_type"
+            found @ true
+
+    assert found
+    bad_field = checked_file("extern \"m.h\"\n    record Holder\n        name: str\n")
+    assert bad_field.out.diagnostics.len() == 1
+    assert bad_field.out.diagnostics[0].code == "ffi_field_type"
+    stray = checked_file("record Plain\n    cells: i32[4]\n")
+    assert stray.out.diagnostics.len() == 1
+    assert stray.out.diagnostics[0].code == "fixed_outside_a_group"

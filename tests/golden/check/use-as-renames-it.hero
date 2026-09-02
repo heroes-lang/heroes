@@ -3,7 +3,7 @@
 #
 # What a single file can pin about `as` is the refusal and the promise; the
 # happy path needs two modules whose last parts collide, so it lives in
-# `selfhost/resolve_top.hero`'s own test and in `examples/`.
+# `selfhost/resolve/top.hero`'s own test and in `examples/`.
 #
 # **`as` is an ordinary identifier, not a keyword** — measured at panel 100:
 # zero C identifiers named `as` across 3120 SDK headers, so a keyword would

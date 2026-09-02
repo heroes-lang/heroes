@@ -1,0 +1,165 @@
+# Which types carry a reference the compiler must count (design.md
+# §4.10, §4.20; panels 021, 022).
+# Port of crates/heroes/src/types/counted.rs.
+#
+# str, [T] and {K: V} are the only reference-counted things in the
+# language. A record or a variant is BY VALUE and owns no block of its
+# own — but it can CONTAIN one, and then copying it is an incref of
+# every counted field. So the question is transitive, and answering it
+# needs the declarations. This is the one place it is ANSWERED; the
+# lowering's is_refcounted stays the one place it is asked — two answers
+# that disagree about which types are counted is a refcount bug that
+# reproduces once a week.
+#
+# The walk terminates because the size pass ran first: a cycle through
+# by-value fields is no_size and the file has already failed; a cycle
+# through [T] stops at the container, which is counted whatever it holds.
+
+use ast
+use source
+use parse
+use resolve
+use check/lower
+use check/table
+use check/state
+
+# One entry per interned type: does a value of it own a counted
+# reference. Dense over the interner, built after checking, when no more
+# types can appear. Fixpoint rather than recursion: this is a graph, the
+# graph is the author's, and a record reachable only through [T] can be
+# interned before the type that holds it — a loop to stability cannot be
+# wrong.
+function build(t: table.Types, decls: [ast.Decl], written: {i64: i64}) -> [bool]
+    count = table.len_of(t)
+    answer: [bool] @ []
+    i: i64 @ 0
+
+    while i < count
+        answer @ answer.push(false)
+        i @ i + 1
+
+    changed: bool @ true
+
+    while changed
+        changed @ false
+        index: i64 @ 0
+
+        while index < count
+            if !answer[index]
+                if counts(t, decls, written, answer, ty: index)
+                    answer[index] @ true
+                    changed @ true
+            index @ index + 1
+
+    return answer
+
+# Every arm listed, never a catch-all: a type added to the language must
+# not become silently uncounted.
+function counts(t: table.Types, decls: [ast.Decl], written: {i64: i64}, answer: [bool], ty: i64) -> bool
+    match table.get(t, ty)
+        # Owns a heap block (§4.20).
+        .str => return true
+        # By value, and counted exactly when something inside them is.
+        # Both kinds through fields_of, because reading only records made
+        # every variant uncounted: a str payload copied with = and never
+        # increfed, found by the test that names one case counted.
+
+        .named n =>
+            for f in fields_of(decls, written, decl: n.decl)
+                if answer[f]
+                    return true
+
+            return false
+        .case_ty vc =>
+            for f in case_fields_of(decls, written, decl: vc.decl, at: vc.at)
+                if answer[f]
+                    return true
+
+            return false
+        .array | .map => return true
+        # EVERY T? is counted whatever T is, and a Failure always: it is
+        # two strs, so even i64? owns a reference on its error side.
+
+        .fallible | .failure                               => return true
+        .int_ty | .float_ty | .bool | .unit | .ptr | .cstr => return false
+        # A fixed array owns exactly what its element owns: inline bytes,
+        # no reference of its own — written as the honest rule rather
+        # than as false, because the day a fixed array is permitted
+        # outside a group the wrong answer here is a leak.
+
+        .fixed x                         => return counts(t, decls, written, answer, ty: x.element)
+        .function_ty | .generic | .error => return false
+
+    return false
+
+# Every field a value of this declaration can hold, as interned ids. A
+# variant's cases are alternatives, so ANY case carrying a reference
+# makes the variant counted: the generated drop switches on the tag.
+function fields_of(decls: [ast.Decl], written: {i64: i64}, decl: i64) -> [i64]
+    out: [i64] @ []
+
+    match decls[decl].kind
+        .record_decl rec =>
+            for field in rec.fields
+                found = written[field.ty]
+
+                if !found.is_err()
+                    out @ out.push(found.must())
+        .variant_decl v =>
+            for one_case in v.cases
+                for field in one_case.fields
+                    found = written[field.ty]
+
+                    if !found.is_err()
+                        out @ out.push(found.must())
+        .constant_decl | .function_decl | .test_decl => return out
+
+    return out
+
+# One case's payload fields — the narrower question a case type asks.
+function case_fields_of(decls: [ast.Decl], written: {i64: i64}, decl: i64, at: i64) -> [i64]
+    out: [i64] @ []
+
+    match decls[decl].kind
+        .variant_decl v =>
+            if at < v.cases.len()
+                for field in v.cases[at].fields
+                    found = written[field.ty]
+
+                    if !found.is_err()
+                        out @ out.push(found.must())
+        .constant_decl | .function_decl | .record_decl | .test_decl => return out
+
+    return out
+
+## Tests
+
+test "the count is transitive, and a variant's payload makes it so"
+    text = "record Plain\n    n: i64\n\nrecord Holder\n    name: str\n\nvariant Token\n    word\n        text: str\n    plus\n\nrecord Deep\n    inner: Holder\n"
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    c: state.Checker @ state.new_checker(out_of: out, expr_count: 0)
+    i: i64 @ 0
+
+    while i < p.tree.types.len()
+        _ = lower.lower_ty(@c, p.tree, out, i)
+        i @ i + 1
+
+    plain = table.intern(@c.out.types, .named(decl: 0))
+    holder = table.intern(@c.out.types, .named(decl: 1))
+    tok = table.intern(@c.out.types, .named(decl: 2))
+    deep = table.intern(@c.out.types, .named(decl: 3))
+    int_maybe = table.intern(@c.out.types, .fallible(payload: table.int_ty_id(c.out.types)))
+    fixed_ints = table.intern(@c.out.types, .fixed(element: table.int_ty_id(c.out.types), length: 4))
+    answer = build(c.out.types, p.decls, c.out.written_types)
+    assert answer[table.str_ty(c.out.types)]
+    assert !answer[plain]
+    assert answer[holder]
+    assert answer[tok]
+    assert answer[deep]
+
+    # Even i64? owns a reference on its error side.
+    assert answer[int_maybe]
+    assert !answer[fixed_ints]
+    assert !answer[table.int_ty_id(c.out.types)]
