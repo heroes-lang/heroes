@@ -44,14 +44,30 @@ see.
   asynchronous: adopt the conservative default, queue the ratification.
 - Write the code and the golden cases. Mark the milestone's 5 adversarial
   cases `# UNVERIFIED — pending debrief`; label bulk regression cases.
-- Run the tests, which since **M-bootstrap-archive** (2026-08-19) means the two
-  the one command gives: `heroes test selfhost/main.hero` for the compiler's own,
-  and `heroes run tests/harness/main.hero -- <compiler>` for the net — the second
-  one carries the double-emit determinism diff, the ASan `run/` goldens, the
-  blessed emissions and §11's file ceiling inside it. `cargo test` and `cargo
-  clippy` were this line until the archive; the Rust they ran is
-  `archive/bootstrap-rs/` and nothing builds it. Naming a suite runs only that
-  one, which is what makes a fast loop possible: `-- <compiler> records`.
+- Run the tests, which since **M-bootstrap-archive** (2026-08-19) means the
+  **three** the one command gives:
+  - `heroes test selfhost/main.hero` — the compiler's own;
+  - `heroes run tests/harness/main.hero -- <compiler>` — the net, which carries
+    the double-emit determinism diff, the ASan `run/` goldens, the blessed
+    emissions and §11's file ceiling inside it;
+  - `heroes test tests/harness/main.hero` — **the net's own tests, 17 s**, which
+    is the one that goes red when an instrument's pinned number stops matching
+    what the instrument reads.
+
+  **This line said "the two" until 2026-09-02 and the third one was red for six
+  commits.** `9599d97` re-baselined `suite_layout`'s ceiling table and left two
+  asserts reading the old numbers — and that commit's own diff *states both new
+  numbers in prose*, two screens above the asserts. `DESIGN-LOG` had already
+  recorded the identical failure on 2026-08-31, *"a suite that had never been
+  run"*, 83 of 90 while the other two were green, and recorded the lesson without
+  giving it a caller. The command existed the whole time, in
+  `docs/ROADMAP.md`'s verify block, which nothing obliges anybody to open. A rule
+  written in one document and performed by nothing is CLAUDE.md §3's own story
+  about `DECIDE.md`, and this is that story in the test suites.
+
+  `cargo test` and `cargo clippy` were this line until the archive; the Rust they
+  ran is `archive/bootstrap-rs/` and nothing builds it. Naming a suite runs only
+  that one, which is what makes a fast loop possible: `-- <compiler> records`.
 
 ## 3. On failure
 Diagnose and fix autonomously. Record symptom → cause → fix in the milestone

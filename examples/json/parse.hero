@@ -230,14 +230,14 @@ function read_exponent(@r: Reader) -> i64?
     if !at_end(r) && (here(r) == '+' || here(r) == '-')
         negative @ here(r) == '-'
         advance(@r)
-    value: i64 @ 0
+    exponent: i64 @ 0
     digits: i64 @ 0
 
     while !at_end(r) && is_digit(here(r))
-        value @ value * 10 + digit_of(here(r))
+        exponent @ exponent * 10 + digit_of(here(r))
         digits @ digits + 1
 
-        if value > 400
+        if exponent > 400
             return fail(ERR_EXPONENT_OUT_OF_RANGE, "an exponent beyond an f64's range at " + r.pos.to_str())
         advance(@r)
 
@@ -245,8 +245,8 @@ function read_exponent(@r: Reader) -> i64?
         return fail(ERR_BAD_NUMBER, "an exponent needs a digit at " + r.pos.to_str())
 
     if negative
-        return ok(-value)
-    return ok(value)
+        return ok(-exponent)
+    return ok(exponent)
 
 function power_of_ten(n: i64) -> f64
     out: f64 @ 1.0

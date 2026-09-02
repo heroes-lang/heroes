@@ -264,6 +264,7 @@ function verb_probes() -> [probe.Probe]
         row(name: "a wrong extern signature is exit 1 on the declaring module's line", argv: "build tests/golden/surface-fixtures/externsignature/wrong.hero", code: 1).err_has("error[ffi_return_type]").err_has("externsignature/bind.hero:13:5").err_has("that is what `math.h` says").err_lacks("internal error").err_lacks("build/").err_lacks("hero_ffi_probe")
         row(name: "the same shape with the header's own signature runs", argv: "run tests/golden/surface-fixtures/externsignature/right.hero", code: 0).out_is("4.0\n")
         row(name: "one C symbol carries two bindings, in two modules", argv: "run tests/golden/surface-fixtures/twoarity/main.hero", code: 0).out_is("n = 42\ns = forty-two\n")
+        row(name: "a local may not take the name a use bound, and one mistake is one diagnostic", argv: "check tests/golden/surface-fixtures/localtakesamodule/main.hero", code: 1).err_has("error[shadowed_binding]").err_has("what this file calls the module `state`").err_has("use state as <other>").err_has("or rename this binding").err_lacks("module_is_not_a_value").err_lacks("internal error")
         row(name: "text names the file a diagnostic is in", argv: "check tests/golden/surface-fixtures/cross/main.hero --brief", code: 1).err_has("geom.hero:5:")
         row(name: "json names it too", argv: "check tests/golden/surface-fixtures/cross/main.hero --json", code: 1).err_has("\"line\": 5,")
         row(name: "the hole count names the file the holes are in", argv: "build tests/golden/surface-fixtures/holes/main.hero", code: 1).err_has("no binary: 1 hole in ").err_has("geom.hero")
@@ -317,7 +318,7 @@ test "the tables are what this module is, so they are counted"
     assert help_probes().len() == 4
     assert render_probes().len() == 9
     assert ffi_probes().len() == 17
-    assert verb_probes().len() == 32
+    assert verb_probes().len() == 33
 
 test "a probe holds when everything it asks for is true"
     scratch = "build/harness-selftest"

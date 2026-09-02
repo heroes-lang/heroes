@@ -37,6 +37,7 @@ use resolve_vocab
 use resolve_binding
 use builtins
 use resolve_errors
+use module_errors
 
 ## The stack
 
@@ -288,6 +289,19 @@ function declare(@r: Resolver, s: source.Source, decls: [ast.Decl], name: token.
         bound_at = source.elsewhere(s, here: name.start, there: at.start)
         push_diagnostic(@r, resolve_errors.shadowed(name: text, bound_at: bound_at, span: name))
         return fail("refused", "shadowing is a compile error")
+
+    # **A `use` binds its name for the whole file, so a local may not take it
+    # either** — the mirror of `use_shadows_a_declaration` and the same rule,
+    # because `use` BINDS (panel 031 R3, ratified at `DESIGN-LOG:185`, which
+    # chose that verb for exactly this coverage). FIRST of the four, because a
+    # `use` line is always in this file. **It reports and then BINDS**, unlike
+    # the three below: returning here leaves the name meaning the MODULE,
+    # which is not a value, and one mistake became five diagnostics — measured
+    # on `examples/json/parse.hero` (panel 102, the whole argument).
+    used = resolved.used_module_named(r.out, from: source.module_at(s, name.start), binding: text)
+
+    if !used.is_err()
+        push_diagnostic(@r, module_errors.local_shadows_a_use(name: text, module: used.must(), span: name))
 
     # A built-in's name is taken everywhere, not only at the top level: a
     # local `ok` makes `ok(x)` on the next line mean the local, which is
