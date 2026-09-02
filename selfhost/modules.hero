@@ -3,7 +3,11 @@
 # crates/heroes/src/modules/{mod,graph}.rs — one module, because the
 # two halves share nothing but their subject and neither is 300 lines.
 #
-# `use geom` names geom.hero beside the file that names it. Discovery
+# `use geom` names geom.hero, and `use syntax/decl` names
+# syntax/decl.hero — both READ FROM THE DIRECTORY OF THE FILE YOU
+# COMPILE, whichever file writes the line (panel 099 R1; the base was
+# already the only one implemented here, and the flat tree is what made
+# "beside the file that names it" look like a different rule). Discovery
 # starts at the root, finds its use lines, reads what they name, and
 # repeats — producing the ordered list from_files turns into one text.
 # DISCOVERY RE-USES THE REAL LEXER (panel 031 R8): a prefix scanner
@@ -31,33 +35,10 @@
 use token
 use diag
 use source
+use module_names
+use module_paths
 use ast
-use lexer
 use parse
-
-# The module names a file's use lines name, in source order. Scanned
-# from the TOKEN STREAM rather than the tree: discovery runs before
-# there is a Source to parse against, and a use line is two tokens
-# whose shape the lexer already settles. A malformed use is skipped
-# here and diagnosed by the parser later, once.
-function uses_of(text: str) -> [str]
-    out = lexer.lex_one(text)
-    found: [str] @ []
-    previous_was_use: bool @ false
-
-    for t in out.tokens
-        if t.kind == .comment
-            continue
-
-        if t.kind == .kw_use
-            previous_was_use @ true
-            continue
-
-        if t.kind == .ident && previous_was_use
-            found @ found.push(text.slice(from: t.span.start, to: t.span.end))
-        previous_was_use @ false
-
-    return found
 
 # The root's own directory TEXT — everything up to and including the
 # last separator the author wrote, or "" for a bare name. This names
@@ -123,13 +104,13 @@ function load_text(path: str, root_text: str, library: str) -> source.Source
     # the compiler reported a cycle of one file with itself (sweep 001
     # audit L2).
     files: [source.InputFile] @ [source.user_file(name: path, text: root_text)]
-    seen: [str] @ [source.stem_of(path)]
+    seen: [str] @ [module_names.stem_of(path)]
     pending: [i64] @ [0]
 
     while pending.len() > 0
         index = pending[pending.len() - 1]
         pending @ pending.slice(from: 0, to: pending.len() - 1)
-        named = uses_of(files[index].text)
+        named = module_paths.uses_of(files[index].text)
         added: [i64] @ []
 
         for module in named
@@ -179,6 +160,7 @@ function errors(s: source.Source, uses: [ast.Use]) -> [diag.Diagnostic]
     out: [diag.Diagnostic] @ []
     out @ unknown_modules(s, uses, found: out)
     out @ collisions(s, found: out)
+    out @ module_paths.last_parts_collide(s, found: out)
 
     if out.len() == 0
         out @ cycles(s, uses, found: out)
@@ -208,9 +190,21 @@ function errors(s: source.Source, uses: [ast.Use]) -> [diag.Diagnostic]
 
     return sorted
 
-# `use geom` with no geom.hero beside the file that says it.
+# `use geom` with no geom.hero where the path is read from.
+#
+# **The message names the BASE, and that is panel 099 R5 rather than a
+# flourish.** It used to say *"beside `<the importing file>`"*, which was
+# true of every module while the tree was flat and is false of a path: a
+# `use` is read from the directory of the file you compile, wherever the
+# file writing it sits. The sitting adopted the root base knowing its one
+# hazard — compiling a file BELOW a nested program's root re-bases every
+# path in it — and this is the diagnostic that hazard surfaces through, so
+# it says which directory it looked in and which file decided that.
+# A rule the compiler enforces silently is a rule the author learns by
+# guessing.
 function unknown_modules(s: source.Source, uses: [ast.Use], found: [diag.Diagnostic]) -> [diag.Diagnostic]
     out: [diag.Diagnostic] @ found
+    base = directory_text(s.name)
 
     for used in uses
         if source.is_library(s, used.span.start)
@@ -224,10 +218,9 @@ function unknown_modules(s: source.Source, uses: [ast.Use], found: [diag.Diagnos
 
         if present
             continue
-        importer = source.file_at(s, used.span.start)
         d: diag.Diagnostic @ diag.new_diagnostic(
             code: "unknown_module",
-            message: "there is no module `" + name + "` — `use " + name + "` reads `" + name + ".hero`, beside `" + importer.name + "`, and that file is not there",
+            message: "there is no module `" + name + "` — `use " + name + "` reads `" + base + name + ".hero`, from the directory of `" + s.name + "`, the file you compile, and that file is not there",
             span: used.name
         )
         out @ out.push(d)
@@ -267,10 +260,10 @@ function collisions(s: source.Source, found: [diag.Diagnostic]) -> [diag.Diagnos
             f = s.files[index]
             earlier = s.files[earlier_at]
 
-            if earlier.module != f.module && source.module_of(earlier.module) == source.module_of(f.module)
+            if earlier.module != f.module && module_names.component_of(earlier.module) == module_names.component_of(f.module)
                 d: diag.Diagnostic @ diag.new_diagnostic(
                     code: "module_names_collide",
-                    message: "modules `" + earlier.module + "` and `" + f.module + "` are one name to the compiler — every name reaching C is `h_<module>_<name>` with the module reduced to letters and digits, so both become `h_" + source.module_of(f.module) + "_…`",
+                    message: "modules `" + earlier.module + "` and `" + f.module + "` are one name to the compiler — every name reaching C is `h_<module>_<name>` with the module reduced to letters and digits, so both become `h_" + module_names.component_of(f.module) + "_…`",
                     span: token.Span(start: f.start, end: f.start)
                 )
                 d.notes @ d.notes.push(
@@ -392,14 +385,6 @@ function walk(node: i64, edges: [Edge], state: [i64], stack: [i64], s: source.So
 
 ## Tests
 
-test "uses_of reads the stream, not a prefix, and skips what is malformed"
-    text = "# a comment first\nuse geom\nuse util\n\nfunction main()\n    print(1)\n"
-    found = uses_of(text)
-    assert found.len() == 2
-    assert found[0] == "geom"
-    assert found[1] == "util"
-    assert uses_of("function main()\n    print(1)\n").len() == 0
-
 test "directory text keeps the author's spelling; opening keeps the slash rule"
     assert directory_text("examples/calc/main.hero") == "examples/calc/"
     assert directory_text("main.hero") == ""
@@ -418,7 +403,7 @@ test "the graph: an absent module, the reserved name, a collision, a ring"
     found = errors(s, parsed.uses)
     assert found.len() == 1
     assert found[0].code == "unknown_module"
-    assert found[0].message == "there is no module `ghost` — `use ghost` reads `ghost.hero`, beside `t.hero`, and that file is not there"
+    assert found[0].message == "there is no module `ghost` — `use ghost` reads `ghost.hero`, from the directory of `t.hero`, the file you compile, and that file is not there"
 
     # A collision: two stems, one C component.
     a = source.user_file(name: "geo_m.hero", text: "function main()\n    print(1)\n")

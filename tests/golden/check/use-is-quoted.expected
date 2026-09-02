@@ -1,1 +1,1 @@
-tests/golden/check/use-is-quoted.hero:16:5: error[use_wants_a_name]: a module is named, not quoted — write `use geom`, and the file `geom.hero` beside this one is what it reads
+tests/golden/check/use-is-quoted.hero:16:5: error[use_wants_a_name]: a module is named, not quoted — write `use geom`, which reads `geom.hero` from the directory of the file you compile

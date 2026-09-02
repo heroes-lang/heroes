@@ -13,6 +13,7 @@
 
 use ast
 use source
+use module_names
 use resolved
 use check_table
 use check_state
@@ -222,7 +223,11 @@ function nearby(tree: ast.Ast, r: resolved.Resolved, c: check_state.Checked, s: 
             written: str @ name
 
             if module != here
-                written @ module + "." + name
+                # The form the author would TYPE, which is the module's
+                # binding — its last part where it is a path (panel 099 R3).
+                # A hole's whole job is to hand back lines that can be
+                # pasted; `syntax/decl.foo(...)` cannot.
+                written @ module_names.binding_of(module) + "." + name
             line: str @ written + "(" + params.join(", ") + ")"
 
             if decls[decl].doc.len() > 0

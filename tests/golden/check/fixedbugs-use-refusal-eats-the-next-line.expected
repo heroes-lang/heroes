@@ -1,0 +1,2 @@
+tests/golden/check/fixedbugs-use-refusal-eats-the-next-line.hero:43:9: error[module_path_climbs]: a `use` path cannot climb — every `use` starts at the directory of the file you compile, so write the path from there: `use lex/token`, wherever the file that writes it sits
+tests/golden/check/fixedbugs-use-refusal-eats-the-next-line.hero:45:11: error[module_path_wants_a_part]: a `/` in a `use` joins two names with nothing between them — `use shapes/decl` names one module, and `use shapes` names another

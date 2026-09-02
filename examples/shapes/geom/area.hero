@@ -1,0 +1,27 @@
+# What a pair of corners measures.
+#
+# **`use geom/point` and not `use point`** — and `point.hero` is the file
+# right next to this one. A `use` path is read from the directory of the
+# file you compile, so a neighbour has no shorter spelling than a stranger;
+# the reward is that this line means the same thing wherever it is copied
+# to, which is what `render/ascii.hero` does with it.
+use geom/point
+
+function rect(a: point.Point, b: point.Point) -> i64
+    return point.span(from: a, to: b) * height(a: a, b: b)
+
+function perimeter(a: point.Point, b: point.Point) -> i64
+    return 2 * (point.span(from: a, to: b) + height(a: a, b: b))
+
+# The other side, measured the same way the first one is — through the
+# module that owns the idea of a distance rather than by subtracting here.
+function height(a: point.Point, b: point.Point) -> i64
+    swapped_a = point.Point(x: a.y, y: a.x)
+    swapped_b = point.Point(x: b.y, y: b.x)
+    return point.span(from: swapped_a, to: swapped_b)
+
+test "a rectangle of no width has no area and a perimeter twice its height"
+    a = point.Point(x: 2, y: 0)
+    b = point.Point(x: 2, y: 5)
+    assert rect(a: a, b: b) == 0
+    assert perimeter(a: a, b: b) == 10

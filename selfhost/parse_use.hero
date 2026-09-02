@@ -1,11 +1,21 @@
-# `use geom` — the one declaration that names another file (design.md §3.1,
-# panel 031).
+# `use geom` and `use syntax/decl` — the one declaration that names another
+# file (design.md §3.1, panels 031, 032, 099).
 # Port of crates/heroes/src/syntax/uses.rs.
 #
-# It is its own module for the reason the two rejections below give: a `use`
-# line is where a model's memory of four other languages arrives, so the
-# interesting code here is not the happy path (one identifier) but the two
-# shapes that are refused and what each is met with.
+# It is its own module for the reason the refusals below give: a `use` line
+# is where a model's memory of four other languages arrives, so the
+# interesting code here is not the happy path but the shapes that are
+# refused and what each is met with.
+#
+# **A path landed at M-package-layout and this file is where the base is
+# enforced** (panel 099 R1/R4). A path is `ident (/ ident)*`, ADJACENT — the
+# lexer gives the same three tokens for `use a/b` and `use a / b`, and only
+# the first is a path. There is no climb: `..` has no spelling, because
+# every `use` starts at the directory of the file you compile, so a module
+# above that directory belongs to a different program. Two of the four
+# refusals here are that rule being said out loud at the point of the
+# attempt, which panel 031 already found is cheaper than a spec sentence
+# nobody reads twice.
 #
 # **Why this file could be ported today while the expression grammar waits.**
 # The port measured Heroes' own module rule on 2026-08-16: `module_cycle` fires
@@ -40,37 +50,157 @@ function declaration(@c: cursor.Cursor, @uses: [ast.Use], text: str)
         quoted_module(@c, text)
         return
 
+    # `use ../lex/token`, `use ./token` — a climb, and the one shape whose
+    # answer is a RULE rather than a typo (panel 099 R4). It is caught
+    # before `missing_name` because a dot where a name belongs is not a
+    # missing name, it is a relative path: the author knows exactly what
+    # they meant and the compiler owes them the reason it cannot be written.
+    if cursor.at(c, .dot)
+        climbs(@c, text, keyword)
+        return
+
     if !cursor.at(c, .ident)
         missing_name(@c, text, keyword)
         return
-    name = cursor.bump(@c).span
+    name: token.Span @ cursor.bump(@c).span
 
-    # `use geom.shapes` and `use shapes/geom`: there is no hierarchy, and the
-    # second token is where the author finds that out.
-    if cursor.at(c, .dot) || cursor.at(c, .slash)
+    # `use geom.shapes` — a dot is not the separator, and the second token
+    # is where the author finds that out. The message names the spelling
+    # that works rather than the absence of one: a path exists now, and it
+    # is written with `/` (spec § Files and layout; panel 032 R2 killed the
+    # quoted form, panel 099 R1 fixed the base).
+    if cursor.at(c, .dot)
         cursor.error(
             @c,
             code: "module_path_has_no_parts",
-            message: "a module name is one word — `use " + cursor.slice_of(text, name) + "`. There is no nesting: every `.hero` a program reads sits beside the file that names it",
+            message: "a module path is written with `/`, not `.` — `use " + cursor.slice_of(text, name) + "/…`, and every `use` starts at the directory of the file you compile",
             span: cursor.current_span(c)
         )
-        cursor.recover_to_next_decl(@c)
+
+        # The line, not the terminator — `use geom.` ends in punctuation
+        # and closes without one, exactly like the two refusals below. The
+        # shape that provoked `skip_rest_of_line` was a climb; this is the
+        # neighbouring shape, fixed in the same commit rather than left to
+        # be found later (CLAUDE.md §1).
+        skip_rest_of_line(@c, text, from: name)
         return
+
+    # `use syntax/decl` — as many parts as the author wrote, each one an
+    # identifier. ADJACENCY IS THE RULE, not the token sequence: `use a / b`
+    # would lex the same three tokens, and a path with a space in it is not
+    # a path, it is a line the author has to look at twice.
+    while cursor.at(c, .slash)
+        slash = cursor.current_span(c)
+
+        if slash.start != name.end
+            break
+        _ = cursor.bump(@c)
+
+        if cursor.at(c, .dot)
+            climbs(@c, text, keyword)
+            return
+
+        if !cursor.at(c, .ident)
+            part_missing(@c, text, name: name, slash: slash)
+            return
+        part = cursor.current_span(c)
+
+        if part.start != slash.end
+            part_missing(@c, text, name: name, slash: slash)
+            return
+        _ = cursor.bump(@c)
+        name @ token.Span(start: name.start, end: part.end)
+
     uses @ uses.push(ast.Use(name: name, span: token.Span(start: keyword.start, end: name.end)))
 
-## The two refusals
+## The three refusals
+
+# `use ../lex/token` — the one refusal whose answer is a design decision
+# rather than a slip, so the message carries the decision.
+#
+# **There is no climb operator, deliberately** (panel 099 R4, three seats):
+# the spec-warden priced `..` at +7 spec tokens with three silences left
+# open — may it repeat, may it sit mid-path, may a path leave the project at
+# all — the ffi-pragmatist compiled what happens if one reaches the mangler
+# (`../token` sanitises to the same component as `token`, a silent
+# collision), and the historian found the relief valve every file-relative
+# language reached for was a manifest, which §10 refuses. So a module above
+# the root is a module of a different program, and this is where the author
+# is told.
+#
+# One message for `.`, `..`, `./x` and `../x` alike: they are four spellings
+# of one intent, and the sentence that answers the intent answers all four.
+# The provoking case is a witness, not the class.
+function climbs(@c: cursor.Cursor, text: str, keyword: token.Span)
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "module_path_climbs",
+        message: "a `use` path cannot climb — every `use` starts at the directory of the file you compile, so write the path from there: `use lex/token`, wherever the file that writes it sits",
+        span: cursor.current_span(c)
+    )
+    d.notes @ d.notes.push(
+        "a module above that directory belongs to a different program: give this one its own root, or move the file in"
+    )
+    c.diagnostics @ c.diagnostics.push(d)
+    skip_rest_of_line(@c, text, from: keyword)
+
+# `use syntax/` and `use syntax /decl` — a separator with no part after it,
+# and a part the separator does not touch.
+#
+# Adjacency is the rule the loop enforces, and it is worth its own message:
+# `use a / b` lexes as the same three tokens as `use a/b`, so a path with a
+# space in it would otherwise become a path silently. The caret goes on the
+# separator, which is the character that made the line a path.
+function part_missing(@c: cursor.Cursor, text: str, name: token.Span, slash: token.Span)
+    written = cursor.slice_of(text, name)
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "module_path_wants_a_part",
+        message: "a `/` in a `use` joins two names with nothing between them — `use " + written + "/decl` names one module, and `use " + written + "` names another",
+        span: slash
+    )
+    c.diagnostics @ c.diagnostics.push(d)
+    skip_rest_of_line(@c, text, from: name)
+
+# Everything still on the line the `use` started on, dropped — and then the
+# cursor is on the next declaration's own first token.
+#
+# **`recover_to_next_decl` CANNOT DO THIS, and the reason is a lexer rule
+# this file already documents twice.** `use` is not in panel 007's ender
+# list, so a use line whose last token is punctuation — `use lex/..`,
+# `use shapes/` — closes with **no terminator**, and a recovery that scans
+# for one runs off the end of the line and eats whole declarations. It did:
+# measured on `use lex/..` followed by `use shapes/`, the parser produced
+# **one** diagnostic and **zero** uses, the second line gone entirely, and
+# the golden that pins these refusals is what found it. `missing_name` below
+# reasons about the same hazard by comparing lines and was written for it;
+# this is that reasoning as a landmark rather than a special case, because a
+# LINE exists whatever the last token on it happened to be.
+function skip_rest_of_line(@c: cursor.Cursor, text: str, from: token.Span)
+    line = text_lines.line_col(text, from.start).line
+    scanning: bool @ true
+
+    while scanning && !cursor.at(c, .eof)
+        if text_lines.line_col(text, cursor.current_span(c).start).line != line
+            scanning @ false
+        else
+            _ = cursor.bump(@c)
+
+## The two refusals a use line has always had
 
 # `use "geom"` — the shape four other languages write. The quotes are part of
 # the literal's span, so the replacement is its own text with them removed —
 # and it is only CERTAIN when what is left is a name this language could have
-# accepted.
+# accepted, which since M-package-layout includes a path.
+#
+# The message stopped saying *"beside this one"* with the same landing: that
+# was true of every module while the tree was flat and is false of a path,
+# so it names the file the `use` reads and where the reading starts instead.
 function quoted_module(@c: cursor.Cursor, text: str)
     s = cursor.current_span(c)
     quoted = cursor.slice_of(text, s)
     inner = unquote(quoted)
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "use_wants_a_name",
-        message: "a module is named, not quoted — write `use " + inner + "`, and the file `" + inner + ".hero` beside this one is what it reads",
+        message: "a module is named, not quoted — write `use " + inner + "`, which reads `" + inner + ".hero` from the directory of the file you compile",
         span: s
     )
 
@@ -107,10 +237,38 @@ function missing_name(@c: cursor.Cursor, text: str, keyword: token.Span)
 
 ## Two questions about text
 
-# Could this text have been written after `use`? Exactly the identifier rule,
-# asked of a string's contents so that the fix above is offered only when
-# applying it produces a program that parses.
+# Could this text have been written after `use`? The identifier rule, asked
+# of a string's contents so that the fix above is offered only when applying
+# it produces a program that parses.
+#
+# **It answers for a PATH now, and that is a repair rather than a widening**
+# (M-package-layout, panel 099). `use "shapes/geom"` is the shape four other
+# languages write; until paths landed, unquoting it produced something this
+# grammar still refused, so the fix was withheld and the author was left
+# with a message. The same string is now a legal `use`, and withholding the
+# fix would have been the compiler knowing the answer and not saying it —
+# the premise under the old `false` expired the moment the grammar grew
+# (CLAUDE.md §11), which is why this function is asked segment by segment
+# instead of once over the whole string.
 function is_module_name(s: str) -> bool
+    if s.len() == 0
+        return false
+    start: i64 @ 0
+    i: i64 @ 0
+
+    while i < s.len()
+        if s[i] == '/'
+            if !is_one_part(s.slice(from: start, to: i))
+                return false
+            start @ i + 1
+        i @ i + 1
+
+    return is_one_part(s.slice(from: start, to: s.len()))
+
+# One part of a path: the identifier rule, and an empty part is not one —
+# which is what refuses `"a//b"`, `"/a"` and `"a/"`, the three shapes an
+# unquoted path can be broken in.
+function is_one_part(s: str) -> bool
     if s.len() == 0
         return false
     first = s[0]
@@ -173,9 +331,12 @@ test "a quoted module is met with the repair, not a lecture"
     assert c.diagnostics[0].fixes[0].replacement == "geom"
     assert c.diagnostics[0].fixes[0].certainty == .certain
 
-test "the fix is offered only when applying it would parse"
-    # `use "shapes/geom"` — the repair would still not be a module name, so no
-    # fix is attached: a fix that leaves the program broken is worse than none.
+test "a quoted PATH now earns the certain fix too"
+    # This case asserted the OPPOSITE until M-package-layout, and the
+    # premise is what changed rather than the rule: unquoting
+    # `"shapes/geom"` used to leave something the grammar refused, so no fix
+    # was offered; the same string is a legal `use` now, and withholding the
+    # repair would be the compiler knowing the answer and not saying it.
     text = "use \"shapes/geom\""
     stream: [token.Token] = [
         tok(.kw_use, start: 0, end: 3)
@@ -186,9 +347,26 @@ test "the fix is offered only when applying it would parse"
     uses: [ast.Use] @ []
     declaration(@c, @uses, text)
     assert c.diagnostics[0].code == "use_wants_a_name"
+    assert c.diagnostics[0].fixes.len() == 1
+    assert c.diagnostics[0].fixes[0].replacement == "shapes/geom"
+    assert c.diagnostics[0].fixes[0].certainty == .certain
+
+test "the fix is still withheld where applying it would not parse"
+    # A fix that leaves the program broken is worse than none, and the
+    # shapes that stay broken are the ones with an empty part.
+    text = "use \"shapes//geom\""
+    stream: [token.Token] = [
+        tok(.kw_use, start: 0, end: 3)
+        tok(.str_lit, start: 4, end: 18)
+        tok(.eof, start: 18, end: 18)
+    ]
+    c: cursor.Cursor @ cursor.new_cursor(stream)
+    uses: [ast.Use] @ []
+    declaration(@c, @uses, text)
+    assert c.diagnostics[0].code == "use_wants_a_name"
     assert c.diagnostics[0].fixes.len() == 0
 
-test "there is no nesting, and the second token is where you find out"
+test "a dot is not the separator, and the second token is where you find out"
     text = "use geom.shapes"
     stream: [token.Token] = [
         tok(.kw_use, start: 0, end: 3)
@@ -202,6 +380,11 @@ test "there is no nesting, and the second token is where you find out"
     declaration(@c, @uses, text)
     assert uses.len() == 0
     assert c.diagnostics[0].code == "module_path_has_no_parts"
+
+test "a slashed path is the spelling, and the whole path is the name"
+    # The case the test above used to share: `use shapes/geom` was refused
+    # by name until M-package-layout and is the language now. The `name`
+    # span covers the WHOLE path, which is what makes it the identity.
     slashed: [token.Token] = [
         tok(.kw_use, start: 0, end: 3)
         tok(.ident, start: 4, end: 10)
@@ -212,7 +395,90 @@ test "there is no nesting, and the second token is where you find out"
     d: cursor.Cursor @ cursor.new_cursor(slashed)
     more: [ast.Use] @ []
     declaration(@d, @more, "use shapes/geom")
-    assert d.diagnostics[0].code == "module_path_has_no_parts"
+    assert d.diagnostics.len() == 0
+    assert more.len() == 1
+    assert cursor.slice_of("use shapes/geom", more[0].name) == "shapes/geom"
+    assert more[0].span == token.Span(start: 0, end: 15)
+
+test "three parts, and a space in a path is not a path"
+    deep: [token.Token] = [
+        tok(.kw_use, start: 0, end: 3)
+        tok(.ident, start: 4, end: 5)
+        tok(.slash, start: 5, end: 6)
+        tok(.ident, start: 6, end: 7)
+        tok(.slash, start: 7, end: 8)
+        tok(.ident, start: 8, end: 9)
+        tok(.eof, start: 9, end: 9)
+    ]
+    c: cursor.Cursor @ cursor.new_cursor(deep)
+    uses: [ast.Use] @ []
+    declaration(@c, @uses, "use a/b/c")
+    assert uses.len() == 1
+    assert cursor.slice_of("use a/b/c", uses[0].name) == "a/b/c"
+
+    # `use a / b` lexes as the same three tokens. Adjacency is what tells
+    # the two lines apart, and the path stops at the name that touches.
+    spaced: [token.Token] = [
+        tok(.kw_use, start: 0, end: 3)
+        tok(.ident, start: 4, end: 5)
+        tok(.slash, start: 6, end: 7)
+        tok(.ident, start: 8, end: 9)
+        tok(.eof, start: 9, end: 9)
+    ]
+    d: cursor.Cursor @ cursor.new_cursor(spaced)
+    more: [ast.Use] @ []
+    declaration(@d, @more, "use a / b")
+    assert more.len() == 1
+    assert cursor.slice_of("use a / b", more[0].name) == "a"
+
+test "a path cannot climb, and one message answers all four spellings"
+    # Panel 099 R4. `..`, `.`, `./x` and `../x` are four spellings of one
+    # intent, so the sentence that answers the intent answers all four.
+    climb: [token.Token] = [
+        tok(.kw_use, start: 0, end: 3)
+        tok(.dot, start: 4, end: 5)
+        tok(.dot, start: 5, end: 6)
+        tok(.slash, start: 6, end: 7)
+        tok(.ident, start: 7, end: 12)
+        tok(.eof, start: 12, end: 12)
+    ]
+    c: cursor.Cursor @ cursor.new_cursor(climb)
+    uses: [ast.Use] @ []
+    declaration(@c, @uses, "use ../token")
+    assert uses.len() == 0
+    assert c.diagnostics.len() == 1
+    assert c.diagnostics[0].code == "module_path_climbs"
+    assert c.diagnostics[0].notes.len() == 1
+
+    # And mid-path, which is the shape a canonicaliser would have had to
+    # answer and this language never has to.
+    inner: [token.Token] = [
+        tok(.kw_use, start: 0, end: 3)
+        tok(.ident, start: 4, end: 7)
+        tok(.slash, start: 7, end: 8)
+        tok(.dot, start: 8, end: 9)
+        tok(.dot, start: 9, end: 10)
+        tok(.eof, start: 10, end: 10)
+    ]
+    d: cursor.Cursor @ cursor.new_cursor(inner)
+    more: [ast.Use] @ []
+    declaration(@d, @more, "use lex/..")
+    assert more.len() == 0
+    assert d.diagnostics[0].code == "module_path_climbs"
+
+test "a separator with nothing after it names the two modules it is between"
+    dangling: [token.Token] = [
+        tok(.kw_use, start: 0, end: 3)
+        tok(.ident, start: 4, end: 10)
+        tok(.slash, start: 10, end: 11)
+        tok(.eof, start: 11, end: 11)
+    ]
+    c: cursor.Cursor @ cursor.new_cursor(dangling)
+    uses: [ast.Use] @ []
+    declaration(@c, @uses, "use shapes/")
+    assert uses.len() == 0
+    assert c.diagnostics[0].code == "module_path_wants_a_part"
+    assert c.diagnostics[0].span == token.Span(start: 10, end: 11)
 
 test "a bare use blames its own keyword, never the next line"
     # `use` alone, then `function` on the NEXT line. `use` plants no terminator,
@@ -247,13 +513,21 @@ test "a use whose mistake IS on its line quotes what it found"
     assert c.diagnostics[0].code == "expected_module_name"
     assert c.diagnostics[0].message == "expected the module's name after `use`, found a number (`42`) — `use geom`, which reads `geom.hero` beside this file"
 
-test "the identifier rule is asked of a string's contents"
+test "the identifier rule is asked of a string's contents, part by part"
     assert is_module_name("geom")
     assert is_module_name("_private")
     assert is_module_name("g2")
     assert !is_module_name("")
     assert !is_module_name("2geom")
-    assert !is_module_name("shapes/geom")
     assert !is_module_name("geom.shapes")
+
+    # A path is a name now, part by part — and an empty part is not one,
+    # which is the whole of what refuses the three broken spellings.
+    assert is_module_name("shapes/geom")
+    assert is_module_name("a/b/c")
+    assert !is_module_name("shapes//geom")
+    assert !is_module_name("/geom")
+    assert !is_module_name("geom/")
+    assert !is_module_name("shapes/2geom")
     assert unquote("\"geom\"") == "geom"
     assert unquote("geom") == "geom"

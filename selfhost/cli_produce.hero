@@ -11,6 +11,7 @@
 # the edge carries.
 
 use source
+use module_names
 use modules
 use emit_ffi
 use cli_io
@@ -74,7 +75,7 @@ function produce(path: str, s: source.Source, options: cli_compile.Options, t: c
     if art.must().stopped
         none_t: [str] = []
         return ok(Produced(binary: "", tests: none_t, stopped: true))
-    module = source.module_of(s.name)
+    module = module_names.module_of(s.name)
     level_key: str @ options.level
     is_tests: bool @ false
 
@@ -188,7 +189,7 @@ function produce(path: str, s: source.Source, options: cli_compile.Options, t: c
         # One .c per module (panel 093): each TU compiled to its own
         # cached object, every dirty TU before any verdict (R5), one
         # link over all of them re-run every build.
-        root = source.module_of(s.name)
+        root = module_names.module_of(s.name)
         objects: [str] @ [object.must()]
         stopped: ()? @ ok()
 
