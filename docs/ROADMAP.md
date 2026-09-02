@@ -42,64 +42,16 @@ in the numbers that were re-measured.
 
 | | |
 |---|---|
-| **Current milestone** | **M-package-layout** — next in the chain, not yet opened |
-| **Last closed** | **M-argv-execution**, 2026-08-31, tag `m-argv-execution` · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
-| Milestones closed | 27 of 39 · 27 tags |
-| The compiler | **48,690 lines** of Heroes in 167 files · the seed **797,015** lines of generated C |
-| The spec | **3592** tokens of a hard 4096 · headroom 504 · runtime ABI **17** |
-| Records | panels **97** · journals 27 · measurements 13 · examples 15 · defects 5 |
-| Waiting on the author | **5 decisions** in `DECIDE.md` · 8 assigned in `SCHEDULED.md` · 278 in `LEARN.md` (never a gate) |
+| **Current milestone** | **M-selfhost-nesting** — open 2026-09-02, blocked on nothing: the road is the author's choice, and all three are priced in `docs/panel/100` R6 |
+| **Last closed** | **M-package-layout**, 2026-09-02, tag `m-package-layout` ([027](journal/027-package-layout.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
+| Milestones closed | 28 of 39 · 28 tags |
+| The compiler | **49,994 lines** of Heroes in **170** modules · the seed **802,624** lines of generated C |
+| The spec | **3663** tokens of a hard 4096 · headroom **433** · runtime ABI **18** |
+| Records | sittings **100** · journals 27 · measurements 13 · examples 16 · defects 5 |
+| Waiting on the author | **8 decisions** · 10 in `SCHEDULED.md` · 285 in `LEARN.md` (never a gate) · and an **outstanding veto** of the rule that stands, with its falsifier registered (`docs/panel/101` R3) |
 
-Every number re-measured 2026-08-31 at the close. Windows is a first-class
-leg: the net 1166/0 and the self-tests 92/92 there, all three CI legs green.
-
----|---|
-| **Current milestone** | **M-argv-execution** — open 2026-08-30, ten steps landed; **Windows green is the acceptance criterion and it is not met** |
-| **Last closed** | **M-separate-compilation**, 2026-08-26, tag `m-separate-compilation` |
-| **v1** | **reached** at M-selfhost-fixpoint, 2026-08-18 — the compiler compiles itself |
-| Milestones closed | 26 of 37 · 26 tags |
-| The compiler | **48,690 lines** of Heroes in 167 files |
-| The seed | **797,015** lines of generated C — the whole way in |
-| The spec | **3592** tokens of a hard 4096 · headroom 504 |
-| Runtime ABI | 17 |
-| Panels held | **97** · journals 27 · measurements 13 · examples 15 · defects 5 |
-| Waiting on the author | **5 decisions** in `DECIDE.md` · 8 assigned in `SCHEDULED.md` · 278 in `LEARN.md` (never a gate) |
-
-Every number re-measured 2026-08-31. What is left of M-argv-execution is one
-platform: `heroes run` prints the right answer on Windows and `heroes test` exits
-1 there in silence. The history of these rows lives in the journals.
-
----|---|
-| **Current milestone** | **M-argv-execution** — open 2026-08-30, panels 097 and 098 ratified |
-| **Last closed** | **M-separate-compilation**, 2026-08-26, tag `m-separate-compilation` — all four acceptance rows, and the frontend from **88 s to about 8** ([journal 025](journal/025-separate-compilation.md)) |
-| **v1** | **reached** at M-selfhost-fixpoint, 2026-08-18 — the compiler compiles itself |
-| Milestones closed | 26 of 37 · 26 tags |
-| The compiler | **48,342 lines** of Heroes in 165 files, built as 157 translation units |
-| The seed | **798,556** lines of generated C — the whole way in |
-| The spec | **3592** tokens of a hard 4096 · headroom 504 |
-| Runtime ABI | 16 |
-| Panels held | **95** · journals 26 · measurements 13 · examples 15 · defects 5 |
-| Waiting on the author | **5 decisions** in `DECIDE.md` · 8 assigned in `SCHEDULED.md` · 278 in `LEARN.md` (never a gate) |
-
-**Every number above was re-measured on 2026-08-28 and five were wrong.** Two had
-rotted quietly — the runtime ABI said 15 and is 16, and the panel count said 92
-against 94 files in `docs/panel/`. Three moved that day and one of them needs its
-reason said out loud: **the compiler did not grow by 8,425 lines of code.** It went
-from 39,739 to 48,164 because `heroes fmt` swept all 165 files into canonical form
-(panel 095 stage 4), and **+8.8% of that is blank lines** the formatter now inserts
-to make structure visible, with the rest the 120-column break and arm alignment.
-The C it emits is **byte-identical** with `#line` directives stripped, which is the
-gate that sweep had to pass. A reader comparing this row against an older journal
-is comparing two different layouts of the same program.
-
-**Re-measured again on 2026-08-30, and the seed row had been wrong on the day the
-paragraph above was written.** It said 797,529 lines and the file was already
-798,556 at the commit that touched it that same day — a number carried rather than
-run, inside the sentence claiming every number had been run. Six moved and one is
-this correction: the compiler 48,164 to **48,342**, the seed to **798,556**, panels
-94 to **95**, defects 4 to **5**, and the decisions waiting on the author 11 to
-**6**. The one number in the compiler row that was NOT re-measured is the 157
-translation units, which is `journal 025`'s and is left in plain type to say so.
+Every number re-measured 2026-09-02. **This section held three stale tables from
+three closes until that day** — 64 lines against a ceiling of 15, caught here.
 
 ---
 
@@ -190,8 +142,8 @@ it), **§1.1** (comprehension is the objective), or **scheduled, no warrant**.
 | 25 | **M-bootstrap-archive** | done 2026-08-19 | `m-bootstrap-archive` | [024](journal/024-bootstrap-archive.md) | the third language dies · v1's last clause (design.md:82) |
 | 26 | **M-separate-compilation** | done 2026-08-26 | `m-separate-compilation` | [025](journal/025-separate-compilation.md) | one `.c` per module, prototypes across TUs, the cache · closure list |
 | 27 | **M-argv-execution** | done 2026-08-31 | `m-argv-execution` | [026](journal/026-argv-execution.md) | the compiler runs programs by argument list; `sq()` is deleted, the shell stops being the boundary, and Windows goes green · **panels 097 and 098, ratified 2026-08-30** |
-| 28 | **M-package-layout** | **OPEN** | — | — | `use` paths, the qualifier, where a program's files live · **scheduled by author decision 2026-08-25** |
-| 29 | **M-selfhost-nesting** | scheduled | — | — | the compiler's own modules move into directories by subsystem · **scheduled by author instruction 2026-09-02, unblocked by panels 100 and 101** |
+| 28 | **M-package-layout** | done 2026-09-02 | `m-package-layout` | [027](journal/027-package-layout.md) | `use` paths, the qualifier, `as`, and where a program's files live · **panels 099, 100 and 101, all three ratified the same day** |
+| 29 | **M-selfhost-nesting** | **OPEN** | — | — | the compiler's own modules move into directories by subsystem · **scheduled by author instruction 2026-09-02, unblocked by panels 100 and 101** |
 | 30 | **M-corpus-coverage** | scheduled | — | — | every language form has a program that runs it · **scheduled by author instruction 2026-09-02**, ordered after the nesting so the new programs are written against the final layout |
 | 31 | **M-isolated-threads** | scheduled | — | — | Part 7.13 concurrency · **moved ahead of packages by author instruction, 2026-08-25** |
 | 32 | **M-package-manager** | scheduled | — | — | `heroes add`/`heroes fetch`; bindings instead of a standard library |
