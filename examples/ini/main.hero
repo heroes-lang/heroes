@@ -1,0 +1,244 @@
+# A configuration file read into sections — nested maps, and the four ways a
+# config file lies to you.
+#
+# Corpus and regression material (CLAUDE.md §9). It closes no measured form
+# gap; it is here for a shape and for a refusal. The shape is
+# `{str: {str: str}}`, built from text rather than written out as a literal
+# the way `examples/board/` does — which is the difference between a nested
+# map the program declares and one it discovers.
+#
+# THE REFUSAL IS THE INTERESTING HALF. A config parser has four places to be
+# quietly wrong, and every one of them is a real bug somebody has shipped:
+#
+#   1. a key before any section — silently dropped, or silently global?
+#   2. the same key twice — first wins, or last?
+#   3. the same SECTION twice — merged, or replaced?
+#   4. a line that is neither — ignored, or refused?
+#
+# This one answers: a key before any section goes into `""`, the empty
+# section, so it is reachable rather than lost; a repeated key is a FAILURE,
+# because the writer meant one of them and nobody can tell which; a repeated
+# section MERGES, because that is what every real format does; and a line
+# that parses as nothing is a failure with its line number, because a config
+# file silently ignoring a typo is how a service starts with the wrong port.
+#
+# Choice 2 is the one worth arguing about, and it is deliberate: `last wins`
+# is convenient and it is how a value gets overridden by accident.
+
+record Config
+    sections: {str: {str: str}}
+
+function parse(text: str) -> Config?
+    sections: {str: {str: str}} @ {}
+    current: str @ ""
+    empty: {str: str} = {}
+    sections[current] @ empty
+    number: i64 @ 0
+
+    for line in split_lines(text)
+        number @ number + 1
+        trimmed = without_spaces(line)
+
+        if trimmed.len() == 0
+            continue
+
+        if starts_with(text: trimmed, prefix: "#") || starts_with(text: trimmed, prefix: ";")
+            continue
+
+        if starts_with(text: trimmed, prefix: "[")
+            name = section_name(trimmed)?
+            current @ name
+
+            # Merging rather than replacing: the section may already exist,
+            # and every format in use does this.
+            if sections[current].is_err()
+                fresh: {str: str} = {}
+                sections[current] @ fresh
+            continue
+        at = index_of_equals(trimmed)
+
+        if at.is_err()
+            return fail("not_a_line", "line " + number.to_str() + " is neither a section, a comment, nor a key")
+        key = without_spaces(trimmed.slice(from: 0, to: at.must()))
+        value = without_spaces(trimmed.slice(from: at.must() + 1, to: trimmed.len()))
+
+        if key.len() == 0
+            return fail("empty_key", "line " + number.to_str() + " has a value and no key")
+        inner: {str: str} @ sections[current].default(empty)
+
+        if !inner[key].is_err()
+            return fail(
+                "repeated_key",
+                "`" + key + "` is set twice in section `" + current + "`, and only the writer knows which was meant"
+            )
+        inner[key] @ value
+        sections[current] @ inner
+
+    return ok(Config(sections: sections))
+
+function section_name(line: str) -> str?
+    if !ends_with(text: line, suffix: "]")
+        return fail("unclosed_section", "a `[` with no `]`")
+    inner = without_spaces(line.slice(from: 1, to: line.len() - 1))
+
+    if inner.len() == 0
+        return fail("empty_section", "`[]` names nothing")
+
+    return ok(inner)
+
+function value_of(c: Config, section: str, key: str) -> str?
+    empty: {str: str} = {}
+    return c.sections[section].default(empty)[key]
+
+# Every section that holds at least one key, sorted.
+#
+# ORDER: sort(keys(c.sections)) — the list is returned to a caller that
+# prints it, so the order is observed. The empty section is dropped when it
+# holds nothing, which is why this is not just `keys`.
+function section_names(c: Config) -> [str]
+    out: [str] @ []
+
+    for name in sort(keys(c.sections))
+        if c.sections[name].must().len() > 0
+            out @ out.push(name)
+
+    return out
+
+function split_lines(text: str) -> [str]
+    out: [str] @ []
+    piece: str @ ""
+
+    for ch in text.chars()
+        if ch == "\n"
+            out @ out.push(piece)
+            piece @ ""
+        else
+            piece @ piece + ch
+
+    if piece.len() > 0
+        out @ out.push(piece)
+
+    return out
+
+function without_spaces(text: str) -> str
+    first: i64 @ 0
+    last: i64 @ text.len()
+
+    while first < last && text[first] == ' '
+        first @ first + 1
+
+    while last > first && text[last - 1] == ' '
+        last @ last - 1
+
+    return text.slice(from: first, to: last)
+
+function starts_with(text: str, prefix: str) -> bool
+    if prefix.len() > text.len()
+        return false
+
+    return text.slice(from: 0, to: prefix.len()) == prefix
+
+function ends_with(text: str, suffix: str) -> bool
+    if suffix.len() > text.len()
+        return false
+
+    return text.slice(from: text.len() - suffix.len(), to: text.len()) == suffix
+
+function index_of_equals(text: str) -> i64?
+    i: i64 @ 0
+
+    while i < text.len()
+        if text[i] == '='
+            return ok(i)
+        i @ i + 1
+
+    return fail("no_equals", "no `=` on the line")
+
+constant SAMPLE: str
+    "verbose = true\n\n[server]\nhost = localhost\nport = 8080\n\n# a comment\n[client]\nretries = 3\n\n[server]\ntimeout = 30\n"
+
+function main()
+    c = parse(SAMPLE).must()
+    print(join(section_names(c), ","))
+    print(value_of(c, section: "server", key: "host").must())
+    print(value_of(c, section: "server", key: "port").must())
+    print(value_of(c, section: "server", key: "timeout").must())
+    print(value_of(c, section: "client", key: "retries").must())
+
+    # A key before any section is reachable rather than lost.
+    print(value_of(c, section: "", key: "verbose").must())
+
+    # And the four refusals.
+    print(parse("host = a\nhost = b\n").is_err())
+    print(parse("[unclosed\n").is_err())
+    print(parse("[]\n").is_err())
+    print(parse("nonsense\n").is_err())
+
+test "the ordinary case, with sections and keys"
+    c = parse("[a]\nx = 1\n[b]\ny = 2\n").must()
+    assert value_of(c, section: "a", key: "x").must() == "1"
+    assert value_of(c, section: "b", key: "y").must() == "2"
+    assert section_names(c) == ["a", "b"]
+
+test "spaces around a key or a value are not part of it"
+    c = parse("[a]\n  x   =   1  \n").must()
+    assert value_of(c, section: "a", key: "x").must() == "1"
+
+test "a value may be empty, and a key may not"
+    c = parse("[a]\nx =\n").must()
+    assert value_of(c, section: "a", key: "x").must() == ""
+    assert parse("[a]\n= 1\n").is_err()
+
+test "a value may contain an equals sign, because only the first one counts"
+    c = parse("[a]\nx = y=z\n").must()
+    assert value_of(c, section: "a", key: "x").must() == "y=z"
+
+test "a key before any section lands in the empty section rather than nowhere"
+    c = parse("global = yes\n[a]\nx = 1\n").must()
+    assert value_of(c, section: "", key: "global").must() == "yes"
+    assert value_of(c, section: "a", key: "x").must() == "1"
+
+    # And it is not reported as a section, because it has a name nobody wrote.
+    assert section_names(c) == ["", "a"]
+
+test "a repeated section merges rather than replacing"
+    c = parse("[a]\nx = 1\n[b]\ny = 2\n[a]\nz = 3\n").must()
+    assert value_of(c, section: "a", key: "x").must() == "1"
+    assert value_of(c, section: "a", key: "z").must() == "3"
+    assert value_of(c, section: "b", key: "y").must() == "2"
+    assert section_names(c) == ["a", "b"]
+
+test "a repeated key is a failure, which is the choice this file argues for"
+    # `last wins` is convenient and it is how a value gets overridden by
+    # accident. Refusing costs the writer one edit and costs a reader nothing.
+    assert parse("[a]\nx = 1\nx = 2\n").is_err()
+    assert parse("x = 1\nx = 2\n").is_err()
+
+    # The same key in two DIFFERENT sections is not a repeat.
+    assert !parse("[a]\nx = 1\n[b]\nx = 2\n").is_err()
+
+test "comments and blank lines are skipped, in both spellings"
+    c = parse("# one\n; two\n\n[a]\nx = 1\n\n").must()
+    assert value_of(c, section: "a", key: "x").must() == "1"
+    assert section_names(c) == ["a"]
+
+test "a line that is nothing at all is refused, with its number"
+    # A config file that silently ignores a typo is how a service starts on
+    # the wrong port.
+    assert parse("nonsense\n").is_err()
+    assert parse("[a]\nfine = 1\nnonsense\n").is_err()
+    assert parse("[unclosed\n").is_err()
+    assert parse("[]\n").is_err()
+
+test "an empty file is an empty config and not a failure"
+    c = parse("").must()
+    assert section_names(c) == []
+    assert value_of(c, section: "a", key: "x").is_err()
+    assert value_of(c, section: "", key: "x").is_err()
+
+test "the sample's repeated section is merged and its early key is reachable"
+    c = parse(SAMPLE).must()
+    assert value_of(c, section: "server", key: "host").must() == "localhost"
+    assert value_of(c, section: "server", key: "timeout").must() == "30"
+    assert value_of(c, section: "", key: "verbose").must() == "true"
+    assert section_names(c) == ["", "client", "server"]
