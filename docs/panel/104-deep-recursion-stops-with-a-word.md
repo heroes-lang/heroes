@@ -148,6 +148,15 @@ optimisation; the seats' conditions name the one shape (b) may return in.
 
 ## Author's verdict
 
-**Pending.** The item that asks for it is open in `docs/work/DECIDE.md` and names
-this sitting as `panel 104`; work proceeds on the provisional default (CLAUDE.md
-§4 — a panel never blocks).
+**Ratified 2026-09-03** (author instruction, *"confermo la ratifica dei 2 in
+decide"*, given the same afternoon, before step 4 opened).
+
+**What the yes settles**: (a) in its complete form under every condition of both
+seats — save and chain, two witnesses, nothing under `--sanitize`, `SIGBUS` kept,
+the alternate stack sized in bytes, the frame walk that names the function,
+Linux's `_GNU_SOURCE` and `-rdynamic`, the Windows arm measured on the box
+before its commit; and (b) rejected, returning only as a frame-address probe
+where an exception mechanism cannot name the frame.
+
+**What the yes does not settle**: the two predictions, scored at the milestone's
+close; the threads hole, which is recorded and owned by M-isolated-threads.
