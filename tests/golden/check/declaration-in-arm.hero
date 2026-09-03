@@ -1,0 +1,22 @@
+# An inline arm body is one statement that yields the arm's value, and a
+# declaration is not one: `.a => x = 5` binds `x` where nothing can ever read
+# it, so the parser refuses it where Rust refuses `let` in expression position
+# (spec § Control flow: write the value as the arm's body, or open a block —
+# inside a block a binding is ordinary). This is one of the fourteen thesis
+# rules — the ones `--permissive` drops — and until 2026-09-03 it had no golden
+# under `check/`, only its own module's unit test: the set of thesis codes the
+# corpus annotates is what the Part 11 measurement stands on, and this file is
+# the code's witness in that set (sweep 001's audit S13, the instrument the port
+# had not brought over).
+variant Shape
+    dot
+    line
+        length: i64
+
+function size(s: Shape) -> i64
+    return match s
+        .dot => 0
+        .line l => doubled = l.length * 2  #~ declaration_in_arm
+
+function main()
+    print(size(.line(length: 4)))

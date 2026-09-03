@@ -129,6 +129,8 @@ _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
+_Static_assert(HERO_RET_INT(HERO_OS_NOT_TEXT), "heroes-ffi-return HERO_OS_NOT_TEXT i64");
+_Static_assert(__builtin_constant_p(HERO_OS_NOT_TEXT), "heroes-ffi-const HERO_OS_NOT_TEXT");
 _Static_assert(HERO_RET_STR(hero_file_read(0, 0)), "heroes-ffi-return hero_file_read str");
 _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
@@ -148,19 +150,19 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 __attribute__((unused)) static void hero_ffi_probe_h_ffiacarraymember_LoadVrStereoConfig(VrDeviceInfo a0) { (void)(LoadVrStereoConfig)(a0); }
 #line 79 "tests/golden/run/ffi-a-c-array-member.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_ffiacarraymember_UnloadVrStereoConfig(VrStereoConfig a0) { (void)(UnloadVrStereoConfig)(a0); }
-#line 111 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
 #line 112 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
+#line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
-#line 114 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 115 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 116 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 122 "<heroes library>"
+#line 123 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 154 "ffiacarraymember.c"
+#line 156 "ffiacarraymember.c"
 #pragma clang diagnostic pop
 
 typedef struct h_0opt_f87774a {
@@ -197,7 +199,7 @@ void h_ffiacarraymember_main(void);
 
 #line 81 "tests/golden/run/ffi-a-c-array-member.hero"
 void h_ffiacarraymember_main(void) {
-#line 191 "ffiacarraymember.c"
+#line 193 "ffiacarraymember.c"
     VrDeviceInfo h0_device;
     VrStereoConfig h1_config;
     int32_t t1;
@@ -325,7 +327,7 @@ bb0:
     (void)UnloadVrStereoConfig(t38);
 #line 101 "tests/golden/run/ffi-a-c-array-member.hero"
     return;
-#line 319 "ffiacarraymember.c"
+#line 321 "ffiacarraymember.c"
 }
 HERO_TU_LOCAL bool h_ffiacarraymember_Matrix_eq(const Matrix *a, const Matrix *b) {
     if (!(a->m0 == b->m0)) return false;

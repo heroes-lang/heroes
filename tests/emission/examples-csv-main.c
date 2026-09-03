@@ -29,6 +29,8 @@ _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
+_Static_assert(HERO_RET_INT(HERO_OS_NOT_TEXT), "heroes-ffi-return HERO_OS_NOT_TEXT i64");
+_Static_assert(__builtin_constant_p(HERO_OS_NOT_TEXT), "heroes-ffi-const HERO_OS_NOT_TEXT");
 _Static_assert(HERO_RET_STR(hero_file_read(0, 0)), "heroes-ffi-return hero_file_read str");
 _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
@@ -39,25 +41,25 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 43 "main.c"
+#line 45 "main.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
-#line 111 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
 #line 112 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
+#line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
-#line 114 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 115 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 116 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 122 "<heroes library>"
+#line 123 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 61 "main.c"
+#line 63 "main.c"
 #pragma clang diagnostic pop
 
 HERO_STR_STATIC(hero_str_0, "");
@@ -155,7 +157,7 @@ void h_main_main(void);
 
 #line 23 "examples/csv/main.hero"
 h_0opt_755e4b59 h_main_parse(HeroStr h0_text) {
-#line 159 "main.c"
+#line 161 "main.c"
     HeroArrayHeader * h1_rows = {0};
     HeroArrayHeader * h2_row = {0};
     HeroStr h3_field = {0};
@@ -319,15 +321,15 @@ bb0:
     t93 = h13_own13;
 #line 24 "examples/csv/main.hero"
     h13_own13 = t1;
-#line 323 "main.c"
+#line 325 "main.c"
     hero_array_decref(t93);
 #line 24 "examples/csv/main.hero"
     t94 = h1_rows;
-#line 327 "main.c"
+#line 329 "main.c"
     hero_array_incref(t1);
 #line 24 "examples/csv/main.hero"
     h1_rows = t1;
-#line 331 "main.c"
+#line 333 "main.c"
     hero_array_decref(t94);
 #line 25 "examples/csv/main.hero"
     t2 = hero_array_new(&hero_desc_str, 1);
@@ -335,25 +337,25 @@ bb0:
     t95 = h14_own14;
 #line 25 "examples/csv/main.hero"
     h14_own14 = t2;
-#line 339 "main.c"
+#line 341 "main.c"
     hero_array_decref(t95);
 #line 25 "examples/csv/main.hero"
     t96 = h2_row;
-#line 343 "main.c"
+#line 345 "main.c"
     hero_array_incref(t2);
 #line 25 "examples/csv/main.hero"
     h2_row = t2;
-#line 347 "main.c"
+#line 349 "main.c"
     hero_array_decref(t96);
 #line 26 "examples/csv/main.hero"
     t3 = HERO_STR_LIT(hero_str_0);
 #line 26 "examples/csv/main.hero"
     t97 = h3_field;
-#line 353 "main.c"
+#line 355 "main.c"
     hero_str_incref(t3);
 #line 26 "examples/csv/main.hero"
     h3_field = t3;
-#line 357 "main.c"
+#line 359 "main.c"
     hero_str_decref(t97);
 #line 27 "examples/csv/main.hero"
     t4 = false;
@@ -375,15 +377,15 @@ bb0:
     t98 = h15_own15;
 #line 31 "examples/csv/main.hero"
     h15_own15 = t8;
-#line 379 "main.c"
+#line 381 "main.c"
     hero_array_decref(t98);
 #line 31 "examples/csv/main.hero"
     t99 = h7_xs0;
-#line 383 "main.c"
+#line 385 "main.c"
     hero_array_incref(t8);
 #line 31 "examples/csv/main.hero"
     h7_xs0 = t8;
-#line 387 "main.c"
+#line 389 "main.c"
     hero_array_decref(t99);
 #line 31 "examples/csv/main.hero"
     t9 = INT64_C(0);
@@ -413,11 +415,11 @@ bb2:
     t16 = *(HeroStr const *)hero_array_at(t14, t15);
 #line 31 "examples/csv/main.hero"
     t100 = h9_ch;
-#line 417 "main.c"
+#line 419 "main.c"
     hero_str_incref(t16);
 #line 31 "examples/csv/main.hero"
     h9_ch = t16;
-#line 421 "main.c"
+#line 423 "main.c"
     hero_str_decref(t100);
 #line 32 "examples/csv/main.hero"
     t17 = h5_pending_quote;
@@ -487,15 +489,15 @@ bb9:
     t101 = h16_own16;
 #line 37 "examples/csv/main.hero"
     h16_own16 = t24;
-#line 491 "main.c"
+#line 493 "main.c"
     hero_str_decref(t101);
 #line 37 "examples/csv/main.hero"
     t102 = h3_field;
-#line 495 "main.c"
+#line 497 "main.c"
     hero_str_incref(t24);
 #line 37 "examples/csv/main.hero"
     h3_field = t24;
-#line 499 "main.c"
+#line 501 "main.c"
     hero_str_decref(t102);
     goto bb3;
 bb10:
@@ -547,15 +549,15 @@ bb16:
     t103 = h17_own17;
 #line 48 "examples/csv/main.hero"
     h17_own17 = t33;
-#line 551 "main.c"
+#line 553 "main.c"
     hero_str_decref(t103);
 #line 48 "examples/csv/main.hero"
     t104 = h3_field;
-#line 555 "main.c"
+#line 557 "main.c"
     hero_str_incref(t33);
 #line 48 "examples/csv/main.hero"
     h3_field = t33;
-#line 559 "main.c"
+#line 561 "main.c"
     hero_str_decref(t104);
     goto bb14;
 bb17:
@@ -603,11 +605,11 @@ bb21:
     t45 = HERO_STR_LIT(hero_str_0);
 #line 58 "examples/csv/main.hero"
     t105 = h3_field;
-#line 607 "main.c"
+#line 609 "main.c"
     hero_str_incref(t45);
 #line 58 "examples/csv/main.hero"
     h3_field = t45;
-#line 611 "main.c"
+#line 613 "main.c"
     hero_str_decref(t105);
 #line 59 "examples/csv/main.hero"
     t46 = true;
@@ -631,15 +633,15 @@ bb23:
     t106 = h18_own18;
 #line 69 "examples/csv/main.hero"
     h18_own18 = t61;
-#line 635 "main.c"
+#line 637 "main.c"
     hero_str_decref(t106);
 #line 69 "examples/csv/main.hero"
     t107 = h3_field;
-#line 639 "main.c"
+#line 641 "main.c"
     hero_str_incref(t61);
 #line 69 "examples/csv/main.hero"
     h3_field = t61;
-#line 643 "main.c"
+#line 645 "main.c"
     hero_str_decref(t107);
 #line 70 "examples/csv/main.hero"
     t62 = true;
@@ -663,25 +665,25 @@ bb24:
     t108 = h19_own19;
 #line 65 "examples/csv/main.hero"
     h19_own19 = t56;
-#line 667 "main.c"
+#line 669 "main.c"
     hero_array_decref(t108);
 #line 65 "examples/csv/main.hero"
     t109 = h2_row;
-#line 671 "main.c"
+#line 673 "main.c"
     hero_array_incref(t56);
 #line 65 "examples/csv/main.hero"
     h2_row = t56;
-#line 675 "main.c"
+#line 677 "main.c"
     hero_array_decref(t109);
 #line 66 "examples/csv/main.hero"
     t57 = HERO_STR_LIT(hero_str_0);
 #line 66 "examples/csv/main.hero"
     t110 = h3_field;
-#line 681 "main.c"
+#line 683 "main.c"
     hero_str_incref(t57);
 #line 66 "examples/csv/main.hero"
     h3_field = t57;
-#line 685 "main.c"
+#line 687 "main.c"
     hero_str_decref(t110);
 #line 67 "examples/csv/main.hero"
     t58 = false;
@@ -723,10 +725,10 @@ bb29:
     t70 = HERO_STR_LIT(hero_str_41de4fd4);
 #line 73 "examples/csv/main.hero"
     t71 = HERO_STR_LIT(hero_str_6147841e);
-#line 727 "main.c"
+#line 729 "main.c"
     hero_str_incref(t70);
 #line 73 "examples/csv/main.hero"
-#line 730 "main.c"
+#line 732 "main.c"
     hero_str_incref(t71);
 #line 73 "examples/csv/main.hero"
     t72 = (h_0opt_755e4b59){.tag = INT64_C(1), .as.err = {.code = t70, .msg = t71}};
@@ -734,70 +736,70 @@ bb29:
     t111 = h20_own20;
 #line 73 "examples/csv/main.hero"
     h20_own20 = t72;
-#line 738 "main.c"
+#line 740 "main.c"
     h_0opt_755e4b59_release(&t111);
 #line 73 "examples/csv/main.hero"
-#line 741 "main.c"
+#line 743 "main.c"
     h_0opt_755e4b59_retain(&t72);
 #line 73 "examples/csv/main.hero"
     t114 = h1_rows;
-#line 745 "main.c"
+#line 747 "main.c"
     hero_array_decref(t114);
 #line 73 "examples/csv/main.hero"
     t115 = h2_row;
-#line 749 "main.c"
+#line 751 "main.c"
     hero_array_decref(t115);
 #line 73 "examples/csv/main.hero"
     t116 = h3_field;
-#line 753 "main.c"
+#line 755 "main.c"
     hero_str_decref(t116);
 #line 73 "examples/csv/main.hero"
     t117 = h7_xs0;
-#line 757 "main.c"
+#line 759 "main.c"
     hero_array_decref(t117);
 #line 73 "examples/csv/main.hero"
     t118 = h9_ch;
-#line 761 "main.c"
+#line 763 "main.c"
     hero_str_decref(t118);
 #line 73 "examples/csv/main.hero"
     t119 = h13_own13;
-#line 765 "main.c"
+#line 767 "main.c"
     hero_array_decref(t119);
 #line 73 "examples/csv/main.hero"
     t120 = h14_own14;
-#line 769 "main.c"
+#line 771 "main.c"
     hero_array_decref(t120);
 #line 73 "examples/csv/main.hero"
     t121 = h15_own15;
-#line 773 "main.c"
+#line 775 "main.c"
     hero_array_decref(t121);
 #line 73 "examples/csv/main.hero"
     t122 = h16_own16;
-#line 777 "main.c"
+#line 779 "main.c"
     hero_str_decref(t122);
 #line 73 "examples/csv/main.hero"
     t123 = h17_own17;
-#line 781 "main.c"
+#line 783 "main.c"
     hero_str_decref(t123);
 #line 73 "examples/csv/main.hero"
     t124 = h18_own18;
-#line 785 "main.c"
+#line 787 "main.c"
     hero_str_decref(t124);
 #line 73 "examples/csv/main.hero"
     t125 = h19_own19;
-#line 789 "main.c"
+#line 791 "main.c"
     hero_array_decref(t125);
 #line 73 "examples/csv/main.hero"
     t126 = h20_own20;
-#line 793 "main.c"
+#line 795 "main.c"
     h_0opt_755e4b59_release(&t126);
 #line 73 "examples/csv/main.hero"
     t127 = h21_own21;
-#line 797 "main.c"
+#line 799 "main.c"
     h_main_Table_release(&t127);
 #line 73 "examples/csv/main.hero"
     t128 = h22_own22;
-#line 801 "main.c"
+#line 803 "main.c"
     h_0opt_755e4b59_release(&t128);
     return t72;
 bb30:
@@ -805,7 +807,7 @@ bb30:
 bb31:
 #line 81 "examples/csv/main.hero"
     t90 = h1_rows;
-#line 809 "main.c"
+#line 811 "main.c"
     hero_array_incref(t90);
 #line 81 "examples/csv/main.hero"
     t91 = (h_main_Table){.f_rows = t90};
@@ -813,10 +815,10 @@ bb31:
     t112 = h21_own21;
 #line 81 "examples/csv/main.hero"
     h21_own21 = t91;
-#line 817 "main.c"
+#line 819 "main.c"
     h_main_Table_release(&t112);
 #line 81 "examples/csv/main.hero"
-#line 820 "main.c"
+#line 822 "main.c"
     h_main_Table_retain(&t91);
 #line 81 "examples/csv/main.hero"
     t92 = (h_0opt_755e4b59){.tag = INT64_C(0), .as.ok = t91};
@@ -824,70 +826,70 @@ bb31:
     t113 = h22_own22;
 #line 81 "examples/csv/main.hero"
     h22_own22 = t92;
-#line 828 "main.c"
+#line 830 "main.c"
     h_0opt_755e4b59_release(&t113);
 #line 81 "examples/csv/main.hero"
-#line 831 "main.c"
+#line 833 "main.c"
     h_0opt_755e4b59_retain(&t92);
 #line 81 "examples/csv/main.hero"
     t129 = h1_rows;
-#line 835 "main.c"
+#line 837 "main.c"
     hero_array_decref(t129);
 #line 81 "examples/csv/main.hero"
     t130 = h2_row;
-#line 839 "main.c"
+#line 841 "main.c"
     hero_array_decref(t130);
 #line 81 "examples/csv/main.hero"
     t131 = h3_field;
-#line 843 "main.c"
+#line 845 "main.c"
     hero_str_decref(t131);
 #line 81 "examples/csv/main.hero"
     t132 = h7_xs0;
-#line 847 "main.c"
+#line 849 "main.c"
     hero_array_decref(t132);
 #line 81 "examples/csv/main.hero"
     t133 = h9_ch;
-#line 851 "main.c"
+#line 853 "main.c"
     hero_str_decref(t133);
 #line 81 "examples/csv/main.hero"
     t134 = h13_own13;
-#line 855 "main.c"
+#line 857 "main.c"
     hero_array_decref(t134);
 #line 81 "examples/csv/main.hero"
     t135 = h14_own14;
-#line 859 "main.c"
+#line 861 "main.c"
     hero_array_decref(t135);
 #line 81 "examples/csv/main.hero"
     t136 = h15_own15;
-#line 863 "main.c"
+#line 865 "main.c"
     hero_array_decref(t136);
 #line 81 "examples/csv/main.hero"
     t137 = h16_own16;
-#line 867 "main.c"
+#line 869 "main.c"
     hero_str_decref(t137);
 #line 81 "examples/csv/main.hero"
     t138 = h17_own17;
-#line 871 "main.c"
+#line 873 "main.c"
     hero_str_decref(t138);
 #line 81 "examples/csv/main.hero"
     t139 = h18_own18;
-#line 875 "main.c"
+#line 877 "main.c"
     hero_str_decref(t139);
 #line 81 "examples/csv/main.hero"
     t140 = h19_own19;
-#line 879 "main.c"
+#line 881 "main.c"
     hero_array_decref(t140);
 #line 81 "examples/csv/main.hero"
     t141 = h20_own20;
-#line 883 "main.c"
+#line 885 "main.c"
     h_0opt_755e4b59_release(&t141);
 #line 81 "examples/csv/main.hero"
     t142 = h21_own21;
-#line 887 "main.c"
+#line 889 "main.c"
     h_main_Table_release(&t142);
 #line 81 "examples/csv/main.hero"
     t143 = h22_own22;
-#line 891 "main.c"
+#line 893 "main.c"
     h_0opt_755e4b59_release(&t143);
     return t92;
 bb32:
@@ -947,12 +949,12 @@ bb36:
 bb37:
 #line 79 "examples/csv/main.hero"
     goto bb31;
-#line 951 "main.c"
+#line 953 "main.c"
 }
 
 #line 83 "examples/csv/main.hero"
 int64_t h_main_width(h_main_Table h0_t) {
-#line 956 "main.c"
+#line 958 "main.c"
     int64_t h1_r0;
     h_main_Table t1 = {0};
     HeroArrayHeader * t2 = {0};
@@ -1010,12 +1012,12 @@ bb3:
     h1_r0 = t11;
 #line 84 "examples/csv/main.hero"
     goto bb1;
-#line 1014 "main.c"
+#line 1016 "main.c"
 }
 
 #line 91 "examples/csv/main.hero"
 bool h_main_rectangular(h_main_Table h0_t) {
-#line 1019 "main.c"
+#line 1021 "main.c"
     HeroArrayHeader * h1_xs0 = {0};
     int64_t h2_i0;
     HeroArrayHeader * h3_one = {0};
@@ -1053,11 +1055,11 @@ bb0:
     t2 = t1.f_rows;
 #line 92 "examples/csv/main.hero"
     t21 = h1_xs0;
-#line 1057 "main.c"
+#line 1059 "main.c"
     hero_array_incref(t2);
 #line 92 "examples/csv/main.hero"
     h1_xs0 = t2;
-#line 1061 "main.c"
+#line 1063 "main.c"
     hero_array_decref(t21);
 #line 92 "examples/csv/main.hero"
     t3 = INT64_C(0);
@@ -1087,11 +1089,11 @@ bb2:
     t10 = *(HeroArrayHeader * const *)hero_array_at(t8, t9);
 #line 92 "examples/csv/main.hero"
     t22 = h3_one;
-#line 1091 "main.c"
+#line 1093 "main.c"
     hero_array_incref(t10);
 #line 92 "examples/csv/main.hero"
     h3_one = t10;
-#line 1095 "main.c"
+#line 1097 "main.c"
     hero_array_decref(t22);
 #line 93 "examples/csv/main.hero"
     t11 = h3_one;
@@ -1123,11 +1125,11 @@ bb4:
     t20 = true;
 #line 96 "examples/csv/main.hero"
     t23 = h1_xs0;
-#line 1127 "main.c"
+#line 1129 "main.c"
     hero_array_decref(t23);
 #line 96 "examples/csv/main.hero"
     t24 = h3_one;
-#line 1131 "main.c"
+#line 1133 "main.c"
     hero_array_decref(t24);
     return t20;
 bb5:
@@ -1137,11 +1139,11 @@ bb6:
     t16 = false;
 #line 94 "examples/csv/main.hero"
     t25 = h1_xs0;
-#line 1141 "main.c"
+#line 1143 "main.c"
     hero_array_decref(t25);
 #line 94 "examples/csv/main.hero"
     t26 = h3_one;
-#line 1145 "main.c"
+#line 1147 "main.c"
     hero_array_decref(t26);
     return t16;
 bb7:
@@ -1150,7 +1152,7 @@ bb7:
 
 #line 98 "examples/csv/main.hero"
 h_0opt_5a58f2ca h_main_column(h_main_Table h0_t, int64_t h1_at) {
-#line 1154 "main.c"
+#line 1156 "main.c"
     bool h2_b0;
     HeroArrayHeader * h3_out = {0};
     HeroArrayHeader * h4_xs0 = {0};
@@ -1231,15 +1233,15 @@ bb1:
     t37 = h7_own7;
 #line 101 "examples/csv/main.hero"
     h7_own7 = t12;
-#line 1235 "main.c"
+#line 1237 "main.c"
     hero_array_decref(t37);
 #line 101 "examples/csv/main.hero"
     t38 = h3_out;
-#line 1239 "main.c"
+#line 1241 "main.c"
     hero_array_incref(t12);
 #line 101 "examples/csv/main.hero"
     h3_out = t12;
-#line 1243 "main.c"
+#line 1245 "main.c"
     hero_array_decref(t38);
 #line 103 "examples/csv/main.hero"
     t13 = h0_t;
@@ -1247,11 +1249,11 @@ bb1:
     t14 = t13.f_rows;
 #line 103 "examples/csv/main.hero"
     t39 = h4_xs0;
-#line 1251 "main.c"
+#line 1253 "main.c"
     hero_array_incref(t14);
 #line 103 "examples/csv/main.hero"
     h4_xs0 = t14;
-#line 1255 "main.c"
+#line 1257 "main.c"
     hero_array_decref(t39);
 #line 103 "examples/csv/main.hero"
     t15 = INT64_C(0);
@@ -1285,10 +1287,10 @@ bb4:
     t9 = HERO_STR_LIT(hero_str_688477b1);
 #line 100 "examples/csv/main.hero"
     t10 = HERO_STR_LIT(hero_str_5921dbd5);
-#line 1289 "main.c"
+#line 1291 "main.c"
     hero_str_incref(t9);
 #line 100 "examples/csv/main.hero"
-#line 1292 "main.c"
+#line 1294 "main.c"
     hero_str_incref(t10);
 #line 100 "examples/csv/main.hero"
     t11 = (h_0opt_5a58f2ca){.tag = INT64_C(1), .as.err = {.code = t9, .msg = t10}};
@@ -1296,34 +1298,34 @@ bb4:
     t40 = h8_own8;
 #line 100 "examples/csv/main.hero"
     h8_own8 = t11;
-#line 1300 "main.c"
+#line 1302 "main.c"
     h_0opt_5a58f2ca_release(&t40);
 #line 100 "examples/csv/main.hero"
-#line 1303 "main.c"
+#line 1305 "main.c"
     h_0opt_5a58f2ca_retain(&t11);
 #line 100 "examples/csv/main.hero"
     t43 = h3_out;
-#line 1307 "main.c"
+#line 1309 "main.c"
     hero_array_decref(t43);
 #line 100 "examples/csv/main.hero"
     t44 = h4_xs0;
-#line 1311 "main.c"
+#line 1313 "main.c"
     hero_array_decref(t44);
 #line 100 "examples/csv/main.hero"
     t45 = h6_one;
-#line 1315 "main.c"
+#line 1317 "main.c"
     hero_array_decref(t45);
 #line 100 "examples/csv/main.hero"
     t46 = h7_own7;
-#line 1319 "main.c"
+#line 1321 "main.c"
     hero_array_decref(t46);
 #line 100 "examples/csv/main.hero"
     t47 = h8_own8;
-#line 1323 "main.c"
+#line 1325 "main.c"
     h_0opt_5a58f2ca_release(&t47);
 #line 100 "examples/csv/main.hero"
     t48 = h9_own9;
-#line 1327 "main.c"
+#line 1329 "main.c"
     h_0opt_5a58f2ca_release(&t48);
     return t11;
 bb5:
@@ -1349,11 +1351,11 @@ bb7:
     t22 = *(HeroArrayHeader * const *)hero_array_at(t20, t21);
 #line 103 "examples/csv/main.hero"
     t41 = h6_one;
-#line 1353 "main.c"
+#line 1355 "main.c"
     hero_array_incref(t22);
 #line 103 "examples/csv/main.hero"
     h6_one = t22;
-#line 1357 "main.c"
+#line 1359 "main.c"
     hero_array_decref(t41);
 #line 104 "examples/csv/main.hero"
     t23 = h1_at;
@@ -1381,7 +1383,7 @@ bb8:
 bb9:
 #line 107 "examples/csv/main.hero"
     t35 = h3_out;
-#line 1385 "main.c"
+#line 1387 "main.c"
     hero_array_incref(t35);
 #line 107 "examples/csv/main.hero"
     t36 = (h_0opt_5a58f2ca){.tag = INT64_C(0), .as.ok = t35};
@@ -1389,34 +1391,34 @@ bb9:
     t42 = h9_own9;
 #line 107 "examples/csv/main.hero"
     h9_own9 = t36;
-#line 1393 "main.c"
+#line 1395 "main.c"
     h_0opt_5a58f2ca_release(&t42);
 #line 107 "examples/csv/main.hero"
-#line 1396 "main.c"
+#line 1398 "main.c"
     h_0opt_5a58f2ca_retain(&t36);
 #line 107 "examples/csv/main.hero"
     t49 = h3_out;
-#line 1400 "main.c"
+#line 1402 "main.c"
     hero_array_decref(t49);
 #line 107 "examples/csv/main.hero"
     t50 = h4_xs0;
-#line 1404 "main.c"
+#line 1406 "main.c"
     hero_array_decref(t50);
 #line 107 "examples/csv/main.hero"
     t51 = h6_one;
-#line 1408 "main.c"
+#line 1410 "main.c"
     hero_array_decref(t51);
 #line 107 "examples/csv/main.hero"
     t52 = h7_own7;
-#line 1412 "main.c"
+#line 1414 "main.c"
     hero_array_decref(t52);
 #line 107 "examples/csv/main.hero"
     t53 = h8_own8;
-#line 1416 "main.c"
+#line 1418 "main.c"
     h_0opt_5a58f2ca_release(&t53);
 #line 107 "examples/csv/main.hero"
     t54 = h9_own9;
-#line 1420 "main.c"
+#line 1422 "main.c"
     h_0opt_5a58f2ca_release(&t54);
     return t36;
 bb10:
@@ -1436,25 +1438,25 @@ bb11:
 bb12:
 #line 105 "examples/csv/main.hero"
     goto bb10;
-#line 1440 "main.c"
+#line 1442 "main.c"
 }
 
 #line 109 "examples/csv/main.hero"
 HeroStr h_main_SAMPLE(void) {
-#line 1445 "main.c"
+#line 1447 "main.c"
     HeroStr t1 = {0};
     goto bb0;
 bb0:
 #line 110 "examples/csv/main.hero"
     t1 = HERO_STR_LIT(hero_str_690861d0);
-#line 1451 "main.c"
+#line 1453 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 112 "examples/csv/main.hero"
 void h_main_main(void) {
-#line 1458 "main.c"
+#line 1460 "main.c"
     h_0opt_755e4b59 h0_f0 = {0};
     h_main_Table h1_table = {0};
     h_0opt_5a58f2ca h2_f1 = {0};
@@ -1575,7 +1577,7 @@ bb0:
     t68 = h6_own6;
 #line 113 "examples/csv/main.hero"
     h6_own6 = t1;
-#line 1579 "main.c"
+#line 1581 "main.c"
     hero_str_decref(t68);
 #line 113 "examples/csv/main.hero"
     t2 = h_main_parse(t1);
@@ -1583,15 +1585,15 @@ bb0:
     t69 = h7_own7;
 #line 113 "examples/csv/main.hero"
     h7_own7 = t2;
-#line 1587 "main.c"
+#line 1589 "main.c"
     h_0opt_755e4b59_release(&t69);
 #line 113 "examples/csv/main.hero"
     t70 = h0_f0;
-#line 1591 "main.c"
+#line 1593 "main.c"
     h_0opt_755e4b59_retain(&t2);
 #line 113 "examples/csv/main.hero"
     h0_f0 = t2;
-#line 1595 "main.c"
+#line 1597 "main.c"
     h_0opt_755e4b59_release(&t70);
 #line 113 "examples/csv/main.hero"
     t3 = h0_f0;
@@ -1611,11 +1613,11 @@ bb1:
     t10 = t9.as.ok;
 #line 113 "examples/csv/main.hero"
     t71 = h1_table;
-#line 1615 "main.c"
+#line 1617 "main.c"
     h_main_Table_retain(&t10);
 #line 113 "examples/csv/main.hero"
     h1_table = t10;
-#line 1619 "main.c"
+#line 1621 "main.c"
     h_main_Table_release(&t71);
 #line 114 "examples/csv/main.hero"
     t11 = h1_table;
@@ -1659,7 +1661,7 @@ bb1:
     t72 = h8_own8;
 #line 118 "examples/csv/main.hero"
     h8_own8 = t23;
-#line 1663 "main.c"
+#line 1665 "main.c"
     hero_str_decref(t72);
 #line 118 "examples/csv/main.hero"
     hero_print_str(t23);
@@ -1681,7 +1683,7 @@ bb1:
     t73 = h9_own9;
 #line 119 "examples/csv/main.hero"
     h9_own9 = t29;
-#line 1685 "main.c"
+#line 1687 "main.c"
     hero_str_decref(t73);
 #line 119 "examples/csv/main.hero"
     hero_print_str(t29);
@@ -1697,15 +1699,15 @@ bb1:
     t74 = h10_own10;
 #line 120 "examples/csv/main.hero"
     h10_own10 = t32;
-#line 1701 "main.c"
+#line 1703 "main.c"
     h_0opt_5a58f2ca_release(&t74);
 #line 120 "examples/csv/main.hero"
     t75 = h2_f1;
-#line 1705 "main.c"
+#line 1707 "main.c"
     h_0opt_5a58f2ca_retain(&t32);
 #line 120 "examples/csv/main.hero"
     h2_f1 = t32;
-#line 1709 "main.c"
+#line 1711 "main.c"
     h_0opt_5a58f2ca_release(&t75);
 #line 120 "examples/csv/main.hero"
     t33 = h2_f1;
@@ -1723,7 +1725,7 @@ bb2:
     t7 = h0_f0;
 #line 113 "examples/csv/main.hero"
     t8 = t7.as.err;
-#line 1727 "main.c"
+#line 1729 "main.c"
     hero_panic_must(t8);
     hero_unreachable();
 bb3:
@@ -1739,7 +1741,7 @@ bb3:
     t76 = h11_own11;
 #line 120 "examples/csv/main.hero"
     h11_own11 = t42;
-#line 1743 "main.c"
+#line 1745 "main.c"
     hero_str_decref(t76);
 #line 120 "examples/csv/main.hero"
     hero_print_str(t42);
@@ -1755,15 +1757,15 @@ bb3:
     t77 = h12_own12;
 #line 121 "examples/csv/main.hero"
     h12_own12 = t45;
-#line 1759 "main.c"
+#line 1761 "main.c"
     h_0opt_5a58f2ca_release(&t77);
 #line 121 "examples/csv/main.hero"
     t78 = h3_f2;
-#line 1763 "main.c"
+#line 1765 "main.c"
     h_0opt_5a58f2ca_retain(&t45);
 #line 121 "examples/csv/main.hero"
     h3_f2 = t45;
-#line 1767 "main.c"
+#line 1769 "main.c"
     h_0opt_5a58f2ca_release(&t78);
 #line 121 "examples/csv/main.hero"
     t46 = h3_f2;
@@ -1785,15 +1787,15 @@ bb3:
     t79 = h13_own13;
 #line 124 "examples/csv/main.hero"
     h13_own13 = t51;
-#line 1789 "main.c"
+#line 1791 "main.c"
     h_0opt_755e4b59_release(&t79);
 #line 124 "examples/csv/main.hero"
     t80 = h4_f3;
-#line 1793 "main.c"
+#line 1795 "main.c"
     h_0opt_755e4b59_retain(&t51);
 #line 124 "examples/csv/main.hero"
     h4_f3 = t51;
-#line 1797 "main.c"
+#line 1799 "main.c"
     h_0opt_755e4b59_release(&t80);
 #line 124 "examples/csv/main.hero"
     t52 = h4_f3;
@@ -1815,15 +1817,15 @@ bb3:
     t81 = h14_own14;
 #line 125 "examples/csv/main.hero"
     h14_own14 = t57;
-#line 1819 "main.c"
+#line 1821 "main.c"
     h_0opt_755e4b59_release(&t81);
 #line 125 "examples/csv/main.hero"
     t82 = h5_f4;
-#line 1823 "main.c"
+#line 1825 "main.c"
     h_0opt_755e4b59_retain(&t57);
 #line 125 "examples/csv/main.hero"
     h5_f4 = t57;
-#line 1827 "main.c"
+#line 1829 "main.c"
     h_0opt_755e4b59_release(&t82);
 #line 125 "examples/csv/main.hero"
     t58 = h5_f4;
@@ -1841,7 +1843,7 @@ bb4:
     t37 = h2_f1;
 #line 120 "examples/csv/main.hero"
     t38 = t37.as.err;
-#line 1845 "main.c"
+#line 1847 "main.c"
     hero_panic_must(t38);
     hero_unreachable();
 bb5:
@@ -1859,63 +1861,63 @@ bb5:
     hero_print_end();
 #line 125 "examples/csv/main.hero"
     t83 = h0_f0;
-#line 1863 "main.c"
+#line 1865 "main.c"
     h_0opt_755e4b59_release(&t83);
 #line 125 "examples/csv/main.hero"
     t84 = h1_table;
-#line 1867 "main.c"
+#line 1869 "main.c"
     h_main_Table_release(&t84);
 #line 125 "examples/csv/main.hero"
     t85 = h2_f1;
-#line 1871 "main.c"
+#line 1873 "main.c"
     h_0opt_5a58f2ca_release(&t85);
 #line 125 "examples/csv/main.hero"
     t86 = h3_f2;
-#line 1875 "main.c"
+#line 1877 "main.c"
     h_0opt_5a58f2ca_release(&t86);
 #line 125 "examples/csv/main.hero"
     t87 = h4_f3;
-#line 1879 "main.c"
+#line 1881 "main.c"
     h_0opt_755e4b59_release(&t87);
 #line 125 "examples/csv/main.hero"
     t88 = h5_f4;
-#line 1883 "main.c"
+#line 1885 "main.c"
     h_0opt_755e4b59_release(&t88);
 #line 125 "examples/csv/main.hero"
     t89 = h6_own6;
-#line 1887 "main.c"
+#line 1889 "main.c"
     hero_str_decref(t89);
 #line 125 "examples/csv/main.hero"
     t90 = h7_own7;
-#line 1891 "main.c"
+#line 1893 "main.c"
     h_0opt_755e4b59_release(&t90);
 #line 125 "examples/csv/main.hero"
     t91 = h8_own8;
-#line 1895 "main.c"
+#line 1897 "main.c"
     hero_str_decref(t91);
 #line 125 "examples/csv/main.hero"
     t92 = h9_own9;
-#line 1899 "main.c"
+#line 1901 "main.c"
     hero_str_decref(t92);
 #line 125 "examples/csv/main.hero"
     t93 = h10_own10;
-#line 1903 "main.c"
+#line 1905 "main.c"
     h_0opt_5a58f2ca_release(&t93);
 #line 125 "examples/csv/main.hero"
     t94 = h11_own11;
-#line 1907 "main.c"
+#line 1909 "main.c"
     hero_str_decref(t94);
 #line 125 "examples/csv/main.hero"
     t95 = h12_own12;
-#line 1911 "main.c"
+#line 1913 "main.c"
     h_0opt_5a58f2ca_release(&t95);
 #line 125 "examples/csv/main.hero"
     t96 = h13_own13;
-#line 1915 "main.c"
+#line 1917 "main.c"
     h_0opt_755e4b59_release(&t96);
 #line 125 "examples/csv/main.hero"
     t97 = h14_own14;
-#line 1919 "main.c"
+#line 1921 "main.c"
     h_0opt_755e4b59_release(&t97);
     return;
 bb6:
@@ -1923,7 +1925,7 @@ bb6:
     t62 = h5_f4;
 #line 125 "examples/csv/main.hero"
     t63 = t62.as.err;
-#line 1927 "main.c"
+#line 1929 "main.c"
     hero_panic_must(t63);
     hero_unreachable();
 }

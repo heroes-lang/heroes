@@ -95,6 +95,8 @@ _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
+_Static_assert(HERO_RET_INT(HERO_OS_NOT_TEXT), "heroes-ffi-return HERO_OS_NOT_TEXT i64");
+_Static_assert(__builtin_constant_p(HERO_OS_NOT_TEXT), "heroes-ffi-const HERO_OS_NOT_TEXT");
 _Static_assert(HERO_RET_STR(hero_file_read(0, 0)), "heroes-ffi-return hero_file_read str");
 _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
@@ -114,19 +116,19 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugsanestedrecordandatypedpointer_IsFontValid(Font a0) { (void)(IsFontValid)(a0); }
 #line 57 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugsanestedrecordandatypedpointer_GetWorldToScreen2D(Vector2 a0, Camera2D a1) { (void)(GetWorldToScreen2D)(a0, a1); }
-#line 111 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
 #line 112 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
+#line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
-#line 114 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 115 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 116 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 122 "<heroes library>"
+#line 123 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 130 "fixedbugsanestedrecordandatypedpointer.c"
+#line 132 "fixedbugsanestedrecordandatypedpointer.c"
 #pragma clang diagnostic pop
 
 typedef struct h_0opt_f87774a {
@@ -165,7 +167,7 @@ void h_fixedbugsanestedrecordandatypedpointer_main(void);
 
 #line 59 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
 void h_fixedbugsanestedrecordandatypedpointer_main(void) {
-#line 169 "fixedbugsanestedrecordandatypedpointer.c"
+#line 171 "fixedbugsanestedrecordandatypedpointer.c"
     Camera2D h0_c;
     Vector2 h1_p;
     Font h2_empty;
@@ -287,7 +289,7 @@ bb0:
     hero_print_end();
 #line 83 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
     return;
-#line 291 "fixedbugsanestedrecordandatypedpointer.c"
+#line 293 "fixedbugsanestedrecordandatypedpointer.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsanestedrecordandatypedpointer_Texture_eq(const Texture *a, const Texture *b) {
     if (!(a->id == b->id)) return false;

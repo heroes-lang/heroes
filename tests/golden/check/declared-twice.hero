@@ -1,0 +1,16 @@
+# One file is one module, and a module declares each name once: the second
+# `function area` is refused where it stands, naming the first. A thesis rule
+# (`--permissive` drops it) with no golden under `check/` until 2026-09-03 —
+# sweep 001's audit S13 asked that every code the measurement counts have a
+# witness in the corpus, and this is `declared_twice`'s.
+record Square
+    side: i64
+
+function area(s: Square) -> i64
+    return s.side * s.side
+
+function area(s: Square) -> i64  #~ declared_twice
+    return s.side + s.side
+
+function main()
+    print(area(Square(side: 3)))

@@ -97,6 +97,7 @@ constant LEAST: i64
 function run_all(scratch: str, compiler: str) -> report.Report?
     r: report.Report @ report.empty()
     annotated: i64 @ 0
+    witnessed: {str: bool} @ {}
 
     for dir in DIRECTORIES
         found = cases.collect(scratch: scratch, dir: dir)?
@@ -116,6 +117,11 @@ function run_all(scratch: str, compiler: str) -> report.Report?
                 reported = sorted(reported_by(expectation.must()))
                 annotated @ annotated + reported.len()
 
+                # `claimed` spells each mark `<line>:<code>`; the witness is the code.
+                for mark in claimed
+                    parts = strings.split_on(text: mark, byte: 58)
+                    witnessed[parts[parts.len() - 1]] @ true
+
                 if claimed != reported
                     report.keep_failure(
                         @r,
@@ -125,6 +131,7 @@ function run_all(scratch: str, compiler: str) -> report.Report?
                 else
                     report.keep_pass(@r)
 
+    every_thesis_rule_has_a_witness(@r, witnessed: witnessed)
     stepped_aside: i64 @ 0
 
     for group in groups(scratch)?
@@ -140,6 +147,76 @@ function run_all(scratch: str, compiler: str) -> report.Report?
             detail: "  only " + annotated.to_str() + " annotated diagnostics (+" + stepped_aside.to_str() + " that this machine cannot ask), and there were " + LEAST.to_str() + " — annotations that stop being checked are the shape §9 calls a decoration"
         )
     return ok(r)
+
+# SWEEP 001'S AUDIT S13, PORTED AT LAST (2026-09-03). The thesis rules —
+# the codes `check --permissive` drops, which is what makes it Part 11's
+# control arm — are a hand-maintained list in `selfhost/diag.hero`, and a
+# hand-maintained list is the fifth root the sweep named: a code MISSING
+# from it silently understates the number the thesis is argued from, and
+# a code IN it with no golden is a rule nobody can show firing. The Rust
+# bootstrap pinned the set (`measure::gate`'s shape: "adding a diagnostic
+# turns it red until somebody writes the code down"); the port did not
+# bring it, and measured the evening this was written, three of the
+# fourteen — `declaration_in_arm`, `declared_twice`, `ufcs_on_mutable` —
+# had no case under `check/` at all, only their own module's unit test.
+# So: every code the list names is annotated by at least one case this
+# suite already reads. The list is read from the source text rather than
+# imported, because a `use` cannot climb out of `tests/harness/`
+# (`module_path_climbs`), and a copy of the list here would be the second
+# hand-maintained list the audit warns about.
+constant THESIS_LIST: str
+    "selfhost/diag.hero"
+
+function every_thesis_rule_has_a_witness(@r: report.Report, witnessed: {str: bool})
+    text = read_file(THESIS_LIST)
+
+    if text.is_err()
+        report.keep_failure(
+            @r,
+            label: "annotations/thesis",
+            detail: "  cannot read " + THESIS_LIST + ", where the thesis rules are listed"
+        )
+        return
+    listed = thesis_codes(text.must())
+
+    if listed.len() == 0
+        report.keep_failure(
+            @r,
+            label: "annotations/thesis",
+            detail: "  " + THESIS_LIST + " has no `is_thesis_rule` list this suite can read — the list moved, and this reader has to follow it"
+        )
+        return
+
+    for code in listed
+        if witnessed[code].is_err()
+            report.keep_failure(
+                @r,
+                label: "annotations/thesis",
+                detail: "  `" + code + "` is a thesis rule (`check --permissive` drops it), and no case under " + DIRECTORIES.join(" or ") + " annotates it — Part 11's control arm counts a rule nobody can show firing"
+            )
+        else
+            report.keep_pass(@r)
+
+# The quoted codes between `function is_thesis_rule` and the loop that
+# reads them, in the order written. Anything else on those lines is not a
+# code: the list is one string per line, and that is the shape this reads.
+function thesis_codes(diag_source: str) -> [str]
+    out: [str] @ []
+    inside: bool @ false
+
+    for row in strings.lines(diag_source)
+        if strings.starts_with(text: row, prefix: "function is_thesis_rule")
+            inside @ true
+            continue
+
+        if inside && strings.contains(text: row, needle: "for one in codes")
+            return out
+        trimmed = strings.trimmed(row)
+
+        if inside && trimmed.len() >= 2 && trimmed[0] == 34 && trimmed[trimmed.len() - 1] == 34
+            out @ out.push(trimmed.slice(from: 1, to: trimmed.len() - 1))
+
+    return out
 
 # Every directory whose cases carry no `.expected`: `fixedbugs/` flat,
 # plus each subdirectory of `surface-fixtures/`. Discovered rather than
@@ -492,3 +569,36 @@ test "a case whose annotation disagrees with its diagnostic is caught"
     assert claimed != reported
     same = sorted(reported_by("x.hero:1:1: error[unused_binding]: ...\n"))
     assert claimed == same
+
+test "the thesis list is read from the source, one quoted code per line, and stops at its loop"
+    text = "# prose\nfunction is_thesis_rule(d: Diagnostic) -> bool\n    codes = [\n        \"unused_binding\"\n        \"declared_twice\"\n    ]\n\n    for one in codes\n        if d.code == one\n            return true\n    \"not_a_code\"\n"
+    got = thesis_codes(text)
+    assert got.len() == 2
+    assert got[0] == "unused_binding"
+    assert got[1] == "declared_twice"
+    assert thesis_codes("function other()\n    return 1\n").len() == 0
+
+test "a thesis rule with no witness is one failure, and the real list is found"
+    real = read_file("selfhost/diag.hero")
+    assert !real.is_err()
+    listed = thesis_codes(real.must())
+    assert listed.len() >= 14
+    all_seen: {str: bool} @ {}
+
+    for code in listed
+        all_seen[code] @ true
+
+    green: report.Report @ report.empty()
+    every_thesis_rule_has_a_witness(@green, witnessed: all_seen)
+    assert green.failed == 0
+    assert green.passed == listed.len()
+    one_short: {str: bool} @ all_seen
+    one_short @ {}
+
+    for code in listed
+        if code != "declared_twice"
+            one_short[code] @ true
+
+    red: report.Report @ report.empty()
+    every_thesis_rule_has_a_witness(@red, witnessed: one_short)
+    assert red.failed == 1

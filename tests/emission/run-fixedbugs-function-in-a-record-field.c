@@ -29,6 +29,8 @@ _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
+_Static_assert(HERO_RET_INT(HERO_OS_NOT_TEXT), "heroes-ffi-return HERO_OS_NOT_TEXT i64");
+_Static_assert(__builtin_constant_p(HERO_OS_NOT_TEXT), "heroes-ffi-const HERO_OS_NOT_TEXT");
 _Static_assert(HERO_RET_STR(hero_file_read(0, 0)), "heroes-ffi-return hero_file_read str");
 _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
@@ -39,25 +41,25 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 43 "fixedbugsfunctioninarecordfield.c"
+#line 45 "fixedbugsfunctioninarecordfield.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
-#line 111 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
 #line 112 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
+#line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
-#line 114 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 115 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 116 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 122 "<heroes library>"
+#line 123 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 61 "fixedbugsfunctioninarecordfield.c"
+#line 63 "fixedbugsfunctioninarecordfield.c"
 #pragma clang diagnostic pop
 
 HERO_STR_STATIC(hero_str_6be6e610, "double");
@@ -122,7 +124,7 @@ void h_fixedbugsfunctioninarecordfield_main(void);
 
 #line 29 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
 int64_t h_fixedbugsfunctioninarecordfield_double(int64_t h0_n) {
-#line 126 "fixedbugsfunctioninarecordfield.c"
+#line 128 "fixedbugsfunctioninarecordfield.c"
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -136,12 +138,12 @@ bb0:
     if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 30 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
     return t3;
-#line 140 "fixedbugsfunctioninarecordfield.c"
+#line 142 "fixedbugsfunctioninarecordfield.c"
 }
 
 #line 32 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
 int64_t h_fixedbugsfunctioninarecordfield_negate(int64_t h0_n) {
-#line 145 "fixedbugsfunctioninarecordfield.c"
+#line 147 "fixedbugsfunctioninarecordfield.c"
     int64_t t1;
     int64_t t2;
     goto bb0;
@@ -152,12 +154,12 @@ bb0:
     if (__builtin_sub_overflow(INT64_C(0), t1, &t2)) hero_panic_overflow();
 #line 33 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
     return t2;
-#line 156 "fixedbugsfunctioninarecordfield.c"
+#line 158 "fixedbugsfunctioninarecordfield.c"
 }
 
 #line 46 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
 void h_fixedbugsfunctioninarecordfield_main(void) {
-#line 161 "fixedbugsfunctioninarecordfield.c"
+#line 163 "fixedbugsfunctioninarecordfield.c"
     h_fixedbugsfunctioninarecordfield_Holder h0_h = {0};
     h_fixedbugsfunctioninarecordfield_Holder h1_k = {0};
     h_fixedbugsfunctioninarecordfield_Step h2_s;
@@ -209,7 +211,7 @@ bb0:
     t1 = h_fixedbugsfunctioninarecordfield_double;
 #line 47 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
     t2 = HERO_STR_LIT(hero_str_6be6e610);
-#line 213 "fixedbugsfunctioninarecordfield.c"
+#line 215 "fixedbugsfunctioninarecordfield.c"
     hero_str_incref(t2);
 #line 47 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
     t3 = (h_fixedbugsfunctioninarecordfield_Holder){.f_f = t1, .f_label = t2};
@@ -217,15 +219,15 @@ bb0:
     t33 = h6_own6;
 #line 47 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
     h6_own6 = t3;
-#line 221 "fixedbugsfunctioninarecordfield.c"
+#line 223 "fixedbugsfunctioninarecordfield.c"
     h_fixedbugsfunctioninarecordfield_Holder_release(&t33);
 #line 47 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
     t34 = h0_h;
-#line 225 "fixedbugsfunctioninarecordfield.c"
+#line 227 "fixedbugsfunctioninarecordfield.c"
     h_fixedbugsfunctioninarecordfield_Holder_retain(&t3);
 #line 47 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
     h0_h = t3;
-#line 229 "fixedbugsfunctioninarecordfield.c"
+#line 231 "fixedbugsfunctioninarecordfield.c"
     h_fixedbugsfunctioninarecordfield_Holder_release(&t34);
 #line 48 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
     t4 = h0_h;
@@ -251,11 +253,11 @@ bb0:
     t10 = h0_h;
 #line 52 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
     t35 = h1_k;
-#line 255 "fixedbugsfunctioninarecordfield.c"
+#line 257 "fixedbugsfunctioninarecordfield.c"
     h_fixedbugsfunctioninarecordfield_Holder_retain(&t10);
 #line 52 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
     h1_k = t10;
-#line 259 "fixedbugsfunctioninarecordfield.c"
+#line 261 "fixedbugsfunctioninarecordfield.c"
     h_fixedbugsfunctioninarecordfield_Holder_release(&t35);
 #line 53 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
     t11 = h_fixedbugsfunctioninarecordfield_negate;
@@ -313,15 +315,15 @@ bb0:
 bb1:
 #line 46 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
     t36 = h0_h;
-#line 317 "fixedbugsfunctioninarecordfield.c"
+#line 319 "fixedbugsfunctioninarecordfield.c"
     h_fixedbugsfunctioninarecordfield_Holder_release(&t36);
 #line 46 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
     t37 = h1_k;
-#line 321 "fixedbugsfunctioninarecordfield.c"
+#line 323 "fixedbugsfunctioninarecordfield.c"
     h_fixedbugsfunctioninarecordfield_Holder_release(&t37);
 #line 46 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
     t38 = h6_own6;
-#line 325 "fixedbugsfunctioninarecordfield.c"
+#line 327 "fixedbugsfunctioninarecordfield.c"
     h_fixedbugsfunctioninarecordfield_Holder_release(&t38);
     return;
 bb2:
@@ -359,7 +361,7 @@ bb3:
     hero_print_end();
 #line 64 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
     goto bb1;
-#line 363 "fixedbugsfunctioninarecordfield.c"
+#line 365 "fixedbugsfunctioninarecordfield.c"
 }
 HERO_TU_LOCAL void h_fixedbugsfunctioninarecordfield_Holder_retain(const h_fixedbugsfunctioninarecordfield_Holder *v) {
     hero_str_incref(v->f_label);

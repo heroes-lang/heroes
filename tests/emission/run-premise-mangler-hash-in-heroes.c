@@ -29,6 +29,8 @@ _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
+_Static_assert(HERO_RET_INT(HERO_OS_NOT_TEXT), "heroes-ffi-return HERO_OS_NOT_TEXT i64");
+_Static_assert(__builtin_constant_p(HERO_OS_NOT_TEXT), "heroes-ffi-const HERO_OS_NOT_TEXT");
 _Static_assert(HERO_RET_STR(hero_file_read(0, 0)), "heroes-ffi-return hero_file_read str");
 _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
@@ -39,25 +41,25 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 43 "premisemanglerhashinheroes.c"
+#line 45 "premisemanglerhashinheroes.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
-#line 111 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
 #line 112 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
+#line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
-#line 114 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 115 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 116 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 122 "<heroes library>"
+#line 123 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 61 "premisemanglerhashinheroes.c"
+#line 63 "premisemanglerhashinheroes.c"
 #pragma clang diagnostic pop
 
 HERO_STR_STATIC(hero_str_1afbd0d1, "map<i64, str>");
@@ -107,7 +109,7 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to);
 
 #line 24 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
 int64_t h_premisemanglerhashinheroes_typehash(HeroStr h0_rendered) {
-#line 111 "premisemanglerhashinheroes.c"
+#line 113 "premisemanglerhashinheroes.c"
     int64_t h1_h;
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
@@ -176,15 +178,15 @@ bb0:
     t36 = h6_own6;
 #line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     h6_own6 = t5;
-#line 180 "premisemanglerhashinheroes.c"
+#line 182 "premisemanglerhashinheroes.c"
     hero_array_decref(t36);
 #line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t37 = h2_xs0;
-#line 184 "premisemanglerhashinheroes.c"
+#line 186 "premisemanglerhashinheroes.c"
     hero_array_incref(t5);
 #line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     h2_xs0 = t5;
-#line 188 "premisemanglerhashinheroes.c"
+#line 190 "premisemanglerhashinheroes.c"
     hero_array_decref(t37);
 #line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t6 = INT64_C(0);
@@ -232,15 +234,15 @@ bb2:
     t38 = h7_own7;
 #line 28 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     h7_own7 = t20;
-#line 236 "premisemanglerhashinheroes.c"
+#line 238 "premisemanglerhashinheroes.c"
     h_0opt_e201354_release(&t38);
 #line 28 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t39 = h5_f0;
-#line 240 "premisemanglerhashinheroes.c"
+#line 242 "premisemanglerhashinheroes.c"
     h_0opt_e201354_retain(&t20);
 #line 28 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     h5_f0 = t20;
-#line 244 "premisemanglerhashinheroes.c"
+#line 246 "premisemanglerhashinheroes.c"
     h_0opt_e201354_release(&t39);
 #line 28 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t21 = h5_f0;
@@ -270,19 +272,19 @@ bb4:
     t35 = h1_h;
 #line 30 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t40 = h2_xs0;
-#line 274 "premisemanglerhashinheroes.c"
+#line 276 "premisemanglerhashinheroes.c"
     hero_array_decref(t40);
 #line 30 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t41 = h5_f0;
-#line 278 "premisemanglerhashinheroes.c"
+#line 280 "premisemanglerhashinheroes.c"
     h_0opt_e201354_release(&t41);
 #line 30 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t42 = h6_own6;
-#line 282 "premisemanglerhashinheroes.c"
+#line 284 "premisemanglerhashinheroes.c"
     hero_array_decref(t42);
 #line 30 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t43 = h7_own7;
-#line 286 "premisemanglerhashinheroes.c"
+#line 288 "premisemanglerhashinheroes.c"
     h_0opt_e201354_release(&t43);
     return t35;
 bb5:
@@ -310,14 +312,14 @@ bb6:
     t25 = h5_f0;
 #line 28 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t26 = t25.as.err;
-#line 314 "premisemanglerhashinheroes.c"
+#line 316 "premisemanglerhashinheroes.c"
     hero_panic_must(t26);
     hero_unreachable();
 }
 
 #line 32 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
 void h_premisemanglerhashinheroes_main(void) {
-#line 321 "premisemanglerhashinheroes.c"
+#line 323 "premisemanglerhashinheroes.c"
     HeroStr t1 = {0};
     int64_t t2;
     HeroStr t3 = {0};
@@ -362,12 +364,12 @@ bb0:
     hero_print_end();
 #line 39 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     return;
-#line 366 "premisemanglerhashinheroes.c"
+#line 368 "premisemanglerhashinheroes.c"
 }
 
 #line 26 "<heroes library>"
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
-#line 371 "premisemanglerhashinheroes.c"
+#line 373 "premisemanglerhashinheroes.c"
     HeroArrayHeader * h2_out = {0};
     int64_t h3_i;
     HeroArrayHeader * h4_own4 = {0};
@@ -393,15 +395,15 @@ bb0:
     t13 = h4_own4;
 #line 27 "<heroes library>"
     h4_own4 = t1;
-#line 397 "premisemanglerhashinheroes.c"
+#line 399 "premisemanglerhashinheroes.c"
     hero_array_decref(t13);
 #line 27 "<heroes library>"
     t14 = h2_out;
-#line 401 "premisemanglerhashinheroes.c"
+#line 403 "premisemanglerhashinheroes.c"
     hero_array_incref(t1);
 #line 27 "<heroes library>"
     h2_out = t1;
-#line 405 "premisemanglerhashinheroes.c"
+#line 407 "premisemanglerhashinheroes.c"
     hero_array_decref(t14);
 #line 28 "<heroes library>"
     t2 = h0_from;
@@ -439,15 +441,15 @@ bb2:
 bb3:
 #line 32 "<heroes library>"
     t12 = h2_out;
-#line 443 "premisemanglerhashinheroes.c"
+#line 445 "premisemanglerhashinheroes.c"
     hero_array_incref(t12);
 #line 32 "<heroes library>"
     t15 = h2_out;
-#line 447 "premisemanglerhashinheroes.c"
+#line 449 "premisemanglerhashinheroes.c"
     hero_array_decref(t15);
 #line 32 "<heroes library>"
     t16 = h4_own4;
-#line 451 "premisemanglerhashinheroes.c"
+#line 453 "premisemanglerhashinheroes.c"
     hero_array_decref(t16);
     return t12;
 }

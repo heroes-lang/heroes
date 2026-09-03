@@ -43,11 +43,10 @@
  * UTF-8 by definition (spec:51), so this is the one failure a caller cannot
  * discover by looking at the value it got back — and until panel 087 it was not
  * a failure at all but an abort inside `hero_str_from_bytes`, unreachable by any
- * Heroes branch. The Tier-2 wrapper currently collapses it into `read_failed`;
- * naming it as its own `e.code` is queued (panel 087, the two seats that compile
- * disagreed and it is the author's call). It is written here anyway, because the
- * runtime has to say which of two program states it is in whether or not
- * anybody is listening yet. */
+ * Heroes branch. The Tier-2 wrapper answers `not_text` for it since 2026-09-03 —
+ * the code `validated` already gives a cstr in the same state — after collapsing
+ * it into `read_failed` for two weeks (panel 087 left the naming to the author,
+ * who chose the robust form: a code that says what happened). */
 #define HERO_OS_NOT_TEXT 3
 
 /* The whole file, as an owned `str` (+1). `*status` says whether it worked; on

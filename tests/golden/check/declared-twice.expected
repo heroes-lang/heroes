@@ -1,0 +1,1 @@
+tests/golden/check/declared-twice.hero:12:10: error[declared_twice]: `area` is already declared at line 9 — one file is one module, and a name means one thing in it
