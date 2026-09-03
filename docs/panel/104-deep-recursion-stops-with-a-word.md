@@ -160,3 +160,10 @@ where an exception mechanism cannot name the frame.
 
 **What the yes does not settle**: the two predictions, scored at the milestone's
 close; the threads hole, which is recorded and owned by M-isolated-threads.
+
+## Predictions scored at M-robustness-guards close (2026-09-03)
+
+| judge | prediction | result |
+|---|---|---|
+| compiler-engineer | 0 files under `selfhost/emit/` in the landing commit; `wc -l runtime/parts/stack.c` ≤ 200; the ABI moves only for step 5 (18 → 19, never 20); the `-O0` deep-recursion golden prints `panic: stack exhausted in` at exit 134 on the macOS and Linux CI legs | **Three of four right.** `4848d0f` touches 0 files under `selfhost/emit/`. `wc -l` is **316** — the 156 "essential lines" the seat counted plus the comments that carry each measured reason, which is what §11 asks of a runtime part; the number was a count of the wrong thing, not a wrong count. The ABI went 18 → 19 once, at step 5, and never to 20. The deep golden prints the line at exit 134 on the Mac and in the Linux image at `-O0` (and at `-O2`, and at ten million); the CI legs run at the push. |
+| ffi-pragmatist | an SDL3 program that recurses to death prints the panic line and exits 134, no shim | **Not checkable here** — the first SDL3 program in `examples/`. Stands. |

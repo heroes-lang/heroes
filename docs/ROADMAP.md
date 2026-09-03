@@ -58,16 +58,16 @@ M-separate-compilation already did.
 
 | | |
 |---|---|
-| **Current milestone** | **M-robustness-guards** — **OPEN 2026-09-03**: the guards that shut the holes §1.12 named — `@` on an immutable, the stack, the C pointer verdict, the harness scratch; six steps, two sittings, the step list is the six items naming it in `docs/work/SCHEDULED.md` |
-| **Last closed** | **M-documentation-site**, 2026-09-02, tag `m-documentation-site` ([030](journal/030-documentation-site.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
-| Milestones closed | 31 of 41 · 31 tags |
-| The compiler | **50,100 lines** of Heroes in **170** modules across **10 directories** and 37 flat files · the seed **803,134** lines of generated C |
-| The spec | **3685** tokens of a hard 4096 · headroom **411** · runtime ABI **18** |
-| Records | sittings **101** · journals 31 · measurements 13 · examples **35** · defects 5 · the site **46** pages, 13 doc chapters per edition |
-| Waiting on the author | **0 decisions** · **16** in `SCHEDULED.md` · 289 in `LEARN.md` (never a gate) · an **outstanding veto** of the rule that stands (`docs/panel/101` R3) · the **heap-use-after-free** the spec forbids is step 1 of the open milestone, with nine measured shapes beside it |
+| **Current milestone** | **M-isolated-threads** — **OPEN 2026-09-03**, the chain's next row at M-robustness-guards' close: Part 7.13 concurrency, per-thread heaps, copying at the boundaries, no scheduler — and it owns the one hole panel 104 left, a C library's own thread overflowing its stack |
+| **Last closed** | **M-robustness-guards**, 2026-09-03, tag `m-robustness-guards` ([031](journal/031-robustness-guards.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
+| Milestones closed | 32 of 41 · 32 tags |
+| The compiler | **51,693 lines** of Heroes in **178** modules across **10 directories** and 37 flat files · the seed **840,151** lines of generated C |
+| The spec | **3718** tokens of a hard 4096 · headroom **378** · runtime ABI **19** |
+| Records | sittings **103** · journals 32 · measurements 13 · examples **35** · defects 5 · the site **46** pages (built 2026-09-03), 13 doc chapters per edition |
+| Waiting on the author | **0 decisions** · **10** in `SCHEDULED.md` · 297 in `LEARN.md` (never a gate) · an **outstanding veto** of the rule that stands (`docs/panel/101` R3) · the push of this close, which publishes the site's one-hole paragraph |
 
-Every number re-measured 2026-09-03. **This section held three stale tables from
-three closes until that day** — 64 lines against a ceiling of 15, caught here.
+Every number re-measured 2026-09-03 at the close. **This section held three
+stale tables until that day** — 64 lines against a ceiling of 15, caught here.
 
 ---
 
@@ -167,8 +167,8 @@ and why one overtook another are under the table, in § Who scheduled what.
 | 29 | **M-selfhost-nesting** | done 2026-09-02 | `m-selfhost-nesting` | [028](journal/028-selfhost-nesting.md) | the compiler's own modules move into ten directories |
 | 30 | **M-corpus-coverage** | done 2026-09-02 | `m-corpus-coverage` | [029](journal/029-corpus-coverage.md) | every language form has a program that runs it |
 | 31 | **M-documentation-site** | done 2026-09-02 | `m-documentation-site` | [030](journal/030-documentation-site.md) | the site, anchored to programs that run |
-| 32 | **M-robustness-guards** | **OPEN** 2026-09-03 | — | — | the guards that shut the holes §1.12 named: `@` on an immutable, the stack, the C pointer verdict, the harness scratch · §1.12 |
-| 33 | **M-isolated-threads** | scheduled | — | — | Part 7.13 concurrency: per-thread heaps, copying at the boundaries, no scheduler |
+| 32 | **M-robustness-guards** | done 2026-09-03 | `m-robustness-guards` | [031](journal/031-robustness-guards.md) | the guards that shut the holes §1.12 named: `@` on an immutable, the stack, the C pointer verdict, the harness scratch · §1.12 |
+| 33 | **M-isolated-threads** | **OPEN** 2026-09-03 | — | — | Part 7.13 concurrency: per-thread heaps, copying at the boundaries, no scheduler |
 | 34 | **M-package-manager** | scheduled | — | — | `heroes add`/`heroes fetch`; bindings instead of a standard library |
 | 35 | **M-qbe-backend** | scheduled | — | — | Part 7.14 — the proof that the IR is not C in disguise |
 | 36 | **M-lsp-server** | scheduled | — | — | `heroes lsp` |
@@ -473,44 +473,28 @@ code block comes from `examples/`, and publishing is a hard stop.
 
 ### M-robustness-guards — the guards that shut the holes
 
-**OPEN 2026-09-03** (author instruction, § Who scheduled what). design.md §1.12
-makes not crashing and not corrupting memory a **goal** of the language, and
-CLAUDE.md §12 gives it the tie-break over every other criterion in the contract.
-On 2026-09-03 a `/decide` sitting measured four places where the promise did not
-hold, and this milestone is those four places shut — in their complete form, not
-their cheapest, by the author's instruction of the same day:
+**Done 2026-09-03**, tag `m-robustness-guards`; the record is
+[journal 031](journal/031-robustness-guards.md). What a later milestone has to
+honour:
 
-1. **`@` on an immutable binding** is accepted and corrupts memory: seven of eight
-   measured shapes pass `heroes check` (field exit 134, index exit 138, nested
-   record 134; a `=` local, a `for` variable and a `match` payload mutated in
-   silence). Found while opening the milestone: an `@` argument that is not a
-   place at all (`add(@make(), "x")`) is accepted too, and the **legal**
-   `add(@bs[0], "y")` on a cell is exit 138 because the emitted call passes the
-   address of the whole array where a `Bag *` is expected — the corpus holds 150
-   `@x.field` arguments and zero `@x[i]`, which is why nobody saw it. One rule in
-   the resolver, the non-place refused, the index path lowered as
-   read-element / call / write-back through the indexed store that already
-   exists, nine golden cases.
-2. **`.fixed` cannot see a module diagnostic**, and `needs_qualifying`'s
-   `certain` fix reproduces itself (`window.window.destroy()`) on the FFI's most
-   natural spelling. Both halves: the tag drops to `guess`, and `.fixed` learns
-   the multi-file fixtures.
-3. **The FFI pointer verdict differs by host clang**, and a `size_t *`
-   out-parameter declared `i32` is accepted with a warning. A full sitting, strict
-   direction: `-Werror=incompatible-pointer-types` on every platform and never a
-   `-Wno-` flag; the emitter passes `(void *)&x` for a `ptr` out-parameter; the
-   compiler learns the header's parameter types and checks a numeric
-   out-parameter's pointee by width and sign. It takes panel 096's Q3 and the
-   arity case with it.
-4. **Deep recursion is exit 139 without a word**: a guard-page handler on the
-   abort path every other runtime failure uses, exit 134, naming the Heroes
-   function through symbolisation — soundness lane first.
-
-Plus the harness scratch two runs could share (pid-suffixed, removed at exit, the
-blessing validating a trace before writing it) and the diagnostic panel 099 R5
-owed. **Every landing is measured on the Mac, the Linux image and the Windows box
-before its commit**, and in both sittings the historian's seat outweighs the
-warden's token count, by author instruction. The record is journal 031 at close.
+- **Robust over cheap, on every platform, and never a `-Wno-` flag** (author
+  instruction 2026-09-03, four sentences, § Who scheduled what). A landing is
+  measured on the Mac, the Linux image and the Windows box BEFORE its commit;
+  a flag that hides what clang saw is not one of the options a sitting may choose.
+- **The clang floor is 18** (`selfhost/cli/clang_floor.hero`; panel 103, author
+  leave): the CI's Ubuntu leg, and the oldest clang whose `-ast-dump=json` shape
+  the pointee check was measured on. Raising it owes a measurement of what the
+  next-oldest CI leg builds with; lowering it promises a dump shape nobody read.
+- **`HERO_RUNTIME_ABI` is 19** and the bump is a two-phase edit — emitter, then
+  header, then the seed regenerated in the same commit (`seed/README.md`).
+- **The stack guard is process-wide and names the function on POSIX only**
+  (`runtime/parts/stack.c`): a C library's own thread that overflows is the hole
+  M-isolated-threads owns, and Windows names the failure and not the function
+  until dbghelp and a PDB are measured on the box.
+- **Compiling a leaf below a nested program's root re-bases its `use` paths** —
+  a stated rule with a fixture (`tests/golden/surface-fixtures/nested/`), not a
+  defect; the historian's standing prediction on it (Zig #13970's shape) is
+  scored the day a defect of that shape is filed.
 
 ### M-isolated-threads — concurrency
 
@@ -866,7 +850,7 @@ So a number met in the record resolves here, and only here.
 | `M-guide-book` | M17 | — | the guide |
 | `M-argv-execution` | — | — | the compiler runs programs by argument list, and the shell stops being the boundary |
 | `M-publication-gate` | M18 | — | the last gate before anything goes outward |
-| `M-robustness-guards` | — | — | the guards that shut the holes §1.12 named |
+| `M-robustness-guards` | — | `m-robustness-guards` | the guards that shut the holes §1.12 named. **Done 2026-09-03**, the day it opened: six steps, two sittings (103, 104), every landing measured on the Mac, the Linux image and the Windows box before its commit |
 
 **`M8` has no row, because it meant three different things.** It was an umbrella
 that predates the a/b/c/e/p split and no heading has carried it since. In the
