@@ -31,9 +31,16 @@ use checker
 use check/state
 use mutate/ops
 
-# One program of the corpus.
+# One program of the corpus: the file as it is on disk, and the name it is
+# COMPILED under. The two differ for a module below a nested program's root
+# — `examples/shapes/geom/area.hero` is compiled as `examples/shapes/area.hero`
+# with its own text, so that its `use` paths are read from the root, which is
+# how the compiler reads them when the program is compiled (panel 099 R1) —
+# and `name` stays the real path, because a survivor is reported where the
+# author can open it. `cli/mutate.hero::checked_name` decides the stand-in.
 record Program
     name: str
+    checked_as: str
     text: str
 
 variant Fate
@@ -105,6 +112,14 @@ function rate(killed: i64, mutants: i64, excluded: i64) -> i64
 # every module the file names. Measured on a bare source, a module file scores
 # 100% caught on one unrelated complaint about a `use` line nobody loaded — a
 # number that is high and means nothing.
+#
+# **AND FROM THE RIGHT DIRECTORY.** `name` is what `load_text` reads the `use`
+# paths from, so a caller hands it `Program.checked_as` and never the disk
+# path: a module below a nested program's root, checked under its own path,
+# is `unknown_module` for every path its root resolves — which is exactly
+# what `heroes check` on that leaf says, and R5's stated hazard — and the
+# whole corpus was refused for a day because of it (measurement 014,
+# M-corpus-depth step 1).
 function fate(name: str, text: str, library: str, permissive: bool) -> Fate
     s = modules.load_text(path: name, root_text: text, library: library)
     parsed = parse.parse_source(s)
@@ -164,13 +179,13 @@ function scored(sources: [Program], only: str, library: str) -> Run
         for one in sources
             for mutant in ops.apply(id: operator.id, name: one.name, text: one.text)
                 mutants @ mutants + 1
-                verdict = fate(name: one.name, text: mutant, library: library, permissive: false)
+                verdict = fate(name: one.checked_as, text: mutant, library: library, permissive: false)
 
                 match verdict
                     .excluded => excluded @ excluded + 1
                     .killed =>
                         strict @ strict + 1
-                        control = fate(name: one.name, text: mutant, library: library, permissive: true)
+                        control = fate(name: one.checked_as, text: mutant, library: library, permissive: true)
 
                         match control
                             .killed               => permissive @ permissive + 1

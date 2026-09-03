@@ -58,13 +58,13 @@ M-separate-compilation already did.
 
 | | |
 |---|---|
-| **Current milestone** | **M-isolated-threads** — **OPEN 2026-09-03**, the chain's next row at M-robustness-guards' close: Part 7.13 concurrency, per-thread heaps, copying at the boundaries, no scheduler — and it owns the one hole panel 104 left, a C library's own thread overflowing its stack |
+| **Current milestone** | **Two open, in two sessions** (author instruction 2026-09-03). **M-corpus-depth** — **OPEN 2026-09-03**, row 33: `heroes mutate` reads its corpus again (it refused `examples/` for a day), the gate on every CI leg, then nine programs for the rung between a program and the compiler. **M-isolated-threads** — **OPEN 2026-09-03**, row 34: Part 7.13 concurrency, per-thread heaps, copying at the boundaries, no scheduler — and the one hole panel 104 left, a C library's own thread overflowing its stack |
 | **Last closed** | **M-robustness-guards**, 2026-09-03, tag `m-robustness-guards` ([031](journal/031-robustness-guards.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
 | Milestones closed | 32 of 42 · 32 tags |
-| The compiler | **51,693 lines** of Heroes in **178** modules across **10 directories** and 37 flat files · the seed **840,151** lines of generated C |
+| The compiler | **51,788 lines** of Heroes in **178** modules across **10 directories** and 37 flat files · the seed **840,806** lines of generated C |
 | The spec | **3718** tokens of a hard 4096 · headroom **378** · runtime ABI **19** |
 | Records | sittings **103** · journals 32 · measurements **14** · examples **35** · defects 5 · the site **46** pages (built 2026-09-03), 13 doc chapters per edition |
-| Waiting on the author | **1 decision** (`heroes mutate` in CI — the tool has been unable to read `examples/` since 2026-09-02, found 2026-09-03) · **14** in `SCHEDULED.md` · 297 in `LEARN.md` (never a gate) · an **outstanding veto** of the rule that stands (`docs/panel/101` R3) · the push of this close, which publishes the site's one-hole paragraph |
+| Waiting on the author | **1 decision** (a discarded fallible value swallows its error: `_ = f()?` → `_ = f()` compiles, nine times in the corpus — measurement 014; `heroes mutate` in CI was asked and answered the same evening) · **13** in `SCHEDULED.md` · 297 in `LEARN.md` (never a gate) · an **outstanding veto** of the rule that stands (`docs/panel/101` R3) · the push of this close, which publishes the site's one-hole paragraph |
 
 Every number re-measured 2026-09-03 at the close. **This section held three
 stale tables until that day** — 64 lines against a ceiling of 15, caught here.
@@ -168,8 +168,8 @@ and why one overtook another are under the table, in § Who scheduled what.
 | 30 | **M-corpus-coverage** | done 2026-09-02 | `m-corpus-coverage` | [029](journal/029-corpus-coverage.md) | every language form has a program that runs it |
 | 31 | **M-documentation-site** | done 2026-09-02 | `m-documentation-site` | [030](journal/030-documentation-site.md) | the site, anchored to programs that run |
 | 32 | **M-robustness-guards** | done 2026-09-03 | `m-robustness-guards` | [031](journal/031-robustness-guards.md) | the guards that shut the holes §1.12 named: `@` on an immutable, the stack, the C pointer verdict, the harness scratch · §1.12 |
-| 33 | **M-isolated-threads** | **OPEN** 2026-09-03 | — | — | Part 7.13 concurrency: per-thread heaps, copying at the boundaries, no scheduler |
-| 34 | **M-corpus-depth** | scheduled | — | — | the rung between a program and the compiler: nine programs — oracle-checked, deep, FFI at program scale · **§1.1** |
+| 33 | **M-corpus-depth** | **OPEN** 2026-09-03 | — | — | the rung between a program and the compiler: `heroes mutate` reads its corpus again, then nine programs — oracle-checked, deep, FFI at program scale · **§1.1** |
+| 34 | **M-isolated-threads** | **OPEN** 2026-09-03 | — | — | Part 7.13 concurrency: per-thread heaps, copying at the boundaries, no scheduler |
 | 35 | **M-package-manager** | scheduled | — | — | `heroes add`/`heroes fetch`; bindings instead of a standard library |
 | 36 | **M-qbe-backend** | scheduled | — | — | Part 7.14 — the proof that the IR is not C in disguise |
 | 37 | **M-lsp-server** | scheduled | — | — | `heroes lsp` |
@@ -229,10 +229,17 @@ row number, because a reorder moves a number and never a name (CLAUDE.md §14).
   sulla possibilità di aggiungere ulteriori esempi anche alcuni più complessi per
   avere una rete più ampia, guarda anche cosa hanno fatto altri linguaggi"*, from a
   plan measured and approved the same day. The author placed it after
-  M-robustness-guards, which closed that afternoon, so it stands at 34 behind the
-  open M-isolated-threads. Its step 0 — the first `heroes mutate` score over the
-  35-program corpus since 2026-08-13, and the corpus leg timed alone — landed with
-  the scheduling, so the "before" exists before the first program does.
+  M-robustness-guards, which closed that afternoon, so it first stood at 34 behind
+  the open M-isolated-threads. Its step 0 — the first `heroes mutate` score over
+  the 35-program corpus since 2026-08-13, and the corpus leg timed alone — landed
+  with the scheduling, so the "before" exists before the first program does.
+  **Then step 0 found `heroes mutate` unable to read `examples/` at all**, refused
+  since 2026-09-02 (measurement 014), and the author moved the milestone to 33
+  and opened it the same evening — *"anticipare quei due passi subito, prima di
+  M-isolated-threads"*, with *"cancello su ogni ramo + punteggio pieno sui tag"*
+  for the CI question — so that the metric the thesis rests on is repaired
+  before anything else is measured against it. **Two milestones are open at
+  once**, in two sessions, and the table says so rather than hiding one.
 
 ---
 
@@ -519,8 +526,13 @@ and is logged as one (panel 030 R6).
 
 ### M-corpus-depth — the rung between a program and the compiler
 
-**Scheduled by author instruction 2026-09-03** (§ Who scheduled what), from a plan
-measured the same day. Form coverage of `examples/` reached zero unexercised at
+**OPEN 2026-09-03**, scheduled and then moved ahead of M-isolated-threads the same
+day by author instruction (§ Who scheduled what), from a plan measured that day.
+**Its first two steps are not programs**: `heroes mutate` learns to check a module
+below a nested program's root from that root (it refused the whole corpus for a
+day), and the net gains the gate every leg runs plus the full score on the tag
+run — because a corpus milestone measured by an instrument that cannot read the
+corpus would be measuring nothing. Form coverage of `examples/` reached zero unexercised at
 M-corpus-coverage (journal 029); what the corpus is thin in is **shape**, and it
 was measured over the 78 files: the six `extern` programs are 65–192 lines and
 single-module, none with a `variant`, a nested container, a generic or an

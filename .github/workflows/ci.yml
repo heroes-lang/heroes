@@ -492,6 +492,26 @@ jobs:
           HEROES_COMPILER: ./heroes-from-seed${{ matrix.exe }}
         run: ./heroes-from-seed${{ matrix.exe }} test tests/harness/main.hero
 
+      # THE MUTATION SCORE OVER THE CORPUS — metric 3 (design.md Part 11), the
+      # number the thesis rests on, printed into the log and never asserted:
+      # a per-operator rate is the measurement (panel 011) and it moves by
+      # design every time a program joins `examples/`. What IS asserted, on
+      # every push, is the row in `tests/harness/suite_surface.hero` that runs
+      # `mutate examples --operator typo-digit` and wants exit 0 — *the tool
+      # reads its corpus* — because on 2026-09-02 `examples/shapes/` landed two
+      # modules below a nested root, `mutate` checked them from their own
+      # directories, and the corpus was refused at exit 2 for a day with no
+      # instrument saying so (measurement 014, M-corpus-depth step 0).
+      # Tags and dispatch only, like the compiler's own tests above: 36
+      # per-directory runs took 680 s on the author's Mac the day this was
+      # written, one run over the whole directory is measured in that file,
+      # and a push should not pay it (author decision 2026-09-03: the gate on
+      # every leg, the score on the tag run).
+      - name: The mutation score over the corpus
+        if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
+        shell: bash
+        run: ./heroes-from-seed${{ matrix.exe }} mutate examples
+
       # THE SEED IS WHAT TODAY'S SOURCE EMITS — and until 2026-08-23 nothing
       # asked. `tests/harness/suite_determinism.hero:13` claimed this repository
       # "now has one that matters — `seed/heroes.c` is checked by `cmp` against

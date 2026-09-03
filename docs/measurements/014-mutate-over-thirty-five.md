@@ -145,7 +145,68 @@ run and is not the same command, so the two are not compared. **The "before" for
 M-corpus-depth is this pair**: the milestone's projection is +1:15 on it, and the
 close re-runs the same command twice.
 
-## What this measurement changes
+## Appended the same evening: step 1 landed, and one run reads the whole corpus
+
+The author moved M-corpus-depth ahead of M-isolated-threads and opened it
+(*"anticipare quei due passi subito"*); step 1 teaches `mutate` to compile a
+module below a nested program's root under a stand-in name beside that root's
+`main.hero` (`selfhost/cli/mutate.hero::checked_name`), so its `use` paths are
+read from the root exactly as the compiler reads them. With that compiler,
+`heroes mutate examples --survivors` over all **78** files, alone on the Mac:
+
+| operator | mutants | excluded | killed (check) | killed (--permissive) |
+|---|---|---|---|---|
+| swap-args | 1135 | 29 | 893 (81%) | 608 (55%) |
+| drop-case | 89 | 0 | 89 (100%) | 89 (100%) |
+| forget-at-decl | 388 | 0 | 382 (98%) | 382 (98%) |
+| mutate-undeclared | 438 | 73 | 365 (100%) | 365 (100%) |
+| typo-ident | 6232 | 36 | 6196 (100%) | 6196 (100%) |
+| typo-code | 34 | 0 | 0 (0%) | 0 (0%) |
+| wildcard-variant | 238 | 0 | 238 (100%) | 146 (61%) |
+| positional-named | 692 | 1 | 521 (75%) | 0 (0%) |
+| mix-int-float | 845 | 0 | 845 (100%) | 845 (100%) |
+| shadow | 508 | 0 | 490 (96%) | 0 (0%) |
+| drop-question | 84 | 0 | 75 (89%) | 75 (89%) |
+| typo-digit | 29 | 0 | 0 (0%) | 0 (0%) |
+| boolean-twin | 166 | 0 | 166 (100%) | 166 (100%) |
+| **total** | 10878 | 139 | 10260 (96%) | 8872 (83%) |
+
+**This is the corpus's number**, and the per-directory sum above was what it
+said it was: the six `shapes/` files add **167 mutants, 161 killed strict, 90
+permissive**, and every other operator row is the earlier row plus `shapes/`'s
+share (`swap-args` 1106 → 1135, `typo-ident` 6161 → 6232, `positional-named`
+657 → 692, `shadow` 495 → 508, `mix-int-float` 830 → 845, `forget-at-decl` 386 →
+388, `mutate-undeclared` 436 → 438; the six others unchanged).
+
+**Survivors, listed for the first time over this corpus: 479** — `swap-args`
+213, `positional-named` 170, `typo-code` 34, `typo-digit` 29, `shadow` 18,
+`drop-question` 9, `forget-at-decl` 6. By file, the most: `template/main.hero`
+38, `wrap/main.hero` 36, `assembler/program.hero` 34, `json/parse.hero` 27,
+`ini/main.hero` 24 — programs whose functions take two `str` or two `i64`
+parameters, which is where `swap-args` and `positional-named` live. The 29
+`typo-digit` survivors are all of the shape `10000` → `10001` and `0` → `1` in
+`assembler/` — constants a program defines and no test pins to a second source —
+which is the same thing measurement 005 said of them in a different corpus.
+
+**The 27 survivors outside the four expected operators were read, and they are
+two shapes.** The 18 `shadow` survivors are all a `_ = <call>` line duplicated —
+`_ = sqlite3_close(db)` twice, `_ = node.add_node(@u, …)` twice — which
+`spec:128-129` makes legal by design (`_` binds nothing and may repeat): a
+repeated discarded call is a program the type system cannot tell from the
+intended one, and the double `sqlite3_close` says what it costs at run time. The
+9 `drop-question` survivors are **one shape and a finding**: `_ = expect(line,
+2)?` → `_ = expect(line, 2)` compiles, because a discard accepts a `T?` like any
+value, so the one place a `?` can be forgotten without a type error is the
+discard. That is filed in `docs/work/DECIDE.md` with three shapes and a
+recommendation; the nine lines are its witnesses.
+
+**The prediction above is scored, and the honest verdict is "held by 0.74 s and
+for the wrong reason."** One run took **679.26 s** wall against the loop's 680: it
+did come in under, and the reason given — 36 compiler start-ups paid by the loop —
+is falsified, because that saving would have been visible and it is not (a
+start-up is milliseconds; the run also scored six files the loop could not). The
+cost is the mutants, not the invocations, and the 11-minute price on the tag run
+is what the DECIDE answer accepted.
 
 - `docs/work/SCHEDULED.md` gains M-corpus-depth **step 1**, the `mutate` root fix,
   ahead of every program — because every later score depends on it.
