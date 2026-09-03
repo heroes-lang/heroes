@@ -123,6 +123,91 @@ function mismatch_shape(@c: state.Checker, s: source.Source, decls: [ast.Decl], 
     b = state.show(c, s, decls, got)
     state.push_diagnostic(@c, value_errors.mismatch(expected: a, got: b, span: span))
 
+# THE CONTEXT BINDS WHAT THE ARGUMENTS LEFT (panel 105, ratified
+# 2026-09-03; the defect is 006, in docs/work/DONE.md). `wanted<A>(what: str) ->
+# A?` has no argument that mentions `A`; what does is the type the call's
+# position asks for — the annotation of the binding, the declared result a
+# `return` or an arm answers to, a non-generic callee's parameter — which
+# the checker already threads as `expected` to every literal, every empty
+# `[]` and every `fail(…)`. The same walk as `bind`, with one difference
+# that is the whole point: it FILLS and never REPORTS. A parameter an
+# argument already bound keeps that binding whatever the context says,
+# and a shape that does not fit says nothing here, because `compare` at
+# the call owns that message — a disagreeing annotation is one diagnostic,
+# not two (the engineer's condition 2). Nothing is bound THROUGH another
+# generic: a generic callee's arguments are synthesised, not checked, so
+# the nested case Go declined (`f(f(f(0)))`) never reaches this walk.
+function bind_missing(c: state.Checker, @bindings: [i64?], param: i64, got: i64)
+    if table.poisoned(c.out.types, got)
+        return
+
+    match table.get(c.out.types, param)
+        .generic g =>
+            if g.at < bindings.len() && bindings[g.at].is_err()
+                bindings[g.at] @ ok(got)
+        .array wanted =>
+            match table.get(c.out.types, got)
+                .array actual => bind_missing(c, @bindings, param: wanted.element, got: actual.element)
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return
+                .fixed | .map | .fallible | .function_ty | .named => return
+                .case_ty | .failure | .generic | .error => return
+        .fallible wanted =>
+            match table.get(c.out.types, got)
+                .fallible actual => bind_missing(c, @bindings, param: wanted.payload, got: actual.payload)
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return
+                .fixed | .map | .array | .function_ty | .named => return
+                .case_ty | .failure | .generic | .error => return
+        .map wanted =>
+            match table.get(c.out.types, got)
+                .map actual =>
+                    bind_missing(c, @bindings, param: wanted.key, got: actual.key)
+                    bind_missing(c, @bindings, param: wanted.value, got: actual.value)
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return
+                .fixed | .array | .fallible | .function_ty | .named       => return
+                .case_ty | .failure | .generic | .error                   => return
+        .function_ty wanted =>
+            match table.get(c.out.types, got)
+                .function_ty actual =>
+                    ws = table.params_of(c.out.types, wanted.params)
+                    gs = table.params_of(c.out.types, actual.params)
+
+                    if ws.len() == gs.len()
+                        i: i64 @ 0
+
+                        while i < ws.len()
+                            bind_missing(c, @bindings, param: ws[i], got: gs[i])
+                            i @ i + 1
+
+                        bind_missing(c, @bindings, param: wanted.result, got: actual.result)
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return
+                .fixed | .map | .fallible | .array | .named               => return
+                .case_ty | .failure | .generic | .error                   => return
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return
+        .fixed | .named | .case_ty | .failure | .error            => return
+
+# Does this type mention type parameter number `at` anywhere inside it?
+# Asked of a declaration's signature (check/decls.hero): a parameter that
+# appears in no parameter's type AND not in the result can never be bound
+# — not by an argument, not by the context — so every call would be
+# refused, and the declaration is the one line that can be fixed.
+function mentions(c: state.Checker, ty: i64, at: i64) -> bool
+    match table.get(c.out.types, ty)
+        .generic g  => return g.at == at
+        .array a    => return mentions(c, ty: a.element, at: at)
+        .fallible o => return mentions(c, ty: o.payload, at: at)
+        .fixed x    => return mentions(c, ty: x.element, at: at)
+        .map m      => return mentions(c, ty: m.key, at: at) || mentions(c, ty: m.value, at: at)
+        .function_ty f =>
+            for p in table.params_of(c.out.types, f.params)
+                if mentions(c, ty: p, at: at)
+                    return true
+
+            return mentions(c, ty: f.result, at: at)
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return false
+        .named | .case_ty | .failure | .error                     => return false
+
+    return false
+
 # Replace every generic with what the call bound it to.
 function substitute(@c: state.Checker, ty: i64, bindings: [i64?]) -> i64
     if bindings.len() == 0
@@ -206,6 +291,54 @@ test "binding descends the shapes: array, map, and a function type"
     out_param = table.intern(@c.out.types, .array(element: b_param))
     rebuilt = substitute(@c, out_param, bindings)
     assert table.get(c.out.types, rebuilt) == .array(element: str_id)
+
+test "the context fills only what the arguments left, and never reports"
+    r: resolved.Resolved @ resolved.new_resolved()
+    c: state.Checker @ state.new_checker(out_of: r, expr_count: 0)
+    a_param = table.intern(@c.out.types, .generic(at: 0))
+    b_param = table.intern(@c.out.types, .generic(at: 1))
+    int_id = table.int_ty_id(c.out.types)
+    str_id = table.str_ty(c.out.types)
+
+    # wanted<A>(what: str) -> A? meeting an expected i64?: A := i64.
+    result = table.intern(@c.out.types, .fallible(payload: a_param))
+    asked = table.intern(@c.out.types, .fallible(payload: int_id))
+    bindings: [i64?] @ [fail("unbound", "A")]
+    bind_missing(c, @bindings, param: result, got: asked)
+    assert bindings[0].must() == int_id
+
+    # A parameter the arguments bound keeps its binding whatever the
+    # context says, and the disagreement is reported by nobody HERE.
+    bound: [i64?] @ [ok(str_id)]
+    bind_missing(c, @bound, param: result, got: asked)
+    assert bound[0].must() == str_id
+    assert c.out.diagnostics.len() == 0
+
+    # A shape that does not fit fills nothing: pick<A, B>(x: A) -> B? met
+    # by an expected plain i64 leaves B unbound, and says nothing.
+    two: [i64?] @ [ok(int_id), fail("unbound", "B")]
+    other = table.intern(@c.out.types, .fallible(payload: b_param))
+    bind_missing(c, @two, param: other, got: int_id)
+    assert two[1].is_err()
+    assert c.out.diagnostics.len() == 0
+
+    # And the walk descends: [B] against [str] binds B := str.
+    listed = table.intern(@c.out.types, .array(element: b_param))
+    strs = table.intern(@c.out.types, .array(element: str_id))
+    bind_missing(c, @two, param: listed, got: strs)
+    assert two[1].must() == str_id
+
+test "a signature either mentions a type parameter or it does not"
+    r: resolved.Resolved @ resolved.new_resolved()
+    c: state.Checker @ state.new_checker(out_of: r, expr_count: 0)
+    a_param = table.intern(@c.out.types, .generic(at: 0))
+    str_id = table.str_ty(c.out.types)
+    in_result = table.intern(@c.out.types, .fallible(payload: a_param))
+    assert mentions(c, ty: in_result, at: 0)
+    assert !mentions(c, ty: in_result, at: 1)
+    assert !mentions(c, ty: str_id, at: 0)
+    nested = table.intern(@c.out.types, .map(key: str_id, value: table.intern(@c.out.types, .array(element: a_param))))
+    assert mentions(c, ty: nested, at: 0)
 
 test "an unbound generic substitutes to the silent error id"
     r: resolved.Resolved @ resolved.new_resolved()

@@ -250,6 +250,7 @@ test "the fixpoint: a unit payload silences its own feeding load"
         steps: [],
         instance: [],
         call_instances: {},
+        instantiated_at: token.Span(start: 0, end: 0),
         span: span
     )
     read = emitted_reads(f, c)

@@ -1,0 +1,1 @@
+tests/golden/check/type-parameter-nowhere.hero:7:17: error[cannot_infer]: `A` of `unused` appears in no parameter and not in the result, so no call could ever say what it is — use it in the signature, or remove it

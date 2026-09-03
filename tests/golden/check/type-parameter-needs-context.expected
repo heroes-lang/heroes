@@ -1,0 +1,5 @@
+tests/golden/check/type-parameter-needs-context.hero:13:9: error[cannot_infer]: nothing here says what `A` of `wanted` is: it appears only in the result `A?`, so it takes the type the context asks for, and this position asks for none
+tests/golden/check/type-parameter-needs-context.hero:15:11: error[cannot_infer]: nothing here says what `A` of `wanted` is: it appears only in the result `A?`, so it takes the type the context asks for, and this position asks for none
+tests/golden/check/type-parameter-needs-context.hero:16:11: error[cannot_infer]: nothing here says what `A` of `wanted` is: it appears only in the result `A?`, so it takes the type the context asks for, and this position asks for none
+tests/golden/check/type-parameter-needs-context.hero:17:9: error[cannot_infer]: nothing here says what `A` of `wanted` is: it appears only in the result `A?`, so it takes the type the context asks for, and this position asks for none
+tests/golden/check/type-parameter-needs-context.hero:18:14: error[type_mismatch]: expected `i64`, found `A?`

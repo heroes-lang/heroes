@@ -181,12 +181,12 @@ function synth(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
         .call cl => return state.record_expr(
             @c,
             at: id,
-            ty: dispatch_call(@c, a, r, s, decls, at: id, callee: cl.callee, given: cl.args)
+            ty: dispatch_call(@c, a, r, s, decls, at: id, callee: cl.callee, given: cl.args, expected: fail("absent", "no expectation"))
         )
         .method m => return state.record_expr(
             @c,
             at: id,
-            ty: method(@c, a, r, s, decls, at: id, receiver: m.receiver, called: m.name, given: m.args)
+            ty: method(@c, a, r, s, decls, at: id, receiver: m.receiver, called: m.name, given: m.args, expected: fail("absent", "no expectation"))
         )
         # Which variant a case belongs to comes from context (§4.5's ⇐
         # mode), so there is nothing to synthesise from.
@@ -488,7 +488,14 @@ function check(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
             if !built.is_err()
                 _ = state.record_expr(@c, at: id, ty: built.must())
                 return
-            got = synth(@c, a, r, s, decls, id)
+
+            # Not ok/fail: an ordinary call, checked WITH its expectation,
+            # so a type parameter the arguments leave unbound can take the
+            # type this position asks for (panel 105). This line was
+            # `synth`, which drops `expected` — the whole of defect 006
+            # was that one fall.
+            got = dispatch_call(@c, a, r, s, decls, at: id, callee: cl.callee, given: cl.args, expected: ok(expected))
+            _ = state.record_expr(@c, at: id, ty: got)
             compare(@c, s, decls, expected: expected, got: got, span: span)
             return
         # An if or match in ⇐ position pushes the expectation into every
@@ -529,8 +536,29 @@ function check(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
                 state.push_diagnostic(@c, flow_errors.no_value("match", span))
             _ = state.record_expr(@c, at: id, ty: expected)
             return
+        # A UFCS call takes the same expectation as a call (panel 105, the
+        # engineer's first correction to the brief): `return "a".wanted()`
+        # and `return wanted(what: "a")` are one row of Part 5, and this
+        # arm fell through to `synth` while `.call` did not.
+
+        .method m =>
+            got = method(
+                @c,
+                a,
+                r,
+                s,
+                decls,
+                at: id,
+                receiver: m.receiver,
+                called: m.name,
+                given: m.args,
+                expected: ok(expected)
+            )
+            _ = state.record_expr(@c, at: id, ty: got)
+            compare(@c, s, decls, expected: expected, got: got, span: span)
+            return
         .int_lit | .char_lit | .float_lit | .str_lit | .bool_lit | .null_ptr => fall_through()
-        .name | .unary | .binary | .field | .index | .method | .hole         => fall_through()
+        .name | .unary | .binary | .field | .index | .hole                   => fall_through()
         .try_expr | .error                                                   => fall_through()
 
     got = synth(@c, a, r, s, decls, id)
@@ -1133,7 +1161,10 @@ function signature_of(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, decls
 
 # Four things arrive looking identical in the tree, and the callee's
 # RESOLUTION tells them apart — which is why the resolver runs first.
-function dispatch_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], at: i64, callee: i64, given: [ast.Arg]) -> i64
+# `expected` is the type the call's position asks for, or absent in a
+# synthesised position; it reaches `user_call`, where a type parameter no
+# argument bound takes it (panel 105).
+function dispatch_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], at: i64, callee: i64, given: [ast.Arg], expected: i64?) -> i64
     span = a.exprs[at].span
 
     callee_is_name = match a.exprs[callee].kind
@@ -1143,7 +1174,7 @@ function dispatch_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: s
         .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => false
 
     if callee_is_name
-        direct = named_call(@c, a, r, s, decls, callee: callee, given: given, span: span)
+        direct = named_call(@c, a, r, s, decls, callee: callee, given: given, span: span, expected: expected)
 
         if !direct.is_err()
             return direct.must()
@@ -1164,7 +1195,7 @@ function dispatch_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: s
     )
 
 # The named-callee half of the dispatch; fail = fall to the indirect path.
-function named_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], callee: i64, given: [ast.Arg], span: token.Span) -> i64?
+function named_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], callee: i64, given: [ast.Arg], span: token.Span, expected: i64?) -> i64?
     match r.uses[callee]
         .top t =>
             match decls[t.at].kind
@@ -1175,7 +1206,7 @@ function named_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sour
                     signature = signature_of(@c, a, r, decls, decl: t.at)
                     _ = state.record_expr(@c, at: callee, ty: signature)
                     return ok(
-                        user_call(@c, a, r, s, decls, decl: t.at, given: given, receiver: fail("absent", "no receiver"), span: span)
+                        user_call(@c, a, r, s, decls, decl: t.at, given: given, receiver: fail("absent", "no receiver"), span: span, expected: expected)
                     )
                 .record_decl => return ok(construct_record(@c, a, r, s, decls, decl: t.at, given: given, span: span))
                 .variant_decl =>
@@ -1278,7 +1309,7 @@ function indirect_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: s
 # x.f(y) — §4.11's algorithm, in §4.11's order: A FIELD FIRST, then a
 # free function. The field half needs the receiver's type, which is why
 # the resolver deliberately left this half unanswered (panel 015 D).
-function method(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], at: i64, receiver: i64, called: token.Span, given: [ast.Arg]) -> i64
+function method(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], at: i64, receiver: i64, called: token.Span, given: [ast.Arg], expected: i64?) -> i64
     span = a.exprs[at].span
 
     # geom.dist2(a, b) is a call with two arguments, not three: the check
@@ -1302,7 +1333,8 @@ function method(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.S
                         decl: t.at,
                         given: given,
                         receiver: fail("absent", "no receiver"),
-                        span: span
+                        span: span,
+                        expected: expected
                     )
                     .constant_decl | .variant_decl | .test_decl => return state.error_ty_of(c)
             # The resolver already said what is wrong with it.
@@ -1333,7 +1365,18 @@ function method(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.S
             if ufcs_hides_the_marker(decls, decl: t.at)
                 state.push_diagnostic(@c, data_errors.ufcs_on_mutable(name, called))
                 return state.error_ty_of(c)
-            return user_call(@c, a, r, s, decls, decl: t.at, given: given, receiver: ok(receiver_ty), span: span)
+            return user_call(
+                @c,
+                a,
+                r,
+                s,
+                decls,
+                decl: t.at,
+                given: given,
+                receiver: ok(receiver_ty),
+                span: span,
+                expected: expected
+            )
         .builtin b => return builtin_dispatch(
             @c,
             a,
@@ -1379,7 +1422,7 @@ function header_line(s: source.Source, from: i64) -> str
 
     return s.text.slice(from: from, to: end)
 
-function user_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], decl: i64, given: [ast.Arg], receiver: i64?, span: token.Span) -> i64
+function user_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], decl: i64, given: [ast.Arg], receiver: i64?, span: token.Span, expected: i64?) -> i64
     match decls[decl].kind
         .function_decl fd =>
             name = source.span_text(s, decls[decl].name)
@@ -1399,6 +1442,7 @@ function user_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
                 return state.error_ty_of(c)
             generics = fd.value.generics.len()
             bindings: [i64?] @ []
+            tainted: bool @ false
             g: i64 @ 0
 
             while g < generics
@@ -1498,8 +1542,60 @@ function user_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
                     check(@c, a, r, s, decls, id: arg.value, expected: param)
                 else
                     got = synth(@c, a, r, s, decls, arg.value)
+
+                    # A poisoned argument is a mistake already reported, and
+                    # whatever it left unbound is that mistake's shadow, not a
+                    # second one (§4.5).
+                    if table.poisoned(c.out.types, got)
+                        tainted @ true
                     check_generics.bind(@c, s, decls, @bindings, param: param, got: got, span: a.exprs[arg.value].span)
                 index @ index + 1
+
+            # THE CONTEXT BINDS WHAT THE ARGUMENTS LEFT (panel 105, ratified
+            # 2026-09-03; defect 006, docs/work/DONE.md). `wanted<A>(what: str) -> A?`
+            # has no argument that mentions `A`; the type this call's
+            # position asks for does — the same expectation a literal, an
+            # empty `[]` and `fail(…)` take theirs from. Fill-only: a
+            # parameter an argument bound keeps that binding, and a shape
+            # that does not fit is `compare`'s message, not ours.
+            if generics > 0 && !expected.is_err()
+                check_generics.bind_missing(c, @bindings, param: result, got: expected.must())
+
+            # A parameter still unbound here is one no argument and no
+            # context could name, and this call is the one line that can
+            # be fixed — reported HERE, before the error id below goes
+            # anywhere, so the poison it leaves has a diagnostic behind it
+            # (the class the verifier's `no_error_survives` refuses when it
+            # does not). Two messages, by what the position asked: nothing
+            # at all, or a type the result cannot be — never a type
+            # argument, which the language has no syntax for.
+            if generics > 0
+                callee_letters: [str] @ []
+
+                for gspan in fd.value.generics
+                    callee_letters @ callee_letters.push(source.span_text(s, gspan))
+
+                at_letter: i64 @ 0
+
+                for b in bindings
+                    # A letter that appears in NEITHER the result nor a
+                    # parameter was refused at its declaration
+                    # (check/decls.hero); reporting it again at every
+                    # call would be one mistake, N messages.
+                    if b.is_err() && !tainted && check_generics.mentions(c, ty: result, at: at_letter)
+                        shown_result = render.render_ty(c.out.types, s, decls, result, callee_letters)
+
+                        if expected.is_err()
+                            state.push_diagnostic(
+                                @c,
+                                contextless_errors.type_parameter_needs_context(callee: name, letter: callee_letters[at_letter], result: shown_result, span: span)
+                            )
+                        else if !table.poisoned(c.out.types, expected.must())
+                            state.push_diagnostic(
+                                @c,
+                                value_errors.mismatch(expected: state.show(c, s, decls, expected.must()), got: shown_result, span: span)
+                            )
+                    at_letter @ at_letter + 1
 
             # Recorded, not dropped (panel 029 R2): monomorphisation needs
             # exactly these bindings, and recomputing them at IR level
@@ -1922,3 +2018,54 @@ test "the try operator and the else rule hold at the statement seam"
     assert lopsided.out.diagnostics[0].code == "if_without_else"
     unit_ok = checked_program("function save() -> ()?\n    return ok()\n")
     assert unit_ok.out.diagnostics.len() == 0
+
+test "a type parameter only in the result takes the type the context asks for"
+    # Panel 105: annotated binding, `return` under a declared result, a
+    # `match` arm, an argument to a non-generic callee, and a UFCS receiver
+    # all say what `A` is; none is a diagnostic.
+    text = "function wanted<A>(what: str) -> A?\n    return fail(\"type\", what)\n\nfunction take(v: i64?) -> bool\n    return v.is_err()\n\nfunction number_of(flag: bool) -> i64?\n    return match flag\n        true => ok(1)\n        false => wanted(what: \"a number\")\n\nfunction as_return() -> str?\n    return wanted(what: \"text\")\n\nfunction via_ufcs() -> bool?\n    return \"a truth\".wanted()\n\nfunction main()\n    x: f64? = wanted(what: \"a float\")\n    print(x.is_err())\n    print(take(wanted(what: \"an argument\")))\n    print(number_of(true).is_err())\n    print(as_return().is_err())\n    print(via_ufcs().is_err())\n"
+    c = checked_program(text)
+    assert c.out.diagnostics.len() == 0
+
+test "a call that says neither is refused at the call, and a disagreeing context is one mismatch"
+    # No context: the receiver of `.is_err()` is synthesised, so nothing asks
+    # `wanted` for a type. One diagnostic, at the call, with a guess fix that
+    # names the two ways to give it context and never a type argument.
+    c = checked_program(
+        "function wanted<A>(what: str) -> A?\n    return fail(\"type\", what)\n\nfunction main()\n    print(wanted(what: \"a\").is_err())\n"
+    )
+    assert c.out.diagnostics.len() == 1
+    assert c.out.diagnostics[0].code == "cannot_infer"
+    assert c.out.diagnostics[0].message == "nothing here says what `A` of `wanted` is: it appears only in the result `A?`, so it takes the type the context asks for, and this position asks for none"
+    assert c.out.diagnostics[0].fixes.len() == 1
+    assert c.out.diagnostics[0].fixes[0].certainty == .guess
+
+    # A context the result cannot be is the ordinary mismatch, once — the
+    # engineer's condition 2: context binding fills and never reports, so
+    # `compare`'s message is the only one.
+    d = checked_program(
+        "function wanted<A>(what: str) -> A?\n    return fail(\"type\", what)\n\nfunction main()\n    n: i64 = wanted(what: \"a\")\n    print(n)\n"
+    )
+    assert d.out.diagnostics.len() == 1
+    assert d.out.diagnostics[0].code == "type_mismatch"
+    assert d.out.diagnostics[0].message == "expected `i64`, found `A?`"
+
+    # A parameter an ARGUMENT bound keeps its binding; the annotation that
+    # disagrees with it is compare's mismatch, once, on the substituted type.
+    e = checked_program(
+        "function same<A>(x: A) -> A?\n    return ok(x)\n\nfunction main()\n    n: str? = same(1)\n    print(n.is_err())\n"
+    )
+    assert e.out.diagnostics.len() == 1
+    assert e.out.diagnostics[0].code == "type_mismatch"
+    assert e.out.diagnostics[0].message == "expected `str?`, found `i64?`"
+
+test "a poisoned argument reports once, and the parameter it left unbound is not a second message"
+    # `len` as a value is `builtin_as_value`; the `B` that argument would have
+    # bound stays unbound, and saying so again would be one mistake, two
+    # messages — the cascade the check/ golden `fixedbugs-builtin-as-value`
+    # caught on the evening panel 105 landed.
+    c = checked_program(
+        "function m<A, B>(xs: [A], f: (function(A) -> B)) -> [B]\n    out: [B] @ []\n    for x in xs\n        out @ out.push(f(x))\n    return out\n\nfunction main()\n    print(m([\"a\"], len).len())\n"
+    )
+    assert c.out.diagnostics.len() == 1
+    assert c.out.diagnostics[0].code == "builtin_as_value"

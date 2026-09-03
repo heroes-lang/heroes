@@ -1,0 +1,25 @@
+# Panel 105's compiler-engineer condition 4: the context that binds `A` may
+# itself be another function's type parameter. `first_or<B>` returns `wanted`
+# where its declared result is `B?`, so `A := B` — the enclosing template's own
+# `#0` — and each copy of `first_or` must reach its own copy of `wanted`
+# (`mono.substituted_calls`), a path that existed for argument-bound chains and
+# had no test for a context-bound one.
+function wanted<A>(what: str) -> A?
+    return fail("type", what)
+
+function first_or<B>(xs: [B]) -> B?
+    if xs.len() == 0
+        return wanted(what: "an element")
+
+    return ok(xs[0])
+
+function main()
+    print(first_or([3, 4]).must())
+    print(first_or(["a", "b"]).must())
+    none: [i64] = []
+    print(first_or(none).is_err())
+    words: [str] = []
+
+    match first_or(words)
+        .ok w  => print(w)
+        .err e => print(e.msg)

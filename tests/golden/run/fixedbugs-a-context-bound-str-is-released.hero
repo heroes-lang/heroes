@@ -1,0 +1,20 @@
+# Panel 105's blocking condition 3, from the ffi-pragmatist: a type parameter
+# bound from the CONTEXT to a refcounted type — `A := str` — must be released
+# like one bound from an argument, and a store of the result into a live `@`
+# slot must release what the slot held. Under `--sanitize` and with
+# `hero_runtime_check_leaks()` in every generated main, this case is the
+# measurement: a descriptor carried over from a template rather than re-derived
+# from the substituted type (panel 029 R4c's class) would leak or double-free
+# here and nowhere a plain `i64` could show it.
+function wanted<A>(what: str) -> A?
+    return fail("type", "expected " + what)
+
+function main()
+    s: str? = wanted(what: "text")
+    print(s.is_err())
+    cell: str? @ ok("start")
+    print(cell.must())
+    cell @ wanted(what: "more text")
+    print(cell.is_err())
+    cell @ ok("again")
+    print(cell.must())

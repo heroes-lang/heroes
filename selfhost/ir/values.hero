@@ -199,6 +199,7 @@ test "assigned twice and never produced are both named"
         steps: [],
         instance: [],
         call_instances: {},
+        instantiated_at: token.Span(start: 0, end: 0),
         span: span
     )
     problems: [str] @ []
@@ -232,6 +233,7 @@ test "a sibling block's definition does not dominate, the entry's does"
         steps: [],
         instance: [],
         call_instances: {},
+        instantiated_at: token.Span(start: 0, end: 0),
         span: span
     )
     problems: [str] @ []

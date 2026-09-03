@@ -384,6 +384,7 @@ test "the dispatcher: a discarded call keeps its effect, a unit store vanishes"
         steps: [],
         instance: [],
         call_instances: {},
+        instantiated_at: token.Span(start: 0, end: 0),
         span: token.Span(start: 0, end: 1)
     )
     p = containers.Program(phase: .lowered, functions: [shout_f], strings: [])
@@ -401,6 +402,7 @@ test "the dispatcher: a discarded call keeps its effect, a unit store vanishes"
         steps: [],
         instance: [],
         call_instances: {},
+        instantiated_at: token.Span(start: 0, end: 0),
         span: token.Span(start: 30, end: 31)
     )
     live: {i64: bool} @ {}

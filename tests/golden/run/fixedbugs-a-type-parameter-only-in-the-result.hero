@@ -1,0 +1,49 @@
+# Defect 006 (docs/work/DONE.md), repaired by panel 105 on 2026-09-03: a type
+# parameter that appears ONLY in a function's result takes the type the context
+# asks for. `wanted<A>` has no argument that mentions `A`; every call below is
+# in a position whose type is known — a `match` arm under a declared `i64?`
+# result (the shape that found the defect: exit 134, `assert failed: false`), a
+# `return` (exit 2 from the verifier before the repair), an annotated binding
+# and a UFCS receiver (both exit 134). Symptom, cause and date are in the
+# record; this file is the case named after it.
+variant Value
+    number
+        v: i64
+    text
+        s: str
+
+function wanted<A>(what: str) -> A?
+    return fail("type", what)
+
+function number_of(v: Value) -> i64?
+    return match v
+        .number n => ok(n.v)
+        .text _   => wanted(what: "a number")
+
+function text_of(v: Value) -> str?
+    return match v
+        .text t   => ok(t.s)
+        .number _ => wanted(what: "a string")
+
+function as_return(flag: bool) -> i64?
+    if flag
+        return ok(1)
+
+    return wanted(what: "a flag")
+
+function via_ufcs() -> bool?
+    return "a truth".wanted()
+
+function main()
+    print(number_of(.number(v: 7)).must())
+
+    match number_of(.text(s: "x"))
+        .ok _  => print("?")
+        .err e => print(e.code, ": ", e.msg)
+
+    print(text_of(.text(s: "seven")).must())
+    print(text_of(.number(v: 1)).is_err())
+    print(as_return(false).is_err())
+    annotated: f64? = wanted(what: "a float")
+    print(annotated.is_err())
+    print(via_ufcs().is_err())

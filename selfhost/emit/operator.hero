@@ -315,6 +315,7 @@ function ready() -> Setup
         steps: [],
         instance: [],
         call_instances: {},
+        instantiated_at: token.Span(start: 0, end: 0),
         span: token.Span(start: 0, end: 1)
     )
     return Setup(c: c, names: names, f: f)

@@ -97,15 +97,15 @@ function refuse(target: emit_decls.BuildTarget, p: containers.Program, c: state.
             continue
 
         for slot_id in f.params
-            check_type(@found, c, s, decls, ty: f.slots[slot_id].ty, span: f.span)
+            check_type(@found, c, s, decls, ty: f.slots[slot_id].ty, span: containers.reports_at(f, f.span))
 
-        check_type(@found, c, s, decls, ty: f.result, span: f.span)
+        check_type(@found, c, s, decls, ty: f.result, span: containers.reports_at(f, f.span))
 
         for blk in f.blocks
             for inst in blk.insts
-                check_type(@found, c, s, decls, ty: inst.ty, span: inst.span)
-                check_op(@found, op: inst.op, span: inst.span)
-                check_fixed_flow(@found, c, f, op: inst.op, span: inst.span)
+                check_type(@found, c, s, decls, ty: inst.ty, span: containers.reports_at(f, inst.span))
+                check_op(@found, op: inst.op, span: containers.reports_at(f, inst.span))
+                check_fixed_flow(@found, c, f, op: inst.op, span: containers.reports_at(f, inst.span))
 
     # Sorted by first appearance: an insertion sort over spans, the
     # resolver's own idiom.

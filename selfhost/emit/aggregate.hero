@@ -301,6 +301,7 @@ test "designated construction, a walked place, and the failure's fixed pair"
         steps: steps,
         instance: [],
         call_instances: {},
+        instantiated_at: token.Span(start: 0, end: 0),
         span: token.Span(start: 0, end: 1)
     )
     spot = place(got.c, got.s, got.decls, f, at: ir.Place(root: 0, path: ir.Run(start: 0, length: 2)))
@@ -331,6 +332,7 @@ test "a case writes its tag alone when bare, and the payload member when not"
         steps: [],
         instance: [],
         call_instances: {},
+        instantiated_at: token.Span(start: 0, end: 0),
         span: token.Span(start: 0, end: 1)
     )
     read = payload_member(got.c, got.names, got.s, got.decls, f, base: 0, at: 0)

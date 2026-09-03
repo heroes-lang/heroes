@@ -1,0 +1,19 @@
+# Panel 105: a type parameter that appears only in the result takes the type
+# the context asks for — and a call that says neither is refused AT THE CALL,
+# under the code `ok(…)` without context already had. Four positions ask for no
+# type: an unannotated binding, an argument to `print` (which takes anything),
+# a UFCS receiver, and a discard. The fifth line asks for a type the result
+# cannot be, which is the ordinary mismatch and not a question of inference.
+# No message here ever suggests a type argument: the language has no such
+# syntax (§ Functions and calls).
+function wanted<A>(what: str) -> A?
+    return fail("type", what)
+
+function main()
+    x = wanted(what: "a")  #~ cannot_infer
+    print(x.is_err())
+    print(wanted(what: "b"))  #~ cannot_infer
+    print(wanted(what: "c").is_err())  #~ cannot_infer
+    _ = wanted(what: "d")  #~ cannot_infer
+    n: i64 = wanted(what: "e")  #~ type_mismatch
+    print(n)

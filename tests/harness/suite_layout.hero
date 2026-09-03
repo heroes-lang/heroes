@@ -131,9 +131,23 @@ constant CEILING: i64
 # `grammar_expr.hero` 1000 -> **1002**: `@` before something that is not a
 # place is refused where `1 @ 2` already is, six lines of code beside
 # `is_place`, which is the function that decides both.
+#
+# **Two moved on 2026-09-03 for panel 105, ratified the evening it sat**: a
+# type parameter the arguments leave unbound takes the type the context asks
+# for. `check/walk.hero` 1583 -> **1700** against a measured 1664: `check()`'s
+# `.call` arm keeps its expectation instead of falling to `synth`, the
+# `.method` arm gets one, four call-dispatch functions carry `expected: i64?`,
+# and `user_call` binds from the context and reports what nothing bound — all
+# inside the checker's knot (check/synth/block/statement are mutually
+# recursive; §11's knot clause), and the paragraphs that say why are the
+# larger part of the growth, by CLAUDE.md §11's own rule that a comment
+# teaches the invariant. `ir/mono.hero` 367 -> **380** against a measured 368:
+# one field, `instantiated_at`, so the emitter's gate can report an instance
+# at the call that made it (the pragmatist's blocking condition 4). Raised
+# with room, as the precedents above were.
 constant DECIDED: [str]
     [
-        "selfhost/check/walk.hero 1583"
+        "selfhost/check/walk.hero 1700"
         "selfhost/ir/lower.hero 1511"
         "selfhost/print/fmt.hero 1150"
         "selfhost/grammar_expr.hero 1002"
@@ -141,7 +155,7 @@ constant DECIDED: [str]
         "selfhost/ir/print.hero 460"
         "selfhost/ast.hero 455"
         "selfhost/check/builtins.hero 374"
-        "selfhost/ir/mono.hero 367"
+        "selfhost/ir/mono.hero 380"
         "selfhost/emit/ctype.hero 365"
         "selfhost/emit/gate.hero 341"
         "selfhost/resolve/cycles.hero 331"
@@ -314,7 +328,7 @@ test "the ceiling is per file, and a decided file keeps its own"
     #
     # The witness is now the entry nearest CEILING **by lookup rather than by
     # name**, which is what the sentence above always claimed it was.
-    assert ceiling_for("selfhost/check/walk.hero") == 1583
+    assert ceiling_for("selfhost/check/walk.hero") == 1700
     assert ceiling_for("selfhost/parse/use_line.hero") == 310
     assert ceiling_for("selfhost/anything-else.hero") == CEILING
 

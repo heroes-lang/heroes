@@ -378,22 +378,22 @@ function c_type(names: Names, c: state.Checked, ty: i64) -> str?
         # what makes qsort and every raylib callback expressible.
 
         .function_ty => return ok(func_of(names, ty: ty))
-        # The two the checker keeps for its own bookkeeping. Reaching
-        # here with one is a compiler bug that must say so loudly: a
-        # generic here means monomorphisation left a parameter behind;
-        # an error here means some checker path answered error_ty
-        # WITHOUT pushing a diagnostic — the poison class §4.5 exists
-        # to prevent. Both produced C clang refused at exit 2, blaming
-        # the emitter for the checker's mistake.
+        # The two the checker keeps for its own bookkeeping: a generic
+        # here means monomorphisation left a parameter behind; an error
+        # means a checker path answered error_ty WITHOUT a diagnostic
+        # (§4.5's poison). Both were a bare `assert false` — defect 006 —
+        # and ir/phases.hero refuses both first, at exit 2, with names.
 
-        .generic =>
-            assert false
-            return fail("bug", "a type parameter survived monomorphisation and reached the emitter")
-        .error =>
-            assert false
-            return fail("bug", "a poisoned type reached the emitter with no diagnostic")
+        .generic => return ok(compiler_bug("a type parameter survived monomorphisation"))
+        .error   => return ok(compiler_bug("a type the checker never resolved reached the emitter"))
 
     return fail("none", "unreached")
+
+# `.must()` on a failure is the one worded stop this module can reach, and
+# it must happen HERE: `c_result` maps any returned failure to `void`.
+function compiler_bug(what: str) -> str
+    bug: str? = fail("compiler bug", what + " — ir/phases.hero should have refused this program first")
+    return bug.must()
 
 # The type a FUNCTION returns, in C. Unit is void — the one place the
 # absence of a type has a spelling.

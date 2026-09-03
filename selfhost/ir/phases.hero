@@ -47,9 +47,12 @@ function check(p: containers.Program, f: containers.Function, blk: containers.Bl
         # answers false for it — right for T = i64, a leak for T = str
         # (panel 029 R1).
 
-        .mono => no_generic_survives(f, blk, c, label: label, problems: @problems)
+        .mono =>
+            no_generic_survives(f, blk, c, label: label, problems: @problems)
+            no_error_survives(f, blk, c, label: label, problems: @problems)
         .owned =>
             no_generic_survives(f, blk, c, label: label, problems: @problems)
+            no_error_survives(f, blk, c, label: label, problems: @problems)
             released_on_return(f, blk, c, label: label, problems: @problems)
             owning_temporaries_move_into_slots(blk, c, label: label, problems: @problems)
             place_store.verify(blk, f, c, label: label, problems: @problems)
@@ -67,6 +70,63 @@ function no_generic_survives(f: containers.Function, blk: containers.Block, c: s
 
     if mentions_generic(c, ty: f.result)
         problems @ problems.push(label + "the result still has a type parameter in it")
+
+# NO POISON SURVIVES EITHER (defect 006, docs/work/DONE.md, 2026-09-03). The checker
+# answers the error id for an expression it has ALREADY REPORTED, so that
+# one mistake is one diagnostic (§4.5's poison class) — and a program that
+# reached this phase has no diagnostics, or the compile would have stopped
+# at exit 1. So an error id in a slot, an instruction or a result here
+# means some checker path answered it WITHOUT reporting: exactly what a
+# type parameter bound by nothing did, through `substitute`'s silent id,
+# until the emitter met it in `ctype.hero` and died with `assert failed:
+# false`. The verifier caught one spelling of that (a `return`'s value)
+# and not the other (a `match` arm's), because `check_return_type` looks
+# only at returns. This looks at every type the function carries.
+#
+# The one legitimate carrier of the error id is a `???`: a hole in value
+# position has no type to be, and a program with holes type-checks
+# everything else and produces no binary (spec § Tests and holes). So the
+# check asks the value in hand — does this program have holes? — and not
+# a premise about which passes might have run (CLAUDE.md §11).
+function no_error_survives(f: containers.Function, blk: containers.Block, c: state.Checked, label: str, @problems: [str])
+    if c.holes.len() > 0
+        return
+
+    for inst in blk.insts
+        if mentions_error(c, ty: inst.ty)
+            problems @ problems.push(
+                label + "an instruction carries a type the checker never resolved, and no diagnostic says why"
+            )
+
+    for slot in f.slots
+        if mentions_error(c, ty: slot.ty)
+            problems @ problems.push(
+                label + "slot `" + slot.name + "` carries a type the checker never resolved, and no diagnostic says why"
+            )
+
+    if mentions_error(c, ty: f.result)
+        problems @ problems.push(
+            label + "the result carries a type the checker never resolved, and no diagnostic says why"
+        )
+
+# Does this type mention the checker's error id anywhere inside it?
+function mentions_error(c: state.Checked, ty: i64) -> bool
+    match table.get(c.types, ty)
+        .error      => return true
+        .array arr  => return mentions_error(c, ty: arr.element)
+        .fallible o => return mentions_error(c, ty: o.payload)
+        .fixed x    => return mentions_error(c, ty: x.element)
+        .map m      => return mentions_error(c, ty: m.key) || mentions_error(c, ty: m.value)
+        .function_ty fn_ty =>
+            for p in table.params_of(c.types, fn_ty.params)
+                if mentions_error(c, ty: p)
+                    return true
+
+            return mentions_error(c, ty: fn_ty.result)
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return false
+        .named | .case_ty | .failure | .generic                   => return false
+
+    return false
 
 # Does this type mention a type parameter anywhere inside it?
 function mentions_generic(c: state.Checked, ty: i64) -> bool
@@ -240,9 +300,63 @@ function phase_scaffold(phase: containers.Phase, blk: containers.Block) -> conta
         steps: [],
         instance: [],
         call_instances: {},
+        instantiated_at: token.Span(start: 0, end: 0),
         span: token.Span(start: 0, end: 1)
     )
     return containers.Program(phase: phase, functions: [f], strings: [])
+
+test "a type the checker never resolved is refused after mono, unless the program has holes"
+    span = token.Span(start: 0, end: 1)
+
+    # Type id 0 is the checker's error id — the poison a reported mistake
+    # leaves behind (check/generics.hero's own test pins the number). An
+    # instruction and a slot both carry it here, as the defect's `match`
+    # arm did: `$own5: ??` and `$t10: ?? = call heroes wanted($t9)`.
+    insts: [ir.Inst] = [ir.Inst(dest: fail("none", "void"), op: .incref(value: 1), ty: 0, span: span)]
+    preds: [i64] = []
+    blk = containers.Block(preds: preds, insts: insts, term: .return_term(value: fail("none", "no value")), note: "t")
+    slots: [containers.Slot] = [containers.Slot(name: "own5", ty: 0, kind: .local_slot)]
+    f = containers.Function(
+        name: "t",
+        decl: 0,
+        kind: .function_kind,
+        generics: [],
+        params: [],
+        result: 1,
+        slots: slots,
+        blocks: [blk],
+        values: [0, 1, 2],
+        arguments: [],
+        steps: [],
+        instance: [],
+        call_instances: {},
+        instantiated_at: token.Span(start: 0, end: 0),
+        span: span
+    )
+    p = containers.Program(phase: .mono, functions: [f], strings: [])
+    text = "record R\n    n: i64\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c = checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.holes.len() == 0
+    problems: [str] @ []
+    check(p, f, blk, c, label: "", problems: @problems)
+    assert problems.len() == 2
+    assert problems[0] == "an instruction carries a type the checker never resolved, and no diagnostic says why"
+    assert problems[1] == "slot `own5` carries a type the checker never resolved, and no diagnostic says why"
+
+    # The same IR under a program with a hole is legal: a `???` in value
+    # position has no type to be, and that is the one carrier of the id.
+    holed = "function f() -> i64\n    return ???\n"
+    parsed_h = parse.parse(holed)
+    s_h = source.new_source(name: "h.hero", text: holed)
+    out_h = resolve.resolve(parsed_h.tree, s_h, parsed_h.decls, parsed_h.uses)
+    c_h = checker.check(parsed_h.tree, out_h, s_h, parsed_h.decls)
+    assert c_h.holes.len() == 1
+    quiet: [str] @ []
+    check(p, f, blk, c_h, label: "", problems: @quiet)
+    assert quiet.len() == 0
 
 test "a refcount op before the ownership pass is named, after it is legal"
     span = token.Span(start: 0, end: 1)

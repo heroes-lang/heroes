@@ -115,6 +115,8 @@ Shadowing is a compile error: a `use` binds its name for the whole file, so noth
   parentheses are mandatory.
 - Generics: on functions only, no constraints, always inferred, never written
   at the call site: `function map<A, B>(xs: [A], f: (function(A) -> B)) -> [B]`.
+  A type parameter takes its type from the arguments, else from the type the
+  context asks for; a call that says neither is an error.
 
 ## Control flow
 `match` is the only destructuring construct:

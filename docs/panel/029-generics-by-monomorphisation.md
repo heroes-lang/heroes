@@ -405,3 +405,28 @@ than the compiler's behaviour.
 What it does **not** settle: anything this file keys to a measurement that has not
 been taken. Those stay open on their own terms, listed in `docs/debrief/QUEUE.md`,
 and a blanket yes cannot make a number arrive.
+
+## Prediction 7 scored at panel 105 (2026-09-03)
+
+The historian's row — *every generic in the self-hosted compiler has all type
+parameters determined by parameter types alone; zero need a return-position-only
+parameter; if even one does, inference-only breaks and this project reaches for
+GHC 8.0's answer* — scored in three parts by the seats of `docs/panel/105`:
+
+- **Letter: confirmed.** The spec-warden read every generic signature in
+  `selfhost/`, `examples/` and `tests/` — 52 — and 52 of 52 bind every type
+  parameter from a parameter's type. (The compiler-engineer's grep over
+  `selfhost/` alone found 0 generic functions; the warden's 15 there are the six
+  library sources and nine test strings.)
+- **Spirit: refuted, by one witness.** `examples/interpreter/run/value.hero` was
+  written with `wanted<A>(what: str, v: Value) -> A?` because that is the natural
+  spelling of one refusal shared by two result types, and rewritten as two
+  functions to dodge the compiler. One instance refutes "zero"; it is not a
+  trend.
+- **Remedy: refuted.** The row said the project would reach for visible type
+  application; the sitting refused a turbofish from both options and ruled for
+  inference from the context instead — the answer Swift, Kotlin, Java 8 and
+  TypeScript 2.4 took, none of which needed the syntax for this case.
+
+And the row's premise was never *enforced*: inference-only was the compiler's
+behaviour, not its rule — the checker accepted the program and the emitter died.

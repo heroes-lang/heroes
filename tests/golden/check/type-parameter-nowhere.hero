@@ -1,0 +1,11 @@
+# Panel 105, the spec-warden's find: a type parameter that appears NOWHERE in
+# the signature — not in a parameter, not in the result — compiled at exit 0
+# until 2026-09-03. No argument can bind it and no context reaches it, so every
+# call would be refused; the declaration is the one line that can be fixed, and
+# it is refused there, once (Swift's rule: "Generic parameter 'T' is not used
+# in function signature").
+function unused<A>(what: str) -> str  #~ cannot_infer
+    return what
+
+function main()
+    print(unused(what: "a"))

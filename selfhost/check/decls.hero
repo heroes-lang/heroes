@@ -26,8 +26,10 @@ use check/state
 use check/lower
 use check/walk
 use check/ffi
+use check/generics
 use value_errors
 use flow_errors
+use contextless_errors
 
 function file(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl])
     index: i64 @ 0
@@ -79,9 +81,33 @@ function file(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Sou
                 c.result @ result
                 c.fallible @ is_fallible_ty(c, result)
 
+                param_tys: [i64] @ []
+
                 for param in fd.value.params
                     ty = lower.lower_ty(@c, a, r, param.ty)
                     state.bind_local(@c, param.name, ty: ty)
+                    param_tys @ param_tys.push(ty)
+
+                # A type parameter that appears NOWHERE in the signature
+                # (panel 105; the spec-warden's find — it compiled at exit 0
+                # until 2026-09-03): no argument can bind it and no context
+                # reaches it, so every call would be refused at the call,
+                # and this declaration is the one line that can be fixed.
+                letter_at: i64 @ 0
+
+                for g in fd.value.generics
+                    seen: bool @ generics.mentions(c, ty: result, at: letter_at)
+
+                    for pt in param_tys
+                        if generics.mentions(c, ty: pt, at: letter_at)
+                            seen @ true
+
+                    if !seen
+                        state.push_diagnostic(
+                            @c,
+                            contextless_errors.type_parameter_nowhere(callee: source.span_text(s, decl.name), letter: source.span_text(s, g), span: g)
+                        )
+                    letter_at @ letter_at + 1
 
                 # AFTER the parameters are lowered, never before: the check
                 # reads written_type, and that table is what the lowering
@@ -212,3 +238,20 @@ test "the extern hooks fire from the declaration walk"
     stray = checked_file("record Plain\n    cells: i32[4]\n")
     assert stray.out.diagnostics.len() == 1
     assert stray.out.diagnostics[0].code == "fixed_outside_a_group"
+
+test "a type parameter that appears nowhere in the signature is refused at its letter"
+    # Panel 105, the spec-warden's find: `A` in no parameter and not in the
+    # result compiled at exit 0. One diagnostic, on the letter, and a
+    # parameter that appears only in the RESULT is not it — the context
+    # binds that one (walk.hero's tests).
+    c = checked_file(
+        "function unused<A>(what: str) -> str\n    return what\n\nfunction main()\n    print(unused(what: \"a\"))\n"
+    )
+    assert c.out.diagnostics.len() == 1
+    assert c.out.diagnostics[0].code == "cannot_infer"
+    assert c.out.diagnostics[0].message == "`A` of `unused` appears in no parameter and not in the result, so no call could ever say what it is — use it in the signature, or remove it"
+    assert c.out.diagnostics[0].span.start == 16
+    fine = checked_file(
+        "function wanted<A>(what: str) -> A?\n    return fail(\"type\", what)\n\nfunction main()\n    x: i64? = wanted(what: \"a\")\n    print(x.is_err())\n"
+    )
+    assert fine.out.diagnostics.len() == 0

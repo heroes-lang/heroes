@@ -69,7 +69,7 @@ function run_fmt(path: str, s: source.Source, inv: argv.Invocation) -> cli_table
 
 # THE OUTPUT GUARD. `fmt` checked that its INPUT parsed and never looked
 # at what it wrote, so it deleted seven arms out of a compiler source
-# file at exit 0 (docs/defects/003, the third instance of this class
+# file at exit 0 (defect 003 (docs/work/DONE.md), the third instance of this class
 # after panels 014 and 060/061 — every one found by a person).
 #
 # THREE CHECKS, and they are three different properties. The output must

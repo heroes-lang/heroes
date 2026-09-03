@@ -133,6 +133,7 @@ test "a comparison carries both sides, an unprintable side is discarded aloud"
         steps: [],
         instance: [],
         call_instances: {},
+        instantiated_at: token.Span(start: 0, end: 0),
         span: token.Span(start: 0, end: 1)
     )
     w: writer.Writer @ writer.new_writer("t")
