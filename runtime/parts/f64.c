@@ -23,11 +23,17 @@
 
 /* -- f64 rendering (design.md §4.9, panel 021) -----------------------------
  *
- * ROUND-TRIP-EXACT, never "shortest": %.*g at increasing precision until
- * strtod() reads back the same bits. The distinction is not pedantic — 5e-324
- * renders 4.94065645841247e-324, which round-trips and is not the shortest
- * decimal, and Java shipped 1.9999999999999998E23 for eighteen years before
- * Schubfach to prove it matters.
+ * ROUND-TRIP-EXACT is the promise, and "shortest" is not promised: %.*g at
+ * increasing precision until strtod() reads back the same bits. The promise
+ * is the one a program may rely on; where the ladder also happens to give the
+ * shortest decimal, that is an outcome and not a guarantee. Java shipped
+ * 1.9999999999999998E23 for eighteen years before Schubfach; this printer
+ * renders it 2e+23 (measured 2026-09-03, compiled directly).
+ *
+ * This comment said for a month that 5e-324 renders 4.94065645841247e-324.
+ * It has rendered 5e-324 since the subnormal branch below landed
+ * (DESIGN-LOG:100, 2026-08-05), and 1e-323 renders 1e-323 — both measured
+ * 2026-09-03. A dead example in a comment reads as a live one (CLAUDE.md §11).
  *
  * The subnormal branch is gnulib's, whose ftoastr is the widely-shipped
  * implementation of this technique (coreutils, Emacs): below DBL_MIN the loop
