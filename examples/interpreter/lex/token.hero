@@ -1,0 +1,224 @@
+# What a token is, and nothing about how one is read.
+#
+# Part of `examples/interpreter/`, whose root `main.hero` carries the whole
+# program's argument. This module is the vocabulary: `scan.hero` produces these
+# and `syn/parse.hero` consumes them, and neither knows anything else about the
+# other.
+#
+# WHY A VARIANT WITH PAYLOADS RATHER THAN A KIND AND A TEXT. A token that is a
+# number carries an `i64`; one that is a name carries a `str`; one that is `+`
+# carries nothing. Spelling that as `record Token { kind: Kind, text: str }`
+# would give every token a `text` field that is empty for most of them and
+# would move the question *is this number well formed* out of the scanner and
+# into whoever reads it. The payload is where the answer belongs, and the
+# `match` in `syn/parse.hero` is exhaustive or a compile error.
+
+# One token of the little language this interpreter runs.
+variant Token
+    # A run of digits, already turned into a number.
+    number
+        value: i64
+    # Text between double quotes, with its escapes already decoded.
+    text
+        value: str
+    # A bare word that is not a keyword.
+    name
+        value: str
+    # The keywords, one case each, so a `match` over them is exhaustive and a
+    # new keyword cannot be forgotten by a reader.
+    kw_let
+    kw_print
+    kw_if
+    kw_else
+    kw_while
+    kw_fn
+    kw_return
+    kw_exit
+    kw_end
+    kw_true
+    kw_false
+    # The operators and the punctuation.
+    plus
+    minus
+    star
+    slash
+    percent
+    equals
+    less
+    less_equal
+    greater
+    greater_equal
+    equal_equal
+    bang_equal
+    bang
+    ampersands
+    bars
+    lparen
+    rparen
+    comma
+    # One line's worth of newline, however many blank lines it stood for. The
+    # language is line-oriented, so this is a token and not whitespace.
+    newline
+    # The end of the source, which the parser reads rather than testing an
+    # index against a length.
+    finish
+
+# The keyword a word spells, or `.name` if it spells none. The scanner calls
+# this once per word, so this list is the only place a keyword is written down.
+function worded(word: str) -> Token
+    if word == "let"
+        return .kw_let
+
+    if word == "print"
+        return .kw_print
+
+    if word == "if"
+        return .kw_if
+
+    if word == "else"
+        return .kw_else
+
+    if word == "while"
+        return .kw_while
+
+    if word == "fn"
+        return .kw_fn
+
+    if word == "return"
+        return .kw_return
+
+    if word == "exit"
+        return .kw_exit
+
+    if word == "end"
+        return .kw_end
+
+    if word == "true"
+        return .kw_true
+
+    if word == "false"
+        return .kw_false
+
+    return .name(value: word)
+
+# How a token reads in a diagnostic. Every case has a spelling, including the
+# two that have no text of their own, because a parse error that says
+# `expected a name, found ` is a diagnostic with a hole in it.
+function shown(t: Token) -> str
+    return match t
+        .number n      => n.value.to_str()
+        .text x        => "\"" + x.value + "\""
+        .name n        => n.value
+        .kw_let        => "let"
+        .kw_print      => "print"
+        .kw_if         => "if"
+        .kw_else       => "else"
+        .kw_while      => "while"
+        .kw_fn         => "fn"
+        .kw_return     => "return"
+        .kw_exit       => "exit"
+        .kw_end        => "end"
+        .kw_true       => "true"
+        .kw_false      => "false"
+        .plus          => "+"
+        .minus         => "-"
+        .star          => "*"
+        .slash         => "/"
+        .percent       => "%"
+        .equals        => "="
+        .less          => "<"
+        .less_equal    => "<="
+        .greater       => ">"
+        .greater_equal => ">="
+        .equal_equal   => "=="
+        .bang_equal    => "!="
+        .bang          => "!"
+        .ampersands    => "&&"
+        .bars          => "||"
+        .lparen        => "("
+        .rparen        => ")"
+        .comma         => ","
+        .newline       => "end of line"
+        .finish        => "end of file"
+
+# Whether this token can begin an expression — the one question the parser asks
+# that is about the token alone, so it lives here beside the vocabulary.
+# Every case is named, and the reason is the language: `_` as an arm over a
+# `variant` is `error[wildcard_on_variant]` — *name every case, so that adding
+# one breaks this `match` instead of silently falling through*. The first draft
+# of this function wrote `_ => false` and the compiler refused it, which is the
+# refusal doing its job: a thirty-fifth token added next month has to be
+# classified here rather than defaulting to *cannot open a value*.
+function opens_a_value(t: Token) -> bool
+    return match t
+        .number _ | .text _ | .name _ | .kw_true | .kw_false => true
+        .minus | .bang | .lparen                             => true
+        .kw_let | .kw_print | .kw_if | .kw_else | .kw_while  => false
+        .kw_fn | .kw_return | .kw_exit | .kw_end             => false
+        .plus | .star | .slash | .percent | .equals          => false
+        .less | .less_equal | .greater | .greater_equal      => false
+        .equal_equal | .bang_equal | .ampersands | .bars     => false
+        .rparen | .comma | .newline | .finish                => false
+
+test "a keyword is a keyword and a word that only looks like one is not"
+    assert worded("let") == .kw_let
+    assert worded("end") == .kw_end
+    assert worded("letter") == .name(value: "letter")
+    assert worded("ending") == .name(value: "ending")
+    assert worded("iff") == .name(value: "iff")
+    assert worded("") == .name(value: "")
+
+test "every keyword this module knows round-trips through its own spelling"
+    # The list is written twice on purpose — once in `worded` and once here —
+    # because the second copy is what notices a keyword whose spelling and
+    # whose case have drifted apart.
+    words = ["let", "print", "if", "else", "while", "fn", "return", "exit", "end", "true", "false"]
+
+    for word in words
+        assert shown(worded(word)) == word
+        assert worded(word) != .name(value: word)
+
+test "a token that carries a payload shows the payload"
+    assert shown(.number(value: 42)) == "42"
+    assert shown(.number(value: 0 - 7)) == "-7"
+    assert shown(.text(value: "hi")) == "\"hi\""
+    assert shown(.name(value: "total")) == "total"
+
+test "the two tokens with no text of their own still have a spelling"
+    # A parse error naming `.newline` or `.finish` has to say something, and
+    # what it says is checked here rather than discovered in a message.
+    assert shown(.newline) == "end of line"
+    assert shown(.finish) == "end of file"
+
+test "what can open a value, and what cannot"
+    assert opens_a_value(.number(value: 1))
+    assert opens_a_value(.name(value: "x"))
+    assert opens_a_value(.text(value: "s"))
+    assert opens_a_value(.kw_true)
+    assert opens_a_value(.minus)
+    assert opens_a_value(.bang)
+    assert opens_a_value(.lparen)
+    assert !opens_a_value(.plus)
+    assert !opens_a_value(.rparen)
+    assert !opens_a_value(.kw_end)
+    assert !opens_a_value(.newline)
+    assert !opens_a_value(.finish)
+
+test "two tokens are equal when their payloads are"
+    # Structural equality over a variant, which the compiler generates by
+    # walking fields (CLAUDE.md §7) — the parser leans on it for every
+    # `expect`, so it is asserted rather than assumed.
+    #
+    # The annotations are not decoration: `.number(value: 3) == .number(value:
+    # 3)` is `error[cannot_infer]`, because neither side of the `==` says which
+    # variant `.number` belongs to. A case literal takes its type from the
+    # context, and two case literals give each other none.
+    three: Token = .number(value: 3)
+    four: Token = .number(value: 4)
+    letter_a: Token = .name(value: "a")
+    text_a: Token = .text(value: "a")
+    assert three == .number(value: 3)
+    assert three != four
+    assert letter_a != text_a
+    assert worded("if") != worded("else")
+    assert shown(three) == "3"

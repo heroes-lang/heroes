@@ -1,0 +1,426 @@
+# Source text into tokens, one pass, no lookahead beyond the next byte.
+#
+# Part of `examples/interpreter/` — the root `main.hero` carries the program's
+# argument. This module knows the shape of the little language's surface and
+# nothing about its grammar: it says `.plus` where it sees `+` and never asks
+# whether a `+` may stand there.
+#
+# WHAT IT REFUSES, and every refusal is named. A scanner that returns *no
+# tokens* on bad input tells the caller nothing, so the four things that can go
+# wrong here each carry a code and a message quoting the offending text:
+# an unterminated string, an escape that is not one of the four, a byte that
+# begins no token, and a number too large for an `i64`.
+#
+# THE LAST ONE IS A ROBUSTNESS RULE AND NOT A NICETY (design.md §1.12,
+# CLAUDE.md §12). Heroes aborts on integer overflow at every width, so
+# accumulating `value * 10 + digit` over a long run of digits does not wrap —
+# it stops the whole interpreter with a panic. A script is INPUT, and input must
+# not be able to kill the program reading it, so the multiplication is guarded
+# before it happens rather than after. The test at the bottom feeds it
+# nineteen and twenty digits and asserts a refusal, not a crash.
+#
+# **AND IT WORKS ON BYTES, WHICH IT DID NOT AT FIRST.** Every single-character
+# decision below compares an `i64` taken from `source[at]`, never a
+# `slice(from: at, to: at + 1)`. The first draft sliced, and the first script
+# it was given killed it: `panic: string slice splits a character`, exit 134,
+# because a comment in that script contained one em dash. A `str` is measured
+# in bytes and a slice that splits a character ABORTS (spec § Failure), so
+# slicing one byte at a time is safe only for ASCII — and a comment with an
+# accented letter in it is not a strange input, it is the normal one. The
+# slices that remain are all taken between ASCII boundaries (a whole word, a
+# run of digits, a run inside a string literal), where they cannot split
+# anything. This is the same rule as the number guard above, found the same
+# way: by running the program instead of reasoning about it.
+#
+# THE LANGUAGE IS LINE-ORIENTED, so a newline is a token. Blank lines and
+# comment-only lines collapse into the one `.newline` that follows them, which
+# is what lets the parser say *a statement ends at the end of its line* without
+# ever seeing an empty statement.
+
+use lex/token
+
+constant DIGITS: str
+    "0123456789"
+
+constant MAX: i64
+    9223372036854775807
+
+constant ERR_TEXT: str
+    "unterminated_text"
+
+constant ERR_ESCAPE: str
+    "bad_escape"
+
+constant ERR_BYTE: str
+    "unknown_byte"
+
+constant ERR_NUMBER: str
+    "number_too_large"
+
+# Every token in `source`, ending with exactly one `.finish`.
+function scanned(source: str) -> [token.Token]?
+    out: [token.Token] @ []
+    at: i64 @ 0
+    n = source.len()
+
+    while at < n
+        here = byte_at(source: source, at: at)
+
+        if here == ' ' || here == '\t'
+            at @ at + 1
+        else if here == '#'
+            at @ line_end(source: source, from: at)
+        else if here == '\n'
+            at @ at + 1
+
+            # One `.newline` however many blank lines stood there, so the
+            # parser never meets a statement with nothing in it.
+            if !ends_with_newline(out)
+                out @ out.push(.newline)
+        else if is_digit(here)
+            read = number_at(source: source, from: at)?
+            out @ out.push(read.what)
+            at @ read.next
+        else if here == '"'
+            read = text_at(source: source, from: at)?
+            out @ out.push(read.what)
+            at @ read.next
+        else if is_word_start(here)
+            read = word_at(source: source, from: at)
+            out @ out.push(read.what)
+            at @ read.next
+        else
+            read = operator_at(source: source, from: at)?
+            out @ out.push(read.what)
+            at @ read.next
+
+    if !ends_with_newline(out) && out.len() > 0
+        out @ out.push(.newline)
+
+    return ok(out.push(.finish))
+
+# One token and where the scanner continues. A record rather than two returns,
+# because the two answers are one answer and splitting them is how a caller
+# forgets to advance.
+record Read
+    what: token.Token
+    next: i64
+
+# Where the line holding `from` ends: the index of its `\n`, or the end of the
+# source. Used to skip a comment.
+function line_end(source: str, from: i64) -> i64
+    at: i64 @ from
+
+    while at < source.len() && byte_at(source: source, at: at) != '\n'
+        at @ at + 1
+
+    return at
+
+# The byte at `at`, or -1 past the end — so every test below is one comparison
+# and no caller has to check the length first. -1 is safe as *no byte* because
+# a byte is 0..255 and this returns an `i64`.
+function byte_at(source: str, at: i64) -> i64
+    if at >= source.len() || at < 0
+        return 0 - 1
+
+    return source[at].to_i64().must()
+
+function ends_with_newline(out: [token.Token]) -> bool
+    if out.len() == 0
+        return false
+
+    return out[out.len() - 1] == .newline
+
+function is_digit(b: i64) -> bool
+    return b >= '0' && b <= '9'
+
+# A letter or an underscore — what a name may begin with. Written as a range
+# test on the byte rather than as a table, because the bytes of `a`..`z` are
+# contiguous and a character literal is an integer (spec § Types).
+function is_word_start(b: i64) -> bool
+    return b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b == '_'
+
+function is_word_rest(b: i64) -> bool
+    return is_word_start(b) || is_digit(b)
+
+# The digits at `from`, accumulated — refusing rather than aborting when they
+# do not fit. See the module header: this is the guard that keeps a script from
+# panicking the interpreter.
+function number_at(source: str, from: i64) -> Read?
+    value: i64 @ 0
+    at: i64 @ from
+
+    while is_digit(byte_at(source: source, at: at))
+        digit = byte_at(source: source, at: at) - '0'
+
+        # `value * 10 + digit > MAX` is the test somebody writes first, and it
+        # is the wrong one: computing it is the overflow. The division is what
+        # makes the question answerable without asking it.
+        if value > (MAX - digit) / 10
+            return fail(
+                ERR_NUMBER,
+                "`" + source.slice(from: from, to: at + 1) + "` does not fit in a 64-bit integer"
+            )
+        value @ value * 10 + digit
+        at @ at + 1
+
+    return ok(Read(what: .number(value: value), next: at))
+
+# The string literal at `from`, with its four escapes decoded.
+#
+# Four and not six: `\n`, `\t`, `\"` and `\\`. The little language has no
+# character literals, so `\'` would have nothing to escape, and `\r` is left
+# out deliberately — a scanner that accepts an escape it cannot explain is a
+# scanner whose author was copying.
+function text_at(source: str, from: i64) -> Read?
+    pieces: [str] @ []
+    at: i64 @ from + 1
+
+    # Where the current unescaped run began. The literal is copied a RUN at a
+    # time rather than a byte at a time, and that is what keeps this safe on
+    # text: every slice is taken between two ASCII bytes (the opening quote, an
+    # escape's backslash, the closing quote), so none of them can split a
+    # character. A byte-at-a-time loop aborts on the first accented letter.
+    run: i64 @ at
+
+    while at < source.len()
+        one = byte_at(source: source, at: at)
+
+        if one == '"'
+            pieces @ pieces.push(source.slice(from: run, to: at))
+            return ok(Read(what: .text(value: join(pieces, "")), next: at + 1))
+
+        if one == '\n'
+            return fail(ERR_TEXT, "a string may not run past the end of its line")
+
+        if one == '\\'
+            pieces @ pieces.push(source.slice(from: run, to: at))
+            next_one = byte_at(source: source, at: at + 1)
+
+            if next_one == 0 - 1
+                return fail(ERR_TEXT, "the source ends inside a string")
+
+            if next_one == 'n'
+                pieces @ pieces.push("\n")
+            else if next_one == 't'
+                pieces @ pieces.push("\t")
+            else if next_one == '"'
+                pieces @ pieces.push("\"")
+            else if next_one == '\\'
+                pieces @ pieces.push("\\")
+            else
+                return fail(
+                    ERR_ESCAPE,
+                    "`\\" + source.slice(from: at + 1, to: at + 2) + "` is not one of the four escapes `\\n` `\\t` `\\\"` `\\\\`"
+                )
+            at @ at + 2
+            run @ at
+        else
+            at @ at + 1
+
+    return fail(ERR_TEXT, "the source ends inside a string")
+
+# The word at `from`, resolved to a keyword or a name by `token.worded` — this
+# module does not hold a list of keywords, and that is deliberate: one list, in
+# the module that owns the vocabulary.
+function word_at(source: str, from: i64) -> Read
+    at: i64 @ from
+
+    while is_word_rest(byte_at(source: source, at: at))
+        at @ at + 1
+
+    return Read(what: token.worded(source.slice(from: from, to: at)), next: at)
+
+# The operator at `from`. The two-byte ones are tried before the one-byte ones
+# they begin with, which is the whole subtlety here: `<=` read as `<` then `=`
+# is a program that parses and means something else.
+function operator_at(source: str, from: i64) -> Read?
+    one = byte_at(source: source, at: from)
+    two = byte_at(source: source, at: from + 1)
+
+    if one == '<' && two == '='
+        return ok(Read(what: .less_equal, next: from + 2))
+
+    if one == '>' && two == '='
+        return ok(Read(what: .greater_equal, next: from + 2))
+
+    if one == '=' && two == '='
+        return ok(Read(what: .equal_equal, next: from + 2))
+
+    if one == '!' && two == '='
+        return ok(Read(what: .bang_equal, next: from + 2))
+
+    if one == '&' && two == '&'
+        return ok(Read(what: .ampersands, next: from + 2))
+
+    if one == '|' && two == '|'
+        return ok(Read(what: .bars, next: from + 2))
+    single = one_byte(one)
+
+    if single.is_err()
+        return unknown_byte(source: source, at: from)
+
+    return ok(Read(what: single.must(), next: from + 1))
+
+# A byte that begins no token, quoted in the refusal. The quoting is where the
+# non-ASCII case has to be careful one last time: the offending byte may be the
+# FIRST of a multi-byte character, so the message slices to the end of the
+# line rather than to the next byte — a slice to `at + 1` would abort while
+# building the diagnostic, which is the worst place to abort.
+function unknown_byte(source: str, at: i64) -> Read?
+    stop = line_end(source: source, from: at)
+    return fail(
+        ERR_BYTE,
+        "`" + source.slice(from: at, to: stop) + "` begins no token this language knows"
+    )
+
+function one_byte(b: i64) -> token.Token?
+    if b == '+'
+        return ok(.plus)
+
+    if b == '-'
+        return ok(.minus)
+
+    if b == '*'
+        return ok(.star)
+
+    if b == '/'
+        return ok(.slash)
+
+    if b == '%'
+        return ok(.percent)
+
+    if b == '='
+        return ok(.equals)
+
+    if b == '<'
+        return ok(.less)
+
+    if b == '>'
+        return ok(.greater)
+
+    if b == '!'
+        return ok(.bang)
+
+    if b == '('
+        return ok(.lparen)
+
+    if b == ')'
+        return ok(.rparen)
+
+    if b == ','
+        return ok(.comma)
+
+    return fail(ERR_BYTE, "not an operator")
+
+# The code a scan refused with, or a sentence saying it did not — so a test
+# asserts WHICH refusal in one line.
+function refusal_of(said: [token.Token]?) -> str
+    return match said
+        .ok _  => "nothing was refused"
+        .err e => e.code
+
+test "a whole statement, token by token"
+    got = scanned("let total = 3 + 4").must()
+    assert got.len() == 8
+    assert got[0] == .kw_let
+    assert got[1] == .name(value: "total")
+    assert got[2] == .equals
+    assert got[3] == .number(value: 3)
+    assert got[4] == .plus
+    assert got[5] == .number(value: 4)
+    assert got[6] == .newline
+    assert got[7] == .finish
+
+test "the empty source is one token, and it is the end"
+    got = scanned("").must()
+    assert got.len() == 1
+    assert got[0] == .finish
+
+test "blank lines and comments collapse into the newline that follows them"
+    # Three lines of nothing between two statements must not become three
+    # statements — the parser would then have to know what an empty statement
+    # is, and it does not.
+    got = scanned("print 1\n\n\n# a comment\n\nprint 2").must()
+    newlines: i64 @ 0
+
+    for one in got
+        if one == .newline
+            newlines @ newlines + 1
+
+    assert newlines == 2
+    assert got[0] == .kw_print
+    assert got[3] == .kw_print
+
+test "a comment runs to the end of its line and no further"
+    got = scanned("print 1 # let x = 9\nprint 2").must()
+    assert got.len() == 7
+    assert got[0] == .kw_print
+    assert got[1] == .number(value: 1)
+    assert got[2] == .newline
+    assert got[3] == .kw_print
+    assert got[4] == .number(value: 2)
+
+test "a two-byte operator is never read as the one it begins with"
+    # `<=` read as `<` then `=` parses and means something else, which is the
+    # one mistake in this module that a passing program would hide.
+    got = scanned("a <= b >= c == d != e && f || g").must()
+    assert got[1] == .less_equal
+    assert got[3] == .greater_equal
+    assert got[5] == .equal_equal
+    assert got[7] == .bang_equal
+    assert got[9] == .ampersands
+    assert got[11] == .bars
+    single = scanned("a < b > c = d ! e").must()
+    assert single[1] == .less
+    assert single[3] == .greater
+    assert single[5] == .equals
+    assert single[7] == .bang
+
+test "a string keeps its spaces and decodes its four escapes"
+    got = scanned("print \"a b\\tc\\nd\\\"e\\\\f\"").must()
+    assert got[1] == .text(value: "a b\tc\nd\"e\\f")
+
+test "the empty string is a token with nothing in it"
+    got = scanned("print \"\"").must()
+    assert got[1] == .text(value: "")
+
+test "a name may hold digits and underscores but may not begin with a digit"
+    got = scanned("total_2 _x").must()
+    assert got[0] == .name(value: "total_2")
+    assert got[1] == .name(value: "_x")
+    mixed = scanned("2x").must()
+    assert mixed[0] == .number(value: 2)
+    assert mixed[1] == .name(value: "x")
+
+test "the four refusals, each asserted by its code"
+    assert refusal_of(scanned("print \"open")) == ERR_TEXT
+    assert refusal_of(scanned("print \"line\nbreak\"")) == ERR_TEXT
+    assert refusal_of(scanned("print \"\\q\"")) == ERR_ESCAPE
+    assert refusal_of(scanned("print @")) == ERR_BYTE
+    assert refusal_of(scanned("print 1")) == "nothing was refused"
+
+test "a number too large is refused and does not abort the interpreter"
+    # THE ROBUSTNESS CASE (design.md §1.12). Heroes aborts on overflow, so
+    # without the guard in `number_at` these three lines would be a panic
+    # rather than a diagnostic — and the input is a SCRIPT, which is the one
+    # thing this program does not control.
+    assert refusal_of(scanned("print 9223372036854775807")) == "nothing was refused"
+    assert scanned("print 9223372036854775807").must()[1] == .number(value: MAX)
+    assert refusal_of(scanned("print 9223372036854775808")) == ERR_NUMBER
+    assert refusal_of(scanned("print 99999999999999999999")) == ERR_NUMBER
+    assert refusal_of(scanned("print 123456789012345678901234567890")) == ERR_NUMBER
+
+test "the source always ends in exactly one finish, whatever it held"
+    sources = ["", " ", "\n", "# nothing\n", "print 1", "print 1\n", "print 1\n\n"]
+
+    for source in sources
+        got = scanned(source).must()
+        finishes: i64 @ 0
+
+        for one in got
+            if one == .finish
+                finishes @ finishes + 1
+
+        assert finishes == 1
+        assert got[got.len() - 1] == .finish

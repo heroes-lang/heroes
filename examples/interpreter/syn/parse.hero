@@ -1,0 +1,211 @@
+# Statements, blocks and a whole program — the layer above `syn/expr.hero`.
+#
+# Part of `examples/interpreter/` — the root `main.hero` carries the program's
+# argument. This module owns the line-oriented shape of the little language:
+# every statement begins with a keyword or is an expression, every statement
+# ends at the end of its line, and every block ends at `end`.
+#
+# WHERE THE GENERICS CROSS A `use`. `util/each.hero` declares four templates
+# and this file instantiates two of them at `str` — `joined` for the parameter
+# list a duplicate-parameter refusal has to quote, and `every` for the check
+# that a `fn`'s parameters are all names. `run/eval.hero` instantiates the same
+# templates at `run/value.hero`'s `Value`. That is the shape the corpus was
+# measured to be missing on 2026-09-03: three programs declared generics and
+# **none instantiated one across a module boundary**, so monomorphisation had
+# never been asked for two layouts from two callers that share nothing.
+#
+# AND WHERE THE LANGUAGE STOPS. The duplicate-parameter check below is a plain
+# loop and not `each.counted`, because the predicate would have to know which
+# name it is looking for — and Heroes has no closures (design.md Part 7 item 1,
+# still unruled). A generic over a `(function(A) -> bool)` can therefore only
+# ever be handed a TOP-LEVEL function, which is why every predicate this
+# program passes is one: `is_a_name`, `itself`, `token.opens_a_value`. That is
+# not a complaint, it is the count `M-closures-verdict` is owed, taken from a
+# program rather than from a feeling.
+
+use lex/scan
+use lex/token
+use syn/cursor
+use syn/expr
+use syn/tree
+use util/each
+
+constant ERR_PARSE: str
+    "parse"
+
+# A whole program: scanned, then read statement by statement until the tokens
+# run out.
+function program(source: str) -> tree.Tree?
+    tokens = scan.scanned(source)?
+    c: cursor.Cursor @ cursor.over(tokens)
+    t: tree.Tree @ tree.empty()
+    top: [i64] @ []
+    cursor.skipped_lines(@c)
+
+    while !cursor.done(c)
+        top @ top.push(statement(@c, @t)?)
+        cursor.skipped_lines(@c)
+
+    t.top @ top
+    return ok(t)
+
+# One statement. The keyword decides, and a line that begins with none of them
+# is an expression — which is how a bare call like `greet("world")` stands as a
+# statement.
+function statement(@c: cursor.Cursor, @t: tree.Tree) -> i64?
+    if cursor.accepted(@c, want: .kw_let)
+        return let_statement(@c, @t)
+
+    if cursor.accepted(@c, want: .kw_print)
+        value = expr.parsed(@c, @t)?
+        line_end(@c)?
+        return ok(tree.added_stmt(@t, .say(value: value)))
+
+    if cursor.accepted(@c, want: .kw_if)
+        return if_statement(@c, @t)
+
+    if cursor.accepted(@c, want: .kw_while)
+        return while_statement(@c, @t)
+
+    if cursor.accepted(@c, want: .kw_fn)
+        return fn_statement(@c, @t)
+
+    if cursor.accepted(@c, want: .kw_return)
+        value = expr.parsed(@c, @t)?
+        line_end(@c)?
+        return ok(tree.added_stmt(@t, .give(value: value)))
+
+    if cursor.accepted(@c, want: .kw_exit)
+        code = expr.parsed(@c, @t)?
+        line_end(@c)?
+        return ok(tree.added_stmt(@t, .stop(code: code)))
+
+    if cursor.here(c) == .kw_end || cursor.here(c) == .kw_else
+        return fail(
+            ERR_PARSE,
+            "`" + token.shown(cursor.here(c)) + "` closes a block that was never opened"
+        )
+    value = expr.parsed(@c, @t)?
+    line_end(@c)?
+    return ok(tree.added_stmt(@t, .evaluate(value: value)))
+
+function let_statement(@c: cursor.Cursor, @t: tree.Tree) -> i64?
+    name = cursor.name_here(@c)?
+    cursor.expected(@c, want: .equals)?
+    value = expr.parsed(@c, @t)?
+    line_end(@c)?
+    return ok(tree.added_stmt(@t, .bind(name: name, value: value)))
+
+function if_statement(@c: cursor.Cursor, @t: tree.Tree) -> i64?
+    condition = expr.parsed(@c, @t)?
+    line_end(@c)?
+    then = block(@c, @t)?
+    otherwise: [i64] @ []
+
+    if cursor.accepted(@c, want: .kw_else)
+        line_end(@c)?
+        otherwise @ block(@c, @t)?
+    cursor.expected(@c, want: .kw_end)?
+    line_end(@c)?
+    return ok(tree.added_stmt(@t, .when(condition: condition, then: then, otherwise: otherwise)))
+
+function while_statement(@c: cursor.Cursor, @t: tree.Tree) -> i64?
+    condition = expr.parsed(@c, @t)?
+    line_end(@c)?
+    body = block(@c, @t)?
+    cursor.expected(@c, want: .kw_end)?
+    line_end(@c)?
+    return ok(tree.added_stmt(@t, .while_loop(condition: condition, body: body)))
+
+function fn_statement(@c: cursor.Cursor, @t: tree.Tree) -> i64?
+    name = cursor.name_here(@c)?
+    cursor.expected(@c, want: .lparen)?
+    params = parameters(@c)?
+    line_end(@c)?
+    body = block(@c, @t)?
+    cursor.expected(@c, want: .kw_end)?
+    line_end(@c)?
+    return ok(tree.added_stmt(@t, .define(name: name, params: params, body: body)))
+
+# A parameter list, refusing a repeated name — and quoting the whole list when
+# it does, which is `each.joined` instantiated at `str` from this module.
+function parameters(@c: cursor.Cursor) -> [str]?
+    names: [str] @ []
+
+    if cursor.accepted(@c, want: .rparen)
+        return ok(names)
+    names @ names.push(cursor.name_here(@c)?)
+
+    while cursor.accepted(@c, want: .comma)
+        names @ names.push(cursor.name_here(@c)?)
+
+    cursor.expected(@c, want: .rparen)?
+
+    if repeats(names)
+        return fail(
+            ERR_PARSE,
+            "a parameter is named twice in `(" + each.joined(names, itself, ", ") + ")`"
+        )
+
+    if !each.every(names, is_a_name)
+        return fail(ERR_PARSE, "a parameter may not be the empty name")
+
+    return ok(names)
+
+# Statements until the block's end — `end` or `else`, neither of which this
+# function consumes: the caller does, because only the caller knows which of
+# the two it is willing to see.
+function block(@c: cursor.Cursor, @t: tree.Tree) -> [i64]?
+    made: [i64] @ []
+    cursor.skipped_lines(@c)
+
+    while !closes_a_block(cursor.here(c))
+        made @ made.push(statement(@c, @t)?)
+        cursor.skipped_lines(@c)
+
+    if cursor.done(c)
+        return fail(ERR_PARSE, "the file ends inside a block that no `end` closes")
+
+    return ok(made)
+
+function closes_a_block(t: token.Token) -> bool
+    return t == .kw_end || t == .kw_else || t == .finish
+
+# A statement ends at the end of its line, or at the end of the file. Anything
+# else left on the line is a mistake worth naming, because the commonest one is
+# a second statement written after the first.
+function line_end(@c: cursor.Cursor) -> ()?
+    if cursor.here(c) == .finish
+        return ok()
+
+    if cursor.accepted(@c, want: .newline)
+        return ok()
+
+    return fail(
+        ERR_PARSE,
+        "a statement ends at the end of its line, and `" + token.shown(cursor.here(c)) + "` follows this one"
+    )
+
+# Whether any name in `names` appears twice. A plain loop and not a generic
+# walk, for the reason the module header gives: the predicate would have to
+# know which name it is hunting, and this language has no closures to carry it.
+function repeats(names: [str]) -> bool
+    i: i64 @ 0
+
+    while i < names.len()
+        j: i64 @ i + 1
+
+        while j < names.len()
+            if names[i] == names[j]
+                return true
+            j @ j + 1
+
+        i @ i + 1
+
+    return false
+
+function is_a_name(word: str) -> bool
+    return word.len() > 0
+
+function itself(word: str) -> str
+    return word
