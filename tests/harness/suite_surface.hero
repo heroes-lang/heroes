@@ -279,6 +279,8 @@ function verb_probes() -> [probe.Probe]
         row(name: "dump-tokens shows the file that was named", argv: "lex examples/gallery/00-first.hero --dump-tokens", code: 0).out_starts("1:1 ").out_lacks("range").out_lines_max(39)
         row(name: "mutate refuses a corpus that does not compile", argv: "mutate tests/golden/check", code: 2).out_empty().err_has("this corpus does not compile").err_has("already refused by").err_has("tests/golden/check/")
         row(name: "mutate accepts the gallery", argv: "mutate examples/gallery", code: 0)
+        row(name: "mutate reads a nested program from its root: the leaf below it is checked from there, not from its own directory", argv: "mutate examples/shapes --operator typo-digit", code: 0).out_has("corpus: 6 programs").out_has("| **total** |")
+        row(name: "mutate reads the WHOLE corpus — the gate every leg runs, one cheap operator, so a program the tool cannot read is red the day it lands", argv: "mutate examples --operator typo-digit", code: 0).out_has("corpus: ").out_has("| typo-digit |").err_empty()
         row(name: "mutate prints the survivors of one operator", argv: "mutate examples/gallery --operator swap-args --survivors", code: 0).out_has("| swap-args |").out_lacks("| typo-ident |")
         row(name: "an unknown operator names the ones there are", argv: "mutate --operator swapargs", code: 2).err_has("no operator `swapargs`").err_has("swap-args")
         row(name: "the zen prints and says nothing on stderr", argv: "this", code: 0).err_empty().out_has("20. We can be heroes, just for one day.\n")
@@ -342,7 +344,12 @@ test "the tables are what this module is, so they are counted"
     # message is the fact.
     # 36 -> 40 on 2026-09-03, M-robustness-guards step 6: the four rows of
     # panel 099 R5's nested-leaf fixture.
-    assert verb_probes().len() == 40
+    # 40 -> 42 on 2026-09-03, M-corpus-depth steps 1 and 2: `mutate` reads a
+    # nested program from its root (the corpus was refused for a day because
+    # it did not — measurement 014), and the gate over the whole corpus that
+    # every leg runs, one cheap operator (typo-digit, 29 mutants, 2.1 s of
+    # base check over 78 files measured the day it was written).
+    assert verb_probes().len() == 42
 
 test "a probe holds when everything it asks for is true"
     scratch = "build/harness-selftest"

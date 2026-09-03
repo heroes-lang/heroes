@@ -28,6 +28,7 @@ use cli/io
 use cli/table as cli_table
 use cli/process
 use library_source
+use modules
 use mutate/ops
 use mutate/score
 
@@ -95,9 +96,57 @@ function corpus(dir: str) -> [score.Program]?
 
         if text.is_err()
             return fail("no_corpus", "cannot read " + path)
-        out @ out.push(score.Program(name: path, text: text.must()))
+        out @ out.push(score.Program(name: path, checked_as: checked_name(dir: dir, path: path), text: text.must()))
 
     return ok(out)
+
+# The name a corpus file is COMPILED under: itself, unless it sits below a
+# program's root — then the root directory plus its own file name, with its
+# own text. `use geom/point` in `examples/shapes/geom/area.hero` is read from
+# `examples/shapes/`, because that is where the compiler reads it when the
+# program is compiled from `main.hero` (panel 099 R1); checked from its own
+# directory the same line is `unknown_module`, which is R5's stated hazard
+# and what `heroes check` on the leaf alone says. The root is the nearest
+# directory at or above the file, no higher than `dir`, that holds a
+# `main.hero` — `dir` included, so `mutate examples/shapes` finds it too.
+#
+# Found by M-corpus-depth step 0: this walk checked every file under its own
+# directory, two of `examples/shapes/`'s modules were refused, and the whole
+# corpus with them — for a day, because nothing ran `mutate` over `examples/`
+# (measurement 014). The survivor listing keeps the real path: a site is
+# reported where the author can open it.
+function checked_name(dir: str, path: str) -> str
+    own = modules.open_directory(path)
+    file = path.slice(from: own.len(), to: path.len())
+    floor = with_slash(dir)
+    at: str @ own
+
+    while at.len() >= floor.len()
+        if !read_file(at + "main.hero").is_err()
+            return at + file
+
+        if at.len() == floor.len()
+            return path
+        at @ parent_of(at)
+
+    return path
+
+# `dir` as a directory prefix: one trailing `/`, added if the caller did not.
+# The last BYTE is compared, so a name ending in a multibyte character is
+# neither split nor aborted on.
+function with_slash(dir: str) -> str
+    if dir.len() == 0
+        return ""
+
+    if dir[dir.len() - 1] == '/'
+        return dir
+    return dir + "/"
+
+# The directory above `directory` (which ends with `/`), ending with `/` too
+# — "" above a top-level one. Strictly shorter than its input, which is what
+# makes `checked_name`'s walk end.
+function parent_of(directory: str) -> str
+    return modules.open_directory(directory.slice(from: 0, to: directory.len() - 1))
 
 # `.hero` at the end, byte-walked so a multibyte name neither matches nor
 # aborts.
@@ -116,7 +165,7 @@ function refuse_a_corpus_that_does_not_compile(sources: [score.Program], library
     refused: [str] @ []
 
     for one in sources
-        if !score.base_checks_clean(name: one.name, text: one.text, library: library)
+        if !score.base_checks_clean(name: one.checked_as, text: one.text, library: library)
             refused @ refused.push(one.name)
 
     if refused.len() == 0
@@ -140,3 +189,34 @@ test "an unknown operator names the ones there are"
     # bootstrap's help while there were thirteen (CLAUDE.md §11).
     assert ops.ids().len() == 13
     assert !ops.known("swapargs")
+
+test "a module below a nested program's root is checked from the root, the nearest one no higher than the corpus"
+    # Panel 099 R5's own fixture: a root, a leaf under lib/, and a decoy
+    # program inside it with a main.hero of its own.
+    nested = "tests/golden/surface-fixtures/nested"
+
+    # The leaf's stand-in sits beside main.hero; the root's own files are themselves.
+    assert checked_name(dir: nested, path: nested + "/lib/leaf.hero") == nested + "/leaf.hero"
+    assert checked_name(dir: nested, path: nested + "/main.hero") == nested + "/main.hero"
+    assert checked_name(dir: nested, path: nested + "/util.hero") == nested + "/util.hero"
+
+    # The NEAREST root wins: the decoy has its own main.hero.
+    assert checked_name(dir: nested, path: nested + "/decoy/lib/leaf.hero") == nested + "/decoy/leaf.hero"
+
+    # The walk never climbs above the corpus directory: pointed at lib/ alone,
+    # the leaf has no root and is itself — which `heroes check` then refuses,
+    # and the corpus with it, as it should.
+    assert checked_name(dir: nested + "/lib", path: nested + "/lib/leaf.hero") == nested + "/lib/leaf.hero"
+
+    # A trailing slash on the corpus directory changes nothing.
+    assert checked_name(dir: nested + "/", path: nested + "/lib/leaf.hero") == nested + "/leaf.hero"
+
+    # No main.hero anywhere above it inside the corpus: the gallery's shape.
+    assert checked_name(dir: "examples", path: "examples/gallery/00-first.hero") == "examples/gallery/00-first.hero"
+
+test "parent_of climbs one directory and ends above the top"
+    assert parent_of("examples/shapes/geom/") == "examples/shapes/"
+    assert parent_of("examples/") == ""
+    assert with_slash("examples") == "examples/"
+    assert with_slash("examples/") == "examples/"
+    assert with_slash("") == ""
