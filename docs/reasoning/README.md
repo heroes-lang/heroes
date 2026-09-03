@@ -35,11 +35,12 @@ it means it: it already absorbed the old `docs/theory/`.
   inherit: "Lessons stay impersonal — shapes and rules, never scores; personal
   performance is never written anywhere."
 - **English, like every artifact** (CLAUDE.md §11); the conversation stays
-  Italian — the same split `/learn` already declares. **One carve-out**: the
-  author's question may be quoted verbatim in Italian, on the precedent
-  `docs/book/README.md` sets for `beats.md` — "Italian quotes are welcome
-  inside beats: they are quoted speech, not artifacts". Quoted speech, not an
-  artifact; nothing else in the file is Italian.
+  Italian — the same split `/learn` already declares. **The carve-out is gone**
+  (2026-09-04): this bullet used to let the author's question be quoted verbatim
+  in Italian, on a precedent `docs/book/README.md` set for `beats.md`, and §11
+  retired that doctrine in both places — quoted speech is an artifact like any
+  other. The author's question is quoted for what it **meant**, in English. The
+  notes already written are dated records and keep their words (§14).
 - **The session is read-only.** The note, its index line, and the hand-offs in
   the table above are everything the session writes. Nothing under `crates/`,
   `spec/`, `design.md`, `tests/`.
@@ -81,7 +82,7 @@ file does not already say, it should not have been written.
 That is why the exception is a sentence rather than a licence. The rule's reason
 was never *"one session, one artifact"* — it was *"do not record the same thing
 twice"*, and 004 is the case where the two artifacts differ.
-A pure orientation (`/where`, "a che punto siamo?") produces no note: there is
+A pure orientation (`/where`, "where are we?") produces no note: there is
 no resolved question to re-read.
 
 ## Template
@@ -131,7 +132,7 @@ understand>. Read: design.md §… · spec § … · <files consulted, none modi
   re-read for what it lacked: three faults in the order (the language's rulings
   after the code they shape, closures with no row, the manager before the
   packages), sixteen candidates each met with the rule that already ruled on it,
-  seven that became rows and nine that did not; what *"un runtime forte"*
+  seven that became rows and nine that did not; what *"a strong runtime"*
   resolves to once the runtime is read
 
 ## A note on the vocabulary of 000–002

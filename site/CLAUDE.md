@@ -2,7 +2,7 @@
 
 These rules govern all copy under `site/` (both editions) and any outward-facing
 communication written for this project. They were installed by author
-instruction (2026-08-25: *"NO AI SLOP — via tutti i —"*), and the em-dash rule
+instruction (2026-08-25: *"NO AI SLOP — get rid of all the —"*), and the em-dash rule
 here is stricter than the general one below: **no em dashes in site prose at
 all**. Verbatim compiler output and code blocks are the one exception — they
 are evidence, and evidence is never edited. `site/README.md` keeps the site's
@@ -10,12 +10,12 @@ structural rules; this file is about the writing.
 
 ## No dates on the page
 
-Author instruction 2026-08-28: *"tutte le volte che nel sito dici alla data del
-ventisei agosto duemilaventisei è stato fatto questo, è stato misurato questo,
-non mi piace per niente ... mi sembra un log e nel sito non mi interessa avere
-questo livello di dettaglio. Puoi dire ad oggi, oppure darlo in assoluto come un
-fatto finito. Cerca su tutto il sito occorrenze di data, non le voglio le date.
-Non le voglio assolutamente."*
+Author instruction 2026-08-28: *"every time the site says on the date of the
+twenty-sixth of August two thousand twenty-six this was done, this was measured,
+I do not like it one bit ... it reads like a log to me, and on the site I am not
+interested in having that level of detail. You can say as of today, or give it
+outright as a finished fact. Search the whole site for occurrences of a date, I
+do not want the dates. I absolutely do not want them."*
 
 - **A measurement never carries a date.** Not *"measured 2026-08-25"*, not
   *"re-run on 2026-08-28"*, not *"counted on"*. Write the number as a finished
@@ -35,31 +35,35 @@ Non le voglio assolutamente."*
 
 ## The reader is never assumed to be an expert
 
-Author instruction 2026-08-26: *"metti come regola che chi capita sul sito non
-sia un esperto di linguaggi di programmazione. Non è assolutamente detto."*
+Author instruction 2026-08-26: *"make it a rule that whoever lands on the site
+is not an expert in programming languages. That is by no means a given."*
 Somebody landing here may have never written a compiler, may not know what a
 type checker or a garbage collector is, and may be reading about this out of
 curiosity. Write for them.
 
 - **A technical term that stays in English gets a plain-words gloss the first
-  time it appears on a page**, in a few words, inline: *token* (i pezzi in cui
-  il compilatore spezza il testo del programma), *runtime* (il pezzo di
-  programma che sta sotto e fa funzionare le cose mentre gira). One gloss per
-  page, not per paragraph: repeating it in every section is its own kind of
-  noise.
+  time it appears on a page**, in a few words, inline: *token* (the pieces the
+  compiler chops the program's text into), *runtime* (the piece of program that
+  sits underneath and keeps things working while it runs). One gloss per page,
+  not per paragraph: repeating it in every section is its own kind of noise. The
+  Italian edition does the same thing in Italian, which is what the two rows
+  below are for.
 - **Keep the English term.** Do not invent Italian translations for words the
   industry says in English (`token`, `prompt`, `runtime`, `header`, `linker`,
   `commit`, `build`, `parser`, `garbage collector`). Explaining them is the
   job; replacing them teaches the reader a word nobody else uses.
-- **Italian spelling follows current usage, not archaic variants.** `dai`,
+- **Italian spelling follows current usage, not archaic variants** — the one
+  rule on this page written in Italian on purpose, because the words themselves
+  are what it rules on, and the Italian edition is written from it (CLAUDE.md
+  §11's second declared exception). `dai`,
   never `dài`; `perché`, `finché`, `trentatré` with the acute accent; `po'`
   with an apostrophe. An accent a reader has to stop and look at is a mistake
   even when a dictionary admits it (author instruction 2026-08-26).
 - **Never explain a term by using three more.** If the gloss needs its own
   gloss, the sentence is wrong.
-- **Prefer the thing over the category.** *"Un file che il compilatore legge
-  per sapere com'è fatta una libreria C"* beats *"un artefatto di
-  interfaccia"*.
+- **Prefer the thing over the category.** *"A file the compiler reads to find
+  out how a C library is shaped"* beats *"an interface artifact"*. This one was
+  settled on the Italian page and holds in both editions.
 - The Italian edition is the one the author reads, so where the two editions
   diverge the Italian is fixed to be clearer and the English is then brought up
   to match (CLAUDE.md §11). The glosses added for the Italian belong in the

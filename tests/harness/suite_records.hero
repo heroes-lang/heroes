@@ -211,6 +211,127 @@ constant WATCHED: [str]
 constant WHERE_CEILING: i64
     15
 
+# **Italian function words, and the reason the list is ASCII only.** CLAUDE.md
+# §11's first line says the repository's working text is English. It said so
+# while 241 Italian quotations sat in the tree, 19 of them in that very section,
+# because a doctrine written at `docs/book/README.md` held that quoted speech is
+# not an artifact and everything else cited it. The doctrine is retired
+# (2026-09-04) and this is what replaces the honour system.
+#
+# The words are the ones a byte-oriented tokenizer sees: `latin_words` breaks a
+# token at any byte outside `a`–`z`, and every accented character is two bytes
+# above 127, so `perché` arrives as `perch` and that is the spelling listed.
+# Nothing here is spelled with an accent for the same reason — `così` would
+# arrive as `cos`, which is a C function, and `più` as `pi`. A marker that
+# collides with English or with mathematics buys a false failure, and a check
+# that cries wolf is turned off.
+#
+# **`un`, `chi`, `nel` and `sia` were added after the list missed a real
+# sentence.** *"metti come regola che chi capita sul sito non sia un esperto"* —
+# `site/CLAUDE.md`'s own instruction — reached three markers of twelve words and
+# stayed under the threshold. With the four it reaches six. They were measured
+# before they were added: over every tracked text file outside the records, the
+# longer list fires on the same 23 declared files and nothing else.
+constant ITALIAN_MARKERS: [str]
+    [
+        "che"
+        "non"
+        "sono"
+        "questo"
+        "questa"
+        "quello"
+        "quella"
+        "della"
+        "delle"
+        "degli"
+        "nella"
+        "nello"
+        "anche"
+        "senza"
+        "molto"
+        "tutto"
+        "tutti"
+        "tutte"
+        "voglio"
+        "cosa"
+        "quando"
+        "sempre"
+        "essere"
+        "fare"
+        "adesso"
+        "ogni"
+        "qualcosa"
+        "niente"
+        "nulla"
+        "poi"
+        "quindi"
+        "mai"
+        "solo"
+        "una"
+        "uno"
+        "dei"
+        "sul"
+        "nel"
+        "sia"
+        "chi"
+        "un"
+        "alla"
+        "allo"
+        "agli"
+        "gli"
+        "perch"
+    ]
+
+# Where Italian is the DELIVERABLE rather than a leak: CLAUDE.md §11's second
+# declared exception, a translation somebody reads on purpose. Prefix match, the
+# same shape as `is_record`.
+#
+# **Two entries, and the tree that is missing from them is deliberate.** The
+# Italian edition's page sources are here; its 23 `.astro` wrappers under
+# `site/src/pages/it/` are NOT, and neither is `SiteNav.astro`'s table of
+# Italian nav labels, because measured 2026-09-04 **not one of them fires**: a
+# wrapper carries one Italian title of five or six words and this check needs
+# six words on a line before it looks. A dead exemption is not free — the same
+# argument that deleted `site/log.html` from RECORD above — because it reads as
+# a licence, and the next person to write a paragraph of Italian into a wrapper
+# would believe it had one. If that day comes the check goes red, which is the
+# point, and the entry is added then with a measurement beside it.
+constant ITALIAN_BY_DESIGN: [str]
+    [
+        "site/src/html/it"
+        ".claude/skills/where/italian-vocabulary.md"
+    ]
+
+# The record that lives under no record DIRECTORY. `docs/work/DONE.md` is
+# append-only and never rewritten (CLAUDE.md §3 and §14), so it keeps the words
+# it was written with exactly as `docs/panel/` does — about 38 Italian quotations
+# among them, left there on purpose. It is missing from `RECORD` only because
+# `quoting` already takes it out of the milestone walk for an unrelated reason.
+#
+# **This is why `english` does not walk `living`.** `living` also drops
+# `CLAUDE.md` and `docs/ROADMAP.md` — they quote the retired milestone spelling,
+# so `quoting` removes them — and those two held **35 of the 55 Italian spans**
+# repaired on 2026-09-04. A check reading `living` would have run green over the
+# exact two files it exists for. It was written that way first, and caught
+# before the commit by asking which files the walk actually hands it.
+constant APPENDED: [str]
+    [
+        "docs/work/DONE.md"
+    ]
+
+# **The one file that must hold Italian in order to refuse it: this one.** Its
+# test quotes the sentences the check has to catch, and a check that cannot
+# state its own witnesses is a check nobody can read or trust. It is the same
+# argument, in the same module, as `QUOTES_THE_OLD_SPELLING` above, which is
+# there because these assertions quote `M0` and `M5b`.
+#
+# Exact match and one entry, so the exemption cannot spread: any OTHER harness
+# file that grows an Italian line is reported like anything else.
+constant QUOTES_THE_ITALIAN: [str]
+    [
+        "tests/harness/suite_records.hero"
+    ]
+
 function run_all(scratch: str) -> report.Report?
     r: report.Report @ report.empty()
 
@@ -236,6 +357,7 @@ function run_all(scratch: str) -> report.Report?
     named(@r, living: living)
     c_files(@r, living: living)
     citations(@r, present: walked)
+    english(@r, present: walked)
     exemptions(@r, present: walked)
     expectations(@r, scratch: scratch)
     boundary(@r)
@@ -481,6 +603,162 @@ function citations(@r: report.Report, present: [str])
         )
     else
         report.keep_pass(@r)
+
+# **The repository's working text is English** (CLAUDE.md §11), and this is the
+# check that says so out loud instead of trusting whoever writes next.
+#
+# It reads every file that is not a record — the records keep the words they were
+# written with (§14) — so a red line here is never history: it is a rule, a
+# comment or a page that somebody wrote in Italian today. It takes the whole
+# walk and does its own pruning rather than the `living` list, and `APPENDED`
+# above says why in full: `living` drops the two files this rule exists for.
+#
+# **Why per line and not per file.** The shape this catches is one Italian
+# sentence inside an English document: a quoted author instruction, a module doc
+# citing one, a gloss nobody translated. A file-wide ratio drowns one sentence in
+# four hundred English ones, which is exactly the case that got past every reader
+# for a month.
+function english(@r: report.Report, present: [str])
+    found: [str] @ []
+
+    for path in present
+        if is_record(path) || is_generated(path) || is_appended(path)
+            continue
+
+        if quotes_the_italian(path)
+            continue
+
+        if !reads_as_prose(path) || italian_by_design(path)
+            continue
+
+        text = read_file(path)
+
+        if text.is_err()
+            continue
+
+        for line in strings.lines(text.must())
+            if italian_line(line)
+                found @ found.push("    " + path + ": " + strings.trimmed(line))
+
+    if found.len() > 0
+        report.keep_failure(
+            @r,
+            label: "records/english",
+            detail: "  a living file is written in Italian:\n" + found.join("\n") + "\n  CLAUDE.md §11: everything written is English, and that binds a quoted author\n  instruction too — it is written down for what it MEANT, in English, and the\n  original stays in the git history and in the dated records. If this text is a\n  translation somebody reads on purpose, it belongs under §11's second declared\n  exception and its path goes in ITALIAN_BY_DESIGN with a measurement beside it."
+        )
+    else
+        report.keep_pass(@r)
+
+# Whether this file carries prose a human wrote. An extension list rather than a
+# guess at the content: a `.json` lockfile and a `.svg` icon hold neither
+# English nor Italian, and reading them buys only the chance of a false word.
+function reads_as_prose(path: str) -> bool
+    for suffix in [".md", ".hero", ".c", ".h", ".html", ".astro", ".txt"]
+        if strings.ends_with(text: path, suffix: suffix)
+            return true
+
+    return false
+
+# Prefix match, so a directory covers the files under it — `is_record`'s rule,
+# and the `/` guard is why `site/src/html/italy.md` would not be exempted by an
+# entry naming `site/src/html/it`.
+# This module itself, by exact name. A suffix match like `quoting`'s would also
+# exempt a copy of this file anywhere in the tree; there is one.
+function quotes_the_italian(path: str) -> bool
+    for entry in QUOTES_THE_ITALIAN
+        if path == entry
+            return true
+
+    return false
+
+# The record with no directory of its own, kept out by exact name.
+function is_appended(path: str) -> bool
+    for entry in APPENDED
+        if path == entry
+            return true
+
+    return false
+
+function italian_by_design(path: str) -> bool
+    for entry in ITALIAN_BY_DESIGN
+        if path == entry || strings.starts_with(text: path, prefix: entry + "/")
+            return true
+
+    return false
+
+function is_marker(word: str) -> bool
+    for marker in ITALIAN_MARKERS
+        if same_folded(word: word, marker: marker)
+            return true
+
+    return false
+
+# ASCII case-folded equality. The fold happens HERE rather than while the word
+# is being cut, because cutting builds a word out of slices of the line and a
+# slice carries the byte it found: lowercasing at comparison time is the one
+# place where the byte is a value and not a position. `Non` and `non` are the
+# same marker; the markers themselves are all lowercase.
+function same_folded(word: str, marker: str) -> bool
+    if word.len() != marker.len()
+        return false
+
+    i: i64 @ 0
+
+    while i < word.len()
+        b: u8 @ word[i]
+
+        if b >= 65 && b <= 90
+            b @ b + 32
+
+        if b != marker[i]
+            return false
+        i @ i + 1
+
+    return true
+
+# The line's words, split at every byte that is not an ASCII letter. Case is
+# left alone here and folded by `same_folded` when a word is compared.
+#
+# **The inline code spans go first**, before a single word is counted, because
+# `site/CLAUDE.md`'s Italian spelling rule is a row of backticked Italian words
+# — `dai`, `perch`, `po'` — being ruled ON rather than written IN, and it is the
+# one line in the repository that would fire while obeying every rule in it.
+# Stripping code spans also drops identifiers, paths and emitted C, none of
+# which is prose in any language.
+function latin_words(line: str) -> [str]
+    out: [str] @ []
+    piece: [str] @ []
+    inside_code: bool @ false
+    i: i64 @ 0
+
+    while i < line.len()
+        byte = line[i]
+
+        if byte == 96
+            inside_code @ !inside_code
+
+            if piece.len() > 0
+                out @ out.push(piece.join(""))
+                piece @ []
+            i @ i + 1
+            continue
+
+        letter: bool @ false
+
+        if !inside_code
+            if is_lower(byte) || byte >= 65 && byte <= 90
+                piece @ piece.push(line.slice(from: i, to: i + 1))
+                letter @ true
+
+        if !letter && piece.len() > 0
+            out @ out.push(piece.join(""))
+            piece @ []
+        i @ i + 1
+
+    if piece.len() > 0
+        out @ out.push(piece.join(""))
+
+    return out
 
 # Every backticked token that is anchored at a directory of this repository.
 function path_tokens(text: str, roots: {str: bool}) -> [str]
@@ -1068,6 +1346,58 @@ test "the boundary rule catches the numbers and nothing else"
     assert numbered_in("the RM64 encoding").is_err()
     assert numbered_in("M-selfhost-fixpoint is v1").is_err()
     assert numbered_in("hero_desc_str").is_err()
+
+# The check that CLAUDE.md §11 is obeyed, made to fire on purpose (§9: every
+# verifier check has a test that makes it fire). The Italian line is the shape
+# that got past every reader for a month — one quoted instruction inside an
+# English document — and the English lines are the three that would have made
+# this check cry wolf: a `constant` full of identifiers, a sentence about the
+# Italian edition, and the spelling rule whose subject is Italian words.
+test "an Italian line is caught, and the English ones around it are not"
+    assert italian_line("non voglio nulla in memoria e voglio tutto nel Claude MD")
+    assert italian_line("metti come regola che chi capita sul sito non sia un esperto")
+    assert italian_line("Non le voglio le date, non le voglio assolutamente")
+    assert !italian_line("Italian nav labels are wider, plus the language badge, so the")
+    assert !italian_line("never `dai`; `perche`, `finche`, `trentatre` with the acute accent")
+    assert !italian_line("the author studies from the Italian, so where the two diverge")
+    assert !italian_line("a b c d e")
+
+    assert italian_by_design("site/src/html/it/index.html")
+    assert italian_by_design(".claude/skills/where/italian-vocabulary.md")
+    assert !italian_by_design("site/src/html/index.html")
+    assert !italian_by_design("CLAUDE.md")
+
+    assert reads_as_prose("CLAUDE.md")
+    assert reads_as_prose("selfhost/grammar_expr.hero")
+    assert !reads_as_prose("site/package-lock.json")
+
+    assert latin_words("due, tre cose").len() == 3
+    assert latin_words("a `token dropped` b").len() == 2
+    assert same_folded(word: "Non", marker: "non")
+    assert !same_folded(word: "none", marker: "non")
+
+# **Four markers AND a quarter of the line.** Both, because a long English line
+# reaches four markers on its own and a short one reaches a quarter on `una`
+# alone. Six words before the line is looked at at all, so a heading, a table
+# cell and a nav label are below the horizon.
+#
+# Measured 2026-09-04 over every tracked `.md`, `.hero`, `.c`, `.h`, `.html`,
+# `.astro` and `.txt` file outside the records: **23 files fire, and all 23 are
+# declared** — the Italian edition's 22 pages and the `/where` vocabulary. Zero
+# false positives, which is the number this threshold was chosen to hit.
+function italian_line(line: str) -> bool
+    words = latin_words(line)
+
+    if words.len() < 6
+        return false
+
+    marked: i64 @ 0
+
+    for word in words
+        if is_marker(word)
+            marked @ marked + 1
+
+    return marked >= 4 && marked * 100 >= 25 * words.len()
 
 test "names_used reads a name and leaves the prose alone"
     assert names_used("M-harness-port is next") == ["M-harness-port"]

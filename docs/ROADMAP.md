@@ -14,15 +14,15 @@ lines about the past before its first line about the future, and was growing
 about 66 lines per close. `/step`'s checklist keeps § Where we are short and
 sends the closing block to the journal.
 
-**Reorganised 2026-08-25 by author instruction** — *"riscrivilo completamente
-senza perdere nessuna informazione, in modo più ordinato"*. Nothing was dropped.
+**Reorganised 2026-08-25 by author instruction** — *"rewrite it completely
+without losing any information, in a tidier way"*. Nothing was dropped.
 What changed is that the same milestones used to be listed in **three** separate
 tables — the order, the done list, and the name map — and are now in one, with
 the name map kept separately because CLAUDE.md §14 cites it and a cited record is
 not merged away.
 
-**Reorganised again 2026-08-26 by author instruction** — *"metti in alto la
-tabella di sintesi e poi sotto tutti gli step in ordine"*. That pass merged the
+**Reorganised again 2026-08-26 by author instruction** — *"put the summary table
+at the top and then all the steps below it, in order"*. That pass merged the
 tables and left the **prose** in four sections that did not share an order: a
 milestone's row was in § The chain, the open one's story sat between the summary
 table and that chain — **154 lines of the past before the first line of the
@@ -36,9 +36,9 @@ Nothing was dropped, and this time that is a **measurement** — the word freque
 table of the file before and after differs only in the headings that changed and
 in the numbers that were re-measured.
 
-**Reordered a third time 2026-09-03 by author instruction** — *"riordina roadmap
-con tutto quello che è stato fatto prima di quello che deve essere fatto, in più
-tutte le note spostale dalla tabella … la tabella la voglio pulita"*. Two
+**Reordered a third time 2026-09-03 by author instruction** — *"reorder the roadmap
+with everything that has been done before everything that is still to do, and
+move all the notes out of the table … I want the table clean"*. Two
 changes, and neither drops a word. **The chain now runs closed-then-scheduled**:
 the one closed milestone that sat below five open ones — M-documentation-site,
 taken out of order the day it landed — moves up to the end of the closed run, so
@@ -220,23 +220,23 @@ row number, because a reorder moves a number and never a name (CLAUDE.md §14).
   table runs closed-then-scheduled since 2026-09-03; the five milestones it
   overtook keep their turn and their order among themselves. **What the table no
   longer records is the plan** — that a milestone moved is here, in a sentence,
-  rather than in a row's position, which is what the author's *"la tabella la
-  voglio pulita"* decided.
+  rather than in a row's position, which is what the author's *"I want the
+  table clean"* decided.
 - **M-isolated-threads** — **moved ahead of packages by author instruction,
   2026-08-25.**
 - **M-interpolation-verdict** — **scheduled by author instruction 2026-09-02.**
 - **M-robustness-guards** — **opened by author instruction 2026-09-03**, ahead of
   M-isolated-threads, out of a `/decide` sitting that closed ten items at once:
-  *"ratifica tutto … scegli le soluzioni più robuste e complete rispetto a quelle
-  più economiche … privilegia il consolidamento e le soluzioni migliori non le
-  scorciatoie … più storia e meno attenzione al token … più robustezza su tutte le
-  piattaforme, non silenziare errori"*. Its six steps are the six `SCHEDULED.md`
+  *"ratify everything … choose the most robust and complete solutions over the
+  cheaper ones … favour consolidation and the better solutions, not the
+  shortcuts … more history and less attention to the token … more robustness on
+  every platform, do not silence errors"*. Its six steps are the six `SCHEDULED.md`
   items that name it; two of them are sittings (the FFI pointer verdict, full five
   seats; the stack guard, soundness lane). The `records/names` check found the id in
   a list before it had a row here, which is the order CLAUDE.md §14 wants.
-- **M-corpus-depth** — **scheduled by author instruction 2026-09-03**, *"ragiona
-  sulla possibilità di aggiungere ulteriori esempi anche alcuni più complessi per
-  avere una rete più ampia, guarda anche cosa hanno fatto altri linguaggi"*, from a
+- **M-corpus-depth** — **scheduled by author instruction 2026-09-03**, *"think
+  about whether to add further examples, some of them more complex too, to have
+  a wider net; look at what other languages have done as well"*, from a
   plan measured and approved the same day. The author placed it after
   M-robustness-guards, which closed that afternoon, so it first stood at 34 behind
   the open M-isolated-threads. Its step 0 — the first `heroes mutate` score over
@@ -244,18 +244,19 @@ row number, because a reorder moves a number and never a name (CLAUDE.md §14).
   with the scheduling, so the "before" exists before the first program does.
   **Then step 0 found `heroes mutate` unable to read `examples/` at all**, refused
   since 2026-09-02 (measurement 014), and the author moved the milestone to 33
-  and opened it the same evening — *"anticipare quei due passi subito, prima di
-  M-isolated-threads"*, with *"cancello su ogni ramo + punteggio pieno sui tag"*
+  and opened it the same evening — *"bring those two steps forward right now, before
+  M-isolated-threads"*, with *"the gate on every branch + the full score on the
+  tags"*
   for the CI question — so that the metric the thesis rests on is repaired
   before anything else is measured against it. **Two milestones are open at
   once**, in two sessions, and the table says so rather than hiding one.
 - **M-core-packages** and **M-web-framework** — **scheduled by author instruction
   2026-09-03**, the same evening, out of a reasoning session
-  (`docs/reasoning/005-packages-in-place-of-a-standard-library.md`): *"vorrei
-  avere tutti gli strumenti necessari a costruire un web framework alla Rails o
-  Django o anche più sottile, tipo Go, Echo o FastAPI"*, and then, when a single
-  toolkit was proposed, *"mi immagino più pacchetti che si combinano e poi quello
-  web che li usa tutti; il modello è Go come organizzazione"*. Placed after
+  (`docs/reasoning/005-packages-in-place-of-a-standard-library.md`): *"I would like
+  to have every tool needed to build a web framework in the style of Rails or
+  Django, or even thinner, like Go, Echo or FastAPI"*, and then, when a single
+  toolkit was proposed, *"I picture several packages that combine, and then the
+  web one that uses them all; the model is Go, as organisation"*. Placed after
   M-package-manager because `heroes fetch` is what makes a package a thing you
   distribute. **Reversed later the same evening** — the packages stand before the
   manager since the reorder, and the bullets below say why. **Two rows because they are two deliverables** (CLAUDE.md §14): the
@@ -264,12 +265,12 @@ row number, because a reorder moves a number and never a name (CLAUDE.md §14).
   rows, metaprogramming, dynamic dispatch and inheritance (`design.md:2382-2404`).
   **The sitting sits at the opening, not at the scheduling**, on
   M-interpolation-verdict's precedent, and the author added its sixth question the
-  same night: conditional compilation — *"la compilazione condizionale con la macro
-  if che però non è una macro, o un'altra parola chiave"*.
+  same night: conditional compilation — *"conditional compilation with the
+  if macro that is not a macro, though, or another keyword"*.
 - **The chain was re-read and reordered late on 2026-09-03, by author
-  instruction** — *"facciamo un grosso ragionamento sulla roadmap e anche sulle
-  cose in decide e scheduled … valutiamo se ci sono degli step che non abbiamo
-  considerato finora … poi le riordiniamo tutte in un ordine molto logico"* — out
+  instruction** — *"let us do a big think about the roadmap and about the
+  things in decide and scheduled too … let us judge whether there are steps we
+  have not considered so far … then we reorder them all in a very logical order"* — out
   of a reasoning session (`docs/reasoning/006-what-the-chain-lacked.md`). Three
   faults in the order were measured and each moved a row: the language's one
   scheduled ruling sat at row 41, behind the packages, the framework, QBE and
@@ -299,7 +300,7 @@ row number, because a reorder moves a number and never a name (CLAUDE.md §14).
   before it (`docs/measurements/003` rider 3, `outline` and `explain`). It
   stands after M-web-framework so that its witness — the packages' own API —
   exists, and its entry names the rule as the first question of its opening.
-- **M-panic-location** — row 43, the cheapest half of *"un runtime forte"*: a
+- **M-panic-location** — row 43, the cheapest half of *"a strong runtime"*: a
   panic today prints `panic: <msg>` and aborts with no line and no function
   (`runtime/parts/panic.c`), while the emitted C already carries `#line`. Placed
   after the runtime leaves M-isolated-threads' hands; it depends on nothing else
@@ -787,7 +788,7 @@ one at a time, with the formatter silently deleting it from a working program.
 ### M-reflection-verdict — the ruling on reflection
 
 **Scheduled by author instruction 2026-09-03**, the author's own example of a
-feature never considered (*"la reflection, di tipo un a caso"*), and a
+feature never considered (*"reflection, say, just as an example"*), and a
 **decision**, not a feature.
 
 **The record has no row for it, and that is the finding.** Measured 2026-09-03
@@ -1060,7 +1061,7 @@ documented declarations into a tree somebody else will read.
 ### M-panic-location — a panic names its line
 
 **Scheduled by author instruction 2026-09-03**, the cheapest half of what the
-author called *"un runtime forte"*, and its warrant is **§1.12**: a program that
+author called *"a strong runtime"*, and its warrant is **§1.12**: a program that
 stops must say where.
 
 **Measured 2026-09-03.** `hero_panic` flushes stdout, prints `panic: <msg>` and
@@ -1217,8 +1218,8 @@ write Heroes; open it in the middle and you find the thing you were looking for.
 
 ### M-install-channels — the way in, from a package manager
 
-**Scheduled, no warrant** (author instruction 2026-09-03, *"la pubblicazione ad
-esempio su brew … il deploy del linguaggio"*). Installing Heroes today is a `git
+**Scheduled, no warrant** (author instruction 2026-09-03, *"publishing on brew, for
+instance … deploying the language"*). Installing Heroes today is a `git
 clone` and one clang line (`site/src/html/index.html:135-137`, `seed/README.md`),
 and that is the whole reason this milestone is small: **every channel builds from
 the seed with that line**, 3.5 s, and no channel ships a prebuilt binary —
@@ -1400,7 +1401,7 @@ So a number met in the record resolves here, and only here.
 | `M-robustness-guards` | — | `m-robustness-guards` | the guards that shut the holes §1.12 named. **Done 2026-09-03**, the day it opened: six steps, two sittings (103, 104), every landing measured on the Mac, the Linux image and the Windows box before its commit |
 | `M-corpus-depth` | — | — | the rung between a program and the compiler: nine programs chosen for shape — oracle-checked, deep, FFI at program scale. **A new id rather than a third reopening of the corpus** (§14, author instruction 2026-09-03): `M-program-corpus` delivered *many programs run*, `M-corpus-coverage` *every form has a program*, and this one delivers *size, depth and an external oracle*, which neither name claims |
 | `M-core-packages` | — | — | small packages that compose, organised as Go's tree, in Heroes or over C. **A new id rather than an area annexed** (§14, author instruction 2026-09-03): M-package-layout delivered how a `use` reaches a module, M-package-manager delivers `heroes add`/`heroes fetch` and where a fetched package lives, and this one delivers the packages themselves — a deliverable neither name claims. The word is Odin's `core:` collection, which §1.11 cites for the reason a package can be redesigned and a built-in cannot |
-| `M-web-framework` | — | — | the framework that composes the core packages, Go/Echo style. **A second id and not a step of the one above** (§14, author instruction 2026-09-03, *"poi quello web che li usa tutti"*): the packages are a deliverable with or without a framework, and a framework is falsifiable on its own — it exists when the corpus's `todo` is served over HTTP on three platforms |
+| `M-web-framework` | — | — | the framework that composes the core packages, Go/Echo style. **A second id and not a step of the one above** (§14, author instruction 2026-09-03, *"then the web one that uses them all"*): the packages are a deliverable with or without a framework, and a framework is falsifiable on its own — it exists when the corpus's `todo` is served over HTTP on three platforms |
 | `M-closures-verdict` | — | — | the ruling on Part 7 items 1 and 12, closures and inline blocks. **The verdict is the deliverable and the name says so** (§14, author instruction 2026-09-03), on M-interpolation-verdict's precedent: an id naming the feature would claim what the sitting exists to decide |
 | `M-reflection-verdict` | — | — | the ruling on reflection, at run time and as compile-time derivation over a record's fields — a question the record had never given a row (§14, author instruction 2026-09-03) |
 | `M-deferral-ledger` | — | — | every Part 7 item with no milestone receives a dated verdict or a return condition. **The ledger is the deliverable** — not a feature and not a refusal, but the end of promises without a date (§14, author instruction 2026-09-03) |

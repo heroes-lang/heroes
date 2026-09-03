@@ -1,15 +1,16 @@
 # The clang floor: the oldest clang this compiler is measured on, asked of
 # the machine once per build and by `heroes doctor` (panel 103, author
-# instruction 2026-09-03: *"se serve puoi richiedere una versione minima di
-# clang recente a piacere"*; M-robustness-guards step 3c). Its own module
+# instruction 2026-09-03: *"if you need to, you can require a recent minimum
+# clang version, whichever you like"*; M-robustness-guards step 3c). Its own module
 # because `cli/toolchain.hero` was at the ceiling and the floor is a concern
 # with a name: what version answers, whether it is enough, and what to say
 # when it is not.
 
 use cli/process
 
-# THE CLANG FLOOR: 18 (author instruction 2026-09-03, panel 103 — *"se
-# serve puoi richiedere una versione minima di clang recente a piacere"*).
+# THE CLANG FLOOR: 18 (author instruction 2026-09-03, panel 103 — *"if you
+# need to, you can require a recent minimum clang version, whichever you
+# like"*).
 # Chosen from measured versions and not from a preference: 18.1.3 is the
 # CI's Ubuntu leg, the oldest clang this project builds on; 18.1.8, 21.0.0
 # and 22.1.8 (Debian, Apple, the Windows box) give the same `-ast-dump=json`
