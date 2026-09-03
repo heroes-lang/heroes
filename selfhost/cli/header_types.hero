@@ -1,0 +1,235 @@
+# The header's own type text for what an `@` parameter points at, and the
+# two translation units the pointee check is made of (design.md §4.19;
+# panel 103; M-robustness-guards step 3). `cli/pointee.hero` asks the
+# question and runs clang; this file knows only how to write the two units
+# and how to read clang's answer back.
+#
+# **Where the type text comes from.** One unit includes the program's
+# headers and declares `extern __typeof__(getline) hero_ty_getline;` per
+# extern asked about; `clang -fsyntax-only -Xclang -ast-dump=json -Xclang
+# -ast-dump-filter=hero_ty_` prints, for each, a `FunctionDecl` whose
+# `ParmVarDecl` children carry the parameter types as the header spelled
+# them — `size_t *restrict`, `int *`, `time_t *`. Measured identical on
+# clang 18.1.8, 21.0.0 and 22.1.8, on the Mac, in the Linux image and on
+# the Windows box; `desugaredQualType` is absent on parameters everywhere,
+# which is why the JSON is only where the TEXT comes from and never the
+# verdict.
+#
+# **Read by its shape, not by a JSON parser.** Three facts, all measured:
+# the declaration is a `FunctionDecl` named `hero_ty_<name>`; its
+# parameters follow as `ParmVarDecl`s, each with a `"qualType"`; the next
+# `FunctionDecl` ends the list. A general JSON parser would be a second
+# way to read a file this compiler writes the question for, and the shape
+# is the contract — a fourth fact would be a fourth line here.
+#
+# **The verdict unit.** The same headers, then two `_Static_assert`s per
+# parameter at the author's own `#line`: `sizeof` against the declared C
+# type, and the sign of `(T)-1` — C11 arithmetic on the header's own type,
+# never a width table this compiler carries. Its failure line carries
+# `emit/ffi_pointee.hero`'s marker, which is how the answer finds the
+# parameter.
+
+use emit/ffi_pointee
+use cli/pointee_ask
+
+constant PREFIX: str
+    "hero_ty_"
+
+## The two units
+
+# The dump unit: the program's headers, then one `__typeof__` declaration
+# per extern asked about — one per NAME, because two parameters of one
+# function are read from one declaration.
+function dump_unit(headers: [str], wanted: [pointee_ask.Pointee]) -> str
+    lines: [str] @ []
+
+    for header in headers
+        lines @ lines.push("#include <" + header + ">")
+
+    named: [str] @ []
+
+    for one in wanted
+        already: bool @ false
+
+        for seen in named
+            if seen == one.name
+                already @ true
+
+        if !already
+            named @ named.push(one.name)
+            lines @ lines.push("extern __typeof__(" + one.name + ") " + PREFIX + one.name + ";")
+
+    return lines.join("\n") + "\n"
+
+# The check unit: the same headers, then two assertions per parameter at
+# the author's own line. `(T)-1 > 0` is the sign of an integer type in
+# C11 arithmetic; for a float pointee the two sides agree and only
+# `sizeof` decides, which is the right question for a float.
+function check_unit(headers: [str], wanted: [pointee_ask.Pointee], types: {str: [str]}) -> str
+    lines: [str] @ []
+
+    for header in headers
+        lines @ lines.push("#include <" + header + ">")
+
+    for one in wanted
+        params = types[one.name]
+
+        if params.is_err()
+            continue
+
+        if one.index >= params.must().len()
+            continue
+        pointed = pointee_of(params.must()[one.index])
+
+        if pointed.is_err()
+            continue
+        header_type = pointed.must()
+        lines @ lines.push("#line " + one.line.to_str() + " \"" + one.file + "\"")
+        lines @ lines.push(
+            "_Static_assert(sizeof(" + header_type + ") == sizeof(" + one.declared + ") && (((" + header_type + ")-1 > 0) == ((" + one.declared + ")-1 > 0)), \"" + ffi_pointee.MARKER + one.name + " " + one.param + " " + one.declared + " " + header_type + "\");"
+        )
+
+    return lines.join("\n") + "\n"
+
+# What a header's parameter type points at: the text before its last `*`,
+# with `restrict` and `__restrict` gone. Absent when the header takes the
+# parameter by value — then the declaration is wrong in a way the probe
+# already reports.
+function pointee_of(qual_type: str) -> str?
+    star = last_star(qual_type)
+
+    if star.is_err()
+        return fail("none", "not a pointer")
+    before = trimmed(qual_type.slice(from: 0, to: star.must()))
+    without = trimmed(strip_word(text: strip_word(text: before, word: "__restrict"), word: "restrict"))
+
+    if without.len() == 0
+        return fail("none", "nothing pointed at")
+    return ok(without)
+
+function last_star(text: str) -> i64?
+    index: i64 @ text.len() - 1
+
+    while index >= 0
+        if text[index] == '*'
+            return ok(index)
+        index @ index - 1
+
+    return fail("none", "no star")
+
+function strip_word(text: str, word: str) -> str
+    if text.len() >= word.len() && text.slice(from: text.len() - word.len(), to: text.len()) == word
+        return text.slice(from: 0, to: text.len() - word.len())
+    return text
+
+## Reading the dump
+
+# The parameter types clang reports for `hero_ty_<name>`, in order. The
+# JSON is scanned as text, on three facts about the dump's shape measured
+# on clang 18, 21 and 22: the declaration is a `FunctionDecl` named
+# `hero_ty_<name>`; its parameters follow as `ParmVarDecl`s, each with a
+# `"qualType"` in its `"type"`; and the next `FunctionDecl` ends the list.
+# A general JSON parser would be a second way to read a file this compiler
+# writes the question for, and the shape is the contract.
+function parameter_types(json: str, name: str) -> [str]
+    out: [str] @ []
+    opened = locate_text(text: json, needle: "\"name\": \"" + PREFIX + name + "\"", from: 0)
+
+    if opened.is_err()
+        return out
+    at: i64 @ opened.must()
+    stop = locate_text(text: json, needle: "\"kind\": \"FunctionDecl\"", from: at)
+    limit: i64 @ json.len()
+
+    if !stop.is_err()
+        limit @ stop.must()
+
+    while true
+        param = locate_text(text: json, needle: "\"kind\": \"ParmVarDecl\"", from: at)
+
+        if param.is_err() || param.must() >= limit
+            break
+        typed = locate_text(text: json, needle: "\"qualType\": \"", from: param.must())
+
+        if typed.is_err() || typed.must() >= limit
+            break
+        start = typed.must() + 13
+        close = locate_text(text: json, needle: "\"", from: start)
+
+        if close.is_err()
+            break
+        out @ out.push(json.slice(from: start, to: close.must()))
+        at @ close.must()
+
+    return out
+
+# The parameter types for every asked-about extern, keyed by name.
+function types_of(json: str, wanted: [pointee_ask.Pointee]) -> {str: [str]}
+    out: {str: [str]} @ {}
+
+    for one in wanted
+        if out[one.name].is_err()
+            out[one.name] @ parameter_types(json: json, name: one.name)
+
+    return out
+
+# Byte offset of `needle` in `text` at or after `from`, over bytes: the
+# dump is ASCII where it matters and the needles are ASCII entirely.
+function locate_text(text: str, needle: str, from: i64) -> i64?
+    if needle.len() == 0 || from < 0
+        return fail("none", "nothing to find")
+    index: i64 @ from
+    first = needle[0]
+
+    while index + needle.len() <= text.len()
+        if text[index] == first && text.slice(from: index, to: index + needle.len()) == needle
+            return ok(index)
+        index @ index + 1
+
+    return fail("none", "not found")
+
+function trimmed(text: str) -> str
+    start: i64 @ 0
+    stop: i64 @ text.len()
+
+    while start < stop && text[start] == ' '
+        start @ start + 1
+
+    while stop > start && text[stop - 1] == ' '
+        stop @ stop - 1
+
+    return text.slice(from: start, to: stop)
+
+## Tests
+
+test "the dump is read by its shape: the k-th ParmVarDecl's qualType, and the next FunctionDecl ends the list"
+    json = "{\"kind\": \"FunctionDecl\", \"name\": \"hero_ty_getline\", \"inner\": [{\"kind\": \"ParmVarDecl\", \"type\": {\"qualType\": \"char **restrict\"}}, {\"kind\": \"ParmVarDecl\", \"type\": {\"desugaredQualType\": \"unsigned long *\", \"qualType\": \"size_t *restrict\"}}, {\"kind\": \"ParmVarDecl\", \"type\": {\"qualType\": \"FILE *restrict\"}}]}\n{\"kind\": \"FunctionDecl\", \"name\": \"hero_ty_frexp\", \"inner\": [{\"kind\": \"ParmVarDecl\", \"type\": {\"qualType\": \"double\"}}, {\"kind\": \"ParmVarDecl\", \"type\": {\"qualType\": \"int *\"}}]}\n"
+    got = parameter_types(json: json, name: "getline")
+    assert got.len() == 3
+    assert got[1] == "size_t *restrict"
+    assert parameter_types(json: json, name: "frexp") == ["double", "int *"]
+    assert parameter_types(json: json, name: "absent").len() == 0
+
+test "what is pointed at: the text before the last star, restrict gone, by-value absent"
+    assert pointee_of("size_t *restrict").must() == "size_t"
+    assert pointee_of("unsigned long *").must() == "unsigned long"
+    assert pointee_of("const int *").must() == "const int"
+    assert pointee_of("char **restrict").must() == "char *"
+    assert pointee_of("double").is_err()
+
+test "the check unit asserts width and sign at the author's line, with the marker"
+    wanted: [pointee_ask.Pointee] = [
+        pointee_ask.Pointee(name: "getline", param: "n", index: 1, declared: "int32_t", file: "t.hero", line: 2)
+        pointee_ask.Pointee(name: "frexp", param: "e", index: 1, declared: "int32_t", file: "t.hero", line: 3)
+    ]
+    types: {str: [str]} @ {}
+    types["getline"] @ ["char **restrict", "size_t *restrict", "FILE *restrict"]
+    types["frexp"] @ ["double", "int *"]
+    headers: [str] = ["stdio.h", "math.h"]
+    unit = check_unit(headers, wanted, types)
+    assert unit.slice(from: 0, to: 18) == "#include <stdio.h>"
+    assert locate_text(text: unit, needle: "#line 2 \"t.hero\"", from: 0).must() > 0
+    assert locate_text(text: unit, needle: "_Static_assert(sizeof(size_t) == sizeof(int32_t) && (((size_t)-1 > 0) == ((int32_t)-1 > 0)), \"heroes-ffi-pointee getline n int32_t size_t\");", from: 0).must() > 0
+    assert locate_text(text: unit, needle: "heroes-ffi-pointee frexp e int32_t int\"", from: 0).must() > 0
+    dumped = dump_unit(headers, wanted)
+    assert locate_text(text: dumped, needle: "extern __typeof__(getline) hero_ty_getline;", from: 0).must() > 0

@@ -23,6 +23,7 @@ use ir/containers
 use emit/ctype
 use emit/ffi_lookup
 use emit/ffi_declared
+use emit/ffi_pointee
 use emit/ffi_record
 use emit/ffi_field
 use emit/ffi_tag
@@ -54,6 +55,10 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
 
         if !wrong.is_err()
             found @ ffi_lookup.add_once(found, d: wrong.must())
+        pointed = ffi_pointee.pointee_width(s, decls, tree, line: line, word_bits: word_bits)
+
+        if !pointed.is_err()
+            found @ ffi_lookup.add_once(found, d: pointed.must())
         not_const = ffi_declared.not_constant(s, decls, line: line)
 
         if !not_const.is_err()

@@ -1,0 +1,153 @@
+# What an `@` parameter points at, declared at the wrong width or sign —
+# the reader for `cli/pointee.hero`'s assertion (design.md §4.19, §1.12;
+# panel 103, 2026-09-03). Port of nothing: the bootstrap never asked this
+# question, which is how `getline(@n: i32)` against `size_t *` built at
+# exit 0 and wrote 8 bytes into 4.
+#
+# The assertion the compiler writes is
+#     _Static_assert(sizeof(size_t) == sizeof(int32_t) && …,
+#                    "heroes-ffi-pointee getline n int32_t size_t");
+# `#line`d at the author's declaration, so clang's failure line carries the
+# marker below, the extern's C name, the parameter's name, the declared
+# type as C, and the header's own type text. Everything the diagnostic
+# needs is in the message this compiler wrote; nothing is read from clang's
+# echo of the source (panel 038's trap), and no column arithmetic is
+# needed because the marker names the parameter.
+
+use token
+use ast
+use source
+use diag
+use emit/ffi_lookup
+use emit/c_spellings
+use parse
+use resolve
+use checker
+
+# The contract between the check that writes the assertion and this
+# reader: one string, one home (CLAUDE.md §11).
+constant MARKER: str
+    "heroes-ffi-pointee "
+
+# The parameter's two spans in the author's declaration: its name, and
+# the type written after the colon — the fix replaces the type.
+record ParamSpans
+    name: token.Span
+    ty: token.Span
+
+function parameter_spans(s: source.Source, decls: [ast.Decl], tree: ast.Ast, name: str, param: str) -> ParamSpans?
+    for decl in decls
+        if source.span_text(s, decl.name) != name
+            continue
+
+        match decl.kind
+            .function_decl fd =>
+                if fd.value.header.is_err()
+                    continue
+
+                for one in fd.value.params
+                    if source.span_text(s, one.name) == param
+                        return ok(ParamSpans(name: one.name, ty: tree.types[one.ty].span))
+            .constant_decl | .record_decl | .variant_decl | .test_decl => continue
+
+    return fail("none", "no such parameter on an extern of that name")
+
+# `heroes-ffi-pointee <name> <param> <declared C type> <header type…>`
+# failed: the header's parameter points at something of another width or
+# sign than the `@` parameter declares. The header type may be several
+# words (`unsigned long`), so it is everything after the third.
+function pointee_width(s: source.Source, decls: [ast.Decl], tree: ast.Ast, line: str, word_bits: i64) -> diag.Diagnostic?
+    if !ffi_lookup.has(text: line, needle: ffi_lookup.FAILED)
+        return fail("none", "not an assertion failure")
+    rest = ffi_lookup.after(text: line, marker: MARKER)
+
+    if rest.is_err()
+        return fail("none", "not a pointee assertion")
+    parts = ffi_lookup.words(text: rest.must())
+
+    if parts.len() < 4
+        return fail("none", "the marker's tail is not ours")
+    name = parts[0]
+    param = parts[1]
+    tail: [str] @ []
+    index: i64 @ 3
+
+    while index < parts.len()
+        tail @ tail.push(parts[index])
+        index @ index + 1
+
+    header_type = trim_quote(tail.join(" "))
+    found = ffi_lookup.declaration(s, decls, name: name)
+
+    if found.is_err()
+        return fail("none", "no group declares this name")
+    spans = parameter_spans(s, decls, tree, name: name, param: param)
+    at: token.Span @ found.must().span
+    written: str @ "a width the header does not have"
+
+    if !spans.is_err()
+        at @ spans.must().name
+        written @ "`" + source.span_text(s, spans.must().ty) + "`"
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "ffi_parameter_type",
+        message: "`" + param + "` of `" + name + "` is declared " + written + ", and the header's `" + header_type + " *` points at a different width or sign — clang read the header, and C writes back exactly the bytes the header expects",
+        span: at
+    )
+    d.notes @ d.notes.push(
+        "§4.19: a C out-parameter is an `@` parameter, and what it points at is held to the header's own width and sign — `u64` where it says `size_t *`, `i32` where it says `int *`"
+    )
+    spelled = c_spellings.spelling(c_type: header_type, word_bits: word_bits)
+
+    if spelled.is_err()
+        d.notes @ d.notes.push(
+            "`" + header_type + "` has no name in this language yet — declare the parameter at its width and sign, and say which in a comment beside the declaration"
+        )
+        return ok(d)
+    heroes_type = spelled.must().heroes
+
+    if !spelled.must().caveat.is_err()
+        d.notes @ d.notes.push(spelled.must().caveat.must())
+
+    if !spans.is_err()
+        d.fixes @ d.fixes.push(
+            diag.Fix(title: "declare `" + param + "` as `@" + param + ": " + heroes_type + "`", replacement: heroes_type, span: spans.must().ty, certainty: .guess)
+        )
+    return ok(d)
+
+# clang ends the line with the message's closing quote on some
+# platforms and not on others; the header type never ends in one.
+function trim_quote(text: str) -> str
+    if text.len() > 0 && (text[text.len() - 1] == '"' || text[text.len() - 1] == '\'')
+        return text.slice(from: 0, to: text.len() - 1)
+    return text
+
+## Tests
+
+test "the marker's tail is read into the parameter's own diagnostic, with the header's width as the guess"
+    text = "extern \"stdio.h\"\n    function getline(@line: ptr, @n: i32, stream: ptr) -> i64\n\nfunction main()\n    print(1)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    _ = checker.check(parsed.tree, out, s, parsed.decls)
+    line = "t.hero:2:5: error: static assertion failed: heroes-ffi-pointee getline n int32_t size_t"
+    d = pointee_width(s, parsed.decls, parsed.tree, line: line, word_bits: 64)
+    assert !d.is_err()
+    assert d.must().code == "ffi_parameter_type"
+    assert d.must().message == "`n` of `getline` is declared `i32`, and the header's `size_t *` points at a different width or sign — clang read the header, and C writes back exactly the bytes the header expects"
+    assert d.must().fixes.len() == 1
+    assert d.must().fixes[0].replacement == "u64"
+    assert d.must().fixes[0].certainty == .guess
+    assert source.span_text(s, d.must().span) == "n"
+
+    # A multi-word header type is joined back, and a line that is not ours is refused.
+    two = pointee_width(
+        s,
+        parsed.decls,
+        parsed.tree,
+        line: "t.hero:2:5: error: static assertion failed: heroes-ffi-pointee getline n int64_t unsigned long",
+        word_bits: 64
+    )
+    assert !two.is_err()
+    assert two.must().fixes[0].replacement == "u64"
+    assert pointee_width(s, parsed.decls, parsed.tree, line: "t.hero:2:5: error: static assertion failed: heroes-ffi-return getline i64", word_bits: 64).is_err(
+    )

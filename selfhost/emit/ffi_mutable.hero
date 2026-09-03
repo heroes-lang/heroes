@@ -58,7 +58,7 @@ function writable_parameter(s: source.Source, decls: [ast.Decl], p: containers.P
 
     if parameters.is_err()
         return fail("none", "a parameter with no C spelling")
-    arguments = extern_probe.argument_names(count: f.params.len())
+    arguments = extern_probe.probe_arguments(f, c)
     module = source.component_at(s, decls[f.decl].span.start)
     probe = extern_probe.probe_name(module: module, name: name)
     columns = extern_probe.argument_columns(

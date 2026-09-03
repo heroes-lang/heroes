@@ -208,7 +208,9 @@ checks every result type, constant and record field against that header, and a r
 wider than C's. A **parameter** and a **field** are declared at the header's own
 width and sign — `i32` where C says int, `u64` where it says `size_t` — and one that
 disagrees is refused, except a parameter C converts exactly (`i16` against int)
-and what a pointer points at:
+and what a `ptr` points at. A C out-parameter is an `@` parameter, and what it
+points at is held to the same width and sign — `@n: u64` where it says
+`size_t *`:
 ```
 extern "sqlite3.h" link "sqlite3"
     constant SQLITE_OK: i64
@@ -233,5 +235,4 @@ map key are compile errors — for it and for any value holding it. Its size sta
 C's, not the field list's.
 
 A group's `constant` has no body: the header holds the value. `s.cstr()` lends a
-`str` to C to read and `c.validated()` copies one back as a `str?`. A C
-out-parameter is an `@` parameter.
+`str` to C to read and `c.validated()` copies one back as a `str?`.

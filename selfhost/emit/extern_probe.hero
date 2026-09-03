@@ -108,7 +108,7 @@ function extern_probes(@w: writer.Writer, p: containers.Program, c: state.Checke
 
         if parameters.is_err()
             continue
-        arguments = argument_names(count: f.params.len())
+        arguments = probe_arguments(f, c)
 
         # The declaration's own file and line, so clang's verdict lands
         # where the author can act on it — and a probe for a library's
@@ -182,6 +182,53 @@ function argument_columns(probe: str, name: str, parameters: [str], arguments: [
         at @ at + argument.len() + 2
 
     return out
+
+# The arguments the probe's body hands to the header's function: the
+# positional names, and `(void *)aN` for an `@` parameter that is opaque
+# or numeric (panel 103, 2026-09-03). C converts `void *` to any object
+# pointer and `void **` to none, so `void ** a1` handed to `sqlite3 **` is
+# `-Wincompatible-pointer-types` — an ERROR by default on clang 22 and,
+# since the same day, under this compiler's own flags on every clang. A
+# numeric `@` is cast for the other half of the same fact: `uint64_t *`
+# against `size_t *` is two types and one width on macOS. What the cast
+# gives up — clang checking the pointee — the compiler does itself, by
+# width and sign, in `cli/pointee.hero`. A `cstr` `@` stays TYPED: its
+# `const char **` against a header's `char **` is panel 058's
+# `discards qualifiers`, the writability check, and a cast would
+# silence it. So would a `record`'s: the header's own struct is exact.
+function probe_arguments(f: containers.Function, c: state.Checked) -> [str]
+    out: [str] @ []
+    index: i64 @ 0
+
+    for slot_id in f.params
+        name = "a" + index.to_str()
+
+        if is_cast_out(c, f.slots[slot_id])
+            out @ out.push("(void *)" + name)
+        else
+            out @ out.push(name)
+        index @ index + 1
+
+    return out
+
+# An `@` parameter whose declared type is opaque or numeric — the two
+# the emitter hands to C as `(void *)`, at the call and in the probe.
+function is_cast_out(c: state.Checked, slot: containers.Slot) -> bool
+    mutable: bool @ false
+
+    match slot.kind
+        .param_slot ps =>
+            if ps.mutable
+                mutable @ true
+        .local_slot | .synthetic_slot => mutable @ mutable
+
+    if !mutable
+        return false
+
+    return match table.get(c.types, slot.ty)
+        .ptr | .int_ty | .float_ty | .bool                                 => true
+        .cstr | .str | .named | .unit | .array | .fixed | .map             => false
+        .fallible | .function_ty | .case_ty | .failure | .generic | .error => false
 
 # The names a probe gives its arguments: positional, so nothing about
 # the author's own parameter names can change the generated line.
@@ -309,7 +356,7 @@ test "a probe per extern with parameters, mutables as pointers, columns exact"
     )
 
     # An @ parameter is declared the way the call site passes it.
-    assert has(text: got, needle: "hero_ffi_probe_h_t_fill(int64_t * a0, int64_t a1) { (void)(fill)(a0, a1); }")
+    assert has(text: got, needle: "hero_ffi_probe_h_t_fill(int64_t * a0, int64_t a1) { (void)(fill)((void *)a0, a1); }")
 
     # A zero-parameter extern gets no probe at all.
     assert !has(text: got, needle: "hero_ffi_probe_h_t_version")

@@ -9,7 +9,7 @@
 # corrected — a count in prose is the premise §11 says expires in
 # silence. The reasons ride each flag below; the array is the fact.
 
-# The thirteen, in the bootstrap's order:
+# The fourteen — the bootstrap's thirteen in their order, then panel 103's:
 # - gnu11 not c11: one predefined macro apart (__STRICT_ANSI__), whose
 #   only effect on glibc is to hide M_PI, strdup, fileno and most of
 #   what §1.11 says a program binds (panel 047, ratified).
@@ -21,6 +21,16 @@
 #   said so (panel 020's falsifiable disposition, zero fires).
 # - the qualifier discard is panel 058's cstr-write refusal at the
 #   C level.
+# - -Werror=incompatible-pointer-types is panel 103's (2026-09-03): clang
+#   22.1.0 made it an error by default and clang 18 and 21 warn, so
+#   without the flag the SAME program is refused on two of the three
+#   platforms this project measures on and accepted on the third — and
+#   the third accepted `int32_t *` where the header said `size_t *`, 8
+#   bytes into 4, with a warning nobody read. The emitter earns the
+#   flag by passing `(void *)&x` for an `@` argument it has checked
+#   itself (ops.hero, extern_probe.hero), so a correct binding compiles
+#   clean under it on every clang. Never a -Wno- flag (author
+#   instruction, the same day).
 use cli/process
 
 function flags() -> [str]
@@ -38,6 +48,7 @@ function flags() -> [str]
         "-Werror=shorten-64-to-32"
         "-Werror=sign-conversion"
         "-Werror=incompatible-pointer-types-discards-qualifiers"
+        "-Werror=incompatible-pointer-types"
     ]
 
 # **WHAT A BINARY IS LINKED WITH, and it exists for one platform.**
@@ -104,12 +115,13 @@ function sanitizers(sanitize: bool) -> [str]
 
 ## Tests
 
-test "the array is the fact: thirteen flags, gnu11 named first"
+test "the array is the fact: fourteen flags, gnu11 named first"
     got = flags()
-    assert got.len() == 13
+    assert got.len() == 14
     assert got[0] == "-std=gnu11"
     assert got[1] == "-g"
     assert got[12] == "-Werror=incompatible-pointer-types-discards-qualifiers"
+    assert got[13] == "-Werror=incompatible-pointer-types"
     assert sanitizers(sanitize: true).len() == 1
     assert sanitizers(sanitize: false).len() == 0
 
@@ -127,7 +139,7 @@ test "the link flags are one platform's, and the platform is asked not assumed"
         assert got.len() == 0
 
     # And a link flag never reaches a compile line. `flags()` is pinned at
-    # thirteen above, so the way this could break is somebody pasting the
+    # fourteen above, so the way this could break is somebody pasting the
     # stack reserve into the wrong list — which this names exactly.
     for flag in flags()
         assert flag != "-Wl,/STACK:67108864"

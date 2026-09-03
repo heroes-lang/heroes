@@ -1,0 +1,14 @@
+# One `@` parameter the pointee check asks about (panel 103): the extern's
+# C name, the parameter's written name and position, the declared type as
+# C, and the `.hero` line the verdict must land on. A record of its own so
+# that the file that asks (`cli/pointee.hero`) and the file that writes and
+# reads the units (`cli/header_types.hero`) can both name it without either
+# importing the other — Heroes refuses module cycles, and the seam between
+# asking and reading is the one worth keeping.
+record Pointee
+    name: str
+    param: str
+    index: i64
+    declared: str
+    file: str
+    line: i64

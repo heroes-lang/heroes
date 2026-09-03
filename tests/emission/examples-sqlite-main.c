@@ -41,7 +41,7 @@ _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
-_Static_assert(HERO_RET_STR(hero_file_read(0, (int64_t *)0)), "heroes-ffi-return hero_file_read str");
+_Static_assert(HERO_RET_STR(hero_file_read(0, 0)), "heroes-ffi-return hero_file_read str");
 _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
@@ -49,7 +49,7 @@ _Static_assert(HERO_RET_CSTR(hero_args_raw((int64_t)0)), "heroes-ffi-return hero
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
 _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
-_Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
+_Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 #line 55 "main.c"
 #pragma clang diagnostic push
@@ -58,13 +58,13 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ff
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 34 "examples/sqlite/main.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_main_sqlite3_open(const char * a0, void * * a1) { (void)(sqlite3_open)(a0, a1); }
+__attribute__((unused)) static void hero_ffi_probe_h_main_sqlite3_open(const char * a0, void * * a1) { (void)(sqlite3_open)(a0, (void *)a1); }
 #line 35 "examples/sqlite/main.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_main_sqlite3_close(void * a0) { (void)(sqlite3_close)(a0); }
 #line 36 "examples/sqlite/main.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_main_sqlite3_exec(void * a0, const char * a1, void * a2, void * a3, void * * a4) { (void)(sqlite3_exec)(a0, a1, a2, a3, a4); }
+__attribute__((unused)) static void hero_ffi_probe_h_main_sqlite3_exec(void * a0, const char * a1, void * a2, void * a3, void * * a4) { (void)(sqlite3_exec)(a0, a1, a2, a3, (void *)a4); }
 #line 37 "examples/sqlite/main.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_main_sqlite3_prepare_v2(void * a0, const char * a1, int32_t a2, void * * a3, void * * a4) { (void)(sqlite3_prepare_v2)(a0, a1, a2, a3, a4); }
+__attribute__((unused)) static void hero_ffi_probe_h_main_sqlite3_prepare_v2(void * a0, const char * a1, int32_t a2, void * * a3, void * * a4) { (void)(sqlite3_prepare_v2)(a0, a1, a2, (void *)a3, (void *)a4); }
 #line 38 "examples/sqlite/main.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_main_sqlite3_step(void * a0) { (void)(sqlite3_step)(a0); }
 #line 39 "examples/sqlite/main.hero"
@@ -72,7 +72,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_main_sqlite3_column_int(voi
 #line 40 "examples/sqlite/main.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_main_sqlite3_finalize(void * a0) { (void)(sqlite3_finalize)(a0); }
 #line 111 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, a1); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
 #line 112 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
 #line 114 "<heroes library>"
@@ -82,7 +82,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 87 "main.c"
 #pragma clang diagnostic pop
 
@@ -165,7 +165,7 @@ bb0:
 #line 47 "examples/sqlite/main.hero"
     t6 = ((void *)0);
 #line 47 "examples/sqlite/main.hero"
-    t7 = sqlite3_exec(t2, hero_cstr_nonnull(t4), t5, t6, &h2_error);
+    t7 = sqlite3_exec(t2, hero_cstr_nonnull(t4), t5, t6, (void *)&h2_error);
 #line 47 "examples/sqlite/main.hero"
     return t7;
 #line 172 "main.c"
@@ -222,7 +222,7 @@ bb0:
 #line 56 "examples/sqlite/main.hero"
     t6 = INT64_C(-1);
 #line 53 "examples/sqlite/main.hero"
-    t7 = sqlite3_prepare_v2(t3, hero_cstr_nonnull(t5), t6, &h2_statement, &h3_tail);
+    t7 = sqlite3_prepare_v2(t3, hero_cstr_nonnull(t5), t6, (void *)&h2_statement, (void *)&h3_tail);
 #line 53 "examples/sqlite/main.hero"
     h4_rc = t7;
 #line 61 "examples/sqlite/main.hero"
@@ -331,7 +331,7 @@ bb0:
 #line 73 "examples/sqlite/main.hero"
     t3 = hero_str_cstr(t2);
 #line 73 "examples/sqlite/main.hero"
-    t4 = sqlite3_open(hero_cstr_nonnull(t3), &h0_db);
+    t4 = sqlite3_open(hero_cstr_nonnull(t3), (void *)&h0_db);
 #line 73 "examples/sqlite/main.hero"
     t5 = h_main_SQLITE_OK();
 #line 73 "examples/sqlite/main.hero"
