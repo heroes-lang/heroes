@@ -1,0 +1,204 @@
+# What a value is while the little language runs, and the state one run
+# carries.
+#
+# Part of `examples/interpreter/` — the root `main.hero` carries the program's
+# argument. `run/expr.hero` and `run/eval.hero` both read this and neither
+# declares a value of its own.
+#
+# WHY THE STATE IS A VALUE AND NOT A THING BEING MUTATED. `Frame` is passed in
+# and handed back rather than taken as an `@` parameter, and that is not a
+# style choice: it is what makes the recursion between `run/eval.hero` and
+# `run/expr.hero` expressible at all. Those two need each other — a statement
+# holds expressions, and an expression can call a function whose body is
+# statements — and Heroes refuses a module cycle, so one of them has to take
+# the other as a **function value**. A function type in this language cannot
+# carry an `@` parameter (`error[expected_type]: expected a type, found `@``,
+# measured 2026-09-03), so the state crosses that boundary by value or not at
+# all. Copy-on-write is what makes it cheap: handing a `Frame` down costs a
+# refcount until something writes to it.
+#
+# WHAT A FRAME HOLDS, and why each field is here rather than in a global:
+# there are no mutable globals in Heroes (spec § Top-level declarations), so
+# *everything* a running program accumulates is in this record — the variables,
+# the output written so far, the functions the script has defined, whether a
+# `return` or an `exit` is in flight, and how deep the calls are nested.
+
+use syn/tree
+
+constant ERR_TYPE: str
+    "type"
+
+# One value the script can hold. Four cases and no more: the little language
+# has no arrays and no records, which keeps this program about the shape of an
+# interpreter rather than about the size of a standard library.
+variant Value
+    number
+        v: i64
+    text
+        s: str
+    truth
+        b: bool
+    # What a call with no `return` gives back, and what `print` of nothing
+    # would be. It is a value rather than an absence so that every path in the
+    # evaluator produces one.
+    nothing
+
+# Everything one run accumulates.
+record Frame
+    vars: {str: Value}
+    lines: [str]
+    # A script function's name to the index of its `define` statement. The
+    # body is in the tree; this is only the door.
+    fns: {str: i64}
+    returned: bool
+    result: Value
+    stopping: bool
+    code: i64
+    depth: i64
+
+function fresh() -> Frame
+    vars: {str: Value} @ {}
+    fns: {str: i64} @ {}
+    no_lines: [str] = []
+    return Frame(
+        vars: vars,
+        lines: no_lines,
+        fns: fns,
+        returned: false,
+        result: .nothing,
+        stopping: false,
+        code: 0,
+        depth: 0
+    )
+
+# What `run/expr.hero` hands to the function value that runs a call — the four
+# things a call needs, packed so that the function TYPE stays one parameter
+# wide and a reader can hold it in their head:
+#
+#     (function(Request) -> Frame?)
+#
+# The alternative is a four-parameter function type written out at every
+# signature that passes it on, which is the same information spelled three
+# times.
+record Request
+    nodes: tree.Tree
+    name: str
+    given: [Value]
+    frame: Frame
+
+# How a value prints. This is what `print` writes and what an error message
+# quotes, so it is one function and not two.
+function shown(v: Value) -> str
+    return match v
+        .number n => n.v.to_str()
+        .text x   => x.s
+        .truth t  => t.b.to_str()
+        .nothing  => "nothing"
+
+# The name of a value's kind, for a message that has to say what it got.
+function kind_of(v: Value) -> str
+    return match v
+        .number _ => "a number"
+        .text _   => "a string"
+        .truth _  => "a boolean"
+        .nothing  => "nothing"
+
+# A condition must BE a boolean — there is no truthiness, which is the rule
+# Heroes itself keeps (spec § Control flow: *`if cond` takes only `bool`*), and
+# the little language keeps it for the same reason: `if 0` reads differently to
+# different people.
+function condition_of(v: Value) -> bool?
+    return match v
+        .truth t  => ok(t.b)
+        .number _ => not_a_condition(v)
+        .text _   => not_a_condition(v)
+        .nothing  => not_a_condition(v)
+
+function not_a_condition(v: Value) -> bool?
+    return fail(
+        ERR_TYPE,
+        "a condition must be `true` or `false`, and this one is " + kind_of(v) + " (`" + shown(v) + "`)"
+    )
+
+# The number in a value, or a refusal naming what stood there.
+function number_of(v: Value) -> i64?
+    return match v
+        .number n => ok(n.v)
+        .text _   => no_number(v)
+        .truth _  => no_number(v)
+        .nothing  => no_number(v)
+
+function text_of(v: Value) -> str?
+    return match v
+        .text x   => ok(x.s)
+        .number _ => no_text(v)
+        .truth _  => no_text(v)
+        .nothing  => no_text(v)
+
+# The two refusals `number_of` and `text_of` hand back. **These were one
+# generic function until 2026-09-03** — `wanted<A>(what: str, v: Value) -> A?`,
+# with `A` inferred from the return position — and writing it that way found a
+# compiler defect: `heroes check` accepts it at exit 0, the IR carries the
+# unresolved type as `??`, and `heroes build` then either has its verifier
+# refuse it (*returns a value of the wrong type*, exit 2, when the call is a
+# `return`) or **aborts with a bare `assert failed: false` at exit 134** when
+# the call is a `match` arm's value, naming no file, no line and no
+# expression. The defect is written up in `docs/defects/006`; the two concrete
+# functions below are the workaround, and they cost four lines.
+function no_number(v: Value) -> i64?
+    return fail(ERR_TYPE, "expected a number, found " + kind_of(v) + " (`" + shown(v) + "`)")
+
+function no_text(v: Value) -> str?
+    return fail(ERR_TYPE, "expected a string, found " + kind_of(v) + " (`" + shown(v) + "`)")
+
+test "every value prints, including the one that is nothing"
+    assert shown(.number(v: 42)) == "42"
+    assert shown(.number(v: 0 - 1)) == "-1"
+    assert shown(.text(s: "hi")) == "hi"
+    assert shown(.text(s: "")) == ""
+    assert shown(.truth(b: true)) == "true"
+    assert shown(.truth(b: false)) == "false"
+    assert shown(.nothing) == "nothing"
+
+test "every kind has a name a message can use"
+    assert kind_of(.number(v: 1)) == "a number"
+    assert kind_of(.text(s: "x")) == "a string"
+    assert kind_of(.truth(b: true)) == "a boolean"
+    assert kind_of(.nothing) == "nothing"
+
+test "a condition is a boolean and nothing else is one"
+    assert condition_of(.truth(b: true)).must()
+    assert !condition_of(.truth(b: false)).must()
+    assert condition_of(.number(v: 1)).is_err()
+    assert condition_of(.number(v: 0)).is_err()
+    assert condition_of(.text(s: "yes")).is_err()
+    assert condition_of(.nothing).is_err()
+
+test "the refusal says what it wanted and what it found"
+    said = condition_of(.number(v: 0))
+    assert said.is_err()
+    assert message_of_bool(said) == "a condition must be `true` or `false`, and this one is a number (`0`)"
+
+test "a number is taken out of a number and refused out of everything else"
+    assert number_of(.number(v: 7)).must() == 7
+    assert number_of(.text(s: "7")).is_err()
+    assert number_of(.truth(b: true)).is_err()
+    assert number_of(.nothing).is_err()
+    assert text_of(.text(s: "a")).must() == "a"
+    assert text_of(.number(v: 1)).is_err()
+
+test "a fresh frame holds nothing and is not going anywhere"
+    f = fresh()
+    assert len(f.vars) == 0
+    assert len(f.fns) == 0
+    assert f.lines.len() == 0
+    assert !f.returned
+    assert !f.stopping
+    assert f.code == 0
+    assert f.depth == 0
+    assert f.result == .nothing
+
+function message_of_bool(said: bool?) -> str
+    return match said
+        .ok _  => "nothing was refused"
+        .err e => e.msg

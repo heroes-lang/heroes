@@ -1,0 +1,172 @@
+# A place in a token list, and the four questions a parser asks of one.
+#
+# Part of `examples/interpreter/` — the root `main.hero` carries the program's
+# argument. `syn/expr.hero` and `syn/parse.hero` both hold one of these and
+# nothing else in the program knows what a token index is.
+#
+# WHY THIS IS ITS OWN MODULE. Everything here is four lines long and the
+# temptation is to inline it into the parser, which is how a parser ends up
+# with `c.at @ c.at + 1` written twenty times and one of them wrong. The
+# interesting part is `expected`: it is the only function in the program that
+# turns *the parser wanted something else* into a sentence a reader can act on,
+# so it is written once, and the sentence names both what was wanted and what
+# stood there (design.md §4.17 is the compiler's own rule for this and it is
+# the right rule for a script too).
+#
+# THE CURSOR NEVER RUNS OFF THE END, and that is a property of the SCANNER
+# rather than a check here: `lex/scan.hero` always ends its output with exactly
+# one `.finish`, asserted by its own last test, so `here` on the last index
+# returns `.finish` forever and no parser loop can index past the array. A
+# guard here would be a second answer to a question already answered, and the
+# comment is what stops somebody adding one.
+
+use lex/token
+
+constant ERR_PARSE: str
+    "parse"
+
+record Cursor
+    tokens: [token.Token]
+    at: i64
+
+function over(tokens: [token.Token]) -> Cursor
+    return Cursor(tokens: tokens, at: 0)
+
+# The token the cursor stands on. `.finish` once the list is spent, because the
+# scanner guarantees a `.finish` and never more than one.
+function here(c: Cursor) -> token.Token
+    if c.at >= c.tokens.len()
+        return .finish
+
+    return c.tokens[c.at]
+
+# The token after this one, for the two places the grammar needs to look ahead:
+# telling `name = value` from `name(args)`.
+function after(c: Cursor) -> token.Token
+    if c.at + 1 >= c.tokens.len()
+        return .finish
+
+    return c.tokens[c.at + 1]
+
+# Take the token the cursor stands on and step past it.
+function bump(@c: Cursor) -> token.Token
+    taken = here(c)
+
+    if c.at < c.tokens.len()
+        c.at @ c.at + 1
+
+    return taken
+
+# Step past the token if it is the one wanted, and say whether it was.
+function accepted(@c: Cursor, want: token.Token) -> bool
+    if here(c) == want
+        _ = bump(@c)
+        return true
+
+    return false
+
+# Step past the token wanted, or refuse naming both sides.
+function expected(@c: Cursor, want: token.Token) -> ()?
+    if accepted(@c, want: want)
+        return ok()
+
+    return fail(
+        ERR_PARSE,
+        "expected `" + token.shown(want) + "`, found `" + token.shown(here(c)) + "`"
+    )
+
+# A name, or a refusal saying what stood there instead.
+function name_here(@c: Cursor) -> str?
+    return match bump(@c)
+        .number n => fail(ERR_PARSE, "expected a name, found the number `" + n.value.to_str() + "`")
+        .text x => fail(ERR_PARSE, "expected a name, found the string `" + x.value + "`")
+        .name n => ok(n.value)
+        .kw_let | .kw_print | .kw_if | .kw_else | .kw_while => keyword_taken(t: .kw_let, said: "a keyword")
+        .kw_fn | .kw_return | .kw_exit | .kw_end => keyword_taken(t: .kw_fn, said: "a keyword")
+        .kw_true | .kw_false => keyword_taken(t: .kw_true, said: "a keyword")
+        .plus | .minus | .star | .slash | .percent => keyword_taken(t: .plus, said: "an operator")
+        .equals | .less | .less_equal | .greater | .greater_equal => keyword_taken(t: .equals, said: "an operator")
+        .equal_equal | .bang_equal | .bang | .ampersands | .bars => keyword_taken(t: .bang, said: "an operator")
+        .lparen | .rparen | .comma => keyword_taken(t: .lparen, said: "punctuation")
+        .newline => fail(ERR_PARSE, "expected a name, found the end of the line")
+        .finish => fail(ERR_PARSE, "expected a name, found the end of the file")
+
+# The refusal `name_here`'s keyword and operator arms share. Grouping the arms
+# with `|` costs the exact token — the arms would each have to name it — so the
+# message says the CLASS, which is what a reader needs: *a keyword cannot be a
+# name* is the whole diagnosis.
+function keyword_taken(t: token.Token, said: str) -> str?
+    _ = t
+    return fail(ERR_PARSE, "expected a name, found " + said)
+
+# Step past however many line ends stand here. A block may hold blank lines and
+# the parser should not have to know.
+function skipped_lines(@c: Cursor)
+    while here(c) == .newline
+        _ = bump(@c)
+
+# Whether the cursor is spent.
+function done(c: Cursor) -> bool
+    return here(c) == .finish
+
+test "a cursor walks the list and then stands on the end for ever"
+    c: Cursor @ over([.kw_print, .number(value: 1), .newline, .finish])
+    assert here(c) == .kw_print
+    assert after(c) == .number(value: 1)
+    assert bump(@c) == .kw_print
+    assert bump(@c) == .number(value: 1)
+    assert bump(@c) == .newline
+    assert here(c) == .finish
+    assert bump(@c) == .finish
+    assert bump(@c) == .finish
+    assert done(c)
+
+test "the cursor on an empty list is done, and reading it is safe"
+    empty: [token.Token] = []
+    c: Cursor @ over(empty)
+    assert done(c)
+    assert here(c) == .finish
+    assert after(c) == .finish
+    assert bump(@c) == .finish
+
+test "accepted steps only when it matches"
+    c: Cursor @ over([.kw_if, .newline, .finish])
+    assert !accepted(@c, want: .kw_while)
+    assert here(c) == .kw_if
+    assert accepted(@c, want: .kw_if)
+    assert here(c) == .newline
+
+test "expected names both sides when it refuses"
+    c: Cursor @ over([.kw_if, .finish])
+    assert !expected(@c, want: .kw_if).is_err()
+    said = expected(@c, want: .kw_end)
+    assert said.is_err()
+    assert refusal_message(said) == "expected `end`, found `end of file`"
+
+test "a name is taken, and everything that is not one is refused by class"
+    c: Cursor @ over([.name(value: "total"), .number(value: 3), .kw_let, .plus, .newline, .finish])
+    assert name_here(@c).must() == "total"
+    assert refusal_message_of_name(name_here(@c)) == "expected a name, found the number `3`"
+    assert refusal_message_of_name(name_here(@c)) == "expected a name, found a keyword"
+    assert refusal_message_of_name(name_here(@c)) == "expected a name, found an operator"
+    assert refusal_message_of_name(name_here(@c)) == "expected a name, found the end of the line"
+    assert refusal_message_of_name(name_here(@c)) == "expected a name, found the end of the file"
+
+test "blank lines are stepped over together"
+    c: Cursor @ over([.newline, .newline, .newline, .kw_print, .finish])
+    skipped_lines(@c)
+    assert here(c) == .kw_print
+
+    # And on something that is not a line end it does nothing at all.
+    skipped_lines(@c)
+    assert here(c) == .kw_print
+
+function refusal_message(said: ()?) -> str
+    return match said
+        .ok _  => "nothing was refused"
+        .err e => e.msg
+
+function refusal_message_of_name(said: str?) -> str
+    return match said
+        .ok _  => "nothing was refused"
+        .err e => e.msg

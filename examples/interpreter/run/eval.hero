@@ -1,0 +1,203 @@
+# What a statement does, and the door an expression uses to call a function.
+#
+# Part of `examples/interpreter/` — the root `main.hero` carries the program's
+# argument. This module is the top of the runtime: it walks statements, and
+# hands `run/expr.hero` its own `called` so that an expression holding a call
+# can run a body without this module and that one importing each other (see
+# that file's header for why the language forbids the cycle).
+#
+# WHERE THE GENERICS CROSS A `use` FOR THE SECOND TIME. `util/each.hero`'s
+# templates are instantiated at `str` in `syn/parse.hero` and at
+# `run/value.hero`'s `Value` here — `each.joined` renders the arguments a
+# mismatched call was given. Two callers in two directories, two layouts, one
+# template.
+#
+# WHAT A SCRIPT FUNCTION CAN SEE, decided rather than inherited: its
+# parameters, and nothing else. No closures, no globals, no enclosing scope —
+# so `called` builds a fresh variable map holding only the arguments, and puts
+# the caller's map back afterwards. The alternative (a chain of scopes) is a
+# bigger program and it would teach the corpus nothing it does not already
+# carry; this one keeps the rule a reader can state in one line.
+#
+# THE RECURSION GUARD IS ROBUSTNESS AND NOT A LIMIT (design.md §1.12). A script
+# that calls itself for ever would run this interpreter's own `body` for ever,
+# and the answer to that in a compiled language is a stack overflow — which
+# the runtime now catches and names (panel 104), but which is still a crash
+# from the script's point of view. `DEPTH` refuses first, with the name of the
+# function and the depth, which is a message a script author can act on.
+
+use run/expr
+use run/value
+use syn/tree
+use util/each
+
+constant ERR_NAME: str
+    "unknown_name"
+
+constant ERR_ARITY: str
+    "arity"
+
+constant ERR_DEPTH: str
+    "too_deep"
+
+# How many nested script calls are allowed — and this number is MEASURED, not
+# chosen. The first draft said 200 on the reasoning that a runaway recursion
+# should stop "long before the machine's stack does", and 200 is past the
+# machine's stack: a script recursing 150 deep exited **139 in silence** before
+# the guard was ever consulted.
+#
+# Measured 2026-09-03 on this Mac, nested script calls, one ceiling per
+# configuration:
+#
+#   --sanitize   40 works · 50 overflows (exit 134, ASan names it)
+#   -O0          50 works
+#   -O2          80 works · 100 overflows — **exit 139, SILENTLY**
+#
+# One script call costs about nine Heroes frames (`body` → `one` →
+# `given_back` → `expr.evaluated` → `applied` → the function value → `called`
+# → `entered` → `body`), and `syn/expr.hero`'s note explains why each of those
+# frames is large. So the guard sits at 24: under half of the tightest
+# measured ceiling, which is margin enough for a machine with a smaller stack,
+# and far above anything a script here needs (`scripts/tour.script`'s deepest
+# is `factorial(10)`, ten frames).
+#
+# A GUARD ABOVE THE REAL CEILING IS NOT A GUARD. That is the whole lesson of
+# this constant, and it was learned by running rather than by reasoning.
+constant DEPTH: i64
+    24
+
+# A whole program: every top-level statement in order, on a fresh frame.
+function run(nodes: tree.Tree) -> value.Frame?
+    return body(nodes: nodes, ids: nodes.top, f: value.fresh())
+
+# A list of statements, stopping early the moment a `return` or an `exit` is in
+# flight — which is the whole of this language's non-local control flow.
+function body(nodes: tree.Tree, ids: [i64], f: value.Frame) -> value.Frame?
+    walking: value.Frame @ f
+
+    for id in ids
+        if walking.returned || walking.stopping
+            return ok(walking)
+        walking @ one(nodes: nodes, id: id, f: walking)?
+
+    return ok(walking)
+
+function one(nodes: tree.Tree, id: i64, f: value.Frame) -> value.Frame?
+    return match nodes.stmts[id]
+        .bind b       => bound(nodes: nodes, name: b.name, at: b.value, f: f)
+        .say s        => said(nodes: nodes, at: s.value, f: f)
+        .when w       => chosen(nodes: nodes, at: w.condition, then: w.then, otherwise: w.otherwise, f: f)
+        .while_loop w => looped(nodes: nodes, at: w.condition, inside: w.body, f: f)
+        .give g       => given_back(nodes: nodes, at: g.value, f: f)
+        .stop s       => stopped(nodes: nodes, at: s.code, f: f)
+        .define d     => ok(with_function(f: f, name: d.name, at: id))
+        .evaluate e   => spent(nodes: nodes, at: e.value, f: f)
+
+function bound(nodes: tree.Tree, name: str, at: i64, f: value.Frame) -> value.Frame?
+    step = expr.evaluated(nodes, at, f, called)?
+    home: value.Frame @ step.frame
+    home.vars[name] @ step.got
+    return ok(home)
+
+function said(nodes: tree.Tree, at: i64, f: value.Frame) -> value.Frame?
+    step = expr.evaluated(nodes, at, f, called)?
+    home: value.Frame @ step.frame
+    home.lines @ home.lines.push(value.shown(step.got))
+    return ok(home)
+
+function chosen(nodes: tree.Tree, at: i64, then: [i64], otherwise: [i64], f: value.Frame) -> value.Frame?
+    step = expr.evaluated(nodes, at, f, called)?
+
+    if value.condition_of(step.got)?
+        return body(nodes: nodes, ids: then, f: step.frame)
+
+    return body(nodes: nodes, ids: otherwise, f: step.frame)
+
+function looped(nodes: tree.Tree, at: i64, inside: [i64], f: value.Frame) -> value.Frame?
+    walking: value.Frame @ f
+
+    while true
+        step = expr.evaluated(nodes, at, walking, called)?
+        walking @ step.frame
+
+        if !value.condition_of(step.got)?
+            return ok(walking)
+        walking @ body(nodes: nodes, ids: inside, f: walking)?
+
+        if walking.returned || walking.stopping
+            return ok(walking)
+
+    return ok(walking)
+
+function given_back(nodes: tree.Tree, at: i64, f: value.Frame) -> value.Frame?
+    step = expr.evaluated(nodes, at, f, called)?
+    home: value.Frame @ step.frame
+    home.returned @ true
+    home.result @ step.got
+    return ok(home)
+
+function stopped(nodes: tree.Tree, at: i64, f: value.Frame) -> value.Frame?
+    step = expr.evaluated(nodes, at, f, called)?
+    home: value.Frame @ step.frame
+    home.stopping @ true
+    home.code @ value.number_of(step.got)?
+    return ok(home)
+
+# A bare expression as a statement — a call written for what it prints. The
+# value is thrown away on purpose, which is the one place this interpreter does
+# what `_ =` does in Heroes.
+function spent(nodes: tree.Tree, at: i64, f: value.Frame) -> value.Frame?
+    step = expr.evaluated(nodes, at, f, called)?
+    return ok(step.frame)
+
+function with_function(f: value.Frame, name: str, at: i64) -> value.Frame
+    home: value.Frame @ f
+    home.fns[name] @ at
+    return home
+
+# THE DOOR. This is the function value `run/expr.hero` is handed, and its type
+# is `(function(value.Request) -> value.Frame?)` — one parameter wide because
+# `Request` packs the four things a call needs.
+function called(r: value.Request) -> value.Frame?
+    where = r.frame.fns[r.name]
+
+    if where.is_err()
+        return fail(ERR_NAME, "no function is named `" + r.name + "`")
+
+    if r.frame.depth >= DEPTH
+        return fail(
+            ERR_DEPTH,
+            "`" + r.name + "` is " + DEPTH.to_str() + " calls deep — a script that recurses without an end stops here rather than in the machine's stack"
+        )
+
+    return match r.nodes.stmts[where.must()]
+        .define d                                  => entered(r: r, params: d.params, inside: d.body)
+        .bind _ | .say _ | .when _ | .while_loop _ => not_a_function(r: r)
+        .give _ | .stop _ | .evaluate _            => not_a_function(r: r)
+
+function not_a_function(r: value.Request) -> value.Frame?
+    return fail(ERR_NAME, "`" + r.name + "` names something that is not a function")
+
+# One call: bind the arguments, run the body on a frame that can see nothing
+# else, then put the caller's variables back and carry the result home.
+function entered(r: value.Request, params: [str], inside: [i64]) -> value.Frame?
+    if params.len() != r.given.len()
+        return fail(
+            ERR_ARITY,
+            "`" + r.name + "` takes " + params.len().to_str() + " and was given " + r.given.len().to_str() + ": (" + each.joined(r.given, value.shown, ", ") + ")"
+        )
+    inner: value.Frame @ r.frame
+    fresh_vars: {str: value.Value} @ {}
+    i: i64 @ 0
+
+    while i < params.len()
+        fresh_vars[params[i]] @ r.given[i]
+        i @ i + 1
+
+    inner.vars @ fresh_vars
+    inner.depth @ r.frame.depth + 1
+    after = body(nodes: r.nodes, ids: inside, f: inner)?
+    home: value.Frame @ after
+    home.vars @ r.frame.vars
+    home.depth @ r.frame.depth
+    return ok(home)

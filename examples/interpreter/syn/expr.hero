@@ -1,0 +1,216 @@
+# Tokens into an expression tree, by climbing one precedence level per
+# function.
+#
+# Part of `examples/interpreter/` — the root `main.hero` carries the program's
+# argument. **This module's name collides with `run/expr.hero` on purpose**,
+# and the collision is the honest one a front end has: this file is *how an
+# expression is read*, that one is *what an expression means*, and they are two
+# jobs with one noun. A module that needs both must rename one at its `use`
+# line, which is `use syn/expr as parse_expr` in `main.hero` — the language
+# refuses two bindings of one name in a file (spec § Files and layout) and
+# `examples/pipeline/` is the corpus's other program that cannot be written
+# without `as`.
+#
+# WHY ONE FUNCTION PER LEVEL, and not a table of precedences. Seven small
+# functions that each call the next are longer than one loop over a table, and
+# they are what a reader can check against the grammar line by line: `summed`
+# calls `scaled` and never the other way, so `2 + 3 * 4` cannot come out
+# wrong without one of these seven reading wrong. The table version is the same
+# program with the shape hidden in data, and the shape is the thing worth
+# reading. `examples/calculator/` is the corpus's other recursive-descent
+# parser and it is written the same way, one level per function.
+#
+# THE LEVELS, weakest binding first — the same order as the spec's own table
+# for Heroes, minus the bitwise row this little language does not have:
+#
+#     ||   &&   comparison   + -   * / %   unary - !   call and literal
+
+use lex/token
+use syn/cursor
+use syn/tree
+
+constant ERR_PARSE: str
+    "parse"
+
+# One expression, however deep. The entry point every caller uses.
+function parsed(@c: cursor.Cursor, @t: tree.Tree) -> i64?
+    return either(@c, @t)
+
+function either(@c: cursor.Cursor, @t: tree.Tree) -> i64?
+    left: i64 @ both(@c, @t)?
+
+    while cursor.here(c) == .bars
+        _ = cursor.bump(@c)
+        right = both(@c, @t)?
+        left @ tree.added_expr(@t, .binary(op: .either, left: left, right: right))
+
+    return ok(left)
+
+function both(@c: cursor.Cursor, @t: tree.Tree) -> i64?
+    left: i64 @ compared(@c, @t)?
+
+    while cursor.here(c) == .ampersands
+        _ = cursor.bump(@c)
+        right = compared(@c, @t)?
+        left @ tree.added_expr(@t, .binary(op: .both, left: left, right: right))
+
+    return ok(left)
+
+# Comparisons do NOT chain: `a < b < c` is a parse error rather than a
+# left-nested pair that compares a bool with a number. This is one place where
+# the little language is deliberately stricter than C, and the reason is the
+# reason Heroes gives for the same choice — a program whose meaning a reader
+# guesses wrong is worse than one that does not compile.
+function compared(@c: cursor.Cursor, @t: tree.Tree) -> i64?
+    left = summed(@c, @t)?
+    op = comparison_of(cursor.here(c))
+
+    if op.is_err()
+        return ok(left)
+    _ = cursor.bump(@c)
+    right = summed(@c, @t)?
+    made = tree.added_expr(@t, .binary(op: op.must(), left: left, right: right))
+    second = comparison_of(cursor.here(c))
+
+    if !second.is_err()
+        return fail(
+            ERR_PARSE,
+            "`" + token.shown(cursor.here(c)) + "` cannot follow a comparison — write it as two comparisons joined by `&&`"
+        )
+
+    return ok(made)
+
+function summed(@c: cursor.Cursor, @t: tree.Tree) -> i64?
+    left: i64 @ scaled(@c, @t)?
+
+    while cursor.here(c) == .plus || cursor.here(c) == .minus
+        op: tree.Op @ .add
+
+        if cursor.bump(@c) == .minus
+            op @ .subtract
+        right = scaled(@c, @t)?
+        left @ tree.added_expr(@t, .binary(op: op, left: left, right: right))
+
+    return ok(left)
+
+function scaled(@c: cursor.Cursor, @t: tree.Tree) -> i64?
+    left: i64 @ unary(@c, @t)?
+
+    while is_scaling(cursor.here(c))
+        op: tree.Op @ .multiply
+        taken = cursor.bump(@c)
+
+        if taken == .slash
+            op @ .divide
+
+        if taken == .percent
+            op @ .remainder
+        right = unary(@c, @t)?
+        left @ tree.added_expr(@t, .binary(op: op, left: left, right: right))
+
+    return ok(left)
+
+# `- -x` and `!!x` are both legal and both nest, which is why this function
+# calls itself rather than calling `primary` once.
+function unary(@c: cursor.Cursor, @t: tree.Tree) -> i64?
+    if cursor.here(c) == .minus
+        _ = cursor.bump(@c)
+        on = unary(@c, @t)?
+        return ok(tree.added_expr(@t, .negate(on: on)))
+
+    if cursor.here(c) == .bang
+        _ = cursor.bump(@c)
+        on = unary(@c, @t)?
+        return ok(tree.added_expr(@t, .invert(on: on)))
+
+    return primary(@c, @t)
+
+# A literal, a name, a call, or a parenthesised expression — and this is where
+# the recursion turns around: `(` sends the parser back to `parsed`, which is
+# how a 500-deep nest of parentheses becomes 500 turns through all seven of
+# these functions. `main.hero` has that case and it must PASS, which is what
+# makes it a positive witness for the runtime's stack guard rather than a test
+# of it.
+function primary(@c: cursor.Cursor, @t: tree.Tree) -> i64?
+    return match cursor.bump(@c)
+        .number n                                           => ok(tree.added_expr(@t, .number(value: n.value)))
+        .text x                                             => ok(tree.added_expr(@t, .text(value: x.value)))
+        .kw_true                                            => ok(tree.added_expr(@t, .truth(value: true)))
+        .kw_false                                           => ok(tree.added_expr(@t, .truth(value: false)))
+        .name n                                             => named(@c, @t, word: n.value)
+        .lparen                                             => grouped(@c, @t)
+        .kw_let | .kw_print | .kw_if | .kw_else | .kw_while => not_a_value(said: "a keyword")
+        .kw_fn | .kw_return | .kw_exit | .kw_end            => not_a_value(said: "a keyword")
+        .plus | .star | .slash | .percent                   => not_a_value(said: "an operator with nothing on its left")
+        .equals | .less | .less_equal | .greater | .greater_equal => not_a_value(
+            said: "an operator with nothing on its left"
+        )
+        .equal_equal | .bang_equal | .ampersands | .bars => not_a_value(said: "an operator with nothing on its left")
+        .minus | .bang                                   => not_a_value(said: "a sign with nothing after it")
+        .rparen                                          => not_a_value(said: "a `)` with no `(`")
+        .comma                                           => not_a_value(said: "a `,` outside an argument list")
+        .newline                                         => not_a_value(said: "the end of the line")
+        .finish                                          => not_a_value(said: "the end of the file")
+
+function not_a_value(said: str) -> i64?
+    return fail(ERR_PARSE, "expected a value, found " + said)
+
+# A name, and then the one place this grammar looks ahead: a `(` right after a
+# name makes it a call, and anything else leaves it a plain name.
+function named(@c: cursor.Cursor, @t: tree.Tree, word: str) -> i64?
+    if cursor.here(c) != .lparen
+        return ok(tree.added_expr(@t, .name(value: word)))
+    _ = cursor.bump(@c)
+
+    # `given` and not `args`: `args` is a built-in of the language, so the
+    # name is taken everywhere (`error[builtin_name_taken]`) even for a local.
+    given: [i64] @ []
+
+    if cursor.here(c) == .rparen
+        _ = cursor.bump(@c)
+        return ok(tree.added_expr(@t, .call(name: word, args: given)))
+
+    # One argument, then as many as there are commas. Written this way rather
+    # than as a `while true` holding the `return`, because the flow checker
+    # does not read `while true` as *never falls through*: the loop form is
+    # `error[missing_return]` unless a second `return` follows it, and an
+    # unreachable `return` is a line a reader has to explain.
+    given @ given.push(parsed(@c, @t)?)
+
+    while cursor.accepted(@c, want: .comma)
+        given @ given.push(parsed(@c, @t)?)
+
+    cursor.expected(@c, want: .rparen)?
+    return ok(tree.added_expr(@t, .call(name: word, args: given)))
+
+function grouped(@c: cursor.Cursor, @t: tree.Tree) -> i64?
+    inside = parsed(@c, @t)?
+    cursor.expected(@c, want: .rparen)?
+    return ok(inside)
+
+function is_scaling(t: token.Token) -> bool
+    return t == .star || t == .slash || t == .percent
+
+# The operator a comparison token spells, or a refusal — used as a TEST rather
+# than as a conversion, which is why it returns a fallible instead of an
+# `Op?`-shaped pair with a bool.
+function comparison_of(t: token.Token) -> tree.Op?
+    if t == .less
+        return ok(.less)
+
+    if t == .less_equal
+        return ok(.less_equal)
+
+    if t == .greater
+        return ok(.greater)
+
+    if t == .greater_equal
+        return ok(.greater_equal)
+
+    if t == .equal_equal
+        return ok(.equal)
+
+    if t == .bang_equal
+        return ok(.unequal)
+
+    return fail("not_a_comparison", "`" + token.shown(t) + "` is not a comparison")

@@ -1,0 +1,76 @@
+# Everything the little language has, in one script.
+# Run by `examples/interpreter/main.hero`, whose `main.expected` is this
+# script's output.
+
+let greeting = "hello"
+let subject = "world"
+print greeting + ", " + subject
+
+# Arithmetic, with the precedence the parser climbs.
+print 2 + 3 * 4
+print (2 + 3) * 4
+print 17 / 5
+print 17 % 5
+print -7 / 2
+print -7 % 2
+
+# Comparisons and the two operators that short-circuit.
+print 3 < 4
+print 3 == 4
+print true && false
+print false || true
+print !false
+
+# A loop that counts, and a variable that is re-let.
+let n = 1
+let total = 0
+while n <= 5
+    let total = total + n
+    let n = n + 1
+end
+print total
+
+# A branch, both ways.
+if total > 10
+    print "big"
+else
+    print "small"
+end
+
+if total < 10
+    print "unreachable"
+else
+    print "the else arm"
+end
+
+# Functions, including one that calls another and one that recurses.
+fn double(x)
+    return x * 2
+end
+
+fn quadruple(x)
+    return double(double(x))
+end
+
+fn factorial(n)
+    if n <= 1
+        return 1
+    end
+    return n * factorial(n - 1)
+end
+
+print double(21)
+print quadruple(3)
+print factorial(10)
+
+# A function with no return gives nothing back, and nothing prints as nothing.
+fn shout(word)
+    print word + "!"
+end
+
+shout("listen")
+print shout("again")
+
+# The script ends itself, which is the interpreter calling the language's own
+# `exit` — see `main.hero`.
+exit 0

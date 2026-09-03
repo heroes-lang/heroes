@@ -57,8 +57,13 @@ constant EXAMPLES: str
 # 37 -> 38 on 2026-09-03, M-corpus-depth step 4: `examples/checksum/`, the
 # third of that family and the first program here whose printed output is a
 # STANDARD's own test-vector table (RFC 4648 § 10).
+#
+# 38 -> 39 on 2026-09-03, M-corpus-depth step 5: `examples/interpreter/`, the
+# milestone's large program — **eleven modules in four directories**, which is
+# also the program that made `module_texts` below read the tree instead of one
+# directory.
 constant LEAST: i64
-    38
+    39
 
 function run_all(scratch: str, compiler: str) -> report.Report?
     r: report.Report @ report.empty()
@@ -276,10 +281,24 @@ function program_directories(scratch: str) -> [str]?
 
     return ok(found)
 
+# Every module of one program, however deep it keeps them.
+#
+# **`list_tree` and not `list_entries`, changed 2026-09-03 at M-corpus-depth
+# step 5**, which is the step that added the first program keeping most of its
+# modules two directories down. The flat listing read only the root, so check 2
+# above — *every program either tests itself or binds C* — asked its question of
+# a fraction of the program. It fails in the LOUD direction, which is why
+# nothing was wrong before: a program whose `test` blocks all live in
+# subdirectories was reported as testing nothing, a false red rather than a
+# false green. `examples/shapes/` has been deep since M-package-layout and never
+# tripped it only because `main.hero` happens to carry two tests of its own.
+# `suite_canonical.hero:84-85` made this same repair for the same reason and
+# measured what it was missing: 325 files of 371.
 function module_texts(scratch: str, dir: str) -> [str]?
     texts: [str] @ []
+    nothing: [str] = []
 
-    for entry in shell.list_entries(scratch: scratch, dir: dir)?
+    for entry in shell.list_tree(scratch: scratch, dir: dir, skip: nothing)?
         if strings.ends_with(text: entry, suffix: ".hero")
             text = read_file(entry)
 
