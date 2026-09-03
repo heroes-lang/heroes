@@ -1,0 +1,211 @@
+# One row of the table, and the deterministic generator that writes five
+# thousand of them (spec § Types, § Strings, arrays, maps).
+#
+# Corpus material (CLAUDE.md §9), M-corpus-depth. **The generator is the
+# point of this module and not scaffolding.** Every other program in
+# `examples/` reads an input somebody committed beside it — the largest is
+# 28 lines — so nothing in the corpus has ever handed the language a
+# thousand values at once. Copy-on-write (design.md §4.10) is the part of
+# this language whose cost is proportional to the data, and a corpus that
+# never exceeds thirty rows cannot see it.
+#
+# **The numbers come from a linear congruential generator, so the file is a
+# fact and not a fixture.** The same seed gives the same five thousand rows
+# on every machine and in every configuration, which is what lets
+# `main.expected` hold the answers: a random source would make this program
+# untestable, and a committed 5,000-line CSV would make the repository
+# carry data nobody can check. The recurrence is Park and Miller's classic
+# `x = (a * x + c) mod m`, and the modulus is chosen so that `a * x` cannot
+# overflow an `i64`: `1103515245 * 2147483647` is 2.4e18 against `i64`'s
+# 9.2e18 ceiling, and an overflow here would abort rather than wrap
+# (spec § Types).
+
+# The generator's constants, glibc's, kept together so the recurrence can be
+# read on one screen.
+constant MULTIPLIER: i64
+    1103515245
+
+constant INCREMENT: i64
+    12345
+
+constant MODULUS: i64
+    2147483648
+
+# The seed. Written down rather than derived, because the whole point is
+# that this file is the same everywhere.
+constant SEED: i64
+    20260903
+
+# How many rows the table holds. Five thousand is the size at which the
+# copy-on-write question stops being theoretical: the engine sorts and
+# filters this array whole, several times per query.
+constant ROWS: i64
+    5000
+
+record Row
+    id: i64
+    team: str
+    name: str
+    active: bool
+    score: i64
+    rate: f64
+
+# The team table the join reads: eight teams, each in one region. Small on
+# purpose — a join is interesting when one side is small and the other is
+# not, which is every join anybody writes.
+record Team
+    team: str
+    region: str
+
+constant TEAMS: [str]
+    [
+        "argo"
+        "borea"
+        "cetra"
+        "delta"
+        "eolia"
+        "fauno"
+        "gerbo"
+        "halo"
+    ]
+
+constant REGIONS: [str]
+    [
+        "north"
+        "north"
+        "south"
+        "south"
+        "east"
+        "east"
+        "west"
+        "west"
+    ]
+
+# The team table as values. Two arrays walked in step, which is what the
+# language gives you without a tuple.
+function teams() -> [Team]
+    out: [Team] @ []
+    at: i64 @ 0
+
+    while at < TEAMS.len()
+        out @ out.push(Team(team: TEAMS[at], region: REGIONS[at]))
+        at @ at + 1
+
+    return out
+
+# The next number in the sequence, and the reason this is a function rather
+# than a line: it is the one place an overflow could hide, and the comment
+# above it is the argument that it cannot.
+function stepped(seed: i64) -> i64
+    return (MULTIPLIER * seed + INCREMENT) % MODULUS
+
+# The part of a seed worth using, and **this program measured why it needs
+# one**. The first draft read every field off the low bits — `seed % 8` for
+# the team, `seed % 3` for the active flag — and a test written to check
+# that all four regions appear over five hundred rows FAILED: the low bits
+# of a linear congruential generator with a power-of-two modulus have a
+# period of their own, and the lowest three cycle every eight steps, so
+# whole teams never came out at all. Knuth states it (TAOCP 2, §3.2.1.1);
+# this file learned it from a red test, which is the better teacher.
+# Shifting sixteen bits down takes the part with the full period.
+function spread(seed: i64) -> i64
+    return seed >> 16
+
+# The whole table, generated. The seed is threaded by hand rather than kept
+# in a cell, because a generator that reads a mutable global is a generator
+# whose output depends on who called it first — and there are no mutable
+# globals in this language anyway (spec § Top-level declarations).
+function generated(rows: i64) -> [Row]
+    out: [Row] @ []
+    seed: i64 @ SEED
+    id: i64 @ 1
+
+    while id <= rows
+        seed @ stepped(seed)
+        team = TEAMS[spread(seed) % TEAMS.len()]
+        seed @ stepped(seed)
+        score = spread(seed) % 1000
+        seed @ stepped(seed)
+        active = spread(seed) % 3 != 0
+        seed @ stepped(seed)
+        rate = to_f64(spread(seed) % 10000) / 100.0
+        out @ out.push(
+            Row(id: id, team: team, name: "p" + id.to_str(), active: active, score: score, rate: rate)
+        )
+        id @ id + 1
+
+    return out
+
+## Writing the table out
+
+# One row as a CSV line. `rate` prints through `to_str`, which gives a point
+# or an exponent (spec § Strings, arrays, maps) — the reader below takes it
+# back, and the round trip is asserted rather than assumed.
+function line_of(r: Row) -> str
+    fields: [str] = [
+        r.id.to_str()
+        r.team
+        r.name
+        bool_text(r.active)
+        r.score.to_str()
+        r.rate.to_str()
+    ]
+    return fields.join(",")
+
+# `true`/`false` written the way the language prints them, so a reader of
+# the file meets no third spelling.
+function bool_text(b: bool) -> str
+    if b
+        return "true"
+    return "false"
+
+constant HEADER: str
+    "id,team,name,active,score,rate"
+
+# The whole table as text, header first. Built with `join` and not with `+`
+# in a loop: `spec:174` says a concatenation loop is quadratic, and five
+# thousand rows is where that stops being a remark.
+function written(rows: [Row]) -> str
+    lines: [str] @ [HEADER]
+
+    for r in rows
+        lines @ lines.push(line_of(r))
+
+    return lines.join("\n") + "\n"
+
+test "the generator is a fact: the same seed gives the same first rows"
+    made = generated(4)
+    assert made.len() == 4
+    assert made[0].id == 1
+    assert made[0].name == "p1"
+    assert made[3].id == 4
+
+    # The same call twice is the same table, which is what `main.expected`
+    # rests on.
+    again = generated(4)
+    assert made == again
+
+test "every generated field is inside the range its column promises"
+    made = generated(200)
+
+    for r in made
+        assert r.score >= 0 && r.score < 1000
+        assert r.rate >= 0.0 && r.rate < 100.0
+        assert r.name == "p" + r.id.to_str()
+        assert r.team.len() > 0
+
+test "a row renders as six comma-separated fields"
+    r = Row(id: 7, team: "argo", name: "p7", active: true, score: 42, rate: 1.5)
+    assert line_of(r) == "7,argo,p7,true,42,1.5"
+    assert bool_text(false) == "false"
+
+test "the team table pairs eight teams with their regions"
+    ts = teams()
+    assert ts.len() == 8
+    assert ts[0] == Team(team: "argo", region: "north")
+    assert ts[7] == Team(team: "halo", region: "west")
+
+test "the text starts with the header and holds one line per row"
+    text = written(generated(3))
+    assert text.slice(from: 0, to: HEADER.len()) == HEADER
+    assert text[text.len() - 1] == '\n'

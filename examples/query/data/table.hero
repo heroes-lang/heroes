@@ -1,0 +1,277 @@
+# The table read back from its file: text in, typed rows out, and a named
+# refusal for every way the text can be wrong (spec § Failure).
+#
+# Corpus material (CLAUDE.md §9), M-corpus-depth. **This module is the other
+# half of `row.hero`, and the pair is the point**: the program writes five
+# thousand rows and reads them back, so every conversion in the language is
+# exercised in both directions on data the program made rather than on a
+# fixture somebody typed. `examples/csv/` reads the hard shape — quotes,
+# commas inside them, the doubled quote — and this one reads a shape it
+# generated, so it can afford to be **strict**: a field that is not a number
+# is a refusal naming the line and the column, not a zero.
+#
+# THE STRICTNESS IS THE FEATURE. A reader that answers `0` for a field it
+# could not parse turns a broken file into a wrong answer, which is the one
+# failure this whole corpus exists to catch. Every conversion here is a `T?`
+# and every one of them is propagated with `?` (spec § Failure), so the
+# first bad byte in a five-thousand-line file stops the read and says where.
+
+use data/row
+
+constant ERR_HEADER: str
+    "bad_header"
+
+constant ERR_FIELDS: str
+    "bad_field_count"
+
+constant ERR_NUMBER: str
+    "bad_number"
+
+constant ERR_BOOL: str
+    "bad_bool"
+
+constant ERR_EMPTY: str
+    "empty_table"
+
+# How many fields a row has. Read off `row.HEADER` rather than written
+# again, so the two cannot drift.
+function columns() -> i64
+    return split(text: row.HEADER, at: ',').len()
+
+# Text split on one byte. Written here rather than imported because the
+# language has no `split` built in (spec § Built-ins), and the shape a
+# generated file needs is the simple one: no quoting, no escapes.
+function split(text: str, at: u8) -> [str]
+    out: [str] @ []
+    start: i64 @ 0
+    index: i64 @ 0
+
+    while index < text.len()
+        if text[index] == at
+            out @ out.push(text.slice(from: start, to: index))
+            start @ index + 1
+        index @ index + 1
+
+    out @ out.push(text.slice(from: start, to: text.len()))
+    return out
+
+# The lines of a text, with a trailing newline producing no empty last line.
+function lines_of(text: str) -> [str]
+    all_lines = split(text: text, at: '\n')
+
+    if all_lines.len() > 0 && all_lines[all_lines.len() - 1] == ""
+        return all_lines.slice(from: 0, to: all_lines.len() - 1)
+    return all_lines
+
+# `true` or `false`, and nothing else. A third spelling is a refusal rather
+# than a guess, because guessing here is how a column silently becomes all
+# false.
+function bool_of(text: str, line: i64) -> bool?
+    if text == "true"
+        return ok(true)
+
+    if text == "false"
+        return ok(false)
+    return fail(ERR_BOOL, "line " + line.to_str() + ": `" + text + "` is neither `true` nor `false`")
+
+# An `i64`, refusing what `to_i64` refuses and saying which line it was on.
+# `to_i64` on a `str` does not exist in this language — a `str` has no
+# conversion to a number (spec § Types) — so this walks the bytes, which is
+# also where a leading `+`, a stray space or an empty field is caught.
+function int_of(text: str, line: i64) -> i64?
+    if text.len() == 0
+        return fail(ERR_NUMBER, "line " + line.to_str() + ": a number field is empty")
+    negative = text[0] == '-'
+    start: i64 @ 0
+
+    if negative
+        start @ 1
+
+        if text.len() == 1
+            return fail(ERR_NUMBER, "line " + line.to_str() + ": `-` is not a number")
+    total: i64 @ 0
+    at: i64 @ start
+
+    while at < text.len()
+        digit = text[at]
+
+        if digit < '0' || digit > '9'
+            return fail(ERR_NUMBER, "line " + line.to_str() + ": `" + text + "` is not a whole number")
+        total @ total * 10 + to_i64(digit - '0').must()
+        at @ at + 1
+
+    if negative
+        return ok(-total)
+    return ok(total)
+
+# An `f64`, read as ONE integer divided ONCE — which is not a style but a
+# repair, and the round trip is what forced it.
+#
+# The first draft read the two halves separately and added them: `1` plus
+# `64 / 100`. That is three operations where the writer performed one, and
+# three roundings do not compose into one: the generator makes this rate as
+# `to_f64(164) / 100.0`, which is `1.64` exactly, and `1.0 + 0.64` is
+# `1.6400000000000001`. Row 127 of the table found it — `back == made`
+# failed on a value that had been written and read by the same program.
+#
+# So this reads every digit on both sides of the point into one whole
+# number and divides by the power of ten the point implies, which is the
+# writer's own arithmetic performed backwards, bit for bit. A number with
+# more digits than an `i64` can hold is a refusal rather than a wrap: an
+# overflow here would abort (spec § Types), and a table full of aborts
+# tells a reader less than one line saying which field was too long.
+constant MOST_DIGITS: i64
+    18
+
+function float_of(text: str, line: i64) -> f64?
+    halves = split(text: text, at: '.')
+
+    if halves.len() > 2
+        return fail(ERR_NUMBER, "line " + line.to_str() + ": `" + text + "` has two points")
+    negative = text.len() > 0 && text[0] == '-'
+    whole_digits = digits_of(halves[0], line: line, negative: negative)?
+    fraction_digits: str @ ""
+
+    if halves.len() == 2
+        fraction_digits @ halves[1]
+
+        if fraction_digits.len() == 0
+            return fail(ERR_NUMBER, "line " + line.to_str() + ": `" + text + "` ends at its point")
+    all_digits = whole_digits + fraction_digits
+
+    if all_digits.len() > MOST_DIGITS
+        return fail(
+            ERR_NUMBER,
+            "line " + line.to_str() + ": `" + text + "` has " + all_digits.len().to_str() + " digits and an i64 holds " + MOST_DIGITS.to_str()
+        )
+    scaled: i64 @ 0
+    at: i64 @ 0
+
+    while at < all_digits.len()
+        digit = all_digits[at]
+
+        if digit < '0' || digit > '9'
+            return fail(ERR_NUMBER, "line " + line.to_str() + ": `" + text + "` is not a number")
+        scaled @ scaled * 10 + to_i64(digit - '0').must()
+        at @ at + 1
+
+    scale: f64 @ 1.0
+    left: i64 @ fraction_digits.len()
+
+    while left > 0
+        scale @ scale * 10.0
+        left @ left - 1
+
+    value = to_f64(scaled) / scale
+
+    if negative
+        return ok(-value)
+    return ok(value)
+
+# The digits of a whole part, with its sign taken off — and a refusal for a
+# sign with nothing after it, which is the one shape `text[0] == \'-\'` alone
+# would let through.
+function digits_of(text: str, line: i64, negative: bool) -> str?
+    if text.len() == 0
+        return fail(ERR_NUMBER, "line " + line.to_str() + ": a number field is empty")
+
+    if negative
+        if text.len() == 1
+            return fail(ERR_NUMBER, "line " + line.to_str() + ": `-` is not a number")
+        return ok(text.slice(from: 1, to: text.len()))
+    return ok(text)
+
+# The whole table. The header is checked against the one this program
+# writes, because a file whose columns moved is a file this reader would
+# otherwise read in the wrong order and answer confidently about.
+function read(text: str) -> [row.Row]?
+    all_lines = lines_of(text)
+
+    if all_lines.len() == 0
+        return fail(ERR_EMPTY, "the table is empty: not even a header")
+
+    if all_lines[0] != row.HEADER
+        return fail(ERR_HEADER, "the header reads `" + all_lines[0] + "` and this program writes `" + row.HEADER + "`")
+    out: [row.Row] @ []
+    number: i64 @ 1
+    wanted = columns()
+
+    for one in all_lines.slice(from: 1, to: all_lines.len())
+        number @ number + 1
+        fields = split(text: one, at: ',')
+
+        if fields.len() != wanted
+            return fail(
+                ERR_FIELDS,
+                "line " + number.to_str() + ": " + fields.len().to_str() + " fields where the header has " + wanted.to_str()
+            )
+        out @ out.push(
+            row.Row(id: int_of(fields[0], number)?, team: fields[1], name: fields[2], active: bool_of(fields[3], number)?, score: int_of(fields[4], number)?, rate: float_of(fields[5], number)?)
+        )
+
+    return ok(out)
+
+test "the round trip is exact for every field, including the float"
+    made = row.generated(50)
+    back = read(row.written(made)).must()
+    assert back.len() == made.len()
+    assert back == made
+
+test "a number that is not one stops the read and names its line"
+    text = row.HEADER + "\n1,argo,p1,true,x,1.5\n"
+    got = read(text)
+    assert got.is_err()
+    assert why(got).code == ERR_NUMBER
+    assert holds(text: why(got).msg, needle: "line 2")
+
+test "a third spelling of a boolean is refused rather than guessed"
+    text = row.HEADER + "\n1,argo,p1,yes,10,1.5\n"
+    assert why(read(text)).code == ERR_BOOL
+
+test "a header that moved is refused before a single row is read"
+    text = "id,name,team,active,score,rate\n1,argo,p1,true,10,1.5\n"
+    assert why(read(text)).code == ERR_HEADER
+
+test "a short row is refused with both counts in the message"
+    text = row.HEADER + "\n1,argo,p1,true,10\n"
+    assert why(read(text)).code == ERR_FIELDS
+    assert holds(text: why(read(text)).msg, needle: "5 fields where the header has 6")
+
+test "the pieces answer what they are asked, and refuse what they are not"
+    assert int_of("0", 1).must() == 0
+    assert int_of("-42", 1).must() == -42
+    assert int_of("", 1).is_err()
+    assert int_of("-", 1).is_err()
+    assert int_of("1 ", 1).is_err()
+    assert float_of("2", 1).must() == 2.0
+    assert float_of("2.5", 1).must() == 2.5
+    assert float_of("-0.25", 1).must() == -0.25
+    assert float_of("2.", 1).is_err()
+    assert float_of("2.5.5", 1).is_err()
+    assert split(text: "a,b,,c", at: ',') == ["a", "b", "", "c"]
+    assert lines_of("a\nb\n") == ["a", "b"]
+    assert lines_of("a\nb") == ["a", "b"]
+
+# The error of a failed read, for the tests above. `.must()` on the error
+# side is not a thing, so this is the shape a test uses to look at one.
+function why(got: [row.Row]?) -> Trouble
+    return match got
+        .ok _  => Trouble(code: "", msg: "")
+        .err e => Trouble(code: e.code, msg: e.msg)
+
+record Trouble
+    code: str
+    msg: str
+
+# Whether `text` holds `needle`, for the message assertions above.
+function holds(text: str, needle: str) -> bool
+    if needle.len() > text.len()
+        return false
+    at: i64 @ 0
+
+    while at + needle.len() <= text.len()
+        if text.slice(from: at, to: at + needle.len()) == needle
+            return true
+        at @ at + 1
+
+    return false

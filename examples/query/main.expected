@@ -1,0 +1,48 @@
+wrote 5000 rows to build/query-table.csv
+read back 5000 rows
+
+the ten highest scores, with their region
+id    team   name   score  region
+663   delta  p663   999    south
+2188  delta  p2188  999    south
+2877  fauno  p2877  999    east
+4952  gerbo  p4952  999    west
+203   halo   p203   998    west
+487   cetra  p487   998    south
+902   argo   p902   998    north
+1116  cetra  p1116  998    south
+1238  eolia  p1238  998    east
+1347  gerbo  p1347  998    west
+
+argo's active players, by name, first five
+name   score  rate
+p1     279    19.38
+p1002  959    71.29
+p1009  174    19.41
+p1011  872    14.65
+p1013  58     1.28
+
+every team, active and idle
+team    state     rows   total    best  mean
+argo    idle      195    100381   997   42.95
+argo    active    430    214180   998   47.88
+borea   idle      199    92467    996   45.72
+borea   active    411    198619   992   43.95
+cetra   idle      206    103986   998   47.21
+cetra   active    391    191197   998   49.21
+delta   idle      216    104591   999   47.65
+delta   active    412    213395   995   46.33
+eolia   idle      213    102457   998   45.98
+eolia   active    414    194382   995   47.80
+fauno   idle      208    101140   995   47.32
+fauno   active    449    212561   999   46.22
+gerbo   idle      191    93210    999   48.27
+gerbo   active    432    218478   998   46.15
+halo    idle      222    106600   998   46.95
+halo    active    411    213171   998   44.08
+
+the whole table
+rows   5000
+total  2460815
+best   999
+agree  yes
