@@ -20,9 +20,9 @@ it means it: it already absorbed the old `docs/theory/`.
 | What the session produced | Where it goes |
 |---|---|
 | the reusable explanation of a concept | `docs/glossary/NNN-<concept>.md` — a note here **cites** it, never restates it |
-| a question worth re-doing as retrieval practice | `docs/debrief/LEARN.md`, in its pipe format |
-| a question the compiler is waiting on, or a panel to convene | `docs/debrief/DECIDE.md`, same format |
-| work that already has a milestone to do it in | `docs/debrief/SCHEDULED.md`, same format |
+| a question worth re-doing as retrieval practice | `docs/learn/LEARN.md`, in its pipe format |
+| a question the compiler is waiting on, or a panel to convene | `docs/work/DECIDE.md`, same format |
+| work that already has a milestone to do it in | `docs/work/SCHEDULED.md`, same format |
 | a gap or a condition on the record | the watch list in `docs/panel/OPEN-QUESTIONS.md` |
 | a **change** to the language | **never here** → `/panel` (CLAUDE.md §4) |
 | a decision | `DESIGN-LOG.md`, one line (CLAUDE.md §14) |
@@ -121,6 +121,12 @@ understand>. Read: design.md §… · spec § … · <files consulted, none modi
   does, seven of which already have homes with stated reasons; why Principle 0
   does not fund a manifest and the nearest refusals do not reach one; and the two
   decisions of 2026-08-14 that pull against each other about where a header is
+- [005-packages-in-place-of-a-standard-library.md](005-packages-in-place-of-a-standard-library.md)
+  — what "a mini standard library" names once §1.11's refusal and the ROADMAP's
+  routing are read together; what the corpus has already written by hand; the two
+  compiler facts that stand between Heroes and a web server, and the HTTP server
+  that answered `curl` anyway; five shapes of conditional compilation against the
+  record that already weighs on them
 
 ## A note on the vocabulary of 000–002
 
@@ -130,8 +136,10 @@ changed, and the notes keep the old words.
 
 - **`/debrief` was split in two on 2026-08-12** — `/learn` (what is true) and
   `/decide` (what should be true) — and `docs/debrief/QUEUE.md` became the
-  record plus the index over `LEARN.md`, `DECIDE.md` and `SCHEDULED.md`. Where
-  a note says `/debrief` or "the queue", read the table above.
+  record plus the index over `LEARN.md`, `DECIDE.md` and `SCHEDULED.md`; on
+  2026-08-26 that record became `docs/work/DONE.md` and the three lists moved
+  to `docs/learn/` and `docs/work/`. Where a note says `/debrief` or "the
+  queue", read the table above.
 - **Milestone identifiers became names on 2026-08-12** (CLAUDE.md §14). Note
   `002` keys its obligations to `M5a`, which is retired; the map from the old
   numbers to the names is in `docs/ROADMAP.md` § The names (`M5a` is
