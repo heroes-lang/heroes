@@ -1,0 +1,3 @@
+# The root's `util`: the module `use util` reads from THIS directory.
+function scale() -> i64
+    return 2

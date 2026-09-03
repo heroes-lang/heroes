@@ -1,0 +1,7 @@
+# A leaf below the root. `use util` here is read from the directory of the
+# file you COMPILE — the root's when `main.hero` is compiled, this directory's
+# when this file is compiled directly — which is the hazard R5 states.
+use util
+
+function scaled() -> i64
+    return util.scale() * 10
