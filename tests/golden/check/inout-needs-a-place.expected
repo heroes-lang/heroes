@@ -1,0 +1,2 @@
+tests/golden/check/inout-needs-a-place.hero:17:10: error[not_a_place]: only a name, a field or an element can be passed as `@` — the callee copies its result back into the argument, so `@` must name where the value goes
+tests/golden/check/inout-needs-a-place.hero:18:10: error[not_a_place]: only a name, a field or an element can be passed as `@` — the callee copies its result back into the argument, so `@` must name where the value goes

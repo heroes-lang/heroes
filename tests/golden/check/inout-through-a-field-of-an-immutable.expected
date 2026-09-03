@@ -1,0 +1,1 @@
+tests/golden/check/inout-through-a-field-of-an-immutable.hero:16:16: error[not_mutable]: `b` is a parameter without `@`, so it cannot be written — mark it `@b` in the signature and at every call site (copy in, copy out)

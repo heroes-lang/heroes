@@ -114,9 +114,15 @@ function case_names(names: ctype.Names, s: source.Source, decls: [ast.Decl], dec
 # A place as a C lvalue: the slot, then one .member per step. The path
 # is walked with the TYPE alongside it, because the member's spelling
 # comes from the declaration and each step changes which declaration
-# that is. An index step cannot appear yet — the container store owns
-# it — and the walk stops rather than producing something that
-# compiles.
+# that is. An index step cannot appear here: the container store owns a
+# store through one, and `ir/inout.hero` hands an `@` argument through one
+# to the callee as a temporary — `ir/verify.hero` refuses the place
+# otherwise. This comment said "the walk stops rather than producing
+# something that compiles" until 2026-09-03, and that was false: the walk
+# stopped, the text compiled with a warning, and `add(@bs[0], "y")` was
+# handed `&h0_bs` — the whole array — and died at exit 138. So the arm
+# below spells an undeclared identifier: if it is ever reached again, clang
+# refuses the unit and the failure is exit 2, the compiler's, and loud.
 function place(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, at: ir.Place) -> str
     slot = f.slots[at.root]
     text: str @ mangle.slot(index: at.root, name: slot.name)
@@ -131,7 +137,7 @@ function place(c: state.Checked, s: source.Source, decls: [ast.Decl], f: contain
                     return text
                 text @ text + "." + found.must().member
                 ty @ found.must().ty
-            .index_step => return text
+            .index_step => return text + " HERO_INDEX_STEP_IS_NOT_AN_LVALUE"
 
     return text
 

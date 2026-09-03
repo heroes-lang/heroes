@@ -1,0 +1,21 @@
+# Bulk regression case (assistant-written): `f(@x)` WRITES `x` — the callee
+# copies its result back into the argument (§4.8) — so the argument's root
+# answers to the rule of the left of `@` (spec:88). The rule reads the binding, not the
+# type, so a generic by-value parameter is refused like any other. Accepted
+# until 2026-09-03.
+record Bag
+    items: [str]
+
+function add(@b: Bag, s: str)
+    b.items @ b.items.push(s)
+
+function poke<T>(@x: T)
+    x @ x
+
+function reader<T>(v: T) -> T
+    poke(@v)  #~ not_mutable
+    return v
+
+function main()
+    r = reader(Bag(items: ["a"]))
+    print(r.items.len())

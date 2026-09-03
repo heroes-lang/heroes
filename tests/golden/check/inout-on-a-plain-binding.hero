@@ -1,0 +1,15 @@
+# Bulk regression case (assistant-written): `f(@x)` WRITES `x` — the callee
+# copies its result back into the argument (§4.8) — so the argument's root
+# answers to the rule of the left of `@` (spec:88). `=` binds once, forever, so a
+# plain binding is not a cell either. Accepted until 2026-09-03: the program
+# printed `2` at exit 0, an immutable mutated in silence.
+record Bag
+    items: [str]
+
+function add(@b: Bag, s: str)
+    b.items @ b.items.push(s)
+
+function main()
+    bag = Bag(items: ["a"])
+    add(@bag, "x")  #~ not_mutable
+    print(bag.items.len())

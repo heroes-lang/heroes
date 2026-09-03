@@ -1,0 +1,2 @@
+tests/golden/check/fixedbugs-inout-on-an-immutable-corrupted-the-heap.hero:30:10: error[not_mutable]: `b` is a parameter without `@`, so it cannot be written — mark it `@b` in the signature and at every call site (copy in, copy out)
+tests/golden/check/fixedbugs-inout-on-an-immutable-corrupted-the-heap.hero:31:10: error[not_mutable]: `b` is a parameter without `@`, so it cannot be written — mark it `@b` in the signature and at every call site (copy in, copy out)
