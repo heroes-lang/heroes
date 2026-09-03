@@ -36,6 +36,7 @@ use check/state
 use ir
 use ir/containers
 use ir/build
+use ir/inout
 use ir/uses
 use ir/values
 use ir/phases
@@ -196,10 +197,25 @@ function check_instructions(f: containers.Function, blk: containers.Block, at: s
                 match fr.callee
                     .indirect                             => problems @ problems.push(at + "the address of an address")
                     .heroes_fn | .extern_fn | .builtin_fn => is_abort @ is_abort
-            .abort_op                                                                           => is_abort @ true
-            .lit | .load | .store | .push_owned | .unary | .binary | .cast | .call | .construct => is_abort @ is_abort
-            .field | .index | .map_get | .len_of | .tag_of | .payload                           => is_abort @ is_abort
-            .copy_out | .incref | .decref | .hole                                               => is_abort @ is_abort
+            .abort_op => is_abort @ true
+            # An `@` argument's place never runs through an index by the
+            # time it reaches here: `ir/inout.hero` reads the element into a
+            # temporary and stores it back after the call, because the
+            # emitter renders an inout place as a C lvalue and an element of
+            # a copy-on-write array has none. Until 2026-09-03 the emitter
+            # stopped its walk at the index and handed the callee the
+            # address of the whole array — exit 138 on a legal program — and
+            # nothing between the lowering and clang saw it. This is what
+            # makes that a verifier error instead of a crash.
+
+            .call cl =>
+                if inout.through_index(f, cl.arguments)
+                    problems @ problems.push(
+                        at + "an `@` argument whose place runs through an index — the lowering owes it a temporary (ir/inout.hero)"
+                    )
+            .lit | .load | .store | .push_owned | .unary | .binary | .cast | .construct => is_abort @ is_abort
+            .field | .index | .map_get | .len_of | .tag_of | .payload                   => is_abort @ is_abort
+            .copy_out | .incref | .decref | .hole                                       => is_abort @ is_abort
 
         if is_missing
             problems @ problems.push(at + "a form the lowering does not handle")
@@ -433,3 +449,45 @@ test "a return block that skips one @ parameter is caught by identity"
     problems = verify(p, c, parsed.decls)
     assert problems.len() == 1
     assert problems[0] == "sneaky (after lowering): bb0: returns after copying out 2 of 2 `@` parameters — never s1 — twice s0"
+
+test "an @ argument through an index verifies clean, because the lowering hands over a temporary"
+    clean = verified(
+        "record Bag\n    n: i64\n\nfunction bump(@b: Bag)\n    b.n @ b.n + 1\n\nfunction main()\n    bs: [Bag] @ [Bag(n: 1)]\n    bump(@bs[0])\n    print(bs[0].n)\n"
+    )
+    assert clean.len() == 0
+
+test "an @ argument whose place still runs through an index is refused before the emitter"
+    span = token.Span(start: 0, end: 1)
+    slots: [containers.Slot] = [containers.Slot(name: "bs", ty: 2, kind: .local_slot)]
+    steps: [ir.PathStep] = [.index_step(value: 0)]
+    arguments: [ir.Arg] = [.inout_arg(place: ir.Place(root: 0, path: ir.Run(start: 0, length: 1)))]
+    insts: [ir.Inst] = [
+        ir.Inst(dest: fail("none", "void"), op: .call(callee: .builtin_fn(at: 0), arguments: ir.Run(start: 0, length: 1), variadic: false), ty: 1, span: span)
+    ]
+    preds: [i64] = []
+    blk = containers.Block(preds: preds, insts: insts, term: .return_term(value: fail("none", "no value")), note: "t")
+    f = containers.Function(
+        name: "sneaky",
+        decl: 0,
+        kind: .function_kind,
+        generics: [],
+        params: [],
+        result: 1,
+        slots: slots,
+        blocks: [blk],
+        values: [2],
+        arguments: arguments,
+        steps: steps,
+        instance: [],
+        call_instances: {},
+        span: span
+    )
+    p = containers.Program(phase: .lowered, functions: [f], strings: [])
+    text = "function sneaky()\n    return\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c = checker.check(parsed.tree, out, s, parsed.decls)
+    problems = verify(p, c, parsed.decls)
+    assert problems.len() == 1
+    assert problems[0] == "sneaky (after lowering): bb0: an `@` argument whose place runs through an index — the lowering owes it a temporary (ir/inout.hero)"

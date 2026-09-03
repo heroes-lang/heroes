@@ -1,0 +1,17 @@
+# Bulk regression case (assistant-written): `f(@x)` WRITES `x` — the callee
+# copies its result back into the argument (§4.8) — so the argument's root
+# answers to the rule of the left of `@` (spec:88). An index on the way is
+# read; the root is written, and here the root is a by-value parameter.
+# Accepted until 2026-09-03: exit 138, SIGBUS.
+record Bag
+    items: [str]
+
+function add(@b: Bag, s: str)
+    b.items @ b.items.push(s)
+
+function reader(bs: [Bag])
+    add(@bs[0], "x")  #~ not_mutable
+    print(bs[0].items.len())
+
+function main()
+    reader([Bag(items: ["a"])])

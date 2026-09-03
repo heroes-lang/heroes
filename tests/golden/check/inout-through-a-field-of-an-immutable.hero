@@ -1,0 +1,20 @@
+# Bulk regression case (assistant-written): `f(@x)` WRITES `x` — the callee
+# copies its result back into the argument (§4.8) — so the argument's root
+# answers to the rule of the left of `@` (spec:88). Every place has exactly one
+# root (§4.10, panel 010), so `@b.items` writes `b`. Accepted until
+# 2026-09-03: exit 134 with the leak panic.
+record Bag
+    items: [str]
+
+function add(@b: Bag, s: str)
+    b.items @ b.items.push(s)
+
+function add_items(@xs: [str], s: str)
+    xs @ xs.push(s)
+
+function reader(b: Bag)
+    add_items(@b.items, "x")  #~ not_mutable
+    print(b.items.len())
+
+function main()
+    reader(Bag(items: ["a"]))

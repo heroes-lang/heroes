@@ -17,7 +17,11 @@
 # a bare or dotted mention finds its declaration — split out at
 # M-separate-compilation step 5, when the extern gates took this file
 # past its frozen ceiling and the lookup was the seam that names a
-# concern), `resolve_errors` (the wording), `resolved` (the table).
+# concern), `resolve_errors` (the wording), `resolved` (the table), and
+# `resolve/writes` (the root a write reaches and the rule it answers to —
+# `write_root` for the left of `@`, `inout_root` for an `@` argument; a
+# leaf of the ring, moved out 2026-09-03 when the second caller took this
+# file past the ceiling).
 #
 # **The entry points**: `block` for a body in its own scope, `statements`
 # for a body in a scope the caller opened (a loop's, an arm's), `expr` for
@@ -37,13 +41,13 @@ use token
 use ast
 use source
 use resolved
-use inventory
 use parse
 use resolve/state
 use resolve/types
 use resolve/errors
 use resolve/qualified
 use resolve/names
+use resolve/writes
 use resolve/binding as resolve_binding
 
 ## Statements
@@ -184,6 +188,11 @@ function arguments(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast
     for arg in given
         expr(@r, a, s, decls, arg.value)
 
+        # `f(@x)` reads x (copy in) AND writes it (copy out, §4.8), so its
+        # root answers to the rule of the left of `@`.
+        if arg.mutable
+            writes.inout_root(@r, a, s, arg.value)
+
 # A payload binding. Two patterns of one arm may not bind the same name:
 # under `|` the two cases carry different payloads, so one name would mean
 # two things depending on which case matched.
@@ -203,7 +212,7 @@ function bind_payload(@r: state.Resolver, s: source.Source, decls: [ast.Decl], b
 # implementable at all.
 function place(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl], id: i64)
     match a.exprs[id].kind
-        .name => write_root(@r, a, s, id)
+        .name => writes.write_root(@r, a, s, id)
         # `grid.WALL @ 1` — a qualified constant, which is a top-level
         # declaration and so not a place at all (§4.2: there are no mutable
         # globals). Descending to the base would report `grid` as a name
@@ -227,41 +236,6 @@ function place(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Dec
         .null_ptr | .hole | .unary | .binary | .call             => expr(@r, a, s, decls, id)
         .method | .variant_case | .array | .map | .try_expr      => expr(@r, a, s, decls, id)
         .if_expr | .match_expr | .error                          => expr(@r, a, s, decls, id)
-
-function write_root(@r: state.Resolver, a: ast.Ast, s: source.Source, id: i64)
-    span = a.exprs[id].span
-    text = source.span_text(s, span)
-    local = state.lookup_local(r, text)
-
-    if !local.is_err()
-        at = local.must()
-
-        if !r.out.locals[at].mutable
-            state.push_diagnostic(@r, errors.not_mutable(text, r.out.locals[at].kind, span))
-            return
-
-        # A write is recorded, and it is NOT a read: `v @ 1` alone leaves
-        # `v` unused. Writing through a field or an index is a write to the
-        # root for the same reason — with no aliasing anywhere (§4.10), a
-        # write nobody reads back is unobservable. Go left this hole open
-        # (golang/go#20802); Heroes closes it because it has no aliases.
-        r.out.uses[id] @ .local(at: at)
-        r.out.locals[at].writes @ r.out.locals[at].writes + 1
-        return
-
-    if !state.top_visible(r, text).is_err()
-        state.push_diagnostic(
-            @r,
-            errors.no_mutable_globals(name: text, what: "top-level declaration", span: span)
-        )
-        return
-
-    if !inventory.index_of(text).is_err()
-        state.push_diagnostic(@r, errors.no_mutable_globals(name: text, what: "built-in", span: span))
-        return
-    candidates = names.value_candidates(r)
-    near = state.near_names(@r, text, candidates)
-    state.push_diagnostic(@r, errors.unknown_name(text, near, span))
 
 ## Tests
 
@@ -356,3 +330,24 @@ test "an unknown method name is answered without a type in hand"
 test "an index on the way to the root is read, the root is written"
     r = walked("function f()\n    xs: [i64] @ [1, 2]\n    i = 0\n    xs[i] @ 9\n    print(xs[i])\n")
     assert r.out.diagnostics.len() == 0
+
+test "an @ argument is held to the rule of the left of @"
+    r = walked("function f(@n: i64)\n    n @ n + 1\n\nfunction g(x: i64)\n    f(@x)\n")
+    assert r.out.diagnostics.len() == 1
+    assert r.out.diagnostics[0].code == "not_mutable"
+    assert r.out.diagnostics[0].message == "`x` is a parameter without `@`, so it cannot be written — mark it `@x` in the signature and at every call site (copy in, copy out)"
+
+test "an @ argument through an index writes the root, reads the index, and is clean on a cell"
+    r = walked(
+        "function f(@n: i64)\n    n @ n + 1\n\nfunction g()\n    xs: [i64] @ [1]\n    i = 0\n    f(@xs[i])\n    print(xs[i])\n"
+    )
+    assert r.out.diagnostics.len() == 0
+
+test "an @ argument on a plain binding and on a loop variable each say why"
+    r = walked(
+        "function f(@n: i64)\n    n @ n + 1\n\nfunction g(xs: [i64])\n    y = 1\n    f(@y)\n    print(y)\n    for e in xs\n        f(@e)\n        print(e)\n"
+    )
+    assert r.out.diagnostics.len() == 2
+    assert r.out.diagnostics[0].code == "not_mutable"
+    assert r.out.diagnostics[0].message == "`y` was bound with `=`, which binds once, forever — a cell is declared with its type: `y: <type> @ <value>`"
+    assert r.out.diagnostics[1].message == "`e` is the loop variable, and it is bound afresh for each element — write to a cell declared outside the loop"

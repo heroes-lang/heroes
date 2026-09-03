@@ -1,0 +1,1 @@
+tests/golden/check/inout-through-a-nested-record-of-an-immutable.hero:15:10: error[not_mutable]: `x` is a parameter without `@`, so it cannot be written — mark it `@x` in the signature and at every call site (copy in, copy out)

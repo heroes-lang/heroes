@@ -554,6 +554,19 @@ function call_args(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Arg]
             mutable = cursor.eat(@c, .at)
             value = parse_expr(@c, @a, text)
 
+            # `f(@g(x))`, `f(@Bag(items: []))`: the callee copies its result
+            # back into the argument (§4.8), so `@` must name where that
+            # copy goes — the three shapes the left of `@` accepts, and the
+            # resolver then holds the root to the same rule (`not_mutable`).
+            # Accepted until 2026-09-03 (M-robustness-guards step 1).
+            if mutable && !is_place(a, value)
+                cursor.error(
+                    @c,
+                    code: "not_a_place",
+                    message: "only a name, a field or an element can be passed as `@` — the callee copies its result back into the argument, so `@` must name where the value goes",
+                    span: a.exprs[value].span
+                )
+
             if cursor.at(c, .at)
                 # `f(a @ n)`: recovered as the `f(a: @n)` it meant, so the
                 # mistake costs one diagnostic and the tree stays usable.
@@ -1528,3 +1541,23 @@ test "a match arm may not declare a name where nothing can read it"
         codes @ codes.push(d.code)
 
     assert codes == ["declaration_in_arm"]
+
+test "only a place can be passed as @"
+    # f(@g(x)) — a call's result has nowhere to receive the copy-out
+    stream: [token.Token] = [
+        tok(.ident, start: 0, end: 1)
+        tok(.lparen, start: 1, end: 2)
+        tok(.at, start: 2, end: 3)
+        tok(.ident, start: 3, end: 4)
+        tok(.lparen, start: 4, end: 5)
+        tok(.ident, start: 5, end: 6)
+        tok(.rparen, start: 6, end: 7)
+        tok(.rparen, start: 7, end: 8)
+        tok(.terminator, start: 8, end: 8)
+        tok(.eof, start: 8, end: 8)
+    ]
+    c: cursor.Cursor @ cursor.new_cursor(stream)
+    a: ast.Ast @ ast.new_ast()
+    _ = statement(@c, @a, "f(@g(x))")
+    assert c.diagnostics.len() == 1
+    assert c.diagnostics[0].code == "not_a_place"

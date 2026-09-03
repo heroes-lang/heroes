@@ -1,0 +1,45 @@
+# Bulk regression case (assistant-written): the legal side of `@` through a
+# path — the root is a cell — and the shape that crashed on 2026-09-03 while
+# the eight refusals beside it were being measured. `add(@bs[0], "y")` on a
+# cell was accepted and died at exit 138: the emitter had no lvalue for an
+# element of a copy-on-write array and handed the callee `&h0_bs`, the whole
+# array. `ir/inout.hero` now reads the element into a temporary, the callee
+# copies out into it, and the temporary is stored back through the index after
+# the call (M-robustness-guards step 1). Three things this case pins: the
+# element really changes; two `@` arguments through two indices of two cells
+# store back in argument order (two through ONE cell is panel 010's alias
+# refusal, whatever the indices); and the index expression is evaluated ONCE,
+# so `pick` prints once.
+record Bag
+    items: [str]
+
+function add(@b: Bag, s: str)
+    b.items @ b.items.push(s)
+
+function add_items(@xs: [str], s: str)
+    xs @ xs.push(s)
+
+function swap(@a: Bag, @b: Bag)
+    held = a
+    a @ b
+    b @ held
+
+function pick() -> i64
+    print("pick")
+    return 0
+
+function main()
+    b: Bag @ Bag(items: ["a"])
+    add_items(@b.items, "x")
+    print(b.items.len())
+    bs: [Bag] @ [Bag(items: ["a"]), Bag(items: ["b", "c"])]
+    add(@bs[0], "y")
+    print(bs[0].items.len())
+    add_items(@bs[1].items, "z")
+    print(bs[1].items.len())
+    cs: [Bag] @ [Bag(items: ["d", "e", "f", "g"])]
+    swap(a: @bs[0], b: @cs[0])
+    print(bs[0].items.len())
+    print(cs[0].items.len())
+    add(@bs[pick()], "w")
+    print(bs[0].items.len())

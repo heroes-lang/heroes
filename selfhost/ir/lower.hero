@@ -39,6 +39,7 @@ use ir
 use ir/containers
 use ir/build
 use ir/layout
+use ir/inout
 use parse
 use resolve
 use checker
@@ -729,15 +730,22 @@ function call(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Che
                 # the IR does, because the layout decision belongs to the
                 # descriptor pass.
                 if is_record(decls, t.at)
-                    run = lower_args(@b, a, r, c, s, decls, given: given)
+                    run = lower_args(@b, a, r, c, s, decls, given: given).run
                     return build.emit(
                         @b,
                         op: .construct(shape: .record_shape(decl: t.at), arguments: run),
                         ty: ty,
                         span: span
                     )
-                run = lower_args(@b, a, r, c, s, decls, given: given)
-                return emit_call(@b, target: callee_of(decls, t.at), run: run, variadic: false, ty: ty, span: span)
+                handed = lower_args(@b, a, r, c, s, decls, given: given)
+                return emit_call(
+                    @b,
+                    target: callee_of(decls, t.at),
+                    given: handed,
+                    variadic: false,
+                    ty: ty,
+                    span: span
+                )
             .builtin bt =>
                 builtin_name = inventory.table()[bt.at].name
 
@@ -752,13 +760,13 @@ function call(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Che
                 shape = fallible_constructor(builtin_name)
 
                 if !shape.is_err()
-                    run = lower_args(@b, a, r, c, s, decls, given: given)
+                    run = lower_args(@b, a, r, c, s, decls, given: given).run
                     return build.emit(@b, op: .construct(shape: shape.must(), arguments: run), ty: ty, span: span)
-                run = lower_args(@b, a, r, c, s, decls, given: given)
+                handed = lower_args(@b, a, r, c, s, decls, given: given)
                 return emit_call(
                     @b,
                     target: .builtin_fn(at: bt.at),
-                    run: run,
+                    given: handed,
                     variadic: is_variadic(builtin_name),
                     ty: ty,
                     span: span
@@ -769,8 +777,8 @@ function call(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Che
 
             .module | .local | .unresolved => is_name @ is_name
     target = expr(@b, a, r, c, s, decls, id: callee)
-    run = lower_args(@b, a, r, c, s, decls, given: given)
-    return emit_call(@b, target: .indirect(value: target), run: run, variadic: false, ty: ty, span: span)
+    handed = lower_args(@b, a, r, c, s, decls, given: given)
+    return emit_call(@b, target: .indirect(value: target), given: handed, variadic: false, ty: ty, span: span)
 
 function is_record(decls: [ast.Decl], decl: i64) -> bool
     return match decls[decl].kind
@@ -786,7 +794,7 @@ function case_construct(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c:
 
             if found.is_err()
                 return build.emit(@b, op: .missing, ty: ty, span: span)
-            run = lower_args(@b, a, r, c, s, decls, given: given)
+            run = lower_args(@b, a, r, c, s, decls, given: given).run
             return build.emit(
                 @b,
                 op: .construct(shape: .case_shape(decl: n.decl, at: found.must()), arguments: run),
@@ -808,47 +816,60 @@ function case_construct(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c:
 # `dst = call print(x)` is a hard clang error and raylib is almost
 # entirely void-returning, so a () result produces no destination at
 # all — the value handed back is the function-wide unit, which no
-# instruction defines.
-function emit_call(@b: build.Lowering, target: ir.Callee, run: ir.Run, variadic: bool, ty: i64, span: token.Span) -> i64
+# instruction defines. What the call owes AFTER the instruction — an `@`
+# argument handed over as a temporary, stored back through its indexed
+# place — is paid here, because only the call knows when it has returned
+# (`ir/inout.hero`).
+function emit_call(@b: build.Lowering, target: ir.Callee, given: inout.Args, variadic: bool, ty: i64, span: token.Span) -> i64
     if ty == build.unit_ty(b)
-        build.emit_void(@b, op: .call(callee: target, arguments: run, variadic: variadic), ty: ty, span: span)
+        build.emit_void(@b, op: .call(callee: target, arguments: given.run, variadic: variadic), ty: ty, span: span)
+        inout.write_back(@b, given.after, span: span)
         return build.unit_value()
-    return build.emit(@b, op: .call(callee: target, arguments: run, variadic: variadic), ty: ty, span: span)
+    result = build.emit(@b, op: .call(callee: target, arguments: given.run, variadic: variadic), ty: ty, span: span)
+    inout.write_back(@b, given.after, span: span)
+    return result
 
 # Lowers the written arguments, left to right. `@x` at the call site
 # becomes a PLACE, not a value: the callee copies in and copies out, so
 # it needs to know where to write back (§4.8). The label is dropped
 # here — it was checked against the parameter at this position and
-# carries no further meaning.
-function lower_args(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], given: [ast.Arg]) -> ir.Run
+# carries no further meaning. A place that runs through an index is
+# handed over as a temporary, and the store back is what `after` owes.
+function lower_args(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], given: [ast.Arg]) -> inout.Args
     lowered_args: [ir.Arg] @ []
+    after: [inout.WriteBack] @ []
 
     for arg in given
         if arg.mutable
             spot = place(@b, a, r, c, s, decls, id: arg.value)
-            lowered_args @ lowered_args.push(.inout_arg(place: spot))
+            lowered_args @ lowered_args.push(
+                inout.argument(@b, a, r, c, s, decls, id: arg.value, spot: spot, after: @after)
+            )
         else
             value = expr(@b, a, r, c, s, decls, id: arg.value)
             lowered_args @ lowered_args.push(.value_arg(value: value))
 
-    return build.args_run(@b, lowered_args)
+    return inout.Args(run: build.args_run(@b, lowered_args), after: after)
 
 # The UFCS shape: the receiver becomes argument zero. §4.11 forbids
 # this where the first parameter is @, so the receiver is always a
 # value.
-function with_receiver(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], receiver: i64, given: [ast.Arg]) -> ir.Run
+function with_receiver(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], receiver: i64, given: [ast.Arg]) -> inout.Args
     first = expr(@b, a, r, c, s, decls, id: receiver)
     lowered_args: [ir.Arg] @ [.value_arg(value: first)]
+    after: [inout.WriteBack] @ []
 
     for arg in given
         if arg.mutable
             spot = place(@b, a, r, c, s, decls, id: arg.value)
-            lowered_args @ lowered_args.push(.inout_arg(place: spot))
+            lowered_args @ lowered_args.push(
+                inout.argument(@b, a, r, c, s, decls, id: arg.value, spot: spot, after: @after)
+            )
         else
             value = expr(@b, a, r, c, s, decls, id: arg.value)
             lowered_args @ lowered_args.push(.value_arg(value: value))
 
-    return build.args_run(@b, lowered_args)
+    return inout.Args(run: build.args_run(@b, lowered_args), after: after)
 
 # The one call shape clang verifies nothing about (§4.19): print today,
 # TextFormat and sqlite3_mprintf at the boundary, where a wrong argument
@@ -880,18 +901,25 @@ function method(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.C
     if is_qualified
         match r.uses[at]
             .top t =>
-                run = lower_args(@b, a, r, c, s, decls, given: given)
+                handed = lower_args(@b, a, r, c, s, decls, given: given)
 
                 # A record is constructed, not called — the same split
                 # call makes.
                 if is_record(decls, t.at)
                     return build.emit(
                         @b,
-                        op: .construct(shape: .record_shape(decl: t.at), arguments: run),
+                        op: .construct(shape: .record_shape(decl: t.at), arguments: handed.run),
                         ty: ty,
                         span: span
                     )
-                return emit_call(@b, target: callee_of(decls, t.at), run: run, variadic: false, ty: ty, span: span)
+                return emit_call(
+                    @b,
+                    target: callee_of(decls, t.at),
+                    given: handed,
+                    variadic: false,
+                    ty: ty,
+                    span: span
+                )
             .local | .builtin | .module | .unresolved => is_qualified @ is_qualified
 
     # .must(), .default(v) and .is_err() are branches, not calls
@@ -942,18 +970,18 @@ function method(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.C
             if builtin_name == "cstr"
                 operand = expr(@b, a, r, c, s, decls, id: receiver)
                 return build.emit(@b, op: .cast(kind: .str_to_cstr, operand: operand), ty: ty, span: span)
-            run = with_receiver(@b, a, r, c, s, decls, receiver: receiver, given: given)
+            handed = with_receiver(@b, a, r, c, s, decls, receiver: receiver, given: given)
             return emit_call(
                 @b,
                 target: .builtin_fn(at: bt.at),
-                run: run,
+                given: handed,
                 variadic: is_variadic(builtin_name),
                 ty: ty,
                 span: span
             )
         .top t =>
-            run = with_receiver(@b, a, r, c, s, decls, receiver: receiver, given: given)
-            return emit_call(@b, target: callee_of(decls, t.at), run: run, variadic: false, ty: ty, span: span)
+            handed = with_receiver(@b, a, r, c, s, decls, receiver: receiver, given: given)
+            return emit_call(@b, target: callee_of(decls, t.at), given: handed, variadic: false, ty: ty, span: span)
         # h.cb(n) where cb is a field holding a function value: the dot
         # is a FIELD READ, not a receiver (§4.11's first lookup, §4.13).
         # A module receiver never reaches here — the branch above
@@ -988,8 +1016,8 @@ function field_call(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: sta
         target @ build.emit(@b, op: .missing, ty: function_ty, span: span)
     else
         target @ build.emit(@b, op: .field(base: base, at: found.must()), ty: function_ty, span: span)
-    run = lower_args(@b, a, r, c, s, decls, given: given)
-    return emit_call(@b, target: .indirect(value: target), run: run, variadic: false, ty: ty, span: span)
+    handed = lower_args(@b, a, r, c, s, decls, given: given)
+    return emit_call(@b, target: .indirect(value: target), given: handed, variadic: false, ty: ty, span: span)
 
 ## assert — the source expression and both sides (§4.18, spec:157)
 
@@ -2077,3 +2105,44 @@ test "a literal match is a chain of tests closed by _, and a T? still switches"
             .jump | .branch | .return_term | .unreachable | .open => continue
 
     assert fallible_switch
+
+test "an @ argument through an index is handed over as a temporary and stored back after the call"
+    got = lowered(
+        "record Bag\n    n: i64\n\nfunction bump(@b: Bag)\n    b.n @ b.n + 1\n\nfunction main()\n    bs: [Bag] @ [Bag(n: 1)]\n    bump(@bs[0])\n    print(bs[0].n)\n"
+    )
+    call_at: i64 @ 0 - 1
+    store_at: i64 @ 0 - 1
+    handed_over: bool @ false
+
+    for f in got.program.functions
+        if f.name != "main"
+            continue
+        index: i64 @ 0
+
+        for inst in f.blocks[0].insts
+            match inst.op
+                .call cl =>
+                    for arg in containers.args_of(f, cl.arguments)
+                        match arg
+                            .value_arg => continue
+                            .inout_arg io =>
+                                call_at @ index
+
+                                # The callee sees a whole synthetic slot, never the array.
+                                match f.slots[io.place.root].kind
+                                    .synthetic_slot           => handed_over @ io.place.path.length == 0
+                                    .param_slot | .local_slot => handed_over @ false
+                .store st =>
+                    for step in containers.steps_of(f, st.place.path)
+                        match step
+                            .index_step => store_at @ index
+                            .field_step => continue
+                .lit | .load | .push_owned | .unary | .binary | .cast | .construct       => index @ index
+                .field | .index | .map_get | .len_of | .tag_of | .payload                => index @ index
+                .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing => index @ index
+
+            index @ index + 1
+
+    assert handed_over
+    assert call_at >= 0
+    assert store_at > call_at

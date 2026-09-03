@@ -1,0 +1,18 @@
+# Bulk regression case (assistant-written): `f(@x)` WRITES `x` — the callee
+# copies its result back into the argument (§4.8) — so the argument's root
+# answers to the rule of the left of `@` (spec:88). A loop variable is bound afresh for
+# each element, so a write to it goes nowhere. Accepted until 2026-09-03:
+# the program printed `2 2` at exit 0.
+record Bag
+    items: [str]
+
+function add(@b: Bag, s: str)
+    b.items @ b.items.push(s)
+
+function reader(bs: [Bag])
+    for b in bs
+        add(@b, "x")  #~ not_mutable
+        print(b.items.len())
+
+function main()
+    reader([Bag(items: ["a"]), Bag(items: ["b"])])

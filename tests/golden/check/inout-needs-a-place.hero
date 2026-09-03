@@ -1,0 +1,19 @@
+# Bulk regression case (assistant-written): `@` before something that is not
+# a place. The callee copies its result back into the argument (§4.8), so
+# `@` must name where that copy goes — a name, a field or an element, the
+# three shapes the left of `@` accepts. A call's result and a fresh record
+# have nowhere to receive it. Accepted until 2026-09-03 (M-robustness-guards
+# step 1); the parser refuses it where it already refuses `f(x) @ 1`.
+record Bag
+    items: [str]
+
+function add(@b: Bag, s: str)
+    b.items @ b.items.push(s)
+
+function make() -> Bag
+    return Bag(items: ["a"])
+
+function main()
+    add(@make(), "x")  #~ not_a_place
+    add(@Bag(items: ["q"]), "y")  #~ not_a_place
+    print(1)

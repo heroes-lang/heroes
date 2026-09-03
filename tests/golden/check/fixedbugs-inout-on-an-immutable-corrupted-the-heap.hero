@@ -1,0 +1,37 @@
+# A fixed defect, named after it (CLAUDE.md §9; Go's `test/fixedbugs`).
+#
+# SYMPTOM, 2026-09-02 (panel 102's compiler-engineer, on its way to something
+# else; reproduced by the coordinator the same hour, and again 2026-09-03):
+# this program was accepted by `heroes check` at exit 0, printed `2` and then
+# `panic: 1 heap blocks still live at exit (a missing decref) — this is a
+# compiler bug`, exit 134; with the second call it was exit 133 and no output;
+# under `--sanitize` it was `AddressSanitizer: heap-use-after-free`, a READ of
+# size 8 in `hero_array_decref`. `spec:88` forbids the program: *only a
+# declared `@` name can be mutated*, and `b` is a parameter without `@`.
+#
+# CAUSE: the write half of an `@` argument was never checked. `write_root`,
+# the resolver's rule for the left of `@`, had exactly one caller — the
+# mutation STATEMENT — and the checker's `marker_mismatch` asked only whether
+# the argument's marker matched the PARAMETER's marker, never whether the
+# argument's root was a cell. So the callee copied out into a by-value copy
+# the caller then released twice.
+#
+# FIX, 2026-09-03 (M-robustness-guards step 1): `resolve/writes.hero`'s
+# `inout_root` holds the root of every `@` argument to the rule of the left
+# of `@`. Eight shapes were measured before the repair and seven passed; the
+# eight cases beside this one are those shapes, one each.
+record Bag
+    items: [str]
+
+function add(@b: Bag, s: str)
+    b.items @ b.items.push(s)
+
+function reader(b: Bag)
+    add(@b, "x")  #~ not_mutable
+    add(@b, "y")  #~ not_mutable
+    print(b.items.len())
+
+function main()
+    bag = Bag(items: ["a"])
+    reader(bag)
+    print(bag.items.len())

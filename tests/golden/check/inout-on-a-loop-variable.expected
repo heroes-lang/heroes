@@ -1,0 +1,1 @@
+tests/golden/check/inout-on-a-loop-variable.hero:14:14: error[not_mutable]: `b` is the loop variable, and it is bound afresh for each element — write to a cell declared outside the loop

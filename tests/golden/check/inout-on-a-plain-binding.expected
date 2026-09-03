@@ -1,0 +1,1 @@
+tests/golden/check/inout-on-a-plain-binding.hero:14:10: error[not_mutable]: `bag` was bound with `=`, which binds once, forever — a cell is declared with its type: `bag: <type> @ <value>`

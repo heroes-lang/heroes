@@ -118,12 +118,25 @@ constant CEILING: i64
 # this addition does not spend. The whole diagnostic is 8 lines of comment and
 # 3 of code; its argument lives on `docs/panel/102` instead, which is CLAUDE.md's
 # preamble applied to a comment for once.
+#
+# **Two moved on 2026-09-03, M-robustness-guards step 1** (`@` on an
+# immutable binding accepted and corrupting memory; `@bs[0]` on a cell
+# handed the callee the whole array). `ir/lower.hero` 1483 -> **1511**:
+# `lower_args` and `with_receiver` hand an `@` argument through an index to
+# the new `ir/inout.hero` and `emit_call` pays the write-back after the
+# instruction — 14 of the 28 lines are the formatter breaking two
+# `emit_call` sites whose argument list grew by one word. The mechanism
+# itself is 145 lines in its own module, which is the knot argument applied
+# in the right direction: the ring gained a hand-over, not a feature.
+# `grammar_expr.hero` 1000 -> **1002**: `@` before something that is not a
+# place is refused where `1 @ 2` already is, six lines of code beside
+# `is_place`, which is the function that decides both.
 constant DECIDED: [str]
     [
         "selfhost/check/walk.hero 1583"
-        "selfhost/ir/lower.hero 1483"
+        "selfhost/ir/lower.hero 1511"
         "selfhost/print/fmt.hero 1150"
-        "selfhost/grammar_expr.hero 1000"
+        "selfhost/grammar_expr.hero 1002"
         "selfhost/parse/decl.hero 638"
         "selfhost/ir/print.hero 460"
         "selfhost/ast.hero 455"

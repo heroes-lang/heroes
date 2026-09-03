@@ -1,0 +1,99 @@
+# The root that a WRITE reaches, and the rule it answers to (design.md
+# §4.4 the three line shapes, §4.8 `@` parameters, spec:88 *only a declared
+# `@` name can be mutated*; panels 010, 015). Two callers in
+# `resolve/walk.hero`, and they are the two ways a program writes a value:
+# the left of a mutation statement, and an `@` argument at a call site.
+#
+# **Why this left the walker's knot** (CLAUDE.md §11). `write_root` calls
+# nothing in the ring `statement` → `expr` → `block` → `statement`; it is a
+# leaf that reads the scope stack and the tables. It sat in `walk.hero` for
+# as long as that file stayed under the ceiling, and on 2026-09-03 the
+# second caller arrived — `inout_root`, for `@` arguments — and took the
+# file past 300. A leaf that leaves a knot costs the reader nothing: the
+# map in `walk.hero`'s module doc names this module as the place the write
+# rule lives, and the ring is unchanged.
+#
+# **What `inout_root` closes** (M-robustness-guards step 1). Until that day
+# the call site `add(@b, "x")` on a by-value `b` was accepted and corrupted
+# the heap — exit 133 or exit 134 with the leak panic, ASan
+# heap-use-after-free — because the marker at the call site was checked
+# only against the PARAMETER's marker (`check/walk.hero`'s
+# `marker_mismatch`), never against the argument's binding. Eight shapes
+# were measured before the repair and seven passed `heroes check`: a
+# by-value parameter, a `=` local, a field, an index, a nested record, a
+# `for` variable, a `match` payload and a generic `@x: T`. One rule closes
+# all of them, because every place has exactly one root (§4.10, panel 010):
+# the root of an `@` argument is written, so it is held to the rule of the
+# left of `@` — a cell or an `@` parameter, never a `=` binding, a loop
+# variable, a payload, a top-level declaration or a built-in.
+
+use ast
+use source
+use inventory
+use resolve/state
+use resolve/errors
+use resolve/qualified
+use resolve/names
+
+# The root of a written place. A write is recorded, and it is NOT a read:
+# `v @ 1` alone leaves `v` unused. Writing through a field or an index is a
+# write to the root for the same reason — with no aliasing anywhere
+# (§4.10), a write nobody reads back is unobservable. Go left this hole
+# open (golang/go#20802); Heroes closes it because it has no aliases.
+function write_root(@r: state.Resolver, a: ast.Ast, s: source.Source, id: i64)
+    span = a.exprs[id].span
+    text = source.span_text(s, span)
+    local = state.lookup_local(r, text)
+
+    if !local.is_err()
+        at = local.must()
+
+        if !r.out.locals[at].mutable
+            state.push_diagnostic(@r, errors.not_mutable(text, r.out.locals[at].kind, span))
+            return
+        r.out.uses[id] @ .local(at: at)
+        r.out.locals[at].writes @ r.out.locals[at].writes + 1
+        return
+
+    if !state.top_visible(r, text).is_err()
+        state.push_diagnostic(
+            @r,
+            errors.no_mutable_globals(name: text, what: "top-level declaration", span: span)
+        )
+        return
+
+    if !inventory.index_of(text).is_err()
+        state.push_diagnostic(@r, errors.no_mutable_globals(name: text, what: "built-in", span: span))
+        return
+    candidates = names.value_candidates(r)
+    near = state.near_names(@r, text, candidates)
+    state.push_diagnostic(@r, errors.unknown_name(text, near, span))
+
+# The root of an `@` argument, held to the rule of the left of `@`. The
+# walker resolved the argument as a READ first (copy in), so an unknown
+# name has been reported once already; this adds the write half (copy
+# out) and records the write, exactly as `place` does for a statement. The
+# parser guarantees the shape — `not_a_place` refuses anything but a name,
+# a field path or an index path after `@` — so every arm below that is not
+# one of those three is a tree the parser did not produce.
+function inout_root(@r: state.Resolver, a: ast.Ast, s: source.Source, id: i64)
+    match a.exprs[id].kind
+        .name =>
+            match r.out.uses[id]
+                .local | .top | .builtin => write_root(@r, a, s, id)
+                .module | .unresolved    => return
+        .field f =>
+            # `f(@geom.ORIGIN)`: a qualified constant is a top-level
+            # declaration, and `place` says the same for the statement.
+            if !qualified.module_at(r, a, s, f.base).is_err()
+                state.push_diagnostic(
+                    @r,
+                    errors.no_mutable_globals(name: source.span_text(s, f.name), what: "top-level declaration", span: f.name)
+                )
+                return
+            inout_root(@r, a, s, f.base)
+        .index i => inout_root(@r, a, s, i.base)
+
+        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr => return
+        .hole | .unary | .binary | .call | .method | .variant_case           => return
+        .array | .map | .try_expr | .if_expr | .match_expr | .error          => return

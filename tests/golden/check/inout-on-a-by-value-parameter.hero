@@ -1,0 +1,17 @@
+# Bulk regression case (assistant-written): `f(@x)` WRITES `x` — the callee
+# copies its result back into the argument (§4.8) — so the argument's root
+# answers to the rule of the left of `@` (spec:88). A parameter without `@` is
+# not a cell. Accepted until 2026-09-03, and it corrupted the heap
+# (M-robustness-guards step 1).
+record Bag
+    items: [str]
+
+function add(@b: Bag, s: str)
+    b.items @ b.items.push(s)
+
+function reader(b: Bag)
+    add(@b, "x")  #~ not_mutable
+    print(b.items.len())
+
+function main()
+    reader(Bag(items: ["a"]))

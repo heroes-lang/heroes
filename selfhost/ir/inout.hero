@@ -1,0 +1,177 @@
+# An `@` argument whose place runs through an INDEX — `add(@bs[0], "y")` —
+# and what the call owes after it (design.md §4.8 copy in, copy out; §4.10
+# copy-on-write; M-robustness-guards step 1).
+#
+# The emitter renders an inout place as a C lvalue and hands the callee its
+# address: `&h0_b.f_items` for `@b.items`. An element of a copy-on-write
+# array HAS no such lvalue — the runtime owns the replacement
+# (`emit/container.hero`'s `write_element`), which is why a store through an
+# index is a call and not an assignment. Until 2026-09-03 the emitter
+# stopped its walk at the index step and handed the callee the address of
+# whatever it had spelled so far: `&h0_bs`, the WHOLE array, where a
+# `Bag *` was expected. clang warned, the build went on, and the program
+# died at exit 138 — on a form design.md names as legal (§4.8, panel 010:
+# `f(a @ xs[0])`). The corpus held 150 `@x.field` arguments and zero
+# `@x[i]`, which is why nobody saw it.
+#
+# The repair is the one every copy-in/copy-out language makes: the element
+# is read into a temporary before the call, the callee copies out into the
+# temporary, and the temporary is stored back through the indexed place
+# after the call — the same `.store` that `bs[0] @ v` lowers to, unshare
+# included. Ada calls the temporary a copy-back; Swift's `inout` on a
+# subscript does exactly this (an accessor materialises a temporary and
+# writes it back). Two rules keep it honest:
+#
+# - **The index is evaluated once.** `lower.place` already lowered every
+#   index expression on its walk, left to right (§4.8); the read reuses
+#   those values instead of lowering the expression again, so `xs[f()]`
+#   calls `f` once.
+# - **The write-back is owed by the CALL, not by the argument.** It has to
+#   come after the call instruction, so `lower_args` hands its caller the
+#   list in `Args.after` and `emit_call` pays it — one store per temporary,
+#   in argument order. `ir/verify.hero` refuses an inout place that still
+#   carries an index step, so the hand-over cannot be skipped in silence,
+#   and `emit/aggregate.hero` spells such a place as an undeclared C
+#   identifier, so even a verifier that was not run would fail loudly.
+#
+# Why a module of its own: `ir/lower.hero` is a knot held at its decided
+# ceiling, and this mechanism needs nothing from it — the caller computes
+# the place; this file only knows how to read one and how to write one
+# back.
+
+use ast
+use token
+use source
+use resolved
+use check/table
+use check/state
+use ir
+use ir/containers
+use ir/build
+use ir/layout
+
+# What one call's arguments became, and what the call still owes.
+record Args
+    run: ir.Run
+    after: [WriteBack]
+
+# One temporary to store back through its place once the call returns.
+record WriteBack
+    place: ir.Place
+    slot: i64
+
+# The inout argument for `spot`: the place itself when it is a C lvalue, a
+# temporary — recorded in `after` — when the place runs through an index.
+function argument(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], id: i64, spot: ir.Place, @after: [WriteBack]) -> ir.Arg
+    indices = index_values(b, spot)
+
+    if indices.len() == 0
+        return .inout_arg(place: spot)
+    span = a.exprs[id].span
+    at: i64 @ 0
+    current = element_value(@b, a, r, c, s, decls, id: id, indices: indices, at: @at)
+    holder = build.synthetic(@b, prefix: "e", ty: c.expr_types[id])
+    build.store_slot(@b, slot_id: holder, value: current, span: span)
+    after @ after.push(WriteBack(place: spot, slot: holder))
+    return .inout_arg(place: build.whole(holder))
+
+# Whether any `@` argument of the call still runs through an index — the
+# invariant `ir/verify.hero` asserts on every call, because this module is
+# what makes it true.
+function through_index(f: containers.Function, run: ir.Run) -> bool
+    for arg in containers.args_of(f, run)
+        match arg
+            .value_arg => continue
+            .inout_arg io =>
+                for step in containers.steps_of(f, io.place.path)
+                    match step
+                        .index_step => return true
+                        .field_step => continue
+
+    return false
+
+# The index values `place` lowered, root-first — the order the read
+# consumes them in.
+function index_values(b: build.Lowering, spot: ir.Place) -> [i64]
+    indices: [i64] @ []
+
+    for step in containers.steps_of(b.building, spot.path)
+        match step
+            .index_step ix => indices @ indices.push(ix.value)
+            .field_step    => continue
+
+    return indices
+
+# The value at the place, read along the same path `place` walked: the
+# root slot is loaded, then one `.field` or `.index` instruction per step,
+# each typed by the checker's answer for that sub-expression.
+function element_value(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], id: i64, indices: [i64], @at: i64) -> i64
+    span = a.exprs[id].span
+    ty = c.expr_types[id]
+
+    match a.exprs[id].kind
+        .name =>
+            match r.uses[id]
+                .local l =>
+                    slot = build.slot_of_local(b, l.at)
+
+                    if slot.is_err()
+                        return build.emit(@b, op: .missing, ty: ty, span: span)
+                    return build.load_slot(@b, slot_id: slot.must(), span: span)
+                .top | .builtin | .module | .unresolved => return build.emit(@b, op: .missing, ty: ty, span: span)
+        .field f =>
+            base = element_value(@b, a, r, c, s, decls, id: f.base, indices: indices, at: @at)
+            found = layout.field_index(decls, c, s, owner: c.expr_types[f.base], name: f.name)
+
+            if found.is_err()
+                return build.emit(@b, op: .missing, ty: ty, span: span)
+            return build.emit(@b, op: .field(base: base, at: found.must()), ty: ty, span: span)
+        .index ix =>
+            base = element_value(@b, a, r, c, s, decls, id: ix.base, indices: indices, at: @at)
+
+            # A map element is a `V?`, and the checker refused it as an `@`
+            # argument; if one ever arrives, `.missing` is what `verify`
+            # names, rather than an `.index` on a map.
+            if is_map(c, ty: c.expr_types[ix.base]) || at >= indices.len()
+                return build.emit(@b, op: .missing, ty: ty, span: span)
+            key = indices[at]
+            at @ at + 1
+            return build.emit(@b, op: .index(base: base, at: key), ty: ty, span: span)
+        # The parser refuses every other shape after `@` (`not_a_place`), so
+        # this is a tree the parser did not produce.
+
+        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr => return build.emit(
+            @b,
+            op: .missing,
+            ty: ty,
+            span: span
+        )
+        .hole | .unary | .binary | .call | .method | .variant_case => return build.emit(
+            @b,
+            op: .missing,
+            ty: ty,
+            span: span
+        )
+        .array | .map | .try_expr | .if_expr | .match_expr | .error => return build.emit(
+            @b,
+            op: .missing,
+            ty: ty,
+            span: span
+        )
+
+    return build.emit(@b, op: .missing, ty: ty, span: span)
+
+function is_map(c: state.Checked, ty: i64) -> bool
+    return match table.get(c.types, ty)
+        .map                                                      => true
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
+        .array | .fixed | .fallible | .function_ty | .named       => false
+        .case_ty | .failure | .generic | .error                   => false
+
+# What `emit_call` pays after the instruction: each temporary stored back
+# through its place, in argument order — the indexed store the language
+# already has, unshare included.
+function write_back(@b: build.Lowering, after: [WriteBack], span: token.Span)
+    for owed in after
+        value = build.load_slot(@b, slot_id: owed.slot, span: span)
+        build.emit_void(@b, op: .store(place: owed.place, value: value), ty: build.slot_type(b, owed.slot), span: span)

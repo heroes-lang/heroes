@@ -1,0 +1,1 @@
+tests/golden/check/inout-on-a-generic-by-value.hero:16:11: error[not_mutable]: `v` is a parameter without `@`, so it cannot be written — mark it `@v` in the signature and at every call site (copy in, copy out)

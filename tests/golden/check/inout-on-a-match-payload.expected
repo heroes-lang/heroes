@@ -1,0 +1,1 @@
+tests/golden/check/inout-on-a-match-payload.hero:19:18: error[not_mutable]: `s` is bound by the pattern, and a pattern binding is not a cell — bind what you need with `@` outside the `match`
