@@ -2,9 +2,11 @@
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/assets/banner-dark.svg">
     <source media="(prefers-color-scheme: light)" srcset="docs/assets/banner-light.svg">
-    <img src="docs/assets/banner-light.svg" alt="Heroes, a compiled programming language. Small enough to fit in a prompt, real enough to compile itself.">
+    <img src="docs/assets/banner-light.svg" alt="Heroes, a compiled programming language.">
   </picture>
 </p>
+
+<h3 align="center">A whole language in one prompt. It <em>compiles itself</em>.</h3>
 
 <p align="center">
   <b>233</b> lines: the whole language &nbsp;&middot;&nbsp;
