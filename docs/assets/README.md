@@ -6,7 +6,7 @@ daylight twin. `README.md` selects between them with `<picture>` and
 
 | picture | what it is |
 |---|---|
-| `banner-*.svg` | the marquee: the 1973 bolt, the name in its gold quotation marks, the promise |
+| `banner-*.svg` | the marquee: the 1973 bolt, the kicker, the name in its gold quotation marks. The promise under it is markdown in `README.md` (rule 6) |
 | `error-*.svg` | one real diagnostic, the compiler's own output |
 | `fixpoint-*.svg` | the loop: C makes the compiler, the compiler makes the C, the two are the same bytes |
 
@@ -17,7 +17,7 @@ else paper and ink. The palette is copied from `site/public/style.css`, both
 themes, and the rules behind it live in `site/README.md` § Style guide and
 § The visual system.
 
-## Five rules
+## Six rules
 
 1. **The banner carries no measured number** (author instruction 2026-08-31).
    The four figures that used to sit along its bottom edge are markdown in
@@ -53,6 +53,15 @@ themes, and the rules behind it live in `site/README.md` § Style guide and
    coloured runs are `tspan`s with no `x` of their own, so the glyphs flow and
    the caret row stays under the span it marks whatever monospace font the
    reader has.
+
+6. **The banner carries no sentence either: the promise is markdown, and it
+   is the site's line** (author instruction 2026-09-03). The site's hero
+   promise changed in `0367070` and the banner went on saying the old one, so a
+   sentence in a drawing ages exactly the way rule 1 says a number does. The
+   line under the banner in `README.md` is now the same words, with the same
+   `<em>`, as the `promise` paragraph in `site/src/html/index.html`, and when
+   one moves the other follows. The picture keeps what does not change: the
+   bolt, the kicker and the name.
 
 ## Checking a change
 

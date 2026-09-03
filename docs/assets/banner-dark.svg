@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 376" width="1200" height="376" role="img" aria-label="Heroes, a compiled programming language. Small enough to fit in a prompt, real enough to compile itself.">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 320" width="1200" height="320" role="img" aria-label="Heroes, a compiled programming language.">
   <!-- The README's marquee, in the site's own art direction (site/README.md
        § Style guide and § The visual system): one light source (the red and blue
        wash), one motif (the Aladdin Sane bolt of 1973, red over blue at a jaunty
@@ -12,8 +12,12 @@
        2026-08-31). The four figures that used to sit along the bottom are now
        markdown in README.md, under the banner: a number in a picture ages in
        silence, because nobody re-measures a drawing, and CLAUDE.md §1 wants the
-       count in the session that writes it. docs/assets/README.md is the rule's
-       home.
+       count in the session that writes it. **And no sentence either** (author
+       instruction 2026-09-03): the promise that used to sit under the name is
+       markdown in README.md as well, and it is the site's own hero line. The
+       site changed that line and this drawing kept the old one for a day, which
+       is the same silence with words instead of digits. docs/assets/README.md
+       is the home of both rules.
 
        Path data is written `M 14 0`, with the space, because a bare capital M
        followed by a digit is the milestone shape the net refuses in a living
@@ -21,22 +25,19 @@
   <style>
     .plate  { fill: #0b0b10; stroke: #262633; stroke-width: 1.5; }
     .fg     { fill: #efece4; }
-    .dim    { fill: #9d998f; }
     .blue   { fill: #3f7bff; }
     .red    { fill: #ef4a52; }
     .gold   { fill: #e8b552; }
     .rule-blue { stroke: #3f7bff; }
     .cond   { font-family: 'Avenir Next Condensed','HelveticaNeue-CondensedBold','Helvetica Neue','Roboto Condensed','Arial Narrow',sans-serif; font-weight: 700; }
     .mono   { font-family: ui-monospace,'SF Mono',Menlo,monospace; }
-    .serif  { font-family: Georgia,'Iowan Old Style','Times New Roman',serif; font-weight: 700; }
     .kicker { font-size: 15px; letter-spacing: 3.4px; }
     .title  { font-size: 112px; letter-spacing: 1px; }
     .quote  { font-size: 92px; }
-    .promise{ font-size: 27px; }
   </style>
 
   <defs>
-    <clipPath id="plateClip"><rect x="1" y="1" width="1198" height="374" rx="16"/></clipPath>
+    <clipPath id="plateClip"><rect x="1" y="1" width="1198" height="318" rx="16"/></clipPath>
     <radialGradient id="washRed"><stop offset="0" stop-color="#ef4a52" stop-opacity="0.30"/><stop offset="1" stop-color="#ef4a52" stop-opacity="0"/></radialGradient>
     <radialGradient id="washBlue"><stop offset="0" stop-color="#3f7bff" stop-opacity="0.24"/><stop offset="1" stop-color="#3f7bff" stop-opacity="0"/></radialGradient>
     <linearGradient id="beam" x1="0" y1="0.04" x2="1" y2="0.13">
@@ -52,14 +53,14 @@
     </filter>
   </defs>
 
-  <rect class="plate" x="0.75" y="0.75" width="1198.5" height="374.5" rx="16"/>
+  <rect class="plate" x="0.75" y="0.75" width="1198.5" height="318.5" rx="16"/>
 
   <g clip-path="url(#plateClip)">
     <!-- one light, raked along the bolt's own angle -->
     <ellipse cx="300" cy="120" rx="560" ry="330" fill="url(#washRed)"/>
-    <ellipse cx="910" cy="360" rx="500" ry="300" fill="url(#washBlue)"/>
-    <rect x="0" y="0" width="1200" height="376" fill="url(#beam)"/>
-    <rect x="0" y="0" width="1200" height="376" filter="url(#grain)" opacity="0.035"/>
+    <ellipse cx="910" cy="304" rx="500" ry="300" fill="url(#washBlue)"/>
+    <rect x="0" y="0" width="1200" height="320" fill="url(#beam)"/>
+    <rect x="0" y="0" width="1200" height="320" filter="url(#grain)" opacity="0.035"/>
   </g>
 
   <!-- the 1973 bolt: blue plate a hair off the red one, worn at eight degrees -->
@@ -74,7 +75,5 @@
   <text class="mono kicker blue" x="600" y="176" text-anchor="middle">A COMPILED PROGRAMMING LANGUAGE</text>
 
   <text class="cond title fg" x="600" y="278" text-anchor="middle"><tspan class="gold quote">&#8220;</tspan>HEROES<tspan class="gold quote">&#8221;</tspan></text>
-
-  <text class="serif promise fg" x="600" y="330" text-anchor="middle">Small enough to fit in a prompt, real enough to <tspan class="red">compile itself</tspan>.</text>
 
 </svg>
