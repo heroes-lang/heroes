@@ -1,0 +1,18 @@
+# fixedbugs, M-robustness-guards step 3, 2026-09-03 (panel 096 § Q3, panel 103
+# item 5).
+#
+# SYMPTOM: `extern function printf(format: cstr) -> i32`, bound at the format
+# alone and called with a variable, was exit 2 with clang's `format string is
+# not a string literal (potentially insecure) [-Wformat-security]` — the
+# compiler blaming itself for a shape the author chose.
+#
+# CAUSE and FIX: as `ffi-call-arity.hero`'s. The reader's second text; the
+# repair clang itself names is to bind the arguments the call needs, and a
+# variadic bound at a FIXED arity — `printf(format: cstr, value: i64)` — is
+# legal and stays green (`ffi-variadic-at-a-fixed-arity.hero`, in `run/`).
+extern "stdio.h"
+    function printf(format: cstr) -> i32  #~ ffi_call_shape
+
+function main()
+    greeting = "hi\n"
+    _ = printf(format: greeting.cstr())

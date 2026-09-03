@@ -1,0 +1,12 @@
+# Bulk regression case (assistant-written): a C variadic bound at ONE fixed
+# shape is legal and stays legal under the strict flags and the call-shape
+# reader (panel 103 item 5's own condition, measured by the ffi-pragmatist:
+# clang says *too many arguments* only against a non-variadic prototype, and
+# `examples/curl`'s `curl_easy_setopt` is the same shape). `printf` writes to
+# the same stdout the runtime writes to, so the two lines interleave in order.
+extern "stdio.h"
+    function printf(format: cstr, value: i64) -> i32
+
+function main()
+    _ = printf(format: "%lld\n".cstr(), value: 42)
+    print(7)
