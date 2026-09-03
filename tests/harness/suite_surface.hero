@@ -268,6 +268,10 @@ function verb_probes() -> [probe.Probe]
         row(name: "a ptr local wearing a module's name is two diagnostics, and the qualifying repair is a guess", argv: "check tests/golden/surface-fixtures/qualifyptr/main.hero", code: 1).err_has("error[shadowed_binding]").err_has("error[needs_qualifying]").err_lacks("fix (certain)").err_lacks("internal error")
         row(name: "apply on it leaves the text untouched, because a fix that reproduced itself was no fix", argv: "check tests/golden/surface-fixtures/qualifyptr/main.hero --apply", code: 0).out_is("use window\n\nfunction main()\n    window: ptr @ nullptr  #~ shadowed_binding\n    window @ nullptr\n    _ = window.destroy()  #~ needs_qualifying\n").out_lacks("window.window")
         row(name: "deep recursion stops with a word at -O0, on every platform", argv: "run tests/golden/surface-fixtures/deep/main.hero -O0", code: -1).err_has("panic: stack exhausted").out_empty()
+        row(name: "a nested program runs from its root, the leaf reading the root's module by path", argv: "run tests/golden/surface-fixtures/nested/main.hero", code: 0).out_is("2\n20\n")
+        row(name: "a leaf below the root, compiled directly, refuses and names the directory it read from and the file that decided it", argv: "check tests/golden/surface-fixtures/nested/lib/leaf.hero", code: 1).err_has("error[unknown_module]").err_has("reads `tests/golden/surface-fixtures/nested/lib/util.hero`").err_has("from the directory of `tests/golden/surface-fixtures/nested/lib/leaf.hero`, the file you compile")
+        row(name: "beside a decoy module the same leaf checks clean against the wrong file, which is the stated hazard and not a defect", argv: "check tests/golden/surface-fixtures/nested/decoy/lib/leaf.hero", code: 0).err_empty()
+        row(name: "and the decoy program itself, compiled from its root, reads the root's module", argv: "run tests/golden/surface-fixtures/nested/decoy/main.hero", code: 0).out_is("3\n30\n")
         row(name: "text names the file a diagnostic is in", argv: "check tests/golden/surface-fixtures/cross/main.hero --brief", code: 1).err_has("geom.hero:5:")
         row(name: "json names it too", argv: "check tests/golden/surface-fixtures/cross/main.hero --json", code: 1).err_has("\"line\": 5,")
         row(name: "the hole count names the file the holes are in", argv: "build tests/golden/surface-fixtures/holes/main.hero", code: 1).err_has("no binary: 1 hole in ").err_has("geom.hero")
@@ -279,6 +283,13 @@ function verb_probes() -> [probe.Probe]
         row(name: "an unknown operator names the ones there are", argv: "mutate --operator swapargs", code: 2).err_has("no operator `swapargs`").err_has("swap-args")
         row(name: "the zen prints and says nothing on stderr", argv: "this", code: 0).err_empty().out_has("20. We can be heroes, just for one day.\n")
     ]
+
+# Panel 099 R5 (M-robustness-guards step 6): a nested program, its leaf
+# compiled directly. The root program runs; the leaf alone refuses and
+# says where it looked and which file decided that; and beside a decoy
+# `lib/util.hero` the leaf alone checks CLEAN against a different module
+# — the hazard the root base carries, stated by a row rather than by a
+# silence (the historian's standing prediction is Zig #13970's shape).
 
 # A hole is not an error and not a binary: the report is the
 # artifact, and `build` is the one verb that must refuse.
@@ -329,7 +340,9 @@ test "the tables are what this module is, so they are counted"
     # row, the first surface row whose exit code is not asserted — `abort()`
     # is 134 on POSIX and the MSVC runtime's own number on Windows, and the
     # message is the fact.
-    assert verb_probes().len() == 36
+    # 36 -> 40 on 2026-09-03, M-robustness-guards step 6: the four rows of
+    # panel 099 R5's nested-leaf fixture.
+    assert verb_probes().len() == 40
 
 test "a probe holds when everything it asks for is true"
     scratch = "build/harness-selftest"
