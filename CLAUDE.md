@@ -563,6 +563,24 @@ redirects permanently is creating a repository at the old name, so that name is
 never reused). Hard stops that remain: publishing the
 site or anything else outward-facing, and destructive ops.
 
+**NEVER `git add -A`, `git add .`, `git add -u` or `git commit -a`. A commit
+stages ONLY the files this conversation touched, each one named on the command
+line** (author instruction 2026-09-03, categorical). The reason is the working
+tree, not tidiness: more than one session works in the same checkout at the same
+time, and their half-finished files sit side by side in one `git status`. A sweep
+stages everything it finds, so it commits another session's unfinished work under
+this session's subject — a change nobody in this conversation read, tested or
+meant to record, and one that the other session then finds gone from its tree.
+Measured the day the rule was written, while it was being written: `git status`
+showed **8 dirty paths, 6 modified and 2 untracked, all under `selfhost/` and
+`tests/harness/`, and this conversation had touched none of them** — a `git add
+-A` here would have shipped eight files of somebody else's compiler work inside a
+one-paragraph edit to this contract. The same reasoning forbids `git stash` in
+the shared tree: it takes every session's changes, not one's. Before staging,
+`git status` is read and every path about to be added is one this conversation
+edited or created; a path that is dirty and unexplained stays out of the commit
+and is reported to the author instead.
+
 **Milestone identifiers are names, not numbers** (author instruction 2026-08-12;
 panel 030 R7 as amended — the argument lives there). This is the algorithm's only
 home; `docs/ROADMAP.md` § The names carries the map and cites this.
