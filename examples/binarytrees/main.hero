@@ -1,0 +1,218 @@
+# Binary trees built, walked and dropped by the hundred thousand — and a
+# published output that says what each of them held.
+#
+# Corpus material (CLAUDE.md §9). It closes no measured form gap. What it adds
+# is two things the corpus was measured short of on 2026-09-03: an answer
+# somebody else wrote down, and a recursive `variant` allocated at volume.
+# `examples/tree/` declares a tree and builds eight nodes; `examples/json/`
+# builds one the size of its input, and its input is a sample. Nothing here was
+# written to allocate at volume, and 135,854 nodes built and dropped is the
+# shape that finds a leak, a double free, and a refcount that is one out — on a
+# corpus where every program also runs under `--sanitize`.
+#
+# THE ORACLE, fetched 2026-09-03 and quoted with its source: the benchmarks
+# game's published output for binary-trees at N = 10, which is exactly what
+# `main` prints, tab characters included.
+# https://benchmarksgame-team.pages.debian.net/benchmarksgame/download/binarytrees-output.txt
+# (sha256 b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb)
+# described at
+# https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/binarytrees.html
+# where it is called *a simplistic adaptation of Hans Boehm's GCBench, which
+# in turn was adapted from a benchmark by John Ellis and Pete Kovac*.
+#
+# A SECOND ORACLE, and this one is arithmetic rather than a file: a tree of
+# depth `d` holds `2^(d+1) - 1` nodes, so the published `check:` numbers are
+# the node counts and nothing else — 4095 is one tree of depth 11, and 31744
+# is 1024 trees of depth 4 at 31 nodes each. The tests below assert the
+# identity for every depth from 0 to 14, which is 32,767 nodes the published
+# file never mentions. Two oracles that agree is the point: the file pins the
+# FORMAT and one arrangement, the identity pins every other one.
+#
+# WHY THE HALVES LIVE IN AN ARRAY, which is the language showing through. The
+# obvious declaration is refused, and the refusal is a rule rather than an
+# accident:
+#
+#     record Node          # a record holds its fields BY VALUE, so this one
+#         left: Node       # would have to be bigger than itself
+#         right: Node
+#
+# measured 2026-09-03, and the compiler says the whole of it:
+#
+#     error[no_size]: `record Node` contains itself, so it has no size
+#     note: every value is an independent copy, so `Node` holding one more
+#           `Node` would need one at every depth
+#     note: `[T]` holds its contents elsewhere, so it is how a type contains
+#           itself
+#     fix (guess): hold them in an array: `[Node]`
+#
+# spec § Types: *a record or variant holds its fields by value, so it may
+# contain itself only through `[T]` or `{K: V}`*. So the two halves are a
+# `[Tree]` of length two — the fix the diagnostic offers, taken — and
+# `halves[0]`/`halves[1]` is what `left`/`right` would have been. The array is
+# the indirection, written down instead of implied; in a language with
+# references the same declaration compiles and the pointer is invisible.
+
+# The benchmark's floor: every tree the loop builds is at least this deep.
+constant MIN_DEPTH: i64
+    4
+
+# The published run, and the reason `main` takes no argument: the oracle is
+# the output at N = 10, so the depth is part of what is being checked.
+constant DEPTH: i64
+    10
+
+# A node with two halves, or a leaf. `.branch` is the recursive case and it
+# reaches itself through `[Tree]`, which is the only door the language leaves
+# open (see the header).
+variant Tree
+    leaf
+    branch
+        halves: [Tree]
+
+# A tree of exactly `depth`, built bottom up: the two halves exist before the
+# node that holds them, because a value cannot be filled in later.
+function grown(depth: i64) -> Tree
+    if depth <= 0
+        return .leaf
+
+    return .branch(halves: [grown(depth - 1), grown(depth - 1)])
+
+# The benchmark's `check`: how many nodes the tree holds, counting leaves.
+# The walk is the whole point of the program — it is what makes the allocation
+# observable, and a tree nobody reads is a tree the compiler could have
+# skipped.
+function checked(t: Tree) -> i64
+    return match t
+        .leaf     => 1
+        .branch b => 1 + checked(b.halves[0]) + checked(b.halves[1])
+
+# How deep the tree actually is, walking the left halves only. `grown` is
+# symmetric, so this is the whole depth, and `balanced` below is what says so.
+function depth_of(t: Tree) -> i64
+    return match t
+        .leaf     => 0
+        .branch b => 1 + depth_of(b.halves[0])
+
+# Whether both halves of every node have the same shape. `grown` builds its
+# two halves with the same call, so the answer must be `true` at every depth —
+# and if a future change to the language made the second call share the first
+# one's value rather than copy it, this is still `true`, which is why the
+# equality test below stands beside it.
+function balanced(t: Tree) -> bool
+    return match t
+        .leaf     => true
+        .branch b => balanced(b.halves[0]) && balanced(b.halves[1]) && depth_of(b.halves[0]) == depth_of(b.halves[1])
+
+# The published output, in the published shape: a stretch tree deeper than
+# anything else, then a long-lived tree that must survive every allocation
+# after it, then the loop that does the allocating.
+function main()
+    print("stretch tree of depth ", DEPTH + 1, "\t check: ", checked(grown(DEPTH + 1)))
+
+    # Bound before the loop and read after it. On this runtime that is a
+    # refcount held while 135,854 nodes are built and dropped around it — more
+    # allocations than that, since every branch also holds an array — and the
+    # benchmark's original point was a garbage collector that must not move or
+    # free it.
+    long_lived = grown(DEPTH)
+    depth: i64 @ MIN_DEPTH
+
+    while depth <= DEPTH
+        # Half as many trees for every two levels of depth, so each line of
+        # the output allocates about the same number of nodes as the last.
+        iterations = 1 << DEPTH - depth + MIN_DEPTH
+        total: i64 @ 0
+        i: i64 @ 0
+
+        while i < iterations
+            total @ total + checked(grown(depth))
+            i @ i + 1
+
+        print(iterations, "\t trees of depth ", depth, "\t check: ", total)
+        depth @ depth + 2
+
+    print("long lived tree of depth ", DEPTH, "\t check: ", checked(long_lived))
+
+test "the published check values, which this program did not invent"
+    # binarytrees-output.txt, N = 10, fetched 2026-09-03. Every number on the
+    # right of a `check:` in that file, in the order it appears there.
+    assert checked(grown(11)) == 4095
+    assert 1024 * checked(grown(4)) == 31744
+    assert 256 * checked(grown(6)) == 32512
+    assert 64 * checked(grown(8)) == 32704
+    assert 16 * checked(grown(10)) == 32752
+    assert checked(grown(10)) == 2047
+
+test "the published iteration counts are what the shift produces"
+    # The left column of the same file: 1024, 256, 64, 16, for depths 4, 6, 8
+    # and 10. Written as the program computes it, so a change to either the
+    # constant or the shift breaks this before it reaches the output.
+    assert 1 << DEPTH - 4 + MIN_DEPTH == 1024
+    assert 1 << DEPTH - 6 + MIN_DEPTH == 256
+    assert 1 << DEPTH - 8 + MIN_DEPTH == 64
+    assert 1 << DEPTH - 10 + MIN_DEPTH == 16
+
+test "a tree of depth d holds two-to-the-d-plus-one minus one nodes"
+    # The second oracle, and the one the published file cannot give: it names
+    # six arrangements, this names fifteen, and 14 is 32,767 nodes built and
+    # dropped inside one assertion.
+    depth: i64 @ 0
+
+    while depth <= 14
+        assert checked(grown(depth)) == (1 << depth + 1) - 1
+        depth @ depth + 1
+
+test "the depth of a grown tree is the depth it was asked for"
+    depth: i64 @ 0
+
+    while depth <= 12
+        assert depth_of(grown(depth)) == depth
+        depth @ depth + 1
+
+test "a leaf is one node and no depth, and a negative depth is a leaf"
+    assert checked(.leaf) == 1
+    assert depth_of(.leaf) == 0
+
+    # The floor is `depth <= 0` and not `depth == 0`, so nothing recurses
+    # forever if a caller subtracts too far.
+    assert grown(0 - 3) == .leaf
+    assert checked(grown(0 - 3)) == 1
+
+test "both halves of every node have the same shape"
+    depth: i64 @ 0
+
+    while depth <= 10
+        assert balanced(grown(depth))
+        depth @ depth + 1
+
+test "two trees grown apart are the same value, at every depth"
+    # Structural equality over a recursive variant, which is code the compiler
+    # generates by walking fields rather than bytes (CLAUDE.md §7). The trees
+    # share no allocation: each `grown` call built its own.
+    depth: i64 @ 0
+
+    while depth <= 8
+        assert grown(depth) == grown(depth)
+        depth @ depth + 1
+
+    assert grown(4) != grown(5)
+    assert grown(0) == .leaf
+    assert grown(1) == .branch(halves: [.leaf, .leaf])
+
+test "a tree taken apart by hand is the tree the program built"
+    # One tree small enough to write out, so the shape is asserted and not
+    # only its node count.
+    two = grown(2)
+    assert two == .branch(halves: [.branch(halves: [.leaf, .leaf]), .branch(halves: [.leaf, .leaf])])
+    assert checked(two) == 7
+    assert depth_of(two) == 2
+
+test "a copy of a tree does not change when the original is replaced"
+    # Value semantics on a recursive variant: `held` is an independent copy,
+    # which is what makes `long_lived` in `main` safe to read at the end.
+    held: Tree @ grown(3)
+    kept = held
+    held @ grown(5)
+    assert checked(kept) == 15
+    assert checked(held) == 63
+    assert kept == grown(3)

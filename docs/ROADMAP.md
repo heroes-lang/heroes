@@ -63,11 +63,11 @@ M-separate-compilation already did.
 | Milestones closed | 32 of 51 · 32 tags |
 | The compiler | **51,788 lines** of Heroes in **178** modules across **10 directories** and 37 flat files · the seed **840,806** lines of generated C |
 | The spec | **3718** tokens of a hard 4096 · headroom **378** · runtime ABI **19** |
-| Records | sittings **103** · journals 32 · measurements **14** · examples **35** · defects 5 · the site **46** pages (built 2026-09-03), 13 doc chapters per edition |
-| Waiting on the author | **1 decision** (a discarded fallible value swallows its error: `_ = f()?` → `_ = f()` compiles, nine times in the corpus — measurement 014; `heroes mutate` in CI was asked and answered the same evening) · **25** in `SCHEDULED.md` · 297 in `LEARN.md` (never a gate) · an **outstanding veto** of the rule that stands (`docs/panel/101` R3) · the push of this close, which publishes the site's one-hole paragraph |
+| Records | sittings **103** · journals 32 · measurements **14** · examples **37** · defects 5 · the site **46** pages (built 2026-09-03), 13 doc chapters per edition |
+| Waiting on the author | **3 decisions** (a discarded fallible value swallows its error: `_ = f()?` → `_ = f()` compiles, nine times in the corpus — measurement 014; and two the first full three-leg CI run put there the same evening — which legs run `heroes mutate examples`, and how the Darwin leg gets a clang at or above the floor) · **25** in `SCHEDULED.md` · 299 in `LEARN.md` (never a gate) · an **outstanding veto** of the rule that stands (`docs/panel/101` R3) · the push of this close, which publishes the site's one-hole paragraph |
 
 Every number re-measured 2026-09-03 at the close. **This section held three
-stale tables until that day** — 64 lines against a ceiling of 15, caught here. The two counts the reorder moved were re-counted late the same evening (`docs/reasoning/006`).
+stale tables until that day** — 64 lines against a ceiling of 15, caught here. The two counts the reorder moved were re-counted late the same evening (`docs/reasoning/006`), and the two M-corpus-depth step 3 moved — examples 35 → **37**, `LEARN.md` 297 → **299** — were re-counted when it landed rather than left for the close.
 
 ---
 

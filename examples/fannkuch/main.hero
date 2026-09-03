@@ -1,0 +1,273 @@
+# Every permutation of n cards, flipped until the 1 is on top — and two
+# numbers that somebody else published.
+#
+# Corpus material (CLAUDE.md §9). It closes no measured form gap. What it adds
+# is a program whose answer is checkable against arithmetic nobody in this
+# repository invented, which is the property `sieve/` began and the property
+# this corpus was measured thin in: most of `examples/` asserts what its own
+# functions produce, and that catches a change without catching a mistake.
+#
+# THE TWO ORACLES, both fetched 2026-09-03 and quoted with their source.
+#
+#   1. The benchmarks game's published output for fannkuch-redux at N = 7:
+#      `228` then `Pfannkuchen(7) = 16`, which is what `main` prints.
+#      https://benchmarksgame-team.pages.debian.net/benchmarksgame/download/fannkuchredux-output.txt
+#      (sha256 2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f)
+#      described at
+#      https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/fannkuchredux.html
+#
+#   2. OEIS A000375, *Topswops (1): start by shuffling n cards labeled 1..n.
+#      If top card is m, reverse order of top m cards, then repeat. a(n) is the
+#      maximal number of steps before top card is 1.* — the same quantity as
+#      the flip count below, from a source that has never heard of the
+#      benchmark. Offset 1, so a(1) … a(8) are 0, 1, 2, 4, 7, 10, 16, 22.
+#      https://oeis.org/A000375
+#
+# The first oracle gives ONE checkpoint and the second gives eight, and they
+# agree where they overlap. That is the whole argument for two: a program that
+# matches one published number can be wrong in a way that number cannot see.
+#
+# WHY THE CHECKSUM IS THE HARD HALF, and the reason this program was measured
+# before it was written. The maximum flip count does not depend on the order
+# the permutations are visited in; the checksum does, because it adds and
+# subtracts by turns. Visiting the 5040 permutations of seven cards in
+# DICTIONARY order and alternating the sign gives -502, measured 2026-09-03
+# before a line of this was written. The published 228 belongs to the order
+# `advance` below produces — rotate a prefix, spend one of its counters —
+# which is the reference program's generator and not an incidental choice.
+# A program that had guessed the order would have printed a wrong number
+# while looking exactly as correct as this one.
+#
+# The cards are held as 0 … n-1 rather than 1 … n, so "the 1 is on top" reads
+# `order[0] == 0` and the prefix to reverse is `0` through `order[0]`
+# inclusive. That is one subtraction saved in the inner loop and one place to
+# be wrong by one; the tests below pin both ends.
+
+# What a whole run of `n` cards produced. `visited` is n! and exists to be
+# asserted: a walk that misses permutations gets the maximum right surprisingly
+# often, and the count is what notices.
+record Fannkuch
+    checksum: i64
+    max_flips: i64
+    visited: i64
+
+# The state of a walk over every permutation, and the reason it is a record
+# rather than three loose bindings: `advance` has to mutate all four together,
+# and an `@` parameter is how Heroes lets it (spec § Functions and calls).
+record Walk
+    # The permutation the walk is standing on.
+    order: [i64]
+    # How many rotations position `i` still owes before it is exhausted.
+    left: [i64]
+    # The position whose counter is being spent. Everything below it has been
+    # exhausted and needs resetting before the next permutation is read.
+    at: i64
+    ended: bool
+
+# The flip count of one permutation: reverse the first `order[0] + 1` cards,
+# again and again, until the 0 arrives at the front.
+#
+# `order` is a parameter and not an `@` parameter, so `work` is this function's
+# own copy and the caller's permutation is untouched — which is what lets the
+# walk hand the same array to the counter 5040 times without defending it.
+function flips(order: [i64]) -> i64
+    work: [i64] @ order
+    done: i64 @ 0
+
+    while work[0] != 0
+        low: i64 @ 0
+        high: i64 @ work[0]
+
+        while low < high
+            held = work[low]
+            work[low] @ work[high]
+            work[high] @ held
+            low @ low + 1
+            high @ high - 1
+
+        done @ done + 1
+
+    return done
+
+# The identity permutation, with every counter empty and `at` above the top so
+# that the first `reset` fills them all.
+function start(n: i64) -> Walk
+    order: [i64] @ []
+    left: [i64] @ []
+    i: i64 @ 0
+
+    while i < n
+        order @ order.push(i)
+        left @ left.push(0)
+        i @ i + 1
+
+    return Walk(order: order, left: left, at: n, ended: false)
+
+# Give every position below `at` its full quota of rotations back. Position `i`
+# owes `i + 1` of them, which is written `w.left[w.at - 1] @ w.at` because the
+# walk counts positions from zero and quotas from one.
+function reset(@w: Walk)
+    while w.at != 1
+        w.left[w.at - 1] @ w.at
+        w.at @ w.at - 1
+
+# Step to the next permutation: rotate the first `at + 1` cards left by one and
+# spend one of position `at`'s rotations. When that position is exhausted the
+# walk moves up to the next one, and when it moves past the top the walk is
+# over — every permutation has been visited exactly once.
+function advance(@w: Walk)
+    while true
+        if w.at == w.order.len()
+            w.ended @ true
+            return
+        head = w.order[0]
+        i: i64 @ 0
+
+        while i < w.at
+            w.order[i] @ w.order[i + 1]
+            i @ i + 1
+
+        w.order[w.at] @ head
+        w.left[w.at] @ w.left[w.at] - 1
+
+        if w.left[w.at] > 0
+            return
+        w.at @ w.at + 1
+
+# The whole run. The checksum adds the flip count of every even-numbered
+# permutation and subtracts every odd one, which is the benchmark's rule and
+# the reason `visited` is carried rather than recomputed.
+function fannkuch(n: i64) -> Fannkuch
+    w: Walk @ start(n)
+    checksum: i64 @ 0
+    max_flips: i64 @ 0
+    visited: i64 @ 0
+
+    while !w.ended
+        reset(@w)
+        count = flips(w.order)
+
+        if count > max_flips
+            max_flips @ count
+
+        if visited % 2 == 0
+            checksum @ checksum + count
+        else
+            checksum @ checksum - count
+        visited @ visited + 1
+        advance(@w)
+
+    return Fannkuch(checksum: checksum, max_flips: max_flips, visited: visited)
+
+# n! , to check the walk against the number of permutations there are.
+function factorial(n: i64) -> i64
+    out: i64 @ 1
+    i: i64 @ 2
+
+    while i <= n
+        out @ out * i
+        i @ i + 1
+
+    return out
+
+# The published output, in the published shape: the checksum on its own line,
+# then the maximum flip count behind the German name the benchmark kept.
+function main()
+    n = 7
+    said = fannkuch(n)
+    print(said.checksum)
+    print("Pfannkuchen(", n, ") = ", said.max_flips)
+
+test "the two published numbers for seven cards, which this program did not invent"
+    # benchmarks game, fannkuchredux-output.txt, fetched 2026-09-03:
+    #   228
+    #   Pfannkuchen(7) = 16
+    said = fannkuch(7)
+    assert said.checksum == 228
+    assert said.max_flips == 16
+
+test "eight terms of OEIS A000375, from a source that never heard of the benchmark"
+    # https://oeis.org/A000375 , offset 1: 0, 1, 2, 4, 7, 10, 16, 22, 30, …
+    published = [0, 1, 2, 4, 7, 10, 16, 22]
+    n: i64 @ 1
+
+    while n <= published.len()
+        assert fannkuch(n).max_flips == published[n - 1]
+        n @ n + 1
+
+test "the walk visits n! permutations, no more and none twice"
+    # The count is what notices a generator that skips: a walk missing whole
+    # branches still reports the right maximum surprisingly often, because the
+    # worst permutation is not rare.
+    n: i64 @ 1
+
+    while n <= 7
+        assert fannkuch(n).visited == factorial(n)
+        n @ n + 1
+
+test "every permutation is visited, and each of them exactly once"
+    # The strongest statement available about the generator, and it needs no
+    # oracle: walk seven cards again by hand, keep every permutation seen as a
+    # map key, and the map must end up n! large.
+    w: Walk @ start(7)
+    seen: {str: i64} @ {}
+
+    while !w.ended
+        reset(@w)
+        key = join(shown(w.order), ",")
+        assert seen[key].is_err()
+        seen[key] @ 1
+        advance(@w)
+
+    assert len(seen) == factorial(7)
+
+test "one card is already sorted, and no permutation of two takes two flips"
+    assert fannkuch(1).checksum == 0
+    assert fannkuch(1).max_flips == 0
+    assert fannkuch(1).visited == 1
+    assert fannkuch(2).max_flips == 1
+    assert fannkuch(2).visited == 2
+
+test "the flip count of a permutation somebody can check by hand"
+    # The benchmark's own worked example, from its description page: taking
+    # 4 2 1 5 3 (written here from zero) down to a 1 on top is five flips.
+    assert flips([3, 1, 0, 4, 2]) == 5
+
+    # And the two ends of the prefix rule: the 0 already on top is no flips,
+    # and the whole array reversed by one flip is one.
+    assert flips([0, 1, 2, 3]) == 0
+    assert flips([3, 2, 1, 0]) == 1
+    assert flips([1, 0]) == 1
+
+test "counting the flips leaves the caller's permutation alone"
+    # Value semantics, asserted rather than assumed: `flips` mutates a copy,
+    # which is what lets the walk hand it the live permutation.
+    order = [3, 1, 0, 4, 2]
+    assert flips(order) == 5
+    assert order == [3, 1, 0, 4, 2]
+    assert flips(order) == 5
+
+test "the maximum flip count is reached by some permutation the walk saw"
+    # A maximum that no visited permutation attains would mean the walk and
+    # the counter disagree about what they are looking at.
+    said = fannkuch(6)
+    w: Walk @ start(6)
+    reached: bool @ false
+
+    while !w.ended
+        reset(@w)
+
+        if flips(w.order) == said.max_flips
+            reached @ true
+        advance(@w)
+
+    assert reached
+    assert said.max_flips == 10
+
+function shown(numbers: [i64]) -> [str]
+    out: [str] @ []
+
+    for one in numbers
+        out @ out.push(one.to_str())
+
+    return out
