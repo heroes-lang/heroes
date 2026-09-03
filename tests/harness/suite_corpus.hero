@@ -49,8 +49,12 @@ constant EXAMPLES: str
 # get wrong. The floor moves with the corpus rather than staying where it was
 # measured, because its whole job is to notice a program that quietly stops
 # being found.
+#
+# 35 -> 37 on 2026-09-03, M-corpus-depth step 3: `examples/fannkuch/` and
+# `examples/binarytrees/`, the first two programs of the milestone's oracle
+# family. Measured the same day: 38 directories, 37 with a `main.hero`.
 constant LEAST: i64
-    35
+    37
 
 function run_all(scratch: str, compiler: str) -> report.Report?
     r: report.Report @ report.empty()

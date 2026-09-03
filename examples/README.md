@@ -47,6 +47,7 @@ close a measured gap, its own header comment carries the measurement.
 | `adventure/` | a text adventure played from a script — the world is data written in code, a turn is a **value** (a state in, a state and some lines out), and it is the program that never calls `exit`, so the corpus keeps a path across the leak gate |
 | `argv/` | its own command line read two ways, `args()` and `args_checked()`: the only caller of the second, which the spec-budget ledger's row 3541 owed a use |
 | `assembler/` | a register machine, assembled and run: two passes because a jump may name a label further down, an encoding and its decoder written from one set of `constant`s, and a run bounded by fuel |
+| `binarytrees/` | 135,854 nodes of a recursive `variant` built, walked and dropped, against the benchmarks game's published output at N = 10 — the first program here written to allocate at volume, and its `main.expected` **is** the downloaded file, byte for byte. The two halves live in a `[Tree]` because a record holding itself is `error[no_size]`, so the program is also where the language's one rule about recursive types is visible in a working program rather than in a diagnostic |
 | `board/` | a grid of cells that grow and die, and a scoreboard keyed twice: `[[i64]]`, nested maps, `if` as an expression and `_` as a catch-all arm, all measured at zero uses before it |
 | `calculator/` | the acceptance program: a lexer, a recursive-descent parser and an evaluator for arithmetic with variables, across four modules — and `whole.hero` beside them, the same program in one file, so "two spellings of one program" is a claim something checks |
 | `csv/` | CSV read properly: quotes, commas inside them, and a doubled quote that means one |
@@ -55,6 +56,7 @@ close a measured gap, its own header comment carries the measurement.
 | `dates/` | days between two dates, and the four leap-year rules |
 | `deck/` | a generic deck — deal, cut, reverse, riffle: generics declared by the **program** rather than by the library, instantiated at `str` and at `i64` with the answers asserted to agree |
 | `diff/` | the longest common subsequence, filled into a `[[i64]]` table |
+| `fannkuch/` | every permutation of seven cards, flipped until the 1 is on top, against **two** published oracles that agree: the benchmarks game's output at N = 7 and OEIS A000375, which has never heard of the benchmark. The checksum depends on the order the permutations are generated in — dictionary order gives -502 where the published answer is 228, measured before the program was written — so it is the corpus's one program whose correctness rests on a generator rather than on a formula |
 | `floats/` | `inf` and `nan`, and the one comparison that survives them (`x != x`) |
 | `ini/` | a configuration file into `{str: {str: str}}`, built from text, with four named refusals |
 | `json/` | a JSON reader: recursive descent over one byte of lookahead, a value recursive through **both** `[T]` and `{K: V}`, and `f64`s built digit by digit because a `str` has no conversion to a number |
