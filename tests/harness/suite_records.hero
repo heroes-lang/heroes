@@ -160,8 +160,13 @@ constant REFUSED: [str]
 # reaches this number the same way any other does. This one arrives before it
 # has a step, a tag or a line of code, which is the direction the count was
 # written for.
+#
+# **44 → 45 on 2026-09-03**, `M-robustness-guards`, opened by author instruction
+# out of a `/decide` sitting. The sibling check `records/names` fired first, in
+# the commit that scheduled six items under the name before the ROADMAP had a
+# row for it — the order CLAUDE.md §14 asks for, read by an instrument.
 constant ROWS: i64
-    44
+    45
 
 # The two documents whose citations are checked. They are the two a reader is sent
 # to for a rule, and the only two this project rewrites rather than appends to.
