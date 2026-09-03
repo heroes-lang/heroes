@@ -165,8 +165,14 @@ constant REFUSED: [str]
 # out of a `/decide` sitting. The sibling check `records/names` fired first, in
 # the commit that scheduled six items under the name before the ROADMAP had a
 # row for it — the order CLAUDE.md §14 asks for, read by an instrument.
+#
+# **45 → 46 on 2026-09-03**, `M-corpus-depth`, scheduled by author instruction
+# from a plan measured and approved the same day, its step 0 landing with the
+# row. The planning found the same milestone open in `SCHEDULED.md` and closed
+# in `DESIGN-LOG.md` a day after its close — two lists disagreeing about one
+# fact — which is the shape a count that must be moved by hand exists to catch.
 constant ROWS: i64
-    45
+    46
 
 # The two documents whose citations are checked. They are the two a reader is sent
 # to for a rule, and the only two this project rewrites rather than appends to.
