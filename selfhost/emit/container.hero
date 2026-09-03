@@ -343,6 +343,7 @@ test "an array literal is new plus push/decref pairs, a read is a cast"
         steps: [],
         instance: [],
         call_instances: {},
+        instantiated_at: token.Span(start: 0, end: 0),
         span: token.Span(start: 0, end: 1)
     )
     read = read_element(got.c, got.s, got.decls, got.names, f, base: 0, index: 1)
@@ -371,6 +372,7 @@ test "the session's own fixedbug: a trailing field behind an index releases then
         steps: steps,
         instance: [],
         call_instances: {},
+        instantiated_at: token.Span(start: 0, end: 0),
         span: token.Span(start: 0, end: 1)
     )
     lines = write_element(

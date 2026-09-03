@@ -104,6 +104,13 @@ record Function
     # Two documents asserting one premise is not two witnesses. It is one
     # premise, and the second copy is what makes the first look checked.
     call_instances: {i64: [i64]}
+    # The CALL that made this instance — where its type arguments were
+    # bound — and a zero span for an ordinary function. `span` stays the
+    # declaration's, because the module and the `#line` come from it; this
+    # is for the message that must point at the line whose annotation or
+    # result bound `A` to `ptr`, not at a template with no `ptr` in it
+    # (panel 105, the pragmatist's condition 4).
+    instantiated_at: token.Span
     span: token.Span
 
 function args_of(f: Function, run: ir.Run) -> [ir.Arg]
@@ -128,6 +135,18 @@ function steps_of(f: Function, run: ir.Run) -> [ir.PathStep]
 
 function value_type(f: Function, value: i64) -> i64
     return f.values[value]
+
+# Where a message about this function's types points. An INSTANCE reports
+# at the call that made it, never inside the template: `wanted<A>` has no
+# `ptr` in its text, and the line that does is the one whose annotation or
+# declared result bound `A` to `ptr` (panel 105, the pragmatist's
+# condition 4). Measured before it: the gate's dedup keeps the earliest
+# span, so a reader was sent to the declaration or to the call by source
+# order alone. An ordinary function reports where it was asked to.
+function reports_at(f: Function, own: token.Span) -> token.Span
+    if f.instance.len() > 0
+        return f.instantiated_at
+    return own
 
 # Which passes have run. Ranked, because a pass may only move forward.
 variant Phase
@@ -201,6 +220,7 @@ test "a run slices its pool, and the phase only moves forward"
         steps: [],
         instance: [],
         call_instances: {},
+        instantiated_at: token.Span(start: 0, end: 0),
         span: token.Span(start: 0, end: 1)
     )
     two = args_of(f, ir.Run(start: 1, length: 2))

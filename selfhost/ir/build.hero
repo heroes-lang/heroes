@@ -70,6 +70,7 @@ function empty_function() -> containers.Function
         steps: [],
         instance: [],
         call_instances: {},
+        instantiated_at: token.Span(start: 0, end: 0),
         span: token.Span(start: 0, end: 0)
     )
 

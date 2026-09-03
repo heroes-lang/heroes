@@ -397,6 +397,7 @@ test "an open block, a missing form and a wrong return are all named"
         steps: [],
         instance: [],
         call_instances: {},
+        instantiated_at: token.Span(start: 0, end: 0),
         span: span
     )
     p = containers.Program(phase: .lowered, functions: [f], strings: [])
@@ -438,6 +439,7 @@ test "a return block that skips one @ parameter is caught by identity"
         steps: [],
         instance: [],
         call_instances: {},
+        instantiated_at: token.Span(start: 0, end: 0),
         span: span
     )
     p = containers.Program(phase: .lowered, functions: [f], strings: [])
@@ -480,6 +482,7 @@ test "an @ argument whose place still runs through an index is refused before th
         steps: steps,
         instance: [],
         call_instances: {},
+        instantiated_at: token.Span(start: 0, end: 0),
         span: span
     )
     p = containers.Program(phase: .lowered, functions: [f], strings: [])

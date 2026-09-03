@@ -139,6 +139,7 @@ test "the signature spells the pair rule, and an instance carries its hash"
         steps: [],
         instance: [],
         call_instances: {},
+        instantiated_at: token.Span(start: 0, end: 0),
         span: token.Span(start: 0, end: 1)
     )
     assert signature(f, c, names, s, parsed.decls) == "int64_t h_t_dist(int64_t h0_a, int64_t *ph1_b)"

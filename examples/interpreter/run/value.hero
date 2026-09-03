@@ -124,32 +124,31 @@ function not_a_condition(v: Value) -> bool?
 function number_of(v: Value) -> i64?
     return match v
         .number n => ok(n.v)
-        .text _   => no_number(v)
-        .truth _  => no_number(v)
-        .nothing  => no_number(v)
+        .text _   => wanted(what: "a number", v: v)
+        .truth _  => wanted(what: "a number", v: v)
+        .nothing  => wanted(what: "a number", v: v)
 
 function text_of(v: Value) -> str?
     return match v
         .text x   => ok(x.s)
-        .number _ => no_text(v)
-        .truth _  => no_text(v)
-        .nothing  => no_text(v)
+        .number _ => wanted(what: "a string", v: v)
+        .truth _  => wanted(what: "a string", v: v)
+        .nothing  => wanted(what: "a string", v: v)
 
-# The two refusals `number_of` and `text_of` hand back. **These were one
-# generic function until 2026-09-03** — `wanted<A>(what: str, v: Value) -> A?`,
-# with `A` inferred from the return position — and writing it that way found a
-# compiler defect: `heroes check` accepts it at exit 0, the IR carries the
-# unresolved type as `??`, and `heroes build` then either has its verifier
-# refuse it (*returns a value of the wrong type*, exit 2, when the call is a
-# `return`) or **aborts with a bare `assert failed: false` at exit 134** when
-# the call is a `match` arm's value, naming no file, no line and no
-# expression. The defect is written up in `docs/defects/006`; the two concrete
-# functions below are the workaround, and they cost four lines.
-function no_number(v: Value) -> i64?
-    return fail(ERR_TYPE, "expected a number, found " + kind_of(v) + " (`" + shown(v) + "`)")
-
-function no_text(v: Value) -> str?
-    return fail(ERR_TYPE, "expected a string, found " + kind_of(v) + " (`" + shown(v) + "`)")
+# The one refusal `number_of` and `text_of` hand back, written ONCE: `A`
+# appears only in the result, and each caller's declared result says what it
+# is — `i64?` in `number_of`, `str?` in `text_of`. **This is the function that
+# found a compiler defect on 2026-09-03**: written exactly like this, `heroes
+# check` accepted it at exit 0 and `heroes build` died at exit 134 with a bare
+# `assert failed: false`, because inference read the arguments only and left
+# `A` as a silent error type all the way to the emitter. It was rewritten as two
+# concrete functions for a few hours (defect 006 in `docs/work/DONE.md`), and it is one generic
+# again because panel 105 ruled, the same evening, that a type parameter the
+# arguments leave unbound takes the type the context asks for — the rule `fail`,
+# `[]` and `nullptr` already followed. A call with no context, `x = wanted(...)`,
+# is refused at the call.
+function wanted<A>(what: str, v: Value) -> A?
+    return fail(ERR_TYPE, "expected " + what + ", found " + kind_of(v) + " (`" + shown(v) + "`)")
 
 test "every value prints, including the one that is nothing"
     assert shown(.number(v: 42)) == "42"

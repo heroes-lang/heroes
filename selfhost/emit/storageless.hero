@@ -132,6 +132,7 @@ test "a fixed literal renders braced at the use site, a field read stays an lval
         steps: [],
         instance: [],
         call_instances: {},
+        instantiated_at: token.Span(start: 0, end: 0),
         span: span
     )
     braced = fixed_text(c, s, p.decls, f, value: 3)

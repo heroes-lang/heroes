@@ -177,7 +177,7 @@ function binary(@c: cursor.Cursor, @a: ast.Ast, text: str, min_power: i64) -> i6
     # at a shallower indent, and belongs to the next statement. Climbing
     # from there builds a continuation the language does not have.
     #
-    # Measured before the guard (docs/defects/005): `return match c` with
+    # Measured before the guard (defect 005, `docs/work/DONE.md`): `return match c` with
     # arms, then `+ "x"` at the function's own indent, parsed as
     # `return (match … + "x")` and the program PRINTED `bx` at exit 0.
     # `heroes fmt` refused that file for a week and was right to — there

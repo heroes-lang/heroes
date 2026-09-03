@@ -292,6 +292,7 @@ test "print composes monomorphic printers, and u64 gets its own"
         steps: [],
         instance: [],
         call_instances: {},
+        instantiated_at: token.Span(start: 0, end: 0),
         span: token.Span(start: 0, end: 1)
     )
     w: writer.Writer @ writer.new_writer("t")
@@ -324,6 +325,7 @@ test "a Heroes call names the copy, an extern stays bare with its cstr guarded"
         steps: [],
         instance: [],
         call_instances: {},
+        instantiated_at: token.Span(start: 0, end: 0),
         span: token.Span(start: 40, end: 41)
     )
     extern_slots: [containers.Slot] = [
@@ -344,6 +346,7 @@ test "a Heroes call names the copy, an extern stays bare with its cstr guarded"
         steps: [],
         instance: [],
         call_instances: {},
+        instantiated_at: token.Span(start: 0, end: 0),
         span: token.Span(start: 0, end: 1)
     )
     p = containers.Program(phase: .lowered, functions: [extern_f, heroes_f], strings: [])
@@ -361,6 +364,7 @@ test "a Heroes call names the copy, an extern stays bare with its cstr guarded"
         steps: [],
         instance: [],
         call_instances: {},
+        instantiated_at: token.Span(start: 0, end: 0),
         span: token.Span(start: 60, end: 61)
     )
     empty_instance: [i64] = []

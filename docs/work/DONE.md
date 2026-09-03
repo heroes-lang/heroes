@@ -2121,3 +2121,145 @@ Was | author instruction, 2026-08-14 | **A runtime function that joins two path 
   hoisted-frame rule (CLAUDE.md §7), and lowering it is architecture, filed for
   the next sitting that touches the emitter. clang's own default is 256 bracket
   levels; the ceiling is not the defect, the silence was.
+
+- [x] **006 — A type parameter the checker accepted and the emitter could not name** | Date: 2026-09-03, M-corpus-depth step 5. **Found by writing a program, not by reading the compiler** — which is the reason that milestone exists. | **Status: OPEN.** Worked around in the program that found it (`examples/interpreter/run/value.hero`, four lines instead of one generic) and filed as work with a home in `docs/work/SCHEDULED.md`. Nothing is fixed here. | moved here 2026-09-03 from `docs/defects/006-a-type-parameter-with-nowhere-to-come-from.md` by author instruction — the directory is gone, its text is below, unedited except that its `## ` headings became bold leads | Severity: **★★★** — `heroes check` says exit 0 and `heroes build` aborts at **exit 134** with `assert failed: false`, naming no file, no line and no expression. It is the shape panel 082 R3 is about (*check accepts ⇒ build succeeds* is false) with a second failure on top of it: when the compiler does give up, it says nothing a reader can act on.
+
+
+  Date: 2026-09-03, M-corpus-depth step 5. **Found by writing a program, not by
+  reading the compiler** — which is the reason that milestone exists.
+
+  **Status: OPEN.** Worked around in the program that found it
+  (`examples/interpreter/run/value.hero`, four lines instead of one generic) and
+  filed as work with a home in `docs/work/SCHEDULED.md`. Nothing is fixed here.
+
+  Severity: **★★★** — `heroes check` says exit 0 and `heroes build` aborts at
+  **exit 134** with `assert failed: false`, naming no file, no line and no
+  expression. It is the shape panel 082 R3 is about (*check accepts ⇒ build
+  succeeds* is false) with a second failure on top of it: when the compiler does
+  give up, it says nothing a reader can act on.
+
+  **The program.**
+
+  Eighteen lines, reduced from `examples/interpreter/`'s value module while it was
+  being written:
+
+  ```
+  variant Value
+      number
+          v: i64
+      text
+          s: str
+
+  function wanted<A>(what: str) -> A?
+      return fail("type", what)
+
+  function number_of(v: Value) -> i64?
+      return match v
+          .number n => ok(n.v)
+          .text _ => wanted(what: "a number")
+
+  function main()
+      print(number_of(.number(v: 7)).must())
+      print(number_of(.text(s: "x")).is_err())
+  ```
+
+  `wanted`'s type parameter `A` appears **only in its return type**. There is no
+  argument to infer it from; the only thing that could say what `A` is here is
+  the context the call sits in — `number_of`'s declared `i64?`.
+
+  **What each tool says, measured 2026-09-03 on the author's Mac with the.**
+  compiler built from `seed/heroes.c`
+
+  | command | exit | what it says |
+  |---|---|---|
+  | `heroes check` | **0** | nothing at all |
+  | `heroes build --dump-ir` | **0** | the IR, carrying `??` where the type should be |
+  | `heroes build --emit-c` | — | `assert failed: false` |
+  | `heroes build` | **134** | `assert failed: false` |
+
+  The IR dump is where the defect is visible rather than merely fatal:
+
+  ```
+  slots  $s0: Value · $r0: i64? · n: Value.number · $own4: i64? · $own5: ??
+         $t10: ?? = call heroes wanted($t9)
+         $t15: ?? = load $own5
+         $t16: ?? = load $r0
+  ```
+
+  `??` is a type the lowering never resolved. Four slots and three temporaries
+  carry it, and the dump prints at exit 0 — so the pipeline is willing to hand a
+  half-typed program to the next stage.
+
+  **The second shape, and why it matters more than the first.**
+
+  Move the same call from a `match` arm to a `return` and the failure changes
+  completely:
+
+  ```
+  function number_of(n: i64) -> i64?
+      if n > 0
+          return ok(n)
+
+      return wanted(what: "a number")
+  ```
+
+  ```
+  internal error: the lowered program is not well formed
+    number_of (after lowering): bb1: returns a value of the wrong type
+  error: the verifier refused
+  ```
+
+  Exit **2**, which CLAUDE.md §7 says is the right code for *the compiler is
+  wrong*, from the instrument built to catch exactly this. So the verifier
+  already knows this program is malformed — it just does not look at the shape
+  the `match` arm produces. **The verifier is not blind to the defect; it is
+  blind to one of its two spellings**, and the one it misses is the one that
+  reaches the emitter.
+
+  **What is not yet decided, and why nothing was fixed here.**
+
+  Whether a type parameter may be inferred from the **return context** at all is
+  a language question and therefore a panel path (CLAUDE.md §4). The spec says
+  generics are *"always inferred, never written at the call site"* (§ Functions
+  and calls) and does not say inference reads only the arguments. Two rulings are
+  available and they are opposite:
+
+  - **refuse it** — a type parameter must appear in the parameter list, so
+    `wanted<A>(what: str) -> A?` is `error[...]` at *check*, with a diagnostic
+    naming the parameter that has nowhere to come from. This is the smaller
+    change and it makes the two failures above impossible.
+  - **support it** — infer from the enclosing return type, which is what the
+    checker already half does (it accepted this program), and repair the lowering
+    so the instantiation carries a resolved type.
+
+  Either way **two repairs are owed regardless of the ruling**, and they are the
+  reason this file exists rather than a note in a commit:
+
+  1. the verifier must catch the `match`-arm shape as it catches the `return`
+     shape, so the worst outcome is exit 2 rather than exit 134;
+  2. `assert failed: false` must become an `internal error:` naming the function
+     and the node, as the verifier's own message does. An internal assertion that
+     prints the word `false` and nothing else is a message that costs its reader
+     an hour.
+
+  **How it was found.**
+
+  `examples/interpreter/run/value.hero` needed two refusals that differ only in a
+  noun — *expected a number, found a string* and *expected a string, found a
+  number* — so they were written once, generically, with the type parameter in
+  the return position. That is the natural way to write it, and it is what a
+  language with return-position inference invites. The module's own tests then
+  reported `assert failed: false` with no test name, which is what sent the hunt
+  into the compiler rather than into the program: `heroes run` does not execute
+  test blocks, so a message that appeared under `heroes run` could not be coming
+  from the program's asserts.
+
+  **The repair — 2026-09-03, the same evening, `docs/panel/105`, ratified minutes after it sat.** The language question was answered the robust way, by the author's instruction: **a type parameter the arguments leave unbound takes the type the context asks for** — the binding's annotation, the declared result a `return` or an arm answers to, a non-generic callee's parameter — which is the expectation the checker already threaded to every literal, every empty `[]` and every `fail(…)`, and dropped at exactly one line: `check()`'s `.call` arm fell to `synth`. Now `dispatch_call`, `named_call`, `method` and `user_call` carry `expected: i64?`; `check_generics.bind_missing` fills what the arguments left and never reports (a disagreeing annotation is `compare`'s one message); a call with no context is `error[cannot_infer]` AT THE CALL, naming the letter, saying it appears only in the result, and offering the two ways to give it context as a `guess` fix — never a type argument; a letter that appears nowhere in the signature (the spec-warden's find, `function unused<A>(what: str) -> str` compiled at exit 0) is refused once, at its letter, in `check/decls.hero`. The two ruling-independent repairs: `ir/phases.hero`'s `no_error_survives` (mono and owned, under *no holes*) refuses any type the checker never resolved before the emitter sees it, naming function and slot at exit 2; `emit/ctype.hero`'s two `assert false` say what happened and which verifier check should have refused the program first. An instance now carries `instantiated_at`, and the emitter's gate reports an instance's boundary types at the call that made it (`containers.reports_at`): `p: [ptr] = empty_of(why: "p")` says `pointer_element` at the annotation's line whether `empty_of` is declared above `main` or below it (the pragmatist's condition 4, measured both orders: `6:5` and `2:5`). **Measured with the rebuilt compiler**: the eighteen-line reproducer prints `7` and `true` at exit 0; of the pragmatist's 21 adjacent shapes, the four with no context (`x = wanted(…)`, `print(wanted(…))`, `pick` unannotated, `_ = wanted(…)`) are exit 1 `cannot_infer` at the call and every other one builds and runs — `-> [A]` and `-> {str: A}` included, the three that used to panic at run time; one `empty_of` called at `[i64]` and `[f64]` is two instances in `--dump-ir`, `??` appears 0 times, and the mangled `?` (`_3f`) appears 0 times in the C. Four `run/` goldens (the reproducer's four spellings; the empty results at two types; `A := str` and a store into a live `@` slot; `outer<B>` reaching `wanted` through the enclosing parameter) match at `-O0`, `-O2` and `--sanitize` with the leak counter green; two `check/` goldens carry the `#~` annotations. `examples/interpreter/run/value.hero` is one generic again, its 57 tests green. Spec 3718 → **3750**, ledger row 50, `SPEC_TOKENS` moved in the same commit; design.md §4.12 gains the context clause. **What is deliberately not in the repair**: the warden's cheaper wordings (+13, +20), on the record as the author's option, not taken.
+
+- [x] **M-discard-refusal**, or the first sitting that rules on generics — whichever opens first; the defect is defect 006 in `docs/work/DONE.md` | found 2026-09-03 by M-corpus-depth step 5, writing `examples/interpreter/run/value.hero` | **A type parameter that appears only in the return type: `heroes check` accepts it at exit 0 and `heroes build` either has its verifier refuse it or ABORTS at exit 134 with `assert failed: false`, naming nothing.** Eighteen-line reproducer in the defect note. The IR carries the unresolved type as `??` and `--dump-ir` prints it at exit 0. Two spellings, two failures: as a `return`'s value the verifier says *returns a value of the wrong type* (exit 2, the right code and a real message); as a `match` arm's value the verifier does not look and the emitter aborts. **The language question is separate from the two repairs.** The question — may a type parameter be inferred from the enclosing return type at all? — is a panel path, and the spec's *"always inferred, never written at the call site"* does not say inference reads only the arguments. The repairs are owed under either ruling: the verifier must catch both spellings, and `assert failed: false` must become an `internal error:` naming the function and the node, as the verifier's own message does. Worked around in the program that found it (two concrete functions instead of one generic, four lines) | defect 006 (docs/work/DONE.md) · spec § Functions and calls · selfhost/ir/mono.hero · selfhost/emit/ · docs/panel/082 R3 (*check accepts ⇒ build succeeds*) | an internal assertion that prints the word `false` and nothing else costs its reader an hour
+
+  **CLOSED 2026-09-03 by panel 105 and its landing, the same evening the item was filed.** The sitting that ruled on generics was convened for this defect rather than waited for: five seats, 3–1–1 for inference from the context, ratified by the author within minutes. The two repairs the item said were owed under either ruling are in (`no_error_survives` in the verifier's mono and owned phases; the emitter's bare asserts given words), and the language question is answered as the record entry above says. `docs/defects/006` no longer exists — the directory became `docs/work/DEFECTS.md` and this record the same evening — so the item's own pointer expired while it was open; the entry above is where it points now.
+
+- [x] **The six repaired defects, re-read the evening the last two were repaired for what each still owed (2026-09-03)** | author instruction, *"cerca di risolverli nella maniera migliore … quei difetti li deve risolvere"*, over 007 → 001 in that order | every "still owed" sentence in the six entries above checked against the tree by running or grepping, not by recalling | this record; the instruments named below | a repaired defect with an unpaid promise in its own text is the shape CLAUDE.md §1 calls *reading a record without reading forward*
+
+  **005** owes nothing: fixed 2026-08-28, lesson recorded. **004 and 003 owed `assert_canonical`** — `dump(text) == dump(fmt(text))`, the guard that sees a formatter output that parses and *means something else* — and it exists: the third check of `refuse_output_the_formatter_broke` in `selfhost/cli/syntax_cmds.hero`, landed 2026-08-27 in `e6bd83b3`, one day after 004's note said it was missing; its own comment says how the two trees are made comparable (the root file re-parsed standalone against the output parsed standalone). Closed; nothing to do. **002 owed one door of three**: the `read_failed` collapse — *could not read* said of a file that read perfectly well — which panel 087 left to the author and no list carried. Closed the robust way this evening under the author's instruction: `read_file` answers `not_text`, the code `validated` already gives a `cstr` in the same state; the five-line reproducer over the tracked JPEG says `fail: not_text`, the golden `fixedbugs-read-file-on-bytes-that-are-not-text` is re-pinned, `runtime/hero_os.h`'s comment no longer describes a collapse. The other two doors: `args_checked()` was closed 2026-08-24; the *"is this pointer safe"* predicate stays categorically unbindable, by design, untouched. **001 said *"the remaining work is five tests rather than eleven fixes"*** — one test per root premise. Four have theirs today, named: *one byte is one column* → `selfhost/source.hero` *"the column counts characters, not bytes"*; *counting as a proxy for identity* → `selfhost/ir/verify.hero` *"a return block that skips one @ parameter is caught by identity"*; *the runtime may trust its caller* → `hero_utf8_valid` in `runtime/parts/str.c` and the `read_file` golden above, plus `fixedbugs-a-map-key-that-is-not-itself` for the NaN key; *the printer's input adjacency is its output adjacency* → `arm_alignment` in `selfhost/print/fmt.hero` asks the printer's own one-line test by construction (audit S3, cited there). **The fifth was missing, and it was measured rather than assumed**: *hand-maintained lists* — S13's pin of the thesis-code set, *"adding a diagnostic turns it red until somebody writes the code down"* — had not been ported, and `is_thesis_rule`'s fourteen codes against every `#~` under `tests/golden/check/` showed **three with no golden at all**: `declaration_in_arm`, `declared_twice`, `ufcs_on_mutable`, each tested only by its own module. Closed the same evening: three check goldens with their annotations, and `tests/harness/suite_annotations.hero` now reads the list from `selfhost/diag.hero`'s text (a `use` cannot climb out of the harness, and a copy would be the second hand-maintained list) and fails on any thesis code no case witnesses. **Nothing of the seven is open**; `docs/work/DEFECTS.md` holds zero items.

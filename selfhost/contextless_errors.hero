@@ -62,6 +62,40 @@ function constructor_needs_context(name: str, span: token.Span) -> diag.Diagnost
         span: span
     )
 
+# `wanted<A>(what: str) -> A?` called where nothing says what `A` is
+# (panel 105, ratified 2026-09-03). The parameter appears only in the
+# result, so no argument can bind it, and this position asks for no type
+# either — `x = wanted(…)`, `print(wanted(…))`, `_ = wanted(…)`, a UFCS
+# receiver, an argument to another GENERIC. Same code as the `ok(…)`
+# without context above, because it is the same fact about the same
+# rule. The message names the parameter, says where it appears, and gives
+# the two ways to hand it a type — and NEVER a type argument: the language
+# has no such syntax, and a fix that suggests one sends the reader to a
+# form the parser refuses (the historian's Rust `::<_>` fixed point).
+function type_parameter_needs_context(callee: str, letter: str, result: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "cannot_infer",
+        message: "nothing here says what `" + letter + "` of `" + callee + "` is: it appears only in the result `" + result + "`, so it takes the type the context asks for, and this position asks for none",
+        span: span
+    )
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "bind it with an annotation first — `x: <type> = " + callee + "(…)` — or return it from a function whose declared result says what `" + letter + "` is", replacement: "", span: span, certainty: .guess)
+    )
+    return d
+
+# A type parameter that appears NOWHERE in the signature — not in a
+# parameter, not in the result — so no argument and no context could ever
+# bind it, and every call would be the error above. Refused once, at the
+# declaration, which is the one line that can be fixed (Swift's rule,
+# panel 105's historian; the shape was the spec-warden's find: it
+# compiled at exit 0 until 2026-09-03).
+function type_parameter_nowhere(callee: str, letter: str, span: token.Span) -> diag.Diagnostic
+    return diag.new_diagnostic(
+        code: "cannot_infer",
+        message: "`" + letter + "` of `" + callee + "` appears in no parameter and not in the result, so no call could ever say what it is — use it in the signature, or remove it",
+        span: span
+    )
+
 function record_name_alone(name: str, span: token.Span) -> diag.Diagnostic
     return diag.new_diagnostic(
         code: "record_name_alone",
