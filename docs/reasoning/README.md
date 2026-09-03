@@ -127,6 +127,12 @@ understand>. Read: design.md §… · spec § … · <files consulted, none modi
   compiler facts that stand between Heroes and a web server, and the HTTP server
   that answered `curl` anyway; five shapes of conditional compilation against the
   record that already weighs on them
+- [006-what-the-chain-lacked.md](006-what-the-chain-lacked.md) — the chain
+  re-read for what it lacked: three faults in the order (the language's rulings
+  after the code they shape, closures with no row, the manager before the
+  packages), sixteen candidates each met with the rule that already ruled on it,
+  seven that became rows and nine that did not; what *"un runtime forte"*
+  resolves to once the runtime is read
 
 ## A note on the vocabulary of 000–002
 
