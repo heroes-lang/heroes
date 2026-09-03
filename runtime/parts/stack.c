@@ -62,6 +62,16 @@
  * be: +55–60% per call at -O0, and at -O2 it forbids the transformation that
  * turns the recursion into a loop (0.81 s against 0.000 s, measured), for
  * coverage this handler already has.
+ *
+ * WHAT DEFECT 007 ADDED (docs/defects/007, 2026-09-03). The second witness
+ * above was written for a frame that is touched AFTER `sp` moves, and a
+ * frame larger than a page is not: clang's prologue calls `___chkstk_darwin`,
+ * which probes the frame-to-be page by page while `sp` still stands where the
+ * caller left it. `heroes check` on a legal program died at 139 in silence
+ * that way while `heroes parse` on the same file panicked with a name — the
+ * difference being only which function's frame straddled the guard. The
+ * witness now has two shapes (see the handler); the wild store panel 104
+ * rejected was re-run against both and still re-raises, exit 139.
  */
 
 #if defined(__has_feature)
@@ -242,7 +252,21 @@ static void hero_stack_handler(int signum, siginfo_t *si, void *ctx) {
     hero_stack_regs(ctx, &pc, &fp, &sp);
     int in_guard = addr >= hero_stack_lo - HERO_STACK_WINDOW && addr < hero_stack_lo;
     int sp_low = sp >= hero_stack_lo - HERO_STACK_WINDOW && sp < hero_stack_lo + 4096;
-    if (in_guard && sp_low) {
+    /* THE SECOND WITNESS HAS TWO SHAPES, and this file knew one of them until
+     * docs/defects/007. A function whose frame is larger than a page does not
+     * touch it after moving `sp`: clang's prologue calls `___chkstk_darwin`
+     * (and `-fstack-clash-protection` emits the same loop inline), which
+     * PROBES every page of the frame-to-be while `sp` still stands where the
+     * caller left it. When a probe reaches the guard, `si_addr` is in the
+     * guard and `sp` is a whole frame above it — `heroes check` measured
+     * 6,472 bytes, a frame of 8,576 in `grammarexpr.primary` — so `sp_low`
+     * said no, the fault went to SIG_DFL, and the compiler died at 139 with
+     * nothing on stderr on a legal program. The shape's own witness is the
+     * address: a probe lands BELOW `sp` by less than one frame, and the wild
+     * store panel 104 rejected (8 KiB under the stack, from a shallow frame)
+     * is megabytes below `sp`, so it still re-raises as before. */
+    int probing = addr < sp && sp - addr < HERO_STACK_WINDOW;
+    if (in_guard && (sp_low || probing)) {
         const char *who = hero_stack_blame(pc, fp);
         hero_stack_say("panic: stack exhausted");
         if (who != NULL) {

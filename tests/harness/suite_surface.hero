@@ -268,6 +268,8 @@ function verb_probes() -> [probe.Probe]
         row(name: "a ptr local wearing a module's name is two diagnostics, and the qualifying repair is a guess", argv: "check tests/golden/surface-fixtures/qualifyptr/main.hero", code: 1).err_has("error[shadowed_binding]").err_has("error[needs_qualifying]").err_lacks("fix (certain)").err_lacks("internal error")
         row(name: "apply on it leaves the text untouched, because a fix that reproduced itself was no fix", argv: "check tests/golden/surface-fixtures/qualifyptr/main.hero --apply", code: 0).out_is("use window\n\nfunction main()\n    window: ptr @ nullptr  #~ shadowed_binding\n    window @ nullptr\n    _ = window.destroy()  #~ needs_qualifying\n").out_lacks("window.window")
         row(name: "deep recursion stops with a word at -O0, on every platform", argv: "run tests/golden/surface-fixtures/deep/main.hero -O0", code: -1).err_has("panic: stack exhausted").out_empty()
+        row(name: "a recursion of WIDE frames stops with the same word at -O0: the probe reaches the guard before sp does (docs/defects/007)", argv: "run tests/golden/surface-fixtures/wideframe/main.hero -O0", code: -1).err_has("panic: stack exhausted").out_empty()
+        row(name: "and at -O2, where the frame is smaller and the witness is the other one", argv: "run tests/golden/surface-fixtures/wideframe/main.hero -O2", code: -1).err_has("panic: stack exhausted").out_empty()
         row(name: "a nested program runs from its root, the leaf reading the root's module by path", argv: "run tests/golden/surface-fixtures/nested/main.hero", code: 0).out_is("2\n20\n")
         row(name: "a leaf below the root, compiled directly, refuses and names the directory it read from and the file that decided it", argv: "check tests/golden/surface-fixtures/nested/lib/leaf.hero", code: 1).err_has("error[unknown_module]").err_has("reads `tests/golden/surface-fixtures/nested/lib/util.hero`").err_has("from the directory of `tests/golden/surface-fixtures/nested/lib/leaf.hero`, the file you compile")
         row(name: "beside a decoy module the same leaf checks clean against the wrong file, which is the stated hazard and not a defect", argv: "check tests/golden/surface-fixtures/nested/decoy/lib/leaf.hero", code: 0).err_empty()
@@ -349,7 +351,14 @@ test "the tables are what this module is, so they are counted"
     # it did not — measurement 014), and the gate over the whole corpus that
     # every leg runs, one cheap operator (typo-digit, 29 mutants, 2.1 s of
     # base check over 78 files measured the day it was written).
-    assert verb_probes().len() == 42
+    # 42 -> 44 on 2026-09-03, the repair of defect 007: the WIDE-frame
+    # recursion at -O0 and -O2. Its -O0 frame is 32 KiB and the prologue
+    # probes it with `___chkstk_darwin` before `sp` moves, which is the shape
+    # the guard's second witness missed — `heroes check` died at 139 in
+    # silence on a legal program. Not under `--sanitize`: the guard yields to
+    # ASan there by design, and ASan's own `stack-overflow` report is what
+    # `run/`'s judge refuses on sight, so the case cannot live in `run/`.
+    assert verb_probes().len() == 44
 
 test "a probe holds when everything it asks for is true"
     scratch = "build/harness-selftest"

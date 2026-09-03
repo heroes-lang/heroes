@@ -1,0 +1,91 @@
+# A recursion whose FRAMES are wide, kept as the fixture that pins the repair of
+# `docs/defects/007` (2026-09-03). `deep/main.hero` beside it overflows with a
+# frame of a few dozen bytes; this one overflows with a frame of several
+# kilobytes, and the two are caught by DIFFERENT witnesses in
+# `runtime/parts/stack.c`. A frame larger than a page is not touched after `sp`
+# moves: clang's prologue calls `___chkstk_darwin`, which PROBES every page of
+# the frame-to-be while `sp` still stands where the caller left it, so when a
+# probe reaches the guard the stack pointer is a whole frame above it. The
+# guard's second witness read `sp` alone and said no, and `heroes check` on a
+# legal program with 440 nested parentheses died at exit 139 with nothing on
+# stderr — measured under lldb: fault 6,472 bytes below `sp`, frame 8,576.
+# The width here is manufactured the way the compiler's own parser has it by
+# accident: many by-value locals, every one hoisted to the prologue (CLAUDE.md
+# §7), each a record of 32 words — 24 of them, 6144 bytes
+# before the temporaries. The recursion is mutual, as a recursive-descent
+# grammar's is. The file is generated, not typed, and says so; the depth is ten
+# million for `deep/main.hero`'s reason (Windows' 64 MB stack holds a hundred
+# thousand of the narrow frames).
+record Wide
+    a0: i64
+    a1: i64
+    a2: i64
+    a3: i64
+    a4: i64
+    a5: i64
+    a6: i64
+    a7: i64
+    a8: i64
+    a9: i64
+    a10: i64
+    a11: i64
+    a12: i64
+    a13: i64
+    a14: i64
+    a15: i64
+    a16: i64
+    a17: i64
+    a18: i64
+    a19: i64
+    a20: i64
+    a21: i64
+    a22: i64
+    a23: i64
+    a24: i64
+    a25: i64
+    a26: i64
+    a27: i64
+    a28: i64
+    a29: i64
+    a30: i64
+    a31: i64
+
+function widen(w: Wide, k: i64) -> Wide
+    out: Wide @ w
+    out.a0 @ w.a0 + k
+    return out
+
+function descend(n: i64, w: Wide) -> i64
+    if n == 0
+        return w.a0
+    w1 = widen(w, k: 1)
+    w2 = widen(w1, k: 2)
+    w3 = widen(w2, k: 3)
+    w4 = widen(w3, k: 4)
+    w5 = widen(w4, k: 5)
+    w6 = widen(w5, k: 6)
+    w7 = widen(w6, k: 7)
+    w8 = widen(w7, k: 8)
+    w9 = widen(w8, k: 9)
+    w10 = widen(w9, k: 10)
+    w11 = widen(w10, k: 11)
+    w12 = widen(w11, k: 12)
+    w13 = widen(w12, k: 13)
+    w14 = widen(w13, k: 14)
+    w15 = widen(w14, k: 15)
+    w16 = widen(w15, k: 16)
+    w17 = widen(w16, k: 17)
+    w18 = widen(w17, k: 18)
+    w19 = widen(w18, k: 19)
+    w20 = widen(w19, k: 20)
+    w21 = widen(w20, k: 21)
+    w22 = widen(w21, k: 22)
+    w23 = widen(w22, k: 23)
+    w24 = widen(w23, k: 24)
+    return bounce(n - 1, w24) + w24.a1
+
+function bounce(n: i64, w: Wide) -> i64
+    return descend(n, w)
+
+function main()
+    print(descend(10000000, Wide(a0: 0, a1: 0, a2: 0, a3: 0, a4: 0, a5: 0, a6: 0, a7: 0, a8: 0, a9: 0, a10: 0, a11: 0, a12: 0, a13: 0, a14: 0, a15: 0, a16: 0, a17: 0, a18: 0, a19: 0, a20: 0, a21: 0, a22: 0, a23: 0, a24: 0, a25: 0, a26: 0, a27: 0, a28: 0, a29: 0, a30: 0, a31: 0)))
