@@ -194,9 +194,26 @@ citation shapes `tests/harness/suite_records.hero`'s dead-citation check cannot
 read (panel 086 R7's measured limit), so this sentence is now checked by an
 instrument instead of by memory. The teaching process (design.md Part 0, the skills) is
 amended by author instruction, no panel. The panel never blocks: the
-synthesis adopts the most conservative resolution `provisional — author
+synthesis adopts a resolution marked `provisional — author
 ratification pending` and queues the decision; the author's verdict is
-appended when given. No design change lands without `docs/panel/NNN-*.md` +
+appended when given.
+
+**AND THE RESOLUTION IT ADOPTS IS THE MOST ROBUST AND COMPLETE ONE, NEVER THE
+CHEAPEST AND NEVER A COMPROMISE** (author instruction 2026-09-03, given
+mid-sitting at panel 106: *"panel usa sempre soluzione più robusta e sicura mai
+più economica e di compromesso"*; it is the same instruction as the `/decide`
+one of the same day — *"scegli le soluzioni più robuste e complete rispetto a
+quelle più economiche"* — applied to the panel). **This line used to read *the
+most conservative resolution*, and the two are not the same thing.** Panel 106 is
+where the difference showed: both seats vetoed the proposal, so the conservative
+resolution was *do nothing* and the ceilings would have stayed where they were —
+while the sitting's own measurements had found a repair worth **58.5% of the
+frame** sitting next to the question it was asked. Conservative means *change
+least*; robust means *leave the fewest ways to be wrong*. When they disagree the
+synthesis takes robust, says so, and records what the conservative resolution
+would have been so the author can choose it. What does **not** change: the seats
+still veto on soundness, a veto is still a refusal rather than a price, and the
+author still ratifies. No design change lands without `docs/panel/NNN-*.md` +
 a DESIGN-LOG line + its own commit citing the verdict.
 
 ## 5. The Heroes subset of Rust — the Cyclone rule
