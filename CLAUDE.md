@@ -112,6 +112,17 @@ directory it replaces, which was named after a skill deleted on 2026-08-12.
 check in `tests/harness/suite_records.hero` reads every backticked path in this
 file, and a path that no longer exists is exactly what it exists to catch.)
 
+**And a fourth list, for what is BROKEN: `docs/work/DEFECTS.md`** (author
+instruction 2026-09-03, *"non mi piace la cartella defect … se ti rimane ancora
+qualcosa aperto in defect alla fine fai un solo file chiamato DEFECTS.md
+all'interno di work, così tutto è ordinato"*). A compiler defect — a crash, a
+wrong answer at exit 0, a silence where a message is owed — is an open item
+there, with its reproducer, its measured cause and what is owed, for as long as
+it is open; the moment it is repaired the entry gains its *The repair* section
+and moves to `DONE.md` like everything else. The directory that held one file per
+defect is gone: its seven files became six record entries and one open item the
+evening the rule was given, and every live citation followed them.
+
 **One notation, and only one: `- [ ]` and `- [x]`.** A finding written as a bare
 bullet is invisible to every count in this project — which is how nine live FFI
 findings sat in a second, uncounted notation under `DECIDE.md`'s panel 051/052
@@ -626,8 +637,10 @@ home; `docs/ROADMAP.md` § The names carries the map and cites this.
 - **Appending to a dated record uses that record's vocabulary**, with the new name
   in parentheses on first use — `scored at M8a close (M-module-namespace)`. The
   record is never rewritten: `docs/panel/`, `DESIGN-LOG.md`, `docs/journal/`,
-  `docs/measurements/`, `docs/defects/`, `docs/book/beats.md`, `docs/reasoning/`,
+  `docs/measurements/`, `docs/work/DONE.md`, `docs/book/beats.md`, `docs/reasoning/`,
   `tests/golden/`, every commit subject and the twelve legacy tags keep the numbers.
+  (The list named a defects directory until 2026-09-03; its seven files are six
+  entries in `docs/work/DONE.md` and one in `docs/work/DEFECTS.md` now, §3.)
 
 ## 15. Working instructions that lived in the assistant's memory until 2026-09-03
 Each of these was an author instruction kept in a per-machine memory file until

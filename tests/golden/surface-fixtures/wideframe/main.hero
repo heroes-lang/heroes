@@ -1,5 +1,5 @@
 # A recursion whose FRAMES are wide, kept as the fixture that pins the repair of
-# `docs/defects/007` (2026-09-03). `deep/main.hero` beside it overflows with a
+# defect 007 in `docs/work/DONE.md` (2026-09-03). `deep/main.hero` beside it overflows with a
 # frame of a few dozen bytes; this one overflows with a frame of several
 # kilobytes, and the two are caught by DIFFERENT witnesses in
 # `runtime/parts/stack.c`. A frame larger than a page is not touched after `sp`

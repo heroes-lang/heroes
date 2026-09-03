@@ -63,8 +63,8 @@ M-separate-compilation already did.
 | Milestones closed | 32 of 51 · 32 tags |
 | The compiler | **51,788 lines** of Heroes in **178** modules across **10 directories** and 37 flat files · the seed **840,806** lines of generated C |
 | The spec | **3718** tokens of a hard 4096 · headroom **378** · runtime ABI **19** |
-| Records | sittings **103** · journals 32 · measurements **14** · examples **39** · defects **7** · the site **46** pages (built 2026-09-03), 13 doc chapters per edition |
-| Waiting on the author | **no decisions** — `DECIDE.md` holds zero open items for the first time since it was emptied of its 138 ticked ones on 2026-08-26, because all three were answered and applied the evening they were asked (`1c` + the push half, `2a`, `3a`; the record is `DONE.md`) · **30** in `SCHEDULED.md`, four of them new from M-corpus-depth step 5 — the two compiler defects it found (`docs/defects/006`, `007`), the hoisted-frame question as architecture, and the milestone's five remaining programs — plus `M-discard-refusal`, which is `3a`'s execution and needs a chain row · 299 in `LEARN.md` (never a gate) · an **outstanding veto** of the rule that stands (`docs/panel/101` R3) · the push of this close, which publishes the site's one-hole paragraph |
+| Records | sittings **103** · journals 32 · measurements **14** · examples **39** · open defects **1** (`docs/work/DEFECTS.md`; six repaired ones are entries in `docs/work/DONE.md`, the directory that held them is gone since 2026-09-03) · the site **46** pages (built 2026-09-03), 13 doc chapters per edition |
+| Waiting on the author | **no decisions** — `DECIDE.md` holds zero open items for the first time since it was emptied of its 138 ticked ones on 2026-08-26, because all three were answered and applied the evening they were asked (`1c` + the push half, `2a`, `3a`; the record is `DONE.md`) · **30** in `SCHEDULED.md`, four of them new from M-corpus-depth step 5 — the two compiler defects it found (defect 006 in `docs/work/DONE.md`, `007`), the hoisted-frame question as architecture, and the milestone's five remaining programs — plus `M-discard-refusal`, which is `3a`'s execution and needs a chain row · 299 in `LEARN.md` (never a gate) · an **outstanding veto** of the rule that stands (`docs/panel/101` R3) · the push of this close, which publishes the site's one-hole paragraph |
 
 Every number re-measured 2026-09-03 at the close. **This section held three
 stale tables until that day** — 64 lines against a ceiling of 15, caught here. The two counts the reorder moved were re-counted late the same evening (`docs/reasoning/006`), and the two M-corpus-depth step 3 moved — examples 35 → **37**, `LEARN.md` 297 → **299** — were re-counted when it landed rather than left for the close.
@@ -1344,7 +1344,7 @@ once.
 Milestones were numbered until 2026-08-12 and are named now. The algorithm that
 assigns the next one is **CLAUDE.md §14** — its only home; this section is only
 the map, and it exists because **the record was not rewritten**. `docs/panel/`,
-`DESIGN-LOG.md`, `docs/journal/`, `docs/measurements/`, `docs/defects/`,
+`DESIGN-LOG.md`, `docs/journal/`, `docs/measurements/`, `docs/work/DONE.md`,
 `docs/book/beats.md`, `tests/golden/`, every commit subject and all twelve legacy
 tags keep the identifiers they were written with. Panel 030 R7, as amended, is
 the argument.

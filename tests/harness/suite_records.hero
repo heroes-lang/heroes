@@ -43,7 +43,6 @@ constant RECORD: [str]
         "docs/panel"
         "docs/journal"
         "docs/measurements"
-        "docs/defects"
         "docs/book"
         "docs/reasoning"
         "tests/golden"
