@@ -192,9 +192,18 @@ add a manifest — it searched and found none.
 
 ## Author's verdict
 
-**Pending.** The item that asks for it is open in `docs/work/DECIDE.md` and names
-this sitting as `panel 099`; work proceeds on R1–R6 as the provisional default
-(CLAUDE.md §4 — a panel never blocks).
+**Ratified 2026-09-03** (author instruction, *"ratifica tutto"*, in a `/decide`
+sitting that put ten items to the author at once; the instruction that followed
+— *"scegli le soluzioni più robuste e complete rispetto a quelle più
+economiche"* — changed nothing here, because ROOT was at once the cheaper form,
+the smaller diff and the only one with precedent, and the alternative had no
+seat). The item that asked for this stood open in `docs/work/DECIDE.md` from
+2026-09-02 to 2026-09-03 and is in `docs/work/DONE.md` with the verdict.
+
+**The leaf-test hazard now has a home.** A grep on the day of ratification found
+R5's owed diagnostic and golden in no list — `SCHEDULED.md` 0, `DONE.md` 0 — so
+it is scheduled in `docs/work/SCHEDULED.md` under the milestone that takes the
+robustness repairs.
 
 **What a yes would settle**: ROOT as the base, in w-root-min's exact wording at a
 measured 3630, with the ", beside this file," removal in the same commit; no
