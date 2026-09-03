@@ -51,13 +51,17 @@ for byte.
 
 ## What it needs beside itself
 
-Eighteen files, and they are all in the checkout:
+Twenty-two files on 2026-09-03, and they are all in the checkout:
 
 - `seed/heroes.c`
 - `runtime/heroes_runtime.h` and `runtime/hero_os.h` — `heroes.c` includes both,
   which is why `-I runtime` is not optional
-- `runtime/runtime.c` and the **fourteen** files under `runtime/parts/`, which
-  `runtime.c` includes. Shipping `runtime.c` alone does not link.
+- `runtime/runtime.c` and every file under `runtime/parts/`, which `runtime.c`
+  includes — its `#include "parts/…"` lines ARE the list, eighteen of them
+  today, and the number is dated because this sentence said **fourteen** from
+  the day it was written until 2026-09-03, through four parts joining (CLAUDE.md
+  §11: a count in prose expires in silence while the sentence around it goes on
+  reading as correct). Shipping `runtime.c` alone does not link.
 
 And at **run** time the compiler needs `runtime/` again — it compiles it — which
 it finds under the working directory, or wherever `$HEROES_RUNTIME` says.
