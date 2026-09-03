@@ -21,20 +21,21 @@
 # said so on every build of `examples/maze/` while every golden stayed
 # silent.
 #
-# THE ONE EXEMPTION IS `ptr`, AND IT IS NOT A LIST OF FILE NAMES. A
-# program that hands C an `@` parameter of type `ptr` emits `void **`
-# where the header wants `sqlite3 **`; C converts `void *` to any object
-# pointer implicitly and does NOT convert `void **`. That warning is TRUE
-# and is forwarded rather than silenced (an M-ffi-ladder decision recorded
-# in examples/sqlite/main.hero's own header): a cast the emitter inserted
-# would compile clean and hide a real limit of `ptr`.
-#
-# So the assertion runs BOTH WAYS. A program with no `ptr` out-parameter
-# must produce no warning at all; one that has them MUST produce warnings,
-# and every one of them must be that warning. When Part 7 item 10 lands
-# and `ptr` stops erasing the type, this fails on the second half and the
-# exemption is deleted by whoever made it obsolete — which is what a
-# premise with a test under it looks like.
+# THERE IS NO EXEMPTION, AND THERE WAS ONE UNTIL 2026-09-03. A program
+# that handed C an `@` parameter of type `ptr` emitted `void **` where the
+# header wanted `sqlite3 **`, and C converts `void *` to any object pointer
+# but never `void **`; that warning was TRUE, so this suite forwarded it and
+# asserted BOTH ways — a program lending a `ptr` HAD to warn, and only with
+# that text. The premise under it was an M-ffi-ladder decision: a cast the
+# emitter inserted would compile clean and hide a real limit of `ptr`.
+# Panel 103 overturned it on a measurement: clang 22 made that warning an
+# ERROR by default, so the same program was refused on two of the three
+# platforms and accepted on the third, and the emitter now passes
+# `(void *)&x` for a `ptr` out-parameter — the one pointee the spec leaves
+# to the header — while a NUMERIC `@` is checked by the compiler itself
+# (`cli/pointee.hero`). The second half of this suite fired on
+# `examples/sqlite` the same afternoon, exactly as the sentence above it
+# promised, and the exemption was deleted by the step that made it obsolete.
 
 use cases
 use report
@@ -55,35 +56,19 @@ function run_all(scratch: str, compiler: str) -> report.Report?
 
     for dir in GOLDEN_DIRS
         for item in cases.collect(scratch: scratch, dir: dir)?
-            judge(
-                @r,
-                scratch: scratch,
-                compiler: compiler,
-                label: "warnings/" + item.name,
-                main: item.source,
-                erases: false
-            )
+            judge(@r, scratch: scratch, compiler: compiler, label: "warnings/" + item.name, main: item.source)
 
     for dir in shell.list_directories(scratch: scratch, dir: EXAMPLES)?
         main = dir + "/main.hero"
 
         if read_file(main).is_err()
             continue
-        judge(
-            @r,
-            scratch: scratch,
-            compiler: compiler,
-            label: "warnings/" + strings.base_name(path: dir),
-            main: main,
-            erases: lends_a_ptr(scratch: scratch, dir: dir)
-        )
+        judge(@r, scratch: scratch, compiler: compiler, label: "warnings/" + strings.base_name(path: dir), main: main)
 
     return ok(r)
 
-# One program under both verbs. `erases` says whether this program hands
-# C the address of a `ptr`, which is the one thing clang may complain
-# about — and then must.
-function judge(@r: report.Report, scratch: str, compiler: str, label: str, main: str, erases: bool)
+# One program under both verbs, and no warning under either.
+function judge(@r: report.Report, scratch: str, compiler: str, label: str, main: str)
     for verb in ["build", "run"]
         said = shell.run_guarded(
             scratch: scratch,
@@ -98,31 +83,13 @@ function judge(@r: report.Report, scratch: str, compiler: str, label: str, main:
             return
         noise = warnings_in(said.must().err)
 
-        if !erases
-            if noise.len() > 0
-                report.keep_failure(
-                    @r,
-                    label: label + " under `" + verb + "`",
-                    detail: "  " + main + " produced clang warnings:\n    " + noise.join("\n    ")
-                )
-                return
-        else
-            if noise.len() == 0
-                report.keep_failure(
-                    @r,
-                    label: label + " under `" + verb + "`",
-                    detail: "  " + main + " lends a `ptr` and no longer warns — if `ptr` stopped erasing the type, delete this exemption instead of widening it"
-                )
-                return
-
-            for one in noise
-                if !strings.contains(text: one, needle: "incompatible pointer types")
-                    report.keep_failure(
-                        @r,
-                        label: label + " under `" + verb + "`",
-                        detail: "  " + main + " warns about something other than `ptr`:\n    " + one
-                    )
-                    return
+        if noise.len() > 0
+            report.keep_failure(
+                @r,
+                label: label + " under `" + verb + "`",
+                detail: "  " + main + " produced clang warnings:\n    " + noise.join("\n    ")
+            )
+            return
 
     report.keep_pass(@r)
 
@@ -135,25 +102,6 @@ function warnings_in(err: str) -> [str]
 
     return found
 
-# Whether a module hands C the address of a `ptr` — an `@` parameter of
-# that type, which is what becomes `void **`.
-function lends_a_ptr(scratch: str, dir: str) -> bool
-    listing = shell.list_entries(scratch: scratch, dir: dir)
-
-    if listing.is_err()
-        return false
-
-    for entry in listing.must()
-        if strings.ends_with(text: entry, suffix: ".hero")
-            text = read_file(entry)
-
-            if !text.is_err()
-                for row in strings.lines(text.must())
-                    if strings.contains(text: row, needle: "@") && strings.contains(text: row, needle: ": ptr")
-                        return true
-
-    return false
-
 test "a warning line is found wherever clang puts it, and nothing else is"
     said = "x.c:3:5: warning: unused variable 'a' [-Wunused-variable]\nx.c:9:1: note: here\n"
     assert warnings_in(said).len() == 1
@@ -163,13 +111,3 @@ test "a warning line is found wherever clang puts it, and nothing else is"
     # A `note:` mentioning the word is not a warning line; a real warning
     # line always carries `warning:` itself.
     assert warnings_in("  note: this warning: is quoted\n").len() == 1
-
-test "lending a ptr is read off the program"
-    scratch = "build/harness-selftest"
-    tree = scratch + "/warnings"
-    assert !shell.remove_tree(tree).is_err()
-    assert !shell.mkdir_all(tree).is_err()
-    assert !write_file(path: tree + "/main.hero", text: "function main()\n    print(1)\n").is_err()
-    assert !lends_a_ptr(scratch: scratch, dir: tree)
-    assert !write_file(path: tree + "/db.hero", text: "extern \"sqlite3.h\"\n    function sqlite3_open(path: cstr, @out: ptr) -> i64\n").is_err()
-    assert lends_a_ptr(scratch: scratch, dir: tree)

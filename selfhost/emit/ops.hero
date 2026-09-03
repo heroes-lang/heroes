@@ -19,6 +19,7 @@ use emit/ctype
 use emit/signature
 use emit/builtins
 use emit/convert
+use emit/extern_probe
 use emit/writer
 use token
 use parse
@@ -115,7 +116,7 @@ function call(@w: writer.Writer, p: containers.Program, f: containers.Function, 
 
         .extern_fn e =>
             extern_name = source.span_text(s, decls[e.decl].name)
-            guarded = guard_cstr_arguments(p, c, decl: e.decl, arguments: arguments)
+            guarded = guard_arguments(p, c, decl: e.decl, arguments: arguments)
 
             # The result half of the const cast: sqlite3_column_blob
             # returns const void *, and without the cast the assignment
@@ -207,7 +208,11 @@ function print_call(@w: writer.Writer, f: containers.Function, c: state.Checked,
     writer.line(@w, text: "    hero_print_end();")
 
 # Every cstr argument of an extern call, wrapped in the runtime's null
-# check (panel 053; §12's robustness rule). Not a language change and
+# check (panel 053; §12's robustness rule) — and every opaque or numeric
+# `@` argument cast to `(void *)` (panel 103; the reason and the two
+# exclusions are `extern_probe.is_cast_out`'s, and the probe and the call
+# spell the argument the same way or one of them is the thing clang
+# refuses). Not a language change and
 # not a type rule: hero_cstr_nonnull is to a null cstr what
 # __builtin_mul_overflow is to signed overflow — one branch, a named
 # abort, C's UB never reached. The hole was measured: a null cstr
@@ -219,7 +224,7 @@ function print_call(@w: writer.Writer, f: containers.Function, c: state.Checked,
 # excluded: §4.8 makes it a pointer parameter, so the argument is the
 # address of a local, never null — a guard that cannot fail is read as
 # protection that is there (author decision 2026-08-15).
-function guard_cstr_arguments(p: containers.Program, c: state.Checked, decl: i64, arguments: [str]) -> [str]
+function guard_arguments(p: containers.Program, c: state.Checked, decl: i64, arguments: [str]) -> [str]
     callee: containers.Function? @ fail("none", "not lowered")
 
     for candidate in p.functions
@@ -234,9 +239,11 @@ function guard_cstr_arguments(p: containers.Program, c: state.Checked, decl: i64
     for argument in arguments
         is_cstr: bool @ false
         is_out: bool @ false
+        cast: bool @ false
 
         if index < callee.must().params.len()
             slot = callee.must().slots[callee.must().params[index]]
+            cast @ extern_probe.is_cast_out(c, slot)
 
             match table.get(c.types, slot.ty)
                 .cstr                                                      => is_cstr @ true
@@ -252,6 +259,8 @@ function guard_cstr_arguments(p: containers.Program, c: state.Checked, decl: i64
 
         if is_cstr && !is_out
             out @ out.push("hero_cstr_nonnull(" + argument + ")")
+        else if cast
+            out @ out.push("(void *)" + argument)
         else
             out @ out.push(argument)
         index @ index + 1

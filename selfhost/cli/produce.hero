@@ -19,6 +19,7 @@ use cli/compile
 use cli/toolchain
 use cli/process
 use cli/units
+use cli/pointee
 use emit/unit
 use emit/members
 use cli/libraries
@@ -165,93 +166,109 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
 
     if source_dir.len() == 0
         source_dir @ "."
-    linked: ()? @ ok()
 
-    if is_tests
-        # A test binary keeps the fused unit: `heroes test` compiles
-        # once and runs per block, and the fused path is the artifact
-        # path the blessed emissions pin.
-        linked @ toolchain.link(
-            t,
-            c_file: c_file,
-            object: object.must(),
-            binary: binary,
-            level: options.level,
-            sanitize: options.sanitize,
-            source_dir: source_dir,
-            search_include: options.headers_from,
-            search_library: options.library,
-            package_flags: package_flags.must(),
-            link_names: names
-        )
-    else
+    # What the extern out-parameters point at, asked of the header before
+    # any unit compiles (panel 103): the width and sign of a numeric `@`
+    # against the header's own type. A failure here is the AUTHOR's, and it
+    # rides the same mapping a clang failure does, below — `emit/ffi.hero`
+    # reads the assertion's marker back into the parameter's diagnostic.
+    linked: ()? @ pointee.check(
+        t,
+        art.must().program,
+        art.must().checked,
+        s,
+        art.must().decls,
+        search_include: options.headers_from,
+        package_flags: package_flags.must(),
+        source_dir: source_dir
+    )
 
-        # One .c per module (panel 093): each TU compiled to its own
-        # cached object, every dirty TU before any verdict (R5), one
-        # link over all of them re-run every build.
-        root = module_names.module_of(s.name)
-        objects: [str] @ [object.must()]
-        stopped: ()? @ ok()
-
-        # The whole-program tables, built once for the whole build
-        # rather than once per TU. They are functions of the program,
-        # so 157 modules used to buy 157 identical answers — and the
-        # arena walk and the content hashing behind them is what made
-        # the per-module self-build take longer than the fused one.
-        whole = members.whole_of(art.must().program, c: art.must().checked, s: s, decls: art.must().decls)
-
-        # One build's answers about files on disk. Every TU asks whether
-        # the headers it read still say the same thing, and 157 of them
-        # share almost all of those headers — so the map is threaded
-        # through the loop rather than rebuilt per unit.
-        memo: {str: str} @ {}
-
-        for component in units.components(s)
-            tu_text = unit.unit(
-                module: component,
-                p: art.must().program,
-                c: art.must().checked,
-                s: s,
-                decls: art.must().decls,
-                version: version,
-                is_root: component == root,
-                whole: whole
-            )
-            made = units.tu_object(
+    if !linked.is_err()
+        if is_tests
+            # A test binary keeps the fused unit: `heroes test` compiles
+            # once and runs per block, and the fused path is the artifact
+            # path the blessed emissions pin.
+            linked @ toolchain.link(
                 t,
-                module: component,
-                tu_text: tu_text,
-                level: options.level,
-                sanitize: options.sanitize,
-                search: compile.search_key(headers_from: options.headers_from, library: options.library),
-                package_flags: package_flags.must(),
-                source_dir: source_dir,
-                search_include: options.headers_from,
-                @memo
-            )
-
-            if made.is_err()
-                if stopped.is_err()
-                    stopped @ stopped
-                else
-                    stopped @ carry_failure(made)
-            else
-                objects @ objects.push(made.must())
-
-        if stopped.is_err()
-            linked @ stopped
-        else
-            linked @ units.link_objects(
-                t,
-                objects: objects,
+                c_file: c_file,
+                object: object.must(),
                 binary: binary,
                 level: options.level,
                 sanitize: options.sanitize,
+                source_dir: source_dir,
                 search_include: options.headers_from,
                 search_library: options.library,
                 package_flags: package_flags.must(),
                 link_names: names
             )
+        else
+
+            # One .c per module (panel 093): each TU compiled to its own
+            # cached object, every dirty TU before any verdict (R5), one
+            # link over all of them re-run every build.
+            root = module_names.module_of(s.name)
+            objects: [str] @ [object.must()]
+            stopped: ()? @ ok()
+
+            # The whole-program tables, built once for the whole build
+            # rather than once per TU. They are functions of the program,
+            # so 157 modules used to buy 157 identical answers — and the
+            # arena walk and the content hashing behind them is what made
+            # the per-module self-build take longer than the fused one.
+            whole = members.whole_of(art.must().program, c: art.must().checked, s: s, decls: art.must().decls)
+
+            # One build's answers about files on disk. Every TU asks whether
+            # the headers it read still say the same thing, and 157 of them
+            # share almost all of those headers — so the map is threaded
+            # through the loop rather than rebuilt per unit.
+            memo: {str: str} @ {}
+
+            for component in units.components(s)
+                tu_text = unit.unit(
+                    module: component,
+                    p: art.must().program,
+                    c: art.must().checked,
+                    s: s,
+                    decls: art.must().decls,
+                    version: version,
+                    is_root: component == root,
+                    whole: whole
+                )
+                made = units.tu_object(
+                    t,
+                    module: component,
+                    tu_text: tu_text,
+                    level: options.level,
+                    sanitize: options.sanitize,
+                    search: compile.search_key(headers_from: options.headers_from, library: options.library),
+                    package_flags: package_flags.must(),
+                    source_dir: source_dir,
+                    search_include: options.headers_from,
+                    @memo
+                )
+
+                if made.is_err()
+                    if stopped.is_err()
+                        stopped @ stopped
+                    else
+                        stopped @ carry_failure(made)
+                else
+                    objects @ objects.push(made.must())
+
+            if stopped.is_err()
+                linked @ stopped
+            else
+                linked @ units.link_objects(
+                    t,
+                    objects: objects,
+                    binary: binary,
+                    level: options.level,
+                    sanitize: options.sanitize,
+                    search_include: options.headers_from,
+                    search_library: options.library,
+                    package_flags: package_flags.must(),
+                    link_names: names
+                )
 
     if linked.is_err()
         # Some clang failures are the AUTHOR's, and the ffi mapping is

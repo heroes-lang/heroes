@@ -1,0 +1,271 @@
+# The width and sign of what an `@` parameter points at, checked against
+# the header by the compiler itself (design.md §4.19, §1.12; CLAUDE.md
+# §12; panel 103, 2026-09-03; M-robustness-guards step 3).
+#
+# **The hole.** `extern function getline(@line: ptr, @n: i32, stream: ptr)`
+# against `size_t *n` built at exit 0 with five warnings and ran: `getline`
+# wrote 8 bytes into a 4-byte slot, and `--sanitize` saw nothing (panel 096
+# found it, panel 103 measured it on three clangs). The spec's own advice —
+# *`u64` where it says `size_t`* — passed through a pointer is
+# `uint64_t *` against `size_t *`, which on macOS is `unsigned long long *`
+# against `unsigned long *`: two types, one width. So neither clang's
+# warning nor the strict flag can be the check: the flag refuses the
+# correct `@n: u64` on one platform and never looks at sign at all
+# (`-Wpointer-sign` is a warning on every clang). The check has to be the
+# compiler's, and it has to ask the header.
+#
+# **How the compiler learns the header's type.** C11 has no
+# parameter-position `__typeof__`; a `transparent_union` redeclaration is
+# free and uniform but fails with `conflicting types` the moment any
+# parameter is `ptr`; DWARF is cgo's route and the CI's Linux leg has no
+# `llvm-dwarfdump`. What works on clang 18, 21 and 22 alike, measured: one
+# translation unit that includes the program's headers and declares
+# `extern __typeof__(getline) hero_ty_getline;` per extern with a numeric
+# `@`, dumped with `-ast-dump=json -ast-dump-filter=hero_ty_` — 6–8 KB, 0.02 s,
+# the k-th `ParmVarDecl`'s `qualType` is the header's own text for the
+# parameter (`size_t *restrict`). The JSON is not the verdict: it is only
+# where the TYPE TEXT comes from. The verdict is asked of clang in a
+# second, tiny unit — two `_Static_assert`s per parameter, `#line`d at the
+# author's declaration, `sizeof` and the sign of `(T)-1` — so it is C11
+# arithmetic on the header's own type and never a width table this
+# compiler carries. A failure comes back as a `static assertion failed`
+# line carrying this file's marker, and `emit/ffi_pointee.hero` turns it
+# into `ffi_parameter_type` on the parameter, with a `guess` fix naming the
+# header's width.
+#
+# **Cached like an object.** The dump and the check run once per (compiler,
+# declarations, headers, search path); the verdict is a file under
+# `build/pointee-<key>/` recorded with the headers it read (`cli/deps`), so
+# a header that changes re-asks the question and an unchanged one costs a
+# `test -e`.
+#
+# **Two things this file deliberately does not do.** It does not cast: the
+# emitter passes `(void *)&x` for the argument it has checked here
+# (`emit/ops.hero`, `emit/extern_probe.hero`), which is what makes a
+# correct binding compile clean under `-Werror=incompatible-pointer-types`
+# on every clang. And it does not fail a build the dump could not serve: a
+# name the header spells as a macro cannot be `__typeof__`'d, the probe
+# already refuses that name on its own line, and a check that fell over
+# there would be the compiler blaming itself for the author's mistake.
+
+use ast
+use source
+use widths
+use check/table
+use check/state
+use ir/containers
+use emit/externs as emit_externs
+use cli/toolchain
+use cli/process
+use cli/digest
+use cli/deps
+use cli/header_types
+use cli/pointee_ask
+use parse
+use resolve
+use checker
+use ir/lower
+
+## What is asked
+
+# Every extern function of the program with a numeric `@` parameter. The
+# narrowing is a fact about the declaration in hand: mutable, and an
+# integer or a float. A `ptr` points at what the header says and nothing
+# can be asked of it; a `cstr` is the writability check's (panel 058); a
+# record is the header's own struct.
+function pointees(p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> [pointee_ask.Pointee]
+    out: [pointee_ask.Pointee] @ []
+
+    for f in p.functions
+        if emit_externs.extern_spans(decls, f).header.is_err()
+            continue
+        name = source.span_text(s, decls[f.decl].name)
+        found = source.locate(s, decls[f.decl].name.start)
+        index: i64 @ 0
+
+        for slot_id in f.params
+            slot = f.slots[slot_id]
+            declared = numeric_out(c, slot)
+
+            if !declared.is_err()
+                out @ out.push(
+                    pointee_ask.Pointee(name: name, param: slot.name, index: index, declared: declared.must(), file: found.file, line: found.line)
+                )
+            index @ index + 1
+
+    return out
+
+# The C spelling of a numeric `@` parameter's declared type, or absent for
+# any other kind of slot.
+function numeric_out(c: state.Checked, slot: containers.Slot) -> str?
+    mutable: bool @ false
+
+    match slot.kind
+        .param_slot ps =>
+            if ps.mutable
+                mutable @ true
+        .local_slot | .synthetic_slot => mutable @ mutable
+
+    if !mutable
+        return fail("none", "not an @ parameter")
+
+    match table.get(c.types, slot.ty)
+        .int_ty ik                                                 => return ok(widths.int_c_type(ik.kind))
+        .float_ty fk                                               => return ok(widths.float_c_type(fk.kind))
+        .bool | .str | .ptr | .cstr | .unit                        => return fail("none", "not numeric")
+        .array | .fixed | .map | .fallible | .function_ty | .named => return fail("none", "not numeric")
+        .case_ty | .failure | .generic | .error                    => return fail("none", "not numeric")
+
+    return fail("none", "unreached")
+
+## The check itself
+
+# Ask the header, once per (compiler, declarations, headers, search path).
+# Absent is the answer when nothing is asked, when the answer is cached
+# and fresh, or when the check passed; a failure carries clang's own words,
+# which `emit/ffi.hero` reads back into the author's diagnostic.
+function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], search_include: [str], package_flags: [str], source_dir: str) -> ()?
+    wanted = pointees(p, c, s, decls)
+
+    if wanted.len() == 0
+        return ok()
+    headers = emit_externs.headers(p, s, decls)
+    asked: [str] @ []
+
+    for one in wanted
+        asked @ asked.push(
+            one.name + ":" + one.param + ":" + one.index.to_str() + ":" + one.declared + ":" + one.file + ":" + one.line.to_str()
+        )
+
+    key = digest.digest(
+        t.fingerprint + "|pointee|" + asked.join(",") + "|" + headers.join(",") + "|" + search_include.join(",") + "|" + package_flags.join(" ") + "|" + t.runtime_key
+    )
+    dir = t.build + "/pointee-" + key
+    verdict = dir + "/verdict.txt"
+    memo: {str: str} @ {}
+
+    if process.path_exists(verdict) && deps.fresh(deps.record_for(verdict), @memo)
+        kept = read_file(verdict)
+
+        if !kept.is_err()
+            if kept.must() == "ok\n"
+                return ok()
+            return fail("clang", kept.must())
+
+    if process.mkdir_all(dir).is_err()
+        return fail("failed", "cannot create " + dir)
+    dump_c = dir + "/dump.c"
+    dump_json = dir + "/dump.json"
+    depfile = dir + "/dump.d"
+    err_path = dir + "/dump-stderr.txt"
+
+    if write_file(path: dump_c, text: header_types.dump_unit(headers, wanted)).is_err()
+        return fail("failed", "cannot write " + dump_c)
+    line: [str] @ [
+        "clang"
+        "-std=gnu11"
+        "-fsyntax-only"
+        "-Xclang"
+        "-ast-dump=json"
+        "-Xclang"
+        "-ast-dump-filter=" + header_types.PREFIX
+        "-MD"
+        "-MT"
+        "dep"
+        "-MF"
+        depfile
+    ]
+    line @ with_search(
+        line: line,
+        search_include: search_include,
+        package_flags: package_flags,
+        runtime: t.runtime,
+        source_dir: source_dir
+    )
+    line @ line.push(dump_c)
+    ran = process.run(program: "clang", words: line, out: dump_json, err: err_path)
+
+    if !ran.started || ran.code != 0
+        # The headers did not compile in isolation, or a name is a macro
+        # `__typeof__` cannot take: the build's own compile reports it on
+        # the author's line, and this check has nothing to add.
+        return ok()
+    json = read_file(dump_json)
+
+    if json.is_err()
+        return ok()
+    check_c = dir + "/check.c"
+    check_err = dir + "/check-stderr.txt"
+
+    if write_file(path: check_c, text: header_types.check_unit(headers, wanted, header_types.types_of(json.must(), wanted))).is_err()
+        return fail("failed", "cannot write " + check_c)
+    check_line: [str] @ ["clang", "-std=gnu11", "-fsyntax-only"]
+    check_line @ with_search(
+        line: check_line,
+        search_include: search_include,
+        package_flags: package_flags,
+        runtime: t.runtime,
+        source_dir: source_dir
+    )
+    check_line @ check_line.push(check_c)
+    checked = toolchain.run_clang(
+        line: check_line,
+        what: "checking what the extern out-parameters point at",
+        err_path: check_err
+    )
+    recorded = deps.record_deps(record_path: deps.record_for(verdict), depfile: depfile, skip: dir + "/", @memo)
+
+    if recorded.is_err()
+        return fail("failed", "cannot record what the pointee check read")
+
+    if checked.is_err()
+        text = failure_text(checked)
+        _ = write_file(path: verdict, text: text)
+        return fail("clang", text)
+    _ = write_file(path: verdict, text: "ok\n")
+    return ok()
+
+# The include search a unit compiles under, on the two check lines too:
+# the same headers must be found from the same places or the question
+# is asked of a different header.
+function with_search(line: [str], search_include: [str], package_flags: [str], runtime: str, source_dir: str) -> [str]
+    out: [str] @ line
+
+    for one in search_include
+        out @ toolchain.with_all(list: out, more: ["-I", one])
+
+    for flag in package_flags
+        if toolchain.starts_with(text: flag, prefix: "-I")
+            out @ out.push(flag)
+
+    out @ toolchain.with_all(list: out, more: ["-I", runtime])
+
+    if source_dir.len() > 0
+        out @ toolchain.with_all(list: out, more: ["-I", source_dir])
+
+    return out
+
+function failure_text(failed: ()?) -> str
+    match failed
+        .ok    => return ""
+        .err e => return e.msg
+
+## Tests
+
+test "the question is asked only of a numeric @ parameter, and each one carries its line"
+    text = "extern \"stdio.h\"\n    function getline(@line: ptr, @n: i32, stream: ptr) -> i64\n    function frexp(x: f64, @e: i32) -> f64\n\nfunction main()\n    print(1)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c = checker.check(parsed.tree, out, s, parsed.decls)
+    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+    wanted = pointees(low.program, c, s, parsed.decls)
+    named: [str] @ []
+
+    for one in wanted
+        if one.file == "t.hero"
+            named @ named.push(
+                one.name + "." + one.param + "@" + one.index.to_str() + ":" + one.declared + ":" + one.line.to_str()
+            )
+
+    assert named == ["getline.n@1:int32_t:2", "frexp.e@1:int32_t:3"]

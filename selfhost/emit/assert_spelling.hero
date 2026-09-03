@@ -187,13 +187,22 @@ function zero_of(names: ctype.Names, c: state.Checked, ty: i64, mutable: bool) -
             if mutable
                 return "(HeroStr *)0"
             return "(HeroStr){0}"
+        # A MUTABLE NUMERIC IS A BARE 0, like a mutable ptr (panel 103).
+        # `(uint64_t *)0` against a header's `size_t *` is
+        # `-Wincompatible-pointer-types` on macOS, where `size_t` is
+        # `unsigned long` and `uint64_t` is `unsigned long long` — the same
+        # 8 bytes, two types — and that flag is an error since 2026-09-03.
+        # The width and sign of what an `@` parameter points at are checked
+        # by the compiler itself (`cli/pointee.hero`), so this assertion
+        # asks only what it can ask: the RESULT type.
+
         .int_ty ik =>
             if mutable
-                return "(" + widths.int_c_type(ik.kind) + " *)0"
+                return "0"
             return "(" + widths.int_c_type(ik.kind) + ")0"
         .float_ty fk =>
             if mutable
-                return "(" + widths.float_c_type(fk.kind) + " *)0"
+                return "0"
             return "(" + widths.float_c_type(fk.kind) + ")0"
         .bool =>
             if mutable
@@ -261,7 +270,7 @@ test "the spelling table: widths, the bare cstr zero, the struct pair"
         assert zero_of(names, c, ty: ptr_id.must(), mutable: true) == "0"
         assert zero_of(names, c, ty: ptr_id.must(), mutable: false) == "(void *)0"
     assert zero_of(names, c, ty: int_id, mutable: false) == "(int64_t)0"
-    assert zero_of(names, c, ty: int_id, mutable: true) == "(int64_t *)0"
+    assert zero_of(names, c, ty: int_id, mutable: true) == "0"
     assert zero_of(names, c, ty: str_id, mutable: false) == "(HeroStr){0}"
     assert zero_of(names, c, ty: color, mutable: false) == "(Color){0}"
     assert zero_of(names, c, ty: color, mutable: true) == "(Color *)0"

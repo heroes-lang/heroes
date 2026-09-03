@@ -15,14 +15,14 @@
 # What is NOT here is as much of the point: no marshalling, no glue layer, no
 # generated binding file, and no `sqlite3.c` of our own.
 #
-# **This program builds with four warnings, and they are true.** `ptr` is C's
-# `void *`, so an out-parameter is `void **` where the header wants `sqlite3 **`
-# — and C converts `void *` to any object pointer implicitly but does not
-# convert `void **`. clang says so on every build, and the warning is forwarded
-# rather than silenced: what it reports is a real limit of `ptr`, which erases
-# the type SQLite would otherwise have checked. The repair is not a cast the
-# emitter inserts — that compiles clean and hides the fact — it is the C-width
-# type vocabulary §4.19 defers to Part 7 item 10.
+# **This program builds with zero warnings, since panel 103 (2026-09-03).** It
+# built with four, and they were true: `ptr` is C's `void *`, an out-parameter
+# was `void **` where the header wants `sqlite3 **`, and C converts `void *` to
+# any object pointer but never `void **`. Clang 22 made that an ERROR by
+# default, so the same program was refused on Linux and accepted here. Now the
+# emitter passes `(void *)&db` — the pointee of a `ptr` is the one thing the
+# spec leaves to the header (spec § FFI) — while a NUMERIC `@` is checked by the
+# compiler itself against the header's width and sign (`cli/pointee.hero`).
 
 extern "sqlite3.h" link "sqlite3"
     # SQLite's own result codes, from SQLite's own header. A typo is

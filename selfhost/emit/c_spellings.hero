@@ -93,6 +93,39 @@ function spelling(c_type: str, word_bits: i64) -> Spelling?
     if c_type == "float"
         return ok(Spelling(heroes: "f32", caveat: no_caveat))
 
+    # The standard's own typedefs (panel 103's pointee check names them
+    # in its message): the fixed-width ones are exactly what they say,
+    # and the object-size family is the word, with the word's caveat.
+    if c_type == "size_t" || c_type == "uintptr_t"
+        return ok(object_width(sign: "u", word_bits: word_bits, c_type: c_type))
+
+    if c_type == "ssize_t" || c_type == "ptrdiff_t" || c_type == "intptr_t"
+        return ok(object_width(sign: "i", word_bits: word_bits, c_type: c_type))
+
+    if c_type == "int8_t"
+        return ok(Spelling(heroes: "i8", caveat: no_caveat))
+
+    if c_type == "int16_t"
+        return ok(Spelling(heroes: "i16", caveat: no_caveat))
+
+    if c_type == "int32_t"
+        return ok(Spelling(heroes: "i32", caveat: no_caveat))
+
+    if c_type == "int64_t"
+        return ok(Spelling(heroes: "i64", caveat: no_caveat))
+
+    if c_type == "uint8_t"
+        return ok(Spelling(heroes: "u8", caveat: no_caveat))
+
+    if c_type == "uint16_t"
+        return ok(Spelling(heroes: "u16", caveat: no_caveat))
+
+    if c_type == "uint32_t"
+        return ok(Spelling(heroes: "u32", caveat: no_caveat))
+
+    if c_type == "uint64_t"
+        return ok(Spelling(heroes: "u64", caveat: no_caveat))
+
     # A C type absent from this table means the class DECLINES — clang's
     # own verdict is still printed, and the compiler does not pretend
     # to know the repair. `long double` is the live example.
@@ -109,6 +142,21 @@ function word_width(sign: str, word_bits: i64) -> Spelling
     heroes = sign + word_bits.to_str()
     caveat: str? = ok(
         "C's `long` is the platform's word, not a width the header chose: " + word_bits.to_str() + " bits on this machine, and " + other.to_str() + " elsewhere — Windows is " + other.to_str() + " where the Unixes are " + word_bits.to_str() + ", or the reverse. `" + heroes + "` is the answer for this target; a program that must build on both declares the width it means there and converts at the call"
+    )
+    return Spelling(heroes: heroes, caveat: caveat)
+
+# The object-size typedefs are the platform's word too, but NOT `long`'s
+# word: `size_t` is 64 bits on every 64-bit target, Windows included,
+# where `long` stays 32 there. So the caveat is their own, or the note
+# would say something false on the one platform it exists to warn about.
+function object_width(sign: str, word_bits: i64, c_type: str) -> Spelling
+    other: i64 @ 32
+
+    if word_bits == 32
+        other @ 64
+    heroes = sign + word_bits.to_str()
+    caveat: str? = ok(
+        "`" + c_type + "` is the platform's pointer width: " + word_bits.to_str() + " bits on this machine, and " + other.to_str() + " on a " + other.to_str() + "-bit target. `" + heroes + "` is the answer for this target; a program that must build on both declares the width it means there and converts at the call"
     )
     return Spelling(heroes: heroes, caveat: caveat)
 

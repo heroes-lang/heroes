@@ -102,6 +102,38 @@ which only checks clean beside its module; the second fixture is the `window`
 program itself, pinned by two surface rows that assert `fix (guess)` and an
 `--apply` that changes nothing.
 
+**The seat that compiles corrected the coordinator on the same point twice
+(step 3).** The brief cast only `ptr`. Both compiling seats measured that the
+strict flag then refuses `time(@t: i64)` and `getline(@n: u64)` on macOS alone
+— `long *` and `long long *` are the same 8 bytes and two types there — and the
+engineer went one further: the probe's typed `uint64_t *` against `size_t *`
+was already being claimed by the width reader as a FALSE `ffi_parameter_type` on
+the Mac. So the cast is on every opaque or numeric `@`, in the probe, the call
+and the assertion alike, and the pointee check is the compiler's own. A `cstr`
+`@` stays typed on purpose: its `const char **` against a header's `char **` is
+panel 058's writability refusal, and a cast would have silenced it — the warden
+measured that the ergonomist's *`ptr` or a `cstr`* wording would have written
+the same falsehood into the spec.
+
+**The header's type text comes from clang, and the verdict is asked of clang,
+and the two are different processes on purpose.** `-ast-dump=json` gives the
+parameter's `qualType` — `size_t *restrict`, the same shape on clang 18, 21 and
+22, measured on all three plus the Windows box — but not its canonical width;
+`desugaredQualType` is absent on parameters. So the JSON is only where the
+TYPE TEXT comes from; the verdict is two `_Static_assert`s in a second, tiny
+unit, `sizeof` and the sign of `(T)-1`, C11 arithmetic on the header's own
+type and never a width table this compiler carries. The check runs once per
+build, is cached like an object with the headers it read, and flows its failure
+through the same reader path as every other clang failure — which is how
+`ffi_parameter_type` lands on the parameter's name with `@n: u64` as the guess
+without a line of column arithmetic. The emitter gained nothing but the casts.
+
+**The spec sentence landed in the same commit as the check, and not a minute
+before**, which is the warden's condition and panel 060's lesson: a document
+that says the compiler refuses something it accepts is false by fiat. w5 at
+3718, the clause's third size in nine days, and the 172 blessed emissions moved
+with it in exactly four line shapes.
+
 ## What broke and why
 
 - **`keys` is a built-in.** `ir/inout.hero` named a local `keys` and the
@@ -129,6 +161,19 @@ program itself, pinned by two surface rows that assert `fix (guess)` and an
   decision rather than a quiet one; `suite_surface.hero` counts its own rows
   (33 → 35) and `report.tally` takes two `Report`s, so the labels are
   mandatory. Each red run said exactly which line to read.
+
+- **Two more built-in names, and the label rule, four times (step 3).**
+  `find` is a built-in like `keys`; `strip_word`, `locate_text`,
+  `parameter_types` and `with_search` each take two parameters of one type,
+  so every call names them. Each red build said the line. The formatter
+  reflowed one call before the fix reached it, so the replacement missed once.
+- **Two pins guarded the old shape, correctly.** `extern_probe.hero`'s test
+  expected `(void)(fill)(a0, a1)` and `assert_spelling.hero`'s expected
+  `(int64_t *)0`; both now say what the emitter says, `(void *)a0` and `0`.
+- **A caveat that was true for `long` and false for `size_t`.** The typedef
+  rows first reused `long`'s note — *Windows is 32 where the Unixes are 64* —
+  which is false for `size_t` on 64-bit Windows; the object-size typedefs got
+  their own note before the first golden could print the wrong one.
 
 ## What landed, and what carried forward
 
