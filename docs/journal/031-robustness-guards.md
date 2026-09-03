@@ -80,6 +80,28 @@ leaf left, into `resolve/writes.hero` at 91 lines. Two files grew past a ceiling
 and two decided numbers moved with dated reasons; two files were split at a seam
 that was there all along.
 
+**A promise with no executor, one department over (step 2).** CLAUDE.md §8
+promises that CI checks an applied `certain` fix, and `tests/harness/
+suite_fixes.hero` made it executable — for `check/`, where a case is one
+file. Every diagnostic about modules needs two files to provoke, so the
+promise had never once run on the module class, and that is how
+`needs_qualifying` shipped a `certain` fix that reproduces itself: `use window`
+beside `window: ptr`, `_ = window.destroy()`, and `--apply` writes
+`window.window.destroy()`, then `window.window.window.destroy()`. The `/decide`
+item that scheduled this step said panel 102's file-wide reservation had
+closed the path; measured on the seed of 2026-09-02 17:52, it had not — the
+reservation *reports and then binds*, so the dot still falls through a `ptr`
+with no fields to the module path. Both halves landed: the fix is a `guess`
+with the measurement written where the certainty used to be argued, and the
+fixes suite walks `surface-fixtures/` for an `X.fixed` beside its `X.hero`,
+applies through the real binary, copies the directory to scratch with the one
+file replaced, and re-checks EVERY `.hero` in the copy, because the fix is
+applied to one file and the program is all of them. The first `.fixed` is
+`unknown_in_module`'s one-candidate repair, `geom.dist` → `geom.dist2`,
+which only checks clean beside its module; the second fixture is the `window`
+program itself, pinned by two surface rows that assert `fix (guess)` and an
+`--apply` that changes nothing.
+
 ## What broke and why
 
 - **`keys` is a built-in.** `ir/inout.hero` named a local `keys` and the
@@ -101,6 +123,12 @@ that was there all along.
   @bs[1])` needed labels (two parameters of one type) and would then have been
   panel 010's alias refusal, two `@` arguments with one root whatever the
   indices. Two cells, `swap(a: @bs[0], b: @cs[0])`.
+
+- **Two pins and a label (step 2).** `resolve/qualified.hero` had a test
+  asserting the fix certain — the pin that made the downgrade a visible
+  decision rather than a quiet one; `suite_surface.hero` counts its own rows
+  (33 → 35) and `report.tally` takes two `Report`s, so the labels are
+  mandatory. Each red run said exactly which line to read.
 
 ## What landed, and what carried forward
 

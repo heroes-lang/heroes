@@ -89,16 +89,31 @@ function not_in_module(module: str, qualifier: str, name: str, near: [str], span
     return d
 
 # The one panel 031 R5 bought instead of a spec sentence: an unqualified
-# name that exists, in a module this file already `use`s. It carries a
-# CERTAIN fix, and that is the whole trade — the spec says nothing about
-# UFCS across a module boundary because the error says everything, at the
-# call site, with the repair pre-written (CLAUDE.md §8).
+# name that exists, in a module this file already `use`s. The error says
+# everything at the call site, with the repair pre-written (CLAUDE.md §8) —
+# and the repair is a GUESS, not a certain fix, since 2026-09-03.
+#
+# **Why it was certain, and why it is not.** Panel 031's trade was that the
+# spec says nothing about UFCS across a module boundary because this error
+# carries the repair, and it carried it as `.certain` until a measurement
+# on the seed of 2026-09-02 17:52: `use window` beside a local `window: ptr`
+# and `_ = window.destroy()` — the FFI's most natural spelling — gives
+# `shadowed_binding` AND this diagnostic, and `heroes check --apply` wrote
+# `window.window.destroy()`; applying that writes
+# `window.window.window.destroy()`. The fix reproduces itself, because
+# `ptr` has no fields, so the dot falls to the module path every time and
+# the repair prepends a qualifier the line already has. Panel 101 R4: a
+# certain fix that does not compile is the one thing a fix may never be —
+# and CLAUDE.md §8's promise that CI checks an applied certain fix had never
+# once run on a module diagnostic, because `.fixed` lived only in `check/`
+# and every module diagnostic needs two files. M-robustness-guards step 2
+# gives the multi-file fixtures a `.fixed` of their own, and
+# `tests/golden/surface-fixtures/qualifyptr/` pins this program.
 # **The qualifier is what the IMPORTING FILE calls the module** (spec
 # § Files and layout; panels 099 R3, 100). It is passed in rather than
 # derived here, because since `as` exists only the caller knows it: the
-# module's own name answers a different question, and a `.certain` fix built
-# from it would be machine-applied into a program that does not parse, which
-# is the one thing §4.17 says a certain fix may never do.
+# module's own name answers a different question, and a fix built from it
+# would name a line the author never wrote.
 function needs_qualifying(name: str, qualifier: str, module: str, span: token.Span) -> diag.Diagnostic
     binding = qualifier
     d: diag.Diagnostic @ diag.new_diagnostic(
@@ -107,7 +122,7 @@ function needs_qualifying(name: str, qualifier: str, module: str, span: token.Sp
         span: span
     )
     d.fixes @ d.fixes.push(
-        diag.Fix(title: "write `" + binding + "." + name + "`", replacement: binding + "." + name, span: span, certainty: .certain)
+        diag.Fix(title: "write `" + binding + "." + name + "`", replacement: binding + "." + name, span: span, certainty: .guess)
     )
     return d
 
@@ -275,10 +290,10 @@ test "one candidate rewrites the line, several stay prose"
     assert e.fixes.len() == 0
     assert e.message == "module `geom` declares nothing called `dist` — it has `a`, `b` and `c`"
 
-test "the qualification pair splits exactly at the missing use"
+test "neither qualification fix is certain, and the used half's reason is measured"
     span = token.Span(start: 0, end: 5)
     have = needs_qualifying(name: "dist2", qualifier: "geom", module: "geom", span: span)
-    assert have.fixes[0].certainty == .certain
+    assert have.fixes[0].certainty == .guess
     assert have.fixes[0].replacement == "geom.dist2"
     missing = needs_a_use(name: "dist2", module: "geom", span: span)
     assert missing.fixes[0].certainty == .guess
