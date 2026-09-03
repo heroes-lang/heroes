@@ -4,9 +4,12 @@ Date: 2026-09-03, M-corpus-depth step 5. **Found by writing a program**, and
 then by asking the obvious next question: the interpreter being written has a
 recursive-descent parser, and so does the compiler.
 
-**Status: OPEN.** Nothing is fixed here. The program that found it works around
-its own half by nesting 60 deep instead of 500, with every ceiling measured in
-its comment (`examples/interpreter/main.hero`).
+**Status: fixed 2026-09-03**, the same evening — `runtime/parts/stack.c`, one
+witness given a second shape; see § The repair at the end. The hypothesis below
+was right in its conclusion and wrong in its mechanism, and the difference is
+the interesting part. The program that found it still nests 60 deep instead of
+500, with every ceiling measured in its comment (`examples/interpreter/main.hero`):
+the ceiling is unchanged, and what changed is that crossing it has a name.
 
 Severity: **★★★★** — design.md §1.12 says a Heroes program must not segfault,
 and the compiler is a Heroes program. `heroes check` on a **valid** file exits
@@ -109,3 +112,75 @@ parses arithmetic with the same shape but is only ever given short expressions;
 the compiler's own tests parse the compiler's own source, whose deepest
 expression nests nowhere near 400. It took a program written to nest on purpose,
 which is what M-corpus-depth exists to add.
+
+## The repair — 2026-09-03, the same evening
+
+**The hypothesis above had the right conclusion and the wrong mechanism.** It
+said a wide frame "moves the stack pointer past the guard region in a single
+step". Under `lldb`, on the 440-parenthesis file, the faulting instruction is
+not a store in the compiler at all: it is `ldur x11, [x11, #-0x8]` inside
+**`___chkstk_darwin`**, libsystem's stack probe, which clang's prologue calls
+for any frame larger than a page. The probe walks DOWN through the pages of the
+frame it is about to claim, one load per page, **while `sp` still stands where
+the caller left it**. Measured registers at the fault:
+
+```
+pc  = ___chkstk_darwin + 60        fault address = 0x16f603ff8
+sp  = 0x16f605940                  sp - fault    = 6,472 bytes
+x9  = 0x2180                       the frame: 8,576 bytes (grammarexpr.primary)
+fp chain: primary ← postfix ← unary ← binary ← parse_expr ← group ← primary …
+```
+
+So the first witness held (the address is in the guard) and the second did
+not: `sp < lo + 4096` fails by 2,368 bytes, the handler concludes the fault is
+not an overflow, restores `SIG_DFL`, and the kernel kills the process at 139.
+**Why `parse` named it and `check` did not** is nothing but which function's
+frame happened to straddle the guard: `postfix`'s frame is under a page, so it
+is touched after `sp` moves and `sp` is low; `primary`'s is 8.5 KiB, probed
+first. Same file, same recursion, two verbs, two stack depths at entry, two
+different frames on the boundary.
+
+**The fix is one line and its comment**: the second witness has a second shape.
+A probe lands *below* `sp` by less than one frame, and nothing legitimate is
+ever written below `sp` except a frame being set up — so `addr < sp && sp -
+addr < HERO_STACK_WINDOW` is the witness for the probing shape, beside the
+original `sp_low` for the stored shape. Panel 104's falsifier — a wild store
+8 KiB under the stack from a shallow frame — is megabytes below `sp`, and was
+**re-run against both runtimes**: exit 139 before and after, on the Mac and in
+the Linux container; a store to `NULL` likewise.
+
+Measured after the fix, on this Mac, from the seed-built compiler:
+
+| n | `heroes check` before | after |
+|---|---|---|
+| 420 | 0 | 0 |
+| 440 | 139, silent | **134, `panic: stack exhausted in grammarexpr.postfix`** |
+| 500 | 139, silent | 134, named |
+| 2000 | 139, silent | 134, named |
+
+**And the shape has a fixture of its own**,
+`tests/golden/surface-fixtures/wideframe/main.hero`: a mutual recursion whose
+`descend` holds 24 locals of a 32-word record — a frame of **32 KiB at `-O0`**
+(`sub sp, sp, #0x8, lsl #12`), and `otool` shows the prologue calling
+`___chkstk_darwin`. Against the runtime at `756b3920` it is exit **139 with
+nothing on stderr**, which is what makes it a test of this defect rather than
+of the guard in general; against the repaired one it is `panic: stack exhausted
+in main.bounce` at `-O0` and `in main.descend` at `-O2`, exit 134 both. Under
+`--sanitize` the guard yields to ASan by design (panel 104) and ASan reports
+`stack-overflow`, so the two rows live in `tests/harness/suite_surface.hero`
+(`verb_probes` 42 → 44) and not in `run/`, whose judge refuses ASan's words on
+sight. On **Linux x86-64** (the container of
+`docs/environment/linux/LINUX-MACHINE.md`, clang 22) the fixture panicked with a
+name **before the fix as well**: clang emits no probe there (`sub $0x65f0,%rsp`
+and a first store with `sp` already low), so the defect was Darwin's alone and
+the repair is neutral on Linux — measured at `-O0`, `-O2` and `--sanitize`.
+Windows is untouched by construction: the change is inside the POSIX branch, and
+the vectored handler there keys on `EXCEPTION_STACK_OVERFLOW` and never reads
+`sp`. The box was off, so that last sentence is a reading of the code and not a
+run.
+
+**What is deliberately not done here.** The ceiling itself — 440 parentheses in
+the compiler, 190 nesting levels in the interpreter at `-O0` — is set by the
+hoisted-frame rule (CLAUDE.md §7), and lowering it is architecture, filed for
+the next sitting that touches the emitter. clang's own default is 256 bracket
+levels; the ceiling is not the defect, the silence was.

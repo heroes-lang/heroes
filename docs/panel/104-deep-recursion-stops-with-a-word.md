@@ -167,3 +167,22 @@ close; the threads hole, which is recorded and owned by M-isolated-threads.
 |---|---|---|
 | compiler-engineer | 0 files under `selfhost/emit/` in the landing commit; `wc -l runtime/parts/stack.c` ≤ 200; the ABI moves only for step 5 (18 → 19, never 20); the `-O0` deep-recursion golden prints `panic: stack exhausted in` at exit 134 on the macOS and Linux CI legs | **Three of four right.** `4848d0f` touches 0 files under `selfhost/emit/`. `wc -l` is **316** — the 156 "essential lines" the seat counted plus the comments that carry each measured reason, which is what §11 asks of a runtime part; the number was a count of the wrong thing, not a wrong count. The ABI went 18 → 19 once, at step 5, and never to 20. The deep golden prints the line at exit 134 on the Mac and in the Linux image at `-O0` (and at `-O2`, and at ten million); the CI legs run at the push. |
 | ffi-pragmatist | an SDL3 program that recurses to death prints the panic line and exits 134, no shim | **Not checkable here** — the first SDL3 program in `examples/`. Stands. |
+
+## The second witness had a second shape — 2026-09-03, `docs/defects/007`
+
+The two-witness rule above (condition (1) of the compiler-engineer's seat) was
+written against a frame that is touched AFTER `sp` moves, and a frame larger
+than a page is not: clang's prologue calls `___chkstk_darwin`, which probes the
+frame-to-be page by page while `sp` still stands where the caller left it.
+`heroes check` on a legal program with 440 nested parentheses hit the guard
+inside that probe — `si_addr` in the guard, `sp` 6,472 bytes above it, frame
+8,576 — and `sp < lo + 4096` said no; the fault went to `SIG_DFL` and the
+compiler died at 139 in silence, while `heroes parse` on the same file, whose
+boundary frame was a small one, panicked with a name. The witness now has two
+shapes (`runtime/parts/stack.c`): the original, and *the address is below `sp`
+by less than one window*. The falsifier this seat built — a wild store 8 KiB
+under the stack from a shallow frame — was re-run against the old and the new
+handler on the Mac and in the Linux container: exit 139 both, as condition (1)
+requires. The resolution is otherwise unchanged; the fixture is
+`tests/golden/surface-fixtures/wideframe/main.hero`, and the defect note carries
+the registers.
