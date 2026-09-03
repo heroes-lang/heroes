@@ -60,11 +60,11 @@ M-separate-compilation already did.
 |---|---|
 | **Current milestone** | **M-isolated-threads** — **OPEN 2026-09-03**, the chain's next row at M-robustness-guards' close: Part 7.13 concurrency, per-thread heaps, copying at the boundaries, no scheduler — and it owns the one hole panel 104 left, a C library's own thread overflowing its stack |
 | **Last closed** | **M-robustness-guards**, 2026-09-03, tag `m-robustness-guards` ([031](journal/031-robustness-guards.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
-| Milestones closed | 32 of 41 · 32 tags |
+| Milestones closed | 32 of 42 · 32 tags |
 | The compiler | **51,693 lines** of Heroes in **178** modules across **10 directories** and 37 flat files · the seed **840,151** lines of generated C |
 | The spec | **3718** tokens of a hard 4096 · headroom **378** · runtime ABI **19** |
-| Records | sittings **103** · journals 32 · measurements 13 · examples **35** · defects 5 · the site **46** pages (built 2026-09-03), 13 doc chapters per edition |
-| Waiting on the author | **0 decisions** · **10** in `SCHEDULED.md` · 297 in `LEARN.md` (never a gate) · an **outstanding veto** of the rule that stands (`docs/panel/101` R3) · the push of this close, which publishes the site's one-hole paragraph |
+| Records | sittings **103** · journals 32 · measurements **14** · examples **35** · defects 5 · the site **46** pages (built 2026-09-03), 13 doc chapters per edition |
+| Waiting on the author | **1 decision** (`heroes mutate` in CI — the tool has been unable to read `examples/` since 2026-09-02, found 2026-09-03) · **14** in `SCHEDULED.md` · 297 in `LEARN.md` (never a gate) · an **outstanding veto** of the rule that stands (`docs/panel/101` R3) · the push of this close, which publishes the site's one-hole paragraph |
 
 Every number re-measured 2026-09-03 at the close. **This section held three
 stale tables until that day** — 64 lines against a ceiling of 15, caught here.
@@ -125,8 +125,8 @@ heroes test selfhost/main.hero                 # the compiler's own tests
 
 ## The chain
 
-One table, one row per milestone, **closed first and scheduled after**: rows 1–31
-are done, in the order they closed, and rows 32–41 are what is next, in the order
+One table, one row per milestone, **closed first and scheduled after**: rows 1–32
+are done, in the order they closed, and rows 33–42 are what is next, in the order
 they will be taken. `warrant` is why a milestone exists: **v1** (the self-hosting
 finish line), **closure list** (design.md §1.0 — the compiler needs it), **§1.1**
 (comprehension is the objective), or **scheduled, no warrant**.
@@ -169,14 +169,15 @@ and why one overtook another are under the table, in § Who scheduled what.
 | 31 | **M-documentation-site** | done 2026-09-02 | `m-documentation-site` | [030](journal/030-documentation-site.md) | the site, anchored to programs that run |
 | 32 | **M-robustness-guards** | done 2026-09-03 | `m-robustness-guards` | [031](journal/031-robustness-guards.md) | the guards that shut the holes §1.12 named: `@` on an immutable, the stack, the C pointer verdict, the harness scratch · §1.12 |
 | 33 | **M-isolated-threads** | **OPEN** 2026-09-03 | — | — | Part 7.13 concurrency: per-thread heaps, copying at the boundaries, no scheduler |
-| 34 | **M-package-manager** | scheduled | — | — | `heroes add`/`heroes fetch`; bindings instead of a standard library |
-| 35 | **M-qbe-backend** | scheduled | — | — | Part 7.14 — the proof that the IR is not C in disguise |
-| 36 | **M-lsp-server** | scheduled | — | — | `heroes lsp` |
-| 37 | **M-vscode-extension** | scheduled | — | — | the extension, complete |
-| 38 | **M-interpolation-verdict** | scheduled | — | — | the ruling on design.md Part 7 item 7, string interpolation — a decision, not a feature |
-| 39 | **M-journey-book** | scheduled | — | — | the journey — how this language came to be |
-| 40 | **M-guide-book** | scheduled | — | — | the guide, as a book you would find in a shop · **§1.1** |
-| 41 | **M-publication-gate** | scheduled | — | — | the last gate before anything goes outward · CLAUDE.md §14 |
+| 34 | **M-corpus-depth** | scheduled | — | — | the rung between a program and the compiler: nine programs — oracle-checked, deep, FFI at program scale · **§1.1** |
+| 35 | **M-package-manager** | scheduled | — | — | `heroes add`/`heroes fetch`; bindings instead of a standard library |
+| 36 | **M-qbe-backend** | scheduled | — | — | Part 7.14 — the proof that the IR is not C in disguise |
+| 37 | **M-lsp-server** | scheduled | — | — | `heroes lsp` |
+| 38 | **M-vscode-extension** | scheduled | — | — | the extension, complete |
+| 39 | **M-interpolation-verdict** | scheduled | — | — | the ruling on design.md Part 7 item 7, string interpolation — a decision, not a feature |
+| 40 | **M-journey-book** | scheduled | — | — | the journey — how this language came to be |
+| 41 | **M-guide-book** | scheduled | — | — | the guide, as a book you would find in a shop · **§1.1** |
+| 42 | **M-publication-gate** | scheduled | — | — | the last gate before anything goes outward · CLAUDE.md §14 |
 
 Three closed milestones have no tag of their own because they were parents or
 sub-steps: **M-checker-core**, **M-data-declarations** and **M-rich-diagnostics**
@@ -224,6 +225,14 @@ row number, because a reorder moves a number and never a name (CLAUDE.md §14).
   items that name it; two of them are sittings (the FFI pointer verdict, full five
   seats; the stack guard, soundness lane). The `records/names` check found the id in
   a list before it had a row here, which is the order CLAUDE.md §14 wants.
+- **M-corpus-depth** — **scheduled by author instruction 2026-09-03**, *"ragiona
+  sulla possibilità di aggiungere ulteriori esempi anche alcuni più complessi per
+  avere una rete più ampia, guarda anche cosa hanno fatto altri linguaggi"*, from a
+  plan measured and approved the same day. The author placed it after
+  M-robustness-guards, which closed that afternoon, so it stands at 34 behind the
+  open M-isolated-threads. Its step 0 — the first `heroes mutate` score over the
+  35-program corpus since 2026-08-13, and the corpus leg timed alone — landed with
+  the scheduling, so the "before" exists before the first program does.
 
 ---
 
@@ -507,6 +516,42 @@ the direct ancestor of this architecture, was abandoned in 1993 after a failed
 attempt to add exception support, having frozen around forms that could not carry
 non-local control flow. If the answer is "not yet known", the deferral is a bet
 and is logged as one (panel 030 R6).
+
+### M-corpus-depth — the rung between a program and the compiler
+
+**Scheduled by author instruction 2026-09-03** (§ Who scheduled what), from a plan
+measured the same day. Form coverage of `examples/` reached zero unexercised at
+M-corpus-coverage (journal 029); what the corpus is thin in is **shape**, and it
+was measured over the 78 files: the six `extern` programs are 65–192 lines and
+single-module, none with a `variant`, a nested container, a generic or an
+`@`-parameter structure — FFI and "real program" are disjoint sets; generics are
+declared in three programs and never used across a `use`; direct self-recursion
+lives in three programs at depths bounded by tiny inputs; one program checks an
+answer somebody else wrote down (`sieve/`); one writes a file (`todo/`); and
+between `json/` at 671 lines and the compiler at 50,452 there is nothing, where
+Nim keeps `tests/manyloc/`, Zig `test/standalone/` and Rust `rustc-perf`'s pinned
+crates (nine languages surveyed that day, twelve recurring patterns, ten of them
+already here).
+
+**Nine programs, three families.** Five with a public oracle — `nbody/`,
+`spectral/`, `fannkuch/`, `binarytrees/` against the benchmarks game's published
+outputs at a fixed n, `checksum/` against CRC-32's and Adler-32's catalogue check
+values and RFC 4648's Base64 vectors — every number fetched from its source the day
+it is written and quoted with its URL. Two large — `interpreter/`, ≥ 1,500 lines in
+three directories with generics instantiated across modules and a 500-deep
+expression as the stack guard's positive witness, and `query/`, a CSV query engine
+over 5,000 rows it generates itself, copy-on-write measured at volume for the
+first time. One FFI at program scale — `ledger/`, sqlite with ≥ 15 functions
+bound, where sqlite's aggregate and Heroes' over the same rows must agree.
+
+**Step 0 landed with the scheduling**: `heroes mutate` scored over the 35-program
+corpus for the first time since 2026-08-13, the corpus leg timed alone, both in
+`docs/measurements/014-mutate-over-thirty-five.md`; `examples/README.md`
+rewritten to list every program; and two record faults repaired (§ Who scheduled
+what names the third). The brief is the `SCHEDULED.md` item naming this
+milestone; the record is journal 032 at close. Cost is projected at **+1:15** on
+the corpus leg and checked at close against step 0's number; every FFI program is
+measured on the Mac, the Linux image and the Windows box before its commit.
 
 ### M-package-manager — packages, and what stands in for a standard library
 
@@ -851,6 +896,7 @@ So a number met in the record resolves here, and only here.
 | `M-argv-execution` | — | — | the compiler runs programs by argument list, and the shell stops being the boundary |
 | `M-publication-gate` | M18 | — | the last gate before anything goes outward |
 | `M-robustness-guards` | — | `m-robustness-guards` | the guards that shut the holes §1.12 named. **Done 2026-09-03**, the day it opened: six steps, two sittings (103, 104), every landing measured on the Mac, the Linux image and the Windows box before its commit |
+| `M-corpus-depth` | — | — | the rung between a program and the compiler: nine programs chosen for shape — oracle-checked, deep, FFI at program scale. **A new id rather than a third reopening of the corpus** (§14, author instruction 2026-09-03): `M-program-corpus` delivered *many programs run*, `M-corpus-coverage` *every form has a program*, and this one delivers *size, depth and an external oracle*, which neither name claims |
 
 **`M8` has no row, because it meant three different things.** It was an umbrella
 that predates the a/b/c/e/p split and no heading has carried it since. In the
