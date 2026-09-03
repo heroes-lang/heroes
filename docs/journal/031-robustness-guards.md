@@ -294,4 +294,29 @@ place to be scored.
 
 ## What landed, and what carried forward
 
-*(appended at the milestone's close)*
+**Closed 2026-09-03, the day it opened**, tag `m-robustness-guards`, chain row
+32. Six steps and two sittings (103 full, 104 soundness lane), every step's
+commit carrying its three-platform measurement. At the close: the compiler's
+own tests **551**, the net **1372 passed, 0 failed**, the net's own tests
+**93**; the spec **3718** tokens (3685 at the open; panel 103's w5
+sentence is the +33); `HERO_RUNTIME_ABI` **19**; the seed regenerated at
+**840,151** lines and the fixpoint verified — the seed-built compiler
+re-emits the seed byte for byte. `docs/work/DECIDE.md` holds 0 items,
+`SCHEDULED.md` 10, `LEARN.md` 297 (+8 this milestone).
+
+What landed: an `@` argument answers to the rule of the left of `@` (step 1);
+`needs_qualifying` is a `guess` and the fixes suite reads multi-file fixtures
+(step 2); the FFI pointer verdict is strict on every platform, the pointee's
+width and sign are read from the header, a clang complaint about the author's
+`extern` is the author's error, and clang 18 is the floor (steps 3a–3c);
+deep recursion panics with the function's name on POSIX and with a line on
+Windows (step 4); the harness scratch carries the pid and a blessing checks its
+capture (step 5); panel 099 R5's nested-leaf fixture pins the rule and the
+hazard (step 6). The site's *two holes* is *one hole*, committed and not
+published.
+
+What carried forward: the per-thread stack (M-isolated-threads); a frame walk
+on Windows (dbghelp + PDB, unmeasured); panel 103's ergonomist and historian
+predictions and panel 104's pragmatist prediction, each waiting on a checkpoint
+that is not a milestone close; and the CI legs' own reading of the deep
+golden, which runs at the push.
