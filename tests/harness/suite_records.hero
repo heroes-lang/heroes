@@ -178,8 +178,17 @@ constant REFUSED: [str]
 # at the first one's opening — as `M-interpolation-verdict` did. Two rows in one
 # move because they are two deliverables (CLAUDE.md §14): the packages, and the
 # framework that composes them.
+#
+# **48 → 55 on 2026-09-03**, later the same evening, out of a reasoning session
+# that re-read the whole chain for what it lacked (`docs/reasoning/006`): four
+# rulings on the language (`M-closures-verdict`, `M-reflection-verdict`,
+# `M-deferral-ledger`, with `M-interpolation-verdict` moved up beside them), one
+# runtime guard (`M-panic-location`), one instrument (`M-thesis-harness`), one
+# tool (`M-doc-generator`) and the way in (`M-install-channels`). Seven ids that
+# reach this number before any has a step, a tag or a sitting, by author
+# instruction, each named for its deliverable (CLAUDE.md §14).
 constant ROWS: i64
-    48
+    55
 
 # The two documents whose citations are checked. They are the two a reader is sent
 # to for a rule, and the only two this project rewrites rather than appends to.
