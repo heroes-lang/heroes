@@ -1,0 +1,164 @@
+# CRC-32, with the catalogue's parameters written down rather than folded into
+# the code — and the catalogue's own check value asserted below.
+#
+# Corpus material (CLAUDE.md §9). What this module is here for is
+# the one place where Heroes and a 32-bit checksum disagree: **the bitwise
+# operators are `i64` only** (spec § Operators), so there is no 32-bit register
+# to overflow. The register is an `i64` that never grows, because every step is
+# a shift RIGHT and an exclusive-or with a 32-bit constant, and the result is
+# handed back as a `u32` at the boundary. A program that reached for `u32`
+# arithmetic inside the loop would not compile, and that is the language
+# refusing the shape rather than the author choosing one.
+#
+# THE ORACLE, fetched 2026-09-03 from the CRC catalogue and quoted whole:
+#
+#   CRC-32/ISO-HDLC
+#   width=32  poly=0x04c11db7  init=0xffffffff  refin=true  refout=true
+#   xorout=0xffffffff  check=0xcbf43926  residue=0xdebb20e3
+#   Alias: CRC-32, CRC-32/ADCCP, CRC-32/V-42, CRC-32/XZ, PKZIP
+#
+# https://reveng.sourceforge.io/crc-catalogue/17plus.htm
+#
+# and `check` is defined by that catalogue as *the contents of the register
+# after initialising, reading the UTF-8 string "123456789" (as 8-bit
+# characters), optionally reflecting, and applying the final XOR*. So
+# `crc32("123456789") == 0xcbf43926` is not this program's opinion.
+#
+# A SECOND SOURCE, measured the same day: Python 3's `zlib.crc32` — an
+# implementation nothing here shares a line with — gives `0xcbf43926` for
+# `123456789`, `0x00000000` for the empty string, `0xe8b7be43` for `a` and
+# `0x9ef61f95` for `foobar`. All four are asserted below.
+#
+# WHY THE POLYNOMIAL IS WRITTEN 0xedb88320 IN THE LOOP. The catalogue's
+# `poly` is 0x04c11db7 read most-significant-bit first; `refin=true` says the
+# message bits arrive least-significant first, and the standard way to obey
+# that is to walk the register rightwards with the polynomial's bits reversed.
+# 0xedb88320 IS 0x04c11db7 reversed, and the test below asserts exactly that
+# rather than asking the reader to take it on trust.
+
+# The catalogue's `poly`, as the catalogue writes it.
+constant POLY: i64
+    0x04c11db7
+
+# The same polynomial, bit-reversed, which is the form a rightwards walk needs.
+constant POLY_REFLECTED: i64
+    0xedb88320
+
+# The catalogue's `init` and `xorout`. They are the same value here, which is
+# true of CRC-32 and not of every model, so both are named.
+constant INIT: i64
+    0xffffffff
+
+constant XOROUT: i64
+    0xffffffff
+
+# The CRC-32 of `text`, byte by byte.
+#
+# `reg` is an `i64` because `>>` and `^` are `i64`-only, and it stays inside 32
+# bits without a mask: it starts at 0xffffffff, every step shifts it right, and
+# the only value ever xored in is 32 bits wide. The `.to_u32()` at the end is
+# where the width becomes part of the type instead of a fact about the loop.
+function crc32(text: str) -> u32
+    reg: i64 @ INIT
+    i: i64 @ 0
+
+    while i < text.len()
+        byte: u8 @ text[i]
+        reg @ reg ^ byte.to_i64().must()
+        bit: i64 @ 0
+
+        while bit < 8
+            # `reg & 1 == 1` is `(reg & 1) == 1`: in Heroes `&` binds tighter
+            # than a comparison, the other way round from C, which is
+            # `examples/palette/`'s lesson and is why there are no parentheses
+            # here — `heroes fmt` deletes them.
+            if reg & 1 == 1
+                reg @ reg >> 1 ^ POLY_REFLECTED
+            else
+                reg @ reg >> 1
+            bit @ bit + 1
+
+        i @ i + 1
+
+    return (reg ^ XOROUT).to_u32().must()
+
+# The bits of `value`, most significant first, reversed — used only by the test
+# that checks the reflected polynomial against the catalogue's.
+function reversed_bits(value: i64, width: i64) -> i64
+    out: i64 @ 0
+    i: i64 @ 0
+
+    while i < width
+        out @ out << 1 | value >> i & 1
+        i @ i + 1
+
+    return out
+
+test "the catalogue's check value, which this program did not invent"
+    # CRC-32/ISO-HDLC, check=0xcbf43926 over "123456789". Fetched 2026-09-03.
+    assert crc32("123456789") == 0xcbf43926
+
+test "three more values from an implementation this one shares no line with"
+    # Python 3 `zlib.crc32`, run 2026-09-03.
+    assert crc32("") == 0x00000000
+    assert crc32("a") == 0xe8b7be43
+    assert crc32("foobar") == 0x9ef61f95
+
+test "the reflected polynomial is the catalogue's polynomial, reversed"
+    # The one derived constant in this module, derived in a test instead of in
+    # a comment. If somebody mistypes `POLY_REFLECTED`, this fails before the
+    # check value does, and it says which of the two is wrong.
+    assert reversed_bits(value: POLY, width: 32) == POLY_REFLECTED
+    assert reversed_bits(value: POLY_REFLECTED, width: 32) == POLY
+
+test "reversing bits twice is where it started"
+    assert reversed_bits(value: 1, width: 32) == 0x80000000
+    assert reversed_bits(value: 0x80000000, width: 32) == 1
+    assert reversed_bits(value: 0, width: 32) == 0
+    assert reversed_bits(value: 0xffffffff, width: 32) == 0xffffffff
+    assert reversed_bits(value: reversed_bits(value: 0x12345678, width: 32), width: 32) == 0x12345678
+
+test "the empty string is init xored with xorout, which is zero here"
+    # Not a coincidence worth hiding: with init == xorout the empty message's
+    # CRC is 0, and the assertion says so in the parameters rather than in hex.
+    assert crc32("") == (INIT ^ XOROUT).to_u32().must()
+
+test "one changed byte changes the checksum, and so does one moved byte"
+    # What a checksum is FOR, asserted rather than assumed.
+    assert crc32("123456789") != crc32("123456780")
+    assert crc32("ab") != crc32("ba")
+    assert crc32("a") != crc32("aa")
+
+test "the loop walks bytes and not characters"
+    # A `str` is measured in bytes (spec § Types), so `é` is two of them and
+    # the checksum covers both. The value is `zlib.crc32` on those two bytes,
+    # 195 and 169, run 2026-09-03 — and it is here because a loop over
+    # `text.chars()` would give a different answer while looking just as
+    # reasonable.
+    assert "é".len() == 2
+    assert crc32("é") == 0x0e048d3e
+
+test "the register never leaves 32 bits, at every step of a real message"
+    # The claim the module's header rests on, made falsifiable: if any step
+    # grew past 32 bits the mask-free implementation would be wrong, and the
+    # check value alone would not say where.
+    reg: i64 @ INIT
+    i: i64 @ 0
+    text = "123456789"
+
+    while i < text.len()
+        reg @ reg ^ text[i].to_i64().must()
+        bit: i64 @ 0
+
+        while bit < 8
+            if reg & 1 == 1
+                reg @ reg >> 1 ^ POLY_REFLECTED
+            else
+                reg @ reg >> 1
+            assert reg >= 0
+            assert reg <= 0xffffffff
+            bit @ bit + 1
+
+        i @ i + 1
+
+    assert (reg ^ XOROUT).to_u32().must() == 0xcbf43926

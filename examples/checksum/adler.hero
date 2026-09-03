@@ -1,0 +1,132 @@
+# Adler-32, straight out of the sentence that defines it.
+#
+# Corpus material (CLAUDE.md §9). This module is the other half of `crc.hero`'s
+# point: a 32-bit checksum with **no bitwise operator in it at all**. Adler-32
+# is two running sums modulo a prime, so it needs `+` and `%` and nothing else,
+# and its 32-bit result is an arrangement of two 16-bit halves rather than an
+# overflowing register. Where CRC-32 shows what Heroes refuses (`u32`
+# arithmetic), this shows what it does not have to refuse.
+#
+# THE DEFINITION, quoted from its source and fetched 2026-09-03 — RFC 1950
+# § 2.2, the zlib format specification, where Adler-32 is normative:
+#
+#   Adler-32 is composed of two sums accumulated per byte: s1 is the sum of
+#   all bytes, s2 is the sum of all s1 values. Both sums are done modulo
+#   65521. s1 is initialized to 1, s2 to zero. The Adler-32 checksum is
+#   stored as s2*65536 + s1 in most-significant-byte first (network) order.
+#
+# https://www.rfc-editor.org/rfc/rfc1950.txt
+#
+# THE ORACLE is Python 3's `zlib.adler32`, run 2026-09-03 — an implementation
+# this one shares no line with: `0x00000001` for the empty string, `0x00620062`
+# for `a`, `0x091e01de` for `123456789`, `0x08ab027a` for `foobar`,
+# `0x11e60398` for `Wikipedia` and `0x0231016d` for the two bytes of `é`. All
+# six are asserted below. The `Wikipedia` value is also the one this checksum
+# is published with almost everywhere, which is why it is in the list.
+#
+# WHY 65521, and why the program says it rather than 65536: it is the largest
+# prime below 2^16, and the primality is the whole reason the sum catches
+# transpositions that a plain sum does not. The test at the bottom asserts it
+# is prime, so the number is a fact in this program and not a magic constant.
+
+# The modulus: the largest prime below 65536.
+constant BASE: i64
+    65521
+
+# The two halves of an Adler-32, each of them a 16-bit value by construction
+# because both are taken modulo `BASE`. Declared `u16` so the width is in the
+# type rather than in a comment — `s2 * 65536 + s1` then says how they are put
+# together, exactly as RFC 1950 writes it.
+record Halves
+    s1: u16
+    s2: u16
+
+# The two sums of `text`, in the order the RFC names them.
+function halves(text: str) -> Halves
+    s1: i64 @ 1
+    s2: i64 @ 0
+    i: i64 @ 0
+
+    while i < text.len()
+        byte: u8 @ text[i]
+        s1 @ (s1 + byte.to_i64().must()) % BASE
+        s2 @ (s2 + s1) % BASE
+        i @ i + 1
+
+    return Halves(s1: s1.to_u16().must(), s2: s2.to_u16().must())
+
+# The checksum itself: `s2 * 65536 + s1`, the RFC's own arrangement.
+function adler32(text: str) -> u32
+    two = halves(text)
+    return (two.s2.to_i64().must() * 65536 + two.s1.to_i64().must()).to_u32().must()
+
+# Whether `n` has no divisor but itself and one — used only by the test that
+# asserts `BASE` is prime.
+function is_prime(n: i64) -> bool
+    if n < 2
+        return false
+    d: i64 @ 2
+
+    while d * d <= n
+        if n % d == 0
+            return false
+        d @ d + 1
+
+    return true
+
+test "six values from an implementation this one shares no line with"
+    # Python 3 `zlib.adler32`, run 2026-09-03.
+    assert adler32("") == 0x00000001
+    assert adler32("a") == 0x00620062
+    assert adler32("123456789") == 0x091e01de
+    assert adler32("foobar") == 0x08ab027a
+    assert adler32("Wikipedia") == 0x11e60398
+    assert adler32("é") == 0x0231016d
+
+test "the empty string is s1 = 1 and s2 = 0, which is the RFC's initialisation"
+    # The one value the definition gives directly, asserted through the halves
+    # rather than through the packed number, so a mistake in the packing and a
+    # mistake in the initialisation cannot hide each other.
+    empty = halves("")
+    assert empty.s1 == 1
+    assert empty.s2 == 0
+    assert adler32("") == 1
+
+test "s1 is the sum of the bytes, plus the one it started at"
+    # `a` is 97, `b` is 98, `c` is 99, and a character literal is an integer
+    # (spec § Types), so the sum can be written out rather than trusted.
+    three = halves("abc")
+    assert three.s1.to_i64().must() == 1 + 'a' + 'b' + 'c'
+
+    # s2 accumulates s1 after each byte: (1+97) + (1+97+98) + (1+97+98+99).
+    assert three.s2.to_i64().must() == 98 + 196 + 295
+
+test "moving a byte changes the checksum, which a plain sum would not notice"
+    # This is what the second sum BUYS, and it is the reason Adler-32 is not
+    # just s1. The first assertion is the one a plain byte sum fails.
+    assert halves("ab").s1 == halves("ba").s1
+    assert adler32("ab") != adler32("ba")
+    assert adler32("abcd") != adler32("dcba")
+
+test "the modulus is the largest prime below sixty-five thousand five hundred and thirty-six"
+    # `BASE` is a fact in this program rather than a number somebody copied.
+    assert is_prime(BASE)
+    assert BASE < 65536
+    n: i64 @ BASE + 1
+
+    while n < 65536
+        assert !is_prime(n)
+        n @ n + 1
+
+test "both halves stay inside sixteen bits, whatever the message"
+    # The claim `record Halves` makes in its types, made falsifiable: if either
+    # sum could exceed 65535 the `to_u16()` would abort, and this walks a
+    # message long enough to have wrapped both sums many times.
+    long = repeat("the quick brown fox jumps over the lazy dog", 200)
+    assert long.len() == 8600
+    wide = halves(long)
+    assert wide.s1.to_i64().must() < BASE
+    assert wide.s2.to_i64().must() < BASE
+
+    # And the packed value still agrees with the halves it was built from.
+    assert adler32(long).to_i64().must() == wide.s2.to_i64().must() * 65536 + wide.s1.to_i64().must()
