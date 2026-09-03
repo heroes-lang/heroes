@@ -63,7 +63,7 @@
  * turns the recursion into a loop (0.81 s against 0.000 s, measured), for
  * coverage this handler already has.
  *
- * WHAT DEFECT 007 ADDED (docs/defects/007, 2026-09-03). The second witness
+ * WHAT DEFECT 007 ADDED (docs/work/DONE.md, 2026-09-03). The second witness
  * above was written for a frame that is touched AFTER `sp` moves, and a
  * frame larger than a page is not: clang's prologue calls `___chkstk_darwin`,
  * which probes the frame-to-be page by page while `sp` still stands where the
@@ -253,7 +253,7 @@ static void hero_stack_handler(int signum, siginfo_t *si, void *ctx) {
     int in_guard = addr >= hero_stack_lo - HERO_STACK_WINDOW && addr < hero_stack_lo;
     int sp_low = sp >= hero_stack_lo - HERO_STACK_WINDOW && sp < hero_stack_lo + 4096;
     /* THE SECOND WITNESS HAS TWO SHAPES, and this file knew one of them until
-     * docs/defects/007. A function whose frame is larger than a page does not
+     * defect 007 (docs/work/DONE.md). A function whose frame is larger than a page does not
      * touch it after moving `sp`: clang's prologue calls `___chkstk_darwin`
      * (and `-fstack-clash-protection` emits the same loop inline), which
      * PROBES every page of the frame-to-be while `sp` still stands where the

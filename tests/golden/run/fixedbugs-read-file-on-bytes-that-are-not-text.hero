@@ -4,7 +4,7 @@
 # process — `panic: hero_str_from_bytes: not well-formed UTF-8`, exit 134 — and a
 # program handling both `.ok` and `.err` reached NEITHER arm. The project's own
 # test net went red on it the day the repository acquired its first tracked JPEG,
-# and `docs/defects/002-the-guard-the-language-took-away.md` is the record: the
+# and defect 002 in `docs/work/DONE.md` is the record: the
 # Rust bootstrap's record walk survived the same input because `read_to_string`
 # returns `Err`, and the Heroes port transcribed that guard faithfully to a place
 # where it could never fire.

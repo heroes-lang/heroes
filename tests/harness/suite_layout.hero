@@ -62,8 +62,8 @@ constant CEILING: i64
 # here that grows is red again.
 #
 # The one number that WAS raised, four times on 2026-08-26 and -28:
-# `print_fmt.hero` 843 -> 888 -> 903 -> 996 -> 1005 for docs/defects/003,
-# docs/defects/004, panel 095 stage 3 and WIDTH 88 -> 120. Raised, never
+# `print_fmt.hero` 843 -> 888 -> 903 -> 996 -> 1005 for defect 003 (docs/work/DONE.md),
+# defect 004 (docs/work/DONE.md), panel 095 stage 3 and WIDTH 88 -> 120. Raised, never
 # split, because the language refuses the only cut available — 003's two
 # functions read `power` and `wrapped`, so the seam runs print_bodies ->
 # print_fmt -> print_bodies and `module_cycle` fires on the `use` edge

@@ -1049,3 +1049,1075 @@ Was | author instruction, 2026-08-14 | **A runtime function that joins two path 
 - [x] **panel 105** (2026-09-03, full panel, five seats) — ratify the resolution: a type parameter unbound by the arguments takes the type the CONTEXT asks for (Option A, flat), with every condition of the approving seats and both ruling-independent repairs | `docs/panel/105-a-type-parameter-takes-the-type-the-context-asks-for.md` § Resolution; the defect is `docs/defects/006` | **Default while open: A is being built** — the checker binds a still-unbound type parameter against the type the context asks for (annotation, declared result through `return`/`match`/`if`, a non-generic callee's parameter), refuses a call with no context at the call under the existing `cannot_infer`, refuses a type parameter that appears nowhere in the signature at the declaration, keys instantiations by the bound types, and the verifier refuses any unresolved type before the emitter. Seats: ergonomist A/approve-with-conditions · engineer A/approve · historian A/approve flat · pragmatist A/approve with three blocking engineering conditions and B/approve · **warden A/OBJECT on Principle 0 cost (+32 tokens, 52 of 52 signatures bind from arguments), B/approve**. The author's instruction of the same evening — robust over cheap, *"non transigo"* — is the criterion the synthesis applied; a NO here compels Option B in the warden's B3 wording (+15) with the declaration diagnostic and `value.hero` keeping its four duplicated lines | the language either admits the program a writer naturally reaches for, or refuses it with no outlet: the one decision about generics the spec has never stated
 
   **RATIFIED 2026-09-03 by the author, the same evening, minutes after the synthesis** (*"Va bene, la ratifico subito"*), after the plain-words answer to *"esce la soluzione più robusta? più sicura?"*: yes on both — the natural program compiles wherever the type is known, no wrong guess can compile into a different program (the ergonomist's parametricity argument), and the verifier refuses any unresolved type before the emitter. The verdict is written into `docs/panel/105` § Author's verdict; the work lands in the same session, in its complete form under every approving seat's condition.
+
+- [x] **001 — The post-M8a sweep: twenty defects, and the three shapes they came in** | Date: 2026-08-12, after panels 033 and 034. **Nothing here was found by reading.** | **Status: all twenty fixed**, each with a case named after it. No golden moved and no expectation changed except one sentence that M8a had made false (`declared_twice` said *"one file is one program"*; spec line 6 says one file is one **module**). 427 crate tests (was 414 at M8a close), 37 surface, 13 golden harnesses, clippy clean, spec unmoved at 2434, `heroes mutate` unchanged at 1173 mutants and 93% / 78%. | moved here 2026-09-03 from `docs/defects/001-the-post-m8a-sweep.md` by author instruction — the directory is gone, its text is below, unedited except that its `## ` headings became bold leads | Severity: **★★★** a legal program is refused or miscompiled · **★★** a diagnostic is wrong or teaches a wrong program · **★** cosmetic or contract-level.
+
+
+  Date: 2026-08-12, after panels 033 and 034. **Nothing here was found by reading.**
+
+  **Status: all twenty fixed**, each with a case named after it. No golden moved
+  and no expectation changed except one sentence that M8a had made false
+  (`declared_twice` said *"one file is one program"*; spec line 6 says one file is
+  one **module**). 427 crate tests (was 414 at M8a close), 37 surface, 13 golden
+  harnesses, clippy clean, spec unmoved at 2434, `heroes mutate` unchanged at
+  1173 mutants and 93% / 78%.
+
+  **Why this file exists.**
+
+  Panels 033 and 034 were convened about the *language* and each found a defect in
+  code it was only reading as background — the second and third time in a row. That
+  pattern was the author's instruction to stop and look properly: *"fai delle
+  analisi ricorsive per scovare altri errori prima di andare avanti."*
+
+  So the three defects those panels found were **generalised into hypotheses** and
+  each hypothesis was given to a hunt with one rule: **compile and run; a defect you
+  only reasoned about is not a finding.** Four hunts, four confirmations, and this
+  inventory. Every entry below has a reproducer that was executed.
+
+  The project already knew the lesson and had written it down at
+  `crates/heroes/src/modules/tests.rs`: *"the invariant was enforced by convention
+  over one type, and the one caller outside that type kept the defect."* What the
+  sweep adds is that the sentence was **understated** — the convention leaks *inside*
+  the type too, because a line number formatted into a `String` note is invisible to
+  every guard the compiler has.
+
+  **The three shapes.**
+
+  **Shape A — the scope widened silently.** A `bool` or a set that meant *"this
+  file"* when a `Source` held one file, and since M8a means *"this program"*. Fix:
+  key it by module and ask per reported site — D1's `holes_in` + `hole_covers`.
+
+  **Shape B — a position assembled by hand.** A caller that builds a location from
+  `line_col` + `src.name` + `text.len()` instead of `Source::locate` /
+  `file_line_of` / `root_end`. `source/mod.rs:229` already declares the one function
+  mandatory. The convention is enforced by nothing.
+
+  **Shape C — the emitter asked what the program *mentioned* where it needed what a
+  declaration *is*.** D3's own shape. `emit/descriptors.rs::generated()` answers
+  "which types did the program mention inside a container" while its three callers
+  ask "which types does the function I am about to write name".
+
+  **The inventory.**
+
+  Severity: **★★★** a legal program is refused or miscompiled · **★★** a diagnostic
+  is wrong or teaches a wrong program · **★** cosmetic or contract-level.
+
+  ### Fixed in this sweep
+
+  | # | shape | what | severity |
+  |---|---|---|---|
+  | D1 | A | §4.16's hole exemption was program-wide: a `???` in one module silenced §4.4 in another | ★★ |
+  | D2 | B | the hole report named the root file and a line past its end | ★★ |
+  | D3 | C | a variant case payload was never released when no `match` in the same compilation bound it — same module, leaking rooted at itself, clean rooted at its caller | ★★★ |
+  | D4 | — | `heroes fmt` was not idempotent on **its own output**: a call the 88-column rule breaks across lines grew a blank line on every re-format | ★★ |
+  | D5 | B | `no_entry_point` spanned `text.len()`, which lands in the appended library, so the commonest mistake in the language answered `internal error … exit 2` — the compiler blaming itself | ★★★ |
+  | D6 | B | `check --json` named the root file for a diagnostic in another module — D2's shape in the one consumer that cannot notice by eye | ★★ |
+  | D7 | B | `no binary: N holes in <file>` named the file on the command line, not the files the holes are in | ★ |
+
+  ### Fixed in this sweep — the emitter (2026-08-12, second pass)
+
+  **Shape C, and one repair did retire three.**
+
+  | # | what | symptom | severity |
+  |---|---|---|---|
+  | E1 | `equality_body` has no row for `Ty::Map`, `Ty::Fallible`, `Ty::Failure`, `Ty::Func` | `record Box { m: {str: int} }` then `==` → `panic: entered unreachable code`, exit 134. **`hash` covers maps and `eq` does not**, so CLAUDE.md §7's "eq and hash agree" is broken in the loudest direction: `{Box: int}` inserts and then aborts on lookup | ★★★ |
+  | E2 | `descriptors::generated()` is seeded from container elements only | `function grab() -> P?` for a record `P` → `use of undeclared identifier 'h_M_P_desc'`, exit 2. Adding `[P]` **anywhere in the program** fixes it, so the same file compiles under one root and not another | ★★★ |
+  | E3 | the same, for a `T?`-typed field's `hash` | `use of undeclared identifier 'h_M_opt0_desc'` | ★★★ |
+  | E4 | `descriptors::generated()` does not skip `mentions_generic` where its two sibling walks do | `[A?]` inside a generic → `thread 'main' panicked … every 'T?' is named before anything can mention one`, **exit 101**, which is outside §10's three codes | ★★★ |
+  | E5 | declared aggregates are emitted before generated option/function typedefs, and each kind can contain the other | `record Box { v: int? }` → `unknown type name 'h_M_opt0'`, exit 2. **Not a swap**: the reverse dependency is in the same file. Needs one interleaved containment order over both | ★★★ |
+  | E6 | a unit-typed record field | `void f_u;` → `field has incomplete type 'void'`, exit 2. CLAUDE.md §7 calls `void t0;` a hard error; the rule reached temporaries and not fields, and `emit/gate.rs` walks the IR and never a declaration's field list | ★★★ |
+  | E7 | the emitter's synthesised names `opt<N>` / `fn<N>` are unreserved, and take the **root** module | `record opt0` plus any `T?` → `redefinition of 'h_M_opt0'`, exit 2 — and only under some roots. The residual panel 031 R10 closed for module names and left open for the names the emitter invents | ★★★ |
+  | E8 | `builtins::reachable` matches `Op::Call` but never `Op::FuncRef` | a library function passed as a **value** is referenced and never defined → `use of undeclared identifier 'h_library_range'`, exit 2. One direct call from any module puts it back | ★★★ |
+  | E9 | `descriptors::generated` walks the interner, which the checker filled from `test` blocks too | `warning: unused variable 'h_M_P_desc'` on an ordinary program build — the zero-warning rule, and precisely what that module's doc says its worklist exists to prevent. Fixed by filtering the seed to the types the functions **this build emits** mention | ★ |
+
+  ### Fixed in this sweep — the resolver and the checker (third pass)
+
+  **Shape A — scope widened.**
+
+  | # | what | symptom | severity |
+  |---|---|---|---|
+  | N1 | `missing_return`'s hole exemption is program-wide in the **checker** (`types/mod.rs:208`) | D1's twin in the pass D1's fix did not reach: an unfinished `geom.hero` suppresses `missing_return` in `main.hero` | ★★ |
+  | N2 | `Resolver::suggested` is program-wide | a did-you-mean offered in module B exempts that name from the unused sweep in module A — a dropped spec-line-77 error | ★★ |
+  | N3 | `Resolver::fields` is program-wide | a field name declared in `geom.hero` **removes a `certain` fix** from a diagnostic in `main.hero`. Another module decides whether a fix is machine-applicable (CLAUDE.md §8) | ★★ |
+
+  **Shape B — position assembled by hand.**
+
+  | # | what | symptom | severity |
+  |---|---|---|---|
+  | N4 | `check --apply` indexes concatenated-text spans into `user_text()` | `assertion failed: self.is_char_boundary(n)`, **exit 101**, on any multi-module program whose certain fix is outside the root — and `--apply` is what CI uses to assert `.fixed` files compile | ★★★ |
+  | N5 | ten sites format a line number **into a message** | `note: declared at line 6` where the truth is `geom.hero:1`; `the cycle is: A.b: B (line 7)`; a `shadowed_binding` whose message points *forward past its own caret*. All ten build real `Diagnostic`s, so M8a's sweep saw them and fixed only the span. Sites: `resolve/top.rs:75,108`, `resolve/scope.rs:159,190`, `resolve/decls.rs:85,101`, `types/calls.rs:190`, `types/construct.rs:41,92`, `types/sized.rs:291` | ★★ |
+  | N6 | `lex --dump-tokens` dumps the whole compilation | an 8-line program prints 470 lines including the library's, at concatenated line numbers, with no file marker. `--dump-ast` and `--dump-scopes` filter correctly | ★★ |
+  | N7 | `measure` returns exit 1 where the tool could not run | a missing vendored tokeniser table is `Exit::Diagnostics`; §10 says 2. Two adjacent `Err` arms in one function disagree | ★ |
+  | N8 | the tab diagnostic's caret is misaligned | `render.rs`'s doc says tabs cannot appear because the lexer rejects them — but the diagnostic *reporting* the tab prints the tabbed line | ★ |
+
+  **Neither shape.**
+
+  | # | what | symptom | severity |
+  |---|---|---|---|
+  | N9 | **fixed** — `Resolved::module_declaring` `.find()`s over a `BTreeMap` and so picks the **alphabetically first** module | with `use geom` written and both `alpha` and `geom` declaring `scale`, the compiler names `alpha` — a module the file cannot see — attaches a `guess` fix that produces `wrong_arity` if followed, and **cascades a false `unused_binding` telling the author to delete the `use geom` line that was the fix**. Rename `alpha.hero` to `zeta.hero` and the same program gets the right answer with a `certain` fix. It had exactly one possible answer when there was one module | ★★★ |
+  | N10 | the hole report offers functions from modules the hole's file cannot name | a hole in `geom.hero` is offered `main.tally(x: int)`, which `geom` cannot `use` without a cycle. The code states the right principle two lines above and applies it halfway | ★★ |
+
+  **What was cleared, stated plainly.**
+
+  A hunt that finds nothing is a result. **The emitter is not root-dependent in the
+  sense D3 was**: across the calculator's four roots, 277 shared C entities are
+  byte-identical — every `retain`/`release`/`eq`/`hash`, every descriptor, every
+  typedef — and the same holds for a purpose-built three-module corpus, for
+  monomorphisation, and for diagnostics. D3's own fix recurses correctly through
+  containers, nested payloads and every payload kind. `ir::is_refcounted` is
+  genuinely one home. The mangler survives a program whose every identifier is a C
+  keyword or libc symbol. `#line` is correct across modules and nothing bypasses the
+  writer that counts lines. Exit codes are right on unreadable, directory,
+  non-UTF-8, nonexistent, tab, BOM and missing-module inputs. `fmt`,
+  `--dump-ast` and `--dump-scopes` are correctly root-filtered. `-0.0` is normalised
+  before hashing. And `eq`/`hash` agree on every shape the language has **except**
+  the four rows E1 names.
+
+  One candidate was investigated and **is not a defect**: `check --json` printing to
+  stderr. `check` produces no artifact, so its diagnostics are the whole output and
+  `--json` says only *how* to print them (CLAUDE.md §10). The existing surface test
+  already pinned it; a hunt nearly filed it, and reading the contract settled it.
+
+  **What the sweep says about the instruments.**
+
+  Three things, and none is about any individual defect.
+
+  **The corpus is the instrument, and it had holes shaped like these defects.** D3
+  needed a payload owning a *computed* `str` that no `match` binds; E1 needs a map
+  inside an aggregate that something compares; E5 needs a record field typed `T?`.
+  Ninety `run/` cases and seventeen examples contain none of the three. Every one of
+  these is an ordinary program.
+
+  **An invariant enforced by convention is enforced by nothing.** Shape B has eight
+  entries and `source/mod.rs` has said *"there is one function and no caller
+  assembles the triple itself"* since M8a. The honest repair is not another sweep: it
+  is making `line_col` unavailable to callers that have no business with a
+  concatenated line — the only legitimate consumers are `locate` itself and the
+  printers' relative arithmetic.
+
+  **A comment that argues correctly for the wrong world is worse than no comment.**
+  D4's `spans_lines` was narrow *on purpose*, with the reason written out; the reason
+  was about source a person writes, and the formatter started writing source. D3's
+  fallback was the same. Both were read by reviewers who agreed with them.
+
+
+  **The premise audit, and the five roots (2026-08-12, same day).**
+
+  The rule the sweep produced — *a narrowing asks the value, never the world* — was
+  then turned on the compiler and asked of every load-bearing premise in it. **Nine
+  more live defects, eleven latent**, and they group into five roots rather than
+  twenty problems, which is the useful half.
+
+  **Fixed here:**
+
+  | # | what | why it was silent |
+  |---|---|---|
+  | **S1** | a **NaN as a map key**. `{f64: int}` is legal, `0.0 / 0.0` is legal, and the probe rests on the key's `eq` being reflexive — which nothing said, and which `desc.c` does not defend (it defends the neighbouring rule, *equal keys hash equally*, which is what the `-0.0` normalisation is for). Inserted twice, `len` was 2; the lookup answered `missing_key`; `{nan: 1} == {nan: 1}` was false. **Exit 0, ASan clean, leak counter balanced** — every instrument reported success. Now aborts, as `sort` already did for the same value | ★★★ |
+  | **L1** | the lexer walked to `text.len()` under a doc comment saying *"one source file"*. Since M8a the indent stack and the open-bracket list **crossed the file boundary**: an unclosed `(` in `main.hero` swallowed all of `geom.hero` and reported itself inside the library, and so did `y =` — a half-written line. The commonest state a file is ever in answered `internal error … exit 2` | ★★★ |
+  | **S2** | a user file named **`library.hero`** had its declarations resolvable *unqualified* from every module; renaming it `util.hero` refused the same program correctly. Four sites identify the library by module *name* rather than by the `is_library` flag, and the collision check skips a pair whose modules are equal — a hole exactly at identity | ★★★ |
+
+  **Then all of the rest, the same day, grouped by root — because that is how they were fixed:**
+
+  - **"one byte is one column"** — three faces, one fix. S4: `fmt`'s 88-column test
+    counted bytes, so a **56-column** line of 96 bytes was broken across four lines
+    by a formatter whose own constant is called `WIDTH`. S5: the caret was one `^`
+    per byte, underlining `return "ààà"` eight wide for five columns. And the third,
+    which the tab repair had created: `line_col`'s column was bytes while the
+    caret's padding had become characters, so a message named column 21 above a
+    caret standing at 18. `line_col` counts characters now — its doc justified
+    bytes by *"how the generated C's `#line` … reports positions"*, and `#line`
+    carries a file and a line and **never a column**, so the premise defending the
+    premise was dead too.
+  - **"the printer's input adjacency is its output adjacency"** — S3, the fixed
+    `spans_lines` defect's twin three hundred lines away in the same file. Run
+    membership is decided by the printer's own one-line test now, which is the only
+    answer that survives the round trip.
+  - **"the runtime may trust its caller"** — the largest cluster, and every one of
+    them asked about *the world that produced the value*. S11: `hero_str_from_bytes`
+    validated nothing, while `slice` aborts on a split character, `chars` walks
+    continuation bytes and `len` is documented over a valid encoding — three rules
+    on an unchecked premise, which held only because the gate refuses `extern`
+    today and **dies at M7**. It validates UTF-8 now, at the one place foreign bytes
+    become a `str`. L5: growth freed the old block before the retry re-read the
+    caller's key and value; the caller releases it after. L3: `key->hash` was
+    guarded and `val->hash` was not, though `hero_map_hash` calls it. S7: every
+    digit of the test index was validated and the accumulation was not — signed
+    overflow, which is UB and which CLAUDE.md §7 forbids in the generated code.
+  - **counting as a proxy for identity** — S8. `phases.rs` had rejected counting for
+    the decref sweep twenty lines away, and `check_copy_out` still counted: two
+    copy-outs of one parameter and none of the other read as "2 of 2". It compares
+    the multiset now, and `copying_one_parameter_out_twice_and_the_other_never_is_caught`
+    is the case §9 asks for.
+  - **hand-maintained lists** — S13 is the interesting one. `is_thesis_rule`'s codes
+    are what `--permissive` drops, so a **missing** entry silently understates the
+    very number the thesis is argued from, and nothing could see it. The set of
+    codes the golden corpus annotates is now pinned to a constant, `measure::gate`'s
+    shape: adding a diagnostic turns it red until somebody writes the code down and
+    decides which side of the control arm it is on. **It fired on its first day** —
+    S6's new golden — which is the only evidence worth having. S12: hand-typed
+    literal lengths became `sizeof(b) - 1`. S9: a null `newlocale` aborts instead of
+    silently rendering `3,5`. S10: the key array's fill is bounded. S6: a lone `\r`
+    is a diagnostic like a tab. L2: the root's module was stored **sanitised** while
+    every other module's was raw, so `a_b.hero` saying `use ab` answered *"modules
+    may not form a cycle: ab uses ab"*.
+  - **L4 is not a defect**, tested and stated: `to_str` on a `bool` prints `true`,
+    and the `_ =>` entry-point fallback is genuinely enforced by `types/builtins.rs`.
+
+  **What the roots say.** Twenty premises, five claims. A premise depended on in
+  three places is **one thing to test, not three** — which is the shape
+  `a_declared_type_cannot_contain_a_type_parameter` already takes, and the reason
+  the remaining work is five tests rather than eleven fixes.
+
+  **Re-read 2026-08-26 — nothing retracted, and where the tree it names lives now.**
+
+  Asked whether this file still earns its place. **Nothing above is retracted**, and
+  the sweep is load-bearing rather than historical — measured today:
+
+  - **CLAUDE.md §11 rests on it.** *"A narrowing asks the value, never the world
+    (author instruction 2026-08-12, sweep 001)"*, and four lines below, *"Two of
+    sweep 001's twenty were exactly this"* (`CLAUDE.md:422` and `:429`). The rule
+    cites the evidence; deleting the evidence would leave the rule asserting a
+    sweep nobody can read.
+  - **Six comments in the live compiler cite these audits by number** —
+    `selfhost/ir_verify.hero:199` (S8), `scan.hero:43` (S6), `diag_render.hero:73`
+    (S5), `modules.hero:111` (L2) and `:203` (S2), `print_fmt.hero:588` (S3). The
+    Rust they were written against is archived; the *defects* were ported forward
+    with the compiler, and those comments are how a reader learns why the code
+    guards what it guards.
+  - Two golden cases carry the same numbers
+    (`tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero` is S1,
+    `tests/golden/check/stray-carriage-return.hero` is S6), `DESIGN-LOG:204` cites
+    the sweep, journal 011 records it, and four open `LEARN.md` items ask about it.
+
+  **What has expired is the addressing, not the content.** Every path above is the
+  bootstrap's — `crates/heroes/src/modules/tests.rs` at the top, and the bare module
+  paths under it (`emit/descriptors.rs`, `source/mod.rs`, `types/mod.rs`,
+  `resolve/top.rs`, `render.rs`, `phases.rs`). Since M-bootstrap-archive,
+  2026-08-19, that tree is `archive/bootstrap-rs/heroes/src/…`, where nothing builds
+  and nothing lints. They stay as written, because CLAUDE.md §14 does not rewrite a
+  record and 2026-08-12 is where they pointed; **this paragraph is the redirection**.
+
+- [x] **002 — The guard the port kept and the language took away** | Date: 2026-08-19, opening M-separate-compilation. **Found by running the baseline net before touching anything**, which is the only reason it was found at all: it had been in the tree for one commit and CI would have reported it as a pass. | **Status: fixed 2026-08-19** (panel 087, commit `f343fdd`) — see § The repair at the end of this file. The sentence that stood here said *"the repair is a language change (`read_file`'s contract), so it is a panel path"*; the panel path was right and the prediction was wrong, and that is the most useful thing this file records. The finding and the fix have their own commits, as this line asked. | moved here 2026-09-03 from `docs/defects/002-the-guard-the-language-took-away.md` by author instruction — the directory is gone, its text is below, unedited except that its `## ` headings became bold leads | Severity: **★★★** — a legal program is killed. And the killed program is the project's own test net.
+
+
+  Date: 2026-08-19, opening M-separate-compilation. **Found by running the baseline
+  net before touching anything**, which is the only reason it was found at all: it
+  had been in the tree for one commit and CI would have reported it as a pass.
+
+  **Status: fixed 2026-08-19** (panel 087, commit `f343fdd`) — see § The repair at
+  the end of this file. The sentence that stood here said *"the repair is a language
+  change (`read_file`'s contract), so it is a panel path"*; the panel path was right
+  and the prediction was wrong, and that is the most useful thing this file records.
+  The finding and the fix have their own commits, as this line asked.
+
+  Severity: **★★★** — a legal program is killed. And the killed program is the
+  project's own test net.
+
+  **The symptom.**
+
+  ```
+  $ ./heroes run tests/harness/main.hero -- ./heroes
+    ...
+    warnings: 107 passed, 0 failed
+  panic: hero_str_from_bytes: not well-formed UTF-8
+  $ echo $?
+  134
+  ```
+
+  Twelve suites green, then SIGABRT in the thirteenth (`records`), no summary line,
+  no `report.verdict`. `heroes run tests/harness/main.hero -- ./heroes records`
+  reproduces it alone in seconds.
+
+  **The reproducer, five lines and no harness.**
+
+  ```
+  function main()
+      got = read_file(path: "site/public/images/giuseppe-arici.jpg")
+      match got
+          .ok text => print("ok, bytes: " + text.len().to_str())
+          .err e => print("fail: " + e.code)
+  ```
+
+  `panic: hero_str_from_bytes: not well-formed UTF-8`, exit 134. **Neither arm
+  runs.** `read_file` is declared `-> str?` at `spec:179`, the program handles both
+  halves of the fallible, and the process dies before either is reached.
+
+  **The cause.**
+
+  `runtime/parts/os.c:114`, in `hero_file_read`:
+
+  ```c
+  HeroStr text = hero_str_from_bytes(buffer, (int64_t)got);
+  ```
+
+  unguarded. Three statuses exist — `HERO_OS_OK`, `HERO_OS_NOT_FOUND`,
+  `HERO_OS_FAILED` (`runtime/hero_os.h:39-41`) — and the fourth program state,
+  *these bytes are not text*, has no code. `hero_str_from_bytes` aborts on invalid
+  UTF-8 (`runtime/parts/str.c:244`), so the failure that has no status also has no
+  survivor.
+
+  The runtime's own header already knows this is a state a caller should be able to
+  branch on. `runtime/heroes_runtime.h:120` says `hero_str_from_bytes` is
+  *"**Exported so a binding can branch instead of dying**"* — and the one entry
+  point in the runtime that reads a file the program did not write does not branch.
+
+  **Why it fired now, and what the trigger says.**
+
+  `abaa7ca` ("site: the author has a face") added
+  `site/public/images/giuseppe-arici.jpg` — **the first non-text file this
+  repository has ever tracked**. Measured over `git ls-files`: 1373 tracked files,
+  exactly one of which is not valid UTF-8, and it is that one.
+
+  `tests/harness/suite_records.hero` walks every git-tracked file that is not a
+  dated record and reads it, looking for a numbered milestone identifier
+  (CLAUDE.md §14). The walk asks git which files are the project's — deliberately,
+  since 2026-08-19 — so a tracked JPEG is in scope by design and correctly so: a
+  list of exclusions is a premise about which junk exists, and that premise had
+  already expired once.
+
+  **The finding, which is bigger than the trigger.**
+
+  **The port kept the guard and the language took away its ability to fire.**
+
+  `archive/bootstrap-rs/heroes-cli/tests/milestones.rs:183` — the Rust twin of this
+  walk:
+
+  ```rust
+  let Ok(text) = std::fs::read_to_string(file) else { continue };
+  ```
+
+  Rust's `read_to_string` returns `Err(InvalidData)` on non-UTF-8 bytes, so the
+  Rust instrument **skipped** a file it could not decode, by construction, and
+  would have survived this commit untouched.
+
+  `tests/harness/suite_records.hero:148-150` — the Heroes port of the same lines:
+
+  ```
+  text = read_file(path)
+  if text.is_err()
+      continue
+  ```
+
+  The branch was transcribed faithfully. It is in the right place, it is written
+  correctly, and **it can never be taken**, because the failure it exists for kills
+  the process instead of arriving as a value. Two call sites (`:148`, `:175`) carry
+  the same dead guard, mirroring the Rust's two (`:183`, `:262`).
+
+  This is the shape CLAUDE.md §11 warns about from the other side: a premise that
+  expires silently while the code around it goes on reading as correct. Here the
+  code is not merely still readable — it is still *right*. What died is the
+  language's ability to honour it.
+
+  **What the repair has to decide.**
+
+  Not "add a status" — that is the implementation. The question is what
+  `read_file` **means** when the bytes are not text, and it has two answers with a
+  real argument on each side:
+
+  - **abort** (today). A `str` is UTF-8 by definition (`spec:51`), so a file that
+    is not text is not a `str`, and the language aborts elsewhere for exactly this
+    kind of category error — an out-of-range index, a `nan` comparison, an
+    overflow.
+  - **`fail("file_not_text", …)`** — `spec:179` already types the built-in as
+    fallible, §Failure says codes are stable snake_case strings, and §1.12 makes
+    robustness a goal of the language rather than a preference. A program cannot
+    ask whether a file is text without dying, so the language cannot express a walk
+    over a directory it did not create — and a directory it did not create is the
+    only kind a real program walks.
+
+  The second is also the only repair that lets the harness's filter **ask the
+  value** rather than a premise about the world (CLAUDE.md §11): every alternative
+  available today — an extension deny-list, git's own `-text` heuristic — answers a
+  different question. Git's was measured: it reports three tracked files as binary,
+  and two of them are valid-UTF-8 `.hero` fixtures with raw carriage returns
+  (`tests/golden/check/{raw,stray}-carriage-return.hero`), so filtering on it would
+  drop `.hero` files from a walk whose job is to read them.
+
+  That is a panel question and it goes to the panel as one.
+
+  **The repair — 2026-08-19, panel 087, commit `f343fdd`.**
+
+  **The second answer won, and it cost five lines of C and zero spec tokens.** The
+  panel shrank the proposal by two thirds: `spec:179` already types the built-in as
+  fallible, so the document was never wrong and the runtime was the thing that lied
+  — paying tokens to *describe* this behaviour would have written a defect into the
+  spec. §12's rule ("the compiler has the bug") applied to the one place the spec
+  cannot see.
+
+  `runtime/parts/os.c:130` asks `hero_utf8_valid` before converting, releases the
+  buffer, sets the new `HERO_OS_NOT_TEXT` (`runtime/hero_os.h:51`) and returns the
+  empty str — keeping `hero_os.h:44`'s promise that on anything but OK the string
+  owns nothing. **The abort inside `hero_str_from_bytes` is deliberately untouched**:
+  `hero_str_chars` (`runtime/parts/text.c:87`) takes one byte off an invalid
+  sequence and depends on that abort for the language-wide well-formedness
+  invariant, so a weaker conversion would have traded this defect for a worse one.
+  That was the ffi-pragmatist's uncast veto and it decided the shape. The case is
+  `tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero`, which
+  builds its own fixture through `extern "stdio.h"` because **no Heroes program can
+  create a file that is not text** — `write_file` takes a `str`, and a `str` is
+  UTF-8 by definition.
+
+  Re-measured 2026-08-23, in the session that writes this paragraph rather than
+  recalled from the fix's own commit:
+
+  - the five-line reproducer above → `fail: read_failed`, exit **0** (was `panic:
+    hero_str_from_bytes: not well-formed UTF-8`, exit 134)
+  - the guard at `suite_records.hero:148` is **reachable at last**: the call that
+    killed the process returns `.err`, which is the only thing that branch tests
+
+  **What the fix did not close, and both are queued in `docs/debrief/DECIDE.md`**
+  (that path died on 2026-08-26 — see the note at the end of this file):
+  the status is collapsed into `read_failed`, so the message still says *could not
+  read* about a file that read perfectly well (naming it `file_not_text` is one
+  `constant` line and the two compiling seats disagreed, so it is the author's);
+  and three of panel 087's four doors are untouched — `args()` has no error channel
+  at all, `spec:229` sends a binding author through a null test and then kills them
+  anyway, and a "is this pointer safe" predicate is categorically unbindable
+  because every `cstr` argument is wrapped in `hero_cstr_nonnull`.
+
+  **Re-read 2026-08-26 — the defect holds, the paragraph above has expired.**
+
+  Asked whether this file still earns its place. **The defect does not need
+  re-arguing: the repair still holds**, run again today rather than recalled — the
+  five-line reproducer at the top of this file, against the same tracked JPEG,
+  prints `fail: read_failed` at exit **0**. What has moved is the paragraph
+  immediately above, and each of its three claims was checked against the record and
+  the tree, not remembered.
+
+  - **The path is dead.** `docs/debrief/` no longer exists: the lists were re-cut on
+    2026-08-26 by what an item *is* rather than where it was written, and the live
+    ones are `docs/work/DECIDE.md` (open decisions), `docs/work/SCHEDULED.md` (work
+    with a milestone) and `docs/work/DONE.md` (the record). CLAUDE.md §3 carries the
+    reason.
+  - **Two of the three doors are shut, both on 2026-08-24.** `args()` got its error
+    channel — `args_checked() -> [str?]`, the shape the ffi-pragmatist compiled, now
+    at `spec:186` and `selfhost/library_source.hero:226` (`DONE.md:620`). And
+    `spec:229` stopped sending a binding author through a null test: the sentence
+    *"test `c == nullptr` first, because converting one aborts"* is **deleted**, −15
+    tokens, the named removal that funded panel 089 (`DONE.md:640`) — and the
+    killing it warned about is a named abort now, because every `cstr` argument
+    leaves through `guard_cstr_arguments` (`selfhost/emit_ops.hero:181`). Only the
+    third is still open as written: a *"is this pointer safe"* predicate remains
+    categorically unbindable.
+  - **The `read_failed` collapse is still real and still the author's call.**
+    `runtime/hero_os.h:46` says in the live header that the Tier-2 wrapper collapses
+    `HERO_OS_NOT_TEXT`, and the reproducer above still says *could not read* about a
+    file that read perfectly well. **But the item is in no open list**: `DONE.md:638`
+    struck it from panel 090's ballot on 2026-08-25 with the words *"It stays open as
+    scheduled work, not as a decision"*, and `SCHEDULED.md` does not carry it — ten
+    open items on 2026-08-26 and none is this one. Ticked in the record and absent
+    from the work is exactly the shape CLAUDE.md §3 was amended to prevent, and it is
+    recorded here because this file is where somebody looking for that decision will
+    come.
+
+- [x] **003 — `heroes fmt` deletes a control form used inside an expression** | Date: 2026-08-26, during the first repo-wide `heroes fmt` sweep (the sweep was reverted; nothing shipped). **Found by the sweep itself**, because formatting file 50 of 165 broke every one of the 107 files after it: `fmt` refused them with a diagnostic pointing into the file it had just written. | **Status: fixed 2026-08-26**, two repairs in one commit — see § The repair. | moved here 2026-09-03 from `docs/defects/003-fmt-deletes-a-control-form-inside-an-expression.md` by author instruction — the directory is gone, its text is below, unedited except that its `## ` headings became bold leads | Severity: **★★★** — `fmt` rewrote a compiler source file into a **different program that does not parse**, at **exit 0**, with the author's file replaced. This is the worst shape a formatter's bug can take, and it is the third instance of the same class (panel 014, panel 060/061, this).
+
+
+  Date: 2026-08-26, during the first repo-wide `heroes fmt` sweep (the sweep was
+  reverted; nothing shipped). **Found by the sweep itself**, because formatting
+  file 50 of 165 broke every one of the 107 files after it: `fmt` refused them
+  with a diagnostic pointing into the file it had just written.
+
+  **Status: fixed 2026-08-26**, two repairs in one commit — see § The repair.
+
+  Severity: **★★★** — `fmt` rewrote a compiler source file into a **different
+  program that does not parse**, at **exit 0**, with the author's file replaced.
+  This is the worst shape a formatter's bug can take, and it is the third instance
+  of the same class (panel 014, panel 060/061, this).
+
+  **The symptom.**
+
+  `heroes fmt --in-place selfhost/digits.hero` exited 0 and wrote this:
+
+  ```
+  function canonical_int(text: str) -> str
+      out: str @ ""
+      for c in text.chars()
+          out @ out + match c
+      return out
+  ```
+
+  Every arm was gone. What the file said before:
+
+  ```
+      for c in text.chars()
+          out @ out + match c
+              "A" => "a"
+              "B" => "b"
+              "C" => "c"
+              "D" => "d"
+              "E" => "e"
+              "F" => "f"
+              _ => c
+  ```
+
+  Seven arms deleted, `31` `=>` in the file down to `24`. The next `heroes fmt` on
+  any file that `use`s `digits` then reported
+
+  ```
+  selfhost/digits.hero:238:1: error[missing_match_arms]: a `match` needs its arms
+  indented one level below it, found the end of the block
+  error: refusing to format a file with diagnostics
+  ```
+
+  which is how the sweep noticed. Had `digits.hero` been the last file formatted,
+  nothing would have noticed.
+
+  **The cause.**
+
+  `print_fmt.hero`'s `render()` returns a control form's **header alone**. Its own
+  comment says so, and names the contract that makes it safe:
+
+  ```
+          # Headers only: valued() prints the blocks under them.
+          .if_expr ie =>
+              ...
+          .match_expr me => return "match " + render(tree, s, id: me.scrutinee)
+  ```
+
+  `valued()` does print the blocks — when the value **is** a control form. It
+  matches on `tree.exprs[value].kind` and has arms for `.if_expr` and
+  `.match_expr`. A value that *contains* a control form has some other kind:
+  `out + match c` is a `.binary`, which fell into
+
+  ```
+          .name | .hole | .unary | .binary | .field | .index => plain_valued(...)
+  ```
+
+  and `plain_valued` calls `render()`. Header printed, body dropped.
+
+  **The contract was true of one shape and was written as though it were true of
+  the type.** That is the whole defect, and it is CLAUDE.md §11's premise rule at
+  the level of an invariant between two functions: `render`'s comment states the
+  obligation it is owed and nothing checks that the obligation is met.
+
+  **The class, measured — nine shapes, not one.**
+
+  The provoking case is a witness, not the class (CLAUDE.md §1). Measured with
+  probes before the repair:
+
+  | shape | before |
+  |---|---|
+  | `out @ out + match c` | **all arms deleted** |
+  | `out @ out + p + match c` | **all arms deleted** |
+  | `return "x" + match c` | **all arms deleted** |
+  | `match` in an arm of a `match` at a binary's edge | **all four deleted** |
+  | `out @ out + if c == "a" … else …` | **the `else` branch deleted** |
+  | `return match c … + "x"` (control form on the **left**) | **all arms deleted** |
+  | `out @ match c` | fine |
+  | `return match c` | fine |
+  | `v = match c` | fine |
+
+  So it is not about `match`: it is **any control form that is an operand of a
+  binary operator**. `if` behaves identically because `render` treats both the
+  same way.
+
+  **The repair.**
+
+  **Two repairs, and the second is the one that matters.**
+
+  1. `print_fmt.hero` — `valued()` grows a `.binary` arm that asks
+     `binary_control_tail()` whether the expression's right edge is a control
+     form. If it is, everything left of it is rendered by `binary_prefix()` and
+     handed to `valued()` **as the head**, which is the path that already knows
+     how to print a block under a head. A control form runs to the end of its line
+     and carries its block indented below, so it can only ever be the rightmost
+     operand — that is what makes the prefix printable as a head.
+
+  2. `cli_syntax_cmds.hero` — **`fmt` now reads back what it wrote.**
+     `refuse_output_the_formatter_broke()` re-parses the formatted text and
+     re-formats it, and refuses at **exit 2** — the compiler's own error class
+     (§7) — if the output does not parse or is not a fixpoint. The author's file is
+     left untouched.
+
+  The second repair is worth more than the first. Repair 1 fixes the shapes
+  somebody thought of; repair 2 turns **every shape nobody thought of** from
+  "silently writes a different program" into "stops and says it is a compiler
+  bug". One shape in the table above is still unspellable by the printer — the
+  control form on the **left**, with the expression continuing after its block,
+  which `heroes check` accepts as legal Heroes — and it now refuses loudly instead
+  of destroying the file. `tests/harness` has no case for it because the guard's
+  test lives with the guard, in `cli_syntax_cmds.hero`, and it fires on exactly
+  that shape.
+
+  **Why this is the third instance, and what the instrument owes.**
+
+  - **Panel 014**: an arm whose body was a control form. *"`heroes fmt` silently
+    deletes code."* The post-mortem then: *"`heroes fmt` had no test with a control
+    form in an arm body."*
+  - **Panels 060 / 061**: `fmt` hoisted a `record` out of its `extern` group, and
+    deleted the word `partial` — *"two blind spots cancel into a green test"*,
+    because `print_dump` dropped the same word and `assert_canonical` compared the
+    two dumps.
+  - **This**: a control form as a binary operand.
+
+  Every one was found by a person. The guard that was supposed to find them,
+  `assert_canonical` — `dump(text) == dump(fmt(text))` — **exists nowhere in the
+  selfhost compiler.** It was in the Rust bootstrap
+  (`archive/bootstrap-rs/heroes/src/printer/tests/mod.rs:45-51`) and was not
+  ported; `print_dump.hero:12` still describes it as though it were live.
+
+  Repair 2 is not that guard and does not replace it. It catches output that does
+  not **parse**; `assert_canonical` catches output that parses and **means
+  something else**, which is the panel 061 case. Restoring it is still owed, and
+  the obstacle is real: the input here is parsed with the whole module graph while
+  the output is one file, so the two dumps are not comparable without splitting the
+  parse. That is written down in the guard's own comment so the next reader does
+  not mistake one property for the other.
+
+- [x] **004 — `heroes fmt` was not a fixpoint on 31 of its own 165 modules** | Date: 2026-08-26, found by panel 095's compiler-engineer seat and independently re-measured by the coordinator at the same number in the same session. | **Status: fixed 2026-08-26** — two repairs, both in `selfhost/print_fmt.hero`. See § The repair. | moved here 2026-09-03 from `docs/defects/004-fmt-was-not-a-fixpoint-on-its-own-compiler.md` by author instruction — the directory is gone, its text is below, unedited except that its `## ` headings became bold leads | Severity: **★★★** — it made the repo-wide sweep the sitting was convened for **impossible**, and before the guard existed it silently wrote source that changes again on the next format. The morning's reverted sweep did exactly that to 118 files.
+
+
+  Date: 2026-08-26, found by panel 095's compiler-engineer seat and independently
+  re-measured by the coordinator at the same number in the same session.
+
+  **Status: fixed 2026-08-26** — two repairs, both in `selfhost/print_fmt.hero`.
+  See § The repair.
+
+  Severity: **★★★** — it made the repo-wide sweep the sitting was convened for
+  **impossible**, and before the guard existed it silently wrote source that
+  changes again on the next format. The morning's reverted sweep did exactly that
+  to 118 files.
+
+  **The symptom.**
+
+  ```
+  $ for f in selfhost/*.hero; do ./heroes fmt "$f" >/dev/null || echo "$f"; done | wc -l
+  31
+  $ ./heroes fmt selfhost/check_map_keys.hero
+  error: `fmt` is not a fixpoint on its own output for `selfhost/check_map_keys.hero`
+  error: this is a compiler bug — `selfhost/check_map_keys.hero` was NOT changed
+  $ echo $?
+  2
+  ```
+
+  31 of 165, among them `print_fmt.hero` itself, `check_walk.hero`,
+  `check_map_keys.hero`, `ir_lower.hero`, `emit_gate.hero`. `examples/` is clean,
+  which is why nothing in the harness net ever saw it.
+
+  **The defect is older than the guard.** `docs/defects/003`'s output guard, added
+  earlier the same day, is the only reason it is visible: before it, `fmt
+  --in-place` wrote non-fixpoint source and exited 0. The guard did not cause this;
+  it made a defect loud that had been in the tree since the alignment rule landed
+  on 2026-08-04.
+
+  **The two causes, and they are the same mistake twice.**
+
+  Both are the mistake `spans_lines`'s own comment already names — *"true of source
+  a person writes and false of source THIS FORMATTER writes"* — and defect 001's D4
+  paid for it once already. It came back in two places the lesson had not reached.
+
+  ### (a) The measurement did not measure what the printer prints
+
+  `fits_on_one_line` decides whether a `match` arm joins an alignment run and
+  reports the width that decision was made on. `close_run` then vetoes the whole
+  run if padding any member would cross the 88-column margin — that guard was
+  already there and already correct. **It was reading a wrong number.**
+
+  Two errors in the sum:
+
+  - `statement()` prints `return ` before a `.return_stmt` arm's value
+    (`print_fmt.hero`'s `.return_stmt` arm passes `head + "return "`).
+    `fits_on_one_line` never added those **7 characters**.
+  - the no-value path returned `indent + left + 4` while the measured path returned
+    `left + 4 + …`, and `close_run` adds `indent` to whatever comes back — so that
+    path counted one indent level **twice**.
+
+  The loop this opened, on `selfhost/check_map_keys.hero:107`:
+
+  ```
+          .array arr => return reaches_float(c, s, decls, ty: arr.element, depth: depth + 1)
+  ```
+
+  Measured as 82 columns, printed at 90. So it joined the run, `close_run`'s veto
+  did not fire, it was padded to `.array arr  =>`, and `plain_valued` then broke it
+  across lines because the real line was over the margin. On the **next** format
+  that value spans lines in the source, `spans_lines` is true, `fits_on_one_line`
+  refuses it, the run loses its widest member, and the padding changes:
+
+  ```
+  pass 1:         .array arr  => return reaches_float(
+  pass 2:         .array arr => return reaches_float(
+  ```
+
+  **Fix: add the head's width, taken from the literal rather than typed, and drop
+  the double `indent`.** Measured effect alone: **31 → 29**.
+
+  ### (b) `last_line` stopped at the arm's first line, and the arm occupied four
+
+  After printing a one-statement arm, `print_fmt.hero` set `f.last_line @ line` —
+  the line the arm **starts** on. The comment above it explains, correctly, why it
+  is not `arm.span.end`: that span reaches the terminator and one line too far once
+  made `trailing_comment` steal the next declaration's doc comment.
+
+  But a value **this formatter** broke across lines does occupy those lines. So
+  after a `match` whose last arm had been broken, `f.last_line` was three lines
+  short, `fmt_block`'s *"a blank line the author left survives"* test
+  (`line > f.last_line + 1`) saw a gap that was not there, and grew a blank line:
+
+  ```
+          )
+  +                                      <- appears on every re-format
+      return fail("absent", "unreached")
+  ```
+
+  **Fix: ask `literal_end_line` for the value's own extent, which is the same
+  question `fmt_block` already asks about a statement, and take it when it is
+  further than the arm's first line.** This is the narrower span the original
+  comment was reaching for.
+
+  Measured effect: `check_map_keys.hero` exits 0, and the remaining single-line
+  disagreement disappears.
+
+  **The repair.**
+
+  `selfhost/print_fmt.hero`, two edits:
+
+  1. `fits_on_one_line` grows a `head` term — `"return ".chars().len()` for a
+     `.return_stmt` with a value, 0 otherwise — and its no-value path returns
+     `left + 4` rather than `indent + left + 4`. The width comes from the literal
+     so the two sites cannot drift apart in characters.
+  2. the `.one_stmt` arm consults `literal_end_line(tree, s, id: one.at)` after
+     printing, and advances `f.last_line` to it when it reaches further.
+
+  514 selfhost tests pass. The census is the acceptance criterion and it is in the
+  commit body.
+
+  **What this bought, beyond itself.**
+
+  **Panel 095's stage 1.** The sitting ruled that nothing about the author's
+  blank-line rules could be applied until `heroes fmt` exits 0 on all 165 selfhost
+  modules, because `--in-place` refuses a non-fixpoint and leaves the file
+  untouched. This is that gate.
+
+  **And the sitting measured that the new rules make it better, not worse**: the
+  compiler-engineer's rules-1-4 prototype refused **7** of the same 165 against
+  HEAD's 31 — a strict subset. So the two problems were independent, and this one
+  was always the blocker.
+
+  **What is still owed.**
+
+  `assert_canonical` — `dump(text) == dump(fmt(text))` — still does not exist
+  (`selfhost/print_dump.hero:12` claims it does). Both repairs here are about text,
+  and text is the weaker property. The defect logged the same day at
+  `docs/work/DECIDE.md` — `fmt` deleting the blank under a record-field remark, so
+  that a remark becomes documentation — **parses, is a fixpoint, and passes both of
+  this file's repairs.** Only the tree comparison sees it.
+
+- [x] **005 — The parser accepted a continuation at bracket depth zero** | Date: 2026-08-28, `/decide` answer `5a`. **Found by `heroes fmt` refusing to format a file, and the refusal was right.** | **Status: fixed 2026-08-28** — `selfhost/grammar_expr.hero`, `ends_the_expression`. | moved here 2026-09-03 from `docs/defects/005-a-continuation-the-language-does-not-have.md` by author instruction — the directory is gone, its text is below, unedited except that its `## ` headings became bold leads | Severity: **★★** — a program that two ratified rulings forbid compiled, ran, and produced a meaningful answer. Nothing was silently wrong; a form that should not exist simply existed.
+
+
+  Date: 2026-08-28, `/decide` answer `5a`. **Found by `heroes fmt` refusing to
+  format a file, and the refusal was right.**
+
+  **Status: fixed 2026-08-28** — `selfhost/grammar_expr.hero`,
+  `ends_the_expression`.
+
+  Severity: **★★** — a program that two ratified rulings forbid compiled, ran, and
+  produced a meaningful answer. Nothing was silently wrong; a form that should not
+  exist simply existed.
+
+  **How it was found, which is the part worth keeping.**
+
+  `docs/defects/003` gave `heroes fmt` a guard that re-reads its own output. One
+  shape then refused for a week:
+
+  ```
+  function f(c: str) -> str
+      return match c
+          "a" => "b"
+          _ => c
+      + "x"
+  ```
+
+  ```
+  error: `fmt` produced source that does not parse
+  error: this is a compiler bug — `…` was NOT changed
+  ```
+
+  The obvious reading was that the printer had a hole, and that is how it was
+  written down: *"one shape `heroes fmt` still cannot spell"*. The item put the
+  question the other way round as well — **which of the two artifacts is wrong?**
+  — and that is the question that turned out to matter.
+
+  **What the program meant.**
+
+  ```
+  $ heroes parse v7.hero --dump-ast
+    function f(c: str) -> str
+      return (match … + "x")
+
+  $ heroes run v7run.hero
+  bx
+  ```
+
+  So the `+ "x"` was really being applied to the `match`'s result, across a dedent,
+  at bracket depth zero. `heroes check` exited 0.
+
+  **Why that is not allowed.**
+
+  Two ratified places say so in almost the same words.
+
+  **Panel 007, Amendment B**, the bracket clause: continuation is *"inside `(` `[`
+  `{`"* and nowhere else. The sitting's own § Disagreements records the
+  ergonomist arguing for a depth-0 continuation and the engineer showing the clause
+  unsound; the resolution took *"continuation inside brackets only"*.
+
+  **design.md:1794**, in the section that rule lives in:
+
+  > At bracket depth zero every line's indentation is structural: a long expression
+  > is broken inside parentheses or not at all.
+
+  So `fmt` was correct to refuse: **there is no canonical spelling of a form the
+  language does not have.** CLAUDE.md §12 settles the rest — spec beats compiler,
+  and the compiler had the bug.
+
+  **The cause.**
+
+  `grammar_expr.hero`'s `binary()` parses an operand and then climbs while the next
+  token is a binary operator. An `if` or a `match` in expression position carries a
+  **block**, and parsing that block consumes the dedent that closes it — so by the
+  time `binary()` looks again, the next token *looks* adjacent to the operand when
+  it is on a later line at a shallower indent, belonging to the next statement.
+
+  The existing golden `tests/golden/check/depth-zero-continuation.hero` guards the
+  other half of the same rule and passes:
+
+  ```
+      total = 1 +
+          2  #~ expected_expression
+  ```
+
+  There the continuation line is **indented**, so the lexer hands the parser an
+  indent and the parser says `expected_expression`. The dedented case had no
+  guard, because nothing in the token stream distinguishes it — the block ate the
+  dedent.
+
+  **The repair.**
+
+  One predicate and one early return. `ends_the_expression(a, id)` answers whether
+  an operand carries a block; `binary()` returns immediately when it does, because
+  the expression ended with the block.
+
+  The enumeration is exhaustive with no catch-all, which is panel 060's lesson in
+  the formatter applied here: a new expression kind that carries a block must be
+  made to answer, and a `_ => false` would answer *"no"* silently.
+
+  **`out + match c` is untouched**, and the reason is structural rather than lucky:
+  there the control form is the RIGHT operand, which is the only side its block can
+  be on. `print_fmt.hero`'s `binary_control_tail` says the same thing from the
+  printer's side, and the two now agree by construction instead of by accident.
+
+  The diagnostic is the one that already existed — `expected_expression`, on the
+  author's own line, pointing at the `+`. **No new diagnostic class, so no panel**:
+  this is a compiler made to obey a ruling it already had.
+
+  **What it changed about `fmt`.**
+
+  That file is now **exit 1** — the input has diagnostics — instead of **exit 2**,
+  the compiler accusing itself. The attribution is the honest one, and it is what
+  `/decide` answer `5a` bought.
+
+  **The lesson, and it is about the instrument rather than the bug.**
+
+  **A guard that reports a compiler bug can be reporting the truth about a
+  different compiler part than the one it points at.** The output guard said *"the
+  printer produced something that does not parse"*, which was accurate and
+  misleading: the printer had produced the only spelling available for a tree the
+  parser should never have built. Two of this file's three sentences of diagnosis
+  came from asking `--dump-ast` and `run` what the program MEANT, rather than from
+  reading the printer.
+
+  Both tests that used this shape to make a guard FIRE were rewritten as predicate
+  tests in the same commit, and the reason generalises: **a firing test that
+  depends on a live defect stops firing the day the defect is repaired, which is
+  the day it stops being a test.** §9 asks for a check that fires, and it has to
+  keep firing.
+
+- [x] **007 — `heroes check` exits 139 without a word on a legal program** | Date: 2026-09-03, M-corpus-depth step 5. **Found by writing a program**, and then by asking the obvious next question: the interpreter being written has a recursive-descent parser, and so does the compiler. | **Status: fixed 2026-09-03**, the same evening — `runtime/parts/stack.c`, one witness given a second shape; see § The repair at the end. The hypothesis below was right in its conclusion and wrong in its mechanism, and the difference is the interesting part. The program that found it still nests 60 deep instead of 500, with every ceiling measured in its comment (`examples/interpreter/main.hero`): the ceiling is unchanged, and what changed is that crossing it has a name. | moved here 2026-09-03 from `docs/defects/007-the-compiler-dies-in-silence-on-a-valid-program.md` by author instruction — the directory is gone, its text is below, unedited except that its `## ` headings became bold leads | Severity: **★★★★** — design.md §1.12 says a Heroes program must not segfault, and the compiler is a Heroes program. `heroes check` on a **valid** file exits **139** (SIGSEGV) having printed **nothing at all**: no diagnostic, no panic, no `internal error`. The runtime's stack guard (panel 104) exists to turn exactly this into a named panic, and in the neighbouring stage it does.
+
+
+  Date: 2026-09-03, M-corpus-depth step 5. **Found by writing a program**, and
+  then by asking the obvious next question: the interpreter being written has a
+  recursive-descent parser, and so does the compiler.
+
+  **Status: fixed 2026-09-03**, the same evening — `runtime/parts/stack.c`, one
+  witness given a second shape; see § The repair at the end. The hypothesis below
+  was right in its conclusion and wrong in its mechanism, and the difference is
+  the interesting part. The program that found it still nests 60 deep instead of
+  500, with every ceiling measured in its comment (`examples/interpreter/main.hero`):
+  the ceiling is unchanged, and what changed is that crossing it has a name.
+
+  Severity: **★★★★** — design.md §1.12 says a Heroes program must not segfault,
+  and the compiler is a Heroes program. `heroes check` on a **valid** file exits
+  **139** (SIGSEGV) having printed **nothing at all**: no diagnostic, no panic, no
+  `internal error`. The runtime's stack guard (panel 104) exists to turn exactly
+  this into a named panic, and in the neighbouring stage it does.
+
+  **The program, and it is legal Heroes.**
+
+  ```
+  function main()
+      print(((((… 440 parentheses … 1 …)))))
+  ```
+
+  Generated, not typed: `'function main()\n    print(' + '('*n + '1' + ')'*n + ')'`.
+
+  **What each verb says, measured 2026-09-03 on the author's Mac with the.**
+  compiler built from `seed/heroes.c`
+
+  | n | `heroes lex` | `heroes parse` | `heroes check` |
+  |---|---|---|---|
+  | 420 | 0 | 0 | **0** |
+  | 440 | 0 | 0 | **139, silent** |
+  | 500 | 0 | **134** — `panic: stack exhausted in grammarexpr.postfix` | **139, silent** |
+  | 1000 | 0 | 134 | 139, silent |
+
+  Three things in that table matter more than the ceiling itself.
+
+  **The lexer never fails**, at any depth, because it is a loop. So the failure is
+  recursion and nothing else.
+
+  **`parse` and `check` disagree about the same file.** At n = 500 the parse stage
+  overflows and the guard names the function it was in; the check stage overflows
+  and the process dies with no output. Whatever the guard is reading, it reads it
+  in one of these stages and not in the other. **The guard is not broken in
+  general** — a small-frame recursion is caught at both `-O0` and `-O2`:
+
+  ```
+  function down(n: i64) -> i64
+      if n <= 0
+          return 0
+
+      return 1 + down(n - 1)
+  ```
+
+  `down(1000000)` is `panic: stack exhausted in down1000000.down` at exit 134,
+  built either way. So this is a coverage gap in one shape, not an absent guard.
+
+  **And the ceiling is low.** 440 parentheses is not an adversarial input; it is
+  the kind of expression a generated program or a machine-written test can hold,
+  and the corpus's own new interpreter meets the same wall at 200 in its `-O0`
+  configuration.
+
+  **The measured cause of the low ceiling, which is a separate finding.**
+
+  `heroes build --emit-c` over `examples/interpreter/`'s parser shows the frames:
+  **247 hoisted locals in the prologue of `syn/expr.hero`'s `compared`**, 151 in
+  `primary`. CLAUDE.md §7 puts every local in the prologue, so a recursive
+  function's frame is proportional to its whole **body** rather than to what is
+  live at any one point, and one nesting level of a seven-level precedence
+  grammar passes through all seven of those frames plus `grouped`. Under
+  `--sanitize` the same chain measured **11,728 bytes between `bp` and `sp` for a
+  single frame** (ASan's own report, which pads stack variables, so that number is
+  an upper bound rather than the plain frame size).
+
+  Two ceilings of the same program, same machine, same day:
+
+  ```
+  examples/interpreter/, nesting depth      --sanitize 120 ok / 160 over
+                                            -O0        190 ok / 200 over (139, silent)
+                                            -O2        340 ok / 360 over (134, named)
+  ```
+
+  **A hypothesis, stated as one because it has not been run**: a frame this large
+  moves the stack pointer past the guard region in a single step, so the fault
+  lands where the handler declines to call it a stack overflow, and the signal is
+  re-raised. Confirming it means reading `runtime/parts/stack.c`'s two witnesses
+  (the faulting address and the stack pointer) against these numbers — which is
+  the fix's job, not this file's.
+
+  **What is owed.**
+
+  1. **`heroes check` must not exit 139 in silence.** Whatever the ceiling turns
+     out to be, crossing it has to name itself, as `parse` already does. This is
+     §1.12 at its plainest.
+  2. **The guard's coverage needs a case per shape**, not per language: a
+     `fixedbugs` program with a wide-frame mutual recursion, run in all three
+     configurations, asserting exit 134 and a message — the shape that is missed
+     today.
+  3. **The hoisted-frame question is architecture** (CLAUDE.md §4): a temporary
+     that is live inside one basic block does not need a slot for the whole
+     function, and every recursive program in this language pays for the ones
+     that do. That is a panel path and it is filed in `docs/work/SCHEDULED.md`
+     rather than decided here.
+
+  **Why this was not found before.**
+
+  Nothing in the corpus recursed deeply through a wide grammar. `examples/calculator/`
+  parses arithmetic with the same shape but is only ever given short expressions;
+  the compiler's own tests parse the compiler's own source, whose deepest
+  expression nests nowhere near 400. It took a program written to nest on purpose,
+  which is what M-corpus-depth exists to add.
+
+  **The repair — 2026-09-03, the same evening.**
+
+  **The hypothesis above had the right conclusion and the wrong mechanism.** It
+  said a wide frame "moves the stack pointer past the guard region in a single
+  step". Under `lldb`, on the 440-parenthesis file, the faulting instruction is
+  not a store in the compiler at all: it is `ldur x11, [x11, #-0x8]` inside
+  **`___chkstk_darwin`**, libsystem's stack probe, which clang's prologue calls
+  for any frame larger than a page. The probe walks DOWN through the pages of the
+  frame it is about to claim, one load per page, **while `sp` still stands where
+  the caller left it**. Measured registers at the fault:
+
+  ```
+  pc  = ___chkstk_darwin + 60        fault address = 0x16f603ff8
+  sp  = 0x16f605940                  sp - fault    = 6,472 bytes
+  x9  = 0x2180                       the frame: 8,576 bytes (grammarexpr.primary)
+  fp chain: primary ← postfix ← unary ← binary ← parse_expr ← group ← primary …
+  ```
+
+  So the first witness held (the address is in the guard) and the second did
+  not: `sp < lo + 4096` fails by 2,368 bytes, the handler concludes the fault is
+  not an overflow, restores `SIG_DFL`, and the kernel kills the process at 139.
+  **Why `parse` named it and `check` did not** is nothing but which function's
+  frame happened to straddle the guard: `postfix`'s frame is under a page, so it
+  is touched after `sp` moves and `sp` is low; `primary`'s is 8.5 KiB, probed
+  first. Same file, same recursion, two verbs, two stack depths at entry, two
+  different frames on the boundary.
+
+  **The fix is one line and its comment**: the second witness has a second shape.
+  A probe lands *below* `sp` by less than one frame, and nothing legitimate is
+  ever written below `sp` except a frame being set up — so `addr < sp && sp -
+  addr < HERO_STACK_WINDOW` is the witness for the probing shape, beside the
+  original `sp_low` for the stored shape. Panel 104's falsifier — a wild store
+  8 KiB under the stack from a shallow frame — is megabytes below `sp`, and was
+  **re-run against both runtimes**: exit 139 before and after, on the Mac and in
+  the Linux container; a store to `NULL` likewise.
+
+  Measured after the fix, on this Mac, from the seed-built compiler:
+
+  | n | `heroes check` before | after |
+  |---|---|---|
+  | 420 | 0 | 0 |
+  | 440 | 139, silent | **134, `panic: stack exhausted in grammarexpr.postfix`** |
+  | 500 | 139, silent | 134, named |
+  | 2000 | 139, silent | 134, named |
+
+  **And the shape has a fixture of its own**,
+  `tests/golden/surface-fixtures/wideframe/main.hero`: a mutual recursion whose
+  `descend` holds 24 locals of a 32-word record — a frame of **32 KiB at `-O0`**
+  (`sub sp, sp, #0x8, lsl #12`), and `otool` shows the prologue calling
+  `___chkstk_darwin`. Against the runtime at `756b3920` it is exit **139 with
+  nothing on stderr**, which is what makes it a test of this defect rather than
+  of the guard in general; against the repaired one it is `panic: stack exhausted
+  in main.bounce` at `-O0` and `in main.descend` at `-O2`, exit 134 both. Under
+  `--sanitize` the guard yields to ASan by design (panel 104) and ASan reports
+  `stack-overflow`, so the two rows live in `tests/harness/suite_surface.hero`
+  (`verb_probes` 42 → 44) and not in `run/`, whose judge refuses ASan's words on
+  sight. On **Linux x86-64** (the container of
+  `docs/environment/linux/LINUX-MACHINE.md`, clang 22) the fixture panicked with a
+  name **before the fix as well**: clang emits no probe there (`sub $0x65f0,%rsp`
+  and a first store with `sp` already low), so the defect was Darwin's alone and
+  the repair is neutral on Linux — measured at `-O0`, `-O2` and `--sanitize`.
+  Windows is untouched by construction: the change is inside the POSIX branch, and
+  the vectored handler there keys on `EXCEPTION_STACK_OVERFLOW` and never reads
+  `sp`. The box was off, so that last sentence is a reading of the code and not a
+  run.
+
+  **What is deliberately not done here.** The ceiling itself — 440 parentheses in
+  the compiler, 190 nesting levels in the interpreter at `-O0` — is set by the
+  hoisted-frame rule (CLAUDE.md §7), and lowering it is architecture, filed for
+  the next sitting that touches the emitter. clang's own default is 256 bracket
+  levels; the ceiling is not the defect, the silence was.
