@@ -85,6 +85,8 @@ use suite_units
 use suite_warnings
 use suite_run
 
+# The prefix of this run's scratch directory; the process id follows it
+# (main, below), so that no two runs alive at once share a directory.
 constant SCRATCH: str
     "build/harness"
 
@@ -105,11 +107,16 @@ function main()
 
     # The scratch directory holds the captured streams and the directory
     # listings. It is under build/ because that is the one directory this
-    # project already treats as disposable.
-    made = shell.mkdir_all(SCRATCH)
+    # project already treats as disposable, and it carries this process's
+    # id because two harnesses started together used to share one — and a
+    # blessing (`UPDATE_EMISSION=1`) wrote the other run's capture to disk
+    # while both reported success (M-robustness-guards step 5, found by
+    # doing it on 2026-08-28).
+    scratch = SCRATCH + "-" + shell.pid().to_str()
+    made = shell.mkdir_all(scratch)
 
     if made.is_err()
-        print("harness: cannot create " + SCRATCH)
+        print("harness: cannot create " + scratch)
         exit(2)
 
     if compiler.len() == 0
@@ -133,7 +140,7 @@ function main()
 
     for form in forms
         if only == "" || only == form.name
-            got = suite_golden.run_all(scratch: SCRATCH, compiler: compiler, shape: form)
+            got = suite_golden.run_all(scratch: scratch, compiler: compiler, shape: form)
 
             if got.is_err()
                 print("harness: the " + form.name + "/ suite could not run")
@@ -148,7 +155,7 @@ function main()
     # question in each of three configurations, so it carries its own
     # runner rather than a row in the table above.
     if only == "" || only == "run"
-        got = suite_run.run_all(scratch: SCRATCH, compiler: compiler)
+        got = suite_run.run_all(scratch: scratch, compiler: compiler)
 
         if got.is_err()
             print("harness: the run/ suite could not run")
@@ -161,7 +168,7 @@ function main()
     # it takes no compiler at all — it is about whether the goldens agree
     # with themselves.
     if only == "" || only == "annotations"
-        got = suite_annotations.run_all(scratch: SCRATCH, compiler: compiler)
+        got = suite_annotations.run_all(scratch: scratch, compiler: compiler)
 
         if got.is_err()
             print("harness: the annotations sweep could not run")
@@ -171,7 +178,7 @@ function main()
         ran @ ran + 1
 
     if only == "" || only == "determinism"
-        got = suite_determinism.run_all(scratch: SCRATCH, compiler: compiler)
+        got = suite_determinism.run_all(scratch: scratch, compiler: compiler)
 
         if got.is_err()
             print("harness: the determinism suite could not run")
@@ -184,7 +191,7 @@ function main()
     # suite that can WRITE into the repository — under UPDATE_EMISSION=1
     # and nothing else.
     if only == "" || only == "emission"
-        got = suite_emission.run_all(scratch: SCRATCH, compiler: compiler)
+        got = suite_emission.run_all(scratch: scratch, compiler: compiler)
 
         if got.is_err()
             print("harness: the emission suite could not run")
@@ -197,7 +204,7 @@ function main()
     # descriptor in them both defined and pointed at. Reads files and
     # runs no compiler, so it is the cheapest suite here.
     if only == "" || only == "descriptors"
-        got = suite_descriptors.run_all(scratch: SCRATCH)
+        got = suite_descriptors.run_all(scratch: scratch)
 
         if got.is_err()
             print("harness: the descriptors suite could not run")
@@ -209,7 +216,7 @@ function main()
     # The per-module build cache, asked across TWO invocations with a
     # file edited in between — the one question no golden row can put.
     if only == "" || only == "cache"
-        got = suite_cache.run_all(scratch: SCRATCH, compiler: compiler)
+        got = suite_cache.run_all(scratch: scratch, compiler: compiler)
 
         if got.is_err()
             print("harness: the cache suite could not run")
@@ -222,7 +229,7 @@ function main()
     # the cache suite above asks what the second invocation does, this
     # one asks what the first one produced.
     if only == "" || only == "units"
-        got = suite_units.run_all(scratch: SCRATCH, compiler: compiler)
+        got = suite_units.run_all(scratch: scratch, compiler: compiler)
 
         if got.is_err()
             print("harness: the units suite could not run")
@@ -232,7 +239,7 @@ function main()
         ran @ ran + 1
 
     if only == "" || only == "fixes"
-        got = suite_fixes.run_default(scratch: SCRATCH, compiler: compiler)
+        got = suite_fixes.run_default(scratch: scratch, compiler: compiler)
 
         if got.is_err()
             print("harness: the fixes suite could not run")
@@ -242,7 +249,7 @@ function main()
         ran @ ran + 1
 
     if only == "" || only == "lines"
-        got = suite_lines.run_all(scratch: SCRATCH, compiler: compiler)
+        got = suite_lines.run_all(scratch: scratch, compiler: compiler)
 
         if got.is_err()
             print("harness: the lines sweep could not run")
@@ -252,7 +259,7 @@ function main()
         ran @ ran + 1
 
     if only == "" || only == "corpus"
-        got = suite_corpus.run_all(scratch: SCRATCH, compiler: compiler)
+        got = suite_corpus.run_all(scratch: scratch, compiler: compiler)
 
         if got.is_err()
             print("harness: the corpus suite could not run")
@@ -262,7 +269,7 @@ function main()
         ran @ ran + 1
 
     if only == "" || only == "warnings"
-        got = suite_warnings.run_all(scratch: SCRATCH, compiler: compiler)
+        got = suite_warnings.run_all(scratch: scratch, compiler: compiler)
 
         if got.is_err()
             print("harness: the warnings gate could not run")
@@ -274,7 +281,7 @@ function main()
     # The record checks read the tree rather than the compiler, so they
     # take no compiler at all.
     if only == "" || only == "records"
-        got = suite_records.run_all(SCRATCH)
+        got = suite_records.run_all(scratch)
 
         if got.is_err()
             print("harness: the record checks could not run")
@@ -284,7 +291,7 @@ function main()
         ran @ ran + 1
 
     if only == "" || only == "surface"
-        got = suite_surface.run_all(scratch: SCRATCH, compiler: compiler)
+        got = suite_surface.run_all(scratch: scratch, compiler: compiler)
 
         if got.is_err()
             print("harness: the surface suite could not run")
@@ -294,7 +301,7 @@ function main()
         ran @ ran + 1
 
     if only == "" || only == "special"
-        got = suite_special.run_all(scratch: SCRATCH, compiler: compiler)
+        got = suite_special.run_all(scratch: scratch, compiler: compiler)
 
         if got.is_err()
             print("harness: the special cases could not run")
@@ -306,7 +313,7 @@ function main()
     # The spec's own gate: the budget, and whether the document and the
     # compiler still name the same language.
     if only == "" || only == "spec"
-        got = suite_spec.run_all(scratch: SCRATCH, compiler: compiler)
+        got = suite_spec.run_all(scratch: scratch, compiler: compiler)
 
         if got.is_err()
             print("harness: the spec checks could not run")
@@ -316,7 +323,7 @@ function main()
         ran @ ran + 1
 
     if only == "" || only == "layout"
-        got = suite_layout.run_all(SCRATCH)
+        got = suite_layout.run_all(scratch)
 
         if got.is_err()
             print("harness: the layout check could not run")
@@ -330,7 +337,7 @@ function main()
     # form, so that a textual difference between two versions is semantic.
     # 12 s for 371 files (2026-08-28).
     if only == "" || only == "canonical"
-        got = suite_canonical.run_all(scratch: SCRATCH, compiler: compiler)
+        got = suite_canonical.run_all(scratch: scratch, compiler: compiler)
 
         if got.is_err()
             print("harness: the canonical check could not run")
@@ -342,7 +349,7 @@ function main()
     # §4.9's mark over the compiler's own map walks. Reads files and runs
     # no compiler, like `layout` beside it.
     if only == "" || only == "order"
-        got = suite_order.run_all(SCRATCH)
+        got = suite_order.run_all(scratch)
 
         if got.is_err()
             print("harness: the order check could not run")
@@ -355,5 +362,18 @@ function main()
         print("harness: no suite named " + only)
         exit(2)
 
-    if !report.verdict(total, "harness")
+    clean = report.verdict(total, "harness")
+
+    # This run's directory is its own (the pid is in the name), so removing
+    # it cannot take another run's captures with it. It goes only on a run
+    # that reached its verdict: a suite that could not run exits 2 above and
+    # leaves the directory for whoever is diagnosing it. It was never removed
+    # before this step, measured — `build/harness` outlived every run.
+    swept = shell.remove_tree(scratch)
+
+    if swept.is_err()
+        print("harness: could not remove " + scratch)
+        exit(2)
+
+    if !clean
         exit(1)

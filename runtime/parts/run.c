@@ -116,6 +116,14 @@ HeroStr hero_run_exe_suffix(void) {
 #endif
 }
 
+int64_t hero_os_pid(void) {
+#if defined(_WIN32)
+    return (int64_t)GetCurrentProcessId();
+#else
+    return (int64_t)getpid();
+#endif
+}
+
 HeroStr hero_run_discard_path(void) {
     return hero_str_from_bytes(HERO_RUN_DISCARD, (int64_t)strlen(HERO_RUN_DISCARD));
 }
