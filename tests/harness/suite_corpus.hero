@@ -53,8 +53,12 @@ constant EXAMPLES: str
 # 35 -> 37 on 2026-09-03, M-corpus-depth step 3: `examples/fannkuch/` and
 # `examples/binarytrees/`, the first two programs of the milestone's oracle
 # family. Measured the same day: 38 directories, 37 with a `main.hero`.
+#
+# 37 -> 38 on 2026-09-03, M-corpus-depth step 4: `examples/checksum/`, the
+# third of that family and the first program here whose printed output is a
+# STANDARD's own test-vector table (RFC 4648 § 10).
 constant LEAST: i64
-    37
+    38
 
 function run_all(scratch: str, compiler: str) -> report.Report?
     r: report.Report @ report.empty()

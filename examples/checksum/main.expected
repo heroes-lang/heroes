@@ -1,0 +1,11 @@
+BASE64("") = ""
+BASE64("f") = "Zg=="
+BASE64("fo") = "Zm8="
+BASE64("foo") = "Zm9v"
+BASE64("foob") = "Zm9vYg=="
+BASE64("fooba") = "Zm9vYmE="
+BASE64("foobar") = "Zm9vYmFy"
+crc32("123456789") = 0xcbf43926
+adler32("123456789") = 0x091e01de
+bytes = 9
+decoded("Zm9vYmE=") = 102 111 111 98 97

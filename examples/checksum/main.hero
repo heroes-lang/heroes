@@ -1,0 +1,159 @@
+# Three published instruments over the same bytes: CRC-32, Adler-32 and
+# Base64, each checked against the document that defines it.
+#
+# Corpus material (CLAUDE.md §9), and the third of M-corpus-depth's oracle
+# family. What the three modules beside this one have in common is that
+# **nothing here decides whether it is right** — the CRC catalogue, RFC 1950
+# and RFC 4648 do, and each module's header quotes its source with the URL and
+# the day it was fetched.
+#
+# WHAT THIS PROGRAM PRINTS is RFC 4648 § 10's BASE64 table, in the RFC's own
+# spelling, as this program computes it — so the first seven lines of
+# `main.expected` are the standard's test-vector block rather than this
+# program's opinion of itself. Measured 2026-09-03 with `diff` against the
+# lines fetched from `rfc-editor.org`: **identical**, once the RFC's
+# three-space indent is removed. Then the three numbers the other two
+# documents publish.
+#
+# WHAT IT IS FOR, beyond the oracles. The corpus was measured on 2026-09-03
+# and `u8`, `u16` and `u64` were **declared nowhere** in it: every program that
+# touched a width converted through it and went back to `i64`. Here the widths
+# are in the types — `Digest` holds two `u32` and a `u64`, `adler.Halves` holds
+# two `u16`, and `base64.decoded` gives back a `[u8]` — while every
+# calculation happens in `i64`, because the bitwise operators are `i64` only
+# (spec § Operators). That split is the whole shape of a 32-bit checksum in
+# this language, and `crc.hero`'s header is where it is argued.
+
+use adler
+use base64
+use crc
+
+# RFC 4648 § 10's seven inputs, in the order the RFC lists them.
+constant VECTORS: [str]
+    [
+        ""
+        "f"
+        "fo"
+        "foo"
+        "foob"
+        "fooba"
+        "foobar"
+    ]
+
+constant DIGITS: str
+    "0123456789abcdef"
+
+# Everything the three instruments say about one message. The two checksums
+# are `u32` because that is what they are, and the length is a `u64` because
+# that is what a size is — neither is an `i64` that happens to be small.
+record Digest
+    checksum: u32
+    rolling: u32
+    length: u64
+
+function digest_of(text: str) -> Digest
+    return Digest(
+        checksum: crc.crc32(text),
+        rolling: adler.adler32(text),
+        length: text.len().to_u64().must()
+    )
+
+# A `u32` written the way both standards write it: `0x` and eight digits, low
+# ones included, because a checksum with a leading zero dropped is a checksum
+# nobody can compare by eye.
+function hex(value: u32) -> str
+    out: [str] @ []
+    v = value.to_i64().must()
+    shift: i64 @ 28
+
+    while shift >= 0
+        nibble = v >> shift & 15
+        out @ out.push(DIGITS.slice(from: nibble, to: nibble + 1))
+        shift @ shift - 4
+
+    return "0x" + join(out, "")
+
+# The bytes of a decode, as numbers — the only way to show them, because
+# Heroes cannot build a character from a byte value (`base64.hero`'s header
+# says why, and it is a language fact rather than a gap in this program).
+function shown(data: [u8]) -> [str]
+    out: [str] @ []
+
+    for one in data
+        out @ out.push(one.to_str())
+
+    return out
+
+function main()
+    # RFC 4648 § 10, recomputed. Compare this block with the standard's.
+    for text in VECTORS
+        print("BASE64(\"", text, "\") = \"", base64.encoded(text), "\"")
+
+    # The CRC catalogue's check value for CRC-32/ISO-HDLC, and RFC 1950's
+    # Adler-32 over the same nine characters.
+    nine = digest_of("123456789")
+    print("crc32(\"123456789\") = ", hex(nine.checksum))
+    print("adler32(\"123456789\") = ", hex(nine.rolling))
+    print("bytes = ", nine.length.to_str())
+
+    # And one decode, shown as the bytes it is: 102 111 111 98 97 is `fooba`
+    # in ASCII, which is the vector two lines above read backwards.
+    back = base64.decoded("Zm9vYmE=").must()
+    print("decoded(\"Zm9vYmE=\") = ", join(shown(back), " "))
+
+test "the printed table is RFC 4648's, entry by entry"
+    # The same seven the encoder's own module asserts, asserted again HERE
+    # because this is the list `main` prints from: a vector dropped from
+    # `VECTORS` would change the output and break no test in `base64.hero`.
+    assert VECTORS.len() == 7
+    assert base64.encoded(VECTORS[0]) == ""
+    assert base64.encoded(VECTORS[1]) == "Zg=="
+    assert base64.encoded(VECTORS[2]) == "Zm8="
+    assert base64.encoded(VECTORS[3]) == "Zm9v"
+    assert base64.encoded(VECTORS[4]) == "Zm9vYg=="
+    assert base64.encoded(VECTORS[5]) == "Zm9vYmE="
+    assert base64.encoded(VECTORS[6]) == "Zm9vYmFy"
+
+test "the digest of the nine characters every one of the three documents uses"
+    nine = digest_of("123456789")
+    assert nine.checksum == 0xcbf43926
+    assert nine.rolling == 0x091e01de
+    assert nine.length == 9
+
+test "hex prints eight digits, keeping the zeros a reader needs"
+    assert hex(0x00000001.to_u32().must()) == "0x00000001"
+    assert hex(0xcbf43926.to_u32().must()) == "0xcbf43926"
+    assert hex(0x091e01de.to_u32().must()) == "0x091e01de"
+    assert hex(0xffffffff.to_u32().must()) == "0xffffffff"
+    assert hex(0.to_u32().must()) == "0x00000000"
+
+test "the empty message, through all three instruments at once"
+    # Each of the three has a defined answer for nothing at all, and they are
+    # three different answers: 0, 1, and the empty text.
+    nothing = digest_of("")
+    assert nothing.checksum == 0
+    assert nothing.rolling == 1
+    assert nothing.length == 0
+    assert base64.encoded("") == ""
+
+test "the three instruments disagree about which messages collide"
+    # Why a program carries more than one: `ab` and `ba` have the same byte
+    # sum, and both checksums notice; a checksum is not a hash, so what is
+    # asserted here is that they are DIFFERENT functions of the same bytes.
+    left = digest_of("ab")
+    right = digest_of("ba")
+    assert left.checksum != right.checksum
+    assert left.rolling != right.rolling
+    assert left.length == right.length
+    assert left.checksum.to_i64().must() != left.rolling.to_i64().must()
+
+test "a digest survives the round trip through base64"
+    # The two halves of the program meeting: encode a message, decode it, and
+    # the decoded bytes must checksum to what the original did.
+    text = "the quick brown fox jumps over the lazy dog"
+    there = base64.encoded(text)
+    assert there == "dGhlIHF1aWNrIGJyb3duIGZveCBqdW1wcyBvdmVyIHRoZSBsYXp5IGRvZw=="
+    home = base64.decoded(there).must()
+    assert home == base64.bytes_of(text)
+    assert crc.crc32(text) == digest_of(text).checksum
+    assert home.len() == 43

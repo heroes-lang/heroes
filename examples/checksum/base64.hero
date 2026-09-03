@@ -1,0 +1,280 @@
+# Base64, both ways, against the vectors in the standard that defines it.
+#
+# Corpus material (CLAUDE.md §9). Where `crc.hero` and `adler.hero` turn bytes
+# into a number, this turns bytes into text and back, which is the other half
+# of what a checksum program does for a living: six bits at a time out of
+# every three bytes, and the two padded shapes at the end that everybody gets
+# wrong.
+#
+# THE ORACLE, fetched 2026-09-03 and quoted whole — RFC 4648 § 10, *Test
+# Vectors*, the section the standard provides for exactly this purpose:
+#
+#   BASE64("") = ""
+#   BASE64("f") = "Zg=="
+#   BASE64("fo") = "Zm8="
+#   BASE64("foo") = "Zm9v"
+#   BASE64("foob") = "Zm9vYg=="
+#   BASE64("fooba") = "Zm9vYmE="
+#   BASE64("foobar") = "Zm9vYmFy"
+#
+# https://www.rfc-editor.org/rfc/rfc4648.txt
+#
+# All seven are asserted below in BOTH directions, which is more than the RFC
+# writes down: the vectors are an encoding table, and reading them backwards is
+# a second program.
+#
+# WHY DECODING STOPS AT BYTES, and this is the language rather than a choice.
+# `decoded` returns `[u8]` and not `str`, because **Heroes has no way to build
+# a character from a byte value**: the spec's conversions go the other way
+# (`to_u8` takes a number and gives a number), a string literal is ASCII-only
+# with six escapes and none of them numeric, and the runtime's byte-to-text
+# door is `hero_str_from_bytes`, which takes a `ptr` — while `[u8]` in an
+# `extern` position is `error[ffi_type]` today. So a decoder written in Heroes
+# alone can hand back the bytes and nothing else, and the way to check them is
+# `bytes_of` on the text they should be. This is a witness for M-core-packages'
+# opening question (iii), the byte buffer, and it was found by writing the
+# program rather than by reading the spec.
+
+constant ALPHABET: str
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+
+constant PAD: str
+    "="
+
+constant ERR_LENGTH: str
+    "base64_length"
+
+constant ERR_CHARACTER: str
+    "base64_character"
+
+constant ERR_PADDING: str
+    "base64_padding"
+
+# The bytes of `text`, which is what a `str` already is (spec § Types) — this
+# only changes the type, so that a caller can hand text to a byte-oriented
+# function without the two ever being confused.
+function bytes_of(text: str) -> [u8]
+    out: [u8] @ []
+    i: i64 @ 0
+
+    while i < text.len()
+        out @ out.push(text[i])
+        i @ i + 1
+
+    return out
+
+# The character six bits stand for.
+function letter(value: i64) -> str
+    return ALPHABET.slice(from: value, to: value + 1)
+
+# The six bits a character stands for, or a refusal naming it.
+function value_of(written: str) -> i64?
+    i: i64 @ 0
+
+    while i < 64
+        if ALPHABET.slice(from: i, to: i + 1) == written
+            return ok(i)
+        i @ i + 1
+
+    return fail(ERR_CHARACTER, "`" + written + "` is not one of base64's 64 characters")
+
+# `text`, encoded. The general one takes bytes; this is the spelling the RFC's
+# vectors are written in.
+function encoded(text: str) -> str
+    return encoded_bytes(bytes_of(text))
+
+# Three bytes in, four characters out — and where there are not three, the
+# missing sixth-bit groups become `=`, which is what makes the length of the
+# output say how many bytes the last group held.
+function encoded_bytes(data: [u8]) -> str
+    out: [str] @ []
+    i: i64 @ 0
+    n = data.len()
+
+    while i < n
+        b0 = data[i].to_i64().must()
+        b1: i64 @ 0
+        b2: i64 @ 0
+        held: i64 @ 1
+
+        if i + 1 < n
+            b1 @ data[i + 1].to_i64().must()
+            held @ 2
+
+        if i + 2 < n
+            b2 @ data[i + 2].to_i64().must()
+            held @ 3
+
+        # `b0 << 16 | b1 << 8 | b2` is `((b0 << 16) | (b1 << 8)) | b2`: in
+        # Heroes a shift binds tighter than `|` (spec § Operators), so the
+        # parentheses a C programmer writes here are the ones `heroes fmt`
+        # deletes.
+        block = b0 << 16 | b1 << 8 | b2
+        out @ out.push(letter(block >> 18 & 63))
+        out @ out.push(letter(block >> 12 & 63))
+
+        if held >= 2
+            out @ out.push(letter(block >> 6 & 63))
+        else
+            out @ out.push(PAD)
+
+        if held == 3
+            out @ out.push(letter(block & 63))
+        else
+            out @ out.push(PAD)
+        i @ i + 3
+
+    return join(out, "")
+
+# How many `=` close a four-character group, refusing the shapes that cannot
+# occur: padding in the first two places, and a gap in the middle.
+function padding_of(group: str) -> i64?
+    third = group.slice(from: 2, to: 3)
+    fourth = group.slice(from: 3, to: 4)
+
+    if group.slice(from: 0, to: 1) == PAD || group.slice(from: 1, to: 2) == PAD
+        return fail(
+            ERR_PADDING,
+            "`=` cannot stand in the first two places of a group, and `" + group + "` has one there"
+        )
+
+    if third == PAD && fourth != PAD
+        return fail(ERR_PADDING, "`" + group + "` pads its third character and not its fourth, which no encoder writes")
+
+    if third == PAD
+        return ok(2)
+
+    if fourth == PAD
+        return ok(1)
+
+    return ok(0)
+
+# `text`, decoded to the bytes it stands for — see the header for why this
+# stops at bytes.
+function decoded(text: str) -> [u8]?
+    if text.len() % 4 != 0
+        return fail(
+            ERR_LENGTH,
+            "a base64 text is a multiple of four characters long, and this one is " + text.len().to_str()
+        )
+    out: [u8] @ []
+    i: i64 @ 0
+
+    while i < text.len()
+        group = text.slice(from: i, to: i + 4)
+        pad = padding_of(group)?
+
+        if pad > 0 && i + 4 < text.len()
+            return fail(ERR_PADDING, "`" + group + "` is padded and is not the last group")
+        v0 = value_of(group.slice(from: 0, to: 1))?
+        v1 = value_of(group.slice(from: 1, to: 2))?
+        v2: i64 @ 0
+        v3: i64 @ 0
+
+        if pad < 2
+            v2 @ value_of(group.slice(from: 2, to: 3))?
+
+        if pad < 1
+            v3 @ value_of(group.slice(from: 3, to: 4))?
+        block = v0 << 18 | v1 << 12 | v2 << 6 | v3
+        out @ out.push((block >> 16 & 255).to_u8().must())
+
+        if pad < 2
+            out @ out.push((block >> 8 & 255).to_u8().must())
+
+        if pad < 1
+            out @ out.push((block & 255).to_u8().must())
+        i @ i + 4
+
+    return ok(out)
+
+# The code a decode refused with, or a sentence saying it did not — so a test
+# can assert WHICH refusal happened in one line.
+function refusal_of(said: [u8]?) -> str
+    return match said
+        .ok _  => "nothing was refused"
+        .err e => e.code
+
+test "the seven vectors of RFC 4648, encoding"
+    # § 10 Test Vectors, fetched 2026-09-03.
+    assert encoded("") == ""
+    assert encoded("f") == "Zg=="
+    assert encoded("fo") == "Zm8="
+    assert encoded("foo") == "Zm9v"
+    assert encoded("foob") == "Zm9vYg=="
+    assert encoded("fooba") == "Zm9vYmE="
+    assert encoded("foobar") == "Zm9vYmFy"
+
+test "the same seven, read backwards, which the RFC does not write down"
+    assert decoded("").must() == bytes_of("")
+    assert decoded("Zg==").must() == bytes_of("f")
+    assert decoded("Zm8=").must() == bytes_of("fo")
+    assert decoded("Zm9v").must() == bytes_of("foo")
+    assert decoded("Zm9vYg==").must() == bytes_of("foob")
+    assert decoded("Zm9vYmE=").must() == bytes_of("fooba")
+    assert decoded("Zm9vYmFy").must() == bytes_of("foobar")
+
+test "every length from nothing to seventeen bytes survives the round trip"
+    # The three padded shapes repeat with period three, so seventeen lengths
+    # cover each of them five times and the empty case once.
+    text = "the quick brown fox"
+    n: i64 @ 0
+
+    while n <= 17
+        piece = text.slice(from: 0, to: n)
+        assert decoded(encoded(piece)).must() == bytes_of(piece)
+        n @ n + 1
+
+test "the length of the output says how many bytes the last group held"
+    # Four characters per three bytes, always, and the `=` count is 3 - n % 3
+    # where it is not zero.
+    assert encoded("f").len() == 4
+    assert encoded("fo").len() == 4
+    assert encoded("foo").len() == 4
+    assert encoded("foob").len() == 8
+    assert encoded("the quick brown fox").len() == 28
+
+test "a byte above ASCII goes through untouched, because a str is bytes"
+    # `é` is two bytes (195 and 169), so it is one padded group, and the
+    # decoder gives both bytes back.
+    assert "é".len() == 2
+    assert encoded("é") == "w6k="
+    assert decoded("w6k=").must() == bytes_of("é")
+    assert decoded("w6k=").must().len() == 2
+
+test "the five refusals, each asserted by the code that names it"
+    # Named refusals rather than a bare `is_err()`, which is `examples/ini/`'s
+    # discipline: a decoder that refuses everything for one reason is a
+    # decoder nobody can debug, and a test that only asks `is_err()` cannot
+    # tell the two apart either.
+    assert refusal_of(decoded("Zm9")) == ERR_LENGTH
+    assert refusal_of(decoded("Zm9$")) == ERR_CHARACTER
+    assert refusal_of(decoded("=m9v")) == ERR_PADDING
+    assert refusal_of(decoded("Zm=v")) == ERR_PADDING
+    assert refusal_of(decoded("Zg==Zg==")) == ERR_PADDING
+
+    # And what is NOT refused: the last group may be padded, and only it.
+    assert refusal_of(decoded("Zm9vYg==")) == "nothing was refused"
+
+test "the alphabet is the standard one, in the standard order"
+    # RFC 4648 § 4's table, asserted at its four corners and its length, so a
+    # transposed character cannot hide behind a vector that happens to pass.
+    assert ALPHABET.len() == 64
+    assert letter(0) == "A"
+    assert letter(25) == "Z"
+    assert letter(26) == "a"
+    assert letter(51) == "z"
+    assert letter(52) == "0"
+    assert letter(61) == "9"
+    assert letter(62) == "+"
+    assert letter(63) == "/"
+
+test "a character and its value are each other's inverse, all sixty-four"
+    i: i64 @ 0
+
+    while i < 64
+        assert value_of(letter(i)).must() == i
+        i @ i + 1
+
+    assert value_of("=").is_err()
+    assert value_of(" ").is_err()
