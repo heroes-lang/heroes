@@ -232,8 +232,22 @@ compels a second tool on a platform that does not have it.
 
 ## Author's verdict
 
-**Pending.** The item that asks for it is open in `docs/work/DECIDE.md` and names
-this sitting as `panel 103`; work proceeds on the provisional default (CLAUDE.md
-§4 — a panel never blocks). Two instructions were given during the sitting and
-are recorded above: the clang floor is the coordinator's to choose from measured
-versions, and no `-Wno-` flag is an option.
+**Ratified 2026-09-03** (author instruction, *"confermo la ratifica dei 2 in
+decide"*, given the same afternoon while step 3a was being built). Two
+instructions had been given during the sitting and are recorded above: the clang
+floor is the coordinator's to choose from measured versions, and no `-Wno-` flag
+is an option.
+
+**What the yes settles**: items (1)–(5) as resolved — the 14th flag, the
+`(void *)` cast on every opaque or numeric `@` argument in its three spellings,
+the compiler's own width-and-sign check by the JSON dump and two
+`_Static_assert`s at the declaration, spec w5 at 3718 in the same commit as the
+check, Q3 as the 21st `ffi_*` code with two texts — and the clang 18 floor. Q4
+is not adopted. The JSON mechanism is chosen over DWARF on the pragmatist's
+measurement (one platform has no `llvm-dwarfdump`), which is the historian's
+objection answered by a machine and not by a preference.
+
+**What the yes does not settle**: every prediction in the table, which is scored
+at M-robustness-guards' close rather than ratified; the engineer's reprice
+conditions (a general JSON parser above 150 lines, one process per extern
+rather than per unit) stand as conditions on the landing.
