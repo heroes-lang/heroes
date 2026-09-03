@@ -214,6 +214,16 @@ alongside `-Wl,/INCREMENTAL:NO`, added after MSVC's incremental linker printed
 its full-link notice into program stdout the harness compares byte for byte —
 so a seed built by the line above passes both on.
 
+**Since M-robustness-guards step 4 (2026-09-03) a stack death on this box is not
+silent.** `runtime/parts/stack.c`'s vectored exception handler writes `panic:
+stack exhausted` to stderr before the process dies, measured here with
+`down(10000000)` at `-O0` and at `-O2`: the line, then exit 127. So the pair
+above splits: a 127 WITH that line is the stack, a 127 with both streams empty
+is a program that could not be started. The line names the failure and not the
+function — `SymFromAddr` needs dbghelp initialised before the fault and a PDB
+beside the binary, neither measured on this box yet — where the Mac and Linux
+say `… in main.down`.
+
 **Seed build time here: 7.7 s**, measured 2026-08-31 (`real 0m7.715s`, first
 build after a clone) against 3.5 s on the Mac. A full cold net run is roughly
 12 minutes. The sync loop that matters: a delta `git push win main:main` from

@@ -166,6 +166,34 @@ ceiling is 300 — and the seam has a name, which is the only kind of split
 the layout suite's message asks for: what version answers, whether it is
 enough, and what to say when it is not. `toolchain.hero` is back at 297.
 
+**`-O2` does not turn the recursion into a loop; it makes the frames cheaper
+(step 4).** The sitting's fixture was `down(100000)`, and at `-O2` it printed
+the depth at exit 0 on all three platforms — which read as clang's
+recursion-to-loop transformation and was written down as one. It is not: at a
+million, `-O2` on the Mac is `panic: stack exhausted in deep1m.down`, exit
+134, and so is ten million at every level. What `-O2` buys is a frame small
+enough for a hundred thousand of them to fit in 8 MB. One measurement at one
+depth had been read as a property of the optimiser; the inference carried no
+number and CLAUDE.md §1's tell — *so*, *therefore* — was on it.
+
+**Windows holds a hundred thousand frames, so the fixture could not.** The
+64 MB `/STACK` panel 058 ratified is eight times the Unix stack, and
+`down(100000)` at `-O0` printed `100000` at exit 0 on the box while it
+overflowed on the Mac and in the Linux image. A fixture that fails on two
+platforms out of three tests the platform, not the guard; the depth went to
+ten million, which fits nowhere, and the surface row asserts the message and
+not the exit code — `abort()` is 134 on POSIX and the box reports 127. The
+Windows arm names the failure and not the function: `SymFromAddr` needs
+dbghelp initialised before the fault and a PDB beside the binary, neither
+measured today, so the line says `panic: stack exhausted` and the site says
+so too.
+
+**The guard and the sanitizer never meet.** Under `--sanitize` nothing is
+installed (`__has_feature(address_sanitizer)`), and the run/ suite — 95 ASan
+goldens — is green on the Mac and on Linux with the part in the runtime;
+`down(100000) --sanitize` is ASan's own `stack-overflow` report, which names
+the `.hero` line and is the better one.
+
 ## What broke and why
 
 - **`keys` is a built-in.** `ir/inout.hero` named a local `keys` and the
@@ -206,6 +234,17 @@ enough, and what to say when it is not. `toolchain.hero` is back at 297.
   rows first reused `long`'s note — *Windows is 32 where the Unixes are 64* —
   which is false for `size_t` on 64-bit Windows; the object-size typedefs got
   their own note before the first golden could print the wrong one.
+
+- **A copy of the tree as the workbench, and one number carried from the
+  wrong depth.** Step 4 was built and measured in a scratchpad copy while the
+  net measured the real tree for step 3, then applied with one script; the
+  copy's first fixture said `100000` and its comment said `-O2` prints — both
+  measured, both true at that depth, and the second one false as a rule (above).
+  The fixture and the comment were rewritten before the script touched the
+  real tree.
+- **The Windows surface row went red first, on the platform the depth was not
+  chosen for.** 84 passed, 1 failed: the deep row printed `100000` where the
+  row wanted a panic. The measurement, not the reasoning, found it.
 
 ## What landed, and what carried forward
 

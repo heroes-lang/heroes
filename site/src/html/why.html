@@ -194,13 +194,14 @@ graphics, audio, terminal <span class="c">→</span> SDL, raylib, ncurses</code>
     on every run, instead of carrying on with an invented value. And this is not
     asserted, it is measured: with the tools that watch memory while the program
     runs, with a check that reports at exit anything not given back, and with
-    the deliberately damaged programs. Two holes remain, and both are declared. When you hand data to a C
-    function, what that function does with it is still C's business. And a
-    program that recurses deeply enough runs out of stack: measured on this
-    compiler, half a million frames is fine and a million is not, and what you
-    get is the operating system stopping the program rather than a message from
-    it. Build with <code>--sanitize</code> and the sanitizer names the function
-    and the line.
+    the deliberately damaged programs. One hole remains, and it is declared: when you hand data to a C
+    function, what that function does with it is still C's business. Running
+    out of stack used to be the second hole, and it is closed. A program that
+    recurses deeply enough now stops with <code>panic: stack exhausted in
+    main.down</code>, naming the function, where it used to be the operating
+    system killing it without a word. On Windows the line names the failure
+    and not the function. Build with <code>--sanitize</code> and the
+    sanitizer names the function and the line instead.
   </p>
 
   <h2>The rules it lives by <span class="nod">· fashion ·</span></h2>
@@ -209,7 +210,7 @@ graphics, audio, terminal <span class="c">→</span> SDL, raylib, ncurses</code>
     <li><b>One way to write anything.</b> A command that puts code back into its single canonical shape, one word for loops, no automatic conversion between types, and argument names required where types are not enough to tell them apart. The mistakes models actually make become errors the compiler actually raises.</li>
     <li><b>Errors written to be read by a machine.</b> Every message carries everything needed to fix the program in one go: what the compiler expected, where the thing it clashes with was declared, and the repair, tagged <code>certain</code> when it is sure and <code>guess</code> when it is a suggestion. And writing <code>???</code> leaves a declared gap and asks the compiler what belongs in it.</li>
     <li><b>A program must not crash.</b> Where two designs are both acceptable and one of them can be made to fall over, the other wins, whatever it costs in elegance or in words. The section above has the argument and the one hole it leaves open.</li>
-    <li><b>Small enough to compile itself.</b> The whole specification measures 3,663 tokens against a hard ceiling of 4,096: five pages, written to be handed to a model rather than shelved.</li>
+    <li><b>Small enough to compile itself.</b> The whole specification measures 3,718 tokens against a hard ceiling of 4,096: five pages, written to be handed to a model rather than shelved.</li>
   </ul>
 
   <h2>The obvious objections <span class="nod">· quicksand, avoided ·</span></h2>
