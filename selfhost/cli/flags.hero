@@ -84,10 +84,17 @@ function flags() -> [str]
 # (DESIGN-LOG:282's rule, `in_the_c_runtime`'s shape). `selfhost/` gains no
 # platform axis: it asks a question and gets a fact.
 function link_flags() -> [str]
-    none: [str] = []
-
+    # **`-rdynamic` on every POSIX link line** (panel 104, 2026-09-03). The stack
+    # guard names the function that ran out of stack through `dladdr`, and glibc's
+    # `dladdr` reads only `.dynsym` — measured in the Linux image: without the
+    # flag the message is `panic: stack exhausted` and nothing more; with it,
+    # `… in d100000.down`, and the binary grows 134,640 → 142,832 bytes. Darwin
+    # names the symbol either way (`-g` on every build, nothing strips) and
+    # accepts the flag (measured: exit 0, no diagnostic), so the flag is POSIX's
+    # rather than Linux's — `selfhost/` still asks the machine one question,
+    # `exe_suffix()`, and gains no second platform axis.
     if process.exe_suffix() != ".exe"
-        return none
+        return ["-rdynamic"]
 
     # **`/INCREMENTAL:NO` because this compiler stages and renames.** Every
     # binary is linked to `<name>.tmp` and then published with a rename, so
@@ -136,7 +143,7 @@ test "the link flags are one platform's, and the platform is asked not assumed"
         assert got[0] == "-Wl,/STACK:67108864"
         assert got[1] == "-Wl,/INCREMENTAL:NO"
     else
-        assert got.len() == 0
+        assert got == ["-rdynamic"]
 
     # And a link flag never reaches a compile line. `flags()` is pinned at
     # fourteen above, so the way this could break is somebody pasting the

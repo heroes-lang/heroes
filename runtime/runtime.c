@@ -75,8 +75,16 @@
 #  define _CRT_SECURE_NO_WARNINGS 1
 #endif
 
-#if defined(__linux__) && !defined(_POSIX_C_SOURCE)
-#  define _POSIX_C_SOURCE 200809L
+/* **Linux asks for GNU, not bare POSIX, since 2026-09-03** (panel 104). The
+ * stack guard reads the main thread's bounds with `pthread_getattr_np`, a GNU
+ * extension glibc declares only under `_GNU_SOURCE` — measured: undeclared
+ * under `_POSIX_C_SOURCE 200809L`, a compile error. `_GNU_SOURCE` implies
+ * POSIX 2008, so every declaration the paragraph above asks for stays
+ * declared; what it adds is what one part needs, and this comment is where
+ * the next reader learns that the older macro was a deliberate choice replaced
+ * for a measured reason rather than an oversight. */
+#if defined(__linux__) && !defined(_GNU_SOURCE)
+#  define _GNU_SOURCE 1
 #endif
 
 #include "heroes_runtime.h"
@@ -96,6 +104,11 @@
 
 /* Aborting and printing: no dependencies, and everything below may abort. */
 #include "parts/panic.c"
+
+/* The guard-page handler that turns a stack overflow into a panic with the
+ * function's name (panel 104). Needs only panic.c above it; installed once
+ * from hero_args_set, in os.c below. */
+#include "parts/stack.c"
 
 /* The single allocation point and the live-block counter (design.md §4.20).
  * First after `panic.c`, because everything that allocates needs both. */

@@ -80,6 +80,10 @@ static char **hero_argv = NULL;
 void hero_args_set(int argc, char **argv) {
     hero_stdout_is_bytes();
     hero_err_unbuffered();
+    /* The stack guard goes up here, before a program's first line, because
+     * this is the one call every generated `main` makes first — so the
+     * emitted C and the ABI stamp are untouched (panel 104). */
+    hero_stack_guard_install();
     hero_argc = argc;
     hero_argv = argv;
 }
