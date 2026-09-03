@@ -189,6 +189,14 @@ HeroStr hero_run_discard_path(void);
  * and then cannot be started, because CreateProcess's search appends the
  * executable extensions rather than trying the bare name. */
 HeroStr hero_run_exe_suffix(void);
+
+/* THIS PROCESS'S OWN ID, as the operating system numbers it (`getpid` /
+ * `GetCurrentProcessId`). The test harness puts it in the name of its scratch
+ * directory so that two harnesses started together never share one
+ * (M-robustness-guards step 5). The collision was found by doing it: two runs
+ * in one `build/harness`, and a blessing wrote the other run's capture to disk
+ * while both reported success. ABI 18 -> 19 for this declaration. */
+int64_t hero_os_pid(void);
 /* LISTING A DIRECTORY, AND REMOVING A TREE.
  *
  * The test harness reached these through `find … -print0` and `rm -rf`, which

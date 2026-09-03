@@ -40,6 +40,7 @@ extern "hero_os.h"
     function hero_run_arg(word: str)
     function hero_run_limit(seconds: i64)
     function hero_run_exe_suffix() -> str
+    function hero_os_pid() -> i64
     function hero_run_go(program: cstr, out_path: cstr, err_path: cstr, @status: i64) -> i64
     function hero_run_discard_path() -> str
     function hero_fs_exists(path: cstr) -> i64
@@ -510,6 +511,11 @@ function remove_tree(path: str) -> ()?
     if hero_dir_remove_tree(path: path.cstr()) != 0
         return fail("cannot_run", "cannot remove " + path)
     return ok()
+
+# This process's id — the one number no other process running now shares,
+# which is what a scratch directory's name needs (main.hero).
+function pid() -> i64
+    return hero_os_pid()
 
 test "a status is decoded the way a shell prints it"
     # POSIX is this case's subject, and this machine answers for itself
