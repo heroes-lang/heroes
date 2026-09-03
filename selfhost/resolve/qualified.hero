@@ -269,7 +269,7 @@ test "a name the module does not declare earns the module's own list"
     assert r.out.diagnostics.len() == 1
     assert r.out.diagnostics[0].code == "unknown_in_module"
 
-test "elsewhere splits on the use line, certain against guess"
+test "elsewhere splits on the use line, and neither repair is certain"
     r: state.Resolver @ state.new_resolver(expr_count: 0, type_count: 0)
     r.module @ "t"
     resolved.declare_top(@r.out, module: "geom", name: "dist2", decl: 0)
@@ -279,10 +279,14 @@ test "elsewhere splits on the use line, certain against guess"
     missing = name_declared_elsewhere(@r, "dist2", span)
     assert missing.must().fixes[0].certainty == .guess
 
-    # With the use written, the same name earns the certain rewrite.
+    # With the use written, the same name earns the rewrite — and since
+    # 2026-09-03 that rewrite is a guess too: on `window: ptr` beside
+    # `use window` it prepended a qualifier the line already had, and a
+    # fix that reproduces itself is no fix (module/diagnostics.hero says
+    # the rest; M-robustness-guards step 2).
     resolved.declare_use(@r.out, from: "t", binding: "geom", module: "geom")
     have = name_declared_elsewhere(@r, "dist2", span)
-    assert have.must().fixes[0].certainty == .certain
+    assert have.must().fixes[0].certainty == .guess
     assert have.must().fixes[0].replacement == "geom.dist2"
 
     # A name only the library declares is not "elsewhere".

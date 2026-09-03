@@ -12,8 +12,20 @@
 #      the file broken is a `guess` that lied, and the second half is what
 #      makes the tag mean something.
 #
-# Only `check/` cases carry `.fixed` files, and `cases.collect` ignores
-# them by design — a `.fixed` is not a case, it is a case's answer.
+# `check/` cases carry `.fixed` files beside them, and `cases.collect`
+# ignores them by design — a `.fixed` is not a case, it is a case's answer.
+#
+# **And since 2026-09-03 the multi-file fixtures carry them too**
+# (M-robustness-guards step 2). Every diagnostic about modules needs two
+# files to provoke, so for as long as `.fixed` lived only in `check/`, §8's
+# promise had never once run on a module diagnostic — which is how
+# `needs_qualifying` shipped a `certain` fix that reproduces itself
+# (`window.destroy()` → `window.window.destroy()`, panel 102's pragmatist).
+# In `tests/golden/surface-fixtures/<case>/`, an `X.fixed` beside `X.hero`
+# says: `check <case>/X.hero --apply` produces exactly this text, and the
+# directory copied to scratch with `X.hero` replaced by it checks clean —
+# EVERY `.hero` in the copy, because the fix is applied to one file and the
+# program is all of them.
 
 use cases
 use report
@@ -27,10 +39,21 @@ constant CHECK_DIR: str
 constant LEAST: i64
     6
 
+constant FIXTURES_DIR: str
+    "tests/golden/surface-fixtures"
+
+# Measured 2026-09-03: one fixture carries a `.fixed` (`qualifytypo`, the
+# `unknown_in_module` repair). The floor is the same idea as LEAST: a walk
+# that finds nothing reports green.
+constant LEAST_FIXTURES: i64
+    1
+
 # The golden tree's own answer, with the directory and the floor as
 # parameters so the tests below can point it at a tree they built.
 function run_default(scratch: str, compiler: str) -> report.Report?
-    return run_all(scratch: scratch, compiler: compiler, dir: CHECK_DIR, least: LEAST)
+    single = run_all(scratch: scratch, compiler: compiler, dir: CHECK_DIR, least: LEAST)?
+    multi = run_fixtures(scratch: scratch, compiler: compiler, dir: FIXTURES_DIR, least: LEAST_FIXTURES)?
+    return ok(report.tally(one: single, two: multi))
 
 function run_all(scratch: str, compiler: str, dir: str, least: i64) -> report.Report?
     # One directory walk answers "does this case have a .fixed?" for every
@@ -98,6 +121,109 @@ function run_all(scratch: str, compiler: str, dir: str, least: i64) -> report.Re
         )
     return ok(r)
 
+# The multi-file half: one directory per case under `dir`, and inside it
+# an `X.fixed` beside the `X.hero` it repairs.
+function run_fixtures(scratch: str, compiler: str, dir: str, least: i64) -> report.Report?
+    r: report.Report @ report.empty()
+    seen: i64 @ 0
+
+    for case_dir in shell.list_directories(scratch: scratch, dir: dir)?
+        entries = shell.list_entries(scratch: scratch, dir: case_dir)?
+        present: {str: bool} @ {}
+
+        for entry in entries
+            present[entry] @ true
+
+        for entry in entries
+            if !strings.ends_with(text: entry, suffix: ".fixed")
+                continue
+            seen @ seen + 1
+            name = strings.base_name(path: case_dir) + "/" + strings.base_name(path: entry)
+            source = strings.without_suffix(text: entry, suffix: ".fixed") + ".hero"
+
+            if present[source].is_err()
+                report.keep_failure(
+                    @r,
+                    label: "fixes/" + name,
+                    detail: "  " + entry + " repairs nothing: there is no " + source
+                )
+                continue
+            want = read_file(entry)
+
+            if want.is_err()
+                report.keep_failure(@r, label: "fixes/" + name, detail: "  cannot read " + entry)
+                continue
+            applied = shell.run(scratch: scratch, program: compiler, words: [compiler, "check", source, "--apply"])
+
+            if applied.is_err()
+                report.keep_failure(@r, label: "fixes/" + name, detail: "  cannot run the compiler on " + source)
+                continue
+
+            if applied.must().out != want.must()
+                report.keep_failure(
+                    @r,
+                    label: "fixes/" + name,
+                    detail: report.mismatch(what: source + " --apply", expected: want.must(), actual: applied.must().out)
+                )
+                continue
+
+            # The repaired PROGRAM checks clean: the directory, with the one
+            # file replaced, and every `.hero` in it re-checked.
+            copy = scratch + "/fixed/" + strings.base_name(path: case_dir)
+            _ = shell.remove_tree(copy)
+            _ = shell.mkdir_all(copy)
+            broken: str @ ""
+
+            for file in entries
+                if !strings.ends_with(text: file, suffix: ".hero")
+                    continue
+                text: str @ ""
+
+                if file == source
+                    text @ want.must()
+                else
+                    original = read_file(file)
+
+                    if original.is_err()
+                        broken @ "cannot read " + file
+                        continue
+                    text @ original.must()
+
+                if write_file(path: copy + "/" + strings.base_name(path: file), text: text).is_err()
+                    broken @ "cannot write the copy of " + file
+
+            if broken != ""
+                report.keep_failure(@r, label: "fixes/" + name, detail: "  " + broken)
+                continue
+
+            for file in entries
+                if !strings.ends_with(text: file, suffix: ".hero") || broken != ""
+                    continue
+                placed = copy + "/" + strings.base_name(path: file)
+                rechecked = shell.run(
+                    scratch: scratch,
+                    program: compiler,
+                    words: [compiler, "check", placed, "--brief"]
+                )
+
+                if rechecked.is_err()
+                    broken @ "cannot run the compiler on " + placed
+                else if rechecked.must().code != 0
+                    broken @ placed + " does not check clean after the fix in " + strings.base_name(path: source) + " — a `certain` fix that leaves the program broken is a `guess` that lied:\n" + rechecked.must().err
+
+            if broken != ""
+                report.keep_failure(@r, label: "fixes/" + name, detail: "  " + broken)
+                continue
+            report.keep_pass(@r)
+
+    if seen < least
+        report.keep_failure(
+            @r,
+            label: "fixes/fixtures",
+            detail: "  only " + seen.to_str() + " fixture(s) carry a `.fixed`, and there were " + least.to_str() + " — the module class of §8's promise is tested by these and nothing else"
+        )
+    return ok(r)
+
 test "the fixes suite catches a wrong application and a repair that does not check clean"
     scratch = "build/harness-selftest"
     tree = scratch + "/fixes"
@@ -140,3 +266,53 @@ test "the fixes suite catches a wrong application and a repair that does not che
     assert !red.is_err()
     assert red.must().passed == 0
     assert strings.contains(text: red.must().failures[0], needle: "--apply")
+
+test "the fixtures half applies across two files, re-checks the whole program, and catches a lie"
+    scratch = "build/harness-selftest"
+    tree = scratch + "/fixtures"
+    assert !shell.remove_tree(tree).is_err()
+    assert !shell.mkdir_all(tree + "/typo").is_err()
+
+    # `geom.dist` where geom declares `dist2`: unknown_in_module's one-candidate
+    # repair, which is certain — and it lives in a file that only checks clean
+    # together with its module.
+    main = "use geom\n\nfunction main()\n    print(geom.dist(a: 1, b: 2))\n"
+    geom = "function dist2(a: i64, b: i64) -> i64\n    return a * a + b * b\n"
+    assert !write_file(path: tree + "/typo/main.hero", text: main).is_err()
+    assert !write_file(path: tree + "/typo/geom.hero", text: geom).is_err()
+    compiler = shell.some_compiler()
+    assert compiler.len() > 0
+    applied = shell.run(
+        scratch: scratch,
+        program: compiler,
+        words: [compiler, "check", tree + "/typo/main.hero", "--apply"]
+    )
+    assert !applied.is_err()
+    assert strings.contains(text: applied.must().out, needle: "geom.dist2(")
+    assert !write_file(path: tree + "/typo/main.fixed", text: applied.must().out).is_err()
+    green = run_fixtures(scratch: scratch, compiler: compiler, dir: tree, least: 1)
+    assert !green.is_err()
+    assert green.must().passed == 1
+    assert green.must().failed == 0
+
+    # The floor.
+    short = run_fixtures(scratch: scratch, compiler: compiler, dir: tree, least: 2)
+    assert !short.is_err()
+    assert short.must().failed == 1
+
+    # A `.fixed` that is not what the compiler produces.
+    assert !write_file(path: tree + "/typo/main.fixed", text: "use geom\n\nfunction main()\n    print(geom.dist3(a: 1, b: 2))\n").is_err()
+    red = run_fixtures(scratch: scratch, compiler: compiler, dir: tree, least: 1)
+    assert !red.is_err()
+    assert red.must().passed == 0
+    assert strings.contains(text: red.must().failures[0], needle: "--apply")
+
+    # A `.fixed` the compiler WOULD produce that does not check clean with its
+    # module: the second half, which is the one that makes the tag mean
+    # something. `geom.hero` loses `dist2`, so the applied text is right and
+    # the program is still broken.
+    assert !write_file(path: tree + "/typo/main.fixed", text: applied.must().out).is_err()
+    assert !write_file(path: tree + "/typo/geom.hero", text: "function dist3(a: i64, b: i64) -> i64\n    return a + b\n").is_err()
+    lied = run_fixtures(scratch: scratch, compiler: compiler, dir: tree, least: 1)
+    assert !lied.is_err()
+    assert lied.must().passed == 0

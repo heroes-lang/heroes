@@ -1,0 +1,6 @@
+use window
+
+function main()
+    window: ptr @ nullptr  #~ shadowed_binding
+    window @ nullptr
+    _ = window.destroy()  #~ needs_qualifying

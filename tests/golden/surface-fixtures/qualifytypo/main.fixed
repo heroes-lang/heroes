@@ -1,0 +1,10 @@
+# The multi-file case that carries a `.fixed` (M-robustness-guards step 2):
+# `geom.dist` where `geom` declares `dist2` is `unknown_in_module` with its
+# one-candidate repair, which is certain — and the program only checks clean
+# together with its module, so `.fixed` in `check/` could never have tested
+# it. `main.fixed` is what `check main.hero --apply` writes; the fixes suite
+# copies this directory with that text in place and re-checks every file.
+use geom
+
+function main()
+    print(geom.dist2(a: 1, b: 2))  #~ unknown_in_module

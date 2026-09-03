@@ -265,6 +265,8 @@ function verb_probes() -> [probe.Probe]
         row(name: "the same shape with the header's own signature runs", argv: "run tests/golden/surface-fixtures/externsignature/right.hero", code: 0).out_is("4.0\n")
         row(name: "one C symbol carries two bindings, in two modules", argv: "run tests/golden/surface-fixtures/twoarity/main.hero", code: 0).out_is("n = 42\ns = forty-two\n")
         row(name: "a local may not take the name a use bound, and one mistake is one diagnostic", argv: "check tests/golden/surface-fixtures/localtakesamodule/main.hero", code: 1).err_has("error[shadowed_binding]").err_has("what this file calls the module `state`").err_has("use state as <other>").err_has("or rename this binding").err_lacks("module_is_not_a_value").err_lacks("internal error")
+        row(name: "a ptr local wearing a module's name is two diagnostics, and the qualifying repair is a guess", argv: "check tests/golden/surface-fixtures/qualifyptr/main.hero", code: 1).err_has("error[shadowed_binding]").err_has("error[needs_qualifying]").err_lacks("fix (certain)").err_lacks("internal error")
+        row(name: "apply on it leaves the text untouched, because a fix that reproduced itself was no fix", argv: "check tests/golden/surface-fixtures/qualifyptr/main.hero --apply", code: 0).out_is("use window\n\nfunction main()\n    window: ptr @ nullptr  #~ shadowed_binding\n    window @ nullptr\n    _ = window.destroy()  #~ needs_qualifying\n").out_lacks("window.window")
         row(name: "text names the file a diagnostic is in", argv: "check tests/golden/surface-fixtures/cross/main.hero --brief", code: 1).err_has("geom.hero:5:")
         row(name: "json names it too", argv: "check tests/golden/surface-fixtures/cross/main.hero --json", code: 1).err_has("\"line\": 5,")
         row(name: "the hole count names the file the holes are in", argv: "build tests/golden/surface-fixtures/holes/main.hero", code: 1).err_has("no binary: 1 hole in ").err_has("geom.hero")
@@ -318,7 +320,11 @@ test "the tables are what this module is, so they are counted"
     assert help_probes().len() == 4
     assert render_probes().len() == 9
     assert ffi_probes().len() == 17
-    assert verb_probes().len() == 33
+
+    # 33 -> 35 on 2026-09-03, M-robustness-guards step 2: `qualifyptr`'s two
+    # rows — the program whose `certain` fix reproduced itself, now a guess,
+    # and `--apply` leaving its text untouched.
+    assert verb_probes().len() == 35
 
 test "a probe holds when everything it asks for is true"
     scratch = "build/harness-selftest"
