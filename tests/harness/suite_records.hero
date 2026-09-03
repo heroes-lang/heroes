@@ -171,8 +171,15 @@ constant REFUSED: [str]
 # row. The planning found the same milestone open in `SCHEDULED.md` and closed
 # in `DESIGN-LOG.md` a day after its close — two lists disagreeing about one
 # fact — which is the shape a count that must be moved by hand exists to catch.
+#
+# **46 → 48 on 2026-09-03**, `M-core-packages` and `M-web-framework`, scheduled
+# by author instruction out of a reasoning session the same evening: two ids that
+# reach this number before either has a step, a tag or a sitting — the sitting is
+# at the first one's opening — as `M-interpolation-verdict` did. Two rows in one
+# move because they are two deliverables (CLAUDE.md §14): the packages, and the
+# framework that composes them.
 constant ROWS: i64
-    46
+    48
 
 # The two documents whose citations are checked. They are the two a reader is sent
 # to for a rule, and the only two this project rewrites rather than appends to.

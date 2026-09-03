@@ -60,11 +60,11 @@ M-separate-compilation already did.
 |---|---|
 | **Current milestone** | **Two open, in two sessions** (author instruction 2026-09-03). **M-corpus-depth** — **OPEN 2026-09-03**, row 33: `heroes mutate` reads its corpus again (it refused `examples/` for a day), the gate on every CI leg, then nine programs for the rung between a program and the compiler. **M-isolated-threads** — **OPEN 2026-09-03**, row 34: Part 7.13 concurrency, per-thread heaps, copying at the boundaries, no scheduler — and the one hole panel 104 left, a C library's own thread overflowing its stack |
 | **Last closed** | **M-robustness-guards**, 2026-09-03, tag `m-robustness-guards` ([031](journal/031-robustness-guards.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
-| Milestones closed | 32 of 42 · 32 tags |
+| Milestones closed | 32 of 44 · 32 tags |
 | The compiler | **51,788 lines** of Heroes in **178** modules across **10 directories** and 37 flat files · the seed **840,806** lines of generated C |
 | The spec | **3718** tokens of a hard 4096 · headroom **378** · runtime ABI **19** |
 | Records | sittings **103** · journals 32 · measurements **14** · examples **35** · defects 5 · the site **46** pages (built 2026-09-03), 13 doc chapters per edition |
-| Waiting on the author | **1 decision** (a discarded fallible value swallows its error: `_ = f()?` → `_ = f()` compiles, nine times in the corpus — measurement 014; `heroes mutate` in CI was asked and answered the same evening) · **13** in `SCHEDULED.md` · 297 in `LEARN.md` (never a gate) · an **outstanding veto** of the rule that stands (`docs/panel/101` R3) · the push of this close, which publishes the site's one-hole paragraph |
+| Waiting on the author | **1 decision** (a discarded fallible value swallows its error: `_ = f()?` → `_ = f()` compiles, nine times in the corpus — measurement 014; `heroes mutate` in CI was asked and answered the same evening) · **18** in `SCHEDULED.md` · 297 in `LEARN.md` (never a gate) · an **outstanding veto** of the rule that stands (`docs/panel/101` R3) · the push of this close, which publishes the site's one-hole paragraph |
 
 Every number re-measured 2026-09-03 at the close. **This section held three
 stale tables until that day** — 64 lines against a ceiling of 15, caught here.
@@ -126,7 +126,7 @@ heroes test selfhost/main.hero                 # the compiler's own tests
 ## The chain
 
 One table, one row per milestone, **closed first and scheduled after**: rows 1–32
-are done, in the order they closed, and rows 33–42 are what is next, in the order
+are done, in the order they closed, and rows 33–44 are what is next, in the order
 they will be taken. `warrant` is why a milestone exists: **v1** (the self-hosting
 finish line), **closure list** (design.md §1.0 — the compiler needs it), **§1.1**
 (comprehension is the objective), or **scheduled, no warrant**.
@@ -171,13 +171,15 @@ and why one overtook another are under the table, in § Who scheduled what.
 | 33 | **M-corpus-depth** | **OPEN** 2026-09-03 | — | — | the rung between a program and the compiler: `heroes mutate` reads its corpus again, then nine programs — oracle-checked, deep, FFI at program scale · **§1.1** |
 | 34 | **M-isolated-threads** | **OPEN** 2026-09-03 | — | — | Part 7.13 concurrency: per-thread heaps, copying at the boundaries, no scheduler |
 | 35 | **M-package-manager** | scheduled | — | — | `heroes add`/`heroes fetch`; bindings instead of a standard library |
-| 36 | **M-qbe-backend** | scheduled | — | — | Part 7.14 — the proof that the IR is not C in disguise |
-| 37 | **M-lsp-server** | scheduled | — | — | `heroes lsp` |
-| 38 | **M-vscode-extension** | scheduled | — | — | the extension, complete |
-| 39 | **M-interpolation-verdict** | scheduled | — | — | the ruling on design.md Part 7 item 7, string interpolation — a decision, not a feature |
-| 40 | **M-journey-book** | scheduled | — | — | the journey — how this language came to be |
-| 41 | **M-guide-book** | scheduled | — | — | the guide, as a book you would find in a shop · **§1.1** |
-| 42 | **M-publication-gate** | scheduled | — | — | the last gate before anything goes outward · CLAUDE.md §14 |
+| 36 | **M-core-packages** | scheduled | — | — | small packages that compose, organised as Go's tree, in Heroes or over C |
+| 37 | **M-web-framework** | scheduled | — | — | composes the core packages, Go/Echo style: explicit routes, records, no magic |
+| 38 | **M-qbe-backend** | scheduled | — | — | Part 7.14 — the proof that the IR is not C in disguise |
+| 39 | **M-lsp-server** | scheduled | — | — | `heroes lsp` |
+| 40 | **M-vscode-extension** | scheduled | — | — | the extension, complete |
+| 41 | **M-interpolation-verdict** | scheduled | — | — | the ruling on design.md Part 7 item 7, string interpolation — a decision, not a feature |
+| 42 | **M-journey-book** | scheduled | — | — | the journey — how this language came to be |
+| 43 | **M-guide-book** | scheduled | — | — | the guide, as a book you would find in a shop · **§1.1** |
+| 44 | **M-publication-gate** | scheduled | — | — | the last gate before anything goes outward · CLAUDE.md §14 |
 
 Three closed milestones have no tag of their own because they were parents or
 sub-steps: **M-checker-core**, **M-data-declarations** and **M-rich-diagnostics**
@@ -240,14 +242,30 @@ row number, because a reorder moves a number and never a name (CLAUDE.md §14).
   for the CI question — so that the metric the thesis rests on is repaired
   before anything else is measured against it. **Two milestones are open at
   once**, in two sessions, and the table says so rather than hiding one.
+- **M-core-packages** and **M-web-framework** — **scheduled by author instruction
+  2026-09-03**, the same evening, out of a reasoning session
+  (`docs/reasoning/005-packages-in-place-of-a-standard-library.md`): *"vorrei
+  avere tutti gli strumenti necessari a costruire un web framework alla Rails o
+  Django o anche più sottile, tipo Go, Echo o FastAPI"*, and then, when a single
+  toolkit was proposed, *"mi immagino più pacchetti che si combinano e poi quello
+  web che li usa tutti; il modello è Go come organizzazione"*. Placed after
+  M-package-manager because `heroes fetch` is what makes a package a thing you
+  distribute. **Two rows because they are two deliverables** (CLAUDE.md §14): the
+  packages, and the framework that composes them. The level is Go's and Echo's —
+  everything explicit — because the Rails and Django shape rests on Part 6's own
+  rows, metaprogramming, dynamic dispatch and inheritance (`design.md:2382-2404`).
+  **The sitting sits at the opening, not at the scheduling**, on
+  M-interpolation-verdict's precedent, and the author added its sixth question the
+  same night: conditional compilation — *"la compilazione condizionale con la macro
+  if che però non è una macro, o un'altra parola chiave"*.
 
 ---
 
 ## The milestones, one by one
 
 One section per milestone that still has something to say, **in the order of the
-table above** — so the **seven closed** ones come first and the **nine
-scheduled** ones after (CLAUDE.md §14: the table carries the numbers, the
+table above** — so the **eight closed** ones come first and the **twelve** open or
+scheduled ones after (CLAUDE.md §14: the table carries the numbers, the
 sections carry the order, and neither repeats the other).
 
 **Rows 1–21 have no section here**, and that is the rule rather than an omission:
@@ -487,7 +505,7 @@ code block comes from `examples/`, and publishing is a hard stop.
 - **Publishing stays a hard stop** (CLAUDE.md §14): the site is built here and
   goes outward only when the author says so.
 
-### M-robustness-guards — the guards that shut the holes
+### M-robustness-guards — the guards that shut the holes *(closed 2026-09-03)*
 
 **Done 2026-09-03**, tag `m-robustness-guards`; the record is
 [journal 031](journal/031-robustness-guards.md). What a later milestone has to
@@ -567,7 +585,7 @@ measured on the Mac, the Linux image and the Windows box before its commit.
 
 ### M-package-manager — packages, and what stands in for a standard library
 
-**Scheduled, no warrant.** Not a decision to take later: design.md:637 already
+**Scheduled, no warrant.** Not a decision to take later: design.md:772 already
 fixes the shape — *"No package manager exists before modules do; when it arrives
 it will be `heroes add`/`heroes fetch` — inside the same binary"* (never a second
 binary, CLAUDE.md §6 and §10). Its real prerequisite is
@@ -584,7 +602,153 @@ here in a form the constraint permits: **distributable bindings**, ordinary
 Heroes modules over real C headers, each with its link flag declared next to the
 `extern` that needs it (§3.5). The difference is not cosmetic: a binding is
 verified by clang against the header it names, and a standard library is verified
-by whoever wrote it.
+by whoever wrote it. **What this milestone does not deliver is the packages**:
+those are M-core-packages, the row after it — and the sentence just above,
+*verified by clang, or by whoever wrote it*, is the first question that
+milestone's opening sitting has to answer for a package written in Heroes alone.
+
+**Panel 056's return conditions live here, as that sitting ruled** (`docs/panel/056`
+§ Resolution, deliverable D, ratified 2026-08-15 — and written into this entry only
+on 2026-09-03, by a reasoning session that read the panel forward and found the
+deliverable undischarged). A per-project file is refused (CLAUDE.md §10: there is
+no fourth input class), and **three conditions, all met, return the question to a
+panel**: *one key, not two* — a `prefix <dir>` from which `-I` and `-L` are both
+derived, so the skew is unrepresentable; *no string in the file may also appear in
+a `.hero` file*, so deleting the file never changes which symbols are linked, only
+whether the build succeeds; and *one named binding that `package "<name>"` and one
+command line cannot build* — a set that was empty on 2026-08-15. Meeting fewer
+does not.
+
+### M-core-packages — small packages that compose, and what a web server needs
+
+**Scheduled, no warrant** (author instruction 2026-09-03; § Who scheduled what
+has the words). It adds **no language form and no built-in**: panel 097
+condition 5 keeps `selfhost/library_source.hero` closed, and panel 057 refused
+`path_join` there on Principle 0. So Principle 0 binds nothing in this milestone;
+what binds it is §1.11, and where its line falls for a package written in Heroes
+alone is the first thing the opening sitting rules.
+
+**What it delivers**: ordinary Heroes modules, distributable, organised as Go's
+tree and reached by the `use` path form M-package-layout landed — `use net/http`
+binds `http`, `use encoding/json` binds `json`, `as` renames (`spec:10-13`). Each
+package is a directory with `test` blocks; a package over C is two modules, the
+raw `extern` group and the idiomatic wrapper (panel 033 R5: an extern is never
+callable across a module boundary). The list, with each package's source, was
+measured on 2026-09-03 with probes on the Mac and in the Linux image; Windows was
+not measured:
+
+| package | source | today |
+|---|---|---|
+| `strings`, `path`, `net/url`, `log`, `sort` (generic — the built-in refuses a type parameter), `rand` (deterministic) | Heroes alone | writable |
+| `encoding/json` | Heroes alone — `examples/json/`, 671 lines, already parses and renders | writable |
+| `html/template` | Heroes alone — `examples/template/main.hero`, 235 lines, plus escaping | writable |
+| `os` | `hero_os.h` and `getenv` — `selfhost/cli/process.hero:37-56` lifted out of the compiler | writable |
+| `io`, `bufio` | `stdio.h` (`FILE*`); bulk text through `hero_str_from_bytes(p: ptr, n: i64)`, exported by panel 035 | writable, POSIX |
+| `bytes` | Heroes plus `fmemopen`/`fgetc`, one C call per byte, until the sitting picks a route | writable, slow, POSIX |
+| `time` | `time.h`: `time`, `timespec_get`, `strftime`, `gmtime_r`, `nanosleep` | writable, POSIX; `tv_nsec: i64` unmeasured on Windows |
+| `math` | `math.h` `link "m"` | writable |
+| `database/sql` | `sqlite3.h`, prepare/step; blobs through `bytes` | writable |
+| `crypto/sha256`, `crypto/hmac` | `package "libcrypto"` | writable, Mac and Linux |
+| `net/http` client | libcurl, two modules for `curl_easy_setopt`'s two value types (panel 094 R4) | writable |
+| `net` | a runtime part, or one file per platform — the sitting's questions (iv) and (vi) | per platform only |
+| `net/http` server | Heroes alone over `net`, `io`, `strings` | writable, one thread |
+
+**Measured before it was scheduled, which is why it could be**: a single-threaded
+HTTP server written in Heroes answered `curl` on 2026-09-03 with no language
+change — `socket`, `bind`, `listen` and `accept` as `extern`s, the address as
+`record SockAddr tag sockaddr` with the port's two bytes computed in Heroes (no
+`htons`), the request read through `fdopen` and `fgets`, the response through
+`write`; about 100 lines, and the same program on Linux with three lines of the
+record changed (`sa_len` does not exist there, `sa_family` is `u16`). None of the
+three gaps the brief expected was needed: not a byte buffer, not `htons`, not
+`sockaddr_in`. And the callback boundary — a function value cannot cross the FFI,
+`selfhost/check/ffi.hero:45` — is needed by **nothing on the list**: `sqlite3_exec`
+is avoided by prepare/step, libcurl writes into `CURLOPT_WRITEDATA` with no
+`CURLOPT_WRITEFUNCTION` (measured: a Heroes client fetched from the Heroes server),
+`qsort` is the built-in `sort`. It is needed by threads and by event-driven server
+libraries, so it is M-isolated-threads' question and is filed there.
+
+**What the opening sitting rules, full five seats, before any step**: (i) the
+§1.11 boundary for a package written in Heroes alone — the sentence in the entry
+above, and the falsifier the answer owes (CLAUDE.md §12); (ii) where packages live
+and how `use` reaches them — measured: a module that `use`s a sibling package
+compiles only from the program's root, because `use` cannot climb (panel 099 R1),
+so `heroes fetch` places a tree under the root and each tree wants a root-level
+test driver; (iii) the byte buffer, three routes with their cost — per-byte
+runtime entries (soundness lane, ABI +1), a `[u8]` result admitted for a group
+over `heroes_runtime.h` (`ffi.hero:45` refuses `.array` today; a diagnostic and a
+§4.19 sentence change), or a built-in (the route panel 036 refused for
+`read_file`); (iv) `net` as a runtime part, because `sockaddr` differs between
+Darwin and glibc — `error[ffi_field_type]` on the other platform, measured both
+ways — and Windows is winsock: panel 097's `struct stat` shape, touching §1.11's
+own row *Sockets: libc*; (v) Part 7 item 10 widened from `long` and `size_t` to a
+typedef whose width **or sign** differs by platform, on the measurement that
+`clockid_t` is `u32` on Darwin and `i32` on glibc, so `clock_gettime` has no
+single spelling and `timespec_get` is the portable clock; (vi) **conditional
+compilation** — the five shapes other languages use: C's textual `#if`; a
+compile-time keyword in the body (Nim's `when`, D's `version`, Odin's `when`,
+Swift's `#if`), whose inactive branch is not type-checked on this machine; Rust's
+`cfg` attributes, likewise; one file per platform (Go's `net_linux.go`, Odin's
+`_linux.odin`, Hare's `+linux`), every file a whole module checked on its platform
+and no word in the body; and nothing in the language (Ada, Oberon), which is
+where Heroes stands with the arm in `runtime/parts/`. The record the seats are
+handed: panel 049 refused the platform axis with a veto, ratified 2026-08-14;
+panel 097 put the arm in the runtime; panel 039 left comptime unplaced; §4.15
+makes every textual difference semantic; and CI compares `seed/heroes.c` byte for
+byte against what the compiler emits on every leg, so emission that depends on
+the host breaks an instrument. The limit the sitting must name: the runtime is
+the only C a package can add to, since panel 036 P2 vetoed `compile "shim.c"` —
+so the shape Heroes has today serves the project's packages and nobody else's. A
+refusal of any shape lands as a Part 6 row with its falsifier.
+
+**Step order** — one package or one gap per step, each step a corpus program on
+the three platforms or skipped by the missing-header rule: **0** three repairs
+the probes found, each a `fixedbugs` case — `xs @ xs.push(c.to_u8().must())`
+copies the whole array per push (100,000 pushes in 14.78 s against 0.00 s with
+the value bound first, this Mac, 2026-09-03; `selfhost/ir/place_store.hero:100`
+chooses `.push_owned` for a bound value and not for an inline `.must()`),
+`@value: i32` against a `const void *` pointee is `internal error` at exit 2
+(`setsockopt`; panel 103's pointee assertion writes `sizeof(const void)`), and
+`ffi_unknown_name` for the macro-only `htons` on Darwin says the header declares
+no such name when it does · **1** `strings` and `path`, and the copies leave
+`examples/` — `split_lines` in 8 files, `is_space` in 8, `trimmed` in 7,
+`index_of` in 4, and `tests/harness/strings.hero` carrying a fourth `trimmed` ·
+**2** `encoding/json`, `net/url`, `html/template`, `log`, `sort`, `rand` · **3**
+`os` · **4** `io` and `bufio` (M-corpus-depth's `wc` over stdin is the witness if
+it has landed) · **5** `time` · **6** `math` · **7** the byte buffer, in the
+sitting's route (M-corpus-depth's `checksum/` is the witness) · **8** `crypto` ·
+**9** `database/sql` (M-corpus-depth's `ledger/`) · **10** `net`, in the sitting's
+shape (the loopback program as `examples/echo/`) · **11** `net/http` client,
+against a `file://` URL · **12** `net/http` server, two requests on one
+connection · **13** `heroes fetch` under the root, the root-level driver, and the
+`heroes check` item panel 091 filed under M-package-manager. Until `heroes fetch`
+exists the packages live as directories under `examples/`, reached by `use` from a
+program in the same root.
+
+**Acceptance**: a small HTTP server built from the packages and nothing else, in
+`examples/`, in the corpus's three configurations, in the loopback shape — server
+and client in one process, deterministic output — because a listening server does
+not fit `main.expected`.
+
+### M-web-framework — the framework that composes the packages
+
+**Scheduled, no warrant** (author instruction 2026-09-03, the same session). It
+composes M-core-packages' packages in Go's and Echo's shape, everything explicit:
+routes as a table of function values, `(function(Request) -> Response)` keyed by
+method and path — top-level functions are values (`spec:112-117`); records for
+request and response; middleware as a chain of functions, because v1 has no
+closures (`selfhost/emit/ctype.hero:375-380`); templates from `html/template`,
+bodies from `encoding/json`, rows from `database/sql`. No metaprogramming and no
+dynamic dispatch: the Rails and Django shape rests on Part 6's own rows
+(`design.md:2382-2404`), and `design.md:2395` says why — *"this is why LLMs err
+more on Rails/RSpec than on plain Ruby"*. What it inherits from
+M-isolated-threads is concurrency alone: `serve` takes one connection at a time
+until a thread can take an accepted descriptor, and a `Request` record is exactly
+the message the separate-heap model wants, small and copied once
+(`design.md:2512-2524`). **Acceptance**: a small application — the corpus's `todo`
+over a database — served over HTTP, on the three platforms. Its full brief is
+written at M-core-packages' close, when the packages exist and what a framework
+must add is measured rather than guessed.
 
 ### M-qbe-backend — the proof that the IR is not C in disguise
 
@@ -909,6 +1073,8 @@ So a number met in the record resolves here, and only here.
 | `M-publication-gate` | M18 | — | the last gate before anything goes outward |
 | `M-robustness-guards` | — | `m-robustness-guards` | the guards that shut the holes §1.12 named. **Done 2026-09-03**, the day it opened: six steps, two sittings (103, 104), every landing measured on the Mac, the Linux image and the Windows box before its commit |
 | `M-corpus-depth` | — | — | the rung between a program and the compiler: nine programs chosen for shape — oracle-checked, deep, FFI at program scale. **A new id rather than a third reopening of the corpus** (§14, author instruction 2026-09-03): `M-program-corpus` delivered *many programs run*, `M-corpus-coverage` *every form has a program*, and this one delivers *size, depth and an external oracle*, which neither name claims |
+| `M-core-packages` | — | — | small packages that compose, organised as Go's tree, in Heroes or over C. **A new id rather than an area annexed** (§14, author instruction 2026-09-03): M-package-layout delivered how a `use` reaches a module, M-package-manager delivers `heroes add`/`heroes fetch` and where a fetched package lives, and this one delivers the packages themselves — a deliverable neither name claims. The word is Odin's `core:` collection, which §1.11 cites for the reason a package can be redesigned and a built-in cannot |
+| `M-web-framework` | — | — | the framework that composes the core packages, Go/Echo style. **A second id and not a step of the one above** (§14, author instruction 2026-09-03, *"poi quello web che li usa tutti"*): the packages are a deliverable with or without a framework, and a framework is falsifiable on its own — it exists when the corpus's `todo` is served over HTTP on three platforms |
 
 **`M8` has no row, because it meant three different things.** It was an umbrella
 that predates the a/b/c/e/p split and no heading has carried it since. In the
