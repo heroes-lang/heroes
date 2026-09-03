@@ -1,8 +1,8 @@
 # site/ — the showcase site for heroes-lang.org
 
 One self-contained *directory*, shaped like a language site rather than one long
-page (author instruction 2026-08-17: *"più a forma di siti di linguaggi, guarda
-go, rust — non voglio una mega scroll page"*). Every page carries the same nav,
+page (author instruction 2026-08-17: *"more the shape of language sites, look at
+go, rust — I do not want a mega scroll page"*). Every page carries the same nav,
 so no page is a dead end:
 
 **The site is built.** `npm run build` turns `site/src/` into **`site/dist/`**,
@@ -99,9 +99,9 @@ answers at drops the extension and gains a slash, so `why.html` is `/why/` and
 | source file | what it is |
 |---|---|
 | `index.html` | the landing: hero, one sample, three cards, the claim. Short on purpose. |
-| | The hero says **&ldquo;a compiled programming language&rdquo;** above the name, because a visitor who has never heard of Heroes should not have to infer the category (author instruction 2026-08-17). Its code panel shows **working code, never a diagnostic** — *&ldquo;aprire un sito di un linguaggio con un errore è brutto&rdquo;*, same date. The errors have their own page. In that panel the `bar` names the file, so the figure carries no second caption. |
-| | **The three figure cards carry only at-a-glance numbers a stranger parses without context** (author instruction 2026-08-25: *&ldquo;metti solo dei dati a colpo d'occhio facilmente capibili&rdquo;*). The mutation measurement is not one &mdash; *&ldquo;91% contro 0%&rdquo;* needed three sentences of setup and still read as nothing &mdash; so the thesis table lives on `errors.html` only, and the home's § The claim explains the method in prose and links it. The cards are 231 lines · 0 null/exceptions/GC · 1 hash. |
-| | The promise line under the name **leans on something that is not an error** (author instruction 2026-08-24: *&ldquo;cambia il claim in home page facendo leva su qualcosa che non sia un errore&rdquo;*): it now reads *&ldquo;Small enough to fit in a prompt, real enough to compile itself&rdquo;*, both halves measured. The thesis has not left the page — it closed the tagline and it still owns § The claim — it just no longer leads. |
+| | The hero says **&ldquo;a compiled programming language&rdquo;** above the name, because a visitor who has never heard of Heroes should not have to infer the category (author instruction 2026-08-17). Its code panel shows **working code, never a diagnostic** — *&ldquo;opening a language's site on an error is ugly&rdquo;*, same date. The errors have their own page. In that panel the `bar` names the file, so the figure carries no second caption. |
+| | **The three figure cards carry only at-a-glance numbers a stranger parses without context** (author instruction 2026-08-25: *&ldquo;put only at-a-glance figures that are easy to understand&rdquo;*). The mutation measurement is not one &mdash; *&ldquo;91% against 0%&rdquo;* needed three sentences of setup and still read as nothing &mdash; so the thesis table lives on `errors.html` only, and the home's § The claim explains the method in prose and links it. The cards are 231 lines · 0 null/exceptions/GC · 1 hash. |
+| | The promise line under the name **leans on something that is not an error** (author instruction 2026-08-24: *&ldquo;change the claim on the home page so it leans on something that is not an error&rdquo;*): it now reads *&ldquo;Small enough to fit in a prompt, real enough to compile itself&rdquo;*, both halves measured. The thesis has not left the page — it closed the tagline and it still owns § The claim — it just no longer leads. |
 | `why.html` | the founding constraint, the thesis, the cost formula, the rules, the objections |
 | `errors.html` | diagnostics as a deliverable — real output, fixes, holes, the mutation numbers. Not in the nav: it is a sub-page of `docs/`, linked from the docs landing, with a crumb and `Docs` marked current |
 | `selfhost.html` | the fixpoint: the hash, what it took, and what it found |
@@ -413,10 +413,11 @@ answers 301 to the apex, and the certificate still names the apex.
 
 ## The Italian edition — `site/src/html/it/`
 
-The site ships in two languages (author instruction 2026-08-18: *"traduci tutto
-il sito anche in italiano … lascia in inglese i termini tecnici"*). This extends
-CLAUDE.md §11's declared exception — which already covers the two books — to the
-site, and the same rule applies: **neither edition is a machine translation of
+The site ships in two languages (author instruction 2026-08-18: *"translate the whole
+site into Italian as well … leave the technical terms in English"*). It is
+CLAUDE.md §11's **second declared exception**, named there beside the two books
+since 2026-09-04 — until that day §11 said there was one, and this edition had
+been 46 tracked files for 17 days. The same rule applies: **neither edition is a machine translation of
 the other**, and where they diverge the Italian is fixed to read better rather
 than the English to read more literally, because the author studies from the
 Italian.
@@ -589,8 +590,8 @@ everything else is paper and ink.
     `--plate-dark` is **recorded** rather than used: a filter cannot read a custom
     property, so the numbers live in the filter's own tables. Change one, change
     the other.
-  - **The prose runs alongside it** (author instruction 2026-08-19: *"fagli
-    girare il testo a fianco e dagliela più grande"*), which needs a `float`, and
+  - **The prose runs alongside it** (author instruction 2026-08-19: *"make the text
+    run alongside it and give it to me bigger"*), which needs a `float`, and
     a `float` needs a block container: `main` is a grid and **a grid item ignores
     `float` outright**, which is why the first attempt put the portrait above the
     lede. Hence `.byline`, holding the portrait and the lede and nothing else.
@@ -693,8 +694,8 @@ copy could be wrong later:
    still get the joke.
 
 8. **No page count and no word count for the book, anywhere on the site**
-   (author instruction 2026-09-02: *"togli i numeri sulle parole e pagine del
-   libro perché sono in evoluzione"*). The book keeps being revised, and a
+   (author instruction 2026-09-02: *"take out the numbers for the book's words and
+   pages, because they keep changing"*). The book keeps being revised, and a
    figure that changes with the next print is a figure the site cannot keep
    true, which is CLAUDE.md §11's expiring-premise rule applied to somebody
    else's manuscript. The `.stats` block on `author.html` carried **599 pages**
@@ -764,7 +765,7 @@ checked rather than recalled (CLAUDE.md §1):
 Three rules follow, and they bind every later edit:
 
 - **One name links to a project rather than to a person, on purpose** (author
-  instruction: *"linka anche il sito di nim sul nome di rumpf"*). Andreas Rumpf
+  instruction: *"link nim's site on rumpf's name too"*). Andreas Rumpf
   is the trap named above, so there is no biography to point at, and the link on
   his name goes to `nim-lang.org`, the language's official site, verified live in
   the session that added it. It is the only link of this shape on the page.

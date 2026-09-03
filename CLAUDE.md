@@ -113,9 +113,9 @@ check in `tests/harness/suite_records.hero` reads every backticked path in this
 file, and a path that no longer exists is exactly what it exists to catch.)
 
 **And a fourth list, for what is BROKEN: `docs/work/DEFECTS.md`** (author
-instruction 2026-09-03, *"non mi piace la cartella defect … se ti rimane ancora
-qualcosa aperto in defect alla fine fai un solo file chiamato DEFECTS.md
-all'interno di work, così tutto è ordinato"*). A compiler defect — a crash, a
+instruction 2026-09-03, *"I do not like the defect directory … if anything is
+still open in defect at the end, make one single file called DEFECTS.md inside
+work, so that everything is tidy"*). A compiler defect — a crash, a
 wrong answer at exit 0, a silence where a message is owed — is an open item
 there, with its reproducer, its measured cause and what is owed, for as long as
 it is open; the moment it is repaired the entry gains its *The repair* section
@@ -138,8 +138,8 @@ its only home. Lessons stay impersonal: shapes and rules, never scores.
 
 **NEVER LET THREE MINUTES PASS WITHOUT TELLING THE AUTHOR WHERE YOU ARE**
 (author instruction 2026-08-31, categorical, given after a day of long silent
-waits: *"non far passare mai più di tre minuti senza aggiornarmi in parole
-chiave"*). This binds EVERY working session, not only a `/loop`: whatever is
+waits: *"never let more than three minutes pass without updating me in
+keywords"*). This binds EVERY working session, not only a `/loop`: whatever is
 happening — a measurement running, a CI leg in flight, a remote machine
 building, a diagnosis mid-thought — the author hears it in plain Italian
 keywords before three minutes are up: what is running, what is being waited
@@ -151,20 +151,20 @@ status line. That is this rule's origin and its reason.
 
 **WHEN THE AUTHOR IS FOLLOWING LIVE, THE UPDATE COMES EVERY TWO MINUTES AND IN
 FULL** (author instruction 2026-09-03, given while the seven defects were being
-attacked: *"Voglio essere aggiornato con molte parole e con dovizia di dettaglio
-mai in parole povere ogni due minuti, perché sono molto interessato a questa
-cosa"*). The three-minute rule above is the floor for an unattended stretch; an
+attacked: *"I want to be updated with many words and with plenty of detail,
+never in plain words, every two minutes, because I am very interested in this
+thing"*). The three-minute rule above is the floor for an unattended stretch; an
 author who has said they are interested gets the whole picture every two minutes
 — which function, which number, which file, and the reasoning that joins them —
-never a keyword line. *"Mai in parole povere"* here means never in FEW words;
+never a keyword line. *"Never in plain words"* there means never in FEW words;
 it does not repeal §11's plain register, which is about naming the thing before
 the term for it. Rich and plain are compatible; terse and plain were being
 confused, and the author noticed.
 
 **NOTHING GOES INTO THE ASSISTANT'S OWN MEMORY; EVERYTHING THE AUTHOR WANTS KEPT
 GOES INTO THIS FILE** (author instruction 2026-09-03, the second time it was
-given: *"non voglio nulla in memoria e voglio tutto nel Claude MD. Cambierò
-computer e poi perderò la memoria"*). The assistant's memory directory lives on
+given: *"I want nothing in memory and everything in the Claude MD. I will change
+computer and then I will lose the memory"*). The assistant's memory directory lives on
 one machine and dies with it; this file travels with the repository. An
 instruction the author gives about how to work is written here, under the
 section it amends, with its date and its words, and never into a memory file.
@@ -449,10 +449,11 @@ shape the dead-citation instrument cannot see, because a line number is not a
 path).
 
 ## 11. Language and conventions
-**Everything written is English** — code, comments, docs, commits, verdicts.
-Conversation with the author is Italian, **and always in plain words** (author
-instruction 2026-08-15: *"spiegami sempre le cose con questo linguaggio semplice
-in parole povere, perché a volte faccio fatica a capirlo"*). This is not a
+**Everything written is English** — code, comments, docs, commits, verdicts,
+**and the author's own words when this file quotes them**. Conversation with the
+author is Italian, **and always in plain words** (author instruction 2026-08-15:
+*"always explain things to me in this simple language, in plain words, because
+sometimes I have a hard time understanding it"*). This is not a
 register for summaries and status reports — it is **every** explanation, including
 the middle of a working session, including a defect's cause, including why a panel
 ruled as it did. The rule the `/where` skill already states is the rule
@@ -463,9 +464,9 @@ author is the one person this project is being built for — §1.1 makes their
 comprehension **the objective**, so an explanation they bounce off is the
 objective missing, not a communication style.
 
-**And plain is not flat** (author instruction 2026-08-16: *"ti voglio un po' più
-emozionante nel dirmi le cose positive e anche quelle negative — stiamo facendo un
-nuovo linguaggio"*). The register the author asked for is plain **and alive**: when
+**And plain is not flat** (author instruction 2026-08-16: *"I want you a bit more
+excited when you tell me the good things and the bad ones too — we are making a
+new language"*). The register the author asked for is plain **and alive**: when
 something works, say so like it matters, because it does — a defect that printed a
 false number at exit 0 and now stops on the author's own line is a *win*, not a
 line item. When something is bad, say that with the same force and no cushioning:
@@ -485,13 +486,53 @@ numbers, the file names and the measurements still belong in the sentence, becau
 *"it was slower"* is not plainer than *"it took 0.94 of the time"*, it is only
 emptier.
 
-**One declared exception** (author
-instruction 2026-08-11): the two books, M-journey-book and M-guide-book,
-are written in **Italian and English**, neither a machine translation of the
-other. The author studies from the Italian, so where the two diverge the Italian
-is fixed to be clearer rather than the English to be more faithful — and both are
-in the plain register of the `/where` skill, which assumes zero compiler
-knowledge. `Heroes` in prose, `heroes` for the binary, `.hero` for files.
+**A QUOTED AUTHOR INSTRUCTION IS WRITTEN DOWN IN ENGLISH** (author instruction
+2026-09-04: *"I do not want anything in Italian … I speak Italian to you because
+it is comfortable for me, but the texts are all in English, since this is a
+project that will become open source"*). Every rule in this file is anchored to
+the author's own words, because a quotation binds where a summary does not, and
+those words arrive in Italian. Until this instruction they were written down as
+spoken, on a doctrine `docs/book/README.md` states in one line — *quoted speech
+is not an artifact* — which `docs/reasoning/README.md` then cited as precedent
+for its own carve-out. **Measured 2026-09-04, that loophole had let 241 Italian
+quotations into the repository, 19 of them in this file** — in the section whose
+first line says everything written is English. The doctrine is retired in all
+three places: quoted speech is an artifact like any other. What is quoted is
+what the author **meant**, in English, rather than a literal gloss of the Italian
+— an instruction is a ruling, not a specimen. Nothing is lost: the original
+stands in the git history and in the dated records, which is where evidence
+belongs and which §14 forbids anybody to rewrite. **The records are therefore
+not translated**, and they hold about 210 of those 241; 40 commit bodies carry
+the same words and cannot be edited at all, so a translated record would
+disagree with the commit that made it.
+
+**Two declared exceptions, and they are a class rather than a list: a
+translation that is itself a deliverable.** Everything above governs the
+repository's **working** text — the rules, the records, the code. A text written
+for a reader in that reader's own language is a product decision, and it is
+named here so the rule above cannot be read as refusing one.
+- **The two books**, M-journey-book and M-guide-book (author instruction
+  2026-08-11), in **Italian and English**, neither a machine translation of the
+  other. The author studies from the Italian, so where the two diverge the
+  Italian is fixed to be clearer rather than the English to be more faithful —
+  and both are in the plain register of the `/where` skill, which assumes zero
+  compiler knowledge.
+- **The Italian edition of the site**, born 2026-08-18 by author instruction
+  (quoted with its date in `site/README.md` § The Italian edition): **23 pages
+  under `site/src/html/it/` and their 23 wrappers under `site/src/pages/it/`,
+  measured 2026-09-04**. Three things serve that edition and stay Italian
+  because of it, each one Italian *data* rather than Italian prose:
+  `site/CLAUDE.md`'s spelling rule, whose subject is the words themselves;
+  `site/src/components/SiteNav.astro`'s table of nav labels; and the vocabulary
+  `/where` speaks from, which is why that vocabulary now lives in a file of its
+  own with an English header saying what it is.
+
+**This section said *"one declared exception"* until 2026-09-04, and the second
+one had been 46 tracked files for 17 days** — §11's own expiring premise (below),
+in §11, about §11. The exceptions are a class now precisely so that the third
+one does not have to come back here to be counted.
+
+`Heroes` in prose, `heroes` for the binary, `.hero` for files.
 ASCII-only syntax. Bowie belongs in prose and
 packaging, never in error text or library names; the site's register and its
 rules live in `site/README.md` § Style guide.
@@ -510,7 +551,7 @@ the cache key `link` and `runtime_object` share, and a file split against its ow
 seam is harder to read than a long one.
 
 **And the threshold yields entirely where the *language* forbids the seam**
-(author instruction 2026-08-16, *"supera la regola per heroes"*, answering the
+(author instruction 2026-08-16, *"go past the rule for heroes"*, answering the
 port's measurement). Heroes refuses module cycles — `module_cycle` fires on the
 `use` edge, whatever it carries, measured both ways — and a recursive-descent
 grammar is mutually recursive by construction, so its knots cannot be split at
@@ -590,8 +631,8 @@ stale sentence that removal would have looked like deleting a warning.
 ## 13. Where not to go
 Performance (a non-goal, never a justification — **and never a licence either**,
 and see §12's robustness rule, which is its mirror and outranks it:
-author instruction 2026-08-12, *"le prestazioni non sono un goal ma non devono
-essere nemmeno un limite"*. The rule forbids reaching for speed as a **reason**;
+author instruction 2026-08-12, *"performance is not a goal, but it must not be a
+ceiling either"*. The rule forbids reaching for speed as a **reason**;
 it does not make slowness acceptable as a **ceiling**. Where a cost stops a
 program the closure list needs from running at all, that is §1.0 compiler-need
 and it goes to the panel, not to this line). A standard library. Anything
@@ -666,22 +707,21 @@ words are the originals. Anything the sections above already state is not
 repeated; what follows is what they did not.
 
 - **Every decision put to the author comes with a recommendation and its reason**
-  (2026-08-23, *"per le decisioni dimmi sempre in parole povere quale opzione mi
-  suggerisci e perché"*). A neutral list of options hands the author work the
+  (2026-08-23, *"for decisions, always tell me in plain words which option you
+  recommend, and why"*). A neutral list of options hands the author work the
   assistant has already done. The recommendation rests on a measurement or a
   verified fact, never on a hope; the decision stays the author's.
-- **A long compile is when the open decisions are proposed** (2026-09-03, *"mi
-  piace quest'idea che mentre aspetti il risultato di una compilazione mi proponi
-  le decide"*). While a build, a suite or a measurement runs for minutes, the
+- **A long compile is when the open decisions are proposed** (2026-09-03, *"I like this idea that while you wait for the result of a
+  compilation you put the decide items to me"*). While a build, a suite or a measurement runs for minutes, the
   open items of `docs/work/DECIDE.md` are verified against the repository and put
   to the author, each with a recommendation. A silent wait wastes the author's
   time twice, and deciding costs no CPU, so it distorts no measurement in flight.
 - **Every progress update carries a percentage and its breakdown** (2026-09-02,
-  *"scrivimi anche nell'aggiornarmi a che % sei"*). The number is counted against
+  *"when you update me, write what % you are at as well"*). The number is counted against
   the author's ask, not against invented work, and comes with the parts that
   produce it — done, in flight, not started — so the author can disagree with it.
-- **Never slow the compiler down** (2026-08-23, in capitals: *"mi raccomando non
-  peggiorare le prestazioni del compilatore, sarebbe una tragedia"*). A change that
+- **Never slow the compiler down** (2026-08-23, in capitals: *"whatever you do, do not make the compiler's
+  performance worse, that would be a tragedy"*). A change that
   makes the compiler slower does not land on a hunch: time before and after with
   `/usr/bin/time -p` (zsh's own `time` prints no `real` line, and a whole
   comparison was once lost to that), look at the machine's load first (a stray
@@ -692,12 +732,12 @@ repeated; what follows is what they did not.
   real cost. §13 says performance is not a goal and not a licence; this is the
   same rule seen from the compiler's side.
 - **No em dashes and no machine-written patterns, on the site and in the chat**
-  (2026-08-25, *"NO AI SLOP — via tutti i —"*). The rulebook is `site/README.md`
+  (2026-08-25, *"NO AI SLOP — get rid of all the —"*). The rulebook is `site/README.md`
   § Style guide and `site/CLAUDE.md`; the chat half is that the assistant's
   Italian replies carry no em dashes either. Two exceptions, both evidence:
   compiler output shown verbatim, and code copied byte for byte.
 - **A measured number never goes inside an image** (2026-08-31, on the README
-  banner: *"quelli invecchiano velocemente"*). Artwork carries identity and
+  banner: *"those age fast"*). Artwork carries identity and
   structure; the text beside it carries the numbers, where `grep` and a re-count
   can reach them.
 - **Committing and tagging is routine; pushing `main` is asked for.** The site
@@ -706,8 +746,8 @@ repeated; what follows is what they did not.
   with it (§14's hard stop). Commit and tag locally, then ask, saying how many
   site commits would go along; on a yes, `git push --follow-tags`.
 - **A whole milestone may be asked for in one `/step`, and a choice surfaced
-  twice is a question** (2026-08-04, *"continua fino a finire m2 e accetta tue
-  raccomandazioni sempre"*; sharpened 2026-09-02, *"continua senza chiedermelo"*,
+  twice is a question** (2026-08-04, *"carry on until m2 is finished, and always accept your
+  own recommendations"*; sharpened 2026-09-02, *"carry on without asking me"*,
   after one trade had been put to the author in three recaps running). Chain the
   steps, close the milestone, decide the delegated questions with the recommended
   resolution as the provisional default, and say which way it went — once.
@@ -717,12 +757,12 @@ repeated; what follows is what they did not.
   written, and a 22-anchor edit to `docs/ROADMAP.md` failed twice on sentences
   the peer had rewritten in between. For a multi-anchor edit to a shared record:
   script the pairs, assert each anchor matches exactly once, dry-run, then apply.
-- **Comprehension questions are never put through the question widget** (*"devi
-  mostrarmi la riga, se no io non so"*): the snippet in a fenced block, the
+- **Comprehension questions are never put through the question widget** (*"you have to show me the
+  line, otherwise I cannot know"*): the snippet in a fenced block, the
   options lettered, the whole batch in one message, answered in one reply
   (`1b 2a 3c`). The widget hides the code the question is about.
-- **A panel-gated step asks once and expects yes** (2026-08-19: *"convoca il panel
-  e finisci"*). §4 makes the sitting mandatory and the author has said its cost
+- **A panel-gated step asks once and expects yes** (2026-08-19: *"convene the panel
+  and finish"*). §4 makes the sitting mandatory and the author has said its cost
   is worth paying; ask once per milestone, then convene without asking again,
   choosing only the seats whose input differs.
 - **Panel briefs keep every command short and give one copy per judge** (panels

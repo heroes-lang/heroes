@@ -10,7 +10,7 @@
 # code is five files (`expr.rs`, `primary.rs`, `control.rs`, `stmt.rs`,
 # `name_stmt.rs`, 1025 lines) held together by `super::`; there is no such
 # spelling here, so the knot is one file. §11's threshold yields for exactly
-# this reason (author instruction *"supera la regola per heroes"*), and what it
+# this reason (author instruction *"go past the rule for heroes"*), and what it
 # asks in exchange is this map.
 #
 # **The ring**, and it is why nothing here can be split: `parse_expr` → `binary`

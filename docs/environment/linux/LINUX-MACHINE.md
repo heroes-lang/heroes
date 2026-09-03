@@ -21,7 +21,7 @@ not a formality on this machine in particular.
 
 Docker Desktop is installed on the Mac and **its resting state is stopped**:
 `docker info` fails until the author starts it, and the author is the one who
-does (2026-09-03, *"docker è acceso ora"*, after the assistant had said there
+does (2026-09-03, *"docker is on now"*, after the assistant had said there
 was no Linux instrument to hand). When it is off, the assistant asks for it
 in so many words and does the machine-free parts of the work while waiting,
 which is the same protocol as the Windows box.

@@ -3,9 +3,9 @@
 Read by whoever attacks a defect. Every item here is a **measured** failure of
 the compiler on a program — a crash, a wrong answer at exit 0, a silence where
 a message is owed — with its reproducer, its cause where known, and what is
-owed. It exists because the author said so on 2026-09-03: *"non mi piace la
-cartella defect … se ti rimane ancora qualcosa aperto in defect alla fine fai
-un solo file chiamato DEFECTS.md all'interno di work, così tutto è ordinato"*.
+owed. It exists because the author said so on 2026-09-03: *"I do not like the
+defect directory … if anything is still open in defect at the end, make one
+single file called DEFECTS.md inside work, so that everything is tidy"*.
 Seven files under `docs/defects/` became this list and six entries in
 `docs/work/DONE.md` that evening; the directory is gone.
 

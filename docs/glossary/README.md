@@ -20,8 +20,10 @@ note. An entry is born one of two ways:
 - **English, like every artifact** (the language rule — no exceptions).
   Entries use the same canonical analogies as `.claude/skills/where/SKILL.md`
   (the assembly line, the road and its intersections, the sentence tree) so
-  the author's mental model accumulates; `/where` renders those analogies in
-  Italian in conversation.
+  the author's mental model accumulates; `/where` speaks those analogies in
+  Italian, out of the vocabulary at
+  `.claude/skills/where/italian-vocabulary.md`, which is the file that holds
+  the Italian wording so no prose document has to.
 - Each entry opens with its **origin**: date, journal entry, and the friction
   (or plan item) that produced it.
 - **Append-and-refine**: entries improve as understanding deepens; they are
