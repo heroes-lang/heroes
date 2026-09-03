@@ -20,6 +20,7 @@ use cli/toolchain
 use cli/process
 use cli/units
 use cli/pointee
+use cli/clang_floor
 use emit/unit
 use emit/members
 use cli/libraries
@@ -49,6 +50,14 @@ function failure_of(art: compile.Artifact?) -> str
         .err e => return e.code + " — " + e.msg
 
 function produce(path: str, s: source.Source, options: compile.Options, t: toolchain.Toolchain, version: str) -> Produced?
+    # The clang floor, once per build and before anything is emitted
+    # (panel 103, author instruction): an older clang is exit 2 with the
+    # version found and the floor, not a wrong verdict later.
+    floor = clang_floor.check(t.build)
+
+    if floor.is_err()
+        io.eprint(text: "error: " + floor_text(floor))
+        return fail("failed", "clang is below the floor")
     art = compile.to_unit(s, options, version: version)
 
     # **A failure here used to be propagated without a word.** `_ = art?`
@@ -317,3 +326,8 @@ function carry_failure(failed: str?) -> ()?
     match failed
         .ok    => return ok()
         .err e => return fail(e.code, e.msg)
+
+function floor_text(failed: ()?) -> str
+    match failed
+        .ok    => return ""
+        .err e => return e.msg

@@ -134,6 +134,38 @@ that says the compiler refuses something it accepts is false by fiat. w5 at
 3718, the clause's third size in nine days, and the 172 blessed emissions moved
 with it in exactly four line shapes.
 
+**A witness that exists on two platforms is not a witness (step 3).** The
+first refusal goldens used `getline`, the program the whole question began
+with. On the Windows box the same file is `ffi_unknown_name`: the MSVC C
+runtime has no `getline`, which is POSIX and not C. The goldens now stand on
+C89's `frexp(double, int *)` for the width mistake and on `time(time_t *)`
+for the sign mistake — `int` is 32 bits and `time_t` a signed 64-bit integer
+on all three platforms — and `getline`'s story stays in the comment as what
+was measured. The same afternoon's lesson as `ctime`'s: a platform fact
+that has not been run on the platform is an inference.
+
+**Q3 cost less than panel 096 priced, because the probe reproduces the call
+at the declaration (step 3b).** Panel 096's engineer expected new machinery
+for a clang complaint at the CALL line; the probe already re-enacts the call
+the declaration implies, `#line`d at the declaration, so `extern_at_line`
+claims that copy and the call-line duplicate is swallowed by `add_once`.
+`emit/ffi_call.hero` reads two texts — arity, and a format string bound alone
+— into the 21st `ffi_*` code, `ffi_call_shape`, and a variadic bound at a
+fixed arity stays green because clang says *too many arguments* only against
+a non-variadic prototype.
+
+**The clang floor is a measured number, not a preference (step 3c).** The
+author's leave to require a minimum clang arrived mid-sitting; the floor is
+18 because 18.1.3 is the CI's Ubuntu leg, the oldest clang this project
+builds on, and because 18, 21 and 22 give the same `-ast-dump=json` shape the
+pointee check reads. A higher floor would have broken the CI's Linux leg for
+nothing. `heroes doctor` says the major and the floor; a build below it is
+exit 2 naming both. The floor lives in its own module, `cli/clang_floor.hero`
+(87 code lines), because it took `cli/toolchain.hero` to 375 and §11's
+ceiling is 300 — and the seam has a name, which is the only kind of split
+the layout suite's message asks for: what version answers, whether it is
+enough, and what to say when it is not. `toolchain.hero` is back at 297.
+
 ## What broke and why
 
 - **`keys` is a built-in.** `ir/inout.hero` named a local `keys` and the

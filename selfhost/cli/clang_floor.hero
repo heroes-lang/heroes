@@ -1,0 +1,119 @@
+# The clang floor: the oldest clang this compiler is measured on, asked of
+# the machine once per build and by `heroes doctor` (panel 103, author
+# instruction 2026-09-03: *"se serve puoi richiedere una versione minima di
+# clang recente a piacere"*; M-robustness-guards step 3c). Its own module
+# because `cli/toolchain.hero` was at the ceiling and the floor is a concern
+# with a name: what version answers, whether it is enough, and what to say
+# when it is not.
+
+use cli/process
+
+# THE CLANG FLOOR: 18 (author instruction 2026-09-03, panel 103 — *"se
+# serve puoi richiedere una versione minima di clang recente a piacere"*).
+# Chosen from measured versions and not from a preference: 18.1.3 is the
+# CI's Ubuntu leg, the oldest clang this project builds on; 18.1.8, 21.0.0
+# and 22.1.8 (Debian, Apple, the Windows box) give the same `-ast-dump=json`
+# shape the pointee check reads (`cli/header_types.hero`), and the
+# `-Wincompatible-pointer-types` default flips only at 22, so the floor
+# does not make the 14th flag redundant and the flag does not make the
+# floor redundant. A higher floor today would break the CI's Linux leg for
+# nothing; a lower one would promise a dump shape nobody measured.
+constant FLOOR: i64
+    18
+
+# The major version in clang's first `--version` line, whatever vendor
+# prefix it wears: `Apple clang version 21.0.0 (clang-2100.1.1.101)`,
+# `Debian clang version 22.1.8 (++2026…)`, `clang version 22.1.8
+# (https://github.com/llvm/llvm-project …)`, `Debian clang version 18.1.8`.
+# The first integer after the word `version` is the major; anything else
+# on the line is the vendor's.
+function major_of(first_line: str) -> i64?
+    after = text_after(text: first_line, marker: "version ")
+
+    if after.is_err()
+        return fail("none", "no `version` on the line")
+    rest = after.must()
+    value: i64 @ 0
+    seen: i64 @ 0
+    index: i64 @ 0
+
+    while index < rest.len()
+        b = rest[index]
+
+        if b < '0' || b > '9'
+            break
+        value @ value * 10 + (b - '0').to_i64().must()
+        seen @ seen + 1
+        index @ index + 1
+
+    if seen == 0
+        return fail("none", "no number after `version`")
+    return ok(value)
+
+function text_after(text: str, marker: str) -> str?
+    index: i64 @ 0
+
+    while index + marker.len() <= text.len()
+        if text.slice(from: index, to: index + marker.len()) == marker
+            return ok(text.slice(from: index + marker.len(), to: text.len()))
+        index @ index + 1
+
+    return fail("none", "marker absent")
+
+# What this machine's clang answers `--version` with — its first line — or
+# absent when clang is not on the PATH. Asked once per build in `produce`,
+# and by `heroes doctor`; a few milliseconds beside a link.
+function version_line(build_dir: str) -> str?
+    out_path = build_dir + "/clang-version.txt"
+    _ = process.mkdir_all(build_dir)
+    ran = process.run(program: "clang", words: ["clang", "--version"], out: out_path, err: process.discard())
+
+    if !ran.started || ran.code != 0
+        return fail("none", "clang did not answer --version")
+    said = read_file(out_path)
+
+    if said.is_err()
+        return fail("none", "nothing was said")
+    first: str @ ""
+
+    for ch in said.must().chars()
+        if ch == "\n" || ch == "\r"
+            break
+        first @ first + ch
+
+    return ok(first)
+
+# The floor, enforced: absent when clang is at or above it, a message the
+# CLI prints at exit 2 otherwise — the tool could not run, which is what
+# exit 2 means (CLAUDE.md §10). A clang that does not answer is left to
+# `run_clang`, which already says *not on this machine's PATH*.
+function check(build_dir: str) -> ()?
+    line = version_line(build_dir)
+
+    if line.is_err()
+        return ok()
+    major = major_of(line.must())
+
+    if major.is_err()
+        return ok()
+
+    if major.must() < FLOOR
+        return fail(
+            "clang",
+            "clang " + FLOOR.to_str() + " or newer is required, and this machine's clang is `" + line.must() + "` — the flags this compiler passes and the way it reads a header's parameter types were measured on clang 18, 21 and 22; an older clang answers differently, and a guess would be silent. `heroes doctor` says what this machine has"
+        )
+    return ok()
+
+## Tests
+
+test "the clang floor reads the major from every vendor's first line, and holds at 18"
+    assert major_of("Apple clang version 21.0.0 (clang-2100.1.1.101)").must() == 21
+    assert major_of("Debian clang version 22.1.8 (++20260613092233+e80beda6e255-1~exp1~20260613092250.77)").must() == 22
+    assert major_of("clang version 22.1.8 (https://github.com/llvm/llvm-project ca7933e47d3a3451d81e72ac174dcb5aa28b59d1)").must() == 22
+    assert major_of("Debian clang version 18.1.8 (++20240731024826+3b5b5c1ec4a3-1~exp1~20240731144843.145)").must() == 18
+    assert major_of("Ubuntu clang version 18.1.3 (1ubuntu1)").must() == 18
+    assert major_of("gcc (GCC) 14.1.0").is_err()
+    assert FLOOR == 18
+
+    # This machine's own clang is at or above the floor, or nothing here would build.
+    assert !check("build").is_err()
