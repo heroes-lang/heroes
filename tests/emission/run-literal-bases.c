@@ -29,6 +29,8 @@ _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
+_Static_assert(HERO_RET_INT(HERO_OS_NOT_TEXT), "heroes-ffi-return HERO_OS_NOT_TEXT i64");
+_Static_assert(__builtin_constant_p(HERO_OS_NOT_TEXT), "heroes-ffi-const HERO_OS_NOT_TEXT");
 _Static_assert(HERO_RET_STR(hero_file_read(0, 0)), "heroes-ffi-return hero_file_read str");
 _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
@@ -39,25 +41,25 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 43 "literalbases.c"
+#line 45 "literalbases.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
-#line 111 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
 #line 112 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
+#line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
-#line 114 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 115 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 116 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 122 "<heroes library>"
+#line 123 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 61 "literalbases.c"
+#line 63 "literalbases.c"
 #pragma clang diagnostic pop
 
 HERO_STR_STATIC(hero_str_e0a370d, "hex ");
@@ -101,7 +103,7 @@ void h_literalbases_main(void);
 
 #line 27 "tests/golden/run/literal-bases.hero"
 void h_literalbases_main(void) {
-#line 105 "literalbases.c"
+#line 107 "literalbases.c"
     HeroStr h0_own0 = {0};
     HeroStr t1 = {0};
     int64_t t2;
@@ -243,7 +245,7 @@ bb0:
     t41 = h0_own0;
 #line 35 "tests/golden/run/literal-bases.hero"
     h0_own0 = t23;
-#line 247 "literalbases.c"
+#line 249 "literalbases.c"
     hero_str_decref(t41);
 #line 35 "tests/golden/run/literal-bases.hero"
     hero_print_str(t21);
@@ -313,7 +315,7 @@ bb0:
     hero_print_end();
 #line 38 "tests/golden/run/literal-bases.hero"
     t42 = h0_own0;
-#line 317 "literalbases.c"
+#line 319 "literalbases.c"
     hero_str_decref(t42);
     return;
 }

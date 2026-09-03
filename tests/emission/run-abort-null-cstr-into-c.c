@@ -31,6 +31,8 @@ _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
+_Static_assert(HERO_RET_INT(HERO_OS_NOT_TEXT), "heroes-ffi-return HERO_OS_NOT_TEXT i64");
+_Static_assert(__builtin_constant_p(HERO_OS_NOT_TEXT), "heroes-ffi-const HERO_OS_NOT_TEXT");
 _Static_assert(HERO_RET_STR(hero_file_read(0, 0)), "heroes-ffi-return hero_file_read str");
 _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
@@ -41,7 +43,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 45 "abortnullcstrintoc.c"
+#line 47 "abortnullcstrintoc.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -49,19 +51,19 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 18 "tests/golden/run/abort-null-cstr-into-c.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_abortnullcstrintoc_strstr(const char * a0, const char * a1) { (void)(strstr)(a0, a1); }
-#line 111 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
 #line 112 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
+#line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
-#line 114 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 115 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 116 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 122 "<heroes library>"
+#line 123 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 65 "abortnullcstrintoc.c"
+#line 67 "abortnullcstrintoc.c"
 #pragma clang diagnostic pop
 
 HERO_STR_STATIC(hero_str_43560e4d, "before");
@@ -98,7 +100,7 @@ void h_abortnullcstrintoc_main(void);
 
 #line 20 "tests/golden/run/abort-null-cstr-into-c.hero"
 void h_abortnullcstrintoc_main(void) {
-#line 102 "abortnullcstrintoc.c"
+#line 104 "abortnullcstrintoc.c"
     const char * h0_absent;
     HeroStr t1 = {0};
     HeroStr t2 = {0};
@@ -165,7 +167,7 @@ bb2:
 bb3:
 #line 34 "tests/golden/run/abort-null-cstr-into-c.hero"
     goto bb1;
-#line 169 "abortnullcstrintoc.c"
+#line 171 "abortnullcstrintoc.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

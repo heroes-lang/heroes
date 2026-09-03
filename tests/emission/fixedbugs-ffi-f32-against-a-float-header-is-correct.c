@@ -30,6 +30,8 @@ _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
+_Static_assert(HERO_RET_INT(HERO_OS_NOT_TEXT), "heroes-ffi-return HERO_OS_NOT_TEXT i64");
+_Static_assert(__builtin_constant_p(HERO_OS_NOT_TEXT), "heroes-ffi-const HERO_OS_NOT_TEXT");
 _Static_assert(HERO_RET_STR(hero_file_read(0, 0)), "heroes-ffi-return hero_file_read str");
 _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
@@ -40,7 +42,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 44 "ffif32againstafloatheaderiscorrect.c"
+#line 46 "ffif32againstafloatheaderiscorrect.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -48,19 +50,19 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 40 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_ffif32againstafloatheaderiscorrect_fmaxf(float a0, float a1) { (void)(fmaxf)(a0, a1); }
-#line 111 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
 #line 112 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
+#line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
-#line 114 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 115 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 116 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 122 "<heroes library>"
+#line 123 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 64 "ffif32againstafloatheaderiscorrect.c"
+#line 66 "ffif32againstafloatheaderiscorrect.c"
 #pragma clang diagnostic pop
 
 typedef struct h_0opt_e201354 {
@@ -103,7 +105,7 @@ void h_ffif32againstafloatheaderiscorrect_main(void);
 
 #line 42 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
 void h_ffif32againstafloatheaderiscorrect_main(void) {
-#line 107 "ffif32againstafloatheaderiscorrect.c"
+#line 109 "ffif32againstafloatheaderiscorrect.c"
     float h0_bigger;
     h_0opt_e201354 h1_f0 = {0};
     h_0opt_e201354 h2_own2 = {0};
@@ -154,15 +156,15 @@ bb0:
     t15 = h2_own2;
 #line 47 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
     h2_own2 = t5;
-#line 158 "ffif32againstafloatheaderiscorrect.c"
+#line 160 "ffif32againstafloatheaderiscorrect.c"
     h_0opt_e201354_release(&t15);
 #line 47 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
     t16 = h1_f0;
-#line 162 "ffif32againstafloatheaderiscorrect.c"
+#line 164 "ffif32againstafloatheaderiscorrect.c"
     h_0opt_e201354_retain(&t5);
 #line 47 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
     h1_f0 = t5;
-#line 166 "ffif32againstafloatheaderiscorrect.c"
+#line 168 "ffif32againstafloatheaderiscorrect.c"
     h_0opt_e201354_release(&t16);
 #line 47 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
     t6 = h1_f0;
@@ -186,7 +188,7 @@ bb1:
     t17 = h3_own3;
 #line 47 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
     h3_own3 = t14;
-#line 190 "ffif32againstafloatheaderiscorrect.c"
+#line 192 "ffif32againstafloatheaderiscorrect.c"
     hero_str_decref(t17);
 #line 47 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
     hero_print_str(t14);
@@ -194,15 +196,15 @@ bb1:
     hero_print_end();
 #line 47 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
     t18 = h1_f0;
-#line 198 "ffif32againstafloatheaderiscorrect.c"
+#line 200 "ffif32againstafloatheaderiscorrect.c"
     h_0opt_e201354_release(&t18);
 #line 47 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
     t19 = h2_own2;
-#line 202 "ffif32againstafloatheaderiscorrect.c"
+#line 204 "ffif32againstafloatheaderiscorrect.c"
     h_0opt_e201354_release(&t19);
 #line 47 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
     t20 = h3_own3;
-#line 206 "ffif32againstafloatheaderiscorrect.c"
+#line 208 "ffif32againstafloatheaderiscorrect.c"
     hero_str_decref(t20);
     return;
 bb2:
@@ -210,7 +212,7 @@ bb2:
     t10 = h1_f0;
 #line 47 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
     t11 = t10.as.err;
-#line 214 "ffif32againstafloatheaderiscorrect.c"
+#line 216 "ffif32againstafloatheaderiscorrect.c"
     hero_panic_must(t11);
     hero_unreachable();
 }

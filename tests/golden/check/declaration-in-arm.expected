@@ -1,0 +1,1 @@
+tests/golden/check/declaration-in-arm.hero:19:20: error[declaration_in_arm]: an arm's body may not declare a name — `doubled` would be bound where nothing can read it; write the value as the arm's body, or open a block

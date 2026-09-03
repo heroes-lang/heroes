@@ -29,6 +29,8 @@ _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
+_Static_assert(HERO_RET_INT(HERO_OS_NOT_TEXT), "heroes-ffi-return HERO_OS_NOT_TEXT i64");
+_Static_assert(__builtin_constant_p(HERO_OS_NOT_TEXT), "heroes-ffi-const HERO_OS_NOT_TEXT");
 _Static_assert(HERO_RET_STR(hero_file_read(0, 0)), "heroes-ffi-return hero_file_read str");
 _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
@@ -39,25 +41,25 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 43 "fixedbugsmapstorealiased.c"
+#line 45 "fixedbugsmapstorealiased.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
-#line 111 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
 #line 112 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
+#line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
-#line 114 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 115 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 116 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 122 "<heroes library>"
+#line 123 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 61 "fixedbugsmapstorealiased.c"
+#line 63 "fixedbugsmapstorealiased.c"
 #pragma clang diagnostic pop
 
 HERO_STR_STATIC(hero_str_61, "a");
@@ -103,7 +105,7 @@ void h_fixedbugsmapstorealiased_main(void);
 
 #line 25 "tests/golden/run/fixedbugs-map-store-aliased.hero"
 void h_fixedbugsmapstorealiased_main(void) {
-#line 107 "fixedbugsmapstorealiased.c"
+#line 109 "fixedbugsmapstorealiased.c"
     HeroMapHeader * h0_m = {0};
     HeroMapHeader * h1_n = {0};
     h_0opt_e201354 h2_f0 = {0};
@@ -149,15 +151,15 @@ bb0:
     t22 = h4_own4;
 #line 26 "tests/golden/run/fixedbugs-map-store-aliased.hero"
     h4_own4 = t1;
-#line 153 "fixedbugsmapstorealiased.c"
+#line 155 "fixedbugsmapstorealiased.c"
     hero_map_decref(t22);
 #line 26 "tests/golden/run/fixedbugs-map-store-aliased.hero"
     t23 = h0_m;
-#line 157 "fixedbugsmapstorealiased.c"
+#line 159 "fixedbugsmapstorealiased.c"
     hero_map_incref(t1);
 #line 26 "tests/golden/run/fixedbugs-map-store-aliased.hero"
     h0_m = t1;
-#line 161 "fixedbugsmapstorealiased.c"
+#line 163 "fixedbugsmapstorealiased.c"
     hero_map_decref(t23);
 #line 27 "tests/golden/run/fixedbugs-map-store-aliased.hero"
     t2 = HERO_STR_LIT(hero_str_61);
@@ -169,11 +171,11 @@ bb0:
     t4 = h0_m;
 #line 28 "tests/golden/run/fixedbugs-map-store-aliased.hero"
     t24 = h1_n;
-#line 173 "fixedbugsmapstorealiased.c"
+#line 175 "fixedbugsmapstorealiased.c"
     hero_map_incref(t4);
 #line 28 "tests/golden/run/fixedbugs-map-store-aliased.hero"
     h1_n = t4;
-#line 177 "fixedbugsmapstorealiased.c"
+#line 179 "fixedbugsmapstorealiased.c"
     hero_map_decref(t24);
 #line 29 "tests/golden/run/fixedbugs-map-store-aliased.hero"
     t5 = HERO_STR_LIT(hero_str_62);
@@ -223,15 +225,15 @@ bb0:
     t25 = h5_own5;
 #line 32 "tests/golden/run/fixedbugs-map-store-aliased.hero"
     h5_own5 = t13;
-#line 227 "fixedbugsmapstorealiased.c"
+#line 229 "fixedbugsmapstorealiased.c"
     h_0opt_e201354_release(&t25);
 #line 32 "tests/golden/run/fixedbugs-map-store-aliased.hero"
     t26 = h2_f0;
-#line 231 "fixedbugsmapstorealiased.c"
+#line 233 "fixedbugsmapstorealiased.c"
     h_0opt_e201354_retain(&t13);
 #line 32 "tests/golden/run/fixedbugs-map-store-aliased.hero"
     h2_f0 = t13;
-#line 235 "fixedbugsmapstorealiased.c"
+#line 237 "fixedbugsmapstorealiased.c"
     h_0opt_e201354_release(&t26);
 #line 32 "tests/golden/run/fixedbugs-map-store-aliased.hero"
     t14 = h2_f0;
@@ -271,23 +273,23 @@ bb3:
     hero_print_end();
 #line 32 "tests/golden/run/fixedbugs-map-store-aliased.hero"
     t27 = h0_m;
-#line 275 "fixedbugsmapstorealiased.c"
+#line 277 "fixedbugsmapstorealiased.c"
     hero_map_decref(t27);
 #line 32 "tests/golden/run/fixedbugs-map-store-aliased.hero"
     t28 = h1_n;
-#line 279 "fixedbugsmapstorealiased.c"
+#line 281 "fixedbugsmapstorealiased.c"
     hero_map_decref(t28);
 #line 32 "tests/golden/run/fixedbugs-map-store-aliased.hero"
     t29 = h2_f0;
-#line 283 "fixedbugsmapstorealiased.c"
+#line 285 "fixedbugsmapstorealiased.c"
     h_0opt_e201354_release(&t29);
 #line 32 "tests/golden/run/fixedbugs-map-store-aliased.hero"
     t30 = h4_own4;
-#line 287 "fixedbugsmapstorealiased.c"
+#line 289 "fixedbugsmapstorealiased.c"
     hero_map_decref(t30);
 #line 32 "tests/golden/run/fixedbugs-map-store-aliased.hero"
     t31 = h5_own5;
-#line 291 "fixedbugsmapstorealiased.c"
+#line 293 "fixedbugsmapstorealiased.c"
     h_0opt_e201354_release(&t31);
     return;
 }

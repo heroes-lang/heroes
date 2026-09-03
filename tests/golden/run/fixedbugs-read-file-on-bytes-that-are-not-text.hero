@@ -56,10 +56,12 @@ function main()
         print("cannot build the fixture")
         return
 
-    # The arm that was unreachable. Its code is `read_failed` and not something
-    # sharper because the Tier-2 wrapper collapses the status on purpose — panel
-    # 087's two compiling seats disagreed about naming it, and `DECIDE.md` holds
-    # the question. What this case pins is that a branch is reached AT ALL.
+    # The arm that was unreachable. Its code was `read_failed` until 2026-09-03,
+    # because the Tier-2 wrapper collapsed the status on purpose — panel 087's two
+    # compiling seats disagreed about naming it and left it to the author, who
+    # chose the code that says what happened: `not_text`, the one `validated`
+    # already gives a cstr in the same state. This case pins both facts: that the
+    # branch is reached at all, and what it is told.
     match read_file(NOT_TEXT)
         .ok text => print("unexpected: ", len(text), " bytes")
         .err e   => print("not text: ", e.code)

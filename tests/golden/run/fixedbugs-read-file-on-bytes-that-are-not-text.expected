@@ -1,4 +1,4 @@
-not text: read_failed
+not text: not_text
 wrote the text one
 text: 7 bytes
 missing: file_not_found

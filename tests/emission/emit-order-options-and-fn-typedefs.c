@@ -29,6 +29,8 @@ _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
+_Static_assert(HERO_RET_INT(HERO_OS_NOT_TEXT), "heroes-ffi-return HERO_OS_NOT_TEXT i64");
+_Static_assert(__builtin_constant_p(HERO_OS_NOT_TEXT), "heroes-ffi-const HERO_OS_NOT_TEXT");
 _Static_assert(HERO_RET_STR(hero_file_read(0, 0)), "heroes-ffi-return hero_file_read str");
 _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
@@ -39,25 +41,25 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 43 "orderoptionsandfntypedefs.c"
+#line 45 "orderoptionsandfntypedefs.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
-#line 111 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
 #line 112 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
+#line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
-#line 114 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 115 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 116 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 122 "<heroes library>"
+#line 123 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 61 "orderoptionsandfntypedefs.c"
+#line 63 "orderoptionsandfntypedefs.c"
 #pragma clang diagnostic pop
 
 HERO_STR_STATIC(hero_str_1d4477, "odd");
@@ -155,7 +157,7 @@ void h_orderoptionsandfntypedefs_main(void);
 
 #line 14 "tests/golden/emit/order-options-and-fn-typedefs.hero"
 h_0opt_e201354 h_orderoptionsandfntypedefs_half(int64_t h0_n) {
-#line 159 "orderoptionsandfntypedefs.c"
+#line 161 "orderoptionsandfntypedefs.c"
     h_0opt_e201354 h1_own1 = {0};
     h_0opt_e201354 h2_own2 = {0};
     int64_t t1;
@@ -200,10 +202,10 @@ bb1:
     t10 = HERO_STR_LIT(hero_str_1d4477);
 #line 17 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t11 = HERO_STR_LIT(hero_str_7fc615fd);
-#line 204 "orderoptionsandfntypedefs.c"
+#line 206 "orderoptionsandfntypedefs.c"
     hero_str_incref(t10);
 #line 17 "tests/golden/emit/order-options-and-fn-typedefs.hero"
-#line 207 "orderoptionsandfntypedefs.c"
+#line 209 "orderoptionsandfntypedefs.c"
     hero_str_incref(t11);
 #line 17 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t12 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t10, .msg = t11}};
@@ -211,18 +213,18 @@ bb1:
     t13 = h1_own1;
 #line 17 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     h1_own1 = t12;
-#line 215 "orderoptionsandfntypedefs.c"
+#line 217 "orderoptionsandfntypedefs.c"
     h_0opt_e201354_release(&t13);
 #line 17 "tests/golden/emit/order-options-and-fn-typedefs.hero"
-#line 218 "orderoptionsandfntypedefs.c"
+#line 220 "orderoptionsandfntypedefs.c"
     h_0opt_e201354_retain(&t12);
 #line 17 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t15 = h1_own1;
-#line 222 "orderoptionsandfntypedefs.c"
+#line 224 "orderoptionsandfntypedefs.c"
     h_0opt_e201354_release(&t15);
 #line 17 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t16 = h2_own2;
-#line 226 "orderoptionsandfntypedefs.c"
+#line 228 "orderoptionsandfntypedefs.c"
     h_0opt_e201354_release(&t16);
     return t12;
 bb2:
@@ -242,18 +244,18 @@ bb2:
     t14 = h2_own2;
 #line 16 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     h2_own2 = t9;
-#line 246 "orderoptionsandfntypedefs.c"
+#line 248 "orderoptionsandfntypedefs.c"
     h_0opt_e201354_release(&t14);
 #line 16 "tests/golden/emit/order-options-and-fn-typedefs.hero"
-#line 249 "orderoptionsandfntypedefs.c"
+#line 251 "orderoptionsandfntypedefs.c"
     h_0opt_e201354_retain(&t9);
 #line 16 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t17 = h1_own1;
-#line 253 "orderoptionsandfntypedefs.c"
+#line 255 "orderoptionsandfntypedefs.c"
     h_0opt_e201354_release(&t17);
 #line 16 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t18 = h2_own2;
-#line 257 "orderoptionsandfntypedefs.c"
+#line 259 "orderoptionsandfntypedefs.c"
     h_0opt_e201354_release(&t18);
     return t9;
 bb3:
@@ -262,7 +264,7 @@ bb3:
 
 #line 19 "tests/golden/emit/order-options-and-fn-typedefs.hero"
 h_0opt_f87774a h_orderoptionsandfntypedefs_name_of(int64_t h0_n) {
-#line 266 "orderoptionsandfntypedefs.c"
+#line 268 "orderoptionsandfntypedefs.c"
     h_0opt_f87774a h1_own1 = {0};
     h_0opt_f87774a h2_own2 = {0};
     int64_t t1;
@@ -295,10 +297,10 @@ bb1:
     t6 = HERO_STR_LIT(hero_str_d93bba2);
 #line 22 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t7 = HERO_STR_LIT(hero_str_73ad6a73);
-#line 299 "orderoptionsandfntypedefs.c"
+#line 301 "orderoptionsandfntypedefs.c"
     hero_str_incref(t6);
 #line 22 "tests/golden/emit/order-options-and-fn-typedefs.hero"
-#line 302 "orderoptionsandfntypedefs.c"
+#line 304 "orderoptionsandfntypedefs.c"
     hero_str_incref(t7);
 #line 22 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t8 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t6, .msg = t7}};
@@ -306,24 +308,24 @@ bb1:
     t9 = h1_own1;
 #line 22 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     h1_own1 = t8;
-#line 310 "orderoptionsandfntypedefs.c"
+#line 312 "orderoptionsandfntypedefs.c"
     h_0opt_f87774a_release(&t9);
 #line 22 "tests/golden/emit/order-options-and-fn-typedefs.hero"
-#line 313 "orderoptionsandfntypedefs.c"
+#line 315 "orderoptionsandfntypedefs.c"
     h_0opt_f87774a_retain(&t8);
 #line 22 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t11 = h1_own1;
-#line 317 "orderoptionsandfntypedefs.c"
+#line 319 "orderoptionsandfntypedefs.c"
     h_0opt_f87774a_release(&t11);
 #line 22 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t12 = h2_own2;
-#line 321 "orderoptionsandfntypedefs.c"
+#line 323 "orderoptionsandfntypedefs.c"
     h_0opt_f87774a_release(&t12);
     return t8;
 bb2:
 #line 21 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t4 = HERO_STR_LIT(hero_str_1073a930);
-#line 327 "orderoptionsandfntypedefs.c"
+#line 329 "orderoptionsandfntypedefs.c"
     hero_str_incref(t4);
 #line 21 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t5 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t4};
@@ -331,18 +333,18 @@ bb2:
     t10 = h2_own2;
 #line 21 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     h2_own2 = t5;
-#line 335 "orderoptionsandfntypedefs.c"
+#line 337 "orderoptionsandfntypedefs.c"
     h_0opt_f87774a_release(&t10);
 #line 21 "tests/golden/emit/order-options-and-fn-typedefs.hero"
-#line 338 "orderoptionsandfntypedefs.c"
+#line 340 "orderoptionsandfntypedefs.c"
     h_0opt_f87774a_retain(&t5);
 #line 21 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t13 = h1_own1;
-#line 342 "orderoptionsandfntypedefs.c"
+#line 344 "orderoptionsandfntypedefs.c"
     h_0opt_f87774a_release(&t13);
 #line 21 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t14 = h2_own2;
-#line 346 "orderoptionsandfntypedefs.c"
+#line 348 "orderoptionsandfntypedefs.c"
     h_0opt_f87774a_release(&t14);
     return t5;
 bb3:
@@ -351,7 +353,7 @@ bb3:
 
 #line 24 "tests/golden/emit/order-options-and-fn-typedefs.hero"
 h_0opt_de89a9a h_orderoptionsandfntypedefs_origin(bool h0_flag) {
-#line 355 "orderoptionsandfntypedefs.c"
+#line 357 "orderoptionsandfntypedefs.c"
     h_0opt_de89a9a h1_own1 = {0};
     h_0opt_de89a9a h2_own2 = {0};
     bool t1;
@@ -380,10 +382,10 @@ bb1:
     t6 = HERO_STR_LIT(hero_str_edaa230);
 #line 27 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t7 = HERO_STR_LIT(hero_str_56b81d56);
-#line 384 "orderoptionsandfntypedefs.c"
+#line 386 "orderoptionsandfntypedefs.c"
     hero_str_incref(t6);
 #line 27 "tests/golden/emit/order-options-and-fn-typedefs.hero"
-#line 387 "orderoptionsandfntypedefs.c"
+#line 389 "orderoptionsandfntypedefs.c"
     hero_str_incref(t7);
 #line 27 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t8 = (h_0opt_de89a9a){.tag = INT64_C(1), .as.err = {.code = t6, .msg = t7}};
@@ -391,18 +393,18 @@ bb1:
     t9 = h1_own1;
 #line 27 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     h1_own1 = t8;
-#line 395 "orderoptionsandfntypedefs.c"
+#line 397 "orderoptionsandfntypedefs.c"
     h_0opt_de89a9a_release(&t9);
 #line 27 "tests/golden/emit/order-options-and-fn-typedefs.hero"
-#line 398 "orderoptionsandfntypedefs.c"
+#line 400 "orderoptionsandfntypedefs.c"
     h_0opt_de89a9a_retain(&t8);
 #line 27 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t11 = h1_own1;
-#line 402 "orderoptionsandfntypedefs.c"
+#line 404 "orderoptionsandfntypedefs.c"
     h_0opt_de89a9a_release(&t11);
 #line 27 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t12 = h2_own2;
-#line 406 "orderoptionsandfntypedefs.c"
+#line 408 "orderoptionsandfntypedefs.c"
     h_0opt_de89a9a_release(&t12);
     return t8;
 bb2:
@@ -418,18 +420,18 @@ bb2:
     t10 = h2_own2;
 #line 26 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     h2_own2 = t5;
-#line 422 "orderoptionsandfntypedefs.c"
+#line 424 "orderoptionsandfntypedefs.c"
     h_0opt_de89a9a_release(&t10);
 #line 26 "tests/golden/emit/order-options-and-fn-typedefs.hero"
-#line 425 "orderoptionsandfntypedefs.c"
+#line 427 "orderoptionsandfntypedefs.c"
     h_0opt_de89a9a_retain(&t5);
 #line 26 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t13 = h1_own1;
-#line 429 "orderoptionsandfntypedefs.c"
+#line 431 "orderoptionsandfntypedefs.c"
     h_0opt_de89a9a_release(&t13);
 #line 26 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t14 = h2_own2;
-#line 433 "orderoptionsandfntypedefs.c"
+#line 435 "orderoptionsandfntypedefs.c"
     h_0opt_de89a9a_release(&t14);
     return t5;
 bb3:
@@ -438,7 +440,7 @@ bb3:
 
 #line 29 "tests/golden/emit/order-options-and-fn-typedefs.hero"
 int64_t h_orderoptionsandfntypedefs_apply(h_0fn_7b615d8f h0_f, int64_t h1_x, int64_t h2_y) {
-#line 442 "orderoptionsandfntypedefs.c"
+#line 444 "orderoptionsandfntypedefs.c"
     h_0fn_7b615d8f t1;
     int64_t t2;
     int64_t t3;
@@ -455,12 +457,12 @@ bb0:
     t4 = t1(t2, t3);
 #line 30 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     return t4;
-#line 459 "orderoptionsandfntypedefs.c"
+#line 461 "orderoptionsandfntypedefs.c"
 }
 
 #line 32 "tests/golden/emit/order-options-and-fn-typedefs.hero"
 int64_t h_orderoptionsandfntypedefs_add(int64_t h0_a, int64_t h1_b) {
-#line 464 "orderoptionsandfntypedefs.c"
+#line 466 "orderoptionsandfntypedefs.c"
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -474,12 +476,12 @@ bb0:
     if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 33 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     return t3;
-#line 478 "orderoptionsandfntypedefs.c"
+#line 480 "orderoptionsandfntypedefs.c"
 }
 
 #line 35 "tests/golden/emit/order-options-and-fn-typedefs.hero"
 void h_orderoptionsandfntypedefs_twice(h_0fn_294870dd h0_f) {
-#line 483 "orderoptionsandfntypedefs.c"
+#line 485 "orderoptionsandfntypedefs.c"
     h_0fn_294870dd t1;
     h_0fn_294870dd t2;
     goto bb0;
@@ -494,12 +496,12 @@ bb0:
     t2();
 #line 37 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     return;
-#line 498 "orderoptionsandfntypedefs.c"
+#line 500 "orderoptionsandfntypedefs.c"
 }
 
 #line 39 "tests/golden/emit/order-options-and-fn-typedefs.hero"
 void h_orderoptionsandfntypedefs_tick(void) {
-#line 503 "orderoptionsandfntypedefs.c"
+#line 505 "orderoptionsandfntypedefs.c"
     HeroStr t1 = {0};
     goto bb0;
 bb0:
@@ -511,12 +513,12 @@ bb0:
     hero_print_end();
 #line 40 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     return;
-#line 515 "orderoptionsandfntypedefs.c"
+#line 517 "orderoptionsandfntypedefs.c"
 }
 
 #line 42 "tests/golden/emit/order-options-and-fn-typedefs.hero"
 void h_orderoptionsandfntypedefs_main(void) {
-#line 520 "orderoptionsandfntypedefs.c"
+#line 522 "orderoptionsandfntypedefs.c"
     HeroArrayHeader * h0_points = {0};
     h_0opt_e201354 h1_f0 = {0};
     int64_t h2_r0;
@@ -616,15 +618,15 @@ bb0:
     t43 = h6_own6;
 #line 43 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     h6_own6 = t7;
-#line 620 "orderoptionsandfntypedefs.c"
+#line 622 "orderoptionsandfntypedefs.c"
     hero_array_decref(t43);
 #line 43 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t44 = h0_points;
-#line 624 "orderoptionsandfntypedefs.c"
+#line 626 "orderoptionsandfntypedefs.c"
     hero_array_incref(t7);
 #line 43 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     h0_points = t7;
-#line 628 "orderoptionsandfntypedefs.c"
+#line 630 "orderoptionsandfntypedefs.c"
     hero_array_decref(t44);
 #line 44 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t8 = h0_points;
@@ -646,15 +648,15 @@ bb0:
     t45 = h7_own7;
 #line 45 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     h7_own7 = t13;
-#line 650 "orderoptionsandfntypedefs.c"
+#line 652 "orderoptionsandfntypedefs.c"
     h_0opt_e201354_release(&t45);
 #line 45 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t46 = h1_f0;
-#line 654 "orderoptionsandfntypedefs.c"
+#line 656 "orderoptionsandfntypedefs.c"
     h_0opt_e201354_retain(&t13);
 #line 45 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     h1_f0 = t13;
-#line 658 "orderoptionsandfntypedefs.c"
+#line 660 "orderoptionsandfntypedefs.c"
     h_0opt_e201354_release(&t46);
 #line 45 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t14 = h1_f0;
@@ -700,15 +702,15 @@ bb3:
     t47 = h8_own8;
 #line 46 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     h8_own8 = t23;
-#line 704 "orderoptionsandfntypedefs.c"
+#line 706 "orderoptionsandfntypedefs.c"
     h_0opt_f87774a_release(&t47);
 #line 46 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t48 = h3_f1;
-#line 708 "orderoptionsandfntypedefs.c"
+#line 710 "orderoptionsandfntypedefs.c"
     h_0opt_f87774a_retain(&t23);
 #line 46 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     h3_f1 = t23;
-#line 712 "orderoptionsandfntypedefs.c"
+#line 714 "orderoptionsandfntypedefs.c"
     h_0opt_f87774a_release(&t48);
 #line 46 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t24 = h3_f1;
@@ -728,11 +730,11 @@ bb4:
     t29 = t28.as.ok;
 #line 46 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t49 = h4_r1;
-#line 732 "orderoptionsandfntypedefs.c"
+#line 734 "orderoptionsandfntypedefs.c"
     hero_str_incref(t29);
 #line 46 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     h4_r1 = t29;
-#line 736 "orderoptionsandfntypedefs.c"
+#line 738 "orderoptionsandfntypedefs.c"
     hero_str_decref(t49);
     goto bb6;
 bb5:
@@ -740,11 +742,11 @@ bb5:
     t30 = HERO_STR_LIT(hero_str_3f);
 #line 46 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t50 = h4_r1;
-#line 744 "orderoptionsandfntypedefs.c"
+#line 746 "orderoptionsandfntypedefs.c"
     hero_str_incref(t30);
 #line 46 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     h4_r1 = t30;
-#line 748 "orderoptionsandfntypedefs.c"
+#line 750 "orderoptionsandfntypedefs.c"
     hero_str_decref(t50);
     goto bb6;
 bb6:
@@ -762,15 +764,15 @@ bb6:
     t51 = h9_own9;
 #line 47 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     h9_own9 = t33;
-#line 766 "orderoptionsandfntypedefs.c"
+#line 768 "orderoptionsandfntypedefs.c"
     h_0opt_de89a9a_release(&t51);
 #line 47 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t52 = h5_f2;
-#line 770 "orderoptionsandfntypedefs.c"
+#line 772 "orderoptionsandfntypedefs.c"
     h_0opt_de89a9a_retain(&t33);
 #line 47 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     h5_f2 = t33;
-#line 774 "orderoptionsandfntypedefs.c"
+#line 776 "orderoptionsandfntypedefs.c"
     h_0opt_de89a9a_release(&t52);
 #line 47 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t34 = h5_f2;
@@ -802,39 +804,39 @@ bb6:
     h_orderoptionsandfntypedefs_twice(t42);
 #line 49 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t53 = h0_points;
-#line 806 "orderoptionsandfntypedefs.c"
+#line 808 "orderoptionsandfntypedefs.c"
     hero_array_decref(t53);
 #line 49 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t54 = h1_f0;
-#line 810 "orderoptionsandfntypedefs.c"
+#line 812 "orderoptionsandfntypedefs.c"
     h_0opt_e201354_release(&t54);
 #line 49 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t55 = h3_f1;
-#line 814 "orderoptionsandfntypedefs.c"
+#line 816 "orderoptionsandfntypedefs.c"
     h_0opt_f87774a_release(&t55);
 #line 49 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t56 = h4_r1;
-#line 818 "orderoptionsandfntypedefs.c"
+#line 820 "orderoptionsandfntypedefs.c"
     hero_str_decref(t56);
 #line 49 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t57 = h5_f2;
-#line 822 "orderoptionsandfntypedefs.c"
+#line 824 "orderoptionsandfntypedefs.c"
     h_0opt_de89a9a_release(&t57);
 #line 49 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t58 = h6_own6;
-#line 826 "orderoptionsandfntypedefs.c"
+#line 828 "orderoptionsandfntypedefs.c"
     hero_array_decref(t58);
 #line 49 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t59 = h7_own7;
-#line 830 "orderoptionsandfntypedefs.c"
+#line 832 "orderoptionsandfntypedefs.c"
     h_0opt_e201354_release(&t59);
 #line 49 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t60 = h8_own8;
-#line 834 "orderoptionsandfntypedefs.c"
+#line 836 "orderoptionsandfntypedefs.c"
     h_0opt_f87774a_release(&t60);
 #line 49 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t61 = h9_own9;
-#line 838 "orderoptionsandfntypedefs.c"
+#line 840 "orderoptionsandfntypedefs.c"
     h_0opt_de89a9a_release(&t61);
     return;
 }

@@ -29,6 +29,8 @@ _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
+_Static_assert(HERO_RET_INT(HERO_OS_NOT_TEXT), "heroes-ffi-return HERO_OS_NOT_TEXT i64");
+_Static_assert(__builtin_constant_p(HERO_OS_NOT_TEXT), "heroes-ffi-const HERO_OS_NOT_TEXT");
 _Static_assert(HERO_RET_STR(hero_file_read(0, 0)), "heroes-ffi-return hero_file_read str");
 _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
@@ -39,25 +41,25 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 43 "fixedbugsadiscardedbindingwarnsinc.c"
+#line 45 "fixedbugsadiscardedbindingwarnsinc.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
-#line 111 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
 #line 112 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
+#line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
-#line 114 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 115 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 116 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 122 "<heroes library>"
+#line 123 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 61 "fixedbugsadiscardedbindingwarnsinc.c"
+#line 63 "fixedbugsadiscardedbindingwarnsinc.c"
 #pragma clang diagnostic pop
 
 HERO_STR_STATIC(hero_str_6bb5e50a, "ziggy");
@@ -91,7 +93,7 @@ void h_fixedbugsadiscardedbindingwarnsinc_main(void);
 
 #line 29 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
 int64_t h_fixedbugsadiscardedbindingwarnsinc_twice(int64_t h0_n) {
-#line 95 "fixedbugsadiscardedbindingwarnsinc.c"
+#line 97 "fixedbugsadiscardedbindingwarnsinc.c"
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -105,12 +107,12 @@ bb0:
     if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 30 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
     return t3;
-#line 109 "fixedbugsadiscardedbindingwarnsinc.c"
+#line 111 "fixedbugsadiscardedbindingwarnsinc.c"
 }
 
 #line 32 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
 void h_fixedbugsadiscardedbindingwarnsinc_main(void) {
-#line 114 "fixedbugsadiscardedbindingwarnsinc.c"
+#line 116 "fixedbugsadiscardedbindingwarnsinc.c"
     __attribute__((unused)) int64_t h0_v;
     HeroStr h1_s = {0};
     int64_t h2_kept;
@@ -133,11 +135,11 @@ bb0:
     t3 = HERO_STR_LIT(hero_str_6bb5e50a);
 #line 38 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
     t10 = h1_s;
-#line 137 "fixedbugsadiscardedbindingwarnsinc.c"
+#line 139 "fixedbugsadiscardedbindingwarnsinc.c"
     hero_str_incref(t3);
 #line 38 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
     h1_s = t3;
-#line 141 "fixedbugsadiscardedbindingwarnsinc.c"
+#line 143 "fixedbugsadiscardedbindingwarnsinc.c"
     hero_str_decref(t10);
 #line 39 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
 #line 42 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
@@ -158,7 +160,7 @@ bb0:
     hero_print_end();
 #line 46 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
     t11 = h1_s;
-#line 162 "fixedbugsadiscardedbindingwarnsinc.c"
+#line 164 "fixedbugsadiscardedbindingwarnsinc.c"
     hero_str_decref(t11);
     return;
 }

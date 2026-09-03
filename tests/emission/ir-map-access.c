@@ -29,6 +29,8 @@ _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
+_Static_assert(HERO_RET_INT(HERO_OS_NOT_TEXT), "heroes-ffi-return HERO_OS_NOT_TEXT i64");
+_Static_assert(__builtin_constant_p(HERO_OS_NOT_TEXT), "heroes-ffi-const HERO_OS_NOT_TEXT");
 _Static_assert(HERO_RET_STR(hero_file_read(0, 0)), "heroes-ffi-return hero_file_read str");
 _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
@@ -39,25 +41,25 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 43 "mapaccess.c"
+#line 45 "mapaccess.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
-#line 111 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
 #line 112 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
+#line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
-#line 114 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 115 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 116 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 122 "<heroes library>"
+#line 123 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 61 "mapaccess.c"
+#line 63 "mapaccess.c"
 #pragma clang diagnostic pop
 
 HERO_STR_STATIC(hero_str_1999f6, "ada");
@@ -104,7 +106,7 @@ int64_t h_mapaccess_both(HeroMapHeader * h0_scores, HeroArrayHeader * h1_xs);
 
 #line 5 "tests/golden/ir/map-access.hero"
 int64_t h_mapaccess_score_of(HeroMapHeader * h0_scores, HeroStr h1_name) {
-#line 108 "mapaccess.c"
+#line 110 "mapaccess.c"
     h_0opt_e201354 h2_f0 = {0};
     int64_t h3_r0;
     h_0opt_e201354 h4_own4 = {0};
@@ -151,15 +153,15 @@ bb0:
     t12 = h4_own4;
 #line 6 "tests/golden/ir/map-access.hero"
     h4_own4 = t3;
-#line 155 "mapaccess.c"
+#line 157 "mapaccess.c"
     h_0opt_e201354_release(&t12);
 #line 6 "tests/golden/ir/map-access.hero"
     t13 = h2_f0;
-#line 159 "mapaccess.c"
+#line 161 "mapaccess.c"
     h_0opt_e201354_retain(&t3);
 #line 6 "tests/golden/ir/map-access.hero"
     h2_f0 = t3;
-#line 163 "mapaccess.c"
+#line 165 "mapaccess.c"
     h_0opt_e201354_release(&t13);
 #line 6 "tests/golden/ir/map-access.hero"
     t4 = h2_f0;
@@ -195,18 +197,18 @@ bb3:
     t11 = h3_r0;
 #line 6 "tests/golden/ir/map-access.hero"
     t14 = h2_f0;
-#line 199 "mapaccess.c"
+#line 201 "mapaccess.c"
     h_0opt_e201354_release(&t14);
 #line 6 "tests/golden/ir/map-access.hero"
     t15 = h4_own4;
-#line 203 "mapaccess.c"
+#line 205 "mapaccess.c"
     h_0opt_e201354_release(&t15);
     return t11;
 }
 
 #line 8 "tests/golden/ir/map-access.hero"
 int64_t h_mapaccess_first_of(HeroArrayHeader * h0_xs) {
-#line 210 "mapaccess.c"
+#line 212 "mapaccess.c"
     HeroArrayHeader * t1 = {0};
     int64_t t2;
     int64_t t3;
@@ -220,12 +222,12 @@ bb0:
     t3 = *(int64_t const *)hero_array_at(t1, t2);
 #line 9 "tests/golden/ir/map-access.hero"
     return t3;
-#line 224 "mapaccess.c"
+#line 226 "mapaccess.c"
 }
 
 #line 11 "tests/golden/ir/map-access.hero"
 int64_t h_mapaccess_both(HeroMapHeader * h0_scores, HeroArrayHeader * h1_xs) {
-#line 229 "mapaccess.c"
+#line 231 "mapaccess.c"
     HeroMapHeader * t1 = {0};
     HeroStr t2 = {0};
     int64_t t3;
@@ -248,7 +250,7 @@ bb0:
     if (__builtin_add_overflow(t3, t5, &t6)) hero_panic_overflow();
 #line 12 "tests/golden/ir/map-access.hero"
     return t6;
-#line 252 "mapaccess.c"
+#line 254 "mapaccess.c"
 }
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {

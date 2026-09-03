@@ -1,0 +1,1 @@
+tests/golden/check/ufcs-on-mutable.hero:15:7: error[ufcs_on_mutable]: `bump` changes its first argument, so it is called `bump(@x, …)` — the dotted form would hide the `@`

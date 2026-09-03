@@ -29,6 +29,8 @@ _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
+_Static_assert(HERO_RET_INT(HERO_OS_NOT_TEXT), "heroes-ffi-return HERO_OS_NOT_TEXT i64");
+_Static_assert(__builtin_constant_p(HERO_OS_NOT_TEXT), "heroes-ffi-const HERO_OS_NOT_TEXT");
 _Static_assert(HERO_RET_STR(hero_file_read(0, 0)), "heroes-ffi-return hero_file_read str");
 _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
@@ -39,25 +41,25 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 43 "abortarrayslice.c"
+#line 45 "abortarrayslice.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
-#line 111 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
 #line 112 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
+#line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
-#line 114 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 115 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 116 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 122 "<heroes library>"
+#line 123 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 61 "abortarrayslice.c"
+#line 63 "abortarrayslice.c"
 #pragma clang diagnostic pop
 
 typedef struct h_0opt_f87774a {
@@ -88,7 +90,7 @@ void h_abortarrayslice_main(void);
 
 #line 5 "tests/golden/run/abort-array-slice.hero"
 void h_abortarrayslice_main(void) {
-#line 92 "abortarrayslice.c"
+#line 94 "abortarrayslice.c"
     HeroArrayHeader * h0_xs = {0};
     HeroArrayHeader * h1_own1 = {0};
     HeroArrayHeader * h2_own2 = {0};
@@ -141,15 +143,15 @@ bb0:
     t15 = h1_own1;
 #line 6 "tests/golden/run/abort-array-slice.hero"
     h1_own1 = t4;
-#line 145 "abortarrayslice.c"
+#line 147 "abortarrayslice.c"
     hero_array_decref(t15);
 #line 6 "tests/golden/run/abort-array-slice.hero"
     t16 = h0_xs;
-#line 149 "abortarrayslice.c"
+#line 151 "abortarrayslice.c"
     hero_array_incref(t4);
 #line 6 "tests/golden/run/abort-array-slice.hero"
     h0_xs = t4;
-#line 153 "abortarrayslice.c"
+#line 155 "abortarrayslice.c"
     hero_array_decref(t16);
 #line 7 "tests/golden/run/abort-array-slice.hero"
     t5 = h0_xs;
@@ -163,7 +165,7 @@ bb0:
     t17 = h2_own2;
 #line 7 "tests/golden/run/abort-array-slice.hero"
     h2_own2 = t8;
-#line 167 "abortarrayslice.c"
+#line 169 "abortarrayslice.c"
     hero_array_decref(t17);
 #line 7 "tests/golden/run/abort-array-slice.hero"
     t9 = hero_array_len(t8);
@@ -183,7 +185,7 @@ bb0:
     t18 = h3_own3;
 #line 8 "tests/golden/run/abort-array-slice.hero"
     h3_own3 = t13;
-#line 187 "abortarrayslice.c"
+#line 189 "abortarrayslice.c"
     hero_array_decref(t18);
 #line 8 "tests/golden/run/abort-array-slice.hero"
     t14 = hero_array_len(t13);
@@ -193,19 +195,19 @@ bb0:
     hero_print_end();
 #line 8 "tests/golden/run/abort-array-slice.hero"
     t19 = h0_xs;
-#line 197 "abortarrayslice.c"
+#line 199 "abortarrayslice.c"
     hero_array_decref(t19);
 #line 8 "tests/golden/run/abort-array-slice.hero"
     t20 = h1_own1;
-#line 201 "abortarrayslice.c"
+#line 203 "abortarrayslice.c"
     hero_array_decref(t20);
 #line 8 "tests/golden/run/abort-array-slice.hero"
     t21 = h2_own2;
-#line 205 "abortarrayslice.c"
+#line 207 "abortarrayslice.c"
     hero_array_decref(t21);
 #line 8 "tests/golden/run/abort-array-slice.hero"
     t22 = h3_own3;
-#line 209 "abortarrayslice.c"
+#line 211 "abortarrayslice.c"
     hero_array_decref(t22);
     return;
 }

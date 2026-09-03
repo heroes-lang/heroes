@@ -29,6 +29,8 @@ _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
+_Static_assert(HERO_RET_INT(HERO_OS_NOT_TEXT), "heroes-ffi-return HERO_OS_NOT_TEXT i64");
+_Static_assert(__builtin_constant_p(HERO_OS_NOT_TEXT), "heroes-ffi-const HERO_OS_NOT_TEXT");
 _Static_assert(HERO_RET_STR(hero_file_read(0, 0)), "heroes-ffi-return hero_file_read str");
 _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
@@ -39,25 +41,25 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 43 "main.c"
+#line 45 "main.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
-#line 111 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
 #line 112 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
+#line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
-#line 114 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 115 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 116 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 122 "<heroes library>"
+#line 123 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 61 "main.c"
+#line 63 "main.c"
 #pragma clang diagnostic pop
 
 HERO_STR_STATIC(hero_str_9b908bc, "usage: assembler <file.asm> [listing]");
@@ -103,8 +105,11 @@ HERO_STR_STATIC(hero_str_14a4096d, "bad_number");
 HERO_STR_STATIC(hero_str_52629714, "bad_register");
 HERO_STR_STATIC(hero_str_7494754c, "` is not a register \342\200\224 r0 to r3");
 HERO_STR_STATIC(hero_str_7597be40, "` is not a number");
+HERO_STR_STATIC(hero_str_34624695, "not_text");
 HERO_STR_STATIC(hero_str_5b56e076, "file_not_found");
 HERO_STR_STATIC(hero_str_2ae119c5, "no file at ");
+HERO_STR_STATIC(hero_str_d028710, "the bytes of ");
+HERO_STR_STATIC(hero_str_612f4355, " are not UTF-8");
 HERO_STR_STATIC(hero_str_3e46668, "read_failed");
 HERO_STR_STATIC(hero_str_b908f30, "could not read ");
 
@@ -307,13 +312,14 @@ h_0opt_e201354 h_program_number_of(HeroStr h0_word, int64_t h1_number);
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to);
 int64_t h_library_HERO_OS_OK(void);
 int64_t h_library_HERO_OS_NOT_FOUND(void);
+int64_t h_library_HERO_OS_NOT_TEXT(void);
 h_0opt_f87774a h_library_read_file(HeroStr h0_path);
 HeroArrayHeader * h_library_args(void);
 void h_library_exit(int64_t h0_code);
 
 #line 21 "examples/assembler/main.hero"
 int64_t h_main_FUEL(void) {
-#line 317 "main.c"
+#line 323 "main.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -321,12 +327,12 @@ bb0:
     t1 = INT64_C(10000);
 #line 22 "examples/assembler/main.hero"
     return t1;
-#line 325 "main.c"
+#line 331 "main.c"
 }
 
 #line 24 "examples/assembler/main.hero"
 void h_main_main(void) {
-#line 330 "main.c"
+#line 336 "main.c"
     HeroArrayHeader * h0_given = {0};
     h_0opt_f87774a h1_s0 = {0};
     HeroFailure h2_e = {0};
@@ -391,15 +397,15 @@ bb0:
     t30 = h4_own4;
 #line 25 "examples/assembler/main.hero"
     h4_own4 = t1;
-#line 395 "main.c"
+#line 401 "main.c"
     hero_array_decref(t30);
 #line 25 "examples/assembler/main.hero"
     t31 = h0_given;
-#line 399 "main.c"
+#line 405 "main.c"
     hero_array_incref(t1);
 #line 25 "examples/assembler/main.hero"
     h0_given = t1;
-#line 403 "main.c"
+#line 409 "main.c"
     hero_array_decref(t31);
 #line 27 "examples/assembler/main.hero"
     t2 = h0_given;
@@ -425,15 +431,15 @@ bb1:
     t32 = h5_own5;
 #line 31 "examples/assembler/main.hero"
     h5_own5 = t11;
-#line 429 "main.c"
+#line 435 "main.c"
     h_0opt_f87774a_release(&t32);
 #line 31 "examples/assembler/main.hero"
     t33 = h1_s0;
-#line 433 "main.c"
+#line 439 "main.c"
     h_0opt_f87774a_retain(&t11);
 #line 31 "examples/assembler/main.hero"
     h1_s0 = t11;
-#line 437 "main.c"
+#line 443 "main.c"
     h_0opt_f87774a_release(&t33);
 #line 31 "examples/assembler/main.hero"
     t12 = h1_s0;
@@ -471,39 +477,39 @@ bb3:
 bb4:
 #line 24 "examples/assembler/main.hero"
     t39 = h0_given;
-#line 475 "main.c"
+#line 481 "main.c"
     hero_array_decref(t39);
 #line 24 "examples/assembler/main.hero"
     t40 = h1_s0;
-#line 479 "main.c"
+#line 485 "main.c"
     h_0opt_f87774a_release(&t40);
 #line 24 "examples/assembler/main.hero"
     t41 = h2_e;
-#line 483 "main.c"
+#line 489 "main.c"
     hero_failure_release(&t41);
 #line 24 "examples/assembler/main.hero"
     t42 = h3_text;
-#line 487 "main.c"
+#line 493 "main.c"
     hero_str_decref(t42);
 #line 24 "examples/assembler/main.hero"
     t43 = h4_own4;
-#line 491 "main.c"
+#line 497 "main.c"
     hero_array_decref(t43);
 #line 24 "examples/assembler/main.hero"
     t44 = h5_own5;
-#line 495 "main.c"
+#line 501 "main.c"
     h_0opt_f87774a_release(&t44);
 #line 24 "examples/assembler/main.hero"
     t45 = h6_own6;
-#line 499 "main.c"
+#line 505 "main.c"
     hero_str_decref(t45);
 #line 24 "examples/assembler/main.hero"
     t46 = h7_own7;
-#line 503 "main.c"
+#line 509 "main.c"
     hero_str_decref(t46);
 #line 24 "examples/assembler/main.hero"
     t47 = h8_own8;
-#line 507 "main.c"
+#line 513 "main.c"
     hero_str_decref(t47);
     return;
 bb5:
@@ -513,11 +519,11 @@ bb5:
     t15 = t14.as.err;
 #line 32 "examples/assembler/main.hero"
     t34 = h2_e;
-#line 517 "main.c"
+#line 523 "main.c"
     hero_failure_retain(&t15);
 #line 32 "examples/assembler/main.hero"
     h2_e = t15;
-#line 521 "main.c"
+#line 527 "main.c"
     hero_failure_release(&t34);
 #line 32 "examples/assembler/main.hero"
     t16 = HERO_STR_LIT(hero_str_2d78c599);
@@ -533,7 +539,7 @@ bb5:
     t35 = h6_own6;
 #line 32 "examples/assembler/main.hero"
     h6_own6 = t20;
-#line 537 "main.c"
+#line 543 "main.c"
     hero_str_decref(t35);
 #line 32 "examples/assembler/main.hero"
     t21 = HERO_STR_LIT(hero_str_1dce);
@@ -543,7 +549,7 @@ bb5:
     t36 = h7_own7;
 #line 32 "examples/assembler/main.hero"
     h7_own7 = t22;
-#line 547 "main.c"
+#line 553 "main.c"
     hero_str_decref(t36);
 #line 32 "examples/assembler/main.hero"
     t23 = h2_e;
@@ -555,7 +561,7 @@ bb5:
     t37 = h8_own8;
 #line 32 "examples/assembler/main.hero"
     h8_own8 = t25;
-#line 559 "main.c"
+#line 565 "main.c"
     hero_str_decref(t37);
 #line 32 "examples/assembler/main.hero"
     h_main_stop(t25);
@@ -569,11 +575,11 @@ bb6:
     t27 = t26.as.ok;
 #line 33 "examples/assembler/main.hero"
     t38 = h3_text;
-#line 573 "main.c"
+#line 579 "main.c"
     hero_str_incref(t27);
 #line 33 "examples/assembler/main.hero"
     h3_text = t27;
-#line 577 "main.c"
+#line 583 "main.c"
     hero_str_decref(t38);
 #line 33 "examples/assembler/main.hero"
     t28 = h3_text;
@@ -583,12 +589,12 @@ bb6:
     h_main_build(t28, t29);
 #line 33 "examples/assembler/main.hero"
     goto bb4;
-#line 587 "main.c"
+#line 593 "main.c"
 }
 
 #line 35 "examples/assembler/main.hero"
 void h_main_stop(HeroStr h0_message) {
-#line 592 "main.c"
+#line 598 "main.c"
     HeroStr t1 = {0};
     int64_t t2;
     goto bb0;
@@ -605,12 +611,12 @@ bb0:
     h_library_exit(t2);
 #line 37 "examples/assembler/main.hero"
     return;
-#line 609 "main.c"
+#line 615 "main.c"
 }
 
 #line 39 "examples/assembler/main.hero"
 void h_main_build(HeroStr h0_text, HeroArrayHeader * h1_given) {
-#line 614 "main.c"
+#line 620 "main.c"
     h_0opt_40eff9f5 h2_s0 = {0};
     HeroFailure h3_e = {0};
     h_assemble_Assembled h4_out = {0};
@@ -660,7 +666,7 @@ bb0:
     t19 = h5_own5;
 #line 40 "examples/assembler/main.hero"
     h5_own5 = t2;
-#line 664 "main.c"
+#line 670 "main.c"
     hero_array_decref(t19);
 #line 40 "examples/assembler/main.hero"
     t3 = h_assemble_assemble(t2);
@@ -668,15 +674,15 @@ bb0:
     t20 = h6_own6;
 #line 40 "examples/assembler/main.hero"
     h6_own6 = t3;
-#line 672 "main.c"
+#line 678 "main.c"
     h_0opt_40eff9f5_release(&t20);
 #line 40 "examples/assembler/main.hero"
     t21 = h2_s0;
-#line 676 "main.c"
+#line 682 "main.c"
     h_0opt_40eff9f5_retain(&t3);
 #line 40 "examples/assembler/main.hero"
     h2_s0 = t3;
-#line 680 "main.c"
+#line 686 "main.c"
     h_0opt_40eff9f5_release(&t21);
 #line 40 "examples/assembler/main.hero"
     t4 = h2_s0;
@@ -696,31 +702,31 @@ bb0:
 bb1:
 #line 39 "examples/assembler/main.hero"
     t26 = h2_s0;
-#line 700 "main.c"
+#line 706 "main.c"
     h_0opt_40eff9f5_release(&t26);
 #line 39 "examples/assembler/main.hero"
     t27 = h3_e;
-#line 704 "main.c"
+#line 710 "main.c"
     hero_failure_release(&t27);
 #line 39 "examples/assembler/main.hero"
     t28 = h4_out;
-#line 708 "main.c"
+#line 714 "main.c"
     h_assemble_Assembled_release(&t28);
 #line 39 "examples/assembler/main.hero"
     t29 = h5_own5;
-#line 712 "main.c"
+#line 718 "main.c"
     hero_array_decref(t29);
 #line 39 "examples/assembler/main.hero"
     t30 = h6_own6;
-#line 716 "main.c"
+#line 722 "main.c"
     h_0opt_40eff9f5_release(&t30);
 #line 39 "examples/assembler/main.hero"
     t31 = h7_own7;
-#line 720 "main.c"
+#line 726 "main.c"
     hero_str_decref(t31);
 #line 39 "examples/assembler/main.hero"
     t32 = h8_own8;
-#line 724 "main.c"
+#line 730 "main.c"
     hero_str_decref(t32);
     return;
 bb2:
@@ -730,11 +736,11 @@ bb2:
     t7 = t6.as.err;
 #line 41 "examples/assembler/main.hero"
     t22 = h3_e;
-#line 734 "main.c"
+#line 740 "main.c"
     hero_failure_retain(&t7);
 #line 41 "examples/assembler/main.hero"
     h3_e = t7;
-#line 738 "main.c"
+#line 744 "main.c"
     hero_failure_release(&t22);
 #line 41 "examples/assembler/main.hero"
     t8 = h3_e;
@@ -748,7 +754,7 @@ bb2:
     t23 = h7_own7;
 #line 41 "examples/assembler/main.hero"
     h7_own7 = t11;
-#line 752 "main.c"
+#line 758 "main.c"
     hero_str_decref(t23);
 #line 41 "examples/assembler/main.hero"
     t12 = h3_e;
@@ -760,7 +766,7 @@ bb2:
     t24 = h8_own8;
 #line 41 "examples/assembler/main.hero"
     h8_own8 = t14;
-#line 764 "main.c"
+#line 770 "main.c"
     hero_str_decref(t24);
 #line 41 "examples/assembler/main.hero"
     h_main_stop(t14);
@@ -774,11 +780,11 @@ bb3:
     t16 = t15.as.ok;
 #line 42 "examples/assembler/main.hero"
     t25 = h4_out;
-#line 778 "main.c"
+#line 784 "main.c"
     h_assemble_Assembled_retain(&t16);
 #line 42 "examples/assembler/main.hero"
     h4_out = t16;
-#line 782 "main.c"
+#line 788 "main.c"
     h_assemble_Assembled_release(&t25);
 #line 42 "examples/assembler/main.hero"
     t17 = h4_out;
@@ -788,12 +794,12 @@ bb3:
     h_main_show(t17, t18);
 #line 42 "examples/assembler/main.hero"
     goto bb1;
-#line 792 "main.c"
+#line 798 "main.c"
 }
 
 #line 44 "examples/assembler/main.hero"
 void h_main_show(h_assemble_Assembled h0_out, HeroArrayHeader * h1_given) {
-#line 797 "main.c"
+#line 803 "main.c"
     bool h2_b0;
     HeroArrayHeader * h3_xs0 = {0};
     int64_t h4_i0;
@@ -933,15 +939,15 @@ bb1:
     t65 = h12_own12;
 #line 51 "examples/assembler/main.hero"
     h12_own12 = t29;
-#line 937 "main.c"
+#line 943 "main.c"
     h_0opt_5a58f2ca_release(&t65);
 #line 51 "examples/assembler/main.hero"
     t66 = h6_s0;
-#line 941 "main.c"
+#line 947 "main.c"
     h_0opt_5a58f2ca_retain(&t29);
 #line 51 "examples/assembler/main.hero"
     h6_s0 = t29;
-#line 945 "main.c"
+#line 951 "main.c"
     h_0opt_5a58f2ca_release(&t66);
 #line 51 "examples/assembler/main.hero"
     t30 = h6_s0;
@@ -991,15 +997,15 @@ bb4:
     t67 = h13_own13;
 #line 46 "examples/assembler/main.hero"
     h13_own13 = t13;
-#line 995 "main.c"
+#line 1001 "main.c"
     hero_array_decref(t67);
 #line 46 "examples/assembler/main.hero"
     t68 = h3_xs0;
-#line 999 "main.c"
+#line 1005 "main.c"
     hero_array_incref(t13);
 #line 46 "examples/assembler/main.hero"
     h3_xs0 = t13;
-#line 1003 "main.c"
+#line 1009 "main.c"
     hero_array_decref(t68);
 #line 46 "examples/assembler/main.hero"
     t14 = INT64_C(0);
@@ -1033,11 +1039,11 @@ bb7:
     t21 = *(HeroStr const *)hero_array_at(t19, t20);
 #line 46 "examples/assembler/main.hero"
     t69 = h5_line;
-#line 1037 "main.c"
+#line 1043 "main.c"
     hero_str_incref(t21);
 #line 46 "examples/assembler/main.hero"
     h5_line = t21;
-#line 1041 "main.c"
+#line 1047 "main.c"
     hero_str_decref(t69);
 #line 47 "examples/assembler/main.hero"
     t22 = h5_line;
@@ -1063,93 +1069,93 @@ bb8:
 bb9:
 #line 44 "examples/assembler/main.hero"
     t76 = h3_xs0;
-#line 1067 "main.c"
+#line 1073 "main.c"
     hero_array_decref(t76);
 #line 44 "examples/assembler/main.hero"
     t77 = h5_line;
-#line 1071 "main.c"
+#line 1077 "main.c"
     hero_str_decref(t77);
 #line 44 "examples/assembler/main.hero"
     t78 = h6_s0;
-#line 1075 "main.c"
+#line 1081 "main.c"
     h_0opt_5a58f2ca_release(&t78);
 #line 44 "examples/assembler/main.hero"
     t79 = h7_e;
-#line 1079 "main.c"
+#line 1085 "main.c"
     hero_failure_release(&t79);
 #line 44 "examples/assembler/main.hero"
     t80 = h8_output;
-#line 1083 "main.c"
+#line 1089 "main.c"
     hero_array_decref(t80);
 #line 44 "examples/assembler/main.hero"
     t81 = h9_xs1;
-#line 1087 "main.c"
+#line 1093 "main.c"
     hero_array_decref(t81);
 #line 44 "examples/assembler/main.hero"
     t82 = h11_line;
-#line 1091 "main.c"
+#line 1097 "main.c"
     hero_str_decref(t82);
 #line 44 "examples/assembler/main.hero"
     t83 = h12_own12;
-#line 1095 "main.c"
+#line 1101 "main.c"
     h_0opt_5a58f2ca_release(&t83);
 #line 44 "examples/assembler/main.hero"
     t84 = h13_own13;
-#line 1099 "main.c"
+#line 1105 "main.c"
     hero_array_decref(t84);
 #line 44 "examples/assembler/main.hero"
     t85 = h14_own14;
-#line 1103 "main.c"
+#line 1109 "main.c"
     hero_str_decref(t85);
 #line 44 "examples/assembler/main.hero"
     t86 = h15_own15;
-#line 1107 "main.c"
+#line 1113 "main.c"
     hero_str_decref(t86);
     return;
 bb10:
 #line 44 "examples/assembler/main.hero"
     t87 = h3_xs0;
-#line 1113 "main.c"
+#line 1119 "main.c"
     hero_array_decref(t87);
 #line 44 "examples/assembler/main.hero"
     t88 = h5_line;
-#line 1117 "main.c"
+#line 1123 "main.c"
     hero_str_decref(t88);
 #line 44 "examples/assembler/main.hero"
     t89 = h6_s0;
-#line 1121 "main.c"
+#line 1127 "main.c"
     h_0opt_5a58f2ca_release(&t89);
 #line 44 "examples/assembler/main.hero"
     t90 = h7_e;
-#line 1125 "main.c"
+#line 1131 "main.c"
     hero_failure_release(&t90);
 #line 44 "examples/assembler/main.hero"
     t91 = h8_output;
-#line 1129 "main.c"
+#line 1135 "main.c"
     hero_array_decref(t91);
 #line 44 "examples/assembler/main.hero"
     t92 = h9_xs1;
-#line 1133 "main.c"
+#line 1139 "main.c"
     hero_array_decref(t92);
 #line 44 "examples/assembler/main.hero"
     t93 = h11_line;
-#line 1137 "main.c"
+#line 1143 "main.c"
     hero_str_decref(t93);
 #line 44 "examples/assembler/main.hero"
     t94 = h12_own12;
-#line 1141 "main.c"
+#line 1147 "main.c"
     h_0opt_5a58f2ca_release(&t94);
 #line 44 "examples/assembler/main.hero"
     t95 = h13_own13;
-#line 1145 "main.c"
+#line 1151 "main.c"
     hero_array_decref(t95);
 #line 44 "examples/assembler/main.hero"
     t96 = h14_own14;
-#line 1149 "main.c"
+#line 1155 "main.c"
     hero_str_decref(t96);
 #line 44 "examples/assembler/main.hero"
     t97 = h15_own15;
-#line 1153 "main.c"
+#line 1159 "main.c"
     hero_str_decref(t97);
     return;
 bb11:
@@ -1159,11 +1165,11 @@ bb11:
     t33 = t32.as.err;
 #line 52 "examples/assembler/main.hero"
     t70 = h7_e;
-#line 1163 "main.c"
+#line 1169 "main.c"
     hero_failure_retain(&t33);
 #line 52 "examples/assembler/main.hero"
     h7_e = t33;
-#line 1167 "main.c"
+#line 1173 "main.c"
     hero_failure_release(&t70);
 #line 52 "examples/assembler/main.hero"
     t34 = h7_e;
@@ -1177,7 +1183,7 @@ bb11:
     t71 = h14_own14;
 #line 52 "examples/assembler/main.hero"
     h14_own14 = t37;
-#line 1181 "main.c"
+#line 1187 "main.c"
     hero_str_decref(t71);
 #line 52 "examples/assembler/main.hero"
     t38 = h7_e;
@@ -1189,7 +1195,7 @@ bb11:
     t72 = h15_own15;
 #line 52 "examples/assembler/main.hero"
     h15_own15 = t40;
-#line 1193 "main.c"
+#line 1199 "main.c"
     hero_str_decref(t72);
 #line 52 "examples/assembler/main.hero"
     h_main_stop(t40);
@@ -1203,21 +1209,21 @@ bb12:
     t42 = t41.as.ok;
 #line 53 "examples/assembler/main.hero"
     t73 = h8_output;
-#line 1207 "main.c"
+#line 1213 "main.c"
     hero_array_incref(t42);
 #line 53 "examples/assembler/main.hero"
     h8_output = t42;
-#line 1211 "main.c"
+#line 1217 "main.c"
     hero_array_decref(t73);
 #line 54 "examples/assembler/main.hero"
     t43 = h8_output;
 #line 54 "examples/assembler/main.hero"
     t74 = h9_xs1;
-#line 1217 "main.c"
+#line 1223 "main.c"
     hero_array_incref(t43);
 #line 54 "examples/assembler/main.hero"
     h9_xs1 = t43;
-#line 1221 "main.c"
+#line 1227 "main.c"
     hero_array_decref(t74);
 #line 54 "examples/assembler/main.hero"
     t44 = INT64_C(0);
@@ -1247,11 +1253,11 @@ bb14:
     t51 = *(HeroStr const *)hero_array_at(t49, t50);
 #line 54 "examples/assembler/main.hero"
     t75 = h11_line;
-#line 1251 "main.c"
+#line 1257 "main.c"
     hero_str_incref(t51);
 #line 54 "examples/assembler/main.hero"
     h11_line = t51;
-#line 1255 "main.c"
+#line 1261 "main.c"
     hero_str_decref(t75);
 #line 55 "examples/assembler/main.hero"
     t52 = h11_line;
@@ -1309,12 +1315,12 @@ bb16:
     hero_print_end();
 #line 57 "examples/assembler/main.hero"
     goto bb10;
-#line 1313 "main.c"
+#line 1319 "main.c"
 }
 
 #line 61 "examples/assembler/main.hero"
 HeroArrayHeader * h_main_listing(HeroArrayHeader * h0_code) {
-#line 1318 "main.c"
+#line 1324 "main.c"
     HeroArrayHeader * h1_out = {0};
     int64_t h2_at;
     HeroArrayHeader * h3_row = {0};
@@ -1387,15 +1393,15 @@ bb0:
     t39 = h4_own4;
 #line 62 "examples/assembler/main.hero"
     h4_own4 = t1;
-#line 1391 "main.c"
+#line 1397 "main.c"
     hero_array_decref(t39);
 #line 62 "examples/assembler/main.hero"
     t40 = h1_out;
-#line 1395 "main.c"
+#line 1401 "main.c"
     hero_array_incref(t1);
 #line 62 "examples/assembler/main.hero"
     h1_out = t1;
-#line 1399 "main.c"
+#line 1405 "main.c"
     hero_array_decref(t40);
 #line 63 "examples/assembler/main.hero"
     t2 = INT64_C(0);
@@ -1437,7 +1443,7 @@ bb2:
     t41 = h5_own5;
 #line 66 "examples/assembler/main.hero"
     h5_own5 = t12;
-#line 1441 "main.c"
+#line 1447 "main.c"
     hero_str_decref(t41);
 #line 66 "examples/assembler/main.hero"
     t13 = h0_code;
@@ -1451,7 +1457,7 @@ bb2:
     t42 = h6_own6;
 #line 66 "examples/assembler/main.hero"
     h6_own6 = t16;
-#line 1455 "main.c"
+#line 1461 "main.c"
     hero_str_decref(t42);
 #line 66 "examples/assembler/main.hero"
     t17 = h0_code;
@@ -1469,7 +1475,7 @@ bb2:
     t43 = h7_own7;
 #line 66 "examples/assembler/main.hero"
     h7_own7 = t22;
-#line 1473 "main.c"
+#line 1479 "main.c"
     hero_str_decref(t43);
 #line 66 "examples/assembler/main.hero"
     t23 = h0_code;
@@ -1487,7 +1493,7 @@ bb2:
     t44 = h8_own8;
 #line 66 "examples/assembler/main.hero"
     h8_own8 = t28;
-#line 1491 "main.c"
+#line 1497 "main.c"
     hero_str_decref(t44);
 #line 66 "examples/assembler/main.hero"
     t29 = hero_array_new(&hero_desc_str, 4);
@@ -1511,15 +1517,15 @@ bb2:
     t45 = h9_own9;
 #line 66 "examples/assembler/main.hero"
     h9_own9 = t29;
-#line 1515 "main.c"
+#line 1521 "main.c"
     hero_array_decref(t45);
 #line 66 "examples/assembler/main.hero"
     t46 = h3_row;
-#line 1519 "main.c"
+#line 1525 "main.c"
     hero_array_incref(t29);
 #line 66 "examples/assembler/main.hero"
     h3_row = t29;
-#line 1523 "main.c"
+#line 1529 "main.c"
     hero_array_decref(t46);
 #line 67 "examples/assembler/main.hero"
     t31 = h3_row;
@@ -1531,7 +1537,7 @@ bb2:
     t47 = h10_own10;
 #line 67 "examples/assembler/main.hero"
     h10_own10 = t33;
-#line 1535 "main.c"
+#line 1541 "main.c"
     hero_str_decref(t47);
 #line 67 "examples/assembler/main.hero"
     hero_array_push_owned(&h1_out, &t33);
@@ -1549,50 +1555,50 @@ bb2:
 bb3:
 #line 70 "examples/assembler/main.hero"
     t38 = h1_out;
-#line 1553 "main.c"
+#line 1559 "main.c"
     hero_array_incref(t38);
 #line 70 "examples/assembler/main.hero"
     t48 = h1_out;
-#line 1557 "main.c"
+#line 1563 "main.c"
     hero_array_decref(t48);
 #line 70 "examples/assembler/main.hero"
     t49 = h3_row;
-#line 1561 "main.c"
+#line 1567 "main.c"
     hero_array_decref(t49);
 #line 70 "examples/assembler/main.hero"
     t50 = h4_own4;
-#line 1565 "main.c"
+#line 1571 "main.c"
     hero_array_decref(t50);
 #line 70 "examples/assembler/main.hero"
     t51 = h5_own5;
-#line 1569 "main.c"
+#line 1575 "main.c"
     hero_str_decref(t51);
 #line 70 "examples/assembler/main.hero"
     t52 = h6_own6;
-#line 1573 "main.c"
+#line 1579 "main.c"
     hero_str_decref(t52);
 #line 70 "examples/assembler/main.hero"
     t53 = h7_own7;
-#line 1577 "main.c"
+#line 1583 "main.c"
     hero_str_decref(t53);
 #line 70 "examples/assembler/main.hero"
     t54 = h8_own8;
-#line 1581 "main.c"
+#line 1587 "main.c"
     hero_str_decref(t54);
 #line 70 "examples/assembler/main.hero"
     t55 = h9_own9;
-#line 1585 "main.c"
+#line 1591 "main.c"
     hero_array_decref(t55);
 #line 70 "examples/assembler/main.hero"
     t56 = h10_own10;
-#line 1589 "main.c"
+#line 1595 "main.c"
     hero_str_decref(t56);
     return t38;
 }
 
 #line 72 "examples/assembler/main.hero"
 HeroStr h_main_name_of(int64_t h0_opcode) {
-#line 1596 "main.c"
+#line 1602 "main.c"
     int64_t t1;
     int64_t t2;
     bool t3;
@@ -1650,7 +1656,7 @@ bb1:
 bb2:
 #line 74 "examples/assembler/main.hero"
     t4 = HERO_STR_LIT(hero_str_e960052);
-#line 1654 "main.c"
+#line 1660 "main.c"
     hero_str_incref(t4);
     return t4;
 bb3:
@@ -1668,7 +1674,7 @@ bb4:
 bb5:
 #line 77 "examples/assembler/main.hero"
     t8 = HERO_STR_LIT(hero_str_d614da1);
-#line 1672 "main.c"
+#line 1678 "main.c"
     hero_str_incref(t8);
     return t8;
 bb6:
@@ -1686,7 +1692,7 @@ bb7:
 bb8:
 #line 80 "examples/assembler/main.hero"
     t12 = HERO_STR_LIT(hero_str_1999f9);
-#line 1690 "main.c"
+#line 1696 "main.c"
     hero_str_incref(t12);
     return t12;
 bb9:
@@ -1704,7 +1710,7 @@ bb10:
 bb11:
 #line 83 "examples/assembler/main.hero"
     t16 = HERO_STR_LIT(hero_str_1e594c);
-#line 1708 "main.c"
+#line 1714 "main.c"
     hero_str_incref(t16);
     return t16;
 bb12:
@@ -1722,7 +1728,7 @@ bb13:
 bb14:
 #line 86 "examples/assembler/main.hero"
     t20 = HERO_STR_LIT(hero_str_3d6209f4);
-#line 1726 "main.c"
+#line 1732 "main.c"
     hero_str_incref(t20);
     return t20;
 bb15:
@@ -1740,7 +1746,7 @@ bb16:
 bb17:
 #line 89 "examples/assembler/main.hero"
     t24 = HERO_STR_LIT(hero_str_e50e6cd);
-#line 1744 "main.c"
+#line 1750 "main.c"
     hero_str_incref(t24);
     return t24;
 bb18:
@@ -1758,7 +1764,7 @@ bb19:
 bb20:
 #line 92 "examples/assembler/main.hero"
     t28 = HERO_STR_LIT(hero_str_1bf9f1);
-#line 1762 "main.c"
+#line 1768 "main.c"
     hero_str_incref(t28);
     return t28;
 bb21:
@@ -1766,13 +1772,13 @@ bb21:
 bb22:
 #line 96 "examples/assembler/main.hero"
     t33 = HERO_STR_LIT(hero_str_3f);
-#line 1770 "main.c"
+#line 1776 "main.c"
     hero_str_incref(t33);
     return t33;
 bb23:
 #line 95 "examples/assembler/main.hero"
     t32 = HERO_STR_LIT(hero_str_e092519);
-#line 1776 "main.c"
+#line 1782 "main.c"
     hero_str_incref(t32);
     return t32;
 bb24:
@@ -1781,59 +1787,59 @@ bb24:
 
 #line 19 "examples/assembler/assemble.hero"
 HeroStr h_assemble_ERR_BAD_OPERAND_COUNT(void) {
-#line 1785 "main.c"
+#line 1791 "main.c"
     HeroStr t1 = {0};
     goto bb0;
 bb0:
 #line 20 "examples/assembler/assemble.hero"
     t1 = HERO_STR_LIT(hero_str_6ddca0c8);
-#line 1791 "main.c"
+#line 1797 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 22 "examples/assembler/assemble.hero"
 HeroStr h_assemble_ERR_DUPLICATE_LABEL(void) {
-#line 1798 "main.c"
+#line 1804 "main.c"
     HeroStr t1 = {0};
     goto bb0;
 bb0:
 #line 23 "examples/assembler/assemble.hero"
     t1 = HERO_STR_LIT(hero_str_4348b026);
-#line 1804 "main.c"
+#line 1810 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 25 "examples/assembler/assemble.hero"
 HeroStr h_assemble_ERR_UNKNOWN_INSTRUCTION(void) {
-#line 1811 "main.c"
+#line 1817 "main.c"
     HeroStr t1 = {0};
     goto bb0;
 bb0:
 #line 26 "examples/assembler/assemble.hero"
     t1 = HERO_STR_LIT(hero_str_4261e33);
-#line 1817 "main.c"
+#line 1823 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 28 "examples/assembler/assemble.hero"
 HeroStr h_assemble_ERR_UNKNOWN_LABEL(void) {
-#line 1824 "main.c"
+#line 1830 "main.c"
     HeroStr t1 = {0};
     goto bb0;
 bb0:
 #line 29 "examples/assembler/assemble.hero"
     t1 = HERO_STR_LIT(hero_str_6ee9eb5a);
-#line 1830 "main.c"
+#line 1836 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 37 "examples/assembler/assemble.hero"
 h_0opt_7e3a44cc h_assemble_label_table(HeroArrayHeader * h0_lines) {
-#line 1837 "main.c"
+#line 1843 "main.c"
     HeroMapHeader * h1_labels = {0};
     int64_t h2_at;
     HeroArrayHeader * h3_xs0 = {0};
@@ -1953,15 +1959,15 @@ bb0:
     t54 = h7_own7;
 #line 38 "examples/assembler/assemble.hero"
     h7_own7 = t1;
-#line 1957 "main.c"
+#line 1963 "main.c"
     hero_map_decref(t54);
 #line 38 "examples/assembler/assemble.hero"
     t55 = h1_labels;
-#line 1961 "main.c"
+#line 1967 "main.c"
     hero_map_incref(t1);
 #line 38 "examples/assembler/assemble.hero"
     h1_labels = t1;
-#line 1965 "main.c"
+#line 1971 "main.c"
     hero_map_decref(t55);
 #line 39 "examples/assembler/assemble.hero"
     t2 = INT64_C(0);
@@ -1971,11 +1977,11 @@ bb0:
     t3 = h0_lines;
 #line 41 "examples/assembler/assemble.hero"
     t56 = h3_xs0;
-#line 1975 "main.c"
+#line 1981 "main.c"
     hero_array_incref(t3);
 #line 41 "examples/assembler/assemble.hero"
     h3_xs0 = t3;
-#line 1979 "main.c"
+#line 1985 "main.c"
     hero_array_decref(t56);
 #line 41 "examples/assembler/assemble.hero"
     t4 = INT64_C(0);
@@ -2005,11 +2011,11 @@ bb2:
     t11 = *(h_program_Line const *)hero_array_at(t9, t10);
 #line 41 "examples/assembler/assemble.hero"
     t57 = h5_line;
-#line 2009 "main.c"
+#line 2015 "main.c"
     h_program_Line_retain(&t11);
 #line 41 "examples/assembler/assemble.hero"
     h5_line = t11;
-#line 2013 "main.c"
+#line 2019 "main.c"
     h_program_Line_release(&t57);
 #line 42 "examples/assembler/assemble.hero"
     t12 = h5_line;
@@ -2037,7 +2043,7 @@ bb3:
 bb4:
 #line 53 "examples/assembler/assemble.hero"
     t52 = h1_labels;
-#line 2041 "main.c"
+#line 2047 "main.c"
     hero_map_incref(t52);
 #line 53 "examples/assembler/assemble.hero"
     t53 = (h_0opt_7e3a44cc){.tag = INT64_C(0), .as.ok = t52};
@@ -2045,66 +2051,66 @@ bb4:
     t58 = h8_own8;
 #line 53 "examples/assembler/assemble.hero"
     h8_own8 = t53;
-#line 2049 "main.c"
+#line 2055 "main.c"
     h_0opt_7e3a44cc_release(&t58);
 #line 53 "examples/assembler/assemble.hero"
-#line 2052 "main.c"
+#line 2058 "main.c"
     h_0opt_7e3a44cc_retain(&t53);
 #line 53 "examples/assembler/assemble.hero"
     t68 = h1_labels;
-#line 2056 "main.c"
+#line 2062 "main.c"
     hero_map_decref(t68);
 #line 53 "examples/assembler/assemble.hero"
     t69 = h3_xs0;
-#line 2060 "main.c"
+#line 2066 "main.c"
     hero_array_decref(t69);
 #line 53 "examples/assembler/assemble.hero"
     t70 = h5_line;
-#line 2064 "main.c"
+#line 2070 "main.c"
     h_program_Line_release(&t70);
 #line 53 "examples/assembler/assemble.hero"
     t71 = h6_f0;
-#line 2068 "main.c"
+#line 2074 "main.c"
     h_0opt_e201354_release(&t71);
 #line 53 "examples/assembler/assemble.hero"
     t72 = h7_own7;
-#line 2072 "main.c"
+#line 2078 "main.c"
     hero_map_decref(t72);
 #line 53 "examples/assembler/assemble.hero"
     t73 = h8_own8;
-#line 2076 "main.c"
+#line 2082 "main.c"
     h_0opt_7e3a44cc_release(&t73);
 #line 53 "examples/assembler/assemble.hero"
     t74 = h9_own9;
-#line 2080 "main.c"
+#line 2086 "main.c"
     h_0opt_e201354_release(&t74);
 #line 53 "examples/assembler/assemble.hero"
     t75 = h10_own10;
-#line 2084 "main.c"
+#line 2090 "main.c"
     hero_str_decref(t75);
 #line 53 "examples/assembler/assemble.hero"
     t76 = h11_own11;
-#line 2088 "main.c"
+#line 2094 "main.c"
     hero_str_decref(t76);
 #line 53 "examples/assembler/assemble.hero"
     t77 = h12_own12;
-#line 2092 "main.c"
+#line 2098 "main.c"
     hero_str_decref(t77);
 #line 53 "examples/assembler/assemble.hero"
     t78 = h13_own13;
-#line 2096 "main.c"
+#line 2102 "main.c"
     hero_str_decref(t78);
 #line 53 "examples/assembler/assemble.hero"
     t79 = h14_own14;
-#line 2100 "main.c"
+#line 2106 "main.c"
     hero_str_decref(t79);
 #line 53 "examples/assembler/assemble.hero"
     t80 = h15_own15;
-#line 2104 "main.c"
+#line 2110 "main.c"
     hero_str_decref(t80);
 #line 53 "examples/assembler/assemble.hero"
     t81 = h16_own16;
-#line 2108 "main.c"
+#line 2114 "main.c"
     h_0opt_7e3a44cc_release(&t81);
     return t53;
 bb5:
@@ -2148,15 +2154,15 @@ bb6:
     t59 = h9_own9;
 #line 43 "examples/assembler/assemble.hero"
     h9_own9 = t19;
-#line 2152 "main.c"
+#line 2158 "main.c"
     h_0opt_e201354_release(&t59);
 #line 43 "examples/assembler/assemble.hero"
     t60 = h6_f0;
-#line 2156 "main.c"
+#line 2162 "main.c"
     h_0opt_e201354_retain(&t19);
 #line 43 "examples/assembler/assemble.hero"
     h6_f0 = t19;
-#line 2160 "main.c"
+#line 2166 "main.c"
     h_0opt_e201354_release(&t60);
 #line 43 "examples/assembler/assemble.hero"
     t20 = h6_f0;
@@ -2194,7 +2200,7 @@ bb9:
     t61 = h10_own10;
 #line 45 "examples/assembler/assemble.hero"
     h10_own10 = t25;
-#line 2198 "main.c"
+#line 2204 "main.c"
     hero_str_decref(t61);
 #line 46 "examples/assembler/assemble.hero"
     t26 = HERO_STR_LIT(hero_str_75f7c07a);
@@ -2208,7 +2214,7 @@ bb9:
     t62 = h11_own11;
 #line 46 "examples/assembler/assemble.hero"
     h11_own11 = t29;
-#line 2212 "main.c"
+#line 2218 "main.c"
     hero_str_decref(t62);
 #line 46 "examples/assembler/assemble.hero"
     t30 = hero_str_concat(t26, t29);
@@ -2216,7 +2222,7 @@ bb9:
     t63 = h12_own12;
 #line 46 "examples/assembler/assemble.hero"
     h12_own12 = t30;
-#line 2220 "main.c"
+#line 2226 "main.c"
     hero_str_decref(t63);
 #line 46 "examples/assembler/assemble.hero"
     t31 = HERO_STR_LIT(hero_str_f40ca);
@@ -2226,7 +2232,7 @@ bb9:
     t64 = h13_own13;
 #line 46 "examples/assembler/assemble.hero"
     h13_own13 = t32;
-#line 2230 "main.c"
+#line 2236 "main.c"
     hero_str_decref(t64);
 #line 46 "examples/assembler/assemble.hero"
     t33 = h5_line;
@@ -2238,7 +2244,7 @@ bb9:
     t65 = h14_own14;
 #line 46 "examples/assembler/assemble.hero"
     h14_own14 = t35;
-#line 2242 "main.c"
+#line 2248 "main.c"
     hero_str_decref(t65);
 #line 46 "examples/assembler/assemble.hero"
     t36 = HERO_STR_LIT(hero_str_62fe34fa);
@@ -2248,13 +2254,13 @@ bb9:
     t66 = h15_own15;
 #line 46 "examples/assembler/assemble.hero"
     h15_own15 = t37;
-#line 2252 "main.c"
+#line 2258 "main.c"
     hero_str_decref(t66);
 #line 44 "examples/assembler/assemble.hero"
-#line 2255 "main.c"
+#line 2261 "main.c"
     hero_str_incref(t25);
 #line 44 "examples/assembler/assemble.hero"
-#line 2258 "main.c"
+#line 2264 "main.c"
     hero_str_incref(t37);
 #line 44 "examples/assembler/assemble.hero"
     t38 = (h_0opt_7e3a44cc){.tag = INT64_C(1), .as.err = {.code = t25, .msg = t37}};
@@ -2262,66 +2268,66 @@ bb9:
     t67 = h16_own16;
 #line 44 "examples/assembler/assemble.hero"
     h16_own16 = t38;
-#line 2266 "main.c"
+#line 2272 "main.c"
     h_0opt_7e3a44cc_release(&t67);
 #line 44 "examples/assembler/assemble.hero"
-#line 2269 "main.c"
+#line 2275 "main.c"
     h_0opt_7e3a44cc_retain(&t38);
 #line 44 "examples/assembler/assemble.hero"
     t82 = h1_labels;
-#line 2273 "main.c"
+#line 2279 "main.c"
     hero_map_decref(t82);
 #line 44 "examples/assembler/assemble.hero"
     t83 = h3_xs0;
-#line 2277 "main.c"
+#line 2283 "main.c"
     hero_array_decref(t83);
 #line 44 "examples/assembler/assemble.hero"
     t84 = h5_line;
-#line 2281 "main.c"
+#line 2287 "main.c"
     h_program_Line_release(&t84);
 #line 44 "examples/assembler/assemble.hero"
     t85 = h6_f0;
-#line 2285 "main.c"
+#line 2291 "main.c"
     h_0opt_e201354_release(&t85);
 #line 44 "examples/assembler/assemble.hero"
     t86 = h7_own7;
-#line 2289 "main.c"
+#line 2295 "main.c"
     hero_map_decref(t86);
 #line 44 "examples/assembler/assemble.hero"
     t87 = h8_own8;
-#line 2293 "main.c"
+#line 2299 "main.c"
     h_0opt_7e3a44cc_release(&t87);
 #line 44 "examples/assembler/assemble.hero"
     t88 = h9_own9;
-#line 2297 "main.c"
+#line 2303 "main.c"
     h_0opt_e201354_release(&t88);
 #line 44 "examples/assembler/assemble.hero"
     t89 = h10_own10;
-#line 2301 "main.c"
+#line 2307 "main.c"
     hero_str_decref(t89);
 #line 44 "examples/assembler/assemble.hero"
     t90 = h11_own11;
-#line 2305 "main.c"
+#line 2311 "main.c"
     hero_str_decref(t90);
 #line 44 "examples/assembler/assemble.hero"
     t91 = h12_own12;
-#line 2309 "main.c"
+#line 2315 "main.c"
     hero_str_decref(t91);
 #line 44 "examples/assembler/assemble.hero"
     t92 = h13_own13;
-#line 2313 "main.c"
+#line 2319 "main.c"
     hero_str_decref(t92);
 #line 44 "examples/assembler/assemble.hero"
     t93 = h14_own14;
-#line 2317 "main.c"
+#line 2323 "main.c"
     hero_str_decref(t93);
 #line 44 "examples/assembler/assemble.hero"
     t94 = h15_own15;
-#line 2321 "main.c"
+#line 2327 "main.c"
     hero_str_decref(t94);
 #line 44 "examples/assembler/assemble.hero"
     t95 = h16_own16;
-#line 2325 "main.c"
+#line 2331 "main.c"
     h_0opt_7e3a44cc_release(&t95);
     return t38;
 bb10:
@@ -2343,12 +2349,12 @@ bb12:
 bb13:
 #line 51 "examples/assembler/assemble.hero"
     goto bb11;
-#line 2347 "main.c"
+#line 2353 "main.c"
 }
 
 #line 57 "examples/assembler/assemble.hero"
 h_0opt_40eff9f5 h_assemble_assemble(HeroArrayHeader * h0_lines) {
-#line 2352 "main.c"
+#line 2358 "main.c"
     h_0opt_7e3a44cc h1_f0 = {0};
     HeroMapHeader * h2_labels = {0};
     HeroArrayHeader * h3_code = {0};
@@ -2488,15 +2494,15 @@ bb0:
     t59 = h11_own11;
 #line 58 "examples/assembler/assemble.hero"
     h11_own11 = t2;
-#line 2492 "main.c"
+#line 2498 "main.c"
     h_0opt_7e3a44cc_release(&t59);
 #line 58 "examples/assembler/assemble.hero"
     t60 = h1_f0;
-#line 2496 "main.c"
+#line 2502 "main.c"
     h_0opt_7e3a44cc_retain(&t2);
 #line 58 "examples/assembler/assemble.hero"
     h1_f0 = t2;
-#line 2500 "main.c"
+#line 2506 "main.c"
     h_0opt_7e3a44cc_release(&t60);
 #line 58 "examples/assembler/assemble.hero"
     t3 = h1_f0;
@@ -2516,11 +2522,11 @@ bb1:
     t11 = t10.as.ok;
 #line 58 "examples/assembler/assemble.hero"
     t61 = h2_labels;
-#line 2520 "main.c"
+#line 2526 "main.c"
     hero_map_incref(t11);
 #line 58 "examples/assembler/assemble.hero"
     h2_labels = t11;
-#line 2524 "main.c"
+#line 2530 "main.c"
     hero_map_decref(t61);
 #line 59 "examples/assembler/assemble.hero"
     t12 = hero_array_new(&hero_desc_int, 1);
@@ -2528,25 +2534,25 @@ bb1:
     t62 = h12_own12;
 #line 59 "examples/assembler/assemble.hero"
     h12_own12 = t12;
-#line 2532 "main.c"
+#line 2538 "main.c"
     hero_array_decref(t62);
 #line 59 "examples/assembler/assemble.hero"
     t63 = h3_code;
-#line 2536 "main.c"
+#line 2542 "main.c"
     hero_array_incref(t12);
 #line 59 "examples/assembler/assemble.hero"
     h3_code = t12;
-#line 2540 "main.c"
+#line 2546 "main.c"
     hero_array_decref(t63);
 #line 61 "examples/assembler/assemble.hero"
     t13 = h0_lines;
 #line 61 "examples/assembler/assemble.hero"
     t64 = h4_xs0;
-#line 2546 "main.c"
+#line 2552 "main.c"
     hero_array_incref(t13);
 #line 61 "examples/assembler/assemble.hero"
     h4_xs0 = t13;
-#line 2550 "main.c"
+#line 2556 "main.c"
     hero_array_decref(t64);
 #line 61 "examples/assembler/assemble.hero"
     t14 = INT64_C(0);
@@ -2560,7 +2566,7 @@ bb2:
     t7 = h1_f0;
 #line 58 "examples/assembler/assemble.hero"
     t8 = t7.as.err;
-#line 2564 "main.c"
+#line 2570 "main.c"
     hero_failure_retain(&t8);
 #line 58 "examples/assembler/assemble.hero"
     t9 = (h_0opt_40eff9f5){.tag = INT64_C(1), .as.err = t8};
@@ -2568,66 +2574,66 @@ bb2:
     t65 = h13_own13;
 #line 58 "examples/assembler/assemble.hero"
     h13_own13 = t9;
-#line 2572 "main.c"
+#line 2578 "main.c"
     h_0opt_40eff9f5_release(&t65);
 #line 58 "examples/assembler/assemble.hero"
-#line 2575 "main.c"
+#line 2581 "main.c"
     h_0opt_40eff9f5_retain(&t9);
 #line 58 "examples/assembler/assemble.hero"
     t73 = h1_f0;
-#line 2579 "main.c"
+#line 2585 "main.c"
     h_0opt_7e3a44cc_release(&t73);
 #line 58 "examples/assembler/assemble.hero"
     t74 = h2_labels;
-#line 2583 "main.c"
+#line 2589 "main.c"
     hero_map_decref(t74);
 #line 58 "examples/assembler/assemble.hero"
     t75 = h3_code;
-#line 2587 "main.c"
+#line 2593 "main.c"
     hero_array_decref(t75);
 #line 58 "examples/assembler/assemble.hero"
     t76 = h4_xs0;
-#line 2591 "main.c"
+#line 2597 "main.c"
     hero_array_decref(t76);
 #line 58 "examples/assembler/assemble.hero"
     t77 = h6_line;
-#line 2595 "main.c"
+#line 2601 "main.c"
     h_program_Line_release(&t77);
 #line 58 "examples/assembler/assemble.hero"
     t78 = h7_f1;
-#line 2599 "main.c"
+#line 2605 "main.c"
     h_0opt_2270cbe7_release(&t78);
 #line 58 "examples/assembler/assemble.hero"
     t79 = h8_xs1;
-#line 2603 "main.c"
+#line 2609 "main.c"
     hero_array_decref(t79);
 #line 58 "examples/assembler/assemble.hero"
     t80 = h11_own11;
-#line 2607 "main.c"
+#line 2613 "main.c"
     h_0opt_7e3a44cc_release(&t80);
 #line 58 "examples/assembler/assemble.hero"
     t81 = h12_own12;
-#line 2611 "main.c"
+#line 2617 "main.c"
     hero_array_decref(t81);
 #line 58 "examples/assembler/assemble.hero"
     t82 = h13_own13;
-#line 2615 "main.c"
+#line 2621 "main.c"
     h_0opt_40eff9f5_release(&t82);
 #line 58 "examples/assembler/assemble.hero"
     t83 = h14_own14;
-#line 2619 "main.c"
+#line 2625 "main.c"
     h_assemble_Assembled_release(&t83);
 #line 58 "examples/assembler/assemble.hero"
     t84 = h15_own15;
-#line 2623 "main.c"
+#line 2629 "main.c"
     h_0opt_40eff9f5_release(&t84);
 #line 58 "examples/assembler/assemble.hero"
     t85 = h16_own16;
-#line 2627 "main.c"
+#line 2633 "main.c"
     h_0opt_2270cbe7_release(&t85);
 #line 58 "examples/assembler/assemble.hero"
     t86 = h17_own17;
-#line 2631 "main.c"
+#line 2637 "main.c"
     h_0opt_40eff9f5_release(&t86);
     return t9;
 bb3:
@@ -2651,11 +2657,11 @@ bb4:
     t21 = *(h_program_Line const *)hero_array_at(t19, t20);
 #line 61 "examples/assembler/assemble.hero"
     t66 = h6_line;
-#line 2655 "main.c"
+#line 2661 "main.c"
     h_program_Line_retain(&t21);
 #line 61 "examples/assembler/assemble.hero"
     h6_line = t21;
-#line 2659 "main.c"
+#line 2665 "main.c"
     h_program_Line_release(&t66);
 #line 62 "examples/assembler/assemble.hero"
     t22 = h6_line;
@@ -2685,10 +2691,10 @@ bb6:
     t55 = h3_code;
 #line 68 "examples/assembler/assemble.hero"
     t56 = h2_labels;
-#line 2689 "main.c"
+#line 2695 "main.c"
     hero_array_incref(t55);
 #line 68 "examples/assembler/assemble.hero"
-#line 2692 "main.c"
+#line 2698 "main.c"
     hero_map_incref(t56);
 #line 68 "examples/assembler/assemble.hero"
     t57 = (h_assemble_Assembled){.f_code = t55, .f_labels = t56};
@@ -2696,10 +2702,10 @@ bb6:
     t67 = h14_own14;
 #line 68 "examples/assembler/assemble.hero"
     h14_own14 = t57;
-#line 2700 "main.c"
+#line 2706 "main.c"
     h_assemble_Assembled_release(&t67);
 #line 68 "examples/assembler/assemble.hero"
-#line 2703 "main.c"
+#line 2709 "main.c"
     h_assemble_Assembled_retain(&t57);
 #line 68 "examples/assembler/assemble.hero"
     t58 = (h_0opt_40eff9f5){.tag = INT64_C(0), .as.ok = t57};
@@ -2707,66 +2713,66 @@ bb6:
     t68 = h15_own15;
 #line 68 "examples/assembler/assemble.hero"
     h15_own15 = t58;
-#line 2711 "main.c"
+#line 2717 "main.c"
     h_0opt_40eff9f5_release(&t68);
 #line 68 "examples/assembler/assemble.hero"
-#line 2714 "main.c"
+#line 2720 "main.c"
     h_0opt_40eff9f5_retain(&t58);
 #line 68 "examples/assembler/assemble.hero"
     t87 = h1_f0;
-#line 2718 "main.c"
+#line 2724 "main.c"
     h_0opt_7e3a44cc_release(&t87);
 #line 68 "examples/assembler/assemble.hero"
     t88 = h2_labels;
-#line 2722 "main.c"
+#line 2728 "main.c"
     hero_map_decref(t88);
 #line 68 "examples/assembler/assemble.hero"
     t89 = h3_code;
-#line 2726 "main.c"
+#line 2732 "main.c"
     hero_array_decref(t89);
 #line 68 "examples/assembler/assemble.hero"
     t90 = h4_xs0;
-#line 2730 "main.c"
+#line 2736 "main.c"
     hero_array_decref(t90);
 #line 68 "examples/assembler/assemble.hero"
     t91 = h6_line;
-#line 2734 "main.c"
+#line 2740 "main.c"
     h_program_Line_release(&t91);
 #line 68 "examples/assembler/assemble.hero"
     t92 = h7_f1;
-#line 2738 "main.c"
+#line 2744 "main.c"
     h_0opt_2270cbe7_release(&t92);
 #line 68 "examples/assembler/assemble.hero"
     t93 = h8_xs1;
-#line 2742 "main.c"
+#line 2748 "main.c"
     hero_array_decref(t93);
 #line 68 "examples/assembler/assemble.hero"
     t94 = h11_own11;
-#line 2746 "main.c"
+#line 2752 "main.c"
     h_0opt_7e3a44cc_release(&t94);
 #line 68 "examples/assembler/assemble.hero"
     t95 = h12_own12;
-#line 2750 "main.c"
+#line 2756 "main.c"
     hero_array_decref(t95);
 #line 68 "examples/assembler/assemble.hero"
     t96 = h13_own13;
-#line 2754 "main.c"
+#line 2760 "main.c"
     h_0opt_40eff9f5_release(&t96);
 #line 68 "examples/assembler/assemble.hero"
     t97 = h14_own14;
-#line 2758 "main.c"
+#line 2764 "main.c"
     h_assemble_Assembled_release(&t97);
 #line 68 "examples/assembler/assemble.hero"
     t98 = h15_own15;
-#line 2762 "main.c"
+#line 2768 "main.c"
     h_0opt_40eff9f5_release(&t98);
 #line 68 "examples/assembler/assemble.hero"
     t99 = h16_own16;
-#line 2766 "main.c"
+#line 2772 "main.c"
     h_0opt_2270cbe7_release(&t99);
 #line 68 "examples/assembler/assemble.hero"
     t100 = h17_own17;
-#line 2770 "main.c"
+#line 2776 "main.c"
     h_0opt_40eff9f5_release(&t100);
     return t58;
 bb7:
@@ -2780,15 +2786,15 @@ bb7:
     t69 = h16_own16;
 #line 65 "examples/assembler/assemble.hero"
     h16_own16 = t28;
-#line 2784 "main.c"
+#line 2790 "main.c"
     h_0opt_2270cbe7_release(&t69);
 #line 65 "examples/assembler/assemble.hero"
     t70 = h7_f1;
-#line 2788 "main.c"
+#line 2794 "main.c"
     h_0opt_2270cbe7_retain(&t28);
 #line 65 "examples/assembler/assemble.hero"
     h7_f1 = t28;
-#line 2792 "main.c"
+#line 2798 "main.c"
     h_0opt_2270cbe7_release(&t70);
 #line 65 "examples/assembler/assemble.hero"
     t29 = h7_f1;
@@ -2816,11 +2822,11 @@ bb10:
     t37 = t36.as.ok;
 #line 65 "examples/assembler/assemble.hero"
     t71 = h8_xs1;
-#line 2820 "main.c"
+#line 2826 "main.c"
     hero_array_incref(t37);
 #line 65 "examples/assembler/assemble.hero"
     h8_xs1 = t37;
-#line 2824 "main.c"
+#line 2830 "main.c"
     hero_array_decref(t71);
 #line 65 "examples/assembler/assemble.hero"
     t38 = INT64_C(0);
@@ -2834,7 +2840,7 @@ bb11:
     t33 = h7_f1;
 #line 65 "examples/assembler/assemble.hero"
     t34 = t33.as.err;
-#line 2838 "main.c"
+#line 2844 "main.c"
     hero_failure_retain(&t34);
 #line 65 "examples/assembler/assemble.hero"
     t35 = (h_0opt_40eff9f5){.tag = INT64_C(1), .as.err = t34};
@@ -2842,66 +2848,66 @@ bb11:
     t72 = h17_own17;
 #line 65 "examples/assembler/assemble.hero"
     h17_own17 = t35;
-#line 2846 "main.c"
+#line 2852 "main.c"
     h_0opt_40eff9f5_release(&t72);
 #line 65 "examples/assembler/assemble.hero"
-#line 2849 "main.c"
+#line 2855 "main.c"
     h_0opt_40eff9f5_retain(&t35);
 #line 65 "examples/assembler/assemble.hero"
     t101 = h1_f0;
-#line 2853 "main.c"
+#line 2859 "main.c"
     h_0opt_7e3a44cc_release(&t101);
 #line 65 "examples/assembler/assemble.hero"
     t102 = h2_labels;
-#line 2857 "main.c"
+#line 2863 "main.c"
     hero_map_decref(t102);
 #line 65 "examples/assembler/assemble.hero"
     t103 = h3_code;
-#line 2861 "main.c"
+#line 2867 "main.c"
     hero_array_decref(t103);
 #line 65 "examples/assembler/assemble.hero"
     t104 = h4_xs0;
-#line 2865 "main.c"
+#line 2871 "main.c"
     hero_array_decref(t104);
 #line 65 "examples/assembler/assemble.hero"
     t105 = h6_line;
-#line 2869 "main.c"
+#line 2875 "main.c"
     h_program_Line_release(&t105);
 #line 65 "examples/assembler/assemble.hero"
     t106 = h7_f1;
-#line 2873 "main.c"
+#line 2879 "main.c"
     h_0opt_2270cbe7_release(&t106);
 #line 65 "examples/assembler/assemble.hero"
     t107 = h8_xs1;
-#line 2877 "main.c"
+#line 2883 "main.c"
     hero_array_decref(t107);
 #line 65 "examples/assembler/assemble.hero"
     t108 = h11_own11;
-#line 2881 "main.c"
+#line 2887 "main.c"
     h_0opt_7e3a44cc_release(&t108);
 #line 65 "examples/assembler/assemble.hero"
     t109 = h12_own12;
-#line 2885 "main.c"
+#line 2891 "main.c"
     hero_array_decref(t109);
 #line 65 "examples/assembler/assemble.hero"
     t110 = h13_own13;
-#line 2889 "main.c"
+#line 2895 "main.c"
     h_0opt_40eff9f5_release(&t110);
 #line 65 "examples/assembler/assemble.hero"
     t111 = h14_own14;
-#line 2893 "main.c"
+#line 2899 "main.c"
     h_assemble_Assembled_release(&t111);
 #line 65 "examples/assembler/assemble.hero"
     t112 = h15_own15;
-#line 2897 "main.c"
+#line 2903 "main.c"
     h_0opt_40eff9f5_release(&t112);
 #line 65 "examples/assembler/assemble.hero"
     t113 = h16_own16;
-#line 2901 "main.c"
+#line 2907 "main.c"
     h_0opt_2270cbe7_release(&t113);
 #line 65 "examples/assembler/assemble.hero"
     t114 = h17_own17;
-#line 2905 "main.c"
+#line 2911 "main.c"
     h_0opt_40eff9f5_release(&t114);
     return t35;
 bb12:
@@ -2947,12 +2953,12 @@ bb14:
 bb15:
 #line 65 "examples/assembler/assemble.hero"
     goto bb5;
-#line 2951 "main.c"
+#line 2957 "main.c"
 }
 
 #line 73 "examples/assembler/assemble.hero"
 h_0opt_2270cbe7 h_assemble_encode(h_program_Line h0_line, HeroMapHeader * h1_labels) {
-#line 2956 "main.c"
+#line 2962 "main.c"
     HeroStr h2_m = {0};
     h_0opt_e201354 h3_f0 = {0};
     h_0opt_e201354 h4_f1 = {0};
@@ -4643,11 +4649,11 @@ bb0:
     t2 = t1.f_mnemonic;
 #line 74 "examples/assembler/assemble.hero"
     t267 = h2_m;
-#line 4647 "main.c"
+#line 4653 "main.c"
     hero_str_incref(t2);
 #line 74 "examples/assembler/assemble.hero"
     h2_m = t2;
-#line 4651 "main.c"
+#line 4657 "main.c"
     hero_str_decref(t267);
 #line 76 "examples/assembler/assemble.hero"
     t3 = h2_m;
@@ -4681,15 +4687,15 @@ bb2:
     t268 = h19_own19;
 #line 77 "examples/assembler/assemble.hero"
     h19_own19 = t8;
-#line 4685 "main.c"
+#line 4691 "main.c"
     h_0opt_e201354_release(&t268);
 #line 77 "examples/assembler/assemble.hero"
     t269 = h3_f0;
-#line 4689 "main.c"
+#line 4695 "main.c"
     h_0opt_e201354_retain(&t8);
 #line 77 "examples/assembler/assemble.hero"
     h3_f0 = t8;
-#line 4693 "main.c"
+#line 4699 "main.c"
     h_0opt_e201354_release(&t269);
 #line 77 "examples/assembler/assemble.hero"
     t9 = h3_f0;
@@ -4727,15 +4733,15 @@ bb4:
     t270 = h20_own20;
 #line 79 "examples/assembler/assemble.hero"
     h20_own20 = t25;
-#line 4731 "main.c"
+#line 4737 "main.c"
     h_0opt_e201354_release(&t270);
 #line 79 "examples/assembler/assemble.hero"
     t271 = h4_f1;
-#line 4735 "main.c"
+#line 4741 "main.c"
     h_0opt_e201354_retain(&t25);
 #line 79 "examples/assembler/assemble.hero"
     h4_f1 = t25;
-#line 4739 "main.c"
+#line 4745 "main.c"
     h_0opt_e201354_release(&t271);
 #line 79 "examples/assembler/assemble.hero"
     t26 = h4_f1;
@@ -4753,7 +4759,7 @@ bb5:
     t13 = h3_f0;
 #line 77 "examples/assembler/assemble.hero"
     t14 = t13.as.err;
-#line 4757 "main.c"
+#line 4763 "main.c"
     hero_failure_retain(&t14);
 #line 77 "examples/assembler/assemble.hero"
     t15 = (h_0opt_2270cbe7){.tag = INT64_C(1), .as.err = t14};
@@ -4761,258 +4767,258 @@ bb5:
     t272 = h21_own21;
 #line 77 "examples/assembler/assemble.hero"
     h21_own21 = t15;
-#line 4765 "main.c"
+#line 4771 "main.c"
     h_0opt_2270cbe7_release(&t272);
 #line 77 "examples/assembler/assemble.hero"
-#line 4768 "main.c"
+#line 4774 "main.c"
     h_0opt_2270cbe7_retain(&t15);
 #line 77 "examples/assembler/assemble.hero"
     t329 = h2_m;
-#line 4772 "main.c"
+#line 4778 "main.c"
     hero_str_decref(t329);
 #line 77 "examples/assembler/assemble.hero"
     t330 = h3_f0;
-#line 4776 "main.c"
+#line 4782 "main.c"
     h_0opt_e201354_release(&t330);
 #line 77 "examples/assembler/assemble.hero"
     t331 = h4_f1;
-#line 4780 "main.c"
+#line 4786 "main.c"
     h_0opt_e201354_release(&t331);
 #line 77 "examples/assembler/assemble.hero"
     t332 = h5_f2;
-#line 4784 "main.c"
+#line 4790 "main.c"
     h_0opt_e201354_release(&t332);
 #line 77 "examples/assembler/assemble.hero"
     t333 = h8_f3;
-#line 4788 "main.c"
+#line 4794 "main.c"
     h_0opt_e201354_release(&t333);
 #line 77 "examples/assembler/assemble.hero"
     t334 = h9_f4;
-#line 4792 "main.c"
+#line 4798 "main.c"
     h_0opt_e201354_release(&t334);
 #line 77 "examples/assembler/assemble.hero"
     t335 = h10_f5;
-#line 4796 "main.c"
+#line 4802 "main.c"
     h_0opt_e201354_release(&t335);
 #line 77 "examples/assembler/assemble.hero"
     t336 = h11_f6;
-#line 4800 "main.c"
+#line 4806 "main.c"
     h_0opt_e201354_release(&t336);
 #line 77 "examples/assembler/assemble.hero"
     t337 = h12_f7;
-#line 4804 "main.c"
+#line 4810 "main.c"
     h_0opt_e201354_release(&t337);
 #line 77 "examples/assembler/assemble.hero"
     t338 = h13_f8;
-#line 4808 "main.c"
+#line 4814 "main.c"
     h_0opt_e201354_release(&t338);
 #line 77 "examples/assembler/assemble.hero"
     t339 = h14_f9;
-#line 4812 "main.c"
+#line 4818 "main.c"
     h_0opt_e201354_release(&t339);
 #line 77 "examples/assembler/assemble.hero"
     t340 = h15_f10;
-#line 4816 "main.c"
+#line 4822 "main.c"
     h_0opt_e201354_release(&t340);
 #line 77 "examples/assembler/assemble.hero"
     t341 = h16_f11;
-#line 4820 "main.c"
+#line 4826 "main.c"
     h_0opt_e201354_release(&t341);
 #line 77 "examples/assembler/assemble.hero"
     t342 = h17_f12;
-#line 4824 "main.c"
+#line 4830 "main.c"
     h_0opt_e201354_release(&t342);
 #line 77 "examples/assembler/assemble.hero"
     t343 = h18_f13;
-#line 4828 "main.c"
+#line 4834 "main.c"
     h_0opt_e201354_release(&t343);
 #line 77 "examples/assembler/assemble.hero"
     t344 = h19_own19;
-#line 4832 "main.c"
+#line 4838 "main.c"
     h_0opt_e201354_release(&t344);
 #line 77 "examples/assembler/assemble.hero"
     t345 = h20_own20;
-#line 4836 "main.c"
+#line 4842 "main.c"
     h_0opt_e201354_release(&t345);
 #line 77 "examples/assembler/assemble.hero"
     t346 = h21_own21;
-#line 4840 "main.c"
+#line 4846 "main.c"
     h_0opt_2270cbe7_release(&t346);
 #line 77 "examples/assembler/assemble.hero"
     t347 = h22_own22;
-#line 4844 "main.c"
+#line 4850 "main.c"
     h_0opt_e201354_release(&t347);
 #line 77 "examples/assembler/assemble.hero"
     t348 = h23_own23;
-#line 4848 "main.c"
+#line 4854 "main.c"
     h_0opt_2270cbe7_release(&t348);
 #line 77 "examples/assembler/assemble.hero"
     t349 = h24_own24;
-#line 4852 "main.c"
+#line 4858 "main.c"
     hero_array_decref(t349);
 #line 77 "examples/assembler/assemble.hero"
     t350 = h25_own25;
-#line 4856 "main.c"
+#line 4862 "main.c"
     h_0opt_2270cbe7_release(&t350);
 #line 77 "examples/assembler/assemble.hero"
     t351 = h26_own26;
-#line 4860 "main.c"
+#line 4866 "main.c"
     h_0opt_2270cbe7_release(&t351);
 #line 77 "examples/assembler/assemble.hero"
     t352 = h27_own27;
-#line 4864 "main.c"
+#line 4870 "main.c"
     h_0opt_e201354_release(&t352);
 #line 77 "examples/assembler/assemble.hero"
     t353 = h28_own28;
-#line 4868 "main.c"
+#line 4874 "main.c"
     h_0opt_e201354_release(&t353);
 #line 77 "examples/assembler/assemble.hero"
     t354 = h29_own29;
-#line 4872 "main.c"
+#line 4878 "main.c"
     h_0opt_2270cbe7_release(&t354);
 #line 77 "examples/assembler/assemble.hero"
     t355 = h30_own30;
-#line 4876 "main.c"
+#line 4882 "main.c"
     h_0opt_e201354_release(&t355);
 #line 77 "examples/assembler/assemble.hero"
     t356 = h31_own31;
-#line 4880 "main.c"
+#line 4886 "main.c"
     h_0opt_2270cbe7_release(&t356);
 #line 77 "examples/assembler/assemble.hero"
     t357 = h32_own32;
-#line 4884 "main.c"
+#line 4890 "main.c"
     hero_array_decref(t357);
 #line 77 "examples/assembler/assemble.hero"
     t358 = h33_own33;
-#line 4888 "main.c"
+#line 4894 "main.c"
     h_0opt_2270cbe7_release(&t358);
 #line 77 "examples/assembler/assemble.hero"
     t359 = h34_own34;
-#line 4892 "main.c"
+#line 4898 "main.c"
     h_0opt_2270cbe7_release(&t359);
 #line 77 "examples/assembler/assemble.hero"
     t360 = h35_own35;
-#line 4896 "main.c"
+#line 4902 "main.c"
     h_0opt_e201354_release(&t360);
 #line 77 "examples/assembler/assemble.hero"
     t361 = h36_own36;
-#line 4900 "main.c"
+#line 4906 "main.c"
     h_0opt_e201354_release(&t361);
 #line 77 "examples/assembler/assemble.hero"
     t362 = h37_own37;
-#line 4904 "main.c"
+#line 4910 "main.c"
     h_0opt_2270cbe7_release(&t362);
 #line 77 "examples/assembler/assemble.hero"
     t363 = h38_own38;
-#line 4908 "main.c"
+#line 4914 "main.c"
     hero_array_decref(t363);
 #line 77 "examples/assembler/assemble.hero"
     t364 = h39_own39;
-#line 4912 "main.c"
+#line 4918 "main.c"
     h_0opt_2270cbe7_release(&t364);
 #line 77 "examples/assembler/assemble.hero"
     t365 = h40_own40;
-#line 4916 "main.c"
+#line 4922 "main.c"
     h_0opt_2270cbe7_release(&t365);
 #line 77 "examples/assembler/assemble.hero"
     t366 = h41_own41;
-#line 4920 "main.c"
+#line 4926 "main.c"
     h_0opt_e201354_release(&t366);
 #line 77 "examples/assembler/assemble.hero"
     t367 = h42_own42;
-#line 4924 "main.c"
+#line 4930 "main.c"
     h_0opt_e201354_release(&t367);
 #line 77 "examples/assembler/assemble.hero"
     t368 = h43_own43;
-#line 4928 "main.c"
+#line 4934 "main.c"
     h_0opt_2270cbe7_release(&t368);
 #line 77 "examples/assembler/assemble.hero"
     t369 = h44_own44;
-#line 4932 "main.c"
+#line 4938 "main.c"
     h_0opt_e201354_release(&t369);
 #line 77 "examples/assembler/assemble.hero"
     t370 = h45_own45;
-#line 4936 "main.c"
+#line 4942 "main.c"
     h_0opt_2270cbe7_release(&t370);
 #line 77 "examples/assembler/assemble.hero"
     t371 = h46_own46;
-#line 4940 "main.c"
+#line 4946 "main.c"
     hero_array_decref(t371);
 #line 77 "examples/assembler/assemble.hero"
     t372 = h47_own47;
-#line 4944 "main.c"
+#line 4950 "main.c"
     h_0opt_2270cbe7_release(&t372);
 #line 77 "examples/assembler/assemble.hero"
     t373 = h48_own48;
-#line 4948 "main.c"
+#line 4954 "main.c"
     h_0opt_2270cbe7_release(&t373);
 #line 77 "examples/assembler/assemble.hero"
     t374 = h49_own49;
-#line 4952 "main.c"
+#line 4958 "main.c"
     h_0opt_e201354_release(&t374);
 #line 77 "examples/assembler/assemble.hero"
     t375 = h50_own50;
-#line 4956 "main.c"
+#line 4962 "main.c"
     h_0opt_e201354_release(&t375);
 #line 77 "examples/assembler/assemble.hero"
     t376 = h51_own51;
-#line 4960 "main.c"
+#line 4966 "main.c"
     h_0opt_2270cbe7_release(&t376);
 #line 77 "examples/assembler/assemble.hero"
     t377 = h52_own52;
-#line 4964 "main.c"
+#line 4970 "main.c"
     hero_array_decref(t377);
 #line 77 "examples/assembler/assemble.hero"
     t378 = h53_own53;
-#line 4968 "main.c"
+#line 4974 "main.c"
     h_0opt_2270cbe7_release(&t378);
 #line 77 "examples/assembler/assemble.hero"
     t379 = h54_own54;
-#line 4972 "main.c"
+#line 4978 "main.c"
     h_0opt_2270cbe7_release(&t379);
 #line 77 "examples/assembler/assemble.hero"
     t380 = h55_own55;
-#line 4976 "main.c"
+#line 4982 "main.c"
     hero_str_decref(t380);
 #line 77 "examples/assembler/assemble.hero"
     t381 = h56_own56;
-#line 4980 "main.c"
+#line 4986 "main.c"
     hero_str_decref(t381);
 #line 77 "examples/assembler/assemble.hero"
     t382 = h57_own57;
-#line 4984 "main.c"
+#line 4990 "main.c"
     hero_str_decref(t382);
 #line 77 "examples/assembler/assemble.hero"
     t383 = h58_own58;
-#line 4988 "main.c"
+#line 4994 "main.c"
     hero_str_decref(t383);
 #line 77 "examples/assembler/assemble.hero"
     t384 = h59_own59;
-#line 4992 "main.c"
+#line 4998 "main.c"
     hero_str_decref(t384);
 #line 77 "examples/assembler/assemble.hero"
     t385 = h60_own60;
-#line 4996 "main.c"
+#line 5002 "main.c"
     hero_str_decref(t385);
 #line 77 "examples/assembler/assemble.hero"
     t386 = h61_own61;
-#line 5000 "main.c"
+#line 5006 "main.c"
     h_0opt_2270cbe7_release(&t386);
 #line 77 "examples/assembler/assemble.hero"
     t387 = h62_own62;
-#line 5004 "main.c"
+#line 5010 "main.c"
     h_0opt_e201354_release(&t387);
 #line 77 "examples/assembler/assemble.hero"
     t388 = h63_own63;
-#line 5008 "main.c"
+#line 5014 "main.c"
     hero_array_decref(t388);
 #line 77 "examples/assembler/assemble.hero"
     t389 = h64_own64;
-#line 5012 "main.c"
+#line 5018 "main.c"
     h_0opt_2270cbe7_release(&t389);
 #line 77 "examples/assembler/assemble.hero"
     t390 = h65_own65;
-#line 5016 "main.c"
+#line 5022 "main.c"
     h_0opt_2270cbe7_release(&t390);
     return t15;
 bb6:
@@ -5038,15 +5044,15 @@ bb6:
     t273 = h22_own22;
 #line 79 "examples/assembler/assemble.hero"
     h22_own22 = t41;
-#line 5042 "main.c"
+#line 5048 "main.c"
     h_0opt_e201354_release(&t273);
 #line 79 "examples/assembler/assemble.hero"
     t274 = h5_f2;
-#line 5046 "main.c"
+#line 5052 "main.c"
     h_0opt_e201354_retain(&t41);
 #line 79 "examples/assembler/assemble.hero"
     h5_f2 = t41;
-#line 5050 "main.c"
+#line 5056 "main.c"
     h_0opt_e201354_release(&t274);
 #line 79 "examples/assembler/assemble.hero"
     t42 = h5_f2;
@@ -5064,7 +5070,7 @@ bb7:
     t30 = h4_f1;
 #line 79 "examples/assembler/assemble.hero"
     t31 = t30.as.err;
-#line 5068 "main.c"
+#line 5074 "main.c"
     hero_failure_retain(&t31);
 #line 79 "examples/assembler/assemble.hero"
     t32 = (h_0opt_2270cbe7){.tag = INT64_C(1), .as.err = t31};
@@ -5072,258 +5078,258 @@ bb7:
     t275 = h23_own23;
 #line 79 "examples/assembler/assemble.hero"
     h23_own23 = t32;
-#line 5076 "main.c"
+#line 5082 "main.c"
     h_0opt_2270cbe7_release(&t275);
 #line 79 "examples/assembler/assemble.hero"
-#line 5079 "main.c"
+#line 5085 "main.c"
     h_0opt_2270cbe7_retain(&t32);
 #line 79 "examples/assembler/assemble.hero"
     t391 = h2_m;
-#line 5083 "main.c"
+#line 5089 "main.c"
     hero_str_decref(t391);
 #line 79 "examples/assembler/assemble.hero"
     t392 = h3_f0;
-#line 5087 "main.c"
+#line 5093 "main.c"
     h_0opt_e201354_release(&t392);
 #line 79 "examples/assembler/assemble.hero"
     t393 = h4_f1;
-#line 5091 "main.c"
+#line 5097 "main.c"
     h_0opt_e201354_release(&t393);
 #line 79 "examples/assembler/assemble.hero"
     t394 = h5_f2;
-#line 5095 "main.c"
+#line 5101 "main.c"
     h_0opt_e201354_release(&t394);
 #line 79 "examples/assembler/assemble.hero"
     t395 = h8_f3;
-#line 5099 "main.c"
+#line 5105 "main.c"
     h_0opt_e201354_release(&t395);
 #line 79 "examples/assembler/assemble.hero"
     t396 = h9_f4;
-#line 5103 "main.c"
+#line 5109 "main.c"
     h_0opt_e201354_release(&t396);
 #line 79 "examples/assembler/assemble.hero"
     t397 = h10_f5;
-#line 5107 "main.c"
+#line 5113 "main.c"
     h_0opt_e201354_release(&t397);
 #line 79 "examples/assembler/assemble.hero"
     t398 = h11_f6;
-#line 5111 "main.c"
+#line 5117 "main.c"
     h_0opt_e201354_release(&t398);
 #line 79 "examples/assembler/assemble.hero"
     t399 = h12_f7;
-#line 5115 "main.c"
+#line 5121 "main.c"
     h_0opt_e201354_release(&t399);
 #line 79 "examples/assembler/assemble.hero"
     t400 = h13_f8;
-#line 5119 "main.c"
+#line 5125 "main.c"
     h_0opt_e201354_release(&t400);
 #line 79 "examples/assembler/assemble.hero"
     t401 = h14_f9;
-#line 5123 "main.c"
+#line 5129 "main.c"
     h_0opt_e201354_release(&t401);
 #line 79 "examples/assembler/assemble.hero"
     t402 = h15_f10;
-#line 5127 "main.c"
+#line 5133 "main.c"
     h_0opt_e201354_release(&t402);
 #line 79 "examples/assembler/assemble.hero"
     t403 = h16_f11;
-#line 5131 "main.c"
+#line 5137 "main.c"
     h_0opt_e201354_release(&t403);
 #line 79 "examples/assembler/assemble.hero"
     t404 = h17_f12;
-#line 5135 "main.c"
+#line 5141 "main.c"
     h_0opt_e201354_release(&t404);
 #line 79 "examples/assembler/assemble.hero"
     t405 = h18_f13;
-#line 5139 "main.c"
+#line 5145 "main.c"
     h_0opt_e201354_release(&t405);
 #line 79 "examples/assembler/assemble.hero"
     t406 = h19_own19;
-#line 5143 "main.c"
+#line 5149 "main.c"
     h_0opt_e201354_release(&t406);
 #line 79 "examples/assembler/assemble.hero"
     t407 = h20_own20;
-#line 5147 "main.c"
+#line 5153 "main.c"
     h_0opt_e201354_release(&t407);
 #line 79 "examples/assembler/assemble.hero"
     t408 = h21_own21;
-#line 5151 "main.c"
+#line 5157 "main.c"
     h_0opt_2270cbe7_release(&t408);
 #line 79 "examples/assembler/assemble.hero"
     t409 = h22_own22;
-#line 5155 "main.c"
+#line 5161 "main.c"
     h_0opt_e201354_release(&t409);
 #line 79 "examples/assembler/assemble.hero"
     t410 = h23_own23;
-#line 5159 "main.c"
+#line 5165 "main.c"
     h_0opt_2270cbe7_release(&t410);
 #line 79 "examples/assembler/assemble.hero"
     t411 = h24_own24;
-#line 5163 "main.c"
+#line 5169 "main.c"
     hero_array_decref(t411);
 #line 79 "examples/assembler/assemble.hero"
     t412 = h25_own25;
-#line 5167 "main.c"
+#line 5173 "main.c"
     h_0opt_2270cbe7_release(&t412);
 #line 79 "examples/assembler/assemble.hero"
     t413 = h26_own26;
-#line 5171 "main.c"
+#line 5177 "main.c"
     h_0opt_2270cbe7_release(&t413);
 #line 79 "examples/assembler/assemble.hero"
     t414 = h27_own27;
-#line 5175 "main.c"
+#line 5181 "main.c"
     h_0opt_e201354_release(&t414);
 #line 79 "examples/assembler/assemble.hero"
     t415 = h28_own28;
-#line 5179 "main.c"
+#line 5185 "main.c"
     h_0opt_e201354_release(&t415);
 #line 79 "examples/assembler/assemble.hero"
     t416 = h29_own29;
-#line 5183 "main.c"
+#line 5189 "main.c"
     h_0opt_2270cbe7_release(&t416);
 #line 79 "examples/assembler/assemble.hero"
     t417 = h30_own30;
-#line 5187 "main.c"
+#line 5193 "main.c"
     h_0opt_e201354_release(&t417);
 #line 79 "examples/assembler/assemble.hero"
     t418 = h31_own31;
-#line 5191 "main.c"
+#line 5197 "main.c"
     h_0opt_2270cbe7_release(&t418);
 #line 79 "examples/assembler/assemble.hero"
     t419 = h32_own32;
-#line 5195 "main.c"
+#line 5201 "main.c"
     hero_array_decref(t419);
 #line 79 "examples/assembler/assemble.hero"
     t420 = h33_own33;
-#line 5199 "main.c"
+#line 5205 "main.c"
     h_0opt_2270cbe7_release(&t420);
 #line 79 "examples/assembler/assemble.hero"
     t421 = h34_own34;
-#line 5203 "main.c"
+#line 5209 "main.c"
     h_0opt_2270cbe7_release(&t421);
 #line 79 "examples/assembler/assemble.hero"
     t422 = h35_own35;
-#line 5207 "main.c"
+#line 5213 "main.c"
     h_0opt_e201354_release(&t422);
 #line 79 "examples/assembler/assemble.hero"
     t423 = h36_own36;
-#line 5211 "main.c"
+#line 5217 "main.c"
     h_0opt_e201354_release(&t423);
 #line 79 "examples/assembler/assemble.hero"
     t424 = h37_own37;
-#line 5215 "main.c"
+#line 5221 "main.c"
     h_0opt_2270cbe7_release(&t424);
 #line 79 "examples/assembler/assemble.hero"
     t425 = h38_own38;
-#line 5219 "main.c"
+#line 5225 "main.c"
     hero_array_decref(t425);
 #line 79 "examples/assembler/assemble.hero"
     t426 = h39_own39;
-#line 5223 "main.c"
+#line 5229 "main.c"
     h_0opt_2270cbe7_release(&t426);
 #line 79 "examples/assembler/assemble.hero"
     t427 = h40_own40;
-#line 5227 "main.c"
+#line 5233 "main.c"
     h_0opt_2270cbe7_release(&t427);
 #line 79 "examples/assembler/assemble.hero"
     t428 = h41_own41;
-#line 5231 "main.c"
+#line 5237 "main.c"
     h_0opt_e201354_release(&t428);
 #line 79 "examples/assembler/assemble.hero"
     t429 = h42_own42;
-#line 5235 "main.c"
+#line 5241 "main.c"
     h_0opt_e201354_release(&t429);
 #line 79 "examples/assembler/assemble.hero"
     t430 = h43_own43;
-#line 5239 "main.c"
+#line 5245 "main.c"
     h_0opt_2270cbe7_release(&t430);
 #line 79 "examples/assembler/assemble.hero"
     t431 = h44_own44;
-#line 5243 "main.c"
+#line 5249 "main.c"
     h_0opt_e201354_release(&t431);
 #line 79 "examples/assembler/assemble.hero"
     t432 = h45_own45;
-#line 5247 "main.c"
+#line 5253 "main.c"
     h_0opt_2270cbe7_release(&t432);
 #line 79 "examples/assembler/assemble.hero"
     t433 = h46_own46;
-#line 5251 "main.c"
+#line 5257 "main.c"
     hero_array_decref(t433);
 #line 79 "examples/assembler/assemble.hero"
     t434 = h47_own47;
-#line 5255 "main.c"
+#line 5261 "main.c"
     h_0opt_2270cbe7_release(&t434);
 #line 79 "examples/assembler/assemble.hero"
     t435 = h48_own48;
-#line 5259 "main.c"
+#line 5265 "main.c"
     h_0opt_2270cbe7_release(&t435);
 #line 79 "examples/assembler/assemble.hero"
     t436 = h49_own49;
-#line 5263 "main.c"
+#line 5269 "main.c"
     h_0opt_e201354_release(&t436);
 #line 79 "examples/assembler/assemble.hero"
     t437 = h50_own50;
-#line 5267 "main.c"
+#line 5273 "main.c"
     h_0opt_e201354_release(&t437);
 #line 79 "examples/assembler/assemble.hero"
     t438 = h51_own51;
-#line 5271 "main.c"
+#line 5277 "main.c"
     h_0opt_2270cbe7_release(&t438);
 #line 79 "examples/assembler/assemble.hero"
     t439 = h52_own52;
-#line 5275 "main.c"
+#line 5281 "main.c"
     hero_array_decref(t439);
 #line 79 "examples/assembler/assemble.hero"
     t440 = h53_own53;
-#line 5279 "main.c"
+#line 5285 "main.c"
     h_0opt_2270cbe7_release(&t440);
 #line 79 "examples/assembler/assemble.hero"
     t441 = h54_own54;
-#line 5283 "main.c"
+#line 5289 "main.c"
     h_0opt_2270cbe7_release(&t441);
 #line 79 "examples/assembler/assemble.hero"
     t442 = h55_own55;
-#line 5287 "main.c"
+#line 5293 "main.c"
     hero_str_decref(t442);
 #line 79 "examples/assembler/assemble.hero"
     t443 = h56_own56;
-#line 5291 "main.c"
+#line 5297 "main.c"
     hero_str_decref(t443);
 #line 79 "examples/assembler/assemble.hero"
     t444 = h57_own57;
-#line 5295 "main.c"
+#line 5301 "main.c"
     hero_str_decref(t444);
 #line 79 "examples/assembler/assemble.hero"
     t445 = h58_own58;
-#line 5299 "main.c"
+#line 5305 "main.c"
     hero_str_decref(t445);
 #line 79 "examples/assembler/assemble.hero"
     t446 = h59_own59;
-#line 5303 "main.c"
+#line 5309 "main.c"
     hero_str_decref(t446);
 #line 79 "examples/assembler/assemble.hero"
     t447 = h60_own60;
-#line 5307 "main.c"
+#line 5313 "main.c"
     hero_str_decref(t447);
 #line 79 "examples/assembler/assemble.hero"
     t448 = h61_own61;
-#line 5311 "main.c"
+#line 5317 "main.c"
     h_0opt_2270cbe7_release(&t448);
 #line 79 "examples/assembler/assemble.hero"
     t449 = h62_own62;
-#line 5315 "main.c"
+#line 5321 "main.c"
     h_0opt_e201354_release(&t449);
 #line 79 "examples/assembler/assemble.hero"
     t450 = h63_own63;
-#line 5319 "main.c"
+#line 5325 "main.c"
     hero_array_decref(t450);
 #line 79 "examples/assembler/assemble.hero"
     t451 = h64_own64;
-#line 5323 "main.c"
+#line 5329 "main.c"
     h_0opt_2270cbe7_release(&t451);
 #line 79 "examples/assembler/assemble.hero"
     t452 = h65_own65;
-#line 5327 "main.c"
+#line 5333 "main.c"
     h_0opt_2270cbe7_release(&t452);
     return t32;
 bb8:
@@ -5349,10 +5355,10 @@ bb8:
     t276 = h24_own24;
 #line 79 "examples/assembler/assemble.hero"
     h24_own24 = t51;
-#line 5353 "main.c"
+#line 5359 "main.c"
     hero_array_decref(t276);
 #line 78 "examples/assembler/assemble.hero"
-#line 5356 "main.c"
+#line 5362 "main.c"
     hero_array_incref(t51);
 #line 78 "examples/assembler/assemble.hero"
     t52 = (h_0opt_2270cbe7){.tag = INT64_C(0), .as.ok = t51};
@@ -5360,258 +5366,258 @@ bb8:
     t277 = h25_own25;
 #line 78 "examples/assembler/assemble.hero"
     h25_own25 = t52;
-#line 5364 "main.c"
+#line 5370 "main.c"
     h_0opt_2270cbe7_release(&t277);
 #line 78 "examples/assembler/assemble.hero"
-#line 5367 "main.c"
+#line 5373 "main.c"
     h_0opt_2270cbe7_retain(&t52);
 #line 78 "examples/assembler/assemble.hero"
     t453 = h2_m;
-#line 5371 "main.c"
+#line 5377 "main.c"
     hero_str_decref(t453);
 #line 78 "examples/assembler/assemble.hero"
     t454 = h3_f0;
-#line 5375 "main.c"
+#line 5381 "main.c"
     h_0opt_e201354_release(&t454);
 #line 78 "examples/assembler/assemble.hero"
     t455 = h4_f1;
-#line 5379 "main.c"
+#line 5385 "main.c"
     h_0opt_e201354_release(&t455);
 #line 78 "examples/assembler/assemble.hero"
     t456 = h5_f2;
-#line 5383 "main.c"
+#line 5389 "main.c"
     h_0opt_e201354_release(&t456);
 #line 78 "examples/assembler/assemble.hero"
     t457 = h8_f3;
-#line 5387 "main.c"
+#line 5393 "main.c"
     h_0opt_e201354_release(&t457);
 #line 78 "examples/assembler/assemble.hero"
     t458 = h9_f4;
-#line 5391 "main.c"
+#line 5397 "main.c"
     h_0opt_e201354_release(&t458);
 #line 78 "examples/assembler/assemble.hero"
     t459 = h10_f5;
-#line 5395 "main.c"
+#line 5401 "main.c"
     h_0opt_e201354_release(&t459);
 #line 78 "examples/assembler/assemble.hero"
     t460 = h11_f6;
-#line 5399 "main.c"
+#line 5405 "main.c"
     h_0opt_e201354_release(&t460);
 #line 78 "examples/assembler/assemble.hero"
     t461 = h12_f7;
-#line 5403 "main.c"
+#line 5409 "main.c"
     h_0opt_e201354_release(&t461);
 #line 78 "examples/assembler/assemble.hero"
     t462 = h13_f8;
-#line 5407 "main.c"
+#line 5413 "main.c"
     h_0opt_e201354_release(&t462);
 #line 78 "examples/assembler/assemble.hero"
     t463 = h14_f9;
-#line 5411 "main.c"
+#line 5417 "main.c"
     h_0opt_e201354_release(&t463);
 #line 78 "examples/assembler/assemble.hero"
     t464 = h15_f10;
-#line 5415 "main.c"
+#line 5421 "main.c"
     h_0opt_e201354_release(&t464);
 #line 78 "examples/assembler/assemble.hero"
     t465 = h16_f11;
-#line 5419 "main.c"
+#line 5425 "main.c"
     h_0opt_e201354_release(&t465);
 #line 78 "examples/assembler/assemble.hero"
     t466 = h17_f12;
-#line 5423 "main.c"
+#line 5429 "main.c"
     h_0opt_e201354_release(&t466);
 #line 78 "examples/assembler/assemble.hero"
     t467 = h18_f13;
-#line 5427 "main.c"
+#line 5433 "main.c"
     h_0opt_e201354_release(&t467);
 #line 78 "examples/assembler/assemble.hero"
     t468 = h19_own19;
-#line 5431 "main.c"
+#line 5437 "main.c"
     h_0opt_e201354_release(&t468);
 #line 78 "examples/assembler/assemble.hero"
     t469 = h20_own20;
-#line 5435 "main.c"
+#line 5441 "main.c"
     h_0opt_e201354_release(&t469);
 #line 78 "examples/assembler/assemble.hero"
     t470 = h21_own21;
-#line 5439 "main.c"
+#line 5445 "main.c"
     h_0opt_2270cbe7_release(&t470);
 #line 78 "examples/assembler/assemble.hero"
     t471 = h22_own22;
-#line 5443 "main.c"
+#line 5449 "main.c"
     h_0opt_e201354_release(&t471);
 #line 78 "examples/assembler/assemble.hero"
     t472 = h23_own23;
-#line 5447 "main.c"
+#line 5453 "main.c"
     h_0opt_2270cbe7_release(&t472);
 #line 78 "examples/assembler/assemble.hero"
     t473 = h24_own24;
-#line 5451 "main.c"
+#line 5457 "main.c"
     hero_array_decref(t473);
 #line 78 "examples/assembler/assemble.hero"
     t474 = h25_own25;
-#line 5455 "main.c"
+#line 5461 "main.c"
     h_0opt_2270cbe7_release(&t474);
 #line 78 "examples/assembler/assemble.hero"
     t475 = h26_own26;
-#line 5459 "main.c"
+#line 5465 "main.c"
     h_0opt_2270cbe7_release(&t475);
 #line 78 "examples/assembler/assemble.hero"
     t476 = h27_own27;
-#line 5463 "main.c"
+#line 5469 "main.c"
     h_0opt_e201354_release(&t476);
 #line 78 "examples/assembler/assemble.hero"
     t477 = h28_own28;
-#line 5467 "main.c"
+#line 5473 "main.c"
     h_0opt_e201354_release(&t477);
 #line 78 "examples/assembler/assemble.hero"
     t478 = h29_own29;
-#line 5471 "main.c"
+#line 5477 "main.c"
     h_0opt_2270cbe7_release(&t478);
 #line 78 "examples/assembler/assemble.hero"
     t479 = h30_own30;
-#line 5475 "main.c"
+#line 5481 "main.c"
     h_0opt_e201354_release(&t479);
 #line 78 "examples/assembler/assemble.hero"
     t480 = h31_own31;
-#line 5479 "main.c"
+#line 5485 "main.c"
     h_0opt_2270cbe7_release(&t480);
 #line 78 "examples/assembler/assemble.hero"
     t481 = h32_own32;
-#line 5483 "main.c"
+#line 5489 "main.c"
     hero_array_decref(t481);
 #line 78 "examples/assembler/assemble.hero"
     t482 = h33_own33;
-#line 5487 "main.c"
+#line 5493 "main.c"
     h_0opt_2270cbe7_release(&t482);
 #line 78 "examples/assembler/assemble.hero"
     t483 = h34_own34;
-#line 5491 "main.c"
+#line 5497 "main.c"
     h_0opt_2270cbe7_release(&t483);
 #line 78 "examples/assembler/assemble.hero"
     t484 = h35_own35;
-#line 5495 "main.c"
+#line 5501 "main.c"
     h_0opt_e201354_release(&t484);
 #line 78 "examples/assembler/assemble.hero"
     t485 = h36_own36;
-#line 5499 "main.c"
+#line 5505 "main.c"
     h_0opt_e201354_release(&t485);
 #line 78 "examples/assembler/assemble.hero"
     t486 = h37_own37;
-#line 5503 "main.c"
+#line 5509 "main.c"
     h_0opt_2270cbe7_release(&t486);
 #line 78 "examples/assembler/assemble.hero"
     t487 = h38_own38;
-#line 5507 "main.c"
+#line 5513 "main.c"
     hero_array_decref(t487);
 #line 78 "examples/assembler/assemble.hero"
     t488 = h39_own39;
-#line 5511 "main.c"
+#line 5517 "main.c"
     h_0opt_2270cbe7_release(&t488);
 #line 78 "examples/assembler/assemble.hero"
     t489 = h40_own40;
-#line 5515 "main.c"
+#line 5521 "main.c"
     h_0opt_2270cbe7_release(&t489);
 #line 78 "examples/assembler/assemble.hero"
     t490 = h41_own41;
-#line 5519 "main.c"
+#line 5525 "main.c"
     h_0opt_e201354_release(&t490);
 #line 78 "examples/assembler/assemble.hero"
     t491 = h42_own42;
-#line 5523 "main.c"
+#line 5529 "main.c"
     h_0opt_e201354_release(&t491);
 #line 78 "examples/assembler/assemble.hero"
     t492 = h43_own43;
-#line 5527 "main.c"
+#line 5533 "main.c"
     h_0opt_2270cbe7_release(&t492);
 #line 78 "examples/assembler/assemble.hero"
     t493 = h44_own44;
-#line 5531 "main.c"
+#line 5537 "main.c"
     h_0opt_e201354_release(&t493);
 #line 78 "examples/assembler/assemble.hero"
     t494 = h45_own45;
-#line 5535 "main.c"
+#line 5541 "main.c"
     h_0opt_2270cbe7_release(&t494);
 #line 78 "examples/assembler/assemble.hero"
     t495 = h46_own46;
-#line 5539 "main.c"
+#line 5545 "main.c"
     hero_array_decref(t495);
 #line 78 "examples/assembler/assemble.hero"
     t496 = h47_own47;
-#line 5543 "main.c"
+#line 5549 "main.c"
     h_0opt_2270cbe7_release(&t496);
 #line 78 "examples/assembler/assemble.hero"
     t497 = h48_own48;
-#line 5547 "main.c"
+#line 5553 "main.c"
     h_0opt_2270cbe7_release(&t497);
 #line 78 "examples/assembler/assemble.hero"
     t498 = h49_own49;
-#line 5551 "main.c"
+#line 5557 "main.c"
     h_0opt_e201354_release(&t498);
 #line 78 "examples/assembler/assemble.hero"
     t499 = h50_own50;
-#line 5555 "main.c"
+#line 5561 "main.c"
     h_0opt_e201354_release(&t499);
 #line 78 "examples/assembler/assemble.hero"
     t500 = h51_own51;
-#line 5559 "main.c"
+#line 5565 "main.c"
     h_0opt_2270cbe7_release(&t500);
 #line 78 "examples/assembler/assemble.hero"
     t501 = h52_own52;
-#line 5563 "main.c"
+#line 5569 "main.c"
     hero_array_decref(t501);
 #line 78 "examples/assembler/assemble.hero"
     t502 = h53_own53;
-#line 5567 "main.c"
+#line 5573 "main.c"
     h_0opt_2270cbe7_release(&t502);
 #line 78 "examples/assembler/assemble.hero"
     t503 = h54_own54;
-#line 5571 "main.c"
+#line 5577 "main.c"
     h_0opt_2270cbe7_release(&t503);
 #line 78 "examples/assembler/assemble.hero"
     t504 = h55_own55;
-#line 5575 "main.c"
+#line 5581 "main.c"
     hero_str_decref(t504);
 #line 78 "examples/assembler/assemble.hero"
     t505 = h56_own56;
-#line 5579 "main.c"
+#line 5585 "main.c"
     hero_str_decref(t505);
 #line 78 "examples/assembler/assemble.hero"
     t506 = h57_own57;
-#line 5583 "main.c"
+#line 5589 "main.c"
     hero_str_decref(t506);
 #line 78 "examples/assembler/assemble.hero"
     t507 = h58_own58;
-#line 5587 "main.c"
+#line 5593 "main.c"
     hero_str_decref(t507);
 #line 78 "examples/assembler/assemble.hero"
     t508 = h59_own59;
-#line 5591 "main.c"
+#line 5597 "main.c"
     hero_str_decref(t508);
 #line 78 "examples/assembler/assemble.hero"
     t509 = h60_own60;
-#line 5595 "main.c"
+#line 5601 "main.c"
     hero_str_decref(t509);
 #line 78 "examples/assembler/assemble.hero"
     t510 = h61_own61;
-#line 5599 "main.c"
+#line 5605 "main.c"
     h_0opt_2270cbe7_release(&t510);
 #line 78 "examples/assembler/assemble.hero"
     t511 = h62_own62;
-#line 5603 "main.c"
+#line 5609 "main.c"
     h_0opt_e201354_release(&t511);
 #line 78 "examples/assembler/assemble.hero"
     t512 = h63_own63;
-#line 5607 "main.c"
+#line 5613 "main.c"
     hero_array_decref(t512);
 #line 78 "examples/assembler/assemble.hero"
     t513 = h64_own64;
-#line 5611 "main.c"
+#line 5617 "main.c"
     h_0opt_2270cbe7_release(&t513);
 #line 78 "examples/assembler/assemble.hero"
     t514 = h65_own65;
-#line 5615 "main.c"
+#line 5621 "main.c"
     h_0opt_2270cbe7_release(&t514);
     return t52;
 bb9:
@@ -5619,7 +5625,7 @@ bb9:
     t46 = h5_f2;
 #line 79 "examples/assembler/assemble.hero"
     t47 = t46.as.err;
-#line 5623 "main.c"
+#line 5629 "main.c"
     hero_failure_retain(&t47);
 #line 79 "examples/assembler/assemble.hero"
     t48 = (h_0opt_2270cbe7){.tag = INT64_C(1), .as.err = t47};
@@ -5627,258 +5633,258 @@ bb9:
     t278 = h26_own26;
 #line 79 "examples/assembler/assemble.hero"
     h26_own26 = t48;
-#line 5631 "main.c"
+#line 5637 "main.c"
     h_0opt_2270cbe7_release(&t278);
 #line 79 "examples/assembler/assemble.hero"
-#line 5634 "main.c"
+#line 5640 "main.c"
     h_0opt_2270cbe7_retain(&t48);
 #line 79 "examples/assembler/assemble.hero"
     t515 = h2_m;
-#line 5638 "main.c"
+#line 5644 "main.c"
     hero_str_decref(t515);
 #line 79 "examples/assembler/assemble.hero"
     t516 = h3_f0;
-#line 5642 "main.c"
+#line 5648 "main.c"
     h_0opt_e201354_release(&t516);
 #line 79 "examples/assembler/assemble.hero"
     t517 = h4_f1;
-#line 5646 "main.c"
+#line 5652 "main.c"
     h_0opt_e201354_release(&t517);
 #line 79 "examples/assembler/assemble.hero"
     t518 = h5_f2;
-#line 5650 "main.c"
+#line 5656 "main.c"
     h_0opt_e201354_release(&t518);
 #line 79 "examples/assembler/assemble.hero"
     t519 = h8_f3;
-#line 5654 "main.c"
+#line 5660 "main.c"
     h_0opt_e201354_release(&t519);
 #line 79 "examples/assembler/assemble.hero"
     t520 = h9_f4;
-#line 5658 "main.c"
+#line 5664 "main.c"
     h_0opt_e201354_release(&t520);
 #line 79 "examples/assembler/assemble.hero"
     t521 = h10_f5;
-#line 5662 "main.c"
+#line 5668 "main.c"
     h_0opt_e201354_release(&t521);
 #line 79 "examples/assembler/assemble.hero"
     t522 = h11_f6;
-#line 5666 "main.c"
+#line 5672 "main.c"
     h_0opt_e201354_release(&t522);
 #line 79 "examples/assembler/assemble.hero"
     t523 = h12_f7;
-#line 5670 "main.c"
+#line 5676 "main.c"
     h_0opt_e201354_release(&t523);
 #line 79 "examples/assembler/assemble.hero"
     t524 = h13_f8;
-#line 5674 "main.c"
+#line 5680 "main.c"
     h_0opt_e201354_release(&t524);
 #line 79 "examples/assembler/assemble.hero"
     t525 = h14_f9;
-#line 5678 "main.c"
+#line 5684 "main.c"
     h_0opt_e201354_release(&t525);
 #line 79 "examples/assembler/assemble.hero"
     t526 = h15_f10;
-#line 5682 "main.c"
+#line 5688 "main.c"
     h_0opt_e201354_release(&t526);
 #line 79 "examples/assembler/assemble.hero"
     t527 = h16_f11;
-#line 5686 "main.c"
+#line 5692 "main.c"
     h_0opt_e201354_release(&t527);
 #line 79 "examples/assembler/assemble.hero"
     t528 = h17_f12;
-#line 5690 "main.c"
+#line 5696 "main.c"
     h_0opt_e201354_release(&t528);
 #line 79 "examples/assembler/assemble.hero"
     t529 = h18_f13;
-#line 5694 "main.c"
+#line 5700 "main.c"
     h_0opt_e201354_release(&t529);
 #line 79 "examples/assembler/assemble.hero"
     t530 = h19_own19;
-#line 5698 "main.c"
+#line 5704 "main.c"
     h_0opt_e201354_release(&t530);
 #line 79 "examples/assembler/assemble.hero"
     t531 = h20_own20;
-#line 5702 "main.c"
+#line 5708 "main.c"
     h_0opt_e201354_release(&t531);
 #line 79 "examples/assembler/assemble.hero"
     t532 = h21_own21;
-#line 5706 "main.c"
+#line 5712 "main.c"
     h_0opt_2270cbe7_release(&t532);
 #line 79 "examples/assembler/assemble.hero"
     t533 = h22_own22;
-#line 5710 "main.c"
+#line 5716 "main.c"
     h_0opt_e201354_release(&t533);
 #line 79 "examples/assembler/assemble.hero"
     t534 = h23_own23;
-#line 5714 "main.c"
+#line 5720 "main.c"
     h_0opt_2270cbe7_release(&t534);
 #line 79 "examples/assembler/assemble.hero"
     t535 = h24_own24;
-#line 5718 "main.c"
+#line 5724 "main.c"
     hero_array_decref(t535);
 #line 79 "examples/assembler/assemble.hero"
     t536 = h25_own25;
-#line 5722 "main.c"
+#line 5728 "main.c"
     h_0opt_2270cbe7_release(&t536);
 #line 79 "examples/assembler/assemble.hero"
     t537 = h26_own26;
-#line 5726 "main.c"
+#line 5732 "main.c"
     h_0opt_2270cbe7_release(&t537);
 #line 79 "examples/assembler/assemble.hero"
     t538 = h27_own27;
-#line 5730 "main.c"
+#line 5736 "main.c"
     h_0opt_e201354_release(&t538);
 #line 79 "examples/assembler/assemble.hero"
     t539 = h28_own28;
-#line 5734 "main.c"
+#line 5740 "main.c"
     h_0opt_e201354_release(&t539);
 #line 79 "examples/assembler/assemble.hero"
     t540 = h29_own29;
-#line 5738 "main.c"
+#line 5744 "main.c"
     h_0opt_2270cbe7_release(&t540);
 #line 79 "examples/assembler/assemble.hero"
     t541 = h30_own30;
-#line 5742 "main.c"
+#line 5748 "main.c"
     h_0opt_e201354_release(&t541);
 #line 79 "examples/assembler/assemble.hero"
     t542 = h31_own31;
-#line 5746 "main.c"
+#line 5752 "main.c"
     h_0opt_2270cbe7_release(&t542);
 #line 79 "examples/assembler/assemble.hero"
     t543 = h32_own32;
-#line 5750 "main.c"
+#line 5756 "main.c"
     hero_array_decref(t543);
 #line 79 "examples/assembler/assemble.hero"
     t544 = h33_own33;
-#line 5754 "main.c"
+#line 5760 "main.c"
     h_0opt_2270cbe7_release(&t544);
 #line 79 "examples/assembler/assemble.hero"
     t545 = h34_own34;
-#line 5758 "main.c"
+#line 5764 "main.c"
     h_0opt_2270cbe7_release(&t545);
 #line 79 "examples/assembler/assemble.hero"
     t546 = h35_own35;
-#line 5762 "main.c"
+#line 5768 "main.c"
     h_0opt_e201354_release(&t546);
 #line 79 "examples/assembler/assemble.hero"
     t547 = h36_own36;
-#line 5766 "main.c"
+#line 5772 "main.c"
     h_0opt_e201354_release(&t547);
 #line 79 "examples/assembler/assemble.hero"
     t548 = h37_own37;
-#line 5770 "main.c"
+#line 5776 "main.c"
     h_0opt_2270cbe7_release(&t548);
 #line 79 "examples/assembler/assemble.hero"
     t549 = h38_own38;
-#line 5774 "main.c"
+#line 5780 "main.c"
     hero_array_decref(t549);
 #line 79 "examples/assembler/assemble.hero"
     t550 = h39_own39;
-#line 5778 "main.c"
+#line 5784 "main.c"
     h_0opt_2270cbe7_release(&t550);
 #line 79 "examples/assembler/assemble.hero"
     t551 = h40_own40;
-#line 5782 "main.c"
+#line 5788 "main.c"
     h_0opt_2270cbe7_release(&t551);
 #line 79 "examples/assembler/assemble.hero"
     t552 = h41_own41;
-#line 5786 "main.c"
+#line 5792 "main.c"
     h_0opt_e201354_release(&t552);
 #line 79 "examples/assembler/assemble.hero"
     t553 = h42_own42;
-#line 5790 "main.c"
+#line 5796 "main.c"
     h_0opt_e201354_release(&t553);
 #line 79 "examples/assembler/assemble.hero"
     t554 = h43_own43;
-#line 5794 "main.c"
+#line 5800 "main.c"
     h_0opt_2270cbe7_release(&t554);
 #line 79 "examples/assembler/assemble.hero"
     t555 = h44_own44;
-#line 5798 "main.c"
+#line 5804 "main.c"
     h_0opt_e201354_release(&t555);
 #line 79 "examples/assembler/assemble.hero"
     t556 = h45_own45;
-#line 5802 "main.c"
+#line 5808 "main.c"
     h_0opt_2270cbe7_release(&t556);
 #line 79 "examples/assembler/assemble.hero"
     t557 = h46_own46;
-#line 5806 "main.c"
+#line 5812 "main.c"
     hero_array_decref(t557);
 #line 79 "examples/assembler/assemble.hero"
     t558 = h47_own47;
-#line 5810 "main.c"
+#line 5816 "main.c"
     h_0opt_2270cbe7_release(&t558);
 #line 79 "examples/assembler/assemble.hero"
     t559 = h48_own48;
-#line 5814 "main.c"
+#line 5820 "main.c"
     h_0opt_2270cbe7_release(&t559);
 #line 79 "examples/assembler/assemble.hero"
     t560 = h49_own49;
-#line 5818 "main.c"
+#line 5824 "main.c"
     h_0opt_e201354_release(&t560);
 #line 79 "examples/assembler/assemble.hero"
     t561 = h50_own50;
-#line 5822 "main.c"
+#line 5828 "main.c"
     h_0opt_e201354_release(&t561);
 #line 79 "examples/assembler/assemble.hero"
     t562 = h51_own51;
-#line 5826 "main.c"
+#line 5832 "main.c"
     h_0opt_2270cbe7_release(&t562);
 #line 79 "examples/assembler/assemble.hero"
     t563 = h52_own52;
-#line 5830 "main.c"
+#line 5836 "main.c"
     hero_array_decref(t563);
 #line 79 "examples/assembler/assemble.hero"
     t564 = h53_own53;
-#line 5834 "main.c"
+#line 5840 "main.c"
     h_0opt_2270cbe7_release(&t564);
 #line 79 "examples/assembler/assemble.hero"
     t565 = h54_own54;
-#line 5838 "main.c"
+#line 5844 "main.c"
     h_0opt_2270cbe7_release(&t565);
 #line 79 "examples/assembler/assemble.hero"
     t566 = h55_own55;
-#line 5842 "main.c"
+#line 5848 "main.c"
     hero_str_decref(t566);
 #line 79 "examples/assembler/assemble.hero"
     t567 = h56_own56;
-#line 5846 "main.c"
+#line 5852 "main.c"
     hero_str_decref(t567);
 #line 79 "examples/assembler/assemble.hero"
     t568 = h57_own57;
-#line 5850 "main.c"
+#line 5856 "main.c"
     hero_str_decref(t568);
 #line 79 "examples/assembler/assemble.hero"
     t569 = h58_own58;
-#line 5854 "main.c"
+#line 5860 "main.c"
     hero_str_decref(t569);
 #line 79 "examples/assembler/assemble.hero"
     t570 = h59_own59;
-#line 5858 "main.c"
+#line 5864 "main.c"
     hero_str_decref(t570);
 #line 79 "examples/assembler/assemble.hero"
     t571 = h60_own60;
-#line 5862 "main.c"
+#line 5868 "main.c"
     hero_str_decref(t571);
 #line 79 "examples/assembler/assemble.hero"
     t572 = h61_own61;
-#line 5866 "main.c"
+#line 5872 "main.c"
     h_0opt_2270cbe7_release(&t572);
 #line 79 "examples/assembler/assemble.hero"
     t573 = h62_own62;
-#line 5870 "main.c"
+#line 5876 "main.c"
     h_0opt_e201354_release(&t573);
 #line 79 "examples/assembler/assemble.hero"
     t574 = h63_own63;
-#line 5874 "main.c"
+#line 5880 "main.c"
     hero_array_decref(t574);
 #line 79 "examples/assembler/assemble.hero"
     t575 = h64_own64;
-#line 5878 "main.c"
+#line 5884 "main.c"
     h_0opt_2270cbe7_release(&t575);
 #line 79 "examples/assembler/assemble.hero"
     t576 = h65_own65;
-#line 5882 "main.c"
+#line 5888 "main.c"
     h_0opt_2270cbe7_release(&t576);
     return t48;
 bb10:
@@ -5940,15 +5946,15 @@ bb15:
     t279 = h27_own27;
 #line 83 "examples/assembler/assemble.hero"
     h27_own27 = t66;
-#line 5944 "main.c"
+#line 5950 "main.c"
     h_0opt_e201354_release(&t279);
 #line 83 "examples/assembler/assemble.hero"
     t280 = h8_f3;
-#line 5948 "main.c"
+#line 5954 "main.c"
     h_0opt_e201354_retain(&t66);
 #line 83 "examples/assembler/assemble.hero"
     h8_f3 = t66;
-#line 5952 "main.c"
+#line 5958 "main.c"
     h_0opt_e201354_release(&t280);
 #line 83 "examples/assembler/assemble.hero"
     t67 = h8_f3;
@@ -5988,15 +5994,15 @@ bb17:
     t281 = h28_own28;
 #line 85 "examples/assembler/assemble.hero"
     h28_own28 = t84;
-#line 5992 "main.c"
+#line 5998 "main.c"
     h_0opt_e201354_release(&t281);
 #line 85 "examples/assembler/assemble.hero"
     t282 = h9_f4;
-#line 5996 "main.c"
+#line 6002 "main.c"
     h_0opt_e201354_retain(&t84);
 #line 85 "examples/assembler/assemble.hero"
     h9_f4 = t84;
-#line 6000 "main.c"
+#line 6006 "main.c"
     h_0opt_e201354_release(&t282);
 #line 85 "examples/assembler/assemble.hero"
     t85 = h9_f4;
@@ -6014,7 +6020,7 @@ bb18:
     t71 = h8_f3;
 #line 83 "examples/assembler/assemble.hero"
     t72 = t71.as.err;
-#line 6018 "main.c"
+#line 6024 "main.c"
     hero_failure_retain(&t72);
 #line 83 "examples/assembler/assemble.hero"
     t73 = (h_0opt_2270cbe7){.tag = INT64_C(1), .as.err = t72};
@@ -6022,258 +6028,258 @@ bb18:
     t283 = h29_own29;
 #line 83 "examples/assembler/assemble.hero"
     h29_own29 = t73;
-#line 6026 "main.c"
+#line 6032 "main.c"
     h_0opt_2270cbe7_release(&t283);
 #line 83 "examples/assembler/assemble.hero"
-#line 6029 "main.c"
+#line 6035 "main.c"
     h_0opt_2270cbe7_retain(&t73);
 #line 83 "examples/assembler/assemble.hero"
     t577 = h2_m;
-#line 6033 "main.c"
+#line 6039 "main.c"
     hero_str_decref(t577);
 #line 83 "examples/assembler/assemble.hero"
     t578 = h3_f0;
-#line 6037 "main.c"
+#line 6043 "main.c"
     h_0opt_e201354_release(&t578);
 #line 83 "examples/assembler/assemble.hero"
     t579 = h4_f1;
-#line 6041 "main.c"
+#line 6047 "main.c"
     h_0opt_e201354_release(&t579);
 #line 83 "examples/assembler/assemble.hero"
     t580 = h5_f2;
-#line 6045 "main.c"
+#line 6051 "main.c"
     h_0opt_e201354_release(&t580);
 #line 83 "examples/assembler/assemble.hero"
     t581 = h8_f3;
-#line 6049 "main.c"
+#line 6055 "main.c"
     h_0opt_e201354_release(&t581);
 #line 83 "examples/assembler/assemble.hero"
     t582 = h9_f4;
-#line 6053 "main.c"
+#line 6059 "main.c"
     h_0opt_e201354_release(&t582);
 #line 83 "examples/assembler/assemble.hero"
     t583 = h10_f5;
-#line 6057 "main.c"
+#line 6063 "main.c"
     h_0opt_e201354_release(&t583);
 #line 83 "examples/assembler/assemble.hero"
     t584 = h11_f6;
-#line 6061 "main.c"
+#line 6067 "main.c"
     h_0opt_e201354_release(&t584);
 #line 83 "examples/assembler/assemble.hero"
     t585 = h12_f7;
-#line 6065 "main.c"
+#line 6071 "main.c"
     h_0opt_e201354_release(&t585);
 #line 83 "examples/assembler/assemble.hero"
     t586 = h13_f8;
-#line 6069 "main.c"
+#line 6075 "main.c"
     h_0opt_e201354_release(&t586);
 #line 83 "examples/assembler/assemble.hero"
     t587 = h14_f9;
-#line 6073 "main.c"
+#line 6079 "main.c"
     h_0opt_e201354_release(&t587);
 #line 83 "examples/assembler/assemble.hero"
     t588 = h15_f10;
-#line 6077 "main.c"
+#line 6083 "main.c"
     h_0opt_e201354_release(&t588);
 #line 83 "examples/assembler/assemble.hero"
     t589 = h16_f11;
-#line 6081 "main.c"
+#line 6087 "main.c"
     h_0opt_e201354_release(&t589);
 #line 83 "examples/assembler/assemble.hero"
     t590 = h17_f12;
-#line 6085 "main.c"
+#line 6091 "main.c"
     h_0opt_e201354_release(&t590);
 #line 83 "examples/assembler/assemble.hero"
     t591 = h18_f13;
-#line 6089 "main.c"
+#line 6095 "main.c"
     h_0opt_e201354_release(&t591);
 #line 83 "examples/assembler/assemble.hero"
     t592 = h19_own19;
-#line 6093 "main.c"
+#line 6099 "main.c"
     h_0opt_e201354_release(&t592);
 #line 83 "examples/assembler/assemble.hero"
     t593 = h20_own20;
-#line 6097 "main.c"
+#line 6103 "main.c"
     h_0opt_e201354_release(&t593);
 #line 83 "examples/assembler/assemble.hero"
     t594 = h21_own21;
-#line 6101 "main.c"
+#line 6107 "main.c"
     h_0opt_2270cbe7_release(&t594);
 #line 83 "examples/assembler/assemble.hero"
     t595 = h22_own22;
-#line 6105 "main.c"
+#line 6111 "main.c"
     h_0opt_e201354_release(&t595);
 #line 83 "examples/assembler/assemble.hero"
     t596 = h23_own23;
-#line 6109 "main.c"
+#line 6115 "main.c"
     h_0opt_2270cbe7_release(&t596);
 #line 83 "examples/assembler/assemble.hero"
     t597 = h24_own24;
-#line 6113 "main.c"
+#line 6119 "main.c"
     hero_array_decref(t597);
 #line 83 "examples/assembler/assemble.hero"
     t598 = h25_own25;
-#line 6117 "main.c"
+#line 6123 "main.c"
     h_0opt_2270cbe7_release(&t598);
 #line 83 "examples/assembler/assemble.hero"
     t599 = h26_own26;
-#line 6121 "main.c"
+#line 6127 "main.c"
     h_0opt_2270cbe7_release(&t599);
 #line 83 "examples/assembler/assemble.hero"
     t600 = h27_own27;
-#line 6125 "main.c"
+#line 6131 "main.c"
     h_0opt_e201354_release(&t600);
 #line 83 "examples/assembler/assemble.hero"
     t601 = h28_own28;
-#line 6129 "main.c"
+#line 6135 "main.c"
     h_0opt_e201354_release(&t601);
 #line 83 "examples/assembler/assemble.hero"
     t602 = h29_own29;
-#line 6133 "main.c"
+#line 6139 "main.c"
     h_0opt_2270cbe7_release(&t602);
 #line 83 "examples/assembler/assemble.hero"
     t603 = h30_own30;
-#line 6137 "main.c"
+#line 6143 "main.c"
     h_0opt_e201354_release(&t603);
 #line 83 "examples/assembler/assemble.hero"
     t604 = h31_own31;
-#line 6141 "main.c"
+#line 6147 "main.c"
     h_0opt_2270cbe7_release(&t604);
 #line 83 "examples/assembler/assemble.hero"
     t605 = h32_own32;
-#line 6145 "main.c"
+#line 6151 "main.c"
     hero_array_decref(t605);
 #line 83 "examples/assembler/assemble.hero"
     t606 = h33_own33;
-#line 6149 "main.c"
+#line 6155 "main.c"
     h_0opt_2270cbe7_release(&t606);
 #line 83 "examples/assembler/assemble.hero"
     t607 = h34_own34;
-#line 6153 "main.c"
+#line 6159 "main.c"
     h_0opt_2270cbe7_release(&t607);
 #line 83 "examples/assembler/assemble.hero"
     t608 = h35_own35;
-#line 6157 "main.c"
+#line 6163 "main.c"
     h_0opt_e201354_release(&t608);
 #line 83 "examples/assembler/assemble.hero"
     t609 = h36_own36;
-#line 6161 "main.c"
+#line 6167 "main.c"
     h_0opt_e201354_release(&t609);
 #line 83 "examples/assembler/assemble.hero"
     t610 = h37_own37;
-#line 6165 "main.c"
+#line 6171 "main.c"
     h_0opt_2270cbe7_release(&t610);
 #line 83 "examples/assembler/assemble.hero"
     t611 = h38_own38;
-#line 6169 "main.c"
+#line 6175 "main.c"
     hero_array_decref(t611);
 #line 83 "examples/assembler/assemble.hero"
     t612 = h39_own39;
-#line 6173 "main.c"
+#line 6179 "main.c"
     h_0opt_2270cbe7_release(&t612);
 #line 83 "examples/assembler/assemble.hero"
     t613 = h40_own40;
-#line 6177 "main.c"
+#line 6183 "main.c"
     h_0opt_2270cbe7_release(&t613);
 #line 83 "examples/assembler/assemble.hero"
     t614 = h41_own41;
-#line 6181 "main.c"
+#line 6187 "main.c"
     h_0opt_e201354_release(&t614);
 #line 83 "examples/assembler/assemble.hero"
     t615 = h42_own42;
-#line 6185 "main.c"
+#line 6191 "main.c"
     h_0opt_e201354_release(&t615);
 #line 83 "examples/assembler/assemble.hero"
     t616 = h43_own43;
-#line 6189 "main.c"
+#line 6195 "main.c"
     h_0opt_2270cbe7_release(&t616);
 #line 83 "examples/assembler/assemble.hero"
     t617 = h44_own44;
-#line 6193 "main.c"
+#line 6199 "main.c"
     h_0opt_e201354_release(&t617);
 #line 83 "examples/assembler/assemble.hero"
     t618 = h45_own45;
-#line 6197 "main.c"
+#line 6203 "main.c"
     h_0opt_2270cbe7_release(&t618);
 #line 83 "examples/assembler/assemble.hero"
     t619 = h46_own46;
-#line 6201 "main.c"
+#line 6207 "main.c"
     hero_array_decref(t619);
 #line 83 "examples/assembler/assemble.hero"
     t620 = h47_own47;
-#line 6205 "main.c"
+#line 6211 "main.c"
     h_0opt_2270cbe7_release(&t620);
 #line 83 "examples/assembler/assemble.hero"
     t621 = h48_own48;
-#line 6209 "main.c"
+#line 6215 "main.c"
     h_0opt_2270cbe7_release(&t621);
 #line 83 "examples/assembler/assemble.hero"
     t622 = h49_own49;
-#line 6213 "main.c"
+#line 6219 "main.c"
     h_0opt_e201354_release(&t622);
 #line 83 "examples/assembler/assemble.hero"
     t623 = h50_own50;
-#line 6217 "main.c"
+#line 6223 "main.c"
     h_0opt_e201354_release(&t623);
 #line 83 "examples/assembler/assemble.hero"
     t624 = h51_own51;
-#line 6221 "main.c"
+#line 6227 "main.c"
     h_0opt_2270cbe7_release(&t624);
 #line 83 "examples/assembler/assemble.hero"
     t625 = h52_own52;
-#line 6225 "main.c"
+#line 6231 "main.c"
     hero_array_decref(t625);
 #line 83 "examples/assembler/assemble.hero"
     t626 = h53_own53;
-#line 6229 "main.c"
+#line 6235 "main.c"
     h_0opt_2270cbe7_release(&t626);
 #line 83 "examples/assembler/assemble.hero"
     t627 = h54_own54;
-#line 6233 "main.c"
+#line 6239 "main.c"
     h_0opt_2270cbe7_release(&t627);
 #line 83 "examples/assembler/assemble.hero"
     t628 = h55_own55;
-#line 6237 "main.c"
+#line 6243 "main.c"
     hero_str_decref(t628);
 #line 83 "examples/assembler/assemble.hero"
     t629 = h56_own56;
-#line 6241 "main.c"
+#line 6247 "main.c"
     hero_str_decref(t629);
 #line 83 "examples/assembler/assemble.hero"
     t630 = h57_own57;
-#line 6245 "main.c"
+#line 6251 "main.c"
     hero_str_decref(t630);
 #line 83 "examples/assembler/assemble.hero"
     t631 = h58_own58;
-#line 6249 "main.c"
+#line 6255 "main.c"
     hero_str_decref(t631);
 #line 83 "examples/assembler/assemble.hero"
     t632 = h59_own59;
-#line 6253 "main.c"
+#line 6259 "main.c"
     hero_str_decref(t632);
 #line 83 "examples/assembler/assemble.hero"
     t633 = h60_own60;
-#line 6257 "main.c"
+#line 6263 "main.c"
     hero_str_decref(t633);
 #line 83 "examples/assembler/assemble.hero"
     t634 = h61_own61;
-#line 6261 "main.c"
+#line 6267 "main.c"
     h_0opt_2270cbe7_release(&t634);
 #line 83 "examples/assembler/assemble.hero"
     t635 = h62_own62;
-#line 6265 "main.c"
+#line 6271 "main.c"
     h_0opt_e201354_release(&t635);
 #line 83 "examples/assembler/assemble.hero"
     t636 = h63_own63;
-#line 6269 "main.c"
+#line 6275 "main.c"
     hero_array_decref(t636);
 #line 83 "examples/assembler/assemble.hero"
     t637 = h64_own64;
-#line 6273 "main.c"
+#line 6279 "main.c"
     h_0opt_2270cbe7_release(&t637);
 #line 83 "examples/assembler/assemble.hero"
     t638 = h65_own65;
-#line 6277 "main.c"
+#line 6283 "main.c"
     h_0opt_2270cbe7_release(&t638);
     return t73;
 bb19:
@@ -6299,15 +6305,15 @@ bb19:
     t284 = h30_own30;
 #line 85 "examples/assembler/assemble.hero"
     h30_own30 = t100;
-#line 6303 "main.c"
+#line 6309 "main.c"
     h_0opt_e201354_release(&t284);
 #line 85 "examples/assembler/assemble.hero"
     t285 = h10_f5;
-#line 6307 "main.c"
+#line 6313 "main.c"
     h_0opt_e201354_retain(&t100);
 #line 85 "examples/assembler/assemble.hero"
     h10_f5 = t100;
-#line 6311 "main.c"
+#line 6317 "main.c"
     h_0opt_e201354_release(&t285);
 #line 85 "examples/assembler/assemble.hero"
     t101 = h10_f5;
@@ -6325,7 +6331,7 @@ bb20:
     t89 = h9_f4;
 #line 85 "examples/assembler/assemble.hero"
     t90 = t89.as.err;
-#line 6329 "main.c"
+#line 6335 "main.c"
     hero_failure_retain(&t90);
 #line 85 "examples/assembler/assemble.hero"
     t91 = (h_0opt_2270cbe7){.tag = INT64_C(1), .as.err = t90};
@@ -6333,258 +6339,258 @@ bb20:
     t286 = h31_own31;
 #line 85 "examples/assembler/assemble.hero"
     h31_own31 = t91;
-#line 6337 "main.c"
+#line 6343 "main.c"
     h_0opt_2270cbe7_release(&t286);
 #line 85 "examples/assembler/assemble.hero"
-#line 6340 "main.c"
+#line 6346 "main.c"
     h_0opt_2270cbe7_retain(&t91);
 #line 85 "examples/assembler/assemble.hero"
     t639 = h2_m;
-#line 6344 "main.c"
+#line 6350 "main.c"
     hero_str_decref(t639);
 #line 85 "examples/assembler/assemble.hero"
     t640 = h3_f0;
-#line 6348 "main.c"
+#line 6354 "main.c"
     h_0opt_e201354_release(&t640);
 #line 85 "examples/assembler/assemble.hero"
     t641 = h4_f1;
-#line 6352 "main.c"
+#line 6358 "main.c"
     h_0opt_e201354_release(&t641);
 #line 85 "examples/assembler/assemble.hero"
     t642 = h5_f2;
-#line 6356 "main.c"
+#line 6362 "main.c"
     h_0opt_e201354_release(&t642);
 #line 85 "examples/assembler/assemble.hero"
     t643 = h8_f3;
-#line 6360 "main.c"
+#line 6366 "main.c"
     h_0opt_e201354_release(&t643);
 #line 85 "examples/assembler/assemble.hero"
     t644 = h9_f4;
-#line 6364 "main.c"
+#line 6370 "main.c"
     h_0opt_e201354_release(&t644);
 #line 85 "examples/assembler/assemble.hero"
     t645 = h10_f5;
-#line 6368 "main.c"
+#line 6374 "main.c"
     h_0opt_e201354_release(&t645);
 #line 85 "examples/assembler/assemble.hero"
     t646 = h11_f6;
-#line 6372 "main.c"
+#line 6378 "main.c"
     h_0opt_e201354_release(&t646);
 #line 85 "examples/assembler/assemble.hero"
     t647 = h12_f7;
-#line 6376 "main.c"
+#line 6382 "main.c"
     h_0opt_e201354_release(&t647);
 #line 85 "examples/assembler/assemble.hero"
     t648 = h13_f8;
-#line 6380 "main.c"
+#line 6386 "main.c"
     h_0opt_e201354_release(&t648);
 #line 85 "examples/assembler/assemble.hero"
     t649 = h14_f9;
-#line 6384 "main.c"
+#line 6390 "main.c"
     h_0opt_e201354_release(&t649);
 #line 85 "examples/assembler/assemble.hero"
     t650 = h15_f10;
-#line 6388 "main.c"
+#line 6394 "main.c"
     h_0opt_e201354_release(&t650);
 #line 85 "examples/assembler/assemble.hero"
     t651 = h16_f11;
-#line 6392 "main.c"
+#line 6398 "main.c"
     h_0opt_e201354_release(&t651);
 #line 85 "examples/assembler/assemble.hero"
     t652 = h17_f12;
-#line 6396 "main.c"
+#line 6402 "main.c"
     h_0opt_e201354_release(&t652);
 #line 85 "examples/assembler/assemble.hero"
     t653 = h18_f13;
-#line 6400 "main.c"
+#line 6406 "main.c"
     h_0opt_e201354_release(&t653);
 #line 85 "examples/assembler/assemble.hero"
     t654 = h19_own19;
-#line 6404 "main.c"
+#line 6410 "main.c"
     h_0opt_e201354_release(&t654);
 #line 85 "examples/assembler/assemble.hero"
     t655 = h20_own20;
-#line 6408 "main.c"
+#line 6414 "main.c"
     h_0opt_e201354_release(&t655);
 #line 85 "examples/assembler/assemble.hero"
     t656 = h21_own21;
-#line 6412 "main.c"
+#line 6418 "main.c"
     h_0opt_2270cbe7_release(&t656);
 #line 85 "examples/assembler/assemble.hero"
     t657 = h22_own22;
-#line 6416 "main.c"
+#line 6422 "main.c"
     h_0opt_e201354_release(&t657);
 #line 85 "examples/assembler/assemble.hero"
     t658 = h23_own23;
-#line 6420 "main.c"
+#line 6426 "main.c"
     h_0opt_2270cbe7_release(&t658);
 #line 85 "examples/assembler/assemble.hero"
     t659 = h24_own24;
-#line 6424 "main.c"
+#line 6430 "main.c"
     hero_array_decref(t659);
 #line 85 "examples/assembler/assemble.hero"
     t660 = h25_own25;
-#line 6428 "main.c"
+#line 6434 "main.c"
     h_0opt_2270cbe7_release(&t660);
 #line 85 "examples/assembler/assemble.hero"
     t661 = h26_own26;
-#line 6432 "main.c"
+#line 6438 "main.c"
     h_0opt_2270cbe7_release(&t661);
 #line 85 "examples/assembler/assemble.hero"
     t662 = h27_own27;
-#line 6436 "main.c"
+#line 6442 "main.c"
     h_0opt_e201354_release(&t662);
 #line 85 "examples/assembler/assemble.hero"
     t663 = h28_own28;
-#line 6440 "main.c"
+#line 6446 "main.c"
     h_0opt_e201354_release(&t663);
 #line 85 "examples/assembler/assemble.hero"
     t664 = h29_own29;
-#line 6444 "main.c"
+#line 6450 "main.c"
     h_0opt_2270cbe7_release(&t664);
 #line 85 "examples/assembler/assemble.hero"
     t665 = h30_own30;
-#line 6448 "main.c"
+#line 6454 "main.c"
     h_0opt_e201354_release(&t665);
 #line 85 "examples/assembler/assemble.hero"
     t666 = h31_own31;
-#line 6452 "main.c"
+#line 6458 "main.c"
     h_0opt_2270cbe7_release(&t666);
 #line 85 "examples/assembler/assemble.hero"
     t667 = h32_own32;
-#line 6456 "main.c"
+#line 6462 "main.c"
     hero_array_decref(t667);
 #line 85 "examples/assembler/assemble.hero"
     t668 = h33_own33;
-#line 6460 "main.c"
+#line 6466 "main.c"
     h_0opt_2270cbe7_release(&t668);
 #line 85 "examples/assembler/assemble.hero"
     t669 = h34_own34;
-#line 6464 "main.c"
+#line 6470 "main.c"
     h_0opt_2270cbe7_release(&t669);
 #line 85 "examples/assembler/assemble.hero"
     t670 = h35_own35;
-#line 6468 "main.c"
+#line 6474 "main.c"
     h_0opt_e201354_release(&t670);
 #line 85 "examples/assembler/assemble.hero"
     t671 = h36_own36;
-#line 6472 "main.c"
+#line 6478 "main.c"
     h_0opt_e201354_release(&t671);
 #line 85 "examples/assembler/assemble.hero"
     t672 = h37_own37;
-#line 6476 "main.c"
+#line 6482 "main.c"
     h_0opt_2270cbe7_release(&t672);
 #line 85 "examples/assembler/assemble.hero"
     t673 = h38_own38;
-#line 6480 "main.c"
+#line 6486 "main.c"
     hero_array_decref(t673);
 #line 85 "examples/assembler/assemble.hero"
     t674 = h39_own39;
-#line 6484 "main.c"
+#line 6490 "main.c"
     h_0opt_2270cbe7_release(&t674);
 #line 85 "examples/assembler/assemble.hero"
     t675 = h40_own40;
-#line 6488 "main.c"
+#line 6494 "main.c"
     h_0opt_2270cbe7_release(&t675);
 #line 85 "examples/assembler/assemble.hero"
     t676 = h41_own41;
-#line 6492 "main.c"
+#line 6498 "main.c"
     h_0opt_e201354_release(&t676);
 #line 85 "examples/assembler/assemble.hero"
     t677 = h42_own42;
-#line 6496 "main.c"
+#line 6502 "main.c"
     h_0opt_e201354_release(&t677);
 #line 85 "examples/assembler/assemble.hero"
     t678 = h43_own43;
-#line 6500 "main.c"
+#line 6506 "main.c"
     h_0opt_2270cbe7_release(&t678);
 #line 85 "examples/assembler/assemble.hero"
     t679 = h44_own44;
-#line 6504 "main.c"
+#line 6510 "main.c"
     h_0opt_e201354_release(&t679);
 #line 85 "examples/assembler/assemble.hero"
     t680 = h45_own45;
-#line 6508 "main.c"
+#line 6514 "main.c"
     h_0opt_2270cbe7_release(&t680);
 #line 85 "examples/assembler/assemble.hero"
     t681 = h46_own46;
-#line 6512 "main.c"
+#line 6518 "main.c"
     hero_array_decref(t681);
 #line 85 "examples/assembler/assemble.hero"
     t682 = h47_own47;
-#line 6516 "main.c"
+#line 6522 "main.c"
     h_0opt_2270cbe7_release(&t682);
 #line 85 "examples/assembler/assemble.hero"
     t683 = h48_own48;
-#line 6520 "main.c"
+#line 6526 "main.c"
     h_0opt_2270cbe7_release(&t683);
 #line 85 "examples/assembler/assemble.hero"
     t684 = h49_own49;
-#line 6524 "main.c"
+#line 6530 "main.c"
     h_0opt_e201354_release(&t684);
 #line 85 "examples/assembler/assemble.hero"
     t685 = h50_own50;
-#line 6528 "main.c"
+#line 6534 "main.c"
     h_0opt_e201354_release(&t685);
 #line 85 "examples/assembler/assemble.hero"
     t686 = h51_own51;
-#line 6532 "main.c"
+#line 6538 "main.c"
     h_0opt_2270cbe7_release(&t686);
 #line 85 "examples/assembler/assemble.hero"
     t687 = h52_own52;
-#line 6536 "main.c"
+#line 6542 "main.c"
     hero_array_decref(t687);
 #line 85 "examples/assembler/assemble.hero"
     t688 = h53_own53;
-#line 6540 "main.c"
+#line 6546 "main.c"
     h_0opt_2270cbe7_release(&t688);
 #line 85 "examples/assembler/assemble.hero"
     t689 = h54_own54;
-#line 6544 "main.c"
+#line 6550 "main.c"
     h_0opt_2270cbe7_release(&t689);
 #line 85 "examples/assembler/assemble.hero"
     t690 = h55_own55;
-#line 6548 "main.c"
+#line 6554 "main.c"
     hero_str_decref(t690);
 #line 85 "examples/assembler/assemble.hero"
     t691 = h56_own56;
-#line 6552 "main.c"
+#line 6558 "main.c"
     hero_str_decref(t691);
 #line 85 "examples/assembler/assemble.hero"
     t692 = h57_own57;
-#line 6556 "main.c"
+#line 6562 "main.c"
     hero_str_decref(t692);
 #line 85 "examples/assembler/assemble.hero"
     t693 = h58_own58;
-#line 6560 "main.c"
+#line 6566 "main.c"
     hero_str_decref(t693);
 #line 85 "examples/assembler/assemble.hero"
     t694 = h59_own59;
-#line 6564 "main.c"
+#line 6570 "main.c"
     hero_str_decref(t694);
 #line 85 "examples/assembler/assemble.hero"
     t695 = h60_own60;
-#line 6568 "main.c"
+#line 6574 "main.c"
     hero_str_decref(t695);
 #line 85 "examples/assembler/assemble.hero"
     t696 = h61_own61;
-#line 6572 "main.c"
+#line 6578 "main.c"
     h_0opt_2270cbe7_release(&t696);
 #line 85 "examples/assembler/assemble.hero"
     t697 = h62_own62;
-#line 6576 "main.c"
+#line 6582 "main.c"
     h_0opt_e201354_release(&t697);
 #line 85 "examples/assembler/assemble.hero"
     t698 = h63_own63;
-#line 6580 "main.c"
+#line 6586 "main.c"
     hero_array_decref(t698);
 #line 85 "examples/assembler/assemble.hero"
     t699 = h64_own64;
-#line 6584 "main.c"
+#line 6590 "main.c"
     h_0opt_2270cbe7_release(&t699);
 #line 85 "examples/assembler/assemble.hero"
     t700 = h65_own65;
-#line 6588 "main.c"
+#line 6594 "main.c"
     h_0opt_2270cbe7_release(&t700);
     return t91;
 bb21:
@@ -6610,10 +6616,10 @@ bb21:
     t287 = h32_own32;
 #line 85 "examples/assembler/assemble.hero"
     h32_own32 = t110;
-#line 6614 "main.c"
+#line 6620 "main.c"
     hero_array_decref(t287);
 #line 84 "examples/assembler/assemble.hero"
-#line 6617 "main.c"
+#line 6623 "main.c"
     hero_array_incref(t110);
 #line 84 "examples/assembler/assemble.hero"
     t111 = (h_0opt_2270cbe7){.tag = INT64_C(0), .as.ok = t110};
@@ -6621,258 +6627,258 @@ bb21:
     t288 = h33_own33;
 #line 84 "examples/assembler/assemble.hero"
     h33_own33 = t111;
-#line 6625 "main.c"
+#line 6631 "main.c"
     h_0opt_2270cbe7_release(&t288);
 #line 84 "examples/assembler/assemble.hero"
-#line 6628 "main.c"
+#line 6634 "main.c"
     h_0opt_2270cbe7_retain(&t111);
 #line 84 "examples/assembler/assemble.hero"
     t701 = h2_m;
-#line 6632 "main.c"
+#line 6638 "main.c"
     hero_str_decref(t701);
 #line 84 "examples/assembler/assemble.hero"
     t702 = h3_f0;
-#line 6636 "main.c"
+#line 6642 "main.c"
     h_0opt_e201354_release(&t702);
 #line 84 "examples/assembler/assemble.hero"
     t703 = h4_f1;
-#line 6640 "main.c"
+#line 6646 "main.c"
     h_0opt_e201354_release(&t703);
 #line 84 "examples/assembler/assemble.hero"
     t704 = h5_f2;
-#line 6644 "main.c"
+#line 6650 "main.c"
     h_0opt_e201354_release(&t704);
 #line 84 "examples/assembler/assemble.hero"
     t705 = h8_f3;
-#line 6648 "main.c"
+#line 6654 "main.c"
     h_0opt_e201354_release(&t705);
 #line 84 "examples/assembler/assemble.hero"
     t706 = h9_f4;
-#line 6652 "main.c"
+#line 6658 "main.c"
     h_0opt_e201354_release(&t706);
 #line 84 "examples/assembler/assemble.hero"
     t707 = h10_f5;
-#line 6656 "main.c"
+#line 6662 "main.c"
     h_0opt_e201354_release(&t707);
 #line 84 "examples/assembler/assemble.hero"
     t708 = h11_f6;
-#line 6660 "main.c"
+#line 6666 "main.c"
     h_0opt_e201354_release(&t708);
 #line 84 "examples/assembler/assemble.hero"
     t709 = h12_f7;
-#line 6664 "main.c"
+#line 6670 "main.c"
     h_0opt_e201354_release(&t709);
 #line 84 "examples/assembler/assemble.hero"
     t710 = h13_f8;
-#line 6668 "main.c"
+#line 6674 "main.c"
     h_0opt_e201354_release(&t710);
 #line 84 "examples/assembler/assemble.hero"
     t711 = h14_f9;
-#line 6672 "main.c"
+#line 6678 "main.c"
     h_0opt_e201354_release(&t711);
 #line 84 "examples/assembler/assemble.hero"
     t712 = h15_f10;
-#line 6676 "main.c"
+#line 6682 "main.c"
     h_0opt_e201354_release(&t712);
 #line 84 "examples/assembler/assemble.hero"
     t713 = h16_f11;
-#line 6680 "main.c"
+#line 6686 "main.c"
     h_0opt_e201354_release(&t713);
 #line 84 "examples/assembler/assemble.hero"
     t714 = h17_f12;
-#line 6684 "main.c"
+#line 6690 "main.c"
     h_0opt_e201354_release(&t714);
 #line 84 "examples/assembler/assemble.hero"
     t715 = h18_f13;
-#line 6688 "main.c"
+#line 6694 "main.c"
     h_0opt_e201354_release(&t715);
 #line 84 "examples/assembler/assemble.hero"
     t716 = h19_own19;
-#line 6692 "main.c"
+#line 6698 "main.c"
     h_0opt_e201354_release(&t716);
 #line 84 "examples/assembler/assemble.hero"
     t717 = h20_own20;
-#line 6696 "main.c"
+#line 6702 "main.c"
     h_0opt_e201354_release(&t717);
 #line 84 "examples/assembler/assemble.hero"
     t718 = h21_own21;
-#line 6700 "main.c"
+#line 6706 "main.c"
     h_0opt_2270cbe7_release(&t718);
 #line 84 "examples/assembler/assemble.hero"
     t719 = h22_own22;
-#line 6704 "main.c"
+#line 6710 "main.c"
     h_0opt_e201354_release(&t719);
 #line 84 "examples/assembler/assemble.hero"
     t720 = h23_own23;
-#line 6708 "main.c"
+#line 6714 "main.c"
     h_0opt_2270cbe7_release(&t720);
 #line 84 "examples/assembler/assemble.hero"
     t721 = h24_own24;
-#line 6712 "main.c"
+#line 6718 "main.c"
     hero_array_decref(t721);
 #line 84 "examples/assembler/assemble.hero"
     t722 = h25_own25;
-#line 6716 "main.c"
+#line 6722 "main.c"
     h_0opt_2270cbe7_release(&t722);
 #line 84 "examples/assembler/assemble.hero"
     t723 = h26_own26;
-#line 6720 "main.c"
+#line 6726 "main.c"
     h_0opt_2270cbe7_release(&t723);
 #line 84 "examples/assembler/assemble.hero"
     t724 = h27_own27;
-#line 6724 "main.c"
+#line 6730 "main.c"
     h_0opt_e201354_release(&t724);
 #line 84 "examples/assembler/assemble.hero"
     t725 = h28_own28;
-#line 6728 "main.c"
+#line 6734 "main.c"
     h_0opt_e201354_release(&t725);
 #line 84 "examples/assembler/assemble.hero"
     t726 = h29_own29;
-#line 6732 "main.c"
+#line 6738 "main.c"
     h_0opt_2270cbe7_release(&t726);
 #line 84 "examples/assembler/assemble.hero"
     t727 = h30_own30;
-#line 6736 "main.c"
+#line 6742 "main.c"
     h_0opt_e201354_release(&t727);
 #line 84 "examples/assembler/assemble.hero"
     t728 = h31_own31;
-#line 6740 "main.c"
+#line 6746 "main.c"
     h_0opt_2270cbe7_release(&t728);
 #line 84 "examples/assembler/assemble.hero"
     t729 = h32_own32;
-#line 6744 "main.c"
+#line 6750 "main.c"
     hero_array_decref(t729);
 #line 84 "examples/assembler/assemble.hero"
     t730 = h33_own33;
-#line 6748 "main.c"
+#line 6754 "main.c"
     h_0opt_2270cbe7_release(&t730);
 #line 84 "examples/assembler/assemble.hero"
     t731 = h34_own34;
-#line 6752 "main.c"
+#line 6758 "main.c"
     h_0opt_2270cbe7_release(&t731);
 #line 84 "examples/assembler/assemble.hero"
     t732 = h35_own35;
-#line 6756 "main.c"
+#line 6762 "main.c"
     h_0opt_e201354_release(&t732);
 #line 84 "examples/assembler/assemble.hero"
     t733 = h36_own36;
-#line 6760 "main.c"
+#line 6766 "main.c"
     h_0opt_e201354_release(&t733);
 #line 84 "examples/assembler/assemble.hero"
     t734 = h37_own37;
-#line 6764 "main.c"
+#line 6770 "main.c"
     h_0opt_2270cbe7_release(&t734);
 #line 84 "examples/assembler/assemble.hero"
     t735 = h38_own38;
-#line 6768 "main.c"
+#line 6774 "main.c"
     hero_array_decref(t735);
 #line 84 "examples/assembler/assemble.hero"
     t736 = h39_own39;
-#line 6772 "main.c"
+#line 6778 "main.c"
     h_0opt_2270cbe7_release(&t736);
 #line 84 "examples/assembler/assemble.hero"
     t737 = h40_own40;
-#line 6776 "main.c"
+#line 6782 "main.c"
     h_0opt_2270cbe7_release(&t737);
 #line 84 "examples/assembler/assemble.hero"
     t738 = h41_own41;
-#line 6780 "main.c"
+#line 6786 "main.c"
     h_0opt_e201354_release(&t738);
 #line 84 "examples/assembler/assemble.hero"
     t739 = h42_own42;
-#line 6784 "main.c"
+#line 6790 "main.c"
     h_0opt_e201354_release(&t739);
 #line 84 "examples/assembler/assemble.hero"
     t740 = h43_own43;
-#line 6788 "main.c"
+#line 6794 "main.c"
     h_0opt_2270cbe7_release(&t740);
 #line 84 "examples/assembler/assemble.hero"
     t741 = h44_own44;
-#line 6792 "main.c"
+#line 6798 "main.c"
     h_0opt_e201354_release(&t741);
 #line 84 "examples/assembler/assemble.hero"
     t742 = h45_own45;
-#line 6796 "main.c"
+#line 6802 "main.c"
     h_0opt_2270cbe7_release(&t742);
 #line 84 "examples/assembler/assemble.hero"
     t743 = h46_own46;
-#line 6800 "main.c"
+#line 6806 "main.c"
     hero_array_decref(t743);
 #line 84 "examples/assembler/assemble.hero"
     t744 = h47_own47;
-#line 6804 "main.c"
+#line 6810 "main.c"
     h_0opt_2270cbe7_release(&t744);
 #line 84 "examples/assembler/assemble.hero"
     t745 = h48_own48;
-#line 6808 "main.c"
+#line 6814 "main.c"
     h_0opt_2270cbe7_release(&t745);
 #line 84 "examples/assembler/assemble.hero"
     t746 = h49_own49;
-#line 6812 "main.c"
+#line 6818 "main.c"
     h_0opt_e201354_release(&t746);
 #line 84 "examples/assembler/assemble.hero"
     t747 = h50_own50;
-#line 6816 "main.c"
+#line 6822 "main.c"
     h_0opt_e201354_release(&t747);
 #line 84 "examples/assembler/assemble.hero"
     t748 = h51_own51;
-#line 6820 "main.c"
+#line 6826 "main.c"
     h_0opt_2270cbe7_release(&t748);
 #line 84 "examples/assembler/assemble.hero"
     t749 = h52_own52;
-#line 6824 "main.c"
+#line 6830 "main.c"
     hero_array_decref(t749);
 #line 84 "examples/assembler/assemble.hero"
     t750 = h53_own53;
-#line 6828 "main.c"
+#line 6834 "main.c"
     h_0opt_2270cbe7_release(&t750);
 #line 84 "examples/assembler/assemble.hero"
     t751 = h54_own54;
-#line 6832 "main.c"
+#line 6838 "main.c"
     h_0opt_2270cbe7_release(&t751);
 #line 84 "examples/assembler/assemble.hero"
     t752 = h55_own55;
-#line 6836 "main.c"
+#line 6842 "main.c"
     hero_str_decref(t752);
 #line 84 "examples/assembler/assemble.hero"
     t753 = h56_own56;
-#line 6840 "main.c"
+#line 6846 "main.c"
     hero_str_decref(t753);
 #line 84 "examples/assembler/assemble.hero"
     t754 = h57_own57;
-#line 6844 "main.c"
+#line 6850 "main.c"
     hero_str_decref(t754);
 #line 84 "examples/assembler/assemble.hero"
     t755 = h58_own58;
-#line 6848 "main.c"
+#line 6854 "main.c"
     hero_str_decref(t755);
 #line 84 "examples/assembler/assemble.hero"
     t756 = h59_own59;
-#line 6852 "main.c"
+#line 6858 "main.c"
     hero_str_decref(t756);
 #line 84 "examples/assembler/assemble.hero"
     t757 = h60_own60;
-#line 6856 "main.c"
+#line 6862 "main.c"
     hero_str_decref(t757);
 #line 84 "examples/assembler/assemble.hero"
     t758 = h61_own61;
-#line 6860 "main.c"
+#line 6866 "main.c"
     h_0opt_2270cbe7_release(&t758);
 #line 84 "examples/assembler/assemble.hero"
     t759 = h62_own62;
-#line 6864 "main.c"
+#line 6870 "main.c"
     h_0opt_e201354_release(&t759);
 #line 84 "examples/assembler/assemble.hero"
     t760 = h63_own63;
-#line 6868 "main.c"
+#line 6874 "main.c"
     hero_array_decref(t760);
 #line 84 "examples/assembler/assemble.hero"
     t761 = h64_own64;
-#line 6872 "main.c"
+#line 6878 "main.c"
     h_0opt_2270cbe7_release(&t761);
 #line 84 "examples/assembler/assemble.hero"
     t762 = h65_own65;
-#line 6876 "main.c"
+#line 6882 "main.c"
     h_0opt_2270cbe7_release(&t762);
     return t111;
 bb22:
@@ -6880,7 +6886,7 @@ bb22:
     t105 = h10_f5;
 #line 85 "examples/assembler/assemble.hero"
     t106 = t105.as.err;
-#line 6884 "main.c"
+#line 6890 "main.c"
     hero_failure_retain(&t106);
 #line 85 "examples/assembler/assemble.hero"
     t107 = (h_0opt_2270cbe7){.tag = INT64_C(1), .as.err = t106};
@@ -6888,258 +6894,258 @@ bb22:
     t289 = h34_own34;
 #line 85 "examples/assembler/assemble.hero"
     h34_own34 = t107;
-#line 6892 "main.c"
+#line 6898 "main.c"
     h_0opt_2270cbe7_release(&t289);
 #line 85 "examples/assembler/assemble.hero"
-#line 6895 "main.c"
+#line 6901 "main.c"
     h_0opt_2270cbe7_retain(&t107);
 #line 85 "examples/assembler/assemble.hero"
     t763 = h2_m;
-#line 6899 "main.c"
+#line 6905 "main.c"
     hero_str_decref(t763);
 #line 85 "examples/assembler/assemble.hero"
     t764 = h3_f0;
-#line 6903 "main.c"
+#line 6909 "main.c"
     h_0opt_e201354_release(&t764);
 #line 85 "examples/assembler/assemble.hero"
     t765 = h4_f1;
-#line 6907 "main.c"
+#line 6913 "main.c"
     h_0opt_e201354_release(&t765);
 #line 85 "examples/assembler/assemble.hero"
     t766 = h5_f2;
-#line 6911 "main.c"
+#line 6917 "main.c"
     h_0opt_e201354_release(&t766);
 #line 85 "examples/assembler/assemble.hero"
     t767 = h8_f3;
-#line 6915 "main.c"
+#line 6921 "main.c"
     h_0opt_e201354_release(&t767);
 #line 85 "examples/assembler/assemble.hero"
     t768 = h9_f4;
-#line 6919 "main.c"
+#line 6925 "main.c"
     h_0opt_e201354_release(&t768);
 #line 85 "examples/assembler/assemble.hero"
     t769 = h10_f5;
-#line 6923 "main.c"
+#line 6929 "main.c"
     h_0opt_e201354_release(&t769);
 #line 85 "examples/assembler/assemble.hero"
     t770 = h11_f6;
-#line 6927 "main.c"
+#line 6933 "main.c"
     h_0opt_e201354_release(&t770);
 #line 85 "examples/assembler/assemble.hero"
     t771 = h12_f7;
-#line 6931 "main.c"
+#line 6937 "main.c"
     h_0opt_e201354_release(&t771);
 #line 85 "examples/assembler/assemble.hero"
     t772 = h13_f8;
-#line 6935 "main.c"
+#line 6941 "main.c"
     h_0opt_e201354_release(&t772);
 #line 85 "examples/assembler/assemble.hero"
     t773 = h14_f9;
-#line 6939 "main.c"
+#line 6945 "main.c"
     h_0opt_e201354_release(&t773);
 #line 85 "examples/assembler/assemble.hero"
     t774 = h15_f10;
-#line 6943 "main.c"
+#line 6949 "main.c"
     h_0opt_e201354_release(&t774);
 #line 85 "examples/assembler/assemble.hero"
     t775 = h16_f11;
-#line 6947 "main.c"
+#line 6953 "main.c"
     h_0opt_e201354_release(&t775);
 #line 85 "examples/assembler/assemble.hero"
     t776 = h17_f12;
-#line 6951 "main.c"
+#line 6957 "main.c"
     h_0opt_e201354_release(&t776);
 #line 85 "examples/assembler/assemble.hero"
     t777 = h18_f13;
-#line 6955 "main.c"
+#line 6961 "main.c"
     h_0opt_e201354_release(&t777);
 #line 85 "examples/assembler/assemble.hero"
     t778 = h19_own19;
-#line 6959 "main.c"
+#line 6965 "main.c"
     h_0opt_e201354_release(&t778);
 #line 85 "examples/assembler/assemble.hero"
     t779 = h20_own20;
-#line 6963 "main.c"
+#line 6969 "main.c"
     h_0opt_e201354_release(&t779);
 #line 85 "examples/assembler/assemble.hero"
     t780 = h21_own21;
-#line 6967 "main.c"
+#line 6973 "main.c"
     h_0opt_2270cbe7_release(&t780);
 #line 85 "examples/assembler/assemble.hero"
     t781 = h22_own22;
-#line 6971 "main.c"
+#line 6977 "main.c"
     h_0opt_e201354_release(&t781);
 #line 85 "examples/assembler/assemble.hero"
     t782 = h23_own23;
-#line 6975 "main.c"
+#line 6981 "main.c"
     h_0opt_2270cbe7_release(&t782);
 #line 85 "examples/assembler/assemble.hero"
     t783 = h24_own24;
-#line 6979 "main.c"
+#line 6985 "main.c"
     hero_array_decref(t783);
 #line 85 "examples/assembler/assemble.hero"
     t784 = h25_own25;
-#line 6983 "main.c"
+#line 6989 "main.c"
     h_0opt_2270cbe7_release(&t784);
 #line 85 "examples/assembler/assemble.hero"
     t785 = h26_own26;
-#line 6987 "main.c"
+#line 6993 "main.c"
     h_0opt_2270cbe7_release(&t785);
 #line 85 "examples/assembler/assemble.hero"
     t786 = h27_own27;
-#line 6991 "main.c"
+#line 6997 "main.c"
     h_0opt_e201354_release(&t786);
 #line 85 "examples/assembler/assemble.hero"
     t787 = h28_own28;
-#line 6995 "main.c"
+#line 7001 "main.c"
     h_0opt_e201354_release(&t787);
 #line 85 "examples/assembler/assemble.hero"
     t788 = h29_own29;
-#line 6999 "main.c"
+#line 7005 "main.c"
     h_0opt_2270cbe7_release(&t788);
 #line 85 "examples/assembler/assemble.hero"
     t789 = h30_own30;
-#line 7003 "main.c"
+#line 7009 "main.c"
     h_0opt_e201354_release(&t789);
 #line 85 "examples/assembler/assemble.hero"
     t790 = h31_own31;
-#line 7007 "main.c"
+#line 7013 "main.c"
     h_0opt_2270cbe7_release(&t790);
 #line 85 "examples/assembler/assemble.hero"
     t791 = h32_own32;
-#line 7011 "main.c"
+#line 7017 "main.c"
     hero_array_decref(t791);
 #line 85 "examples/assembler/assemble.hero"
     t792 = h33_own33;
-#line 7015 "main.c"
+#line 7021 "main.c"
     h_0opt_2270cbe7_release(&t792);
 #line 85 "examples/assembler/assemble.hero"
     t793 = h34_own34;
-#line 7019 "main.c"
+#line 7025 "main.c"
     h_0opt_2270cbe7_release(&t793);
 #line 85 "examples/assembler/assemble.hero"
     t794 = h35_own35;
-#line 7023 "main.c"
+#line 7029 "main.c"
     h_0opt_e201354_release(&t794);
 #line 85 "examples/assembler/assemble.hero"
     t795 = h36_own36;
-#line 7027 "main.c"
+#line 7033 "main.c"
     h_0opt_e201354_release(&t795);
 #line 85 "examples/assembler/assemble.hero"
     t796 = h37_own37;
-#line 7031 "main.c"
+#line 7037 "main.c"
     h_0opt_2270cbe7_release(&t796);
 #line 85 "examples/assembler/assemble.hero"
     t797 = h38_own38;
-#line 7035 "main.c"
+#line 7041 "main.c"
     hero_array_decref(t797);
 #line 85 "examples/assembler/assemble.hero"
     t798 = h39_own39;
-#line 7039 "main.c"
+#line 7045 "main.c"
     h_0opt_2270cbe7_release(&t798);
 #line 85 "examples/assembler/assemble.hero"
     t799 = h40_own40;
-#line 7043 "main.c"
+#line 7049 "main.c"
     h_0opt_2270cbe7_release(&t799);
 #line 85 "examples/assembler/assemble.hero"
     t800 = h41_own41;
-#line 7047 "main.c"
+#line 7053 "main.c"
     h_0opt_e201354_release(&t800);
 #line 85 "examples/assembler/assemble.hero"
     t801 = h42_own42;
-#line 7051 "main.c"
+#line 7057 "main.c"
     h_0opt_e201354_release(&t801);
 #line 85 "examples/assembler/assemble.hero"
     t802 = h43_own43;
-#line 7055 "main.c"
+#line 7061 "main.c"
     h_0opt_2270cbe7_release(&t802);
 #line 85 "examples/assembler/assemble.hero"
     t803 = h44_own44;
-#line 7059 "main.c"
+#line 7065 "main.c"
     h_0opt_e201354_release(&t803);
 #line 85 "examples/assembler/assemble.hero"
     t804 = h45_own45;
-#line 7063 "main.c"
+#line 7069 "main.c"
     h_0opt_2270cbe7_release(&t804);
 #line 85 "examples/assembler/assemble.hero"
     t805 = h46_own46;
-#line 7067 "main.c"
+#line 7073 "main.c"
     hero_array_decref(t805);
 #line 85 "examples/assembler/assemble.hero"
     t806 = h47_own47;
-#line 7071 "main.c"
+#line 7077 "main.c"
     h_0opt_2270cbe7_release(&t806);
 #line 85 "examples/assembler/assemble.hero"
     t807 = h48_own48;
-#line 7075 "main.c"
+#line 7081 "main.c"
     h_0opt_2270cbe7_release(&t807);
 #line 85 "examples/assembler/assemble.hero"
     t808 = h49_own49;
-#line 7079 "main.c"
+#line 7085 "main.c"
     h_0opt_e201354_release(&t808);
 #line 85 "examples/assembler/assemble.hero"
     t809 = h50_own50;
-#line 7083 "main.c"
+#line 7089 "main.c"
     h_0opt_e201354_release(&t809);
 #line 85 "examples/assembler/assemble.hero"
     t810 = h51_own51;
-#line 7087 "main.c"
+#line 7093 "main.c"
     h_0opt_2270cbe7_release(&t810);
 #line 85 "examples/assembler/assemble.hero"
     t811 = h52_own52;
-#line 7091 "main.c"
+#line 7097 "main.c"
     hero_array_decref(t811);
 #line 85 "examples/assembler/assemble.hero"
     t812 = h53_own53;
-#line 7095 "main.c"
+#line 7101 "main.c"
     h_0opt_2270cbe7_release(&t812);
 #line 85 "examples/assembler/assemble.hero"
     t813 = h54_own54;
-#line 7099 "main.c"
+#line 7105 "main.c"
     h_0opt_2270cbe7_release(&t813);
 #line 85 "examples/assembler/assemble.hero"
     t814 = h55_own55;
-#line 7103 "main.c"
+#line 7109 "main.c"
     hero_str_decref(t814);
 #line 85 "examples/assembler/assemble.hero"
     t815 = h56_own56;
-#line 7107 "main.c"
+#line 7113 "main.c"
     hero_str_decref(t815);
 #line 85 "examples/assembler/assemble.hero"
     t816 = h57_own57;
-#line 7111 "main.c"
+#line 7117 "main.c"
     hero_str_decref(t816);
 #line 85 "examples/assembler/assemble.hero"
     t817 = h58_own58;
-#line 7115 "main.c"
+#line 7121 "main.c"
     hero_str_decref(t817);
 #line 85 "examples/assembler/assemble.hero"
     t818 = h59_own59;
-#line 7119 "main.c"
+#line 7125 "main.c"
     hero_str_decref(t818);
 #line 85 "examples/assembler/assemble.hero"
     t819 = h60_own60;
-#line 7123 "main.c"
+#line 7129 "main.c"
     hero_str_decref(t819);
 #line 85 "examples/assembler/assemble.hero"
     t820 = h61_own61;
-#line 7127 "main.c"
+#line 7133 "main.c"
     h_0opt_2270cbe7_release(&t820);
 #line 85 "examples/assembler/assemble.hero"
     t821 = h62_own62;
-#line 7131 "main.c"
+#line 7137 "main.c"
     h_0opt_e201354_release(&t821);
 #line 85 "examples/assembler/assemble.hero"
     t822 = h63_own63;
-#line 7135 "main.c"
+#line 7141 "main.c"
     hero_array_decref(t822);
 #line 85 "examples/assembler/assemble.hero"
     t823 = h64_own64;
-#line 7139 "main.c"
+#line 7145 "main.c"
     h_0opt_2270cbe7_release(&t823);
 #line 85 "examples/assembler/assemble.hero"
     t824 = h65_own65;
-#line 7143 "main.c"
+#line 7149 "main.c"
     h_0opt_2270cbe7_release(&t824);
     return t107;
 bb23:
@@ -7163,15 +7169,15 @@ bb24:
     t290 = h35_own35;
 #line 89 "examples/assembler/assemble.hero"
     h35_own35 = t117;
-#line 7167 "main.c"
+#line 7173 "main.c"
     h_0opt_e201354_release(&t290);
 #line 89 "examples/assembler/assemble.hero"
     t291 = h11_f6;
-#line 7171 "main.c"
+#line 7177 "main.c"
     h_0opt_e201354_retain(&t117);
 #line 89 "examples/assembler/assemble.hero"
     h11_f6 = t117;
-#line 7175 "main.c"
+#line 7181 "main.c"
     h_0opt_e201354_release(&t291);
 #line 89 "examples/assembler/assemble.hero"
     t118 = h11_f6;
@@ -7209,15 +7215,15 @@ bb26:
     t292 = h36_own36;
 #line 90 "examples/assembler/assemble.hero"
     h36_own36 = t134;
-#line 7213 "main.c"
+#line 7219 "main.c"
     h_0opt_e201354_release(&t292);
 #line 90 "examples/assembler/assemble.hero"
     t293 = h12_f7;
-#line 7217 "main.c"
+#line 7223 "main.c"
     h_0opt_e201354_retain(&t134);
 #line 90 "examples/assembler/assemble.hero"
     h12_f7 = t134;
-#line 7221 "main.c"
+#line 7227 "main.c"
     h_0opt_e201354_release(&t293);
 #line 90 "examples/assembler/assemble.hero"
     t135 = h12_f7;
@@ -7235,7 +7241,7 @@ bb27:
     t122 = h11_f6;
 #line 89 "examples/assembler/assemble.hero"
     t123 = t122.as.err;
-#line 7239 "main.c"
+#line 7245 "main.c"
     hero_failure_retain(&t123);
 #line 89 "examples/assembler/assemble.hero"
     t124 = (h_0opt_2270cbe7){.tag = INT64_C(1), .as.err = t123};
@@ -7243,258 +7249,258 @@ bb27:
     t294 = h37_own37;
 #line 89 "examples/assembler/assemble.hero"
     h37_own37 = t124;
-#line 7247 "main.c"
+#line 7253 "main.c"
     h_0opt_2270cbe7_release(&t294);
 #line 89 "examples/assembler/assemble.hero"
-#line 7250 "main.c"
+#line 7256 "main.c"
     h_0opt_2270cbe7_retain(&t124);
 #line 89 "examples/assembler/assemble.hero"
     t825 = h2_m;
-#line 7254 "main.c"
+#line 7260 "main.c"
     hero_str_decref(t825);
 #line 89 "examples/assembler/assemble.hero"
     t826 = h3_f0;
-#line 7258 "main.c"
+#line 7264 "main.c"
     h_0opt_e201354_release(&t826);
 #line 89 "examples/assembler/assemble.hero"
     t827 = h4_f1;
-#line 7262 "main.c"
+#line 7268 "main.c"
     h_0opt_e201354_release(&t827);
 #line 89 "examples/assembler/assemble.hero"
     t828 = h5_f2;
-#line 7266 "main.c"
+#line 7272 "main.c"
     h_0opt_e201354_release(&t828);
 #line 89 "examples/assembler/assemble.hero"
     t829 = h8_f3;
-#line 7270 "main.c"
+#line 7276 "main.c"
     h_0opt_e201354_release(&t829);
 #line 89 "examples/assembler/assemble.hero"
     t830 = h9_f4;
-#line 7274 "main.c"
+#line 7280 "main.c"
     h_0opt_e201354_release(&t830);
 #line 89 "examples/assembler/assemble.hero"
     t831 = h10_f5;
-#line 7278 "main.c"
+#line 7284 "main.c"
     h_0opt_e201354_release(&t831);
 #line 89 "examples/assembler/assemble.hero"
     t832 = h11_f6;
-#line 7282 "main.c"
+#line 7288 "main.c"
     h_0opt_e201354_release(&t832);
 #line 89 "examples/assembler/assemble.hero"
     t833 = h12_f7;
-#line 7286 "main.c"
+#line 7292 "main.c"
     h_0opt_e201354_release(&t833);
 #line 89 "examples/assembler/assemble.hero"
     t834 = h13_f8;
-#line 7290 "main.c"
+#line 7296 "main.c"
     h_0opt_e201354_release(&t834);
 #line 89 "examples/assembler/assemble.hero"
     t835 = h14_f9;
-#line 7294 "main.c"
+#line 7300 "main.c"
     h_0opt_e201354_release(&t835);
 #line 89 "examples/assembler/assemble.hero"
     t836 = h15_f10;
-#line 7298 "main.c"
+#line 7304 "main.c"
     h_0opt_e201354_release(&t836);
 #line 89 "examples/assembler/assemble.hero"
     t837 = h16_f11;
-#line 7302 "main.c"
+#line 7308 "main.c"
     h_0opt_e201354_release(&t837);
 #line 89 "examples/assembler/assemble.hero"
     t838 = h17_f12;
-#line 7306 "main.c"
+#line 7312 "main.c"
     h_0opt_e201354_release(&t838);
 #line 89 "examples/assembler/assemble.hero"
     t839 = h18_f13;
-#line 7310 "main.c"
+#line 7316 "main.c"
     h_0opt_e201354_release(&t839);
 #line 89 "examples/assembler/assemble.hero"
     t840 = h19_own19;
-#line 7314 "main.c"
+#line 7320 "main.c"
     h_0opt_e201354_release(&t840);
 #line 89 "examples/assembler/assemble.hero"
     t841 = h20_own20;
-#line 7318 "main.c"
+#line 7324 "main.c"
     h_0opt_e201354_release(&t841);
 #line 89 "examples/assembler/assemble.hero"
     t842 = h21_own21;
-#line 7322 "main.c"
+#line 7328 "main.c"
     h_0opt_2270cbe7_release(&t842);
 #line 89 "examples/assembler/assemble.hero"
     t843 = h22_own22;
-#line 7326 "main.c"
+#line 7332 "main.c"
     h_0opt_e201354_release(&t843);
 #line 89 "examples/assembler/assemble.hero"
     t844 = h23_own23;
-#line 7330 "main.c"
+#line 7336 "main.c"
     h_0opt_2270cbe7_release(&t844);
 #line 89 "examples/assembler/assemble.hero"
     t845 = h24_own24;
-#line 7334 "main.c"
+#line 7340 "main.c"
     hero_array_decref(t845);
 #line 89 "examples/assembler/assemble.hero"
     t846 = h25_own25;
-#line 7338 "main.c"
+#line 7344 "main.c"
     h_0opt_2270cbe7_release(&t846);
 #line 89 "examples/assembler/assemble.hero"
     t847 = h26_own26;
-#line 7342 "main.c"
+#line 7348 "main.c"
     h_0opt_2270cbe7_release(&t847);
 #line 89 "examples/assembler/assemble.hero"
     t848 = h27_own27;
-#line 7346 "main.c"
+#line 7352 "main.c"
     h_0opt_e201354_release(&t848);
 #line 89 "examples/assembler/assemble.hero"
     t849 = h28_own28;
-#line 7350 "main.c"
+#line 7356 "main.c"
     h_0opt_e201354_release(&t849);
 #line 89 "examples/assembler/assemble.hero"
     t850 = h29_own29;
-#line 7354 "main.c"
+#line 7360 "main.c"
     h_0opt_2270cbe7_release(&t850);
 #line 89 "examples/assembler/assemble.hero"
     t851 = h30_own30;
-#line 7358 "main.c"
+#line 7364 "main.c"
     h_0opt_e201354_release(&t851);
 #line 89 "examples/assembler/assemble.hero"
     t852 = h31_own31;
-#line 7362 "main.c"
+#line 7368 "main.c"
     h_0opt_2270cbe7_release(&t852);
 #line 89 "examples/assembler/assemble.hero"
     t853 = h32_own32;
-#line 7366 "main.c"
+#line 7372 "main.c"
     hero_array_decref(t853);
 #line 89 "examples/assembler/assemble.hero"
     t854 = h33_own33;
-#line 7370 "main.c"
+#line 7376 "main.c"
     h_0opt_2270cbe7_release(&t854);
 #line 89 "examples/assembler/assemble.hero"
     t855 = h34_own34;
-#line 7374 "main.c"
+#line 7380 "main.c"
     h_0opt_2270cbe7_release(&t855);
 #line 89 "examples/assembler/assemble.hero"
     t856 = h35_own35;
-#line 7378 "main.c"
+#line 7384 "main.c"
     h_0opt_e201354_release(&t856);
 #line 89 "examples/assembler/assemble.hero"
     t857 = h36_own36;
-#line 7382 "main.c"
+#line 7388 "main.c"
     h_0opt_e201354_release(&t857);
 #line 89 "examples/assembler/assemble.hero"
     t858 = h37_own37;
-#line 7386 "main.c"
+#line 7392 "main.c"
     h_0opt_2270cbe7_release(&t858);
 #line 89 "examples/assembler/assemble.hero"
     t859 = h38_own38;
-#line 7390 "main.c"
+#line 7396 "main.c"
     hero_array_decref(t859);
 #line 89 "examples/assembler/assemble.hero"
     t860 = h39_own39;
-#line 7394 "main.c"
+#line 7400 "main.c"
     h_0opt_2270cbe7_release(&t860);
 #line 89 "examples/assembler/assemble.hero"
     t861 = h40_own40;
-#line 7398 "main.c"
+#line 7404 "main.c"
     h_0opt_2270cbe7_release(&t861);
 #line 89 "examples/assembler/assemble.hero"
     t862 = h41_own41;
-#line 7402 "main.c"
+#line 7408 "main.c"
     h_0opt_e201354_release(&t862);
 #line 89 "examples/assembler/assemble.hero"
     t863 = h42_own42;
-#line 7406 "main.c"
+#line 7412 "main.c"
     h_0opt_e201354_release(&t863);
 #line 89 "examples/assembler/assemble.hero"
     t864 = h43_own43;
-#line 7410 "main.c"
+#line 7416 "main.c"
     h_0opt_2270cbe7_release(&t864);
 #line 89 "examples/assembler/assemble.hero"
     t865 = h44_own44;
-#line 7414 "main.c"
+#line 7420 "main.c"
     h_0opt_e201354_release(&t865);
 #line 89 "examples/assembler/assemble.hero"
     t866 = h45_own45;
-#line 7418 "main.c"
+#line 7424 "main.c"
     h_0opt_2270cbe7_release(&t866);
 #line 89 "examples/assembler/assemble.hero"
     t867 = h46_own46;
-#line 7422 "main.c"
+#line 7428 "main.c"
     hero_array_decref(t867);
 #line 89 "examples/assembler/assemble.hero"
     t868 = h47_own47;
-#line 7426 "main.c"
+#line 7432 "main.c"
     h_0opt_2270cbe7_release(&t868);
 #line 89 "examples/assembler/assemble.hero"
     t869 = h48_own48;
-#line 7430 "main.c"
+#line 7436 "main.c"
     h_0opt_2270cbe7_release(&t869);
 #line 89 "examples/assembler/assemble.hero"
     t870 = h49_own49;
-#line 7434 "main.c"
+#line 7440 "main.c"
     h_0opt_e201354_release(&t870);
 #line 89 "examples/assembler/assemble.hero"
     t871 = h50_own50;
-#line 7438 "main.c"
+#line 7444 "main.c"
     h_0opt_e201354_release(&t871);
 #line 89 "examples/assembler/assemble.hero"
     t872 = h51_own51;
-#line 7442 "main.c"
+#line 7448 "main.c"
     h_0opt_2270cbe7_release(&t872);
 #line 89 "examples/assembler/assemble.hero"
     t873 = h52_own52;
-#line 7446 "main.c"
+#line 7452 "main.c"
     hero_array_decref(t873);
 #line 89 "examples/assembler/assemble.hero"
     t874 = h53_own53;
-#line 7450 "main.c"
+#line 7456 "main.c"
     h_0opt_2270cbe7_release(&t874);
 #line 89 "examples/assembler/assemble.hero"
     t875 = h54_own54;
-#line 7454 "main.c"
+#line 7460 "main.c"
     h_0opt_2270cbe7_release(&t875);
 #line 89 "examples/assembler/assemble.hero"
     t876 = h55_own55;
-#line 7458 "main.c"
+#line 7464 "main.c"
     hero_str_decref(t876);
 #line 89 "examples/assembler/assemble.hero"
     t877 = h56_own56;
-#line 7462 "main.c"
+#line 7468 "main.c"
     hero_str_decref(t877);
 #line 89 "examples/assembler/assemble.hero"
     t878 = h57_own57;
-#line 7466 "main.c"
+#line 7472 "main.c"
     hero_str_decref(t878);
 #line 89 "examples/assembler/assemble.hero"
     t879 = h58_own58;
-#line 7470 "main.c"
+#line 7476 "main.c"
     hero_str_decref(t879);
 #line 89 "examples/assembler/assemble.hero"
     t880 = h59_own59;
-#line 7474 "main.c"
+#line 7480 "main.c"
     hero_str_decref(t880);
 #line 89 "examples/assembler/assemble.hero"
     t881 = h60_own60;
-#line 7478 "main.c"
+#line 7484 "main.c"
     hero_str_decref(t881);
 #line 89 "examples/assembler/assemble.hero"
     t882 = h61_own61;
-#line 7482 "main.c"
+#line 7488 "main.c"
     h_0opt_2270cbe7_release(&t882);
 #line 89 "examples/assembler/assemble.hero"
     t883 = h62_own62;
-#line 7486 "main.c"
+#line 7492 "main.c"
     h_0opt_e201354_release(&t883);
 #line 89 "examples/assembler/assemble.hero"
     t884 = h63_own63;
-#line 7490 "main.c"
+#line 7496 "main.c"
     hero_array_decref(t884);
 #line 89 "examples/assembler/assemble.hero"
     t885 = h64_own64;
-#line 7494 "main.c"
+#line 7500 "main.c"
     h_0opt_2270cbe7_release(&t885);
 #line 89 "examples/assembler/assemble.hero"
     t886 = h65_own65;
-#line 7498 "main.c"
+#line 7504 "main.c"
     h_0opt_2270cbe7_release(&t886);
     return t124;
 bb28:
@@ -7522,10 +7528,10 @@ bb28:
     t295 = h38_own38;
 #line 90 "examples/assembler/assemble.hero"
     h38_own38 = t145;
-#line 7526 "main.c"
+#line 7532 "main.c"
     hero_array_decref(t295);
 #line 90 "examples/assembler/assemble.hero"
-#line 7529 "main.c"
+#line 7535 "main.c"
     hero_array_incref(t145);
 #line 90 "examples/assembler/assemble.hero"
     t146 = (h_0opt_2270cbe7){.tag = INT64_C(0), .as.ok = t145};
@@ -7533,258 +7539,258 @@ bb28:
     t296 = h39_own39;
 #line 90 "examples/assembler/assemble.hero"
     h39_own39 = t146;
-#line 7537 "main.c"
+#line 7543 "main.c"
     h_0opt_2270cbe7_release(&t296);
 #line 90 "examples/assembler/assemble.hero"
-#line 7540 "main.c"
+#line 7546 "main.c"
     h_0opt_2270cbe7_retain(&t146);
 #line 90 "examples/assembler/assemble.hero"
     t887 = h2_m;
-#line 7544 "main.c"
+#line 7550 "main.c"
     hero_str_decref(t887);
 #line 90 "examples/assembler/assemble.hero"
     t888 = h3_f0;
-#line 7548 "main.c"
+#line 7554 "main.c"
     h_0opt_e201354_release(&t888);
 #line 90 "examples/assembler/assemble.hero"
     t889 = h4_f1;
-#line 7552 "main.c"
+#line 7558 "main.c"
     h_0opt_e201354_release(&t889);
 #line 90 "examples/assembler/assemble.hero"
     t890 = h5_f2;
-#line 7556 "main.c"
+#line 7562 "main.c"
     h_0opt_e201354_release(&t890);
 #line 90 "examples/assembler/assemble.hero"
     t891 = h8_f3;
-#line 7560 "main.c"
+#line 7566 "main.c"
     h_0opt_e201354_release(&t891);
 #line 90 "examples/assembler/assemble.hero"
     t892 = h9_f4;
-#line 7564 "main.c"
+#line 7570 "main.c"
     h_0opt_e201354_release(&t892);
 #line 90 "examples/assembler/assemble.hero"
     t893 = h10_f5;
-#line 7568 "main.c"
+#line 7574 "main.c"
     h_0opt_e201354_release(&t893);
 #line 90 "examples/assembler/assemble.hero"
     t894 = h11_f6;
-#line 7572 "main.c"
+#line 7578 "main.c"
     h_0opt_e201354_release(&t894);
 #line 90 "examples/assembler/assemble.hero"
     t895 = h12_f7;
-#line 7576 "main.c"
+#line 7582 "main.c"
     h_0opt_e201354_release(&t895);
 #line 90 "examples/assembler/assemble.hero"
     t896 = h13_f8;
-#line 7580 "main.c"
+#line 7586 "main.c"
     h_0opt_e201354_release(&t896);
 #line 90 "examples/assembler/assemble.hero"
     t897 = h14_f9;
-#line 7584 "main.c"
+#line 7590 "main.c"
     h_0opt_e201354_release(&t897);
 #line 90 "examples/assembler/assemble.hero"
     t898 = h15_f10;
-#line 7588 "main.c"
+#line 7594 "main.c"
     h_0opt_e201354_release(&t898);
 #line 90 "examples/assembler/assemble.hero"
     t899 = h16_f11;
-#line 7592 "main.c"
+#line 7598 "main.c"
     h_0opt_e201354_release(&t899);
 #line 90 "examples/assembler/assemble.hero"
     t900 = h17_f12;
-#line 7596 "main.c"
+#line 7602 "main.c"
     h_0opt_e201354_release(&t900);
 #line 90 "examples/assembler/assemble.hero"
     t901 = h18_f13;
-#line 7600 "main.c"
+#line 7606 "main.c"
     h_0opt_e201354_release(&t901);
 #line 90 "examples/assembler/assemble.hero"
     t902 = h19_own19;
-#line 7604 "main.c"
+#line 7610 "main.c"
     h_0opt_e201354_release(&t902);
 #line 90 "examples/assembler/assemble.hero"
     t903 = h20_own20;
-#line 7608 "main.c"
+#line 7614 "main.c"
     h_0opt_e201354_release(&t903);
 #line 90 "examples/assembler/assemble.hero"
     t904 = h21_own21;
-#line 7612 "main.c"
+#line 7618 "main.c"
     h_0opt_2270cbe7_release(&t904);
 #line 90 "examples/assembler/assemble.hero"
     t905 = h22_own22;
-#line 7616 "main.c"
+#line 7622 "main.c"
     h_0opt_e201354_release(&t905);
 #line 90 "examples/assembler/assemble.hero"
     t906 = h23_own23;
-#line 7620 "main.c"
+#line 7626 "main.c"
     h_0opt_2270cbe7_release(&t906);
 #line 90 "examples/assembler/assemble.hero"
     t907 = h24_own24;
-#line 7624 "main.c"
+#line 7630 "main.c"
     hero_array_decref(t907);
 #line 90 "examples/assembler/assemble.hero"
     t908 = h25_own25;
-#line 7628 "main.c"
+#line 7634 "main.c"
     h_0opt_2270cbe7_release(&t908);
 #line 90 "examples/assembler/assemble.hero"
     t909 = h26_own26;
-#line 7632 "main.c"
+#line 7638 "main.c"
     h_0opt_2270cbe7_release(&t909);
 #line 90 "examples/assembler/assemble.hero"
     t910 = h27_own27;
-#line 7636 "main.c"
+#line 7642 "main.c"
     h_0opt_e201354_release(&t910);
 #line 90 "examples/assembler/assemble.hero"
     t911 = h28_own28;
-#line 7640 "main.c"
+#line 7646 "main.c"
     h_0opt_e201354_release(&t911);
 #line 90 "examples/assembler/assemble.hero"
     t912 = h29_own29;
-#line 7644 "main.c"
+#line 7650 "main.c"
     h_0opt_2270cbe7_release(&t912);
 #line 90 "examples/assembler/assemble.hero"
     t913 = h30_own30;
-#line 7648 "main.c"
+#line 7654 "main.c"
     h_0opt_e201354_release(&t913);
 #line 90 "examples/assembler/assemble.hero"
     t914 = h31_own31;
-#line 7652 "main.c"
+#line 7658 "main.c"
     h_0opt_2270cbe7_release(&t914);
 #line 90 "examples/assembler/assemble.hero"
     t915 = h32_own32;
-#line 7656 "main.c"
+#line 7662 "main.c"
     hero_array_decref(t915);
 #line 90 "examples/assembler/assemble.hero"
     t916 = h33_own33;
-#line 7660 "main.c"
+#line 7666 "main.c"
     h_0opt_2270cbe7_release(&t916);
 #line 90 "examples/assembler/assemble.hero"
     t917 = h34_own34;
-#line 7664 "main.c"
+#line 7670 "main.c"
     h_0opt_2270cbe7_release(&t917);
 #line 90 "examples/assembler/assemble.hero"
     t918 = h35_own35;
-#line 7668 "main.c"
+#line 7674 "main.c"
     h_0opt_e201354_release(&t918);
 #line 90 "examples/assembler/assemble.hero"
     t919 = h36_own36;
-#line 7672 "main.c"
+#line 7678 "main.c"
     h_0opt_e201354_release(&t919);
 #line 90 "examples/assembler/assemble.hero"
     t920 = h37_own37;
-#line 7676 "main.c"
+#line 7682 "main.c"
     h_0opt_2270cbe7_release(&t920);
 #line 90 "examples/assembler/assemble.hero"
     t921 = h38_own38;
-#line 7680 "main.c"
+#line 7686 "main.c"
     hero_array_decref(t921);
 #line 90 "examples/assembler/assemble.hero"
     t922 = h39_own39;
-#line 7684 "main.c"
+#line 7690 "main.c"
     h_0opt_2270cbe7_release(&t922);
 #line 90 "examples/assembler/assemble.hero"
     t923 = h40_own40;
-#line 7688 "main.c"
+#line 7694 "main.c"
     h_0opt_2270cbe7_release(&t923);
 #line 90 "examples/assembler/assemble.hero"
     t924 = h41_own41;
-#line 7692 "main.c"
+#line 7698 "main.c"
     h_0opt_e201354_release(&t924);
 #line 90 "examples/assembler/assemble.hero"
     t925 = h42_own42;
-#line 7696 "main.c"
+#line 7702 "main.c"
     h_0opt_e201354_release(&t925);
 #line 90 "examples/assembler/assemble.hero"
     t926 = h43_own43;
-#line 7700 "main.c"
+#line 7706 "main.c"
     h_0opt_2270cbe7_release(&t926);
 #line 90 "examples/assembler/assemble.hero"
     t927 = h44_own44;
-#line 7704 "main.c"
+#line 7710 "main.c"
     h_0opt_e201354_release(&t927);
 #line 90 "examples/assembler/assemble.hero"
     t928 = h45_own45;
-#line 7708 "main.c"
+#line 7714 "main.c"
     h_0opt_2270cbe7_release(&t928);
 #line 90 "examples/assembler/assemble.hero"
     t929 = h46_own46;
-#line 7712 "main.c"
+#line 7718 "main.c"
     hero_array_decref(t929);
 #line 90 "examples/assembler/assemble.hero"
     t930 = h47_own47;
-#line 7716 "main.c"
+#line 7722 "main.c"
     h_0opt_2270cbe7_release(&t930);
 #line 90 "examples/assembler/assemble.hero"
     t931 = h48_own48;
-#line 7720 "main.c"
+#line 7726 "main.c"
     h_0opt_2270cbe7_release(&t931);
 #line 90 "examples/assembler/assemble.hero"
     t932 = h49_own49;
-#line 7724 "main.c"
+#line 7730 "main.c"
     h_0opt_e201354_release(&t932);
 #line 90 "examples/assembler/assemble.hero"
     t933 = h50_own50;
-#line 7728 "main.c"
+#line 7734 "main.c"
     h_0opt_e201354_release(&t933);
 #line 90 "examples/assembler/assemble.hero"
     t934 = h51_own51;
-#line 7732 "main.c"
+#line 7738 "main.c"
     h_0opt_2270cbe7_release(&t934);
 #line 90 "examples/assembler/assemble.hero"
     t935 = h52_own52;
-#line 7736 "main.c"
+#line 7742 "main.c"
     hero_array_decref(t935);
 #line 90 "examples/assembler/assemble.hero"
     t936 = h53_own53;
-#line 7740 "main.c"
+#line 7746 "main.c"
     h_0opt_2270cbe7_release(&t936);
 #line 90 "examples/assembler/assemble.hero"
     t937 = h54_own54;
-#line 7744 "main.c"
+#line 7750 "main.c"
     h_0opt_2270cbe7_release(&t937);
 #line 90 "examples/assembler/assemble.hero"
     t938 = h55_own55;
-#line 7748 "main.c"
+#line 7754 "main.c"
     hero_str_decref(t938);
 #line 90 "examples/assembler/assemble.hero"
     t939 = h56_own56;
-#line 7752 "main.c"
+#line 7758 "main.c"
     hero_str_decref(t939);
 #line 90 "examples/assembler/assemble.hero"
     t940 = h57_own57;
-#line 7756 "main.c"
+#line 7762 "main.c"
     hero_str_decref(t940);
 #line 90 "examples/assembler/assemble.hero"
     t941 = h58_own58;
-#line 7760 "main.c"
+#line 7766 "main.c"
     hero_str_decref(t941);
 #line 90 "examples/assembler/assemble.hero"
     t942 = h59_own59;
-#line 7764 "main.c"
+#line 7770 "main.c"
     hero_str_decref(t942);
 #line 90 "examples/assembler/assemble.hero"
     t943 = h60_own60;
-#line 7768 "main.c"
+#line 7774 "main.c"
     hero_str_decref(t943);
 #line 90 "examples/assembler/assemble.hero"
     t944 = h61_own61;
-#line 7772 "main.c"
+#line 7778 "main.c"
     h_0opt_2270cbe7_release(&t944);
 #line 90 "examples/assembler/assemble.hero"
     t945 = h62_own62;
-#line 7776 "main.c"
+#line 7782 "main.c"
     h_0opt_e201354_release(&t945);
 #line 90 "examples/assembler/assemble.hero"
     t946 = h63_own63;
-#line 7780 "main.c"
+#line 7786 "main.c"
     hero_array_decref(t946);
 #line 90 "examples/assembler/assemble.hero"
     t947 = h64_own64;
-#line 7784 "main.c"
+#line 7790 "main.c"
     h_0opt_2270cbe7_release(&t947);
 #line 90 "examples/assembler/assemble.hero"
     t948 = h65_own65;
-#line 7788 "main.c"
+#line 7794 "main.c"
     h_0opt_2270cbe7_release(&t948);
     return t146;
 bb29:
@@ -7792,7 +7798,7 @@ bb29:
     t139 = h12_f7;
 #line 90 "examples/assembler/assemble.hero"
     t140 = t139.as.err;
-#line 7796 "main.c"
+#line 7802 "main.c"
     hero_failure_retain(&t140);
 #line 90 "examples/assembler/assemble.hero"
     t141 = (h_0opt_2270cbe7){.tag = INT64_C(1), .as.err = t140};
@@ -7800,258 +7806,258 @@ bb29:
     t297 = h40_own40;
 #line 90 "examples/assembler/assemble.hero"
     h40_own40 = t141;
-#line 7804 "main.c"
+#line 7810 "main.c"
     h_0opt_2270cbe7_release(&t297);
 #line 90 "examples/assembler/assemble.hero"
-#line 7807 "main.c"
+#line 7813 "main.c"
     h_0opt_2270cbe7_retain(&t141);
 #line 90 "examples/assembler/assemble.hero"
     t949 = h2_m;
-#line 7811 "main.c"
+#line 7817 "main.c"
     hero_str_decref(t949);
 #line 90 "examples/assembler/assemble.hero"
     t950 = h3_f0;
-#line 7815 "main.c"
+#line 7821 "main.c"
     h_0opt_e201354_release(&t950);
 #line 90 "examples/assembler/assemble.hero"
     t951 = h4_f1;
-#line 7819 "main.c"
+#line 7825 "main.c"
     h_0opt_e201354_release(&t951);
 #line 90 "examples/assembler/assemble.hero"
     t952 = h5_f2;
-#line 7823 "main.c"
+#line 7829 "main.c"
     h_0opt_e201354_release(&t952);
 #line 90 "examples/assembler/assemble.hero"
     t953 = h8_f3;
-#line 7827 "main.c"
+#line 7833 "main.c"
     h_0opt_e201354_release(&t953);
 #line 90 "examples/assembler/assemble.hero"
     t954 = h9_f4;
-#line 7831 "main.c"
+#line 7837 "main.c"
     h_0opt_e201354_release(&t954);
 #line 90 "examples/assembler/assemble.hero"
     t955 = h10_f5;
-#line 7835 "main.c"
+#line 7841 "main.c"
     h_0opt_e201354_release(&t955);
 #line 90 "examples/assembler/assemble.hero"
     t956 = h11_f6;
-#line 7839 "main.c"
+#line 7845 "main.c"
     h_0opt_e201354_release(&t956);
 #line 90 "examples/assembler/assemble.hero"
     t957 = h12_f7;
-#line 7843 "main.c"
+#line 7849 "main.c"
     h_0opt_e201354_release(&t957);
 #line 90 "examples/assembler/assemble.hero"
     t958 = h13_f8;
-#line 7847 "main.c"
+#line 7853 "main.c"
     h_0opt_e201354_release(&t958);
 #line 90 "examples/assembler/assemble.hero"
     t959 = h14_f9;
-#line 7851 "main.c"
+#line 7857 "main.c"
     h_0opt_e201354_release(&t959);
 #line 90 "examples/assembler/assemble.hero"
     t960 = h15_f10;
-#line 7855 "main.c"
+#line 7861 "main.c"
     h_0opt_e201354_release(&t960);
 #line 90 "examples/assembler/assemble.hero"
     t961 = h16_f11;
-#line 7859 "main.c"
+#line 7865 "main.c"
     h_0opt_e201354_release(&t961);
 #line 90 "examples/assembler/assemble.hero"
     t962 = h17_f12;
-#line 7863 "main.c"
+#line 7869 "main.c"
     h_0opt_e201354_release(&t962);
 #line 90 "examples/assembler/assemble.hero"
     t963 = h18_f13;
-#line 7867 "main.c"
+#line 7873 "main.c"
     h_0opt_e201354_release(&t963);
 #line 90 "examples/assembler/assemble.hero"
     t964 = h19_own19;
-#line 7871 "main.c"
+#line 7877 "main.c"
     h_0opt_e201354_release(&t964);
 #line 90 "examples/assembler/assemble.hero"
     t965 = h20_own20;
-#line 7875 "main.c"
+#line 7881 "main.c"
     h_0opt_e201354_release(&t965);
 #line 90 "examples/assembler/assemble.hero"
     t966 = h21_own21;
-#line 7879 "main.c"
+#line 7885 "main.c"
     h_0opt_2270cbe7_release(&t966);
 #line 90 "examples/assembler/assemble.hero"
     t967 = h22_own22;
-#line 7883 "main.c"
+#line 7889 "main.c"
     h_0opt_e201354_release(&t967);
 #line 90 "examples/assembler/assemble.hero"
     t968 = h23_own23;
-#line 7887 "main.c"
+#line 7893 "main.c"
     h_0opt_2270cbe7_release(&t968);
 #line 90 "examples/assembler/assemble.hero"
     t969 = h24_own24;
-#line 7891 "main.c"
+#line 7897 "main.c"
     hero_array_decref(t969);
 #line 90 "examples/assembler/assemble.hero"
     t970 = h25_own25;
-#line 7895 "main.c"
+#line 7901 "main.c"
     h_0opt_2270cbe7_release(&t970);
 #line 90 "examples/assembler/assemble.hero"
     t971 = h26_own26;
-#line 7899 "main.c"
+#line 7905 "main.c"
     h_0opt_2270cbe7_release(&t971);
 #line 90 "examples/assembler/assemble.hero"
     t972 = h27_own27;
-#line 7903 "main.c"
+#line 7909 "main.c"
     h_0opt_e201354_release(&t972);
 #line 90 "examples/assembler/assemble.hero"
     t973 = h28_own28;
-#line 7907 "main.c"
+#line 7913 "main.c"
     h_0opt_e201354_release(&t973);
 #line 90 "examples/assembler/assemble.hero"
     t974 = h29_own29;
-#line 7911 "main.c"
+#line 7917 "main.c"
     h_0opt_2270cbe7_release(&t974);
 #line 90 "examples/assembler/assemble.hero"
     t975 = h30_own30;
-#line 7915 "main.c"
+#line 7921 "main.c"
     h_0opt_e201354_release(&t975);
 #line 90 "examples/assembler/assemble.hero"
     t976 = h31_own31;
-#line 7919 "main.c"
+#line 7925 "main.c"
     h_0opt_2270cbe7_release(&t976);
 #line 90 "examples/assembler/assemble.hero"
     t977 = h32_own32;
-#line 7923 "main.c"
+#line 7929 "main.c"
     hero_array_decref(t977);
 #line 90 "examples/assembler/assemble.hero"
     t978 = h33_own33;
-#line 7927 "main.c"
+#line 7933 "main.c"
     h_0opt_2270cbe7_release(&t978);
 #line 90 "examples/assembler/assemble.hero"
     t979 = h34_own34;
-#line 7931 "main.c"
+#line 7937 "main.c"
     h_0opt_2270cbe7_release(&t979);
 #line 90 "examples/assembler/assemble.hero"
     t980 = h35_own35;
-#line 7935 "main.c"
+#line 7941 "main.c"
     h_0opt_e201354_release(&t980);
 #line 90 "examples/assembler/assemble.hero"
     t981 = h36_own36;
-#line 7939 "main.c"
+#line 7945 "main.c"
     h_0opt_e201354_release(&t981);
 #line 90 "examples/assembler/assemble.hero"
     t982 = h37_own37;
-#line 7943 "main.c"
+#line 7949 "main.c"
     h_0opt_2270cbe7_release(&t982);
 #line 90 "examples/assembler/assemble.hero"
     t983 = h38_own38;
-#line 7947 "main.c"
+#line 7953 "main.c"
     hero_array_decref(t983);
 #line 90 "examples/assembler/assemble.hero"
     t984 = h39_own39;
-#line 7951 "main.c"
+#line 7957 "main.c"
     h_0opt_2270cbe7_release(&t984);
 #line 90 "examples/assembler/assemble.hero"
     t985 = h40_own40;
-#line 7955 "main.c"
+#line 7961 "main.c"
     h_0opt_2270cbe7_release(&t985);
 #line 90 "examples/assembler/assemble.hero"
     t986 = h41_own41;
-#line 7959 "main.c"
+#line 7965 "main.c"
     h_0opt_e201354_release(&t986);
 #line 90 "examples/assembler/assemble.hero"
     t987 = h42_own42;
-#line 7963 "main.c"
+#line 7969 "main.c"
     h_0opt_e201354_release(&t987);
 #line 90 "examples/assembler/assemble.hero"
     t988 = h43_own43;
-#line 7967 "main.c"
+#line 7973 "main.c"
     h_0opt_2270cbe7_release(&t988);
 #line 90 "examples/assembler/assemble.hero"
     t989 = h44_own44;
-#line 7971 "main.c"
+#line 7977 "main.c"
     h_0opt_e201354_release(&t989);
 #line 90 "examples/assembler/assemble.hero"
     t990 = h45_own45;
-#line 7975 "main.c"
+#line 7981 "main.c"
     h_0opt_2270cbe7_release(&t990);
 #line 90 "examples/assembler/assemble.hero"
     t991 = h46_own46;
-#line 7979 "main.c"
+#line 7985 "main.c"
     hero_array_decref(t991);
 #line 90 "examples/assembler/assemble.hero"
     t992 = h47_own47;
-#line 7983 "main.c"
+#line 7989 "main.c"
     h_0opt_2270cbe7_release(&t992);
 #line 90 "examples/assembler/assemble.hero"
     t993 = h48_own48;
-#line 7987 "main.c"
+#line 7993 "main.c"
     h_0opt_2270cbe7_release(&t993);
 #line 90 "examples/assembler/assemble.hero"
     t994 = h49_own49;
-#line 7991 "main.c"
+#line 7997 "main.c"
     h_0opt_e201354_release(&t994);
 #line 90 "examples/assembler/assemble.hero"
     t995 = h50_own50;
-#line 7995 "main.c"
+#line 8001 "main.c"
     h_0opt_e201354_release(&t995);
 #line 90 "examples/assembler/assemble.hero"
     t996 = h51_own51;
-#line 7999 "main.c"
+#line 8005 "main.c"
     h_0opt_2270cbe7_release(&t996);
 #line 90 "examples/assembler/assemble.hero"
     t997 = h52_own52;
-#line 8003 "main.c"
+#line 8009 "main.c"
     hero_array_decref(t997);
 #line 90 "examples/assembler/assemble.hero"
     t998 = h53_own53;
-#line 8007 "main.c"
+#line 8013 "main.c"
     h_0opt_2270cbe7_release(&t998);
 #line 90 "examples/assembler/assemble.hero"
     t999 = h54_own54;
-#line 8011 "main.c"
+#line 8017 "main.c"
     h_0opt_2270cbe7_release(&t999);
 #line 90 "examples/assembler/assemble.hero"
     t1000 = h55_own55;
-#line 8015 "main.c"
+#line 8021 "main.c"
     hero_str_decref(t1000);
 #line 90 "examples/assembler/assemble.hero"
     t1001 = h56_own56;
-#line 8019 "main.c"
+#line 8025 "main.c"
     hero_str_decref(t1001);
 #line 90 "examples/assembler/assemble.hero"
     t1002 = h57_own57;
-#line 8023 "main.c"
+#line 8029 "main.c"
     hero_str_decref(t1002);
 #line 90 "examples/assembler/assemble.hero"
     t1003 = h58_own58;
-#line 8027 "main.c"
+#line 8033 "main.c"
     hero_str_decref(t1003);
 #line 90 "examples/assembler/assemble.hero"
     t1004 = h59_own59;
-#line 8031 "main.c"
+#line 8037 "main.c"
     hero_str_decref(t1004);
 #line 90 "examples/assembler/assemble.hero"
     t1005 = h60_own60;
-#line 8035 "main.c"
+#line 8041 "main.c"
     hero_str_decref(t1005);
 #line 90 "examples/assembler/assemble.hero"
     t1006 = h61_own61;
-#line 8039 "main.c"
+#line 8045 "main.c"
     h_0opt_2270cbe7_release(&t1006);
 #line 90 "examples/assembler/assemble.hero"
     t1007 = h62_own62;
-#line 8043 "main.c"
+#line 8049 "main.c"
     h_0opt_e201354_release(&t1007);
 #line 90 "examples/assembler/assemble.hero"
     t1008 = h63_own63;
-#line 8047 "main.c"
+#line 8053 "main.c"
     hero_array_decref(t1008);
 #line 90 "examples/assembler/assemble.hero"
     t1009 = h64_own64;
-#line 8051 "main.c"
+#line 8057 "main.c"
     h_0opt_2270cbe7_release(&t1009);
 #line 90 "examples/assembler/assemble.hero"
     t1010 = h65_own65;
-#line 8055 "main.c"
+#line 8061 "main.c"
     h_0opt_2270cbe7_release(&t1010);
     return t141;
 bb30:
@@ -8075,15 +8081,15 @@ bb31:
     t298 = h41_own41;
 #line 93 "examples/assembler/assemble.hero"
     h41_own41 = t152;
-#line 8079 "main.c"
+#line 8085 "main.c"
     h_0opt_e201354_release(&t298);
 #line 93 "examples/assembler/assemble.hero"
     t299 = h13_f8;
-#line 8083 "main.c"
+#line 8089 "main.c"
     h_0opt_e201354_retain(&t152);
 #line 93 "examples/assembler/assemble.hero"
     h13_f8 = t152;
-#line 8087 "main.c"
+#line 8093 "main.c"
     h_0opt_e201354_release(&t299);
 #line 93 "examples/assembler/assemble.hero"
     t153 = h13_f8;
@@ -8121,15 +8127,15 @@ bb33:
     t300 = h42_own42;
 #line 95 "examples/assembler/assemble.hero"
     h42_own42 = t169;
-#line 8125 "main.c"
+#line 8131 "main.c"
     h_0opt_e201354_release(&t300);
 #line 95 "examples/assembler/assemble.hero"
     t301 = h14_f9;
-#line 8129 "main.c"
+#line 8135 "main.c"
     h_0opt_e201354_retain(&t169);
 #line 95 "examples/assembler/assemble.hero"
     h14_f9 = t169;
-#line 8133 "main.c"
+#line 8139 "main.c"
     h_0opt_e201354_release(&t301);
 #line 95 "examples/assembler/assemble.hero"
     t170 = h14_f9;
@@ -8147,7 +8153,7 @@ bb34:
     t157 = h13_f8;
 #line 93 "examples/assembler/assemble.hero"
     t158 = t157.as.err;
-#line 8151 "main.c"
+#line 8157 "main.c"
     hero_failure_retain(&t158);
 #line 93 "examples/assembler/assemble.hero"
     t159 = (h_0opt_2270cbe7){.tag = INT64_C(1), .as.err = t158};
@@ -8155,258 +8161,258 @@ bb34:
     t302 = h43_own43;
 #line 93 "examples/assembler/assemble.hero"
     h43_own43 = t159;
-#line 8159 "main.c"
+#line 8165 "main.c"
     h_0opt_2270cbe7_release(&t302);
 #line 93 "examples/assembler/assemble.hero"
-#line 8162 "main.c"
+#line 8168 "main.c"
     h_0opt_2270cbe7_retain(&t159);
 #line 93 "examples/assembler/assemble.hero"
     t1011 = h2_m;
-#line 8166 "main.c"
+#line 8172 "main.c"
     hero_str_decref(t1011);
 #line 93 "examples/assembler/assemble.hero"
     t1012 = h3_f0;
-#line 8170 "main.c"
+#line 8176 "main.c"
     h_0opt_e201354_release(&t1012);
 #line 93 "examples/assembler/assemble.hero"
     t1013 = h4_f1;
-#line 8174 "main.c"
+#line 8180 "main.c"
     h_0opt_e201354_release(&t1013);
 #line 93 "examples/assembler/assemble.hero"
     t1014 = h5_f2;
-#line 8178 "main.c"
+#line 8184 "main.c"
     h_0opt_e201354_release(&t1014);
 #line 93 "examples/assembler/assemble.hero"
     t1015 = h8_f3;
-#line 8182 "main.c"
+#line 8188 "main.c"
     h_0opt_e201354_release(&t1015);
 #line 93 "examples/assembler/assemble.hero"
     t1016 = h9_f4;
-#line 8186 "main.c"
+#line 8192 "main.c"
     h_0opt_e201354_release(&t1016);
 #line 93 "examples/assembler/assemble.hero"
     t1017 = h10_f5;
-#line 8190 "main.c"
+#line 8196 "main.c"
     h_0opt_e201354_release(&t1017);
 #line 93 "examples/assembler/assemble.hero"
     t1018 = h11_f6;
-#line 8194 "main.c"
+#line 8200 "main.c"
     h_0opt_e201354_release(&t1018);
 #line 93 "examples/assembler/assemble.hero"
     t1019 = h12_f7;
-#line 8198 "main.c"
+#line 8204 "main.c"
     h_0opt_e201354_release(&t1019);
 #line 93 "examples/assembler/assemble.hero"
     t1020 = h13_f8;
-#line 8202 "main.c"
+#line 8208 "main.c"
     h_0opt_e201354_release(&t1020);
 #line 93 "examples/assembler/assemble.hero"
     t1021 = h14_f9;
-#line 8206 "main.c"
+#line 8212 "main.c"
     h_0opt_e201354_release(&t1021);
 #line 93 "examples/assembler/assemble.hero"
     t1022 = h15_f10;
-#line 8210 "main.c"
+#line 8216 "main.c"
     h_0opt_e201354_release(&t1022);
 #line 93 "examples/assembler/assemble.hero"
     t1023 = h16_f11;
-#line 8214 "main.c"
+#line 8220 "main.c"
     h_0opt_e201354_release(&t1023);
 #line 93 "examples/assembler/assemble.hero"
     t1024 = h17_f12;
-#line 8218 "main.c"
+#line 8224 "main.c"
     h_0opt_e201354_release(&t1024);
 #line 93 "examples/assembler/assemble.hero"
     t1025 = h18_f13;
-#line 8222 "main.c"
+#line 8228 "main.c"
     h_0opt_e201354_release(&t1025);
 #line 93 "examples/assembler/assemble.hero"
     t1026 = h19_own19;
-#line 8226 "main.c"
+#line 8232 "main.c"
     h_0opt_e201354_release(&t1026);
 #line 93 "examples/assembler/assemble.hero"
     t1027 = h20_own20;
-#line 8230 "main.c"
+#line 8236 "main.c"
     h_0opt_e201354_release(&t1027);
 #line 93 "examples/assembler/assemble.hero"
     t1028 = h21_own21;
-#line 8234 "main.c"
+#line 8240 "main.c"
     h_0opt_2270cbe7_release(&t1028);
 #line 93 "examples/assembler/assemble.hero"
     t1029 = h22_own22;
-#line 8238 "main.c"
+#line 8244 "main.c"
     h_0opt_e201354_release(&t1029);
 #line 93 "examples/assembler/assemble.hero"
     t1030 = h23_own23;
-#line 8242 "main.c"
+#line 8248 "main.c"
     h_0opt_2270cbe7_release(&t1030);
 #line 93 "examples/assembler/assemble.hero"
     t1031 = h24_own24;
-#line 8246 "main.c"
+#line 8252 "main.c"
     hero_array_decref(t1031);
 #line 93 "examples/assembler/assemble.hero"
     t1032 = h25_own25;
-#line 8250 "main.c"
+#line 8256 "main.c"
     h_0opt_2270cbe7_release(&t1032);
 #line 93 "examples/assembler/assemble.hero"
     t1033 = h26_own26;
-#line 8254 "main.c"
+#line 8260 "main.c"
     h_0opt_2270cbe7_release(&t1033);
 #line 93 "examples/assembler/assemble.hero"
     t1034 = h27_own27;
-#line 8258 "main.c"
+#line 8264 "main.c"
     h_0opt_e201354_release(&t1034);
 #line 93 "examples/assembler/assemble.hero"
     t1035 = h28_own28;
-#line 8262 "main.c"
+#line 8268 "main.c"
     h_0opt_e201354_release(&t1035);
 #line 93 "examples/assembler/assemble.hero"
     t1036 = h29_own29;
-#line 8266 "main.c"
+#line 8272 "main.c"
     h_0opt_2270cbe7_release(&t1036);
 #line 93 "examples/assembler/assemble.hero"
     t1037 = h30_own30;
-#line 8270 "main.c"
+#line 8276 "main.c"
     h_0opt_e201354_release(&t1037);
 #line 93 "examples/assembler/assemble.hero"
     t1038 = h31_own31;
-#line 8274 "main.c"
+#line 8280 "main.c"
     h_0opt_2270cbe7_release(&t1038);
 #line 93 "examples/assembler/assemble.hero"
     t1039 = h32_own32;
-#line 8278 "main.c"
+#line 8284 "main.c"
     hero_array_decref(t1039);
 #line 93 "examples/assembler/assemble.hero"
     t1040 = h33_own33;
-#line 8282 "main.c"
+#line 8288 "main.c"
     h_0opt_2270cbe7_release(&t1040);
 #line 93 "examples/assembler/assemble.hero"
     t1041 = h34_own34;
-#line 8286 "main.c"
+#line 8292 "main.c"
     h_0opt_2270cbe7_release(&t1041);
 #line 93 "examples/assembler/assemble.hero"
     t1042 = h35_own35;
-#line 8290 "main.c"
+#line 8296 "main.c"
     h_0opt_e201354_release(&t1042);
 #line 93 "examples/assembler/assemble.hero"
     t1043 = h36_own36;
-#line 8294 "main.c"
+#line 8300 "main.c"
     h_0opt_e201354_release(&t1043);
 #line 93 "examples/assembler/assemble.hero"
     t1044 = h37_own37;
-#line 8298 "main.c"
+#line 8304 "main.c"
     h_0opt_2270cbe7_release(&t1044);
 #line 93 "examples/assembler/assemble.hero"
     t1045 = h38_own38;
-#line 8302 "main.c"
+#line 8308 "main.c"
     hero_array_decref(t1045);
 #line 93 "examples/assembler/assemble.hero"
     t1046 = h39_own39;
-#line 8306 "main.c"
+#line 8312 "main.c"
     h_0opt_2270cbe7_release(&t1046);
 #line 93 "examples/assembler/assemble.hero"
     t1047 = h40_own40;
-#line 8310 "main.c"
+#line 8316 "main.c"
     h_0opt_2270cbe7_release(&t1047);
 #line 93 "examples/assembler/assemble.hero"
     t1048 = h41_own41;
-#line 8314 "main.c"
+#line 8320 "main.c"
     h_0opt_e201354_release(&t1048);
 #line 93 "examples/assembler/assemble.hero"
     t1049 = h42_own42;
-#line 8318 "main.c"
+#line 8324 "main.c"
     h_0opt_e201354_release(&t1049);
 #line 93 "examples/assembler/assemble.hero"
     t1050 = h43_own43;
-#line 8322 "main.c"
+#line 8328 "main.c"
     h_0opt_2270cbe7_release(&t1050);
 #line 93 "examples/assembler/assemble.hero"
     t1051 = h44_own44;
-#line 8326 "main.c"
+#line 8332 "main.c"
     h_0opt_e201354_release(&t1051);
 #line 93 "examples/assembler/assemble.hero"
     t1052 = h45_own45;
-#line 8330 "main.c"
+#line 8336 "main.c"
     h_0opt_2270cbe7_release(&t1052);
 #line 93 "examples/assembler/assemble.hero"
     t1053 = h46_own46;
-#line 8334 "main.c"
+#line 8340 "main.c"
     hero_array_decref(t1053);
 #line 93 "examples/assembler/assemble.hero"
     t1054 = h47_own47;
-#line 8338 "main.c"
+#line 8344 "main.c"
     h_0opt_2270cbe7_release(&t1054);
 #line 93 "examples/assembler/assemble.hero"
     t1055 = h48_own48;
-#line 8342 "main.c"
+#line 8348 "main.c"
     h_0opt_2270cbe7_release(&t1055);
 #line 93 "examples/assembler/assemble.hero"
     t1056 = h49_own49;
-#line 8346 "main.c"
+#line 8352 "main.c"
     h_0opt_e201354_release(&t1056);
 #line 93 "examples/assembler/assemble.hero"
     t1057 = h50_own50;
-#line 8350 "main.c"
+#line 8356 "main.c"
     h_0opt_e201354_release(&t1057);
 #line 93 "examples/assembler/assemble.hero"
     t1058 = h51_own51;
-#line 8354 "main.c"
+#line 8360 "main.c"
     h_0opt_2270cbe7_release(&t1058);
 #line 93 "examples/assembler/assemble.hero"
     t1059 = h52_own52;
-#line 8358 "main.c"
+#line 8364 "main.c"
     hero_array_decref(t1059);
 #line 93 "examples/assembler/assemble.hero"
     t1060 = h53_own53;
-#line 8362 "main.c"
+#line 8368 "main.c"
     h_0opt_2270cbe7_release(&t1060);
 #line 93 "examples/assembler/assemble.hero"
     t1061 = h54_own54;
-#line 8366 "main.c"
+#line 8372 "main.c"
     h_0opt_2270cbe7_release(&t1061);
 #line 93 "examples/assembler/assemble.hero"
     t1062 = h55_own55;
-#line 8370 "main.c"
+#line 8376 "main.c"
     hero_str_decref(t1062);
 #line 93 "examples/assembler/assemble.hero"
     t1063 = h56_own56;
-#line 8374 "main.c"
+#line 8380 "main.c"
     hero_str_decref(t1063);
 #line 93 "examples/assembler/assemble.hero"
     t1064 = h57_own57;
-#line 8378 "main.c"
+#line 8384 "main.c"
     hero_str_decref(t1064);
 #line 93 "examples/assembler/assemble.hero"
     t1065 = h58_own58;
-#line 8382 "main.c"
+#line 8388 "main.c"
     hero_str_decref(t1065);
 #line 93 "examples/assembler/assemble.hero"
     t1066 = h59_own59;
-#line 8386 "main.c"
+#line 8392 "main.c"
     hero_str_decref(t1066);
 #line 93 "examples/assembler/assemble.hero"
     t1067 = h60_own60;
-#line 8390 "main.c"
+#line 8396 "main.c"
     hero_str_decref(t1067);
 #line 93 "examples/assembler/assemble.hero"
     t1068 = h61_own61;
-#line 8394 "main.c"
+#line 8400 "main.c"
     h_0opt_2270cbe7_release(&t1068);
 #line 93 "examples/assembler/assemble.hero"
     t1069 = h62_own62;
-#line 8398 "main.c"
+#line 8404 "main.c"
     h_0opt_e201354_release(&t1069);
 #line 93 "examples/assembler/assemble.hero"
     t1070 = h63_own63;
-#line 8402 "main.c"
+#line 8408 "main.c"
     hero_array_decref(t1070);
 #line 93 "examples/assembler/assemble.hero"
     t1071 = h64_own64;
-#line 8406 "main.c"
+#line 8412 "main.c"
     h_0opt_2270cbe7_release(&t1071);
 #line 93 "examples/assembler/assemble.hero"
     t1072 = h65_own65;
-#line 8410 "main.c"
+#line 8416 "main.c"
     h_0opt_2270cbe7_release(&t1072);
     return t159;
 bb35:
@@ -8434,15 +8440,15 @@ bb35:
     t303 = h44_own44;
 #line 95 "examples/assembler/assemble.hero"
     h44_own44 = t186;
-#line 8438 "main.c"
+#line 8444 "main.c"
     h_0opt_e201354_release(&t303);
 #line 95 "examples/assembler/assemble.hero"
     t304 = h15_f10;
-#line 8442 "main.c"
+#line 8448 "main.c"
     h_0opt_e201354_retain(&t186);
 #line 95 "examples/assembler/assemble.hero"
     h15_f10 = t186;
-#line 8446 "main.c"
+#line 8452 "main.c"
     h_0opt_e201354_release(&t304);
 #line 95 "examples/assembler/assemble.hero"
     t187 = h15_f10;
@@ -8460,7 +8466,7 @@ bb36:
     t174 = h14_f9;
 #line 95 "examples/assembler/assemble.hero"
     t175 = t174.as.err;
-#line 8464 "main.c"
+#line 8470 "main.c"
     hero_failure_retain(&t175);
 #line 95 "examples/assembler/assemble.hero"
     t176 = (h_0opt_2270cbe7){.tag = INT64_C(1), .as.err = t175};
@@ -8468,258 +8474,258 @@ bb36:
     t305 = h45_own45;
 #line 95 "examples/assembler/assemble.hero"
     h45_own45 = t176;
-#line 8472 "main.c"
+#line 8478 "main.c"
     h_0opt_2270cbe7_release(&t305);
 #line 95 "examples/assembler/assemble.hero"
-#line 8475 "main.c"
+#line 8481 "main.c"
     h_0opt_2270cbe7_retain(&t176);
 #line 95 "examples/assembler/assemble.hero"
     t1073 = h2_m;
-#line 8479 "main.c"
+#line 8485 "main.c"
     hero_str_decref(t1073);
 #line 95 "examples/assembler/assemble.hero"
     t1074 = h3_f0;
-#line 8483 "main.c"
+#line 8489 "main.c"
     h_0opt_e201354_release(&t1074);
 #line 95 "examples/assembler/assemble.hero"
     t1075 = h4_f1;
-#line 8487 "main.c"
+#line 8493 "main.c"
     h_0opt_e201354_release(&t1075);
 #line 95 "examples/assembler/assemble.hero"
     t1076 = h5_f2;
-#line 8491 "main.c"
+#line 8497 "main.c"
     h_0opt_e201354_release(&t1076);
 #line 95 "examples/assembler/assemble.hero"
     t1077 = h8_f3;
-#line 8495 "main.c"
+#line 8501 "main.c"
     h_0opt_e201354_release(&t1077);
 #line 95 "examples/assembler/assemble.hero"
     t1078 = h9_f4;
-#line 8499 "main.c"
+#line 8505 "main.c"
     h_0opt_e201354_release(&t1078);
 #line 95 "examples/assembler/assemble.hero"
     t1079 = h10_f5;
-#line 8503 "main.c"
+#line 8509 "main.c"
     h_0opt_e201354_release(&t1079);
 #line 95 "examples/assembler/assemble.hero"
     t1080 = h11_f6;
-#line 8507 "main.c"
+#line 8513 "main.c"
     h_0opt_e201354_release(&t1080);
 #line 95 "examples/assembler/assemble.hero"
     t1081 = h12_f7;
-#line 8511 "main.c"
+#line 8517 "main.c"
     h_0opt_e201354_release(&t1081);
 #line 95 "examples/assembler/assemble.hero"
     t1082 = h13_f8;
-#line 8515 "main.c"
+#line 8521 "main.c"
     h_0opt_e201354_release(&t1082);
 #line 95 "examples/assembler/assemble.hero"
     t1083 = h14_f9;
-#line 8519 "main.c"
+#line 8525 "main.c"
     h_0opt_e201354_release(&t1083);
 #line 95 "examples/assembler/assemble.hero"
     t1084 = h15_f10;
-#line 8523 "main.c"
+#line 8529 "main.c"
     h_0opt_e201354_release(&t1084);
 #line 95 "examples/assembler/assemble.hero"
     t1085 = h16_f11;
-#line 8527 "main.c"
+#line 8533 "main.c"
     h_0opt_e201354_release(&t1085);
 #line 95 "examples/assembler/assemble.hero"
     t1086 = h17_f12;
-#line 8531 "main.c"
+#line 8537 "main.c"
     h_0opt_e201354_release(&t1086);
 #line 95 "examples/assembler/assemble.hero"
     t1087 = h18_f13;
-#line 8535 "main.c"
+#line 8541 "main.c"
     h_0opt_e201354_release(&t1087);
 #line 95 "examples/assembler/assemble.hero"
     t1088 = h19_own19;
-#line 8539 "main.c"
+#line 8545 "main.c"
     h_0opt_e201354_release(&t1088);
 #line 95 "examples/assembler/assemble.hero"
     t1089 = h20_own20;
-#line 8543 "main.c"
+#line 8549 "main.c"
     h_0opt_e201354_release(&t1089);
 #line 95 "examples/assembler/assemble.hero"
     t1090 = h21_own21;
-#line 8547 "main.c"
+#line 8553 "main.c"
     h_0opt_2270cbe7_release(&t1090);
 #line 95 "examples/assembler/assemble.hero"
     t1091 = h22_own22;
-#line 8551 "main.c"
+#line 8557 "main.c"
     h_0opt_e201354_release(&t1091);
 #line 95 "examples/assembler/assemble.hero"
     t1092 = h23_own23;
-#line 8555 "main.c"
+#line 8561 "main.c"
     h_0opt_2270cbe7_release(&t1092);
 #line 95 "examples/assembler/assemble.hero"
     t1093 = h24_own24;
-#line 8559 "main.c"
+#line 8565 "main.c"
     hero_array_decref(t1093);
 #line 95 "examples/assembler/assemble.hero"
     t1094 = h25_own25;
-#line 8563 "main.c"
+#line 8569 "main.c"
     h_0opt_2270cbe7_release(&t1094);
 #line 95 "examples/assembler/assemble.hero"
     t1095 = h26_own26;
-#line 8567 "main.c"
+#line 8573 "main.c"
     h_0opt_2270cbe7_release(&t1095);
 #line 95 "examples/assembler/assemble.hero"
     t1096 = h27_own27;
-#line 8571 "main.c"
+#line 8577 "main.c"
     h_0opt_e201354_release(&t1096);
 #line 95 "examples/assembler/assemble.hero"
     t1097 = h28_own28;
-#line 8575 "main.c"
+#line 8581 "main.c"
     h_0opt_e201354_release(&t1097);
 #line 95 "examples/assembler/assemble.hero"
     t1098 = h29_own29;
-#line 8579 "main.c"
+#line 8585 "main.c"
     h_0opt_2270cbe7_release(&t1098);
 #line 95 "examples/assembler/assemble.hero"
     t1099 = h30_own30;
-#line 8583 "main.c"
+#line 8589 "main.c"
     h_0opt_e201354_release(&t1099);
 #line 95 "examples/assembler/assemble.hero"
     t1100 = h31_own31;
-#line 8587 "main.c"
+#line 8593 "main.c"
     h_0opt_2270cbe7_release(&t1100);
 #line 95 "examples/assembler/assemble.hero"
     t1101 = h32_own32;
-#line 8591 "main.c"
+#line 8597 "main.c"
     hero_array_decref(t1101);
 #line 95 "examples/assembler/assemble.hero"
     t1102 = h33_own33;
-#line 8595 "main.c"
+#line 8601 "main.c"
     h_0opt_2270cbe7_release(&t1102);
 #line 95 "examples/assembler/assemble.hero"
     t1103 = h34_own34;
-#line 8599 "main.c"
+#line 8605 "main.c"
     h_0opt_2270cbe7_release(&t1103);
 #line 95 "examples/assembler/assemble.hero"
     t1104 = h35_own35;
-#line 8603 "main.c"
+#line 8609 "main.c"
     h_0opt_e201354_release(&t1104);
 #line 95 "examples/assembler/assemble.hero"
     t1105 = h36_own36;
-#line 8607 "main.c"
+#line 8613 "main.c"
     h_0opt_e201354_release(&t1105);
 #line 95 "examples/assembler/assemble.hero"
     t1106 = h37_own37;
-#line 8611 "main.c"
+#line 8617 "main.c"
     h_0opt_2270cbe7_release(&t1106);
 #line 95 "examples/assembler/assemble.hero"
     t1107 = h38_own38;
-#line 8615 "main.c"
+#line 8621 "main.c"
     hero_array_decref(t1107);
 #line 95 "examples/assembler/assemble.hero"
     t1108 = h39_own39;
-#line 8619 "main.c"
+#line 8625 "main.c"
     h_0opt_2270cbe7_release(&t1108);
 #line 95 "examples/assembler/assemble.hero"
     t1109 = h40_own40;
-#line 8623 "main.c"
+#line 8629 "main.c"
     h_0opt_2270cbe7_release(&t1109);
 #line 95 "examples/assembler/assemble.hero"
     t1110 = h41_own41;
-#line 8627 "main.c"
+#line 8633 "main.c"
     h_0opt_e201354_release(&t1110);
 #line 95 "examples/assembler/assemble.hero"
     t1111 = h42_own42;
-#line 8631 "main.c"
+#line 8637 "main.c"
     h_0opt_e201354_release(&t1111);
 #line 95 "examples/assembler/assemble.hero"
     t1112 = h43_own43;
-#line 8635 "main.c"
+#line 8641 "main.c"
     h_0opt_2270cbe7_release(&t1112);
 #line 95 "examples/assembler/assemble.hero"
     t1113 = h44_own44;
-#line 8639 "main.c"
+#line 8645 "main.c"
     h_0opt_e201354_release(&t1113);
 #line 95 "examples/assembler/assemble.hero"
     t1114 = h45_own45;
-#line 8643 "main.c"
+#line 8649 "main.c"
     h_0opt_2270cbe7_release(&t1114);
 #line 95 "examples/assembler/assemble.hero"
     t1115 = h46_own46;
-#line 8647 "main.c"
+#line 8653 "main.c"
     hero_array_decref(t1115);
 #line 95 "examples/assembler/assemble.hero"
     t1116 = h47_own47;
-#line 8651 "main.c"
+#line 8657 "main.c"
     h_0opt_2270cbe7_release(&t1116);
 #line 95 "examples/assembler/assemble.hero"
     t1117 = h48_own48;
-#line 8655 "main.c"
+#line 8661 "main.c"
     h_0opt_2270cbe7_release(&t1117);
 #line 95 "examples/assembler/assemble.hero"
     t1118 = h49_own49;
-#line 8659 "main.c"
+#line 8665 "main.c"
     h_0opt_e201354_release(&t1118);
 #line 95 "examples/assembler/assemble.hero"
     t1119 = h50_own50;
-#line 8663 "main.c"
+#line 8669 "main.c"
     h_0opt_e201354_release(&t1119);
 #line 95 "examples/assembler/assemble.hero"
     t1120 = h51_own51;
-#line 8667 "main.c"
+#line 8673 "main.c"
     h_0opt_2270cbe7_release(&t1120);
 #line 95 "examples/assembler/assemble.hero"
     t1121 = h52_own52;
-#line 8671 "main.c"
+#line 8677 "main.c"
     hero_array_decref(t1121);
 #line 95 "examples/assembler/assemble.hero"
     t1122 = h53_own53;
-#line 8675 "main.c"
+#line 8681 "main.c"
     h_0opt_2270cbe7_release(&t1122);
 #line 95 "examples/assembler/assemble.hero"
     t1123 = h54_own54;
-#line 8679 "main.c"
+#line 8685 "main.c"
     h_0opt_2270cbe7_release(&t1123);
 #line 95 "examples/assembler/assemble.hero"
     t1124 = h55_own55;
-#line 8683 "main.c"
+#line 8689 "main.c"
     hero_str_decref(t1124);
 #line 95 "examples/assembler/assemble.hero"
     t1125 = h56_own56;
-#line 8687 "main.c"
+#line 8693 "main.c"
     hero_str_decref(t1125);
 #line 95 "examples/assembler/assemble.hero"
     t1126 = h57_own57;
-#line 8691 "main.c"
+#line 8697 "main.c"
     hero_str_decref(t1126);
 #line 95 "examples/assembler/assemble.hero"
     t1127 = h58_own58;
-#line 8695 "main.c"
+#line 8701 "main.c"
     hero_str_decref(t1127);
 #line 95 "examples/assembler/assemble.hero"
     t1128 = h59_own59;
-#line 8699 "main.c"
+#line 8705 "main.c"
     hero_str_decref(t1128);
 #line 95 "examples/assembler/assemble.hero"
     t1129 = h60_own60;
-#line 8703 "main.c"
+#line 8709 "main.c"
     hero_str_decref(t1129);
 #line 95 "examples/assembler/assemble.hero"
     t1130 = h61_own61;
-#line 8707 "main.c"
+#line 8713 "main.c"
     h_0opt_2270cbe7_release(&t1130);
 #line 95 "examples/assembler/assemble.hero"
     t1131 = h62_own62;
-#line 8711 "main.c"
+#line 8717 "main.c"
     h_0opt_e201354_release(&t1131);
 #line 95 "examples/assembler/assemble.hero"
     t1132 = h63_own63;
-#line 8715 "main.c"
+#line 8721 "main.c"
     hero_array_decref(t1132);
 #line 95 "examples/assembler/assemble.hero"
     t1133 = h64_own64;
-#line 8719 "main.c"
+#line 8725 "main.c"
     h_0opt_2270cbe7_release(&t1133);
 #line 95 "examples/assembler/assemble.hero"
     t1134 = h65_own65;
-#line 8723 "main.c"
+#line 8729 "main.c"
     h_0opt_2270cbe7_release(&t1134);
     return t176;
 bb37:
@@ -8745,10 +8751,10 @@ bb37:
     t306 = h46_own46;
 #line 95 "examples/assembler/assemble.hero"
     h46_own46 = t196;
-#line 8749 "main.c"
+#line 8755 "main.c"
     hero_array_decref(t306);
 #line 94 "examples/assembler/assemble.hero"
-#line 8752 "main.c"
+#line 8758 "main.c"
     hero_array_incref(t196);
 #line 94 "examples/assembler/assemble.hero"
     t197 = (h_0opt_2270cbe7){.tag = INT64_C(0), .as.ok = t196};
@@ -8756,258 +8762,258 @@ bb37:
     t307 = h47_own47;
 #line 94 "examples/assembler/assemble.hero"
     h47_own47 = t197;
-#line 8760 "main.c"
+#line 8766 "main.c"
     h_0opt_2270cbe7_release(&t307);
 #line 94 "examples/assembler/assemble.hero"
-#line 8763 "main.c"
+#line 8769 "main.c"
     h_0opt_2270cbe7_retain(&t197);
 #line 94 "examples/assembler/assemble.hero"
     t1135 = h2_m;
-#line 8767 "main.c"
+#line 8773 "main.c"
     hero_str_decref(t1135);
 #line 94 "examples/assembler/assemble.hero"
     t1136 = h3_f0;
-#line 8771 "main.c"
+#line 8777 "main.c"
     h_0opt_e201354_release(&t1136);
 #line 94 "examples/assembler/assemble.hero"
     t1137 = h4_f1;
-#line 8775 "main.c"
+#line 8781 "main.c"
     h_0opt_e201354_release(&t1137);
 #line 94 "examples/assembler/assemble.hero"
     t1138 = h5_f2;
-#line 8779 "main.c"
+#line 8785 "main.c"
     h_0opt_e201354_release(&t1138);
 #line 94 "examples/assembler/assemble.hero"
     t1139 = h8_f3;
-#line 8783 "main.c"
+#line 8789 "main.c"
     h_0opt_e201354_release(&t1139);
 #line 94 "examples/assembler/assemble.hero"
     t1140 = h9_f4;
-#line 8787 "main.c"
+#line 8793 "main.c"
     h_0opt_e201354_release(&t1140);
 #line 94 "examples/assembler/assemble.hero"
     t1141 = h10_f5;
-#line 8791 "main.c"
+#line 8797 "main.c"
     h_0opt_e201354_release(&t1141);
 #line 94 "examples/assembler/assemble.hero"
     t1142 = h11_f6;
-#line 8795 "main.c"
+#line 8801 "main.c"
     h_0opt_e201354_release(&t1142);
 #line 94 "examples/assembler/assemble.hero"
     t1143 = h12_f7;
-#line 8799 "main.c"
+#line 8805 "main.c"
     h_0opt_e201354_release(&t1143);
 #line 94 "examples/assembler/assemble.hero"
     t1144 = h13_f8;
-#line 8803 "main.c"
+#line 8809 "main.c"
     h_0opt_e201354_release(&t1144);
 #line 94 "examples/assembler/assemble.hero"
     t1145 = h14_f9;
-#line 8807 "main.c"
+#line 8813 "main.c"
     h_0opt_e201354_release(&t1145);
 #line 94 "examples/assembler/assemble.hero"
     t1146 = h15_f10;
-#line 8811 "main.c"
+#line 8817 "main.c"
     h_0opt_e201354_release(&t1146);
 #line 94 "examples/assembler/assemble.hero"
     t1147 = h16_f11;
-#line 8815 "main.c"
+#line 8821 "main.c"
     h_0opt_e201354_release(&t1147);
 #line 94 "examples/assembler/assemble.hero"
     t1148 = h17_f12;
-#line 8819 "main.c"
+#line 8825 "main.c"
     h_0opt_e201354_release(&t1148);
 #line 94 "examples/assembler/assemble.hero"
     t1149 = h18_f13;
-#line 8823 "main.c"
+#line 8829 "main.c"
     h_0opt_e201354_release(&t1149);
 #line 94 "examples/assembler/assemble.hero"
     t1150 = h19_own19;
-#line 8827 "main.c"
+#line 8833 "main.c"
     h_0opt_e201354_release(&t1150);
 #line 94 "examples/assembler/assemble.hero"
     t1151 = h20_own20;
-#line 8831 "main.c"
+#line 8837 "main.c"
     h_0opt_e201354_release(&t1151);
 #line 94 "examples/assembler/assemble.hero"
     t1152 = h21_own21;
-#line 8835 "main.c"
+#line 8841 "main.c"
     h_0opt_2270cbe7_release(&t1152);
 #line 94 "examples/assembler/assemble.hero"
     t1153 = h22_own22;
-#line 8839 "main.c"
+#line 8845 "main.c"
     h_0opt_e201354_release(&t1153);
 #line 94 "examples/assembler/assemble.hero"
     t1154 = h23_own23;
-#line 8843 "main.c"
+#line 8849 "main.c"
     h_0opt_2270cbe7_release(&t1154);
 #line 94 "examples/assembler/assemble.hero"
     t1155 = h24_own24;
-#line 8847 "main.c"
+#line 8853 "main.c"
     hero_array_decref(t1155);
 #line 94 "examples/assembler/assemble.hero"
     t1156 = h25_own25;
-#line 8851 "main.c"
+#line 8857 "main.c"
     h_0opt_2270cbe7_release(&t1156);
 #line 94 "examples/assembler/assemble.hero"
     t1157 = h26_own26;
-#line 8855 "main.c"
+#line 8861 "main.c"
     h_0opt_2270cbe7_release(&t1157);
 #line 94 "examples/assembler/assemble.hero"
     t1158 = h27_own27;
-#line 8859 "main.c"
+#line 8865 "main.c"
     h_0opt_e201354_release(&t1158);
 #line 94 "examples/assembler/assemble.hero"
     t1159 = h28_own28;
-#line 8863 "main.c"
+#line 8869 "main.c"
     h_0opt_e201354_release(&t1159);
 #line 94 "examples/assembler/assemble.hero"
     t1160 = h29_own29;
-#line 8867 "main.c"
+#line 8873 "main.c"
     h_0opt_2270cbe7_release(&t1160);
 #line 94 "examples/assembler/assemble.hero"
     t1161 = h30_own30;
-#line 8871 "main.c"
+#line 8877 "main.c"
     h_0opt_e201354_release(&t1161);
 #line 94 "examples/assembler/assemble.hero"
     t1162 = h31_own31;
-#line 8875 "main.c"
+#line 8881 "main.c"
     h_0opt_2270cbe7_release(&t1162);
 #line 94 "examples/assembler/assemble.hero"
     t1163 = h32_own32;
-#line 8879 "main.c"
+#line 8885 "main.c"
     hero_array_decref(t1163);
 #line 94 "examples/assembler/assemble.hero"
     t1164 = h33_own33;
-#line 8883 "main.c"
+#line 8889 "main.c"
     h_0opt_2270cbe7_release(&t1164);
 #line 94 "examples/assembler/assemble.hero"
     t1165 = h34_own34;
-#line 8887 "main.c"
+#line 8893 "main.c"
     h_0opt_2270cbe7_release(&t1165);
 #line 94 "examples/assembler/assemble.hero"
     t1166 = h35_own35;
-#line 8891 "main.c"
+#line 8897 "main.c"
     h_0opt_e201354_release(&t1166);
 #line 94 "examples/assembler/assemble.hero"
     t1167 = h36_own36;
-#line 8895 "main.c"
+#line 8901 "main.c"
     h_0opt_e201354_release(&t1167);
 #line 94 "examples/assembler/assemble.hero"
     t1168 = h37_own37;
-#line 8899 "main.c"
+#line 8905 "main.c"
     h_0opt_2270cbe7_release(&t1168);
 #line 94 "examples/assembler/assemble.hero"
     t1169 = h38_own38;
-#line 8903 "main.c"
+#line 8909 "main.c"
     hero_array_decref(t1169);
 #line 94 "examples/assembler/assemble.hero"
     t1170 = h39_own39;
-#line 8907 "main.c"
+#line 8913 "main.c"
     h_0opt_2270cbe7_release(&t1170);
 #line 94 "examples/assembler/assemble.hero"
     t1171 = h40_own40;
-#line 8911 "main.c"
+#line 8917 "main.c"
     h_0opt_2270cbe7_release(&t1171);
 #line 94 "examples/assembler/assemble.hero"
     t1172 = h41_own41;
-#line 8915 "main.c"
+#line 8921 "main.c"
     h_0opt_e201354_release(&t1172);
 #line 94 "examples/assembler/assemble.hero"
     t1173 = h42_own42;
-#line 8919 "main.c"
+#line 8925 "main.c"
     h_0opt_e201354_release(&t1173);
 #line 94 "examples/assembler/assemble.hero"
     t1174 = h43_own43;
-#line 8923 "main.c"
+#line 8929 "main.c"
     h_0opt_2270cbe7_release(&t1174);
 #line 94 "examples/assembler/assemble.hero"
     t1175 = h44_own44;
-#line 8927 "main.c"
+#line 8933 "main.c"
     h_0opt_e201354_release(&t1175);
 #line 94 "examples/assembler/assemble.hero"
     t1176 = h45_own45;
-#line 8931 "main.c"
+#line 8937 "main.c"
     h_0opt_2270cbe7_release(&t1176);
 #line 94 "examples/assembler/assemble.hero"
     t1177 = h46_own46;
-#line 8935 "main.c"
+#line 8941 "main.c"
     hero_array_decref(t1177);
 #line 94 "examples/assembler/assemble.hero"
     t1178 = h47_own47;
-#line 8939 "main.c"
+#line 8945 "main.c"
     h_0opt_2270cbe7_release(&t1178);
 #line 94 "examples/assembler/assemble.hero"
     t1179 = h48_own48;
-#line 8943 "main.c"
+#line 8949 "main.c"
     h_0opt_2270cbe7_release(&t1179);
 #line 94 "examples/assembler/assemble.hero"
     t1180 = h49_own49;
-#line 8947 "main.c"
+#line 8953 "main.c"
     h_0opt_e201354_release(&t1180);
 #line 94 "examples/assembler/assemble.hero"
     t1181 = h50_own50;
-#line 8951 "main.c"
+#line 8957 "main.c"
     h_0opt_e201354_release(&t1181);
 #line 94 "examples/assembler/assemble.hero"
     t1182 = h51_own51;
-#line 8955 "main.c"
+#line 8961 "main.c"
     h_0opt_2270cbe7_release(&t1182);
 #line 94 "examples/assembler/assemble.hero"
     t1183 = h52_own52;
-#line 8959 "main.c"
+#line 8965 "main.c"
     hero_array_decref(t1183);
 #line 94 "examples/assembler/assemble.hero"
     t1184 = h53_own53;
-#line 8963 "main.c"
+#line 8969 "main.c"
     h_0opt_2270cbe7_release(&t1184);
 #line 94 "examples/assembler/assemble.hero"
     t1185 = h54_own54;
-#line 8967 "main.c"
+#line 8973 "main.c"
     h_0opt_2270cbe7_release(&t1185);
 #line 94 "examples/assembler/assemble.hero"
     t1186 = h55_own55;
-#line 8971 "main.c"
+#line 8977 "main.c"
     hero_str_decref(t1186);
 #line 94 "examples/assembler/assemble.hero"
     t1187 = h56_own56;
-#line 8975 "main.c"
+#line 8981 "main.c"
     hero_str_decref(t1187);
 #line 94 "examples/assembler/assemble.hero"
     t1188 = h57_own57;
-#line 8979 "main.c"
+#line 8985 "main.c"
     hero_str_decref(t1188);
 #line 94 "examples/assembler/assemble.hero"
     t1189 = h58_own58;
-#line 8983 "main.c"
+#line 8989 "main.c"
     hero_str_decref(t1189);
 #line 94 "examples/assembler/assemble.hero"
     t1190 = h59_own59;
-#line 8987 "main.c"
+#line 8993 "main.c"
     hero_str_decref(t1190);
 #line 94 "examples/assembler/assemble.hero"
     t1191 = h60_own60;
-#line 8991 "main.c"
+#line 8997 "main.c"
     hero_str_decref(t1191);
 #line 94 "examples/assembler/assemble.hero"
     t1192 = h61_own61;
-#line 8995 "main.c"
+#line 9001 "main.c"
     h_0opt_2270cbe7_release(&t1192);
 #line 94 "examples/assembler/assemble.hero"
     t1193 = h62_own62;
-#line 8999 "main.c"
+#line 9005 "main.c"
     h_0opt_e201354_release(&t1193);
 #line 94 "examples/assembler/assemble.hero"
     t1194 = h63_own63;
-#line 9003 "main.c"
+#line 9009 "main.c"
     hero_array_decref(t1194);
 #line 94 "examples/assembler/assemble.hero"
     t1195 = h64_own64;
-#line 9007 "main.c"
+#line 9013 "main.c"
     h_0opt_2270cbe7_release(&t1195);
 #line 94 "examples/assembler/assemble.hero"
     t1196 = h65_own65;
-#line 9011 "main.c"
+#line 9017 "main.c"
     h_0opt_2270cbe7_release(&t1196);
     return t197;
 bb38:
@@ -9015,7 +9021,7 @@ bb38:
     t191 = h15_f10;
 #line 95 "examples/assembler/assemble.hero"
     t192 = t191.as.err;
-#line 9019 "main.c"
+#line 9025 "main.c"
     hero_failure_retain(&t192);
 #line 95 "examples/assembler/assemble.hero"
     t193 = (h_0opt_2270cbe7){.tag = INT64_C(1), .as.err = t192};
@@ -9023,258 +9029,258 @@ bb38:
     t308 = h48_own48;
 #line 95 "examples/assembler/assemble.hero"
     h48_own48 = t193;
-#line 9027 "main.c"
+#line 9033 "main.c"
     h_0opt_2270cbe7_release(&t308);
 #line 95 "examples/assembler/assemble.hero"
-#line 9030 "main.c"
+#line 9036 "main.c"
     h_0opt_2270cbe7_retain(&t193);
 #line 95 "examples/assembler/assemble.hero"
     t1197 = h2_m;
-#line 9034 "main.c"
+#line 9040 "main.c"
     hero_str_decref(t1197);
 #line 95 "examples/assembler/assemble.hero"
     t1198 = h3_f0;
-#line 9038 "main.c"
+#line 9044 "main.c"
     h_0opt_e201354_release(&t1198);
 #line 95 "examples/assembler/assemble.hero"
     t1199 = h4_f1;
-#line 9042 "main.c"
+#line 9048 "main.c"
     h_0opt_e201354_release(&t1199);
 #line 95 "examples/assembler/assemble.hero"
     t1200 = h5_f2;
-#line 9046 "main.c"
+#line 9052 "main.c"
     h_0opt_e201354_release(&t1200);
 #line 95 "examples/assembler/assemble.hero"
     t1201 = h8_f3;
-#line 9050 "main.c"
+#line 9056 "main.c"
     h_0opt_e201354_release(&t1201);
 #line 95 "examples/assembler/assemble.hero"
     t1202 = h9_f4;
-#line 9054 "main.c"
+#line 9060 "main.c"
     h_0opt_e201354_release(&t1202);
 #line 95 "examples/assembler/assemble.hero"
     t1203 = h10_f5;
-#line 9058 "main.c"
+#line 9064 "main.c"
     h_0opt_e201354_release(&t1203);
 #line 95 "examples/assembler/assemble.hero"
     t1204 = h11_f6;
-#line 9062 "main.c"
+#line 9068 "main.c"
     h_0opt_e201354_release(&t1204);
 #line 95 "examples/assembler/assemble.hero"
     t1205 = h12_f7;
-#line 9066 "main.c"
+#line 9072 "main.c"
     h_0opt_e201354_release(&t1205);
 #line 95 "examples/assembler/assemble.hero"
     t1206 = h13_f8;
-#line 9070 "main.c"
+#line 9076 "main.c"
     h_0opt_e201354_release(&t1206);
 #line 95 "examples/assembler/assemble.hero"
     t1207 = h14_f9;
-#line 9074 "main.c"
+#line 9080 "main.c"
     h_0opt_e201354_release(&t1207);
 #line 95 "examples/assembler/assemble.hero"
     t1208 = h15_f10;
-#line 9078 "main.c"
+#line 9084 "main.c"
     h_0opt_e201354_release(&t1208);
 #line 95 "examples/assembler/assemble.hero"
     t1209 = h16_f11;
-#line 9082 "main.c"
+#line 9088 "main.c"
     h_0opt_e201354_release(&t1209);
 #line 95 "examples/assembler/assemble.hero"
     t1210 = h17_f12;
-#line 9086 "main.c"
+#line 9092 "main.c"
     h_0opt_e201354_release(&t1210);
 #line 95 "examples/assembler/assemble.hero"
     t1211 = h18_f13;
-#line 9090 "main.c"
+#line 9096 "main.c"
     h_0opt_e201354_release(&t1211);
 #line 95 "examples/assembler/assemble.hero"
     t1212 = h19_own19;
-#line 9094 "main.c"
+#line 9100 "main.c"
     h_0opt_e201354_release(&t1212);
 #line 95 "examples/assembler/assemble.hero"
     t1213 = h20_own20;
-#line 9098 "main.c"
+#line 9104 "main.c"
     h_0opt_e201354_release(&t1213);
 #line 95 "examples/assembler/assemble.hero"
     t1214 = h21_own21;
-#line 9102 "main.c"
+#line 9108 "main.c"
     h_0opt_2270cbe7_release(&t1214);
 #line 95 "examples/assembler/assemble.hero"
     t1215 = h22_own22;
-#line 9106 "main.c"
+#line 9112 "main.c"
     h_0opt_e201354_release(&t1215);
 #line 95 "examples/assembler/assemble.hero"
     t1216 = h23_own23;
-#line 9110 "main.c"
+#line 9116 "main.c"
     h_0opt_2270cbe7_release(&t1216);
 #line 95 "examples/assembler/assemble.hero"
     t1217 = h24_own24;
-#line 9114 "main.c"
+#line 9120 "main.c"
     hero_array_decref(t1217);
 #line 95 "examples/assembler/assemble.hero"
     t1218 = h25_own25;
-#line 9118 "main.c"
+#line 9124 "main.c"
     h_0opt_2270cbe7_release(&t1218);
 #line 95 "examples/assembler/assemble.hero"
     t1219 = h26_own26;
-#line 9122 "main.c"
+#line 9128 "main.c"
     h_0opt_2270cbe7_release(&t1219);
 #line 95 "examples/assembler/assemble.hero"
     t1220 = h27_own27;
-#line 9126 "main.c"
+#line 9132 "main.c"
     h_0opt_e201354_release(&t1220);
 #line 95 "examples/assembler/assemble.hero"
     t1221 = h28_own28;
-#line 9130 "main.c"
+#line 9136 "main.c"
     h_0opt_e201354_release(&t1221);
 #line 95 "examples/assembler/assemble.hero"
     t1222 = h29_own29;
-#line 9134 "main.c"
+#line 9140 "main.c"
     h_0opt_2270cbe7_release(&t1222);
 #line 95 "examples/assembler/assemble.hero"
     t1223 = h30_own30;
-#line 9138 "main.c"
+#line 9144 "main.c"
     h_0opt_e201354_release(&t1223);
 #line 95 "examples/assembler/assemble.hero"
     t1224 = h31_own31;
-#line 9142 "main.c"
+#line 9148 "main.c"
     h_0opt_2270cbe7_release(&t1224);
 #line 95 "examples/assembler/assemble.hero"
     t1225 = h32_own32;
-#line 9146 "main.c"
+#line 9152 "main.c"
     hero_array_decref(t1225);
 #line 95 "examples/assembler/assemble.hero"
     t1226 = h33_own33;
-#line 9150 "main.c"
+#line 9156 "main.c"
     h_0opt_2270cbe7_release(&t1226);
 #line 95 "examples/assembler/assemble.hero"
     t1227 = h34_own34;
-#line 9154 "main.c"
+#line 9160 "main.c"
     h_0opt_2270cbe7_release(&t1227);
 #line 95 "examples/assembler/assemble.hero"
     t1228 = h35_own35;
-#line 9158 "main.c"
+#line 9164 "main.c"
     h_0opt_e201354_release(&t1228);
 #line 95 "examples/assembler/assemble.hero"
     t1229 = h36_own36;
-#line 9162 "main.c"
+#line 9168 "main.c"
     h_0opt_e201354_release(&t1229);
 #line 95 "examples/assembler/assemble.hero"
     t1230 = h37_own37;
-#line 9166 "main.c"
+#line 9172 "main.c"
     h_0opt_2270cbe7_release(&t1230);
 #line 95 "examples/assembler/assemble.hero"
     t1231 = h38_own38;
-#line 9170 "main.c"
+#line 9176 "main.c"
     hero_array_decref(t1231);
 #line 95 "examples/assembler/assemble.hero"
     t1232 = h39_own39;
-#line 9174 "main.c"
+#line 9180 "main.c"
     h_0opt_2270cbe7_release(&t1232);
 #line 95 "examples/assembler/assemble.hero"
     t1233 = h40_own40;
-#line 9178 "main.c"
+#line 9184 "main.c"
     h_0opt_2270cbe7_release(&t1233);
 #line 95 "examples/assembler/assemble.hero"
     t1234 = h41_own41;
-#line 9182 "main.c"
+#line 9188 "main.c"
     h_0opt_e201354_release(&t1234);
 #line 95 "examples/assembler/assemble.hero"
     t1235 = h42_own42;
-#line 9186 "main.c"
+#line 9192 "main.c"
     h_0opt_e201354_release(&t1235);
 #line 95 "examples/assembler/assemble.hero"
     t1236 = h43_own43;
-#line 9190 "main.c"
+#line 9196 "main.c"
     h_0opt_2270cbe7_release(&t1236);
 #line 95 "examples/assembler/assemble.hero"
     t1237 = h44_own44;
-#line 9194 "main.c"
+#line 9200 "main.c"
     h_0opt_e201354_release(&t1237);
 #line 95 "examples/assembler/assemble.hero"
     t1238 = h45_own45;
-#line 9198 "main.c"
+#line 9204 "main.c"
     h_0opt_2270cbe7_release(&t1238);
 #line 95 "examples/assembler/assemble.hero"
     t1239 = h46_own46;
-#line 9202 "main.c"
+#line 9208 "main.c"
     hero_array_decref(t1239);
 #line 95 "examples/assembler/assemble.hero"
     t1240 = h47_own47;
-#line 9206 "main.c"
+#line 9212 "main.c"
     h_0opt_2270cbe7_release(&t1240);
 #line 95 "examples/assembler/assemble.hero"
     t1241 = h48_own48;
-#line 9210 "main.c"
+#line 9216 "main.c"
     h_0opt_2270cbe7_release(&t1241);
 #line 95 "examples/assembler/assemble.hero"
     t1242 = h49_own49;
-#line 9214 "main.c"
+#line 9220 "main.c"
     h_0opt_e201354_release(&t1242);
 #line 95 "examples/assembler/assemble.hero"
     t1243 = h50_own50;
-#line 9218 "main.c"
+#line 9224 "main.c"
     h_0opt_e201354_release(&t1243);
 #line 95 "examples/assembler/assemble.hero"
     t1244 = h51_own51;
-#line 9222 "main.c"
+#line 9228 "main.c"
     h_0opt_2270cbe7_release(&t1244);
 #line 95 "examples/assembler/assemble.hero"
     t1245 = h52_own52;
-#line 9226 "main.c"
+#line 9232 "main.c"
     hero_array_decref(t1245);
 #line 95 "examples/assembler/assemble.hero"
     t1246 = h53_own53;
-#line 9230 "main.c"
+#line 9236 "main.c"
     h_0opt_2270cbe7_release(&t1246);
 #line 95 "examples/assembler/assemble.hero"
     t1247 = h54_own54;
-#line 9234 "main.c"
+#line 9240 "main.c"
     h_0opt_2270cbe7_release(&t1247);
 #line 95 "examples/assembler/assemble.hero"
     t1248 = h55_own55;
-#line 9238 "main.c"
+#line 9244 "main.c"
     hero_str_decref(t1248);
 #line 95 "examples/assembler/assemble.hero"
     t1249 = h56_own56;
-#line 9242 "main.c"
+#line 9248 "main.c"
     hero_str_decref(t1249);
 #line 95 "examples/assembler/assemble.hero"
     t1250 = h57_own57;
-#line 9246 "main.c"
+#line 9252 "main.c"
     hero_str_decref(t1250);
 #line 95 "examples/assembler/assemble.hero"
     t1251 = h58_own58;
-#line 9250 "main.c"
+#line 9256 "main.c"
     hero_str_decref(t1251);
 #line 95 "examples/assembler/assemble.hero"
     t1252 = h59_own59;
-#line 9254 "main.c"
+#line 9260 "main.c"
     hero_str_decref(t1252);
 #line 95 "examples/assembler/assemble.hero"
     t1253 = h60_own60;
-#line 9258 "main.c"
+#line 9264 "main.c"
     hero_str_decref(t1253);
 #line 95 "examples/assembler/assemble.hero"
     t1254 = h61_own61;
-#line 9262 "main.c"
+#line 9268 "main.c"
     h_0opt_2270cbe7_release(&t1254);
 #line 95 "examples/assembler/assemble.hero"
     t1255 = h62_own62;
-#line 9266 "main.c"
+#line 9272 "main.c"
     h_0opt_e201354_release(&t1255);
 #line 95 "examples/assembler/assemble.hero"
     t1256 = h63_own63;
-#line 9270 "main.c"
+#line 9276 "main.c"
     hero_array_decref(t1256);
 #line 95 "examples/assembler/assemble.hero"
     t1257 = h64_own64;
-#line 9274 "main.c"
+#line 9280 "main.c"
     h_0opt_2270cbe7_release(&t1257);
 #line 95 "examples/assembler/assemble.hero"
     t1258 = h65_own65;
-#line 9278 "main.c"
+#line 9284 "main.c"
     h_0opt_2270cbe7_release(&t1258);
     return t193;
 bb39:
@@ -9298,15 +9304,15 @@ bb40:
     t309 = h49_own49;
 #line 99 "examples/assembler/assemble.hero"
     h49_own49 = t203;
-#line 9302 "main.c"
+#line 9308 "main.c"
     h_0opt_e201354_release(&t309);
 #line 99 "examples/assembler/assemble.hero"
     t310 = h16_f11;
-#line 9306 "main.c"
+#line 9312 "main.c"
     h_0opt_e201354_retain(&t203);
 #line 99 "examples/assembler/assemble.hero"
     h16_f11 = t203;
-#line 9310 "main.c"
+#line 9316 "main.c"
     h_0opt_e201354_release(&t310);
 #line 99 "examples/assembler/assemble.hero"
     t204 = h16_f11;
@@ -9346,15 +9352,15 @@ bb42:
     t311 = h50_own50;
 #line 100 "examples/assembler/assemble.hero"
     h50_own50 = t221;
-#line 9350 "main.c"
+#line 9356 "main.c"
     h_0opt_e201354_release(&t311);
 #line 100 "examples/assembler/assemble.hero"
     t312 = h17_f12;
-#line 9354 "main.c"
+#line 9360 "main.c"
     h_0opt_e201354_retain(&t221);
 #line 100 "examples/assembler/assemble.hero"
     h17_f12 = t221;
-#line 9358 "main.c"
+#line 9364 "main.c"
     h_0opt_e201354_release(&t312);
 #line 100 "examples/assembler/assemble.hero"
     t222 = h17_f12;
@@ -9372,7 +9378,7 @@ bb43:
     t208 = h16_f11;
 #line 99 "examples/assembler/assemble.hero"
     t209 = t208.as.err;
-#line 9376 "main.c"
+#line 9382 "main.c"
     hero_failure_retain(&t209);
 #line 99 "examples/assembler/assemble.hero"
     t210 = (h_0opt_2270cbe7){.tag = INT64_C(1), .as.err = t209};
@@ -9380,258 +9386,258 @@ bb43:
     t313 = h51_own51;
 #line 99 "examples/assembler/assemble.hero"
     h51_own51 = t210;
-#line 9384 "main.c"
+#line 9390 "main.c"
     h_0opt_2270cbe7_release(&t313);
 #line 99 "examples/assembler/assemble.hero"
-#line 9387 "main.c"
+#line 9393 "main.c"
     h_0opt_2270cbe7_retain(&t210);
 #line 99 "examples/assembler/assemble.hero"
     t1259 = h2_m;
-#line 9391 "main.c"
+#line 9397 "main.c"
     hero_str_decref(t1259);
 #line 99 "examples/assembler/assemble.hero"
     t1260 = h3_f0;
-#line 9395 "main.c"
+#line 9401 "main.c"
     h_0opt_e201354_release(&t1260);
 #line 99 "examples/assembler/assemble.hero"
     t1261 = h4_f1;
-#line 9399 "main.c"
+#line 9405 "main.c"
     h_0opt_e201354_release(&t1261);
 #line 99 "examples/assembler/assemble.hero"
     t1262 = h5_f2;
-#line 9403 "main.c"
+#line 9409 "main.c"
     h_0opt_e201354_release(&t1262);
 #line 99 "examples/assembler/assemble.hero"
     t1263 = h8_f3;
-#line 9407 "main.c"
+#line 9413 "main.c"
     h_0opt_e201354_release(&t1263);
 #line 99 "examples/assembler/assemble.hero"
     t1264 = h9_f4;
-#line 9411 "main.c"
+#line 9417 "main.c"
     h_0opt_e201354_release(&t1264);
 #line 99 "examples/assembler/assemble.hero"
     t1265 = h10_f5;
-#line 9415 "main.c"
+#line 9421 "main.c"
     h_0opt_e201354_release(&t1265);
 #line 99 "examples/assembler/assemble.hero"
     t1266 = h11_f6;
-#line 9419 "main.c"
+#line 9425 "main.c"
     h_0opt_e201354_release(&t1266);
 #line 99 "examples/assembler/assemble.hero"
     t1267 = h12_f7;
-#line 9423 "main.c"
+#line 9429 "main.c"
     h_0opt_e201354_release(&t1267);
 #line 99 "examples/assembler/assemble.hero"
     t1268 = h13_f8;
-#line 9427 "main.c"
+#line 9433 "main.c"
     h_0opt_e201354_release(&t1268);
 #line 99 "examples/assembler/assemble.hero"
     t1269 = h14_f9;
-#line 9431 "main.c"
+#line 9437 "main.c"
     h_0opt_e201354_release(&t1269);
 #line 99 "examples/assembler/assemble.hero"
     t1270 = h15_f10;
-#line 9435 "main.c"
+#line 9441 "main.c"
     h_0opt_e201354_release(&t1270);
 #line 99 "examples/assembler/assemble.hero"
     t1271 = h16_f11;
-#line 9439 "main.c"
+#line 9445 "main.c"
     h_0opt_e201354_release(&t1271);
 #line 99 "examples/assembler/assemble.hero"
     t1272 = h17_f12;
-#line 9443 "main.c"
+#line 9449 "main.c"
     h_0opt_e201354_release(&t1272);
 #line 99 "examples/assembler/assemble.hero"
     t1273 = h18_f13;
-#line 9447 "main.c"
+#line 9453 "main.c"
     h_0opt_e201354_release(&t1273);
 #line 99 "examples/assembler/assemble.hero"
     t1274 = h19_own19;
-#line 9451 "main.c"
+#line 9457 "main.c"
     h_0opt_e201354_release(&t1274);
 #line 99 "examples/assembler/assemble.hero"
     t1275 = h20_own20;
-#line 9455 "main.c"
+#line 9461 "main.c"
     h_0opt_e201354_release(&t1275);
 #line 99 "examples/assembler/assemble.hero"
     t1276 = h21_own21;
-#line 9459 "main.c"
+#line 9465 "main.c"
     h_0opt_2270cbe7_release(&t1276);
 #line 99 "examples/assembler/assemble.hero"
     t1277 = h22_own22;
-#line 9463 "main.c"
+#line 9469 "main.c"
     h_0opt_e201354_release(&t1277);
 #line 99 "examples/assembler/assemble.hero"
     t1278 = h23_own23;
-#line 9467 "main.c"
+#line 9473 "main.c"
     h_0opt_2270cbe7_release(&t1278);
 #line 99 "examples/assembler/assemble.hero"
     t1279 = h24_own24;
-#line 9471 "main.c"
+#line 9477 "main.c"
     hero_array_decref(t1279);
 #line 99 "examples/assembler/assemble.hero"
     t1280 = h25_own25;
-#line 9475 "main.c"
+#line 9481 "main.c"
     h_0opt_2270cbe7_release(&t1280);
 #line 99 "examples/assembler/assemble.hero"
     t1281 = h26_own26;
-#line 9479 "main.c"
+#line 9485 "main.c"
     h_0opt_2270cbe7_release(&t1281);
 #line 99 "examples/assembler/assemble.hero"
     t1282 = h27_own27;
-#line 9483 "main.c"
+#line 9489 "main.c"
     h_0opt_e201354_release(&t1282);
 #line 99 "examples/assembler/assemble.hero"
     t1283 = h28_own28;
-#line 9487 "main.c"
+#line 9493 "main.c"
     h_0opt_e201354_release(&t1283);
 #line 99 "examples/assembler/assemble.hero"
     t1284 = h29_own29;
-#line 9491 "main.c"
+#line 9497 "main.c"
     h_0opt_2270cbe7_release(&t1284);
 #line 99 "examples/assembler/assemble.hero"
     t1285 = h30_own30;
-#line 9495 "main.c"
+#line 9501 "main.c"
     h_0opt_e201354_release(&t1285);
 #line 99 "examples/assembler/assemble.hero"
     t1286 = h31_own31;
-#line 9499 "main.c"
+#line 9505 "main.c"
     h_0opt_2270cbe7_release(&t1286);
 #line 99 "examples/assembler/assemble.hero"
     t1287 = h32_own32;
-#line 9503 "main.c"
+#line 9509 "main.c"
     hero_array_decref(t1287);
 #line 99 "examples/assembler/assemble.hero"
     t1288 = h33_own33;
-#line 9507 "main.c"
+#line 9513 "main.c"
     h_0opt_2270cbe7_release(&t1288);
 #line 99 "examples/assembler/assemble.hero"
     t1289 = h34_own34;
-#line 9511 "main.c"
+#line 9517 "main.c"
     h_0opt_2270cbe7_release(&t1289);
 #line 99 "examples/assembler/assemble.hero"
     t1290 = h35_own35;
-#line 9515 "main.c"
+#line 9521 "main.c"
     h_0opt_e201354_release(&t1290);
 #line 99 "examples/assembler/assemble.hero"
     t1291 = h36_own36;
-#line 9519 "main.c"
+#line 9525 "main.c"
     h_0opt_e201354_release(&t1291);
 #line 99 "examples/assembler/assemble.hero"
     t1292 = h37_own37;
-#line 9523 "main.c"
+#line 9529 "main.c"
     h_0opt_2270cbe7_release(&t1292);
 #line 99 "examples/assembler/assemble.hero"
     t1293 = h38_own38;
-#line 9527 "main.c"
+#line 9533 "main.c"
     hero_array_decref(t1293);
 #line 99 "examples/assembler/assemble.hero"
     t1294 = h39_own39;
-#line 9531 "main.c"
+#line 9537 "main.c"
     h_0opt_2270cbe7_release(&t1294);
 #line 99 "examples/assembler/assemble.hero"
     t1295 = h40_own40;
-#line 9535 "main.c"
+#line 9541 "main.c"
     h_0opt_2270cbe7_release(&t1295);
 #line 99 "examples/assembler/assemble.hero"
     t1296 = h41_own41;
-#line 9539 "main.c"
+#line 9545 "main.c"
     h_0opt_e201354_release(&t1296);
 #line 99 "examples/assembler/assemble.hero"
     t1297 = h42_own42;
-#line 9543 "main.c"
+#line 9549 "main.c"
     h_0opt_e201354_release(&t1297);
 #line 99 "examples/assembler/assemble.hero"
     t1298 = h43_own43;
-#line 9547 "main.c"
+#line 9553 "main.c"
     h_0opt_2270cbe7_release(&t1298);
 #line 99 "examples/assembler/assemble.hero"
     t1299 = h44_own44;
-#line 9551 "main.c"
+#line 9557 "main.c"
     h_0opt_e201354_release(&t1299);
 #line 99 "examples/assembler/assemble.hero"
     t1300 = h45_own45;
-#line 9555 "main.c"
+#line 9561 "main.c"
     h_0opt_2270cbe7_release(&t1300);
 #line 99 "examples/assembler/assemble.hero"
     t1301 = h46_own46;
-#line 9559 "main.c"
+#line 9565 "main.c"
     hero_array_decref(t1301);
 #line 99 "examples/assembler/assemble.hero"
     t1302 = h47_own47;
-#line 9563 "main.c"
+#line 9569 "main.c"
     h_0opt_2270cbe7_release(&t1302);
 #line 99 "examples/assembler/assemble.hero"
     t1303 = h48_own48;
-#line 9567 "main.c"
+#line 9573 "main.c"
     h_0opt_2270cbe7_release(&t1303);
 #line 99 "examples/assembler/assemble.hero"
     t1304 = h49_own49;
-#line 9571 "main.c"
+#line 9577 "main.c"
     h_0opt_e201354_release(&t1304);
 #line 99 "examples/assembler/assemble.hero"
     t1305 = h50_own50;
-#line 9575 "main.c"
+#line 9581 "main.c"
     h_0opt_e201354_release(&t1305);
 #line 99 "examples/assembler/assemble.hero"
     t1306 = h51_own51;
-#line 9579 "main.c"
+#line 9585 "main.c"
     h_0opt_2270cbe7_release(&t1306);
 #line 99 "examples/assembler/assemble.hero"
     t1307 = h52_own52;
-#line 9583 "main.c"
+#line 9589 "main.c"
     hero_array_decref(t1307);
 #line 99 "examples/assembler/assemble.hero"
     t1308 = h53_own53;
-#line 9587 "main.c"
+#line 9593 "main.c"
     h_0opt_2270cbe7_release(&t1308);
 #line 99 "examples/assembler/assemble.hero"
     t1309 = h54_own54;
-#line 9591 "main.c"
+#line 9597 "main.c"
     h_0opt_2270cbe7_release(&t1309);
 #line 99 "examples/assembler/assemble.hero"
     t1310 = h55_own55;
-#line 9595 "main.c"
+#line 9601 "main.c"
     hero_str_decref(t1310);
 #line 99 "examples/assembler/assemble.hero"
     t1311 = h56_own56;
-#line 9599 "main.c"
+#line 9605 "main.c"
     hero_str_decref(t1311);
 #line 99 "examples/assembler/assemble.hero"
     t1312 = h57_own57;
-#line 9603 "main.c"
+#line 9609 "main.c"
     hero_str_decref(t1312);
 #line 99 "examples/assembler/assemble.hero"
     t1313 = h58_own58;
-#line 9607 "main.c"
+#line 9613 "main.c"
     hero_str_decref(t1313);
 #line 99 "examples/assembler/assemble.hero"
     t1314 = h59_own59;
-#line 9611 "main.c"
+#line 9617 "main.c"
     hero_str_decref(t1314);
 #line 99 "examples/assembler/assemble.hero"
     t1315 = h60_own60;
-#line 9615 "main.c"
+#line 9621 "main.c"
     hero_str_decref(t1315);
 #line 99 "examples/assembler/assemble.hero"
     t1316 = h61_own61;
-#line 9619 "main.c"
+#line 9625 "main.c"
     h_0opt_2270cbe7_release(&t1316);
 #line 99 "examples/assembler/assemble.hero"
     t1317 = h62_own62;
-#line 9623 "main.c"
+#line 9629 "main.c"
     h_0opt_e201354_release(&t1317);
 #line 99 "examples/assembler/assemble.hero"
     t1318 = h63_own63;
-#line 9627 "main.c"
+#line 9633 "main.c"
     hero_array_decref(t1318);
 #line 99 "examples/assembler/assemble.hero"
     t1319 = h64_own64;
-#line 9631 "main.c"
+#line 9637 "main.c"
     h_0opt_2270cbe7_release(&t1319);
 #line 99 "examples/assembler/assemble.hero"
     t1320 = h65_own65;
-#line 9635 "main.c"
+#line 9641 "main.c"
     h_0opt_2270cbe7_release(&t1320);
     return t210;
 bb44:
@@ -9659,10 +9665,10 @@ bb44:
     t314 = h52_own52;
 #line 100 "examples/assembler/assemble.hero"
     h52_own52 = t232;
-#line 9663 "main.c"
+#line 9669 "main.c"
     hero_array_decref(t314);
 #line 100 "examples/assembler/assemble.hero"
-#line 9666 "main.c"
+#line 9672 "main.c"
     hero_array_incref(t232);
 #line 100 "examples/assembler/assemble.hero"
     t233 = (h_0opt_2270cbe7){.tag = INT64_C(0), .as.ok = t232};
@@ -9670,258 +9676,258 @@ bb44:
     t315 = h53_own53;
 #line 100 "examples/assembler/assemble.hero"
     h53_own53 = t233;
-#line 9674 "main.c"
+#line 9680 "main.c"
     h_0opt_2270cbe7_release(&t315);
 #line 100 "examples/assembler/assemble.hero"
-#line 9677 "main.c"
+#line 9683 "main.c"
     h_0opt_2270cbe7_retain(&t233);
 #line 100 "examples/assembler/assemble.hero"
     t1321 = h2_m;
-#line 9681 "main.c"
+#line 9687 "main.c"
     hero_str_decref(t1321);
 #line 100 "examples/assembler/assemble.hero"
     t1322 = h3_f0;
-#line 9685 "main.c"
+#line 9691 "main.c"
     h_0opt_e201354_release(&t1322);
 #line 100 "examples/assembler/assemble.hero"
     t1323 = h4_f1;
-#line 9689 "main.c"
+#line 9695 "main.c"
     h_0opt_e201354_release(&t1323);
 #line 100 "examples/assembler/assemble.hero"
     t1324 = h5_f2;
-#line 9693 "main.c"
+#line 9699 "main.c"
     h_0opt_e201354_release(&t1324);
 #line 100 "examples/assembler/assemble.hero"
     t1325 = h8_f3;
-#line 9697 "main.c"
+#line 9703 "main.c"
     h_0opt_e201354_release(&t1325);
 #line 100 "examples/assembler/assemble.hero"
     t1326 = h9_f4;
-#line 9701 "main.c"
+#line 9707 "main.c"
     h_0opt_e201354_release(&t1326);
 #line 100 "examples/assembler/assemble.hero"
     t1327 = h10_f5;
-#line 9705 "main.c"
+#line 9711 "main.c"
     h_0opt_e201354_release(&t1327);
 #line 100 "examples/assembler/assemble.hero"
     t1328 = h11_f6;
-#line 9709 "main.c"
+#line 9715 "main.c"
     h_0opt_e201354_release(&t1328);
 #line 100 "examples/assembler/assemble.hero"
     t1329 = h12_f7;
-#line 9713 "main.c"
+#line 9719 "main.c"
     h_0opt_e201354_release(&t1329);
 #line 100 "examples/assembler/assemble.hero"
     t1330 = h13_f8;
-#line 9717 "main.c"
+#line 9723 "main.c"
     h_0opt_e201354_release(&t1330);
 #line 100 "examples/assembler/assemble.hero"
     t1331 = h14_f9;
-#line 9721 "main.c"
+#line 9727 "main.c"
     h_0opt_e201354_release(&t1331);
 #line 100 "examples/assembler/assemble.hero"
     t1332 = h15_f10;
-#line 9725 "main.c"
+#line 9731 "main.c"
     h_0opt_e201354_release(&t1332);
 #line 100 "examples/assembler/assemble.hero"
     t1333 = h16_f11;
-#line 9729 "main.c"
+#line 9735 "main.c"
     h_0opt_e201354_release(&t1333);
 #line 100 "examples/assembler/assemble.hero"
     t1334 = h17_f12;
-#line 9733 "main.c"
+#line 9739 "main.c"
     h_0opt_e201354_release(&t1334);
 #line 100 "examples/assembler/assemble.hero"
     t1335 = h18_f13;
-#line 9737 "main.c"
+#line 9743 "main.c"
     h_0opt_e201354_release(&t1335);
 #line 100 "examples/assembler/assemble.hero"
     t1336 = h19_own19;
-#line 9741 "main.c"
+#line 9747 "main.c"
     h_0opt_e201354_release(&t1336);
 #line 100 "examples/assembler/assemble.hero"
     t1337 = h20_own20;
-#line 9745 "main.c"
+#line 9751 "main.c"
     h_0opt_e201354_release(&t1337);
 #line 100 "examples/assembler/assemble.hero"
     t1338 = h21_own21;
-#line 9749 "main.c"
+#line 9755 "main.c"
     h_0opt_2270cbe7_release(&t1338);
 #line 100 "examples/assembler/assemble.hero"
     t1339 = h22_own22;
-#line 9753 "main.c"
+#line 9759 "main.c"
     h_0opt_e201354_release(&t1339);
 #line 100 "examples/assembler/assemble.hero"
     t1340 = h23_own23;
-#line 9757 "main.c"
+#line 9763 "main.c"
     h_0opt_2270cbe7_release(&t1340);
 #line 100 "examples/assembler/assemble.hero"
     t1341 = h24_own24;
-#line 9761 "main.c"
+#line 9767 "main.c"
     hero_array_decref(t1341);
 #line 100 "examples/assembler/assemble.hero"
     t1342 = h25_own25;
-#line 9765 "main.c"
+#line 9771 "main.c"
     h_0opt_2270cbe7_release(&t1342);
 #line 100 "examples/assembler/assemble.hero"
     t1343 = h26_own26;
-#line 9769 "main.c"
+#line 9775 "main.c"
     h_0opt_2270cbe7_release(&t1343);
 #line 100 "examples/assembler/assemble.hero"
     t1344 = h27_own27;
-#line 9773 "main.c"
+#line 9779 "main.c"
     h_0opt_e201354_release(&t1344);
 #line 100 "examples/assembler/assemble.hero"
     t1345 = h28_own28;
-#line 9777 "main.c"
+#line 9783 "main.c"
     h_0opt_e201354_release(&t1345);
 #line 100 "examples/assembler/assemble.hero"
     t1346 = h29_own29;
-#line 9781 "main.c"
+#line 9787 "main.c"
     h_0opt_2270cbe7_release(&t1346);
 #line 100 "examples/assembler/assemble.hero"
     t1347 = h30_own30;
-#line 9785 "main.c"
+#line 9791 "main.c"
     h_0opt_e201354_release(&t1347);
 #line 100 "examples/assembler/assemble.hero"
     t1348 = h31_own31;
-#line 9789 "main.c"
+#line 9795 "main.c"
     h_0opt_2270cbe7_release(&t1348);
 #line 100 "examples/assembler/assemble.hero"
     t1349 = h32_own32;
-#line 9793 "main.c"
+#line 9799 "main.c"
     hero_array_decref(t1349);
 #line 100 "examples/assembler/assemble.hero"
     t1350 = h33_own33;
-#line 9797 "main.c"
+#line 9803 "main.c"
     h_0opt_2270cbe7_release(&t1350);
 #line 100 "examples/assembler/assemble.hero"
     t1351 = h34_own34;
-#line 9801 "main.c"
+#line 9807 "main.c"
     h_0opt_2270cbe7_release(&t1351);
 #line 100 "examples/assembler/assemble.hero"
     t1352 = h35_own35;
-#line 9805 "main.c"
+#line 9811 "main.c"
     h_0opt_e201354_release(&t1352);
 #line 100 "examples/assembler/assemble.hero"
     t1353 = h36_own36;
-#line 9809 "main.c"
+#line 9815 "main.c"
     h_0opt_e201354_release(&t1353);
 #line 100 "examples/assembler/assemble.hero"
     t1354 = h37_own37;
-#line 9813 "main.c"
+#line 9819 "main.c"
     h_0opt_2270cbe7_release(&t1354);
 #line 100 "examples/assembler/assemble.hero"
     t1355 = h38_own38;
-#line 9817 "main.c"
+#line 9823 "main.c"
     hero_array_decref(t1355);
 #line 100 "examples/assembler/assemble.hero"
     t1356 = h39_own39;
-#line 9821 "main.c"
+#line 9827 "main.c"
     h_0opt_2270cbe7_release(&t1356);
 #line 100 "examples/assembler/assemble.hero"
     t1357 = h40_own40;
-#line 9825 "main.c"
+#line 9831 "main.c"
     h_0opt_2270cbe7_release(&t1357);
 #line 100 "examples/assembler/assemble.hero"
     t1358 = h41_own41;
-#line 9829 "main.c"
+#line 9835 "main.c"
     h_0opt_e201354_release(&t1358);
 #line 100 "examples/assembler/assemble.hero"
     t1359 = h42_own42;
-#line 9833 "main.c"
+#line 9839 "main.c"
     h_0opt_e201354_release(&t1359);
 #line 100 "examples/assembler/assemble.hero"
     t1360 = h43_own43;
-#line 9837 "main.c"
+#line 9843 "main.c"
     h_0opt_2270cbe7_release(&t1360);
 #line 100 "examples/assembler/assemble.hero"
     t1361 = h44_own44;
-#line 9841 "main.c"
+#line 9847 "main.c"
     h_0opt_e201354_release(&t1361);
 #line 100 "examples/assembler/assemble.hero"
     t1362 = h45_own45;
-#line 9845 "main.c"
+#line 9851 "main.c"
     h_0opt_2270cbe7_release(&t1362);
 #line 100 "examples/assembler/assemble.hero"
     t1363 = h46_own46;
-#line 9849 "main.c"
+#line 9855 "main.c"
     hero_array_decref(t1363);
 #line 100 "examples/assembler/assemble.hero"
     t1364 = h47_own47;
-#line 9853 "main.c"
+#line 9859 "main.c"
     h_0opt_2270cbe7_release(&t1364);
 #line 100 "examples/assembler/assemble.hero"
     t1365 = h48_own48;
-#line 9857 "main.c"
+#line 9863 "main.c"
     h_0opt_2270cbe7_release(&t1365);
 #line 100 "examples/assembler/assemble.hero"
     t1366 = h49_own49;
-#line 9861 "main.c"
+#line 9867 "main.c"
     h_0opt_e201354_release(&t1366);
 #line 100 "examples/assembler/assemble.hero"
     t1367 = h50_own50;
-#line 9865 "main.c"
+#line 9871 "main.c"
     h_0opt_e201354_release(&t1367);
 #line 100 "examples/assembler/assemble.hero"
     t1368 = h51_own51;
-#line 9869 "main.c"
+#line 9875 "main.c"
     h_0opt_2270cbe7_release(&t1368);
 #line 100 "examples/assembler/assemble.hero"
     t1369 = h52_own52;
-#line 9873 "main.c"
+#line 9879 "main.c"
     hero_array_decref(t1369);
 #line 100 "examples/assembler/assemble.hero"
     t1370 = h53_own53;
-#line 9877 "main.c"
+#line 9883 "main.c"
     h_0opt_2270cbe7_release(&t1370);
 #line 100 "examples/assembler/assemble.hero"
     t1371 = h54_own54;
-#line 9881 "main.c"
+#line 9887 "main.c"
     h_0opt_2270cbe7_release(&t1371);
 #line 100 "examples/assembler/assemble.hero"
     t1372 = h55_own55;
-#line 9885 "main.c"
+#line 9891 "main.c"
     hero_str_decref(t1372);
 #line 100 "examples/assembler/assemble.hero"
     t1373 = h56_own56;
-#line 9889 "main.c"
+#line 9895 "main.c"
     hero_str_decref(t1373);
 #line 100 "examples/assembler/assemble.hero"
     t1374 = h57_own57;
-#line 9893 "main.c"
+#line 9899 "main.c"
     hero_str_decref(t1374);
 #line 100 "examples/assembler/assemble.hero"
     t1375 = h58_own58;
-#line 9897 "main.c"
+#line 9903 "main.c"
     hero_str_decref(t1375);
 #line 100 "examples/assembler/assemble.hero"
     t1376 = h59_own59;
-#line 9901 "main.c"
+#line 9907 "main.c"
     hero_str_decref(t1376);
 #line 100 "examples/assembler/assemble.hero"
     t1377 = h60_own60;
-#line 9905 "main.c"
+#line 9911 "main.c"
     hero_str_decref(t1377);
 #line 100 "examples/assembler/assemble.hero"
     t1378 = h61_own61;
-#line 9909 "main.c"
+#line 9915 "main.c"
     h_0opt_2270cbe7_release(&t1378);
 #line 100 "examples/assembler/assemble.hero"
     t1379 = h62_own62;
-#line 9913 "main.c"
+#line 9919 "main.c"
     h_0opt_e201354_release(&t1379);
 #line 100 "examples/assembler/assemble.hero"
     t1380 = h63_own63;
-#line 9917 "main.c"
+#line 9923 "main.c"
     hero_array_decref(t1380);
 #line 100 "examples/assembler/assemble.hero"
     t1381 = h64_own64;
-#line 9921 "main.c"
+#line 9927 "main.c"
     h_0opt_2270cbe7_release(&t1381);
 #line 100 "examples/assembler/assemble.hero"
     t1382 = h65_own65;
-#line 9925 "main.c"
+#line 9931 "main.c"
     h_0opt_2270cbe7_release(&t1382);
     return t233;
 bb45:
@@ -9929,7 +9935,7 @@ bb45:
     t226 = h17_f12;
 #line 100 "examples/assembler/assemble.hero"
     t227 = t226.as.err;
-#line 9933 "main.c"
+#line 9939 "main.c"
     hero_failure_retain(&t227);
 #line 100 "examples/assembler/assemble.hero"
     t228 = (h_0opt_2270cbe7){.tag = INT64_C(1), .as.err = t227};
@@ -9937,258 +9943,258 @@ bb45:
     t316 = h54_own54;
 #line 100 "examples/assembler/assemble.hero"
     h54_own54 = t228;
-#line 9941 "main.c"
+#line 9947 "main.c"
     h_0opt_2270cbe7_release(&t316);
 #line 100 "examples/assembler/assemble.hero"
-#line 9944 "main.c"
+#line 9950 "main.c"
     h_0opt_2270cbe7_retain(&t228);
 #line 100 "examples/assembler/assemble.hero"
     t1383 = h2_m;
-#line 9948 "main.c"
+#line 9954 "main.c"
     hero_str_decref(t1383);
 #line 100 "examples/assembler/assemble.hero"
     t1384 = h3_f0;
-#line 9952 "main.c"
+#line 9958 "main.c"
     h_0opt_e201354_release(&t1384);
 #line 100 "examples/assembler/assemble.hero"
     t1385 = h4_f1;
-#line 9956 "main.c"
+#line 9962 "main.c"
     h_0opt_e201354_release(&t1385);
 #line 100 "examples/assembler/assemble.hero"
     t1386 = h5_f2;
-#line 9960 "main.c"
+#line 9966 "main.c"
     h_0opt_e201354_release(&t1386);
 #line 100 "examples/assembler/assemble.hero"
     t1387 = h8_f3;
-#line 9964 "main.c"
+#line 9970 "main.c"
     h_0opt_e201354_release(&t1387);
 #line 100 "examples/assembler/assemble.hero"
     t1388 = h9_f4;
-#line 9968 "main.c"
+#line 9974 "main.c"
     h_0opt_e201354_release(&t1388);
 #line 100 "examples/assembler/assemble.hero"
     t1389 = h10_f5;
-#line 9972 "main.c"
+#line 9978 "main.c"
     h_0opt_e201354_release(&t1389);
 #line 100 "examples/assembler/assemble.hero"
     t1390 = h11_f6;
-#line 9976 "main.c"
+#line 9982 "main.c"
     h_0opt_e201354_release(&t1390);
 #line 100 "examples/assembler/assemble.hero"
     t1391 = h12_f7;
-#line 9980 "main.c"
+#line 9986 "main.c"
     h_0opt_e201354_release(&t1391);
 #line 100 "examples/assembler/assemble.hero"
     t1392 = h13_f8;
-#line 9984 "main.c"
+#line 9990 "main.c"
     h_0opt_e201354_release(&t1392);
 #line 100 "examples/assembler/assemble.hero"
     t1393 = h14_f9;
-#line 9988 "main.c"
+#line 9994 "main.c"
     h_0opt_e201354_release(&t1393);
 #line 100 "examples/assembler/assemble.hero"
     t1394 = h15_f10;
-#line 9992 "main.c"
+#line 9998 "main.c"
     h_0opt_e201354_release(&t1394);
 #line 100 "examples/assembler/assemble.hero"
     t1395 = h16_f11;
-#line 9996 "main.c"
+#line 10002 "main.c"
     h_0opt_e201354_release(&t1395);
 #line 100 "examples/assembler/assemble.hero"
     t1396 = h17_f12;
-#line 10000 "main.c"
+#line 10006 "main.c"
     h_0opt_e201354_release(&t1396);
 #line 100 "examples/assembler/assemble.hero"
     t1397 = h18_f13;
-#line 10004 "main.c"
+#line 10010 "main.c"
     h_0opt_e201354_release(&t1397);
 #line 100 "examples/assembler/assemble.hero"
     t1398 = h19_own19;
-#line 10008 "main.c"
+#line 10014 "main.c"
     h_0opt_e201354_release(&t1398);
 #line 100 "examples/assembler/assemble.hero"
     t1399 = h20_own20;
-#line 10012 "main.c"
+#line 10018 "main.c"
     h_0opt_e201354_release(&t1399);
 #line 100 "examples/assembler/assemble.hero"
     t1400 = h21_own21;
-#line 10016 "main.c"
+#line 10022 "main.c"
     h_0opt_2270cbe7_release(&t1400);
 #line 100 "examples/assembler/assemble.hero"
     t1401 = h22_own22;
-#line 10020 "main.c"
+#line 10026 "main.c"
     h_0opt_e201354_release(&t1401);
 #line 100 "examples/assembler/assemble.hero"
     t1402 = h23_own23;
-#line 10024 "main.c"
+#line 10030 "main.c"
     h_0opt_2270cbe7_release(&t1402);
 #line 100 "examples/assembler/assemble.hero"
     t1403 = h24_own24;
-#line 10028 "main.c"
+#line 10034 "main.c"
     hero_array_decref(t1403);
 #line 100 "examples/assembler/assemble.hero"
     t1404 = h25_own25;
-#line 10032 "main.c"
+#line 10038 "main.c"
     h_0opt_2270cbe7_release(&t1404);
 #line 100 "examples/assembler/assemble.hero"
     t1405 = h26_own26;
-#line 10036 "main.c"
+#line 10042 "main.c"
     h_0opt_2270cbe7_release(&t1405);
 #line 100 "examples/assembler/assemble.hero"
     t1406 = h27_own27;
-#line 10040 "main.c"
+#line 10046 "main.c"
     h_0opt_e201354_release(&t1406);
 #line 100 "examples/assembler/assemble.hero"
     t1407 = h28_own28;
-#line 10044 "main.c"
+#line 10050 "main.c"
     h_0opt_e201354_release(&t1407);
 #line 100 "examples/assembler/assemble.hero"
     t1408 = h29_own29;
-#line 10048 "main.c"
+#line 10054 "main.c"
     h_0opt_2270cbe7_release(&t1408);
 #line 100 "examples/assembler/assemble.hero"
     t1409 = h30_own30;
-#line 10052 "main.c"
+#line 10058 "main.c"
     h_0opt_e201354_release(&t1409);
 #line 100 "examples/assembler/assemble.hero"
     t1410 = h31_own31;
-#line 10056 "main.c"
+#line 10062 "main.c"
     h_0opt_2270cbe7_release(&t1410);
 #line 100 "examples/assembler/assemble.hero"
     t1411 = h32_own32;
-#line 10060 "main.c"
+#line 10066 "main.c"
     hero_array_decref(t1411);
 #line 100 "examples/assembler/assemble.hero"
     t1412 = h33_own33;
-#line 10064 "main.c"
+#line 10070 "main.c"
     h_0opt_2270cbe7_release(&t1412);
 #line 100 "examples/assembler/assemble.hero"
     t1413 = h34_own34;
-#line 10068 "main.c"
+#line 10074 "main.c"
     h_0opt_2270cbe7_release(&t1413);
 #line 100 "examples/assembler/assemble.hero"
     t1414 = h35_own35;
-#line 10072 "main.c"
+#line 10078 "main.c"
     h_0opt_e201354_release(&t1414);
 #line 100 "examples/assembler/assemble.hero"
     t1415 = h36_own36;
-#line 10076 "main.c"
+#line 10082 "main.c"
     h_0opt_e201354_release(&t1415);
 #line 100 "examples/assembler/assemble.hero"
     t1416 = h37_own37;
-#line 10080 "main.c"
+#line 10086 "main.c"
     h_0opt_2270cbe7_release(&t1416);
 #line 100 "examples/assembler/assemble.hero"
     t1417 = h38_own38;
-#line 10084 "main.c"
+#line 10090 "main.c"
     hero_array_decref(t1417);
 #line 100 "examples/assembler/assemble.hero"
     t1418 = h39_own39;
-#line 10088 "main.c"
+#line 10094 "main.c"
     h_0opt_2270cbe7_release(&t1418);
 #line 100 "examples/assembler/assemble.hero"
     t1419 = h40_own40;
-#line 10092 "main.c"
+#line 10098 "main.c"
     h_0opt_2270cbe7_release(&t1419);
 #line 100 "examples/assembler/assemble.hero"
     t1420 = h41_own41;
-#line 10096 "main.c"
+#line 10102 "main.c"
     h_0opt_e201354_release(&t1420);
 #line 100 "examples/assembler/assemble.hero"
     t1421 = h42_own42;
-#line 10100 "main.c"
+#line 10106 "main.c"
     h_0opt_e201354_release(&t1421);
 #line 100 "examples/assembler/assemble.hero"
     t1422 = h43_own43;
-#line 10104 "main.c"
+#line 10110 "main.c"
     h_0opt_2270cbe7_release(&t1422);
 #line 100 "examples/assembler/assemble.hero"
     t1423 = h44_own44;
-#line 10108 "main.c"
+#line 10114 "main.c"
     h_0opt_e201354_release(&t1423);
 #line 100 "examples/assembler/assemble.hero"
     t1424 = h45_own45;
-#line 10112 "main.c"
+#line 10118 "main.c"
     h_0opt_2270cbe7_release(&t1424);
 #line 100 "examples/assembler/assemble.hero"
     t1425 = h46_own46;
-#line 10116 "main.c"
+#line 10122 "main.c"
     hero_array_decref(t1425);
 #line 100 "examples/assembler/assemble.hero"
     t1426 = h47_own47;
-#line 10120 "main.c"
+#line 10126 "main.c"
     h_0opt_2270cbe7_release(&t1426);
 #line 100 "examples/assembler/assemble.hero"
     t1427 = h48_own48;
-#line 10124 "main.c"
+#line 10130 "main.c"
     h_0opt_2270cbe7_release(&t1427);
 #line 100 "examples/assembler/assemble.hero"
     t1428 = h49_own49;
-#line 10128 "main.c"
+#line 10134 "main.c"
     h_0opt_e201354_release(&t1428);
 #line 100 "examples/assembler/assemble.hero"
     t1429 = h50_own50;
-#line 10132 "main.c"
+#line 10138 "main.c"
     h_0opt_e201354_release(&t1429);
 #line 100 "examples/assembler/assemble.hero"
     t1430 = h51_own51;
-#line 10136 "main.c"
+#line 10142 "main.c"
     h_0opt_2270cbe7_release(&t1430);
 #line 100 "examples/assembler/assemble.hero"
     t1431 = h52_own52;
-#line 10140 "main.c"
+#line 10146 "main.c"
     hero_array_decref(t1431);
 #line 100 "examples/assembler/assemble.hero"
     t1432 = h53_own53;
-#line 10144 "main.c"
+#line 10150 "main.c"
     h_0opt_2270cbe7_release(&t1432);
 #line 100 "examples/assembler/assemble.hero"
     t1433 = h54_own54;
-#line 10148 "main.c"
+#line 10154 "main.c"
     h_0opt_2270cbe7_release(&t1433);
 #line 100 "examples/assembler/assemble.hero"
     t1434 = h55_own55;
-#line 10152 "main.c"
+#line 10158 "main.c"
     hero_str_decref(t1434);
 #line 100 "examples/assembler/assemble.hero"
     t1435 = h56_own56;
-#line 10156 "main.c"
+#line 10162 "main.c"
     hero_str_decref(t1435);
 #line 100 "examples/assembler/assemble.hero"
     t1436 = h57_own57;
-#line 10160 "main.c"
+#line 10166 "main.c"
     hero_str_decref(t1436);
 #line 100 "examples/assembler/assemble.hero"
     t1437 = h58_own58;
-#line 10164 "main.c"
+#line 10170 "main.c"
     hero_str_decref(t1437);
 #line 100 "examples/assembler/assemble.hero"
     t1438 = h59_own59;
-#line 10168 "main.c"
+#line 10174 "main.c"
     hero_str_decref(t1438);
 #line 100 "examples/assembler/assemble.hero"
     t1439 = h60_own60;
-#line 10172 "main.c"
+#line 10178 "main.c"
     hero_str_decref(t1439);
 #line 100 "examples/assembler/assemble.hero"
     t1440 = h61_own61;
-#line 10176 "main.c"
+#line 10182 "main.c"
     h_0opt_2270cbe7_release(&t1440);
 #line 100 "examples/assembler/assemble.hero"
     t1441 = h62_own62;
-#line 10180 "main.c"
+#line 10186 "main.c"
     h_0opt_e201354_release(&t1441);
 #line 100 "examples/assembler/assemble.hero"
     t1442 = h63_own63;
-#line 10184 "main.c"
+#line 10190 "main.c"
     hero_array_decref(t1442);
 #line 100 "examples/assembler/assemble.hero"
     t1443 = h64_own64;
-#line 10188 "main.c"
+#line 10194 "main.c"
     h_0opt_2270cbe7_release(&t1443);
 #line 100 "examples/assembler/assemble.hero"
     t1444 = h65_own65;
-#line 10192 "main.c"
+#line 10198 "main.c"
     h_0opt_2270cbe7_release(&t1444);
     return t228;
 bb46:
@@ -10198,7 +10204,7 @@ bb46:
     t317 = h55_own55;
 #line 105 "examples/assembler/assemble.hero"
     h55_own55 = t254;
-#line 10202 "main.c"
+#line 10208 "main.c"
     hero_str_decref(t317);
 #line 105 "examples/assembler/assemble.hero"
     t255 = HERO_STR_LIT(hero_str_75f7c07a);
@@ -10212,7 +10218,7 @@ bb46:
     t318 = h56_own56;
 #line 105 "examples/assembler/assemble.hero"
     h56_own56 = t258;
-#line 10216 "main.c"
+#line 10222 "main.c"
     hero_str_decref(t318);
 #line 105 "examples/assembler/assemble.hero"
     t259 = hero_str_concat(t255, t258);
@@ -10220,7 +10226,7 @@ bb46:
     t319 = h57_own57;
 #line 105 "examples/assembler/assemble.hero"
     h57_own57 = t259;
-#line 10224 "main.c"
+#line 10230 "main.c"
     hero_str_decref(t319);
 #line 105 "examples/assembler/assemble.hero"
     t260 = HERO_STR_LIT(hero_str_3e09749b);
@@ -10230,7 +10236,7 @@ bb46:
     t320 = h58_own58;
 #line 105 "examples/assembler/assemble.hero"
     h58_own58 = t261;
-#line 10234 "main.c"
+#line 10240 "main.c"
     hero_str_decref(t320);
 #line 105 "examples/assembler/assemble.hero"
     t262 = h2_m;
@@ -10240,7 +10246,7 @@ bb46:
     t321 = h59_own59;
 #line 105 "examples/assembler/assemble.hero"
     h59_own59 = t263;
-#line 10244 "main.c"
+#line 10250 "main.c"
     hero_str_decref(t321);
 #line 105 "examples/assembler/assemble.hero"
     t264 = HERO_STR_LIT(hero_str_19325099);
@@ -10250,13 +10256,13 @@ bb46:
     t322 = h60_own60;
 #line 105 "examples/assembler/assemble.hero"
     h60_own60 = t265;
-#line 10254 "main.c"
+#line 10260 "main.c"
     hero_str_decref(t322);
 #line 105 "examples/assembler/assemble.hero"
-#line 10257 "main.c"
+#line 10263 "main.c"
     hero_str_incref(t254);
 #line 105 "examples/assembler/assemble.hero"
-#line 10260 "main.c"
+#line 10266 "main.c"
     hero_str_incref(t265);
 #line 105 "examples/assembler/assemble.hero"
     t266 = (h_0opt_2270cbe7){.tag = INT64_C(1), .as.err = {.code = t254, .msg = t265}};
@@ -10264,258 +10270,258 @@ bb46:
     t323 = h61_own61;
 #line 105 "examples/assembler/assemble.hero"
     h61_own61 = t266;
-#line 10268 "main.c"
+#line 10274 "main.c"
     h_0opt_2270cbe7_release(&t323);
 #line 105 "examples/assembler/assemble.hero"
-#line 10271 "main.c"
+#line 10277 "main.c"
     h_0opt_2270cbe7_retain(&t266);
 #line 105 "examples/assembler/assemble.hero"
     t1445 = h2_m;
-#line 10275 "main.c"
+#line 10281 "main.c"
     hero_str_decref(t1445);
 #line 105 "examples/assembler/assemble.hero"
     t1446 = h3_f0;
-#line 10279 "main.c"
+#line 10285 "main.c"
     h_0opt_e201354_release(&t1446);
 #line 105 "examples/assembler/assemble.hero"
     t1447 = h4_f1;
-#line 10283 "main.c"
+#line 10289 "main.c"
     h_0opt_e201354_release(&t1447);
 #line 105 "examples/assembler/assemble.hero"
     t1448 = h5_f2;
-#line 10287 "main.c"
+#line 10293 "main.c"
     h_0opt_e201354_release(&t1448);
 #line 105 "examples/assembler/assemble.hero"
     t1449 = h8_f3;
-#line 10291 "main.c"
+#line 10297 "main.c"
     h_0opt_e201354_release(&t1449);
 #line 105 "examples/assembler/assemble.hero"
     t1450 = h9_f4;
-#line 10295 "main.c"
+#line 10301 "main.c"
     h_0opt_e201354_release(&t1450);
 #line 105 "examples/assembler/assemble.hero"
     t1451 = h10_f5;
-#line 10299 "main.c"
+#line 10305 "main.c"
     h_0opt_e201354_release(&t1451);
 #line 105 "examples/assembler/assemble.hero"
     t1452 = h11_f6;
-#line 10303 "main.c"
+#line 10309 "main.c"
     h_0opt_e201354_release(&t1452);
 #line 105 "examples/assembler/assemble.hero"
     t1453 = h12_f7;
-#line 10307 "main.c"
+#line 10313 "main.c"
     h_0opt_e201354_release(&t1453);
 #line 105 "examples/assembler/assemble.hero"
     t1454 = h13_f8;
-#line 10311 "main.c"
+#line 10317 "main.c"
     h_0opt_e201354_release(&t1454);
 #line 105 "examples/assembler/assemble.hero"
     t1455 = h14_f9;
-#line 10315 "main.c"
+#line 10321 "main.c"
     h_0opt_e201354_release(&t1455);
 #line 105 "examples/assembler/assemble.hero"
     t1456 = h15_f10;
-#line 10319 "main.c"
+#line 10325 "main.c"
     h_0opt_e201354_release(&t1456);
 #line 105 "examples/assembler/assemble.hero"
     t1457 = h16_f11;
-#line 10323 "main.c"
+#line 10329 "main.c"
     h_0opt_e201354_release(&t1457);
 #line 105 "examples/assembler/assemble.hero"
     t1458 = h17_f12;
-#line 10327 "main.c"
+#line 10333 "main.c"
     h_0opt_e201354_release(&t1458);
 #line 105 "examples/assembler/assemble.hero"
     t1459 = h18_f13;
-#line 10331 "main.c"
+#line 10337 "main.c"
     h_0opt_e201354_release(&t1459);
 #line 105 "examples/assembler/assemble.hero"
     t1460 = h19_own19;
-#line 10335 "main.c"
+#line 10341 "main.c"
     h_0opt_e201354_release(&t1460);
 #line 105 "examples/assembler/assemble.hero"
     t1461 = h20_own20;
-#line 10339 "main.c"
+#line 10345 "main.c"
     h_0opt_e201354_release(&t1461);
 #line 105 "examples/assembler/assemble.hero"
     t1462 = h21_own21;
-#line 10343 "main.c"
+#line 10349 "main.c"
     h_0opt_2270cbe7_release(&t1462);
 #line 105 "examples/assembler/assemble.hero"
     t1463 = h22_own22;
-#line 10347 "main.c"
+#line 10353 "main.c"
     h_0opt_e201354_release(&t1463);
 #line 105 "examples/assembler/assemble.hero"
     t1464 = h23_own23;
-#line 10351 "main.c"
+#line 10357 "main.c"
     h_0opt_2270cbe7_release(&t1464);
 #line 105 "examples/assembler/assemble.hero"
     t1465 = h24_own24;
-#line 10355 "main.c"
+#line 10361 "main.c"
     hero_array_decref(t1465);
 #line 105 "examples/assembler/assemble.hero"
     t1466 = h25_own25;
-#line 10359 "main.c"
+#line 10365 "main.c"
     h_0opt_2270cbe7_release(&t1466);
 #line 105 "examples/assembler/assemble.hero"
     t1467 = h26_own26;
-#line 10363 "main.c"
+#line 10369 "main.c"
     h_0opt_2270cbe7_release(&t1467);
 #line 105 "examples/assembler/assemble.hero"
     t1468 = h27_own27;
-#line 10367 "main.c"
+#line 10373 "main.c"
     h_0opt_e201354_release(&t1468);
 #line 105 "examples/assembler/assemble.hero"
     t1469 = h28_own28;
-#line 10371 "main.c"
+#line 10377 "main.c"
     h_0opt_e201354_release(&t1469);
 #line 105 "examples/assembler/assemble.hero"
     t1470 = h29_own29;
-#line 10375 "main.c"
+#line 10381 "main.c"
     h_0opt_2270cbe7_release(&t1470);
 #line 105 "examples/assembler/assemble.hero"
     t1471 = h30_own30;
-#line 10379 "main.c"
+#line 10385 "main.c"
     h_0opt_e201354_release(&t1471);
 #line 105 "examples/assembler/assemble.hero"
     t1472 = h31_own31;
-#line 10383 "main.c"
+#line 10389 "main.c"
     h_0opt_2270cbe7_release(&t1472);
 #line 105 "examples/assembler/assemble.hero"
     t1473 = h32_own32;
-#line 10387 "main.c"
+#line 10393 "main.c"
     hero_array_decref(t1473);
 #line 105 "examples/assembler/assemble.hero"
     t1474 = h33_own33;
-#line 10391 "main.c"
+#line 10397 "main.c"
     h_0opt_2270cbe7_release(&t1474);
 #line 105 "examples/assembler/assemble.hero"
     t1475 = h34_own34;
-#line 10395 "main.c"
+#line 10401 "main.c"
     h_0opt_2270cbe7_release(&t1475);
 #line 105 "examples/assembler/assemble.hero"
     t1476 = h35_own35;
-#line 10399 "main.c"
+#line 10405 "main.c"
     h_0opt_e201354_release(&t1476);
 #line 105 "examples/assembler/assemble.hero"
     t1477 = h36_own36;
-#line 10403 "main.c"
+#line 10409 "main.c"
     h_0opt_e201354_release(&t1477);
 #line 105 "examples/assembler/assemble.hero"
     t1478 = h37_own37;
-#line 10407 "main.c"
+#line 10413 "main.c"
     h_0opt_2270cbe7_release(&t1478);
 #line 105 "examples/assembler/assemble.hero"
     t1479 = h38_own38;
-#line 10411 "main.c"
+#line 10417 "main.c"
     hero_array_decref(t1479);
 #line 105 "examples/assembler/assemble.hero"
     t1480 = h39_own39;
-#line 10415 "main.c"
+#line 10421 "main.c"
     h_0opt_2270cbe7_release(&t1480);
 #line 105 "examples/assembler/assemble.hero"
     t1481 = h40_own40;
-#line 10419 "main.c"
+#line 10425 "main.c"
     h_0opt_2270cbe7_release(&t1481);
 #line 105 "examples/assembler/assemble.hero"
     t1482 = h41_own41;
-#line 10423 "main.c"
+#line 10429 "main.c"
     h_0opt_e201354_release(&t1482);
 #line 105 "examples/assembler/assemble.hero"
     t1483 = h42_own42;
-#line 10427 "main.c"
+#line 10433 "main.c"
     h_0opt_e201354_release(&t1483);
 #line 105 "examples/assembler/assemble.hero"
     t1484 = h43_own43;
-#line 10431 "main.c"
+#line 10437 "main.c"
     h_0opt_2270cbe7_release(&t1484);
 #line 105 "examples/assembler/assemble.hero"
     t1485 = h44_own44;
-#line 10435 "main.c"
+#line 10441 "main.c"
     h_0opt_e201354_release(&t1485);
 #line 105 "examples/assembler/assemble.hero"
     t1486 = h45_own45;
-#line 10439 "main.c"
+#line 10445 "main.c"
     h_0opt_2270cbe7_release(&t1486);
 #line 105 "examples/assembler/assemble.hero"
     t1487 = h46_own46;
-#line 10443 "main.c"
+#line 10449 "main.c"
     hero_array_decref(t1487);
 #line 105 "examples/assembler/assemble.hero"
     t1488 = h47_own47;
-#line 10447 "main.c"
+#line 10453 "main.c"
     h_0opt_2270cbe7_release(&t1488);
 #line 105 "examples/assembler/assemble.hero"
     t1489 = h48_own48;
-#line 10451 "main.c"
+#line 10457 "main.c"
     h_0opt_2270cbe7_release(&t1489);
 #line 105 "examples/assembler/assemble.hero"
     t1490 = h49_own49;
-#line 10455 "main.c"
+#line 10461 "main.c"
     h_0opt_e201354_release(&t1490);
 #line 105 "examples/assembler/assemble.hero"
     t1491 = h50_own50;
-#line 10459 "main.c"
+#line 10465 "main.c"
     h_0opt_e201354_release(&t1491);
 #line 105 "examples/assembler/assemble.hero"
     t1492 = h51_own51;
-#line 10463 "main.c"
+#line 10469 "main.c"
     h_0opt_2270cbe7_release(&t1492);
 #line 105 "examples/assembler/assemble.hero"
     t1493 = h52_own52;
-#line 10467 "main.c"
+#line 10473 "main.c"
     hero_array_decref(t1493);
 #line 105 "examples/assembler/assemble.hero"
     t1494 = h53_own53;
-#line 10471 "main.c"
+#line 10477 "main.c"
     h_0opt_2270cbe7_release(&t1494);
 #line 105 "examples/assembler/assemble.hero"
     t1495 = h54_own54;
-#line 10475 "main.c"
+#line 10481 "main.c"
     h_0opt_2270cbe7_release(&t1495);
 #line 105 "examples/assembler/assemble.hero"
     t1496 = h55_own55;
-#line 10479 "main.c"
+#line 10485 "main.c"
     hero_str_decref(t1496);
 #line 105 "examples/assembler/assemble.hero"
     t1497 = h56_own56;
-#line 10483 "main.c"
+#line 10489 "main.c"
     hero_str_decref(t1497);
 #line 105 "examples/assembler/assemble.hero"
     t1498 = h57_own57;
-#line 10487 "main.c"
+#line 10493 "main.c"
     hero_str_decref(t1498);
 #line 105 "examples/assembler/assemble.hero"
     t1499 = h58_own58;
-#line 10491 "main.c"
+#line 10497 "main.c"
     hero_str_decref(t1499);
 #line 105 "examples/assembler/assemble.hero"
     t1500 = h59_own59;
-#line 10495 "main.c"
+#line 10501 "main.c"
     hero_str_decref(t1500);
 #line 105 "examples/assembler/assemble.hero"
     t1501 = h60_own60;
-#line 10499 "main.c"
+#line 10505 "main.c"
     hero_str_decref(t1501);
 #line 105 "examples/assembler/assemble.hero"
     t1502 = h61_own61;
-#line 10503 "main.c"
+#line 10509 "main.c"
     h_0opt_2270cbe7_release(&t1502);
 #line 105 "examples/assembler/assemble.hero"
     t1503 = h62_own62;
-#line 10507 "main.c"
+#line 10513 "main.c"
     h_0opt_e201354_release(&t1503);
 #line 105 "examples/assembler/assemble.hero"
     t1504 = h63_own63;
-#line 10511 "main.c"
+#line 10517 "main.c"
     hero_array_decref(t1504);
 #line 105 "examples/assembler/assemble.hero"
     t1505 = h64_own64;
-#line 10515 "main.c"
+#line 10521 "main.c"
     h_0opt_2270cbe7_release(&t1505);
 #line 105 "examples/assembler/assemble.hero"
     t1506 = h65_own65;
-#line 10519 "main.c"
+#line 10525 "main.c"
     h_0opt_2270cbe7_release(&t1506);
     return t266;
 bb47:
@@ -10529,15 +10535,15 @@ bb47:
     t324 = h62_own62;
 #line 103 "examples/assembler/assemble.hero"
     h62_own62 = t239;
-#line 10533 "main.c"
+#line 10539 "main.c"
     h_0opt_e201354_release(&t324);
 #line 103 "examples/assembler/assemble.hero"
     t325 = h18_f13;
-#line 10537 "main.c"
+#line 10543 "main.c"
     h_0opt_e201354_retain(&t239);
 #line 103 "examples/assembler/assemble.hero"
     h18_f13 = t239;
-#line 10541 "main.c"
+#line 10547 "main.c"
     h_0opt_e201354_release(&t325);
 #line 103 "examples/assembler/assemble.hero"
     t240 = h18_f13;
@@ -10579,10 +10585,10 @@ bb49:
     t326 = h63_own63;
 #line 104 "examples/assembler/assemble.hero"
     h63_own63 = t252;
-#line 10583 "main.c"
+#line 10589 "main.c"
     hero_array_decref(t326);
 #line 104 "examples/assembler/assemble.hero"
-#line 10586 "main.c"
+#line 10592 "main.c"
     hero_array_incref(t252);
 #line 104 "examples/assembler/assemble.hero"
     t253 = (h_0opt_2270cbe7){.tag = INT64_C(0), .as.ok = t252};
@@ -10590,258 +10596,258 @@ bb49:
     t327 = h64_own64;
 #line 104 "examples/assembler/assemble.hero"
     h64_own64 = t253;
-#line 10594 "main.c"
+#line 10600 "main.c"
     h_0opt_2270cbe7_release(&t327);
 #line 104 "examples/assembler/assemble.hero"
-#line 10597 "main.c"
+#line 10603 "main.c"
     h_0opt_2270cbe7_retain(&t253);
 #line 104 "examples/assembler/assemble.hero"
     t1507 = h2_m;
-#line 10601 "main.c"
+#line 10607 "main.c"
     hero_str_decref(t1507);
 #line 104 "examples/assembler/assemble.hero"
     t1508 = h3_f0;
-#line 10605 "main.c"
+#line 10611 "main.c"
     h_0opt_e201354_release(&t1508);
 #line 104 "examples/assembler/assemble.hero"
     t1509 = h4_f1;
-#line 10609 "main.c"
+#line 10615 "main.c"
     h_0opt_e201354_release(&t1509);
 #line 104 "examples/assembler/assemble.hero"
     t1510 = h5_f2;
-#line 10613 "main.c"
+#line 10619 "main.c"
     h_0opt_e201354_release(&t1510);
 #line 104 "examples/assembler/assemble.hero"
     t1511 = h8_f3;
-#line 10617 "main.c"
+#line 10623 "main.c"
     h_0opt_e201354_release(&t1511);
 #line 104 "examples/assembler/assemble.hero"
     t1512 = h9_f4;
-#line 10621 "main.c"
+#line 10627 "main.c"
     h_0opt_e201354_release(&t1512);
 #line 104 "examples/assembler/assemble.hero"
     t1513 = h10_f5;
-#line 10625 "main.c"
+#line 10631 "main.c"
     h_0opt_e201354_release(&t1513);
 #line 104 "examples/assembler/assemble.hero"
     t1514 = h11_f6;
-#line 10629 "main.c"
+#line 10635 "main.c"
     h_0opt_e201354_release(&t1514);
 #line 104 "examples/assembler/assemble.hero"
     t1515 = h12_f7;
-#line 10633 "main.c"
+#line 10639 "main.c"
     h_0opt_e201354_release(&t1515);
 #line 104 "examples/assembler/assemble.hero"
     t1516 = h13_f8;
-#line 10637 "main.c"
+#line 10643 "main.c"
     h_0opt_e201354_release(&t1516);
 #line 104 "examples/assembler/assemble.hero"
     t1517 = h14_f9;
-#line 10641 "main.c"
+#line 10647 "main.c"
     h_0opt_e201354_release(&t1517);
 #line 104 "examples/assembler/assemble.hero"
     t1518 = h15_f10;
-#line 10645 "main.c"
+#line 10651 "main.c"
     h_0opt_e201354_release(&t1518);
 #line 104 "examples/assembler/assemble.hero"
     t1519 = h16_f11;
-#line 10649 "main.c"
+#line 10655 "main.c"
     h_0opt_e201354_release(&t1519);
 #line 104 "examples/assembler/assemble.hero"
     t1520 = h17_f12;
-#line 10653 "main.c"
+#line 10659 "main.c"
     h_0opt_e201354_release(&t1520);
 #line 104 "examples/assembler/assemble.hero"
     t1521 = h18_f13;
-#line 10657 "main.c"
+#line 10663 "main.c"
     h_0opt_e201354_release(&t1521);
 #line 104 "examples/assembler/assemble.hero"
     t1522 = h19_own19;
-#line 10661 "main.c"
+#line 10667 "main.c"
     h_0opt_e201354_release(&t1522);
 #line 104 "examples/assembler/assemble.hero"
     t1523 = h20_own20;
-#line 10665 "main.c"
+#line 10671 "main.c"
     h_0opt_e201354_release(&t1523);
 #line 104 "examples/assembler/assemble.hero"
     t1524 = h21_own21;
-#line 10669 "main.c"
+#line 10675 "main.c"
     h_0opt_2270cbe7_release(&t1524);
 #line 104 "examples/assembler/assemble.hero"
     t1525 = h22_own22;
-#line 10673 "main.c"
+#line 10679 "main.c"
     h_0opt_e201354_release(&t1525);
 #line 104 "examples/assembler/assemble.hero"
     t1526 = h23_own23;
-#line 10677 "main.c"
+#line 10683 "main.c"
     h_0opt_2270cbe7_release(&t1526);
 #line 104 "examples/assembler/assemble.hero"
     t1527 = h24_own24;
-#line 10681 "main.c"
+#line 10687 "main.c"
     hero_array_decref(t1527);
 #line 104 "examples/assembler/assemble.hero"
     t1528 = h25_own25;
-#line 10685 "main.c"
+#line 10691 "main.c"
     h_0opt_2270cbe7_release(&t1528);
 #line 104 "examples/assembler/assemble.hero"
     t1529 = h26_own26;
-#line 10689 "main.c"
+#line 10695 "main.c"
     h_0opt_2270cbe7_release(&t1529);
 #line 104 "examples/assembler/assemble.hero"
     t1530 = h27_own27;
-#line 10693 "main.c"
+#line 10699 "main.c"
     h_0opt_e201354_release(&t1530);
 #line 104 "examples/assembler/assemble.hero"
     t1531 = h28_own28;
-#line 10697 "main.c"
+#line 10703 "main.c"
     h_0opt_e201354_release(&t1531);
 #line 104 "examples/assembler/assemble.hero"
     t1532 = h29_own29;
-#line 10701 "main.c"
+#line 10707 "main.c"
     h_0opt_2270cbe7_release(&t1532);
 #line 104 "examples/assembler/assemble.hero"
     t1533 = h30_own30;
-#line 10705 "main.c"
+#line 10711 "main.c"
     h_0opt_e201354_release(&t1533);
 #line 104 "examples/assembler/assemble.hero"
     t1534 = h31_own31;
-#line 10709 "main.c"
+#line 10715 "main.c"
     h_0opt_2270cbe7_release(&t1534);
 #line 104 "examples/assembler/assemble.hero"
     t1535 = h32_own32;
-#line 10713 "main.c"
+#line 10719 "main.c"
     hero_array_decref(t1535);
 #line 104 "examples/assembler/assemble.hero"
     t1536 = h33_own33;
-#line 10717 "main.c"
+#line 10723 "main.c"
     h_0opt_2270cbe7_release(&t1536);
 #line 104 "examples/assembler/assemble.hero"
     t1537 = h34_own34;
-#line 10721 "main.c"
+#line 10727 "main.c"
     h_0opt_2270cbe7_release(&t1537);
 #line 104 "examples/assembler/assemble.hero"
     t1538 = h35_own35;
-#line 10725 "main.c"
+#line 10731 "main.c"
     h_0opt_e201354_release(&t1538);
 #line 104 "examples/assembler/assemble.hero"
     t1539 = h36_own36;
-#line 10729 "main.c"
+#line 10735 "main.c"
     h_0opt_e201354_release(&t1539);
 #line 104 "examples/assembler/assemble.hero"
     t1540 = h37_own37;
-#line 10733 "main.c"
+#line 10739 "main.c"
     h_0opt_2270cbe7_release(&t1540);
 #line 104 "examples/assembler/assemble.hero"
     t1541 = h38_own38;
-#line 10737 "main.c"
+#line 10743 "main.c"
     hero_array_decref(t1541);
 #line 104 "examples/assembler/assemble.hero"
     t1542 = h39_own39;
-#line 10741 "main.c"
+#line 10747 "main.c"
     h_0opt_2270cbe7_release(&t1542);
 #line 104 "examples/assembler/assemble.hero"
     t1543 = h40_own40;
-#line 10745 "main.c"
+#line 10751 "main.c"
     h_0opt_2270cbe7_release(&t1543);
 #line 104 "examples/assembler/assemble.hero"
     t1544 = h41_own41;
-#line 10749 "main.c"
+#line 10755 "main.c"
     h_0opt_e201354_release(&t1544);
 #line 104 "examples/assembler/assemble.hero"
     t1545 = h42_own42;
-#line 10753 "main.c"
+#line 10759 "main.c"
     h_0opt_e201354_release(&t1545);
 #line 104 "examples/assembler/assemble.hero"
     t1546 = h43_own43;
-#line 10757 "main.c"
+#line 10763 "main.c"
     h_0opt_2270cbe7_release(&t1546);
 #line 104 "examples/assembler/assemble.hero"
     t1547 = h44_own44;
-#line 10761 "main.c"
+#line 10767 "main.c"
     h_0opt_e201354_release(&t1547);
 #line 104 "examples/assembler/assemble.hero"
     t1548 = h45_own45;
-#line 10765 "main.c"
+#line 10771 "main.c"
     h_0opt_2270cbe7_release(&t1548);
 #line 104 "examples/assembler/assemble.hero"
     t1549 = h46_own46;
-#line 10769 "main.c"
+#line 10775 "main.c"
     hero_array_decref(t1549);
 #line 104 "examples/assembler/assemble.hero"
     t1550 = h47_own47;
-#line 10773 "main.c"
+#line 10779 "main.c"
     h_0opt_2270cbe7_release(&t1550);
 #line 104 "examples/assembler/assemble.hero"
     t1551 = h48_own48;
-#line 10777 "main.c"
+#line 10783 "main.c"
     h_0opt_2270cbe7_release(&t1551);
 #line 104 "examples/assembler/assemble.hero"
     t1552 = h49_own49;
-#line 10781 "main.c"
+#line 10787 "main.c"
     h_0opt_e201354_release(&t1552);
 #line 104 "examples/assembler/assemble.hero"
     t1553 = h50_own50;
-#line 10785 "main.c"
+#line 10791 "main.c"
     h_0opt_e201354_release(&t1553);
 #line 104 "examples/assembler/assemble.hero"
     t1554 = h51_own51;
-#line 10789 "main.c"
+#line 10795 "main.c"
     h_0opt_2270cbe7_release(&t1554);
 #line 104 "examples/assembler/assemble.hero"
     t1555 = h52_own52;
-#line 10793 "main.c"
+#line 10799 "main.c"
     hero_array_decref(t1555);
 #line 104 "examples/assembler/assemble.hero"
     t1556 = h53_own53;
-#line 10797 "main.c"
+#line 10803 "main.c"
     h_0opt_2270cbe7_release(&t1556);
 #line 104 "examples/assembler/assemble.hero"
     t1557 = h54_own54;
-#line 10801 "main.c"
+#line 10807 "main.c"
     h_0opt_2270cbe7_release(&t1557);
 #line 104 "examples/assembler/assemble.hero"
     t1558 = h55_own55;
-#line 10805 "main.c"
+#line 10811 "main.c"
     hero_str_decref(t1558);
 #line 104 "examples/assembler/assemble.hero"
     t1559 = h56_own56;
-#line 10809 "main.c"
+#line 10815 "main.c"
     hero_str_decref(t1559);
 #line 104 "examples/assembler/assemble.hero"
     t1560 = h57_own57;
-#line 10813 "main.c"
+#line 10819 "main.c"
     hero_str_decref(t1560);
 #line 104 "examples/assembler/assemble.hero"
     t1561 = h58_own58;
-#line 10817 "main.c"
+#line 10823 "main.c"
     hero_str_decref(t1561);
 #line 104 "examples/assembler/assemble.hero"
     t1562 = h59_own59;
-#line 10821 "main.c"
+#line 10827 "main.c"
     hero_str_decref(t1562);
 #line 104 "examples/assembler/assemble.hero"
     t1563 = h60_own60;
-#line 10825 "main.c"
+#line 10831 "main.c"
     hero_str_decref(t1563);
 #line 104 "examples/assembler/assemble.hero"
     t1564 = h61_own61;
-#line 10829 "main.c"
+#line 10835 "main.c"
     h_0opt_2270cbe7_release(&t1564);
 #line 104 "examples/assembler/assemble.hero"
     t1565 = h62_own62;
-#line 10833 "main.c"
+#line 10839 "main.c"
     h_0opt_e201354_release(&t1565);
 #line 104 "examples/assembler/assemble.hero"
     t1566 = h63_own63;
-#line 10837 "main.c"
+#line 10843 "main.c"
     hero_array_decref(t1566);
 #line 104 "examples/assembler/assemble.hero"
     t1567 = h64_own64;
-#line 10841 "main.c"
+#line 10847 "main.c"
     h_0opt_2270cbe7_release(&t1567);
 #line 104 "examples/assembler/assemble.hero"
     t1568 = h65_own65;
-#line 10845 "main.c"
+#line 10851 "main.c"
     h_0opt_2270cbe7_release(&t1568);
     return t253;
 bb50:
@@ -10849,7 +10855,7 @@ bb50:
     t244 = h18_f13;
 #line 103 "examples/assembler/assemble.hero"
     t245 = t244.as.err;
-#line 10853 "main.c"
+#line 10859 "main.c"
     hero_failure_retain(&t245);
 #line 103 "examples/assembler/assemble.hero"
     t246 = (h_0opt_2270cbe7){.tag = INT64_C(1), .as.err = t245};
@@ -10857,265 +10863,265 @@ bb50:
     t328 = h65_own65;
 #line 103 "examples/assembler/assemble.hero"
     h65_own65 = t246;
-#line 10861 "main.c"
+#line 10867 "main.c"
     h_0opt_2270cbe7_release(&t328);
 #line 103 "examples/assembler/assemble.hero"
-#line 10864 "main.c"
+#line 10870 "main.c"
     h_0opt_2270cbe7_retain(&t246);
 #line 103 "examples/assembler/assemble.hero"
     t1569 = h2_m;
-#line 10868 "main.c"
+#line 10874 "main.c"
     hero_str_decref(t1569);
 #line 103 "examples/assembler/assemble.hero"
     t1570 = h3_f0;
-#line 10872 "main.c"
+#line 10878 "main.c"
     h_0opt_e201354_release(&t1570);
 #line 103 "examples/assembler/assemble.hero"
     t1571 = h4_f1;
-#line 10876 "main.c"
+#line 10882 "main.c"
     h_0opt_e201354_release(&t1571);
 #line 103 "examples/assembler/assemble.hero"
     t1572 = h5_f2;
-#line 10880 "main.c"
+#line 10886 "main.c"
     h_0opt_e201354_release(&t1572);
 #line 103 "examples/assembler/assemble.hero"
     t1573 = h8_f3;
-#line 10884 "main.c"
+#line 10890 "main.c"
     h_0opt_e201354_release(&t1573);
 #line 103 "examples/assembler/assemble.hero"
     t1574 = h9_f4;
-#line 10888 "main.c"
+#line 10894 "main.c"
     h_0opt_e201354_release(&t1574);
 #line 103 "examples/assembler/assemble.hero"
     t1575 = h10_f5;
-#line 10892 "main.c"
+#line 10898 "main.c"
     h_0opt_e201354_release(&t1575);
 #line 103 "examples/assembler/assemble.hero"
     t1576 = h11_f6;
-#line 10896 "main.c"
+#line 10902 "main.c"
     h_0opt_e201354_release(&t1576);
 #line 103 "examples/assembler/assemble.hero"
     t1577 = h12_f7;
-#line 10900 "main.c"
+#line 10906 "main.c"
     h_0opt_e201354_release(&t1577);
 #line 103 "examples/assembler/assemble.hero"
     t1578 = h13_f8;
-#line 10904 "main.c"
+#line 10910 "main.c"
     h_0opt_e201354_release(&t1578);
 #line 103 "examples/assembler/assemble.hero"
     t1579 = h14_f9;
-#line 10908 "main.c"
+#line 10914 "main.c"
     h_0opt_e201354_release(&t1579);
 #line 103 "examples/assembler/assemble.hero"
     t1580 = h15_f10;
-#line 10912 "main.c"
+#line 10918 "main.c"
     h_0opt_e201354_release(&t1580);
 #line 103 "examples/assembler/assemble.hero"
     t1581 = h16_f11;
-#line 10916 "main.c"
+#line 10922 "main.c"
     h_0opt_e201354_release(&t1581);
 #line 103 "examples/assembler/assemble.hero"
     t1582 = h17_f12;
-#line 10920 "main.c"
+#line 10926 "main.c"
     h_0opt_e201354_release(&t1582);
 #line 103 "examples/assembler/assemble.hero"
     t1583 = h18_f13;
-#line 10924 "main.c"
+#line 10930 "main.c"
     h_0opt_e201354_release(&t1583);
 #line 103 "examples/assembler/assemble.hero"
     t1584 = h19_own19;
-#line 10928 "main.c"
+#line 10934 "main.c"
     h_0opt_e201354_release(&t1584);
 #line 103 "examples/assembler/assemble.hero"
     t1585 = h20_own20;
-#line 10932 "main.c"
+#line 10938 "main.c"
     h_0opt_e201354_release(&t1585);
 #line 103 "examples/assembler/assemble.hero"
     t1586 = h21_own21;
-#line 10936 "main.c"
+#line 10942 "main.c"
     h_0opt_2270cbe7_release(&t1586);
 #line 103 "examples/assembler/assemble.hero"
     t1587 = h22_own22;
-#line 10940 "main.c"
+#line 10946 "main.c"
     h_0opt_e201354_release(&t1587);
 #line 103 "examples/assembler/assemble.hero"
     t1588 = h23_own23;
-#line 10944 "main.c"
+#line 10950 "main.c"
     h_0opt_2270cbe7_release(&t1588);
 #line 103 "examples/assembler/assemble.hero"
     t1589 = h24_own24;
-#line 10948 "main.c"
+#line 10954 "main.c"
     hero_array_decref(t1589);
 #line 103 "examples/assembler/assemble.hero"
     t1590 = h25_own25;
-#line 10952 "main.c"
+#line 10958 "main.c"
     h_0opt_2270cbe7_release(&t1590);
 #line 103 "examples/assembler/assemble.hero"
     t1591 = h26_own26;
-#line 10956 "main.c"
+#line 10962 "main.c"
     h_0opt_2270cbe7_release(&t1591);
 #line 103 "examples/assembler/assemble.hero"
     t1592 = h27_own27;
-#line 10960 "main.c"
+#line 10966 "main.c"
     h_0opt_e201354_release(&t1592);
 #line 103 "examples/assembler/assemble.hero"
     t1593 = h28_own28;
-#line 10964 "main.c"
+#line 10970 "main.c"
     h_0opt_e201354_release(&t1593);
 #line 103 "examples/assembler/assemble.hero"
     t1594 = h29_own29;
-#line 10968 "main.c"
+#line 10974 "main.c"
     h_0opt_2270cbe7_release(&t1594);
 #line 103 "examples/assembler/assemble.hero"
     t1595 = h30_own30;
-#line 10972 "main.c"
+#line 10978 "main.c"
     h_0opt_e201354_release(&t1595);
 #line 103 "examples/assembler/assemble.hero"
     t1596 = h31_own31;
-#line 10976 "main.c"
+#line 10982 "main.c"
     h_0opt_2270cbe7_release(&t1596);
 #line 103 "examples/assembler/assemble.hero"
     t1597 = h32_own32;
-#line 10980 "main.c"
+#line 10986 "main.c"
     hero_array_decref(t1597);
 #line 103 "examples/assembler/assemble.hero"
     t1598 = h33_own33;
-#line 10984 "main.c"
+#line 10990 "main.c"
     h_0opt_2270cbe7_release(&t1598);
 #line 103 "examples/assembler/assemble.hero"
     t1599 = h34_own34;
-#line 10988 "main.c"
+#line 10994 "main.c"
     h_0opt_2270cbe7_release(&t1599);
 #line 103 "examples/assembler/assemble.hero"
     t1600 = h35_own35;
-#line 10992 "main.c"
+#line 10998 "main.c"
     h_0opt_e201354_release(&t1600);
 #line 103 "examples/assembler/assemble.hero"
     t1601 = h36_own36;
-#line 10996 "main.c"
+#line 11002 "main.c"
     h_0opt_e201354_release(&t1601);
 #line 103 "examples/assembler/assemble.hero"
     t1602 = h37_own37;
-#line 11000 "main.c"
+#line 11006 "main.c"
     h_0opt_2270cbe7_release(&t1602);
 #line 103 "examples/assembler/assemble.hero"
     t1603 = h38_own38;
-#line 11004 "main.c"
+#line 11010 "main.c"
     hero_array_decref(t1603);
 #line 103 "examples/assembler/assemble.hero"
     t1604 = h39_own39;
-#line 11008 "main.c"
+#line 11014 "main.c"
     h_0opt_2270cbe7_release(&t1604);
 #line 103 "examples/assembler/assemble.hero"
     t1605 = h40_own40;
-#line 11012 "main.c"
+#line 11018 "main.c"
     h_0opt_2270cbe7_release(&t1605);
 #line 103 "examples/assembler/assemble.hero"
     t1606 = h41_own41;
-#line 11016 "main.c"
+#line 11022 "main.c"
     h_0opt_e201354_release(&t1606);
 #line 103 "examples/assembler/assemble.hero"
     t1607 = h42_own42;
-#line 11020 "main.c"
+#line 11026 "main.c"
     h_0opt_e201354_release(&t1607);
 #line 103 "examples/assembler/assemble.hero"
     t1608 = h43_own43;
-#line 11024 "main.c"
+#line 11030 "main.c"
     h_0opt_2270cbe7_release(&t1608);
 #line 103 "examples/assembler/assemble.hero"
     t1609 = h44_own44;
-#line 11028 "main.c"
+#line 11034 "main.c"
     h_0opt_e201354_release(&t1609);
 #line 103 "examples/assembler/assemble.hero"
     t1610 = h45_own45;
-#line 11032 "main.c"
+#line 11038 "main.c"
     h_0opt_2270cbe7_release(&t1610);
 #line 103 "examples/assembler/assemble.hero"
     t1611 = h46_own46;
-#line 11036 "main.c"
+#line 11042 "main.c"
     hero_array_decref(t1611);
 #line 103 "examples/assembler/assemble.hero"
     t1612 = h47_own47;
-#line 11040 "main.c"
+#line 11046 "main.c"
     h_0opt_2270cbe7_release(&t1612);
 #line 103 "examples/assembler/assemble.hero"
     t1613 = h48_own48;
-#line 11044 "main.c"
+#line 11050 "main.c"
     h_0opt_2270cbe7_release(&t1613);
 #line 103 "examples/assembler/assemble.hero"
     t1614 = h49_own49;
-#line 11048 "main.c"
+#line 11054 "main.c"
     h_0opt_e201354_release(&t1614);
 #line 103 "examples/assembler/assemble.hero"
     t1615 = h50_own50;
-#line 11052 "main.c"
+#line 11058 "main.c"
     h_0opt_e201354_release(&t1615);
 #line 103 "examples/assembler/assemble.hero"
     t1616 = h51_own51;
-#line 11056 "main.c"
+#line 11062 "main.c"
     h_0opt_2270cbe7_release(&t1616);
 #line 103 "examples/assembler/assemble.hero"
     t1617 = h52_own52;
-#line 11060 "main.c"
+#line 11066 "main.c"
     hero_array_decref(t1617);
 #line 103 "examples/assembler/assemble.hero"
     t1618 = h53_own53;
-#line 11064 "main.c"
+#line 11070 "main.c"
     h_0opt_2270cbe7_release(&t1618);
 #line 103 "examples/assembler/assemble.hero"
     t1619 = h54_own54;
-#line 11068 "main.c"
+#line 11074 "main.c"
     h_0opt_2270cbe7_release(&t1619);
 #line 103 "examples/assembler/assemble.hero"
     t1620 = h55_own55;
-#line 11072 "main.c"
+#line 11078 "main.c"
     hero_str_decref(t1620);
 #line 103 "examples/assembler/assemble.hero"
     t1621 = h56_own56;
-#line 11076 "main.c"
+#line 11082 "main.c"
     hero_str_decref(t1621);
 #line 103 "examples/assembler/assemble.hero"
     t1622 = h57_own57;
-#line 11080 "main.c"
+#line 11086 "main.c"
     hero_str_decref(t1622);
 #line 103 "examples/assembler/assemble.hero"
     t1623 = h58_own58;
-#line 11084 "main.c"
+#line 11090 "main.c"
     hero_str_decref(t1623);
 #line 103 "examples/assembler/assemble.hero"
     t1624 = h59_own59;
-#line 11088 "main.c"
+#line 11094 "main.c"
     hero_str_decref(t1624);
 #line 103 "examples/assembler/assemble.hero"
     t1625 = h60_own60;
-#line 11092 "main.c"
+#line 11098 "main.c"
     hero_str_decref(t1625);
 #line 103 "examples/assembler/assemble.hero"
     t1626 = h61_own61;
-#line 11096 "main.c"
+#line 11102 "main.c"
     h_0opt_2270cbe7_release(&t1626);
 #line 103 "examples/assembler/assemble.hero"
     t1627 = h62_own62;
-#line 11100 "main.c"
+#line 11106 "main.c"
     h_0opt_e201354_release(&t1627);
 #line 103 "examples/assembler/assemble.hero"
     t1628 = h63_own63;
-#line 11104 "main.c"
+#line 11110 "main.c"
     hero_array_decref(t1628);
 #line 103 "examples/assembler/assemble.hero"
     t1629 = h64_own64;
-#line 11108 "main.c"
+#line 11114 "main.c"
     h_0opt_2270cbe7_release(&t1629);
 #line 103 "examples/assembler/assemble.hero"
     t1630 = h65_own65;
-#line 11112 "main.c"
+#line 11118 "main.c"
     h_0opt_2270cbe7_release(&t1630);
     return t246;
 }
 
 #line 107 "examples/assembler/assemble.hero"
 int64_t h_assemble_opcode_of(HeroStr h0_m) {
-#line 11119 "main.c"
+#line 11125 "main.c"
     HeroStr t1 = {0};
     HeroStr t2 = {0};
     bool t3;
@@ -11171,12 +11177,12 @@ bb5:
 bb6:
 #line 112 "examples/assembler/assemble.hero"
     goto bb4;
-#line 11175 "main.c"
+#line 11181 "main.c"
 }
 
 #line 115 "examples/assembler/assemble.hero"
 h_0opt_e201354 h_assemble_expect(h_program_Line h0_line, int64_t h1_wanted) {
-#line 11180 "main.c"
+#line 11186 "main.c"
     h_0opt_e201354 h2_own2 = {0};
     HeroStr h3_own3 = {0};
     HeroStr h4_own4 = {0};
@@ -11284,62 +11290,62 @@ bb1:
     t32 = h2_own2;
 #line 121 "examples/assembler/assemble.hero"
     h2_own2 = t31;
-#line 11288 "main.c"
+#line 11294 "main.c"
     h_0opt_e201354_release(&t32);
 #line 121 "examples/assembler/assemble.hero"
-#line 11291 "main.c"
+#line 11297 "main.c"
     h_0opt_e201354_retain(&t31);
 #line 121 "examples/assembler/assemble.hero"
     t45 = h2_own2;
-#line 11295 "main.c"
+#line 11301 "main.c"
     h_0opt_e201354_release(&t45);
 #line 121 "examples/assembler/assemble.hero"
     t46 = h3_own3;
-#line 11299 "main.c"
+#line 11305 "main.c"
     hero_str_decref(t46);
 #line 121 "examples/assembler/assemble.hero"
     t47 = h4_own4;
-#line 11303 "main.c"
+#line 11309 "main.c"
     hero_str_decref(t47);
 #line 121 "examples/assembler/assemble.hero"
     t48 = h5_own5;
-#line 11307 "main.c"
+#line 11313 "main.c"
     hero_str_decref(t48);
 #line 121 "examples/assembler/assemble.hero"
     t49 = h6_own6;
-#line 11311 "main.c"
+#line 11317 "main.c"
     hero_str_decref(t49);
 #line 121 "examples/assembler/assemble.hero"
     t50 = h7_own7;
-#line 11315 "main.c"
+#line 11321 "main.c"
     hero_str_decref(t50);
 #line 121 "examples/assembler/assemble.hero"
     t51 = h8_own8;
-#line 11319 "main.c"
+#line 11325 "main.c"
     hero_str_decref(t51);
 #line 121 "examples/assembler/assemble.hero"
     t52 = h9_own9;
-#line 11323 "main.c"
+#line 11329 "main.c"
     hero_str_decref(t52);
 #line 121 "examples/assembler/assemble.hero"
     t53 = h10_own10;
-#line 11327 "main.c"
+#line 11333 "main.c"
     hero_str_decref(t53);
 #line 121 "examples/assembler/assemble.hero"
     t54 = h11_own11;
-#line 11331 "main.c"
+#line 11337 "main.c"
     hero_str_decref(t54);
 #line 121 "examples/assembler/assemble.hero"
     t55 = h12_own12;
-#line 11335 "main.c"
+#line 11341 "main.c"
     hero_str_decref(t55);
 #line 121 "examples/assembler/assemble.hero"
     t56 = h13_own13;
-#line 11339 "main.c"
+#line 11345 "main.c"
     hero_str_decref(t56);
 #line 121 "examples/assembler/assemble.hero"
     t57 = h14_own14;
-#line 11343 "main.c"
+#line 11349 "main.c"
     h_0opt_e201354_release(&t57);
     return t31;
 bb2:
@@ -11349,7 +11355,7 @@ bb2:
     t33 = h3_own3;
 #line 118 "examples/assembler/assemble.hero"
     h3_own3 = t6;
-#line 11353 "main.c"
+#line 11359 "main.c"
     hero_str_decref(t33);
 #line 119 "examples/assembler/assemble.hero"
     t7 = HERO_STR_LIT(hero_str_75f7c07a);
@@ -11363,7 +11369,7 @@ bb2:
     t34 = h4_own4;
 #line 119 "examples/assembler/assemble.hero"
     h4_own4 = t10;
-#line 11367 "main.c"
+#line 11373 "main.c"
     hero_str_decref(t34);
 #line 119 "examples/assembler/assemble.hero"
     t11 = hero_str_concat(t7, t10);
@@ -11371,7 +11377,7 @@ bb2:
     t35 = h5_own5;
 #line 119 "examples/assembler/assemble.hero"
     h5_own5 = t11;
-#line 11375 "main.c"
+#line 11381 "main.c"
     hero_str_decref(t35);
 #line 119 "examples/assembler/assemble.hero"
     t12 = HERO_STR_LIT(hero_str_f40ca);
@@ -11381,7 +11387,7 @@ bb2:
     t36 = h6_own6;
 #line 119 "examples/assembler/assemble.hero"
     h6_own6 = t13;
-#line 11385 "main.c"
+#line 11391 "main.c"
     hero_str_decref(t36);
 #line 119 "examples/assembler/assemble.hero"
     t14 = h0_line;
@@ -11393,7 +11399,7 @@ bb2:
     t37 = h7_own7;
 #line 119 "examples/assembler/assemble.hero"
     h7_own7 = t16;
-#line 11397 "main.c"
+#line 11403 "main.c"
     hero_str_decref(t37);
 #line 119 "examples/assembler/assemble.hero"
     t17 = HERO_STR_LIT(hero_str_b55ab14);
@@ -11403,7 +11409,7 @@ bb2:
     t38 = h8_own8;
 #line 119 "examples/assembler/assemble.hero"
     h8_own8 = t18;
-#line 11407 "main.c"
+#line 11413 "main.c"
     hero_str_decref(t38);
 #line 119 "examples/assembler/assemble.hero"
     t19 = h1_wanted;
@@ -11413,7 +11419,7 @@ bb2:
     t39 = h9_own9;
 #line 119 "examples/assembler/assemble.hero"
     h9_own9 = t20;
-#line 11417 "main.c"
+#line 11423 "main.c"
     hero_str_decref(t39);
 #line 119 "examples/assembler/assemble.hero"
     t21 = hero_str_concat(t18, t20);
@@ -11421,7 +11427,7 @@ bb2:
     t40 = h10_own10;
 #line 119 "examples/assembler/assemble.hero"
     h10_own10 = t21;
-#line 11425 "main.c"
+#line 11431 "main.c"
     hero_str_decref(t40);
 #line 119 "examples/assembler/assemble.hero"
     t22 = HERO_STR_LIT(hero_str_7b4e69fb);
@@ -11431,7 +11437,7 @@ bb2:
     t41 = h11_own11;
 #line 119 "examples/assembler/assemble.hero"
     h11_own11 = t23;
-#line 11435 "main.c"
+#line 11441 "main.c"
     hero_str_decref(t41);
 #line 119 "examples/assembler/assemble.hero"
     t24 = h0_line;
@@ -11445,7 +11451,7 @@ bb2:
     t42 = h12_own12;
 #line 119 "examples/assembler/assemble.hero"
     h12_own12 = t27;
-#line 11449 "main.c"
+#line 11455 "main.c"
     hero_str_decref(t42);
 #line 119 "examples/assembler/assemble.hero"
     t28 = hero_str_concat(t23, t27);
@@ -11453,13 +11459,13 @@ bb2:
     t43 = h13_own13;
 #line 119 "examples/assembler/assemble.hero"
     h13_own13 = t28;
-#line 11457 "main.c"
+#line 11463 "main.c"
     hero_str_decref(t43);
 #line 117 "examples/assembler/assemble.hero"
-#line 11460 "main.c"
+#line 11466 "main.c"
     hero_str_incref(t6);
 #line 117 "examples/assembler/assemble.hero"
-#line 11463 "main.c"
+#line 11469 "main.c"
     hero_str_incref(t28);
 #line 117 "examples/assembler/assemble.hero"
     t29 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t6, .msg = t28}};
@@ -11467,62 +11473,62 @@ bb2:
     t44 = h14_own14;
 #line 117 "examples/assembler/assemble.hero"
     h14_own14 = t29;
-#line 11471 "main.c"
+#line 11477 "main.c"
     h_0opt_e201354_release(&t44);
 #line 117 "examples/assembler/assemble.hero"
-#line 11474 "main.c"
+#line 11480 "main.c"
     h_0opt_e201354_retain(&t29);
 #line 117 "examples/assembler/assemble.hero"
     t58 = h2_own2;
-#line 11478 "main.c"
+#line 11484 "main.c"
     h_0opt_e201354_release(&t58);
 #line 117 "examples/assembler/assemble.hero"
     t59 = h3_own3;
-#line 11482 "main.c"
+#line 11488 "main.c"
     hero_str_decref(t59);
 #line 117 "examples/assembler/assemble.hero"
     t60 = h4_own4;
-#line 11486 "main.c"
+#line 11492 "main.c"
     hero_str_decref(t60);
 #line 117 "examples/assembler/assemble.hero"
     t61 = h5_own5;
-#line 11490 "main.c"
+#line 11496 "main.c"
     hero_str_decref(t61);
 #line 117 "examples/assembler/assemble.hero"
     t62 = h6_own6;
-#line 11494 "main.c"
+#line 11500 "main.c"
     hero_str_decref(t62);
 #line 117 "examples/assembler/assemble.hero"
     t63 = h7_own7;
-#line 11498 "main.c"
+#line 11504 "main.c"
     hero_str_decref(t63);
 #line 117 "examples/assembler/assemble.hero"
     t64 = h8_own8;
-#line 11502 "main.c"
+#line 11508 "main.c"
     hero_str_decref(t64);
 #line 117 "examples/assembler/assemble.hero"
     t65 = h9_own9;
-#line 11506 "main.c"
+#line 11512 "main.c"
     hero_str_decref(t65);
 #line 117 "examples/assembler/assemble.hero"
     t66 = h10_own10;
-#line 11510 "main.c"
+#line 11516 "main.c"
     hero_str_decref(t66);
 #line 117 "examples/assembler/assemble.hero"
     t67 = h11_own11;
-#line 11514 "main.c"
+#line 11520 "main.c"
     hero_str_decref(t67);
 #line 117 "examples/assembler/assemble.hero"
     t68 = h12_own12;
-#line 11518 "main.c"
+#line 11524 "main.c"
     hero_str_decref(t68);
 #line 117 "examples/assembler/assemble.hero"
     t69 = h13_own13;
-#line 11522 "main.c"
+#line 11528 "main.c"
     hero_str_decref(t69);
 #line 117 "examples/assembler/assemble.hero"
     t70 = h14_own14;
-#line 11526 "main.c"
+#line 11532 "main.c"
     h_0opt_e201354_release(&t70);
     return t29;
 bb3:
@@ -11531,7 +11537,7 @@ bb3:
 
 #line 125 "examples/assembler/assemble.hero"
 h_0opt_e201354 h_assemble_target_of(HeroStr h0_name, HeroMapHeader * h1_labels, int64_t h2_number) {
-#line 11535 "main.c"
+#line 11541 "main.c"
     h_0opt_e201354 h3_s0 = {0};
     int64_t h4_at;
     h_0opt_e201354 h5_own5 = {0};
@@ -11624,15 +11630,15 @@ bb0:
     t24 = h5_own5;
 #line 126 "examples/assembler/assemble.hero"
     h5_own5 = t3;
-#line 11628 "main.c"
+#line 11634 "main.c"
     h_0opt_e201354_release(&t24);
 #line 126 "examples/assembler/assemble.hero"
     t25 = h3_s0;
-#line 11632 "main.c"
+#line 11638 "main.c"
     h_0opt_e201354_retain(&t3);
 #line 126 "examples/assembler/assemble.hero"
     h3_s0 = t3;
-#line 11636 "main.c"
+#line 11642 "main.c"
     h_0opt_e201354_release(&t25);
 #line 126 "examples/assembler/assemble.hero"
     t4 = h3_s0;
@@ -11668,50 +11674,50 @@ bb2:
     t26 = h6_own6;
 #line 127 "examples/assembler/assemble.hero"
     h6_own6 = t11;
-#line 11672 "main.c"
+#line 11678 "main.c"
     h_0opt_e201354_release(&t26);
 #line 127 "examples/assembler/assemble.hero"
-#line 11675 "main.c"
+#line 11681 "main.c"
     h_0opt_e201354_retain(&t11);
 #line 127 "examples/assembler/assemble.hero"
     t34 = h3_s0;
-#line 11679 "main.c"
+#line 11685 "main.c"
     h_0opt_e201354_release(&t34);
 #line 127 "examples/assembler/assemble.hero"
     t35 = h5_own5;
-#line 11683 "main.c"
+#line 11689 "main.c"
     h_0opt_e201354_release(&t35);
 #line 127 "examples/assembler/assemble.hero"
     t36 = h6_own6;
-#line 11687 "main.c"
+#line 11693 "main.c"
     h_0opt_e201354_release(&t36);
 #line 127 "examples/assembler/assemble.hero"
     t37 = h7_own7;
-#line 11691 "main.c"
+#line 11697 "main.c"
     hero_str_decref(t37);
 #line 127 "examples/assembler/assemble.hero"
     t38 = h8_own8;
-#line 11695 "main.c"
+#line 11701 "main.c"
     hero_str_decref(t38);
 #line 127 "examples/assembler/assemble.hero"
     t39 = h9_own9;
-#line 11699 "main.c"
+#line 11705 "main.c"
     hero_str_decref(t39);
 #line 127 "examples/assembler/assemble.hero"
     t40 = h10_own10;
-#line 11703 "main.c"
+#line 11709 "main.c"
     hero_str_decref(t40);
 #line 127 "examples/assembler/assemble.hero"
     t41 = h11_own11;
-#line 11707 "main.c"
+#line 11713 "main.c"
     hero_str_decref(t41);
 #line 127 "examples/assembler/assemble.hero"
     t42 = h12_own12;
-#line 11711 "main.c"
+#line 11717 "main.c"
     hero_str_decref(t42);
 #line 127 "examples/assembler/assemble.hero"
     t43 = h13_own13;
-#line 11715 "main.c"
+#line 11721 "main.c"
     h_0opt_e201354_release(&t43);
     return t11;
 bb3:
@@ -11721,7 +11727,7 @@ bb3:
     t27 = h7_own7;
 #line 128 "examples/assembler/assemble.hero"
     h7_own7 = t12;
-#line 11725 "main.c"
+#line 11731 "main.c"
     hero_str_decref(t27);
 #line 128 "examples/assembler/assemble.hero"
     t13 = HERO_STR_LIT(hero_str_75f7c07a);
@@ -11733,7 +11739,7 @@ bb3:
     t28 = h8_own8;
 #line 128 "examples/assembler/assemble.hero"
     h8_own8 = t15;
-#line 11737 "main.c"
+#line 11743 "main.c"
     hero_str_decref(t28);
 #line 128 "examples/assembler/assemble.hero"
     t16 = hero_str_concat(t13, t15);
@@ -11741,7 +11747,7 @@ bb3:
     t29 = h9_own9;
 #line 128 "examples/assembler/assemble.hero"
     h9_own9 = t16;
-#line 11745 "main.c"
+#line 11751 "main.c"
     hero_str_decref(t29);
 #line 128 "examples/assembler/assemble.hero"
     t17 = HERO_STR_LIT(hero_str_393bfd31);
@@ -11751,7 +11757,7 @@ bb3:
     t30 = h10_own10;
 #line 128 "examples/assembler/assemble.hero"
     h10_own10 = t18;
-#line 11755 "main.c"
+#line 11761 "main.c"
     hero_str_decref(t30);
 #line 128 "examples/assembler/assemble.hero"
     t19 = h0_name;
@@ -11761,7 +11767,7 @@ bb3:
     t31 = h11_own11;
 #line 128 "examples/assembler/assemble.hero"
     h11_own11 = t20;
-#line 11765 "main.c"
+#line 11771 "main.c"
     hero_str_decref(t31);
 #line 128 "examples/assembler/assemble.hero"
     t21 = HERO_STR_LIT(hero_str_60);
@@ -11771,13 +11777,13 @@ bb3:
     t32 = h12_own12;
 #line 128 "examples/assembler/assemble.hero"
     h12_own12 = t22;
-#line 11775 "main.c"
+#line 11781 "main.c"
     hero_str_decref(t32);
 #line 128 "examples/assembler/assemble.hero"
-#line 11778 "main.c"
+#line 11784 "main.c"
     hero_str_incref(t12);
 #line 128 "examples/assembler/assemble.hero"
-#line 11781 "main.c"
+#line 11787 "main.c"
     hero_str_incref(t22);
 #line 128 "examples/assembler/assemble.hero"
     t23 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t12, .msg = t22}};
@@ -11785,57 +11791,57 @@ bb3:
     t33 = h13_own13;
 #line 128 "examples/assembler/assemble.hero"
     h13_own13 = t23;
-#line 11789 "main.c"
+#line 11795 "main.c"
     h_0opt_e201354_release(&t33);
 #line 128 "examples/assembler/assemble.hero"
-#line 11792 "main.c"
+#line 11798 "main.c"
     h_0opt_e201354_retain(&t23);
 #line 128 "examples/assembler/assemble.hero"
     t44 = h3_s0;
-#line 11796 "main.c"
+#line 11802 "main.c"
     h_0opt_e201354_release(&t44);
 #line 128 "examples/assembler/assemble.hero"
     t45 = h5_own5;
-#line 11800 "main.c"
+#line 11806 "main.c"
     h_0opt_e201354_release(&t45);
 #line 128 "examples/assembler/assemble.hero"
     t46 = h6_own6;
-#line 11804 "main.c"
+#line 11810 "main.c"
     h_0opt_e201354_release(&t46);
 #line 128 "examples/assembler/assemble.hero"
     t47 = h7_own7;
-#line 11808 "main.c"
+#line 11814 "main.c"
     hero_str_decref(t47);
 #line 128 "examples/assembler/assemble.hero"
     t48 = h8_own8;
-#line 11812 "main.c"
+#line 11818 "main.c"
     hero_str_decref(t48);
 #line 128 "examples/assembler/assemble.hero"
     t49 = h9_own9;
-#line 11816 "main.c"
+#line 11822 "main.c"
     hero_str_decref(t49);
 #line 128 "examples/assembler/assemble.hero"
     t50 = h10_own10;
-#line 11820 "main.c"
+#line 11826 "main.c"
     hero_str_decref(t50);
 #line 128 "examples/assembler/assemble.hero"
     t51 = h11_own11;
-#line 11824 "main.c"
+#line 11830 "main.c"
     hero_str_decref(t51);
 #line 128 "examples/assembler/assemble.hero"
     t52 = h12_own12;
-#line 11828 "main.c"
+#line 11834 "main.c"
     hero_str_decref(t52);
 #line 128 "examples/assembler/assemble.hero"
     t53 = h13_own13;
-#line 11832 "main.c"
+#line 11838 "main.c"
     h_0opt_e201354_release(&t53);
     return t23;
 }
 
 #line 159 "examples/assembler/assemble.hero"
 HeroStr h_assemble_code_of(HeroStr h0_text) {
-#line 11839 "main.c"
+#line 11845 "main.c"
     h_0opt_40eff9f5 h1_s0 = {0};
     HeroStr h2_r0 = {0};
     HeroFailure h3_e = {0};
@@ -11873,7 +11879,7 @@ bb0:
     t12 = h4_own4;
 #line 160 "examples/assembler/assemble.hero"
     h4_own4 = t2;
-#line 11877 "main.c"
+#line 11883 "main.c"
     hero_array_decref(t12);
 #line 160 "examples/assembler/assemble.hero"
     t3 = h_assemble_assemble(t2);
@@ -11881,15 +11887,15 @@ bb0:
     t13 = h5_own5;
 #line 160 "examples/assembler/assemble.hero"
     h5_own5 = t3;
-#line 11885 "main.c"
+#line 11891 "main.c"
     h_0opt_40eff9f5_release(&t13);
 #line 160 "examples/assembler/assemble.hero"
     t14 = h1_s0;
-#line 11889 "main.c"
+#line 11895 "main.c"
     h_0opt_40eff9f5_retain(&t3);
 #line 160 "examples/assembler/assemble.hero"
     h1_s0 = t3;
-#line 11893 "main.c"
+#line 11899 "main.c"
     h_0opt_40eff9f5_release(&t14);
 #line 160 "examples/assembler/assemble.hero"
     t4 = h1_s0;
@@ -11909,27 +11915,27 @@ bb0:
 bb1:
 #line 160 "examples/assembler/assemble.hero"
     t11 = h2_r0;
-#line 11913 "main.c"
+#line 11919 "main.c"
     hero_str_incref(t11);
 #line 160 "examples/assembler/assemble.hero"
     t18 = h1_s0;
-#line 11917 "main.c"
+#line 11923 "main.c"
     h_0opt_40eff9f5_release(&t18);
 #line 160 "examples/assembler/assemble.hero"
     t19 = h2_r0;
-#line 11921 "main.c"
+#line 11927 "main.c"
     hero_str_decref(t19);
 #line 160 "examples/assembler/assemble.hero"
     t20 = h3_e;
-#line 11925 "main.c"
+#line 11931 "main.c"
     hero_failure_release(&t20);
 #line 160 "examples/assembler/assemble.hero"
     t21 = h4_own4;
-#line 11929 "main.c"
+#line 11935 "main.c"
     hero_array_decref(t21);
 #line 160 "examples/assembler/assemble.hero"
     t22 = h5_own5;
-#line 11933 "main.c"
+#line 11939 "main.c"
     h_0opt_40eff9f5_release(&t22);
     return t11;
 bb2:
@@ -11937,11 +11943,11 @@ bb2:
     t6 = HERO_STR_LIT(hero_str_7b992235);
 #line 160 "examples/assembler/assemble.hero"
     t15 = h2_r0;
-#line 11941 "main.c"
+#line 11947 "main.c"
     hero_str_incref(t6);
 #line 160 "examples/assembler/assemble.hero"
     h2_r0 = t6;
-#line 11945 "main.c"
+#line 11951 "main.c"
     hero_str_decref(t15);
     goto bb1;
 bb3:
@@ -11951,11 +11957,11 @@ bb3:
     t8 = t7.as.err;
 #line 162 "examples/assembler/assemble.hero"
     t16 = h3_e;
-#line 11955 "main.c"
+#line 11961 "main.c"
     hero_failure_retain(&t8);
 #line 162 "examples/assembler/assemble.hero"
     h3_e = t8;
-#line 11959 "main.c"
+#line 11965 "main.c"
     hero_failure_release(&t16);
 #line 162 "examples/assembler/assemble.hero"
     t9 = h3_e;
@@ -11963,57 +11969,57 @@ bb3:
     t10 = t9.code;
 #line 160 "examples/assembler/assemble.hero"
     t17 = h2_r0;
-#line 11967 "main.c"
+#line 11973 "main.c"
     hero_str_incref(t10);
 #line 160 "examples/assembler/assemble.hero"
     h2_r0 = t10;
-#line 11971 "main.c"
+#line 11977 "main.c"
     hero_str_decref(t17);
     goto bb1;
 }
 
 #line 20 "examples/assembler/machine.hero"
 HeroStr h_machine_ERR_BAD_OPCODE(void) {
-#line 11978 "main.c"
+#line 11984 "main.c"
     HeroStr t1 = {0};
     goto bb0;
 bb0:
 #line 21 "examples/assembler/machine.hero"
     t1 = HERO_STR_LIT(hero_str_37102433);
-#line 11984 "main.c"
+#line 11990 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 23 "examples/assembler/machine.hero"
 HeroStr h_machine_ERR_OUT_OF_FUEL(void) {
-#line 11991 "main.c"
+#line 11997 "main.c"
     HeroStr t1 = {0};
     goto bb0;
 bb0:
 #line 24 "examples/assembler/machine.hero"
     t1 = HERO_STR_LIT(hero_str_2ba30e4);
-#line 11997 "main.c"
+#line 12003 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 26 "examples/assembler/machine.hero"
 HeroStr h_machine_ERR_RAN_OFF_THE_END(void) {
-#line 12004 "main.c"
+#line 12010 "main.c"
     HeroStr t1 = {0};
     goto bb0;
 bb0:
 #line 27 "examples/assembler/machine.hero"
     t1 = HERO_STR_LIT(hero_str_5eb0412c);
-#line 12010 "main.c"
+#line 12016 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 34 "examples/assembler/machine.hero"
 h_0opt_5a58f2ca h_machine_run(HeroArrayHeader * h0_code, int64_t h1_fuel) {
-#line 12017 "main.c"
+#line 12023 "main.c"
     h_machine_Machine h2_m = {0};
     int64_t h3_left;
     bool h4_b0;
@@ -12212,7 +12218,7 @@ bb0:
     t74 = h9_own9;
 #line 35 "examples/assembler/machine.hero"
     h9_own9 = t5;
-#line 12216 "main.c"
+#line 12222 "main.c"
     hero_array_decref(t74);
 #line 35 "examples/assembler/machine.hero"
     t6 = INT64_C(0);
@@ -12222,13 +12228,13 @@ bb0:
     t75 = h10_own10;
 #line 35 "examples/assembler/machine.hero"
     h10_own10 = t7;
-#line 12226 "main.c"
+#line 12232 "main.c"
     hero_array_decref(t75);
 #line 35 "examples/assembler/machine.hero"
-#line 12229 "main.c"
+#line 12235 "main.c"
     hero_array_incref(t5);
 #line 35 "examples/assembler/machine.hero"
-#line 12232 "main.c"
+#line 12238 "main.c"
     hero_array_incref(t7);
 #line 35 "examples/assembler/machine.hero"
     t8 = (h_machine_Machine){.f_registers = t5, .f_pc = t6, .f_output = t7};
@@ -12236,15 +12242,15 @@ bb0:
     t76 = h11_own11;
 #line 35 "examples/assembler/machine.hero"
     h11_own11 = t8;
-#line 12240 "main.c"
+#line 12246 "main.c"
     h_machine_Machine_release(&t76);
 #line 35 "examples/assembler/machine.hero"
     t77 = h2_m;
-#line 12244 "main.c"
+#line 12250 "main.c"
     h_machine_Machine_retain(&t8);
 #line 35 "examples/assembler/machine.hero"
     h2_m = t8;
-#line 12248 "main.c"
+#line 12254 "main.c"
     h_machine_Machine_release(&t77);
 #line 36 "examples/assembler/machine.hero"
     t9 = h1_fuel;
@@ -12292,7 +12298,7 @@ bb3:
     t78 = h12_own12;
 #line 51 "examples/assembler/machine.hero"
     h12_own12 = t66;
-#line 12296 "main.c"
+#line 12302 "main.c"
     hero_str_decref(t78);
 #line 51 "examples/assembler/machine.hero"
     t67 = HERO_STR_LIT(hero_str_1970e8d9);
@@ -12304,7 +12310,7 @@ bb3:
     t79 = h13_own13;
 #line 51 "examples/assembler/machine.hero"
     h13_own13 = t69;
-#line 12308 "main.c"
+#line 12314 "main.c"
     hero_str_decref(t79);
 #line 51 "examples/assembler/machine.hero"
     t70 = hero_str_concat(t67, t69);
@@ -12312,7 +12318,7 @@ bb3:
     t80 = h14_own14;
 #line 51 "examples/assembler/machine.hero"
     h14_own14 = t70;
-#line 12316 "main.c"
+#line 12322 "main.c"
     hero_str_decref(t80);
 #line 51 "examples/assembler/machine.hero"
     t71 = HERO_STR_LIT(hero_str_7f9a023c);
@@ -12322,13 +12328,13 @@ bb3:
     t81 = h15_own15;
 #line 51 "examples/assembler/machine.hero"
     h15_own15 = t72;
-#line 12326 "main.c"
+#line 12332 "main.c"
     hero_str_decref(t81);
 #line 51 "examples/assembler/machine.hero"
-#line 12329 "main.c"
+#line 12335 "main.c"
     hero_str_incref(t66);
 #line 51 "examples/assembler/machine.hero"
-#line 12332 "main.c"
+#line 12338 "main.c"
     hero_str_incref(t72);
 #line 51 "examples/assembler/machine.hero"
     t73 = (h_0opt_5a58f2ca){.tag = INT64_C(1), .as.err = {.code = t66, .msg = t72}};
@@ -12336,70 +12342,70 @@ bb3:
     t82 = h16_own16;
 #line 51 "examples/assembler/machine.hero"
     h16_own16 = t73;
-#line 12340 "main.c"
+#line 12346 "main.c"
     h_0opt_5a58f2ca_release(&t82);
 #line 51 "examples/assembler/machine.hero"
-#line 12343 "main.c"
+#line 12349 "main.c"
     h_0opt_5a58f2ca_retain(&t73);
 #line 51 "examples/assembler/machine.hero"
     t89 = h2_m;
-#line 12347 "main.c"
+#line 12353 "main.c"
     h_machine_Machine_release(&t89);
 #line 51 "examples/assembler/machine.hero"
     t90 = h8_f0;
-#line 12351 "main.c"
+#line 12357 "main.c"
     h_0opt_e201354_release(&t90);
 #line 51 "examples/assembler/machine.hero"
     t91 = h9_own9;
-#line 12355 "main.c"
+#line 12361 "main.c"
     hero_array_decref(t91);
 #line 51 "examples/assembler/machine.hero"
     t92 = h10_own10;
-#line 12359 "main.c"
+#line 12365 "main.c"
     hero_array_decref(t92);
 #line 51 "examples/assembler/machine.hero"
     t93 = h11_own11;
-#line 12363 "main.c"
+#line 12369 "main.c"
     h_machine_Machine_release(&t93);
 #line 51 "examples/assembler/machine.hero"
     t94 = h12_own12;
-#line 12367 "main.c"
+#line 12373 "main.c"
     hero_str_decref(t94);
 #line 51 "examples/assembler/machine.hero"
     t95 = h13_own13;
-#line 12371 "main.c"
+#line 12377 "main.c"
     hero_str_decref(t95);
 #line 51 "examples/assembler/machine.hero"
     t96 = h14_own14;
-#line 12375 "main.c"
+#line 12381 "main.c"
     hero_str_decref(t96);
 #line 51 "examples/assembler/machine.hero"
     t97 = h15_own15;
-#line 12379 "main.c"
+#line 12385 "main.c"
     hero_str_decref(t97);
 #line 51 "examples/assembler/machine.hero"
     t98 = h16_own16;
-#line 12383 "main.c"
+#line 12389 "main.c"
     h_0opt_5a58f2ca_release(&t98);
 #line 51 "examples/assembler/machine.hero"
     t99 = h17_own17;
-#line 12387 "main.c"
+#line 12393 "main.c"
     hero_str_decref(t99);
 #line 51 "examples/assembler/machine.hero"
     t100 = h18_own18;
-#line 12391 "main.c"
+#line 12397 "main.c"
     h_0opt_5a58f2ca_release(&t100);
 #line 51 "examples/assembler/machine.hero"
     t101 = h19_own19;
-#line 12395 "main.c"
+#line 12401 "main.c"
     h_0opt_e201354_release(&t101);
 #line 51 "examples/assembler/machine.hero"
     t102 = h20_own20;
-#line 12399 "main.c"
+#line 12405 "main.c"
     h_0opt_5a58f2ca_release(&t102);
 #line 51 "examples/assembler/machine.hero"
     t103 = h21_own21;
-#line 12403 "main.c"
+#line 12409 "main.c"
     h_0opt_5a58f2ca_release(&t103);
     return t73;
 bb4:
@@ -12483,14 +12489,14 @@ bb7:
     t83 = h17_own17;
 #line 42 "examples/assembler/machine.hero"
     h17_own17 = t28;
-#line 12487 "main.c"
+#line 12493 "main.c"
     hero_str_decref(t83);
 #line 42 "examples/assembler/machine.hero"
     t29 = HERO_STR_LIT(hero_str_3adccc43);
-#line 12491 "main.c"
+#line 12497 "main.c"
     hero_str_incref(t28);
 #line 42 "examples/assembler/machine.hero"
-#line 12494 "main.c"
+#line 12500 "main.c"
     hero_str_incref(t29);
 #line 42 "examples/assembler/machine.hero"
     t30 = (h_0opt_5a58f2ca){.tag = INT64_C(1), .as.err = {.code = t28, .msg = t29}};
@@ -12498,70 +12504,70 @@ bb7:
     t84 = h18_own18;
 #line 42 "examples/assembler/machine.hero"
     h18_own18 = t30;
-#line 12502 "main.c"
+#line 12508 "main.c"
     h_0opt_5a58f2ca_release(&t84);
 #line 42 "examples/assembler/machine.hero"
-#line 12505 "main.c"
+#line 12511 "main.c"
     h_0opt_5a58f2ca_retain(&t30);
 #line 42 "examples/assembler/machine.hero"
     t104 = h2_m;
-#line 12509 "main.c"
+#line 12515 "main.c"
     h_machine_Machine_release(&t104);
 #line 42 "examples/assembler/machine.hero"
     t105 = h8_f0;
-#line 12513 "main.c"
+#line 12519 "main.c"
     h_0opt_e201354_release(&t105);
 #line 42 "examples/assembler/machine.hero"
     t106 = h9_own9;
-#line 12517 "main.c"
+#line 12523 "main.c"
     hero_array_decref(t106);
 #line 42 "examples/assembler/machine.hero"
     t107 = h10_own10;
-#line 12521 "main.c"
+#line 12527 "main.c"
     hero_array_decref(t107);
 #line 42 "examples/assembler/machine.hero"
     t108 = h11_own11;
-#line 12525 "main.c"
+#line 12531 "main.c"
     h_machine_Machine_release(&t108);
 #line 42 "examples/assembler/machine.hero"
     t109 = h12_own12;
-#line 12529 "main.c"
+#line 12535 "main.c"
     hero_str_decref(t109);
 #line 42 "examples/assembler/machine.hero"
     t110 = h13_own13;
-#line 12533 "main.c"
+#line 12539 "main.c"
     hero_str_decref(t110);
 #line 42 "examples/assembler/machine.hero"
     t111 = h14_own14;
-#line 12537 "main.c"
+#line 12543 "main.c"
     hero_str_decref(t111);
 #line 42 "examples/assembler/machine.hero"
     t112 = h15_own15;
-#line 12541 "main.c"
+#line 12547 "main.c"
     hero_str_decref(t112);
 #line 42 "examples/assembler/machine.hero"
     t113 = h16_own16;
-#line 12545 "main.c"
+#line 12551 "main.c"
     h_0opt_5a58f2ca_release(&t113);
 #line 42 "examples/assembler/machine.hero"
     t114 = h17_own17;
-#line 12549 "main.c"
+#line 12555 "main.c"
     hero_str_decref(t114);
 #line 42 "examples/assembler/machine.hero"
     t115 = h18_own18;
-#line 12553 "main.c"
+#line 12559 "main.c"
     h_0opt_5a58f2ca_release(&t115);
 #line 42 "examples/assembler/machine.hero"
     t116 = h19_own19;
-#line 12557 "main.c"
+#line 12563 "main.c"
     h_0opt_e201354_release(&t116);
 #line 42 "examples/assembler/machine.hero"
     t117 = h20_own20;
-#line 12561 "main.c"
+#line 12567 "main.c"
     h_0opt_5a58f2ca_release(&t117);
 #line 42 "examples/assembler/machine.hero"
     t118 = h21_own21;
-#line 12565 "main.c"
+#line 12571 "main.c"
     h_0opt_5a58f2ca_release(&t118);
     return t30;
 bb8:
@@ -12579,15 +12585,15 @@ bb9:
     t85 = h19_own19;
 #line 49 "examples/assembler/machine.hero"
     h19_own19 = t56;
-#line 12583 "main.c"
+#line 12589 "main.c"
     h_0opt_e201354_release(&t85);
 #line 49 "examples/assembler/machine.hero"
     t86 = h8_f0;
-#line 12587 "main.c"
+#line 12593 "main.c"
     h_0opt_e201354_retain(&t56);
 #line 49 "examples/assembler/machine.hero"
     h8_f0 = t56;
-#line 12591 "main.c"
+#line 12597 "main.c"
     h_0opt_e201354_release(&t86);
 #line 49 "examples/assembler/machine.hero"
     t57 = h8_f0;
@@ -12605,7 +12611,7 @@ bb10:
     t50 = h2_m;
 #line 48 "examples/assembler/machine.hero"
     t51 = t50.f_output;
-#line 12609 "main.c"
+#line 12615 "main.c"
     hero_array_incref(t51);
 #line 48 "examples/assembler/machine.hero"
     t52 = (h_0opt_5a58f2ca){.tag = INT64_C(0), .as.ok = t51};
@@ -12613,70 +12619,70 @@ bb10:
     t87 = h20_own20;
 #line 48 "examples/assembler/machine.hero"
     h20_own20 = t52;
-#line 12617 "main.c"
+#line 12623 "main.c"
     h_0opt_5a58f2ca_release(&t87);
 #line 48 "examples/assembler/machine.hero"
-#line 12620 "main.c"
+#line 12626 "main.c"
     h_0opt_5a58f2ca_retain(&t52);
 #line 48 "examples/assembler/machine.hero"
     t119 = h2_m;
-#line 12624 "main.c"
+#line 12630 "main.c"
     h_machine_Machine_release(&t119);
 #line 48 "examples/assembler/machine.hero"
     t120 = h8_f0;
-#line 12628 "main.c"
+#line 12634 "main.c"
     h_0opt_e201354_release(&t120);
 #line 48 "examples/assembler/machine.hero"
     t121 = h9_own9;
-#line 12632 "main.c"
+#line 12638 "main.c"
     hero_array_decref(t121);
 #line 48 "examples/assembler/machine.hero"
     t122 = h10_own10;
-#line 12636 "main.c"
+#line 12642 "main.c"
     hero_array_decref(t122);
 #line 48 "examples/assembler/machine.hero"
     t123 = h11_own11;
-#line 12640 "main.c"
+#line 12646 "main.c"
     h_machine_Machine_release(&t123);
 #line 48 "examples/assembler/machine.hero"
     t124 = h12_own12;
-#line 12644 "main.c"
+#line 12650 "main.c"
     hero_str_decref(t124);
 #line 48 "examples/assembler/machine.hero"
     t125 = h13_own13;
-#line 12648 "main.c"
+#line 12654 "main.c"
     hero_str_decref(t125);
 #line 48 "examples/assembler/machine.hero"
     t126 = h14_own14;
-#line 12652 "main.c"
+#line 12658 "main.c"
     hero_str_decref(t126);
 #line 48 "examples/assembler/machine.hero"
     t127 = h15_own15;
-#line 12656 "main.c"
+#line 12662 "main.c"
     hero_str_decref(t127);
 #line 48 "examples/assembler/machine.hero"
     t128 = h16_own16;
-#line 12660 "main.c"
+#line 12666 "main.c"
     h_0opt_5a58f2ca_release(&t128);
 #line 48 "examples/assembler/machine.hero"
     t129 = h17_own17;
-#line 12664 "main.c"
+#line 12670 "main.c"
     hero_str_decref(t129);
 #line 48 "examples/assembler/machine.hero"
     t130 = h18_own18;
-#line 12668 "main.c"
+#line 12674 "main.c"
     h_0opt_5a58f2ca_release(&t130);
 #line 48 "examples/assembler/machine.hero"
     t131 = h19_own19;
-#line 12672 "main.c"
+#line 12678 "main.c"
     h_0opt_e201354_release(&t131);
 #line 48 "examples/assembler/machine.hero"
     t132 = h20_own20;
-#line 12676 "main.c"
+#line 12682 "main.c"
     h_0opt_5a58f2ca_release(&t132);
 #line 48 "examples/assembler/machine.hero"
     t133 = h21_own21;
-#line 12680 "main.c"
+#line 12686 "main.c"
     h_0opt_5a58f2ca_release(&t133);
     return t52;
 bb11:
@@ -12690,7 +12696,7 @@ bb13:
     t61 = h8_f0;
 #line 49 "examples/assembler/machine.hero"
     t62 = t61.as.err;
-#line 12694 "main.c"
+#line 12700 "main.c"
     hero_failure_retain(&t62);
 #line 49 "examples/assembler/machine.hero"
     t63 = (h_0opt_5a58f2ca){.tag = INT64_C(1), .as.err = t62};
@@ -12698,77 +12704,77 @@ bb13:
     t88 = h21_own21;
 #line 49 "examples/assembler/machine.hero"
     h21_own21 = t63;
-#line 12702 "main.c"
+#line 12708 "main.c"
     h_0opt_5a58f2ca_release(&t88);
 #line 49 "examples/assembler/machine.hero"
-#line 12705 "main.c"
+#line 12711 "main.c"
     h_0opt_5a58f2ca_retain(&t63);
 #line 49 "examples/assembler/machine.hero"
     t134 = h2_m;
-#line 12709 "main.c"
+#line 12715 "main.c"
     h_machine_Machine_release(&t134);
 #line 49 "examples/assembler/machine.hero"
     t135 = h8_f0;
-#line 12713 "main.c"
+#line 12719 "main.c"
     h_0opt_e201354_release(&t135);
 #line 49 "examples/assembler/machine.hero"
     t136 = h9_own9;
-#line 12717 "main.c"
+#line 12723 "main.c"
     hero_array_decref(t136);
 #line 49 "examples/assembler/machine.hero"
     t137 = h10_own10;
-#line 12721 "main.c"
+#line 12727 "main.c"
     hero_array_decref(t137);
 #line 49 "examples/assembler/machine.hero"
     t138 = h11_own11;
-#line 12725 "main.c"
+#line 12731 "main.c"
     h_machine_Machine_release(&t138);
 #line 49 "examples/assembler/machine.hero"
     t139 = h12_own12;
-#line 12729 "main.c"
+#line 12735 "main.c"
     hero_str_decref(t139);
 #line 49 "examples/assembler/machine.hero"
     t140 = h13_own13;
-#line 12733 "main.c"
+#line 12739 "main.c"
     hero_str_decref(t140);
 #line 49 "examples/assembler/machine.hero"
     t141 = h14_own14;
-#line 12737 "main.c"
+#line 12743 "main.c"
     hero_str_decref(t141);
 #line 49 "examples/assembler/machine.hero"
     t142 = h15_own15;
-#line 12741 "main.c"
+#line 12747 "main.c"
     hero_str_decref(t142);
 #line 49 "examples/assembler/machine.hero"
     t143 = h16_own16;
-#line 12745 "main.c"
+#line 12751 "main.c"
     h_0opt_5a58f2ca_release(&t143);
 #line 49 "examples/assembler/machine.hero"
     t144 = h17_own17;
-#line 12749 "main.c"
+#line 12755 "main.c"
     hero_str_decref(t144);
 #line 49 "examples/assembler/machine.hero"
     t145 = h18_own18;
-#line 12753 "main.c"
+#line 12759 "main.c"
     h_0opt_5a58f2ca_release(&t145);
 #line 49 "examples/assembler/machine.hero"
     t146 = h19_own19;
-#line 12757 "main.c"
+#line 12763 "main.c"
     h_0opt_e201354_release(&t146);
 #line 49 "examples/assembler/machine.hero"
     t147 = h20_own20;
-#line 12761 "main.c"
+#line 12767 "main.c"
     h_0opt_5a58f2ca_release(&t147);
 #line 49 "examples/assembler/machine.hero"
     t148 = h21_own21;
-#line 12765 "main.c"
+#line 12771 "main.c"
     h_0opt_5a58f2ca_release(&t148);
     return t63;
 }
 
 #line 55 "examples/assembler/machine.hero"
 h_0opt_e201354 h_machine_step(h_machine_Machine *ph0_m, int64_t h1_opcode, int64_t h2_a, int64_t h3_b) {
-#line 12772 "main.c"
+#line 12778 "main.c"
     h_machine_Machine h0_m = {0};
     h_0opt_e201354 h4_own4 = {0};
     HeroStr h5_own5 = {0};
@@ -12944,51 +12950,51 @@ bb1:
     t83 = h4_own4;
 #line 76 "examples/assembler/machine.hero"
     h4_own4 = t82;
-#line 12948 "main.c"
+#line 12954 "main.c"
     h_0opt_e201354_release(&t83);
     *ph0_m = h0_m;
 #line 55 "examples/assembler/machine.hero"
-#line 12952 "main.c"
+#line 12958 "main.c"
     h_0opt_e201354_retain(&t82);
 #line 55 "examples/assembler/machine.hero"
     t94 = h4_own4;
-#line 12956 "main.c"
+#line 12962 "main.c"
     h_0opt_e201354_release(&t94);
 #line 55 "examples/assembler/machine.hero"
     t95 = h5_own5;
-#line 12960 "main.c"
+#line 12966 "main.c"
     hero_str_decref(t95);
 #line 55 "examples/assembler/machine.hero"
     t96 = h6_own6;
-#line 12964 "main.c"
+#line 12970 "main.c"
     hero_array_decref(t96);
 #line 55 "examples/assembler/machine.hero"
     t97 = h7_own7;
-#line 12968 "main.c"
+#line 12974 "main.c"
     h_0opt_e201354_release(&t97);
 #line 55 "examples/assembler/machine.hero"
     t98 = h8_own8;
-#line 12972 "main.c"
+#line 12978 "main.c"
     hero_str_decref(t98);
 #line 55 "examples/assembler/machine.hero"
     t99 = h9_own9;
-#line 12976 "main.c"
+#line 12982 "main.c"
     hero_str_decref(t99);
 #line 55 "examples/assembler/machine.hero"
     t100 = h10_own10;
-#line 12980 "main.c"
+#line 12986 "main.c"
     hero_str_decref(t100);
 #line 55 "examples/assembler/machine.hero"
     t101 = h11_own11;
-#line 12984 "main.c"
+#line 12990 "main.c"
     hero_str_decref(t101);
 #line 55 "examples/assembler/machine.hero"
     t102 = h12_own12;
-#line 12988 "main.c"
+#line 12994 "main.c"
     h_0opt_e201354_release(&t102);
 #line 55 "examples/assembler/machine.hero"
     t103 = h13_own13;
-#line 12992 "main.c"
+#line 12998 "main.c"
     h_0opt_e201354_release(&t103);
     return t82;
 bb2:
@@ -13128,7 +13134,7 @@ bb10:
     t84 = h5_own5;
 #line 65 "examples/assembler/machine.hero"
     h5_own5 = t49;
-#line 13132 "main.c"
+#line 13138 "main.c"
     hero_str_decref(t84);
 #line 65 "examples/assembler/machine.hero"
     t50 = hero_array_push(t44, &t49);
@@ -13136,15 +13142,15 @@ bb10:
     t85 = h6_own6;
 #line 65 "examples/assembler/machine.hero"
     h6_own6 = t50;
-#line 13140 "main.c"
+#line 13146 "main.c"
     hero_array_decref(t85);
 #line 65 "examples/assembler/machine.hero"
     t86 = h0_m.f_output;
-#line 13144 "main.c"
+#line 13150 "main.c"
     hero_array_incref(t50);
 #line 65 "examples/assembler/machine.hero"
     h0_m.f_output = t50;
-#line 13148 "main.c"
+#line 13154 "main.c"
     hero_array_decref(t86);
     goto bb1;
 bb11:
@@ -13170,51 +13176,51 @@ bb12:
     t87 = h7_own7;
 #line 68 "examples/assembler/machine.hero"
     h7_own7 = t56;
-#line 13174 "main.c"
+#line 13180 "main.c"
     h_0opt_e201354_release(&t87);
     *ph0_m = h0_m;
 #line 55 "examples/assembler/machine.hero"
-#line 13178 "main.c"
+#line 13184 "main.c"
     h_0opt_e201354_retain(&t56);
 #line 55 "examples/assembler/machine.hero"
     t104 = h4_own4;
-#line 13182 "main.c"
+#line 13188 "main.c"
     h_0opt_e201354_release(&t104);
 #line 55 "examples/assembler/machine.hero"
     t105 = h5_own5;
-#line 13186 "main.c"
+#line 13192 "main.c"
     hero_str_decref(t105);
 #line 55 "examples/assembler/machine.hero"
     t106 = h6_own6;
-#line 13190 "main.c"
+#line 13196 "main.c"
     hero_array_decref(t106);
 #line 55 "examples/assembler/machine.hero"
     t107 = h7_own7;
-#line 13194 "main.c"
+#line 13200 "main.c"
     h_0opt_e201354_release(&t107);
 #line 55 "examples/assembler/machine.hero"
     t108 = h8_own8;
-#line 13198 "main.c"
+#line 13204 "main.c"
     hero_str_decref(t108);
 #line 55 "examples/assembler/machine.hero"
     t109 = h9_own9;
-#line 13202 "main.c"
+#line 13208 "main.c"
     hero_str_decref(t109);
 #line 55 "examples/assembler/machine.hero"
     t110 = h10_own10;
-#line 13206 "main.c"
+#line 13212 "main.c"
     hero_str_decref(t110);
 #line 55 "examples/assembler/machine.hero"
     t111 = h11_own11;
-#line 13210 "main.c"
+#line 13216 "main.c"
     hero_str_decref(t111);
 #line 55 "examples/assembler/machine.hero"
     t112 = h12_own12;
-#line 13214 "main.c"
+#line 13220 "main.c"
     h_0opt_e201354_release(&t112);
 #line 55 "examples/assembler/machine.hero"
     t113 = h13_own13;
-#line 13218 "main.c"
+#line 13224 "main.c"
     h_0opt_e201354_release(&t113);
     return t56;
 bb13:
@@ -13250,7 +13256,7 @@ bb15:
     t88 = h8_own8;
 #line 74 "examples/assembler/machine.hero"
     h8_own8 = t69;
-#line 13254 "main.c"
+#line 13260 "main.c"
     hero_str_decref(t88);
 #line 74 "examples/assembler/machine.hero"
     t70 = HERO_STR_LIT(hero_str_3cb7f28c);
@@ -13262,7 +13268,7 @@ bb15:
     t89 = h9_own9;
 #line 74 "examples/assembler/machine.hero"
     h9_own9 = t72;
-#line 13266 "main.c"
+#line 13272 "main.c"
     hero_str_decref(t89);
 #line 74 "examples/assembler/machine.hero"
     t73 = hero_str_concat(t70, t72);
@@ -13270,7 +13276,7 @@ bb15:
     t90 = h10_own10;
 #line 74 "examples/assembler/machine.hero"
     h10_own10 = t73;
-#line 13274 "main.c"
+#line 13280 "main.c"
     hero_str_decref(t90);
 #line 74 "examples/assembler/machine.hero"
     t74 = HERO_STR_LIT(hero_str_601da456);
@@ -13280,13 +13286,13 @@ bb15:
     t91 = h11_own11;
 #line 74 "examples/assembler/machine.hero"
     h11_own11 = t75;
-#line 13284 "main.c"
+#line 13290 "main.c"
     hero_str_decref(t91);
 #line 74 "examples/assembler/machine.hero"
-#line 13287 "main.c"
+#line 13293 "main.c"
     hero_str_incref(t69);
 #line 74 "examples/assembler/machine.hero"
-#line 13290 "main.c"
+#line 13296 "main.c"
     hero_str_incref(t75);
 #line 74 "examples/assembler/machine.hero"
     t76 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t69, .msg = t75}};
@@ -13294,51 +13300,51 @@ bb15:
     t92 = h12_own12;
 #line 74 "examples/assembler/machine.hero"
     h12_own12 = t76;
-#line 13298 "main.c"
+#line 13304 "main.c"
     h_0opt_e201354_release(&t92);
     *ph0_m = h0_m;
 #line 55 "examples/assembler/machine.hero"
-#line 13302 "main.c"
+#line 13308 "main.c"
     h_0opt_e201354_retain(&t76);
 #line 55 "examples/assembler/machine.hero"
     t114 = h4_own4;
-#line 13306 "main.c"
+#line 13312 "main.c"
     h_0opt_e201354_release(&t114);
 #line 55 "examples/assembler/machine.hero"
     t115 = h5_own5;
-#line 13310 "main.c"
+#line 13316 "main.c"
     hero_str_decref(t115);
 #line 55 "examples/assembler/machine.hero"
     t116 = h6_own6;
-#line 13314 "main.c"
+#line 13320 "main.c"
     hero_array_decref(t116);
 #line 55 "examples/assembler/machine.hero"
     t117 = h7_own7;
-#line 13318 "main.c"
+#line 13324 "main.c"
     h_0opt_e201354_release(&t117);
 #line 55 "examples/assembler/machine.hero"
     t118 = h8_own8;
-#line 13322 "main.c"
+#line 13328 "main.c"
     hero_str_decref(t118);
 #line 55 "examples/assembler/machine.hero"
     t119 = h9_own9;
-#line 13326 "main.c"
+#line 13332 "main.c"
     hero_str_decref(t119);
 #line 55 "examples/assembler/machine.hero"
     t120 = h10_own10;
-#line 13330 "main.c"
+#line 13336 "main.c"
     hero_str_decref(t120);
 #line 55 "examples/assembler/machine.hero"
     t121 = h11_own11;
-#line 13334 "main.c"
+#line 13340 "main.c"
     hero_str_decref(t121);
 #line 55 "examples/assembler/machine.hero"
     t122 = h12_own12;
-#line 13338 "main.c"
+#line 13344 "main.c"
     h_0opt_e201354_release(&t122);
 #line 55 "examples/assembler/machine.hero"
     t123 = h13_own13;
-#line 13342 "main.c"
+#line 13348 "main.c"
     h_0opt_e201354_release(&t123);
     return t76;
 bb16:
@@ -13356,51 +13362,51 @@ bb17:
     t93 = h13_own13;
 #line 72 "examples/assembler/machine.hero"
     h13_own13 = t68;
-#line 13360 "main.c"
+#line 13366 "main.c"
     h_0opt_e201354_release(&t93);
     *ph0_m = h0_m;
 #line 55 "examples/assembler/machine.hero"
-#line 13364 "main.c"
+#line 13370 "main.c"
     h_0opt_e201354_retain(&t68);
 #line 55 "examples/assembler/machine.hero"
     t124 = h4_own4;
-#line 13368 "main.c"
+#line 13374 "main.c"
     h_0opt_e201354_release(&t124);
 #line 55 "examples/assembler/machine.hero"
     t125 = h5_own5;
-#line 13372 "main.c"
+#line 13378 "main.c"
     hero_str_decref(t125);
 #line 55 "examples/assembler/machine.hero"
     t126 = h6_own6;
-#line 13376 "main.c"
+#line 13382 "main.c"
     hero_array_decref(t126);
 #line 55 "examples/assembler/machine.hero"
     t127 = h7_own7;
-#line 13380 "main.c"
+#line 13386 "main.c"
     h_0opt_e201354_release(&t127);
 #line 55 "examples/assembler/machine.hero"
     t128 = h8_own8;
-#line 13384 "main.c"
+#line 13390 "main.c"
     hero_str_decref(t128);
 #line 55 "examples/assembler/machine.hero"
     t129 = h9_own9;
-#line 13388 "main.c"
+#line 13394 "main.c"
     hero_str_decref(t129);
 #line 55 "examples/assembler/machine.hero"
     t130 = h10_own10;
-#line 13392 "main.c"
+#line 13398 "main.c"
     hero_str_decref(t130);
 #line 55 "examples/assembler/machine.hero"
     t131 = h11_own11;
-#line 13396 "main.c"
+#line 13402 "main.c"
     hero_str_decref(t131);
 #line 55 "examples/assembler/machine.hero"
     t132 = h12_own12;
-#line 13400 "main.c"
+#line 13406 "main.c"
     h_0opt_e201354_release(&t132);
 #line 55 "examples/assembler/machine.hero"
     t133 = h13_own13;
-#line 13404 "main.c"
+#line 13410 "main.c"
     h_0opt_e201354_release(&t133);
     return t68;
 bb18:
@@ -13409,7 +13415,7 @@ bb18:
 
 #line 81 "examples/assembler/machine.hero"
 h_0opt_5a58f2ca h_machine_execute(HeroStr h0_text, int64_t h1_fuel) {
-#line 13413 "main.c"
+#line 13419 "main.c"
     h_0opt_40eff9f5 h2_f0 = {0};
     h_assemble_Assembled h3_out = {0};
     HeroArrayHeader * h4_own4 = {0};
@@ -13460,7 +13466,7 @@ bb0:
     t17 = h4_own4;
 #line 82 "examples/assembler/machine.hero"
     h4_own4 = t2;
-#line 13464 "main.c"
+#line 13470 "main.c"
     hero_array_decref(t17);
 #line 82 "examples/assembler/machine.hero"
     t3 = h_assemble_assemble(t2);
@@ -13468,15 +13474,15 @@ bb0:
     t18 = h5_own5;
 #line 82 "examples/assembler/machine.hero"
     h5_own5 = t3;
-#line 13472 "main.c"
+#line 13478 "main.c"
     h_0opt_40eff9f5_release(&t18);
 #line 82 "examples/assembler/machine.hero"
     t19 = h2_f0;
-#line 13476 "main.c"
+#line 13482 "main.c"
     h_0opt_40eff9f5_retain(&t3);
 #line 82 "examples/assembler/machine.hero"
     h2_f0 = t3;
-#line 13480 "main.c"
+#line 13486 "main.c"
     h_0opt_40eff9f5_release(&t19);
 #line 82 "examples/assembler/machine.hero"
     t4 = h2_f0;
@@ -13496,11 +13502,11 @@ bb1:
     t12 = t11.as.ok;
 #line 82 "examples/assembler/machine.hero"
     t20 = h3_out;
-#line 13500 "main.c"
+#line 13506 "main.c"
     h_assemble_Assembled_retain(&t12);
 #line 82 "examples/assembler/machine.hero"
     h3_out = t12;
-#line 13504 "main.c"
+#line 13510 "main.c"
     h_assemble_Assembled_release(&t20);
 #line 83 "examples/assembler/machine.hero"
     t13 = h3_out;
@@ -13514,34 +13520,34 @@ bb1:
     t21 = h6_own6;
 #line 83 "examples/assembler/machine.hero"
     h6_own6 = t16;
-#line 13518 "main.c"
+#line 13524 "main.c"
     h_0opt_5a58f2ca_release(&t21);
 #line 83 "examples/assembler/machine.hero"
-#line 13521 "main.c"
+#line 13527 "main.c"
     h_0opt_5a58f2ca_retain(&t16);
 #line 83 "examples/assembler/machine.hero"
     t23 = h2_f0;
-#line 13525 "main.c"
+#line 13531 "main.c"
     h_0opt_40eff9f5_release(&t23);
 #line 83 "examples/assembler/machine.hero"
     t24 = h3_out;
-#line 13529 "main.c"
+#line 13535 "main.c"
     h_assemble_Assembled_release(&t24);
 #line 83 "examples/assembler/machine.hero"
     t25 = h4_own4;
-#line 13533 "main.c"
+#line 13539 "main.c"
     hero_array_decref(t25);
 #line 83 "examples/assembler/machine.hero"
     t26 = h5_own5;
-#line 13537 "main.c"
+#line 13543 "main.c"
     h_0opt_40eff9f5_release(&t26);
 #line 83 "examples/assembler/machine.hero"
     t27 = h6_own6;
-#line 13541 "main.c"
+#line 13547 "main.c"
     h_0opt_5a58f2ca_release(&t27);
 #line 83 "examples/assembler/machine.hero"
     t28 = h7_own7;
-#line 13545 "main.c"
+#line 13551 "main.c"
     h_0opt_5a58f2ca_release(&t28);
     return t16;
 bb2:
@@ -13549,7 +13555,7 @@ bb2:
     t8 = h2_f0;
 #line 82 "examples/assembler/machine.hero"
     t9 = t8.as.err;
-#line 13553 "main.c"
+#line 13559 "main.c"
     hero_failure_retain(&t9);
 #line 82 "examples/assembler/machine.hero"
     t10 = (h_0opt_5a58f2ca){.tag = INT64_C(1), .as.err = t9};
@@ -13557,41 +13563,41 @@ bb2:
     t22 = h7_own7;
 #line 82 "examples/assembler/machine.hero"
     h7_own7 = t10;
-#line 13561 "main.c"
+#line 13567 "main.c"
     h_0opt_5a58f2ca_release(&t22);
 #line 82 "examples/assembler/machine.hero"
-#line 13564 "main.c"
+#line 13570 "main.c"
     h_0opt_5a58f2ca_retain(&t10);
 #line 82 "examples/assembler/machine.hero"
     t29 = h2_f0;
-#line 13568 "main.c"
+#line 13574 "main.c"
     h_0opt_40eff9f5_release(&t29);
 #line 82 "examples/assembler/machine.hero"
     t30 = h3_out;
-#line 13572 "main.c"
+#line 13578 "main.c"
     h_assemble_Assembled_release(&t30);
 #line 82 "examples/assembler/machine.hero"
     t31 = h4_own4;
-#line 13576 "main.c"
+#line 13582 "main.c"
     hero_array_decref(t31);
 #line 82 "examples/assembler/machine.hero"
     t32 = h5_own5;
-#line 13580 "main.c"
+#line 13586 "main.c"
     h_0opt_40eff9f5_release(&t32);
 #line 82 "examples/assembler/machine.hero"
     t33 = h6_own6;
-#line 13584 "main.c"
+#line 13590 "main.c"
     h_0opt_5a58f2ca_release(&t33);
 #line 82 "examples/assembler/machine.hero"
     t34 = h7_own7;
-#line 13588 "main.c"
+#line 13594 "main.c"
     h_0opt_5a58f2ca_release(&t34);
     return t10;
 }
 
 #line 105 "examples/assembler/machine.hero"
 HeroStr h_machine_code_of(HeroStr h0_text, int64_t h1_fuel) {
-#line 13595 "main.c"
+#line 13601 "main.c"
     h_0opt_5a58f2ca h2_s0 = {0};
     HeroStr h3_r0 = {0};
     HeroFailure h4_e = {0};
@@ -13628,15 +13634,15 @@ bb0:
     t12 = h5_own5;
 #line 106 "examples/assembler/machine.hero"
     h5_own5 = t3;
-#line 13632 "main.c"
+#line 13638 "main.c"
     h_0opt_5a58f2ca_release(&t12);
 #line 106 "examples/assembler/machine.hero"
     t13 = h2_s0;
-#line 13636 "main.c"
+#line 13642 "main.c"
     h_0opt_5a58f2ca_retain(&t3);
 #line 106 "examples/assembler/machine.hero"
     h2_s0 = t3;
-#line 13640 "main.c"
+#line 13646 "main.c"
     h_0opt_5a58f2ca_release(&t13);
 #line 106 "examples/assembler/machine.hero"
     t4 = h2_s0;
@@ -13656,23 +13662,23 @@ bb0:
 bb1:
 #line 106 "examples/assembler/machine.hero"
     t11 = h3_r0;
-#line 13660 "main.c"
+#line 13666 "main.c"
     hero_str_incref(t11);
 #line 106 "examples/assembler/machine.hero"
     t17 = h2_s0;
-#line 13664 "main.c"
+#line 13670 "main.c"
     h_0opt_5a58f2ca_release(&t17);
 #line 106 "examples/assembler/machine.hero"
     t18 = h3_r0;
-#line 13668 "main.c"
+#line 13674 "main.c"
     hero_str_decref(t18);
 #line 106 "examples/assembler/machine.hero"
     t19 = h4_e;
-#line 13672 "main.c"
+#line 13678 "main.c"
     hero_failure_release(&t19);
 #line 106 "examples/assembler/machine.hero"
     t20 = h5_own5;
-#line 13676 "main.c"
+#line 13682 "main.c"
     h_0opt_5a58f2ca_release(&t20);
     return t11;
 bb2:
@@ -13680,11 +13686,11 @@ bb2:
     t6 = HERO_STR_LIT(hero_str_7b992235);
 #line 106 "examples/assembler/machine.hero"
     t14 = h3_r0;
-#line 13684 "main.c"
+#line 13690 "main.c"
     hero_str_incref(t6);
 #line 106 "examples/assembler/machine.hero"
     h3_r0 = t6;
-#line 13688 "main.c"
+#line 13694 "main.c"
     hero_str_decref(t14);
     goto bb1;
 bb3:
@@ -13694,11 +13700,11 @@ bb3:
     t8 = t7.as.err;
 #line 108 "examples/assembler/machine.hero"
     t15 = h4_e;
-#line 13698 "main.c"
+#line 13704 "main.c"
     hero_failure_retain(&t8);
 #line 108 "examples/assembler/machine.hero"
     h4_e = t8;
-#line 13702 "main.c"
+#line 13708 "main.c"
     hero_failure_release(&t15);
 #line 108 "examples/assembler/machine.hero"
     t9 = h4_e;
@@ -13706,44 +13712,44 @@ bb3:
     t10 = t9.code;
 #line 106 "examples/assembler/machine.hero"
     t16 = h3_r0;
-#line 13710 "main.c"
+#line 13716 "main.c"
     hero_str_incref(t10);
 #line 106 "examples/assembler/machine.hero"
     h3_r0 = t10;
-#line 13714 "main.c"
+#line 13720 "main.c"
     hero_str_decref(t16);
     goto bb1;
 }
 
 #line 29 "examples/assembler/program.hero"
 HeroStr h_program_ERR_BAD_NUMBER(void) {
-#line 13721 "main.c"
+#line 13727 "main.c"
     HeroStr t1 = {0};
     goto bb0;
 bb0:
 #line 30 "examples/assembler/program.hero"
     t1 = HERO_STR_LIT(hero_str_14a4096d);
-#line 13727 "main.c"
+#line 13733 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 32 "examples/assembler/program.hero"
 HeroStr h_program_ERR_BAD_REGISTER(void) {
-#line 13734 "main.c"
+#line 13740 "main.c"
     HeroStr t1 = {0};
     goto bb0;
 bb0:
 #line 33 "examples/assembler/program.hero"
     t1 = HERO_STR_LIT(hero_str_52629714);
-#line 13740 "main.c"
+#line 13746 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 35 "examples/assembler/program.hero"
 int64_t h_program_OP_LOAD(void) {
-#line 13747 "main.c"
+#line 13753 "main.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -13751,12 +13757,12 @@ bb0:
     t1 = INT64_C(0);
 #line 36 "examples/assembler/program.hero"
     return t1;
-#line 13755 "main.c"
+#line 13761 "main.c"
 }
 
 #line 38 "examples/assembler/program.hero"
 int64_t h_program_OP_COPY(void) {
-#line 13760 "main.c"
+#line 13766 "main.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -13764,12 +13770,12 @@ bb0:
     t1 = INT64_C(1);
 #line 39 "examples/assembler/program.hero"
     return t1;
-#line 13768 "main.c"
+#line 13774 "main.c"
 }
 
 #line 41 "examples/assembler/program.hero"
 int64_t h_program_OP_ADD(void) {
-#line 13773 "main.c"
+#line 13779 "main.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -13777,12 +13783,12 @@ bb0:
     t1 = INT64_C(2);
 #line 42 "examples/assembler/program.hero"
     return t1;
-#line 13781 "main.c"
+#line 13787 "main.c"
 }
 
 #line 44 "examples/assembler/program.hero"
 int64_t h_program_OP_SUB(void) {
-#line 13786 "main.c"
+#line 13792 "main.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -13790,12 +13796,12 @@ bb0:
     t1 = INT64_C(3);
 #line 45 "examples/assembler/program.hero"
     return t1;
-#line 13794 "main.c"
+#line 13800 "main.c"
 }
 
 #line 47 "examples/assembler/program.hero"
 int64_t h_program_OP_PRINT(void) {
-#line 13799 "main.c"
+#line 13805 "main.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -13803,12 +13809,12 @@ bb0:
     t1 = INT64_C(4);
 #line 48 "examples/assembler/program.hero"
     return t1;
-#line 13807 "main.c"
+#line 13813 "main.c"
 }
 
 #line 50 "examples/assembler/program.hero"
 int64_t h_program_OP_JMPZ(void) {
-#line 13812 "main.c"
+#line 13818 "main.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -13816,12 +13822,12 @@ bb0:
     t1 = INT64_C(5);
 #line 51 "examples/assembler/program.hero"
     return t1;
-#line 13820 "main.c"
+#line 13826 "main.c"
 }
 
 #line 53 "examples/assembler/program.hero"
 int64_t h_program_OP_JMP(void) {
-#line 13825 "main.c"
+#line 13831 "main.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -13829,12 +13835,12 @@ bb0:
     t1 = INT64_C(6);
 #line 54 "examples/assembler/program.hero"
     return t1;
-#line 13833 "main.c"
+#line 13839 "main.c"
 }
 
 #line 56 "examples/assembler/program.hero"
 int64_t h_program_OP_HALT(void) {
-#line 13838 "main.c"
+#line 13844 "main.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -13842,12 +13848,12 @@ bb0:
     t1 = INT64_C(7);
 #line 57 "examples/assembler/program.hero"
     return t1;
-#line 13846 "main.c"
+#line 13852 "main.c"
 }
 
 #line 59 "examples/assembler/program.hero"
 int64_t h_program_WORDS(void) {
-#line 13851 "main.c"
+#line 13857 "main.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -13855,12 +13861,12 @@ bb0:
     t1 = INT64_C(3);
 #line 60 "examples/assembler/program.hero"
     return t1;
-#line 13859 "main.c"
+#line 13865 "main.c"
 }
 
 #line 62 "examples/assembler/program.hero"
 int64_t h_program_REGISTERS(void) {
-#line 13864 "main.c"
+#line 13870 "main.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -13868,12 +13874,12 @@ bb0:
     t1 = INT64_C(4);
 #line 63 "examples/assembler/program.hero"
     return t1;
-#line 13872 "main.c"
+#line 13878 "main.c"
 }
 
 #line 73 "examples/assembler/program.hero"
 bool h_program_is_space(uint8_t h0_c) {
-#line 13877 "main.c"
+#line 13883 "main.c"
     bool h1_b0;
     bool h2_b1;
     uint8_t t1;
@@ -13937,12 +13943,12 @@ bb4:
     t11 = h1_b0;
 #line 74 "examples/assembler/program.hero"
     return t11;
-#line 13941 "main.c"
+#line 13947 "main.c"
 }
 
 #line 76 "examples/assembler/program.hero"
 HeroStr h_program_trimmed(HeroStr h0_line) {
-#line 13946 "main.c"
+#line 13952 "main.c"
     int64_t h1_from;
     bool h2_b0;
     int64_t h3_to;
@@ -14084,14 +14090,14 @@ bb8:
     t33 = h5_own5;
 #line 87 "examples/assembler/program.hero"
     h5_own5 = t32;
-#line 14088 "main.c"
+#line 14094 "main.c"
     hero_str_decref(t33);
 #line 87 "examples/assembler/program.hero"
-#line 14091 "main.c"
+#line 14097 "main.c"
     hero_str_incref(t32);
 #line 87 "examples/assembler/program.hero"
     t34 = h5_own5;
-#line 14095 "main.c"
+#line 14101 "main.c"
     hero_str_decref(t34);
     return t32;
 bb9:
@@ -14117,12 +14123,12 @@ bb10:
     t25 = h4_b1;
 #line 84 "examples/assembler/program.hero"
     if (t25) goto bb7; else goto bb8;
-#line 14121 "main.c"
+#line 14127 "main.c"
 }
 
 #line 89 "examples/assembler/program.hero"
 HeroArrayHeader * h_program_split_lines(HeroStr h0_text) {
-#line 14126 "main.c"
+#line 14132 "main.c"
     HeroArrayHeader * h1_out = {0};
     int64_t h2_start;
     int64_t h3_i;
@@ -14177,15 +14183,15 @@ bb0:
     t37 = h4_own4;
 #line 90 "examples/assembler/program.hero"
     h4_own4 = t1;
-#line 14181 "main.c"
+#line 14187 "main.c"
     hero_array_decref(t37);
 #line 90 "examples/assembler/program.hero"
     t38 = h1_out;
-#line 14185 "main.c"
+#line 14191 "main.c"
     hero_array_incref(t1);
 #line 90 "examples/assembler/program.hero"
     h1_out = t1;
-#line 14189 "main.c"
+#line 14195 "main.c"
     hero_array_decref(t38);
 #line 91 "examples/assembler/program.hero"
     t2 = INT64_C(0);
@@ -14261,7 +14267,7 @@ bb5:
     t39 = h5_own5;
 #line 96 "examples/assembler/program.hero"
     h5_own5 = t17;
-#line 14265 "main.c"
+#line 14271 "main.c"
     hero_str_decref(t39);
 #line 96 "examples/assembler/program.hero"
     hero_array_push_owned(&h1_out, &t17);
@@ -14283,23 +14289,23 @@ bb6:
 bb7:
 #line 102 "examples/assembler/program.hero"
     t36 = h1_out;
-#line 14287 "main.c"
+#line 14293 "main.c"
     hero_array_incref(t36);
 #line 102 "examples/assembler/program.hero"
     t41 = h1_out;
-#line 14291 "main.c"
+#line 14297 "main.c"
     hero_array_decref(t41);
 #line 102 "examples/assembler/program.hero"
     t42 = h4_own4;
-#line 14295 "main.c"
+#line 14301 "main.c"
     hero_array_decref(t42);
 #line 102 "examples/assembler/program.hero"
     t43 = h5_own5;
-#line 14299 "main.c"
+#line 14305 "main.c"
     hero_str_decref(t43);
 #line 102 "examples/assembler/program.hero"
     t44 = h6_own6;
-#line 14303 "main.c"
+#line 14309 "main.c"
     hero_str_decref(t44);
     return t36;
 bb8:
@@ -14317,7 +14323,7 @@ bb8:
     t40 = h6_own6;
 #line 101 "examples/assembler/program.hero"
     h6_own6 = t34;
-#line 14321 "main.c"
+#line 14327 "main.c"
     hero_str_decref(t40);
 #line 101 "examples/assembler/program.hero"
     hero_array_push_owned(&h1_out, &t34);
@@ -14327,12 +14333,12 @@ bb8:
 bb9:
 #line 101 "examples/assembler/program.hero"
     goto bb7;
-#line 14331 "main.c"
+#line 14337 "main.c"
 }
 
 #line 104 "examples/assembler/program.hero"
 int64_t h_program_index_of(HeroStr h0_text, uint8_t h1_c) {
-#line 14336 "main.c"
+#line 14342 "main.c"
     int64_t h2_i;
     int64_t t1;
     int64_t t2;
@@ -14417,12 +14423,12 @@ bb5:
 bb6:
 #line 109 "examples/assembler/program.hero"
     goto bb4;
-#line 14421 "main.c"
+#line 14427 "main.c"
 }
 
 #line 116 "examples/assembler/program.hero"
 HeroArrayHeader * h_program_split_on(HeroStr h0_text, uint8_t h1_c) {
-#line 14426 "main.c"
+#line 14432 "main.c"
     HeroArrayHeader * h2_out = {0};
     int64_t h3_start;
     int64_t h4_i;
@@ -14482,15 +14488,15 @@ bb0:
     t36 = h7_own7;
 #line 117 "examples/assembler/program.hero"
     h7_own7 = t1;
-#line 14486 "main.c"
+#line 14492 "main.c"
     hero_array_decref(t36);
 #line 117 "examples/assembler/program.hero"
     t37 = h2_out;
-#line 14490 "main.c"
+#line 14496 "main.c"
     hero_array_incref(t1);
 #line 117 "examples/assembler/program.hero"
     h2_out = t1;
-#line 14494 "main.c"
+#line 14500 "main.c"
     hero_array_decref(t37);
 #line 118 "examples/assembler/program.hero"
     t2 = INT64_C(0);
@@ -14532,27 +14538,27 @@ bb2:
 bb3:
 #line 130 "examples/assembler/program.hero"
     t35 = h2_out;
-#line 14536 "main.c"
+#line 14542 "main.c"
     hero_array_incref(t35);
 #line 130 "examples/assembler/program.hero"
     t41 = h2_out;
-#line 14540 "main.c"
+#line 14546 "main.c"
     hero_array_decref(t41);
 #line 130 "examples/assembler/program.hero"
     t42 = h6_piece;
-#line 14544 "main.c"
+#line 14550 "main.c"
     hero_str_decref(t42);
 #line 130 "examples/assembler/program.hero"
     t43 = h7_own7;
-#line 14548 "main.c"
+#line 14554 "main.c"
     hero_array_decref(t43);
 #line 130 "examples/assembler/program.hero"
     t44 = h8_own8;
-#line 14552 "main.c"
+#line 14558 "main.c"
     hero_str_decref(t44);
 #line 130 "examples/assembler/program.hero"
     t45 = h9_own9;
-#line 14556 "main.c"
+#line 14562 "main.c"
     hero_str_decref(t45);
     return t35;
 bb4:
@@ -14602,7 +14608,7 @@ bb7:
     t38 = h8_own8;
 #line 123 "examples/assembler/program.hero"
     h8_own8 = t21;
-#line 14606 "main.c"
+#line 14612 "main.c"
     hero_str_decref(t38);
 #line 123 "examples/assembler/program.hero"
     t22 = h_program_trimmed(t21);
@@ -14610,15 +14616,15 @@ bb7:
     t39 = h9_own9;
 #line 123 "examples/assembler/program.hero"
     h9_own9 = t22;
-#line 14614 "main.c"
+#line 14620 "main.c"
     hero_str_decref(t39);
 #line 123 "examples/assembler/program.hero"
     t40 = h6_piece;
-#line 14618 "main.c"
+#line 14624 "main.c"
     hero_str_incref(t22);
 #line 123 "examples/assembler/program.hero"
     h6_piece = t22;
-#line 14622 "main.c"
+#line 14628 "main.c"
     hero_str_decref(t40);
 #line 125 "examples/assembler/program.hero"
     t23 = h6_piece;
@@ -14656,12 +14662,12 @@ bb10:
 bb11:
 #line 126 "examples/assembler/program.hero"
     goto bb9;
-#line 14660 "main.c"
+#line 14666 "main.c"
 }
 
 #line 137 "examples/assembler/program.hero"
 h_program_Line h_program_read_line(HeroStr h0_text, int64_t h1_number) {
-#line 14665 "main.c"
+#line 14671 "main.c"
     HeroStr h2_body = {0};
     int64_t h3_at;
     HeroStr h4_label = {0};
@@ -14835,11 +14841,11 @@ bb0:
     t1 = h0_text;
 #line 138 "examples/assembler/program.hero"
     t71 = h2_body;
-#line 14839 "main.c"
+#line 14845 "main.c"
     hero_str_incref(t1);
 #line 138 "examples/assembler/program.hero"
     h2_body = t1;
-#line 14843 "main.c"
+#line 14849 "main.c"
     hero_str_decref(t71);
 #line 139 "examples/assembler/program.hero"
     t2 = h2_body;
@@ -14867,25 +14873,25 @@ bb1:
     t72 = h9_own9;
 #line 143 "examples/assembler/program.hero"
     h9_own9 = t13;
-#line 14871 "main.c"
+#line 14877 "main.c"
     hero_str_decref(t72);
 #line 143 "examples/assembler/program.hero"
     t73 = h2_body;
-#line 14875 "main.c"
+#line 14881 "main.c"
     hero_str_incref(t13);
 #line 143 "examples/assembler/program.hero"
     h2_body = t13;
-#line 14879 "main.c"
+#line 14885 "main.c"
     hero_str_decref(t73);
 #line 144 "examples/assembler/program.hero"
     t14 = HERO_STR_LIT(hero_str_0);
 #line 144 "examples/assembler/program.hero"
     t74 = h4_label;
-#line 14885 "main.c"
+#line 14891 "main.c"
     hero_str_incref(t14);
 #line 144 "examples/assembler/program.hero"
     h4_label = t14;
-#line 14889 "main.c"
+#line 14895 "main.c"
     hero_str_decref(t74);
 #line 145 "examples/assembler/program.hero"
     t15 = h2_body;
@@ -14917,15 +14923,15 @@ bb2:
     t75 = h10_own10;
 #line 142 "examples/assembler/program.hero"
     h10_own10 = t11;
-#line 14921 "main.c"
+#line 14927 "main.c"
     hero_str_decref(t75);
 #line 142 "examples/assembler/program.hero"
     t76 = h2_body;
-#line 14925 "main.c"
+#line 14931 "main.c"
     hero_str_incref(t11);
 #line 142 "examples/assembler/program.hero"
     h2_body = t11;
-#line 14929 "main.c"
+#line 14935 "main.c"
     hero_str_decref(t76);
     goto bb1;
 bb3:
@@ -14953,7 +14959,7 @@ bb5:
     t77 = h11_own11;
 #line 148 "examples/assembler/program.hero"
     h11_own11 = t24;
-#line 14957 "main.c"
+#line 14963 "main.c"
     hero_str_decref(t77);
 #line 148 "examples/assembler/program.hero"
     t25 = h_program_trimmed(t24);
@@ -14961,15 +14967,15 @@ bb5:
     t78 = h12_own12;
 #line 148 "examples/assembler/program.hero"
     h12_own12 = t25;
-#line 14965 "main.c"
+#line 14971 "main.c"
     hero_str_decref(t78);
 #line 148 "examples/assembler/program.hero"
     t79 = h4_label;
-#line 14969 "main.c"
+#line 14975 "main.c"
     hero_str_incref(t25);
 #line 148 "examples/assembler/program.hero"
     h4_label = t25;
-#line 14973 "main.c"
+#line 14979 "main.c"
     hero_str_decref(t79);
 #line 149 "examples/assembler/program.hero"
     t26 = h2_body;
@@ -14989,7 +14995,7 @@ bb5:
     t80 = h13_own13;
 #line 149 "examples/assembler/program.hero"
     h13_own13 = t32;
-#line 14993 "main.c"
+#line 14999 "main.c"
     hero_str_decref(t80);
 #line 149 "examples/assembler/program.hero"
     t33 = h_program_trimmed(t32);
@@ -14997,15 +15003,15 @@ bb5:
     t81 = h14_own14;
 #line 149 "examples/assembler/program.hero"
     h14_own14 = t33;
-#line 15001 "main.c"
+#line 15007 "main.c"
     hero_str_decref(t81);
 #line 149 "examples/assembler/program.hero"
     t82 = h2_body;
-#line 15005 "main.c"
+#line 15011 "main.c"
     hero_str_incref(t33);
 #line 149 "examples/assembler/program.hero"
     h2_body = t33;
-#line 15009 "main.c"
+#line 15015 "main.c"
     hero_str_decref(t82);
     goto bb4;
 bb6:
@@ -15039,17 +15045,17 @@ bb8:
     t83 = h15_own15;
 #line 152 "examples/assembler/program.hero"
     h15_own15 = t39;
-#line 15043 "main.c"
+#line 15049 "main.c"
     hero_array_decref(t83);
 #line 152 "examples/assembler/program.hero"
     t40 = h1_number;
-#line 15047 "main.c"
+#line 15053 "main.c"
     hero_str_incref(t37);
 #line 152 "examples/assembler/program.hero"
-#line 15050 "main.c"
+#line 15056 "main.c"
     hero_str_incref(t38);
 #line 152 "examples/assembler/program.hero"
-#line 15053 "main.c"
+#line 15059 "main.c"
     hero_array_incref(t39);
 #line 152 "examples/assembler/program.hero"
     t41 = (h_program_Line){.f_label = t37, .f_mnemonic = t38, .f_operands = t39, .f_number = t40};
@@ -15057,82 +15063,82 @@ bb8:
     t84 = h16_own16;
 #line 152 "examples/assembler/program.hero"
     h16_own16 = t41;
-#line 15061 "main.c"
+#line 15067 "main.c"
     h_program_Line_release(&t84);
 #line 152 "examples/assembler/program.hero"
-#line 15064 "main.c"
+#line 15070 "main.c"
     h_program_Line_retain(&t41);
 #line 152 "examples/assembler/program.hero"
     t93 = h2_body;
-#line 15068 "main.c"
+#line 15074 "main.c"
     hero_str_decref(t93);
 #line 152 "examples/assembler/program.hero"
     t94 = h4_label;
-#line 15072 "main.c"
+#line 15078 "main.c"
     hero_str_decref(t94);
 #line 152 "examples/assembler/program.hero"
     t95 = h7_mnemonic;
-#line 15076 "main.c"
+#line 15082 "main.c"
     hero_str_decref(t95);
 #line 152 "examples/assembler/program.hero"
     t96 = h8_rest;
-#line 15080 "main.c"
+#line 15086 "main.c"
     hero_str_decref(t96);
 #line 152 "examples/assembler/program.hero"
     t97 = h9_own9;
-#line 15084 "main.c"
+#line 15090 "main.c"
     hero_str_decref(t97);
 #line 152 "examples/assembler/program.hero"
     t98 = h10_own10;
-#line 15088 "main.c"
+#line 15094 "main.c"
     hero_str_decref(t98);
 #line 152 "examples/assembler/program.hero"
     t99 = h11_own11;
-#line 15092 "main.c"
+#line 15098 "main.c"
     hero_str_decref(t99);
 #line 152 "examples/assembler/program.hero"
     t100 = h12_own12;
-#line 15096 "main.c"
+#line 15102 "main.c"
     hero_str_decref(t100);
 #line 152 "examples/assembler/program.hero"
     t101 = h13_own13;
-#line 15100 "main.c"
+#line 15106 "main.c"
     hero_str_decref(t101);
 #line 152 "examples/assembler/program.hero"
     t102 = h14_own14;
-#line 15104 "main.c"
+#line 15110 "main.c"
     hero_str_decref(t102);
 #line 152 "examples/assembler/program.hero"
     t103 = h15_own15;
-#line 15108 "main.c"
+#line 15114 "main.c"
     hero_array_decref(t103);
 #line 152 "examples/assembler/program.hero"
     t104 = h16_own16;
-#line 15112 "main.c"
+#line 15118 "main.c"
     h_program_Line_release(&t104);
 #line 152 "examples/assembler/program.hero"
     t105 = h17_own17;
-#line 15116 "main.c"
+#line 15122 "main.c"
     hero_str_decref(t105);
 #line 152 "examples/assembler/program.hero"
     t106 = h18_own18;
-#line 15120 "main.c"
+#line 15126 "main.c"
     hero_str_decref(t106);
 #line 152 "examples/assembler/program.hero"
     t107 = h19_own19;
-#line 15124 "main.c"
+#line 15130 "main.c"
     hero_array_decref(t107);
 #line 152 "examples/assembler/program.hero"
     t108 = h20_own20;
-#line 15128 "main.c"
+#line 15134 "main.c"
     h_program_Line_release(&t108);
 #line 152 "examples/assembler/program.hero"
     t109 = h21_own21;
-#line 15132 "main.c"
+#line 15138 "main.c"
     hero_array_decref(t109);
 #line 152 "examples/assembler/program.hero"
     t110 = h22_own22;
-#line 15136 "main.c"
+#line 15142 "main.c"
     h_program_Line_release(&t110);
     return t41;
 bb9:
@@ -15150,15 +15156,15 @@ bb10:
     t85 = h17_own17;
 #line 157 "examples/assembler/program.hero"
     h17_own17 = t56;
-#line 15154 "main.c"
+#line 15160 "main.c"
     hero_str_decref(t85);
 #line 157 "examples/assembler/program.hero"
     t86 = h7_mnemonic;
-#line 15158 "main.c"
+#line 15164 "main.c"
     hero_str_incref(t56);
 #line 157 "examples/assembler/program.hero"
     h7_mnemonic = t56;
-#line 15162 "main.c"
+#line 15168 "main.c"
     hero_str_decref(t86);
 #line 158 "examples/assembler/program.hero"
     t57 = h2_body;
@@ -15178,15 +15184,15 @@ bb10:
     t87 = h18_own18;
 #line 158 "examples/assembler/program.hero"
     h18_own18 = t63;
-#line 15182 "main.c"
+#line 15188 "main.c"
     hero_str_decref(t87);
 #line 158 "examples/assembler/program.hero"
     t88 = h8_rest;
-#line 15186 "main.c"
+#line 15192 "main.c"
     hero_str_incref(t63);
 #line 158 "examples/assembler/program.hero"
     h8_rest = t63;
-#line 15190 "main.c"
+#line 15196 "main.c"
     hero_str_decref(t88);
 #line 159 "examples/assembler/program.hero"
     t64 = h4_label;
@@ -15202,17 +15208,17 @@ bb10:
     t89 = h19_own19;
 #line 159 "examples/assembler/program.hero"
     h19_own19 = t68;
-#line 15206 "main.c"
+#line 15212 "main.c"
     hero_array_decref(t89);
 #line 159 "examples/assembler/program.hero"
     t69 = h1_number;
-#line 15210 "main.c"
+#line 15216 "main.c"
     hero_str_incref(t64);
 #line 159 "examples/assembler/program.hero"
-#line 15213 "main.c"
+#line 15219 "main.c"
     hero_str_incref(t65);
 #line 159 "examples/assembler/program.hero"
-#line 15216 "main.c"
+#line 15222 "main.c"
     hero_array_incref(t68);
 #line 159 "examples/assembler/program.hero"
     t70 = (h_program_Line){.f_label = t64, .f_mnemonic = t65, .f_operands = t68, .f_number = t69};
@@ -15220,82 +15226,82 @@ bb10:
     t90 = h20_own20;
 #line 159 "examples/assembler/program.hero"
     h20_own20 = t70;
-#line 15224 "main.c"
+#line 15230 "main.c"
     h_program_Line_release(&t90);
 #line 159 "examples/assembler/program.hero"
-#line 15227 "main.c"
+#line 15233 "main.c"
     h_program_Line_retain(&t70);
 #line 159 "examples/assembler/program.hero"
     t111 = h2_body;
-#line 15231 "main.c"
+#line 15237 "main.c"
     hero_str_decref(t111);
 #line 159 "examples/assembler/program.hero"
     t112 = h4_label;
-#line 15235 "main.c"
+#line 15241 "main.c"
     hero_str_decref(t112);
 #line 159 "examples/assembler/program.hero"
     t113 = h7_mnemonic;
-#line 15239 "main.c"
+#line 15245 "main.c"
     hero_str_decref(t113);
 #line 159 "examples/assembler/program.hero"
     t114 = h8_rest;
-#line 15243 "main.c"
+#line 15249 "main.c"
     hero_str_decref(t114);
 #line 159 "examples/assembler/program.hero"
     t115 = h9_own9;
-#line 15247 "main.c"
+#line 15253 "main.c"
     hero_str_decref(t115);
 #line 159 "examples/assembler/program.hero"
     t116 = h10_own10;
-#line 15251 "main.c"
+#line 15257 "main.c"
     hero_str_decref(t116);
 #line 159 "examples/assembler/program.hero"
     t117 = h11_own11;
-#line 15255 "main.c"
+#line 15261 "main.c"
     hero_str_decref(t117);
 #line 159 "examples/assembler/program.hero"
     t118 = h12_own12;
-#line 15259 "main.c"
+#line 15265 "main.c"
     hero_str_decref(t118);
 #line 159 "examples/assembler/program.hero"
     t119 = h13_own13;
-#line 15263 "main.c"
+#line 15269 "main.c"
     hero_str_decref(t119);
 #line 159 "examples/assembler/program.hero"
     t120 = h14_own14;
-#line 15267 "main.c"
+#line 15273 "main.c"
     hero_str_decref(t120);
 #line 159 "examples/assembler/program.hero"
     t121 = h15_own15;
-#line 15271 "main.c"
+#line 15277 "main.c"
     hero_array_decref(t121);
 #line 159 "examples/assembler/program.hero"
     t122 = h16_own16;
-#line 15275 "main.c"
+#line 15281 "main.c"
     h_program_Line_release(&t122);
 #line 159 "examples/assembler/program.hero"
     t123 = h17_own17;
-#line 15279 "main.c"
+#line 15285 "main.c"
     hero_str_decref(t123);
 #line 159 "examples/assembler/program.hero"
     t124 = h18_own18;
-#line 15283 "main.c"
+#line 15289 "main.c"
     hero_str_decref(t124);
 #line 159 "examples/assembler/program.hero"
     t125 = h19_own19;
-#line 15287 "main.c"
+#line 15293 "main.c"
     hero_array_decref(t125);
 #line 159 "examples/assembler/program.hero"
     t126 = h20_own20;
-#line 15291 "main.c"
+#line 15297 "main.c"
     h_program_Line_release(&t126);
 #line 159 "examples/assembler/program.hero"
     t127 = h21_own21;
-#line 15295 "main.c"
+#line 15301 "main.c"
     hero_array_decref(t127);
 #line 159 "examples/assembler/program.hero"
     t128 = h22_own22;
-#line 15299 "main.c"
+#line 15305 "main.c"
     h_program_Line_release(&t128);
     return t70;
 bb11:
@@ -15309,17 +15315,17 @@ bb11:
     t91 = h21_own21;
 #line 156 "examples/assembler/program.hero"
     h21_own21 = t50;
-#line 15313 "main.c"
+#line 15319 "main.c"
     hero_array_decref(t91);
 #line 156 "examples/assembler/program.hero"
     t51 = h1_number;
-#line 15317 "main.c"
+#line 15323 "main.c"
     hero_str_incref(t48);
 #line 156 "examples/assembler/program.hero"
-#line 15320 "main.c"
+#line 15326 "main.c"
     hero_str_incref(t49);
 #line 156 "examples/assembler/program.hero"
-#line 15323 "main.c"
+#line 15329 "main.c"
     hero_array_incref(t50);
 #line 156 "examples/assembler/program.hero"
     t52 = (h_program_Line){.f_label = t48, .f_mnemonic = t49, .f_operands = t50, .f_number = t51};
@@ -15327,82 +15333,82 @@ bb11:
     t92 = h22_own22;
 #line 156 "examples/assembler/program.hero"
     h22_own22 = t52;
-#line 15331 "main.c"
+#line 15337 "main.c"
     h_program_Line_release(&t92);
 #line 156 "examples/assembler/program.hero"
-#line 15334 "main.c"
+#line 15340 "main.c"
     h_program_Line_retain(&t52);
 #line 156 "examples/assembler/program.hero"
     t129 = h2_body;
-#line 15338 "main.c"
+#line 15344 "main.c"
     hero_str_decref(t129);
 #line 156 "examples/assembler/program.hero"
     t130 = h4_label;
-#line 15342 "main.c"
+#line 15348 "main.c"
     hero_str_decref(t130);
 #line 156 "examples/assembler/program.hero"
     t131 = h7_mnemonic;
-#line 15346 "main.c"
+#line 15352 "main.c"
     hero_str_decref(t131);
 #line 156 "examples/assembler/program.hero"
     t132 = h8_rest;
-#line 15350 "main.c"
+#line 15356 "main.c"
     hero_str_decref(t132);
 #line 156 "examples/assembler/program.hero"
     t133 = h9_own9;
-#line 15354 "main.c"
+#line 15360 "main.c"
     hero_str_decref(t133);
 #line 156 "examples/assembler/program.hero"
     t134 = h10_own10;
-#line 15358 "main.c"
+#line 15364 "main.c"
     hero_str_decref(t134);
 #line 156 "examples/assembler/program.hero"
     t135 = h11_own11;
-#line 15362 "main.c"
+#line 15368 "main.c"
     hero_str_decref(t135);
 #line 156 "examples/assembler/program.hero"
     t136 = h12_own12;
-#line 15366 "main.c"
+#line 15372 "main.c"
     hero_str_decref(t136);
 #line 156 "examples/assembler/program.hero"
     t137 = h13_own13;
-#line 15370 "main.c"
+#line 15376 "main.c"
     hero_str_decref(t137);
 #line 156 "examples/assembler/program.hero"
     t138 = h14_own14;
-#line 15374 "main.c"
+#line 15380 "main.c"
     hero_str_decref(t138);
 #line 156 "examples/assembler/program.hero"
     t139 = h15_own15;
-#line 15378 "main.c"
+#line 15384 "main.c"
     hero_array_decref(t139);
 #line 156 "examples/assembler/program.hero"
     t140 = h16_own16;
-#line 15382 "main.c"
+#line 15388 "main.c"
     h_program_Line_release(&t140);
 #line 156 "examples/assembler/program.hero"
     t141 = h17_own17;
-#line 15386 "main.c"
+#line 15392 "main.c"
     hero_str_decref(t141);
 #line 156 "examples/assembler/program.hero"
     t142 = h18_own18;
-#line 15390 "main.c"
+#line 15396 "main.c"
     hero_str_decref(t142);
 #line 156 "examples/assembler/program.hero"
     t143 = h19_own19;
-#line 15394 "main.c"
+#line 15400 "main.c"
     hero_array_decref(t143);
 #line 156 "examples/assembler/program.hero"
     t144 = h20_own20;
-#line 15398 "main.c"
+#line 15404 "main.c"
     h_program_Line_release(&t144);
 #line 156 "examples/assembler/program.hero"
     t145 = h21_own21;
-#line 15402 "main.c"
+#line 15408 "main.c"
     hero_array_decref(t145);
 #line 156 "examples/assembler/program.hero"
     t146 = h22_own22;
-#line 15406 "main.c"
+#line 15412 "main.c"
     h_program_Line_release(&t146);
     return t52;
 bb12:
@@ -15411,7 +15417,7 @@ bb12:
 
 #line 161 "examples/assembler/program.hero"
 HeroArrayHeader * h_program_read(HeroStr h0_text) {
-#line 15415 "main.c"
+#line 15421 "main.c"
     HeroArrayHeader * h1_out = {0};
     int64_t h2_number;
     HeroArrayHeader * h3_xs0 = {0};
@@ -15462,15 +15468,15 @@ bb0:
     t25 = h6_own6;
 #line 162 "examples/assembler/program.hero"
     h6_own6 = t1;
-#line 15466 "main.c"
+#line 15472 "main.c"
     hero_array_decref(t25);
 #line 162 "examples/assembler/program.hero"
     t26 = h1_out;
-#line 15470 "main.c"
+#line 15476 "main.c"
     hero_array_incref(t1);
 #line 162 "examples/assembler/program.hero"
     h1_out = t1;
-#line 15474 "main.c"
+#line 15480 "main.c"
     hero_array_decref(t26);
 #line 163 "examples/assembler/program.hero"
     t2 = INT64_C(0);
@@ -15484,15 +15490,15 @@ bb0:
     t27 = h7_own7;
 #line 165 "examples/assembler/program.hero"
     h7_own7 = t4;
-#line 15488 "main.c"
+#line 15494 "main.c"
     hero_array_decref(t27);
 #line 165 "examples/assembler/program.hero"
     t28 = h3_xs0;
-#line 15492 "main.c"
+#line 15498 "main.c"
     hero_array_incref(t4);
 #line 165 "examples/assembler/program.hero"
     h3_xs0 = t4;
-#line 15496 "main.c"
+#line 15502 "main.c"
     hero_array_decref(t28);
 #line 165 "examples/assembler/program.hero"
     t5 = INT64_C(0);
@@ -15522,11 +15528,11 @@ bb2:
     t12 = *(HeroStr const *)hero_array_at(t10, t11);
 #line 165 "examples/assembler/program.hero"
     t29 = h5_line;
-#line 15526 "main.c"
+#line 15532 "main.c"
     hero_str_incref(t12);
 #line 165 "examples/assembler/program.hero"
     h5_line = t12;
-#line 15530 "main.c"
+#line 15536 "main.c"
     hero_str_decref(t29);
 #line 166 "examples/assembler/program.hero"
     t13 = h2_number;
@@ -15546,7 +15552,7 @@ bb2:
     t30 = h8_own8;
 #line 167 "examples/assembler/program.hero"
     h8_own8 = t19;
-#line 15550 "main.c"
+#line 15556 "main.c"
     h_program_Line_release(&t30);
 #line 167 "examples/assembler/program.hero"
     hero_array_push_owned(&h1_out, &t19);
@@ -15568,38 +15574,38 @@ bb3:
 bb4:
 #line 169 "examples/assembler/program.hero"
     t24 = h1_out;
-#line 15572 "main.c"
+#line 15578 "main.c"
     hero_array_incref(t24);
 #line 169 "examples/assembler/program.hero"
     t31 = h1_out;
-#line 15576 "main.c"
+#line 15582 "main.c"
     hero_array_decref(t31);
 #line 169 "examples/assembler/program.hero"
     t32 = h3_xs0;
-#line 15580 "main.c"
+#line 15586 "main.c"
     hero_array_decref(t32);
 #line 169 "examples/assembler/program.hero"
     t33 = h5_line;
-#line 15584 "main.c"
+#line 15590 "main.c"
     hero_str_decref(t33);
 #line 169 "examples/assembler/program.hero"
     t34 = h6_own6;
-#line 15588 "main.c"
+#line 15594 "main.c"
     hero_array_decref(t34);
 #line 169 "examples/assembler/program.hero"
     t35 = h7_own7;
-#line 15592 "main.c"
+#line 15598 "main.c"
     hero_array_decref(t35);
 #line 169 "examples/assembler/program.hero"
     t36 = h8_own8;
-#line 15596 "main.c"
+#line 15602 "main.c"
     h_program_Line_release(&t36);
     return t24;
 }
 
 #line 175 "examples/assembler/program.hero"
 h_0opt_e201354 h_program_register_of(HeroStr h0_word, int64_t h1_number) {
-#line 15603 "main.c"
+#line 15609 "main.c"
     bool h2_b0;
     h_0opt_e201354 h3_f0 = {0};
     int64_t h4_n;
@@ -15777,15 +15783,15 @@ bb1:
     t58 = h6_own6;
 #line 178 "examples/assembler/program.hero"
     h6_own6 = t28;
-#line 15781 "main.c"
+#line 15787 "main.c"
     h_0opt_e201354_release(&t58);
 #line 178 "examples/assembler/program.hero"
     t59 = h3_f0;
-#line 15785 "main.c"
+#line 15791 "main.c"
     h_0opt_e201354_retain(&t28);
 #line 178 "examples/assembler/program.hero"
     h3_f0 = t28;
-#line 15789 "main.c"
+#line 15795 "main.c"
     h_0opt_e201354_release(&t59);
 #line 178 "examples/assembler/program.hero"
     t29 = h3_f0;
@@ -15827,7 +15833,7 @@ bb4:
     t60 = h7_own7;
 #line 177 "examples/assembler/program.hero"
     h7_own7 = t11;
-#line 15831 "main.c"
+#line 15837 "main.c"
     hero_str_decref(t60);
 #line 177 "examples/assembler/program.hero"
     t12 = HERO_STR_LIT(hero_str_75f7c07a);
@@ -15839,7 +15845,7 @@ bb4:
     t61 = h8_own8;
 #line 177 "examples/assembler/program.hero"
     h8_own8 = t14;
-#line 15843 "main.c"
+#line 15849 "main.c"
     hero_str_decref(t61);
 #line 177 "examples/assembler/program.hero"
     t15 = hero_str_concat(t12, t14);
@@ -15847,7 +15853,7 @@ bb4:
     t62 = h9_own9;
 #line 177 "examples/assembler/program.hero"
     h9_own9 = t15;
-#line 15851 "main.c"
+#line 15857 "main.c"
     hero_str_decref(t62);
 #line 177 "examples/assembler/program.hero"
     t16 = HERO_STR_LIT(hero_str_f40ca);
@@ -15857,7 +15863,7 @@ bb4:
     t63 = h10_own10;
 #line 177 "examples/assembler/program.hero"
     h10_own10 = t17;
-#line 15861 "main.c"
+#line 15867 "main.c"
     hero_str_decref(t63);
 #line 177 "examples/assembler/program.hero"
     t18 = h0_word;
@@ -15867,7 +15873,7 @@ bb4:
     t64 = h11_own11;
 #line 177 "examples/assembler/program.hero"
     h11_own11 = t19;
-#line 15871 "main.c"
+#line 15877 "main.c"
     hero_str_decref(t64);
 #line 177 "examples/assembler/program.hero"
     t20 = HERO_STR_LIT(hero_str_7494754c);
@@ -15877,13 +15883,13 @@ bb4:
     t65 = h12_own12;
 #line 177 "examples/assembler/program.hero"
     h12_own12 = t21;
-#line 15881 "main.c"
+#line 15887 "main.c"
     hero_str_decref(t65);
 #line 177 "examples/assembler/program.hero"
-#line 15884 "main.c"
+#line 15890 "main.c"
     hero_str_incref(t11);
 #line 177 "examples/assembler/program.hero"
-#line 15887 "main.c"
+#line 15893 "main.c"
     hero_str_incref(t21);
 #line 177 "examples/assembler/program.hero"
     t22 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t11, .msg = t21}};
@@ -15891,78 +15897,78 @@ bb4:
     t66 = h13_own13;
 #line 177 "examples/assembler/program.hero"
     h13_own13 = t22;
-#line 15895 "main.c"
+#line 15901 "main.c"
     h_0opt_e201354_release(&t66);
 #line 177 "examples/assembler/program.hero"
-#line 15898 "main.c"
+#line 15904 "main.c"
     h_0opt_e201354_retain(&t22);
 #line 177 "examples/assembler/program.hero"
     t75 = h3_f0;
-#line 15902 "main.c"
+#line 15908 "main.c"
     h_0opt_e201354_release(&t75);
 #line 177 "examples/assembler/program.hero"
     t76 = h6_own6;
-#line 15906 "main.c"
+#line 15912 "main.c"
     h_0opt_e201354_release(&t76);
 #line 177 "examples/assembler/program.hero"
     t77 = h7_own7;
-#line 15910 "main.c"
+#line 15916 "main.c"
     hero_str_decref(t77);
 #line 177 "examples/assembler/program.hero"
     t78 = h8_own8;
-#line 15914 "main.c"
+#line 15920 "main.c"
     hero_str_decref(t78);
 #line 177 "examples/assembler/program.hero"
     t79 = h9_own9;
-#line 15918 "main.c"
+#line 15924 "main.c"
     hero_str_decref(t79);
 #line 177 "examples/assembler/program.hero"
     t80 = h10_own10;
-#line 15922 "main.c"
+#line 15928 "main.c"
     hero_str_decref(t80);
 #line 177 "examples/assembler/program.hero"
     t81 = h11_own11;
-#line 15926 "main.c"
+#line 15932 "main.c"
     hero_str_decref(t81);
 #line 177 "examples/assembler/program.hero"
     t82 = h12_own12;
-#line 15930 "main.c"
+#line 15936 "main.c"
     hero_str_decref(t82);
 #line 177 "examples/assembler/program.hero"
     t83 = h13_own13;
-#line 15934 "main.c"
+#line 15940 "main.c"
     h_0opt_e201354_release(&t83);
 #line 177 "examples/assembler/program.hero"
     t84 = h14_own14;
-#line 15938 "main.c"
+#line 15944 "main.c"
     h_0opt_e201354_release(&t84);
 #line 177 "examples/assembler/program.hero"
     t85 = h15_own15;
-#line 15942 "main.c"
+#line 15948 "main.c"
     hero_str_decref(t85);
 #line 177 "examples/assembler/program.hero"
     t86 = h16_own16;
-#line 15946 "main.c"
+#line 15952 "main.c"
     hero_str_decref(t86);
 #line 177 "examples/assembler/program.hero"
     t87 = h17_own17;
-#line 15950 "main.c"
+#line 15956 "main.c"
     hero_str_decref(t87);
 #line 177 "examples/assembler/program.hero"
     t88 = h18_own18;
-#line 15954 "main.c"
+#line 15960 "main.c"
     hero_str_decref(t88);
 #line 177 "examples/assembler/program.hero"
     t89 = h19_own19;
-#line 15958 "main.c"
+#line 15964 "main.c"
     hero_str_decref(t89);
 #line 177 "examples/assembler/program.hero"
     t90 = h20_own20;
-#line 15962 "main.c"
+#line 15968 "main.c"
     hero_str_decref(t90);
 #line 177 "examples/assembler/program.hero"
     t91 = h21_own21;
-#line 15966 "main.c"
+#line 15972 "main.c"
     h_0opt_e201354_release(&t91);
     return t22;
 bb5:
@@ -15990,7 +15996,7 @@ bb7:
     t33 = h3_f0;
 #line 178 "examples/assembler/program.hero"
     t34 = t33.as.err;
-#line 15994 "main.c"
+#line 16000 "main.c"
     hero_panic_must(t34);
     hero_unreachable();
 bb8:
@@ -16002,78 +16008,78 @@ bb8:
     t67 = h14_own14;
 #line 182 "examples/assembler/program.hero"
     h14_own14 = t57;
-#line 16006 "main.c"
+#line 16012 "main.c"
     h_0opt_e201354_release(&t67);
 #line 182 "examples/assembler/program.hero"
-#line 16009 "main.c"
+#line 16015 "main.c"
     h_0opt_e201354_retain(&t57);
 #line 182 "examples/assembler/program.hero"
     t92 = h3_f0;
-#line 16013 "main.c"
+#line 16019 "main.c"
     h_0opt_e201354_release(&t92);
 #line 182 "examples/assembler/program.hero"
     t93 = h6_own6;
-#line 16017 "main.c"
+#line 16023 "main.c"
     h_0opt_e201354_release(&t93);
 #line 182 "examples/assembler/program.hero"
     t94 = h7_own7;
-#line 16021 "main.c"
+#line 16027 "main.c"
     hero_str_decref(t94);
 #line 182 "examples/assembler/program.hero"
     t95 = h8_own8;
-#line 16025 "main.c"
+#line 16031 "main.c"
     hero_str_decref(t95);
 #line 182 "examples/assembler/program.hero"
     t96 = h9_own9;
-#line 16029 "main.c"
+#line 16035 "main.c"
     hero_str_decref(t96);
 #line 182 "examples/assembler/program.hero"
     t97 = h10_own10;
-#line 16033 "main.c"
+#line 16039 "main.c"
     hero_str_decref(t97);
 #line 182 "examples/assembler/program.hero"
     t98 = h11_own11;
-#line 16037 "main.c"
+#line 16043 "main.c"
     hero_str_decref(t98);
 #line 182 "examples/assembler/program.hero"
     t99 = h12_own12;
-#line 16041 "main.c"
+#line 16047 "main.c"
     hero_str_decref(t99);
 #line 182 "examples/assembler/program.hero"
     t100 = h13_own13;
-#line 16045 "main.c"
+#line 16051 "main.c"
     h_0opt_e201354_release(&t100);
 #line 182 "examples/assembler/program.hero"
     t101 = h14_own14;
-#line 16049 "main.c"
+#line 16055 "main.c"
     h_0opt_e201354_release(&t101);
 #line 182 "examples/assembler/program.hero"
     t102 = h15_own15;
-#line 16053 "main.c"
+#line 16059 "main.c"
     hero_str_decref(t102);
 #line 182 "examples/assembler/program.hero"
     t103 = h16_own16;
-#line 16057 "main.c"
+#line 16063 "main.c"
     hero_str_decref(t103);
 #line 182 "examples/assembler/program.hero"
     t104 = h17_own17;
-#line 16061 "main.c"
+#line 16067 "main.c"
     hero_str_decref(t104);
 #line 182 "examples/assembler/program.hero"
     t105 = h18_own18;
-#line 16065 "main.c"
+#line 16071 "main.c"
     hero_str_decref(t105);
 #line 182 "examples/assembler/program.hero"
     t106 = h19_own19;
-#line 16069 "main.c"
+#line 16075 "main.c"
     hero_str_decref(t106);
 #line 182 "examples/assembler/program.hero"
     t107 = h20_own20;
-#line 16073 "main.c"
+#line 16079 "main.c"
     hero_str_decref(t107);
 #line 182 "examples/assembler/program.hero"
     t108 = h21_own21;
-#line 16077 "main.c"
+#line 16083 "main.c"
     h_0opt_e201354_release(&t108);
     return t57;
 bb9:
@@ -16101,7 +16107,7 @@ bb11:
     t68 = h15_own15;
 #line 181 "examples/assembler/program.hero"
     h15_own15 = t44;
-#line 16105 "main.c"
+#line 16111 "main.c"
     hero_str_decref(t68);
 #line 181 "examples/assembler/program.hero"
     t45 = HERO_STR_LIT(hero_str_75f7c07a);
@@ -16113,7 +16119,7 @@ bb11:
     t69 = h16_own16;
 #line 181 "examples/assembler/program.hero"
     h16_own16 = t47;
-#line 16117 "main.c"
+#line 16123 "main.c"
     hero_str_decref(t69);
 #line 181 "examples/assembler/program.hero"
     t48 = hero_str_concat(t45, t47);
@@ -16121,7 +16127,7 @@ bb11:
     t70 = h17_own17;
 #line 181 "examples/assembler/program.hero"
     h17_own17 = t48;
-#line 16125 "main.c"
+#line 16131 "main.c"
     hero_str_decref(t70);
 #line 181 "examples/assembler/program.hero"
     t49 = HERO_STR_LIT(hero_str_f40ca);
@@ -16131,7 +16137,7 @@ bb11:
     t71 = h18_own18;
 #line 181 "examples/assembler/program.hero"
     h18_own18 = t50;
-#line 16135 "main.c"
+#line 16141 "main.c"
     hero_str_decref(t71);
 #line 181 "examples/assembler/program.hero"
     t51 = h0_word;
@@ -16141,7 +16147,7 @@ bb11:
     t72 = h19_own19;
 #line 181 "examples/assembler/program.hero"
     h19_own19 = t52;
-#line 16145 "main.c"
+#line 16151 "main.c"
     hero_str_decref(t72);
 #line 181 "examples/assembler/program.hero"
     t53 = HERO_STR_LIT(hero_str_7494754c);
@@ -16151,13 +16157,13 @@ bb11:
     t73 = h20_own20;
 #line 181 "examples/assembler/program.hero"
     h20_own20 = t54;
-#line 16155 "main.c"
+#line 16161 "main.c"
     hero_str_decref(t73);
 #line 181 "examples/assembler/program.hero"
-#line 16158 "main.c"
+#line 16164 "main.c"
     hero_str_incref(t44);
 #line 181 "examples/assembler/program.hero"
-#line 16161 "main.c"
+#line 16167 "main.c"
     hero_str_incref(t54);
 #line 181 "examples/assembler/program.hero"
     t55 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t44, .msg = t54}};
@@ -16165,78 +16171,78 @@ bb11:
     t74 = h21_own21;
 #line 181 "examples/assembler/program.hero"
     h21_own21 = t55;
-#line 16169 "main.c"
+#line 16175 "main.c"
     h_0opt_e201354_release(&t74);
 #line 181 "examples/assembler/program.hero"
-#line 16172 "main.c"
+#line 16178 "main.c"
     h_0opt_e201354_retain(&t55);
 #line 181 "examples/assembler/program.hero"
     t109 = h3_f0;
-#line 16176 "main.c"
+#line 16182 "main.c"
     h_0opt_e201354_release(&t109);
 #line 181 "examples/assembler/program.hero"
     t110 = h6_own6;
-#line 16180 "main.c"
+#line 16186 "main.c"
     h_0opt_e201354_release(&t110);
 #line 181 "examples/assembler/program.hero"
     t111 = h7_own7;
-#line 16184 "main.c"
+#line 16190 "main.c"
     hero_str_decref(t111);
 #line 181 "examples/assembler/program.hero"
     t112 = h8_own8;
-#line 16188 "main.c"
+#line 16194 "main.c"
     hero_str_decref(t112);
 #line 181 "examples/assembler/program.hero"
     t113 = h9_own9;
-#line 16192 "main.c"
+#line 16198 "main.c"
     hero_str_decref(t113);
 #line 181 "examples/assembler/program.hero"
     t114 = h10_own10;
-#line 16196 "main.c"
+#line 16202 "main.c"
     hero_str_decref(t114);
 #line 181 "examples/assembler/program.hero"
     t115 = h11_own11;
-#line 16200 "main.c"
+#line 16206 "main.c"
     hero_str_decref(t115);
 #line 181 "examples/assembler/program.hero"
     t116 = h12_own12;
-#line 16204 "main.c"
+#line 16210 "main.c"
     hero_str_decref(t116);
 #line 181 "examples/assembler/program.hero"
     t117 = h13_own13;
-#line 16208 "main.c"
+#line 16214 "main.c"
     h_0opt_e201354_release(&t117);
 #line 181 "examples/assembler/program.hero"
     t118 = h14_own14;
-#line 16212 "main.c"
+#line 16218 "main.c"
     h_0opt_e201354_release(&t118);
 #line 181 "examples/assembler/program.hero"
     t119 = h15_own15;
-#line 16216 "main.c"
+#line 16222 "main.c"
     hero_str_decref(t119);
 #line 181 "examples/assembler/program.hero"
     t120 = h16_own16;
-#line 16220 "main.c"
+#line 16226 "main.c"
     hero_str_decref(t120);
 #line 181 "examples/assembler/program.hero"
     t121 = h17_own17;
-#line 16224 "main.c"
+#line 16230 "main.c"
     hero_str_decref(t121);
 #line 181 "examples/assembler/program.hero"
     t122 = h18_own18;
-#line 16228 "main.c"
+#line 16234 "main.c"
     hero_str_decref(t122);
 #line 181 "examples/assembler/program.hero"
     t123 = h19_own19;
-#line 16232 "main.c"
+#line 16238 "main.c"
     hero_str_decref(t123);
 #line 181 "examples/assembler/program.hero"
     t124 = h20_own20;
-#line 16236 "main.c"
+#line 16242 "main.c"
     hero_str_decref(t124);
 #line 181 "examples/assembler/program.hero"
     t125 = h21_own21;
-#line 16240 "main.c"
+#line 16246 "main.c"
     h_0opt_e201354_release(&t125);
     return t55;
 bb12:
@@ -16245,7 +16251,7 @@ bb12:
 
 #line 184 "examples/assembler/program.hero"
 h_0opt_e201354 h_program_number_of(HeroStr h0_word, int64_t h1_number) {
-#line 16249 "main.c"
+#line 16255 "main.c"
     HeroStr h2_body = {0};
     bool h3_negative;
     bool h4_b0;
@@ -16488,11 +16494,11 @@ bb0:
     t1 = h0_word;
 #line 185 "examples/assembler/program.hero"
     t98 = h2_body;
-#line 16492 "main.c"
+#line 16498 "main.c"
     hero_str_incref(t1);
 #line 185 "examples/assembler/program.hero"
     h2_body = t1;
-#line 16496 "main.c"
+#line 16502 "main.c"
     hero_str_decref(t98);
 #line 186 "examples/assembler/program.hero"
     t2 = false;
@@ -16564,15 +16570,15 @@ bb4:
     t99 = h11_own11;
 #line 190 "examples/assembler/program.hero"
     h11_own11 = t18;
-#line 16568 "main.c"
+#line 16574 "main.c"
     hero_str_decref(t99);
 #line 190 "examples/assembler/program.hero"
     t100 = h2_body;
-#line 16572 "main.c"
+#line 16578 "main.c"
     hero_str_incref(t18);
 #line 190 "examples/assembler/program.hero"
     h2_body = t18;
-#line 16576 "main.c"
+#line 16582 "main.c"
     hero_str_decref(t100);
     goto bb1;
 bb5:
@@ -16594,15 +16600,15 @@ bb6:
     t101 = h12_own12;
 #line 196 "examples/assembler/program.hero"
     h12_own12 = t39;
-#line 16598 "main.c"
+#line 16604 "main.c"
     hero_array_decref(t101);
 #line 196 "examples/assembler/program.hero"
     t102 = h6_xs0;
-#line 16602 "main.c"
+#line 16608 "main.c"
     hero_array_incref(t39);
 #line 196 "examples/assembler/program.hero"
     h6_xs0 = t39;
-#line 16606 "main.c"
+#line 16612 "main.c"
     hero_array_decref(t102);
 #line 196 "examples/assembler/program.hero"
     t40 = INT64_C(0);
@@ -16618,7 +16624,7 @@ bb7:
     t103 = h13_own13;
 #line 193 "examples/assembler/program.hero"
     h13_own13 = t23;
-#line 16622 "main.c"
+#line 16628 "main.c"
     hero_str_decref(t103);
 #line 193 "examples/assembler/program.hero"
     t24 = HERO_STR_LIT(hero_str_75f7c07a);
@@ -16630,7 +16636,7 @@ bb7:
     t104 = h14_own14;
 #line 193 "examples/assembler/program.hero"
     h14_own14 = t26;
-#line 16634 "main.c"
+#line 16640 "main.c"
     hero_str_decref(t104);
 #line 193 "examples/assembler/program.hero"
     t27 = hero_str_concat(t24, t26);
@@ -16638,7 +16644,7 @@ bb7:
     t105 = h15_own15;
 #line 193 "examples/assembler/program.hero"
     h15_own15 = t27;
-#line 16642 "main.c"
+#line 16648 "main.c"
     hero_str_decref(t105);
 #line 193 "examples/assembler/program.hero"
     t28 = HERO_STR_LIT(hero_str_f40ca);
@@ -16648,7 +16654,7 @@ bb7:
     t106 = h16_own16;
 #line 193 "examples/assembler/program.hero"
     h16_own16 = t29;
-#line 16652 "main.c"
+#line 16658 "main.c"
     hero_str_decref(t106);
 #line 193 "examples/assembler/program.hero"
     t30 = h0_word;
@@ -16658,7 +16664,7 @@ bb7:
     t107 = h17_own17;
 #line 193 "examples/assembler/program.hero"
     h17_own17 = t31;
-#line 16662 "main.c"
+#line 16668 "main.c"
     hero_str_decref(t107);
 #line 193 "examples/assembler/program.hero"
     t32 = HERO_STR_LIT(hero_str_7597be40);
@@ -16668,13 +16674,13 @@ bb7:
     t108 = h18_own18;
 #line 193 "examples/assembler/program.hero"
     h18_own18 = t33;
-#line 16672 "main.c"
+#line 16678 "main.c"
     hero_str_decref(t108);
 #line 193 "examples/assembler/program.hero"
-#line 16675 "main.c"
+#line 16681 "main.c"
     hero_str_incref(t23);
 #line 193 "examples/assembler/program.hero"
-#line 16678 "main.c"
+#line 16684 "main.c"
     hero_str_incref(t33);
 #line 193 "examples/assembler/program.hero"
     t34 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t23, .msg = t33}};
@@ -16682,98 +16688,98 @@ bb7:
     t109 = h19_own19;
 #line 193 "examples/assembler/program.hero"
     h19_own19 = t34;
-#line 16686 "main.c"
+#line 16692 "main.c"
     h_0opt_e201354_release(&t109);
 #line 193 "examples/assembler/program.hero"
-#line 16689 "main.c"
+#line 16695 "main.c"
     h_0opt_e201354_retain(&t34);
 #line 193 "examples/assembler/program.hero"
     t121 = h2_body;
-#line 16693 "main.c"
+#line 16699 "main.c"
     hero_str_decref(t121);
 #line 193 "examples/assembler/program.hero"
     t122 = h6_xs0;
-#line 16697 "main.c"
+#line 16703 "main.c"
     hero_array_decref(t122);
 #line 193 "examples/assembler/program.hero"
     t123 = h10_f0;
-#line 16701 "main.c"
+#line 16707 "main.c"
     h_0opt_e201354_release(&t123);
 #line 193 "examples/assembler/program.hero"
     t124 = h11_own11;
-#line 16705 "main.c"
+#line 16711 "main.c"
     hero_str_decref(t124);
 #line 193 "examples/assembler/program.hero"
     t125 = h12_own12;
-#line 16709 "main.c"
+#line 16715 "main.c"
     hero_array_decref(t125);
 #line 193 "examples/assembler/program.hero"
     t126 = h13_own13;
-#line 16713 "main.c"
+#line 16719 "main.c"
     hero_str_decref(t126);
 #line 193 "examples/assembler/program.hero"
     t127 = h14_own14;
-#line 16717 "main.c"
+#line 16723 "main.c"
     hero_str_decref(t127);
 #line 193 "examples/assembler/program.hero"
     t128 = h15_own15;
-#line 16721 "main.c"
+#line 16727 "main.c"
     hero_str_decref(t128);
 #line 193 "examples/assembler/program.hero"
     t129 = h16_own16;
-#line 16725 "main.c"
+#line 16731 "main.c"
     hero_str_decref(t129);
 #line 193 "examples/assembler/program.hero"
     t130 = h17_own17;
-#line 16729 "main.c"
+#line 16735 "main.c"
     hero_str_decref(t130);
 #line 193 "examples/assembler/program.hero"
     t131 = h18_own18;
-#line 16733 "main.c"
+#line 16739 "main.c"
     hero_str_decref(t131);
 #line 193 "examples/assembler/program.hero"
     t132 = h19_own19;
-#line 16737 "main.c"
+#line 16743 "main.c"
     h_0opt_e201354_release(&t132);
 #line 193 "examples/assembler/program.hero"
     t133 = h20_own20;
-#line 16741 "main.c"
+#line 16747 "main.c"
     h_0opt_e201354_release(&t133);
 #line 193 "examples/assembler/program.hero"
     t134 = h21_own21;
-#line 16745 "main.c"
+#line 16751 "main.c"
     hero_str_decref(t134);
 #line 193 "examples/assembler/program.hero"
     t135 = h22_own22;
-#line 16749 "main.c"
+#line 16755 "main.c"
     hero_str_decref(t135);
 #line 193 "examples/assembler/program.hero"
     t136 = h23_own23;
-#line 16753 "main.c"
+#line 16759 "main.c"
     hero_str_decref(t136);
 #line 193 "examples/assembler/program.hero"
     t137 = h24_own24;
-#line 16757 "main.c"
+#line 16763 "main.c"
     hero_str_decref(t137);
 #line 193 "examples/assembler/program.hero"
     t138 = h25_own25;
-#line 16761 "main.c"
+#line 16767 "main.c"
     hero_str_decref(t138);
 #line 193 "examples/assembler/program.hero"
     t139 = h26_own26;
-#line 16765 "main.c"
+#line 16771 "main.c"
     hero_str_decref(t139);
 #line 193 "examples/assembler/program.hero"
     t140 = h27_own27;
-#line 16769 "main.c"
+#line 16775 "main.c"
     h_0opt_e201354_release(&t140);
 #line 193 "examples/assembler/program.hero"
     t141 = h28_own28;
-#line 16773 "main.c"
+#line 16779 "main.c"
     h_0opt_e201354_release(&t141);
 #line 193 "examples/assembler/program.hero"
     t142 = h29_own29;
-#line 16777 "main.c"
+#line 16783 "main.c"
     h_0opt_e201354_release(&t142);
     return t34;
 bb8:
@@ -16855,15 +16861,15 @@ bb13:
     t110 = h20_own20;
 #line 199 "examples/assembler/program.hero"
     h20_own20 = t79;
-#line 16859 "main.c"
+#line 16865 "main.c"
     h_0opt_e201354_release(&t110);
 #line 199 "examples/assembler/program.hero"
     t111 = h10_f0;
-#line 16863 "main.c"
+#line 16869 "main.c"
     h_0opt_e201354_retain(&t79);
 #line 199 "examples/assembler/program.hero"
     h10_f0 = t79;
-#line 16867 "main.c"
+#line 16873 "main.c"
     h_0opt_e201354_release(&t111);
 #line 199 "examples/assembler/program.hero"
     t80 = h10_f0;
@@ -16905,7 +16911,7 @@ bb16:
     t112 = h21_own21;
 #line 198 "examples/assembler/program.hero"
     h21_own21 = t59;
-#line 16909 "main.c"
+#line 16915 "main.c"
     hero_str_decref(t112);
 #line 198 "examples/assembler/program.hero"
     t60 = HERO_STR_LIT(hero_str_75f7c07a);
@@ -16917,7 +16923,7 @@ bb16:
     t113 = h22_own22;
 #line 198 "examples/assembler/program.hero"
     h22_own22 = t62;
-#line 16921 "main.c"
+#line 16927 "main.c"
     hero_str_decref(t113);
 #line 198 "examples/assembler/program.hero"
     t63 = hero_str_concat(t60, t62);
@@ -16925,7 +16931,7 @@ bb16:
     t114 = h23_own23;
 #line 198 "examples/assembler/program.hero"
     h23_own23 = t63;
-#line 16929 "main.c"
+#line 16935 "main.c"
     hero_str_decref(t114);
 #line 198 "examples/assembler/program.hero"
     t64 = HERO_STR_LIT(hero_str_f40ca);
@@ -16935,7 +16941,7 @@ bb16:
     t115 = h24_own24;
 #line 198 "examples/assembler/program.hero"
     h24_own24 = t65;
-#line 16939 "main.c"
+#line 16945 "main.c"
     hero_str_decref(t115);
 #line 198 "examples/assembler/program.hero"
     t66 = h0_word;
@@ -16945,7 +16951,7 @@ bb16:
     t116 = h25_own25;
 #line 198 "examples/assembler/program.hero"
     h25_own25 = t67;
-#line 16949 "main.c"
+#line 16955 "main.c"
     hero_str_decref(t116);
 #line 198 "examples/assembler/program.hero"
     t68 = HERO_STR_LIT(hero_str_7597be40);
@@ -16955,13 +16961,13 @@ bb16:
     t117 = h26_own26;
 #line 198 "examples/assembler/program.hero"
     h26_own26 = t69;
-#line 16959 "main.c"
+#line 16965 "main.c"
     hero_str_decref(t117);
 #line 198 "examples/assembler/program.hero"
-#line 16962 "main.c"
+#line 16968 "main.c"
     hero_str_incref(t59);
 #line 198 "examples/assembler/program.hero"
-#line 16965 "main.c"
+#line 16971 "main.c"
     hero_str_incref(t69);
 #line 198 "examples/assembler/program.hero"
     t70 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t59, .msg = t69}};
@@ -16969,98 +16975,98 @@ bb16:
     t118 = h27_own27;
 #line 198 "examples/assembler/program.hero"
     h27_own27 = t70;
-#line 16973 "main.c"
+#line 16979 "main.c"
     h_0opt_e201354_release(&t118);
 #line 198 "examples/assembler/program.hero"
-#line 16976 "main.c"
+#line 16982 "main.c"
     h_0opt_e201354_retain(&t70);
 #line 198 "examples/assembler/program.hero"
     t143 = h2_body;
-#line 16980 "main.c"
+#line 16986 "main.c"
     hero_str_decref(t143);
 #line 198 "examples/assembler/program.hero"
     t144 = h6_xs0;
-#line 16984 "main.c"
+#line 16990 "main.c"
     hero_array_decref(t144);
 #line 198 "examples/assembler/program.hero"
     t145 = h10_f0;
-#line 16988 "main.c"
+#line 16994 "main.c"
     h_0opt_e201354_release(&t145);
 #line 198 "examples/assembler/program.hero"
     t146 = h11_own11;
-#line 16992 "main.c"
+#line 16998 "main.c"
     hero_str_decref(t146);
 #line 198 "examples/assembler/program.hero"
     t147 = h12_own12;
-#line 16996 "main.c"
+#line 17002 "main.c"
     hero_array_decref(t147);
 #line 198 "examples/assembler/program.hero"
     t148 = h13_own13;
-#line 17000 "main.c"
+#line 17006 "main.c"
     hero_str_decref(t148);
 #line 198 "examples/assembler/program.hero"
     t149 = h14_own14;
-#line 17004 "main.c"
+#line 17010 "main.c"
     hero_str_decref(t149);
 #line 198 "examples/assembler/program.hero"
     t150 = h15_own15;
-#line 17008 "main.c"
+#line 17014 "main.c"
     hero_str_decref(t150);
 #line 198 "examples/assembler/program.hero"
     t151 = h16_own16;
-#line 17012 "main.c"
+#line 17018 "main.c"
     hero_str_decref(t151);
 #line 198 "examples/assembler/program.hero"
     t152 = h17_own17;
-#line 17016 "main.c"
+#line 17022 "main.c"
     hero_str_decref(t152);
 #line 198 "examples/assembler/program.hero"
     t153 = h18_own18;
-#line 17020 "main.c"
+#line 17026 "main.c"
     hero_str_decref(t153);
 #line 198 "examples/assembler/program.hero"
     t154 = h19_own19;
-#line 17024 "main.c"
+#line 17030 "main.c"
     h_0opt_e201354_release(&t154);
 #line 198 "examples/assembler/program.hero"
     t155 = h20_own20;
-#line 17028 "main.c"
+#line 17034 "main.c"
     h_0opt_e201354_release(&t155);
 #line 198 "examples/assembler/program.hero"
     t156 = h21_own21;
-#line 17032 "main.c"
+#line 17038 "main.c"
     hero_str_decref(t156);
 #line 198 "examples/assembler/program.hero"
     t157 = h22_own22;
-#line 17036 "main.c"
+#line 17042 "main.c"
     hero_str_decref(t157);
 #line 198 "examples/assembler/program.hero"
     t158 = h23_own23;
-#line 17040 "main.c"
+#line 17046 "main.c"
     hero_str_decref(t158);
 #line 198 "examples/assembler/program.hero"
     t159 = h24_own24;
-#line 17044 "main.c"
+#line 17050 "main.c"
     hero_str_decref(t159);
 #line 198 "examples/assembler/program.hero"
     t160 = h25_own25;
-#line 17048 "main.c"
+#line 17054 "main.c"
     hero_str_decref(t160);
 #line 198 "examples/assembler/program.hero"
     t161 = h26_own26;
-#line 17052 "main.c"
+#line 17058 "main.c"
     hero_str_decref(t161);
 #line 198 "examples/assembler/program.hero"
     t162 = h27_own27;
-#line 17056 "main.c"
+#line 17062 "main.c"
     h_0opt_e201354_release(&t162);
 #line 198 "examples/assembler/program.hero"
     t163 = h28_own28;
-#line 17060 "main.c"
+#line 17066 "main.c"
     h_0opt_e201354_release(&t163);
 #line 198 "examples/assembler/program.hero"
     t164 = h29_own29;
-#line 17064 "main.c"
+#line 17070 "main.c"
     h_0opt_e201354_release(&t164);
     return t70;
 bb17:
@@ -17082,7 +17088,7 @@ bb19:
     t84 = h10_f0;
 #line 199 "examples/assembler/program.hero"
     t85 = t84.as.err;
-#line 17086 "main.c"
+#line 17092 "main.c"
     hero_panic_must(t85);
     hero_unreachable();
 bb20:
@@ -17094,98 +17100,98 @@ bb20:
     t119 = h28_own28;
 #line 203 "examples/assembler/program.hero"
     h28_own28 = t97;
-#line 17098 "main.c"
+#line 17104 "main.c"
     h_0opt_e201354_release(&t119);
 #line 203 "examples/assembler/program.hero"
-#line 17101 "main.c"
+#line 17107 "main.c"
     h_0opt_e201354_retain(&t97);
 #line 203 "examples/assembler/program.hero"
     t165 = h2_body;
-#line 17105 "main.c"
+#line 17111 "main.c"
     hero_str_decref(t165);
 #line 203 "examples/assembler/program.hero"
     t166 = h6_xs0;
-#line 17109 "main.c"
+#line 17115 "main.c"
     hero_array_decref(t166);
 #line 203 "examples/assembler/program.hero"
     t167 = h10_f0;
-#line 17113 "main.c"
+#line 17119 "main.c"
     h_0opt_e201354_release(&t167);
 #line 203 "examples/assembler/program.hero"
     t168 = h11_own11;
-#line 17117 "main.c"
+#line 17123 "main.c"
     hero_str_decref(t168);
 #line 203 "examples/assembler/program.hero"
     t169 = h12_own12;
-#line 17121 "main.c"
+#line 17127 "main.c"
     hero_array_decref(t169);
 #line 203 "examples/assembler/program.hero"
     t170 = h13_own13;
-#line 17125 "main.c"
+#line 17131 "main.c"
     hero_str_decref(t170);
 #line 203 "examples/assembler/program.hero"
     t171 = h14_own14;
-#line 17129 "main.c"
+#line 17135 "main.c"
     hero_str_decref(t171);
 #line 203 "examples/assembler/program.hero"
     t172 = h15_own15;
-#line 17133 "main.c"
+#line 17139 "main.c"
     hero_str_decref(t172);
 #line 203 "examples/assembler/program.hero"
     t173 = h16_own16;
-#line 17137 "main.c"
+#line 17143 "main.c"
     hero_str_decref(t173);
 #line 203 "examples/assembler/program.hero"
     t174 = h17_own17;
-#line 17141 "main.c"
+#line 17147 "main.c"
     hero_str_decref(t174);
 #line 203 "examples/assembler/program.hero"
     t175 = h18_own18;
-#line 17145 "main.c"
+#line 17151 "main.c"
     hero_str_decref(t175);
 #line 203 "examples/assembler/program.hero"
     t176 = h19_own19;
-#line 17149 "main.c"
+#line 17155 "main.c"
     h_0opt_e201354_release(&t176);
 #line 203 "examples/assembler/program.hero"
     t177 = h20_own20;
-#line 17153 "main.c"
+#line 17159 "main.c"
     h_0opt_e201354_release(&t177);
 #line 203 "examples/assembler/program.hero"
     t178 = h21_own21;
-#line 17157 "main.c"
+#line 17163 "main.c"
     hero_str_decref(t178);
 #line 203 "examples/assembler/program.hero"
     t179 = h22_own22;
-#line 17161 "main.c"
+#line 17167 "main.c"
     hero_str_decref(t179);
 #line 203 "examples/assembler/program.hero"
     t180 = h23_own23;
-#line 17165 "main.c"
+#line 17171 "main.c"
     hero_str_decref(t180);
 #line 203 "examples/assembler/program.hero"
     t181 = h24_own24;
-#line 17169 "main.c"
+#line 17175 "main.c"
     hero_str_decref(t181);
 #line 203 "examples/assembler/program.hero"
     t182 = h25_own25;
-#line 17173 "main.c"
+#line 17179 "main.c"
     hero_str_decref(t182);
 #line 203 "examples/assembler/program.hero"
     t183 = h26_own26;
-#line 17177 "main.c"
+#line 17183 "main.c"
     hero_str_decref(t183);
 #line 203 "examples/assembler/program.hero"
     t184 = h27_own27;
-#line 17181 "main.c"
+#line 17187 "main.c"
     h_0opt_e201354_release(&t184);
 #line 203 "examples/assembler/program.hero"
     t185 = h28_own28;
-#line 17185 "main.c"
+#line 17191 "main.c"
     h_0opt_e201354_release(&t185);
 #line 203 "examples/assembler/program.hero"
     t186 = h29_own29;
-#line 17189 "main.c"
+#line 17195 "main.c"
     h_0opt_e201354_release(&t186);
     return t97;
 bb21:
@@ -17199,98 +17205,98 @@ bb21:
     t120 = h29_own29;
 #line 202 "examples/assembler/program.hero"
     h29_own29 = t95;
-#line 17203 "main.c"
+#line 17209 "main.c"
     h_0opt_e201354_release(&t120);
 #line 202 "examples/assembler/program.hero"
-#line 17206 "main.c"
+#line 17212 "main.c"
     h_0opt_e201354_retain(&t95);
 #line 202 "examples/assembler/program.hero"
     t187 = h2_body;
-#line 17210 "main.c"
+#line 17216 "main.c"
     hero_str_decref(t187);
 #line 202 "examples/assembler/program.hero"
     t188 = h6_xs0;
-#line 17214 "main.c"
+#line 17220 "main.c"
     hero_array_decref(t188);
 #line 202 "examples/assembler/program.hero"
     t189 = h10_f0;
-#line 17218 "main.c"
+#line 17224 "main.c"
     h_0opt_e201354_release(&t189);
 #line 202 "examples/assembler/program.hero"
     t190 = h11_own11;
-#line 17222 "main.c"
+#line 17228 "main.c"
     hero_str_decref(t190);
 #line 202 "examples/assembler/program.hero"
     t191 = h12_own12;
-#line 17226 "main.c"
+#line 17232 "main.c"
     hero_array_decref(t191);
 #line 202 "examples/assembler/program.hero"
     t192 = h13_own13;
-#line 17230 "main.c"
+#line 17236 "main.c"
     hero_str_decref(t192);
 #line 202 "examples/assembler/program.hero"
     t193 = h14_own14;
-#line 17234 "main.c"
+#line 17240 "main.c"
     hero_str_decref(t193);
 #line 202 "examples/assembler/program.hero"
     t194 = h15_own15;
-#line 17238 "main.c"
+#line 17244 "main.c"
     hero_str_decref(t194);
 #line 202 "examples/assembler/program.hero"
     t195 = h16_own16;
-#line 17242 "main.c"
+#line 17248 "main.c"
     hero_str_decref(t195);
 #line 202 "examples/assembler/program.hero"
     t196 = h17_own17;
-#line 17246 "main.c"
+#line 17252 "main.c"
     hero_str_decref(t196);
 #line 202 "examples/assembler/program.hero"
     t197 = h18_own18;
-#line 17250 "main.c"
+#line 17256 "main.c"
     hero_str_decref(t197);
 #line 202 "examples/assembler/program.hero"
     t198 = h19_own19;
-#line 17254 "main.c"
+#line 17260 "main.c"
     h_0opt_e201354_release(&t198);
 #line 202 "examples/assembler/program.hero"
     t199 = h20_own20;
-#line 17258 "main.c"
+#line 17264 "main.c"
     h_0opt_e201354_release(&t199);
 #line 202 "examples/assembler/program.hero"
     t200 = h21_own21;
-#line 17262 "main.c"
+#line 17268 "main.c"
     hero_str_decref(t200);
 #line 202 "examples/assembler/program.hero"
     t201 = h22_own22;
-#line 17266 "main.c"
+#line 17272 "main.c"
     hero_str_decref(t201);
 #line 202 "examples/assembler/program.hero"
     t202 = h23_own23;
-#line 17270 "main.c"
+#line 17276 "main.c"
     hero_str_decref(t202);
 #line 202 "examples/assembler/program.hero"
     t203 = h24_own24;
-#line 17274 "main.c"
+#line 17280 "main.c"
     hero_str_decref(t203);
 #line 202 "examples/assembler/program.hero"
     t204 = h25_own25;
-#line 17278 "main.c"
+#line 17284 "main.c"
     hero_str_decref(t204);
 #line 202 "examples/assembler/program.hero"
     t205 = h26_own26;
-#line 17282 "main.c"
+#line 17288 "main.c"
     hero_str_decref(t205);
 #line 202 "examples/assembler/program.hero"
     t206 = h27_own27;
-#line 17286 "main.c"
+#line 17292 "main.c"
     h_0opt_e201354_release(&t206);
 #line 202 "examples/assembler/program.hero"
     t207 = h28_own28;
-#line 17290 "main.c"
+#line 17296 "main.c"
     h_0opt_e201354_release(&t207);
 #line 202 "examples/assembler/program.hero"
     t208 = h29_own29;
-#line 17294 "main.c"
+#line 17300 "main.c"
     h_0opt_e201354_release(&t208);
     return t95;
 bb22:
@@ -17299,7 +17305,7 @@ bb22:
 
 #line 26 "<heroes library>"
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
-#line 17303 "main.c"
+#line 17309 "main.c"
     HeroArrayHeader * h2_out = {0};
     int64_t h3_i;
     HeroArrayHeader * h4_own4 = {0};
@@ -17325,15 +17331,15 @@ bb0:
     t13 = h4_own4;
 #line 27 "<heroes library>"
     h4_own4 = t1;
-#line 17329 "main.c"
+#line 17335 "main.c"
     hero_array_decref(t13);
 #line 27 "<heroes library>"
     t14 = h2_out;
-#line 17333 "main.c"
+#line 17339 "main.c"
     hero_array_incref(t1);
 #line 27 "<heroes library>"
     h2_out = t1;
-#line 17337 "main.c"
+#line 17343 "main.c"
     hero_array_decref(t14);
 #line 28 "<heroes library>"
     t2 = h0_from;
@@ -17371,34 +17377,40 @@ bb2:
 bb3:
 #line 32 "<heroes library>"
     t12 = h2_out;
-#line 17375 "main.c"
+#line 17381 "main.c"
     hero_array_incref(t12);
 #line 32 "<heroes library>"
     t15 = h2_out;
-#line 17379 "main.c"
+#line 17385 "main.c"
     hero_array_decref(t15);
 #line 32 "<heroes library>"
     t16 = h4_own4;
-#line 17383 "main.c"
+#line 17389 "main.c"
     hero_array_decref(t16);
     return t12;
 }
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) {
-#line 17390 "main.c"
+#line 17396 "main.c"
     return HERO_OS_OK;
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) {
-#line 17396 "main.c"
+#line 17402 "main.c"
     return HERO_OS_NOT_FOUND;
 }
 
-#line 163 "<heroes library>"
+#line 111 "<heroes library>"
+int64_t h_library_HERO_OS_NOT_TEXT(void) {
+#line 17408 "main.c"
+    return HERO_OS_NOT_TEXT;
+}
+
+#line 166 "<heroes library>"
 h_0opt_f87774a h_library_read_file(HeroStr h0_path) {
-#line 17402 "main.c"
+#line 17414 "main.c"
     int64_t h1_status;
     HeroStr h2_text = {0};
     HeroStr h3_own3 = {0};
@@ -17407,6 +17419,9 @@ h_0opt_f87774a h_library_read_file(HeroStr h0_path) {
     h_0opt_f87774a h6_own6 = {0};
     HeroStr h7_own7 = {0};
     h_0opt_f87774a h8_own8 = {0};
+    HeroStr h9_own9 = {0};
+    HeroStr h10_own10 = {0};
+    h_0opt_f87774a h11_own11 = {0};
     int64_t t1;
     HeroStr t2 = {0};
     const char * t3;
@@ -17424,260 +17439,423 @@ h_0opt_f87774a h_library_read_file(HeroStr h0_path) {
     HeroStr t15 = {0};
     HeroStr t16 = {0};
     h_0opt_f87774a t17 = {0};
-    HeroStr t18 = {0};
-    HeroStr t19 = {0};
-    HeroStr t20 = {0};
+    int64_t t18;
+    int64_t t19;
+    bool t20;
     HeroStr t21 = {0};
-    h_0opt_f87774a t22 = {0};
+    HeroStr t22 = {0};
     HeroStr t23 = {0};
     HeroStr t24 = {0};
-    h_0opt_f87774a t25 = {0};
+    HeroStr t25 = {0};
     HeroStr t26 = {0};
     h_0opt_f87774a t27 = {0};
     HeroStr t28 = {0};
-    h_0opt_f87774a t29 = {0};
+    HeroStr t29 = {0};
     HeroStr t30 = {0};
     HeroStr t31 = {0};
     h_0opt_f87774a t32 = {0};
     HeroStr t33 = {0};
-    h_0opt_f87774a t34 = {0};
-    HeroStr t35 = {0};
-    h_0opt_f87774a t36 = {0};
-    HeroStr t37 = {0};
+    HeroStr t34 = {0};
+    h_0opt_f87774a t35 = {0};
+    HeroStr t36 = {0};
+    h_0opt_f87774a t37 = {0};
     HeroStr t38 = {0};
     h_0opt_f87774a t39 = {0};
     HeroStr t40 = {0};
-    h_0opt_f87774a t41 = {0};
-    HeroStr t42 = {0};
-    h_0opt_f87774a t43 = {0};
+    HeroStr t41 = {0};
+    h_0opt_f87774a t42 = {0};
+    HeroStr t43 = {0};
     HeroStr t44 = {0};
-    HeroStr t45 = {0};
-    h_0opt_f87774a t46 = {0};
-    HeroStr t47 = {0};
-    h_0opt_f87774a t48 = {0};
-    HeroStr t49 = {0};
-    h_0opt_f87774a t50 = {0};
+    h_0opt_f87774a t45 = {0};
+    HeroStr t46 = {0};
+    h_0opt_f87774a t47 = {0};
+    HeroStr t48 = {0};
+    h_0opt_f87774a t49 = {0};
+    HeroStr t50 = {0};
+    HeroStr t51 = {0};
+    h_0opt_f87774a t52 = {0};
+    HeroStr t53 = {0};
+    HeroStr t54 = {0};
+    h_0opt_f87774a t55 = {0};
+    HeroStr t56 = {0};
+    h_0opt_f87774a t57 = {0};
+    HeroStr t58 = {0};
+    h_0opt_f87774a t59 = {0};
+    HeroStr t60 = {0};
+    HeroStr t61 = {0};
+    h_0opt_f87774a t62 = {0};
+    HeroStr t63 = {0};
+    HeroStr t64 = {0};
+    h_0opt_f87774a t65 = {0};
+    HeroStr t66 = {0};
+    h_0opt_f87774a t67 = {0};
+    HeroStr t68 = {0};
+    h_0opt_f87774a t69 = {0};
+    HeroStr t70 = {0};
+    HeroStr t71 = {0};
+    h_0opt_f87774a t72 = {0};
+    HeroStr t73 = {0};
+    HeroStr t74 = {0};
+    h_0opt_f87774a t75 = {0};
+    HeroStr t76 = {0};
+    h_0opt_f87774a t77 = {0};
+    HeroStr t78 = {0};
+    h_0opt_f87774a t79 = {0};
+    HeroStr t80 = {0};
+    HeroStr t81 = {0};
+    h_0opt_f87774a t82 = {0};
     goto bb0;
 bb0:
-#line 164 "<heroes library>"
+#line 167 "<heroes library>"
     t1 = INT64_C(0);
-#line 164 "<heroes library>"
+#line 167 "<heroes library>"
     h1_status = t1;
-#line 165 "<heroes library>"
+#line 168 "<heroes library>"
     t2 = h0_path;
-#line 165 "<heroes library>"
+#line 168 "<heroes library>"
     t3 = hero_str_cstr(t2);
-#line 165 "<heroes library>"
+#line 168 "<heroes library>"
     t4 = hero_file_read(hero_cstr_nonnull(t3), (void *)&h1_status);
-#line 165 "<heroes library>"
-    t23 = h3_own3;
-#line 165 "<heroes library>"
+#line 168 "<heroes library>"
+    t33 = h3_own3;
+#line 168 "<heroes library>"
     h3_own3 = t4;
-#line 17477 "main.c"
-    hero_str_decref(t23);
-#line 165 "<heroes library>"
-    t24 = h2_text;
-#line 17481 "main.c"
-    hero_str_incref(t4);
-#line 165 "<heroes library>"
-    h2_text = t4;
-#line 17485 "main.c"
-    hero_str_decref(t24);
-#line 166 "<heroes library>"
-    t5 = h1_status;
-#line 166 "<heroes library>"
-    t6 = h_library_HERO_OS_OK();
-#line 166 "<heroes library>"
-    t7 = t5 == t6;
-#line 166 "<heroes library>"
-    if (t7) goto bb2; else goto bb3;
-#line 166 "<heroes library>"
-bb1:
-#line 168 "<heroes library>"
-    t10 = h1_status;
-#line 168 "<heroes library>"
-    t11 = h_library_HERO_OS_NOT_FOUND();
-#line 168 "<heroes library>"
-    t12 = t10 == t11;
-#line 168 "<heroes library>"
-    if (t12) goto bb5; else goto bb6;
-#line 168 "<heroes library>"
-bb2:
-#line 167 "<heroes library>"
-    t8 = h2_text;
-#line 17509 "main.c"
-    hero_str_incref(t8);
-#line 167 "<heroes library>"
-    t9 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t8};
-#line 167 "<heroes library>"
-    t25 = h4_own4;
-#line 167 "<heroes library>"
-    h4_own4 = t9;
-#line 17517 "main.c"
-    h_0opt_f87774a_release(&t25);
-#line 167 "<heroes library>"
-#line 17520 "main.c"
-    h_0opt_f87774a_retain(&t9);
-#line 167 "<heroes library>"
-    t30 = h2_text;
 #line 17524 "main.c"
-    hero_str_decref(t30);
-#line 167 "<heroes library>"
-    t31 = h3_own3;
-#line 17528 "main.c"
-    hero_str_decref(t31);
-#line 167 "<heroes library>"
-    t32 = h4_own4;
-#line 17532 "main.c"
-    h_0opt_f87774a_release(&t32);
-#line 167 "<heroes library>"
-    t33 = h5_own5;
-#line 17536 "main.c"
     hero_str_decref(t33);
-#line 167 "<heroes library>"
-    t34 = h6_own6;
-#line 17540 "main.c"
-    h_0opt_f87774a_release(&t34);
-#line 167 "<heroes library>"
-    t35 = h7_own7;
-#line 17544 "main.c"
-    hero_str_decref(t35);
-#line 167 "<heroes library>"
-    t36 = h8_own8;
-#line 17548 "main.c"
-    h_0opt_f87774a_release(&t36);
+#line 168 "<heroes library>"
+    t34 = h2_text;
+#line 17528 "main.c"
+    hero_str_incref(t4);
+#line 168 "<heroes library>"
+    h2_text = t4;
+#line 17532 "main.c"
+    hero_str_decref(t34);
+#line 169 "<heroes library>"
+    t5 = h1_status;
+#line 169 "<heroes library>"
+    t6 = h_library_HERO_OS_OK();
+#line 169 "<heroes library>"
+    t7 = t5 == t6;
+#line 169 "<heroes library>"
+    if (t7) goto bb2; else goto bb3;
+#line 169 "<heroes library>"
+bb1:
+#line 171 "<heroes library>"
+    t10 = h1_status;
+#line 171 "<heroes library>"
+    t11 = h_library_HERO_OS_NOT_FOUND();
+#line 171 "<heroes library>"
+    t12 = t10 == t11;
+#line 171 "<heroes library>"
+    if (t12) goto bb5; else goto bb6;
+#line 171 "<heroes library>"
+bb2:
+#line 170 "<heroes library>"
+    t8 = h2_text;
+#line 17556 "main.c"
+    hero_str_incref(t8);
+#line 170 "<heroes library>"
+    t9 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t8};
+#line 170 "<heroes library>"
+    t35 = h4_own4;
+#line 170 "<heroes library>"
+    h4_own4 = t9;
+#line 17564 "main.c"
+    h_0opt_f87774a_release(&t35);
+#line 170 "<heroes library>"
+#line 17567 "main.c"
+    h_0opt_f87774a_retain(&t9);
+#line 170 "<heroes library>"
+    t43 = h2_text;
+#line 17571 "main.c"
+    hero_str_decref(t43);
+#line 170 "<heroes library>"
+    t44 = h3_own3;
+#line 17575 "main.c"
+    hero_str_decref(t44);
+#line 170 "<heroes library>"
+    t45 = h4_own4;
+#line 17579 "main.c"
+    h_0opt_f87774a_release(&t45);
+#line 170 "<heroes library>"
+    t46 = h5_own5;
+#line 17583 "main.c"
+    hero_str_decref(t46);
+#line 170 "<heroes library>"
+    t47 = h6_own6;
+#line 17587 "main.c"
+    h_0opt_f87774a_release(&t47);
+#line 170 "<heroes library>"
+    t48 = h7_own7;
+#line 17591 "main.c"
+    hero_str_decref(t48);
+#line 170 "<heroes library>"
+    t49 = h8_own8;
+#line 17595 "main.c"
+    h_0opt_f87774a_release(&t49);
+#line 170 "<heroes library>"
+    t50 = h9_own9;
+#line 17599 "main.c"
+    hero_str_decref(t50);
+#line 170 "<heroes library>"
+    t51 = h10_own10;
+#line 17603 "main.c"
+    hero_str_decref(t51);
+#line 170 "<heroes library>"
+    t52 = h11_own11;
+#line 17607 "main.c"
+    h_0opt_f87774a_release(&t52);
     return t9;
 bb3:
     goto bb1;
 bb4:
-#line 170 "<heroes library>"
-    t18 = HERO_STR_LIT(hero_str_3e46668);
-#line 170 "<heroes library>"
-    t19 = HERO_STR_LIT(hero_str_b908f30);
-#line 170 "<heroes library>"
-    t20 = h0_path;
-#line 170 "<heroes library>"
-    t21 = hero_str_concat(t19, t20);
-#line 170 "<heroes library>"
-    t26 = h5_own5;
-#line 170 "<heroes library>"
-    h5_own5 = t21;
-#line 17566 "main.c"
-    hero_str_decref(t26);
-#line 170 "<heroes library>"
-#line 17569 "main.c"
-    hero_str_incref(t18);
-#line 170 "<heroes library>"
-#line 17572 "main.c"
-    hero_str_incref(t21);
-#line 170 "<heroes library>"
-    t22 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t18, .msg = t21}};
-#line 170 "<heroes library>"
-    t27 = h6_own6;
-#line 170 "<heroes library>"
-    h6_own6 = t22;
-#line 17580 "main.c"
-    h_0opt_f87774a_release(&t27);
-#line 170 "<heroes library>"
-#line 17583 "main.c"
-    h_0opt_f87774a_retain(&t22);
-#line 170 "<heroes library>"
-    t37 = h2_text;
-#line 17587 "main.c"
-    hero_str_decref(t37);
-#line 170 "<heroes library>"
-    t38 = h3_own3;
-#line 17591 "main.c"
-    hero_str_decref(t38);
-#line 170 "<heroes library>"
-    t39 = h4_own4;
-#line 17595 "main.c"
-    h_0opt_f87774a_release(&t39);
-#line 170 "<heroes library>"
-    t40 = h5_own5;
-#line 17599 "main.c"
-    hero_str_decref(t40);
-#line 170 "<heroes library>"
-    t41 = h6_own6;
-#line 17603 "main.c"
-    h_0opt_f87774a_release(&t41);
-#line 170 "<heroes library>"
-    t42 = h7_own7;
-#line 17607 "main.c"
-    hero_str_decref(t42);
-#line 170 "<heroes library>"
-    t43 = h8_own8;
-#line 17611 "main.c"
-    h_0opt_f87774a_release(&t43);
-    return t22;
+#line 176 "<heroes library>"
+    t18 = h1_status;
+#line 176 "<heroes library>"
+    t19 = h_library_HERO_OS_NOT_TEXT();
+#line 176 "<heroes library>"
+    t20 = t18 == t19;
+#line 176 "<heroes library>"
+    if (t20) goto bb8; else goto bb9;
+#line 176 "<heroes library>"
 bb5:
-#line 169 "<heroes library>"
+#line 172 "<heroes library>"
     t13 = HERO_STR_LIT(hero_str_5b56e076);
-#line 169 "<heroes library>"
+#line 172 "<heroes library>"
     t14 = HERO_STR_LIT(hero_str_2ae119c5);
-#line 169 "<heroes library>"
+#line 172 "<heroes library>"
     t15 = h0_path;
-#line 169 "<heroes library>"
+#line 172 "<heroes library>"
     t16 = hero_str_concat(t14, t15);
-#line 169 "<heroes library>"
-    t28 = h7_own7;
-#line 169 "<heroes library>"
-    h7_own7 = t16;
-#line 17627 "main.c"
-    hero_str_decref(t28);
-#line 169 "<heroes library>"
-#line 17630 "main.c"
+#line 172 "<heroes library>"
+    t36 = h5_own5;
+#line 172 "<heroes library>"
+    h5_own5 = t16;
+#line 17635 "main.c"
+    hero_str_decref(t36);
+#line 172 "<heroes library>"
+#line 17638 "main.c"
     hero_str_incref(t13);
-#line 169 "<heroes library>"
-#line 17633 "main.c"
-    hero_str_incref(t16);
-#line 169 "<heroes library>"
-    t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t13, .msg = t16}};
-#line 169 "<heroes library>"
-    t29 = h8_own8;
-#line 169 "<heroes library>"
-    h8_own8 = t17;
+#line 172 "<heroes library>"
 #line 17641 "main.c"
-    h_0opt_f87774a_release(&t29);
-#line 169 "<heroes library>"
-#line 17644 "main.c"
-    h_0opt_f87774a_retain(&t17);
-#line 169 "<heroes library>"
-    t44 = h2_text;
-#line 17648 "main.c"
-    hero_str_decref(t44);
-#line 169 "<heroes library>"
-    t45 = h3_own3;
+    hero_str_incref(t16);
+#line 172 "<heroes library>"
+    t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t13, .msg = t16}};
+#line 172 "<heroes library>"
+    t37 = h6_own6;
+#line 172 "<heroes library>"
+    h6_own6 = t17;
+#line 17649 "main.c"
+    h_0opt_f87774a_release(&t37);
+#line 172 "<heroes library>"
 #line 17652 "main.c"
-    hero_str_decref(t45);
-#line 169 "<heroes library>"
-    t46 = h4_own4;
+    h_0opt_f87774a_retain(&t17);
+#line 172 "<heroes library>"
+    t53 = h2_text;
 #line 17656 "main.c"
-    h_0opt_f87774a_release(&t46);
-#line 169 "<heroes library>"
-    t47 = h5_own5;
+    hero_str_decref(t53);
+#line 172 "<heroes library>"
+    t54 = h3_own3;
 #line 17660 "main.c"
-    hero_str_decref(t47);
-#line 169 "<heroes library>"
-    t48 = h6_own6;
+    hero_str_decref(t54);
+#line 172 "<heroes library>"
+    t55 = h4_own4;
 #line 17664 "main.c"
-    h_0opt_f87774a_release(&t48);
-#line 169 "<heroes library>"
-    t49 = h7_own7;
+    h_0opt_f87774a_release(&t55);
+#line 172 "<heroes library>"
+    t56 = h5_own5;
 #line 17668 "main.c"
-    hero_str_decref(t49);
-#line 169 "<heroes library>"
-    t50 = h8_own8;
+    hero_str_decref(t56);
+#line 172 "<heroes library>"
+    t57 = h6_own6;
 #line 17672 "main.c"
-    h_0opt_f87774a_release(&t50);
+    h_0opt_f87774a_release(&t57);
+#line 172 "<heroes library>"
+    t58 = h7_own7;
+#line 17676 "main.c"
+    hero_str_decref(t58);
+#line 172 "<heroes library>"
+    t59 = h8_own8;
+#line 17680 "main.c"
+    h_0opt_f87774a_release(&t59);
+#line 172 "<heroes library>"
+    t60 = h9_own9;
+#line 17684 "main.c"
+    hero_str_decref(t60);
+#line 172 "<heroes library>"
+    t61 = h10_own10;
+#line 17688 "main.c"
+    hero_str_decref(t61);
+#line 172 "<heroes library>"
+    t62 = h11_own11;
+#line 17692 "main.c"
+    h_0opt_f87774a_release(&t62);
     return t17;
 bb6:
     goto bb4;
+bb7:
+#line 178 "<heroes library>"
+    t28 = HERO_STR_LIT(hero_str_3e46668);
+#line 178 "<heroes library>"
+    t29 = HERO_STR_LIT(hero_str_b908f30);
+#line 178 "<heroes library>"
+    t30 = h0_path;
+#line 178 "<heroes library>"
+    t31 = hero_str_concat(t29, t30);
+#line 178 "<heroes library>"
+    t38 = h7_own7;
+#line 178 "<heroes library>"
+    h7_own7 = t31;
+#line 17710 "main.c"
+    hero_str_decref(t38);
+#line 178 "<heroes library>"
+#line 17713 "main.c"
+    hero_str_incref(t28);
+#line 178 "<heroes library>"
+#line 17716 "main.c"
+    hero_str_incref(t31);
+#line 178 "<heroes library>"
+    t32 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t28, .msg = t31}};
+#line 178 "<heroes library>"
+    t39 = h8_own8;
+#line 178 "<heroes library>"
+    h8_own8 = t32;
+#line 17724 "main.c"
+    h_0opt_f87774a_release(&t39);
+#line 178 "<heroes library>"
+#line 17727 "main.c"
+    h_0opt_f87774a_retain(&t32);
+#line 178 "<heroes library>"
+    t63 = h2_text;
+#line 17731 "main.c"
+    hero_str_decref(t63);
+#line 178 "<heroes library>"
+    t64 = h3_own3;
+#line 17735 "main.c"
+    hero_str_decref(t64);
+#line 178 "<heroes library>"
+    t65 = h4_own4;
+#line 17739 "main.c"
+    h_0opt_f87774a_release(&t65);
+#line 178 "<heroes library>"
+    t66 = h5_own5;
+#line 17743 "main.c"
+    hero_str_decref(t66);
+#line 178 "<heroes library>"
+    t67 = h6_own6;
+#line 17747 "main.c"
+    h_0opt_f87774a_release(&t67);
+#line 178 "<heroes library>"
+    t68 = h7_own7;
+#line 17751 "main.c"
+    hero_str_decref(t68);
+#line 178 "<heroes library>"
+    t69 = h8_own8;
+#line 17755 "main.c"
+    h_0opt_f87774a_release(&t69);
+#line 178 "<heroes library>"
+    t70 = h9_own9;
+#line 17759 "main.c"
+    hero_str_decref(t70);
+#line 178 "<heroes library>"
+    t71 = h10_own10;
+#line 17763 "main.c"
+    hero_str_decref(t71);
+#line 178 "<heroes library>"
+    t72 = h11_own11;
+#line 17767 "main.c"
+    h_0opt_f87774a_release(&t72);
+    return t32;
+bb8:
+#line 177 "<heroes library>"
+    t21 = HERO_STR_LIT(hero_str_34624695);
+#line 177 "<heroes library>"
+    t22 = HERO_STR_LIT(hero_str_d028710);
+#line 177 "<heroes library>"
+    t23 = h0_path;
+#line 177 "<heroes library>"
+    t24 = hero_str_concat(t22, t23);
+#line 177 "<heroes library>"
+    t40 = h9_own9;
+#line 177 "<heroes library>"
+    h9_own9 = t24;
+#line 17783 "main.c"
+    hero_str_decref(t40);
+#line 177 "<heroes library>"
+    t25 = HERO_STR_LIT(hero_str_612f4355);
+#line 177 "<heroes library>"
+    t26 = hero_str_concat(t24, t25);
+#line 177 "<heroes library>"
+    t41 = h10_own10;
+#line 177 "<heroes library>"
+    h10_own10 = t26;
+#line 17793 "main.c"
+    hero_str_decref(t41);
+#line 177 "<heroes library>"
+#line 17796 "main.c"
+    hero_str_incref(t21);
+#line 177 "<heroes library>"
+#line 17799 "main.c"
+    hero_str_incref(t26);
+#line 177 "<heroes library>"
+    t27 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t21, .msg = t26}};
+#line 177 "<heroes library>"
+    t42 = h11_own11;
+#line 177 "<heroes library>"
+    h11_own11 = t27;
+#line 17807 "main.c"
+    h_0opt_f87774a_release(&t42);
+#line 177 "<heroes library>"
+#line 17810 "main.c"
+    h_0opt_f87774a_retain(&t27);
+#line 177 "<heroes library>"
+    t73 = h2_text;
+#line 17814 "main.c"
+    hero_str_decref(t73);
+#line 177 "<heroes library>"
+    t74 = h3_own3;
+#line 17818 "main.c"
+    hero_str_decref(t74);
+#line 177 "<heroes library>"
+    t75 = h4_own4;
+#line 17822 "main.c"
+    h_0opt_f87774a_release(&t75);
+#line 177 "<heroes library>"
+    t76 = h5_own5;
+#line 17826 "main.c"
+    hero_str_decref(t76);
+#line 177 "<heroes library>"
+    t77 = h6_own6;
+#line 17830 "main.c"
+    h_0opt_f87774a_release(&t77);
+#line 177 "<heroes library>"
+    t78 = h7_own7;
+#line 17834 "main.c"
+    hero_str_decref(t78);
+#line 177 "<heroes library>"
+    t79 = h8_own8;
+#line 17838 "main.c"
+    h_0opt_f87774a_release(&t79);
+#line 177 "<heroes library>"
+    t80 = h9_own9;
+#line 17842 "main.c"
+    hero_str_decref(t80);
+#line 177 "<heroes library>"
+    t81 = h10_own10;
+#line 17846 "main.c"
+    hero_str_decref(t81);
+#line 177 "<heroes library>"
+    t82 = h11_own11;
+#line 17850 "main.c"
+    h_0opt_f87774a_release(&t82);
+    return t27;
+bb9:
+    goto bb7;
 }
 
-#line 180 "<heroes library>"
+#line 188 "<heroes library>"
 HeroArrayHeader * h_library_args(void) {
-#line 17681 "main.c"
+#line 17859 "main.c"
     HeroArrayHeader * h0_out = {0};
     int64_t h1_i;
     HeroArrayHeader * h2_own2 = {0};
@@ -17701,96 +17879,96 @@ HeroArrayHeader * h_library_args(void) {
     HeroStr t19 = {0};
     goto bb0;
 bb0:
-#line 181 "<heroes library>"
+#line 189 "<heroes library>"
     t1 = hero_array_new(&hero_desc_str, 1);
-#line 181 "<heroes library>"
+#line 189 "<heroes library>"
     t14 = h2_own2;
-#line 181 "<heroes library>"
+#line 189 "<heroes library>"
     h2_own2 = t1;
-#line 17711 "main.c"
+#line 17889 "main.c"
     hero_array_decref(t14);
-#line 181 "<heroes library>"
+#line 189 "<heroes library>"
     t15 = h0_out;
-#line 17715 "main.c"
+#line 17893 "main.c"
     hero_array_incref(t1);
-#line 181 "<heroes library>"
+#line 189 "<heroes library>"
     h0_out = t1;
-#line 17719 "main.c"
+#line 17897 "main.c"
     hero_array_decref(t15);
-#line 182 "<heroes library>"
+#line 190 "<heroes library>"
     t2 = INT64_C(0);
-#line 182 "<heroes library>"
+#line 190 "<heroes library>"
     h1_i = t2;
-#line 182 "<heroes library>"
+#line 190 "<heroes library>"
     goto bb1;
-#line 182 "<heroes library>"
+#line 190 "<heroes library>"
 bb1:
-#line 183 "<heroes library>"
+#line 191 "<heroes library>"
     t3 = h1_i;
-#line 183 "<heroes library>"
+#line 191 "<heroes library>"
     t4 = hero_args_count();
-#line 183 "<heroes library>"
+#line 191 "<heroes library>"
     t5 = t3 < t4;
-#line 183 "<heroes library>"
+#line 191 "<heroes library>"
     if (t5) goto bb2; else goto bb3;
-#line 183 "<heroes library>"
+#line 191 "<heroes library>"
 bb2:
-#line 184 "<heroes library>"
+#line 192 "<heroes library>"
     t7 = h1_i;
-#line 184 "<heroes library>"
+#line 192 "<heroes library>"
     t8 = hero_args_at(t7);
-#line 184 "<heroes library>"
+#line 192 "<heroes library>"
     t16 = h3_own3;
-#line 184 "<heroes library>"
+#line 192 "<heroes library>"
     h3_own3 = t8;
-#line 17747 "main.c"
+#line 17925 "main.c"
     hero_str_decref(t16);
-#line 184 "<heroes library>"
+#line 192 "<heroes library>"
     hero_array_push_owned(&h0_out, &t8);
-#line 185 "<heroes library>"
+#line 193 "<heroes library>"
     t10 = h1_i;
-#line 185 "<heroes library>"
+#line 193 "<heroes library>"
     t11 = INT64_C(1);
-#line 185 "<heroes library>"
+#line 193 "<heroes library>"
     if (__builtin_add_overflow(t10, t11, &t12)) hero_panic_overflow();
-#line 185 "<heroes library>"
+#line 193 "<heroes library>"
     h1_i = t12;
-#line 185 "<heroes library>"
+#line 193 "<heroes library>"
     goto bb1;
-#line 185 "<heroes library>"
+#line 193 "<heroes library>"
 bb3:
-#line 186 "<heroes library>"
+#line 194 "<heroes library>"
     t13 = h0_out;
-#line 17765 "main.c"
+#line 17943 "main.c"
     hero_array_incref(t13);
-#line 186 "<heroes library>"
+#line 194 "<heroes library>"
     t17 = h0_out;
-#line 17769 "main.c"
+#line 17947 "main.c"
     hero_array_decref(t17);
-#line 186 "<heroes library>"
+#line 194 "<heroes library>"
     t18 = h2_own2;
-#line 17773 "main.c"
+#line 17951 "main.c"
     hero_array_decref(t18);
-#line 186 "<heroes library>"
+#line 194 "<heroes library>"
     t19 = h3_own3;
-#line 17777 "main.c"
+#line 17955 "main.c"
     hero_str_decref(t19);
     return t13;
 }
 
-#line 211 "<heroes library>"
+#line 219 "<heroes library>"
 void h_library_exit(int64_t h0_code) {
-#line 17784 "main.c"
+#line 17962 "main.c"
     int64_t t1;
     goto bb0;
 bb0:
-#line 212 "<heroes library>"
+#line 220 "<heroes library>"
     t1 = h0_code;
-#line 212 "<heroes library>"
+#line 220 "<heroes library>"
     (void)hero_exit(t1);
-#line 212 "<heroes library>"
+#line 220 "<heroes library>"
     return;
-#line 17794 "main.c"
+#line 17972 "main.c"
 }
 HERO_TU_LOCAL void h_assemble_Assembled_retain(const h_assemble_Assembled *v) {
     hero_array_incref(v->f_code);

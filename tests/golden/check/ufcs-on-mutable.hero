@@ -1,0 +1,17 @@
+# UFCS does not apply when the first parameter is `@` (spec § Functions and
+# calls): `c.bump()` would hide the mutation the marker exists to show, so the
+# call is written `bump(@c)`. A thesis rule (`--permissive` drops it) with no
+# golden under `check/` until 2026-09-03 — sweep 001's audit S13 asked that
+# every code the measurement counts have a witness in the corpus, and this is
+# `ufcs_on_mutable`'s.
+record Counter
+    n: i64
+
+function bump(@c: Counter)
+    c.n @ c.n + 1
+
+function main()
+    c: Counter @ Counter(n: 0)
+    c.bump()  #~ ufcs_on_mutable
+    bump(@c)
+    print(c.n)

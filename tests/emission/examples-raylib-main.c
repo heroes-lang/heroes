@@ -92,6 +92,8 @@ _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
+_Static_assert(HERO_RET_INT(HERO_OS_NOT_TEXT), "heroes-ffi-return HERO_OS_NOT_TEXT i64");
+_Static_assert(__builtin_constant_p(HERO_OS_NOT_TEXT), "heroes-ffi-const HERO_OS_NOT_TEXT");
 _Static_assert(HERO_RET_STR(hero_file_read(0, 0)), "heroes-ffi-return hero_file_read str");
 _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
@@ -119,19 +121,19 @@ __attribute__((unused)) static void hero_ffi_probe_h_main_ColorAlpha(Color a0, f
 __attribute__((unused)) static void hero_ffi_probe_h_main_GetSplinePointLinear(Vector2 a0, Vector2 a1, float a2) { (void)(GetSplinePointLinear)(a0, a1, a2); }
 #line 84 "examples/raylib/main.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_main_CheckCollisionPointRec(Vector2 a0, Rectangle a1) { (void)(CheckCollisionPointRec)(a0, a1); }
-#line 111 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
 #line 112 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
+#line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
-#line 114 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 115 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 116 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 122 "<heroes library>"
+#line 123 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 134 "main.c"
+#line 136 "main.c"
 #pragma clang diagnostic pop
 
 HERO_STR_STATIC(hero_str_106b1639, "raylib answered ");
@@ -173,7 +175,7 @@ void h_main_main(void);
 
 #line 103 "examples/raylib/main.hero"
 void h_main_main(void) {
-#line 176 "main.c"
+#line 178 "main.c"
     Color h0_red;
     Vector2 h1_mid;
     AutomationEvent h2_event;
@@ -388,7 +390,7 @@ bb0:
     hero_print_end();
 #line 125 "examples/raylib/main.hero"
     return;
-#line 391 "main.c"
+#line 393 "main.c"
 }
 HERO_TU_LOCAL bool h_main_Color_eq(const Color *a, const Color *b) {
     if (!(a->r == b->r)) return false;

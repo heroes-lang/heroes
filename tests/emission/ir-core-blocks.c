@@ -29,6 +29,8 @@ _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
+_Static_assert(HERO_RET_INT(HERO_OS_NOT_TEXT), "heroes-ffi-return HERO_OS_NOT_TEXT i64");
+_Static_assert(__builtin_constant_p(HERO_OS_NOT_TEXT), "heroes-ffi-const HERO_OS_NOT_TEXT");
 _Static_assert(HERO_RET_STR(hero_file_read(0, 0)), "heroes-ffi-return hero_file_read str");
 _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
@@ -39,25 +41,25 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 43 "coreblocks.c"
+#line 45 "coreblocks.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
-#line 111 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
 #line 112 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
+#line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
-#line 114 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 115 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 116 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 122 "<heroes library>"
+#line 123 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 61 "coreblocks.c"
+#line 63 "coreblocks.c"
 #pragma clang diagnostic pop
 
 HERO_STR_STATIC(hero_str_1073a930, "zero");
@@ -93,7 +95,7 @@ HeroStr h_coreblocks_named(int64_t h0_n);
 
 #line 5 "tests/golden/ir/core-blocks.hero"
 int64_t h_coreblocks_first_even_after(HeroArrayHeader * h0_xs, int64_t h1_floor) {
-#line 97 "coreblocks.c"
+#line 99 "coreblocks.c"
     int64_t h2_i;
     int64_t h3_v;
     int64_t t1;
@@ -215,12 +217,12 @@ bb8:
 bb9:
 #line 16 "tests/golden/ir/core-blocks.hero"
     goto bb7;
-#line 219 "coreblocks.c"
+#line 221 "coreblocks.c"
 }
 
 #line 21 "tests/golden/ir/core-blocks.hero"
 HeroStr h_coreblocks_named(int64_t h0_n) {
-#line 224 "coreblocks.c"
+#line 226 "coreblocks.c"
     int64_t h1_s0;
     HeroStr h2_r0 = {0};
     int64_t t1;
@@ -256,11 +258,11 @@ bb0:
 bb1:
 #line 22 "tests/golden/ir/core-blocks.hero"
     t11 = h2_r0;
-#line 260 "coreblocks.c"
+#line 262 "coreblocks.c"
     hero_str_incref(t11);
 #line 22 "tests/golden/ir/core-blocks.hero"
     t15 = h2_r0;
-#line 264 "coreblocks.c"
+#line 266 "coreblocks.c"
     hero_str_decref(t15);
     return t11;
 bb2:
@@ -268,11 +270,11 @@ bb2:
     t8 = HERO_STR_LIT(hero_str_1073a930);
 #line 22 "tests/golden/ir/core-blocks.hero"
     t12 = h2_r0;
-#line 272 "coreblocks.c"
+#line 274 "coreblocks.c"
     hero_str_incref(t8);
 #line 22 "tests/golden/ir/core-blocks.hero"
     h2_r0 = t8;
-#line 276 "coreblocks.c"
+#line 278 "coreblocks.c"
     hero_str_decref(t12);
     goto bb1;
 bb3:
@@ -290,11 +292,11 @@ bb4:
     t9 = HERO_STR_LIT(hero_str_1d4996);
 #line 22 "tests/golden/ir/core-blocks.hero"
     t13 = h2_r0;
-#line 294 "coreblocks.c"
+#line 296 "coreblocks.c"
     hero_str_incref(t9);
 #line 22 "tests/golden/ir/core-blocks.hero"
     h2_r0 = t9;
-#line 298 "coreblocks.c"
+#line 300 "coreblocks.c"
     hero_str_decref(t13);
     goto bb1;
 bb5:
@@ -304,11 +306,11 @@ bb6:
     t10 = HERO_STR_LIT(hero_str_eb4aa2b);
 #line 22 "tests/golden/ir/core-blocks.hero"
     t14 = h2_r0;
-#line 308 "coreblocks.c"
+#line 310 "coreblocks.c"
     hero_str_incref(t10);
 #line 22 "tests/golden/ir/core-blocks.hero"
     h2_r0 = t10;
-#line 312 "coreblocks.c"
+#line 314 "coreblocks.c"
     hero_str_decref(t14);
     goto bb1;
 }

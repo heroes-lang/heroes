@@ -32,6 +32,8 @@ _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
+_Static_assert(HERO_RET_INT(HERO_OS_NOT_TEXT), "heroes-ffi-return HERO_OS_NOT_TEXT i64");
+_Static_assert(__builtin_constant_p(HERO_OS_NOT_TEXT), "heroes-ffi-const HERO_OS_NOT_TEXT");
 _Static_assert(HERO_RET_STR(hero_file_read(0, 0)), "heroes-ffi-return hero_file_read str");
 _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
@@ -42,25 +44,25 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 46 "main.c"
+#line 48 "main.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
-#line 111 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
 #line 112 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
+#line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
-#line 114 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 115 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 116 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 122 "<heroes library>"
+#line 123 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 64 "main.c"
+#line 66 "main.c"
 #pragma clang diagnostic pop
 
 HERO_STR_STATIC(hero_str_32e30c02, "sdl3 named its build: ");
@@ -101,7 +103,7 @@ h_0opt_f87774a h_library_validated(const char * h0_c);
 
 #line 52 "examples/sdl/main.hero"
 void h_main_main(void) {
-#line 105 "main.c"
+#line 107 "main.c"
     h_0opt_f87774a h0_f0 = {0};
     HeroStr h1_r0 = {0};
     h_0opt_f87774a h2_own2 = {0};
@@ -142,15 +144,15 @@ bb0:
     t19 = h2_own2;
 #line 56 "examples/sdl/main.hero"
     h2_own2 = t3;
-#line 146 "main.c"
+#line 148 "main.c"
     h_0opt_f87774a_release(&t19);
 #line 56 "examples/sdl/main.hero"
     t20 = h0_f0;
-#line 150 "main.c"
+#line 152 "main.c"
     h_0opt_f87774a_retain(&t3);
 #line 56 "examples/sdl/main.hero"
     h0_f0 = t3;
-#line 154 "main.c"
+#line 156 "main.c"
     h_0opt_f87774a_release(&t20);
 #line 56 "examples/sdl/main.hero"
     t4 = h0_f0;
@@ -170,11 +172,11 @@ bb1:
     t9 = t8.as.ok;
 #line 56 "examples/sdl/main.hero"
     t21 = h1_r0;
-#line 174 "main.c"
+#line 176 "main.c"
     hero_str_incref(t9);
 #line 56 "examples/sdl/main.hero"
     h1_r0 = t9;
-#line 178 "main.c"
+#line 180 "main.c"
     hero_str_decref(t21);
     goto bb3;
 bb2:
@@ -182,11 +184,11 @@ bb2:
     t10 = HERO_STR_LIT(hero_str_0);
 #line 56 "examples/sdl/main.hero"
     t22 = h1_r0;
-#line 186 "main.c"
+#line 188 "main.c"
     hero_str_incref(t10);
 #line 56 "examples/sdl/main.hero"
     h1_r0 = t10;
-#line 190 "main.c"
+#line 192 "main.c"
     hero_str_decref(t22);
     goto bb3;
 bb3:
@@ -220,28 +222,28 @@ bb3:
     hero_print_end();
 #line 61 "examples/sdl/main.hero"
     t23 = h0_f0;
-#line 224 "main.c"
+#line 226 "main.c"
     h_0opt_f87774a_release(&t23);
 #line 61 "examples/sdl/main.hero"
     t24 = h1_r0;
-#line 228 "main.c"
+#line 230 "main.c"
     hero_str_decref(t24);
 #line 61 "examples/sdl/main.hero"
     t25 = h2_own2;
-#line 232 "main.c"
+#line 234 "main.c"
     h_0opt_f87774a_release(&t25);
     return;
 }
 
-#line 121 "<heroes library>"
+#line 122 "<heroes library>"
 int64_t h_library_HERO_STR_OK(void) {
-#line 239 "main.c"
+#line 241 "main.c"
     return HERO_STR_OK;
 }
 
-#line 151 "<heroes library>"
+#line 152 "<heroes library>"
 h_0opt_f87774a h_library_validated(const char * h0_c) {
-#line 245 "main.c"
+#line 247 "main.c"
     int64_t h1_status;
     HeroStr h2_text = {0};
     HeroStr h3_own3 = {0};
@@ -287,168 +289,168 @@ h_0opt_f87774a h_library_validated(const char * h0_c) {
     h_0opt_f87774a t37 = {0};
     goto bb0;
 bb0:
-#line 152 "<heroes library>"
+#line 153 "<heroes library>"
     t1 = h0_c;
-#line 152 "<heroes library>"
+#line 153 "<heroes library>"
     t2 = ((void *)0);
-#line 152 "<heroes library>"
+#line 153 "<heroes library>"
     t3 = t1 == t2;
-#line 152 "<heroes library>"
+#line 153 "<heroes library>"
     if (t3) goto bb2; else goto bb3;
-#line 152 "<heroes library>"
+#line 153 "<heroes library>"
 bb1:
-#line 154 "<heroes library>"
+#line 155 "<heroes library>"
     t7 = INT64_C(0);
-#line 154 "<heroes library>"
+#line 155 "<heroes library>"
     h1_status = t7;
-#line 155 "<heroes library>"
+#line 156 "<heroes library>"
     t8 = h0_c;
-#line 155 "<heroes library>"
+#line 156 "<heroes library>"
     t9 = hero_str_try_from_cstr(hero_cstr_nonnull(t8), (void *)&h1_status);
-#line 155 "<heroes library>"
+#line 156 "<heroes library>"
     t18 = h3_own3;
-#line 155 "<heroes library>"
+#line 156 "<heroes library>"
     h3_own3 = t9;
-#line 313 "main.c"
+#line 315 "main.c"
     hero_str_decref(t18);
-#line 155 "<heroes library>"
+#line 156 "<heroes library>"
     t19 = h2_text;
-#line 317 "main.c"
+#line 319 "main.c"
     hero_str_incref(t9);
-#line 155 "<heroes library>"
+#line 156 "<heroes library>"
     h2_text = t9;
-#line 321 "main.c"
+#line 323 "main.c"
     hero_str_decref(t19);
-#line 156 "<heroes library>"
+#line 157 "<heroes library>"
     t10 = h1_status;
-#line 156 "<heroes library>"
+#line 157 "<heroes library>"
     t11 = h_library_HERO_STR_OK();
-#line 156 "<heroes library>"
+#line 157 "<heroes library>"
     t12 = t10 == t11;
-#line 156 "<heroes library>"
+#line 157 "<heroes library>"
     if (t12) goto bb5; else goto bb6;
-#line 156 "<heroes library>"
+#line 157 "<heroes library>"
 bb2:
-#line 153 "<heroes library>"
+#line 154 "<heroes library>"
     t4 = HERO_STR_LIT(hero_str_4a05a740);
-#line 153 "<heroes library>"
+#line 154 "<heroes library>"
     t5 = HERO_STR_LIT(hero_str_5263489);
-#line 337 "main.c"
+#line 339 "main.c"
     hero_str_incref(t4);
-#line 153 "<heroes library>"
-#line 340 "main.c"
+#line 154 "<heroes library>"
+#line 342 "main.c"
     hero_str_incref(t5);
-#line 153 "<heroes library>"
+#line 154 "<heroes library>"
     t6 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t4, .msg = t5}};
-#line 153 "<heroes library>"
+#line 154 "<heroes library>"
     t20 = h4_own4;
-#line 153 "<heroes library>"
+#line 154 "<heroes library>"
     h4_own4 = t6;
-#line 348 "main.c"
+#line 350 "main.c"
     h_0opt_f87774a_release(&t20);
-#line 153 "<heroes library>"
-#line 351 "main.c"
+#line 154 "<heroes library>"
+#line 353 "main.c"
     h_0opt_f87774a_retain(&t6);
-#line 153 "<heroes library>"
+#line 154 "<heroes library>"
     t23 = h2_text;
-#line 355 "main.c"
+#line 357 "main.c"
     hero_str_decref(t23);
-#line 153 "<heroes library>"
+#line 154 "<heroes library>"
     t24 = h3_own3;
-#line 359 "main.c"
+#line 361 "main.c"
     hero_str_decref(t24);
-#line 153 "<heroes library>"
+#line 154 "<heroes library>"
     t25 = h4_own4;
-#line 363 "main.c"
+#line 365 "main.c"
     h_0opt_f87774a_release(&t25);
-#line 153 "<heroes library>"
+#line 154 "<heroes library>"
     t26 = h5_own5;
-#line 367 "main.c"
+#line 369 "main.c"
     h_0opt_f87774a_release(&t26);
-#line 153 "<heroes library>"
+#line 154 "<heroes library>"
     t27 = h6_own6;
-#line 371 "main.c"
+#line 373 "main.c"
     h_0opt_f87774a_release(&t27);
     return t6;
 bb3:
     goto bb1;
 bb4:
-#line 158 "<heroes library>"
+#line 159 "<heroes library>"
     t15 = HERO_STR_LIT(hero_str_34624695);
-#line 158 "<heroes library>"
+#line 159 "<heroes library>"
     t16 = HERO_STR_LIT(hero_str_4bb64adb);
-#line 381 "main.c"
+#line 383 "main.c"
     hero_str_incref(t15);
-#line 158 "<heroes library>"
-#line 384 "main.c"
+#line 159 "<heroes library>"
+#line 386 "main.c"
     hero_str_incref(t16);
-#line 158 "<heroes library>"
+#line 159 "<heroes library>"
     t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}};
-#line 158 "<heroes library>"
+#line 159 "<heroes library>"
     t21 = h5_own5;
-#line 158 "<heroes library>"
+#line 159 "<heroes library>"
     h5_own5 = t17;
-#line 392 "main.c"
+#line 394 "main.c"
     h_0opt_f87774a_release(&t21);
-#line 158 "<heroes library>"
-#line 395 "main.c"
+#line 159 "<heroes library>"
+#line 397 "main.c"
     h_0opt_f87774a_retain(&t17);
-#line 158 "<heroes library>"
+#line 159 "<heroes library>"
     t28 = h2_text;
-#line 399 "main.c"
+#line 401 "main.c"
     hero_str_decref(t28);
-#line 158 "<heroes library>"
+#line 159 "<heroes library>"
     t29 = h3_own3;
-#line 403 "main.c"
+#line 405 "main.c"
     hero_str_decref(t29);
-#line 158 "<heroes library>"
+#line 159 "<heroes library>"
     t30 = h4_own4;
-#line 407 "main.c"
+#line 409 "main.c"
     h_0opt_f87774a_release(&t30);
-#line 158 "<heroes library>"
+#line 159 "<heroes library>"
     t31 = h5_own5;
-#line 411 "main.c"
+#line 413 "main.c"
     h_0opt_f87774a_release(&t31);
-#line 158 "<heroes library>"
+#line 159 "<heroes library>"
     t32 = h6_own6;
-#line 415 "main.c"
+#line 417 "main.c"
     h_0opt_f87774a_release(&t32);
     return t17;
 bb5:
-#line 157 "<heroes library>"
+#line 158 "<heroes library>"
     t13 = h2_text;
-#line 421 "main.c"
+#line 423 "main.c"
     hero_str_incref(t13);
-#line 157 "<heroes library>"
+#line 158 "<heroes library>"
     t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t13};
-#line 157 "<heroes library>"
+#line 158 "<heroes library>"
     t22 = h6_own6;
-#line 157 "<heroes library>"
+#line 158 "<heroes library>"
     h6_own6 = t14;
-#line 429 "main.c"
+#line 431 "main.c"
     h_0opt_f87774a_release(&t22);
-#line 157 "<heroes library>"
-#line 432 "main.c"
+#line 158 "<heroes library>"
+#line 434 "main.c"
     h_0opt_f87774a_retain(&t14);
-#line 157 "<heroes library>"
+#line 158 "<heroes library>"
     t33 = h2_text;
-#line 436 "main.c"
+#line 438 "main.c"
     hero_str_decref(t33);
-#line 157 "<heroes library>"
+#line 158 "<heroes library>"
     t34 = h3_own3;
-#line 440 "main.c"
+#line 442 "main.c"
     hero_str_decref(t34);
-#line 157 "<heroes library>"
+#line 158 "<heroes library>"
     t35 = h4_own4;
-#line 444 "main.c"
+#line 446 "main.c"
     h_0opt_f87774a_release(&t35);
-#line 157 "<heroes library>"
+#line 158 "<heroes library>"
     t36 = h5_own5;
-#line 448 "main.c"
+#line 450 "main.c"
     h_0opt_f87774a_release(&t36);
-#line 157 "<heroes library>"
+#line 158 "<heroes library>"
     t37 = h6_own6;
-#line 452 "main.c"
+#line 454 "main.c"
     h_0opt_f87774a_release(&t37);
     return t14;
 bb6:

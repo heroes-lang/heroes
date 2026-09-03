@@ -29,6 +29,8 @@ _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
+_Static_assert(HERO_RET_INT(HERO_OS_NOT_TEXT), "heroes-ffi-return HERO_OS_NOT_TEXT i64");
+_Static_assert(__builtin_constant_p(HERO_OS_NOT_TEXT), "heroes-ffi-const HERO_OS_NOT_TEXT");
 _Static_assert(HERO_RET_STR(hero_file_read(0, 0)), "heroes-ffi-return hero_file_read str");
 _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
@@ -39,25 +41,25 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 43 "records.c"
+#line 45 "records.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
-#line 111 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
 #line 112 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
+#line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
-#line 114 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 115 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 116 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 122 "<heroes library>"
+#line 123 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 61 "records.c"
+#line 63 "records.c"
 #pragma clang diagnostic pop
 
 typedef struct h_records_Point {
@@ -104,7 +106,7 @@ void h_records_main(void);
 
 #line 18 "tests/golden/run/records.hero"
 int64_t h_records_dist2(h_records_Point h0_a, h_records_Point h1_b) {
-#line 108 "records.c"
+#line 110 "records.c"
     int64_t h2_dx;
     int64_t h3_dy;
     h_records_Point t1;
@@ -166,12 +168,12 @@ bb0:
     if (__builtin_add_overflow(t13, t16, &t17)) hero_panic_overflow();
 #line 21 "tests/golden/run/records.hero"
     return t17;
-#line 170 "records.c"
+#line 172 "records.c"
 }
 
 #line 23 "tests/golden/run/records.hero"
 h_records_Point h_records_moved(h_records_Point h0_p) {
-#line 175 "records.c"
+#line 177 "records.c"
     h_records_Point t1;
     int64_t t2;
     int64_t t3;
@@ -197,12 +199,12 @@ bb0:
     t7 = (h_records_Point){.f_x = t4, .f_y = t6};
 #line 24 "tests/golden/run/records.hero"
     return t7;
-#line 201 "records.c"
+#line 203 "records.c"
 }
 
 #line 26 "tests/golden/run/records.hero"
 void h_records_main(void) {
-#line 206 "records.c"
+#line 208 "records.c"
     h_records_Point h0_p;
     h_records_Point h1_q;
     h_records_Pair h2_both;
@@ -377,7 +379,7 @@ bb0:
     hero_print_end();
 #line 47 "tests/golden/run/records.hero"
     return;
-#line 381 "records.c"
+#line 383 "records.c"
 }
 HERO_TU_LOCAL bool h_records_Point_eq(const h_records_Point *a, const h_records_Point *b) {
     if (!(a->f_x == b->f_x)) return false;
