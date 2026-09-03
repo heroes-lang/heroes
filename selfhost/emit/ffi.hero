@@ -24,6 +24,7 @@ use emit/ctype
 use emit/ffi_lookup
 use emit/ffi_declared
 use emit/ffi_pointee
+use emit/ffi_call
 use emit/ffi_record
 use emit/ffi_field
 use emit/ffi_tag
@@ -59,6 +60,10 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
 
         if !pointed.is_err()
             found @ ffi_lookup.add_once(found, d: pointed.must())
+        shape = ffi_call.call_shape(s, decls, p, line: line)
+
+        if !shape.is_err()
+            found @ ffi_lookup.add_once(found, d: shape.must())
         not_const = ffi_declared.not_constant(s, decls, line: line)
 
         if !not_const.is_err()

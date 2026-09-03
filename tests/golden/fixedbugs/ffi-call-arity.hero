@@ -1,0 +1,24 @@
+# fixedbugs, M-robustness-guards step 3, 2026-09-03 (panel 096 § Q3, sent to
+# the full panel; panel 103 item 5, ratified the same day).
+#
+# SYMPTOM: `extern function strtok(target: cstr, sep: cstr, pad: cstr)` against
+# C11's two-parameter `strtok` was exit 2 — `internal error: compiling the
+# generated C failed` — with clang's `too many arguments to function call,
+# expected 2, have 3` printed three times: at a raw `.c` line, at this
+# declaration and at the call. The compiler blamed itself for the author's
+# count, which is CLAUDE.md §7's named exception being missed: every class
+# recovers a name THIS program declared `extern`.
+#
+# CAUSE: no reader among the twenty claimed clang's arity text, so the failure
+# fell through to exit 2. Panel 096's compiler-engineer refused to mint the
+# 21st `ffi_*` code in the soundness lane, correctly: a diagnostic class is a
+# full-panel path, and panel 103 was that sitting.
+#
+# FIX: `emit/ffi_call.hero` reads the two call-shape texts — arity and a
+# non-literal format string — at the probe's declaration line, and the
+# refusal is `ffi_call_shape` on this line, naming both counts.
+extern "string.h"
+    function strtok(target: cstr, sep: cstr, pad: cstr) -> cstr  #~ ffi_call_shape
+
+function main()
+    print(strtok(target: "a,b".cstr(), sep: ",".cstr(), pad: "".cstr()) == nullptr)

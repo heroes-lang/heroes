@@ -1,0 +1,156 @@
+# A clang complaint about the CALL of an author-declared extern, attributed
+# to the author's line (design.md §4.19; CLAUDE.md §7's named exception;
+# panel 096 § Q3, panel 103 item 5). The 21st `ffi_*` code, minted for two
+# texts and no third.
+#
+# The probe (`extern_probe.hero`) reproduces the call the author's
+# declaration implies, `#line`d at the declaration — so when the declaration
+# is the WRONG SHAPE for the header, clang says so at that line, in words no
+# assertion this compiler writes could carry:
+#
+# - **arity**: `strtok(target: cstr, sep: cstr, pad: cstr)` against a two-
+#   parameter header is `too many arguments to function call, expected 2,
+#   have 3`; the mirror is `too few`. Panel 096 measured it at exit 2, the
+#   compiler blaming itself for the author's count.
+# - **a format string that is not a literal**: `printf(format: cstr)` bound at
+#   ONE parameter and called with a variable is `format string is not a
+#   string literal (potentially insecure)` under `-Wformat-security`, and
+#   clang's own repair is right: bind the arguments the call needs. A
+#   variadic bound at a FIXED arity — `printf(format: cstr, value: i64)`,
+#   `curl_easy_setopt` in `examples/curl` — is legal and stays green: clang
+#   says *too many arguments* only against a non-variadic prototype.
+#
+# Two lines arrive per mistake — the probe's, at the declaration, and the
+# call's, at the call site — and a third, raw `.c` line from the return
+# assertion with no `#line` at all. `extern_at_line` claims the first
+# (only a declaration line has an extern), `add_once` keeps one diagnostic
+# per span, and the raw line fails `location` because its file is not one of
+# this compilation's. Every class recovers a name THIS program declared
+# `extern` (CLAUDE.md §7's narrowing); a call-shape complaint about a name
+# no group declares stays exit 2, the compiler's.
+
+use ast
+use source
+use diag
+use ir/containers
+use emit/ffi_lookup
+use emit/ffi_narrowed
+use parse
+use resolve
+use checker
+use ir/lower
+
+constant TOO_MANY: str
+    "too many arguments to function call"
+
+constant TOO_FEW: str
+    "too few arguments to function call"
+
+constant NOT_A_LITERAL: str
+    "format string is not a string literal"
+
+# `expected N, have M` — clang's own count, read back so the message can
+# say the header's number and the author's.
+record Counts
+    expected: i64
+    have: i64
+
+function counts(text: str) -> Counts?
+    e = ffi_lookup.after(text: text, marker: "expected ")
+
+    if e.is_err()
+        return fail("none", "no count")
+    words = ffi_lookup.words(text: e.must())
+
+    if words.len() < 3
+        return fail("none", "no count")
+    expected = ffi_lookup.number(trim_comma(words[0]))
+    have = ffi_lookup.number(words[2])
+
+    if expected.is_err() || have.is_err()
+        return fail("none", "not numbers")
+    return ok(Counts(expected: expected.must(), have: have.must()))
+
+function trim_comma(text: str) -> str
+    if text.len() > 0 && text[text.len() - 1] == ','
+        return text.slice(from: 0, to: text.len() - 1)
+    return text
+
+# The call's shape disagrees with the header's: arity, or a format string
+# bound so that clang cannot see it is a literal.
+function call_shape(s: source.Source, decls: [ast.Decl], p: containers.Program, line: str) -> diag.Diagnostic?
+    arity = ffi_lookup.has(text: line, needle: TOO_MANY) || ffi_lookup.has(text: line, needle: TOO_FEW)
+    format = ffi_lookup.has(text: line, needle: NOT_A_LITERAL)
+
+    if !arity && !format
+        return fail("none", "not a call-shape line")
+    at = ffi_narrowed.location(s, line: line)
+
+    if at.is_err()
+        return fail("none", "no usable location")
+    found = ffi_narrowed.extern_at_line(p, s, decls, file: at.must().file, at_line: at.must().line)
+
+    if found.is_err()
+        return fail("none", "no extern is declared at that line")
+    name = found.must().name
+    declared = ffi_lookup.declaration(s, decls, name: name)
+
+    if declared.is_err()
+        return fail("none", "no group declares this name")
+    header = declared.must().header
+    span = declared.must().span
+
+    if arity
+        n = counts(at.must().rest)
+        message: str @ "`" + name + "` is declared with a different number of parameters from `" + header + "`'s — clang read the header, and the call this declaration implies does not fit it"
+
+        if !n.is_err()
+            message @ "`" + name + "` is declared with " + n.must().have.to_str() + " parameters, and `" + header + "` gives it " + n.must().expected.to_str() + " — clang read the header, and the call this declaration implies does not fit it"
+        d: diag.Diagnostic @ diag.new_diagnostic(code: "ffi_call_shape", message: message, span: span)
+        d.notes @ d.notes.push(
+            "§4.19: an `extern` is checked against the real header. Declare exactly the parameters the header has, at its widths — or, for a function the header declares variadic (`...`), the fixed shape this program calls it with"
+        )
+        return ok(d)
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "ffi_call_shape",
+        message: "`" + name + "`'s format string is not a literal at this shape — `" + header + "` declares it variadic, and a format bound alone with nothing after it is what clang refuses (`-Wformat-security`)",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "§4.19: bind the fixed shape the program calls — `function " + name + "(format: cstr, value: i64) -> i32` binds one argument after the format, and the format may then be a literal at every call"
+    )
+    return ok(d)
+
+## Tests
+
+test "the arity text is read into the author's declaration, with both counts"
+    text = "extern \"string.h\"\n    function strtok(target: cstr, sep: cstr, pad: cstr) -> cstr\n\nfunction main()\n    print(1)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c = checker.check(parsed.tree, out, s, parsed.decls)
+    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+    line = "t.hero:2:139: error: too many arguments to function call, expected 2, have 3"
+    d = call_shape(s, parsed.decls, low.program, line: line)
+    assert !d.is_err()
+    assert d.must().code == "ffi_call_shape"
+    assert d.must().message == "`strtok` is declared with 3 parameters, and `string.h` gives it 2 — clang read the header, and the call this declaration implies does not fit it"
+
+    # The call line names no extern, and a line that is not ours is refused.
+    assert call_shape(s, parsed.decls, low.program, line: "t.hero:5:5: error: too many arguments to function call, expected 2, have 3").is_err(
+    )
+    assert call_shape(s, parsed.decls, low.program, line: "t.hero:2:139: error: incompatible pointer types passing 'int *' to parameter of type 'long *'").is_err(
+    )
+
+test "the format-security text lands on the declaration with the fixed-shape repair"
+    text = "extern \"stdio.h\"\n    function printf(format: cstr) -> i32\n\nfunction main()\n    print(1)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c = checker.check(parsed.tree, out, s, parsed.decls)
+    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+    line = "t.hero:2:102: error: format string is not a string literal (potentially insecure) [-Werror,-Wformat-security]"
+    d = call_shape(s, parsed.decls, low.program, line: line)
+    assert !d.is_err()
+    assert d.must().code == "ffi_call_shape"
+    assert d.must().notes.len() == 1
