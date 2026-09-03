@@ -82,6 +82,24 @@ on:
           - windows
           - darwin
           - linux
+      # **The mutation score, opted into.** Measured in run 33781889835, the
+      # first full three-leg run after the score landed: the step alone cost
+      # **1294 s on Linux and 1908 s on Windows**, against 586 s and 1474 s for
+      # the whole net, and it took the leg totals to 35m37s and 59m49s where the
+      # last run before it was 20m. And the three tables it produces are
+      # **identical byte for byte** — Linux's, Windows's, and one measured the
+      # same day on the author's Mac (666.37 s): 78 programs, 10878 mutants, 96%
+      # killed by `check`, 83% under `--permissive`, every per-operator row
+      # equal, `diff` clean on both pairs. So Windows was spending 31m48s to
+      # reproduce Linux's number (author decision 2026-09-03, `/decide` answer
+      # `1c`: one leg, gated on tags plus this input).
+      mutation:
+        description: 'Also score the mutations over examples/ (slow; tags always do)'
+        type: choice
+        default: 'no'
+        options:
+          - 'no'
+          - 'yes'
 
 # One run per ref: a second push cancels the first, because a red result about
 # code nobody has any more is a red result nobody reads.
@@ -115,6 +133,20 @@ jobs:
       #     being less informative but for being *already read*: it is the
       #     author's machine, so a local run of the net is this job, and it is
       #     the only leg billed at ten Linux minutes to the minute.
+      #     **`macos-14` -> `macos-26` on 2026-09-03** (author decision,
+      #     `/decide` answer `2a`), and the reason is that the leg was reporting
+      #     NOTHING: in run 33781889835 it died in 16 seconds at `heroes doctor`,
+      #     step 7 of 18, and the ten steps after it were skipped. Not a
+      #     compiler defect — `macos-14` carries Apple clang 15.0.0 against the
+      #     floor of 18 that `selfhost/cli/clang_floor.hero` set the same
+      #     morning, so `doctor` was right to exit 2. Read from the
+      #     `runner-images` readmes over the API that day (a document, not a
+      #     machine): `macos-15` is clang 17.0.0, still under, and `macos-26` is
+      #     **21.0.0** — the version the author's own Mac reports, so CI's macOS
+      #     toolchain becomes the one this project is developed on instead of
+      #     one nobody measures. What this still owes is a run: the image exists
+      #     in that document, and that the label is accepted for this repository
+      #     has not been executed.
       #   - **Windows x86-64 — tags and `workflow_dispatch`, and it covers the
       #     whole net again as of 2026-08-24.** It was added the day the runtime
       #     could hold it (author instruction 2026-08-14, "I want Windows too")
@@ -156,11 +188,11 @@ jobs:
           (github.event_name == 'workflow_dispatch' && inputs.only == 'windows')
           && '[{"name":"Windows x86-64","os":"windows-latest","exe":".exe"}]'
           || (github.event_name == 'workflow_dispatch' && inputs.only == 'darwin')
-          && '[{"name":"Darwin arm64","os":"macos-14","exe":""}]'
+          && '[{"name":"Darwin arm64","os":"macos-26","exe":""}]'
           || (github.event_name == 'workflow_dispatch' && inputs.only == 'linux')
           && '[{"name":"Linux x86-64","os":"ubuntu-latest","exe":""}]'
           || (github.ref_type == 'tag' || github.event_name == 'workflow_dispatch')
-          && '[{"name":"Linux x86-64","os":"ubuntu-latest","exe":""},{"name":"Darwin arm64","os":"macos-14","exe":""},{"name":"Windows x86-64","os":"windows-latest","exe":".exe"}]'
+          && '[{"name":"Linux x86-64","os":"ubuntu-latest","exe":""},{"name":"Darwin arm64","os":"macos-26","exe":""},{"name":"Windows x86-64","os":"windows-latest","exe":".exe"}]'
           || '[{"name":"Linux x86-64","os":"ubuntu-latest","exe":""}]'
           ) }}
 
@@ -456,8 +488,16 @@ jobs:
           echo "--- exit $code ---"
           exit $code
 
+      # **On every event, including a plain push** (author decision 2026-09-03,
+      # `/decide` answer `1`, the same sitting that took the mutation score off
+      # two legs — the two halves paid for each other). It was tags and dispatch
+      # only, and what that meant is measured: a push leg is 10m54s and this
+      # step was **115 s** in run 33781889835, so **553** tests (counted on the
+      # author's Mac the same day, 113 s there) were invisible for 2 minutes on
+      # 11 — a change that reddens the compiler's own tests could sit on `main`
+      # until somebody dispatched or tagged. The gate is cheap and the blind
+      # spot was not.
       - name: The compiler's own tests
-        if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
         shell: bash
         run: ./heroes-from-seed${{ matrix.exe }} test selfhost/main.hero
 
@@ -502,13 +542,27 @@ jobs:
       # modules below a nested root, `mutate` checked them from their own
       # directories, and the corpus was refused at exit 2 for a day with no
       # instrument saying so (measurement 014, M-corpus-depth step 0).
-      # Tags and dispatch only, like the compiler's own tests above: 36
-      # per-directory runs took 680 s on the author's Mac the day this was
-      # written, one run over the whole directory is measured in that file,
-      # and a push should not pay it (author decision 2026-09-03: the gate on
-      # every leg, the score on the tag run).
+      # Tags and dispatch only: 36 per-directory runs took 680 s on the author's
+      # Mac the day this was written, one run over the whole directory is
+      # measured in that file, and a push should not pay it (author decision
+      # 2026-09-03: the gate on every leg, the score on the tag run).
+      #
+      # **ONE LEG, AND OPTED INTO ON A DISPATCH** (author decision 2026-09-03,
+      # `/decide` answer `1c`; the numbers and the byte-for-byte identity of the
+      # three tables are in the `mutation` input's own comment above). Linux is
+      # the leg because it is the cheapest of the three and the only one whose
+      # ASan also carries a leak detector. Nothing is lost unless the score is
+      # platform-dependent, and run 33781889835 measured that it is not — three
+      # machines, three architectures, one table.
+      #
+      # **The day that stops being true, the way to find out must still exist**,
+      # so the second half of this condition keeps one door open: a dispatch
+      # that narrows to a single leg (`only: windows`, `mutation: yes`) scores
+      # on THAT leg. A tag cannot take that door, because `inputs.only` is empty
+      # on a tag push and an `!= 'all'` test alone would put the step back on
+      # all three legs — which is the thing being removed.
       - name: The mutation score over the corpus
-        if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
+        if: (github.ref_type == 'tag' || inputs.mutation == 'yes') && (matrix.name == 'Linux x86-64' || (github.event_name == 'workflow_dispatch' && inputs.only != 'all'))
         shell: bash
         run: ./heroes-from-seed${{ matrix.exe }} mutate examples
 

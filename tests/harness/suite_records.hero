@@ -187,8 +187,17 @@ constant REFUSED: [str]
 # tool (`M-doc-generator`) and the way in (`M-install-channels`). Seven ids that
 # reach this number before any has a step, a tag or a sitting, by author
 # instruction, each named for its deliverable (CLAUDE.md §14).
+#
+# **55 → 56 on 2026-09-03**, `M-discard-refusal`, out of the `/decide` sitting
+# that ran beside M-corpus-depth step 4: `_ =` on a fallible value becomes a
+# compile error (author answer `3a`). A new id rather than a step of the corpus
+# milestone that found it — the instrument is `heroes mutate`'s, the deliverable
+# is a language rule — and this count is what noticed the id was in
+# `SCHEDULED.md` with no row here, which is this check's whole job. It went red
+# twice in one minute, once for the missing row and once for this number, and
+# both are the instrument working rather than failing.
 constant ROWS: i64
-    55
+    56
 
 # The two documents whose citations are checked. They are the two a reader is sent
 # to for a rule, and the only two this project rewrites rather than appends to.
