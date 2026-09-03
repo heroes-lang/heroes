@@ -1,0 +1,222 @@
+# A query, as a value: what to keep, what to join, how to order, what to
+# count (spec § Top-level declarations, § Control flow).
+#
+# Corpus material (CLAUDE.md §9), M-corpus-depth. **A query here is DATA and
+# not a string.** The corpus already holds three programs that read a
+# language — `calculator/`, `json/` and `interpreter/` — so a fourth parser
+# would measure nothing this repository has not measured. What it has never
+# measured is a `variant` used as an *instruction set*: a value the program
+# builds, passes around, compares and prints, whose every case the checker
+# forces the engine to handle. `run/engine.hero` cannot forget a case,
+# because a `match` on a variant is exhaustive or it is a compile error
+# (spec § Control flow) — which is the whole reason a query is spelled this
+# way rather than as text somebody parses.
+#
+# THE COLUMNS ARE A VARIANT AND NOT A `str`, for the same reason. A column
+# named by a string is a typo waiting to become an empty result; a column
+# named by a case is a typo the compiler catches.
+
+use data/row
+
+variant Column
+    id
+    team
+    name
+    active
+    score
+    rate
+
+# What a row must satisfy to be kept. `every_row` is the identity, and it
+# exists so that a query with no filter is a value like any other rather
+# than a `Where?` every caller has to unwrap.
+variant Where
+    every_row
+    team_is
+        team: str
+    active_is
+        want: bool
+    score_at_least
+        least: i64
+    rate_below
+        limit: f64
+    both
+        left: [Where]
+
+# How the kept rows are ordered. `by_active` is here because sorting on a
+# `bool` is a shape the corpus had never exercised — `sort` takes a number,
+# a `str` or a `bool` (spec § Built-ins), and the third had no program.
+variant Order
+    unordered
+    by_id
+    by_score_high_first
+    by_name
+    by_active
+
+# What is counted over the kept rows. Three aggregates, and `mean_rate` is
+# the one that has to decide what the mean of nothing is — a question a
+# `T?` answers and a zero does not.
+variant Aggregate
+    how_many
+    total_score
+    best_score
+    mean_rate
+
+# The whole query. `joined` asks for the team table to be joined in, which
+# is what makes `region` available to the report.
+record Query
+    keep: Where
+    order: Order
+    joined: bool
+    limit: i64
+
+# A row with its team's region attached — what a join produces. It is a
+# record and not a pair, because there are no tuples in this language and
+# because a name is what makes a column readable in the report.
+record Joined
+    r: row.Row
+    region: str
+
+# The key a `group by` groups on. **A record used as a map key**, which is
+# the shape this program was written to exercise: a generated `hash` and
+# `eq` walk fields rather than bytes (CLAUDE.md §7), so two keys that are
+# equal field by field are one key however they were built.
+record Group
+    team: str
+    active: bool
+
+# What one group holds. Kept as a record rather than four maps, so a group
+# is one value that can be compared and printed whole.
+record Summary
+    rows: i64
+    total: i64
+    best: i64
+    rate_sum: f64
+
+# The empty summary a group starts from. `best` starts below every possible
+# score rather than at zero, because a group whose scores are all zero and a
+# group with no rows must not answer the same thing.
+function nothing_yet() -> Summary
+    return Summary(rows: 0, total: 0, best: -1, rate_sum: 0.0)
+
+# One row folded into a summary.
+function with_row(s: Summary, r: row.Row) -> Summary
+    highest: i64 @ s.best
+
+    if r.score > highest
+        highest @ r.score
+    return Summary(rows: s.rows + 1, total: s.total + r.score, best: highest, rate_sum: s.rate_sum + r.rate)
+
+# The mean of a summary's rates — `fail` on an empty group, because the mean
+# of nothing is not a number and answering `0.0` would put a lie in a
+# column of real numbers.
+function mean_of(s: Summary) -> f64?
+    if s.rows == 0
+        return fail("empty_group", "the mean of no rows is not a number")
+    return ok(s.rate_sum / to_f64(s.rows))
+
+# Whether a row satisfies a filter. Recursive through `both`, which is what
+# makes a filter a tree rather than a list — and the recursion is over an
+# array inside the case, because a variant may only contain itself through
+# `[T]` or `{K: V}` (spec § Types).
+function kept(w: Where, r: row.Row) -> bool
+    return match w
+        .every_row        => true
+        .team_is t        => r.team == t.team
+        .active_is a      => r.active == a.want
+        .score_at_least s => r.score >= s.least
+        .rate_below l     => r.rate < l.limit
+        .both b =>
+            for one in b.left
+                if !kept(one, r)
+                    return false
+
+            true
+
+# The column a row reads for an order, as text — used by the report and by
+# `by_name`. A `match` here rather than a field lookup, because a column is
+# a case and there is no other way to get from a case to a value.
+function text_at(c: Column, r: row.Row) -> str
+    return match c
+        .id     => r.id.to_str()
+        .team   => r.team
+        .name   => r.name
+        .active => bool_text(r.active)
+        .score  => r.score.to_str()
+        .rate   => r.rate.to_str()
+
+function bool_text(b: bool) -> str
+    if b
+        return "true"
+    return "false"
+
+# The name of a column, for a report's heading. Kept beside `text_at` so
+# that a column added to the variant makes both `match`es fail to compile
+# rather than one of them print a wrong heading.
+function heading(c: Column) -> str
+    return match c
+        .id     => "id"
+        .team   => "team"
+        .name   => "name"
+        .active => "active"
+        .score  => "score"
+        .rate   => "rate"
+
+test "a filter is a value, and an empty one keeps everything"
+    r = row.Row(id: 1, team: "argo", name: "p1", active: true, score: 500, rate: 12.5)
+    assert kept(.every_row, r)
+    assert kept(.team_is(team: "argo"), r)
+    assert !kept(.team_is(team: "borea"), r)
+    assert kept(.active_is(want: true), r)
+    assert !kept(.active_is(want: false), r)
+    assert kept(.score_at_least(least: 500), r)
+    assert !kept(.score_at_least(least: 501), r)
+    assert kept(.rate_below(limit: 13.0), r)
+    assert !kept(.rate_below(limit: 12.5), r)
+
+test "filters compose, and every one of them must hold"
+    r = row.Row(id: 1, team: "argo", name: "p1", active: true, score: 500, rate: 12.5)
+    all_of: [Where] = [.team_is(team: "argo"), .score_at_least(least: 100)]
+    assert kept(.both(left: all_of), r)
+    one_fails: [Where] = [.team_is(team: "argo"), .score_at_least(least: 900)]
+    assert !kept(.both(left: one_fails), r)
+
+    # A `both` of nothing keeps the row: there is no condition to fail.
+    none_at_all: [Where] = []
+    assert kept(.both(left: none_at_all), r)
+
+test "a summary counts, totals and remembers the highest"
+    a = row.Row(id: 1, team: "argo", name: "p1", active: true, score: 10, rate: 1.0)
+    b = row.Row(id: 2, team: "argo", name: "p2", active: false, score: 30, rate: 2.0)
+    s = nothing_yet().with_row(a).with_row(b)
+    assert s.rows == 2
+    assert s.total == 40
+    assert s.best == 30
+    assert s.mean_of().must() == 1.5
+
+test "the mean of an empty group is a refusal and not a zero"
+    assert nothing_yet().mean_of().is_err()
+
+    # And the empty summary's `best` is below every score, so a group of
+    # zeroes is not the same value as a group of nothing.
+    assert nothing_yet().best == -1
+
+test "a group is a record, and two groups built apart are one key"
+    m: {Group: i64} @ {}
+    m[Group(team: "argo", active: true)] @ 1
+    m[Group(team: "argo", active: true)] @ 2
+    assert m.keys().len() == 1
+    assert m[Group(team: "argo", active: true)].must() == 2
+    assert m[Group(team: "argo", active: false)].is_err()
+
+test "every column has a heading and a reading, and the two lists cannot drift"
+    r = row.Row(id: 7, team: "argo", name: "p7", active: false, score: 42, rate: 1.5)
+    every: [Column] = [.id, .team, .name, .active, .score, .rate]
+    seen: [str] @ []
+
+    for c in every
+        seen @ seen.push(heading(c))
+
+    assert seen == ["id", "team", "name", "active", "score", "rate"]
+    assert text_at(.id, r) == "7"
+    assert text_at(.active, r) == "false"
+    assert text_at(.rate, r) == "1.5"

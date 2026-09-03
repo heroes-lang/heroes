@@ -62,8 +62,16 @@ constant EXAMPLES: str
 # milestone's large program — **eleven modules in four directories**, which is
 # also the program that made `module_texts` below read the tree instead of one
 # directory.
+#
+# 39 -> 40 on 2026-09-04, M-corpus-depth: `examples/query/`, the milestone's
+# second large program and the first in this corpus to hand the language DATA
+# at volume — a deterministic generator writes 5,000 rows, the program writes
+# them to a file, reads them back through a strict reader and then filters,
+# joins, merge-sorts and groups them whole, several times, in all three
+# configurations. Measured the day it landed: 41 directories, 40 with a
+# `main.hero`.
 constant LEAST: i64
-    39
+    40
 
 function run_all(scratch: str, compiler: str) -> report.Report?
     r: report.Report @ report.empty()
