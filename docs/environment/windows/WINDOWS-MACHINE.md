@@ -229,3 +229,22 @@ build after a clone) against 3.5 s on the Mac. A full cold net run is roughly
 12 minutes. The sync loop that matters: a delta `git push win main:main` from
 the Mac is ~9–14 s once the bare repository has refs — the first 80 MiB push is
 the only slow one.
+
+## `$?` inside a `printf` that also runs a substitution is not the exit you think
+
+Found 2026-09-04, measuring defect 010's repair on this box. A loop printed
+`exit 0` for three programs that must fail:
+
+```sh
+./heroes.exe build "$f" -o /tmp/b.exe 2>/dev/null; printf "%s exit %s\n" "$(basename $f)" "$?"
+```
+
+In bash — the shell this box's SSH lands in — `$?` is expanded **after** the
+`$(basename $f)` in the same argument list has run, so it is `basename`'s 0.
+Measured here: `false; printf "%s %s\n" "$(basename /x/y)" "$?"` prints `y 0`.
+The identical script in the Linux image had printed `exit 1`, because Debian's
+`sh` is dash, which expands `$?` before running the substitution. Same words,
+two shells, opposite readings — the shape of § "Escaping `$?` through two
+shells" above, one level down. Capture the exit into a variable on the line
+after the command (`code=$?`) and print the variable; never let `$?` share an
+argument list with a `$(…)`.
