@@ -410,7 +410,6 @@ constant QUOTED_MARKERS: [str]
         "e"
     ]
 
-
 # **The one file that must hold Italian in order to refuse it: this one.** Its
 # test quotes the sentences the check has to catch, and a check that cannot
 # state its own witnesses is a check nobody can read or trust. It is the same
