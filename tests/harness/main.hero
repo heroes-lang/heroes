@@ -45,6 +45,9 @@
 #   special       the surface tests no table row can express
 #   layout        §11's per-file ceiling over selfhost/, tests excluded
 #   order         §4.9's `# ORDER:` mark on every map walk in selfhost/
+#   runtime       Part 7.13's two v1 invariants over runtime/: one
+#                 allocation point, and a refcount boundary clang
+#                 cannot inline away
 #   emission      every program's emitted C against the bytes two
 #                 compilers agreed on (M-bootstrap-archive step 1)
 #   descriptors   every descriptor the blessed C names is defined in it,
@@ -78,6 +81,7 @@ use suite_layout
 use suite_lines
 use suite_order
 use suite_records
+use suite_runtime
 use suite_spec
 use suite_special
 use suite_surface
@@ -355,6 +359,20 @@ function main()
             print("harness: the order check could not run")
             exit(2)
         print("  order: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
+        total @ report.tally(one: total, two: got.must())
+        ran @ ran + 1
+
+    # Part 7.13's two invariants over the runtime's own C. Reads files and
+    # runs no compiler, like `layout` and `order` above it — and unlike
+    # every other suite here, its subject is `runtime/` rather than
+    # `selfhost/`, the goldens or the corpus.
+    if only == "" || only == "runtime"
+        got = suite_runtime.run_all(scratch)
+
+        if got.is_err()
+            print("harness: the runtime invariants could not run")
+            exit(2)
+        print("  runtime: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 

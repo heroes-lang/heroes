@@ -200,9 +200,17 @@ static void hero_eq_push(const unsigned char *a, const unsigned char *b, const H
                          int64_t len) {
     if (hero_eq_len == hero_eq_cap) {
         size_t cap = hero_eq_cap ? hero_eq_cap * 2 : 64;
-        HeroEqWork *grown = (HeroEqWork *)realloc(hero_eq_queue, cap * sizeof(HeroEqWork));
-        if (grown == NULL) hero_panic("out of memory comparing a deep value");
-        hero_eq_queue = grown;
+        /* The guard before the allocation, §4.20's normative sentence: the
+         * doubling is what could wrap, and a wrapped size allocates a few bytes
+         * and is then written past. `hero_malloc_raw` says "out of memory" for a
+         * refused malloc, as it does everywhere else; this is the case worth its
+         * own words, because it is the one this call can produce. */
+        if (cap > SIZE_MAX / sizeof(HeroEqWork)) hero_panic("out of memory comparing a deep value");
+        /* Through the allocator, never `realloc`: design.md Part 7.13 has one
+         * allocation point, and this queue is exactly the state that becomes
+         * `_Thread_local` the day threads arrive. */
+        hero_eq_queue = (HeroEqWork *)hero_grow_kept(hero_eq_queue, hero_eq_cap * sizeof(HeroEqWork),
+                                                     cap * sizeof(HeroEqWork));
         hero_eq_cap = cap;
     }
     hero_eq_queue[hero_eq_len].a = a;
