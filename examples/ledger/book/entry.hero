@@ -1,0 +1,209 @@
+# What a ledger holds, and the arithmetic that must not be a float
+# (spec § Types, § Failure).
+#
+# Corpus material (CLAUDE.md §9), M-corpus-depth. **This module has no
+# `extern` in it and that is the design.** `db/sqlite.hero` is the only file
+# that touches C; everything about *what the numbers mean* lives here, where
+# a test can reach it without a database. It is the same split
+# `examples/todo/` makes for the disk and for the same reason: a program
+# whose logic can only be tested through its I/O is a program whose logic is
+# not tested.
+#
+# **MONEY IS AN INTEGER NUMBER OF CENTS AND NEVER AN `f64`.** The reason is
+# older than this language and this program states it rather than assuming
+# the reader knows: `0.1 + 0.2` is not `0.3` in binary floating point, and a
+# ledger that adds a thousand of those and compares the total to a figure
+# somebody typed will disagree with them by a cent and be unable to say why.
+# So `Amount` carries cents, the database column is an INTEGER, and the only
+# float in this program is the one SQLite's `avg()` hands back — which is
+# compared with a tolerance, and the comparison says so.
+
+record Amount
+    cents: i64
+
+# An amount from whole units and cents, refusing the shapes that would
+# silently become a different number.
+function amount(units: i64, cents: i64) -> Amount?
+    if cents < 0 || cents > 99
+        return fail("bad_cents", "cents are 0 to 99, not " + cents.to_str())
+
+    if units < 0
+        return fail("negative_units", "build a negative amount by negating a positive one")
+    return ok(Amount(cents: units * 100 + cents))
+
+function negated(a: Amount) -> Amount
+    return Amount(cents: 0 - a.cents)
+
+function added(a: Amount, b: Amount) -> Amount
+    return Amount(cents: a.cents + b.cents)
+
+# `-12.34`, and the sign is written once. The whole-and-remainder split is
+# taken on the ABSOLUTE value, because `-1234 / 100` truncates toward zero
+# to `-12` and `-1234 % 100` is `-34` (spec § Failure), so a naive rendering
+# gives `-12.-34`.
+function shown(a: Amount) -> str
+    size: i64 @ a.cents
+
+    if size < 0
+        size @ 0 - size
+    whole = size / 100
+    rest = size % 100
+    tail: str @ rest.to_str()
+
+    if rest < 10
+        tail @ "0" + tail
+    text = whole.to_str() + "." + tail
+
+    if a.cents < 0
+        return "-" + text
+    return text
+
+# One line of the book: which account, what it was for, how much.
+record Entry
+    id: i64
+    account: str
+    memo: str
+    amount: Amount
+
+# An account and what it holds — what a `group by` produces, and what this
+# program checks SQLite's own aggregate against.
+record Balance
+    account: str
+    entries: i64
+    total: Amount
+
+# The entries this program writes. Written down rather than generated,
+# because a ledger's whole point is that somebody can read the book and
+# check the totals by hand — which is exactly what the tests below do.
+function book() -> [Entry]
+    return [
+        Entry(id: 1, account: "rent", memo: "september", amount: Amount(cents: 0 - 120000))
+        Entry(id: 2, account: "salary", memo: "september", amount: Amount(cents: 310000))
+        Entry(id: 3, account: "food", memo: "market", amount: Amount(cents: 0 - 4250))
+        Entry(id: 4, account: "food", memo: "bakery", amount: Amount(cents: 0 - 780))
+        Entry(id: 5, account: "books", memo: "two paperbacks", amount: Amount(cents: 0 - 2495))
+        Entry(id: 6, account: "salary", memo: "a lesson", amount: Amount(cents: 8000))
+        Entry(id: 7, account: "food", memo: "market", amount: Amount(cents: 0 - 3110))
+        Entry(id: 8, account: "rent", memo: "deposit back", amount: Amount(cents: 60000))
+        Entry(id: 9, account: "books", memo: "a dictionary", amount: Amount(cents: 0 - 5500))
+        Entry(id: 10, account: "food", memo: "market", amount: Amount(cents: 0 - 2940))
+    ]
+
+# The accounts, and what each is for. The second table, so the program has
+# a join to make rather than a join to describe.
+record Account
+    name: str
+    kind: str
+
+function accounts() -> [Account]
+    return [
+        Account(name: "rent", kind: "housing")
+        Account(name: "salary", kind: "income")
+        Account(name: "food", kind: "living")
+        Account(name: "books", kind: "living")
+    ]
+
+# **The balances, computed in Heroes.** This is one half of the check the
+# whole program exists for: SQLite computes the same thing with
+# `sum(amount) group by account`, and the two must agree entry for entry.
+# Neither is the oracle — there is no published answer for a book somebody
+# invented — so the agreement of two routes that share no line is the
+# strongest claim available, and it is stronger than either alone.
+function balances(entries: [Entry]) -> [Balance]
+    names: [str] @ []
+    totals: {str: i64} @ {}
+    counts: {str: i64} @ {}
+
+    for e in entries
+        seen = totals[e.account]
+
+        if seen.is_err()
+            names @ names.push(e.account)
+            totals[e.account] @ e.amount.cents
+            counts[e.account] @ 1
+        else
+            totals[e.account] @ seen.must() + e.amount.cents
+            counts[e.account] @ counts[e.account].must() + 1
+
+    out: [Balance] @ []
+
+    # ORDER: by account name, because `keys(m)` gives no order (spec
+    # § Bindings) and this list is printed and compared line by line.
+    for name in names.sort()
+        out @ out.push(
+            Balance(account: name, entries: counts[name].must(), total: Amount(cents: totals[name].must()))
+        )
+
+    return out
+
+# What the whole book comes to.
+function total(entries: [Entry]) -> Amount
+    sum: Amount @ Amount(cents: 0)
+
+    for e in entries
+        sum @ added(a: sum, b: e.amount)
+
+    return sum
+
+# The kind an account belongs to, which is what the join is for.
+function kind_of(name: str, all_accounts: [Account]) -> str?
+    for a in all_accounts
+        if a.name == name
+            return ok(a.kind)
+
+    return fail("unknown_account", "no account is named " + name)
+
+test "an amount is cents, and the shapes that would lose money are refused"
+    assert amount(units: 12, cents: 34).must().cents == 1234
+    assert amount(units: 0, cents: 5).must().cents == 5
+    assert amount(units: 12, cents: 100).is_err()
+    assert amount(units: 12, cents: 0 - 1).is_err()
+    assert amount(units: 0 - 1, cents: 0).is_err()
+
+test "a negative amount prints its sign once and its cents in full"
+    assert shown(Amount(cents: 0 - 1234)) == "-12.34"
+    assert shown(Amount(cents: 1234)) == "12.34"
+    assert shown(Amount(cents: 0 - 5)) == "-0.05"
+    assert shown(Amount(cents: 0)) == "0.00"
+    assert shown(Amount(cents: 100)) == "1.00"
+
+    # The one a float would get wrong, and the one truncation toward zero
+    # would print as `-12.-34` if the split were taken on the signed value.
+    assert shown(negated(Amount(cents: 1234))) == "-12.34"
+
+test "the book's total is what adding the ten lines by hand gives"
+    # -120000 +310000 -4250 -780 -2495 +8000 -3110 +60000 -5500 -2940
+    assert total(book()).cents == 238925
+    assert shown(total(book())) == "2389.25"
+
+test "the balances are the four accounts, in name order, with the right totals"
+    b = balances(book())
+    assert b.len() == 4
+    assert b[0].account == "books"
+    assert b[1].account == "food"
+    assert b[2].account == "rent"
+    assert b[3].account == "salary"
+
+    # Checked by hand from the ten lines above, which is what makes this a
+    # second opinion rather than a restatement of the code.
+    assert b[0].total.cents == 0 - 7995
+    assert b[1].total.cents == 0 - 11080
+    assert b[2].total.cents == 0 - 60000
+    assert b[3].total.cents == 318000
+    assert b[0].entries == 2
+    assert b[1].entries == 4
+
+test "the balances add up to the book's total"
+    sum: i64 @ 0
+
+    for b in balances(book())
+        sum @ sum + b.total.cents
+
+    assert sum == total(book()).cents
+
+test "every account in the book is one the account table names"
+    for e in book()
+        assert !kind_of(e.account, accounts()).is_err()
+
+    assert kind_of("nowhere", accounts()).is_err()
+    assert kind_of("food", accounts()).must() == "living"

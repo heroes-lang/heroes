@@ -1,0 +1,83 @@
+# The report's text, and nothing else (spec § Strings, arrays, maps).
+#
+# Corpus material (CLAUDE.md §9), M-corpus-depth. Here for the reason
+# `examples/todo/` gives for its own split: every decision about *what the
+# answer is* lives in `book/entry.hero` and in the queries, so the tests
+# that check the arithmetic never have to read text, and the tests that
+# check the text never have to open a database.
+
+use book/entry
+
+constant BALANCE_HEADING: str
+    "account  kind     entries      total"
+
+# One line of the book: the entry's own fields, and the account's kind
+# fetched through the join this program also asks the database to do.
+function book_lines(entries: [entry.Entry], accounts: [entry.Account]) -> [str]
+    out: [str] @ []
+
+    for e in entries
+        kind = entry.kind_of(e.account, accounts).default("?")
+        out @ out.push(
+            "  " + wide(text: e.id.to_str(), to: 3) + wide(text: e.account, to: 9) + wide(text: kind, to: 9) + wide(text: e.memo, to: 17) + right(text: entry.shown(e.amount), to: 10)
+        )
+
+    return out
+
+function balance_line(b: entry.Balance, kind: str) -> str
+    return wide(text: b.account, to: 9) + wide(text: kind, to: 9) + right(text: b.entries.to_str(), to: 7) + right(text: entry.shown(b.total), to: 11)
+
+# Padded on the right, never truncated: a report that cuts a value to fit
+# shows the wrong value.
+function wide(text: str, to: i64) -> str
+    if text.len() >= to
+        return text + " "
+    return text + repeat(" ", to_u64(to - text.len()).must())
+
+# Padded on the LEFT, which is what a column of numbers wants: the digits
+# line up under each other and a longer number pushes the column rather
+# than hiding in it.
+function right(text: str, to: i64) -> str
+    if text.len() >= to
+        return " " + text
+    return repeat(" ", to_u64(to - text.len()).must()) + text
+
+# Whether `text` holds `needle`. Here because `main.hero` asserts against
+# SQLite's own error message, and a message is the one thing this program
+# does not control the exact words of.
+function holds(text: str, needle: str) -> bool
+    if needle.len() > text.len()
+        return false
+    at: i64 @ 0
+
+    while at + needle.len() <= text.len()
+        if text.slice(from: at, to: at + needle.len()) == needle
+            return true
+        at @ at + 1
+
+    return false
+
+test "a cell is padded and never cut, on both sides"
+    assert wide(text: "ab", to: 5) == "ab   "
+    assert wide(text: "abcdef", to: 3) == "abcdef "
+    assert right(text: "7", to: 4) == "   7"
+    assert right(text: "1234567", to: 4) == " 1234567"
+
+test "a book line carries the entry, its account's kind and the amount"
+    line = book_lines(entry.book(), entry.accounts())[0]
+    assert holds(text: line, needle: "rent")
+    assert holds(text: line, needle: "housing")
+    assert holds(text: line, needle: "september")
+    assert holds(text: line, needle: "-1200.00")
+
+test "a balance line carries the account and its total"
+    b = entry.balances(entry.book())[1]
+    line = balance_line(b, "living")
+    assert holds(text: line, needle: "food")
+    assert holds(text: line, needle: "living")
+    assert holds(text: line, needle: "-110.80")
+
+test "the search finds what is there and refuses what is not"
+    assert holds(text: "no such table: nothing", needle: "no such table")
+    assert !holds(text: "short", needle: "much longer than the text")
+    assert holds(text: "abc", needle: "abc")

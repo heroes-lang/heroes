@@ -1,0 +1,285 @@
+# SQLite, bound at the width of a real program (spec § FFI; design.md §4.19).
+#
+# Corpus material (CLAUDE.md §9), M-corpus-depth's third family. **The
+# corpus binds SQLite twice and the two programs ask different questions.**
+# `examples/sqlite/` is §4.19's own acceptance — open, one statement, one
+# integer back, eight functions — and it answers *does the architecture
+# work at all*. This one answers *does it hold up when a program leans on
+# it*: prepared statements reused across rows, values bound in, values of
+# three types read out, a transaction, a join, and the error message the
+# library itself produces when something is wrong.
+#
+# **Every signature here is checked against the SDK's `sqlite3.h` by
+# clang**, which is the whole point of the group: a wrong width, a wrong
+# result type or a name the header does not have is a compile error on the
+# `.hero` line that wrote it, not a crash later.
+#
+# THE TWO SHAPES WORTH READING BEFORE THE LIST:
+#
+# - `sqlite3_bind_text`'s last parameter is a **destructor**, and `nullptr`
+#   there is SQLite's `SQLITE_STATIC`: it means *I keep the bytes alive, do
+#   not copy them*. So the `str` whose `.cstr()` is handed over must outlive
+#   the `step` that reads it — which it does, because a Heroes binding lives
+#   in its slot until the function returns (design.md §4.10). This is the
+#   one place in this program where the language's lifetime rule and C's
+#   expectation have to be read together, and it is written down rather
+#   than assumed. `docs/panel/106` is where that shape was compiled and
+#   measured, by the seat that refused a proposal because of it.
+# - `sqlite3_column_text` answers `const unsigned char *`, which is a
+#   `cstr` here, and a `cstr` becomes a `str` only through `validated` —
+#   which can fail, because the bytes are the database's and not this
+#   program's (spec § Types). `db/rows.hero` is where that `str?` is
+#   handled rather than assumed away.
+
+extern "sqlite3.h" link "sqlite3"
+    # Result codes and column types, read from the header rather than
+    # written as numbers (M-header-constants): a typo is
+    # `error[unknown_name]` locally, and a wrong VALUE is impossible
+    # because there is no value here to get wrong.
+    constant SQLITE_OK: i64
+    constant SQLITE_ROW: i64
+    constant SQLITE_DONE: i64
+    constant SQLITE_INTEGER: i64
+    constant SQLITE_FLOAT: i64
+    constant SQLITE_TEXT: i64
+    constant SQLITE_NULL: i64
+    function sqlite3_open(filename: cstr, @out: ptr) -> i64
+    function sqlite3_close(db: ptr) -> i64
+    function sqlite3_exec(db: ptr, sql: cstr, callback: ptr, context: ptr, @error: ptr) -> i64
+    function sqlite3_errmsg(db: ptr) -> cstr
+    function sqlite3_changes(db: ptr) -> i32
+    function sqlite3_prepare_v2(db: ptr, sql: cstr, length: i32, @statement: ptr, @tail: ptr) -> i64
+    function sqlite3_step(statement: ptr) -> i64
+    function sqlite3_reset(statement: ptr) -> i64
+    function sqlite3_finalize(statement: ptr) -> i64
+    function sqlite3_bind_int64(statement: ptr, column: i32, value: i64) -> i64
+    function sqlite3_bind_double(statement: ptr, column: i32, value: f64) -> i64
+    function sqlite3_bind_text(statement: ptr, column: i32, text: cstr, length: i32, destructor: ptr) -> i64
+    function sqlite3_column_count(statement: ptr) -> i32
+    function sqlite3_column_type(statement: ptr, column: i32) -> i32
+    function sqlite3_column_int64(statement: ptr, column: i32) -> i64
+    function sqlite3_column_double(statement: ptr, column: i32) -> f64
+    function sqlite3_column_text(statement: ptr, column: i32) -> cstr
+
+# Eighteen functions and seven constants. The count is here because the
+# milestone's plan asked for **at least fifteen bound functions** — the
+# measured gap was that every FFI program in this corpus was 65 to 192
+# lines and bound a handful — and a number in a plan is worth checking
+# against the thing it produced. `grep -c '^    function' db/sqlite.hero`
+# answers it without trusting this sentence.
+
+# Whether a prepared statement's column holds text, an integer, a float or
+# nothing. A `variant` and not the raw `i32`, so the reader below cannot
+# forget a case: SQLite has five column types and a program that handles
+# four of them silently reads the fifth as a zero.
+variant Cell
+    integer_cell
+        value: i64
+    float_cell
+        value: f64
+    text_cell
+        value: str
+    null_cell
+    # The one SQLite has and this program does not read: a BLOB. It is a
+    # case rather than an omission, so `match` forces every reader to say
+    # what it does with one, and this program says "refuse" rather than
+    # "treat as empty text".
+    blob_cell
+
+# What a column holds, read at its own type. **The type is asked rather
+# than assumed**: `sqlite3_column_int64` on a text column answers 0 and
+# says nothing, which is the silent wrong answer this whole corpus exists
+# to catch.
+function cell_at(statement: ptr, column: i32) -> Cell?
+    kind = sqlite3_column_type(statement: statement, column: column)
+
+    if to_i64(kind).must() == SQLITE_INTEGER
+        return ok(.integer_cell(value: sqlite3_column_int64(statement: statement, column: column)))
+
+    if to_i64(kind).must() == SQLITE_FLOAT
+        return ok(.float_cell(value: sqlite3_column_double(statement: statement, column: column)))
+
+    if to_i64(kind).must() == SQLITE_TEXT
+        # The bytes are the database's. `validated` copies them into a
+        # Heroes `str` and refuses what is not UTF-8, which is a thing a
+        # database can hold and this program must not print blindly.
+        text = sqlite3_column_text(statement: statement, column: column).validated()
+
+        if text.is_err()
+            return fail("not_text", "column " + to_i64(column).must().to_str() + " holds bytes that are not UTF-8")
+        return ok(.text_cell(value: text.must()))
+
+    if to_i64(kind).must() == SQLITE_NULL
+        return ok(.null_cell)
+    return ok(.blob_cell)
+
+## The wrappers, and the rule that forces them
+
+# **AN `extern` IS NOT CALLABLE ACROSS A MODULE BOUNDARY**, and this program
+# learned it from the compiler on its first run:
+#
+#     error[extern_across_modules]: `sqlite3_open` is an `extern` of module
+#     `db/sqlite` — an extern is never callable across a module boundary,
+#     because only `db/sqlite` carries the header that checks it
+#     note: §4.19: write a Heroes function beside the `extern` and call that
+#
+# The reason is the whole architecture in one line: clang checks a signature
+# against `sqlite3.h`, and the header is `#include`d in the C of THIS module
+# only. A caller in another module would be a call nothing verified. So the
+# boundary is drawn here, on purpose: everything below is a Heroes function
+# with a Heroes signature, and the rest of the program never sees a `cstr`,
+# a `ptr` result code or a column index counted from one.
+#
+# That is also why this file is the only one with `link "sqlite3"` in it,
+# and why a machine without the library skips exactly this program rather
+# than half of it.
+
+# **A `ptr` MAY NOT BE THE ELEMENT OF A `T?`, and this program met that on
+# its first run** — which is why a handle here is a record with one field
+# rather than a bare pointer:
+#
+#     unsupported[pointer_element]: `ptr` as the element of a `T?` is not
+#     emitted yet
+#     note: hold the pointer in a `record` and make an array of that instead
+#
+# The diagnostic is a declared gap rather than a defect (§4.16's shape: the
+# backend says what it does not emit), and its note is the repair. But it
+# lands squarely on the FFI, where §4.19 asks for *complete and bug-proof*:
+# a binding that opens something is the commonest shape there is, and
+# `open() -> ptr?` is how anybody writes it first. The wrapping is one line
+# and it also improves the signature — `Db` and `Statement` are two types
+# the compiler will not let a caller confuse, where two `ptr`s are one type
+# — so the program keeps the records and the finding is filed rather than
+# argued here.
+record Db
+    handle: ptr
+
+record Statement
+    handle: ptr
+
+# A database, opened in memory. `:memory:` because a corpus program that
+# wrote a file would have to clean it up, and its output would depend on
+# what a previous run left behind.
+function opened() -> Db?
+    db: ptr @ nullptr
+
+    if sqlite3_open(":memory:".cstr(), @db) != SQLITE_OK
+        return fail("cannot_open", "sqlite would not open a database in memory")
+    return ok(Db(handle: db))
+
+function closed(db: Db) -> i64
+    return sqlite3_close(db.handle)
+
+# One statement run for its effect, with SQLite's own message on failure.
+function run(db: Db, sql: str) -> ()?
+    error: ptr @ nullptr
+
+    if sqlite3_exec(db: db.handle, sql: sql.cstr(), callback: nullptr, context: nullptr, error: @error) != SQLITE_OK
+        return fail("statement_refused", sql + ": " + why(db))
+    return ok()
+
+# How many rows the last statement changed — SQLite's own counter, which is
+# the second opinion this program checks its own inserts against.
+function changed(db: Db) -> i64
+    return to_i64(sqlite3_changes(db.handle)).must()
+
+# A prepared statement, which is the shape that makes this program different
+# from `examples/sqlite/`: prepared once, bound and stepped many times.
+function prepared(db: Db, sql: str) -> Statement?
+    statement: ptr @ nullptr
+    tail: ptr @ nullptr
+
+    if sqlite3_prepare_v2(db: db.handle, sql: sql.cstr(), length: -1, statement: @statement, tail: @tail) != SQLITE_OK
+        return fail("cannot_prepare", sql + ": " + why(db))
+    return ok(Statement(handle: statement))
+
+function finalized(statement: Statement) -> i64
+    return sqlite3_finalize(statement.handle)
+
+# Ready to be bound and stepped again. The whole reason a prepared
+# statement is worth having.
+function reset(statement: Statement) -> ()?
+    if sqlite3_reset(statement.handle) != SQLITE_OK
+        return fail("cannot_reset", "sqlite would not reset the statement")
+    return ok()
+
+# One step. `.stepped_row` when a row is there, `.stepped_done` at the end,
+# and a refusal otherwise — a variant rather than the raw code, so a caller
+# cannot compare against the wrong constant.
+variant Step
+    stepped_row
+    stepped_done
+
+function stepped(statement: Statement) -> Step?
+    code = sqlite3_step(statement.handle)
+
+    if code == SQLITE_ROW
+        return ok(.stepped_row)
+
+    if code == SQLITE_DONE
+        return ok(.stepped_done)
+    return fail("step_refused", "sqlite refused the step with code " + code.to_str())
+
+# Binding, one function per type this program uses. The column index is
+# ONE-BASED in SQLite and this is the only place that knows it: every
+# caller counts from one because the wrapper says `at:` and the doc says
+# what `at` means, which is cheaper than a translation nobody remembers.
+function bind_int(statement: Statement, at: i64, value: i64) -> ()?
+    if sqlite3_bind_int64(statement: statement.handle, column: to_i32(at).must(), value: value) != SQLITE_OK
+        return fail("cannot_bind", "sqlite refused an integer at " + at.to_str())
+    return ok()
+
+function bind_float(statement: Statement, at: i64, value: f64) -> ()?
+    if sqlite3_bind_double(statement: statement.handle, column: to_i32(at).must(), value: value) != SQLITE_OK
+        return fail("cannot_bind", "sqlite refused a float at " + at.to_str())
+    return ok()
+
+# **The one binding with a lifetime rule**, and the module doc above is its
+# argument: the last parameter is a destructor, `nullptr` is SQLite's
+# `SQLITE_STATIC`, and it means the library keeps the caller's bytes rather
+# than copying them. `text` is a parameter, so it lives in this function's
+# slot until this function returns — which is past the `bind` and not past
+# the `step`. **So a caller must step before it drops the string**, and
+# every caller here does, in the next line. Written down because it is the
+# one place a correct-looking rearrangement would be a use-after-free.
+function bind_text(statement: Statement, at: i64, text: str) -> ()?
+    if sqlite3_bind_text(statement: statement.handle, column: to_i32(at).must(), text: text.cstr(), length: -1, destructor: nullptr) != SQLITE_OK
+        return fail("cannot_bind", "sqlite refused text at " + at.to_str())
+    return ok()
+
+# How many columns the statement's result has — asked rather than assumed,
+# so a query edited to select one more column does not read past the end.
+function columns(statement: Statement) -> i64
+    return to_i64(sqlite3_column_count(statement.handle)).must()
+
+# One column of the current row, at its own type. Zero-based here, because
+# SQLite's column READERS are zero-based while its binders are one-based —
+# a genuine wart of that library, and the wrapper keeps it visible in the
+# names (`at:` binds from one, `column:` reads from zero) rather than
+# papering over it.
+function cell(statement: Statement, column: i64) -> Cell?
+    return cell_at(statement: statement.handle, column: to_i32(column).must())
+
+# A cell as the integer it is, or a refusal naming what it was instead.
+# Every caller of this wants a number and would otherwise get a zero.
+function integer_of(c: Cell) -> i64?
+    return match c
+        .integer_cell i => ok(i.value)
+        .float_cell     => fail("wrong_type", "the column holds a float where a whole number was asked for")
+        .text_cell      => fail("wrong_type", "the column holds text where a whole number was asked for")
+        .null_cell      => fail("wrong_type", "the column is null where a whole number was asked for")
+        .blob_cell      => fail("wrong_type", "the column holds a blob, which this program does not read")
+
+function text_of(c: Cell) -> str?
+    return match c
+        .text_cell t    => ok(t.value)
+        .integer_cell i => ok(i.value.to_str())
+        .float_cell f   => ok(f.value.to_str())
+        .null_cell      => fail("wrong_type", "the column is null where text was asked for")
+        .blob_cell      => fail("wrong_type", "the column holds a blob, which this program does not read")
+
+# The library's own message for the last thing that went wrong. Bound
+# because a program at this scale has to be able to say WHY a statement
+# was refused, and SQLite is the only thing that knows.
+function why(db: Db) -> str
+    return sqlite3_errmsg(db.handle).validated().default("sqlite said nothing")
