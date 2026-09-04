@@ -162,6 +162,18 @@ constant CEILING: i64
 # 460 -> **470** against a measured 465: one line prints the slot by name, and
 # four say why printing it as a decref of an invented temporary would make
 # `--dump-ir` describe a program the emitter no longer writes.
+# **One moved on 2026-09-04, defect 012's repair**: `emit/gate.hero` 341 ->
+# **365** against a measured 355. `function f(_: ())` reached clang as
+# `int64_t h_f(void h0_)` — *argument may not have 'void' type*, exit 2, the
+# compiler blaming itself — and the FIELD position of that same hole was
+# closed 2026-08-12, twelve lines below, by `unit_fields`. `_` is the one
+# spelling that got through: a named `()` parameter is `unused_binding` when
+# it is not read and `bound_unit` when it is, and `_` binds nothing so
+# neither rule fires. Five lines of check inside the loop that already walks
+# `f.params`, one route in `what_the_author_can_do`, and the comment that
+# says which sibling this is — the ceiling is what forced the count to be
+# read at all, which is the point of pinning it. Raised with room, as the
+# precedents above were.
 constant DECIDED: [str]
     [
         "selfhost/check/walk.hero 1700"
@@ -174,7 +186,7 @@ constant DECIDED: [str]
         "selfhost/check/builtins.hero 374"
         "selfhost/ir/mono.hero 380"
         "selfhost/emit/ctype.hero 365"
-        "selfhost/emit/gate.hero 341"
+        "selfhost/emit/gate.hero 365"
         "selfhost/resolve/cycles.hero 331"
         "selfhost/resolve/state.hero 330"
         "selfhost/emit/inst.hero 350"
