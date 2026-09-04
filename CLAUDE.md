@@ -747,6 +747,17 @@ repeated; what follows is what they did not.
   percent is paid at every rebuild until somebody stops verifying, which is the
   real cost. §13 says performance is not a goal and not a licence; this is the
   same rule seen from the compiler's side.
+  **AND THOSE TWO NUMBERS ARE THE COLD ONES: say which you measured** (added
+  2026-09-05, after a session budgeted 37 minutes for a verification that took
+  64 seconds). With the per-module cache warm and three files changed,
+  `heroes build selfhost/main.hero` is **28 s** and `heroes test
+  selfhost/main.hero` is **35 s**, both measured with `/usr/bin/time -p` on this
+  Mac. The 2026-08-23 pair stands and is not deleted: it is the cold tree, which
+  is what CI and a fresh clone pay. The reason to carry both is that the cold
+  number is the one that funds *"do not make it slower"* and the warm number is
+  the one that decides how a session is planned — a rebuild believed to cost 17
+  minutes gets batched, deferred, and sometimes skipped, and skipping is the
+  failure this whole paragraph exists to prevent.
 - **No em dashes and no machine-written patterns, on the site and in the chat**
   (2026-08-25, *"NO AI SLOP — get rid of all the —"*). The rulebook is `site/README.md`
   § Style guide and `site/CLAUDE.md`; the chat half is that the assistant's
@@ -809,7 +820,7 @@ repeated; what follows is what they did not.
 ```
 clang -I runtime seed/heroes.c runtime/runtime.c -o heroes   # the compiler, from C alone (3.5 s)
 ./heroes build selfhost/main.hero -o heroes-next             # the compiler, from Heroes
-./heroes test selfhost/main.hero                             # its own tests (536, 2026-09-02)
+./heroes test selfhost/main.hero                             # its own tests (572, 2026-09-05; 35 s warm)
 ./heroes run tests/harness/main.hero -- ./heroes             # the net (1200 checks, 2026-09-02)
 ./heroes test tests/harness/main.hero                        # THE NET'S OWN TESTS (92, 17 s) — the third suite
 
