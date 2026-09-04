@@ -1,0 +1,405 @@
+# Five bodies under gravity for a thousand steps, and the two energies a
+# published file says they must have.
+#
+# Corpus material (CLAUDE.md §9), M-corpus-depth's oracle family. **This is
+# the first program in `examples/` where the FFI is inside a real program
+# rather than beside one.** Measured before it was written: the six
+# directories that declare an `extern` group are 65 to 192 lines, every one
+# of them a single module, and not one has a `variant`, a nested container,
+# a generic or an `@`-parameter data structure. `sqrt` is not decoration
+# here — the simulation cannot take a step without it, and §1.11 says
+# everything beyond this language comes from C.
+#
+# THE ORACLE, fetched 2026-09-03 and quoted with its source. The benchmarks
+# game publishes the output of n-body at N = 1000:
+#
+#     -0.169075164
+#     -0.169087605
+#
+#     https://benchmarksgame-team.pages.debian.net/benchmarksgame/download/nbody-output.txt
+#
+# The first line is the system's energy before any step, the second after a
+# thousand steps of 0.01. Both are printed to nine decimal places, and the
+# task's own tolerance is `ndiff -abserr 1.0e-8`, so nine places is the
+# comparison rather than a formatting taste:
+#
+#     https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/nbody.html
+#
+# THE INITIAL CONDITIONS ARE COPIED, DIGIT FOR DIGIT, from the reference C
+# program on the same site (contributed by Christoph Bauer), fetched the
+# same day:
+#
+#     https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-gcc-1.html
+#
+# **They are written without exponents because this language has none.**
+# `4.84143144246472090e+00` is `error[exponent_literal]` here, and the
+# diagnostic says what to do: write the digits out. Moving the point is
+# exact — the decimal value is the same, so the `f64` it parses to is the
+# same bits — and every constant below carries the reference's own spelling
+# in a comment beside it, so the two can be compared without arithmetic.
+#
+# WHAT THIS PROGRAM DOES NOT DO is the benchmark's other half: N = 50 000
+# 000, which is what the site times. A corpus program is run three times on
+# every push (`-O0`, `-O2`, `--sanitize`), so it takes the N the published
+# OUTPUT is for. The answer is the same answer; only the clock differs.
+
+extern "math.h" link "m"
+    function sqrt(x: f64) -> f64
+
+# The published constants. `solar_mass` is `4 * pi * pi` and
+# `days_per_year` scales the velocities, both exactly as the reference
+# writes them — computed here rather than written out, so the arithmetic is
+# the reference's and not a transcription of its result.
+constant PI: f64
+    3.141592653589793
+
+constant DAYS_PER_YEAR: f64
+    365.24
+
+function solar_mass() -> f64
+    return 4.0 * PI * PI
+
+# One body. A record and not six arrays: the whole point of the corpus is
+# programs written the way somebody would write them.
+record Body
+    x: f64
+    y: f64
+    z: f64
+    vx: f64
+    vy: f64
+    vz: f64
+    mass: f64
+
+# The sun, which the reference gives as all zeroes with the solar mass —
+# and whose velocity `offset_momentum` then sets so that the whole system
+# does not drift.
+function sun() -> Body
+    return Body(x: 0.0, y: 0.0, z: 0.0, vx: 0.0, vy: 0.0, vz: 0.0, mass: solar_mass())
+
+# jupiter, from the reference:
+#     4.84143144246472090e+00, -1.16032004402742839e+00,
+#     -1.03622044471123109e-01
+#     1.66007664274403694e-03, 7.69901118419740425e-03,
+#     -6.90460016972063023e-05   (each × days_per_year)
+#     9.54791938424326609e-04    (× solar_mass)
+function jupiter() -> Body
+    return Body(
+        x: 4.8414314424647209,
+        y: -1.16032004402742839,
+        z: -0.103622044471123109,
+        vx: 0.00166007664274403694 * DAYS_PER_YEAR,
+        vy: 0.00769901118419740425 * DAYS_PER_YEAR,
+        vz: -0.0000690460016972063023 * DAYS_PER_YEAR,
+        mass: 0.000954791938424326609 * solar_mass()
+    )
+
+# saturn:
+#     8.34336671824457987e+00, 4.12479856412430479e+00,
+#     -4.03523417114321381e-01
+#     -2.76742510726862411e-03, 4.99852801234917238e-03,
+#     2.30417297573763929e-05
+#     2.85885980666130812e-04
+function saturn() -> Body
+    return Body(
+        x: 8.34336671824457987,
+        y: 4.12479856412430479,
+        z: -0.403523417114321381,
+        vx: -0.00276742510726862411 * DAYS_PER_YEAR,
+        vy: 0.00499852801234917238 * DAYS_PER_YEAR,
+        vz: 0.0000230417297573763929 * DAYS_PER_YEAR,
+        mass: 0.000285885980666130812 * solar_mass()
+    )
+
+# uranus:
+#     1.28943695621391310e+01, -1.51111514016986312e+01,
+#     -2.23307578892655734e-01
+#     2.96460137564761618e-03, 2.37847173959480950e-03,
+#     -2.96589568540237556e-05
+#     4.36624404335156298e-05
+function uranus() -> Body
+    return Body(
+        x: 12.8943695621391310,
+        y: -15.1111514016986312,
+        z: -0.223307578892655734,
+        vx: 0.00296460137564761618 * DAYS_PER_YEAR,
+        vy: 0.00237847173959480950 * DAYS_PER_YEAR,
+        vz: -0.0000296589568540237556 * DAYS_PER_YEAR,
+        mass: 0.0000436624404335156298 * solar_mass()
+    )
+
+# neptune:
+#     1.53796971148509165e+01, -2.59193146099879641e+01,
+#     1.79258772950371181e-01
+#     2.68067772490389322e-03, 1.62824170038242295e-03,
+#     -9.51592254519715870e-05
+#     5.15138902046611451e-05
+function neptune() -> Body
+    return Body(
+        x: 15.3796971148509165,
+        y: -25.9193146099879641,
+        z: 0.179258772950371181,
+        vx: 0.00268067772490389322 * DAYS_PER_YEAR,
+        vy: 0.00162824170038242295 * DAYS_PER_YEAR,
+        vz: -0.0000951592254519715870 * DAYS_PER_YEAR,
+        mass: 0.0000515138902046611451 * solar_mass()
+    )
+
+# The system, in the reference's order — which matters: the pair loop is
+# `for i, for j > i`, so a different order is a different floating-point
+# sum and a different last digit.
+function system() -> [Body]
+    return [sun(), jupiter(), saturn(), uranus(), neptune()]
+
+# The sun's velocity set so the system's total momentum is zero. **This is
+# where the language and the reference part company and nothing is lost**:
+# C mutates `bodies[0]` through a pointer, and here the array comes back
+# with a new first body, because every value behaves as an independent copy
+# (spec § Types). The arithmetic is identical.
+function offset_momentum(bodies: [Body]) -> [Body]
+    px: f64 @ 0.0
+    py: f64 @ 0.0
+    pz: f64 @ 0.0
+
+    for b in bodies
+        px @ px + b.vx * b.mass
+        py @ py + b.vy * b.mass
+        pz @ pz + b.vz * b.mass
+
+    first = bodies[0]
+    out: [Body] @ [
+        Body(x: first.x, y: first.y, z: first.z, vx: -px / solar_mass(), vy: -py / solar_mass(), vz: -pz / solar_mass(), mass: first.mass)
+    ]
+    at: i64 @ 1
+
+    while at < bodies.len()
+        out @ out.push(bodies[at])
+        at @ at + 1
+
+    return out
+
+# One step of the symplectic integrator: every pair pulls on both bodies,
+# then every body moves. The two loops are separate in the reference and
+# separate here, and that is not style — moving a body before the last pair
+# has been counted would use a position from the wrong instant.
+function advanced(bodies: [Body], dt: f64) -> [Body]
+    moved: [Body] @ bodies
+    i: i64 @ 0
+
+    while i < moved.len()
+        j: i64 @ i + 1
+
+        while j < moved.len()
+            b = moved[i]
+            other = moved[j]
+            dx = b.x - other.x
+            dy = b.y - other.y
+            dz = b.z - other.z
+            distance = sqrt(x: dx * dx + dy * dy + dz * dz)
+            mag = dt / (distance * distance * distance)
+            moved[i] @ pulled(b: b, dx: dx, dy: dy, dz: dz, mass: other.mass, mag: -mag)
+            moved[j] @ pulled(b: other, dx: dx, dy: dy, dz: dz, mass: b.mass, mag: mag)
+            j @ j + 1
+
+        i @ i + 1
+
+    at: i64 @ 0
+
+    while at < moved.len()
+        b = moved[at]
+        moved[at] @ Body(
+            x: b.x + dt * b.vx,
+            y: b.y + dt * b.vy,
+            z: b.z + dt * b.vz,
+            vx: b.vx,
+            vy: b.vy,
+            vz: b.vz,
+            mass: b.mass
+        )
+        at @ at + 1
+
+    return moved
+
+# One body's velocity after a pull. The sign lives in `mag`, so the two
+# sides of a pair are one function called twice rather than two functions
+# that must agree.
+function pulled(b: Body, dx: f64, dy: f64, dz: f64, mass: f64, mag: f64) -> Body
+    return Body(
+        x: b.x,
+        y: b.y,
+        z: b.z,
+        vx: b.vx + dx * mass * mag,
+        vy: b.vy + dy * mass * mag,
+        vz: b.vz + dz * mass * mag,
+        mass: b.mass
+    )
+
+# The system's energy: the kinetic energy of every body, less the potential
+# between every pair. This is the number the published file holds, and the
+# only number this program prints.
+function energy(bodies: [Body]) -> f64
+    e: f64 @ 0.0
+    i: i64 @ 0
+
+    while i < bodies.len()
+        b = bodies[i]
+        e @ e + 0.5 * b.mass * (b.vx * b.vx + b.vy * b.vy + b.vz * b.vz)
+        j: i64 @ i + 1
+
+        while j < bodies.len()
+            other = bodies[j]
+            dx = b.x - other.x
+            dy = b.y - other.y
+            dz = b.z - other.z
+            e @ e - b.mass * other.mass / sqrt(x: dx * dx + dy * dy + dz * dz)
+            j @ j + 1
+
+        i @ i + 1
+
+    return e
+
+# The published steps and step size.
+constant STEPS: i64
+    1000
+
+constant STEP: f64
+    0.01
+
+function main()
+    start = offset_momentum(system())
+    print(nine_places(energy(start)))
+    moved: [Body] @ start
+    step: i64 @ 0
+
+    while step < STEPS
+        moved @ advanced(moved, STEP)
+        step @ step + 1
+
+    print(nine_places(energy(moved)))
+
+# A number to exactly nine decimal places — C's `%.9f`, which this language
+# does not have: `to_str` prints the shortest text that reads back as the
+# same value (spec § Strings, arrays, maps), so `-0.169075164` would print
+# as `-0.16907516382852447`. The published file is nine places, and the
+# task's tolerance is `1.0e-8`, so the places are the comparison.
+#
+# The scaling is exact for the values this program prints: an energy near
+# `-0.17` times a billion is about `1.7e8`, and an `i64` holds nineteen
+# digits, so nothing is near the edge — and an overflow would abort rather
+# than wrap (spec § Types).
+constant BILLION: f64
+    1000000000.0
+
+function nine_places(v: f64) -> str
+    negative = v < 0.0
+    size: f64 @ v
+
+    if negative
+        size @ -v
+    scaled = to_i64(size * BILLION + 0.5).must()
+    whole = scaled / 1000000000
+    rest = scaled % 1000000000
+    text: str @ whole.to_str() + "." + padded(rest)
+
+    if negative
+        return "-" + text
+    return text
+
+# Nine digits, leading zeroes kept: `.25` of a unit is `250000000`, and
+# `.000000001` is `000000001`, which without padding would print as `1`.
+function padded(rest: i64) -> str
+    digits: str @ rest.to_str()
+
+    while digits.len() < 9
+        digits @ "0" + digits
+
+    return digits
+
+test "the two published energies, which this program did not invent"
+    # benchmarks game, nbody-output.txt, fetched 2026-09-03:
+    #     -0.169075164
+    #     -0.169087605
+    start = offset_momentum(system())
+    assert nine_places(energy(start)) == "-0.169075164"
+    moved: [Body] @ start
+    step: i64 @ 0
+
+    while step < STEPS
+        moved @ advanced(moved, STEP)
+        step @ step + 1
+
+    assert nine_places(energy(moved)) == "-0.169087605"
+
+test "offsetting the momentum makes the system's total momentum zero"
+    # The whole reason the step exists: without it the five bodies drift
+    # together and every later energy is measured from a moving frame.
+    bodies = offset_momentum(system())
+    px: f64 @ 0.0
+    py: f64 @ 0.0
+    pz: f64 @ 0.0
+
+    for b in bodies
+        px @ px + b.vx * b.mass
+        py @ py + b.vy * b.mass
+        pz @ pz + b.vz * b.mass
+
+    # Zero to within the last bits of a double, which is what "zero" means
+    # for a sum of five products.
+    assert near(a: px, b: 0.0)
+    assert near(a: py, b: 0.0)
+    assert near(a: pz, b: 0.0)
+
+test "the energy drifts by exactly what the published pair says it drifts by"
+    # **This test was written as a guess and the program corrected it.** The
+    # first draft asserted the drift was under a millionth, on the reasoning
+    # that a symplectic integrator conserves energy. It does not conserve it
+    # exactly, and the published file says so in its own two lines:
+    # -0.169087605 minus -0.169075164 is -0.000012441, which is twelve
+    # millionths and not one. So the bound is read off the oracle rather
+    # than off an expectation, and what this asserts is that a thousand
+    # steps move the energy by the published amount — a program with the
+    # arithmetic subtly wrong would still print two plausible numbers, and
+    # this is the test that would catch it.
+    start = offset_momentum(system())
+    before = energy(start)
+    moved: [Body] @ start
+    step: i64 @ 0
+
+    while step < STEPS
+        moved @ advanced(moved, STEP)
+        step @ step + 1
+
+    drift = energy(moved) - before
+    assert nine_places(drift) == "-0.000012441"
+
+    # And it is small against the energy itself, which is what "conserved"
+    # means for an integrator: under one part in ten thousand.
+    assert drift > -0.0001 && drift < 0.0001
+
+test "one step does something, and the sun stays the heaviest body"
+    start = offset_momentum(system())
+    one = advanced(start, STEP)
+    assert one[1].x != start[1].x
+    assert one.len() == start.len()
+
+    for b in one
+        assert b.mass <= one[0].mass
+
+test "nine places prints nine places, and keeps the leading zeroes"
+    assert nine_places(0.0) == "0.000000000"
+    assert nine_places(0.25) == "0.250000000"
+    assert nine_places(-0.25) == "-0.250000000"
+    assert nine_places(1.5) == "1.500000000"
+    assert padded(1) == "000000001"
+    assert padded(250000000) == "250000000"
+
+test "sqrt comes from C, and it is the C answer"
+    assert sqrt(x: 4.0) == 2.0
+    assert sqrt(x: 0.0) == 0.0
+    assert sqrt(x: 2.0) * sqrt(x: 2.0) != 2.0
+
+function near(a: f64, b: f64) -> bool
+    d = a - b
+
+    if d < 0.0
+        return -d < 0.000000000001
+    return d < 0.000000000001

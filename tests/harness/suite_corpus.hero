@@ -70,8 +70,17 @@ constant EXAMPLES: str
 # joins, merge-sorts and groups them whole, several times, in all three
 # configurations. Measured the day it landed: 41 directories, 40 with a
 # `main.hero`.
+#
+# 40 -> 42 on 2026-09-04, M-corpus-depth: `examples/nbody/` and
+# `examples/spectral/`, the last two of the milestone's oracle family and the
+# first two programs here where the FFI is INSIDE a real program rather than
+# beside one — both need `sqrt` from `math.h` to take a step at all. Both were
+# measured on the Mac, in the Linux image and on the Windows box before this
+# number moved, and all three print the published numbers byte for byte in all
+# three configurations. Measured the day they landed: 43 directories, 42 with a
+# `main.hero`.
 constant LEAST: i64
-    40
+    42
 
 function run_all(scratch: str, compiler: str) -> report.Report?
     r: report.Report @ report.empty()
