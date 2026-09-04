@@ -1508,11 +1508,15 @@ instruction is the reason and it outranks elegance, brevity and completeness: he
 will read these to *study* what was built, so a sentence that needs a compiler
 course to parse is a sentence to rewrite.
 
-**Both exist in Italian and English, and this is the one declared exception** to
-CLAUDE.md §11's "everything written is English" (§11 records it). Neither version
+**Both exist in Italian and English, one of CLAUDE.md §11's declared
+exceptions** to "everything written is English" (§11 records it). Neither version
 is a machine translation of the other; the Italian is the one the author studies
 from, so where the two diverge, the Italian is fixed to be clearer rather than
-the English to be more faithful.
+the English to be more faithful. **This said *the one* declared exception until
+2026-09-04**, when §11 was corrected and these two dependants were not: the
+exceptions are a class — a translation that is itself a deliverable — and the
+site's Italian edition, 23 pages measured that day, had been the second one for
+seventeen days.
 
 **Both teach with M-program-corpus's programs** — code known to compile, run and
 pass its own tests in three configurations, rather than snippets that were true

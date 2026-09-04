@@ -10,9 +10,12 @@ so that it can never become a teaching text.
 Two rules govern both. They are written in **plain, plain language** — the
 `/where` skill's register, assuming zero compiler knowledge, because the author
 reads them to study what was built. And they exist in **Italian and English**,
-the one declared exception to CLAUDE.md §11, neither version a translation of the
+one of CLAUDE.md §11's declared exceptions, neither version a translation of the
 other; where they diverge, the Italian is made clearer rather than the English
-made faithful.
+made faithful. **This line said *the one* declared exception until 2026-09-04**:
+§11 was corrected that day — the exceptions are a class, a translation that is
+itself a deliverable, and the site's Italian edition had been the second one for
+seventeen days — and the two sentences that repeated the old count were not.
 
 ## The journey book — "how this language came to be"
 
