@@ -296,6 +296,8 @@ example is queued. The `void *` pointee exit-2 defect is open in
 | historian | run the check over every accepted program and classify: (a) C out-only never read, (b) true in-out consumed by the callee, (c) read (must be 0). (a) ≥ 1 and (b) ≥ 1; if (b) > (a) the robust fix is a declared out mode | `heroes check` in a copy | the §4.19 ownership sitting |
 | coordinator | the §4.19 ownership sitting, when held, prices its keyword at **≤ +25 spec tokens** and its falsifier is a bound library whose caller-owned out-parameter the compiler then refuses to drop | `heroes measure` + the sitting's own compiled binding | that sitting |
 
+**Scored 2026-09-04, at panel 109**: the coordinator's row above — *the §4.19 ownership sitting prices its keyword at ≤ +25 spec tokens* — is **FALSE**. Panel 109's spec-warden measured the floor for the three facts the mark must state at **+49** (`heroes measure`, cl100k binding), the wording the sitting proposes at +70 gross and +42 net of a named removal. The instrument was the one named; the number was a hope.
+
 ## Author's verdict
 
 **RATIFIED 2026-09-04** (author instruction, *"ratify 108"*, given while the
