@@ -1,0 +1,29 @@
+the book, as Heroes reads it
+  1  rent     housing  september          -1200.00
+  2  salary   income   september           3100.00
+  3  food     living   market               -42.50
+  4  food     living   bakery                -7.80
+  5  books    living   two paperbacks       -24.95
+  6  salary   income   a lesson              80.00
+  7  food     living   market               -31.10
+  8  rent     housing  deposit back         600.00
+  9  books    living   a dictionary         -55.00
+  10 food     living   market               -29.40
+
+balances, joined to each account's kind
+account  kind     entries      total
+books    living         2     -79.95
+food     living         4    -110.80
+rent     housing        2    -600.00
+salary   income         2    3180.00
+
+sqlite and heroes, over the same rows
+  balances agree   yes
+  total agrees     yes
+  total            2389.25
+  rows agree       yes
+  average agrees   yes
+  average          238.92
+
+living expenses, from the join
+  -190.75   agree yes

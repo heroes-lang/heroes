@@ -201,8 +201,20 @@ function hash_body(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: s
         writer.line(@w, text: "}")
         writer.blank(@w)
         return
-    writer.line(@w, text: "    const " + at.c_type + " *v = elem;")
-    writer.line(@w, text: "    uint64_t h = UINT64_C(0xcbf29ce484222325);")
+
+    # **`v` is declared only where a line actually reads it**, decided from
+    # the lines in hand rather than from a premise about which field kinds
+    # produce one (CLAUDE.md §11). A record whose every field is unhashable
+    # — one `ptr`, which is what a binding wraps a handle in — otherwise
+    # declares it and reads nothing, and `suite_warnings` holds the corpus
+    # to zero clang warnings. `(void)elem;` is the other way and is worse:
+    # it says *somebody might have read this* where nothing can.
+    #
+    # **The first repair asked a predicate instead and was wrong** — a fixed
+    # array answers no there while the loop below still writes `&v->…` for
+    # it. Defect 009 in `docs/work/DONE.md` has the reproducer, the golden
+    # that caught it and why the predicate could not have been right.
+    lines: [str] @ []
 
     for field in fields
         ty: i64 @ table.error_ty(c.types)
@@ -229,20 +241,49 @@ function hash_body(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: s
 
             while i < fixed_count
                 place = "&v->" + member + "[" + i.to_str() + "]"
-                writer.line(
-                    @w,
-                    text: "    h = (h ^ " + one_hash(c, names, ty: fixed_element, place: place) + ") * UINT64_C(0x100000001b3);"
+                lines @ lines.push(
+                    "    h = (h ^ " + one_hash(c, names, ty: fixed_element, place: place) + ") * UINT64_C(0x100000001b3);"
                 )
                 i @ i + 1
         else
-            writer.line(
-                @w,
-                text: "    h = (h ^ " + one_hash(c, names, ty: ty, place: "&v->" + member) + ") * UINT64_C(0x100000001b3);"
+            lines @ lines.push(
+                "    h = (h ^ " + one_hash(c, names, ty: ty, place: "&v->" + member) + ") * UINT64_C(0x100000001b3);"
             )
+
+    reads_the_value: bool @ false
+
+    for line in lines
+        if mentions_v(line)
+            reads_the_value @ true
+
+    if reads_the_value
+        writer.line(@w, text: "    const " + at.c_type + " *v = elem;")
+    writer.line(@w, text: "    uint64_t h = UINT64_C(0xcbf29ce484222325);")
+
+    for line in lines
+        writer.line(@w, text: line)
 
     writer.line(@w, text: "    return h;")
     writer.line(@w, text: "}")
     writer.blank(@w)
+
+# Whether a line the hash is about to write reads `v`. Every place this
+# emitter builds spells it `&v->`, in both branches of the loop above and
+# nowhere else, so the needle is that and not the bare letter — which would
+# match the `v` inside a field named `value`.
+function mentions_v(line: str) -> bool
+    needle = "&v->"
+
+    if needle.len() > line.len()
+        return false
+    at: i64 @ 0
+
+    while at + needle.len() <= line.len()
+        if line.slice(from: at, to: at + needle.len()) == needle
+            return true
+        at @ at + 1
+
+    return false
 
 function one_hash(c: state.Checked, names: ctype.Names, ty: i64, place: str) -> str
     found = descriptors.hash_call(c, names, ty: ty, place: place)

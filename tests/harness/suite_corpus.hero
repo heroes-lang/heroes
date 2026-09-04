@@ -79,8 +79,22 @@ constant EXAMPLES: str
 # number moved, and all three print the published numbers byte for byte in all
 # three configurations. Measured the day they landed: 43 directories, 42 with a
 # `main.hero`.
+#
+# 42 -> 43 on 2026-09-04, M-corpus-depth: `examples/ledger/`, the LAST of the
+# milestone's nine programs and the one that closes its measured gap outright
+# — FFI and "a real program" were disjoint sets, every `extern` directory in
+# this corpus being 65 to 192 lines and single-module. This one is four
+# modules, binds **eighteen** SQLite functions and seven of its constants,
+# reuses one prepared statement across ten inserts inside a transaction, reads
+# three column types through a `variant` that cannot forget SQLite's fifth,
+# and checks every number twice: SQLite's own `sum … group by` against the
+# same total computed in Heroes over the same rows. It found two things on its
+# first run — an `extern` is not callable across a module boundary, and a
+# `ptr` may not be the element of a `T?` — and the record it wrote around that
+# pointer emitted C clang warned about, which is defect 009, repaired the same
+# hour. Measured the day it landed: 44 directories, 43 with a `main.hero`.
 constant LEAST: i64
-    42
+    43
 
 function run_all(scratch: str, compiler: str) -> report.Report?
     r: report.Report @ report.empty()
