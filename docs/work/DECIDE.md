@@ -27,12 +27,18 @@ Two rules bind this file, both learned the hard way:
 
 Format: `- [ ] <origin> | <what> | <where to look> | <why it matters>`
 
-**Nothing is open here as of 2026-09-05.** The four spec silences carried from
+**It was empty for one morning, 2026-09-05.** The four spec silences carried from
 the retired panel watch list were settled at `docs/panel/110` and are in
 `docs/work/DONE.md`. **An empty list is not a finished list**, and CLAUDE.md's
 own closing paragraph says why: this file reaching zero *"reads as tidiness and
 was the symptom"* on 2026-09-04, because the item that had gone was the author's
-ratification standing in for the author. What emptied it this time was a sitting
+ratification standing in for the author. What emptied it that time was a sitting
 that ruled, two vetoes that refused a sentence, and one premise that measurement
 destroyed — and what those left behind is **work**, which is in
 `docs/work/SCHEDULED.md` under M-check-completeness and M-guide-book, not here.
+
+**What refilled it the same evening was not a sitting but a red `main`**: the
+seed had been two repairs behind for a day, nothing between tags was obliged to
+notice, and the thing that did notice was luck. That is the one item below.
+
+- [ ] **Does the seed-freshness rule get an instrument that runs on every push, given the exact cheap check has a false-positive mode?** | found 2026-09-05, out of a stale seed that reddened `main` for a day (`docs/work/DONE.md`, the entry for the regeneration) | **What is true today.** `seed/README.md` says *"if the diff touches `selfhost/`, the seed is regenerated in the same commit"* and names three forcing conditions with one instrument each; the third's instrument is CI's *The seed is what today's source emits*, a `cmp` **on Linux at tags only**. Between tags the only thing that notices is the net going red — and it goes red only when the stale compiler's behaviour differs from a golden's expectation, which on 2026-09-05 it did **by luck rather than by design**: had defect 011's repair carried no golden, a stale seed would have passed every suite. **The default the compiler runs on**, which is the cost of leaving this open: *the seed may be a whole tag behind, silently, unless a golden happens to catch it.* **The cheap check is exact about git and cries wolf** — assert that the newest commit touching `selfhost/**` also touches `seed/heroes.c`; it would have fired on `44930209`, and it fires falsely on any `selfhost/` change whose emitted C is byte-identical, because git records no change to the seed and that commit never enters its log. **The expensive check has no false positive and is no longer expensive**: emit `selfhost/` and `cmp` it against the committed seed — measured twice on this Mac 2026-09-05, **21.13 s** and **21.89 s**, against the *"15m41s"* `seed/README.md` prices it at, which is the arithmetic that put it on tags. So the question is narrow and answerable: does 21 s belong in the net on every push, in `heroes doctor`, or where it is | seed/README.md § When this file must be regenerated · .github/workflows/ci.yml:508-510 · tests/harness/suite_records.hero · docs/work/DONE.md | the instrument that would have caught this exists and fires a milestone late, and a rule whose check is that late costs a day of red every time somebody forgets
