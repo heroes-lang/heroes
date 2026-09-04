@@ -15,6 +15,15 @@ archive/bootstrap-rs/target
 /heroes
 /heroes-next
 
+# The third name, and it was missing until 2026-09-05 while the other two had a
+# paragraph explaining why they are here. `heroes-from-seed` is what CI builds
+# from `seed/heroes.c` on every leg, it is the FIRST candidate
+# `tests/harness/shell.hero`'s `some_compiler()` looks for, and it is the binary
+# a session reaches for when it wants to know what a clean checkout would do. It
+# is the same multi-megabyte artifact as the two above, and it was one `git add
+# -A` away from the repository the whole time.
+/heroes-from-seed
+
 # bootstrap stages (derived)
 stage[0-9]
 *.o
