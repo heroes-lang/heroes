@@ -105,8 +105,6 @@ void h_abortarrayindex_main(void) {
     int64_t t10;
     HeroArrayHeader * t11 = {0};
     HeroArrayHeader * t12 = {0};
-    HeroArrayHeader * t13 = {0};
-    HeroArrayHeader * t14 = {0};
     goto bb0;
 bb0:
 #line 5 "tests/golden/run/abort-array-index.hero"
@@ -133,15 +131,15 @@ bb0:
     t11 = h1_own1;
 #line 5 "tests/golden/run/abort-array-index.hero"
     h1_own1 = t4;
-#line 137 "abortarrayindex.c"
+#line 135 "abortarrayindex.c"
     hero_array_decref(t11);
 #line 5 "tests/golden/run/abort-array-index.hero"
     t12 = h0_xs;
-#line 141 "abortarrayindex.c"
+#line 139 "abortarrayindex.c"
     hero_array_incref(t4);
 #line 5 "tests/golden/run/abort-array-index.hero"
     h0_xs = t4;
-#line 145 "abortarrayindex.c"
+#line 143 "abortarrayindex.c"
     hero_array_decref(t12);
 #line 6 "tests/golden/run/abort-array-index.hero"
     t5 = h0_xs;
@@ -163,14 +161,11 @@ bb0:
     hero_print_int(t10);
 #line 7 "tests/golden/run/abort-array-index.hero"
     hero_print_end();
+#line 165 "abortarrayindex.c"
+    hero_array_decref(h0_xs);
 #line 7 "tests/golden/run/abort-array-index.hero"
-    t13 = h0_xs;
-#line 169 "abortarrayindex.c"
-    hero_array_decref(t13);
-#line 7 "tests/golden/run/abort-array-index.hero"
-    t14 = h1_own1;
-#line 173 "abortarrayindex.c"
-    hero_array_decref(t14);
+#line 168 "abortarrayindex.c"
+    hero_array_decref(h1_own1);
     return;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

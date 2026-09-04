@@ -146,7 +146,6 @@ void h_literalbases_main(void) {
     int64_t t39;
     int64_t t40;
     HeroStr t41 = {0};
-    HeroStr t42 = {0};
     goto bb0;
 bb0:
 #line 28 "tests/golden/run/literal-bases.hero"
@@ -245,7 +244,7 @@ bb0:
     t41 = h0_own0;
 #line 35 "tests/golden/run/literal-bases.hero"
     h0_own0 = t23;
-#line 249 "literalbases.c"
+#line 248 "literalbases.c"
     hero_str_decref(t41);
 #line 35 "tests/golden/run/literal-bases.hero"
     hero_print_str(t21);
@@ -313,10 +312,8 @@ bb0:
     hero_print_int(t40);
 #line 38 "tests/golden/run/literal-bases.hero"
     hero_print_end();
-#line 38 "tests/golden/run/literal-bases.hero"
-    t42 = h0_own0;
-#line 319 "literalbases.c"
-    hero_str_decref(t42);
+#line 316 "literalbases.c"
+    hero_str_decref(h0_own0);
     return;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

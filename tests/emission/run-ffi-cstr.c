@@ -106,7 +106,6 @@ HeroStr h_fficstr_shout(HeroStr h0_text) {
     HeroStr t2 = {0};
     HeroStr t3 = {0};
     HeroStr t4 = {0};
-    HeroStr t5 = {0};
     goto bb0;
 bb0:
 #line 16 "tests/golden/run/ffi-cstr.hero"
@@ -119,21 +118,20 @@ bb0:
     t4 = h1_own1;
 #line 16 "tests/golden/run/ffi-cstr.hero"
     h1_own1 = t3;
-#line 123 "fficstr.c"
+#line 122 "fficstr.c"
     hero_str_decref(t4);
 #line 16 "tests/golden/run/ffi-cstr.hero"
-#line 126 "fficstr.c"
+#line 125 "fficstr.c"
     hero_str_incref(t3);
 #line 16 "tests/golden/run/ffi-cstr.hero"
-    t5 = h1_own1;
-#line 130 "fficstr.c"
-    hero_str_decref(t5);
+#line 128 "fficstr.c"
+    hero_str_decref(h1_own1);
     return t3;
 }
 
 #line 18 "tests/golden/run/ffi-cstr.hero"
 void h_fficstr_main(void) {
-#line 137 "fficstr.c"
+#line 135 "fficstr.c"
     HeroStr h0_own0 = {0};
     HeroStr t1 = {0};
     const char * t2;
@@ -142,7 +140,6 @@ void h_fficstr_main(void) {
     const char * t6;
     HeroStr t8 = {0};
     HeroStr t9 = {0};
-    HeroStr t10 = {0};
     goto bb0;
 bb0:
 #line 19 "tests/golden/run/ffi-cstr.hero"
@@ -159,7 +156,7 @@ bb0:
     t9 = h0_own0;
 #line 24 "tests/golden/run/ffi-cstr.hero"
     h0_own0 = t5;
-#line 163 "fficstr.c"
+#line 160 "fficstr.c"
     hero_str_decref(t9);
 #line 24 "tests/golden/run/ffi-cstr.hero"
     t6 = hero_str_cstr(t5);
@@ -171,10 +168,8 @@ bb0:
     hero_print_str(t8);
 #line 25 "tests/golden/run/ffi-cstr.hero"
     hero_print_end();
-#line 25 "tests/golden/run/ffi-cstr.hero"
-    t10 = h0_own0;
-#line 177 "fficstr.c"
-    hero_str_decref(t10);
+#line 172 "fficstr.c"
+    hero_str_decref(h0_own0);
     return;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

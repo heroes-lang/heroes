@@ -15,12 +15,9 @@ function describe(s: Shape, c: Colour) -> str
     bb1  match: join    preds bb4, bb7
         $t16: str = load $r0
         incref $t16
-        $t23: str = load $r0
-        decref $t23
-        $t24: str = load $r1
-        decref $t24
-        $t25: str = load $r2
-        decref $t25
+        decref_slot $r0
+        decref_slot $r1
+        decref_slot $r2
         return $t16
     bb2  match: arm    preds bb0
         $t4: Colour = load c

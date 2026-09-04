@@ -56,7 +56,7 @@ function emit(@w: writer.Writer, p: containers.Program, c: state.Checked, names:
             is_copy_out @ true
         .lit | .load | .store | .push_owned | .unary | .binary | .cast | .call | .construct => is_copy_out @ is_copy_out
         .field | .index | .map_get | .len_of | .tag_of | .payload                           => is_copy_out @ is_copy_out
-        .func_ref | .abort_op | .incref | .decref | .hole | .missing                        => is_copy_out @ is_copy_out
+        .func_ref | .abort_op | .incref | .decref | .decref_slot | .hole | .missing         => is_copy_out @ is_copy_out
 
     if is_copy_out
         return
@@ -156,7 +156,21 @@ function emit(@w: writer.Writer, p: containers.Program, c: state.Checked, names:
             )
         .incref rc => reference(@w, c, names, f, value: rc.value, keep: true)
         .decref rc => reference(@w, c, names, f, value: rc.value, keep: false)
-        .unary u   => operator.unary(@w, f, c, op: u.op, operand: u.operand, target: target)
+        # **Panel 106's whole repair, in one line.** The exit sweep used to
+        # emit a load into a fresh temporary and then a decref of it; the
+        # temporary was address-taken, so clang pinned it to the frame for
+        # the function's whole life, and 58.5% of every declared frame was
+        # those pairs. Now the release names the slot.
+
+        .decref_slot ds => reference_named(
+            @w,
+            c,
+            names,
+            ty: f.slots[ds.slot].ty,
+            name: mangle.slot(index: ds.slot, name: f.slots[ds.slot].name),
+            keep: false
+        )
+        .unary u => operator.unary(@w, f, c, op: u.op, operand: u.operand, target: target)
         .binary bin => operator.binary(
             @w,
             c,
@@ -315,9 +329,16 @@ function emit(@w: writer.Writer, p: containers.Program, c: state.Checked, names:
 # The refcount line for one value, dispatched by type with the
 # aggregate fallback.
 function reference(@w: writer.Writer, c: state.Checked, names: ctype.Names, f: containers.Function, value: i64, keep: bool)
+    reference_named(@w, c, names, ty: containers.value_type(f, value), name: mangle.value(value), keep: keep)
+
+# The refcount call over a name the caller has already rendered. **One
+# table of spellings, reached two ways** — a temporary's name, and since
+# panel 106 a slot's — because a second copy of this match is a second
+# place that can learn a type and disagree about `hero_str_decref` versus
+# `_release(&…)`. `reference` above is the value door; `release_slot`
+# below is the slot door; the C they write comes from here.
+function reference_named(@w: writer.Writer, c: state.Checked, names: ctype.Names, ty: i64, name: str, keep: bool)
     writer.at_generated(@w)
-    ty = containers.value_type(f, value)
-    name = mangle.value(value)
     line: str @ ""
 
     match table.get(c.types, ty)
@@ -349,7 +370,7 @@ function reference(@w: writer.Writer, c: state.Checked, names: ctype.Names, f: c
         .generic | .error                                     => line @ line
 
     if line == ""
-        found = aggregate.retain(c, names, ty: ty, value: value, keep: keep)
+        found = aggregate.retain_named(c, names, ty: ty, name: name, keep: keep)
 
         if found.is_err()
             line @ "    hero_unreachable(); /* the gate refuses this type */"

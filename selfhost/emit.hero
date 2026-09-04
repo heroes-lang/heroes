@@ -151,7 +151,7 @@ function reach_of(p: containers.Program, c: state.Checked, target: emit_decls.Bu
                     .lit | .load | .field | .payload | .tag_of | .len_of | .call => reached[inst.ty] @ true
                     .func_ref | .store | .push_owned | .unary | .binary | .cast  => reached[inst.ty] @ true
                     .index | .map_get | .copy_out | .abort_op                    => reached[inst.ty] @ true
-                    .incref | .decref | .hole | .missing                         => reached[inst.ty] @ true
+                    .incref | .decref | .decref_slot | .hole | .missing          => reached[inst.ty] @ true
 
     return Reach(reached: closed_over(c, reached: reached), constructed: constructed)
 

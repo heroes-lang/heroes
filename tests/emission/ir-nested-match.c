@@ -155,9 +155,6 @@ HeroStr h_nestedmatch_describe(h_nestedmatch_Shape h0_s, h_nestedmatch_Colour h1
     HeroStr t20 = {0};
     HeroStr t21 = {0};
     HeroStr t22 = {0};
-    HeroStr t23 = {0};
-    HeroStr t24 = {0};
-    HeroStr t25 = {0};
     goto bb0;
 bb0:
 #line 22 "tests/golden/ir/nested-match.hero"
@@ -182,20 +179,17 @@ bb0:
 bb1:
 #line 22 "tests/golden/ir/nested-match.hero"
     t16 = h3_r0;
-#line 186 "nestedmatch.c"
+#line 183 "nestedmatch.c"
     hero_str_incref(t16);
 #line 22 "tests/golden/ir/nested-match.hero"
-    t23 = h3_r0;
-#line 190 "nestedmatch.c"
-    hero_str_decref(t23);
+#line 186 "nestedmatch.c"
+    hero_str_decref(h3_r0);
 #line 22 "tests/golden/ir/nested-match.hero"
-    t24 = h5_r1;
-#line 194 "nestedmatch.c"
-    hero_str_decref(t24);
+#line 189 "nestedmatch.c"
+    hero_str_decref(h5_r1);
 #line 22 "tests/golden/ir/nested-match.hero"
-    t25 = h7_r2;
-#line 198 "nestedmatch.c"
-    hero_str_decref(t25);
+#line 192 "nestedmatch.c"
+    hero_str_decref(h7_r2);
     return t16;
 bb2:
 #line 24 "tests/golden/ir/nested-match.hero"
@@ -242,11 +236,11 @@ bb4:
     t9 = h5_r1;
 #line 22 "tests/golden/ir/nested-match.hero"
     t17 = h3_r0;
-#line 246 "nestedmatch.c"
+#line 240 "nestedmatch.c"
     hero_str_incref(t9);
 #line 22 "tests/golden/ir/nested-match.hero"
     h3_r0 = t9;
-#line 250 "nestedmatch.c"
+#line 244 "nestedmatch.c"
     hero_str_decref(t17);
     goto bb1;
 bb5:
@@ -254,11 +248,11 @@ bb5:
     t7 = HERO_STR_LIT(hero_str_127e9def);
 #line 24 "tests/golden/ir/nested-match.hero"
     t18 = h5_r1;
-#line 258 "nestedmatch.c"
+#line 252 "nestedmatch.c"
     hero_str_incref(t7);
 #line 24 "tests/golden/ir/nested-match.hero"
     h5_r1 = t7;
-#line 262 "nestedmatch.c"
+#line 256 "nestedmatch.c"
     hero_str_decref(t18);
     goto bb4;
 bb6:
@@ -266,11 +260,11 @@ bb6:
     t8 = HERO_STR_LIT(hero_str_56e1b672);
 #line 24 "tests/golden/ir/nested-match.hero"
     t19 = h5_r1;
-#line 270 "nestedmatch.c"
+#line 264 "nestedmatch.c"
     hero_str_incref(t8);
 #line 24 "tests/golden/ir/nested-match.hero"
     h5_r1 = t8;
-#line 274 "nestedmatch.c"
+#line 268 "nestedmatch.c"
     hero_str_decref(t19);
     goto bb4;
 bb7:
@@ -278,11 +272,11 @@ bb7:
     t15 = h7_r2;
 #line 22 "tests/golden/ir/nested-match.hero"
     t20 = h3_r0;
-#line 282 "nestedmatch.c"
+#line 276 "nestedmatch.c"
     hero_str_incref(t15);
 #line 22 "tests/golden/ir/nested-match.hero"
     h3_r0 = t15;
-#line 286 "nestedmatch.c"
+#line 280 "nestedmatch.c"
     hero_str_decref(t20);
     goto bb1;
 bb8:
@@ -290,11 +284,11 @@ bb8:
     t13 = HERO_STR_LIT(hero_str_77dba954);
 #line 28 "tests/golden/ir/nested-match.hero"
     t21 = h7_r2;
-#line 294 "nestedmatch.c"
+#line 288 "nestedmatch.c"
     hero_str_incref(t13);
 #line 28 "tests/golden/ir/nested-match.hero"
     h7_r2 = t13;
-#line 298 "nestedmatch.c"
+#line 292 "nestedmatch.c"
     hero_str_decref(t21);
     goto bb7;
 bb9:
@@ -302,11 +296,11 @@ bb9:
     t14 = HERO_STR_LIT(hero_str_769134a3);
 #line 28 "tests/golden/ir/nested-match.hero"
     t22 = h7_r2;
-#line 306 "nestedmatch.c"
+#line 300 "nestedmatch.c"
     hero_str_incref(t14);
 #line 28 "tests/golden/ir/nested-match.hero"
     h7_r2 = t14;
-#line 310 "nestedmatch.c"
+#line 304 "nestedmatch.c"
     hero_str_decref(t22);
     goto bb7;
 }

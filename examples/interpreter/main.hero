@@ -119,30 +119,39 @@ test "both modules named expr are in this file, and one had to be renamed"
     assert ran("print 2 * 3") == "6"
 
 test "deep nesting works, and the depth it works to is measured rather than hoped"
-    # THE MILESTONE ASKED FOR 500 AND 500 DOES NOT WORK, so the number here is
-    # 60 and the reason is written down instead of the wish.
+    # THE MILESTONE ASKED FOR 500. IT IS 83, AND THE REASON IS WRITTEN DOWN
+    # INSTEAD OF THE WISH — twice now, because the number moved once.
     #
-    # Measured 2026-09-03 on this Mac, one nesting depth per configuration,
-    # this program:
+    # It was 60 when this program landed. Panel 106 then measured why the
+    # ceiling was where it was: the exit sweep minted a load temporary per
+    # swept slot per returning block, every one address-taken so clang could
+    # never promote it, and together they were **58.5% of all declared frame
+    # bytes**. The repair deletes them, and the ceilings roughly doubled.
     #
-    #   --sanitize   120 works · 160 overflows (ASan says so, exit 134)
-    #   -O0          190 works · 200 overflows — **exit 139, SILENTLY**
-    #   -O2          340 works · 360 overflows (the runtime's guard names the
-    #                function: `panic: stack exhausted in synexpr.grouped`)
+    # Measured 2026-09-04 on this Mac, one nesting depth per configuration,
+    # this program, binary-searched:
     #
-    # WHY SO SHALLOW, and this is measured too: `heroes build --emit-c` shows
-    # **247 hoisted locals** in the prologue of `syn/expr.hero`'s `compared`
-    # and 151 in `primary`. CLAUDE.md §7 puts every local in the prologue, so a
-    # recursive function's frame is proportional to its whole BODY rather than
-    # to what is live at any point — and one nesting level of this grammar goes
-    # through seven of those functions plus `grouped`. The two `@` parameters
-    # are copied in by value at every level as well (§4.8's copy-in/copy-out).
+    #                  before   after
+    #   --sanitize       104      166
+    #   -O0              191      314
+    #   -O2              349      585
     #
-    # 60 is half of the tightest measured limit, which is margin enough that
-    # this case cannot become flaky on a machine with a smaller stack. It is
-    # still a POSITIVE witness for the runtime's stack guard (panel 104): the
-    # guard must not fire on legitimate depth, and here it does not.
-    deep = "print " + repeat("(", 60) + "1" + repeat(")", 60)
+    # All three stop with `panic: stack exhausted` and the guard naming the
+    # function (panel 104), which is what makes a ceiling measurable at all.
+    #
+    # WHY IT IS STILL NOT 500, and this is the honest half: `--sanitize` tops
+    # out at 166, the corpus runs every program in all three configurations,
+    # and half of the tightest measured ceiling is the rule this file has
+    # followed since it was written — so the case sits at **83**. 500 is not
+    # reachable by any configuration under the sanitiser today, and saying so
+    # with the number beats a case that passes on two platforms and is flaky
+    # on the third.
+    #
+    # What still costs the bytes, measured by the same sitting and filed
+    # rather than done: the store's own `old` temporary, 9.1% more of
+    # declared bytes, which genuinely needs a temporary because the store
+    # sits between the load and the decref.
+    deep = "print " + repeat("(", 83) + "1" + repeat(")", 83)
     assert ran(deep) == "1"
 
     # And the tree really is that deep, so a parser that quietly flattened the
@@ -150,9 +159,10 @@ test "deep nesting works, and the depth it works to is measured rather than hope
     nodes = parse.program(deep).must()
     assert nodes.exprs.len() == 1
 
-    # A hundred still works in every configuration, which says 60 is not
-    # sitting on a cliff.
-    hundred = "print " + repeat("(", 100) + "2" + repeat(")", 100)
+    # A hundred and fifty still works in every configuration, which says 83 is
+    # not sitting on a cliff — it was a hundred against a ceiling of 104
+    # before the repair, and the margin is wider now.
+    hundred = "print " + repeat("(", 150) + "2" + repeat(")", 150)
     assert ran(hundred) == "2"
 
 test "a script that recurses without an end is refused, and does not crash"
@@ -163,12 +173,15 @@ test "a script that recurses without an end is refused, and does not crash"
     assert refusal_code(forever) == "too_deep"
 
     # And a script that recurses deeply but finitely still works, up to the
-    # guard: 20 nested calls, which is under `run/eval.hero`'s measured 24.
-    counted = "fn down(n)\n    if n <= 0\n        return 0\n    end\n    return 1 + down(n - 1)\nend\nprint down(20)"
-    assert ran(counted) == "20"
+    # guard: 30 nested calls, which is under `run/eval.hero`'s measured 38.
+    counted = "fn down(n)\n    if n <= 0\n        return 0\n    end\n    return 1 + down(n - 1)\nend\nprint down(30)"
+    assert ran(counted) == "30"
 
-    # And 30, which is over it, is the guard's refusal rather than a crash.
-    assert refusal_code("fn down(n)\n    if n <= 0\n        return 0\n    end\n    return 1 + down(n - 1)\nend\nprint down(30)") == "too_deep"
+    # And 50, which is over it, is the guard's refusal rather than a crash.
+    # The pair moved together when the guard did (24 -> 38 at panel 106's
+    # repair): a "works" case and a "refused" case that met in the middle
+    # would assert nothing, and for one edit they both read 30.
+    assert refusal_code("fn down(n)\n    if n <= 0\n        return 0\n    end\n    return 1 + down(n - 1)\nend\nprint down(50)") == "too_deep"
 
 test "every way arithmetic can stop this language is a refusal, not an abort"
     # Each of these is Heroes itself aborting if `run/expr.hero` did not guard

@@ -322,7 +322,7 @@ function check_op(@found: [GateNote], op: ir.OpKind, span: token.Span)
         .missing => note(@found, code: "missing", what: "a form the compiler cannot lower", span: span)
         .lit | .load | .store | .push_owned | .unary | .binary | .cast | .construct => return
         .field | .index | .map_get | .len_of | .tag_of | .payload => return
-        .func_ref | .copy_out | .abort_op | .incref | .decref => return
+        .func_ref | .copy_out | .abort_op | .incref | .decref | .decref_slot => return
 
 # Where a fixed array is allowed to FLOW (panel 081 R3) — C's rule:
 # a T[N] has no storage of its own, so it works in exactly the two
@@ -356,9 +356,9 @@ function check_fixed_flow(@found: [GateNote], c: state.Checked, f: containers.Fu
                                     span: span
                                 )
                         .inout_arg => continue
-        .lit | .load | .push_owned | .unary | .binary | .cast | .call            => return
-        .field | .index | .map_get | .len_of | .tag_of | .payload                => return
-        .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing => return
+        .lit | .load | .push_owned | .unary | .binary | .cast | .call                           => return
+        .field | .index | .map_get | .len_of | .tag_of | .payload                               => return
+        .func_ref | .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => return
 
 function is_fixed_value(c: state.Checked, f: containers.Function, value: i64) -> bool
     return match table.get(c.types, containers.value_type(f, value))
@@ -381,9 +381,9 @@ function is_a_written_literal(f: containers.Function, value: i64) -> bool
                             .array_shape                             => return true
                             .record_shape | .case_shape | .map_shape => return false
                             .ok_shape | .fail_shape | .err_shape     => return false
-                    .lit | .load | .store | .push_owned | .unary | .binary | .cast | .call   => return false
-                    .field | .index | .map_get | .len_of | .tag_of | .payload                => return false
-                    .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing => return false
+                    .lit | .load | .store | .push_owned | .unary | .binary | .cast | .call => return false
+                    .field | .index | .map_get | .len_of | .tag_of | .payload              => return false
+                    .func_ref | .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => return false
 
     return false
 

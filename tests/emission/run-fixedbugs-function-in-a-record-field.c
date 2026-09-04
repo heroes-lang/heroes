@@ -202,16 +202,13 @@ void h_fixedbugsfunctioninarecordfield_main(void) {
     h_fixedbugsfunctioninarecordfield_Holder t33 = {0};
     h_fixedbugsfunctioninarecordfield_Holder t34 = {0};
     h_fixedbugsfunctioninarecordfield_Holder t35 = {0};
-    h_fixedbugsfunctioninarecordfield_Holder t36 = {0};
-    h_fixedbugsfunctioninarecordfield_Holder t37 = {0};
-    h_fixedbugsfunctioninarecordfield_Holder t38 = {0};
     goto bb0;
 bb0:
 #line 47 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
     t1 = h_fixedbugsfunctioninarecordfield_double;
 #line 47 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
     t2 = HERO_STR_LIT(hero_str_6be6e610);
-#line 215 "fixedbugsfunctioninarecordfield.c"
+#line 212 "fixedbugsfunctioninarecordfield.c"
     hero_str_incref(t2);
 #line 47 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
     t3 = (h_fixedbugsfunctioninarecordfield_Holder){.f_f = t1, .f_label = t2};
@@ -219,15 +216,15 @@ bb0:
     t33 = h6_own6;
 #line 47 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
     h6_own6 = t3;
-#line 223 "fixedbugsfunctioninarecordfield.c"
+#line 220 "fixedbugsfunctioninarecordfield.c"
     h_fixedbugsfunctioninarecordfield_Holder_release(&t33);
 #line 47 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
     t34 = h0_h;
-#line 227 "fixedbugsfunctioninarecordfield.c"
+#line 224 "fixedbugsfunctioninarecordfield.c"
     h_fixedbugsfunctioninarecordfield_Holder_retain(&t3);
 #line 47 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
     h0_h = t3;
-#line 231 "fixedbugsfunctioninarecordfield.c"
+#line 228 "fixedbugsfunctioninarecordfield.c"
     h_fixedbugsfunctioninarecordfield_Holder_release(&t34);
 #line 48 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
     t4 = h0_h;
@@ -253,11 +250,11 @@ bb0:
     t10 = h0_h;
 #line 52 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
     t35 = h1_k;
-#line 257 "fixedbugsfunctioninarecordfield.c"
+#line 254 "fixedbugsfunctioninarecordfield.c"
     h_fixedbugsfunctioninarecordfield_Holder_retain(&t10);
 #line 52 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
     h1_k = t10;
-#line 261 "fixedbugsfunctioninarecordfield.c"
+#line 258 "fixedbugsfunctioninarecordfield.c"
     h_fixedbugsfunctioninarecordfield_Holder_release(&t35);
 #line 53 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
     t11 = h_fixedbugsfunctioninarecordfield_negate;
@@ -314,17 +311,14 @@ bb0:
 #line 60 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
 bb1:
 #line 46 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
-    t36 = h0_h;
-#line 319 "fixedbugsfunctioninarecordfield.c"
-    h_fixedbugsfunctioninarecordfield_Holder_release(&t36);
+#line 315 "fixedbugsfunctioninarecordfield.c"
+    h_fixedbugsfunctioninarecordfield_Holder_release(&h0_h);
 #line 46 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
-    t37 = h1_k;
-#line 323 "fixedbugsfunctioninarecordfield.c"
-    h_fixedbugsfunctioninarecordfield_Holder_release(&t37);
+#line 318 "fixedbugsfunctioninarecordfield.c"
+    h_fixedbugsfunctioninarecordfield_Holder_release(&h1_k);
 #line 46 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
-    t38 = h6_own6;
-#line 327 "fixedbugsfunctioninarecordfield.c"
-    h_fixedbugsfunctioninarecordfield_Holder_release(&t38);
+#line 321 "fixedbugsfunctioninarecordfield.c"
+    h_fixedbugsfunctioninarecordfield_Holder_release(&h6_own6);
     return;
 bb2:
 #line 61 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
@@ -361,7 +355,7 @@ bb3:
     hero_print_end();
 #line 64 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
     goto bb1;
-#line 365 "fixedbugsfunctioninarecordfield.c"
+#line 359 "fixedbugsfunctioninarecordfield.c"
 }
 HERO_TU_LOCAL void h_fixedbugsfunctioninarecordfield_Holder_retain(const h_fixedbugsfunctioninarecordfield_Holder *v) {
     hero_str_incref(v->f_label);

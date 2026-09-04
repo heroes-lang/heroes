@@ -109,7 +109,6 @@ void h_f64rendering_main(void) {
     double t15;
     HeroStr t16 = {0};
     HeroStr t17 = {0};
-    HeroStr t18 = {0};
     goto bb0;
 bb0:
 #line 20 "tests/golden/run/f64-rendering.hero"
@@ -172,16 +171,14 @@ bb0:
     t17 = h0_own0;
 #line 26 "tests/golden/run/f64-rendering.hero"
     h0_own0 = t16;
-#line 176 "f64rendering.c"
+#line 175 "f64rendering.c"
     hero_str_decref(t17);
 #line 26 "tests/golden/run/f64-rendering.hero"
     hero_print_str(t16);
 #line 26 "tests/golden/run/f64-rendering.hero"
     hero_print_end();
-#line 26 "tests/golden/run/f64-rendering.hero"
-    t18 = h0_own0;
-#line 184 "f64rendering.c"
-    hero_str_decref(t18);
+#line 181 "f64rendering.c"
+    hero_str_decref(h0_own0);
     return;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

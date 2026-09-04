@@ -107,19 +107,17 @@ HeroStr h_strings_greet(HeroStr h0_name, bool h1_formal) {
     HeroStr t7 = {0};
     HeroStr t8 = {0};
     HeroStr t9 = {0};
-    HeroStr t10 = {0};
-    HeroStr t11 = {0};
     goto bb0;
 bb0:
 #line 8 "tests/golden/emit/strings.hero"
     t1 = HERO_STR_LIT(hero_str_1b7183);
 #line 8 "tests/golden/emit/strings.hero"
     t7 = h2_prefix;
-#line 119 "strings.c"
+#line 117 "strings.c"
     hero_str_incref(t1);
 #line 8 "tests/golden/emit/strings.hero"
     h2_prefix = t1;
-#line 123 "strings.c"
+#line 121 "strings.c"
     hero_str_decref(t7);
 #line 10 "tests/golden/emit/strings.hero"
     t2 = h1_formal;
@@ -137,30 +135,28 @@ bb1:
     t8 = h3_own3;
 #line 12 "tests/golden/emit/strings.hero"
     h3_own3 = t6;
-#line 141 "strings.c"
+#line 139 "strings.c"
     hero_str_decref(t8);
 #line 12 "tests/golden/emit/strings.hero"
-#line 144 "strings.c"
+#line 142 "strings.c"
     hero_str_incref(t6);
 #line 12 "tests/golden/emit/strings.hero"
-    t10 = h2_prefix;
-#line 148 "strings.c"
-    hero_str_decref(t10);
+#line 145 "strings.c"
+    hero_str_decref(h2_prefix);
 #line 12 "tests/golden/emit/strings.hero"
-    t11 = h3_own3;
-#line 152 "strings.c"
-    hero_str_decref(t11);
+#line 148 "strings.c"
+    hero_str_decref(h3_own3);
     return t6;
 bb2:
 #line 11 "tests/golden/emit/strings.hero"
     t3 = HERO_STR_LIT(hero_str_2d678ad8);
 #line 11 "tests/golden/emit/strings.hero"
     t9 = h2_prefix;
-#line 160 "strings.c"
+#line 156 "strings.c"
     hero_str_incref(t3);
 #line 11 "tests/golden/emit/strings.hero"
     h2_prefix = t3;
-#line 164 "strings.c"
+#line 160 "strings.c"
     hero_str_decref(t9);
     goto bb1;
 bb3:
@@ -169,13 +165,12 @@ bb3:
 
 #line 14 "tests/golden/emit/strings.hero"
 void h_strings_main(void) {
-#line 173 "strings.c"
+#line 169 "strings.c"
     HeroStr h0_own0 = {0};
     HeroStr t1 = {0};
     bool t2;
     HeroStr t3 = {0};
     HeroStr t4 = {0};
-    HeroStr t5 = {0};
     goto bb0;
 bb0:
 #line 15 "tests/golden/emit/strings.hero"
@@ -188,16 +183,14 @@ bb0:
     t4 = h0_own0;
 #line 15 "tests/golden/emit/strings.hero"
     h0_own0 = t3;
-#line 192 "strings.c"
+#line 187 "strings.c"
     hero_str_decref(t4);
 #line 15 "tests/golden/emit/strings.hero"
     hero_print_str(t3);
 #line 15 "tests/golden/emit/strings.hero"
     hero_print_end();
-#line 15 "tests/golden/emit/strings.hero"
-    t5 = h0_own0;
-#line 200 "strings.c"
-    hero_str_decref(t5);
+#line 193 "strings.c"
+    hero_str_decref(h0_own0);
     return;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

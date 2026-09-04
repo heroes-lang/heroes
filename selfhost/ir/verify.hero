@@ -215,7 +215,7 @@ function check_instructions(f: containers.Function, blk: containers.Block, at: s
                     )
             .lit | .load | .store | .push_owned | .unary | .binary | .cast | .construct => is_abort @ is_abort
             .field | .index | .map_get | .len_of | .tag_of | .payload                   => is_abort @ is_abort
-            .copy_out | .incref | .decref | .hole                                       => is_abort @ is_abort
+            .copy_out | .incref | .decref | .decref_slot | .hole                        => is_abort @ is_abort
 
         if is_missing
             problems @ problems.push(at + "a form the lowering does not handle")
@@ -278,7 +278,7 @@ function check_copy_out(f: containers.Function, blk: containers.Block, at: str, 
             )
             .lit | .load | .store | .push_owned | .unary | .binary | .cast | .call | .construct => continue
             .field | .index | .map_get | .len_of | .tag_of | .payload                           => continue
-            .func_ref | .abort_op | .incref | .decref | .hole | .missing                        => continue
+            .func_ref | .abort_op | .incref | .decref | .decref_slot | .hole | .missing         => continue
 
     written @ sorted(written)
     owed @ sorted(owed)

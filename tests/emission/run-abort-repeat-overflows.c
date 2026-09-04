@@ -105,7 +105,6 @@ void h_abortrepeatoverflows_main(void) {
     int64_t t6;
     HeroStr t7 = {0};
     HeroStr t8 = {0};
-    HeroStr t9 = {0};
     goto bb0;
 bb0:
 #line 22 "tests/golden/run/abort-repeat-overflows.hero"
@@ -128,7 +127,7 @@ bb0:
     t8 = h1_own1;
 #line 26 "tests/golden/run/abort-repeat-overflows.hero"
     h1_own1 = t5;
-#line 132 "abortrepeatoverflows.c"
+#line 131 "abortrepeatoverflows.c"
     hero_str_decref(t8);
 #line 26 "tests/golden/run/abort-repeat-overflows.hero"
     t6 = hero_str_len(t5);
@@ -142,10 +141,8 @@ bb0:
     hero_print_str(t7);
 #line 27 "tests/golden/run/abort-repeat-overflows.hero"
     hero_print_end();
-#line 27 "tests/golden/run/abort-repeat-overflows.hero"
-    t9 = h1_own1;
-#line 148 "abortrepeatoverflows.c"
-    hero_str_decref(t9);
+#line 145 "abortrepeatoverflows.c"
+    hero_str_decref(h1_own1);
     return;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

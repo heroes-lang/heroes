@@ -14,8 +14,7 @@ function numbers() -> [i64]
         store $own0 <- $t5
         decref $t6
         incref $t5
-        $t7: [i64] = load $own0
-        decref $t7
+        decref_slot $own0
         return $t5
 
 function total() -> i64
@@ -58,8 +57,6 @@ function total() -> i64
         jump bb1
     bb4  for: exit    preds bb1
         $t17: i64 = load sum
-        $t20: [i64] = load $xs0
-        decref $t20
-        $t21: [i64] = load $own4
-        decref $t21
+        decref_slot $xs0
+        decref_slot $own4
         return $t17

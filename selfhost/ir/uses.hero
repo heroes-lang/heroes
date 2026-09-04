@@ -39,6 +39,13 @@ function operands(f: containers.Function, op: ir.OpKind) -> [i64]
 
         .incref rc => out @ out.push(rc.value)
         .decref rc => out @ out.push(rc.value)
+        # And `decref_slot` reads no VALUE at all, which is the whole
+        # point of it: it names a slot, and a slot is not an SSA value
+        # with a definition to dominate. `slots_of` below is where it is
+        # reported, and that is the report `emit/body.hero` reads when it
+        # decides whether a slot is written and never read.
+
+        .decref_slot => return out
         .binary bin =>
             out @ out.push(bin.left)
             out @ out.push(bin.right)
@@ -116,10 +123,18 @@ function slots_of(op: ir.OpKind) -> [i64]
     out: [i64] @ []
 
     match op
-        .load ld                                                     => out @ out.push(ld.place.root)
-        .store st                                                    => out @ out.push(st.place.root)
-        .push_owned pg                                               => out @ out.push(pg.place.root)
-        .copy_out co                                                 => out @ out.push(co.param)
+        .load ld       => out @ out.push(ld.place.root)
+        .store st      => out @ out.push(st.place.root)
+        .push_owned pg => out @ out.push(pg.place.root)
+        .copy_out co   => out @ out.push(co.param)
+        # **The one line the whole of panel 106's repair rests on.** A
+        # swept slot used to be reported here through the `.load` above,
+        # because releasing it was a load; naming it directly means this
+        # arm is what keeps it counted as read. Without it every swept
+        # slot would gain `__attribute__((unused))` in the prologue
+        # (`emit/body.hero`), which is a lie clang would not catch.
+
+        .decref_slot ds                                              => out @ out.push(ds.slot)
         .lit | .unary | .binary | .cast | .call | .construct         => return out
         .field | .index | .map_get | .len_of | .tag_of | .payload    => return out
         .func_ref | .abort_op | .incref | .decref | .hole | .missing => return out

@@ -1759,9 +1759,9 @@ test "a function body flattens: loads, one add, and a return with a value"
         .binary bin =>
             assert bin.left == 1
             assert bin.right == 2
-        .lit | .load | .store | .push_owned | .unary | .cast | .call | .construct => assert false
-        .field | .index | .map_get | .len_of | .tag_of | .payload                 => assert false
-        .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing  => assert false
+        .lit | .load | .store | .push_owned | .unary | .cast | .call | .construct               => assert false
+        .field | .index | .map_get | .len_of | .tag_of | .payload                               => assert false
+        .func_ref | .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => assert false
 
     match f.blocks[0].term
         .return_term ret                                      => assert ret.value.must() == 3
@@ -1798,9 +1798,9 @@ test "a negative literal folds, a mutation stores through a place"
                     wanted: u64 = 128
                     assert ic.value.magnitude == wanted
                 .float_const | .bool_const | .str_const | .null_ptr => assert false
-        .load | .store | .push_owned | .unary | .binary | .cast | .call | .construct => assert false
-        .field | .index | .map_get | .len_of | .tag_of | .payload                    => assert false
-        .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing     => assert false
+        .load | .store | .push_owned | .unary | .binary | .cast | .call | .construct            => assert false
+        .field | .index | .map_get | .len_of | .tag_of | .payload                               => assert false
+        .func_ref | .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => assert false
 
 test "string literals intern decoded, and twice is once"
     got = lowered("function f() -> str\n    a = \"he\\nllo\"\n    b = \"he\\nllo\"\n    return a + b\n")
@@ -1913,9 +1913,9 @@ test "? branches on the tag, and the error edge is a real exit edge"
                     .err_shape                                 => wrapped @ true
                     .record_shape | .case_shape | .array_shape => continue
                     .map_shape | .ok_shape | .fail_shape       => continue
-            .lit | .load | .store | .push_owned | .unary | .binary | .cast | .call   => continue
-            .field | .index | .map_get | .len_of | .tag_of | .payload                => continue
-            .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing => continue
+            .lit | .load | .store | .push_owned | .unary | .binary | .cast | .call                  => continue
+            .field | .index | .map_get | .len_of | .tag_of | .payload                               => continue
+            .func_ref | .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => continue
 
     assert wrapped
 
@@ -1941,9 +1941,9 @@ test "an @ argument is a place, and a record construction is not a call"
                         .record_shape                           => built @ true
                         .case_shape | .array_shape | .map_shape => continue
                         .ok_shape | .fail_shape | .err_shape    => continue
-                .lit | .load | .store | .push_owned | .unary | .binary | .cast           => continue
-                .field | .index | .map_get | .len_of | .tag_of | .payload                => continue
-                .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing => continue
+                .lit | .load | .store | .push_owned | .unary | .binary | .cast                          => continue
+                .field | .index | .map_get | .len_of | .tag_of | .payload                               => continue
+                .func_ref | .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => continue
 
     assert passed_place
     assert built
@@ -1967,9 +1967,9 @@ test "UFCS puts the receiver first, and print is variadic with no destination"
                             assert inst.dest.is_err()
                             printed @ true
                         .extern_fn | .indirect => continue
-                .lit | .load | .store | .push_owned | .unary | .binary | .cast | .construct => continue
-                .field | .index | .map_get | .len_of | .tag_of | .payload                   => continue
-                .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing    => continue
+                .lit | .load | .store | .push_owned | .unary | .binary | .cast | .construct             => continue
+                .field | .index | .map_get | .len_of | .tag_of | .payload                               => continue
+                .func_ref | .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => continue
 
     assert ufcs_two
     assert printed
@@ -1988,7 +1988,7 @@ test "must branches to the payload or an abort that carries the failure"
                         aborted @ true
                     .lit | .load | .store | .push_owned | .unary | .binary | .cast | .call | .construct => continue
                     .field | .index | .map_get | .len_of | .tag_of | .payload                           => continue
-                    .func_ref | .copy_out | .incref | .decref | .hole | .missing                        => continue
+                    .func_ref | .copy_out | .incref | .decref | .decref_slot | .hole | .missing         => continue
 
             match blk.term
                 .unreachable                                          => continue
@@ -2014,7 +2014,7 @@ test "an assert carries its text and both sides, and a str side rides a slot"
                             carried_three @ true
                     .lit | .load | .store | .push_owned | .unary | .binary | .cast | .call | .construct => continue
                     .field | .index | .map_get | .len_of | .tag_of | .payload                           => continue
-                    .func_ref | .copy_out | .incref | .decref | .hole | .missing                        => continue
+                    .func_ref | .copy_out | .incref | .decref | .decref_slot | .hole | .missing         => continue
 
     assert carried_three
     slotted: i64 @ 0
@@ -2048,7 +2048,7 @@ test "a bare assert carries only its text, and an i64 side rides no slot"
                     )
                     .lit | .load | .store | .push_owned | .unary | .binary | .cast | .call | .construct => continue
                     .field | .index | .map_get | .len_of | .tag_of | .payload                           => continue
-                    .func_ref | .copy_out | .incref | .decref | .hole | .missing                        => continue
+                    .func_ref | .copy_out | .incref | .decref | .decref_slot | .hole | .missing         => continue
 
     assert counts.len() == 2
     assert counts[0] == 1
@@ -2137,9 +2137,9 @@ test "an @ argument through an index is handed over as a temporary and stored ba
                         match step
                             .index_step => store_at @ index
                             .field_step => continue
-                .lit | .load | .push_owned | .unary | .binary | .cast | .construct       => index @ index
-                .field | .index | .map_get | .len_of | .tag_of | .payload                => index @ index
-                .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing => index @ index
+                .lit | .load | .push_owned | .unary | .binary | .cast | .construct                      => index @ index
+                .field | .index | .map_get | .len_of | .tag_of | .payload                               => index @ index
+                .func_ref | .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => index @ index
 
             index @ index + 1
 

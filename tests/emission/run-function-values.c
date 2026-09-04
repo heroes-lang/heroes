@@ -247,8 +247,6 @@ void h_functionvalues_main(void) {
     bool t43;
     HeroArrayHeader * t44 = {0};
     HeroArrayHeader * t45 = {0};
-    HeroArrayHeader * t46 = {0};
-    HeroArrayHeader * t47 = {0};
     goto bb0;
 bb0:
 #line 44 "tests/golden/run/function-values.hero"
@@ -317,15 +315,15 @@ bb0:
     t44 = h3_own3;
 #line 51 "tests/golden/run/function-values.hero"
     h3_own3 = t19;
-#line 321 "functionvalues.c"
+#line 319 "functionvalues.c"
     hero_array_decref(t44);
 #line 51 "tests/golden/run/function-values.hero"
     t45 = h1_ops;
-#line 325 "functionvalues.c"
+#line 323 "functionvalues.c"
     hero_array_incref(t19);
 #line 51 "tests/golden/run/function-values.hero"
     h1_ops = t19;
-#line 329 "functionvalues.c"
+#line 327 "functionvalues.c"
     hero_array_decref(t45);
 #line 52 "tests/golden/run/function-values.hero"
     t20 = h1_ops;
@@ -397,14 +395,11 @@ bb0:
     hero_print_bool(t43);
 #line 56 "tests/golden/run/function-values.hero"
     hero_print_end();
+#line 399 "functionvalues.c"
+    hero_array_decref(h1_ops);
 #line 56 "tests/golden/run/function-values.hero"
-    t46 = h1_ops;
-#line 403 "functionvalues.c"
-    hero_array_decref(t46);
-#line 56 "tests/golden/run/function-values.hero"
-    t47 = h3_own3;
-#line 407 "functionvalues.c"
-    hero_array_decref(t47);
+#line 402 "functionvalues.c"
+    hero_array_decref(h3_own3);
     return;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

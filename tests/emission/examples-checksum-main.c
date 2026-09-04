@@ -249,7 +249,6 @@ HeroArrayHeader * h_main_VECTORS(void) {
     HeroStr t7 = {0};
     HeroArrayHeader * t8 = {0};
     HeroArrayHeader * t9 = {0};
-    HeroArrayHeader * t10 = {0};
     goto bb0;
 bb0:
 #line 34 "examples/checksum/main.hero"
@@ -300,34 +299,33 @@ bb0:
     t9 = h0_own0;
 #line 33 "examples/checksum/main.hero"
     h0_own0 = t8;
-#line 304 "main.c"
+#line 303 "main.c"
     hero_array_decref(t9);
 #line 33 "examples/checksum/main.hero"
-#line 307 "main.c"
+#line 306 "main.c"
     hero_array_incref(t8);
 #line 33 "examples/checksum/main.hero"
-    t10 = h0_own0;
-#line 311 "main.c"
-    hero_array_decref(t10);
+#line 309 "main.c"
+    hero_array_decref(h0_own0);
     return t8;
 }
 
 #line 43 "examples/checksum/main.hero"
 HeroStr h_main_DIGITS(void) {
-#line 318 "main.c"
+#line 316 "main.c"
     HeroStr t1 = {0};
     goto bb0;
 bb0:
 #line 44 "examples/checksum/main.hero"
     t1 = HERO_STR_LIT(hero_str_35b2f7b2);
-#line 324 "main.c"
+#line 322 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 54 "examples/checksum/main.hero"
 h_main_Digest h_main_digest_of(HeroStr h0_text) {
-#line 331 "main.c"
+#line 329 "main.c"
     h_0opt_fbbb698 h1_f0 = {0};
     h_0opt_fbbb698 h2_own2 = {0};
     HeroStr t1 = {0};
@@ -348,8 +346,6 @@ h_main_Digest h_main_digest_of(HeroStr h0_text) {
     h_main_Digest t16;
     h_0opt_fbbb698 t17 = {0};
     h_0opt_fbbb698 t18 = {0};
-    h_0opt_fbbb698 t19 = {0};
-    h_0opt_fbbb698 t20 = {0};
     goto bb0;
 bb0:
 #line 56 "examples/checksum/main.hero"
@@ -378,15 +374,15 @@ bb0:
     t17 = h2_own2;
 #line 58 "examples/checksum/main.hero"
     h2_own2 = t7;
-#line 382 "main.c"
+#line 378 "main.c"
     h_0opt_fbbb698_release(&t17);
 #line 58 "examples/checksum/main.hero"
     t18 = h1_f0;
-#line 386 "main.c"
+#line 382 "main.c"
     h_0opt_fbbb698_retain(&t7);
 #line 58 "examples/checksum/main.hero"
     h1_f0 = t7;
-#line 390 "main.c"
+#line 386 "main.c"
     h_0opt_fbbb698_release(&t18);
 #line 58 "examples/checksum/main.hero"
     t8 = h1_f0;
@@ -406,28 +402,25 @@ bb1:
     t15 = t14.as.ok;
 #line 55 "examples/checksum/main.hero"
     t16 = (h_main_Digest){.f_checksum = t2, .f_rolling = t4, .f_length = t15};
+#line 406 "main.c"
+    h_0opt_fbbb698_release(&h1_f0);
 #line 55 "examples/checksum/main.hero"
-    t19 = h1_f0;
-#line 412 "main.c"
-    h_0opt_fbbb698_release(&t19);
-#line 55 "examples/checksum/main.hero"
-    t20 = h2_own2;
-#line 416 "main.c"
-    h_0opt_fbbb698_release(&t20);
+#line 409 "main.c"
+    h_0opt_fbbb698_release(&h2_own2);
     return t16;
 bb2:
 #line 58 "examples/checksum/main.hero"
     t12 = h1_f0;
 #line 58 "examples/checksum/main.hero"
     t13 = t12.as.err;
-#line 424 "main.c"
+#line 417 "main.c"
     hero_panic_must(t13);
     hero_unreachable();
 }
 
 #line 64 "examples/checksum/main.hero"
 HeroStr h_main_hex(uint32_t h0_value) {
-#line 431 "main.c"
+#line 424 "main.c"
     HeroArrayHeader * h1_out = {0};
     h_0opt_e201354 h2_f0 = {0};
     int64_t h3_v;
@@ -481,14 +474,6 @@ HeroStr h_main_hex(uint32_t h0_value) {
     HeroStr t42 = {0};
     HeroStr t43 = {0};
     HeroStr t44 = {0};
-    HeroArrayHeader * t45 = {0};
-    h_0opt_e201354 t46 = {0};
-    HeroArrayHeader * t47 = {0};
-    h_0opt_e201354 t48 = {0};
-    HeroStr t49 = {0};
-    HeroStr t50 = {0};
-    HeroStr t51 = {0};
-    HeroStr t52 = {0};
     goto bb0;
 bb0:
 #line 65 "examples/checksum/main.hero"
@@ -497,15 +482,15 @@ bb0:
     t37 = h6_own6;
 #line 65 "examples/checksum/main.hero"
     h6_own6 = t1;
-#line 501 "main.c"
+#line 486 "main.c"
     hero_array_decref(t37);
 #line 65 "examples/checksum/main.hero"
     t38 = h1_out;
-#line 505 "main.c"
+#line 490 "main.c"
     hero_array_incref(t1);
 #line 65 "examples/checksum/main.hero"
     h1_out = t1;
-#line 509 "main.c"
+#line 494 "main.c"
     hero_array_decref(t38);
 #line 66 "examples/checksum/main.hero"
     t2 = h0_value;
@@ -515,15 +500,15 @@ bb0:
     t39 = h7_own7;
 #line 66 "examples/checksum/main.hero"
     h7_own7 = t3;
-#line 519 "main.c"
+#line 504 "main.c"
     h_0opt_e201354_release(&t39);
 #line 66 "examples/checksum/main.hero"
     t40 = h2_f0;
-#line 523 "main.c"
+#line 508 "main.c"
     h_0opt_e201354_retain(&t3);
 #line 66 "examples/checksum/main.hero"
     h2_f0 = t3;
-#line 527 "main.c"
+#line 512 "main.c"
     h_0opt_e201354_release(&t40);
 #line 66 "examples/checksum/main.hero"
     t4 = h2_f0;
@@ -555,7 +540,7 @@ bb2:
     t8 = h2_f0;
 #line 66 "examples/checksum/main.hero"
     t9 = t8.as.err;
-#line 559 "main.c"
+#line 544 "main.c"
     hero_panic_must(t9);
     hero_unreachable();
 bb3:
@@ -589,7 +574,7 @@ bb4:
     t41 = h8_own8;
 #line 71 "examples/checksum/main.hero"
     h8_own8 = t22;
-#line 593 "main.c"
+#line 578 "main.c"
     hero_str_decref(t41);
 #line 71 "examples/checksum/main.hero"
     t23 = h5_nibble;
@@ -605,7 +590,7 @@ bb4:
     t42 = h9_own9;
 #line 71 "examples/checksum/main.hero"
     h9_own9 = t27;
-#line 609 "main.c"
+#line 594 "main.c"
     hero_str_decref(t42);
 #line 71 "examples/checksum/main.hero"
     hero_array_push_owned(&h1_out, &t27);
@@ -633,7 +618,7 @@ bb5:
     t43 = h10_own10;
 #line 74 "examples/checksum/main.hero"
     h10_own10 = t35;
-#line 637 "main.c"
+#line 622 "main.c"
     hero_str_decref(t43);
 #line 74 "examples/checksum/main.hero"
     t36 = hero_str_concat(t32, t35);
@@ -641,49 +626,41 @@ bb5:
     t44 = h11_own11;
 #line 74 "examples/checksum/main.hero"
     h11_own11 = t36;
-#line 645 "main.c"
+#line 630 "main.c"
     hero_str_decref(t44);
 #line 74 "examples/checksum/main.hero"
-#line 648 "main.c"
+#line 633 "main.c"
     hero_str_incref(t36);
 #line 74 "examples/checksum/main.hero"
-    t45 = h1_out;
-#line 652 "main.c"
-    hero_array_decref(t45);
+#line 636 "main.c"
+    hero_array_decref(h1_out);
 #line 74 "examples/checksum/main.hero"
-    t46 = h2_f0;
-#line 656 "main.c"
-    h_0opt_e201354_release(&t46);
+#line 639 "main.c"
+    h_0opt_e201354_release(&h2_f0);
 #line 74 "examples/checksum/main.hero"
-    t47 = h6_own6;
-#line 660 "main.c"
-    hero_array_decref(t47);
+#line 642 "main.c"
+    hero_array_decref(h6_own6);
 #line 74 "examples/checksum/main.hero"
-    t48 = h7_own7;
-#line 664 "main.c"
-    h_0opt_e201354_release(&t48);
+#line 645 "main.c"
+    h_0opt_e201354_release(&h7_own7);
 #line 74 "examples/checksum/main.hero"
-    t49 = h8_own8;
-#line 668 "main.c"
-    hero_str_decref(t49);
+#line 648 "main.c"
+    hero_str_decref(h8_own8);
 #line 74 "examples/checksum/main.hero"
-    t50 = h9_own9;
-#line 672 "main.c"
-    hero_str_decref(t50);
+#line 651 "main.c"
+    hero_str_decref(h9_own9);
 #line 74 "examples/checksum/main.hero"
-    t51 = h10_own10;
-#line 676 "main.c"
-    hero_str_decref(t51);
+#line 654 "main.c"
+    hero_str_decref(h10_own10);
 #line 74 "examples/checksum/main.hero"
-    t52 = h11_own11;
-#line 680 "main.c"
-    hero_str_decref(t52);
+#line 657 "main.c"
+    hero_str_decref(h11_own11);
     return t36;
 }
 
 #line 79 "examples/checksum/main.hero"
 HeroArrayHeader * h_main_shown(HeroArrayHeader * h0_data) {
-#line 687 "main.c"
+#line 664 "main.c"
     HeroArrayHeader * h1_out = {0};
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
@@ -710,10 +687,6 @@ HeroArrayHeader * h_main_shown(HeroArrayHeader * h0_data) {
     HeroArrayHeader * t20 = {0};
     HeroArrayHeader * t21 = {0};
     HeroStr t22 = {0};
-    HeroArrayHeader * t23 = {0};
-    HeroArrayHeader * t24 = {0};
-    HeroArrayHeader * t25 = {0};
-    HeroStr t26 = {0};
     goto bb0;
 bb0:
 #line 80 "examples/checksum/main.hero"
@@ -722,25 +695,25 @@ bb0:
     t19 = h5_own5;
 #line 80 "examples/checksum/main.hero"
     h5_own5 = t1;
-#line 726 "main.c"
+#line 699 "main.c"
     hero_array_decref(t19);
 #line 80 "examples/checksum/main.hero"
     t20 = h1_out;
-#line 730 "main.c"
+#line 703 "main.c"
     hero_array_incref(t1);
 #line 80 "examples/checksum/main.hero"
     h1_out = t1;
-#line 734 "main.c"
+#line 707 "main.c"
     hero_array_decref(t20);
 #line 82 "examples/checksum/main.hero"
     t2 = h0_data;
 #line 82 "examples/checksum/main.hero"
     t21 = h2_xs0;
-#line 740 "main.c"
+#line 713 "main.c"
     hero_array_incref(t2);
 #line 82 "examples/checksum/main.hero"
     h2_xs0 = t2;
-#line 744 "main.c"
+#line 717 "main.c"
     hero_array_decref(t21);
 #line 82 "examples/checksum/main.hero"
     t3 = INT64_C(0);
@@ -778,7 +751,7 @@ bb2:
     t22 = h6_own6;
 #line 83 "examples/checksum/main.hero"
     h6_own6 = t13;
-#line 782 "main.c"
+#line 755 "main.c"
     hero_str_decref(t22);
 #line 83 "examples/checksum/main.hero"
     hero_array_push_owned(&h1_out, &t13);
@@ -800,30 +773,26 @@ bb3:
 bb4:
 #line 85 "examples/checksum/main.hero"
     t18 = h1_out;
-#line 804 "main.c"
+#line 777 "main.c"
     hero_array_incref(t18);
 #line 85 "examples/checksum/main.hero"
-    t23 = h1_out;
-#line 808 "main.c"
-    hero_array_decref(t23);
+#line 780 "main.c"
+    hero_array_decref(h1_out);
 #line 85 "examples/checksum/main.hero"
-    t24 = h2_xs0;
-#line 812 "main.c"
-    hero_array_decref(t24);
+#line 783 "main.c"
+    hero_array_decref(h2_xs0);
 #line 85 "examples/checksum/main.hero"
-    t25 = h5_own5;
-#line 816 "main.c"
-    hero_array_decref(t25);
+#line 786 "main.c"
+    hero_array_decref(h5_own5);
 #line 85 "examples/checksum/main.hero"
-    t26 = h6_own6;
-#line 820 "main.c"
-    hero_str_decref(t26);
+#line 789 "main.c"
+    hero_str_decref(h6_own6);
     return t18;
 }
 
 #line 87 "examples/checksum/main.hero"
 void h_main_main(void) {
-#line 827 "main.c"
+#line 796 "main.c"
     HeroArrayHeader * h0_xs0 = {0};
     int64_t h1_i0;
     HeroStr h2_text = {0};
@@ -897,18 +866,6 @@ void h_main_main(void) {
     HeroArrayHeader * t57 = {0};
     HeroArrayHeader * t58 = {0};
     HeroStr t59 = {0};
-    HeroArrayHeader * t60 = {0};
-    HeroStr t61 = {0};
-    h_0opt_4d1c207c t62 = {0};
-    HeroArrayHeader * t63 = {0};
-    HeroArrayHeader * t64 = {0};
-    HeroStr t65 = {0};
-    HeroStr t66 = {0};
-    HeroStr t67 = {0};
-    HeroStr t68 = {0};
-    h_0opt_4d1c207c t69 = {0};
-    HeroArrayHeader * t70 = {0};
-    HeroStr t71 = {0};
     goto bb0;
 bb0:
 #line 89 "examples/checksum/main.hero"
@@ -917,15 +874,15 @@ bb0:
     t48 = h6_own6;
 #line 89 "examples/checksum/main.hero"
     h6_own6 = t1;
-#line 921 "main.c"
+#line 878 "main.c"
     hero_array_decref(t48);
 #line 89 "examples/checksum/main.hero"
     t49 = h0_xs0;
-#line 925 "main.c"
+#line 882 "main.c"
     hero_array_incref(t1);
 #line 89 "examples/checksum/main.hero"
     h0_xs0 = t1;
-#line 929 "main.c"
+#line 886 "main.c"
     hero_array_decref(t49);
 #line 89 "examples/checksum/main.hero"
     t2 = INT64_C(0);
@@ -955,11 +912,11 @@ bb2:
     t9 = *(HeroStr const *)hero_array_at(t7, t8);
 #line 89 "examples/checksum/main.hero"
     t50 = h2_text;
-#line 959 "main.c"
+#line 916 "main.c"
     hero_str_incref(t9);
 #line 89 "examples/checksum/main.hero"
     h2_text = t9;
-#line 963 "main.c"
+#line 920 "main.c"
     hero_str_decref(t50);
 #line 90 "examples/checksum/main.hero"
     t10 = HERO_STR_LIT(hero_str_792e9662);
@@ -975,7 +932,7 @@ bb2:
     t51 = h7_own7;
 #line 90 "examples/checksum/main.hero"
     h7_own7 = t14;
-#line 979 "main.c"
+#line 936 "main.c"
     hero_str_decref(t51);
 #line 90 "examples/checksum/main.hero"
     t15 = HERO_STR_LIT(hero_str_22);
@@ -1025,7 +982,7 @@ bb4:
     t52 = h8_own8;
 #line 95 "examples/checksum/main.hero"
     h8_own8 = t24;
-#line 1029 "main.c"
+#line 986 "main.c"
     hero_str_decref(t52);
 #line 95 "examples/checksum/main.hero"
     hero_print_str(t21);
@@ -1045,7 +1002,7 @@ bb4:
     t53 = h9_own9;
 #line 96 "examples/checksum/main.hero"
     h9_own9 = t28;
-#line 1049 "main.c"
+#line 1006 "main.c"
     hero_str_decref(t53);
 #line 96 "examples/checksum/main.hero"
     hero_print_str(t25);
@@ -1065,7 +1022,7 @@ bb4:
     t54 = h10_own10;
 #line 97 "examples/checksum/main.hero"
     h10_own10 = t32;
-#line 1069 "main.c"
+#line 1026 "main.c"
     hero_str_decref(t54);
 #line 97 "examples/checksum/main.hero"
     hero_print_str(t29);
@@ -1081,15 +1038,15 @@ bb4:
     t55 = h11_own11;
 #line 101 "examples/checksum/main.hero"
     h11_own11 = t34;
-#line 1085 "main.c"
+#line 1042 "main.c"
     h_0opt_4d1c207c_release(&t55);
 #line 101 "examples/checksum/main.hero"
     t56 = h4_f0;
-#line 1089 "main.c"
+#line 1046 "main.c"
     h_0opt_4d1c207c_retain(&t34);
 #line 101 "examples/checksum/main.hero"
     h4_f0 = t34;
-#line 1093 "main.c"
+#line 1050 "main.c"
     h_0opt_4d1c207c_release(&t56);
 #line 101 "examples/checksum/main.hero"
     t35 = h4_f0;
@@ -1109,11 +1066,11 @@ bb5:
     t42 = t41.as.ok;
 #line 101 "examples/checksum/main.hero"
     t57 = h5_back;
-#line 1113 "main.c"
+#line 1070 "main.c"
     hero_array_incref(t42);
 #line 101 "examples/checksum/main.hero"
     h5_back = t42;
-#line 1117 "main.c"
+#line 1074 "main.c"
     hero_array_decref(t57);
 #line 102 "examples/checksum/main.hero"
     t43 = HERO_STR_LIT(hero_str_1907f49f);
@@ -1125,7 +1082,7 @@ bb5:
     t58 = h12_own12;
 #line 102 "examples/checksum/main.hero"
     h12_own12 = t45;
-#line 1129 "main.c"
+#line 1086 "main.c"
     hero_array_decref(t58);
 #line 102 "examples/checksum/main.hero"
     t46 = HERO_STR_LIT(hero_str_20);
@@ -1135,7 +1092,7 @@ bb5:
     t59 = h13_own13;
 #line 102 "examples/checksum/main.hero"
     h13_own13 = t47;
-#line 1139 "main.c"
+#line 1096 "main.c"
     hero_str_decref(t59);
 #line 102 "examples/checksum/main.hero"
     hero_print_str(t43);
@@ -1143,68 +1100,55 @@ bb5:
     hero_print_str(t47);
 #line 102 "examples/checksum/main.hero"
     hero_print_end();
+#line 1104 "main.c"
+    hero_array_decref(h0_xs0);
 #line 102 "examples/checksum/main.hero"
-    t60 = h0_xs0;
-#line 1149 "main.c"
-    hero_array_decref(t60);
+#line 1107 "main.c"
+    hero_str_decref(h2_text);
 #line 102 "examples/checksum/main.hero"
-    t61 = h2_text;
-#line 1153 "main.c"
-    hero_str_decref(t61);
+#line 1110 "main.c"
+    h_0opt_4d1c207c_release(&h4_f0);
 #line 102 "examples/checksum/main.hero"
-    t62 = h4_f0;
-#line 1157 "main.c"
-    h_0opt_4d1c207c_release(&t62);
+#line 1113 "main.c"
+    hero_array_decref(h5_back);
 #line 102 "examples/checksum/main.hero"
-    t63 = h5_back;
-#line 1161 "main.c"
-    hero_array_decref(t63);
+#line 1116 "main.c"
+    hero_array_decref(h6_own6);
 #line 102 "examples/checksum/main.hero"
-    t64 = h6_own6;
-#line 1165 "main.c"
-    hero_array_decref(t64);
+#line 1119 "main.c"
+    hero_str_decref(h7_own7);
 #line 102 "examples/checksum/main.hero"
-    t65 = h7_own7;
-#line 1169 "main.c"
-    hero_str_decref(t65);
+#line 1122 "main.c"
+    hero_str_decref(h8_own8);
 #line 102 "examples/checksum/main.hero"
-    t66 = h8_own8;
-#line 1173 "main.c"
-    hero_str_decref(t66);
+#line 1125 "main.c"
+    hero_str_decref(h9_own9);
 #line 102 "examples/checksum/main.hero"
-    t67 = h9_own9;
-#line 1177 "main.c"
-    hero_str_decref(t67);
+#line 1128 "main.c"
+    hero_str_decref(h10_own10);
 #line 102 "examples/checksum/main.hero"
-    t68 = h10_own10;
-#line 1181 "main.c"
-    hero_str_decref(t68);
+#line 1131 "main.c"
+    h_0opt_4d1c207c_release(&h11_own11);
 #line 102 "examples/checksum/main.hero"
-    t69 = h11_own11;
-#line 1185 "main.c"
-    h_0opt_4d1c207c_release(&t69);
+#line 1134 "main.c"
+    hero_array_decref(h12_own12);
 #line 102 "examples/checksum/main.hero"
-    t70 = h12_own12;
-#line 1189 "main.c"
-    hero_array_decref(t70);
-#line 102 "examples/checksum/main.hero"
-    t71 = h13_own13;
-#line 1193 "main.c"
-    hero_str_decref(t71);
+#line 1137 "main.c"
+    hero_str_decref(h13_own13);
     return;
 bb6:
 #line 101 "examples/checksum/main.hero"
     t39 = h4_f0;
 #line 101 "examples/checksum/main.hero"
     t40 = t39.as.err;
-#line 1201 "main.c"
+#line 1145 "main.c"
     hero_panic_must(t40);
     hero_unreachable();
 }
 
 #line 33 "examples/checksum/adler.hero"
 int64_t h_adler_BASE(void) {
-#line 1208 "main.c"
+#line 1152 "main.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -1212,12 +1156,12 @@ bb0:
     t1 = INT64_C(65521);
 #line 34 "examples/checksum/adler.hero"
     return t1;
-#line 1216 "main.c"
+#line 1160 "main.c"
 }
 
 #line 45 "examples/checksum/adler.hero"
 h_adler_Halves h_adler_halves(HeroStr h0_text) {
-#line 1221 "main.c"
+#line 1165 "main.c"
     int64_t h1_s1;
     int64_t h2_s2;
     int64_t h3_i;
@@ -1287,12 +1231,6 @@ h_adler_Halves h_adler_halves(HeroStr h0_text) {
     h_0opt_fba6871 t57 = {0};
     h_0opt_fba6871 t58 = {0};
     h_0opt_fba6871 t59 = {0};
-    h_0opt_e201354 t60 = {0};
-    h_0opt_fba6871 t61 = {0};
-    h_0opt_fba6871 t62 = {0};
-    h_0opt_e201354 t63 = {0};
-    h_0opt_fba6871 t64 = {0};
-    h_0opt_fba6871 t65 = {0};
     goto bb0;
 bb0:
 #line 46 "examples/checksum/adler.hero"
@@ -1341,15 +1279,15 @@ bb2:
     t54 = h8_own8;
 #line 52 "examples/checksum/adler.hero"
     h8_own8 = t13;
-#line 1345 "main.c"
+#line 1283 "main.c"
     h_0opt_e201354_release(&t54);
 #line 52 "examples/checksum/adler.hero"
     t55 = h5_f0;
-#line 1349 "main.c"
+#line 1287 "main.c"
     h_0opt_e201354_retain(&t13);
 #line 52 "examples/checksum/adler.hero"
     h5_f0 = t13;
-#line 1353 "main.c"
+#line 1291 "main.c"
     h_0opt_e201354_release(&t55);
 #line 52 "examples/checksum/adler.hero"
     t14 = h5_f0;
@@ -1379,15 +1317,15 @@ bb3:
     t56 = h9_own9;
 #line 56 "examples/checksum/adler.hero"
     h9_own9 = t34;
-#line 1383 "main.c"
+#line 1321 "main.c"
     h_0opt_fba6871_release(&t56);
 #line 56 "examples/checksum/adler.hero"
     t57 = h6_f1;
-#line 1387 "main.c"
+#line 1325 "main.c"
     h_0opt_fba6871_retain(&t34);
 #line 56 "examples/checksum/adler.hero"
     h6_f1 = t34;
-#line 1391 "main.c"
+#line 1329 "main.c"
     h_0opt_fba6871_release(&t57);
 #line 56 "examples/checksum/adler.hero"
     t35 = h6_f1;
@@ -1449,7 +1387,7 @@ bb5:
     t18 = h5_f0;
 #line 52 "examples/checksum/adler.hero"
     t19 = t18.as.err;
-#line 1453 "main.c"
+#line 1391 "main.c"
     hero_panic_must(t19);
     hero_unreachable();
 bb6:
@@ -1473,15 +1411,15 @@ bb6:
     t58 = h10_own10;
 #line 56 "examples/checksum/adler.hero"
     h10_own10 = t44;
-#line 1477 "main.c"
+#line 1415 "main.c"
     h_0opt_fba6871_release(&t58);
 #line 56 "examples/checksum/adler.hero"
     t59 = h7_f2;
-#line 1481 "main.c"
+#line 1419 "main.c"
     h_0opt_fba6871_retain(&t44);
 #line 56 "examples/checksum/adler.hero"
     h7_f2 = t44;
-#line 1485 "main.c"
+#line 1423 "main.c"
     h_0opt_fba6871_release(&t59);
 #line 56 "examples/checksum/adler.hero"
     t45 = h7_f2;
@@ -1499,7 +1437,7 @@ bb7:
     t39 = h6_f1;
 #line 56 "examples/checksum/adler.hero"
     t40 = t39.as.err;
-#line 1503 "main.c"
+#line 1441 "main.c"
     hero_panic_must(t40);
     hero_unreachable();
 bb8:
@@ -1509,44 +1447,37 @@ bb8:
     t52 = t51.as.ok;
 #line 56 "examples/checksum/adler.hero"
     t53 = (h_adler_Halves){.f_s1 = t42, .f_s2 = t52};
+#line 1451 "main.c"
+    h_0opt_e201354_release(&h5_f0);
 #line 56 "examples/checksum/adler.hero"
-    t60 = h5_f0;
-#line 1515 "main.c"
-    h_0opt_e201354_release(&t60);
+#line 1454 "main.c"
+    h_0opt_fba6871_release(&h6_f1);
 #line 56 "examples/checksum/adler.hero"
-    t61 = h6_f1;
-#line 1519 "main.c"
-    h_0opt_fba6871_release(&t61);
+#line 1457 "main.c"
+    h_0opt_fba6871_release(&h7_f2);
 #line 56 "examples/checksum/adler.hero"
-    t62 = h7_f2;
-#line 1523 "main.c"
-    h_0opt_fba6871_release(&t62);
+#line 1460 "main.c"
+    h_0opt_e201354_release(&h8_own8);
 #line 56 "examples/checksum/adler.hero"
-    t63 = h8_own8;
-#line 1527 "main.c"
-    h_0opt_e201354_release(&t63);
+#line 1463 "main.c"
+    h_0opt_fba6871_release(&h9_own9);
 #line 56 "examples/checksum/adler.hero"
-    t64 = h9_own9;
-#line 1531 "main.c"
-    h_0opt_fba6871_release(&t64);
-#line 56 "examples/checksum/adler.hero"
-    t65 = h10_own10;
-#line 1535 "main.c"
-    h_0opt_fba6871_release(&t65);
+#line 1466 "main.c"
+    h_0opt_fba6871_release(&h10_own10);
     return t53;
 bb9:
 #line 56 "examples/checksum/adler.hero"
     t49 = h7_f2;
 #line 56 "examples/checksum/adler.hero"
     t50 = t49.as.err;
-#line 1543 "main.c"
+#line 1474 "main.c"
     hero_panic_must(t50);
     hero_unreachable();
 }
 
 #line 59 "examples/checksum/adler.hero"
 uint32_t h_adler_adler32(HeroStr h0_text) {
-#line 1550 "main.c"
+#line 1481 "main.c"
     h_adler_Halves h1_two;
     h_0opt_e201354 h2_f0 = {0};
     h_0opt_e201354 h3_f1 = {0};
@@ -1596,12 +1527,6 @@ uint32_t h_adler_adler32(HeroStr h0_text) {
     h_0opt_e201354 t40 = {0};
     h_0opt_fbaec77 t41 = {0};
     h_0opt_fbaec77 t42 = {0};
-    h_0opt_e201354 t43 = {0};
-    h_0opt_e201354 t44 = {0};
-    h_0opt_fbaec77 t45 = {0};
-    h_0opt_e201354 t46 = {0};
-    h_0opt_e201354 t47 = {0};
-    h_0opt_fbaec77 t48 = {0};
     goto bb0;
 bb0:
 #line 60 "examples/checksum/adler.hero"
@@ -1620,15 +1545,15 @@ bb0:
     t37 = h5_own5;
 #line 61 "examples/checksum/adler.hero"
     h5_own5 = t5;
-#line 1624 "main.c"
+#line 1549 "main.c"
     h_0opt_e201354_release(&t37);
 #line 61 "examples/checksum/adler.hero"
     t38 = h2_f0;
-#line 1628 "main.c"
+#line 1553 "main.c"
     h_0opt_e201354_retain(&t5);
 #line 61 "examples/checksum/adler.hero"
     h2_f0 = t5;
-#line 1632 "main.c"
+#line 1557 "main.c"
     h_0opt_e201354_release(&t38);
 #line 61 "examples/checksum/adler.hero"
     t6 = h2_f0;
@@ -1660,15 +1585,15 @@ bb1:
     t39 = h6_own6;
 #line 61 "examples/checksum/adler.hero"
     h6_own6 = t18;
-#line 1664 "main.c"
+#line 1589 "main.c"
     h_0opt_e201354_release(&t39);
 #line 61 "examples/checksum/adler.hero"
     t40 = h3_f1;
-#line 1668 "main.c"
+#line 1593 "main.c"
     h_0opt_e201354_retain(&t18);
 #line 61 "examples/checksum/adler.hero"
     h3_f1 = t18;
-#line 1672 "main.c"
+#line 1597 "main.c"
     h_0opt_e201354_release(&t40);
 #line 61 "examples/checksum/adler.hero"
     t19 = h3_f1;
@@ -1686,7 +1611,7 @@ bb2:
     t10 = h2_f0;
 #line 61 "examples/checksum/adler.hero"
     t11 = t10.as.err;
-#line 1690 "main.c"
+#line 1615 "main.c"
     hero_panic_must(t11);
     hero_unreachable();
 bb3:
@@ -1710,15 +1635,15 @@ bb3:
     t41 = h7_own7;
 #line 61 "examples/checksum/adler.hero"
     h7_own7 = t28;
-#line 1714 "main.c"
+#line 1639 "main.c"
     h_0opt_fbaec77_release(&t41);
 #line 61 "examples/checksum/adler.hero"
     t42 = h4_f2;
-#line 1718 "main.c"
+#line 1643 "main.c"
     h_0opt_fbaec77_retain(&t28);
 #line 61 "examples/checksum/adler.hero"
     h4_f2 = t28;
-#line 1722 "main.c"
+#line 1647 "main.c"
     h_0opt_fbaec77_release(&t42);
 #line 61 "examples/checksum/adler.hero"
     t29 = h4_f2;
@@ -1736,7 +1661,7 @@ bb4:
     t23 = h3_f1;
 #line 61 "examples/checksum/adler.hero"
     t24 = t23.as.err;
-#line 1740 "main.c"
+#line 1665 "main.c"
     hero_panic_must(t24);
     hero_unreachable();
 bb5:
@@ -1744,44 +1669,37 @@ bb5:
     t35 = h4_f2;
 #line 61 "examples/checksum/adler.hero"
     t36 = t35.as.ok;
+#line 1673 "main.c"
+    h_0opt_e201354_release(&h2_f0);
 #line 61 "examples/checksum/adler.hero"
-    t43 = h2_f0;
-#line 1750 "main.c"
-    h_0opt_e201354_release(&t43);
+#line 1676 "main.c"
+    h_0opt_e201354_release(&h3_f1);
 #line 61 "examples/checksum/adler.hero"
-    t44 = h3_f1;
-#line 1754 "main.c"
-    h_0opt_e201354_release(&t44);
+#line 1679 "main.c"
+    h_0opt_fbaec77_release(&h4_f2);
 #line 61 "examples/checksum/adler.hero"
-    t45 = h4_f2;
-#line 1758 "main.c"
-    h_0opt_fbaec77_release(&t45);
+#line 1682 "main.c"
+    h_0opt_e201354_release(&h5_own5);
 #line 61 "examples/checksum/adler.hero"
-    t46 = h5_own5;
-#line 1762 "main.c"
-    h_0opt_e201354_release(&t46);
+#line 1685 "main.c"
+    h_0opt_e201354_release(&h6_own6);
 #line 61 "examples/checksum/adler.hero"
-    t47 = h6_own6;
-#line 1766 "main.c"
-    h_0opt_e201354_release(&t47);
-#line 61 "examples/checksum/adler.hero"
-    t48 = h7_own7;
-#line 1770 "main.c"
-    h_0opt_fbaec77_release(&t48);
+#line 1688 "main.c"
+    h_0opt_fbaec77_release(&h7_own7);
     return t36;
 bb6:
 #line 61 "examples/checksum/adler.hero"
     t33 = h4_f2;
 #line 61 "examples/checksum/adler.hero"
     t34 = t33.as.err;
-#line 1778 "main.c"
+#line 1696 "main.c"
     hero_panic_must(t34);
     hero_unreachable();
 }
 
 #line 65 "examples/checksum/adler.hero"
 bool h_adler_is_prime(int64_t h0_n) {
-#line 1785 "main.c"
+#line 1703 "main.c"
     int64_t h1_d;
     int64_t t1;
     int64_t t2;
@@ -1891,77 +1809,77 @@ bb8:
 bb9:
 #line 72 "examples/checksum/adler.hero"
     goto bb7;
-#line 1895 "main.c"
+#line 1813 "main.c"
 }
 
 #line 38 "examples/checksum/base64.hero"
 HeroStr h_base64_ALPHABET(void) {
-#line 1900 "main.c"
+#line 1818 "main.c"
     HeroStr t1 = {0};
     goto bb0;
 bb0:
 #line 39 "examples/checksum/base64.hero"
     t1 = HERO_STR_LIT(hero_str_45fa86fe);
-#line 1906 "main.c"
+#line 1824 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 41 "examples/checksum/base64.hero"
 HeroStr h_base64_PAD(void) {
-#line 1913 "main.c"
+#line 1831 "main.c"
     HeroStr t1 = {0};
     goto bb0;
 bb0:
 #line 42 "examples/checksum/base64.hero"
     t1 = HERO_STR_LIT(hero_str_3d);
-#line 1919 "main.c"
+#line 1837 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 44 "examples/checksum/base64.hero"
 HeroStr h_base64_ERR_LENGTH(void) {
-#line 1926 "main.c"
+#line 1844 "main.c"
     HeroStr t1 = {0};
     goto bb0;
 bb0:
 #line 45 "examples/checksum/base64.hero"
     t1 = HERO_STR_LIT(hero_str_220131e1);
-#line 1932 "main.c"
+#line 1850 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 47 "examples/checksum/base64.hero"
 HeroStr h_base64_ERR_CHARACTER(void) {
-#line 1939 "main.c"
+#line 1857 "main.c"
     HeroStr t1 = {0};
     goto bb0;
 bb0:
 #line 48 "examples/checksum/base64.hero"
     t1 = HERO_STR_LIT(hero_str_552a00f0);
-#line 1945 "main.c"
+#line 1863 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 50 "examples/checksum/base64.hero"
 HeroStr h_base64_ERR_PADDING(void) {
-#line 1952 "main.c"
+#line 1870 "main.c"
     HeroStr t1 = {0};
     goto bb0;
 bb0:
 #line 51 "examples/checksum/base64.hero"
     t1 = HERO_STR_LIT(hero_str_1b630675);
-#line 1958 "main.c"
+#line 1876 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 56 "examples/checksum/base64.hero"
 HeroArrayHeader * h_base64_bytes_of(HeroStr h0_text) {
-#line 1965 "main.c"
+#line 1883 "main.c"
     HeroArrayHeader * h1_out = {0};
     int64_t h2_i;
     HeroArrayHeader * h3_own3 = {0};
@@ -1980,8 +1898,6 @@ HeroArrayHeader * h_base64_bytes_of(HeroStr h0_text) {
     HeroArrayHeader * t15 = {0};
     HeroArrayHeader * t16 = {0};
     HeroArrayHeader * t17 = {0};
-    HeroArrayHeader * t18 = {0};
-    HeroArrayHeader * t19 = {0};
     goto bb0;
 bb0:
 #line 57 "examples/checksum/base64.hero"
@@ -1990,15 +1906,15 @@ bb0:
     t16 = h3_own3;
 #line 57 "examples/checksum/base64.hero"
     h3_own3 = t1;
-#line 1994 "main.c"
+#line 1910 "main.c"
     hero_array_decref(t16);
 #line 57 "examples/checksum/base64.hero"
     t17 = h1_out;
-#line 1998 "main.c"
+#line 1914 "main.c"
     hero_array_incref(t1);
 #line 57 "examples/checksum/base64.hero"
     h1_out = t1;
-#line 2002 "main.c"
+#line 1918 "main.c"
     hero_array_decref(t17);
 #line 58 "examples/checksum/base64.hero"
     t2 = INT64_C(0);
@@ -2042,22 +1958,20 @@ bb2:
 bb3:
 #line 64 "examples/checksum/base64.hero"
     t15 = h1_out;
-#line 2046 "main.c"
+#line 1962 "main.c"
     hero_array_incref(t15);
 #line 64 "examples/checksum/base64.hero"
-    t18 = h1_out;
-#line 2050 "main.c"
-    hero_array_decref(t18);
+#line 1965 "main.c"
+    hero_array_decref(h1_out);
 #line 64 "examples/checksum/base64.hero"
-    t19 = h3_own3;
-#line 2054 "main.c"
-    hero_array_decref(t19);
+#line 1968 "main.c"
+    hero_array_decref(h3_own3);
     return t15;
 }
 
 #line 67 "examples/checksum/base64.hero"
 HeroStr h_base64_letter(int64_t h0_value) {
-#line 2061 "main.c"
+#line 1975 "main.c"
     HeroStr h1_own1 = {0};
     HeroStr h2_own2 = {0};
     HeroStr t1 = {0};
@@ -2068,8 +1982,6 @@ HeroStr h_base64_letter(int64_t h0_value) {
     HeroStr t6 = {0};
     HeroStr t7 = {0};
     HeroStr t8 = {0};
-    HeroStr t9 = {0};
-    HeroStr t10 = {0};
     goto bb0;
 bb0:
 #line 68 "examples/checksum/base64.hero"
@@ -2078,7 +1990,7 @@ bb0:
     t7 = h1_own1;
 #line 68 "examples/checksum/base64.hero"
     h1_own1 = t1;
-#line 2082 "main.c"
+#line 1994 "main.c"
     hero_str_decref(t7);
 #line 68 "examples/checksum/base64.hero"
     t2 = h0_value;
@@ -2094,25 +2006,23 @@ bb0:
     t8 = h2_own2;
 #line 68 "examples/checksum/base64.hero"
     h2_own2 = t6;
-#line 2098 "main.c"
+#line 2010 "main.c"
     hero_str_decref(t8);
 #line 68 "examples/checksum/base64.hero"
-#line 2101 "main.c"
+#line 2013 "main.c"
     hero_str_incref(t6);
 #line 68 "examples/checksum/base64.hero"
-    t9 = h1_own1;
-#line 2105 "main.c"
-    hero_str_decref(t9);
+#line 2016 "main.c"
+    hero_str_decref(h1_own1);
 #line 68 "examples/checksum/base64.hero"
-    t10 = h2_own2;
-#line 2109 "main.c"
-    hero_str_decref(t10);
+#line 2019 "main.c"
+    hero_str_decref(h2_own2);
     return t6;
 }
 
 #line 71 "examples/checksum/base64.hero"
 h_0opt_e201354 h_base64_value_of(HeroStr h0_written) {
-#line 2116 "main.c"
+#line 2026 "main.c"
     int64_t h1_i;
     HeroStr h2_own2 = {0};
     HeroStr h3_own3 = {0};
@@ -2152,20 +2062,6 @@ h_0opt_e201354 h_base64_value_of(HeroStr h0_written) {
     HeroStr t29 = {0};
     h_0opt_e201354 t30 = {0};
     h_0opt_e201354 t31 = {0};
-    HeroStr t32 = {0};
-    HeroStr t33 = {0};
-    HeroStr t34 = {0};
-    HeroStr t35 = {0};
-    HeroStr t36 = {0};
-    h_0opt_e201354 t37 = {0};
-    h_0opt_e201354 t38 = {0};
-    HeroStr t39 = {0};
-    HeroStr t40 = {0};
-    HeroStr t41 = {0};
-    HeroStr t42 = {0};
-    HeroStr t43 = {0};
-    h_0opt_e201354 t44 = {0};
-    h_0opt_e201354 t45 = {0};
     goto bb0;
 bb0:
 #line 72 "examples/checksum/base64.hero"
@@ -2192,7 +2088,7 @@ bb2:
     t25 = h2_own2;
 #line 75 "examples/checksum/base64.hero"
     h2_own2 = t5;
-#line 2196 "main.c"
+#line 2092 "main.c"
     hero_str_decref(t25);
 #line 75 "examples/checksum/base64.hero"
     t6 = h1_i;
@@ -2208,7 +2104,7 @@ bb2:
     t26 = h3_own3;
 #line 75 "examples/checksum/base64.hero"
     h3_own3 = t10;
-#line 2212 "main.c"
+#line 2108 "main.c"
     hero_str_decref(t26);
 #line 75 "examples/checksum/base64.hero"
     t11 = h0_written;
@@ -2224,7 +2120,7 @@ bb3:
     t27 = h4_own4;
 #line 79 "examples/checksum/base64.hero"
     h4_own4 = t18;
-#line 2228 "main.c"
+#line 2124 "main.c"
     hero_str_decref(t27);
 #line 79 "examples/checksum/base64.hero"
     t19 = HERO_STR_LIT(hero_str_60);
@@ -2236,7 +2132,7 @@ bb3:
     t28 = h5_own5;
 #line 79 "examples/checksum/base64.hero"
     h5_own5 = t21;
-#line 2240 "main.c"
+#line 2136 "main.c"
     hero_str_decref(t28);
 #line 79 "examples/checksum/base64.hero"
     t22 = HERO_STR_LIT(hero_str_3b7a254e);
@@ -2246,13 +2142,13 @@ bb3:
     t29 = h6_own6;
 #line 79 "examples/checksum/base64.hero"
     h6_own6 = t23;
-#line 2250 "main.c"
+#line 2146 "main.c"
     hero_str_decref(t29);
 #line 79 "examples/checksum/base64.hero"
-#line 2253 "main.c"
+#line 2149 "main.c"
     hero_str_incref(t18);
 #line 79 "examples/checksum/base64.hero"
-#line 2256 "main.c"
+#line 2152 "main.c"
     hero_str_incref(t23);
 #line 79 "examples/checksum/base64.hero"
     t24 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t18, .msg = t23}};
@@ -2260,39 +2156,32 @@ bb3:
     t30 = h7_own7;
 #line 79 "examples/checksum/base64.hero"
     h7_own7 = t24;
-#line 2264 "main.c"
+#line 2160 "main.c"
     h_0opt_e201354_release(&t30);
 #line 79 "examples/checksum/base64.hero"
-#line 2267 "main.c"
+#line 2163 "main.c"
     h_0opt_e201354_retain(&t24);
 #line 79 "examples/checksum/base64.hero"
-    t32 = h2_own2;
-#line 2271 "main.c"
-    hero_str_decref(t32);
+#line 2166 "main.c"
+    hero_str_decref(h2_own2);
 #line 79 "examples/checksum/base64.hero"
-    t33 = h3_own3;
-#line 2275 "main.c"
-    hero_str_decref(t33);
+#line 2169 "main.c"
+    hero_str_decref(h3_own3);
 #line 79 "examples/checksum/base64.hero"
-    t34 = h4_own4;
-#line 2279 "main.c"
-    hero_str_decref(t34);
+#line 2172 "main.c"
+    hero_str_decref(h4_own4);
 #line 79 "examples/checksum/base64.hero"
-    t35 = h5_own5;
-#line 2283 "main.c"
-    hero_str_decref(t35);
+#line 2175 "main.c"
+    hero_str_decref(h5_own5);
 #line 79 "examples/checksum/base64.hero"
-    t36 = h6_own6;
-#line 2287 "main.c"
-    hero_str_decref(t36);
+#line 2178 "main.c"
+    hero_str_decref(h6_own6);
 #line 79 "examples/checksum/base64.hero"
-    t37 = h7_own7;
-#line 2291 "main.c"
-    h_0opt_e201354_release(&t37);
+#line 2181 "main.c"
+    h_0opt_e201354_release(&h7_own7);
 #line 79 "examples/checksum/base64.hero"
-    t38 = h8_own8;
-#line 2295 "main.c"
-    h_0opt_e201354_release(&t38);
+#line 2184 "main.c"
+    h_0opt_e201354_release(&h8_own8);
     return t24;
 bb4:
 #line 77 "examples/checksum/base64.hero"
@@ -2315,39 +2204,32 @@ bb5:
     t31 = h8_own8;
 #line 76 "examples/checksum/base64.hero"
     h8_own8 = t14;
-#line 2319 "main.c"
+#line 2208 "main.c"
     h_0opt_e201354_release(&t31);
 #line 76 "examples/checksum/base64.hero"
-#line 2322 "main.c"
+#line 2211 "main.c"
     h_0opt_e201354_retain(&t14);
 #line 76 "examples/checksum/base64.hero"
-    t39 = h2_own2;
-#line 2326 "main.c"
-    hero_str_decref(t39);
+#line 2214 "main.c"
+    hero_str_decref(h2_own2);
 #line 76 "examples/checksum/base64.hero"
-    t40 = h3_own3;
-#line 2330 "main.c"
-    hero_str_decref(t40);
+#line 2217 "main.c"
+    hero_str_decref(h3_own3);
 #line 76 "examples/checksum/base64.hero"
-    t41 = h4_own4;
-#line 2334 "main.c"
-    hero_str_decref(t41);
+#line 2220 "main.c"
+    hero_str_decref(h4_own4);
 #line 76 "examples/checksum/base64.hero"
-    t42 = h5_own5;
-#line 2338 "main.c"
-    hero_str_decref(t42);
+#line 2223 "main.c"
+    hero_str_decref(h5_own5);
 #line 76 "examples/checksum/base64.hero"
-    t43 = h6_own6;
-#line 2342 "main.c"
-    hero_str_decref(t43);
+#line 2226 "main.c"
+    hero_str_decref(h6_own6);
 #line 76 "examples/checksum/base64.hero"
-    t44 = h7_own7;
-#line 2346 "main.c"
-    h_0opt_e201354_release(&t44);
+#line 2229 "main.c"
+    h_0opt_e201354_release(&h7_own7);
 #line 76 "examples/checksum/base64.hero"
-    t45 = h8_own8;
-#line 2350 "main.c"
-    h_0opt_e201354_release(&t45);
+#line 2232 "main.c"
+    h_0opt_e201354_release(&h8_own8);
     return t14;
 bb6:
     goto bb4;
@@ -2355,7 +2237,7 @@ bb6:
 
 #line 83 "examples/checksum/base64.hero"
 HeroStr h_base64_encoded(HeroStr h0_text) {
-#line 2359 "main.c"
+#line 2241 "main.c"
     HeroArrayHeader * h1_own1 = {0};
     HeroStr h2_own2 = {0};
     HeroStr t1 = {0};
@@ -2363,8 +2245,6 @@ HeroStr h_base64_encoded(HeroStr h0_text) {
     HeroStr t3 = {0};
     HeroArrayHeader * t4 = {0};
     HeroStr t5 = {0};
-    HeroArrayHeader * t6 = {0};
-    HeroStr t7 = {0};
     goto bb0;
 bb0:
 #line 84 "examples/checksum/base64.hero"
@@ -2375,7 +2255,7 @@ bb0:
     t4 = h1_own1;
 #line 84 "examples/checksum/base64.hero"
     h1_own1 = t2;
-#line 2379 "main.c"
+#line 2259 "main.c"
     hero_array_decref(t4);
 #line 84 "examples/checksum/base64.hero"
     t3 = h_base64_encoded_bytes(t2);
@@ -2383,25 +2263,23 @@ bb0:
     t5 = h2_own2;
 #line 84 "examples/checksum/base64.hero"
     h2_own2 = t3;
-#line 2387 "main.c"
+#line 2267 "main.c"
     hero_str_decref(t5);
 #line 84 "examples/checksum/base64.hero"
-#line 2390 "main.c"
+#line 2270 "main.c"
     hero_str_incref(t3);
 #line 84 "examples/checksum/base64.hero"
-    t6 = h1_own1;
-#line 2394 "main.c"
-    hero_array_decref(t6);
+#line 2273 "main.c"
+    hero_array_decref(h1_own1);
 #line 84 "examples/checksum/base64.hero"
-    t7 = h2_own2;
-#line 2398 "main.c"
-    hero_str_decref(t7);
+#line 2276 "main.c"
+    hero_str_decref(h2_own2);
     return t3;
 }
 
 #line 89 "examples/checksum/base64.hero"
 HeroStr h_base64_encoded_bytes(HeroArrayHeader * h0_data) {
-#line 2405 "main.c"
+#line 2283 "main.c"
     HeroArrayHeader * h1_out = {0};
     int64_t h2_i;
     int64_t h3_n;
@@ -2546,21 +2424,6 @@ HeroStr h_base64_encoded_bytes(HeroArrayHeader * h0_data) {
     HeroStr t132 = {0};
     HeroStr t133 = {0};
     HeroStr t134 = {0};
-    HeroArrayHeader * t135 = {0};
-    h_0opt_e201354 t136 = {0};
-    h_0opt_e201354 t137 = {0};
-    h_0opt_e201354 t138 = {0};
-    HeroArrayHeader * t139 = {0};
-    h_0opt_e201354 t140 = {0};
-    HeroStr t141 = {0};
-    h_0opt_e201354 t142 = {0};
-    HeroStr t143 = {0};
-    HeroStr t144 = {0};
-    h_0opt_e201354 t145 = {0};
-    HeroStr t146 = {0};
-    HeroStr t147 = {0};
-    HeroStr t148 = {0};
-    HeroStr t149 = {0};
     goto bb0;
 bb0:
 #line 90 "examples/checksum/base64.hero"
@@ -2569,15 +2432,15 @@ bb0:
     t120 = h12_own12;
 #line 90 "examples/checksum/base64.hero"
     h12_own12 = t1;
-#line 2573 "main.c"
+#line 2436 "main.c"
     hero_array_decref(t120);
 #line 90 "examples/checksum/base64.hero"
     t121 = h1_out;
-#line 2577 "main.c"
+#line 2440 "main.c"
     hero_array_incref(t1);
 #line 90 "examples/checksum/base64.hero"
     h1_out = t1;
-#line 2581 "main.c"
+#line 2444 "main.c"
     hero_array_decref(t121);
 #line 91 "examples/checksum/base64.hero"
     t2 = INT64_C(0);
@@ -2615,15 +2478,15 @@ bb2:
     t122 = h13_own13;
 #line 95 "examples/checksum/base64.hero"
     h13_own13 = t11;
-#line 2619 "main.c"
+#line 2482 "main.c"
     h_0opt_e201354_release(&t122);
 #line 95 "examples/checksum/base64.hero"
     t123 = h4_f0;
-#line 2623 "main.c"
+#line 2486 "main.c"
     h_0opt_e201354_retain(&t11);
 #line 95 "examples/checksum/base64.hero"
     h4_f0 = t11;
-#line 2627 "main.c"
+#line 2490 "main.c"
     h_0opt_e201354_release(&t123);
 #line 95 "examples/checksum/base64.hero"
     t12 = h4_f0;
@@ -2647,71 +2510,56 @@ bb3:
     t124 = h14_own14;
 #line 127 "examples/checksum/base64.hero"
     h14_own14 = t119;
-#line 2651 "main.c"
+#line 2514 "main.c"
     hero_str_decref(t124);
 #line 127 "examples/checksum/base64.hero"
-#line 2654 "main.c"
+#line 2517 "main.c"
     hero_str_incref(t119);
 #line 127 "examples/checksum/base64.hero"
-    t135 = h1_out;
-#line 2658 "main.c"
-    hero_array_decref(t135);
+#line 2520 "main.c"
+    hero_array_decref(h1_out);
 #line 127 "examples/checksum/base64.hero"
-    t136 = h4_f0;
-#line 2662 "main.c"
-    h_0opt_e201354_release(&t136);
+#line 2523 "main.c"
+    h_0opt_e201354_release(&h4_f0);
 #line 127 "examples/checksum/base64.hero"
-    t137 = h9_f1;
-#line 2666 "main.c"
-    h_0opt_e201354_release(&t137);
+#line 2526 "main.c"
+    h_0opt_e201354_release(&h9_f1);
 #line 127 "examples/checksum/base64.hero"
-    t138 = h10_f2;
-#line 2670 "main.c"
-    h_0opt_e201354_release(&t138);
+#line 2529 "main.c"
+    h_0opt_e201354_release(&h10_f2);
 #line 127 "examples/checksum/base64.hero"
-    t139 = h12_own12;
-#line 2674 "main.c"
-    hero_array_decref(t139);
+#line 2532 "main.c"
+    hero_array_decref(h12_own12);
 #line 127 "examples/checksum/base64.hero"
-    t140 = h13_own13;
-#line 2678 "main.c"
-    h_0opt_e201354_release(&t140);
+#line 2535 "main.c"
+    h_0opt_e201354_release(&h13_own13);
 #line 127 "examples/checksum/base64.hero"
-    t141 = h14_own14;
-#line 2682 "main.c"
-    hero_str_decref(t141);
+#line 2538 "main.c"
+    hero_str_decref(h14_own14);
 #line 127 "examples/checksum/base64.hero"
-    t142 = h15_own15;
-#line 2686 "main.c"
-    h_0opt_e201354_release(&t142);
+#line 2541 "main.c"
+    h_0opt_e201354_release(&h15_own15);
 #line 127 "examples/checksum/base64.hero"
-    t143 = h16_own16;
-#line 2690 "main.c"
-    hero_str_decref(t143);
+#line 2544 "main.c"
+    hero_str_decref(h16_own16);
 #line 127 "examples/checksum/base64.hero"
-    t144 = h17_own17;
-#line 2694 "main.c"
-    hero_str_decref(t144);
+#line 2547 "main.c"
+    hero_str_decref(h17_own17);
 #line 127 "examples/checksum/base64.hero"
-    t145 = h18_own18;
-#line 2698 "main.c"
-    h_0opt_e201354_release(&t145);
+#line 2550 "main.c"
+    h_0opt_e201354_release(&h18_own18);
 #line 127 "examples/checksum/base64.hero"
-    t146 = h19_own19;
-#line 2702 "main.c"
-    hero_str_decref(t146);
+#line 2553 "main.c"
+    hero_str_decref(h19_own19);
 #line 127 "examples/checksum/base64.hero"
-    t147 = h20_own20;
-#line 2706 "main.c"
-    hero_str_decref(t147);
+#line 2556 "main.c"
+    hero_str_decref(h20_own20);
 #line 127 "examples/checksum/base64.hero"
-    t148 = h21_own21;
-#line 2710 "main.c"
-    hero_str_decref(t148);
+#line 2559 "main.c"
+    hero_str_decref(h21_own21);
 #line 127 "examples/checksum/base64.hero"
-    t149 = h22_own22;
-#line 2714 "main.c"
-    hero_str_decref(t149);
+#line 2562 "main.c"
+    hero_str_decref(h22_own22);
     return t119;
 bb4:
 #line 95 "examples/checksum/base64.hero"
@@ -2750,7 +2598,7 @@ bb5:
     t16 = h4_f0;
 #line 95 "examples/checksum/base64.hero"
     t17 = t16.as.err;
-#line 2754 "main.c"
+#line 2602 "main.c"
     hero_panic_must(t17);
     hero_unreachable();
 bb6:
@@ -2784,15 +2632,15 @@ bb7:
     t125 = h15_own15;
 #line 101 "examples/checksum/base64.hero"
     h15_own15 = t33;
-#line 2788 "main.c"
+#line 2636 "main.c"
     h_0opt_e201354_release(&t125);
 #line 101 "examples/checksum/base64.hero"
     t126 = h9_f1;
-#line 2792 "main.c"
+#line 2640 "main.c"
     h_0opt_e201354_retain(&t33);
 #line 101 "examples/checksum/base64.hero"
     h9_f1 = t33;
-#line 2796 "main.c"
+#line 2644 "main.c"
     h_0opt_e201354_release(&t126);
 #line 101 "examples/checksum/base64.hero"
     t34 = h9_f1;
@@ -2828,7 +2676,7 @@ bb10:
     t38 = h9_f1;
 #line 101 "examples/checksum/base64.hero"
     t39 = t38.as.err;
-#line 2832 "main.c"
+#line 2680 "main.c"
     hero_panic_must(t39);
     hero_unreachable();
 bb11:
@@ -2874,7 +2722,7 @@ bb11:
     t127 = h16_own16;
 #line 113 "examples/checksum/base64.hero"
     h16_own16 = t78;
-#line 2878 "main.c"
+#line 2726 "main.c"
     hero_str_decref(t127);
 #line 113 "examples/checksum/base64.hero"
     hero_array_push_owned(&h1_out, &t78);
@@ -2896,7 +2744,7 @@ bb11:
     t128 = h17_own17;
 #line 114 "examples/checksum/base64.hero"
     h17_own17 = t86;
-#line 2900 "main.c"
+#line 2748 "main.c"
     hero_str_decref(t128);
 #line 114 "examples/checksum/base64.hero"
     hero_array_push_owned(&h1_out, &t86);
@@ -2926,15 +2774,15 @@ bb12:
     t129 = h18_own18;
 #line 105 "examples/checksum/base64.hero"
     h18_own18 = t53;
-#line 2930 "main.c"
+#line 2778 "main.c"
     h_0opt_e201354_release(&t129);
 #line 105 "examples/checksum/base64.hero"
     t130 = h10_f2;
-#line 2934 "main.c"
+#line 2782 "main.c"
     h_0opt_e201354_retain(&t53);
 #line 105 "examples/checksum/base64.hero"
     h10_f2 = t53;
-#line 2938 "main.c"
+#line 2786 "main.c"
     h_0opt_e201354_release(&t130);
 #line 105 "examples/checksum/base64.hero"
     t54 = h10_f2;
@@ -2970,7 +2818,7 @@ bb15:
     t58 = h10_f2;
 #line 105 "examples/checksum/base64.hero"
     t59 = t58.as.err;
-#line 2974 "main.c"
+#line 2822 "main.c"
     hero_panic_must(t59);
     hero_unreachable();
 bb16:
@@ -3002,7 +2850,7 @@ bb17:
     t131 = h19_own19;
 #line 117 "examples/checksum/base64.hero"
     h19_own19 = t97;
-#line 3006 "main.c"
+#line 2854 "main.c"
     hero_str_decref(t131);
 #line 117 "examples/checksum/base64.hero"
     hero_array_push_owned(&h1_out, &t97);
@@ -3016,7 +2864,7 @@ bb18:
     t132 = h20_own20;
 #line 119 "examples/checksum/base64.hero"
     h20_own20 = t100;
-#line 3020 "main.c"
+#line 2868 "main.c"
     hero_str_decref(t132);
 #line 119 "examples/checksum/base64.hero"
     hero_array_push_owned(&h1_out, &t100);
@@ -3048,7 +2896,7 @@ bb20:
     t133 = h21_own21;
 #line 122 "examples/checksum/base64.hero"
     h21_own21 = t109;
-#line 3052 "main.c"
+#line 2900 "main.c"
     hero_str_decref(t133);
 #line 122 "examples/checksum/base64.hero"
     hero_array_push_owned(&h1_out, &t109);
@@ -3062,18 +2910,18 @@ bb21:
     t134 = h22_own22;
 #line 124 "examples/checksum/base64.hero"
     h22_own22 = t112;
-#line 3066 "main.c"
+#line 2914 "main.c"
     hero_str_decref(t134);
 #line 124 "examples/checksum/base64.hero"
     hero_array_push_owned(&h1_out, &t112);
 #line 124 "examples/checksum/base64.hero"
     goto bb19;
-#line 3072 "main.c"
+#line 2920 "main.c"
 }
 
 #line 131 "examples/checksum/base64.hero"
 h_0opt_e201354 h_base64_padding_of(HeroStr h0_group) {
-#line 3077 "main.c"
+#line 2925 "main.c"
     HeroStr h1_third = {0};
     HeroStr h2_fourth = {0};
     bool h3_b0;
@@ -3176,121 +3024,6 @@ h_0opt_e201354 h_base64_padding_of(HeroStr h0_group) {
     h_0opt_e201354 t75 = {0};
     h_0opt_e201354 t76 = {0};
     h_0opt_e201354 t77 = {0};
-    HeroStr t78 = {0};
-    HeroStr t79 = {0};
-    HeroStr t80 = {0};
-    HeroStr t81 = {0};
-    HeroStr t82 = {0};
-    HeroStr t83 = {0};
-    HeroStr t84 = {0};
-    HeroStr t85 = {0};
-    HeroStr t86 = {0};
-    HeroStr t87 = {0};
-    HeroStr t88 = {0};
-    HeroStr t89 = {0};
-    h_0opt_e201354 t90 = {0};
-    HeroStr t91 = {0};
-    HeroStr t92 = {0};
-    HeroStr t93 = {0};
-    HeroStr t94 = {0};
-    HeroStr t95 = {0};
-    h_0opt_e201354 t96 = {0};
-    HeroStr t97 = {0};
-    h_0opt_e201354 t98 = {0};
-    h_0opt_e201354 t99 = {0};
-    h_0opt_e201354 t100 = {0};
-    HeroStr t101 = {0};
-    HeroStr t102 = {0};
-    HeroStr t103 = {0};
-    HeroStr t104 = {0};
-    HeroStr t105 = {0};
-    HeroStr t106 = {0};
-    HeroStr t107 = {0};
-    HeroStr t108 = {0};
-    HeroStr t109 = {0};
-    HeroStr t110 = {0};
-    HeroStr t111 = {0};
-    HeroStr t112 = {0};
-    h_0opt_e201354 t113 = {0};
-    HeroStr t114 = {0};
-    HeroStr t115 = {0};
-    HeroStr t116 = {0};
-    HeroStr t117 = {0};
-    HeroStr t118 = {0};
-    h_0opt_e201354 t119 = {0};
-    HeroStr t120 = {0};
-    h_0opt_e201354 t121 = {0};
-    h_0opt_e201354 t122 = {0};
-    h_0opt_e201354 t123 = {0};
-    HeroStr t124 = {0};
-    HeroStr t125 = {0};
-    HeroStr t126 = {0};
-    HeroStr t127 = {0};
-    HeroStr t128 = {0};
-    HeroStr t129 = {0};
-    HeroStr t130 = {0};
-    HeroStr t131 = {0};
-    HeroStr t132 = {0};
-    HeroStr t133 = {0};
-    HeroStr t134 = {0};
-    HeroStr t135 = {0};
-    h_0opt_e201354 t136 = {0};
-    HeroStr t137 = {0};
-    HeroStr t138 = {0};
-    HeroStr t139 = {0};
-    HeroStr t140 = {0};
-    HeroStr t141 = {0};
-    h_0opt_e201354 t142 = {0};
-    HeroStr t143 = {0};
-    h_0opt_e201354 t144 = {0};
-    h_0opt_e201354 t145 = {0};
-    h_0opt_e201354 t146 = {0};
-    HeroStr t147 = {0};
-    HeroStr t148 = {0};
-    HeroStr t149 = {0};
-    HeroStr t150 = {0};
-    HeroStr t151 = {0};
-    HeroStr t152 = {0};
-    HeroStr t153 = {0};
-    HeroStr t154 = {0};
-    HeroStr t155 = {0};
-    HeroStr t156 = {0};
-    HeroStr t157 = {0};
-    HeroStr t158 = {0};
-    h_0opt_e201354 t159 = {0};
-    HeroStr t160 = {0};
-    HeroStr t161 = {0};
-    HeroStr t162 = {0};
-    HeroStr t163 = {0};
-    HeroStr t164 = {0};
-    h_0opt_e201354 t165 = {0};
-    HeroStr t166 = {0};
-    h_0opt_e201354 t167 = {0};
-    h_0opt_e201354 t168 = {0};
-    h_0opt_e201354 t169 = {0};
-    HeroStr t170 = {0};
-    HeroStr t171 = {0};
-    HeroStr t172 = {0};
-    HeroStr t173 = {0};
-    HeroStr t174 = {0};
-    HeroStr t175 = {0};
-    HeroStr t176 = {0};
-    HeroStr t177 = {0};
-    HeroStr t178 = {0};
-    HeroStr t179 = {0};
-    HeroStr t180 = {0};
-    HeroStr t181 = {0};
-    h_0opt_e201354 t182 = {0};
-    HeroStr t183 = {0};
-    HeroStr t184 = {0};
-    HeroStr t185 = {0};
-    HeroStr t186 = {0};
-    HeroStr t187 = {0};
-    h_0opt_e201354 t188 = {0};
-    HeroStr t189 = {0};
-    h_0opt_e201354 t190 = {0};
-    h_0opt_e201354 t191 = {0};
-    h_0opt_e201354 t192 = {0};
     goto bb0;
 bb0:
 #line 132 "examples/checksum/base64.hero"
@@ -3305,15 +3038,15 @@ bb0:
     t55 = h5_own5;
 #line 132 "examples/checksum/base64.hero"
     h5_own5 = t4;
-#line 3309 "main.c"
+#line 3042 "main.c"
     hero_str_decref(t55);
 #line 132 "examples/checksum/base64.hero"
     t56 = h1_third;
-#line 3313 "main.c"
+#line 3046 "main.c"
     hero_str_incref(t4);
 #line 132 "examples/checksum/base64.hero"
     h1_third = t4;
-#line 3317 "main.c"
+#line 3050 "main.c"
     hero_str_decref(t56);
 #line 133 "examples/checksum/base64.hero"
     t5 = h0_group;
@@ -3327,15 +3060,15 @@ bb0:
     t57 = h6_own6;
 #line 133 "examples/checksum/base64.hero"
     h6_own6 = t8;
-#line 3331 "main.c"
+#line 3064 "main.c"
     hero_str_decref(t57);
 #line 133 "examples/checksum/base64.hero"
     t58 = h2_fourth;
-#line 3335 "main.c"
+#line 3068 "main.c"
     hero_str_incref(t8);
 #line 133 "examples/checksum/base64.hero"
     h2_fourth = t8;
-#line 3339 "main.c"
+#line 3072 "main.c"
     hero_str_decref(t58);
 #line 135 "examples/checksum/base64.hero"
     t9 = h0_group;
@@ -3349,7 +3082,7 @@ bb0:
     t59 = h7_own7;
 #line 135 "examples/checksum/base64.hero"
     h7_own7 = t12;
-#line 3353 "main.c"
+#line 3086 "main.c"
     hero_str_decref(t59);
 #line 135 "examples/checksum/base64.hero"
     t13 = h_base64_PAD();
@@ -3357,7 +3090,7 @@ bb0:
     t60 = h8_own8;
 #line 135 "examples/checksum/base64.hero"
     h8_own8 = t13;
-#line 3361 "main.c"
+#line 3094 "main.c"
     hero_str_decref(t60);
 #line 135 "examples/checksum/base64.hero"
     t14 = hero_str_eq(t12, t13);
@@ -3375,7 +3108,7 @@ bb1:
     t61 = h9_own9;
 #line 141 "examples/checksum/base64.hero"
     h9_own9 = t30;
-#line 3379 "main.c"
+#line 3112 "main.c"
     hero_str_decref(t61);
 #line 141 "examples/checksum/base64.hero"
     t31 = hero_str_eq(t29, t30);
@@ -3397,7 +3130,7 @@ bb2:
     t62 = h10_own10;
 #line 135 "examples/checksum/base64.hero"
     h10_own10 = t18;
-#line 3401 "main.c"
+#line 3134 "main.c"
     hero_str_decref(t62);
 #line 135 "examples/checksum/base64.hero"
     t19 = h_base64_PAD();
@@ -3405,7 +3138,7 @@ bb2:
     t63 = h11_own11;
 #line 135 "examples/checksum/base64.hero"
     h11_own11 = t19;
-#line 3409 "main.c"
+#line 3142 "main.c"
     hero_str_decref(t63);
 #line 135 "examples/checksum/base64.hero"
     t20 = hero_str_eq(t18, t19);
@@ -3427,7 +3160,7 @@ bb4:
     t64 = h12_own12;
 #line 137 "examples/checksum/base64.hero"
     h12_own12 = t22;
-#line 3431 "main.c"
+#line 3164 "main.c"
     hero_str_decref(t64);
 #line 138 "examples/checksum/base64.hero"
     t23 = HERO_STR_LIT(hero_str_4245b2d);
@@ -3439,7 +3172,7 @@ bb4:
     t65 = h13_own13;
 #line 138 "examples/checksum/base64.hero"
     h13_own13 = t25;
-#line 3443 "main.c"
+#line 3176 "main.c"
     hero_str_decref(t65);
 #line 138 "examples/checksum/base64.hero"
     t26 = HERO_STR_LIT(hero_str_19bc6a6d);
@@ -3449,13 +3182,13 @@ bb4:
     t66 = h14_own14;
 #line 138 "examples/checksum/base64.hero"
     h14_own14 = t27;
-#line 3453 "main.c"
+#line 3186 "main.c"
     hero_str_decref(t66);
 #line 136 "examples/checksum/base64.hero"
-#line 3456 "main.c"
+#line 3189 "main.c"
     hero_str_incref(t22);
 #line 136 "examples/checksum/base64.hero"
-#line 3459 "main.c"
+#line 3192 "main.c"
     hero_str_incref(t27);
 #line 136 "examples/checksum/base64.hero"
     t28 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t22, .msg = t27}};
@@ -3463,103 +3196,80 @@ bb4:
     t67 = h15_own15;
 #line 136 "examples/checksum/base64.hero"
     h15_own15 = t28;
-#line 3467 "main.c"
+#line 3200 "main.c"
     h_0opt_e201354_release(&t67);
 #line 136 "examples/checksum/base64.hero"
-#line 3470 "main.c"
+#line 3203 "main.c"
     h_0opt_e201354_retain(&t28);
 #line 136 "examples/checksum/base64.hero"
-    t78 = h1_third;
-#line 3474 "main.c"
-    hero_str_decref(t78);
+#line 3206 "main.c"
+    hero_str_decref(h1_third);
 #line 136 "examples/checksum/base64.hero"
-    t79 = h2_fourth;
-#line 3478 "main.c"
-    hero_str_decref(t79);
+#line 3209 "main.c"
+    hero_str_decref(h2_fourth);
 #line 136 "examples/checksum/base64.hero"
-    t80 = h5_own5;
-#line 3482 "main.c"
-    hero_str_decref(t80);
+#line 3212 "main.c"
+    hero_str_decref(h5_own5);
 #line 136 "examples/checksum/base64.hero"
-    t81 = h6_own6;
-#line 3486 "main.c"
-    hero_str_decref(t81);
+#line 3215 "main.c"
+    hero_str_decref(h6_own6);
 #line 136 "examples/checksum/base64.hero"
-    t82 = h7_own7;
-#line 3490 "main.c"
-    hero_str_decref(t82);
+#line 3218 "main.c"
+    hero_str_decref(h7_own7);
 #line 136 "examples/checksum/base64.hero"
-    t83 = h8_own8;
-#line 3494 "main.c"
-    hero_str_decref(t83);
+#line 3221 "main.c"
+    hero_str_decref(h8_own8);
 #line 136 "examples/checksum/base64.hero"
-    t84 = h9_own9;
-#line 3498 "main.c"
-    hero_str_decref(t84);
+#line 3224 "main.c"
+    hero_str_decref(h9_own9);
 #line 136 "examples/checksum/base64.hero"
-    t85 = h10_own10;
-#line 3502 "main.c"
-    hero_str_decref(t85);
+#line 3227 "main.c"
+    hero_str_decref(h10_own10);
 #line 136 "examples/checksum/base64.hero"
-    t86 = h11_own11;
-#line 3506 "main.c"
-    hero_str_decref(t86);
+#line 3230 "main.c"
+    hero_str_decref(h11_own11);
 #line 136 "examples/checksum/base64.hero"
-    t87 = h12_own12;
-#line 3510 "main.c"
-    hero_str_decref(t87);
+#line 3233 "main.c"
+    hero_str_decref(h12_own12);
 #line 136 "examples/checksum/base64.hero"
-    t88 = h13_own13;
-#line 3514 "main.c"
-    hero_str_decref(t88);
+#line 3236 "main.c"
+    hero_str_decref(h13_own13);
 #line 136 "examples/checksum/base64.hero"
-    t89 = h14_own14;
-#line 3518 "main.c"
-    hero_str_decref(t89);
+#line 3239 "main.c"
+    hero_str_decref(h14_own14);
 #line 136 "examples/checksum/base64.hero"
-    t90 = h15_own15;
-#line 3522 "main.c"
-    h_0opt_e201354_release(&t90);
+#line 3242 "main.c"
+    h_0opt_e201354_release(&h15_own15);
 #line 136 "examples/checksum/base64.hero"
-    t91 = h16_own16;
-#line 3526 "main.c"
-    hero_str_decref(t91);
+#line 3245 "main.c"
+    hero_str_decref(h16_own16);
 #line 136 "examples/checksum/base64.hero"
-    t92 = h17_own17;
-#line 3530 "main.c"
-    hero_str_decref(t92);
+#line 3248 "main.c"
+    hero_str_decref(h17_own17);
 #line 136 "examples/checksum/base64.hero"
-    t93 = h18_own18;
-#line 3534 "main.c"
-    hero_str_decref(t93);
+#line 3251 "main.c"
+    hero_str_decref(h18_own18);
 #line 136 "examples/checksum/base64.hero"
-    t94 = h19_own19;
-#line 3538 "main.c"
-    hero_str_decref(t94);
+#line 3254 "main.c"
+    hero_str_decref(h19_own19);
 #line 136 "examples/checksum/base64.hero"
-    t95 = h20_own20;
-#line 3542 "main.c"
-    hero_str_decref(t95);
+#line 3257 "main.c"
+    hero_str_decref(h20_own20);
 #line 136 "examples/checksum/base64.hero"
-    t96 = h21_own21;
-#line 3546 "main.c"
-    h_0opt_e201354_release(&t96);
+#line 3260 "main.c"
+    h_0opt_e201354_release(&h21_own21);
 #line 136 "examples/checksum/base64.hero"
-    t97 = h22_own22;
-#line 3550 "main.c"
-    hero_str_decref(t97);
+#line 3263 "main.c"
+    hero_str_decref(h22_own22);
 #line 136 "examples/checksum/base64.hero"
-    t98 = h23_own23;
-#line 3554 "main.c"
-    h_0opt_e201354_release(&t98);
+#line 3266 "main.c"
+    h_0opt_e201354_release(&h23_own23);
 #line 136 "examples/checksum/base64.hero"
-    t99 = h24_own24;
-#line 3558 "main.c"
-    h_0opt_e201354_release(&t99);
+#line 3269 "main.c"
+    h_0opt_e201354_release(&h24_own24);
 #line 136 "examples/checksum/base64.hero"
-    t100 = h25_own25;
-#line 3562 "main.c"
-    h_0opt_e201354_release(&t100);
+#line 3272 "main.c"
+    h_0opt_e201354_release(&h25_own25);
     return t28;
 bb5:
     goto bb1;
@@ -3572,7 +3282,7 @@ bb6:
     t68 = h16_own16;
 #line 144 "examples/checksum/base64.hero"
     h16_own16 = t44;
-#line 3576 "main.c"
+#line 3286 "main.c"
     hero_str_decref(t68);
 #line 144 "examples/checksum/base64.hero"
     t45 = hero_str_eq(t43, t44);
@@ -3588,7 +3298,7 @@ bb7:
     t69 = h17_own17;
 #line 141 "examples/checksum/base64.hero"
     h17_own17 = t33;
-#line 3592 "main.c"
+#line 3302 "main.c"
     hero_str_decref(t69);
 #line 141 "examples/checksum/base64.hero"
     t34 = !hero_str_eq(t32, t33);
@@ -3610,7 +3320,7 @@ bb9:
     t70 = h18_own18;
 #line 142 "examples/checksum/base64.hero"
     h18_own18 = t36;
-#line 3614 "main.c"
+#line 3324 "main.c"
     hero_str_decref(t70);
 #line 142 "examples/checksum/base64.hero"
     t37 = HERO_STR_LIT(hero_str_60);
@@ -3622,7 +3332,7 @@ bb9:
     t71 = h19_own19;
 #line 142 "examples/checksum/base64.hero"
     h19_own19 = t39;
-#line 3626 "main.c"
+#line 3336 "main.c"
     hero_str_decref(t71);
 #line 142 "examples/checksum/base64.hero"
     t40 = HERO_STR_LIT(hero_str_b59aa2d);
@@ -3632,13 +3342,13 @@ bb9:
     t72 = h20_own20;
 #line 142 "examples/checksum/base64.hero"
     h20_own20 = t41;
-#line 3636 "main.c"
+#line 3346 "main.c"
     hero_str_decref(t72);
 #line 142 "examples/checksum/base64.hero"
-#line 3639 "main.c"
+#line 3349 "main.c"
     hero_str_incref(t36);
 #line 142 "examples/checksum/base64.hero"
-#line 3642 "main.c"
+#line 3352 "main.c"
     hero_str_incref(t41);
 #line 142 "examples/checksum/base64.hero"
     t42 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t36, .msg = t41}};
@@ -3646,103 +3356,80 @@ bb9:
     t73 = h21_own21;
 #line 142 "examples/checksum/base64.hero"
     h21_own21 = t42;
-#line 3650 "main.c"
+#line 3360 "main.c"
     h_0opt_e201354_release(&t73);
 #line 142 "examples/checksum/base64.hero"
-#line 3653 "main.c"
+#line 3363 "main.c"
     h_0opt_e201354_retain(&t42);
 #line 142 "examples/checksum/base64.hero"
-    t101 = h1_third;
-#line 3657 "main.c"
-    hero_str_decref(t101);
+#line 3366 "main.c"
+    hero_str_decref(h1_third);
 #line 142 "examples/checksum/base64.hero"
-    t102 = h2_fourth;
-#line 3661 "main.c"
-    hero_str_decref(t102);
+#line 3369 "main.c"
+    hero_str_decref(h2_fourth);
 #line 142 "examples/checksum/base64.hero"
-    t103 = h5_own5;
-#line 3665 "main.c"
-    hero_str_decref(t103);
+#line 3372 "main.c"
+    hero_str_decref(h5_own5);
 #line 142 "examples/checksum/base64.hero"
-    t104 = h6_own6;
-#line 3669 "main.c"
-    hero_str_decref(t104);
+#line 3375 "main.c"
+    hero_str_decref(h6_own6);
 #line 142 "examples/checksum/base64.hero"
-    t105 = h7_own7;
-#line 3673 "main.c"
-    hero_str_decref(t105);
+#line 3378 "main.c"
+    hero_str_decref(h7_own7);
 #line 142 "examples/checksum/base64.hero"
-    t106 = h8_own8;
-#line 3677 "main.c"
-    hero_str_decref(t106);
+#line 3381 "main.c"
+    hero_str_decref(h8_own8);
 #line 142 "examples/checksum/base64.hero"
-    t107 = h9_own9;
-#line 3681 "main.c"
-    hero_str_decref(t107);
+#line 3384 "main.c"
+    hero_str_decref(h9_own9);
 #line 142 "examples/checksum/base64.hero"
-    t108 = h10_own10;
-#line 3685 "main.c"
-    hero_str_decref(t108);
+#line 3387 "main.c"
+    hero_str_decref(h10_own10);
 #line 142 "examples/checksum/base64.hero"
-    t109 = h11_own11;
-#line 3689 "main.c"
-    hero_str_decref(t109);
+#line 3390 "main.c"
+    hero_str_decref(h11_own11);
 #line 142 "examples/checksum/base64.hero"
-    t110 = h12_own12;
-#line 3693 "main.c"
-    hero_str_decref(t110);
+#line 3393 "main.c"
+    hero_str_decref(h12_own12);
 #line 142 "examples/checksum/base64.hero"
-    t111 = h13_own13;
-#line 3697 "main.c"
-    hero_str_decref(t111);
+#line 3396 "main.c"
+    hero_str_decref(h13_own13);
 #line 142 "examples/checksum/base64.hero"
-    t112 = h14_own14;
-#line 3701 "main.c"
-    hero_str_decref(t112);
+#line 3399 "main.c"
+    hero_str_decref(h14_own14);
 #line 142 "examples/checksum/base64.hero"
-    t113 = h15_own15;
-#line 3705 "main.c"
-    h_0opt_e201354_release(&t113);
+#line 3402 "main.c"
+    h_0opt_e201354_release(&h15_own15);
 #line 142 "examples/checksum/base64.hero"
-    t114 = h16_own16;
-#line 3709 "main.c"
-    hero_str_decref(t114);
+#line 3405 "main.c"
+    hero_str_decref(h16_own16);
 #line 142 "examples/checksum/base64.hero"
-    t115 = h17_own17;
-#line 3713 "main.c"
-    hero_str_decref(t115);
+#line 3408 "main.c"
+    hero_str_decref(h17_own17);
 #line 142 "examples/checksum/base64.hero"
-    t116 = h18_own18;
-#line 3717 "main.c"
-    hero_str_decref(t116);
+#line 3411 "main.c"
+    hero_str_decref(h18_own18);
 #line 142 "examples/checksum/base64.hero"
-    t117 = h19_own19;
-#line 3721 "main.c"
-    hero_str_decref(t117);
+#line 3414 "main.c"
+    hero_str_decref(h19_own19);
 #line 142 "examples/checksum/base64.hero"
-    t118 = h20_own20;
-#line 3725 "main.c"
-    hero_str_decref(t118);
+#line 3417 "main.c"
+    hero_str_decref(h20_own20);
 #line 142 "examples/checksum/base64.hero"
-    t119 = h21_own21;
-#line 3729 "main.c"
-    h_0opt_e201354_release(&t119);
+#line 3420 "main.c"
+    h_0opt_e201354_release(&h21_own21);
 #line 142 "examples/checksum/base64.hero"
-    t120 = h22_own22;
-#line 3733 "main.c"
-    hero_str_decref(t120);
+#line 3423 "main.c"
+    hero_str_decref(h22_own22);
 #line 142 "examples/checksum/base64.hero"
-    t121 = h23_own23;
-#line 3737 "main.c"
-    h_0opt_e201354_release(&t121);
+#line 3426 "main.c"
+    h_0opt_e201354_release(&h23_own23);
 #line 142 "examples/checksum/base64.hero"
-    t122 = h24_own24;
-#line 3741 "main.c"
-    h_0opt_e201354_release(&t122);
+#line 3429 "main.c"
+    h_0opt_e201354_release(&h24_own24);
 #line 142 "examples/checksum/base64.hero"
-    t123 = h25_own25;
-#line 3745 "main.c"
-    h_0opt_e201354_release(&t123);
+#line 3432 "main.c"
+    h_0opt_e201354_release(&h25_own25);
     return t42;
 bb10:
     goto bb6;
@@ -3755,7 +3442,7 @@ bb11:
     t74 = h22_own22;
 #line 147 "examples/checksum/base64.hero"
     h22_own22 = t49;
-#line 3759 "main.c"
+#line 3446 "main.c"
     hero_str_decref(t74);
 #line 147 "examples/checksum/base64.hero"
     t50 = hero_str_eq(t48, t49);
@@ -3771,103 +3458,80 @@ bb12:
     t75 = h23_own23;
 #line 145 "examples/checksum/base64.hero"
     h23_own23 = t47;
-#line 3775 "main.c"
+#line 3462 "main.c"
     h_0opt_e201354_release(&t75);
 #line 145 "examples/checksum/base64.hero"
-#line 3778 "main.c"
+#line 3465 "main.c"
     h_0opt_e201354_retain(&t47);
 #line 145 "examples/checksum/base64.hero"
-    t124 = h1_third;
-#line 3782 "main.c"
-    hero_str_decref(t124);
+#line 3468 "main.c"
+    hero_str_decref(h1_third);
 #line 145 "examples/checksum/base64.hero"
-    t125 = h2_fourth;
-#line 3786 "main.c"
-    hero_str_decref(t125);
+#line 3471 "main.c"
+    hero_str_decref(h2_fourth);
 #line 145 "examples/checksum/base64.hero"
-    t126 = h5_own5;
-#line 3790 "main.c"
-    hero_str_decref(t126);
+#line 3474 "main.c"
+    hero_str_decref(h5_own5);
 #line 145 "examples/checksum/base64.hero"
-    t127 = h6_own6;
-#line 3794 "main.c"
-    hero_str_decref(t127);
+#line 3477 "main.c"
+    hero_str_decref(h6_own6);
 #line 145 "examples/checksum/base64.hero"
-    t128 = h7_own7;
-#line 3798 "main.c"
-    hero_str_decref(t128);
+#line 3480 "main.c"
+    hero_str_decref(h7_own7);
 #line 145 "examples/checksum/base64.hero"
-    t129 = h8_own8;
-#line 3802 "main.c"
-    hero_str_decref(t129);
+#line 3483 "main.c"
+    hero_str_decref(h8_own8);
 #line 145 "examples/checksum/base64.hero"
-    t130 = h9_own9;
-#line 3806 "main.c"
-    hero_str_decref(t130);
+#line 3486 "main.c"
+    hero_str_decref(h9_own9);
 #line 145 "examples/checksum/base64.hero"
-    t131 = h10_own10;
-#line 3810 "main.c"
-    hero_str_decref(t131);
+#line 3489 "main.c"
+    hero_str_decref(h10_own10);
 #line 145 "examples/checksum/base64.hero"
-    t132 = h11_own11;
-#line 3814 "main.c"
-    hero_str_decref(t132);
+#line 3492 "main.c"
+    hero_str_decref(h11_own11);
 #line 145 "examples/checksum/base64.hero"
-    t133 = h12_own12;
-#line 3818 "main.c"
-    hero_str_decref(t133);
+#line 3495 "main.c"
+    hero_str_decref(h12_own12);
 #line 145 "examples/checksum/base64.hero"
-    t134 = h13_own13;
-#line 3822 "main.c"
-    hero_str_decref(t134);
+#line 3498 "main.c"
+    hero_str_decref(h13_own13);
 #line 145 "examples/checksum/base64.hero"
-    t135 = h14_own14;
-#line 3826 "main.c"
-    hero_str_decref(t135);
+#line 3501 "main.c"
+    hero_str_decref(h14_own14);
 #line 145 "examples/checksum/base64.hero"
-    t136 = h15_own15;
-#line 3830 "main.c"
-    h_0opt_e201354_release(&t136);
+#line 3504 "main.c"
+    h_0opt_e201354_release(&h15_own15);
 #line 145 "examples/checksum/base64.hero"
-    t137 = h16_own16;
-#line 3834 "main.c"
-    hero_str_decref(t137);
+#line 3507 "main.c"
+    hero_str_decref(h16_own16);
 #line 145 "examples/checksum/base64.hero"
-    t138 = h17_own17;
-#line 3838 "main.c"
-    hero_str_decref(t138);
+#line 3510 "main.c"
+    hero_str_decref(h17_own17);
 #line 145 "examples/checksum/base64.hero"
-    t139 = h18_own18;
-#line 3842 "main.c"
-    hero_str_decref(t139);
+#line 3513 "main.c"
+    hero_str_decref(h18_own18);
 #line 145 "examples/checksum/base64.hero"
-    t140 = h19_own19;
-#line 3846 "main.c"
-    hero_str_decref(t140);
+#line 3516 "main.c"
+    hero_str_decref(h19_own19);
 #line 145 "examples/checksum/base64.hero"
-    t141 = h20_own20;
-#line 3850 "main.c"
-    hero_str_decref(t141);
+#line 3519 "main.c"
+    hero_str_decref(h20_own20);
 #line 145 "examples/checksum/base64.hero"
-    t142 = h21_own21;
-#line 3854 "main.c"
-    h_0opt_e201354_release(&t142);
+#line 3522 "main.c"
+    h_0opt_e201354_release(&h21_own21);
 #line 145 "examples/checksum/base64.hero"
-    t143 = h22_own22;
-#line 3858 "main.c"
-    hero_str_decref(t143);
+#line 3525 "main.c"
+    hero_str_decref(h22_own22);
 #line 145 "examples/checksum/base64.hero"
-    t144 = h23_own23;
-#line 3862 "main.c"
-    h_0opt_e201354_release(&t144);
+#line 3528 "main.c"
+    h_0opt_e201354_release(&h23_own23);
 #line 145 "examples/checksum/base64.hero"
-    t145 = h24_own24;
-#line 3866 "main.c"
-    h_0opt_e201354_release(&t145);
+#line 3531 "main.c"
+    h_0opt_e201354_release(&h24_own24);
 #line 145 "examples/checksum/base64.hero"
-    t146 = h25_own25;
-#line 3870 "main.c"
-    h_0opt_e201354_release(&t146);
+#line 3534 "main.c"
+    h_0opt_e201354_release(&h25_own25);
     return t47;
 bb13:
     goto bb11;
@@ -3880,103 +3544,80 @@ bb14:
     t76 = h24_own24;
 #line 150 "examples/checksum/base64.hero"
     h24_own24 = t54;
-#line 3884 "main.c"
+#line 3548 "main.c"
     h_0opt_e201354_release(&t76);
 #line 150 "examples/checksum/base64.hero"
-#line 3887 "main.c"
+#line 3551 "main.c"
     h_0opt_e201354_retain(&t54);
 #line 150 "examples/checksum/base64.hero"
-    t147 = h1_third;
-#line 3891 "main.c"
-    hero_str_decref(t147);
+#line 3554 "main.c"
+    hero_str_decref(h1_third);
 #line 150 "examples/checksum/base64.hero"
-    t148 = h2_fourth;
-#line 3895 "main.c"
-    hero_str_decref(t148);
+#line 3557 "main.c"
+    hero_str_decref(h2_fourth);
 #line 150 "examples/checksum/base64.hero"
-    t149 = h5_own5;
-#line 3899 "main.c"
-    hero_str_decref(t149);
+#line 3560 "main.c"
+    hero_str_decref(h5_own5);
 #line 150 "examples/checksum/base64.hero"
-    t150 = h6_own6;
-#line 3903 "main.c"
-    hero_str_decref(t150);
+#line 3563 "main.c"
+    hero_str_decref(h6_own6);
 #line 150 "examples/checksum/base64.hero"
-    t151 = h7_own7;
-#line 3907 "main.c"
-    hero_str_decref(t151);
+#line 3566 "main.c"
+    hero_str_decref(h7_own7);
 #line 150 "examples/checksum/base64.hero"
-    t152 = h8_own8;
-#line 3911 "main.c"
-    hero_str_decref(t152);
+#line 3569 "main.c"
+    hero_str_decref(h8_own8);
 #line 150 "examples/checksum/base64.hero"
-    t153 = h9_own9;
-#line 3915 "main.c"
-    hero_str_decref(t153);
+#line 3572 "main.c"
+    hero_str_decref(h9_own9);
 #line 150 "examples/checksum/base64.hero"
-    t154 = h10_own10;
-#line 3919 "main.c"
-    hero_str_decref(t154);
+#line 3575 "main.c"
+    hero_str_decref(h10_own10);
 #line 150 "examples/checksum/base64.hero"
-    t155 = h11_own11;
-#line 3923 "main.c"
-    hero_str_decref(t155);
+#line 3578 "main.c"
+    hero_str_decref(h11_own11);
 #line 150 "examples/checksum/base64.hero"
-    t156 = h12_own12;
-#line 3927 "main.c"
-    hero_str_decref(t156);
+#line 3581 "main.c"
+    hero_str_decref(h12_own12);
 #line 150 "examples/checksum/base64.hero"
-    t157 = h13_own13;
-#line 3931 "main.c"
-    hero_str_decref(t157);
+#line 3584 "main.c"
+    hero_str_decref(h13_own13);
 #line 150 "examples/checksum/base64.hero"
-    t158 = h14_own14;
-#line 3935 "main.c"
-    hero_str_decref(t158);
+#line 3587 "main.c"
+    hero_str_decref(h14_own14);
 #line 150 "examples/checksum/base64.hero"
-    t159 = h15_own15;
-#line 3939 "main.c"
-    h_0opt_e201354_release(&t159);
+#line 3590 "main.c"
+    h_0opt_e201354_release(&h15_own15);
 #line 150 "examples/checksum/base64.hero"
-    t160 = h16_own16;
-#line 3943 "main.c"
-    hero_str_decref(t160);
+#line 3593 "main.c"
+    hero_str_decref(h16_own16);
 #line 150 "examples/checksum/base64.hero"
-    t161 = h17_own17;
-#line 3947 "main.c"
-    hero_str_decref(t161);
+#line 3596 "main.c"
+    hero_str_decref(h17_own17);
 #line 150 "examples/checksum/base64.hero"
-    t162 = h18_own18;
-#line 3951 "main.c"
-    hero_str_decref(t162);
+#line 3599 "main.c"
+    hero_str_decref(h18_own18);
 #line 150 "examples/checksum/base64.hero"
-    t163 = h19_own19;
-#line 3955 "main.c"
-    hero_str_decref(t163);
+#line 3602 "main.c"
+    hero_str_decref(h19_own19);
 #line 150 "examples/checksum/base64.hero"
-    t164 = h20_own20;
-#line 3959 "main.c"
-    hero_str_decref(t164);
+#line 3605 "main.c"
+    hero_str_decref(h20_own20);
 #line 150 "examples/checksum/base64.hero"
-    t165 = h21_own21;
-#line 3963 "main.c"
-    h_0opt_e201354_release(&t165);
+#line 3608 "main.c"
+    h_0opt_e201354_release(&h21_own21);
 #line 150 "examples/checksum/base64.hero"
-    t166 = h22_own22;
-#line 3967 "main.c"
-    hero_str_decref(t166);
+#line 3611 "main.c"
+    hero_str_decref(h22_own22);
 #line 150 "examples/checksum/base64.hero"
-    t167 = h23_own23;
-#line 3971 "main.c"
-    h_0opt_e201354_release(&t167);
+#line 3614 "main.c"
+    h_0opt_e201354_release(&h23_own23);
 #line 150 "examples/checksum/base64.hero"
-    t168 = h24_own24;
-#line 3975 "main.c"
-    h_0opt_e201354_release(&t168);
+#line 3617 "main.c"
+    h_0opt_e201354_release(&h24_own24);
 #line 150 "examples/checksum/base64.hero"
-    t169 = h25_own25;
-#line 3979 "main.c"
-    h_0opt_e201354_release(&t169);
+#line 3620 "main.c"
+    h_0opt_e201354_release(&h25_own25);
     return t54;
 bb15:
 #line 148 "examples/checksum/base64.hero"
@@ -3987,103 +3628,80 @@ bb15:
     t77 = h25_own25;
 #line 148 "examples/checksum/base64.hero"
     h25_own25 = t52;
-#line 3991 "main.c"
+#line 3632 "main.c"
     h_0opt_e201354_release(&t77);
 #line 148 "examples/checksum/base64.hero"
-#line 3994 "main.c"
+#line 3635 "main.c"
     h_0opt_e201354_retain(&t52);
 #line 148 "examples/checksum/base64.hero"
-    t170 = h1_third;
-#line 3998 "main.c"
-    hero_str_decref(t170);
+#line 3638 "main.c"
+    hero_str_decref(h1_third);
 #line 148 "examples/checksum/base64.hero"
-    t171 = h2_fourth;
-#line 4002 "main.c"
-    hero_str_decref(t171);
+#line 3641 "main.c"
+    hero_str_decref(h2_fourth);
 #line 148 "examples/checksum/base64.hero"
-    t172 = h5_own5;
-#line 4006 "main.c"
-    hero_str_decref(t172);
+#line 3644 "main.c"
+    hero_str_decref(h5_own5);
 #line 148 "examples/checksum/base64.hero"
-    t173 = h6_own6;
-#line 4010 "main.c"
-    hero_str_decref(t173);
+#line 3647 "main.c"
+    hero_str_decref(h6_own6);
 #line 148 "examples/checksum/base64.hero"
-    t174 = h7_own7;
-#line 4014 "main.c"
-    hero_str_decref(t174);
+#line 3650 "main.c"
+    hero_str_decref(h7_own7);
 #line 148 "examples/checksum/base64.hero"
-    t175 = h8_own8;
-#line 4018 "main.c"
-    hero_str_decref(t175);
+#line 3653 "main.c"
+    hero_str_decref(h8_own8);
 #line 148 "examples/checksum/base64.hero"
-    t176 = h9_own9;
-#line 4022 "main.c"
-    hero_str_decref(t176);
+#line 3656 "main.c"
+    hero_str_decref(h9_own9);
 #line 148 "examples/checksum/base64.hero"
-    t177 = h10_own10;
-#line 4026 "main.c"
-    hero_str_decref(t177);
+#line 3659 "main.c"
+    hero_str_decref(h10_own10);
 #line 148 "examples/checksum/base64.hero"
-    t178 = h11_own11;
-#line 4030 "main.c"
-    hero_str_decref(t178);
+#line 3662 "main.c"
+    hero_str_decref(h11_own11);
 #line 148 "examples/checksum/base64.hero"
-    t179 = h12_own12;
-#line 4034 "main.c"
-    hero_str_decref(t179);
+#line 3665 "main.c"
+    hero_str_decref(h12_own12);
 #line 148 "examples/checksum/base64.hero"
-    t180 = h13_own13;
-#line 4038 "main.c"
-    hero_str_decref(t180);
+#line 3668 "main.c"
+    hero_str_decref(h13_own13);
 #line 148 "examples/checksum/base64.hero"
-    t181 = h14_own14;
-#line 4042 "main.c"
-    hero_str_decref(t181);
+#line 3671 "main.c"
+    hero_str_decref(h14_own14);
 #line 148 "examples/checksum/base64.hero"
-    t182 = h15_own15;
-#line 4046 "main.c"
-    h_0opt_e201354_release(&t182);
+#line 3674 "main.c"
+    h_0opt_e201354_release(&h15_own15);
 #line 148 "examples/checksum/base64.hero"
-    t183 = h16_own16;
-#line 4050 "main.c"
-    hero_str_decref(t183);
+#line 3677 "main.c"
+    hero_str_decref(h16_own16);
 #line 148 "examples/checksum/base64.hero"
-    t184 = h17_own17;
-#line 4054 "main.c"
-    hero_str_decref(t184);
+#line 3680 "main.c"
+    hero_str_decref(h17_own17);
 #line 148 "examples/checksum/base64.hero"
-    t185 = h18_own18;
-#line 4058 "main.c"
-    hero_str_decref(t185);
+#line 3683 "main.c"
+    hero_str_decref(h18_own18);
 #line 148 "examples/checksum/base64.hero"
-    t186 = h19_own19;
-#line 4062 "main.c"
-    hero_str_decref(t186);
+#line 3686 "main.c"
+    hero_str_decref(h19_own19);
 #line 148 "examples/checksum/base64.hero"
-    t187 = h20_own20;
-#line 4066 "main.c"
-    hero_str_decref(t187);
+#line 3689 "main.c"
+    hero_str_decref(h20_own20);
 #line 148 "examples/checksum/base64.hero"
-    t188 = h21_own21;
-#line 4070 "main.c"
-    h_0opt_e201354_release(&t188);
+#line 3692 "main.c"
+    h_0opt_e201354_release(&h21_own21);
 #line 148 "examples/checksum/base64.hero"
-    t189 = h22_own22;
-#line 4074 "main.c"
-    hero_str_decref(t189);
+#line 3695 "main.c"
+    hero_str_decref(h22_own22);
 #line 148 "examples/checksum/base64.hero"
-    t190 = h23_own23;
-#line 4078 "main.c"
-    h_0opt_e201354_release(&t190);
+#line 3698 "main.c"
+    h_0opt_e201354_release(&h23_own23);
 #line 148 "examples/checksum/base64.hero"
-    t191 = h24_own24;
-#line 4082 "main.c"
-    h_0opt_e201354_release(&t191);
+#line 3701 "main.c"
+    h_0opt_e201354_release(&h24_own24);
 #line 148 "examples/checksum/base64.hero"
-    t192 = h25_own25;
-#line 4086 "main.c"
-    h_0opt_e201354_release(&t192);
+#line 3704 "main.c"
+    h_0opt_e201354_release(&h25_own25);
     return t52;
 bb16:
     goto bb14;
@@ -4091,7 +3709,7 @@ bb16:
 
 #line 154 "examples/checksum/base64.hero"
 h_0opt_4d1c207c h_base64_decoded(HeroStr h0_text) {
-#line 4095 "main.c"
+#line 3713 "main.c"
     HeroArrayHeader * h1_out = {0};
     int64_t h2_i;
     HeroStr h3_group = {0};
@@ -4372,334 +3990,6 @@ h_0opt_4d1c207c h_base64_decoded(HeroStr h0_text) {
     h_0opt_1ec004 t229 = {0};
     HeroArrayHeader * t230 = {0};
     HeroArrayHeader * t231 = {0};
-    HeroArrayHeader * t232 = {0};
-    HeroStr t233 = {0};
-    h_0opt_e201354 t234 = {0};
-    h_0opt_e201354 t235 = {0};
-    h_0opt_e201354 t236 = {0};
-    h_0opt_e201354 t237 = {0};
-    h_0opt_e201354 t238 = {0};
-    h_0opt_1ec004 t239 = {0};
-    h_0opt_1ec004 t240 = {0};
-    h_0opt_1ec004 t241 = {0};
-    HeroArrayHeader * t242 = {0};
-    HeroStr t243 = {0};
-    HeroStr t244 = {0};
-    HeroStr t245 = {0};
-    h_0opt_4d1c207c t246 = {0};
-    HeroStr t247 = {0};
-    h_0opt_e201354 t248 = {0};
-    h_0opt_4d1c207c t249 = {0};
-    h_0opt_4d1c207c t250 = {0};
-    HeroStr t251 = {0};
-    h_0opt_e201354 t252 = {0};
-    HeroStr t253 = {0};
-    HeroStr t254 = {0};
-    HeroStr t255 = {0};
-    h_0opt_4d1c207c t256 = {0};
-    HeroStr t257 = {0};
-    h_0opt_e201354 t258 = {0};
-    h_0opt_4d1c207c t259 = {0};
-    h_0opt_4d1c207c t260 = {0};
-    HeroStr t261 = {0};
-    h_0opt_e201354 t262 = {0};
-    h_0opt_4d1c207c t263 = {0};
-    h_0opt_1ec004 t264 = {0};
-    HeroStr t265 = {0};
-    h_0opt_e201354 t266 = {0};
-    h_0opt_4d1c207c t267 = {0};
-    HeroArrayHeader * t268 = {0};
-    h_0opt_1ec004 t269 = {0};
-    HeroArrayHeader * t270 = {0};
-    h_0opt_1ec004 t271 = {0};
-    HeroArrayHeader * t272 = {0};
-    HeroArrayHeader * t273 = {0};
-    HeroStr t274 = {0};
-    h_0opt_e201354 t275 = {0};
-    h_0opt_e201354 t276 = {0};
-    h_0opt_e201354 t277 = {0};
-    h_0opt_e201354 t278 = {0};
-    h_0opt_e201354 t279 = {0};
-    h_0opt_1ec004 t280 = {0};
-    h_0opt_1ec004 t281 = {0};
-    h_0opt_1ec004 t282 = {0};
-    HeroArrayHeader * t283 = {0};
-    HeroStr t284 = {0};
-    HeroStr t285 = {0};
-    HeroStr t286 = {0};
-    h_0opt_4d1c207c t287 = {0};
-    HeroStr t288 = {0};
-    h_0opt_e201354 t289 = {0};
-    h_0opt_4d1c207c t290 = {0};
-    h_0opt_4d1c207c t291 = {0};
-    HeroStr t292 = {0};
-    h_0opt_e201354 t293 = {0};
-    HeroStr t294 = {0};
-    HeroStr t295 = {0};
-    HeroStr t296 = {0};
-    h_0opt_4d1c207c t297 = {0};
-    HeroStr t298 = {0};
-    h_0opt_e201354 t299 = {0};
-    h_0opt_4d1c207c t300 = {0};
-    h_0opt_4d1c207c t301 = {0};
-    HeroStr t302 = {0};
-    h_0opt_e201354 t303 = {0};
-    h_0opt_4d1c207c t304 = {0};
-    h_0opt_1ec004 t305 = {0};
-    HeroStr t306 = {0};
-    h_0opt_e201354 t307 = {0};
-    h_0opt_4d1c207c t308 = {0};
-    HeroArrayHeader * t309 = {0};
-    h_0opt_1ec004 t310 = {0};
-    HeroArrayHeader * t311 = {0};
-    h_0opt_1ec004 t312 = {0};
-    HeroArrayHeader * t313 = {0};
-    HeroArrayHeader * t314 = {0};
-    HeroStr t315 = {0};
-    h_0opt_e201354 t316 = {0};
-    h_0opt_e201354 t317 = {0};
-    h_0opt_e201354 t318 = {0};
-    h_0opt_e201354 t319 = {0};
-    h_0opt_e201354 t320 = {0};
-    h_0opt_1ec004 t321 = {0};
-    h_0opt_1ec004 t322 = {0};
-    h_0opt_1ec004 t323 = {0};
-    HeroArrayHeader * t324 = {0};
-    HeroStr t325 = {0};
-    HeroStr t326 = {0};
-    HeroStr t327 = {0};
-    h_0opt_4d1c207c t328 = {0};
-    HeroStr t329 = {0};
-    h_0opt_e201354 t330 = {0};
-    h_0opt_4d1c207c t331 = {0};
-    h_0opt_4d1c207c t332 = {0};
-    HeroStr t333 = {0};
-    h_0opt_e201354 t334 = {0};
-    HeroStr t335 = {0};
-    HeroStr t336 = {0};
-    HeroStr t337 = {0};
-    h_0opt_4d1c207c t338 = {0};
-    HeroStr t339 = {0};
-    h_0opt_e201354 t340 = {0};
-    h_0opt_4d1c207c t341 = {0};
-    h_0opt_4d1c207c t342 = {0};
-    HeroStr t343 = {0};
-    h_0opt_e201354 t344 = {0};
-    h_0opt_4d1c207c t345 = {0};
-    h_0opt_1ec004 t346 = {0};
-    HeroStr t347 = {0};
-    h_0opt_e201354 t348 = {0};
-    h_0opt_4d1c207c t349 = {0};
-    HeroArrayHeader * t350 = {0};
-    h_0opt_1ec004 t351 = {0};
-    HeroArrayHeader * t352 = {0};
-    h_0opt_1ec004 t353 = {0};
-    HeroArrayHeader * t354 = {0};
-    HeroArrayHeader * t355 = {0};
-    HeroStr t356 = {0};
-    h_0opt_e201354 t357 = {0};
-    h_0opt_e201354 t358 = {0};
-    h_0opt_e201354 t359 = {0};
-    h_0opt_e201354 t360 = {0};
-    h_0opt_e201354 t361 = {0};
-    h_0opt_1ec004 t362 = {0};
-    h_0opt_1ec004 t363 = {0};
-    h_0opt_1ec004 t364 = {0};
-    HeroArrayHeader * t365 = {0};
-    HeroStr t366 = {0};
-    HeroStr t367 = {0};
-    HeroStr t368 = {0};
-    h_0opt_4d1c207c t369 = {0};
-    HeroStr t370 = {0};
-    h_0opt_e201354 t371 = {0};
-    h_0opt_4d1c207c t372 = {0};
-    h_0opt_4d1c207c t373 = {0};
-    HeroStr t374 = {0};
-    h_0opt_e201354 t375 = {0};
-    HeroStr t376 = {0};
-    HeroStr t377 = {0};
-    HeroStr t378 = {0};
-    h_0opt_4d1c207c t379 = {0};
-    HeroStr t380 = {0};
-    h_0opt_e201354 t381 = {0};
-    h_0opt_4d1c207c t382 = {0};
-    h_0opt_4d1c207c t383 = {0};
-    HeroStr t384 = {0};
-    h_0opt_e201354 t385 = {0};
-    h_0opt_4d1c207c t386 = {0};
-    h_0opt_1ec004 t387 = {0};
-    HeroStr t388 = {0};
-    h_0opt_e201354 t389 = {0};
-    h_0opt_4d1c207c t390 = {0};
-    HeroArrayHeader * t391 = {0};
-    h_0opt_1ec004 t392 = {0};
-    HeroArrayHeader * t393 = {0};
-    h_0opt_1ec004 t394 = {0};
-    HeroArrayHeader * t395 = {0};
-    HeroArrayHeader * t396 = {0};
-    HeroStr t397 = {0};
-    h_0opt_e201354 t398 = {0};
-    h_0opt_e201354 t399 = {0};
-    h_0opt_e201354 t400 = {0};
-    h_0opt_e201354 t401 = {0};
-    h_0opt_e201354 t402 = {0};
-    h_0opt_1ec004 t403 = {0};
-    h_0opt_1ec004 t404 = {0};
-    h_0opt_1ec004 t405 = {0};
-    HeroArrayHeader * t406 = {0};
-    HeroStr t407 = {0};
-    HeroStr t408 = {0};
-    HeroStr t409 = {0};
-    h_0opt_4d1c207c t410 = {0};
-    HeroStr t411 = {0};
-    h_0opt_e201354 t412 = {0};
-    h_0opt_4d1c207c t413 = {0};
-    h_0opt_4d1c207c t414 = {0};
-    HeroStr t415 = {0};
-    h_0opt_e201354 t416 = {0};
-    HeroStr t417 = {0};
-    HeroStr t418 = {0};
-    HeroStr t419 = {0};
-    h_0opt_4d1c207c t420 = {0};
-    HeroStr t421 = {0};
-    h_0opt_e201354 t422 = {0};
-    h_0opt_4d1c207c t423 = {0};
-    h_0opt_4d1c207c t424 = {0};
-    HeroStr t425 = {0};
-    h_0opt_e201354 t426 = {0};
-    h_0opt_4d1c207c t427 = {0};
-    h_0opt_1ec004 t428 = {0};
-    HeroStr t429 = {0};
-    h_0opt_e201354 t430 = {0};
-    h_0opt_4d1c207c t431 = {0};
-    HeroArrayHeader * t432 = {0};
-    h_0opt_1ec004 t433 = {0};
-    HeroArrayHeader * t434 = {0};
-    h_0opt_1ec004 t435 = {0};
-    HeroArrayHeader * t436 = {0};
-    HeroArrayHeader * t437 = {0};
-    HeroStr t438 = {0};
-    h_0opt_e201354 t439 = {0};
-    h_0opt_e201354 t440 = {0};
-    h_0opt_e201354 t441 = {0};
-    h_0opt_e201354 t442 = {0};
-    h_0opt_e201354 t443 = {0};
-    h_0opt_1ec004 t444 = {0};
-    h_0opt_1ec004 t445 = {0};
-    h_0opt_1ec004 t446 = {0};
-    HeroArrayHeader * t447 = {0};
-    HeroStr t448 = {0};
-    HeroStr t449 = {0};
-    HeroStr t450 = {0};
-    h_0opt_4d1c207c t451 = {0};
-    HeroStr t452 = {0};
-    h_0opt_e201354 t453 = {0};
-    h_0opt_4d1c207c t454 = {0};
-    h_0opt_4d1c207c t455 = {0};
-    HeroStr t456 = {0};
-    h_0opt_e201354 t457 = {0};
-    HeroStr t458 = {0};
-    HeroStr t459 = {0};
-    HeroStr t460 = {0};
-    h_0opt_4d1c207c t461 = {0};
-    HeroStr t462 = {0};
-    h_0opt_e201354 t463 = {0};
-    h_0opt_4d1c207c t464 = {0};
-    h_0opt_4d1c207c t465 = {0};
-    HeroStr t466 = {0};
-    h_0opt_e201354 t467 = {0};
-    h_0opt_4d1c207c t468 = {0};
-    h_0opt_1ec004 t469 = {0};
-    HeroStr t470 = {0};
-    h_0opt_e201354 t471 = {0};
-    h_0opt_4d1c207c t472 = {0};
-    HeroArrayHeader * t473 = {0};
-    h_0opt_1ec004 t474 = {0};
-    HeroArrayHeader * t475 = {0};
-    h_0opt_1ec004 t476 = {0};
-    HeroArrayHeader * t477 = {0};
-    HeroArrayHeader * t478 = {0};
-    HeroStr t479 = {0};
-    h_0opt_e201354 t480 = {0};
-    h_0opt_e201354 t481 = {0};
-    h_0opt_e201354 t482 = {0};
-    h_0opt_e201354 t483 = {0};
-    h_0opt_e201354 t484 = {0};
-    h_0opt_1ec004 t485 = {0};
-    h_0opt_1ec004 t486 = {0};
-    h_0opt_1ec004 t487 = {0};
-    HeroArrayHeader * t488 = {0};
-    HeroStr t489 = {0};
-    HeroStr t490 = {0};
-    HeroStr t491 = {0};
-    h_0opt_4d1c207c t492 = {0};
-    HeroStr t493 = {0};
-    h_0opt_e201354 t494 = {0};
-    h_0opt_4d1c207c t495 = {0};
-    h_0opt_4d1c207c t496 = {0};
-    HeroStr t497 = {0};
-    h_0opt_e201354 t498 = {0};
-    HeroStr t499 = {0};
-    HeroStr t500 = {0};
-    HeroStr t501 = {0};
-    h_0opt_4d1c207c t502 = {0};
-    HeroStr t503 = {0};
-    h_0opt_e201354 t504 = {0};
-    h_0opt_4d1c207c t505 = {0};
-    h_0opt_4d1c207c t506 = {0};
-    HeroStr t507 = {0};
-    h_0opt_e201354 t508 = {0};
-    h_0opt_4d1c207c t509 = {0};
-    h_0opt_1ec004 t510 = {0};
-    HeroStr t511 = {0};
-    h_0opt_e201354 t512 = {0};
-    h_0opt_4d1c207c t513 = {0};
-    HeroArrayHeader * t514 = {0};
-    h_0opt_1ec004 t515 = {0};
-    HeroArrayHeader * t516 = {0};
-    h_0opt_1ec004 t517 = {0};
-    HeroArrayHeader * t518 = {0};
-    HeroArrayHeader * t519 = {0};
-    HeroStr t520 = {0};
-    h_0opt_e201354 t521 = {0};
-    h_0opt_e201354 t522 = {0};
-    h_0opt_e201354 t523 = {0};
-    h_0opt_e201354 t524 = {0};
-    h_0opt_e201354 t525 = {0};
-    h_0opt_1ec004 t526 = {0};
-    h_0opt_1ec004 t527 = {0};
-    h_0opt_1ec004 t528 = {0};
-    HeroArrayHeader * t529 = {0};
-    HeroStr t530 = {0};
-    HeroStr t531 = {0};
-    HeroStr t532 = {0};
-    h_0opt_4d1c207c t533 = {0};
-    HeroStr t534 = {0};
-    h_0opt_e201354 t535 = {0};
-    h_0opt_4d1c207c t536 = {0};
-    h_0opt_4d1c207c t537 = {0};
-    HeroStr t538 = {0};
-    h_0opt_e201354 t539 = {0};
-    HeroStr t540 = {0};
-    HeroStr t541 = {0};
-    HeroStr t542 = {0};
-    h_0opt_4d1c207c t543 = {0};
-    HeroStr t544 = {0};
-    h_0opt_e201354 t545 = {0};
-    h_0opt_4d1c207c t546 = {0};
-    h_0opt_4d1c207c t547 = {0};
-    HeroStr t548 = {0};
-    h_0opt_e201354 t549 = {0};
-    h_0opt_4d1c207c t550 = {0};
-    h_0opt_1ec004 t551 = {0};
-    HeroStr t552 = {0};
-    h_0opt_e201354 t553 = {0};
-    h_0opt_4d1c207c t554 = {0};
-    HeroArrayHeader * t555 = {0};
-    h_0opt_1ec004 t556 = {0};
-    HeroArrayHeader * t557 = {0};
-    h_0opt_1ec004 t558 = {0};
-    HeroArrayHeader * t559 = {0};
     goto bb0;
 bb0:
 #line 155 "examples/checksum/base64.hero"
@@ -4728,15 +4018,15 @@ bb1:
     t188 = h19_own19;
 #line 160 "examples/checksum/base64.hero"
     h19_own19 = t14;
-#line 4732 "main.c"
+#line 4022 "main.c"
     hero_array_decref(t188);
 #line 160 "examples/checksum/base64.hero"
     t189 = h1_out;
-#line 4736 "main.c"
+#line 4026 "main.c"
     hero_array_incref(t14);
 #line 160 "examples/checksum/base64.hero"
     h1_out = t14;
-#line 4740 "main.c"
+#line 4030 "main.c"
     hero_array_decref(t189);
 #line 161 "examples/checksum/base64.hero"
     t15 = INT64_C(0);
@@ -4752,7 +4042,7 @@ bb2:
     t190 = h20_own20;
 #line 157 "examples/checksum/base64.hero"
     h20_own20 = t7;
-#line 4756 "main.c"
+#line 4046 "main.c"
     hero_str_decref(t190);
 #line 158 "examples/checksum/base64.hero"
     t8 = HERO_STR_LIT(hero_str_7eed3f00);
@@ -4766,7 +4056,7 @@ bb2:
     t191 = h21_own21;
 #line 158 "examples/checksum/base64.hero"
     h21_own21 = t11;
-#line 4770 "main.c"
+#line 4060 "main.c"
     hero_str_decref(t191);
 #line 158 "examples/checksum/base64.hero"
     t12 = hero_str_concat(t8, t11);
@@ -4774,13 +4064,13 @@ bb2:
     t192 = h22_own22;
 #line 158 "examples/checksum/base64.hero"
     h22_own22 = t12;
-#line 4778 "main.c"
+#line 4068 "main.c"
     hero_str_decref(t192);
 #line 156 "examples/checksum/base64.hero"
-#line 4781 "main.c"
+#line 4071 "main.c"
     hero_str_incref(t7);
 #line 156 "examples/checksum/base64.hero"
-#line 4784 "main.c"
+#line 4074 "main.c"
     hero_str_incref(t12);
 #line 156 "examples/checksum/base64.hero"
     t13 = (h_0opt_4d1c207c){.tag = INT64_C(1), .as.err = {.code = t7, .msg = t12}};
@@ -4788,175 +4078,134 @@ bb2:
     t193 = h23_own23;
 #line 156 "examples/checksum/base64.hero"
     h23_own23 = t13;
-#line 4792 "main.c"
+#line 4082 "main.c"
     h_0opt_4d1c207c_release(&t193);
 #line 156 "examples/checksum/base64.hero"
-#line 4795 "main.c"
+#line 4085 "main.c"
     h_0opt_4d1c207c_retain(&t13);
 #line 156 "examples/checksum/base64.hero"
-    t232 = h1_out;
-#line 4799 "main.c"
-    hero_array_decref(t232);
+#line 4088 "main.c"
+    hero_array_decref(h1_out);
 #line 156 "examples/checksum/base64.hero"
-    t233 = h3_group;
-#line 4803 "main.c"
-    hero_str_decref(t233);
+#line 4091 "main.c"
+    hero_str_decref(h3_group);
 #line 156 "examples/checksum/base64.hero"
-    t234 = h4_f0;
-#line 4807 "main.c"
-    h_0opt_e201354_release(&t234);
+#line 4094 "main.c"
+    h_0opt_e201354_release(&h4_f0);
 #line 156 "examples/checksum/base64.hero"
-    t235 = h7_f1;
-#line 4811 "main.c"
-    h_0opt_e201354_release(&t235);
+#line 4097 "main.c"
+    h_0opt_e201354_release(&h7_f1);
 #line 156 "examples/checksum/base64.hero"
-    t236 = h9_f2;
-#line 4815 "main.c"
-    h_0opt_e201354_release(&t236);
+#line 4100 "main.c"
+    h_0opt_e201354_release(&h9_f2);
 #line 156 "examples/checksum/base64.hero"
-    t237 = h13_f3;
-#line 4819 "main.c"
-    h_0opt_e201354_release(&t237);
+#line 4103 "main.c"
+    h_0opt_e201354_release(&h13_f3);
 #line 156 "examples/checksum/base64.hero"
-    t238 = h14_f4;
-#line 4823 "main.c"
-    h_0opt_e201354_release(&t238);
+#line 4106 "main.c"
+    h_0opt_e201354_release(&h14_f4);
 #line 156 "examples/checksum/base64.hero"
-    t239 = h16_f5;
-#line 4827 "main.c"
-    h_0opt_1ec004_release(&t239);
+#line 4109 "main.c"
+    h_0opt_1ec004_release(&h16_f5);
 #line 156 "examples/checksum/base64.hero"
-    t240 = h17_f6;
-#line 4831 "main.c"
-    h_0opt_1ec004_release(&t240);
+#line 4112 "main.c"
+    h_0opt_1ec004_release(&h17_f6);
 #line 156 "examples/checksum/base64.hero"
-    t241 = h18_f7;
-#line 4835 "main.c"
-    h_0opt_1ec004_release(&t241);
+#line 4115 "main.c"
+    h_0opt_1ec004_release(&h18_f7);
 #line 156 "examples/checksum/base64.hero"
-    t242 = h19_own19;
-#line 4839 "main.c"
-    hero_array_decref(t242);
+#line 4118 "main.c"
+    hero_array_decref(h19_own19);
 #line 156 "examples/checksum/base64.hero"
-    t243 = h20_own20;
-#line 4843 "main.c"
-    hero_str_decref(t243);
+#line 4121 "main.c"
+    hero_str_decref(h20_own20);
 #line 156 "examples/checksum/base64.hero"
-    t244 = h21_own21;
-#line 4847 "main.c"
-    hero_str_decref(t244);
+#line 4124 "main.c"
+    hero_str_decref(h21_own21);
 #line 156 "examples/checksum/base64.hero"
-    t245 = h22_own22;
-#line 4851 "main.c"
-    hero_str_decref(t245);
+#line 4127 "main.c"
+    hero_str_decref(h22_own22);
 #line 156 "examples/checksum/base64.hero"
-    t246 = h23_own23;
-#line 4855 "main.c"
-    h_0opt_4d1c207c_release(&t246);
+#line 4130 "main.c"
+    h_0opt_4d1c207c_release(&h23_own23);
 #line 156 "examples/checksum/base64.hero"
-    t247 = h24_own24;
-#line 4859 "main.c"
-    hero_str_decref(t247);
+#line 4133 "main.c"
+    hero_str_decref(h24_own24);
 #line 156 "examples/checksum/base64.hero"
-    t248 = h25_own25;
-#line 4863 "main.c"
-    h_0opt_e201354_release(&t248);
+#line 4136 "main.c"
+    h_0opt_e201354_release(&h25_own25);
 #line 156 "examples/checksum/base64.hero"
-    t249 = h26_own26;
-#line 4867 "main.c"
-    h_0opt_4d1c207c_release(&t249);
+#line 4139 "main.c"
+    h_0opt_4d1c207c_release(&h26_own26);
 #line 156 "examples/checksum/base64.hero"
-    t250 = h27_own27;
-#line 4871 "main.c"
-    h_0opt_4d1c207c_release(&t250);
+#line 4142 "main.c"
+    h_0opt_4d1c207c_release(&h27_own27);
 #line 156 "examples/checksum/base64.hero"
-    t251 = h28_own28;
-#line 4875 "main.c"
-    hero_str_decref(t251);
+#line 4145 "main.c"
+    hero_str_decref(h28_own28);
 #line 156 "examples/checksum/base64.hero"
-    t252 = h29_own29;
-#line 4879 "main.c"
-    h_0opt_e201354_release(&t252);
+#line 4148 "main.c"
+    h_0opt_e201354_release(&h29_own29);
 #line 156 "examples/checksum/base64.hero"
-    t253 = h30_own30;
-#line 4883 "main.c"
-    hero_str_decref(t253);
+#line 4151 "main.c"
+    hero_str_decref(h30_own30);
 #line 156 "examples/checksum/base64.hero"
-    t254 = h31_own31;
-#line 4887 "main.c"
-    hero_str_decref(t254);
+#line 4154 "main.c"
+    hero_str_decref(h31_own31);
 #line 156 "examples/checksum/base64.hero"
-    t255 = h32_own32;
-#line 4891 "main.c"
-    hero_str_decref(t255);
+#line 4157 "main.c"
+    hero_str_decref(h32_own32);
 #line 156 "examples/checksum/base64.hero"
-    t256 = h33_own33;
-#line 4895 "main.c"
-    h_0opt_4d1c207c_release(&t256);
+#line 4160 "main.c"
+    h_0opt_4d1c207c_release(&h33_own33);
 #line 156 "examples/checksum/base64.hero"
-    t257 = h34_own34;
-#line 4899 "main.c"
-    hero_str_decref(t257);
+#line 4163 "main.c"
+    hero_str_decref(h34_own34);
 #line 156 "examples/checksum/base64.hero"
-    t258 = h35_own35;
-#line 4903 "main.c"
-    h_0opt_e201354_release(&t258);
+#line 4166 "main.c"
+    h_0opt_e201354_release(&h35_own35);
 #line 156 "examples/checksum/base64.hero"
-    t259 = h36_own36;
-#line 4907 "main.c"
-    h_0opt_4d1c207c_release(&t259);
+#line 4169 "main.c"
+    h_0opt_4d1c207c_release(&h36_own36);
 #line 156 "examples/checksum/base64.hero"
-    t260 = h37_own37;
-#line 4911 "main.c"
-    h_0opt_4d1c207c_release(&t260);
+#line 4172 "main.c"
+    h_0opt_4d1c207c_release(&h37_own37);
 #line 156 "examples/checksum/base64.hero"
-    t261 = h38_own38;
-#line 4915 "main.c"
-    hero_str_decref(t261);
+#line 4175 "main.c"
+    hero_str_decref(h38_own38);
 #line 156 "examples/checksum/base64.hero"
-    t262 = h39_own39;
-#line 4919 "main.c"
-    h_0opt_e201354_release(&t262);
+#line 4178 "main.c"
+    h_0opt_e201354_release(&h39_own39);
 #line 156 "examples/checksum/base64.hero"
-    t263 = h40_own40;
-#line 4923 "main.c"
-    h_0opt_4d1c207c_release(&t263);
+#line 4181 "main.c"
+    h_0opt_4d1c207c_release(&h40_own40);
 #line 156 "examples/checksum/base64.hero"
-    t264 = h41_own41;
-#line 4927 "main.c"
-    h_0opt_1ec004_release(&t264);
+#line 4184 "main.c"
+    h_0opt_1ec004_release(&h41_own41);
 #line 156 "examples/checksum/base64.hero"
-    t265 = h42_own42;
-#line 4931 "main.c"
-    hero_str_decref(t265);
+#line 4187 "main.c"
+    hero_str_decref(h42_own42);
 #line 156 "examples/checksum/base64.hero"
-    t266 = h43_own43;
-#line 4935 "main.c"
-    h_0opt_e201354_release(&t266);
+#line 4190 "main.c"
+    h_0opt_e201354_release(&h43_own43);
 #line 156 "examples/checksum/base64.hero"
-    t267 = h44_own44;
-#line 4939 "main.c"
-    h_0opt_4d1c207c_release(&t267);
+#line 4193 "main.c"
+    h_0opt_4d1c207c_release(&h44_own44);
 #line 156 "examples/checksum/base64.hero"
-    t268 = h45_own45;
-#line 4943 "main.c"
-    hero_array_decref(t268);
+#line 4196 "main.c"
+    hero_array_decref(h45_own45);
 #line 156 "examples/checksum/base64.hero"
-    t269 = h46_own46;
-#line 4947 "main.c"
-    h_0opt_1ec004_release(&t269);
+#line 4199 "main.c"
+    h_0opt_1ec004_release(&h46_own46);
 #line 156 "examples/checksum/base64.hero"
-    t270 = h47_own47;
-#line 4951 "main.c"
-    hero_array_decref(t270);
+#line 4202 "main.c"
+    hero_array_decref(h47_own47);
 #line 156 "examples/checksum/base64.hero"
-    t271 = h48_own48;
-#line 4955 "main.c"
-    h_0opt_1ec004_release(&t271);
+#line 4205 "main.c"
+    h_0opt_1ec004_release(&h48_own48);
 #line 156 "examples/checksum/base64.hero"
-    t272 = h49_own49;
-#line 4959 "main.c"
-    hero_array_decref(t272);
+#line 4208 "main.c"
+    hero_array_decref(h49_own49);
     return t13;
 bb3:
     goto bb1;
@@ -4989,15 +4238,15 @@ bb5:
     t194 = h24_own24;
 #line 164 "examples/checksum/base64.hero"
     h24_own24 = t25;
-#line 4993 "main.c"
+#line 4242 "main.c"
     hero_str_decref(t194);
 #line 164 "examples/checksum/base64.hero"
     t195 = h3_group;
-#line 4997 "main.c"
+#line 4246 "main.c"
     hero_str_incref(t25);
 #line 164 "examples/checksum/base64.hero"
     h3_group = t25;
-#line 5001 "main.c"
+#line 4250 "main.c"
     hero_str_decref(t195);
 #line 165 "examples/checksum/base64.hero"
     t26 = h3_group;
@@ -5007,15 +4256,15 @@ bb5:
     t196 = h25_own25;
 #line 165 "examples/checksum/base64.hero"
     h25_own25 = t27;
-#line 5011 "main.c"
+#line 4260 "main.c"
     h_0opt_e201354_release(&t196);
 #line 165 "examples/checksum/base64.hero"
     t197 = h4_f0;
-#line 5015 "main.c"
+#line 4264 "main.c"
     h_0opt_e201354_retain(&t27);
 #line 165 "examples/checksum/base64.hero"
     h4_f0 = t27;
-#line 5019 "main.c"
+#line 4268 "main.c"
     h_0opt_e201354_release(&t197);
 #line 165 "examples/checksum/base64.hero"
     t28 = h4_f0;
@@ -5031,7 +4280,7 @@ bb5:
 bb6:
 #line 189 "examples/checksum/base64.hero"
     t186 = h1_out;
-#line 5035 "main.c"
+#line 4284 "main.c"
     hero_array_incref(t186);
 #line 189 "examples/checksum/base64.hero"
     t187 = (h_0opt_4d1c207c){.tag = INT64_C(0), .as.ok = t186};
@@ -5039,175 +4288,134 @@ bb6:
     t198 = h26_own26;
 #line 189 "examples/checksum/base64.hero"
     h26_own26 = t187;
-#line 5043 "main.c"
+#line 4292 "main.c"
     h_0opt_4d1c207c_release(&t198);
 #line 189 "examples/checksum/base64.hero"
-#line 5046 "main.c"
+#line 4295 "main.c"
     h_0opt_4d1c207c_retain(&t187);
 #line 189 "examples/checksum/base64.hero"
-    t273 = h1_out;
-#line 5050 "main.c"
-    hero_array_decref(t273);
+#line 4298 "main.c"
+    hero_array_decref(h1_out);
 #line 189 "examples/checksum/base64.hero"
-    t274 = h3_group;
-#line 5054 "main.c"
-    hero_str_decref(t274);
+#line 4301 "main.c"
+    hero_str_decref(h3_group);
 #line 189 "examples/checksum/base64.hero"
-    t275 = h4_f0;
-#line 5058 "main.c"
-    h_0opt_e201354_release(&t275);
+#line 4304 "main.c"
+    h_0opt_e201354_release(&h4_f0);
 #line 189 "examples/checksum/base64.hero"
-    t276 = h7_f1;
-#line 5062 "main.c"
-    h_0opt_e201354_release(&t276);
+#line 4307 "main.c"
+    h_0opt_e201354_release(&h7_f1);
 #line 189 "examples/checksum/base64.hero"
-    t277 = h9_f2;
-#line 5066 "main.c"
-    h_0opt_e201354_release(&t277);
+#line 4310 "main.c"
+    h_0opt_e201354_release(&h9_f2);
 #line 189 "examples/checksum/base64.hero"
-    t278 = h13_f3;
-#line 5070 "main.c"
-    h_0opt_e201354_release(&t278);
+#line 4313 "main.c"
+    h_0opt_e201354_release(&h13_f3);
 #line 189 "examples/checksum/base64.hero"
-    t279 = h14_f4;
-#line 5074 "main.c"
-    h_0opt_e201354_release(&t279);
+#line 4316 "main.c"
+    h_0opt_e201354_release(&h14_f4);
 #line 189 "examples/checksum/base64.hero"
-    t280 = h16_f5;
-#line 5078 "main.c"
-    h_0opt_1ec004_release(&t280);
+#line 4319 "main.c"
+    h_0opt_1ec004_release(&h16_f5);
 #line 189 "examples/checksum/base64.hero"
-    t281 = h17_f6;
-#line 5082 "main.c"
-    h_0opt_1ec004_release(&t281);
+#line 4322 "main.c"
+    h_0opt_1ec004_release(&h17_f6);
 #line 189 "examples/checksum/base64.hero"
-    t282 = h18_f7;
-#line 5086 "main.c"
-    h_0opt_1ec004_release(&t282);
+#line 4325 "main.c"
+    h_0opt_1ec004_release(&h18_f7);
 #line 189 "examples/checksum/base64.hero"
-    t283 = h19_own19;
-#line 5090 "main.c"
-    hero_array_decref(t283);
+#line 4328 "main.c"
+    hero_array_decref(h19_own19);
 #line 189 "examples/checksum/base64.hero"
-    t284 = h20_own20;
-#line 5094 "main.c"
-    hero_str_decref(t284);
+#line 4331 "main.c"
+    hero_str_decref(h20_own20);
 #line 189 "examples/checksum/base64.hero"
-    t285 = h21_own21;
-#line 5098 "main.c"
-    hero_str_decref(t285);
+#line 4334 "main.c"
+    hero_str_decref(h21_own21);
 #line 189 "examples/checksum/base64.hero"
-    t286 = h22_own22;
-#line 5102 "main.c"
-    hero_str_decref(t286);
+#line 4337 "main.c"
+    hero_str_decref(h22_own22);
 #line 189 "examples/checksum/base64.hero"
-    t287 = h23_own23;
-#line 5106 "main.c"
-    h_0opt_4d1c207c_release(&t287);
+#line 4340 "main.c"
+    h_0opt_4d1c207c_release(&h23_own23);
 #line 189 "examples/checksum/base64.hero"
-    t288 = h24_own24;
-#line 5110 "main.c"
-    hero_str_decref(t288);
+#line 4343 "main.c"
+    hero_str_decref(h24_own24);
 #line 189 "examples/checksum/base64.hero"
-    t289 = h25_own25;
-#line 5114 "main.c"
-    h_0opt_e201354_release(&t289);
+#line 4346 "main.c"
+    h_0opt_e201354_release(&h25_own25);
 #line 189 "examples/checksum/base64.hero"
-    t290 = h26_own26;
-#line 5118 "main.c"
-    h_0opt_4d1c207c_release(&t290);
+#line 4349 "main.c"
+    h_0opt_4d1c207c_release(&h26_own26);
 #line 189 "examples/checksum/base64.hero"
-    t291 = h27_own27;
-#line 5122 "main.c"
-    h_0opt_4d1c207c_release(&t291);
+#line 4352 "main.c"
+    h_0opt_4d1c207c_release(&h27_own27);
 #line 189 "examples/checksum/base64.hero"
-    t292 = h28_own28;
-#line 5126 "main.c"
-    hero_str_decref(t292);
+#line 4355 "main.c"
+    hero_str_decref(h28_own28);
 #line 189 "examples/checksum/base64.hero"
-    t293 = h29_own29;
-#line 5130 "main.c"
-    h_0opt_e201354_release(&t293);
+#line 4358 "main.c"
+    h_0opt_e201354_release(&h29_own29);
 #line 189 "examples/checksum/base64.hero"
-    t294 = h30_own30;
-#line 5134 "main.c"
-    hero_str_decref(t294);
+#line 4361 "main.c"
+    hero_str_decref(h30_own30);
 #line 189 "examples/checksum/base64.hero"
-    t295 = h31_own31;
-#line 5138 "main.c"
-    hero_str_decref(t295);
+#line 4364 "main.c"
+    hero_str_decref(h31_own31);
 #line 189 "examples/checksum/base64.hero"
-    t296 = h32_own32;
-#line 5142 "main.c"
-    hero_str_decref(t296);
+#line 4367 "main.c"
+    hero_str_decref(h32_own32);
 #line 189 "examples/checksum/base64.hero"
-    t297 = h33_own33;
-#line 5146 "main.c"
-    h_0opt_4d1c207c_release(&t297);
+#line 4370 "main.c"
+    h_0opt_4d1c207c_release(&h33_own33);
 #line 189 "examples/checksum/base64.hero"
-    t298 = h34_own34;
-#line 5150 "main.c"
-    hero_str_decref(t298);
+#line 4373 "main.c"
+    hero_str_decref(h34_own34);
 #line 189 "examples/checksum/base64.hero"
-    t299 = h35_own35;
-#line 5154 "main.c"
-    h_0opt_e201354_release(&t299);
+#line 4376 "main.c"
+    h_0opt_e201354_release(&h35_own35);
 #line 189 "examples/checksum/base64.hero"
-    t300 = h36_own36;
-#line 5158 "main.c"
-    h_0opt_4d1c207c_release(&t300);
+#line 4379 "main.c"
+    h_0opt_4d1c207c_release(&h36_own36);
 #line 189 "examples/checksum/base64.hero"
-    t301 = h37_own37;
-#line 5162 "main.c"
-    h_0opt_4d1c207c_release(&t301);
+#line 4382 "main.c"
+    h_0opt_4d1c207c_release(&h37_own37);
 #line 189 "examples/checksum/base64.hero"
-    t302 = h38_own38;
-#line 5166 "main.c"
-    hero_str_decref(t302);
+#line 4385 "main.c"
+    hero_str_decref(h38_own38);
 #line 189 "examples/checksum/base64.hero"
-    t303 = h39_own39;
-#line 5170 "main.c"
-    h_0opt_e201354_release(&t303);
+#line 4388 "main.c"
+    h_0opt_e201354_release(&h39_own39);
 #line 189 "examples/checksum/base64.hero"
-    t304 = h40_own40;
-#line 5174 "main.c"
-    h_0opt_4d1c207c_release(&t304);
+#line 4391 "main.c"
+    h_0opt_4d1c207c_release(&h40_own40);
 #line 189 "examples/checksum/base64.hero"
-    t305 = h41_own41;
-#line 5178 "main.c"
-    h_0opt_1ec004_release(&t305);
+#line 4394 "main.c"
+    h_0opt_1ec004_release(&h41_own41);
 #line 189 "examples/checksum/base64.hero"
-    t306 = h42_own42;
-#line 5182 "main.c"
-    hero_str_decref(t306);
+#line 4397 "main.c"
+    hero_str_decref(h42_own42);
 #line 189 "examples/checksum/base64.hero"
-    t307 = h43_own43;
-#line 5186 "main.c"
-    h_0opt_e201354_release(&t307);
+#line 4400 "main.c"
+    h_0opt_e201354_release(&h43_own43);
 #line 189 "examples/checksum/base64.hero"
-    t308 = h44_own44;
-#line 5190 "main.c"
-    h_0opt_4d1c207c_release(&t308);
+#line 4403 "main.c"
+    h_0opt_4d1c207c_release(&h44_own44);
 #line 189 "examples/checksum/base64.hero"
-    t309 = h45_own45;
-#line 5194 "main.c"
-    hero_array_decref(t309);
+#line 4406 "main.c"
+    hero_array_decref(h45_own45);
 #line 189 "examples/checksum/base64.hero"
-    t310 = h46_own46;
-#line 5198 "main.c"
-    h_0opt_1ec004_release(&t310);
+#line 4409 "main.c"
+    h_0opt_1ec004_release(&h46_own46);
 #line 189 "examples/checksum/base64.hero"
-    t311 = h47_own47;
-#line 5202 "main.c"
-    hero_array_decref(t311);
+#line 4412 "main.c"
+    hero_array_decref(h47_own47);
 #line 189 "examples/checksum/base64.hero"
-    t312 = h48_own48;
-#line 5206 "main.c"
-    h_0opt_1ec004_release(&t312);
+#line 4415 "main.c"
+    h_0opt_1ec004_release(&h48_own48);
 #line 189 "examples/checksum/base64.hero"
-    t313 = h49_own49;
-#line 5210 "main.c"
-    hero_array_decref(t313);
+#line 4418 "main.c"
+    hero_array_decref(h49_own49);
     return t187;
 bb7:
 #line 165 "examples/checksum/base64.hero"
@@ -5232,7 +4440,7 @@ bb8:
     t32 = h4_f0;
 #line 165 "examples/checksum/base64.hero"
     t33 = t32.as.err;
-#line 5236 "main.c"
+#line 4444 "main.c"
     hero_failure_retain(&t33);
 #line 165 "examples/checksum/base64.hero"
     t34 = (h_0opt_4d1c207c){.tag = INT64_C(1), .as.err = t33};
@@ -5240,175 +4448,134 @@ bb8:
     t199 = h27_own27;
 #line 165 "examples/checksum/base64.hero"
     h27_own27 = t34;
-#line 5244 "main.c"
+#line 4452 "main.c"
     h_0opt_4d1c207c_release(&t199);
 #line 165 "examples/checksum/base64.hero"
-#line 5247 "main.c"
+#line 4455 "main.c"
     h_0opt_4d1c207c_retain(&t34);
 #line 165 "examples/checksum/base64.hero"
-    t314 = h1_out;
-#line 5251 "main.c"
-    hero_array_decref(t314);
+#line 4458 "main.c"
+    hero_array_decref(h1_out);
 #line 165 "examples/checksum/base64.hero"
-    t315 = h3_group;
-#line 5255 "main.c"
-    hero_str_decref(t315);
+#line 4461 "main.c"
+    hero_str_decref(h3_group);
 #line 165 "examples/checksum/base64.hero"
-    t316 = h4_f0;
-#line 5259 "main.c"
-    h_0opt_e201354_release(&t316);
+#line 4464 "main.c"
+    h_0opt_e201354_release(&h4_f0);
 #line 165 "examples/checksum/base64.hero"
-    t317 = h7_f1;
-#line 5263 "main.c"
-    h_0opt_e201354_release(&t317);
+#line 4467 "main.c"
+    h_0opt_e201354_release(&h7_f1);
 #line 165 "examples/checksum/base64.hero"
-    t318 = h9_f2;
-#line 5267 "main.c"
-    h_0opt_e201354_release(&t318);
+#line 4470 "main.c"
+    h_0opt_e201354_release(&h9_f2);
 #line 165 "examples/checksum/base64.hero"
-    t319 = h13_f3;
-#line 5271 "main.c"
-    h_0opt_e201354_release(&t319);
+#line 4473 "main.c"
+    h_0opt_e201354_release(&h13_f3);
 #line 165 "examples/checksum/base64.hero"
-    t320 = h14_f4;
-#line 5275 "main.c"
-    h_0opt_e201354_release(&t320);
+#line 4476 "main.c"
+    h_0opt_e201354_release(&h14_f4);
 #line 165 "examples/checksum/base64.hero"
-    t321 = h16_f5;
-#line 5279 "main.c"
-    h_0opt_1ec004_release(&t321);
+#line 4479 "main.c"
+    h_0opt_1ec004_release(&h16_f5);
 #line 165 "examples/checksum/base64.hero"
-    t322 = h17_f6;
-#line 5283 "main.c"
-    h_0opt_1ec004_release(&t322);
+#line 4482 "main.c"
+    h_0opt_1ec004_release(&h17_f6);
 #line 165 "examples/checksum/base64.hero"
-    t323 = h18_f7;
-#line 5287 "main.c"
-    h_0opt_1ec004_release(&t323);
+#line 4485 "main.c"
+    h_0opt_1ec004_release(&h18_f7);
 #line 165 "examples/checksum/base64.hero"
-    t324 = h19_own19;
-#line 5291 "main.c"
-    hero_array_decref(t324);
+#line 4488 "main.c"
+    hero_array_decref(h19_own19);
 #line 165 "examples/checksum/base64.hero"
-    t325 = h20_own20;
-#line 5295 "main.c"
-    hero_str_decref(t325);
+#line 4491 "main.c"
+    hero_str_decref(h20_own20);
 #line 165 "examples/checksum/base64.hero"
-    t326 = h21_own21;
-#line 5299 "main.c"
-    hero_str_decref(t326);
+#line 4494 "main.c"
+    hero_str_decref(h21_own21);
 #line 165 "examples/checksum/base64.hero"
-    t327 = h22_own22;
-#line 5303 "main.c"
-    hero_str_decref(t327);
+#line 4497 "main.c"
+    hero_str_decref(h22_own22);
 #line 165 "examples/checksum/base64.hero"
-    t328 = h23_own23;
-#line 5307 "main.c"
-    h_0opt_4d1c207c_release(&t328);
+#line 4500 "main.c"
+    h_0opt_4d1c207c_release(&h23_own23);
 #line 165 "examples/checksum/base64.hero"
-    t329 = h24_own24;
-#line 5311 "main.c"
-    hero_str_decref(t329);
+#line 4503 "main.c"
+    hero_str_decref(h24_own24);
 #line 165 "examples/checksum/base64.hero"
-    t330 = h25_own25;
-#line 5315 "main.c"
-    h_0opt_e201354_release(&t330);
+#line 4506 "main.c"
+    h_0opt_e201354_release(&h25_own25);
 #line 165 "examples/checksum/base64.hero"
-    t331 = h26_own26;
-#line 5319 "main.c"
-    h_0opt_4d1c207c_release(&t331);
+#line 4509 "main.c"
+    h_0opt_4d1c207c_release(&h26_own26);
 #line 165 "examples/checksum/base64.hero"
-    t332 = h27_own27;
-#line 5323 "main.c"
-    h_0opt_4d1c207c_release(&t332);
+#line 4512 "main.c"
+    h_0opt_4d1c207c_release(&h27_own27);
 #line 165 "examples/checksum/base64.hero"
-    t333 = h28_own28;
-#line 5327 "main.c"
-    hero_str_decref(t333);
+#line 4515 "main.c"
+    hero_str_decref(h28_own28);
 #line 165 "examples/checksum/base64.hero"
-    t334 = h29_own29;
-#line 5331 "main.c"
-    h_0opt_e201354_release(&t334);
+#line 4518 "main.c"
+    h_0opt_e201354_release(&h29_own29);
 #line 165 "examples/checksum/base64.hero"
-    t335 = h30_own30;
-#line 5335 "main.c"
-    hero_str_decref(t335);
+#line 4521 "main.c"
+    hero_str_decref(h30_own30);
 #line 165 "examples/checksum/base64.hero"
-    t336 = h31_own31;
-#line 5339 "main.c"
-    hero_str_decref(t336);
+#line 4524 "main.c"
+    hero_str_decref(h31_own31);
 #line 165 "examples/checksum/base64.hero"
-    t337 = h32_own32;
-#line 5343 "main.c"
-    hero_str_decref(t337);
+#line 4527 "main.c"
+    hero_str_decref(h32_own32);
 #line 165 "examples/checksum/base64.hero"
-    t338 = h33_own33;
-#line 5347 "main.c"
-    h_0opt_4d1c207c_release(&t338);
+#line 4530 "main.c"
+    h_0opt_4d1c207c_release(&h33_own33);
 #line 165 "examples/checksum/base64.hero"
-    t339 = h34_own34;
-#line 5351 "main.c"
-    hero_str_decref(t339);
+#line 4533 "main.c"
+    hero_str_decref(h34_own34);
 #line 165 "examples/checksum/base64.hero"
-    t340 = h35_own35;
-#line 5355 "main.c"
-    h_0opt_e201354_release(&t340);
+#line 4536 "main.c"
+    h_0opt_e201354_release(&h35_own35);
 #line 165 "examples/checksum/base64.hero"
-    t341 = h36_own36;
-#line 5359 "main.c"
-    h_0opt_4d1c207c_release(&t341);
+#line 4539 "main.c"
+    h_0opt_4d1c207c_release(&h36_own36);
 #line 165 "examples/checksum/base64.hero"
-    t342 = h37_own37;
-#line 5363 "main.c"
-    h_0opt_4d1c207c_release(&t342);
+#line 4542 "main.c"
+    h_0opt_4d1c207c_release(&h37_own37);
 #line 165 "examples/checksum/base64.hero"
-    t343 = h38_own38;
-#line 5367 "main.c"
-    hero_str_decref(t343);
+#line 4545 "main.c"
+    hero_str_decref(h38_own38);
 #line 165 "examples/checksum/base64.hero"
-    t344 = h39_own39;
-#line 5371 "main.c"
-    h_0opt_e201354_release(&t344);
+#line 4548 "main.c"
+    h_0opt_e201354_release(&h39_own39);
 #line 165 "examples/checksum/base64.hero"
-    t345 = h40_own40;
-#line 5375 "main.c"
-    h_0opt_4d1c207c_release(&t345);
+#line 4551 "main.c"
+    h_0opt_4d1c207c_release(&h40_own40);
 #line 165 "examples/checksum/base64.hero"
-    t346 = h41_own41;
-#line 5379 "main.c"
-    h_0opt_1ec004_release(&t346);
+#line 4554 "main.c"
+    h_0opt_1ec004_release(&h41_own41);
 #line 165 "examples/checksum/base64.hero"
-    t347 = h42_own42;
-#line 5383 "main.c"
-    hero_str_decref(t347);
+#line 4557 "main.c"
+    hero_str_decref(h42_own42);
 #line 165 "examples/checksum/base64.hero"
-    t348 = h43_own43;
-#line 5387 "main.c"
-    h_0opt_e201354_release(&t348);
+#line 4560 "main.c"
+    h_0opt_e201354_release(&h43_own43);
 #line 165 "examples/checksum/base64.hero"
-    t349 = h44_own44;
-#line 5391 "main.c"
-    h_0opt_4d1c207c_release(&t349);
+#line 4563 "main.c"
+    h_0opt_4d1c207c_release(&h44_own44);
 #line 165 "examples/checksum/base64.hero"
-    t350 = h45_own45;
-#line 5395 "main.c"
-    hero_array_decref(t350);
+#line 4566 "main.c"
+    hero_array_decref(h45_own45);
 #line 165 "examples/checksum/base64.hero"
-    t351 = h46_own46;
-#line 5399 "main.c"
-    h_0opt_1ec004_release(&t351);
+#line 4569 "main.c"
+    h_0opt_1ec004_release(&h46_own46);
 #line 165 "examples/checksum/base64.hero"
-    t352 = h47_own47;
-#line 5403 "main.c"
-    hero_array_decref(t352);
+#line 4572 "main.c"
+    hero_array_decref(h47_own47);
 #line 165 "examples/checksum/base64.hero"
-    t353 = h48_own48;
-#line 5407 "main.c"
-    h_0opt_1ec004_release(&t353);
+#line 4575 "main.c"
+    h_0opt_1ec004_release(&h48_own48);
 #line 165 "examples/checksum/base64.hero"
-    t354 = h49_own49;
-#line 5411 "main.c"
-    hero_array_decref(t354);
+#line 4578 "main.c"
+    hero_array_decref(h49_own49);
     return t34;
 bb9:
 #line 169 "examples/checksum/base64.hero"
@@ -5423,7 +4590,7 @@ bb9:
     t200 = h28_own28;
 #line 169 "examples/checksum/base64.hero"
     h28_own28 = t57;
-#line 5427 "main.c"
+#line 4594 "main.c"
     hero_str_decref(t200);
 #line 169 "examples/checksum/base64.hero"
     t58 = h_base64_value_of(t57);
@@ -5431,15 +4598,15 @@ bb9:
     t201 = h29_own29;
 #line 169 "examples/checksum/base64.hero"
     h29_own29 = t58;
-#line 5435 "main.c"
+#line 4602 "main.c"
     h_0opt_e201354_release(&t201);
 #line 169 "examples/checksum/base64.hero"
     t202 = h7_f1;
-#line 5439 "main.c"
+#line 4606 "main.c"
     h_0opt_e201354_retain(&t58);
 #line 169 "examples/checksum/base64.hero"
     h7_f1 = t58;
-#line 5443 "main.c"
+#line 4610 "main.c"
     h_0opt_e201354_release(&t202);
 #line 169 "examples/checksum/base64.hero"
     t59 = h7_f1;
@@ -5483,7 +4650,7 @@ bb12:
     t203 = h30_own30;
 #line 168 "examples/checksum/base64.hero"
     h30_own30 = t47;
-#line 5487 "main.c"
+#line 4654 "main.c"
     hero_str_decref(t203);
 #line 168 "examples/checksum/base64.hero"
     t48 = HERO_STR_LIT(hero_str_60);
@@ -5495,7 +4662,7 @@ bb12:
     t204 = h31_own31;
 #line 168 "examples/checksum/base64.hero"
     h31_own31 = t50;
-#line 5499 "main.c"
+#line 4666 "main.c"
     hero_str_decref(t204);
 #line 168 "examples/checksum/base64.hero"
     t51 = HERO_STR_LIT(hero_str_42df8527);
@@ -5505,13 +4672,13 @@ bb12:
     t205 = h32_own32;
 #line 168 "examples/checksum/base64.hero"
     h32_own32 = t52;
-#line 5509 "main.c"
+#line 4676 "main.c"
     hero_str_decref(t205);
 #line 168 "examples/checksum/base64.hero"
-#line 5512 "main.c"
+#line 4679 "main.c"
     hero_str_incref(t47);
 #line 168 "examples/checksum/base64.hero"
-#line 5515 "main.c"
+#line 4682 "main.c"
     hero_str_incref(t52);
 #line 168 "examples/checksum/base64.hero"
     t53 = (h_0opt_4d1c207c){.tag = INT64_C(1), .as.err = {.code = t47, .msg = t52}};
@@ -5519,175 +4686,134 @@ bb12:
     t206 = h33_own33;
 #line 168 "examples/checksum/base64.hero"
     h33_own33 = t53;
-#line 5523 "main.c"
+#line 4690 "main.c"
     h_0opt_4d1c207c_release(&t206);
 #line 168 "examples/checksum/base64.hero"
-#line 5526 "main.c"
+#line 4693 "main.c"
     h_0opt_4d1c207c_retain(&t53);
 #line 168 "examples/checksum/base64.hero"
-    t355 = h1_out;
-#line 5530 "main.c"
-    hero_array_decref(t355);
+#line 4696 "main.c"
+    hero_array_decref(h1_out);
 #line 168 "examples/checksum/base64.hero"
-    t356 = h3_group;
-#line 5534 "main.c"
-    hero_str_decref(t356);
+#line 4699 "main.c"
+    hero_str_decref(h3_group);
 #line 168 "examples/checksum/base64.hero"
-    t357 = h4_f0;
-#line 5538 "main.c"
-    h_0opt_e201354_release(&t357);
+#line 4702 "main.c"
+    h_0opt_e201354_release(&h4_f0);
 #line 168 "examples/checksum/base64.hero"
-    t358 = h7_f1;
-#line 5542 "main.c"
-    h_0opt_e201354_release(&t358);
+#line 4705 "main.c"
+    h_0opt_e201354_release(&h7_f1);
 #line 168 "examples/checksum/base64.hero"
-    t359 = h9_f2;
-#line 5546 "main.c"
-    h_0opt_e201354_release(&t359);
+#line 4708 "main.c"
+    h_0opt_e201354_release(&h9_f2);
 #line 168 "examples/checksum/base64.hero"
-    t360 = h13_f3;
-#line 5550 "main.c"
-    h_0opt_e201354_release(&t360);
+#line 4711 "main.c"
+    h_0opt_e201354_release(&h13_f3);
 #line 168 "examples/checksum/base64.hero"
-    t361 = h14_f4;
-#line 5554 "main.c"
-    h_0opt_e201354_release(&t361);
+#line 4714 "main.c"
+    h_0opt_e201354_release(&h14_f4);
 #line 168 "examples/checksum/base64.hero"
-    t362 = h16_f5;
-#line 5558 "main.c"
-    h_0opt_1ec004_release(&t362);
+#line 4717 "main.c"
+    h_0opt_1ec004_release(&h16_f5);
 #line 168 "examples/checksum/base64.hero"
-    t363 = h17_f6;
-#line 5562 "main.c"
-    h_0opt_1ec004_release(&t363);
+#line 4720 "main.c"
+    h_0opt_1ec004_release(&h17_f6);
 #line 168 "examples/checksum/base64.hero"
-    t364 = h18_f7;
-#line 5566 "main.c"
-    h_0opt_1ec004_release(&t364);
+#line 4723 "main.c"
+    h_0opt_1ec004_release(&h18_f7);
 #line 168 "examples/checksum/base64.hero"
-    t365 = h19_own19;
-#line 5570 "main.c"
-    hero_array_decref(t365);
+#line 4726 "main.c"
+    hero_array_decref(h19_own19);
 #line 168 "examples/checksum/base64.hero"
-    t366 = h20_own20;
-#line 5574 "main.c"
-    hero_str_decref(t366);
+#line 4729 "main.c"
+    hero_str_decref(h20_own20);
 #line 168 "examples/checksum/base64.hero"
-    t367 = h21_own21;
-#line 5578 "main.c"
-    hero_str_decref(t367);
+#line 4732 "main.c"
+    hero_str_decref(h21_own21);
 #line 168 "examples/checksum/base64.hero"
-    t368 = h22_own22;
-#line 5582 "main.c"
-    hero_str_decref(t368);
+#line 4735 "main.c"
+    hero_str_decref(h22_own22);
 #line 168 "examples/checksum/base64.hero"
-    t369 = h23_own23;
-#line 5586 "main.c"
-    h_0opt_4d1c207c_release(&t369);
+#line 4738 "main.c"
+    h_0opt_4d1c207c_release(&h23_own23);
 #line 168 "examples/checksum/base64.hero"
-    t370 = h24_own24;
-#line 5590 "main.c"
-    hero_str_decref(t370);
+#line 4741 "main.c"
+    hero_str_decref(h24_own24);
 #line 168 "examples/checksum/base64.hero"
-    t371 = h25_own25;
-#line 5594 "main.c"
-    h_0opt_e201354_release(&t371);
+#line 4744 "main.c"
+    h_0opt_e201354_release(&h25_own25);
 #line 168 "examples/checksum/base64.hero"
-    t372 = h26_own26;
-#line 5598 "main.c"
-    h_0opt_4d1c207c_release(&t372);
+#line 4747 "main.c"
+    h_0opt_4d1c207c_release(&h26_own26);
 #line 168 "examples/checksum/base64.hero"
-    t373 = h27_own27;
-#line 5602 "main.c"
-    h_0opt_4d1c207c_release(&t373);
+#line 4750 "main.c"
+    h_0opt_4d1c207c_release(&h27_own27);
 #line 168 "examples/checksum/base64.hero"
-    t374 = h28_own28;
-#line 5606 "main.c"
-    hero_str_decref(t374);
+#line 4753 "main.c"
+    hero_str_decref(h28_own28);
 #line 168 "examples/checksum/base64.hero"
-    t375 = h29_own29;
-#line 5610 "main.c"
-    h_0opt_e201354_release(&t375);
+#line 4756 "main.c"
+    h_0opt_e201354_release(&h29_own29);
 #line 168 "examples/checksum/base64.hero"
-    t376 = h30_own30;
-#line 5614 "main.c"
-    hero_str_decref(t376);
+#line 4759 "main.c"
+    hero_str_decref(h30_own30);
 #line 168 "examples/checksum/base64.hero"
-    t377 = h31_own31;
-#line 5618 "main.c"
-    hero_str_decref(t377);
+#line 4762 "main.c"
+    hero_str_decref(h31_own31);
 #line 168 "examples/checksum/base64.hero"
-    t378 = h32_own32;
-#line 5622 "main.c"
-    hero_str_decref(t378);
+#line 4765 "main.c"
+    hero_str_decref(h32_own32);
 #line 168 "examples/checksum/base64.hero"
-    t379 = h33_own33;
-#line 5626 "main.c"
-    h_0opt_4d1c207c_release(&t379);
+#line 4768 "main.c"
+    h_0opt_4d1c207c_release(&h33_own33);
 #line 168 "examples/checksum/base64.hero"
-    t380 = h34_own34;
-#line 5630 "main.c"
-    hero_str_decref(t380);
+#line 4771 "main.c"
+    hero_str_decref(h34_own34);
 #line 168 "examples/checksum/base64.hero"
-    t381 = h35_own35;
-#line 5634 "main.c"
-    h_0opt_e201354_release(&t381);
+#line 4774 "main.c"
+    h_0opt_e201354_release(&h35_own35);
 #line 168 "examples/checksum/base64.hero"
-    t382 = h36_own36;
-#line 5638 "main.c"
-    h_0opt_4d1c207c_release(&t382);
+#line 4777 "main.c"
+    h_0opt_4d1c207c_release(&h36_own36);
 #line 168 "examples/checksum/base64.hero"
-    t383 = h37_own37;
-#line 5642 "main.c"
-    h_0opt_4d1c207c_release(&t383);
+#line 4780 "main.c"
+    h_0opt_4d1c207c_release(&h37_own37);
 #line 168 "examples/checksum/base64.hero"
-    t384 = h38_own38;
-#line 5646 "main.c"
-    hero_str_decref(t384);
+#line 4783 "main.c"
+    hero_str_decref(h38_own38);
 #line 168 "examples/checksum/base64.hero"
-    t385 = h39_own39;
-#line 5650 "main.c"
-    h_0opt_e201354_release(&t385);
+#line 4786 "main.c"
+    h_0opt_e201354_release(&h39_own39);
 #line 168 "examples/checksum/base64.hero"
-    t386 = h40_own40;
-#line 5654 "main.c"
-    h_0opt_4d1c207c_release(&t386);
+#line 4789 "main.c"
+    h_0opt_4d1c207c_release(&h40_own40);
 #line 168 "examples/checksum/base64.hero"
-    t387 = h41_own41;
-#line 5658 "main.c"
-    h_0opt_1ec004_release(&t387);
+#line 4792 "main.c"
+    h_0opt_1ec004_release(&h41_own41);
 #line 168 "examples/checksum/base64.hero"
-    t388 = h42_own42;
-#line 5662 "main.c"
-    hero_str_decref(t388);
+#line 4795 "main.c"
+    hero_str_decref(h42_own42);
 #line 168 "examples/checksum/base64.hero"
-    t389 = h43_own43;
-#line 5666 "main.c"
-    h_0opt_e201354_release(&t389);
+#line 4798 "main.c"
+    h_0opt_e201354_release(&h43_own43);
 #line 168 "examples/checksum/base64.hero"
-    t390 = h44_own44;
-#line 5670 "main.c"
-    h_0opt_4d1c207c_release(&t390);
+#line 4801 "main.c"
+    h_0opt_4d1c207c_release(&h44_own44);
 #line 168 "examples/checksum/base64.hero"
-    t391 = h45_own45;
-#line 5674 "main.c"
-    hero_array_decref(t391);
+#line 4804 "main.c"
+    hero_array_decref(h45_own45);
 #line 168 "examples/checksum/base64.hero"
-    t392 = h46_own46;
-#line 5678 "main.c"
-    h_0opt_1ec004_release(&t392);
+#line 4807 "main.c"
+    h_0opt_1ec004_release(&h46_own46);
 #line 168 "examples/checksum/base64.hero"
-    t393 = h47_own47;
-#line 5682 "main.c"
-    hero_array_decref(t393);
+#line 4810 "main.c"
+    hero_array_decref(h47_own47);
 #line 168 "examples/checksum/base64.hero"
-    t394 = h48_own48;
-#line 5686 "main.c"
-    h_0opt_1ec004_release(&t394);
+#line 4813 "main.c"
+    h_0opt_1ec004_release(&h48_own48);
 #line 168 "examples/checksum/base64.hero"
-    t395 = h49_own49;
-#line 5690 "main.c"
-    hero_array_decref(t395);
+#line 4816 "main.c"
+    hero_array_decref(h49_own49);
     return t53;
 bb13:
     goto bb9;
@@ -5710,7 +4836,7 @@ bb14:
     t207 = h34_own34;
 #line 170 "examples/checksum/base64.hero"
     h34_own34 = t71;
-#line 5714 "main.c"
+#line 4840 "main.c"
     hero_str_decref(t207);
 #line 170 "examples/checksum/base64.hero"
     t72 = h_base64_value_of(t71);
@@ -5718,15 +4844,15 @@ bb14:
     t208 = h35_own35;
 #line 170 "examples/checksum/base64.hero"
     h35_own35 = t72;
-#line 5722 "main.c"
+#line 4848 "main.c"
     h_0opt_e201354_release(&t208);
 #line 170 "examples/checksum/base64.hero"
     t209 = h9_f2;
-#line 5726 "main.c"
+#line 4852 "main.c"
     h_0opt_e201354_retain(&t72);
 #line 170 "examples/checksum/base64.hero"
     h9_f2 = t72;
-#line 5730 "main.c"
+#line 4856 "main.c"
     h_0opt_e201354_release(&t209);
 #line 170 "examples/checksum/base64.hero"
     t73 = h9_f2;
@@ -5744,7 +4870,7 @@ bb15:
     t63 = h7_f1;
 #line 169 "examples/checksum/base64.hero"
     t64 = t63.as.err;
-#line 5748 "main.c"
+#line 4874 "main.c"
     hero_failure_retain(&t64);
 #line 169 "examples/checksum/base64.hero"
     t65 = (h_0opt_4d1c207c){.tag = INT64_C(1), .as.err = t64};
@@ -5752,175 +4878,134 @@ bb15:
     t210 = h36_own36;
 #line 169 "examples/checksum/base64.hero"
     h36_own36 = t65;
-#line 5756 "main.c"
+#line 4882 "main.c"
     h_0opt_4d1c207c_release(&t210);
 #line 169 "examples/checksum/base64.hero"
-#line 5759 "main.c"
+#line 4885 "main.c"
     h_0opt_4d1c207c_retain(&t65);
 #line 169 "examples/checksum/base64.hero"
-    t396 = h1_out;
-#line 5763 "main.c"
-    hero_array_decref(t396);
+#line 4888 "main.c"
+    hero_array_decref(h1_out);
 #line 169 "examples/checksum/base64.hero"
-    t397 = h3_group;
-#line 5767 "main.c"
-    hero_str_decref(t397);
+#line 4891 "main.c"
+    hero_str_decref(h3_group);
 #line 169 "examples/checksum/base64.hero"
-    t398 = h4_f0;
-#line 5771 "main.c"
-    h_0opt_e201354_release(&t398);
+#line 4894 "main.c"
+    h_0opt_e201354_release(&h4_f0);
 #line 169 "examples/checksum/base64.hero"
-    t399 = h7_f1;
-#line 5775 "main.c"
-    h_0opt_e201354_release(&t399);
+#line 4897 "main.c"
+    h_0opt_e201354_release(&h7_f1);
 #line 169 "examples/checksum/base64.hero"
-    t400 = h9_f2;
-#line 5779 "main.c"
-    h_0opt_e201354_release(&t400);
+#line 4900 "main.c"
+    h_0opt_e201354_release(&h9_f2);
 #line 169 "examples/checksum/base64.hero"
-    t401 = h13_f3;
-#line 5783 "main.c"
-    h_0opt_e201354_release(&t401);
+#line 4903 "main.c"
+    h_0opt_e201354_release(&h13_f3);
 #line 169 "examples/checksum/base64.hero"
-    t402 = h14_f4;
-#line 5787 "main.c"
-    h_0opt_e201354_release(&t402);
+#line 4906 "main.c"
+    h_0opt_e201354_release(&h14_f4);
 #line 169 "examples/checksum/base64.hero"
-    t403 = h16_f5;
-#line 5791 "main.c"
-    h_0opt_1ec004_release(&t403);
+#line 4909 "main.c"
+    h_0opt_1ec004_release(&h16_f5);
 #line 169 "examples/checksum/base64.hero"
-    t404 = h17_f6;
-#line 5795 "main.c"
-    h_0opt_1ec004_release(&t404);
+#line 4912 "main.c"
+    h_0opt_1ec004_release(&h17_f6);
 #line 169 "examples/checksum/base64.hero"
-    t405 = h18_f7;
-#line 5799 "main.c"
-    h_0opt_1ec004_release(&t405);
+#line 4915 "main.c"
+    h_0opt_1ec004_release(&h18_f7);
 #line 169 "examples/checksum/base64.hero"
-    t406 = h19_own19;
-#line 5803 "main.c"
-    hero_array_decref(t406);
+#line 4918 "main.c"
+    hero_array_decref(h19_own19);
 #line 169 "examples/checksum/base64.hero"
-    t407 = h20_own20;
-#line 5807 "main.c"
-    hero_str_decref(t407);
+#line 4921 "main.c"
+    hero_str_decref(h20_own20);
 #line 169 "examples/checksum/base64.hero"
-    t408 = h21_own21;
-#line 5811 "main.c"
-    hero_str_decref(t408);
+#line 4924 "main.c"
+    hero_str_decref(h21_own21);
 #line 169 "examples/checksum/base64.hero"
-    t409 = h22_own22;
-#line 5815 "main.c"
-    hero_str_decref(t409);
+#line 4927 "main.c"
+    hero_str_decref(h22_own22);
 #line 169 "examples/checksum/base64.hero"
-    t410 = h23_own23;
-#line 5819 "main.c"
-    h_0opt_4d1c207c_release(&t410);
+#line 4930 "main.c"
+    h_0opt_4d1c207c_release(&h23_own23);
 #line 169 "examples/checksum/base64.hero"
-    t411 = h24_own24;
-#line 5823 "main.c"
-    hero_str_decref(t411);
+#line 4933 "main.c"
+    hero_str_decref(h24_own24);
 #line 169 "examples/checksum/base64.hero"
-    t412 = h25_own25;
-#line 5827 "main.c"
-    h_0opt_e201354_release(&t412);
+#line 4936 "main.c"
+    h_0opt_e201354_release(&h25_own25);
 #line 169 "examples/checksum/base64.hero"
-    t413 = h26_own26;
-#line 5831 "main.c"
-    h_0opt_4d1c207c_release(&t413);
+#line 4939 "main.c"
+    h_0opt_4d1c207c_release(&h26_own26);
 #line 169 "examples/checksum/base64.hero"
-    t414 = h27_own27;
-#line 5835 "main.c"
-    h_0opt_4d1c207c_release(&t414);
+#line 4942 "main.c"
+    h_0opt_4d1c207c_release(&h27_own27);
 #line 169 "examples/checksum/base64.hero"
-    t415 = h28_own28;
-#line 5839 "main.c"
-    hero_str_decref(t415);
+#line 4945 "main.c"
+    hero_str_decref(h28_own28);
 #line 169 "examples/checksum/base64.hero"
-    t416 = h29_own29;
-#line 5843 "main.c"
-    h_0opt_e201354_release(&t416);
+#line 4948 "main.c"
+    h_0opt_e201354_release(&h29_own29);
 #line 169 "examples/checksum/base64.hero"
-    t417 = h30_own30;
-#line 5847 "main.c"
-    hero_str_decref(t417);
+#line 4951 "main.c"
+    hero_str_decref(h30_own30);
 #line 169 "examples/checksum/base64.hero"
-    t418 = h31_own31;
-#line 5851 "main.c"
-    hero_str_decref(t418);
+#line 4954 "main.c"
+    hero_str_decref(h31_own31);
 #line 169 "examples/checksum/base64.hero"
-    t419 = h32_own32;
-#line 5855 "main.c"
-    hero_str_decref(t419);
+#line 4957 "main.c"
+    hero_str_decref(h32_own32);
 #line 169 "examples/checksum/base64.hero"
-    t420 = h33_own33;
-#line 5859 "main.c"
-    h_0opt_4d1c207c_release(&t420);
+#line 4960 "main.c"
+    h_0opt_4d1c207c_release(&h33_own33);
 #line 169 "examples/checksum/base64.hero"
-    t421 = h34_own34;
-#line 5863 "main.c"
-    hero_str_decref(t421);
+#line 4963 "main.c"
+    hero_str_decref(h34_own34);
 #line 169 "examples/checksum/base64.hero"
-    t422 = h35_own35;
-#line 5867 "main.c"
-    h_0opt_e201354_release(&t422);
+#line 4966 "main.c"
+    h_0opt_e201354_release(&h35_own35);
 #line 169 "examples/checksum/base64.hero"
-    t423 = h36_own36;
-#line 5871 "main.c"
-    h_0opt_4d1c207c_release(&t423);
+#line 4969 "main.c"
+    h_0opt_4d1c207c_release(&h36_own36);
 #line 169 "examples/checksum/base64.hero"
-    t424 = h37_own37;
-#line 5875 "main.c"
-    h_0opt_4d1c207c_release(&t424);
+#line 4972 "main.c"
+    h_0opt_4d1c207c_release(&h37_own37);
 #line 169 "examples/checksum/base64.hero"
-    t425 = h38_own38;
-#line 5879 "main.c"
-    hero_str_decref(t425);
+#line 4975 "main.c"
+    hero_str_decref(h38_own38);
 #line 169 "examples/checksum/base64.hero"
-    t426 = h39_own39;
-#line 5883 "main.c"
-    h_0opt_e201354_release(&t426);
+#line 4978 "main.c"
+    h_0opt_e201354_release(&h39_own39);
 #line 169 "examples/checksum/base64.hero"
-    t427 = h40_own40;
-#line 5887 "main.c"
-    h_0opt_4d1c207c_release(&t427);
+#line 4981 "main.c"
+    h_0opt_4d1c207c_release(&h40_own40);
 #line 169 "examples/checksum/base64.hero"
-    t428 = h41_own41;
-#line 5891 "main.c"
-    h_0opt_1ec004_release(&t428);
+#line 4984 "main.c"
+    h_0opt_1ec004_release(&h41_own41);
 #line 169 "examples/checksum/base64.hero"
-    t429 = h42_own42;
-#line 5895 "main.c"
-    hero_str_decref(t429);
+#line 4987 "main.c"
+    hero_str_decref(h42_own42);
 #line 169 "examples/checksum/base64.hero"
-    t430 = h43_own43;
-#line 5899 "main.c"
-    h_0opt_e201354_release(&t430);
+#line 4990 "main.c"
+    h_0opt_e201354_release(&h43_own43);
 #line 169 "examples/checksum/base64.hero"
-    t431 = h44_own44;
-#line 5903 "main.c"
-    h_0opt_4d1c207c_release(&t431);
+#line 4993 "main.c"
+    h_0opt_4d1c207c_release(&h44_own44);
 #line 169 "examples/checksum/base64.hero"
-    t432 = h45_own45;
-#line 5907 "main.c"
-    hero_array_decref(t432);
+#line 4996 "main.c"
+    hero_array_decref(h45_own45);
 #line 169 "examples/checksum/base64.hero"
-    t433 = h46_own46;
-#line 5911 "main.c"
-    h_0opt_1ec004_release(&t433);
+#line 4999 "main.c"
+    h_0opt_1ec004_release(&h46_own46);
 #line 169 "examples/checksum/base64.hero"
-    t434 = h47_own47;
-#line 5915 "main.c"
-    hero_array_decref(t434);
+#line 5002 "main.c"
+    hero_array_decref(h47_own47);
 #line 169 "examples/checksum/base64.hero"
-    t435 = h48_own48;
-#line 5919 "main.c"
-    h_0opt_1ec004_release(&t435);
+#line 5005 "main.c"
+    h_0opt_1ec004_release(&h48_own48);
 #line 169 "examples/checksum/base64.hero"
-    t436 = h49_own49;
-#line 5923 "main.c"
-    hero_array_decref(t436);
+#line 5008 "main.c"
+    hero_array_decref(h49_own49);
     return t65;
 bb16:
 #line 170 "examples/checksum/base64.hero"
@@ -5951,7 +5036,7 @@ bb17:
     t77 = h9_f2;
 #line 170 "examples/checksum/base64.hero"
     t78 = t77.as.err;
-#line 5955 "main.c"
+#line 5040 "main.c"
     hero_failure_retain(&t78);
 #line 170 "examples/checksum/base64.hero"
     t79 = (h_0opt_4d1c207c){.tag = INT64_C(1), .as.err = t78};
@@ -5959,175 +5044,134 @@ bb17:
     t211 = h37_own37;
 #line 170 "examples/checksum/base64.hero"
     h37_own37 = t79;
-#line 5963 "main.c"
+#line 5048 "main.c"
     h_0opt_4d1c207c_release(&t211);
 #line 170 "examples/checksum/base64.hero"
-#line 5966 "main.c"
+#line 5051 "main.c"
     h_0opt_4d1c207c_retain(&t79);
 #line 170 "examples/checksum/base64.hero"
-    t437 = h1_out;
-#line 5970 "main.c"
-    hero_array_decref(t437);
+#line 5054 "main.c"
+    hero_array_decref(h1_out);
 #line 170 "examples/checksum/base64.hero"
-    t438 = h3_group;
-#line 5974 "main.c"
-    hero_str_decref(t438);
+#line 5057 "main.c"
+    hero_str_decref(h3_group);
 #line 170 "examples/checksum/base64.hero"
-    t439 = h4_f0;
-#line 5978 "main.c"
-    h_0opt_e201354_release(&t439);
+#line 5060 "main.c"
+    h_0opt_e201354_release(&h4_f0);
 #line 170 "examples/checksum/base64.hero"
-    t440 = h7_f1;
-#line 5982 "main.c"
-    h_0opt_e201354_release(&t440);
+#line 5063 "main.c"
+    h_0opt_e201354_release(&h7_f1);
 #line 170 "examples/checksum/base64.hero"
-    t441 = h9_f2;
-#line 5986 "main.c"
-    h_0opt_e201354_release(&t441);
+#line 5066 "main.c"
+    h_0opt_e201354_release(&h9_f2);
 #line 170 "examples/checksum/base64.hero"
-    t442 = h13_f3;
-#line 5990 "main.c"
-    h_0opt_e201354_release(&t442);
+#line 5069 "main.c"
+    h_0opt_e201354_release(&h13_f3);
 #line 170 "examples/checksum/base64.hero"
-    t443 = h14_f4;
-#line 5994 "main.c"
-    h_0opt_e201354_release(&t443);
+#line 5072 "main.c"
+    h_0opt_e201354_release(&h14_f4);
 #line 170 "examples/checksum/base64.hero"
-    t444 = h16_f5;
-#line 5998 "main.c"
-    h_0opt_1ec004_release(&t444);
+#line 5075 "main.c"
+    h_0opt_1ec004_release(&h16_f5);
 #line 170 "examples/checksum/base64.hero"
-    t445 = h17_f6;
-#line 6002 "main.c"
-    h_0opt_1ec004_release(&t445);
+#line 5078 "main.c"
+    h_0opt_1ec004_release(&h17_f6);
 #line 170 "examples/checksum/base64.hero"
-    t446 = h18_f7;
-#line 6006 "main.c"
-    h_0opt_1ec004_release(&t446);
+#line 5081 "main.c"
+    h_0opt_1ec004_release(&h18_f7);
 #line 170 "examples/checksum/base64.hero"
-    t447 = h19_own19;
-#line 6010 "main.c"
-    hero_array_decref(t447);
+#line 5084 "main.c"
+    hero_array_decref(h19_own19);
 #line 170 "examples/checksum/base64.hero"
-    t448 = h20_own20;
-#line 6014 "main.c"
-    hero_str_decref(t448);
+#line 5087 "main.c"
+    hero_str_decref(h20_own20);
 #line 170 "examples/checksum/base64.hero"
-    t449 = h21_own21;
-#line 6018 "main.c"
-    hero_str_decref(t449);
+#line 5090 "main.c"
+    hero_str_decref(h21_own21);
 #line 170 "examples/checksum/base64.hero"
-    t450 = h22_own22;
-#line 6022 "main.c"
-    hero_str_decref(t450);
+#line 5093 "main.c"
+    hero_str_decref(h22_own22);
 #line 170 "examples/checksum/base64.hero"
-    t451 = h23_own23;
-#line 6026 "main.c"
-    h_0opt_4d1c207c_release(&t451);
+#line 5096 "main.c"
+    h_0opt_4d1c207c_release(&h23_own23);
 #line 170 "examples/checksum/base64.hero"
-    t452 = h24_own24;
-#line 6030 "main.c"
-    hero_str_decref(t452);
+#line 5099 "main.c"
+    hero_str_decref(h24_own24);
 #line 170 "examples/checksum/base64.hero"
-    t453 = h25_own25;
-#line 6034 "main.c"
-    h_0opt_e201354_release(&t453);
+#line 5102 "main.c"
+    h_0opt_e201354_release(&h25_own25);
 #line 170 "examples/checksum/base64.hero"
-    t454 = h26_own26;
-#line 6038 "main.c"
-    h_0opt_4d1c207c_release(&t454);
+#line 5105 "main.c"
+    h_0opt_4d1c207c_release(&h26_own26);
 #line 170 "examples/checksum/base64.hero"
-    t455 = h27_own27;
-#line 6042 "main.c"
-    h_0opt_4d1c207c_release(&t455);
+#line 5108 "main.c"
+    h_0opt_4d1c207c_release(&h27_own27);
 #line 170 "examples/checksum/base64.hero"
-    t456 = h28_own28;
-#line 6046 "main.c"
-    hero_str_decref(t456);
+#line 5111 "main.c"
+    hero_str_decref(h28_own28);
 #line 170 "examples/checksum/base64.hero"
-    t457 = h29_own29;
-#line 6050 "main.c"
-    h_0opt_e201354_release(&t457);
+#line 5114 "main.c"
+    h_0opt_e201354_release(&h29_own29);
 #line 170 "examples/checksum/base64.hero"
-    t458 = h30_own30;
-#line 6054 "main.c"
-    hero_str_decref(t458);
+#line 5117 "main.c"
+    hero_str_decref(h30_own30);
 #line 170 "examples/checksum/base64.hero"
-    t459 = h31_own31;
-#line 6058 "main.c"
-    hero_str_decref(t459);
+#line 5120 "main.c"
+    hero_str_decref(h31_own31);
 #line 170 "examples/checksum/base64.hero"
-    t460 = h32_own32;
-#line 6062 "main.c"
-    hero_str_decref(t460);
+#line 5123 "main.c"
+    hero_str_decref(h32_own32);
 #line 170 "examples/checksum/base64.hero"
-    t461 = h33_own33;
-#line 6066 "main.c"
-    h_0opt_4d1c207c_release(&t461);
+#line 5126 "main.c"
+    h_0opt_4d1c207c_release(&h33_own33);
 #line 170 "examples/checksum/base64.hero"
-    t462 = h34_own34;
-#line 6070 "main.c"
-    hero_str_decref(t462);
+#line 5129 "main.c"
+    hero_str_decref(h34_own34);
 #line 170 "examples/checksum/base64.hero"
-    t463 = h35_own35;
-#line 6074 "main.c"
-    h_0opt_e201354_release(&t463);
+#line 5132 "main.c"
+    h_0opt_e201354_release(&h35_own35);
 #line 170 "examples/checksum/base64.hero"
-    t464 = h36_own36;
-#line 6078 "main.c"
-    h_0opt_4d1c207c_release(&t464);
+#line 5135 "main.c"
+    h_0opt_4d1c207c_release(&h36_own36);
 #line 170 "examples/checksum/base64.hero"
-    t465 = h37_own37;
-#line 6082 "main.c"
-    h_0opt_4d1c207c_release(&t465);
+#line 5138 "main.c"
+    h_0opt_4d1c207c_release(&h37_own37);
 #line 170 "examples/checksum/base64.hero"
-    t466 = h38_own38;
-#line 6086 "main.c"
-    hero_str_decref(t466);
+#line 5141 "main.c"
+    hero_str_decref(h38_own38);
 #line 170 "examples/checksum/base64.hero"
-    t467 = h39_own39;
-#line 6090 "main.c"
-    h_0opt_e201354_release(&t467);
+#line 5144 "main.c"
+    h_0opt_e201354_release(&h39_own39);
 #line 170 "examples/checksum/base64.hero"
-    t468 = h40_own40;
-#line 6094 "main.c"
-    h_0opt_4d1c207c_release(&t468);
+#line 5147 "main.c"
+    h_0opt_4d1c207c_release(&h40_own40);
 #line 170 "examples/checksum/base64.hero"
-    t469 = h41_own41;
-#line 6098 "main.c"
-    h_0opt_1ec004_release(&t469);
+#line 5150 "main.c"
+    h_0opt_1ec004_release(&h41_own41);
 #line 170 "examples/checksum/base64.hero"
-    t470 = h42_own42;
-#line 6102 "main.c"
-    hero_str_decref(t470);
+#line 5153 "main.c"
+    hero_str_decref(h42_own42);
 #line 170 "examples/checksum/base64.hero"
-    t471 = h43_own43;
-#line 6106 "main.c"
-    h_0opt_e201354_release(&t471);
+#line 5156 "main.c"
+    h_0opt_e201354_release(&h43_own43);
 #line 170 "examples/checksum/base64.hero"
-    t472 = h44_own44;
-#line 6110 "main.c"
-    h_0opt_4d1c207c_release(&t472);
+#line 5159 "main.c"
+    h_0opt_4d1c207c_release(&h44_own44);
 #line 170 "examples/checksum/base64.hero"
-    t473 = h45_own45;
-#line 6114 "main.c"
-    hero_array_decref(t473);
+#line 5162 "main.c"
+    hero_array_decref(h45_own45);
 #line 170 "examples/checksum/base64.hero"
-    t474 = h46_own46;
-#line 6118 "main.c"
-    h_0opt_1ec004_release(&t474);
+#line 5165 "main.c"
+    h_0opt_1ec004_release(&h46_own46);
 #line 170 "examples/checksum/base64.hero"
-    t475 = h47_own47;
-#line 6122 "main.c"
-    hero_array_decref(t475);
+#line 5168 "main.c"
+    hero_array_decref(h47_own47);
 #line 170 "examples/checksum/base64.hero"
-    t476 = h48_own48;
-#line 6126 "main.c"
-    h_0opt_1ec004_release(&t476);
+#line 5171 "main.c"
+    h_0opt_1ec004_release(&h48_own48);
 #line 170 "examples/checksum/base64.hero"
-    t477 = h49_own49;
-#line 6130 "main.c"
-    hero_array_decref(t477);
+#line 5174 "main.c"
+    hero_array_decref(h49_own49);
     return t79;
 bb18:
 #line 177 "examples/checksum/base64.hero"
@@ -6152,7 +5196,7 @@ bb19:
     t212 = h38_own38;
 #line 175 "examples/checksum/base64.hero"
     h38_own38 = t90;
-#line 6156 "main.c"
+#line 5200 "main.c"
     hero_str_decref(t212);
 #line 175 "examples/checksum/base64.hero"
     t91 = h_base64_value_of(t90);
@@ -6160,15 +5204,15 @@ bb19:
     t213 = h39_own39;
 #line 175 "examples/checksum/base64.hero"
     h39_own39 = t91;
-#line 6164 "main.c"
+#line 5208 "main.c"
     h_0opt_e201354_release(&t213);
 #line 175 "examples/checksum/base64.hero"
     t214 = h13_f3;
-#line 6168 "main.c"
+#line 5212 "main.c"
     h_0opt_e201354_retain(&t91);
 #line 175 "examples/checksum/base64.hero"
     h13_f3 = t91;
-#line 6172 "main.c"
+#line 5216 "main.c"
     h_0opt_e201354_release(&t214);
 #line 175 "examples/checksum/base64.hero"
     t92 = h13_f3;
@@ -6200,7 +5244,7 @@ bb22:
     t96 = h13_f3;
 #line 175 "examples/checksum/base64.hero"
     t97 = t96.as.err;
-#line 6204 "main.c"
+#line 5248 "main.c"
     hero_failure_retain(&t97);
 #line 175 "examples/checksum/base64.hero"
     t98 = (h_0opt_4d1c207c){.tag = INT64_C(1), .as.err = t97};
@@ -6208,175 +5252,134 @@ bb22:
     t215 = h40_own40;
 #line 175 "examples/checksum/base64.hero"
     h40_own40 = t98;
-#line 6212 "main.c"
+#line 5256 "main.c"
     h_0opt_4d1c207c_release(&t215);
 #line 175 "examples/checksum/base64.hero"
-#line 6215 "main.c"
+#line 5259 "main.c"
     h_0opt_4d1c207c_retain(&t98);
 #line 175 "examples/checksum/base64.hero"
-    t478 = h1_out;
-#line 6219 "main.c"
-    hero_array_decref(t478);
+#line 5262 "main.c"
+    hero_array_decref(h1_out);
 #line 175 "examples/checksum/base64.hero"
-    t479 = h3_group;
-#line 6223 "main.c"
-    hero_str_decref(t479);
+#line 5265 "main.c"
+    hero_str_decref(h3_group);
 #line 175 "examples/checksum/base64.hero"
-    t480 = h4_f0;
-#line 6227 "main.c"
-    h_0opt_e201354_release(&t480);
+#line 5268 "main.c"
+    h_0opt_e201354_release(&h4_f0);
 #line 175 "examples/checksum/base64.hero"
-    t481 = h7_f1;
-#line 6231 "main.c"
-    h_0opt_e201354_release(&t481);
+#line 5271 "main.c"
+    h_0opt_e201354_release(&h7_f1);
 #line 175 "examples/checksum/base64.hero"
-    t482 = h9_f2;
-#line 6235 "main.c"
-    h_0opt_e201354_release(&t482);
+#line 5274 "main.c"
+    h_0opt_e201354_release(&h9_f2);
 #line 175 "examples/checksum/base64.hero"
-    t483 = h13_f3;
-#line 6239 "main.c"
-    h_0opt_e201354_release(&t483);
+#line 5277 "main.c"
+    h_0opt_e201354_release(&h13_f3);
 #line 175 "examples/checksum/base64.hero"
-    t484 = h14_f4;
-#line 6243 "main.c"
-    h_0opt_e201354_release(&t484);
+#line 5280 "main.c"
+    h_0opt_e201354_release(&h14_f4);
 #line 175 "examples/checksum/base64.hero"
-    t485 = h16_f5;
-#line 6247 "main.c"
-    h_0opt_1ec004_release(&t485);
+#line 5283 "main.c"
+    h_0opt_1ec004_release(&h16_f5);
 #line 175 "examples/checksum/base64.hero"
-    t486 = h17_f6;
-#line 6251 "main.c"
-    h_0opt_1ec004_release(&t486);
+#line 5286 "main.c"
+    h_0opt_1ec004_release(&h17_f6);
 #line 175 "examples/checksum/base64.hero"
-    t487 = h18_f7;
-#line 6255 "main.c"
-    h_0opt_1ec004_release(&t487);
+#line 5289 "main.c"
+    h_0opt_1ec004_release(&h18_f7);
 #line 175 "examples/checksum/base64.hero"
-    t488 = h19_own19;
-#line 6259 "main.c"
-    hero_array_decref(t488);
+#line 5292 "main.c"
+    hero_array_decref(h19_own19);
 #line 175 "examples/checksum/base64.hero"
-    t489 = h20_own20;
-#line 6263 "main.c"
-    hero_str_decref(t489);
+#line 5295 "main.c"
+    hero_str_decref(h20_own20);
 #line 175 "examples/checksum/base64.hero"
-    t490 = h21_own21;
-#line 6267 "main.c"
-    hero_str_decref(t490);
+#line 5298 "main.c"
+    hero_str_decref(h21_own21);
 #line 175 "examples/checksum/base64.hero"
-    t491 = h22_own22;
-#line 6271 "main.c"
-    hero_str_decref(t491);
+#line 5301 "main.c"
+    hero_str_decref(h22_own22);
 #line 175 "examples/checksum/base64.hero"
-    t492 = h23_own23;
-#line 6275 "main.c"
-    h_0opt_4d1c207c_release(&t492);
+#line 5304 "main.c"
+    h_0opt_4d1c207c_release(&h23_own23);
 #line 175 "examples/checksum/base64.hero"
-    t493 = h24_own24;
-#line 6279 "main.c"
-    hero_str_decref(t493);
+#line 5307 "main.c"
+    hero_str_decref(h24_own24);
 #line 175 "examples/checksum/base64.hero"
-    t494 = h25_own25;
-#line 6283 "main.c"
-    h_0opt_e201354_release(&t494);
+#line 5310 "main.c"
+    h_0opt_e201354_release(&h25_own25);
 #line 175 "examples/checksum/base64.hero"
-    t495 = h26_own26;
-#line 6287 "main.c"
-    h_0opt_4d1c207c_release(&t495);
+#line 5313 "main.c"
+    h_0opt_4d1c207c_release(&h26_own26);
 #line 175 "examples/checksum/base64.hero"
-    t496 = h27_own27;
-#line 6291 "main.c"
-    h_0opt_4d1c207c_release(&t496);
+#line 5316 "main.c"
+    h_0opt_4d1c207c_release(&h27_own27);
 #line 175 "examples/checksum/base64.hero"
-    t497 = h28_own28;
-#line 6295 "main.c"
-    hero_str_decref(t497);
+#line 5319 "main.c"
+    hero_str_decref(h28_own28);
 #line 175 "examples/checksum/base64.hero"
-    t498 = h29_own29;
-#line 6299 "main.c"
-    h_0opt_e201354_release(&t498);
+#line 5322 "main.c"
+    h_0opt_e201354_release(&h29_own29);
 #line 175 "examples/checksum/base64.hero"
-    t499 = h30_own30;
-#line 6303 "main.c"
-    hero_str_decref(t499);
+#line 5325 "main.c"
+    hero_str_decref(h30_own30);
 #line 175 "examples/checksum/base64.hero"
-    t500 = h31_own31;
-#line 6307 "main.c"
-    hero_str_decref(t500);
+#line 5328 "main.c"
+    hero_str_decref(h31_own31);
 #line 175 "examples/checksum/base64.hero"
-    t501 = h32_own32;
-#line 6311 "main.c"
-    hero_str_decref(t501);
+#line 5331 "main.c"
+    hero_str_decref(h32_own32);
 #line 175 "examples/checksum/base64.hero"
-    t502 = h33_own33;
-#line 6315 "main.c"
-    h_0opt_4d1c207c_release(&t502);
+#line 5334 "main.c"
+    h_0opt_4d1c207c_release(&h33_own33);
 #line 175 "examples/checksum/base64.hero"
-    t503 = h34_own34;
-#line 6319 "main.c"
-    hero_str_decref(t503);
+#line 5337 "main.c"
+    hero_str_decref(h34_own34);
 #line 175 "examples/checksum/base64.hero"
-    t504 = h35_own35;
-#line 6323 "main.c"
-    h_0opt_e201354_release(&t504);
+#line 5340 "main.c"
+    h_0opt_e201354_release(&h35_own35);
 #line 175 "examples/checksum/base64.hero"
-    t505 = h36_own36;
-#line 6327 "main.c"
-    h_0opt_4d1c207c_release(&t505);
+#line 5343 "main.c"
+    h_0opt_4d1c207c_release(&h36_own36);
 #line 175 "examples/checksum/base64.hero"
-    t506 = h37_own37;
-#line 6331 "main.c"
-    h_0opt_4d1c207c_release(&t506);
+#line 5346 "main.c"
+    h_0opt_4d1c207c_release(&h37_own37);
 #line 175 "examples/checksum/base64.hero"
-    t507 = h38_own38;
-#line 6335 "main.c"
-    hero_str_decref(t507);
+#line 5349 "main.c"
+    hero_str_decref(h38_own38);
 #line 175 "examples/checksum/base64.hero"
-    t508 = h39_own39;
-#line 6339 "main.c"
-    h_0opt_e201354_release(&t508);
+#line 5352 "main.c"
+    h_0opt_e201354_release(&h39_own39);
 #line 175 "examples/checksum/base64.hero"
-    t509 = h40_own40;
-#line 6343 "main.c"
-    h_0opt_4d1c207c_release(&t509);
+#line 5355 "main.c"
+    h_0opt_4d1c207c_release(&h40_own40);
 #line 175 "examples/checksum/base64.hero"
-    t510 = h41_own41;
-#line 6347 "main.c"
-    h_0opt_1ec004_release(&t510);
+#line 5358 "main.c"
+    h_0opt_1ec004_release(&h41_own41);
 #line 175 "examples/checksum/base64.hero"
-    t511 = h42_own42;
-#line 6351 "main.c"
-    hero_str_decref(t511);
+#line 5361 "main.c"
+    hero_str_decref(h42_own42);
 #line 175 "examples/checksum/base64.hero"
-    t512 = h43_own43;
-#line 6355 "main.c"
-    h_0opt_e201354_release(&t512);
+#line 5364 "main.c"
+    h_0opt_e201354_release(&h43_own43);
 #line 175 "examples/checksum/base64.hero"
-    t513 = h44_own44;
-#line 6359 "main.c"
-    h_0opt_4d1c207c_release(&t513);
+#line 5367 "main.c"
+    h_0opt_4d1c207c_release(&h44_own44);
 #line 175 "examples/checksum/base64.hero"
-    t514 = h45_own45;
-#line 6363 "main.c"
-    hero_array_decref(t514);
+#line 5370 "main.c"
+    hero_array_decref(h45_own45);
 #line 175 "examples/checksum/base64.hero"
-    t515 = h46_own46;
-#line 6367 "main.c"
-    h_0opt_1ec004_release(&t515);
+#line 5373 "main.c"
+    h_0opt_1ec004_release(&h46_own46);
 #line 175 "examples/checksum/base64.hero"
-    t516 = h47_own47;
-#line 6371 "main.c"
-    hero_array_decref(t516);
+#line 5376 "main.c"
+    hero_array_decref(h47_own47);
 #line 175 "examples/checksum/base64.hero"
-    t517 = h48_own48;
-#line 6375 "main.c"
-    h_0opt_1ec004_release(&t517);
+#line 5379 "main.c"
+    h_0opt_1ec004_release(&h48_own48);
 #line 175 "examples/checksum/base64.hero"
-    t518 = h49_own49;
-#line 6379 "main.c"
-    hero_array_decref(t518);
+#line 5382 "main.c"
+    hero_array_decref(h49_own49);
     return t98;
 bb23:
 #line 179 "examples/checksum/base64.hero"
@@ -6441,15 +5444,15 @@ bb23:
     t216 = h41_own41;
 #line 180 "examples/checksum/base64.hero"
     h41_own41 = t137;
-#line 6445 "main.c"
+#line 5448 "main.c"
     h_0opt_1ec004_release(&t216);
 #line 180 "examples/checksum/base64.hero"
     t217 = h16_f5;
-#line 6449 "main.c"
+#line 5452 "main.c"
     h_0opt_1ec004_retain(&t137);
 #line 180 "examples/checksum/base64.hero"
     h16_f5 = t137;
-#line 6453 "main.c"
+#line 5456 "main.c"
     h_0opt_1ec004_release(&t217);
 #line 180 "examples/checksum/base64.hero"
     t138 = h16_f5;
@@ -6475,7 +5478,7 @@ bb24:
     t218 = h42_own42;
 #line 178 "examples/checksum/base64.hero"
     h42_own42 = t107;
-#line 6479 "main.c"
+#line 5482 "main.c"
     hero_str_decref(t218);
 #line 178 "examples/checksum/base64.hero"
     t108 = h_base64_value_of(t107);
@@ -6483,15 +5486,15 @@ bb24:
     t219 = h43_own43;
 #line 178 "examples/checksum/base64.hero"
     h43_own43 = t108;
-#line 6487 "main.c"
+#line 5490 "main.c"
     h_0opt_e201354_release(&t219);
 #line 178 "examples/checksum/base64.hero"
     t220 = h14_f4;
-#line 6491 "main.c"
+#line 5494 "main.c"
     h_0opt_e201354_retain(&t108);
 #line 178 "examples/checksum/base64.hero"
     h14_f4 = t108;
-#line 6495 "main.c"
+#line 5498 "main.c"
     h_0opt_e201354_release(&t220);
 #line 178 "examples/checksum/base64.hero"
     t109 = h14_f4;
@@ -6523,7 +5526,7 @@ bb27:
     t113 = h14_f4;
 #line 178 "examples/checksum/base64.hero"
     t114 = t113.as.err;
-#line 6527 "main.c"
+#line 5530 "main.c"
     hero_failure_retain(&t114);
 #line 178 "examples/checksum/base64.hero"
     t115 = (h_0opt_4d1c207c){.tag = INT64_C(1), .as.err = t114};
@@ -6531,175 +5534,134 @@ bb27:
     t221 = h44_own44;
 #line 178 "examples/checksum/base64.hero"
     h44_own44 = t115;
-#line 6535 "main.c"
+#line 5538 "main.c"
     h_0opt_4d1c207c_release(&t221);
 #line 178 "examples/checksum/base64.hero"
-#line 6538 "main.c"
+#line 5541 "main.c"
     h_0opt_4d1c207c_retain(&t115);
 #line 178 "examples/checksum/base64.hero"
-    t519 = h1_out;
-#line 6542 "main.c"
-    hero_array_decref(t519);
+#line 5544 "main.c"
+    hero_array_decref(h1_out);
 #line 178 "examples/checksum/base64.hero"
-    t520 = h3_group;
-#line 6546 "main.c"
-    hero_str_decref(t520);
+#line 5547 "main.c"
+    hero_str_decref(h3_group);
 #line 178 "examples/checksum/base64.hero"
-    t521 = h4_f0;
-#line 6550 "main.c"
-    h_0opt_e201354_release(&t521);
+#line 5550 "main.c"
+    h_0opt_e201354_release(&h4_f0);
 #line 178 "examples/checksum/base64.hero"
-    t522 = h7_f1;
-#line 6554 "main.c"
-    h_0opt_e201354_release(&t522);
+#line 5553 "main.c"
+    h_0opt_e201354_release(&h7_f1);
 #line 178 "examples/checksum/base64.hero"
-    t523 = h9_f2;
-#line 6558 "main.c"
-    h_0opt_e201354_release(&t523);
+#line 5556 "main.c"
+    h_0opt_e201354_release(&h9_f2);
 #line 178 "examples/checksum/base64.hero"
-    t524 = h13_f3;
-#line 6562 "main.c"
-    h_0opt_e201354_release(&t524);
+#line 5559 "main.c"
+    h_0opt_e201354_release(&h13_f3);
 #line 178 "examples/checksum/base64.hero"
-    t525 = h14_f4;
-#line 6566 "main.c"
-    h_0opt_e201354_release(&t525);
+#line 5562 "main.c"
+    h_0opt_e201354_release(&h14_f4);
 #line 178 "examples/checksum/base64.hero"
-    t526 = h16_f5;
-#line 6570 "main.c"
-    h_0opt_1ec004_release(&t526);
+#line 5565 "main.c"
+    h_0opt_1ec004_release(&h16_f5);
 #line 178 "examples/checksum/base64.hero"
-    t527 = h17_f6;
-#line 6574 "main.c"
-    h_0opt_1ec004_release(&t527);
+#line 5568 "main.c"
+    h_0opt_1ec004_release(&h17_f6);
 #line 178 "examples/checksum/base64.hero"
-    t528 = h18_f7;
-#line 6578 "main.c"
-    h_0opt_1ec004_release(&t528);
+#line 5571 "main.c"
+    h_0opt_1ec004_release(&h18_f7);
 #line 178 "examples/checksum/base64.hero"
-    t529 = h19_own19;
-#line 6582 "main.c"
-    hero_array_decref(t529);
+#line 5574 "main.c"
+    hero_array_decref(h19_own19);
 #line 178 "examples/checksum/base64.hero"
-    t530 = h20_own20;
-#line 6586 "main.c"
-    hero_str_decref(t530);
+#line 5577 "main.c"
+    hero_str_decref(h20_own20);
 #line 178 "examples/checksum/base64.hero"
-    t531 = h21_own21;
-#line 6590 "main.c"
-    hero_str_decref(t531);
+#line 5580 "main.c"
+    hero_str_decref(h21_own21);
 #line 178 "examples/checksum/base64.hero"
-    t532 = h22_own22;
-#line 6594 "main.c"
-    hero_str_decref(t532);
+#line 5583 "main.c"
+    hero_str_decref(h22_own22);
 #line 178 "examples/checksum/base64.hero"
-    t533 = h23_own23;
-#line 6598 "main.c"
-    h_0opt_4d1c207c_release(&t533);
+#line 5586 "main.c"
+    h_0opt_4d1c207c_release(&h23_own23);
 #line 178 "examples/checksum/base64.hero"
-    t534 = h24_own24;
-#line 6602 "main.c"
-    hero_str_decref(t534);
+#line 5589 "main.c"
+    hero_str_decref(h24_own24);
 #line 178 "examples/checksum/base64.hero"
-    t535 = h25_own25;
-#line 6606 "main.c"
-    h_0opt_e201354_release(&t535);
+#line 5592 "main.c"
+    h_0opt_e201354_release(&h25_own25);
 #line 178 "examples/checksum/base64.hero"
-    t536 = h26_own26;
-#line 6610 "main.c"
-    h_0opt_4d1c207c_release(&t536);
+#line 5595 "main.c"
+    h_0opt_4d1c207c_release(&h26_own26);
 #line 178 "examples/checksum/base64.hero"
-    t537 = h27_own27;
-#line 6614 "main.c"
-    h_0opt_4d1c207c_release(&t537);
+#line 5598 "main.c"
+    h_0opt_4d1c207c_release(&h27_own27);
 #line 178 "examples/checksum/base64.hero"
-    t538 = h28_own28;
-#line 6618 "main.c"
-    hero_str_decref(t538);
+#line 5601 "main.c"
+    hero_str_decref(h28_own28);
 #line 178 "examples/checksum/base64.hero"
-    t539 = h29_own29;
-#line 6622 "main.c"
-    h_0opt_e201354_release(&t539);
+#line 5604 "main.c"
+    h_0opt_e201354_release(&h29_own29);
 #line 178 "examples/checksum/base64.hero"
-    t540 = h30_own30;
-#line 6626 "main.c"
-    hero_str_decref(t540);
+#line 5607 "main.c"
+    hero_str_decref(h30_own30);
 #line 178 "examples/checksum/base64.hero"
-    t541 = h31_own31;
-#line 6630 "main.c"
-    hero_str_decref(t541);
+#line 5610 "main.c"
+    hero_str_decref(h31_own31);
 #line 178 "examples/checksum/base64.hero"
-    t542 = h32_own32;
-#line 6634 "main.c"
-    hero_str_decref(t542);
+#line 5613 "main.c"
+    hero_str_decref(h32_own32);
 #line 178 "examples/checksum/base64.hero"
-    t543 = h33_own33;
-#line 6638 "main.c"
-    h_0opt_4d1c207c_release(&t543);
+#line 5616 "main.c"
+    h_0opt_4d1c207c_release(&h33_own33);
 #line 178 "examples/checksum/base64.hero"
-    t544 = h34_own34;
-#line 6642 "main.c"
-    hero_str_decref(t544);
+#line 5619 "main.c"
+    hero_str_decref(h34_own34);
 #line 178 "examples/checksum/base64.hero"
-    t545 = h35_own35;
-#line 6646 "main.c"
-    h_0opt_e201354_release(&t545);
+#line 5622 "main.c"
+    h_0opt_e201354_release(&h35_own35);
 #line 178 "examples/checksum/base64.hero"
-    t546 = h36_own36;
-#line 6650 "main.c"
-    h_0opt_4d1c207c_release(&t546);
+#line 5625 "main.c"
+    h_0opt_4d1c207c_release(&h36_own36);
 #line 178 "examples/checksum/base64.hero"
-    t547 = h37_own37;
-#line 6654 "main.c"
-    h_0opt_4d1c207c_release(&t547);
+#line 5628 "main.c"
+    h_0opt_4d1c207c_release(&h37_own37);
 #line 178 "examples/checksum/base64.hero"
-    t548 = h38_own38;
-#line 6658 "main.c"
-    hero_str_decref(t548);
+#line 5631 "main.c"
+    hero_str_decref(h38_own38);
 #line 178 "examples/checksum/base64.hero"
-    t549 = h39_own39;
-#line 6662 "main.c"
-    h_0opt_e201354_release(&t549);
+#line 5634 "main.c"
+    h_0opt_e201354_release(&h39_own39);
 #line 178 "examples/checksum/base64.hero"
-    t550 = h40_own40;
-#line 6666 "main.c"
-    h_0opt_4d1c207c_release(&t550);
+#line 5637 "main.c"
+    h_0opt_4d1c207c_release(&h40_own40);
 #line 178 "examples/checksum/base64.hero"
-    t551 = h41_own41;
-#line 6670 "main.c"
-    h_0opt_1ec004_release(&t551);
+#line 5640 "main.c"
+    h_0opt_1ec004_release(&h41_own41);
 #line 178 "examples/checksum/base64.hero"
-    t552 = h42_own42;
-#line 6674 "main.c"
-    hero_str_decref(t552);
+#line 5643 "main.c"
+    hero_str_decref(h42_own42);
 #line 178 "examples/checksum/base64.hero"
-    t553 = h43_own43;
-#line 6678 "main.c"
-    h_0opt_e201354_release(&t553);
+#line 5646 "main.c"
+    h_0opt_e201354_release(&h43_own43);
 #line 178 "examples/checksum/base64.hero"
-    t554 = h44_own44;
-#line 6682 "main.c"
-    h_0opt_4d1c207c_release(&t554);
+#line 5649 "main.c"
+    h_0opt_4d1c207c_release(&h44_own44);
 #line 178 "examples/checksum/base64.hero"
-    t555 = h45_own45;
-#line 6686 "main.c"
-    hero_array_decref(t555);
+#line 5652 "main.c"
+    hero_array_decref(h45_own45);
 #line 178 "examples/checksum/base64.hero"
-    t556 = h46_own46;
-#line 6690 "main.c"
-    h_0opt_1ec004_release(&t556);
+#line 5655 "main.c"
+    h_0opt_1ec004_release(&h46_own46);
 #line 178 "examples/checksum/base64.hero"
-    t557 = h47_own47;
-#line 6694 "main.c"
-    hero_array_decref(t557);
+#line 5658 "main.c"
+    hero_array_decref(h47_own47);
 #line 178 "examples/checksum/base64.hero"
-    t558 = h48_own48;
-#line 6698 "main.c"
-    h_0opt_1ec004_release(&t558);
+#line 5661 "main.c"
+    h_0opt_1ec004_release(&h48_own48);
 #line 178 "examples/checksum/base64.hero"
-    t559 = h49_own49;
-#line 6702 "main.c"
-    hero_array_decref(t559);
+#line 5664 "main.c"
+    hero_array_decref(h49_own49);
     return t115;
 bb28:
 #line 180 "examples/checksum/base64.hero"
@@ -6712,15 +5674,15 @@ bb28:
     t222 = h45_own45;
 #line 180 "examples/checksum/base64.hero"
     h45_own45 = t146;
-#line 6716 "main.c"
+#line 5678 "main.c"
     hero_array_decref(t222);
 #line 180 "examples/checksum/base64.hero"
     t223 = h1_out;
-#line 6720 "main.c"
+#line 5682 "main.c"
     hero_array_incref(t146);
 #line 180 "examples/checksum/base64.hero"
     h1_out = t146;
-#line 6724 "main.c"
+#line 5686 "main.c"
     hero_array_decref(t223);
 #line 182 "examples/checksum/base64.hero"
     t147 = h5_pad;
@@ -6736,7 +5698,7 @@ bb29:
     t142 = h16_f5;
 #line 180 "examples/checksum/base64.hero"
     t143 = t142.as.err;
-#line 6740 "main.c"
+#line 5702 "main.c"
     hero_panic_must(t143);
     hero_unreachable();
 bb30:
@@ -6778,15 +5740,15 @@ bb31:
     t224 = h46_own46;
 #line 183 "examples/checksum/base64.hero"
     h46_own46 = t156;
-#line 6782 "main.c"
+#line 5744 "main.c"
     h_0opt_1ec004_release(&t224);
 #line 183 "examples/checksum/base64.hero"
     t225 = h17_f6;
-#line 6786 "main.c"
+#line 5748 "main.c"
     h_0opt_1ec004_retain(&t156);
 #line 183 "examples/checksum/base64.hero"
     h17_f6 = t156;
-#line 6790 "main.c"
+#line 5752 "main.c"
     h_0opt_1ec004_release(&t225);
 #line 183 "examples/checksum/base64.hero"
     t157 = h17_f6;
@@ -6814,15 +5776,15 @@ bb33:
     t226 = h47_own47;
 #line 183 "examples/checksum/base64.hero"
     h47_own47 = t165;
-#line 6818 "main.c"
+#line 5780 "main.c"
     hero_array_decref(t226);
 #line 183 "examples/checksum/base64.hero"
     t227 = h1_out;
-#line 6822 "main.c"
+#line 5784 "main.c"
     hero_array_incref(t165);
 #line 183 "examples/checksum/base64.hero"
     h1_out = t165;
-#line 6826 "main.c"
+#line 5788 "main.c"
     hero_array_decref(t227);
     goto bb30;
 bb34:
@@ -6830,7 +5792,7 @@ bb34:
     t161 = h17_f6;
 #line 183 "examples/checksum/base64.hero"
     t162 = t161.as.err;
-#line 6834 "main.c"
+#line 5796 "main.c"
     hero_panic_must(t162);
     hero_unreachable();
 bb35:
@@ -6868,15 +5830,15 @@ bb36:
     t228 = h48_own48;
 #line 186 "examples/checksum/base64.hero"
     h48_own48 = t173;
-#line 6872 "main.c"
+#line 5834 "main.c"
     h_0opt_1ec004_release(&t228);
 #line 186 "examples/checksum/base64.hero"
     t229 = h18_f7;
-#line 6876 "main.c"
+#line 5838 "main.c"
     h_0opt_1ec004_retain(&t173);
 #line 186 "examples/checksum/base64.hero"
     h18_f7 = t173;
-#line 6880 "main.c"
+#line 5842 "main.c"
     h_0opt_1ec004_release(&t229);
 #line 186 "examples/checksum/base64.hero"
     t174 = h18_f7;
@@ -6904,15 +5866,15 @@ bb38:
     t230 = h49_own49;
 #line 186 "examples/checksum/base64.hero"
     h49_own49 = t182;
-#line 6908 "main.c"
+#line 5870 "main.c"
     hero_array_decref(t230);
 #line 186 "examples/checksum/base64.hero"
     t231 = h1_out;
-#line 6912 "main.c"
+#line 5874 "main.c"
     hero_array_incref(t182);
 #line 186 "examples/checksum/base64.hero"
     h1_out = t182;
-#line 6916 "main.c"
+#line 5878 "main.c"
     hero_array_decref(t231);
     goto bb35;
 bb39:
@@ -6920,14 +5882,14 @@ bb39:
     t178 = h18_f7;
 #line 186 "examples/checksum/base64.hero"
     t179 = t178.as.err;
-#line 6924 "main.c"
+#line 5886 "main.c"
     hero_panic_must(t179);
     hero_unreachable();
 }
 
 #line 193 "examples/checksum/base64.hero"
 HeroStr h_base64_refusal_of(h_0opt_4d1c207c h0_said) {
-#line 6931 "main.c"
+#line 5893 "main.c"
     h_0opt_4d1c207c h1_s0 = {0};
     HeroStr h2_r0 = {0};
     HeroFailure h3_e = {0};
@@ -6944,20 +5906,17 @@ HeroStr h_base64_refusal_of(h_0opt_4d1c207c h0_said) {
     HeroStr t11 = {0};
     HeroFailure t12 = {0};
     HeroStr t13 = {0};
-    h_0opt_4d1c207c t14 = {0};
-    HeroStr t15 = {0};
-    HeroFailure t16 = {0};
     goto bb0;
 bb0:
 #line 194 "examples/checksum/base64.hero"
     t1 = h0_said;
 #line 194 "examples/checksum/base64.hero"
     t10 = h1_s0;
-#line 6957 "main.c"
+#line 5916 "main.c"
     h_0opt_4d1c207c_retain(&t1);
 #line 194 "examples/checksum/base64.hero"
     h1_s0 = t1;
-#line 6961 "main.c"
+#line 5920 "main.c"
     h_0opt_4d1c207c_release(&t10);
 #line 194 "examples/checksum/base64.hero"
     t2 = h1_s0;
@@ -6977,31 +5936,28 @@ bb0:
 bb1:
 #line 194 "examples/checksum/base64.hero"
     t9 = h2_r0;
-#line 6981 "main.c"
+#line 5940 "main.c"
     hero_str_incref(t9);
 #line 194 "examples/checksum/base64.hero"
-    t14 = h1_s0;
-#line 6985 "main.c"
-    h_0opt_4d1c207c_release(&t14);
+#line 5943 "main.c"
+    h_0opt_4d1c207c_release(&h1_s0);
 #line 194 "examples/checksum/base64.hero"
-    t15 = h2_r0;
-#line 6989 "main.c"
-    hero_str_decref(t15);
+#line 5946 "main.c"
+    hero_str_decref(h2_r0);
 #line 194 "examples/checksum/base64.hero"
-    t16 = h3_e;
-#line 6993 "main.c"
-    hero_failure_release(&t16);
+#line 5949 "main.c"
+    hero_failure_release(&h3_e);
     return t9;
 bb2:
 #line 195 "examples/checksum/base64.hero"
     t4 = HERO_STR_LIT(hero_str_16ecc41b);
 #line 194 "examples/checksum/base64.hero"
     t11 = h2_r0;
-#line 7001 "main.c"
+#line 5957 "main.c"
     hero_str_incref(t4);
 #line 194 "examples/checksum/base64.hero"
     h2_r0 = t4;
-#line 7005 "main.c"
+#line 5961 "main.c"
     hero_str_decref(t11);
     goto bb1;
 bb3:
@@ -7011,11 +5967,11 @@ bb3:
     t6 = t5.as.err;
 #line 196 "examples/checksum/base64.hero"
     t12 = h3_e;
-#line 7015 "main.c"
+#line 5971 "main.c"
     hero_failure_retain(&t6);
 #line 196 "examples/checksum/base64.hero"
     h3_e = t6;
-#line 7019 "main.c"
+#line 5975 "main.c"
     hero_failure_release(&t12);
 #line 196 "examples/checksum/base64.hero"
     t7 = h3_e;
@@ -7023,18 +5979,18 @@ bb3:
     t8 = t7.code;
 #line 194 "examples/checksum/base64.hero"
     t13 = h2_r0;
-#line 7027 "main.c"
+#line 5983 "main.c"
     hero_str_incref(t8);
 #line 194 "examples/checksum/base64.hero"
     h2_r0 = t8;
-#line 7031 "main.c"
+#line 5987 "main.c"
     hero_str_decref(t13);
     goto bb1;
 }
 
 #line 40 "examples/checksum/crc.hero"
 int64_t h_crc_POLY(void) {
-#line 7038 "main.c"
+#line 5994 "main.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -7042,12 +5998,12 @@ bb0:
     t1 = INT64_C(79764919);
 #line 41 "examples/checksum/crc.hero"
     return t1;
-#line 7046 "main.c"
+#line 6002 "main.c"
 }
 
 #line 44 "examples/checksum/crc.hero"
 int64_t h_crc_POLY_REFLECTED(void) {
-#line 7051 "main.c"
+#line 6007 "main.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -7055,12 +6011,12 @@ bb0:
     t1 = INT64_C(3988292384);
 #line 45 "examples/checksum/crc.hero"
     return t1;
-#line 7059 "main.c"
+#line 6015 "main.c"
 }
 
 #line 49 "examples/checksum/crc.hero"
 int64_t h_crc_INIT(void) {
-#line 7064 "main.c"
+#line 6020 "main.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -7068,12 +6024,12 @@ bb0:
     t1 = INT64_C(4294967295);
 #line 50 "examples/checksum/crc.hero"
     return t1;
-#line 7072 "main.c"
+#line 6028 "main.c"
 }
 
 #line 52 "examples/checksum/crc.hero"
 int64_t h_crc_XOROUT(void) {
-#line 7077 "main.c"
+#line 6033 "main.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -7081,12 +6037,12 @@ bb0:
     t1 = INT64_C(4294967295);
 #line 53 "examples/checksum/crc.hero"
     return t1;
-#line 7085 "main.c"
+#line 6041 "main.c"
 }
 
 #line 61 "examples/checksum/crc.hero"
 uint32_t h_crc_crc32(HeroStr h0_text) {
-#line 7090 "main.c"
+#line 6046 "main.c"
     int64_t h1_reg;
     int64_t h2_i;
     uint8_t h3_byte;
@@ -7155,10 +6111,6 @@ uint32_t h_crc_crc32(HeroStr h0_text) {
     h_0opt_e201354 t58 = {0};
     h_0opt_fbaec77 t59 = {0};
     h_0opt_fbaec77 t60 = {0};
-    h_0opt_e201354 t61 = {0};
-    h_0opt_fbaec77 t62 = {0};
-    h_0opt_e201354 t63 = {0};
-    h_0opt_fbaec77 t64 = {0};
     goto bb0;
 bb0:
 #line 62 "examples/checksum/crc.hero"
@@ -7203,15 +6155,15 @@ bb2:
     t57 = h7_own7;
 #line 67 "examples/checksum/crc.hero"
     h7_own7 = t12;
-#line 7207 "main.c"
+#line 6159 "main.c"
     h_0opt_e201354_release(&t57);
 #line 67 "examples/checksum/crc.hero"
     t58 = h4_f0;
-#line 7211 "main.c"
+#line 6163 "main.c"
     h_0opt_e201354_retain(&t12);
 #line 67 "examples/checksum/crc.hero"
     h4_f0 = t12;
-#line 7215 "main.c"
+#line 6167 "main.c"
     h_0opt_e201354_release(&t58);
 #line 67 "examples/checksum/crc.hero"
     t13 = h4_f0;
@@ -7245,15 +6197,15 @@ bb3:
     t59 = h8_own8;
 #line 83 "examples/checksum/crc.hero"
     h8_own8 = t48;
-#line 7249 "main.c"
+#line 6201 "main.c"
     h_0opt_fbaec77_release(&t59);
 #line 83 "examples/checksum/crc.hero"
     t60 = h6_f1;
-#line 7253 "main.c"
+#line 6205 "main.c"
     h_0opt_fbaec77_retain(&t48);
 #line 83 "examples/checksum/crc.hero"
     h6_f1 = t48;
-#line 7257 "main.c"
+#line 6209 "main.c"
     h_0opt_fbaec77_release(&t60);
 #line 83 "examples/checksum/crc.hero"
     t49 = h6_f1;
@@ -7287,7 +6239,7 @@ bb5:
     t17 = h4_f0;
 #line 67 "examples/checksum/crc.hero"
     t18 = t17.as.err;
-#line 7291 "main.c"
+#line 6243 "main.c"
     hero_panic_must(t18);
     hero_unreachable();
 bb6:
@@ -7375,36 +6327,31 @@ bb12:
     t55 = h6_f1;
 #line 83 "examples/checksum/crc.hero"
     t56 = t55.as.ok;
+#line 6331 "main.c"
+    h_0opt_e201354_release(&h4_f0);
 #line 83 "examples/checksum/crc.hero"
-    t61 = h4_f0;
-#line 7381 "main.c"
-    h_0opt_e201354_release(&t61);
+#line 6334 "main.c"
+    h_0opt_fbaec77_release(&h6_f1);
 #line 83 "examples/checksum/crc.hero"
-    t62 = h6_f1;
-#line 7385 "main.c"
-    h_0opt_fbaec77_release(&t62);
+#line 6337 "main.c"
+    h_0opt_e201354_release(&h7_own7);
 #line 83 "examples/checksum/crc.hero"
-    t63 = h7_own7;
-#line 7389 "main.c"
-    h_0opt_e201354_release(&t63);
-#line 83 "examples/checksum/crc.hero"
-    t64 = h8_own8;
-#line 7393 "main.c"
-    h_0opt_fbaec77_release(&t64);
+#line 6340 "main.c"
+    h_0opt_fbaec77_release(&h8_own8);
     return t56;
 bb13:
 #line 83 "examples/checksum/crc.hero"
     t53 = h6_f1;
 #line 83 "examples/checksum/crc.hero"
     t54 = t53.as.err;
-#line 7401 "main.c"
+#line 6348 "main.c"
     hero_panic_must(t54);
     hero_unreachable();
 }
 
 #line 87 "examples/checksum/crc.hero"
 int64_t h_crc_reversed_bits(int64_t h0_value, int64_t h1_width) {
-#line 7408 "main.c"
+#line 6355 "main.c"
     int64_t h2_out;
     int64_t h3_i;
     int64_t t1;
@@ -7489,7 +6436,7 @@ bb3:
     t18 = h2_out;
 #line 95 "examples/checksum/crc.hero"
     return t18;
-#line 7493 "main.c"
+#line 6440 "main.c"
 }
 HERO_TU_LOCAL bool h_main_Digest_eq(const h_main_Digest *a, const h_main_Digest *b) {
     if (!(a->f_checksum == b->f_checksum)) return false;

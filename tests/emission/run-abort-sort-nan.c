@@ -118,10 +118,6 @@ void h_abortsortnan_main(void) {
     HeroArrayHeader * t19 = {0};
     HeroArrayHeader * t20 = {0};
     HeroArrayHeader * t21 = {0};
-    HeroArrayHeader * t22 = {0};
-    HeroArrayHeader * t23 = {0};
-    HeroArrayHeader * t24 = {0};
-    HeroArrayHeader * t25 = {0};
     goto bb0;
 bb0:
 #line 15 "tests/golden/run/abort-sort-nan.hero"
@@ -154,7 +150,7 @@ bb0:
     t18 = h2_own2;
 #line 17 "tests/golden/run/abort-sort-nan.hero"
     h2_own2 = t7;
-#line 158 "abortsortnan.c"
+#line 154 "abortsortnan.c"
     hero_array_decref(t18);
 #line 17 "tests/golden/run/abort-sort-nan.hero"
     t8 = hero_array_sort(t7);
@@ -162,7 +158,7 @@ bb0:
     t19 = h3_own3;
 #line 17 "tests/golden/run/abort-sort-nan.hero"
     h3_own3 = t8;
-#line 166 "abortsortnan.c"
+#line 162 "abortsortnan.c"
     hero_array_decref(t19);
 #line 17 "tests/golden/run/abort-sort-nan.hero"
     t9 = INT64_C(0);
@@ -196,7 +192,7 @@ bb0:
     t20 = h4_own4;
 #line 18 "tests/golden/run/abort-sort-nan.hero"
     h4_own4 = t14;
-#line 200 "abortsortnan.c"
+#line 196 "abortsortnan.c"
     hero_array_decref(t20);
 #line 18 "tests/golden/run/abort-sort-nan.hero"
     t15 = hero_array_sort(t14);
@@ -204,7 +200,7 @@ bb0:
     t21 = h5_own5;
 #line 18 "tests/golden/run/abort-sort-nan.hero"
     h5_own5 = t15;
-#line 208 "abortsortnan.c"
+#line 204 "abortsortnan.c"
     hero_array_decref(t21);
 #line 18 "tests/golden/run/abort-sort-nan.hero"
     t16 = INT64_C(0);
@@ -214,22 +210,17 @@ bb0:
     hero_print_f64(t17);
 #line 18 "tests/golden/run/abort-sort-nan.hero"
     hero_print_end();
+#line 214 "abortsortnan.c"
+    hero_array_decref(h2_own2);
 #line 18 "tests/golden/run/abort-sort-nan.hero"
-    t22 = h2_own2;
+#line 217 "abortsortnan.c"
+    hero_array_decref(h3_own3);
+#line 18 "tests/golden/run/abort-sort-nan.hero"
 #line 220 "abortsortnan.c"
-    hero_array_decref(t22);
+    hero_array_decref(h4_own4);
 #line 18 "tests/golden/run/abort-sort-nan.hero"
-    t23 = h3_own3;
-#line 224 "abortsortnan.c"
-    hero_array_decref(t23);
-#line 18 "tests/golden/run/abort-sort-nan.hero"
-    t24 = h4_own4;
-#line 228 "abortsortnan.c"
-    hero_array_decref(t24);
-#line 18 "tests/golden/run/abort-sort-nan.hero"
-    t25 = h5_own5;
-#line 232 "abortsortnan.c"
-    hero_array_decref(t25);
+#line 223 "abortsortnan.c"
+    hero_array_decref(h5_own5);
     return;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

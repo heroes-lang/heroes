@@ -64,8 +64,7 @@ function named(n: i64) -> str
     bb1  match: join    preds bb2, bb4, bb6
         $t11: str = load $r0
         incref $t11
-        $t15: str = load $r0
-        decref $t15
+        decref_slot $r0
         return $t11
     bb2  match: arm    preds bb0
         $t8: str = const str 0

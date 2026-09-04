@@ -208,8 +208,6 @@ int64_t h_main_year_of(struct tm h0_b) {
     int64_t t13;
     h_0opt_e201354 t14 = {0};
     h_0opt_e201354 t15 = {0};
-    h_0opt_e201354 t16 = {0};
-    h_0opt_e201354 t17 = {0};
     goto bb0;
 bb0:
 #line 70 "examples/ctime/main.hero"
@@ -222,15 +220,15 @@ bb0:
     t14 = h2_own2;
 #line 70 "examples/ctime/main.hero"
     h2_own2 = t3;
-#line 226 "main.c"
+#line 224 "main.c"
     h_0opt_e201354_release(&t14);
 #line 70 "examples/ctime/main.hero"
     t15 = h1_f0;
-#line 230 "main.c"
+#line 228 "main.c"
     h_0opt_e201354_retain(&t3);
 #line 70 "examples/ctime/main.hero"
     h1_f0 = t3;
-#line 234 "main.c"
+#line 232 "main.c"
     h_0opt_e201354_release(&t15);
 #line 70 "examples/ctime/main.hero"
     t4 = h1_f0;
@@ -252,28 +250,25 @@ bb1:
     t12 = h_main_C_EPOCH_YEAR();
 #line 70 "examples/ctime/main.hero"
     if (__builtin_add_overflow(t11, t12, &t13)) hero_panic_overflow();
+#line 254 "main.c"
+    h_0opt_e201354_release(&h1_f0);
 #line 70 "examples/ctime/main.hero"
-    t16 = h1_f0;
-#line 258 "main.c"
-    h_0opt_e201354_release(&t16);
-#line 70 "examples/ctime/main.hero"
-    t17 = h2_own2;
-#line 262 "main.c"
-    h_0opt_e201354_release(&t17);
+#line 257 "main.c"
+    h_0opt_e201354_release(&h2_own2);
     return t13;
 bb2:
 #line 70 "examples/ctime/main.hero"
     t8 = h1_f0;
 #line 70 "examples/ctime/main.hero"
     t9 = t8.as.err;
-#line 270 "main.c"
+#line 265 "main.c"
     hero_panic_must(t9);
     hero_unreachable();
 }
 
 #line 73 "examples/ctime/main.hero"
 int64_t h_main_month_of(struct tm h0_b) {
-#line 277 "main.c"
+#line 272 "main.c"
     h_0opt_e201354 h1_f0 = {0};
     h_0opt_e201354 h2_own2 = {0};
     struct tm t1;
@@ -291,8 +286,6 @@ int64_t h_main_month_of(struct tm h0_b) {
     int64_t t13;
     h_0opt_e201354 t14 = {0};
     h_0opt_e201354 t15 = {0};
-    h_0opt_e201354 t16 = {0};
-    h_0opt_e201354 t17 = {0};
     goto bb0;
 bb0:
 #line 74 "examples/ctime/main.hero"
@@ -305,15 +298,15 @@ bb0:
     t14 = h2_own2;
 #line 74 "examples/ctime/main.hero"
     h2_own2 = t3;
-#line 309 "main.c"
+#line 302 "main.c"
     h_0opt_e201354_release(&t14);
 #line 74 "examples/ctime/main.hero"
     t15 = h1_f0;
-#line 313 "main.c"
+#line 306 "main.c"
     h_0opt_e201354_retain(&t3);
 #line 74 "examples/ctime/main.hero"
     h1_f0 = t3;
-#line 317 "main.c"
+#line 310 "main.c"
     h_0opt_e201354_release(&t15);
 #line 74 "examples/ctime/main.hero"
     t4 = h1_f0;
@@ -335,28 +328,25 @@ bb1:
     t12 = INT64_C(1);
 #line 74 "examples/ctime/main.hero"
     if (__builtin_add_overflow(t11, t12, &t13)) hero_panic_overflow();
+#line 332 "main.c"
+    h_0opt_e201354_release(&h1_f0);
 #line 74 "examples/ctime/main.hero"
-    t16 = h1_f0;
-#line 341 "main.c"
-    h_0opt_e201354_release(&t16);
-#line 74 "examples/ctime/main.hero"
-    t17 = h2_own2;
-#line 345 "main.c"
-    h_0opt_e201354_release(&t17);
+#line 335 "main.c"
+    h_0opt_e201354_release(&h2_own2);
     return t13;
 bb2:
 #line 74 "examples/ctime/main.hero"
     t8 = h1_f0;
 #line 74 "examples/ctime/main.hero"
     t9 = t8.as.err;
-#line 353 "main.c"
+#line 343 "main.c"
     hero_panic_must(t9);
     hero_unreachable();
 }
 
 #line 76 "examples/ctime/main.hero"
 int64_t h_main_day_of(struct tm h0_b) {
-#line 360 "main.c"
+#line 350 "main.c"
     h_0opt_e201354 h1_f0 = {0};
     h_0opt_e201354 h2_own2 = {0};
     struct tm t1;
@@ -372,8 +362,6 @@ int64_t h_main_day_of(struct tm h0_b) {
     int64_t t11;
     h_0opt_e201354 t12 = {0};
     h_0opt_e201354 t13 = {0};
-    h_0opt_e201354 t14 = {0};
-    h_0opt_e201354 t15 = {0};
     goto bb0;
 bb0:
 #line 77 "examples/ctime/main.hero"
@@ -386,15 +374,15 @@ bb0:
     t12 = h2_own2;
 #line 77 "examples/ctime/main.hero"
     h2_own2 = t3;
-#line 390 "main.c"
+#line 378 "main.c"
     h_0opt_e201354_release(&t12);
 #line 77 "examples/ctime/main.hero"
     t13 = h1_f0;
-#line 394 "main.c"
+#line 382 "main.c"
     h_0opt_e201354_retain(&t3);
 #line 77 "examples/ctime/main.hero"
     h1_f0 = t3;
-#line 398 "main.c"
+#line 386 "main.c"
     h_0opt_e201354_release(&t13);
 #line 77 "examples/ctime/main.hero"
     t4 = h1_f0;
@@ -412,28 +400,25 @@ bb1:
     t10 = h1_f0;
 #line 77 "examples/ctime/main.hero"
     t11 = t10.as.ok;
+#line 404 "main.c"
+    h_0opt_e201354_release(&h1_f0);
 #line 77 "examples/ctime/main.hero"
-    t14 = h1_f0;
-#line 418 "main.c"
-    h_0opt_e201354_release(&t14);
-#line 77 "examples/ctime/main.hero"
-    t15 = h2_own2;
-#line 422 "main.c"
-    h_0opt_e201354_release(&t15);
+#line 407 "main.c"
+    h_0opt_e201354_release(&h2_own2);
     return t11;
 bb2:
 #line 77 "examples/ctime/main.hero"
     t8 = h1_f0;
 #line 77 "examples/ctime/main.hero"
     t9 = t8.as.err;
-#line 430 "main.c"
+#line 415 "main.c"
     hero_panic_must(t9);
     hero_unreachable();
 }
 
 #line 79 "examples/ctime/main.hero"
 int64_t h_main_hour_of(struct tm h0_b) {
-#line 437 "main.c"
+#line 422 "main.c"
     h_0opt_e201354 h1_f0 = {0};
     h_0opt_e201354 h2_own2 = {0};
     struct tm t1;
@@ -449,8 +434,6 @@ int64_t h_main_hour_of(struct tm h0_b) {
     int64_t t11;
     h_0opt_e201354 t12 = {0};
     h_0opt_e201354 t13 = {0};
-    h_0opt_e201354 t14 = {0};
-    h_0opt_e201354 t15 = {0};
     goto bb0;
 bb0:
 #line 80 "examples/ctime/main.hero"
@@ -463,15 +446,15 @@ bb0:
     t12 = h2_own2;
 #line 80 "examples/ctime/main.hero"
     h2_own2 = t3;
-#line 467 "main.c"
+#line 450 "main.c"
     h_0opt_e201354_release(&t12);
 #line 80 "examples/ctime/main.hero"
     t13 = h1_f0;
-#line 471 "main.c"
+#line 454 "main.c"
     h_0opt_e201354_retain(&t3);
 #line 80 "examples/ctime/main.hero"
     h1_f0 = t3;
-#line 475 "main.c"
+#line 458 "main.c"
     h_0opt_e201354_release(&t13);
 #line 80 "examples/ctime/main.hero"
     t4 = h1_f0;
@@ -489,28 +472,25 @@ bb1:
     t10 = h1_f0;
 #line 80 "examples/ctime/main.hero"
     t11 = t10.as.ok;
+#line 476 "main.c"
+    h_0opt_e201354_release(&h1_f0);
 #line 80 "examples/ctime/main.hero"
-    t14 = h1_f0;
-#line 495 "main.c"
-    h_0opt_e201354_release(&t14);
-#line 80 "examples/ctime/main.hero"
-    t15 = h2_own2;
-#line 499 "main.c"
-    h_0opt_e201354_release(&t15);
+#line 479 "main.c"
+    h_0opt_e201354_release(&h2_own2);
     return t11;
 bb2:
 #line 80 "examples/ctime/main.hero"
     t8 = h1_f0;
 #line 80 "examples/ctime/main.hero"
     t9 = t8.as.err;
-#line 507 "main.c"
+#line 487 "main.c"
     hero_panic_must(t9);
     hero_unreachable();
 }
 
 #line 82 "examples/ctime/main.hero"
 h_0opt_13b8cf25 h_main_made(int64_t h0_year, int64_t h1_month, int64_t h2_day, int64_t h3_hour) {
-#line 514 "main.c"
+#line 494 "main.c"
     h_0opt_e1f4933 h4_f0 = {0};
     int32_t h5_y;
     h_0opt_e1f4933 h6_f1 = {0};
@@ -595,71 +575,6 @@ h_0opt_13b8cf25 h_main_made(int64_t h0_year, int64_t h1_month, int64_t h2_day, i
     h_0opt_13b8cf25 t65 = {0};
     h_0opt_13b8cf25 t66 = {0};
     h_0opt_13b8cf25 t67 = {0};
-    h_0opt_e1f4933 t68 = {0};
-    h_0opt_e1f4933 t69 = {0};
-    h_0opt_e1f4933 t70 = {0};
-    h_0opt_e1f4933 t71 = {0};
-    h_0opt_e1f4933 t72 = {0};
-    h_0opt_e1f4933 t73 = {0};
-    h_0opt_13b8cf25 t74 = {0};
-    h_0opt_e1f4933 t75 = {0};
-    h_0opt_13b8cf25 t76 = {0};
-    h_0opt_e1f4933 t77 = {0};
-    h_0opt_13b8cf25 t78 = {0};
-    h_0opt_13b8cf25 t79 = {0};
-    h_0opt_13b8cf25 t80 = {0};
-    h_0opt_e1f4933 t81 = {0};
-    h_0opt_e1f4933 t82 = {0};
-    h_0opt_e1f4933 t83 = {0};
-    h_0opt_e1f4933 t84 = {0};
-    h_0opt_e1f4933 t85 = {0};
-    h_0opt_e1f4933 t86 = {0};
-    h_0opt_13b8cf25 t87 = {0};
-    h_0opt_e1f4933 t88 = {0};
-    h_0opt_13b8cf25 t89 = {0};
-    h_0opt_e1f4933 t90 = {0};
-    h_0opt_13b8cf25 t91 = {0};
-    h_0opt_13b8cf25 t92 = {0};
-    h_0opt_13b8cf25 t93 = {0};
-    h_0opt_e1f4933 t94 = {0};
-    h_0opt_e1f4933 t95 = {0};
-    h_0opt_e1f4933 t96 = {0};
-    h_0opt_e1f4933 t97 = {0};
-    h_0opt_e1f4933 t98 = {0};
-    h_0opt_e1f4933 t99 = {0};
-    h_0opt_13b8cf25 t100 = {0};
-    h_0opt_e1f4933 t101 = {0};
-    h_0opt_13b8cf25 t102 = {0};
-    h_0opt_e1f4933 t103 = {0};
-    h_0opt_13b8cf25 t104 = {0};
-    h_0opt_13b8cf25 t105 = {0};
-    h_0opt_13b8cf25 t106 = {0};
-    h_0opt_e1f4933 t107 = {0};
-    h_0opt_e1f4933 t108 = {0};
-    h_0opt_e1f4933 t109 = {0};
-    h_0opt_e1f4933 t110 = {0};
-    h_0opt_e1f4933 t111 = {0};
-    h_0opt_e1f4933 t112 = {0};
-    h_0opt_13b8cf25 t113 = {0};
-    h_0opt_e1f4933 t114 = {0};
-    h_0opt_13b8cf25 t115 = {0};
-    h_0opt_e1f4933 t116 = {0};
-    h_0opt_13b8cf25 t117 = {0};
-    h_0opt_13b8cf25 t118 = {0};
-    h_0opt_13b8cf25 t119 = {0};
-    h_0opt_e1f4933 t120 = {0};
-    h_0opt_e1f4933 t121 = {0};
-    h_0opt_e1f4933 t122 = {0};
-    h_0opt_e1f4933 t123 = {0};
-    h_0opt_e1f4933 t124 = {0};
-    h_0opt_e1f4933 t125 = {0};
-    h_0opt_13b8cf25 t126 = {0};
-    h_0opt_e1f4933 t127 = {0};
-    h_0opt_13b8cf25 t128 = {0};
-    h_0opt_e1f4933 t129 = {0};
-    h_0opt_13b8cf25 t130 = {0};
-    h_0opt_13b8cf25 t131 = {0};
-    h_0opt_13b8cf25 t132 = {0};
     goto bb0;
 bb0:
 #line 83 "examples/ctime/main.hero"
@@ -682,15 +597,15 @@ bb0:
     t55 = h12_own12;
 #line 83 "examples/ctime/main.hero"
     h12_own12 = t4;
-#line 686 "main.c"
+#line 601 "main.c"
     h_0opt_e1f4933_release(&t55);
 #line 83 "examples/ctime/main.hero"
     t56 = h4_f0;
-#line 690 "main.c"
+#line 605 "main.c"
     h_0opt_e1f4933_retain(&t4);
 #line 83 "examples/ctime/main.hero"
     h4_f0 = t4;
-#line 694 "main.c"
+#line 609 "main.c"
     h_0opt_e1f4933_release(&t56);
 #line 83 "examples/ctime/main.hero"
     t5 = h4_f0;
@@ -730,15 +645,15 @@ bb1:
     t57 = h13_own13;
 #line 84 "examples/ctime/main.hero"
     h13_own13 = t17;
-#line 734 "main.c"
+#line 649 "main.c"
     h_0opt_e1f4933_release(&t57);
 #line 84 "examples/ctime/main.hero"
     t58 = h6_f1;
-#line 738 "main.c"
+#line 653 "main.c"
     h_0opt_e1f4933_retain(&t17);
 #line 84 "examples/ctime/main.hero"
     h6_f1 = t17;
-#line 742 "main.c"
+#line 657 "main.c"
     h_0opt_e1f4933_release(&t58);
 #line 84 "examples/ctime/main.hero"
     t18 = h6_f1;
@@ -756,7 +671,7 @@ bb2:
     t9 = h4_f0;
 #line 83 "examples/ctime/main.hero"
     t10 = t9.as.err;
-#line 760 "main.c"
+#line 675 "main.c"
     hero_failure_retain(&t10);
 #line 83 "examples/ctime/main.hero"
     t11 = (h_0opt_13b8cf25){.tag = INT64_C(1), .as.err = t10};
@@ -764,63 +679,50 @@ bb2:
     t59 = h14_own14;
 #line 83 "examples/ctime/main.hero"
     h14_own14 = t11;
-#line 768 "main.c"
+#line 683 "main.c"
     h_0opt_13b8cf25_release(&t59);
 #line 83 "examples/ctime/main.hero"
-#line 771 "main.c"
+#line 686 "main.c"
     h_0opt_13b8cf25_retain(&t11);
 #line 83 "examples/ctime/main.hero"
-    t68 = h4_f0;
-#line 775 "main.c"
-    h_0opt_e1f4933_release(&t68);
+#line 689 "main.c"
+    h_0opt_e1f4933_release(&h4_f0);
 #line 83 "examples/ctime/main.hero"
-    t69 = h6_f1;
-#line 779 "main.c"
-    h_0opt_e1f4933_release(&t69);
+#line 692 "main.c"
+    h_0opt_e1f4933_release(&h6_f1);
 #line 83 "examples/ctime/main.hero"
-    t70 = h8_f2;
-#line 783 "main.c"
-    h_0opt_e1f4933_release(&t70);
+#line 695 "main.c"
+    h_0opt_e1f4933_release(&h8_f2);
 #line 83 "examples/ctime/main.hero"
-    t71 = h10_f3;
-#line 787 "main.c"
-    h_0opt_e1f4933_release(&t71);
+#line 698 "main.c"
+    h_0opt_e1f4933_release(&h10_f3);
 #line 83 "examples/ctime/main.hero"
-    t72 = h12_own12;
-#line 791 "main.c"
-    h_0opt_e1f4933_release(&t72);
+#line 701 "main.c"
+    h_0opt_e1f4933_release(&h12_own12);
 #line 83 "examples/ctime/main.hero"
-    t73 = h13_own13;
-#line 795 "main.c"
-    h_0opt_e1f4933_release(&t73);
+#line 704 "main.c"
+    h_0opt_e1f4933_release(&h13_own13);
 #line 83 "examples/ctime/main.hero"
-    t74 = h14_own14;
-#line 799 "main.c"
-    h_0opt_13b8cf25_release(&t74);
+#line 707 "main.c"
+    h_0opt_13b8cf25_release(&h14_own14);
 #line 83 "examples/ctime/main.hero"
-    t75 = h15_own15;
-#line 803 "main.c"
-    h_0opt_e1f4933_release(&t75);
+#line 710 "main.c"
+    h_0opt_e1f4933_release(&h15_own15);
 #line 83 "examples/ctime/main.hero"
-    t76 = h16_own16;
-#line 807 "main.c"
-    h_0opt_13b8cf25_release(&t76);
+#line 713 "main.c"
+    h_0opt_13b8cf25_release(&h16_own16);
 #line 83 "examples/ctime/main.hero"
-    t77 = h17_own17;
-#line 811 "main.c"
-    h_0opt_e1f4933_release(&t77);
+#line 716 "main.c"
+    h_0opt_e1f4933_release(&h17_own17);
 #line 83 "examples/ctime/main.hero"
-    t78 = h18_own18;
-#line 815 "main.c"
-    h_0opt_13b8cf25_release(&t78);
+#line 719 "main.c"
+    h_0opt_13b8cf25_release(&h18_own18);
 #line 83 "examples/ctime/main.hero"
-    t79 = h19_own19;
-#line 819 "main.c"
-    h_0opt_13b8cf25_release(&t79);
+#line 722 "main.c"
+    h_0opt_13b8cf25_release(&h19_own19);
 #line 83 "examples/ctime/main.hero"
-    t80 = h20_own20;
-#line 823 "main.c"
-    h_0opt_13b8cf25_release(&t80);
+#line 725 "main.c"
+    h_0opt_13b8cf25_release(&h20_own20);
     return t11;
 bb3:
 #line 84 "examples/ctime/main.hero"
@@ -845,15 +747,15 @@ bb3:
     t60 = h15_own15;
 #line 85 "examples/ctime/main.hero"
     h15_own15 = t28;
-#line 849 "main.c"
+#line 751 "main.c"
     h_0opt_e1f4933_release(&t60);
 #line 85 "examples/ctime/main.hero"
     t61 = h8_f2;
-#line 853 "main.c"
+#line 755 "main.c"
     h_0opt_e1f4933_retain(&t28);
 #line 85 "examples/ctime/main.hero"
     h8_f2 = t28;
-#line 857 "main.c"
+#line 759 "main.c"
     h_0opt_e1f4933_release(&t61);
 #line 85 "examples/ctime/main.hero"
     t29 = h8_f2;
@@ -871,7 +773,7 @@ bb4:
     t22 = h6_f1;
 #line 84 "examples/ctime/main.hero"
     t23 = t22.as.err;
-#line 875 "main.c"
+#line 777 "main.c"
     hero_failure_retain(&t23);
 #line 84 "examples/ctime/main.hero"
     t24 = (h_0opt_13b8cf25){.tag = INT64_C(1), .as.err = t23};
@@ -879,63 +781,50 @@ bb4:
     t62 = h16_own16;
 #line 84 "examples/ctime/main.hero"
     h16_own16 = t24;
-#line 883 "main.c"
+#line 785 "main.c"
     h_0opt_13b8cf25_release(&t62);
 #line 84 "examples/ctime/main.hero"
-#line 886 "main.c"
+#line 788 "main.c"
     h_0opt_13b8cf25_retain(&t24);
 #line 84 "examples/ctime/main.hero"
-    t81 = h4_f0;
-#line 890 "main.c"
-    h_0opt_e1f4933_release(&t81);
+#line 791 "main.c"
+    h_0opt_e1f4933_release(&h4_f0);
 #line 84 "examples/ctime/main.hero"
-    t82 = h6_f1;
-#line 894 "main.c"
-    h_0opt_e1f4933_release(&t82);
+#line 794 "main.c"
+    h_0opt_e1f4933_release(&h6_f1);
 #line 84 "examples/ctime/main.hero"
-    t83 = h8_f2;
-#line 898 "main.c"
-    h_0opt_e1f4933_release(&t83);
+#line 797 "main.c"
+    h_0opt_e1f4933_release(&h8_f2);
 #line 84 "examples/ctime/main.hero"
-    t84 = h10_f3;
-#line 902 "main.c"
-    h_0opt_e1f4933_release(&t84);
+#line 800 "main.c"
+    h_0opt_e1f4933_release(&h10_f3);
 #line 84 "examples/ctime/main.hero"
-    t85 = h12_own12;
-#line 906 "main.c"
-    h_0opt_e1f4933_release(&t85);
+#line 803 "main.c"
+    h_0opt_e1f4933_release(&h12_own12);
 #line 84 "examples/ctime/main.hero"
-    t86 = h13_own13;
-#line 910 "main.c"
-    h_0opt_e1f4933_release(&t86);
+#line 806 "main.c"
+    h_0opt_e1f4933_release(&h13_own13);
 #line 84 "examples/ctime/main.hero"
-    t87 = h14_own14;
-#line 914 "main.c"
-    h_0opt_13b8cf25_release(&t87);
+#line 809 "main.c"
+    h_0opt_13b8cf25_release(&h14_own14);
 #line 84 "examples/ctime/main.hero"
-    t88 = h15_own15;
-#line 918 "main.c"
-    h_0opt_e1f4933_release(&t88);
+#line 812 "main.c"
+    h_0opt_e1f4933_release(&h15_own15);
 #line 84 "examples/ctime/main.hero"
-    t89 = h16_own16;
-#line 922 "main.c"
-    h_0opt_13b8cf25_release(&t89);
+#line 815 "main.c"
+    h_0opt_13b8cf25_release(&h16_own16);
 #line 84 "examples/ctime/main.hero"
-    t90 = h17_own17;
-#line 926 "main.c"
-    h_0opt_e1f4933_release(&t90);
+#line 818 "main.c"
+    h_0opt_e1f4933_release(&h17_own17);
 #line 84 "examples/ctime/main.hero"
-    t91 = h18_own18;
-#line 930 "main.c"
-    h_0opt_13b8cf25_release(&t91);
+#line 821 "main.c"
+    h_0opt_13b8cf25_release(&h18_own18);
 #line 84 "examples/ctime/main.hero"
-    t92 = h19_own19;
-#line 934 "main.c"
-    h_0opt_13b8cf25_release(&t92);
+#line 824 "main.c"
+    h_0opt_13b8cf25_release(&h19_own19);
 #line 84 "examples/ctime/main.hero"
-    t93 = h20_own20;
-#line 938 "main.c"
-    h_0opt_13b8cf25_release(&t93);
+#line 827 "main.c"
+    h_0opt_13b8cf25_release(&h20_own20);
     return t24;
 bb5:
 #line 85 "examples/ctime/main.hero"
@@ -960,15 +849,15 @@ bb5:
     t63 = h17_own17;
 #line 86 "examples/ctime/main.hero"
     h17_own17 = t39;
-#line 964 "main.c"
+#line 853 "main.c"
     h_0opt_e1f4933_release(&t63);
 #line 86 "examples/ctime/main.hero"
     t64 = h10_f3;
-#line 968 "main.c"
+#line 857 "main.c"
     h_0opt_e1f4933_retain(&t39);
 #line 86 "examples/ctime/main.hero"
     h10_f3 = t39;
-#line 972 "main.c"
+#line 861 "main.c"
     h_0opt_e1f4933_release(&t64);
 #line 86 "examples/ctime/main.hero"
     t40 = h10_f3;
@@ -986,7 +875,7 @@ bb6:
     t33 = h8_f2;
 #line 85 "examples/ctime/main.hero"
     t34 = t33.as.err;
-#line 990 "main.c"
+#line 879 "main.c"
     hero_failure_retain(&t34);
 #line 85 "examples/ctime/main.hero"
     t35 = (h_0opt_13b8cf25){.tag = INT64_C(1), .as.err = t34};
@@ -994,63 +883,50 @@ bb6:
     t65 = h18_own18;
 #line 85 "examples/ctime/main.hero"
     h18_own18 = t35;
-#line 998 "main.c"
+#line 887 "main.c"
     h_0opt_13b8cf25_release(&t65);
 #line 85 "examples/ctime/main.hero"
-#line 1001 "main.c"
+#line 890 "main.c"
     h_0opt_13b8cf25_retain(&t35);
 #line 85 "examples/ctime/main.hero"
-    t94 = h4_f0;
-#line 1005 "main.c"
-    h_0opt_e1f4933_release(&t94);
+#line 893 "main.c"
+    h_0opt_e1f4933_release(&h4_f0);
 #line 85 "examples/ctime/main.hero"
-    t95 = h6_f1;
-#line 1009 "main.c"
-    h_0opt_e1f4933_release(&t95);
+#line 896 "main.c"
+    h_0opt_e1f4933_release(&h6_f1);
 #line 85 "examples/ctime/main.hero"
-    t96 = h8_f2;
-#line 1013 "main.c"
-    h_0opt_e1f4933_release(&t96);
+#line 899 "main.c"
+    h_0opt_e1f4933_release(&h8_f2);
 #line 85 "examples/ctime/main.hero"
-    t97 = h10_f3;
-#line 1017 "main.c"
-    h_0opt_e1f4933_release(&t97);
+#line 902 "main.c"
+    h_0opt_e1f4933_release(&h10_f3);
 #line 85 "examples/ctime/main.hero"
-    t98 = h12_own12;
-#line 1021 "main.c"
-    h_0opt_e1f4933_release(&t98);
+#line 905 "main.c"
+    h_0opt_e1f4933_release(&h12_own12);
 #line 85 "examples/ctime/main.hero"
-    t99 = h13_own13;
-#line 1025 "main.c"
-    h_0opt_e1f4933_release(&t99);
+#line 908 "main.c"
+    h_0opt_e1f4933_release(&h13_own13);
 #line 85 "examples/ctime/main.hero"
-    t100 = h14_own14;
-#line 1029 "main.c"
-    h_0opt_13b8cf25_release(&t100);
+#line 911 "main.c"
+    h_0opt_13b8cf25_release(&h14_own14);
 #line 85 "examples/ctime/main.hero"
-    t101 = h15_own15;
-#line 1033 "main.c"
-    h_0opt_e1f4933_release(&t101);
+#line 914 "main.c"
+    h_0opt_e1f4933_release(&h15_own15);
 #line 85 "examples/ctime/main.hero"
-    t102 = h16_own16;
-#line 1037 "main.c"
-    h_0opt_13b8cf25_release(&t102);
+#line 917 "main.c"
+    h_0opt_13b8cf25_release(&h16_own16);
 #line 85 "examples/ctime/main.hero"
-    t103 = h17_own17;
-#line 1041 "main.c"
-    h_0opt_e1f4933_release(&t103);
+#line 920 "main.c"
+    h_0opt_e1f4933_release(&h17_own17);
 #line 85 "examples/ctime/main.hero"
-    t104 = h18_own18;
-#line 1045 "main.c"
-    h_0opt_13b8cf25_release(&t104);
+#line 923 "main.c"
+    h_0opt_13b8cf25_release(&h18_own18);
 #line 85 "examples/ctime/main.hero"
-    t105 = h19_own19;
-#line 1049 "main.c"
-    h_0opt_13b8cf25_release(&t105);
+#line 926 "main.c"
+    h_0opt_13b8cf25_release(&h19_own19);
 #line 85 "examples/ctime/main.hero"
-    t106 = h20_own20;
-#line 1053 "main.c"
-    h_0opt_13b8cf25_release(&t106);
+#line 929 "main.c"
+    h_0opt_13b8cf25_release(&h20_own20);
     return t35;
 bb7:
 #line 86 "examples/ctime/main.hero"
@@ -1075,70 +951,57 @@ bb7:
     t66 = h19_own19;
 #line 87 "examples/ctime/main.hero"
     h19_own19 = t54;
-#line 1079 "main.c"
+#line 955 "main.c"
     h_0opt_13b8cf25_release(&t66);
 #line 87 "examples/ctime/main.hero"
-#line 1082 "main.c"
+#line 958 "main.c"
     h_0opt_13b8cf25_retain(&t54);
 #line 87 "examples/ctime/main.hero"
-    t107 = h4_f0;
-#line 1086 "main.c"
-    h_0opt_e1f4933_release(&t107);
+#line 961 "main.c"
+    h_0opt_e1f4933_release(&h4_f0);
 #line 87 "examples/ctime/main.hero"
-    t108 = h6_f1;
-#line 1090 "main.c"
-    h_0opt_e1f4933_release(&t108);
+#line 964 "main.c"
+    h_0opt_e1f4933_release(&h6_f1);
 #line 87 "examples/ctime/main.hero"
-    t109 = h8_f2;
-#line 1094 "main.c"
-    h_0opt_e1f4933_release(&t109);
+#line 967 "main.c"
+    h_0opt_e1f4933_release(&h8_f2);
 #line 87 "examples/ctime/main.hero"
-    t110 = h10_f3;
-#line 1098 "main.c"
-    h_0opt_e1f4933_release(&t110);
+#line 970 "main.c"
+    h_0opt_e1f4933_release(&h10_f3);
 #line 87 "examples/ctime/main.hero"
-    t111 = h12_own12;
-#line 1102 "main.c"
-    h_0opt_e1f4933_release(&t111);
+#line 973 "main.c"
+    h_0opt_e1f4933_release(&h12_own12);
 #line 87 "examples/ctime/main.hero"
-    t112 = h13_own13;
-#line 1106 "main.c"
-    h_0opt_e1f4933_release(&t112);
+#line 976 "main.c"
+    h_0opt_e1f4933_release(&h13_own13);
 #line 87 "examples/ctime/main.hero"
-    t113 = h14_own14;
-#line 1110 "main.c"
-    h_0opt_13b8cf25_release(&t113);
+#line 979 "main.c"
+    h_0opt_13b8cf25_release(&h14_own14);
 #line 87 "examples/ctime/main.hero"
-    t114 = h15_own15;
-#line 1114 "main.c"
-    h_0opt_e1f4933_release(&t114);
+#line 982 "main.c"
+    h_0opt_e1f4933_release(&h15_own15);
 #line 87 "examples/ctime/main.hero"
-    t115 = h16_own16;
-#line 1118 "main.c"
-    h_0opt_13b8cf25_release(&t115);
+#line 985 "main.c"
+    h_0opt_13b8cf25_release(&h16_own16);
 #line 87 "examples/ctime/main.hero"
-    t116 = h17_own17;
-#line 1122 "main.c"
-    h_0opt_e1f4933_release(&t116);
+#line 988 "main.c"
+    h_0opt_e1f4933_release(&h17_own17);
 #line 87 "examples/ctime/main.hero"
-    t117 = h18_own18;
-#line 1126 "main.c"
-    h_0opt_13b8cf25_release(&t117);
+#line 991 "main.c"
+    h_0opt_13b8cf25_release(&h18_own18);
 #line 87 "examples/ctime/main.hero"
-    t118 = h19_own19;
-#line 1130 "main.c"
-    h_0opt_13b8cf25_release(&t118);
+#line 994 "main.c"
+    h_0opt_13b8cf25_release(&h19_own19);
 #line 87 "examples/ctime/main.hero"
-    t119 = h20_own20;
-#line 1134 "main.c"
-    h_0opt_13b8cf25_release(&t119);
+#line 997 "main.c"
+    h_0opt_13b8cf25_release(&h20_own20);
     return t54;
 bb8:
 #line 86 "examples/ctime/main.hero"
     t44 = h10_f3;
 #line 86 "examples/ctime/main.hero"
     t45 = t44.as.err;
-#line 1142 "main.c"
+#line 1005 "main.c"
     hero_failure_retain(&t45);
 #line 86 "examples/ctime/main.hero"
     t46 = (h_0opt_13b8cf25){.tag = INT64_C(1), .as.err = t45};
@@ -1146,69 +1009,56 @@ bb8:
     t67 = h20_own20;
 #line 86 "examples/ctime/main.hero"
     h20_own20 = t46;
-#line 1150 "main.c"
+#line 1013 "main.c"
     h_0opt_13b8cf25_release(&t67);
 #line 86 "examples/ctime/main.hero"
-#line 1153 "main.c"
+#line 1016 "main.c"
     h_0opt_13b8cf25_retain(&t46);
 #line 86 "examples/ctime/main.hero"
-    t120 = h4_f0;
-#line 1157 "main.c"
-    h_0opt_e1f4933_release(&t120);
+#line 1019 "main.c"
+    h_0opt_e1f4933_release(&h4_f0);
 #line 86 "examples/ctime/main.hero"
-    t121 = h6_f1;
-#line 1161 "main.c"
-    h_0opt_e1f4933_release(&t121);
+#line 1022 "main.c"
+    h_0opt_e1f4933_release(&h6_f1);
 #line 86 "examples/ctime/main.hero"
-    t122 = h8_f2;
-#line 1165 "main.c"
-    h_0opt_e1f4933_release(&t122);
+#line 1025 "main.c"
+    h_0opt_e1f4933_release(&h8_f2);
 #line 86 "examples/ctime/main.hero"
-    t123 = h10_f3;
-#line 1169 "main.c"
-    h_0opt_e1f4933_release(&t123);
+#line 1028 "main.c"
+    h_0opt_e1f4933_release(&h10_f3);
 #line 86 "examples/ctime/main.hero"
-    t124 = h12_own12;
-#line 1173 "main.c"
-    h_0opt_e1f4933_release(&t124);
+#line 1031 "main.c"
+    h_0opt_e1f4933_release(&h12_own12);
 #line 86 "examples/ctime/main.hero"
-    t125 = h13_own13;
-#line 1177 "main.c"
-    h_0opt_e1f4933_release(&t125);
+#line 1034 "main.c"
+    h_0opt_e1f4933_release(&h13_own13);
 #line 86 "examples/ctime/main.hero"
-    t126 = h14_own14;
-#line 1181 "main.c"
-    h_0opt_13b8cf25_release(&t126);
+#line 1037 "main.c"
+    h_0opt_13b8cf25_release(&h14_own14);
 #line 86 "examples/ctime/main.hero"
-    t127 = h15_own15;
-#line 1185 "main.c"
-    h_0opt_e1f4933_release(&t127);
+#line 1040 "main.c"
+    h_0opt_e1f4933_release(&h15_own15);
 #line 86 "examples/ctime/main.hero"
-    t128 = h16_own16;
-#line 1189 "main.c"
-    h_0opt_13b8cf25_release(&t128);
+#line 1043 "main.c"
+    h_0opt_13b8cf25_release(&h16_own16);
 #line 86 "examples/ctime/main.hero"
-    t129 = h17_own17;
-#line 1193 "main.c"
-    h_0opt_e1f4933_release(&t129);
+#line 1046 "main.c"
+    h_0opt_e1f4933_release(&h17_own17);
 #line 86 "examples/ctime/main.hero"
-    t130 = h18_own18;
-#line 1197 "main.c"
-    h_0opt_13b8cf25_release(&t130);
+#line 1049 "main.c"
+    h_0opt_13b8cf25_release(&h18_own18);
 #line 86 "examples/ctime/main.hero"
-    t131 = h19_own19;
-#line 1201 "main.c"
-    h_0opt_13b8cf25_release(&t131);
+#line 1052 "main.c"
+    h_0opt_13b8cf25_release(&h19_own19);
 #line 86 "examples/ctime/main.hero"
-    t132 = h20_own20;
-#line 1205 "main.c"
-    h_0opt_13b8cf25_release(&t132);
+#line 1055 "main.c"
+    h_0opt_13b8cf25_release(&h20_own20);
     return t46;
 }
 
 #line 89 "examples/ctime/main.hero"
 HeroStr h_main_shown(struct tm h0_b) {
-#line 1212 "main.c"
+#line 1062 "main.c"
     HeroStr h1_own1 = {0};
     HeroStr h2_own2 = {0};
     HeroStr h3_own3 = {0};
@@ -1254,17 +1104,6 @@ HeroStr h_main_shown(struct tm h0_b) {
     HeroStr t32 = {0};
     HeroStr t33 = {0};
     HeroStr t34 = {0};
-    HeroStr t35 = {0};
-    HeroStr t36 = {0};
-    HeroStr t37 = {0};
-    HeroStr t38 = {0};
-    HeroStr t39 = {0};
-    HeroStr t40 = {0};
-    HeroStr t41 = {0};
-    HeroStr t42 = {0};
-    HeroStr t43 = {0};
-    HeroStr t44 = {0};
-    HeroStr t45 = {0};
     goto bb0;
 bb0:
 #line 90 "examples/ctime/main.hero"
@@ -1277,7 +1116,7 @@ bb0:
     t24 = h1_own1;
 #line 90 "examples/ctime/main.hero"
     h1_own1 = t3;
-#line 1281 "main.c"
+#line 1120 "main.c"
     hero_str_decref(t24);
 #line 90 "examples/ctime/main.hero"
     t4 = HERO_STR_LIT(hero_str_2d);
@@ -1287,7 +1126,7 @@ bb0:
     t25 = h2_own2;
 #line 90 "examples/ctime/main.hero"
     h2_own2 = t5;
-#line 1291 "main.c"
+#line 1130 "main.c"
     hero_str_decref(t25);
 #line 90 "examples/ctime/main.hero"
     t6 = h0_b;
@@ -1299,7 +1138,7 @@ bb0:
     t26 = h3_own3;
 #line 90 "examples/ctime/main.hero"
     h3_own3 = t8;
-#line 1303 "main.c"
+#line 1142 "main.c"
     hero_str_decref(t26);
 #line 90 "examples/ctime/main.hero"
     t9 = hero_str_concat(t5, t8);
@@ -1307,7 +1146,7 @@ bb0:
     t27 = h4_own4;
 #line 90 "examples/ctime/main.hero"
     h4_own4 = t9;
-#line 1311 "main.c"
+#line 1150 "main.c"
     hero_str_decref(t27);
 #line 90 "examples/ctime/main.hero"
     t10 = HERO_STR_LIT(hero_str_2d);
@@ -1317,7 +1156,7 @@ bb0:
     t28 = h5_own5;
 #line 90 "examples/ctime/main.hero"
     h5_own5 = t11;
-#line 1321 "main.c"
+#line 1160 "main.c"
     hero_str_decref(t28);
 #line 90 "examples/ctime/main.hero"
     t12 = h0_b;
@@ -1329,7 +1168,7 @@ bb0:
     t29 = h6_own6;
 #line 90 "examples/ctime/main.hero"
     h6_own6 = t14;
-#line 1333 "main.c"
+#line 1172 "main.c"
     hero_str_decref(t29);
 #line 90 "examples/ctime/main.hero"
     t15 = hero_str_concat(t11, t14);
@@ -1337,7 +1176,7 @@ bb0:
     t30 = h7_own7;
 #line 90 "examples/ctime/main.hero"
     h7_own7 = t15;
-#line 1341 "main.c"
+#line 1180 "main.c"
     hero_str_decref(t30);
 #line 90 "examples/ctime/main.hero"
     t16 = HERO_STR_LIT(hero_str_20);
@@ -1347,7 +1186,7 @@ bb0:
     t31 = h8_own8;
 #line 90 "examples/ctime/main.hero"
     h8_own8 = t17;
-#line 1351 "main.c"
+#line 1190 "main.c"
     hero_str_decref(t31);
 #line 90 "examples/ctime/main.hero"
     t18 = h0_b;
@@ -1359,7 +1198,7 @@ bb0:
     t32 = h9_own9;
 #line 90 "examples/ctime/main.hero"
     h9_own9 = t20;
-#line 1363 "main.c"
+#line 1202 "main.c"
     hero_str_decref(t32);
 #line 90 "examples/ctime/main.hero"
     t21 = hero_str_concat(t17, t20);
@@ -1367,7 +1206,7 @@ bb0:
     t33 = h10_own10;
 #line 90 "examples/ctime/main.hero"
     h10_own10 = t21;
-#line 1371 "main.c"
+#line 1210 "main.c"
     hero_str_decref(t33);
 #line 90 "examples/ctime/main.hero"
     t22 = HERO_STR_LIT(hero_str_f48ca);
@@ -1377,61 +1216,50 @@ bb0:
     t34 = h11_own11;
 #line 90 "examples/ctime/main.hero"
     h11_own11 = t23;
-#line 1381 "main.c"
+#line 1220 "main.c"
     hero_str_decref(t34);
 #line 90 "examples/ctime/main.hero"
-#line 1384 "main.c"
+#line 1223 "main.c"
     hero_str_incref(t23);
 #line 90 "examples/ctime/main.hero"
-    t35 = h1_own1;
-#line 1388 "main.c"
-    hero_str_decref(t35);
+#line 1226 "main.c"
+    hero_str_decref(h1_own1);
 #line 90 "examples/ctime/main.hero"
-    t36 = h2_own2;
-#line 1392 "main.c"
-    hero_str_decref(t36);
+#line 1229 "main.c"
+    hero_str_decref(h2_own2);
 #line 90 "examples/ctime/main.hero"
-    t37 = h3_own3;
-#line 1396 "main.c"
-    hero_str_decref(t37);
+#line 1232 "main.c"
+    hero_str_decref(h3_own3);
 #line 90 "examples/ctime/main.hero"
-    t38 = h4_own4;
-#line 1400 "main.c"
-    hero_str_decref(t38);
+#line 1235 "main.c"
+    hero_str_decref(h4_own4);
 #line 90 "examples/ctime/main.hero"
-    t39 = h5_own5;
-#line 1404 "main.c"
-    hero_str_decref(t39);
+#line 1238 "main.c"
+    hero_str_decref(h5_own5);
 #line 90 "examples/ctime/main.hero"
-    t40 = h6_own6;
-#line 1408 "main.c"
-    hero_str_decref(t40);
+#line 1241 "main.c"
+    hero_str_decref(h6_own6);
 #line 90 "examples/ctime/main.hero"
-    t41 = h7_own7;
-#line 1412 "main.c"
-    hero_str_decref(t41);
+#line 1244 "main.c"
+    hero_str_decref(h7_own7);
 #line 90 "examples/ctime/main.hero"
-    t42 = h8_own8;
-#line 1416 "main.c"
-    hero_str_decref(t42);
+#line 1247 "main.c"
+    hero_str_decref(h8_own8);
 #line 90 "examples/ctime/main.hero"
-    t43 = h9_own9;
-#line 1420 "main.c"
-    hero_str_decref(t43);
+#line 1250 "main.c"
+    hero_str_decref(h9_own9);
 #line 90 "examples/ctime/main.hero"
-    t44 = h10_own10;
-#line 1424 "main.c"
-    hero_str_decref(t44);
+#line 1253 "main.c"
+    hero_str_decref(h10_own10);
 #line 90 "examples/ctime/main.hero"
-    t45 = h11_own11;
-#line 1428 "main.c"
-    hero_str_decref(t45);
+#line 1256 "main.c"
+    hero_str_decref(h11_own11);
     return t23;
 }
 
 #line 92 "examples/ctime/main.hero"
 HeroStr h_main_padded(int64_t h0_n) {
-#line 1435 "main.c"
+#line 1263 "main.c"
     HeroStr h1_r0 = {0};
     HeroStr h2_own2 = {0};
     HeroStr h3_own3 = {0};
@@ -1451,10 +1279,6 @@ HeroStr h_main_padded(int64_t h0_n) {
     HeroStr t13 = {0};
     HeroStr t14 = {0};
     HeroStr t15 = {0};
-    HeroStr t16 = {0};
-    HeroStr t17 = {0};
-    HeroStr t18 = {0};
-    HeroStr t19 = {0};
     goto bb0;
 bb0:
 #line 93 "examples/ctime/main.hero"
@@ -1469,24 +1293,20 @@ bb0:
 bb1:
 #line 93 "examples/ctime/main.hero"
     t10 = h1_r0;
-#line 1473 "main.c"
+#line 1297 "main.c"
     hero_str_incref(t10);
 #line 93 "examples/ctime/main.hero"
-    t16 = h1_r0;
-#line 1477 "main.c"
-    hero_str_decref(t16);
+#line 1300 "main.c"
+    hero_str_decref(h1_r0);
 #line 93 "examples/ctime/main.hero"
-    t17 = h2_own2;
-#line 1481 "main.c"
-    hero_str_decref(t17);
+#line 1303 "main.c"
+    hero_str_decref(h2_own2);
 #line 93 "examples/ctime/main.hero"
-    t18 = h3_own3;
-#line 1485 "main.c"
-    hero_str_decref(t18);
+#line 1306 "main.c"
+    hero_str_decref(h3_own3);
 #line 93 "examples/ctime/main.hero"
-    t19 = h4_own4;
-#line 1489 "main.c"
-    hero_str_decref(t19);
+#line 1309 "main.c"
+    hero_str_decref(h4_own4);
     return t10;
 bb2:
 #line 94 "examples/ctime/main.hero"
@@ -1499,7 +1319,7 @@ bb2:
     t11 = h2_own2;
 #line 94 "examples/ctime/main.hero"
     h2_own2 = t6;
-#line 1503 "main.c"
+#line 1323 "main.c"
     hero_str_decref(t11);
 #line 94 "examples/ctime/main.hero"
     t7 = hero_str_concat(t4, t6);
@@ -1507,15 +1327,15 @@ bb2:
     t12 = h3_own3;
 #line 94 "examples/ctime/main.hero"
     h3_own3 = t7;
-#line 1511 "main.c"
+#line 1331 "main.c"
     hero_str_decref(t12);
 #line 93 "examples/ctime/main.hero"
     t13 = h1_r0;
-#line 1515 "main.c"
+#line 1335 "main.c"
     hero_str_incref(t7);
 #line 93 "examples/ctime/main.hero"
     h1_r0 = t7;
-#line 1519 "main.c"
+#line 1339 "main.c"
     hero_str_decref(t13);
     goto bb1;
 bb3:
@@ -1527,22 +1347,22 @@ bb3:
     t14 = h4_own4;
 #line 96 "examples/ctime/main.hero"
     h4_own4 = t9;
-#line 1531 "main.c"
+#line 1351 "main.c"
     hero_str_decref(t14);
 #line 93 "examples/ctime/main.hero"
     t15 = h1_r0;
-#line 1535 "main.c"
+#line 1355 "main.c"
     hero_str_incref(t9);
 #line 93 "examples/ctime/main.hero"
     h1_r0 = t9;
-#line 1539 "main.c"
+#line 1359 "main.c"
     hero_str_decref(t15);
     goto bb1;
 }
 
 #line 98 "examples/ctime/main.hero"
 void h_main_main(void) {
-#line 1546 "main.c"
+#line 1366 "main.c"
     h_0opt_13b8cf25 h0_f0 = {0};
     struct tm h1_landing;
     h_0opt_13b8cf25 h2_f1 = {0};
@@ -1621,14 +1441,6 @@ void h_main_main(void) {
     HeroStr t66 = {0};
     h_0opt_13b8cf25 t67 = {0};
     h_0opt_13b8cf25 t68 = {0};
-    h_0opt_13b8cf25 t69 = {0};
-    h_0opt_13b8cf25 t70 = {0};
-    h_0opt_13b8cf25 t71 = {0};
-    h_0opt_13b8cf25 t72 = {0};
-    HeroStr t73 = {0};
-    h_0opt_13b8cf25 t74 = {0};
-    HeroStr t75 = {0};
-    h_0opt_13b8cf25 t76 = {0};
     goto bb0;
 bb0:
 #line 100 "examples/ctime/main.hero"
@@ -1645,15 +1457,15 @@ bb0:
     t61 = h5_own5;
 #line 100 "examples/ctime/main.hero"
     h5_own5 = t5;
-#line 1649 "main.c"
+#line 1461 "main.c"
     h_0opt_13b8cf25_release(&t61);
 #line 100 "examples/ctime/main.hero"
     t62 = h0_f0;
-#line 1653 "main.c"
+#line 1465 "main.c"
     h_0opt_13b8cf25_retain(&t5);
 #line 100 "examples/ctime/main.hero"
     h0_f0 = t5;
-#line 1657 "main.c"
+#line 1469 "main.c"
     h_0opt_13b8cf25_release(&t62);
 #line 100 "examples/ctime/main.hero"
     t6 = h0_f0;
@@ -1681,7 +1493,7 @@ bb1:
     t63 = h6_own6;
 #line 101 "examples/ctime/main.hero"
     h6_own6 = t15;
-#line 1685 "main.c"
+#line 1497 "main.c"
     hero_str_decref(t63);
 #line 101 "examples/ctime/main.hero"
     hero_print_str(t15);
@@ -1749,15 +1561,15 @@ bb1:
     t64 = h7_own7;
 #line 112 "examples/ctime/main.hero"
     h7_own7 = t32;
-#line 1753 "main.c"
+#line 1565 "main.c"
     h_0opt_13b8cf25_release(&t64);
 #line 112 "examples/ctime/main.hero"
     t65 = h2_f1;
-#line 1757 "main.c"
+#line 1569 "main.c"
     h_0opt_13b8cf25_retain(&t32);
 #line 112 "examples/ctime/main.hero"
     h2_f1 = t32;
-#line 1761 "main.c"
+#line 1573 "main.c"
     h_0opt_13b8cf25_release(&t65);
 #line 112 "examples/ctime/main.hero"
     t33 = h2_f1;
@@ -1775,7 +1587,7 @@ bb2:
     t10 = h0_f0;
 #line 100 "examples/ctime/main.hero"
     t11 = t10.as.err;
-#line 1779 "main.c"
+#line 1591 "main.c"
     hero_panic_must(t11);
     hero_unreachable();
 bb3:
@@ -1793,7 +1605,7 @@ bb3:
     t66 = h8_own8;
 #line 113 "examples/ctime/main.hero"
     h8_own8 = t42;
-#line 1797 "main.c"
+#line 1609 "main.c"
     hero_str_decref(t66);
 #line 113 "examples/ctime/main.hero"
     hero_print_str(t42);
@@ -1843,15 +1655,15 @@ bb3:
     t67 = h9_own9;
 #line 121 "examples/ctime/main.hero"
     h9_own9 = t56;
-#line 1847 "main.c"
+#line 1659 "main.c"
     h_0opt_13b8cf25_release(&t67);
 #line 121 "examples/ctime/main.hero"
     t68 = h4_f2;
-#line 1851 "main.c"
+#line 1663 "main.c"
     h_0opt_13b8cf25_retain(&t56);
 #line 121 "examples/ctime/main.hero"
     h4_f2 = t56;
-#line 1855 "main.c"
+#line 1667 "main.c"
     h_0opt_13b8cf25_release(&t68);
 #line 121 "examples/ctime/main.hero"
     t57 = h4_f2;
@@ -1865,45 +1677,36 @@ bb3:
     hero_print_bool(t60);
 #line 121 "examples/ctime/main.hero"
     hero_print_end();
+#line 1681 "main.c"
+    h_0opt_13b8cf25_release(&h0_f0);
 #line 121 "examples/ctime/main.hero"
-    t69 = h0_f0;
-#line 1871 "main.c"
-    h_0opt_13b8cf25_release(&t69);
+#line 1684 "main.c"
+    h_0opt_13b8cf25_release(&h2_f1);
 #line 121 "examples/ctime/main.hero"
-    t70 = h2_f1;
-#line 1875 "main.c"
-    h_0opt_13b8cf25_release(&t70);
+#line 1687 "main.c"
+    h_0opt_13b8cf25_release(&h4_f2);
 #line 121 "examples/ctime/main.hero"
-    t71 = h4_f2;
-#line 1879 "main.c"
-    h_0opt_13b8cf25_release(&t71);
+#line 1690 "main.c"
+    h_0opt_13b8cf25_release(&h5_own5);
 #line 121 "examples/ctime/main.hero"
-    t72 = h5_own5;
-#line 1883 "main.c"
-    h_0opt_13b8cf25_release(&t72);
+#line 1693 "main.c"
+    hero_str_decref(h6_own6);
 #line 121 "examples/ctime/main.hero"
-    t73 = h6_own6;
-#line 1887 "main.c"
-    hero_str_decref(t73);
+#line 1696 "main.c"
+    h_0opt_13b8cf25_release(&h7_own7);
 #line 121 "examples/ctime/main.hero"
-    t74 = h7_own7;
-#line 1891 "main.c"
-    h_0opt_13b8cf25_release(&t74);
+#line 1699 "main.c"
+    hero_str_decref(h8_own8);
 #line 121 "examples/ctime/main.hero"
-    t75 = h8_own8;
-#line 1895 "main.c"
-    hero_str_decref(t75);
-#line 121 "examples/ctime/main.hero"
-    t76 = h9_own9;
-#line 1899 "main.c"
-    h_0opt_13b8cf25_release(&t76);
+#line 1702 "main.c"
+    h_0opt_13b8cf25_release(&h9_own9);
     return;
 bb4:
 #line 112 "examples/ctime/main.hero"
     t37 = h2_f1;
 #line 112 "examples/ctime/main.hero"
     t38 = t37.as.err;
-#line 1907 "main.c"
+#line 1710 "main.c"
     hero_panic_must(t38);
     hero_unreachable();
 }

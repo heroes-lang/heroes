@@ -101,7 +101,6 @@ HeroArrayHeader * h_adversarialforevaluatesonce_numbers(void) {
     int64_t t4;
     HeroArrayHeader * t5 = {0};
     HeroArrayHeader * t6 = {0};
-    HeroArrayHeader * t7 = {0};
     goto bb0;
 bb0:
 #line 8 "tests/golden/ir/adversarial-for-evaluates-once.hero"
@@ -134,21 +133,20 @@ bb0:
     t6 = h0_own0;
 #line 9 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     h0_own0 = t5;
-#line 138 "adversarialforevaluatesonce.c"
+#line 137 "adversarialforevaluatesonce.c"
     hero_array_decref(t6);
 #line 9 "tests/golden/ir/adversarial-for-evaluates-once.hero"
-#line 141 "adversarialforevaluatesonce.c"
+#line 140 "adversarialforevaluatesonce.c"
     hero_array_incref(t5);
 #line 9 "tests/golden/ir/adversarial-for-evaluates-once.hero"
-    t7 = h0_own0;
-#line 145 "adversarialforevaluatesonce.c"
-    hero_array_decref(t7);
+#line 143 "adversarialforevaluatesonce.c"
+    hero_array_decref(h0_own0);
     return t5;
 }
 
 #line 11 "tests/golden/ir/adversarial-for-evaluates-once.hero"
 int64_t h_adversarialforevaluatesonce_total(void) {
-#line 152 "adversarialforevaluatesonce.c"
+#line 150 "adversarialforevaluatesonce.c"
     int64_t h0_sum;
     HeroArrayHeader * h1_xs0 = {0};
     int64_t h2_i0;
@@ -173,8 +171,6 @@ int64_t h_adversarialforevaluatesonce_total(void) {
     int64_t t17;
     HeroArrayHeader * t18 = {0};
     HeroArrayHeader * t19 = {0};
-    HeroArrayHeader * t20 = {0};
-    HeroArrayHeader * t21 = {0};
     goto bb0;
 bb0:
 #line 12 "tests/golden/ir/adversarial-for-evaluates-once.hero"
@@ -187,15 +183,15 @@ bb0:
     t18 = h4_own4;
 #line 14 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     h4_own4 = t2;
-#line 191 "adversarialforevaluatesonce.c"
+#line 187 "adversarialforevaluatesonce.c"
     hero_array_decref(t18);
 #line 14 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     t19 = h1_xs0;
-#line 195 "adversarialforevaluatesonce.c"
+#line 191 "adversarialforevaluatesonce.c"
     hero_array_incref(t2);
 #line 14 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     h1_xs0 = t2;
-#line 199 "adversarialforevaluatesonce.c"
+#line 195 "adversarialforevaluatesonce.c"
     hero_array_decref(t19);
 #line 14 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     t3 = INT64_C(0);
@@ -251,14 +247,11 @@ bb3:
 bb4:
 #line 17 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     t17 = h0_sum;
+#line 251 "adversarialforevaluatesonce.c"
+    hero_array_decref(h1_xs0);
 #line 17 "tests/golden/ir/adversarial-for-evaluates-once.hero"
-    t20 = h1_xs0;
-#line 257 "adversarialforevaluatesonce.c"
-    hero_array_decref(t20);
-#line 17 "tests/golden/ir/adversarial-for-evaluates-once.hero"
-    t21 = h4_own4;
-#line 261 "adversarialforevaluatesonce.c"
-    hero_array_decref(t21);
+#line 254 "adversarialforevaluatesonce.c"
+    hero_array_decref(h4_own4);
     return t17;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

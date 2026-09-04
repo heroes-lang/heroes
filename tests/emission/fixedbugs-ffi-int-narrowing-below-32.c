@@ -136,10 +136,6 @@ void h_ffiintnarrowingbelow32_main(void) {
     h_0opt_e1ec52d t24 = {0};
     h_0opt_e1ec52d t25 = {0};
     h_0opt_e1ec52d t26 = {0};
-    h_0opt_e1ec52d t27 = {0};
-    h_0opt_e1ec52d t28 = {0};
-    h_0opt_e1ec52d t29 = {0};
-    h_0opt_e1ec52d t30 = {0};
     goto bb0;
 bb0:
 #line 31 "tests/golden/fixedbugs/ffi-int-narrowing-below-32.hero"
@@ -160,15 +156,15 @@ bb0:
     t23 = h2_own2;
 #line 31 "tests/golden/fixedbugs/ffi-int-narrowing-below-32.hero"
     h2_own2 = t3;
-#line 164 "ffiintnarrowingbelow32.c"
+#line 160 "ffiintnarrowingbelow32.c"
     h_0opt_e1ec52d_release(&t23);
 #line 31 "tests/golden/fixedbugs/ffi-int-narrowing-below-32.hero"
     t24 = h0_f0;
-#line 168 "ffiintnarrowingbelow32.c"
+#line 164 "ffiintnarrowingbelow32.c"
     h_0opt_e1ec52d_retain(&t3);
 #line 31 "tests/golden/fixedbugs/ffi-int-narrowing-below-32.hero"
     h0_f0 = t3;
-#line 172 "ffiintnarrowingbelow32.c"
+#line 168 "ffiintnarrowingbelow32.c"
     h_0opt_e1ec52d_release(&t24);
 #line 31 "tests/golden/fixedbugs/ffi-int-narrowing-below-32.hero"
     t4 = h0_f0;
@@ -202,15 +198,15 @@ bb1:
     t25 = h3_own3;
 #line 31 "tests/golden/fixedbugs/ffi-int-narrowing-below-32.hero"
     h3_own3 = t13;
-#line 206 "ffiintnarrowingbelow32.c"
+#line 202 "ffiintnarrowingbelow32.c"
     h_0opt_e1ec52d_release(&t25);
 #line 31 "tests/golden/fixedbugs/ffi-int-narrowing-below-32.hero"
     t26 = h1_f1;
-#line 210 "ffiintnarrowingbelow32.c"
+#line 206 "ffiintnarrowingbelow32.c"
     h_0opt_e1ec52d_retain(&t13);
 #line 31 "tests/golden/fixedbugs/ffi-int-narrowing-below-32.hero"
     h1_f1 = t13;
-#line 214 "ffiintnarrowingbelow32.c"
+#line 210 "ffiintnarrowingbelow32.c"
     h_0opt_e1ec52d_release(&t26);
 #line 31 "tests/golden/fixedbugs/ffi-int-narrowing-below-32.hero"
     t14 = h1_f1;
@@ -228,7 +224,7 @@ bb2:
     t8 = h0_f0;
 #line 31 "tests/golden/fixedbugs/ffi-int-narrowing-below-32.hero"
     t9 = t8.as.err;
-#line 232 "ffiintnarrowingbelow32.c"
+#line 228 "ffiintnarrowingbelow32.c"
     hero_panic_must(t9);
     hero_unreachable();
 bb3:
@@ -238,29 +234,24 @@ bb3:
     t21 = t20.as.ok;
 #line 31 "tests/golden/fixedbugs/ffi-int-narrowing-below-32.hero"
     (void)init_pair(t1, t11, t21);
+#line 238 "ffiintnarrowingbelow32.c"
+    h_0opt_e1ec52d_release(&h0_f0);
 #line 31 "tests/golden/fixedbugs/ffi-int-narrowing-below-32.hero"
-    t27 = h0_f0;
+#line 241 "ffiintnarrowingbelow32.c"
+    h_0opt_e1ec52d_release(&h1_f1);
+#line 31 "tests/golden/fixedbugs/ffi-int-narrowing-below-32.hero"
 #line 244 "ffiintnarrowingbelow32.c"
-    h_0opt_e1ec52d_release(&t27);
+    h_0opt_e1ec52d_release(&h2_own2);
 #line 31 "tests/golden/fixedbugs/ffi-int-narrowing-below-32.hero"
-    t28 = h1_f1;
-#line 248 "ffiintnarrowingbelow32.c"
-    h_0opt_e1ec52d_release(&t28);
-#line 31 "tests/golden/fixedbugs/ffi-int-narrowing-below-32.hero"
-    t29 = h2_own2;
-#line 252 "ffiintnarrowingbelow32.c"
-    h_0opt_e1ec52d_release(&t29);
-#line 31 "tests/golden/fixedbugs/ffi-int-narrowing-below-32.hero"
-    t30 = h3_own3;
-#line 256 "ffiintnarrowingbelow32.c"
-    h_0opt_e1ec52d_release(&t30);
+#line 247 "ffiintnarrowingbelow32.c"
+    h_0opt_e1ec52d_release(&h3_own3);
     return;
 bb4:
 #line 31 "tests/golden/fixedbugs/ffi-int-narrowing-below-32.hero"
     t18 = h1_f1;
 #line 31 "tests/golden/fixedbugs/ffi-int-narrowing-below-32.hero"
     t19 = t18.as.err;
-#line 264 "ffiintnarrowingbelow32.c"
+#line 255 "ffiintnarrowingbelow32.c"
     hero_panic_must(t19);
     hero_unreachable();
 }

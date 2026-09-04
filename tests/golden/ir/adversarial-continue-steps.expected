@@ -36,8 +36,7 @@ function evens_in(xs: [i64]) -> i64
         jump bb1
     bb4  for: exit    preds bb1
         $t22: i64 = load count
-        $t24: [i64] = load $xs0
-        decref $t24
+        decref_slot $xs0
         return $t22
     bb5  if: join    preds bb7
         $t16: i64 = load count

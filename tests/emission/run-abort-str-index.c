@@ -102,18 +102,17 @@ void h_abortstrindex_main(void) {
     int64_t t6;
     uint8_t t7;
     HeroStr t8 = {0};
-    HeroStr t9 = {0};
     goto bb0;
 bb0:
 #line 8 "tests/golden/run/abort-str-index.hero"
     t1 = HERO_STR_LIT(hero_str_1998f2);
 #line 8 "tests/golden/run/abort-str-index.hero"
     t8 = h0_s;
-#line 113 "abortstrindex.c"
+#line 112 "abortstrindex.c"
     hero_str_incref(t1);
 #line 8 "tests/golden/run/abort-str-index.hero"
     h0_s = t1;
-#line 117 "abortstrindex.c"
+#line 116 "abortstrindex.c"
     hero_str_decref(t8);
 #line 9 "tests/golden/run/abort-str-index.hero"
     t2 = h0_s;
@@ -135,10 +134,8 @@ bb0:
     hero_print_int(t7);
 #line 10 "tests/golden/run/abort-str-index.hero"
     hero_print_end();
-#line 10 "tests/golden/run/abort-str-index.hero"
-    t9 = h0_s;
-#line 141 "abortstrindex.c"
-    hero_str_decref(t9);
+#line 138 "abortstrindex.c"
+    hero_str_decref(h0_s);
     return;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

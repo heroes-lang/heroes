@@ -127,9 +127,6 @@ void h_ffif32againstafloatheaderiscorrect_main(void) {
     h_0opt_e201354 t15 = {0};
     h_0opt_e201354 t16 = {0};
     HeroStr t17 = {0};
-    h_0opt_e201354 t18 = {0};
-    h_0opt_e201354 t19 = {0};
-    HeroStr t20 = {0};
     goto bb0;
 bb0:
 #line 46 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
@@ -156,15 +153,15 @@ bb0:
     t15 = h2_own2;
 #line 47 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
     h2_own2 = t5;
-#line 160 "ffif32againstafloatheaderiscorrect.c"
+#line 157 "ffif32againstafloatheaderiscorrect.c"
     h_0opt_e201354_release(&t15);
 #line 47 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
     t16 = h1_f0;
-#line 164 "ffif32againstafloatheaderiscorrect.c"
+#line 161 "ffif32againstafloatheaderiscorrect.c"
     h_0opt_e201354_retain(&t5);
 #line 47 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
     h1_f0 = t5;
-#line 168 "ffif32againstafloatheaderiscorrect.c"
+#line 165 "ffif32againstafloatheaderiscorrect.c"
     h_0opt_e201354_release(&t16);
 #line 47 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
     t6 = h1_f0;
@@ -188,31 +185,27 @@ bb1:
     t17 = h3_own3;
 #line 47 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
     h3_own3 = t14;
-#line 192 "ffif32againstafloatheaderiscorrect.c"
+#line 189 "ffif32againstafloatheaderiscorrect.c"
     hero_str_decref(t17);
 #line 47 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
     hero_print_str(t14);
 #line 47 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
     hero_print_end();
+#line 195 "ffif32againstafloatheaderiscorrect.c"
+    h_0opt_e201354_release(&h1_f0);
 #line 47 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
-    t18 = h1_f0;
-#line 200 "ffif32againstafloatheaderiscorrect.c"
-    h_0opt_e201354_release(&t18);
+#line 198 "ffif32againstafloatheaderiscorrect.c"
+    h_0opt_e201354_release(&h2_own2);
 #line 47 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
-    t19 = h2_own2;
-#line 204 "ffif32againstafloatheaderiscorrect.c"
-    h_0opt_e201354_release(&t19);
-#line 47 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
-    t20 = h3_own3;
-#line 208 "ffif32againstafloatheaderiscorrect.c"
-    hero_str_decref(t20);
+#line 201 "ffif32againstafloatheaderiscorrect.c"
+    hero_str_decref(h3_own3);
     return;
 bb2:
 #line 47 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
     t10 = h1_f0;
 #line 47 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
     t11 = t10.as.err;
-#line 216 "ffif32againstafloatheaderiscorrect.c"
+#line 209 "ffif32againstafloatheaderiscorrect.c"
     hero_panic_must(t11);
     hero_unreachable();
 }
