@@ -134,11 +134,22 @@ constant QUOTES_THE_OLD_SPELLING: [str]
 # been reported as a §14 breach — the check firing loudly about the wrong
 # thing, which is worse than not firing.
 
-# The one name deliberately written without being a milestone: the
-# runner-up § The names records as refused, so the reasoning survives the
-# decision.
+# The names deliberately written without being milestones: a runner-up
+# § The names records as refused, so the reasoning survives the decision.
+#
+# **`M-foreign-ownership` joined it 2026-09-04**, and it joined by making this
+# check fire. Panel 109's `owned` mark took the id `M-declared-freer`, and both
+# the ROADMAP row and the `SCHEDULED.md` item say **why it is not the obvious
+# name**: the `ptr owned` half is refused under a standing veto with measured
+# return conditions, so an id that annexed the whole ownership area would make a
+# claim a later milestone could falsify (CLAUDE.md §14). Writing that reasoning
+# down is what this list is for — a refused name is written *once*, in the
+# sentence that refuses it, and nowhere else.
 constant REFUSED: [str]
-    ["M-language"]
+    [
+        "M-language"
+        "M-foreign-ownership"
+    ]
 
 # Measured 2026-08-25: 40 rows in the ROADMAP's alias table (39 until
 # M-package-layout was scheduled — author decision 2026-08-25, `/decide`).
@@ -195,8 +206,22 @@ constant REFUSED: [str]
 # `SCHEDULED.md` with no row here, which is this check's whole job. It went red
 # twice in one minute, once for the missing row and once for this number, and
 # both are the instrument working rather than failing.
+#
+# **56 → 59 on 2026-09-04**, by author instruction — *"fix SCHEDULED too, so that
+# every item is attached to a roadmap step that is still to be done; if you cannot
+# find one, create it"* — and the three ids are what the instruction cost:
+# `M-declared-freer` (panel 109's `owned` mark, whose item was scheduled at
+# `M-ffi-ladder`, closed 2026-08-12), `M-thread-stacks` (panel 107's per-thread
+# guard and the Windows stack flag, whose two items named no milestone at all) and
+# `M-check-completeness` (the two items parked on a `grep` since 2026-08-16).
+# **The shape this count exists to catch is the one that produced all three**: an
+# item may name a home that is closed, or no home at all, and read as scheduled
+# either way — twelve of twenty-nine did. A fourth row entered the chain in the
+# same commit and is NOT in this number, because `M-discard-refusal` already had
+# its alias row and was missing only the chain row, which is the order §14 asks
+# for and the direction this check reads.
 constant ROWS: i64
-    56
+    59
 
 # The two documents whose citations are checked. They are the two a reader is sent
 # to for a rule, and the only two this project rewrites rather than appends to.
@@ -454,6 +479,7 @@ function run_all(scratch: str) -> report.Report?
     boundary(@r)
     verdicts(@r, present: walked)
     where_we_are(@r)
+    homed(@r)
     return ok(r)
 
 # Whether this path is one of the dated records — the pruning `find` used to do
@@ -1123,6 +1149,11 @@ function sitting_number(path: str) -> i64?
 constant DECISIONS: str
     "docs/work/DECIDE.md"
 
+# The list of work that already has a milestone. Read by `homed` below, which is
+# the executor of that file's own preamble rule.
+constant SCHEDULED: str
+    "docs/work/SCHEDULED.md"
+
 # Does an OPEN item in the queue name this sitting? The number is the key, because
 # a panel file's name changes and its number does not (CLAUDE.md §14: an id is
 # never renamed once it is in the record).
@@ -1268,6 +1299,170 @@ function where_we_are(@r: report.Report)
         )
     else
         report.keep_pass(@r)
+
+# **Every open item in `docs/work/SCHEDULED.md` names a milestone that has a row
+# in `docs/ROADMAP.md` § The chain and is NOT closed** (author instruction
+# 2026-09-04; the rule is in that list's own preamble, this is what performs it).
+#
+# **It arrived with twelve items of twenty-nine already breaking it.** Nine named
+# a waiting condition instead of a milestone — *"the next panel that touches
+# emission"*, *"trigger, not a milestone"*, *"the milestone that makes the stack
+# guard per-thread"* — and three named a milestone that had CLOSED, one of them
+# filed the day before at an id closed 2026-08-12. **A closed home and no home
+# read identically in that list**: the item looks scheduled either way. Neither is
+# reachable by `/step`, which finds an item by grepping the milestone's name, so
+# nine of them were invisible to the one command obliged to open them.
+#
+# CLAUDE.md §3 tells this story twice already — `DECIDE.md` grew to 391 KB under
+# a rule three documents stated and no skill performed. A rule in a preamble is a
+# wish; a rule an instrument reads is a rule.
+#
+# **The first field only.** Everything after the first `|` is prose and may name
+# any milestone it likes, closed ones included — that is how an item records the
+# home it used to have, which is what several of them now do.
+function homed(@r: report.Report)
+    chain = read_file("docs/ROADMAP.md")
+    list = read_file(SCHEDULED)
+
+    if chain.is_err() || list.is_err()
+        report.keep_failure(
+            @r,
+            label: "records/homes",
+            detail: "  docs/ROADMAP.md or " + SCHEDULED + " cannot be read"
+        )
+        return
+    is_open: {str: bool} @ {}
+
+    for row in strings.lines(chain.must())
+        found = chain_row_name(row)
+
+        if !found.is_err()
+            is_open[found.must()] @ !strings.contains(text: row, needle: "| done ")
+
+    offenders: [str] @ []
+
+    for row in strings.lines(list.must())
+        if strings.starts_with(text: row, prefix: "- [ ] ")
+            home = item_milestone(row)
+
+            if home.is_err()
+                offenders @ offenders.push("    names no milestone: " + head_of(row))
+            else
+                state = is_open[home.must()]
+
+                if state.is_err()
+                    offenders @ offenders.push("    " + home.must() + ": no row in § The chain")
+                else if !state.must()
+                    offenders @ offenders.push("    " + home.must() + ": that milestone is CLOSED")
+
+    if offenders.len() > 0
+        report.keep_failure(
+            @r,
+            label: "records/homes",
+            detail: "  an item scheduled at nothing a reader can open — the first field is a milestone with an open row (" + SCHEDULED + ", its preamble):\n" + offenders.join("\n")
+        )
+    else
+        report.keep_pass(@r)
+
+# `| 35 | **M-declared-freer** | scheduled | …` — the milestone of a CHAIN row.
+#
+# **The first cell must be a row number**, and that is not pedantry: § Where we
+# are opens with `| **Current milestone** | **M-isolated-threads** …` and
+# `| **Last closed** | **M-corpus-depth**, 2026-09-04 …`, and neither carries a
+# `done` cell — so a looser reader would have learned that the milestone which
+# closed this morning is open, and this check would have passed the very item it
+# was written for.
+function chain_row_name(row: str) -> str?
+    if !strings.starts_with(text: row, prefix: "| ")
+        return fail("shape", "not a table row")
+    rest = strings.without_prefix(text: row, prefix: "| ")
+    bar = strings.index_of(text: rest, needle: " | ")
+
+    if bar.is_err()
+        return fail("shape", "a row of one cell")
+
+    if !all_digits(rest.slice(from: 0, to: bar.must()))
+        return fail("shape", "the first cell is not a row number")
+    after = strings.without_prefix(
+        text: rest.slice(from: bar.must(), to: rest.len()),
+        prefix: " | "
+    )
+
+    if !strings.starts_with(text: after, prefix: "**M-")
+        return fail("shape", "the second cell is not a milestone")
+    name = strings.without_prefix(text: after, prefix: "**")
+    end = strings.index_of(text: name, needle: "**")
+
+    if end.is_err()
+        return fail("shape", "the name is not closed")
+    return ok(name.slice(from: 0, to: end.must()))
+
+# `- [ ] **M-guide-book** | …` — the milestone an OPEN item is scheduled at.
+# A ticked item is not read at all: it belongs to `docs/work/DONE.md`, and the
+# record is allowed to name a milestone that has since closed.
+function item_milestone(row: str) -> str?
+    if !strings.starts_with(text: row, prefix: "- [ ] **M-")
+        return fail("shape", "the first field is not a milestone")
+    rest = strings.without_prefix(text: row, prefix: "- [ ] **")
+    end = strings.index_of(text: rest, needle: "**")
+
+    if end.is_err()
+        return fail("shape", "the name is not closed")
+    return ok(rest.slice(from: 0, to: end.must()))
+
+function all_digits(text: str) -> bool
+    if text.len() == 0
+        return false
+    i: i64 @ 0
+
+    while i < text.len()
+        if !is_digit(text[i])
+            return false
+        i @ i + 1
+
+    return true
+
+# Enough of an offending line to recognise it without printing the item, which
+# runs to several thousand characters.
+function head_of(row: str) -> str
+    if row.len() <= 78
+        return row
+    return row.slice(from: 0, to: 78) + " …"
+
+test "a chain row gives up its milestone, and the summary rows do not"
+    row = "| 35 | **M-declared-freer** | scheduled | — | — | the freer by name |"
+    assert chain_row_name(row).must() == "M-declared-freer"
+    assert chain_row_name("| 33 | **M-corpus-depth** | done 2026-09-04 | x | y | z |").must() == "M-corpus-depth"
+
+    # The two § Where we are rows, which is the case that makes the row-number
+    # test load-bearing: neither says `done`, and one of them names a milestone
+    # that closed.
+    assert chain_row_name("| **Last closed** | **M-corpus-depth**, 2026-09-04 |").is_err()
+    assert chain_row_name("| **Current milestone** | **M-isolated-threads** — OPEN |").is_err()
+
+    # The alias table, whose rows open with a backtick rather than two stars.
+    assert chain_row_name("| `M-day-zero` | M0 | `m0` | git, the workspace |").is_err()
+    assert chain_row_name("prose about M-guide-book").is_err()
+
+test "an item's home is its first field, and the prose after the bar is not"
+    item = "- [ ] **M-guide-book** | **M-guide-book** (author decision) | the tasks |"
+    assert item_milestone(item).must() == "M-guide-book"
+    assert item_milestone("- [ ] **M-core-packages** step 0 — three repairs |").must() == "M-core-packages"
+
+    # The nine shapes this check was written for.
+    assert item_milestone("- [ ] **The next panel that touches emission** — it rides a sitting |").is_err()
+    assert item_milestone("- [ ] **Trigger, not a milestone: the day `grep` returns a generic** |").is_err()
+
+    # A ticked item belongs to the record and is not read here.
+    assert item_milestone("- [x] **M-corpus-depth** | closed |").is_err()
+
+test "a row number is digits and nothing else"
+    assert all_digits("35")
+    assert all_digits("7")
+    assert !all_digits("")
+    assert !all_digits("3a")
+    assert !all_digits(" 35")
+    assert !all_digits("**Last closed**")
 
 function boundary(@r: report.Report)
     caught: [str] @ ["scheduled for M8c", "at M5b the increfs", "M0 was day zero", "(M6+)"]
