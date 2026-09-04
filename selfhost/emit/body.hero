@@ -138,11 +138,17 @@ function prologue(@w: writer.Writer, c: state.Checked, names: ctype.Names, f: co
             if layout.is_refcounted(c, slot.ty)
                 initialiser @ " = {0}"
 
-            # A binding the author discarded is told to C that it was on
-            # purpose: `_ = v` is the only way to reach a written-never-
-            # read slot, so the attribute says the silence is deliberate.
-            # A refcounted slot never gets it, and that FALLS OUT: the
-            # exit sweep loads it to decref, so it is read.
+            # A slot that is written and never read is told to C that the
+            # silence is deliberate. **This comment said `_ = v` was the
+            # only way to reach such a slot, and the premise was false**
+            # (panel 108, 2026-09-04): a cell passed as an `@` argument and
+            # never read afterwards reaches it too — `error: ptr @ nullptr`
+            # handed to `sqlite3_exec` — because the resolver counts the
+            # copy-in as a read and accepts the program. The attribute is
+            # harmless there and buys nothing, measured: with the slot's
+            # address taken, clang warns about neither form. A refcounted
+            # slot never gets it, and that FALLS OUT: the exit sweep
+            # decrefs it (`decref_slot`, panel 106), so it is read.
             deliberate: str @ ""
 
             if !unread.slot_is_read(f, live, read: read, slot: index)
