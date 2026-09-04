@@ -5,7 +5,8 @@ Date: 2026-09-04 · **full panel, five judges** · convened by author instructio
 panel 108 queued the same day: the ownership fact at the C boundary that no
 unread-cell rule can see.
 
-Status: **provisional — author ratification pending.**
+Status: **RATIFIED 2026-09-04** (author instruction, *"I ratify"*). See
+§ Author's verdict.
 
 Lane: **full**, and every seat earned its place. The two that do not compile
 found the two facts the resolution rests on: the ergonomist that **the correct
@@ -320,7 +321,42 @@ sitting is **FALSE** — the floor is +49.
 
 ## Author's verdict
 
-Pending.
+**RATIFIED 2026-09-04** (author instruction, *"I ratify"*, the third
+ratification of the day and the first that is not a refusal).
+
+**What the yes settles is a form entering the language**, which panels 107 and
+108 did not do: both of those refused, and their value was the falsifier they
+named. This one adds `owned <C function>` to the FFI, and the burden Principle 0
+puts on an addition is discharged not by elegance but by a measurement three
+seats reached independently — **the correct program cannot be written today**.
+A caller-owned C string is freeable or readable and never both, so §1.11's
+founding constraint (everything comes from C) had a hole in it that no program
+could route around, and `fa01ab20`'s `nullptr` was not the cheap repair but the
+only legal one.
+
+**What it authorises, in the order the work must happen**: the two splits first
+(`ir/lower.hero` at 1511 of 1511 and `parse/decl.hero` at 638 of 638, along
+seams that name a concern, `DECIDED` rows lowered and not raised), then the mark
+with all eight conditions, then `examples/ledger/db/sqlite.hero` returning to
+`@error: cstr owned sqlite3_free` with the Linux `--sanitize` leg green on it.
+None of the eight is negotiable at implementation time: each is a seat's
+condition, and the one that four seats wrote independently — **your own call of
+the declared freer on an owned value is a compile error** — is the one that
+turns a silent double release at exit 0 into a diagnostic.
+
+**What the yes does NOT settle**: the `ptr owned` half stays refused under a
+standing veto. The author's ratification does not overturn a seat's veto and is
+not being asked to: the half returns through its own conditions, measured, and
+`examples/ledger/main.hero`'s five leaking error paths are the program those
+conditions point at. The third case — C keeping a lent buffer — stays queued
+with its C-side spelling working today.
+
+**And the record keeps the day's shape.** Three sittings, three ratifications:
+107 refused a number that cannot be uniform, 108 refused a rule that cannot see
+what it was convened for, and 109 admits a form because a program was
+unwritable. The first two were convened by `/decide` items whose recommendations
+the sittings overturned; this one was convened by the author on a question a
+sitting had queued, and it is the one that changes the language.
 
 ## What the lane gave up
 
