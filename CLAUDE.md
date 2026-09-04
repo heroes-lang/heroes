@@ -805,6 +805,38 @@ It is in `/step`'s § 2 as well now. **The third suite is the one that goes red
 when an instrument's pinned number stops matching what the instrument reads** —
 the other two test the language; this one tests the tests.
 
+**THE SUITE YOU DID NOT EXPECT TO MOVE IS THE ONE WORTH RUNNING, AND THE MOMENT
+TO RUN IT IS AFTER THE LAST EDIT RATHER THAN AFTER THE LAST INTERESTING EDIT**
+(author instruction 2026-09-04). The paragraph above says which suite went red
+and left the lesson *run the third suite*, and that lesson is too small: it
+names the suite that was missed last time. On 2026-09-04 two sessions worked
+this tree at once and **both missed a different one, in the same afternoon, for
+the same reason** — each ran what it expected its own change to touch.
+- One rewrote prose across fifteen files and ran the third suite plus `records`,
+  `layout`, `lines` and `units`. It did not run `canonical`, on the reasoning
+  that prose cannot break a formatter. `tests/harness/suite_records.hero` had
+  one blank line the formatter removes, and **the net was red for everybody**:
+  design.md §4.15's whole argument is that a textual difference is semantic, so
+  a non-canonical file *inside the harness* means the instrument for that rule
+  is not held to it.
+- The other landed a large repair and ran the whole net, which is what found
+  that failure — and its own `tests/harness/suite_layout.hero` pin, `DECIDED`
+  grown to 17 entries with the assert still reading 16. **An addition is the
+  direction that assert notices least loudly**: a removal takes the table below
+  the number and a raise leaves it alone.
+- And an edit *after* a green run is the same fault wearing a clock. `records`
+  was green fifteen minutes before an item left `docs/work/DECIDE.md`, and the
+  recap was already written. The move made `records/verdicts` red, correctly:
+  `docs/panel/106-the-frame-is-the-sweeps-own-temporaries.md` still said its
+  ratification was queued, and nothing named it any more.
+
+The rule is therefore not a list of suites. **A ticked item is a question, not a
+task** — the third bullet is what the check caught: `DECIDE.md` reaching zero
+open items reads as tidiness and was the symptom, because the item was the
+author's ratification standing in for the author, and the work being built is
+not the work being ratified. And *"my change cannot have touched that"* is an
+inference (§1), so it is either run or it is written down as a guess.
+
 **And the three platforms are measured from this Mac, BEFORE the commit**
 (author instruction 2026-09-03, after the program that is now `examples/ctime/`
 — it was called filestat until that day, and the directory of that name is
