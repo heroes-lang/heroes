@@ -125,5 +125,9 @@ files by `data-src` and `data-lines`, which is why they are not renumbered.
 What no suite asserts today: that a gallery file **builds** in the three
 configurations. `00-first.hero` is built by several surface rows and
 `09-holes.hero` is built to exit 1 on purpose; the other ten are checked and
-formatted and never lowered. That is filed with the milestone that widens this
-directory next (`docs/work/SCHEDULED.md`, M-corpus-depth).
+formatted and never lowered. That is filed at **M-publication-gate**
+(`docs/work/SCHEDULED.md`), where the site's claims about itself are made into
+instruments — 148 of the site's 160 code slices come out of this directory,
+measured 2026-09-04. **It said M-corpus-depth until then**, and that milestone
+closed 2026-09-04 with this half unbuilt, which is the kind of citation that goes
+on reading as scheduled while pointing at finished work.
