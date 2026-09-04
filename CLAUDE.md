@@ -200,10 +200,10 @@ appended when given.
 
 **AND THE RESOLUTION IT ADOPTS IS THE MOST ROBUST AND COMPLETE ONE, NEVER THE
 CHEAPEST AND NEVER A COMPROMISE** (author instruction 2026-09-03, given
-mid-sitting at panel 106: *"panel usa sempre soluzione più robusta e sicura mai
-più economica e di compromesso"*; it is the same instruction as the `/decide`
-one of the same day — *"scegli le soluzioni più robuste e complete rispetto a
-quelle più economiche"* — applied to the panel). **This line used to read *the
+mid-sitting at panel 106: *"the panel always takes the most robust and safest
+resolution, never the cheapest and never a compromise"*; it is the same
+instruction as the `/decide` one of the same day — *"choose the most robust and
+complete solutions over the cheaper ones"* — applied to the panel). **This line used to read *the
 most conservative resolution*, and the two are not the same thing.** Panel 106 is
 where the difference showed: both seats vetoed the proposal, so the conservative
 resolution was *do nothing* and the ceilings would have stayed where they were —

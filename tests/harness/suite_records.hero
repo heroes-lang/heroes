@@ -319,6 +319,98 @@ constant APPENDED: [str]
         "docs/work/DONE.md"
     ]
 
+# **The same words again, and many more of them, for use INSIDE A QUOTATION
+# ONLY.** The list above is what a line of mixed English prose can be scanned
+# with; this is what a span already known to be a quotation can be scanned with,
+# and the difference is the whole reason there are two.
+#
+# **The line rule alone caught 10 of 42.** Measured 2026-09-04 by replaying the
+# 42 Italian spans this repository actually held, out of `d7c2661b`, against the
+# check as first written: it found the Italian *pages*, whose paragraphs are
+# Italian end to end, and it walked straight past the shape this repository is
+# full of — six Italian words quoted inside an English sentence. `*"convoca il
+# panel e finisci"*` is five words on a line of thirty, and no per-line density
+# will ever see it. The span rule reads the quotation on its own terms and
+# catches **41 of the 42**.
+#
+# **Why the extra words cannot be used on a line.** `i`, `e`, `di` and `per` are
+# what make a five-word quotation legible, and they are also what a `.hero`
+# signature is made of: with this list on the line rule,
+# `function step(@m: Machine, opcode: i64, a: i64, b: i64) -> i64?` reads as
+# Italian, and so do 46 other lines of real code and comments — measured, the
+# same session. Inside `*"…"*` there is no code to trip over, so the same words
+# stop being noise and become evidence.
+constant QUOTED_MARKERS: [str]
+    [
+        "il"
+        "la"
+        "le"
+        "lo"
+        "gli"
+        "i"
+        "un"
+        "una"
+        "uno"
+        "del"
+        "della"
+        "delle"
+        "dei"
+        "degli"
+        "nel"
+        "nella"
+        "nello"
+        "sul"
+        "sulla"
+        "alla"
+        "allo"
+        "agli"
+        "con"
+        "che"
+        "non"
+        "mi"
+        "ti"
+        "ci"
+        "si"
+        "se"
+        "ma"
+        "poi"
+        "sempre"
+        "mai"
+        "anche"
+        "senza"
+        "tutto"
+        "tutti"
+        "tutte"
+        "voglio"
+        "fai"
+        "fare"
+        "cosa"
+        "quando"
+        "dove"
+        "solo"
+        "sono"
+        "essere"
+        "questo"
+        "questa"
+        "quello"
+        "quella"
+        "chi"
+        "sia"
+        "perch"
+        "quindi"
+        "niente"
+        "nulla"
+        "molto"
+        "ogni"
+        "adesso"
+        "qualcosa"
+        "piu"
+        "per"
+        "di"
+        "e"
+    ]
+
+
 # **The one file that must hold Italian in order to refuse it: this one.** Its
 # test quotes the sentences the check has to catch, and a check that cannot
 # state its own witnesses is a check nobody can read or trust. It is the same
@@ -639,6 +731,10 @@ function english(@r: report.Report, present: [str])
         for line in strings.lines(text.must())
             if italian_line(line)
                 found @ found.push("    " + path + ": " + strings.trimmed(line))
+
+        for span in quoted_spans(text.must())
+            if italian_quote(span)
+                found @ found.push("    " + path + ", quoted: " + strings.trimmed(span))
 
     if found.len() > 0
         report.keep_failure(
@@ -1376,6 +1472,34 @@ test "an Italian line is caught, and the English ones around it are not"
     assert same_folded(word: "Non", marker: "non")
     assert !same_folded(word: "none", marker: "non")
 
+# The quotation rule, on the five shapes the LINE rule could not see: a short
+# instruction inside an English sentence. Every one of these was a real span in
+# this repository on 2026-09-04, and the line rule missed all five.
+test "a short Italian quotation is caught where a per-line count cannot see it"
+    assert italian_quote("convoca il panel e finisci")
+    assert italian_quote("supera la regola per heroes")
+    assert italian_quote("un artefatto di interfaccia")
+    assert italian_quote("panel usa sempre soluzione piu robusta e sicura mai piu economica")
+    assert italian_quote("usa questa immagine duotonata nella pagina autore")
+    assert italian_quote("NO AI SLOP via tutti i")
+
+    # The floor, asserted so that it is a known bound and not a surprise: three
+    # words carrying one function word cannot be told from English by counting.
+    assert !italian_quote("continua senza chiedermelo")
+
+    # The English quotations this contract and the site rulebook actually carry.
+    # Every one of them is a span the check reads on every run.
+    assert !italian_quote("this is huge")
+    assert !italian_quote("it took 0.94 of the time")
+    assert !italian_quote("any textual difference between two versions is SEMANTIC")
+    assert !italian_quote("the copy that used to stand here is deleted rather than corrected a third time")
+    assert !italian_quote("a suite that had never been run")
+    assert !italian_quote("every commit subject cites that path")
+
+    assert quoted_spans("a *\"one two three\"* b").len() == 1
+    assert quoted_spans("*\"first\"* and *\"second\"*").len() == 2
+    assert quoted_spans("an unterminated *\"span").len() == 0
+
 # **Four markers AND a quarter of the line.** Both, because a long English line
 # reaches four markers on its own and a short one reaches a quarter on `una`
 # alone. Six words before the line is looked at at all, so a heading, a table
@@ -1385,6 +1509,67 @@ test "an Italian line is caught, and the English ones around it are not"
 # `.astro` and `.txt` file outside the records: **23 files fire, and all 23 are
 # declared** — the Italian edition's 22 pages and the `/where` vocabulary. Zero
 # false positives, which is the number this threshold was chosen to hit.
+# **The quotation rule.** A span of three words or more, inside `*"…"*`, where
+# two of the words and a fifth of them are Italian. Lower than the line rule on
+# both counts because the span is known to be somebody's quoted words: there is
+# no English sentence around them to dilute, and no code to mistake.
+#
+# Measured 2026-09-04 over every `*"…"*` span in the tree outside the records:
+# the only spans it fires on are Italian. **The one span of the 42 it misses is
+# `*"continua senza chiedermelo"*`** — three words, one of them a function word,
+# so it cannot reach two markers whatever the percentage is. That is the floor
+# of this rule rather than a bug in it: a three-word quotation carrying one
+# Italian preposition is not distinguishable from an English one by counting,
+# and a rule loose enough to take it would take `*"this is huge"*` with it.
+# The bound is stated here rather than left to be discovered: **an Italian
+# instruction of three words or fewer walks past this check.**
+function italian_quote(span: str) -> bool
+    words = latin_words(span)
+
+    if words.len() < 3
+        return false
+
+    marked: i64 @ 0
+
+    for word in words
+        if is_quoted_marker(word)
+            marked @ marked + 1
+
+    return marked >= 2 && marked * 100 >= 20 * words.len()
+
+function is_quoted_marker(word: str) -> bool
+    for marker in QUOTED_MARKERS
+        if same_folded(word: word, marker: marker)
+            return true
+
+    return false
+
+# Every `*"…"*` span in a file, in order. A quotation may run over several lines
+# — most of the long ones do — so this reads the whole text rather than a line,
+# and an unterminated `*"` is simply not a span.
+function quoted_spans(text: str) -> [str]
+    out: [str] @ []
+    i: i64 @ 0
+
+    while i + 1 < text.len()
+        if text[i] == 42 && text[i + 1] == 34
+            j: i64 @ i + 2
+            closed: bool @ false
+
+            while j + 1 < text.len()
+                if text[j] == 34 && text[j + 1] == 42
+                    closed @ true
+                    break
+                j @ j + 1
+
+            if closed
+                out @ out.push(text.slice(from: i + 2, to: j))
+                i @ j + 2
+                continue
+        i @ i + 1
+
+    return out
+
 function italian_line(line: str) -> bool
     words = latin_words(line)
 
