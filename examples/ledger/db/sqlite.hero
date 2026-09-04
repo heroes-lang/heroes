@@ -45,7 +45,19 @@ extern "sqlite3.h" link "sqlite3"
     constant SQLITE_NULL: i64
     function sqlite3_open(filename: cstr, @out: ptr) -> i64
     function sqlite3_close(db: ptr) -> i64
-    function sqlite3_exec(db: ptr, sql: cstr, callback: ptr, context: ptr, @error: ptr) -> i64
+    # **The fifth argument is a plain `ptr` and NOT an `@` parameter, and that
+    # is a repair rather than a shortcut.** It is `char **errmsg`, and a
+    # non-NULL one makes SQLite allocate a copy of the message that the CALLER
+    # owns and must release with `sqlite3_free`. This program asked for that
+    # copy, never freed it and never even read it — the message it prints comes
+    # from `sqlite3_errmsg` — so every refused statement leaked 40 bytes.
+    # Declaring it as a value the program passes `nullptr` for is what SQLite
+    # documents as *do not allocate one*, and it removes the resource instead of
+    # adding a rule somebody has to remember. Measured on both platforms,
+    # sqlite 3.51.0 here and 3.46.1 in the Linux image: with the out-parameter
+    # and without it, `sqlite3_errmsg` answers the same `no such table:
+    # nothing_at_all`, so nothing is lost by not asking.
+    function sqlite3_exec(db: ptr, sql: cstr, callback: ptr, context: ptr, error: ptr) -> i64
     function sqlite3_errmsg(db: ptr) -> cstr
     function sqlite3_changes(db: ptr) -> i32
     function sqlite3_prepare_v2(db: ptr, sql: cstr, length: i32, @statement: ptr, @tail: ptr) -> i64
@@ -164,17 +176,39 @@ function opened() -> Db?
     db: ptr @ nullptr
 
     if sqlite3_open(":memory:".cstr(), @db) != SQLITE_OK
-        return fail("cannot_open", "sqlite would not open a database in memory")
+        # **A FAILED OPEN STILL HANDS BACK A CONNECTION, and dropping it leaks
+        # something far larger than a message.** This branch is the shape next
+        # to the leak `run` had, attacked before the repair was committed
+        # because CLAUDE.md §1 says the provoking case is a witness and not the
+        # class. Measured on both platforms rather than read off the
+        # documentation, sqlite 3.51.0 here and 3.46.1 in the Linux image:
+        # `sqlite3_open("/no-such-directory-here/x.db", &db)` answers **14**
+        # with `db` **non-NULL**, `sqlite3_errmsg` on that handle says `unable
+        # to open database file`, and `sqlite3_close` on it answers 0. So the
+        # handle is this program's to release here too — and the reason is
+        # SQLite's own, read off the handle before it is closed, rather than the
+        # sentence this program used to invent about a failure it had not
+        # actually asked about.
+        reason = why(Db(handle: db))
+        _ = sqlite3_close(db)
+        return fail("cannot_open", reason)
     return ok(Db(handle: db))
 
 function closed(db: Db) -> i64
     return sqlite3_close(db.handle)
 
 # One statement run for its effect, with SQLite's own message on failure.
+#
+# **THIS FUNCTION LEAKED 40 BYTES PER REFUSED STATEMENT UNTIL 2026-09-04, and
+# only one of the three platforms could see it.** It passed `@error` to
+# `sqlite3_exec`, which allocates a copy of the message for the caller to free;
+# nothing freed it, and nothing read it either. What found it is the Linux leg
+# of CI under `--sanitize`, because **LeakSanitizer does not exist on Darwin
+# arm64** (CLAUDE.md §7) — so the program ran clean on the machine it was
+# written on, in all three configurations, while leaking on every failure. The
+# fix is in the `extern` group above: the parameter is not requested at all.
 function run(db: Db, sql: str) -> ()?
-    error: ptr @ nullptr
-
-    if sqlite3_exec(db: db.handle, sql: sql.cstr(), callback: nullptr, context: nullptr, error: @error) != SQLITE_OK
+    if sqlite3_exec(db: db.handle, sql: sql.cstr(), callback: nullptr, context: nullptr, error: nullptr) != SQLITE_OK
         return fail("statement_refused", sql + ": " + why(db))
     return ok()
 

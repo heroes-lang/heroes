@@ -42,7 +42,7 @@ _Static_assert(HERO_RET_INT(SQLITE_NULL), "heroes-ffi-return SQLITE_NULL i64");
 _Static_assert(__builtin_constant_p(SQLITE_NULL), "heroes-ffi-const SQLITE_NULL");
 _Static_assert(HERO_RET_INT(sqlite3_open(0, 0)), "heroes-ffi-return sqlite3_open i64");
 _Static_assert(HERO_RET_INT(sqlite3_close((void *)0)), "heroes-ffi-return sqlite3_close i64");
-_Static_assert(HERO_RET_INT(sqlite3_exec((void *)0, 0, (void *)0, (void *)0, 0)), "heroes-ffi-return sqlite3_exec i64");
+_Static_assert(HERO_RET_INT(sqlite3_exec((void *)0, 0, (void *)0, (void *)0, (void *)0)), "heroes-ffi-return sqlite3_exec i64");
 _Static_assert(HERO_RET_CSTR(sqlite3_errmsg((void *)0)), "heroes-ffi-return sqlite3_errmsg cstr");
 _Static_assert(HERO_RET_I32(sqlite3_changes((void *)0)), "heroes-ffi-return sqlite3_changes i32");
 _Static_assert(HERO_RET_INT(sqlite3_prepare_v2((void *)0, 0, (int32_t)0, 0, 0)), "heroes-ffi-return sqlite3_prepare_v2 i64");
@@ -83,35 +83,35 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 __attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_open(const char * a0, void * * a1) { (void)(sqlite3_open)(a0, (void *)a1); }
 #line 47 "examples/ledger/db/sqlite.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_close(void * a0) { (void)(sqlite3_close)(a0); }
-#line 48 "examples/ledger/db/sqlite.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_exec(void * a0, const char * a1, void * a2, void * a3, void * * a4) { (void)(sqlite3_exec)(a0, a1, a2, a3, (void *)a4); }
-#line 49 "examples/ledger/db/sqlite.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_errmsg(void * a0) { (void)(sqlite3_errmsg)(a0); }
-#line 50 "examples/ledger/db/sqlite.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_changes(void * a0) { (void)(sqlite3_changes)(a0); }
-#line 51 "examples/ledger/db/sqlite.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_prepare_v2(void * a0, const char * a1, int32_t a2, void * * a3, void * * a4) { (void)(sqlite3_prepare_v2)(a0, a1, a2, (void *)a3, (void *)a4); }
-#line 52 "examples/ledger/db/sqlite.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_step(void * a0) { (void)(sqlite3_step)(a0); }
-#line 53 "examples/ledger/db/sqlite.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_reset(void * a0) { (void)(sqlite3_reset)(a0); }
-#line 54 "examples/ledger/db/sqlite.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_finalize(void * a0) { (void)(sqlite3_finalize)(a0); }
-#line 55 "examples/ledger/db/sqlite.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_bind_int64(void * a0, int32_t a1, int64_t a2) { (void)(sqlite3_bind_int64)(a0, a1, a2); }
-#line 56 "examples/ledger/db/sqlite.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_bind_double(void * a0, int32_t a1, double a2) { (void)(sqlite3_bind_double)(a0, a1, a2); }
-#line 57 "examples/ledger/db/sqlite.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_bind_text(void * a0, int32_t a1, const char * a2, int32_t a3, void * a4) { (void)(sqlite3_bind_text)(a0, a1, a2, a3, a4); }
-#line 58 "examples/ledger/db/sqlite.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_column_count(void * a0) { (void)(sqlite3_column_count)(a0); }
-#line 59 "examples/ledger/db/sqlite.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_column_type(void * a0, int32_t a1) { (void)(sqlite3_column_type)(a0, a1); }
 #line 60 "examples/ledger/db/sqlite.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_column_int64(void * a0, int32_t a1) { (void)(sqlite3_column_int64)(a0, a1); }
+__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_exec(void * a0, const char * a1, void * a2, void * a3, void * a4) { (void)(sqlite3_exec)(a0, a1, a2, a3, a4); }
 #line 61 "examples/ledger/db/sqlite.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_column_double(void * a0, int32_t a1) { (void)(sqlite3_column_double)(a0, a1); }
+__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_errmsg(void * a0) { (void)(sqlite3_errmsg)(a0); }
 #line 62 "examples/ledger/db/sqlite.hero"
+__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_changes(void * a0) { (void)(sqlite3_changes)(a0); }
+#line 63 "examples/ledger/db/sqlite.hero"
+__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_prepare_v2(void * a0, const char * a1, int32_t a2, void * * a3, void * * a4) { (void)(sqlite3_prepare_v2)(a0, a1, a2, (void *)a3, (void *)a4); }
+#line 64 "examples/ledger/db/sqlite.hero"
+__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_step(void * a0) { (void)(sqlite3_step)(a0); }
+#line 65 "examples/ledger/db/sqlite.hero"
+__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_reset(void * a0) { (void)(sqlite3_reset)(a0); }
+#line 66 "examples/ledger/db/sqlite.hero"
+__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_finalize(void * a0) { (void)(sqlite3_finalize)(a0); }
+#line 67 "examples/ledger/db/sqlite.hero"
+__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_bind_int64(void * a0, int32_t a1, int64_t a2) { (void)(sqlite3_bind_int64)(a0, a1, a2); }
+#line 68 "examples/ledger/db/sqlite.hero"
+__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_bind_double(void * a0, int32_t a1, double a2) { (void)(sqlite3_bind_double)(a0, a1, a2); }
+#line 69 "examples/ledger/db/sqlite.hero"
+__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_bind_text(void * a0, int32_t a1, const char * a2, int32_t a3, void * a4) { (void)(sqlite3_bind_text)(a0, a1, a2, a3, a4); }
+#line 70 "examples/ledger/db/sqlite.hero"
+__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_column_count(void * a0) { (void)(sqlite3_column_count)(a0); }
+#line 71 "examples/ledger/db/sqlite.hero"
+__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_column_type(void * a0, int32_t a1) { (void)(sqlite3_column_type)(a0, a1); }
+#line 72 "examples/ledger/db/sqlite.hero"
+__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_column_int64(void * a0, int32_t a1) { (void)(sqlite3_column_int64)(a0, a1); }
+#line 73 "examples/ledger/db/sqlite.hero"
+__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_column_double(void * a0, int32_t a1) { (void)(sqlite3_column_double)(a0, a1); }
+#line 74 "examples/ledger/db/sqlite.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_column_text(void * a0, int32_t a1) { (void)(sqlite3_column_text)(a0, a1); }
 #line 112 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
@@ -187,7 +187,6 @@ HERO_STR_STATIC(hero_str_6705b6fe, "column ");
 HERO_STR_STATIC(hero_str_4daa4e70, " holds bytes that are not UTF-8");
 HERO_STR_STATIC(hero_str_41b4cad0, ":memory:");
 HERO_STR_STATIC(hero_str_2cb37c54, "cannot_open");
-HERO_STR_STATIC(hero_str_199d06ab, "sqlite would not open a database in memory");
 HERO_STR_STATIC(hero_str_27d8ba8f, "statement_refused");
 HERO_STR_STATIC(hero_str_1dce, ": ");
 HERO_STR_STATIC(hero_str_3c5efe11, "cannot_prepare");
@@ -653,7 +652,7 @@ void h_library_exit(int64_t h0_code);
 
 #line 33 "examples/ledger/main.hero"
 void h_main_main(void) {
-#line 657 "main.c"
+#line 656 "main.c"
     h_0opt_24dfc0bb h0_opened = {0};
     h_0opt_24dfc0bb h1_f0 = {0};
     h_0opt_24dfc0bb h2_f1 = {0};
@@ -733,25 +732,25 @@ bb0:
     t48 = h8_own8;
 #line 34 "examples/ledger/main.hero"
     h8_own8 = t1;
-#line 737 "main.c"
+#line 736 "main.c"
     h_0opt_24dfc0bb_release(&t48);
 #line 34 "examples/ledger/main.hero"
     t49 = h0_opened;
-#line 741 "main.c"
+#line 740 "main.c"
     h_0opt_24dfc0bb_retain(&t1);
 #line 34 "examples/ledger/main.hero"
     h0_opened = t1;
-#line 745 "main.c"
+#line 744 "main.c"
     h_0opt_24dfc0bb_release(&t49);
 #line 36 "examples/ledger/main.hero"
     t2 = h0_opened;
 #line 36 "examples/ledger/main.hero"
     t50 = h1_f0;
-#line 751 "main.c"
+#line 750 "main.c"
     h_0opt_24dfc0bb_retain(&t2);
 #line 36 "examples/ledger/main.hero"
     h1_f0 = t2;
-#line 755 "main.c"
+#line 754 "main.c"
     h_0opt_24dfc0bb_release(&t50);
 #line 36 "examples/ledger/main.hero"
     t3 = h1_f0;
@@ -769,11 +768,11 @@ bb1:
     t11 = h0_opened;
 #line 39 "examples/ledger/main.hero"
     t51 = h2_f1;
-#line 773 "main.c"
+#line 772 "main.c"
     h_0opt_24dfc0bb_retain(&t11);
 #line 39 "examples/ledger/main.hero"
     h2_f1 = t11;
-#line 777 "main.c"
+#line 776 "main.c"
     h_0opt_24dfc0bb_release(&t51);
 #line 39 "examples/ledger/main.hero"
     t12 = h2_f1;
@@ -797,7 +796,7 @@ bb2:
     t52 = h9_own9;
 #line 37 "examples/ledger/main.hero"
     h9_own9 = t9;
-#line 801 "main.c"
+#line 800 "main.c"
     hero_str_decref(t52);
 #line 37 "examples/ledger/main.hero"
     hero_print_str(t7);
@@ -831,25 +830,25 @@ bb4:
     t53 = h10_own10;
 #line 40 "examples/ledger/main.hero"
     h10_own10 = t21;
-#line 835 "main.c"
+#line 834 "main.c"
     h_0opt_a8ea2_release(&t53);
 #line 40 "examples/ledger/main.hero"
     t54 = h4_built;
-#line 839 "main.c"
+#line 838 "main.c"
     h_0opt_a8ea2_retain(&t21);
 #line 40 "examples/ledger/main.hero"
     h4_built = t21;
-#line 843 "main.c"
+#line 842 "main.c"
     h_0opt_a8ea2_release(&t54);
 #line 42 "examples/ledger/main.hero"
     t22 = h4_built;
 #line 42 "examples/ledger/main.hero"
     t55 = h5_f2;
-#line 849 "main.c"
+#line 848 "main.c"
     h_0opt_a8ea2_retain(&t22);
 #line 42 "examples/ledger/main.hero"
     h5_f2 = t22;
-#line 853 "main.c"
+#line 852 "main.c"
     h_0opt_a8ea2_release(&t55);
 #line 42 "examples/ledger/main.hero"
     t23 = h5_f2;
@@ -867,7 +866,7 @@ bb5:
     t16 = h2_f1;
 #line 39 "examples/ledger/main.hero"
     t17 = t16.as.err;
-#line 871 "main.c"
+#line 870 "main.c"
     hero_panic_must(t17);
     hero_unreachable();
 bb6:
@@ -879,25 +878,25 @@ bb6:
     t56 = h11_own11;
 #line 46 "examples/ledger/main.hero"
     h11_own11 = t34;
-#line 883 "main.c"
+#line 882 "main.c"
     h_0opt_a8ea2_release(&t56);
 #line 46 "examples/ledger/main.hero"
     t57 = h6_shown;
-#line 887 "main.c"
+#line 886 "main.c"
     h_0opt_a8ea2_retain(&t34);
 #line 46 "examples/ledger/main.hero"
     h6_shown = t34;
-#line 891 "main.c"
+#line 890 "main.c"
     h_0opt_a8ea2_release(&t57);
 #line 48 "examples/ledger/main.hero"
     t35 = h6_shown;
 #line 48 "examples/ledger/main.hero"
     t58 = h7_f3;
-#line 897 "main.c"
+#line 896 "main.c"
     h_0opt_a8ea2_retain(&t35);
 #line 48 "examples/ledger/main.hero"
     h7_f3 = t35;
-#line 901 "main.c"
+#line 900 "main.c"
     h_0opt_a8ea2_release(&t58);
 #line 48 "examples/ledger/main.hero"
     t36 = h7_f3;
@@ -921,7 +920,7 @@ bb7:
     t59 = h12_own12;
 #line 43 "examples/ledger/main.hero"
     h12_own12 = t29;
-#line 925 "main.c"
+#line 924 "main.c"
     hero_str_decref(t59);
 #line 43 "examples/ledger/main.hero"
     hero_print_str(t27);
@@ -949,43 +948,43 @@ bb9:
     t46 = h3_db;
 #line 52 "examples/ledger/main.hero"
     h_dbsqlite_closed(t46);
-#line 953 "main.c"
+#line 952 "main.c"
     h_0opt_24dfc0bb_release(&h0_opened);
 #line 52 "examples/ledger/main.hero"
-#line 956 "main.c"
+#line 955 "main.c"
     h_0opt_24dfc0bb_release(&h1_f0);
 #line 52 "examples/ledger/main.hero"
-#line 959 "main.c"
+#line 958 "main.c"
     h_0opt_24dfc0bb_release(&h2_f1);
 #line 52 "examples/ledger/main.hero"
-#line 962 "main.c"
+#line 961 "main.c"
     h_0opt_a8ea2_release(&h4_built);
 #line 52 "examples/ledger/main.hero"
-#line 965 "main.c"
+#line 964 "main.c"
     h_0opt_a8ea2_release(&h5_f2);
 #line 52 "examples/ledger/main.hero"
-#line 968 "main.c"
+#line 967 "main.c"
     h_0opt_a8ea2_release(&h6_shown);
 #line 52 "examples/ledger/main.hero"
-#line 971 "main.c"
+#line 970 "main.c"
     h_0opt_a8ea2_release(&h7_f3);
 #line 52 "examples/ledger/main.hero"
-#line 974 "main.c"
+#line 973 "main.c"
     h_0opt_24dfc0bb_release(&h8_own8);
 #line 52 "examples/ledger/main.hero"
-#line 977 "main.c"
+#line 976 "main.c"
     hero_str_decref(h9_own9);
 #line 52 "examples/ledger/main.hero"
-#line 980 "main.c"
+#line 979 "main.c"
     h_0opt_a8ea2_release(&h10_own10);
 #line 52 "examples/ledger/main.hero"
-#line 983 "main.c"
+#line 982 "main.c"
     h_0opt_a8ea2_release(&h11_own11);
 #line 52 "examples/ledger/main.hero"
-#line 986 "main.c"
+#line 985 "main.c"
     hero_str_decref(h12_own12);
 #line 52 "examples/ledger/main.hero"
-#line 989 "main.c"
+#line 988 "main.c"
     hero_str_decref(h13_own13);
     return;
 bb10:
@@ -999,7 +998,7 @@ bb10:
     t60 = h13_own13;
 #line 49 "examples/ledger/main.hero"
     h13_own13 = t42;
-#line 1003 "main.c"
+#line 1002 "main.c"
     hero_str_decref(t60);
 #line 49 "examples/ledger/main.hero"
     hero_print_str(t40);
@@ -1021,12 +1020,12 @@ bb10:
 bb11:
 #line 51 "examples/ledger/main.hero"
     goto bb9;
-#line 1025 "main.c"
+#line 1024 "main.c"
 }
 
 #line 57 "examples/ledger/main.hero"
 h_0opt_a8ea2 h_main_build(h_dbsqlite_Db h0_db) {
-#line 1030 "main.c"
+#line 1029 "main.c"
     h_0opt_a8ea2 h1_f0 = {0};
     h_0opt_a8ea2 h2_f1 = {0};
     h_0opt_a8ea2 h3_f2 = {0};
@@ -1353,15 +1352,15 @@ bb0:
     t231 = h25_own25;
 #line 58 "examples/ledger/main.hero"
     h25_own25 = t3;
-#line 1357 "main.c"
+#line 1356 "main.c"
     h_0opt_a8ea2_release(&t231);
 #line 58 "examples/ledger/main.hero"
     t232 = h1_f0;
-#line 1361 "main.c"
+#line 1360 "main.c"
     h_0opt_a8ea2_retain(&t3);
 #line 58 "examples/ledger/main.hero"
     h1_f0 = t3;
-#line 1365 "main.c"
+#line 1364 "main.c"
     h_0opt_a8ea2_release(&t232);
 #line 58 "examples/ledger/main.hero"
     t4 = h1_f0;
@@ -1385,15 +1384,15 @@ bb1:
     t233 = h26_own26;
 #line 59 "examples/ledger/main.hero"
     h26_own26 = t15;
-#line 1389 "main.c"
+#line 1388 "main.c"
     h_0opt_a8ea2_release(&t233);
 #line 59 "examples/ledger/main.hero"
     t234 = h2_f1;
-#line 1393 "main.c"
+#line 1392 "main.c"
     h_0opt_a8ea2_retain(&t15);
 #line 59 "examples/ledger/main.hero"
     h2_f1 = t15;
-#line 1397 "main.c"
+#line 1396 "main.c"
     h_0opt_a8ea2_release(&t234);
 #line 59 "examples/ledger/main.hero"
     t16 = h2_f1;
@@ -1411,7 +1410,7 @@ bb2:
     t8 = h1_f0;
 #line 58 "examples/ledger/main.hero"
     t9 = t8.as.err;
-#line 1415 "main.c"
+#line 1414 "main.c"
     hero_failure_retain(&t9);
 #line 58 "examples/ledger/main.hero"
     t10 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = t9};
@@ -1419,175 +1418,175 @@ bb2:
     t235 = h27_own27;
 #line 58 "examples/ledger/main.hero"
     h27_own27 = t10;
-#line 1423 "main.c"
+#line 1422 "main.c"
     h_0opt_a8ea2_release(&t235);
 #line 58 "examples/ledger/main.hero"
-#line 1426 "main.c"
+#line 1425 "main.c"
     h_0opt_a8ea2_retain(&t10);
 #line 58 "examples/ledger/main.hero"
-#line 1429 "main.c"
+#line 1428 "main.c"
     h_0opt_a8ea2_release(&h1_f0);
 #line 58 "examples/ledger/main.hero"
-#line 1432 "main.c"
+#line 1431 "main.c"
     h_0opt_a8ea2_release(&h2_f1);
 #line 58 "examples/ledger/main.hero"
-#line 1435 "main.c"
+#line 1434 "main.c"
     h_0opt_a8ea2_release(&h3_f2);
 #line 58 "examples/ledger/main.hero"
-#line 1438 "main.c"
+#line 1437 "main.c"
     h_0opt_791f9719_release(&h4_f3);
 #line 58 "examples/ledger/main.hero"
-#line 1441 "main.c"
+#line 1440 "main.c"
     hero_array_decref(h6_xs0);
 #line 58 "examples/ledger/main.hero"
-#line 1444 "main.c"
+#line 1443 "main.c"
     h_bookentry_Account_release(&h8_a);
 #line 58 "examples/ledger/main.hero"
-#line 1447 "main.c"
+#line 1446 "main.c"
     h_0opt_a8ea2_release(&h9_f4);
 #line 58 "examples/ledger/main.hero"
-#line 1450 "main.c"
+#line 1449 "main.c"
     h_0opt_a8ea2_release(&h10_f5);
 #line 58 "examples/ledger/main.hero"
-#line 1453 "main.c"
+#line 1452 "main.c"
     h_0opt_70720e79_release(&h11_f6);
 #line 58 "examples/ledger/main.hero"
-#line 1456 "main.c"
+#line 1455 "main.c"
     h_0opt_a8ea2_release(&h12_f7);
 #line 58 "examples/ledger/main.hero"
-#line 1459 "main.c"
+#line 1458 "main.c"
     h_0opt_791f9719_release(&h13_f8);
 #line 58 "examples/ledger/main.hero"
-#line 1462 "main.c"
+#line 1461 "main.c"
     hero_array_decref(h15_xs1);
 #line 58 "examples/ledger/main.hero"
-#line 1465 "main.c"
+#line 1464 "main.c"
     h_bookentry_Entry_release(&h17_e);
 #line 58 "examples/ledger/main.hero"
-#line 1468 "main.c"
+#line 1467 "main.c"
     h_0opt_a8ea2_release(&h18_f9);
 #line 58 "examples/ledger/main.hero"
-#line 1471 "main.c"
+#line 1470 "main.c"
     h_0opt_a8ea2_release(&h19_f10);
 #line 58 "examples/ledger/main.hero"
-#line 1474 "main.c"
+#line 1473 "main.c"
     h_0opt_a8ea2_release(&h20_f11);
 #line 58 "examples/ledger/main.hero"
-#line 1477 "main.c"
+#line 1476 "main.c"
     h_0opt_a8ea2_release(&h21_f12);
 #line 58 "examples/ledger/main.hero"
-#line 1480 "main.c"
+#line 1479 "main.c"
     h_0opt_70720e79_release(&h22_f13);
 #line 58 "examples/ledger/main.hero"
-#line 1483 "main.c"
+#line 1482 "main.c"
     h_0opt_a8ea2_release(&h23_f14);
 #line 58 "examples/ledger/main.hero"
-#line 1486 "main.c"
+#line 1485 "main.c"
     h_0opt_a8ea2_release(&h24_f15);
 #line 58 "examples/ledger/main.hero"
-#line 1489 "main.c"
+#line 1488 "main.c"
     h_0opt_a8ea2_release(&h25_own25);
 #line 58 "examples/ledger/main.hero"
-#line 1492 "main.c"
+#line 1491 "main.c"
     h_0opt_a8ea2_release(&h26_own26);
 #line 58 "examples/ledger/main.hero"
-#line 1495 "main.c"
+#line 1494 "main.c"
     h_0opt_a8ea2_release(&h27_own27);
 #line 58 "examples/ledger/main.hero"
-#line 1498 "main.c"
+#line 1497 "main.c"
     h_0opt_a8ea2_release(&h28_own28);
 #line 58 "examples/ledger/main.hero"
-#line 1501 "main.c"
+#line 1500 "main.c"
     h_0opt_a8ea2_release(&h29_own29);
 #line 58 "examples/ledger/main.hero"
-#line 1504 "main.c"
+#line 1503 "main.c"
     h_0opt_791f9719_release(&h30_own30);
 #line 58 "examples/ledger/main.hero"
-#line 1507 "main.c"
+#line 1506 "main.c"
     h_0opt_a8ea2_release(&h31_own31);
 #line 58 "examples/ledger/main.hero"
-#line 1510 "main.c"
+#line 1509 "main.c"
     hero_array_decref(h32_own32);
 #line 58 "examples/ledger/main.hero"
-#line 1513 "main.c"
+#line 1512 "main.c"
     h_0opt_a8ea2_release(&h33_own33);
 #line 58 "examples/ledger/main.hero"
-#line 1516 "main.c"
+#line 1515 "main.c"
     h_0opt_a8ea2_release(&h34_own34);
 #line 58 "examples/ledger/main.hero"
-#line 1519 "main.c"
+#line 1518 "main.c"
     h_0opt_791f9719_release(&h35_own35);
 #line 58 "examples/ledger/main.hero"
-#line 1522 "main.c"
+#line 1521 "main.c"
     h_0opt_a8ea2_release(&h36_own36);
 #line 58 "examples/ledger/main.hero"
-#line 1525 "main.c"
+#line 1524 "main.c"
     h_0opt_a8ea2_release(&h37_own37);
 #line 58 "examples/ledger/main.hero"
-#line 1528 "main.c"
+#line 1527 "main.c"
     h_0opt_70720e79_release(&h38_own38);
 #line 58 "examples/ledger/main.hero"
-#line 1531 "main.c"
+#line 1530 "main.c"
     h_0opt_a8ea2_release(&h39_own39);
 #line 58 "examples/ledger/main.hero"
-#line 1534 "main.c"
+#line 1533 "main.c"
     h_0opt_a8ea2_release(&h40_own40);
 #line 58 "examples/ledger/main.hero"
-#line 1537 "main.c"
+#line 1536 "main.c"
     h_0opt_a8ea2_release(&h41_own41);
 #line 58 "examples/ledger/main.hero"
-#line 1540 "main.c"
+#line 1539 "main.c"
     h_0opt_a8ea2_release(&h42_own42);
 #line 58 "examples/ledger/main.hero"
-#line 1543 "main.c"
+#line 1542 "main.c"
     hero_array_decref(h43_own43);
 #line 58 "examples/ledger/main.hero"
-#line 1546 "main.c"
+#line 1545 "main.c"
     h_0opt_a8ea2_release(&h44_own44);
 #line 58 "examples/ledger/main.hero"
-#line 1549 "main.c"
+#line 1548 "main.c"
     h_0opt_a8ea2_release(&h45_own45);
 #line 58 "examples/ledger/main.hero"
-#line 1552 "main.c"
+#line 1551 "main.c"
     h_0opt_a8ea2_release(&h46_own46);
 #line 58 "examples/ledger/main.hero"
-#line 1555 "main.c"
+#line 1554 "main.c"
     h_0opt_a8ea2_release(&h47_own47);
 #line 58 "examples/ledger/main.hero"
-#line 1558 "main.c"
+#line 1557 "main.c"
     h_0opt_a8ea2_release(&h48_own48);
 #line 58 "examples/ledger/main.hero"
-#line 1561 "main.c"
+#line 1560 "main.c"
     h_0opt_a8ea2_release(&h49_own49);
 #line 58 "examples/ledger/main.hero"
-#line 1564 "main.c"
+#line 1563 "main.c"
     h_0opt_a8ea2_release(&h50_own50);
 #line 58 "examples/ledger/main.hero"
-#line 1567 "main.c"
+#line 1566 "main.c"
     h_0opt_a8ea2_release(&h51_own51);
 #line 58 "examples/ledger/main.hero"
-#line 1570 "main.c"
+#line 1569 "main.c"
     h_0opt_a8ea2_release(&h52_own52);
 #line 58 "examples/ledger/main.hero"
-#line 1573 "main.c"
+#line 1572 "main.c"
     h_0opt_70720e79_release(&h53_own53);
 #line 58 "examples/ledger/main.hero"
-#line 1576 "main.c"
+#line 1575 "main.c"
     h_0opt_a8ea2_release(&h54_own54);
 #line 58 "examples/ledger/main.hero"
-#line 1579 "main.c"
+#line 1578 "main.c"
     h_0opt_a8ea2_release(&h55_own55);
 #line 58 "examples/ledger/main.hero"
-#line 1582 "main.c"
+#line 1581 "main.c"
     h_0opt_a8ea2_release(&h56_own56);
 #line 58 "examples/ledger/main.hero"
-#line 1585 "main.c"
+#line 1584 "main.c"
     h_0opt_a8ea2_release(&h57_own57);
 #line 58 "examples/ledger/main.hero"
-#line 1588 "main.c"
+#line 1587 "main.c"
     h_0opt_a8ea2_release(&h58_own58);
 #line 58 "examples/ledger/main.hero"
-#line 1591 "main.c"
+#line 1590 "main.c"
     h_0opt_a8ea2_release(&h59_own59);
     return t10;
 bb3:
@@ -1602,15 +1601,15 @@ bb3:
     t236 = h28_own28;
 #line 63 "examples/ledger/main.hero"
     h28_own28 = t27;
-#line 1606 "main.c"
+#line 1605 "main.c"
     h_0opt_a8ea2_release(&t236);
 #line 63 "examples/ledger/main.hero"
     t237 = h3_f2;
-#line 1610 "main.c"
+#line 1609 "main.c"
     h_0opt_a8ea2_retain(&t27);
 #line 63 "examples/ledger/main.hero"
     h3_f2 = t27;
-#line 1614 "main.c"
+#line 1613 "main.c"
     h_0opt_a8ea2_release(&t237);
 #line 63 "examples/ledger/main.hero"
     t28 = h3_f2;
@@ -1628,7 +1627,7 @@ bb4:
     t20 = h2_f1;
 #line 59 "examples/ledger/main.hero"
     t21 = t20.as.err;
-#line 1632 "main.c"
+#line 1631 "main.c"
     hero_failure_retain(&t21);
 #line 59 "examples/ledger/main.hero"
     t22 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = t21};
@@ -1636,175 +1635,175 @@ bb4:
     t238 = h29_own29;
 #line 59 "examples/ledger/main.hero"
     h29_own29 = t22;
-#line 1640 "main.c"
+#line 1639 "main.c"
     h_0opt_a8ea2_release(&t238);
 #line 59 "examples/ledger/main.hero"
-#line 1643 "main.c"
+#line 1642 "main.c"
     h_0opt_a8ea2_retain(&t22);
 #line 59 "examples/ledger/main.hero"
-#line 1646 "main.c"
+#line 1645 "main.c"
     h_0opt_a8ea2_release(&h1_f0);
 #line 59 "examples/ledger/main.hero"
-#line 1649 "main.c"
+#line 1648 "main.c"
     h_0opt_a8ea2_release(&h2_f1);
 #line 59 "examples/ledger/main.hero"
-#line 1652 "main.c"
+#line 1651 "main.c"
     h_0opt_a8ea2_release(&h3_f2);
 #line 59 "examples/ledger/main.hero"
-#line 1655 "main.c"
+#line 1654 "main.c"
     h_0opt_791f9719_release(&h4_f3);
 #line 59 "examples/ledger/main.hero"
-#line 1658 "main.c"
+#line 1657 "main.c"
     hero_array_decref(h6_xs0);
 #line 59 "examples/ledger/main.hero"
-#line 1661 "main.c"
+#line 1660 "main.c"
     h_bookentry_Account_release(&h8_a);
 #line 59 "examples/ledger/main.hero"
-#line 1664 "main.c"
+#line 1663 "main.c"
     h_0opt_a8ea2_release(&h9_f4);
 #line 59 "examples/ledger/main.hero"
-#line 1667 "main.c"
+#line 1666 "main.c"
     h_0opt_a8ea2_release(&h10_f5);
 #line 59 "examples/ledger/main.hero"
-#line 1670 "main.c"
+#line 1669 "main.c"
     h_0opt_70720e79_release(&h11_f6);
 #line 59 "examples/ledger/main.hero"
-#line 1673 "main.c"
+#line 1672 "main.c"
     h_0opt_a8ea2_release(&h12_f7);
 #line 59 "examples/ledger/main.hero"
-#line 1676 "main.c"
+#line 1675 "main.c"
     h_0opt_791f9719_release(&h13_f8);
 #line 59 "examples/ledger/main.hero"
-#line 1679 "main.c"
+#line 1678 "main.c"
     hero_array_decref(h15_xs1);
 #line 59 "examples/ledger/main.hero"
-#line 1682 "main.c"
+#line 1681 "main.c"
     h_bookentry_Entry_release(&h17_e);
 #line 59 "examples/ledger/main.hero"
-#line 1685 "main.c"
+#line 1684 "main.c"
     h_0opt_a8ea2_release(&h18_f9);
 #line 59 "examples/ledger/main.hero"
-#line 1688 "main.c"
+#line 1687 "main.c"
     h_0opt_a8ea2_release(&h19_f10);
 #line 59 "examples/ledger/main.hero"
-#line 1691 "main.c"
+#line 1690 "main.c"
     h_0opt_a8ea2_release(&h20_f11);
 #line 59 "examples/ledger/main.hero"
-#line 1694 "main.c"
+#line 1693 "main.c"
     h_0opt_a8ea2_release(&h21_f12);
 #line 59 "examples/ledger/main.hero"
-#line 1697 "main.c"
+#line 1696 "main.c"
     h_0opt_70720e79_release(&h22_f13);
 #line 59 "examples/ledger/main.hero"
-#line 1700 "main.c"
+#line 1699 "main.c"
     h_0opt_a8ea2_release(&h23_f14);
 #line 59 "examples/ledger/main.hero"
-#line 1703 "main.c"
+#line 1702 "main.c"
     h_0opt_a8ea2_release(&h24_f15);
 #line 59 "examples/ledger/main.hero"
-#line 1706 "main.c"
+#line 1705 "main.c"
     h_0opt_a8ea2_release(&h25_own25);
 #line 59 "examples/ledger/main.hero"
-#line 1709 "main.c"
+#line 1708 "main.c"
     h_0opt_a8ea2_release(&h26_own26);
 #line 59 "examples/ledger/main.hero"
-#line 1712 "main.c"
+#line 1711 "main.c"
     h_0opt_a8ea2_release(&h27_own27);
 #line 59 "examples/ledger/main.hero"
-#line 1715 "main.c"
+#line 1714 "main.c"
     h_0opt_a8ea2_release(&h28_own28);
 #line 59 "examples/ledger/main.hero"
-#line 1718 "main.c"
+#line 1717 "main.c"
     h_0opt_a8ea2_release(&h29_own29);
 #line 59 "examples/ledger/main.hero"
-#line 1721 "main.c"
+#line 1720 "main.c"
     h_0opt_791f9719_release(&h30_own30);
 #line 59 "examples/ledger/main.hero"
-#line 1724 "main.c"
+#line 1723 "main.c"
     h_0opt_a8ea2_release(&h31_own31);
 #line 59 "examples/ledger/main.hero"
-#line 1727 "main.c"
+#line 1726 "main.c"
     hero_array_decref(h32_own32);
 #line 59 "examples/ledger/main.hero"
-#line 1730 "main.c"
+#line 1729 "main.c"
     h_0opt_a8ea2_release(&h33_own33);
 #line 59 "examples/ledger/main.hero"
-#line 1733 "main.c"
+#line 1732 "main.c"
     h_0opt_a8ea2_release(&h34_own34);
 #line 59 "examples/ledger/main.hero"
-#line 1736 "main.c"
+#line 1735 "main.c"
     h_0opt_791f9719_release(&h35_own35);
 #line 59 "examples/ledger/main.hero"
-#line 1739 "main.c"
+#line 1738 "main.c"
     h_0opt_a8ea2_release(&h36_own36);
 #line 59 "examples/ledger/main.hero"
-#line 1742 "main.c"
+#line 1741 "main.c"
     h_0opt_a8ea2_release(&h37_own37);
 #line 59 "examples/ledger/main.hero"
-#line 1745 "main.c"
+#line 1744 "main.c"
     h_0opt_70720e79_release(&h38_own38);
 #line 59 "examples/ledger/main.hero"
-#line 1748 "main.c"
+#line 1747 "main.c"
     h_0opt_a8ea2_release(&h39_own39);
 #line 59 "examples/ledger/main.hero"
-#line 1751 "main.c"
+#line 1750 "main.c"
     h_0opt_a8ea2_release(&h40_own40);
 #line 59 "examples/ledger/main.hero"
-#line 1754 "main.c"
+#line 1753 "main.c"
     h_0opt_a8ea2_release(&h41_own41);
 #line 59 "examples/ledger/main.hero"
-#line 1757 "main.c"
+#line 1756 "main.c"
     h_0opt_a8ea2_release(&h42_own42);
 #line 59 "examples/ledger/main.hero"
-#line 1760 "main.c"
+#line 1759 "main.c"
     hero_array_decref(h43_own43);
 #line 59 "examples/ledger/main.hero"
-#line 1763 "main.c"
+#line 1762 "main.c"
     h_0opt_a8ea2_release(&h44_own44);
 #line 59 "examples/ledger/main.hero"
-#line 1766 "main.c"
+#line 1765 "main.c"
     h_0opt_a8ea2_release(&h45_own45);
 #line 59 "examples/ledger/main.hero"
-#line 1769 "main.c"
+#line 1768 "main.c"
     h_0opt_a8ea2_release(&h46_own46);
 #line 59 "examples/ledger/main.hero"
-#line 1772 "main.c"
+#line 1771 "main.c"
     h_0opt_a8ea2_release(&h47_own47);
 #line 59 "examples/ledger/main.hero"
-#line 1775 "main.c"
+#line 1774 "main.c"
     h_0opt_a8ea2_release(&h48_own48);
 #line 59 "examples/ledger/main.hero"
-#line 1778 "main.c"
+#line 1777 "main.c"
     h_0opt_a8ea2_release(&h49_own49);
 #line 59 "examples/ledger/main.hero"
-#line 1781 "main.c"
+#line 1780 "main.c"
     h_0opt_a8ea2_release(&h50_own50);
 #line 59 "examples/ledger/main.hero"
-#line 1784 "main.c"
+#line 1783 "main.c"
     h_0opt_a8ea2_release(&h51_own51);
 #line 59 "examples/ledger/main.hero"
-#line 1787 "main.c"
+#line 1786 "main.c"
     h_0opt_a8ea2_release(&h52_own52);
 #line 59 "examples/ledger/main.hero"
-#line 1790 "main.c"
+#line 1789 "main.c"
     h_0opt_70720e79_release(&h53_own53);
 #line 59 "examples/ledger/main.hero"
-#line 1793 "main.c"
+#line 1792 "main.c"
     h_0opt_a8ea2_release(&h54_own54);
 #line 59 "examples/ledger/main.hero"
-#line 1796 "main.c"
+#line 1795 "main.c"
     h_0opt_a8ea2_release(&h55_own55);
 #line 59 "examples/ledger/main.hero"
-#line 1799 "main.c"
+#line 1798 "main.c"
     h_0opt_a8ea2_release(&h56_own56);
 #line 59 "examples/ledger/main.hero"
-#line 1802 "main.c"
+#line 1801 "main.c"
     h_0opt_a8ea2_release(&h57_own57);
 #line 59 "examples/ledger/main.hero"
-#line 1805 "main.c"
+#line 1804 "main.c"
     h_0opt_a8ea2_release(&h58_own58);
 #line 59 "examples/ledger/main.hero"
-#line 1808 "main.c"
+#line 1807 "main.c"
     h_0opt_a8ea2_release(&h59_own59);
     return t22;
 bb5:
@@ -1819,15 +1818,15 @@ bb5:
     t239 = h30_own30;
 #line 64 "examples/ledger/main.hero"
     h30_own30 = t39;
-#line 1823 "main.c"
+#line 1822 "main.c"
     h_0opt_791f9719_release(&t239);
 #line 64 "examples/ledger/main.hero"
     t240 = h4_f3;
-#line 1827 "main.c"
+#line 1826 "main.c"
     h_0opt_791f9719_retain(&t39);
 #line 64 "examples/ledger/main.hero"
     h4_f3 = t39;
-#line 1831 "main.c"
+#line 1830 "main.c"
     h_0opt_791f9719_release(&t240);
 #line 64 "examples/ledger/main.hero"
     t40 = h4_f3;
@@ -1845,7 +1844,7 @@ bb6:
     t32 = h3_f2;
 #line 63 "examples/ledger/main.hero"
     t33 = t32.as.err;
-#line 1849 "main.c"
+#line 1848 "main.c"
     hero_failure_retain(&t33);
 #line 63 "examples/ledger/main.hero"
     t34 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = t33};
@@ -1853,175 +1852,175 @@ bb6:
     t241 = h31_own31;
 #line 63 "examples/ledger/main.hero"
     h31_own31 = t34;
-#line 1857 "main.c"
+#line 1856 "main.c"
     h_0opt_a8ea2_release(&t241);
 #line 63 "examples/ledger/main.hero"
-#line 1860 "main.c"
+#line 1859 "main.c"
     h_0opt_a8ea2_retain(&t34);
 #line 63 "examples/ledger/main.hero"
-#line 1863 "main.c"
+#line 1862 "main.c"
     h_0opt_a8ea2_release(&h1_f0);
 #line 63 "examples/ledger/main.hero"
-#line 1866 "main.c"
+#line 1865 "main.c"
     h_0opt_a8ea2_release(&h2_f1);
 #line 63 "examples/ledger/main.hero"
-#line 1869 "main.c"
+#line 1868 "main.c"
     h_0opt_a8ea2_release(&h3_f2);
 #line 63 "examples/ledger/main.hero"
-#line 1872 "main.c"
+#line 1871 "main.c"
     h_0opt_791f9719_release(&h4_f3);
 #line 63 "examples/ledger/main.hero"
-#line 1875 "main.c"
+#line 1874 "main.c"
     hero_array_decref(h6_xs0);
 #line 63 "examples/ledger/main.hero"
-#line 1878 "main.c"
+#line 1877 "main.c"
     h_bookentry_Account_release(&h8_a);
 #line 63 "examples/ledger/main.hero"
-#line 1881 "main.c"
+#line 1880 "main.c"
     h_0opt_a8ea2_release(&h9_f4);
 #line 63 "examples/ledger/main.hero"
-#line 1884 "main.c"
+#line 1883 "main.c"
     h_0opt_a8ea2_release(&h10_f5);
 #line 63 "examples/ledger/main.hero"
-#line 1887 "main.c"
+#line 1886 "main.c"
     h_0opt_70720e79_release(&h11_f6);
 #line 63 "examples/ledger/main.hero"
-#line 1890 "main.c"
+#line 1889 "main.c"
     h_0opt_a8ea2_release(&h12_f7);
 #line 63 "examples/ledger/main.hero"
-#line 1893 "main.c"
+#line 1892 "main.c"
     h_0opt_791f9719_release(&h13_f8);
 #line 63 "examples/ledger/main.hero"
-#line 1896 "main.c"
+#line 1895 "main.c"
     hero_array_decref(h15_xs1);
 #line 63 "examples/ledger/main.hero"
-#line 1899 "main.c"
+#line 1898 "main.c"
     h_bookentry_Entry_release(&h17_e);
 #line 63 "examples/ledger/main.hero"
-#line 1902 "main.c"
+#line 1901 "main.c"
     h_0opt_a8ea2_release(&h18_f9);
 #line 63 "examples/ledger/main.hero"
-#line 1905 "main.c"
+#line 1904 "main.c"
     h_0opt_a8ea2_release(&h19_f10);
 #line 63 "examples/ledger/main.hero"
-#line 1908 "main.c"
+#line 1907 "main.c"
     h_0opt_a8ea2_release(&h20_f11);
 #line 63 "examples/ledger/main.hero"
-#line 1911 "main.c"
+#line 1910 "main.c"
     h_0opt_a8ea2_release(&h21_f12);
 #line 63 "examples/ledger/main.hero"
-#line 1914 "main.c"
+#line 1913 "main.c"
     h_0opt_70720e79_release(&h22_f13);
 #line 63 "examples/ledger/main.hero"
-#line 1917 "main.c"
+#line 1916 "main.c"
     h_0opt_a8ea2_release(&h23_f14);
 #line 63 "examples/ledger/main.hero"
-#line 1920 "main.c"
+#line 1919 "main.c"
     h_0opt_a8ea2_release(&h24_f15);
 #line 63 "examples/ledger/main.hero"
-#line 1923 "main.c"
+#line 1922 "main.c"
     h_0opt_a8ea2_release(&h25_own25);
 #line 63 "examples/ledger/main.hero"
-#line 1926 "main.c"
+#line 1925 "main.c"
     h_0opt_a8ea2_release(&h26_own26);
 #line 63 "examples/ledger/main.hero"
-#line 1929 "main.c"
+#line 1928 "main.c"
     h_0opt_a8ea2_release(&h27_own27);
 #line 63 "examples/ledger/main.hero"
-#line 1932 "main.c"
+#line 1931 "main.c"
     h_0opt_a8ea2_release(&h28_own28);
 #line 63 "examples/ledger/main.hero"
-#line 1935 "main.c"
+#line 1934 "main.c"
     h_0opt_a8ea2_release(&h29_own29);
 #line 63 "examples/ledger/main.hero"
-#line 1938 "main.c"
+#line 1937 "main.c"
     h_0opt_791f9719_release(&h30_own30);
 #line 63 "examples/ledger/main.hero"
-#line 1941 "main.c"
+#line 1940 "main.c"
     h_0opt_a8ea2_release(&h31_own31);
 #line 63 "examples/ledger/main.hero"
-#line 1944 "main.c"
+#line 1943 "main.c"
     hero_array_decref(h32_own32);
 #line 63 "examples/ledger/main.hero"
-#line 1947 "main.c"
+#line 1946 "main.c"
     h_0opt_a8ea2_release(&h33_own33);
 #line 63 "examples/ledger/main.hero"
-#line 1950 "main.c"
+#line 1949 "main.c"
     h_0opt_a8ea2_release(&h34_own34);
 #line 63 "examples/ledger/main.hero"
-#line 1953 "main.c"
+#line 1952 "main.c"
     h_0opt_791f9719_release(&h35_own35);
 #line 63 "examples/ledger/main.hero"
-#line 1956 "main.c"
+#line 1955 "main.c"
     h_0opt_a8ea2_release(&h36_own36);
 #line 63 "examples/ledger/main.hero"
-#line 1959 "main.c"
+#line 1958 "main.c"
     h_0opt_a8ea2_release(&h37_own37);
 #line 63 "examples/ledger/main.hero"
-#line 1962 "main.c"
+#line 1961 "main.c"
     h_0opt_70720e79_release(&h38_own38);
 #line 63 "examples/ledger/main.hero"
-#line 1965 "main.c"
+#line 1964 "main.c"
     h_0opt_a8ea2_release(&h39_own39);
 #line 63 "examples/ledger/main.hero"
-#line 1968 "main.c"
+#line 1967 "main.c"
     h_0opt_a8ea2_release(&h40_own40);
 #line 63 "examples/ledger/main.hero"
-#line 1971 "main.c"
+#line 1970 "main.c"
     h_0opt_a8ea2_release(&h41_own41);
 #line 63 "examples/ledger/main.hero"
-#line 1974 "main.c"
+#line 1973 "main.c"
     h_0opt_a8ea2_release(&h42_own42);
 #line 63 "examples/ledger/main.hero"
-#line 1977 "main.c"
+#line 1976 "main.c"
     hero_array_decref(h43_own43);
 #line 63 "examples/ledger/main.hero"
-#line 1980 "main.c"
+#line 1979 "main.c"
     h_0opt_a8ea2_release(&h44_own44);
 #line 63 "examples/ledger/main.hero"
-#line 1983 "main.c"
+#line 1982 "main.c"
     h_0opt_a8ea2_release(&h45_own45);
 #line 63 "examples/ledger/main.hero"
-#line 1986 "main.c"
+#line 1985 "main.c"
     h_0opt_a8ea2_release(&h46_own46);
 #line 63 "examples/ledger/main.hero"
-#line 1989 "main.c"
+#line 1988 "main.c"
     h_0opt_a8ea2_release(&h47_own47);
 #line 63 "examples/ledger/main.hero"
-#line 1992 "main.c"
+#line 1991 "main.c"
     h_0opt_a8ea2_release(&h48_own48);
 #line 63 "examples/ledger/main.hero"
-#line 1995 "main.c"
+#line 1994 "main.c"
     h_0opt_a8ea2_release(&h49_own49);
 #line 63 "examples/ledger/main.hero"
-#line 1998 "main.c"
+#line 1997 "main.c"
     h_0opt_a8ea2_release(&h50_own50);
 #line 63 "examples/ledger/main.hero"
-#line 2001 "main.c"
+#line 2000 "main.c"
     h_0opt_a8ea2_release(&h51_own51);
 #line 63 "examples/ledger/main.hero"
-#line 2004 "main.c"
+#line 2003 "main.c"
     h_0opt_a8ea2_release(&h52_own52);
 #line 63 "examples/ledger/main.hero"
-#line 2007 "main.c"
+#line 2006 "main.c"
     h_0opt_70720e79_release(&h53_own53);
 #line 63 "examples/ledger/main.hero"
-#line 2010 "main.c"
+#line 2009 "main.c"
     h_0opt_a8ea2_release(&h54_own54);
 #line 63 "examples/ledger/main.hero"
-#line 2013 "main.c"
+#line 2012 "main.c"
     h_0opt_a8ea2_release(&h55_own55);
 #line 63 "examples/ledger/main.hero"
-#line 2016 "main.c"
+#line 2015 "main.c"
     h_0opt_a8ea2_release(&h56_own56);
 #line 63 "examples/ledger/main.hero"
-#line 2019 "main.c"
+#line 2018 "main.c"
     h_0opt_a8ea2_release(&h57_own57);
 #line 63 "examples/ledger/main.hero"
-#line 2022 "main.c"
+#line 2021 "main.c"
     h_0opt_a8ea2_release(&h58_own58);
 #line 63 "examples/ledger/main.hero"
-#line 2025 "main.c"
+#line 2024 "main.c"
     h_0opt_a8ea2_release(&h59_own59);
     return t34;
 bb7:
@@ -2037,15 +2036,15 @@ bb7:
     t242 = h32_own32;
 #line 66 "examples/ledger/main.hero"
     h32_own32 = t49;
-#line 2041 "main.c"
+#line 2040 "main.c"
     hero_array_decref(t242);
 #line 66 "examples/ledger/main.hero"
     t243 = h6_xs0;
-#line 2045 "main.c"
+#line 2044 "main.c"
     hero_array_incref(t49);
 #line 66 "examples/ledger/main.hero"
     h6_xs0 = t49;
-#line 2049 "main.c"
+#line 2048 "main.c"
     hero_array_decref(t243);
 #line 66 "examples/ledger/main.hero"
     t50 = INT64_C(0);
@@ -2059,7 +2058,7 @@ bb8:
     t44 = h4_f3;
 #line 64 "examples/ledger/main.hero"
     t45 = t44.as.err;
-#line 2063 "main.c"
+#line 2062 "main.c"
     hero_failure_retain(&t45);
 #line 64 "examples/ledger/main.hero"
     t46 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = t45};
@@ -2067,175 +2066,175 @@ bb8:
     t244 = h33_own33;
 #line 64 "examples/ledger/main.hero"
     h33_own33 = t46;
-#line 2071 "main.c"
+#line 2070 "main.c"
     h_0opt_a8ea2_release(&t244);
 #line 64 "examples/ledger/main.hero"
-#line 2074 "main.c"
+#line 2073 "main.c"
     h_0opt_a8ea2_retain(&t46);
 #line 64 "examples/ledger/main.hero"
-#line 2077 "main.c"
+#line 2076 "main.c"
     h_0opt_a8ea2_release(&h1_f0);
 #line 64 "examples/ledger/main.hero"
-#line 2080 "main.c"
+#line 2079 "main.c"
     h_0opt_a8ea2_release(&h2_f1);
 #line 64 "examples/ledger/main.hero"
-#line 2083 "main.c"
+#line 2082 "main.c"
     h_0opt_a8ea2_release(&h3_f2);
 #line 64 "examples/ledger/main.hero"
-#line 2086 "main.c"
+#line 2085 "main.c"
     h_0opt_791f9719_release(&h4_f3);
 #line 64 "examples/ledger/main.hero"
-#line 2089 "main.c"
+#line 2088 "main.c"
     hero_array_decref(h6_xs0);
 #line 64 "examples/ledger/main.hero"
-#line 2092 "main.c"
+#line 2091 "main.c"
     h_bookentry_Account_release(&h8_a);
 #line 64 "examples/ledger/main.hero"
-#line 2095 "main.c"
+#line 2094 "main.c"
     h_0opt_a8ea2_release(&h9_f4);
 #line 64 "examples/ledger/main.hero"
-#line 2098 "main.c"
+#line 2097 "main.c"
     h_0opt_a8ea2_release(&h10_f5);
 #line 64 "examples/ledger/main.hero"
-#line 2101 "main.c"
+#line 2100 "main.c"
     h_0opt_70720e79_release(&h11_f6);
 #line 64 "examples/ledger/main.hero"
-#line 2104 "main.c"
+#line 2103 "main.c"
     h_0opt_a8ea2_release(&h12_f7);
 #line 64 "examples/ledger/main.hero"
-#line 2107 "main.c"
+#line 2106 "main.c"
     h_0opt_791f9719_release(&h13_f8);
 #line 64 "examples/ledger/main.hero"
-#line 2110 "main.c"
+#line 2109 "main.c"
     hero_array_decref(h15_xs1);
 #line 64 "examples/ledger/main.hero"
-#line 2113 "main.c"
+#line 2112 "main.c"
     h_bookentry_Entry_release(&h17_e);
 #line 64 "examples/ledger/main.hero"
-#line 2116 "main.c"
+#line 2115 "main.c"
     h_0opt_a8ea2_release(&h18_f9);
 #line 64 "examples/ledger/main.hero"
-#line 2119 "main.c"
+#line 2118 "main.c"
     h_0opt_a8ea2_release(&h19_f10);
 #line 64 "examples/ledger/main.hero"
-#line 2122 "main.c"
+#line 2121 "main.c"
     h_0opt_a8ea2_release(&h20_f11);
 #line 64 "examples/ledger/main.hero"
-#line 2125 "main.c"
+#line 2124 "main.c"
     h_0opt_a8ea2_release(&h21_f12);
 #line 64 "examples/ledger/main.hero"
-#line 2128 "main.c"
+#line 2127 "main.c"
     h_0opt_70720e79_release(&h22_f13);
 #line 64 "examples/ledger/main.hero"
-#line 2131 "main.c"
+#line 2130 "main.c"
     h_0opt_a8ea2_release(&h23_f14);
 #line 64 "examples/ledger/main.hero"
-#line 2134 "main.c"
+#line 2133 "main.c"
     h_0opt_a8ea2_release(&h24_f15);
 #line 64 "examples/ledger/main.hero"
-#line 2137 "main.c"
+#line 2136 "main.c"
     h_0opt_a8ea2_release(&h25_own25);
 #line 64 "examples/ledger/main.hero"
-#line 2140 "main.c"
+#line 2139 "main.c"
     h_0opt_a8ea2_release(&h26_own26);
 #line 64 "examples/ledger/main.hero"
-#line 2143 "main.c"
+#line 2142 "main.c"
     h_0opt_a8ea2_release(&h27_own27);
 #line 64 "examples/ledger/main.hero"
-#line 2146 "main.c"
+#line 2145 "main.c"
     h_0opt_a8ea2_release(&h28_own28);
 #line 64 "examples/ledger/main.hero"
-#line 2149 "main.c"
+#line 2148 "main.c"
     h_0opt_a8ea2_release(&h29_own29);
 #line 64 "examples/ledger/main.hero"
-#line 2152 "main.c"
+#line 2151 "main.c"
     h_0opt_791f9719_release(&h30_own30);
 #line 64 "examples/ledger/main.hero"
-#line 2155 "main.c"
+#line 2154 "main.c"
     h_0opt_a8ea2_release(&h31_own31);
 #line 64 "examples/ledger/main.hero"
-#line 2158 "main.c"
+#line 2157 "main.c"
     hero_array_decref(h32_own32);
 #line 64 "examples/ledger/main.hero"
-#line 2161 "main.c"
+#line 2160 "main.c"
     h_0opt_a8ea2_release(&h33_own33);
 #line 64 "examples/ledger/main.hero"
-#line 2164 "main.c"
+#line 2163 "main.c"
     h_0opt_a8ea2_release(&h34_own34);
 #line 64 "examples/ledger/main.hero"
-#line 2167 "main.c"
+#line 2166 "main.c"
     h_0opt_791f9719_release(&h35_own35);
 #line 64 "examples/ledger/main.hero"
-#line 2170 "main.c"
+#line 2169 "main.c"
     h_0opt_a8ea2_release(&h36_own36);
 #line 64 "examples/ledger/main.hero"
-#line 2173 "main.c"
+#line 2172 "main.c"
     h_0opt_a8ea2_release(&h37_own37);
 #line 64 "examples/ledger/main.hero"
-#line 2176 "main.c"
+#line 2175 "main.c"
     h_0opt_70720e79_release(&h38_own38);
 #line 64 "examples/ledger/main.hero"
-#line 2179 "main.c"
+#line 2178 "main.c"
     h_0opt_a8ea2_release(&h39_own39);
 #line 64 "examples/ledger/main.hero"
-#line 2182 "main.c"
+#line 2181 "main.c"
     h_0opt_a8ea2_release(&h40_own40);
 #line 64 "examples/ledger/main.hero"
-#line 2185 "main.c"
+#line 2184 "main.c"
     h_0opt_a8ea2_release(&h41_own41);
 #line 64 "examples/ledger/main.hero"
-#line 2188 "main.c"
+#line 2187 "main.c"
     h_0opt_a8ea2_release(&h42_own42);
 #line 64 "examples/ledger/main.hero"
-#line 2191 "main.c"
+#line 2190 "main.c"
     hero_array_decref(h43_own43);
 #line 64 "examples/ledger/main.hero"
-#line 2194 "main.c"
+#line 2193 "main.c"
     h_0opt_a8ea2_release(&h44_own44);
 #line 64 "examples/ledger/main.hero"
-#line 2197 "main.c"
+#line 2196 "main.c"
     h_0opt_a8ea2_release(&h45_own45);
 #line 64 "examples/ledger/main.hero"
-#line 2200 "main.c"
+#line 2199 "main.c"
     h_0opt_a8ea2_release(&h46_own46);
 #line 64 "examples/ledger/main.hero"
-#line 2203 "main.c"
+#line 2202 "main.c"
     h_0opt_a8ea2_release(&h47_own47);
 #line 64 "examples/ledger/main.hero"
-#line 2206 "main.c"
+#line 2205 "main.c"
     h_0opt_a8ea2_release(&h48_own48);
 #line 64 "examples/ledger/main.hero"
-#line 2209 "main.c"
+#line 2208 "main.c"
     h_0opt_a8ea2_release(&h49_own49);
 #line 64 "examples/ledger/main.hero"
-#line 2212 "main.c"
+#line 2211 "main.c"
     h_0opt_a8ea2_release(&h50_own50);
 #line 64 "examples/ledger/main.hero"
-#line 2215 "main.c"
+#line 2214 "main.c"
     h_0opt_a8ea2_release(&h51_own51);
 #line 64 "examples/ledger/main.hero"
-#line 2218 "main.c"
+#line 2217 "main.c"
     h_0opt_a8ea2_release(&h52_own52);
 #line 64 "examples/ledger/main.hero"
-#line 2221 "main.c"
+#line 2220 "main.c"
     h_0opt_70720e79_release(&h53_own53);
 #line 64 "examples/ledger/main.hero"
-#line 2224 "main.c"
+#line 2223 "main.c"
     h_0opt_a8ea2_release(&h54_own54);
 #line 64 "examples/ledger/main.hero"
-#line 2227 "main.c"
+#line 2226 "main.c"
     h_0opt_a8ea2_release(&h55_own55);
 #line 64 "examples/ledger/main.hero"
-#line 2230 "main.c"
+#line 2229 "main.c"
     h_0opt_a8ea2_release(&h56_own56);
 #line 64 "examples/ledger/main.hero"
-#line 2233 "main.c"
+#line 2232 "main.c"
     h_0opt_a8ea2_release(&h57_own57);
 #line 64 "examples/ledger/main.hero"
-#line 2236 "main.c"
+#line 2235 "main.c"
     h_0opt_a8ea2_release(&h58_own58);
 #line 64 "examples/ledger/main.hero"
-#line 2239 "main.c"
+#line 2238 "main.c"
     h_0opt_a8ea2_release(&h59_own59);
     return t46;
 bb9:
@@ -2259,11 +2258,11 @@ bb10:
     t57 = *(h_bookentry_Account const *)hero_array_at(t55, t56);
 #line 66 "examples/ledger/main.hero"
     t245 = h8_a;
-#line 2263 "main.c"
+#line 2262 "main.c"
     h_bookentry_Account_retain(&t57);
 #line 66 "examples/ledger/main.hero"
     h8_a = t57;
-#line 2267 "main.c"
+#line 2266 "main.c"
     h_bookentry_Account_release(&t245);
 #line 67 "examples/ledger/main.hero"
     t58 = h5_accounts;
@@ -2279,15 +2278,15 @@ bb10:
     t246 = h34_own34;
 #line 67 "examples/ledger/main.hero"
     h34_own34 = t62;
-#line 2283 "main.c"
+#line 2282 "main.c"
     h_0opt_a8ea2_release(&t246);
 #line 67 "examples/ledger/main.hero"
     t247 = h9_f4;
-#line 2287 "main.c"
+#line 2286 "main.c"
     h_0opt_a8ea2_retain(&t62);
 #line 67 "examples/ledger/main.hero"
     h9_f4 = t62;
-#line 2291 "main.c"
+#line 2290 "main.c"
     h_0opt_a8ea2_release(&t247);
 #line 67 "examples/ledger/main.hero"
     t63 = h9_f4;
@@ -2327,15 +2326,15 @@ bb12:
     t248 = h35_own35;
 #line 73 "examples/ledger/main.hero"
     h35_own35 = t115;
-#line 2331 "main.c"
+#line 2330 "main.c"
     h_0opt_791f9719_release(&t248);
 #line 73 "examples/ledger/main.hero"
     t249 = h13_f8;
-#line 2335 "main.c"
+#line 2334 "main.c"
     h_0opt_791f9719_retain(&t115);
 #line 73 "examples/ledger/main.hero"
     h13_f8 = t115;
-#line 2339 "main.c"
+#line 2338 "main.c"
     h_0opt_791f9719_release(&t249);
 #line 73 "examples/ledger/main.hero"
     t116 = h13_f8;
@@ -2364,15 +2363,15 @@ bb13:
     t250 = h36_own36;
 #line 68 "examples/ledger/main.hero"
     h36_own36 = t76;
-#line 2368 "main.c"
+#line 2367 "main.c"
     h_0opt_a8ea2_release(&t250);
 #line 68 "examples/ledger/main.hero"
     t251 = h10_f5;
-#line 2372 "main.c"
+#line 2371 "main.c"
     h_0opt_a8ea2_retain(&t76);
 #line 68 "examples/ledger/main.hero"
     h10_f5 = t76;
-#line 2376 "main.c"
+#line 2375 "main.c"
     h_0opt_a8ea2_release(&t251);
 #line 68 "examples/ledger/main.hero"
     t77 = h10_f5;
@@ -2390,7 +2389,7 @@ bb14:
     t67 = h9_f4;
 #line 67 "examples/ledger/main.hero"
     t68 = t67.as.err;
-#line 2394 "main.c"
+#line 2393 "main.c"
     hero_failure_retain(&t68);
 #line 67 "examples/ledger/main.hero"
     t69 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = t68};
@@ -2398,175 +2397,175 @@ bb14:
     t252 = h37_own37;
 #line 67 "examples/ledger/main.hero"
     h37_own37 = t69;
-#line 2402 "main.c"
+#line 2401 "main.c"
     h_0opt_a8ea2_release(&t252);
 #line 67 "examples/ledger/main.hero"
-#line 2405 "main.c"
+#line 2404 "main.c"
     h_0opt_a8ea2_retain(&t69);
 #line 67 "examples/ledger/main.hero"
-#line 2408 "main.c"
+#line 2407 "main.c"
     h_0opt_a8ea2_release(&h1_f0);
 #line 67 "examples/ledger/main.hero"
-#line 2411 "main.c"
+#line 2410 "main.c"
     h_0opt_a8ea2_release(&h2_f1);
 #line 67 "examples/ledger/main.hero"
-#line 2414 "main.c"
+#line 2413 "main.c"
     h_0opt_a8ea2_release(&h3_f2);
 #line 67 "examples/ledger/main.hero"
-#line 2417 "main.c"
+#line 2416 "main.c"
     h_0opt_791f9719_release(&h4_f3);
 #line 67 "examples/ledger/main.hero"
-#line 2420 "main.c"
+#line 2419 "main.c"
     hero_array_decref(h6_xs0);
 #line 67 "examples/ledger/main.hero"
-#line 2423 "main.c"
+#line 2422 "main.c"
     h_bookentry_Account_release(&h8_a);
 #line 67 "examples/ledger/main.hero"
-#line 2426 "main.c"
+#line 2425 "main.c"
     h_0opt_a8ea2_release(&h9_f4);
 #line 67 "examples/ledger/main.hero"
-#line 2429 "main.c"
+#line 2428 "main.c"
     h_0opt_a8ea2_release(&h10_f5);
 #line 67 "examples/ledger/main.hero"
-#line 2432 "main.c"
+#line 2431 "main.c"
     h_0opt_70720e79_release(&h11_f6);
 #line 67 "examples/ledger/main.hero"
-#line 2435 "main.c"
+#line 2434 "main.c"
     h_0opt_a8ea2_release(&h12_f7);
 #line 67 "examples/ledger/main.hero"
-#line 2438 "main.c"
+#line 2437 "main.c"
     h_0opt_791f9719_release(&h13_f8);
 #line 67 "examples/ledger/main.hero"
-#line 2441 "main.c"
+#line 2440 "main.c"
     hero_array_decref(h15_xs1);
 #line 67 "examples/ledger/main.hero"
-#line 2444 "main.c"
+#line 2443 "main.c"
     h_bookentry_Entry_release(&h17_e);
 #line 67 "examples/ledger/main.hero"
-#line 2447 "main.c"
+#line 2446 "main.c"
     h_0opt_a8ea2_release(&h18_f9);
 #line 67 "examples/ledger/main.hero"
-#line 2450 "main.c"
+#line 2449 "main.c"
     h_0opt_a8ea2_release(&h19_f10);
 #line 67 "examples/ledger/main.hero"
-#line 2453 "main.c"
+#line 2452 "main.c"
     h_0opt_a8ea2_release(&h20_f11);
 #line 67 "examples/ledger/main.hero"
-#line 2456 "main.c"
+#line 2455 "main.c"
     h_0opt_a8ea2_release(&h21_f12);
 #line 67 "examples/ledger/main.hero"
-#line 2459 "main.c"
+#line 2458 "main.c"
     h_0opt_70720e79_release(&h22_f13);
 #line 67 "examples/ledger/main.hero"
-#line 2462 "main.c"
+#line 2461 "main.c"
     h_0opt_a8ea2_release(&h23_f14);
 #line 67 "examples/ledger/main.hero"
-#line 2465 "main.c"
+#line 2464 "main.c"
     h_0opt_a8ea2_release(&h24_f15);
 #line 67 "examples/ledger/main.hero"
-#line 2468 "main.c"
+#line 2467 "main.c"
     h_0opt_a8ea2_release(&h25_own25);
 #line 67 "examples/ledger/main.hero"
-#line 2471 "main.c"
+#line 2470 "main.c"
     h_0opt_a8ea2_release(&h26_own26);
 #line 67 "examples/ledger/main.hero"
-#line 2474 "main.c"
+#line 2473 "main.c"
     h_0opt_a8ea2_release(&h27_own27);
 #line 67 "examples/ledger/main.hero"
-#line 2477 "main.c"
+#line 2476 "main.c"
     h_0opt_a8ea2_release(&h28_own28);
 #line 67 "examples/ledger/main.hero"
-#line 2480 "main.c"
+#line 2479 "main.c"
     h_0opt_a8ea2_release(&h29_own29);
 #line 67 "examples/ledger/main.hero"
-#line 2483 "main.c"
+#line 2482 "main.c"
     h_0opt_791f9719_release(&h30_own30);
 #line 67 "examples/ledger/main.hero"
-#line 2486 "main.c"
+#line 2485 "main.c"
     h_0opt_a8ea2_release(&h31_own31);
 #line 67 "examples/ledger/main.hero"
-#line 2489 "main.c"
+#line 2488 "main.c"
     hero_array_decref(h32_own32);
 #line 67 "examples/ledger/main.hero"
-#line 2492 "main.c"
+#line 2491 "main.c"
     h_0opt_a8ea2_release(&h33_own33);
 #line 67 "examples/ledger/main.hero"
-#line 2495 "main.c"
+#line 2494 "main.c"
     h_0opt_a8ea2_release(&h34_own34);
 #line 67 "examples/ledger/main.hero"
-#line 2498 "main.c"
+#line 2497 "main.c"
     h_0opt_791f9719_release(&h35_own35);
 #line 67 "examples/ledger/main.hero"
-#line 2501 "main.c"
+#line 2500 "main.c"
     h_0opt_a8ea2_release(&h36_own36);
 #line 67 "examples/ledger/main.hero"
-#line 2504 "main.c"
+#line 2503 "main.c"
     h_0opt_a8ea2_release(&h37_own37);
 #line 67 "examples/ledger/main.hero"
-#line 2507 "main.c"
+#line 2506 "main.c"
     h_0opt_70720e79_release(&h38_own38);
 #line 67 "examples/ledger/main.hero"
-#line 2510 "main.c"
+#line 2509 "main.c"
     h_0opt_a8ea2_release(&h39_own39);
 #line 67 "examples/ledger/main.hero"
-#line 2513 "main.c"
+#line 2512 "main.c"
     h_0opt_a8ea2_release(&h40_own40);
 #line 67 "examples/ledger/main.hero"
-#line 2516 "main.c"
+#line 2515 "main.c"
     h_0opt_a8ea2_release(&h41_own41);
 #line 67 "examples/ledger/main.hero"
-#line 2519 "main.c"
+#line 2518 "main.c"
     h_0opt_a8ea2_release(&h42_own42);
 #line 67 "examples/ledger/main.hero"
-#line 2522 "main.c"
+#line 2521 "main.c"
     hero_array_decref(h43_own43);
 #line 67 "examples/ledger/main.hero"
-#line 2525 "main.c"
+#line 2524 "main.c"
     h_0opt_a8ea2_release(&h44_own44);
 #line 67 "examples/ledger/main.hero"
-#line 2528 "main.c"
+#line 2527 "main.c"
     h_0opt_a8ea2_release(&h45_own45);
 #line 67 "examples/ledger/main.hero"
-#line 2531 "main.c"
+#line 2530 "main.c"
     h_0opt_a8ea2_release(&h46_own46);
 #line 67 "examples/ledger/main.hero"
-#line 2534 "main.c"
+#line 2533 "main.c"
     h_0opt_a8ea2_release(&h47_own47);
 #line 67 "examples/ledger/main.hero"
-#line 2537 "main.c"
+#line 2536 "main.c"
     h_0opt_a8ea2_release(&h48_own48);
 #line 67 "examples/ledger/main.hero"
-#line 2540 "main.c"
+#line 2539 "main.c"
     h_0opt_a8ea2_release(&h49_own49);
 #line 67 "examples/ledger/main.hero"
-#line 2543 "main.c"
+#line 2542 "main.c"
     h_0opt_a8ea2_release(&h50_own50);
 #line 67 "examples/ledger/main.hero"
-#line 2546 "main.c"
+#line 2545 "main.c"
     h_0opt_a8ea2_release(&h51_own51);
 #line 67 "examples/ledger/main.hero"
-#line 2549 "main.c"
+#line 2548 "main.c"
     h_0opt_a8ea2_release(&h52_own52);
 #line 67 "examples/ledger/main.hero"
-#line 2552 "main.c"
+#line 2551 "main.c"
     h_0opt_70720e79_release(&h53_own53);
 #line 67 "examples/ledger/main.hero"
-#line 2555 "main.c"
+#line 2554 "main.c"
     h_0opt_a8ea2_release(&h54_own54);
 #line 67 "examples/ledger/main.hero"
-#line 2558 "main.c"
+#line 2557 "main.c"
     h_0opt_a8ea2_release(&h55_own55);
 #line 67 "examples/ledger/main.hero"
-#line 2561 "main.c"
+#line 2560 "main.c"
     h_0opt_a8ea2_release(&h56_own56);
 #line 67 "examples/ledger/main.hero"
-#line 2564 "main.c"
+#line 2563 "main.c"
     h_0opt_a8ea2_release(&h57_own57);
 #line 67 "examples/ledger/main.hero"
-#line 2567 "main.c"
+#line 2566 "main.c"
     h_0opt_a8ea2_release(&h58_own58);
 #line 67 "examples/ledger/main.hero"
-#line 2570 "main.c"
+#line 2569 "main.c"
     h_0opt_a8ea2_release(&h59_own59);
     return t69;
 bb15:
@@ -2579,15 +2578,15 @@ bb15:
     t253 = h38_own38;
 #line 69 "examples/ledger/main.hero"
     h38_own38 = t87;
-#line 2583 "main.c"
+#line 2582 "main.c"
     h_0opt_70720e79_release(&t253);
 #line 69 "examples/ledger/main.hero"
     t254 = h11_f6;
-#line 2587 "main.c"
+#line 2586 "main.c"
     h_0opt_70720e79_retain(&t87);
 #line 69 "examples/ledger/main.hero"
     h11_f6 = t87;
-#line 2591 "main.c"
+#line 2590 "main.c"
     h_0opt_70720e79_release(&t254);
 #line 69 "examples/ledger/main.hero"
     t88 = h11_f6;
@@ -2605,7 +2604,7 @@ bb16:
     t81 = h10_f5;
 #line 68 "examples/ledger/main.hero"
     t82 = t81.as.err;
-#line 2609 "main.c"
+#line 2608 "main.c"
     hero_failure_retain(&t82);
 #line 68 "examples/ledger/main.hero"
     t83 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = t82};
@@ -2613,175 +2612,175 @@ bb16:
     t255 = h39_own39;
 #line 68 "examples/ledger/main.hero"
     h39_own39 = t83;
-#line 2617 "main.c"
+#line 2616 "main.c"
     h_0opt_a8ea2_release(&t255);
 #line 68 "examples/ledger/main.hero"
-#line 2620 "main.c"
+#line 2619 "main.c"
     h_0opt_a8ea2_retain(&t83);
 #line 68 "examples/ledger/main.hero"
-#line 2623 "main.c"
+#line 2622 "main.c"
     h_0opt_a8ea2_release(&h1_f0);
 #line 68 "examples/ledger/main.hero"
-#line 2626 "main.c"
+#line 2625 "main.c"
     h_0opt_a8ea2_release(&h2_f1);
 #line 68 "examples/ledger/main.hero"
-#line 2629 "main.c"
+#line 2628 "main.c"
     h_0opt_a8ea2_release(&h3_f2);
 #line 68 "examples/ledger/main.hero"
-#line 2632 "main.c"
+#line 2631 "main.c"
     h_0opt_791f9719_release(&h4_f3);
 #line 68 "examples/ledger/main.hero"
-#line 2635 "main.c"
+#line 2634 "main.c"
     hero_array_decref(h6_xs0);
 #line 68 "examples/ledger/main.hero"
-#line 2638 "main.c"
+#line 2637 "main.c"
     h_bookentry_Account_release(&h8_a);
 #line 68 "examples/ledger/main.hero"
-#line 2641 "main.c"
+#line 2640 "main.c"
     h_0opt_a8ea2_release(&h9_f4);
 #line 68 "examples/ledger/main.hero"
-#line 2644 "main.c"
+#line 2643 "main.c"
     h_0opt_a8ea2_release(&h10_f5);
 #line 68 "examples/ledger/main.hero"
-#line 2647 "main.c"
+#line 2646 "main.c"
     h_0opt_70720e79_release(&h11_f6);
 #line 68 "examples/ledger/main.hero"
-#line 2650 "main.c"
+#line 2649 "main.c"
     h_0opt_a8ea2_release(&h12_f7);
 #line 68 "examples/ledger/main.hero"
-#line 2653 "main.c"
+#line 2652 "main.c"
     h_0opt_791f9719_release(&h13_f8);
 #line 68 "examples/ledger/main.hero"
-#line 2656 "main.c"
+#line 2655 "main.c"
     hero_array_decref(h15_xs1);
 #line 68 "examples/ledger/main.hero"
-#line 2659 "main.c"
+#line 2658 "main.c"
     h_bookentry_Entry_release(&h17_e);
 #line 68 "examples/ledger/main.hero"
-#line 2662 "main.c"
+#line 2661 "main.c"
     h_0opt_a8ea2_release(&h18_f9);
 #line 68 "examples/ledger/main.hero"
-#line 2665 "main.c"
+#line 2664 "main.c"
     h_0opt_a8ea2_release(&h19_f10);
 #line 68 "examples/ledger/main.hero"
-#line 2668 "main.c"
+#line 2667 "main.c"
     h_0opt_a8ea2_release(&h20_f11);
 #line 68 "examples/ledger/main.hero"
-#line 2671 "main.c"
+#line 2670 "main.c"
     h_0opt_a8ea2_release(&h21_f12);
 #line 68 "examples/ledger/main.hero"
-#line 2674 "main.c"
+#line 2673 "main.c"
     h_0opt_70720e79_release(&h22_f13);
 #line 68 "examples/ledger/main.hero"
-#line 2677 "main.c"
+#line 2676 "main.c"
     h_0opt_a8ea2_release(&h23_f14);
 #line 68 "examples/ledger/main.hero"
-#line 2680 "main.c"
+#line 2679 "main.c"
     h_0opt_a8ea2_release(&h24_f15);
 #line 68 "examples/ledger/main.hero"
-#line 2683 "main.c"
+#line 2682 "main.c"
     h_0opt_a8ea2_release(&h25_own25);
 #line 68 "examples/ledger/main.hero"
-#line 2686 "main.c"
+#line 2685 "main.c"
     h_0opt_a8ea2_release(&h26_own26);
 #line 68 "examples/ledger/main.hero"
-#line 2689 "main.c"
+#line 2688 "main.c"
     h_0opt_a8ea2_release(&h27_own27);
 #line 68 "examples/ledger/main.hero"
-#line 2692 "main.c"
+#line 2691 "main.c"
     h_0opt_a8ea2_release(&h28_own28);
 #line 68 "examples/ledger/main.hero"
-#line 2695 "main.c"
+#line 2694 "main.c"
     h_0opt_a8ea2_release(&h29_own29);
 #line 68 "examples/ledger/main.hero"
-#line 2698 "main.c"
+#line 2697 "main.c"
     h_0opt_791f9719_release(&h30_own30);
 #line 68 "examples/ledger/main.hero"
-#line 2701 "main.c"
+#line 2700 "main.c"
     h_0opt_a8ea2_release(&h31_own31);
 #line 68 "examples/ledger/main.hero"
-#line 2704 "main.c"
+#line 2703 "main.c"
     hero_array_decref(h32_own32);
 #line 68 "examples/ledger/main.hero"
-#line 2707 "main.c"
+#line 2706 "main.c"
     h_0opt_a8ea2_release(&h33_own33);
 #line 68 "examples/ledger/main.hero"
-#line 2710 "main.c"
+#line 2709 "main.c"
     h_0opt_a8ea2_release(&h34_own34);
 #line 68 "examples/ledger/main.hero"
-#line 2713 "main.c"
+#line 2712 "main.c"
     h_0opt_791f9719_release(&h35_own35);
 #line 68 "examples/ledger/main.hero"
-#line 2716 "main.c"
+#line 2715 "main.c"
     h_0opt_a8ea2_release(&h36_own36);
 #line 68 "examples/ledger/main.hero"
-#line 2719 "main.c"
+#line 2718 "main.c"
     h_0opt_a8ea2_release(&h37_own37);
 #line 68 "examples/ledger/main.hero"
-#line 2722 "main.c"
+#line 2721 "main.c"
     h_0opt_70720e79_release(&h38_own38);
 #line 68 "examples/ledger/main.hero"
-#line 2725 "main.c"
+#line 2724 "main.c"
     h_0opt_a8ea2_release(&h39_own39);
 #line 68 "examples/ledger/main.hero"
-#line 2728 "main.c"
+#line 2727 "main.c"
     h_0opt_a8ea2_release(&h40_own40);
 #line 68 "examples/ledger/main.hero"
-#line 2731 "main.c"
+#line 2730 "main.c"
     h_0opt_a8ea2_release(&h41_own41);
 #line 68 "examples/ledger/main.hero"
-#line 2734 "main.c"
+#line 2733 "main.c"
     h_0opt_a8ea2_release(&h42_own42);
 #line 68 "examples/ledger/main.hero"
-#line 2737 "main.c"
+#line 2736 "main.c"
     hero_array_decref(h43_own43);
 #line 68 "examples/ledger/main.hero"
-#line 2740 "main.c"
+#line 2739 "main.c"
     h_0opt_a8ea2_release(&h44_own44);
 #line 68 "examples/ledger/main.hero"
-#line 2743 "main.c"
+#line 2742 "main.c"
     h_0opt_a8ea2_release(&h45_own45);
 #line 68 "examples/ledger/main.hero"
-#line 2746 "main.c"
+#line 2745 "main.c"
     h_0opt_a8ea2_release(&h46_own46);
 #line 68 "examples/ledger/main.hero"
-#line 2749 "main.c"
+#line 2748 "main.c"
     h_0opt_a8ea2_release(&h47_own47);
 #line 68 "examples/ledger/main.hero"
-#line 2752 "main.c"
+#line 2751 "main.c"
     h_0opt_a8ea2_release(&h48_own48);
 #line 68 "examples/ledger/main.hero"
-#line 2755 "main.c"
+#line 2754 "main.c"
     h_0opt_a8ea2_release(&h49_own49);
 #line 68 "examples/ledger/main.hero"
-#line 2758 "main.c"
+#line 2757 "main.c"
     h_0opt_a8ea2_release(&h50_own50);
 #line 68 "examples/ledger/main.hero"
-#line 2761 "main.c"
+#line 2760 "main.c"
     h_0opt_a8ea2_release(&h51_own51);
 #line 68 "examples/ledger/main.hero"
-#line 2764 "main.c"
+#line 2763 "main.c"
     h_0opt_a8ea2_release(&h52_own52);
 #line 68 "examples/ledger/main.hero"
-#line 2767 "main.c"
+#line 2766 "main.c"
     h_0opt_70720e79_release(&h53_own53);
 #line 68 "examples/ledger/main.hero"
-#line 2770 "main.c"
+#line 2769 "main.c"
     h_0opt_a8ea2_release(&h54_own54);
 #line 68 "examples/ledger/main.hero"
-#line 2773 "main.c"
+#line 2772 "main.c"
     h_0opt_a8ea2_release(&h55_own55);
 #line 68 "examples/ledger/main.hero"
-#line 2776 "main.c"
+#line 2775 "main.c"
     h_0opt_a8ea2_release(&h56_own56);
 #line 68 "examples/ledger/main.hero"
-#line 2779 "main.c"
+#line 2778 "main.c"
     h_0opt_a8ea2_release(&h57_own57);
 #line 68 "examples/ledger/main.hero"
-#line 2782 "main.c"
+#line 2781 "main.c"
     h_0opt_a8ea2_release(&h58_own58);
 #line 68 "examples/ledger/main.hero"
-#line 2785 "main.c"
+#line 2784 "main.c"
     h_0opt_a8ea2_release(&h59_own59);
     return t83;
 bb17:
@@ -2794,15 +2793,15 @@ bb17:
     t256 = h40_own40;
 #line 70 "examples/ledger/main.hero"
     h40_own40 = t98;
-#line 2798 "main.c"
+#line 2797 "main.c"
     h_0opt_a8ea2_release(&t256);
 #line 70 "examples/ledger/main.hero"
     t257 = h12_f7;
-#line 2802 "main.c"
+#line 2801 "main.c"
     h_0opt_a8ea2_retain(&t98);
 #line 70 "examples/ledger/main.hero"
     h12_f7 = t98;
-#line 2806 "main.c"
+#line 2805 "main.c"
     h_0opt_a8ea2_release(&t257);
 #line 70 "examples/ledger/main.hero"
     t99 = h12_f7;
@@ -2820,7 +2819,7 @@ bb18:
     t92 = h11_f6;
 #line 69 "examples/ledger/main.hero"
     t93 = t92.as.err;
-#line 2824 "main.c"
+#line 2823 "main.c"
     hero_failure_retain(&t93);
 #line 69 "examples/ledger/main.hero"
     t94 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = t93};
@@ -2828,175 +2827,175 @@ bb18:
     t258 = h41_own41;
 #line 69 "examples/ledger/main.hero"
     h41_own41 = t94;
-#line 2832 "main.c"
+#line 2831 "main.c"
     h_0opt_a8ea2_release(&t258);
 #line 69 "examples/ledger/main.hero"
-#line 2835 "main.c"
+#line 2834 "main.c"
     h_0opt_a8ea2_retain(&t94);
 #line 69 "examples/ledger/main.hero"
-#line 2838 "main.c"
+#line 2837 "main.c"
     h_0opt_a8ea2_release(&h1_f0);
 #line 69 "examples/ledger/main.hero"
-#line 2841 "main.c"
+#line 2840 "main.c"
     h_0opt_a8ea2_release(&h2_f1);
 #line 69 "examples/ledger/main.hero"
-#line 2844 "main.c"
+#line 2843 "main.c"
     h_0opt_a8ea2_release(&h3_f2);
 #line 69 "examples/ledger/main.hero"
-#line 2847 "main.c"
+#line 2846 "main.c"
     h_0opt_791f9719_release(&h4_f3);
 #line 69 "examples/ledger/main.hero"
-#line 2850 "main.c"
+#line 2849 "main.c"
     hero_array_decref(h6_xs0);
 #line 69 "examples/ledger/main.hero"
-#line 2853 "main.c"
+#line 2852 "main.c"
     h_bookentry_Account_release(&h8_a);
 #line 69 "examples/ledger/main.hero"
-#line 2856 "main.c"
+#line 2855 "main.c"
     h_0opt_a8ea2_release(&h9_f4);
 #line 69 "examples/ledger/main.hero"
-#line 2859 "main.c"
+#line 2858 "main.c"
     h_0opt_a8ea2_release(&h10_f5);
 #line 69 "examples/ledger/main.hero"
-#line 2862 "main.c"
+#line 2861 "main.c"
     h_0opt_70720e79_release(&h11_f6);
 #line 69 "examples/ledger/main.hero"
-#line 2865 "main.c"
+#line 2864 "main.c"
     h_0opt_a8ea2_release(&h12_f7);
 #line 69 "examples/ledger/main.hero"
-#line 2868 "main.c"
+#line 2867 "main.c"
     h_0opt_791f9719_release(&h13_f8);
 #line 69 "examples/ledger/main.hero"
-#line 2871 "main.c"
+#line 2870 "main.c"
     hero_array_decref(h15_xs1);
 #line 69 "examples/ledger/main.hero"
-#line 2874 "main.c"
+#line 2873 "main.c"
     h_bookentry_Entry_release(&h17_e);
 #line 69 "examples/ledger/main.hero"
-#line 2877 "main.c"
+#line 2876 "main.c"
     h_0opt_a8ea2_release(&h18_f9);
 #line 69 "examples/ledger/main.hero"
-#line 2880 "main.c"
+#line 2879 "main.c"
     h_0opt_a8ea2_release(&h19_f10);
 #line 69 "examples/ledger/main.hero"
-#line 2883 "main.c"
+#line 2882 "main.c"
     h_0opt_a8ea2_release(&h20_f11);
 #line 69 "examples/ledger/main.hero"
-#line 2886 "main.c"
+#line 2885 "main.c"
     h_0opt_a8ea2_release(&h21_f12);
 #line 69 "examples/ledger/main.hero"
-#line 2889 "main.c"
+#line 2888 "main.c"
     h_0opt_70720e79_release(&h22_f13);
 #line 69 "examples/ledger/main.hero"
-#line 2892 "main.c"
+#line 2891 "main.c"
     h_0opt_a8ea2_release(&h23_f14);
 #line 69 "examples/ledger/main.hero"
-#line 2895 "main.c"
+#line 2894 "main.c"
     h_0opt_a8ea2_release(&h24_f15);
 #line 69 "examples/ledger/main.hero"
-#line 2898 "main.c"
+#line 2897 "main.c"
     h_0opt_a8ea2_release(&h25_own25);
 #line 69 "examples/ledger/main.hero"
-#line 2901 "main.c"
+#line 2900 "main.c"
     h_0opt_a8ea2_release(&h26_own26);
 #line 69 "examples/ledger/main.hero"
-#line 2904 "main.c"
+#line 2903 "main.c"
     h_0opt_a8ea2_release(&h27_own27);
 #line 69 "examples/ledger/main.hero"
-#line 2907 "main.c"
+#line 2906 "main.c"
     h_0opt_a8ea2_release(&h28_own28);
 #line 69 "examples/ledger/main.hero"
-#line 2910 "main.c"
+#line 2909 "main.c"
     h_0opt_a8ea2_release(&h29_own29);
 #line 69 "examples/ledger/main.hero"
-#line 2913 "main.c"
+#line 2912 "main.c"
     h_0opt_791f9719_release(&h30_own30);
 #line 69 "examples/ledger/main.hero"
-#line 2916 "main.c"
+#line 2915 "main.c"
     h_0opt_a8ea2_release(&h31_own31);
 #line 69 "examples/ledger/main.hero"
-#line 2919 "main.c"
+#line 2918 "main.c"
     hero_array_decref(h32_own32);
 #line 69 "examples/ledger/main.hero"
-#line 2922 "main.c"
+#line 2921 "main.c"
     h_0opt_a8ea2_release(&h33_own33);
 #line 69 "examples/ledger/main.hero"
-#line 2925 "main.c"
+#line 2924 "main.c"
     h_0opt_a8ea2_release(&h34_own34);
 #line 69 "examples/ledger/main.hero"
-#line 2928 "main.c"
+#line 2927 "main.c"
     h_0opt_791f9719_release(&h35_own35);
 #line 69 "examples/ledger/main.hero"
-#line 2931 "main.c"
+#line 2930 "main.c"
     h_0opt_a8ea2_release(&h36_own36);
 #line 69 "examples/ledger/main.hero"
-#line 2934 "main.c"
+#line 2933 "main.c"
     h_0opt_a8ea2_release(&h37_own37);
 #line 69 "examples/ledger/main.hero"
-#line 2937 "main.c"
+#line 2936 "main.c"
     h_0opt_70720e79_release(&h38_own38);
 #line 69 "examples/ledger/main.hero"
-#line 2940 "main.c"
+#line 2939 "main.c"
     h_0opt_a8ea2_release(&h39_own39);
 #line 69 "examples/ledger/main.hero"
-#line 2943 "main.c"
+#line 2942 "main.c"
     h_0opt_a8ea2_release(&h40_own40);
 #line 69 "examples/ledger/main.hero"
-#line 2946 "main.c"
+#line 2945 "main.c"
     h_0opt_a8ea2_release(&h41_own41);
 #line 69 "examples/ledger/main.hero"
-#line 2949 "main.c"
+#line 2948 "main.c"
     h_0opt_a8ea2_release(&h42_own42);
 #line 69 "examples/ledger/main.hero"
-#line 2952 "main.c"
+#line 2951 "main.c"
     hero_array_decref(h43_own43);
 #line 69 "examples/ledger/main.hero"
-#line 2955 "main.c"
+#line 2954 "main.c"
     h_0opt_a8ea2_release(&h44_own44);
 #line 69 "examples/ledger/main.hero"
-#line 2958 "main.c"
+#line 2957 "main.c"
     h_0opt_a8ea2_release(&h45_own45);
 #line 69 "examples/ledger/main.hero"
-#line 2961 "main.c"
+#line 2960 "main.c"
     h_0opt_a8ea2_release(&h46_own46);
 #line 69 "examples/ledger/main.hero"
-#line 2964 "main.c"
+#line 2963 "main.c"
     h_0opt_a8ea2_release(&h47_own47);
 #line 69 "examples/ledger/main.hero"
-#line 2967 "main.c"
+#line 2966 "main.c"
     h_0opt_a8ea2_release(&h48_own48);
 #line 69 "examples/ledger/main.hero"
-#line 2970 "main.c"
+#line 2969 "main.c"
     h_0opt_a8ea2_release(&h49_own49);
 #line 69 "examples/ledger/main.hero"
-#line 2973 "main.c"
+#line 2972 "main.c"
     h_0opt_a8ea2_release(&h50_own50);
 #line 69 "examples/ledger/main.hero"
-#line 2976 "main.c"
+#line 2975 "main.c"
     h_0opt_a8ea2_release(&h51_own51);
 #line 69 "examples/ledger/main.hero"
-#line 2979 "main.c"
+#line 2978 "main.c"
     h_0opt_a8ea2_release(&h52_own52);
 #line 69 "examples/ledger/main.hero"
-#line 2982 "main.c"
+#line 2981 "main.c"
     h_0opt_70720e79_release(&h53_own53);
 #line 69 "examples/ledger/main.hero"
-#line 2985 "main.c"
+#line 2984 "main.c"
     h_0opt_a8ea2_release(&h54_own54);
 #line 69 "examples/ledger/main.hero"
-#line 2988 "main.c"
+#line 2987 "main.c"
     h_0opt_a8ea2_release(&h55_own55);
 #line 69 "examples/ledger/main.hero"
-#line 2991 "main.c"
+#line 2990 "main.c"
     h_0opt_a8ea2_release(&h56_own56);
 #line 69 "examples/ledger/main.hero"
-#line 2994 "main.c"
+#line 2993 "main.c"
     h_0opt_a8ea2_release(&h57_own57);
 #line 69 "examples/ledger/main.hero"
-#line 2997 "main.c"
+#line 2996 "main.c"
     h_0opt_a8ea2_release(&h58_own58);
 #line 69 "examples/ledger/main.hero"
-#line 3000 "main.c"
+#line 2999 "main.c"
     h_0opt_a8ea2_release(&h59_own59);
     return t94;
 bb19:
@@ -3008,7 +3007,7 @@ bb20:
     t103 = h12_f7;
 #line 70 "examples/ledger/main.hero"
     t104 = t103.as.err;
-#line 3012 "main.c"
+#line 3011 "main.c"
     hero_failure_retain(&t104);
 #line 70 "examples/ledger/main.hero"
     t105 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = t104};
@@ -3016,175 +3015,175 @@ bb20:
     t259 = h42_own42;
 #line 70 "examples/ledger/main.hero"
     h42_own42 = t105;
-#line 3020 "main.c"
+#line 3019 "main.c"
     h_0opt_a8ea2_release(&t259);
 #line 70 "examples/ledger/main.hero"
-#line 3023 "main.c"
+#line 3022 "main.c"
     h_0opt_a8ea2_retain(&t105);
 #line 70 "examples/ledger/main.hero"
-#line 3026 "main.c"
+#line 3025 "main.c"
     h_0opt_a8ea2_release(&h1_f0);
 #line 70 "examples/ledger/main.hero"
-#line 3029 "main.c"
+#line 3028 "main.c"
     h_0opt_a8ea2_release(&h2_f1);
 #line 70 "examples/ledger/main.hero"
-#line 3032 "main.c"
+#line 3031 "main.c"
     h_0opt_a8ea2_release(&h3_f2);
 #line 70 "examples/ledger/main.hero"
-#line 3035 "main.c"
+#line 3034 "main.c"
     h_0opt_791f9719_release(&h4_f3);
 #line 70 "examples/ledger/main.hero"
-#line 3038 "main.c"
+#line 3037 "main.c"
     hero_array_decref(h6_xs0);
 #line 70 "examples/ledger/main.hero"
-#line 3041 "main.c"
+#line 3040 "main.c"
     h_bookentry_Account_release(&h8_a);
 #line 70 "examples/ledger/main.hero"
-#line 3044 "main.c"
+#line 3043 "main.c"
     h_0opt_a8ea2_release(&h9_f4);
 #line 70 "examples/ledger/main.hero"
-#line 3047 "main.c"
+#line 3046 "main.c"
     h_0opt_a8ea2_release(&h10_f5);
 #line 70 "examples/ledger/main.hero"
-#line 3050 "main.c"
+#line 3049 "main.c"
     h_0opt_70720e79_release(&h11_f6);
 #line 70 "examples/ledger/main.hero"
-#line 3053 "main.c"
+#line 3052 "main.c"
     h_0opt_a8ea2_release(&h12_f7);
 #line 70 "examples/ledger/main.hero"
-#line 3056 "main.c"
+#line 3055 "main.c"
     h_0opt_791f9719_release(&h13_f8);
 #line 70 "examples/ledger/main.hero"
-#line 3059 "main.c"
+#line 3058 "main.c"
     hero_array_decref(h15_xs1);
 #line 70 "examples/ledger/main.hero"
-#line 3062 "main.c"
+#line 3061 "main.c"
     h_bookentry_Entry_release(&h17_e);
 #line 70 "examples/ledger/main.hero"
-#line 3065 "main.c"
+#line 3064 "main.c"
     h_0opt_a8ea2_release(&h18_f9);
 #line 70 "examples/ledger/main.hero"
-#line 3068 "main.c"
+#line 3067 "main.c"
     h_0opt_a8ea2_release(&h19_f10);
 #line 70 "examples/ledger/main.hero"
-#line 3071 "main.c"
+#line 3070 "main.c"
     h_0opt_a8ea2_release(&h20_f11);
 #line 70 "examples/ledger/main.hero"
-#line 3074 "main.c"
+#line 3073 "main.c"
     h_0opt_a8ea2_release(&h21_f12);
 #line 70 "examples/ledger/main.hero"
-#line 3077 "main.c"
+#line 3076 "main.c"
     h_0opt_70720e79_release(&h22_f13);
 #line 70 "examples/ledger/main.hero"
-#line 3080 "main.c"
+#line 3079 "main.c"
     h_0opt_a8ea2_release(&h23_f14);
 #line 70 "examples/ledger/main.hero"
-#line 3083 "main.c"
+#line 3082 "main.c"
     h_0opt_a8ea2_release(&h24_f15);
 #line 70 "examples/ledger/main.hero"
-#line 3086 "main.c"
+#line 3085 "main.c"
     h_0opt_a8ea2_release(&h25_own25);
 #line 70 "examples/ledger/main.hero"
-#line 3089 "main.c"
+#line 3088 "main.c"
     h_0opt_a8ea2_release(&h26_own26);
 #line 70 "examples/ledger/main.hero"
-#line 3092 "main.c"
+#line 3091 "main.c"
     h_0opt_a8ea2_release(&h27_own27);
 #line 70 "examples/ledger/main.hero"
-#line 3095 "main.c"
+#line 3094 "main.c"
     h_0opt_a8ea2_release(&h28_own28);
 #line 70 "examples/ledger/main.hero"
-#line 3098 "main.c"
+#line 3097 "main.c"
     h_0opt_a8ea2_release(&h29_own29);
 #line 70 "examples/ledger/main.hero"
-#line 3101 "main.c"
+#line 3100 "main.c"
     h_0opt_791f9719_release(&h30_own30);
 #line 70 "examples/ledger/main.hero"
-#line 3104 "main.c"
+#line 3103 "main.c"
     h_0opt_a8ea2_release(&h31_own31);
 #line 70 "examples/ledger/main.hero"
-#line 3107 "main.c"
+#line 3106 "main.c"
     hero_array_decref(h32_own32);
 #line 70 "examples/ledger/main.hero"
-#line 3110 "main.c"
+#line 3109 "main.c"
     h_0opt_a8ea2_release(&h33_own33);
 #line 70 "examples/ledger/main.hero"
-#line 3113 "main.c"
+#line 3112 "main.c"
     h_0opt_a8ea2_release(&h34_own34);
 #line 70 "examples/ledger/main.hero"
-#line 3116 "main.c"
+#line 3115 "main.c"
     h_0opt_791f9719_release(&h35_own35);
 #line 70 "examples/ledger/main.hero"
-#line 3119 "main.c"
+#line 3118 "main.c"
     h_0opt_a8ea2_release(&h36_own36);
 #line 70 "examples/ledger/main.hero"
-#line 3122 "main.c"
+#line 3121 "main.c"
     h_0opt_a8ea2_release(&h37_own37);
 #line 70 "examples/ledger/main.hero"
-#line 3125 "main.c"
+#line 3124 "main.c"
     h_0opt_70720e79_release(&h38_own38);
 #line 70 "examples/ledger/main.hero"
-#line 3128 "main.c"
+#line 3127 "main.c"
     h_0opt_a8ea2_release(&h39_own39);
 #line 70 "examples/ledger/main.hero"
-#line 3131 "main.c"
+#line 3130 "main.c"
     h_0opt_a8ea2_release(&h40_own40);
 #line 70 "examples/ledger/main.hero"
-#line 3134 "main.c"
+#line 3133 "main.c"
     h_0opt_a8ea2_release(&h41_own41);
 #line 70 "examples/ledger/main.hero"
-#line 3137 "main.c"
+#line 3136 "main.c"
     h_0opt_a8ea2_release(&h42_own42);
 #line 70 "examples/ledger/main.hero"
-#line 3140 "main.c"
+#line 3139 "main.c"
     hero_array_decref(h43_own43);
 #line 70 "examples/ledger/main.hero"
-#line 3143 "main.c"
+#line 3142 "main.c"
     h_0opt_a8ea2_release(&h44_own44);
 #line 70 "examples/ledger/main.hero"
-#line 3146 "main.c"
+#line 3145 "main.c"
     h_0opt_a8ea2_release(&h45_own45);
 #line 70 "examples/ledger/main.hero"
-#line 3149 "main.c"
+#line 3148 "main.c"
     h_0opt_a8ea2_release(&h46_own46);
 #line 70 "examples/ledger/main.hero"
-#line 3152 "main.c"
+#line 3151 "main.c"
     h_0opt_a8ea2_release(&h47_own47);
 #line 70 "examples/ledger/main.hero"
-#line 3155 "main.c"
+#line 3154 "main.c"
     h_0opt_a8ea2_release(&h48_own48);
 #line 70 "examples/ledger/main.hero"
-#line 3158 "main.c"
+#line 3157 "main.c"
     h_0opt_a8ea2_release(&h49_own49);
 #line 70 "examples/ledger/main.hero"
-#line 3161 "main.c"
+#line 3160 "main.c"
     h_0opt_a8ea2_release(&h50_own50);
 #line 70 "examples/ledger/main.hero"
-#line 3164 "main.c"
+#line 3163 "main.c"
     h_0opt_a8ea2_release(&h51_own51);
 #line 70 "examples/ledger/main.hero"
-#line 3167 "main.c"
+#line 3166 "main.c"
     h_0opt_a8ea2_release(&h52_own52);
 #line 70 "examples/ledger/main.hero"
-#line 3170 "main.c"
+#line 3169 "main.c"
     h_0opt_70720e79_release(&h53_own53);
 #line 70 "examples/ledger/main.hero"
-#line 3173 "main.c"
+#line 3172 "main.c"
     h_0opt_a8ea2_release(&h54_own54);
 #line 70 "examples/ledger/main.hero"
-#line 3176 "main.c"
+#line 3175 "main.c"
     h_0opt_a8ea2_release(&h55_own55);
 #line 70 "examples/ledger/main.hero"
-#line 3179 "main.c"
+#line 3178 "main.c"
     h_0opt_a8ea2_release(&h56_own56);
 #line 70 "examples/ledger/main.hero"
-#line 3182 "main.c"
+#line 3181 "main.c"
     h_0opt_a8ea2_release(&h57_own57);
 #line 70 "examples/ledger/main.hero"
-#line 3185 "main.c"
+#line 3184 "main.c"
     h_0opt_a8ea2_release(&h58_own58);
 #line 70 "examples/ledger/main.hero"
-#line 3188 "main.c"
+#line 3187 "main.c"
     h_0opt_a8ea2_release(&h59_own59);
     return t105;
 bb21:
@@ -3200,15 +3199,15 @@ bb21:
     t260 = h43_own43;
 #line 75 "examples/ledger/main.hero"
     h43_own43 = t125;
-#line 3204 "main.c"
+#line 3203 "main.c"
     hero_array_decref(t260);
 #line 75 "examples/ledger/main.hero"
     t261 = h15_xs1;
-#line 3208 "main.c"
+#line 3207 "main.c"
     hero_array_incref(t125);
 #line 75 "examples/ledger/main.hero"
     h15_xs1 = t125;
-#line 3212 "main.c"
+#line 3211 "main.c"
     hero_array_decref(t261);
 #line 75 "examples/ledger/main.hero"
     t126 = INT64_C(0);
@@ -3222,7 +3221,7 @@ bb22:
     t120 = h13_f8;
 #line 73 "examples/ledger/main.hero"
     t121 = t120.as.err;
-#line 3226 "main.c"
+#line 3225 "main.c"
     hero_failure_retain(&t121);
 #line 73 "examples/ledger/main.hero"
     t122 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = t121};
@@ -3230,175 +3229,175 @@ bb22:
     t262 = h44_own44;
 #line 73 "examples/ledger/main.hero"
     h44_own44 = t122;
-#line 3234 "main.c"
+#line 3233 "main.c"
     h_0opt_a8ea2_release(&t262);
 #line 73 "examples/ledger/main.hero"
-#line 3237 "main.c"
+#line 3236 "main.c"
     h_0opt_a8ea2_retain(&t122);
 #line 73 "examples/ledger/main.hero"
-#line 3240 "main.c"
+#line 3239 "main.c"
     h_0opt_a8ea2_release(&h1_f0);
 #line 73 "examples/ledger/main.hero"
-#line 3243 "main.c"
+#line 3242 "main.c"
     h_0opt_a8ea2_release(&h2_f1);
 #line 73 "examples/ledger/main.hero"
-#line 3246 "main.c"
+#line 3245 "main.c"
     h_0opt_a8ea2_release(&h3_f2);
 #line 73 "examples/ledger/main.hero"
-#line 3249 "main.c"
+#line 3248 "main.c"
     h_0opt_791f9719_release(&h4_f3);
 #line 73 "examples/ledger/main.hero"
-#line 3252 "main.c"
+#line 3251 "main.c"
     hero_array_decref(h6_xs0);
 #line 73 "examples/ledger/main.hero"
-#line 3255 "main.c"
+#line 3254 "main.c"
     h_bookentry_Account_release(&h8_a);
 #line 73 "examples/ledger/main.hero"
-#line 3258 "main.c"
+#line 3257 "main.c"
     h_0opt_a8ea2_release(&h9_f4);
 #line 73 "examples/ledger/main.hero"
-#line 3261 "main.c"
+#line 3260 "main.c"
     h_0opt_a8ea2_release(&h10_f5);
 #line 73 "examples/ledger/main.hero"
-#line 3264 "main.c"
+#line 3263 "main.c"
     h_0opt_70720e79_release(&h11_f6);
 #line 73 "examples/ledger/main.hero"
-#line 3267 "main.c"
+#line 3266 "main.c"
     h_0opt_a8ea2_release(&h12_f7);
 #line 73 "examples/ledger/main.hero"
-#line 3270 "main.c"
+#line 3269 "main.c"
     h_0opt_791f9719_release(&h13_f8);
 #line 73 "examples/ledger/main.hero"
-#line 3273 "main.c"
+#line 3272 "main.c"
     hero_array_decref(h15_xs1);
 #line 73 "examples/ledger/main.hero"
-#line 3276 "main.c"
+#line 3275 "main.c"
     h_bookentry_Entry_release(&h17_e);
 #line 73 "examples/ledger/main.hero"
-#line 3279 "main.c"
+#line 3278 "main.c"
     h_0opt_a8ea2_release(&h18_f9);
 #line 73 "examples/ledger/main.hero"
-#line 3282 "main.c"
+#line 3281 "main.c"
     h_0opt_a8ea2_release(&h19_f10);
 #line 73 "examples/ledger/main.hero"
-#line 3285 "main.c"
+#line 3284 "main.c"
     h_0opt_a8ea2_release(&h20_f11);
 #line 73 "examples/ledger/main.hero"
-#line 3288 "main.c"
+#line 3287 "main.c"
     h_0opt_a8ea2_release(&h21_f12);
 #line 73 "examples/ledger/main.hero"
-#line 3291 "main.c"
+#line 3290 "main.c"
     h_0opt_70720e79_release(&h22_f13);
 #line 73 "examples/ledger/main.hero"
-#line 3294 "main.c"
+#line 3293 "main.c"
     h_0opt_a8ea2_release(&h23_f14);
 #line 73 "examples/ledger/main.hero"
-#line 3297 "main.c"
+#line 3296 "main.c"
     h_0opt_a8ea2_release(&h24_f15);
 #line 73 "examples/ledger/main.hero"
-#line 3300 "main.c"
+#line 3299 "main.c"
     h_0opt_a8ea2_release(&h25_own25);
 #line 73 "examples/ledger/main.hero"
-#line 3303 "main.c"
+#line 3302 "main.c"
     h_0opt_a8ea2_release(&h26_own26);
 #line 73 "examples/ledger/main.hero"
-#line 3306 "main.c"
+#line 3305 "main.c"
     h_0opt_a8ea2_release(&h27_own27);
 #line 73 "examples/ledger/main.hero"
-#line 3309 "main.c"
+#line 3308 "main.c"
     h_0opt_a8ea2_release(&h28_own28);
 #line 73 "examples/ledger/main.hero"
-#line 3312 "main.c"
+#line 3311 "main.c"
     h_0opt_a8ea2_release(&h29_own29);
 #line 73 "examples/ledger/main.hero"
-#line 3315 "main.c"
+#line 3314 "main.c"
     h_0opt_791f9719_release(&h30_own30);
 #line 73 "examples/ledger/main.hero"
-#line 3318 "main.c"
+#line 3317 "main.c"
     h_0opt_a8ea2_release(&h31_own31);
 #line 73 "examples/ledger/main.hero"
-#line 3321 "main.c"
+#line 3320 "main.c"
     hero_array_decref(h32_own32);
 #line 73 "examples/ledger/main.hero"
-#line 3324 "main.c"
+#line 3323 "main.c"
     h_0opt_a8ea2_release(&h33_own33);
 #line 73 "examples/ledger/main.hero"
-#line 3327 "main.c"
+#line 3326 "main.c"
     h_0opt_a8ea2_release(&h34_own34);
 #line 73 "examples/ledger/main.hero"
-#line 3330 "main.c"
+#line 3329 "main.c"
     h_0opt_791f9719_release(&h35_own35);
 #line 73 "examples/ledger/main.hero"
-#line 3333 "main.c"
+#line 3332 "main.c"
     h_0opt_a8ea2_release(&h36_own36);
 #line 73 "examples/ledger/main.hero"
-#line 3336 "main.c"
+#line 3335 "main.c"
     h_0opt_a8ea2_release(&h37_own37);
 #line 73 "examples/ledger/main.hero"
-#line 3339 "main.c"
+#line 3338 "main.c"
     h_0opt_70720e79_release(&h38_own38);
 #line 73 "examples/ledger/main.hero"
-#line 3342 "main.c"
+#line 3341 "main.c"
     h_0opt_a8ea2_release(&h39_own39);
 #line 73 "examples/ledger/main.hero"
-#line 3345 "main.c"
+#line 3344 "main.c"
     h_0opt_a8ea2_release(&h40_own40);
 #line 73 "examples/ledger/main.hero"
-#line 3348 "main.c"
+#line 3347 "main.c"
     h_0opt_a8ea2_release(&h41_own41);
 #line 73 "examples/ledger/main.hero"
-#line 3351 "main.c"
+#line 3350 "main.c"
     h_0opt_a8ea2_release(&h42_own42);
 #line 73 "examples/ledger/main.hero"
-#line 3354 "main.c"
+#line 3353 "main.c"
     hero_array_decref(h43_own43);
 #line 73 "examples/ledger/main.hero"
-#line 3357 "main.c"
+#line 3356 "main.c"
     h_0opt_a8ea2_release(&h44_own44);
 #line 73 "examples/ledger/main.hero"
-#line 3360 "main.c"
+#line 3359 "main.c"
     h_0opt_a8ea2_release(&h45_own45);
 #line 73 "examples/ledger/main.hero"
-#line 3363 "main.c"
+#line 3362 "main.c"
     h_0opt_a8ea2_release(&h46_own46);
 #line 73 "examples/ledger/main.hero"
-#line 3366 "main.c"
+#line 3365 "main.c"
     h_0opt_a8ea2_release(&h47_own47);
 #line 73 "examples/ledger/main.hero"
-#line 3369 "main.c"
+#line 3368 "main.c"
     h_0opt_a8ea2_release(&h48_own48);
 #line 73 "examples/ledger/main.hero"
-#line 3372 "main.c"
+#line 3371 "main.c"
     h_0opt_a8ea2_release(&h49_own49);
 #line 73 "examples/ledger/main.hero"
-#line 3375 "main.c"
+#line 3374 "main.c"
     h_0opt_a8ea2_release(&h50_own50);
 #line 73 "examples/ledger/main.hero"
-#line 3378 "main.c"
+#line 3377 "main.c"
     h_0opt_a8ea2_release(&h51_own51);
 #line 73 "examples/ledger/main.hero"
-#line 3381 "main.c"
+#line 3380 "main.c"
     h_0opt_a8ea2_release(&h52_own52);
 #line 73 "examples/ledger/main.hero"
-#line 3384 "main.c"
+#line 3383 "main.c"
     h_0opt_70720e79_release(&h53_own53);
 #line 73 "examples/ledger/main.hero"
-#line 3387 "main.c"
+#line 3386 "main.c"
     h_0opt_a8ea2_release(&h54_own54);
 #line 73 "examples/ledger/main.hero"
-#line 3390 "main.c"
+#line 3389 "main.c"
     h_0opt_a8ea2_release(&h55_own55);
 #line 73 "examples/ledger/main.hero"
-#line 3393 "main.c"
+#line 3392 "main.c"
     h_0opt_a8ea2_release(&h56_own56);
 #line 73 "examples/ledger/main.hero"
-#line 3396 "main.c"
+#line 3395 "main.c"
     h_0opt_a8ea2_release(&h57_own57);
 #line 73 "examples/ledger/main.hero"
-#line 3399 "main.c"
+#line 3398 "main.c"
     h_0opt_a8ea2_release(&h58_own58);
 #line 73 "examples/ledger/main.hero"
-#line 3402 "main.c"
+#line 3401 "main.c"
     h_0opt_a8ea2_release(&h59_own59);
     return t122;
 bb23:
@@ -3422,11 +3421,11 @@ bb24:
     t133 = *(h_bookentry_Entry const *)hero_array_at(t131, t132);
 #line 75 "examples/ledger/main.hero"
     t263 = h17_e;
-#line 3426 "main.c"
+#line 3425 "main.c"
     h_bookentry_Entry_retain(&t133);
 #line 75 "examples/ledger/main.hero"
     h17_e = t133;
-#line 3430 "main.c"
+#line 3429 "main.c"
     h_bookentry_Entry_release(&t263);
 #line 76 "examples/ledger/main.hero"
     t134 = h14_rows;
@@ -3442,15 +3441,15 @@ bb24:
     t264 = h45_own45;
 #line 76 "examples/ledger/main.hero"
     h45_own45 = t138;
-#line 3446 "main.c"
+#line 3445 "main.c"
     h_0opt_a8ea2_release(&t264);
 #line 76 "examples/ledger/main.hero"
     t265 = h18_f9;
-#line 3450 "main.c"
+#line 3449 "main.c"
     h_0opt_a8ea2_retain(&t138);
 #line 76 "examples/ledger/main.hero"
     h18_f9 = t138;
-#line 3454 "main.c"
+#line 3453 "main.c"
     h_0opt_a8ea2_release(&t265);
 #line 76 "examples/ledger/main.hero"
     t139 = h18_f9;
@@ -3490,15 +3489,15 @@ bb26:
     t266 = h46_own46;
 #line 84 "examples/ledger/main.hero"
     h46_own46 = t220;
-#line 3494 "main.c"
+#line 3493 "main.c"
     h_0opt_a8ea2_release(&t266);
 #line 84 "examples/ledger/main.hero"
     t267 = h24_f15;
-#line 3498 "main.c"
+#line 3497 "main.c"
     h_0opt_a8ea2_retain(&t220);
 #line 84 "examples/ledger/main.hero"
     h24_f15 = t220;
-#line 3502 "main.c"
+#line 3501 "main.c"
     h_0opt_a8ea2_release(&t267);
 #line 84 "examples/ledger/main.hero"
     t221 = h24_f15;
@@ -3527,15 +3526,15 @@ bb27:
     t268 = h47_own47;
 #line 77 "examples/ledger/main.hero"
     h47_own47 = t152;
-#line 3531 "main.c"
+#line 3530 "main.c"
     h_0opt_a8ea2_release(&t268);
 #line 77 "examples/ledger/main.hero"
     t269 = h19_f10;
-#line 3535 "main.c"
+#line 3534 "main.c"
     h_0opt_a8ea2_retain(&t152);
 #line 77 "examples/ledger/main.hero"
     h19_f10 = t152;
-#line 3539 "main.c"
+#line 3538 "main.c"
     h_0opt_a8ea2_release(&t269);
 #line 77 "examples/ledger/main.hero"
     t153 = h19_f10;
@@ -3553,7 +3552,7 @@ bb28:
     t143 = h18_f9;
 #line 76 "examples/ledger/main.hero"
     t144 = t143.as.err;
-#line 3557 "main.c"
+#line 3556 "main.c"
     hero_failure_retain(&t144);
 #line 76 "examples/ledger/main.hero"
     t145 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = t144};
@@ -3561,175 +3560,175 @@ bb28:
     t270 = h48_own48;
 #line 76 "examples/ledger/main.hero"
     h48_own48 = t145;
-#line 3565 "main.c"
+#line 3564 "main.c"
     h_0opt_a8ea2_release(&t270);
 #line 76 "examples/ledger/main.hero"
-#line 3568 "main.c"
+#line 3567 "main.c"
     h_0opt_a8ea2_retain(&t145);
 #line 76 "examples/ledger/main.hero"
-#line 3571 "main.c"
+#line 3570 "main.c"
     h_0opt_a8ea2_release(&h1_f0);
 #line 76 "examples/ledger/main.hero"
-#line 3574 "main.c"
+#line 3573 "main.c"
     h_0opt_a8ea2_release(&h2_f1);
 #line 76 "examples/ledger/main.hero"
-#line 3577 "main.c"
+#line 3576 "main.c"
     h_0opt_a8ea2_release(&h3_f2);
 #line 76 "examples/ledger/main.hero"
-#line 3580 "main.c"
+#line 3579 "main.c"
     h_0opt_791f9719_release(&h4_f3);
 #line 76 "examples/ledger/main.hero"
-#line 3583 "main.c"
+#line 3582 "main.c"
     hero_array_decref(h6_xs0);
 #line 76 "examples/ledger/main.hero"
-#line 3586 "main.c"
+#line 3585 "main.c"
     h_bookentry_Account_release(&h8_a);
 #line 76 "examples/ledger/main.hero"
-#line 3589 "main.c"
+#line 3588 "main.c"
     h_0opt_a8ea2_release(&h9_f4);
 #line 76 "examples/ledger/main.hero"
-#line 3592 "main.c"
+#line 3591 "main.c"
     h_0opt_a8ea2_release(&h10_f5);
 #line 76 "examples/ledger/main.hero"
-#line 3595 "main.c"
+#line 3594 "main.c"
     h_0opt_70720e79_release(&h11_f6);
 #line 76 "examples/ledger/main.hero"
-#line 3598 "main.c"
+#line 3597 "main.c"
     h_0opt_a8ea2_release(&h12_f7);
 #line 76 "examples/ledger/main.hero"
-#line 3601 "main.c"
+#line 3600 "main.c"
     h_0opt_791f9719_release(&h13_f8);
 #line 76 "examples/ledger/main.hero"
-#line 3604 "main.c"
+#line 3603 "main.c"
     hero_array_decref(h15_xs1);
 #line 76 "examples/ledger/main.hero"
-#line 3607 "main.c"
+#line 3606 "main.c"
     h_bookentry_Entry_release(&h17_e);
 #line 76 "examples/ledger/main.hero"
-#line 3610 "main.c"
+#line 3609 "main.c"
     h_0opt_a8ea2_release(&h18_f9);
 #line 76 "examples/ledger/main.hero"
-#line 3613 "main.c"
+#line 3612 "main.c"
     h_0opt_a8ea2_release(&h19_f10);
 #line 76 "examples/ledger/main.hero"
-#line 3616 "main.c"
+#line 3615 "main.c"
     h_0opt_a8ea2_release(&h20_f11);
 #line 76 "examples/ledger/main.hero"
-#line 3619 "main.c"
+#line 3618 "main.c"
     h_0opt_a8ea2_release(&h21_f12);
 #line 76 "examples/ledger/main.hero"
-#line 3622 "main.c"
+#line 3621 "main.c"
     h_0opt_70720e79_release(&h22_f13);
 #line 76 "examples/ledger/main.hero"
-#line 3625 "main.c"
+#line 3624 "main.c"
     h_0opt_a8ea2_release(&h23_f14);
 #line 76 "examples/ledger/main.hero"
-#line 3628 "main.c"
+#line 3627 "main.c"
     h_0opt_a8ea2_release(&h24_f15);
 #line 76 "examples/ledger/main.hero"
-#line 3631 "main.c"
+#line 3630 "main.c"
     h_0opt_a8ea2_release(&h25_own25);
 #line 76 "examples/ledger/main.hero"
-#line 3634 "main.c"
+#line 3633 "main.c"
     h_0opt_a8ea2_release(&h26_own26);
 #line 76 "examples/ledger/main.hero"
-#line 3637 "main.c"
+#line 3636 "main.c"
     h_0opt_a8ea2_release(&h27_own27);
 #line 76 "examples/ledger/main.hero"
-#line 3640 "main.c"
+#line 3639 "main.c"
     h_0opt_a8ea2_release(&h28_own28);
 #line 76 "examples/ledger/main.hero"
-#line 3643 "main.c"
+#line 3642 "main.c"
     h_0opt_a8ea2_release(&h29_own29);
 #line 76 "examples/ledger/main.hero"
-#line 3646 "main.c"
+#line 3645 "main.c"
     h_0opt_791f9719_release(&h30_own30);
 #line 76 "examples/ledger/main.hero"
-#line 3649 "main.c"
+#line 3648 "main.c"
     h_0opt_a8ea2_release(&h31_own31);
 #line 76 "examples/ledger/main.hero"
-#line 3652 "main.c"
+#line 3651 "main.c"
     hero_array_decref(h32_own32);
 #line 76 "examples/ledger/main.hero"
-#line 3655 "main.c"
+#line 3654 "main.c"
     h_0opt_a8ea2_release(&h33_own33);
 #line 76 "examples/ledger/main.hero"
-#line 3658 "main.c"
+#line 3657 "main.c"
     h_0opt_a8ea2_release(&h34_own34);
 #line 76 "examples/ledger/main.hero"
-#line 3661 "main.c"
+#line 3660 "main.c"
     h_0opt_791f9719_release(&h35_own35);
 #line 76 "examples/ledger/main.hero"
-#line 3664 "main.c"
+#line 3663 "main.c"
     h_0opt_a8ea2_release(&h36_own36);
 #line 76 "examples/ledger/main.hero"
-#line 3667 "main.c"
+#line 3666 "main.c"
     h_0opt_a8ea2_release(&h37_own37);
 #line 76 "examples/ledger/main.hero"
-#line 3670 "main.c"
+#line 3669 "main.c"
     h_0opt_70720e79_release(&h38_own38);
 #line 76 "examples/ledger/main.hero"
-#line 3673 "main.c"
+#line 3672 "main.c"
     h_0opt_a8ea2_release(&h39_own39);
 #line 76 "examples/ledger/main.hero"
-#line 3676 "main.c"
+#line 3675 "main.c"
     h_0opt_a8ea2_release(&h40_own40);
 #line 76 "examples/ledger/main.hero"
-#line 3679 "main.c"
+#line 3678 "main.c"
     h_0opt_a8ea2_release(&h41_own41);
 #line 76 "examples/ledger/main.hero"
-#line 3682 "main.c"
+#line 3681 "main.c"
     h_0opt_a8ea2_release(&h42_own42);
 #line 76 "examples/ledger/main.hero"
-#line 3685 "main.c"
+#line 3684 "main.c"
     hero_array_decref(h43_own43);
 #line 76 "examples/ledger/main.hero"
-#line 3688 "main.c"
+#line 3687 "main.c"
     h_0opt_a8ea2_release(&h44_own44);
 #line 76 "examples/ledger/main.hero"
-#line 3691 "main.c"
+#line 3690 "main.c"
     h_0opt_a8ea2_release(&h45_own45);
 #line 76 "examples/ledger/main.hero"
-#line 3694 "main.c"
+#line 3693 "main.c"
     h_0opt_a8ea2_release(&h46_own46);
 #line 76 "examples/ledger/main.hero"
-#line 3697 "main.c"
+#line 3696 "main.c"
     h_0opt_a8ea2_release(&h47_own47);
 #line 76 "examples/ledger/main.hero"
-#line 3700 "main.c"
+#line 3699 "main.c"
     h_0opt_a8ea2_release(&h48_own48);
 #line 76 "examples/ledger/main.hero"
-#line 3703 "main.c"
+#line 3702 "main.c"
     h_0opt_a8ea2_release(&h49_own49);
 #line 76 "examples/ledger/main.hero"
-#line 3706 "main.c"
+#line 3705 "main.c"
     h_0opt_a8ea2_release(&h50_own50);
 #line 76 "examples/ledger/main.hero"
-#line 3709 "main.c"
+#line 3708 "main.c"
     h_0opt_a8ea2_release(&h51_own51);
 #line 76 "examples/ledger/main.hero"
-#line 3712 "main.c"
+#line 3711 "main.c"
     h_0opt_a8ea2_release(&h52_own52);
 #line 76 "examples/ledger/main.hero"
-#line 3715 "main.c"
+#line 3714 "main.c"
     h_0opt_70720e79_release(&h53_own53);
 #line 76 "examples/ledger/main.hero"
-#line 3718 "main.c"
+#line 3717 "main.c"
     h_0opt_a8ea2_release(&h54_own54);
 #line 76 "examples/ledger/main.hero"
-#line 3721 "main.c"
+#line 3720 "main.c"
     h_0opt_a8ea2_release(&h55_own55);
 #line 76 "examples/ledger/main.hero"
-#line 3724 "main.c"
+#line 3723 "main.c"
     h_0opt_a8ea2_release(&h56_own56);
 #line 76 "examples/ledger/main.hero"
-#line 3727 "main.c"
+#line 3726 "main.c"
     h_0opt_a8ea2_release(&h57_own57);
 #line 76 "examples/ledger/main.hero"
-#line 3730 "main.c"
+#line 3729 "main.c"
     h_0opt_a8ea2_release(&h58_own58);
 #line 76 "examples/ledger/main.hero"
-#line 3733 "main.c"
+#line 3732 "main.c"
     h_0opt_a8ea2_release(&h59_own59);
     return t145;
 bb29:
@@ -3748,15 +3747,15 @@ bb29:
     t271 = h49_own49;
 #line 78 "examples/ledger/main.hero"
     h49_own49 = t166;
-#line 3752 "main.c"
+#line 3751 "main.c"
     h_0opt_a8ea2_release(&t271);
 #line 78 "examples/ledger/main.hero"
     t272 = h20_f11;
-#line 3756 "main.c"
+#line 3755 "main.c"
     h_0opt_a8ea2_retain(&t166);
 #line 78 "examples/ledger/main.hero"
     h20_f11 = t166;
-#line 3760 "main.c"
+#line 3759 "main.c"
     h_0opt_a8ea2_release(&t272);
 #line 78 "examples/ledger/main.hero"
     t167 = h20_f11;
@@ -3774,7 +3773,7 @@ bb30:
     t157 = h19_f10;
 #line 77 "examples/ledger/main.hero"
     t158 = t157.as.err;
-#line 3778 "main.c"
+#line 3777 "main.c"
     hero_failure_retain(&t158);
 #line 77 "examples/ledger/main.hero"
     t159 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = t158};
@@ -3782,175 +3781,175 @@ bb30:
     t273 = h50_own50;
 #line 77 "examples/ledger/main.hero"
     h50_own50 = t159;
-#line 3786 "main.c"
+#line 3785 "main.c"
     h_0opt_a8ea2_release(&t273);
 #line 77 "examples/ledger/main.hero"
-#line 3789 "main.c"
+#line 3788 "main.c"
     h_0opt_a8ea2_retain(&t159);
 #line 77 "examples/ledger/main.hero"
-#line 3792 "main.c"
+#line 3791 "main.c"
     h_0opt_a8ea2_release(&h1_f0);
 #line 77 "examples/ledger/main.hero"
-#line 3795 "main.c"
+#line 3794 "main.c"
     h_0opt_a8ea2_release(&h2_f1);
 #line 77 "examples/ledger/main.hero"
-#line 3798 "main.c"
+#line 3797 "main.c"
     h_0opt_a8ea2_release(&h3_f2);
 #line 77 "examples/ledger/main.hero"
-#line 3801 "main.c"
+#line 3800 "main.c"
     h_0opt_791f9719_release(&h4_f3);
 #line 77 "examples/ledger/main.hero"
-#line 3804 "main.c"
+#line 3803 "main.c"
     hero_array_decref(h6_xs0);
 #line 77 "examples/ledger/main.hero"
-#line 3807 "main.c"
+#line 3806 "main.c"
     h_bookentry_Account_release(&h8_a);
 #line 77 "examples/ledger/main.hero"
-#line 3810 "main.c"
+#line 3809 "main.c"
     h_0opt_a8ea2_release(&h9_f4);
 #line 77 "examples/ledger/main.hero"
-#line 3813 "main.c"
+#line 3812 "main.c"
     h_0opt_a8ea2_release(&h10_f5);
 #line 77 "examples/ledger/main.hero"
-#line 3816 "main.c"
+#line 3815 "main.c"
     h_0opt_70720e79_release(&h11_f6);
 #line 77 "examples/ledger/main.hero"
-#line 3819 "main.c"
+#line 3818 "main.c"
     h_0opt_a8ea2_release(&h12_f7);
 #line 77 "examples/ledger/main.hero"
-#line 3822 "main.c"
+#line 3821 "main.c"
     h_0opt_791f9719_release(&h13_f8);
 #line 77 "examples/ledger/main.hero"
-#line 3825 "main.c"
+#line 3824 "main.c"
     hero_array_decref(h15_xs1);
 #line 77 "examples/ledger/main.hero"
-#line 3828 "main.c"
+#line 3827 "main.c"
     h_bookentry_Entry_release(&h17_e);
 #line 77 "examples/ledger/main.hero"
-#line 3831 "main.c"
+#line 3830 "main.c"
     h_0opt_a8ea2_release(&h18_f9);
 #line 77 "examples/ledger/main.hero"
-#line 3834 "main.c"
+#line 3833 "main.c"
     h_0opt_a8ea2_release(&h19_f10);
 #line 77 "examples/ledger/main.hero"
-#line 3837 "main.c"
+#line 3836 "main.c"
     h_0opt_a8ea2_release(&h20_f11);
 #line 77 "examples/ledger/main.hero"
-#line 3840 "main.c"
+#line 3839 "main.c"
     h_0opt_a8ea2_release(&h21_f12);
 #line 77 "examples/ledger/main.hero"
-#line 3843 "main.c"
+#line 3842 "main.c"
     h_0opt_70720e79_release(&h22_f13);
 #line 77 "examples/ledger/main.hero"
-#line 3846 "main.c"
+#line 3845 "main.c"
     h_0opt_a8ea2_release(&h23_f14);
 #line 77 "examples/ledger/main.hero"
-#line 3849 "main.c"
+#line 3848 "main.c"
     h_0opt_a8ea2_release(&h24_f15);
 #line 77 "examples/ledger/main.hero"
-#line 3852 "main.c"
+#line 3851 "main.c"
     h_0opt_a8ea2_release(&h25_own25);
 #line 77 "examples/ledger/main.hero"
-#line 3855 "main.c"
+#line 3854 "main.c"
     h_0opt_a8ea2_release(&h26_own26);
 #line 77 "examples/ledger/main.hero"
-#line 3858 "main.c"
+#line 3857 "main.c"
     h_0opt_a8ea2_release(&h27_own27);
 #line 77 "examples/ledger/main.hero"
-#line 3861 "main.c"
+#line 3860 "main.c"
     h_0opt_a8ea2_release(&h28_own28);
 #line 77 "examples/ledger/main.hero"
-#line 3864 "main.c"
+#line 3863 "main.c"
     h_0opt_a8ea2_release(&h29_own29);
 #line 77 "examples/ledger/main.hero"
-#line 3867 "main.c"
+#line 3866 "main.c"
     h_0opt_791f9719_release(&h30_own30);
 #line 77 "examples/ledger/main.hero"
-#line 3870 "main.c"
+#line 3869 "main.c"
     h_0opt_a8ea2_release(&h31_own31);
 #line 77 "examples/ledger/main.hero"
-#line 3873 "main.c"
+#line 3872 "main.c"
     hero_array_decref(h32_own32);
 #line 77 "examples/ledger/main.hero"
-#line 3876 "main.c"
+#line 3875 "main.c"
     h_0opt_a8ea2_release(&h33_own33);
 #line 77 "examples/ledger/main.hero"
-#line 3879 "main.c"
+#line 3878 "main.c"
     h_0opt_a8ea2_release(&h34_own34);
 #line 77 "examples/ledger/main.hero"
-#line 3882 "main.c"
+#line 3881 "main.c"
     h_0opt_791f9719_release(&h35_own35);
 #line 77 "examples/ledger/main.hero"
-#line 3885 "main.c"
+#line 3884 "main.c"
     h_0opt_a8ea2_release(&h36_own36);
 #line 77 "examples/ledger/main.hero"
-#line 3888 "main.c"
+#line 3887 "main.c"
     h_0opt_a8ea2_release(&h37_own37);
 #line 77 "examples/ledger/main.hero"
-#line 3891 "main.c"
+#line 3890 "main.c"
     h_0opt_70720e79_release(&h38_own38);
 #line 77 "examples/ledger/main.hero"
-#line 3894 "main.c"
+#line 3893 "main.c"
     h_0opt_a8ea2_release(&h39_own39);
 #line 77 "examples/ledger/main.hero"
-#line 3897 "main.c"
+#line 3896 "main.c"
     h_0opt_a8ea2_release(&h40_own40);
 #line 77 "examples/ledger/main.hero"
-#line 3900 "main.c"
+#line 3899 "main.c"
     h_0opt_a8ea2_release(&h41_own41);
 #line 77 "examples/ledger/main.hero"
-#line 3903 "main.c"
+#line 3902 "main.c"
     h_0opt_a8ea2_release(&h42_own42);
 #line 77 "examples/ledger/main.hero"
-#line 3906 "main.c"
+#line 3905 "main.c"
     hero_array_decref(h43_own43);
 #line 77 "examples/ledger/main.hero"
-#line 3909 "main.c"
+#line 3908 "main.c"
     h_0opt_a8ea2_release(&h44_own44);
 #line 77 "examples/ledger/main.hero"
-#line 3912 "main.c"
+#line 3911 "main.c"
     h_0opt_a8ea2_release(&h45_own45);
 #line 77 "examples/ledger/main.hero"
-#line 3915 "main.c"
+#line 3914 "main.c"
     h_0opt_a8ea2_release(&h46_own46);
 #line 77 "examples/ledger/main.hero"
-#line 3918 "main.c"
+#line 3917 "main.c"
     h_0opt_a8ea2_release(&h47_own47);
 #line 77 "examples/ledger/main.hero"
-#line 3921 "main.c"
+#line 3920 "main.c"
     h_0opt_a8ea2_release(&h48_own48);
 #line 77 "examples/ledger/main.hero"
-#line 3924 "main.c"
+#line 3923 "main.c"
     h_0opt_a8ea2_release(&h49_own49);
 #line 77 "examples/ledger/main.hero"
-#line 3927 "main.c"
+#line 3926 "main.c"
     h_0opt_a8ea2_release(&h50_own50);
 #line 77 "examples/ledger/main.hero"
-#line 3930 "main.c"
+#line 3929 "main.c"
     h_0opt_a8ea2_release(&h51_own51);
 #line 77 "examples/ledger/main.hero"
-#line 3933 "main.c"
+#line 3932 "main.c"
     h_0opt_a8ea2_release(&h52_own52);
 #line 77 "examples/ledger/main.hero"
-#line 3936 "main.c"
+#line 3935 "main.c"
     h_0opt_70720e79_release(&h53_own53);
 #line 77 "examples/ledger/main.hero"
-#line 3939 "main.c"
+#line 3938 "main.c"
     h_0opt_a8ea2_release(&h54_own54);
 #line 77 "examples/ledger/main.hero"
-#line 3942 "main.c"
+#line 3941 "main.c"
     h_0opt_a8ea2_release(&h55_own55);
 #line 77 "examples/ledger/main.hero"
-#line 3945 "main.c"
+#line 3944 "main.c"
     h_0opt_a8ea2_release(&h56_own56);
 #line 77 "examples/ledger/main.hero"
-#line 3948 "main.c"
+#line 3947 "main.c"
     h_0opt_a8ea2_release(&h57_own57);
 #line 77 "examples/ledger/main.hero"
-#line 3951 "main.c"
+#line 3950 "main.c"
     h_0opt_a8ea2_release(&h58_own58);
 #line 77 "examples/ledger/main.hero"
-#line 3954 "main.c"
+#line 3953 "main.c"
     h_0opt_a8ea2_release(&h59_own59);
     return t159;
 bb31:
@@ -3971,15 +3970,15 @@ bb31:
     t274 = h51_own51;
 #line 79 "examples/ledger/main.hero"
     h51_own51 = t181;
-#line 3975 "main.c"
+#line 3974 "main.c"
     h_0opt_a8ea2_release(&t274);
 #line 79 "examples/ledger/main.hero"
     t275 = h21_f12;
-#line 3979 "main.c"
+#line 3978 "main.c"
     h_0opt_a8ea2_retain(&t181);
 #line 79 "examples/ledger/main.hero"
     h21_f12 = t181;
-#line 3983 "main.c"
+#line 3982 "main.c"
     h_0opt_a8ea2_release(&t275);
 #line 79 "examples/ledger/main.hero"
     t182 = h21_f12;
@@ -3997,7 +3996,7 @@ bb32:
     t171 = h20_f11;
 #line 78 "examples/ledger/main.hero"
     t172 = t171.as.err;
-#line 4001 "main.c"
+#line 4000 "main.c"
     hero_failure_retain(&t172);
 #line 78 "examples/ledger/main.hero"
     t173 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = t172};
@@ -4005,175 +4004,175 @@ bb32:
     t276 = h52_own52;
 #line 78 "examples/ledger/main.hero"
     h52_own52 = t173;
-#line 4009 "main.c"
+#line 4008 "main.c"
     h_0opt_a8ea2_release(&t276);
 #line 78 "examples/ledger/main.hero"
-#line 4012 "main.c"
+#line 4011 "main.c"
     h_0opt_a8ea2_retain(&t173);
 #line 78 "examples/ledger/main.hero"
-#line 4015 "main.c"
+#line 4014 "main.c"
     h_0opt_a8ea2_release(&h1_f0);
 #line 78 "examples/ledger/main.hero"
-#line 4018 "main.c"
+#line 4017 "main.c"
     h_0opt_a8ea2_release(&h2_f1);
 #line 78 "examples/ledger/main.hero"
-#line 4021 "main.c"
+#line 4020 "main.c"
     h_0opt_a8ea2_release(&h3_f2);
 #line 78 "examples/ledger/main.hero"
-#line 4024 "main.c"
+#line 4023 "main.c"
     h_0opt_791f9719_release(&h4_f3);
 #line 78 "examples/ledger/main.hero"
-#line 4027 "main.c"
+#line 4026 "main.c"
     hero_array_decref(h6_xs0);
 #line 78 "examples/ledger/main.hero"
-#line 4030 "main.c"
+#line 4029 "main.c"
     h_bookentry_Account_release(&h8_a);
 #line 78 "examples/ledger/main.hero"
-#line 4033 "main.c"
+#line 4032 "main.c"
     h_0opt_a8ea2_release(&h9_f4);
 #line 78 "examples/ledger/main.hero"
-#line 4036 "main.c"
+#line 4035 "main.c"
     h_0opt_a8ea2_release(&h10_f5);
 #line 78 "examples/ledger/main.hero"
-#line 4039 "main.c"
+#line 4038 "main.c"
     h_0opt_70720e79_release(&h11_f6);
 #line 78 "examples/ledger/main.hero"
-#line 4042 "main.c"
+#line 4041 "main.c"
     h_0opt_a8ea2_release(&h12_f7);
 #line 78 "examples/ledger/main.hero"
-#line 4045 "main.c"
+#line 4044 "main.c"
     h_0opt_791f9719_release(&h13_f8);
 #line 78 "examples/ledger/main.hero"
-#line 4048 "main.c"
+#line 4047 "main.c"
     hero_array_decref(h15_xs1);
 #line 78 "examples/ledger/main.hero"
-#line 4051 "main.c"
+#line 4050 "main.c"
     h_bookentry_Entry_release(&h17_e);
 #line 78 "examples/ledger/main.hero"
-#line 4054 "main.c"
+#line 4053 "main.c"
     h_0opt_a8ea2_release(&h18_f9);
 #line 78 "examples/ledger/main.hero"
-#line 4057 "main.c"
+#line 4056 "main.c"
     h_0opt_a8ea2_release(&h19_f10);
 #line 78 "examples/ledger/main.hero"
-#line 4060 "main.c"
+#line 4059 "main.c"
     h_0opt_a8ea2_release(&h20_f11);
 #line 78 "examples/ledger/main.hero"
-#line 4063 "main.c"
+#line 4062 "main.c"
     h_0opt_a8ea2_release(&h21_f12);
 #line 78 "examples/ledger/main.hero"
-#line 4066 "main.c"
+#line 4065 "main.c"
     h_0opt_70720e79_release(&h22_f13);
 #line 78 "examples/ledger/main.hero"
-#line 4069 "main.c"
+#line 4068 "main.c"
     h_0opt_a8ea2_release(&h23_f14);
 #line 78 "examples/ledger/main.hero"
-#line 4072 "main.c"
+#line 4071 "main.c"
     h_0opt_a8ea2_release(&h24_f15);
 #line 78 "examples/ledger/main.hero"
-#line 4075 "main.c"
+#line 4074 "main.c"
     h_0opt_a8ea2_release(&h25_own25);
 #line 78 "examples/ledger/main.hero"
-#line 4078 "main.c"
+#line 4077 "main.c"
     h_0opt_a8ea2_release(&h26_own26);
 #line 78 "examples/ledger/main.hero"
-#line 4081 "main.c"
+#line 4080 "main.c"
     h_0opt_a8ea2_release(&h27_own27);
 #line 78 "examples/ledger/main.hero"
-#line 4084 "main.c"
+#line 4083 "main.c"
     h_0opt_a8ea2_release(&h28_own28);
 #line 78 "examples/ledger/main.hero"
-#line 4087 "main.c"
+#line 4086 "main.c"
     h_0opt_a8ea2_release(&h29_own29);
 #line 78 "examples/ledger/main.hero"
-#line 4090 "main.c"
+#line 4089 "main.c"
     h_0opt_791f9719_release(&h30_own30);
 #line 78 "examples/ledger/main.hero"
-#line 4093 "main.c"
+#line 4092 "main.c"
     h_0opt_a8ea2_release(&h31_own31);
 #line 78 "examples/ledger/main.hero"
-#line 4096 "main.c"
+#line 4095 "main.c"
     hero_array_decref(h32_own32);
 #line 78 "examples/ledger/main.hero"
-#line 4099 "main.c"
+#line 4098 "main.c"
     h_0opt_a8ea2_release(&h33_own33);
 #line 78 "examples/ledger/main.hero"
-#line 4102 "main.c"
+#line 4101 "main.c"
     h_0opt_a8ea2_release(&h34_own34);
 #line 78 "examples/ledger/main.hero"
-#line 4105 "main.c"
+#line 4104 "main.c"
     h_0opt_791f9719_release(&h35_own35);
 #line 78 "examples/ledger/main.hero"
-#line 4108 "main.c"
+#line 4107 "main.c"
     h_0opt_a8ea2_release(&h36_own36);
 #line 78 "examples/ledger/main.hero"
-#line 4111 "main.c"
+#line 4110 "main.c"
     h_0opt_a8ea2_release(&h37_own37);
 #line 78 "examples/ledger/main.hero"
-#line 4114 "main.c"
+#line 4113 "main.c"
     h_0opt_70720e79_release(&h38_own38);
 #line 78 "examples/ledger/main.hero"
-#line 4117 "main.c"
+#line 4116 "main.c"
     h_0opt_a8ea2_release(&h39_own39);
 #line 78 "examples/ledger/main.hero"
-#line 4120 "main.c"
+#line 4119 "main.c"
     h_0opt_a8ea2_release(&h40_own40);
 #line 78 "examples/ledger/main.hero"
-#line 4123 "main.c"
+#line 4122 "main.c"
     h_0opt_a8ea2_release(&h41_own41);
 #line 78 "examples/ledger/main.hero"
-#line 4126 "main.c"
+#line 4125 "main.c"
     h_0opt_a8ea2_release(&h42_own42);
 #line 78 "examples/ledger/main.hero"
-#line 4129 "main.c"
+#line 4128 "main.c"
     hero_array_decref(h43_own43);
 #line 78 "examples/ledger/main.hero"
-#line 4132 "main.c"
+#line 4131 "main.c"
     h_0opt_a8ea2_release(&h44_own44);
 #line 78 "examples/ledger/main.hero"
-#line 4135 "main.c"
+#line 4134 "main.c"
     h_0opt_a8ea2_release(&h45_own45);
 #line 78 "examples/ledger/main.hero"
-#line 4138 "main.c"
+#line 4137 "main.c"
     h_0opt_a8ea2_release(&h46_own46);
 #line 78 "examples/ledger/main.hero"
-#line 4141 "main.c"
+#line 4140 "main.c"
     h_0opt_a8ea2_release(&h47_own47);
 #line 78 "examples/ledger/main.hero"
-#line 4144 "main.c"
+#line 4143 "main.c"
     h_0opt_a8ea2_release(&h48_own48);
 #line 78 "examples/ledger/main.hero"
-#line 4147 "main.c"
+#line 4146 "main.c"
     h_0opt_a8ea2_release(&h49_own49);
 #line 78 "examples/ledger/main.hero"
-#line 4150 "main.c"
+#line 4149 "main.c"
     h_0opt_a8ea2_release(&h50_own50);
 #line 78 "examples/ledger/main.hero"
-#line 4153 "main.c"
+#line 4152 "main.c"
     h_0opt_a8ea2_release(&h51_own51);
 #line 78 "examples/ledger/main.hero"
-#line 4156 "main.c"
+#line 4155 "main.c"
     h_0opt_a8ea2_release(&h52_own52);
 #line 78 "examples/ledger/main.hero"
-#line 4159 "main.c"
+#line 4158 "main.c"
     h_0opt_70720e79_release(&h53_own53);
 #line 78 "examples/ledger/main.hero"
-#line 4162 "main.c"
+#line 4161 "main.c"
     h_0opt_a8ea2_release(&h54_own54);
 #line 78 "examples/ledger/main.hero"
-#line 4165 "main.c"
+#line 4164 "main.c"
     h_0opt_a8ea2_release(&h55_own55);
 #line 78 "examples/ledger/main.hero"
-#line 4168 "main.c"
+#line 4167 "main.c"
     h_0opt_a8ea2_release(&h56_own56);
 #line 78 "examples/ledger/main.hero"
-#line 4171 "main.c"
+#line 4170 "main.c"
     h_0opt_a8ea2_release(&h57_own57);
 #line 78 "examples/ledger/main.hero"
-#line 4174 "main.c"
+#line 4173 "main.c"
     h_0opt_a8ea2_release(&h58_own58);
 #line 78 "examples/ledger/main.hero"
-#line 4177 "main.c"
+#line 4176 "main.c"
     h_0opt_a8ea2_release(&h59_own59);
     return t173;
 bb33:
@@ -4186,15 +4185,15 @@ bb33:
     t277 = h53_own53;
 #line 80 "examples/ledger/main.hero"
     h53_own53 = t192;
-#line 4190 "main.c"
+#line 4189 "main.c"
     h_0opt_70720e79_release(&t277);
 #line 80 "examples/ledger/main.hero"
     t278 = h22_f13;
-#line 4194 "main.c"
+#line 4193 "main.c"
     h_0opt_70720e79_retain(&t192);
 #line 80 "examples/ledger/main.hero"
     h22_f13 = t192;
-#line 4198 "main.c"
+#line 4197 "main.c"
     h_0opt_70720e79_release(&t278);
 #line 80 "examples/ledger/main.hero"
     t193 = h22_f13;
@@ -4212,7 +4211,7 @@ bb34:
     t186 = h21_f12;
 #line 79 "examples/ledger/main.hero"
     t187 = t186.as.err;
-#line 4216 "main.c"
+#line 4215 "main.c"
     hero_failure_retain(&t187);
 #line 79 "examples/ledger/main.hero"
     t188 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = t187};
@@ -4220,175 +4219,175 @@ bb34:
     t279 = h54_own54;
 #line 79 "examples/ledger/main.hero"
     h54_own54 = t188;
-#line 4224 "main.c"
+#line 4223 "main.c"
     h_0opt_a8ea2_release(&t279);
 #line 79 "examples/ledger/main.hero"
-#line 4227 "main.c"
+#line 4226 "main.c"
     h_0opt_a8ea2_retain(&t188);
 #line 79 "examples/ledger/main.hero"
-#line 4230 "main.c"
+#line 4229 "main.c"
     h_0opt_a8ea2_release(&h1_f0);
 #line 79 "examples/ledger/main.hero"
-#line 4233 "main.c"
+#line 4232 "main.c"
     h_0opt_a8ea2_release(&h2_f1);
 #line 79 "examples/ledger/main.hero"
-#line 4236 "main.c"
+#line 4235 "main.c"
     h_0opt_a8ea2_release(&h3_f2);
 #line 79 "examples/ledger/main.hero"
-#line 4239 "main.c"
+#line 4238 "main.c"
     h_0opt_791f9719_release(&h4_f3);
 #line 79 "examples/ledger/main.hero"
-#line 4242 "main.c"
+#line 4241 "main.c"
     hero_array_decref(h6_xs0);
 #line 79 "examples/ledger/main.hero"
-#line 4245 "main.c"
+#line 4244 "main.c"
     h_bookentry_Account_release(&h8_a);
 #line 79 "examples/ledger/main.hero"
-#line 4248 "main.c"
+#line 4247 "main.c"
     h_0opt_a8ea2_release(&h9_f4);
 #line 79 "examples/ledger/main.hero"
-#line 4251 "main.c"
+#line 4250 "main.c"
     h_0opt_a8ea2_release(&h10_f5);
 #line 79 "examples/ledger/main.hero"
-#line 4254 "main.c"
+#line 4253 "main.c"
     h_0opt_70720e79_release(&h11_f6);
 #line 79 "examples/ledger/main.hero"
-#line 4257 "main.c"
+#line 4256 "main.c"
     h_0opt_a8ea2_release(&h12_f7);
 #line 79 "examples/ledger/main.hero"
-#line 4260 "main.c"
+#line 4259 "main.c"
     h_0opt_791f9719_release(&h13_f8);
 #line 79 "examples/ledger/main.hero"
-#line 4263 "main.c"
+#line 4262 "main.c"
     hero_array_decref(h15_xs1);
 #line 79 "examples/ledger/main.hero"
-#line 4266 "main.c"
+#line 4265 "main.c"
     h_bookentry_Entry_release(&h17_e);
 #line 79 "examples/ledger/main.hero"
-#line 4269 "main.c"
+#line 4268 "main.c"
     h_0opt_a8ea2_release(&h18_f9);
 #line 79 "examples/ledger/main.hero"
-#line 4272 "main.c"
+#line 4271 "main.c"
     h_0opt_a8ea2_release(&h19_f10);
 #line 79 "examples/ledger/main.hero"
-#line 4275 "main.c"
+#line 4274 "main.c"
     h_0opt_a8ea2_release(&h20_f11);
 #line 79 "examples/ledger/main.hero"
-#line 4278 "main.c"
+#line 4277 "main.c"
     h_0opt_a8ea2_release(&h21_f12);
 #line 79 "examples/ledger/main.hero"
-#line 4281 "main.c"
+#line 4280 "main.c"
     h_0opt_70720e79_release(&h22_f13);
 #line 79 "examples/ledger/main.hero"
-#line 4284 "main.c"
+#line 4283 "main.c"
     h_0opt_a8ea2_release(&h23_f14);
 #line 79 "examples/ledger/main.hero"
-#line 4287 "main.c"
+#line 4286 "main.c"
     h_0opt_a8ea2_release(&h24_f15);
 #line 79 "examples/ledger/main.hero"
-#line 4290 "main.c"
+#line 4289 "main.c"
     h_0opt_a8ea2_release(&h25_own25);
 #line 79 "examples/ledger/main.hero"
-#line 4293 "main.c"
+#line 4292 "main.c"
     h_0opt_a8ea2_release(&h26_own26);
 #line 79 "examples/ledger/main.hero"
-#line 4296 "main.c"
+#line 4295 "main.c"
     h_0opt_a8ea2_release(&h27_own27);
 #line 79 "examples/ledger/main.hero"
-#line 4299 "main.c"
+#line 4298 "main.c"
     h_0opt_a8ea2_release(&h28_own28);
 #line 79 "examples/ledger/main.hero"
-#line 4302 "main.c"
+#line 4301 "main.c"
     h_0opt_a8ea2_release(&h29_own29);
 #line 79 "examples/ledger/main.hero"
-#line 4305 "main.c"
+#line 4304 "main.c"
     h_0opt_791f9719_release(&h30_own30);
 #line 79 "examples/ledger/main.hero"
-#line 4308 "main.c"
+#line 4307 "main.c"
     h_0opt_a8ea2_release(&h31_own31);
 #line 79 "examples/ledger/main.hero"
-#line 4311 "main.c"
+#line 4310 "main.c"
     hero_array_decref(h32_own32);
 #line 79 "examples/ledger/main.hero"
-#line 4314 "main.c"
+#line 4313 "main.c"
     h_0opt_a8ea2_release(&h33_own33);
 #line 79 "examples/ledger/main.hero"
-#line 4317 "main.c"
+#line 4316 "main.c"
     h_0opt_a8ea2_release(&h34_own34);
 #line 79 "examples/ledger/main.hero"
-#line 4320 "main.c"
+#line 4319 "main.c"
     h_0opt_791f9719_release(&h35_own35);
 #line 79 "examples/ledger/main.hero"
-#line 4323 "main.c"
+#line 4322 "main.c"
     h_0opt_a8ea2_release(&h36_own36);
 #line 79 "examples/ledger/main.hero"
-#line 4326 "main.c"
+#line 4325 "main.c"
     h_0opt_a8ea2_release(&h37_own37);
 #line 79 "examples/ledger/main.hero"
-#line 4329 "main.c"
+#line 4328 "main.c"
     h_0opt_70720e79_release(&h38_own38);
 #line 79 "examples/ledger/main.hero"
-#line 4332 "main.c"
+#line 4331 "main.c"
     h_0opt_a8ea2_release(&h39_own39);
 #line 79 "examples/ledger/main.hero"
-#line 4335 "main.c"
+#line 4334 "main.c"
     h_0opt_a8ea2_release(&h40_own40);
 #line 79 "examples/ledger/main.hero"
-#line 4338 "main.c"
+#line 4337 "main.c"
     h_0opt_a8ea2_release(&h41_own41);
 #line 79 "examples/ledger/main.hero"
-#line 4341 "main.c"
+#line 4340 "main.c"
     h_0opt_a8ea2_release(&h42_own42);
 #line 79 "examples/ledger/main.hero"
-#line 4344 "main.c"
+#line 4343 "main.c"
     hero_array_decref(h43_own43);
 #line 79 "examples/ledger/main.hero"
-#line 4347 "main.c"
+#line 4346 "main.c"
     h_0opt_a8ea2_release(&h44_own44);
 #line 79 "examples/ledger/main.hero"
-#line 4350 "main.c"
+#line 4349 "main.c"
     h_0opt_a8ea2_release(&h45_own45);
 #line 79 "examples/ledger/main.hero"
-#line 4353 "main.c"
+#line 4352 "main.c"
     h_0opt_a8ea2_release(&h46_own46);
 #line 79 "examples/ledger/main.hero"
-#line 4356 "main.c"
+#line 4355 "main.c"
     h_0opt_a8ea2_release(&h47_own47);
 #line 79 "examples/ledger/main.hero"
-#line 4359 "main.c"
+#line 4358 "main.c"
     h_0opt_a8ea2_release(&h48_own48);
 #line 79 "examples/ledger/main.hero"
-#line 4362 "main.c"
+#line 4361 "main.c"
     h_0opt_a8ea2_release(&h49_own49);
 #line 79 "examples/ledger/main.hero"
-#line 4365 "main.c"
+#line 4364 "main.c"
     h_0opt_a8ea2_release(&h50_own50);
 #line 79 "examples/ledger/main.hero"
-#line 4368 "main.c"
+#line 4367 "main.c"
     h_0opt_a8ea2_release(&h51_own51);
 #line 79 "examples/ledger/main.hero"
-#line 4371 "main.c"
+#line 4370 "main.c"
     h_0opt_a8ea2_release(&h52_own52);
 #line 79 "examples/ledger/main.hero"
-#line 4374 "main.c"
+#line 4373 "main.c"
     h_0opt_70720e79_release(&h53_own53);
 #line 79 "examples/ledger/main.hero"
-#line 4377 "main.c"
+#line 4376 "main.c"
     h_0opt_a8ea2_release(&h54_own54);
 #line 79 "examples/ledger/main.hero"
-#line 4380 "main.c"
+#line 4379 "main.c"
     h_0opt_a8ea2_release(&h55_own55);
 #line 79 "examples/ledger/main.hero"
-#line 4383 "main.c"
+#line 4382 "main.c"
     h_0opt_a8ea2_release(&h56_own56);
 #line 79 "examples/ledger/main.hero"
-#line 4386 "main.c"
+#line 4385 "main.c"
     h_0opt_a8ea2_release(&h57_own57);
 #line 79 "examples/ledger/main.hero"
-#line 4389 "main.c"
+#line 4388 "main.c"
     h_0opt_a8ea2_release(&h58_own58);
 #line 79 "examples/ledger/main.hero"
-#line 4392 "main.c"
+#line 4391 "main.c"
     h_0opt_a8ea2_release(&h59_own59);
     return t188;
 bb35:
@@ -4401,15 +4400,15 @@ bb35:
     t280 = h55_own55;
 #line 81 "examples/ledger/main.hero"
     h55_own55 = t203;
-#line 4405 "main.c"
+#line 4404 "main.c"
     h_0opt_a8ea2_release(&t280);
 #line 81 "examples/ledger/main.hero"
     t281 = h23_f14;
-#line 4409 "main.c"
+#line 4408 "main.c"
     h_0opt_a8ea2_retain(&t203);
 #line 81 "examples/ledger/main.hero"
     h23_f14 = t203;
-#line 4413 "main.c"
+#line 4412 "main.c"
     h_0opt_a8ea2_release(&t281);
 #line 81 "examples/ledger/main.hero"
     t204 = h23_f14;
@@ -4427,7 +4426,7 @@ bb36:
     t197 = h22_f13;
 #line 80 "examples/ledger/main.hero"
     t198 = t197.as.err;
-#line 4431 "main.c"
+#line 4430 "main.c"
     hero_failure_retain(&t198);
 #line 80 "examples/ledger/main.hero"
     t199 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = t198};
@@ -4435,175 +4434,175 @@ bb36:
     t282 = h56_own56;
 #line 80 "examples/ledger/main.hero"
     h56_own56 = t199;
-#line 4439 "main.c"
+#line 4438 "main.c"
     h_0opt_a8ea2_release(&t282);
 #line 80 "examples/ledger/main.hero"
-#line 4442 "main.c"
+#line 4441 "main.c"
     h_0opt_a8ea2_retain(&t199);
 #line 80 "examples/ledger/main.hero"
-#line 4445 "main.c"
+#line 4444 "main.c"
     h_0opt_a8ea2_release(&h1_f0);
 #line 80 "examples/ledger/main.hero"
-#line 4448 "main.c"
+#line 4447 "main.c"
     h_0opt_a8ea2_release(&h2_f1);
 #line 80 "examples/ledger/main.hero"
-#line 4451 "main.c"
+#line 4450 "main.c"
     h_0opt_a8ea2_release(&h3_f2);
 #line 80 "examples/ledger/main.hero"
-#line 4454 "main.c"
+#line 4453 "main.c"
     h_0opt_791f9719_release(&h4_f3);
 #line 80 "examples/ledger/main.hero"
-#line 4457 "main.c"
+#line 4456 "main.c"
     hero_array_decref(h6_xs0);
 #line 80 "examples/ledger/main.hero"
-#line 4460 "main.c"
+#line 4459 "main.c"
     h_bookentry_Account_release(&h8_a);
 #line 80 "examples/ledger/main.hero"
-#line 4463 "main.c"
+#line 4462 "main.c"
     h_0opt_a8ea2_release(&h9_f4);
 #line 80 "examples/ledger/main.hero"
-#line 4466 "main.c"
+#line 4465 "main.c"
     h_0opt_a8ea2_release(&h10_f5);
 #line 80 "examples/ledger/main.hero"
-#line 4469 "main.c"
+#line 4468 "main.c"
     h_0opt_70720e79_release(&h11_f6);
 #line 80 "examples/ledger/main.hero"
-#line 4472 "main.c"
+#line 4471 "main.c"
     h_0opt_a8ea2_release(&h12_f7);
 #line 80 "examples/ledger/main.hero"
-#line 4475 "main.c"
+#line 4474 "main.c"
     h_0opt_791f9719_release(&h13_f8);
 #line 80 "examples/ledger/main.hero"
-#line 4478 "main.c"
+#line 4477 "main.c"
     hero_array_decref(h15_xs1);
 #line 80 "examples/ledger/main.hero"
-#line 4481 "main.c"
+#line 4480 "main.c"
     h_bookentry_Entry_release(&h17_e);
 #line 80 "examples/ledger/main.hero"
-#line 4484 "main.c"
+#line 4483 "main.c"
     h_0opt_a8ea2_release(&h18_f9);
 #line 80 "examples/ledger/main.hero"
-#line 4487 "main.c"
+#line 4486 "main.c"
     h_0opt_a8ea2_release(&h19_f10);
 #line 80 "examples/ledger/main.hero"
-#line 4490 "main.c"
+#line 4489 "main.c"
     h_0opt_a8ea2_release(&h20_f11);
 #line 80 "examples/ledger/main.hero"
-#line 4493 "main.c"
+#line 4492 "main.c"
     h_0opt_a8ea2_release(&h21_f12);
 #line 80 "examples/ledger/main.hero"
-#line 4496 "main.c"
+#line 4495 "main.c"
     h_0opt_70720e79_release(&h22_f13);
 #line 80 "examples/ledger/main.hero"
-#line 4499 "main.c"
+#line 4498 "main.c"
     h_0opt_a8ea2_release(&h23_f14);
 #line 80 "examples/ledger/main.hero"
-#line 4502 "main.c"
+#line 4501 "main.c"
     h_0opt_a8ea2_release(&h24_f15);
 #line 80 "examples/ledger/main.hero"
-#line 4505 "main.c"
+#line 4504 "main.c"
     h_0opt_a8ea2_release(&h25_own25);
 #line 80 "examples/ledger/main.hero"
-#line 4508 "main.c"
+#line 4507 "main.c"
     h_0opt_a8ea2_release(&h26_own26);
 #line 80 "examples/ledger/main.hero"
-#line 4511 "main.c"
+#line 4510 "main.c"
     h_0opt_a8ea2_release(&h27_own27);
 #line 80 "examples/ledger/main.hero"
-#line 4514 "main.c"
+#line 4513 "main.c"
     h_0opt_a8ea2_release(&h28_own28);
 #line 80 "examples/ledger/main.hero"
-#line 4517 "main.c"
+#line 4516 "main.c"
     h_0opt_a8ea2_release(&h29_own29);
 #line 80 "examples/ledger/main.hero"
-#line 4520 "main.c"
+#line 4519 "main.c"
     h_0opt_791f9719_release(&h30_own30);
 #line 80 "examples/ledger/main.hero"
-#line 4523 "main.c"
+#line 4522 "main.c"
     h_0opt_a8ea2_release(&h31_own31);
 #line 80 "examples/ledger/main.hero"
-#line 4526 "main.c"
+#line 4525 "main.c"
     hero_array_decref(h32_own32);
 #line 80 "examples/ledger/main.hero"
-#line 4529 "main.c"
+#line 4528 "main.c"
     h_0opt_a8ea2_release(&h33_own33);
 #line 80 "examples/ledger/main.hero"
-#line 4532 "main.c"
+#line 4531 "main.c"
     h_0opt_a8ea2_release(&h34_own34);
 #line 80 "examples/ledger/main.hero"
-#line 4535 "main.c"
+#line 4534 "main.c"
     h_0opt_791f9719_release(&h35_own35);
 #line 80 "examples/ledger/main.hero"
-#line 4538 "main.c"
+#line 4537 "main.c"
     h_0opt_a8ea2_release(&h36_own36);
 #line 80 "examples/ledger/main.hero"
-#line 4541 "main.c"
+#line 4540 "main.c"
     h_0opt_a8ea2_release(&h37_own37);
 #line 80 "examples/ledger/main.hero"
-#line 4544 "main.c"
+#line 4543 "main.c"
     h_0opt_70720e79_release(&h38_own38);
 #line 80 "examples/ledger/main.hero"
-#line 4547 "main.c"
+#line 4546 "main.c"
     h_0opt_a8ea2_release(&h39_own39);
 #line 80 "examples/ledger/main.hero"
-#line 4550 "main.c"
+#line 4549 "main.c"
     h_0opt_a8ea2_release(&h40_own40);
 #line 80 "examples/ledger/main.hero"
-#line 4553 "main.c"
+#line 4552 "main.c"
     h_0opt_a8ea2_release(&h41_own41);
 #line 80 "examples/ledger/main.hero"
-#line 4556 "main.c"
+#line 4555 "main.c"
     h_0opt_a8ea2_release(&h42_own42);
 #line 80 "examples/ledger/main.hero"
-#line 4559 "main.c"
+#line 4558 "main.c"
     hero_array_decref(h43_own43);
 #line 80 "examples/ledger/main.hero"
-#line 4562 "main.c"
+#line 4561 "main.c"
     h_0opt_a8ea2_release(&h44_own44);
 #line 80 "examples/ledger/main.hero"
-#line 4565 "main.c"
+#line 4564 "main.c"
     h_0opt_a8ea2_release(&h45_own45);
 #line 80 "examples/ledger/main.hero"
-#line 4568 "main.c"
+#line 4567 "main.c"
     h_0opt_a8ea2_release(&h46_own46);
 #line 80 "examples/ledger/main.hero"
-#line 4571 "main.c"
+#line 4570 "main.c"
     h_0opt_a8ea2_release(&h47_own47);
 #line 80 "examples/ledger/main.hero"
-#line 4574 "main.c"
+#line 4573 "main.c"
     h_0opt_a8ea2_release(&h48_own48);
 #line 80 "examples/ledger/main.hero"
-#line 4577 "main.c"
+#line 4576 "main.c"
     h_0opt_a8ea2_release(&h49_own49);
 #line 80 "examples/ledger/main.hero"
-#line 4580 "main.c"
+#line 4579 "main.c"
     h_0opt_a8ea2_release(&h50_own50);
 #line 80 "examples/ledger/main.hero"
-#line 4583 "main.c"
+#line 4582 "main.c"
     h_0opt_a8ea2_release(&h51_own51);
 #line 80 "examples/ledger/main.hero"
-#line 4586 "main.c"
+#line 4585 "main.c"
     h_0opt_a8ea2_release(&h52_own52);
 #line 80 "examples/ledger/main.hero"
-#line 4589 "main.c"
+#line 4588 "main.c"
     h_0opt_70720e79_release(&h53_own53);
 #line 80 "examples/ledger/main.hero"
-#line 4592 "main.c"
+#line 4591 "main.c"
     h_0opt_a8ea2_release(&h54_own54);
 #line 80 "examples/ledger/main.hero"
-#line 4595 "main.c"
+#line 4594 "main.c"
     h_0opt_a8ea2_release(&h55_own55);
 #line 80 "examples/ledger/main.hero"
-#line 4598 "main.c"
+#line 4597 "main.c"
     h_0opt_a8ea2_release(&h56_own56);
 #line 80 "examples/ledger/main.hero"
-#line 4601 "main.c"
+#line 4600 "main.c"
     h_0opt_a8ea2_release(&h57_own57);
 #line 80 "examples/ledger/main.hero"
-#line 4604 "main.c"
+#line 4603 "main.c"
     h_0opt_a8ea2_release(&h58_own58);
 #line 80 "examples/ledger/main.hero"
-#line 4607 "main.c"
+#line 4606 "main.c"
     h_0opt_a8ea2_release(&h59_own59);
     return t199;
 bb37:
@@ -4615,7 +4614,7 @@ bb38:
     t208 = h23_f14;
 #line 81 "examples/ledger/main.hero"
     t209 = t208.as.err;
-#line 4619 "main.c"
+#line 4618 "main.c"
     hero_failure_retain(&t209);
 #line 81 "examples/ledger/main.hero"
     t210 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = t209};
@@ -4623,175 +4622,175 @@ bb38:
     t283 = h57_own57;
 #line 81 "examples/ledger/main.hero"
     h57_own57 = t210;
-#line 4627 "main.c"
+#line 4626 "main.c"
     h_0opt_a8ea2_release(&t283);
 #line 81 "examples/ledger/main.hero"
-#line 4630 "main.c"
+#line 4629 "main.c"
     h_0opt_a8ea2_retain(&t210);
 #line 81 "examples/ledger/main.hero"
-#line 4633 "main.c"
+#line 4632 "main.c"
     h_0opt_a8ea2_release(&h1_f0);
 #line 81 "examples/ledger/main.hero"
-#line 4636 "main.c"
+#line 4635 "main.c"
     h_0opt_a8ea2_release(&h2_f1);
 #line 81 "examples/ledger/main.hero"
-#line 4639 "main.c"
+#line 4638 "main.c"
     h_0opt_a8ea2_release(&h3_f2);
 #line 81 "examples/ledger/main.hero"
-#line 4642 "main.c"
+#line 4641 "main.c"
     h_0opt_791f9719_release(&h4_f3);
 #line 81 "examples/ledger/main.hero"
-#line 4645 "main.c"
+#line 4644 "main.c"
     hero_array_decref(h6_xs0);
 #line 81 "examples/ledger/main.hero"
-#line 4648 "main.c"
+#line 4647 "main.c"
     h_bookentry_Account_release(&h8_a);
 #line 81 "examples/ledger/main.hero"
-#line 4651 "main.c"
+#line 4650 "main.c"
     h_0opt_a8ea2_release(&h9_f4);
 #line 81 "examples/ledger/main.hero"
-#line 4654 "main.c"
+#line 4653 "main.c"
     h_0opt_a8ea2_release(&h10_f5);
 #line 81 "examples/ledger/main.hero"
-#line 4657 "main.c"
+#line 4656 "main.c"
     h_0opt_70720e79_release(&h11_f6);
 #line 81 "examples/ledger/main.hero"
-#line 4660 "main.c"
+#line 4659 "main.c"
     h_0opt_a8ea2_release(&h12_f7);
 #line 81 "examples/ledger/main.hero"
-#line 4663 "main.c"
+#line 4662 "main.c"
     h_0opt_791f9719_release(&h13_f8);
 #line 81 "examples/ledger/main.hero"
-#line 4666 "main.c"
+#line 4665 "main.c"
     hero_array_decref(h15_xs1);
 #line 81 "examples/ledger/main.hero"
-#line 4669 "main.c"
+#line 4668 "main.c"
     h_bookentry_Entry_release(&h17_e);
 #line 81 "examples/ledger/main.hero"
-#line 4672 "main.c"
+#line 4671 "main.c"
     h_0opt_a8ea2_release(&h18_f9);
 #line 81 "examples/ledger/main.hero"
-#line 4675 "main.c"
+#line 4674 "main.c"
     h_0opt_a8ea2_release(&h19_f10);
 #line 81 "examples/ledger/main.hero"
-#line 4678 "main.c"
+#line 4677 "main.c"
     h_0opt_a8ea2_release(&h20_f11);
 #line 81 "examples/ledger/main.hero"
-#line 4681 "main.c"
+#line 4680 "main.c"
     h_0opt_a8ea2_release(&h21_f12);
 #line 81 "examples/ledger/main.hero"
-#line 4684 "main.c"
+#line 4683 "main.c"
     h_0opt_70720e79_release(&h22_f13);
 #line 81 "examples/ledger/main.hero"
-#line 4687 "main.c"
+#line 4686 "main.c"
     h_0opt_a8ea2_release(&h23_f14);
 #line 81 "examples/ledger/main.hero"
-#line 4690 "main.c"
+#line 4689 "main.c"
     h_0opt_a8ea2_release(&h24_f15);
 #line 81 "examples/ledger/main.hero"
-#line 4693 "main.c"
+#line 4692 "main.c"
     h_0opt_a8ea2_release(&h25_own25);
 #line 81 "examples/ledger/main.hero"
-#line 4696 "main.c"
+#line 4695 "main.c"
     h_0opt_a8ea2_release(&h26_own26);
 #line 81 "examples/ledger/main.hero"
-#line 4699 "main.c"
+#line 4698 "main.c"
     h_0opt_a8ea2_release(&h27_own27);
 #line 81 "examples/ledger/main.hero"
-#line 4702 "main.c"
+#line 4701 "main.c"
     h_0opt_a8ea2_release(&h28_own28);
 #line 81 "examples/ledger/main.hero"
-#line 4705 "main.c"
+#line 4704 "main.c"
     h_0opt_a8ea2_release(&h29_own29);
 #line 81 "examples/ledger/main.hero"
-#line 4708 "main.c"
+#line 4707 "main.c"
     h_0opt_791f9719_release(&h30_own30);
 #line 81 "examples/ledger/main.hero"
-#line 4711 "main.c"
+#line 4710 "main.c"
     h_0opt_a8ea2_release(&h31_own31);
 #line 81 "examples/ledger/main.hero"
-#line 4714 "main.c"
+#line 4713 "main.c"
     hero_array_decref(h32_own32);
 #line 81 "examples/ledger/main.hero"
-#line 4717 "main.c"
+#line 4716 "main.c"
     h_0opt_a8ea2_release(&h33_own33);
 #line 81 "examples/ledger/main.hero"
-#line 4720 "main.c"
+#line 4719 "main.c"
     h_0opt_a8ea2_release(&h34_own34);
 #line 81 "examples/ledger/main.hero"
-#line 4723 "main.c"
+#line 4722 "main.c"
     h_0opt_791f9719_release(&h35_own35);
 #line 81 "examples/ledger/main.hero"
-#line 4726 "main.c"
+#line 4725 "main.c"
     h_0opt_a8ea2_release(&h36_own36);
 #line 81 "examples/ledger/main.hero"
-#line 4729 "main.c"
+#line 4728 "main.c"
     h_0opt_a8ea2_release(&h37_own37);
 #line 81 "examples/ledger/main.hero"
-#line 4732 "main.c"
+#line 4731 "main.c"
     h_0opt_70720e79_release(&h38_own38);
 #line 81 "examples/ledger/main.hero"
-#line 4735 "main.c"
+#line 4734 "main.c"
     h_0opt_a8ea2_release(&h39_own39);
 #line 81 "examples/ledger/main.hero"
-#line 4738 "main.c"
+#line 4737 "main.c"
     h_0opt_a8ea2_release(&h40_own40);
 #line 81 "examples/ledger/main.hero"
-#line 4741 "main.c"
+#line 4740 "main.c"
     h_0opt_a8ea2_release(&h41_own41);
 #line 81 "examples/ledger/main.hero"
-#line 4744 "main.c"
+#line 4743 "main.c"
     h_0opt_a8ea2_release(&h42_own42);
 #line 81 "examples/ledger/main.hero"
-#line 4747 "main.c"
+#line 4746 "main.c"
     hero_array_decref(h43_own43);
 #line 81 "examples/ledger/main.hero"
-#line 4750 "main.c"
+#line 4749 "main.c"
     h_0opt_a8ea2_release(&h44_own44);
 #line 81 "examples/ledger/main.hero"
-#line 4753 "main.c"
+#line 4752 "main.c"
     h_0opt_a8ea2_release(&h45_own45);
 #line 81 "examples/ledger/main.hero"
-#line 4756 "main.c"
+#line 4755 "main.c"
     h_0opt_a8ea2_release(&h46_own46);
 #line 81 "examples/ledger/main.hero"
-#line 4759 "main.c"
+#line 4758 "main.c"
     h_0opt_a8ea2_release(&h47_own47);
 #line 81 "examples/ledger/main.hero"
-#line 4762 "main.c"
+#line 4761 "main.c"
     h_0opt_a8ea2_release(&h48_own48);
 #line 81 "examples/ledger/main.hero"
-#line 4765 "main.c"
+#line 4764 "main.c"
     h_0opt_a8ea2_release(&h49_own49);
 #line 81 "examples/ledger/main.hero"
-#line 4768 "main.c"
+#line 4767 "main.c"
     h_0opt_a8ea2_release(&h50_own50);
 #line 81 "examples/ledger/main.hero"
-#line 4771 "main.c"
+#line 4770 "main.c"
     h_0opt_a8ea2_release(&h51_own51);
 #line 81 "examples/ledger/main.hero"
-#line 4774 "main.c"
+#line 4773 "main.c"
     h_0opt_a8ea2_release(&h52_own52);
 #line 81 "examples/ledger/main.hero"
-#line 4777 "main.c"
+#line 4776 "main.c"
     h_0opt_70720e79_release(&h53_own53);
 #line 81 "examples/ledger/main.hero"
-#line 4780 "main.c"
+#line 4779 "main.c"
     h_0opt_a8ea2_release(&h54_own54);
 #line 81 "examples/ledger/main.hero"
-#line 4783 "main.c"
+#line 4782 "main.c"
     h_0opt_a8ea2_release(&h55_own55);
 #line 81 "examples/ledger/main.hero"
-#line 4786 "main.c"
+#line 4785 "main.c"
     h_0opt_a8ea2_release(&h56_own56);
 #line 81 "examples/ledger/main.hero"
-#line 4789 "main.c"
+#line 4788 "main.c"
     h_0opt_a8ea2_release(&h57_own57);
 #line 81 "examples/ledger/main.hero"
-#line 4792 "main.c"
+#line 4791 "main.c"
     h_0opt_a8ea2_release(&h58_own58);
 #line 81 "examples/ledger/main.hero"
-#line 4795 "main.c"
+#line 4794 "main.c"
     h_0opt_a8ea2_release(&h59_own59);
     return t210;
 bb39:
@@ -4802,175 +4801,175 @@ bb39:
     t284 = h58_own58;
 #line 85 "examples/ledger/main.hero"
     h58_own58 = t230;
-#line 4806 "main.c"
+#line 4805 "main.c"
     h_0opt_a8ea2_release(&t284);
 #line 85 "examples/ledger/main.hero"
-#line 4809 "main.c"
+#line 4808 "main.c"
     h_0opt_a8ea2_retain(&t230);
 #line 85 "examples/ledger/main.hero"
-#line 4812 "main.c"
+#line 4811 "main.c"
     h_0opt_a8ea2_release(&h1_f0);
 #line 85 "examples/ledger/main.hero"
-#line 4815 "main.c"
+#line 4814 "main.c"
     h_0opt_a8ea2_release(&h2_f1);
 #line 85 "examples/ledger/main.hero"
-#line 4818 "main.c"
+#line 4817 "main.c"
     h_0opt_a8ea2_release(&h3_f2);
 #line 85 "examples/ledger/main.hero"
-#line 4821 "main.c"
+#line 4820 "main.c"
     h_0opt_791f9719_release(&h4_f3);
 #line 85 "examples/ledger/main.hero"
-#line 4824 "main.c"
+#line 4823 "main.c"
     hero_array_decref(h6_xs0);
 #line 85 "examples/ledger/main.hero"
-#line 4827 "main.c"
+#line 4826 "main.c"
     h_bookentry_Account_release(&h8_a);
 #line 85 "examples/ledger/main.hero"
-#line 4830 "main.c"
+#line 4829 "main.c"
     h_0opt_a8ea2_release(&h9_f4);
 #line 85 "examples/ledger/main.hero"
-#line 4833 "main.c"
+#line 4832 "main.c"
     h_0opt_a8ea2_release(&h10_f5);
 #line 85 "examples/ledger/main.hero"
-#line 4836 "main.c"
+#line 4835 "main.c"
     h_0opt_70720e79_release(&h11_f6);
 #line 85 "examples/ledger/main.hero"
-#line 4839 "main.c"
+#line 4838 "main.c"
     h_0opt_a8ea2_release(&h12_f7);
 #line 85 "examples/ledger/main.hero"
-#line 4842 "main.c"
+#line 4841 "main.c"
     h_0opt_791f9719_release(&h13_f8);
 #line 85 "examples/ledger/main.hero"
-#line 4845 "main.c"
+#line 4844 "main.c"
     hero_array_decref(h15_xs1);
 #line 85 "examples/ledger/main.hero"
-#line 4848 "main.c"
+#line 4847 "main.c"
     h_bookentry_Entry_release(&h17_e);
 #line 85 "examples/ledger/main.hero"
-#line 4851 "main.c"
+#line 4850 "main.c"
     h_0opt_a8ea2_release(&h18_f9);
 #line 85 "examples/ledger/main.hero"
-#line 4854 "main.c"
+#line 4853 "main.c"
     h_0opt_a8ea2_release(&h19_f10);
 #line 85 "examples/ledger/main.hero"
-#line 4857 "main.c"
+#line 4856 "main.c"
     h_0opt_a8ea2_release(&h20_f11);
 #line 85 "examples/ledger/main.hero"
-#line 4860 "main.c"
+#line 4859 "main.c"
     h_0opt_a8ea2_release(&h21_f12);
 #line 85 "examples/ledger/main.hero"
-#line 4863 "main.c"
+#line 4862 "main.c"
     h_0opt_70720e79_release(&h22_f13);
 #line 85 "examples/ledger/main.hero"
-#line 4866 "main.c"
+#line 4865 "main.c"
     h_0opt_a8ea2_release(&h23_f14);
 #line 85 "examples/ledger/main.hero"
-#line 4869 "main.c"
+#line 4868 "main.c"
     h_0opt_a8ea2_release(&h24_f15);
 #line 85 "examples/ledger/main.hero"
-#line 4872 "main.c"
+#line 4871 "main.c"
     h_0opt_a8ea2_release(&h25_own25);
 #line 85 "examples/ledger/main.hero"
-#line 4875 "main.c"
+#line 4874 "main.c"
     h_0opt_a8ea2_release(&h26_own26);
 #line 85 "examples/ledger/main.hero"
-#line 4878 "main.c"
+#line 4877 "main.c"
     h_0opt_a8ea2_release(&h27_own27);
 #line 85 "examples/ledger/main.hero"
-#line 4881 "main.c"
+#line 4880 "main.c"
     h_0opt_a8ea2_release(&h28_own28);
 #line 85 "examples/ledger/main.hero"
-#line 4884 "main.c"
+#line 4883 "main.c"
     h_0opt_a8ea2_release(&h29_own29);
 #line 85 "examples/ledger/main.hero"
-#line 4887 "main.c"
+#line 4886 "main.c"
     h_0opt_791f9719_release(&h30_own30);
 #line 85 "examples/ledger/main.hero"
-#line 4890 "main.c"
+#line 4889 "main.c"
     h_0opt_a8ea2_release(&h31_own31);
 #line 85 "examples/ledger/main.hero"
-#line 4893 "main.c"
+#line 4892 "main.c"
     hero_array_decref(h32_own32);
 #line 85 "examples/ledger/main.hero"
-#line 4896 "main.c"
+#line 4895 "main.c"
     h_0opt_a8ea2_release(&h33_own33);
 #line 85 "examples/ledger/main.hero"
-#line 4899 "main.c"
+#line 4898 "main.c"
     h_0opt_a8ea2_release(&h34_own34);
 #line 85 "examples/ledger/main.hero"
-#line 4902 "main.c"
+#line 4901 "main.c"
     h_0opt_791f9719_release(&h35_own35);
 #line 85 "examples/ledger/main.hero"
-#line 4905 "main.c"
+#line 4904 "main.c"
     h_0opt_a8ea2_release(&h36_own36);
 #line 85 "examples/ledger/main.hero"
-#line 4908 "main.c"
+#line 4907 "main.c"
     h_0opt_a8ea2_release(&h37_own37);
 #line 85 "examples/ledger/main.hero"
-#line 4911 "main.c"
+#line 4910 "main.c"
     h_0opt_70720e79_release(&h38_own38);
 #line 85 "examples/ledger/main.hero"
-#line 4914 "main.c"
+#line 4913 "main.c"
     h_0opt_a8ea2_release(&h39_own39);
 #line 85 "examples/ledger/main.hero"
-#line 4917 "main.c"
+#line 4916 "main.c"
     h_0opt_a8ea2_release(&h40_own40);
 #line 85 "examples/ledger/main.hero"
-#line 4920 "main.c"
+#line 4919 "main.c"
     h_0opt_a8ea2_release(&h41_own41);
 #line 85 "examples/ledger/main.hero"
-#line 4923 "main.c"
+#line 4922 "main.c"
     h_0opt_a8ea2_release(&h42_own42);
 #line 85 "examples/ledger/main.hero"
-#line 4926 "main.c"
+#line 4925 "main.c"
     hero_array_decref(h43_own43);
 #line 85 "examples/ledger/main.hero"
-#line 4929 "main.c"
+#line 4928 "main.c"
     h_0opt_a8ea2_release(&h44_own44);
 #line 85 "examples/ledger/main.hero"
-#line 4932 "main.c"
+#line 4931 "main.c"
     h_0opt_a8ea2_release(&h45_own45);
 #line 85 "examples/ledger/main.hero"
-#line 4935 "main.c"
+#line 4934 "main.c"
     h_0opt_a8ea2_release(&h46_own46);
 #line 85 "examples/ledger/main.hero"
-#line 4938 "main.c"
+#line 4937 "main.c"
     h_0opt_a8ea2_release(&h47_own47);
 #line 85 "examples/ledger/main.hero"
-#line 4941 "main.c"
+#line 4940 "main.c"
     h_0opt_a8ea2_release(&h48_own48);
 #line 85 "examples/ledger/main.hero"
-#line 4944 "main.c"
+#line 4943 "main.c"
     h_0opt_a8ea2_release(&h49_own49);
 #line 85 "examples/ledger/main.hero"
-#line 4947 "main.c"
+#line 4946 "main.c"
     h_0opt_a8ea2_release(&h50_own50);
 #line 85 "examples/ledger/main.hero"
-#line 4950 "main.c"
+#line 4949 "main.c"
     h_0opt_a8ea2_release(&h51_own51);
 #line 85 "examples/ledger/main.hero"
-#line 4953 "main.c"
+#line 4952 "main.c"
     h_0opt_a8ea2_release(&h52_own52);
 #line 85 "examples/ledger/main.hero"
-#line 4956 "main.c"
+#line 4955 "main.c"
     h_0opt_70720e79_release(&h53_own53);
 #line 85 "examples/ledger/main.hero"
-#line 4959 "main.c"
+#line 4958 "main.c"
     h_0opt_a8ea2_release(&h54_own54);
 #line 85 "examples/ledger/main.hero"
-#line 4962 "main.c"
+#line 4961 "main.c"
     h_0opt_a8ea2_release(&h55_own55);
 #line 85 "examples/ledger/main.hero"
-#line 4965 "main.c"
+#line 4964 "main.c"
     h_0opt_a8ea2_release(&h56_own56);
 #line 85 "examples/ledger/main.hero"
-#line 4968 "main.c"
+#line 4967 "main.c"
     h_0opt_a8ea2_release(&h57_own57);
 #line 85 "examples/ledger/main.hero"
-#line 4971 "main.c"
+#line 4970 "main.c"
     h_0opt_a8ea2_release(&h58_own58);
 #line 85 "examples/ledger/main.hero"
-#line 4974 "main.c"
+#line 4973 "main.c"
     h_0opt_a8ea2_release(&h59_own59);
     return t230;
 bb40:
@@ -4978,7 +4977,7 @@ bb40:
     t225 = h24_f15;
 #line 84 "examples/ledger/main.hero"
     t226 = t225.as.err;
-#line 4982 "main.c"
+#line 4981 "main.c"
     hero_failure_retain(&t226);
 #line 84 "examples/ledger/main.hero"
     t227 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = t226};
@@ -4986,182 +4985,182 @@ bb40:
     t285 = h59_own59;
 #line 84 "examples/ledger/main.hero"
     h59_own59 = t227;
-#line 4990 "main.c"
+#line 4989 "main.c"
     h_0opt_a8ea2_release(&t285);
 #line 84 "examples/ledger/main.hero"
-#line 4993 "main.c"
+#line 4992 "main.c"
     h_0opt_a8ea2_retain(&t227);
 #line 84 "examples/ledger/main.hero"
-#line 4996 "main.c"
+#line 4995 "main.c"
     h_0opt_a8ea2_release(&h1_f0);
 #line 84 "examples/ledger/main.hero"
-#line 4999 "main.c"
+#line 4998 "main.c"
     h_0opt_a8ea2_release(&h2_f1);
 #line 84 "examples/ledger/main.hero"
-#line 5002 "main.c"
+#line 5001 "main.c"
     h_0opt_a8ea2_release(&h3_f2);
 #line 84 "examples/ledger/main.hero"
-#line 5005 "main.c"
+#line 5004 "main.c"
     h_0opt_791f9719_release(&h4_f3);
 #line 84 "examples/ledger/main.hero"
-#line 5008 "main.c"
+#line 5007 "main.c"
     hero_array_decref(h6_xs0);
 #line 84 "examples/ledger/main.hero"
-#line 5011 "main.c"
+#line 5010 "main.c"
     h_bookentry_Account_release(&h8_a);
 #line 84 "examples/ledger/main.hero"
-#line 5014 "main.c"
+#line 5013 "main.c"
     h_0opt_a8ea2_release(&h9_f4);
 #line 84 "examples/ledger/main.hero"
-#line 5017 "main.c"
+#line 5016 "main.c"
     h_0opt_a8ea2_release(&h10_f5);
 #line 84 "examples/ledger/main.hero"
-#line 5020 "main.c"
+#line 5019 "main.c"
     h_0opt_70720e79_release(&h11_f6);
 #line 84 "examples/ledger/main.hero"
-#line 5023 "main.c"
+#line 5022 "main.c"
     h_0opt_a8ea2_release(&h12_f7);
 #line 84 "examples/ledger/main.hero"
-#line 5026 "main.c"
+#line 5025 "main.c"
     h_0opt_791f9719_release(&h13_f8);
 #line 84 "examples/ledger/main.hero"
-#line 5029 "main.c"
+#line 5028 "main.c"
     hero_array_decref(h15_xs1);
 #line 84 "examples/ledger/main.hero"
-#line 5032 "main.c"
+#line 5031 "main.c"
     h_bookentry_Entry_release(&h17_e);
 #line 84 "examples/ledger/main.hero"
-#line 5035 "main.c"
+#line 5034 "main.c"
     h_0opt_a8ea2_release(&h18_f9);
 #line 84 "examples/ledger/main.hero"
-#line 5038 "main.c"
+#line 5037 "main.c"
     h_0opt_a8ea2_release(&h19_f10);
 #line 84 "examples/ledger/main.hero"
-#line 5041 "main.c"
+#line 5040 "main.c"
     h_0opt_a8ea2_release(&h20_f11);
 #line 84 "examples/ledger/main.hero"
-#line 5044 "main.c"
+#line 5043 "main.c"
     h_0opt_a8ea2_release(&h21_f12);
 #line 84 "examples/ledger/main.hero"
-#line 5047 "main.c"
+#line 5046 "main.c"
     h_0opt_70720e79_release(&h22_f13);
 #line 84 "examples/ledger/main.hero"
-#line 5050 "main.c"
+#line 5049 "main.c"
     h_0opt_a8ea2_release(&h23_f14);
 #line 84 "examples/ledger/main.hero"
-#line 5053 "main.c"
+#line 5052 "main.c"
     h_0opt_a8ea2_release(&h24_f15);
 #line 84 "examples/ledger/main.hero"
-#line 5056 "main.c"
+#line 5055 "main.c"
     h_0opt_a8ea2_release(&h25_own25);
 #line 84 "examples/ledger/main.hero"
-#line 5059 "main.c"
+#line 5058 "main.c"
     h_0opt_a8ea2_release(&h26_own26);
 #line 84 "examples/ledger/main.hero"
-#line 5062 "main.c"
+#line 5061 "main.c"
     h_0opt_a8ea2_release(&h27_own27);
 #line 84 "examples/ledger/main.hero"
-#line 5065 "main.c"
+#line 5064 "main.c"
     h_0opt_a8ea2_release(&h28_own28);
 #line 84 "examples/ledger/main.hero"
-#line 5068 "main.c"
+#line 5067 "main.c"
     h_0opt_a8ea2_release(&h29_own29);
 #line 84 "examples/ledger/main.hero"
-#line 5071 "main.c"
+#line 5070 "main.c"
     h_0opt_791f9719_release(&h30_own30);
 #line 84 "examples/ledger/main.hero"
-#line 5074 "main.c"
+#line 5073 "main.c"
     h_0opt_a8ea2_release(&h31_own31);
 #line 84 "examples/ledger/main.hero"
-#line 5077 "main.c"
+#line 5076 "main.c"
     hero_array_decref(h32_own32);
 #line 84 "examples/ledger/main.hero"
-#line 5080 "main.c"
+#line 5079 "main.c"
     h_0opt_a8ea2_release(&h33_own33);
 #line 84 "examples/ledger/main.hero"
-#line 5083 "main.c"
+#line 5082 "main.c"
     h_0opt_a8ea2_release(&h34_own34);
 #line 84 "examples/ledger/main.hero"
-#line 5086 "main.c"
+#line 5085 "main.c"
     h_0opt_791f9719_release(&h35_own35);
 #line 84 "examples/ledger/main.hero"
-#line 5089 "main.c"
+#line 5088 "main.c"
     h_0opt_a8ea2_release(&h36_own36);
 #line 84 "examples/ledger/main.hero"
-#line 5092 "main.c"
+#line 5091 "main.c"
     h_0opt_a8ea2_release(&h37_own37);
 #line 84 "examples/ledger/main.hero"
-#line 5095 "main.c"
+#line 5094 "main.c"
     h_0opt_70720e79_release(&h38_own38);
 #line 84 "examples/ledger/main.hero"
-#line 5098 "main.c"
+#line 5097 "main.c"
     h_0opt_a8ea2_release(&h39_own39);
 #line 84 "examples/ledger/main.hero"
-#line 5101 "main.c"
+#line 5100 "main.c"
     h_0opt_a8ea2_release(&h40_own40);
 #line 84 "examples/ledger/main.hero"
-#line 5104 "main.c"
+#line 5103 "main.c"
     h_0opt_a8ea2_release(&h41_own41);
 #line 84 "examples/ledger/main.hero"
-#line 5107 "main.c"
+#line 5106 "main.c"
     h_0opt_a8ea2_release(&h42_own42);
 #line 84 "examples/ledger/main.hero"
-#line 5110 "main.c"
+#line 5109 "main.c"
     hero_array_decref(h43_own43);
 #line 84 "examples/ledger/main.hero"
-#line 5113 "main.c"
+#line 5112 "main.c"
     h_0opt_a8ea2_release(&h44_own44);
 #line 84 "examples/ledger/main.hero"
-#line 5116 "main.c"
+#line 5115 "main.c"
     h_0opt_a8ea2_release(&h45_own45);
 #line 84 "examples/ledger/main.hero"
-#line 5119 "main.c"
+#line 5118 "main.c"
     h_0opt_a8ea2_release(&h46_own46);
 #line 84 "examples/ledger/main.hero"
-#line 5122 "main.c"
+#line 5121 "main.c"
     h_0opt_a8ea2_release(&h47_own47);
 #line 84 "examples/ledger/main.hero"
-#line 5125 "main.c"
+#line 5124 "main.c"
     h_0opt_a8ea2_release(&h48_own48);
 #line 84 "examples/ledger/main.hero"
-#line 5128 "main.c"
+#line 5127 "main.c"
     h_0opt_a8ea2_release(&h49_own49);
 #line 84 "examples/ledger/main.hero"
-#line 5131 "main.c"
+#line 5130 "main.c"
     h_0opt_a8ea2_release(&h50_own50);
 #line 84 "examples/ledger/main.hero"
-#line 5134 "main.c"
+#line 5133 "main.c"
     h_0opt_a8ea2_release(&h51_own51);
 #line 84 "examples/ledger/main.hero"
-#line 5137 "main.c"
+#line 5136 "main.c"
     h_0opt_a8ea2_release(&h52_own52);
 #line 84 "examples/ledger/main.hero"
-#line 5140 "main.c"
+#line 5139 "main.c"
     h_0opt_70720e79_release(&h53_own53);
 #line 84 "examples/ledger/main.hero"
-#line 5143 "main.c"
+#line 5142 "main.c"
     h_0opt_a8ea2_release(&h54_own54);
 #line 84 "examples/ledger/main.hero"
-#line 5146 "main.c"
+#line 5145 "main.c"
     h_0opt_a8ea2_release(&h55_own55);
 #line 84 "examples/ledger/main.hero"
-#line 5149 "main.c"
+#line 5148 "main.c"
     h_0opt_a8ea2_release(&h56_own56);
 #line 84 "examples/ledger/main.hero"
-#line 5152 "main.c"
+#line 5151 "main.c"
     h_0opt_a8ea2_release(&h57_own57);
 #line 84 "examples/ledger/main.hero"
-#line 5155 "main.c"
+#line 5154 "main.c"
     h_0opt_a8ea2_release(&h58_own58);
 #line 84 "examples/ledger/main.hero"
-#line 5158 "main.c"
+#line 5157 "main.c"
     h_0opt_a8ea2_release(&h59_own59);
     return t227;
 }
 
 #line 90 "examples/ledger/main.hero"
 h_0opt_a8ea2 h_main_show(h_dbsqlite_Db h0_db) {
-#line 5165 "main.c"
+#line 5164 "main.c"
     HeroArrayHeader * h1_xs0 = {0};
     int64_t h2_i0;
     HeroStr h3_line = {0};
@@ -5498,7 +5497,7 @@ bb0:
     t204 = h27_own27;
 #line 93 "examples/ledger/main.hero"
     h27_own27 = t2;
-#line 5502 "main.c"
+#line 5501 "main.c"
     hero_array_decref(t204);
 #line 93 "examples/ledger/main.hero"
     t3 = h_bookentry_accounts();
@@ -5506,7 +5505,7 @@ bb0:
     t205 = h28_own28;
 #line 93 "examples/ledger/main.hero"
     h28_own28 = t3;
-#line 5510 "main.c"
+#line 5509 "main.c"
     hero_array_decref(t205);
 #line 93 "examples/ledger/main.hero"
     t4 = h_reportlines_book_lines(t2, t3);
@@ -5514,15 +5513,15 @@ bb0:
     t206 = h29_own29;
 #line 93 "examples/ledger/main.hero"
     h29_own29 = t4;
-#line 5518 "main.c"
+#line 5517 "main.c"
     hero_array_decref(t206);
 #line 93 "examples/ledger/main.hero"
     t207 = h1_xs0;
-#line 5522 "main.c"
+#line 5521 "main.c"
     hero_array_incref(t4);
 #line 93 "examples/ledger/main.hero"
     h1_xs0 = t4;
-#line 5526 "main.c"
+#line 5525 "main.c"
     hero_array_decref(t207);
 #line 93 "examples/ledger/main.hero"
     t5 = INT64_C(0);
@@ -5552,11 +5551,11 @@ bb2:
     t12 = *(HeroStr const *)hero_array_at(t10, t11);
 #line 93 "examples/ledger/main.hero"
     t208 = h3_line;
-#line 5556 "main.c"
+#line 5555 "main.c"
     hero_str_incref(t12);
 #line 93 "examples/ledger/main.hero"
     h3_line = t12;
-#line 5560 "main.c"
+#line 5559 "main.c"
     hero_str_decref(t208);
 #line 94 "examples/ledger/main.hero"
     t13 = h3_line;
@@ -5598,7 +5597,7 @@ bb4:
     t209 = h30_own30;
 #line 98 "examples/ledger/main.hero"
     h30_own30 = t19;
-#line 5602 "main.c"
+#line 5601 "main.c"
     hero_str_decref(t209);
 #line 98 "examples/ledger/main.hero"
     hero_print_str(t19);
@@ -5612,15 +5611,15 @@ bb4:
     t210 = h31_own31;
 #line 99 "examples/ledger/main.hero"
     h31_own31 = t21;
-#line 5616 "main.c"
+#line 5615 "main.c"
     h_0opt_5036d564_release(&t210);
 #line 99 "examples/ledger/main.hero"
     t211 = h4_f0;
-#line 5620 "main.c"
+#line 5619 "main.c"
     h_0opt_5036d564_retain(&t21);
 #line 99 "examples/ledger/main.hero"
     h4_f0 = t21;
-#line 5624 "main.c"
+#line 5623 "main.c"
     h_0opt_5036d564_release(&t211);
 #line 99 "examples/ledger/main.hero"
     t22 = h4_f0;
@@ -5640,11 +5639,11 @@ bb5:
     t30 = t29.as.ok;
 #line 99 "examples/ledger/main.hero"
     t212 = h5_from_db;
-#line 5644 "main.c"
+#line 5643 "main.c"
     hero_array_incref(t30);
 #line 99 "examples/ledger/main.hero"
     h5_from_db = t30;
-#line 5648 "main.c"
+#line 5647 "main.c"
     hero_array_decref(t212);
 #line 100 "examples/ledger/main.hero"
     t31 = h_bookentry_book();
@@ -5652,7 +5651,7 @@ bb5:
     t213 = h32_own32;
 #line 100 "examples/ledger/main.hero"
     h32_own32 = t31;
-#line 5656 "main.c"
+#line 5655 "main.c"
     hero_array_decref(t213);
 #line 100 "examples/ledger/main.hero"
     t32 = h_bookentry_balances(t31);
@@ -5660,25 +5659,25 @@ bb5:
     t214 = h33_own33;
 #line 100 "examples/ledger/main.hero"
     h33_own33 = t32;
-#line 5664 "main.c"
+#line 5663 "main.c"
     hero_array_decref(t214);
 #line 100 "examples/ledger/main.hero"
     t215 = h6_mine;
-#line 5668 "main.c"
+#line 5667 "main.c"
     hero_array_incref(t32);
 #line 100 "examples/ledger/main.hero"
     h6_mine = t32;
-#line 5672 "main.c"
+#line 5671 "main.c"
     hero_array_decref(t215);
 #line 102 "examples/ledger/main.hero"
     t33 = h5_from_db;
 #line 102 "examples/ledger/main.hero"
     t216 = h7_xs1;
-#line 5678 "main.c"
+#line 5677 "main.c"
     hero_array_incref(t33);
 #line 102 "examples/ledger/main.hero"
     h7_xs1 = t33;
-#line 5682 "main.c"
+#line 5681 "main.c"
     hero_array_decref(t216);
 #line 102 "examples/ledger/main.hero"
     t34 = INT64_C(0);
@@ -5692,7 +5691,7 @@ bb6:
     t26 = h4_f0;
 #line 99 "examples/ledger/main.hero"
     t27 = t26.as.err;
-#line 5696 "main.c"
+#line 5695 "main.c"
     hero_failure_retain(&t27);
 #line 99 "examples/ledger/main.hero"
     t28 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = t27};
@@ -5700,175 +5699,175 @@ bb6:
     t217 = h34_own34;
 #line 99 "examples/ledger/main.hero"
     h34_own34 = t28;
-#line 5704 "main.c"
+#line 5703 "main.c"
     h_0opt_a8ea2_release(&t217);
 #line 99 "examples/ledger/main.hero"
-#line 5707 "main.c"
+#line 5706 "main.c"
     h_0opt_a8ea2_retain(&t28);
 #line 99 "examples/ledger/main.hero"
-#line 5710 "main.c"
+#line 5709 "main.c"
     hero_array_decref(h1_xs0);
 #line 99 "examples/ledger/main.hero"
-#line 5713 "main.c"
+#line 5712 "main.c"
     hero_str_decref(h3_line);
 #line 99 "examples/ledger/main.hero"
-#line 5716 "main.c"
+#line 5715 "main.c"
     h_0opt_5036d564_release(&h4_f0);
 #line 99 "examples/ledger/main.hero"
-#line 5719 "main.c"
+#line 5718 "main.c"
     hero_array_decref(h5_from_db);
 #line 99 "examples/ledger/main.hero"
-#line 5722 "main.c"
+#line 5721 "main.c"
     hero_array_decref(h6_mine);
 #line 99 "examples/ledger/main.hero"
-#line 5725 "main.c"
+#line 5724 "main.c"
     hero_array_decref(h7_xs1);
 #line 99 "examples/ledger/main.hero"
-#line 5728 "main.c"
+#line 5727 "main.c"
     h_bookentry_Balance_release(&h9_b);
 #line 99 "examples/ledger/main.hero"
-#line 5731 "main.c"
+#line 5730 "main.c"
     h_0opt_f87774a_release(&h10_f1);
 #line 99 "examples/ledger/main.hero"
-#line 5734 "main.c"
+#line 5733 "main.c"
     hero_str_decref(h11_kind);
 #line 99 "examples/ledger/main.hero"
-#line 5737 "main.c"
+#line 5736 "main.c"
     h_0opt_e201354_release(&h12_f2);
 #line 99 "examples/ledger/main.hero"
-#line 5740 "main.c"
+#line 5739 "main.c"
     h_0opt_e201354_release(&h14_f3);
 #line 99 "examples/ledger/main.hero"
-#line 5743 "main.c"
+#line 5742 "main.c"
     h_0opt_db92a83_release(&h16_f4);
 #line 99 "examples/ledger/main.hero"
-#line 5746 "main.c"
+#line 5745 "main.c"
     h_0opt_e201354_release(&h19_f5);
 #line 99 "examples/ledger/main.hero"
-#line 5749 "main.c"
+#line 5748 "main.c"
     h_0opt_e201354_release(&h20_f6);
 #line 99 "examples/ledger/main.hero"
-#line 5752 "main.c"
+#line 5751 "main.c"
     hero_array_decref(h23_xs2);
 #line 99 "examples/ledger/main.hero"
-#line 5755 "main.c"
+#line 5754 "main.c"
     h_bookentry_Entry_release(&h25_e);
 #line 99 "examples/ledger/main.hero"
-#line 5758 "main.c"
+#line 5757 "main.c"
     h_0opt_f87774a_release(&h26_f7);
 #line 99 "examples/ledger/main.hero"
-#line 5761 "main.c"
+#line 5760 "main.c"
     hero_array_decref(h27_own27);
 #line 99 "examples/ledger/main.hero"
-#line 5764 "main.c"
+#line 5763 "main.c"
     hero_array_decref(h28_own28);
 #line 99 "examples/ledger/main.hero"
-#line 5767 "main.c"
+#line 5766 "main.c"
     hero_array_decref(h29_own29);
 #line 99 "examples/ledger/main.hero"
-#line 5770 "main.c"
+#line 5769 "main.c"
     hero_str_decref(h30_own30);
 #line 99 "examples/ledger/main.hero"
-#line 5773 "main.c"
+#line 5772 "main.c"
     h_0opt_5036d564_release(&h31_own31);
 #line 99 "examples/ledger/main.hero"
-#line 5776 "main.c"
+#line 5775 "main.c"
     hero_array_decref(h32_own32);
 #line 99 "examples/ledger/main.hero"
-#line 5779 "main.c"
+#line 5778 "main.c"
     hero_array_decref(h33_own33);
 #line 99 "examples/ledger/main.hero"
-#line 5782 "main.c"
+#line 5781 "main.c"
     h_0opt_a8ea2_release(&h34_own34);
 #line 99 "examples/ledger/main.hero"
-#line 5785 "main.c"
+#line 5784 "main.c"
     hero_array_decref(h35_own35);
 #line 99 "examples/ledger/main.hero"
-#line 5788 "main.c"
+#line 5787 "main.c"
     h_0opt_f87774a_release(&h36_own36);
 #line 99 "examples/ledger/main.hero"
-#line 5791 "main.c"
+#line 5790 "main.c"
     hero_str_decref(h37_own37);
 #line 99 "examples/ledger/main.hero"
-#line 5794 "main.c"
+#line 5793 "main.c"
     h_0opt_e201354_release(&h38_own38);
 #line 99 "examples/ledger/main.hero"
-#line 5797 "main.c"
+#line 5796 "main.c"
     hero_str_decref(h39_own39);
 #line 99 "examples/ledger/main.hero"
-#line 5800 "main.c"
+#line 5799 "main.c"
     h_0opt_a8ea2_release(&h40_own40);
 #line 99 "examples/ledger/main.hero"
-#line 5803 "main.c"
+#line 5802 "main.c"
     hero_array_decref(h41_own41);
 #line 99 "examples/ledger/main.hero"
-#line 5806 "main.c"
+#line 5805 "main.c"
     hero_str_decref(h42_own42);
 #line 99 "examples/ledger/main.hero"
-#line 5809 "main.c"
+#line 5808 "main.c"
     hero_str_decref(h43_own43);
 #line 99 "examples/ledger/main.hero"
-#line 5812 "main.c"
+#line 5811 "main.c"
     h_0opt_e201354_release(&h44_own44);
 #line 99 "examples/ledger/main.hero"
-#line 5815 "main.c"
+#line 5814 "main.c"
     h_0opt_a8ea2_release(&h45_own45);
 #line 99 "examples/ledger/main.hero"
-#line 5818 "main.c"
+#line 5817 "main.c"
     hero_array_decref(h46_own46);
 #line 99 "examples/ledger/main.hero"
-#line 5821 "main.c"
+#line 5820 "main.c"
     hero_str_decref(h47_own47);
 #line 99 "examples/ledger/main.hero"
-#line 5824 "main.c"
+#line 5823 "main.c"
     h_0opt_db92a83_release(&h48_own48);
 #line 99 "examples/ledger/main.hero"
-#line 5827 "main.c"
+#line 5826 "main.c"
     h_0opt_a8ea2_release(&h49_own49);
 #line 99 "examples/ledger/main.hero"
-#line 5830 "main.c"
+#line 5829 "main.c"
     hero_array_decref(h50_own50);
 #line 99 "examples/ledger/main.hero"
-#line 5833 "main.c"
+#line 5832 "main.c"
     hero_array_decref(h51_own51);
 #line 99 "examples/ledger/main.hero"
-#line 5836 "main.c"
+#line 5835 "main.c"
     hero_str_decref(h52_own52);
 #line 99 "examples/ledger/main.hero"
-#line 5839 "main.c"
+#line 5838 "main.c"
     h_0opt_e201354_release(&h53_own53);
 #line 99 "examples/ledger/main.hero"
-#line 5842 "main.c"
+#line 5841 "main.c"
     h_0opt_a8ea2_release(&h54_own54);
 #line 99 "examples/ledger/main.hero"
-#line 5845 "main.c"
+#line 5844 "main.c"
     hero_str_decref(h55_own55);
 #line 99 "examples/ledger/main.hero"
-#line 5848 "main.c"
+#line 5847 "main.c"
     h_0opt_e201354_release(&h56_own56);
 #line 99 "examples/ledger/main.hero"
-#line 5851 "main.c"
+#line 5850 "main.c"
     hero_array_decref(h57_own57);
 #line 99 "examples/ledger/main.hero"
-#line 5854 "main.c"
+#line 5853 "main.c"
     h_0opt_a8ea2_release(&h58_own58);
 #line 99 "examples/ledger/main.hero"
-#line 5857 "main.c"
+#line 5856 "main.c"
     hero_array_decref(h59_own59);
 #line 99 "examples/ledger/main.hero"
-#line 5860 "main.c"
+#line 5859 "main.c"
     h_0opt_f87774a_release(&h60_own60);
 #line 99 "examples/ledger/main.hero"
-#line 5863 "main.c"
+#line 5862 "main.c"
     hero_str_decref(h61_own61);
 #line 99 "examples/ledger/main.hero"
-#line 5866 "main.c"
+#line 5865 "main.c"
     hero_str_decref(h62_own62);
 #line 99 "examples/ledger/main.hero"
-#line 5869 "main.c"
+#line 5868 "main.c"
     h_0opt_a8ea2_release(&h63_own63);
 #line 99 "examples/ledger/main.hero"
-#line 5872 "main.c"
+#line 5871 "main.c"
     h_0opt_a8ea2_release(&h64_own64);
     return t28;
 bb7:
@@ -5892,11 +5891,11 @@ bb8:
     t41 = *(h_bookentry_Balance const *)hero_array_at(t39, t40);
 #line 102 "examples/ledger/main.hero"
     t218 = h9_b;
-#line 5896 "main.c"
+#line 5895 "main.c"
     h_bookentry_Balance_retain(&t41);
 #line 102 "examples/ledger/main.hero"
     h9_b = t41;
-#line 5900 "main.c"
+#line 5899 "main.c"
     h_bookentry_Balance_release(&t218);
 #line 103 "examples/ledger/main.hero"
     t42 = h9_b;
@@ -5908,7 +5907,7 @@ bb8:
     t219 = h35_own35;
 #line 103 "examples/ledger/main.hero"
     h35_own35 = t44;
-#line 5912 "main.c"
+#line 5911 "main.c"
     hero_array_decref(t219);
 #line 103 "examples/ledger/main.hero"
     t45 = h_bookentry_kind_of(t43, t44);
@@ -5916,15 +5915,15 @@ bb8:
     t220 = h36_own36;
 #line 103 "examples/ledger/main.hero"
     h36_own36 = t45;
-#line 5920 "main.c"
+#line 5919 "main.c"
     h_0opt_f87774a_release(&t220);
 #line 103 "examples/ledger/main.hero"
     t221 = h10_f1;
-#line 5924 "main.c"
+#line 5923 "main.c"
     h_0opt_f87774a_retain(&t45);
 #line 103 "examples/ledger/main.hero"
     h10_f1 = t45;
-#line 5928 "main.c"
+#line 5927 "main.c"
     h_0opt_f87774a_release(&t221);
 #line 103 "examples/ledger/main.hero"
     t46 = h10_f1;
@@ -5976,7 +5975,7 @@ bb10:
     t222 = h37_own37;
 #line 113 "examples/ledger/main.hero"
     h37_own37 = t67;
-#line 5980 "main.c"
+#line 5979 "main.c"
     hero_str_decref(t222);
 #line 113 "examples/ledger/main.hero"
     hero_print_str(t63);
@@ -5994,15 +5993,15 @@ bb10:
     t223 = h38_own38;
 #line 114 "examples/ledger/main.hero"
     h38_own38 = t70;
-#line 5998 "main.c"
+#line 5997 "main.c"
     h_0opt_e201354_release(&t223);
 #line 114 "examples/ledger/main.hero"
     t224 = h12_f2;
-#line 6002 "main.c"
+#line 6001 "main.c"
     h_0opt_e201354_retain(&t70);
 #line 114 "examples/ledger/main.hero"
     h12_f2 = t70;
-#line 6006 "main.c"
+#line 6005 "main.c"
     h_0opt_e201354_release(&t224);
 #line 114 "examples/ledger/main.hero"
     t71 = h12_f2;
@@ -6022,11 +6021,11 @@ bb11:
     t54 = t53.as.ok;
 #line 103 "examples/ledger/main.hero"
     t225 = h11_kind;
-#line 6026 "main.c"
+#line 6025 "main.c"
     hero_str_incref(t54);
 #line 103 "examples/ledger/main.hero"
     h11_kind = t54;
-#line 6030 "main.c"
+#line 6029 "main.c"
     hero_str_decref(t225);
 #line 104 "examples/ledger/main.hero"
     t55 = h9_b;
@@ -6038,7 +6037,7 @@ bb11:
     t226 = h39_own39;
 #line 104 "examples/ledger/main.hero"
     h39_own39 = t57;
-#line 6042 "main.c"
+#line 6041 "main.c"
     hero_str_decref(t226);
 #line 104 "examples/ledger/main.hero"
     hero_print_str(t57);
@@ -6052,7 +6051,7 @@ bb12:
     t50 = h10_f1;
 #line 103 "examples/ledger/main.hero"
     t51 = t50.as.err;
-#line 6056 "main.c"
+#line 6055 "main.c"
     hero_failure_retain(&t51);
 #line 103 "examples/ledger/main.hero"
     t52 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = t51};
@@ -6060,175 +6059,175 @@ bb12:
     t227 = h40_own40;
 #line 103 "examples/ledger/main.hero"
     h40_own40 = t52;
-#line 6064 "main.c"
+#line 6063 "main.c"
     h_0opt_a8ea2_release(&t227);
 #line 103 "examples/ledger/main.hero"
-#line 6067 "main.c"
+#line 6066 "main.c"
     h_0opt_a8ea2_retain(&t52);
 #line 103 "examples/ledger/main.hero"
-#line 6070 "main.c"
+#line 6069 "main.c"
     hero_array_decref(h1_xs0);
 #line 103 "examples/ledger/main.hero"
-#line 6073 "main.c"
+#line 6072 "main.c"
     hero_str_decref(h3_line);
 #line 103 "examples/ledger/main.hero"
-#line 6076 "main.c"
+#line 6075 "main.c"
     h_0opt_5036d564_release(&h4_f0);
 #line 103 "examples/ledger/main.hero"
-#line 6079 "main.c"
+#line 6078 "main.c"
     hero_array_decref(h5_from_db);
 #line 103 "examples/ledger/main.hero"
-#line 6082 "main.c"
+#line 6081 "main.c"
     hero_array_decref(h6_mine);
 #line 103 "examples/ledger/main.hero"
-#line 6085 "main.c"
+#line 6084 "main.c"
     hero_array_decref(h7_xs1);
 #line 103 "examples/ledger/main.hero"
-#line 6088 "main.c"
+#line 6087 "main.c"
     h_bookentry_Balance_release(&h9_b);
 #line 103 "examples/ledger/main.hero"
-#line 6091 "main.c"
+#line 6090 "main.c"
     h_0opt_f87774a_release(&h10_f1);
 #line 103 "examples/ledger/main.hero"
-#line 6094 "main.c"
+#line 6093 "main.c"
     hero_str_decref(h11_kind);
 #line 103 "examples/ledger/main.hero"
-#line 6097 "main.c"
+#line 6096 "main.c"
     h_0opt_e201354_release(&h12_f2);
 #line 103 "examples/ledger/main.hero"
-#line 6100 "main.c"
+#line 6099 "main.c"
     h_0opt_e201354_release(&h14_f3);
 #line 103 "examples/ledger/main.hero"
-#line 6103 "main.c"
+#line 6102 "main.c"
     h_0opt_db92a83_release(&h16_f4);
 #line 103 "examples/ledger/main.hero"
-#line 6106 "main.c"
+#line 6105 "main.c"
     h_0opt_e201354_release(&h19_f5);
 #line 103 "examples/ledger/main.hero"
-#line 6109 "main.c"
+#line 6108 "main.c"
     h_0opt_e201354_release(&h20_f6);
 #line 103 "examples/ledger/main.hero"
-#line 6112 "main.c"
+#line 6111 "main.c"
     hero_array_decref(h23_xs2);
 #line 103 "examples/ledger/main.hero"
-#line 6115 "main.c"
+#line 6114 "main.c"
     h_bookentry_Entry_release(&h25_e);
 #line 103 "examples/ledger/main.hero"
-#line 6118 "main.c"
+#line 6117 "main.c"
     h_0opt_f87774a_release(&h26_f7);
 #line 103 "examples/ledger/main.hero"
-#line 6121 "main.c"
+#line 6120 "main.c"
     hero_array_decref(h27_own27);
 #line 103 "examples/ledger/main.hero"
-#line 6124 "main.c"
+#line 6123 "main.c"
     hero_array_decref(h28_own28);
 #line 103 "examples/ledger/main.hero"
-#line 6127 "main.c"
+#line 6126 "main.c"
     hero_array_decref(h29_own29);
 #line 103 "examples/ledger/main.hero"
-#line 6130 "main.c"
+#line 6129 "main.c"
     hero_str_decref(h30_own30);
 #line 103 "examples/ledger/main.hero"
-#line 6133 "main.c"
+#line 6132 "main.c"
     h_0opt_5036d564_release(&h31_own31);
 #line 103 "examples/ledger/main.hero"
-#line 6136 "main.c"
+#line 6135 "main.c"
     hero_array_decref(h32_own32);
 #line 103 "examples/ledger/main.hero"
-#line 6139 "main.c"
+#line 6138 "main.c"
     hero_array_decref(h33_own33);
 #line 103 "examples/ledger/main.hero"
-#line 6142 "main.c"
+#line 6141 "main.c"
     h_0opt_a8ea2_release(&h34_own34);
 #line 103 "examples/ledger/main.hero"
-#line 6145 "main.c"
+#line 6144 "main.c"
     hero_array_decref(h35_own35);
 #line 103 "examples/ledger/main.hero"
-#line 6148 "main.c"
+#line 6147 "main.c"
     h_0opt_f87774a_release(&h36_own36);
 #line 103 "examples/ledger/main.hero"
-#line 6151 "main.c"
+#line 6150 "main.c"
     hero_str_decref(h37_own37);
 #line 103 "examples/ledger/main.hero"
-#line 6154 "main.c"
+#line 6153 "main.c"
     h_0opt_e201354_release(&h38_own38);
 #line 103 "examples/ledger/main.hero"
-#line 6157 "main.c"
+#line 6156 "main.c"
     hero_str_decref(h39_own39);
 #line 103 "examples/ledger/main.hero"
-#line 6160 "main.c"
+#line 6159 "main.c"
     h_0opt_a8ea2_release(&h40_own40);
 #line 103 "examples/ledger/main.hero"
-#line 6163 "main.c"
+#line 6162 "main.c"
     hero_array_decref(h41_own41);
 #line 103 "examples/ledger/main.hero"
-#line 6166 "main.c"
+#line 6165 "main.c"
     hero_str_decref(h42_own42);
 #line 103 "examples/ledger/main.hero"
-#line 6169 "main.c"
+#line 6168 "main.c"
     hero_str_decref(h43_own43);
 #line 103 "examples/ledger/main.hero"
-#line 6172 "main.c"
+#line 6171 "main.c"
     h_0opt_e201354_release(&h44_own44);
 #line 103 "examples/ledger/main.hero"
-#line 6175 "main.c"
+#line 6174 "main.c"
     h_0opt_a8ea2_release(&h45_own45);
 #line 103 "examples/ledger/main.hero"
-#line 6178 "main.c"
+#line 6177 "main.c"
     hero_array_decref(h46_own46);
 #line 103 "examples/ledger/main.hero"
-#line 6181 "main.c"
+#line 6180 "main.c"
     hero_str_decref(h47_own47);
 #line 103 "examples/ledger/main.hero"
-#line 6184 "main.c"
+#line 6183 "main.c"
     h_0opt_db92a83_release(&h48_own48);
 #line 103 "examples/ledger/main.hero"
-#line 6187 "main.c"
+#line 6186 "main.c"
     h_0opt_a8ea2_release(&h49_own49);
 #line 103 "examples/ledger/main.hero"
-#line 6190 "main.c"
+#line 6189 "main.c"
     hero_array_decref(h50_own50);
 #line 103 "examples/ledger/main.hero"
-#line 6193 "main.c"
+#line 6192 "main.c"
     hero_array_decref(h51_own51);
 #line 103 "examples/ledger/main.hero"
-#line 6196 "main.c"
+#line 6195 "main.c"
     hero_str_decref(h52_own52);
 #line 103 "examples/ledger/main.hero"
-#line 6199 "main.c"
+#line 6198 "main.c"
     h_0opt_e201354_release(&h53_own53);
 #line 103 "examples/ledger/main.hero"
-#line 6202 "main.c"
+#line 6201 "main.c"
     h_0opt_a8ea2_release(&h54_own54);
 #line 103 "examples/ledger/main.hero"
-#line 6205 "main.c"
+#line 6204 "main.c"
     hero_str_decref(h55_own55);
 #line 103 "examples/ledger/main.hero"
-#line 6208 "main.c"
+#line 6207 "main.c"
     h_0opt_e201354_release(&h56_own56);
 #line 103 "examples/ledger/main.hero"
-#line 6211 "main.c"
+#line 6210 "main.c"
     hero_array_decref(h57_own57);
 #line 103 "examples/ledger/main.hero"
-#line 6214 "main.c"
+#line 6213 "main.c"
     h_0opt_a8ea2_release(&h58_own58);
 #line 103 "examples/ledger/main.hero"
-#line 6217 "main.c"
+#line 6216 "main.c"
     hero_array_decref(h59_own59);
 #line 103 "examples/ledger/main.hero"
-#line 6220 "main.c"
+#line 6219 "main.c"
     h_0opt_f87774a_release(&h60_own60);
 #line 103 "examples/ledger/main.hero"
-#line 6223 "main.c"
+#line 6222 "main.c"
     hero_str_decref(h61_own61);
 #line 103 "examples/ledger/main.hero"
-#line 6226 "main.c"
+#line 6225 "main.c"
     hero_str_decref(h62_own62);
 #line 103 "examples/ledger/main.hero"
-#line 6229 "main.c"
+#line 6228 "main.c"
     h_0opt_a8ea2_release(&h63_own63);
 #line 103 "examples/ledger/main.hero"
-#line 6232 "main.c"
+#line 6231 "main.c"
     h_0opt_a8ea2_release(&h64_own64);
     return t52;
 bb13:
@@ -6248,7 +6247,7 @@ bb13:
     t228 = h41_own41;
 #line 115 "examples/ledger/main.hero"
     h41_own41 = t82;
-#line 6252 "main.c"
+#line 6251 "main.c"
     hero_array_decref(t228);
 #line 115 "examples/ledger/main.hero"
     t83 = h_bookentry_total(t82);
@@ -6262,7 +6261,7 @@ bb13:
     t229 = h42_own42;
 #line 115 "examples/ledger/main.hero"
     h42_own42 = t86;
-#line 6266 "main.c"
+#line 6265 "main.c"
     hero_str_decref(t229);
 #line 115 "examples/ledger/main.hero"
     hero_print_str(t80);
@@ -6282,7 +6281,7 @@ bb13:
     t230 = h43_own43;
 #line 116 "examples/ledger/main.hero"
     h43_own43 = t90;
-#line 6286 "main.c"
+#line 6285 "main.c"
     hero_str_decref(t230);
 #line 116 "examples/ledger/main.hero"
     hero_print_str(t87);
@@ -6300,15 +6299,15 @@ bb13:
     t231 = h44_own44;
 #line 117 "examples/ledger/main.hero"
     h44_own44 = t93;
-#line 6304 "main.c"
+#line 6303 "main.c"
     h_0opt_e201354_release(&t231);
 #line 117 "examples/ledger/main.hero"
     t232 = h14_f3;
-#line 6308 "main.c"
+#line 6307 "main.c"
     h_0opt_e201354_retain(&t93);
 #line 117 "examples/ledger/main.hero"
     h14_f3 = t93;
-#line 6312 "main.c"
+#line 6311 "main.c"
     h_0opt_e201354_release(&t232);
 #line 117 "examples/ledger/main.hero"
     t94 = h14_f3;
@@ -6326,7 +6325,7 @@ bb14:
     t75 = h12_f2;
 #line 114 "examples/ledger/main.hero"
     t76 = t75.as.err;
-#line 6330 "main.c"
+#line 6329 "main.c"
     hero_failure_retain(&t76);
 #line 114 "examples/ledger/main.hero"
     t77 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = t76};
@@ -6334,175 +6333,175 @@ bb14:
     t233 = h45_own45;
 #line 114 "examples/ledger/main.hero"
     h45_own45 = t77;
-#line 6338 "main.c"
+#line 6337 "main.c"
     h_0opt_a8ea2_release(&t233);
 #line 114 "examples/ledger/main.hero"
-#line 6341 "main.c"
+#line 6340 "main.c"
     h_0opt_a8ea2_retain(&t77);
 #line 114 "examples/ledger/main.hero"
-#line 6344 "main.c"
+#line 6343 "main.c"
     hero_array_decref(h1_xs0);
 #line 114 "examples/ledger/main.hero"
-#line 6347 "main.c"
+#line 6346 "main.c"
     hero_str_decref(h3_line);
 #line 114 "examples/ledger/main.hero"
-#line 6350 "main.c"
+#line 6349 "main.c"
     h_0opt_5036d564_release(&h4_f0);
 #line 114 "examples/ledger/main.hero"
-#line 6353 "main.c"
+#line 6352 "main.c"
     hero_array_decref(h5_from_db);
 #line 114 "examples/ledger/main.hero"
-#line 6356 "main.c"
+#line 6355 "main.c"
     hero_array_decref(h6_mine);
 #line 114 "examples/ledger/main.hero"
-#line 6359 "main.c"
+#line 6358 "main.c"
     hero_array_decref(h7_xs1);
 #line 114 "examples/ledger/main.hero"
-#line 6362 "main.c"
+#line 6361 "main.c"
     h_bookentry_Balance_release(&h9_b);
 #line 114 "examples/ledger/main.hero"
-#line 6365 "main.c"
+#line 6364 "main.c"
     h_0opt_f87774a_release(&h10_f1);
 #line 114 "examples/ledger/main.hero"
-#line 6368 "main.c"
+#line 6367 "main.c"
     hero_str_decref(h11_kind);
 #line 114 "examples/ledger/main.hero"
-#line 6371 "main.c"
+#line 6370 "main.c"
     h_0opt_e201354_release(&h12_f2);
 #line 114 "examples/ledger/main.hero"
-#line 6374 "main.c"
+#line 6373 "main.c"
     h_0opt_e201354_release(&h14_f3);
 #line 114 "examples/ledger/main.hero"
-#line 6377 "main.c"
+#line 6376 "main.c"
     h_0opt_db92a83_release(&h16_f4);
 #line 114 "examples/ledger/main.hero"
-#line 6380 "main.c"
+#line 6379 "main.c"
     h_0opt_e201354_release(&h19_f5);
 #line 114 "examples/ledger/main.hero"
-#line 6383 "main.c"
+#line 6382 "main.c"
     h_0opt_e201354_release(&h20_f6);
 #line 114 "examples/ledger/main.hero"
-#line 6386 "main.c"
+#line 6385 "main.c"
     hero_array_decref(h23_xs2);
 #line 114 "examples/ledger/main.hero"
-#line 6389 "main.c"
+#line 6388 "main.c"
     h_bookentry_Entry_release(&h25_e);
 #line 114 "examples/ledger/main.hero"
-#line 6392 "main.c"
+#line 6391 "main.c"
     h_0opt_f87774a_release(&h26_f7);
 #line 114 "examples/ledger/main.hero"
-#line 6395 "main.c"
+#line 6394 "main.c"
     hero_array_decref(h27_own27);
 #line 114 "examples/ledger/main.hero"
-#line 6398 "main.c"
+#line 6397 "main.c"
     hero_array_decref(h28_own28);
 #line 114 "examples/ledger/main.hero"
-#line 6401 "main.c"
+#line 6400 "main.c"
     hero_array_decref(h29_own29);
 #line 114 "examples/ledger/main.hero"
-#line 6404 "main.c"
+#line 6403 "main.c"
     hero_str_decref(h30_own30);
 #line 114 "examples/ledger/main.hero"
-#line 6407 "main.c"
+#line 6406 "main.c"
     h_0opt_5036d564_release(&h31_own31);
 #line 114 "examples/ledger/main.hero"
-#line 6410 "main.c"
+#line 6409 "main.c"
     hero_array_decref(h32_own32);
 #line 114 "examples/ledger/main.hero"
-#line 6413 "main.c"
+#line 6412 "main.c"
     hero_array_decref(h33_own33);
 #line 114 "examples/ledger/main.hero"
-#line 6416 "main.c"
+#line 6415 "main.c"
     h_0opt_a8ea2_release(&h34_own34);
 #line 114 "examples/ledger/main.hero"
-#line 6419 "main.c"
+#line 6418 "main.c"
     hero_array_decref(h35_own35);
 #line 114 "examples/ledger/main.hero"
-#line 6422 "main.c"
+#line 6421 "main.c"
     h_0opt_f87774a_release(&h36_own36);
 #line 114 "examples/ledger/main.hero"
-#line 6425 "main.c"
+#line 6424 "main.c"
     hero_str_decref(h37_own37);
 #line 114 "examples/ledger/main.hero"
-#line 6428 "main.c"
+#line 6427 "main.c"
     h_0opt_e201354_release(&h38_own38);
 #line 114 "examples/ledger/main.hero"
-#line 6431 "main.c"
+#line 6430 "main.c"
     hero_str_decref(h39_own39);
 #line 114 "examples/ledger/main.hero"
-#line 6434 "main.c"
+#line 6433 "main.c"
     h_0opt_a8ea2_release(&h40_own40);
 #line 114 "examples/ledger/main.hero"
-#line 6437 "main.c"
+#line 6436 "main.c"
     hero_array_decref(h41_own41);
 #line 114 "examples/ledger/main.hero"
-#line 6440 "main.c"
+#line 6439 "main.c"
     hero_str_decref(h42_own42);
 #line 114 "examples/ledger/main.hero"
-#line 6443 "main.c"
+#line 6442 "main.c"
     hero_str_decref(h43_own43);
 #line 114 "examples/ledger/main.hero"
-#line 6446 "main.c"
+#line 6445 "main.c"
     h_0opt_e201354_release(&h44_own44);
 #line 114 "examples/ledger/main.hero"
-#line 6449 "main.c"
+#line 6448 "main.c"
     h_0opt_a8ea2_release(&h45_own45);
 #line 114 "examples/ledger/main.hero"
-#line 6452 "main.c"
+#line 6451 "main.c"
     hero_array_decref(h46_own46);
 #line 114 "examples/ledger/main.hero"
-#line 6455 "main.c"
+#line 6454 "main.c"
     hero_str_decref(h47_own47);
 #line 114 "examples/ledger/main.hero"
-#line 6458 "main.c"
+#line 6457 "main.c"
     h_0opt_db92a83_release(&h48_own48);
 #line 114 "examples/ledger/main.hero"
-#line 6461 "main.c"
+#line 6460 "main.c"
     h_0opt_a8ea2_release(&h49_own49);
 #line 114 "examples/ledger/main.hero"
-#line 6464 "main.c"
+#line 6463 "main.c"
     hero_array_decref(h50_own50);
 #line 114 "examples/ledger/main.hero"
-#line 6467 "main.c"
+#line 6466 "main.c"
     hero_array_decref(h51_own51);
 #line 114 "examples/ledger/main.hero"
-#line 6470 "main.c"
+#line 6469 "main.c"
     hero_str_decref(h52_own52);
 #line 114 "examples/ledger/main.hero"
-#line 6473 "main.c"
+#line 6472 "main.c"
     h_0opt_e201354_release(&h53_own53);
 #line 114 "examples/ledger/main.hero"
-#line 6476 "main.c"
+#line 6475 "main.c"
     h_0opt_a8ea2_release(&h54_own54);
 #line 114 "examples/ledger/main.hero"
-#line 6479 "main.c"
+#line 6478 "main.c"
     hero_str_decref(h55_own55);
 #line 114 "examples/ledger/main.hero"
-#line 6482 "main.c"
+#line 6481 "main.c"
     h_0opt_e201354_release(&h56_own56);
 #line 114 "examples/ledger/main.hero"
-#line 6485 "main.c"
+#line 6484 "main.c"
     hero_array_decref(h57_own57);
 #line 114 "examples/ledger/main.hero"
-#line 6488 "main.c"
+#line 6487 "main.c"
     h_0opt_a8ea2_release(&h58_own58);
 #line 114 "examples/ledger/main.hero"
-#line 6491 "main.c"
+#line 6490 "main.c"
     hero_array_decref(h59_own59);
 #line 114 "examples/ledger/main.hero"
-#line 6494 "main.c"
+#line 6493 "main.c"
     h_0opt_f87774a_release(&h60_own60);
 #line 114 "examples/ledger/main.hero"
-#line 6497 "main.c"
+#line 6496 "main.c"
     hero_str_decref(h61_own61);
 #line 114 "examples/ledger/main.hero"
-#line 6500 "main.c"
+#line 6499 "main.c"
     hero_str_decref(h62_own62);
 #line 114 "examples/ledger/main.hero"
-#line 6503 "main.c"
+#line 6502 "main.c"
     h_0opt_a8ea2_release(&h63_own63);
 #line 114 "examples/ledger/main.hero"
-#line 6506 "main.c"
+#line 6505 "main.c"
     h_0opt_a8ea2_release(&h64_own64);
     return t77;
 bb15:
@@ -6522,7 +6521,7 @@ bb15:
     t234 = h46_own46;
 #line 118 "examples/ledger/main.hero"
     h46_own46 = t105;
-#line 6526 "main.c"
+#line 6525 "main.c"
     hero_array_decref(t234);
 #line 118 "examples/ledger/main.hero"
     t106 = hero_array_len(t105);
@@ -6534,7 +6533,7 @@ bb15:
     t235 = h47_own47;
 #line 118 "examples/ledger/main.hero"
     h47_own47 = t108;
-#line 6538 "main.c"
+#line 6537 "main.c"
     hero_str_decref(t235);
 #line 118 "examples/ledger/main.hero"
     hero_print_str(t103);
@@ -6552,15 +6551,15 @@ bb15:
     t236 = h48_own48;
 #line 123 "examples/ledger/main.hero"
     h48_own48 = t111;
-#line 6556 "main.c"
+#line 6555 "main.c"
     h_0opt_db92a83_release(&t236);
 #line 123 "examples/ledger/main.hero"
     t237 = h16_f4;
-#line 6560 "main.c"
+#line 6559 "main.c"
     h_0opt_db92a83_retain(&t111);
 #line 123 "examples/ledger/main.hero"
     h16_f4 = t111;
-#line 6564 "main.c"
+#line 6563 "main.c"
     h_0opt_db92a83_release(&t237);
 #line 123 "examples/ledger/main.hero"
     t112 = h16_f4;
@@ -6578,7 +6577,7 @@ bb16:
     t98 = h14_f3;
 #line 117 "examples/ledger/main.hero"
     t99 = t98.as.err;
-#line 6582 "main.c"
+#line 6581 "main.c"
     hero_failure_retain(&t99);
 #line 117 "examples/ledger/main.hero"
     t100 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = t99};
@@ -6586,175 +6585,175 @@ bb16:
     t238 = h49_own49;
 #line 117 "examples/ledger/main.hero"
     h49_own49 = t100;
-#line 6590 "main.c"
+#line 6589 "main.c"
     h_0opt_a8ea2_release(&t238);
 #line 117 "examples/ledger/main.hero"
-#line 6593 "main.c"
+#line 6592 "main.c"
     h_0opt_a8ea2_retain(&t100);
 #line 117 "examples/ledger/main.hero"
-#line 6596 "main.c"
+#line 6595 "main.c"
     hero_array_decref(h1_xs0);
 #line 117 "examples/ledger/main.hero"
-#line 6599 "main.c"
+#line 6598 "main.c"
     hero_str_decref(h3_line);
 #line 117 "examples/ledger/main.hero"
-#line 6602 "main.c"
+#line 6601 "main.c"
     h_0opt_5036d564_release(&h4_f0);
 #line 117 "examples/ledger/main.hero"
-#line 6605 "main.c"
+#line 6604 "main.c"
     hero_array_decref(h5_from_db);
 #line 117 "examples/ledger/main.hero"
-#line 6608 "main.c"
+#line 6607 "main.c"
     hero_array_decref(h6_mine);
 #line 117 "examples/ledger/main.hero"
-#line 6611 "main.c"
+#line 6610 "main.c"
     hero_array_decref(h7_xs1);
 #line 117 "examples/ledger/main.hero"
-#line 6614 "main.c"
+#line 6613 "main.c"
     h_bookentry_Balance_release(&h9_b);
 #line 117 "examples/ledger/main.hero"
-#line 6617 "main.c"
+#line 6616 "main.c"
     h_0opt_f87774a_release(&h10_f1);
 #line 117 "examples/ledger/main.hero"
-#line 6620 "main.c"
+#line 6619 "main.c"
     hero_str_decref(h11_kind);
 #line 117 "examples/ledger/main.hero"
-#line 6623 "main.c"
+#line 6622 "main.c"
     h_0opt_e201354_release(&h12_f2);
 #line 117 "examples/ledger/main.hero"
-#line 6626 "main.c"
+#line 6625 "main.c"
     h_0opt_e201354_release(&h14_f3);
 #line 117 "examples/ledger/main.hero"
-#line 6629 "main.c"
+#line 6628 "main.c"
     h_0opt_db92a83_release(&h16_f4);
 #line 117 "examples/ledger/main.hero"
-#line 6632 "main.c"
+#line 6631 "main.c"
     h_0opt_e201354_release(&h19_f5);
 #line 117 "examples/ledger/main.hero"
-#line 6635 "main.c"
+#line 6634 "main.c"
     h_0opt_e201354_release(&h20_f6);
 #line 117 "examples/ledger/main.hero"
-#line 6638 "main.c"
+#line 6637 "main.c"
     hero_array_decref(h23_xs2);
 #line 117 "examples/ledger/main.hero"
-#line 6641 "main.c"
+#line 6640 "main.c"
     h_bookentry_Entry_release(&h25_e);
 #line 117 "examples/ledger/main.hero"
-#line 6644 "main.c"
+#line 6643 "main.c"
     h_0opt_f87774a_release(&h26_f7);
 #line 117 "examples/ledger/main.hero"
-#line 6647 "main.c"
+#line 6646 "main.c"
     hero_array_decref(h27_own27);
 #line 117 "examples/ledger/main.hero"
-#line 6650 "main.c"
+#line 6649 "main.c"
     hero_array_decref(h28_own28);
 #line 117 "examples/ledger/main.hero"
-#line 6653 "main.c"
+#line 6652 "main.c"
     hero_array_decref(h29_own29);
 #line 117 "examples/ledger/main.hero"
-#line 6656 "main.c"
+#line 6655 "main.c"
     hero_str_decref(h30_own30);
 #line 117 "examples/ledger/main.hero"
-#line 6659 "main.c"
+#line 6658 "main.c"
     h_0opt_5036d564_release(&h31_own31);
 #line 117 "examples/ledger/main.hero"
-#line 6662 "main.c"
+#line 6661 "main.c"
     hero_array_decref(h32_own32);
 #line 117 "examples/ledger/main.hero"
-#line 6665 "main.c"
+#line 6664 "main.c"
     hero_array_decref(h33_own33);
 #line 117 "examples/ledger/main.hero"
-#line 6668 "main.c"
+#line 6667 "main.c"
     h_0opt_a8ea2_release(&h34_own34);
 #line 117 "examples/ledger/main.hero"
-#line 6671 "main.c"
+#line 6670 "main.c"
     hero_array_decref(h35_own35);
 #line 117 "examples/ledger/main.hero"
-#line 6674 "main.c"
+#line 6673 "main.c"
     h_0opt_f87774a_release(&h36_own36);
 #line 117 "examples/ledger/main.hero"
-#line 6677 "main.c"
+#line 6676 "main.c"
     hero_str_decref(h37_own37);
 #line 117 "examples/ledger/main.hero"
-#line 6680 "main.c"
+#line 6679 "main.c"
     h_0opt_e201354_release(&h38_own38);
 #line 117 "examples/ledger/main.hero"
-#line 6683 "main.c"
+#line 6682 "main.c"
     hero_str_decref(h39_own39);
 #line 117 "examples/ledger/main.hero"
-#line 6686 "main.c"
+#line 6685 "main.c"
     h_0opt_a8ea2_release(&h40_own40);
 #line 117 "examples/ledger/main.hero"
-#line 6689 "main.c"
+#line 6688 "main.c"
     hero_array_decref(h41_own41);
 #line 117 "examples/ledger/main.hero"
-#line 6692 "main.c"
+#line 6691 "main.c"
     hero_str_decref(h42_own42);
 #line 117 "examples/ledger/main.hero"
-#line 6695 "main.c"
+#line 6694 "main.c"
     hero_str_decref(h43_own43);
 #line 117 "examples/ledger/main.hero"
-#line 6698 "main.c"
+#line 6697 "main.c"
     h_0opt_e201354_release(&h44_own44);
 #line 117 "examples/ledger/main.hero"
-#line 6701 "main.c"
+#line 6700 "main.c"
     h_0opt_a8ea2_release(&h45_own45);
 #line 117 "examples/ledger/main.hero"
-#line 6704 "main.c"
+#line 6703 "main.c"
     hero_array_decref(h46_own46);
 #line 117 "examples/ledger/main.hero"
-#line 6707 "main.c"
+#line 6706 "main.c"
     hero_str_decref(h47_own47);
 #line 117 "examples/ledger/main.hero"
-#line 6710 "main.c"
+#line 6709 "main.c"
     h_0opt_db92a83_release(&h48_own48);
 #line 117 "examples/ledger/main.hero"
-#line 6713 "main.c"
+#line 6712 "main.c"
     h_0opt_a8ea2_release(&h49_own49);
 #line 117 "examples/ledger/main.hero"
-#line 6716 "main.c"
+#line 6715 "main.c"
     hero_array_decref(h50_own50);
 #line 117 "examples/ledger/main.hero"
-#line 6719 "main.c"
+#line 6718 "main.c"
     hero_array_decref(h51_own51);
 #line 117 "examples/ledger/main.hero"
-#line 6722 "main.c"
+#line 6721 "main.c"
     hero_str_decref(h52_own52);
 #line 117 "examples/ledger/main.hero"
-#line 6725 "main.c"
+#line 6724 "main.c"
     h_0opt_e201354_release(&h53_own53);
 #line 117 "examples/ledger/main.hero"
-#line 6728 "main.c"
+#line 6727 "main.c"
     h_0opt_a8ea2_release(&h54_own54);
 #line 117 "examples/ledger/main.hero"
-#line 6731 "main.c"
+#line 6730 "main.c"
     hero_str_decref(h55_own55);
 #line 117 "examples/ledger/main.hero"
-#line 6734 "main.c"
+#line 6733 "main.c"
     h_0opt_e201354_release(&h56_own56);
 #line 117 "examples/ledger/main.hero"
-#line 6737 "main.c"
+#line 6736 "main.c"
     hero_array_decref(h57_own57);
 #line 117 "examples/ledger/main.hero"
-#line 6740 "main.c"
+#line 6739 "main.c"
     h_0opt_a8ea2_release(&h58_own58);
 #line 117 "examples/ledger/main.hero"
-#line 6743 "main.c"
+#line 6742 "main.c"
     hero_array_decref(h59_own59);
 #line 117 "examples/ledger/main.hero"
-#line 6746 "main.c"
+#line 6745 "main.c"
     h_0opt_f87774a_release(&h60_own60);
 #line 117 "examples/ledger/main.hero"
-#line 6749 "main.c"
+#line 6748 "main.c"
     hero_str_decref(h61_own61);
 #line 117 "examples/ledger/main.hero"
-#line 6752 "main.c"
+#line 6751 "main.c"
     hero_str_decref(h62_own62);
 #line 117 "examples/ledger/main.hero"
-#line 6755 "main.c"
+#line 6754 "main.c"
     h_0opt_a8ea2_release(&h63_own63);
 #line 117 "examples/ledger/main.hero"
-#line 6758 "main.c"
+#line 6757 "main.c"
     h_0opt_a8ea2_release(&h64_own64);
     return t100;
 bb17:
@@ -6770,7 +6769,7 @@ bb17:
     t239 = h50_own50;
 #line 124 "examples/ledger/main.hero"
     h50_own50 = t121;
-#line 6774 "main.c"
+#line 6773 "main.c"
     hero_array_decref(t239);
 #line 124 "examples/ledger/main.hero"
     t122 = h_bookentry_total(t121);
@@ -6784,7 +6783,7 @@ bb17:
     t240 = h51_own51;
 #line 124 "examples/ledger/main.hero"
     h51_own51 = t125;
-#line 6788 "main.c"
+#line 6787 "main.c"
     hero_array_decref(t240);
 #line 124 "examples/ledger/main.hero"
     t126 = hero_array_len(t125);
@@ -6808,7 +6807,7 @@ bb17:
     t241 = h52_own52;
 #line 125 "examples/ledger/main.hero"
     h52_own52 = t133;
-#line 6812 "main.c"
+#line 6811 "main.c"
     hero_str_decref(t241);
 #line 125 "examples/ledger/main.hero"
     hero_print_str(t129);
@@ -6834,15 +6833,15 @@ bb17:
     t242 = h53_own53;
 #line 126 "examples/ledger/main.hero"
     h53_own53 = t136;
-#line 6838 "main.c"
+#line 6837 "main.c"
     h_0opt_e201354_release(&t242);
 #line 126 "examples/ledger/main.hero"
     t243 = h19_f5;
-#line 6842 "main.c"
+#line 6841 "main.c"
     h_0opt_e201354_retain(&t136);
 #line 126 "examples/ledger/main.hero"
     h19_f5 = t136;
-#line 6846 "main.c"
+#line 6845 "main.c"
     h_0opt_e201354_release(&t243);
 #line 126 "examples/ledger/main.hero"
     t137 = h19_f5;
@@ -6860,7 +6859,7 @@ bb18:
     t116 = h16_f4;
 #line 123 "examples/ledger/main.hero"
     t117 = t116.as.err;
-#line 6864 "main.c"
+#line 6863 "main.c"
     hero_failure_retain(&t117);
 #line 123 "examples/ledger/main.hero"
     t118 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = t117};
@@ -6868,175 +6867,175 @@ bb18:
     t244 = h54_own54;
 #line 123 "examples/ledger/main.hero"
     h54_own54 = t118;
-#line 6872 "main.c"
+#line 6871 "main.c"
     h_0opt_a8ea2_release(&t244);
 #line 123 "examples/ledger/main.hero"
-#line 6875 "main.c"
+#line 6874 "main.c"
     h_0opt_a8ea2_retain(&t118);
 #line 123 "examples/ledger/main.hero"
-#line 6878 "main.c"
+#line 6877 "main.c"
     hero_array_decref(h1_xs0);
 #line 123 "examples/ledger/main.hero"
-#line 6881 "main.c"
+#line 6880 "main.c"
     hero_str_decref(h3_line);
 #line 123 "examples/ledger/main.hero"
-#line 6884 "main.c"
+#line 6883 "main.c"
     h_0opt_5036d564_release(&h4_f0);
 #line 123 "examples/ledger/main.hero"
-#line 6887 "main.c"
+#line 6886 "main.c"
     hero_array_decref(h5_from_db);
 #line 123 "examples/ledger/main.hero"
-#line 6890 "main.c"
+#line 6889 "main.c"
     hero_array_decref(h6_mine);
 #line 123 "examples/ledger/main.hero"
-#line 6893 "main.c"
+#line 6892 "main.c"
     hero_array_decref(h7_xs1);
 #line 123 "examples/ledger/main.hero"
-#line 6896 "main.c"
+#line 6895 "main.c"
     h_bookentry_Balance_release(&h9_b);
 #line 123 "examples/ledger/main.hero"
-#line 6899 "main.c"
+#line 6898 "main.c"
     h_0opt_f87774a_release(&h10_f1);
 #line 123 "examples/ledger/main.hero"
-#line 6902 "main.c"
+#line 6901 "main.c"
     hero_str_decref(h11_kind);
 #line 123 "examples/ledger/main.hero"
-#line 6905 "main.c"
+#line 6904 "main.c"
     h_0opt_e201354_release(&h12_f2);
 #line 123 "examples/ledger/main.hero"
-#line 6908 "main.c"
+#line 6907 "main.c"
     h_0opt_e201354_release(&h14_f3);
 #line 123 "examples/ledger/main.hero"
-#line 6911 "main.c"
+#line 6910 "main.c"
     h_0opt_db92a83_release(&h16_f4);
 #line 123 "examples/ledger/main.hero"
-#line 6914 "main.c"
+#line 6913 "main.c"
     h_0opt_e201354_release(&h19_f5);
 #line 123 "examples/ledger/main.hero"
-#line 6917 "main.c"
+#line 6916 "main.c"
     h_0opt_e201354_release(&h20_f6);
 #line 123 "examples/ledger/main.hero"
-#line 6920 "main.c"
+#line 6919 "main.c"
     hero_array_decref(h23_xs2);
 #line 123 "examples/ledger/main.hero"
-#line 6923 "main.c"
+#line 6922 "main.c"
     h_bookentry_Entry_release(&h25_e);
 #line 123 "examples/ledger/main.hero"
-#line 6926 "main.c"
+#line 6925 "main.c"
     h_0opt_f87774a_release(&h26_f7);
 #line 123 "examples/ledger/main.hero"
-#line 6929 "main.c"
+#line 6928 "main.c"
     hero_array_decref(h27_own27);
 #line 123 "examples/ledger/main.hero"
-#line 6932 "main.c"
+#line 6931 "main.c"
     hero_array_decref(h28_own28);
 #line 123 "examples/ledger/main.hero"
-#line 6935 "main.c"
+#line 6934 "main.c"
     hero_array_decref(h29_own29);
 #line 123 "examples/ledger/main.hero"
-#line 6938 "main.c"
+#line 6937 "main.c"
     hero_str_decref(h30_own30);
 #line 123 "examples/ledger/main.hero"
-#line 6941 "main.c"
+#line 6940 "main.c"
     h_0opt_5036d564_release(&h31_own31);
 #line 123 "examples/ledger/main.hero"
-#line 6944 "main.c"
+#line 6943 "main.c"
     hero_array_decref(h32_own32);
 #line 123 "examples/ledger/main.hero"
-#line 6947 "main.c"
+#line 6946 "main.c"
     hero_array_decref(h33_own33);
 #line 123 "examples/ledger/main.hero"
-#line 6950 "main.c"
+#line 6949 "main.c"
     h_0opt_a8ea2_release(&h34_own34);
 #line 123 "examples/ledger/main.hero"
-#line 6953 "main.c"
+#line 6952 "main.c"
     hero_array_decref(h35_own35);
 #line 123 "examples/ledger/main.hero"
-#line 6956 "main.c"
+#line 6955 "main.c"
     h_0opt_f87774a_release(&h36_own36);
 #line 123 "examples/ledger/main.hero"
-#line 6959 "main.c"
+#line 6958 "main.c"
     hero_str_decref(h37_own37);
 #line 123 "examples/ledger/main.hero"
-#line 6962 "main.c"
+#line 6961 "main.c"
     h_0opt_e201354_release(&h38_own38);
 #line 123 "examples/ledger/main.hero"
-#line 6965 "main.c"
+#line 6964 "main.c"
     hero_str_decref(h39_own39);
 #line 123 "examples/ledger/main.hero"
-#line 6968 "main.c"
+#line 6967 "main.c"
     h_0opt_a8ea2_release(&h40_own40);
 #line 123 "examples/ledger/main.hero"
-#line 6971 "main.c"
+#line 6970 "main.c"
     hero_array_decref(h41_own41);
 #line 123 "examples/ledger/main.hero"
-#line 6974 "main.c"
+#line 6973 "main.c"
     hero_str_decref(h42_own42);
 #line 123 "examples/ledger/main.hero"
-#line 6977 "main.c"
+#line 6976 "main.c"
     hero_str_decref(h43_own43);
 #line 123 "examples/ledger/main.hero"
-#line 6980 "main.c"
+#line 6979 "main.c"
     h_0opt_e201354_release(&h44_own44);
 #line 123 "examples/ledger/main.hero"
-#line 6983 "main.c"
+#line 6982 "main.c"
     h_0opt_a8ea2_release(&h45_own45);
 #line 123 "examples/ledger/main.hero"
-#line 6986 "main.c"
+#line 6985 "main.c"
     hero_array_decref(h46_own46);
 #line 123 "examples/ledger/main.hero"
-#line 6989 "main.c"
+#line 6988 "main.c"
     hero_str_decref(h47_own47);
 #line 123 "examples/ledger/main.hero"
-#line 6992 "main.c"
+#line 6991 "main.c"
     h_0opt_db92a83_release(&h48_own48);
 #line 123 "examples/ledger/main.hero"
-#line 6995 "main.c"
+#line 6994 "main.c"
     h_0opt_a8ea2_release(&h49_own49);
 #line 123 "examples/ledger/main.hero"
-#line 6998 "main.c"
+#line 6997 "main.c"
     hero_array_decref(h50_own50);
 #line 123 "examples/ledger/main.hero"
-#line 7001 "main.c"
+#line 7000 "main.c"
     hero_array_decref(h51_own51);
 #line 123 "examples/ledger/main.hero"
-#line 7004 "main.c"
+#line 7003 "main.c"
     hero_str_decref(h52_own52);
 #line 123 "examples/ledger/main.hero"
-#line 7007 "main.c"
+#line 7006 "main.c"
     h_0opt_e201354_release(&h53_own53);
 #line 123 "examples/ledger/main.hero"
-#line 7010 "main.c"
+#line 7009 "main.c"
     h_0opt_a8ea2_release(&h54_own54);
 #line 123 "examples/ledger/main.hero"
-#line 7013 "main.c"
+#line 7012 "main.c"
     hero_str_decref(h55_own55);
 #line 123 "examples/ledger/main.hero"
-#line 7016 "main.c"
+#line 7015 "main.c"
     h_0opt_e201354_release(&h56_own56);
 #line 123 "examples/ledger/main.hero"
-#line 7019 "main.c"
+#line 7018 "main.c"
     hero_array_decref(h57_own57);
 #line 123 "examples/ledger/main.hero"
-#line 7022 "main.c"
+#line 7021 "main.c"
     h_0opt_a8ea2_release(&h58_own58);
 #line 123 "examples/ledger/main.hero"
-#line 7025 "main.c"
+#line 7024 "main.c"
     hero_array_decref(h59_own59);
 #line 123 "examples/ledger/main.hero"
-#line 7028 "main.c"
+#line 7027 "main.c"
     h_0opt_f87774a_release(&h60_own60);
 #line 123 "examples/ledger/main.hero"
-#line 7031 "main.c"
+#line 7030 "main.c"
     hero_str_decref(h61_own61);
 #line 123 "examples/ledger/main.hero"
-#line 7034 "main.c"
+#line 7033 "main.c"
     hero_str_decref(h62_own62);
 #line 123 "examples/ledger/main.hero"
-#line 7037 "main.c"
+#line 7036 "main.c"
     h_0opt_a8ea2_release(&h63_own63);
 #line 123 "examples/ledger/main.hero"
-#line 7040 "main.c"
+#line 7039 "main.c"
     h_0opt_a8ea2_release(&h64_own64);
     return t118;
 bb19:
@@ -7052,7 +7051,7 @@ bb19:
     t245 = h55_own55;
 #line 126 "examples/ledger/main.hero"
     h55_own55 = t146;
-#line 7056 "main.c"
+#line 7055 "main.c"
     hero_str_decref(t245);
 #line 126 "examples/ledger/main.hero"
     hero_print_str(t134);
@@ -7082,15 +7081,15 @@ bb19:
     t246 = h56_own56;
 #line 132 "examples/ledger/main.hero"
     h56_own56 = t151;
-#line 7086 "main.c"
+#line 7085 "main.c"
     h_0opt_e201354_release(&t246);
 #line 132 "examples/ledger/main.hero"
     t247 = h20_f6;
-#line 7090 "main.c"
+#line 7089 "main.c"
     h_0opt_e201354_retain(&t151);
 #line 132 "examples/ledger/main.hero"
     h20_f6 = t151;
-#line 7094 "main.c"
+#line 7093 "main.c"
     h_0opt_e201354_release(&t247);
 #line 132 "examples/ledger/main.hero"
     t152 = h20_f6;
@@ -7108,7 +7107,7 @@ bb20:
     t141 = h19_f5;
 #line 126 "examples/ledger/main.hero"
     t142 = t141.as.err;
-#line 7112 "main.c"
+#line 7111 "main.c"
     hero_panic_must(t142);
     hero_unreachable();
 bb21:
@@ -7128,15 +7127,15 @@ bb21:
     t248 = h57_own57;
 #line 135 "examples/ledger/main.hero"
     h57_own57 = t162;
-#line 7132 "main.c"
+#line 7131 "main.c"
     hero_array_decref(t248);
 #line 135 "examples/ledger/main.hero"
     t249 = h23_xs2;
-#line 7136 "main.c"
+#line 7135 "main.c"
     hero_array_incref(t162);
 #line 135 "examples/ledger/main.hero"
     h23_xs2 = t162;
-#line 7140 "main.c"
+#line 7139 "main.c"
     hero_array_decref(t249);
 #line 135 "examples/ledger/main.hero"
     t163 = INT64_C(0);
@@ -7150,7 +7149,7 @@ bb22:
     t156 = h20_f6;
 #line 132 "examples/ledger/main.hero"
     t157 = t156.as.err;
-#line 7154 "main.c"
+#line 7153 "main.c"
     hero_failure_retain(&t157);
 #line 132 "examples/ledger/main.hero"
     t158 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = t157};
@@ -7158,175 +7157,175 @@ bb22:
     t250 = h58_own58;
 #line 132 "examples/ledger/main.hero"
     h58_own58 = t158;
-#line 7162 "main.c"
+#line 7161 "main.c"
     h_0opt_a8ea2_release(&t250);
 #line 132 "examples/ledger/main.hero"
-#line 7165 "main.c"
+#line 7164 "main.c"
     h_0opt_a8ea2_retain(&t158);
 #line 132 "examples/ledger/main.hero"
-#line 7168 "main.c"
+#line 7167 "main.c"
     hero_array_decref(h1_xs0);
 #line 132 "examples/ledger/main.hero"
-#line 7171 "main.c"
+#line 7170 "main.c"
     hero_str_decref(h3_line);
 #line 132 "examples/ledger/main.hero"
-#line 7174 "main.c"
+#line 7173 "main.c"
     h_0opt_5036d564_release(&h4_f0);
 #line 132 "examples/ledger/main.hero"
-#line 7177 "main.c"
+#line 7176 "main.c"
     hero_array_decref(h5_from_db);
 #line 132 "examples/ledger/main.hero"
-#line 7180 "main.c"
+#line 7179 "main.c"
     hero_array_decref(h6_mine);
 #line 132 "examples/ledger/main.hero"
-#line 7183 "main.c"
+#line 7182 "main.c"
     hero_array_decref(h7_xs1);
 #line 132 "examples/ledger/main.hero"
-#line 7186 "main.c"
+#line 7185 "main.c"
     h_bookentry_Balance_release(&h9_b);
 #line 132 "examples/ledger/main.hero"
-#line 7189 "main.c"
+#line 7188 "main.c"
     h_0opt_f87774a_release(&h10_f1);
 #line 132 "examples/ledger/main.hero"
-#line 7192 "main.c"
+#line 7191 "main.c"
     hero_str_decref(h11_kind);
 #line 132 "examples/ledger/main.hero"
-#line 7195 "main.c"
+#line 7194 "main.c"
     h_0opt_e201354_release(&h12_f2);
 #line 132 "examples/ledger/main.hero"
-#line 7198 "main.c"
+#line 7197 "main.c"
     h_0opt_e201354_release(&h14_f3);
 #line 132 "examples/ledger/main.hero"
-#line 7201 "main.c"
+#line 7200 "main.c"
     h_0opt_db92a83_release(&h16_f4);
 #line 132 "examples/ledger/main.hero"
-#line 7204 "main.c"
+#line 7203 "main.c"
     h_0opt_e201354_release(&h19_f5);
 #line 132 "examples/ledger/main.hero"
-#line 7207 "main.c"
+#line 7206 "main.c"
     h_0opt_e201354_release(&h20_f6);
 #line 132 "examples/ledger/main.hero"
-#line 7210 "main.c"
+#line 7209 "main.c"
     hero_array_decref(h23_xs2);
 #line 132 "examples/ledger/main.hero"
-#line 7213 "main.c"
+#line 7212 "main.c"
     h_bookentry_Entry_release(&h25_e);
 #line 132 "examples/ledger/main.hero"
-#line 7216 "main.c"
+#line 7215 "main.c"
     h_0opt_f87774a_release(&h26_f7);
 #line 132 "examples/ledger/main.hero"
-#line 7219 "main.c"
+#line 7218 "main.c"
     hero_array_decref(h27_own27);
 #line 132 "examples/ledger/main.hero"
-#line 7222 "main.c"
+#line 7221 "main.c"
     hero_array_decref(h28_own28);
 #line 132 "examples/ledger/main.hero"
-#line 7225 "main.c"
+#line 7224 "main.c"
     hero_array_decref(h29_own29);
 #line 132 "examples/ledger/main.hero"
-#line 7228 "main.c"
+#line 7227 "main.c"
     hero_str_decref(h30_own30);
 #line 132 "examples/ledger/main.hero"
-#line 7231 "main.c"
+#line 7230 "main.c"
     h_0opt_5036d564_release(&h31_own31);
 #line 132 "examples/ledger/main.hero"
-#line 7234 "main.c"
+#line 7233 "main.c"
     hero_array_decref(h32_own32);
 #line 132 "examples/ledger/main.hero"
-#line 7237 "main.c"
+#line 7236 "main.c"
     hero_array_decref(h33_own33);
 #line 132 "examples/ledger/main.hero"
-#line 7240 "main.c"
+#line 7239 "main.c"
     h_0opt_a8ea2_release(&h34_own34);
 #line 132 "examples/ledger/main.hero"
-#line 7243 "main.c"
+#line 7242 "main.c"
     hero_array_decref(h35_own35);
 #line 132 "examples/ledger/main.hero"
-#line 7246 "main.c"
+#line 7245 "main.c"
     h_0opt_f87774a_release(&h36_own36);
 #line 132 "examples/ledger/main.hero"
-#line 7249 "main.c"
+#line 7248 "main.c"
     hero_str_decref(h37_own37);
 #line 132 "examples/ledger/main.hero"
-#line 7252 "main.c"
+#line 7251 "main.c"
     h_0opt_e201354_release(&h38_own38);
 #line 132 "examples/ledger/main.hero"
-#line 7255 "main.c"
+#line 7254 "main.c"
     hero_str_decref(h39_own39);
 #line 132 "examples/ledger/main.hero"
-#line 7258 "main.c"
+#line 7257 "main.c"
     h_0opt_a8ea2_release(&h40_own40);
 #line 132 "examples/ledger/main.hero"
-#line 7261 "main.c"
+#line 7260 "main.c"
     hero_array_decref(h41_own41);
 #line 132 "examples/ledger/main.hero"
-#line 7264 "main.c"
+#line 7263 "main.c"
     hero_str_decref(h42_own42);
 #line 132 "examples/ledger/main.hero"
-#line 7267 "main.c"
+#line 7266 "main.c"
     hero_str_decref(h43_own43);
 #line 132 "examples/ledger/main.hero"
-#line 7270 "main.c"
+#line 7269 "main.c"
     h_0opt_e201354_release(&h44_own44);
 #line 132 "examples/ledger/main.hero"
-#line 7273 "main.c"
+#line 7272 "main.c"
     h_0opt_a8ea2_release(&h45_own45);
 #line 132 "examples/ledger/main.hero"
-#line 7276 "main.c"
+#line 7275 "main.c"
     hero_array_decref(h46_own46);
 #line 132 "examples/ledger/main.hero"
-#line 7279 "main.c"
+#line 7278 "main.c"
     hero_str_decref(h47_own47);
 #line 132 "examples/ledger/main.hero"
-#line 7282 "main.c"
+#line 7281 "main.c"
     h_0opt_db92a83_release(&h48_own48);
 #line 132 "examples/ledger/main.hero"
-#line 7285 "main.c"
+#line 7284 "main.c"
     h_0opt_a8ea2_release(&h49_own49);
 #line 132 "examples/ledger/main.hero"
-#line 7288 "main.c"
+#line 7287 "main.c"
     hero_array_decref(h50_own50);
 #line 132 "examples/ledger/main.hero"
-#line 7291 "main.c"
+#line 7290 "main.c"
     hero_array_decref(h51_own51);
 #line 132 "examples/ledger/main.hero"
-#line 7294 "main.c"
+#line 7293 "main.c"
     hero_str_decref(h52_own52);
 #line 132 "examples/ledger/main.hero"
-#line 7297 "main.c"
+#line 7296 "main.c"
     h_0opt_e201354_release(&h53_own53);
 #line 132 "examples/ledger/main.hero"
-#line 7300 "main.c"
+#line 7299 "main.c"
     h_0opt_a8ea2_release(&h54_own54);
 #line 132 "examples/ledger/main.hero"
-#line 7303 "main.c"
+#line 7302 "main.c"
     hero_str_decref(h55_own55);
 #line 132 "examples/ledger/main.hero"
-#line 7306 "main.c"
+#line 7305 "main.c"
     h_0opt_e201354_release(&h56_own56);
 #line 132 "examples/ledger/main.hero"
-#line 7309 "main.c"
+#line 7308 "main.c"
     hero_array_decref(h57_own57);
 #line 132 "examples/ledger/main.hero"
-#line 7312 "main.c"
+#line 7311 "main.c"
     h_0opt_a8ea2_release(&h58_own58);
 #line 132 "examples/ledger/main.hero"
-#line 7315 "main.c"
+#line 7314 "main.c"
     hero_array_decref(h59_own59);
 #line 132 "examples/ledger/main.hero"
-#line 7318 "main.c"
+#line 7317 "main.c"
     h_0opt_f87774a_release(&h60_own60);
 #line 132 "examples/ledger/main.hero"
-#line 7321 "main.c"
+#line 7320 "main.c"
     hero_str_decref(h61_own61);
 #line 132 "examples/ledger/main.hero"
-#line 7324 "main.c"
+#line 7323 "main.c"
     hero_str_decref(h62_own62);
 #line 132 "examples/ledger/main.hero"
-#line 7327 "main.c"
+#line 7326 "main.c"
     h_0opt_a8ea2_release(&h63_own63);
 #line 132 "examples/ledger/main.hero"
-#line 7330 "main.c"
+#line 7329 "main.c"
     h_0opt_a8ea2_release(&h64_own64);
     return t158;
 bb23:
@@ -7350,11 +7349,11 @@ bb24:
     t170 = *(h_bookentry_Entry const *)hero_array_at(t168, t169);
 #line 135 "examples/ledger/main.hero"
     t251 = h25_e;
-#line 7354 "main.c"
+#line 7353 "main.c"
     h_bookentry_Entry_retain(&t170);
 #line 135 "examples/ledger/main.hero"
     h25_e = t170;
-#line 7358 "main.c"
+#line 7357 "main.c"
     h_bookentry_Entry_release(&t251);
 #line 136 "examples/ledger/main.hero"
     t171 = h25_e;
@@ -7366,7 +7365,7 @@ bb24:
     t252 = h59_own59;
 #line 136 "examples/ledger/main.hero"
     h59_own59 = t173;
-#line 7370 "main.c"
+#line 7369 "main.c"
     hero_array_decref(t252);
 #line 136 "examples/ledger/main.hero"
     t174 = h_bookentry_kind_of(t172, t173);
@@ -7374,15 +7373,15 @@ bb24:
     t253 = h60_own60;
 #line 136 "examples/ledger/main.hero"
     h60_own60 = t174;
-#line 7378 "main.c"
+#line 7377 "main.c"
     h_0opt_f87774a_release(&t253);
 #line 136 "examples/ledger/main.hero"
     t254 = h26_f7;
-#line 7382 "main.c"
+#line 7381 "main.c"
     h_0opt_f87774a_retain(&t174);
 #line 136 "examples/ledger/main.hero"
     h26_f7 = t174;
-#line 7386 "main.c"
+#line 7385 "main.c"
     h_0opt_f87774a_release(&t254);
 #line 136 "examples/ledger/main.hero"
     t175 = h26_f7;
@@ -7420,7 +7419,7 @@ bb26:
     t255 = h61_own61;
 #line 139 "examples/ledger/main.hero"
     h61_own61 = t197;
-#line 7424 "main.c"
+#line 7423 "main.c"
     hero_str_decref(t255);
 #line 139 "examples/ledger/main.hero"
     t198 = HERO_STR_LIT(hero_str_5f5a379a);
@@ -7436,7 +7435,7 @@ bb26:
     t256 = h62_own62;
 #line 139 "examples/ledger/main.hero"
     h62_own62 = t202;
-#line 7440 "main.c"
+#line 7439 "main.c"
     hero_str_decref(t256);
 #line 139 "examples/ledger/main.hero"
     hero_print_str(t194);
@@ -7454,175 +7453,175 @@ bb26:
     t257 = h63_own63;
 #line 140 "examples/ledger/main.hero"
     h63_own63 = t203;
-#line 7458 "main.c"
+#line 7457 "main.c"
     h_0opt_a8ea2_release(&t257);
 #line 140 "examples/ledger/main.hero"
-#line 7461 "main.c"
+#line 7460 "main.c"
     h_0opt_a8ea2_retain(&t203);
 #line 140 "examples/ledger/main.hero"
-#line 7464 "main.c"
+#line 7463 "main.c"
     hero_array_decref(h1_xs0);
 #line 140 "examples/ledger/main.hero"
-#line 7467 "main.c"
+#line 7466 "main.c"
     hero_str_decref(h3_line);
 #line 140 "examples/ledger/main.hero"
-#line 7470 "main.c"
+#line 7469 "main.c"
     h_0opt_5036d564_release(&h4_f0);
 #line 140 "examples/ledger/main.hero"
-#line 7473 "main.c"
+#line 7472 "main.c"
     hero_array_decref(h5_from_db);
 #line 140 "examples/ledger/main.hero"
-#line 7476 "main.c"
+#line 7475 "main.c"
     hero_array_decref(h6_mine);
 #line 140 "examples/ledger/main.hero"
-#line 7479 "main.c"
+#line 7478 "main.c"
     hero_array_decref(h7_xs1);
 #line 140 "examples/ledger/main.hero"
-#line 7482 "main.c"
+#line 7481 "main.c"
     h_bookentry_Balance_release(&h9_b);
 #line 140 "examples/ledger/main.hero"
-#line 7485 "main.c"
+#line 7484 "main.c"
     h_0opt_f87774a_release(&h10_f1);
 #line 140 "examples/ledger/main.hero"
-#line 7488 "main.c"
+#line 7487 "main.c"
     hero_str_decref(h11_kind);
 #line 140 "examples/ledger/main.hero"
-#line 7491 "main.c"
+#line 7490 "main.c"
     h_0opt_e201354_release(&h12_f2);
 #line 140 "examples/ledger/main.hero"
-#line 7494 "main.c"
+#line 7493 "main.c"
     h_0opt_e201354_release(&h14_f3);
 #line 140 "examples/ledger/main.hero"
-#line 7497 "main.c"
+#line 7496 "main.c"
     h_0opt_db92a83_release(&h16_f4);
 #line 140 "examples/ledger/main.hero"
-#line 7500 "main.c"
+#line 7499 "main.c"
     h_0opt_e201354_release(&h19_f5);
 #line 140 "examples/ledger/main.hero"
-#line 7503 "main.c"
+#line 7502 "main.c"
     h_0opt_e201354_release(&h20_f6);
 #line 140 "examples/ledger/main.hero"
-#line 7506 "main.c"
+#line 7505 "main.c"
     hero_array_decref(h23_xs2);
 #line 140 "examples/ledger/main.hero"
-#line 7509 "main.c"
+#line 7508 "main.c"
     h_bookentry_Entry_release(&h25_e);
 #line 140 "examples/ledger/main.hero"
-#line 7512 "main.c"
+#line 7511 "main.c"
     h_0opt_f87774a_release(&h26_f7);
 #line 140 "examples/ledger/main.hero"
-#line 7515 "main.c"
+#line 7514 "main.c"
     hero_array_decref(h27_own27);
 #line 140 "examples/ledger/main.hero"
-#line 7518 "main.c"
+#line 7517 "main.c"
     hero_array_decref(h28_own28);
 #line 140 "examples/ledger/main.hero"
-#line 7521 "main.c"
+#line 7520 "main.c"
     hero_array_decref(h29_own29);
 #line 140 "examples/ledger/main.hero"
-#line 7524 "main.c"
+#line 7523 "main.c"
     hero_str_decref(h30_own30);
 #line 140 "examples/ledger/main.hero"
-#line 7527 "main.c"
+#line 7526 "main.c"
     h_0opt_5036d564_release(&h31_own31);
 #line 140 "examples/ledger/main.hero"
-#line 7530 "main.c"
+#line 7529 "main.c"
     hero_array_decref(h32_own32);
 #line 140 "examples/ledger/main.hero"
-#line 7533 "main.c"
+#line 7532 "main.c"
     hero_array_decref(h33_own33);
 #line 140 "examples/ledger/main.hero"
-#line 7536 "main.c"
+#line 7535 "main.c"
     h_0opt_a8ea2_release(&h34_own34);
 #line 140 "examples/ledger/main.hero"
-#line 7539 "main.c"
+#line 7538 "main.c"
     hero_array_decref(h35_own35);
 #line 140 "examples/ledger/main.hero"
-#line 7542 "main.c"
+#line 7541 "main.c"
     h_0opt_f87774a_release(&h36_own36);
 #line 140 "examples/ledger/main.hero"
-#line 7545 "main.c"
+#line 7544 "main.c"
     hero_str_decref(h37_own37);
 #line 140 "examples/ledger/main.hero"
-#line 7548 "main.c"
+#line 7547 "main.c"
     h_0opt_e201354_release(&h38_own38);
 #line 140 "examples/ledger/main.hero"
-#line 7551 "main.c"
+#line 7550 "main.c"
     hero_str_decref(h39_own39);
 #line 140 "examples/ledger/main.hero"
-#line 7554 "main.c"
+#line 7553 "main.c"
     h_0opt_a8ea2_release(&h40_own40);
 #line 140 "examples/ledger/main.hero"
-#line 7557 "main.c"
+#line 7556 "main.c"
     hero_array_decref(h41_own41);
 #line 140 "examples/ledger/main.hero"
-#line 7560 "main.c"
+#line 7559 "main.c"
     hero_str_decref(h42_own42);
 #line 140 "examples/ledger/main.hero"
-#line 7563 "main.c"
+#line 7562 "main.c"
     hero_str_decref(h43_own43);
 #line 140 "examples/ledger/main.hero"
-#line 7566 "main.c"
+#line 7565 "main.c"
     h_0opt_e201354_release(&h44_own44);
 #line 140 "examples/ledger/main.hero"
-#line 7569 "main.c"
+#line 7568 "main.c"
     h_0opt_a8ea2_release(&h45_own45);
 #line 140 "examples/ledger/main.hero"
-#line 7572 "main.c"
+#line 7571 "main.c"
     hero_array_decref(h46_own46);
 #line 140 "examples/ledger/main.hero"
-#line 7575 "main.c"
+#line 7574 "main.c"
     hero_str_decref(h47_own47);
 #line 140 "examples/ledger/main.hero"
-#line 7578 "main.c"
+#line 7577 "main.c"
     h_0opt_db92a83_release(&h48_own48);
 #line 140 "examples/ledger/main.hero"
-#line 7581 "main.c"
+#line 7580 "main.c"
     h_0opt_a8ea2_release(&h49_own49);
 #line 140 "examples/ledger/main.hero"
-#line 7584 "main.c"
+#line 7583 "main.c"
     hero_array_decref(h50_own50);
 #line 140 "examples/ledger/main.hero"
-#line 7587 "main.c"
+#line 7586 "main.c"
     hero_array_decref(h51_own51);
 #line 140 "examples/ledger/main.hero"
-#line 7590 "main.c"
+#line 7589 "main.c"
     hero_str_decref(h52_own52);
 #line 140 "examples/ledger/main.hero"
-#line 7593 "main.c"
+#line 7592 "main.c"
     h_0opt_e201354_release(&h53_own53);
 #line 140 "examples/ledger/main.hero"
-#line 7596 "main.c"
+#line 7595 "main.c"
     h_0opt_a8ea2_release(&h54_own54);
 #line 140 "examples/ledger/main.hero"
-#line 7599 "main.c"
+#line 7598 "main.c"
     hero_str_decref(h55_own55);
 #line 140 "examples/ledger/main.hero"
-#line 7602 "main.c"
+#line 7601 "main.c"
     h_0opt_e201354_release(&h56_own56);
 #line 140 "examples/ledger/main.hero"
-#line 7605 "main.c"
+#line 7604 "main.c"
     hero_array_decref(h57_own57);
 #line 140 "examples/ledger/main.hero"
-#line 7608 "main.c"
+#line 7607 "main.c"
     h_0opt_a8ea2_release(&h58_own58);
 #line 140 "examples/ledger/main.hero"
-#line 7611 "main.c"
+#line 7610 "main.c"
     hero_array_decref(h59_own59);
 #line 140 "examples/ledger/main.hero"
-#line 7614 "main.c"
+#line 7613 "main.c"
     h_0opt_f87774a_release(&h60_own60);
 #line 140 "examples/ledger/main.hero"
-#line 7617 "main.c"
+#line 7616 "main.c"
     hero_str_decref(h61_own61);
 #line 140 "examples/ledger/main.hero"
-#line 7620 "main.c"
+#line 7619 "main.c"
     hero_str_decref(h62_own62);
 #line 140 "examples/ledger/main.hero"
-#line 7623 "main.c"
+#line 7622 "main.c"
     h_0opt_a8ea2_release(&h63_own63);
 #line 140 "examples/ledger/main.hero"
-#line 7626 "main.c"
+#line 7625 "main.c"
     h_0opt_a8ea2_release(&h64_own64);
     return t203;
 bb27:
@@ -7644,7 +7643,7 @@ bb29:
     t179 = h26_f7;
 #line 136 "examples/ledger/main.hero"
     t180 = t179.as.err;
-#line 7648 "main.c"
+#line 7647 "main.c"
     hero_failure_retain(&t180);
 #line 136 "examples/ledger/main.hero"
     t181 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = t180};
@@ -7652,175 +7651,175 @@ bb29:
     t258 = h64_own64;
 #line 136 "examples/ledger/main.hero"
     h64_own64 = t181;
-#line 7656 "main.c"
+#line 7655 "main.c"
     h_0opt_a8ea2_release(&t258);
 #line 136 "examples/ledger/main.hero"
-#line 7659 "main.c"
+#line 7658 "main.c"
     h_0opt_a8ea2_retain(&t181);
 #line 136 "examples/ledger/main.hero"
-#line 7662 "main.c"
+#line 7661 "main.c"
     hero_array_decref(h1_xs0);
 #line 136 "examples/ledger/main.hero"
-#line 7665 "main.c"
+#line 7664 "main.c"
     hero_str_decref(h3_line);
 #line 136 "examples/ledger/main.hero"
-#line 7668 "main.c"
+#line 7667 "main.c"
     h_0opt_5036d564_release(&h4_f0);
 #line 136 "examples/ledger/main.hero"
-#line 7671 "main.c"
+#line 7670 "main.c"
     hero_array_decref(h5_from_db);
 #line 136 "examples/ledger/main.hero"
-#line 7674 "main.c"
+#line 7673 "main.c"
     hero_array_decref(h6_mine);
 #line 136 "examples/ledger/main.hero"
-#line 7677 "main.c"
+#line 7676 "main.c"
     hero_array_decref(h7_xs1);
 #line 136 "examples/ledger/main.hero"
-#line 7680 "main.c"
+#line 7679 "main.c"
     h_bookentry_Balance_release(&h9_b);
 #line 136 "examples/ledger/main.hero"
-#line 7683 "main.c"
+#line 7682 "main.c"
     h_0opt_f87774a_release(&h10_f1);
 #line 136 "examples/ledger/main.hero"
-#line 7686 "main.c"
+#line 7685 "main.c"
     hero_str_decref(h11_kind);
 #line 136 "examples/ledger/main.hero"
-#line 7689 "main.c"
+#line 7688 "main.c"
     h_0opt_e201354_release(&h12_f2);
 #line 136 "examples/ledger/main.hero"
-#line 7692 "main.c"
+#line 7691 "main.c"
     h_0opt_e201354_release(&h14_f3);
 #line 136 "examples/ledger/main.hero"
-#line 7695 "main.c"
+#line 7694 "main.c"
     h_0opt_db92a83_release(&h16_f4);
 #line 136 "examples/ledger/main.hero"
-#line 7698 "main.c"
+#line 7697 "main.c"
     h_0opt_e201354_release(&h19_f5);
 #line 136 "examples/ledger/main.hero"
-#line 7701 "main.c"
+#line 7700 "main.c"
     h_0opt_e201354_release(&h20_f6);
 #line 136 "examples/ledger/main.hero"
-#line 7704 "main.c"
+#line 7703 "main.c"
     hero_array_decref(h23_xs2);
 #line 136 "examples/ledger/main.hero"
-#line 7707 "main.c"
+#line 7706 "main.c"
     h_bookentry_Entry_release(&h25_e);
 #line 136 "examples/ledger/main.hero"
-#line 7710 "main.c"
+#line 7709 "main.c"
     h_0opt_f87774a_release(&h26_f7);
 #line 136 "examples/ledger/main.hero"
-#line 7713 "main.c"
+#line 7712 "main.c"
     hero_array_decref(h27_own27);
 #line 136 "examples/ledger/main.hero"
-#line 7716 "main.c"
+#line 7715 "main.c"
     hero_array_decref(h28_own28);
 #line 136 "examples/ledger/main.hero"
-#line 7719 "main.c"
+#line 7718 "main.c"
     hero_array_decref(h29_own29);
 #line 136 "examples/ledger/main.hero"
-#line 7722 "main.c"
+#line 7721 "main.c"
     hero_str_decref(h30_own30);
 #line 136 "examples/ledger/main.hero"
-#line 7725 "main.c"
+#line 7724 "main.c"
     h_0opt_5036d564_release(&h31_own31);
 #line 136 "examples/ledger/main.hero"
-#line 7728 "main.c"
+#line 7727 "main.c"
     hero_array_decref(h32_own32);
 #line 136 "examples/ledger/main.hero"
-#line 7731 "main.c"
+#line 7730 "main.c"
     hero_array_decref(h33_own33);
 #line 136 "examples/ledger/main.hero"
-#line 7734 "main.c"
+#line 7733 "main.c"
     h_0opt_a8ea2_release(&h34_own34);
 #line 136 "examples/ledger/main.hero"
-#line 7737 "main.c"
+#line 7736 "main.c"
     hero_array_decref(h35_own35);
 #line 136 "examples/ledger/main.hero"
-#line 7740 "main.c"
+#line 7739 "main.c"
     h_0opt_f87774a_release(&h36_own36);
 #line 136 "examples/ledger/main.hero"
-#line 7743 "main.c"
+#line 7742 "main.c"
     hero_str_decref(h37_own37);
 #line 136 "examples/ledger/main.hero"
-#line 7746 "main.c"
+#line 7745 "main.c"
     h_0opt_e201354_release(&h38_own38);
 #line 136 "examples/ledger/main.hero"
-#line 7749 "main.c"
+#line 7748 "main.c"
     hero_str_decref(h39_own39);
 #line 136 "examples/ledger/main.hero"
-#line 7752 "main.c"
+#line 7751 "main.c"
     h_0opt_a8ea2_release(&h40_own40);
 #line 136 "examples/ledger/main.hero"
-#line 7755 "main.c"
+#line 7754 "main.c"
     hero_array_decref(h41_own41);
 #line 136 "examples/ledger/main.hero"
-#line 7758 "main.c"
+#line 7757 "main.c"
     hero_str_decref(h42_own42);
 #line 136 "examples/ledger/main.hero"
-#line 7761 "main.c"
+#line 7760 "main.c"
     hero_str_decref(h43_own43);
 #line 136 "examples/ledger/main.hero"
-#line 7764 "main.c"
+#line 7763 "main.c"
     h_0opt_e201354_release(&h44_own44);
 #line 136 "examples/ledger/main.hero"
-#line 7767 "main.c"
+#line 7766 "main.c"
     h_0opt_a8ea2_release(&h45_own45);
 #line 136 "examples/ledger/main.hero"
-#line 7770 "main.c"
+#line 7769 "main.c"
     hero_array_decref(h46_own46);
 #line 136 "examples/ledger/main.hero"
-#line 7773 "main.c"
+#line 7772 "main.c"
     hero_str_decref(h47_own47);
 #line 136 "examples/ledger/main.hero"
-#line 7776 "main.c"
+#line 7775 "main.c"
     h_0opt_db92a83_release(&h48_own48);
 #line 136 "examples/ledger/main.hero"
-#line 7779 "main.c"
+#line 7778 "main.c"
     h_0opt_a8ea2_release(&h49_own49);
 #line 136 "examples/ledger/main.hero"
-#line 7782 "main.c"
+#line 7781 "main.c"
     hero_array_decref(h50_own50);
 #line 136 "examples/ledger/main.hero"
-#line 7785 "main.c"
+#line 7784 "main.c"
     hero_array_decref(h51_own51);
 #line 136 "examples/ledger/main.hero"
-#line 7788 "main.c"
+#line 7787 "main.c"
     hero_str_decref(h52_own52);
 #line 136 "examples/ledger/main.hero"
-#line 7791 "main.c"
+#line 7790 "main.c"
     h_0opt_e201354_release(&h53_own53);
 #line 136 "examples/ledger/main.hero"
-#line 7794 "main.c"
+#line 7793 "main.c"
     h_0opt_a8ea2_release(&h54_own54);
 #line 136 "examples/ledger/main.hero"
-#line 7797 "main.c"
+#line 7796 "main.c"
     hero_str_decref(h55_own55);
 #line 136 "examples/ledger/main.hero"
-#line 7800 "main.c"
+#line 7799 "main.c"
     h_0opt_e201354_release(&h56_own56);
 #line 136 "examples/ledger/main.hero"
-#line 7803 "main.c"
+#line 7802 "main.c"
     hero_array_decref(h57_own57);
 #line 136 "examples/ledger/main.hero"
-#line 7806 "main.c"
+#line 7805 "main.c"
     h_0opt_a8ea2_release(&h58_own58);
 #line 136 "examples/ledger/main.hero"
-#line 7809 "main.c"
+#line 7808 "main.c"
     hero_array_decref(h59_own59);
 #line 136 "examples/ledger/main.hero"
-#line 7812 "main.c"
+#line 7811 "main.c"
     h_0opt_f87774a_release(&h60_own60);
 #line 136 "examples/ledger/main.hero"
-#line 7815 "main.c"
+#line 7814 "main.c"
     hero_str_decref(h61_own61);
 #line 136 "examples/ledger/main.hero"
-#line 7818 "main.c"
+#line 7817 "main.c"
     hero_str_decref(h62_own62);
 #line 136 "examples/ledger/main.hero"
-#line 7821 "main.c"
+#line 7820 "main.c"
     h_0opt_a8ea2_release(&h63_own63);
 #line 136 "examples/ledger/main.hero"
-#line 7824 "main.c"
+#line 7823 "main.c"
     h_0opt_a8ea2_release(&h64_own64);
     return t181;
 bb30:
@@ -7842,12 +7841,12 @@ bb30:
 bb31:
 #line 137 "examples/ledger/main.hero"
     goto bb27;
-#line 7846 "main.c"
+#line 7845 "main.c"
 }
 
 #line 145 "examples/ledger/main.hero"
 h_0opt_5036d564 h_main_queried_balances(h_dbsqlite_Db h0_db) {
-#line 7851 "main.c"
+#line 7850 "main.c"
     h_0opt_791f9719 h1_f0 = {0};
     h_dbsqlite_Statement h2_statement;
     HeroArrayHeader * h3_out = {0};
@@ -8026,15 +8025,15 @@ bb0:
     t107 = h16_own16;
 #line 146 "examples/ledger/main.hero"
     h16_own16 = t3;
-#line 8030 "main.c"
+#line 8029 "main.c"
     h_0opt_791f9719_release(&t107);
 #line 146 "examples/ledger/main.hero"
     t108 = h1_f0;
-#line 8034 "main.c"
+#line 8033 "main.c"
     h_0opt_791f9719_retain(&t3);
 #line 146 "examples/ledger/main.hero"
     h1_f0 = t3;
-#line 8038 "main.c"
+#line 8037 "main.c"
     h_0opt_791f9719_release(&t108);
 #line 146 "examples/ledger/main.hero"
     t4 = h1_f0;
@@ -8060,15 +8059,15 @@ bb1:
     t109 = h17_own17;
 #line 147 "examples/ledger/main.hero"
     h17_own17 = t13;
-#line 8064 "main.c"
+#line 8063 "main.c"
     hero_array_decref(t109);
 #line 147 "examples/ledger/main.hero"
     t110 = h3_out;
-#line 8068 "main.c"
+#line 8067 "main.c"
     hero_array_incref(t13);
 #line 147 "examples/ledger/main.hero"
     h3_out = t13;
-#line 8072 "main.c"
+#line 8071 "main.c"
     hero_array_decref(t110);
 #line 148 "examples/ledger/main.hero"
     t14 = true;
@@ -8082,7 +8081,7 @@ bb2:
     t8 = h1_f0;
 #line 146 "examples/ledger/main.hero"
     t9 = t8.as.err;
-#line 8086 "main.c"
+#line 8085 "main.c"
     hero_failure_retain(&t9);
 #line 146 "examples/ledger/main.hero"
     t10 = (h_0opt_5036d564){.tag = INT64_C(1), .as.err = t9};
@@ -8090,97 +8089,97 @@ bb2:
     t111 = h18_own18;
 #line 146 "examples/ledger/main.hero"
     h18_own18 = t10;
-#line 8094 "main.c"
+#line 8093 "main.c"
     h_0opt_5036d564_release(&t111);
 #line 146 "examples/ledger/main.hero"
-#line 8097 "main.c"
+#line 8096 "main.c"
     h_0opt_5036d564_retain(&t10);
 #line 146 "examples/ledger/main.hero"
-#line 8100 "main.c"
+#line 8099 "main.c"
     h_0opt_791f9719_release(&h1_f0);
 #line 146 "examples/ledger/main.hero"
-#line 8103 "main.c"
+#line 8102 "main.c"
     hero_array_decref(h3_out);
 #line 146 "examples/ledger/main.hero"
-#line 8106 "main.c"
+#line 8105 "main.c"
     h_0opt_70720e79_release(&h5_f1);
 #line 146 "examples/ledger/main.hero"
-#line 8109 "main.c"
+#line 8108 "main.c"
     h_0opt_e405689_release(&h7_f2);
 #line 146 "examples/ledger/main.hero"
-#line 8112 "main.c"
+#line 8111 "main.c"
     h_0opt_f87774a_release(&h8_f3);
 #line 146 "examples/ledger/main.hero"
-#line 8115 "main.c"
+#line 8114 "main.c"
     hero_str_decref(h9_name);
 #line 146 "examples/ledger/main.hero"
-#line 8118 "main.c"
+#line 8117 "main.c"
     h_0opt_e405689_release(&h10_f4);
 #line 146 "examples/ledger/main.hero"
-#line 8121 "main.c"
+#line 8120 "main.c"
     h_0opt_e201354_release(&h11_f5);
 #line 146 "examples/ledger/main.hero"
-#line 8124 "main.c"
+#line 8123 "main.c"
     h_0opt_e405689_release(&h13_f6);
 #line 146 "examples/ledger/main.hero"
-#line 8127 "main.c"
+#line 8126 "main.c"
     h_0opt_e201354_release(&h14_f7);
 #line 146 "examples/ledger/main.hero"
-#line 8130 "main.c"
+#line 8129 "main.c"
     h_0opt_791f9719_release(&h16_own16);
 #line 146 "examples/ledger/main.hero"
-#line 8133 "main.c"
+#line 8132 "main.c"
     hero_array_decref(h17_own17);
 #line 146 "examples/ledger/main.hero"
-#line 8136 "main.c"
+#line 8135 "main.c"
     h_0opt_5036d564_release(&h18_own18);
 #line 146 "examples/ledger/main.hero"
-#line 8139 "main.c"
+#line 8138 "main.c"
     h_0opt_70720e79_release(&h19_own19);
 #line 146 "examples/ledger/main.hero"
-#line 8142 "main.c"
+#line 8141 "main.c"
     h_0opt_5036d564_release(&h20_own20);
 #line 146 "examples/ledger/main.hero"
-#line 8145 "main.c"
+#line 8144 "main.c"
     h_0opt_5036d564_release(&h21_own21);
 #line 146 "examples/ledger/main.hero"
-#line 8148 "main.c"
+#line 8147 "main.c"
     h_0opt_e405689_release(&h22_own22);
 #line 146 "examples/ledger/main.hero"
-#line 8151 "main.c"
+#line 8150 "main.c"
     h_0opt_f87774a_release(&h23_own23);
 #line 146 "examples/ledger/main.hero"
-#line 8154 "main.c"
+#line 8153 "main.c"
     h_0opt_5036d564_release(&h24_own24);
 #line 146 "examples/ledger/main.hero"
-#line 8157 "main.c"
+#line 8156 "main.c"
     h_0opt_e405689_release(&h25_own25);
 #line 146 "examples/ledger/main.hero"
-#line 8160 "main.c"
+#line 8159 "main.c"
     h_0opt_5036d564_release(&h26_own26);
 #line 146 "examples/ledger/main.hero"
-#line 8163 "main.c"
+#line 8162 "main.c"
     h_0opt_e201354_release(&h27_own27);
 #line 146 "examples/ledger/main.hero"
-#line 8166 "main.c"
+#line 8165 "main.c"
     h_0opt_5036d564_release(&h28_own28);
 #line 146 "examples/ledger/main.hero"
-#line 8169 "main.c"
+#line 8168 "main.c"
     h_0opt_e405689_release(&h29_own29);
 #line 146 "examples/ledger/main.hero"
-#line 8172 "main.c"
+#line 8171 "main.c"
     h_0opt_5036d564_release(&h30_own30);
 #line 146 "examples/ledger/main.hero"
-#line 8175 "main.c"
+#line 8174 "main.c"
     h_0opt_e201354_release(&h31_own31);
 #line 146 "examples/ledger/main.hero"
-#line 8178 "main.c"
+#line 8177 "main.c"
     h_0opt_5036d564_release(&h32_own32);
 #line 146 "examples/ledger/main.hero"
-#line 8181 "main.c"
+#line 8180 "main.c"
     h_bookentry_Balance_release(&h33_own33);
 #line 146 "examples/ledger/main.hero"
-#line 8184 "main.c"
+#line 8183 "main.c"
     h_0opt_5036d564_release(&h34_own34);
     return t10;
 bb3:
@@ -8198,15 +8197,15 @@ bb4:
     t112 = h19_own19;
 #line 151 "examples/ledger/main.hero"
     h19_own19 = t17;
-#line 8202 "main.c"
+#line 8201 "main.c"
     h_0opt_70720e79_release(&t112);
 #line 151 "examples/ledger/main.hero"
     t113 = h5_f1;
-#line 8206 "main.c"
+#line 8205 "main.c"
     h_0opt_70720e79_retain(&t17);
 #line 151 "examples/ledger/main.hero"
     h5_f1 = t17;
-#line 8210 "main.c"
+#line 8209 "main.c"
     h_0opt_70720e79_release(&t113);
 #line 151 "examples/ledger/main.hero"
     t18 = h5_f1;
@@ -8226,7 +8225,7 @@ bb5:
     h_dbsqlite_finalized(t103);
 #line 160 "examples/ledger/main.hero"
     t105 = h3_out;
-#line 8230 "main.c"
+#line 8229 "main.c"
     hero_array_incref(t105);
 #line 160 "examples/ledger/main.hero"
     t106 = (h_0opt_5036d564){.tag = INT64_C(0), .as.ok = t105};
@@ -8234,97 +8233,97 @@ bb5:
     t114 = h20_own20;
 #line 160 "examples/ledger/main.hero"
     h20_own20 = t106;
-#line 8238 "main.c"
+#line 8237 "main.c"
     h_0opt_5036d564_release(&t114);
 #line 160 "examples/ledger/main.hero"
-#line 8241 "main.c"
+#line 8240 "main.c"
     h_0opt_5036d564_retain(&t106);
 #line 160 "examples/ledger/main.hero"
-#line 8244 "main.c"
+#line 8243 "main.c"
     h_0opt_791f9719_release(&h1_f0);
 #line 160 "examples/ledger/main.hero"
-#line 8247 "main.c"
+#line 8246 "main.c"
     hero_array_decref(h3_out);
 #line 160 "examples/ledger/main.hero"
-#line 8250 "main.c"
+#line 8249 "main.c"
     h_0opt_70720e79_release(&h5_f1);
 #line 160 "examples/ledger/main.hero"
-#line 8253 "main.c"
+#line 8252 "main.c"
     h_0opt_e405689_release(&h7_f2);
 #line 160 "examples/ledger/main.hero"
-#line 8256 "main.c"
+#line 8255 "main.c"
     h_0opt_f87774a_release(&h8_f3);
 #line 160 "examples/ledger/main.hero"
-#line 8259 "main.c"
+#line 8258 "main.c"
     hero_str_decref(h9_name);
 #line 160 "examples/ledger/main.hero"
-#line 8262 "main.c"
+#line 8261 "main.c"
     h_0opt_e405689_release(&h10_f4);
 #line 160 "examples/ledger/main.hero"
-#line 8265 "main.c"
+#line 8264 "main.c"
     h_0opt_e201354_release(&h11_f5);
 #line 160 "examples/ledger/main.hero"
-#line 8268 "main.c"
+#line 8267 "main.c"
     h_0opt_e405689_release(&h13_f6);
 #line 160 "examples/ledger/main.hero"
-#line 8271 "main.c"
+#line 8270 "main.c"
     h_0opt_e201354_release(&h14_f7);
 #line 160 "examples/ledger/main.hero"
-#line 8274 "main.c"
+#line 8273 "main.c"
     h_0opt_791f9719_release(&h16_own16);
 #line 160 "examples/ledger/main.hero"
-#line 8277 "main.c"
+#line 8276 "main.c"
     hero_array_decref(h17_own17);
 #line 160 "examples/ledger/main.hero"
-#line 8280 "main.c"
+#line 8279 "main.c"
     h_0opt_5036d564_release(&h18_own18);
 #line 160 "examples/ledger/main.hero"
-#line 8283 "main.c"
+#line 8282 "main.c"
     h_0opt_70720e79_release(&h19_own19);
 #line 160 "examples/ledger/main.hero"
-#line 8286 "main.c"
+#line 8285 "main.c"
     h_0opt_5036d564_release(&h20_own20);
 #line 160 "examples/ledger/main.hero"
-#line 8289 "main.c"
+#line 8288 "main.c"
     h_0opt_5036d564_release(&h21_own21);
 #line 160 "examples/ledger/main.hero"
-#line 8292 "main.c"
+#line 8291 "main.c"
     h_0opt_e405689_release(&h22_own22);
 #line 160 "examples/ledger/main.hero"
-#line 8295 "main.c"
+#line 8294 "main.c"
     h_0opt_f87774a_release(&h23_own23);
 #line 160 "examples/ledger/main.hero"
-#line 8298 "main.c"
+#line 8297 "main.c"
     h_0opt_5036d564_release(&h24_own24);
 #line 160 "examples/ledger/main.hero"
-#line 8301 "main.c"
+#line 8300 "main.c"
     h_0opt_e405689_release(&h25_own25);
 #line 160 "examples/ledger/main.hero"
-#line 8304 "main.c"
+#line 8303 "main.c"
     h_0opt_5036d564_release(&h26_own26);
 #line 160 "examples/ledger/main.hero"
-#line 8307 "main.c"
+#line 8306 "main.c"
     h_0opt_e201354_release(&h27_own27);
 #line 160 "examples/ledger/main.hero"
-#line 8310 "main.c"
+#line 8309 "main.c"
     h_0opt_5036d564_release(&h28_own28);
 #line 160 "examples/ledger/main.hero"
-#line 8313 "main.c"
+#line 8312 "main.c"
     h_0opt_e405689_release(&h29_own29);
 #line 160 "examples/ledger/main.hero"
-#line 8316 "main.c"
+#line 8315 "main.c"
     h_0opt_5036d564_release(&h30_own30);
 #line 160 "examples/ledger/main.hero"
-#line 8319 "main.c"
+#line 8318 "main.c"
     h_0opt_e201354_release(&h31_own31);
 #line 160 "examples/ledger/main.hero"
-#line 8322 "main.c"
+#line 8321 "main.c"
     h_0opt_5036d564_release(&h32_own32);
 #line 160 "examples/ledger/main.hero"
-#line 8325 "main.c"
+#line 8324 "main.c"
     h_bookentry_Balance_release(&h33_own33);
 #line 160 "examples/ledger/main.hero"
-#line 8328 "main.c"
+#line 8327 "main.c"
     h_0opt_5036d564_release(&h34_own34);
     return t106;
 bb6:
@@ -8354,7 +8353,7 @@ bb7:
     t22 = h5_f1;
 #line 151 "examples/ledger/main.hero"
     t23 = t22.as.err;
-#line 8358 "main.c"
+#line 8357 "main.c"
     hero_failure_retain(&t23);
 #line 151 "examples/ledger/main.hero"
     t24 = (h_0opt_5036d564){.tag = INT64_C(1), .as.err = t23};
@@ -8362,97 +8361,97 @@ bb7:
     t115 = h21_own21;
 #line 151 "examples/ledger/main.hero"
     h21_own21 = t24;
-#line 8366 "main.c"
+#line 8365 "main.c"
     h_0opt_5036d564_release(&t115);
 #line 151 "examples/ledger/main.hero"
-#line 8369 "main.c"
+#line 8368 "main.c"
     h_0opt_5036d564_retain(&t24);
 #line 151 "examples/ledger/main.hero"
-#line 8372 "main.c"
+#line 8371 "main.c"
     h_0opt_791f9719_release(&h1_f0);
 #line 151 "examples/ledger/main.hero"
-#line 8375 "main.c"
+#line 8374 "main.c"
     hero_array_decref(h3_out);
 #line 151 "examples/ledger/main.hero"
-#line 8378 "main.c"
+#line 8377 "main.c"
     h_0opt_70720e79_release(&h5_f1);
 #line 151 "examples/ledger/main.hero"
-#line 8381 "main.c"
+#line 8380 "main.c"
     h_0opt_e405689_release(&h7_f2);
 #line 151 "examples/ledger/main.hero"
-#line 8384 "main.c"
+#line 8383 "main.c"
     h_0opt_f87774a_release(&h8_f3);
 #line 151 "examples/ledger/main.hero"
-#line 8387 "main.c"
+#line 8386 "main.c"
     hero_str_decref(h9_name);
 #line 151 "examples/ledger/main.hero"
-#line 8390 "main.c"
+#line 8389 "main.c"
     h_0opt_e405689_release(&h10_f4);
 #line 151 "examples/ledger/main.hero"
-#line 8393 "main.c"
+#line 8392 "main.c"
     h_0opt_e201354_release(&h11_f5);
 #line 151 "examples/ledger/main.hero"
-#line 8396 "main.c"
+#line 8395 "main.c"
     h_0opt_e405689_release(&h13_f6);
 #line 151 "examples/ledger/main.hero"
-#line 8399 "main.c"
+#line 8398 "main.c"
     h_0opt_e201354_release(&h14_f7);
 #line 151 "examples/ledger/main.hero"
-#line 8402 "main.c"
+#line 8401 "main.c"
     h_0opt_791f9719_release(&h16_own16);
 #line 151 "examples/ledger/main.hero"
-#line 8405 "main.c"
+#line 8404 "main.c"
     hero_array_decref(h17_own17);
 #line 151 "examples/ledger/main.hero"
-#line 8408 "main.c"
+#line 8407 "main.c"
     h_0opt_5036d564_release(&h18_own18);
 #line 151 "examples/ledger/main.hero"
-#line 8411 "main.c"
+#line 8410 "main.c"
     h_0opt_70720e79_release(&h19_own19);
 #line 151 "examples/ledger/main.hero"
-#line 8414 "main.c"
+#line 8413 "main.c"
     h_0opt_5036d564_release(&h20_own20);
 #line 151 "examples/ledger/main.hero"
-#line 8417 "main.c"
+#line 8416 "main.c"
     h_0opt_5036d564_release(&h21_own21);
 #line 151 "examples/ledger/main.hero"
-#line 8420 "main.c"
+#line 8419 "main.c"
     h_0opt_e405689_release(&h22_own22);
 #line 151 "examples/ledger/main.hero"
-#line 8423 "main.c"
+#line 8422 "main.c"
     h_0opt_f87774a_release(&h23_own23);
 #line 151 "examples/ledger/main.hero"
-#line 8426 "main.c"
+#line 8425 "main.c"
     h_0opt_5036d564_release(&h24_own24);
 #line 151 "examples/ledger/main.hero"
-#line 8429 "main.c"
+#line 8428 "main.c"
     h_0opt_e405689_release(&h25_own25);
 #line 151 "examples/ledger/main.hero"
-#line 8432 "main.c"
+#line 8431 "main.c"
     h_0opt_5036d564_release(&h26_own26);
 #line 151 "examples/ledger/main.hero"
-#line 8435 "main.c"
+#line 8434 "main.c"
     h_0opt_e201354_release(&h27_own27);
 #line 151 "examples/ledger/main.hero"
-#line 8438 "main.c"
+#line 8437 "main.c"
     h_0opt_5036d564_release(&h28_own28);
 #line 151 "examples/ledger/main.hero"
-#line 8441 "main.c"
+#line 8440 "main.c"
     h_0opt_e405689_release(&h29_own29);
 #line 151 "examples/ledger/main.hero"
-#line 8444 "main.c"
+#line 8443 "main.c"
     h_0opt_5036d564_release(&h30_own30);
 #line 151 "examples/ledger/main.hero"
-#line 8447 "main.c"
+#line 8446 "main.c"
     h_0opt_e201354_release(&h31_own31);
 #line 151 "examples/ledger/main.hero"
-#line 8450 "main.c"
+#line 8449 "main.c"
     h_0opt_5036d564_release(&h32_own32);
 #line 151 "examples/ledger/main.hero"
-#line 8453 "main.c"
+#line 8452 "main.c"
     h_bookentry_Balance_release(&h33_own33);
 #line 151 "examples/ledger/main.hero"
-#line 8456 "main.c"
+#line 8455 "main.c"
     h_0opt_5036d564_release(&h34_own34);
     return t24;
 bb8:
@@ -8468,15 +8467,15 @@ bb9:
     t116 = h22_own22;
 #line 153 "examples/ledger/main.hero"
     h22_own22 = t31;
-#line 8472 "main.c"
+#line 8471 "main.c"
     h_0opt_e405689_release(&t116);
 #line 153 "examples/ledger/main.hero"
     t117 = h7_f2;
-#line 8476 "main.c"
+#line 8475 "main.c"
     h_0opt_e405689_retain(&t31);
 #line 153 "examples/ledger/main.hero"
     h7_f2 = t31;
-#line 8480 "main.c"
+#line 8479 "main.c"
     h_0opt_e405689_release(&t117);
 #line 153 "examples/ledger/main.hero"
     t32 = h7_f2;
@@ -8508,15 +8507,15 @@ bb11:
     t118 = h23_own23;
 #line 153 "examples/ledger/main.hero"
     h23_own23 = t41;
-#line 8512 "main.c"
+#line 8511 "main.c"
     h_0opt_f87774a_release(&t118);
 #line 153 "examples/ledger/main.hero"
     t119 = h8_f3;
-#line 8516 "main.c"
+#line 8515 "main.c"
     h_0opt_f87774a_retain(&t41);
 #line 153 "examples/ledger/main.hero"
     h8_f3 = t41;
-#line 8520 "main.c"
+#line 8519 "main.c"
     h_0opt_f87774a_release(&t119);
 #line 153 "examples/ledger/main.hero"
     t42 = h8_f3;
@@ -8534,7 +8533,7 @@ bb12:
     t36 = h7_f2;
 #line 153 "examples/ledger/main.hero"
     t37 = t36.as.err;
-#line 8538 "main.c"
+#line 8537 "main.c"
     hero_failure_retain(&t37);
 #line 153 "examples/ledger/main.hero"
     t38 = (h_0opt_5036d564){.tag = INT64_C(1), .as.err = t37};
@@ -8542,97 +8541,97 @@ bb12:
     t120 = h24_own24;
 #line 153 "examples/ledger/main.hero"
     h24_own24 = t38;
-#line 8546 "main.c"
+#line 8545 "main.c"
     h_0opt_5036d564_release(&t120);
 #line 153 "examples/ledger/main.hero"
-#line 8549 "main.c"
+#line 8548 "main.c"
     h_0opt_5036d564_retain(&t38);
 #line 153 "examples/ledger/main.hero"
-#line 8552 "main.c"
+#line 8551 "main.c"
     h_0opt_791f9719_release(&h1_f0);
 #line 153 "examples/ledger/main.hero"
-#line 8555 "main.c"
+#line 8554 "main.c"
     hero_array_decref(h3_out);
 #line 153 "examples/ledger/main.hero"
-#line 8558 "main.c"
+#line 8557 "main.c"
     h_0opt_70720e79_release(&h5_f1);
 #line 153 "examples/ledger/main.hero"
-#line 8561 "main.c"
+#line 8560 "main.c"
     h_0opt_e405689_release(&h7_f2);
 #line 153 "examples/ledger/main.hero"
-#line 8564 "main.c"
+#line 8563 "main.c"
     h_0opt_f87774a_release(&h8_f3);
 #line 153 "examples/ledger/main.hero"
-#line 8567 "main.c"
+#line 8566 "main.c"
     hero_str_decref(h9_name);
 #line 153 "examples/ledger/main.hero"
-#line 8570 "main.c"
+#line 8569 "main.c"
     h_0opt_e405689_release(&h10_f4);
 #line 153 "examples/ledger/main.hero"
-#line 8573 "main.c"
+#line 8572 "main.c"
     h_0opt_e201354_release(&h11_f5);
 #line 153 "examples/ledger/main.hero"
-#line 8576 "main.c"
+#line 8575 "main.c"
     h_0opt_e405689_release(&h13_f6);
 #line 153 "examples/ledger/main.hero"
-#line 8579 "main.c"
+#line 8578 "main.c"
     h_0opt_e201354_release(&h14_f7);
 #line 153 "examples/ledger/main.hero"
-#line 8582 "main.c"
+#line 8581 "main.c"
     h_0opt_791f9719_release(&h16_own16);
 #line 153 "examples/ledger/main.hero"
-#line 8585 "main.c"
+#line 8584 "main.c"
     hero_array_decref(h17_own17);
 #line 153 "examples/ledger/main.hero"
-#line 8588 "main.c"
+#line 8587 "main.c"
     h_0opt_5036d564_release(&h18_own18);
 #line 153 "examples/ledger/main.hero"
-#line 8591 "main.c"
+#line 8590 "main.c"
     h_0opt_70720e79_release(&h19_own19);
 #line 153 "examples/ledger/main.hero"
-#line 8594 "main.c"
+#line 8593 "main.c"
     h_0opt_5036d564_release(&h20_own20);
 #line 153 "examples/ledger/main.hero"
-#line 8597 "main.c"
+#line 8596 "main.c"
     h_0opt_5036d564_release(&h21_own21);
 #line 153 "examples/ledger/main.hero"
-#line 8600 "main.c"
+#line 8599 "main.c"
     h_0opt_e405689_release(&h22_own22);
 #line 153 "examples/ledger/main.hero"
-#line 8603 "main.c"
+#line 8602 "main.c"
     h_0opt_f87774a_release(&h23_own23);
 #line 153 "examples/ledger/main.hero"
-#line 8606 "main.c"
+#line 8605 "main.c"
     h_0opt_5036d564_release(&h24_own24);
 #line 153 "examples/ledger/main.hero"
-#line 8609 "main.c"
+#line 8608 "main.c"
     h_0opt_e405689_release(&h25_own25);
 #line 153 "examples/ledger/main.hero"
-#line 8612 "main.c"
+#line 8611 "main.c"
     h_0opt_5036d564_release(&h26_own26);
 #line 153 "examples/ledger/main.hero"
-#line 8615 "main.c"
+#line 8614 "main.c"
     h_0opt_e201354_release(&h27_own27);
 #line 153 "examples/ledger/main.hero"
-#line 8618 "main.c"
+#line 8617 "main.c"
     h_0opt_5036d564_release(&h28_own28);
 #line 153 "examples/ledger/main.hero"
-#line 8621 "main.c"
+#line 8620 "main.c"
     h_0opt_e405689_release(&h29_own29);
 #line 153 "examples/ledger/main.hero"
-#line 8624 "main.c"
+#line 8623 "main.c"
     h_0opt_5036d564_release(&h30_own30);
 #line 153 "examples/ledger/main.hero"
-#line 8627 "main.c"
+#line 8626 "main.c"
     h_0opt_e201354_release(&h31_own31);
 #line 153 "examples/ledger/main.hero"
-#line 8630 "main.c"
+#line 8629 "main.c"
     h_0opt_5036d564_release(&h32_own32);
 #line 153 "examples/ledger/main.hero"
-#line 8633 "main.c"
+#line 8632 "main.c"
     h_bookentry_Balance_release(&h33_own33);
 #line 153 "examples/ledger/main.hero"
-#line 8636 "main.c"
+#line 8635 "main.c"
     h_0opt_5036d564_release(&h34_own34);
     return t38;
 bb13:
@@ -8642,11 +8641,11 @@ bb13:
     t50 = t49.as.ok;
 #line 153 "examples/ledger/main.hero"
     t121 = h9_name;
-#line 8646 "main.c"
+#line 8645 "main.c"
     hero_str_incref(t50);
 #line 153 "examples/ledger/main.hero"
     h9_name = t50;
-#line 8650 "main.c"
+#line 8649 "main.c"
     hero_str_decref(t121);
 #line 154 "examples/ledger/main.hero"
     t51 = h2_statement;
@@ -8658,15 +8657,15 @@ bb13:
     t122 = h25_own25;
 #line 154 "examples/ledger/main.hero"
     h25_own25 = t53;
-#line 8662 "main.c"
+#line 8661 "main.c"
     h_0opt_e405689_release(&t122);
 #line 154 "examples/ledger/main.hero"
     t123 = h10_f4;
-#line 8666 "main.c"
+#line 8665 "main.c"
     h_0opt_e405689_retain(&t53);
 #line 154 "examples/ledger/main.hero"
     h10_f4 = t53;
-#line 8670 "main.c"
+#line 8669 "main.c"
     h_0opt_e405689_release(&t123);
 #line 154 "examples/ledger/main.hero"
     t54 = h10_f4;
@@ -8684,7 +8683,7 @@ bb14:
     t46 = h8_f3;
 #line 153 "examples/ledger/main.hero"
     t47 = t46.as.err;
-#line 8688 "main.c"
+#line 8687 "main.c"
     hero_failure_retain(&t47);
 #line 153 "examples/ledger/main.hero"
     t48 = (h_0opt_5036d564){.tag = INT64_C(1), .as.err = t47};
@@ -8692,97 +8691,97 @@ bb14:
     t124 = h26_own26;
 #line 153 "examples/ledger/main.hero"
     h26_own26 = t48;
-#line 8696 "main.c"
+#line 8695 "main.c"
     h_0opt_5036d564_release(&t124);
 #line 153 "examples/ledger/main.hero"
-#line 8699 "main.c"
+#line 8698 "main.c"
     h_0opt_5036d564_retain(&t48);
 #line 153 "examples/ledger/main.hero"
-#line 8702 "main.c"
+#line 8701 "main.c"
     h_0opt_791f9719_release(&h1_f0);
 #line 153 "examples/ledger/main.hero"
-#line 8705 "main.c"
+#line 8704 "main.c"
     hero_array_decref(h3_out);
 #line 153 "examples/ledger/main.hero"
-#line 8708 "main.c"
+#line 8707 "main.c"
     h_0opt_70720e79_release(&h5_f1);
 #line 153 "examples/ledger/main.hero"
-#line 8711 "main.c"
+#line 8710 "main.c"
     h_0opt_e405689_release(&h7_f2);
 #line 153 "examples/ledger/main.hero"
-#line 8714 "main.c"
+#line 8713 "main.c"
     h_0opt_f87774a_release(&h8_f3);
 #line 153 "examples/ledger/main.hero"
-#line 8717 "main.c"
+#line 8716 "main.c"
     hero_str_decref(h9_name);
 #line 153 "examples/ledger/main.hero"
-#line 8720 "main.c"
+#line 8719 "main.c"
     h_0opt_e405689_release(&h10_f4);
 #line 153 "examples/ledger/main.hero"
-#line 8723 "main.c"
+#line 8722 "main.c"
     h_0opt_e201354_release(&h11_f5);
 #line 153 "examples/ledger/main.hero"
-#line 8726 "main.c"
+#line 8725 "main.c"
     h_0opt_e405689_release(&h13_f6);
 #line 153 "examples/ledger/main.hero"
-#line 8729 "main.c"
+#line 8728 "main.c"
     h_0opt_e201354_release(&h14_f7);
 #line 153 "examples/ledger/main.hero"
-#line 8732 "main.c"
+#line 8731 "main.c"
     h_0opt_791f9719_release(&h16_own16);
 #line 153 "examples/ledger/main.hero"
-#line 8735 "main.c"
+#line 8734 "main.c"
     hero_array_decref(h17_own17);
 #line 153 "examples/ledger/main.hero"
-#line 8738 "main.c"
+#line 8737 "main.c"
     h_0opt_5036d564_release(&h18_own18);
 #line 153 "examples/ledger/main.hero"
-#line 8741 "main.c"
+#line 8740 "main.c"
     h_0opt_70720e79_release(&h19_own19);
 #line 153 "examples/ledger/main.hero"
-#line 8744 "main.c"
+#line 8743 "main.c"
     h_0opt_5036d564_release(&h20_own20);
 #line 153 "examples/ledger/main.hero"
-#line 8747 "main.c"
+#line 8746 "main.c"
     h_0opt_5036d564_release(&h21_own21);
 #line 153 "examples/ledger/main.hero"
-#line 8750 "main.c"
+#line 8749 "main.c"
     h_0opt_e405689_release(&h22_own22);
 #line 153 "examples/ledger/main.hero"
-#line 8753 "main.c"
+#line 8752 "main.c"
     h_0opt_f87774a_release(&h23_own23);
 #line 153 "examples/ledger/main.hero"
-#line 8756 "main.c"
+#line 8755 "main.c"
     h_0opt_5036d564_release(&h24_own24);
 #line 153 "examples/ledger/main.hero"
-#line 8759 "main.c"
+#line 8758 "main.c"
     h_0opt_e405689_release(&h25_own25);
 #line 153 "examples/ledger/main.hero"
-#line 8762 "main.c"
+#line 8761 "main.c"
     h_0opt_5036d564_release(&h26_own26);
 #line 153 "examples/ledger/main.hero"
-#line 8765 "main.c"
+#line 8764 "main.c"
     h_0opt_e201354_release(&h27_own27);
 #line 153 "examples/ledger/main.hero"
-#line 8768 "main.c"
+#line 8767 "main.c"
     h_0opt_5036d564_release(&h28_own28);
 #line 153 "examples/ledger/main.hero"
-#line 8771 "main.c"
+#line 8770 "main.c"
     h_0opt_e405689_release(&h29_own29);
 #line 153 "examples/ledger/main.hero"
-#line 8774 "main.c"
+#line 8773 "main.c"
     h_0opt_5036d564_release(&h30_own30);
 #line 153 "examples/ledger/main.hero"
-#line 8777 "main.c"
+#line 8776 "main.c"
     h_0opt_e201354_release(&h31_own31);
 #line 153 "examples/ledger/main.hero"
-#line 8780 "main.c"
+#line 8779 "main.c"
     h_0opt_5036d564_release(&h32_own32);
 #line 153 "examples/ledger/main.hero"
-#line 8783 "main.c"
+#line 8782 "main.c"
     h_bookentry_Balance_release(&h33_own33);
 #line 153 "examples/ledger/main.hero"
-#line 8786 "main.c"
+#line 8785 "main.c"
     h_0opt_5036d564_release(&h34_own34);
     return t48;
 bb15:
@@ -8796,15 +8795,15 @@ bb15:
     t125 = h27_own27;
 #line 154 "examples/ledger/main.hero"
     h27_own27 = t63;
-#line 8800 "main.c"
+#line 8799 "main.c"
     h_0opt_e201354_release(&t125);
 #line 154 "examples/ledger/main.hero"
     t126 = h11_f5;
-#line 8804 "main.c"
+#line 8803 "main.c"
     h_0opt_e201354_retain(&t63);
 #line 154 "examples/ledger/main.hero"
     h11_f5 = t63;
-#line 8808 "main.c"
+#line 8807 "main.c"
     h_0opt_e201354_release(&t126);
 #line 154 "examples/ledger/main.hero"
     t64 = h11_f5;
@@ -8822,7 +8821,7 @@ bb16:
     t58 = h10_f4;
 #line 154 "examples/ledger/main.hero"
     t59 = t58.as.err;
-#line 8826 "main.c"
+#line 8825 "main.c"
     hero_failure_retain(&t59);
 #line 154 "examples/ledger/main.hero"
     t60 = (h_0opt_5036d564){.tag = INT64_C(1), .as.err = t59};
@@ -8830,97 +8829,97 @@ bb16:
     t127 = h28_own28;
 #line 154 "examples/ledger/main.hero"
     h28_own28 = t60;
-#line 8834 "main.c"
+#line 8833 "main.c"
     h_0opt_5036d564_release(&t127);
 #line 154 "examples/ledger/main.hero"
-#line 8837 "main.c"
+#line 8836 "main.c"
     h_0opt_5036d564_retain(&t60);
 #line 154 "examples/ledger/main.hero"
-#line 8840 "main.c"
+#line 8839 "main.c"
     h_0opt_791f9719_release(&h1_f0);
 #line 154 "examples/ledger/main.hero"
-#line 8843 "main.c"
+#line 8842 "main.c"
     hero_array_decref(h3_out);
 #line 154 "examples/ledger/main.hero"
-#line 8846 "main.c"
+#line 8845 "main.c"
     h_0opt_70720e79_release(&h5_f1);
 #line 154 "examples/ledger/main.hero"
-#line 8849 "main.c"
+#line 8848 "main.c"
     h_0opt_e405689_release(&h7_f2);
 #line 154 "examples/ledger/main.hero"
-#line 8852 "main.c"
+#line 8851 "main.c"
     h_0opt_f87774a_release(&h8_f3);
 #line 154 "examples/ledger/main.hero"
-#line 8855 "main.c"
+#line 8854 "main.c"
     hero_str_decref(h9_name);
 #line 154 "examples/ledger/main.hero"
-#line 8858 "main.c"
+#line 8857 "main.c"
     h_0opt_e405689_release(&h10_f4);
 #line 154 "examples/ledger/main.hero"
-#line 8861 "main.c"
+#line 8860 "main.c"
     h_0opt_e201354_release(&h11_f5);
 #line 154 "examples/ledger/main.hero"
-#line 8864 "main.c"
+#line 8863 "main.c"
     h_0opt_e405689_release(&h13_f6);
 #line 154 "examples/ledger/main.hero"
-#line 8867 "main.c"
+#line 8866 "main.c"
     h_0opt_e201354_release(&h14_f7);
 #line 154 "examples/ledger/main.hero"
-#line 8870 "main.c"
+#line 8869 "main.c"
     h_0opt_791f9719_release(&h16_own16);
 #line 154 "examples/ledger/main.hero"
-#line 8873 "main.c"
+#line 8872 "main.c"
     hero_array_decref(h17_own17);
 #line 154 "examples/ledger/main.hero"
-#line 8876 "main.c"
+#line 8875 "main.c"
     h_0opt_5036d564_release(&h18_own18);
 #line 154 "examples/ledger/main.hero"
-#line 8879 "main.c"
+#line 8878 "main.c"
     h_0opt_70720e79_release(&h19_own19);
 #line 154 "examples/ledger/main.hero"
-#line 8882 "main.c"
+#line 8881 "main.c"
     h_0opt_5036d564_release(&h20_own20);
 #line 154 "examples/ledger/main.hero"
-#line 8885 "main.c"
+#line 8884 "main.c"
     h_0opt_5036d564_release(&h21_own21);
 #line 154 "examples/ledger/main.hero"
-#line 8888 "main.c"
+#line 8887 "main.c"
     h_0opt_e405689_release(&h22_own22);
 #line 154 "examples/ledger/main.hero"
-#line 8891 "main.c"
+#line 8890 "main.c"
     h_0opt_f87774a_release(&h23_own23);
 #line 154 "examples/ledger/main.hero"
-#line 8894 "main.c"
+#line 8893 "main.c"
     h_0opt_5036d564_release(&h24_own24);
 #line 154 "examples/ledger/main.hero"
-#line 8897 "main.c"
+#line 8896 "main.c"
     h_0opt_e405689_release(&h25_own25);
 #line 154 "examples/ledger/main.hero"
-#line 8900 "main.c"
+#line 8899 "main.c"
     h_0opt_5036d564_release(&h26_own26);
 #line 154 "examples/ledger/main.hero"
-#line 8903 "main.c"
+#line 8902 "main.c"
     h_0opt_e201354_release(&h27_own27);
 #line 154 "examples/ledger/main.hero"
-#line 8906 "main.c"
+#line 8905 "main.c"
     h_0opt_5036d564_release(&h28_own28);
 #line 154 "examples/ledger/main.hero"
-#line 8909 "main.c"
+#line 8908 "main.c"
     h_0opt_e405689_release(&h29_own29);
 #line 154 "examples/ledger/main.hero"
-#line 8912 "main.c"
+#line 8911 "main.c"
     h_0opt_5036d564_release(&h30_own30);
 #line 154 "examples/ledger/main.hero"
-#line 8915 "main.c"
+#line 8914 "main.c"
     h_0opt_e201354_release(&h31_own31);
 #line 154 "examples/ledger/main.hero"
-#line 8918 "main.c"
+#line 8917 "main.c"
     h_0opt_5036d564_release(&h32_own32);
 #line 154 "examples/ledger/main.hero"
-#line 8921 "main.c"
+#line 8920 "main.c"
     h_bookentry_Balance_release(&h33_own33);
 #line 154 "examples/ledger/main.hero"
-#line 8924 "main.c"
+#line 8923 "main.c"
     h_0opt_5036d564_release(&h34_own34);
     return t60;
 bb17:
@@ -8940,15 +8939,15 @@ bb17:
     t128 = h29_own29;
 #line 155 "examples/ledger/main.hero"
     h29_own29 = t75;
-#line 8944 "main.c"
+#line 8943 "main.c"
     h_0opt_e405689_release(&t128);
 #line 155 "examples/ledger/main.hero"
     t129 = h13_f6;
-#line 8948 "main.c"
+#line 8947 "main.c"
     h_0opt_e405689_retain(&t75);
 #line 155 "examples/ledger/main.hero"
     h13_f6 = t75;
-#line 8952 "main.c"
+#line 8951 "main.c"
     h_0opt_e405689_release(&t129);
 #line 155 "examples/ledger/main.hero"
     t76 = h13_f6;
@@ -8966,7 +8965,7 @@ bb18:
     t68 = h11_f5;
 #line 154 "examples/ledger/main.hero"
     t69 = t68.as.err;
-#line 8970 "main.c"
+#line 8969 "main.c"
     hero_failure_retain(&t69);
 #line 154 "examples/ledger/main.hero"
     t70 = (h_0opt_5036d564){.tag = INT64_C(1), .as.err = t69};
@@ -8974,97 +8973,97 @@ bb18:
     t130 = h30_own30;
 #line 154 "examples/ledger/main.hero"
     h30_own30 = t70;
-#line 8978 "main.c"
+#line 8977 "main.c"
     h_0opt_5036d564_release(&t130);
 #line 154 "examples/ledger/main.hero"
-#line 8981 "main.c"
+#line 8980 "main.c"
     h_0opt_5036d564_retain(&t70);
 #line 154 "examples/ledger/main.hero"
-#line 8984 "main.c"
+#line 8983 "main.c"
     h_0opt_791f9719_release(&h1_f0);
 #line 154 "examples/ledger/main.hero"
-#line 8987 "main.c"
+#line 8986 "main.c"
     hero_array_decref(h3_out);
 #line 154 "examples/ledger/main.hero"
-#line 8990 "main.c"
+#line 8989 "main.c"
     h_0opt_70720e79_release(&h5_f1);
 #line 154 "examples/ledger/main.hero"
-#line 8993 "main.c"
+#line 8992 "main.c"
     h_0opt_e405689_release(&h7_f2);
 #line 154 "examples/ledger/main.hero"
-#line 8996 "main.c"
+#line 8995 "main.c"
     h_0opt_f87774a_release(&h8_f3);
 #line 154 "examples/ledger/main.hero"
-#line 8999 "main.c"
+#line 8998 "main.c"
     hero_str_decref(h9_name);
 #line 154 "examples/ledger/main.hero"
-#line 9002 "main.c"
+#line 9001 "main.c"
     h_0opt_e405689_release(&h10_f4);
 #line 154 "examples/ledger/main.hero"
-#line 9005 "main.c"
+#line 9004 "main.c"
     h_0opt_e201354_release(&h11_f5);
 #line 154 "examples/ledger/main.hero"
-#line 9008 "main.c"
+#line 9007 "main.c"
     h_0opt_e405689_release(&h13_f6);
 #line 154 "examples/ledger/main.hero"
-#line 9011 "main.c"
+#line 9010 "main.c"
     h_0opt_e201354_release(&h14_f7);
 #line 154 "examples/ledger/main.hero"
-#line 9014 "main.c"
+#line 9013 "main.c"
     h_0opt_791f9719_release(&h16_own16);
 #line 154 "examples/ledger/main.hero"
-#line 9017 "main.c"
+#line 9016 "main.c"
     hero_array_decref(h17_own17);
 #line 154 "examples/ledger/main.hero"
-#line 9020 "main.c"
+#line 9019 "main.c"
     h_0opt_5036d564_release(&h18_own18);
 #line 154 "examples/ledger/main.hero"
-#line 9023 "main.c"
+#line 9022 "main.c"
     h_0opt_70720e79_release(&h19_own19);
 #line 154 "examples/ledger/main.hero"
-#line 9026 "main.c"
+#line 9025 "main.c"
     h_0opt_5036d564_release(&h20_own20);
 #line 154 "examples/ledger/main.hero"
-#line 9029 "main.c"
+#line 9028 "main.c"
     h_0opt_5036d564_release(&h21_own21);
 #line 154 "examples/ledger/main.hero"
-#line 9032 "main.c"
+#line 9031 "main.c"
     h_0opt_e405689_release(&h22_own22);
 #line 154 "examples/ledger/main.hero"
-#line 9035 "main.c"
+#line 9034 "main.c"
     h_0opt_f87774a_release(&h23_own23);
 #line 154 "examples/ledger/main.hero"
-#line 9038 "main.c"
+#line 9037 "main.c"
     h_0opt_5036d564_release(&h24_own24);
 #line 154 "examples/ledger/main.hero"
-#line 9041 "main.c"
+#line 9040 "main.c"
     h_0opt_e405689_release(&h25_own25);
 #line 154 "examples/ledger/main.hero"
-#line 9044 "main.c"
+#line 9043 "main.c"
     h_0opt_5036d564_release(&h26_own26);
 #line 154 "examples/ledger/main.hero"
-#line 9047 "main.c"
+#line 9046 "main.c"
     h_0opt_e201354_release(&h27_own27);
 #line 154 "examples/ledger/main.hero"
-#line 9050 "main.c"
+#line 9049 "main.c"
     h_0opt_5036d564_release(&h28_own28);
 #line 154 "examples/ledger/main.hero"
-#line 9053 "main.c"
+#line 9052 "main.c"
     h_0opt_e405689_release(&h29_own29);
 #line 154 "examples/ledger/main.hero"
-#line 9056 "main.c"
+#line 9055 "main.c"
     h_0opt_5036d564_release(&h30_own30);
 #line 154 "examples/ledger/main.hero"
-#line 9059 "main.c"
+#line 9058 "main.c"
     h_0opt_e201354_release(&h31_own31);
 #line 154 "examples/ledger/main.hero"
-#line 9062 "main.c"
+#line 9061 "main.c"
     h_0opt_5036d564_release(&h32_own32);
 #line 154 "examples/ledger/main.hero"
-#line 9065 "main.c"
+#line 9064 "main.c"
     h_bookentry_Balance_release(&h33_own33);
 #line 154 "examples/ledger/main.hero"
-#line 9068 "main.c"
+#line 9067 "main.c"
     h_0opt_5036d564_release(&h34_own34);
     return t70;
 bb19:
@@ -9078,15 +9077,15 @@ bb19:
     t131 = h31_own31;
 #line 155 "examples/ledger/main.hero"
     h31_own31 = t85;
-#line 9082 "main.c"
+#line 9081 "main.c"
     h_0opt_e201354_release(&t131);
 #line 155 "examples/ledger/main.hero"
     t132 = h14_f7;
-#line 9086 "main.c"
+#line 9085 "main.c"
     h_0opt_e201354_retain(&t85);
 #line 155 "examples/ledger/main.hero"
     h14_f7 = t85;
-#line 9090 "main.c"
+#line 9089 "main.c"
     h_0opt_e201354_release(&t132);
 #line 155 "examples/ledger/main.hero"
     t86 = h14_f7;
@@ -9104,7 +9103,7 @@ bb20:
     t80 = h13_f6;
 #line 155 "examples/ledger/main.hero"
     t81 = t80.as.err;
-#line 9108 "main.c"
+#line 9107 "main.c"
     hero_failure_retain(&t81);
 #line 155 "examples/ledger/main.hero"
     t82 = (h_0opt_5036d564){.tag = INT64_C(1), .as.err = t81};
@@ -9112,97 +9111,97 @@ bb20:
     t133 = h32_own32;
 #line 155 "examples/ledger/main.hero"
     h32_own32 = t82;
-#line 9116 "main.c"
+#line 9115 "main.c"
     h_0opt_5036d564_release(&t133);
 #line 155 "examples/ledger/main.hero"
-#line 9119 "main.c"
+#line 9118 "main.c"
     h_0opt_5036d564_retain(&t82);
 #line 155 "examples/ledger/main.hero"
-#line 9122 "main.c"
+#line 9121 "main.c"
     h_0opt_791f9719_release(&h1_f0);
 #line 155 "examples/ledger/main.hero"
-#line 9125 "main.c"
+#line 9124 "main.c"
     hero_array_decref(h3_out);
 #line 155 "examples/ledger/main.hero"
-#line 9128 "main.c"
+#line 9127 "main.c"
     h_0opt_70720e79_release(&h5_f1);
 #line 155 "examples/ledger/main.hero"
-#line 9131 "main.c"
+#line 9130 "main.c"
     h_0opt_e405689_release(&h7_f2);
 #line 155 "examples/ledger/main.hero"
-#line 9134 "main.c"
+#line 9133 "main.c"
     h_0opt_f87774a_release(&h8_f3);
 #line 155 "examples/ledger/main.hero"
-#line 9137 "main.c"
+#line 9136 "main.c"
     hero_str_decref(h9_name);
 #line 155 "examples/ledger/main.hero"
-#line 9140 "main.c"
+#line 9139 "main.c"
     h_0opt_e405689_release(&h10_f4);
 #line 155 "examples/ledger/main.hero"
-#line 9143 "main.c"
+#line 9142 "main.c"
     h_0opt_e201354_release(&h11_f5);
 #line 155 "examples/ledger/main.hero"
-#line 9146 "main.c"
+#line 9145 "main.c"
     h_0opt_e405689_release(&h13_f6);
 #line 155 "examples/ledger/main.hero"
-#line 9149 "main.c"
+#line 9148 "main.c"
     h_0opt_e201354_release(&h14_f7);
 #line 155 "examples/ledger/main.hero"
-#line 9152 "main.c"
+#line 9151 "main.c"
     h_0opt_791f9719_release(&h16_own16);
 #line 155 "examples/ledger/main.hero"
-#line 9155 "main.c"
+#line 9154 "main.c"
     hero_array_decref(h17_own17);
 #line 155 "examples/ledger/main.hero"
-#line 9158 "main.c"
+#line 9157 "main.c"
     h_0opt_5036d564_release(&h18_own18);
 #line 155 "examples/ledger/main.hero"
-#line 9161 "main.c"
+#line 9160 "main.c"
     h_0opt_70720e79_release(&h19_own19);
 #line 155 "examples/ledger/main.hero"
-#line 9164 "main.c"
+#line 9163 "main.c"
     h_0opt_5036d564_release(&h20_own20);
 #line 155 "examples/ledger/main.hero"
-#line 9167 "main.c"
+#line 9166 "main.c"
     h_0opt_5036d564_release(&h21_own21);
 #line 155 "examples/ledger/main.hero"
-#line 9170 "main.c"
+#line 9169 "main.c"
     h_0opt_e405689_release(&h22_own22);
 #line 155 "examples/ledger/main.hero"
-#line 9173 "main.c"
+#line 9172 "main.c"
     h_0opt_f87774a_release(&h23_own23);
 #line 155 "examples/ledger/main.hero"
-#line 9176 "main.c"
+#line 9175 "main.c"
     h_0opt_5036d564_release(&h24_own24);
 #line 155 "examples/ledger/main.hero"
-#line 9179 "main.c"
+#line 9178 "main.c"
     h_0opt_e405689_release(&h25_own25);
 #line 155 "examples/ledger/main.hero"
-#line 9182 "main.c"
+#line 9181 "main.c"
     h_0opt_5036d564_release(&h26_own26);
 #line 155 "examples/ledger/main.hero"
-#line 9185 "main.c"
+#line 9184 "main.c"
     h_0opt_e201354_release(&h27_own27);
 #line 155 "examples/ledger/main.hero"
-#line 9188 "main.c"
+#line 9187 "main.c"
     h_0opt_5036d564_release(&h28_own28);
 #line 155 "examples/ledger/main.hero"
-#line 9191 "main.c"
+#line 9190 "main.c"
     h_0opt_e405689_release(&h29_own29);
 #line 155 "examples/ledger/main.hero"
-#line 9194 "main.c"
+#line 9193 "main.c"
     h_0opt_5036d564_release(&h30_own30);
 #line 155 "examples/ledger/main.hero"
-#line 9197 "main.c"
+#line 9196 "main.c"
     h_0opt_e201354_release(&h31_own31);
 #line 155 "examples/ledger/main.hero"
-#line 9200 "main.c"
+#line 9199 "main.c"
     h_0opt_5036d564_release(&h32_own32);
 #line 155 "examples/ledger/main.hero"
-#line 9203 "main.c"
+#line 9202 "main.c"
     h_bookentry_Balance_release(&h33_own33);
 #line 155 "examples/ledger/main.hero"
-#line 9206 "main.c"
+#line 9205 "main.c"
     h_0opt_5036d564_release(&h34_own34);
     return t82;
 bb21:
@@ -9220,7 +9219,7 @@ bb21:
     t98 = h15_cents;
 #line 156 "examples/ledger/main.hero"
     t99 = (h_bookentry_Amount){.f_cents = t98};
-#line 9224 "main.c"
+#line 9223 "main.c"
     hero_str_incref(t96);
 #line 156 "examples/ledger/main.hero"
     t100 = (h_bookentry_Balance){.f_account = t96, .f_entries = t97, .f_total = t99};
@@ -9228,7 +9227,7 @@ bb21:
     t134 = h33_own33;
 #line 156 "examples/ledger/main.hero"
     h33_own33 = t100;
-#line 9232 "main.c"
+#line 9231 "main.c"
     h_bookentry_Balance_release(&t134);
 #line 156 "examples/ledger/main.hero"
     hero_array_push_owned(&h3_out, &t100);
@@ -9240,7 +9239,7 @@ bb22:
     t90 = h14_f7;
 #line 155 "examples/ledger/main.hero"
     t91 = t90.as.err;
-#line 9244 "main.c"
+#line 9243 "main.c"
     hero_failure_retain(&t91);
 #line 155 "examples/ledger/main.hero"
     t92 = (h_0opt_5036d564){.tag = INT64_C(1), .as.err = t91};
@@ -9248,104 +9247,104 @@ bb22:
     t135 = h34_own34;
 #line 155 "examples/ledger/main.hero"
     h34_own34 = t92;
-#line 9252 "main.c"
+#line 9251 "main.c"
     h_0opt_5036d564_release(&t135);
 #line 155 "examples/ledger/main.hero"
-#line 9255 "main.c"
+#line 9254 "main.c"
     h_0opt_5036d564_retain(&t92);
 #line 155 "examples/ledger/main.hero"
-#line 9258 "main.c"
+#line 9257 "main.c"
     h_0opt_791f9719_release(&h1_f0);
 #line 155 "examples/ledger/main.hero"
-#line 9261 "main.c"
+#line 9260 "main.c"
     hero_array_decref(h3_out);
 #line 155 "examples/ledger/main.hero"
-#line 9264 "main.c"
+#line 9263 "main.c"
     h_0opt_70720e79_release(&h5_f1);
 #line 155 "examples/ledger/main.hero"
-#line 9267 "main.c"
+#line 9266 "main.c"
     h_0opt_e405689_release(&h7_f2);
 #line 155 "examples/ledger/main.hero"
-#line 9270 "main.c"
+#line 9269 "main.c"
     h_0opt_f87774a_release(&h8_f3);
 #line 155 "examples/ledger/main.hero"
-#line 9273 "main.c"
+#line 9272 "main.c"
     hero_str_decref(h9_name);
 #line 155 "examples/ledger/main.hero"
-#line 9276 "main.c"
+#line 9275 "main.c"
     h_0opt_e405689_release(&h10_f4);
 #line 155 "examples/ledger/main.hero"
-#line 9279 "main.c"
+#line 9278 "main.c"
     h_0opt_e201354_release(&h11_f5);
 #line 155 "examples/ledger/main.hero"
-#line 9282 "main.c"
+#line 9281 "main.c"
     h_0opt_e405689_release(&h13_f6);
 #line 155 "examples/ledger/main.hero"
-#line 9285 "main.c"
+#line 9284 "main.c"
     h_0opt_e201354_release(&h14_f7);
 #line 155 "examples/ledger/main.hero"
-#line 9288 "main.c"
+#line 9287 "main.c"
     h_0opt_791f9719_release(&h16_own16);
 #line 155 "examples/ledger/main.hero"
-#line 9291 "main.c"
+#line 9290 "main.c"
     hero_array_decref(h17_own17);
 #line 155 "examples/ledger/main.hero"
-#line 9294 "main.c"
+#line 9293 "main.c"
     h_0opt_5036d564_release(&h18_own18);
 #line 155 "examples/ledger/main.hero"
-#line 9297 "main.c"
+#line 9296 "main.c"
     h_0opt_70720e79_release(&h19_own19);
 #line 155 "examples/ledger/main.hero"
-#line 9300 "main.c"
+#line 9299 "main.c"
     h_0opt_5036d564_release(&h20_own20);
 #line 155 "examples/ledger/main.hero"
-#line 9303 "main.c"
+#line 9302 "main.c"
     h_0opt_5036d564_release(&h21_own21);
 #line 155 "examples/ledger/main.hero"
-#line 9306 "main.c"
+#line 9305 "main.c"
     h_0opt_e405689_release(&h22_own22);
 #line 155 "examples/ledger/main.hero"
-#line 9309 "main.c"
+#line 9308 "main.c"
     h_0opt_f87774a_release(&h23_own23);
 #line 155 "examples/ledger/main.hero"
-#line 9312 "main.c"
+#line 9311 "main.c"
     h_0opt_5036d564_release(&h24_own24);
 #line 155 "examples/ledger/main.hero"
-#line 9315 "main.c"
+#line 9314 "main.c"
     h_0opt_e405689_release(&h25_own25);
 #line 155 "examples/ledger/main.hero"
-#line 9318 "main.c"
+#line 9317 "main.c"
     h_0opt_5036d564_release(&h26_own26);
 #line 155 "examples/ledger/main.hero"
-#line 9321 "main.c"
+#line 9320 "main.c"
     h_0opt_e201354_release(&h27_own27);
 #line 155 "examples/ledger/main.hero"
-#line 9324 "main.c"
+#line 9323 "main.c"
     h_0opt_5036d564_release(&h28_own28);
 #line 155 "examples/ledger/main.hero"
-#line 9327 "main.c"
+#line 9326 "main.c"
     h_0opt_e405689_release(&h29_own29);
 #line 155 "examples/ledger/main.hero"
-#line 9330 "main.c"
+#line 9329 "main.c"
     h_0opt_5036d564_release(&h30_own30);
 #line 155 "examples/ledger/main.hero"
-#line 9333 "main.c"
+#line 9332 "main.c"
     h_0opt_e201354_release(&h31_own31);
 #line 155 "examples/ledger/main.hero"
-#line 9336 "main.c"
+#line 9335 "main.c"
     h_0opt_5036d564_release(&h32_own32);
 #line 155 "examples/ledger/main.hero"
-#line 9339 "main.c"
+#line 9338 "main.c"
     h_bookentry_Balance_release(&h33_own33);
 #line 155 "examples/ledger/main.hero"
-#line 9342 "main.c"
+#line 9341 "main.c"
     h_0opt_5036d564_release(&h34_own34);
     return t92;
 }
 
 #line 164 "examples/ledger/main.hero"
 h_0opt_e201354 h_main_queried_int(h_dbsqlite_Db h0_db, HeroStr h1_sql) {
-#line 9349 "main.c"
+#line 9348 "main.c"
     h_0opt_791f9719 h2_f0 = {0};
     h_dbsqlite_Statement h3_statement;
     int64_t h4_value;
@@ -9453,15 +9452,15 @@ bb0:
     t63 = h10_own10;
 #line 165 "examples/ledger/main.hero"
     h10_own10 = t3;
-#line 9457 "main.c"
+#line 9456 "main.c"
     h_0opt_791f9719_release(&t63);
 #line 165 "examples/ledger/main.hero"
     t64 = h2_f0;
-#line 9461 "main.c"
+#line 9460 "main.c"
     h_0opt_791f9719_retain(&t3);
 #line 165 "examples/ledger/main.hero"
     h2_f0 = t3;
-#line 9465 "main.c"
+#line 9464 "main.c"
     h_0opt_791f9719_release(&t64);
 #line 165 "examples/ledger/main.hero"
     t4 = h2_f0;
@@ -9497,15 +9496,15 @@ bb1:
     t65 = h11_own11;
 #line 169 "examples/ledger/main.hero"
     h11_own11 = t16;
-#line 9501 "main.c"
+#line 9500 "main.c"
     h_0opt_70720e79_release(&t65);
 #line 169 "examples/ledger/main.hero"
     t66 = h6_f1;
-#line 9505 "main.c"
+#line 9504 "main.c"
     h_0opt_70720e79_retain(&t16);
 #line 169 "examples/ledger/main.hero"
     h6_f1 = t16;
-#line 9509 "main.c"
+#line 9508 "main.c"
     h_0opt_70720e79_release(&t66);
 #line 169 "examples/ledger/main.hero"
     t17 = h6_f1;
@@ -9523,7 +9522,7 @@ bb2:
     t8 = h2_f0;
 #line 165 "examples/ledger/main.hero"
     t9 = t8.as.err;
-#line 9527 "main.c"
+#line 9526 "main.c"
     hero_failure_retain(&t9);
 #line 165 "examples/ledger/main.hero"
     t10 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t9};
@@ -9531,55 +9530,55 @@ bb2:
     t67 = h12_own12;
 #line 165 "examples/ledger/main.hero"
     h12_own12 = t10;
-#line 9535 "main.c"
+#line 9534 "main.c"
     h_0opt_e201354_release(&t67);
 #line 165 "examples/ledger/main.hero"
-#line 9538 "main.c"
+#line 9537 "main.c"
     h_0opt_e201354_retain(&t10);
 #line 165 "examples/ledger/main.hero"
-#line 9541 "main.c"
+#line 9540 "main.c"
     h_0opt_791f9719_release(&h2_f0);
 #line 165 "examples/ledger/main.hero"
-#line 9544 "main.c"
+#line 9543 "main.c"
     h_0opt_70720e79_release(&h6_f1);
 #line 165 "examples/ledger/main.hero"
-#line 9547 "main.c"
+#line 9546 "main.c"
     h_0opt_e405689_release(&h8_f2);
 #line 165 "examples/ledger/main.hero"
-#line 9550 "main.c"
+#line 9549 "main.c"
     h_0opt_e201354_release(&h9_f3);
 #line 165 "examples/ledger/main.hero"
-#line 9553 "main.c"
+#line 9552 "main.c"
     h_0opt_791f9719_release(&h10_own10);
 #line 165 "examples/ledger/main.hero"
-#line 9556 "main.c"
+#line 9555 "main.c"
     h_0opt_70720e79_release(&h11_own11);
 #line 165 "examples/ledger/main.hero"
-#line 9559 "main.c"
+#line 9558 "main.c"
     h_0opt_e201354_release(&h12_own12);
 #line 165 "examples/ledger/main.hero"
-#line 9562 "main.c"
+#line 9561 "main.c"
     h_0opt_e201354_release(&h13_own13);
 #line 165 "examples/ledger/main.hero"
-#line 9565 "main.c"
+#line 9564 "main.c"
     h_0opt_e405689_release(&h14_own14);
 #line 165 "examples/ledger/main.hero"
-#line 9568 "main.c"
+#line 9567 "main.c"
     h_0opt_e201354_release(&h15_own15);
 #line 165 "examples/ledger/main.hero"
-#line 9571 "main.c"
+#line 9570 "main.c"
     h_0opt_e201354_release(&h16_own16);
 #line 165 "examples/ledger/main.hero"
-#line 9574 "main.c"
+#line 9573 "main.c"
     h_0opt_e201354_release(&h17_own17);
 #line 165 "examples/ledger/main.hero"
-#line 9577 "main.c"
+#line 9576 "main.c"
     h_0opt_e201354_release(&h18_own18);
 #line 165 "examples/ledger/main.hero"
-#line 9580 "main.c"
+#line 9579 "main.c"
     hero_str_decref(h19_own19);
 #line 165 "examples/ledger/main.hero"
-#line 9583 "main.c"
+#line 9582 "main.c"
     h_0opt_e201354_release(&h20_own20);
     return t10;
 bb3:
@@ -9609,7 +9608,7 @@ bb4:
     t21 = h6_f1;
 #line 169 "examples/ledger/main.hero"
     t22 = t21.as.err;
-#line 9613 "main.c"
+#line 9612 "main.c"
     hero_failure_retain(&t22);
 #line 169 "examples/ledger/main.hero"
     t23 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t22};
@@ -9617,55 +9616,55 @@ bb4:
     t68 = h13_own13;
 #line 169 "examples/ledger/main.hero"
     h13_own13 = t23;
-#line 9621 "main.c"
+#line 9620 "main.c"
     h_0opt_e201354_release(&t68);
 #line 169 "examples/ledger/main.hero"
-#line 9624 "main.c"
+#line 9623 "main.c"
     h_0opt_e201354_retain(&t23);
 #line 169 "examples/ledger/main.hero"
-#line 9627 "main.c"
+#line 9626 "main.c"
     h_0opt_791f9719_release(&h2_f0);
 #line 169 "examples/ledger/main.hero"
-#line 9630 "main.c"
+#line 9629 "main.c"
     h_0opt_70720e79_release(&h6_f1);
 #line 169 "examples/ledger/main.hero"
-#line 9633 "main.c"
+#line 9632 "main.c"
     h_0opt_e405689_release(&h8_f2);
 #line 169 "examples/ledger/main.hero"
-#line 9636 "main.c"
+#line 9635 "main.c"
     h_0opt_e201354_release(&h9_f3);
 #line 169 "examples/ledger/main.hero"
-#line 9639 "main.c"
+#line 9638 "main.c"
     h_0opt_791f9719_release(&h10_own10);
 #line 169 "examples/ledger/main.hero"
-#line 9642 "main.c"
+#line 9641 "main.c"
     h_0opt_70720e79_release(&h11_own11);
 #line 169 "examples/ledger/main.hero"
-#line 9645 "main.c"
+#line 9644 "main.c"
     h_0opt_e201354_release(&h12_own12);
 #line 169 "examples/ledger/main.hero"
-#line 9648 "main.c"
+#line 9647 "main.c"
     h_0opt_e201354_release(&h13_own13);
 #line 169 "examples/ledger/main.hero"
-#line 9651 "main.c"
+#line 9650 "main.c"
     h_0opt_e405689_release(&h14_own14);
 #line 169 "examples/ledger/main.hero"
-#line 9654 "main.c"
+#line 9653 "main.c"
     h_0opt_e201354_release(&h15_own15);
 #line 169 "examples/ledger/main.hero"
-#line 9657 "main.c"
+#line 9656 "main.c"
     h_0opt_e201354_release(&h16_own16);
 #line 169 "examples/ledger/main.hero"
-#line 9660 "main.c"
+#line 9659 "main.c"
     h_0opt_e201354_release(&h17_own17);
 #line 169 "examples/ledger/main.hero"
-#line 9663 "main.c"
+#line 9662 "main.c"
     h_0opt_e201354_release(&h18_own18);
 #line 169 "examples/ledger/main.hero"
-#line 9666 "main.c"
+#line 9665 "main.c"
     hero_str_decref(h19_own19);
 #line 169 "examples/ledger/main.hero"
-#line 9669 "main.c"
+#line 9668 "main.c"
     h_0opt_e201354_release(&h20_own20);
     return t23;
 bb5:
@@ -9691,15 +9690,15 @@ bb6:
     t69 = h14_own14;
 #line 171 "examples/ledger/main.hero"
     h14_own14 = t30;
-#line 9695 "main.c"
+#line 9694 "main.c"
     h_0opt_e405689_release(&t69);
 #line 171 "examples/ledger/main.hero"
     t70 = h8_f2;
-#line 9699 "main.c"
+#line 9698 "main.c"
     h_0opt_e405689_retain(&t30);
 #line 171 "examples/ledger/main.hero"
     h8_f2 = t30;
-#line 9703 "main.c"
+#line 9702 "main.c"
     h_0opt_e405689_release(&t70);
 #line 171 "examples/ledger/main.hero"
     t31 = h8_f2;
@@ -9731,15 +9730,15 @@ bb8:
     t71 = h15_own15;
 #line 171 "examples/ledger/main.hero"
     h15_own15 = t40;
-#line 9735 "main.c"
+#line 9734 "main.c"
     h_0opt_e201354_release(&t71);
 #line 171 "examples/ledger/main.hero"
     t72 = h9_f3;
-#line 9739 "main.c"
+#line 9738 "main.c"
     h_0opt_e201354_retain(&t40);
 #line 171 "examples/ledger/main.hero"
     h9_f3 = t40;
-#line 9743 "main.c"
+#line 9742 "main.c"
     h_0opt_e201354_release(&t72);
 #line 171 "examples/ledger/main.hero"
     t41 = h9_f3;
@@ -9757,7 +9756,7 @@ bb9:
     t35 = h8_f2;
 #line 171 "examples/ledger/main.hero"
     t36 = t35.as.err;
-#line 9761 "main.c"
+#line 9760 "main.c"
     hero_failure_retain(&t36);
 #line 171 "examples/ledger/main.hero"
     t37 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t36};
@@ -9765,55 +9764,55 @@ bb9:
     t73 = h16_own16;
 #line 171 "examples/ledger/main.hero"
     h16_own16 = t37;
-#line 9769 "main.c"
+#line 9768 "main.c"
     h_0opt_e201354_release(&t73);
 #line 171 "examples/ledger/main.hero"
-#line 9772 "main.c"
+#line 9771 "main.c"
     h_0opt_e201354_retain(&t37);
 #line 171 "examples/ledger/main.hero"
-#line 9775 "main.c"
+#line 9774 "main.c"
     h_0opt_791f9719_release(&h2_f0);
 #line 171 "examples/ledger/main.hero"
-#line 9778 "main.c"
+#line 9777 "main.c"
     h_0opt_70720e79_release(&h6_f1);
 #line 171 "examples/ledger/main.hero"
-#line 9781 "main.c"
+#line 9780 "main.c"
     h_0opt_e405689_release(&h8_f2);
 #line 171 "examples/ledger/main.hero"
-#line 9784 "main.c"
+#line 9783 "main.c"
     h_0opt_e201354_release(&h9_f3);
 #line 171 "examples/ledger/main.hero"
-#line 9787 "main.c"
+#line 9786 "main.c"
     h_0opt_791f9719_release(&h10_own10);
 #line 171 "examples/ledger/main.hero"
-#line 9790 "main.c"
+#line 9789 "main.c"
     h_0opt_70720e79_release(&h11_own11);
 #line 171 "examples/ledger/main.hero"
-#line 9793 "main.c"
+#line 9792 "main.c"
     h_0opt_e201354_release(&h12_own12);
 #line 171 "examples/ledger/main.hero"
-#line 9796 "main.c"
+#line 9795 "main.c"
     h_0opt_e201354_release(&h13_own13);
 #line 171 "examples/ledger/main.hero"
-#line 9799 "main.c"
+#line 9798 "main.c"
     h_0opt_e405689_release(&h14_own14);
 #line 171 "examples/ledger/main.hero"
-#line 9802 "main.c"
+#line 9801 "main.c"
     h_0opt_e201354_release(&h15_own15);
 #line 171 "examples/ledger/main.hero"
-#line 9805 "main.c"
+#line 9804 "main.c"
     h_0opt_e201354_release(&h16_own16);
 #line 171 "examples/ledger/main.hero"
-#line 9808 "main.c"
+#line 9807 "main.c"
     h_0opt_e201354_release(&h17_own17);
 #line 171 "examples/ledger/main.hero"
-#line 9811 "main.c"
+#line 9810 "main.c"
     h_0opt_e201354_release(&h18_own18);
 #line 171 "examples/ledger/main.hero"
-#line 9814 "main.c"
+#line 9813 "main.c"
     hero_str_decref(h19_own19);
 #line 171 "examples/ledger/main.hero"
-#line 9817 "main.c"
+#line 9816 "main.c"
     h_0opt_e201354_release(&h20_own20);
     return t37;
 bb10:
@@ -9835,7 +9834,7 @@ bb11:
     t45 = h9_f3;
 #line 171 "examples/ledger/main.hero"
     t46 = t45.as.err;
-#line 9839 "main.c"
+#line 9838 "main.c"
     hero_failure_retain(&t46);
 #line 171 "examples/ledger/main.hero"
     t47 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t46};
@@ -9843,55 +9842,55 @@ bb11:
     t74 = h17_own17;
 #line 171 "examples/ledger/main.hero"
     h17_own17 = t47;
-#line 9847 "main.c"
+#line 9846 "main.c"
     h_0opt_e201354_release(&t74);
 #line 171 "examples/ledger/main.hero"
-#line 9850 "main.c"
+#line 9849 "main.c"
     h_0opt_e201354_retain(&t47);
 #line 171 "examples/ledger/main.hero"
-#line 9853 "main.c"
+#line 9852 "main.c"
     h_0opt_791f9719_release(&h2_f0);
 #line 171 "examples/ledger/main.hero"
-#line 9856 "main.c"
+#line 9855 "main.c"
     h_0opt_70720e79_release(&h6_f1);
 #line 171 "examples/ledger/main.hero"
-#line 9859 "main.c"
+#line 9858 "main.c"
     h_0opt_e405689_release(&h8_f2);
 #line 171 "examples/ledger/main.hero"
-#line 9862 "main.c"
+#line 9861 "main.c"
     h_0opt_e201354_release(&h9_f3);
 #line 171 "examples/ledger/main.hero"
-#line 9865 "main.c"
+#line 9864 "main.c"
     h_0opt_791f9719_release(&h10_own10);
 #line 171 "examples/ledger/main.hero"
-#line 9868 "main.c"
+#line 9867 "main.c"
     h_0opt_70720e79_release(&h11_own11);
 #line 171 "examples/ledger/main.hero"
-#line 9871 "main.c"
+#line 9870 "main.c"
     h_0opt_e201354_release(&h12_own12);
 #line 171 "examples/ledger/main.hero"
-#line 9874 "main.c"
+#line 9873 "main.c"
     h_0opt_e201354_release(&h13_own13);
 #line 171 "examples/ledger/main.hero"
-#line 9877 "main.c"
+#line 9876 "main.c"
     h_0opt_e405689_release(&h14_own14);
 #line 171 "examples/ledger/main.hero"
-#line 9880 "main.c"
+#line 9879 "main.c"
     h_0opt_e201354_release(&h15_own15);
 #line 171 "examples/ledger/main.hero"
-#line 9883 "main.c"
+#line 9882 "main.c"
     h_0opt_e201354_release(&h16_own16);
 #line 171 "examples/ledger/main.hero"
-#line 9886 "main.c"
+#line 9885 "main.c"
     h_0opt_e201354_release(&h17_own17);
 #line 171 "examples/ledger/main.hero"
-#line 9889 "main.c"
+#line 9888 "main.c"
     h_0opt_e201354_release(&h18_own18);
 #line 171 "examples/ledger/main.hero"
-#line 9892 "main.c"
+#line 9891 "main.c"
     hero_str_decref(h19_own19);
 #line 171 "examples/ledger/main.hero"
-#line 9895 "main.c"
+#line 9894 "main.c"
     h_0opt_e201354_release(&h20_own20);
     return t47;
 bb12:
@@ -9903,55 +9902,55 @@ bb12:
     t75 = h18_own18;
 #line 179 "examples/ledger/main.hero"
     h18_own18 = t62;
-#line 9907 "main.c"
+#line 9906 "main.c"
     h_0opt_e201354_release(&t75);
 #line 179 "examples/ledger/main.hero"
-#line 9910 "main.c"
+#line 9909 "main.c"
     h_0opt_e201354_retain(&t62);
 #line 179 "examples/ledger/main.hero"
-#line 9913 "main.c"
+#line 9912 "main.c"
     h_0opt_791f9719_release(&h2_f0);
 #line 179 "examples/ledger/main.hero"
-#line 9916 "main.c"
+#line 9915 "main.c"
     h_0opt_70720e79_release(&h6_f1);
 #line 179 "examples/ledger/main.hero"
-#line 9919 "main.c"
+#line 9918 "main.c"
     h_0opt_e405689_release(&h8_f2);
 #line 179 "examples/ledger/main.hero"
-#line 9922 "main.c"
+#line 9921 "main.c"
     h_0opt_e201354_release(&h9_f3);
 #line 179 "examples/ledger/main.hero"
-#line 9925 "main.c"
+#line 9924 "main.c"
     h_0opt_791f9719_release(&h10_own10);
 #line 179 "examples/ledger/main.hero"
-#line 9928 "main.c"
+#line 9927 "main.c"
     h_0opt_70720e79_release(&h11_own11);
 #line 179 "examples/ledger/main.hero"
-#line 9931 "main.c"
+#line 9930 "main.c"
     h_0opt_e201354_release(&h12_own12);
 #line 179 "examples/ledger/main.hero"
-#line 9934 "main.c"
+#line 9933 "main.c"
     h_0opt_e201354_release(&h13_own13);
 #line 179 "examples/ledger/main.hero"
-#line 9937 "main.c"
+#line 9936 "main.c"
     h_0opt_e405689_release(&h14_own14);
 #line 179 "examples/ledger/main.hero"
-#line 9940 "main.c"
+#line 9939 "main.c"
     h_0opt_e201354_release(&h15_own15);
 #line 179 "examples/ledger/main.hero"
-#line 9943 "main.c"
+#line 9942 "main.c"
     h_0opt_e201354_release(&h16_own16);
 #line 179 "examples/ledger/main.hero"
-#line 9946 "main.c"
+#line 9945 "main.c"
     h_0opt_e201354_release(&h17_own17);
 #line 179 "examples/ledger/main.hero"
-#line 9949 "main.c"
+#line 9948 "main.c"
     h_0opt_e201354_release(&h18_own18);
 #line 179 "examples/ledger/main.hero"
-#line 9952 "main.c"
+#line 9951 "main.c"
     hero_str_decref(h19_own19);
 #line 179 "examples/ledger/main.hero"
-#line 9955 "main.c"
+#line 9954 "main.c"
     h_0opt_e201354_release(&h20_own20);
     return t62;
 bb13:
@@ -9967,13 +9966,13 @@ bb13:
     t76 = h19_own19;
 #line 178 "examples/ledger/main.hero"
     h19_own19 = t59;
-#line 9971 "main.c"
+#line 9970 "main.c"
     hero_str_decref(t76);
 #line 178 "examples/ledger/main.hero"
-#line 9974 "main.c"
+#line 9973 "main.c"
     hero_str_incref(t56);
 #line 178 "examples/ledger/main.hero"
-#line 9977 "main.c"
+#line 9976 "main.c"
     hero_str_incref(t59);
 #line 178 "examples/ledger/main.hero"
     t60 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t56, .msg = t59}};
@@ -9981,55 +9980,55 @@ bb13:
     t77 = h20_own20;
 #line 178 "examples/ledger/main.hero"
     h20_own20 = t60;
-#line 9985 "main.c"
+#line 9984 "main.c"
     h_0opt_e201354_release(&t77);
 #line 178 "examples/ledger/main.hero"
-#line 9988 "main.c"
+#line 9987 "main.c"
     h_0opt_e201354_retain(&t60);
 #line 178 "examples/ledger/main.hero"
-#line 9991 "main.c"
+#line 9990 "main.c"
     h_0opt_791f9719_release(&h2_f0);
 #line 178 "examples/ledger/main.hero"
-#line 9994 "main.c"
+#line 9993 "main.c"
     h_0opt_70720e79_release(&h6_f1);
 #line 178 "examples/ledger/main.hero"
-#line 9997 "main.c"
+#line 9996 "main.c"
     h_0opt_e405689_release(&h8_f2);
 #line 178 "examples/ledger/main.hero"
-#line 10000 "main.c"
+#line 9999 "main.c"
     h_0opt_e201354_release(&h9_f3);
 #line 178 "examples/ledger/main.hero"
-#line 10003 "main.c"
+#line 10002 "main.c"
     h_0opt_791f9719_release(&h10_own10);
 #line 178 "examples/ledger/main.hero"
-#line 10006 "main.c"
+#line 10005 "main.c"
     h_0opt_70720e79_release(&h11_own11);
 #line 178 "examples/ledger/main.hero"
-#line 10009 "main.c"
+#line 10008 "main.c"
     h_0opt_e201354_release(&h12_own12);
 #line 178 "examples/ledger/main.hero"
-#line 10012 "main.c"
+#line 10011 "main.c"
     h_0opt_e201354_release(&h13_own13);
 #line 178 "examples/ledger/main.hero"
-#line 10015 "main.c"
+#line 10014 "main.c"
     h_0opt_e405689_release(&h14_own14);
 #line 178 "examples/ledger/main.hero"
-#line 10018 "main.c"
+#line 10017 "main.c"
     h_0opt_e201354_release(&h15_own15);
 #line 178 "examples/ledger/main.hero"
-#line 10021 "main.c"
+#line 10020 "main.c"
     h_0opt_e201354_release(&h16_own16);
 #line 178 "examples/ledger/main.hero"
-#line 10024 "main.c"
+#line 10023 "main.c"
     h_0opt_e201354_release(&h17_own17);
 #line 178 "examples/ledger/main.hero"
-#line 10027 "main.c"
+#line 10026 "main.c"
     h_0opt_e201354_release(&h18_own18);
 #line 178 "examples/ledger/main.hero"
-#line 10030 "main.c"
+#line 10029 "main.c"
     hero_str_decref(h19_own19);
 #line 178 "examples/ledger/main.hero"
-#line 10033 "main.c"
+#line 10032 "main.c"
     h_0opt_e201354_release(&h20_own20);
     return t60;
 bb14:
@@ -10038,7 +10037,7 @@ bb14:
 
 #line 181 "examples/ledger/main.hero"
 h_0opt_db92a83 h_main_queried_float(h_dbsqlite_Db h0_db, HeroStr h1_sql) {
-#line 10042 "main.c"
+#line 10041 "main.c"
     h_0opt_791f9719 h2_f0 = {0};
     h_dbsqlite_Statement h3_statement;
     double h4_value;
@@ -10148,15 +10147,15 @@ bb0:
     t67 = h12_own12;
 #line 182 "examples/ledger/main.hero"
     h12_own12 = t3;
-#line 10152 "main.c"
+#line 10151 "main.c"
     h_0opt_791f9719_release(&t67);
 #line 182 "examples/ledger/main.hero"
     t68 = h2_f0;
-#line 10156 "main.c"
+#line 10155 "main.c"
     h_0opt_791f9719_retain(&t3);
 #line 182 "examples/ledger/main.hero"
     h2_f0 = t3;
-#line 10160 "main.c"
+#line 10159 "main.c"
     h_0opt_791f9719_release(&t68);
 #line 182 "examples/ledger/main.hero"
     t4 = h2_f0;
@@ -10192,15 +10191,15 @@ bb1:
     t69 = h13_own13;
 #line 186 "examples/ledger/main.hero"
     h13_own13 = t16;
-#line 10196 "main.c"
+#line 10195 "main.c"
     h_0opt_70720e79_release(&t69);
 #line 186 "examples/ledger/main.hero"
     t70 = h6_f1;
-#line 10200 "main.c"
+#line 10199 "main.c"
     h_0opt_70720e79_retain(&t16);
 #line 186 "examples/ledger/main.hero"
     h6_f1 = t16;
-#line 10204 "main.c"
+#line 10203 "main.c"
     h_0opt_70720e79_release(&t70);
 #line 186 "examples/ledger/main.hero"
     t17 = h6_f1;
@@ -10218,7 +10217,7 @@ bb2:
     t8 = h2_f0;
 #line 182 "examples/ledger/main.hero"
     t9 = t8.as.err;
-#line 10222 "main.c"
+#line 10221 "main.c"
     hero_failure_retain(&t9);
 #line 182 "examples/ledger/main.hero"
     t10 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = t9};
@@ -10226,49 +10225,49 @@ bb2:
     t71 = h14_own14;
 #line 182 "examples/ledger/main.hero"
     h14_own14 = t10;
-#line 10230 "main.c"
+#line 10229 "main.c"
     h_0opt_db92a83_release(&t71);
 #line 182 "examples/ledger/main.hero"
-#line 10233 "main.c"
+#line 10232 "main.c"
     h_0opt_db92a83_retain(&t10);
 #line 182 "examples/ledger/main.hero"
-#line 10236 "main.c"
+#line 10235 "main.c"
     h_0opt_791f9719_release(&h2_f0);
 #line 182 "examples/ledger/main.hero"
-#line 10239 "main.c"
+#line 10238 "main.c"
     h_0opt_70720e79_release(&h6_f1);
 #line 182 "examples/ledger/main.hero"
-#line 10242 "main.c"
+#line 10241 "main.c"
     h_0opt_e405689_release(&h8_f2);
 #line 182 "examples/ledger/main.hero"
-#line 10245 "main.c"
+#line 10244 "main.c"
     h_dbsqlite_Cell_release(&h9_s1);
 #line 182 "examples/ledger/main.hero"
-#line 10248 "main.c"
+#line 10247 "main.c"
     h_0opt_791f9719_release(&h12_own12);
 #line 182 "examples/ledger/main.hero"
-#line 10251 "main.c"
+#line 10250 "main.c"
     h_0opt_70720e79_release(&h13_own13);
 #line 182 "examples/ledger/main.hero"
-#line 10254 "main.c"
+#line 10253 "main.c"
     h_0opt_db92a83_release(&h14_own14);
 #line 182 "examples/ledger/main.hero"
-#line 10257 "main.c"
+#line 10256 "main.c"
     h_0opt_db92a83_release(&h15_own15);
 #line 182 "examples/ledger/main.hero"
-#line 10260 "main.c"
+#line 10259 "main.c"
     h_0opt_e405689_release(&h16_own16);
 #line 182 "examples/ledger/main.hero"
-#line 10263 "main.c"
+#line 10262 "main.c"
     h_0opt_db92a83_release(&h17_own17);
 #line 182 "examples/ledger/main.hero"
-#line 10266 "main.c"
+#line 10265 "main.c"
     h_0opt_db92a83_release(&h18_own18);
 #line 182 "examples/ledger/main.hero"
-#line 10269 "main.c"
+#line 10268 "main.c"
     hero_str_decref(h19_own19);
 #line 182 "examples/ledger/main.hero"
-#line 10272 "main.c"
+#line 10271 "main.c"
     h_0opt_db92a83_release(&h20_own20);
     return t10;
 bb3:
@@ -10298,7 +10297,7 @@ bb4:
     t21 = h6_f1;
 #line 186 "examples/ledger/main.hero"
     t22 = t21.as.err;
-#line 10302 "main.c"
+#line 10301 "main.c"
     hero_failure_retain(&t22);
 #line 186 "examples/ledger/main.hero"
     t23 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = t22};
@@ -10306,49 +10305,49 @@ bb4:
     t72 = h15_own15;
 #line 186 "examples/ledger/main.hero"
     h15_own15 = t23;
-#line 10310 "main.c"
+#line 10309 "main.c"
     h_0opt_db92a83_release(&t72);
 #line 186 "examples/ledger/main.hero"
-#line 10313 "main.c"
+#line 10312 "main.c"
     h_0opt_db92a83_retain(&t23);
 #line 186 "examples/ledger/main.hero"
-#line 10316 "main.c"
+#line 10315 "main.c"
     h_0opt_791f9719_release(&h2_f0);
 #line 186 "examples/ledger/main.hero"
-#line 10319 "main.c"
+#line 10318 "main.c"
     h_0opt_70720e79_release(&h6_f1);
 #line 186 "examples/ledger/main.hero"
-#line 10322 "main.c"
+#line 10321 "main.c"
     h_0opt_e405689_release(&h8_f2);
 #line 186 "examples/ledger/main.hero"
-#line 10325 "main.c"
+#line 10324 "main.c"
     h_dbsqlite_Cell_release(&h9_s1);
 #line 186 "examples/ledger/main.hero"
-#line 10328 "main.c"
+#line 10327 "main.c"
     h_0opt_791f9719_release(&h12_own12);
 #line 186 "examples/ledger/main.hero"
-#line 10331 "main.c"
+#line 10330 "main.c"
     h_0opt_70720e79_release(&h13_own13);
 #line 186 "examples/ledger/main.hero"
-#line 10334 "main.c"
+#line 10333 "main.c"
     h_0opt_db92a83_release(&h14_own14);
 #line 186 "examples/ledger/main.hero"
-#line 10337 "main.c"
+#line 10336 "main.c"
     h_0opt_db92a83_release(&h15_own15);
 #line 186 "examples/ledger/main.hero"
-#line 10340 "main.c"
+#line 10339 "main.c"
     h_0opt_e405689_release(&h16_own16);
 #line 186 "examples/ledger/main.hero"
-#line 10343 "main.c"
+#line 10342 "main.c"
     h_0opt_db92a83_release(&h17_own17);
 #line 186 "examples/ledger/main.hero"
-#line 10346 "main.c"
+#line 10345 "main.c"
     h_0opt_db92a83_release(&h18_own18);
 #line 186 "examples/ledger/main.hero"
-#line 10349 "main.c"
+#line 10348 "main.c"
     hero_str_decref(h19_own19);
 #line 186 "examples/ledger/main.hero"
-#line 10352 "main.c"
+#line 10351 "main.c"
     h_0opt_db92a83_release(&h20_own20);
     return t23;
 bb5:
@@ -10374,15 +10373,15 @@ bb6:
     t73 = h16_own16;
 #line 188 "examples/ledger/main.hero"
     h16_own16 = t30;
-#line 10378 "main.c"
+#line 10377 "main.c"
     h_0opt_e405689_release(&t73);
 #line 188 "examples/ledger/main.hero"
     t74 = h8_f2;
-#line 10382 "main.c"
+#line 10381 "main.c"
     h_0opt_e405689_retain(&t30);
 #line 188 "examples/ledger/main.hero"
     h8_f2 = t30;
-#line 10386 "main.c"
+#line 10385 "main.c"
     h_0opt_e405689_release(&t74);
 #line 188 "examples/ledger/main.hero"
     t31 = h8_f2;
@@ -10410,11 +10409,11 @@ bb8:
     t39 = t38.as.ok;
 #line 188 "examples/ledger/main.hero"
     t75 = h9_s1;
-#line 10414 "main.c"
+#line 10413 "main.c"
     h_dbsqlite_Cell_retain(&t39);
 #line 188 "examples/ledger/main.hero"
     h9_s1 = t39;
-#line 10418 "main.c"
+#line 10417 "main.c"
     h_dbsqlite_Cell_release(&t75);
 #line 188 "examples/ledger/main.hero"
     t40 = h9_s1;
@@ -10442,7 +10441,7 @@ bb9:
     t35 = h8_f2;
 #line 188 "examples/ledger/main.hero"
     t36 = t35.as.err;
-#line 10446 "main.c"
+#line 10445 "main.c"
     hero_failure_retain(&t36);
 #line 188 "examples/ledger/main.hero"
     t37 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = t36};
@@ -10450,49 +10449,49 @@ bb9:
     t76 = h17_own17;
 #line 188 "examples/ledger/main.hero"
     h17_own17 = t37;
-#line 10454 "main.c"
+#line 10453 "main.c"
     h_0opt_db92a83_release(&t76);
 #line 188 "examples/ledger/main.hero"
-#line 10457 "main.c"
+#line 10456 "main.c"
     h_0opt_db92a83_retain(&t37);
 #line 188 "examples/ledger/main.hero"
-#line 10460 "main.c"
+#line 10459 "main.c"
     h_0opt_791f9719_release(&h2_f0);
 #line 188 "examples/ledger/main.hero"
-#line 10463 "main.c"
+#line 10462 "main.c"
     h_0opt_70720e79_release(&h6_f1);
 #line 188 "examples/ledger/main.hero"
-#line 10466 "main.c"
+#line 10465 "main.c"
     h_0opt_e405689_release(&h8_f2);
 #line 188 "examples/ledger/main.hero"
-#line 10469 "main.c"
+#line 10468 "main.c"
     h_dbsqlite_Cell_release(&h9_s1);
 #line 188 "examples/ledger/main.hero"
-#line 10472 "main.c"
+#line 10471 "main.c"
     h_0opt_791f9719_release(&h12_own12);
 #line 188 "examples/ledger/main.hero"
-#line 10475 "main.c"
+#line 10474 "main.c"
     h_0opt_70720e79_release(&h13_own13);
 #line 188 "examples/ledger/main.hero"
-#line 10478 "main.c"
+#line 10477 "main.c"
     h_0opt_db92a83_release(&h14_own14);
 #line 188 "examples/ledger/main.hero"
-#line 10481 "main.c"
+#line 10480 "main.c"
     h_0opt_db92a83_release(&h15_own15);
 #line 188 "examples/ledger/main.hero"
-#line 10484 "main.c"
+#line 10483 "main.c"
     h_0opt_e405689_release(&h16_own16);
 #line 188 "examples/ledger/main.hero"
-#line 10487 "main.c"
+#line 10486 "main.c"
     h_0opt_db92a83_release(&h17_own17);
 #line 188 "examples/ledger/main.hero"
-#line 10490 "main.c"
+#line 10489 "main.c"
     h_0opt_db92a83_release(&h18_own18);
 #line 188 "examples/ledger/main.hero"
-#line 10493 "main.c"
+#line 10492 "main.c"
     hero_str_decref(h19_own19);
 #line 188 "examples/ledger/main.hero"
-#line 10496 "main.c"
+#line 10495 "main.c"
     h_0opt_db92a83_release(&h20_own20);
     return t37;
 bb10:
@@ -10570,49 +10569,49 @@ bb16:
     t77 = h18_own18;
 #line 202 "examples/ledger/main.hero"
     h18_own18 = t66;
-#line 10574 "main.c"
+#line 10573 "main.c"
     h_0opt_db92a83_release(&t77);
 #line 202 "examples/ledger/main.hero"
-#line 10577 "main.c"
+#line 10576 "main.c"
     h_0opt_db92a83_retain(&t66);
 #line 202 "examples/ledger/main.hero"
-#line 10580 "main.c"
+#line 10579 "main.c"
     h_0opt_791f9719_release(&h2_f0);
 #line 202 "examples/ledger/main.hero"
-#line 10583 "main.c"
+#line 10582 "main.c"
     h_0opt_70720e79_release(&h6_f1);
 #line 202 "examples/ledger/main.hero"
-#line 10586 "main.c"
+#line 10585 "main.c"
     h_0opt_e405689_release(&h8_f2);
 #line 202 "examples/ledger/main.hero"
-#line 10589 "main.c"
+#line 10588 "main.c"
     h_dbsqlite_Cell_release(&h9_s1);
 #line 202 "examples/ledger/main.hero"
-#line 10592 "main.c"
+#line 10591 "main.c"
     h_0opt_791f9719_release(&h12_own12);
 #line 202 "examples/ledger/main.hero"
-#line 10595 "main.c"
+#line 10594 "main.c"
     h_0opt_70720e79_release(&h13_own13);
 #line 202 "examples/ledger/main.hero"
-#line 10598 "main.c"
+#line 10597 "main.c"
     h_0opt_db92a83_release(&h14_own14);
 #line 202 "examples/ledger/main.hero"
-#line 10601 "main.c"
+#line 10600 "main.c"
     h_0opt_db92a83_release(&h15_own15);
 #line 202 "examples/ledger/main.hero"
-#line 10604 "main.c"
+#line 10603 "main.c"
     h_0opt_e405689_release(&h16_own16);
 #line 202 "examples/ledger/main.hero"
-#line 10607 "main.c"
+#line 10606 "main.c"
     h_0opt_db92a83_release(&h17_own17);
 #line 202 "examples/ledger/main.hero"
-#line 10610 "main.c"
+#line 10609 "main.c"
     h_0opt_db92a83_release(&h18_own18);
 #line 202 "examples/ledger/main.hero"
-#line 10613 "main.c"
+#line 10612 "main.c"
     hero_str_decref(h19_own19);
 #line 202 "examples/ledger/main.hero"
-#line 10616 "main.c"
+#line 10615 "main.c"
     h_0opt_db92a83_release(&h20_own20);
     return t66;
 bb17:
@@ -10628,13 +10627,13 @@ bb17:
     t78 = h19_own19;
 #line 201 "examples/ledger/main.hero"
     h19_own19 = t63;
-#line 10632 "main.c"
+#line 10631 "main.c"
     hero_str_decref(t78);
 #line 201 "examples/ledger/main.hero"
-#line 10635 "main.c"
+#line 10634 "main.c"
     hero_str_incref(t60);
 #line 201 "examples/ledger/main.hero"
-#line 10638 "main.c"
+#line 10637 "main.c"
     hero_str_incref(t63);
 #line 201 "examples/ledger/main.hero"
     t64 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = {.code = t60, .msg = t63}};
@@ -10642,49 +10641,49 @@ bb17:
     t79 = h20_own20;
 #line 201 "examples/ledger/main.hero"
     h20_own20 = t64;
-#line 10646 "main.c"
+#line 10645 "main.c"
     h_0opt_db92a83_release(&t79);
 #line 201 "examples/ledger/main.hero"
-#line 10649 "main.c"
+#line 10648 "main.c"
     h_0opt_db92a83_retain(&t64);
 #line 201 "examples/ledger/main.hero"
-#line 10652 "main.c"
+#line 10651 "main.c"
     h_0opt_791f9719_release(&h2_f0);
 #line 201 "examples/ledger/main.hero"
-#line 10655 "main.c"
+#line 10654 "main.c"
     h_0opt_70720e79_release(&h6_f1);
 #line 201 "examples/ledger/main.hero"
-#line 10658 "main.c"
+#line 10657 "main.c"
     h_0opt_e405689_release(&h8_f2);
 #line 201 "examples/ledger/main.hero"
-#line 10661 "main.c"
+#line 10660 "main.c"
     h_dbsqlite_Cell_release(&h9_s1);
 #line 201 "examples/ledger/main.hero"
-#line 10664 "main.c"
+#line 10663 "main.c"
     h_0opt_791f9719_release(&h12_own12);
 #line 201 "examples/ledger/main.hero"
-#line 10667 "main.c"
+#line 10666 "main.c"
     h_0opt_70720e79_release(&h13_own13);
 #line 201 "examples/ledger/main.hero"
-#line 10670 "main.c"
+#line 10669 "main.c"
     h_0opt_db92a83_release(&h14_own14);
 #line 201 "examples/ledger/main.hero"
-#line 10673 "main.c"
+#line 10672 "main.c"
     h_0opt_db92a83_release(&h15_own15);
 #line 201 "examples/ledger/main.hero"
-#line 10676 "main.c"
+#line 10675 "main.c"
     h_0opt_e405689_release(&h16_own16);
 #line 201 "examples/ledger/main.hero"
-#line 10679 "main.c"
+#line 10678 "main.c"
     h_0opt_db92a83_release(&h17_own17);
 #line 201 "examples/ledger/main.hero"
-#line 10682 "main.c"
+#line 10681 "main.c"
     h_0opt_db92a83_release(&h18_own18);
 #line 201 "examples/ledger/main.hero"
-#line 10685 "main.c"
+#line 10684 "main.c"
     hero_str_decref(h19_own19);
 #line 201 "examples/ledger/main.hero"
-#line 10688 "main.c"
+#line 10687 "main.c"
     h_0opt_db92a83_release(&h20_own20);
     return t64;
 bb18:
@@ -10693,7 +10692,7 @@ bb18:
 
 #line 207 "examples/ledger/main.hero"
 bool h_main_same_balances(HeroArrayHeader * h0_from_db, HeroArrayHeader * h1_mine) {
-#line 10697 "main.c"
+#line 10696 "main.c"
     int64_t h2_at;
     HeroArrayHeader * t1 = {0};
     int64_t t2;
@@ -10904,12 +10903,12 @@ bb14:
 bb15:
 #line 220 "examples/ledger/main.hero"
     goto bb13;
-#line 10908 "main.c"
+#line 10907 "main.c"
 }
 
 #line 229 "examples/ledger/main.hero"
 bool h_main_near(double h0_a, double h1_b) {
-#line 10913 "main.c"
+#line 10912 "main.c"
     double h2_d;
     double t1;
     double t2;
@@ -10977,12 +10976,12 @@ bb2:
 bb3:
 #line 233 "examples/ledger/main.hero"
     goto bb1;
-#line 10981 "main.c"
+#line 10980 "main.c"
 }
 
 #line 236 "examples/ledger/main.hero"
 HeroStr h_main_verdict(bool h0_holds) {
-#line 10986 "main.c"
+#line 10985 "main.c"
     bool t1;
     HeroStr t2 = {0};
     HeroStr t3 = {0};
@@ -10996,13 +10995,13 @@ bb0:
 bb1:
 #line 239 "examples/ledger/main.hero"
     t3 = HERO_STR_LIT(hero_str_38b9);
-#line 11000 "main.c"
+#line 10999 "main.c"
     hero_str_incref(t3);
     return t3;
 bb2:
 #line 238 "examples/ledger/main.hero"
     t2 = HERO_STR_LIT(hero_str_1fe363);
-#line 11006 "main.c"
+#line 11005 "main.c"
     hero_str_incref(t2);
     return t2;
 bb3:
@@ -11011,7 +11010,7 @@ bb3:
 
 #line 303 "examples/ledger/main.hero"
 HeroStr h_main_err_text_of(h_0opt_a8ea2 h0_got) {
-#line 11015 "main.c"
+#line 11014 "main.c"
     h_0opt_a8ea2 h1_s0 = {0};
     HeroStr h2_r0 = {0};
     HeroFailure h3_e = {0};
@@ -11034,11 +11033,11 @@ bb0:
     t1 = h0_got;
 #line 304 "examples/ledger/main.hero"
     t10 = h1_s0;
-#line 11038 "main.c"
+#line 11037 "main.c"
     h_0opt_a8ea2_retain(&t1);
 #line 304 "examples/ledger/main.hero"
     h1_s0 = t1;
-#line 11042 "main.c"
+#line 11041 "main.c"
     h_0opt_a8ea2_release(&t10);
 #line 304 "examples/ledger/main.hero"
     t2 = h1_s0;
@@ -11058,16 +11057,16 @@ bb0:
 bb1:
 #line 304 "examples/ledger/main.hero"
     t9 = h2_r0;
-#line 11062 "main.c"
+#line 11061 "main.c"
     hero_str_incref(t9);
 #line 304 "examples/ledger/main.hero"
-#line 11065 "main.c"
+#line 11064 "main.c"
     h_0opt_a8ea2_release(&h1_s0);
 #line 304 "examples/ledger/main.hero"
-#line 11068 "main.c"
+#line 11067 "main.c"
     hero_str_decref(h2_r0);
 #line 304 "examples/ledger/main.hero"
-#line 11071 "main.c"
+#line 11070 "main.c"
     hero_failure_release(&h3_e);
     return t9;
 bb2:
@@ -11075,11 +11074,11 @@ bb2:
     t4 = HERO_STR_LIT(hero_str_0);
 #line 304 "examples/ledger/main.hero"
     t11 = h2_r0;
-#line 11079 "main.c"
+#line 11078 "main.c"
     hero_str_incref(t4);
 #line 304 "examples/ledger/main.hero"
     h2_r0 = t4;
-#line 11083 "main.c"
+#line 11082 "main.c"
     hero_str_decref(t11);
     goto bb1;
 bb3:
@@ -11089,11 +11088,11 @@ bb3:
     t6 = t5.as.err;
 #line 306 "examples/ledger/main.hero"
     t12 = h3_e;
-#line 11093 "main.c"
+#line 11092 "main.c"
     hero_failure_retain(&t6);
 #line 306 "examples/ledger/main.hero"
     h3_e = t6;
-#line 11097 "main.c"
+#line 11096 "main.c"
     hero_failure_release(&t12);
 #line 306 "examples/ledger/main.hero"
     t7 = h3_e;
@@ -11101,18 +11100,18 @@ bb3:
     t8 = t7.msg;
 #line 304 "examples/ledger/main.hero"
     t13 = h2_r0;
-#line 11105 "main.c"
+#line 11104 "main.c"
     hero_str_incref(t8);
 #line 304 "examples/ledger/main.hero"
     h2_r0 = t8;
-#line 11109 "main.c"
+#line 11108 "main.c"
     hero_str_decref(t13);
     goto bb1;
 }
 
 #line 308 "examples/ledger/main.hero"
 HeroStr h_main_why_open(h_0opt_24dfc0bb h0_got) {
-#line 11116 "main.c"
+#line 11115 "main.c"
     h_0opt_24dfc0bb h1_s0 = {0};
     HeroStr h2_r0 = {0};
     HeroFailure h3_e = {0};
@@ -11135,11 +11134,11 @@ bb0:
     t1 = h0_got;
 #line 309 "examples/ledger/main.hero"
     t10 = h1_s0;
-#line 11139 "main.c"
+#line 11138 "main.c"
     h_0opt_24dfc0bb_retain(&t1);
 #line 309 "examples/ledger/main.hero"
     h1_s0 = t1;
-#line 11143 "main.c"
+#line 11142 "main.c"
     h_0opt_24dfc0bb_release(&t10);
 #line 309 "examples/ledger/main.hero"
     t2 = h1_s0;
@@ -11159,16 +11158,16 @@ bb0:
 bb1:
 #line 309 "examples/ledger/main.hero"
     t9 = h2_r0;
-#line 11163 "main.c"
+#line 11162 "main.c"
     hero_str_incref(t9);
 #line 309 "examples/ledger/main.hero"
-#line 11166 "main.c"
+#line 11165 "main.c"
     h_0opt_24dfc0bb_release(&h1_s0);
 #line 309 "examples/ledger/main.hero"
-#line 11169 "main.c"
+#line 11168 "main.c"
     hero_str_decref(h2_r0);
 #line 309 "examples/ledger/main.hero"
-#line 11172 "main.c"
+#line 11171 "main.c"
     hero_failure_release(&h3_e);
     return t9;
 bb2:
@@ -11176,11 +11175,11 @@ bb2:
     t4 = HERO_STR_LIT(hero_str_0);
 #line 309 "examples/ledger/main.hero"
     t11 = h2_r0;
-#line 11180 "main.c"
+#line 11179 "main.c"
     hero_str_incref(t4);
 #line 309 "examples/ledger/main.hero"
     h2_r0 = t4;
-#line 11184 "main.c"
+#line 11183 "main.c"
     hero_str_decref(t11);
     goto bb1;
 bb3:
@@ -11190,11 +11189,11 @@ bb3:
     t6 = t5.as.err;
 #line 311 "examples/ledger/main.hero"
     t12 = h3_e;
-#line 11194 "main.c"
+#line 11193 "main.c"
     hero_failure_retain(&t6);
 #line 311 "examples/ledger/main.hero"
     h3_e = t6;
-#line 11198 "main.c"
+#line 11197 "main.c"
     hero_failure_release(&t12);
 #line 311 "examples/ledger/main.hero"
     t7 = h3_e;
@@ -11202,18 +11201,18 @@ bb3:
     t8 = t7.msg;
 #line 309 "examples/ledger/main.hero"
     t13 = h2_r0;
-#line 11206 "main.c"
+#line 11205 "main.c"
     hero_str_incref(t8);
 #line 309 "examples/ledger/main.hero"
     h2_r0 = t8;
-#line 11210 "main.c"
+#line 11209 "main.c"
     hero_str_decref(t13);
     goto bb1;
 }
 
 #line 26 "examples/ledger/book/entry.hero"
 h_0opt_2e78f68e h_bookentry_amount(int64_t h0_units, int64_t h1_cents) {
-#line 11217 "main.c"
+#line 11216 "main.c"
     bool h2_b0;
     HeroStr h3_own3 = {0};
     HeroStr h4_own4 = {0};
@@ -11305,7 +11304,7 @@ bb4:
     t27 = h3_own3;
 #line 28 "examples/ledger/book/entry.hero"
     h3_own3 = t11;
-#line 11309 "main.c"
+#line 11308 "main.c"
     hero_str_decref(t27);
 #line 28 "examples/ledger/book/entry.hero"
     t12 = hero_str_concat(t9, t11);
@@ -11313,13 +11312,13 @@ bb4:
     t28 = h4_own4;
 #line 28 "examples/ledger/book/entry.hero"
     h4_own4 = t12;
-#line 11317 "main.c"
+#line 11316 "main.c"
     hero_str_decref(t28);
 #line 28 "examples/ledger/book/entry.hero"
-#line 11320 "main.c"
+#line 11319 "main.c"
     hero_str_incref(t8);
 #line 28 "examples/ledger/book/entry.hero"
-#line 11323 "main.c"
+#line 11322 "main.c"
     hero_str_incref(t12);
 #line 28 "examples/ledger/book/entry.hero"
     t13 = (h_0opt_2e78f68e){.tag = INT64_C(1), .as.err = {.code = t8, .msg = t12}};
@@ -11327,25 +11326,25 @@ bb4:
     t29 = h5_own5;
 #line 28 "examples/ledger/book/entry.hero"
     h5_own5 = t13;
-#line 11331 "main.c"
+#line 11330 "main.c"
     h_0opt_2e78f68e_release(&t29);
 #line 28 "examples/ledger/book/entry.hero"
-#line 11334 "main.c"
+#line 11333 "main.c"
     h_0opt_2e78f68e_retain(&t13);
 #line 28 "examples/ledger/book/entry.hero"
-#line 11337 "main.c"
+#line 11336 "main.c"
     hero_str_decref(h3_own3);
 #line 28 "examples/ledger/book/entry.hero"
-#line 11340 "main.c"
+#line 11339 "main.c"
     hero_str_decref(h4_own4);
 #line 28 "examples/ledger/book/entry.hero"
-#line 11343 "main.c"
+#line 11342 "main.c"
     h_0opt_2e78f68e_release(&h5_own5);
 #line 28 "examples/ledger/book/entry.hero"
-#line 11346 "main.c"
+#line 11345 "main.c"
     h_0opt_2e78f68e_release(&h6_own6);
 #line 28 "examples/ledger/book/entry.hero"
-#line 11349 "main.c"
+#line 11348 "main.c"
     h_0opt_2e78f68e_release(&h7_own7);
     return t13;
 bb5:
@@ -11369,25 +11368,25 @@ bb6:
     t30 = h6_own6;
 #line 32 "examples/ledger/book/entry.hero"
     h6_own6 = t26;
-#line 11373 "main.c"
+#line 11372 "main.c"
     h_0opt_2e78f68e_release(&t30);
 #line 32 "examples/ledger/book/entry.hero"
-#line 11376 "main.c"
+#line 11375 "main.c"
     h_0opt_2e78f68e_retain(&t26);
 #line 32 "examples/ledger/book/entry.hero"
-#line 11379 "main.c"
+#line 11378 "main.c"
     hero_str_decref(h3_own3);
 #line 32 "examples/ledger/book/entry.hero"
-#line 11382 "main.c"
+#line 11381 "main.c"
     hero_str_decref(h4_own4);
 #line 32 "examples/ledger/book/entry.hero"
-#line 11385 "main.c"
+#line 11384 "main.c"
     h_0opt_2e78f68e_release(&h5_own5);
 #line 32 "examples/ledger/book/entry.hero"
-#line 11388 "main.c"
+#line 11387 "main.c"
     h_0opt_2e78f68e_release(&h6_own6);
 #line 32 "examples/ledger/book/entry.hero"
-#line 11391 "main.c"
+#line 11390 "main.c"
     h_0opt_2e78f68e_release(&h7_own7);
     return t26;
 bb7:
@@ -11395,10 +11394,10 @@ bb7:
     t17 = HERO_STR_LIT(hero_str_8d6579f);
 #line 31 "examples/ledger/book/entry.hero"
     t18 = HERO_STR_LIT(hero_str_4a8d7403);
-#line 11399 "main.c"
+#line 11398 "main.c"
     hero_str_incref(t17);
 #line 31 "examples/ledger/book/entry.hero"
-#line 11402 "main.c"
+#line 11401 "main.c"
     hero_str_incref(t18);
 #line 31 "examples/ledger/book/entry.hero"
     t19 = (h_0opt_2e78f68e){.tag = INT64_C(1), .as.err = {.code = t17, .msg = t18}};
@@ -11406,25 +11405,25 @@ bb7:
     t31 = h7_own7;
 #line 31 "examples/ledger/book/entry.hero"
     h7_own7 = t19;
-#line 11410 "main.c"
+#line 11409 "main.c"
     h_0opt_2e78f68e_release(&t31);
 #line 31 "examples/ledger/book/entry.hero"
-#line 11413 "main.c"
+#line 11412 "main.c"
     h_0opt_2e78f68e_retain(&t19);
 #line 31 "examples/ledger/book/entry.hero"
-#line 11416 "main.c"
+#line 11415 "main.c"
     hero_str_decref(h3_own3);
 #line 31 "examples/ledger/book/entry.hero"
-#line 11419 "main.c"
+#line 11418 "main.c"
     hero_str_decref(h4_own4);
 #line 31 "examples/ledger/book/entry.hero"
-#line 11422 "main.c"
+#line 11421 "main.c"
     h_0opt_2e78f68e_release(&h5_own5);
 #line 31 "examples/ledger/book/entry.hero"
-#line 11425 "main.c"
+#line 11424 "main.c"
     h_0opt_2e78f68e_release(&h6_own6);
 #line 31 "examples/ledger/book/entry.hero"
-#line 11428 "main.c"
+#line 11427 "main.c"
     h_0opt_2e78f68e_release(&h7_own7);
     return t19;
 bb8:
@@ -11433,7 +11432,7 @@ bb8:
 
 #line 34 "examples/ledger/book/entry.hero"
 h_bookentry_Amount h_bookentry_negated(h_bookentry_Amount h0_a) {
-#line 11437 "main.c"
+#line 11436 "main.c"
     int64_t t1;
     h_bookentry_Amount t2;
     int64_t t3;
@@ -11453,12 +11452,12 @@ bb0:
     t5 = (h_bookentry_Amount){.f_cents = t4};
 #line 35 "examples/ledger/book/entry.hero"
     return t5;
-#line 11457 "main.c"
+#line 11456 "main.c"
 }
 
 #line 37 "examples/ledger/book/entry.hero"
 h_bookentry_Amount h_bookentry_added(h_bookentry_Amount h0_a, h_bookentry_Amount h1_b) {
-#line 11462 "main.c"
+#line 11461 "main.c"
     h_bookentry_Amount t1;
     int64_t t2;
     h_bookentry_Amount t3;
@@ -11481,12 +11480,12 @@ bb0:
     t6 = (h_bookentry_Amount){.f_cents = t5};
 #line 38 "examples/ledger/book/entry.hero"
     return t6;
-#line 11485 "main.c"
+#line 11484 "main.c"
 }
 
 #line 44 "examples/ledger/book/entry.hero"
 HeroStr h_bookentry_shown(h_bookentry_Amount h0_a) {
-#line 11490 "main.c"
+#line 11489 "main.c"
     int64_t h1_size;
     int64_t h2_whole;
     int64_t h3_rest;
@@ -11593,15 +11592,15 @@ bb1:
     t37 = h6_own6;
 #line 51 "examples/ledger/book/entry.hero"
     h6_own6 = t16;
-#line 11597 "main.c"
+#line 11596 "main.c"
     hero_str_decref(t37);
 #line 51 "examples/ledger/book/entry.hero"
     t38 = h4_tail;
-#line 11601 "main.c"
+#line 11600 "main.c"
     hero_str_incref(t16);
 #line 51 "examples/ledger/book/entry.hero"
     h4_tail = t16;
-#line 11605 "main.c"
+#line 11604 "main.c"
     hero_str_decref(t38);
 #line 53 "examples/ledger/book/entry.hero"
     t17 = h3_rest;
@@ -11637,7 +11636,7 @@ bb4:
     t39 = h7_own7;
 #line 55 "examples/ledger/book/entry.hero"
     h7_own7 = t24;
-#line 11641 "main.c"
+#line 11640 "main.c"
     hero_str_decref(t39);
 #line 55 "examples/ledger/book/entry.hero"
     t25 = HERO_STR_LIT(hero_str_2e);
@@ -11647,7 +11646,7 @@ bb4:
     t40 = h8_own8;
 #line 55 "examples/ledger/book/entry.hero"
     h8_own8 = t26;
-#line 11651 "main.c"
+#line 11650 "main.c"
     hero_str_decref(t40);
 #line 55 "examples/ledger/book/entry.hero"
     t27 = h4_tail;
@@ -11657,15 +11656,15 @@ bb4:
     t41 = h9_own9;
 #line 55 "examples/ledger/book/entry.hero"
     h9_own9 = t28;
-#line 11661 "main.c"
+#line 11660 "main.c"
     hero_str_decref(t41);
 #line 55 "examples/ledger/book/entry.hero"
     t42 = h5_text;
-#line 11665 "main.c"
+#line 11664 "main.c"
     hero_str_incref(t28);
 #line 55 "examples/ledger/book/entry.hero"
     h5_text = t28;
-#line 11669 "main.c"
+#line 11668 "main.c"
     hero_str_decref(t42);
 #line 57 "examples/ledger/book/entry.hero"
     t29 = h0_a;
@@ -11689,15 +11688,15 @@ bb5:
     t43 = h10_own10;
 #line 54 "examples/ledger/book/entry.hero"
     h10_own10 = t22;
-#line 11693 "main.c"
+#line 11692 "main.c"
     hero_str_decref(t43);
 #line 54 "examples/ledger/book/entry.hero"
     t44 = h4_tail;
-#line 11697 "main.c"
+#line 11696 "main.c"
     hero_str_incref(t22);
 #line 54 "examples/ledger/book/entry.hero"
     h4_tail = t22;
-#line 11701 "main.c"
+#line 11700 "main.c"
     hero_str_decref(t44);
     goto bb4;
 bb6:
@@ -11705,31 +11704,31 @@ bb6:
 bb7:
 #line 59 "examples/ledger/book/entry.hero"
     t36 = h5_text;
-#line 11709 "main.c"
+#line 11708 "main.c"
     hero_str_incref(t36);
 #line 59 "examples/ledger/book/entry.hero"
-#line 11712 "main.c"
+#line 11711 "main.c"
     hero_str_decref(h4_tail);
 #line 59 "examples/ledger/book/entry.hero"
-#line 11715 "main.c"
+#line 11714 "main.c"
     hero_str_decref(h5_text);
 #line 59 "examples/ledger/book/entry.hero"
-#line 11718 "main.c"
+#line 11717 "main.c"
     hero_str_decref(h6_own6);
 #line 59 "examples/ledger/book/entry.hero"
-#line 11721 "main.c"
+#line 11720 "main.c"
     hero_str_decref(h7_own7);
 #line 59 "examples/ledger/book/entry.hero"
-#line 11724 "main.c"
+#line 11723 "main.c"
     hero_str_decref(h8_own8);
 #line 59 "examples/ledger/book/entry.hero"
-#line 11727 "main.c"
+#line 11726 "main.c"
     hero_str_decref(h9_own9);
 #line 59 "examples/ledger/book/entry.hero"
-#line 11730 "main.c"
+#line 11729 "main.c"
     hero_str_decref(h10_own10);
 #line 59 "examples/ledger/book/entry.hero"
-#line 11733 "main.c"
+#line 11732 "main.c"
     hero_str_decref(h11_own11);
     return t36;
 bb8:
@@ -11743,34 +11742,34 @@ bb8:
     t45 = h11_own11;
 #line 58 "examples/ledger/book/entry.hero"
     h11_own11 = t35;
-#line 11747 "main.c"
+#line 11746 "main.c"
     hero_str_decref(t45);
 #line 58 "examples/ledger/book/entry.hero"
-#line 11750 "main.c"
+#line 11749 "main.c"
     hero_str_incref(t35);
 #line 58 "examples/ledger/book/entry.hero"
-#line 11753 "main.c"
+#line 11752 "main.c"
     hero_str_decref(h4_tail);
 #line 58 "examples/ledger/book/entry.hero"
-#line 11756 "main.c"
+#line 11755 "main.c"
     hero_str_decref(h5_text);
 #line 58 "examples/ledger/book/entry.hero"
-#line 11759 "main.c"
+#line 11758 "main.c"
     hero_str_decref(h6_own6);
 #line 58 "examples/ledger/book/entry.hero"
-#line 11762 "main.c"
+#line 11761 "main.c"
     hero_str_decref(h7_own7);
 #line 58 "examples/ledger/book/entry.hero"
-#line 11765 "main.c"
+#line 11764 "main.c"
     hero_str_decref(h8_own8);
 #line 58 "examples/ledger/book/entry.hero"
-#line 11768 "main.c"
+#line 11767 "main.c"
     hero_str_decref(h9_own9);
 #line 58 "examples/ledger/book/entry.hero"
-#line 11771 "main.c"
+#line 11770 "main.c"
     hero_str_decref(h10_own10);
 #line 58 "examples/ledger/book/entry.hero"
-#line 11774 "main.c"
+#line 11773 "main.c"
     hero_str_decref(h11_own11);
     return t35;
 bb9:
@@ -11779,7 +11778,7 @@ bb9:
 
 #line 78 "examples/ledger/book/entry.hero"
 HeroArrayHeader * h_bookentry_book(void) {
-#line 11783 "main.c"
+#line 11782 "main.c"
     h_bookentry_Entry h0_own0 = {0};
     h_bookentry_Entry h1_own1 = {0};
     h_bookentry_Entry h2_own2 = {0};
@@ -11893,10 +11892,10 @@ bb0:
     if (__builtin_sub_overflow(t4, t5, &t6)) hero_panic_overflow();
 #line 80 "examples/ledger/book/entry.hero"
     t7 = (h_bookentry_Amount){.f_cents = t6};
-#line 11897 "main.c"
+#line 11896 "main.c"
     hero_str_incref(t2);
 #line 80 "examples/ledger/book/entry.hero"
-#line 11900 "main.c"
+#line 11899 "main.c"
     hero_str_incref(t3);
 #line 80 "examples/ledger/book/entry.hero"
     t8 = (h_bookentry_Entry){.f_id = t1, .f_account = t2, .f_memo = t3, .f_amount = t7};
@@ -11904,7 +11903,7 @@ bb0:
     t76 = h0_own0;
 #line 80 "examples/ledger/book/entry.hero"
     h0_own0 = t8;
-#line 11908 "main.c"
+#line 11907 "main.c"
     h_bookentry_Entry_release(&t76);
 #line 81 "examples/ledger/book/entry.hero"
     t9 = INT64_C(2);
@@ -11916,10 +11915,10 @@ bb0:
     t12 = INT64_C(310000);
 #line 81 "examples/ledger/book/entry.hero"
     t13 = (h_bookentry_Amount){.f_cents = t12};
-#line 11920 "main.c"
+#line 11919 "main.c"
     hero_str_incref(t10);
 #line 81 "examples/ledger/book/entry.hero"
-#line 11923 "main.c"
+#line 11922 "main.c"
     hero_str_incref(t11);
 #line 81 "examples/ledger/book/entry.hero"
     t14 = (h_bookentry_Entry){.f_id = t9, .f_account = t10, .f_memo = t11, .f_amount = t13};
@@ -11927,7 +11926,7 @@ bb0:
     t77 = h1_own1;
 #line 81 "examples/ledger/book/entry.hero"
     h1_own1 = t14;
-#line 11931 "main.c"
+#line 11930 "main.c"
     h_bookentry_Entry_release(&t77);
 #line 82 "examples/ledger/book/entry.hero"
     t15 = INT64_C(3);
@@ -11943,10 +11942,10 @@ bb0:
     if (__builtin_sub_overflow(t18, t19, &t20)) hero_panic_overflow();
 #line 82 "examples/ledger/book/entry.hero"
     t21 = (h_bookentry_Amount){.f_cents = t20};
-#line 11947 "main.c"
+#line 11946 "main.c"
     hero_str_incref(t16);
 #line 82 "examples/ledger/book/entry.hero"
-#line 11950 "main.c"
+#line 11949 "main.c"
     hero_str_incref(t17);
 #line 82 "examples/ledger/book/entry.hero"
     t22 = (h_bookentry_Entry){.f_id = t15, .f_account = t16, .f_memo = t17, .f_amount = t21};
@@ -11954,7 +11953,7 @@ bb0:
     t78 = h2_own2;
 #line 82 "examples/ledger/book/entry.hero"
     h2_own2 = t22;
-#line 11958 "main.c"
+#line 11957 "main.c"
     h_bookentry_Entry_release(&t78);
 #line 83 "examples/ledger/book/entry.hero"
     t23 = INT64_C(4);
@@ -11970,10 +11969,10 @@ bb0:
     if (__builtin_sub_overflow(t26, t27, &t28)) hero_panic_overflow();
 #line 83 "examples/ledger/book/entry.hero"
     t29 = (h_bookentry_Amount){.f_cents = t28};
-#line 11974 "main.c"
+#line 11973 "main.c"
     hero_str_incref(t24);
 #line 83 "examples/ledger/book/entry.hero"
-#line 11977 "main.c"
+#line 11976 "main.c"
     hero_str_incref(t25);
 #line 83 "examples/ledger/book/entry.hero"
     t30 = (h_bookentry_Entry){.f_id = t23, .f_account = t24, .f_memo = t25, .f_amount = t29};
@@ -11981,7 +11980,7 @@ bb0:
     t79 = h3_own3;
 #line 83 "examples/ledger/book/entry.hero"
     h3_own3 = t30;
-#line 11985 "main.c"
+#line 11984 "main.c"
     h_bookentry_Entry_release(&t79);
 #line 84 "examples/ledger/book/entry.hero"
     t31 = INT64_C(5);
@@ -11997,10 +11996,10 @@ bb0:
     if (__builtin_sub_overflow(t34, t35, &t36)) hero_panic_overflow();
 #line 84 "examples/ledger/book/entry.hero"
     t37 = (h_bookentry_Amount){.f_cents = t36};
-#line 12001 "main.c"
+#line 12000 "main.c"
     hero_str_incref(t32);
 #line 84 "examples/ledger/book/entry.hero"
-#line 12004 "main.c"
+#line 12003 "main.c"
     hero_str_incref(t33);
 #line 84 "examples/ledger/book/entry.hero"
     t38 = (h_bookentry_Entry){.f_id = t31, .f_account = t32, .f_memo = t33, .f_amount = t37};
@@ -12008,7 +12007,7 @@ bb0:
     t80 = h4_own4;
 #line 84 "examples/ledger/book/entry.hero"
     h4_own4 = t38;
-#line 12012 "main.c"
+#line 12011 "main.c"
     h_bookentry_Entry_release(&t80);
 #line 85 "examples/ledger/book/entry.hero"
     t39 = INT64_C(6);
@@ -12020,10 +12019,10 @@ bb0:
     t42 = INT64_C(8000);
 #line 85 "examples/ledger/book/entry.hero"
     t43 = (h_bookentry_Amount){.f_cents = t42};
-#line 12024 "main.c"
+#line 12023 "main.c"
     hero_str_incref(t40);
 #line 85 "examples/ledger/book/entry.hero"
-#line 12027 "main.c"
+#line 12026 "main.c"
     hero_str_incref(t41);
 #line 85 "examples/ledger/book/entry.hero"
     t44 = (h_bookentry_Entry){.f_id = t39, .f_account = t40, .f_memo = t41, .f_amount = t43};
@@ -12031,7 +12030,7 @@ bb0:
     t81 = h5_own5;
 #line 85 "examples/ledger/book/entry.hero"
     h5_own5 = t44;
-#line 12035 "main.c"
+#line 12034 "main.c"
     h_bookentry_Entry_release(&t81);
 #line 86 "examples/ledger/book/entry.hero"
     t45 = INT64_C(7);
@@ -12047,10 +12046,10 @@ bb0:
     if (__builtin_sub_overflow(t48, t49, &t50)) hero_panic_overflow();
 #line 86 "examples/ledger/book/entry.hero"
     t51 = (h_bookentry_Amount){.f_cents = t50};
-#line 12051 "main.c"
+#line 12050 "main.c"
     hero_str_incref(t46);
 #line 86 "examples/ledger/book/entry.hero"
-#line 12054 "main.c"
+#line 12053 "main.c"
     hero_str_incref(t47);
 #line 86 "examples/ledger/book/entry.hero"
     t52 = (h_bookentry_Entry){.f_id = t45, .f_account = t46, .f_memo = t47, .f_amount = t51};
@@ -12058,7 +12057,7 @@ bb0:
     t82 = h6_own6;
 #line 86 "examples/ledger/book/entry.hero"
     h6_own6 = t52;
-#line 12062 "main.c"
+#line 12061 "main.c"
     h_bookentry_Entry_release(&t82);
 #line 87 "examples/ledger/book/entry.hero"
     t53 = INT64_C(8);
@@ -12070,10 +12069,10 @@ bb0:
     t56 = INT64_C(60000);
 #line 87 "examples/ledger/book/entry.hero"
     t57 = (h_bookentry_Amount){.f_cents = t56};
-#line 12074 "main.c"
+#line 12073 "main.c"
     hero_str_incref(t54);
 #line 87 "examples/ledger/book/entry.hero"
-#line 12077 "main.c"
+#line 12076 "main.c"
     hero_str_incref(t55);
 #line 87 "examples/ledger/book/entry.hero"
     t58 = (h_bookentry_Entry){.f_id = t53, .f_account = t54, .f_memo = t55, .f_amount = t57};
@@ -12081,7 +12080,7 @@ bb0:
     t83 = h7_own7;
 #line 87 "examples/ledger/book/entry.hero"
     h7_own7 = t58;
-#line 12085 "main.c"
+#line 12084 "main.c"
     h_bookentry_Entry_release(&t83);
 #line 88 "examples/ledger/book/entry.hero"
     t59 = INT64_C(9);
@@ -12097,10 +12096,10 @@ bb0:
     if (__builtin_sub_overflow(t62, t63, &t64)) hero_panic_overflow();
 #line 88 "examples/ledger/book/entry.hero"
     t65 = (h_bookentry_Amount){.f_cents = t64};
-#line 12101 "main.c"
+#line 12100 "main.c"
     hero_str_incref(t60);
 #line 88 "examples/ledger/book/entry.hero"
-#line 12104 "main.c"
+#line 12103 "main.c"
     hero_str_incref(t61);
 #line 88 "examples/ledger/book/entry.hero"
     t66 = (h_bookentry_Entry){.f_id = t59, .f_account = t60, .f_memo = t61, .f_amount = t65};
@@ -12108,7 +12107,7 @@ bb0:
     t84 = h8_own8;
 #line 88 "examples/ledger/book/entry.hero"
     h8_own8 = t66;
-#line 12112 "main.c"
+#line 12111 "main.c"
     h_bookentry_Entry_release(&t84);
 #line 89 "examples/ledger/book/entry.hero"
     t67 = INT64_C(10);
@@ -12124,10 +12123,10 @@ bb0:
     if (__builtin_sub_overflow(t70, t71, &t72)) hero_panic_overflow();
 #line 89 "examples/ledger/book/entry.hero"
     t73 = (h_bookentry_Amount){.f_cents = t72};
-#line 12128 "main.c"
+#line 12127 "main.c"
     hero_str_incref(t68);
 #line 89 "examples/ledger/book/entry.hero"
-#line 12131 "main.c"
+#line 12130 "main.c"
     hero_str_incref(t69);
 #line 89 "examples/ledger/book/entry.hero"
     t74 = (h_bookentry_Entry){.f_id = t67, .f_account = t68, .f_memo = t69, .f_amount = t73};
@@ -12135,7 +12134,7 @@ bb0:
     t85 = h9_own9;
 #line 89 "examples/ledger/book/entry.hero"
     h9_own9 = t74;
-#line 12139 "main.c"
+#line 12138 "main.c"
     h_bookentry_Entry_release(&t85);
 #line 79 "examples/ledger/book/entry.hero"
     t75 = hero_array_new(&h_bookentry_Entry_desc, 10);
@@ -12183,50 +12182,50 @@ bb0:
     t86 = h10_own10;
 #line 79 "examples/ledger/book/entry.hero"
     h10_own10 = t75;
-#line 12187 "main.c"
+#line 12186 "main.c"
     hero_array_decref(t86);
 #line 79 "examples/ledger/book/entry.hero"
-#line 12190 "main.c"
+#line 12189 "main.c"
     hero_array_incref(t75);
 #line 79 "examples/ledger/book/entry.hero"
-#line 12193 "main.c"
+#line 12192 "main.c"
     h_bookentry_Entry_release(&h0_own0);
 #line 79 "examples/ledger/book/entry.hero"
-#line 12196 "main.c"
+#line 12195 "main.c"
     h_bookentry_Entry_release(&h1_own1);
 #line 79 "examples/ledger/book/entry.hero"
-#line 12199 "main.c"
+#line 12198 "main.c"
     h_bookentry_Entry_release(&h2_own2);
 #line 79 "examples/ledger/book/entry.hero"
-#line 12202 "main.c"
+#line 12201 "main.c"
     h_bookentry_Entry_release(&h3_own3);
 #line 79 "examples/ledger/book/entry.hero"
-#line 12205 "main.c"
+#line 12204 "main.c"
     h_bookentry_Entry_release(&h4_own4);
 #line 79 "examples/ledger/book/entry.hero"
-#line 12208 "main.c"
+#line 12207 "main.c"
     h_bookentry_Entry_release(&h5_own5);
 #line 79 "examples/ledger/book/entry.hero"
-#line 12211 "main.c"
+#line 12210 "main.c"
     h_bookentry_Entry_release(&h6_own6);
 #line 79 "examples/ledger/book/entry.hero"
-#line 12214 "main.c"
+#line 12213 "main.c"
     h_bookentry_Entry_release(&h7_own7);
 #line 79 "examples/ledger/book/entry.hero"
-#line 12217 "main.c"
+#line 12216 "main.c"
     h_bookentry_Entry_release(&h8_own8);
 #line 79 "examples/ledger/book/entry.hero"
-#line 12220 "main.c"
+#line 12219 "main.c"
     h_bookentry_Entry_release(&h9_own9);
 #line 79 "examples/ledger/book/entry.hero"
-#line 12223 "main.c"
+#line 12222 "main.c"
     hero_array_decref(h10_own10);
     return t75;
 }
 
 #line 98 "examples/ledger/book/entry.hero"
 HeroArrayHeader * h_bookentry_accounts(void) {
-#line 12230 "main.c"
+#line 12229 "main.c"
     h_bookentry_Account h0_own0 = {0};
     h_bookentry_Account h1_own1 = {0};
     h_bookentry_Account h2_own2 = {0};
@@ -12256,10 +12255,10 @@ bb0:
     t1 = HERO_STR_LIT(hero_str_f613a51);
 #line 100 "examples/ledger/book/entry.hero"
     t2 = HERO_STR_LIT(hero_str_c38b1fa);
-#line 12260 "main.c"
+#line 12259 "main.c"
     hero_str_incref(t1);
 #line 100 "examples/ledger/book/entry.hero"
-#line 12263 "main.c"
+#line 12262 "main.c"
     hero_str_incref(t2);
 #line 100 "examples/ledger/book/entry.hero"
     t3 = (h_bookentry_Account){.f_name = t1, .f_kind = t2};
@@ -12267,16 +12266,16 @@ bb0:
     t14 = h0_own0;
 #line 100 "examples/ledger/book/entry.hero"
     h0_own0 = t3;
-#line 12271 "main.c"
+#line 12270 "main.c"
     h_bookentry_Account_release(&t14);
 #line 101 "examples/ledger/book/entry.hero"
     t4 = HERO_STR_LIT(hero_str_31b26015);
 #line 101 "examples/ledger/book/entry.hero"
     t5 = HERO_STR_LIT(hero_str_41889c6a);
-#line 12277 "main.c"
+#line 12276 "main.c"
     hero_str_incref(t4);
 #line 101 "examples/ledger/book/entry.hero"
-#line 12280 "main.c"
+#line 12279 "main.c"
     hero_str_incref(t5);
 #line 101 "examples/ledger/book/entry.hero"
     t6 = (h_bookentry_Account){.f_name = t4, .f_kind = t5};
@@ -12284,16 +12283,16 @@ bb0:
     t15 = h1_own1;
 #line 101 "examples/ledger/book/entry.hero"
     h1_own1 = t6;
-#line 12288 "main.c"
+#line 12287 "main.c"
     h_bookentry_Account_release(&t15);
 #line 102 "examples/ledger/book/entry.hero"
     t7 = HERO_STR_LIT(hero_str_dc835da);
 #line 102 "examples/ledger/book/entry.hero"
     t8 = HERO_STR_LIT(hero_str_5edb2033);
-#line 12294 "main.c"
+#line 12293 "main.c"
     hero_str_incref(t7);
 #line 102 "examples/ledger/book/entry.hero"
-#line 12297 "main.c"
+#line 12296 "main.c"
     hero_str_incref(t8);
 #line 102 "examples/ledger/book/entry.hero"
     t9 = (h_bookentry_Account){.f_name = t7, .f_kind = t8};
@@ -12301,16 +12300,16 @@ bb0:
     t16 = h2_own2;
 #line 102 "examples/ledger/book/entry.hero"
     h2_own2 = t9;
-#line 12305 "main.c"
+#line 12304 "main.c"
     h_bookentry_Account_release(&t16);
 #line 103 "examples/ledger/book/entry.hero"
     t10 = HERO_STR_LIT(hero_str_473cb95f);
 #line 103 "examples/ledger/book/entry.hero"
     t11 = HERO_STR_LIT(hero_str_5edb2033);
-#line 12311 "main.c"
+#line 12310 "main.c"
     hero_str_incref(t10);
 #line 103 "examples/ledger/book/entry.hero"
-#line 12314 "main.c"
+#line 12313 "main.c"
     hero_str_incref(t11);
 #line 103 "examples/ledger/book/entry.hero"
     t12 = (h_bookentry_Account){.f_name = t10, .f_kind = t11};
@@ -12318,7 +12317,7 @@ bb0:
     t17 = h3_own3;
 #line 103 "examples/ledger/book/entry.hero"
     h3_own3 = t12;
-#line 12322 "main.c"
+#line 12321 "main.c"
     h_bookentry_Account_release(&t17);
 #line 99 "examples/ledger/book/entry.hero"
     t13 = hero_array_new(&h_bookentry_Account_desc, 4);
@@ -12342,32 +12341,32 @@ bb0:
     t18 = h4_own4;
 #line 99 "examples/ledger/book/entry.hero"
     h4_own4 = t13;
-#line 12346 "main.c"
+#line 12345 "main.c"
     hero_array_decref(t18);
 #line 99 "examples/ledger/book/entry.hero"
-#line 12349 "main.c"
+#line 12348 "main.c"
     hero_array_incref(t13);
 #line 99 "examples/ledger/book/entry.hero"
-#line 12352 "main.c"
+#line 12351 "main.c"
     h_bookentry_Account_release(&h0_own0);
 #line 99 "examples/ledger/book/entry.hero"
-#line 12355 "main.c"
+#line 12354 "main.c"
     h_bookentry_Account_release(&h1_own1);
 #line 99 "examples/ledger/book/entry.hero"
-#line 12358 "main.c"
+#line 12357 "main.c"
     h_bookentry_Account_release(&h2_own2);
 #line 99 "examples/ledger/book/entry.hero"
-#line 12361 "main.c"
+#line 12360 "main.c"
     h_bookentry_Account_release(&h3_own3);
 #line 99 "examples/ledger/book/entry.hero"
-#line 12364 "main.c"
+#line 12363 "main.c"
     hero_array_decref(h4_own4);
     return t13;
 }
 
 #line 112 "examples/ledger/book/entry.hero"
 HeroArrayHeader * h_bookentry_balances(HeroArrayHeader * h0_entries) {
-#line 12371 "main.c"
+#line 12370 "main.c"
     HeroArrayHeader * h1_names = {0};
     HeroMapHeader * h2_totals = {0};
     HeroMapHeader * h3_counts = {0};
@@ -12536,15 +12535,15 @@ bb0:
     t110 = h17_own17;
 #line 113 "examples/ledger/book/entry.hero"
     h17_own17 = t1;
-#line 12540 "main.c"
+#line 12539 "main.c"
     hero_array_decref(t110);
 #line 113 "examples/ledger/book/entry.hero"
     t111 = h1_names;
-#line 12544 "main.c"
+#line 12543 "main.c"
     hero_array_incref(t1);
 #line 113 "examples/ledger/book/entry.hero"
     h1_names = t1;
-#line 12548 "main.c"
+#line 12547 "main.c"
     hero_array_decref(t111);
 #line 114 "examples/ledger/book/entry.hero"
     t2 = hero_map_new(&hero_desc_str, &hero_desc_int, 0);
@@ -12552,15 +12551,15 @@ bb0:
     t112 = h18_own18;
 #line 114 "examples/ledger/book/entry.hero"
     h18_own18 = t2;
-#line 12556 "main.c"
+#line 12555 "main.c"
     hero_map_decref(t112);
 #line 114 "examples/ledger/book/entry.hero"
     t113 = h2_totals;
-#line 12560 "main.c"
+#line 12559 "main.c"
     hero_map_incref(t2);
 #line 114 "examples/ledger/book/entry.hero"
     h2_totals = t2;
-#line 12564 "main.c"
+#line 12563 "main.c"
     hero_map_decref(t113);
 #line 115 "examples/ledger/book/entry.hero"
     t3 = hero_map_new(&hero_desc_str, &hero_desc_int, 0);
@@ -12568,25 +12567,25 @@ bb0:
     t114 = h19_own19;
 #line 115 "examples/ledger/book/entry.hero"
     h19_own19 = t3;
-#line 12572 "main.c"
+#line 12571 "main.c"
     hero_map_decref(t114);
 #line 115 "examples/ledger/book/entry.hero"
     t115 = h3_counts;
-#line 12576 "main.c"
+#line 12575 "main.c"
     hero_map_incref(t3);
 #line 115 "examples/ledger/book/entry.hero"
     h3_counts = t3;
-#line 12580 "main.c"
+#line 12579 "main.c"
     hero_map_decref(t115);
 #line 117 "examples/ledger/book/entry.hero"
     t4 = h0_entries;
 #line 117 "examples/ledger/book/entry.hero"
     t116 = h4_xs0;
-#line 12586 "main.c"
+#line 12585 "main.c"
     hero_array_incref(t4);
 #line 117 "examples/ledger/book/entry.hero"
     h4_xs0 = t4;
-#line 12590 "main.c"
+#line 12589 "main.c"
     hero_array_decref(t116);
 #line 117 "examples/ledger/book/entry.hero"
     t5 = INT64_C(0);
@@ -12616,11 +12615,11 @@ bb2:
     t12 = *(h_bookentry_Entry const *)hero_array_at(t10, t11);
 #line 117 "examples/ledger/book/entry.hero"
     t117 = h6_e;
-#line 12620 "main.c"
+#line 12619 "main.c"
     h_bookentry_Entry_retain(&t12);
 #line 117 "examples/ledger/book/entry.hero"
     h6_e = t12;
-#line 12624 "main.c"
+#line 12623 "main.c"
     h_bookentry_Entry_release(&t117);
 #line 118 "examples/ledger/book/entry.hero"
     t13 = h2_totals;
@@ -12650,25 +12649,25 @@ bb2:
     t118 = h20_own20;
 #line 118 "examples/ledger/book/entry.hero"
     h20_own20 = t16;
-#line 12654 "main.c"
+#line 12653 "main.c"
     h_0opt_e201354_release(&t118);
 #line 118 "examples/ledger/book/entry.hero"
     t119 = h7_seen;
-#line 12658 "main.c"
+#line 12657 "main.c"
     h_0opt_e201354_retain(&t16);
 #line 118 "examples/ledger/book/entry.hero"
     h7_seen = t16;
-#line 12662 "main.c"
+#line 12661 "main.c"
     h_0opt_e201354_release(&t119);
 #line 120 "examples/ledger/book/entry.hero"
     t17 = h7_seen;
 #line 120 "examples/ledger/book/entry.hero"
     t120 = h8_f0;
-#line 12668 "main.c"
+#line 12667 "main.c"
     h_0opt_e201354_retain(&t17);
 #line 120 "examples/ledger/book/entry.hero"
     h8_f0 = t17;
-#line 12672 "main.c"
+#line 12671 "main.c"
     h_0opt_e201354_release(&t120);
 #line 120 "examples/ledger/book/entry.hero"
     t18 = h8_f0;
@@ -12700,15 +12699,15 @@ bb4:
     t121 = h21_own21;
 #line 128 "examples/ledger/book/entry.hero"
     h21_own21 = t68;
-#line 12704 "main.c"
+#line 12703 "main.c"
     hero_array_decref(t121);
 #line 128 "examples/ledger/book/entry.hero"
     t122 = h11_out;
-#line 12708 "main.c"
+#line 12707 "main.c"
     hero_array_incref(t68);
 #line 128 "examples/ledger/book/entry.hero"
     h11_out = t68;
-#line 12712 "main.c"
+#line 12711 "main.c"
     hero_array_decref(t122);
 #line 132 "examples/ledger/book/entry.hero"
     t69 = h1_names;
@@ -12718,15 +12717,15 @@ bb4:
     t123 = h22_own22;
 #line 132 "examples/ledger/book/entry.hero"
     h22_own22 = t70;
-#line 12722 "main.c"
+#line 12721 "main.c"
     hero_array_decref(t123);
 #line 132 "examples/ledger/book/entry.hero"
     t124 = h12_xs1;
-#line 12726 "main.c"
+#line 12725 "main.c"
     hero_array_incref(t70);
 #line 132 "examples/ledger/book/entry.hero"
     h12_xs1 = t70;
-#line 12730 "main.c"
+#line 12729 "main.c"
     hero_array_decref(t124);
 #line 132 "examples/ledger/book/entry.hero"
     t71 = INT64_C(0);
@@ -12778,11 +12777,11 @@ bb7:
     t36 = h7_seen;
 #line 125 "examples/ledger/book/entry.hero"
     t125 = h9_f1;
-#line 12782 "main.c"
+#line 12781 "main.c"
     h_0opt_e201354_retain(&t36);
 #line 125 "examples/ledger/book/entry.hero"
     h9_f1 = t36;
-#line 12786 "main.c"
+#line 12785 "main.c"
     h_0opt_e201354_release(&t125);
 #line 125 "examples/ledger/book/entry.hero"
     t37 = h9_f1;
@@ -12842,15 +12841,15 @@ bb8:
     t126 = h23_own23;
 #line 126 "examples/ledger/book/entry.hero"
     h23_own23 = t54;
-#line 12846 "main.c"
+#line 12845 "main.c"
     h_0opt_e201354_release(&t126);
 #line 126 "examples/ledger/book/entry.hero"
     t127 = h10_f2;
-#line 12850 "main.c"
+#line 12849 "main.c"
     h_0opt_e201354_retain(&t54);
 #line 126 "examples/ledger/book/entry.hero"
     h10_f2 = t54;
-#line 12854 "main.c"
+#line 12853 "main.c"
     h_0opt_e201354_release(&t127);
 #line 126 "examples/ledger/book/entry.hero"
     t55 = h10_f2;
@@ -12868,7 +12867,7 @@ bb9:
     t41 = h9_f1;
 #line 125 "examples/ledger/book/entry.hero"
     t42 = t41.as.err;
-#line 12872 "main.c"
+#line 12871 "main.c"
     hero_panic_must(t42);
     hero_unreachable();
 bb10:
@@ -12890,7 +12889,7 @@ bb11:
     t59 = h10_f2;
 #line 126 "examples/ledger/book/entry.hero"
     t60 = t59.as.err;
-#line 12894 "main.c"
+#line 12893 "main.c"
     hero_panic_must(t60);
     hero_unreachable();
 bb12:
@@ -12914,11 +12913,11 @@ bb13:
     t78 = *(HeroStr const *)hero_array_at(t76, t77);
 #line 132 "examples/ledger/book/entry.hero"
     t128 = h14_name;
-#line 12918 "main.c"
+#line 12917 "main.c"
     hero_str_incref(t78);
 #line 132 "examples/ledger/book/entry.hero"
     h14_name = t78;
-#line 12922 "main.c"
+#line 12921 "main.c"
     hero_str_decref(t128);
 #line 133 "examples/ledger/book/entry.hero"
     t79 = h11_out;
@@ -12950,15 +12949,15 @@ bb13:
     t129 = h24_own24;
 #line 134 "examples/ledger/book/entry.hero"
     h24_own24 = t83;
-#line 12954 "main.c"
+#line 12953 "main.c"
     h_0opt_e201354_release(&t129);
 #line 134 "examples/ledger/book/entry.hero"
     t130 = h15_f3;
-#line 12958 "main.c"
+#line 12957 "main.c"
     h_0opt_e201354_retain(&t83);
 #line 134 "examples/ledger/book/entry.hero"
     h15_f3 = t83;
-#line 12962 "main.c"
+#line 12961 "main.c"
     h_0opt_e201354_release(&t130);
 #line 134 "examples/ledger/book/entry.hero"
     t84 = h15_f3;
@@ -12986,82 +12985,82 @@ bb14:
 bb15:
 #line 137 "examples/ledger/book/entry.hero"
     t109 = h11_out;
-#line 12990 "main.c"
+#line 12989 "main.c"
     hero_array_incref(t109);
 #line 137 "examples/ledger/book/entry.hero"
-#line 12993 "main.c"
+#line 12992 "main.c"
     hero_array_decref(h1_names);
 #line 137 "examples/ledger/book/entry.hero"
-#line 12996 "main.c"
+#line 12995 "main.c"
     hero_map_decref(h2_totals);
 #line 137 "examples/ledger/book/entry.hero"
-#line 12999 "main.c"
+#line 12998 "main.c"
     hero_map_decref(h3_counts);
 #line 137 "examples/ledger/book/entry.hero"
-#line 13002 "main.c"
+#line 13001 "main.c"
     hero_array_decref(h4_xs0);
 #line 137 "examples/ledger/book/entry.hero"
-#line 13005 "main.c"
+#line 13004 "main.c"
     h_bookentry_Entry_release(&h6_e);
 #line 137 "examples/ledger/book/entry.hero"
-#line 13008 "main.c"
+#line 13007 "main.c"
     h_0opt_e201354_release(&h7_seen);
 #line 137 "examples/ledger/book/entry.hero"
-#line 13011 "main.c"
+#line 13010 "main.c"
     h_0opt_e201354_release(&h8_f0);
 #line 137 "examples/ledger/book/entry.hero"
-#line 13014 "main.c"
+#line 13013 "main.c"
     h_0opt_e201354_release(&h9_f1);
 #line 137 "examples/ledger/book/entry.hero"
-#line 13017 "main.c"
+#line 13016 "main.c"
     h_0opt_e201354_release(&h10_f2);
 #line 137 "examples/ledger/book/entry.hero"
-#line 13020 "main.c"
+#line 13019 "main.c"
     hero_array_decref(h11_out);
 #line 137 "examples/ledger/book/entry.hero"
-#line 13023 "main.c"
+#line 13022 "main.c"
     hero_array_decref(h12_xs1);
 #line 137 "examples/ledger/book/entry.hero"
-#line 13026 "main.c"
+#line 13025 "main.c"
     hero_str_decref(h14_name);
 #line 137 "examples/ledger/book/entry.hero"
-#line 13029 "main.c"
+#line 13028 "main.c"
     h_0opt_e201354_release(&h15_f3);
 #line 137 "examples/ledger/book/entry.hero"
-#line 13032 "main.c"
+#line 13031 "main.c"
     h_0opt_e201354_release(&h16_f4);
 #line 137 "examples/ledger/book/entry.hero"
-#line 13035 "main.c"
+#line 13034 "main.c"
     hero_array_decref(h17_own17);
 #line 137 "examples/ledger/book/entry.hero"
-#line 13038 "main.c"
+#line 13037 "main.c"
     hero_map_decref(h18_own18);
 #line 137 "examples/ledger/book/entry.hero"
-#line 13041 "main.c"
+#line 13040 "main.c"
     hero_map_decref(h19_own19);
 #line 137 "examples/ledger/book/entry.hero"
-#line 13044 "main.c"
+#line 13043 "main.c"
     h_0opt_e201354_release(&h20_own20);
 #line 137 "examples/ledger/book/entry.hero"
-#line 13047 "main.c"
+#line 13046 "main.c"
     hero_array_decref(h21_own21);
 #line 137 "examples/ledger/book/entry.hero"
-#line 13050 "main.c"
+#line 13049 "main.c"
     hero_array_decref(h22_own22);
 #line 137 "examples/ledger/book/entry.hero"
-#line 13053 "main.c"
+#line 13052 "main.c"
     h_0opt_e201354_release(&h23_own23);
 #line 137 "examples/ledger/book/entry.hero"
-#line 13056 "main.c"
+#line 13055 "main.c"
     h_0opt_e201354_release(&h24_own24);
 #line 137 "examples/ledger/book/entry.hero"
-#line 13059 "main.c"
+#line 13058 "main.c"
     h_0opt_e201354_release(&h25_own25);
 #line 137 "examples/ledger/book/entry.hero"
-#line 13062 "main.c"
+#line 13061 "main.c"
     h_bookentry_Balance_release(&h26_own26);
 #line 137 "examples/ledger/book/entry.hero"
-#line 13065 "main.c"
+#line 13064 "main.c"
     hero_array_decref(h27_own27);
     return t109;
 bb16:
@@ -13095,15 +13094,15 @@ bb16:
     t131 = h25_own25;
 #line 134 "examples/ledger/book/entry.hero"
     h25_own25 = t94;
-#line 13099 "main.c"
+#line 13098 "main.c"
     h_0opt_e201354_release(&t131);
 #line 134 "examples/ledger/book/entry.hero"
     t132 = h16_f4;
-#line 13103 "main.c"
+#line 13102 "main.c"
     h_0opt_e201354_retain(&t94);
 #line 134 "examples/ledger/book/entry.hero"
     h16_f4 = t94;
-#line 13107 "main.c"
+#line 13106 "main.c"
     h_0opt_e201354_release(&t132);
 #line 134 "examples/ledger/book/entry.hero"
     t95 = h16_f4;
@@ -13121,7 +13120,7 @@ bb17:
     t88 = h15_f3;
 #line 134 "examples/ledger/book/entry.hero"
     t89 = t88.as.err;
-#line 13125 "main.c"
+#line 13124 "main.c"
     hero_panic_must(t89);
     hero_unreachable();
 bb18:
@@ -13131,7 +13130,7 @@ bb18:
     t102 = t101.as.ok;
 #line 134 "examples/ledger/book/entry.hero"
     t103 = (h_bookentry_Amount){.f_cents = t102};
-#line 13135 "main.c"
+#line 13134 "main.c"
     hero_str_incref(t80);
 #line 134 "examples/ledger/book/entry.hero"
     t104 = (h_bookentry_Balance){.f_account = t80, .f_entries = t91, .f_total = t103};
@@ -13139,7 +13138,7 @@ bb18:
     t133 = h26_own26;
 #line 134 "examples/ledger/book/entry.hero"
     h26_own26 = t104;
-#line 13143 "main.c"
+#line 13142 "main.c"
     h_bookentry_Balance_release(&t133);
 #line 133 "examples/ledger/book/entry.hero"
     t105 = hero_array_push(t79, &t104);
@@ -13147,15 +13146,15 @@ bb18:
     t134 = h27_own27;
 #line 133 "examples/ledger/book/entry.hero"
     h27_own27 = t105;
-#line 13151 "main.c"
+#line 13150 "main.c"
     hero_array_decref(t134);
 #line 133 "examples/ledger/book/entry.hero"
     t135 = h11_out;
-#line 13155 "main.c"
+#line 13154 "main.c"
     hero_array_incref(t105);
 #line 133 "examples/ledger/book/entry.hero"
     h11_out = t105;
-#line 13159 "main.c"
+#line 13158 "main.c"
     hero_array_decref(t135);
     goto bb14;
 bb19:
@@ -13163,14 +13162,14 @@ bb19:
     t99 = h16_f4;
 #line 134 "examples/ledger/book/entry.hero"
     t100 = t99.as.err;
-#line 13167 "main.c"
+#line 13166 "main.c"
     hero_panic_must(t100);
     hero_unreachable();
 }
 
 #line 140 "examples/ledger/book/entry.hero"
 h_bookentry_Amount h_bookentry_total(HeroArrayHeader * h0_entries) {
-#line 13174 "main.c"
+#line 13173 "main.c"
     h_bookentry_Amount h1_sum;
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
@@ -13208,11 +13207,11 @@ bb0:
     t3 = h0_entries;
 #line 143 "examples/ledger/book/entry.hero"
     t20 = h2_xs0;
-#line 13212 "main.c"
+#line 13211 "main.c"
     hero_array_incref(t3);
 #line 143 "examples/ledger/book/entry.hero"
     h2_xs0 = t3;
-#line 13216 "main.c"
+#line 13215 "main.c"
     hero_array_decref(t20);
 #line 143 "examples/ledger/book/entry.hero"
     t4 = INT64_C(0);
@@ -13242,11 +13241,11 @@ bb2:
     t11 = *(h_bookentry_Entry const *)hero_array_at(t9, t10);
 #line 143 "examples/ledger/book/entry.hero"
     t21 = h4_e;
-#line 13246 "main.c"
+#line 13245 "main.c"
     h_bookentry_Entry_retain(&t11);
 #line 143 "examples/ledger/book/entry.hero"
     h4_e = t11;
-#line 13250 "main.c"
+#line 13249 "main.c"
     h_bookentry_Entry_release(&t21);
 #line 144 "examples/ledger/book/entry.hero"
     t12 = h1_sum;
@@ -13276,17 +13275,17 @@ bb3:
 bb4:
 #line 146 "examples/ledger/book/entry.hero"
     t19 = h1_sum;
-#line 13280 "main.c"
+#line 13279 "main.c"
     hero_array_decref(h2_xs0);
 #line 146 "examples/ledger/book/entry.hero"
-#line 13283 "main.c"
+#line 13282 "main.c"
     h_bookentry_Entry_release(&h4_e);
     return t19;
 }
 
 #line 149 "examples/ledger/book/entry.hero"
 h_0opt_f87774a h_bookentry_kind_of(HeroStr h0_name, HeroArrayHeader * h1_all_accounts) {
-#line 13290 "main.c"
+#line 13289 "main.c"
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
     h_bookentry_Account h4_a = {0};
@@ -13328,11 +13327,11 @@ bb0:
     t1 = h1_all_accounts;
 #line 150 "examples/ledger/book/entry.hero"
     t25 = h2_xs0;
-#line 13332 "main.c"
+#line 13331 "main.c"
     hero_array_incref(t1);
 #line 150 "examples/ledger/book/entry.hero"
     h2_xs0 = t1;
-#line 13336 "main.c"
+#line 13335 "main.c"
     hero_array_decref(t25);
 #line 150 "examples/ledger/book/entry.hero"
     t2 = INT64_C(0);
@@ -13362,11 +13361,11 @@ bb2:
     t9 = *(h_bookentry_Account const *)hero_array_at(t7, t8);
 #line 150 "examples/ledger/book/entry.hero"
     t26 = h4_a;
-#line 13366 "main.c"
+#line 13365 "main.c"
     h_bookentry_Account_retain(&t9);
 #line 150 "examples/ledger/book/entry.hero"
     h4_a = t9;
-#line 13370 "main.c"
+#line 13369 "main.c"
     h_bookentry_Account_release(&t26);
 #line 151 "examples/ledger/book/entry.hero"
     t10 = h4_a;
@@ -13404,13 +13403,13 @@ bb4:
     t27 = h5_own5;
 #line 154 "examples/ledger/book/entry.hero"
     h5_own5 = t23;
-#line 13408 "main.c"
+#line 13407 "main.c"
     hero_str_decref(t27);
 #line 154 "examples/ledger/book/entry.hero"
-#line 13411 "main.c"
+#line 13410 "main.c"
     hero_str_incref(t20);
 #line 154 "examples/ledger/book/entry.hero"
-#line 13414 "main.c"
+#line 13413 "main.c"
     hero_str_incref(t23);
 #line 154 "examples/ledger/book/entry.hero"
     t24 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t20, .msg = t23}};
@@ -13418,25 +13417,25 @@ bb4:
     t28 = h6_own6;
 #line 154 "examples/ledger/book/entry.hero"
     h6_own6 = t24;
-#line 13422 "main.c"
+#line 13421 "main.c"
     h_0opt_f87774a_release(&t28);
 #line 154 "examples/ledger/book/entry.hero"
-#line 13425 "main.c"
+#line 13424 "main.c"
     h_0opt_f87774a_retain(&t24);
 #line 154 "examples/ledger/book/entry.hero"
-#line 13428 "main.c"
+#line 13427 "main.c"
     hero_array_decref(h2_xs0);
 #line 154 "examples/ledger/book/entry.hero"
-#line 13431 "main.c"
+#line 13430 "main.c"
     h_bookentry_Account_release(&h4_a);
 #line 154 "examples/ledger/book/entry.hero"
-#line 13434 "main.c"
+#line 13433 "main.c"
     hero_str_decref(h5_own5);
 #line 154 "examples/ledger/book/entry.hero"
-#line 13437 "main.c"
+#line 13436 "main.c"
     h_0opt_f87774a_release(&h6_own6);
 #line 154 "examples/ledger/book/entry.hero"
-#line 13440 "main.c"
+#line 13439 "main.c"
     h_0opt_f87774a_release(&h7_own7);
     return t24;
 bb5:
@@ -13446,7 +13445,7 @@ bb6:
     t14 = h4_a;
 #line 152 "examples/ledger/book/entry.hero"
     t15 = t14.f_kind;
-#line 13450 "main.c"
+#line 13449 "main.c"
     hero_str_incref(t15);
 #line 152 "examples/ledger/book/entry.hero"
     t16 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t15};
@@ -13454,25 +13453,25 @@ bb6:
     t29 = h7_own7;
 #line 152 "examples/ledger/book/entry.hero"
     h7_own7 = t16;
-#line 13458 "main.c"
+#line 13457 "main.c"
     h_0opt_f87774a_release(&t29);
 #line 152 "examples/ledger/book/entry.hero"
-#line 13461 "main.c"
+#line 13460 "main.c"
     h_0opt_f87774a_retain(&t16);
 #line 152 "examples/ledger/book/entry.hero"
-#line 13464 "main.c"
+#line 13463 "main.c"
     hero_array_decref(h2_xs0);
 #line 152 "examples/ledger/book/entry.hero"
-#line 13467 "main.c"
+#line 13466 "main.c"
     h_bookentry_Account_release(&h4_a);
 #line 152 "examples/ledger/book/entry.hero"
-#line 13470 "main.c"
+#line 13469 "main.c"
     hero_str_decref(h5_own5);
 #line 152 "examples/ledger/book/entry.hero"
-#line 13473 "main.c"
+#line 13472 "main.c"
     h_0opt_f87774a_release(&h6_own6);
 #line 152 "examples/ledger/book/entry.hero"
-#line 13476 "main.c"
+#line 13475 "main.c"
     h_0opt_f87774a_release(&h7_own7);
     return t16;
 bb7:
@@ -13481,49 +13480,49 @@ bb7:
 
 #line 39 "examples/ledger/db/sqlite.hero"
 int64_t h_dbsqlite_SQLITE_OK(void) {
-#line 13485 "main.c"
+#line 13484 "main.c"
     return SQLITE_OK;
 }
 
 #line 40 "examples/ledger/db/sqlite.hero"
 int64_t h_dbsqlite_SQLITE_ROW(void) {
-#line 13491 "main.c"
+#line 13490 "main.c"
     return SQLITE_ROW;
 }
 
 #line 41 "examples/ledger/db/sqlite.hero"
 int64_t h_dbsqlite_SQLITE_DONE(void) {
-#line 13497 "main.c"
+#line 13496 "main.c"
     return SQLITE_DONE;
 }
 
 #line 42 "examples/ledger/db/sqlite.hero"
 int64_t h_dbsqlite_SQLITE_INTEGER(void) {
-#line 13503 "main.c"
+#line 13502 "main.c"
     return SQLITE_INTEGER;
 }
 
 #line 43 "examples/ledger/db/sqlite.hero"
 int64_t h_dbsqlite_SQLITE_FLOAT(void) {
-#line 13509 "main.c"
+#line 13508 "main.c"
     return SQLITE_FLOAT;
 }
 
 #line 44 "examples/ledger/db/sqlite.hero"
 int64_t h_dbsqlite_SQLITE_TEXT(void) {
-#line 13515 "main.c"
+#line 13514 "main.c"
     return SQLITE_TEXT;
 }
 
 #line 45 "examples/ledger/db/sqlite.hero"
 int64_t h_dbsqlite_SQLITE_NULL(void) {
-#line 13521 "main.c"
+#line 13520 "main.c"
     return SQLITE_NULL;
 }
 
-#line 93 "examples/ledger/db/sqlite.hero"
+#line 105 "examples/ledger/db/sqlite.hero"
 h_0opt_e405689 h_dbsqlite_cell_at(void * h0_statement, int32_t h1_column) {
-#line 13527 "main.c"
+#line 13526 "main.c"
     int32_t h2_kind;
     h_0opt_e201354 h3_f0 = {0};
     h_0opt_e201354 h4_f1 = {0};
@@ -13685,1163 +13684,1206 @@ h_0opt_e405689 h_dbsqlite_cell_at(void * h0_statement, int32_t h1_column) {
     h_0opt_e405689 t130 = {0};
     goto bb0;
 bb0:
-#line 94 "examples/ledger/db/sqlite.hero"
+#line 106 "examples/ledger/db/sqlite.hero"
     t1 = h0_statement;
-#line 94 "examples/ledger/db/sqlite.hero"
+#line 106 "examples/ledger/db/sqlite.hero"
     t2 = h1_column;
-#line 94 "examples/ledger/db/sqlite.hero"
+#line 106 "examples/ledger/db/sqlite.hero"
     t3 = sqlite3_column_type(t1, t2);
-#line 94 "examples/ledger/db/sqlite.hero"
+#line 106 "examples/ledger/db/sqlite.hero"
     h2_kind = t3;
-#line 96 "examples/ledger/db/sqlite.hero"
+#line 108 "examples/ledger/db/sqlite.hero"
     t4 = h2_kind;
-#line 96 "examples/ledger/db/sqlite.hero"
+#line 108 "examples/ledger/db/sqlite.hero"
     t5 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t4};
-#line 96 "examples/ledger/db/sqlite.hero"
+#line 108 "examples/ledger/db/sqlite.hero"
     t103 = h11_own11;
-#line 96 "examples/ledger/db/sqlite.hero"
+#line 108 "examples/ledger/db/sqlite.hero"
     h11_own11 = t5;
-#line 13705 "main.c"
+#line 13704 "main.c"
     h_0opt_e201354_release(&t103);
-#line 96 "examples/ledger/db/sqlite.hero"
+#line 108 "examples/ledger/db/sqlite.hero"
     t104 = h3_f0;
-#line 13709 "main.c"
+#line 13708 "main.c"
     h_0opt_e201354_retain(&t5);
-#line 96 "examples/ledger/db/sqlite.hero"
+#line 108 "examples/ledger/db/sqlite.hero"
     h3_f0 = t5;
-#line 13713 "main.c"
+#line 13712 "main.c"
     h_0opt_e201354_release(&t104);
-#line 96 "examples/ledger/db/sqlite.hero"
+#line 108 "examples/ledger/db/sqlite.hero"
     t6 = h3_f0;
-#line 96 "examples/ledger/db/sqlite.hero"
+#line 108 "examples/ledger/db/sqlite.hero"
     t7 = t6.tag;
-#line 96 "examples/ledger/db/sqlite.hero"
+#line 108 "examples/ledger/db/sqlite.hero"
     t8 = INT64_C(0);
-#line 96 "examples/ledger/db/sqlite.hero"
+#line 108 "examples/ledger/db/sqlite.hero"
     t9 = t7 == t8;
-#line 96 "examples/ledger/db/sqlite.hero"
+#line 108 "examples/ledger/db/sqlite.hero"
     if (t9) goto bb2; else goto bb3;
-#line 96 "examples/ledger/db/sqlite.hero"
+#line 108 "examples/ledger/db/sqlite.hero"
 bb1:
-#line 99 "examples/ledger/db/sqlite.hero"
+#line 111 "examples/ledger/db/sqlite.hero"
     t21 = h2_kind;
-#line 99 "examples/ledger/db/sqlite.hero"
+#line 111 "examples/ledger/db/sqlite.hero"
     t22 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t21};
-#line 99 "examples/ledger/db/sqlite.hero"
+#line 111 "examples/ledger/db/sqlite.hero"
     t105 = h12_own12;
-#line 99 "examples/ledger/db/sqlite.hero"
+#line 111 "examples/ledger/db/sqlite.hero"
     h12_own12 = t22;
-#line 13735 "main.c"
+#line 13734 "main.c"
     h_0opt_e201354_release(&t105);
-#line 99 "examples/ledger/db/sqlite.hero"
+#line 111 "examples/ledger/db/sqlite.hero"
     t106 = h4_f1;
-#line 13739 "main.c"
+#line 13738 "main.c"
     h_0opt_e201354_retain(&t22);
-#line 99 "examples/ledger/db/sqlite.hero"
+#line 111 "examples/ledger/db/sqlite.hero"
     h4_f1 = t22;
-#line 13743 "main.c"
+#line 13742 "main.c"
     h_0opt_e201354_release(&t106);
-#line 99 "examples/ledger/db/sqlite.hero"
+#line 111 "examples/ledger/db/sqlite.hero"
     t23 = h4_f1;
-#line 99 "examples/ledger/db/sqlite.hero"
+#line 111 "examples/ledger/db/sqlite.hero"
     t24 = t23.tag;
-#line 99 "examples/ledger/db/sqlite.hero"
+#line 111 "examples/ledger/db/sqlite.hero"
     t25 = INT64_C(0);
-#line 99 "examples/ledger/db/sqlite.hero"
+#line 111 "examples/ledger/db/sqlite.hero"
     t26 = t24 == t25;
-#line 99 "examples/ledger/db/sqlite.hero"
+#line 111 "examples/ledger/db/sqlite.hero"
     if (t26) goto bb7; else goto bb8;
-#line 99 "examples/ledger/db/sqlite.hero"
+#line 111 "examples/ledger/db/sqlite.hero"
 bb2:
-#line 96 "examples/ledger/db/sqlite.hero"
+#line 108 "examples/ledger/db/sqlite.hero"
     t12 = h3_f0;
-#line 96 "examples/ledger/db/sqlite.hero"
+#line 108 "examples/ledger/db/sqlite.hero"
     t13 = t12.as.ok;
-#line 96 "examples/ledger/db/sqlite.hero"
+#line 108 "examples/ledger/db/sqlite.hero"
     t14 = h_dbsqlite_SQLITE_INTEGER();
-#line 96 "examples/ledger/db/sqlite.hero"
+#line 108 "examples/ledger/db/sqlite.hero"
     t15 = t13 == t14;
-#line 96 "examples/ledger/db/sqlite.hero"
+#line 108 "examples/ledger/db/sqlite.hero"
     if (t15) goto bb4; else goto bb5;
-#line 96 "examples/ledger/db/sqlite.hero"
+#line 108 "examples/ledger/db/sqlite.hero"
 bb3:
-#line 96 "examples/ledger/db/sqlite.hero"
+#line 108 "examples/ledger/db/sqlite.hero"
     t10 = h3_f0;
-#line 96 "examples/ledger/db/sqlite.hero"
+#line 108 "examples/ledger/db/sqlite.hero"
     t11 = t10.as.err;
-#line 13773 "main.c"
+#line 13772 "main.c"
     hero_panic_must(t11);
     hero_unreachable();
 bb4:
-#line 97 "examples/ledger/db/sqlite.hero"
+#line 109 "examples/ledger/db/sqlite.hero"
     t16 = h0_statement;
-#line 97 "examples/ledger/db/sqlite.hero"
+#line 109 "examples/ledger/db/sqlite.hero"
     t17 = h1_column;
-#line 97 "examples/ledger/db/sqlite.hero"
+#line 109 "examples/ledger/db/sqlite.hero"
     t18 = sqlite3_column_int64(t16, t17);
-#line 97 "examples/ledger/db/sqlite.hero"
+#line 109 "examples/ledger/db/sqlite.hero"
     t19 = (h_dbsqlite_Cell){.tag = h_dbsqlite_Cell_tag_integer_cell, .as.c_integer_cell = {.f_value = t18}};
-#line 97 "examples/ledger/db/sqlite.hero"
+#line 109 "examples/ledger/db/sqlite.hero"
     t107 = h13_own13;
-#line 97 "examples/ledger/db/sqlite.hero"
+#line 109 "examples/ledger/db/sqlite.hero"
     h13_own13 = t19;
-#line 13789 "main.c"
+#line 13788 "main.c"
     h_dbsqlite_Cell_release(&t107);
-#line 97 "examples/ledger/db/sqlite.hero"
-#line 13792 "main.c"
+#line 109 "examples/ledger/db/sqlite.hero"
+#line 13791 "main.c"
     h_dbsqlite_Cell_retain(&t19);
-#line 97 "examples/ledger/db/sqlite.hero"
+#line 109 "examples/ledger/db/sqlite.hero"
     t20 = (h_0opt_e405689){.tag = INT64_C(0), .as.ok = t19};
-#line 97 "examples/ledger/db/sqlite.hero"
+#line 109 "examples/ledger/db/sqlite.hero"
     t108 = h14_own14;
-#line 97 "examples/ledger/db/sqlite.hero"
+#line 109 "examples/ledger/db/sqlite.hero"
     h14_own14 = t20;
-#line 13800 "main.c"
+#line 13799 "main.c"
     h_0opt_e405689_release(&t108);
-#line 97 "examples/ledger/db/sqlite.hero"
-#line 13803 "main.c"
+#line 109 "examples/ledger/db/sqlite.hero"
+#line 13802 "main.c"
     h_0opt_e405689_retain(&t20);
-#line 97 "examples/ledger/db/sqlite.hero"
-#line 13806 "main.c"
+#line 109 "examples/ledger/db/sqlite.hero"
+#line 13805 "main.c"
     h_0opt_e201354_release(&h3_f0);
-#line 97 "examples/ledger/db/sqlite.hero"
-#line 13809 "main.c"
+#line 109 "examples/ledger/db/sqlite.hero"
+#line 13808 "main.c"
     h_0opt_e201354_release(&h4_f1);
-#line 97 "examples/ledger/db/sqlite.hero"
-#line 13812 "main.c"
+#line 109 "examples/ledger/db/sqlite.hero"
+#line 13811 "main.c"
     h_0opt_e201354_release(&h5_f2);
-#line 97 "examples/ledger/db/sqlite.hero"
-#line 13815 "main.c"
+#line 109 "examples/ledger/db/sqlite.hero"
+#line 13814 "main.c"
     h_0opt_f87774a_release(&h6_text);
-#line 97 "examples/ledger/db/sqlite.hero"
-#line 13818 "main.c"
+#line 109 "examples/ledger/db/sqlite.hero"
+#line 13817 "main.c"
     h_0opt_f87774a_release(&h7_f3);
-#line 97 "examples/ledger/db/sqlite.hero"
-#line 13821 "main.c"
+#line 109 "examples/ledger/db/sqlite.hero"
+#line 13820 "main.c"
     h_0opt_e201354_release(&h8_f4);
-#line 97 "examples/ledger/db/sqlite.hero"
-#line 13824 "main.c"
+#line 109 "examples/ledger/db/sqlite.hero"
+#line 13823 "main.c"
     h_0opt_f87774a_release(&h9_f5);
-#line 97 "examples/ledger/db/sqlite.hero"
-#line 13827 "main.c"
+#line 109 "examples/ledger/db/sqlite.hero"
+#line 13826 "main.c"
     h_0opt_e201354_release(&h10_f6);
-#line 97 "examples/ledger/db/sqlite.hero"
-#line 13830 "main.c"
+#line 109 "examples/ledger/db/sqlite.hero"
+#line 13829 "main.c"
     h_0opt_e201354_release(&h11_own11);
-#line 97 "examples/ledger/db/sqlite.hero"
-#line 13833 "main.c"
+#line 109 "examples/ledger/db/sqlite.hero"
+#line 13832 "main.c"
     h_0opt_e201354_release(&h12_own12);
-#line 97 "examples/ledger/db/sqlite.hero"
-#line 13836 "main.c"
+#line 109 "examples/ledger/db/sqlite.hero"
+#line 13835 "main.c"
     h_dbsqlite_Cell_release(&h13_own13);
-#line 97 "examples/ledger/db/sqlite.hero"
-#line 13839 "main.c"
+#line 109 "examples/ledger/db/sqlite.hero"
+#line 13838 "main.c"
     h_0opt_e405689_release(&h14_own14);
-#line 97 "examples/ledger/db/sqlite.hero"
-#line 13842 "main.c"
+#line 109 "examples/ledger/db/sqlite.hero"
+#line 13841 "main.c"
     h_0opt_e201354_release(&h15_own15);
-#line 97 "examples/ledger/db/sqlite.hero"
-#line 13845 "main.c"
+#line 109 "examples/ledger/db/sqlite.hero"
+#line 13844 "main.c"
     h_dbsqlite_Cell_release(&h16_own16);
-#line 97 "examples/ledger/db/sqlite.hero"
-#line 13848 "main.c"
+#line 109 "examples/ledger/db/sqlite.hero"
+#line 13847 "main.c"
     h_0opt_e405689_release(&h17_own17);
-#line 97 "examples/ledger/db/sqlite.hero"
-#line 13851 "main.c"
+#line 109 "examples/ledger/db/sqlite.hero"
+#line 13850 "main.c"
     h_0opt_e201354_release(&h18_own18);
-#line 97 "examples/ledger/db/sqlite.hero"
-#line 13854 "main.c"
+#line 109 "examples/ledger/db/sqlite.hero"
+#line 13853 "main.c"
     h_0opt_f87774a_release(&h19_own19);
-#line 97 "examples/ledger/db/sqlite.hero"
-#line 13857 "main.c"
+#line 109 "examples/ledger/db/sqlite.hero"
+#line 13856 "main.c"
     h_0opt_e201354_release(&h20_own20);
-#line 97 "examples/ledger/db/sqlite.hero"
-#line 13860 "main.c"
+#line 109 "examples/ledger/db/sqlite.hero"
+#line 13859 "main.c"
     hero_str_decref(h21_own21);
-#line 97 "examples/ledger/db/sqlite.hero"
-#line 13863 "main.c"
+#line 109 "examples/ledger/db/sqlite.hero"
+#line 13862 "main.c"
     hero_str_decref(h22_own22);
-#line 97 "examples/ledger/db/sqlite.hero"
-#line 13866 "main.c"
+#line 109 "examples/ledger/db/sqlite.hero"
+#line 13865 "main.c"
     hero_str_decref(h23_own23);
-#line 97 "examples/ledger/db/sqlite.hero"
-#line 13869 "main.c"
+#line 109 "examples/ledger/db/sqlite.hero"
+#line 13868 "main.c"
     h_0opt_e405689_release(&h24_own24);
-#line 97 "examples/ledger/db/sqlite.hero"
-#line 13872 "main.c"
+#line 109 "examples/ledger/db/sqlite.hero"
+#line 13871 "main.c"
     h_dbsqlite_Cell_release(&h25_own25);
-#line 97 "examples/ledger/db/sqlite.hero"
-#line 13875 "main.c"
+#line 109 "examples/ledger/db/sqlite.hero"
+#line 13874 "main.c"
     h_0opt_e405689_release(&h26_own26);
-#line 97 "examples/ledger/db/sqlite.hero"
-#line 13878 "main.c"
+#line 109 "examples/ledger/db/sqlite.hero"
+#line 13877 "main.c"
     h_dbsqlite_Cell_release(&h27_own27);
-#line 97 "examples/ledger/db/sqlite.hero"
-#line 13881 "main.c"
+#line 109 "examples/ledger/db/sqlite.hero"
+#line 13880 "main.c"
     h_0opt_e405689_release(&h28_own28);
-#line 97 "examples/ledger/db/sqlite.hero"
-#line 13884 "main.c"
+#line 109 "examples/ledger/db/sqlite.hero"
+#line 13883 "main.c"
     h_dbsqlite_Cell_release(&h29_own29);
-#line 97 "examples/ledger/db/sqlite.hero"
-#line 13887 "main.c"
+#line 109 "examples/ledger/db/sqlite.hero"
+#line 13886 "main.c"
     h_0opt_e405689_release(&h30_own30);
     return t20;
 bb5:
     goto bb1;
 bb6:
-#line 102 "examples/ledger/db/sqlite.hero"
+#line 114 "examples/ledger/db/sqlite.hero"
     t38 = h2_kind;
-#line 102 "examples/ledger/db/sqlite.hero"
+#line 114 "examples/ledger/db/sqlite.hero"
     t39 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t38};
-#line 102 "examples/ledger/db/sqlite.hero"
+#line 114 "examples/ledger/db/sqlite.hero"
     t109 = h15_own15;
-#line 102 "examples/ledger/db/sqlite.hero"
+#line 114 "examples/ledger/db/sqlite.hero"
     h15_own15 = t39;
-#line 13901 "main.c"
+#line 13900 "main.c"
     h_0opt_e201354_release(&t109);
-#line 102 "examples/ledger/db/sqlite.hero"
+#line 114 "examples/ledger/db/sqlite.hero"
     t110 = h5_f2;
-#line 13905 "main.c"
+#line 13904 "main.c"
     h_0opt_e201354_retain(&t39);
-#line 102 "examples/ledger/db/sqlite.hero"
+#line 114 "examples/ledger/db/sqlite.hero"
     h5_f2 = t39;
-#line 13909 "main.c"
+#line 13908 "main.c"
     h_0opt_e201354_release(&t110);
-#line 102 "examples/ledger/db/sqlite.hero"
+#line 114 "examples/ledger/db/sqlite.hero"
     t40 = h5_f2;
-#line 102 "examples/ledger/db/sqlite.hero"
+#line 114 "examples/ledger/db/sqlite.hero"
     t41 = t40.tag;
-#line 102 "examples/ledger/db/sqlite.hero"
+#line 114 "examples/ledger/db/sqlite.hero"
     t42 = INT64_C(0);
-#line 102 "examples/ledger/db/sqlite.hero"
+#line 114 "examples/ledger/db/sqlite.hero"
     t43 = t41 == t42;
-#line 102 "examples/ledger/db/sqlite.hero"
+#line 114 "examples/ledger/db/sqlite.hero"
     if (t43) goto bb12; else goto bb13;
-#line 102 "examples/ledger/db/sqlite.hero"
+#line 114 "examples/ledger/db/sqlite.hero"
 bb7:
-#line 99 "examples/ledger/db/sqlite.hero"
+#line 111 "examples/ledger/db/sqlite.hero"
     t29 = h4_f1;
-#line 99 "examples/ledger/db/sqlite.hero"
+#line 111 "examples/ledger/db/sqlite.hero"
     t30 = t29.as.ok;
-#line 99 "examples/ledger/db/sqlite.hero"
+#line 111 "examples/ledger/db/sqlite.hero"
     t31 = h_dbsqlite_SQLITE_FLOAT();
-#line 99 "examples/ledger/db/sqlite.hero"
+#line 111 "examples/ledger/db/sqlite.hero"
     t32 = t30 == t31;
-#line 99 "examples/ledger/db/sqlite.hero"
+#line 111 "examples/ledger/db/sqlite.hero"
     if (t32) goto bb9; else goto bb10;
-#line 99 "examples/ledger/db/sqlite.hero"
+#line 111 "examples/ledger/db/sqlite.hero"
 bb8:
-#line 99 "examples/ledger/db/sqlite.hero"
+#line 111 "examples/ledger/db/sqlite.hero"
     t27 = h4_f1;
-#line 99 "examples/ledger/db/sqlite.hero"
+#line 111 "examples/ledger/db/sqlite.hero"
     t28 = t27.as.err;
-#line 13939 "main.c"
+#line 13938 "main.c"
     hero_panic_must(t28);
     hero_unreachable();
 bb9:
-#line 100 "examples/ledger/db/sqlite.hero"
+#line 112 "examples/ledger/db/sqlite.hero"
     t33 = h0_statement;
-#line 100 "examples/ledger/db/sqlite.hero"
+#line 112 "examples/ledger/db/sqlite.hero"
     t34 = h1_column;
-#line 100 "examples/ledger/db/sqlite.hero"
+#line 112 "examples/ledger/db/sqlite.hero"
     t35 = sqlite3_column_double(t33, t34);
-#line 100 "examples/ledger/db/sqlite.hero"
+#line 112 "examples/ledger/db/sqlite.hero"
     t36 = (h_dbsqlite_Cell){.tag = h_dbsqlite_Cell_tag_float_cell, .as.c_float_cell = {.f_value = t35}};
-#line 100 "examples/ledger/db/sqlite.hero"
+#line 112 "examples/ledger/db/sqlite.hero"
     t111 = h16_own16;
-#line 100 "examples/ledger/db/sqlite.hero"
+#line 112 "examples/ledger/db/sqlite.hero"
     h16_own16 = t36;
-#line 13955 "main.c"
+#line 13954 "main.c"
     h_dbsqlite_Cell_release(&t111);
-#line 100 "examples/ledger/db/sqlite.hero"
-#line 13958 "main.c"
+#line 112 "examples/ledger/db/sqlite.hero"
+#line 13957 "main.c"
     h_dbsqlite_Cell_retain(&t36);
-#line 100 "examples/ledger/db/sqlite.hero"
+#line 112 "examples/ledger/db/sqlite.hero"
     t37 = (h_0opt_e405689){.tag = INT64_C(0), .as.ok = t36};
-#line 100 "examples/ledger/db/sqlite.hero"
+#line 112 "examples/ledger/db/sqlite.hero"
     t112 = h17_own17;
-#line 100 "examples/ledger/db/sqlite.hero"
+#line 112 "examples/ledger/db/sqlite.hero"
     h17_own17 = t37;
-#line 13966 "main.c"
+#line 13965 "main.c"
     h_0opt_e405689_release(&t112);
-#line 100 "examples/ledger/db/sqlite.hero"
-#line 13969 "main.c"
+#line 112 "examples/ledger/db/sqlite.hero"
+#line 13968 "main.c"
     h_0opt_e405689_retain(&t37);
-#line 100 "examples/ledger/db/sqlite.hero"
-#line 13972 "main.c"
+#line 112 "examples/ledger/db/sqlite.hero"
+#line 13971 "main.c"
     h_0opt_e201354_release(&h3_f0);
-#line 100 "examples/ledger/db/sqlite.hero"
-#line 13975 "main.c"
+#line 112 "examples/ledger/db/sqlite.hero"
+#line 13974 "main.c"
     h_0opt_e201354_release(&h4_f1);
-#line 100 "examples/ledger/db/sqlite.hero"
-#line 13978 "main.c"
+#line 112 "examples/ledger/db/sqlite.hero"
+#line 13977 "main.c"
     h_0opt_e201354_release(&h5_f2);
-#line 100 "examples/ledger/db/sqlite.hero"
-#line 13981 "main.c"
+#line 112 "examples/ledger/db/sqlite.hero"
+#line 13980 "main.c"
     h_0opt_f87774a_release(&h6_text);
-#line 100 "examples/ledger/db/sqlite.hero"
-#line 13984 "main.c"
+#line 112 "examples/ledger/db/sqlite.hero"
+#line 13983 "main.c"
     h_0opt_f87774a_release(&h7_f3);
-#line 100 "examples/ledger/db/sqlite.hero"
-#line 13987 "main.c"
+#line 112 "examples/ledger/db/sqlite.hero"
+#line 13986 "main.c"
     h_0opt_e201354_release(&h8_f4);
-#line 100 "examples/ledger/db/sqlite.hero"
-#line 13990 "main.c"
+#line 112 "examples/ledger/db/sqlite.hero"
+#line 13989 "main.c"
     h_0opt_f87774a_release(&h9_f5);
-#line 100 "examples/ledger/db/sqlite.hero"
-#line 13993 "main.c"
+#line 112 "examples/ledger/db/sqlite.hero"
+#line 13992 "main.c"
     h_0opt_e201354_release(&h10_f6);
-#line 100 "examples/ledger/db/sqlite.hero"
-#line 13996 "main.c"
+#line 112 "examples/ledger/db/sqlite.hero"
+#line 13995 "main.c"
     h_0opt_e201354_release(&h11_own11);
-#line 100 "examples/ledger/db/sqlite.hero"
-#line 13999 "main.c"
+#line 112 "examples/ledger/db/sqlite.hero"
+#line 13998 "main.c"
     h_0opt_e201354_release(&h12_own12);
-#line 100 "examples/ledger/db/sqlite.hero"
-#line 14002 "main.c"
+#line 112 "examples/ledger/db/sqlite.hero"
+#line 14001 "main.c"
     h_dbsqlite_Cell_release(&h13_own13);
-#line 100 "examples/ledger/db/sqlite.hero"
-#line 14005 "main.c"
+#line 112 "examples/ledger/db/sqlite.hero"
+#line 14004 "main.c"
     h_0opt_e405689_release(&h14_own14);
-#line 100 "examples/ledger/db/sqlite.hero"
-#line 14008 "main.c"
+#line 112 "examples/ledger/db/sqlite.hero"
+#line 14007 "main.c"
     h_0opt_e201354_release(&h15_own15);
-#line 100 "examples/ledger/db/sqlite.hero"
-#line 14011 "main.c"
+#line 112 "examples/ledger/db/sqlite.hero"
+#line 14010 "main.c"
     h_dbsqlite_Cell_release(&h16_own16);
-#line 100 "examples/ledger/db/sqlite.hero"
-#line 14014 "main.c"
+#line 112 "examples/ledger/db/sqlite.hero"
+#line 14013 "main.c"
     h_0opt_e405689_release(&h17_own17);
-#line 100 "examples/ledger/db/sqlite.hero"
-#line 14017 "main.c"
+#line 112 "examples/ledger/db/sqlite.hero"
+#line 14016 "main.c"
     h_0opt_e201354_release(&h18_own18);
-#line 100 "examples/ledger/db/sqlite.hero"
-#line 14020 "main.c"
+#line 112 "examples/ledger/db/sqlite.hero"
+#line 14019 "main.c"
     h_0opt_f87774a_release(&h19_own19);
-#line 100 "examples/ledger/db/sqlite.hero"
-#line 14023 "main.c"
+#line 112 "examples/ledger/db/sqlite.hero"
+#line 14022 "main.c"
     h_0opt_e201354_release(&h20_own20);
-#line 100 "examples/ledger/db/sqlite.hero"
-#line 14026 "main.c"
+#line 112 "examples/ledger/db/sqlite.hero"
+#line 14025 "main.c"
     hero_str_decref(h21_own21);
-#line 100 "examples/ledger/db/sqlite.hero"
-#line 14029 "main.c"
+#line 112 "examples/ledger/db/sqlite.hero"
+#line 14028 "main.c"
     hero_str_decref(h22_own22);
-#line 100 "examples/ledger/db/sqlite.hero"
-#line 14032 "main.c"
+#line 112 "examples/ledger/db/sqlite.hero"
+#line 14031 "main.c"
     hero_str_decref(h23_own23);
-#line 100 "examples/ledger/db/sqlite.hero"
-#line 14035 "main.c"
+#line 112 "examples/ledger/db/sqlite.hero"
+#line 14034 "main.c"
     h_0opt_e405689_release(&h24_own24);
-#line 100 "examples/ledger/db/sqlite.hero"
-#line 14038 "main.c"
+#line 112 "examples/ledger/db/sqlite.hero"
+#line 14037 "main.c"
     h_dbsqlite_Cell_release(&h25_own25);
-#line 100 "examples/ledger/db/sqlite.hero"
-#line 14041 "main.c"
+#line 112 "examples/ledger/db/sqlite.hero"
+#line 14040 "main.c"
     h_0opt_e405689_release(&h26_own26);
-#line 100 "examples/ledger/db/sqlite.hero"
-#line 14044 "main.c"
+#line 112 "examples/ledger/db/sqlite.hero"
+#line 14043 "main.c"
     h_dbsqlite_Cell_release(&h27_own27);
-#line 100 "examples/ledger/db/sqlite.hero"
-#line 14047 "main.c"
+#line 112 "examples/ledger/db/sqlite.hero"
+#line 14046 "main.c"
     h_0opt_e405689_release(&h28_own28);
-#line 100 "examples/ledger/db/sqlite.hero"
-#line 14050 "main.c"
+#line 112 "examples/ledger/db/sqlite.hero"
+#line 14049 "main.c"
     h_dbsqlite_Cell_release(&h29_own29);
-#line 100 "examples/ledger/db/sqlite.hero"
-#line 14053 "main.c"
+#line 112 "examples/ledger/db/sqlite.hero"
+#line 14052 "main.c"
     h_0opt_e405689_release(&h30_own30);
     return t37;
 bb10:
     goto bb6;
 bb11:
-#line 112 "examples/ledger/db/sqlite.hero"
+#line 124 "examples/ledger/db/sqlite.hero"
     t87 = h2_kind;
-#line 112 "examples/ledger/db/sqlite.hero"
+#line 124 "examples/ledger/db/sqlite.hero"
     t88 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t87};
-#line 112 "examples/ledger/db/sqlite.hero"
+#line 124 "examples/ledger/db/sqlite.hero"
     t113 = h18_own18;
-#line 112 "examples/ledger/db/sqlite.hero"
+#line 124 "examples/ledger/db/sqlite.hero"
     h18_own18 = t88;
-#line 14067 "main.c"
+#line 14066 "main.c"
     h_0opt_e201354_release(&t113);
-#line 112 "examples/ledger/db/sqlite.hero"
+#line 124 "examples/ledger/db/sqlite.hero"
     t114 = h10_f6;
-#line 14071 "main.c"
+#line 14070 "main.c"
     h_0opt_e201354_retain(&t88);
-#line 112 "examples/ledger/db/sqlite.hero"
+#line 124 "examples/ledger/db/sqlite.hero"
     h10_f6 = t88;
-#line 14075 "main.c"
+#line 14074 "main.c"
     h_0opt_e201354_release(&t114);
-#line 112 "examples/ledger/db/sqlite.hero"
+#line 124 "examples/ledger/db/sqlite.hero"
     t89 = h10_f6;
-#line 112 "examples/ledger/db/sqlite.hero"
+#line 124 "examples/ledger/db/sqlite.hero"
     t90 = t89.tag;
-#line 112 "examples/ledger/db/sqlite.hero"
+#line 124 "examples/ledger/db/sqlite.hero"
     t91 = INT64_C(0);
-#line 112 "examples/ledger/db/sqlite.hero"
+#line 124 "examples/ledger/db/sqlite.hero"
     t92 = t90 == t91;
-#line 112 "examples/ledger/db/sqlite.hero"
+#line 124 "examples/ledger/db/sqlite.hero"
     if (t92) goto bb24; else goto bb25;
-#line 112 "examples/ledger/db/sqlite.hero"
+#line 124 "examples/ledger/db/sqlite.hero"
 bb12:
-#line 102 "examples/ledger/db/sqlite.hero"
+#line 114 "examples/ledger/db/sqlite.hero"
     t46 = h5_f2;
-#line 102 "examples/ledger/db/sqlite.hero"
+#line 114 "examples/ledger/db/sqlite.hero"
     t47 = t46.as.ok;
-#line 102 "examples/ledger/db/sqlite.hero"
+#line 114 "examples/ledger/db/sqlite.hero"
     t48 = h_dbsqlite_SQLITE_TEXT();
-#line 102 "examples/ledger/db/sqlite.hero"
+#line 114 "examples/ledger/db/sqlite.hero"
     t49 = t47 == t48;
-#line 102 "examples/ledger/db/sqlite.hero"
+#line 114 "examples/ledger/db/sqlite.hero"
     if (t49) goto bb14; else goto bb15;
-#line 102 "examples/ledger/db/sqlite.hero"
+#line 114 "examples/ledger/db/sqlite.hero"
 bb13:
-#line 102 "examples/ledger/db/sqlite.hero"
+#line 114 "examples/ledger/db/sqlite.hero"
     t44 = h5_f2;
-#line 102 "examples/ledger/db/sqlite.hero"
+#line 114 "examples/ledger/db/sqlite.hero"
     t45 = t44.as.err;
-#line 14105 "main.c"
+#line 14104 "main.c"
     hero_panic_must(t45);
     hero_unreachable();
 bb14:
-#line 106 "examples/ledger/db/sqlite.hero"
+#line 118 "examples/ledger/db/sqlite.hero"
     t50 = h0_statement;
-#line 106 "examples/ledger/db/sqlite.hero"
+#line 118 "examples/ledger/db/sqlite.hero"
     t51 = h1_column;
-#line 106 "examples/ledger/db/sqlite.hero"
+#line 118 "examples/ledger/db/sqlite.hero"
     t52 = (const char *)sqlite3_column_text(t50, t51);
-#line 106 "examples/ledger/db/sqlite.hero"
+#line 118 "examples/ledger/db/sqlite.hero"
     t53 = h_library_validated(t52);
-#line 106 "examples/ledger/db/sqlite.hero"
+#line 118 "examples/ledger/db/sqlite.hero"
     t115 = h19_own19;
-#line 106 "examples/ledger/db/sqlite.hero"
+#line 118 "examples/ledger/db/sqlite.hero"
     h19_own19 = t53;
-#line 14121 "main.c"
+#line 14120 "main.c"
     h_0opt_f87774a_release(&t115);
-#line 106 "examples/ledger/db/sqlite.hero"
+#line 118 "examples/ledger/db/sqlite.hero"
     t116 = h6_text;
-#line 14125 "main.c"
+#line 14124 "main.c"
     h_0opt_f87774a_retain(&t53);
-#line 106 "examples/ledger/db/sqlite.hero"
+#line 118 "examples/ledger/db/sqlite.hero"
     h6_text = t53;
-#line 14129 "main.c"
+#line 14128 "main.c"
     h_0opt_f87774a_release(&t116);
-#line 108 "examples/ledger/db/sqlite.hero"
+#line 120 "examples/ledger/db/sqlite.hero"
     t54 = h6_text;
-#line 108 "examples/ledger/db/sqlite.hero"
+#line 120 "examples/ledger/db/sqlite.hero"
     t117 = h7_f3;
-#line 14135 "main.c"
+#line 14134 "main.c"
     h_0opt_f87774a_retain(&t54);
-#line 108 "examples/ledger/db/sqlite.hero"
+#line 120 "examples/ledger/db/sqlite.hero"
     h7_f3 = t54;
-#line 14139 "main.c"
+#line 14138 "main.c"
     h_0opt_f87774a_release(&t117);
-#line 108 "examples/ledger/db/sqlite.hero"
+#line 120 "examples/ledger/db/sqlite.hero"
     t55 = h7_f3;
-#line 108 "examples/ledger/db/sqlite.hero"
+#line 120 "examples/ledger/db/sqlite.hero"
     t56 = t55.tag;
-#line 108 "examples/ledger/db/sqlite.hero"
+#line 120 "examples/ledger/db/sqlite.hero"
     t57 = INT64_C(1);
-#line 108 "examples/ledger/db/sqlite.hero"
+#line 120 "examples/ledger/db/sqlite.hero"
     t58 = t56 == t57;
-#line 108 "examples/ledger/db/sqlite.hero"
+#line 120 "examples/ledger/db/sqlite.hero"
     if (t58) goto bb17; else goto bb18;
-#line 108 "examples/ledger/db/sqlite.hero"
+#line 120 "examples/ledger/db/sqlite.hero"
 bb15:
-#line 108 "examples/ledger/db/sqlite.hero"
+#line 120 "examples/ledger/db/sqlite.hero"
     goto bb11;
-#line 108 "examples/ledger/db/sqlite.hero"
+#line 120 "examples/ledger/db/sqlite.hero"
 bb16:
-#line 110 "examples/ledger/db/sqlite.hero"
+#line 122 "examples/ledger/db/sqlite.hero"
     t76 = h6_text;
-#line 110 "examples/ledger/db/sqlite.hero"
+#line 122 "examples/ledger/db/sqlite.hero"
     t118 = h9_f5;
-#line 14161 "main.c"
+#line 14160 "main.c"
     h_0opt_f87774a_retain(&t76);
-#line 110 "examples/ledger/db/sqlite.hero"
+#line 122 "examples/ledger/db/sqlite.hero"
     h9_f5 = t76;
-#line 14165 "main.c"
+#line 14164 "main.c"
     h_0opt_f87774a_release(&t118);
-#line 110 "examples/ledger/db/sqlite.hero"
+#line 122 "examples/ledger/db/sqlite.hero"
     t77 = h9_f5;
-#line 110 "examples/ledger/db/sqlite.hero"
+#line 122 "examples/ledger/db/sqlite.hero"
     t78 = t77.tag;
-#line 110 "examples/ledger/db/sqlite.hero"
+#line 122 "examples/ledger/db/sqlite.hero"
     t79 = INT64_C(0);
-#line 110 "examples/ledger/db/sqlite.hero"
+#line 122 "examples/ledger/db/sqlite.hero"
     t80 = t78 == t79;
-#line 110 "examples/ledger/db/sqlite.hero"
+#line 122 "examples/ledger/db/sqlite.hero"
     if (t80) goto bb21; else goto bb22;
-#line 110 "examples/ledger/db/sqlite.hero"
+#line 122 "examples/ledger/db/sqlite.hero"
 bb17:
-#line 109 "examples/ledger/db/sqlite.hero"
+#line 121 "examples/ledger/db/sqlite.hero"
     t59 = HERO_STR_LIT(hero_str_34624695);
-#line 109 "examples/ledger/db/sqlite.hero"
+#line 121 "examples/ledger/db/sqlite.hero"
     t60 = HERO_STR_LIT(hero_str_6705b6fe);
-#line 109 "examples/ledger/db/sqlite.hero"
+#line 121 "examples/ledger/db/sqlite.hero"
     t61 = h1_column;
-#line 109 "examples/ledger/db/sqlite.hero"
+#line 121 "examples/ledger/db/sqlite.hero"
     t62 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t61};
-#line 109 "examples/ledger/db/sqlite.hero"
+#line 121 "examples/ledger/db/sqlite.hero"
     t119 = h20_own20;
-#line 109 "examples/ledger/db/sqlite.hero"
+#line 121 "examples/ledger/db/sqlite.hero"
     h20_own20 = t62;
-#line 14191 "main.c"
+#line 14190 "main.c"
     h_0opt_e201354_release(&t119);
-#line 109 "examples/ledger/db/sqlite.hero"
+#line 121 "examples/ledger/db/sqlite.hero"
     t120 = h8_f4;
-#line 14195 "main.c"
+#line 14194 "main.c"
     h_0opt_e201354_retain(&t62);
-#line 109 "examples/ledger/db/sqlite.hero"
+#line 121 "examples/ledger/db/sqlite.hero"
     h8_f4 = t62;
-#line 14199 "main.c"
+#line 14198 "main.c"
     h_0opt_e201354_release(&t120);
-#line 109 "examples/ledger/db/sqlite.hero"
+#line 121 "examples/ledger/db/sqlite.hero"
     t63 = h8_f4;
-#line 109 "examples/ledger/db/sqlite.hero"
+#line 121 "examples/ledger/db/sqlite.hero"
     t64 = t63.tag;
-#line 109 "examples/ledger/db/sqlite.hero"
+#line 121 "examples/ledger/db/sqlite.hero"
     t65 = INT64_C(0);
-#line 109 "examples/ledger/db/sqlite.hero"
+#line 121 "examples/ledger/db/sqlite.hero"
     t66 = t64 == t65;
-#line 109 "examples/ledger/db/sqlite.hero"
+#line 121 "examples/ledger/db/sqlite.hero"
     if (t66) goto bb19; else goto bb20;
-#line 109 "examples/ledger/db/sqlite.hero"
+#line 121 "examples/ledger/db/sqlite.hero"
 bb18:
-#line 109 "examples/ledger/db/sqlite.hero"
+#line 121 "examples/ledger/db/sqlite.hero"
     goto bb16;
-#line 109 "examples/ledger/db/sqlite.hero"
+#line 121 "examples/ledger/db/sqlite.hero"
 bb19:
-#line 109 "examples/ledger/db/sqlite.hero"
+#line 121 "examples/ledger/db/sqlite.hero"
     t69 = h8_f4;
-#line 109 "examples/ledger/db/sqlite.hero"
+#line 121 "examples/ledger/db/sqlite.hero"
     t70 = t69.as.ok;
-#line 109 "examples/ledger/db/sqlite.hero"
+#line 121 "examples/ledger/db/sqlite.hero"
     t71 = hero_int_to_str(t70);
-#line 109 "examples/ledger/db/sqlite.hero"
+#line 121 "examples/ledger/db/sqlite.hero"
     t121 = h21_own21;
-#line 109 "examples/ledger/db/sqlite.hero"
+#line 121 "examples/ledger/db/sqlite.hero"
     h21_own21 = t71;
-#line 14227 "main.c"
+#line 14226 "main.c"
     hero_str_decref(t121);
-#line 109 "examples/ledger/db/sqlite.hero"
+#line 121 "examples/ledger/db/sqlite.hero"
     t72 = hero_str_concat(t60, t71);
-#line 109 "examples/ledger/db/sqlite.hero"
+#line 121 "examples/ledger/db/sqlite.hero"
     t122 = h22_own22;
-#line 109 "examples/ledger/db/sqlite.hero"
+#line 121 "examples/ledger/db/sqlite.hero"
     h22_own22 = t72;
-#line 14235 "main.c"
+#line 14234 "main.c"
     hero_str_decref(t122);
-#line 109 "examples/ledger/db/sqlite.hero"
+#line 121 "examples/ledger/db/sqlite.hero"
     t73 = HERO_STR_LIT(hero_str_4daa4e70);
-#line 109 "examples/ledger/db/sqlite.hero"
+#line 121 "examples/ledger/db/sqlite.hero"
     t74 = hero_str_concat(t72, t73);
-#line 109 "examples/ledger/db/sqlite.hero"
+#line 121 "examples/ledger/db/sqlite.hero"
     t123 = h23_own23;
-#line 109 "examples/ledger/db/sqlite.hero"
+#line 121 "examples/ledger/db/sqlite.hero"
     h23_own23 = t74;
-#line 14245 "main.c"
+#line 14244 "main.c"
     hero_str_decref(t123);
-#line 109 "examples/ledger/db/sqlite.hero"
-#line 14248 "main.c"
+#line 121 "examples/ledger/db/sqlite.hero"
+#line 14247 "main.c"
     hero_str_incref(t59);
-#line 109 "examples/ledger/db/sqlite.hero"
-#line 14251 "main.c"
+#line 121 "examples/ledger/db/sqlite.hero"
+#line 14250 "main.c"
     hero_str_incref(t74);
-#line 109 "examples/ledger/db/sqlite.hero"
+#line 121 "examples/ledger/db/sqlite.hero"
     t75 = (h_0opt_e405689){.tag = INT64_C(1), .as.err = {.code = t59, .msg = t74}};
-#line 109 "examples/ledger/db/sqlite.hero"
+#line 121 "examples/ledger/db/sqlite.hero"
     t124 = h24_own24;
-#line 109 "examples/ledger/db/sqlite.hero"
+#line 121 "examples/ledger/db/sqlite.hero"
     h24_own24 = t75;
-#line 14259 "main.c"
+#line 14258 "main.c"
     h_0opt_e405689_release(&t124);
-#line 109 "examples/ledger/db/sqlite.hero"
-#line 14262 "main.c"
+#line 121 "examples/ledger/db/sqlite.hero"
+#line 14261 "main.c"
     h_0opt_e405689_retain(&t75);
-#line 109 "examples/ledger/db/sqlite.hero"
-#line 14265 "main.c"
+#line 121 "examples/ledger/db/sqlite.hero"
+#line 14264 "main.c"
     h_0opt_e201354_release(&h3_f0);
-#line 109 "examples/ledger/db/sqlite.hero"
-#line 14268 "main.c"
+#line 121 "examples/ledger/db/sqlite.hero"
+#line 14267 "main.c"
     h_0opt_e201354_release(&h4_f1);
-#line 109 "examples/ledger/db/sqlite.hero"
-#line 14271 "main.c"
+#line 121 "examples/ledger/db/sqlite.hero"
+#line 14270 "main.c"
     h_0opt_e201354_release(&h5_f2);
-#line 109 "examples/ledger/db/sqlite.hero"
-#line 14274 "main.c"
+#line 121 "examples/ledger/db/sqlite.hero"
+#line 14273 "main.c"
     h_0opt_f87774a_release(&h6_text);
-#line 109 "examples/ledger/db/sqlite.hero"
-#line 14277 "main.c"
+#line 121 "examples/ledger/db/sqlite.hero"
+#line 14276 "main.c"
     h_0opt_f87774a_release(&h7_f3);
-#line 109 "examples/ledger/db/sqlite.hero"
-#line 14280 "main.c"
+#line 121 "examples/ledger/db/sqlite.hero"
+#line 14279 "main.c"
     h_0opt_e201354_release(&h8_f4);
-#line 109 "examples/ledger/db/sqlite.hero"
-#line 14283 "main.c"
+#line 121 "examples/ledger/db/sqlite.hero"
+#line 14282 "main.c"
     h_0opt_f87774a_release(&h9_f5);
-#line 109 "examples/ledger/db/sqlite.hero"
-#line 14286 "main.c"
+#line 121 "examples/ledger/db/sqlite.hero"
+#line 14285 "main.c"
     h_0opt_e201354_release(&h10_f6);
-#line 109 "examples/ledger/db/sqlite.hero"
-#line 14289 "main.c"
+#line 121 "examples/ledger/db/sqlite.hero"
+#line 14288 "main.c"
     h_0opt_e201354_release(&h11_own11);
-#line 109 "examples/ledger/db/sqlite.hero"
-#line 14292 "main.c"
+#line 121 "examples/ledger/db/sqlite.hero"
+#line 14291 "main.c"
     h_0opt_e201354_release(&h12_own12);
-#line 109 "examples/ledger/db/sqlite.hero"
-#line 14295 "main.c"
+#line 121 "examples/ledger/db/sqlite.hero"
+#line 14294 "main.c"
     h_dbsqlite_Cell_release(&h13_own13);
-#line 109 "examples/ledger/db/sqlite.hero"
-#line 14298 "main.c"
+#line 121 "examples/ledger/db/sqlite.hero"
+#line 14297 "main.c"
     h_0opt_e405689_release(&h14_own14);
-#line 109 "examples/ledger/db/sqlite.hero"
-#line 14301 "main.c"
+#line 121 "examples/ledger/db/sqlite.hero"
+#line 14300 "main.c"
     h_0opt_e201354_release(&h15_own15);
-#line 109 "examples/ledger/db/sqlite.hero"
-#line 14304 "main.c"
+#line 121 "examples/ledger/db/sqlite.hero"
+#line 14303 "main.c"
     h_dbsqlite_Cell_release(&h16_own16);
-#line 109 "examples/ledger/db/sqlite.hero"
-#line 14307 "main.c"
+#line 121 "examples/ledger/db/sqlite.hero"
+#line 14306 "main.c"
     h_0opt_e405689_release(&h17_own17);
-#line 109 "examples/ledger/db/sqlite.hero"
-#line 14310 "main.c"
+#line 121 "examples/ledger/db/sqlite.hero"
+#line 14309 "main.c"
     h_0opt_e201354_release(&h18_own18);
-#line 109 "examples/ledger/db/sqlite.hero"
-#line 14313 "main.c"
+#line 121 "examples/ledger/db/sqlite.hero"
+#line 14312 "main.c"
     h_0opt_f87774a_release(&h19_own19);
-#line 109 "examples/ledger/db/sqlite.hero"
-#line 14316 "main.c"
+#line 121 "examples/ledger/db/sqlite.hero"
+#line 14315 "main.c"
     h_0opt_e201354_release(&h20_own20);
-#line 109 "examples/ledger/db/sqlite.hero"
-#line 14319 "main.c"
+#line 121 "examples/ledger/db/sqlite.hero"
+#line 14318 "main.c"
     hero_str_decref(h21_own21);
-#line 109 "examples/ledger/db/sqlite.hero"
-#line 14322 "main.c"
+#line 121 "examples/ledger/db/sqlite.hero"
+#line 14321 "main.c"
     hero_str_decref(h22_own22);
-#line 109 "examples/ledger/db/sqlite.hero"
-#line 14325 "main.c"
+#line 121 "examples/ledger/db/sqlite.hero"
+#line 14324 "main.c"
     hero_str_decref(h23_own23);
-#line 109 "examples/ledger/db/sqlite.hero"
-#line 14328 "main.c"
+#line 121 "examples/ledger/db/sqlite.hero"
+#line 14327 "main.c"
     h_0opt_e405689_release(&h24_own24);
-#line 109 "examples/ledger/db/sqlite.hero"
-#line 14331 "main.c"
+#line 121 "examples/ledger/db/sqlite.hero"
+#line 14330 "main.c"
     h_dbsqlite_Cell_release(&h25_own25);
-#line 109 "examples/ledger/db/sqlite.hero"
-#line 14334 "main.c"
+#line 121 "examples/ledger/db/sqlite.hero"
+#line 14333 "main.c"
     h_0opt_e405689_release(&h26_own26);
-#line 109 "examples/ledger/db/sqlite.hero"
-#line 14337 "main.c"
+#line 121 "examples/ledger/db/sqlite.hero"
+#line 14336 "main.c"
     h_dbsqlite_Cell_release(&h27_own27);
-#line 109 "examples/ledger/db/sqlite.hero"
-#line 14340 "main.c"
+#line 121 "examples/ledger/db/sqlite.hero"
+#line 14339 "main.c"
     h_0opt_e405689_release(&h28_own28);
-#line 109 "examples/ledger/db/sqlite.hero"
-#line 14343 "main.c"
+#line 121 "examples/ledger/db/sqlite.hero"
+#line 14342 "main.c"
     h_dbsqlite_Cell_release(&h29_own29);
-#line 109 "examples/ledger/db/sqlite.hero"
-#line 14346 "main.c"
+#line 121 "examples/ledger/db/sqlite.hero"
+#line 14345 "main.c"
     h_0opt_e405689_release(&h30_own30);
     return t75;
 bb20:
-#line 109 "examples/ledger/db/sqlite.hero"
+#line 121 "examples/ledger/db/sqlite.hero"
     t67 = h8_f4;
-#line 109 "examples/ledger/db/sqlite.hero"
+#line 121 "examples/ledger/db/sqlite.hero"
     t68 = t67.as.err;
-#line 14354 "main.c"
+#line 14353 "main.c"
     hero_panic_must(t68);
     hero_unreachable();
 bb21:
-#line 110 "examples/ledger/db/sqlite.hero"
+#line 122 "examples/ledger/db/sqlite.hero"
     t83 = h9_f5;
-#line 110 "examples/ledger/db/sqlite.hero"
+#line 122 "examples/ledger/db/sqlite.hero"
     t84 = t83.as.ok;
-#line 14362 "main.c"
+#line 14361 "main.c"
     hero_str_incref(t84);
-#line 110 "examples/ledger/db/sqlite.hero"
+#line 122 "examples/ledger/db/sqlite.hero"
     t85 = (h_dbsqlite_Cell){.tag = h_dbsqlite_Cell_tag_text_cell, .as.c_text_cell = {.f_value = t84}};
-#line 110 "examples/ledger/db/sqlite.hero"
+#line 122 "examples/ledger/db/sqlite.hero"
     t125 = h25_own25;
-#line 110 "examples/ledger/db/sqlite.hero"
+#line 122 "examples/ledger/db/sqlite.hero"
     h25_own25 = t85;
-#line 14370 "main.c"
+#line 14369 "main.c"
     h_dbsqlite_Cell_release(&t125);
-#line 110 "examples/ledger/db/sqlite.hero"
-#line 14373 "main.c"
+#line 122 "examples/ledger/db/sqlite.hero"
+#line 14372 "main.c"
     h_dbsqlite_Cell_retain(&t85);
-#line 110 "examples/ledger/db/sqlite.hero"
+#line 122 "examples/ledger/db/sqlite.hero"
     t86 = (h_0opt_e405689){.tag = INT64_C(0), .as.ok = t85};
-#line 110 "examples/ledger/db/sqlite.hero"
+#line 122 "examples/ledger/db/sqlite.hero"
     t126 = h26_own26;
-#line 110 "examples/ledger/db/sqlite.hero"
+#line 122 "examples/ledger/db/sqlite.hero"
     h26_own26 = t86;
-#line 14381 "main.c"
+#line 14380 "main.c"
     h_0opt_e405689_release(&t126);
-#line 110 "examples/ledger/db/sqlite.hero"
-#line 14384 "main.c"
+#line 122 "examples/ledger/db/sqlite.hero"
+#line 14383 "main.c"
     h_0opt_e405689_retain(&t86);
-#line 110 "examples/ledger/db/sqlite.hero"
-#line 14387 "main.c"
+#line 122 "examples/ledger/db/sqlite.hero"
+#line 14386 "main.c"
     h_0opt_e201354_release(&h3_f0);
-#line 110 "examples/ledger/db/sqlite.hero"
-#line 14390 "main.c"
+#line 122 "examples/ledger/db/sqlite.hero"
+#line 14389 "main.c"
     h_0opt_e201354_release(&h4_f1);
-#line 110 "examples/ledger/db/sqlite.hero"
-#line 14393 "main.c"
+#line 122 "examples/ledger/db/sqlite.hero"
+#line 14392 "main.c"
     h_0opt_e201354_release(&h5_f2);
-#line 110 "examples/ledger/db/sqlite.hero"
-#line 14396 "main.c"
+#line 122 "examples/ledger/db/sqlite.hero"
+#line 14395 "main.c"
     h_0opt_f87774a_release(&h6_text);
-#line 110 "examples/ledger/db/sqlite.hero"
-#line 14399 "main.c"
+#line 122 "examples/ledger/db/sqlite.hero"
+#line 14398 "main.c"
     h_0opt_f87774a_release(&h7_f3);
-#line 110 "examples/ledger/db/sqlite.hero"
-#line 14402 "main.c"
+#line 122 "examples/ledger/db/sqlite.hero"
+#line 14401 "main.c"
     h_0opt_e201354_release(&h8_f4);
-#line 110 "examples/ledger/db/sqlite.hero"
-#line 14405 "main.c"
+#line 122 "examples/ledger/db/sqlite.hero"
+#line 14404 "main.c"
     h_0opt_f87774a_release(&h9_f5);
-#line 110 "examples/ledger/db/sqlite.hero"
-#line 14408 "main.c"
+#line 122 "examples/ledger/db/sqlite.hero"
+#line 14407 "main.c"
     h_0opt_e201354_release(&h10_f6);
-#line 110 "examples/ledger/db/sqlite.hero"
-#line 14411 "main.c"
+#line 122 "examples/ledger/db/sqlite.hero"
+#line 14410 "main.c"
     h_0opt_e201354_release(&h11_own11);
-#line 110 "examples/ledger/db/sqlite.hero"
-#line 14414 "main.c"
+#line 122 "examples/ledger/db/sqlite.hero"
+#line 14413 "main.c"
     h_0opt_e201354_release(&h12_own12);
-#line 110 "examples/ledger/db/sqlite.hero"
-#line 14417 "main.c"
+#line 122 "examples/ledger/db/sqlite.hero"
+#line 14416 "main.c"
     h_dbsqlite_Cell_release(&h13_own13);
-#line 110 "examples/ledger/db/sqlite.hero"
-#line 14420 "main.c"
+#line 122 "examples/ledger/db/sqlite.hero"
+#line 14419 "main.c"
     h_0opt_e405689_release(&h14_own14);
-#line 110 "examples/ledger/db/sqlite.hero"
-#line 14423 "main.c"
+#line 122 "examples/ledger/db/sqlite.hero"
+#line 14422 "main.c"
     h_0opt_e201354_release(&h15_own15);
-#line 110 "examples/ledger/db/sqlite.hero"
-#line 14426 "main.c"
+#line 122 "examples/ledger/db/sqlite.hero"
+#line 14425 "main.c"
     h_dbsqlite_Cell_release(&h16_own16);
-#line 110 "examples/ledger/db/sqlite.hero"
-#line 14429 "main.c"
+#line 122 "examples/ledger/db/sqlite.hero"
+#line 14428 "main.c"
     h_0opt_e405689_release(&h17_own17);
-#line 110 "examples/ledger/db/sqlite.hero"
-#line 14432 "main.c"
+#line 122 "examples/ledger/db/sqlite.hero"
+#line 14431 "main.c"
     h_0opt_e201354_release(&h18_own18);
-#line 110 "examples/ledger/db/sqlite.hero"
-#line 14435 "main.c"
+#line 122 "examples/ledger/db/sqlite.hero"
+#line 14434 "main.c"
     h_0opt_f87774a_release(&h19_own19);
-#line 110 "examples/ledger/db/sqlite.hero"
-#line 14438 "main.c"
+#line 122 "examples/ledger/db/sqlite.hero"
+#line 14437 "main.c"
     h_0opt_e201354_release(&h20_own20);
-#line 110 "examples/ledger/db/sqlite.hero"
-#line 14441 "main.c"
+#line 122 "examples/ledger/db/sqlite.hero"
+#line 14440 "main.c"
     hero_str_decref(h21_own21);
-#line 110 "examples/ledger/db/sqlite.hero"
-#line 14444 "main.c"
+#line 122 "examples/ledger/db/sqlite.hero"
+#line 14443 "main.c"
     hero_str_decref(h22_own22);
-#line 110 "examples/ledger/db/sqlite.hero"
-#line 14447 "main.c"
+#line 122 "examples/ledger/db/sqlite.hero"
+#line 14446 "main.c"
     hero_str_decref(h23_own23);
-#line 110 "examples/ledger/db/sqlite.hero"
-#line 14450 "main.c"
+#line 122 "examples/ledger/db/sqlite.hero"
+#line 14449 "main.c"
     h_0opt_e405689_release(&h24_own24);
-#line 110 "examples/ledger/db/sqlite.hero"
-#line 14453 "main.c"
+#line 122 "examples/ledger/db/sqlite.hero"
+#line 14452 "main.c"
     h_dbsqlite_Cell_release(&h25_own25);
-#line 110 "examples/ledger/db/sqlite.hero"
-#line 14456 "main.c"
+#line 122 "examples/ledger/db/sqlite.hero"
+#line 14455 "main.c"
     h_0opt_e405689_release(&h26_own26);
-#line 110 "examples/ledger/db/sqlite.hero"
-#line 14459 "main.c"
+#line 122 "examples/ledger/db/sqlite.hero"
+#line 14458 "main.c"
     h_dbsqlite_Cell_release(&h27_own27);
-#line 110 "examples/ledger/db/sqlite.hero"
-#line 14462 "main.c"
+#line 122 "examples/ledger/db/sqlite.hero"
+#line 14461 "main.c"
     h_0opt_e405689_release(&h28_own28);
-#line 110 "examples/ledger/db/sqlite.hero"
-#line 14465 "main.c"
+#line 122 "examples/ledger/db/sqlite.hero"
+#line 14464 "main.c"
     h_dbsqlite_Cell_release(&h29_own29);
-#line 110 "examples/ledger/db/sqlite.hero"
-#line 14468 "main.c"
+#line 122 "examples/ledger/db/sqlite.hero"
+#line 14467 "main.c"
     h_0opt_e405689_release(&h30_own30);
     return t86;
 bb22:
-#line 110 "examples/ledger/db/sqlite.hero"
+#line 122 "examples/ledger/db/sqlite.hero"
     t81 = h9_f5;
-#line 110 "examples/ledger/db/sqlite.hero"
+#line 122 "examples/ledger/db/sqlite.hero"
     t82 = t81.as.err;
-#line 14476 "main.c"
+#line 14475 "main.c"
     hero_panic_must(t82);
     hero_unreachable();
 bb23:
-#line 114 "examples/ledger/db/sqlite.hero"
+#line 126 "examples/ledger/db/sqlite.hero"
     t101 = (h_dbsqlite_Cell){.tag = h_dbsqlite_Cell_tag_blob_cell};
-#line 114 "examples/ledger/db/sqlite.hero"
+#line 126 "examples/ledger/db/sqlite.hero"
     t127 = h27_own27;
-#line 114 "examples/ledger/db/sqlite.hero"
+#line 126 "examples/ledger/db/sqlite.hero"
     h27_own27 = t101;
-#line 14486 "main.c"
+#line 14485 "main.c"
     h_dbsqlite_Cell_release(&t127);
-#line 114 "examples/ledger/db/sqlite.hero"
-#line 14489 "main.c"
+#line 126 "examples/ledger/db/sqlite.hero"
+#line 14488 "main.c"
     h_dbsqlite_Cell_retain(&t101);
-#line 114 "examples/ledger/db/sqlite.hero"
+#line 126 "examples/ledger/db/sqlite.hero"
     t102 = (h_0opt_e405689){.tag = INT64_C(0), .as.ok = t101};
-#line 114 "examples/ledger/db/sqlite.hero"
+#line 126 "examples/ledger/db/sqlite.hero"
     t128 = h28_own28;
-#line 114 "examples/ledger/db/sqlite.hero"
+#line 126 "examples/ledger/db/sqlite.hero"
     h28_own28 = t102;
-#line 14497 "main.c"
+#line 14496 "main.c"
     h_0opt_e405689_release(&t128);
-#line 114 "examples/ledger/db/sqlite.hero"
-#line 14500 "main.c"
+#line 126 "examples/ledger/db/sqlite.hero"
+#line 14499 "main.c"
     h_0opt_e405689_retain(&t102);
-#line 114 "examples/ledger/db/sqlite.hero"
-#line 14503 "main.c"
+#line 126 "examples/ledger/db/sqlite.hero"
+#line 14502 "main.c"
     h_0opt_e201354_release(&h3_f0);
-#line 114 "examples/ledger/db/sqlite.hero"
-#line 14506 "main.c"
+#line 126 "examples/ledger/db/sqlite.hero"
+#line 14505 "main.c"
     h_0opt_e201354_release(&h4_f1);
-#line 114 "examples/ledger/db/sqlite.hero"
-#line 14509 "main.c"
+#line 126 "examples/ledger/db/sqlite.hero"
+#line 14508 "main.c"
     h_0opt_e201354_release(&h5_f2);
-#line 114 "examples/ledger/db/sqlite.hero"
-#line 14512 "main.c"
+#line 126 "examples/ledger/db/sqlite.hero"
+#line 14511 "main.c"
     h_0opt_f87774a_release(&h6_text);
-#line 114 "examples/ledger/db/sqlite.hero"
-#line 14515 "main.c"
+#line 126 "examples/ledger/db/sqlite.hero"
+#line 14514 "main.c"
     h_0opt_f87774a_release(&h7_f3);
-#line 114 "examples/ledger/db/sqlite.hero"
-#line 14518 "main.c"
+#line 126 "examples/ledger/db/sqlite.hero"
+#line 14517 "main.c"
     h_0opt_e201354_release(&h8_f4);
-#line 114 "examples/ledger/db/sqlite.hero"
-#line 14521 "main.c"
+#line 126 "examples/ledger/db/sqlite.hero"
+#line 14520 "main.c"
     h_0opt_f87774a_release(&h9_f5);
-#line 114 "examples/ledger/db/sqlite.hero"
-#line 14524 "main.c"
+#line 126 "examples/ledger/db/sqlite.hero"
+#line 14523 "main.c"
     h_0opt_e201354_release(&h10_f6);
-#line 114 "examples/ledger/db/sqlite.hero"
-#line 14527 "main.c"
+#line 126 "examples/ledger/db/sqlite.hero"
+#line 14526 "main.c"
     h_0opt_e201354_release(&h11_own11);
-#line 114 "examples/ledger/db/sqlite.hero"
-#line 14530 "main.c"
+#line 126 "examples/ledger/db/sqlite.hero"
+#line 14529 "main.c"
     h_0opt_e201354_release(&h12_own12);
-#line 114 "examples/ledger/db/sqlite.hero"
-#line 14533 "main.c"
+#line 126 "examples/ledger/db/sqlite.hero"
+#line 14532 "main.c"
     h_dbsqlite_Cell_release(&h13_own13);
-#line 114 "examples/ledger/db/sqlite.hero"
-#line 14536 "main.c"
+#line 126 "examples/ledger/db/sqlite.hero"
+#line 14535 "main.c"
     h_0opt_e405689_release(&h14_own14);
-#line 114 "examples/ledger/db/sqlite.hero"
-#line 14539 "main.c"
+#line 126 "examples/ledger/db/sqlite.hero"
+#line 14538 "main.c"
     h_0opt_e201354_release(&h15_own15);
-#line 114 "examples/ledger/db/sqlite.hero"
-#line 14542 "main.c"
+#line 126 "examples/ledger/db/sqlite.hero"
+#line 14541 "main.c"
     h_dbsqlite_Cell_release(&h16_own16);
-#line 114 "examples/ledger/db/sqlite.hero"
-#line 14545 "main.c"
+#line 126 "examples/ledger/db/sqlite.hero"
+#line 14544 "main.c"
     h_0opt_e405689_release(&h17_own17);
-#line 114 "examples/ledger/db/sqlite.hero"
-#line 14548 "main.c"
+#line 126 "examples/ledger/db/sqlite.hero"
+#line 14547 "main.c"
     h_0opt_e201354_release(&h18_own18);
-#line 114 "examples/ledger/db/sqlite.hero"
-#line 14551 "main.c"
+#line 126 "examples/ledger/db/sqlite.hero"
+#line 14550 "main.c"
     h_0opt_f87774a_release(&h19_own19);
-#line 114 "examples/ledger/db/sqlite.hero"
-#line 14554 "main.c"
+#line 126 "examples/ledger/db/sqlite.hero"
+#line 14553 "main.c"
     h_0opt_e201354_release(&h20_own20);
-#line 114 "examples/ledger/db/sqlite.hero"
-#line 14557 "main.c"
+#line 126 "examples/ledger/db/sqlite.hero"
+#line 14556 "main.c"
     hero_str_decref(h21_own21);
-#line 114 "examples/ledger/db/sqlite.hero"
-#line 14560 "main.c"
+#line 126 "examples/ledger/db/sqlite.hero"
+#line 14559 "main.c"
     hero_str_decref(h22_own22);
-#line 114 "examples/ledger/db/sqlite.hero"
-#line 14563 "main.c"
+#line 126 "examples/ledger/db/sqlite.hero"
+#line 14562 "main.c"
     hero_str_decref(h23_own23);
-#line 114 "examples/ledger/db/sqlite.hero"
-#line 14566 "main.c"
+#line 126 "examples/ledger/db/sqlite.hero"
+#line 14565 "main.c"
     h_0opt_e405689_release(&h24_own24);
-#line 114 "examples/ledger/db/sqlite.hero"
-#line 14569 "main.c"
+#line 126 "examples/ledger/db/sqlite.hero"
+#line 14568 "main.c"
     h_dbsqlite_Cell_release(&h25_own25);
-#line 114 "examples/ledger/db/sqlite.hero"
-#line 14572 "main.c"
+#line 126 "examples/ledger/db/sqlite.hero"
+#line 14571 "main.c"
     h_0opt_e405689_release(&h26_own26);
-#line 114 "examples/ledger/db/sqlite.hero"
-#line 14575 "main.c"
+#line 126 "examples/ledger/db/sqlite.hero"
+#line 14574 "main.c"
     h_dbsqlite_Cell_release(&h27_own27);
-#line 114 "examples/ledger/db/sqlite.hero"
-#line 14578 "main.c"
+#line 126 "examples/ledger/db/sqlite.hero"
+#line 14577 "main.c"
     h_0opt_e405689_release(&h28_own28);
-#line 114 "examples/ledger/db/sqlite.hero"
-#line 14581 "main.c"
+#line 126 "examples/ledger/db/sqlite.hero"
+#line 14580 "main.c"
     h_dbsqlite_Cell_release(&h29_own29);
-#line 114 "examples/ledger/db/sqlite.hero"
-#line 14584 "main.c"
+#line 126 "examples/ledger/db/sqlite.hero"
+#line 14583 "main.c"
     h_0opt_e405689_release(&h30_own30);
     return t102;
 bb24:
-#line 112 "examples/ledger/db/sqlite.hero"
+#line 124 "examples/ledger/db/sqlite.hero"
     t95 = h10_f6;
-#line 112 "examples/ledger/db/sqlite.hero"
+#line 124 "examples/ledger/db/sqlite.hero"
     t96 = t95.as.ok;
-#line 112 "examples/ledger/db/sqlite.hero"
+#line 124 "examples/ledger/db/sqlite.hero"
     t97 = h_dbsqlite_SQLITE_NULL();
-#line 112 "examples/ledger/db/sqlite.hero"
+#line 124 "examples/ledger/db/sqlite.hero"
     t98 = t96 == t97;
-#line 112 "examples/ledger/db/sqlite.hero"
+#line 124 "examples/ledger/db/sqlite.hero"
     if (t98) goto bb26; else goto bb27;
-#line 112 "examples/ledger/db/sqlite.hero"
+#line 124 "examples/ledger/db/sqlite.hero"
 bb25:
-#line 112 "examples/ledger/db/sqlite.hero"
+#line 124 "examples/ledger/db/sqlite.hero"
     t93 = h10_f6;
-#line 112 "examples/ledger/db/sqlite.hero"
+#line 124 "examples/ledger/db/sqlite.hero"
     t94 = t93.as.err;
-#line 14604 "main.c"
+#line 14603 "main.c"
     hero_panic_must(t94);
     hero_unreachable();
 bb26:
-#line 113 "examples/ledger/db/sqlite.hero"
+#line 125 "examples/ledger/db/sqlite.hero"
     t99 = (h_dbsqlite_Cell){.tag = h_dbsqlite_Cell_tag_null_cell};
-#line 113 "examples/ledger/db/sqlite.hero"
+#line 125 "examples/ledger/db/sqlite.hero"
     t129 = h29_own29;
-#line 113 "examples/ledger/db/sqlite.hero"
+#line 125 "examples/ledger/db/sqlite.hero"
     h29_own29 = t99;
-#line 14614 "main.c"
+#line 14613 "main.c"
     h_dbsqlite_Cell_release(&t129);
-#line 113 "examples/ledger/db/sqlite.hero"
-#line 14617 "main.c"
+#line 125 "examples/ledger/db/sqlite.hero"
+#line 14616 "main.c"
     h_dbsqlite_Cell_retain(&t99);
-#line 113 "examples/ledger/db/sqlite.hero"
+#line 125 "examples/ledger/db/sqlite.hero"
     t100 = (h_0opt_e405689){.tag = INT64_C(0), .as.ok = t99};
-#line 113 "examples/ledger/db/sqlite.hero"
+#line 125 "examples/ledger/db/sqlite.hero"
     t130 = h30_own30;
-#line 113 "examples/ledger/db/sqlite.hero"
+#line 125 "examples/ledger/db/sqlite.hero"
     h30_own30 = t100;
-#line 14625 "main.c"
+#line 14624 "main.c"
     h_0opt_e405689_release(&t130);
-#line 113 "examples/ledger/db/sqlite.hero"
-#line 14628 "main.c"
+#line 125 "examples/ledger/db/sqlite.hero"
+#line 14627 "main.c"
     h_0opt_e405689_retain(&t100);
-#line 113 "examples/ledger/db/sqlite.hero"
-#line 14631 "main.c"
+#line 125 "examples/ledger/db/sqlite.hero"
+#line 14630 "main.c"
     h_0opt_e201354_release(&h3_f0);
-#line 113 "examples/ledger/db/sqlite.hero"
-#line 14634 "main.c"
+#line 125 "examples/ledger/db/sqlite.hero"
+#line 14633 "main.c"
     h_0opt_e201354_release(&h4_f1);
-#line 113 "examples/ledger/db/sqlite.hero"
-#line 14637 "main.c"
+#line 125 "examples/ledger/db/sqlite.hero"
+#line 14636 "main.c"
     h_0opt_e201354_release(&h5_f2);
-#line 113 "examples/ledger/db/sqlite.hero"
-#line 14640 "main.c"
+#line 125 "examples/ledger/db/sqlite.hero"
+#line 14639 "main.c"
     h_0opt_f87774a_release(&h6_text);
-#line 113 "examples/ledger/db/sqlite.hero"
-#line 14643 "main.c"
+#line 125 "examples/ledger/db/sqlite.hero"
+#line 14642 "main.c"
     h_0opt_f87774a_release(&h7_f3);
-#line 113 "examples/ledger/db/sqlite.hero"
-#line 14646 "main.c"
+#line 125 "examples/ledger/db/sqlite.hero"
+#line 14645 "main.c"
     h_0opt_e201354_release(&h8_f4);
-#line 113 "examples/ledger/db/sqlite.hero"
-#line 14649 "main.c"
+#line 125 "examples/ledger/db/sqlite.hero"
+#line 14648 "main.c"
     h_0opt_f87774a_release(&h9_f5);
-#line 113 "examples/ledger/db/sqlite.hero"
-#line 14652 "main.c"
+#line 125 "examples/ledger/db/sqlite.hero"
+#line 14651 "main.c"
     h_0opt_e201354_release(&h10_f6);
-#line 113 "examples/ledger/db/sqlite.hero"
-#line 14655 "main.c"
+#line 125 "examples/ledger/db/sqlite.hero"
+#line 14654 "main.c"
     h_0opt_e201354_release(&h11_own11);
-#line 113 "examples/ledger/db/sqlite.hero"
-#line 14658 "main.c"
+#line 125 "examples/ledger/db/sqlite.hero"
+#line 14657 "main.c"
     h_0opt_e201354_release(&h12_own12);
-#line 113 "examples/ledger/db/sqlite.hero"
-#line 14661 "main.c"
+#line 125 "examples/ledger/db/sqlite.hero"
+#line 14660 "main.c"
     h_dbsqlite_Cell_release(&h13_own13);
-#line 113 "examples/ledger/db/sqlite.hero"
-#line 14664 "main.c"
+#line 125 "examples/ledger/db/sqlite.hero"
+#line 14663 "main.c"
     h_0opt_e405689_release(&h14_own14);
-#line 113 "examples/ledger/db/sqlite.hero"
-#line 14667 "main.c"
+#line 125 "examples/ledger/db/sqlite.hero"
+#line 14666 "main.c"
     h_0opt_e201354_release(&h15_own15);
-#line 113 "examples/ledger/db/sqlite.hero"
-#line 14670 "main.c"
+#line 125 "examples/ledger/db/sqlite.hero"
+#line 14669 "main.c"
     h_dbsqlite_Cell_release(&h16_own16);
-#line 113 "examples/ledger/db/sqlite.hero"
-#line 14673 "main.c"
+#line 125 "examples/ledger/db/sqlite.hero"
+#line 14672 "main.c"
     h_0opt_e405689_release(&h17_own17);
-#line 113 "examples/ledger/db/sqlite.hero"
-#line 14676 "main.c"
+#line 125 "examples/ledger/db/sqlite.hero"
+#line 14675 "main.c"
     h_0opt_e201354_release(&h18_own18);
-#line 113 "examples/ledger/db/sqlite.hero"
-#line 14679 "main.c"
+#line 125 "examples/ledger/db/sqlite.hero"
+#line 14678 "main.c"
     h_0opt_f87774a_release(&h19_own19);
-#line 113 "examples/ledger/db/sqlite.hero"
-#line 14682 "main.c"
+#line 125 "examples/ledger/db/sqlite.hero"
+#line 14681 "main.c"
     h_0opt_e201354_release(&h20_own20);
-#line 113 "examples/ledger/db/sqlite.hero"
-#line 14685 "main.c"
+#line 125 "examples/ledger/db/sqlite.hero"
+#line 14684 "main.c"
     hero_str_decref(h21_own21);
-#line 113 "examples/ledger/db/sqlite.hero"
-#line 14688 "main.c"
+#line 125 "examples/ledger/db/sqlite.hero"
+#line 14687 "main.c"
     hero_str_decref(h22_own22);
-#line 113 "examples/ledger/db/sqlite.hero"
-#line 14691 "main.c"
+#line 125 "examples/ledger/db/sqlite.hero"
+#line 14690 "main.c"
     hero_str_decref(h23_own23);
-#line 113 "examples/ledger/db/sqlite.hero"
-#line 14694 "main.c"
+#line 125 "examples/ledger/db/sqlite.hero"
+#line 14693 "main.c"
     h_0opt_e405689_release(&h24_own24);
-#line 113 "examples/ledger/db/sqlite.hero"
-#line 14697 "main.c"
+#line 125 "examples/ledger/db/sqlite.hero"
+#line 14696 "main.c"
     h_dbsqlite_Cell_release(&h25_own25);
-#line 113 "examples/ledger/db/sqlite.hero"
-#line 14700 "main.c"
+#line 125 "examples/ledger/db/sqlite.hero"
+#line 14699 "main.c"
     h_0opt_e405689_release(&h26_own26);
-#line 113 "examples/ledger/db/sqlite.hero"
-#line 14703 "main.c"
+#line 125 "examples/ledger/db/sqlite.hero"
+#line 14702 "main.c"
     h_dbsqlite_Cell_release(&h27_own27);
-#line 113 "examples/ledger/db/sqlite.hero"
-#line 14706 "main.c"
+#line 125 "examples/ledger/db/sqlite.hero"
+#line 14705 "main.c"
     h_0opt_e405689_release(&h28_own28);
-#line 113 "examples/ledger/db/sqlite.hero"
-#line 14709 "main.c"
+#line 125 "examples/ledger/db/sqlite.hero"
+#line 14708 "main.c"
     h_dbsqlite_Cell_release(&h29_own29);
-#line 113 "examples/ledger/db/sqlite.hero"
-#line 14712 "main.c"
+#line 125 "examples/ledger/db/sqlite.hero"
+#line 14711 "main.c"
     h_0opt_e405689_release(&h30_own30);
     return t100;
 bb27:
     goto bb23;
 }
 
-#line 163 "examples/ledger/db/sqlite.hero"
+#line 175 "examples/ledger/db/sqlite.hero"
 h_0opt_24dfc0bb h_dbsqlite_opened(void) {
-#line 14721 "main.c"
+#line 14720 "main.c"
     void * h0_db;
-    h_0opt_24dfc0bb h1_own1 = {0};
+    HeroStr h1_reason = {0};
     h_0opt_24dfc0bb h2_own2 = {0};
+    HeroStr h3_own3 = {0};
+    h_0opt_24dfc0bb h4_own4 = {0};
     void * t1;
     HeroStr t2 = {0};
     const char * t3;
     int64_t t4;
     int64_t t5;
     bool t6;
-    HeroStr t7 = {0};
-    HeroStr t8 = {0};
-    h_0opt_24dfc0bb t9 = {0};
+    void * t7;
+    h_dbsqlite_Db t8;
+    HeroStr t9 = {0};
     void * t10;
-    h_dbsqlite_Db t11;
-    h_0opt_24dfc0bb t12 = {0};
-    h_0opt_24dfc0bb t13 = {0};
+    HeroStr t12 = {0};
+    HeroStr t13 = {0};
     h_0opt_24dfc0bb t14 = {0};
+    void * t15;
+    h_dbsqlite_Db t16;
+    h_0opt_24dfc0bb t17 = {0};
+    h_0opt_24dfc0bb t18 = {0};
+    HeroStr t19 = {0};
+    HeroStr t20 = {0};
+    h_0opt_24dfc0bb t21 = {0};
     goto bb0;
 bb0:
-#line 164 "examples/ledger/db/sqlite.hero"
+#line 176 "examples/ledger/db/sqlite.hero"
     t1 = ((void *)0);
-#line 164 "examples/ledger/db/sqlite.hero"
+#line 176 "examples/ledger/db/sqlite.hero"
     h0_db = t1;
-#line 166 "examples/ledger/db/sqlite.hero"
+#line 178 "examples/ledger/db/sqlite.hero"
     t2 = HERO_STR_LIT(hero_str_41b4cad0);
-#line 166 "examples/ledger/db/sqlite.hero"
+#line 178 "examples/ledger/db/sqlite.hero"
     t3 = hero_str_cstr(t2);
-#line 166 "examples/ledger/db/sqlite.hero"
+#line 178 "examples/ledger/db/sqlite.hero"
     t4 = sqlite3_open(hero_cstr_nonnull(t3), (void *)&h0_db);
-#line 166 "examples/ledger/db/sqlite.hero"
+#line 178 "examples/ledger/db/sqlite.hero"
     t5 = h_dbsqlite_SQLITE_OK();
-#line 166 "examples/ledger/db/sqlite.hero"
+#line 178 "examples/ledger/db/sqlite.hero"
     t6 = t4 != t5;
-#line 166 "examples/ledger/db/sqlite.hero"
+#line 178 "examples/ledger/db/sqlite.hero"
     if (t6) goto bb2; else goto bb3;
-#line 166 "examples/ledger/db/sqlite.hero"
+#line 178 "examples/ledger/db/sqlite.hero"
 bb1:
-#line 168 "examples/ledger/db/sqlite.hero"
-    t10 = h0_db;
-#line 168 "examples/ledger/db/sqlite.hero"
-    t11 = (h_dbsqlite_Db){.f_handle = t10};
-#line 168 "examples/ledger/db/sqlite.hero"
-    t12 = (h_0opt_24dfc0bb){.tag = INT64_C(0), .as.ok = t11};
-#line 168 "examples/ledger/db/sqlite.hero"
-    t13 = h1_own1;
-#line 168 "examples/ledger/db/sqlite.hero"
-    h1_own1 = t12;
-#line 14769 "main.c"
-    h_0opt_24dfc0bb_release(&t13);
-#line 168 "examples/ledger/db/sqlite.hero"
-#line 14772 "main.c"
-    h_0opt_24dfc0bb_retain(&t12);
-#line 168 "examples/ledger/db/sqlite.hero"
-#line 14775 "main.c"
-    h_0opt_24dfc0bb_release(&h1_own1);
-#line 168 "examples/ledger/db/sqlite.hero"
-#line 14778 "main.c"
+#line 195 "examples/ledger/db/sqlite.hero"
+    t15 = h0_db;
+#line 195 "examples/ledger/db/sqlite.hero"
+    t16 = (h_dbsqlite_Db){.f_handle = t15};
+#line 195 "examples/ledger/db/sqlite.hero"
+    t17 = (h_0opt_24dfc0bb){.tag = INT64_C(0), .as.ok = t16};
+#line 195 "examples/ledger/db/sqlite.hero"
+    t18 = h2_own2;
+#line 195 "examples/ledger/db/sqlite.hero"
+    h2_own2 = t17;
+#line 14776 "main.c"
+    h_0opt_24dfc0bb_release(&t18);
+#line 195 "examples/ledger/db/sqlite.hero"
+#line 14779 "main.c"
+    h_0opt_24dfc0bb_retain(&t17);
+#line 195 "examples/ledger/db/sqlite.hero"
+#line 14782 "main.c"
+    hero_str_decref(h1_reason);
+#line 195 "examples/ledger/db/sqlite.hero"
+#line 14785 "main.c"
     h_0opt_24dfc0bb_release(&h2_own2);
-    return t12;
+#line 195 "examples/ledger/db/sqlite.hero"
+#line 14788 "main.c"
+    hero_str_decref(h3_own3);
+#line 195 "examples/ledger/db/sqlite.hero"
+#line 14791 "main.c"
+    h_0opt_24dfc0bb_release(&h4_own4);
+    return t17;
 bb2:
-#line 167 "examples/ledger/db/sqlite.hero"
-    t7 = HERO_STR_LIT(hero_str_2cb37c54);
-#line 167 "examples/ledger/db/sqlite.hero"
-    t8 = HERO_STR_LIT(hero_str_199d06ab);
-#line 14786 "main.c"
-    hero_str_incref(t7);
-#line 167 "examples/ledger/db/sqlite.hero"
-#line 14789 "main.c"
-    hero_str_incref(t8);
-#line 167 "examples/ledger/db/sqlite.hero"
-    t9 = (h_0opt_24dfc0bb){.tag = INT64_C(1), .as.err = {.code = t7, .msg = t8}};
-#line 167 "examples/ledger/db/sqlite.hero"
-    t14 = h2_own2;
-#line 167 "examples/ledger/db/sqlite.hero"
-    h2_own2 = t9;
-#line 14797 "main.c"
-    h_0opt_24dfc0bb_release(&t14);
-#line 167 "examples/ledger/db/sqlite.hero"
-#line 14800 "main.c"
-    h_0opt_24dfc0bb_retain(&t9);
-#line 167 "examples/ledger/db/sqlite.hero"
-#line 14803 "main.c"
-    h_0opt_24dfc0bb_release(&h1_own1);
-#line 167 "examples/ledger/db/sqlite.hero"
-#line 14806 "main.c"
+#line 192 "examples/ledger/db/sqlite.hero"
+    t7 = h0_db;
+#line 192 "examples/ledger/db/sqlite.hero"
+    t8 = (h_dbsqlite_Db){.f_handle = t7};
+#line 192 "examples/ledger/db/sqlite.hero"
+    t9 = h_dbsqlite_why(t8);
+#line 192 "examples/ledger/db/sqlite.hero"
+    t19 = h3_own3;
+#line 192 "examples/ledger/db/sqlite.hero"
+    h3_own3 = t9;
+#line 14805 "main.c"
+    hero_str_decref(t19);
+#line 192 "examples/ledger/db/sqlite.hero"
+    t20 = h1_reason;
+#line 14809 "main.c"
+    hero_str_incref(t9);
+#line 192 "examples/ledger/db/sqlite.hero"
+    h1_reason = t9;
+#line 14813 "main.c"
+    hero_str_decref(t20);
+#line 193 "examples/ledger/db/sqlite.hero"
+    t10 = h0_db;
+#line 193 "examples/ledger/db/sqlite.hero"
+    (void)sqlite3_close(t10);
+#line 194 "examples/ledger/db/sqlite.hero"
+    t12 = HERO_STR_LIT(hero_str_2cb37c54);
+#line 194 "examples/ledger/db/sqlite.hero"
+    t13 = h1_reason;
+#line 14823 "main.c"
+    hero_str_incref(t12);
+#line 194 "examples/ledger/db/sqlite.hero"
+#line 14826 "main.c"
+    hero_str_incref(t13);
+#line 194 "examples/ledger/db/sqlite.hero"
+    t14 = (h_0opt_24dfc0bb){.tag = INT64_C(1), .as.err = {.code = t12, .msg = t13}};
+#line 194 "examples/ledger/db/sqlite.hero"
+    t21 = h4_own4;
+#line 194 "examples/ledger/db/sqlite.hero"
+    h4_own4 = t14;
+#line 14834 "main.c"
+    h_0opt_24dfc0bb_release(&t21);
+#line 194 "examples/ledger/db/sqlite.hero"
+#line 14837 "main.c"
+    h_0opt_24dfc0bb_retain(&t14);
+#line 194 "examples/ledger/db/sqlite.hero"
+#line 14840 "main.c"
+    hero_str_decref(h1_reason);
+#line 194 "examples/ledger/db/sqlite.hero"
+#line 14843 "main.c"
     h_0opt_24dfc0bb_release(&h2_own2);
-    return t9;
+#line 194 "examples/ledger/db/sqlite.hero"
+#line 14846 "main.c"
+    hero_str_decref(h3_own3);
+#line 194 "examples/ledger/db/sqlite.hero"
+#line 14849 "main.c"
+    h_0opt_24dfc0bb_release(&h4_own4);
+    return t14;
 bb3:
     goto bb1;
 }
 
-#line 170 "examples/ledger/db/sqlite.hero"
+#line 197 "examples/ledger/db/sqlite.hero"
 int64_t h_dbsqlite_closed(h_dbsqlite_Db h0_db) {
-#line 14815 "main.c"
+#line 14858 "main.c"
     h_dbsqlite_Db t1;
     void * t2;
     int64_t t3;
     goto bb0;
 bb0:
-#line 171 "examples/ledger/db/sqlite.hero"
+#line 198 "examples/ledger/db/sqlite.hero"
     t1 = h0_db;
-#line 171 "examples/ledger/db/sqlite.hero"
+#line 198 "examples/ledger/db/sqlite.hero"
     t2 = (void *)t1.f_handle;
-#line 171 "examples/ledger/db/sqlite.hero"
+#line 198 "examples/ledger/db/sqlite.hero"
     t3 = sqlite3_close(t2);
-#line 171 "examples/ledger/db/sqlite.hero"
+#line 198 "examples/ledger/db/sqlite.hero"
     return t3;
-#line 14829 "main.c"
+#line 14872 "main.c"
 }
 
-#line 174 "examples/ledger/db/sqlite.hero"
+#line 210 "examples/ledger/db/sqlite.hero"
 h_0opt_a8ea2 h_dbsqlite_run(h_dbsqlite_Db h0_db, HeroStr h1_sql) {
-#line 14834 "main.c"
-    __attribute__((unused)) void * h2_error;
-    h_0opt_a8ea2 h3_own3 = {0};
+#line 14877 "main.c"
+    h_0opt_a8ea2 h2_own2 = {0};
+    HeroStr h3_own3 = {0};
     HeroStr h4_own4 = {0};
     HeroStr h5_own5 = {0};
-    HeroStr h6_own6 = {0};
-    h_0opt_a8ea2 h7_own7 = {0};
-    void * t1;
-    h_dbsqlite_Db t2;
-    void * t3;
-    HeroStr t4 = {0};
-    const char * t5;
+    h_0opt_a8ea2 h6_own6 = {0};
+    h_dbsqlite_Db t1;
+    void * t2;
+    HeroStr t3 = {0};
+    const char * t4;
+    void * t5;
     void * t6;
     void * t7;
     int64_t t8;
@@ -14863,132 +14905,130 @@ h_0opt_a8ea2 h_dbsqlite_run(h_dbsqlite_Db h0_db, HeroStr h1_sql) {
     h_0opt_a8ea2 t24 = {0};
     goto bb0;
 bb0:
-#line 175 "examples/ledger/db/sqlite.hero"
-    t1 = ((void *)0);
-#line 175 "examples/ledger/db/sqlite.hero"
-    h2_error = t1;
-#line 177 "examples/ledger/db/sqlite.hero"
-    t2 = h0_db;
-#line 177 "examples/ledger/db/sqlite.hero"
-    t3 = (void *)t2.f_handle;
-#line 177 "examples/ledger/db/sqlite.hero"
-    t4 = h1_sql;
-#line 177 "examples/ledger/db/sqlite.hero"
-    t5 = hero_str_cstr(t4);
-#line 177 "examples/ledger/db/sqlite.hero"
+#line 211 "examples/ledger/db/sqlite.hero"
+    t1 = h0_db;
+#line 211 "examples/ledger/db/sqlite.hero"
+    t2 = (void *)t1.f_handle;
+#line 211 "examples/ledger/db/sqlite.hero"
+    t3 = h1_sql;
+#line 211 "examples/ledger/db/sqlite.hero"
+    t4 = hero_str_cstr(t3);
+#line 211 "examples/ledger/db/sqlite.hero"
+    t5 = ((void *)0);
+#line 211 "examples/ledger/db/sqlite.hero"
     t6 = ((void *)0);
-#line 177 "examples/ledger/db/sqlite.hero"
+#line 211 "examples/ledger/db/sqlite.hero"
     t7 = ((void *)0);
-#line 177 "examples/ledger/db/sqlite.hero"
-    t8 = sqlite3_exec(t3, hero_cstr_nonnull(t5), t6, t7, (void *)&h2_error);
-#line 177 "examples/ledger/db/sqlite.hero"
+#line 211 "examples/ledger/db/sqlite.hero"
+    t8 = sqlite3_exec(t2, hero_cstr_nonnull(t4), t5, t6, t7);
+#line 211 "examples/ledger/db/sqlite.hero"
     t9 = h_dbsqlite_SQLITE_OK();
-#line 177 "examples/ledger/db/sqlite.hero"
+#line 211 "examples/ledger/db/sqlite.hero"
     t10 = t8 != t9;
-#line 177 "examples/ledger/db/sqlite.hero"
+#line 211 "examples/ledger/db/sqlite.hero"
     if (t10) goto bb2; else goto bb3;
-#line 177 "examples/ledger/db/sqlite.hero"
+#line 211 "examples/ledger/db/sqlite.hero"
 bb1:
-#line 179 "examples/ledger/db/sqlite.hero"
+#line 213 "examples/ledger/db/sqlite.hero"
     t19 = (h_0opt_a8ea2){.tag = INT64_C(0)};
-#line 179 "examples/ledger/db/sqlite.hero"
-    t20 = h3_own3;
-#line 179 "examples/ledger/db/sqlite.hero"
-    h3_own3 = t19;
-#line 14899 "main.c"
+#line 213 "examples/ledger/db/sqlite.hero"
+    t20 = h2_own2;
+#line 213 "examples/ledger/db/sqlite.hero"
+    h2_own2 = t19;
+#line 14939 "main.c"
     h_0opt_a8ea2_release(&t20);
-#line 179 "examples/ledger/db/sqlite.hero"
-#line 14902 "main.c"
+#line 213 "examples/ledger/db/sqlite.hero"
+#line 14942 "main.c"
     h_0opt_a8ea2_retain(&t19);
-#line 179 "examples/ledger/db/sqlite.hero"
-#line 14905 "main.c"
-    h_0opt_a8ea2_release(&h3_own3);
-#line 179 "examples/ledger/db/sqlite.hero"
-#line 14908 "main.c"
+#line 213 "examples/ledger/db/sqlite.hero"
+#line 14945 "main.c"
+    h_0opt_a8ea2_release(&h2_own2);
+#line 213 "examples/ledger/db/sqlite.hero"
+#line 14948 "main.c"
+    hero_str_decref(h3_own3);
+#line 213 "examples/ledger/db/sqlite.hero"
+#line 14951 "main.c"
     hero_str_decref(h4_own4);
-#line 179 "examples/ledger/db/sqlite.hero"
-#line 14911 "main.c"
+#line 213 "examples/ledger/db/sqlite.hero"
+#line 14954 "main.c"
     hero_str_decref(h5_own5);
-#line 179 "examples/ledger/db/sqlite.hero"
-#line 14914 "main.c"
-    hero_str_decref(h6_own6);
-#line 179 "examples/ledger/db/sqlite.hero"
-#line 14917 "main.c"
-    h_0opt_a8ea2_release(&h7_own7);
+#line 213 "examples/ledger/db/sqlite.hero"
+#line 14957 "main.c"
+    h_0opt_a8ea2_release(&h6_own6);
     return t19;
 bb2:
-#line 178 "examples/ledger/db/sqlite.hero"
+#line 212 "examples/ledger/db/sqlite.hero"
     t11 = HERO_STR_LIT(hero_str_27d8ba8f);
-#line 178 "examples/ledger/db/sqlite.hero"
+#line 212 "examples/ledger/db/sqlite.hero"
     t12 = h1_sql;
-#line 178 "examples/ledger/db/sqlite.hero"
+#line 212 "examples/ledger/db/sqlite.hero"
     t13 = HERO_STR_LIT(hero_str_1dce);
-#line 178 "examples/ledger/db/sqlite.hero"
+#line 212 "examples/ledger/db/sqlite.hero"
     t14 = hero_str_concat(t12, t13);
-#line 178 "examples/ledger/db/sqlite.hero"
-    t21 = h4_own4;
-#line 178 "examples/ledger/db/sqlite.hero"
-    h4_own4 = t14;
-#line 14933 "main.c"
+#line 212 "examples/ledger/db/sqlite.hero"
+    t21 = h3_own3;
+#line 212 "examples/ledger/db/sqlite.hero"
+    h3_own3 = t14;
+#line 14973 "main.c"
     hero_str_decref(t21);
-#line 178 "examples/ledger/db/sqlite.hero"
+#line 212 "examples/ledger/db/sqlite.hero"
     t15 = h0_db;
-#line 178 "examples/ledger/db/sqlite.hero"
+#line 212 "examples/ledger/db/sqlite.hero"
     t16 = h_dbsqlite_why(t15);
-#line 178 "examples/ledger/db/sqlite.hero"
-    t22 = h5_own5;
-#line 178 "examples/ledger/db/sqlite.hero"
-    h5_own5 = t16;
-#line 14943 "main.c"
-    hero_str_decref(t22);
-#line 178 "examples/ledger/db/sqlite.hero"
-    t17 = hero_str_concat(t14, t16);
-#line 178 "examples/ledger/db/sqlite.hero"
-    t23 = h6_own6;
-#line 178 "examples/ledger/db/sqlite.hero"
-    h6_own6 = t17;
-#line 14951 "main.c"
-    hero_str_decref(t23);
-#line 178 "examples/ledger/db/sqlite.hero"
-#line 14954 "main.c"
-    hero_str_incref(t11);
-#line 178 "examples/ledger/db/sqlite.hero"
-#line 14957 "main.c"
-    hero_str_incref(t17);
-#line 178 "examples/ledger/db/sqlite.hero"
-    t18 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t11, .msg = t17}};
-#line 178 "examples/ledger/db/sqlite.hero"
-    t24 = h7_own7;
-#line 178 "examples/ledger/db/sqlite.hero"
-    h7_own7 = t18;
-#line 14965 "main.c"
-    h_0opt_a8ea2_release(&t24);
-#line 178 "examples/ledger/db/sqlite.hero"
-#line 14968 "main.c"
-    h_0opt_a8ea2_retain(&t18);
-#line 178 "examples/ledger/db/sqlite.hero"
-#line 14971 "main.c"
-    h_0opt_a8ea2_release(&h3_own3);
-#line 178 "examples/ledger/db/sqlite.hero"
-#line 14974 "main.c"
-    hero_str_decref(h4_own4);
-#line 178 "examples/ledger/db/sqlite.hero"
-#line 14977 "main.c"
-    hero_str_decref(h5_own5);
-#line 178 "examples/ledger/db/sqlite.hero"
-#line 14980 "main.c"
-    hero_str_decref(h6_own6);
-#line 178 "examples/ledger/db/sqlite.hero"
+#line 212 "examples/ledger/db/sqlite.hero"
+    t22 = h4_own4;
+#line 212 "examples/ledger/db/sqlite.hero"
+    h4_own4 = t16;
 #line 14983 "main.c"
-    h_0opt_a8ea2_release(&h7_own7);
+    hero_str_decref(t22);
+#line 212 "examples/ledger/db/sqlite.hero"
+    t17 = hero_str_concat(t14, t16);
+#line 212 "examples/ledger/db/sqlite.hero"
+    t23 = h5_own5;
+#line 212 "examples/ledger/db/sqlite.hero"
+    h5_own5 = t17;
+#line 14991 "main.c"
+    hero_str_decref(t23);
+#line 212 "examples/ledger/db/sqlite.hero"
+#line 14994 "main.c"
+    hero_str_incref(t11);
+#line 212 "examples/ledger/db/sqlite.hero"
+#line 14997 "main.c"
+    hero_str_incref(t17);
+#line 212 "examples/ledger/db/sqlite.hero"
+    t18 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t11, .msg = t17}};
+#line 212 "examples/ledger/db/sqlite.hero"
+    t24 = h6_own6;
+#line 212 "examples/ledger/db/sqlite.hero"
+    h6_own6 = t18;
+#line 15005 "main.c"
+    h_0opt_a8ea2_release(&t24);
+#line 212 "examples/ledger/db/sqlite.hero"
+#line 15008 "main.c"
+    h_0opt_a8ea2_retain(&t18);
+#line 212 "examples/ledger/db/sqlite.hero"
+#line 15011 "main.c"
+    h_0opt_a8ea2_release(&h2_own2);
+#line 212 "examples/ledger/db/sqlite.hero"
+#line 15014 "main.c"
+    hero_str_decref(h3_own3);
+#line 212 "examples/ledger/db/sqlite.hero"
+#line 15017 "main.c"
+    hero_str_decref(h4_own4);
+#line 212 "examples/ledger/db/sqlite.hero"
+#line 15020 "main.c"
+    hero_str_decref(h5_own5);
+#line 212 "examples/ledger/db/sqlite.hero"
+#line 15023 "main.c"
+    h_0opt_a8ea2_release(&h6_own6);
     return t18;
 bb3:
     goto bb1;
 }
 
-#line 183 "examples/ledger/db/sqlite.hero"
+#line 217 "examples/ledger/db/sqlite.hero"
 int64_t h_dbsqlite_changed(h_dbsqlite_Db h0_db) {
-#line 14992 "main.c"
+#line 15032 "main.c"
     h_0opt_e201354 h1_f0 = {0};
     h_0opt_e201354 h2_own2 = {0};
     h_dbsqlite_Db t1;
@@ -15007,63 +15047,63 @@ int64_t h_dbsqlite_changed(h_dbsqlite_Db h0_db) {
     h_0opt_e201354 t14 = {0};
     goto bb0;
 bb0:
-#line 184 "examples/ledger/db/sqlite.hero"
+#line 218 "examples/ledger/db/sqlite.hero"
     t1 = h0_db;
-#line 184 "examples/ledger/db/sqlite.hero"
+#line 218 "examples/ledger/db/sqlite.hero"
     t2 = (void *)t1.f_handle;
-#line 184 "examples/ledger/db/sqlite.hero"
+#line 218 "examples/ledger/db/sqlite.hero"
     t3 = sqlite3_changes(t2);
-#line 184 "examples/ledger/db/sqlite.hero"
+#line 218 "examples/ledger/db/sqlite.hero"
     t4 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t3};
-#line 184 "examples/ledger/db/sqlite.hero"
+#line 218 "examples/ledger/db/sqlite.hero"
     t13 = h2_own2;
-#line 184 "examples/ledger/db/sqlite.hero"
+#line 218 "examples/ledger/db/sqlite.hero"
     h2_own2 = t4;
-#line 15023 "main.c"
+#line 15063 "main.c"
     h_0opt_e201354_release(&t13);
-#line 184 "examples/ledger/db/sqlite.hero"
+#line 218 "examples/ledger/db/sqlite.hero"
     t14 = h1_f0;
-#line 15027 "main.c"
+#line 15067 "main.c"
     h_0opt_e201354_retain(&t4);
-#line 184 "examples/ledger/db/sqlite.hero"
+#line 218 "examples/ledger/db/sqlite.hero"
     h1_f0 = t4;
-#line 15031 "main.c"
+#line 15071 "main.c"
     h_0opt_e201354_release(&t14);
-#line 184 "examples/ledger/db/sqlite.hero"
+#line 218 "examples/ledger/db/sqlite.hero"
     t5 = h1_f0;
-#line 184 "examples/ledger/db/sqlite.hero"
+#line 218 "examples/ledger/db/sqlite.hero"
     t6 = t5.tag;
-#line 184 "examples/ledger/db/sqlite.hero"
+#line 218 "examples/ledger/db/sqlite.hero"
     t7 = INT64_C(0);
-#line 184 "examples/ledger/db/sqlite.hero"
+#line 218 "examples/ledger/db/sqlite.hero"
     t8 = t6 == t7;
-#line 184 "examples/ledger/db/sqlite.hero"
+#line 218 "examples/ledger/db/sqlite.hero"
     if (t8) goto bb1; else goto bb2;
-#line 184 "examples/ledger/db/sqlite.hero"
+#line 218 "examples/ledger/db/sqlite.hero"
 bb1:
-#line 184 "examples/ledger/db/sqlite.hero"
+#line 218 "examples/ledger/db/sqlite.hero"
     t11 = h1_f0;
-#line 184 "examples/ledger/db/sqlite.hero"
+#line 218 "examples/ledger/db/sqlite.hero"
     t12 = t11.as.ok;
-#line 15049 "main.c"
+#line 15089 "main.c"
     h_0opt_e201354_release(&h1_f0);
-#line 184 "examples/ledger/db/sqlite.hero"
-#line 15052 "main.c"
+#line 218 "examples/ledger/db/sqlite.hero"
+#line 15092 "main.c"
     h_0opt_e201354_release(&h2_own2);
     return t12;
 bb2:
-#line 184 "examples/ledger/db/sqlite.hero"
+#line 218 "examples/ledger/db/sqlite.hero"
     t9 = h1_f0;
-#line 184 "examples/ledger/db/sqlite.hero"
+#line 218 "examples/ledger/db/sqlite.hero"
     t10 = t9.as.err;
-#line 15060 "main.c"
+#line 15100 "main.c"
     hero_panic_must(t10);
     hero_unreachable();
 }
 
-#line 188 "examples/ledger/db/sqlite.hero"
+#line 222 "examples/ledger/db/sqlite.hero"
 h_0opt_791f9719 h_dbsqlite_prepared(h_dbsqlite_Db h0_db, HeroStr h1_sql) {
-#line 15067 "main.c"
+#line 15107 "main.c"
     void * h2_statement;
     __attribute__((unused)) void * h3_tail;
     h_0opt_791f9719 h4_own4 = {0};
@@ -15099,157 +15139,157 @@ h_0opt_791f9719 h_dbsqlite_prepared(h_dbsqlite_Db h0_db, HeroStr h1_sql) {
     h_0opt_791f9719 t26 = {0};
     goto bb0;
 bb0:
-#line 189 "examples/ledger/db/sqlite.hero"
+#line 223 "examples/ledger/db/sqlite.hero"
     t1 = ((void *)0);
-#line 189 "examples/ledger/db/sqlite.hero"
+#line 223 "examples/ledger/db/sqlite.hero"
     h2_statement = t1;
-#line 190 "examples/ledger/db/sqlite.hero"
+#line 224 "examples/ledger/db/sqlite.hero"
     t2 = ((void *)0);
-#line 190 "examples/ledger/db/sqlite.hero"
+#line 224 "examples/ledger/db/sqlite.hero"
     h3_tail = t2;
-#line 192 "examples/ledger/db/sqlite.hero"
+#line 226 "examples/ledger/db/sqlite.hero"
     t3 = h0_db;
-#line 192 "examples/ledger/db/sqlite.hero"
+#line 226 "examples/ledger/db/sqlite.hero"
     t4 = (void *)t3.f_handle;
-#line 192 "examples/ledger/db/sqlite.hero"
+#line 226 "examples/ledger/db/sqlite.hero"
     t5 = h1_sql;
-#line 192 "examples/ledger/db/sqlite.hero"
+#line 226 "examples/ledger/db/sqlite.hero"
     t6 = hero_str_cstr(t5);
-#line 192 "examples/ledger/db/sqlite.hero"
+#line 226 "examples/ledger/db/sqlite.hero"
     t7 = INT64_C(-1);
-#line 192 "examples/ledger/db/sqlite.hero"
+#line 226 "examples/ledger/db/sqlite.hero"
     t8 = sqlite3_prepare_v2(t4, hero_cstr_nonnull(t6), t7, (void *)&h2_statement, (void *)&h3_tail);
-#line 192 "examples/ledger/db/sqlite.hero"
+#line 226 "examples/ledger/db/sqlite.hero"
     t9 = h_dbsqlite_SQLITE_OK();
-#line 192 "examples/ledger/db/sqlite.hero"
+#line 226 "examples/ledger/db/sqlite.hero"
     t10 = t8 != t9;
-#line 192 "examples/ledger/db/sqlite.hero"
+#line 226 "examples/ledger/db/sqlite.hero"
     if (t10) goto bb2; else goto bb3;
-#line 192 "examples/ledger/db/sqlite.hero"
+#line 226 "examples/ledger/db/sqlite.hero"
 bb1:
-#line 194 "examples/ledger/db/sqlite.hero"
+#line 228 "examples/ledger/db/sqlite.hero"
     t19 = h2_statement;
-#line 194 "examples/ledger/db/sqlite.hero"
+#line 228 "examples/ledger/db/sqlite.hero"
     t20 = (h_dbsqlite_Statement){.f_handle = t19};
-#line 194 "examples/ledger/db/sqlite.hero"
+#line 228 "examples/ledger/db/sqlite.hero"
     t21 = (h_0opt_791f9719){.tag = INT64_C(0), .as.ok = t20};
-#line 194 "examples/ledger/db/sqlite.hero"
+#line 228 "examples/ledger/db/sqlite.hero"
     t22 = h4_own4;
-#line 194 "examples/ledger/db/sqlite.hero"
+#line 228 "examples/ledger/db/sqlite.hero"
     h4_own4 = t21;
-#line 15141 "main.c"
+#line 15181 "main.c"
     h_0opt_791f9719_release(&t22);
-#line 194 "examples/ledger/db/sqlite.hero"
-#line 15144 "main.c"
+#line 228 "examples/ledger/db/sqlite.hero"
+#line 15184 "main.c"
     h_0opt_791f9719_retain(&t21);
-#line 194 "examples/ledger/db/sqlite.hero"
-#line 15147 "main.c"
+#line 228 "examples/ledger/db/sqlite.hero"
+#line 15187 "main.c"
     h_0opt_791f9719_release(&h4_own4);
-#line 194 "examples/ledger/db/sqlite.hero"
-#line 15150 "main.c"
+#line 228 "examples/ledger/db/sqlite.hero"
+#line 15190 "main.c"
     hero_str_decref(h5_own5);
-#line 194 "examples/ledger/db/sqlite.hero"
-#line 15153 "main.c"
+#line 228 "examples/ledger/db/sqlite.hero"
+#line 15193 "main.c"
     hero_str_decref(h6_own6);
-#line 194 "examples/ledger/db/sqlite.hero"
-#line 15156 "main.c"
+#line 228 "examples/ledger/db/sqlite.hero"
+#line 15196 "main.c"
     hero_str_decref(h7_own7);
-#line 194 "examples/ledger/db/sqlite.hero"
-#line 15159 "main.c"
+#line 228 "examples/ledger/db/sqlite.hero"
+#line 15199 "main.c"
     h_0opt_791f9719_release(&h8_own8);
     return t21;
 bb2:
-#line 193 "examples/ledger/db/sqlite.hero"
+#line 227 "examples/ledger/db/sqlite.hero"
     t11 = HERO_STR_LIT(hero_str_3c5efe11);
-#line 193 "examples/ledger/db/sqlite.hero"
+#line 227 "examples/ledger/db/sqlite.hero"
     t12 = h1_sql;
-#line 193 "examples/ledger/db/sqlite.hero"
+#line 227 "examples/ledger/db/sqlite.hero"
     t13 = HERO_STR_LIT(hero_str_1dce);
-#line 193 "examples/ledger/db/sqlite.hero"
+#line 227 "examples/ledger/db/sqlite.hero"
     t14 = hero_str_concat(t12, t13);
-#line 193 "examples/ledger/db/sqlite.hero"
+#line 227 "examples/ledger/db/sqlite.hero"
     t23 = h5_own5;
-#line 193 "examples/ledger/db/sqlite.hero"
+#line 227 "examples/ledger/db/sqlite.hero"
     h5_own5 = t14;
-#line 15175 "main.c"
+#line 15215 "main.c"
     hero_str_decref(t23);
-#line 193 "examples/ledger/db/sqlite.hero"
+#line 227 "examples/ledger/db/sqlite.hero"
     t15 = h0_db;
-#line 193 "examples/ledger/db/sqlite.hero"
+#line 227 "examples/ledger/db/sqlite.hero"
     t16 = h_dbsqlite_why(t15);
-#line 193 "examples/ledger/db/sqlite.hero"
+#line 227 "examples/ledger/db/sqlite.hero"
     t24 = h6_own6;
-#line 193 "examples/ledger/db/sqlite.hero"
+#line 227 "examples/ledger/db/sqlite.hero"
     h6_own6 = t16;
-#line 15185 "main.c"
-    hero_str_decref(t24);
-#line 193 "examples/ledger/db/sqlite.hero"
-    t17 = hero_str_concat(t14, t16);
-#line 193 "examples/ledger/db/sqlite.hero"
-    t25 = h7_own7;
-#line 193 "examples/ledger/db/sqlite.hero"
-    h7_own7 = t17;
-#line 15193 "main.c"
-    hero_str_decref(t25);
-#line 193 "examples/ledger/db/sqlite.hero"
-#line 15196 "main.c"
-    hero_str_incref(t11);
-#line 193 "examples/ledger/db/sqlite.hero"
-#line 15199 "main.c"
-    hero_str_incref(t17);
-#line 193 "examples/ledger/db/sqlite.hero"
-    t18 = (h_0opt_791f9719){.tag = INT64_C(1), .as.err = {.code = t11, .msg = t17}};
-#line 193 "examples/ledger/db/sqlite.hero"
-    t26 = h8_own8;
-#line 193 "examples/ledger/db/sqlite.hero"
-    h8_own8 = t18;
-#line 15207 "main.c"
-    h_0opt_791f9719_release(&t26);
-#line 193 "examples/ledger/db/sqlite.hero"
-#line 15210 "main.c"
-    h_0opt_791f9719_retain(&t18);
-#line 193 "examples/ledger/db/sqlite.hero"
-#line 15213 "main.c"
-    h_0opt_791f9719_release(&h4_own4);
-#line 193 "examples/ledger/db/sqlite.hero"
-#line 15216 "main.c"
-    hero_str_decref(h5_own5);
-#line 193 "examples/ledger/db/sqlite.hero"
-#line 15219 "main.c"
-    hero_str_decref(h6_own6);
-#line 193 "examples/ledger/db/sqlite.hero"
-#line 15222 "main.c"
-    hero_str_decref(h7_own7);
-#line 193 "examples/ledger/db/sqlite.hero"
 #line 15225 "main.c"
+    hero_str_decref(t24);
+#line 227 "examples/ledger/db/sqlite.hero"
+    t17 = hero_str_concat(t14, t16);
+#line 227 "examples/ledger/db/sqlite.hero"
+    t25 = h7_own7;
+#line 227 "examples/ledger/db/sqlite.hero"
+    h7_own7 = t17;
+#line 15233 "main.c"
+    hero_str_decref(t25);
+#line 227 "examples/ledger/db/sqlite.hero"
+#line 15236 "main.c"
+    hero_str_incref(t11);
+#line 227 "examples/ledger/db/sqlite.hero"
+#line 15239 "main.c"
+    hero_str_incref(t17);
+#line 227 "examples/ledger/db/sqlite.hero"
+    t18 = (h_0opt_791f9719){.tag = INT64_C(1), .as.err = {.code = t11, .msg = t17}};
+#line 227 "examples/ledger/db/sqlite.hero"
+    t26 = h8_own8;
+#line 227 "examples/ledger/db/sqlite.hero"
+    h8_own8 = t18;
+#line 15247 "main.c"
+    h_0opt_791f9719_release(&t26);
+#line 227 "examples/ledger/db/sqlite.hero"
+#line 15250 "main.c"
+    h_0opt_791f9719_retain(&t18);
+#line 227 "examples/ledger/db/sqlite.hero"
+#line 15253 "main.c"
+    h_0opt_791f9719_release(&h4_own4);
+#line 227 "examples/ledger/db/sqlite.hero"
+#line 15256 "main.c"
+    hero_str_decref(h5_own5);
+#line 227 "examples/ledger/db/sqlite.hero"
+#line 15259 "main.c"
+    hero_str_decref(h6_own6);
+#line 227 "examples/ledger/db/sqlite.hero"
+#line 15262 "main.c"
+    hero_str_decref(h7_own7);
+#line 227 "examples/ledger/db/sqlite.hero"
+#line 15265 "main.c"
     h_0opt_791f9719_release(&h8_own8);
     return t18;
 bb3:
     goto bb1;
 }
 
-#line 196 "examples/ledger/db/sqlite.hero"
+#line 230 "examples/ledger/db/sqlite.hero"
 int64_t h_dbsqlite_finalized(h_dbsqlite_Statement h0_statement) {
-#line 15234 "main.c"
+#line 15274 "main.c"
     h_dbsqlite_Statement t1;
     void * t2;
     int64_t t3;
     goto bb0;
 bb0:
-#line 197 "examples/ledger/db/sqlite.hero"
+#line 231 "examples/ledger/db/sqlite.hero"
     t1 = h0_statement;
-#line 197 "examples/ledger/db/sqlite.hero"
+#line 231 "examples/ledger/db/sqlite.hero"
     t2 = (void *)t1.f_handle;
-#line 197 "examples/ledger/db/sqlite.hero"
+#line 231 "examples/ledger/db/sqlite.hero"
     t3 = sqlite3_finalize(t2);
-#line 197 "examples/ledger/db/sqlite.hero"
+#line 231 "examples/ledger/db/sqlite.hero"
     return t3;
-#line 15248 "main.c"
+#line 15288 "main.c"
 }
 
-#line 201 "examples/ledger/db/sqlite.hero"
+#line 235 "examples/ledger/db/sqlite.hero"
 h_0opt_a8ea2 h_dbsqlite_reset(h_dbsqlite_Statement h0_statement) {
-#line 15253 "main.c"
+#line 15293 "main.c"
     h_0opt_a8ea2 h1_own1 = {0};
     h_0opt_a8ea2 h2_own2 = {0};
     h_dbsqlite_Statement t1;
@@ -15265,73 +15305,73 @@ h_0opt_a8ea2 h_dbsqlite_reset(h_dbsqlite_Statement h0_statement) {
     h_0opt_a8ea2 t11 = {0};
     goto bb0;
 bb0:
-#line 202 "examples/ledger/db/sqlite.hero"
+#line 236 "examples/ledger/db/sqlite.hero"
     t1 = h0_statement;
-#line 202 "examples/ledger/db/sqlite.hero"
+#line 236 "examples/ledger/db/sqlite.hero"
     t2 = (void *)t1.f_handle;
-#line 202 "examples/ledger/db/sqlite.hero"
+#line 236 "examples/ledger/db/sqlite.hero"
     t3 = sqlite3_reset(t2);
-#line 202 "examples/ledger/db/sqlite.hero"
+#line 236 "examples/ledger/db/sqlite.hero"
     t4 = h_dbsqlite_SQLITE_OK();
-#line 202 "examples/ledger/db/sqlite.hero"
+#line 236 "examples/ledger/db/sqlite.hero"
     t5 = t3 != t4;
-#line 202 "examples/ledger/db/sqlite.hero"
+#line 236 "examples/ledger/db/sqlite.hero"
     if (t5) goto bb2; else goto bb3;
-#line 202 "examples/ledger/db/sqlite.hero"
+#line 236 "examples/ledger/db/sqlite.hero"
 bb1:
-#line 204 "examples/ledger/db/sqlite.hero"
+#line 238 "examples/ledger/db/sqlite.hero"
     t9 = (h_0opt_a8ea2){.tag = INT64_C(0)};
-#line 204 "examples/ledger/db/sqlite.hero"
+#line 238 "examples/ledger/db/sqlite.hero"
     t10 = h1_own1;
-#line 204 "examples/ledger/db/sqlite.hero"
+#line 238 "examples/ledger/db/sqlite.hero"
     h1_own1 = t9;
-#line 15289 "main.c"
+#line 15329 "main.c"
     h_0opt_a8ea2_release(&t10);
-#line 204 "examples/ledger/db/sqlite.hero"
-#line 15292 "main.c"
+#line 238 "examples/ledger/db/sqlite.hero"
+#line 15332 "main.c"
     h_0opt_a8ea2_retain(&t9);
-#line 204 "examples/ledger/db/sqlite.hero"
-#line 15295 "main.c"
+#line 238 "examples/ledger/db/sqlite.hero"
+#line 15335 "main.c"
     h_0opt_a8ea2_release(&h1_own1);
-#line 204 "examples/ledger/db/sqlite.hero"
-#line 15298 "main.c"
+#line 238 "examples/ledger/db/sqlite.hero"
+#line 15338 "main.c"
     h_0opt_a8ea2_release(&h2_own2);
     return t9;
 bb2:
-#line 203 "examples/ledger/db/sqlite.hero"
+#line 237 "examples/ledger/db/sqlite.hero"
     t6 = HERO_STR_LIT(hero_str_130c12cb);
-#line 203 "examples/ledger/db/sqlite.hero"
+#line 237 "examples/ledger/db/sqlite.hero"
     t7 = HERO_STR_LIT(hero_str_50669c1f);
-#line 15306 "main.c"
+#line 15346 "main.c"
     hero_str_incref(t6);
-#line 203 "examples/ledger/db/sqlite.hero"
-#line 15309 "main.c"
+#line 237 "examples/ledger/db/sqlite.hero"
+#line 15349 "main.c"
     hero_str_incref(t7);
-#line 203 "examples/ledger/db/sqlite.hero"
+#line 237 "examples/ledger/db/sqlite.hero"
     t8 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t6, .msg = t7}};
-#line 203 "examples/ledger/db/sqlite.hero"
+#line 237 "examples/ledger/db/sqlite.hero"
     t11 = h2_own2;
-#line 203 "examples/ledger/db/sqlite.hero"
+#line 237 "examples/ledger/db/sqlite.hero"
     h2_own2 = t8;
-#line 15317 "main.c"
+#line 15357 "main.c"
     h_0opt_a8ea2_release(&t11);
-#line 203 "examples/ledger/db/sqlite.hero"
-#line 15320 "main.c"
+#line 237 "examples/ledger/db/sqlite.hero"
+#line 15360 "main.c"
     h_0opt_a8ea2_retain(&t8);
-#line 203 "examples/ledger/db/sqlite.hero"
-#line 15323 "main.c"
+#line 237 "examples/ledger/db/sqlite.hero"
+#line 15363 "main.c"
     h_0opt_a8ea2_release(&h1_own1);
-#line 203 "examples/ledger/db/sqlite.hero"
-#line 15326 "main.c"
+#line 237 "examples/ledger/db/sqlite.hero"
+#line 15366 "main.c"
     h_0opt_a8ea2_release(&h2_own2);
     return t8;
 bb3:
     goto bb1;
 }
 
-#line 213 "examples/ledger/db/sqlite.hero"
+#line 247 "examples/ledger/db/sqlite.hero"
 h_0opt_70720e79 h_dbsqlite_stepped(h_dbsqlite_Statement h0_statement) {
-#line 15335 "main.c"
+#line 15375 "main.c"
     int64_t h1_code;
     h_0opt_70720e79 h2_own2 = {0};
     HeroStr h3_own3 = {0};
@@ -15364,158 +15404,158 @@ h_0opt_70720e79 h_dbsqlite_stepped(h_dbsqlite_Statement h0_statement) {
     h_0opt_70720e79 t24 = {0};
     goto bb0;
 bb0:
-#line 214 "examples/ledger/db/sqlite.hero"
+#line 248 "examples/ledger/db/sqlite.hero"
     t1 = h0_statement;
-#line 214 "examples/ledger/db/sqlite.hero"
+#line 248 "examples/ledger/db/sqlite.hero"
     t2 = (void *)t1.f_handle;
-#line 214 "examples/ledger/db/sqlite.hero"
+#line 248 "examples/ledger/db/sqlite.hero"
     t3 = sqlite3_step(t2);
-#line 214 "examples/ledger/db/sqlite.hero"
+#line 248 "examples/ledger/db/sqlite.hero"
     h1_code = t3;
-#line 216 "examples/ledger/db/sqlite.hero"
+#line 250 "examples/ledger/db/sqlite.hero"
     t4 = h1_code;
-#line 216 "examples/ledger/db/sqlite.hero"
+#line 250 "examples/ledger/db/sqlite.hero"
     t5 = h_dbsqlite_SQLITE_ROW();
-#line 216 "examples/ledger/db/sqlite.hero"
+#line 250 "examples/ledger/db/sqlite.hero"
     t6 = t4 == t5;
-#line 216 "examples/ledger/db/sqlite.hero"
+#line 250 "examples/ledger/db/sqlite.hero"
     if (t6) goto bb2; else goto bb3;
-#line 216 "examples/ledger/db/sqlite.hero"
+#line 250 "examples/ledger/db/sqlite.hero"
 bb1:
-#line 219 "examples/ledger/db/sqlite.hero"
+#line 253 "examples/ledger/db/sqlite.hero"
     t9 = h1_code;
-#line 219 "examples/ledger/db/sqlite.hero"
+#line 253 "examples/ledger/db/sqlite.hero"
     t10 = h_dbsqlite_SQLITE_DONE();
-#line 219 "examples/ledger/db/sqlite.hero"
+#line 253 "examples/ledger/db/sqlite.hero"
     t11 = t9 == t10;
-#line 219 "examples/ledger/db/sqlite.hero"
+#line 253 "examples/ledger/db/sqlite.hero"
     if (t11) goto bb5; else goto bb6;
-#line 219 "examples/ledger/db/sqlite.hero"
+#line 253 "examples/ledger/db/sqlite.hero"
 bb2:
-#line 217 "examples/ledger/db/sqlite.hero"
+#line 251 "examples/ledger/db/sqlite.hero"
     t7 = (h_dbsqlite_Step){.tag = h_dbsqlite_Step_tag_stepped_row};
-#line 217 "examples/ledger/db/sqlite.hero"
+#line 251 "examples/ledger/db/sqlite.hero"
     t8 = (h_0opt_70720e79){.tag = INT64_C(0), .as.ok = t7};
-#line 217 "examples/ledger/db/sqlite.hero"
+#line 251 "examples/ledger/db/sqlite.hero"
     t20 = h2_own2;
-#line 217 "examples/ledger/db/sqlite.hero"
+#line 251 "examples/ledger/db/sqlite.hero"
     h2_own2 = t8;
-#line 15404 "main.c"
+#line 15444 "main.c"
     h_0opt_70720e79_release(&t20);
-#line 217 "examples/ledger/db/sqlite.hero"
-#line 15407 "main.c"
+#line 251 "examples/ledger/db/sqlite.hero"
+#line 15447 "main.c"
     h_0opt_70720e79_retain(&t8);
-#line 217 "examples/ledger/db/sqlite.hero"
-#line 15410 "main.c"
+#line 251 "examples/ledger/db/sqlite.hero"
+#line 15450 "main.c"
     h_0opt_70720e79_release(&h2_own2);
-#line 217 "examples/ledger/db/sqlite.hero"
-#line 15413 "main.c"
+#line 251 "examples/ledger/db/sqlite.hero"
+#line 15453 "main.c"
     hero_str_decref(h3_own3);
-#line 217 "examples/ledger/db/sqlite.hero"
-#line 15416 "main.c"
+#line 251 "examples/ledger/db/sqlite.hero"
+#line 15456 "main.c"
     hero_str_decref(h4_own4);
-#line 217 "examples/ledger/db/sqlite.hero"
-#line 15419 "main.c"
+#line 251 "examples/ledger/db/sqlite.hero"
+#line 15459 "main.c"
     h_0opt_70720e79_release(&h5_own5);
-#line 217 "examples/ledger/db/sqlite.hero"
-#line 15422 "main.c"
+#line 251 "examples/ledger/db/sqlite.hero"
+#line 15462 "main.c"
     h_0opt_70720e79_release(&h6_own6);
     return t8;
 bb3:
     goto bb1;
 bb4:
-#line 221 "examples/ledger/db/sqlite.hero"
+#line 255 "examples/ledger/db/sqlite.hero"
     t14 = HERO_STR_LIT(hero_str_67ab43f7);
-#line 221 "examples/ledger/db/sqlite.hero"
+#line 255 "examples/ledger/db/sqlite.hero"
     t15 = HERO_STR_LIT(hero_str_2196020e);
-#line 221 "examples/ledger/db/sqlite.hero"
+#line 255 "examples/ledger/db/sqlite.hero"
     t16 = h1_code;
-#line 221 "examples/ledger/db/sqlite.hero"
+#line 255 "examples/ledger/db/sqlite.hero"
     t17 = hero_int_to_str(t16);
-#line 221 "examples/ledger/db/sqlite.hero"
+#line 255 "examples/ledger/db/sqlite.hero"
     t21 = h3_own3;
-#line 221 "examples/ledger/db/sqlite.hero"
+#line 255 "examples/ledger/db/sqlite.hero"
     h3_own3 = t17;
-#line 15440 "main.c"
-    hero_str_decref(t21);
-#line 221 "examples/ledger/db/sqlite.hero"
-    t18 = hero_str_concat(t15, t17);
-#line 221 "examples/ledger/db/sqlite.hero"
-    t22 = h4_own4;
-#line 221 "examples/ledger/db/sqlite.hero"
-    h4_own4 = t18;
-#line 15448 "main.c"
-    hero_str_decref(t22);
-#line 221 "examples/ledger/db/sqlite.hero"
-#line 15451 "main.c"
-    hero_str_incref(t14);
-#line 221 "examples/ledger/db/sqlite.hero"
-#line 15454 "main.c"
-    hero_str_incref(t18);
-#line 221 "examples/ledger/db/sqlite.hero"
-    t19 = (h_0opt_70720e79){.tag = INT64_C(1), .as.err = {.code = t14, .msg = t18}};
-#line 221 "examples/ledger/db/sqlite.hero"
-    t23 = h5_own5;
-#line 221 "examples/ledger/db/sqlite.hero"
-    h5_own5 = t19;
-#line 15462 "main.c"
-    h_0opt_70720e79_release(&t23);
-#line 221 "examples/ledger/db/sqlite.hero"
-#line 15465 "main.c"
-    h_0opt_70720e79_retain(&t19);
-#line 221 "examples/ledger/db/sqlite.hero"
-#line 15468 "main.c"
-    h_0opt_70720e79_release(&h2_own2);
-#line 221 "examples/ledger/db/sqlite.hero"
-#line 15471 "main.c"
-    hero_str_decref(h3_own3);
-#line 221 "examples/ledger/db/sqlite.hero"
-#line 15474 "main.c"
-    hero_str_decref(h4_own4);
-#line 221 "examples/ledger/db/sqlite.hero"
-#line 15477 "main.c"
-    h_0opt_70720e79_release(&h5_own5);
-#line 221 "examples/ledger/db/sqlite.hero"
 #line 15480 "main.c"
+    hero_str_decref(t21);
+#line 255 "examples/ledger/db/sqlite.hero"
+    t18 = hero_str_concat(t15, t17);
+#line 255 "examples/ledger/db/sqlite.hero"
+    t22 = h4_own4;
+#line 255 "examples/ledger/db/sqlite.hero"
+    h4_own4 = t18;
+#line 15488 "main.c"
+    hero_str_decref(t22);
+#line 255 "examples/ledger/db/sqlite.hero"
+#line 15491 "main.c"
+    hero_str_incref(t14);
+#line 255 "examples/ledger/db/sqlite.hero"
+#line 15494 "main.c"
+    hero_str_incref(t18);
+#line 255 "examples/ledger/db/sqlite.hero"
+    t19 = (h_0opt_70720e79){.tag = INT64_C(1), .as.err = {.code = t14, .msg = t18}};
+#line 255 "examples/ledger/db/sqlite.hero"
+    t23 = h5_own5;
+#line 255 "examples/ledger/db/sqlite.hero"
+    h5_own5 = t19;
+#line 15502 "main.c"
+    h_0opt_70720e79_release(&t23);
+#line 255 "examples/ledger/db/sqlite.hero"
+#line 15505 "main.c"
+    h_0opt_70720e79_retain(&t19);
+#line 255 "examples/ledger/db/sqlite.hero"
+#line 15508 "main.c"
+    h_0opt_70720e79_release(&h2_own2);
+#line 255 "examples/ledger/db/sqlite.hero"
+#line 15511 "main.c"
+    hero_str_decref(h3_own3);
+#line 255 "examples/ledger/db/sqlite.hero"
+#line 15514 "main.c"
+    hero_str_decref(h4_own4);
+#line 255 "examples/ledger/db/sqlite.hero"
+#line 15517 "main.c"
+    h_0opt_70720e79_release(&h5_own5);
+#line 255 "examples/ledger/db/sqlite.hero"
+#line 15520 "main.c"
     h_0opt_70720e79_release(&h6_own6);
     return t19;
 bb5:
-#line 220 "examples/ledger/db/sqlite.hero"
+#line 254 "examples/ledger/db/sqlite.hero"
     t12 = (h_dbsqlite_Step){.tag = h_dbsqlite_Step_tag_stepped_done};
-#line 220 "examples/ledger/db/sqlite.hero"
+#line 254 "examples/ledger/db/sqlite.hero"
     t13 = (h_0opt_70720e79){.tag = INT64_C(0), .as.ok = t12};
-#line 220 "examples/ledger/db/sqlite.hero"
+#line 254 "examples/ledger/db/sqlite.hero"
     t24 = h6_own6;
-#line 220 "examples/ledger/db/sqlite.hero"
+#line 254 "examples/ledger/db/sqlite.hero"
     h6_own6 = t13;
-#line 15492 "main.c"
+#line 15532 "main.c"
     h_0opt_70720e79_release(&t24);
-#line 220 "examples/ledger/db/sqlite.hero"
-#line 15495 "main.c"
+#line 254 "examples/ledger/db/sqlite.hero"
+#line 15535 "main.c"
     h_0opt_70720e79_retain(&t13);
-#line 220 "examples/ledger/db/sqlite.hero"
-#line 15498 "main.c"
+#line 254 "examples/ledger/db/sqlite.hero"
+#line 15538 "main.c"
     h_0opt_70720e79_release(&h2_own2);
-#line 220 "examples/ledger/db/sqlite.hero"
-#line 15501 "main.c"
+#line 254 "examples/ledger/db/sqlite.hero"
+#line 15541 "main.c"
     hero_str_decref(h3_own3);
-#line 220 "examples/ledger/db/sqlite.hero"
-#line 15504 "main.c"
+#line 254 "examples/ledger/db/sqlite.hero"
+#line 15544 "main.c"
     hero_str_decref(h4_own4);
-#line 220 "examples/ledger/db/sqlite.hero"
-#line 15507 "main.c"
+#line 254 "examples/ledger/db/sqlite.hero"
+#line 15547 "main.c"
     h_0opt_70720e79_release(&h5_own5);
-#line 220 "examples/ledger/db/sqlite.hero"
-#line 15510 "main.c"
+#line 254 "examples/ledger/db/sqlite.hero"
+#line 15550 "main.c"
     h_0opt_70720e79_release(&h6_own6);
     return t13;
 bb6:
     goto bb4;
 }
 
-#line 227 "examples/ledger/db/sqlite.hero"
+#line 261 "examples/ledger/db/sqlite.hero"
 h_0opt_a8ea2 h_dbsqlite_bind_int(h_dbsqlite_Statement h0_statement, int64_t h1_at, int64_t h2_value) {
-#line 15519 "main.c"
+#line 15559 "main.c"
     h_0opt_e1f4933 h3_f0 = {0};
     h_0opt_e1f4933 h4_own4 = {0};
     h_0opt_a8ea2 h5_own5 = {0};
@@ -15553,168 +15593,168 @@ h_0opt_a8ea2 h_dbsqlite_bind_int(h_dbsqlite_Statement h0_statement, int64_t h1_a
     h_0opt_a8ea2 t29 = {0};
     goto bb0;
 bb0:
-#line 228 "examples/ledger/db/sqlite.hero"
+#line 262 "examples/ledger/db/sqlite.hero"
     t1 = h0_statement;
-#line 228 "examples/ledger/db/sqlite.hero"
+#line 262 "examples/ledger/db/sqlite.hero"
     t2 = (void *)t1.f_handle;
-#line 228 "examples/ledger/db/sqlite.hero"
+#line 262 "examples/ledger/db/sqlite.hero"
     t3 = h1_at;
-#line 228 "examples/ledger/db/sqlite.hero"
+#line 262 "examples/ledger/db/sqlite.hero"
     if (t3 >= -2147483648LL && t3 <= 2147483647LL) {
-#line 228 "examples/ledger/db/sqlite.hero"
+#line 262 "examples/ledger/db/sqlite.hero"
         t4 = (h_0opt_e1f4933){.tag = INT64_C(0), .as.ok = (int32_t)t3};
-#line 228 "examples/ledger/db/sqlite.hero"
+#line 262 "examples/ledger/db/sqlite.hero"
     } else {
-#line 228 "examples/ledger/db/sqlite.hero"
+#line 262 "examples/ledger/db/sqlite.hero"
         t4 = (h_0opt_e1f4933){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
-#line 228 "examples/ledger/db/sqlite.hero"
+#line 262 "examples/ledger/db/sqlite.hero"
     }
-#line 228 "examples/ledger/db/sqlite.hero"
+#line 262 "examples/ledger/db/sqlite.hero"
     t24 = h4_own4;
-#line 228 "examples/ledger/db/sqlite.hero"
+#line 262 "examples/ledger/db/sqlite.hero"
     h4_own4 = t4;
-#line 15577 "main.c"
-    h_0opt_e1f4933_release(&t24);
-#line 228 "examples/ledger/db/sqlite.hero"
-    t25 = h3_f0;
-#line 15581 "main.c"
-    h_0opt_e1f4933_retain(&t4);
-#line 228 "examples/ledger/db/sqlite.hero"
-    h3_f0 = t4;
-#line 15585 "main.c"
-    h_0opt_e1f4933_release(&t25);
-#line 228 "examples/ledger/db/sqlite.hero"
-    t5 = h3_f0;
-#line 228 "examples/ledger/db/sqlite.hero"
-    t6 = t5.tag;
-#line 228 "examples/ledger/db/sqlite.hero"
-    t7 = INT64_C(0);
-#line 228 "examples/ledger/db/sqlite.hero"
-    t8 = t6 == t7;
-#line 228 "examples/ledger/db/sqlite.hero"
-    if (t8) goto bb2; else goto bb3;
-#line 228 "examples/ledger/db/sqlite.hero"
-bb1:
-#line 230 "examples/ledger/db/sqlite.hero"
-    t23 = (h_0opt_a8ea2){.tag = INT64_C(0)};
-#line 230 "examples/ledger/db/sqlite.hero"
-    t26 = h5_own5;
-#line 230 "examples/ledger/db/sqlite.hero"
-    h5_own5 = t23;
-#line 15605 "main.c"
-    h_0opt_a8ea2_release(&t26);
-#line 230 "examples/ledger/db/sqlite.hero"
-#line 15608 "main.c"
-    h_0opt_a8ea2_retain(&t23);
-#line 230 "examples/ledger/db/sqlite.hero"
-#line 15611 "main.c"
-    h_0opt_e1f4933_release(&h3_f0);
-#line 230 "examples/ledger/db/sqlite.hero"
-#line 15614 "main.c"
-    h_0opt_e1f4933_release(&h4_own4);
-#line 230 "examples/ledger/db/sqlite.hero"
 #line 15617 "main.c"
+    h_0opt_e1f4933_release(&t24);
+#line 262 "examples/ledger/db/sqlite.hero"
+    t25 = h3_f0;
+#line 15621 "main.c"
+    h_0opt_e1f4933_retain(&t4);
+#line 262 "examples/ledger/db/sqlite.hero"
+    h3_f0 = t4;
+#line 15625 "main.c"
+    h_0opt_e1f4933_release(&t25);
+#line 262 "examples/ledger/db/sqlite.hero"
+    t5 = h3_f0;
+#line 262 "examples/ledger/db/sqlite.hero"
+    t6 = t5.tag;
+#line 262 "examples/ledger/db/sqlite.hero"
+    t7 = INT64_C(0);
+#line 262 "examples/ledger/db/sqlite.hero"
+    t8 = t6 == t7;
+#line 262 "examples/ledger/db/sqlite.hero"
+    if (t8) goto bb2; else goto bb3;
+#line 262 "examples/ledger/db/sqlite.hero"
+bb1:
+#line 264 "examples/ledger/db/sqlite.hero"
+    t23 = (h_0opt_a8ea2){.tag = INT64_C(0)};
+#line 264 "examples/ledger/db/sqlite.hero"
+    t26 = h5_own5;
+#line 264 "examples/ledger/db/sqlite.hero"
+    h5_own5 = t23;
+#line 15645 "main.c"
+    h_0opt_a8ea2_release(&t26);
+#line 264 "examples/ledger/db/sqlite.hero"
+#line 15648 "main.c"
+    h_0opt_a8ea2_retain(&t23);
+#line 264 "examples/ledger/db/sqlite.hero"
+#line 15651 "main.c"
+    h_0opt_e1f4933_release(&h3_f0);
+#line 264 "examples/ledger/db/sqlite.hero"
+#line 15654 "main.c"
+    h_0opt_e1f4933_release(&h4_own4);
+#line 264 "examples/ledger/db/sqlite.hero"
+#line 15657 "main.c"
     h_0opt_a8ea2_release(&h5_own5);
-#line 230 "examples/ledger/db/sqlite.hero"
-#line 15620 "main.c"
+#line 264 "examples/ledger/db/sqlite.hero"
+#line 15660 "main.c"
     hero_str_decref(h6_own6);
-#line 230 "examples/ledger/db/sqlite.hero"
-#line 15623 "main.c"
+#line 264 "examples/ledger/db/sqlite.hero"
+#line 15663 "main.c"
     hero_str_decref(h7_own7);
-#line 230 "examples/ledger/db/sqlite.hero"
-#line 15626 "main.c"
+#line 264 "examples/ledger/db/sqlite.hero"
+#line 15666 "main.c"
     h_0opt_a8ea2_release(&h8_own8);
     return t23;
 bb2:
-#line 228 "examples/ledger/db/sqlite.hero"
+#line 262 "examples/ledger/db/sqlite.hero"
     t11 = h3_f0;
-#line 228 "examples/ledger/db/sqlite.hero"
+#line 262 "examples/ledger/db/sqlite.hero"
     t12 = t11.as.ok;
-#line 228 "examples/ledger/db/sqlite.hero"
+#line 262 "examples/ledger/db/sqlite.hero"
     t13 = h2_value;
-#line 228 "examples/ledger/db/sqlite.hero"
+#line 262 "examples/ledger/db/sqlite.hero"
     t14 = sqlite3_bind_int64(t2, t12, t13);
-#line 228 "examples/ledger/db/sqlite.hero"
+#line 262 "examples/ledger/db/sqlite.hero"
     t15 = h_dbsqlite_SQLITE_OK();
-#line 228 "examples/ledger/db/sqlite.hero"
+#line 262 "examples/ledger/db/sqlite.hero"
     t16 = t14 != t15;
-#line 228 "examples/ledger/db/sqlite.hero"
+#line 262 "examples/ledger/db/sqlite.hero"
     if (t16) goto bb4; else goto bb5;
-#line 228 "examples/ledger/db/sqlite.hero"
+#line 262 "examples/ledger/db/sqlite.hero"
 bb3:
-#line 228 "examples/ledger/db/sqlite.hero"
+#line 262 "examples/ledger/db/sqlite.hero"
     t9 = h3_f0;
-#line 228 "examples/ledger/db/sqlite.hero"
+#line 262 "examples/ledger/db/sqlite.hero"
     t10 = t9.as.err;
-#line 15650 "main.c"
+#line 15690 "main.c"
     hero_panic_must(t10);
     hero_unreachable();
 bb4:
-#line 229 "examples/ledger/db/sqlite.hero"
+#line 263 "examples/ledger/db/sqlite.hero"
     t17 = HERO_STR_LIT(hero_str_2af3bac7);
-#line 229 "examples/ledger/db/sqlite.hero"
+#line 263 "examples/ledger/db/sqlite.hero"
     t18 = HERO_STR_LIT(hero_str_c1fb544);
-#line 229 "examples/ledger/db/sqlite.hero"
+#line 263 "examples/ledger/db/sqlite.hero"
     t19 = h1_at;
-#line 229 "examples/ledger/db/sqlite.hero"
+#line 263 "examples/ledger/db/sqlite.hero"
     t20 = hero_int_to_str(t19);
-#line 229 "examples/ledger/db/sqlite.hero"
+#line 263 "examples/ledger/db/sqlite.hero"
     t27 = h6_own6;
-#line 229 "examples/ledger/db/sqlite.hero"
+#line 263 "examples/ledger/db/sqlite.hero"
     h6_own6 = t20;
-#line 15666 "main.c"
-    hero_str_decref(t27);
-#line 229 "examples/ledger/db/sqlite.hero"
-    t21 = hero_str_concat(t18, t20);
-#line 229 "examples/ledger/db/sqlite.hero"
-    t28 = h7_own7;
-#line 229 "examples/ledger/db/sqlite.hero"
-    h7_own7 = t21;
-#line 15674 "main.c"
-    hero_str_decref(t28);
-#line 229 "examples/ledger/db/sqlite.hero"
-#line 15677 "main.c"
-    hero_str_incref(t17);
-#line 229 "examples/ledger/db/sqlite.hero"
-#line 15680 "main.c"
-    hero_str_incref(t21);
-#line 229 "examples/ledger/db/sqlite.hero"
-    t22 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t17, .msg = t21}};
-#line 229 "examples/ledger/db/sqlite.hero"
-    t29 = h8_own8;
-#line 229 "examples/ledger/db/sqlite.hero"
-    h8_own8 = t22;
-#line 15688 "main.c"
-    h_0opt_a8ea2_release(&t29);
-#line 229 "examples/ledger/db/sqlite.hero"
-#line 15691 "main.c"
-    h_0opt_a8ea2_retain(&t22);
-#line 229 "examples/ledger/db/sqlite.hero"
-#line 15694 "main.c"
-    h_0opt_e1f4933_release(&h3_f0);
-#line 229 "examples/ledger/db/sqlite.hero"
-#line 15697 "main.c"
-    h_0opt_e1f4933_release(&h4_own4);
-#line 229 "examples/ledger/db/sqlite.hero"
-#line 15700 "main.c"
-    h_0opt_a8ea2_release(&h5_own5);
-#line 229 "examples/ledger/db/sqlite.hero"
-#line 15703 "main.c"
-    hero_str_decref(h6_own6);
-#line 229 "examples/ledger/db/sqlite.hero"
 #line 15706 "main.c"
+    hero_str_decref(t27);
+#line 263 "examples/ledger/db/sqlite.hero"
+    t21 = hero_str_concat(t18, t20);
+#line 263 "examples/ledger/db/sqlite.hero"
+    t28 = h7_own7;
+#line 263 "examples/ledger/db/sqlite.hero"
+    h7_own7 = t21;
+#line 15714 "main.c"
+    hero_str_decref(t28);
+#line 263 "examples/ledger/db/sqlite.hero"
+#line 15717 "main.c"
+    hero_str_incref(t17);
+#line 263 "examples/ledger/db/sqlite.hero"
+#line 15720 "main.c"
+    hero_str_incref(t21);
+#line 263 "examples/ledger/db/sqlite.hero"
+    t22 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t17, .msg = t21}};
+#line 263 "examples/ledger/db/sqlite.hero"
+    t29 = h8_own8;
+#line 263 "examples/ledger/db/sqlite.hero"
+    h8_own8 = t22;
+#line 15728 "main.c"
+    h_0opt_a8ea2_release(&t29);
+#line 263 "examples/ledger/db/sqlite.hero"
+#line 15731 "main.c"
+    h_0opt_a8ea2_retain(&t22);
+#line 263 "examples/ledger/db/sqlite.hero"
+#line 15734 "main.c"
+    h_0opt_e1f4933_release(&h3_f0);
+#line 263 "examples/ledger/db/sqlite.hero"
+#line 15737 "main.c"
+    h_0opt_e1f4933_release(&h4_own4);
+#line 263 "examples/ledger/db/sqlite.hero"
+#line 15740 "main.c"
+    h_0opt_a8ea2_release(&h5_own5);
+#line 263 "examples/ledger/db/sqlite.hero"
+#line 15743 "main.c"
+    hero_str_decref(h6_own6);
+#line 263 "examples/ledger/db/sqlite.hero"
+#line 15746 "main.c"
     hero_str_decref(h7_own7);
-#line 229 "examples/ledger/db/sqlite.hero"
-#line 15709 "main.c"
+#line 263 "examples/ledger/db/sqlite.hero"
+#line 15749 "main.c"
     h_0opt_a8ea2_release(&h8_own8);
     return t22;
 bb5:
     goto bb1;
 }
 
-#line 232 "examples/ledger/db/sqlite.hero"
+#line 266 "examples/ledger/db/sqlite.hero"
 h_0opt_a8ea2 h_dbsqlite_bind_float(h_dbsqlite_Statement h0_statement, int64_t h1_at, double h2_value) {
-#line 15718 "main.c"
+#line 15758 "main.c"
     h_0opt_e1f4933 h3_f0 = {0};
     h_0opt_e1f4933 h4_own4 = {0};
     h_0opt_a8ea2 h5_own5 = {0};
@@ -15752,168 +15792,168 @@ h_0opt_a8ea2 h_dbsqlite_bind_float(h_dbsqlite_Statement h0_statement, int64_t h1
     h_0opt_a8ea2 t29 = {0};
     goto bb0;
 bb0:
-#line 233 "examples/ledger/db/sqlite.hero"
+#line 267 "examples/ledger/db/sqlite.hero"
     t1 = h0_statement;
-#line 233 "examples/ledger/db/sqlite.hero"
+#line 267 "examples/ledger/db/sqlite.hero"
     t2 = (void *)t1.f_handle;
-#line 233 "examples/ledger/db/sqlite.hero"
+#line 267 "examples/ledger/db/sqlite.hero"
     t3 = h1_at;
-#line 233 "examples/ledger/db/sqlite.hero"
+#line 267 "examples/ledger/db/sqlite.hero"
     if (t3 >= -2147483648LL && t3 <= 2147483647LL) {
-#line 233 "examples/ledger/db/sqlite.hero"
+#line 267 "examples/ledger/db/sqlite.hero"
         t4 = (h_0opt_e1f4933){.tag = INT64_C(0), .as.ok = (int32_t)t3};
-#line 233 "examples/ledger/db/sqlite.hero"
+#line 267 "examples/ledger/db/sqlite.hero"
     } else {
-#line 233 "examples/ledger/db/sqlite.hero"
+#line 267 "examples/ledger/db/sqlite.hero"
         t4 = (h_0opt_e1f4933){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
-#line 233 "examples/ledger/db/sqlite.hero"
+#line 267 "examples/ledger/db/sqlite.hero"
     }
-#line 233 "examples/ledger/db/sqlite.hero"
+#line 267 "examples/ledger/db/sqlite.hero"
     t24 = h4_own4;
-#line 233 "examples/ledger/db/sqlite.hero"
+#line 267 "examples/ledger/db/sqlite.hero"
     h4_own4 = t4;
-#line 15776 "main.c"
-    h_0opt_e1f4933_release(&t24);
-#line 233 "examples/ledger/db/sqlite.hero"
-    t25 = h3_f0;
-#line 15780 "main.c"
-    h_0opt_e1f4933_retain(&t4);
-#line 233 "examples/ledger/db/sqlite.hero"
-    h3_f0 = t4;
-#line 15784 "main.c"
-    h_0opt_e1f4933_release(&t25);
-#line 233 "examples/ledger/db/sqlite.hero"
-    t5 = h3_f0;
-#line 233 "examples/ledger/db/sqlite.hero"
-    t6 = t5.tag;
-#line 233 "examples/ledger/db/sqlite.hero"
-    t7 = INT64_C(0);
-#line 233 "examples/ledger/db/sqlite.hero"
-    t8 = t6 == t7;
-#line 233 "examples/ledger/db/sqlite.hero"
-    if (t8) goto bb2; else goto bb3;
-#line 233 "examples/ledger/db/sqlite.hero"
-bb1:
-#line 235 "examples/ledger/db/sqlite.hero"
-    t23 = (h_0opt_a8ea2){.tag = INT64_C(0)};
-#line 235 "examples/ledger/db/sqlite.hero"
-    t26 = h5_own5;
-#line 235 "examples/ledger/db/sqlite.hero"
-    h5_own5 = t23;
-#line 15804 "main.c"
-    h_0opt_a8ea2_release(&t26);
-#line 235 "examples/ledger/db/sqlite.hero"
-#line 15807 "main.c"
-    h_0opt_a8ea2_retain(&t23);
-#line 235 "examples/ledger/db/sqlite.hero"
-#line 15810 "main.c"
-    h_0opt_e1f4933_release(&h3_f0);
-#line 235 "examples/ledger/db/sqlite.hero"
-#line 15813 "main.c"
-    h_0opt_e1f4933_release(&h4_own4);
-#line 235 "examples/ledger/db/sqlite.hero"
 #line 15816 "main.c"
+    h_0opt_e1f4933_release(&t24);
+#line 267 "examples/ledger/db/sqlite.hero"
+    t25 = h3_f0;
+#line 15820 "main.c"
+    h_0opt_e1f4933_retain(&t4);
+#line 267 "examples/ledger/db/sqlite.hero"
+    h3_f0 = t4;
+#line 15824 "main.c"
+    h_0opt_e1f4933_release(&t25);
+#line 267 "examples/ledger/db/sqlite.hero"
+    t5 = h3_f0;
+#line 267 "examples/ledger/db/sqlite.hero"
+    t6 = t5.tag;
+#line 267 "examples/ledger/db/sqlite.hero"
+    t7 = INT64_C(0);
+#line 267 "examples/ledger/db/sqlite.hero"
+    t8 = t6 == t7;
+#line 267 "examples/ledger/db/sqlite.hero"
+    if (t8) goto bb2; else goto bb3;
+#line 267 "examples/ledger/db/sqlite.hero"
+bb1:
+#line 269 "examples/ledger/db/sqlite.hero"
+    t23 = (h_0opt_a8ea2){.tag = INT64_C(0)};
+#line 269 "examples/ledger/db/sqlite.hero"
+    t26 = h5_own5;
+#line 269 "examples/ledger/db/sqlite.hero"
+    h5_own5 = t23;
+#line 15844 "main.c"
+    h_0opt_a8ea2_release(&t26);
+#line 269 "examples/ledger/db/sqlite.hero"
+#line 15847 "main.c"
+    h_0opt_a8ea2_retain(&t23);
+#line 269 "examples/ledger/db/sqlite.hero"
+#line 15850 "main.c"
+    h_0opt_e1f4933_release(&h3_f0);
+#line 269 "examples/ledger/db/sqlite.hero"
+#line 15853 "main.c"
+    h_0opt_e1f4933_release(&h4_own4);
+#line 269 "examples/ledger/db/sqlite.hero"
+#line 15856 "main.c"
     h_0opt_a8ea2_release(&h5_own5);
-#line 235 "examples/ledger/db/sqlite.hero"
-#line 15819 "main.c"
+#line 269 "examples/ledger/db/sqlite.hero"
+#line 15859 "main.c"
     hero_str_decref(h6_own6);
-#line 235 "examples/ledger/db/sqlite.hero"
-#line 15822 "main.c"
+#line 269 "examples/ledger/db/sqlite.hero"
+#line 15862 "main.c"
     hero_str_decref(h7_own7);
-#line 235 "examples/ledger/db/sqlite.hero"
-#line 15825 "main.c"
+#line 269 "examples/ledger/db/sqlite.hero"
+#line 15865 "main.c"
     h_0opt_a8ea2_release(&h8_own8);
     return t23;
 bb2:
-#line 233 "examples/ledger/db/sqlite.hero"
+#line 267 "examples/ledger/db/sqlite.hero"
     t11 = h3_f0;
-#line 233 "examples/ledger/db/sqlite.hero"
+#line 267 "examples/ledger/db/sqlite.hero"
     t12 = t11.as.ok;
-#line 233 "examples/ledger/db/sqlite.hero"
+#line 267 "examples/ledger/db/sqlite.hero"
     t13 = h2_value;
-#line 233 "examples/ledger/db/sqlite.hero"
+#line 267 "examples/ledger/db/sqlite.hero"
     t14 = sqlite3_bind_double(t2, t12, t13);
-#line 233 "examples/ledger/db/sqlite.hero"
+#line 267 "examples/ledger/db/sqlite.hero"
     t15 = h_dbsqlite_SQLITE_OK();
-#line 233 "examples/ledger/db/sqlite.hero"
+#line 267 "examples/ledger/db/sqlite.hero"
     t16 = t14 != t15;
-#line 233 "examples/ledger/db/sqlite.hero"
+#line 267 "examples/ledger/db/sqlite.hero"
     if (t16) goto bb4; else goto bb5;
-#line 233 "examples/ledger/db/sqlite.hero"
+#line 267 "examples/ledger/db/sqlite.hero"
 bb3:
-#line 233 "examples/ledger/db/sqlite.hero"
+#line 267 "examples/ledger/db/sqlite.hero"
     t9 = h3_f0;
-#line 233 "examples/ledger/db/sqlite.hero"
+#line 267 "examples/ledger/db/sqlite.hero"
     t10 = t9.as.err;
-#line 15849 "main.c"
+#line 15889 "main.c"
     hero_panic_must(t10);
     hero_unreachable();
 bb4:
-#line 234 "examples/ledger/db/sqlite.hero"
+#line 268 "examples/ledger/db/sqlite.hero"
     t17 = HERO_STR_LIT(hero_str_2af3bac7);
-#line 234 "examples/ledger/db/sqlite.hero"
+#line 268 "examples/ledger/db/sqlite.hero"
     t18 = HERO_STR_LIT(hero_str_48bfcb92);
-#line 234 "examples/ledger/db/sqlite.hero"
+#line 268 "examples/ledger/db/sqlite.hero"
     t19 = h1_at;
-#line 234 "examples/ledger/db/sqlite.hero"
+#line 268 "examples/ledger/db/sqlite.hero"
     t20 = hero_int_to_str(t19);
-#line 234 "examples/ledger/db/sqlite.hero"
+#line 268 "examples/ledger/db/sqlite.hero"
     t27 = h6_own6;
-#line 234 "examples/ledger/db/sqlite.hero"
+#line 268 "examples/ledger/db/sqlite.hero"
     h6_own6 = t20;
-#line 15865 "main.c"
-    hero_str_decref(t27);
-#line 234 "examples/ledger/db/sqlite.hero"
-    t21 = hero_str_concat(t18, t20);
-#line 234 "examples/ledger/db/sqlite.hero"
-    t28 = h7_own7;
-#line 234 "examples/ledger/db/sqlite.hero"
-    h7_own7 = t21;
-#line 15873 "main.c"
-    hero_str_decref(t28);
-#line 234 "examples/ledger/db/sqlite.hero"
-#line 15876 "main.c"
-    hero_str_incref(t17);
-#line 234 "examples/ledger/db/sqlite.hero"
-#line 15879 "main.c"
-    hero_str_incref(t21);
-#line 234 "examples/ledger/db/sqlite.hero"
-    t22 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t17, .msg = t21}};
-#line 234 "examples/ledger/db/sqlite.hero"
-    t29 = h8_own8;
-#line 234 "examples/ledger/db/sqlite.hero"
-    h8_own8 = t22;
-#line 15887 "main.c"
-    h_0opt_a8ea2_release(&t29);
-#line 234 "examples/ledger/db/sqlite.hero"
-#line 15890 "main.c"
-    h_0opt_a8ea2_retain(&t22);
-#line 234 "examples/ledger/db/sqlite.hero"
-#line 15893 "main.c"
-    h_0opt_e1f4933_release(&h3_f0);
-#line 234 "examples/ledger/db/sqlite.hero"
-#line 15896 "main.c"
-    h_0opt_e1f4933_release(&h4_own4);
-#line 234 "examples/ledger/db/sqlite.hero"
-#line 15899 "main.c"
-    h_0opt_a8ea2_release(&h5_own5);
-#line 234 "examples/ledger/db/sqlite.hero"
-#line 15902 "main.c"
-    hero_str_decref(h6_own6);
-#line 234 "examples/ledger/db/sqlite.hero"
 #line 15905 "main.c"
+    hero_str_decref(t27);
+#line 268 "examples/ledger/db/sqlite.hero"
+    t21 = hero_str_concat(t18, t20);
+#line 268 "examples/ledger/db/sqlite.hero"
+    t28 = h7_own7;
+#line 268 "examples/ledger/db/sqlite.hero"
+    h7_own7 = t21;
+#line 15913 "main.c"
+    hero_str_decref(t28);
+#line 268 "examples/ledger/db/sqlite.hero"
+#line 15916 "main.c"
+    hero_str_incref(t17);
+#line 268 "examples/ledger/db/sqlite.hero"
+#line 15919 "main.c"
+    hero_str_incref(t21);
+#line 268 "examples/ledger/db/sqlite.hero"
+    t22 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t17, .msg = t21}};
+#line 268 "examples/ledger/db/sqlite.hero"
+    t29 = h8_own8;
+#line 268 "examples/ledger/db/sqlite.hero"
+    h8_own8 = t22;
+#line 15927 "main.c"
+    h_0opt_a8ea2_release(&t29);
+#line 268 "examples/ledger/db/sqlite.hero"
+#line 15930 "main.c"
+    h_0opt_a8ea2_retain(&t22);
+#line 268 "examples/ledger/db/sqlite.hero"
+#line 15933 "main.c"
+    h_0opt_e1f4933_release(&h3_f0);
+#line 268 "examples/ledger/db/sqlite.hero"
+#line 15936 "main.c"
+    h_0opt_e1f4933_release(&h4_own4);
+#line 268 "examples/ledger/db/sqlite.hero"
+#line 15939 "main.c"
+    h_0opt_a8ea2_release(&h5_own5);
+#line 268 "examples/ledger/db/sqlite.hero"
+#line 15942 "main.c"
+    hero_str_decref(h6_own6);
+#line 268 "examples/ledger/db/sqlite.hero"
+#line 15945 "main.c"
     hero_str_decref(h7_own7);
-#line 234 "examples/ledger/db/sqlite.hero"
-#line 15908 "main.c"
+#line 268 "examples/ledger/db/sqlite.hero"
+#line 15948 "main.c"
     h_0opt_a8ea2_release(&h8_own8);
     return t22;
 bb5:
     goto bb1;
 }
 
-#line 245 "examples/ledger/db/sqlite.hero"
+#line 279 "examples/ledger/db/sqlite.hero"
 h_0opt_a8ea2 h_dbsqlite_bind_text(h_dbsqlite_Statement h0_statement, int64_t h1_at, HeroStr h2_text) {
-#line 15917 "main.c"
+#line 15957 "main.c"
     h_0opt_e1f4933 h3_f0 = {0};
     h_0opt_e1f4933 h4_own4 = {0};
     h_0opt_a8ea2 h5_own5 = {0};
@@ -15954,174 +15994,174 @@ h_0opt_a8ea2 h_dbsqlite_bind_text(h_dbsqlite_Statement h0_statement, int64_t h1_
     h_0opt_a8ea2 t32 = {0};
     goto bb0;
 bb0:
-#line 246 "examples/ledger/db/sqlite.hero"
+#line 280 "examples/ledger/db/sqlite.hero"
     t1 = h0_statement;
-#line 246 "examples/ledger/db/sqlite.hero"
+#line 280 "examples/ledger/db/sqlite.hero"
     t2 = (void *)t1.f_handle;
-#line 246 "examples/ledger/db/sqlite.hero"
+#line 280 "examples/ledger/db/sqlite.hero"
     t3 = h1_at;
-#line 246 "examples/ledger/db/sqlite.hero"
+#line 280 "examples/ledger/db/sqlite.hero"
     if (t3 >= -2147483648LL && t3 <= 2147483647LL) {
-#line 246 "examples/ledger/db/sqlite.hero"
+#line 280 "examples/ledger/db/sqlite.hero"
         t4 = (h_0opt_e1f4933){.tag = INT64_C(0), .as.ok = (int32_t)t3};
-#line 246 "examples/ledger/db/sqlite.hero"
+#line 280 "examples/ledger/db/sqlite.hero"
     } else {
-#line 246 "examples/ledger/db/sqlite.hero"
+#line 280 "examples/ledger/db/sqlite.hero"
         t4 = (h_0opt_e1f4933){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
-#line 246 "examples/ledger/db/sqlite.hero"
+#line 280 "examples/ledger/db/sqlite.hero"
     }
-#line 246 "examples/ledger/db/sqlite.hero"
+#line 280 "examples/ledger/db/sqlite.hero"
     t27 = h4_own4;
-#line 246 "examples/ledger/db/sqlite.hero"
+#line 280 "examples/ledger/db/sqlite.hero"
     h4_own4 = t4;
-#line 15978 "main.c"
-    h_0opt_e1f4933_release(&t27);
-#line 246 "examples/ledger/db/sqlite.hero"
-    t28 = h3_f0;
-#line 15982 "main.c"
-    h_0opt_e1f4933_retain(&t4);
-#line 246 "examples/ledger/db/sqlite.hero"
-    h3_f0 = t4;
-#line 15986 "main.c"
-    h_0opt_e1f4933_release(&t28);
-#line 246 "examples/ledger/db/sqlite.hero"
-    t5 = h3_f0;
-#line 246 "examples/ledger/db/sqlite.hero"
-    t6 = t5.tag;
-#line 246 "examples/ledger/db/sqlite.hero"
-    t7 = INT64_C(0);
-#line 246 "examples/ledger/db/sqlite.hero"
-    t8 = t6 == t7;
-#line 246 "examples/ledger/db/sqlite.hero"
-    if (t8) goto bb2; else goto bb3;
-#line 246 "examples/ledger/db/sqlite.hero"
-bb1:
-#line 248 "examples/ledger/db/sqlite.hero"
-    t26 = (h_0opt_a8ea2){.tag = INT64_C(0)};
-#line 248 "examples/ledger/db/sqlite.hero"
-    t29 = h5_own5;
-#line 248 "examples/ledger/db/sqlite.hero"
-    h5_own5 = t26;
-#line 16006 "main.c"
-    h_0opt_a8ea2_release(&t29);
-#line 248 "examples/ledger/db/sqlite.hero"
-#line 16009 "main.c"
-    h_0opt_a8ea2_retain(&t26);
-#line 248 "examples/ledger/db/sqlite.hero"
-#line 16012 "main.c"
-    h_0opt_e1f4933_release(&h3_f0);
-#line 248 "examples/ledger/db/sqlite.hero"
-#line 16015 "main.c"
-    h_0opt_e1f4933_release(&h4_own4);
-#line 248 "examples/ledger/db/sqlite.hero"
 #line 16018 "main.c"
+    h_0opt_e1f4933_release(&t27);
+#line 280 "examples/ledger/db/sqlite.hero"
+    t28 = h3_f0;
+#line 16022 "main.c"
+    h_0opt_e1f4933_retain(&t4);
+#line 280 "examples/ledger/db/sqlite.hero"
+    h3_f0 = t4;
+#line 16026 "main.c"
+    h_0opt_e1f4933_release(&t28);
+#line 280 "examples/ledger/db/sqlite.hero"
+    t5 = h3_f0;
+#line 280 "examples/ledger/db/sqlite.hero"
+    t6 = t5.tag;
+#line 280 "examples/ledger/db/sqlite.hero"
+    t7 = INT64_C(0);
+#line 280 "examples/ledger/db/sqlite.hero"
+    t8 = t6 == t7;
+#line 280 "examples/ledger/db/sqlite.hero"
+    if (t8) goto bb2; else goto bb3;
+#line 280 "examples/ledger/db/sqlite.hero"
+bb1:
+#line 282 "examples/ledger/db/sqlite.hero"
+    t26 = (h_0opt_a8ea2){.tag = INT64_C(0)};
+#line 282 "examples/ledger/db/sqlite.hero"
+    t29 = h5_own5;
+#line 282 "examples/ledger/db/sqlite.hero"
+    h5_own5 = t26;
+#line 16046 "main.c"
+    h_0opt_a8ea2_release(&t29);
+#line 282 "examples/ledger/db/sqlite.hero"
+#line 16049 "main.c"
+    h_0opt_a8ea2_retain(&t26);
+#line 282 "examples/ledger/db/sqlite.hero"
+#line 16052 "main.c"
+    h_0opt_e1f4933_release(&h3_f0);
+#line 282 "examples/ledger/db/sqlite.hero"
+#line 16055 "main.c"
+    h_0opt_e1f4933_release(&h4_own4);
+#line 282 "examples/ledger/db/sqlite.hero"
+#line 16058 "main.c"
     h_0opt_a8ea2_release(&h5_own5);
-#line 248 "examples/ledger/db/sqlite.hero"
-#line 16021 "main.c"
+#line 282 "examples/ledger/db/sqlite.hero"
+#line 16061 "main.c"
     hero_str_decref(h6_own6);
-#line 248 "examples/ledger/db/sqlite.hero"
-#line 16024 "main.c"
+#line 282 "examples/ledger/db/sqlite.hero"
+#line 16064 "main.c"
     hero_str_decref(h7_own7);
-#line 248 "examples/ledger/db/sqlite.hero"
-#line 16027 "main.c"
+#line 282 "examples/ledger/db/sqlite.hero"
+#line 16067 "main.c"
     h_0opt_a8ea2_release(&h8_own8);
     return t26;
 bb2:
-#line 246 "examples/ledger/db/sqlite.hero"
+#line 280 "examples/ledger/db/sqlite.hero"
     t11 = h3_f0;
-#line 246 "examples/ledger/db/sqlite.hero"
+#line 280 "examples/ledger/db/sqlite.hero"
     t12 = t11.as.ok;
-#line 246 "examples/ledger/db/sqlite.hero"
+#line 280 "examples/ledger/db/sqlite.hero"
     t13 = h2_text;
-#line 246 "examples/ledger/db/sqlite.hero"
+#line 280 "examples/ledger/db/sqlite.hero"
     t14 = hero_str_cstr(t13);
-#line 246 "examples/ledger/db/sqlite.hero"
+#line 280 "examples/ledger/db/sqlite.hero"
     t15 = INT64_C(-1);
-#line 246 "examples/ledger/db/sqlite.hero"
+#line 280 "examples/ledger/db/sqlite.hero"
     t16 = ((void *)0);
-#line 246 "examples/ledger/db/sqlite.hero"
+#line 280 "examples/ledger/db/sqlite.hero"
     t17 = sqlite3_bind_text(t2, t12, hero_cstr_nonnull(t14), t15, t16);
-#line 246 "examples/ledger/db/sqlite.hero"
+#line 280 "examples/ledger/db/sqlite.hero"
     t18 = h_dbsqlite_SQLITE_OK();
-#line 246 "examples/ledger/db/sqlite.hero"
+#line 280 "examples/ledger/db/sqlite.hero"
     t19 = t17 != t18;
-#line 246 "examples/ledger/db/sqlite.hero"
+#line 280 "examples/ledger/db/sqlite.hero"
     if (t19) goto bb4; else goto bb5;
-#line 246 "examples/ledger/db/sqlite.hero"
+#line 280 "examples/ledger/db/sqlite.hero"
 bb3:
-#line 246 "examples/ledger/db/sqlite.hero"
+#line 280 "examples/ledger/db/sqlite.hero"
     t9 = h3_f0;
-#line 246 "examples/ledger/db/sqlite.hero"
+#line 280 "examples/ledger/db/sqlite.hero"
     t10 = t9.as.err;
-#line 16057 "main.c"
+#line 16097 "main.c"
     hero_panic_must(t10);
     hero_unreachable();
 bb4:
-#line 247 "examples/ledger/db/sqlite.hero"
+#line 281 "examples/ledger/db/sqlite.hero"
     t20 = HERO_STR_LIT(hero_str_2af3bac7);
-#line 247 "examples/ledger/db/sqlite.hero"
+#line 281 "examples/ledger/db/sqlite.hero"
     t21 = HERO_STR_LIT(hero_str_b9d2e31);
-#line 247 "examples/ledger/db/sqlite.hero"
+#line 281 "examples/ledger/db/sqlite.hero"
     t22 = h1_at;
-#line 247 "examples/ledger/db/sqlite.hero"
+#line 281 "examples/ledger/db/sqlite.hero"
     t23 = hero_int_to_str(t22);
-#line 247 "examples/ledger/db/sqlite.hero"
+#line 281 "examples/ledger/db/sqlite.hero"
     t30 = h6_own6;
-#line 247 "examples/ledger/db/sqlite.hero"
+#line 281 "examples/ledger/db/sqlite.hero"
     h6_own6 = t23;
-#line 16073 "main.c"
-    hero_str_decref(t30);
-#line 247 "examples/ledger/db/sqlite.hero"
-    t24 = hero_str_concat(t21, t23);
-#line 247 "examples/ledger/db/sqlite.hero"
-    t31 = h7_own7;
-#line 247 "examples/ledger/db/sqlite.hero"
-    h7_own7 = t24;
-#line 16081 "main.c"
-    hero_str_decref(t31);
-#line 247 "examples/ledger/db/sqlite.hero"
-#line 16084 "main.c"
-    hero_str_incref(t20);
-#line 247 "examples/ledger/db/sqlite.hero"
-#line 16087 "main.c"
-    hero_str_incref(t24);
-#line 247 "examples/ledger/db/sqlite.hero"
-    t25 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t20, .msg = t24}};
-#line 247 "examples/ledger/db/sqlite.hero"
-    t32 = h8_own8;
-#line 247 "examples/ledger/db/sqlite.hero"
-    h8_own8 = t25;
-#line 16095 "main.c"
-    h_0opt_a8ea2_release(&t32);
-#line 247 "examples/ledger/db/sqlite.hero"
-#line 16098 "main.c"
-    h_0opt_a8ea2_retain(&t25);
-#line 247 "examples/ledger/db/sqlite.hero"
-#line 16101 "main.c"
-    h_0opt_e1f4933_release(&h3_f0);
-#line 247 "examples/ledger/db/sqlite.hero"
-#line 16104 "main.c"
-    h_0opt_e1f4933_release(&h4_own4);
-#line 247 "examples/ledger/db/sqlite.hero"
-#line 16107 "main.c"
-    h_0opt_a8ea2_release(&h5_own5);
-#line 247 "examples/ledger/db/sqlite.hero"
-#line 16110 "main.c"
-    hero_str_decref(h6_own6);
-#line 247 "examples/ledger/db/sqlite.hero"
 #line 16113 "main.c"
+    hero_str_decref(t30);
+#line 281 "examples/ledger/db/sqlite.hero"
+    t24 = hero_str_concat(t21, t23);
+#line 281 "examples/ledger/db/sqlite.hero"
+    t31 = h7_own7;
+#line 281 "examples/ledger/db/sqlite.hero"
+    h7_own7 = t24;
+#line 16121 "main.c"
+    hero_str_decref(t31);
+#line 281 "examples/ledger/db/sqlite.hero"
+#line 16124 "main.c"
+    hero_str_incref(t20);
+#line 281 "examples/ledger/db/sqlite.hero"
+#line 16127 "main.c"
+    hero_str_incref(t24);
+#line 281 "examples/ledger/db/sqlite.hero"
+    t25 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t20, .msg = t24}};
+#line 281 "examples/ledger/db/sqlite.hero"
+    t32 = h8_own8;
+#line 281 "examples/ledger/db/sqlite.hero"
+    h8_own8 = t25;
+#line 16135 "main.c"
+    h_0opt_a8ea2_release(&t32);
+#line 281 "examples/ledger/db/sqlite.hero"
+#line 16138 "main.c"
+    h_0opt_a8ea2_retain(&t25);
+#line 281 "examples/ledger/db/sqlite.hero"
+#line 16141 "main.c"
+    h_0opt_e1f4933_release(&h3_f0);
+#line 281 "examples/ledger/db/sqlite.hero"
+#line 16144 "main.c"
+    h_0opt_e1f4933_release(&h4_own4);
+#line 281 "examples/ledger/db/sqlite.hero"
+#line 16147 "main.c"
+    h_0opt_a8ea2_release(&h5_own5);
+#line 281 "examples/ledger/db/sqlite.hero"
+#line 16150 "main.c"
+    hero_str_decref(h6_own6);
+#line 281 "examples/ledger/db/sqlite.hero"
+#line 16153 "main.c"
     hero_str_decref(h7_own7);
-#line 247 "examples/ledger/db/sqlite.hero"
-#line 16116 "main.c"
+#line 281 "examples/ledger/db/sqlite.hero"
+#line 16156 "main.c"
     h_0opt_a8ea2_release(&h8_own8);
     return t25;
 bb5:
     goto bb1;
 }
 
-#line 252 "examples/ledger/db/sqlite.hero"
+#line 286 "examples/ledger/db/sqlite.hero"
 int64_t h_dbsqlite_columns(h_dbsqlite_Statement h0_statement) {
-#line 16125 "main.c"
+#line 16165 "main.c"
     h_0opt_e201354 h1_f0 = {0};
     h_0opt_e201354 h2_own2 = {0};
     h_dbsqlite_Statement t1;
@@ -16140,63 +16180,63 @@ int64_t h_dbsqlite_columns(h_dbsqlite_Statement h0_statement) {
     h_0opt_e201354 t14 = {0};
     goto bb0;
 bb0:
-#line 253 "examples/ledger/db/sqlite.hero"
+#line 287 "examples/ledger/db/sqlite.hero"
     t1 = h0_statement;
-#line 253 "examples/ledger/db/sqlite.hero"
+#line 287 "examples/ledger/db/sqlite.hero"
     t2 = (void *)t1.f_handle;
-#line 253 "examples/ledger/db/sqlite.hero"
+#line 287 "examples/ledger/db/sqlite.hero"
     t3 = sqlite3_column_count(t2);
-#line 253 "examples/ledger/db/sqlite.hero"
+#line 287 "examples/ledger/db/sqlite.hero"
     t4 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t3};
-#line 253 "examples/ledger/db/sqlite.hero"
+#line 287 "examples/ledger/db/sqlite.hero"
     t13 = h2_own2;
-#line 253 "examples/ledger/db/sqlite.hero"
+#line 287 "examples/ledger/db/sqlite.hero"
     h2_own2 = t4;
-#line 16156 "main.c"
+#line 16196 "main.c"
     h_0opt_e201354_release(&t13);
-#line 253 "examples/ledger/db/sqlite.hero"
+#line 287 "examples/ledger/db/sqlite.hero"
     t14 = h1_f0;
-#line 16160 "main.c"
+#line 16200 "main.c"
     h_0opt_e201354_retain(&t4);
-#line 253 "examples/ledger/db/sqlite.hero"
+#line 287 "examples/ledger/db/sqlite.hero"
     h1_f0 = t4;
-#line 16164 "main.c"
+#line 16204 "main.c"
     h_0opt_e201354_release(&t14);
-#line 253 "examples/ledger/db/sqlite.hero"
+#line 287 "examples/ledger/db/sqlite.hero"
     t5 = h1_f0;
-#line 253 "examples/ledger/db/sqlite.hero"
+#line 287 "examples/ledger/db/sqlite.hero"
     t6 = t5.tag;
-#line 253 "examples/ledger/db/sqlite.hero"
+#line 287 "examples/ledger/db/sqlite.hero"
     t7 = INT64_C(0);
-#line 253 "examples/ledger/db/sqlite.hero"
+#line 287 "examples/ledger/db/sqlite.hero"
     t8 = t6 == t7;
-#line 253 "examples/ledger/db/sqlite.hero"
+#line 287 "examples/ledger/db/sqlite.hero"
     if (t8) goto bb1; else goto bb2;
-#line 253 "examples/ledger/db/sqlite.hero"
+#line 287 "examples/ledger/db/sqlite.hero"
 bb1:
-#line 253 "examples/ledger/db/sqlite.hero"
+#line 287 "examples/ledger/db/sqlite.hero"
     t11 = h1_f0;
-#line 253 "examples/ledger/db/sqlite.hero"
+#line 287 "examples/ledger/db/sqlite.hero"
     t12 = t11.as.ok;
-#line 16182 "main.c"
+#line 16222 "main.c"
     h_0opt_e201354_release(&h1_f0);
-#line 253 "examples/ledger/db/sqlite.hero"
-#line 16185 "main.c"
+#line 287 "examples/ledger/db/sqlite.hero"
+#line 16225 "main.c"
     h_0opt_e201354_release(&h2_own2);
     return t12;
 bb2:
-#line 253 "examples/ledger/db/sqlite.hero"
+#line 287 "examples/ledger/db/sqlite.hero"
     t9 = h1_f0;
-#line 253 "examples/ledger/db/sqlite.hero"
+#line 287 "examples/ledger/db/sqlite.hero"
     t10 = t9.as.err;
-#line 16193 "main.c"
+#line 16233 "main.c"
     hero_panic_must(t10);
     hero_unreachable();
 }
 
-#line 260 "examples/ledger/db/sqlite.hero"
+#line 294 "examples/ledger/db/sqlite.hero"
 h_0opt_e405689 h_dbsqlite_cell(h_dbsqlite_Statement h0_statement, int64_t h1_column) {
-#line 16200 "main.c"
+#line 16240 "main.c"
     h_0opt_e1f4933 h2_f0 = {0};
     h_0opt_e1f4933 h3_own3 = {0};
     h_0opt_e405689 h4_own4 = {0};
@@ -16218,86 +16258,86 @@ h_0opt_e405689 h_dbsqlite_cell(h_dbsqlite_Statement h0_statement, int64_t h1_col
     h_0opt_e405689 t16 = {0};
     goto bb0;
 bb0:
-#line 261 "examples/ledger/db/sqlite.hero"
+#line 295 "examples/ledger/db/sqlite.hero"
     t1 = h0_statement;
-#line 261 "examples/ledger/db/sqlite.hero"
+#line 295 "examples/ledger/db/sqlite.hero"
     t2 = (void *)t1.f_handle;
-#line 261 "examples/ledger/db/sqlite.hero"
+#line 295 "examples/ledger/db/sqlite.hero"
     t3 = h1_column;
-#line 261 "examples/ledger/db/sqlite.hero"
+#line 295 "examples/ledger/db/sqlite.hero"
     if (t3 >= -2147483648LL && t3 <= 2147483647LL) {
-#line 261 "examples/ledger/db/sqlite.hero"
+#line 295 "examples/ledger/db/sqlite.hero"
         t4 = (h_0opt_e1f4933){.tag = INT64_C(0), .as.ok = (int32_t)t3};
-#line 261 "examples/ledger/db/sqlite.hero"
+#line 295 "examples/ledger/db/sqlite.hero"
     } else {
-#line 261 "examples/ledger/db/sqlite.hero"
+#line 295 "examples/ledger/db/sqlite.hero"
         t4 = (h_0opt_e1f4933){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
-#line 261 "examples/ledger/db/sqlite.hero"
+#line 295 "examples/ledger/db/sqlite.hero"
     }
-#line 261 "examples/ledger/db/sqlite.hero"
+#line 295 "examples/ledger/db/sqlite.hero"
     t14 = h3_own3;
-#line 261 "examples/ledger/db/sqlite.hero"
+#line 295 "examples/ledger/db/sqlite.hero"
     h3_own3 = t4;
-#line 16242 "main.c"
+#line 16282 "main.c"
     h_0opt_e1f4933_release(&t14);
-#line 261 "examples/ledger/db/sqlite.hero"
+#line 295 "examples/ledger/db/sqlite.hero"
     t15 = h2_f0;
-#line 16246 "main.c"
-    h_0opt_e1f4933_retain(&t4);
-#line 261 "examples/ledger/db/sqlite.hero"
-    h2_f0 = t4;
-#line 16250 "main.c"
-    h_0opt_e1f4933_release(&t15);
-#line 261 "examples/ledger/db/sqlite.hero"
-    t5 = h2_f0;
-#line 261 "examples/ledger/db/sqlite.hero"
-    t6 = t5.tag;
-#line 261 "examples/ledger/db/sqlite.hero"
-    t7 = INT64_C(0);
-#line 261 "examples/ledger/db/sqlite.hero"
-    t8 = t6 == t7;
-#line 261 "examples/ledger/db/sqlite.hero"
-    if (t8) goto bb1; else goto bb2;
-#line 261 "examples/ledger/db/sqlite.hero"
-bb1:
-#line 261 "examples/ledger/db/sqlite.hero"
-    t11 = h2_f0;
-#line 261 "examples/ledger/db/sqlite.hero"
-    t12 = t11.as.ok;
-#line 261 "examples/ledger/db/sqlite.hero"
-    t13 = h_dbsqlite_cell_at(t2, t12);
-#line 261 "examples/ledger/db/sqlite.hero"
-    t16 = h4_own4;
-#line 261 "examples/ledger/db/sqlite.hero"
-    h4_own4 = t13;
-#line 16274 "main.c"
-    h_0opt_e405689_release(&t16);
-#line 261 "examples/ledger/db/sqlite.hero"
-#line 16277 "main.c"
-    h_0opt_e405689_retain(&t13);
-#line 261 "examples/ledger/db/sqlite.hero"
-#line 16280 "main.c"
-    h_0opt_e1f4933_release(&h2_f0);
-#line 261 "examples/ledger/db/sqlite.hero"
-#line 16283 "main.c"
-    h_0opt_e1f4933_release(&h3_own3);
-#line 261 "examples/ledger/db/sqlite.hero"
 #line 16286 "main.c"
+    h_0opt_e1f4933_retain(&t4);
+#line 295 "examples/ledger/db/sqlite.hero"
+    h2_f0 = t4;
+#line 16290 "main.c"
+    h_0opt_e1f4933_release(&t15);
+#line 295 "examples/ledger/db/sqlite.hero"
+    t5 = h2_f0;
+#line 295 "examples/ledger/db/sqlite.hero"
+    t6 = t5.tag;
+#line 295 "examples/ledger/db/sqlite.hero"
+    t7 = INT64_C(0);
+#line 295 "examples/ledger/db/sqlite.hero"
+    t8 = t6 == t7;
+#line 295 "examples/ledger/db/sqlite.hero"
+    if (t8) goto bb1; else goto bb2;
+#line 295 "examples/ledger/db/sqlite.hero"
+bb1:
+#line 295 "examples/ledger/db/sqlite.hero"
+    t11 = h2_f0;
+#line 295 "examples/ledger/db/sqlite.hero"
+    t12 = t11.as.ok;
+#line 295 "examples/ledger/db/sqlite.hero"
+    t13 = h_dbsqlite_cell_at(t2, t12);
+#line 295 "examples/ledger/db/sqlite.hero"
+    t16 = h4_own4;
+#line 295 "examples/ledger/db/sqlite.hero"
+    h4_own4 = t13;
+#line 16314 "main.c"
+    h_0opt_e405689_release(&t16);
+#line 295 "examples/ledger/db/sqlite.hero"
+#line 16317 "main.c"
+    h_0opt_e405689_retain(&t13);
+#line 295 "examples/ledger/db/sqlite.hero"
+#line 16320 "main.c"
+    h_0opt_e1f4933_release(&h2_f0);
+#line 295 "examples/ledger/db/sqlite.hero"
+#line 16323 "main.c"
+    h_0opt_e1f4933_release(&h3_own3);
+#line 295 "examples/ledger/db/sqlite.hero"
+#line 16326 "main.c"
     h_0opt_e405689_release(&h4_own4);
     return t13;
 bb2:
-#line 261 "examples/ledger/db/sqlite.hero"
+#line 295 "examples/ledger/db/sqlite.hero"
     t9 = h2_f0;
-#line 261 "examples/ledger/db/sqlite.hero"
+#line 295 "examples/ledger/db/sqlite.hero"
     t10 = t9.as.err;
-#line 16294 "main.c"
+#line 16334 "main.c"
     hero_panic_must(t10);
     hero_unreachable();
 }
 
-#line 265 "examples/ledger/db/sqlite.hero"
+#line 299 "examples/ledger/db/sqlite.hero"
 h_0opt_e201354 h_dbsqlite_integer_of(h_dbsqlite_Cell h0_c) {
-#line 16301 "main.c"
+#line 16341 "main.c"
     h_dbsqlite_Cell h1_s0 = {0};
     h_0opt_e201354 h2_r0 = {0};
     h_dbsqlite_Cell_c_integer_cell h3_i;
@@ -16340,205 +16380,205 @@ h_0opt_e201354 h_dbsqlite_integer_of(h_dbsqlite_Cell h0_c) {
     h_0opt_e201354 t32 = {0};
     goto bb0;
 bb0:
-#line 266 "examples/ledger/db/sqlite.hero"
+#line 300 "examples/ledger/db/sqlite.hero"
     t1 = h0_c;
-#line 266 "examples/ledger/db/sqlite.hero"
+#line 300 "examples/ledger/db/sqlite.hero"
     t22 = h1_s0;
-#line 16348 "main.c"
+#line 16388 "main.c"
     h_dbsqlite_Cell_retain(&t1);
-#line 266 "examples/ledger/db/sqlite.hero"
+#line 300 "examples/ledger/db/sqlite.hero"
     h1_s0 = t1;
-#line 16352 "main.c"
+#line 16392 "main.c"
     h_dbsqlite_Cell_release(&t22);
-#line 266 "examples/ledger/db/sqlite.hero"
+#line 300 "examples/ledger/db/sqlite.hero"
     t2 = h1_s0;
-#line 266 "examples/ledger/db/sqlite.hero"
+#line 300 "examples/ledger/db/sqlite.hero"
     t3 = t2.tag;
-#line 266 "examples/ledger/db/sqlite.hero"
+#line 300 "examples/ledger/db/sqlite.hero"
     switch (t3) {
-#line 266 "examples/ledger/db/sqlite.hero"
+#line 300 "examples/ledger/db/sqlite.hero"
         case 0: goto bb2;
-#line 266 "examples/ledger/db/sqlite.hero"
+#line 300 "examples/ledger/db/sqlite.hero"
         case 1: goto bb3;
-#line 266 "examples/ledger/db/sqlite.hero"
+#line 300 "examples/ledger/db/sqlite.hero"
         case 2: goto bb4;
-#line 266 "examples/ledger/db/sqlite.hero"
+#line 300 "examples/ledger/db/sqlite.hero"
         case 3: goto bb5;
-#line 266 "examples/ledger/db/sqlite.hero"
+#line 300 "examples/ledger/db/sqlite.hero"
         case 4: goto bb6;
-#line 266 "examples/ledger/db/sqlite.hero"
+#line 300 "examples/ledger/db/sqlite.hero"
         default: hero_unreachable();
-#line 266 "examples/ledger/db/sqlite.hero"
+#line 300 "examples/ledger/db/sqlite.hero"
     }
-#line 266 "examples/ledger/db/sqlite.hero"
+#line 300 "examples/ledger/db/sqlite.hero"
 bb1:
-#line 266 "examples/ledger/db/sqlite.hero"
+#line 300 "examples/ledger/db/sqlite.hero"
     t21 = h2_r0;
-#line 16378 "main.c"
+#line 16418 "main.c"
     h_0opt_e201354_retain(&t21);
-#line 266 "examples/ledger/db/sqlite.hero"
-#line 16381 "main.c"
+#line 300 "examples/ledger/db/sqlite.hero"
+#line 16421 "main.c"
     h_dbsqlite_Cell_release(&h1_s0);
-#line 266 "examples/ledger/db/sqlite.hero"
-#line 16384 "main.c"
+#line 300 "examples/ledger/db/sqlite.hero"
+#line 16424 "main.c"
     h_0opt_e201354_release(&h2_r0);
-#line 266 "examples/ledger/db/sqlite.hero"
-#line 16387 "main.c"
+#line 300 "examples/ledger/db/sqlite.hero"
+#line 16427 "main.c"
     h_0opt_e201354_release(&h4_own4);
-#line 266 "examples/ledger/db/sqlite.hero"
-#line 16390 "main.c"
+#line 300 "examples/ledger/db/sqlite.hero"
+#line 16430 "main.c"
     h_0opt_e201354_release(&h5_own5);
-#line 266 "examples/ledger/db/sqlite.hero"
-#line 16393 "main.c"
+#line 300 "examples/ledger/db/sqlite.hero"
+#line 16433 "main.c"
     h_0opt_e201354_release(&h6_own6);
-#line 266 "examples/ledger/db/sqlite.hero"
-#line 16396 "main.c"
+#line 300 "examples/ledger/db/sqlite.hero"
+#line 16436 "main.c"
     h_0opt_e201354_release(&h7_own7);
-#line 266 "examples/ledger/db/sqlite.hero"
-#line 16399 "main.c"
+#line 300 "examples/ledger/db/sqlite.hero"
+#line 16439 "main.c"
     h_0opt_e201354_release(&h8_own8);
     return t21;
 bb2:
-#line 267 "examples/ledger/db/sqlite.hero"
+#line 301 "examples/ledger/db/sqlite.hero"
     t4 = h1_s0;
-#line 267 "examples/ledger/db/sqlite.hero"
+#line 301 "examples/ledger/db/sqlite.hero"
     t5 = t4.as.c_integer_cell;
-#line 267 "examples/ledger/db/sqlite.hero"
+#line 301 "examples/ledger/db/sqlite.hero"
     h3_i = t5;
-#line 267 "examples/ledger/db/sqlite.hero"
+#line 301 "examples/ledger/db/sqlite.hero"
     t6 = h3_i;
-#line 267 "examples/ledger/db/sqlite.hero"
+#line 301 "examples/ledger/db/sqlite.hero"
     t7 = t6.f_value;
-#line 267 "examples/ledger/db/sqlite.hero"
+#line 301 "examples/ledger/db/sqlite.hero"
     t8 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t7};
-#line 267 "examples/ledger/db/sqlite.hero"
+#line 301 "examples/ledger/db/sqlite.hero"
     t23 = h4_own4;
-#line 267 "examples/ledger/db/sqlite.hero"
+#line 301 "examples/ledger/db/sqlite.hero"
     h4_own4 = t8;
-#line 16419 "main.c"
+#line 16459 "main.c"
     h_0opt_e201354_release(&t23);
-#line 266 "examples/ledger/db/sqlite.hero"
+#line 300 "examples/ledger/db/sqlite.hero"
     t24 = h2_r0;
-#line 16423 "main.c"
+#line 16463 "main.c"
     h_0opt_e201354_retain(&t8);
-#line 266 "examples/ledger/db/sqlite.hero"
+#line 300 "examples/ledger/db/sqlite.hero"
     h2_r0 = t8;
-#line 16427 "main.c"
+#line 16467 "main.c"
     h_0opt_e201354_release(&t24);
     goto bb1;
 bb3:
-#line 268 "examples/ledger/db/sqlite.hero"
+#line 302 "examples/ledger/db/sqlite.hero"
     t9 = HERO_STR_LIT(hero_str_7cdc496a);
-#line 268 "examples/ledger/db/sqlite.hero"
+#line 302 "examples/ledger/db/sqlite.hero"
     t10 = HERO_STR_LIT(hero_str_4be747cd);
-#line 16435 "main.c"
+#line 16475 "main.c"
     hero_str_incref(t9);
-#line 268 "examples/ledger/db/sqlite.hero"
-#line 16438 "main.c"
+#line 302 "examples/ledger/db/sqlite.hero"
+#line 16478 "main.c"
     hero_str_incref(t10);
-#line 268 "examples/ledger/db/sqlite.hero"
+#line 302 "examples/ledger/db/sqlite.hero"
     t11 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t9, .msg = t10}};
-#line 268 "examples/ledger/db/sqlite.hero"
+#line 302 "examples/ledger/db/sqlite.hero"
     t25 = h5_own5;
-#line 268 "examples/ledger/db/sqlite.hero"
+#line 302 "examples/ledger/db/sqlite.hero"
     h5_own5 = t11;
-#line 16446 "main.c"
+#line 16486 "main.c"
     h_0opt_e201354_release(&t25);
-#line 266 "examples/ledger/db/sqlite.hero"
+#line 300 "examples/ledger/db/sqlite.hero"
     t26 = h2_r0;
-#line 16450 "main.c"
+#line 16490 "main.c"
     h_0opt_e201354_retain(&t11);
-#line 266 "examples/ledger/db/sqlite.hero"
+#line 300 "examples/ledger/db/sqlite.hero"
     h2_r0 = t11;
-#line 16454 "main.c"
+#line 16494 "main.c"
     h_0opt_e201354_release(&t26);
     goto bb1;
 bb4:
-#line 269 "examples/ledger/db/sqlite.hero"
+#line 303 "examples/ledger/db/sqlite.hero"
     t12 = HERO_STR_LIT(hero_str_7cdc496a);
-#line 269 "examples/ledger/db/sqlite.hero"
+#line 303 "examples/ledger/db/sqlite.hero"
     t13 = HERO_STR_LIT(hero_str_2e468bbd);
-#line 16462 "main.c"
+#line 16502 "main.c"
     hero_str_incref(t12);
-#line 269 "examples/ledger/db/sqlite.hero"
-#line 16465 "main.c"
+#line 303 "examples/ledger/db/sqlite.hero"
+#line 16505 "main.c"
     hero_str_incref(t13);
-#line 269 "examples/ledger/db/sqlite.hero"
+#line 303 "examples/ledger/db/sqlite.hero"
     t14 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t12, .msg = t13}};
-#line 269 "examples/ledger/db/sqlite.hero"
+#line 303 "examples/ledger/db/sqlite.hero"
     t27 = h6_own6;
-#line 269 "examples/ledger/db/sqlite.hero"
+#line 303 "examples/ledger/db/sqlite.hero"
     h6_own6 = t14;
-#line 16473 "main.c"
+#line 16513 "main.c"
     h_0opt_e201354_release(&t27);
-#line 266 "examples/ledger/db/sqlite.hero"
+#line 300 "examples/ledger/db/sqlite.hero"
     t28 = h2_r0;
-#line 16477 "main.c"
+#line 16517 "main.c"
     h_0opt_e201354_retain(&t14);
-#line 266 "examples/ledger/db/sqlite.hero"
+#line 300 "examples/ledger/db/sqlite.hero"
     h2_r0 = t14;
-#line 16481 "main.c"
+#line 16521 "main.c"
     h_0opt_e201354_release(&t28);
     goto bb1;
 bb5:
-#line 270 "examples/ledger/db/sqlite.hero"
+#line 304 "examples/ledger/db/sqlite.hero"
     t15 = HERO_STR_LIT(hero_str_7cdc496a);
-#line 270 "examples/ledger/db/sqlite.hero"
+#line 304 "examples/ledger/db/sqlite.hero"
     t16 = HERO_STR_LIT(hero_str_598f1148);
-#line 16489 "main.c"
+#line 16529 "main.c"
     hero_str_incref(t15);
-#line 270 "examples/ledger/db/sqlite.hero"
-#line 16492 "main.c"
+#line 304 "examples/ledger/db/sqlite.hero"
+#line 16532 "main.c"
     hero_str_incref(t16);
-#line 270 "examples/ledger/db/sqlite.hero"
+#line 304 "examples/ledger/db/sqlite.hero"
     t17 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}};
-#line 270 "examples/ledger/db/sqlite.hero"
+#line 304 "examples/ledger/db/sqlite.hero"
     t29 = h7_own7;
-#line 270 "examples/ledger/db/sqlite.hero"
+#line 304 "examples/ledger/db/sqlite.hero"
     h7_own7 = t17;
-#line 16500 "main.c"
+#line 16540 "main.c"
     h_0opt_e201354_release(&t29);
-#line 266 "examples/ledger/db/sqlite.hero"
+#line 300 "examples/ledger/db/sqlite.hero"
     t30 = h2_r0;
-#line 16504 "main.c"
+#line 16544 "main.c"
     h_0opt_e201354_retain(&t17);
-#line 266 "examples/ledger/db/sqlite.hero"
+#line 300 "examples/ledger/db/sqlite.hero"
     h2_r0 = t17;
-#line 16508 "main.c"
+#line 16548 "main.c"
     h_0opt_e201354_release(&t30);
     goto bb1;
 bb6:
-#line 271 "examples/ledger/db/sqlite.hero"
+#line 305 "examples/ledger/db/sqlite.hero"
     t18 = HERO_STR_LIT(hero_str_7cdc496a);
-#line 271 "examples/ledger/db/sqlite.hero"
+#line 305 "examples/ledger/db/sqlite.hero"
     t19 = HERO_STR_LIT(hero_str_2d082dd);
-#line 16516 "main.c"
+#line 16556 "main.c"
     hero_str_incref(t18);
-#line 271 "examples/ledger/db/sqlite.hero"
-#line 16519 "main.c"
+#line 305 "examples/ledger/db/sqlite.hero"
+#line 16559 "main.c"
     hero_str_incref(t19);
-#line 271 "examples/ledger/db/sqlite.hero"
+#line 305 "examples/ledger/db/sqlite.hero"
     t20 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t18, .msg = t19}};
-#line 271 "examples/ledger/db/sqlite.hero"
+#line 305 "examples/ledger/db/sqlite.hero"
     t31 = h8_own8;
-#line 271 "examples/ledger/db/sqlite.hero"
+#line 305 "examples/ledger/db/sqlite.hero"
     h8_own8 = t20;
-#line 16527 "main.c"
+#line 16567 "main.c"
     h_0opt_e201354_release(&t31);
-#line 266 "examples/ledger/db/sqlite.hero"
+#line 300 "examples/ledger/db/sqlite.hero"
     t32 = h2_r0;
-#line 16531 "main.c"
+#line 16571 "main.c"
     h_0opt_e201354_retain(&t20);
-#line 266 "examples/ledger/db/sqlite.hero"
+#line 300 "examples/ledger/db/sqlite.hero"
     h2_r0 = t20;
-#line 16535 "main.c"
+#line 16575 "main.c"
     h_0opt_e201354_release(&t32);
     goto bb1;
 }
 
-#line 273 "examples/ledger/db/sqlite.hero"
+#line 307 "examples/ledger/db/sqlite.hero"
 h_0opt_f87774a h_dbsqlite_text_of(h_dbsqlite_Cell h0_c) {
-#line 16542 "main.c"
+#line 16582 "main.c"
     h_dbsqlite_Cell h1_s0 = {0};
     h_0opt_f87774a h2_r0 = {0};
     h_dbsqlite_Cell_c_text_cell h3_t = {0};
@@ -16594,246 +16634,246 @@ h_0opt_f87774a h_dbsqlite_text_of(h_dbsqlite_Cell h0_c) {
     h_0opt_f87774a t41 = {0};
     goto bb0;
 bb0:
-#line 274 "examples/ledger/db/sqlite.hero"
+#line 308 "examples/ledger/db/sqlite.hero"
     t1 = h0_c;
-#line 274 "examples/ledger/db/sqlite.hero"
+#line 308 "examples/ledger/db/sqlite.hero"
     t28 = h1_s0;
-#line 16602 "main.c"
+#line 16642 "main.c"
     h_dbsqlite_Cell_retain(&t1);
-#line 274 "examples/ledger/db/sqlite.hero"
+#line 308 "examples/ledger/db/sqlite.hero"
     h1_s0 = t1;
-#line 16606 "main.c"
+#line 16646 "main.c"
     h_dbsqlite_Cell_release(&t28);
-#line 274 "examples/ledger/db/sqlite.hero"
+#line 308 "examples/ledger/db/sqlite.hero"
     t2 = h1_s0;
-#line 274 "examples/ledger/db/sqlite.hero"
+#line 308 "examples/ledger/db/sqlite.hero"
     t3 = t2.tag;
-#line 274 "examples/ledger/db/sqlite.hero"
+#line 308 "examples/ledger/db/sqlite.hero"
     switch (t3) {
-#line 274 "examples/ledger/db/sqlite.hero"
+#line 308 "examples/ledger/db/sqlite.hero"
         case 0: goto bb3;
-#line 274 "examples/ledger/db/sqlite.hero"
+#line 308 "examples/ledger/db/sqlite.hero"
         case 1: goto bb4;
-#line 274 "examples/ledger/db/sqlite.hero"
+#line 308 "examples/ledger/db/sqlite.hero"
         case 2: goto bb2;
-#line 274 "examples/ledger/db/sqlite.hero"
+#line 308 "examples/ledger/db/sqlite.hero"
         case 3: goto bb5;
-#line 274 "examples/ledger/db/sqlite.hero"
+#line 308 "examples/ledger/db/sqlite.hero"
         case 4: goto bb6;
-#line 274 "examples/ledger/db/sqlite.hero"
+#line 308 "examples/ledger/db/sqlite.hero"
         default: hero_unreachable();
-#line 274 "examples/ledger/db/sqlite.hero"
+#line 308 "examples/ledger/db/sqlite.hero"
     }
-#line 274 "examples/ledger/db/sqlite.hero"
+#line 308 "examples/ledger/db/sqlite.hero"
 bb1:
-#line 274 "examples/ledger/db/sqlite.hero"
+#line 308 "examples/ledger/db/sqlite.hero"
     t27 = h2_r0;
-#line 16632 "main.c"
+#line 16672 "main.c"
     h_0opt_f87774a_retain(&t27);
-#line 274 "examples/ledger/db/sqlite.hero"
-#line 16635 "main.c"
+#line 308 "examples/ledger/db/sqlite.hero"
+#line 16675 "main.c"
     h_dbsqlite_Cell_release(&h1_s0);
-#line 274 "examples/ledger/db/sqlite.hero"
-#line 16638 "main.c"
+#line 308 "examples/ledger/db/sqlite.hero"
+#line 16678 "main.c"
     h_0opt_f87774a_release(&h2_r0);
-#line 274 "examples/ledger/db/sqlite.hero"
-#line 16641 "main.c"
+#line 308 "examples/ledger/db/sqlite.hero"
+#line 16681 "main.c"
     h_dbsqlite_Cell_c_text_cell_release(&h3_t);
-#line 274 "examples/ledger/db/sqlite.hero"
-#line 16644 "main.c"
+#line 308 "examples/ledger/db/sqlite.hero"
+#line 16684 "main.c"
     h_0opt_f87774a_release(&h6_own6);
-#line 274 "examples/ledger/db/sqlite.hero"
-#line 16647 "main.c"
+#line 308 "examples/ledger/db/sqlite.hero"
+#line 16687 "main.c"
     hero_str_decref(h7_own7);
-#line 274 "examples/ledger/db/sqlite.hero"
-#line 16650 "main.c"
+#line 308 "examples/ledger/db/sqlite.hero"
+#line 16690 "main.c"
     h_0opt_f87774a_release(&h8_own8);
-#line 274 "examples/ledger/db/sqlite.hero"
-#line 16653 "main.c"
+#line 308 "examples/ledger/db/sqlite.hero"
+#line 16693 "main.c"
     hero_str_decref(h9_own9);
-#line 274 "examples/ledger/db/sqlite.hero"
-#line 16656 "main.c"
+#line 308 "examples/ledger/db/sqlite.hero"
+#line 16696 "main.c"
     h_0opt_f87774a_release(&h10_own10);
-#line 274 "examples/ledger/db/sqlite.hero"
-#line 16659 "main.c"
+#line 308 "examples/ledger/db/sqlite.hero"
+#line 16699 "main.c"
     h_0opt_f87774a_release(&h11_own11);
-#line 274 "examples/ledger/db/sqlite.hero"
-#line 16662 "main.c"
+#line 308 "examples/ledger/db/sqlite.hero"
+#line 16702 "main.c"
     h_0opt_f87774a_release(&h12_own12);
     return t27;
 bb2:
-#line 275 "examples/ledger/db/sqlite.hero"
+#line 309 "examples/ledger/db/sqlite.hero"
     t4 = h1_s0;
-#line 275 "examples/ledger/db/sqlite.hero"
+#line 309 "examples/ledger/db/sqlite.hero"
     t5 = t4.as.c_text_cell;
-#line 275 "examples/ledger/db/sqlite.hero"
+#line 309 "examples/ledger/db/sqlite.hero"
     t29 = h3_t;
-#line 16672 "main.c"
+#line 16712 "main.c"
     h_dbsqlite_Cell_c_text_cell_retain(&t5);
-#line 275 "examples/ledger/db/sqlite.hero"
+#line 309 "examples/ledger/db/sqlite.hero"
     h3_t = t5;
-#line 16676 "main.c"
+#line 16716 "main.c"
     h_dbsqlite_Cell_c_text_cell_release(&t29);
-#line 275 "examples/ledger/db/sqlite.hero"
+#line 309 "examples/ledger/db/sqlite.hero"
     t6 = h3_t;
-#line 275 "examples/ledger/db/sqlite.hero"
+#line 309 "examples/ledger/db/sqlite.hero"
     t7 = t6.f_value;
-#line 16682 "main.c"
+#line 16722 "main.c"
     hero_str_incref(t7);
-#line 275 "examples/ledger/db/sqlite.hero"
+#line 309 "examples/ledger/db/sqlite.hero"
     t8 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t7};
-#line 275 "examples/ledger/db/sqlite.hero"
+#line 309 "examples/ledger/db/sqlite.hero"
     t30 = h6_own6;
-#line 275 "examples/ledger/db/sqlite.hero"
+#line 309 "examples/ledger/db/sqlite.hero"
     h6_own6 = t8;
-#line 16690 "main.c"
+#line 16730 "main.c"
     h_0opt_f87774a_release(&t30);
-#line 274 "examples/ledger/db/sqlite.hero"
+#line 308 "examples/ledger/db/sqlite.hero"
     t31 = h2_r0;
-#line 16694 "main.c"
+#line 16734 "main.c"
     h_0opt_f87774a_retain(&t8);
-#line 274 "examples/ledger/db/sqlite.hero"
+#line 308 "examples/ledger/db/sqlite.hero"
     h2_r0 = t8;
-#line 16698 "main.c"
+#line 16738 "main.c"
     h_0opt_f87774a_release(&t31);
     goto bb1;
 bb3:
-#line 276 "examples/ledger/db/sqlite.hero"
+#line 310 "examples/ledger/db/sqlite.hero"
     t9 = h1_s0;
-#line 276 "examples/ledger/db/sqlite.hero"
+#line 310 "examples/ledger/db/sqlite.hero"
     t10 = t9.as.c_integer_cell;
-#line 276 "examples/ledger/db/sqlite.hero"
+#line 310 "examples/ledger/db/sqlite.hero"
     h4_i = t10;
-#line 276 "examples/ledger/db/sqlite.hero"
+#line 310 "examples/ledger/db/sqlite.hero"
     t11 = h4_i;
-#line 276 "examples/ledger/db/sqlite.hero"
+#line 310 "examples/ledger/db/sqlite.hero"
     t12 = t11.f_value;
-#line 276 "examples/ledger/db/sqlite.hero"
+#line 310 "examples/ledger/db/sqlite.hero"
     t13 = hero_int_to_str(t12);
-#line 276 "examples/ledger/db/sqlite.hero"
+#line 310 "examples/ledger/db/sqlite.hero"
     t32 = h7_own7;
-#line 276 "examples/ledger/db/sqlite.hero"
+#line 310 "examples/ledger/db/sqlite.hero"
     h7_own7 = t13;
-#line 16718 "main.c"
+#line 16758 "main.c"
     hero_str_decref(t32);
-#line 276 "examples/ledger/db/sqlite.hero"
-#line 16721 "main.c"
+#line 310 "examples/ledger/db/sqlite.hero"
+#line 16761 "main.c"
     hero_str_incref(t13);
-#line 276 "examples/ledger/db/sqlite.hero"
+#line 310 "examples/ledger/db/sqlite.hero"
     t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t13};
-#line 276 "examples/ledger/db/sqlite.hero"
+#line 310 "examples/ledger/db/sqlite.hero"
     t33 = h8_own8;
-#line 276 "examples/ledger/db/sqlite.hero"
+#line 310 "examples/ledger/db/sqlite.hero"
     h8_own8 = t14;
-#line 16729 "main.c"
+#line 16769 "main.c"
     h_0opt_f87774a_release(&t33);
-#line 274 "examples/ledger/db/sqlite.hero"
+#line 308 "examples/ledger/db/sqlite.hero"
     t34 = h2_r0;
-#line 16733 "main.c"
+#line 16773 "main.c"
     h_0opt_f87774a_retain(&t14);
-#line 274 "examples/ledger/db/sqlite.hero"
+#line 308 "examples/ledger/db/sqlite.hero"
     h2_r0 = t14;
-#line 16737 "main.c"
+#line 16777 "main.c"
     h_0opt_f87774a_release(&t34);
     goto bb1;
 bb4:
-#line 277 "examples/ledger/db/sqlite.hero"
+#line 311 "examples/ledger/db/sqlite.hero"
     t15 = h1_s0;
-#line 277 "examples/ledger/db/sqlite.hero"
+#line 311 "examples/ledger/db/sqlite.hero"
     t16 = t15.as.c_float_cell;
-#line 277 "examples/ledger/db/sqlite.hero"
+#line 311 "examples/ledger/db/sqlite.hero"
     h5_f = t16;
-#line 277 "examples/ledger/db/sqlite.hero"
+#line 311 "examples/ledger/db/sqlite.hero"
     t17 = h5_f;
-#line 277 "examples/ledger/db/sqlite.hero"
+#line 311 "examples/ledger/db/sqlite.hero"
     t18 = t17.f_value;
-#line 277 "examples/ledger/db/sqlite.hero"
+#line 311 "examples/ledger/db/sqlite.hero"
     t19 = hero_f64_to_str(t18);
-#line 277 "examples/ledger/db/sqlite.hero"
+#line 311 "examples/ledger/db/sqlite.hero"
     t35 = h9_own9;
-#line 277 "examples/ledger/db/sqlite.hero"
+#line 311 "examples/ledger/db/sqlite.hero"
     h9_own9 = t19;
-#line 16757 "main.c"
+#line 16797 "main.c"
     hero_str_decref(t35);
-#line 277 "examples/ledger/db/sqlite.hero"
-#line 16760 "main.c"
+#line 311 "examples/ledger/db/sqlite.hero"
+#line 16800 "main.c"
     hero_str_incref(t19);
-#line 277 "examples/ledger/db/sqlite.hero"
+#line 311 "examples/ledger/db/sqlite.hero"
     t20 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t19};
-#line 277 "examples/ledger/db/sqlite.hero"
+#line 311 "examples/ledger/db/sqlite.hero"
     t36 = h10_own10;
-#line 277 "examples/ledger/db/sqlite.hero"
+#line 311 "examples/ledger/db/sqlite.hero"
     h10_own10 = t20;
-#line 16768 "main.c"
+#line 16808 "main.c"
     h_0opt_f87774a_release(&t36);
-#line 274 "examples/ledger/db/sqlite.hero"
+#line 308 "examples/ledger/db/sqlite.hero"
     t37 = h2_r0;
-#line 16772 "main.c"
+#line 16812 "main.c"
     h_0opt_f87774a_retain(&t20);
-#line 274 "examples/ledger/db/sqlite.hero"
+#line 308 "examples/ledger/db/sqlite.hero"
     h2_r0 = t20;
-#line 16776 "main.c"
+#line 16816 "main.c"
     h_0opt_f87774a_release(&t37);
     goto bb1;
 bb5:
-#line 278 "examples/ledger/db/sqlite.hero"
+#line 312 "examples/ledger/db/sqlite.hero"
     t21 = HERO_STR_LIT(hero_str_7cdc496a);
-#line 278 "examples/ledger/db/sqlite.hero"
+#line 312 "examples/ledger/db/sqlite.hero"
     t22 = HERO_STR_LIT(hero_str_22d4f5a4);
-#line 16784 "main.c"
+#line 16824 "main.c"
     hero_str_incref(t21);
-#line 278 "examples/ledger/db/sqlite.hero"
-#line 16787 "main.c"
+#line 312 "examples/ledger/db/sqlite.hero"
+#line 16827 "main.c"
     hero_str_incref(t22);
-#line 278 "examples/ledger/db/sqlite.hero"
+#line 312 "examples/ledger/db/sqlite.hero"
     t23 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t21, .msg = t22}};
-#line 278 "examples/ledger/db/sqlite.hero"
+#line 312 "examples/ledger/db/sqlite.hero"
     t38 = h11_own11;
-#line 278 "examples/ledger/db/sqlite.hero"
+#line 312 "examples/ledger/db/sqlite.hero"
     h11_own11 = t23;
-#line 16795 "main.c"
+#line 16835 "main.c"
     h_0opt_f87774a_release(&t38);
-#line 274 "examples/ledger/db/sqlite.hero"
+#line 308 "examples/ledger/db/sqlite.hero"
     t39 = h2_r0;
-#line 16799 "main.c"
+#line 16839 "main.c"
     h_0opt_f87774a_retain(&t23);
-#line 274 "examples/ledger/db/sqlite.hero"
+#line 308 "examples/ledger/db/sqlite.hero"
     h2_r0 = t23;
-#line 16803 "main.c"
+#line 16843 "main.c"
     h_0opt_f87774a_release(&t39);
     goto bb1;
 bb6:
-#line 279 "examples/ledger/db/sqlite.hero"
+#line 313 "examples/ledger/db/sqlite.hero"
     t24 = HERO_STR_LIT(hero_str_7cdc496a);
-#line 279 "examples/ledger/db/sqlite.hero"
+#line 313 "examples/ledger/db/sqlite.hero"
     t25 = HERO_STR_LIT(hero_str_2d082dd);
-#line 16811 "main.c"
+#line 16851 "main.c"
     hero_str_incref(t24);
-#line 279 "examples/ledger/db/sqlite.hero"
-#line 16814 "main.c"
+#line 313 "examples/ledger/db/sqlite.hero"
+#line 16854 "main.c"
     hero_str_incref(t25);
-#line 279 "examples/ledger/db/sqlite.hero"
+#line 313 "examples/ledger/db/sqlite.hero"
     t26 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t24, .msg = t25}};
-#line 279 "examples/ledger/db/sqlite.hero"
+#line 313 "examples/ledger/db/sqlite.hero"
     t40 = h12_own12;
-#line 279 "examples/ledger/db/sqlite.hero"
+#line 313 "examples/ledger/db/sqlite.hero"
     h12_own12 = t26;
-#line 16822 "main.c"
+#line 16862 "main.c"
     h_0opt_f87774a_release(&t40);
-#line 274 "examples/ledger/db/sqlite.hero"
+#line 308 "examples/ledger/db/sqlite.hero"
     t41 = h2_r0;
-#line 16826 "main.c"
+#line 16866 "main.c"
     h_0opt_f87774a_retain(&t26);
-#line 274 "examples/ledger/db/sqlite.hero"
+#line 308 "examples/ledger/db/sqlite.hero"
     h2_r0 = t26;
-#line 16830 "main.c"
+#line 16870 "main.c"
     h_0opt_f87774a_release(&t41);
     goto bb1;
 }
 
-#line 284 "examples/ledger/db/sqlite.hero"
+#line 318 "examples/ledger/db/sqlite.hero"
 HeroStr h_dbsqlite_why(h_dbsqlite_Db h0_db) {
-#line 16837 "main.c"
+#line 16877 "main.c"
     h_0opt_f87774a h1_f0 = {0};
     HeroStr h2_r0 = {0};
     h_0opt_f87774a h3_own3 = {0};
@@ -16855,98 +16895,98 @@ HeroStr h_dbsqlite_why(h_dbsqlite_Db h0_db) {
     HeroStr t16 = {0};
     goto bb0;
 bb0:
-#line 285 "examples/ledger/db/sqlite.hero"
+#line 319 "examples/ledger/db/sqlite.hero"
     t1 = h0_db;
-#line 285 "examples/ledger/db/sqlite.hero"
+#line 319 "examples/ledger/db/sqlite.hero"
     t2 = (void *)t1.f_handle;
-#line 285 "examples/ledger/db/sqlite.hero"
+#line 319 "examples/ledger/db/sqlite.hero"
     t3 = (const char *)sqlite3_errmsg(t2);
-#line 285 "examples/ledger/db/sqlite.hero"
+#line 319 "examples/ledger/db/sqlite.hero"
     t4 = h_library_validated(t3);
-#line 285 "examples/ledger/db/sqlite.hero"
+#line 319 "examples/ledger/db/sqlite.hero"
     t13 = h3_own3;
-#line 285 "examples/ledger/db/sqlite.hero"
+#line 319 "examples/ledger/db/sqlite.hero"
     h3_own3 = t4;
-#line 16871 "main.c"
+#line 16911 "main.c"
     h_0opt_f87774a_release(&t13);
-#line 285 "examples/ledger/db/sqlite.hero"
+#line 319 "examples/ledger/db/sqlite.hero"
     t14 = h1_f0;
-#line 16875 "main.c"
+#line 16915 "main.c"
     h_0opt_f87774a_retain(&t4);
-#line 285 "examples/ledger/db/sqlite.hero"
+#line 319 "examples/ledger/db/sqlite.hero"
     h1_f0 = t4;
-#line 16879 "main.c"
+#line 16919 "main.c"
     h_0opt_f87774a_release(&t14);
-#line 285 "examples/ledger/db/sqlite.hero"
+#line 319 "examples/ledger/db/sqlite.hero"
     t5 = h1_f0;
-#line 285 "examples/ledger/db/sqlite.hero"
+#line 319 "examples/ledger/db/sqlite.hero"
     t6 = t5.tag;
-#line 285 "examples/ledger/db/sqlite.hero"
+#line 319 "examples/ledger/db/sqlite.hero"
     t7 = INT64_C(0);
-#line 285 "examples/ledger/db/sqlite.hero"
+#line 319 "examples/ledger/db/sqlite.hero"
     t8 = t6 == t7;
-#line 285 "examples/ledger/db/sqlite.hero"
+#line 319 "examples/ledger/db/sqlite.hero"
     if (t8) goto bb1; else goto bb2;
-#line 285 "examples/ledger/db/sqlite.hero"
+#line 319 "examples/ledger/db/sqlite.hero"
 bb1:
-#line 285 "examples/ledger/db/sqlite.hero"
+#line 319 "examples/ledger/db/sqlite.hero"
     t9 = h1_f0;
-#line 285 "examples/ledger/db/sqlite.hero"
+#line 319 "examples/ledger/db/sqlite.hero"
     t10 = t9.as.ok;
-#line 285 "examples/ledger/db/sqlite.hero"
+#line 319 "examples/ledger/db/sqlite.hero"
     t15 = h2_r0;
-#line 16899 "main.c"
+#line 16939 "main.c"
     hero_str_incref(t10);
-#line 285 "examples/ledger/db/sqlite.hero"
+#line 319 "examples/ledger/db/sqlite.hero"
     h2_r0 = t10;
-#line 16903 "main.c"
+#line 16943 "main.c"
     hero_str_decref(t15);
     goto bb3;
 bb2:
-#line 285 "examples/ledger/db/sqlite.hero"
+#line 319 "examples/ledger/db/sqlite.hero"
     t11 = HERO_STR_LIT(hero_str_62a614f6);
-#line 285 "examples/ledger/db/sqlite.hero"
+#line 319 "examples/ledger/db/sqlite.hero"
     t16 = h2_r0;
-#line 16911 "main.c"
+#line 16951 "main.c"
     hero_str_incref(t11);
-#line 285 "examples/ledger/db/sqlite.hero"
+#line 319 "examples/ledger/db/sqlite.hero"
     h2_r0 = t11;
-#line 16915 "main.c"
+#line 16955 "main.c"
     hero_str_decref(t16);
     goto bb3;
 bb3:
-#line 285 "examples/ledger/db/sqlite.hero"
+#line 319 "examples/ledger/db/sqlite.hero"
     t12 = h2_r0;
-#line 16921 "main.c"
+#line 16961 "main.c"
     hero_str_incref(t12);
-#line 285 "examples/ledger/db/sqlite.hero"
-#line 16924 "main.c"
+#line 319 "examples/ledger/db/sqlite.hero"
+#line 16964 "main.c"
     h_0opt_f87774a_release(&h1_f0);
-#line 285 "examples/ledger/db/sqlite.hero"
-#line 16927 "main.c"
+#line 319 "examples/ledger/db/sqlite.hero"
+#line 16967 "main.c"
     hero_str_decref(h2_r0);
-#line 285 "examples/ledger/db/sqlite.hero"
-#line 16930 "main.c"
+#line 319 "examples/ledger/db/sqlite.hero"
+#line 16970 "main.c"
     h_0opt_f87774a_release(&h3_own3);
     return t12;
 }
 
 #line 11 "examples/ledger/report/lines.hero"
 HeroStr h_reportlines_BALANCE_HEADING(void) {
-#line 16937 "main.c"
+#line 16977 "main.c"
     HeroStr t1 = {0};
     goto bb0;
 bb0:
 #line 12 "examples/ledger/report/lines.hero"
     t1 = HERO_STR_LIT(hero_str_3a42ef76);
-#line 16943 "main.c"
+#line 16983 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 16 "examples/ledger/report/lines.hero"
 HeroArrayHeader * h_reportlines_book_lines(HeroArrayHeader * h0_entries, HeroArrayHeader * h1_accounts) {
-#line 16950 "main.c"
+#line 16990 "main.c"
     HeroArrayHeader * h2_out = {0};
     HeroArrayHeader * h3_xs0 = {0};
     int64_t h4_i0;
@@ -17050,25 +17090,25 @@ bb0:
     t56 = h9_own9;
 #line 17 "examples/ledger/report/lines.hero"
     h9_own9 = t1;
-#line 17054 "main.c"
+#line 17094 "main.c"
     hero_array_decref(t56);
 #line 17 "examples/ledger/report/lines.hero"
     t57 = h2_out;
-#line 17058 "main.c"
+#line 17098 "main.c"
     hero_array_incref(t1);
 #line 17 "examples/ledger/report/lines.hero"
     h2_out = t1;
-#line 17062 "main.c"
+#line 17102 "main.c"
     hero_array_decref(t57);
 #line 19 "examples/ledger/report/lines.hero"
     t2 = h0_entries;
 #line 19 "examples/ledger/report/lines.hero"
     t58 = h3_xs0;
-#line 17068 "main.c"
+#line 17108 "main.c"
     hero_array_incref(t2);
 #line 19 "examples/ledger/report/lines.hero"
     h3_xs0 = t2;
-#line 17072 "main.c"
+#line 17112 "main.c"
     hero_array_decref(t58);
 #line 19 "examples/ledger/report/lines.hero"
     t3 = INT64_C(0);
@@ -17098,11 +17138,11 @@ bb2:
     t10 = *(h_bookentry_Entry const *)hero_array_at(t8, t9);
 #line 19 "examples/ledger/report/lines.hero"
     t59 = h5_e;
-#line 17102 "main.c"
+#line 17142 "main.c"
     h_bookentry_Entry_retain(&t10);
 #line 19 "examples/ledger/report/lines.hero"
     h5_e = t10;
-#line 17106 "main.c"
+#line 17146 "main.c"
     h_bookentry_Entry_release(&t59);
 #line 20 "examples/ledger/report/lines.hero"
     t11 = h5_e;
@@ -17116,15 +17156,15 @@ bb2:
     t60 = h10_own10;
 #line 20 "examples/ledger/report/lines.hero"
     h10_own10 = t14;
-#line 17120 "main.c"
+#line 17160 "main.c"
     h_0opt_f87774a_release(&t60);
 #line 20 "examples/ledger/report/lines.hero"
     t61 = h6_f0;
-#line 17124 "main.c"
+#line 17164 "main.c"
     h_0opt_f87774a_retain(&t14);
 #line 20 "examples/ledger/report/lines.hero"
     h6_f0 = t14;
-#line 17128 "main.c"
+#line 17168 "main.c"
     h_0opt_f87774a_release(&t61);
 #line 20 "examples/ledger/report/lines.hero"
     t15 = h6_f0;
@@ -17152,67 +17192,67 @@ bb3:
 bb4:
 #line 25 "examples/ledger/report/lines.hero"
     t55 = h2_out;
-#line 17156 "main.c"
+#line 17196 "main.c"
     hero_array_incref(t55);
 #line 25 "examples/ledger/report/lines.hero"
-#line 17159 "main.c"
+#line 17199 "main.c"
     hero_array_decref(h2_out);
 #line 25 "examples/ledger/report/lines.hero"
-#line 17162 "main.c"
+#line 17202 "main.c"
     hero_array_decref(h3_xs0);
 #line 25 "examples/ledger/report/lines.hero"
-#line 17165 "main.c"
+#line 17205 "main.c"
     h_bookentry_Entry_release(&h5_e);
 #line 25 "examples/ledger/report/lines.hero"
-#line 17168 "main.c"
+#line 17208 "main.c"
     h_0opt_f87774a_release(&h6_f0);
 #line 25 "examples/ledger/report/lines.hero"
-#line 17171 "main.c"
+#line 17211 "main.c"
     hero_str_decref(h7_r0);
 #line 25 "examples/ledger/report/lines.hero"
-#line 17174 "main.c"
+#line 17214 "main.c"
     hero_str_decref(h8_kind);
 #line 25 "examples/ledger/report/lines.hero"
-#line 17177 "main.c"
+#line 17217 "main.c"
     hero_array_decref(h9_own9);
 #line 25 "examples/ledger/report/lines.hero"
-#line 17180 "main.c"
+#line 17220 "main.c"
     h_0opt_f87774a_release(&h10_own10);
 #line 25 "examples/ledger/report/lines.hero"
-#line 17183 "main.c"
+#line 17223 "main.c"
     hero_str_decref(h11_own11);
 #line 25 "examples/ledger/report/lines.hero"
-#line 17186 "main.c"
+#line 17226 "main.c"
     hero_str_decref(h12_own12);
 #line 25 "examples/ledger/report/lines.hero"
-#line 17189 "main.c"
+#line 17229 "main.c"
     hero_str_decref(h13_own13);
 #line 25 "examples/ledger/report/lines.hero"
-#line 17192 "main.c"
+#line 17232 "main.c"
     hero_str_decref(h14_own14);
 #line 25 "examples/ledger/report/lines.hero"
-#line 17195 "main.c"
+#line 17235 "main.c"
     hero_str_decref(h15_own15);
 #line 25 "examples/ledger/report/lines.hero"
-#line 17198 "main.c"
+#line 17238 "main.c"
     hero_str_decref(h16_own16);
 #line 25 "examples/ledger/report/lines.hero"
-#line 17201 "main.c"
+#line 17241 "main.c"
     hero_str_decref(h17_own17);
 #line 25 "examples/ledger/report/lines.hero"
-#line 17204 "main.c"
+#line 17244 "main.c"
     hero_str_decref(h18_own18);
 #line 25 "examples/ledger/report/lines.hero"
-#line 17207 "main.c"
+#line 17247 "main.c"
     hero_str_decref(h19_own19);
 #line 25 "examples/ledger/report/lines.hero"
-#line 17210 "main.c"
+#line 17250 "main.c"
     hero_str_decref(h20_own20);
 #line 25 "examples/ledger/report/lines.hero"
-#line 17213 "main.c"
+#line 17253 "main.c"
     hero_str_decref(h21_own21);
 #line 25 "examples/ledger/report/lines.hero"
-#line 17216 "main.c"
+#line 17256 "main.c"
     hero_str_decref(h22_own22);
     return t55;
 bb5:
@@ -17222,11 +17262,11 @@ bb5:
     t20 = t19.as.ok;
 #line 20 "examples/ledger/report/lines.hero"
     t62 = h7_r0;
-#line 17226 "main.c"
+#line 17266 "main.c"
     hero_str_incref(t20);
 #line 20 "examples/ledger/report/lines.hero"
     h7_r0 = t20;
-#line 17230 "main.c"
+#line 17270 "main.c"
     hero_str_decref(t62);
     goto bb7;
 bb6:
@@ -17234,11 +17274,11 @@ bb6:
     t21 = HERO_STR_LIT(hero_str_3f);
 #line 20 "examples/ledger/report/lines.hero"
     t63 = h7_r0;
-#line 17238 "main.c"
+#line 17278 "main.c"
     hero_str_incref(t21);
 #line 20 "examples/ledger/report/lines.hero"
     h7_r0 = t21;
-#line 17242 "main.c"
+#line 17282 "main.c"
     hero_str_decref(t63);
     goto bb7;
 bb7:
@@ -17246,11 +17286,11 @@ bb7:
     t22 = h7_r0;
 #line 20 "examples/ledger/report/lines.hero"
     t64 = h8_kind;
-#line 17250 "main.c"
+#line 17290 "main.c"
     hero_str_incref(t22);
 #line 20 "examples/ledger/report/lines.hero"
     h8_kind = t22;
-#line 17254 "main.c"
+#line 17294 "main.c"
     hero_str_decref(t64);
 #line 22 "examples/ledger/report/lines.hero"
     t24 = HERO_STR_LIT(hero_str_1080);
@@ -17264,7 +17304,7 @@ bb7:
     t65 = h11_own11;
 #line 22 "examples/ledger/report/lines.hero"
     h11_own11 = t27;
-#line 17268 "main.c"
+#line 17308 "main.c"
     hero_str_decref(t65);
 #line 22 "examples/ledger/report/lines.hero"
     t28 = INT64_C(3);
@@ -17274,7 +17314,7 @@ bb7:
     t66 = h12_own12;
 #line 22 "examples/ledger/report/lines.hero"
     h12_own12 = t29;
-#line 17278 "main.c"
+#line 17318 "main.c"
     hero_str_decref(t66);
 #line 22 "examples/ledger/report/lines.hero"
     t30 = hero_str_concat(t24, t29);
@@ -17282,7 +17322,7 @@ bb7:
     t67 = h13_own13;
 #line 22 "examples/ledger/report/lines.hero"
     h13_own13 = t30;
-#line 17286 "main.c"
+#line 17326 "main.c"
     hero_str_decref(t67);
 #line 22 "examples/ledger/report/lines.hero"
     t31 = h5_e;
@@ -17296,7 +17336,7 @@ bb7:
     t68 = h14_own14;
 #line 22 "examples/ledger/report/lines.hero"
     h14_own14 = t34;
-#line 17300 "main.c"
+#line 17340 "main.c"
     hero_str_decref(t68);
 #line 22 "examples/ledger/report/lines.hero"
     t35 = hero_str_concat(t30, t34);
@@ -17304,7 +17344,7 @@ bb7:
     t69 = h15_own15;
 #line 22 "examples/ledger/report/lines.hero"
     h15_own15 = t35;
-#line 17308 "main.c"
+#line 17348 "main.c"
     hero_str_decref(t69);
 #line 22 "examples/ledger/report/lines.hero"
     t36 = h8_kind;
@@ -17316,7 +17356,7 @@ bb7:
     t70 = h16_own16;
 #line 22 "examples/ledger/report/lines.hero"
     h16_own16 = t38;
-#line 17320 "main.c"
+#line 17360 "main.c"
     hero_str_decref(t70);
 #line 22 "examples/ledger/report/lines.hero"
     t39 = hero_str_concat(t35, t38);
@@ -17324,7 +17364,7 @@ bb7:
     t71 = h17_own17;
 #line 22 "examples/ledger/report/lines.hero"
     h17_own17 = t39;
-#line 17328 "main.c"
+#line 17368 "main.c"
     hero_str_decref(t71);
 #line 22 "examples/ledger/report/lines.hero"
     t40 = h5_e;
@@ -17338,7 +17378,7 @@ bb7:
     t72 = h18_own18;
 #line 22 "examples/ledger/report/lines.hero"
     h18_own18 = t43;
-#line 17342 "main.c"
+#line 17382 "main.c"
     hero_str_decref(t72);
 #line 22 "examples/ledger/report/lines.hero"
     t44 = hero_str_concat(t39, t43);
@@ -17346,7 +17386,7 @@ bb7:
     t73 = h19_own19;
 #line 22 "examples/ledger/report/lines.hero"
     h19_own19 = t44;
-#line 17350 "main.c"
+#line 17390 "main.c"
     hero_str_decref(t73);
 #line 22 "examples/ledger/report/lines.hero"
     t45 = h5_e;
@@ -17358,7 +17398,7 @@ bb7:
     t74 = h20_own20;
 #line 22 "examples/ledger/report/lines.hero"
     h20_own20 = t47;
-#line 17362 "main.c"
+#line 17402 "main.c"
     hero_str_decref(t74);
 #line 22 "examples/ledger/report/lines.hero"
     t48 = INT64_C(10);
@@ -17368,7 +17408,7 @@ bb7:
     t75 = h21_own21;
 #line 22 "examples/ledger/report/lines.hero"
     h21_own21 = t49;
-#line 17372 "main.c"
+#line 17412 "main.c"
     hero_str_decref(t75);
 #line 22 "examples/ledger/report/lines.hero"
     t50 = hero_str_concat(t44, t49);
@@ -17376,18 +17416,18 @@ bb7:
     t76 = h22_own22;
 #line 22 "examples/ledger/report/lines.hero"
     h22_own22 = t50;
-#line 17380 "main.c"
+#line 17420 "main.c"
     hero_str_decref(t76);
 #line 21 "examples/ledger/report/lines.hero"
     hero_array_push_owned(&h2_out, &t50);
 #line 21 "examples/ledger/report/lines.hero"
     goto bb3;
-#line 17386 "main.c"
+#line 17426 "main.c"
 }
 
 #line 27 "examples/ledger/report/lines.hero"
 HeroStr h_reportlines_balance_line(h_bookentry_Balance h0_b, HeroStr h1_kind) {
-#line 17391 "main.c"
+#line 17431 "main.c"
     HeroStr h2_own2 = {0};
     HeroStr h3_own3 = {0};
     HeroStr h4_own4 = {0};
@@ -17440,7 +17480,7 @@ bb0:
     t21 = h2_own2;
 #line 28 "examples/ledger/report/lines.hero"
     h2_own2 = t4;
-#line 17444 "main.c"
+#line 17484 "main.c"
     hero_str_decref(t21);
 #line 28 "examples/ledger/report/lines.hero"
     t5 = h1_kind;
@@ -17452,7 +17492,7 @@ bb0:
     t22 = h3_own3;
 #line 28 "examples/ledger/report/lines.hero"
     h3_own3 = t7;
-#line 17456 "main.c"
+#line 17496 "main.c"
     hero_str_decref(t22);
 #line 28 "examples/ledger/report/lines.hero"
     t8 = hero_str_concat(t4, t7);
@@ -17460,7 +17500,7 @@ bb0:
     t23 = h4_own4;
 #line 28 "examples/ledger/report/lines.hero"
     h4_own4 = t8;
-#line 17464 "main.c"
+#line 17504 "main.c"
     hero_str_decref(t23);
 #line 28 "examples/ledger/report/lines.hero"
     t9 = h0_b;
@@ -17472,7 +17512,7 @@ bb0:
     t24 = h5_own5;
 #line 28 "examples/ledger/report/lines.hero"
     h5_own5 = t11;
-#line 17476 "main.c"
+#line 17516 "main.c"
     hero_str_decref(t24);
 #line 28 "examples/ledger/report/lines.hero"
     t12 = INT64_C(7);
@@ -17482,7 +17522,7 @@ bb0:
     t25 = h6_own6;
 #line 28 "examples/ledger/report/lines.hero"
     h6_own6 = t13;
-#line 17486 "main.c"
+#line 17526 "main.c"
     hero_str_decref(t25);
 #line 28 "examples/ledger/report/lines.hero"
     t14 = hero_str_concat(t8, t13);
@@ -17490,7 +17530,7 @@ bb0:
     t26 = h7_own7;
 #line 28 "examples/ledger/report/lines.hero"
     h7_own7 = t14;
-#line 17494 "main.c"
+#line 17534 "main.c"
     hero_str_decref(t26);
 #line 28 "examples/ledger/report/lines.hero"
     t15 = h0_b;
@@ -17502,7 +17542,7 @@ bb0:
     t27 = h8_own8;
 #line 28 "examples/ledger/report/lines.hero"
     h8_own8 = t17;
-#line 17506 "main.c"
+#line 17546 "main.c"
     hero_str_decref(t27);
 #line 28 "examples/ledger/report/lines.hero"
     t18 = INT64_C(11);
@@ -17512,7 +17552,7 @@ bb0:
     t28 = h9_own9;
 #line 28 "examples/ledger/report/lines.hero"
     h9_own9 = t19;
-#line 17516 "main.c"
+#line 17556 "main.c"
     hero_str_decref(t28);
 #line 28 "examples/ledger/report/lines.hero"
     t20 = hero_str_concat(t14, t19);
@@ -17520,44 +17560,44 @@ bb0:
     t29 = h10_own10;
 #line 28 "examples/ledger/report/lines.hero"
     h10_own10 = t20;
-#line 17524 "main.c"
+#line 17564 "main.c"
     hero_str_decref(t29);
 #line 28 "examples/ledger/report/lines.hero"
-#line 17527 "main.c"
+#line 17567 "main.c"
     hero_str_incref(t20);
 #line 28 "examples/ledger/report/lines.hero"
-#line 17530 "main.c"
+#line 17570 "main.c"
     hero_str_decref(h2_own2);
 #line 28 "examples/ledger/report/lines.hero"
-#line 17533 "main.c"
+#line 17573 "main.c"
     hero_str_decref(h3_own3);
 #line 28 "examples/ledger/report/lines.hero"
-#line 17536 "main.c"
+#line 17576 "main.c"
     hero_str_decref(h4_own4);
 #line 28 "examples/ledger/report/lines.hero"
-#line 17539 "main.c"
+#line 17579 "main.c"
     hero_str_decref(h5_own5);
 #line 28 "examples/ledger/report/lines.hero"
-#line 17542 "main.c"
+#line 17582 "main.c"
     hero_str_decref(h6_own6);
 #line 28 "examples/ledger/report/lines.hero"
-#line 17545 "main.c"
+#line 17585 "main.c"
     hero_str_decref(h7_own7);
 #line 28 "examples/ledger/report/lines.hero"
-#line 17548 "main.c"
+#line 17588 "main.c"
     hero_str_decref(h8_own8);
 #line 28 "examples/ledger/report/lines.hero"
-#line 17551 "main.c"
+#line 17591 "main.c"
     hero_str_decref(h9_own9);
 #line 28 "examples/ledger/report/lines.hero"
-#line 17554 "main.c"
+#line 17594 "main.c"
     hero_str_decref(h10_own10);
     return t20;
 }
 
 #line 32 "examples/ledger/report/lines.hero"
 HeroStr h_reportlines_wide(HeroStr h0_text, int64_t h1_to) {
-#line 17561 "main.c"
+#line 17601 "main.c"
     h_0opt_fbbb698 h2_f0 = {0};
     h_0opt_fbbb698 h3_own3 = {0};
     HeroStr h4_own4 = {0};
@@ -17632,15 +17672,15 @@ bb1:
     t25 = h3_own3;
 #line 35 "examples/ledger/report/lines.hero"
     h3_own3 = t14;
-#line 17636 "main.c"
+#line 17676 "main.c"
     h_0opt_fbbb698_release(&t25);
 #line 35 "examples/ledger/report/lines.hero"
     t26 = h2_f0;
-#line 17640 "main.c"
+#line 17680 "main.c"
     h_0opt_fbbb698_retain(&t14);
 #line 35 "examples/ledger/report/lines.hero"
     h2_f0 = t14;
-#line 17644 "main.c"
+#line 17684 "main.c"
     h_0opt_fbbb698_release(&t26);
 #line 35 "examples/ledger/report/lines.hero"
     t15 = h2_f0;
@@ -17664,25 +17704,25 @@ bb2:
     t27 = h4_own4;
 #line 34 "examples/ledger/report/lines.hero"
     h4_own4 = t7;
-#line 17668 "main.c"
+#line 17708 "main.c"
     hero_str_decref(t27);
 #line 34 "examples/ledger/report/lines.hero"
-#line 17671 "main.c"
+#line 17711 "main.c"
     hero_str_incref(t7);
 #line 34 "examples/ledger/report/lines.hero"
-#line 17674 "main.c"
+#line 17714 "main.c"
     h_0opt_fbbb698_release(&h2_f0);
 #line 34 "examples/ledger/report/lines.hero"
-#line 17677 "main.c"
+#line 17717 "main.c"
     h_0opt_fbbb698_release(&h3_own3);
 #line 34 "examples/ledger/report/lines.hero"
-#line 17680 "main.c"
+#line 17720 "main.c"
     hero_str_decref(h4_own4);
 #line 34 "examples/ledger/report/lines.hero"
-#line 17683 "main.c"
+#line 17723 "main.c"
     hero_str_decref(h5_own5);
 #line 34 "examples/ledger/report/lines.hero"
-#line 17686 "main.c"
+#line 17726 "main.c"
     hero_str_decref(h6_own6);
     return t7;
 bb3:
@@ -17698,7 +17738,7 @@ bb4:
     t28 = h5_own5;
 #line 35 "examples/ledger/report/lines.hero"
     h5_own5 = t23;
-#line 17702 "main.c"
+#line 17742 "main.c"
     hero_str_decref(t28);
 #line 35 "examples/ledger/report/lines.hero"
     t24 = hero_str_concat(t8, t23);
@@ -17706,25 +17746,25 @@ bb4:
     t29 = h6_own6;
 #line 35 "examples/ledger/report/lines.hero"
     h6_own6 = t24;
-#line 17710 "main.c"
+#line 17750 "main.c"
     hero_str_decref(t29);
 #line 35 "examples/ledger/report/lines.hero"
-#line 17713 "main.c"
+#line 17753 "main.c"
     hero_str_incref(t24);
 #line 35 "examples/ledger/report/lines.hero"
-#line 17716 "main.c"
+#line 17756 "main.c"
     h_0opt_fbbb698_release(&h2_f0);
 #line 35 "examples/ledger/report/lines.hero"
-#line 17719 "main.c"
+#line 17759 "main.c"
     h_0opt_fbbb698_release(&h3_own3);
 #line 35 "examples/ledger/report/lines.hero"
-#line 17722 "main.c"
+#line 17762 "main.c"
     hero_str_decref(h4_own4);
 #line 35 "examples/ledger/report/lines.hero"
-#line 17725 "main.c"
+#line 17765 "main.c"
     hero_str_decref(h5_own5);
 #line 35 "examples/ledger/report/lines.hero"
-#line 17728 "main.c"
+#line 17768 "main.c"
     hero_str_decref(h6_own6);
     return t24;
 bb5:
@@ -17732,14 +17772,14 @@ bb5:
     t19 = h2_f0;
 #line 35 "examples/ledger/report/lines.hero"
     t20 = t19.as.err;
-#line 17736 "main.c"
+#line 17776 "main.c"
     hero_panic_must(t20);
     hero_unreachable();
 }
 
 #line 40 "examples/ledger/report/lines.hero"
 HeroStr h_reportlines_right(HeroStr h0_text, int64_t h1_to) {
-#line 17743 "main.c"
+#line 17783 "main.c"
     h_0opt_fbbb698 h2_f0 = {0};
     h_0opt_fbbb698 h3_own3 = {0};
     HeroStr h4_own4 = {0};
@@ -17812,15 +17852,15 @@ bb1:
     t25 = h3_own3;
 #line 43 "examples/ledger/report/lines.hero"
     h3_own3 = t13;
-#line 17816 "main.c"
+#line 17856 "main.c"
     h_0opt_fbbb698_release(&t25);
 #line 43 "examples/ledger/report/lines.hero"
     t26 = h2_f0;
-#line 17820 "main.c"
+#line 17860 "main.c"
     h_0opt_fbbb698_retain(&t13);
 #line 43 "examples/ledger/report/lines.hero"
     h2_f0 = t13;
-#line 17824 "main.c"
+#line 17864 "main.c"
     h_0opt_fbbb698_release(&t26);
 #line 43 "examples/ledger/report/lines.hero"
     t14 = h2_f0;
@@ -17844,25 +17884,25 @@ bb2:
     t27 = h4_own4;
 #line 42 "examples/ledger/report/lines.hero"
     h4_own4 = t7;
-#line 17848 "main.c"
+#line 17888 "main.c"
     hero_str_decref(t27);
 #line 42 "examples/ledger/report/lines.hero"
-#line 17851 "main.c"
+#line 17891 "main.c"
     hero_str_incref(t7);
 #line 42 "examples/ledger/report/lines.hero"
-#line 17854 "main.c"
+#line 17894 "main.c"
     h_0opt_fbbb698_release(&h2_f0);
 #line 42 "examples/ledger/report/lines.hero"
-#line 17857 "main.c"
+#line 17897 "main.c"
     h_0opt_fbbb698_release(&h3_own3);
 #line 42 "examples/ledger/report/lines.hero"
-#line 17860 "main.c"
+#line 17900 "main.c"
     hero_str_decref(h4_own4);
 #line 42 "examples/ledger/report/lines.hero"
-#line 17863 "main.c"
+#line 17903 "main.c"
     hero_str_decref(h5_own5);
 #line 42 "examples/ledger/report/lines.hero"
-#line 17866 "main.c"
+#line 17906 "main.c"
     hero_str_decref(h6_own6);
     return t7;
 bb3:
@@ -17878,7 +17918,7 @@ bb4:
     t28 = h5_own5;
 #line 43 "examples/ledger/report/lines.hero"
     h5_own5 = t22;
-#line 17882 "main.c"
+#line 17922 "main.c"
     hero_str_decref(t28);
 #line 43 "examples/ledger/report/lines.hero"
     t23 = h0_text;
@@ -17888,25 +17928,25 @@ bb4:
     t29 = h6_own6;
 #line 43 "examples/ledger/report/lines.hero"
     h6_own6 = t24;
-#line 17892 "main.c"
+#line 17932 "main.c"
     hero_str_decref(t29);
 #line 43 "examples/ledger/report/lines.hero"
-#line 17895 "main.c"
+#line 17935 "main.c"
     hero_str_incref(t24);
 #line 43 "examples/ledger/report/lines.hero"
-#line 17898 "main.c"
+#line 17938 "main.c"
     h_0opt_fbbb698_release(&h2_f0);
 #line 43 "examples/ledger/report/lines.hero"
-#line 17901 "main.c"
+#line 17941 "main.c"
     h_0opt_fbbb698_release(&h3_own3);
 #line 43 "examples/ledger/report/lines.hero"
-#line 17904 "main.c"
+#line 17944 "main.c"
     hero_str_decref(h4_own4);
 #line 43 "examples/ledger/report/lines.hero"
-#line 17907 "main.c"
+#line 17947 "main.c"
     hero_str_decref(h5_own5);
 #line 43 "examples/ledger/report/lines.hero"
-#line 17910 "main.c"
+#line 17950 "main.c"
     hero_str_decref(h6_own6);
     return t24;
 bb5:
@@ -17914,14 +17954,14 @@ bb5:
     t18 = h2_f0;
 #line 43 "examples/ledger/report/lines.hero"
     t19 = t18.as.err;
-#line 17918 "main.c"
+#line 17958 "main.c"
     hero_panic_must(t19);
     hero_unreachable();
 }
 
 #line 48 "examples/ledger/report/lines.hero"
 bool h_reportlines_holds(HeroStr h0_text, HeroStr h1_needle) {
-#line 17925 "main.c"
+#line 17965 "main.c"
     int64_t h2_at;
     HeroStr h3_own3 = {0};
     HeroStr t1 = {0};
@@ -17979,7 +18019,7 @@ bb1:
 bb2:
 #line 50 "examples/ledger/report/lines.hero"
     t6 = false;
-#line 17983 "main.c"
+#line 18023 "main.c"
     hero_str_decref(h3_own3);
     return t6;
 bb3:
@@ -18021,7 +18061,7 @@ bb5:
     t29 = h3_own3;
 #line 54 "examples/ledger/report/lines.hero"
     h3_own3 = t21;
-#line 18025 "main.c"
+#line 18065 "main.c"
     hero_str_decref(t29);
 #line 54 "examples/ledger/report/lines.hero"
     t22 = h1_needle;
@@ -18033,7 +18073,7 @@ bb5:
 bb6:
 #line 58 "examples/ledger/report/lines.hero"
     t28 = false;
-#line 18037 "main.c"
+#line 18077 "main.c"
     hero_str_decref(h3_own3);
     return t28;
 bb7:
@@ -18051,7 +18091,7 @@ bb7:
 bb8:
 #line 55 "examples/ledger/report/lines.hero"
     t24 = true;
-#line 18055 "main.c"
+#line 18095 "main.c"
     hero_str_decref(h3_own3);
     return t24;
 bb9:
@@ -18060,13 +18100,13 @@ bb9:
 
 #line 122 "<heroes library>"
 int64_t h_library_HERO_STR_OK(void) {
-#line 18064 "main.c"
+#line 18104 "main.c"
     return HERO_STR_OK;
 }
 
 #line 152 "<heroes library>"
 h_0opt_f87774a h_library_validated(const char * h0_c) {
-#line 18070 "main.c"
+#line 18110 "main.c"
     int64_t h1_status;
     HeroStr h2_text = {0};
     HeroStr h3_own3 = {0};
@@ -18119,15 +18159,15 @@ bb1:
     t18 = h3_own3;
 #line 156 "<heroes library>"
     h3_own3 = t9;
-#line 18123 "main.c"
+#line 18163 "main.c"
     hero_str_decref(t18);
 #line 156 "<heroes library>"
     t19 = h2_text;
-#line 18127 "main.c"
+#line 18167 "main.c"
     hero_str_incref(t9);
 #line 156 "<heroes library>"
     h2_text = t9;
-#line 18131 "main.c"
+#line 18171 "main.c"
     hero_str_decref(t19);
 #line 157 "<heroes library>"
     t10 = h1_status;
@@ -18143,10 +18183,10 @@ bb2:
     t4 = HERO_STR_LIT(hero_str_4a05a740);
 #line 154 "<heroes library>"
     t5 = HERO_STR_LIT(hero_str_5263489);
-#line 18147 "main.c"
+#line 18187 "main.c"
     hero_str_incref(t4);
 #line 154 "<heroes library>"
-#line 18150 "main.c"
+#line 18190 "main.c"
     hero_str_incref(t5);
 #line 154 "<heroes library>"
     t6 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t4, .msg = t5}};
@@ -18154,25 +18194,25 @@ bb2:
     t20 = h4_own4;
 #line 154 "<heroes library>"
     h4_own4 = t6;
-#line 18158 "main.c"
+#line 18198 "main.c"
     h_0opt_f87774a_release(&t20);
 #line 154 "<heroes library>"
-#line 18161 "main.c"
+#line 18201 "main.c"
     h_0opt_f87774a_retain(&t6);
 #line 154 "<heroes library>"
-#line 18164 "main.c"
+#line 18204 "main.c"
     hero_str_decref(h2_text);
 #line 154 "<heroes library>"
-#line 18167 "main.c"
+#line 18207 "main.c"
     hero_str_decref(h3_own3);
 #line 154 "<heroes library>"
-#line 18170 "main.c"
+#line 18210 "main.c"
     h_0opt_f87774a_release(&h4_own4);
 #line 154 "<heroes library>"
-#line 18173 "main.c"
+#line 18213 "main.c"
     h_0opt_f87774a_release(&h5_own5);
 #line 154 "<heroes library>"
-#line 18176 "main.c"
+#line 18216 "main.c"
     h_0opt_f87774a_release(&h6_own6);
     return t6;
 bb3:
@@ -18182,10 +18222,10 @@ bb4:
     t15 = HERO_STR_LIT(hero_str_34624695);
 #line 159 "<heroes library>"
     t16 = HERO_STR_LIT(hero_str_4bb64adb);
-#line 18186 "main.c"
+#line 18226 "main.c"
     hero_str_incref(t15);
 #line 159 "<heroes library>"
-#line 18189 "main.c"
+#line 18229 "main.c"
     hero_str_incref(t16);
 #line 159 "<heroes library>"
     t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}};
@@ -18193,31 +18233,31 @@ bb4:
     t21 = h5_own5;
 #line 159 "<heroes library>"
     h5_own5 = t17;
-#line 18197 "main.c"
+#line 18237 "main.c"
     h_0opt_f87774a_release(&t21);
 #line 159 "<heroes library>"
-#line 18200 "main.c"
+#line 18240 "main.c"
     h_0opt_f87774a_retain(&t17);
 #line 159 "<heroes library>"
-#line 18203 "main.c"
+#line 18243 "main.c"
     hero_str_decref(h2_text);
 #line 159 "<heroes library>"
-#line 18206 "main.c"
+#line 18246 "main.c"
     hero_str_decref(h3_own3);
 #line 159 "<heroes library>"
-#line 18209 "main.c"
+#line 18249 "main.c"
     h_0opt_f87774a_release(&h4_own4);
 #line 159 "<heroes library>"
-#line 18212 "main.c"
+#line 18252 "main.c"
     h_0opt_f87774a_release(&h5_own5);
 #line 159 "<heroes library>"
-#line 18215 "main.c"
+#line 18255 "main.c"
     h_0opt_f87774a_release(&h6_own6);
     return t17;
 bb5:
 #line 158 "<heroes library>"
     t13 = h2_text;
-#line 18221 "main.c"
+#line 18261 "main.c"
     hero_str_incref(t13);
 #line 158 "<heroes library>"
     t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t13};
@@ -18225,25 +18265,25 @@ bb5:
     t22 = h6_own6;
 #line 158 "<heroes library>"
     h6_own6 = t14;
-#line 18229 "main.c"
+#line 18269 "main.c"
     h_0opt_f87774a_release(&t22);
 #line 158 "<heroes library>"
-#line 18232 "main.c"
+#line 18272 "main.c"
     h_0opt_f87774a_retain(&t14);
 #line 158 "<heroes library>"
-#line 18235 "main.c"
+#line 18275 "main.c"
     hero_str_decref(h2_text);
 #line 158 "<heroes library>"
-#line 18238 "main.c"
+#line 18278 "main.c"
     hero_str_decref(h3_own3);
 #line 158 "<heroes library>"
-#line 18241 "main.c"
+#line 18281 "main.c"
     h_0opt_f87774a_release(&h4_own4);
 #line 158 "<heroes library>"
-#line 18244 "main.c"
+#line 18284 "main.c"
     h_0opt_f87774a_release(&h5_own5);
 #line 158 "<heroes library>"
-#line 18247 "main.c"
+#line 18287 "main.c"
     h_0opt_f87774a_release(&h6_own6);
     return t14;
 bb6:
@@ -18252,7 +18292,7 @@ bb6:
 
 #line 219 "<heroes library>"
 void h_library_exit(int64_t h0_code) {
-#line 18256 "main.c"
+#line 18296 "main.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -18262,7 +18302,7 @@ bb0:
     (void)hero_exit(t1);
 #line 220 "<heroes library>"
     return;
-#line 18266 "main.c"
+#line 18306 "main.c"
 }
 HERO_TU_LOCAL bool h_bookentry_Amount_eq(const h_bookentry_Amount *a, const h_bookentry_Amount *b) {
     if (!(a->f_cents == b->f_cents)) return false;

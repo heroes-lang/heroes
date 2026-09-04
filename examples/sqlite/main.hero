@@ -33,7 +33,17 @@ extern "sqlite3.h" link "sqlite3"
     constant SQLITE_ROW: i64
     function sqlite3_open(filename: cstr, @out: ptr) -> i64
     function sqlite3_close(db: ptr) -> i64
-    function sqlite3_exec(db: ptr, sql: cstr, callback: ptr, context: ptr, @error: ptr) -> i64
+    # The fifth argument is `char **errmsg`, and a non-NULL one makes SQLite
+    # allocate a copy of the message that the CALLER must release with
+    # `sqlite3_free`. This program does not want one, so it is a plain `ptr`
+    # the caller passes `nullptr` for — SQLite's documented *do not allocate*
+    # — rather than an `@` parameter whose value nothing reads. It was an `@`
+    # until 2026-09-04, and `examples/ledger/` shipped the identical binding
+    # and leaked 40 bytes per refused statement; this program never leaked
+    # because no statement here is ever refused, which is a fact about its SQL
+    # and not a defence. Repaired as the class rather than the case
+    # (CLAUDE.md §1).
+    function sqlite3_exec(db: ptr, sql: cstr, callback: ptr, context: ptr, error: ptr) -> i64
     function sqlite3_prepare_v2(db: ptr, sql: cstr, length: i32, @statement: ptr, @tail: ptr) -> i64
     function sqlite3_step(statement: ptr) -> i64
     function sqlite3_column_int(statement: ptr, column: i32) -> i64
@@ -43,8 +53,7 @@ extern "sqlite3.h" link "sqlite3"
 # protocol takes are `nullptr`: §4.19 fixes a callback at `ptr` until the
 # boundary has a C-width type vocabulary, and this program needs none.
 function run(db: ptr, sql: str) -> i64
-    error: ptr @ nullptr
-    return sqlite3_exec(db: db, sql: sql.cstr(), callback: nullptr, context: nullptr, error: @error)
+    return sqlite3_exec(db: db, sql: sql.cstr(), callback: nullptr, context: nullptr, error: nullptr)
 
 # The first column of the first row, which is the whole of "read a result".
 function first_int(db: ptr, sql: str) -> i64
