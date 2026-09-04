@@ -565,7 +565,7 @@ everything else is paper and ink.
   testo lunghissimo"*, and it is a layout answer, not a copy answer, though the
   copy was cut too.
 - **The portrait is printed, not pasted** (author instruction 2026-08-19:
-  *"usa questa immagine duotonata nella pagina autore"*). The photograph on
+  *"use this image duotoned on the author page"*). The photograph on
   `author.html` is duotoned to two of the site's inks — a deep blue in the
   shadows, cream in the highlights — so it belongs to the palette instead of
   sitting on top of it. **Blue and cream, not blue and red**, because the red/blue
