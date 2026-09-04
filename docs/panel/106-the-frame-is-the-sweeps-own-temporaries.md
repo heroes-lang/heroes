@@ -2,8 +2,9 @@
 
 **Soundness lane** (compiler-engineer + ffi-pragmatist), 2026-09-03, convened by
 M-corpus-depth. No surface, no diagnostic, no spec token — which is what the lane
-is for (CLAUDE.md §4; `/panel` § Two lanes). **Provisional — author ratification
-pending.**
+is for (CLAUDE.md §4; `/panel` § Two lanes). **RATIFIED 2026-09-04** by author
+instruction — the verdict section at the foot of this file carries the words and
+what the yes settles.
 
 **Both seats vetoed the proposal, and the second one found the answer the
 proposal was reaching for.** That is the whole sitting in one line.
@@ -216,7 +217,37 @@ sitting exists to make visible.
 
 ## Author's verdict
 
-**Pending.** The open item is `docs/work/DECIDE.md`, naming `panel 106`.
+**Ratified 2026-09-04** (author instruction, *"ratify and push"*, given after
+the repair was built, measured and shipped).
+
+**What the yes settles**: slot sharing is refused permanently and in every form
+— not gated by the ffi-pragmatist's whole-function condition, not narrowed to
+plain slots — and `decref_slot` is the shape this IR has: an op that names a
+slot rather than a value. It was already built when the yes came, so what the
+ratification settles is not whether to do it but whether it was right to: the
+frames −54.0% on `examples/interpreter/` and −35.6% on the compiler itself, the
+recursion ceiling 191 → 314 at `-O0`, the seed 846,804 → 721,238 lines, the
+fixpoint holding byte for byte, 560 own tests and 1,474 net checks green.
+
+**What it does not settle**, unchanged from what this section said while it was
+pending: the store's own `old` temporary (`own.hero:150`, 9.1% more of declared
+bytes), which needs a generated per-type `assign(&slot, &value)`; and whether
+the exit sweep should ever become liveness-directed, which is panel 021 R3 and
+stays ratified as it stands.
+
+**And one thing the yes exposed rather than settled.** The sitting's whole
+subject was the recursion ceiling, and the repair roughly doubled it — but the
+milestone's 500-deep requirement is still unmet at 83, because the corpus runs
+`--sanitize` and that configuration tops out at 166. Measured the same day the
+ratification came, on this Mac, and it changes what that failure means: the
+same interpreter linked with **64 MB of stack** — the number panel 058 ratified
+for Windows in August, which this compiler already passes on that platform and
+on no other — reaches **2,537 levels at `-O0` and 1,347 under `--sanitize`**,
+against 314 and 166 with the 8 MB the operating system hands a program here. So
+the ceiling is not the frames and it is not the language: it is a link-line
+decision this compiler makes on one platform out of three. That is a question
+for a sitting of its own, filed in `docs/work/DECIDE.md`, and it is **not**
+this one's to answer.
 
 **What a yes settles**: that slot sharing is refused permanently and in every
 form — not gated by the ffi-pragmatist's whole-function condition, not narrowed

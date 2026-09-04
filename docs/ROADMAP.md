@@ -64,7 +64,7 @@ M-separate-compilation already did.
 | The compiler | **52,512 lines** of Heroes in **178** modules across **10 directories** and 37 flat files · the seed **721,238** lines of generated C — **125,566 fewer than yesterday**, because panel 106's repair deleted the exit sweep's own temporaries |
 | The spec | **3750** tokens of a hard 4096 · headroom **346** · runtime ABI **20** |
 | Records | sittings **106** · journals **33** · measurements **16** · examples **44** programs, 108 files, 505 `test` blocks · open defects **0** (`docs/work/DEFECTS.md`) · the site **46** pages, 13 doc chapters per edition |
-| Waiting on the author | **1 decision**: ratify `docs/panel/106`, whose repair is already built and measured — the frames −54% on a program and −35.6% on the compiler, the recursion ceiling 191 → 314, the fixpoint holding. A no would mean reverting something that works, so the question is real: is an IR op that names a slot rather than a value the shape this compiler should have · **27** in `SCHEDULED.md` · 302 in `LEARN.md` (never a gate) · an **outstanding veto** of the rule that stands (`docs/panel/101` R3) · the push of two closes |
+| Waiting on the author | **1 decision**: how much stack a Heroes program gets — this compiler passes 64 MB on Windows (panel 058) and nothing on the other two, so the same program reaches 314 levels here and 2,537 with the same flag, measured. Panel 106 is **ratified** · **27** in `SCHEDULED.md` · 302 in `LEARN.md` (never a gate) · an **outstanding veto** of the rule that stands (`docs/panel/101` R3) |
 
 Every number re-measured 2026-09-04. **The seed fell 125,566 lines with no feature removed** — 58.5% of every frame was bookkeeping nobody read (`docs/measurements/015`).
 
