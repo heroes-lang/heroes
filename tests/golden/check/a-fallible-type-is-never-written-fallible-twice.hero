@@ -1,0 +1,45 @@
+# The golden `error[nested_fallible]` did not have, and CLAUDE.md §9 says
+# every verifier check has a test that makes it fire. Written 2026-09-04 at
+# panel 110, which measured the gap: the code existed in exactly ONE place,
+# `selfhost/parse/type.hero:55`, with one in-module test at `:390`, no golden
+# anywhere under `tests/golden/`, and no sentence in the spec — so a refactor
+# could have deleted the refusal in silence.
+#
+# **The spec sentence was proposed at that sitting and VETOED by two seats**,
+# so this file is the whole record of the rule until the sitting the veto
+# names has ruled. The reason is worth carrying here: the refusal is of the
+# WRITTEN form only. `m: {str: i64?}` is accepted and `m[k]` hands back a
+# doubly-fallible value that `.must().must()` consumes; the built-in
+# `find<A>(xs: [A], f) -> A?` over `[i64?]` does the same; and a generic
+# `function wrap<T>(x: T) -> T?` nests without bound. So a value exists that
+# the checker tracks and no signature can name, and `spec:157` promises
+# `m[k]` returns `V?` without qualification. Writing *"`T??` is a compile
+# error"* into the spec would have made the document contradict itself one
+# section away — §12's shape, three defects for 29 tokens.
+#
+# What IS legal is one level of fallibility through a container, and this
+# file pins both sides so the line between them is a program.
+
+function two_deep(x: i64) -> i64??       #~ nested_fallible
+    return ok(ok(x))
+
+function through_a_parameter(x: i64??) -> i64   #~ nested_fallible
+    return x.must().must()
+
+function in_a_binding() -> i64
+    v: i64?? @ ok(ok(1))            #~ nested_fallible
+    return v.must().must()
+
+# Legal: the nesting goes through a container, which is a different type.
+function boxed(x: i64) -> [i64?]?
+    xs: [i64?] = [ok(x)]
+    return ok(xs)
+
+function mapped(x: i64) -> {str: i64?}?
+    m: {str: i64?} @ {}
+    m["a"] @ ok(x)
+    return ok(m)
+
+function main()
+    print(boxed(1).must().len())
+    print(mapped(2).must().len())

@@ -1,0 +1,3 @@
+tests/golden/check/a-fallible-type-is-never-written-fallible-twice.hero:23:34: error[nested_fallible]: a fallible type cannot be fallible twice — `T?` already carries the error case (§4.6)
+tests/golden/check/a-fallible-type-is-never-written-fallible-twice.hero:26:37: error[nested_fallible]: a fallible type cannot be fallible twice — `T?` already carries the error case (§4.6)
+tests/golden/check/a-fallible-type-is-never-written-fallible-twice.hero:30:12: error[nested_fallible]: a fallible type cannot be fallible twice — `T?` already carries the error case (§4.6)

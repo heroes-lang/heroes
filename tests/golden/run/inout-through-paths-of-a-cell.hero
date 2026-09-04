@@ -7,9 +7,20 @@
 # copies out into it, and the temporary is stored back through the index after
 # the call (M-robustness-guards step 1). Three things this case pins: the
 # element really changes; two `@` arguments through two indices of two cells
-# store back in argument order (two through ONE cell is panel 010's alias
-# refusal, whatever the indices); and the index expression is evaluated ONCE,
+# store back in argument order; and the index expression is evaluated ONCE,
 # so `pick` prints once.
+#
+# **The parenthesis here said *"two through ONE cell is panel 010's alias
+# refusal, whatever the indices"* until 2026-09-04, and it was wrong twice
+# over.** It was a claim nothing ran — the refusal did not exist in the
+# compiler at all, which is defect 011 — and when it landed it landed as a
+# comparison of PLACES rather than roots (panel 110): `@xs[0]` and `@xs[1]`
+# of one cell reach disjoint memory and are accepted, while `@xs[i]` and
+# `@xs[j]` are refused. The refusals live in
+# `tests/golden/check/fixedbugs-two-mutable-arguments-of-one-place.hero` and
+# the accepted pairs in
+# `tests/golden/run/mutable-arguments-that-do-not-overlap.hero`, so both
+# halves are now programs instead of a sentence.
 record Bag
     items: [str]
 

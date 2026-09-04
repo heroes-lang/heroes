@@ -1,0 +1,70 @@
+# FIXED DEFECT, 2026-09-04 (defect 011). Symptom: `heroes check` 0, `heroes
+# run` 0, and the program printed `10` — a wrong answer at exit 0, in the one
+# class this language exists to delete, on a form design.md had named as a
+# compile error since 2026-08-04. `10` is the divergence itself arriving
+# silently: §4.8's copy-in/copy-out gives last-write-wins, so `b`'s `+ 10`
+# overwrites `a`'s `+ 1`, while the reference semantics every mainstream
+# language installs would give `11`.
+#
+# Cause: nothing compared the arguments of a call to each other.
+# `resolve/walk.hero`'s `arguments` called `writes.inout_root` once PER
+# argument, and `inout_root` held each argument alone to the rule of the left
+# of `@`. Two accidents hid it for a month: design.md's own three examples
+# were written `shift(a @ n, b @ n)`, a spelling
+# `misplaced_mutable_marker` refuses today, so anybody who pasted one read
+# that diagnostic as the rule firing; and the unlabelled `shift(@n, @n)`
+# fires `needs_label` first, so the alias question is reached only once BOTH
+# labels are written — the one form nothing tested.
+#
+# Fix: `writes.refuse_aliased_places`, called once after the walk over the
+# arguments, comparing PLACES step by step (panel 110) rather than roots.
+
+function shift(@a: i64, @b: i64)
+    a @ a + 1
+    b @ b + 10
+
+function bump(@a: i64, @b: i64, @c: i64)
+    a @ a + 1
+    b @ b + 10
+    c @ c + 100
+
+record P
+    x: i64
+    y: i64
+
+function shift_boxes(@a: P, @b: i64)
+    a.x @ a.x + 1
+    b @ b + 10
+
+function main()
+    n: i64 @ 0
+    shift(a: @n, b: @n)             #~ aliased_mutable_arguments
+    print(n)
+    p: P @ P(x: 0, y: 0)
+    shift(a: @p.x, b: @p.x)         #~ aliased_mutable_arguments
+    print(p.x)
+    xs: [i64] @ [0, 0]
+    shift(a: @xs[0], b: @xs[0])     #~ aliased_mutable_arguments
+    print(xs[0])
+
+    # The over-rejection design.md:1299 authorises: a variable index cannot
+    # be shown to name a different element, so the pair stays overlapping.
+    i = 0
+    j = 1
+    shift(a: @xs[i], b: @xs[j])     #~ aliased_mutable_arguments
+    print(xs[0])
+
+    # And a base this pass does not decode is undecided, not distinct: the
+    # AST keeps a literal's TEXT (`ast.hero:109`) and `0x0` is `0`.
+    shift(a: @xs[0], b: @xs[0x0])   #~ aliased_mutable_arguments
+    print(xs[0])
+
+    # A prefix is an overlap: writing `p` and writing `p.y` land on one
+    # record, and the second place is inside the first.
+    shift_boxes(a: @p, b: @p.y)     #~ aliased_mutable_arguments
+    print(p.y)
+
+    # Three arguments of one cell are TWO findings, each against the first,
+    # so the count is the number of arguments that have to change.
+    bump(a: @n, b: @n, c: @n)       #~ aliased_mutable_arguments aliased_mutable_arguments
+    print(n)
