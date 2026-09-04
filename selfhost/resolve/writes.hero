@@ -28,6 +28,8 @@
 # variable, a payload, a top-level declaration or a built-in.
 
 use ast
+use diag
+use token
 use source
 use inventory
 use resolve/state
@@ -97,3 +99,215 @@ function inout_root(@r: state.Resolver, a: ast.Ast, s: source.Source, id: i64)
         .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr => return
         .hole | .unary | .binary | .call | .method | .variant_case           => return
         .array | .map | .try_expr | .if_expr | .match_expr | .error          => return
+
+## Two `@` arguments of one call
+
+# **Panel 010's alias refusal, ratified 2026-08-04 and missing from the
+# compiler until 2026-09-04** (defect 011). `shift(a: @n, b: @n)` copies
+# `n` in twice and copies it out twice, so the call's answer depends on
+# which copy-out lands last: `10` under left-to-right, `11` under the
+# reference reading every mainstream language installs. Nothing specifies
+# the order, so the form is refused — and the refusal is the precondition
+# that makes spec:80's *"No aliasing exists anywhere"* true, because two
+# copy-outs landing on one place is aliasing of the destination.
+#
+# **PLACES, not roots, and the difference is two working programs**
+# (panel 110). design.md:1298 says *"comparing roots is a complete alias
+# test"*, and it over-shoots: `shift(a: @p.x, b: @p.y)` and
+# `shift(a: @xs[0], b: @xs[1])` reach disjoint memory, print the right
+# answers today, and are clean under `--sanitize` even with the record and
+# the array SHARED — measured, both shapes, before this was written. The
+# unshare is why: the first one takes the refcount to 1, so the second
+# moves nothing. §12 holds a refusal to a feature's standard, and those
+# two are the programs a root test would have made wrong. So the walk goes
+# step by step and stops at the first pair that is DECIDABLY different: two
+# field names, or two indices written as plain decimal digits. Everything
+# else — a variable index, a spelling this pass does not decode, one path
+# being a prefix of the other — stays overlapping, which is the loud
+# direction (CLAUDE.md §11). `f(a: @xs[i], b: @xs[j])` is still refused,
+# which is exactly the over-rejection design.md:1299 authorises.
+#
+# **What is NOT this rule, measured before it was written**: an `@`
+# argument nested inside another call's argument list — `outer(@n, k:
+# bump(@n))` — keeps both mutations. Three shapes were run and all three
+# printed the same answer, because a call's copy-in happens after its
+# arguments are evaluated. Two copy-outs of ONE call are the ambiguity;
+# two calls in sequence are ordered.
+#
+# **Why nobody noticed for a month**, and it is two accidents rather than
+# one. design.md's three examples are written `shift(a @ n, b @ n)`, a
+# spelling `misplaced_mutable_marker` refuses today, so anybody who pasted
+# one read that diagnostic as the rule firing. And the unlabelled
+# `shift(@n, @n)` fires `needs_label` first, so the alias question is
+# reached only once both labels are written — the one form nothing tested.
+
+# The step this pass cannot decide. Two of them never prove two places
+# apart, not even against each other: `xs[i]` and `xs[j]` may be one
+# element, and `ast.hero:109` keeps a literal's TEXT rather than its value
+# — decoding is the checker's job — so `xs[0x0]` is a spelling this pass
+# declines to guess at rather than one it reads.
+constant UNDECIDED_STEP: str
+    "[?]"
+
+# A place as steps from its root, root first: `#3`, `.x`, `[0]`. An error
+# means the root is not a local — a top-level declaration, a built-in, a
+# module, or a name with no answer — and `inout_root` above has already
+# refused every one of those, so this rule has nothing left to say about
+# it. Every step asks the VALUE in hand (CLAUDE.md §11): what the resolver
+# recorded for this expression, never a premise about what the walk did
+# first.
+function place_path(r: state.Resolver, a: ast.Ast, s: source.Source, id: i64) -> [str]?
+    match a.exprs[id].kind
+        .name =>
+            match r.out.uses[id]
+                .local l => return ok(["#" + l.at.to_str()])
+                .top | .builtin | .module | .unresolved => return fail(
+                    "not_a_local",
+                    "the root of this place is not a local"
+                )
+        .field f =>
+            base = place_path(r, a, s, f.base)
+
+            if base.is_err()
+                return base
+
+            return ok(base.must().push("." + source.span_text(s, f.name)))
+        .index i =>
+            base = place_path(r, a, s, i.base)
+
+            if base.is_err()
+                return base
+
+            return ok(base.must().push(index_step(a, s, i.index)))
+
+        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr => return fail(
+            "not_a_place",
+            "the parser refuses this after `@`"
+        )
+        .hole | .unary | .binary | .call | .method | .variant_case => return fail(
+            "not_a_place",
+            "the parser refuses this after `@`"
+        )
+        .array | .map | .try_expr | .if_expr | .match_expr | .error => return fail(
+            "not_a_place",
+            "the parser refuses this after `@`"
+        )
+
+# One index, as a step. Only plain decimal digits name an element this
+# pass may compare: `0` does, `0x0` and `i` do not.
+function index_step(a: ast.Ast, s: source.Source, id: i64) -> str
+    match a.exprs[id].kind
+        .int_lit =>
+            text = source.span_text(s, a.exprs[id].span)
+
+            if plain_decimal(text)
+                return "[" + text + "]"
+
+            return UNDECIDED_STEP
+
+        .name | .field | .index | .float_lit | .str_lit | .char_lit => return UNDECIDED_STEP
+        .bool_lit | .null_ptr | .hole | .unary | .binary | .call    => return UNDECIDED_STEP
+        .method | .variant_case | .array | .map | .try_expr         => return UNDECIDED_STEP
+        .if_expr | .match_expr | .error                             => return UNDECIDED_STEP
+
+# Digits and nothing else, so the text IS the value. `_` between digits,
+# a base prefix and a sign all say no: this pass compares spellings and
+# only a spelling that can mean one number is safe to compare.
+function plain_decimal(text: str) -> bool
+    if text.len() == 0
+        return false
+    i: i64 @ 0
+
+    while i < text.len()
+        if text[i] < '0' || text[i] > '9'
+            return false
+        i @ i + 1
+
+    return true
+
+# Whether two places may reach one value. False only where a step proves
+# them apart; a prefix (`@p` against `@p.x`) is an overlap, and so is any
+# pair whose difference is undecided.
+function overlaps(x: [str], y: [str]) -> bool
+    i: i64 @ 0
+
+    while i < x.len() && i < y.len()
+        if x[i] != y[i]
+            return x[i] == UNDECIDED_STEP || y[i] == UNDECIDED_STEP
+        i @ i + 1
+
+    return true
+
+# The label an argument arrived under, so the second one can name the
+# first: `shift(a: @n, b: @n)` says *this call's `a` argument*.
+function label_of(s: source.Source, arg: ast.Arg) -> str?
+    if arg.name.is_err()
+        return fail("unlabelled", "this argument carries no label")
+
+    return ok(source.span_text(s, arg.name.must()))
+
+# Every `@` argument of one call against every earlier one. Called ONCE,
+# after the walk over the arguments, because it compares the places that
+# walk resolved.
+function refuse_aliased_places(@r: state.Resolver, a: ast.Ast, s: source.Source, given: [ast.Arg])
+    paths: [[str]] @ []
+    labels: [str?] @ []
+
+    for arg in given
+        if !arg.mutable
+            continue
+        path = place_path(r, a, s, arg.value)
+
+        if path.is_err()
+            continue
+        clash: i64? @ fail("none", "no earlier `@` argument of this call overlaps this one")
+        i: i64 @ 0
+
+        while i < paths.len()
+            if clash.is_err() && overlaps(x: paths[i], y: path.must())
+                clash @ ok(i)
+            i @ i + 1
+
+        if clash.is_err()
+            paths @ paths.push(path.must())
+            labels @ labels.push(label_of(s, arg))
+            continue
+        state.push_diagnostic(
+            @r,
+            aliased_mutable_arguments(name: source.span_text(s, a.exprs[arg.value].span), first: labels[clash.must()], span: a.exprs[arg.value].span)
+        )
+
+# The caret is on the SECOND argument, because the first one is fine and
+# the second is the one to change.
+#
+# **The repair is a `guess`, and the reason is the rule's own** (panel
+# 110). A fix that passed a copy would have to CHOOSE which of the two
+# answers the author meant, and that divergence is the whole reason the
+# form is refused. It is not a theory: `n: i64 @ 0` / `t: i64 @ n` /
+# `shift(a: @n, b: @t)` was built and run, and it prints **1** where the
+# program prints 10 and the reference reading gives 11 — a THIRD answer.
+# CLAUDE.md §9's harness asks an applied `certain` fix to compile, not to
+# mean the same thing, so shipping this one `certain` would let `--apply`
+# turn a 10-program into a 1-program with CI green. `d.fixes` is a list of
+# ALTERNATIVES in this tree (`number.hero:105-108` ships two `guess`
+# spellings of one literal), and two readings make two guesses.
+function aliased_mutable_arguments(name: str, first: str?, span: token.Span) -> diag.Diagnostic
+    other: str @ "an earlier `@` argument of this call"
+
+    if !first.is_err()
+        other @ "this call's `" + first.must() + "` argument"
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "aliased_mutable_arguments",
+        message: "`" + name + "` overlaps " + other + " — two `@` arguments may not reach one value: each of them copies out, and nothing says which copy-out lands last",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "with two copies of one place landing back on it the call's answer would depend on the copy-out order, and that is what `no aliasing exists anywhere` rules out (panel 010)"
+    )
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "pass a copy for one of them: declare a second cell holding the same value, pass `@` that cell, and write it back after the call", replacement: "", span: span, certainty: .guess)
+    )
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "or make the two places different: distinct fields (`@p.x` and `@p.y`) and distinct literal indices (`@xs[0]` and `@xs[1]`) are accepted", replacement: "", span: span, certainty: .guess)
+    )
+    return d

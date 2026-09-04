@@ -193,6 +193,10 @@ function arguments(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast
         if arg.mutable
             writes.inout_root(@r, a, s, arg.value)
 
+    # Panel 010: two `@` arguments of one call may not share a root. Asked
+    # after the loop, because it compares the roots the loop just resolved.
+    writes.refuse_aliased_places(@r, a, s, given)
+
 # A payload binding. Two patterns of one arm may not bind the same name:
 # under `|` the two cases carry different payloads, so one name would mean
 # two things depending on which case matched.
@@ -351,3 +355,101 @@ test "an @ argument on a plain binding and on a loop variable each say why"
     assert r.out.diagnostics[0].code == "not_mutable"
     assert r.out.diagnostics[0].message == "`y` was bound with `=`, which binds once, forever — a cell is declared with its type: `y: <type> @ <value>`"
     assert r.out.diagnostics[1].message == "`e` is the loop variable, and it is bound afresh for each element — write to a cell declared outside the loop"
+
+## Panel 010's alias refusal (defect 011)
+
+# The shape design.md has named as a compile error since 2026-08-04, and the
+# one nothing tested: BOTH labels written, which is what it takes to get past
+# `needs_label` to the alias question at all.
+test "two @ arguments of one call may not name one cell"
+    r = walked(
+        "function shift(@a: i64, @b: i64)\n    a @ a + 1\n    b @ b + 10\n\nfunction g()\n    n: i64 @ 0\n    shift(a: @n, b: @n)\n    print(n)\n"
+    )
+    assert r.out.diagnostics.len() == 1
+    assert r.out.diagnostics[0].code == "aliased_mutable_arguments"
+    assert r.out.diagnostics[0].message == "`n` overlaps this call's `a` argument — two `@` arguments may not reach one value: each of them copies out, and nothing says which copy-out lands last"
+    assert r.out.diagnostics[0].fixes.len() == 2
+    assert r.out.diagnostics[0].fixes[0].certainty == .guess
+    assert r.out.diagnostics[0].fixes[1].certainty == .guess
+
+test "one field twice and one literal index twice are the same refusal"
+    field = walked(
+        "record P\n    x: i64\n\nfunction shift(@a: i64, @b: i64)\n    a @ a + 1\n    b @ b + 10\n\nfunction g()\n    p: P @ P(x: 0)\n    shift(a: @p.x, b: @p.x)\n    print(p.x)\n"
+    )
+    assert field.out.diagnostics.len() == 1
+    assert field.out.diagnostics[0].code == "aliased_mutable_arguments"
+    assert field.out.diagnostics[0].message == "`p.x` overlaps this call's `a` argument — two `@` arguments may not reach one value: each of them copies out, and nothing says which copy-out lands last"
+    index = walked(
+        "function shift(@a: i64, @b: i64)\n    a @ a + 1\n    b @ b + 10\n\nfunction g()\n    xs: [i64] @ [0, 0]\n    shift(a: @xs[0], b: @xs[0])\n    print(xs[0])\n"
+    )
+    assert index.out.diagnostics.len() == 1
+    assert index.out.diagnostics[0].code == "aliased_mutable_arguments"
+
+# The over-rejection design.md:1299 authorises, and the one it does not.
+test "variable indices are refused and distinct literal indices are not"
+    variable = walked(
+        "function shift(@a: i64, @b: i64)\n    a @ a + 1\n    b @ b + 10\n\nfunction g(i: i64, j: i64)\n    xs: [i64] @ [0, 0]\n    shift(a: @xs[i], b: @xs[j])\n    print(xs[0])\n"
+    )
+    assert variable.out.diagnostics.len() == 1
+    assert variable.out.diagnostics[0].code == "aliased_mutable_arguments"
+    literal = walked(
+        "function shift(@a: i64, @b: i64)\n    a @ a + 1\n    b @ b + 10\n\nfunction g()\n    xs: [i64] @ [0, 0]\n    shift(a: @xs[0], b: @xs[1])\n    print(xs[0])\n"
+    )
+    assert literal.out.diagnostics.len() == 0
+
+# Panel 110's two witnesses: both print the right answers today and both are
+# clean under `--sanitize` with the value SHARED, so a root test would have
+# made two working programs wrong.
+test "distinct fields of one record are two places"
+    r = walked(
+        "record P\n    x: i64\n    y: i64\n\nfunction shift(@a: i64, @b: i64)\n    a @ a + 1\n    b @ b + 10\n\nfunction g()\n    p: P @ P(x: 0, y: 0)\n    shift(a: @p.x, b: @p.y)\n    print(p.x)\n"
+    )
+    assert r.out.diagnostics.len() == 0
+
+# A prefix is an overlap: writing `p` and writing `p.x` land on one record.
+test "a place and a place inside it overlap"
+    r = walked(
+        "record P\n    x: i64\n\nfunction shift(@a: P, @b: i64)\n    a.x @ a.x + 1\n    b @ b + 10\n\nfunction g()\n    p: P @ P(x: 0)\n    shift(a: @p, b: @p.x)\n    print(p.x)\n"
+    )
+    assert r.out.diagnostics.len() == 1
+    assert r.out.diagnostics[0].code == "aliased_mutable_arguments"
+
+# A spelling this pass does not decode is undecided, not distinct: the AST
+# keeps a literal's TEXT (`ast.hero:109`) and `0x0` is `0`.
+test "a literal index in another base is not proof of a different element"
+    r = walked(
+        "function shift(@a: i64, @b: i64)\n    a @ a + 1\n    b @ b + 10\n\nfunction g()\n    xs: [i64] @ [0, 0]\n    shift(a: @xs[0], b: @xs[0x0])\n    print(xs[0])\n"
+    )
+    assert r.out.diagnostics.len() == 1
+    assert r.out.diagnostics[0].code == "aliased_mutable_arguments"
+
+# Three `@` arguments of one cell: every later one is reported against the
+# FIRST, so the count is the number of arguments that have to change.
+test "three @ arguments of one cell are two findings"
+    r = walked(
+        "function bump(@a: i64, @b: i64, @c: i64)\n    a @ a + 1\n    b @ b + 10\n    c @ c + 100\n\nfunction g()\n    n: i64 @ 0\n    bump(a: @n, b: @n, c: @n)\n    print(n)\n"
+    )
+    assert r.out.diagnostics.len() == 2
+    assert r.out.diagnostics[0].message == "`n` overlaps this call's `a` argument — two `@` arguments may not reach one value: each of them copies out, and nothing says which copy-out lands last"
+    assert r.out.diagnostics[1].message == "`n` overlaps this call's `a` argument — two `@` arguments may not reach one value: each of them copies out, and nothing says which copy-out lands last"
+
+# Two cells are two places, and an unlabelled call says so without a label.
+test "distinct cells are clean and an unlabelled pair names no label"
+    clean = walked(
+        "function shift(@a: i64, @b: i64)\n    a @ a + 1\n    b @ b + 10\n\nfunction g()\n    n: i64 @ 0\n    m: i64 @ 0\n    shift(a: @n, b: @m)\n    print(n + m)\n"
+    )
+    assert clean.out.diagnostics.len() == 0
+    bare = walked(
+        "function shift(@a: i64, @b: str)\n    a @ a + 1\n    b @ b + \"x\"\n\nfunction g()\n    n: i64 @ 0\n    shift(@n, @n)\n    print(n)\n"
+    )
+    assert bare.out.diagnostics.len() == 1
+    assert bare.out.diagnostics[0].message == "`n` overlaps an earlier `@` argument of this call — two `@` arguments may not reach one value: each of them copies out, and nothing says which copy-out lands last"
+
+# A nested call is NOT this rule: `outer(@n, k: bump(@n))` keeps both
+# mutations, measured at three shapes, because a call's copy-in happens after
+# its arguments are evaluated. One `@` argument per call, two calls.
+test "an @ argument inside another call's arguments is a different call"
+    r = walked(
+        "function bump(@n: i64) -> str\n    n @ n + 1\n    return \"x\"\n\nfunction outer(@n: i64, k: str)\n    n @ n + 1000\n    _ = k\n\nfunction g()\n    n: i64 @ 0\n    outer(@n, k: bump(@n))\n    print(n)\n"
+    )
+    assert r.out.diagnostics.len() == 0

@@ -1284,9 +1284,20 @@ which is the only thing `@` exists to make visible. Always `advance(@l)`, prefix
 **Copy-out happens always**, including on early `return` and on `?` propagation. This was
 undefined, and undefined means the model will invent something.
 
-**Two `@` arguments of one call may not share a root binding** (panel 010). `shift(a @ n, b @ n)`,
-`shift(a @ p.x, b @ p.x)` and `shift(a @ xs[0], b @ xs[0])` are compile errors, and the diagnostic
-ships the `certain` repair: pass a copy for the second argument. The rule is not a new restriction —
+**Two `@` arguments of one call may not reach one value** (panel 010; the wording, the repair's tag
+and the comparison are panel 110's, and the three examples are re-spelled here because the
+document's own reproducers had stopped parsing). `shift(a: @n, b: @n)`,
+`shift(a: @p.x, b: @p.x)` and `shift(a: @xs[0], b: @xs[0])` are compile errors —
+`error[aliased_mutable_arguments]` — and the diagnostic ships its repair as a **`guess`**: pass a
+copy for one of them. The tag is not a downgrade, it is the rule's own argument turned on the fix.
+This paragraph said `certain` from 2026-08-04 until 2026-09-04, and panel 110's compiler-engineer
+built that repair and ran it: `n: i64 @ 0` / `t: i64 @ n` / `shift(a: @n, b: @t)` prints **1**,
+where the unrepaired program prints 10 and a reference reading gives 11. A machine-applicable fix
+would therefore pick a **third** answer, and CLAUDE.md §9's harness asks an applied `certain` fix
+to compile rather than to mean the same thing, so `--apply` would have turned a 10-program into a
+1-program with CI green. A repair that chooses between the readings whose divergence is the whole
+reason for the refusal cannot be certain; `d.fixes` is a list of alternatives in this compiler, and
+two readings make two guesses. The rule is not a new restriction —
 it is the precondition that makes §4.10's "no aliasing exists anywhere" *true*, because two
 copy-outs landing on one place is aliasing of the destination. Left legal, the call's meaning would
 depend on copy-out order, which nothing specifies: the same program would print 16 under a reference
@@ -1295,9 +1306,17 @@ copy-back with arbitrary order for thirty-three years and then made the overlapp
 Ada 2012 ("known to denote the same object"), because order-dependence "is usually a bug, and in any
 case, is not portable"; Swift (SE-0176) and Hylo forbid it on the same copy-in/copy-out model, and no
 sourced language specifies the order. Since Heroes has no references, every place has exactly one
-root, so comparing roots is a *complete* alias test — no dataflow, no borrow checker. It
-deliberately over-rejects `f(a @ xs[i], b @ xs[j])` with distinct indices; that form is not on the
-closure list and the rule can be relaxed later without invalidating any program. The invariant it
+root and a place is that root plus its steps, so **comparing places step by step is a complete alias
+test** — no dataflow, no borrow checker. **This sentence said *comparing roots* until panel 110, and
+the difference is two working programs**: `shift(a: @p.x, b: @p.y)` and `shift(a: @xs[0], b: @xs[1])`
+reach disjoint memory, print the right answers, and are clean under `--sanitize` with the record and
+the array *shared* — measured, both shapes, and the unshare is why, since the first one takes the
+refcount to 1 and the second moves nothing. §12 holds a refusal to a feature's standard, and those
+two are the programs a root test makes wrong. So two places are distinct at the first step that is
+**decidably** different — two field names, or two indices written as plain decimal digits — and
+overlapping otherwise. That keeps the deliberate over-rejection of `f(a: @xs[i], b: @xs[j])` with
+variable indices, which is the form this paragraph always named; it is not on the closure list and
+the rule can be relaxed later without invalidating any program. The invariant it
 buys the backend is worth stating: **`@` parameters never alias**, so a direct-pointer lowering and
 `restrict` stay legal.
 
