@@ -2411,10 +2411,12 @@ in `tests/golden/`; where it is a measurement, it belongs in `docs/measurements/
 
 **Compile-time evaluation (`comptime`, `constexpr`, CTFE) is examined and
 deliberately *unplaced* — it is neither on this list nor on Part 7's** (panel 039,
-2026-08-12; the long form is `docs/reasoning/003-comptime-and-macros.md`). This
+2026-08-12; the long form is `docs/panel/039-comptime-and-part-6.md`, whose
+§ Appended 2026-09-04 tables the seven capabilities the word bundles). This
 paragraph exists so the word is greppable: an answer reachable only from a
-reasoning note is uncitable under CLAUDE.md §1, and that is exactly how the
-question came to be asked twice. The row above does **not** cover it — three
+session note is uncitable under CLAUDE.md §1, and that is exactly how the
+question came to be asked twice — the note that held the table was retired on
+2026-09-04 and the table moved into the sitting for this same reason. The row above does **not** cover it — three
 judges found that reason false of comptime, and its author is the source: Zig has
 comptime *so that* macros are unnecessary, which runs the implication the other
 way. Nothing on the closure list (§1.0) needs it; the strongest case in a language

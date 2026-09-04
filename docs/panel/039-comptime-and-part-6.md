@@ -302,3 +302,63 @@ The limit is the 2026-08-12 blanket's limit: a yes settles that the resolution
   compile-time evaluator would close: the gaps are a decoder's width, an
   overflow guard, Option/tuples/no-ops as shapes, and two missing
   spellings (`\r`, byte-to-str) — none is a constant a comptime could fold.
+
+## Appended 2026-09-04 — the seven capabilities, moved here from the retired reasoning note
+
+The note this sitting was convened from was retired on 2026-09-04 by author
+instruction, with the rest of `docs/reasoning/`. Its text stands in the git
+history at `git show 8d68fa55:docs/reasoning/003-comptime-and-macros.md`. **Two
+blocks move here rather than into the record**, because two living documents cite
+them by line — `docs/ROADMAP.md` and `docs/work/SCHEDULED.md` both send a reader
+to the C4 row for the only place reflection's refusal is written down — and
+because `design.md`'s Part 6 paragraph calls this file's long form the answer to
+*"an answer reachable only from a reasoning note is uncitable under CLAUDE.md
+§1"*. Leaving them in a deleted file would have made that sentence false about
+itself. The line numbers the citations used are `003:89` for the C4 row and
+`003:194` for nothing in this file; the wording is unchanged.
+
+### Seven capabilities under one word
+
+| | capability | what Heroes has | what actually refuses it |
+|---|---|---|---|
+| C1 | fold a constant expression | the surface, unrestricted; no evaluator | `CLAUDE.md` §13 + panel 037 — an optimisation with no measured need. **Part 6 does not touch it** |
+| C2 | run a function at compile time | nothing | Principle 0. **Part 6 does not touch it** |
+| C3 | types as compile-time values | §4.12 generics, spent the other way | §4.12 + panel 029. **Part 6 does not touch it** |
+| C4 | reflection over types | field-walking `eq`/`hash`, generated, at zero surface cost | Part 6 — but the **Ruby row**, not the Macros row |
+| C5 | conditional compilation | `runtime/hero_os.h` absorbs target differences | Part 6's Macros row, literally |
+| C6 | macros proper | nothing, refused three deep | Part 6's Macros row. **Zig has no macros either** |
+| C7 | read a header at compile time | delegation to clang: panel 036 for signatures, panel 038 for values | already answered, at +28 spec tokens |
+
+The column that matters is the last: **for four of seven, the thing that refuses
+it is not Part 6.** Answering the author's question with "Part 6 says no" would be
+right about C5 and C6, wrong about C4's reason, and simply unresponsive about C1,
+C2, C3 and C7. That is the taxonomy this sitting's § What all five agree on
+records as needing seven rows where a one-line Part 6 form admits one.
+
+**The C4 row is the citation two living documents depend on**: reflection over
+types is refused by Part 6's Ruby row and not by the Macros row, which is why
+`M-reflection-verdict` was scheduled as a milestone whose deliverable is a
+ruling. The Ruby row's own line number is deliberately not repeated here — it has
+moved twice since the note was written, and `grep` reaches it.
+
+### And the measured pain is disjoint from C1 and C2
+
+Against `docs/measurements/005`'s target — the `typo-digit` operator, **5 mutants
+found and 0 killed**, all five of them C header values hand-copied into Heroes —
+the alternatives are:
+
+| answer | sites | spec Δ | new pass | new evaluator |
+|---|---|---|---|---|
+| write `10000 + 2` in today's body | 5 → 5 | 0 | no | no |
+| panel 038's `extern constant` | **5 → 0** | +28 | no | no |
+| a restricted (`const fn`-shaped) evaluator | 5 → 5 | > 0 | yes | yes |
+| do nothing | 5 → 5 | 0 | no | no |
+
+The third row is the finding. **A restricted evaluator closes none of the five
+sites**, because the number is still hand-copied: the authority a header holds is
+not something an evaluator can consult. So C1 and C2 and the measured pain are
+**disjoint**, which is the sentence `design.md`'s Part 6 paragraph compresses into
+*"§4.19's `extern constant` answers that by computing nothing"*. Re-measured at
+`2ac0403` after the merge: `typo-digit` **0 sites**, corpus 1252 mutants, 93% /
+78% — sites 5 → 0, the number `docs/measurements/005` asked to be reported rather
+than the rate.

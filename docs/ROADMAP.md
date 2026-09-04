@@ -64,7 +64,7 @@ M-separate-compilation already did.
 | The compiler | **52,512 lines** of Heroes in **178** modules across **10 directories** and 37 flat files · the seed **721,238** lines of generated C — **125,566 fewer than yesterday**, because panel 106's repair deleted the exit sweep's own temporaries |
 | The spec | **3750** tokens of a hard 4096 · headroom **346** · runtime ABI **20** |
 | Records | sittings **106** · journals **33** · measurements **16** · examples **44** programs, 108 files, 505 `test` blocks · open defects **1** (`docs/work/DEFECTS.md`, 011: panel 010's refusal was ratified 2026-08-04 and is not in the compiler) · the site **46** pages, 13 doc chapters per edition |
-| Waiting on the author | **no open decision** — `docs/work/DECIDE.md` is at zero, measured 2026-09-04, with panels 106 to 109 all ratified; CLAUDE.md § Commands says zero is a symptom to check rather than an achievement, and what it means here is that the stack question left the list for a milestone (row 36) · **28** in `SCHEDULED.md`, every one naming a row of the table above since 2026-09-04 · 302 in `LEARN.md` (never a gate) · an **outstanding veto** of the rule that stands (`docs/panel/101` R3) |
+| Waiting on the author | **4 decisions**, all four spec silences recovered from the panel watch list when it was retired 2026-09-04 — whether the spec owes a sentence for `T??`'s refusal, a `()` row in the type table, a sentence on what a `constant`'s body may hold, and whether a parameter list may break across lines. Three of the four were queued on 2026-08-04 and never decided; one sitting is recommended for all four. `DECIDE.md` had reached zero the same morning, with panels 106 to 109 all ratified · **32** in `SCHEDULED.md`, every one naming a row of the table above since 2026-09-04 · 302 in `LEARN.md` (never a gate) · an **outstanding veto** of the rule that stands (`docs/panel/101` R3) |
 
 Every number re-measured 2026-09-04. **The seed fell 125,566 lines with no feature removed** — 58.5% of every frame was bookkeeping nobody read (`docs/measurements/015`).
 
@@ -255,7 +255,7 @@ row number, because a reorder moves a number and never a name (CLAUDE.md §14).
   once**, in two sessions, and the table says so rather than hiding one.
 - **M-core-packages** and **M-web-framework** — **scheduled by author instruction
   2026-09-03**, the same evening, out of a reasoning session
-  (`docs/reasoning/005-packages-in-place-of-a-standard-library.md`): *"I would like
+  (`DESIGN-LOG.md:537`, which carries what it measured): *"I would like
   to have every tool needed to build a web framework in the style of Rails or
   Django, or even thinner, like Go, Echo or FastAPI"*, and then, when a single
   toolkit was proposed, *"I picture several packages that combine, and then the
@@ -274,10 +274,11 @@ row number, because a reorder moves a number and never a name (CLAUDE.md §14).
   instruction** — *"let us do a big think about the roadmap and about the
   things in decide and scheduled too … let us judge whether there are steps we
   have not considered so far … then we reorder them all in a very logical order"* — out
-  of a reasoning session (`docs/reasoning/006-what-the-chain-lacked.md`). Three
+  of a reasoning session (`DESIGN-LOG.md:539`). Three
   faults in the order were measured and each moved a row: the language's one
   scheduled ruling sat at row 41, behind the packages, the framework, QBE and
-  both tools, so tens of thousands of lines of Heroes would have been written
+  both tools, so **51,788 lines of Heroes in 178 modules** — the size of the one
+  body of that kind today, measured 2026-09-03 — would have been written
   before it; Part 7 item 1 — closures, *"v1.5, immediately after the first
   running program"*, and that program ran on 2026-08-04 — had no row at all while
   M-web-framework's entry planned its middleware around the absence; and
@@ -806,8 +807,10 @@ branch: a measured Part 11 effect, or a §1 argument the panel accepts.
 (`design.md:2608-2613`): the one-line helpers that exist to be passed around,
 counted with a grep over `selfhost/` and `examples/` at the opening — that number
 was not taken the night this was scheduled and is not guessed here. The
-watch-list condition panel 013's ffi-pragmatist left
-(`docs/panel/OPEN-QUESTIONS.md:33-35`): a capturing closure is a record plus a
+condition panel 013's ffi-pragmatist left
+(`docs/panel/013-function-type-marker.md:185-189`, which is where the sitting
+itself wrote it; the watch list that also carried it was retired 2026-09-04):
+a capturing closure is a record plus a
 pointer, so the type system must distinguish capture-free at the C boundary —
 against `selfhost/emit/ctype.hero:375-380`, which today emits a function value as
 a bare C function pointer *"because v1 has no closures"*, and that is what makes
@@ -915,9 +918,10 @@ It stood at row 41, after the tools and before the two books, because a book is 
 expensive consumer: a surface form that lands after M-guide-book rewrites chapters
 in two languages, while one that lands after M-vscode-extension adds a rule to a
 grammar file. On 2026-09-03 it moved to row 36, before M-core-packages, because the
-packages and the framework are a larger consumer still — tens of thousands of lines
-of Heroes written against the spec, and a form that lands after them is a form they
-were written without (§ Who scheduled what; `docs/reasoning/006`). The book's
+packages and the framework are a larger consumer still — 51,788 lines of Heroes
+in 178 modules is the size of the one body of that kind today, measured
+2026-09-03, and a form that lands after them is a form they
+were written without (§ Who scheduled what; `DESIGN-LOG.md:539`). The book's
 argument holds and is now the second reason. CLAUDE.md §9
 is the bill a new form arrives with — the formatter, every `--dump-<stage>` printer,
 `heroes mutate`, the diagnostics that quote a program back, and `heroes measure`
@@ -934,10 +938,13 @@ feature never considered (*"reflection, say, just as an example"*), and a
 with `grep -rIn -i reflect` over design.md, DESIGN-LOG, the panels and the
 reasoning notes: three mentions and no ruling. Panel 018 (`docs/panel/018:99`)
 calls an attribute/reflection system *"new semantics with no compiler need
-(Principle 0) adjacent to forsworn Part 6 territory"*; `docs/reasoning/003:89`
-files *reflection over types* (C4) under Part 6's Ruby row;
-`docs/reasoning/005:194` notes that FastAPI's decorators and type-driven
-validation *"need reflection Heroes has not got"*. None is a Part 6 row with a
+(Principle 0) adjacent to forsworn Part 6 territory"*; panel 039's C4 row
+(`docs/panel/039-comptime-and-part-6.md` § Appended 2026-09-04) files
+*reflection over types* under Part 6's **Ruby** row rather than its Macros row;
+and the packages session noted that FastAPI's decorators and type-driven
+validation *"need reflection Heroes has not got"* (`docs/work/DONE.md`, its
+2026-09-04 entry — the reasoning note that held both was retired that day and
+the C4 table moved into the sitting that had cited it). None is a Part 6 row with a
 falsifier, so today the refusal is uncitable (CLAUDE.md §1) and a sitting could be
 convened on it as an open question — the shape §1 warns against.
 
@@ -968,9 +975,11 @@ items *"until the Principle 0 closure list compiles itself"*; that was
 were **seven**: 5 `alias` (`design.md:2457`), 6 doctests (`:2467`), 8 traits
 (`:2469`), 9 variant constructors as values (`:2472`), 11 the `raw` module
 (`:2502`, Part 9), 14 declaration visibility (`:2562`, costed at panel 033 and
-left to *"a count"*), 16 symmetric variant syntax (`:2585`, *"v2"*). Two more sit
-on the watch list with no home at all: raw string literals
-(`docs/panel/OPEN-QUESTIONS.md:74-79`, Part 8 wart 15) and printing without a
+left to *"a count"*), 16 symmetric variant syntax (`:2585`, *"v2"*). Two more sat
+on the panel watch list with no home at all until it was retired on 2026-09-04,
+and this milestone is the home they got: raw string literals (Part 8 wart 15,
+`design.md:2673` — panel 008's own implementation found that `"C:\temp"` cannot be
+made loud, because `\t` is legal) and printing without a
 trailing newline (wart 16). Items 1, 7 and 12 have their own rows above; item
 10's C-width vocabulary and conditional compilation are questions (v) and (vi)
 of M-core-packages' opening sitting and stay there; item 13 is
@@ -1211,6 +1220,18 @@ the message the separate-heap model wants, small and copied once
 over a database — served over HTTP, on the three platforms. Its full brief is
 written at M-core-packages' close, when the packages exist and what a framework
 must add is measured rather than guessed.
+
+**The question the brief has to answer, in the falsifiable form the packages
+session left it in** (2026-09-03, recorded here on 2026-09-04 because the note
+that held it was retired and this is the only sentence of it that was not
+already somewhere): **whether a framework with no closures reaches Echo's level
+or collapses into `net/http` itself.** Middleware is planned *"as a chain of
+functions, because v1 has no closures"*, and a chain of named top-level
+functions that cannot capture may leave the framework with nothing to add over
+the package it wraps — in which case the honest outcome is one package and no
+framework. It is scored against the running application rather than argued, and
+M-closures-verdict sits eight rows earlier precisely so its answer is known
+first.
 
 ### M-doc-generator — `heroes doc`
 

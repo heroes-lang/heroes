@@ -493,8 +493,8 @@ project that will become open source"*). Every rule in this file is anchored to
 the author's own words, because a quotation binds where a summary does not, and
 those words arrive in Italian. Until this instruction they were written down as
 spoken, on a doctrine `docs/book/README.md` states in one line — *quoted speech
-is not an artifact* — which `docs/reasoning/README.md` then cited as precedent
-for its own carve-out. **Measured 2026-09-04, that loophole had let 241 Italian
+is not an artifact* — which the reasoning notes' README then cited as precedent
+for its own carve-out (that directory was retired on 2026-09-04, §14). **Measured 2026-09-04, that loophole had let 241 Italian
 quotations into the repository, 19 of them in this file** — in the section whose
 first line says everything written is English. The doctrine is retired in all
 three places: quoted speech is an artifact like any other. What is quoted is
@@ -642,11 +642,25 @@ itself.
 ## 14. Documentation duty + git
 A step is not done without a commit (`M-<name> step <k>: <what>`). Per milestone:
 journal (3 sections) + one story beat in `docs/book/beats.md` + a tag (pushed
-`--follow-tags`) + ROADMAP status. Per decision: a DESIGN-LOG line. Per
-reasoning session — a conversation whose work is questions about the project,
-with no file of code, spec or design modified: a note in `docs/reasoning/`
-(its rules, its template and what does *not* qualify live in that directory's
-README, their only copy) + its own commit. The milestone-close checklist lives
+`--follow-tags`) + ROADMAP status. Per decision: a DESIGN-LOG line.
+
+**A reasoning session leaves no note of its own** — a conversation whose work is
+questions about the project, with no file of code, spec or design modified. It
+had a directory of notes from 2026-08-10 until **2026-09-04**, when the author
+retired it after seven (*"I want to remove it and turn its content into DONE, or
+DECIDE plus a panel where needed, or even into ROADMAP milestones where needed.
+All this work goes in the direction of simplifying the docs directory"*). Where
+the parts go is where they went anyway: what the session **settled** is an entry
+in `docs/work/DONE.md`, what it **left open** is an item in `docs/work/DECIDE.md`
+if it asks what should be true or in `docs/work/SCHEDULED.md` at an open
+milestone if it is work, a **concept** it explained is an entry in
+`docs/glossary/`, a **question worth re-asking** is a line in
+`docs/learn/LEARN.md`, a **change to the language** is `/panel`, and a **decision
+taken** is a DESIGN-LOG line. What the directory alone had held was the path
+between those, and the path is the git history. Measured on the day it went:
+**31 of its 32 hand-offs had already landed** in the artifacts above, and the
+last live thing it carried — a table two documents cited by line — moved into the
+sitting that cited it. The milestone-close checklist lives
 in `/step` — its only copy. The repo pushes to `origin`
 (github.com/heroes-lang/heroes, moved there from github.com/giuseppearici/heroes-lang
 on 2026-08-30 — every old link redirects, and the one act that would kill those
@@ -695,10 +709,12 @@ home; `docs/ROADMAP.md` § The names carries the map and cites this.
 - **Appending to a dated record uses that record's vocabulary**, with the new name
   in parentheses on first use — `scored at M8a close (M-module-namespace)`. The
   record is never rewritten: `docs/panel/`, `DESIGN-LOG.md`, `docs/journal/`,
-  `docs/measurements/`, `docs/work/DONE.md`, `docs/book/beats.md`, `docs/reasoning/`,
+  `docs/measurements/`, `docs/work/DONE.md`, `docs/book/beats.md`,
   `tests/golden/`, every commit subject and the twelve legacy tags keep the numbers.
   (The list named a defects directory until 2026-09-03; its seven files are six
-  entries in `docs/work/DONE.md` and one in `docs/work/DEFECTS.md` now, §3.)
+  entries in `docs/work/DONE.md` and one in `docs/work/DEFECTS.md` now, §3. It
+  named a reasoning directory until 2026-09-04; its seven notes are seven entries
+  in `docs/work/DONE.md`.)
 
 ## 15. Working instructions that lived in the assistant's memory until 2026-09-03
 Each of these was an author instruction kept in a per-machine memory file until

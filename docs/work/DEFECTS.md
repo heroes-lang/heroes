@@ -22,7 +22,7 @@ entry, not decoration.
 
 Format: `- [ ] **NNN — <title>** | <date, found by> | <status> | <where it came from> | <severity>`, then the body.
 
-- [ ] **011 — two `@` arguments sharing one root compile and run, and design.md has promised a compile error since 2026-08-04** | 2026-09-04, found while retiring `docs/panel/OPEN-QUESTIONS.md`, whose entry claimed panel 010 had closed it | **open**, measured and not repaired: the repair is the checker's and this session's scope was the record | panel 010, ratified 2026-08-04 (`DESIGN-LOG.md:43`, `docs/work/DONE.md:91`), written into `design.md:1287-1289` | **the class this language exists to delete**: exit 0, and the answer depends on which reading of §4.8 the reader assumes
+- [ ] **011 — two `@` arguments sharing one root compile and run, and design.md has promised a compile error since 2026-08-04** | 2026-09-04, found while retiring the panel watch list (deleted 2026-09-04), whose entry claimed panel 010 had closed it | **open**, measured and not repaired: the repair is the checker's and this session's scope was the record | panel 010, ratified 2026-08-04 (`DESIGN-LOG.md:43`, `docs/work/DONE.md:91`), written into `design.md:1287-1289` | **the class this language exists to delete**: exit 0, and the answer depends on which reading of §4.8 the reader assumes
 
   **The reproducer**, and it is design.md's own first example in today's spelling:
 
@@ -83,9 +83,13 @@ Format: `- [ ] **NNN — <title>** | <date, found by> | <status> | <where it cam
   (`selfhost/resolve/writes.hero`) holds each argument alone to the rule of the
   left of `@`, while `selfhost/check/walk.hero:1459` compares argument *labels*
   and not roots. Panel 010 R6 assigned the work to *"the routine that already
-  builds the label→argument map for the same-typed-argument rule"*, at M3c — an
-  id that is now `M-data-declarations`, closed. **`grep -n "M3c" docs/work/DONE.md`
-  returns nothing**: the implementation was never recorded as done or as owed.
+  builds the label→argument map for the same-typed-argument rule"*, at the
+  milestone now named `M-data-declarations`, which closed 2026-08-12. **The
+  record carries no entry for that assignment** — searched `docs/work/DONE.md`
+  for the sitting's own numbered id and for the name: the implementation was
+  never recorded as done or as owed. (The numbered spelling is deliberately not
+  repeated here: CLAUDE.md §14 keeps identifiers out of a living file, and the
+  net's `records/numbered` check caught this sentence's first draft.)
 
   **A live golden already asserts the rule as if it existed**:
   `tests/golden/run/inout-through-paths-of-a-cell.hero:10` says two `@` arguments
