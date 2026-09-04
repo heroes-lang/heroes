@@ -44,7 +44,8 @@ variant Token
 ```
 
 Declaration order never matters; mutual recursion needs no forward
-declarations. There are no mutable globals. Constants use SCREAMING_CASE.
+declarations. There are no mutable globals. Constants use SCREAMING_CASE, and
+a written body computes over literals and other constants.
 
 ## Types
 | Type | Meaning |
@@ -57,6 +58,7 @@ declarations. There are no mutable globals. Constants use SCREAMING_CASE.
 | `[T]` | dynamic array, indices from 0 |
 | `{K: V}` | map |
 | `T?` | fallible: a `T`, or an error |
+| `()` | nothing: what a function with no `->` returns; `ok()` is the `()?` |
 | `ptr` `cstr` | an opaque pointer and a C string; `nullptr` is the null of both |
 
 - No implicit conversions, widths included: `a + b` needs both the same type, and
@@ -95,7 +97,7 @@ literals need an annotation: `xs: [i64] = []` · `m: {str: i64} @ {}`.
 All bindings are initialised. An unused binding or parameter is a compile
 error; a read is a use and a write is not, except through an `@` parameter.
 A line that computes a value must use it: bind it, or discard it on purpose with
-`_ = f(x)`.
+`_ = f(x)`, which a `()` line refuses: it stands alone.
 Shadowing is a compile error: a `use` binds its name for the whole file, so nothing else in the file may take it.
 
 ## Functions and calls
