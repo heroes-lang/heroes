@@ -858,3 +858,16 @@ days and a memory pointing at it carried a dead path — which is why they are
 named here, where the dead-citation check reads. **CI stays the judge; these two
 are the hunt**, and a platform fact that has not been run on one of them is an
 inference (§1), whatever the comment around it says.
+
+**And a program that declares an `extern` runs its Linux leg under
+`--sanitize`** (author instruction 2026-09-04, *"write the sentence yourself,
+then convene the sitting"*, after panel 108 named the instrument; the narrow
+form was recommended and taken). LeakSanitizer exists on that leg and on no
+other (§7), so a leak in a C binding is invisible on this Mac in all three
+configurations. Measured 2026-09-04, when `examples/ledger/` leaked 40 bytes per
+refused statement: green here, red in CI, and the only instrument that could see
+it was the one this sentence names. It is narrow on purpose: a program without an
+`extern` cannot leak from the C side, because its own allocations are counted by
+`hero_runtime_check_leaks()` on every platform, so the leak the Mac cannot see
+enters through an `extern` and nowhere else — the wide form would cost 44
+programs a run that concerns 8 and catch nothing more.
