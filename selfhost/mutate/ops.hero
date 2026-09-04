@@ -40,6 +40,7 @@ function operators() -> [Operator]
         Operator(id: "drop-question", imitates: "forgotten error propagation")
         Operator(id: "typo-digit", imitates: "a one-digit slip in a number copied from elsewhere")
         Operator(id: "boolean-twin", imitates: "`&` for `&&`, the habit C and Java leave behind")
+        Operator(id: "local-takes-a-module", imitates: "a local wearing the name a `use` bound")
     ]
 
 function known(id: str) -> bool
@@ -110,14 +111,23 @@ function apply(id: str, name: str, text: str) -> [str]
 
     if id == "boolean-twin"
         return edits.boolean_twin(a, s)
+
+    if id == "local-takes-a-module"
+        return edits.local_takes_a_module(a: a, s: s, uses: parsed.uses)
     return none
 
 test "the table is the list, and the count is read off it"
-    assert operators().len() == 13
+    # 13 -> 14 on 2026-09-04: `local-takes-a-module`, which panel 102 asked
+    # for and which was deferred on purpose until the corpus was wide enough
+    # for the number to mean something — adding an operator moves the
+    # DENOMINATOR of the thesis's own score, so the discontinuity is spent
+    # once (`docs/measurements/014` is the thirteen-operator baseline).
+    assert operators().len() == 14
     assert known("swap-args")
     assert known("boolean-twin")
+    assert known("local-takes-a-module")
     assert !known("swapargs")
-    assert ids().len() == 13
+    assert ids().len() == 14
     assert ids()[0] == "swap-args"
 
 test "a program that does not parse yields no mutants at all"

@@ -1,0 +1,224 @@
+# Counting what arrives on standard input — the corpus's first program that
+# is FED rather than told where to look (spec § FFI; design.md §1.11).
+#
+# Corpus material (CLAUDE.md §9), M-corpus-depth. **Measured before it was
+# written: no program in `examples/` read its standard input, and every
+# other language's example suite has one** — Wren spells it `// stdin:` in
+# the program itself, and Go, Rust and Zig all carry cases fed from a file.
+# Eight corpus programs read a file whose path they were given; that is a
+# different thing, and the difference is exactly what a shell pipeline is.
+#
+# WHAT HAD TO EXIST FIRST, and it was not this program. The harness spawned
+# every child with two streams — stdout and stderr, because those are what a
+# golden DIFFS — and nothing for the third. The scheduling item that asked
+# for this set its own gate: *build it only if the price is a file handle*.
+# It was measured at one `open` plus one `dup2` on POSIX, and one
+# `CreateFileA` on the Windows arm where the inherited handle already had a
+# probe around it — so it was built rather than filed, and
+# `tests/harness/shell.hero::run_fed` is the result. `main.stdin` beside
+# `main.args` is how a corpus program asks to be fed.
+#
+# **AND THE LANGUAGE HAS NO STDIN**, which is the second half of why this
+# program is shaped the way it is. `spec` § Built-ins gives `read_file`,
+# `write_file`, `args` and `exit`; nothing reads a stream. So the reading is
+# C's — `fgets` over `stdin` from `<stdio.h>` — and §1.11 is the whole
+# argument for that: everything beyond this document comes from C, and a
+# program that needs a byte from a pipe reaches for the FFI like any other.
+#
+# It is also the corpus's cheapest FFI program by design: one header, one
+# function, no `link`. `sqlite/`, `ledger/`, `curl/`, `raylib/` and `sdl/`
+# all skip on a machine without their library; this one cannot skip
+# anywhere, because `stdio.h` is the one header every C toolchain has. So
+# the corpus keeps a program that exercises the FFI on EVERY leg, including
+# the Windows one where four of the six others are skipped.
+
+extern "stdio.h"
+    # `char *fgets(char *s, int n, FILE *stream)` — and the two things this
+    # binding has to say out loud. `stdin` is a `FILE *`, which is a `ptr`
+    # here; there is no way to name it from Heroes, so the group binds a
+    # tiny C helper's job instead: `getchar` needs nothing named at all.
+    #
+    # **`getchar` and not `fgets`**, and that is a measured choice rather
+    # than a simplification: `fgets` wants a buffer this language cannot
+    # give it — a `str` is immutable and a `[u8]` is not a `char *` — so
+    # binding it would need a `record` with a fixed array field and a
+    # `partial` read back out. One byte at a time costs a C call per byte
+    # and buys a binding a reader can check against the header in one line.
+    function getchar() -> i32
+
+constant END_OF_FILE: i64
+    0 - 1
+
+# Everything on standard input, as a `str`. **The bytes are validated on the
+# way in**: `getchar` answers an `int`, C's `char` may be signed, and a byte
+# above 127 arrives as a number this program must not paste into a `str`
+# blindly — `spec:56` says a `str` is UTF-8, and the language means it.
+#
+# A `[u8]` collects them and `join` is not available for bytes, so the text
+# is built one character at a time through `chars`-shaped concatenation.
+# `spec:174` says that is quadratic, and it is: this program is written for
+# input of a size a person types or a test writes, and the comment says so
+# rather than pretending otherwise.
+function fed() -> str?
+    bytes: [i64] @ []
+    going: bool @ true
+
+    while going
+        c = to_i64(getchar()).must()
+
+        if c == END_OF_FILE
+            going @ false
+        else
+            if c < 0 || c > 255
+                return fail("bad_byte", "getchar answered " + c.to_str() + ", which is not a byte")
+            bytes @ bytes.push(c)
+
+    return text_of(bytes)
+
+# The bytes as text, refusing what is not UTF-8 rather than pasting it in.
+# **This program cannot use `validated`** — that takes a `cstr`, which comes
+# from C, and these bytes came from C one at a time. So the check is here,
+# and it is the one every reader of foreign bytes owes.
+function text_of(bytes: [i64]) -> str?
+    out: str @ ""
+
+    for b in bytes
+        if b > 127
+            return fail("not_text", "byte " + b.to_str() + " is not ASCII, and this program reads text")
+        out @ out + one_char(b)
+
+    return ok(out)
+
+# One ASCII byte as a one-character `str`. **Nothing in Heroes turns a byte
+# value into a character** — `examples/checksum/` found the same wall and
+# wrote it down — so this is a table, and the table is the printable range
+# plus the three whitespace bytes a text file holds.
+function one_char(b: i64) -> str
+    if b == 10
+        return "\n"
+
+    if b == 9
+        return "\t"
+
+    if b == 13
+        return "\r"
+
+    if b < 32 || b > 126
+        return "?"
+    return PRINTABLE.slice(from: b - 32, to: b - 31)
+
+constant PRINTABLE: str
+    " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+
+# What the program counts: the three numbers `wc` prints, in `wc`'s own
+# order, so the answer can be checked against a program that has been right
+# since 1971.
+record Count
+    lines: i64
+    words: i64
+    bytes: i64
+
+# **A line is a newline**, which is `wc`'s rule and not "a line of text":
+# a file that does not end in a newline has its last line uncounted by
+# `wc -l` too, and a program that disagreed with that would be answering a
+# different question.
+function counted(text: str) -> Count
+    lines: i64 @ 0
+    words: i64 @ 0
+    inside: bool @ false
+    at: i64 @ 0
+
+    while at < text.len()
+        b = text[at]
+
+        if b == '\n'
+            lines @ lines + 1
+
+        if is_space(b)
+            inside @ false
+        else
+            if !inside
+                words @ words + 1
+            inside @ true
+        at @ at + 1
+
+    return Count(lines: lines, words: words, bytes: text.len())
+
+function is_space(b: u8) -> bool
+    return b == ' ' || b == '\t' || b == '\n' || b == 13
+
+function shown(c: Count) -> str
+    return c.lines.to_str() + " " + c.words.to_str() + " " + c.bytes.to_str()
+
+function main()
+    text = fed()
+
+    if text.is_err()
+        print("this program reads text and that was not text")
+        exit(1)
+    body = text.must()
+    print(shown(counted(body)))
+    print("longest line: ", longest(body).to_str())
+
+# The longest line's length in bytes, which is `wc -L` — a second number
+# from the same walk, so the program answers more than one question about
+# what it was fed.
+function longest(text: str) -> i64
+    best: i64 @ 0
+    here: i64 @ 0
+    at: i64 @ 0
+
+    while at < text.len()
+        if text[at] == '\n'
+            if here > best
+                best @ here
+            here @ 0
+        else
+            here @ here + 1
+        at @ at + 1
+
+    if here > best
+        best @ here
+    return best
+
+test "the three numbers are the ones wc prints, on text checked by hand"
+    # "one two\nthree\n" — two newlines, three words, fourteen bytes.
+    c = counted("one two\nthree\n")
+    assert c.lines == 2
+    assert c.words == 3
+    assert c.bytes == 14
+
+test "a file with no final newline has its last line uncounted, exactly as wc does"
+    assert counted("a\nb").lines == 1
+    assert counted("a\nb").words == 2
+    assert counted("a\nb\n").lines == 2
+
+test "runs of blanks are one separator, and leading blanks start no word"
+    assert counted("   ").words == 0
+    assert counted("  a   b  ").words == 2
+    assert counted("a\t\tb\nc").words == 3
+    assert counted("").lines == 0
+    assert counted("").words == 0
+    assert counted("").bytes == 0
+
+test "the longest line is measured without its newline, and the last one counts"
+    assert longest("ab\ncdef\ngh\n") == 4
+    assert longest("ab\ncdefgh") == 6
+    assert longest("") == 0
+    assert longest("\n\n\n") == 0
+
+test "a byte above ASCII is a refusal rather than a broken str"
+    high: [i64] = [104, 105, 200]
+    assert text_of(high).is_err()
+    fine: [i64] = [104, 105, 10]
+    assert text_of(fine).must() == "hi\n"
+
+test "the printable table is what it says it is, byte for byte"
+    assert one_char(32) == " "
+    assert one_char(65) == "A"
+    assert one_char(97) == "a"
+    assert one_char(126) == "~"
+    assert one_char(10) == "\n"
+    assert one_char(9) == "\t"
+    assert one_char(0) == "?"
+    assert PRINTABLE.len() == 95

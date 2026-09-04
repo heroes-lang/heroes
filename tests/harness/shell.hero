@@ -41,7 +41,7 @@ extern "hero_os.h"
     function hero_run_limit(seconds: i64)
     function hero_run_exe_suffix() -> str
     function hero_os_pid() -> i64
-    function hero_run_go(program: cstr, out_path: cstr, err_path: cstr, @status: i64) -> i64
+    function hero_run_go(program: cstr, in_path: cstr, out_path: cstr, err_path: cstr, @status: i64) -> i64
     function hero_run_discard_path() -> str
     function hero_fs_exists(path: cstr) -> i64
     function hero_fs_is_directory(path: cstr) -> i64
@@ -90,7 +90,26 @@ record Run
 # goldens are about: `check/` diffs stderr while `run/` diffs stdout, and
 # a harness that merged them could not tell a diagnostic from a program's
 # output.
+# **The same call, with a file on the child's standard input.** A sibling
+# rather than a parameter on `run`, and the reason is arithmetic: `run` has
+# 28 call sites and exactly one of them ever wants to feed a program, so a
+# required parameter would make 27 places say "nothing" out loud. `run`
+# below delegates here with the inherit sentinel, which is what the runtime
+# has always meant by an empty path.
+#
+# **Why it exists at all**: the corpus had no program that reads its input,
+# measured while planning M-corpus-depth, and every other language's example
+# suite has one — Wren spells it `// stdin:` in the program itself. The price
+# was measured before it was paid, which is the gate the scheduling item set:
+# one file handle in `hero_run_child` on POSIX and one `CreateFileA` on the
+# Windows arm, where the inherited handle already had a probe around it.
+function run_fed(scratch: str, program: str, words: [str], stdin_path: str) -> Run?
+    return spawned(scratch: scratch, program: program, words: words, in_path: stdin_path)
+
 function run(scratch: str, program: str, words: [str]) -> Run?
+    return spawned(scratch: scratch, program: program, words: words, in_path: "")
+
+function spawned(scratch: str, program: str, words: [str], in_path: str) -> Run?
     # **The scratch directory is this function's to make, not its caller's.**
     # The two streams are files opened under it, so a missing directory makes
     # the child fail to start — and `started: false` then means "the program is
@@ -120,6 +139,7 @@ function run(scratch: str, program: str, words: [str]) -> Run?
     status: i64 @ 0
     code = hero_run_go(
         program: program.cstr(),
+        in_path: in_path.cstr(),
         out_path: out_path.cstr(),
         err_path: err_path.cstr(),
         @status

@@ -187,7 +187,13 @@ function why(got: [score.Program]?) -> str
 test "an unknown operator names the ones there are"
     # The count is read off the table, never written: it said "twelve" in the
     # bootstrap's help while there were thirteen (CLAUDE.md §11).
-    assert ops.ids().len() == 13
+    # 13 -> 14 on 2026-09-04, `local-takes-a-module`. **Two places pinned
+    # this number and only one of them was in `ops.hero`** — the file whose
+    # own comment says the count is read and never written. This assert is
+    # the second, and it is kept rather than deleted for the reason the help
+    # text needs it: the message below quotes the count to the author, so a
+    # table that grew without it would print a lie in a diagnostic.
+    assert ops.ids().len() == 14
     assert !ops.known("swapargs")
 
 test "a module below a nested program's root is checked from the root, the nearest one no higher than the corpus"
