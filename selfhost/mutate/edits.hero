@@ -201,6 +201,53 @@ function shadow(a: ast.Ast, s: source.Source) -> [str]
 
     return out
 
+# **A local wearing a module's name** — the fourteenth operator, and the one
+# panel 102 asked for: a `use` binds its name for the whole file, so nothing
+# else in the file may take it (`spec:99`), and the mistake this imitates is
+# the commonest way to break that rule without noticing. A reader who has
+# `use table` at the top and writes `table = rows.sort()` twenty lines down
+# has not done anything a habit from another language would warn them about.
+#
+# It is the only operator that needs the file's `use` lines, which is why
+# `apply` hands them over. A file with no `use` produces no mutant, and that
+# is a fact about the file rather than a gap: the mistake cannot be made
+# where there is no module name to take.
+#
+# **Panel 102's own payment.** The sitting spent 22 spec tokens on the
+# refusal and paid with a prediction about corpus cost, which §1.6 calls the
+# weaker of its two payments; the stronger one was this operator, deferred
+# on purpose until the corpus was wide enough for the number to mean
+# something. `docs/measurements/014` is the thirteen-operator baseline it is
+# scored against.
+function local_takes_a_module(a: ast.Ast, s: source.Source, uses: [ast.Use]) -> [str]
+    out: [str] @ []
+
+    if uses.len() == 0
+        return out
+
+    for st in a.stmts
+        match st.kind
+            .bind b =>
+                for used in uses
+                    taken = source.span_text(s, used.binding)
+
+                    # A binding that already has that name is not a
+                    # mutation — the program would be unchanged, and an
+                    # operator that hands back the original inflates its own
+                    # denominator with mutants nothing could kill.
+                    if source.span_text(s, b.name) != taken
+                        out @ out.push(sites.edit(s, span: b.name, replacement: taken))
+            .declare d =>
+                for used in uses
+                    taken = source.span_text(s, used.binding)
+
+                    if source.span_text(s, d.name) != taken
+                        out @ out.push(sites.edit(s, span: d.name, replacement: taken))
+            .mutate | .return_stmt | .break_stmt | .continue_stmt      => out @ out
+            .while_stmt | .for_in | .assert_stmt | .expr_stmt | .error => out @ out
+
+    return out
+
 # **Forgotten error propagation**: the `?` dropped. It is the last byte of the
 # expression, checked rather than assumed.
 function drop_question(a: ast.Ast, s: source.Source) -> [str]

@@ -39,7 +39,7 @@ extern "hero_os.h"
     function hero_run_exe_suffix() -> str
     function hero_run_reset()
     function hero_run_arg(word: str)
-    function hero_run_go(program: cstr, out_path: cstr, err_path: cstr, @status: i64) -> i64
+    function hero_run_go(program: cstr, in_path: cstr, out_path: cstr, err_path: cstr, @status: i64) -> i64
     function hero_fs_exists(path: cstr) -> i64
     function hero_fs_is_directory(path: cstr) -> i64
     function hero_fs_mkdir_all(path: cstr) -> i64
@@ -81,6 +81,7 @@ function run(program: str, words: [str], out: str, err: str) -> Ran
     status: i64 @ 0
     code = hero_run_go(
         program: program.cstr(),
+        in_path: "".cstr(),
         out_path: out.cstr(),
         err_path: err.cstr(),
         @status

@@ -226,7 +226,8 @@ void hero_run_arg(HeroStr word);
  * program's answer reads the same number. 0 is no limit and is the default.
  * `parts/run.c` carries the reason this is a runtime call and not a program. */
 void hero_run_limit(int64_t seconds);
-int64_t hero_run_go(const char *program, const char *out_path,
+int64_t hero_run_go(const char *program, const char *in_path,
+                    const char *out_path,
                     const char *err_path, int64_t *status);
 
 #endif /* HERO_OS_H */

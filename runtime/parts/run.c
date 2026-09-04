@@ -207,9 +207,29 @@ static HeroStr hero_run_win_command_line(void) {
 /* The child half of the POSIX arm: redirect, exec, and if the exec fails say so
  * down the pipe before dying. Never returns. */
 static void hero_run_child(const char *program, int report,
-                           const char *out_path, const char *err_path) {
-    /* An empty path leaves the stream alone, so the child writes to whatever
-     * this process was writing to. */
+                           const char *in_path, const char *out_path,
+                           const char *err_path) {
+    /* An empty path leaves the stream alone, so the child reads and writes
+     * whatever this process was reading and writing.
+     *
+     * STDIN JOINED THE OTHER TWO ON 2026-09-04, and the reason it was missing
+     * says something about how a harness grows: the two streams a golden
+     * DIFFS were plumbed first, and nothing had ever needed to feed a program.
+     * The corpus has no program that reads its input, every other language's
+     * example suite has one (Wren spells it `// stdin:`), and the price was
+     * measured before it was paid — one handle here and one on the Windows
+     * arm, which is exactly the gate the scheduling item set. */
+    if (!hero_run_inherits(in_path)) {
+        int in = open(in_path, O_RDONLY);
+        if (in < 0) {
+            int failure = errno;
+            ssize_t ignored = write(report, &failure, sizeof failure);
+            (void)ignored;
+            _exit(126);
+        }
+        dup2(in, 0);
+        if (in > 2) close(in);
+    }
     if (!hero_run_inherits(out_path)) {
         int out = open(out_path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
         if (out < 0) {
@@ -284,8 +304,9 @@ void hero_run_limit(int64_t seconds) {
  *
  * The word list is left in place: `hero_run_reset` is the caller's to call, and
  * the leak gate says so at exit if it forgets. */
-int64_t hero_run_go(const char *program, const char *out_path,
-                    const char *err_path, int64_t *status) {
+int64_t hero_run_go(const char *program, const char *in_path,
+                    const char *out_path, const char *err_path,
+                    int64_t *status) {
     if (hero_run_count == 0) {
         *status = HERO_OS_FAILED;
         return -1;
@@ -330,11 +351,31 @@ int64_t hero_run_go(const char *program, const char *out_path,
      * spawned it is gone. GetFileType is the probe — a live handle has a
      * type, a dead one answers UNKNOWN with an error — and the stand-in is
      * NUL, which is what a detached process's stdin honestly is. */
-    HANDLE in = GetStdHandle(STD_INPUT_HANDLE);
+    HANDLE in = INVALID_HANDLE_VALUE;
     HANDLE nul_in = INVALID_HANDLE_VALUE;
+    HANDLE file_in = INVALID_HANDLE_VALUE;
+
+    /* A named path is a file the child reads; an empty one is the inherited
+     * handle, and the paragraph below is why inheriting needs a probe. */
+    if (!hero_run_inherits(in_path)) {
+        file_in = CreateFileA(in_path, GENERIC_READ, FILE_SHARE_READ, &inherit,
+                              OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+        if (file_in == INVALID_HANDLE_VALUE) {
+            if (!hero_run_inherits(out_path)) CloseHandle(out);
+            if (!hero_run_inherits(err_path)) CloseHandle(err);
+            hero_str_decref(line);
+            *status = HERO_OS_FAILED;
+            return -1;
+        }
+        in = file_in;
+    }
     SetLastError(0);
-    if (in == NULL || in == INVALID_HANDLE_VALUE ||
-        (GetFileType(in) == FILE_TYPE_UNKNOWN && GetLastError() != 0)) {
+    if (file_in == INVALID_HANDLE_VALUE) {
+        in = GetStdHandle(STD_INPUT_HANDLE);
+    }
+    if (file_in == INVALID_HANDLE_VALUE &&
+        (in == NULL || in == INVALID_HANDLE_VALUE ||
+         (GetFileType(in) == FILE_TYPE_UNKNOWN && GetLastError() != 0))) {
         nul_in = CreateFileA("NUL", GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE,
                              &inherit, OPEN_EXISTING, 0, NULL);
         in = nul_in;
@@ -368,6 +409,7 @@ int64_t hero_run_go(const char *program, const char *out_path,
     if (!hero_run_inherits(out_path)) CloseHandle(out);
     if (!hero_run_inherits(err_path)) CloseHandle(err);
     if (nul_in != INVALID_HANDLE_VALUE) CloseHandle(nul_in);
+    if (file_in != INVALID_HANDLE_VALUE) CloseHandle(file_in);
     hero_str_decref(line);
     if (!started) {
         *status = HERO_OS_NOT_FOUND;
@@ -415,7 +457,7 @@ int64_t hero_run_go(const char *program, const char *out_path,
     }
     if (child == 0) {
         close(report[0]);
-        hero_run_child(program, report[1], out_path, err_path);
+        hero_run_child(program, report[1], in_path, out_path, err_path);
     }
 
     close(report[1]);

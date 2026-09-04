@@ -93,8 +93,17 @@ constant EXAMPLES: str
 # `ptr` may not be the element of a `T?` — and the record it wrote around that
 # pointer emitted C clang warned about, which is defect 009, repaired the same
 # hour. Measured the day it landed: 44 directories, 43 with a `main.hero`.
+#
+# 43 -> 44 on 2026-09-04, M-corpus-depth: `examples/tally/`, the first program
+# in this corpus that is FED rather than told where to look. Eight programs
+# read a file whose path they were given; none read standard input, measured
+# while the milestone was planned, and every other language's example suite
+# has one. It cost a file handle in the runtime's spawn on each platform and
+# `main.stdin` beside `main.args` here — the gate its scheduling item set, and
+# the reason it was built rather than filed. Measured the day it landed: 45
+# directories, 44 with a `main.hero`.
 constant LEAST: i64
-    43
+    44
 
 function run_all(scratch: str, compiler: str) -> report.Report?
     r: report.Report @ report.empty()
@@ -224,19 +233,21 @@ function prints(scratch: str, compiler: str, binaries: str, dir: str, @r: report
             detail: "  did not build:\n" + built.default(shell.Run(code: -1, out: "", err: "cannot run the compiler", started: false)).err
         )
         return
-    at_o0 = shell.run_guarded(scratch: scratch, words: shell.both(first: [binary], second: passed))
+    at_o0 = ran(scratch: scratch, dir: dir, words: shell.both(first: [binary], second: passed))
 
     if judged(@r, name: name, level: "-O0", want: want.must(), said: at_o0)
         return
-    at_o2 = shell.run_guarded(
+    at_o2 = ran(
         scratch: scratch,
+        dir: dir,
         words: shell.both(first: [compiler, "run", main], second: passed_after_dashes(dir))
     )
 
     if judged(@r, name: name, level: "-O2", want: want.must(), said: at_o2)
         return
-    sanitised = shell.run_guarded(
+    sanitised = ran(
         scratch: scratch,
+        dir: dir,
         words: shell.both(first: [compiler, "run", main, "--sanitize"], second: passed_after_dashes(dir))
     )
 
@@ -251,6 +262,27 @@ function prints(scratch: str, compiler: str, binaries: str, dir: str, @r: report
     if judged(@r, name: name, level: "--sanitize", want: want.must(), said: sanitised)
         return
     report.keep_pass(@r)
+
+# `main.stdin` beside `main.args`, and the same shape: a file the directory
+# carries, handed to the program on its standard input. A directory without
+# one is fed nothing, which is what the empty path has always meant to the
+# runtime.
+#
+# **Every corpus program is run through this**, not only the one that reads,
+# because a spawn that redirects only sometimes is two spawns and one of
+# them would be untested. `examples/tally/` is the program that made it
+# necessary: measured while planning M-corpus-depth, nothing in this corpus
+# read its standard input, and every other language's example suite has
+# something that does.
+function fed_path(dir: str) -> str
+    path = dir + "/main.stdin"
+
+    if read_file(path).is_err()
+        return ""
+    return path
+
+function ran(scratch: str, dir: str, words: [str]) -> shell.Run?
+    return shell.run_fed(scratch: scratch, program: words[0], words: words, stdin_path: fed_path(dir))
 
 function judged(@r: report.Report, name: str, level: str, want: expectation.Expectation, said: shell.Run?) -> bool
     if said.is_err()
