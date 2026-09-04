@@ -4,7 +4,8 @@ Date: 2026-09-04 · **full panel, five judges** · convened from `/decide` on th
 author's question the same morning (*"shall we put a rule in the compiler to
 avoid these leaks?"*), after CI's Linux leg found `examples/ledger/` leaking.
 
-Status: **provisional — author ratification pending.**
+Status: **RATIFIED 2026-09-04** (author instruction, *"ratify 108"*). See
+§ Author's verdict.
 
 Lane: **full**, and it had to be. The two seats that do not compile settled
 two of the sitting's three questions: the ergonomist showed the habit is real
@@ -297,7 +298,37 @@ example is queued. The `void *` pointee exit-2 defect is open in
 
 ## Author's verdict
 
-Pending.
+**RATIFIED 2026-09-04** (author instruction, *"ratify 108"*, given while the
+CI run for the synthesis commit was still in flight — the author asked the
+same morning for the sitting's question and accepted its answer the same day).
+
+**What the yes settles is a refusal with a named falsifier**, the second in one
+day after panel 107, and the same shape: a `/decide` item recommended a change
+from the cases that provoked it, a sitting measured the population the change
+would judge, and the recommendation did not survive the count. The rule that a
+cell passed as `@` and never read is `unused_binding` is refused in both shapes.
+It comes back only through its falsifier — a measured real defect among the 54
+sites it fires on today, or an out-only `extern` parameter mode, after which the
+rule is GNAT's and correct for that mode.
+
+**What it authorises**: the §4.19 ownership sitting, when someone convenes it,
+carries the author's word that the question is the right one — an `extern`
+declaration stating what C hands the caller to free, with the historian's
+out-only mode recorded as its likely carrier and `design.md:2120-2125`'s
+reserved keyword as its budget line. And defect 010 is the author's to see
+repaired, not a finding to argue about.
+
+**What it leaves to the author's own hand**: the CLAUDE.md § Commands
+sharpening — an FFI program's pre-commit Linux run includes `--sanitize`. The
+contract is amended by author instruction (CLAUDE.md §4), so the sitting
+proposed the sentence and the author writes it; it is recorded in the same
+`/decide` exchange as this ratification.
+
+**And the record keeps what the ratification says about the process.** Two
+sittings in one day each overturned the recommendation that convened them, and
+each recommendation was honest and measured — on a sample of one machine, or of
+four sites. Neither would have been caught by a commit. That is the cost of a
+sitting stated as what it bought, twice.
 
 ## What the lane gave up
 
