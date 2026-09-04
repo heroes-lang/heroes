@@ -63,7 +63,7 @@ M-separate-compilation already did.
 | Milestones closed | 33 of 55 · 33 tags |
 | The compiler | **52,512 lines** of Heroes in **178** modules across **10 directories** and 37 flat files · the seed **721,238** lines of generated C — **125,566 fewer than yesterday**, because panel 106's repair deleted the exit sweep's own temporaries |
 | The spec | **3750** tokens of a hard 4096 · headroom **346** · runtime ABI **20** |
-| Records | sittings **106** · journals **33** · measurements **16** · examples **44** programs, 108 files, 505 `test` blocks · open defects **0** (`docs/work/DEFECTS.md`) · the site **46** pages, 13 doc chapters per edition |
+| Records | sittings **106** · journals **33** · measurements **16** · examples **44** programs, 108 files, 505 `test` blocks · open defects **1** (`docs/work/DEFECTS.md`, 011: panel 010's refusal was ratified 2026-08-04 and is not in the compiler) · the site **46** pages, 13 doc chapters per edition |
 | Waiting on the author | **no open decision** — `docs/work/DECIDE.md` is at zero, measured 2026-09-04, with panels 106 to 109 all ratified; CLAUDE.md § Commands says zero is a symptom to check rather than an achievement, and what it means here is that the stack question left the list for a milestone (row 36) · **28** in `SCHEDULED.md`, every one naming a row of the table above since 2026-09-04 · 302 in `LEARN.md` (never a gate) · an **outstanding veto** of the rule that stands (`docs/panel/101` R3) |
 
 Every number re-measured 2026-09-04. **The seed fell 125,566 lines with no feature removed** — 58.5% of every frame was bookkeeping nobody read (`docs/measurements/015`).
