@@ -3,7 +3,8 @@
 Date: 2026-09-04 · **full panel, five judges** · convened by author instruction
 (*"option (a), with a panel"*) on the item `/decide` had put the same day.
 
-Status: **provisional — author ratification pending.**
+Status: **RATIFIED 2026-09-04** (author instruction, *"ratify and push"*). See
+§ Author's verdict.
 
 Lane: **full**, not the soundness lane, and the choice paid for itself twice.
 The two seats that do not compile produced the sitting's two decisive
@@ -303,7 +304,42 @@ that compiled rather than by argument.
 
 ## Author's verdict
 
-Pending.
+**RATIFIED 2026-09-04** (author instruction, *"ratify and push"*, given
+immediately after the synthesis was read).
+
+**What the yes settles is a refusal, which is the rarer kind of ratification in
+this repository and the one design.md Part 6's preamble holds to the same burden
+of proof as a feature.** Three mechanisms are refused permanently and by name:
+`-Wl,-z,stacksize=` is never shipped on Linux; `main` never runs on a created
+thread; the spec never states a recursion depth. Each refusal carries the
+measurement that produced it in this file, so a later sitting that wants to
+reopen one has to falsify a number rather than re-argue a preference — and each
+has a stated return condition, which is the only amendment path.
+
+**What it authorises** is the per-thread guard, filed in
+`docs/work/SCHEDULED.md` with its cheap half and its unsolved half separated:
+the bounds are small (`hero_stack_bounds()` already asks about the calling
+thread), and the alt-stack on a thread Heroes did not create is an open
+question with three different states of knowledge on three platforms. The yes
+does not pretend that question is answered; it says the direction is right.
+
+**What it does NOT do, deliberately: nothing about the stack size changes.**
+Windows keeps `/STACK:67108864` because it repairs a measured breakage; POSIX
+keeps the machine's answer, which is nine times what the deepest Heroes program
+in existence needs. The 16 MB option the compiler seat priced (500 levels × 26
+KB, Darwin and Windows only, a driver default and never a language promise) is
+recorded and not taken. It stays available: it is the one thing in this sitting
+the author was left a choice about, and taking it later costs one arm in
+`link_flags` and owes the `heroes doctor` row the seat named.
+
+**And the sitting's own recommendation was overturned by the sitting**, which is
+worth keeping visible: the `/decide` item that convened this recommended (a) on
+the reasoning that *"the only thing keeping it from the other two platforms is
+that nobody asked"*. Nobody asking was not the reason. Two of three platforms
+cannot take the flag at all, and the third takes it by overriding its own
+operator. The recommendation was made in good faith from a measurement of the
+Mac alone, and the cost of the sitting is exactly the cost of finding that out
+before it shipped rather than after.
 
 ## What the lane gave up
 
