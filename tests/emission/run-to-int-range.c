@@ -183,18 +183,6 @@ void h_tointrange_main(void) {
     h_0opt_e201354 t66 = {0};
     h_0opt_e201354 t67 = {0};
     h_0opt_e201354 t68 = {0};
-    h_0opt_e201354 t69 = {0};
-    h_0opt_e201354 t70 = {0};
-    h_0opt_e201354 t71 = {0};
-    h_0opt_e201354 t72 = {0};
-    h_0opt_e201354 t73 = {0};
-    h_0opt_e201354 t74 = {0};
-    h_0opt_e201354 t75 = {0};
-    h_0opt_e201354 t76 = {0};
-    h_0opt_e201354 t77 = {0};
-    h_0opt_e201354 t78 = {0};
-    h_0opt_e201354 t79 = {0};
-    h_0opt_e201354 t80 = {0};
     goto bb0;
 bb0:
 #line 20 "tests/golden/run/to-int-range.hero"
@@ -213,15 +201,15 @@ bb0:
     t57 = h6_own6;
 #line 20 "tests/golden/run/to-int-range.hero"
     h6_own6 = t2;
-#line 217 "tointrange.c"
+#line 205 "tointrange.c"
     h_0opt_e201354_release(&t57);
 #line 20 "tests/golden/run/to-int-range.hero"
     t58 = h0_f0;
-#line 221 "tointrange.c"
+#line 209 "tointrange.c"
     h_0opt_e201354_retain(&t2);
 #line 20 "tests/golden/run/to-int-range.hero"
     h0_f0 = t2;
-#line 225 "tointrange.c"
+#line 213 "tointrange.c"
     h_0opt_e201354_release(&t58);
 #line 20 "tests/golden/run/to-int-range.hero"
     t3 = h0_f0;
@@ -261,15 +249,15 @@ bb1:
     t59 = h7_own7;
 #line 21 "tests/golden/run/to-int-range.hero"
     h7_own7 = t13;
-#line 265 "tointrange.c"
+#line 253 "tointrange.c"
     h_0opt_e201354_release(&t59);
 #line 21 "tests/golden/run/to-int-range.hero"
     t60 = h1_f1;
-#line 269 "tointrange.c"
+#line 257 "tointrange.c"
     h_0opt_e201354_retain(&t13);
 #line 21 "tests/golden/run/to-int-range.hero"
     h1_f1 = t13;
-#line 273 "tointrange.c"
+#line 261 "tointrange.c"
     h_0opt_e201354_release(&t60);
 #line 21 "tests/golden/run/to-int-range.hero"
     t14 = h1_f1;
@@ -287,7 +275,7 @@ bb2:
     t7 = h0_f0;
 #line 20 "tests/golden/run/to-int-range.hero"
     t8 = t7.as.err;
-#line 291 "tointrange.c"
+#line 279 "tointrange.c"
     hero_panic_must(t8);
     hero_unreachable();
 bb3:
@@ -315,15 +303,15 @@ bb3:
     t61 = h8_own8;
 #line 22 "tests/golden/run/to-int-range.hero"
     h8_own8 = t23;
-#line 319 "tointrange.c"
+#line 307 "tointrange.c"
     h_0opt_e201354_release(&t61);
 #line 22 "tests/golden/run/to-int-range.hero"
     t62 = h2_f2;
-#line 323 "tointrange.c"
+#line 311 "tointrange.c"
     h_0opt_e201354_retain(&t23);
 #line 22 "tests/golden/run/to-int-range.hero"
     h2_f2 = t23;
-#line 327 "tointrange.c"
+#line 315 "tointrange.c"
     h_0opt_e201354_release(&t62);
 #line 22 "tests/golden/run/to-int-range.hero"
     t24 = h2_f2;
@@ -341,7 +329,7 @@ bb4:
     t18 = h1_f1;
 #line 21 "tests/golden/run/to-int-range.hero"
     t19 = t18.as.err;
-#line 345 "tointrange.c"
+#line 333 "tointrange.c"
     hero_panic_must(t19);
     hero_unreachable();
 bb5:
@@ -369,15 +357,15 @@ bb5:
     t63 = h9_own9;
 #line 23 "tests/golden/run/to-int-range.hero"
     h9_own9 = t33;
-#line 373 "tointrange.c"
+#line 361 "tointrange.c"
     h_0opt_e201354_release(&t63);
 #line 23 "tests/golden/run/to-int-range.hero"
     t64 = h3_f3;
-#line 377 "tointrange.c"
+#line 365 "tointrange.c"
     h_0opt_e201354_retain(&t33);
 #line 23 "tests/golden/run/to-int-range.hero"
     h3_f3 = t33;
-#line 381 "tointrange.c"
+#line 369 "tointrange.c"
     h_0opt_e201354_release(&t64);
 #line 23 "tests/golden/run/to-int-range.hero"
     t34 = h3_f3;
@@ -409,15 +397,15 @@ bb5:
     t65 = h10_own10;
 #line 24 "tests/golden/run/to-int-range.hero"
     h10_own10 = t40;
-#line 413 "tointrange.c"
+#line 401 "tointrange.c"
     h_0opt_e201354_release(&t65);
 #line 24 "tests/golden/run/to-int-range.hero"
     t66 = h4_f4;
-#line 417 "tointrange.c"
+#line 405 "tointrange.c"
     h_0opt_e201354_retain(&t40);
 #line 24 "tests/golden/run/to-int-range.hero"
     h4_f4 = t40;
-#line 421 "tointrange.c"
+#line 409 "tointrange.c"
     h_0opt_e201354_release(&t66);
 #line 24 "tests/golden/run/to-int-range.hero"
     t41 = h4_f4;
@@ -435,7 +423,7 @@ bb6:
     t28 = h2_f2;
 #line 22 "tests/golden/run/to-int-range.hero"
     t29 = t28.as.err;
-#line 439 "tointrange.c"
+#line 427 "tointrange.c"
     hero_panic_must(t29);
     hero_unreachable();
 bb7:
@@ -467,15 +455,15 @@ bb7:
     t67 = h11_own11;
 #line 25 "tests/golden/run/to-int-range.hero"
     h11_own11 = t52;
-#line 471 "tointrange.c"
+#line 459 "tointrange.c"
     h_0opt_e201354_release(&t67);
 #line 25 "tests/golden/run/to-int-range.hero"
     t68 = h5_f5;
-#line 475 "tointrange.c"
+#line 463 "tointrange.c"
     h_0opt_e201354_retain(&t52);
 #line 25 "tests/golden/run/to-int-range.hero"
     h5_f5 = t52;
-#line 479 "tointrange.c"
+#line 467 "tointrange.c"
     h_0opt_e201354_release(&t68);
 #line 25 "tests/golden/run/to-int-range.hero"
     t53 = h5_f5;
@@ -489,61 +477,48 @@ bb7:
     hero_print_bool(t56);
 #line 25 "tests/golden/run/to-int-range.hero"
     hero_print_end();
+#line 481 "tointrange.c"
+    h_0opt_e201354_release(&h0_f0);
 #line 25 "tests/golden/run/to-int-range.hero"
-    t69 = h0_f0;
-#line 495 "tointrange.c"
-    h_0opt_e201354_release(&t69);
+#line 484 "tointrange.c"
+    h_0opt_e201354_release(&h1_f1);
 #line 25 "tests/golden/run/to-int-range.hero"
-    t70 = h1_f1;
+#line 487 "tointrange.c"
+    h_0opt_e201354_release(&h2_f2);
+#line 25 "tests/golden/run/to-int-range.hero"
+#line 490 "tointrange.c"
+    h_0opt_e201354_release(&h3_f3);
+#line 25 "tests/golden/run/to-int-range.hero"
+#line 493 "tointrange.c"
+    h_0opt_e201354_release(&h4_f4);
+#line 25 "tests/golden/run/to-int-range.hero"
+#line 496 "tointrange.c"
+    h_0opt_e201354_release(&h5_f5);
+#line 25 "tests/golden/run/to-int-range.hero"
 #line 499 "tointrange.c"
-    h_0opt_e201354_release(&t70);
+    h_0opt_e201354_release(&h6_own6);
 #line 25 "tests/golden/run/to-int-range.hero"
-    t71 = h2_f2;
-#line 503 "tointrange.c"
-    h_0opt_e201354_release(&t71);
+#line 502 "tointrange.c"
+    h_0opt_e201354_release(&h7_own7);
 #line 25 "tests/golden/run/to-int-range.hero"
-    t72 = h3_f3;
-#line 507 "tointrange.c"
-    h_0opt_e201354_release(&t72);
+#line 505 "tointrange.c"
+    h_0opt_e201354_release(&h8_own8);
 #line 25 "tests/golden/run/to-int-range.hero"
-    t73 = h4_f4;
+#line 508 "tointrange.c"
+    h_0opt_e201354_release(&h9_own9);
+#line 25 "tests/golden/run/to-int-range.hero"
 #line 511 "tointrange.c"
-    h_0opt_e201354_release(&t73);
+    h_0opt_e201354_release(&h10_own10);
 #line 25 "tests/golden/run/to-int-range.hero"
-    t74 = h5_f5;
-#line 515 "tointrange.c"
-    h_0opt_e201354_release(&t74);
-#line 25 "tests/golden/run/to-int-range.hero"
-    t75 = h6_own6;
-#line 519 "tointrange.c"
-    h_0opt_e201354_release(&t75);
-#line 25 "tests/golden/run/to-int-range.hero"
-    t76 = h7_own7;
-#line 523 "tointrange.c"
-    h_0opt_e201354_release(&t76);
-#line 25 "tests/golden/run/to-int-range.hero"
-    t77 = h8_own8;
-#line 527 "tointrange.c"
-    h_0opt_e201354_release(&t77);
-#line 25 "tests/golden/run/to-int-range.hero"
-    t78 = h9_own9;
-#line 531 "tointrange.c"
-    h_0opt_e201354_release(&t78);
-#line 25 "tests/golden/run/to-int-range.hero"
-    t79 = h10_own10;
-#line 535 "tointrange.c"
-    h_0opt_e201354_release(&t79);
-#line 25 "tests/golden/run/to-int-range.hero"
-    t80 = h11_own11;
-#line 539 "tointrange.c"
-    h_0opt_e201354_release(&t80);
+#line 514 "tointrange.c"
+    h_0opt_e201354_release(&h11_own11);
     return;
 bb8:
 #line 24 "tests/golden/run/to-int-range.hero"
     t45 = h4_f4;
 #line 24 "tests/golden/run/to-int-range.hero"
     t46 = t45.as.err;
-#line 547 "tointrange.c"
+#line 522 "tointrange.c"
     hero_panic_must(t46);
     hero_unreachable();
 }

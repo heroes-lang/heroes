@@ -143,9 +143,6 @@ void h_placestorec4_main(void) {
     HeroArrayHeader * t45 = {0};
     HeroArrayHeader * t46 = {0};
     HeroArrayHeader * t47 = {0};
-    HeroArrayHeader * t48 = {0};
-    HeroArrayHeader * t49 = {0};
-    HeroArrayHeader * t50 = {0};
     goto bb0;
 bb0:
 #line 16 "tests/golden/run/place-store-c4.hero"
@@ -154,15 +151,15 @@ bb0:
     t45 = h6_own6;
 #line 16 "tests/golden/run/place-store-c4.hero"
     h6_own6 = t1;
-#line 158 "placestorec4.c"
+#line 155 "placestorec4.c"
     hero_array_decref(t45);
 #line 16 "tests/golden/run/place-store-c4.hero"
     t46 = h0_xs;
-#line 162 "placestorec4.c"
+#line 159 "placestorec4.c"
     hero_array_incref(t1);
 #line 16 "tests/golden/run/place-store-c4.hero"
     h0_xs = t1;
-#line 166 "placestorec4.c"
+#line 163 "placestorec4.c"
     hero_array_decref(t46);
 #line 17 "tests/golden/run/place-store-c4.hero"
     t2 = INT64_C(0);
@@ -252,11 +249,11 @@ bb3:
     t29 = h0_xs;
 #line 32 "tests/golden/run/place-store-c4.hero"
     t47 = h3_xs0;
-#line 256 "placestorec4.c"
+#line 253 "placestorec4.c"
     hero_array_incref(t29);
 #line 32 "tests/golden/run/place-store-c4.hero"
     h3_xs0 = t29;
-#line 260 "placestorec4.c"
+#line 257 "placestorec4.c"
     hero_array_decref(t47);
 #line 32 "tests/golden/run/place-store-c4.hero"
     t30 = INT64_C(0);
@@ -316,18 +313,14 @@ bb7:
     hero_print_int(t44);
 #line 35 "tests/golden/run/place-store-c4.hero"
     hero_print_end();
+#line 317 "placestorec4.c"
+    hero_array_decref(h0_xs);
 #line 35 "tests/golden/run/place-store-c4.hero"
-    t48 = h0_xs;
-#line 322 "placestorec4.c"
-    hero_array_decref(t48);
+#line 320 "placestorec4.c"
+    hero_array_decref(h3_xs0);
 #line 35 "tests/golden/run/place-store-c4.hero"
-    t49 = h3_xs0;
-#line 326 "placestorec4.c"
-    hero_array_decref(t49);
-#line 35 "tests/golden/run/place-store-c4.hero"
-    t50 = h6_own6;
-#line 330 "placestorec4.c"
-    hero_array_decref(t50);
+#line 323 "placestorec4.c"
+    hero_array_decref(h6_own6);
     return;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

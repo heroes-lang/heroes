@@ -46,22 +46,16 @@ function widen(v: i64?) -> i64
         jump bb6
     bb6  default: join    preds bb4, bb5
         $t14: i64 = load $r0
-        $t27: i64? = load $f0
-        decref $t27
-        $t28: i64? = load $f1
-        decref $t28
-        $t29: i64? = load $f2
-        decref $t29
+        decref_slot $f0
+        decref_slot $f1
+        decref_slot $f2
         return $t14
     bb7  must: ok    preds bb1
         $t22: i64? = load $f2
         $t23: i64 = payload $t22 .ok
-        $t30: i64? = load $f0
-        decref $t30
-        $t31: i64? = load $f1
-        decref $t31
-        $t32: i64? = load $f2
-        decref $t32
+        decref_slot $f0
+        decref_slot $f1
+        decref_slot $f2
         return $t23
     bb8  must: abort    preds bb1
         $t20: i64? = load $f2

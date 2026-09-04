@@ -118,7 +118,6 @@ int64_t h_adversarialcontinuesteps_evens_in(HeroArrayHeader * h0_xs) {
     int64_t t21;
     int64_t t22;
     HeroArrayHeader * t23 = {0};
-    HeroArrayHeader * t24 = {0};
     goto bb0;
 bb0:
 #line 8 "tests/golden/ir/adversarial-continue-steps.hero"
@@ -129,11 +128,11 @@ bb0:
     t2 = h0_xs;
 #line 10 "tests/golden/ir/adversarial-continue-steps.hero"
     t23 = h2_xs0;
-#line 133 "adversarialcontinuesteps.c"
+#line 132 "adversarialcontinuesteps.c"
     hero_array_incref(t2);
 #line 10 "tests/golden/ir/adversarial-continue-steps.hero"
     h2_xs0 = t2;
-#line 137 "adversarialcontinuesteps.c"
+#line 136 "adversarialcontinuesteps.c"
     hero_array_decref(t23);
 #line 10 "tests/golden/ir/adversarial-continue-steps.hero"
     t3 = INT64_C(0);
@@ -195,10 +194,8 @@ bb3:
 bb4:
 #line 15 "tests/golden/ir/adversarial-continue-steps.hero"
     t22 = h1_count;
-#line 15 "tests/golden/ir/adversarial-continue-steps.hero"
-    t24 = h2_xs0;
-#line 201 "adversarialcontinuesteps.c"
-    hero_array_decref(t24);
+#line 198 "adversarialcontinuesteps.c"
+    hero_array_decref(h2_xs0);
     return t22;
 bb5:
 #line 13 "tests/golden/ir/adversarial-continue-steps.hero"
@@ -219,7 +216,7 @@ bb6:
 bb7:
 #line 13 "tests/golden/ir/adversarial-continue-steps.hero"
     goto bb5;
-#line 223 "adversarialcontinuesteps.c"
+#line 220 "adversarialcontinuesteps.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

@@ -102,18 +102,17 @@ void h_fficallformat_main(void) {
     HeroStr t2 = {0};
     const char * t3;
     HeroStr t5 = {0};
-    HeroStr t6 = {0};
     goto bb0;
 bb0:
 #line 17 "tests/golden/fixedbugs/ffi-call-format.hero"
     t1 = HERO_STR_LIT(hero_str_1b716d);
 #line 17 "tests/golden/fixedbugs/ffi-call-format.hero"
     t5 = h0_greeting;
-#line 113 "fficallformat.c"
+#line 112 "fficallformat.c"
     hero_str_incref(t1);
 #line 17 "tests/golden/fixedbugs/ffi-call-format.hero"
     h0_greeting = t1;
-#line 117 "fficallformat.c"
+#line 116 "fficallformat.c"
     hero_str_decref(t5);
 #line 18 "tests/golden/fixedbugs/ffi-call-format.hero"
     t2 = h0_greeting;
@@ -121,10 +120,8 @@ bb0:
     t3 = hero_str_cstr(t2);
 #line 18 "tests/golden/fixedbugs/ffi-call-format.hero"
     (void)printf(hero_cstr_nonnull(t3));
-#line 18 "tests/golden/fixedbugs/ffi-call-format.hero"
-    t6 = h0_greeting;
-#line 127 "fficallformat.c"
-    hero_str_decref(t6);
+#line 124 "fficallformat.c"
+    hero_str_decref(h0_greeting);
     return;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

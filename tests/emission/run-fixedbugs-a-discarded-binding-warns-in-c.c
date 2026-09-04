@@ -123,7 +123,6 @@ void h_fixedbugsadiscardedbindingwarnsinc_main(void) {
     int64_t t8;
     int64_t t9;
     HeroStr t10 = {0};
-    HeroStr t11 = {0};
     goto bb0;
 bb0:
 #line 34 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
@@ -135,11 +134,11 @@ bb0:
     t3 = HERO_STR_LIT(hero_str_6bb5e50a);
 #line 38 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
     t10 = h1_s;
-#line 139 "fixedbugsadiscardedbindingwarnsinc.c"
+#line 138 "fixedbugsadiscardedbindingwarnsinc.c"
     hero_str_incref(t3);
 #line 38 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
     h1_s = t3;
-#line 143 "fixedbugsadiscardedbindingwarnsinc.c"
+#line 142 "fixedbugsadiscardedbindingwarnsinc.c"
     hero_str_decref(t10);
 #line 39 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
 #line 42 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
@@ -158,10 +157,8 @@ bb0:
     hero_print_int(t9);
 #line 46 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
     hero_print_end();
-#line 46 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
-    t11 = h1_s;
-#line 164 "fixedbugsadiscardedbindingwarnsinc.c"
-    hero_str_decref(t11);
+#line 161 "fixedbugsadiscardedbindingwarnsinc.c"
+    hero_str_decref(h1_s);
     return;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

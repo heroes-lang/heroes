@@ -123,10 +123,6 @@ h_0opt_e201354 h_mustaborts_half(int64_t h0_n) {
     h_0opt_e201354 t12 = {0};
     h_0opt_e201354 t13 = {0};
     h_0opt_e201354 t14 = {0};
-    h_0opt_e201354 t15 = {0};
-    h_0opt_e201354 t16 = {0};
-    h_0opt_e201354 t17 = {0};
-    h_0opt_e201354 t18 = {0};
     goto bb0;
 bb0:
 #line 19 "tests/golden/run/must-aborts.hero"
@@ -163,29 +159,27 @@ bb1:
     t13 = h1_own1;
 #line 21 "tests/golden/run/must-aborts.hero"
     h1_own1 = t12;
-#line 167 "mustaborts.c"
+#line 163 "mustaborts.c"
     h_0opt_e201354_release(&t13);
 #line 21 "tests/golden/run/must-aborts.hero"
-#line 170 "mustaborts.c"
+#line 166 "mustaborts.c"
     h_0opt_e201354_retain(&t12);
 #line 21 "tests/golden/run/must-aborts.hero"
-    t15 = h1_own1;
-#line 174 "mustaborts.c"
-    h_0opt_e201354_release(&t15);
+#line 169 "mustaborts.c"
+    h_0opt_e201354_release(&h1_own1);
 #line 21 "tests/golden/run/must-aborts.hero"
-    t16 = h2_own2;
-#line 178 "mustaborts.c"
-    h_0opt_e201354_release(&t16);
+#line 172 "mustaborts.c"
+    h_0opt_e201354_release(&h2_own2);
     return t12;
 bb2:
 #line 20 "tests/golden/run/must-aborts.hero"
     t6 = HERO_STR_LIT(hero_str_1d4477);
 #line 20 "tests/golden/run/must-aborts.hero"
     t7 = HERO_STR_LIT(hero_str_7fc615fd);
-#line 186 "mustaborts.c"
+#line 180 "mustaborts.c"
     hero_str_incref(t6);
 #line 20 "tests/golden/run/must-aborts.hero"
-#line 189 "mustaborts.c"
+#line 183 "mustaborts.c"
     hero_str_incref(t7);
 #line 20 "tests/golden/run/must-aborts.hero"
     t8 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t6, .msg = t7}};
@@ -193,19 +187,17 @@ bb2:
     t14 = h2_own2;
 #line 20 "tests/golden/run/must-aborts.hero"
     h2_own2 = t8;
-#line 197 "mustaborts.c"
+#line 191 "mustaborts.c"
     h_0opt_e201354_release(&t14);
 #line 20 "tests/golden/run/must-aborts.hero"
-#line 200 "mustaborts.c"
+#line 194 "mustaborts.c"
     h_0opt_e201354_retain(&t8);
 #line 20 "tests/golden/run/must-aborts.hero"
-    t17 = h1_own1;
-#line 204 "mustaborts.c"
-    h_0opt_e201354_release(&t17);
+#line 197 "mustaborts.c"
+    h_0opt_e201354_release(&h1_own1);
 #line 20 "tests/golden/run/must-aborts.hero"
-    t18 = h2_own2;
-#line 208 "mustaborts.c"
-    h_0opt_e201354_release(&t18);
+#line 200 "mustaborts.c"
+    h_0opt_e201354_release(&h2_own2);
     return t8;
 bb3:
     goto bb1;
@@ -213,7 +205,7 @@ bb3:
 
 #line 23 "tests/golden/run/must-aborts.hero"
 void h_mustaborts_main(void) {
-#line 217 "mustaborts.c"
+#line 209 "mustaborts.c"
     h_0opt_e201354 h0_f0 = {0};
     h_0opt_e201354 h1_f1 = {0};
     h_0opt_e201354 h2_own2 = {0};
@@ -242,10 +234,6 @@ void h_mustaborts_main(void) {
     h_0opt_e201354 t22 = {0};
     h_0opt_e201354 t23 = {0};
     h_0opt_e201354 t24 = {0};
-    h_0opt_e201354 t25 = {0};
-    h_0opt_e201354 t26 = {0};
-    h_0opt_e201354 t27 = {0};
-    h_0opt_e201354 t28 = {0};
     goto bb0;
 bb0:
 #line 24 "tests/golden/run/must-aborts.hero"
@@ -256,15 +244,15 @@ bb0:
     t21 = h2_own2;
 #line 24 "tests/golden/run/must-aborts.hero"
     h2_own2 = t2;
-#line 260 "mustaborts.c"
+#line 248 "mustaborts.c"
     h_0opt_e201354_release(&t21);
 #line 24 "tests/golden/run/must-aborts.hero"
     t22 = h0_f0;
-#line 264 "mustaborts.c"
+#line 252 "mustaborts.c"
     h_0opt_e201354_retain(&t2);
 #line 24 "tests/golden/run/must-aborts.hero"
     h0_f0 = t2;
-#line 268 "mustaborts.c"
+#line 256 "mustaborts.c"
     h_0opt_e201354_release(&t22);
 #line 24 "tests/golden/run/must-aborts.hero"
     t3 = h0_f0;
@@ -294,15 +282,15 @@ bb1:
     t23 = h3_own3;
 #line 25 "tests/golden/run/must-aborts.hero"
     h3_own3 = t12;
-#line 298 "mustaborts.c"
+#line 286 "mustaborts.c"
     h_0opt_e201354_release(&t23);
 #line 25 "tests/golden/run/must-aborts.hero"
     t24 = h1_f1;
-#line 302 "mustaborts.c"
+#line 290 "mustaborts.c"
     h_0opt_e201354_retain(&t12);
 #line 25 "tests/golden/run/must-aborts.hero"
     h1_f1 = t12;
-#line 306 "mustaborts.c"
+#line 294 "mustaborts.c"
     h_0opt_e201354_release(&t24);
 #line 25 "tests/golden/run/must-aborts.hero"
     t13 = h1_f1;
@@ -320,7 +308,7 @@ bb2:
     t7 = h0_f0;
 #line 24 "tests/golden/run/must-aborts.hero"
     t8 = t7.as.err;
-#line 324 "mustaborts.c"
+#line 312 "mustaborts.c"
     hero_panic_must(t8);
     hero_unreachable();
 bb3:
@@ -332,29 +320,24 @@ bb3:
     hero_print_int(t20);
 #line 25 "tests/golden/run/must-aborts.hero"
     hero_print_end();
+#line 324 "mustaborts.c"
+    h_0opt_e201354_release(&h0_f0);
 #line 25 "tests/golden/run/must-aborts.hero"
-    t25 = h0_f0;
-#line 338 "mustaborts.c"
-    h_0opt_e201354_release(&t25);
+#line 327 "mustaborts.c"
+    h_0opt_e201354_release(&h1_f1);
 #line 25 "tests/golden/run/must-aborts.hero"
-    t26 = h1_f1;
-#line 342 "mustaborts.c"
-    h_0opt_e201354_release(&t26);
+#line 330 "mustaborts.c"
+    h_0opt_e201354_release(&h2_own2);
 #line 25 "tests/golden/run/must-aborts.hero"
-    t27 = h2_own2;
-#line 346 "mustaborts.c"
-    h_0opt_e201354_release(&t27);
-#line 25 "tests/golden/run/must-aborts.hero"
-    t28 = h3_own3;
-#line 350 "mustaborts.c"
-    h_0opt_e201354_release(&t28);
+#line 333 "mustaborts.c"
+    h_0opt_e201354_release(&h3_own3);
     return;
 bb4:
 #line 25 "tests/golden/run/must-aborts.hero"
     t17 = h1_f1;
 #line 25 "tests/golden/run/must-aborts.hero"
     t18 = t17.as.err;
-#line 358 "mustaborts.c"
+#line 341 "mustaborts.c"
     hero_panic_must(t18);
     hero_unreachable();
 }

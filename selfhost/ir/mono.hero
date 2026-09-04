@@ -175,9 +175,9 @@ function calls_in(f: containers.Function, generic: {i64: bool}, c: state.Checked
                                 FoundCall(instance: Instance(decl: h.decl, bound: recorded.must()), span: inst.span)
                             )
                         .extern_fn | .builtin_fn | .indirect => continue
-                .lit | .load | .store | .push_owned | .unary | .binary | .cast | .construct => continue
-                .field | .index | .map_get | .len_of | .tag_of | .payload                   => continue
-                .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing    => continue
+                .lit | .load | .store | .push_owned | .unary | .binary | .cast | .construct             => continue
+                .field | .index | .map_get | .len_of | .tag_of | .payload                               => continue
+                .func_ref | .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => continue
 
     return found
 

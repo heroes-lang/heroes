@@ -251,6 +251,14 @@ function equality(c: state.Checked, names: ctype.Names, ty: i64, left: i64, righ
 # function takes its address. The name is not copy: nothing is copied,
 # the references inside just become owned.
 function retain(c: state.Checked, names: ctype.Names, ty: i64, value: i64, keep: bool) -> str?
+    return retain_named(c, names, ty: ty, name: mangle.value(value), keep: keep)
+
+# The same call over a name the caller already rendered — a slot's, since
+# panel 106, where it used to be a temporary loaded from that slot. **One
+# function and not two**, because the verb and the `&` are the shape a
+# reader of the emitted C recognises, and two places that build it could
+# disagree about which side the ampersand goes on.
+function retain_named(c: state.Checked, names: ctype.Names, ty: i64, name: str, keep: bool) -> str?
     found = ctype.satellite_name(names, c, ty: ty)
 
     if found.is_err()
@@ -259,7 +267,7 @@ function retain(c: state.Checked, names: ctype.Names, ty: i64, value: i64, keep:
 
     if keep
         verb @ "retain"
-    return ok(found.must() + "_" + verb + "(&" + mangle.value(value) + ")")
+    return ok(found.must() + "_" + verb + "(&" + name + ")")
 
 ## Tests
 

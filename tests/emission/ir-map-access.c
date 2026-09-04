@@ -123,8 +123,6 @@ int64_t h_mapaccess_score_of(HeroMapHeader * h0_scores, HeroStr h1_name) {
     int64_t t11;
     h_0opt_e201354 t12 = {0};
     h_0opt_e201354 t13 = {0};
-    h_0opt_e201354 t14 = {0};
-    h_0opt_e201354 t15 = {0};
     goto bb0;
 bb0:
 #line 6 "tests/golden/ir/map-access.hero"
@@ -153,15 +151,15 @@ bb0:
     t12 = h4_own4;
 #line 6 "tests/golden/ir/map-access.hero"
     h4_own4 = t3;
-#line 157 "mapaccess.c"
+#line 155 "mapaccess.c"
     h_0opt_e201354_release(&t12);
 #line 6 "tests/golden/ir/map-access.hero"
     t13 = h2_f0;
-#line 161 "mapaccess.c"
+#line 159 "mapaccess.c"
     h_0opt_e201354_retain(&t3);
 #line 6 "tests/golden/ir/map-access.hero"
     h2_f0 = t3;
-#line 165 "mapaccess.c"
+#line 163 "mapaccess.c"
     h_0opt_e201354_release(&t13);
 #line 6 "tests/golden/ir/map-access.hero"
     t4 = h2_f0;
@@ -195,20 +193,17 @@ bb2:
 bb3:
 #line 6 "tests/golden/ir/map-access.hero"
     t11 = h3_r0;
+#line 197 "mapaccess.c"
+    h_0opt_e201354_release(&h2_f0);
 #line 6 "tests/golden/ir/map-access.hero"
-    t14 = h2_f0;
-#line 201 "mapaccess.c"
-    h_0opt_e201354_release(&t14);
-#line 6 "tests/golden/ir/map-access.hero"
-    t15 = h4_own4;
-#line 205 "mapaccess.c"
-    h_0opt_e201354_release(&t15);
+#line 200 "mapaccess.c"
+    h_0opt_e201354_release(&h4_own4);
     return t11;
 }
 
 #line 8 "tests/golden/ir/map-access.hero"
 int64_t h_mapaccess_first_of(HeroArrayHeader * h0_xs) {
-#line 212 "mapaccess.c"
+#line 207 "mapaccess.c"
     HeroArrayHeader * t1 = {0};
     int64_t t2;
     int64_t t3;
@@ -222,12 +217,12 @@ bb0:
     t3 = *(int64_t const *)hero_array_at(t1, t2);
 #line 9 "tests/golden/ir/map-access.hero"
     return t3;
-#line 226 "mapaccess.c"
+#line 221 "mapaccess.c"
 }
 
 #line 11 "tests/golden/ir/map-access.hero"
 int64_t h_mapaccess_both(HeroMapHeader * h0_scores, HeroArrayHeader * h1_xs) {
-#line 231 "mapaccess.c"
+#line 226 "mapaccess.c"
     HeroMapHeader * t1 = {0};
     HeroStr t2 = {0};
     int64_t t3;
@@ -250,7 +245,7 @@ bb0:
     if (__builtin_add_overflow(t3, t5, &t6)) hero_panic_overflow();
 #line 12 "tests/golden/ir/map-access.hero"
     return t6;
-#line 254 "mapaccess.c"
+#line 249 "mapaccess.c"
 }
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {

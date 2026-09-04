@@ -114,8 +114,6 @@ void h_fficstrisnotanypointer_main(void) {
     HeroStr t10 = {0};
     h_0opt_f87774a t11 = {0};
     h_0opt_f87774a t12 = {0};
-    h_0opt_f87774a t13 = {0};
-    h_0opt_f87774a t14 = {0};
     goto bb0;
 bb0:
 #line 36 "tests/golden/fixedbugs/ffi-cstr-is-not-any-pointer.hero"
@@ -126,15 +124,15 @@ bb0:
     t11 = h1_own1;
 #line 36 "tests/golden/fixedbugs/ffi-cstr-is-not-any-pointer.hero"
     h1_own1 = t2;
-#line 130 "fficstrisnotanypointer.c"
+#line 128 "fficstrisnotanypointer.c"
     h_0opt_f87774a_release(&t11);
 #line 36 "tests/golden/fixedbugs/ffi-cstr-is-not-any-pointer.hero"
     t12 = h0_f0;
-#line 134 "fficstrisnotanypointer.c"
+#line 132 "fficstrisnotanypointer.c"
     h_0opt_f87774a_retain(&t2);
 #line 36 "tests/golden/fixedbugs/ffi-cstr-is-not-any-pointer.hero"
     h0_f0 = t2;
-#line 138 "fficstrisnotanypointer.c"
+#line 136 "fficstrisnotanypointer.c"
     h_0opt_f87774a_release(&t12);
 #line 36 "tests/golden/fixedbugs/ffi-cstr-is-not-any-pointer.hero"
     t3 = h0_f0;
@@ -156,34 +154,31 @@ bb1:
     hero_print_str(t10);
 #line 36 "tests/golden/fixedbugs/ffi-cstr-is-not-any-pointer.hero"
     hero_print_end();
+#line 158 "fficstrisnotanypointer.c"
+    h_0opt_f87774a_release(&h0_f0);
 #line 36 "tests/golden/fixedbugs/ffi-cstr-is-not-any-pointer.hero"
-    t13 = h0_f0;
-#line 162 "fficstrisnotanypointer.c"
-    h_0opt_f87774a_release(&t13);
-#line 36 "tests/golden/fixedbugs/ffi-cstr-is-not-any-pointer.hero"
-    t14 = h1_own1;
-#line 166 "fficstrisnotanypointer.c"
-    h_0opt_f87774a_release(&t14);
+#line 161 "fficstrisnotanypointer.c"
+    h_0opt_f87774a_release(&h1_own1);
     return;
 bb2:
 #line 36 "tests/golden/fixedbugs/ffi-cstr-is-not-any-pointer.hero"
     t7 = h0_f0;
 #line 36 "tests/golden/fixedbugs/ffi-cstr-is-not-any-pointer.hero"
     t8 = t7.as.err;
-#line 174 "fficstrisnotanypointer.c"
+#line 169 "fficstrisnotanypointer.c"
     hero_panic_must(t8);
     hero_unreachable();
 }
 
 #line 122 "<heroes library>"
 int64_t h_library_HERO_STR_OK(void) {
-#line 181 "fficstrisnotanypointer.c"
+#line 176 "fficstrisnotanypointer.c"
     return HERO_STR_OK;
 }
 
 #line 152 "<heroes library>"
 h_0opt_f87774a h_library_validated(const char * h0_c) {
-#line 187 "fficstrisnotanypointer.c"
+#line 182 "fficstrisnotanypointer.c"
     int64_t h1_status;
     HeroStr h2_text = {0};
     HeroStr h3_own3 = {0};
@@ -212,21 +207,6 @@ h_0opt_f87774a h_library_validated(const char * h0_c) {
     h_0opt_f87774a t20 = {0};
     h_0opt_f87774a t21 = {0};
     h_0opt_f87774a t22 = {0};
-    HeroStr t23 = {0};
-    HeroStr t24 = {0};
-    h_0opt_f87774a t25 = {0};
-    h_0opt_f87774a t26 = {0};
-    h_0opt_f87774a t27 = {0};
-    HeroStr t28 = {0};
-    HeroStr t29 = {0};
-    h_0opt_f87774a t30 = {0};
-    h_0opt_f87774a t31 = {0};
-    h_0opt_f87774a t32 = {0};
-    HeroStr t33 = {0};
-    HeroStr t34 = {0};
-    h_0opt_f87774a t35 = {0};
-    h_0opt_f87774a t36 = {0};
-    h_0opt_f87774a t37 = {0};
     goto bb0;
 bb0:
 #line 153 "<heroes library>"
@@ -251,15 +231,15 @@ bb1:
     t18 = h3_own3;
 #line 156 "<heroes library>"
     h3_own3 = t9;
-#line 255 "fficstrisnotanypointer.c"
+#line 235 "fficstrisnotanypointer.c"
     hero_str_decref(t18);
 #line 156 "<heroes library>"
     t19 = h2_text;
-#line 259 "fficstrisnotanypointer.c"
+#line 239 "fficstrisnotanypointer.c"
     hero_str_incref(t9);
 #line 156 "<heroes library>"
     h2_text = t9;
-#line 263 "fficstrisnotanypointer.c"
+#line 243 "fficstrisnotanypointer.c"
     hero_str_decref(t19);
 #line 157 "<heroes library>"
     t10 = h1_status;
@@ -275,10 +255,10 @@ bb2:
     t4 = HERO_STR_LIT(hero_str_4a05a740);
 #line 154 "<heroes library>"
     t5 = HERO_STR_LIT(hero_str_5263489);
-#line 279 "fficstrisnotanypointer.c"
+#line 259 "fficstrisnotanypointer.c"
     hero_str_incref(t4);
 #line 154 "<heroes library>"
-#line 282 "fficstrisnotanypointer.c"
+#line 262 "fficstrisnotanypointer.c"
     hero_str_incref(t5);
 #line 154 "<heroes library>"
     t6 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t4, .msg = t5}};
@@ -286,31 +266,26 @@ bb2:
     t20 = h4_own4;
 #line 154 "<heroes library>"
     h4_own4 = t6;
-#line 290 "fficstrisnotanypointer.c"
+#line 270 "fficstrisnotanypointer.c"
     h_0opt_f87774a_release(&t20);
 #line 154 "<heroes library>"
-#line 293 "fficstrisnotanypointer.c"
+#line 273 "fficstrisnotanypointer.c"
     h_0opt_f87774a_retain(&t6);
 #line 154 "<heroes library>"
-    t23 = h2_text;
-#line 297 "fficstrisnotanypointer.c"
-    hero_str_decref(t23);
+#line 276 "fficstrisnotanypointer.c"
+    hero_str_decref(h2_text);
 #line 154 "<heroes library>"
-    t24 = h3_own3;
-#line 301 "fficstrisnotanypointer.c"
-    hero_str_decref(t24);
+#line 279 "fficstrisnotanypointer.c"
+    hero_str_decref(h3_own3);
 #line 154 "<heroes library>"
-    t25 = h4_own4;
-#line 305 "fficstrisnotanypointer.c"
-    h_0opt_f87774a_release(&t25);
+#line 282 "fficstrisnotanypointer.c"
+    h_0opt_f87774a_release(&h4_own4);
 #line 154 "<heroes library>"
-    t26 = h5_own5;
-#line 309 "fficstrisnotanypointer.c"
-    h_0opt_f87774a_release(&t26);
+#line 285 "fficstrisnotanypointer.c"
+    h_0opt_f87774a_release(&h5_own5);
 #line 154 "<heroes library>"
-    t27 = h6_own6;
-#line 313 "fficstrisnotanypointer.c"
-    h_0opt_f87774a_release(&t27);
+#line 288 "fficstrisnotanypointer.c"
+    h_0opt_f87774a_release(&h6_own6);
     return t6;
 bb3:
     goto bb1;
@@ -319,10 +294,10 @@ bb4:
     t15 = HERO_STR_LIT(hero_str_34624695);
 #line 159 "<heroes library>"
     t16 = HERO_STR_LIT(hero_str_4bb64adb);
-#line 323 "fficstrisnotanypointer.c"
+#line 298 "fficstrisnotanypointer.c"
     hero_str_incref(t15);
 #line 159 "<heroes library>"
-#line 326 "fficstrisnotanypointer.c"
+#line 301 "fficstrisnotanypointer.c"
     hero_str_incref(t16);
 #line 159 "<heroes library>"
     t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}};
@@ -330,36 +305,31 @@ bb4:
     t21 = h5_own5;
 #line 159 "<heroes library>"
     h5_own5 = t17;
-#line 334 "fficstrisnotanypointer.c"
+#line 309 "fficstrisnotanypointer.c"
     h_0opt_f87774a_release(&t21);
 #line 159 "<heroes library>"
-#line 337 "fficstrisnotanypointer.c"
+#line 312 "fficstrisnotanypointer.c"
     h_0opt_f87774a_retain(&t17);
 #line 159 "<heroes library>"
-    t28 = h2_text;
-#line 341 "fficstrisnotanypointer.c"
-    hero_str_decref(t28);
+#line 315 "fficstrisnotanypointer.c"
+    hero_str_decref(h2_text);
 #line 159 "<heroes library>"
-    t29 = h3_own3;
-#line 345 "fficstrisnotanypointer.c"
-    hero_str_decref(t29);
+#line 318 "fficstrisnotanypointer.c"
+    hero_str_decref(h3_own3);
 #line 159 "<heroes library>"
-    t30 = h4_own4;
-#line 349 "fficstrisnotanypointer.c"
-    h_0opt_f87774a_release(&t30);
+#line 321 "fficstrisnotanypointer.c"
+    h_0opt_f87774a_release(&h4_own4);
 #line 159 "<heroes library>"
-    t31 = h5_own5;
-#line 353 "fficstrisnotanypointer.c"
-    h_0opt_f87774a_release(&t31);
+#line 324 "fficstrisnotanypointer.c"
+    h_0opt_f87774a_release(&h5_own5);
 #line 159 "<heroes library>"
-    t32 = h6_own6;
-#line 357 "fficstrisnotanypointer.c"
-    h_0opt_f87774a_release(&t32);
+#line 327 "fficstrisnotanypointer.c"
+    h_0opt_f87774a_release(&h6_own6);
     return t17;
 bb5:
 #line 158 "<heroes library>"
     t13 = h2_text;
-#line 363 "fficstrisnotanypointer.c"
+#line 333 "fficstrisnotanypointer.c"
     hero_str_incref(t13);
 #line 158 "<heroes library>"
     t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t13};
@@ -367,31 +337,26 @@ bb5:
     t22 = h6_own6;
 #line 158 "<heroes library>"
     h6_own6 = t14;
-#line 371 "fficstrisnotanypointer.c"
+#line 341 "fficstrisnotanypointer.c"
     h_0opt_f87774a_release(&t22);
 #line 158 "<heroes library>"
-#line 374 "fficstrisnotanypointer.c"
+#line 344 "fficstrisnotanypointer.c"
     h_0opt_f87774a_retain(&t14);
 #line 158 "<heroes library>"
-    t33 = h2_text;
-#line 378 "fficstrisnotanypointer.c"
-    hero_str_decref(t33);
+#line 347 "fficstrisnotanypointer.c"
+    hero_str_decref(h2_text);
 #line 158 "<heroes library>"
-    t34 = h3_own3;
-#line 382 "fficstrisnotanypointer.c"
-    hero_str_decref(t34);
+#line 350 "fficstrisnotanypointer.c"
+    hero_str_decref(h3_own3);
 #line 158 "<heroes library>"
-    t35 = h4_own4;
-#line 386 "fficstrisnotanypointer.c"
-    h_0opt_f87774a_release(&t35);
+#line 353 "fficstrisnotanypointer.c"
+    h_0opt_f87774a_release(&h4_own4);
 #line 158 "<heroes library>"
-    t36 = h5_own5;
-#line 390 "fficstrisnotanypointer.c"
-    h_0opt_f87774a_release(&t36);
+#line 356 "fficstrisnotanypointer.c"
+    h_0opt_f87774a_release(&h5_own5);
 #line 158 "<heroes library>"
-    t37 = h6_own6;
-#line 394 "fficstrisnotanypointer.c"
-    h_0opt_f87774a_release(&t37);
+#line 359 "fficstrisnotanypointer.c"
+    h_0opt_f87774a_release(&h6_own6);
     return t14;
 bb6:
     goto bb4;

@@ -173,9 +173,9 @@ function live_strings(p: containers.Program, target: BuildTarget, s: source.Sour
                         match lt.value
                             .str_const sc                                       => live[sc.at] @ true
                             .int_const | .float_const | .bool_const | .null_ptr => continue
-                    .load | .store | .push_owned | .unary | .binary | .cast | .call | .construct => continue
-                    .field | .index | .map_get | .len_of | .tag_of | .payload                    => continue
-                    .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing     => continue
+                    .load | .store | .push_owned | .unary | .binary | .cast | .call | .construct            => continue
+                    .field | .index | .map_get | .len_of | .tag_of | .payload                               => continue
+                    .func_ref | .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => continue
 
     return live
 

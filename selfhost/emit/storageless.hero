@@ -91,7 +91,7 @@ function fixed_text(c: state.Checked, s: source.Source, decls: [ast.Decl], f: co
                         "none",
                         "not a producer of a fixed value"
                     )
-                    .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing => return fail(
+                    .func_ref | .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => return fail(
                         "none",
                         "not a producer of a fixed value"
                     )

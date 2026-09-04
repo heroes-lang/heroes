@@ -113,10 +113,6 @@ void h_abortarrayslice_main(void) {
     HeroArrayHeader * t16 = {0};
     HeroArrayHeader * t17 = {0};
     HeroArrayHeader * t18 = {0};
-    HeroArrayHeader * t19 = {0};
-    HeroArrayHeader * t20 = {0};
-    HeroArrayHeader * t21 = {0};
-    HeroArrayHeader * t22 = {0};
     goto bb0;
 bb0:
 #line 6 "tests/golden/run/abort-array-slice.hero"
@@ -143,15 +139,15 @@ bb0:
     t15 = h1_own1;
 #line 6 "tests/golden/run/abort-array-slice.hero"
     h1_own1 = t4;
-#line 147 "abortarrayslice.c"
+#line 143 "abortarrayslice.c"
     hero_array_decref(t15);
 #line 6 "tests/golden/run/abort-array-slice.hero"
     t16 = h0_xs;
-#line 151 "abortarrayslice.c"
+#line 147 "abortarrayslice.c"
     hero_array_incref(t4);
 #line 6 "tests/golden/run/abort-array-slice.hero"
     h0_xs = t4;
-#line 155 "abortarrayslice.c"
+#line 151 "abortarrayslice.c"
     hero_array_decref(t16);
 #line 7 "tests/golden/run/abort-array-slice.hero"
     t5 = h0_xs;
@@ -165,7 +161,7 @@ bb0:
     t17 = h2_own2;
 #line 7 "tests/golden/run/abort-array-slice.hero"
     h2_own2 = t8;
-#line 169 "abortarrayslice.c"
+#line 165 "abortarrayslice.c"
     hero_array_decref(t17);
 #line 7 "tests/golden/run/abort-array-slice.hero"
     t9 = hero_array_len(t8);
@@ -185,7 +181,7 @@ bb0:
     t18 = h3_own3;
 #line 8 "tests/golden/run/abort-array-slice.hero"
     h3_own3 = t13;
-#line 189 "abortarrayslice.c"
+#line 185 "abortarrayslice.c"
     hero_array_decref(t18);
 #line 8 "tests/golden/run/abort-array-slice.hero"
     t14 = hero_array_len(t13);
@@ -193,22 +189,17 @@ bb0:
     hero_print_int(t14);
 #line 8 "tests/golden/run/abort-array-slice.hero"
     hero_print_end();
+#line 193 "abortarrayslice.c"
+    hero_array_decref(h0_xs);
 #line 8 "tests/golden/run/abort-array-slice.hero"
-    t19 = h0_xs;
+#line 196 "abortarrayslice.c"
+    hero_array_decref(h1_own1);
+#line 8 "tests/golden/run/abort-array-slice.hero"
 #line 199 "abortarrayslice.c"
-    hero_array_decref(t19);
+    hero_array_decref(h2_own2);
 #line 8 "tests/golden/run/abort-array-slice.hero"
-    t20 = h1_own1;
-#line 203 "abortarrayslice.c"
-    hero_array_decref(t20);
-#line 8 "tests/golden/run/abort-array-slice.hero"
-    t21 = h2_own2;
-#line 207 "abortarrayslice.c"
-    hero_array_decref(t21);
-#line 8 "tests/golden/run/abort-array-slice.hero"
-    t22 = h3_own3;
-#line 211 "abortarrayslice.c"
-    hero_array_decref(t22);
+#line 202 "abortarrayslice.c"
+    hero_array_decref(h3_own3);
     return;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

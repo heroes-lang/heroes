@@ -62,9 +62,9 @@ function dump(p: containers.Program, c: state.Checked, s: source.Source, decls: 
                             match lt.value
                                 .str_const sc                                       => live[sc.at] @ true
                                 .int_const | .float_const | .bool_const | .null_ptr => continue
-                        .load | .store | .push_owned | .unary | .binary | .cast | .call | .construct => continue
-                        .field | .index | .map_get | .len_of | .tag_of | .payload                    => continue
-                        .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing     => continue
+                        .load | .store | .push_owned | .unary | .binary | .cast | .call | .construct            => continue
+                        .field | .index | .map_get | .len_of | .tag_of | .payload                               => continue
+                        .func_ref | .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => continue
 
     out: str @ ""
     any_live: bool @ false
@@ -303,8 +303,14 @@ function operation(f: containers.Function, inst: ir.Inst, c: state.Checked, s: s
             return "abort " + word + "(" + operands + ")"
         .incref rc => return "incref " + value_name(rc.value)
         .decref rc => return "decref " + value_name(rc.value)
-        .hole      => return "???"
-        .missing   => return "MISSING"
+        # The slot by its own name, so `--dump-ir` shows what the C will
+        # show. Printing it as a `decref` of an invented temporary would
+        # make the dump describe a program the emitter no longer writes,
+        # which CLAUDE.md §9 calls the quietest kind of lie.
+
+        .decref_slot ds => return "decref_slot " + f.slots[ds.slot].name
+        .hole           => return "???"
+        .missing        => return "MISSING"
 
     return ""
 

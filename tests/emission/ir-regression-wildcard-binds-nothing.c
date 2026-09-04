@@ -186,7 +186,6 @@ int64_t h_regressionwildcardbindsnothing_count_of(HeroArrayHeader * h0_xs) {
     int64_t t13;
     int64_t t14;
     HeroArrayHeader * t15 = {0};
-    HeroArrayHeader * t16 = {0};
     goto bb0;
 bb0:
 #line 19 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
@@ -197,11 +196,11 @@ bb0:
     t2 = h0_xs;
 #line 21 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     t15 = h2_xs0;
-#line 201 "regressionwildcardbindsnothing.c"
+#line 200 "regressionwildcardbindsnothing.c"
     hero_array_incref(t2);
 #line 21 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     h2_xs0 = t2;
-#line 205 "regressionwildcardbindsnothing.c"
+#line 204 "regressionwildcardbindsnothing.c"
     hero_array_decref(t15);
 #line 21 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     t3 = INT64_C(0);
@@ -249,10 +248,8 @@ bb3:
 bb4:
 #line 24 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     t14 = h1_n;
-#line 24 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
-    t16 = h2_xs0;
-#line 255 "regressionwildcardbindsnothing.c"
-    hero_array_decref(t16);
+#line 252 "regressionwildcardbindsnothing.c"
+    hero_array_decref(h2_xs0);
     return t14;
 }
 HERO_TU_LOCAL bool h_regressionwildcardbindsnothing_Token_c_num_eq(const h_regressionwildcardbindsnothing_Token_c_num *a, const h_regressionwildcardbindsnothing_Token_c_num *b) {

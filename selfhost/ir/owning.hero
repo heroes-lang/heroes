@@ -37,12 +37,12 @@ use ir
 # invisible.
 function allocates(op: ir.OpKind) -> bool
     return match op
-        .call | .construct | .cast | .binary                             => true
-        .map_get                                                         => true
-        .field | .index | .payload                                       => false
-        .lit | .load | .store | .push_owned | .unary | .len_of | .tag_of => false
-        .func_ref | .copy_out | .abort_op | .incref | .decref            => false
-        .hole | .missing                                                 => false
+        .call | .construct | .cast | .binary                                 => true
+        .map_get                                                             => true
+        .field | .index | .payload                                           => false
+        .lit | .load | .store | .push_owned | .unary | .len_of | .tag_of     => false
+        .func_ref | .copy_out | .abort_op | .incref | .decref | .decref_slot => false
+        .hole | .missing                                                     => false
 
 # Whether a constructor makes its result a SECOND OWNER of every
 # counted argument (rule 6). A record, a variant case and both sides of

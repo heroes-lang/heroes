@@ -40,7 +40,7 @@ function may_lose_its_destination(op: ir.OpKind) -> bool
         .lit | .load | .field | .payload | .tag_of | .len_of | .call             => true
         .func_ref | .store | .push_owned | .unary | .binary | .cast | .construct => false
         .index | .map_get | .copy_out | .abort_op                                => false
-        .incref | .decref | .hole | .missing                                     => false
+        .incref | .decref | .decref_slot | .hole | .missing                      => false
 
 # Whether the instruction disappears ENTIRELY when its result is unread
 # — the narrower half, and the one the fixpoint iterates over. A
@@ -57,7 +57,7 @@ function vanishes_when_unread(op: ir.OpKind) -> bool
         .lit | .load | .field | .payload | .tag_of | .len_of                     => true
         .func_ref | .store | .push_owned | .unary | .binary | .cast | .construct => true
         .index | .map_get | .copy_out | .abort_op                                => true
-        .incref | .decref | .hole | .missing                                     => true
+        .incref | .decref | .decref_slot | .hole | .missing                      => true
 
 # Whether any EMITTED instruction assigns this temporary: value 0 (the
 # unit) is assigned by nothing, and a temporary that only exists inside
@@ -144,7 +144,7 @@ function reads_given(f: containers.Function, c: state.Checked, gone: {i64: bool}
                     .call | .abort_op                                                           => is_effect @ true
                     .lit | .load | .store | .push_owned | .unary | .binary | .cast | .construct => is_effect @ is_effect
                     .field | .index | .map_get | .len_of | .tag_of | .payload                   => is_effect @ is_effect
-                    .func_ref | .copy_out | .incref | .decref | .hole | .missing                => is_effect @ is_effect
+                    .func_ref | .copy_out | .incref | .decref | .decref_slot | .hole | .missing => is_effect @ is_effect
 
                 if !is_effect
                     silent @ true
@@ -207,9 +207,9 @@ function slot_is_read(f: containers.Function, live: [bool], read: {i64: bool}, s
                     .copy_out co =>
                         if co.param == slot
                             return true
-                    .lit | .unary | .binary | .cast | .call | .construct         => continue
-                    .field | .index | .map_get | .len_of | .tag_of | .payload    => continue
-                    .func_ref | .abort_op | .incref | .decref | .hole | .missing => continue
+                    .lit | .unary | .binary | .cast | .call | .construct                        => continue
+                    .field | .index | .map_get | .len_of | .tag_of | .payload                   => continue
+                    .func_ref | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => continue
         index @ index + 1
 
     return false

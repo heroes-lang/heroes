@@ -142,7 +142,6 @@ void h_inoutthroughpathsofacell_add(h_inoutthroughpathsofacell_Bag *ph0_b, HeroS
     HeroArrayHeader * t4 = {0};
     HeroArrayHeader * t5 = {0};
     HeroArrayHeader * t6 = {0};
-    HeroArrayHeader * t7 = {0};
     h0_b = *ph0_b;
     goto bb0;
 bb0:
@@ -158,27 +157,26 @@ bb0:
     t5 = h2_own2;
 #line 17 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     h2_own2 = t4;
-#line 162 "inoutthroughpathsofacell.c"
+#line 161 "inoutthroughpathsofacell.c"
     hero_array_decref(t5);
 #line 17 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     t6 = h0_b.f_items;
-#line 166 "inoutthroughpathsofacell.c"
+#line 165 "inoutthroughpathsofacell.c"
     hero_array_incref(t4);
 #line 17 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     h0_b.f_items = t4;
-#line 170 "inoutthroughpathsofacell.c"
+#line 169 "inoutthroughpathsofacell.c"
     hero_array_decref(t6);
     *ph0_b = h0_b;
 #line 16 "tests/golden/run/inout-through-paths-of-a-cell.hero"
-    t7 = h2_own2;
-#line 175 "inoutthroughpathsofacell.c"
-    hero_array_decref(t7);
+#line 173 "inoutthroughpathsofacell.c"
+    hero_array_decref(h2_own2);
     return;
 }
 
 #line 19 "tests/golden/run/inout-through-paths-of-a-cell.hero"
 void h_inoutthroughpathsofacell_add_items(HeroArrayHeader * *ph0_xs, HeroStr h1_s) {
-#line 182 "inoutthroughpathsofacell.c"
+#line 180 "inoutthroughpathsofacell.c"
     HeroArrayHeader * h0_xs = {0};
     HeroStr t2 = {0};
     h0_xs = *ph0_xs;
@@ -188,14 +186,14 @@ bb0:
     t2 = h1_s;
 #line 20 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     hero_array_push_owned(&h0_xs, &t2);
-#line 192 "inoutthroughpathsofacell.c"
+#line 190 "inoutthroughpathsofacell.c"
     *ph0_xs = h0_xs;
     return;
 }
 
 #line 22 "tests/golden/run/inout-through-paths-of-a-cell.hero"
 void h_inoutthroughpathsofacell_swap(h_inoutthroughpathsofacell_Bag *ph0_a, h_inoutthroughpathsofacell_Bag *ph1_b) {
-#line 199 "inoutthroughpathsofacell.c"
+#line 197 "inoutthroughpathsofacell.c"
     h_inoutthroughpathsofacell_Bag h0_a = {0};
     h_inoutthroughpathsofacell_Bag h1_b = {0};
     h_inoutthroughpathsofacell_Bag h2_held = {0};
@@ -205,7 +203,6 @@ void h_inoutthroughpathsofacell_swap(h_inoutthroughpathsofacell_Bag *ph0_a, h_in
     h_inoutthroughpathsofacell_Bag t4 = {0};
     h_inoutthroughpathsofacell_Bag t5 = {0};
     h_inoutthroughpathsofacell_Bag t6 = {0};
-    h_inoutthroughpathsofacell_Bag t7 = {0};
     h0_a = *ph0_a;
     h1_b = *ph1_b;
     goto bb0;
@@ -214,44 +211,43 @@ bb0:
     t1 = h0_a;
 #line 23 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     t4 = h2_held;
-#line 218 "inoutthroughpathsofacell.c"
+#line 215 "inoutthroughpathsofacell.c"
     h_inoutthroughpathsofacell_Bag_retain(&t1);
 #line 23 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     h2_held = t1;
-#line 222 "inoutthroughpathsofacell.c"
+#line 219 "inoutthroughpathsofacell.c"
     h_inoutthroughpathsofacell_Bag_release(&t4);
 #line 24 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     t2 = h1_b;
 #line 24 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     t5 = h0_a;
-#line 228 "inoutthroughpathsofacell.c"
+#line 225 "inoutthroughpathsofacell.c"
     h_inoutthroughpathsofacell_Bag_retain(&t2);
 #line 24 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     h0_a = t2;
-#line 232 "inoutthroughpathsofacell.c"
+#line 229 "inoutthroughpathsofacell.c"
     h_inoutthroughpathsofacell_Bag_release(&t5);
 #line 25 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     t3 = h2_held;
 #line 25 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     t6 = h1_b;
-#line 238 "inoutthroughpathsofacell.c"
+#line 235 "inoutthroughpathsofacell.c"
     h_inoutthroughpathsofacell_Bag_retain(&t3);
 #line 25 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     h1_b = t3;
-#line 242 "inoutthroughpathsofacell.c"
+#line 239 "inoutthroughpathsofacell.c"
     h_inoutthroughpathsofacell_Bag_release(&t6);
     *ph0_a = h0_a;
     *ph1_b = h1_b;
 #line 22 "tests/golden/run/inout-through-paths-of-a-cell.hero"
-    t7 = h2_held;
-#line 248 "inoutthroughpathsofacell.c"
-    h_inoutthroughpathsofacell_Bag_release(&t7);
+#line 244 "inoutthroughpathsofacell.c"
+    h_inoutthroughpathsofacell_Bag_release(&h2_held);
     return;
 }
 
 #line 27 "tests/golden/run/inout-through-paths-of-a-cell.hero"
 int64_t h_inoutthroughpathsofacell_pick(void) {
-#line 255 "inoutthroughpathsofacell.c"
+#line 251 "inoutthroughpathsofacell.c"
     HeroStr t1 = {0};
     int64_t t2;
     goto bb0;
@@ -266,12 +262,12 @@ bb0:
     t2 = INT64_C(0);
 #line 29 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     return t2;
-#line 270 "inoutthroughpathsofacell.c"
+#line 266 "inoutthroughpathsofacell.c"
 }
 
 #line 31 "tests/golden/run/inout-through-paths-of-a-cell.hero"
 void h_inoutthroughpathsofacell_main(void) {
-#line 275 "inoutthroughpathsofacell.c"
+#line 271 "inoutthroughpathsofacell.c"
     h_inoutthroughpathsofacell_Bag h0_b = {0};
     HeroArrayHeader * h1_bs = {0};
     h_inoutthroughpathsofacell_Bag h2_e0 = {0};
@@ -379,24 +375,6 @@ void h_inoutthroughpathsofacell_main(void) {
     h_inoutthroughpathsofacell_Bag t87 = {0};
     h_inoutthroughpathsofacell_Bag t88 = {0};
     h_inoutthroughpathsofacell_Bag t89 = {0};
-    h_inoutthroughpathsofacell_Bag t90 = {0};
-    HeroArrayHeader * t91 = {0};
-    h_inoutthroughpathsofacell_Bag t92 = {0};
-    HeroArrayHeader * t93 = {0};
-    HeroArrayHeader * t94 = {0};
-    h_inoutthroughpathsofacell_Bag t95 = {0};
-    h_inoutthroughpathsofacell_Bag t96 = {0};
-    h_inoutthroughpathsofacell_Bag t97 = {0};
-    HeroArrayHeader * t98 = {0};
-    h_inoutthroughpathsofacell_Bag t99 = {0};
-    HeroArrayHeader * t100 = {0};
-    h_inoutthroughpathsofacell_Bag t101 = {0};
-    HeroArrayHeader * t102 = {0};
-    h_inoutthroughpathsofacell_Bag t103 = {0};
-    HeroArrayHeader * t104 = {0};
-    HeroArrayHeader * t105 = {0};
-    h_inoutthroughpathsofacell_Bag t106 = {0};
-    HeroArrayHeader * t107 = {0};
     goto bb0;
 bb0:
 #line 32 "tests/golden/run/inout-through-paths-of-a-cell.hero"
@@ -411,10 +389,10 @@ bb0:
     t72 = h8_own8;
 #line 32 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     h8_own8 = t2;
-#line 415 "inoutthroughpathsofacell.c"
+#line 393 "inoutthroughpathsofacell.c"
     hero_array_decref(t72);
 #line 32 "tests/golden/run/inout-through-paths-of-a-cell.hero"
-#line 418 "inoutthroughpathsofacell.c"
+#line 396 "inoutthroughpathsofacell.c"
     hero_array_incref(t2);
 #line 32 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     t3 = (h_inoutthroughpathsofacell_Bag){.f_items = t2};
@@ -422,15 +400,15 @@ bb0:
     t73 = h9_own9;
 #line 32 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     h9_own9 = t3;
-#line 426 "inoutthroughpathsofacell.c"
+#line 404 "inoutthroughpathsofacell.c"
     h_inoutthroughpathsofacell_Bag_release(&t73);
 #line 32 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     t74 = h0_b;
-#line 430 "inoutthroughpathsofacell.c"
+#line 408 "inoutthroughpathsofacell.c"
     h_inoutthroughpathsofacell_Bag_retain(&t3);
 #line 32 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     h0_b = t3;
-#line 434 "inoutthroughpathsofacell.c"
+#line 412 "inoutthroughpathsofacell.c"
     h_inoutthroughpathsofacell_Bag_release(&t74);
 #line 33 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     t4 = HERO_STR_LIT(hero_str_78);
@@ -458,10 +436,10 @@ bb0:
     t75 = h10_own10;
 #line 35 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     h10_own10 = t9;
-#line 462 "inoutthroughpathsofacell.c"
+#line 440 "inoutthroughpathsofacell.c"
     hero_array_decref(t75);
 #line 35 "tests/golden/run/inout-through-paths-of-a-cell.hero"
-#line 465 "inoutthroughpathsofacell.c"
+#line 443 "inoutthroughpathsofacell.c"
     hero_array_incref(t9);
 #line 35 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     t10 = (h_inoutthroughpathsofacell_Bag){.f_items = t9};
@@ -469,7 +447,7 @@ bb0:
     t76 = h11_own11;
 #line 35 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     h11_own11 = t10;
-#line 473 "inoutthroughpathsofacell.c"
+#line 451 "inoutthroughpathsofacell.c"
     h_inoutthroughpathsofacell_Bag_release(&t76);
 #line 35 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     t11 = HERO_STR_LIT(hero_str_62);
@@ -489,10 +467,10 @@ bb0:
     t77 = h12_own12;
 #line 35 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     h12_own12 = t13;
-#line 493 "inoutthroughpathsofacell.c"
+#line 471 "inoutthroughpathsofacell.c"
     hero_array_decref(t77);
 #line 35 "tests/golden/run/inout-through-paths-of-a-cell.hero"
-#line 496 "inoutthroughpathsofacell.c"
+#line 474 "inoutthroughpathsofacell.c"
     hero_array_incref(t13);
 #line 35 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     t14 = (h_inoutthroughpathsofacell_Bag){.f_items = t13};
@@ -500,7 +478,7 @@ bb0:
     t78 = h13_own13;
 #line 35 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     h13_own13 = t14;
-#line 504 "inoutthroughpathsofacell.c"
+#line 482 "inoutthroughpathsofacell.c"
     h_inoutthroughpathsofacell_Bag_release(&t78);
 #line 35 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     t15 = hero_array_new(&h_inoutthroughpathsofacell_Bag_desc, 2);
@@ -516,15 +494,15 @@ bb0:
     t79 = h14_own14;
 #line 35 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     h14_own14 = t15;
-#line 520 "inoutthroughpathsofacell.c"
+#line 498 "inoutthroughpathsofacell.c"
     hero_array_decref(t79);
 #line 35 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     t80 = h1_bs;
-#line 524 "inoutthroughpathsofacell.c"
+#line 502 "inoutthroughpathsofacell.c"
     hero_array_incref(t15);
 #line 35 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     h1_bs = t15;
-#line 528 "inoutthroughpathsofacell.c"
+#line 506 "inoutthroughpathsofacell.c"
     hero_array_decref(t80);
 #line 36 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     t16 = INT64_C(0);
@@ -534,11 +512,11 @@ bb0:
     t18 = *(h_inoutthroughpathsofacell_Bag const *)hero_array_at(t17, t16);
 #line 36 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     t81 = h2_e0;
-#line 538 "inoutthroughpathsofacell.c"
+#line 516 "inoutthroughpathsofacell.c"
     h_inoutthroughpathsofacell_Bag_retain(&t18);
 #line 36 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     h2_e0 = t18;
-#line 542 "inoutthroughpathsofacell.c"
+#line 520 "inoutthroughpathsofacell.c"
     h_inoutthroughpathsofacell_Bag_release(&t81);
 #line 36 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     t19 = HERO_STR_LIT(hero_str_79);
@@ -546,7 +524,7 @@ bb0:
     h_inoutthroughpathsofacell_add(&h2_e0, t19);
 #line 36 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     t20 = h2_e0;
-#line 550 "inoutthroughpathsofacell.c"
+#line 528 "inoutthroughpathsofacell.c"
     h_inoutthroughpathsofacell_Bag_retain(&t20);
 #line 36 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     hero_array_set(&(h1_bs), t16, &t20);
@@ -574,11 +552,11 @@ bb0:
     t29 = t28.f_items;
 #line 38 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     t82 = h3_e1;
-#line 578 "inoutthroughpathsofacell.c"
+#line 556 "inoutthroughpathsofacell.c"
     hero_array_incref(t29);
 #line 38 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     h3_e1 = t29;
-#line 582 "inoutthroughpathsofacell.c"
+#line 560 "inoutthroughpathsofacell.c"
     hero_array_decref(t82);
 #line 38 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     t30 = HERO_STR_LIT(hero_str_7a);
@@ -586,7 +564,7 @@ bb0:
     h_inoutthroughpathsofacell_add_items(&h3_e1, t30);
 #line 38 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     t31 = h3_e1;
-#line 590 "inoutthroughpathsofacell.c"
+#line 568 "inoutthroughpathsofacell.c"
     hero_array_incref(t31);
 #line 38 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     hero_array_unshare(&(h1_bs));
@@ -638,10 +616,10 @@ bb0:
     t83 = h15_own15;
 #line 40 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     h15_own15 = t41;
-#line 642 "inoutthroughpathsofacell.c"
+#line 620 "inoutthroughpathsofacell.c"
     hero_array_decref(t83);
 #line 40 "tests/golden/run/inout-through-paths-of-a-cell.hero"
-#line 645 "inoutthroughpathsofacell.c"
+#line 623 "inoutthroughpathsofacell.c"
     hero_array_incref(t41);
 #line 40 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     t42 = (h_inoutthroughpathsofacell_Bag){.f_items = t41};
@@ -649,7 +627,7 @@ bb0:
     t84 = h16_own16;
 #line 40 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     h16_own16 = t42;
-#line 653 "inoutthroughpathsofacell.c"
+#line 631 "inoutthroughpathsofacell.c"
     h_inoutthroughpathsofacell_Bag_release(&t84);
 #line 40 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     t43 = hero_array_new(&h_inoutthroughpathsofacell_Bag_desc, 1);
@@ -661,15 +639,15 @@ bb0:
     t85 = h17_own17;
 #line 40 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     h17_own17 = t43;
-#line 665 "inoutthroughpathsofacell.c"
+#line 643 "inoutthroughpathsofacell.c"
     hero_array_decref(t85);
 #line 40 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     t86 = h4_cs;
-#line 669 "inoutthroughpathsofacell.c"
+#line 647 "inoutthroughpathsofacell.c"
     hero_array_incref(t43);
 #line 40 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     h4_cs = t43;
-#line 673 "inoutthroughpathsofacell.c"
+#line 651 "inoutthroughpathsofacell.c"
     hero_array_decref(t86);
 #line 41 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     t44 = INT64_C(0);
@@ -679,11 +657,11 @@ bb0:
     t46 = *(h_inoutthroughpathsofacell_Bag const *)hero_array_at(t45, t44);
 #line 41 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     t87 = h5_e2;
-#line 683 "inoutthroughpathsofacell.c"
+#line 661 "inoutthroughpathsofacell.c"
     h_inoutthroughpathsofacell_Bag_retain(&t46);
 #line 41 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     h5_e2 = t46;
-#line 687 "inoutthroughpathsofacell.c"
+#line 665 "inoutthroughpathsofacell.c"
     h_inoutthroughpathsofacell_Bag_release(&t87);
 #line 41 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     t47 = INT64_C(0);
@@ -693,23 +671,23 @@ bb0:
     t49 = *(h_inoutthroughpathsofacell_Bag const *)hero_array_at(t48, t47);
 #line 41 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     t88 = h6_e3;
-#line 697 "inoutthroughpathsofacell.c"
+#line 675 "inoutthroughpathsofacell.c"
     h_inoutthroughpathsofacell_Bag_retain(&t49);
 #line 41 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     h6_e3 = t49;
-#line 701 "inoutthroughpathsofacell.c"
+#line 679 "inoutthroughpathsofacell.c"
     h_inoutthroughpathsofacell_Bag_release(&t88);
 #line 41 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     h_inoutthroughpathsofacell_swap(&h5_e2, &h6_e3);
 #line 41 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     t50 = h5_e2;
-#line 707 "inoutthroughpathsofacell.c"
+#line 685 "inoutthroughpathsofacell.c"
     h_inoutthroughpathsofacell_Bag_retain(&t50);
 #line 41 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     hero_array_set(&(h1_bs), t44, &t50);
 #line 41 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     t51 = h6_e3;
-#line 713 "inoutthroughpathsofacell.c"
+#line 691 "inoutthroughpathsofacell.c"
     h_inoutthroughpathsofacell_Bag_retain(&t51);
 #line 41 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     hero_array_set(&(h4_cs), t47, &t51);
@@ -749,11 +727,11 @@ bb0:
     t64 = *(h_inoutthroughpathsofacell_Bag const *)hero_array_at(t63, t62);
 #line 44 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     t89 = h7_e4;
-#line 753 "inoutthroughpathsofacell.c"
+#line 731 "inoutthroughpathsofacell.c"
     h_inoutthroughpathsofacell_Bag_retain(&t64);
 #line 44 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     h7_e4 = t64;
-#line 757 "inoutthroughpathsofacell.c"
+#line 735 "inoutthroughpathsofacell.c"
     h_inoutthroughpathsofacell_Bag_release(&t89);
 #line 44 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     t65 = HERO_STR_LIT(hero_str_77);
@@ -761,7 +739,7 @@ bb0:
     h_inoutthroughpathsofacell_add(&h7_e4, t65);
 #line 44 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     t66 = h7_e4;
-#line 765 "inoutthroughpathsofacell.c"
+#line 743 "inoutthroughpathsofacell.c"
     h_inoutthroughpathsofacell_Bag_retain(&t66);
 #line 44 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     hero_array_set(&(h1_bs), t62, &t66);
@@ -779,78 +757,59 @@ bb0:
     hero_print_int(t71);
 #line 45 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     hero_print_end();
+#line 761 "inoutthroughpathsofacell.c"
+    h_inoutthroughpathsofacell_Bag_release(&h0_b);
 #line 45 "tests/golden/run/inout-through-paths-of-a-cell.hero"
-    t90 = h0_b;
+#line 764 "inoutthroughpathsofacell.c"
+    hero_array_decref(h1_bs);
+#line 45 "tests/golden/run/inout-through-paths-of-a-cell.hero"
+#line 767 "inoutthroughpathsofacell.c"
+    h_inoutthroughpathsofacell_Bag_release(&h2_e0);
+#line 45 "tests/golden/run/inout-through-paths-of-a-cell.hero"
+#line 770 "inoutthroughpathsofacell.c"
+    hero_array_decref(h3_e1);
+#line 45 "tests/golden/run/inout-through-paths-of-a-cell.hero"
+#line 773 "inoutthroughpathsofacell.c"
+    hero_array_decref(h4_cs);
+#line 45 "tests/golden/run/inout-through-paths-of-a-cell.hero"
+#line 776 "inoutthroughpathsofacell.c"
+    h_inoutthroughpathsofacell_Bag_release(&h5_e2);
+#line 45 "tests/golden/run/inout-through-paths-of-a-cell.hero"
+#line 779 "inoutthroughpathsofacell.c"
+    h_inoutthroughpathsofacell_Bag_release(&h6_e3);
+#line 45 "tests/golden/run/inout-through-paths-of-a-cell.hero"
+#line 782 "inoutthroughpathsofacell.c"
+    h_inoutthroughpathsofacell_Bag_release(&h7_e4);
+#line 45 "tests/golden/run/inout-through-paths-of-a-cell.hero"
 #line 785 "inoutthroughpathsofacell.c"
-    h_inoutthroughpathsofacell_Bag_release(&t90);
+    hero_array_decref(h8_own8);
 #line 45 "tests/golden/run/inout-through-paths-of-a-cell.hero"
-    t91 = h1_bs;
-#line 789 "inoutthroughpathsofacell.c"
-    hero_array_decref(t91);
+#line 788 "inoutthroughpathsofacell.c"
+    h_inoutthroughpathsofacell_Bag_release(&h9_own9);
 #line 45 "tests/golden/run/inout-through-paths-of-a-cell.hero"
-    t92 = h2_e0;
-#line 793 "inoutthroughpathsofacell.c"
-    h_inoutthroughpathsofacell_Bag_release(&t92);
+#line 791 "inoutthroughpathsofacell.c"
+    hero_array_decref(h10_own10);
 #line 45 "tests/golden/run/inout-through-paths-of-a-cell.hero"
-    t93 = h3_e1;
+#line 794 "inoutthroughpathsofacell.c"
+    h_inoutthroughpathsofacell_Bag_release(&h11_own11);
+#line 45 "tests/golden/run/inout-through-paths-of-a-cell.hero"
 #line 797 "inoutthroughpathsofacell.c"
-    hero_array_decref(t93);
+    hero_array_decref(h12_own12);
 #line 45 "tests/golden/run/inout-through-paths-of-a-cell.hero"
-    t94 = h4_cs;
-#line 801 "inoutthroughpathsofacell.c"
-    hero_array_decref(t94);
+#line 800 "inoutthroughpathsofacell.c"
+    h_inoutthroughpathsofacell_Bag_release(&h13_own13);
 #line 45 "tests/golden/run/inout-through-paths-of-a-cell.hero"
-    t95 = h5_e2;
-#line 805 "inoutthroughpathsofacell.c"
-    h_inoutthroughpathsofacell_Bag_release(&t95);
+#line 803 "inoutthroughpathsofacell.c"
+    hero_array_decref(h14_own14);
 #line 45 "tests/golden/run/inout-through-paths-of-a-cell.hero"
-    t96 = h6_e3;
+#line 806 "inoutthroughpathsofacell.c"
+    hero_array_decref(h15_own15);
+#line 45 "tests/golden/run/inout-through-paths-of-a-cell.hero"
 #line 809 "inoutthroughpathsofacell.c"
-    h_inoutthroughpathsofacell_Bag_release(&t96);
+    h_inoutthroughpathsofacell_Bag_release(&h16_own16);
 #line 45 "tests/golden/run/inout-through-paths-of-a-cell.hero"
-    t97 = h7_e4;
-#line 813 "inoutthroughpathsofacell.c"
-    h_inoutthroughpathsofacell_Bag_release(&t97);
-#line 45 "tests/golden/run/inout-through-paths-of-a-cell.hero"
-    t98 = h8_own8;
-#line 817 "inoutthroughpathsofacell.c"
-    hero_array_decref(t98);
-#line 45 "tests/golden/run/inout-through-paths-of-a-cell.hero"
-    t99 = h9_own9;
-#line 821 "inoutthroughpathsofacell.c"
-    h_inoutthroughpathsofacell_Bag_release(&t99);
-#line 45 "tests/golden/run/inout-through-paths-of-a-cell.hero"
-    t100 = h10_own10;
-#line 825 "inoutthroughpathsofacell.c"
-    hero_array_decref(t100);
-#line 45 "tests/golden/run/inout-through-paths-of-a-cell.hero"
-    t101 = h11_own11;
-#line 829 "inoutthroughpathsofacell.c"
-    h_inoutthroughpathsofacell_Bag_release(&t101);
-#line 45 "tests/golden/run/inout-through-paths-of-a-cell.hero"
-    t102 = h12_own12;
-#line 833 "inoutthroughpathsofacell.c"
-    hero_array_decref(t102);
-#line 45 "tests/golden/run/inout-through-paths-of-a-cell.hero"
-    t103 = h13_own13;
-#line 837 "inoutthroughpathsofacell.c"
-    h_inoutthroughpathsofacell_Bag_release(&t103);
-#line 45 "tests/golden/run/inout-through-paths-of-a-cell.hero"
-    t104 = h14_own14;
-#line 841 "inoutthroughpathsofacell.c"
-    hero_array_decref(t104);
-#line 45 "tests/golden/run/inout-through-paths-of-a-cell.hero"
-    t105 = h15_own15;
-#line 845 "inoutthroughpathsofacell.c"
-    hero_array_decref(t105);
-#line 45 "tests/golden/run/inout-through-paths-of-a-cell.hero"
-    t106 = h16_own16;
-#line 849 "inoutthroughpathsofacell.c"
-    h_inoutthroughpathsofacell_Bag_release(&t106);
-#line 45 "tests/golden/run/inout-through-paths-of-a-cell.hero"
-    t107 = h17_own17;
-#line 853 "inoutthroughpathsofacell.c"
-    hero_array_decref(t107);
+#line 812 "inoutthroughpathsofacell.c"
+    hero_array_decref(h17_own17);
     return;
 }
 HERO_TU_LOCAL void h_inoutthroughpathsofacell_Bag_retain(const h_inoutthroughpathsofacell_Bag *v) {

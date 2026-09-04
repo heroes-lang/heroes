@@ -17,6 +17,5 @@ function main()
         $t4: i64 = call builtin len($t3)
         $t5: i64 = call heroes double($t4)
         call builtin print($t5) variadic
-        $t7: [i64] = load $own0
-        decref $t7
+        decref_slot $own0
         return

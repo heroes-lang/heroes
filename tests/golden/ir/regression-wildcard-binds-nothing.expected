@@ -51,6 +51,5 @@ function count_of(xs: [i64]) -> i64
         jump bb1
     bb4  for: exit    preds bb1
         $t14: i64 = load n
-        $t16: [i64] = load $xs0
-        decref $t16
+        decref_slot $xs0
         return $t14

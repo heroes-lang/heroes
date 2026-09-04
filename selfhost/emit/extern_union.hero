@@ -149,9 +149,9 @@ function used(p: containers.Program, c: state.Checked, decls: [ast.Decl]) -> Use
                     .map_get mg =>
                         reach(@operated, c, decls, ty: containers.value_type(f, mg.map), depth: 0)
                         reach(@operated, c, decls, ty: containers.value_type(f, mg.key), depth: 0)
-                    .lit | .load | .store | .push_owned | .unary | .cast | .call | .func_ref => continue
-                    .field | .index | .len_of | .tag_of | .payload                           => continue
-                    .copy_out | .abort_op | .incref | .decref | .hole | .missing             => continue
+                    .lit | .load | .store | .push_owned | .unary | .cast | .call | .func_ref    => continue
+                    .field | .index | .len_of | .tag_of | .payload                              => continue
+                    .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => continue
 
     return Used(constructed: constructed, operated: operated)
 

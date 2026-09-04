@@ -113,7 +113,6 @@ int64_t h_sugarfor_total_of(HeroArrayHeader * h0_xs) {
     int64_t t16;
     int64_t t17;
     HeroArrayHeader * t18 = {0};
-    HeroArrayHeader * t19 = {0};
     goto bb0;
 bb0:
 #line 5 "tests/golden/ir/sugar-for.hero"
@@ -124,11 +123,11 @@ bb0:
     t2 = h0_xs;
 #line 7 "tests/golden/ir/sugar-for.hero"
     t18 = h2_xs0;
-#line 128 "sugarfor.c"
+#line 127 "sugarfor.c"
     hero_array_incref(t2);
 #line 7 "tests/golden/ir/sugar-for.hero"
     h2_xs0 = t2;
-#line 132 "sugarfor.c"
+#line 131 "sugarfor.c"
     hero_array_decref(t18);
 #line 7 "tests/golden/ir/sugar-for.hero"
     t3 = INT64_C(0);
@@ -184,10 +183,8 @@ bb3:
 bb4:
 #line 10 "tests/golden/ir/sugar-for.hero"
     t17 = h1_sum;
-#line 10 "tests/golden/ir/sugar-for.hero"
-    t19 = h2_xs0;
-#line 190 "sugarfor.c"
-    hero_array_decref(t19);
+#line 187 "sugarfor.c"
+    hero_array_decref(h2_xs0);
     return t17;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

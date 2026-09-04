@@ -40,31 +40,37 @@ constant ERR_ARITY: str
 constant ERR_DEPTH: str
     "too_deep"
 
-# How many nested script calls are allowed — and this number is MEASURED, not
-# chosen. The first draft said 200 on the reasoning that a runaway recursion
-# should stop "long before the machine's stack does", and 200 is past the
-# machine's stack: a script recursing 150 deep exited **139 in silence** before
-# the guard was ever consulted.
+# How many nested script calls are allowed — and this number is MEASURED,
+# not chosen. The first draft said 200 on the reasoning that a runaway
+# recursion should stop "long before the machine's stack does", and 200 is
+# past the machine's stack: a script recursing 150 deep exited **139 in
+# silence** before the guard was ever consulted.
 #
-# Measured 2026-09-03 on this Mac, nested script calls, one ceiling per
-# configuration:
+# **Re-measured 2026-09-04, after panel 106's repair, and it moved.** The
+# exit sweep stopped minting a load temporary per swept slot per returning
+# block — 58.5% of every declared frame — so one script call costs a good
+# deal less than it did. Nested script calls, one ceiling per configuration,
+# binary-searched on this Mac with the guard lifted out of the way:
 #
-#   --sanitize   40 works · 50 overflows (exit 134, ASan names it)
-#   -O0          50 works
-#   -O2          80 works · 100 overflows — **exit 139, SILENTLY**
+#                  before   after
+#   --sanitize        40      76   (exit 134, ASan names it)
+#   -O0               50     107
+#   -O2               80     239
 #
-# One script call costs about nine Heroes frames (`body` → `one` →
-# `given_back` → `expr.evaluated` → `applied` → the function value → `called`
-# → `entered` → `body`), and `syn/expr.hero`'s note explains why each of those
-# frames is large. So the guard sits at 24: under half of the tightest
-# measured ceiling, which is margin enough for a machine with a smaller stack,
-# and far above anything a script here needs (`scripts/tour.script`'s deepest
-# is `factorial(10)`, ten frames).
+# One script call still costs about nine Heroes frames (`body` → `one` →
+# `given_back` → `expr.evaluated` → `applied` → the function value →
+# `called` → `entered` → `body`); each of those frames is now roughly half
+# the size. So the guard moves 24 → **38**: under half of the tightest
+# measured ceiling, which is margin enough for a machine with a smaller
+# stack, and far above anything a script here needs
+# (`scripts/tour.script`'s deepest is `factorial(10)`, ten frames).
 #
 # A GUARD ABOVE THE REAL CEILING IS NOT A GUARD. That is the whole lesson of
-# this constant, and it was learned by running rather than by reasoning.
+# this constant, and it was learned by running rather than by reasoning —
+# twice now, because the ceiling moved and the guard had to be re-measured
+# rather than left where a comment said it belonged.
 constant DEPTH: i64
-    24
+    38
 
 # A whole program: every top-level statement in order, on a fresh frame.
 function run(nodes: tree.Tree) -> value.Frame?

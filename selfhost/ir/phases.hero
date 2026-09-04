@@ -35,7 +35,7 @@ function check(p: containers.Program, f: containers.Function, blk: containers.Bl
 
             for inst in blk.insts
                 match inst.op
-                    .incref | .decref                                                                   => has_rc @ true
+                    .incref | .decref | .decref_slot                                                    => has_rc @ true
                     .lit | .load | .store | .push_owned | .unary | .binary | .cast | .call | .construct => continue
                     .field | .index | .map_get | .len_of | .tag_of | .payload                           => continue
                     .func_ref | .copy_out | .abort_op | .hole | .missing                                => continue
@@ -205,9 +205,9 @@ function last_write(blk: containers.Block, slot_at: i64) -> i64
             .store st =>
                 if st.place.root == slot_at && st.place.path.length == 0
                     floor @ at + 1
-            .lit | .load | .push_owned | .unary | .binary | .cast | .call | .construct => at @ at
-            .field | .index | .map_get | .len_of | .tag_of | .payload                  => at @ at
-            .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing   => at @ at
+            .lit | .load | .push_owned | .unary | .binary | .cast | .call | .construct              => at @ at
+            .field | .index | .map_get | .len_of | .tag_of | .payload                               => at @ at
+            .func_ref | .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => at @ at
 
         at @ at + 1
 
@@ -219,6 +219,13 @@ function released_after(blk: containers.Block, slot_at: i64, floor: i64) -> bool
     for inst in blk.insts
         if at >= floor
             match inst.op
+                # The direct form, since panel 106: the release names the
+                # slot, so the question this function asks is answered by
+                # reading the instruction rather than by tracing a
+                # temporary back to its load.
+                .decref_slot ds =>
+                    if ds.slot == slot_at
+                        return true
                 .decref rc =>
                     if loaded_from(blk, value: rc.value, slot_at: slot_at, floor: floor, before: at)
                         return true
@@ -241,9 +248,9 @@ function loaded_from(blk: containers.Block, value: i64, slot_at: i64, floor: i64
                     .load ld =>
                         if ld.place.root == slot_at && ld.place.path.length == 0
                             return true
-                    .lit | .store | .push_owned | .unary | .binary | .cast | .call | .construct => at @ at
-                    .field | .index | .map_get | .len_of | .tag_of | .payload                   => at @ at
-                    .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing    => at @ at
+                    .lit | .store | .push_owned | .unary | .binary | .cast | .call | .construct             => at @ at
+                    .field | .index | .map_get | .len_of | .tag_of | .payload                               => at @ at
+                    .func_ref | .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => at @ at
         at @ at + 1
 
     return false
@@ -274,9 +281,9 @@ function owning_temporaries_move_into_slots(blk: containers.Block, c: state.Chec
                 .store st =>
                     if st.value == dest
                         moved @ true
-                .lit | .load | .push_owned | .unary | .binary | .cast | .call | .construct => continue
-                .field | .index | .map_get | .len_of | .tag_of | .payload                  => continue
-                .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing   => continue
+                .lit | .load | .push_owned | .unary | .binary | .cast | .call | .construct              => continue
+                .field | .index | .map_get | .len_of | .tag_of | .payload                               => continue
+                .func_ref | .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => continue
 
         if !moved
             problems @ problems.push(

@@ -35,6 +35,5 @@ function total_of(xs: [i64]) -> i64
         jump bb1
     bb4  for: exit    preds bb1
         $t17: i64 = load sum
-        $t19: [i64] = load $xs0
-        decref $t19
+        decref_slot $xs0
         return $t17

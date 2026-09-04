@@ -152,9 +152,9 @@ function members(module: str, p: containers.Program, c: state.Checked, s: source
                                 if !ordinary.is_err()
                                     declared[ordinary.must()] @ true
                             .extern_fn | .builtin_fn | .indirect => continue
-                    .lit | .load | .store | .push_owned | .unary | .binary | .cast         => continue
-                    .field | .index | .map_get | .len_of | .tag_of | .payload | .construct => continue
-                    .copy_out | .abort_op | .incref | .decref | .hole | .missing           => continue
+                    .lit | .load | .store | .push_owned | .unary | .binary | .cast              => continue
+                    .field | .index | .map_get | .len_of | .tag_of | .payload | .construct      => continue
+                    .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => continue
 
     # ORDER: ascending function index — the emitted order must be a
     # function of the program, not of the worklist, and the double-emit

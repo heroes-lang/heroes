@@ -98,9 +98,9 @@ function block_rewrite(f: containers.Function, insts: [ir.Inst], reads: {i64: i6
                     drop[pair.load_at] @ true
                     drop[pair.call_at] @ true
                     grow[si] @ .push_owned(place: st.place, value: pair.pushed)
-            .lit | .load | .push_owned | .unary | .binary | .cast | .call | .construct => si @ si
-            .field | .index | .map_get | .len_of | .tag_of | .payload                  => si @ si
-            .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing   => si @ si
+            .lit | .load | .push_owned | .unary | .binary | .cast | .call | .construct              => si @ si
+            .field | .index | .map_get | .len_of | .tag_of | .payload                               => si @ si
+            .func_ref | .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => si @ si
 
         si @ si + 1
 
@@ -153,7 +153,7 @@ function pattern(f: containers.Function, insts: [ir.Inst], defs: {i64: i64}, rea
             "not a call"
         )
         .field | .index | .map_get | .len_of | .tag_of | .payload => return fail("not_push", "not a call")
-        .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing => return fail(
+        .func_ref | .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => return fail(
             "not_push",
             "not a call"
         )
@@ -188,7 +188,7 @@ function pattern(f: containers.Function, insts: [ir.Inst], defs: {i64: i64}, rea
             "not_load",
             "the receiver is not a load"
         )
-        .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing => return fail(
+        .func_ref | .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => return fail(
             "not_load",
             "the receiver is not a load"
         )
@@ -245,7 +245,7 @@ function writes_root(f: containers.Function, op: ir.OpKind, root: i64) -> bool
         .abort_op ab => return inout_hits(f, over: ab.arguments, root: root)
         .lit | .load | .unary | .binary | .cast => return false
         .field | .index | .map_get | .len_of | .tag_of | .payload => return false
-        .func_ref | .incref | .decref | .hole | .missing => return false
+        .func_ref | .incref | .decref | .decref_slot | .hole | .missing => return false
 
     return false
 
@@ -277,9 +277,9 @@ function verify(blk: containers.Block, f: containers.Function, c: state.Checked,
 
                 if !is_array
                     problems @ problems.push(label + "a push_owned into a place that is not an array")
-            .lit | .load | .store | .unary | .binary | .cast | .call | .construct    => continue
-            .field | .index | .map_get | .len_of | .tag_of | .payload                => continue
-            .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing => continue
+            .lit | .load | .store | .unary | .binary | .cast | .call | .construct                   => continue
+            .field | .index | .map_get | .len_of | .tag_of | .payload                               => continue
+            .func_ref | .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => continue
 
 # The path half, on its own so the test below can fire it without a
 # Checked in hand; the array half above is defensive — from source the
@@ -374,12 +374,12 @@ function op_names(f: containers.Function) -> [str]
 
 function op_name(op: ir.OpKind) -> str
     return match op
-        .lit                                                    => "lit"
-        .load                                                   => "load"
-        .store                                                  => "store"
-        .push_owned                                             => "push_owned"
-        .call                                                   => "call"
-        .len_of                                                 => "len_of"
-        .unary | .binary | .cast | .construct | .field | .index => "other"
-        .map_get | .tag_of | .payload | .func_ref | .copy_out   => "other"
-        .abort_op | .incref | .decref | .hole | .missing        => "other"
+        .lit                                                            => "lit"
+        .load                                                           => "load"
+        .store                                                          => "store"
+        .push_owned                                                     => "push_owned"
+        .call                                                           => "call"
+        .len_of                                                         => "len_of"
+        .unary | .binary | .cast | .construct | .field | .index         => "other"
+        .map_get | .tag_of | .payload | .func_ref | .copy_out           => "other"
+        .abort_op | .incref | .decref | .decref_slot | .hole | .missing => "other"

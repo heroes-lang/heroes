@@ -145,6 +145,23 @@ constant CEILING: i64
 # one field, `instantiated_at`, so the emitter's gate can report an instance
 # at the call that made it (the pragmatist's blocking condition 4). Raised
 # with room, as the precedents above were.
+# **Three moved on 2026-09-04, panel 106's repair** — the exit sweep stops
+# minting a load temporary per swept slot per returning block, which was 58.5%
+# of every declared frame in the emitted C. All three raises are the SAME
+# addition seen from three files, and in every one of them the code is small
+# and the comment is the reason: an op that carries a slot rather than a value
+# is a departure from what `ir.hero` had asserted for a year — *releasing a
+# slot IS a load followed by a decref, which keeps one form instead of two* —
+# so the file that made the claim is the file that has to withdraw it, in
+# writing, with the measurement. `ir.hero` is a NEW entry at **310** against a
+# measured 305: 4 lines of case and the paragraph that says why the old
+# sentence was true and expensive. `emit/inst.hero` 324 -> **350** against a
+# measured 343: the whole change there is one emitted arm plus the split of
+# `reference` into a value door and a name door, which exists so that the two
+# ways to reach a refcount call cannot learn a type apart. `ir/print.hero`
+# 460 -> **470** against a measured 465: one line prints the slot by name, and
+# four say why printing it as a decref of an invented temporary would make
+# `--dump-ir` describe a program the emitter no longer writes.
 constant DECIDED: [str]
     [
         "selfhost/check/walk.hero 1700"
@@ -152,7 +169,7 @@ constant DECIDED: [str]
         "selfhost/print/fmt.hero 1150"
         "selfhost/grammar_expr.hero 1002"
         "selfhost/parse/decl.hero 638"
-        "selfhost/ir/print.hero 460"
+        "selfhost/ir/print.hero 470"
         "selfhost/ast.hero 455"
         "selfhost/check/builtins.hero 374"
         "selfhost/ir/mono.hero 380"
@@ -160,7 +177,8 @@ constant DECIDED: [str]
         "selfhost/emit/gate.hero 341"
         "selfhost/resolve/cycles.hero 331"
         "selfhost/resolve/state.hero 330"
-        "selfhost/emit/inst.hero 324"
+        "selfhost/emit/inst.hero 350"
+        "selfhost/ir.hero 310"
         "selfhost/modules.hero 320"
         "selfhost/parse/use_line.hero 310"
     ]
@@ -348,4 +366,12 @@ test "the ceiling is per file, and a decided file keeps its own"
     # One stale number hid a second one. Two lessons and both are cheap: a case
     # that pins several independent facts hides all but the first, and the
     # suite that holds it needs a caller (see above).
-    assert DECIDED.len() == 16
+    #
+    # **16 -> 17 on 2026-09-04**, `selfhost/ir.hero` at 310: panel 106's repair
+    # adds an `OpKind` case that carries a slot rather than a value, and the
+    # paragraph withdrawing what that file had asserted for a year is longer
+    # than the case. The count moved because a row was ADDED, which is the
+    # direction this assert notices least loudly — a removal takes the table
+    # below the number and a raise leaves it alone, so an addition is the one
+    # that has to be written down here on purpose.
+    assert DECIDED.len() == 17

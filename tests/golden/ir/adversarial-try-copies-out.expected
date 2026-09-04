@@ -18,10 +18,8 @@ function parsed(s: str) -> i64?
         store $own1 <- $t10
         decref $t11
         incref $t10
-        $t13: i64? = load $own1
-        decref $t13
-        $t14: i64? = load $own2
-        decref $t14
+        decref_slot $own1
+        decref_slot $own2
         return $t10
     bb2  if: then    preds bb0
         $t5: str = const str 0
@@ -33,10 +31,8 @@ function parsed(s: str) -> i64?
         store $own2 <- $t7
         decref $t12
         incref $t7
-        $t15: i64? = load $own1
-        decref $t15
-        $t16: i64? = load $own2
-        decref $t16
+        decref_slot $own1
+        decref_slot $own2
         return $t7
     bb3  if: else    preds bb0
         jump bb1
@@ -76,16 +72,11 @@ function advance_over(@r: Reader, s: str) -> i64?
         decref $t25
         copyout r
         incref $t9
-        $t28: i64? = load $f0
-        decref $t28
-        $t29: i64? = load $own4
-        decref $t29
-        $t30: i64? = load $own5
-        decref $t30
-        $t31: i64? = load $own6
-        decref $t31
-        $t32: i64? = load $own7
-        decref $t32
+        decref_slot $f0
+        decref_slot $own4
+        decref_slot $own5
+        decref_slot $own6
+        decref_slot $own7
         return $t9
     bb3  if: join    preds bb5
         $t17: Reader = load r
@@ -100,16 +91,11 @@ function advance_over(@r: Reader, s: str) -> i64?
         decref $t26
         copyout r
         incref $t22
-        $t33: i64? = load $f0
-        decref $t33
-        $t34: i64? = load $own4
-        decref $t34
-        $t35: i64? = load $own5
-        decref $t35
-        $t36: i64? = load $own6
-        decref $t36
-        $t37: i64? = load $own7
-        decref $t37
+        decref_slot $f0
+        decref_slot $own4
+        decref_slot $own5
+        decref_slot $own6
+        decref_slot $own7
         return $t22
     bb4  if: then    preds bb1
         $t15: i64 = const 0
@@ -119,16 +105,11 @@ function advance_over(@r: Reader, s: str) -> i64?
         decref $t27
         copyout r
         incref $t16
-        $t38: i64? = load $f0
-        decref $t38
-        $t39: i64? = load $own4
-        decref $t39
-        $t40: i64? = load $own5
-        decref $t40
-        $t41: i64? = load $own6
-        decref $t41
-        $t42: i64? = load $own7
-        decref $t42
+        decref_slot $f0
+        decref_slot $own4
+        decref_slot $own5
+        decref_slot $own6
+        decref_slot $own7
         return $t16
     bb5  if: else    preds bb1
         jump bb3

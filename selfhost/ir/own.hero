@@ -173,9 +173,9 @@ function rewrite(f: containers.Function, c: state.Checked) -> containers.Functio
                                             ir.Inst(dest: fail("none", "void"), op: .incref(value: v.value), ty: arg_ty, span: inst.span)
                                         )
                                 .inout_arg => continue
-                .lit | .push_owned | .unary | .binary | .cast | .call                    => handled @ handled
-                .field | .index | .map_get | .len_of | .tag_of | .payload                => handled @ handled
-                .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing => handled @ handled
+                .lit | .push_owned | .unary | .binary | .cast | .call                                   => handled @ handled
+                .field | .index | .map_get | .len_of | .tag_of | .payload                               => handled @ handled
+                .func_ref | .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => handled @ handled
 
             if handled
                 continue
@@ -254,12 +254,23 @@ function rewrite(f: containers.Function, c: state.Checked) -> containers.Functio
                         ir.Inst(dest: fail("none", "void"), op: .incref(value: returned.must()), ty: ret_ty, span: span)
                     )
 
+            # **One instruction per swept slot, since panel 106.** This was
+            # a load into a fresh temporary followed by a decref of it, on
+            # the reasoning — written into `ir.hero` beside the op — that
+            # releasing a slot IS a load plus a decref, so the IR keeps one
+            # form and the dominance check covers it for free. Both halves
+            # were true; the sitting measured the price. The temporary is
+            # address-taken by the release it feeds, so clang can never
+            # promote it out of the frame, and one per swept slot per
+            # returning block came to **58.5% of all declared frame bytes**
+            # — measured over `examples/interpreter/`, whose recursion
+            # ceiling that cost 191 levels at `-O0` where the same program
+            # reaches 311 without them.
             for slot_id in sweep
                 ty = worked.slots[slot_id].ty
-                loaded = fresh(next_value: @next_value, worked: @worked, ty: ty)
-                place = ir.Place(root: slot_id, path: ir.Run(start: 0, length: 0))
-                out @ out.push(ir.Inst(dest: ok(loaded), op: .load(place: place), ty: ty, span: span))
-                out @ out.push(ir.Inst(dest: fail("none", "void"), op: .decref(value: loaded), ty: ty, span: span))
+                out @ out.push(
+                    ir.Inst(dest: fail("none", "void"), op: .decref_slot(slot: slot_id), ty: ty, span: span)
+                )
 
             worked.blocks[index].insts @ out
         index @ index + 1
@@ -332,7 +343,7 @@ test "a store expands to load-incref-store-decref, and the sweep closes returns"
     for inst in last.insts
         match inst.op
             .incref                                                                             => incref_at @ at
-            .decref                                                                             => last_decref @ at
+            .decref | .decref_slot                                                              => last_decref @ at
             .lit | .load | .store | .push_owned | .unary | .binary | .cast | .call | .construct => at @ at
             .field | .index | .map_get | .len_of | .tag_of | .payload                           => at @ at
             .func_ref | .copy_out | .abort_op | .hole | .missing                                => at @ at

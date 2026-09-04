@@ -253,6 +253,28 @@ variant OpKind
         value: i64
     decref
         value: i64
+    # Releasing a SLOT, named rather than loaded. The two lines above said
+    # for a year that a slot's release *is* a load followed by a decref,
+    # "which keeps one form instead of two and makes the dominance check
+    # cover it free" — and that was true and it was expensive. Panel 106
+    # measured the bill: `own.hero` mints one load temporary per swept slot
+    # per returning block, every one of them address-taken so clang can
+    # never promote it, and together they are **58.5% of all declared frame
+    # bytes**. Removing them took `examples/interpreter/`'s frames down
+    # 52.3% at `-O0` and 62.7% at `-O2`, and its recursion ceiling from 191
+    # to 311 and from 347 to 581.
+    #
+    # It carries a SLOT and not a Place, deliberately: a refcount belongs to
+    # a whole value, so an op that could name `p.x` would be an op that
+    # could release half of one. The verifier does not have to check what
+    # cannot be spelled.
+    #
+    # The dominance check the old comment mentions is not lost, it is
+    # unnecessary: a slot is not an SSA value, so there is no definition to
+    # dominate. `uses.slots_of` reports it, which is what keeps the swept
+    # slot counted as read (`emit/body.hero`'s `__attribute__((unused))`).
+    decref_slot
+        slot: i64
     # `???` (§4.16). A hole type-checks, so lowering must produce
     # something; the verifier allows it and the emitter refuses it,
     # which is how "no binary" is enforced without making a hole an error.
@@ -305,9 +327,9 @@ test "an instruction is flat: operands are ids, never expressions"
         .binary b =>
             assert b.left == 0
             assert b.right == 1
-        .lit | .load | .store | .push_owned | .unary | .cast | .call | .construct => assert false
-        .field | .index | .map_get | .len_of | .tag_of | .payload                 => assert false
-        .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing  => assert false
+        .lit | .load | .store | .push_owned | .unary | .cast | .call | .construct               => assert false
+        .field | .index | .map_get | .len_of | .tag_of | .payload                               => assert false
+        .func_ref | .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => assert false
 
     assert plus.dest.must() == 2
 
@@ -324,9 +346,9 @@ test "a call's arguments are a run, and a void call has no destination"
         .call c =>
             assert c.variadic
             assert c.arguments.length == 2
-        .lit | .load | .store | .push_owned | .unary | .binary | .cast | .construct => assert false
-        .field | .index | .map_get | .len_of | .tag_of | .payload                   => assert false
-        .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing    => assert false
+        .lit | .load | .store | .push_owned | .unary | .binary | .cast | .construct             => assert false
+        .field | .index | .map_get | .len_of | .tag_of | .payload                               => assert false
+        .func_ref | .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => assert false
 
 test "a place is a root and a path, and a switch is dense"
     spot = Place(root: 3, path: Run(start: 0, length: 1))

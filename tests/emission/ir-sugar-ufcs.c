@@ -118,7 +118,6 @@ void h_sugarufcs_main(void) {
     int64_t t4;
     int64_t t5;
     HeroArrayHeader * t6 = {0};
-    HeroArrayHeader * t7 = {0};
     goto bb0;
 bb0:
 #line 8 "tests/golden/ir/sugar-ufcs.hero"
@@ -139,7 +138,7 @@ bb0:
     t6 = h0_own0;
 #line 8 "tests/golden/ir/sugar-ufcs.hero"
     h0_own0 = t3;
-#line 143 "sugarufcs.c"
+#line 142 "sugarufcs.c"
     hero_array_decref(t6);
 #line 8 "tests/golden/ir/sugar-ufcs.hero"
     t4 = hero_array_len(t3);
@@ -149,10 +148,8 @@ bb0:
     hero_print_int(t5);
 #line 8 "tests/golden/ir/sugar-ufcs.hero"
     hero_print_end();
-#line 8 "tests/golden/ir/sugar-ufcs.hero"
-    t7 = h0_own0;
-#line 155 "sugarufcs.c"
-    hero_array_decref(t7);
+#line 152 "sugarufcs.c"
+    hero_array_decref(h0_own0);
     return;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
