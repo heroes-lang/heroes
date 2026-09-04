@@ -72,10 +72,35 @@ function flags() -> [str]
 # silence.
 #
 # **64 MB is the number that was RUN.** 8 MB (POSIX parity) and 16 were not
-# measured, and this list states measurements rather than preferences — the
-# reserve is address space on a 64-bit target and not committed memory, so a
-# large one costs nothing real. Bringing it down is a change that owes its own
-# measurement.
+# measured, and this list states measurements rather than preferences.
+#
+# **AND IT DOES NOT COST NOTHING — this comment said it did, and panel 107
+# measured that false.** The sentence deleted here read *"the reserve is address
+# space on a 64-bit target and not committed memory, so a large one costs
+# nothing real"*, and it is true for a program that stays inside its stack (max
+# RSS 2,768,896 bytes large against 2,752,512 small, binary 525,312 both) and
+# **false for the case this flag exists for**: a program that runs away takes max
+# RSS **9,814,016 → 68,534,272**. That is CLAUDE.md §11's expiring premise in
+# its usual shape — the argument still reads as valid, and only the premise
+# died. Three more things the sitting ran, none of them known when the number
+# was chosen: the flag **overrides the operator** (`pthread_get_stacksize_np`
+# reports 67,108,864 under `ulimit -s 1024`), Darwin grants it **above the hard
+# rlimit** (67,108,864 > 67,092,480), and 64 MB is exactly Apple's documented
+# ceiling, so there is no margin above it. Bringing it down still owes its own
+# measurement; the number argued from this compiler's own frames would be
+# **16 MB** (`docs/panel/107`, the compiler seat's condition 2).
+#
+# **AND IT IS WINDOWS' AND STAYS WINDOWS', by ruling.** Panel 107 was convened
+# to pass the same number on all three platforms and **refused all three
+# mechanisms**, each on a measurement: `-Wl,-z,stacksize=` is ignored by GNU ld
+# and rejected by lld, leaving `PT_GNU_STACK` `p_memsz` at 0x0 and the depth
+# unchanged, while printing a warning on every Linux build forever through
+# `toolchain.hero`'s stderr forwarding; running `main` on a created thread with
+# a chosen size breaks `examples/sdl/` (`SDL_Init(VIDEO)` needs the process's
+# real main thread); and stating a depth in the spec would be false on the day
+# it landed. What the sitting adopted instead is the **per-thread guard**: the
+# uniformity a program can be given is a named abort on every thread, not a
+# number, because the number cannot be made uniform on any of these platforms.
 #
 # **It is a LINK flag and it is asked of the machine, not of a `#if`.** Passing
 # `-Wl,` to a compile step is an unused argument, and passing `/STACK:` to `ld`
