@@ -44,7 +44,6 @@ constant RECORD: [str]
         "docs/journal"
         "docs/measurements"
         "docs/book"
-        "docs/reasoning"
         "tests/golden"
         "tests/emission"
         "DESIGN-LOG.md"
@@ -67,6 +66,13 @@ constant RECORD: [str]
 # an identifier must never appear. A dead exemption is not free — it reads as a
 # statement that the log is allowed to breach the rule, and the next person to add
 # an entry would believe it.
+#
+# **`docs/reasoning` left the list on 2026-09-04 for the opposite reason: the tree
+# it selected was deleted the same commit**, by author instruction retiring the
+# reasoning notes into `docs/work/DONE.md`. The seven notes were records and the
+# entry was live — it is removed because there is nothing to exempt, not because
+# it was wrong, and `records/exemptions` below is what obliged the two halves to
+# move together. The text is at `git show 365fe929:docs/reasoning/`.
 
 # Files git tracks that NOBODY WRITES. Not records, which are prose somebody
 # meant; artifacts, whose bytes are chosen by a tool.
@@ -190,7 +196,7 @@ constant REFUSED: [str]
 # framework that composes them.
 #
 # **48 → 55 on 2026-09-03**, later the same evening, out of a reasoning session
-# that re-read the whole chain for what it lacked (`docs/reasoning/006`): four
+# that re-read the whole chain for what it lacked (`DESIGN-LOG.md:539`): four
 # rulings on the language (`M-closures-verdict`, `M-reflection-verdict`,
 # `M-deferral-ledger`, with `M-interpolation-verdict` moved up beside them), one
 # runtime guard (`M-panic-location`), one instrument (`M-thesis-harness`), one
@@ -1101,7 +1107,9 @@ function verdicts(@r: report.Report, present: [str])
 #
 # Measured 2026-08-24, on the check's first run: **57 sittings below 063 carry no
 # verdict section at all**, and every one of them is nonetheless RATIFIED — by a
-# `DESIGN-LOG.md` line, by `docs/panel/OPEN-QUESTIONS.md`, or by a blanket author
+# `DESIGN-LOG.md` line, by the panel watch list (`OPEN-QUESTIONS.md`, retired
+# 2026-09-04: ten of its nineteen items were closed, and the file said which
+# sittings the author had decided), or by a blanket author
 # instruction. They predate the convention rather than break it. CLAUDE.md §14
 # says a dated record is not rewritten, so this check does not demand that 57
 # files be retrofitted to satisfy an instrument invented after them.
@@ -1207,8 +1215,11 @@ function sitting_digits(path: str) -> str?
         return fail("unnumbered", "no `-` after the number in " + path)
     return ok(rest.slice(from: 0, to: at.must()))
 
-# A numbered sitting under `docs/panel/`. `OPEN-QUESTIONS.md` is not one: it is
-# the watch list, it has no resolution, and nobody ratifies it.
+# A numbered sitting under `docs/panel/`. The digit is what is asked, and the
+# reason is historical: this directory held one unnumbered file until 2026-09-04
+# — `OPEN-QUESTIONS.md`, the watch list, which had no resolution and which nobody
+# ratified. The rule stays after the file went, so the next unnumbered thing to
+# land here is not read as a sitting either.
 function is_sitting(path: str) -> bool
     if !strings.starts_with(text: path, prefix: "docs/panel/")
         return false
@@ -1799,6 +1810,11 @@ test "a sitting's queue item is found by the digits the record actually writes"
     # because a human may reach for it and it names no other sitting.
     assert sitting_digits("docs/panel/091-a-name.md").must() == "091"
     assert sitting_digits("docs/panel/007-a-name.md").must() == "007"
+
+    # The watch list's own name, kept as a case after the file was retired on
+    # 2026-09-04: a dashed name with no digits parses to something, and what it
+    # parses to must still not read as a sitting number. `is_sitting` is what
+    # refuses it, and this line is why that function asks for a digit.
     assert sitting_digits("docs/panel/OPEN-QUESTIONS.md").must() == "OPEN"
     assert sitting_digits("docs/panel/nodash.md").is_err()
 

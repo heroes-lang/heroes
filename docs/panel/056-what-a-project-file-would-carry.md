@@ -289,3 +289,60 @@ The limit is the 2026-08-12 blanket's limit. Four of the five predictions above
 name instruments that do not exist yet (the model harness, rung 5's close, C's
 landing); the yes does not score them, and R2's *re-decided, never renewed* rule
 governs them exactly as it did before.
+
+## Appended 2026-09-04 — the nine jobs, moved here from the retired reasoning note
+
+The note this sitting was convened from was retired on 2026-09-04 by author
+instruction, with the rest of `docs/reasoning/`; its text stands at
+`git show 2689d606:docs/reasoning/004-a-project-file.md`. **Two blocks move here
+rather than into the record**, and the reason is this file's own § Process notes:
+the note was legalised on 2026-08-15 (`docs/work/DONE.md:456`) precisely because
+it held *"the path to the question, the inventory it was measured against, the
+tension that produced the proposal"* — things the panel file does not say. Moving
+them here rather than deleting them is what keeps that ruling true; the mechanical
+test it set was *"if the note can be deleted without losing anything the panel
+file does not already say, it should not have been written"*, and this is that
+test answered in the only honest direction.
+
+**The `.rs` paths in the table are the bootstrap's, as the note measured them on
+2026-08-14** — five days before `crates/` became `archive/bootstrap-rs/`. They are
+repointed rather than kept, because a citation into a moved tree reads as current
+(CLAUDE.md §11); where a live counterpart exists it is named beside it.
+
+### The nine jobs, and who holds each one today
+
+| # | what a `Cargo.toml` carries | where Heroes puts it | the rule that puts it there |
+|---|---|---|---|
+| 1 | `[package]` — name, version, licence | **nowhere**; no publishable unit exists | — |
+| 2 | `[dependencies]` | `use geom` reads `geom.hero` **beside the file** (`archive/bootstrap-rs/heroes/src/modules/mod.rs`; live: `selfhost/module/paths.hero`) | `design.md` §3.5 — *"a v1 'dependency' is a link flag declared in the source next to the `extern` that needs it"* |
+| 3 | native linking (`links`, `build.rs`) | `link "sqlite3"` / `package "raylib"` in the group head | `design.md` §4.19; panels 036, 050 |
+| 4 | search paths `-I` / `-L` | `--include`/`--library`, plus `CPATH`, `LIBRARY_PATH`, `PKG_CONFIG_PATH` | panel 055; `machine_locked_path`, live at `selfhost/parse/decl.hero:550` (was `syntax/externs.rs:110-136`) |
+| 5 | `[profile]` — opt level, debug | per-verb defaults (`build` −O0, `run` −O2, `test` −O0) and `-O0`/`-O2`/`--sanitize` | `CLAUDE.md` §10 |
+| 6 | `[[bin]]`, entry point | *"the file you compile holds `main`"*; one file operand, maximum (`archive/bootstrap-rs/heroes-cli/src/cli/table.rs`) | `design.md` §4.1 |
+| 7 | `[workspace]`, module paths | beside the file: no path, no search list, no hierarchy | `design.md` Part 7 item 4 — *"no package hierarchy"* |
+| 8 | `[target.'cfg(…)']` | `runtime/hero_os.h`; `package` is **one spelling per platform** | panel 049 — the platform axis refused at +144, with a veto |
+| 9 | toolchain pinning | the flag list names `-std=gnu11` (`archive/bootstrap-rs/heroes-cli/src/commands/toolchain.rs`; live: `selfhost/cli/flags.hero`); clang pinned at the fixpoint | panel 047 — *"`rust-toolchain.toml` pins the Rust, the flag list names the C"* |
+
+**The right-hand column is the finding.** For seven of the nine, what stands
+against a manifest is not a preference about file formats: it is that the fact
+already has a home and the home has a stated reason. Rows 1 and 7 are the
+exceptions — they have no home at all, and both belong to the same unbuilt
+milestone, which is `M-package-manager` and where this sitting's three return
+conditions now live (`docs/ROADMAP.md` § M-package-manager).
+
+### A project file was not on panel 055's ballot, and that is how the gap was found
+
+Panel 055 put four options: **A** a path in the group head · **B** nothing in the
+language, the machine is asked · **C** `--include`/`--library` on the argv table ·
+**D** wait, because `package` may have met the need. A per-project file is none of
+them.
+
+That sitting's own reason for refusing A is what makes the gap visible. The
+llm-ergonomist vetoed A on locality: *"one clang invocation means one `-I` set, so
+a path in group 1's head changes how group 2's header resolves."* That is an
+argument that a search path is a **whole-program fact wearing a per-group
+spelling** — and it says nothing against a whole-program home. Of the three
+whole-program homes that exist, the environment was adopted, the flags were queued
+and then landed, and the third was never written down. The header comment of
+`examples/sdl/main.hero` named the shape of the hole from the other side: *"There
+was no third door."*

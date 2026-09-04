@@ -55,7 +55,7 @@ by hand-written C), the deleted darling (QBE). Include memorable prompts —
 what the author actually asked, verbatim when it matters — **in English**.
 This line said the opposite until 2026-09-04 (*"Italian quotes are welcome
 inside beats: they are quoted speech, not artifacts"*), and it was the root
-precedent the rest of the repository cited: `docs/reasoning/README.md` took its
+precedent the rest of the repository cited: the reasoning notes' README took its
 own carve-out from it by name, and 241 Italian quotations came in behind them
 both. CLAUDE.md §11 retired the doctrine — quoted speech is an artifact like
 any other, and an instruction is quoted for what it **meant**. `beats.md` is a
