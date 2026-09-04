@@ -99,6 +99,24 @@ function refuse(target: emit_decls.BuildTarget, p: containers.Program, c: state.
         for slot_id in f.params
             check_type(@found, c, s, decls, ty: f.slots[slot_id].ty, span: containers.reports_at(f, f.span))
 
+            # `()` in its own right is fine and `check_type` says so —
+            # but a PARAMETER of it emits `void h0_`, which clang
+            # refuses (`argument may not have 'void' type`), exit 2 and
+            # the compiler blaming itself. `_: ()` is the ONE spelling
+            # that reaches here: a named `()` parameter is already
+            # `unused_binding` if it is not read and `bound_unit` if it
+            # is, and `_` binds nothing so neither rule fires. The FIELD
+            # position of this same hole was closed 2026-08-12
+            # (`unit_fields` below); its sibling here was not, which is
+            # a repair shipped without its adjacent shapes.
+            if f.slots[slot_id].ty == table.unit_ty(c.types)
+                note(
+                    @found,
+                    code: "unit_parameter",
+                    what: "`()` as the type of a parameter",
+                    span: containers.reports_at(f, f.span)
+                )
+
         check_type(@found, c, s, decls, ty: f.result, span: containers.reports_at(f, f.span))
 
         for blk in f.blocks
@@ -155,6 +173,9 @@ function what_the_author_can_do(code: str) -> str
 
     if code == "unit_element" || code == "unit_field"
         return "give it a type that carries a value"
+
+    if code == "unit_parameter"
+        return "drop the parameter — `()` carries no value, so a caller has nothing to pass"
 
     if code == "fixed_flow" || code == "fixed_element"
         return "write a fixed array out where its record is built — C has no array assignment"
