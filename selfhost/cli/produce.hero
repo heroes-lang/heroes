@@ -20,6 +20,7 @@ use cli/toolchain
 use cli/process
 use cli/units
 use cli/pointee
+use cli/pointee_ask
 use cli/clang_floor
 use emit/unit
 use emit/members
@@ -56,7 +57,7 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
     floor = clang_floor.check(t.build)
 
     if floor.is_err()
-        io.eprint(text: "error: " + floor_text(floor))
+        io.eprint(text: "error: " + failure_message(floor))
         return fail("failed", "clang is below the floor")
     art = compile.to_unit(s, options, version: version)
 
@@ -129,6 +130,11 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
     if !options.output.is_err()
         binary @ options.output.must()
 
+    # What the header said each `@` parameter points at (defect 010): filled
+    # by the pointee check below, empty for the package failure explained
+    # first, since no pointee has been asked about yet.
+    answered: [pointee_ask.Answered] @ []
+
     # Asked before clang runs, so a package that is not installed is
     # reported as itself rather than as a header clang could not find.
     package_flags = libraries.resolve_packages(art.must().packages, build_dir: t.build)
@@ -146,18 +152,8 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
         # which is every part of §4.17 at once, in the one class where the
         # compiler is allowed to blame the author's own `extern` (§7).
         message = failure_text(package_flags)
-        theirs = ffi.explain(
-            message,
-            s,
-            art.must().tree,
-            art.must().decls,
-            art.must().checked,
-            art.must().program,
-            word_bits: io.word_bits()
-        )
 
-        if theirs.len() > 0
-            _ = compile.stage(theirs, s)
+        if blamed(message, art.must(), s, answered)
             return fail("diagnostics", "the package could not answer")
         io.eprint(text: message)
         return fail("diagnostics", "the package could not answer")
@@ -187,6 +183,7 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
         art.must().checked,
         s,
         art.must().decls,
+        answered: @answered,
         search_include: options.headers_from,
         package_flags: package_flags.must(),
         source_dir: source_dir
@@ -283,19 +280,9 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
         # Some clang failures are the AUTHOR's, and the ffi mapping is
         # the only place that decides which (panel 036 rider 3). The
         # pipeline pieces ride in the Artifact for exactly this call.
-        message = unit_failure_text(linked)
-        theirs = ffi.explain(
-            message,
-            s,
-            art.must().tree,
-            art.must().decls,
-            art.must().checked,
-            art.must().program,
-            word_bits: io.word_bits()
-        )
+        message = failure_message(linked)
 
-        if theirs.len() > 0
-            _ = compile.stage(theirs, s)
+        if blamed(message, art.must(), s, answered)
             return fail("diagnostics", "the author's extern disagrees with the header")
         io.eprint(text: "internal error: " + message)
 
@@ -314,7 +301,30 @@ function failure_text(failed: [str]?) -> str
         .ok    => return ""
         .err e => return e.msg
 
-function unit_failure_text(failed: ()?) -> str
+# Whether a clang failure is the AUTHOR's: `emit/ffi.hero` reads its marker
+# lines back into diagnostics on the `.hero` line, prints them, and the answer
+# is yes (CLAUDE.md §7's named exception). One door for the package that could
+# not answer and the unit clang refused — the same eleven lines twice, before.
+function blamed(message: str, art: compile.Artifact, s: source.Source, answered: [pointee_ask.Answered]) -> bool
+    theirs = ffi.explain(
+        message,
+        s,
+        art.tree,
+        art.decls,
+        art.checked,
+        art.program,
+        word_bits: io.word_bits(),
+        answered: answered
+    )
+
+    if theirs.len() == 0
+        return false
+    _ = compile.stage(theirs, s)
+    return true
+
+# The message of a failed `()?` — the clang floor's and the unit's alike.
+# It was two identical functions under two names until 2026-09-04.
+function failure_message(failed: ()?) -> str
     match failed
         .ok    => return ""
         .err e => return e.msg
@@ -326,8 +336,3 @@ function carry_failure(failed: str?) -> ()?
     match failed
         .ok    => return ok()
         .err e => return fail(e.code, e.msg)
-
-function floor_text(failed: ()?) -> str
-    match failed
-        .ok    => return ""
-        .err e => return e.msg

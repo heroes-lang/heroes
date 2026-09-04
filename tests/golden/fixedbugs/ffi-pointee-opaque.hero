@@ -1,0 +1,27 @@
+# fixedbugs, defect 010's adjacent shape, 2026-09-04 — attacked before the
+# repair was committed, because the provoking case is a witness and not the
+# class (CLAUDE.md §1).
+#
+# SYMPTOM: `@out: i64` declared against a C parameter of type `struct opaque *`,
+# where the header declares `struct opaque` and never defines it, made `heroes
+# build` say `internal error … clang refused the generated C`, exit 2 — the
+# same wrong party blamed as in `ffi-pointee-void`, by a different clang line.
+#
+# CAUSE: `sizeof(struct opaque)` on an incomplete type is a hard error
+# (`invalid application of 'sizeof' to an incomplete type 'struct opaque'`),
+# and no assertion can turn it into a marker line — measured: neither
+# `__builtin_choose_expr` nor a guard skips the type-check of the width
+# expression. The line names the TYPE and nothing else.
+#
+# FIX: `cli/pointee.hero` now hands `emit/ffi.hero` what the header said each
+# asked parameter points at (`pointee_ask.Answered`), and `pointee_unsized`
+# finds the parameter from the type the line names. The diagnostic is the same
+# `ffi_parameter_type` with the same repair: `ptr`, and no `@` — C keeps the
+# type opaque on purpose, and only C can size it.
+extern "ffi-pointee-opaque.h"
+    function fill(@out: i64) -> i32  #~ ffi_parameter_type
+
+function main()
+    out: i64 @ 0
+    print(fill(@out).to_str())
+    print(out.to_str())

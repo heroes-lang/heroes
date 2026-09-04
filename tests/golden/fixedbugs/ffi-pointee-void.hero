@@ -1,0 +1,34 @@
+# fixedbugs, defect 010, 2026-09-04 (panel 108's ffi-pragmatist found it
+# while compiling in-out shapes for a sitting about something else).
+#
+# SYMPTOM: `@value: i32` declared against a C parameter of type `void *`
+# passed `heroes check` and made `heroes build` say `internal error: checking
+# what the extern out-parameters point at failed`, exit 2 — the compiler
+# blaming itself for the author's declaration, which is the one thing
+# CLAUDE.md §7's named exception exists to prevent. Measured on macOS arm64
+# and in the Linux image, the same words on both.
+#
+# CAUSE: the pointee check (panel 103) asserts `sizeof(H) == sizeof(D)` and
+# the sign of `(H)-1` against the header's own type; for `H = void` both are
+# hard errors (`invalid operands to binary expression ('void' and 'int')`),
+# not a `static assertion failed` line, so `emit/ffi.hero`'s readers matched
+# nothing and the failure fell through to the compiler's own exit 2.
+#
+# FIX: `cli/header_types.hero` writes a guard before every width assertion —
+# `!__builtin_types_compatible_p(H, void)` — which fails as a proper assertion
+# carrying its own marker and the parameter's name; `emit/ffi_pointee.hero`
+# reads it into `ffi_parameter_type` on the parameter, with the repair that is
+# not another width: `ptr`, and no `@`. `__builtin_types_compatible_p` rather
+# than the spelling, because it ignores qualifiers (`const void`, measured)
+# and sees through typedefs (Win32's `VOID`).
+#
+# THE WITNESS IS `memcpy` because `void *` is its first parameter in C89 and
+# every C library on the three platforms has it — the defect's own witness was
+# `getsockopt`, which the Windows CRT spells from another header.
+extern "string.h"
+    function memcpy(@dst: i32, src: ptr, n: u64) -> ptr  #~ ffi_parameter_type
+
+function main()
+    dst: i32 @ to_i32(0).must()
+    _ = memcpy(@dst, src: nullptr, n: to_u64(0).must())
+    print(dst.to_str())

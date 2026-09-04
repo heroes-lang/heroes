@@ -214,11 +214,19 @@ function render_probes() -> [probe.Probe]
 # `_Static_assert`, `_Generic`, `hero_ffi_probe` and a `build/` path are
 # what the reader must never see, because each one sends them to a file
 # they did not write.
+#
+# The two `ffi-pointee-void` / `ffi-pointee-opaque` rows are defect 010 and
+# its adjacent shape (2026-09-04): a sized `@` against a pointee that has no
+# size — `void`, or a struct the header leaves incomplete — used to be the
+# compiler's exit 2. The `void` witness (`memcpy`, C89) carries every leg;
+# the opaque one carries its own header beside it, so no leg skips it.
 function ffi_probes() -> [probe.Probe]
     return [
         row(name: "a parameter wider than the header is the author's error", argv: "build tests/golden/fixedbugs/ffi-parameter-width.hero", code: 1).may_skip().err_has("error[ffi_parameter_type]").err_has("`c` of `putchar`").err_has("`int`").err_has("Declare it `i32`").err_lacks("internal error").err_lacks("hero_ffi_probe").err_lacks("build/")
         row(name: "a field the header has as an array is the author's error", argv: "build tests/golden/fixedbugs/ffi-a-field-the-header-has-as-an-array.hero", code: 1).may_skip().err_has("error[ffi_field_type]").err_has("`Dirent.d_name`").err_lacks("internal error")
         row(name: "a word-width parameter names the platform", argv: "build tests/golden/fixedbugs/ffi-word-width.hero", code: 1).may_skip().err_has("error[ffi_parameter_type]").err_has("`size` of `malloc`").err_has("`offset` of `fseek`").err_has("the platform's word").err_has("Windows").err_lacks("internal error").err_lacks("hero_ffi_probe")
+        row(name: "a sized @ against a void pointee is the author's error, and the repair is ptr", argv: "build tests/golden/fixedbugs/ffi-pointee-void.hero", code: 1).err_has("error[ffi_parameter_type]").err_has("`dst` of `memcpy`").err_has("`void`").err_has("dst: ptr").err_lacks("internal error").err_lacks("invalid operands").err_lacks("build/")
+        row(name: "a sized @ against an opaque struct is the author's error, found from the type clang names", argv: "build tests/golden/fixedbugs/ffi-pointee-opaque.hero", code: 1).err_has("error[ffi_parameter_type]").err_has("`out` of `fill`").err_has("`struct opaque`").err_has("out: ptr").err_lacks("internal error").err_lacks("incomplete type 'struct opaque'\n").err_lacks("build/")
         row(name: "a cstr that cannot be used says what turns it into a str", argv: "check tests/golden/check/ffi-cstr-has-a-route.hero", code: 1).err_has("error[bad_operand]").err_has("validated").err_has("null_cstr").err_has("not_text")
         row(name: "a wrong extern return type is the author's error", argv: "build tests/golden/fixedbugs/ffi-return-type.hero", code: 1).err_has("error[ffi_return_type]").err_has("does not return `i64`").err_has("math.h").err_lacks("internal error").err_lacks("_Static_assert").err_lacks("_Generic")
         row(name: "a wrong pointer return is a diagnostic", argv: "build tests/golden/fixedbugs/ffi-pointer-return.hero", code: 1).err_has("error[ffi_return_type]").err_has("getenv").err_has("stdlib.h").err_lacks("internal error").err_lacks("unary expression").err_lacks("_Generic")
@@ -335,7 +343,11 @@ test "the tables are what this module is, so they are counted"
     assert argv_probes().len() == 26
     assert help_probes().len() == 4
     assert render_probes().len() == 9
-    assert ffi_probes().len() == 17
+
+    # 17 -> 19 on 2026-09-04: defect 010's two rows (`ffi-pointee-void`,
+    # `ffi-pointee-opaque`). An addition is the direction this assert
+    # notices least loudly (CLAUDE.md § Commands), and here it noticed.
+    assert ffi_probes().len() == 19
 
     # 33 -> 35 on 2026-09-03, M-robustness-guards step 2: `qualifyptr`'s two
     # rows — the program whose `certain` fix reproduced itself, now a guess,

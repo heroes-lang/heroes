@@ -12,3 +12,14 @@ record Pointee
     declared: str
     file: str
     line: i64
+
+# The same ask once the header has answered: what its parameter points at,
+# as the header's own type text (`size_t`, `void`, `struct opaque`). Built by
+# `cli/header_types.hero` from the dump and handed to `emit/ffi.hero`'s
+# `explain`, because one class of failure names the TYPE and not the
+# parameter — clang says `incomplete type 'struct opaque'` and nothing else
+# (defect 010, 2026-09-04) — so the reader has to find the parameter from
+# the type, and only the asker knows which parameter was asked about which.
+record Answered
+    asked: Pointee
+    header_type: str

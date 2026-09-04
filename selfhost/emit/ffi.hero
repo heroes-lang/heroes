@@ -31,6 +31,7 @@ use emit/ffi_tag
 use emit/ffi_build
 use emit/ffi_narrowed
 use emit/ffi_mutable
+use cli/pointee_ask
 use parse
 use resolve
 use checker
@@ -47,7 +48,7 @@ use ir/lower
 # two things about one mistake, and only the tag line names the
 # repair). add_once keeps one diagnostic per span, so whichever runs
 # first wins.
-function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl], c: state.Checked, p: containers.Program, word_bits: i64) -> [diag.Diagnostic]
+function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl], c: state.Checked, p: containers.Program, word_bits: i64, answered: [pointee_ask.Answered]) -> [diag.Diagnostic]
     names = ctype.new_names(s, decls)
     found: [diag.Diagnostic] @ []
 
@@ -56,6 +57,19 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
 
         if !wrong.is_err()
             found @ ffi_lookup.add_once(found, d: wrong.must())
+
+        # The two sizeless pointees BEFORE the width reader (defect 010): a
+        # `void` pointee fails its guard as a marker line, and an incomplete
+        # one fails as a hard error naming only the type, which `answered`
+        # maps back to the parameter. Neither is a width to correct.
+        void_p = ffi_pointee.pointee_void(s, decls, tree, line: line)
+
+        if !void_p.is_err()
+            found @ ffi_lookup.add_once(found, d: void_p.must())
+
+        for opaque in ffi_pointee.pointee_unsized(s, decls, tree, answered, line: line)
+            found @ ffi_lookup.add_once(found, d: opaque)
+
         pointed = ffi_pointee.pointee_width(s, decls, tree, line: line, word_bits: word_bits)
 
         if !pointed.is_err()
@@ -141,12 +155,13 @@ test "one mistake, several lines, one diagnostic — and the order is the messag
     c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
     assert c.diagnostics.len() == 0
     low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+    none: [pointee_ask.Answered] = []
 
     # The return assertion's message line, then clang's echo of the
     # same source line: one diagnostic survives, by matching rather
     # than by luck of ordering.
     two_lines = "m.c:9:1: error: static assertion failed due to requirement 'x': heroes-ffi-return sqrt i64\n_Static_assert(HERO_RET_INT(sqrt((double)0)), \"heroes-ffi-return sqrt i64\");\n"
-    found = explain(two_lines, s, parsed.tree, parsed.decls, c, low.program, word_bits: 64)
+    found = explain(two_lines, s, parsed.tree, parsed.decls, c, low.program, word_bits: 64, answered: none)
     assert found.len() == 1
     assert found[0].code == "ffi_return_type"
 
@@ -154,10 +169,10 @@ test "one mistake, several lines, one diagnostic — and the order is the messag
     # first and add_once keeps it, so the author is not told to
     # correct a length that cannot exist.
     both = "m.c:2:1: error: static assertion failed due to requirement 'a': heroes-ffi-flex Packet data\nm.c:3:1: error: static assertion failed due to requirement 'b': heroes-ffi-field Packet data\n"
-    kept = explain(both, s, parsed.tree, parsed.decls, c, low.program, word_bits: 64)
+    kept = explain(both, s, parsed.tree, parsed.decls, c, low.program, word_bits: 64, answered: none)
     assert kept.len() == 1
     assert kept[0].code == "ffi_flexible_array_member"
 
     # Any other clang failure explains nothing: still the compiler's.
     other = "m.c:1:1: error: expected ';' after top level declarator\n"
-    assert explain(other, s, parsed.tree, parsed.decls, c, low.program, word_bits: 64).len() == 0
+    assert explain(other, s, parsed.tree, parsed.decls, c, low.program, word_bits: 64, answered: none).len() == 0

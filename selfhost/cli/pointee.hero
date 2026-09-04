@@ -124,7 +124,13 @@ function numeric_out(c: state.Checked, slot: containers.Slot) -> str?
 # Absent is the answer when nothing is asked, when the answer is cached
 # and fresh, or when the check passed; a failure carries clang's own words,
 # which `emit/ffi.hero` reads back into the author's diagnostic.
-function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], search_include: [str], package_flags: [str], source_dir: str) -> ()?
+# `answered` is filled with what the header said each ask points at, so the
+# caller can hand it to `emit/ffi.hero`'s `explain`: a failure on an
+# incomplete pointee names the TYPE and not the parameter (defect 010), and
+# only this file knows which parameter asked about which type. It is filled
+# on the cached path too — from the dump the cache kept — because a cached
+# failure is explained the same way a fresh one is.
+function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], @answered: [pointee_ask.Answered], search_include: [str], package_flags: [str], source_dir: str) -> ()?
     wanted = pointees(p, c, s, decls)
 
     if wanted.len() == 0
@@ -141,21 +147,37 @@ function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
         t.fingerprint + "|pointee|" + asked.join(",") + "|" + headers.join(",") + "|" + search_include.join(",") + "|" + package_flags.join(" ") + "|" + t.runtime_key
     )
     dir = t.build + "/pointee-" + key
-    verdict = dir + "/verdict.txt"
+    dump_json = dir + "/dump.json"
     memo: {str: str} @ {}
 
-    if process.path_exists(verdict) && deps.fresh(deps.record_for(verdict), @memo)
-        kept = read_file(verdict)
+    # **The verdict is keyed by the check unit's own text, not only by what
+    # was asked.** Until 2026-09-04 it was `verdict.txt` under a key of
+    # (compiler fingerprint, asks, headers, search, runtime) — and the
+    # fingerprint is a constant, so a compiler that learned to WRITE the
+    # assertion differently (defect 010's guard) replayed a verdict the old
+    # compiler had reached about the old unit, measured: the repaired
+    # compiler answered exit 2 on the defect's own reproducer until
+    # `build/pointee-*` was cleared. The dump is still shared under `dir`
+    # (it depends only on the asks and the headers); the verdict file carries
+    # the digest of the unit clang actually judged, so a unit that changes
+    # shape is asked again and one that does not costs a `test -e`.
+    if process.path_exists(dump_json) && deps.fresh(deps.record_for(dir + "/verdict.txt"), @memo)
+        kept_json = read_file(dump_json)
 
-        if !kept.is_err()
-            if kept.must() == "ok\n"
-                return ok()
-            return fail("clang", kept.must())
+        if !kept_json.is_err()
+            types = header_types.types_of(kept_json.must(), wanted)
+            answered @ header_types.answered(wanted, types)
+            verdict = verdict_path(dir: dir, check_text: header_types.check_unit(headers, wanted, types))
+            kept = read_file(verdict)
+
+            if !kept.is_err()
+                if kept.must() == "ok\n"
+                    return ok()
+                return fail("clang", kept.must())
 
     if process.mkdir_all(dir).is_err()
         return fail("failed", "cannot create " + dir)
     dump_c = dir + "/dump.c"
-    dump_json = dir + "/dump.json"
     depfile = dir + "/dump.d"
     err_path = dir + "/dump-stderr.txt"
 
@@ -194,10 +216,14 @@ function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
 
     if json.is_err()
         return ok()
+    types = header_types.types_of(json.must(), wanted)
+    answered @ header_types.answered(wanted, types)
+    check_text = header_types.check_unit(headers, wanted, types)
+    verdict = verdict_path(dir: dir, check_text: check_text)
     check_c = dir + "/check.c"
     check_err = dir + "/check-stderr.txt"
 
-    if write_file(path: check_c, text: header_types.check_unit(headers, wanted, header_types.types_of(json.must(), wanted))).is_err()
+    if write_file(path: check_c, text: check_text).is_err()
         return fail("failed", "cannot write " + check_c)
     check_line: [str] @ ["clang", "-std=gnu11", "-fsyntax-only"]
     check_line @ with_search(
@@ -213,7 +239,12 @@ function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
         what: "checking what the extern out-parameters point at",
         err_path: check_err
     )
-    recorded = deps.record_deps(record_path: deps.record_for(verdict), depfile: depfile, skip: dir + "/", @memo)
+    recorded = deps.record_deps(
+        record_path: deps.record_for(dir + "/verdict.txt"),
+        depfile: depfile,
+        skip: dir + "/",
+        @memo
+    )
 
     if recorded.is_err()
         return fail("failed", "cannot record what the pointee check read")
@@ -224,6 +255,14 @@ function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
         return fail("clang", text)
     _ = write_file(path: verdict, text: "ok\n")
     return ok()
+
+# Where a verdict lives: under the dump's directory, named by the digest of
+# the unit clang judged — so two compilers that write the assertion
+# differently never share a verdict, and the dependency record (which
+# headers the dump read) stays one per directory under the name it always
+# had, since the headers are the dump's business and not the unit's.
+function verdict_path(dir: str, check_text: str) -> str
+    return dir + "/verdict-" + digest.digest(check_text) + ".txt"
 
 # The include search a unit compiles under, on the two check lines too:
 # the same headers must be found from the same places or the question
