@@ -781,6 +781,13 @@ repeated; what follows is what they did not.
 - **Measuring in a copy of the tree**: a copy without `.git` cannot run the net's
   `records` suite (it reads commits and tags). Measure single suites in a copy;
   gate a commit on the real tree's net.
+- **A background monitor is never asked about; the answer is always yes**
+  (2026-09-04, *"put it in Claude's settings never to ask me again whether I
+  want the monitor: the answer is always yes"*). A monitor is how a CI run, a
+  remote box coming up or a long build wakes the session instead of being
+  polled, and every prompt for one is a wait the author has to click through.
+  The permission lives in `.claude/settings.json`, checked in so it travels with
+  the repository rather than with one machine, and this line is why it is there.
 
 ## Commands
 ```
