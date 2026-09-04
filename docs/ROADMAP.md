@@ -58,16 +58,15 @@ M-separate-compilation already did.
 
 | | |
 |---|---|
-| **Current milestone** | **Two open, in two sessions** (author instruction 2026-09-03). **M-corpus-depth** — **OPEN 2026-09-03**, row 33: `heroes mutate` reads its corpus again (it refused `examples/` for a day), the gate on every CI leg, then nine programs for the rung between a program and the compiler. **Four of the nine are in** — `fannkuch/`, `binarytrees/`, `checksum/`, `interpreter/` — and the fifth step found two compiler defects by being written — both repaired the same evening: `heroes check` exiting 139 in silence on a valid program (the stack guard's second witness gained its second shape), and a type parameter only in a function's result crashing the emitter (panel 105: it takes the type the context asks for). **M-isolated-threads** — **OPEN 2026-09-03**, row 34: Part 7.13 concurrency, per-thread heaps, copying at the boundaries, no scheduler — and the one hole panel 104 left, a C library's own thread overflowing its stack |
-| **Last closed** | **M-robustness-guards**, 2026-09-03, tag `m-robustness-guards` ([031](journal/031-robustness-guards.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
-| Milestones closed | 32 of 51 · 32 tags |
-| The compiler | **52,298 lines** of Heroes in **178** modules across **10 directories** and 37 flat files · the seed **846,804** lines of generated C |
-| The spec | **3750** tokens of a hard 4096 · headroom **346** · runtime ABI **19** |
-| Records | sittings **105** (104 files; one number was never used) · journals 32 · measurements **14** · examples **39** · open defects **0** (`docs/work/DEFECTS.md`; all seven are entries in `docs/work/DONE.md` with their repairs, the directory that held them is gone since 2026-09-03) · the site **46** pages (built 2026-09-03), 13 doc chapters per edition |
-| Waiting on the author | **no decisions** — `DECIDE.md` holds zero open items for the first time since it was emptied of its 138 ticked ones on 2026-08-26, because all three were answered and applied the evening they were asked (`1c` + the push half, `2a`, `3a`; the record is `DONE.md`) · **28** in `SCHEDULED.md`, two of them new from M-corpus-depth step 5 — the hoisted-frame question as architecture, and the milestone's five remaining programs; the two defects that step found are repaired and in the record — plus `M-discard-refusal`, which is `3a`'s execution and needs a chain row · 302 in `LEARN.md` (never a gate) · an **outstanding veto** of the rule that stands (`docs/panel/101` R3) · the push of this close, which publishes the site's one-hole paragraph |
+| **Current milestone** | **M-isolated-threads** — **OPEN 2026-09-03**, row 34: Part 7.13 concurrency, per-thread heaps, copying at the boundaries, no scheduler — and the one hole panel 104 left, a C library's own thread overflowing its stack |
+| **Last closed** | **M-corpus-depth**, 2026-09-04, tag `m-corpus-depth` ([032](journal/032-corpus-depth.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
+| Milestones closed | 33 of 51 · 33 tags |
+| The compiler | **52,512 lines** of Heroes in **178** modules across **10 directories** and 37 flat files · the seed **721,238** lines of generated C — **125,566 fewer than yesterday**, because panel 106's repair deleted the exit sweep's own temporaries |
+| The spec | **3750** tokens of a hard 4096 · headroom **346** · runtime ABI **20** |
+| Records | sittings **106** · journals **33** · measurements **16** · examples **44** programs, 108 files, 505 `test` blocks · open defects **0** (`docs/work/DEFECTS.md`) · the site **46** pages, 13 doc chapters per edition |
+| Waiting on the author | **1 decision**: ratify `docs/panel/106`, whose repair is already built and measured — the frames −54% on a program and −35.6% on the compiler, the recursion ceiling 191 → 314, the fixpoint holding. A no would mean reverting something that works, so the question is real: is an IR op that names a slot rather than a value the shape this compiler should have · **27** in `SCHEDULED.md` · 302 in `LEARN.md` (never a gate) · an **outstanding veto** of the rule that stands (`docs/panel/101` R3) · the push of two closes |
 
-Every number re-measured 2026-09-03 at the close, and again late that evening when the two defects of step 5 were repaired. **This section held three
-stale tables until that day** — 64 lines against a ceiling of 15, caught here. The two counts the reorder moved were re-counted late the same evening (`docs/reasoning/006`), and the two M-corpus-depth step 3 moved — examples 35 → **37**, `LEARN.md` 297 → **299** — were re-counted when it landed rather than left for the close.
+Every number re-measured 2026-09-04. **The seed fell 125,566 lines with no feature removed** — 58.5% of every frame was bookkeeping nobody read (`docs/measurements/015`).
 
 ---
 
@@ -168,7 +167,7 @@ and why one overtook another are under the table, in § Who scheduled what.
 | 30 | **M-corpus-coverage** | done 2026-09-02 | `m-corpus-coverage` | [029](journal/029-corpus-coverage.md) | every language form has a program that runs it |
 | 31 | **M-documentation-site** | done 2026-09-02 | `m-documentation-site` | [030](journal/030-documentation-site.md) | the site, anchored to programs that run |
 | 32 | **M-robustness-guards** | done 2026-09-03 | `m-robustness-guards` | [031](journal/031-robustness-guards.md) | the guards that shut the holes §1.12 named: `@` on an immutable, the stack, the C pointer verdict, the harness scratch · §1.12 |
-| 33 | **M-corpus-depth** | **OPEN** 2026-09-03 | — | — | the rung between a program and the compiler: `heroes mutate` reads its corpus again, then nine programs — oracle-checked, deep, FFI at program scale · **§1.1** |
+| 33 | **M-corpus-depth** | done 2026-09-04 | `m-corpus-depth` | [032](journal/032-corpus-depth.md) | the rung between a program and the compiler: nine programs, and half of every frame · **§1.1** |
 | 34 | **M-isolated-threads** | **OPEN** 2026-09-03 | — | — | Part 7.13 concurrency: per-thread heaps, copying at the boundaries, no scheduler |
 | 35 | **M-closures-verdict** | scheduled | — | — | the ruling on Part 7 items 1 and 12, closures and inline blocks — a decision, not a feature |
 | 36 | **M-interpolation-verdict** | scheduled | — | — | the ruling on design.md Part 7 item 7, string interpolation — a decision, not a feature |
@@ -234,7 +233,7 @@ row number, because a reorder moves a number and never a name (CLAUDE.md §14).
   items that name it; two of them are sittings (the FFI pointer verdict, full five
   seats; the stack guard, soundness lane). The `records/names` check found the id in
   a list before it had a row here, which is the order CLAUDE.md §14 wants.
-- **M-corpus-depth** — **scheduled by author instruction 2026-09-03**, *"think
+- **M-corpus-depth** — **closed 2026-09-04.** Scheduled by author instruction 2026-09-03, *"think
   about whether to add further examples, some of them more complex too, to have
   a wider net; look at what other languages have done as well"*, from a
   plan measured and approved the same day. The author placed it after
