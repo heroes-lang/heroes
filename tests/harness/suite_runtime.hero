@@ -1,0 +1,411 @@
+# design.md Part 7.13's two v1 invariants, enforced instead of assumed.
+#
+# WHAT THE RULES ARE. Part 7.13 (`design.md:2582-2588`) ends with *"two
+# rules, both already true, both now invariants"*. Reach the allocator
+# through a **single point**, which §4.20 (`design.md:2210-2222`) names as
+# `runtime/parts/alloc.c`; and keep `incref`/`decref` behind a **narrow,
+# never-inlined boundary**, so that making the counter thread-local or
+# atomic is ONE edit. Neither is tidiness. Isolated per-thread heaps are
+# the concurrency model, and a second allocation site discovered later is
+# a redesign rather than a patch.
+#
+# WHY IT IS A CHECK AND NOT A COMMENT. The first rule was **false to the
+# letter** when somebody finally looked, and nobody had noticed for two
+# days: design.md said one `malloc` and one `free` inside the `str`
+# primitives, and the sweep found **eleven calls across five files**
+# (`DESIGN-LOG.md:235`). That is what created `alloc.c`. Its own header
+# then promised *"the invariant is checkable with one grep"* — and the
+# grep was never written, so on 2026-09-05 `runtime/parts/array.c` was
+# growing a static buffer with `realloc`, which is a second allocation
+# site that the promised grep would not have seen anyway, because it
+# names `malloc`.
+#
+# WHAT IS CHECKED.
+#
+# 1. `runtime/**` outside `runtime/parts/alloc.c` calls nothing from the
+#    allocation family — `malloc`, `calloc`, `realloc`, `reallocarray`,
+#    `aligned_alloc`, `strdup`, `strndup`, `free`. The family and not
+#    `malloc` alone: `realloc` is what was actually there, and a rule
+#    that names one spelling of allocation catches one spelling of the
+#    mistake.
+# 2. `runtime/heroes_runtime.h` carries no `inline`, and every line in it
+#    that names an `incref` or a `decref` is a PROTOTYPE — `;`-terminated,
+#    no body. The header is the one file the generated C includes, so
+#    anything defined there is code clang may smear into a caller.
+#
+# COMMENTS AND STRING LITERALS ARE NOT CODE, and this suite would be
+# noise without that. `runtime/parts/run.c:484` contains the sentence
+# *"the first check is free (WNOHANG, no sleep at all)"* — an English
+# `free` followed by `(`, which a plain grep reports and a reader then
+# learns to ignore. `code_lines` blanks every comment and every literal
+# before a needle is looked for, and `alloc.c`'s own floor below is what
+# proves it did not blank everything.
+
+use report
+use shell
+use strings
+
+constant RUNTIME: str
+    "runtime"
+
+# The one file allowed to call them, and the one place a per-thread heap
+# will be built.
+constant SINGLE_POINT: str
+    "runtime/parts/alloc.c"
+
+constant HEADER: str
+    "runtime/heroes_runtime.h"
+
+# The allocation family. C's `<stdlib.h>` and the two `<string.h>`
+# duplicators, which allocate without looking like it.
+constant ALLOCATORS: [str]
+    [
+        "malloc"
+        "calloc"
+        "realloc"
+        "reallocarray"
+        "aligned_alloc"
+        "strdup"
+        "strndup"
+        "free"
+    ]
+
+# Floors, measured 2026-09-05: 21 files under `runtime/`, 3 allocation
+# calls inside `alloc.c` (one `malloc`, two `free`), 6 refcount
+# prototypes in the header. They exist for `suite_order`'s reason — a
+# sweep that reaches nothing reports green — and the middle one is the
+# load-bearing one here: it is what fails if `code_lines` ever blanks
+# code as well as comments, which is the one way this suite could go
+# quiet while the tree went wrong.
+constant LEAST_FILES: i64
+    18
+
+constant LEAST_AT_THE_POINT: i64
+    3
+
+constant LEAST_REFCOUNT: i64
+    6
+
+function run_all(scratch: str) -> report.Report?
+    nothing: [str] = []
+    files = shell.list_tree(scratch: scratch, dir: RUNTIME, skip: nothing)?
+    sources: [str] @ []
+
+    for path in files
+        if strings.ends_with(text: path, suffix: ".c") || strings.ends_with(text: path, suffix: ".h")
+            sources @ sources.push(path)
+
+    r: report.Report @ report.empty()
+    keep_single_point(@r, sources: sources)
+    keep_boundary(@r)
+    return ok(r)
+
+# Rule 1: every allocation in the runtime happens in one file.
+function keep_single_point(@r: report.Report, sources: [str])
+    strays: [str] @ []
+    at_the_point: i64 @ 0
+
+    for path in sources
+        text = read_file(path)
+
+        if text.is_err()
+            report.keep_failure(@r, label: "runtime/alloc", detail: "  cannot read " + path)
+            continue
+        rows = code_lines(text.must())
+        at: i64 @ 0
+
+        while at < rows.len()
+            row = strings.trimmed(rows[at])
+
+            if row.len() == 0
+                at @ at + 1
+                continue
+
+            for name in ALLOCATORS
+                if calls(code: row, name: name)
+                    if path == SINGLE_POINT
+                        at_the_point @ at_the_point + 1
+                    else
+                        strays @ strays.push("    " + path + ":" + (at + 1).to_str() + ": " + row)
+
+            at @ at + 1
+
+    if strays.len() > 0
+        report.keep_failure(
+            @r,
+            label: "runtime/alloc",
+            detail: "  design.md Part 7.13 makes the allocator a SINGLE POINT, `" + SINGLE_POINT + "`, because isolated per-thread heaps need one place to change and a second allocation site is a redesign rather than a patch (design.md:2210, :2582). These calls are somewhere else:\n" + strays.join("\n") + "\n  Route each one through `" + SINGLE_POINT + "`: `hero_alloc_block`/`hero_release_block` for memory the LANGUAGE owns and the leak gate counts, `hero_alloc`/`hero_release` for a buffer borrowed and given back inside one runtime call, `hero_grow_kept` for one the runtime keeps for the life of the process."
+        )
+    else
+        report.keep_pass(@r)
+
+    if sources.len() < LEAST_FILES || at_the_point < LEAST_AT_THE_POINT
+        report.keep_failure(
+            @r,
+            label: "runtime/alloc",
+            detail: "  the sweep read " + sources.len().to_str() + " files and found " + at_the_point.to_str() + " allocation calls inside " + SINGLE_POINT + ", and had " + LEAST_FILES.to_str() + " and " + LEAST_AT_THE_POINT.to_str() + " — either it is not reaching the tree, or `code_lines` is blanking code and not only comments, and then the check above passes by seeing nothing"
+        )
+    else
+        report.keep_pass(@r)
+
+# Rule 2: the refcount boundary is narrow and cannot be inlined.
+function keep_boundary(@r: report.Report)
+    text = read_file(HEADER)
+
+    if text.is_err()
+        report.keep_failure(@r, label: "runtime/refcount", detail: "  cannot read " + HEADER)
+        return
+    rows = code_lines(text.must())
+    wrong: [str] @ []
+    declared: i64 @ 0
+    at: i64 @ 0
+
+    while at < rows.len()
+        row = strings.trimmed(rows[at])
+        where = "    " + HEADER + ":" + (at + 1).to_str() + ": " + row
+
+        if names_word(code: row, name: "inline")
+            wrong @ wrong.push(where)
+
+        if counts(row)
+            declared @ declared + 1
+
+            if !is_prototype(row)
+                wrong @ wrong.push(where)
+        at @ at + 1
+
+    if wrong.len() > 0
+        report.keep_failure(
+            @r,
+            label: "runtime/refcount",
+            detail: "  design.md Part 7.13 keeps `incref`/`decref` behind a NARROW, NEVER-INLINED boundary, so that making the counter thread-local or atomic is one edit rather than a hunt through everything clang smeared it into (design.md:2220, :2584). " + HEADER + " is the one file the generated C includes, so it holds declarations and no code:\n" + wrong.join("\n") + "\n  Put the body in `runtime/parts/`, beside the others, and leave the `;` here."
+        )
+    else
+        report.keep_pass(@r)
+
+    if declared < LEAST_REFCOUNT
+        report.keep_failure(
+            @r,
+            label: "runtime/refcount",
+            detail: "  the sweep found " + declared.to_str() + " refcount declarations in " + HEADER + " and had " + LEAST_REFCOUNT.to_str() + " (a str, an array and a map, increfed and decrefed) — it is not reading the header"
+        )
+    else
+        report.keep_pass(@r)
+
+# Does this line declare a refcount entry point? `counts` is the general
+# half and `hero_str_incref` above is the literal one, so a rename that
+# drops the project's own `incref`/`decref` vocabulary still trips the
+# floor rather than passing quietly.
+function counts(row: str) -> bool
+    return names_word(code: row, name: "incref") || names_word(code: row, name: "decref") || strings.contains(text: row, needle: "_incref") || strings.contains(text: row, needle: "_decref")
+
+function is_prototype(row: str) -> bool
+    trimmed = strings.trimmed(row)
+    return strings.ends_with(text: trimmed, suffix: ";") && !strings.contains(text: trimmed, needle: "{")
+
+## The reader
+
+# A line of `text` per line of source, with every comment and every
+# string or character literal blanked to spaces. Positions are kept, so a
+# failure still names the column a reader sees in their editor.
+#
+# It walks characters rather than bytes because `chars()` is the one
+# spelling that cannot split a multi-byte character, and the runtime's
+# comments are English prose with the odd non-ASCII dash in them.
+#
+# A raw newline inside a literal ends the row and leaves the state on,
+# which would blank the rest of the file. C forbids one, so clang refuses
+# the runtime before this suite ever reads it — and `LEAST_AT_THE_POINT`
+# is the guard that fires if it ever happens anyway.
+function code_lines(text: str) -> [str]
+    cs = text.chars()
+    out: [str] @ []
+    row: [str] @ []
+    block: bool @ false
+    line: bool @ false
+    quoted: bool @ false
+    charred: bool @ false
+    at: i64 @ 0
+
+    while at < cs.len()
+        c = cs[at]
+        after = char_at(cs, at: at + 1)
+
+        if c == "\n"
+            out @ out.push(row.join(""))
+            row @ []
+            line @ false
+            at @ at + 1
+            continue
+
+        if block
+            row @ row.push(" ")
+
+            if c == "*" && after == "/"
+                row @ row.push(" ")
+                block @ false
+                at @ at + 2
+                continue
+            at @ at + 1
+            continue
+
+        if line
+            row @ row.push(" ")
+            at @ at + 1
+            continue
+
+        if quoted || charred
+            row @ row.push(" ")
+
+            if c == "\\" && after != "\n"
+                row @ row.push(" ")
+                at @ at + 2
+                continue
+
+            if quoted && c == "\""
+                quoted @ false
+
+            if charred && c == "'"
+                charred @ false
+            at @ at + 1
+            continue
+
+        if c == "/" && after == "*"
+            row @ row.push(" ")
+            row @ row.push(" ")
+            block @ true
+            at @ at + 2
+            continue
+
+        if c == "/" && after == "/"
+            row @ row.push(" ")
+            row @ row.push(" ")
+            line @ true
+            at @ at + 2
+            continue
+
+        if c == "\""
+            quoted @ true
+            row @ row.push(" ")
+            at @ at + 1
+            continue
+
+        if c == "'"
+            charred @ true
+            row @ row.push(" ")
+            at @ at + 1
+            continue
+        row @ row.push(c)
+        at @ at + 1
+
+    out @ out.push(row.join(""))
+    return out
+
+function char_at(cs: [str], at: i64) -> str
+    if at < 0 || at >= cs.len()
+        return ""
+
+    return cs[at]
+
+## The needles
+
+# Is `name` CALLED here? A whole word, followed by `(` across any spaces.
+# The word boundary is what tells `malloc(` from `hero_malloc_raw(`, and
+# the `(` is what tells a call from a mention.
+function calls(code: str, name: str) -> bool
+    at: i64 @ 0
+
+    while at + name.len() <= code.len()
+        if matches(text: code, at: at, needle: name) && !joined_before(text: code, at: at) && opens(text: code, at: at + name.len())
+            return true
+        at @ at + 1
+
+    return false
+
+# Is `name` here as a whole word at all, called or not? What the `inline`
+# ban needs: `static inline int f(void)` opens no parenthesis of its own.
+function names_word(code: str, name: str) -> bool
+    at: i64 @ 0
+
+    while at + name.len() <= code.len()
+        if matches(text: code, at: at, needle: name) && !joined_before(text: code, at: at) && !joined_after(text: code, at: at + name.len())
+            return true
+        at @ at + 1
+
+    return false
+
+function matches(text: str, at: i64, needle: str) -> bool
+    i: i64 @ 0
+
+    while i < needle.len()
+        if text[at + i] != needle[i]
+            return false
+        i @ i + 1
+
+    return true
+
+function joined_before(text: str, at: i64) -> bool
+    if at == 0
+        return false
+
+    return word_byte(text[at - 1])
+
+function joined_after(text: str, at: i64) -> bool
+    if at >= text.len()
+        return false
+
+    return word_byte(text[at])
+
+function opens(text: str, at: i64) -> bool
+    i: i64 @ at
+
+    while i < text.len() && (text[i] == ' ' || text[i] == '\t')
+        i @ i + 1
+
+    return i < text.len() && text[i] == '('
+
+function word_byte(b: u8) -> bool
+    return b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9' || b == '_'
+
+test "prose that says free is not a call, and a comment hides a real one"
+    source = "/* the first check is free (WNOHANG, no sleep at all) */\nvoid f(void) { /* free(p); */ }\n"
+    rows = code_lines(source)
+    assert rows.len() == 3
+    assert !calls(code: rows[0], name: "free")
+    assert !calls(code: rows[1], name: "free")
+
+test "a string literal is not code either"
+    rows = code_lines("hero_panic(\"malloc(3) failed\");\n")
+    assert !calls(code: rows[0], name: "malloc")
+    assert calls(code: rows[0], name: "hero_panic")
+
+test "the check fires on the shape that was actually in the tree"
+    rows = code_lines("        HeroEqWork *grown = (HeroEqWork *)realloc(hero_eq_queue, cap * sizeof(HeroEqWork));\n")
+    assert calls(code: rows[0], name: "realloc")
+    assert !calls(code: rows[0], name: "malloc")
+
+test "a longer name that ends in an allocator is not one"
+    rows = code_lines("    void *p = hero_malloc_raw(size);\n")
+    assert !calls(code: rows[0], name: "malloc")
+    rows2 = code_lines("    void *p = malloc(size);\n")
+    assert calls(code: rows2[0], name: "malloc")
+
+test "reallocarray is its own needle, because realloc stops at the a"
+    rows = code_lines("    p = reallocarray(p, n, size);\n")
+    assert !calls(code: rows[0], name: "realloc")
+    assert calls(code: rows[0], name: "reallocarray")
+
+test "a character literal cannot open a comment or hide one"
+    rows = code_lines("    if (c == '/') { free(p); }\n")
+    assert calls(code: rows[0], name: "free")
+
+test "the refcount check fires on a body and passes on a prototype"
+    assert is_prototype("void hero_str_incref(HeroStr s);")
+    assert !is_prototype("static inline void hero_str_incref(HeroStr s) { s.p->rc++; }")
+    assert counts("void hero_array_decref(HeroArrayHeader *a);")
+    assert !counts("void hero_array_new(const HeroDesc *elem, int64_t len);")
+
+test "the inline ban reads a word and not a fragment"
+    assert names_word(code: "static inline int64_t hero_len(HeroStr s)", name: "inline")
+    assert !names_word(code: "    /* inlined */ int64_t hero_inlineness;", name: "inline")
+    assert !names_word(code: "void hero_str_incref(HeroStr s);", name: "inline")
