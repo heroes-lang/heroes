@@ -20,6 +20,7 @@ use source
 use diag
 use emit/ffi_lookup
 use emit/c_spellings
+use cli/pointee_ask
 use parse
 use resolve
 use checker
@@ -28,6 +29,14 @@ use checker
 # reader: one string, one home (CLAUDE.md §11).
 constant MARKER: str
     "heroes-ffi-pointee "
+
+# The guard that precedes the width assertion: it fails when the header's
+# parameter points at `void`, which has no width to compare (defect 010).
+# `MARKER` is not a prefix of this one — the space after `pointee` is what
+# keeps `after(text, marker: MARKER)` from reading a void line as a width
+# line.
+constant VOID_MARKER: str
+    "heroes-ffi-pointee-void "
 
 # The parameter's two spans in the author's declaration: its name, and
 # the type written after the colon — the fix replaces the type.
@@ -121,6 +130,128 @@ function trim_quote(text: str) -> str
         return text.slice(from: 0, to: text.len() - 1)
     return text
 
+## What has no width at all
+
+# `heroes-ffi-pointee-void <name> <param> <declared C type> <header type…>`
+# failed: the header's parameter points at `void`, and a `void *` is bound as
+# `ptr`, not as a sized `@` cell (defect 010, 2026-09-04). This is the guard
+# `cli/header_types.hero` writes before every width assertion, so the line is
+# a proper `static assertion failed` and carries the parameter's name.
+function pointee_void(s: source.Source, decls: [ast.Decl], tree: ast.Ast, line: str) -> diag.Diagnostic?
+    if !ffi_lookup.has(text: line, needle: ffi_lookup.FAILED)
+        return fail("none", "not an assertion failure")
+    rest = ffi_lookup.after(text: line, marker: VOID_MARKER)
+
+    if rest.is_err()
+        return fail("none", "not a void-pointee assertion")
+    parts = ffi_lookup.words(text: rest.must())
+
+    if parts.len() < 4
+        return fail("none", "the marker's tail is not ours")
+    tail: [str] @ []
+    index: i64 @ 3
+
+    while index < parts.len()
+        tail @ tail.push(parts[index])
+        index @ index + 1
+
+    return unsized(
+        s,
+        decls,
+        tree,
+        name: parts[0],
+        param: parts[1],
+        header_type: trim_quote(tail.join(" ")),
+        why: "which has no width — nothing can be written back into a cell the header describes as sizeless"
+    )
+
+# The other shape of the same defect, and the one no assertion can turn into
+# a marker line: `invalid application of 'sizeof' to an incomplete type
+# 'struct opaque'` (and clang's companion `cast to incomplete type`). The
+# line names the TYPE and nothing else, so the parameter is found from what
+# the asker recorded the header saying about each one — `answered`. Two asks
+# pointing at the same opaque type both get the diagnostic; `add_once` keeps
+# one per span, which is the parameter, so a repeated line costs nothing.
+function pointee_unsized(s: source.Source, decls: [ast.Decl], tree: ast.Ast, answered: [pointee_ask.Answered], line: str) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @ []
+    named = ffi_lookup.after(text: line, marker: "incomplete type '")
+
+    if named.is_err()
+        return out
+    header_type = ffi_lookup.up_to_quote(named.must())
+
+    for one in answered
+        if one.header_type != header_type
+            continue
+        d = unsized(
+            s,
+            decls,
+            tree,
+            name: one.asked.name,
+            param: one.asked.param,
+            header_type: header_type,
+            why: "which the header leaves incomplete — C keeps it opaque on purpose, and only C can size it"
+        )
+
+        if !d.is_err()
+            out @ out.push(d.must())
+
+    return out
+
+# The diagnostic both shapes share: the parameter is declared at a width,
+# and the header's pointee has none. The repair is not another width — it is
+# `ptr` and no `@`: the program holds a pointer C gave it (or one it built
+# from a `record` it declared) and passes that. So the fix rewrites from the
+# `@` to the end of the type, when the `@` is found: it is looked for
+# backwards from the parameter's name over the spaces the grammar allows
+# there, in THIS source text, and if it is not where it should be there is no
+# fix rather than a wrong one (CLAUDE.md §11: ask the value, never the world).
+function unsized(s: source.Source, decls: [ast.Decl], tree: ast.Ast, name: str, param: str, header_type: str, why: str) -> diag.Diagnostic?
+    found = ffi_lookup.declaration(s, decls, name: name)
+
+    if found.is_err()
+        return fail("none", "no group declares this name")
+    spans = parameter_spans(s, decls, tree, name: name, param: param)
+    at: token.Span @ found.must().span
+    written: str @ "at a width"
+
+    if !spans.is_err()
+        at @ spans.must().name
+        written @ "`" + source.span_text(s, spans.must().ty) + "`"
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "ffi_parameter_type",
+        message: "`" + param + "` of `" + name + "` is declared " + written + ", and the header's `" + header_type + " *` points at `" + header_type + "`, " + why,
+        span: at
+    )
+    d.notes @ d.notes.push(
+        "§4.19: a pointer to something the header does not size is bound as `ptr` — declare `" + param + ": ptr`, hold the address C hands you (or the address of a `record` you declared with the layout the library documents), and pass it"
+    )
+
+    if spans.is_err()
+        return ok(d)
+    marker = at_marker_before(s, spans.must().name)
+
+    if marker.is_err()
+        return ok(d)
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "declare `" + param + "` as `" + param + ": ptr`", replacement: param + ": ptr", span: token.Span(start: marker.must(), end: spans.must().ty.end), certainty: .guess)
+    )
+    return ok(d)
+
+# Where the `@` that marks a parameter sits: backwards from the name over
+# spaces, in this source. The AST keeps no span for it (`ast.Param` is a
+# name, a type and a flag), and `@ n` with a space is accepted (measured), so
+# the position is read off the text rather than assumed adjacent.
+function at_marker_before(s: source.Source, name: token.Span) -> i64?
+    i: i64 @ name.start - 1
+
+    while i >= 0 && source.span_text(s, token.Span(start: i, end: i + 1)) == " "
+        i @ i - 1
+
+    if i >= 0 && source.span_text(s, token.Span(start: i, end: i + 1)) == "@"
+        return ok(i)
+    return fail("none", "no @ before the name")
+
 ## Tests
 
 test "the marker's tail is read into the parameter's own diagnostic, with the header's width as the guess"
@@ -151,3 +282,61 @@ test "the marker's tail is read into the parameter's own diagnostic, with the he
     assert two.must().fixes[0].replacement == "u64"
     assert pointee_width(s, parsed.decls, parsed.tree, line: "t.hero:2:5: error: static assertion failed: heroes-ffi-return getline i64", word_bits: 64).is_err(
     )
+
+test "a void pointee is read off its guard line into ptr-and-no-@, and the fix spans from the @ (defect 010)"
+    text = "extern \"string.h\"\n    function memcpy(@dst: i32, src: ptr, n: u64) -> ptr\n\nfunction main()\n    print(1)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    _ = checker.check(parsed.tree, out, s, parsed.decls)
+    line = "t.hero:2:5: error: static assertion failed due to requirement '!__builtin_types_compatible_p(void, void)': heroes-ffi-pointee-void memcpy dst int32_t void"
+    d = pointee_void(s, parsed.decls, parsed.tree, line: line)
+    assert !d.is_err()
+    assert d.must().code == "ffi_parameter_type"
+    assert source.span_text(s, d.must().span) == "dst"
+    assert d.must().fixes.len() == 1
+    assert d.must().fixes[0].replacement == "dst: ptr"
+    assert d.must().fixes[0].certainty == .guess
+
+    # The fix's span starts at the `@` and ends after the type: `@dst: i32`.
+    assert source.span_text(s, d.must().fixes[0].span) == "@dst: i32"
+
+    # A width line is not a void line, and a void line is not a width line:
+    # the markers differ by one character and `after` keeps them apart.
+    assert pointee_void(s, parsed.decls, parsed.tree, line: "t.hero:2:5: error: static assertion failed: heroes-ffi-pointee memcpy dst int32_t size_t").is_err(
+    )
+    assert pointee_width(s, parsed.decls, parsed.tree, line: line, word_bits: 64).is_err()
+
+test "an incomplete pointee is found from the type clang names, through what the header answered (defect 010's adjacent shape)"
+    text = "extern \"opaque.h\"\n    function fill(@out: i64) -> i32\n    function other(@n: i32) -> i32\n\nfunction main()\n    print(1)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    _ = checker.check(parsed.tree, out, s, parsed.decls)
+    answered: [pointee_ask.Answered] = [
+        pointee_ask.Answered(asked: pointee_ask.Pointee(name: "fill", param: "out", index: 0, declared: "int64_t", file: "t.hero", line: 2), header_type: "struct opaque")
+        pointee_ask.Answered(asked: pointee_ask.Pointee(name: "other", param: "n", index: 0, declared: "int32_t", file: "t.hero", line: 3), header_type: "int")
+    ]
+    line = "t.hero:2:5: error: invalid application of 'sizeof' to an incomplete type 'struct opaque'"
+    found = pointee_unsized(s, parsed.decls, parsed.tree, answered, line: line)
+    assert found.len() == 1
+    assert found[0].code == "ffi_parameter_type"
+    assert source.span_text(s, found[0].span) == "out"
+    assert found[0].fixes[0].replacement == "out: ptr"
+
+    # clang's companion line names the same type and lands on the same span;
+    # `add_once` in the caller keeps one. A line naming no incomplete type
+    # finds nothing, and one naming a type nobody asked about finds nothing.
+    assert pointee_unsized(s, parsed.decls, parsed.tree, answered, line: "t.hero:2:5: error: cast to incomplete type 'struct opaque'").len() == 1
+    assert pointee_unsized(s, parsed.decls, parsed.tree, answered, line: "t.hero:2:5: error: invalid operands to binary expression ('void' and 'int')").len() == 0
+    assert pointee_unsized(s, parsed.decls, parsed.tree, answered, line: "t.hero:9:1: error: invalid application of 'sizeof' to an incomplete type 'struct elsewhere'").len() == 0
+
+test "the @ is found backwards over the spaces the grammar allows, and its absence means no fix"
+    text = "extern \"h.h\"\n    function f(@   a: i32, b: i32) -> i32\n\nfunction main()\n    print(1)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    spans_a = parameter_spans(s, parsed.decls, parsed.tree, name: "f", param: "a").must()
+    spans_b = parameter_spans(s, parsed.decls, parsed.tree, name: "f", param: "b").must()
+    assert !at_marker_before(s, spans_a.name).is_err()
+    assert source.span_text(s, token.Span(start: at_marker_before(s, spans_a.name).must(), end: spans_a.ty.end)) == "@   a: i32"
+    assert at_marker_before(s, spans_b.name).is_err()

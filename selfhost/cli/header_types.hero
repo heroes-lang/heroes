@@ -71,6 +71,41 @@ function check_unit(headers: [str], wanted: [pointee_ask.Pointee], types: {str: 
     for header in headers
         lines @ lines.push("#include <" + header + ">")
 
+    for one in answered(wanted, types)
+        header_type = one.header_type
+        asked = one.asked
+        lines @ lines.push("#line " + asked.line.to_str() + " \"" + asked.file + "\"")
+
+        # **The guard comes first, and it exists because `sizeof(void)` is not
+        # an assertion failure** (defect 010, 2026-09-04). `@value: i32`
+        # against `void *optval` made the width line below a hard error —
+        # `invalid operands to binary expression ('void' and 'int')` — a line
+        # no reader knows, so the compiler called it its own internal error
+        # at exit 2 where §7 owes exit 1 on the author's line. This line
+        # fails as a `static assertion failed` carrying its own marker, and
+        # `__builtin_types_compatible_p` rather than the type's spelling,
+        # because it ignores qualifiers and sees through typedefs: `const
+        # void` and Win32's `VOID` are both caught, measured. The width line
+        # still hard-errors after it, on the same `#line`; the reader takes
+        # the first diagnostic per span and the second line matches nothing.
+        lines @ lines.push(
+            "_Static_assert(!__builtin_types_compatible_p(" + header_type + ", void), \"" + ffi_pointee.VOID_MARKER + asked.name + " " + asked.param + " " + asked.declared + " " + header_type + "\");"
+        )
+        lines @ lines.push(
+            "_Static_assert(sizeof(" + header_type + ") == sizeof(" + asked.declared + ") && (((" + header_type + ")-1 > 0) == ((" + asked.declared + ")-1 > 0)), \"" + ffi_pointee.MARKER + asked.name + " " + asked.param + " " + asked.declared + " " + header_type + "\");"
+        )
+
+    return lines.join("\n") + "\n"
+
+# Every ask the dump could answer, with the header's own pointee text. Shared
+# between the unit above and the reader of its failures (`emit/ffi.hero`),
+# because an incomplete type fails as a hard error naming only the TYPE —
+# `invalid application of 'sizeof' to an incomplete type 'struct opaque'` —
+# and the parameter has to be found from it. An ask the dump did not serve
+# (a macro name, a by-value parameter) is left out, exactly as before.
+function answered(wanted: [pointee_ask.Pointee], types: {str: [str]}) -> [pointee_ask.Answered]
+    out: [pointee_ask.Answered] @ []
+
     for one in wanted
         params = types[one.name]
 
@@ -83,13 +118,9 @@ function check_unit(headers: [str], wanted: [pointee_ask.Pointee], types: {str: 
 
         if pointed.is_err()
             continue
-        header_type = pointed.must()
-        lines @ lines.push("#line " + one.line.to_str() + " \"" + one.file + "\"")
-        lines @ lines.push(
-            "_Static_assert(sizeof(" + header_type + ") == sizeof(" + one.declared + ") && (((" + header_type + ")-1 > 0) == ((" + one.declared + ")-1 > 0)), \"" + ffi_pointee.MARKER + one.name + " " + one.param + " " + one.declared + " " + header_type + "\");"
-        )
+        out @ out.push(pointee_ask.Answered(asked: one, header_type: pointed.must()))
 
-    return lines.join("\n") + "\n"
+    return out
 
 # What a header's parameter type points at: the text before its last `*`,
 # with `restrict` and `__restrict` gone. Absent when the header takes the
