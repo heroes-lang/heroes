@@ -276,6 +276,41 @@ static void hero_stack_handler(int signum, siginfo_t *si, void *ctx) {
         hero_stack_say("\n");
         abort();
     }
+
+    /* A CALL THROUGH A NULL FUNCTION POINTER, and its witness is the PC itself
+     * (defect 013, 2026-09-05). The program did not touch a bad address: it
+     * went to EXECUTE at address zero, and nothing else lands there.
+     *
+     * `si_addr` cannot be the witness and that is measured, not assumed — the
+     * same mistake panel 104 already paid for once with a wild store read as a
+     * stack overflow. Four shapes on this Mac, one probe:
+     *
+     *     a wild store to address 0                si_addr 0  pc NONZERO
+     *     a wild read from address 0               si_addr 0  pc NONZERO
+     *     a call through a NULL function pointer   si_addr 0  pc ZERO
+     *     a call through a garbage pointer         si_addr X  pc NONZERO
+     *
+     * Three of the four give `si_addr == 0`; exactly one gives `pc == 0`.
+     *
+     * WHY THIS AND NOT A REFUSAL AT COMPILE TIME. `extern function atexit(f:
+     * ptr)` handed `nullptr` is the program that gets here, and the compiler
+     * cannot refuse it: `sqlite3_exec(callback: nullptr)` is the SAME
+     * declaration and the SAME argument, and it is correct — SQLite documents a
+     * null callback as *do not call back*. Whether NULL is legal is a property
+     * of the C function, not of the type, and on Windows it is a property of
+     * the C library (`atexit(NULL)` is exit 0 there, measured). So the promise
+     * §1.12 can keep is not prevention, it is that the program says what
+     * happened instead of dying at 139 with an empty stderr — which is exactly
+     * what panel 104 did for the stack, in this handler, on this line.
+     *
+     * The caller is deliberately not named. With `pc == 0` the frame walk's
+     * first entry is bogus, and the honest caller is usually C's own — libc's
+     * exit machinery for `atexit`, a library's dispatch loop elsewhere — so a
+     * name here would point at the wrong file more often than the right one. */
+    if (pc == 0) {
+        hero_stack_say("panic: a null function pointer was called — a `ptr` holding `nullptr` reached C where C calls it back\n");
+        abort();
+    }
     hero_stack_pass_on(signum, si, ctx);
 }
 
@@ -322,6 +357,23 @@ static void hero_stack_guard_install(void) {
 static LONG WINAPI hero_stack_veh(EXCEPTION_POINTERS *ep) {
     if (ep->ExceptionRecord->ExceptionCode == EXCEPTION_STACK_OVERFLOW) {
         const char *line = "panic: stack exhausted\n";
+        _write(2, line, (unsigned int)strlen(line));
+        abort();
+    }
+    /* THE POSIX HALF'S WITNESS, IN WINDOWS' OWN VOCABULARY (defect 013,
+     * 2026-09-05). `ExceptionAddress` is where the program was EXECUTING,
+     * which is the PC — the address it TOUCHED is `ExceptionInformation[1]`,
+     * and that one is zero for three different faults, which is exactly why
+     * the POSIX handler above reads the PC and not `si_addr`.
+     *
+     * `atexit(NULL)` is the WRONG test on this platform and that is measured:
+     * it is exit 0 here because the CRT checks, while the same program
+     * segfaults on macOS and hits a glibc assertion on Linux. The witness that
+     * reaches address zero on all three is a `qsort` whose comparator is
+     * `nullptr`, which no C library checks. */
+    if (ep->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION
+        && (uintptr_t)ep->ExceptionRecord->ExceptionAddress == 0) {
+        const char *line = "panic: a null function pointer was called \xe2\x80\x94 a `ptr` holding `nullptr` reached C where C calls it back\n";
         _write(2, line, (unsigned int)strlen(line));
         abort();
     }
