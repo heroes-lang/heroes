@@ -649,6 +649,33 @@ A step is not done without a commit (`M-<name> step <k>: <what>`). Per milestone
 journal (3 sections) + one story beat in `docs/book/beats.md` + a tag (pushed
 `--follow-tags`) + ROADMAP status. Per decision: a DESIGN-LOG line.
 
+**AND THE RECORD SAYS WHOSE IDEA IT WAS. WHERE IT WAS THE AUTHOR'S, IT SAYS SO**
+(author instruction 2026-09-05: *"in general I would like it to stay in the
+records when I have an intuition, so that when this becomes public it does not
+read as a merely vibe-coded project but as one the author co-authored"*). This is
+not courtesy and it is not decoration. Every other rule in this file exists to
+make the record **checkable**, and a record that attributes to the assistant a
+finding that came from the author is false in exactly the way those rules forbid —
+it just happens to be false about a person instead of about a number.
+
+**What provoked it, the same day.** The thread guard was measured at +6.6% and the
+coordinator was treating that as one cost to haggle over. The author asked a
+different question — *"if the cost is only at compile time it is not a big
+problem; if it is at runtime, then yes, let us look for the compromise"* — and
+answering it meant saying **where** the cost is paid, which meant asking where a
+foreign thread **enters** rather than where the corruption shows. That question
+moved the guard from three wrong placements to the right one, and
+`docs/measurements/018`'s first draft recorded the answer with no author in it.
+The attribution went in only because the author asked for it.
+
+**It cuts both ways, and that is what keeps it honest.** Crediting the author for
+something the assistant found would be the same falsehood wearing the other sign,
+and it would be worse, because it is the flattering direction and nobody would
+check it. The rule is accuracy: name the author where a question, a correction or
+a refusal of theirs is what produced the finding, name the panel seat where a seat
+found it, and name nobody where the work was ordinary. A record nobody can trust
+about people is a record nobody will trust about numbers.
+
 **A reasoning session leaves no note of its own** — a conversation whose work is
 questions about the project, with no file of code, spec or design modified. It
 had a directory of notes from 2026-08-10 until **2026-09-04**, when the author

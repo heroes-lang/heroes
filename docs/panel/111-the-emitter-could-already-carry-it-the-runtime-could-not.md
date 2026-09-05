@@ -354,6 +354,59 @@ measured classes of memory corruption undocumented in the record and a milestone
 whose name is falsified by its own plan, which is why §4's *robust over
 conservative* rule exists.
 
+## Appended 2026-09-05, after ratification — R9, and it is not covered by the yes above
+
+The author ratified R1 through R8. **R9 was proposed and approved separately, the
+same day**, and is written here rather than folded into the resolution because a
+record that lets a later approval look like an earlier one is a record that cannot
+be used to check anything.
+
+**R9 — a foreign thread is refused by name, and the refusal is emitted into the
+callback rather than built into the runtime.** This is the historian's condition
+3, the registration handshake CPython and OCaml have both required for thirty
+years and which in CPython outlived the removal of the global lock. The author's
+approval, in English: *"yes"*, to the proposal that the runtime notice a thread it
+does not know and stop cleanly instead of corrupting.
+
+**It replaces R8's mechanism and keeps R8's rule.** R8 said the permission must
+not land before the refcount is atomic. R9 is stronger and cheaper: atomics repair
+class 1 and leave classes 2, 3 and 4 open, while the handshake makes all four
+**unreachable** — a program that would corrupt stops and says what it touched.
+§1.12 asks that a Heroes program not segfault and not corrupt memory; a named
+abort is that promise kept, not an exception to it.
+
+**The placement is the author's, out of a question rather than an instruction.**
+Shown arm D's +6.6%, the author asked *"if the cost is only at compile time it is
+not a big problem; if it is at runtime, then yes, let us look for the
+compromise"* — and answering that meant saying where the cost is paid, which
+meant asking where a foreign thread *enters* rather than where the corruption
+shows. The coordinator had been pricing three wrong placements; the question is
+what moved the guard to the right one, and it is recorded here because the first
+draft did not.
+
+**And `docs/measurements/018` is why it is emitted rather than installed.** Four
+runtimes were built and raced on `heroes test selfhost/main.hero`: the guard at
+every str/array/map costs **+6.6%** through a `_Thread_local` and **+19%** through
+`pthread_self()` — the coordinator predicted the second would be the cheap one and
+was wrong by a factor of three, which only building both revealed. At the
+allocator alone it is free and buys less. **In the emitted callback's entry it is
+free where it does not apply**, because it is not emitted into a binary that
+passes no callback — which is the compiler and all 45 corpus programs — and it
+sits exactly where the danger enters, since C can reach Heroes code only through
+an address Heroes handed it.
+
+Measured on this sitting's own five witnesses: four of five stop with a message
+naming what was touched, against `heap-use-after-free` in ten ASan runs of ten
+before. **The fifth is not caught and stays open by name**: a recursive Heroes
+function that allocates nothing never reaches a guarded point and dies of stack
+exhaustion at exit 132 with an empty stderr. That is panel 107's half and
+`M-thread-stacks`', which exists for it.
+
+**What this makes one step rather than two**: the guard cannot land before the
+permission, because the functions it guards are the ones the permission admits,
+and the permission must not land before the guard, because it is the door. R8's
+shape survives; only its mechanism changed.
+
 ## Author's verdict
 
 **Ratified 2026-09-05 by the author**, in full: *"and I also ratify R1 to R8"* —
