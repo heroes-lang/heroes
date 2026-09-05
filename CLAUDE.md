@@ -76,6 +76,53 @@ clock, never as a gate** (rule 3).
   The cost is minutes again. The cost of breaking it was a sitting convened on a
   settled question, and a defect that shipped as fixed.
 
+**AND THE LIST IS A MEASUREMENT TOO — WHEN YOU ENUMERATE, SAY WHERE THE
+ENUMERATION CAME FROM** (author instruction 2026-09-05, *"write down somewhere
+what you have learnt, so you do not make the same mistake again"*, given after a
+day that made the same one five times). Everything above is written about
+individual claims, and every rule above was **obeyed** on 2026-09-05 while the
+day's real errors went straight past them. The reasoning was sound each time.
+**The LIST it reasoned over was mine, and it was short.** That is a distinct
+failure, and it is invisible in a way a wrong number is not: a wrong number
+contradicts something, while a missing option contradicts nothing at all —
+nothing in a correct argument points at the row you did not write down.
+
+Five in one day, each measured by somebody else:
+
+- A panel brief named **three causes** for why callbacks do not bind. A seat
+  refused the sample and read the real `sqlite3.h`: **five causes over 106
+  signatures**, and the one the sitting was convened about was **fourth, at
+  2.6%**. The whole sitting was aimed at the wrong noun.
+- That brief's *"`const` buys 3 of the 8"* was **2**, wrong in the convener's own
+  favour — `nftw` is blocked by a `struct FTW *` that is not `const` at all.
+- The same brief's four options **omitted the adapter**, which is what the two
+  languages closest to this one's architecture actually ship. The historian
+  objected to the **list**, not to the options on it.
+- *"CI is green on all three platforms"* was inferred from the word `success`.
+  It was **one leg**; the matrix widens only on an `m-*` tag, which
+  `.github/workflows/ci.yml` says in its own `on:` block.
+- A defect was filed **blocked**, with two routes priced and a written
+  recommendation to repair neither. Both routes were refusals. **A third existed
+  in the same file, three lines above**, and it cost nothing — the author asked
+  for the repair anyway and it took ten minutes.
+
+**Three obligations, and each one kills a specific error above.** **Enumerate
+from the world, not from what you can think of** — the real header, the whole
+corpus, the actual job list, `gh run view --json jobs`; a list built from memory
+is a guess wearing a table's clothes, and the fix is usually one command.
+**Say where the list came from, wherever it is handed on** — a brief, a
+recommendation, a `/decide` item; *"the eight I could think of"* and *"the 106
+in the header"* are different objects and the reader cannot tell them apart
+unless it is written. And **a recommendation is a claim about the option SET,
+not only about the options** (§15's rule that every decision comes with one, at
+its weak point): before recommending, ask what would have to be true for a
+route nobody listed to exist — and if the answer is *somebody would have to look
+somewhere I have not looked*, look there first.
+
+The cost of the rule is one command per list. The cost of breaking it was a
+five-judge sitting convened on 2.6% of its subject, and a defect that would have
+stayed open under a recommendation that was correct about everything it named.
+
 ## 2. Principle 0 (necessary-not-sufficient)
 The language is finished for v1 when it can compile itself. A form enters v1
 if the compiler needs it (the closure list) **or** it provably serves the
