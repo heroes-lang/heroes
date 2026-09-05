@@ -451,7 +451,12 @@ path).
 ## 11. Language and conventions
 **Everything written is English** — code, comments, docs, commits, verdicts,
 **and the author's own words when this file quotes them**. Conversation with the
-author is Italian, **and always in plain words** (author instruction 2026-08-15:
+author is Italian, **in the familiar second person** (author instruction
+2026-09-05: *"and use tu with me"*, given in one parenthesis while answering two
+other questions — Italian's formal *lei* had been the default for a month and
+nobody had asked for it; the familiar form is the register of somebody working
+beside you rather than reporting to you, which is what this project is),
+**and always in plain words** (author instruction 2026-08-15:
 *"always explain things to me in this simple language, in plain words, because
 sometimes I have a hard time understanding it"*). This is not a
 register for summaries and status reports — it is **every** explanation, including
