@@ -22,7 +22,24 @@ entry, not decoration.
 
 Format: `- [ ] **NNN — <title>** | <date, found by> | <status> | <where it came from> | <severity>`, then the body.
 
-**One defect is open as of 2026-09-05**, filed by panel 112 and put to the author with it, because both of its candidate repairs cost something a measurement cannot choose between. The paragraph below was written when the list was empty and is kept: it is the record of what closed before it.
+**Nothing is open as of 2026-09-05, at M-c-callbacks' close.** This line said *one
+defect is open* for part of that day — defect 013, filed by panel 112 and put to
+the author with it, because both of its candidate repairs cost something a
+measurement could not choose between. **It was repaired the same evening, by a
+route neither priced option named**, and it is in `docs/work/DONE.md`: both of
+the sitting's routes were refusals, and the third was three lines above them in
+the same file, written by panel 104 for a problem of the same family. The
+question moved from *how is it prevented* to *how does the program say what
+happened*, and the witness is the faulting **PC** rather than the faulting
+address, because a call through a null function pointer does not touch a bad
+address, it goes to execute at one. **The sentence outlived the defect by a day**,
+which is this file's own rule failing in the direction nobody watches: the rule
+says a repaired defect moves out, and the entry did move — the preamble
+announcing it did not. A list that describes an item it no longer holds reads
+exactly like a list that lost one.
+
+The paragraph below was written when the list was previously empty and is kept:
+it is the record of what closed before that.
 
 **Nothing was open here earlier on 2026-09-05.** Defect 011 (two `@` arguments of one
 place compiling and running) and defect 012 (`function f(_: ())` reaching clang
