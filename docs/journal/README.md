@@ -58,6 +58,10 @@ is `docs/ROADMAP.md` § The names, and the rule is CLAUDE.md §14.
 
 | 030 | [where the files go](030-documentation-site.md) | M-documentation-site — a modules chapter in both editions, and a page with a running program under it | 2026-09-02 | `m-documentation-site` |
 
+| 031 | [the guards](031-robustness-guards.md) | M-robustness-guards — the four holes §1.12 named, shut: `@` on an immutable, the stack, the C pointer verdict, the harness scratch | 2026-09-03 | `m-robustness-guards` |
+
+| 032 | [the rung](032-corpus-depth.md) | M-corpus-depth — nine programs between a program and the compiler, and half of every frame | 2026-09-04 | `m-corpus-depth` |
+
 `git tag --list --sort=creatordate` gives the same order from git itself, and
 `git checkout m5b` re-opens any milestone's code — which is what
 `M-journey-book` is written from.
