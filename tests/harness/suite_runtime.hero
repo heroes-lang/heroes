@@ -70,13 +70,25 @@ constant ALLOCATORS: [str]
         "free"
     ]
 
-# Floors, measured 2026-09-05: 21 files under `runtime/`, 3 allocation
-# calls inside `alloc.c` (one `malloc`, two `free`), 6 refcount
+# Floors, measured 2026-09-05: 21 files under `runtime/`, **4** allocation
+# calls inside `alloc.c` (one `malloc`, three `free`), 6 refcount
 # prototypes in the header. They exist for `suite_order`'s reason — a
 # sweep that reaches nothing reports green — and the middle one is the
 # load-bearing one here: it is what fails if `code_lines` ever blanks
 # code as well as comments, which is the one way this suite could go
 # quiet while the tree went wrong.
+#
+# **Floors, not equalities**, so a refactor that deletes a `free` does not
+# turn this red; `suite_order`'s constants are set the same way. The
+# parenthesis said *three (one `malloc`, two `free`)* for six hours, which
+# is how long it took `hero_grow_kept` to add the fourth — CLAUDE.md §11's
+# premise that expires in silence, inside the suite written to stop
+# premises expiring in silence.
+#
+# And `alloc.c` holds a **fifth** occurrence, at its own line 24, inside a
+# comment quoting `run.c`'s English *"the first check is free ("*. A grep
+# reports five; `code_lines` reports four. That line is this suite's own
+# reason living in the file it checks.
 constant LEAST_FILES: i64
     18
 
