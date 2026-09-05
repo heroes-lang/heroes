@@ -58,7 +58,7 @@ M-separate-compilation already did.
 
 | | |
 |---|---|
-| **Current milestone** | **M-isolated-threads** — **OPEN 2026-09-03**, row 34: Part 7.13 concurrency, per-thread heaps, copying at the boundaries, no scheduler — and the one hole panel 104 left, a C library's own thread overflowing its stack |
+| **Current milestone** | **M-c-callbacks** — **OPEN 2026-09-05**, row 34: a Heroes function reaches a C callback parameter, and the refcount stops being a race. Split out of M-isolated-threads by `docs/panel/111` and placed ahead of it by the author, because three seats measured that the permission is bought entirely by §1.11 and §12's FFI-completeness instruction and needs no thread at all · **M-isolated-threads** stays **OPEN 2026-09-03**, row 35, re-scoped by the same sitting: it delivers Part 7.13's isolation or it delivers nothing |
 | **Last closed** | **M-corpus-depth**, 2026-09-04, tag `m-corpus-depth` ([032](journal/032-corpus-depth.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
 | Milestones closed | 33 of 55 · 33 tags |
 | The compiler | **53,170 lines** of Heroes in **178** modules across **10 directories** and 37 flat files · the seed **728,763** lines of generated C, re-counted 2026-09-05 after it was regenerated through the fixpoint (`320654e3`) — it had been two repairs behind, and `main` was red for a day. This row read **721,238** the day before, when panel 106's repair had just deleted the exit sweep's own temporaries and taken **125,566** lines with them; that pair is the record's and keeps its date, and no difference is computed from it here, because a number derived from a document is not a measurement |
@@ -168,28 +168,29 @@ and why one overtook another are under the table, in § Who scheduled what.
 | 31 | **M-documentation-site** | done 2026-09-02 | `m-documentation-site` | [030](journal/030-documentation-site.md) | the site, anchored to programs that run |
 | 32 | **M-robustness-guards** | done 2026-09-03 | `m-robustness-guards` | [031](journal/031-robustness-guards.md) | the guards that shut the holes §1.12 named: `@` on an immutable, the stack, the C pointer verdict, the harness scratch · §1.12 |
 | 33 | **M-corpus-depth** | done 2026-09-04 | `m-corpus-depth` | [032](journal/032-corpus-depth.md) | the rung between a program and the compiler: nine programs, and half of every frame · **§1.1** |
-| 34 | **M-isolated-threads** | **OPEN** 2026-09-03 | — | — | Part 7.13 concurrency: per-thread heaps, copying at the boundaries, no scheduler |
-| 35 | **M-declared-freer** | scheduled | — | — | `owned <C function>`: the string C hands you is freed by the name its own declaration gives · **§1.12**
-| 36 | **M-thread-stacks** | scheduled | — | — | the guard reads the calling thread's own stack, and the size stops being a string in one CI file · **§1.12**
-| 37 | **M-discard-refusal** | scheduled | — | — | `_ =` on a fallible value becomes a compile error · **§1.1**
-| 38 | **M-closures-verdict** | scheduled | — | — | the ruling on Part 7 items 1 and 12, closures and inline blocks — a decision, not a feature |
-| 39 | **M-interpolation-verdict** | scheduled | — | — | the ruling on design.md Part 7 item 7, string interpolation — a decision, not a feature |
-| 40 | **M-reflection-verdict** | scheduled | — | — | the ruling on reflection — at run time, and as compile-time derivation over a record's fields — a decision, not a feature |
-| 41 | **M-deferral-ledger** | scheduled | — | — | every Part 7 item with no milestone gets a dated verdict or a return condition |
-| 42 | **M-check-completeness** | scheduled | — | — | what `heroes check` accepts, `heroes build` compiles — through a generic too · scheduled, no warrant
-| 43 | **M-core-packages** | scheduled | — | — | small packages that compose, organised as Go's tree, in Heroes or over C |
-| 44 | **M-package-manager** | scheduled | — | — | `heroes add`/`heroes fetch`; bindings instead of a standard library |
-| 45 | **M-web-framework** | scheduled | — | — | composes the core packages, Go/Echo style: explicit routes, records, no magic |
-| 46 | **M-doc-generator** | scheduled | — | — | `heroes doc`, the one direction Part 6's literate-source row promises · scheduled, no warrant |
-| 47 | **M-panic-location** | scheduled | — | — | a panic names the `.hero` file, line and function · **§1.12** |
-| 48 | **M-thesis-harness** | scheduled | — | — | Part 11's metrics 2 and 4 run for the first time, as a Heroes program · **§1.1** |
-| 49 | **M-lsp-server** | scheduled | — | — | `heroes lsp`, and the incremental frontend it needs |
-| 50 | **M-vscode-extension** | scheduled | — | — | the extension, complete |
-| 51 | **M-qbe-backend** | scheduled | — | — | Part 7 item 15 — the proof that the IR is not C in disguise |
-| 52 | **M-journey-book** | scheduled | — | — | the journey — how this language came to be |
-| 53 | **M-guide-book** | scheduled | — | — | the guide, as a book you would find in a shop · **§1.1** |
-| 54 | **M-install-channels** | scheduled | — | — | a Homebrew tap, winget, a Nix flake, a Docker image, all built from the seed, and a version scheme |
-| 55 | **M-publication-gate** | scheduled | — | — | the last gate before anything goes outward · CLAUDE.md §14 |
+| 34 | **M-c-callbacks** | **OPEN** 2026-09-05 | — | — | a Heroes function reaches a C callback parameter, and the refcount stops being a race · **§1.11**, **§1.12** |
+| 35 | **M-isolated-threads** | **OPEN** 2026-09-03 | — | — | Part 7.13 concurrency: per-thread heaps, copying at the boundaries, no scheduler |
+| 36 | **M-declared-freer** | scheduled | — | — | `owned <C function>`: the string C hands you is freed by the name its own declaration gives · **§1.12**
+| 37 | **M-thread-stacks** | scheduled | — | — | the guard reads the calling thread's own stack, and the size stops being a string in one CI file · **§1.12**
+| 38 | **M-discard-refusal** | scheduled | — | — | `_ =` on a fallible value becomes a compile error · **§1.1**
+| 39 | **M-closures-verdict** | scheduled | — | — | the ruling on Part 7 items 1 and 12, closures and inline blocks — a decision, not a feature |
+| 40 | **M-interpolation-verdict** | scheduled | — | — | the ruling on design.md Part 7 item 7, string interpolation — a decision, not a feature |
+| 41 | **M-reflection-verdict** | scheduled | — | — | the ruling on reflection — at run time, and as compile-time derivation over a record's fields — a decision, not a feature |
+| 42 | **M-deferral-ledger** | scheduled | — | — | every Part 7 item with no milestone gets a dated verdict or a return condition |
+| 43 | **M-check-completeness** | scheduled | — | — | what `heroes check` accepts, `heroes build` compiles — through a generic too · scheduled, no warrant
+| 44 | **M-core-packages** | scheduled | — | — | small packages that compose, organised as Go's tree, in Heroes or over C |
+| 45 | **M-package-manager** | scheduled | — | — | `heroes add`/`heroes fetch`; bindings instead of a standard library |
+| 46 | **M-web-framework** | scheduled | — | — | composes the core packages, Go/Echo style: explicit routes, records, no magic |
+| 47 | **M-doc-generator** | scheduled | — | — | `heroes doc`, the one direction Part 6's literate-source row promises · scheduled, no warrant |
+| 48 | **M-panic-location** | scheduled | — | — | a panic names the `.hero` file, line and function · **§1.12** |
+| 49 | **M-thesis-harness** | scheduled | — | — | Part 11's metrics 2 and 4 run for the first time, as a Heroes program · **§1.1** |
+| 50 | **M-lsp-server** | scheduled | — | — | `heroes lsp`, and the incremental frontend it needs |
+| 51 | **M-vscode-extension** | scheduled | — | — | the extension, complete |
+| 52 | **M-qbe-backend** | scheduled | — | — | Part 7 item 15 — the proof that the IR is not C in disguise |
+| 53 | **M-journey-book** | scheduled | — | — | the journey — how this language came to be |
+| 54 | **M-guide-book** | scheduled | — | — | the guide, as a book you would find in a shop · **§1.1** |
+| 55 | **M-install-channels** | scheduled | — | — | a Homebrew tap, winget, a Nix flake, a Docker image, all built from the seed, and a version scheme |
+| 56 | **M-publication-gate** | scheduled | — | — | the last gate before anything goes outward · CLAUDE.md §14 |
 
 Three closed milestones have no tag of their own because they were parents or
 sub-steps: **M-checker-core**, **M-data-declarations** and **M-rich-diagnostics**
@@ -679,17 +680,88 @@ milestone; the record is journal 032 at close. Cost is projected at **+1:15** on
 the corpus leg and checked at close against step 0's number; every FFI program is
 measured on the Mac, the Linux image and the Windows box before its commit.
 
-### M-isolated-threads — concurrency
+### M-c-callbacks — a Heroes function reaches a C callback parameter
 
-**Scheduled, no warrant.** design.md Part 7.13 — isolated per-thread heaps,
-copying at the boundaries, OS threads, **no scheduler** — and its width (data
-parallelism alone, or the mailbox too) is a panel question when it opens.
-**The record must state whether the C11 backend can express the intended model at
-all** (stack switching in the runtime, or a CPS/state-machine transform): cfront,
-the direct ancestor of this architecture, was abandoned in 1993 after a failed
-attempt to add exception support, having frozen around forms that could not carry
-non-local control flow. If the answer is "not yet known", the deferral is a bet
-and is logged as one (panel 030 R6).
+**OPEN 2026-09-05**, split out of M-isolated-threads by `docs/panel/111` and
+placed here by the author the same day. It is bought entirely by §1.11 and
+CLAUDE.md §12's FFI-completeness instruction — *"a library Heroes cannot bind is
+a library the author must leave C code around for"* — and it needs no thread at
+all. Three seats asked for the split independently; bundled, it let the weaker
+half ride the stronger's Principle 0 ticket.
+
+**What is broken today, measured at the sitting.** A function value is refused at
+the FFI by two different doors: declared `ptr`, the extern declaration is accepted
+and the **call site** fails `error[type_mismatch]`; declared at its real type, the
+**declaration** fails `error[ffi_type]`. So `sqlite3_exec`, `atexit`,
+`pthread_create`, `signal`, `qsort` and every raylib callback are unbindable, and
+the author must keep C code around for each.
+
+**What is already true and cost nothing to find.** The emitted C is *already* the
+C the header wants: `function worker(arg: ptr) -> ptr` emits
+`void * f(void * h0_arg)`, which **is** `void *(*)(void *)`, and it compiles under
+`-Wall -Werror` with no cast and no trampoline. The permission is a **+32/−1**
+diff in one file, because the parameter-versus-result distinction already exists.
+
+**What it owes, and every item is a measurement rather than a guess.**
+- The **`c_int`/`const` vocabulary**, or a design.md Part 8 wart naming
+  const-qualified pointee parameters as the known hole with its return condition.
+  Without it the permission binds **3 of 8** real callbacks: `qsort` wants
+  `const void *` and Heroes has no const-pointer spelling, while
+  `selfhost/emit/ctype.hero:376` promises in writing that `qsort` is expressible.
+- **`c_type_of` gains its `.function_ty` arm**. Today a function-typed parameter
+  makes `emit/extern_probe.hero` skip the probe for the **whole extern**, so the
+  other parameters silently stop being checked against the header.
+- A **new diagnostic class**, `ffi_callback_type`, exit 1 on the `.hero` line, so
+  a wrong callback signature is this compiler's message and not clang's internal
+  error at exit 2 — which is the failure §4.19's guarantee exists to prevent.
+- The **`ffi_type` message gains "a function type"** in the same commit, or the
+  spec and the compiler contradict each other on day one.
+- The **spec sentence at the warden's shorter wording**: it states the
+  parameter-only restriction at **+16** where the tabled wording cost +26 and
+  never mentioned it, and a measured **−8** removal brings it to **+8 net**. Plus
+  the ergonomist's second sentence, on the callback's own parameter widths and
+  `(function() -> ())`, without which `atexit` is unwritable from the document.
+- **R8's condition, and it is the one that decides the order**: atomic refcounts
+  and a copy-on-write uniqueness protocol land with the permission or before it.
+  Today neither door admits a function value, so the FFI refusal is, by accident,
+  the only thing between a Heroes program and `hero_str_incref`'s race. The
+  permission is the door. Price measured: **+1.7%** on the refcount, and a sign
+  that flips inside the noise on the allocator's counter. `cow.c`'s
+  `if (a->refcount == 1)` is a test-and-mutate and needs a protocol, not an
+  atomic — the harder half, and the one the cheap half makes easy to forget.
+
+### M-isolated-threads — the isolation, or nothing
+
+**OPEN 2026-09-03, re-scoped by `docs/panel/111` on 2026-09-05.** design.md Part
+7.13 — isolated per-thread heaps, copying at the boundaries, OS threads, **no
+scheduler**. Its width is settled and unopposed: **data parallelism only**, which
+is the design's own words at `:2563` (*"the first and probably only rung Heroes
+needs"*); the mailbox stays deferred.
+
+**Panel 030 R6's rider is answered, and the answer is yes.** The C11 backend can
+express the model: a Heroes function emits exactly the C `pthread_create` wants
+and runs on another thread at exit 0 (`docs/measurements/017`). Stack switching
+and a CPS transform are what green threads and coroutines need, and Part 7.13
+refuses both by name. cfront's fate does not reach this architecture, and the
+deferral was never a bet.
+
+**What the sitting found instead is that the deferred half was the deliverable.**
+The proposal that opened this milestone — threads now, isolation later — was
+**refused on two vetoes**, each with a running program: a shared `str` across 32
+threads is `heap-use-after-free` or double-free in **9 of 10** ASan runs; `a == b`
+on nested arrays is exit 139 with an empty stderr; copy-on-write double-frees; and
+the stack guard is main-thread-only, so a worker overflow is exit 132 in silence.
+Four classes, each from one line of ordinary Heroes. **So this milestone delivers
+Part 7.13's isolation or it delivers nothing** — the route both compiling seats
+accept, and the only one with a precedent: Erlang is the single surveyed language
+that needed no type-system change, and per-process heaps are what it paid.
+
+**Two pieces of open work sit under it** in `docs/work/SCHEDULED.md`: the refcount
+half of design.md's own v1 invariant (`:2578-2586`), which step 0 discharged the
+allocator half of; and the **sixteen** shared mutable buffers the refused plan did
+not name — 22 exist in `runtime/parts/`, 4 are `_Thread_local`, and one of the
+sixteen is the argv buffer for process spawn, which is on §1.0's closure list.
+The stack-guard half is M-thread-stacks' and panel 107's, not this one's.
 
 ### M-declared-freer — the string C hands you, freed by name
 
@@ -1603,7 +1675,7 @@ So a number met in the record resolves here, and only here.
 | `M-guide-book` | M17 | — | the guide |
 | `M-argv-execution` | — | — | the compiler runs programs by argument list, and the shell stops being the boundary |
 | `M-publication-gate` | M18 | — | the last gate before anything goes outward |
-| `M-c-callbacks` | — | — | a Heroes function reaches a C callback parameter. **Proposed by `docs/panel/111`, 2026-09-05, and it has no chain row yet on purpose**: `docs/work/SCHEDULED.md`'s rule places a new id with the author, and the sitting's R4 says so. The name reaches this table first, which is CLAUDE.md §14's order and what the `records/names` check reads — it fired on this very id minutes after the sitting closed. **A new id rather than a part of M-isolated-threads**: three seats found the permission is bought entirely by §1.11 and §12's FFI-completeness instruction and needs no thread at all, so bundled it let the weaker half ride the stronger's Principle 0 ticket. **Named for what it delivers and not for the area**: the callbacks, not the FFI, which must stay free for whatever binds `const void *` |
+| `M-c-callbacks` | — | — | a Heroes function reaches a C callback parameter. **Proposed by `docs/panel/111` and placed at row 34 by the author the same day**, ahead of M-isolated-threads: *"can we put M-c-callbacks in right away? I would not wait too long to do it"*. `docs/work/SCHEDULED.md`'s rule puts the placing of a new id with the author, and this is that placing. The name reaches this table first, which is CLAUDE.md §14's order and what the `records/names` check reads — it fired on this very id minutes after the sitting closed. **A new id rather than a part of M-isolated-threads**: three seats found the permission is bought entirely by §1.11 and §12's FFI-completeness instruction and needs no thread at all, so bundled it let the weaker half ride the stronger's Principle 0 ticket. **Named for what it delivers and not for the area**: the callbacks, not the FFI, which must stay free for whatever binds `const void *` |
 | `M-robustness-guards` | — | `m-robustness-guards` | the guards that shut the holes §1.12 named. **Done 2026-09-03**, the day it opened: six steps, two sittings (103, 104), every landing measured on the Mac, the Linux image and the Windows box before its commit |
 | `M-corpus-depth` | — | — | the rung between a program and the compiler: nine programs chosen for shape — oracle-checked, deep, FFI at program scale. **A new id rather than a third reopening of the corpus** (§14, author instruction 2026-09-03): `M-program-corpus` delivered *many programs run*, `M-corpus-coverage` *every form has a program*, and this one delivers *size, depth and an external oracle*, which neither name claims |
 | `M-core-packages` | — | — | small packages that compose, organised as Go's tree, in Heroes or over C. **A new id rather than an area annexed** (§14, author instruction 2026-09-03): M-package-layout delivered how a `use` reaches a module, M-package-manager delivers `heroes add`/`heroes fetch` and where a fetched package lives, and this one delivers the packages themselves — a deliverable neither name claims. The word is Odin's `core:` collection, which §1.11 cites for the reason a package can be redesigned and a built-in cannot |
