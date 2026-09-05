@@ -37,21 +37,44 @@ record Located
     col: i64
     rest: str
 
+# A clang report is `<file>:<line>:<col>: <severity>: <message>`, and the
+# location is read FROM THE RIGHT because a path may hold colons of its own.
+#
+# **This took the first three colons until 2026-09-05 and was blind on Windows**
+# (M-c-callbacks step 4, found by the three-platform rule against a real box).
+# `C:/Users/…/note.hero:2:110: error: …` gave `C` as the file and the whole path
+# as the line number, which is not numeric, so `location` refused and EVERY ffi
+# classifier that gates on it fell through to exit 2 — the compiler blaming
+# itself for the author's declaration, which is §4.19's own named failure. CI
+# never saw it because CI compiles relative paths; an author compiling
+# `C:\work\thing\main.hero` sees it on the first mistake they make.
+#
+# The seam is the `": "` that ends the column and opens the severity: a path may
+# contain a colon, and it may not contain a colon followed by a space in the
+# position clang puts one. Within that prefix the last two colons are the line
+# and the column, whatever precedes them.
 function location(s: source.Source, line: str) -> Located?
     cs = line.chars()
+    head = ffi_lookup.char_index_of(text: line, needle: ": ")
+
+    if head.is_err()
+        return fail("none", "not a file:line:col report")
+    end = head.must()
     stops: [i64] @ []
     index: i64 @ 0
 
-    while index < cs.len() && stops.len() < 3
+    while index < end
         if cs[index] == ":"
             stops @ stops.push(index)
         index @ index + 1
 
-    if stops.len() < 3
+    if stops.len() < 2
         return fail("none", "not a file:line:col report")
-    file_name = slice_chars(cs, from: 0, to: stops[0])
-    row = ffi_lookup.number(slice_chars(cs, from: stops[0] + 1, to: stops[1]))
-    col = ffi_lookup.number(slice_chars(cs, from: stops[1] + 1, to: stops[2]))
+    at_col = stops[stops.len() - 1]
+    at_row = stops[stops.len() - 2]
+    file_name = slice_chars(cs, from: 0, to: at_row)
+    row = ffi_lookup.number(slice_chars(cs, from: at_row + 1, to: at_col))
+    col = ffi_lookup.number(slice_chars(cs, from: at_col + 1, to: end))
 
     if row.is_err() || col.is_err()
         return fail("none", "the position is not numeric")
@@ -66,7 +89,7 @@ function location(s: source.Source, line: str) -> Located?
     if at == -1
         return fail("none", "not one of this compilation's own files")
     return ok(
-        Located(file: at, line: row.must(), col: col.must(), rest: slice_chars(cs, from: stops[2] + 1, to: cs.len()))
+        Located(file: at, line: row.must(), col: col.must(), rest: slice_chars(cs, from: end + 1, to: cs.len()))
     )
 
 function slice_chars(cs: [str], from: i64, to: i64) -> str
@@ -115,3 +138,37 @@ function last_quoted(text: str) -> str?
     if close == -1 || open == -1
         return fail("none", "no quoted type on the line")
     return ok(slice_chars(cs, from: open + 1, to: close))
+
+## Tests
+
+# The shape every ffi classifier gates on, and the platform that broke it.
+test "a location is read from the right, so a Windows drive letter survives"
+    s = source.new_source(name: "C:/w/thing/main.hero", text: "function main()\n    print(0)\n")
+    got = location(s, line: "C:/w/thing/main.hero:2:110: error: incompatible function pointer types")
+    assert !got.is_err()
+    assert got.must().line == 2
+    assert got.must().col == 110
+
+    # `rest` keeps the space after the colon, which is what it did before this
+    # repair and what `last_quoted` has always been handed. The behaviour is
+    # deliberately identical: this commit moves WHERE the location is cut, not
+    # what the remainder is.
+    assert got.must().rest == " error: incompatible function pointer types"
+
+test "a relative path still reads, which is what CI compiles and why this hid"
+    s = source.new_source(name: "tests/golden/x.hero", text: "function main()\n    print(0)\n")
+    got = location(s, line: "tests/golden/x.hero:7:3: warning: something")
+    assert !got.is_err()
+    assert got.must().line == 7
+    assert got.must().col == 3
+
+# A line with no severity is not a location report, and neither is a path with
+# no position after it — both must refuse rather than invent a number.
+test "a line that is not a position report is refused"
+    s = source.new_source(name: "a.hero", text: "function main()\n    print(0)\n")
+    assert location(s, line: "2 errors generated.").is_err()
+    assert location(s, line: "a.hero: error: no position here").is_err()
+
+test "a file this compilation does not own is refused, drive letter or not"
+    s = source.new_source(name: "a.hero", text: "function main()\n    print(0)\n")
+    assert location(s, line: "C:/elsewhere/other.hero:1:1: error: x").is_err()

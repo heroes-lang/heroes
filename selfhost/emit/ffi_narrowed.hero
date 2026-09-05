@@ -72,6 +72,52 @@ constant MISMATCHED: str
 # needles are measured pairwise disjoint; the two that anchor on less
 # than a family word — MAY_LOSE and the broad MISMATCHED — go last, so
 # neither gets first refusal on a line a sibling names outright.
+# The header's callback type with every `const char *` removed — the one
+# qualified pointee this language already spells, as `cstr`. What is left is
+# exactly the set of qualified pointees with no Heroes name, which is the
+# question the note above needs answered (panel 112).
+#
+# It walks characters rather than bytes for the same reason every scan in this
+# file does, and it is written as a loop rather than a `replace` because this
+# module has no string library behind it and one caller does not earn one.
+function without_const_char(text: str) -> str
+    cs = text.chars()
+    kept: [str] @ []
+    at: i64 @ 0
+    marker = "const char *".chars()
+
+    while at < cs.len()
+        matched: bool @ at + marker.len() <= cs.len()
+        offset: i64 @ 0
+
+        while matched && offset < marker.len()
+            if cs[at + offset] != marker[offset]
+                matched @ false
+            offset @ offset + 1
+
+        if matched
+            at @ at + marker.len()
+        else
+            kept @ kept.push(cs[at])
+            at @ at + 1
+
+    return kept.join("")
+
+test "a const char * is spelled cstr, so it is not a hole and the note must not fire"
+    assert without_const_char("void (*)(const char *, int)") == "void (*)(, int)"
+    assert !ffi_lookup.has(text: without_const_char("void (*)(const char *, int)"), needle: "const ")
+
+# nftw is the shape that keeps the note honest in the other direction: it
+# carries BOTH, and only the char half has a spelling.
+test "a const pointee with no spelling still fires, even beside a const char *"
+    nftw = "int (*)(const char *, const struct stat *, int, struct FTW *)"
+    assert ffi_lookup.has(text: without_const_char(nftw), needle: "const ")
+    assert ffi_lookup.has(text: without_const_char("int (*)(const void *, const void *)"), needle: "const ")
+
+test "a callback with no qualifier anywhere leaves nothing to say"
+    assert !ffi_lookup.has(text: without_const_char("void (*)(void)"), needle: "const ")
+    assert !ffi_lookup.has(text: without_const_char("int (*)(void *, int, char **, char **)"), needle: "const ")
+
 function family(line: str) -> str?
     if ffi_lookup.has(text: line, needle: NARROWED)
         return ok(NARROWED)
@@ -206,15 +252,23 @@ function parameter_width(s: source.Source, decls: [ast.Decl], p: containers.Prog
             "§4.19: a callback is declared with the header's own parameter and result types — each parameter at its width and sign, and `()` where the header says void"
         )
 
-        # The second note ONLY where the header actually qualifies a pointee.
-        # §4.17 says the note is chosen by the type because the repair is, and
-        # this one is a repair the reader cannot make: under `void (*)(void)`
-        # it would send them looking for a `const` that is not in the message
-        # they are reading, which is worse than saying nothing. Asked of the
-        # text clang printed, which is the type in hand.
-        if ffi_lookup.has(text: c_type.must(), needle: "const ")
+        # The second note fires only where the header qualifies a pointee THIS
+        # LANGUAGE CANNOT SPELL, and `const char *` is not one of those: `cstr`
+        # spells it exactly. **This shipped wrong for one commit** and panel 112's
+        # ffi seat found it: the needle was a bare `"const "`, so a callback whose
+        # only mistake was `i64` where the header says `int` was told *"this one
+        # cannot be written at all today"* — while the one-character repair to
+        # `i32` builds and runs at exit 0. A diagnostic that stops a correct
+        # repair is §4.17's own failure, and a needle is the wrong instrument
+        # for a question about which spellings exist.
+        #
+        # So the text is asked with every `const char *` taken out of it first,
+        # which leaves exactly the qualified pointees that have no Heroes name.
+        # `nftw` still fires, correctly: it carries `const char *` AND
+        # `const struct stat *`, and only the first has a spelling.
+        if ffi_lookup.has(text: without_const_char(c_type.must()), needle: "const ")
             cb.notes @ cb.notes.push(
-                "and this one cannot be written at all today: a `const` pointee has no spelling in this language, so a header asking for `const void *` has no Heroes match — design.md Part 8 names it as a known hole"
+                "a pointee the header marks `const` has no spelling here unless it is `const char *`, which is `cstr` — design.md Part 8 wart 19 names this and the four causes measured beside it"
             )
 
         return ok(cb)

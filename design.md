@@ -2154,6 +2154,24 @@ must never insert a cast from `ptr` to a header's function-pointer type (it comp
 silently calls the wrong callback — the exact silent-wrong-answer class this language exists to
 kill), and `-pedantic-errors` waits until callbacks have a typed route.
 
+**Three of those sentences expired on 2026-09-05 and they are corrected here rather than deleted,
+because each was true when it was measured** (panel 111 R4 landed the typed route; panel 112
+measured what it left). **"9 out of 9" is now 8**: `sqlite3_busy_handler` binds typed and runs at
+exit 0, as do `atexit` and `pthread_create` — three of the nine, measured with the seed compiler.
+**"What the boundary lacks is `c_int` and `const`" is measurably the wrong noun**: over
+`sqlite3.h`'s own 106 callback signatures, a `const` spelling unlocks **1** and a spelling for a
+pointer to a header's struct unlocks **64**; the full ordering is Part 8 wart 19, and panel 112
+refused the `const` vocabulary on four independent grounds. And **the `-pedantic-errors` clause has
+had its condition met**: callbacks have a typed route as of R4, so the flag stops waiting. It lands
+narrowly, inside the probe block, because `cb: ptr` in the sentence above is now the shape that
+lets `atexit(f: ptr)` take `nullptr`, compile, and **exit 139** — the typed route made the right
+spelling legal and left the wrong one legal beside it, which is half a repair.
+
+**What does NOT change**: the cast prohibition, which two seats re-earned by running it — under
+this project's own fourteen flags a mismatched function-pointer cast is zero diagnostics, exit 0,
+and an arbitrary permutation, with `-fsanitize=function` absent from `--sanitize` and
+`-Wcast-function-type-strict` absent from the fourteen.
+
 **Provenance of the mechanism:** Nim's `importc` pragma (`{.importc, header: "sqlite3.h".}`) — the
 cheapest FFI mechanism that exists, and it works *only* because the backend is C. An earlier
 revision of this document called it "the design to steal from if the backend ever changes to C
@@ -2745,6 +2763,66 @@ visible rather than patched with a second form.
    `HeroStr` and `int64_t` and allocates nothing the program owns, and `examples/sqlite`,
    `examples/curl` and `examples/raylib` all bind only functions whose results C keeps. One
    binding that must free, and the vocabulary stops being future work.
+
+19. **A C callback's parameters can be spelled for 16% of the callbacks in one real header**
+   (panel 112, 2026-09-05, measured over `sqlite3.h` itself rather than over a sample). Panel
+   111 R4 made a Heroes function a legal `extern` parameter; what it did not do is give the
+   callback's OWN parameters the vocabulary C requires there. **The cause is C and not this
+   emitter**: a pointer type converts at a call site, and inside a function-pointer type the
+   types must be *identical*. Measured both ways the same day — `@result: ptr` against C's
+   `char ***` builds at exit 0 as a direct parameter, because the emitter writes a
+   `(void *)` cast, and the same `char **` inside a callback is a hard error where no cast
+   exists.
+
+   **The causes, in measured order over 106 distinct callback signatures — 153 unspellable
+   parameter occurrences:**
+
+   | cause | occurrences | callbacks a spelling would unlock |
+   |---|---|---|
+   | a pointer to a struct the header declares | **102** (66.7%) | **+64** |
+   | a pointer to a scalar | 26 (17.0%) | — |
+   | a pointer to a pointer (`char **`) | 18 (11.8%) | +14 |
+   | a `const` pointee that is not `const char *` | **4** (2.6%) | **+1** |
+   | an opaque typedef | 3 (2.0%) | — |
+
+   Cumulatively: **17 of 106 bind today**, 18 with a `const` spelling, 82 with a
+   pointer-to-header-record spelling, 96 with pointer-to-pointer as well.
+
+   **A fifth cause is a grammar refusal rather than a vocabulary one**, and no proposal on
+   panel 112's table reached it: `(function(i32, @out: i32) -> i32)` is
+   `expected_function_type_params_close`. An out-parameter inside a callback is **26**
+   occurrences in `sqlite3.h` and it is raylib's `LoadFileDataCallback`.
+
+   **The order matters and this row exists to fix it.** The sitting was convened on `const`,
+   because `qsort` is the callback a reader meets first, and `const` is the **fourth** cause by
+   frequency. A wart that names the smallest cause funds the wrong milestone. What `const`
+   alone buys, measured: `qsort` and `bsearch`, and **not** `nftw`, whose block is a
+   `const struct stat *` **and** a `struct FTW *` that is not const at all.
+
+   **What is NOT a hole here**, each measured at the same sitting and each easy to assume
+   otherwise: a header struct passed **by value** into a callback already works, because panel
+   060 makes a group `record` the header's own type and C sees identity; `const char *` is
+   already `cstr` exactly; and `sqlite3_exec` binds today through **28 lines of `static inline`
+   in a header the group names**, with no build rule. `va_list` is unreachable by any pointer
+   vocabulary at all — it is `char *` on arm64-apple, `struct __va_list_tag *` on x86_64-linux
+   and a **struct by value** on aarch64-linux, so raylib's `SetTraceLogCallback` stays
+   unbindable whatever this row grows into.
+
+   **Why a spelling did not land** (panel 112 R1, and it is four independent measurements):
+   a new `Ty` case is **173 `non_exhaustive` errors across 49 files**, which Part 5's own test
+   makes core rather than sugar; the cheapest spec wording is **+13** of 266 tokens of headroom
+   and the full vocabulary **+49**; `selfhost/` binds **zero** callbacks, so Principle 0's
+   compiler-need branch fails; and a `const` spelling is not checker-only — the qualifier
+   propagates into the body, and the cheap implementation that casts it away compiles clean
+   under all fourteen flags while writing through memory C promised was read-only, at exit 0.
+
+   **What would make this row wrong** (§12): a binding on §4.19's ladder or the closure list
+   that needs a Heroes function value in a callback slot this vocabulary cannot spell.
+   Measured today: `selfhost/`'s four `extern` groups declare 14 functions, every parameter a
+   `str`, `cstr`, `i64` or `@i64`, and **not one callback**; no shipped example is blocked.
+   One such binding and this stops being a wart and becomes §1.0 compiler-need — and the route
+   it must take is then the one panel 112 R6 records, a qualifier field on the function type
+   that already exists (**2 edits in 1 file**, measured) rather than a new `Ty` case.
 
 ## Part 9 — Low-level access, when the time comes
 
