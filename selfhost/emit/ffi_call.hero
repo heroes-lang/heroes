@@ -34,7 +34,7 @@ use source
 use diag
 use ir/containers
 use emit/ffi_lookup
-use emit/ffi_narrowed
+use emit/ffi_site
 use parse
 use resolve
 use checker
@@ -84,11 +84,11 @@ function call_shape(s: source.Source, decls: [ast.Decl], p: containers.Program, 
 
     if !arity && !format
         return fail("none", "not a call-shape line")
-    at = ffi_narrowed.location(s, line: line)
+    at = ffi_site.location(s, line: line)
 
     if at.is_err()
         return fail("none", "no usable location")
-    found = ffi_narrowed.extern_at_line(p, s, decls, file: at.must().file, at_line: at.must().line)
+    found = ffi_site.extern_at_line(p, s, decls, file: at.must().file, at_line: at.must().line)
 
     if found.is_err()
         return fail("none", "no extern is declared at that line")

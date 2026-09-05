@@ -21,6 +21,7 @@ use emit/ctype
 use emit/extern_probe
 use emit/c_spellings
 use emit/ffi_lookup
+use emit/ffi_site
 use parse
 use resolve
 use checker
@@ -94,97 +95,6 @@ function family(line: str) -> str?
         return ok(MISMATCHED)
     return fail("none", "not a conversion line")
 
-# Where clang's caret sits and what follows it, with the file kept
-# only if it is one of this compilation's own NON-LIBRARY files. The
-# library is a registered Source entry whose name is deliberately
-# unopenable: a clang error against one of its lines must not look
-# like an error in a file the author can edit (panel 052's
-# compiler-engineer, in the emitted goldens).
-record Located
-    file: i64
-    line: i64
-    col: i64
-    rest: str
-
-function location(s: source.Source, line: str) -> Located?
-    cs = line.chars()
-    stops: [i64] @ []
-    index: i64 @ 0
-
-    while index < cs.len() && stops.len() < 3
-        if cs[index] == ":"
-            stops @ stops.push(index)
-        index @ index + 1
-
-    if stops.len() < 3
-        return fail("none", "not a file:line:col report")
-    file_name = slice_chars(cs, from: 0, to: stops[0])
-    row = ffi_lookup.number(slice_chars(cs, from: stops[0] + 1, to: stops[1]))
-    col = ffi_lookup.number(slice_chars(cs, from: stops[1] + 1, to: stops[2]))
-
-    if row.is_err() || col.is_err()
-        return fail("none", "the position is not numeric")
-    at: i64 @ -1
-    counter: i64 @ 0
-
-    for entry in s.files
-        if entry.name == file_name && !entry.is_library && at == -1
-            at @ counter
-        counter @ counter + 1
-
-    if at == -1
-        return fail("none", "not one of this compilation's own files")
-    return ok(
-        Located(file: at, line: row.must(), col: col.must(), rest: slice_chars(cs, from: stops[2] + 1, to: cs.len()))
-    )
-
-function slice_chars(cs: [str], from: i64, to: i64) -> str
-    kept: [str] @ []
-    index: i64 @ from
-
-    while index < to
-        kept @ kept.push(cs[index])
-        index @ index + 1
-
-    return kept.join("")
-
-# The extern declared at a file and line — the one the probe's #line
-# claims.
-record ExternAt
-    f: containers.Function
-    name: str
-
-function extern_at_line(p: containers.Program, s: source.Source, decls: [ast.Decl], file: i64, at_line: i64) -> ExternAt?
-    for f in p.functions
-        start = decls[f.decl].name.start
-
-        if source.file_of(s, start) != file || source.file_line_of(s, start) != at_line
-            continue
-        return ok(ExternAt(f: f, name: source.span_text(s, decls[f.decl].name)))
-
-    return fail("none", "no extern is declared at that line")
-
-# The content between the LAST two quotes on the line — the header's
-# type, which is what the parameter should be declared as.
-function last_quoted(text: str) -> str?
-    cs = text.chars()
-    close: i64 @ -1
-    open: i64 @ -1
-    index: i64 @ cs.len() - 1
-
-    while index >= 0
-        if cs[index] == "'"
-            if close == -1
-                close @ index
-            else
-                open @ index
-                break
-        index @ index - 1
-
-    if close == -1 || open == -1
-        return fail("none", "no quoted type on the line")
-    return ok(slice_chars(cs, from: open + 1, to: close))
-
 # A parameter declared wider than the header's, which C narrows in
 # silence. The declaration is found by LINE, and the offending
 # parameter by COLUMN, rebuilt from probe_line — the same string the
@@ -204,11 +114,11 @@ function parameter_width(s: source.Source, decls: [ast.Decl], p: containers.Prog
     if sorted.is_err()
         return fail("none", "not a conversion line")
     kind = sorted.must()
-    at = location(s, line: line)
+    at = ffi_site.location(s, line: line)
 
     if at.is_err()
         return fail("none", "no usable location")
-    c_type = last_quoted(at.must().rest)
+    c_type = ffi_site.last_quoted(at.must().rest)
 
     if c_type.is_err()
         return fail("none", "no header type on the line")
@@ -233,7 +143,7 @@ function parameter_width(s: source.Source, decls: [ast.Decl], p: containers.Prog
 
     if kind == TRUNCATES || kind == MAY_LOSE
         what @ "a different kind of number from"
-    found = extern_at_line(p, s, decls, file: at.must().file, at_line: at.must().line)
+    found = ffi_site.extern_at_line(p, s, decls, file: at.must().file, at_line: at.must().line)
 
     if found.is_err()
         return fail("none", "no extern is declared at that line")
@@ -268,6 +178,47 @@ function parameter_width(s: source.Source, decls: [ast.Decl], p: containers.Prog
 
     span = decls[f.decl].span
 
+    # A CALLBACK IS ITS OWN CLASS, `ffi_callback_type` (panel 111 R4, opened
+    # by author decision 2026-09-05). The measurement that preceded it is
+    # kept, because it is the finding rather than an argument against the
+    # class: R4's stated purpose — *"so a wrong callback signature is the
+    # compiler's message and not clang's internal error at exit 2"* — was
+    # ALREADY met here, since clang's `incompatible function pointer types
+    # passing 'X' to parameter of type 'Y'` carries panel 071's own
+    # ` to parameter of ` needle, so `qsort` was exit 1 on the author's line
+    # before any code was minted. The ffi-pragmatist seat predicted exit 2
+    # and is falsified. What the class buys is the SEARCH: a reader chasing
+    # a callback can grep one code, where `ffi_parameter_type` also carries
+    # every width and sign mismatch in the language. The two mistakes want
+    # the same repair sentence and different searches, and the author's
+    # ruling is that the search decides.
+    #
+    # It returns before the width machinery below on purpose: `what` and
+    # `consequence` are written for a value C converts, and a function
+    # pointer is not one — C refuses it outright.
+    if is_callback
+        cb: diag.Diagnostic @ diag.new_diagnostic(
+            code: "ffi_callback_type",
+            message: which + " of `" + name + "` is not the callback the header declares — clang read the header, and it says `" + c_type.must() + "`",
+            span: span
+        )
+        cb.notes @ cb.notes.push(
+            "§4.19: a callback is declared with the header's own parameter and result types — each parameter at its width and sign, and `()` where the header says void"
+        )
+
+        # The second note ONLY where the header actually qualifies a pointee.
+        # §4.17 says the note is chosen by the type because the repair is, and
+        # this one is a repair the reader cannot make: under `void (*)(void)`
+        # it would send them looking for a `const` that is not in the message
+        # they are reading, which is worse than saying nothing. Asked of the
+        # text clang printed, which is the type in hand.
+        if ffi_lookup.has(text: c_type.must(), needle: "const ")
+            cb.notes @ cb.notes.push(
+                "and this one cannot be written at all today: a `const` pointee has no spelling in this language, so a header asking for `const void *` has no Heroes match — design.md Part 8 names it as a known hole"
+            )
+
+        return ok(cb)
+
     # A width is converted IN SILENCE; a class mismatch is not — clang
     # refuses it outright — so the sentence after the type has to
     # differ or one of the two is false. The float family differs
@@ -293,22 +244,6 @@ function parameter_width(s: source.Source, decls: [ast.Decl], p: containers.Prog
         message: which + " of `" + name + "` is declared " + what + " the header's `" + c_type.must() + "` — clang read the header, " + consequence,
         span: span
     )
-
-    # A CALLBACK gets its own note, and the class stays `ffi_parameter_type`
-    # (panel 111 R4 asked for a new code; measured, this one already lands
-    # on the .hero line at exit 1, and ffi_errors.hero's own rule is that a
-    # second name for one question is not worth a class). What the code
-    # could not carry is the REPAIR: the struct sentence below is nonsense
-    # under `int (*)(const void *, const void *)`, and §4.17 says the note is
-    # chosen by the type because the repair is.
-    if is_callback
-        d.notes @ d.notes.push(
-            "§4.19: a callback is declared with the header's own parameter and result types. C says `" + c_type.must() + "`, so write that signature: each parameter at the header's width and sign, and `()` where it says void"
-        )
-        d.notes @ d.notes.push(
-            "a `const` pointee has no spelling in this language yet, so a header asking for `const void *` cannot be matched at all — design.md Part 8 names it as a known hole"
-        )
-        return ok(d)
 
     if spelled.is_err()
         # No Heroes spelling, and the diagnostic still lands: the note

@@ -22,12 +22,15 @@
 # ffi-pragmatist seat predicted a callback mismatch would reach exit 2 because
 # no reader classifies an argument-position function-pointer mismatch. Measured:
 # clang's text contains ` to parameter of `, which is the needle panel 071's
-# MISMATCHED family already reads, so it is `ffi_parameter_type` at exit 1 on
-# this line. What the sitting was right about is the NOTE, which used to offer
-# the struct repair under a function pointer; it is chosen by the type now.
+# MISMATCHED family already reads, so it was exit 1 on this line before any code
+# was minted for it. The class below is `ffi_callback_type` all the same, opened
+# by author decision 2026-09-05 over the coordinator's recommendation: the two
+# mistakes want the same repair sentence and DIFFERENT SEARCHES, and a reader
+# chasing a callback should not have to sift every width mismatch in the
+# language. The note was wrong too, and it is chosen by the type now (§4.17).
 
 extern "stdlib.h"
-    function atexit(f: (function(i64) -> ())) -> i32  #~ ffi_parameter_type
+    function atexit(f: (function(i64) -> ())) -> i32  #~ ffi_callback_type
 
 function bye(_: i64)
     print("bye")

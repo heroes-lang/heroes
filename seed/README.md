@@ -98,7 +98,10 @@ cannot see:
    the full fixpoint (`heroes build selfhost/main.hero --emit-c` from the
    seed-built compiler, and the bytes must match), which belongs to a milestone
    close: **15m41s measured 2026-08-19**, when `measure` and `mutate` joined the
-   port and the seed grew by a megabyte.
+   port and the seed grew by a megabyte. **That number is kept because it was
+   true when it was taken, and it is no longer what the step costs**: measured
+   twice on 2026-09-05, the same command is **21.5 s**. It is not "expensive" any
+   more, and CI runs it on every push because of that.
 3. **Anything else `selfhost/` says changes what the compiler DOES** — a
    different diagnostic, a different byte in the emitted C, a new library
    function. This is the condition the first two miss and the one that bites:
@@ -106,12 +109,18 @@ cannot see:
    nor the grammar, so a stale seed passes condition 2's 3.4 s build **and the
    compiler it makes carries yesterday's library**. Every job after it then tests
    something nobody wrote. Its instrument is CI's *The seed is what today's source
-   emits* — the fixpoint of condition 2, run as a `cmp` on Linux at tags — and
-   until 2026-08-23 that instrument existed only as a sentence in
-   `tests/harness/suite_determinism.hero` claiming it did (panel 087). The rule of
-   thumb needs no instrument to apply: **if the diff touches `selfhost/`, the seed
-   is regenerated in the same commit.** The two conditions above are what make it
-   *loud* when you forget; this one is why you should not rely on them.
+   emits* — the fixpoint of condition 2, a `cmp` on the Linux leg **of every
+   push since 2026-09-05** — and until 2026-08-23 that instrument existed only as
+   a sentence in `tests/harness/suite_determinism.hero` claiming it did (panel
+   087). **It ran at tags only until that date, and the reason was this file's own
+   arithmetic**: the 15m41s in condition 2 above. Measured twice on a 2026-09-05 Mac, the step is
+   **21.5 s** — the old figure predates the compiler getting fast, and it went on
+   justifying a gate it no longer justifies while `main` sat red for a day with a
+   seed two repairs behind. What noticed that was a golden case happening to
+   exist. The rule of thumb still needs no instrument to apply: **if the diff
+   touches `selfhost/`, the seed is regenerated in the same commit.** The two
+   conditions above are what make it *loud* when you forget; this one is why you
+   should not rely on them.
 
 ## If the seed is already broken — how to get a compiler back
 
@@ -143,7 +152,7 @@ Then re-verify, in this order, because the cheap check catches almost everything
 
 ```sh
 clang -I runtime seed/heroes.c runtime/runtime.c -o heroes    # 3.4 s
-./heroes build selfhost/main.hero --emit-c -o /tmp/again.c    # 15m41s
+./heroes build selfhost/main.hero --emit-c -o /tmp/again.c    # 21.5 s (2026-09-05)
 cmp seed/heroes.c /tmp/again.c                                # must be silent
 ```
 

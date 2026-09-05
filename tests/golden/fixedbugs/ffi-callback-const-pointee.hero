@@ -1,0 +1,35 @@
+# fixedbugs, M-c-callbacks step 0, 2026-09-05 (panel 111 R4).
+#
+# THE SECOND SHAPE OF `ffi_callback_type`, and it is here because the provoking
+# case is a witness and not the class (CLAUDE.md §1). Its sibling
+# `ffi-callback-signature-the-header-refutes.hero` is a callback whose ARITY and
+# parameter type disagree with the header. This one agrees on both and still does
+# not bind, because the header qualifies what the pointers point at.
+#
+# SYMPTOM: `selfhost/emit/ctype.hero` promised in writing that "a Heroes function
+# value and a C callback are the same eight bytes, which is what makes qsort and
+# every raylib callback expressible". Measured the day the permission landed, the
+# promise is false: `stdlib.h` declares the comparator
+# `int (*)(const void *, const void *)`, Heroes emits `int (*)(void *, void *)`,
+# and clang refuses the two as incompatible function pointer types.
+#
+# CAUSE: THE LANGUAGE, not the emitter. There is no spelling for a const pointee
+# at all — `cstr` is `const char *`, `ptr` is `void *`, and there is no third. So
+# this is not a defect with a fix in this file; it is a hole with a diagnostic,
+# and the diagnostic's second note names it as one.
+#
+# WHAT IS OWED: `docs/work/SCHEDULED.md` carries the sitting, at this milestone.
+# Panel 111 R4 left two routes — the `c_int`/`const` vocabulary, or a design.md
+# Part 8 wart with its return condition — and both are language changes. Until
+# one lands, this case is what keeps the refusal honest: it fires, it lands on
+# the author's own line at exit 1, and it says what cannot be written rather than
+# letting clang blame the compiler at exit 2.
+
+extern "stdlib.h"
+    function qsort(base: ptr, n: u64, size: u64, compar: (function(ptr, ptr) -> i32))  #~ ffi_callback_type
+
+function cmp(_: ptr, _: ptr) -> i32
+    return 0
+
+function main()
+    qsort(nullptr, n: 0, size: 0, cmp)

@@ -26,7 +26,7 @@ use ir/containers
 use emit/ctype
 use emit/extern_probe
 use emit/ffi_lookup
-use emit/ffi_narrowed
+use emit/ffi_site
 use parse
 use resolve
 use checker
@@ -37,18 +37,18 @@ use ir/lower
 function writable_parameter(s: source.Source, decls: [ast.Decl], p: containers.Program, c: state.Checked, names: ctype.Names, line: str) -> diag.Diagnostic?
     if !ffi_lookup.has(text: line, needle: ffi_lookup.DISCARDS)
         return fail("none", "not a qualifier line")
-    at = ffi_narrowed.location(s, line: line)
+    at = ffi_site.location(s, line: line)
 
     if at.is_err()
         return fail("none", "no usable location")
 
     # 'const char *' to parameter of type 'char *' — the header's type
     # is the last quoted name, the same shape ffi_narrowed reads.
-    c_type = ffi_narrowed.last_quoted(at.must().rest)
+    c_type = ffi_site.last_quoted(at.must().rest)
 
     if c_type.is_err()
         return fail("none", "no header type on the line")
-    found = ffi_narrowed.extern_at_line(p, s, decls, file: at.must().file, at_line: at.must().line)
+    found = ffi_site.extern_at_line(p, s, decls, file: at.must().file, at_line: at.must().line)
 
     if found.is_err()
         return fail("none", "no extern is declared at that line")

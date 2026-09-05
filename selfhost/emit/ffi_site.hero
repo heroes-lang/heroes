@@ -1,0 +1,117 @@
+# Where clang's verdict points, and which `extern` is declared there
+# (design.md §4.19; panels 052, 071, 096, 103).
+#
+# WHY THIS IS A MODULE. Every reader that turns a clang failure into a
+# diagnostic on the author's own line asks the same two questions first: WHERE
+# does this line point, and WHICH extern did the author declare there. Three of
+# them do — `ffi_narrowed` for a width or a class, `ffi_call` for an arity or a
+# format string, `ffi_mutable` for a writable parameter — and until 2026-09-05
+# all three reached into `ffi_narrowed` for it, which is a module answering
+# somebody else's question in two thirds of its body.
+#
+# The split is CLAUDE.md §11's own rule taken literally: split along a seam that
+# names a concern, never at a line count. The seam was named by its callers
+# before the ceiling ever fired — three importers of one half and one of the
+# other is the strongest evidence a file can give about where it divides.
+#
+# THE GATE IS THE LOCATION, NOT THE TEXT. `extern_probe` writes one `#line` per
+# probe at the author's own extern line, so a clang message about a probe lands
+# in a file this compilation owns; a message about anything else does not, and
+# `location` refuses it. cgo made the same choice for the same reason: reading
+# message text ties the tool to compiler versions, a synthetic `#line` channel
+# does not.
+#
+# NON-LIBRARY, and that word is load-bearing: the library is a registered
+# `Source` entry whose name is deliberately unopenable, so a clang error against
+# one of its lines must never look like an error in a file the author can edit
+# (panel 052's compiler-engineer, in the emitted goldens).
+
+use ast
+use source
+use ir/containers
+use emit/ffi_lookup
+
+record Located
+    file: i64
+    line: i64
+    col: i64
+    rest: str
+
+function location(s: source.Source, line: str) -> Located?
+    cs = line.chars()
+    stops: [i64] @ []
+    index: i64 @ 0
+
+    while index < cs.len() && stops.len() < 3
+        if cs[index] == ":"
+            stops @ stops.push(index)
+        index @ index + 1
+
+    if stops.len() < 3
+        return fail("none", "not a file:line:col report")
+    file_name = slice_chars(cs, from: 0, to: stops[0])
+    row = ffi_lookup.number(slice_chars(cs, from: stops[0] + 1, to: stops[1]))
+    col = ffi_lookup.number(slice_chars(cs, from: stops[1] + 1, to: stops[2]))
+
+    if row.is_err() || col.is_err()
+        return fail("none", "the position is not numeric")
+    at: i64 @ -1
+    counter: i64 @ 0
+
+    for entry in s.files
+        if entry.name == file_name && !entry.is_library && at == -1
+            at @ counter
+        counter @ counter + 1
+
+    if at == -1
+        return fail("none", "not one of this compilation's own files")
+    return ok(
+        Located(file: at, line: row.must(), col: col.must(), rest: slice_chars(cs, from: stops[2] + 1, to: cs.len()))
+    )
+
+function slice_chars(cs: [str], from: i64, to: i64) -> str
+    kept: [str] @ []
+    index: i64 @ from
+
+    while index < to
+        kept @ kept.push(cs[index])
+        index @ index + 1
+
+    return kept.join("")
+
+# The extern declared at a file and line — the one the probe's #line
+# claims.
+record ExternAt
+    f: containers.Function
+    name: str
+
+function extern_at_line(p: containers.Program, s: source.Source, decls: [ast.Decl], file: i64, at_line: i64) -> ExternAt?
+    for f in p.functions
+        start = decls[f.decl].name.start
+
+        if source.file_of(s, start) != file || source.file_line_of(s, start) != at_line
+            continue
+        return ok(ExternAt(f: f, name: source.span_text(s, decls[f.decl].name)))
+
+    return fail("none", "no extern is declared at that line")
+
+# The content between the LAST two quotes on the line — the header's
+# type, which is what the parameter should be declared as.
+function last_quoted(text: str) -> str?
+    cs = text.chars()
+    close: i64 @ -1
+    open: i64 @ -1
+    index: i64 @ cs.len() - 1
+
+    while index >= 0
+        if cs[index] == "'"
+            if close == -1
+                close @ index
+            else
+                open @ index
+                break
+        index @ index - 1
+
+    if close == -1 || open == -1
+        return fail("none", "no quoted type on the line")
+    return ok(slice_chars(cs, from: open + 1, to: close))
