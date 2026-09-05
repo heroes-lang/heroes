@@ -160,6 +160,66 @@ measurement: TSan reports no race in the drop queue. `hero_drop_arrays`,
 (`runtime/parts/drop.c:59-61`) because panel 070's ffi-pragmatist required it
 when they were written.
 
+## 5. Appended the same session — the cheap repair, priced, and the trap inside it
+
+The sitting will be offered `_Thread_local` on the two counters, so it is
+measured here rather than left as an option with no number. Two words, on
+`runtime/parts/alloc.c:61` and `:64`.
+
+**It costs nothing measurable.** Two copies of `runtime`, `seed` and
+`selfhost`, identical but for those two words, each built from the seed and
+each run twice — a control arm rather than a comparison against the
+repository's number, because a copy has a cold cache and the repository does
+not:
+
+| | cold | warm |
+|---|---|---|
+| control | 35.90 s | 34.49 s |
+| `_Thread_local` | 35.75 s | 34.92 s |
+
+The arms differ by **+0.43 s warm and −0.15 s cold** — the sign changes — while
+the same arm varies by **1.41 s** between its own two runs. That is inside the
+noise, and *"no measurable cost"* is what it supports; *"1.2% slower"* is not.
+Both arms report `572 tests, 2 failed`, the same two, and both are artifacts of
+the partial copy: one measures `spec/heroes-spec.md` and one walks `examples/`,
+neither of which was copied. Identical in both arms, so the comparison holds.
+
+**It removes the whole measured race.** The four-thread probe of § 4, rebuilt
+against the patched runtime, prints `the leak gate is happy` and exits 0 on
+three runs of three, and **ThreadSanitizer reports nothing at all**.
+
+**And it trades a wrong answer for a blind one, which is worse.** A worker
+thread that allocates a Heroes string and never decrefs it:
+
+```c
+static void *leaker(void *arg) {
+    HeroStr s = hero_str_from_cstr("a block nobody will free");
+    (void)s; /* deliberately no hero_str_decref */
+    return arg;
+}
+```
+
+| the counters | what `hero_runtime_check_leaks()` says |
+|---|---|
+| shared, today | `panic: 1 heap blocks still live at exit (a missing decref)`, **exit 134** |
+| `_Thread_local` | `the gate said nothing`, **exit 0** |
+
+The gate runs on the main thread at exit and reads one counter. Made
+thread-local, it reads the main thread's own balance and a leak on any other
+thread is **invisible** — in the only leak instrument this platform has, since
+ASan carries no leak detector on Darwin arm64 (panel 021).
+
+So the two words are not a repair on their own. What goes with them is a
+decision the sitting has to take rather than inherit: the exit check becomes
+per-thread as well (each thread checks its own balance as it ends), or the
+counters become atomic and pay for it, or the per-thread heap makes the
+question disappear by construction — which is what design.md Part 7.13
+actually describes. Under that model no value crosses a thread except by copy,
+so allocation and release stay on one thread and a per-thread balance is the
+*right* number rather than a partial one. **The cheap repair is therefore
+correct only together with the isolation it is preparing for**, and landing it
+alone would make §1.12's own instrument quieter than it is today.
+
 ## What this leaves for the sitting
 
 Not *can it be done* — that is answered. The open questions are narrower and
@@ -169,10 +229,13 @@ each has a number attached now:
    `extern` parameter, or a conversion to `ptr`. Both are the language, so
    CLAUDE.md §4 makes it a sitting.
 2. **The counters.** `hero_live_blocks` and `hero_live_scratch`
-   (`runtime/parts/alloc.c:61, :64`) are the whole measured race. Thread-local
-   sums, an atomic, or a per-thread heap that makes the question disappear —
-   design.md's invariant 1 says whichever it is, it is one edit in one file, and
-   that is now checked by `tests/harness/suite_runtime.hero` rather than hoped.
+   (`runtime/parts/alloc.c:61, :64`) are the whole measured race, and § 5 prices
+   the cheap answer and finds the trap in it: `_Thread_local` costs nothing
+   measurable and silences ThreadSanitizer completely, and it makes a leak on a
+   worker thread **invisible** to the only leak instrument this platform has. So
+   the choice is not two words against an atomic — it is what the exit check
+   becomes, and design.md's invariant 1 is what keeps it one edit in one file,
+   now checked by `tests/harness/suite_runtime.hero` rather than hoped.
 3. **`hero_eq_queue`** (`runtime/parts/array.c:194-197`), which TSan did not
    reach because the probe compared nothing, and which its own comment already
    says must become `_Thread_local`.
