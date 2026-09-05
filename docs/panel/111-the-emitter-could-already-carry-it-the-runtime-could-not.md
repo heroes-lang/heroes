@@ -356,20 +356,29 @@ conservative* rule exists.
 
 ## Author's verdict
 
-**Pending.** The open item naming `panel 111` is in `docs/work/DECIDE.md`, which
-is what asks — CLAUDE.md §4 makes the sitting non-blocking and the author's yes
-asynchronous, and panels 069 to 079 sat eight days unratified because nothing
-carried the item.
+**Ratified 2026-09-05 by the author**, in full: *"and I also ratify R1 to R8"* —
+R1 through R8 as they stand, including the refusal of the proposal this sitting
+was convened to adopt.
 
-This one is not a routine ratification and the item says so. The sitting
-**refused the proposal it was convened to adopt**, on two vetoes, and then
-re-scoped the milestone around what the vetoes measured. One part of it cannot
-be defaulted at all: R4 proposes a new milestone id, `M-c-callbacks`, and
-`docs/work/SCHEDULED.md`'s rule puts the placing of a new id in the chain with
-the author.
+**And R4's one undelegatable half was answered in the same breath.** The sitting
+proposed `M-c-callbacks` and left its placing to the author, because
+`docs/work/SCHEDULED.md` puts a new id's position there. The author placed it
+**at row 34, ahead of M-isolated-threads**: *"can we put M-c-callbacks in right
+away? I would not wait too long to do it."* The chain renumbered 34..55 to
+35..56, and the coordinator's recommendation — callbacks first, isolation second,
+because the permission is unblocked and the isolation is architectural — was the
+one taken.
 
-Work proceeds on the provisional resolution above; the verdict is appended here
-when given.
+What the yes settles: the proposal is refused and does not return in this shape;
+M-isolated-threads' deliverable is the isolation itself; the callback permission
+is a milestone of its own and carries R8's atomic refcount and copy-on-write
+protocol as landing conditions; and the thread-local counter plan is dead in
+every form, not deferred.
+
+What it does not settle: the five predictions below are unscored, and each names
+the milestone that scores it. R7's correction to `design.md:2536` and the spec
+sentence R4 owes are language changes that ride this sitting's authority but have
+not been written yet.
 
 ## Predictions to score
 
