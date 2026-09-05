@@ -899,9 +899,9 @@ repeated; what follows is what they did not.
 ```
 clang -I runtime seed/heroes.c runtime/runtime.c -o heroes   # the compiler, from C alone (3.5 s)
 ./heroes build selfhost/main.hero -o heroes-next             # the compiler, from Heroes
-./heroes test selfhost/main.hero                             # its own tests (572, 2026-09-05; 35 s warm)
-./heroes run tests/harness/main.hero -- ./heroes             # the net (1200 checks, 2026-09-02)
-./heroes test tests/harness/main.hero                        # THE NET'S OWN TESTS (92, 17 s) — the third suite
+./heroes test selfhost/main.hero                             # its own tests (583, 2026-09-05; 37 s WARM)
+./heroes run tests/harness/main.hero -- ./heroes             # the net (1521 checks, 2026-09-05; 11m16s)
+./heroes test tests/harness/main.hero                        # THE NET'S OWN TESTS (108, 11 s) — the third suite
 
 ./heroes doctor                                              # toolchain check
 ./heroes <cmd>                                               # the one command

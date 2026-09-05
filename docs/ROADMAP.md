@@ -58,15 +58,15 @@ M-separate-compilation already did.
 
 | | |
 |---|---|
-| **Current milestone** | **M-c-callbacks** — **OPEN 2026-09-05**, row 34, **steps 0 to 5 landed the same day**: a Heroes function reaches a C callback parameter, and a foreign thread is refused by name rather than left to corrupt (panel 111 R4 and R9, one commit because the permission is the door), and the guard is measured firing on **all three platforms** rather than on the one it was written on. The `const` sitting sat as `docs/panel/112` and **refused the spelling on four independent measurements**, finding that `const` is 2.6% of the hole and a pointer to a header's struct is 66.7%; Part 8 wart 19 carries the ordering. **Defect 013 is repaired**: the runtime now names a call through a null function pointer instead of dying at 139, with the faulting PC as a witness measured unique against three adjacent shapes, and firing on macOS and glibc. What the milestone still owes is its close. Split out of M-isolated-threads by `docs/panel/111` and placed ahead of it by the author, because three seats measured that the permission is bought entirely by §1.11 and §12's FFI-completeness instruction and needs no thread at all · **M-isolated-threads** stays **OPEN 2026-09-03**, row 35, re-scoped by the same sitting: it delivers Part 7.13's isolation or it delivers nothing |
-| **Last closed** | **M-corpus-depth**, 2026-09-04, tag `m-corpus-depth` ([032](journal/032-corpus-depth.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
-| Milestones closed | 33 of 55 · 33 tags |
-| The compiler | **53,700 lines** of Heroes in **180** modules across **10 directories** and 37 flat files · the seed **733,032** lines of generated C, re-counted 2026-09-05 after M-c-callbacks step 0 regenerated it through the fixpoint a second time that day (`HERO_RUNTIME_ABI` moved to 21, so the old seed refused the new runtime and the stamp did exactly its job). It read **728,763** earlier the same day, after `320654e3` — it had been two repairs behind, and `main` was red for a day. This row read **721,238** the day before, when panel 106's repair had just deleted the exit sweep's own temporaries and taken **125,566** lines with them; that pair is the record's and keeps its date, and no difference is computed from it here, because a number derived from a document is not a measurement |
-| The spec | **3830** tokens of a hard 4096 · headroom **266** · runtime ABI **21** — `heroes measure` and a `grep` of the `#define`, both 2026-09-05. Panel 111 R4's two sentences landed at step 3, **+39 gross against a measured −8 removal**, and the total is exactly the spec-warden's predicted bound of 3830 rather than under it |
-| Records | sittings **110** (109 `.md` plus panel 000, which is a directory) · journals **33** · measurements **18** (010's ledger at 52 rows) · examples **45** programs, 108 files, 505 `test` blocks · open defects **0** · the site **46** pages, 13 doc chapters per edition · re-counted 2026-09-05 in the small hours, and **three of the four rows above were stale** — the spec by a whole sitting's +49, the compiler by 658 lines, the seed by a regeneration, journals by one, because nothing reads this row. `journals 34` counted the index as a journal; **and `docs/journal/README.md` was itself two behind**, listing 31 of 33, missing both milestones closed this week |
-| Waiting on the author | **0 decisions** — panel 112 was ratified in full the evening it sat. Defect 013 was filed blocked and then repaired the same evening, by a route neither of its two priced options named. It read **0** re-counted 2026-09-05 after both were answered in the same sitting as M-c-callbacks step 0. The seed-freshness instrument moves to every push on the Linux leg (the 15m41s that gated it was measured at 21.5 s), and panel 111 R4's `ffi_callback_type` opens against the coordinator's recommendation, on the ground that two mistakes can want one repair and two searches. Both are in `docs/work/DONE.md` with their verdicts. The four spec silences this row named the day before — `T??`'s refusal, a `()` row in the type table, what a `constant`'s body may hold, whether a parameter list may break across lines — were settled at `docs/panel/110`, ratified 2026-09-05 by standing delegation, and are in `docs/work/DONE.md`; the list was empty for one morning and a red `main` refilled it. `DEFECTS.md` is empty again · **37** in `SCHEDULED.md`, every one naming an open row of the table above · **308** in `LEARN.md` (never a gate) · an **outstanding veto** of the rule that stands (`docs/panel/101` R3, *"live and unlifted"* in that sitting's own words) |
+| **Current milestone** | **M-isolated-threads** — **OPEN 2026-09-03**, row 35, re-scoped by `docs/panel/111` on 2026-09-05: it delivers Part 7.13's isolation or it delivers nothing, at **data parallelism only**, which is the design's own words at `:2563`. **It inherits three measured things from the milestone that closed ahead of it**: `_Atomic` appears **nowhere** in `runtime/`, so the refcount half of design.md's own v1 invariant is still prose; **16 of 22** mutable file-scope objects in `runtime/parts/*.c` are not `_Thread_local`, one of them the argv buffer on the closure list; and `pthread_t` has **two spellings and no portable one** — an opaque pointer here, an `unsigned long` on glibc — which is M-core-packages' platform-typedef question arriving in a second place. The witness it owes is writable for the first time: a loopback HTTP server with one connection per thread, which could not be written at all while a function value could not cross the FFI |
+| **Last closed** | **M-c-callbacks**, 2026-09-05, tag `m-c-callbacks` ([033](journal/033-c-callbacks.md)) — opened and closed the same day, six steps · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
+| Milestones closed | 34 of 56 · 34 tags |
+| The compiler | **53,700 lines** of Heroes in **180** modules across **10 directories** and 37 flat files · the seed **733,032** lines of generated C · runtime ABI **21** — all four re-counted 2026-09-05 at the close, and all four unmoved by it: M-c-callbacks added **171 code lines across 12 files** under `selfhost/` and no declaration, so the stamp did not move and the seed was regenerated for step 0's ABI bump alone |
+| The spec | **3830** tokens of a hard 4096 · headroom **266** — `heroes measure spec/heroes-spec.md`, run at the close. The callback paragraph landed at step 3 at **exactly** the bound panel 111's spec-warden had registered before it was written, which is the bound and not room under it: any further callback text falsifies that prediction |
+| Records | sittings **111** (110 `.md` plus panel 000, which is a directory) · journals **34** · measurements **18** (010's ledger at 52 rows) · examples **45** programs, 108 files, 505 `test` blocks · open defects **0** · the site **46** pages — re-counted 2026-09-05 at the close, and **two rows above were stale by the insert alone**: the chain read *33 of 55* when the table holds **56** rows, because `M-c-callbacks` entered at 34 and the total nobody re-counted, and `SCHEDULED.md` read 37 against a measured 36 |
+| Waiting on the author | **0 decisions** · **35** in `SCHEDULED.md`, every one naming an open row of the table below, and one fewer than this morning because panel 112 closed the `const` question · **0** in `DEFECTS.md` · **312** in `LEARN.md` (never a gate, and four of them are M-c-callbacks' close offers) · an **outstanding veto** of the rule that stands (`docs/panel/101` R3, *"live and unlifted"* in that sitting's own words) |
 
-Every number re-measured 2026-09-04. **The seed fell 125,566 lines with no feature removed** — 58.5% of every frame was bookkeeping nobody read (`docs/measurements/015`).
+Every number above re-measured 2026-09-05 at M-c-callbacks' close. **Three suites green on this Mac that day**: the compiler's own **583**, the net **1521** with an empty determinism diff, and the net's own tests **108**.
 
 ---
 
@@ -77,7 +77,7 @@ Every number re-measured 2026-09-04. **The seed fell 125,566 lines with no featu
 ```sh
 clang -I runtime seed/heroes.c runtime/runtime.c -o heroes   # the compiler, from C alone (~3.5 s)
 ./heroes run tests/harness/main.hero -- ./heroes             # the net
-./heroes test tests/harness/main.hero                        # the net's own tests (13.5 s)
+./heroes test tests/harness/main.hero                        # the net's own tests (108, 11 s, 2026-09-05)
 ./heroes test selfhost/main.hero                             # the compiler's own tests
 ./heroes doctor                                              # the toolchain
 ```
@@ -168,7 +168,7 @@ and why one overtook another are under the table, in § Who scheduled what.
 | 31 | **M-documentation-site** | done 2026-09-02 | `m-documentation-site` | [030](journal/030-documentation-site.md) | the site, anchored to programs that run |
 | 32 | **M-robustness-guards** | done 2026-09-03 | `m-robustness-guards` | [031](journal/031-robustness-guards.md) | the guards that shut the holes §1.12 named: `@` on an immutable, the stack, the C pointer verdict, the harness scratch · §1.12 |
 | 33 | **M-corpus-depth** | done 2026-09-04 | `m-corpus-depth` | [032](journal/032-corpus-depth.md) | the rung between a program and the compiler: nine programs, and half of every frame · **§1.1** |
-| 34 | **M-c-callbacks** | **OPEN** 2026-09-05 | — | — | a Heroes function reaches a C callback parameter, and the refcount stops being a race · **§1.11**, **§1.12** |
+| 34 | **M-c-callbacks** | done 2026-09-05 | `m-c-callbacks` | [033](journal/033-c-callbacks.md) | a Heroes function reaches a C callback parameter, and a foreign thread is refused by name rather than left to corrupt · **§1.11**, **§1.12** |
 | 35 | **M-isolated-threads** | **OPEN** 2026-09-03 | — | — | Part 7.13 concurrency: per-thread heaps, copying at the boundaries, no scheduler |
 | 36 | **M-declared-freer** | scheduled | — | — | `owned <C function>`: the string C hands you is freed by the name its own declaration gives · **§1.12**
 | 37 | **M-thread-stacks** | scheduled | — | — | the guard reads the calling thread's own stack, and the size stops being a string in one CI file · **§1.12**
@@ -682,53 +682,45 @@ measured on the Mac, the Linux image and the Windows box before its commit.
 
 ### M-c-callbacks — a Heroes function reaches a C callback parameter
 
-**OPEN 2026-09-05**, split out of M-isolated-threads by `docs/panel/111` and
-placed here by the author the same day. It is bought entirely by §1.11 and
-CLAUDE.md §12's FFI-completeness instruction — *"a library Heroes cannot bind is
-a library the author must leave C code around for"* — and it needs no thread at
-all. Three seats asked for the split independently; bundled, it let the weaker
-half ride the stronger's Principle 0 ticket.
+**CLOSED 2026-09-05**, the day it opened, tag `m-c-callbacks`, six steps. The
+milestone's own record is [033](journal/033-c-callbacks.md); what stays here is
+the reasoning a later milestone has to honour, and it is four things.
 
-**What is broken today, measured at the sitting.** A function value is refused at
-the FFI by two different doors: declared `ptr`, the extern declaration is accepted
-and the **call site** fails `error[type_mismatch]`; declared at its real type, the
-**declaration** fails `error[ffi_type]`. So `sqlite3_exec`, `atexit`,
-`pthread_create`, `signal`, `qsort` and every raylib callback are unbindable, and
-the author must keep C code around for each.
+**The split is settled and is not re-argued.** The permission is bought entirely
+by §1.11 and CLAUDE.md §12's FFI-completeness instruction and needs no thread at
+all — three seats of `docs/panel/111` asked for the split independently, and
+bundled into M-isolated-threads it would have let the weaker half ride the
+stronger's Principle 0 ticket.
 
-**What is already true and cost nothing to find.** The emitted C is *already* the
-C the header wants: `function worker(arg: ptr) -> ptr` emits
-`void * f(void * h0_arg)`, which **is** `void *(*)(void *)`, and it compiles under
-`-Wall -Werror` with no cast and no trampoline. The permission is a **+32/−1**
-diff in one file, because the parameter-versus-result distinction already exists.
+**Where a callback may stand is a question about position, and never about
+vocabulary.** C spells a function pointer everywhere it spells a type, so *can a
+header declare this* cannot be the rule. A function value crosses as a
+**parameter** and in no other position; one argument refuses all three of the
+remaining shapes — an `extern`'s result, an `@` out-parameter and an `extern
+constant` — and it is the permission's own mirror: an address passed **out** is
+one this compiler emitted, so C calls a body this compiler type-checked; an
+address handed **back** is a body nothing here has seen. `spec:224-225` states
+it.
 
-**What it owes, and every item is a measurement rather than a guess.**
-- The **`c_int`/`const` vocabulary**, or a design.md Part 8 wart naming
-  const-qualified pointee parameters as the known hole with its return condition.
-  Without it the permission binds **3 of 8** real callbacks: `qsort` wants
-  `const void *` and Heroes has no const-pointer spelling, while
-  `selfhost/emit/ctype.hero:376` promises in writing that `qsort` is expressible.
-- **`c_type_of` gains its `.function_ty` arm**. Today a function-typed parameter
-  makes `emit/extern_probe.hero` skip the probe for the **whole extern**, so the
-  other parameters silently stop being checked against the header.
-- A **new diagnostic class**, `ffi_callback_type`, exit 1 on the `.hero` line, so
-  a wrong callback signature is this compiler's message and not clang's internal
-  error at exit 2 — which is the failure §4.19's guarantee exists to prevent.
-- The **`ffi_type` message gains "a function type"** in the same commit, or the
-  spec and the compiler contradict each other on day one.
-- The **spec sentence at the warden's shorter wording**: it states the
-  parameter-only restriction at **+16** where the tabled wording cost +26 and
-  never mentioned it, and a measured **−8** removal brings it to **+8 net**. Plus
-  the ergonomist's second sentence, on the callback's own parameter widths and
-  `(function() -> ())`, without which `atexit` is unwritable from the document.
-- **R8's condition, and it is the one that decides the order**: atomic refcounts
-  and a copy-on-write uniqueness protocol land with the permission or before it.
-  Today neither door admits a function value, so the FFI refusal is, by accident,
-  the only thing between a Heroes program and `hero_str_incref`'s race. The
-  permission is the door. Price measured: **+1.7%** on the refcount, and a sign
-  that flips inside the noise on the allocator's counter. `cow.c`'s
-  `if (a->refcount == 1)` is a test-and-mutate and needs a protocol, not an
-  atomic — the harder half, and the one the cheap half makes easy to forget.
+**The `const` hole is declared rather than open**, and its shape is measured
+rather than assumed. `docs/panel/112` refused a `const` spelling on four
+independent grounds and wrote design.md **Part 8 wart 19** at zero spec tokens,
+in the order the counting found: over the real `sqlite3.h`'s 106 callback
+signatures, a pointer to a struct the header declares is **66.7%** of what cannot
+be spelled and a const pointee is **2.6%**. Anyone reopening it starts from R6:
+`quals` on the existing `function_ty` case is the **only** admissible route — 2
+edits in 1 file, no new `Ty` variant, so panel 083's veto does not fire — and a
+new `Ty` case is 173 `non_exhaustive` errors across 49 files.
+
+**R8's condition was met by the guard and NOT by atomics, so M-isolated-threads
+still owes them.** Panel 111 R8 said the refcount work lands with the permission
+or before it, on the ground that the FFI refusal was by accident the only thing
+between a Heroes program and `hero_str_incref`'s race. What landed instead is
+R9's guard, emitted into the callback: a foreign thread stops by name at the
+entry of every function whose address the program takes, so the corruption is
+**unreachable rather than repaired**. `_Atomic` still appears nowhere in
+`runtime/`, and `cow.c`'s `if (a->refcount == 1)` is a test-and-mutate that an
+atomic would not fix in any case.
 
 ### M-isolated-threads — the isolation, or nothing
 
@@ -1675,7 +1667,7 @@ So a number met in the record resolves here, and only here.
 | `M-guide-book` | M17 | — | the guide |
 | `M-argv-execution` | — | — | the compiler runs programs by argument list, and the shell stops being the boundary |
 | `M-publication-gate` | M18 | — | the last gate before anything goes outward |
-| `M-c-callbacks` | — | — | a Heroes function reaches a C callback parameter. **Proposed by `docs/panel/111` and placed at row 34 by the author the same day**, ahead of M-isolated-threads: *"can we put M-c-callbacks in right away? I would not wait too long to do it"*. `docs/work/SCHEDULED.md`'s rule puts the placing of a new id with the author, and this is that placing. The name reaches this table first, which is CLAUDE.md §14's order and what the `records/names` check reads — it fired on this very id minutes after the sitting closed. **A new id rather than a part of M-isolated-threads**: three seats found the permission is bought entirely by §1.11 and §12's FFI-completeness instruction and needs no thread at all, so bundled it let the weaker half ride the stronger's Principle 0 ticket. **Named for what it delivers and not for the area**: the callbacks, not the FFI, which must stay free for whatever binds `const void *` |
+| `M-c-callbacks` | — | `m-c-callbacks` | a Heroes function reaches a C callback parameter. **Done 2026-09-05**, the day it opened: six steps, [033](journal/033-c-callbacks.md). **Proposed by `docs/panel/111` and placed at row 34 by the author the same day**, ahead of M-isolated-threads: *"can we put M-c-callbacks in right away? I would not wait too long to do it"*. `docs/work/SCHEDULED.md`'s rule puts the placing of a new id with the author, and this is that placing. The name reaches this table first, which is CLAUDE.md §14's order and what the `records/names` check reads — it fired on this very id minutes after the sitting closed. **A new id rather than a part of M-isolated-threads**: three seats found the permission is bought entirely by §1.11 and §12's FFI-completeness instruction and needs no thread at all, so bundled it let the weaker half ride the stronger's Principle 0 ticket. **Named for what it delivers and not for the area**: the callbacks, not the FFI, which must stay free for whatever binds `const void *` |
 | `M-robustness-guards` | — | `m-robustness-guards` | the guards that shut the holes §1.12 named. **Done 2026-09-03**, the day it opened: six steps, two sittings (103, 104), every landing measured on the Mac, the Linux image and the Windows box before its commit |
 | `M-corpus-depth` | — | — | the rung between a program and the compiler: nine programs chosen for shape — oracle-checked, deep, FFI at program scale. **A new id rather than a third reopening of the corpus** (§14, author instruction 2026-09-03): `M-program-corpus` delivered *many programs run*, `M-corpus-coverage` *every form has a program*, and this one delivers *size, depth and an external oracle*, which neither name claims |
 | `M-core-packages` | — | — | small packages that compose, organised as Go's tree, in Heroes or over C. **A new id rather than an area annexed** (§14, author instruction 2026-09-03): M-package-layout delivered how a `use` reaches a module, M-package-manager delivers `heroes add`/`heroes fetch` and where a fetched package lives, and this one delivers the packages themselves — a deliverable neither name claims. The word is Odin's `core:` collection, which §1.11 cites for the reason a package can be redesigned and a built-in cannot |

@@ -15,7 +15,11 @@ The division of labour, and the reason this file exists:
 - **These journals say what happened**, one milestone at a time, with the lesson
   next to the inventory.
 - `DESIGN-LOG.md` says what was decided, `docs/panel/` why, `docs/measurements/`
-  and `docs/defects/` with what numbers, and `docs/book/beats.md` what it felt like.
+  and `docs/work/DONE.md` with what numbers, and `docs/book/beats.md` what it felt
+  like. (That line named a defects directory until 2026-09-05: it went on
+  2026-09-03 by author instruction, its seven files becoming six record entries
+  and one open item, and this pointer outlived it by two days. The dead-citation
+  check in `tests/harness/suite_records.hero` reads `CLAUDE.md`, not this file.)
 
 **The identifiers here are the ones each milestone was built under** — `M5c`, not
 `M-value-aggregates`. A journal is a dated record and is never rewritten; the map
@@ -61,6 +65,8 @@ is `docs/ROADMAP.md` § The names, and the rule is CLAUDE.md §14.
 | 031 | [the guards](031-robustness-guards.md) | M-robustness-guards — the four holes §1.12 named, shut: `@` on an immutable, the stack, the C pointer verdict, the harness scratch | 2026-09-03 | `m-robustness-guards` |
 
 | 032 | [the rung](032-corpus-depth.md) | M-corpus-depth — nine programs between a program and the compiler, and half of every frame | 2026-09-04 | `m-corpus-depth` |
+
+| 033 | [the address](033-c-callbacks.md) | M-c-callbacks — a Heroes function reaches a C callback parameter, and the sitting beside it was convened on 2.6% of its own subject | 2026-09-05 | `m-c-callbacks` |
 
 `git tag --list --sort=creatordate` gives the same order from git itself, and
 `git checkout m5b` re-opens any milestone's code — which is what

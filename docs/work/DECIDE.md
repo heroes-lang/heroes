@@ -39,7 +39,21 @@ destroyed — and what those left behind is **work**, which is in
 
 **What refilled it the same evening was not a sitting but a red `main`**: the
 seed had been two repairs behind for a day, nothing between tags was obliged to
-notice, and the thing that did notice was luck. That is the one item below.
+notice, and the thing that did notice was luck.
+
+**And it emptied again at M-c-callbacks step 1, the same session that asked**,
+which is CLAUDE.md §3's rule that every answer is applied where it is given. Both
+items are in `docs/work/DONE.md` with their verdicts: the seed-freshness check
+moved from tags to every push on the Linux leg, because the 15m41s that had
+funded the tag-only decision measured **21.53 s** today; and `ffi_callback_type`
+opened **against** the coordinator's recommendation, on the author's ground that
+two mistakes can want one repair and two searches. **This paragraph is corrected
+rather than deleted, and the correction is the point**: it stood for a day saying
+*that is the one item below* with nothing below it, which is the shape this
+file's own second rule forbids — an entry is a claim from the day it was written,
+and a preamble is an entry. A list that describes items it no longer holds is
+worse than an empty one, because the reader cannot tell whether the item was
+answered or lost.
 
 
 
