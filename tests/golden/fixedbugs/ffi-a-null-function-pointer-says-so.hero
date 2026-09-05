@@ -1,0 +1,48 @@
+# fixedbugs, M-c-callbacks step 5, 2026-09-05 (defect 013).
+#
+# SYMPTOM: this program built and died with **exit 139 and an empty stderr** —
+# a segfault with nothing said, which design.md §1.12 calls a failure of the
+# language rather than of its implementation. It is panel 111's llm-ergonomist's
+# registered prediction, come true six hours after panel 111 R4 landed the
+# callback permission: R4 made the RIGHT spelling legal, `f: (function() -> ())`,
+# which refuses `nullptr` at the call site — and left the WRONG one legal beside
+# it, where `ptr` accepts any pointer and `nullptr` is one.
+#
+# WHY IT COULD NOT BE REFUSED AT COMPILE TIME, and this is the whole reason the
+# repair is a runtime one. `sqlite3_exec(callback: nullptr)` is the SAME
+# declaration and the SAME argument, and it is **correct**: SQLite documents a
+# null callback as *do not call back*, and `examples/sqlite/main.hero` ships it.
+# Whether NULL is legal is a property of the C function, not of the type — and on
+# Windows it is a property of the C LIBRARY, measured: `atexit(NULL)` is exit 0
+# there, because the CRT checks. No compiler on either side of the boundary
+# carries that fact.
+#
+# CAUSE, and it is not this program's: nothing looked at the fault. The SIGSEGV
+# reached panel 104's handler, failed both stack-overflow witnesses, and was
+# passed on to SIG_DFL.
+#
+# FIX: `runtime/parts/stack.c` gains one witness beside the stack guard's — the
+# faulting **PC**. A program that calls through a null function pointer does not
+# touch a bad address, it goes to EXECUTE at address zero, and nothing else
+# lands there. Measured on this Mac against the three adjacent shapes, one probe:
+# a wild store to 0 and a wild read from 0 both give `si_addr == 0` with a
+# NONZERO pc, and a garbage function pointer gives a nonzero pc too. Three of the
+# four give `si_addr == 0`; exactly one gives `pc == 0`. `si_addr` is the witness
+# panel 104 already rejected once, for the same reason.
+#
+# NOW: `panic: a null function pointer was called …`, exit 134, and the three
+# adjacent fault shapes are untouched — a stack overflow still says
+# `stack exhausted in deep.down`, an out-of-range index still says
+# `array index out of range`.
+#
+# **There is no `.expected` and no `run/` case on purpose**: this program dies on
+# macOS and Linux and exits 0 on Windows, where the CRT checks the pointer, so a
+# run golden would be red on one leg by design. The behaviour is asserted by the
+# measurements in `docs/work/DONE.md` and by this case existing and emitting.
+
+extern "stdlib.h"
+    function atexit(f: ptr) -> i32
+
+function main()
+    print("before")
+    _ = atexit(nullptr)
