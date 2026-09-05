@@ -588,8 +588,20 @@ jobs:
       # If this ever goes red with a diff that is only spellings, THAT is the
       # finding: the seed would be platform-specific, which nobody has decided,
       # and it goes to `docs/work/DECIDE.md` rather than being papered over.
+      # ON EVERY PUSH SINCE 2026-09-05, by author decision, and the gate that
+      # used to stand here said `github.ref_type == 'tag'`. What moved it is a
+      # number rather than an opinion: `seed/README.md` prices this step at
+      # **15m41s**, which is what put it on tags, and it was measured TWICE on
+      # a 2026-09-05 Mac at **21.5 s** — the old figure predates the compiler
+      # getting fast and went on justifying a decision it no longer justifies.
+      # The cost of the gate was paid the same day: `main` was red for a day
+      # with a seed two repairs behind, and what noticed was a golden case
+      # happening to exist, not an instrument. It stays on the Linux leg and
+      # out of the net on purpose — the net is run mid-change, where the seed
+      # is deliberately stale until the commit, and an alarm that is always on
+      # is one people learn to ignore.
       - name: The seed is what today's source emits
-        if: runner.os == 'Linux' && (github.ref_type == 'tag' || github.event_name == 'workflow_dispatch')
+        if: runner.os == 'Linux'
         run: |
           ./heroes-from-seed${{ matrix.exe }} build selfhost/main.hero --emit-c -o /tmp/seed-fresh.c
           cmp seed/heroes.c /tmp/seed-fresh.c

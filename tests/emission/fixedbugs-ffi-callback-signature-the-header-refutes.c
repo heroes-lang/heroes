@@ -68,7 +68,7 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
-#line 30 "tests/golden/fixedbugs/ffi-callback-signature-the-header-refutes.hero"
+#line 33 "tests/golden/fixedbugs/ffi-callback-signature-the-header-refutes.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fficallbacksignaturetheheaderrefutes_atexit(h_0fn_47d100e5 a0) { (void)(atexit)(a0); }
 #line 112 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
@@ -97,25 +97,25 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_fficallbacksignaturetheheaderrefutes_bye(int64_t h0_);
 void h_fficallbacksignaturetheheaderrefutes_main(void);
 
-#line 32 "tests/golden/fixedbugs/ffi-callback-signature-the-header-refutes.hero"
+#line 35 "tests/golden/fixedbugs/ffi-callback-signature-the-header-refutes.hero"
 void h_fficallbacksignaturetheheaderrefutes_bye(int64_t h0_) {
 #line 103 "fficallbacksignaturetheheaderrefutes.c"
     hero_thread_guard("fficallbacksignaturetheheaderrefutes.bye");
     HeroStr t1 = {0};
     goto bb0;
 bb0:
-#line 33 "tests/golden/fixedbugs/ffi-callback-signature-the-header-refutes.hero"
+#line 36 "tests/golden/fixedbugs/ffi-callback-signature-the-header-refutes.hero"
     t1 = HERO_STR_LIT(hero_str_19e7c2);
-#line 33 "tests/golden/fixedbugs/ffi-callback-signature-the-header-refutes.hero"
+#line 36 "tests/golden/fixedbugs/ffi-callback-signature-the-header-refutes.hero"
     hero_print_str(t1);
-#line 33 "tests/golden/fixedbugs/ffi-callback-signature-the-header-refutes.hero"
+#line 36 "tests/golden/fixedbugs/ffi-callback-signature-the-header-refutes.hero"
     hero_print_end();
-#line 33 "tests/golden/fixedbugs/ffi-callback-signature-the-header-refutes.hero"
+#line 36 "tests/golden/fixedbugs/ffi-callback-signature-the-header-refutes.hero"
     return;
 #line 116 "fficallbacksignaturetheheaderrefutes.c"
 }
 
-#line 35 "tests/golden/fixedbugs/ffi-callback-signature-the-header-refutes.hero"
+#line 38 "tests/golden/fixedbugs/ffi-callback-signature-the-header-refutes.hero"
 void h_fficallbacksignaturetheheaderrefutes_main(void) {
 #line 121 "fficallbacksignaturetheheaderrefutes.c"
     h_0fn_47d100e5 t1;
@@ -125,33 +125,33 @@ void h_fficallbacksignaturetheheaderrefutes_main(void) {
     HeroStr t5 = {0};
     goto bb0;
 bb0:
-#line 36 "tests/golden/fixedbugs/ffi-callback-signature-the-header-refutes.hero"
+#line 39 "tests/golden/fixedbugs/ffi-callback-signature-the-header-refutes.hero"
     t1 = h_fficallbacksignaturetheheaderrefutes_bye;
-#line 36 "tests/golden/fixedbugs/ffi-callback-signature-the-header-refutes.hero"
+#line 39 "tests/golden/fixedbugs/ffi-callback-signature-the-header-refutes.hero"
     t2 = atexit(t1);
-#line 36 "tests/golden/fixedbugs/ffi-callback-signature-the-header-refutes.hero"
+#line 39 "tests/golden/fixedbugs/ffi-callback-signature-the-header-refutes.hero"
     t3 = INT64_C(0);
-#line 36 "tests/golden/fixedbugs/ffi-callback-signature-the-header-refutes.hero"
+#line 39 "tests/golden/fixedbugs/ffi-callback-signature-the-header-refutes.hero"
     t4 = t2 != t3;
-#line 36 "tests/golden/fixedbugs/ffi-callback-signature-the-header-refutes.hero"
+#line 39 "tests/golden/fixedbugs/ffi-callback-signature-the-header-refutes.hero"
     if (t4) goto bb2; else goto bb3;
-#line 36 "tests/golden/fixedbugs/ffi-callback-signature-the-header-refutes.hero"
+#line 39 "tests/golden/fixedbugs/ffi-callback-signature-the-header-refutes.hero"
 bb1:
-#line 36 "tests/golden/fixedbugs/ffi-callback-signature-the-header-refutes.hero"
+#line 39 "tests/golden/fixedbugs/ffi-callback-signature-the-header-refutes.hero"
     return;
-#line 36 "tests/golden/fixedbugs/ffi-callback-signature-the-header-refutes.hero"
+#line 39 "tests/golden/fixedbugs/ffi-callback-signature-the-header-refutes.hero"
 bb2:
-#line 37 "tests/golden/fixedbugs/ffi-callback-signature-the-header-refutes.hero"
+#line 40 "tests/golden/fixedbugs/ffi-callback-signature-the-header-refutes.hero"
     t5 = HERO_STR_LIT(hero_str_7bcd5f24);
-#line 37 "tests/golden/fixedbugs/ffi-callback-signature-the-header-refutes.hero"
+#line 40 "tests/golden/fixedbugs/ffi-callback-signature-the-header-refutes.hero"
     hero_print_str(t5);
-#line 37 "tests/golden/fixedbugs/ffi-callback-signature-the-header-refutes.hero"
+#line 40 "tests/golden/fixedbugs/ffi-callback-signature-the-header-refutes.hero"
     hero_print_end();
-#line 37 "tests/golden/fixedbugs/ffi-callback-signature-the-header-refutes.hero"
+#line 40 "tests/golden/fixedbugs/ffi-callback-signature-the-header-refutes.hero"
     goto bb1;
-#line 37 "tests/golden/fixedbugs/ffi-callback-signature-the-header-refutes.hero"
+#line 40 "tests/golden/fixedbugs/ffi-callback-signature-the-header-refutes.hero"
 bb3:
-#line 37 "tests/golden/fixedbugs/ffi-callback-signature-the-header-refutes.hero"
+#line 40 "tests/golden/fixedbugs/ffi-callback-signature-the-header-refutes.hero"
     goto bb1;
 #line 157 "fficallbacksignaturetheheaderrefutes.c"
 }
