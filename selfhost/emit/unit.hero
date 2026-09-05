@@ -29,9 +29,10 @@
 # beside its own definition so a divergence is clang's error there.
 #
 # WHAT A TU CONTAINS, in the fused unit's own order: prelude (runtime
-# include, THIS module's extern headers and asserts and probes, the
-# TU-local macro, this TU's strings) · the whole-program typedefs · the
-# per-type prototypes (macro'd) · this TU's descriptors · prototypes
+# include, THIS module's extern headers and asserts, the TU-local macro,
+# this TU's strings) · the whole-program typedefs · THIS module's extern
+# probes, which name declared types and so follow the typedefs (panel
+# 111 R4) · the per-type prototypes (macro'd) · this TU's descriptors · prototypes
 # for every ordinary function in the program (cross-TU calls resolve
 # against these — and the declaring TU compiles the same text beside
 # its own definitions, so a divergence is clang's `conflicting types`
@@ -56,11 +57,14 @@ use emit/synth
 use emit/members
 use emit/writer
 use emit/decls as emit_decls
+use emit/externs as emit_externs
 use emit/typeorder
+use emit/extern_probe
 use emit/perfn
 use emit/descriptors
 use emit/signature
 use emit/body
+use emit/callback_guard
 
 # One module's translation unit. The caller has already run the gate
 # over the whole program (a refusal is program-wide) and monomorphised;
@@ -86,6 +90,23 @@ function unit(module: str, p: containers.Program, c: state.Checked, s: source.So
     # than argued from "an argument must be a local anyway", which is
     # true today and is a premise about the world (CLAUDE.md §11).
     reached: {i64: bool} @ walked.reached
+
+    # A PROBE names types too, and no loop above can see them: an extern
+    # is nobody's Heroes function, so it is in neither `defined` nor
+    # `needed`. The gap survived unnoticed because every boundary type
+    # was a scalar or the header's own record, and neither needs a
+    # typedef this filter could withhold — a function-typed parameter
+    # (panel 111 R4) is the first that does, and it arrived as `unknown
+    # type name 'h_0fn_294870dd'` at exit 2 on a correct binding. Asked
+    # of tu_p, which IS the program the prelude writes its probes from,
+    # so the two lists cannot drift apart. Parameters only: a probe's
+    # own result is always `void` and its call is cast away.
+    for f in tu_p.functions
+        if emit_externs.extern_spans(decls, f).header.is_err()
+            continue
+
+        for slot in f.params
+            reached[f.slots[slot].ty] @ true
 
     for at in mine.needed
         f = p.functions[at]
@@ -119,7 +140,18 @@ function unit(module: str, p: containers.Program, c: state.Checked, s: source.So
         tu_local: "__attribute__((unused)) static"
     )
     typeorder.definitions(@w, c, names, s, decls, want: want)
+
+    # A probe's parameters are the DECLARED types, so it belongs after
+    # the typedefs and not in the prelude (panel 111 R4). `tu_p` is the
+    # same program the reach loop above walked for exactly this reason.
+    extern_probe.extern_probes(@w, tu_p, c, names, s, decls)
     perfn.prototypes(@w, c, names, decls, want: want)
+
+    # Which functions C may call back (panel 111 R9). Over the FULL
+    # program, never the TU's slice: a function this TU defines may have
+    # its address taken in another module, and the fused path must reach
+    # the same answer or the two emitters disagree about one program.
+    guarded_decls = callback_guard.guarded(p, c, decls)
 
     # `declared`, not `walked.reached`: an option this TU prints `_hash`
     # for takes its payload's descriptor address, so the descriptor set
@@ -153,7 +185,7 @@ function unit(module: str, p: containers.Program, c: state.Checked, s: source.So
             # `hero_unreachable()` at exit 0 potential — found by the
             # first real per-module build, as three symptoms of this
             # one cause.
-            body.definition(@w, p, c, names, s, decls, f: f)
+            body.definition(@w, p, c, names, s, decls, f: f, guarded_decls: guarded_decls)
 
     perfn.bodies(@w, c, names, s, decls, want: want)
 

@@ -1,0 +1,162 @@
+# Which of this program's functions C can call, and the guard that goes at
+# their entry (panel 111 R9; design.md §1.12, Part 7.13).
+#
+# THE DANGER THIS ANSWERS. Since panel 111 R4 an `extern` may declare a
+# function-typed parameter, so a Heroes function's address reaches C — and C is
+# then free to call it back on a thread it made itself. Everything a Heroes
+# value does on the way through is written for one thread: the reference count
+# is a plain `int64_t`, copy-on-write decides in place with a test followed by a
+# mutate, and the comparison scratch buffers are process-wide. Panel 111 built
+# the programs and measured the result: a shared `str` across 32 threads is
+# `heap-use-after-free` or a double free in 9 ASan runs of 10.
+#
+# WHERE THE GUARD GOES, AND WHY IT IS HERE RATHER THAN IN THE RUNTIME. Three
+# other placements were built and raced before this one (`docs/measurements/018`)
+# — at every str, array and map operation through a thread-local (+6.6%),
+# the same through `pthread_self()` (+19%), and at the allocator alone (free,
+# and it buys less). The answer was in none of them. C can reach Heroes code
+# ONLY through an address Heroes handed it, and the compiler knows exactly which
+# functions those are, so the check belongs at the entry of the emitted callback
+# — where a program that hands C no function pays nothing, because the call is
+# not written into its binary at all.
+#
+# THE SET, and it is deliberately a superset of what C can actually reach. A
+# function value in this language is a bare address (v1 has no closures), so it
+# can leave for C only by being passed at a function-typed `extern` parameter —
+# but it may travel through a local, a record field or an array first, and the
+# emitter does not chase values. What it CAN see is where an address is taken at
+# all: `func_ref`. So the rule is asked of the program in hand, in two questions
+# that both have to be yes: does this program declare an `extern` that takes a
+# callback, and is this function's address taken anywhere in it. A program that
+# binds no callback guards nobody — the compiler itself and all 45 corpus
+# programs — and one that does pays a load and a branch at the entry of the
+# functions whose address it took, `xs.fold(0, add)`'s `add` included. That last
+# one is the over-approximation, and it is the safe direction (CLAUDE.md §11's
+# loud fallback): a guard too many stops a program that was never in danger only
+# on a thread it did not start, which cannot happen; a guard too few is the
+# corruption this module exists to prevent.
+#
+# THE FALSIFIABLE CLAIM this rests on, written as one because a premise about
+# the world expires in silence: *a Heroes function reaches C only through an
+# address some instruction in this program took.* It dies the day a function
+# value can be produced without a `func_ref` — a function CONSTANT whose address
+# is folded at compile time, say, or a `constant` of function type. `a_function_
+# value_comes_from_func_ref` below is the test that fires when it does.
+
+use ast
+use source
+use check/table
+use check/state
+use ir/containers
+use emit/externs as emit_externs
+use emit/writer
+use parse
+use resolve
+use checker
+use ir/lower
+
+# The decl indices of every function C may call back, or an empty map when this
+# program hands C no function at all. ONE computation with two consumers — the
+# guard line and the emitted set — because two answers to one question is how
+# the per-TU sections stopped compiling four separate times (emit/unit.hero's
+# own note).
+function guarded(p: containers.Program, c: state.Checked, decls: [ast.Decl]) -> {i64: bool}
+    out: {i64: bool} @ {}
+
+    if !takes_a_callback(p, c, decls)
+        return out
+
+    for f in p.functions
+        for blk in f.blocks
+            for one in blk.insts
+                match one.op
+                    # A function VALUE names its target without calling it,
+                    # which is exactly the instruction an address leaves
+                    # through. A generic function cannot be one: the checker
+                    # refuses it, so a target here is always ordinary.
+                    .func_ref fr =>
+                        match fr.callee
+                            .heroes_fn hf                        => out[hf.decl] @ true
+                            .extern_fn | .builtin_fn | .indirect => continue
+                    .call | .lit | .load | .store | .push_owned | .unary | .binary | .cast      => continue
+                    .field | .index | .map_get | .len_of | .tag_of | .payload | .construct      => continue
+                    .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => continue
+
+    return out
+
+# Does any `extern` in this program declare a parameter C would call? Asked of
+# the declarations in hand rather than of the call sites, because an extern that
+# is declared and never called still gives C the type — and the question the
+# guard answers is whether this program can hand an address out at all.
+function takes_a_callback(p: containers.Program, c: state.Checked, decls: [ast.Decl]) -> bool
+    for f in p.functions
+        if emit_externs.extern_spans(decls, f).header.is_err()
+            continue
+
+        for slot in f.params
+            if table.is_function_ty(c.types, f.slots[slot].ty)
+                return true
+
+    return false
+
+# The guard line, at the entry of one function's body. The name handed to the
+# runtime is the HEROES one, `module.function`, already spelled the way the
+# author wrote it: the reader of `panic: main.worker ran on a thread this
+# program did not start` is looking at a .hero file and never at the C, and
+# panel 104's stack guard pays a whole un-mangler at run time for the same
+# sentence because it has only a symbol to work from. Here the compiler knows.
+function entry(@w: writer.Writer, s: source.Source, f: containers.Function, guarded_decls: {i64: bool})
+    if guarded_decls[f.decl].is_err()
+        return
+    who = source.component_at(s, f.span.start) + "." + f.name
+    writer.line(@w, text: "    hero_thread_guard(\"" + who + "\");")
+
+## Tests
+
+function program_of(text: str) -> containers.Program
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    c: state.Checked @ checker.check(p.tree, out, s, p.decls)
+    assert c.diagnostics.len() == 0
+    low = lower.lower(p.tree, out, c, s, p.decls)
+    return low.program
+
+function checked_of(text: str) -> state.Checked
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    return checker.check(p.tree, out, s, p.decls)
+
+function decls_of(text: str) -> [ast.Decl]
+    p = parse.parse(text)
+    return p.decls
+
+constant WITH_CALLBACK: str
+    "extern \"stdlib.h\"\n    function atexit(f: (function() -> ())) -> i32\n\nfunction bye()\n    print(\"bye\")\n\nfunction main()\n    _ = atexit(bye)\n"
+
+# No `xs.map(twice)` here, however much it would sharpen the contrast: these
+# helpers check a program without the library beside it, so a built-in written
+# in Heroes is an unresolved name and the assert above fires on the SETUP rather
+# than on the answer. Two tests failed that way before this comment existed.
+constant NO_CALLBACK: str
+    "function twice(x: i64) -> i64\n    return x * 2\n\nfunction main()\n    print(twice(21))\n"
+
+test "a program that hands C no function guards nobody"
+    text = NO_CALLBACK
+    found = guarded(program_of(text), checked_of(text), decls_of(text))
+    assert found.len() == 0
+
+# The premise this module rests on, as a test that fires when it dies
+# (CLAUDE.md §11): the address of a function C can call is taken by a `func_ref`
+# instruction, so the walk that reads them finds it.
+test "a function value comes from func_ref"
+    text = WITH_CALLBACK
+    found = guarded(program_of(text), checked_of(text), decls_of(text))
+    assert found.len() == 1
+
+test "an extern taking a callback is what opens the question"
+    text = WITH_CALLBACK
+    assert takes_a_callback(program_of(text), checked_of(text), decls_of(text))
+    other = NO_CALLBACK
+    assert !takes_a_callback(program_of(other), checked_of(other), decls_of(other))

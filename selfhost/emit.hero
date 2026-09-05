@@ -25,10 +25,12 @@ use emit/writer
 use emit/decls as emit_decls
 use emit/gate
 use emit/typeorder
+use emit/extern_probe
 use emit/perfn
 use emit/descriptors
 use emit/signature
 use emit/body
+use emit/callback_guard
 use emit/builtins
 use emit/externs as emit_externs
 use parse
@@ -254,6 +256,10 @@ function emit_maybe(target: emit_decls.BuildTarget, p: containers.Program, c: st
     # descriptors — an array literal names its element's descriptor,
     # so the object must exist before a function body mentions it.
     typeorder.definitions(@w, c, names, s, decls, want: synth.everything())
+
+    # A probe's parameters are the DECLARED types, so it is "anything
+    # that can mention one" and obeys the line above (panel 111 R4).
+    extern_probe.extern_probes(@w, p, c, names, s, decls)
     perfn.prototypes(@w, c, names, decls, want: synth.everything())
     descriptors.definitions(
         @w,
@@ -265,13 +271,18 @@ function emit_maybe(target: emit_decls.BuildTarget, p: containers.Program, c: st
         want: synth.everything()
     )
 
+    # Which functions C may call back, computed ONCE for the whole unit
+    # (panel 111 R9). Empty for every program that hands C no function,
+    # which is this compiler and all 45 corpus programs.
+    guarded_decls = callback_guard.guarded(p, c, decls)
+
     for at in shown
         if emit_decls.emitted(p.functions[at], target: target)
             signature.prototype(@w, p.functions[at], c, names, s, decls)
 
     for at in shown
         if emit_decls.emitted(p.functions[at], target: target)
-            body.definition(@w, p, c, names, s, decls, f: p.functions[at])
+            body.definition(@w, p, c, names, s, decls, f: p.functions[at], guarded_decls: guarded_decls)
 
     perfn.bodies(@w, c, names, s, decls, want: synth.everything())
 

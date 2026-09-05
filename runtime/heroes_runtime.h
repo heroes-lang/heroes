@@ -34,11 +34,20 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define HERO_RUNTIME_ABI 20
+#define HERO_RUNTIME_ABI 21
 
 _Noreturn void hero_panic(const char *msg);
 _Noreturn void hero_panic_overflow(void);
 _Noreturn void hero_unreachable(void);
+
+/* The entry of a function this program hands to C as a callback, so that C
+ * calling it back from a thread of its own stops by name instead of corrupting
+ * a refcount (panel 111 R9; parts/thread.c carries the reasoning and the
+ * measurements). `what` is the Heroes name, `module.function`, because the
+ * reader of the message is looking at a .hero file. It is DECLARED HERE, under
+ * the ABI stamp, on purpose: a runtime that predates the guard must be a
+ * compile error rather than a program that quietly runs unguarded. */
+void hero_thread_guard(const char *what);
 
 /* `heroes test`'s argument, parsed here so a generated unit still includes this
  * header and nothing else (CLAUDE.md §7). */

@@ -14,12 +14,37 @@ use diag
 # A type in an extern's signature that no C header can declare (§4.19).
 # The message names what the boundary DOES carry, because the repair is
 # almost always a different signature rather than a different design.
+# The list gained `(function(A) -> B)` with panel 111 R4's permission and
+# in the same commit: a list of what crosses that omits something that
+# does is the document and the compiler disagreeing on day one, and the
+# reader believes the compiler.
 function ffi_type(name: str, what: str, span: token.Span) -> diag.Diagnostic
     return diag.new_diagnostic(
         code: "ffi_type",
-        message: "`" + name + "` cannot cross the FFI boundary, and it is " + what + " — a C header can declare a number, `bool`, `str`, `ptr`, `cstr`, and a `record` declared in this same group (§4.19)",
+        message: "`" + name + "` cannot cross the FFI boundary, and it is " + what + " — a C header can declare a number, `bool`, `str`, `ptr`, `cstr`, a function type as a parameter, and a `record` declared in this same group (§4.19)",
         span: span
     )
+
+# A function type written as an extern's RESULT (§4.19, panel 111 R4).
+# It reuses `ffi_type` for the same reason ffi_parameter_position reuses
+# ffi_parameter_type: the class already means "this extern's declared
+# type is wrong", and it is the code the reader is already looking at.
+# What it may not reuse is the ffi_type MESSAGE, which now says a
+# function type crosses — true of a parameter, and the sentence a reader
+# would take as permission here.
+function ffi_result_position(function_name: str, name: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "ffi_type",
+        message: "`" + function_name + "` cannot return `" + name + "` — a function type crosses the FFI boundary as a *parameter* only (§4.19)",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "the address a Heroes program passes OUT is one this compiler emitted, so C calls a body this compiler type-checked. An address C hands BACK is a body nothing here has seen, and calling it through a Heroes call site would convert the arguments and hold the result the way this language does, against a signature no probe compared to the header"
+    )
+    d.notes @ d.notes.push(
+        "declare the result `ptr` if the program only stores it and hands it back to C"
+    )
+    return d
 
 # A type that CAN cross the boundary but cannot be a value a header holds
 # (§4.19, panel 038). Separate from ffi_type because the reader did not

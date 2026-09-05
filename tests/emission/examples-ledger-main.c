@@ -5,7 +5,7 @@
 #include <sqlite3.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 20, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 21, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -72,61 +72,6 @@ _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exi
 _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
-
-#line 77 "main.c"
-#pragma clang diagnostic push
-#pragma clang diagnostic error "-Wdouble-promotion"
-#pragma clang diagnostic error "-Wimplicit-float-conversion"
-#pragma clang diagnostic error "-Wfloat-conversion"
-#pragma clang diagnostic error "-Wimplicit-int-conversion"
-#line 46 "examples/ledger/db/sqlite.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_open(const char * a0, void * * a1) { (void)(sqlite3_open)(a0, (void *)a1); }
-#line 47 "examples/ledger/db/sqlite.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_close(void * a0) { (void)(sqlite3_close)(a0); }
-#line 60 "examples/ledger/db/sqlite.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_exec(void * a0, const char * a1, void * a2, void * a3, void * a4) { (void)(sqlite3_exec)(a0, a1, a2, a3, a4); }
-#line 61 "examples/ledger/db/sqlite.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_errmsg(void * a0) { (void)(sqlite3_errmsg)(a0); }
-#line 62 "examples/ledger/db/sqlite.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_changes(void * a0) { (void)(sqlite3_changes)(a0); }
-#line 63 "examples/ledger/db/sqlite.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_prepare_v2(void * a0, const char * a1, int32_t a2, void * * a3, void * * a4) { (void)(sqlite3_prepare_v2)(a0, a1, a2, (void *)a3, (void *)a4); }
-#line 64 "examples/ledger/db/sqlite.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_step(void * a0) { (void)(sqlite3_step)(a0); }
-#line 65 "examples/ledger/db/sqlite.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_reset(void * a0) { (void)(sqlite3_reset)(a0); }
-#line 66 "examples/ledger/db/sqlite.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_finalize(void * a0) { (void)(sqlite3_finalize)(a0); }
-#line 67 "examples/ledger/db/sqlite.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_bind_int64(void * a0, int32_t a1, int64_t a2) { (void)(sqlite3_bind_int64)(a0, a1, a2); }
-#line 68 "examples/ledger/db/sqlite.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_bind_double(void * a0, int32_t a1, double a2) { (void)(sqlite3_bind_double)(a0, a1, a2); }
-#line 69 "examples/ledger/db/sqlite.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_bind_text(void * a0, int32_t a1, const char * a2, int32_t a3, void * a4) { (void)(sqlite3_bind_text)(a0, a1, a2, a3, a4); }
-#line 70 "examples/ledger/db/sqlite.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_column_count(void * a0) { (void)(sqlite3_column_count)(a0); }
-#line 71 "examples/ledger/db/sqlite.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_column_type(void * a0, int32_t a1) { (void)(sqlite3_column_type)(a0, a1); }
-#line 72 "examples/ledger/db/sqlite.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_column_int64(void * a0, int32_t a1) { (void)(sqlite3_column_int64)(a0, a1); }
-#line 73 "examples/ledger/db/sqlite.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_column_double(void * a0, int32_t a1) { (void)(sqlite3_column_double)(a0, a1); }
-#line 74 "examples/ledger/db/sqlite.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_column_text(void * a0, int32_t a1) { (void)(sqlite3_column_text)(a0, a1); }
-#line 112 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
-#line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
-#line 115 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 116 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 117 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 123 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 129 "main.c"
-#pragma clang diagnostic pop
 
 HERO_STR_STATIC(hero_str_18aab1cc, "sqlite would not open a database: ");
 HERO_STR_STATIC(hero_str_24007fdc, "the ledger could not be built: ");
@@ -212,6 +157,7 @@ HERO_STR_STATIC(hero_str_4a05a740, "null_cstr");
 HERO_STR_STATIC(hero_str_5263489, "a null `cstr` holds no text");
 HERO_STR_STATIC(hero_str_4bb64adb, "the bytes behind this `cstr` are not UTF-8");
 
+#line 161 "main.c"
 typedef struct h_bookentry_Amount {
     int64_t f_cents;
 } h_bookentry_Amount;
@@ -374,6 +320,60 @@ typedef struct h_0opt_fbbb698 {
         HeroFailure err;
     } as;
 } h_0opt_fbbb698;
+
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wdouble-promotion"
+#pragma clang diagnostic error "-Wimplicit-float-conversion"
+#pragma clang diagnostic error "-Wfloat-conversion"
+#pragma clang diagnostic error "-Wimplicit-int-conversion"
+#line 46 "examples/ledger/db/sqlite.hero"
+__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_open(const char * a0, void * * a1) { (void)(sqlite3_open)(a0, (void *)a1); }
+#line 47 "examples/ledger/db/sqlite.hero"
+__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_close(void * a0) { (void)(sqlite3_close)(a0); }
+#line 60 "examples/ledger/db/sqlite.hero"
+__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_exec(void * a0, const char * a1, void * a2, void * a3, void * a4) { (void)(sqlite3_exec)(a0, a1, a2, a3, a4); }
+#line 61 "examples/ledger/db/sqlite.hero"
+__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_errmsg(void * a0) { (void)(sqlite3_errmsg)(a0); }
+#line 62 "examples/ledger/db/sqlite.hero"
+__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_changes(void * a0) { (void)(sqlite3_changes)(a0); }
+#line 63 "examples/ledger/db/sqlite.hero"
+__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_prepare_v2(void * a0, const char * a1, int32_t a2, void * * a3, void * * a4) { (void)(sqlite3_prepare_v2)(a0, a1, a2, (void *)a3, (void *)a4); }
+#line 64 "examples/ledger/db/sqlite.hero"
+__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_step(void * a0) { (void)(sqlite3_step)(a0); }
+#line 65 "examples/ledger/db/sqlite.hero"
+__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_reset(void * a0) { (void)(sqlite3_reset)(a0); }
+#line 66 "examples/ledger/db/sqlite.hero"
+__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_finalize(void * a0) { (void)(sqlite3_finalize)(a0); }
+#line 67 "examples/ledger/db/sqlite.hero"
+__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_bind_int64(void * a0, int32_t a1, int64_t a2) { (void)(sqlite3_bind_int64)(a0, a1, a2); }
+#line 68 "examples/ledger/db/sqlite.hero"
+__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_bind_double(void * a0, int32_t a1, double a2) { (void)(sqlite3_bind_double)(a0, a1, a2); }
+#line 69 "examples/ledger/db/sqlite.hero"
+__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_bind_text(void * a0, int32_t a1, const char * a2, int32_t a3, void * a4) { (void)(sqlite3_bind_text)(a0, a1, a2, a3, a4); }
+#line 70 "examples/ledger/db/sqlite.hero"
+__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_column_count(void * a0) { (void)(sqlite3_column_count)(a0); }
+#line 71 "examples/ledger/db/sqlite.hero"
+__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_column_type(void * a0, int32_t a1) { (void)(sqlite3_column_type)(a0, a1); }
+#line 72 "examples/ledger/db/sqlite.hero"
+__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_column_int64(void * a0, int32_t a1) { (void)(sqlite3_column_int64)(a0, a1); }
+#line 73 "examples/ledger/db/sqlite.hero"
+__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_column_double(void * a0, int32_t a1) { (void)(sqlite3_column_double)(a0, a1); }
+#line 74 "examples/ledger/db/sqlite.hero"
+__attribute__((unused)) static void hero_ffi_probe_h_dbsqlite_sqlite3_column_text(void * a0, int32_t a1) { (void)(sqlite3_column_text)(a0, a1); }
+#line 112 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
+#line 113 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
+#line 115 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
+#line 116 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+#line 117 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+#line 123 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
+#line 376 "main.c"
+#pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_bookentry_Amount_eq(const h_bookentry_Amount *a, const h_bookentry_Amount *b);
 HERO_TU_LOCAL uint64_t h_bookentry_Amount_hash(const void *elem);

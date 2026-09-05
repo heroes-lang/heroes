@@ -287,17 +287,25 @@ function parameter_list(names: ctype.Names, c: state.Checked, f: containers.Func
 # silent: two tables answering "what is the C spelling of this FFI
 # type", one grown and one not, when a group's record became a legal
 # extern parameter.
+# It happened AGAIN and panel 111 R4 caught it before the permission
+# shipped: without the `.function_ty` arm below, binding one callback
+# withholds the whole list (see parameter_list) and the probe is skipped
+# for the ENTIRE extern, so every other parameter stops being checked
+# against the header, in silence — DrawText's defect with a new cause.
+# The arm hands back a typedef NAME because that is what ctype has, and
+# a typedef reads the same in a parameter list, a cast and a member.
 function c_type_of(names: ctype.Names, c: state.Checked, ty: i64) -> str?
     match table.get(c.types, ty)
-        .named n                                                           => return ok(ctype.of(names, decl: n.decl))
-        .int_ty ik                                                         => return ok(widths.int_c_type(ik.kind))
-        .float_ty fk                                                       => return ok(widths.float_c_type(fk.kind))
-        .bool                                                              => return ok("bool")
-        .str                                                               => return ok("HeroStr")
-        .cstr                                                              => return ok("const char *")
-        .ptr                                                               => return ok("void *")
-        .unit | .array | .fixed | .map                                     => return fail("none", "no C spelling")
-        .fallible | .function_ty | .case_ty | .failure | .generic | .error => return fail("none", "no C spelling")
+        .named n                                            => return ok(ctype.of(names, decl: n.decl))
+        .int_ty ik                                          => return ok(widths.int_c_type(ik.kind))
+        .float_ty fk                                        => return ok(widths.float_c_type(fk.kind))
+        .bool                                               => return ok("bool")
+        .str                                                => return ok("HeroStr")
+        .cstr                                               => return ok("const char *")
+        .ptr                                                => return ok("void *")
+        .function_ty                                        => return ok(ctype.func_of(names, ty: ty))
+        .unit | .array | .fixed | .map                      => return fail("none", "no C spelling")
+        .fallible | .case_ty | .failure | .generic | .error => return fail("none", "no C spelling")
 
     return fail("none", "unreached")
 

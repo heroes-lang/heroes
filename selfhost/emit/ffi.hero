@@ -49,7 +49,18 @@ use ir/lower
 # repair). add_once keeps one diagnostic per span, so whichever runs
 # first wins.
 function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl], c: state.Checked, p: containers.Program, word_bits: i64, answered: [pointee_ask.Answered]) -> [diag.Diagnostic]
-    names = ctype.new_names(s, decls)
+    # `with_functions`, and it is not decoration: this table is used to
+    # REBUILD the probe line clang complained about, so it has to be the
+    # same table the emitter wrote it with or the column arithmetic
+    # points at the wrong parameter. A bare new_names has no typedef for
+    # a function type, and `ctype.func_of` asserts rather than guesses —
+    # so a callback whose signature the header refutes stopped the
+    # compiler with `assert failed: !found.is_err()` and no line, which
+    # is the compiler blaming itself for a mistake in a .hero file
+    # (measured on `atexit(f: (function(i64) -> ()))`, panel 111 R4).
+    # The gap was latent before the permission: every other boundary
+    # type spells itself without a table.
+    names = ctype.with_functions(ctype.new_names(s, decls), c: c, s: s, decls: decls, p: p)
     found: [diag.Diagnostic] @ []
 
     for line in ffi_lookup.lines(text: stderr)

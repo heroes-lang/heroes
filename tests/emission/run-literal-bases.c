@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 20, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 21, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -41,7 +41,35 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 45 "literalbases.c"
+HERO_STR_STATIC(hero_str_e0a370d, "hex ");
+HERO_STR_STATIC(hero_str_9b8122d, "HEX ");
+HERO_STR_STATIC(hero_str_ef9ce2c, "oct ");
+HERO_STR_STATIC(hero_str_d3d6c71, "bin ");
+HERO_STR_STATIC(hero_str_f83889e, "sep ");
+HERO_STR_STATIC(hero_str_eb6c738, "mix ");
+HERO_STR_STATIC(hero_str_6fc50cd1, "same ");
+HERO_STR_STATIC(hero_str_20, " ");
+HERO_STR_STATIC(hero_str_1389664b, "ufcs ");
+HERO_STR_STATIC(hero_str_6745c33, "mask ");
+HERO_STR_STATIC(hero_str_eb4aef0, "max ");
+HERO_STR_STATIC(hero_str_d1be6eb, "all ");
+
+#line 58 "literalbases.c"
+typedef struct h_0opt_f87774a {
+    int64_t tag;
+    union {
+        HeroStr ok;
+        HeroFailure err;
+    } as;
+} h_0opt_f87774a;
+
+typedef struct h_0opt_a8ea2 {
+    int64_t tag;
+    union {
+        HeroFailure err;
+    } as;
+} h_0opt_a8ea2;
+
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -59,36 +87,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 63 "literalbases.c"
+#line 91 "literalbases.c"
 #pragma clang diagnostic pop
-
-HERO_STR_STATIC(hero_str_e0a370d, "hex ");
-HERO_STR_STATIC(hero_str_9b8122d, "HEX ");
-HERO_STR_STATIC(hero_str_ef9ce2c, "oct ");
-HERO_STR_STATIC(hero_str_d3d6c71, "bin ");
-HERO_STR_STATIC(hero_str_f83889e, "sep ");
-HERO_STR_STATIC(hero_str_eb6c738, "mix ");
-HERO_STR_STATIC(hero_str_6fc50cd1, "same ");
-HERO_STR_STATIC(hero_str_20, " ");
-HERO_STR_STATIC(hero_str_1389664b, "ufcs ");
-HERO_STR_STATIC(hero_str_6745c33, "mask ");
-HERO_STR_STATIC(hero_str_eb4aef0, "max ");
-HERO_STR_STATIC(hero_str_d1be6eb, "all ");
-
-typedef struct h_0opt_f87774a {
-    int64_t tag;
-    union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
-} h_0opt_f87774a;
-
-typedef struct h_0opt_a8ea2 {
-    int64_t tag;
-    union {
-        HeroFailure err;
-    } as;
-} h_0opt_a8ea2;
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
