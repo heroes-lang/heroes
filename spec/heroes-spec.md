@@ -221,7 +221,8 @@ extern "sqlite3.h" link "sqlite3"
     function sqlite3_open(path: cstr, @out: ptr) -> i64
     function sqlite3_close(db: ptr) -> i64
 ```
-Neither may be an absolute path.
+A callback is a **parameter**, never a result; its parameters follow the same rule
+and `()` is `void`: `atexit(f: (function() -> ()))`.
 Where a library lives is the machine's answer, not the program's, so a group may
 name a **package** instead of a library: `extern "raylib.h" package "raylib"`
 asks the system where its headers and libraries are and what else it needs —
