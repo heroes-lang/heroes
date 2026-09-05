@@ -226,8 +226,17 @@ constant REFUSED: [str]
 # same commit and is NOT in this number, because `M-discard-refusal` already had
 # its alias row and was missing only the chain row, which is the order §14 asks
 # for and the direction this check reads.
+#
+# **59 -> 60 on 2026-09-05**, one id, `M-c-callbacks`, out of `docs/panel/111`.
+# The sitting refused the proposal it was convened to adopt and split the
+# callback permission out of M-isolated-threads, because three seats found it is
+# bought entirely by §1.11 and CLAUDE.md §12's FFI-completeness instruction and
+# needs no thread at all. **This check fired on it within a minute of the
+# sitting closing**, before the name had reached the alias table, which is the
+# order §14 asks for and the third time this count has caught its own case.
+# The id has no chain row: placing one is the author's (`SCHEDULED.md`).
 constant ROWS: i64
-    59
+    60
 
 # The two documents whose citations are checked. They are the two a reader is sent
 # to for a rule, and the only two this project rewrites rather than appends to.
