@@ -31,6 +31,7 @@ use ir/layout
 use emit/mangle
 use emit/ctype
 use emit/signature
+use emit/callback_guard
 use emit/inst
 use emit/term
 use emit/unread
@@ -51,7 +52,7 @@ function is_extern_constant(decls: [ast.Decl], f: containers.Function) -> bool
 
     return false
 
-function definition(@w: writer.Writer, p: containers.Program, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function)
+function definition(@w: writer.Writer, p: containers.Program, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, guarded_decls: {i64: bool})
     writer.blank(@w)
 
     # The signature is pointed at the author's declaration: a clang
@@ -75,6 +76,11 @@ function definition(@w: writer.Writer, p: containers.Program, c: state.Checked, 
         return
     writer.line(@w, text: signature.signature(f, c, names, s, decls) + " {")
     writer.at_generated(@w)
+
+    # Before the prologue, because the prologue already touches this
+    # runtime's values and the whole point of the guard is that a
+    # foreign thread must touch none of them (panel 111 R9).
+    callback_guard.entry(@w, s, f, guarded_decls: guarded_decls)
     live = reachable(f)
     read = unread.emitted_reads(f, c)
     prologue(@w, c, names, f, live: live, read: read)
@@ -234,7 +240,8 @@ test "a whole function prints: signature, prologue, goto bb0, blocks, close"
     names1 = ctype.with_options(names0, c: c, s: s, decls: parsed.decls)
     names = ctype.with_functions(names1, c: c, s: s, decls: parsed.decls, p: low.program)
     w: writer.Writer @ writer.new_writer("t")
-    definition(@w, low.program, c, names, s, parsed.decls, low.program.functions[0])
+    none: {i64: bool} = {}
+    definition(@w, low.program, c, names, s, parsed.decls, low.program.functions[0], guarded_decls: none)
     got = writer.finish(w)
     assert has(text: got, needle: "int64_t h_t_add(int64_t h0_a, int64_t h1_b) {")
     assert has(text: got, needle: "    int64_t t1;")
@@ -246,7 +253,7 @@ test "a whole function prints: signature, prologue, goto bb0, blocks, close"
 
     # Deterministic: the same input prints the same bytes.
     again: writer.Writer @ writer.new_writer("t")
-    definition(@again, low.program, c, names, s, parsed.decls, low.program.functions[0])
+    definition(@again, low.program, c, names, s, parsed.decls, low.program.functions[0], guarded_decls: none)
     assert writer.finish(again) == got
 
 test "an unreachable join is omitted entirely, label and all"
@@ -266,7 +273,8 @@ test "an unreachable join is omitted entirely, label and all"
         p: low.program
     )
     w: writer.Writer @ writer.new_writer("t")
-    definition(@w, low.program, c, names, s, parsed.decls, low.program.functions[0])
+    none: {i64: bool} = {}
+    definition(@w, low.program, c, names, s, parsed.decls, low.program.functions[0], guarded_decls: none)
     got = writer.finish(w)
 
     # The join block (bb1, created before the arms) has no preds: its

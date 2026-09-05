@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 20, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 21, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -45,33 +45,6 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 49 "fixedbugsreadfileonbytesthatarenottext.c"
-#pragma clang diagnostic push
-#pragma clang diagnostic error "-Wdouble-promotion"
-#pragma clang diagnostic error "-Wimplicit-float-conversion"
-#pragma clang diagnostic error "-Wfloat-conversion"
-#pragma clang diagnostic error "-Wimplicit-int-conversion"
-#line 32 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugsreadfileonbytesthatarenottext_fopen(const char * a0, const char * a1) { (void)(fopen)(a0, a1); }
-#line 33 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugsreadfileonbytesthatarenottext_fputc(int32_t a0, void * a1) { (void)(fputc)(a0, a1); }
-#line 34 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugsreadfileonbytesthatarenottext_fclose(void * a0) { (void)(fclose)(a0); }
-#line 112 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
-#line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
-#line 115 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 116 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 117 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 123 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 73 "fixedbugsreadfileonbytesthatarenottext.c"
-#pragma clang diagnostic pop
-
 HERO_STR_STATIC(hero_str_22f1d61, "build/heroes-golden-not-text.bin");
 HERO_STR_STATIC(hero_str_788341e7, "build/heroes-golden-is-text.txt");
 HERO_STR_STATIC(hero_str_3d47, "wb");
@@ -97,6 +70,7 @@ HERO_STR_STATIC(hero_str_b908f30, "could not read ");
 HERO_STR_STATIC(hero_str_7e662f9e, "write_failed");
 HERO_STR_STATIC(hero_str_39d7c22a, "could not write ");
 
+#line 74 "fixedbugsreadfileonbytesthatarenottext.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -111,6 +85,32 @@ typedef struct h_0opt_a8ea2 {
         HeroFailure err;
     } as;
 } h_0opt_a8ea2;
+
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wdouble-promotion"
+#pragma clang diagnostic error "-Wimplicit-float-conversion"
+#pragma clang diagnostic error "-Wfloat-conversion"
+#pragma clang diagnostic error "-Wimplicit-int-conversion"
+#line 32 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+__attribute__((unused)) static void hero_ffi_probe_h_fixedbugsreadfileonbytesthatarenottext_fopen(const char * a0, const char * a1) { (void)(fopen)(a0, a1); }
+#line 33 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+__attribute__((unused)) static void hero_ffi_probe_h_fixedbugsreadfileonbytesthatarenottext_fputc(int32_t a0, void * a1) { (void)(fputc)(a0, a1); }
+#line 34 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
+__attribute__((unused)) static void hero_ffi_probe_h_fixedbugsreadfileonbytesthatarenottext_fclose(void * a0) { (void)(fclose)(a0); }
+#line 112 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
+#line 113 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
+#line 115 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
+#line 116 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+#line 117 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+#line 123 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
+#line 113 "fixedbugsreadfileonbytesthatarenottext.c"
+#pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);

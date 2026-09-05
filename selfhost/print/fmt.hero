@@ -1446,3 +1446,21 @@ test "fmt keeps an alias, and this is a fixed defect"
         assert parsed.diagnostics.len() == 0
         s = source.new_source(name: "t.hero", text: text)
         assert format_file(parsed.tree, s, parsed.comments, parsed.uses, parsed.decls) == text
+
+test "fmt keeps a callback in an extern group, at every position the checker judges"
+    # CLAUDE.md §9: a new surface form lands in every tool that reads the
+    # language, and this is the one that lies quietest — a form it has not
+    # learned is not an error, it is a DELETION, and `fmt --in-place` writes it
+    # to disk. Panel 111 R4 let a function type into an `extern` group, so the
+    # round trip is asserted here rather than read off a diff.
+    #
+    # Four shapes, because the provoking case is a witness and not the class:
+    # the parameter the permission is FOR, the result and the `@` parameter the
+    # checker refuses (the formatter must still print what it was given — it
+    # runs before the checker and on programs that do not check), and the same
+    # type in an ordinary signature beside them, which is the shape next door.
+    for text in ["extern \"stdlib.h\"\n    function atexit(f: (function() -> ())) -> i32\n\nfunction main()\n    print(0)\n", "extern \"signal.h\"\n    function installer(h: (function(i32) -> ())) -> (function(i32) -> ())\n\nfunction main()\n    print(0)\n", "extern \"x.h\"\n    function grab(@slot: (function() -> ())) -> i32\n\nfunction main()\n    print(0)\n", "function twice(f: (function(i64) -> i64), x: i64) -> i64\n    return f(f(x))\n\nfunction main()\n    print(0)\n"]
+        parsed = parse.parse(text)
+        assert parsed.diagnostics.len() == 0
+        s = source.new_source(name: "t.hero", text: text)
+        assert format_file(parsed.tree, s, parsed.comments, parsed.uses, parsed.decls) == text

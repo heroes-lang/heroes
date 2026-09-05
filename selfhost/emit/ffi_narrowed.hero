@@ -14,6 +14,7 @@
 use ast
 use source
 use diag
+use check/table
 use check/state
 use ir/containers
 use emit/ctype
@@ -252,11 +253,17 @@ function parameter_width(s: source.Source, decls: [ast.Decl], p: containers.Prog
         arguments: arguments
     )
     which: str @ "a parameter"
+
+    # Whether the parameter clang pointed at is a CALLBACK, tracked here
+    # rather than re-derived below, because the column walk is the only
+    # place that knows which parameter it is (panel 111 R4).
+    is_callback: bool @ false
     index: i64 @ 0
 
     for column in columns
         if column == at.must().col && index < f.params.len()
             which @ "`" + f.slots[f.params[index]].name + "`"
+            is_callback @ table.is_function_ty(c.types, f.slots[f.params[index]].ty)
         index @ index + 1
 
     span = decls[f.decl].span
@@ -286,6 +293,22 @@ function parameter_width(s: source.Source, decls: [ast.Decl], p: containers.Prog
         message: which + " of `" + name + "` is declared " + what + " the header's `" + c_type.must() + "` — clang read the header, " + consequence,
         span: span
     )
+
+    # A CALLBACK gets its own note, and the class stays `ffi_parameter_type`
+    # (panel 111 R4 asked for a new code; measured, this one already lands
+    # on the .hero line at exit 1, and ffi_errors.hero's own rule is that a
+    # second name for one question is not worth a class). What the code
+    # could not carry is the REPAIR: the struct sentence below is nonsense
+    # under `int (*)(const void *, const void *)`, and §4.17 says the note is
+    # chosen by the type because the repair is.
+    if is_callback
+        d.notes @ d.notes.push(
+            "§4.19: a callback is declared with the header's own parameter and result types. C says `" + c_type.must() + "`, so write that signature: each parameter at the header's width and sign, and `()` where it says void"
+        )
+        d.notes @ d.notes.push(
+            "a `const` pointee has no spelling in this language yet, so a header asking for `const void *` cannot be matched at all — design.md Part 8 names it as a known hole"
+        )
+        return ok(d)
 
     if spelled.is_err()
         # No Heroes spelling, and the diagnostic still lands: the note

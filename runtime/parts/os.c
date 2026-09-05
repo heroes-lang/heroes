@@ -84,6 +84,10 @@ void hero_args_set(int argc, char **argv) {
      * this is the one call every generated `main` makes first — so the
      * emitted C and the ABI stamp are untouched (panel 104). */
     hero_stack_guard_install();
+    /* And the thread itself, for the same reason and by the same precedent
+     * (panel 111 R9): this is the thread a Heroes program owns, so a callback
+     * entered from any other one is C calling back from a thread of its own. */
+    hero_thread_claim();
     hero_argc = argc;
     hero_argv = argv;
 }

@@ -110,6 +110,11 @@
  * from hero_args_set, in os.c below. */
 #include "parts/stack.c"
 
+/* Which thread this program was started on, and the refusal a callback entry
+ * makes when C calls back from another one (panel 111 R9). Needs only panic.c;
+ * claimed once from hero_args_set, in os.c below, for stack.c's own reason. */
+#include "parts/thread.c"
+
 /* The single allocation point and the live-block counter (design.md §4.20).
  * First after `panic.c`, because everything that allocates needs both. */
 #include "parts/alloc.c"

@@ -24,9 +24,9 @@
 # The prelude's extern block landed with the FFI crossing: headers
 # (angled, never quoted — panel 036's decoy measurement), the record
 # field assertions before the signatures that pass one, the union
-# predicate, the return assertions, then the probes — after the
-# assertions rather than beside them, because the two answer different
-# questions with different mechanisms.
+# predicate, then the return assertions. The PROBE was the fourth of
+# them until panel 111 R4 and now follows the typedefs instead, in the
+# two emitters — the reason is at its call below.
 
 use ast
 use source
@@ -39,7 +39,6 @@ use emit/externs as emit_externs
 use emit/extern_record
 use emit/extern_union
 use emit/extern_assert
-use emit/extern_probe
 use emit/writer
 use parse
 use resolve
@@ -77,7 +76,7 @@ function prelude(@w: writer.Writer, p: containers.Program, target: BuildTarget, 
         writer.line(@w, text: "#include <" + header + ">")
 
     writer.line(@w, text: "")
-    writer.line(@w, text: "_Static_assert(HERO_RUNTIME_ABI == 20, \"heroes_runtime.h is from another compiler\");")
+    writer.line(@w, text: "_Static_assert(HERO_RUNTIME_ABI == 21, \"heroes_runtime.h is from another compiler\");")
 
     # What a per-type function and a monomorphised instance are LINKED
     # as. One fused unit needs no linkage word; a per-module unit
@@ -106,13 +105,24 @@ function prelude(@w: writer.Writer, p: containers.Program, target: BuildTarget, 
 
     # The struct's fields before the signatures that pass one, so a
     # reader of the emitted unit meets the layout claim before the
-    # call that depends on it — then the union predicate, the return
-    # assertions, and the half a _Generic cannot ask: what the header
-    # ACCEPTS, after the assertions rather than beside them.
+    # call that depends on it — then the union predicate and the return
+    # assertions. All three are _Static_asserts over the header's own
+    # names, so they need the #includes above and nothing this file
+    # writes later.
+    #
+    # The PROBE used to be the fourth line here and is not one any more
+    # (panel 111 R4). It is a static FUNCTION whose parameters are the
+    # declared types, so unlike the three above it can name a typedef
+    # this compiler invents — and the typedefs are emitted after the
+    # prelude, under emit.hero's own invariant "types before anything
+    # that can mention one". A function-typed parameter is the first
+    # boundary type that reaches for one, and it arrived as `unknown
+    # type name 'h_0fn_294870dd'` at exit 2 on a correct binding. Both
+    # emitters now call extern_probes after typeorder.definitions, which
+    # is the rule already written down rather than a new one.
     extern_record.extern_record_assertions(@w, c, names, s, decls)
     extern_union.union_assertions(@w, p, c, names, s, decls)
     extern_assert.extern_assertions(@w, p, c, names, s, decls)
-    extern_probe.extern_probes(@w, p, c, names, s, decls)
 
     # Every decoded literal an EMITTED function actually reads —
     # reachability, not the whole table: program.strings holds every
@@ -322,7 +332,7 @@ test "the prelude stamps the ABI and emits only the strings a build reads"
         tu_local: ""
     )
     got = writer.finish(w)
-    assert has(text: got, needle: "_Static_assert(HERO_RUNTIME_ABI == 20")
+    assert has(text: got, needle: "_Static_assert(HERO_RUNTIME_ABI == 21")
     assert has(text: got, needle: "run me")
 
     # The test block's literal is invisible to a program build — and

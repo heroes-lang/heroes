@@ -1,0 +1,32 @@
+# A function type crosses the FFI boundary as a PARAMETER and nowhere else
+# (§4.19; panel 111 R4, M-c-callbacks). The vocabulary question and the position
+# question are separate on purpose: C spells a function pointer everywhere it
+# spells a type, so "can a header declare this" cannot be the rule that decides
+# where a callback may stand.
+#
+# The permission is one direction only, and the direction is the whole argument.
+# An address this program passes OUT is one this compiler emitted, so the call C
+# makes lands in a body this compiler type-checked. An address C hands BACK is a
+# body nothing here has seen, and calling it through a Heroes call site would
+# convert the arguments and hold the result the way this language does, against
+# a signature no probe ever compared to the header. Three shapes hand one back —
+# a result, an `@` out-parameter, and an `extern constant` — and each is refused
+# with the repair that fits it.
+#
+# Bulk regression case.
+
+extern "stdlib.h"
+    # The permission itself: this one is accepted, and the case exists as much
+    # for this line as for the three below it.
+    function atexit(f: (function() -> ())) -> i32
+    function installer(handler: (function(i32) -> ())) -> (function(i32) -> ())  #~ ffi_type
+    function grab(@slot: (function() -> ())) -> i32  #~ ffi_parameter_type
+    constant DEFAULT_HANDLER: (function() -> ())  #~ ffi_constant_type
+    record Table partial
+        step: (function() -> ())  #~ ffi_field_type
+
+function bye()
+    print("bye")
+
+function main()
+    _ = atexit(bye)

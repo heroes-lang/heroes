@@ -5,7 +5,7 @@
 #include <sqlite3.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 20, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 21, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -53,7 +53,31 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 57 "main.c"
+HERO_STR_STATIC(hero_str_41b4cad0, ":memory:");
+HERO_STR_STATIC(hero_str_4e2b1705, "cannot open the database");
+HERO_STR_STATIC(hero_str_58d8efb7, "create table note(body text)");
+HERO_STR_STATIC(hero_str_37763c95, "insert into note(body) values ('hello'), ('from'), ('sqlite')");
+HERO_STR_STATIC(hero_str_2d6bfc4a, "rows: ");
+HERO_STR_STATIC(hero_str_4a7e2e7, "select count(*) from note");
+HERO_STR_STATIC(hero_str_31daf47e, "longest: ");
+HERO_STR_STATIC(hero_str_4ea48131, "select max(length(body)) from note");
+
+#line 66 "main.c"
+typedef struct h_0opt_f87774a {
+    int64_t tag;
+    union {
+        HeroStr ok;
+        HeroFailure err;
+    } as;
+} h_0opt_f87774a;
+
+typedef struct h_0opt_a8ea2 {
+    int64_t tag;
+    union {
+        HeroFailure err;
+    } as;
+} h_0opt_a8ea2;
+
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -85,32 +109,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 89 "main.c"
+#line 113 "main.c"
 #pragma clang diagnostic pop
-
-HERO_STR_STATIC(hero_str_41b4cad0, ":memory:");
-HERO_STR_STATIC(hero_str_4e2b1705, "cannot open the database");
-HERO_STR_STATIC(hero_str_58d8efb7, "create table note(body text)");
-HERO_STR_STATIC(hero_str_37763c95, "insert into note(body) values ('hello'), ('from'), ('sqlite')");
-HERO_STR_STATIC(hero_str_2d6bfc4a, "rows: ");
-HERO_STR_STATIC(hero_str_4a7e2e7, "select count(*) from note");
-HERO_STR_STATIC(hero_str_31daf47e, "longest: ");
-HERO_STR_STATIC(hero_str_4ea48131, "select max(length(body)) from note");
-
-typedef struct h_0opt_f87774a {
-    int64_t tag;
-    union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
-} h_0opt_f87774a;
-
-typedef struct h_0opt_a8ea2 {
-    int64_t tag;
-    union {
-        HeroFailure err;
-    } as;
-} h_0opt_a8ea2;
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);

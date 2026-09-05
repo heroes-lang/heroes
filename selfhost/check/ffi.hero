@@ -32,9 +32,16 @@ use ffi_errors
 ## The vocabulary — can a C header spell this at all?
 
 # What a C header can spell: the scalars, §4.19's two opaque types, (),
-# and — since panel 060 — a record THE HEADER ITSELF declares. The
-# narrowing asks the declaration, never where the type was mentioned:
-# "this record carries a header" is a fact about the value in hand.
+# a function pointer — since panel 111 R4 — and, since panel 060, a
+# record THE HEADER ITSELF declares. The narrowing asks the
+# declaration, never where the type was mentioned: "this record carries
+# a header" is a fact about the value in hand.
+#
+# A function type answers YES here and is still refused at two of its
+# three positions, which is the whole reason this question and
+# arguments_may_stand's are asked separately. C spells a function
+# pointer everywhere it spells a type, so a vocabulary rule cannot be
+# the one that says where a callback may stand.
 function crosses_the_boundary(c: state.Checker, decls: [ast.Decl], ty: i64) -> bool
     match table.get(c.out.types, ty)
         .named n =>
@@ -42,7 +49,8 @@ function crosses_the_boundary(c: state.Checker, decls: [ast.Decl], ty: i64) -> b
                 .record_decl rec                                             => return !rec.header.is_err()
                 .constant_decl | .function_decl | .variant_decl | .test_decl => return false
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit | .error => return true
-        .array | .fixed | .map | .fallible | .function_ty                  => return false
+        .function_ty                                                       => return true
+        .array | .fixed | .map | .fallible                                 => return false
         .case_ty | .failure | .generic                                     => return false
 
     return false
@@ -71,6 +79,7 @@ function ffi_signature(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [
                 ffi_errors.ffi_type(name: shown, what: "an `extern`'s parameter", span: a.types[param.ty].span)
             )
 
+    result_may_stand(@c, a, s, decls, f: f, result: result, declared_name: declared_name)
     arguments_may_stand(@c, a, s, decls, f: f, declared_name: declared_name)
 
 # The type of an extern constant — a narrower question (panel 038). Two
@@ -87,11 +96,19 @@ function ffi_constant(@c: state.Checker, s: source.Source, decls: [ast.Decl], de
     why: str @ ""
 
     match table.get(c.out.types, declared)
-        .str                                                       => why @ "a `str` is built by this runtime, so no C header holds one: declare it `cstr` and read it with `validated`, which copies and may fail (§4.20)"
-        .unit                                                      => why @ "a `constant` names a value, and `()` is a type rather than a value"
-        .int_ty | .float_ty | .bool | .ptr | .cstr | .error        => return
-        .array | .fixed | .map | .fallible | .function_ty | .named => return
-        .case_ty | .failure | .generic                             => return
+        .str  => why @ "a `str` is built by this runtime, so no C header holds one: declare it `cstr` and read it with `validated`, which copies and may fail (§4.20)"
+        .unit => why @ "a `constant` names a value, and `()` is a type rather than a value"
+        # Panel 111 R4 opened the parameter position and nothing else,
+        # and a `constant` is not a position: it is a VALUE this
+        # compiler hands the program, so the address in it would be
+        # C's and calling it would run a body no Heroes emitter wrote —
+        # result_may_stand's case, reached through the one door that
+        # does not go through a signature.
+
+        .function_ty                                        => why @ "a function value Heroes calls must be one this compiler emitted, and this asks the header for one of C's. Declare it `ptr` if the program only hands it back to C"
+        .int_ty | .float_ty | .bool | .ptr | .cstr | .error => return
+        .array | .fixed | .map | .fallible | .named         => return
+        .case_ty | .failure | .generic                      => return
 
     shown = state.show(c, s, decls, declared)
     state.push_diagnostic(@c, ffi_errors.ffi_constant_type(name: shown, why: why, span: span))
@@ -243,13 +260,35 @@ function claim(a: ast.Ast, id: i64, @owned: {i64: bool})
 
 ## The position — may it stand here?
 
+# A function value C hands BACK is refused, and the reason is not about
+# C's grammar: C returns function pointers, and `signal` is the header
+# every reader meets first. It is about what the value would BE on this
+# side. A Heroes function value is called through a Heroes call site,
+# which converts the arguments and holds the result the way this
+# language does — against a body no Heroes emitter wrote, and which no
+# probe ever compared to the header. The parameter direction is safe for
+# the mirror reason, and that mirror is the whole permission: the
+# address handed OUT is one this compiler emitted, so the call C makes
+# is a call into code this compiler type-checked.
+function result_may_stand(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl], f: ast.FunctionDecl, result: i64, declared_name: token.Span)
+    if !table.is_function_ty(c.out.types, result)
+        return
+    shown = state.show(c, s, decls, result)
+    state.push_diagnostic(
+        @c,
+        ffi_errors.ffi_result_position(function_name: source.span_text(s, declared_name), name: shown, span: a.types[f.result].span)
+    )
+
 # Refuse every parameter whose declared type cannot stand in a C argument
 # list. Runs AFTER the vocabulary check, so a type that can cross at
-# neither position produces one message rather than two. Exactly one
-# type is refused, and the test for whether a refusal belongs in the
-# frontend at all is: is the fact about C's GRAMMAR, or about some
-# header? A parameter list has no spelling for void; a ptr parameter is
-# ordinary C only clang can judge against the header in front of it.
+# neither position produces one message rather than two. Two shapes are
+# refused, and the test for whether a refusal belongs in the frontend at
+# all is: is the fact about C's GRAMMAR, or about what the value would
+# be on this side? A parameter list has no spelling for void; an `@`
+# parameter of function type is result_may_stand's own case wearing
+# C's other direction, since `void (**)(void)` delivers a callable into
+# Heroes exactly as a returned one does. A ptr parameter is ordinary C
+# only clang can judge against the header in front of it.
 function arguments_may_stand(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl], f: ast.FunctionDecl, declared_name: token.Span)
     function_name = source.span_text(s, declared_name)
 
@@ -258,14 +297,20 @@ function arguments_may_stand(@c: state.Checker, a: ast.Ast, s: source.Source, de
 
         if written.is_err()
             continue
-        is_unit = table.get(c.out.types, written.must()) == .unit
+        why: str @ ""
 
-        if !is_unit
+        if table.get(c.out.types, written.must()) == .unit
+            why @ "`()` names no value, so there is no argument to pass: as a *result* it is C's `void`, which a parameter list has no spelling for. Drop the parameter, or declare the type the header uses"
+
+        if param.mutable && table.is_function_ty(c.out.types, written.must())
+            why @ "an `@` parameter is C's out-parameter, so this asks C to WRITE a function value here, and a function value Heroes calls must be one this compiler emitted. Declare it `@" + source.span_text(s, param.name) + ": ptr` if the program only stores what C writes, and pass it back to C to be called"
+
+        if why == ""
             continue
         shown = state.show(c, s, decls, written.must())
         state.push_diagnostic(
             @c,
-            ffi_errors.ffi_parameter_position(parameter: source.span_text(s, param.name), function_name: function_name, name: shown, why: "`()` names no value, so there is no argument to pass: as a *result* it is C's `void`, which a parameter list has no spelling for. Drop the parameter, or declare the type the header uses", span: a.types[param.ty].span)
+            ffi_errors.ffi_parameter_position(parameter: source.span_text(s, param.name), function_name: function_name, name: shown, why: why, span: a.types[param.ty].span)
         )
 
 ## Tests

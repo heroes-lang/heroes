@@ -1,0 +1,37 @@
+# fixedbugs, M-c-callbacks step 0, 2026-09-05 (panel 111 R4).
+#
+# SYMPTOM: a callback declared with the wrong signature stopped the compiler
+# with `assert failed: !found.is_err()` and no file, no line and no code — the
+# worst shape a compiler failure has, because there is nothing in it for the
+# author to act on. `atexit` wants `void (*)(void)`; this case declares the
+# handler as taking an `i64`.
+#
+# CAUSE: when clang refuses a probe, `emit/ffi.hero` REBUILDS the probe line to
+# work out which parameter the column belongs to — and it built its name table
+# with `ctype.new_names` alone, which holds no typedef for a function type. So
+# `ctype.func_of`'s assertion fired, correctly: it refuses to guess a name. The
+# gap was latent before the permission, because every other boundary type spells
+# itself without a table, and it is the same class of defect as the probe's own
+# second spelling table — one question, two answers, one of them not grown.
+#
+# FIX: `explain` builds its table with `ctype.with_functions`, which is the
+# table the emitter wrote the line with. Rebuilding a text with a different
+# table would have mis-numbered the columns even where it did not assert.
+#
+# WHAT IT PRODUCES NOW, and it also scores a panel prediction as FALSIFIED: the
+# ffi-pragmatist seat predicted a callback mismatch would reach exit 2 because
+# no reader classifies an argument-position function-pointer mismatch. Measured:
+# clang's text contains ` to parameter of `, which is the needle panel 071's
+# MISMATCHED family already reads, so it is `ffi_parameter_type` at exit 1 on
+# this line. What the sitting was right about is the NOTE, which used to offer
+# the struct repair under a function pointer; it is chosen by the type now.
+
+extern "stdlib.h"
+    function atexit(f: (function(i64) -> ())) -> i32  #~ ffi_parameter_type
+
+function bye(_: i64)
+    print("bye")
+
+function main()
+    if atexit(bye) != 0
+        print("atexit refused the handler")

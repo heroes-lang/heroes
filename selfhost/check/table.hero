@@ -252,6 +252,20 @@ function contained(t: Types, id: i64) -> [i64]
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr                 => []
         .unit | .fixed | .named | .case_ty | .failure | .generic | .error => []
 
+# Is this a callback's type? One home for a question four modules ask
+# since panel 111 R4 opened the FFI to a function-typed parameter — the
+# boundary rule, the position rule, the guard's own set, and the reader
+# that turns clang's verdict on a probe into a note. The port already
+# knows what a second table answering one question costs: `c_type_of`
+# and `c_type` disagreed about a group's record for a whole milestone,
+# in silence.
+function is_function_ty(t: Types, id: i64) -> bool
+    return match get(t, id)
+        .function_ty                                              => true
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
+        .array | .fixed | .map | .fallible | .named               => false
+        .case_ty | .failure | .generic | .error                   => false
+
 # True where a type is, or contains, `error`. The checker uses it to stay
 # quiet: a mismatch between `error` and anything is a mistake already
 # reported somewhere else.
