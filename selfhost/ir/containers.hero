@@ -1,6 +1,6 @@
 # The IR's containers: what a function, a block and a program ARE
 # (design.md Part 10 step 6; panels 019, 021, 029, 084).
-# Port of crates/heroes/src/ir/mod.rs's data half — the driver `lower`
+# Port of archive/bootstrap-rs/heroes/src/ir/mod.rs's data half — the driver `lower`
 # arrives with the declaration walk.
 #
 # The phase lives ON THE PROGRAM, not in the verifier's signature (panel

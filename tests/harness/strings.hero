@@ -7,7 +7,7 @@
 # wrong.
 #
 # Port of the small string helpers spread through
-# crates/heroes-cli/tests/{golden,corpus,layout}.rs (Rust hands those out
+# archive/bootstrap-rs/heroes-cli/tests/{golden,corpus,layout}.rs (Rust hands those out
 # in its standard library, which is exactly what design.md §1.11 says
 # Heroes does not have).
 #

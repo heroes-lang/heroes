@@ -1,7 +1,7 @@
 # What the generated C is compiled UNDER: the dialect, the diagnostics
 # that are errors, what a binary is LINKED with, and what --sanitize
 # adds (panels 020, 047, 058).
-# Port of crates/heroes-cli/src/commands/flags.rs.
+# Port of archive/bootstrap-rs/heroes-cli/src/commands/flags.rs.
 #
 # THIS IS THE LIST'S ONLY STATEMENT in the port, exactly as flags.rs
 # is the bootstrap's: CLAUDE.md §7 cites it instead of copying it,

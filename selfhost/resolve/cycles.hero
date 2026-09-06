@@ -1,6 +1,6 @@
 # What a constant's body may contain, and whether the bodies are circular
 # (design.md §4.2, §4.16; panel 039).
-# Port of crates/heroes/src/resolve/{constbody,cycles}.rs — two files in
+# Port of archive/bootstrap-rs/heroes/src/resolve/{constbody,cycles}.rs — two files in
 # Rust, split by §11's threshold and held together by `super::`; one module
 # here because each calls the other (report → bodies, bodies → owner and
 # is_valued_constant) and Heroes refuses the cycle. The knot is small, but

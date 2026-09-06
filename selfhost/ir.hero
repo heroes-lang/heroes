@@ -1,6 +1,6 @@
 # What the IR is made of: how it names things, and what an instruction
 # is (design.md Part 10 step 6, Part 5; panel 019).
-# Port of crates/heroes/src/ir/{ids,inst}.rs — one module, because the
+# Port of archive/bootstrap-rs/heroes/src/ir/{ids,inst}.rs — one module, because the
 # ids exist only to be carried by the instructions.
 #
 # Every reference is an index into a dense table, and anything of

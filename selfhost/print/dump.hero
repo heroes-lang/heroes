@@ -1,5 +1,5 @@
 # heroes parse --dump-ast: the tree as text (design.md §3.5, §4.15).
-# Port of crates/heroes/src/printer/dump.rs.
+# Port of archive/bootstrap-rs/heroes/src/printer/dump.rs.
 #
 # Not the formatter — this is the tree SEEN, one node per line, so
 # "what the parser understood" is readable without a debugger. Two

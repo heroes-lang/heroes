@@ -1,6 +1,6 @@
 # §4.12's inference: on functions only, no constraints, never written at
 # the call site.
-# Port of crates/heroes/src/types/generics.rs.
+# Port of archive/bootstrap-rs/heroes/src/types/generics.rs.
 #
 # Two functions, and between them they are the whole of it. `bind` walks
 # a parameter's written type beside the argument's actual type; the first

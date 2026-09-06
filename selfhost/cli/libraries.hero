@@ -1,6 +1,6 @@
 # What a group's link and package become on clang's command line
 # (design.md §4.19; panels 048, 049, 050, 055). Port of
-# crates/heroes-cli/src/commands/libraries.rs.
+# archive/bootstrap-rs/heroes-cli/src/commands/libraries.rs.
 #
 # THE ALLOW-LIST IS THE WHOLE SECURITY OF package, and the precedent
 # is not hypothetical: Go shipped the same idea without a filter and

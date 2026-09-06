@@ -1,7 +1,7 @@
 # The scope stack and the resolver's working state (design.md §4.4 —
 # "Shadowing is a compile error", "An unused variable is a compile error";
 # §4.16's hole exemption; panel 015).
-# Port of crates/heroes/src/resolve/scope.rs plus the state half of
+# Port of archive/bootstrap-rs/heroes/src/resolve/scope.rs plus the state half of
 # resolve/mod.rs. In Rust they are two files held together by `impl
 # Resolver` blocks; there is no such spelling here, and they are one concern
 # — every function below reads or grows the same record — so they are one

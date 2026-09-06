@@ -1,5 +1,5 @@
 # Fields, labels, cases and patterns — the messages about SHAPES.
-# Port of crates/heroes/src/types/errors/data.rs.
+# Port of archive/bootstrap-rs/heroes/src/types/errors/data.rs.
 #
 # Two of them carry certain fixes, and both are renames the compiler knows
 # are right: a wrong field label when the position says which field it is,

@@ -1,5 +1,5 @@
 # A constant value as C text: the macro its width asks for (design.md
-# §3.1, §4.14; panels 020, 042). Port of crates/heroes/src/emit/literal.rs.
+# §3.1, §4.14; panels 020, 042). Port of archive/bootstrap-rs/heroes/src/emit/literal.rs.
 #
 # Everything here turns a value the compiler already knows into the
 # characters clang will read; nothing here can abort, branch or

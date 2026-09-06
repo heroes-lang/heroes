@@ -1,5 +1,5 @@
 # Every name that reaches C, in one place (design.md §3.1, CLAUDE.md §7).
-# Port of crates/heroes/src/emit/mangle.rs.
+# Port of archive/bootstrap-rs/heroes/src/emit/mangle.rs.
 #
 # The rule is h_<module>_<name>[_<typehash>], and the reason is
 # collisions in two directions: a Heroes identifier can be a C keyword

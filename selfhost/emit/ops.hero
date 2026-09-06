@@ -1,6 +1,6 @@
 # One call as C — a Heroes function, a built-in, a function value, a C
 # function — and print (design.md §4.14, §4.19, §4.20; panels 006, 020,
-# 029, 042, 052, 053). Port of crates/heroes/src/emit/ops.rs.
+# 029, 042, 052, 053). Port of archive/bootstrap-rs/heroes/src/emit/ops.rs.
 #
 # inst answers WHICH operation an instruction is and where its result
 # goes; this answers WHAT one operation is in C. The one rule with a

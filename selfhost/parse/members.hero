@@ -1,6 +1,6 @@
 # What sits *inside* a declaration: type parameters, value parameters, record
 # fields, variant cases (design.md §4.2, §4.8, §4.12).
-# Port of crates/heroes/src/syntax/members.rs.
+# Port of archive/bootstrap-rs/heroes/src/syntax/members.rs.
 #
 # One rule explains most of this file: **the lexer keeps planting terminators
 # inside brackets** (panel 007 — a line ending in a name can always be over,

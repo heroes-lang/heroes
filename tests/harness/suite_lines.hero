@@ -2,7 +2,7 @@
 # there.
 #
 # Port of no_generated_line_points_past_or_between_the_authors_lines
-# (crates/heroes-cli/tests/golden.rs:570), run over the whole `run/`
+# (archive/bootstrap-rs/heroes-cli/tests/golden.rs:570), run over the whole `run/`
 # corpus rather than over cases somebody thought of — CLAUDE.md §9's rule
 # about invariants, and the reason this one exists at all.
 #

@@ -1,6 +1,6 @@
 # Records as C: construction, field reads, places with a path, and the
 # calls that keep a counted field alive (design.md §4.9, §4.10; panels
-# 021, 022, 060, 061). Port of crates/heroes/src/emit/aggregate.rs.
+# 021, 022, 060, 061). Port of archive/bootstrap-rs/heroes/src/emit/aggregate.rs.
 #
 # One question: GIVEN A TYPE AND A FIELD INDEX, WHAT IS THE C FOR IT.
 # The field's name is needed to spell the member, and by the IR a field

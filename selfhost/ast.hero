@@ -1,7 +1,7 @@
 # Bodies: blocks, statements, expressions and patterns (design.md §4.4
 # bindings, §4.6 `T?`, §4.7 control flow, §4.9 calls, §4.11 UFCS, §4.14
 # operators, §4.16 holes).
-# Port of crates/heroes/src/syntax/ast/exprs.rs — **the third file**, and the
+# Port of archive/bootstrap-rs/heroes/src/syntax/ast/exprs.rs — **the third file**, and the
 # one that answers the port's last open measurement question: what does a
 # recursive tree cost in a language whose values are all by value?
 #
@@ -372,7 +372,7 @@ variant Library
 
 ## Declarations proper
 
-# Port of crates/heroes/src/syntax/ast/decls.rs. Port note, and it is the
+# Port of archive/bootstrap-rs/heroes/src/syntax/ast/decls.rs. Port note, and it is the
 # `_stmt` finding again at the top level: **all five of Rust's `DeclKind` case
 # names are Heroes keywords** (`constant`, `function`, `record`, `variant`,
 # `test`), so every case carries a `_decl` suffix. The spelling changes; the

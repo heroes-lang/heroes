@@ -1,5 +1,5 @@
 # Escape sequences — the table and the decoder (panel 008).
-# Port of crates/heroes/src/lexer/escape.rs, the pure half: the validator
+# Port of archive/bootstrap-rs/heroes/src/lexer/escape.rs, the pure half: the validator
 # (`LexState.escape`) lives with the lexer state it advances, in scan.
 #
 # Six escapes, split by context (Go's rule), so every character has exactly

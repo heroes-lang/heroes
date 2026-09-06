@@ -1,5 +1,5 @@
 # One instruction, as C (design.md §3.1, §4.14; panels 020, 021, 062).
-# Port of crates/heroes/src/emit/inst.rs.
+# Port of archive/bootstrap-rs/heroes/src/emit/inst.rs.
 #
 # The sibling of the IR's own print_inst, deliberately shaped like it:
 # the same match over the same ops, one arm each, so a new instruction

@@ -1,6 +1,6 @@
 # The top level, collected before any body is looked at — which is the
 # whole of "declaration order never matters" (§4.2).
-# Port of crates/heroes/src/resolve/top.rs.
+# Port of archive/bootstrap-rs/heroes/src/resolve/top.rs.
 #
 # Mutual recursion needs no forward declarations because of this file: by
 # the time `factor` is resolved, `group` is already in the table, and vice

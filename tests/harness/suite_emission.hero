@@ -1,7 +1,7 @@
 # Every program's emitted C, blessed — the instrument that survives the
 # bootstrap.
 #
-# WHY THIS EXISTS. crates/heroes-cli/tests/differential.rs asks the one
+# WHY THIS EXISTS. archive/bootstrap-rs/heroes-cli/tests/differential.rs asks the one
 # question no golden can ask: do the TWO compilers emit the same C? Its
 # oracle is a second implementation, so it is the only test in this
 # repository that must go dark at the archive — and the day it was written

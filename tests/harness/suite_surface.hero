@@ -1,6 +1,6 @@
 # The command surface: what a user types, and what comes back.
 #
-# Port of the table-shaped half of crates/heroes-cli/tests/surface.rs (69
+# Port of the table-shaped half of archive/bootstrap-rs/heroes-cli/tests/surface.rs (69
 # tests, 2,139 lines). Panel 085 measured what the archive would leave of
 # it: 17 in-process successors that "test functions rather than the
 # binary — `cli_argv.parse(...)` returning a value is not `heroes check

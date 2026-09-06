@@ -1,6 +1,6 @@
 # The resolver: every name, and what it means (design.md Part 10 step 4,
 # §4.4, §4.16).
-# Port of crates/heroes/src/resolve/mod.rs::resolve — the driver that cuts
+# Port of archive/bootstrap-rs/heroes/src/resolve/mod.rs::resolve — the driver that cuts
 # the pass into its measured order.
 #
 # One pass over a CLEAN tree answers four questions the checker would

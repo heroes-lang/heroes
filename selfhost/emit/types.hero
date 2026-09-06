@@ -1,6 +1,6 @@
 # Aggregates as C: what a record and a variant look like (design.md
 # §4.2, §4.10, §4.20; panels 022, 060, 062, 074).
-# Port of crates/heroes/src/emit/types.rs.
+# Port of archive/bootstrap-rs/heroes/src/emit/types.rs.
 #
 # This module is the SHAPE; the per-type functions (retain, release,
 # eq — generated because C has no copy constructors, no destructors

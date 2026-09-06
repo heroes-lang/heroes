@@ -1,6 +1,6 @@
 # Whose mistake a clang line is allowed to become (design.md §4.19;
 # CLAUDE.md §7's named exception; panels 048, 062, 074). Port of the
-# lookup half of crates/heroes/src/emit/ffi.rs — the driver's explain()
+# lookup half of archive/bootstrap-rs/heroes/src/emit/ffi.rs — the driver's explain()
 # walk lives in emit_ffi, a leaf module ABOVE the readers; these are
 # the functions every reader shares, split out so the knot the Rust
 # module tree hides never forms.

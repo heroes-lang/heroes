@@ -1,6 +1,6 @@
 # Which types carry a reference the compiler must count (design.md
 # §4.10, §4.20; panels 021, 022).
-# Port of crates/heroes/src/types/counted.rs.
+# Port of archive/bootstrap-rs/heroes/src/types/counted.rs.
 #
 # str, [T] and {K: V} are the only reference-counted things in the
 # language. A record or a variant is BY VALUE and owns no block of its

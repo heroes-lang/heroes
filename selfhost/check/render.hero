@@ -1,5 +1,5 @@
 # A type, written the way the author would have written it.
-# Port of crates/heroes/src/types/render.rs.
+# Port of archive/bootstrap-rs/heroes/src/types/render.rs.
 #
 # Every mismatch message goes through this, and it prints SURFACE syntax —
 # `[{str: Point}?]`, not a tree. design.md §4.17: an error carries what is

@@ -1,6 +1,6 @@
 # Qualified names: `geom.dist2(a: p, b: q)` and `geom.Point(x: 3, y: 4)`
 # (M-module-namespace, panel 031).
-# Port of crates/heroes/src/resolve/qualified.rs.
+# Port of archive/bootstrap-rs/heroes/src/resolve/qualified.rs.
 #
 # Three tokens with two meanings. `x.f(y)` is UFCS — sugar for `f(x, y)` —
 # and `geom.f(y)` is a name from another module, and the surface syntax is

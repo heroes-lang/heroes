@@ -1,6 +1,6 @@
 # A form the context must give a type to, and could not (§4.5's ⇐-only
 # list).
-# Port of crates/heroes/src/types/errors/contextless.rs.
+# Port of archive/bootstrap-rs/heroes/src/types/errors/contextless.rs.
 #
 # value_errors reports a value whose type is KNOWN AND WRONG — a mismatch,
 # an operator that does not take it. These report a form with NO TYPE OF

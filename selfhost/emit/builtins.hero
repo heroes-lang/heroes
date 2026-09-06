@@ -1,5 +1,5 @@
 # Which built-ins reach C, and the entry point each one becomes.
-# Port of crates/heroes/src/emit/inventory.rs.
+# Port of archive/bootstrap-rs/heroes/src/emit/builtins.rs.
 #
 # One module for one question, because the list and the table are the
 # same knowledge and drifting apart is the failure this project keeps

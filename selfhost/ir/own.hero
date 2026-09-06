@@ -1,5 +1,5 @@
 # The ownership pass: values acquire lifetimes (design.md Part 5,
-# §4.10; panels 021, 022). Port of crates/heroes/src/own.rs.
+# §4.10; panels 021, 022). Port of archive/bootstrap-rs/heroes/src/own.rs.
 #
 # The FIRST IR-to-IR pass — a separate pass is what makes the dump show
 # the result and keeps the emitter a printer. Swift's SIL is the

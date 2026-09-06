@@ -1,6 +1,6 @@
 # What a literal's digits *mean*: the four bases and the one decoder
 # (design.md §4.3, §4.15; panel 041).
-# Port of crates/heroes/src/lexer/digits.rs.
+# Port of archive/bootstrap-rs/heroes/src/lexer/digits.rs.
 #
 # There is exactly one decoder, and this is it. The scanner next door reads
 # the same Base table this decoder reads: the two cannot disagree about what

@@ -1,7 +1,7 @@
 # Reading the spec as a document: its code spans, the names it offers, and
 # what it holds above ASCII.
 #
-# Port of the text machinery inside crates/heroes/src/measure/spec.rs. It is
+# Port of the text machinery inside archive/bootstrap-rs/heroes/src/measure/spec.rs. It is
 # a module of its own because the checks that use it are about three
 # different things (the budget, the built-ins, the lexer) and this is the one
 # thing they share: *where in the spec a claim about the language is made*.

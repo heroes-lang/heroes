@@ -1,5 +1,5 @@
 # Types, written back out in surface syntax (design.md §4.15). Port of
-# crates/heroes/src/printer/types.rs.
+# archive/bootstrap-rs/heroes/src/printer/types.rs.
 #
 # There is exactly one correct spelling of every type (§4.15's
 # canonical form), so this renderer has no options and no choices to

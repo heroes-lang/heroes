@@ -2,7 +2,7 @@
 # and everything a call or a pattern needs (design.md §4.5 bidirectional
 # checking, §4.7, §4.8, §4.9, §4.11, §4.12, §4.16; panels 002, 003, 014,
 # 015, 017, 026, 053, 062, 071, 079).
-# Port of crates/heroes/src/types/{exprs,expect,stmts,jumps,arms,patterns,
+# Port of archive/bootstrap-rs/heroes/src/types/{exprs,expect,stmts,jumps,arms,patterns,
 # calls,ufcs,apply,construct,literals}.rs — eleven files, 1,957 lines, one
 # module here: the biggest knot in either compiler.
 #

@@ -1,6 +1,6 @@
 # What the checker leaves behind, and the state it works with (design.md
 # §4.3, §4.16; panels 023, 029).
-# Port of crates/heroes/src/types/checked.rs plus the state half of
+# Port of archive/bootstrap-rs/heroes/src/types/checked.rs plus the state half of
 # types/mod.rs — the same pairing resolve_state made, for the same reason:
 # in Rust they are two files held together by impl blocks; here they are
 # one concern with no cycle forcing them.

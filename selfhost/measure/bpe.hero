@@ -1,6 +1,6 @@
 # The BPE rank table and the merge loop.
 #
-# Port of crates/heroes/src/measure/bpe.rs. A BPE tokeniser is a ranked list
+# Port of archive/bootstrap-rs/heroes/src/measure/bpe.rs. A BPE tokeniser is a ranked list
 # of byte sequences. To tokenise a piece, start with one part per byte and
 # repeatedly merge the LOWEST-ranked adjacent pair that appears in the
 # table, until no adjacent pair does; the token count is the number of parts

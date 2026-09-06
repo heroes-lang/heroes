@@ -1,6 +1,6 @@
 # Pre-tokenisation: cutting text into the pieces BPE merges within.
 #
-# Port of crates/heroes/src/measure/pretokenize.rs. Before any merging
+# Port of archive/bootstrap-rs/heroes/src/measure/pretokenize.rs. Before any merging
 # happens, a BPE tokeniser splits the text on a fixed pattern so that a
 # merge can never cross a boundary — which is why `"hello"` and `" hello"`
 # are two different tokens, and why a run of spaces is its own piece. Both

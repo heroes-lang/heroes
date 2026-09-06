@@ -1,7 +1,7 @@
 # `x.fixed` — CLAUDE.md §8's promise, made executable.
 #
 # Port of applying_certain_fixes_produces_the_fixed_file_and_it_checks
-# _clean (crates/heroes-cli/tests/golden.rs:169). §8 says only a `certain`
+# _clean (archive/bootstrap-rs/heroes-cli/tests/golden.rs:169). §8 says only a `certain`
 # fix is machine-applicable, which is a claim about every fix the compiler
 # tags that way, and this is the two-part test of it:
 #

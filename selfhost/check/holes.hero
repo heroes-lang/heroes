@@ -1,5 +1,5 @@
 # ??? output: what the compiler already knows (design.md §4.16).
-# Port of crates/heroes/src/types/holes.rs.
+# Port of archive/bootstrap-rs/heroes/src/types/holes.rs.
 #
 # A hole is NOT an error. The compiler reaches it, finds it has
 # nothing to compute, and prints what it was about to need instead:

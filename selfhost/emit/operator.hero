@@ -1,6 +1,6 @@
 # One operator as C — and the guard that keeps it out of undefined
 # behaviour (design.md §4.14; panels 020, 022, 035, 040, 042, 075).
-# Port of crates/heroes/src/emit/operator.rs.
+# Port of archive/bootstrap-rs/heroes/src/emit/operator.rs.
 #
 # The concern is single and it is the loudest rule in the emitter:
 # ARITHMETIC ABORTS, IT NEVER WRAPS INTO UB. __builtin_*_overflow for

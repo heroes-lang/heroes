@@ -1,5 +1,5 @@
 # The class where A PARAMETER NARROWS IN SILENCE (design.md §4.19;
-# panels 051, 052, 071). Port of crates/heroes/src/emit/ffi_narrowed.rs.
+# panels 051, 052, 071). Port of archive/bootstrap-rs/heroes/src/emit/ffi_narrowed.rs.
 #
 # Kept apart from ffi_declared because the mechanism differs in the
 # way that matters: those classes read a message this emitter wrote,

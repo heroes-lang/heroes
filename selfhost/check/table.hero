@@ -1,6 +1,6 @@
 # The type table: what a type IS once the checker has it, as opposed to
 # how it was written (design.md §4.3, §4.6, §4.12).
-# Port of crates/heroes/src/types/table.rs — the checker's foundation.
+# Port of archive/bootstrap-rs/heroes/src/types/table.rs — the checker's foundation.
 #
 # **Types are interned, and interning is the whole design.** Every
 # distinct type gets exactly one id, so `a == b` on two ids IS type

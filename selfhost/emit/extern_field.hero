@@ -1,6 +1,6 @@
 # What ONE FIELD asserts about the header, as C (design.md §4.19;
 # panels 060, 062, 064, 071, 079, 081). Port of
-# crates/heroes/src/emit/extern_field.rs.
+# archive/bootstrap-rs/heroes/src/emit/extern_field.rs.
 #
 # Every branch answers the same question in the same shape — is the
 # header's member this type — asked with _Generic on the ADDRESS,

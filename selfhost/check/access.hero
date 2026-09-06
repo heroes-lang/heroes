@@ -1,5 +1,5 @@
 # Reaching inside a value: a field, an index, and `?` (§4.3, §4.6, §4.9).
-# Port of crates/heroes/src/types/access.rs.
+# Port of archive/bootstrap-rs/heroes/src/types/access.rs.
 #
 # Three rules, and each one is a place where the language's shape shows:
 # a FIELD belongs to a record, to a CASE of a variant (a case with fields

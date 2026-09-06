@@ -1,6 +1,6 @@
 # Monomorphisation: one copy of a generic function per concrete type
 # tuple (design.md §4.12; panels 029, 084).
-# Port of crates/heroes/src/ir/{mono,mono_subst,mono_recursion}.rs —
+# Port of archive/bootstrap-rs/heroes/src/ir/{mono,mono_subst,mono_recursion}.rs —
 # one module, because the driver and the recursion refusal share the
 # queue: the eighth knot.
 #

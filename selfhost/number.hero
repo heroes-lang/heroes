@@ -1,6 +1,6 @@
 # Which characters *are* a number: the scanner for the four bases and the `_`
 # separator (design.md §4.3, §4.15; panel 041).
-# Port of crates/heroes/src/lexer/number.rs.
+# Port of archive/bootstrap-rs/heroes/src/lexer/number.rs.
 #
 # What those characters *mean* is digits.hero, and the two share one Base
 # table so they cannot disagree about what a prefix is.

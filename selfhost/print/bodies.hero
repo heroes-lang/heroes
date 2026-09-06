@@ -1,5 +1,5 @@
 # Blocks, statements and expressions, written back out for --dump-ast
-# (design.md §4.15). Port of crates/heroes/src/printer/bodies.rs.
+# (design.md §4.15). Port of archive/bootstrap-rs/heroes/src/printer/bodies.rs.
 #
 # One decision shapes this file: EVERY binary and unary expression is
 # printed with its parentheses, whether the source had them or not —

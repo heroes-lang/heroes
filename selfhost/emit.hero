@@ -1,6 +1,6 @@
 # The backend's front door: the IR becomes one C11 translation unit
 # (design.md §3.1; panels 020, 023). Port of the driver half of
-# crates/heroes/src/emit/mod.rs — the file that says the ORDER the
+# archive/bootstrap-rs/heroes/src/emit/mod.rs — the file that says the ORDER the
 # department writes in, and nothing else.
 #
 # A printer plus two mechanical passes — declaration ordering (Heroes'

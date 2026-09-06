@@ -1,7 +1,7 @@
 # Control flow and fallibility: what `return` owes the signature, where a
 # jump is meaningful, what `?` needs, and the difference between a branch
 # that CANNOT produce a value and one that simply did not.
-# Port of crates/heroes/src/types/errors/flow.rs.
+# Port of archive/bootstrap-rs/heroes/src/types/errors/flow.rs.
 #
 # That last distinction is the whole of panel 017 A, seen from the message
 # side: `no_value` fires where every branch jumps, `branch_without_value`

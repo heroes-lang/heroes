@@ -1,6 +1,6 @@
 # Metric 3, offline: the silent-error rate (design.md Part 11).
 #
-# Port of crates/heroes/src/mutate/{mod,survivors}.rs. The thesis says every
+# Port of archive/bootstrap-rs/heroes/src/mutate/{mod,survivors}.rs. The thesis says every
 # plausible LLM mistake should be a compile error. This pass is the falsifier:
 # take a program that compiles, make one plausible mistake in it, and ask
 # whether the compiler notices. A mutant the compiler **rejects** is KILLED —

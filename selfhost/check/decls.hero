@@ -1,6 +1,6 @@
 # One declaration at a time: what its body is FOR, and what `return`
 # owes it (design.md §4.2, §4.7, §4.18, §4.19; panels 020, 035, 060, 062).
-# Port of crates/heroes/src/types/decls.rs.
+# Port of archive/bootstrap-rs/heroes/src/types/decls.rs.
 #
 # Three shapes, and the difference between them is the whole reason Want
 # exists: a CONSTANT's body IS its value, so its last statement is

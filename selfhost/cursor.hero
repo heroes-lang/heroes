@@ -1,6 +1,6 @@
 # The token cursor: the parser's only way to move, and the only place that
 # knows how to fail.
-# Port of crates/heroes/src/syntax/cursor.rs.
+# Port of archive/bootstrap-rs/heroes/src/syntax/cursor.rs.
 #
 # Three jobs, all of them invariants the grammar files then get to ignore:
 #
@@ -371,7 +371,7 @@ test "a section heading ends the run rather than documenting the declaration"
 
 ## Recovery — what to drop after a mistake
 
-# Port of crates/heroes/src/syntax/recover.rs, which is an `impl Cursor` on the
+# Port of archive/bootstrap-rs/heroes/src/syntax/recover.rs, which is an `impl Cursor` on the
 # Rust side: the same struct, a second file. Here it is the same record and the
 # same file, because the port's cursor is 250 lines rather than 268 + 117 — the
 # Rust split was §11's ceiling, and the port has not reached it.

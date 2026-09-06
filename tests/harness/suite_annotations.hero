@@ -2,7 +2,7 @@
 # the source that provokes it.
 #
 # Port of every_diagnostic_is_annotated_in_the_source_that_provokes_it
-# (crates/heroes-cli/tests/golden.rs:344), and panel 085 named it first
+# (archive/bootstrap-rs/heroes-cli/tests/golden.rs:344), and panel 085 named it first
 # among the tests with NO successor whatever — so this is the module that
 # milestone exists for.
 #

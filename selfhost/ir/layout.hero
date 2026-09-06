@@ -1,5 +1,5 @@
 # Where a field lives, and which case a name is (design.md §4.2, §4.6,
-# §4.9). Port of crates/heroes/src/ir/layout.rs.
+# §4.9). Port of archive/bootstrap-rs/heroes/src/ir/layout.rs.
 #
 # By here a field is an INDEX, not a name. The checker already matched
 # the name against the declaration to give the expression its type;

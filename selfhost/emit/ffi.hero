@@ -1,6 +1,6 @@
 # Turning clang's verdict on an extern back into a Heroes diagnostic
 # (design.md §4.19; panel 036 rider 3; CLAUDE.md §7's named exception).
-# Port of the driver half of crates/heroes/src/emit/ffi.rs — the
+# Port of the driver half of archive/bootstrap-rs/heroes/src/emit/ffi.rs — the
 # lookups it shares with the readers live below them in
 # emit_ffi_lookup, so the knot the Rust module tree hides never forms.
 #

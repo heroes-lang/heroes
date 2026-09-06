@@ -1,6 +1,6 @@
 # The eight integer widths and the two float widths, and what a width
 # implies (spec § Types; design.md §4.3; panel 042, ratified 2026-08-12).
-# Port of crates/heroes/src/types/{widths,floats}.rs — the width halves
+# Port of archive/bootstrap-rs/heroes/src/types/{widths,floats}.rs — the width halves
 # only; the float payload rules stay with the checker port.
 #
 # **This variant exists so that a width cannot be forgotten**, measured on

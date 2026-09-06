@@ -1,6 +1,6 @@
 # THE ORDER every typedef comes out in — one order over two kinds
 # (design.md §4.2, §4.6, §4.20; panel 023 R3). Port of
-# crates/heroes/src/emit/typeorder.rs.
+# archive/bootstrap-rs/heroes/src/emit/typeorder.rs.
 #
 # emit_types is the SHAPE a declaration takes in C; this file is the
 # sequence. C needs every struct complete before it is used by value,

@@ -29,11 +29,25 @@
 # that makes it a diagnostic rather than an internal error: exit 1, the `.hero`
 # line, and the field named as the author named it.
 #
-# The still-open twin is recorded rather than hidden: the MIRROR shape, a fixed
-# array declared where the header has a scalar (`d_type: i8[4]` against
-# `unsigned char`), is still exit 2, because its assertion subscripts the member
-# and a scalar cannot be subscripted. Its repair needs the element's width and
-# sign asked without a subscript, which is `docs/debrief/DECIDE.md`'s entry.
+# THE TWIN WAS OPEN WHEN THIS WAS WRITTEN AND IS CLOSED NOW. The MIRROR shape —
+# a fixed array declared where the header has a scalar, `d_type: i8[4]` against
+# `unsigned char` — was exit 2 for the same reason one position over: its
+# assertion SUBSCRIPTED the member, and a scalar cannot be subscripted. It was
+# repaired 2026-08-24, and the repair is option (a) of the three that were
+# priced: C's twelve integer types enumerated as array-pointer `_Generic`
+# associations, so the length rides inside each association as `(*)[N]` and no
+# subscript is needed anywhere (`docs/work/DONE.md`).
+#
+# Re-measured 2026-09-06 rather than taken from that record: `heroes build` on
+# the mirror program is `error[ffi_field_type]` at **exit 1** with the caret on
+# the field — the same shape this file pins. Worth knowing beside it:
+# `heroes check` on that program is exit **0**, because the header is read by
+# the extern probe and the probe runs at build.
+#
+# This paragraph said *"the still-open twin … is still exit 2"* for thirteen
+# days after the repair, and pointed at a decision list in a directory retired
+# 2026-08-26. A comment that describes a defect the compiler no longer has is
+# read as current by whoever meets it next (CLAUDE.md §11).
 
 extern "dirent.h"
     record Dirent tag dirent partial

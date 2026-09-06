@@ -1,8 +1,8 @@
 # The spec, against its own budget and against the compiler.
 #
 # Ports the two Rust modules that are TESTS and therefore die with the
-# bootstrap: `crates/heroes/src/measure/gate.rs` (the §1.6 budget's gate) and
-# `crates/heroes/src/measure/spec.rs` (the spec-versus-compiler checks).
+# bootstrap: `archive/bootstrap-rs/heroes/src/measure/gate.rs` (the §1.6 budget's gate) and
+# `archive/bootstrap-rs/heroes/src/measure/spec.rs` (the spec-versus-compiler checks).
 # Panel 085's spec-warden vetoed the archive over exactly this — §1.6's
 # ceiling had one live enforcer, and it was `cfg(test)` inside a crate about
 # to be archived.
@@ -49,7 +49,7 @@ constant REGISTRY: str
     "spec/reserved-words.md"
 
 # The ledger — one row per spec amendment, with what it cost and what paid for
-# it. It lived in `crates/heroes/src/measure/gate.rs`'s doc comment until panel
+# it. It lived in `archive/bootstrap-rs/heroes/src/measure/gate.rs`'s doc comment until panel
 # 086 moved it here, verbatim, ahead of the archive: `docs/measurements/` is the
 # one candidate directory that is both on CLAUDE.md §14's never-rewritten list
 # and already outside `suite_records.hero`'s walk.

@@ -1,5 +1,5 @@
 # T? as C: two alternatives, a tag, and never a guess about which one
-# is live (design.md §4.6, §4.8). Port of crates/heroes/src/emit/fallible.rs.
+# is live (design.md §4.6, §4.8). Port of archive/bootstrap-rs/heroes/src/emit/fallible.rs.
 #
 # Its own module because a T? is the one aggregate whose members are
 # ALTERNATIVES: a record's fields all exist at once, and reading the

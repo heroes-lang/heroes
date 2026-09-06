@@ -1,6 +1,6 @@
 # Which types have a size, in what order C can be told about them, and
 # which cycle the author is shown (design.md §3.1, §4.3, §4.10; panel 023).
-# Port of crates/heroes/src/types/{sized,sized_cycle}.rs — mutual through
+# Port of archive/bootstrap-rs/heroes/src/types/{sized,sized_cycle}.rs — mutual through
 # Edge and the two reporters, so one Heroes module: the fifth boundary
 # the cycle rule has drawn.
 #

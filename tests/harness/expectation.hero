@@ -1,6 +1,6 @@
 # What a running program is expected to do, and the one reader of it.
 #
-# Port of crates/heroes-cli/tests/expectation/mod.rs, and it exists here
+# Port of archive/bootstrap-rs/heroes-cli/tests/expectation/mod.rs, and it exists here
 # for the reason it exists there: two suites execute programs and diff
 # what comes out — `run/` and, when it lands, the corpus — so the
 # convention lives in one file rather than in whichever suite was written

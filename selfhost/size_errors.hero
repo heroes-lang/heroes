@@ -1,6 +1,6 @@
 # A type that would have to contain one of itself at every depth (panel
 # 023).
-# Port of crates/heroes/src/types/errors/sizes.rs.
+# Port of archive/bootstrap-rs/heroes/src/types/errors/sizes.rs.
 #
 # Its own file because size is its own subject: data_errors answers "does
 # this shape have that field", and this answers "can this shape exist at

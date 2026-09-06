@@ -1,7 +1,7 @@
 # The same one-character slip, in three places the compiler has different
 # authority over (design.md Part 11; `harness/mutations/operators.md`).
 #
-# Port of crates/heroes/src/mutate/edits_typo.rs. The three belong together
+# Port of archive/bootstrap-rs/heroes/src/mutate/edits_typo.rs. The three belong together
 # because **the mutation is identical and only the target changes** — which is
 # what turns them from three operators into one measurement:
 #

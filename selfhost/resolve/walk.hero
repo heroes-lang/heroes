@@ -1,7 +1,7 @@
 # The resolver's walk: statements, expressions, patterns, and the left of
 # `@` (design.md §4.4 the three line shapes, §4.7 loops and match, §4.9
 # calls, §4.11 UFCS, §4.16 holes; panels 015, 031).
-# Port of crates/heroes/src/resolve/{stmts,exprs,places}.rs — three files,
+# Port of archive/bootstrap-rs/heroes/src/resolve/{stmts,exprs,places}.rs — three files,
 # 434 lines, one module here.
 #
 # ## The map this file owes its reader (CLAUDE.md §11)

@@ -1,5 +1,5 @@
 # heroes --help: the table, plus the contract (panel 016). Port of
-# crates/heroes-cli/src/cli/help.rs.
+# archive/bootstrap-rs/heroes-cli/src/cli/help.rs.
 #
 # The exit codes are printed because a wrapper script has nowhere else
 # to read them, and HEROES_RUNTIME is printed because it is the one

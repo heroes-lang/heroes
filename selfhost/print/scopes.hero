@@ -1,5 +1,5 @@
 # heroes check --dump-scopes: what the resolver decided, seen
-# (design.md §3.5, §4.4). Port of crates/heroes/src/printer/scopes.rs.
+# (design.md §3.5, §4.4). Port of archive/bootstrap-rs/heroes/src/printer/scopes.rs.
 #
 # A pass whose output nobody can look at is a pass nobody can debug.
 # Two things the resolver knows that no earlier stage did: the

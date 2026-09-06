@@ -1,6 +1,6 @@
 # The two word tables: Heroes' own keywords, and the foreign words that fail
 # loudly with the repair pre-written.
-# Port of crates/heroes/src/lexer/keywords.rs (M-selfhost-probe).
+# Port of archive/bootstrap-rs/heroes/src/lexer/keywords.rs (M-selfhost-probe).
 #
 # `keyword` is the closed list from spec/reserved-words.md § keywords — these
 # can never be identifiers. `foreign_word` is the registry's other half and the

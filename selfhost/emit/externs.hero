@@ -1,5 +1,5 @@
 # What an extern group puts in the translation unit (design.md §4.19;
-# panels 036, 038, 061). Port of crates/heroes/src/emit/externs.rs.
+# panels 036, 038, 061). Port of archive/bootstrap-rs/heroes/src/emit/externs.rs.
 #
 # Four walks over the same declarations, together because each answers
 # a question the group's head line asked: which HEADERS the unit

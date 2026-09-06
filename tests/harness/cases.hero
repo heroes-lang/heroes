@@ -1,6 +1,6 @@
 # The golden tree, read as pairs.
 #
-# Port of collect_cases at crates/heroes-cli/tests/golden.rs:54, and it
+# Port of collect_cases at archive/bootstrap-rs/heroes-cli/tests/golden.rs:54, and it
 # keeps that function's one sharp rule: an unpaired file is a BROKEN
 # TEST, not a skip. A `.hero` with no `.expected` and an expectation with
 # no source both stop the harness with the name of the offender, because

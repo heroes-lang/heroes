@@ -1,5 +1,5 @@
 # Owned lexing state — position, layout, output — and the two ways a token
-# enters the stream. Port of the LexState half of crates/heroes/src/lexer/mod.rs;
+# enters the stream. Port of the LexState half of archive/bootstrap-rs/heroes/src/lexer/mod.rs;
 # the drive loop (`lex`, `lex_one`) arrives with the scanners that feed it.
 #
 # The source text is a parameter everywhere and never a field (the Cyclone

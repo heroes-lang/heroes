@@ -1,5 +1,5 @@
 # The dump: what --dump-ir prints (design.md §3.5; panel 019 point 7).
-# Port of crates/heroes/src/ir/{print,print_inst,print_names}.rs — one
+# Port of archive/bootstrap-rs/heroes/src/ir/{print,print_inst,print_names}.rs — one
 # module, because the instruction printer and the name recovery call
 # each other: the seventh knot, and a small one.
 #

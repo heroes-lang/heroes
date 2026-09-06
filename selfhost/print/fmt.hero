@@ -1,6 +1,6 @@
 # heroes fmt: the canonical formatter (design.md §4.15; panels 007,
 # 014, 018, 036, 038, 040, 060, 061, 062). Port of the fmt knot —
-# crates/heroes/src/printer/{fmt,fmt_decl,fmt_extern,fmt_comments,
+# archive/bootstrap-rs/heroes/src/printer/{fmt,fmt_decl,fmt_extern,fmt_comments,
 # fmt_stmt,fmt_expr,fmt_arms,fmt_break,fmt_fits}.rs, nine files as one
 # module, because the walk is mutually recursive by construction:
 # declaration -> block -> statement -> valued -> block (an if carries

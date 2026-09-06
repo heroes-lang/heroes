@@ -1,6 +1,6 @@
 # The lowering pass's state, and the only thing that may add a block, a
 # slot or a temporary (design.md Part 10 step 6; panel 019 points 2, 3).
-# Port of crates/heroes/src/ir/{build,slots}.rs — one module, because
+# Port of archive/bootstrap-rs/heroes/src/ir/{build,slots}.rs — one module, because
 # Rust split one state by concern across two files of methods, and
 # Heroes has no method files: this record IS both halves.
 #

@@ -2,8 +2,8 @@
 # Rust bootstrap is archived (M-harness-port; panel 085 R4).
 #
 # WHY THIS EXISTS. Everything that asks whether the compiler is right
-# lives in crates/heroes-cli/tests/*.rs today, and all of it dies with
-# `crates/`. Panel 085 measured what would be left: nothing runs
+# lives in archive/bootstrap-rs/heroes-cli/tests/*.rs today, and all of it dies with
+# `archive/bootstrap-rs/`. Panel 085 measured what would be left: nothing runs
 # `selfhost/`'s own tests, no selfhost test touches a golden, and 208
 # golden cases go dark. This program is the replacement, and it is a
 # PROGRAM rather than a subcommand because §10's stopping rule refuses the
@@ -23,7 +23,7 @@
 # (`shell.some_compiler`): $HEROES_COMPILER, then `./heroes-from-seed` — what
 # CI builds out of `seed/heroes.c` with clang alone — then `./build/heroes-seed`,
 # then the bootstrap. That order is the archive's order, so this line does not
-# change on the day `crates/` moves.
+# change on the day `archive/bootstrap-rs/` moves.
 #
 # Exit: 0 all green · 1 something failed · 2 the harness could not run.
 # That is §10's contract for a tool whose artifact is a verdict.
@@ -99,7 +99,7 @@ function main()
 
     # No compiler named: ask the machine which one is here (shell.some_compiler
     # — the seed-built one first, the bootstrap last), so the same invocation
-    # works before and after `crates/` is archived.
+    # works before and after `archive/bootstrap-rs/` is archived.
     compiler: str @ shell.some_compiler()
 
     if given.len() > 0

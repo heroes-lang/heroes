@@ -1,5 +1,5 @@
 # Reading the file, once (CLAUDE.md §10's exit contract). Port of
-# crates/heroes-cli/src/input.rs.
+# archive/bootstrap-rs/heroes-cli/src/input.rs.
 #
 # Five bootstrap commands used to carry their own copy of "cannot
 # read", their own USAGE string and their own idea of what to exit

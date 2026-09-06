@@ -1,5 +1,5 @@
 # Errors as a product: the diagnostic and its machine-applicable repairs
-# (design.md §4.17). Port of the slice of crates/heroes/src/diagnostics.rs the
+# (design.md §4.17). Port of the slice of archive/bootstrap-rs/heroes/src/diagnostics/mod.rs the
 # lexer needs: code, message, span, fixes, notes.
 #
 # Port notes:

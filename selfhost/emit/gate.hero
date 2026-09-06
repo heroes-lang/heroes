@@ -1,6 +1,6 @@
 # What this backend cannot emit yet, said in a way that ends the
 # reader's loop (panels 020 R1/R2, 029 R4b, 067, 068, 081 R3, 082 R1).
-# Port of crates/heroes/src/emit/{gate,gate_types,gate_ops}.rs — one
+# Port of archive/bootstrap-rs/heroes/src/emit/{gate,gate_types,gate_ops}.rs — one
 # module, because the two tables and the list that collects them call
 # each other: the tenth knot, and the last one emit/ draws.
 #

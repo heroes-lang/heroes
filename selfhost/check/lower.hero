@@ -1,5 +1,5 @@
 # A written type becomes an interned id (design.md §4.3, §4.6, §4.12).
-# Port of crates/heroes/src/types/lower.rs.
+# Port of archive/bootstrap-rs/heroes/src/types/lower.rs.
 #
 # The resolver already answered the hard half: which declaration or
 # primitive each named node refers to (type_uses). This file only

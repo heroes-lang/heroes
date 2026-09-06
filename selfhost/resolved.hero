@@ -1,5 +1,5 @@
 # What the resolver leaves behind (design.md §4.4, §4.16; panels 015, 031, 033).
-# Port of crates/heroes/src/resolve/resolved.rs — **the second file**, chosen
+# Port of archive/bootstrap-rs/heroes/src/resolve/resolved.rs — **the second file**, chosen
 # because the lexer had zero maps and zero closures, so its gap list was a
 # lower bound (docs/ROADMAP.md § M-selfhost-probe).
 #
