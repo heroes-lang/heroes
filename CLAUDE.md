@@ -123,6 +123,30 @@ The cost of the rule is one command per list. The cost of breaking it was a
 five-judge sitting convened on 2.6% of its subject, and a defect that would have
 stayed open under a recommendation that was correct about everything it named.
 
+**AND READING IS NOT MEASURING — WHAT WAS SEEN ON A SCREEN IS NOT WHAT WAS
+COUNTED OR OPENED** (author instruction 2026-09-06, *"write this in CLAUDE.md"*).
+Everything above is about facts taken from memory or from a document. These two
+came from **looking at the right output and not finishing the job**, which is a
+cheaper mistake to make and just as false on the page. Both were caught, in the
+same session, only because somebody went back and ran the thing.
+- *"Twenty-six lines of code"*, written into a commit message about a runtime
+  change. The number came from **eyeballing a filtered diff** that happened to
+  print about forty lines. Counted — one `git diff` and a filter that drops
+  comments and blanks — it is **33 added and 28 removed**. A count that a command
+  can produce is not estimated from the shape of a screenful; §1's rule about
+  running the measurement has no exception for a number that looks countable.
+- *"Reached from `hero_f64_render` and from the parse side"*, written into three
+  documents. The grep had shown two call sites and the second was **assumed** to
+  be the parse half; opening it, it is `hero_f32_render`, and the `strtod` inside
+  both is a round-trip check rather than a program-facing parse. **Two call sites
+  is a count, not an identity.** A name goes into a sentence after the function
+  is opened, not after the line number is seen.
+
+The shape they share is the tell: a command was run, its output was read, and the
+**last step** — count it, open it — was skipped because the answer felt already
+in view. The rule is to finish the command, and where the sentence names a thing
+rather than a number, to open the thing.
+
 ## 2. Principle 0 (necessary-not-sufficient)
 The language is finished for v1 when it can compile itself. A form enters v1
 if the compiler needs it (the closure list) **or** it provably serves the
@@ -837,6 +861,28 @@ repeated; what follows is what they did not.
   the one that decides how a session is planned — a rebuild believed to cost 17
   minutes gets batched, deferred, and sometimes skipped, and skipping is the
   failure this whole paragraph exists to prevent.
+  **AND THE LOAD THAT RUINS A MEASUREMENT IS THE ONE THE MEASURER MAKES: WHILE A
+  CLOCK IS RUNNING, THE MACHINE STAYS STILL** (author instruction 2026-09-06,
+  *"write this in CLAUDE.md"*, given after a session spoiled its own timings
+  three times). *"Look at the machine's load first"* is above and it was
+  **obeyed** — 1.89, nothing heavy, checked before the first run. It looks at an
+  **instant**, and the load that ruined these runs did not exist at that instant:
+  the session created it afterwards, by building, by running three suites, and by
+  syncing the Windows box while its own comparison was in flight. One arm then
+  read **937.21 s of wall against 33.68 s of CPU** where the other arm's
+  comparable run was 36 s — 3.6% of one core, which is memory pressure from two
+  975,000-line compilations at once and not a fact about the code. Three
+  obligations follow. **Nothing else runs while a timed run does** — not a build,
+  not another suite, not a container, not an `scp`; a remote box is not an
+  exception, because the push, the copy and the ssh all run here. **The tell is
+  the ratio, so read it**: `real` far above `user` + `sys` means the process was
+  waiting, not computing, and the run is discarded rather than explained. And
+  **a discarded run is written down with its reason**, because a measurement that
+  quietly drops its inconvenient half is worth less than none.
+  **The same discipline binds the TREE, and that is the worse version of it**:
+  the same session edited `runtime/` while the net was running over that
+  `runtime/`, so some checks used the old objects and some the new. That run was
+  killed and redone. A suite reading the tree owns the tree until it exits.
 - **No em dashes and no machine-written patterns, on the site and in the chat**
   (2026-08-25, *"NO AI SLOP — get rid of all the —"*). The rulebook is `site/README.md`
   § Style guide and `site/CLAUDE.md`; the chat half is that the assistant's
