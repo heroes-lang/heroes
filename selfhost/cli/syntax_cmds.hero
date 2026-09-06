@@ -301,3 +301,40 @@ function strings_has(haystack: str, needle: str) -> bool
         at @ at + 1
 
     return false
+
+test "the tree guard sees `owned`, and this is the alias test's own lesson applied before the fact"
+    # **The same shape as the alias above, pinned BEFORE it could ship.** On
+    # 2026-09-06, with `owned <freer>` parsing correctly, `heroes fmt` printed
+    # `function strdup(s: cstr) -> cstr` — the mark silently deleted — and
+    # `--dump-ast` dropped it too. Both renderings would have agreed, so this
+    # guard would have reported *"the same tree"* while `fmt --in-place` wrote
+    # a program whose C-allocated string is never freed, at exit 0, with
+    # nothing on either stream.
+    #
+    # For this form a dropped word is not a lost word, it is a LEAK: measured
+    # the day it landed, the same program with and without the mark differs by
+    # **12.8 MB** of peak resident size over 200,000 strings.
+    #
+    # The pair below is the one the defect produced. It fails the day the dump
+    # stops carrying `owned`, which is the day the guard goes blind again.
+    original = "extern \"stdlib.h\"\n    function free(p: ptr)\n\nextern \"string.h\"\n    function strdup(s: cstr) -> cstr owned free\n\nfunction main()\n    print(0)\n"
+    stripped = "extern \"stdlib.h\"\n    function free(p: ptr)\n\nextern \"string.h\"\n    function strdup(s: cstr) -> cstr\n\nfunction main()\n    print(0)\n"
+    caught = refuse_output_the_formatter_broke(path: "t.hero", original: original, formatted: stripped)
+    assert !caught.is_err()
+    assert strings_has(haystack: caught.must(), needle: "changed the TREE")
+
+    # The `@` position too, because the mark rides two places and a guard that
+    # sees one of them is the same blindness one position over.
+    at_original = "extern \"x.h\"\n    function run(@e: cstr owned drop) -> i32\n    function drop(p: ptr)\n\nfunction main()\n    print(0)\n"
+    at_stripped = "extern \"x.h\"\n    function run(@e: cstr) -> i32\n    function drop(p: ptr)\n\nfunction main()\n    print(0)\n"
+    at_caught = refuse_output_the_formatter_broke(path: "t.hero", original: at_original, formatted: at_stripped)
+    assert !at_caught.is_err()
+
+    # And it stays quiet on the real thing, in both positions.
+    for text in [original, at_original]
+        parsed = parse.parse(text)
+        s = source.new_source(name: "t.hero", text: text)
+        formatted = fmt.format_file(parsed.tree, s, parsed.comments, parsed.uses, parsed.decls)
+        assert formatted == text
+        quiet = refuse_output_the_formatter_broke(path: "t.hero", original: text, formatted: formatted)
+        assert quiet.is_err()
