@@ -139,11 +139,23 @@ constant LEAST_REFCOUNT: i64
 # allow-list lines that had just stopped matching anything, which is the
 # other direction and the one a hand-written table never notices.
 #
-# Where it stands after step 4, measured that day: **32 objects, 15
-# `_Thread_local`, 3 `_Atomic`, 14 still shared, 6 of them inside
-# function bodies.** The 14 are the eleven entries below — three of the
-# entries cover a pair each — and ten of them are `M-thread-stacks`' or
-# are safe by where they are called.
+# **AND A FOURTH TIME AT STEP 6**, which is the one worth reading,
+# because it is the first entry on this list that is not waiting for a
+# repair. `runtime/parts/spawn.c` gave the runtime its own way to start a
+# thread, and its table of running threads plus the mutex guarding it are
+# shared ON PURPOSE — a spawned thread may itself spawn, so two threads
+# choose a slot at once, and choosing one is a read-then-write over
+# several fields rather than one counter. That is the shape an atomic
+# cannot make single, and it is `cow.c`'s shape; the difference is that
+# here the runtime owns both sides, so a mutex is available and there it
+# is not. The sweep named all three lines — the table and the lock in
+# each platform arm — in the run that was meant to confirm the threads.
+#
+# Where it stands after step 6, measured that day: **35 objects across 21
+# files, 15 `_Thread_local`, 3 `_Atomic`, 17 shared, 6 of them inside
+# function bodies.** The 17 are the thirteen entries below, three of which
+# cover a pair each; ten are `M-thread-stacks`' or are safe by where they
+# are called, and two are the spawn table and its lock.
 #
 # WHAT IS ALLOWED. `_Thread_local` and `_Atomic` need no entry: the
 # spelling itself says the object was thought about. Everything else must
@@ -161,6 +173,8 @@ constant SHARED_BY_DECISION: [str]
         "runtime/parts/alloc.c hero_kept_key | the POSIX key whose destructor gives a thread's kept buffer back. Written ONCE, inside `pthread_once`, and only read afterwards — which is what a once-guard buys and the one shape where `shared` and `safe` are the same word. A plain `_Atomic` flag would not do: two threads racing to make the key would make two, and the loser's destructor would never run"
         "runtime/parts/alloc.c hero_kept_slot | the Windows half of the same thing, `FlsAlloc`'s index, written once inside `InitOnceExecuteOnce`. Windows has no pthreads at all — measured on the box 2026-09-06, `pthread.h` is not found under clang targeting MSVC"
         "runtime/parts/alloc.c once | the two once-guards themselves, `pthread_once_t` and `INIT_ONCE`, one per platform arm. Being shared is their entire job and the platform owns their synchronisation; there is nothing here for this project to make safe"
+        "runtime/parts/spawn.c hero_spawn_slots | THE ONE OBJECT IN THIS RUNTIME THAT IS SHARED ON PURPOSE AND GUARDED BY A LOCK, and the only entry here that is not waiting for a repair. It is the table of running threads, and it cannot be any of the three other answers: a spawned thread may itself spawn, so two threads choose a slot at the same moment, and choosing one is a read-then-write over several fields rather than one counter — the shape an atomic cannot make single, which is `cow.c`'s shape and the reason panel 113 left that open. Here the answer is a mutex because here the runtime owns both sides of it (design.md Part 7.13; panels 111, 113, 114)"
+        "runtime/parts/spawn.c hero_spawn_lock | the mutex that guards the table above, one per platform arm — `pthread_mutex_t` on POSIX, `SRWLOCK` on Windows, which has no pthreads at all. Being shared is what a lock IS, and the platform owns its safety"
         "runtime/parts/os.c done | two once-guards, for byte-mode stdout on Windows and for unbuffered stderr. Safe because of WHERE THEY ARE CALLED and not because of how they are written: both run inside `hero_args_set`, which the generated `main` calls before a program's first line, on the thread that owns the program. If a second caller is ever added this entry is wrong"
         "runtime/parts/os.c hero_argc | the process's own argument count, written once by `hero_args_set` before any thread can exist and only read afterwards. Process-wide by nature: `args()` must answer the same thing on every thread"
         "runtime/parts/os.c hero_argv | the process's own argument vector, and the same reasoning"

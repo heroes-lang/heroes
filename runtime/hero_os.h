@@ -230,4 +230,29 @@ int64_t hero_run_go(const char *program, const char *in_path,
                     const char *out_path,
                     const char *err_path, int64_t *status);
 
+/* -- threads (design.md Part 7.13; panels 111, 113 and 114) ------------------
+ *
+ * A FOURTH EDGE, and the header's opening line names three. It is here rather
+ * than in a header a program writes because there is no header that spells
+ * threads on all three platforms: `pthread.h` is absent under clang targeting
+ * MSVC and C11's `<threads.h>` is absent from the macOS SDK, both measured
+ * 2026-09-06, so the intersection is empty. `parts/spawn.c` carries the arms
+ * and the reasoning.
+ *
+ * The handle is an `int64_t` index and never a `pthread_t`, which has three
+ * spellings and no portable one. Joining twice, or joining a handle nobody was
+ * given, are named panics here rather than undefined behaviour in C.
+ *
+ * WHAT MAY CROSS IS DECIDED BY THE CHECKER, not by this comment: a Heroes
+ * program binds `hero_thread_spawn` through this file, so
+ * `selfhost/check/ffi.hero` judges the callback's own parameters and result,
+ * and a `[T]` or a `{K: V}` in that signature is `error[ffi_type]` on the
+ * author's line. That is Part 7.13's isolation obtained from the type rule. */
+int64_t hero_thread_spawn(int64_t (*body)(int64_t), int64_t arg);
+int64_t hero_thread_join(int64_t handle);
+
+/* How many may run at once, so a program can ask instead of meeting the panic.
+ * A value rather than a form — `hero_word_bits`'s precedent. */
+int64_t hero_thread_limit(void);
+
 #endif /* HERO_OS_H */
