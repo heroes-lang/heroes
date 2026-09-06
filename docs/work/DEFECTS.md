@@ -22,11 +22,15 @@ entry, not decoration.
 
 Format: `- [ ] **NNN — <title>** | <date, found by> | <status> | <where it came from> | <severity>`, then the body.
 
-**Nothing is open as of 2026-09-06.** Defect 014 was filed and repaired the same
-day and is in `docs/work/DONE.md`: a `[T]` or a `{K: V}` crossed the FFI boundary
-inside a callback signature at exit 0, and `crosses_the_boundary` now recurses.
-The paragraph announcing it while it was open is deleted rather than left to
-outlive it, which is the failure this file recorded about itself one entry above.
+**One defect is open as of 2026-09-06, and it is 015**: a `certain` fix that
+machine-applies into a program which does not compile, found by a panel seat
+outside its own remit and verified the same hour. This line said *nothing is
+open* until it was filed; the file's own rule is that such a paragraph is
+corrected in the commit that makes it false rather than left to outlive itself.
+
+**Defect 014 was filed and repaired the same day** and is in `docs/work/DONE.md`:
+a `[T]` or a `{K: V}` crossed the FFI boundary inside a callback signature at
+exit 0, and `crosses_the_boundary` now recurses.
 
 **Nothing was open as of 2026-09-05, at M-c-callbacks' close.** This line said *one
 defect is open* for part of that day — defect 013, filed by panel 112 and put to
@@ -53,3 +57,53 @@ as `void h0_`, exit 2) were both repaired that night and are in
 `docs/work/DONE.md`. This line is a date and not a boast: an empty list is worth
 exactly as much as the last search that filled it, and the searches that found
 these two were a record audit and a panel seat measuring something else.
+
+- [ ] **015 — a `certain` fix machine-applies into a program that does not compile** | 2026-09-06, found by panel 115's ffi seat outside its remit, verified by the coordinator the same hour | **open** | panel 115, § Two side findings | **a rule the whole fix machinery rests on, broken by one diagnostic**
+
+  **The reproducer**, four lines, run at commit `13165dc7`:
+
+      function main()
+          a = 3.7
+          n: i64 @ 0
+          n @ int(a)
+          print(n)
+
+  `heroes check` says, correctly:
+
+      error[reserved_word]: `int` is not a word in this language — an integer
+      says its width: `i64`, and also `i8` `i16` `i32` `u8` `u16` `u32` `u64`
+        fix (certain): replace `int` with `i64`
+
+  `heroes check main.hero --apply` writes `n @ i64(a)`, and **that program does
+  not compile**:
+
+      error[unknown_name]: nothing named `i64` is in scope
+
+  **The cause, and it is one word: the fix is CONTEXT-BLIND.** `int` is wrong in
+  two different positions and the repairs are different. Where it stands as a
+  TYPE — `n: int @ 0` — the repair is `i64` and the fix is right. Where it stands
+  as a CALL — `int(a)`, which is what a reader coming from C or Python writes to
+  truncate a float — the repair is `to_i64`, which the spec names at :66 as the
+  conversion that takes a float. The diagnostic offers the type-position repair
+  in both places.
+
+  **Why it is a defect and not a rough edge.** CLAUDE.md §8 says only `certain`
+  is machine-applicable, and §9 says CI asserts the applied fix compiles. The
+  first is the promise this breaks; the second is the instrument that should have
+  caught it and did not, because the assertion runs over `x.fixed` goldens and no
+  golden covers `int` in a call position. So the guarantee is asserted for the
+  cases somebody wrote down, and this one was not among them — CLAUDE.md §1's
+  enumeration rule, in the goldens.
+
+  **What is owed.** The fix becomes `to_i64` where the name is the callee of a
+  call and `i64` where it is a type, or it drops to `guess` in the call position
+  and stays `certain` in the other — the narrowing asks the VALUE (which position
+  is this name in?) and never the world (CLAUDE.md §11). A `tests/golden/` case
+  named after this defect, carrying symptom, cause and date, with its `.fixed`
+  file so the CI assertion covers it (CLAUDE.md §9, Go's `test/fixedbugs`). And
+  the same question asked of every other `certain` fix that replaces a NAME
+  rather than inserting a label, since this one was found by accident: the list
+  comes from the emitter, not from memory.
+
+  **Not this milestone's**, and named rather than smuggled: M-thread-stacks is
+  the stack guard and the floor. Filed open so it is not rediscovered.

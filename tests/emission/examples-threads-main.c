@@ -100,13 +100,15 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 int64_t h_main_band(int64_t h0_index);
+int64_t h_main_descend(int64_t h0_n);
+int64_t h_main_deep(int64_t h0_levels);
 int64_t h_main_whole(int64_t h0_bands);
 int64_t h_main_in_parallel(int64_t h0_bands);
 void h_main_main(void);
 
 #line 48 "examples/threads/main.hero"
 int64_t h_main_band(int64_t h0_index) {
-#line 110 "main.c"
+#line 112 "main.c"
     hero_thread_guard("main.band");
     int64_t h1_total;
     int64_t h2_n;
@@ -194,12 +196,81 @@ bb3:
     t20 = h1_total;
 #line 56 "examples/threads/main.hero"
     return t20;
-#line 198 "main.c"
+#line 200 "main.c"
 }
 
-#line 60 "examples/threads/main.hero"
+#line 74 "examples/threads/main.hero"
+int64_t h_main_descend(int64_t h0_n) {
+#line 205 "main.c"
+    int64_t t1;
+    int64_t t2;
+    bool t3;
+    int64_t t4;
+    int64_t t5;
+    int64_t t6;
+    int64_t t7;
+    int64_t t8;
+    int64_t t9;
+    int64_t t10;
+    goto bb0;
+bb0:
+#line 75 "examples/threads/main.hero"
+    t1 = h0_n;
+#line 75 "examples/threads/main.hero"
+    t2 = INT64_C(0);
+#line 75 "examples/threads/main.hero"
+    t3 = t1 <= t2;
+#line 75 "examples/threads/main.hero"
+    if (t3) goto bb2; else goto bb3;
+#line 75 "examples/threads/main.hero"
+bb1:
+#line 77 "examples/threads/main.hero"
+    t5 = INT64_C(1);
+#line 77 "examples/threads/main.hero"
+    t6 = h0_n;
+#line 77 "examples/threads/main.hero"
+    t7 = INT64_C(1);
+#line 77 "examples/threads/main.hero"
+    if (__builtin_sub_overflow(t6, t7, &t8)) hero_panic_overflow();
+#line 77 "examples/threads/main.hero"
+    t9 = h_main_descend(t8);
+#line 77 "examples/threads/main.hero"
+    if (__builtin_add_overflow(t5, t9, &t10)) hero_panic_overflow();
+#line 77 "examples/threads/main.hero"
+    return t10;
+#line 77 "examples/threads/main.hero"
+bb2:
+#line 76 "examples/threads/main.hero"
+    t4 = INT64_C(0);
+#line 76 "examples/threads/main.hero"
+    return t4;
+#line 76 "examples/threads/main.hero"
+bb3:
+#line 76 "examples/threads/main.hero"
+    goto bb1;
+#line 252 "main.c"
+}
+
+#line 81 "examples/threads/main.hero"
+int64_t h_main_deep(int64_t h0_levels) {
+#line 257 "main.c"
+    hero_thread_guard("main.deep");
+    int64_t t1;
+    int64_t t2;
+    goto bb0;
+bb0:
+#line 82 "examples/threads/main.hero"
+    t1 = h0_levels;
+#line 82 "examples/threads/main.hero"
+    t2 = h_main_descend(t1);
+#line 82 "examples/threads/main.hero"
+    return t2;
+#line 269 "main.c"
+}
+
+#line 86 "examples/threads/main.hero"
 int64_t h_main_whole(int64_t h0_bands) {
-#line 203 "main.c"
+#line 274 "main.c"
     int64_t h1_total;
     int64_t h2_n;
     int64_t t1;
@@ -220,66 +291,66 @@ int64_t h_main_whole(int64_t h0_bands) {
     int64_t t16;
     goto bb0;
 bb0:
-#line 61 "examples/threads/main.hero"
+#line 87 "examples/threads/main.hero"
     t1 = INT64_C(0);
-#line 61 "examples/threads/main.hero"
+#line 87 "examples/threads/main.hero"
     h1_total = t1;
-#line 62 "examples/threads/main.hero"
+#line 88 "examples/threads/main.hero"
     t2 = INT64_C(0);
-#line 62 "examples/threads/main.hero"
+#line 88 "examples/threads/main.hero"
     h2_n = t2;
-#line 62 "examples/threads/main.hero"
+#line 88 "examples/threads/main.hero"
     goto bb1;
-#line 62 "examples/threads/main.hero"
+#line 88 "examples/threads/main.hero"
 bb1:
-#line 64 "examples/threads/main.hero"
+#line 90 "examples/threads/main.hero"
     t3 = h2_n;
-#line 64 "examples/threads/main.hero"
+#line 90 "examples/threads/main.hero"
     t4 = h0_bands;
-#line 64 "examples/threads/main.hero"
+#line 90 "examples/threads/main.hero"
     t5 = INT64_C(1000);
-#line 64 "examples/threads/main.hero"
+#line 90 "examples/threads/main.hero"
     if (__builtin_mul_overflow(t4, t5, &t6)) hero_panic_overflow();
-#line 64 "examples/threads/main.hero"
+#line 90 "examples/threads/main.hero"
     t7 = t3 < t6;
-#line 64 "examples/threads/main.hero"
+#line 90 "examples/threads/main.hero"
     if (t7) goto bb2; else goto bb3;
-#line 64 "examples/threads/main.hero"
+#line 90 "examples/threads/main.hero"
 bb2:
-#line 65 "examples/threads/main.hero"
+#line 91 "examples/threads/main.hero"
     t8 = h1_total;
-#line 65 "examples/threads/main.hero"
+#line 91 "examples/threads/main.hero"
     t9 = h2_n;
-#line 65 "examples/threads/main.hero"
+#line 91 "examples/threads/main.hero"
     t10 = h2_n;
-#line 65 "examples/threads/main.hero"
+#line 91 "examples/threads/main.hero"
     if (__builtin_mul_overflow(t9, t10, &t11)) hero_panic_overflow();
-#line 65 "examples/threads/main.hero"
+#line 91 "examples/threads/main.hero"
     if (__builtin_add_overflow(t8, t11, &t12)) hero_panic_overflow();
-#line 65 "examples/threads/main.hero"
+#line 91 "examples/threads/main.hero"
     h1_total = t12;
-#line 66 "examples/threads/main.hero"
+#line 92 "examples/threads/main.hero"
     t13 = h2_n;
-#line 66 "examples/threads/main.hero"
+#line 92 "examples/threads/main.hero"
     t14 = INT64_C(1);
-#line 66 "examples/threads/main.hero"
+#line 92 "examples/threads/main.hero"
     if (__builtin_add_overflow(t13, t14, &t15)) hero_panic_overflow();
-#line 66 "examples/threads/main.hero"
+#line 92 "examples/threads/main.hero"
     h2_n = t15;
-#line 66 "examples/threads/main.hero"
+#line 92 "examples/threads/main.hero"
     goto bb1;
-#line 66 "examples/threads/main.hero"
+#line 92 "examples/threads/main.hero"
 bb3:
-#line 68 "examples/threads/main.hero"
+#line 94 "examples/threads/main.hero"
     t16 = h1_total;
-#line 68 "examples/threads/main.hero"
+#line 94 "examples/threads/main.hero"
     return t16;
-#line 278 "main.c"
+#line 349 "main.c"
 }
 
-#line 70 "examples/threads/main.hero"
+#line 96 "examples/threads/main.hero"
 int64_t h_main_in_parallel(int64_t h0_bands) {
-#line 283 "main.c"
+#line 354 "main.c"
     HeroArrayHeader * h1_handles = {0};
     int64_t h2_i;
     int64_t h3_total;
@@ -321,144 +392,144 @@ int64_t h_main_in_parallel(int64_t h0_bands) {
     HeroArrayHeader * t34 = {0};
     goto bb0;
 bb0:
-#line 71 "examples/threads/main.hero"
+#line 97 "examples/threads/main.hero"
     t1 = hero_array_new(&hero_desc_int, 1);
-#line 71 "examples/threads/main.hero"
+#line 97 "examples/threads/main.hero"
     t32 = h7_own7;
-#line 71 "examples/threads/main.hero"
+#line 97 "examples/threads/main.hero"
     h7_own7 = t1;
-#line 331 "main.c"
+#line 402 "main.c"
     hero_array_decref(t32);
-#line 71 "examples/threads/main.hero"
+#line 97 "examples/threads/main.hero"
     t33 = h1_handles;
-#line 335 "main.c"
+#line 406 "main.c"
     hero_array_incref(t1);
-#line 71 "examples/threads/main.hero"
+#line 97 "examples/threads/main.hero"
     h1_handles = t1;
-#line 339 "main.c"
+#line 410 "main.c"
     hero_array_decref(t33);
-#line 72 "examples/threads/main.hero"
+#line 98 "examples/threads/main.hero"
     t2 = INT64_C(0);
-#line 72 "examples/threads/main.hero"
+#line 98 "examples/threads/main.hero"
     h2_i = t2;
-#line 72 "examples/threads/main.hero"
+#line 98 "examples/threads/main.hero"
     goto bb1;
-#line 72 "examples/threads/main.hero"
+#line 98 "examples/threads/main.hero"
 bb1:
-#line 74 "examples/threads/main.hero"
+#line 100 "examples/threads/main.hero"
     t3 = h2_i;
-#line 74 "examples/threads/main.hero"
+#line 100 "examples/threads/main.hero"
     t4 = h0_bands;
-#line 74 "examples/threads/main.hero"
+#line 100 "examples/threads/main.hero"
     t5 = t3 < t4;
-#line 74 "examples/threads/main.hero"
+#line 100 "examples/threads/main.hero"
     if (t5) goto bb2; else goto bb3;
-#line 74 "examples/threads/main.hero"
+#line 100 "examples/threads/main.hero"
 bb2:
-#line 75 "examples/threads/main.hero"
+#line 101 "examples/threads/main.hero"
     t7 = h_main_band;
-#line 75 "examples/threads/main.hero"
+#line 101 "examples/threads/main.hero"
     t8 = h2_i;
-#line 75 "examples/threads/main.hero"
+#line 101 "examples/threads/main.hero"
     t9 = hero_thread_spawn(t7, t8);
-#line 75 "examples/threads/main.hero"
+#line 101 "examples/threads/main.hero"
     hero_array_push_owned(&h1_handles, &t9);
-#line 76 "examples/threads/main.hero"
+#line 102 "examples/threads/main.hero"
     t11 = h2_i;
-#line 76 "examples/threads/main.hero"
+#line 102 "examples/threads/main.hero"
     t12 = INT64_C(1);
-#line 76 "examples/threads/main.hero"
+#line 102 "examples/threads/main.hero"
     if (__builtin_add_overflow(t11, t12, &t13)) hero_panic_overflow();
-#line 76 "examples/threads/main.hero"
+#line 102 "examples/threads/main.hero"
     h2_i = t13;
-#line 76 "examples/threads/main.hero"
+#line 102 "examples/threads/main.hero"
     goto bb1;
-#line 76 "examples/threads/main.hero"
+#line 102 "examples/threads/main.hero"
 bb3:
-#line 78 "examples/threads/main.hero"
+#line 104 "examples/threads/main.hero"
     t14 = INT64_C(0);
-#line 78 "examples/threads/main.hero"
+#line 104 "examples/threads/main.hero"
     h3_total = t14;
-#line 80 "examples/threads/main.hero"
+#line 106 "examples/threads/main.hero"
     t15 = h1_handles;
-#line 80 "examples/threads/main.hero"
+#line 106 "examples/threads/main.hero"
     t34 = h4_xs0;
-#line 387 "main.c"
+#line 458 "main.c"
     hero_array_incref(t15);
-#line 80 "examples/threads/main.hero"
+#line 106 "examples/threads/main.hero"
     h4_xs0 = t15;
-#line 391 "main.c"
+#line 462 "main.c"
     hero_array_decref(t34);
-#line 80 "examples/threads/main.hero"
+#line 106 "examples/threads/main.hero"
     t16 = INT64_C(0);
-#line 80 "examples/threads/main.hero"
+#line 106 "examples/threads/main.hero"
     h5_i0 = t16;
-#line 80 "examples/threads/main.hero"
+#line 106 "examples/threads/main.hero"
     goto bb4;
-#line 80 "examples/threads/main.hero"
+#line 106 "examples/threads/main.hero"
 bb4:
-#line 80 "examples/threads/main.hero"
+#line 106 "examples/threads/main.hero"
     t17 = h5_i0;
-#line 80 "examples/threads/main.hero"
+#line 106 "examples/threads/main.hero"
     t18 = h4_xs0;
-#line 80 "examples/threads/main.hero"
+#line 106 "examples/threads/main.hero"
     t19 = hero_array_len(t18);
-#line 80 "examples/threads/main.hero"
+#line 106 "examples/threads/main.hero"
     t20 = t17 < t19;
-#line 80 "examples/threads/main.hero"
+#line 106 "examples/threads/main.hero"
     if (t20) goto bb5; else goto bb7;
-#line 80 "examples/threads/main.hero"
+#line 106 "examples/threads/main.hero"
 bb5:
-#line 80 "examples/threads/main.hero"
+#line 106 "examples/threads/main.hero"
     t21 = h4_xs0;
-#line 80 "examples/threads/main.hero"
+#line 106 "examples/threads/main.hero"
     t22 = h5_i0;
-#line 80 "examples/threads/main.hero"
+#line 106 "examples/threads/main.hero"
     t23 = *(int64_t const *)hero_array_at(t21, t22);
-#line 80 "examples/threads/main.hero"
+#line 106 "examples/threads/main.hero"
     h6_h = t23;
-#line 81 "examples/threads/main.hero"
+#line 107 "examples/threads/main.hero"
     t24 = h3_total;
-#line 81 "examples/threads/main.hero"
+#line 107 "examples/threads/main.hero"
     t25 = h6_h;
-#line 81 "examples/threads/main.hero"
+#line 107 "examples/threads/main.hero"
     t26 = hero_thread_join(t25);
-#line 81 "examples/threads/main.hero"
+#line 107 "examples/threads/main.hero"
     if (__builtin_add_overflow(t24, t26, &t27)) hero_panic_overflow();
-#line 81 "examples/threads/main.hero"
+#line 107 "examples/threads/main.hero"
     h3_total = t27;
-#line 81 "examples/threads/main.hero"
+#line 107 "examples/threads/main.hero"
     goto bb6;
-#line 81 "examples/threads/main.hero"
+#line 107 "examples/threads/main.hero"
 bb6:
-#line 80 "examples/threads/main.hero"
+#line 106 "examples/threads/main.hero"
     t28 = h5_i0;
-#line 80 "examples/threads/main.hero"
+#line 106 "examples/threads/main.hero"
     t29 = INT64_C(1);
-#line 80 "examples/threads/main.hero"
+#line 106 "examples/threads/main.hero"
     if (__builtin_add_overflow(t28, t29, &t30)) hero_panic_overflow();
-#line 80 "examples/threads/main.hero"
+#line 106 "examples/threads/main.hero"
     h5_i0 = t30;
-#line 80 "examples/threads/main.hero"
+#line 106 "examples/threads/main.hero"
     goto bb4;
-#line 80 "examples/threads/main.hero"
+#line 106 "examples/threads/main.hero"
 bb7:
-#line 83 "examples/threads/main.hero"
+#line 109 "examples/threads/main.hero"
     t31 = h3_total;
-#line 449 "main.c"
+#line 520 "main.c"
     hero_array_decref(h1_handles);
-#line 83 "examples/threads/main.hero"
-#line 452 "main.c"
+#line 109 "examples/threads/main.hero"
+#line 523 "main.c"
     hero_array_decref(h4_xs0);
-#line 83 "examples/threads/main.hero"
-#line 455 "main.c"
+#line 109 "examples/threads/main.hero"
+#line 526 "main.c"
     hero_array_decref(h7_own7);
     return t31;
 }
 
-#line 85 "examples/threads/main.hero"
+#line 111 "examples/threads/main.hero"
 void h_main_main(void) {
-#line 462 "main.c"
+#line 533 "main.c"
     HeroStr t1 = {0};
     int64_t t2;
     int64_t t3;
@@ -470,47 +541,47 @@ void h_main_main(void) {
     HeroStr t9 = {0};
     goto bb0;
 bb0:
-#line 86 "examples/threads/main.hero"
+#line 112 "examples/threads/main.hero"
     t1 = HERO_STR_LIT(hero_str_10c1db2d);
-#line 86 "examples/threads/main.hero"
+#line 112 "examples/threads/main.hero"
     t2 = INT64_C(8);
-#line 86 "examples/threads/main.hero"
+#line 112 "examples/threads/main.hero"
     t3 = h_main_in_parallel(t2);
-#line 86 "examples/threads/main.hero"
+#line 112 "examples/threads/main.hero"
     hero_print_str(t1);
-#line 86 "examples/threads/main.hero"
+#line 112 "examples/threads/main.hero"
     hero_print_int(t3);
-#line 86 "examples/threads/main.hero"
+#line 112 "examples/threads/main.hero"
     hero_print_end();
-#line 87 "examples/threads/main.hero"
+#line 113 "examples/threads/main.hero"
     t4 = HERO_STR_LIT(hero_str_4ddb55bc);
-#line 87 "examples/threads/main.hero"
+#line 113 "examples/threads/main.hero"
     t5 = INT64_C(8);
-#line 87 "examples/threads/main.hero"
+#line 113 "examples/threads/main.hero"
     t6 = h_main_whole(t5);
-#line 87 "examples/threads/main.hero"
+#line 113 "examples/threads/main.hero"
     hero_print_str(t4);
-#line 87 "examples/threads/main.hero"
+#line 113 "examples/threads/main.hero"
     hero_print_int(t6);
-#line 87 "examples/threads/main.hero"
+#line 113 "examples/threads/main.hero"
     hero_print_end();
-#line 88 "examples/threads/main.hero"
+#line 114 "examples/threads/main.hero"
     t7 = HERO_STR_LIT(hero_str_1926ec6c);
-#line 88 "examples/threads/main.hero"
+#line 114 "examples/threads/main.hero"
     t8 = hero_thread_limit();
-#line 88 "examples/threads/main.hero"
+#line 114 "examples/threads/main.hero"
     t9 = HERO_STR_LIT(hero_str_4a948fa5);
-#line 88 "examples/threads/main.hero"
+#line 114 "examples/threads/main.hero"
     hero_print_str(t7);
-#line 88 "examples/threads/main.hero"
+#line 114 "examples/threads/main.hero"
     hero_print_int(t8);
-#line 88 "examples/threads/main.hero"
+#line 114 "examples/threads/main.hero"
     hero_print_str(t9);
-#line 88 "examples/threads/main.hero"
+#line 114 "examples/threads/main.hero"
     hero_print_end();
-#line 88 "examples/threads/main.hero"
+#line 114 "examples/threads/main.hero"
     return;
-#line 514 "main.c"
+#line 585 "main.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

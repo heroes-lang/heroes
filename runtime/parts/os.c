@@ -88,6 +88,11 @@ void hero_args_set(int argc, char **argv) {
      * (panel 111 R9): this is the thread a Heroes program owns, so a callback
      * entered from any other one is C calling back from a thread of its own. */
     hero_thread_claim();
+    /* And the stack this thread runs on, which becomes the floor under every
+     * thread the runtime starts (panel 115). Measured here for the same reason
+     * as the two above: this is the thread the program owns, and by the time a
+     * worker spawns a worker the calling thread is the wrong reference. */
+    hero_spawn_measure_home();
     hero_argc = argc;
     hero_argv = argv;
 }

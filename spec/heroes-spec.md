@@ -102,7 +102,7 @@ Shadowing is a compile error: a `use` binds its name for the whole file, so noth
 
 ## Functions and calls
 - Record construction is a call with field names, always mandatory:
-  `Point(x: 3, y: 4)`. `Point(3, 4)` does not exist.
+  `Point(x: 3, y: 4)`.
 - When two parameters in a signature share a type, named arguments are
   mandatory at the call site: `copy(from: a, to: b)`.
 - `x.f(y)` is sugar for `f(x, y)` (UFCS). There are no methods, no
@@ -156,7 +156,7 @@ snake_case strings; read `e.code` and `e.msg`. No exceptions exist.
 
 Map access `m[k]` returns
 `V?` with code `missing_key`. An out-of-bounds index or slice
-aborts, and so does a slice that splits a character; integer division by zero aborts. `/` and `%` truncate
+aborts, and so does a slice that splits a character; integer division by zero aborts; so does recursion too deep. `/` and `%` truncate
 toward zero, so `-7 / 3` is `-2` and `-7 % 3` is `-1`.
 
 ## Operators
