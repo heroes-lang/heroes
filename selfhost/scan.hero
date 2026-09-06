@@ -103,7 +103,15 @@ function ident(@l: state.LexState, text: str)
     if !kw.is_err()
         state.emit(@l, kw.must(), start)
         return
-    foreign = keywords.foreign_word(word)
+
+    # **The character after the word decides the repair** (defect 015). A
+    # word-for-word swap that is right where the word DECLARES something is
+    # wrong where it is CALLED — `int(3)` repaired to `i64(3)` is
+    # `error[unknown_name]`, and `--apply` wrote it. The lexer cannot know a
+    # position, but it can read the next byte, and that is a fact about the text
+    # in hand rather than a premise about the program around it (CLAUDE.md §11).
+    called = l.pos < text.len() && text[l.pos] == '('
+    foreign = keywords.foreign_word(text: word, called: called)
 
     if !foreign.is_err()
         span = token.Span(start: start, end: l.pos)
@@ -113,6 +121,9 @@ function ident(@l: state.LexState, text: str)
         d.fixes @ match found.repair
             .swap fix => d.fixes.push(
                 diag.Fix(title: "replace `" + word + "` with `" + fix.word + "`", replacement: fix.word, span: span, certainty: .certain)
+            )
+            .hint fix => d.fixes.push(
+                diag.Fix(title: "`" + fix.word + "` is where to look", replacement: fix.word, span: span, certainty: .guess)
             )
             .guidance => d.fixes
 

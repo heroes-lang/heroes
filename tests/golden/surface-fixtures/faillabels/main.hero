@@ -1,0 +1,38 @@
+# Both spellings of the failure constructor, pinned (2026-09-06).
+#
+# THE QUESTION THIS ANSWERS. `spec:106` says that when two parameters in a
+# signature share a type, named arguments are mandatory at the call site.
+# `spec:146` presents the failure constructor as `fail(code, msg)`, and both of
+# its parameters are `str` — `selfhost/check/walk.hero` checks each against
+# `str_ty` and never consults a label. So a reader who applies the rule and a
+# reader who copies the line write different programs, and the document does not
+# say which is right.
+#
+# THE ANSWER IS BOTH, and it was measured rather than argued: each spelling
+# below compiles and runs. That is the strongest of the three answers the
+# question had, because it is the only one in which no reader can be wrong.
+#
+# WHY A FIXTURE AND NOT A SENTENCE IN THE SPEC. A sentence costs tokens against
+# a headroom that panel 115 has just spent six of getting back, to describe a
+# case where nobody can be wrong. This project's own rule is that a rule an
+# instrument reads is a rule and a rule in prose is a wish — so the fact is
+# pinned here, and the day either spelling stops compiling this goes red instead
+# of a document going quietly stale.
+#
+# A user function with two `str` parameters is included on purpose: it is the
+# other half of the claim, and it still DEMANDS the labels. If the two ever
+# converge, one of these two functions stops compiling and says so.
+
+function positional() -> i64?
+    return fail("negative", "the document's own spelling, at spec:146")
+
+function labelled() -> i64?
+    return fail(code: "negative", msg: "the spelling spec:106's rule implies")
+
+function joined(a: str, b: str) -> str
+    return a + b
+
+function main()
+    print(positional().default(1))
+    print(labelled().default(2))
+    print(joined(a: "the rule ", b: "still binds a user function"))
