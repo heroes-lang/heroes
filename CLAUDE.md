@@ -11,6 +11,48 @@ everything else cites it. One person is learning compilers through this
 project; comprehension is the objective, but it runs **on the author's
 clock, never as a gate** (rule 3).
 
+---
+
+## RUN IT, OR SAY IT IS UNRUN
+
+**A claim is written down only after the command that settles it has been run**
+(author instruction 2026-09-06, *"put this measuring thing into the rules; there
+should already be something, but make it more prominent"*). There is already
+something: **§1 below is this rule's case law, and it is 136 lines long**
+(counted, not eyeballed — the first draft of this sentence said *two hundred*).
+That is why the rule is here instead of in there. A rule a reader meets after
+136 lines of its own exceptions is a rule they meet tired.
+
+Before a sentence enters a panel brief, a record, a commit body or a message to
+the author: **run the thing**. Where it cannot be run, the sentence says so in
+its own words — *unrun*, *not measured*, *a question rather than a premise* —
+and stays a question until somebody runs it. §1 has the shapes this goes wrong
+in; they are worth reading and they are not what this line is for.
+
+**What earned it, and it is the reason the rule is about RUNNING and not about
+thinking harder.** Three claims were corrected on the day it was written, and
+**not one of them fell to a better argument**:
+
+- A panel seat was told the morning's repair had closed a hole. It **deleted one
+  line from the emitted C and rebuilt** against the same runtime: exit 132, empty
+  stderr. The hole was still there and a different milestone had closed it.
+- A second seat was asked whether a sentence about what a program prints could
+  enter the spec. It ran **`strip`** on the binary; the function name was gone,
+  so the sentence would have been false on the day it landed.
+- A peer session was sent a claim about a platform. It **opened the file**, and
+  the claim was an inference wearing a *so*.
+
+**And one shape §1 did not have: a repair that widens a rule to cover a class can
+contradict a ruling the record already made about one member of it.** *A `(`
+after a foreign word means the word is called* was true of the case that provoked
+it and false of an adversarial case the author had ratified on 2026-08-04, where
+`(` opened a function TYPE. The net caught it by quoting that case back. So
+before generalising, grep `docs/panel/`, `DESIGN-LOG.md` and `tests/golden/` for
+the members: **a class is not a class until its exceptions have been looked
+for.**
+
+---
+
 ## 1. Re-read protocol — what never to trust from memory
 - Read `spec/heroes-spec.md` in full at the start of every session (budget
   4096 tokens, measured — never estimated; that is the point of the budget).
