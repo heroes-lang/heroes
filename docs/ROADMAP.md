@@ -58,42 +58,15 @@ M-separate-compilation already did.
 
 | | |
 |---|---|
-| **Current milestone** | **M-thread-stacks** — row 36, **moved ahead of M-declared-freer on 2026-09-06 by author instruction**, because the milestone that just closed is what made its defect reachable: until then no Heroes function could run on another thread, and ten example programs now can. Panel 107 measured it twice — a worker's stack overflow is **exit 132 with an empty stderr** where the main thread says `panic: stack exhausted` at 134 |
+| **Current milestone** | **M-thread-stacks** — **OPEN 2026-09-06**, row 36, moved ahead of M-declared-freer by author instruction the hour M-isolated-threads' step 6 landed, because that step is what made this defect reachable. Panel 107 adopted the repair on 2026-09-04 and could not place it: no Heroes function ran anywhere but on `main`, so there was no line at which to claim the guard. Step 1 measured the defect on three platforms and closed it — a worker's overflow was exit **132** on macOS and **139** on Linux, both silent, and is `panic: stack exhausted in <function>` at 134 on all three now. Windows was already right and that is measured too: its handler is the **process's**, where POSIX's alternate stack is the **thread's** |
 | **Last closed** | **M-isolated-threads**, 2026-09-06, tag `m-isolated-threads` ([034](journal/034-isolated-threads.md)) — seven steps, two sittings, one defect · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
-| Milestones closed | 35 of 56 · 35 tags |
-| The compiler | **53,810** lines of Heroes in **181** modules · the seed **733,838** lines of C, regenerated at step 5 with its fixpoint re-verified · runtime ABI **21**, unmoved by a milestone that added a runtime file |
-| The spec | **3830** of a hard 4096 · headroom **266**, unmoved: this milestone cost **zero** spec tokens, which also scores panel 111's spec-warden prediction as HOLDING at the bound |
-| Records | sittings **113** · journals **35** · measurements **18** · examples **55** programs, 544 `test` blocks · open defects **0** · the site **46** pages |
+| Milestones closed | 35 of **57** · **35** tags — the total moved this afternoon, when `M-online-compiler` entered the chain at row 56 |
+| The compiler | **53,810** lines of Heroes in **181** modules · the seed **733,838** lines of C · runtime ABI **21** |
+| The spec | **3830** of a hard 4096 · headroom **266** — `heroes measure spec/heroes-spec.md`, run while writing this line |
+| Records | sittings **113** (112 `.md` plus panel 000, a directory) · journals **35** · examples **55** programs, **118** files, **544** `test` blocks · open defects **0** · the site **46** pages, 23 English and 23 Italian |
 | Waiting on the author | **1** decision · **35** in `SCHEDULED.md` · **0** in `DEFECTS.md` · **319** in `LEARN.md` (never a gate) · an outstanding veto (`docs/panel/101` R3) |
 
-All re-measured 2026-09-06 at the close. Three suites green: **583**, **1576**, **112**. The ten thread examples run on all three platforms with byte-identical output, all 39 test blocks pass on all three, and **zero are skipped anywhere**.
-
----|---|
-| **Current milestone** | **M-thread-stacks** — next, row 36, **moved ahead of M-declared-freer on 2026-09-06 by author instruction** because the milestone that just closed is what made its defect reachable. Panel 107 measured it twice: a worker thread's stack overflow is **exit 132 with an empty stderr**, where the main thread says `panic: stack exhausted in deep.down` at 134, and a library thread's stack is **536,576 bytes** on Darwin against main's 8,372,224 — a 16:1 gap. Until 2026-09-06 no Heroes function could run on another thread at all, so nobody could meet it; ten example programs now can, and `examples/nqueens/` recurses. The cheap half is that `hero_stack_bounds()` already asks the OS about the CALLING thread, so the two globals become thread-local and are filled lazily. The unsolved half is why it is a milestone: the handler cannot run on an exhausted stack without a `sigaltstack` installed ON THAT thread, and three platforms are in three different states of knowledge |
-| **Last closed** | **M-isolated-threads**, 2026-09-06, tag `m-isolated-threads` ([034](journal/034-isolated-threads.md)) — seven steps, two sittings, one defect · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
-| Milestones closed | 35 of 56 · 35 tags |
-| The compiler | **53,810 lines** of Heroes in **181** modules · the seed **733,838** lines of generated C, regenerated at step 5 and its fixpoint re-verified · runtime ABI **21**, unmoved by a milestone that added a runtime file, because an added declaration does not change a declaration's shape — all re-counted 2026-09-06 at the close |
-| The spec | **3830** tokens of a hard 4096 · headroom **266** — unmoved by this whole milestone, which cost **zero spec tokens**: threads arrive through `hero_os.h`, the door `read_file` and `args` already use. That also **scores panel 111's spec-warden prediction as HOLDING**, at the bound rather than under it |
-| Records | sittings **113** (112 `.md` plus panel 000, a directory) · journals **35** · measurements **18** · examples **55** programs, 118 files, 544 `test` blocks · open defects **0** — defect 014 was filed and repaired the same day · the site **46** pages |
-| Waiting on the author | **1 decision** in `DECIDE.md`, the graphics-library question and `compile`'s deferral · **35** in `SCHEDULED.md` · **0** in `DEFECTS.md` · **319** in `LEARN.md` (never a gate) · an **outstanding veto** of the rule that stands (`docs/panel/101` R3) |
-
-Every number above re-measured 2026-09-06 at M-isolated-threads' close. **Three
-suites green on this Mac**: the compiler's own **583**, the net **1576**, and the
-net's own tests **112**. **And the ten thread example programs run on all three
-platforms with byte-identical output, all 39 of their test blocks pass on all
-three, and zero are skipped anywhere** — the author's own acceptance criterion,
-measured on the string the harness skips on.
-
----|---|
-| **Current milestone** | **M-isolated-threads** — **OPEN 2026-09-03**, row 35, re-scoped by `docs/panel/111` on 2026-09-05: it delivers Part 7.13's isolation or it delivers nothing, at **data parallelism only**, which is the design's own words at `:2563`. **It inherits three measured things from the milestone that closed ahead of it**: `_Atomic` appears **nowhere** in `runtime/`, so the refcount half of design.md's own v1 invariant is still prose; **16 of 22** mutable file-scope objects in `runtime/parts/*.c` are not `_Thread_local`, one of them the argv buffer on the closure list; and `pthread_t` has **two spellings and no portable one** — an opaque pointer here, an `unsigned long` on glibc — which is M-core-packages' platform-typedef question arriving in a second place. The witness it owes is writable for the first time: a loopback HTTP server with one connection per thread, which could not be written at all while a function value could not cross the FFI |
-| **Last closed** | **M-c-callbacks**, 2026-09-05, tag `m-c-callbacks` ([033](journal/033-c-callbacks.md)) — opened and closed the same day, six steps · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
-| Milestones closed | 34 of 56 · 34 tags |
-| The compiler | **53,700 lines** of Heroes in **180** modules across **10 directories** and 37 flat files · the seed **733,032** lines of generated C · runtime ABI **21** — all four re-counted 2026-09-05 at the close, and all four unmoved by it: M-c-callbacks added **171 code lines across 12 files** under `selfhost/` and no declaration, so the stamp did not move and the seed was regenerated for step 0's ABI bump alone |
-| The spec | **3830** tokens of a hard 4096 · headroom **266** — `heroes measure spec/heroes-spec.md`, run at the close. The callback paragraph landed at step 3 at **exactly** the bound panel 111's spec-warden had registered before it was written, which is the bound and not room under it: any further callback text falsifies that prediction |
-| Records | sittings **111** (110 `.md` plus panel 000, which is a directory) · journals **34** · measurements **18** (010's ledger at 52 rows) · examples **45** programs, 108 files, 505 `test` blocks · open defects **0** · the site **46** pages — re-counted 2026-09-05 at the close, and **two rows above were stale by the insert alone**: the chain read *33 of 55* when the table holds **56** rows, because `M-c-callbacks` entered at 34 and the total nobody re-counted, and `SCHEDULED.md` read 37 against a measured 36 |
-| Waiting on the author | **0 decisions** · **35** in `SCHEDULED.md`, every one naming an open row of the table below, and one fewer than this morning because panel 112 closed the `const` question · **0** in `DEFECTS.md` · **312** in `LEARN.md` (never a gate, and four of them are M-c-callbacks' close offers) · an **outstanding veto** of the rule that stands (`docs/panel/101` R3, *"live and unlifted"* in that sitting's own words) |
-
-Every number above re-measured 2026-09-05 at M-c-callbacks' close. **Three suites green on this Mac that day**: the compiler's own **583**, the net **1521** with an empty determinism diff, and the net's own tests **108**.
+Every number above re-counted 2026-09-06 with M-thread-stacks open, and none carried: the chain grew a row the same afternoon, and this section held **three stacked blocks and 41 lines** against a ceiling of 15 until it was collapsed to one.
 
 ---
 
