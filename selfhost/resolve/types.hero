@@ -264,7 +264,8 @@ test "a value in type position is named for what it is"
         body: fail("absent", "unused"),
         is_extern: false,
         header: fail("absent", "none"),
-        library: fail("absent", "none")
+        library: fail("absent", "none"),
+        owned_result: fail("none", "nothing to free")
     )
     fspan = token.Span(start: 12, end: 13)
     decls: [ast.Decl] @ [ast.Decl(name: fspan, doc: doc, span: fspan, kind: .function_decl(value: f))]

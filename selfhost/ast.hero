@@ -334,6 +334,12 @@ record Param
     name: token.Span
     ty: i64
     mutable: bool
+    # `@error: cstr owned sqlite3_free` — the freer for a string C writes
+    # THROUGH this parameter, which the header spells `char **` (§4.19, panel
+    # 109). It rides the parameter rather than the type because two parameters
+    # of one signature can be owned by different functions, and because the
+    # cell is out-only: nothing is copied in for the callee to observe.
+    owned: token.Span?
 
 # A record field, or a variant case's payload field. Fields carry doc comments
 # of their own — §4.1's adjacency rule is about declarations, and a field is
@@ -407,6 +413,13 @@ record FunctionDecl
     # nowhere else, so a declaration's index stays function identity.
     header: token.Span?
     library: Library?
+    # `-> cstr owned sqlite3_free` — the C function that frees the string this
+    # one hands back, named by the declaration itself (§4.19, panel 109).
+    # A SPAN and not a name, because a diagnostic about the freer has to point
+    # at the word the author wrote; the text is read from the source like every
+    # other name. Absent everywhere else, which is the ordinary case: an
+    # unmarked pointer is never freed.
+    owned_result: token.Span?
 
 variant DeclKind
     # `constant MAX: i64` + body (§4.2), or — inside an `extern` group — no
@@ -573,7 +586,7 @@ test "the tree is copied by value, so a walk cannot disturb it"
 test "a declaration owns its members directly, no arena"
     zero = token.Span(start: 0, end: 1)
     generics: [token.Span] = []
-    ps: [Param] = [Param(name: zero, ty: 0, mutable: false)]
+    ps: [Param] = [Param(name: zero, ty: 0, mutable: false, owned: fail("none", "not owned"))]
     doc: [token.Span] = []
     f = FunctionDecl(
         generics: generics,
@@ -582,7 +595,8 @@ test "a declaration owns its members directly, no arena"
         body: fail("absent", "no body"),
         is_extern: true,
         header: ok(zero),
-        library: fail("absent", "none")
+        library: fail("absent", "none"),
+        owned_result: fail("none", "nothing to free")
     )
     d = Decl(name: zero, doc: doc, span: zero, kind: .function_decl(value: f))
 

@@ -540,7 +540,8 @@ test "what the library declares and what the file declares stay two programs"
         body: fail("absent", "unused in this test"),
         is_extern: false,
         header: fail("absent", "none"),
-        library: fail("absent", "none")
+        library: fail("absent", "none"),
+        owned_result: fail("none", "nothing to free")
     )
     d @ d.push(
         ast.Decl(name: span_at(start: 9, end: 15), doc: doc, span: span_at(start: 0, end: 15), kind: .function_decl(value: f))

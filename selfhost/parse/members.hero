@@ -56,8 +56,46 @@ function generics(@c: cursor.Cursor, text: str) -> [token.Span]
 
 ## Value parameters
 
-# `(a: i64, @l: Lex)` — always parenthesised, `()` when empty.
-function params(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Param]
+# `owned <C function>` after a `cstr`, if it is there (§4.19, panel 109): the
+# C function that frees the string this signature hands the program.
+#
+# **A contextual word and never a keyword**, the choice `tag` and `partial`
+# already made and here for a stronger reason than either: `owned` is an
+# ordinary identifier at 22 sites in `selfhost/` today, so reserving it would
+# refuse the compiler's own source. It is consumed only in the two positions
+# that can carry it — after a result type and after a parameter's type — and is
+# an ordinary name everywhere else in the language.
+#
+# **Only inside a group.** The mark names a C function; a declaration with no
+# header behind it has no C function to name, so outside a group the word is
+# left alone and whatever follows is read as it always was.
+#
+# What comes back is the freer's NAME as a span, not its text: a diagnostic
+# about the freer has to point at the word the author wrote, and the text is
+# read from the source like every other name.
+#
+# **It lives here and not beside `tag` and `partial` in `parse/tails.hero`,
+# and that is the cycle rule rather than a preference**: this marker is read
+# in two places, one of them inside `params` below, and `tails` already uses
+# this module — so putting it there would close the ring Heroes refuses.
+function owned_marker(@c: cursor.Cursor, text: str, in_group: bool) -> token.Span?
+    if !in_group || !cursor.at(c, .ident) || cursor.slice_of(text, cursor.current_span(c)) != "owned"
+        return fail("absent", "nothing here is owned")
+    keyword = cursor.bump(@c).span
+
+    if !cursor.at(c, .ident)
+        cursor.error(
+            @c,
+            code: "expected_freer",
+            message: "`owned` names the C function that frees this string: `-> cstr owned sqlite3_free`",
+            span: cursor.here_or(c, keyword)
+        )
+        return fail("absent", "the freer's name is missing")
+    return ok(cursor.bump(@c).span)
+
+# `(a: i64, @l: Lex)` — always parenthesised, `()` when empty. `in_group` is
+# what lets `owned` be read after a parameter's type and nowhere else.
+function params(@c: cursor.Cursor, @a: ast.Ast, text: str, in_group: bool) -> [ast.Param]
     out: [ast.Param] @ []
 
     if !cursor.expect(@c, text: text, kind: .lparen, code: "expected_params", what: "`(` — a signature always has a parameter list, `()` when it takes nothing")
@@ -88,7 +126,8 @@ function params(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Param]
                 reading @ false
             else
                 ty = type.parse_type(@c, @a, text)
-                out @ out.push(ast.Param(name: name, ty: ty, mutable: mutable))
+                owned = owned_marker(@c, text, in_group: in_group)
+                out @ out.push(ast.Param(name: name, ty: ty, mutable: mutable, owned: owned))
                 cursor.skip_terminators(@c)
 
                 if !cursor.eat(@c, .comma)
@@ -241,7 +280,7 @@ test "a signature is always parenthesised, and @ marks in-out"
     ]
     c: cursor.Cursor @ cursor.new_cursor(stream)
     a: ast.Ast @ ast.new_ast()
-    out = params(@c, @a, "(a: i64, @l: Lex)")
+    out = params(@c, @a, "(a: i64, @l: Lex)", in_group: false)
     assert out.len() == 2
     assert !out[0].mutable
     assert out[1].mutable
@@ -251,14 +290,14 @@ test "an empty parameter list is () and not nothing"
     empty: [token.Token] = [tok(.lparen, start: 0, end: 1), tok(.rparen, start: 1, end: 2), tok(.eof, start: 2, end: 2)]
     c: cursor.Cursor @ cursor.new_cursor(empty)
     a: ast.Ast @ ast.new_ast()
-    assert params(@c, @a, "()").len() == 0
+    assert params(@c, @a, "()", in_group: false).len() == 0
     assert c.diagnostics.len() == 0
 
     # A missing `(` says so rather than guessing.
     missing: [token.Token] = [tok(.arrow, start: 0, end: 2), tok(.eof, start: 2, end: 2)]
     d: cursor.Cursor @ cursor.new_cursor(missing)
     b: ast.Ast @ ast.new_ast()
-    _ = params(@d, @b, "->")
+    _ = params(@d, @b, "->", in_group: false)
     assert d.diagnostics[0].code == "expected_params"
 
 test "a signature may break across lines because the separator stays the comma"
@@ -279,7 +318,7 @@ test "a signature may break across lines because the separator stays the comma"
     ]
     c: cursor.Cursor @ cursor.new_cursor(stream)
     a: ast.Ast @ ast.new_ast()
-    assert params(@c, @a, "(a: i64,\nb: i64)").len() == 2
+    assert params(@c, @a, "(a: i64,\nb: i64)", in_group: false).len() == 2
     assert c.diagnostics.len() == 0
 
 test "a field is one line, and its doc comment is the run above it"

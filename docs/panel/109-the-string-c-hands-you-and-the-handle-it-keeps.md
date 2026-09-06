@@ -409,3 +409,19 @@ diagnostic's own note the whole time: *"move what both modules need into a third
 one that neither uses"*. **A knot is a property of a PARTITION, not of a
 grammar**, and the two files this step was told to cut turn out to be one of
 each kind — which is the finding worth more than either number.
+
+## The spec-warden's prediction, scored at M-declared-freer step 2 (2026-09-06)
+
+| judge | prediction | result |
+|---|---|---|
+| spec-warden | `heroes measure` at the landing commit: gross ≥ +49 whatever the wording, net with R2a within ±3 of the figure the step records | **TRUE on both halves, and every delta was re-measured rather than carried.** Base **3824**; Wt2 alone **3895** (+71, where this sitting measured +70); the third case's three words **3898** (+3, exactly); R2a removed **3871** (−27, where this sitting measured −28). **Gross +74**, comfortably over the +49 floor. **Net +47**, and the pair the prediction names (Wt2 with R2a) is **+44** against the sitting's arithmetic of +42 — inside ±3. Headroom **272 → 225**. |
+
+**Why two of the three deltas moved, and it is not an error in either
+measurement.** The sitting measured against a base of 3750; the landing commit's
+base is 3824, because `docs/panel/115` added a sentence four days later and
+`docs/panel/111` one before that. A BPE tokenizer's counts are **not additive
+across an edit boundary** — a sentence costs what it costs *in the text around
+it* — so a ledger that adds up a sitting's columns is doing arithmetic the
+instrument does not support. This is why `docs/measurements/010`'s row re-runs
+`heroes measure` for each delta instead, and why the row records four numbers
+where the sitting recorded three.

@@ -122,18 +122,24 @@ function function_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text:
 
     if !cursor.at(c, .lparen)
         # `params` reports the missing `(` with its own message.
-        _ = parse_members.params(@c, @a, text)
+        _ = parse_members.params(@c, @a, text, in_group: is_extern)
         cursor.recover_to_next_decl(@c)
         return
-    parameters = parse_members.params(@c, @a, text)
+    parameters = parse_members.params(@c, @a, text, in_group: is_extern)
 
     # No `->` means no value. The `unit` node is synthesised at the end of the
     # header so later passes never have to ask whether the arrow was written
     # (§4.3: `()` is a type like any other).
     result: i64 @ 0
 
+    # `-> cstr owned sqlite3_free`: the freer rides the RESULT and is read
+    # right after its type, which is the only place it can be — a signature
+    # with no arrow hands nothing back for anybody to free (§4.19, panel 109).
+    owned_result: token.Span? @ fail("none", "nothing to free")
+
     if cursor.eat(@c, .arrow)
         result @ type.parse_type(@c, @a, text)
+        owned_result @ parse_members.owned_marker(@c, text, in_group: is_extern)
     else
         here = cursor.current_span(c)
         result @ ast.push_type(
@@ -162,7 +168,8 @@ function function_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text:
         body: body,
         is_extern: is_extern,
         header: linkage_header(linkage),
-        library: linkage_library(linkage)
+        library: linkage_library(linkage),
+        owned_result: owned_result
     )
     decls @ decls.push(
         ast.Decl(name: name, doc: doc, span: token.Span(start: keyword.start, end: finish.end), kind: .function_decl(value: f))
