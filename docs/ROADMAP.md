@@ -60,11 +60,11 @@ M-separate-compilation already did.
 |---|---|
 | **Current milestone** | **M-declared-freer** — **OPEN**, row 37: `owned <C function>` on an `extern`, so a `cstr` C hands you is freed by the name its own declaration gives. Panel 109 ratified it 2026-09-04; **step 1 landed 2026-09-06** — the sitting's condition 7, the two splits that had to come first |
 | **Last closed** | **M-thread-stacks**, 2026-09-06, tag `m-thread-stacks` ([035](journal/035-thread-stacks.md)) — four steps, one sitting, one defect opened. The guard speaks on every thread, and a worker's floor is the thread that ran `main` · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
-| Milestones closed | **36** of 57 · **36** tags |
+| Milestones closed | **36** of 58 · **36** tags |
 | The compiler | **54,111** lines of Heroes in **186** modules · the seed **734,938** lines of C · runtime ABI **21**, unmoved: the floor is an argument to `pthread_create` and not a declaration |
 | The spec | **3824** of a hard 4096 · headroom **272** — it **shrank** while gaining a sentence, `; so does recursion too deep.` at +7 against a −12 removal (`docs/panel/115`) |
 | Records | sittings **114** · journals **36** · examples **55** programs, **118** files, **545** `test` blocks · open defects **0** · the site **46** pages, 23 English and 23 Italian |
-| Waiting on the author | **0** decisions · **35** in `SCHEDULED.md` · **0** in `DEFECTS.md` · **319** in `LEARN.md` (never a gate) · an outstanding veto (`docs/panel/101` R3) |
+| Waiting on the author | **0** decisions · **38** in `SCHEDULED.md` · **0** in `DEFECTS.md` · **319** in `LEARN.md` (never a gate) · an outstanding veto (`docs/panel/101` R3) |
 
 Every number re-counted 2026-09-06 at M-declared-freer step 1, none carried. Three suites green: **584**, **1582**, **113** — four of those were a commit stale until this step, `e61fec3b` having stated 584 and 1582 in its own body while repairing defect 015 and touching neither document. What moved for THIS step is the compiler itself: **181 → 186** modules, and `ir/lower.hero` **1511 → 174**, the largest file in the tree until today (`tests/harness/suite_layout.hero` carries every number with its reason).
 
@@ -183,15 +183,16 @@ and why one overtook another are under the table, in § Who scheduled what.
 | 46 | **M-web-framework** | scheduled | — | — | composes the core packages, Go/Echo style: explicit routes, records, no magic |
 | 47 | **M-doc-generator** | scheduled | — | — | `heroes doc`, the one direction Part 6's literate-source row promises · scheduled, no warrant |
 | 48 | **M-panic-location** | scheduled | — | — | a panic names the `.hero` file, line and function · **§1.12** |
-| 49 | **M-thesis-harness** | scheduled | — | — | Part 11's metrics 2 and 4 run for the first time, as a Heroes program · **§1.1** |
-| 50 | **M-lsp-server** | scheduled | — | — | `heroes lsp`, and the incremental frontend it needs |
-| 51 | **M-vscode-extension** | scheduled | — | — | the extension, complete |
-| 52 | **M-qbe-backend** | scheduled | — | — | Part 7 item 15 — the proof that the IR is not C in disguise |
-| 53 | **M-journey-book** | scheduled | — | — | the journey — how this language came to be |
-| 54 | **M-guide-book** | scheduled | — | — | the guide, as a book you would find in a shop · **§1.1** |
-| 55 | **M-install-channels** | scheduled | — | — | a Homebrew tap, winget, a Nix flake, a Docker image, all built from the seed, and a version scheme |
-| 56 | **M-online-compiler** | scheduled | — | — | the compiler reached without installing anything: the site's visitor writes Heroes and gets its answer · scheduled, no warrant |
-| 57 | **M-publication-gate** | scheduled | — | — | the last gate before anything goes outward · CLAUDE.md §14 |
+| 49 | **M-generated-programs** | scheduled | — | — | programs nobody wrote: a generator that composes valid Heroes and knows the answer before the compiler is asked · **§1.12** |
+| 50 | **M-thesis-harness** | scheduled | — | — | Part 11's metrics 2 and 4 run for the first time, as a Heroes program · **§1.1** |
+| 51 | **M-lsp-server** | scheduled | — | — | `heroes lsp`, and the incremental frontend it needs |
+| 52 | **M-vscode-extension** | scheduled | — | — | the extension, complete |
+| 53 | **M-qbe-backend** | scheduled | — | — | Part 7 item 15 — the proof that the IR is not C in disguise |
+| 54 | **M-journey-book** | scheduled | — | — | the journey — how this language came to be |
+| 55 | **M-guide-book** | scheduled | — | — | the guide, as a book you would find in a shop · **§1.1** |
+| 56 | **M-install-channels** | scheduled | — | — | a Homebrew tap, winget, a Nix flake, a Docker image, all built from the seed, and a version scheme |
+| 57 | **M-online-compiler** | scheduled | — | — | the compiler reached without installing anything: the site's visitor writes Heroes and gets its answer · scheduled, no warrant |
+| 58 | **M-publication-gate** | scheduled | — | — | the last gate before anything goes outward · CLAUDE.md §14 |
 
 Three closed milestones have no tag of their own because they were parents or
 sub-steps: **M-checker-core**, **M-data-declarations** and **M-rich-diagnostics**
@@ -382,6 +383,39 @@ row number, because a reorder moves a number and never a name (CLAUDE.md §14).
   visitor's program, and it is the milestone's whole subject — measured the day
   the row entered, **20 of 56** programs under `examples/` declare an `extern`,
   so what a stranger may name is a decision before it is an engine.
+- **M-generated-programs** — **row 49, scheduled by author instruction
+  2026-09-06**, placed after M-panic-location by the author out of four options
+  put with a recommendation: *"Consider adding a step to the roadmap, towards the
+  end, called something like consolidation — you say when it makes sense, maybe
+  after the packages. It should create as many valid Heroes programs as possible
+  that nonetheless make the compiler crash: hunt for bugs, looking too at the bugs
+  that were found in other similar languages and compilers. The difficult
+  conditions are the interfacing with C and very deeply nested structures. Purely
+  and simply with fuzzing."* Rows 49–57 each move down one, which is this
+  section's own shape: the numbers in the bullets above are the ones those rows
+  had when they were written. **The gap it fills was measured before the row was
+  written, and it is the direction of every instrument here.** `heroes mutate` is
+  the inverse one — its own module doc says it takes the corpus programs that
+  check clean and makes *one plausible mistake per site*, counting how many the
+  compiler catches — so everything this repository points at the compiler is
+  pointed at **wrong** programs, and nothing has ever pointed a machine at it with
+  right ones. Of the **fourteen** defect entries in `docs/work/DONE.md` (the
+  record numbers them 001–015 and uses 014 twice, which is a fault of the record
+  rather than of the count), every *found by* field names a person: writing a
+  program (006, 007), a panel seat (004, 010, 013, both 014s, 015), the baseline
+  net run before touching anything (002), a `fmt` sweep (003, 005), the Windows
+  box (008), a program's first run (009), the post-M8a sweep (001). **Four of them
+  are at the C boundary and one is depth**, which is why the author named those
+  two conditions and not others: 010, 013 and both 014s are FFI, and 007 —
+  `heroes check` at exit **139** with nothing on either stream — was a valid
+  program nesting deeper than the compiler's own recursive descent. `selfhost/`
+  holds **63** points where the compiler declares a case impossible
+  (`hero_unreachable`/`unreachable()`, `emit/structural.hero` alone 12), and
+  defect 006 is one of them reached by a program `heroes check` had just accepted.
+  **The author took the widest option on all four questions** — the name, the
+  placing, five oracles rather than crashes alone, and the harness rather than a
+  new verb — so §10's stopping rule is not touched and the tool convenes no
+  sitting; what may convene one is a repair that reaches the language.
 
 ---
 
@@ -1391,6 +1425,95 @@ be taken the day the threads land. Its witnesses are the corpus under
 `--sanitize` and Part 11's metric 4, whose turns-to-green a panic that names its
 line shortens.
 
+### M-generated-programs — programs nobody wrote
+
+**Scheduled by author instruction 2026-09-06** — § Who scheduled what carries the
+instruction, the four choices the author made and the measurements that placed the
+row. The warrant is **§1.12**: a Heroes program must not segfault, and the
+compiler is a Heroes program. Defect 007 is that sentence failing on a **valid**
+file, `heroes check` at exit **139** with nothing on either stream.
+
+**What it delivers.** A generator, written in Heroes, that composes programs
+**valid by construction** and **knows what each one must print before the compiler
+is asked**; five oracles over every program it writes; a reducer that takes a
+failure down to something a person can read; the defects that come out, repaired
+at the class rather than at the witness; and a committed corpus of the reduced
+witnesses in the net, which is what keeps them shut.
+
+**Its first step is a catalogue, and it is enumerated from the world** (CLAUDE.md
+§1, which says a list names where it came from). Csmith and YARPGen state in their
+own papers which classes of bug they found — YARPGen's count is **more than 220**
+in GCC, LLVM and the Intel compiler — a survey of compiler fuzzing exists, Zig
+carries an issue titled *Compiler crashes found with fuzzing*, Go keeps
+`test/fixedbugs` and Nim its `tests/`. The nearest corpus of all is this
+repository: **fourteen** defect entries in `docs/work/DONE.md` and **76**
+regression cases named after one — 49 with the `fixedbugs-` prefix under `check/`,
+`run/` and `unsupported/`, 27 in `tests/golden/fixedbugs/`. The catalogue is a
+`docs/measurements/` file naming each shape with its source and marking what was
+read and what was not.
+
+**The two moves that make it more than a test of the lexer**, both borrowed, both
+named here so the milestone does not re-derive them. Generation goes **from the
+type, never from the text**: it starts at *an expression of type `i64` is needed*
+and descends, choosing at each node among the forms that type admits, so the
+program type-checks by construction and a refusal from `heroes check` is itself a
+defect. And **the answer is computed while the program is built**: every node
+carries its value, so the generator writes the program and its `main.expected`
+together, with no second compiler standing in as judge. That is Csmith's checksum
+trick, and it is the only thing that makes the silent class — exit 0, wrong number
+— visible at all.
+
+**Heroes has no undefined behaviour, and that changes the generator's job.** An
+overflow, a division by zero and an index out of range all abort by design, so
+there is nothing to steer around the way YARPGen must for C; there is a choice to
+declare instead. The clean arm picks values that make the operation safe by
+construction. A smaller, declared arm expects the **abort and its message**, which
+is how the guard rails get checked rather than assumed.
+
+**The five oracles**, all of them, by author decision 2026-09-06 against the two
+narrower options offered: (1) the compiler does not fall over — no 139, no 134, no
+`internal error`, no silent exit, and every `hero_unreachable` reached is a defect,
+of which `selfhost/` holds **63**; (2) the answer is the computed one, in the three
+configurations the net already runs — `-O0`, `-O2`, `--sanitize`
+(`tests/harness/suite_corpus.hero::configurations()`) — whose disagreement is the
+only differential arm there is while there is one backend; (3) `heroes fmt`
+re-prints it byte for byte, the class that produced defects 003 and 004, one of
+which rewrote a compiler source into a different program at exit 0; (4) what
+`heroes check` accepts, `heroes build` compiles, which is M-check-completeness's
+promise put under a volume nobody writes by hand; (5) no leak, with the Linux leg
+under `--sanitize` for whatever declares an `extern` (CLAUDE.md § Commands, where
+LeakSanitizer is the reason that leg exists).
+
+**The two hard shapes are the author's own, and the record agrees with them.**
+The C boundary — generated `extern` groups against a header generated with them:
+structs by value, `@` out-parameters, callbacks, `cstr`, `owned` — is where four
+of the fourteen entries are (010, 013 and both 014s). Depth — records inside
+variants inside maps, generics
+instantiated across `use` lines, expressions hundreds of levels deep — is
+defect 007.
+
+**Where it lives, and what it must never become.** A Heroes program under
+`tests/harness/`, run by `heroes run` as the net is, so §10's stopping rule is
+untouched and no verb is proposed. The long hunt stays **outside** the net: a
+suite that generates at random goes red at random, and this project has already
+paid for an instrument nobody trusts. What enters the net is the committed,
+reduced corpus, deterministic under a seed. The reducer starts from
+`selfhost/mutate/sites.hero`, split out as *the primitives every mutation operator
+is built out of: a text edit, a span, and the four questions about a tree node*.
+A seed is an integer, and `examples/montecarlo/main.hero` already carries a
+deterministic stream with a test saying why — so a defect is reported by its
+number and anybody can reproduce it.
+
+**Why here.** After the four verdict milestones, because a generator has to know
+the final surface; after M-check-completeness, whose promise is oracle 4; after
+M-panic-location, because a crash that names its file, its line and its function
+is the difference between a triage of minutes and one of hours. Before the books,
+the channels and the gate, so that what gets written about and shipped is a
+compiler that has been shot at. **The sixth oracle is dated rather than
+promised**: when M-qbe-backend exists, the same generated program through two
+backends is differential testing in the full sense, and that is the one thing this
+milestone deliberately leaves to a later one.
+
 ### M-thesis-harness — the thesis, measured
 
 **Scheduled by author instruction 2026-09-03**, and it is the second milestone
@@ -1829,6 +1952,7 @@ So a number met in the record resolves here, and only here.
 | `M-thread-stacks` | — | — | the stack guard reads the calling thread's own bounds and installs its own alternate stack, so an overflow on a library's thread stops with a message instead of an empty exit 132 — and the size stops being a link flag that exists in one CI file and no document. **A new id rather than a reopening of `M-robustness-guards`** (§14), which closed 2026-09-03 delivering the guard on the **main** thread; panel 107 found the rest of it on 2026-09-04. **Plural because panel 107 refused a uniform number** on six measurements: the number cannot be the same on three platforms, the abort can |
 | `M-check-completeness` | — | — | what `heroes check` accepts, `heroes build` compiles — through a generic too. **A new id and not a step of a checker milestone** (§14): `M-typed-frontend` and `M-checker-core` closed 2026-08-04 delivering the frontend itself, and what this delivers is a **promise about two commands agreeing**, which neither name claims. Scheduled 2026-09-04 by author instruction with **no warrant** — Principle 0 holds it, panel 082 R3 ruled the direction on 2026-08-16, and the trigger is a `grep` rather than a date |
 | `M-online-compiler` | — | — | the compiler reached without installing anything: the site's visitor writes Heroes and gets its answer. **A new id and not a step of `M-documentation-site` or `M-install-channels`** (§14): the site closed 2026-09-02 delivering pages anchored to programs that run, and the channels deliver installation, while this one delivers the case where nothing is installed at all. **Deliberately neither `M-wasm-playground` nor `M-browser-compiler`**: the engine is this milestone's own opening question, so an id naming either would claim exactly what the sitting exists to decide, and `wasm` has to stay free for the later half of Part 7 item 15 (`design.md:2645`). Scheduled 2026-09-06 by author instruction with **no warrant** |
+| `M-generated-programs` | — | — | programs nobody wrote, and the defects they find: a generator that composes valid Heroes by construction, knows what each program must print before the compiler is asked, and reduces every disagreement to a case. **A new id and not a fourth corpus** (§14, author instruction 2026-09-06): `M-program-corpus` delivered *many programs run*, `M-corpus-coverage` *every form has a program* and `M-corpus-depth` *size, depth and an external oracle* — all three are programs a person sat down and wrote, and this one delivers programs **nobody wrote**. It is also not a reopening of `M-robustness-guards`, which closed 2026-09-03 delivering the guards that shut four named holes: a guard is a hole you have found, and what this delivers is the machine that finds them. **Deliberately neither `M-adversarial-corpus` nor `M-compiler-survival`**: the first annexes an area three milestones already share, and the second states a promise a later milestone can falsify, which §14 forbids an id to do. Both runners-up are in `tests/harness/suite_records.hero`'s `REFUSED` |
 
 **`M8` has no row, because it meant three different things.** It was an umbrella
 that predates the a/b/c/e/p split and no heading has carried it since. In the
