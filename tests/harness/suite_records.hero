@@ -1304,27 +1304,66 @@ function opens_pending(text: str) -> bool
 # The count is every line from the heading to the `---` that ends the section,
 # blank lines included, because a blank line costs a reader the same scroll as
 # any other.
+#
+# **AND THE TERMINATOR IS THE WHOLE LINE, NOT A PREFIX — which is the second
+# thing this check got wrong, and the interesting one** (M-thread-stacks step 2,
+# 2026-09-06). It asked `starts_with("---")`, and on that day the section held
+# **three stacked blocks**: M-isolated-threads' close had APPENDED its table
+# instead of replacing the one before it, and the two older blocks had lost their
+# `| | |` header rows, so each began with the mangled separator `---|---|`. That
+# string starts with `---`. So the count stopped at the first mangled line,
+# reported **14**, passed — and **27 lines were invisible to the one instrument
+# that exists to see them**. With the terminator read as a whole line the same
+# file counts **41** against a ceiling of 15 and goes red, which is what it did.
+#
+# This is CLAUDE.md §9's shape one level up: a self-check that reads the record
+# through a loose pattern can only see what that pattern admits, and the
+# corruption it was built to catch is exactly what slipped through it. So there
+# are two failures below rather than one. The count is the rule; the malformed
+# rule is named on its own because *"41 lines"* would send a reader to trim
+# prose, and what is actually wrong is that a table lost its head.
+record WhereScan
+    counted: i64
+    mangled: i64
+    found: bool
+
+# The scan itself, over TEXT rather than over the file, so the two shapes it
+# judges can be written down as literals in a test (CLAUDE.md §9: every verifier
+# check has a test that makes it fire). The version this replaced could only be
+# exercised by breaking the real ROADMAP, which is why the defect it missed went
+# unnoticed for as long as it existed.
+function scan_where(text: str) -> WhereScan
+    counted: i64 @ 0
+    mangled: i64 @ 0
+    inside: bool @ false
+    closed: bool @ false
+
+    for row in strings.lines(text)
+        if strings.starts_with(text: row, prefix: "## Where we are")
+            inside @ true
+
+        if inside && !closed
+            bare = strings.trimmed(text: row)
+
+            if bare == "---"
+                closed @ true
+            else
+                counted @ counted + 1
+
+                if strings.starts_with(text: bare, prefix: "---")
+                    mangled @ mangled + 1
+
+    return WhereScan(counted: counted, mangled: mangled, found: inside)
+
 function where_we_are(@r: report.Report)
     text = read_file("docs/ROADMAP.md")
 
     if text.is_err()
         report.keep_failure(@r, label: "records/roadmap", detail: "  docs/ROADMAP.md cannot be read")
         return
-    counted: i64 @ 0
-    inside: bool @ false
-    closed: bool @ false
+    got = scan_where(text.must())
 
-    for row in strings.lines(text.must())
-        if strings.starts_with(text: row, prefix: "## Where we are")
-            inside @ true
-
-        if inside && !closed
-            if strings.starts_with(text: row, prefix: "---")
-                closed @ true
-            else
-                counted @ counted + 1
-
-    if !inside
+    if !got.found
         report.keep_failure(
             @r,
             label: "records/roadmap",
@@ -1332,11 +1371,20 @@ function where_we_are(@r: report.Report)
         )
         return
 
-    if counted > WHERE_CEILING
+    if got.mangled > 0
         report.keep_failure(
             @r,
             label: "records/roadmap",
-            detail: "  § Where we are is " + counted.to_str() + " lines and the ceiling is " + WHERE_CEILING.to_str() + " — the ROADMAP says what is NEXT, and a closed milestone's record is its journal (/step, milestone close)"
+            detail: "  § Where we are holds " + got.mangled.to_str() + " line(s) that begin `---` without BEING `---`, and a table whose head is gone reads as a horizontal rule to anything scanning for one. That is how a close appends a second block instead of replacing the first: collapse the section to ONE table, or restore the `| | |` header the mangled line ate"
+        )
+    else
+        report.keep_pass(@r)
+
+    if got.counted > WHERE_CEILING
+        report.keep_failure(
+            @r,
+            label: "records/roadmap",
+            detail: "  § Where we are is " + got.counted.to_str() + " lines and the ceiling is " + WHERE_CEILING.to_str() + " — the ROADMAP says what is NEXT, and a closed milestone's record is its journal (/step, milestone close)"
         )
     else
         report.keep_pass(@r)
@@ -1469,6 +1517,33 @@ function head_of(row: str) -> str
     if row.len() <= 78
         return row
     return row.slice(from: 0, to: 78) + " …"
+
+test "the section ends at a rule and not at anything that merely starts like one"
+    # The shape the record was actually in on 2026-09-06: one good block, then a
+    # second whose `| | |` header had been eaten, leaving `---|---|` where a
+    # table head belonged. Under `starts_with` that line ended the count at 5 and
+    # the check passed over everything below it.
+    broken = "## Where we are\n\n| | |\n|---|---|\n| a | b |\n\n---|---|\n| c | d |\n\n---\n"
+    torn = scan_where(broken)
+    assert torn.found
+    assert torn.mangled == 1
+    assert torn.counted == 9
+
+    # The same section with one block: nine lines become six and nothing is
+    # mangled, which is what a close is supposed to leave behind.
+    whole = "## Where we are\n\n| | |\n|---|---|\n| a | b |\n\n---\n"
+    kept = scan_where(whole)
+    assert kept.found
+    assert kept.mangled == 0
+    assert kept.counted == 6
+
+    # A rule with trailing spaces still ends the section: the terminator is the
+    # line's CONTENT, and an invisible space is not a reason to read on.
+    assert scan_where("## Where we are\n| a |\n---   \n| b |\n").counted == 2
+
+    # And a file with no such section says so rather than answering zero, which
+    # is a different failure with a different message.
+    assert !scan_where("# The Heroes Language\n\nprose\n").found
 
 test "a chain row gives up its milestone, and the summary rows do not"
     row = "| 35 | **M-declared-freer** | scheduled | — | — | the freer by name |"
