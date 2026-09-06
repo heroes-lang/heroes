@@ -1068,6 +1068,37 @@ author's ratification standing in for the author, and the work being built is
 not the work being ratified. And *"my change cannot have touched that"* is an
 inference (§1), so it is either run or it is written down as a guess.
 
+**AND THE FULL NET IS RUN ONCE BEFORE A PUSH, NOT BEFORE EVERY COMMIT — THE
+NAMED SUITES ARE WHAT GATE A SUB-STEP** (author instruction 2026-09-06: *"this
+step is endless, how can we be faster — maybe we do not check the whole net at
+every sub-step, but only at the end"*). The paragraph above says to run the
+suite you did not expect to move, after the last edit rather than after the last
+interesting one, and that rule is unchanged. What changes is **which** run
+carries it at which moment, and the change is paid for by a count of the day it
+was asked.
+
+**Measured over one session, 2026-09-06, M-declared-freer steps 1 to 4a**: the
+full net ran **eight** times to completion at **11–15 minutes each**, close to
+**two hours**. Four runs were green. Four found something — and **all four
+failures were in suites that cost seconds**: `canonical` twice (a file written
+and not passed through `heroes fmt`) and `emission` twice (a blessed capture
+that had legitimately moved). **Not one came from the parts that cost the
+minutes** — the corpus, the `run/` goldens, `mutate`, the three configurations.
+Those were green in all eight.
+
+So a sub-step is gated by **the named suites, one at a time** — `heroes run
+tests/harness/main.hero -- <compiler> <name>` — plus the compiler's own tests
+and the net's own tests. Together that is under a minute against thirteen, and
+on the day this was measured it would have caught **four of four**. The full net
+runs **once, before a push**, which is where §14's hard stop already makes
+somebody stop and look.
+
+**And the cheapest saving is not in this rule at all**: two of the four failures
+were code written and not formatted, which `heroes fmt <file> --in-place` costs
+nothing to prevent and a 13-minute run to discover. **Format at the moment of
+writing, not at the moment of verifying.** A rule about which suite to run is
+worth less than the habit that stops the suite from firing.
+
 **And the three platforms are measured from this Mac, BEFORE the commit**
 (author instruction 2026-09-03, after the program that is now `examples/ctime/`
 — it was called filestat until that day, and the directory of that name is
