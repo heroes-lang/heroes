@@ -354,6 +354,70 @@ went on being the only thing between a Heroes program and that channel.
    CPython and Java each did. Falsified if the milestone closes and the guard's
    refusal is still sufficient for every program in the corpus.
 
+## Predictions, scored at the close — 2026-09-06
+
+**1. compiler-engineer: FALSIFIED, and it was right about the mechanism.** It
+predicted *≤ 20 added lines confined to `selfhost/check/ffi.hero`* plus a golden,
+*zero under `runtime/parts/`*, *zero under `selfhost/emit/`*, and *583 passing
+with no existing golden changed* — *"falsified if any of those four numbers
+moves"*. Two hold and two do not. The recursion itself **is eight lines**, so the
+shape was priced correctly. What moved is the blast radius, for two reasons the
+seat could not have priced: the diagnostic needed a message of its own in
+`selfhost/ffi_errors.hero` (+25), because `ffi_type`'s generic text ends by
+listing *a function type as a parameter* among what a header may declare and
+therefore contradicts itself for this case; and CLAUDE.md §11's line ceiling
+forced `selfhost/check/ffi_sweep.hero` out of the file (+121, with `checker.hero`
++4). Measured `git show --stat b0d8d927`. **The two that hold are the two the
+sitting cared about**: zero lines under `runtime/parts/` and zero under
+`selfhost/emit/`, so the repair really was erased in the frontend, and 583 tests
+pass with no existing golden touched.
+
+**2. ffi-pragmatist: HOLDS.** With the door closed, `examples/sqlite/`,
+`examples/ledger/`, `qsort`, `atexit` and `pthread_create` build with **zero
+characters changed** — measured across the whole corpus: the net's `corpus` suite
+is green at 54 programs and no `.hero` under `examples/` or `tests/golden/` was
+edited by this repair. Verified twice: at step 5 (7 callback declarations inside
+`extern` groups, 0 naming a container) and at the close.
+
+**3. ffi-pragmatist: HOLDS.** `runtime/parts/spawn.c` landed with
+`HERO_RUNTIME_ABI` at **21** and no seed regeneration for it — `cmp seed/heroes.c`
+was verified identical after the runtime change, because a runtime change does
+not move the emitted C.
+
+**4. ffi-pragmatist: HOLDS, and it is the one worth reading.** It predicted *the
+ten thread programs will be `i64`-in, `i64`-out and that will not be enough*. The
+first half is exactly what shipped. The second half is **the surprise, and the
+seat's own reasoning is what makes the scoring interesting**: it is not enough for
+the reason the seat gave — a data-parallel example wants a slice, and today's
+descriptors copy shallowly — and it turned out **not to matter**, because sending
+the slice's INDEX and building the slice inside the thread does the same work with
+none of the risk. Ten programs were written that way and not one is worse for it.
+So the prediction is right about the mechanism and wrong about the consequence,
+which is the more useful half to have in the record.
+
+**5. ffi-pragmatist: NOT SCORED, and it is named rather than lapsed.**
+`link "pthread"` failing on Windows with `LNK1104` was never reached, because the
+resolution put threads in the runtime and no program names `pthread` at all. It
+returns the day one does.
+
+**6. llm-ergonomist: NOT SCORED — its subject did not land.** The prediction was
+about generated samples under a body-scoped `$if` form, and panel 114 refused
+that form. It is not falsified and not met; it waits on the form, and R7 of that
+sitting is where the form's terms live.
+
 ## Author's verdict
 
-*pending.*
+**RATIFIED 2026-09-06 by the author, in full**, together with panel 114's: *"I
+ratify all the decisions."* Given at the close, after the ten example programs had
+run on all three platforms.
+
+What was ratified, in the order it matters: that the sitting's question was the
+wrong one and the record says so (R1); that defect 014 is the repair and it makes
+the compiler agree with `spec:224` (R2); that unconditional copying does not land,
+on two vetoes and a measured 24.50 s against 0.36 s (R3); that the
+compare-and-exchange is **deferred on soundness rather than on cost**, with its
+return condition written (R4); that thread creation is the runtime's and its entry
+point is a checked isolation boundary rather than a portable spelling (R5); that
+attachment is priced now rather than discovered later (R6); that Boehm's 2005
+argument is recorded because it outlives the portability one (R7); and that the
+owner tag is the mechanism to reach for if a second door is found (R8).
