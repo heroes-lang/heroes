@@ -1,0 +1,100 @@
+# Threads, and what may cross into one (design.md Part 7.13).
+#
+# WHAT THIS PROGRAM IS FOR. It is the first program in this corpus to run a
+# Heroes function somewhere other than the thread it was started on, and it is
+# written to be read before the other nine: what crosses a thread boundary here
+# is one `i64`, in and out, and that is not a limitation somebody forgot to
+# lift. It is the model.
+#
+# Part 7.13 asks for **isolated per-thread heaps, copying at the boundaries**,
+# and says the rung Heroes needs is plain data parallelism — *"send a slice, get
+# back a number"*. This program sends less than a slice: it sends the INDEX of
+# the slice, each thread builds its own values from that index, and gives back
+# a number. Nothing counted is shared, so nothing counted can be raced.
+#
+# AND THE COMPILER ENFORCES IT RATHER THAN THIS COMMENT. `hero_thread_spawn`'s
+# body is declared `(function(i64) -> i64)`, so writing `(function([i64]) ->
+# i64)` there is `error[ffi_type]` on the line that wrote it — the callback may
+# stand in an `extern`, but a `[T]` inside it may not (§4.19). Panel 113 found
+# that hole open and it was repaired the same day; panel 111 measured what an
+# unrepaired one costs, which is `heap-use-after-free` in nine ASan runs of ten.
+#
+# WHY THE HANDLE IS A NUMBER. `pthread_t` is an opaque pointer on macOS, an
+# `unsigned long` on Linux and a `HANDLE` on Windows — three spellings and no
+# portable one, so a program that named it would be three programs. An index is
+# the same word everywhere, and it lets the runtime turn joining twice, or
+# joining a handle nobody was given, into a message instead of undefined
+# behaviour.
+#
+# WHY THE DECLARATIONS ARE `hero_os.h`. That header ships with the compiler, so
+# there is no machine that can be missing it and no configuration in which this
+# program is skipped. It is the same door `read_file`, `args` and `exit` come
+# through (§1.11): everything comes from C, threads included.
+
+extern "hero_os.h"
+    # Runs `body` on a new thread and answers a handle. Only an `i64` crosses,
+    # in either direction.
+    function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+
+    # Waits for that thread and answers what its body returned. A handle is
+    # spent once it has been waited for.
+    function hero_thread_join(handle: i64) -> i64
+
+    # How many may run at once, asked of the runtime rather than guessed.
+    function hero_thread_limit() -> i64
+
+# One worker: the sum of the squares of a band of a thousand numbers, chosen
+# by the index it is handed. Everything it touches it made itself.
+function band(index: i64) -> i64
+    total: i64 @ 0
+    n: i64 @ index * 1000
+
+    while n < index * 1000 + 1000
+        total @ total + n * n
+        n @ n + 1
+
+    return total
+
+# The same answer without threads, which is what makes the test above a test
+# rather than a restatement.
+function whole(bands: i64) -> i64
+    total: i64 @ 0
+    n: i64 @ 0
+
+    while n < bands * 1000
+        total @ total + n * n
+        n @ n + 1
+
+    return total
+
+function in_parallel(bands: i64) -> i64
+    handles: [i64] @ []
+    i: i64 @ 0
+
+    while i < bands
+        handles @ handles.push(hero_thread_spawn(body: band, arg: i))
+        i @ i + 1
+
+    total: i64 @ 0
+
+    for h in handles
+        total @ total + hero_thread_join(handle: h)
+
+    return total
+
+function main()
+    print("eight threads: ", in_parallel(bands: 8))
+    print("one thread:    ", whole(bands: 8))
+    print("at most ", hero_thread_limit(), " threads at a time")
+
+test "the threads agree with the single thread"
+    assert in_parallel(bands: 4) == whole(bands: 4)
+
+test "a band is the part of the whole it was given"
+    assert band(index: 0) + band(index: 1) == whole(bands: 2)
+
+test "one band alone is the whole of a one-band problem"
+    assert in_parallel(bands: 1) == band(index: 0)
+
+test "the runtime says how many may run at once, and it is more than one"
+    assert hero_thread_limit() > 1

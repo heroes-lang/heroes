@@ -1,0 +1,101 @@
+# The longest Collatz chain below a bound, split across threads — and the
+# lesson is that the bands do NOT take the same time.
+#
+# Every other program in this family hands each thread an equal share of the
+# numbers. Here that share is equal and the WORK is not: a band full of short
+# chains finishes while its neighbour is still climbing. Nothing has to be done
+# about that, and this program exists to say so. design.md Part 7.13 asks for
+# "OS threads — few, real, OS-scheduled", and the operating system is what
+# decides which core runs what. There is no scheduler here to write, which is
+# the Part's own instruction.
+#
+# WHAT CROSSES is a band index in and the longest chain that band found out.
+# The chain itself is never built: only its length is counted, so a thread that
+# examined a hundred thousand numbers hands back one `i64` (design.md Part
+# 7.13's cost rule — send little, get back little, do the work in between).
+
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
+
+constant BANDS: i64
+    8
+
+constant PER_BAND: i64
+    2500
+
+# How many steps `n` takes to reach 1. The sequence is not stored: a chain of
+# 200 steps costs one `i64` here, not an array.
+function steps(n: i64) -> i64
+    count: i64 @ 0
+    v: i64 @ n
+
+    while v != 1
+        if v % 2 == 0
+            v @ v / 2
+        else
+            v @ 3 * v + 1
+        count @ count + 1
+
+    return count
+
+# The longest chain in one band, and the band is chosen by the index.
+function longest_in(index: i64) -> i64
+    best: i64 @ 0
+    n: i64 @ index * PER_BAND + 1
+
+    while n <= index * PER_BAND + PER_BAND
+        s = steps(n: n)
+
+        if s > best
+            best @ s
+        n @ n + 1
+
+    return best
+
+function longest_at_once() -> i64
+    handles: [i64] @ []
+    i: i64 @ 0
+
+    while i < BANDS
+        handles @ handles.push(hero_thread_spawn(body: longest_in, arg: i))
+        i @ i + 1
+
+    best: i64 @ 0
+
+    for h in handles
+        found = hero_thread_join(handle: h)
+
+        if found > best
+            best @ found
+
+    return best
+
+# The same answer with one thread, which is what makes the tests real.
+function longest_alone() -> i64
+    best: i64 @ 0
+    n: i64 @ 1
+
+    while n <= BANDS * PER_BAND
+        s = steps(n: n)
+
+        if s > best
+            best @ s
+        n @ n + 1
+
+    return best
+
+function main()
+    print("longest chain below ", BANDS * PER_BAND, ": ", longest_at_once())
+
+test "the threads find what one thread finds"
+    assert longest_at_once() == longest_alone()
+
+test "the published chain for 27 is 111 steps"
+    assert steps(n: 27) == 111
+
+test "one is already there"
+    assert steps(n: 1) == 0
+
+test "a power of two only halves"
+    assert steps(n: 1024) == 10

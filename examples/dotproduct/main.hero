@@ -1,0 +1,80 @@
+# A dot product of two long vectors, banded across threads.
+#
+# THE ONE THIS FAMILY IS NAMED FOR. design.md Part 7.13's cost rule says the
+# model pays off when "the message is small relative to the work it triggers —
+# send a slice, get back a number". This program sends less than a slice and
+# gets back a number: each thread is handed the INDEX of its band and builds
+# its own two vectors from it, so nothing counted is shared and the reduction
+# is one addition per thread.
+#
+# WHY THE VECTORS ARE COMPUTED AND NOT PASSED. A `[i64]` cannot cross into a
+# thread — `crosses_the_boundary` refuses it inside a callback signature, and
+# that refusal is what makes the whole thing safe rather than merely fast. So
+# the elements are a function of the index, which is the shape every data
+# parallel program in this corpus takes.
+
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
+
+constant BANDS: i64
+    6
+
+constant PER_BAND: i64
+    4000
+
+# The two vectors, as functions of the position rather than as arrays. `left`
+# counts up and `right` counts down, so the product is not a square and a
+# transposition of the bands would be visible in the answer.
+function left(at: i64) -> i64
+    return at % 97 + 1
+
+function right(at: i64) -> i64
+    return 53 - at % 53
+
+function band(index: i64) -> i64
+    total: i64 @ 0
+    at: i64 @ index * PER_BAND
+
+    while at < index * PER_BAND + PER_BAND
+        total @ total + left(at: at) * right(at: at)
+        at @ at + 1
+
+    return total
+
+function together() -> i64
+    handles: [i64] @ []
+    i: i64 @ 0
+
+    while i < BANDS
+        handles @ handles.push(hero_thread_spawn(body: band, arg: i))
+        i @ i + 1
+
+    total: i64 @ 0
+
+    for h in handles
+        total @ total + hero_thread_join(handle: h)
+
+    return total
+
+function alone() -> i64
+    total: i64 @ 0
+    at: i64 @ 0
+
+    while at < BANDS * PER_BAND
+        total @ total + left(at: at) * right(at: at)
+        at @ at + 1
+
+    return total
+
+function main()
+    print("dot product over ", BANDS * PER_BAND, " terms: ", together())
+
+test "the bands add up to the whole"
+    assert together() == alone()
+
+test "a band is a contiguous piece and they do not overlap"
+    assert band(index: 0) + band(index: 1) + band(index: 2) + band(index: 3) + band(index: 4) + band(index: 5) == alone()
+
+test "the two vectors are not the same vector"
+    assert left(at: 3) != right(at: 3)
