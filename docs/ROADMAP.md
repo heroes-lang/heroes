@@ -58,15 +58,15 @@ M-separate-compilation already did.
 
 | | |
 |---|---|
-| **Current milestone** | **M-thread-stacks** — **OPEN 2026-09-06**, row 36, moved ahead of M-declared-freer by author instruction the hour M-isolated-threads' step 6 landed, because that step is what made this defect reachable. Panel 107 adopted the repair on 2026-09-04 and could not place it: no Heroes function ran anywhere but on `main`, so there was no line at which to claim the guard. Step 1 measured the defect on three platforms and closed it — a worker's overflow was exit **132** on macOS and **139** on Linux, both silent, and is `panic: stack exhausted in <function>` at 134 on all three now. Windows was already right and that is measured too: its handler is the **process's**, where POSIX's alternate stack is the **thread's** |
-| **Last closed** | **M-isolated-threads**, 2026-09-06, tag `m-isolated-threads` ([034](journal/034-isolated-threads.md)) — seven steps, two sittings, one defect · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
-| Milestones closed | 35 of **57** · **35** tags — the total moved this afternoon, when `M-online-compiler` entered the chain at row 56 |
-| The compiler | **53,810** lines of Heroes in **181** modules · the seed **733,838** lines of C · runtime ABI **21** |
-| The spec | **3830** of a hard 4096 · headroom **266** — `heroes measure spec/heroes-spec.md`, run while writing this line |
-| Records | sittings **113** (112 `.md` plus panel 000, a directory) · journals **35** · examples **55** programs, **118** files, **544** `test` blocks · open defects **0** · the site **46** pages, 23 English and 23 Italian |
-| Waiting on the author | **1** decision · **35** in `SCHEDULED.md` · **0** in `DEFECTS.md` · **319** in `LEARN.md` (never a gate) · an outstanding veto (`docs/panel/101` R3) |
+| **Current milestone** | **M-declared-freer** — next, row 37: `owned <C function>` on an `extern`, so a `cstr` C hands you is freed by the name its own declaration gives. Panel 109 ratified it 2026-09-04 |
+| **Last closed** | **M-thread-stacks**, 2026-09-06, tag `m-thread-stacks` ([035](journal/035-thread-stacks.md)) — four steps, one sitting, one defect opened. The guard speaks on every thread, and a worker's floor is the thread that ran `main` · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
+| Milestones closed | **36** of 57 · **36** tags |
+| The compiler | **53,810** lines of Heroes in **181** modules · the seed **733,838** lines of C · runtime ABI **21**, unmoved: the floor is an argument to `pthread_create` and not a declaration |
+| The spec | **3824** of a hard 4096 · headroom **272** — it **shrank** while gaining a sentence, `; so does recursion too deep.` at +7 against a −12 removal (`docs/panel/115`) |
+| Records | sittings **114** · journals **36** · examples **55** programs, **118** files, **545** `test` blocks · open defects **1** (015) · the site **46** pages, 23 English and 23 Italian |
+| Waiting on the author | **3** decisions · **32** in `SCHEDULED.md` · **1** in `DEFECTS.md` · **319** in `LEARN.md` (never a gate) · an outstanding veto (`docs/panel/101` R3) |
 
-Every number above re-counted 2026-09-06 with M-thread-stacks open, and none carried: the chain grew a row the same afternoon, and this section held **three stacked blocks and 41 lines** against a ceiling of 15 until it was collapsed to one.
+Every number re-counted 2026-09-06 at the close, none carried. Three suites green: **583**, **1578**, **113** — and the net's one red was a blessed emission whose diff was read before it was re-blessed, `examples/threads/main.hero` gaining two functions.
 
 ---
 
@@ -170,8 +170,8 @@ and why one overtook another are under the table, in § Who scheduled what.
 | 33 | **M-corpus-depth** | done 2026-09-04 | `m-corpus-depth` | [032](journal/032-corpus-depth.md) | the rung between a program and the compiler: nine programs, and half of every frame · **§1.1** |
 | 34 | **M-c-callbacks** | done 2026-09-05 | `m-c-callbacks` | [033](journal/033-c-callbacks.md) | a Heroes function reaches a C callback parameter, and a foreign thread is refused by name rather than left to corrupt · **§1.11**, **§1.12** |
 | 35 | **M-isolated-threads** | done 2026-09-06 | `m-isolated-threads` | [034](journal/034-isolated-threads.md) | Part 7.13 concurrency: three of four measured corruption classes closed, and the door was in the checker |
-| 36 | **M-thread-stacks** | scheduled | — | — | the guard reads the calling thread's own stack, and the size stops being a string in one CI file · **§1.12**
-| 37 | **M-declared-freer** | scheduled | — | — | `owned <C function>`: the string C hands you is freed by the name its own declaration gives · **§1.12**
+| 36 | **M-thread-stacks** | done 2026-09-06 | `m-thread-stacks` | [035](journal/035-thread-stacks.md) | the guard speaks on every thread, and a worker's floor is the thread that ran `main` · **§1.12**
+| 37 | **M-declared-freer** | **OPEN** | — | — | `owned <C function>`: the string C hands you is freed by the name its own declaration gives · **§1.12**
 | 38 | **M-discard-refusal** | scheduled | — | — | `_ =` on a fallible value becomes a compile error · **§1.1**
 | 39 | **M-closures-verdict** | scheduled | — | — | the ruling on Part 7 items 1 and 12, closures and inline blocks — a decision, not a feature |
 | 40 | **M-interpolation-verdict** | scheduled | — | — | the ruling on design.md Part 7 item 7, string interpolation — a decision, not a feature |
@@ -796,57 +796,41 @@ objects introduced by the repair itself, and a step-3 unit test pinning a fact
 step 4 changed. None would have survived a re-reading, because the reasoning was
 right each time and the list was short.
 
-### M-thread-stacks — every thread's stack, and what happens when it runs out
+### M-thread-stacks — every thread's stack, and what happens when it runs out *(closed 2026-09-06)*
 
-**M-thread-stacks moved ahead of M-declared-freer on 2026-09-06, by author
-instruction** — *"I am putting this idea in the roadmap: bring the stack guard
-forward as the next step."* Given the hour `M-isolated-threads` step 6 landed,
-and the reason is that step: **the defect it names became reachable the moment a
-Heroes function could run on a thread.** Panel 107 measured it twice — a worker
-thread's stack overflow is **exit 132 with an empty stderr**, where the main
-thread says `panic: stack exhausted in deep.down` at 134 — and until today no
-Heroes program could get onto another thread at all, so nobody could meet it.
-Ten example programs can now, and `nqueens/` recurses. It is also the last of
-panel 111's four corruption classes with a measured defect behind it and no
-milestone in flight.
+The story is [journal 035](journal/035-thread-stacks.md). What a later milestone
+has to honour is here, and nothing else.
 
-**Panel 107, ratified 2026-09-04**, plus the divergence that hid defect 008. Two
-questions that look separate and are one: **how much stack there is**, and **what
-is said when it runs out**.
+**Panel 115 refused three things permanently, each with the measurement that
+produced it and a return condition that is its only amendment path.** One stack
+size on all three platforms is refused: 8 MiB is glibc's default imported, and on
+Windows it is an eightfold **cut** from the 64 MiB `selfhost/cli/flags.hero`
+links for a measured reason. A Windows arm passing `dwStackSize` is refused while
+`STACK_SIZE_PARAM_IS_A_RESERVATION` is absent, because without it the number sets
+the **commit** and not the reserve — libuv ships that defect today, and
+`runtime/parts/spawn.c` makes the same call. And a stack-size parameter on
+`hero_thread_spawn` is refused at a price both compiling seats measured:
+`HERO_RUNTIME_ABI` 21→22, 209 emission goldens, two sites in `seed/heroes.c` and
+ten hand-written `extern` groups in `examples/`, for a form no program asked for.
+It returns if a program is shown that must choose its own stack.
 
-**What is broken, measured twice in that sitting.** `hero_stack_lo/hi` are the
-**main thread's**, set once at startup, so the guard is blind on every other
-thread: an overflow inside SDL2's audio callback is **exit 132 with an empty
-stderr**, where the main thread says `panic: stack exhausted in deep.down`. A
-library thread's stack is **536,576 bytes** on Darwin against main's 8,372,224,
-so the gap a program can already trip over is **16:1**, and `--sanitize` is no
-louder.
+**What the floor is, so a later reader does not re-derive it.** A thread this
+runtime starts is given at least the stack of the thread that ran `main`. It is a
+fact about the machine in hand rather than a number, so nothing ages and nothing
+reaches the spec. On glibc it is inert; on Windows it does not run. It raises one
+platform and lowers none, and the delivered size is verified **after the fact**
+because macOS and glibc refuse opposite things and neither refuses a terabyte.
 
-**The cheap half** is that `hero_stack_bounds()` already asks the OS about *the
-calling thread*, so the two globals become thread-local and are filled lazily.
-**The unsolved half is why this is a milestone and not a commit**: the handler
-cannot run on an exhausted stack without a `sigaltstack` installed **on that
-thread**, and Heroes does not create the thread — a C library does. Three
-platforms, three states of knowledge: Darwin has
-`pthread_introspection_hook_np`, which nobody has run; glibc's only found route
-is interposing `pthread_create`, unmeasured, and *"glibc has no hook"* goes to
-that sitting as a **question naming what was searched for**, never as a premise
-(CLAUDE.md §1); Windows was not examined at all, and SEH is a different mechanism
-rather than a translation of the POSIX one.
+**What a later thread milestone inherits.** `hero_spawn_stack_of_self()` has two
+arms and no third, deliberately: a new platform is a compile error at that line
+until somebody decides its answer, which is §11's loud-fallback rule rather than
+an oversight. And `runtime/parts/thread.c`'s isolation refusal — not this
+milestone's guard — is what stops a Heroes callback on a thread a C library made;
+narrowing `selfhost/emit/callback_guard.hero`'s set reopens a silent exit 132.
 
-**And the size, which cannot be uniform.** Panel 107 refused three mechanisms
-permanently by name, each with its measurement. What is left here is the
-**divergence**: CI's Windows leg builds the seed with `-Wl,/STACK:67108864` while
-CLAUDE.md § Commands and `seed/README.md` print the plain clang line for all
-three platforms, so **that leg has never run the instruction the contract
-gives** — which is exactly how defect 008 stayed green for as long as it existed.
-Three shapes are on the table with a recommendation, in the `SCHEDULED.md` item;
-whichever lands, the flag stops being a string that lives in one file and nowhere
-else, on `selfhost/cli/flags.hero`'s precedent.
+**Still open and re-homed to M-core-packages**: `cow.c`'s `if (refcount == 1)` is
+a test and then a mutate, and two sittings have now failed to race it.
 
-**What inherits it**: M-isolated-threads, which needs the same bounds per thread
-and needs the size to live somewhere a thread creator can read — which a link
-flag is not.
 
 ### M-declared-freer — the string C hands you, freed by name
 

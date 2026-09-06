@@ -943,15 +943,33 @@ repeated; what follows is what they did not.
 
 ## Commands
 ```
-clang -I runtime seed/heroes.c runtime/runtime.c -o heroes   # the compiler, from C alone (3.5 s)
+clang -I runtime seed/heroes.c runtime/runtime.c -o heroes   # the compiler, from C alone (2.7 s)
 ./heroes build selfhost/main.hero -o heroes-next             # the compiler, from Heroes
-./heroes test selfhost/main.hero                             # its own tests (583, 2026-09-05; 37 s WARM)
-./heroes run tests/harness/main.hero -- ./heroes             # the net (1521 checks, 2026-09-05; 11m16s)
-./heroes test tests/harness/main.hero                        # THE NET'S OWN TESTS (108, 11 s) — the third suite
+./heroes test selfhost/main.hero                             # its own tests (583, 2026-09-06; 37 s WARM)
+./heroes run tests/harness/main.hero -- ./heroes             # the net (1578 checks, 2026-09-06; 11m16s WARM, ~13m with runtime/ changed)
+./heroes test tests/harness/main.hero                        # THE NET'S OWN TESTS (113, 11 s) — the third suite
 
 ./heroes doctor                                              # toolchain check
 ./heroes <cmd>                                               # the one command
 ```
+
+**On Windows the first line is `seed/README.md`'s**, which adds
+`-Wl,/STACK:67108864` and states why; this block does not repeat the flag,
+because this file's own preamble says each rule is written in exactly one place.
+**Since M-thread-stacks the CI leg builds BOTH** — the flagged seed it then uses,
+and the line printed above, which it asserts still compiles `selfhost/lexer.hero`
+— so the two cannot drift in silence again. That step asserts rather than
+reports, deliberately: `docs/work/SCHEDULED.md` recommended a reporting step and
+a step that only reports is a rule performed by nothing, which is §3's story
+about `DECIDE.md` reaching 391 KB told a third time. **Measured on the box
+2026-09-06**: the plain line's 1 MB now builds a compiler that emits the whole of
+`selfhost/main.hero`, so the flag is headroom rather than the thing holding the
+build up — which is exactly the state in which a silent divergence goes unnoticed.
+
+**And the three numbers above were a milestone stale until 2026-09-06**: this
+block said 108 for the third suite while `docs/ROADMAP.md` said 112, because
+M-isolated-threads' close re-measured the ROADMAP and not the contract. A number
+that lives in two places drifts in the one nobody re-reads.
 
 **There are THREE suites and this block named two until 2026-09-02**, when the
 third was found red at `d08062f` and had been red for six commits —
