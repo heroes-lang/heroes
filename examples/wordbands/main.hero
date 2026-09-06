@@ -1,0 +1,130 @@
+# Counting words in text each thread writes for itself — the member of this
+# family that shows a thread using the parts of the language people worry
+# about.
+#
+# The other nine add up numbers. This one builds `str` values, concatenates
+# them, splits them, puts them in a `{str: i64}` and looks them up, all on a
+# thread that is not the one the program started on. Every one of those
+# operations touches a reference count, and until M-isolated-threads step 3
+# that count was a plain integer: panel 111 measured a shared `str` across 32
+# threads as `heap-use-after-free` in nine ASan runs of ten, with the count
+# drifting to somewhere between 6290 and 9785 where it should have been 1.
+#
+# NOTHING IS SHARED, AND THAT IS WHY IT IS SAFE — not the atomic counter, which
+# is the second line of defence. The text this thread reads is text this thread
+# made, from the one `i64` it was given. Two threads running this function at
+# the same moment allocate two different blocks and never meet. The atomic
+# count is what makes the FIRST line hold even so: a literal, a copy or a map
+# key that outlives its statement is counted correctly under contention.
+#
+# WHAT COMES BACK IS STILL A NUMBER. The map, the words and the text are
+# dropped on the thread that made them; only the count crosses.
+
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
+
+constant BANDS: i64
+    8
+
+constant LINES: i64
+    300
+
+# The text a band works on, written from its index. Nothing is read from disk,
+# so the answer is the same on every machine.
+function text_of(index: i64) -> str
+    pieces: [str] @ []
+    n: i64 @ 0
+
+    while n < LINES
+        which = (index * LINES + n) % 5
+
+        word = match which
+            0 => "alpha"
+            1 => "beta"
+            2 => "gamma"
+            3 => "delta"
+            _ => "epsilon"
+
+        pieces @ pieces.push(word)
+        n @ n + 1
+
+    return join(pieces, " ")
+
+# How many times the longest word appears in this band's text. A map, a split
+# and a lookup, all on this thread.
+function longest_word_count(index: i64) -> i64
+    counts: {str: i64} @ {}
+
+    for word in split_words(text: text_of(index: index))
+        counts[word] @ counts[word].default(0) + 1
+
+    best: str @ ""
+    seen: i64 @ 0
+
+    for key in sort(keys(counts))
+        if key.len() > best.len()
+            best @ key
+            seen @ counts[key].default(0)
+
+    return seen
+
+# The language has no split, so this program has one. It is here rather than
+# hidden because a reader should see that a thread does ordinary work.
+function split_words(text: str) -> [str]
+    out: [str] @ []
+    current: [str] @ []
+
+    for ch in text.chars()
+        if ch == " "
+            if current.len() > 0
+                out @ out.push(join(current, ""))
+                current @ []
+        else
+            current @ current.push(ch)
+
+    if current.len() > 0
+        out @ out.push(join(current, ""))
+
+    return out
+
+function together() -> i64
+    handles: [i64] @ []
+    i: i64 @ 0
+
+    while i < BANDS
+        handles @ handles.push(hero_thread_spawn(body: longest_word_count, arg: i))
+        i @ i + 1
+
+    total: i64 @ 0
+
+    for h in handles
+        total @ total + hero_thread_join(handle: h)
+
+    return total
+
+function alone() -> i64
+    total: i64 @ 0
+    i: i64 @ 0
+
+    while i < BANDS
+        total @ total + longest_word_count(index: i)
+        i @ i + 1
+
+    return total
+
+function main()
+    print("epsilons across ", BANDS, " bands: ", together())
+
+test "the threads count what one thread counts"
+    assert together() == alone()
+
+test "the longest of the five words is the one being counted"
+    assert longest_word_count(index: 0) > 0
+
+test "splitting gives back what was joined"
+    assert split_words(text: "one two three").len() == 3
+    assert split_words(text: "one two three")[1] == "two"
+
+test "and it is not confused by the spaces at the edges"
+    assert split_words(text: "  a  b  ").len() == 2

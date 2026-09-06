@@ -278,7 +278,33 @@ made of.
 
 ## Author's verdict
 
-*pending. The author's stated preference is a new symbol, `$`; four seats refuse a
-language form on grounds that are not the symbol, and the historian reports that
-the symbol itself has precedent in a C-emitting language. R7 records the terms
-under which the form lands if the author takes it.*
+**RATIFIED 2026-09-06 by the author, in full**, in these words: *"all right, I
+understand — you have convinced me."* The sitting had been convened by the same
+author, over the coordinator's twice-stated recommendation, and its answer is the
+opposite of the instruction that opened it — so this line is the record of a mind
+changed by measurement rather than of a plan carried out.
+
+**What convinced was not the argument.** It was `M-isolated-threads` step 6,
+committed forty minutes after the last seat reported: the runtime grew
+`hero_thread_spawn` and a Heroes function ran on a real thread on macOS, on
+Windows and on Debian, one source, one answer, **with no conditional compilation
+anywhere in it**. The platform arm went where every other one in this project
+already lives. The question the sitting was convened on — *should the language be
+able to say which machine it is on* — was answered in practice by the most
+platform-dependent feature there is not needing it.
+
+**R7 is therefore not spent, and it is not deleted either.** If a case appears
+that the runtime cannot absorb, the terms for a `$` form are written down and
+priced, and the historian's finding stands beside them: Turbo Pascal, Oracle
+PL/SQL and V — a C-emitting statically typed language — all spell it `$`, the
+lexer here has the symbol free, and the one collision is that Nim, whose surface
+CLAUDE.md §6 copies, spells `toString` with it.
+
+**One question came back the same hour and it is filed rather than answered
+here**: *if in future I want a graphics library wrapping three different libraries
+underneath, how will I do it?* The thin case is answered and measured — one header
+the package ships, `#ifdef` inside, which is how SDL itself is built and how
+`examples/sdl/main.hero` already binds it with no platform word. The real case
+wants a `.c` file the compiler builds, which is `compile`, which panel 036
+**deferred rather than vetoed** *"for want of an acceptance test"*. That question
+is that test, and it is an open item in `docs/work/DECIDE.md`.

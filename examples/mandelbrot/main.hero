@@ -1,0 +1,114 @@
+# How many iterations a band of the Mandelbrot set needs, counted by several
+# threads — the two-dimensional member of this family.
+#
+# The band is a range of ROWS, so a thread's index picks a horizontal strip of
+# the picture and it works out its own coordinates from that. Nothing about the
+# picture crosses the boundary: not the strip, not the pixels, only the total
+# number of iterations the strip took, which is one `i64`.
+#
+# THE ARITHMETIC IS FIXED POINT AND NOT FLOATING, on purpose. This program's
+# output is compared byte for byte against `main.expected` on three machines,
+# and while IEEE 754 is deterministic, an integer answer needs no argument
+# about it at all. The scale is 1000, so a coordinate is a thousandth: the
+# picture is coarse and the count is exact, which is the right trade for a
+# program whose job is to be checkable rather than pretty.
+
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
+
+constant SCALE: i64
+    1000
+
+constant ROWS: i64
+    64
+
+constant COLS: i64
+    64
+
+constant LIMIT: i64
+    100
+
+# The escape count for one point, in fixed point. `z = z*z + c` with the
+# products divided back down by the scale after each multiply.
+function escapes_at(cx: i64, cy: i64) -> i64
+    zx: i64 @ 0
+    zy: i64 @ 0
+    n: i64 @ 0
+
+    while n < LIMIT
+        xx = zx * zx / SCALE
+        yy = zy * zy / SCALE
+
+        if xx + yy > 4 * SCALE
+            return n
+        nx = xx - yy + cx
+        zy @ 2 * zx * zy / SCALE + cy
+        zx @ nx
+        n @ n + 1
+
+    return LIMIT
+
+# One row of the picture: how many iterations that whole row took.
+function row_total(row: i64) -> i64
+    total: i64 @ 0
+    cy = row * 2 * SCALE / ROWS - SCALE
+    col: i64 @ 0
+
+    while col < COLS
+        cx = col * 3 * SCALE / COLS - 2 * SCALE
+        total @ total + escapes_at(cx: cx, cy: cy)
+        col @ col + 1
+
+    return total
+
+# A band is eight rows, and the index picks which eight.
+function band(index: i64) -> i64
+    total: i64 @ 0
+    row: i64 @ index * 8
+
+    while row < index * 8 + 8
+        total @ total + row_total(row: row)
+        row @ row + 1
+
+    return total
+
+function together() -> i64
+    handles: [i64] @ []
+    i: i64 @ 0
+
+    while i < ROWS / 8
+        handles @ handles.push(hero_thread_spawn(body: band, arg: i))
+        i @ i + 1
+
+    total: i64 @ 0
+
+    for h in handles
+        total @ total + hero_thread_join(handle: h)
+
+    return total
+
+function alone() -> i64
+    total: i64 @ 0
+    row: i64 @ 0
+
+    while row < ROWS
+        total @ total + row_total(row: row)
+        row @ row + 1
+
+    return total
+
+function main()
+    print("iterations over a ", COLS, " by ", ROWS, " picture: ", together())
+
+test "the bands agree with the whole picture"
+    assert together() == alone()
+
+test "the origin never escapes, because zero is in the set"
+    assert escapes_at(cx: 0, cy: 0) == LIMIT
+
+test "a point far to the right escapes at once"
+    assert escapes_at(cx: 3 * SCALE, cy: 0) < 5
+
+test "a band is eight rows and no more"
+    assert band(index: 0) == row_total(row: 0) + row_total(row: 1) + row_total(row: 2) + row_total(row: 3) + row_total(row: 4) + row_total(row: 5) + row_total(row: 6) + row_total(row: 7)

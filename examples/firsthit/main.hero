@@ -1,0 +1,101 @@
+# The first position in a long range where a condition holds, searched by
+# several threads at once — and the lesson is that a reduction is not always a
+# sum.
+#
+# Every other program in this family adds its threads' answers together. This
+# one takes the SMALLEST, because "first" is a minimum and the bands finish in
+# whatever order the operating system chooses. A thread that found nothing
+# hands back a value larger than any position, so the same reduction covers
+# both cases without a second channel: there is no way to say "nothing here"
+# other than by giving back a number, and that is the whole discipline of a
+# boundary only an `i64` crosses.
+#
+# WHY THE THREADS DO NOT STOP EARLY. A band that has already found a hit goes
+# on searching its own band, and a band whose neighbour found an earlier hit
+# does not learn it. Telling them would need shared mutable state across
+# threads, which is exactly what Part 7.13's model removes — and the cost is
+# bounded, because a band is finite. Doing less work is not worth being able
+# to corrupt memory.
+
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
+
+constant BANDS: i64
+    8
+
+constant PER_BAND: i64
+    3000
+
+# Larger than any position, so "not found" reduces the same way a hit does.
+constant NOWHERE: i64
+    999999999
+
+# What is being looked for: the first positive multiple of both 97 and 89.
+#
+# THE CONDITION IS SPARSE ON PURPOSE, and the first draft of this program got
+# it wrong. That draft looked for a square ending in 89, which happens four
+# times in every hundred numbers — so every band found one, `NOWHERE` was
+# never returned, and the reduction below never had to choose between a hit
+# and a miss. The test that asserted otherwise failed, correctly, and the
+# repair was to the PROGRAM: a sentinel nothing exercises is a sentinel
+# nothing checks (CLAUDE.md §9). 97 times 89 is 8633, so five of the eight
+# bands here find nothing at all.
+function wanted(n: i64) -> bool
+    return n > 0 && n % 97 == 0 && n % 89 == 0
+
+function first_in(index: i64) -> i64
+    at: i64 @ index * PER_BAND
+
+    while at < index * PER_BAND + PER_BAND
+        if wanted(n: at)
+            return at
+        at @ at + 1
+
+    return NOWHERE
+
+function first_at_once() -> i64
+    handles: [i64] @ []
+    i: i64 @ 0
+
+    while i < BANDS
+        handles @ handles.push(hero_thread_spawn(body: first_in, arg: i))
+        i @ i + 1
+
+    best: i64 @ NOWHERE
+
+    for h in handles
+        found = hero_thread_join(handle: h)
+
+        if found < best
+            best @ found
+
+    return best
+
+function first_alone() -> i64
+    at: i64 @ 0
+
+    while at < BANDS * PER_BAND
+        if wanted(n: at)
+            return at
+        at @ at + 1
+
+    return NOWHERE
+
+function main()
+    print("first multiple of 97 and 89: ", first_at_once())
+
+test "the threads find the same first as one thread"
+    assert first_at_once() == first_alone()
+
+test "the answer really is a hit"
+    assert wanted(n: first_at_once())
+
+test "and nothing before it is"
+    assert !wanted(n: first_at_once() - 1)
+
+test "a band with no hit gives back the value that loses every comparison"
+    assert first_in(index: 0) == NOWHERE
+
+test "and the winning band is not the first one, so the reduction really chose"
+    assert first_in(index: 2) == first_at_once()
