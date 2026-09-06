@@ -222,6 +222,7 @@ function render_probes() -> [probe.Probe]
 # the opaque one carries its own header beside it, so no leg skips it.
 function ffi_probes() -> [probe.Probe]
     return [
+        row(name: "a freer that cannot free a string is refused at the MARK, not at the declaration (panel 116)", argv: "build tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero", code: 1).may_skip().err_has("error[ffi_freer_type]").err_has("`fclose` cannot free a string").err_has("owned fclose").err_lacks("function fclose(f: ptr)").err_lacks("internal error").err_lacks("hero_ffi_probe")
         row(name: "a parameter wider than the header is the author's error", argv: "build tests/golden/fixedbugs/ffi-parameter-width.hero", code: 1).may_skip().err_has("error[ffi_parameter_type]").err_has("`c` of `putchar`").err_has("`int`").err_has("Declare it `i32`").err_lacks("internal error").err_lacks("hero_ffi_probe").err_lacks("build/")
         row(name: "a field the header has as an array is the author's error", argv: "build tests/golden/fixedbugs/ffi-a-field-the-header-has-as-an-array.hero", code: 1).may_skip().err_has("error[ffi_field_type]").err_has("`Dirent.d_name`").err_lacks("internal error")
         row(name: "a word-width parameter names the platform", argv: "build tests/golden/fixedbugs/ffi-word-width.hero", code: 1).may_skip().err_has("error[ffi_parameter_type]").err_has("`size` of `malloc`").err_has("`offset` of `fseek`").err_has("the platform's word").err_has("Windows").err_lacks("internal error").err_lacks("hero_ffi_probe")

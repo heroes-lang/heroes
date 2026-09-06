@@ -16,9 +16,11 @@ use source
 use diag
 use check/table
 use check/state
+use check/freer as freer
 use ir/containers
 use emit/ctype
 use emit/extern_probe
+use emit/probe_reply as probe_reply
 use emit/c_spellings
 use emit/ffi_lookup
 use emit/ffi_site
@@ -195,14 +197,17 @@ function parameter_width(s: source.Source, decls: [ast.Decl], p: containers.Prog
         return fail("none", "no extern is declared at that line")
     f = found.must().f
     name = found.must().name
-    parameters = extern_probe.parameter_list(names, c, f)
+
+    # Same probe line the emitter wrote, or the columns are read against a
+    # different string (panel 116).
+    parameters = extern_probe.parameter_list(names, c, f, frees: !freer.marked_as_freer(decls, s, name: name).is_err())
 
     if parameters.is_err()
         return fail("none", "a parameter with no C spelling")
     arguments = extern_probe.probe_arguments(f, c)
     module = source.component_at(s, decls[f.decl].span.start)
     probe = extern_probe.probe_name(module: module, name: name)
-    columns = extern_probe.argument_columns(
+    columns = probe_reply.argument_columns(
         probe: probe,
         name: name,
         parameters: parameters.must(),
@@ -293,6 +298,29 @@ function parameter_width(s: source.Source, decls: [ast.Decl], p: containers.Prog
 
     if kind == MAY_LOSE
         consequence @ "and C would round large values in silence"
+
+    # **THE MARK IS THE MISTAKE, NOT THE DECLARATION** (panel 116, and it is the
+    # shape next door to the repair rather than the repair itself). When this
+    # extern is probed as a freer its pointer parameter was typed `char *`
+    # BECAUSE some `owned` names it — so `function fclose(f: ptr)` is a correct
+    # declaration and pointing at it sends the reader to fix what is already
+    # right. The line the author must change is the mark, so the caret goes
+    # there and the message says which question is being asked.
+    mark = freer.marked_as_freer(decls, s, name: name)
+
+    if !mark.is_err()
+        bad: diag.Diagnostic @ diag.new_diagnostic(
+            code: "ffi_freer_type",
+            message: "`" + name + "` cannot free a string: the header takes `" + c_type.must() + "`, and a freer for an `owned` `cstr` is handed the string's own bytes",
+            span: mark.must()
+        )
+        bad.notes @ bad.notes.push(
+            "§4.19: the compiler calls this function for you, so it is checked against the header the way your own call would be — and `" + c_type.must() + "` is not what a string is"
+        )
+        bad.notes @ bad.notes.push(
+            "name the function that frees THIS string — `free` for `strdup`, `sqlite3_free` for SQLite's own — or drop the `owned` mark and free it yourself"
+        )
+        return ok(bad)
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "ffi_parameter_type",
         message: which + " of `" + name + "` is declared " + what + " the header's `" + c_type.must() + "` — clang read the header, " + consequence,
@@ -350,10 +378,10 @@ test "the width, the sign and the class, gated by the probe's own line"
             f0 @ f
             picked @ true
 
-    parameters = extern_probe.parameter_list(names, c, f0).must()
+    parameters = extern_probe.parameter_list(names, c, f0, frees: false).must()
     arguments = extern_probe.argument_names(count: 1)
     probe = extern_probe.probe_name(module: "t", name: "narrow")
-    columns = extern_probe.argument_columns(
+    columns = probe_reply.argument_columns(
         probe: probe,
         name: "narrow",
         parameters: parameters,
@@ -398,10 +426,10 @@ test "the float family: four directions, each with its own sentence"
             f0 @ f
             picked @ true
 
-    parameters = extern_probe.parameter_list(names, c, f0).must()
+    parameters = extern_probe.parameter_list(names, c, f0, frees: false).must()
     arguments = extern_probe.argument_names(count: 1)
     probe = extern_probe.probe_name(module: "t", name: "narrow")
-    columns = extern_probe.argument_columns(
+    columns = probe_reply.argument_columns(
         probe: probe,
         name: "narrow",
         parameters: parameters,

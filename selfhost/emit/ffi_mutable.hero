@@ -21,10 +21,12 @@ use ast
 use source
 use diag
 use check/state
+use check/freer as freer
 use check/render
 use ir/containers
 use emit/ctype
 use emit/extern_probe
+use emit/probe_reply as probe_reply
 use emit/ffi_lookup
 use emit/ffi_site
 use parse
@@ -54,14 +56,17 @@ function writable_parameter(s: source.Source, decls: [ast.Decl], p: containers.P
         return fail("none", "no extern is declared at that line")
     f = found.must().f
     name = found.must().name
-    parameters = extern_probe.parameter_list(names, c, f)
+
+    # The reader must compute the SAME probe line the emitter wrote, or its
+    # column matching lands on the wrong parameter (panel 116).
+    parameters = extern_probe.parameter_list(names, c, f, frees: !freer.marked_as_freer(decls, s, name: name).is_err())
 
     if parameters.is_err()
         return fail("none", "a parameter with no C spelling")
     arguments = extern_probe.probe_arguments(f, c)
     module = source.component_at(s, decls[f.decl].span.start)
     probe = extern_probe.probe_name(module: module, name: name)
-    columns = extern_probe.argument_columns(
+    columns = probe_reply.argument_columns(
         probe: probe,
         name: name,
         parameters: parameters.must(),
@@ -125,10 +130,10 @@ test "a writable char * names the lent parameter and the owning repair"
             f0 @ f
             picked @ true
 
-    parameters = extern_probe.parameter_list(names, c, f0).must()
+    parameters = extern_probe.parameter_list(names, c, f0, frees: false).must()
     arguments = extern_probe.argument_names(count: 2)
     probe = extern_probe.probe_name(module: "t", name: "strtok")
-    columns = extern_probe.argument_columns(
+    columns = probe_reply.argument_columns(
         probe: probe,
         name: "strtok",
         parameters: parameters,

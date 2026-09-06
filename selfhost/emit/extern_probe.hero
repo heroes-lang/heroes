@@ -20,11 +20,13 @@ use ast
 use source
 use check/table
 use check/state
+use check/freer as freer
 use widths
 use ir/containers
 use emit/mangle
 use emit/ctype
 use emit/externs as emit_externs
+use emit/ffi_lookup as ffi_lookup
 use emit/writer
 use parse
 use resolve
@@ -104,7 +106,12 @@ function extern_probes(@w: writer.Writer, p: containers.Program, c: state.Checke
         if f.params.len() == 0
             continue
         name = source.span_text(s, decls[f.decl].name)
-        parameters = parameter_list(names, c, f)
+
+        # A function some `owned` mark names is probed as a FREER: its
+        # pointer parameter is typed `char *`, which is where a wrong
+        # freer becomes a compile error rather than a SIGSEGV.
+        frees = !freer.marked_as_freer(decls, s, name: name).is_err()
+        parameters = parameter_list(names, c, f, frees: frees)
 
         if parameters.is_err()
             continue
@@ -161,27 +168,6 @@ function extern_probes(@w: writer.Writer, p: containers.Program, c: state.Checke
 # and the golden case is owed (docs/panel/092 § Where the seats disagreed).
 function probe_line(probe: str, name: str, parameters: [str], arguments: [str]) -> str
     return "__attribute__((unused)) static void " + probe + "(" + parameters.join(", ") + ") { (void)(" + name + ")(" + arguments.join(", ") + "); }"
-
-# Where each argument begins in probe_line's output, in the 1-based
-# column numbering clang reports. The caret of a conversion diagnostic
-# sits on the argument token, so this is what turns a column back into
-# a parameter index.
-function argument_columns(probe: str, name: str, parameters: [str], arguments: [str]) -> [i64]
-    line = probe_line(probe: probe, name: name, parameters: parameters, arguments: arguments)
-    opens = "(void)(" + name + ")("
-    found = find_text(line: line, needle: opens)
-
-    if found.is_err()
-        none: [i64] = []
-        return none
-    at: i64 @ found.must() + opens.len()
-    out: [i64] @ []
-
-    for argument in arguments
-        out @ out.push(at + 1)
-        at @ at + argument.len() + 2
-
-    return out
 
 # The arguments the probe's body hands to the header's function: the
 # positional names, and `(void *)aN` for an `@` parameter that is opaque
@@ -249,7 +235,16 @@ function argument_names(count: i64) -> [str]
 # probe for the entire function — which is why the named arm below
 # exists: losing it cost DrawText the width check on all four of its
 # i64s because of the fifth parameter (panel 061's audit).
-function parameter_list(names: ctype.Names, c: state.Checked, f: containers.Function) -> [str]?
+# **`frees` is what makes a wrong freer a COMPILE error** (panel 116, ratified
+# 2026-09-06). The probe never runs; it exists so clang checks a name against
+# its header, and the parameter's TYPE is the whole question it asks. Measured:
+# at `void *` both `free` and `fclose` are accepted in silence, because a
+# `void *` converts to anything; at `char *`, `free` passes and `fclose` is
+# refused in the header's own words. So a function some `owned` mark names gets
+# `char *`. The reasoning, the ten-freer table and the honest limit — `curl.h`
+# writes `typedef void CURL;`, so six of ten and not ten of ten — are in
+# `docs/panel/116-where-the-release-lives.md` and in the golden that pins it.
+function parameter_list(names: ctype.Names, c: state.Checked, f: containers.Function, frees: bool) -> [str]?
     out: [str] @ []
     index: i64 @ 0
 
@@ -272,10 +267,15 @@ function parameter_list(names: ctype.Names, c: state.Checked, f: containers.Func
                     mutable @ true
             .local_slot | .synthetic_slot => mutable @ mutable
 
+        spelled: str @ c_type.must()
+
+        if frees && spelled == "void *"
+            spelled @ "char *"
+
         if mutable
-            out @ out.push(c_type.must() + " * a" + index.to_str())
+            out @ out.push(spelled + " * a" + index.to_str())
         else
-            out @ out.push(c_type.must() + " a" + index.to_str())
+            out @ out.push(spelled + " a" + index.to_str())
         index @ index + 1
 
     return ok(out)
@@ -309,6 +309,63 @@ function c_type_of(names: ctype.Names, c: state.Checked, ty: i64) -> str?
 
     return fail("none", "unreached")
 
+test "a probe per extern with parameters, mutables as pointers, columns exact"
+    text = "extern \"m.h\"\n    function narrow(x: i64) -> i64\n    function fill(@buf: i64, n: i64)\n    function version() -> i64\n\nfunction main()\n    print(narrow(x: 1))\n    v: i64 @ 0\n    fill(buf: @v, n: 1)\n    print(version())\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+    names = ctype.new_names(s, parsed.decls)
+    w: writer.Writer @ writer.new_writer("t")
+    extern_probes(@w, low.program, c, names, s, parsed.decls)
+    got = writer.finish(w)
+
+    # The probe's name goes through the mangler; the C name does not.
+    assert ffi_lookup.has(
+        text: got,
+        needle: "__attribute__((unused)) static void hero_ffi_probe_h_t_narrow(int64_t a0) { (void)(narrow)(a0); }"
+    )
+
+    # An @ parameter is declared the way the call site passes it.
+    assert ffi_lookup.has(
+        text: got,
+        needle: "hero_ffi_probe_h_t_fill(int64_t * a0, int64_t a1) { (void)(fill)((void *)a0, a1); }"
+    )
+
+    # A zero-parameter extern gets no probe at all.
+    assert !ffi_lookup.has(text: got, needle: "hero_ffi_probe_h_t_version")
+
+    # #line at the declaration's own line.
+    assert ffi_lookup.has(text: got, needle: "#line 2 \"t.hero\"")
+
+    # The pragma block: every PROBE_ERRORS flag is an error inside it,
+    # the push precedes the first probe and the pop follows the last —
+    # an error pragma leaking past the block would judge generated
+    # code, whose conversions are deliberate casts.
+    assert ffi_lookup.has(text: got, needle: "#pragma clang diagnostic push")
+    assert ffi_lookup.has(text: got, needle: "#pragma clang diagnostic error \"-Wdouble-promotion\"")
+    assert ffi_lookup.has(text: got, needle: "#pragma clang diagnostic error \"-Wimplicit-float-conversion\"")
+    assert ffi_lookup.has(text: got, needle: "#pragma clang diagnostic error \"-Wfloat-conversion\"")
+    assert ffi_lookup.has(text: got, needle: "#pragma clang diagnostic error \"-Wimplicit-int-conversion\"")
+    assert ffi_lookup.has(text: got, needle: "#pragma clang diagnostic pop")
+    assert find_text(line: got, needle: "diagnostic push").must() < find_text(line: got, needle: "hero_ffi_probe_h_t_narrow").must()
+    assert find_text(line: got, needle: "diagnostic pop").must() > find_text(line: got, needle: "hero_ffi_probe_h_t_fill").must()
+
+test "no probes, no pragma: the block may only exist when a probe does"
+    text = "extern \"m.h\"\n    function version() -> i64\n\nfunction main()\n    print(version())\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+    names = ctype.new_names(s, parsed.decls)
+    w: writer.Writer @ writer.new_writer("t")
+    extern_probes(@w, low.program, c, names, s, parsed.decls)
+    assert writer.finish(w) == ""
+
 # Byte offset of the first occurrence of needle, over chars so the scan
 # never splits a character — the ASCII probe lines make the two counts
 # agree.
@@ -338,75 +395,3 @@ function find_text(line: str, needle: str) -> i64?
         start @ start + 1
 
     return fail("none", "not found")
-
-## Tests
-
-function has(text: str, needle: str) -> bool
-    return !find_text(line: text, needle: needle).is_err()
-
-test "a probe per extern with parameters, mutables as pointers, columns exact"
-    text = "extern \"m.h\"\n    function narrow(x: i64) -> i64\n    function fill(@buf: i64, n: i64)\n    function version() -> i64\n\nfunction main()\n    print(narrow(x: 1))\n    v: i64 @ 0\n    fill(buf: @v, n: 1)\n    print(version())\n"
-    parsed = parse.parse(text)
-    s = source.new_source(name: "t.hero", text: text)
-    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
-    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
-    assert c.diagnostics.len() == 0
-    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
-    names = ctype.new_names(s, parsed.decls)
-    w: writer.Writer @ writer.new_writer("t")
-    extern_probes(@w, low.program, c, names, s, parsed.decls)
-    got = writer.finish(w)
-
-    # The probe's name goes through the mangler; the C name does not.
-    assert has(
-        text: got,
-        needle: "__attribute__((unused)) static void hero_ffi_probe_h_t_narrow(int64_t a0) { (void)(narrow)(a0); }"
-    )
-
-    # An @ parameter is declared the way the call site passes it.
-    assert has(text: got, needle: "hero_ffi_probe_h_t_fill(int64_t * a0, int64_t a1) { (void)(fill)((void *)a0, a1); }")
-
-    # A zero-parameter extern gets no probe at all.
-    assert !has(text: got, needle: "hero_ffi_probe_h_t_version")
-
-    # #line at the declaration's own line.
-    assert has(text: got, needle: "#line 2 \"t.hero\"")
-
-    # The pragma block: every PROBE_ERRORS flag is an error inside it,
-    # the push precedes the first probe and the pop follows the last —
-    # an error pragma leaking past the block would judge generated
-    # code, whose conversions are deliberate casts.
-    assert has(text: got, needle: "#pragma clang diagnostic push")
-    assert has(text: got, needle: "#pragma clang diagnostic error \"-Wdouble-promotion\"")
-    assert has(text: got, needle: "#pragma clang diagnostic error \"-Wimplicit-float-conversion\"")
-    assert has(text: got, needle: "#pragma clang diagnostic error \"-Wfloat-conversion\"")
-    assert has(text: got, needle: "#pragma clang diagnostic error \"-Wimplicit-int-conversion\"")
-    assert has(text: got, needle: "#pragma clang diagnostic pop")
-    assert find_text(line: got, needle: "diagnostic push").must() < find_text(line: got, needle: "hero_ffi_probe_h_t_narrow").must()
-    assert find_text(line: got, needle: "diagnostic pop").must() > find_text(line: got, needle: "hero_ffi_probe_h_t_fill").must()
-
-test "no probes, no pragma: the block may only exist when a probe does"
-    text = "extern \"m.h\"\n    function version() -> i64\n\nfunction main()\n    print(version())\n"
-    parsed = parse.parse(text)
-    s = source.new_source(name: "t.hero", text: text)
-    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
-    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
-    assert c.diagnostics.len() == 0
-    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
-    names = ctype.new_names(s, parsed.decls)
-    w: writer.Writer @ writer.new_writer("t")
-    extern_probes(@w, low.program, c, names, s, parsed.decls)
-    assert writer.finish(w) == ""
-
-test "argument columns point at each argument's own token"
-    parameters: [str] = ["int64_t a0", "double a1"]
-    arguments = argument_names(count: 2)
-    line = probe_line(probe: "hero_ffi_probe_h_t_f", name: "f", parameters: parameters, arguments: arguments)
-    columns = argument_columns(probe: "hero_ffi_probe_h_t_f", name: "f", parameters: parameters, arguments: arguments)
-    assert columns.len() == 2
-
-    # The 1-based column lands on the first character of each argument.
-    cs = line.chars()
-    assert cs[columns[0] - 1] == "a"
-    assert cs[columns[1] - 1] == "a"
-    assert columns[1] == columns[0] + 4

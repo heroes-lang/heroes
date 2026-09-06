@@ -290,3 +290,42 @@ compiler seat's verdict was the coordinator's own uncommitted change and not the
 tree's behaviour. The verdict survives the correction and every cost measurement
 is independent of it — but a sitting whose brief was contaminated is a sitting
 the author should read knowing that.
+
+## Correction, appended at the implementation (2026-09-06)
+
+**Resolution item 2 says *"the freer CALL is emitted with the pointee kept"*.
+The FFI seat's own condition says *"still emits a freer PROBE typed `char *`
+rather than `void *`"*. Those are two different places in the generated C, and
+the measurement says the seat was right.**
+
+The probe is what this compiler already emits per extern declaration, and it
+never runs — it exists so clang checks the name against the header. Today, for
+a freer declared `function free(p: ptr)`:
+
+```c
+__attribute__((unused)) static void hero_ffi_probe_h_probe_free(void * a0) { (void)(free)(a0); }
+```
+
+Run at the implementation, with `clang -std=gnu11 -Werror -Wall`, over probes
+for `free` and `fclose` in both shapes:
+
+| probe parameter | `free` | `fclose` |
+|---|---|---|
+| `void *` | accepted | **accepted** — exit 0, nothing said |
+| `char *` | accepted | **rejected**: `incompatible pointer types passing 'char *' to parameter of type 'FILE *' (aka 'struct __sFILE *')` |
+
+**So the probe's parameter type is the whole mechanism**, and the call's is not:
+by the time the call runs, the probe has already refused the wrong freer at
+compile time. Item 2 is therefore implemented as the seat wrote it — **the probe
+for a function named by an `owned` mark is typed `char *`** — and the release's
+own call may take the ordinary `ptr` path.
+
+**Why this is appended rather than edited.** The panel file is a record (§14),
+and the coordinator's synthesis said *call* where a seat's condition said
+*probe*. Correcting the sentence in place would leave the author's ratification
+attached to a text they did not read. The ratification stands: nothing about
+which pass builds the release, which is what the two vetoes were actually about,
+changes — and the seat's condition, which is the operative one, is honoured
+exactly. This is the second thing this sitting has had to write down about its
+own coordinator, and both are here for the same reason: a record that hides its
+own slips is worth less than one that carries them.
