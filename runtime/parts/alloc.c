@@ -175,12 +175,112 @@ static void hero_release_block(void *p) {
  * THE DAY THREADS ARRIVE this is the edit design.md promised would be one edit.
  * `array.c` says the queue must become `_Thread_local`, and *"the buffer then
  * leaks one allocation per thread"*: whether that is paid, pooled or freed at
- * thread exit is decided here, in the allocator, and not in the array. */
+ * thread exit is decided here, in the allocator, and not in the array.
+ *
+ * **THAT DAY IS M-isolated-threads STEP 4, AND THE ANSWER IS FREED AT THREAD
+ * EXIT.** The three the sentence offered are not equal. *Paid* means a thread
+ * that compares one deep value leaves a block behind for the life of the
+ * process, and a program with one thread per connection pays it per connection.
+ * *Pooled* is a shared free list, which is a second allocation site wearing a
+ * different hat and the one thing this file exists to prevent. *Freed at thread
+ * exit* is the model's own answer: under isolation the buffer is made and used
+ * on one thread, so the thread that made it is exactly who can give it back.
+ *
+ * WHY THE POINTER LIVES IN THE KEY AND NOT IN A `_Thread_local`, which is the
+ * whole reason this is 20 lines rather than 2. Panel 111 measured both seats
+ * finding the same trap independently: on Darwin arm64 a `_Thread_local` read
+ * from INSIDE a `pthread_key_t` destructor reads **0**, because thread-local
+ * storage is already torn down when the destructor runs — `worker: live=3` and
+ * `destructor: live=0` at the same address, in the sitting's own transcript. So
+ * a destructor cannot be handed the buffer by the thread-local that names it.
+ * It has to be handed the buffer by the key itself, which is the one thing still
+ * alive at that point, and that is what `hero_kept_note` stores.
+ *
+ * **AND THE ONE SLOT IS A CLAIM, NOT AN ASSUMPTION** (CLAUDE.md §11). The key
+ * holds ONE pointer because there is exactly one kept buffer in this runtime,
+ * and `hero_grow_kept` has exactly one caller. That is a fact about today which
+ * a second caller would quietly break — a thread would free one buffer and
+ * abandon the other. So it is asserted rather than trusted: the `old` a caller
+ * hands in must be what this thread last noted, and a second kept buffer trips
+ * that panic on its first growth instead of leaking in silence.
+ *
+ * THE TWO PLATFORM SPELLINGS, and neither is a translation of the other.
+ * POSIX has `pthread_key_create` with a destructor per key; Windows has no
+ * pthreads at all — measured on the box 2026-09-06, `#include <pthread.h>` is
+ * `fatal error: 'pthread.h' file not found` under clang targeting MSVC — and
+ * answers with fibre-local storage, `FlsAlloc`, whose callback runs on thread
+ * exit exactly as the destructor does. Both were run before either was written
+ * in. C11's `<threads.h>` would have been one spelling for both and is not
+ * available: it is present on Windows and on glibc and **absent from the macOS
+ * SDK**, measured the same day, so the portable-looking answer is the one that
+ * does not compile here. */
+#if defined(_WIN32)
+#include <windows.h>
+static DWORD hero_kept_slot = FLS_OUT_OF_INDEXES;
+static void WINAPI hero_kept_release(PVOID buffer) {
+    free(buffer);
+}
+static BOOL CALLBACK hero_kept_make(PINIT_ONCE once, PVOID param, PVOID *context) {
+    (void)once;
+    (void)param;
+    (void)context;
+    hero_kept_slot = FlsAlloc(hero_kept_release);
+    if (hero_kept_slot == FLS_OUT_OF_INDEXES) hero_panic("cannot make the thread's kept-buffer slot");
+    return TRUE;
+}
+#else
+#include <pthread.h>
+static pthread_key_t hero_kept_key;
+static void hero_kept_release(void *buffer) {
+    free(buffer);
+}
+static void hero_kept_make(void) {
+    if (pthread_key_create(&hero_kept_key, hero_kept_release) != 0) {
+        hero_panic("cannot make the thread's kept-buffer key");
+    }
+}
+#endif
+
+/* Made once for the whole process, on whichever thread grows a kept buffer
+ * first. `pthread_once` and `InitOnceExecuteOnce` are the platform spellings and
+ * both are correct; this is the one place a plain `_Atomic` flag would not be,
+ * because two threads racing here would make two keys and the loser's destructor
+ * would never run. */
+static void hero_kept_ready(void) {
+#if defined(_WIN32)
+    static INIT_ONCE once = INIT_ONCE_STATIC_INIT;
+    InitOnceExecuteOnce(&once, hero_kept_make, NULL, NULL);
+#else
+    static pthread_once_t once = PTHREAD_ONCE_INIT;
+    pthread_once(&once, hero_kept_make);
+#endif
+}
+
+/* This thread's kept buffer, as the OS will see it at thread exit. */
+static void hero_kept_note(void *old, void *fresh) {
+    hero_kept_ready();
+#if defined(_WIN32)
+    void *held = FlsGetValue(hero_kept_slot);
+#else
+    void *held = pthread_getspecific(hero_kept_key);
+#endif
+    if (held != old) {
+        hero_panic("a second buffer kept for the life of a thread — parts/alloc.c "
+                   "holds one slot per thread, and it is now wrong");
+    }
+#if defined(_WIN32)
+    if (!FlsSetValue(hero_kept_slot, fresh)) hero_panic("cannot record a kept buffer");
+#else
+    if (pthread_setspecific(hero_kept_key, fresh) != 0) hero_panic("cannot record a kept buffer");
+#endif
+}
+
 static void *hero_grow_kept(void *old, size_t old_bytes, size_t new_bytes) {
     void *fresh = hero_malloc_raw(new_bytes);
     if (old != NULL) {
         memcpy(fresh, old, old_bytes);
         free(old);
     }
+    hero_kept_note(old, fresh);
     return fresh;
 }

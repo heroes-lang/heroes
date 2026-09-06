@@ -75,23 +75,60 @@
 typedef _locale_t hero_locale;
 #define HERO_NO_LOCALE ((_locale_t)0)
 static hero_locale hero_make_c_locale(void) { return _create_locale(LC_ALL, "C"); }
+static void hero_free_c_locale(hero_locale l) { _free_locale(l); }
 #define hero_snprintf_c(buf, cap, loc, prec, v) _snprintf_s_l((buf), (cap), _TRUNCATE, "%.*g", (loc), (prec), (v))
 #define hero_strtod_c(s, loc) _strtod_l((s), NULL, (loc))
 #else
 typedef locale_t hero_locale;
 #define HERO_NO_LOCALE ((locale_t)0)
 static hero_locale hero_make_c_locale(void) { return newlocale(LC_ALL_MASK, "C", (locale_t)0); }
+static void hero_free_c_locale(hero_locale l) { freelocale(l); }
 #define hero_snprintf_c(buf, cap, loc, prec, v) snprintf((buf), (cap), "%.*g", (prec), (v))
 #define hero_strtod_c(s, loc) strtod((s), NULL)
 #endif
 
+/* THE ONE THE SWEEP FOUND, and it is why `suite_runtime.hero`'s rule 3 reads
+ * function bodies and not only the top of a file.
+ *
+ * This was `static hero_locale cached` INSIDE the function below — shared
+ * mutable state by every definition, and invisible to every count this project
+ * had made, because panel 111 counted 22 objects at FILE SCOPE and there are 28
+ * once a body is opened. What made it worth repairing rather than listing is
+ * where it is reached from: `hero_f64_render` and `hero_f32_render` both call
+ * it, so any Heroes program that prints a number with a point arrives here.
+ *
+ * WHAT THE RACE COSTS, and it is not corruption. Two threads that both find it
+ * empty both build a locale and both write a valid pointer, so nobody reads
+ * rubbish — but `newlocale` ALLOCATES, and the loser's handle is then held by
+ * nobody. That leak is invisible to both instruments this project owns: the leak
+ * gate counts blocks this runtime allocated and this one is the libc's, and ASan
+ * has no leak detector on Darwin arm64 (panel 021). The Linux leg under
+ * `--sanitize` is the only place it could ever have been seen.
+ *
+ * WHY A COMPARE-AND-EXCHANGE AND NOT A `_Thread_local`. Thread-local is the
+ * shorter edit and it is the wrong one: it trades one leaked locale per RACE for
+ * one leaked locale per THREAD, which is `hero_eq_queue`'s trap one file over
+ * and worse, because nothing here could give it back. First one wins, the loser
+ * frees what it made, and every thread afterwards reads a pointer that is
+ * already there. */
+static _Atomic hero_locale hero_locale_cache = HERO_NO_LOCALE;
+
 static hero_locale hero_c_locale(void) {
-    static hero_locale cached = HERO_NO_LOCALE;
-    if (cached == HERO_NO_LOCALE) {
-        cached = hero_make_c_locale();
-        if (cached == HERO_NO_LOCALE) hero_panic("cannot create the C locale for rendering");
+    hero_locale found = atomic_load_explicit(&hero_locale_cache, memory_order_acquire);
+    if (found != HERO_NO_LOCALE) return found;
+
+    hero_locale made = hero_make_c_locale();
+    if (made == HERO_NO_LOCALE) hero_panic("cannot create the C locale for rendering");
+
+    hero_locale empty = HERO_NO_LOCALE;
+    if (atomic_compare_exchange_strong_explicit(&hero_locale_cache, &empty, made,
+                                                memory_order_acq_rel, memory_order_acquire)) {
+        return made;
     }
-    return cached;
+    /* Another thread got there first, and `empty` now holds what it put in. Give
+     * ours back rather than keep it: that release is the whole point. */
+    hero_free_c_locale(made);
+    return empty;
 }
 
 static int hero_f64_render(char *buf, size_t cap, double v) {

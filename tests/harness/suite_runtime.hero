@@ -118,17 +118,32 @@ constant LEAST_REFCOUNT: i64
 # reason it exists. The number in the record is **22 mutable file-scope
 # objects, 4 of them `_Thread_local`** (panel 111, 2026-09-05), and that
 # number is right about what it counted. What it counted is FILE SCOPE.
-# Measured by this sweep on 2026-09-06, over the same 20 files: **28
-# mutable objects, and five of them live INSIDE a function** — `f64.c`'s
-# cached C locale and four `static int done = 0;` once-guards. A `static`
-# inside a function body is shared between threads exactly as much as one
-# at the top of the file, and no count in this project had ever seen one.
+# This sweep's first run, 2026-09-06, over the same 20 files: **28 mutable
+# objects, and five of them live INSIDE a function** — `f64.c`'s cached C
+# locale and four `static int done = 0;` once-guards. A `static` inside a
+# function body is shared between threads exactly as much as one at the
+# top of the file, and no count in this project had ever seen one.
 #
 # That is CLAUDE.md §1's newest rule met in the wild: the argument was
 # sound and the LIST was short, and nothing in a correct argument points
 # at the row nobody wrote down. So the list is taken from the tree on
 # every run, and the allow-list below is the only thing that may be
 # written by hand.
+#
+# **AND ON ITS SECOND RUN IT CAUGHT ITS OWN AUTHOR.** M-isolated-threads
+# step 4 made ten of those objects `_Thread_local` and repaired the
+# locale, and the same commit introduced FOUR new shared ones — a key, a
+# slot and two once-guards, in the very hook written to give a thread's
+# buffer back. The sweep named all four, an hour after it was written, in
+# the run that was meant to confirm the ten. It also named the ten
+# allow-list lines that had just stopped matching anything, which is the
+# other direction and the one a hand-written table never notices.
+#
+# Where it stands after step 4, measured that day: **32 objects, 15
+# `_Thread_local`, 3 `_Atomic`, 14 still shared, 6 of them inside
+# function bodies.** The 14 are the eleven entries below — three of the
+# entries cover a pair each — and ten of them are `M-thread-stacks`' or
+# are safe by where they are called.
 #
 # WHAT IS ALLOWED. `_Thread_local` and `_Atomic` need no entry: the
 # spelling itself says the object was thought about. Everything else must
@@ -143,20 +158,12 @@ constant LEAST_REFCOUNT: i64
 # each of its platform arms, and each pair shares the one reason.
 constant SHARED_BY_DECISION: [str]
     [
-        "runtime/parts/array.c hero_eq_queue | the work list of a deep `==`. Its own comment has predicted this since it was written: the day threads arrive it must become `_Thread_local`, and the buffer then leaks one allocation per thread unless the thread's exit gives it back. Panel 111 reached it from safe Heroes: `a == b` on nested arrays across 8 threads is exit 139 with an empty stderr, and ASan names `heap-buffer-overflow WRITE` in `hero_eq_push`. M-isolated-threads step 4"
-        "runtime/parts/array.c hero_eq_len | the same buffer's length, and it must move with it"
-        "runtime/parts/array.c hero_eq_cap | the same buffer's capacity"
-        "runtime/parts/array.c hero_eq_running | the flag that makes a nested comparison defer to the outermost one, so it is per walk and therefore per thread"
-        "runtime/parts/dir.c hero_dir_names | the names one directory scan collected, bound at `selfhost/cli/process.hero`. Scratch that outlives no call but the scan, so it is per thread the day a thread exists. M-isolated-threads step 4"
-        "runtime/parts/dir.c hero_dir_count | how many names that scan holds"
-        "runtime/parts/dir.c hero_dir_room | how many it has room for"
-        "runtime/parts/f64.c cached | THE ONE THIS SWEEP FOUND, and the reason it sweeps function bodies. A lazily made C locale, cached, reached from BOTH float renderers, `hero_f64_render` and `hero_f32_render` — so any Heroes that prints an `f32` or an `f64`, or asks one for `to_str`, gets here. Two threads can both find it empty, both call `newlocale`, and one handle is then lost: a leak the leak gate cannot see, because it is the libc's allocation and not this runtime's. Unreachable today only because `parts/thread.c`'s guard stops a foreign thread before it arrives. M-isolated-threads step 4"
+        "runtime/parts/alloc.c hero_kept_key | the POSIX key whose destructor gives a thread's kept buffer back. Written ONCE, inside `pthread_once`, and only read afterwards — which is what a once-guard buys and the one shape where `shared` and `safe` are the same word. A plain `_Atomic` flag would not do: two threads racing to make the key would make two, and the loser's destructor would never run"
+        "runtime/parts/alloc.c hero_kept_slot | the Windows half of the same thing, `FlsAlloc`'s index, written once inside `InitOnceExecuteOnce`. Windows has no pthreads at all — measured on the box 2026-09-06, `pthread.h` is not found under clang targeting MSVC"
+        "runtime/parts/alloc.c once | the two once-guards themselves, `pthread_once_t` and `INIT_ONCE`, one per platform arm. Being shared is their entire job and the platform owns their synchronisation; there is nothing here for this project to make safe"
         "runtime/parts/os.c done | two once-guards, for byte-mode stdout on Windows and for unbuffered stderr. Safe because of WHERE THEY ARE CALLED and not because of how they are written: both run inside `hero_args_set`, which the generated `main` calls before a program's first line, on the thread that owns the program. If a second caller is ever added this entry is wrong"
         "runtime/parts/os.c hero_argc | the process's own argument count, written once by `hero_args_set` before any thread can exist and only read afterwards. Process-wide by nature: `args()` must answer the same thing on every thread"
         "runtime/parts/os.c hero_argv | the process's own argument vector, and the same reasoning"
-        "runtime/parts/run.c hero_run_words | the argument list being built for a spawn, 257 slots, and it is ON §1.0's CLOSURE LIST — a raced count walks off the end and `execvp`s a half-built argv. M-isolated-threads step 4"
-        "runtime/parts/run.c hero_run_count | how many words that list holds, and the count that would be raced"
-        "runtime/parts/run.c hero_run_limit_seconds | the deadline the next spawn gets. It pairs with the words above, so two threads spawning at once would take each other's limit; it moves when they do"
         "runtime/parts/stack.c hero_stack_lo | the MAIN thread's stack floor, measured once at startup. Wrong on every other thread, which is why a worker overflow is exit 132 with an empty stderr where the main thread says `panic: stack exhausted`. That is `M-thread-stacks` and panel 107 by name, not this milestone's"
         "runtime/parts/stack.c hero_stack_hi | the main thread's stack ceiling, and the same milestone"
         "runtime/parts/stack.c hero_stack_prev_segv | the handler that was installed before this runtime's, so a fault it does not own is passed on. Installed once, on the main thread, and read from a signal handler; `M-thread-stacks`"
@@ -675,5 +682,12 @@ test "the name is the last identifier before what ends the declarator"
 test "an allow-list entry is read up to its reason, and every one names something"
     assert entry_key("runtime/parts/os.c hero_argc | the process's own count") == "runtime/parts/os.c hero_argc"
     assert entry_key("runtime/parts/os.c done") == "runtime/parts/os.c done"
-    assert named_here("runtime/parts/f64.c cached")
-    assert !named_here("runtime/parts/f64.c a_name_nobody_wrote")
+    assert named_here("runtime/parts/os.c hero_argc")
+    assert !named_here("runtime/parts/os.c a_name_nobody_wrote")
+
+    # This line read `runtime/parts/f64.c cached` for the hour between step 3
+    # and step 4, and step 4 went red on it: the entry went when the locale
+    # stopped racing. A witness picked from a list that is meant to SHRINK is a
+    # test with an expiry date, so this one names an object whose entry says it
+    # is process-wide by nature rather than one that is waiting for a repair.
+    assert !named_here("runtime/parts/f64.c cached")
