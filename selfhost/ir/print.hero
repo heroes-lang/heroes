@@ -271,6 +271,7 @@ function operation(f: containers.Function, inst: ir.Inst, c: state.Checked, s: s
         .cast ca =>
             match ca.kind
                 .str_to_cstr => return "cast str_to_cstr " + value_name(ca.operand)
+                .cstr_to_ptr => return "cast cstr_to_ptr " + value_name(ca.operand)
         .call cl =>
             tail: str @ ""
 

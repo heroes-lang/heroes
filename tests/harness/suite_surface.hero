@@ -352,7 +352,12 @@ test "the tables are what this module is, so they are counted"
     # 17 -> 19 on 2026-09-04: defect 010's two rows (`ffi-pointee-void`,
     # `ffi-pointee-opaque`). An addition is the direction this assert
     # notices least loudly (CLAUDE.md § Commands), and here it noticed.
-    assert ffi_probes().len() == 19
+    # 19 -> 20 on 2026-09-06, M-declared-freer step 4a: the freer a header
+    # refutes. `owned fclose` on a string `strdup` returned used to build
+    # clean and die at exit 139; the probe types a marked freer's parameter
+    # `char *` and clang refuses it, and the row pins that the caret lands on
+    # the MARK and not on the `fclose` declaration, which is correct.
+    assert ffi_probes().len() == 20
 
     # 33 -> 35 on 2026-09-03, M-robustness-guards step 2: `qualifyptr`'s two
     # rows — the program whose `certain` fix reproduced itself, now a guess,
