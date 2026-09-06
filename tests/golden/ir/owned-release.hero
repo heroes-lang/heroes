@@ -1,0 +1,29 @@
+# The `owned <freer>` release, pinned in the one instrument that can see it
+# (§4.19; panels 109 and 116, both ratified 2026-09-06).
+#
+# **This is panel 116's sixth condition and the reason its resolution went the
+# way it did.** Two seats vetoed each other over where the release is BUILT.
+# Building it here, in the lowering, is what puts it in this dump: a `free()`
+# that happened only in generated C would be bytes nobody reads, and
+# `ir.hero`'s own comment above `CastKind` says an invisible conversion would
+# be a lie — an invisible `free()` is the larger one.
+#
+# **What the dump must show, in order, and every line of it is load-bearing:**
+# the extern call yielding a `cstr`; the pointer stored in a slot, because it
+# is read THREE times and the call must not happen three times; `validated`
+# called BEFORE the free, because reading bytes after freeing them is a
+# use-after-free a plain build reports as nothing; the null test against
+# `const nullptr`, which panel 116 measured cannot be checked on this machine
+# any other way — `fclose(NULL)` survives here and a guardless release exits 0
+# even under ASan; and the `cast cstr_to_ptr` reaching the freer by name.
+#
+# `UPDATE_GOLDEN=1` is forbidden in this directory (CLAUDE.md §9), so this pin
+# cannot be regenerated away by a later change that quietly drops a step.
+extern "stdlib.h"
+    function free(p: ptr)
+
+extern "string.h"
+    function strdup(s: cstr) -> cstr owned free
+
+function copy_of(text: str) -> str
+    return strdup(text.cstr()).default("")
