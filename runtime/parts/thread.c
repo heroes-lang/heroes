@@ -13,9 +13,15 @@
  * function as a callback, and C is then free to call it back FROM A THREAD IT
  * MADE ITSELF — an audio callback, a signal handler's worker, a library's own
  * pool. Everything a Heroes value does on the way through is written for one
- * thread: `hero_str_incref` is a plain `int64_t`, `cow.c` decides in-place
- * mutation with `if (a->refcount == 1)` — a test and then a mutate — and the
- * comparison scratch buffers in `array.c` are process-wide. Panel 111 built the
+ * thread. Two of the three reasons this file gives below have since been
+ * repaired and the sentence is corrected rather than left standing, because a
+ * guard whose stated reason has expired is a guard somebody will remove:
+ * `hero_str_incref` was a plain `int64_t` until M-isolated-threads step 3 and is
+ * an `_Atomic` counter now, and `array.c`'s comparison scratch was process-wide
+ * until step 4 and is `_Thread_local` now. **What is NOT repaired is the one in
+ * the middle, and it is enough on its own**: `cow.c` decides in-place mutation
+ * with `if (a->refcount == 1)` — a test and then a mutate, which no memory order
+ * closes. Panel 111 built the
  * programs: a shared `str` across 32 threads is `heap-use-after-free` or a
  * double free in 9 ASan runs of 10, with the refcount drifting to 6290-9785
  * instead of 1, and `a == b` on nested arrays is exit 139 with an empty stderr.

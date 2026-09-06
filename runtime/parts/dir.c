@@ -37,9 +37,9 @@
  * A premise that was true where it was written and false where it was copied,
  * which is CLAUDE.md §11's exact shape. There is no right number to guess for a
  * directory, so there is no number. */
-static char **hero_dir_names = NULL;
-static int64_t hero_dir_count = 0;
-static int64_t hero_dir_room = 0;
+static _Thread_local char **hero_dir_names = NULL;
+static _Thread_local int64_t hero_dir_count = 0;
+static _Thread_local int64_t hero_dir_room = 0;
 
 /* What a scan is looking for. */
 #define HERO_DIR_FILES 0

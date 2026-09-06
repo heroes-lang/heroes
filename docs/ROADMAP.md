@@ -755,17 +755,31 @@ compiler's own test suite, five alternating runs per arm from a cleared cache,
 which is the sitting's own +1.7% reproduced on a different workload, and CLAUDE.md §12 is what lets it land — robustness outranks
 speed, and this closes the class panel 111 measured at nine ASan runs in ten.
 
-**What is left is bigger than the plan said, and the sweep that says so is now an
-instrument.** `tests/harness/suite_runtime.hero`'s rule 3 takes the list from the
-tree on every run: **28** objects in `runtime/` survive between calls — 5
-`_Thread_local`, 2 `_Atomic` since step 3, **21 still shared**. The refused plan
-named two of them and panel 111 named eighteen, because both counted **file
-scope**; five live inside function bodies, and one of those five, `f64.c`'s cached
-C locale, is reached by ordinary Heroes printing a float. Two of the twenty-one
-are load-bearing by name: the argv buffer for process spawn, which is on §1.0's
-closure list, and `cow.c`'s `if (refcount == 1)`, a test-and-mutate that no memory
-order can close. The stack-guard four are M-thread-stacks' and panel 107's, not
-this one's.
+**The scratch the runtime keeps between calls closed at step 4**, the same day.
+Ten objects are per-thread — `array.c`'s comparison scratch, `dir.c`'s listing,
+and `run.c`'s argv buffer, which is on §1.0's closure list — and the buffer
+neither counter weighs is given back by the thread that made it, through a key
+whose destructor `parts/alloc.c` owns. `f64.c`'s cached C locale stops racing by
+compare-and-exchange. **Cost +0.20%, inside the noise.** That is panel 111's
+class 2 closed, and class 1 went at step 3.
+
+**What is left is one line, and the sweep that says so is an instrument rather
+than a paragraph.** `tests/harness/suite_runtime.hero`'s rule 3 takes the list
+from the tree on every run and fails in both directions: **32** objects in
+`runtime/` survive between calls — 15 `_Thread_local`, 3 `_Atomic`, **14 still
+shared**, six of them inside function bodies. Ten of the fourteen are
+M-thread-stacks' or are safe by where they are called, and every one carries its
+reason in the file. **The one that matters is `cow.c`'s `if (refcount == 1)`**, a
+test and then a mutate that no memory order can close — panel 111's class 3, the
+last reason `parts/thread.c`'s guard cannot come down, and now its own item in
+`docs/work/SCHEDULED.md`.
+
+**And the instrument has already earned itself.** Rule 3 landed at step 3 and
+caught its own author three times in the three hours after: ten allow-list lines
+that stopped matching when their objects went per-thread, four newly shared
+objects introduced by the repair itself, and a step-3 unit test pinning a fact
+step 4 changed. None would have survived a re-reading, because the reasoning was
+right each time and the list was short.
 
 ### M-declared-freer — the string C hands you, freed by name
 

@@ -43,8 +43,8 @@
  * magnitude above it. Overflow is a panic, not a truncation. */
 #define HERO_RUN_MAX_ARGS 256
 
-static char *hero_run_words[HERO_RUN_MAX_ARGS + 1];
-static int64_t hero_run_count = 0;
+static _Thread_local char *hero_run_words[HERO_RUN_MAX_ARGS + 1];
+static _Thread_local int64_t hero_run_count = 0;
 
 /* Drop every word. Safe to call twice, and called before every build. */
 void hero_run_reset(void) {
@@ -290,7 +290,7 @@ static void hero_run_child(const char *program, int report,
  *
  * Zero means no limit, which is the default and what every existing caller
  * gets. */
-static int64_t hero_run_limit_seconds = 0;
+static _Thread_local int64_t hero_run_limit_seconds = 0;
 
 void hero_run_limit(int64_t seconds) {
     hero_run_limit_seconds = seconds > 0 ? seconds : 0;

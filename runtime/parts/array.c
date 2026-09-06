@@ -190,17 +190,25 @@ typedef struct {
     int64_t len;
 } HeroEqWork;
 
-/* **These three are file-static rather than thread-local, and that is a decision
- * with an expiry date rather than an oversight.** Heroes has no threads today —
- * concurrency is design.md Part 7.13, `M-isolated-threads`, deferred until the
- * closure list compiles itself. The day it arrives, this queue is shared mutable
- * state across threads and must become `_Thread_local` (the buffer then leaks one
- * allocation per thread, which is why it is not that already). `hero_hash_depth`
- * below is already thread-local because a counter costs nothing to make so. */
-static HeroEqWork *hero_eq_queue = NULL;
-static size_t hero_eq_len = 0;
-static size_t hero_eq_cap = 0;
-static bool hero_eq_running = false;
+/* **The expiry date came, and this is what the comment used to promise.** It read
+ * *"these three are file-static rather than thread-local, and that is a decision
+ * with an expiry date rather than an oversight … the day it arrives, this queue
+ * is shared mutable state across threads and must become `_Thread_local` (the
+ * buffer then leaks one allocation per thread, which is why it is not that
+ * already)"*. Both halves were right, and both are settled at
+ * M-isolated-threads step 4.
+ *
+ * The four are `_Thread_local` now, and the parenthesis — the reason they were
+ * not — is answered where it belongs rather than here: `parts/alloc.c` records
+ * this thread's kept buffer in a key whose destructor frees it, so the thread
+ * that grew the queue is the one that gives it back. That question is the
+ * allocator's by §4.20 and by that file's own words, and the array only has to
+ * say what it needs. `hero_hash_depth` below was thread-local from the start,
+ * because a counter costs nothing to make so. */
+static _Thread_local HeroEqWork *hero_eq_queue = NULL;
+static _Thread_local size_t hero_eq_len = 0;
+static _Thread_local size_t hero_eq_cap = 0;
+static _Thread_local bool hero_eq_running = false;
 
 static void hero_eq_push(const unsigned char *a, const unsigned char *b, const HeroDesc *elem,
                          int64_t len) {
