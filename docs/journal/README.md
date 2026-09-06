@@ -67,6 +67,7 @@ is `docs/ROADMAP.md` § The names, and the rule is CLAUDE.md §14.
 | 032 | [the rung](032-corpus-depth.md) | M-corpus-depth — nine programs between a program and the compiler, and half of every frame | 2026-09-04 | `m-corpus-depth` |
 
 | 033 | [the address](033-c-callbacks.md) | M-c-callbacks — a Heroes function reaches a C callback parameter, and the sitting beside it was convened on 2.6% of its own subject | 2026-09-05 | `m-c-callbacks` |
+| 034 | [the door](034-isolated-threads.md) | M-isolated-threads — three of four corruption classes closed, and the fourth was never where the corruption came from | 2026-09-06 | `m-isolated-threads` |
 
 `git tag --list --sort=creatordate` gives the same order from git itself, and
 `git checkout m5b` re-opens any milestone's code — which is what

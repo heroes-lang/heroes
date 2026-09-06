@@ -58,6 +58,33 @@ M-separate-compilation already did.
 
 | | |
 |---|---|
+| **Current milestone** | **M-thread-stacks** — row 36, **moved ahead of M-declared-freer on 2026-09-06 by author instruction**, because the milestone that just closed is what made its defect reachable: until then no Heroes function could run on another thread, and ten example programs now can. Panel 107 measured it twice — a worker's stack overflow is **exit 132 with an empty stderr** where the main thread says `panic: stack exhausted` at 134 |
+| **Last closed** | **M-isolated-threads**, 2026-09-06, tag `m-isolated-threads` ([034](journal/034-isolated-threads.md)) — seven steps, two sittings, one defect · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
+| Milestones closed | 35 of 56 · 35 tags |
+| The compiler | **53,810** lines of Heroes in **181** modules · the seed **733,838** lines of C, regenerated at step 5 with its fixpoint re-verified · runtime ABI **21**, unmoved by a milestone that added a runtime file |
+| The spec | **3830** of a hard 4096 · headroom **266**, unmoved: this milestone cost **zero** spec tokens, which also scores panel 111's spec-warden prediction as HOLDING at the bound |
+| Records | sittings **113** · journals **35** · measurements **18** · examples **55** programs, 544 `test` blocks · open defects **0** · the site **46** pages |
+| Waiting on the author | **1** decision · **35** in `SCHEDULED.md` · **0** in `DEFECTS.md` · **319** in `LEARN.md` (never a gate) · an outstanding veto (`docs/panel/101` R3) |
+
+All re-measured 2026-09-06 at the close. Three suites green: **583**, **1576**, **112**. The ten thread examples run on all three platforms with byte-identical output, all 39 test blocks pass on all three, and **zero are skipped anywhere**.
+
+---|---|
+| **Current milestone** | **M-thread-stacks** — next, row 36, **moved ahead of M-declared-freer on 2026-09-06 by author instruction** because the milestone that just closed is what made its defect reachable. Panel 107 measured it twice: a worker thread's stack overflow is **exit 132 with an empty stderr**, where the main thread says `panic: stack exhausted in deep.down` at 134, and a library thread's stack is **536,576 bytes** on Darwin against main's 8,372,224 — a 16:1 gap. Until 2026-09-06 no Heroes function could run on another thread at all, so nobody could meet it; ten example programs now can, and `examples/nqueens/` recurses. The cheap half is that `hero_stack_bounds()` already asks the OS about the CALLING thread, so the two globals become thread-local and are filled lazily. The unsolved half is why it is a milestone: the handler cannot run on an exhausted stack without a `sigaltstack` installed ON THAT thread, and three platforms are in three different states of knowledge |
+| **Last closed** | **M-isolated-threads**, 2026-09-06, tag `m-isolated-threads` ([034](journal/034-isolated-threads.md)) — seven steps, two sittings, one defect · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
+| Milestones closed | 35 of 56 · 35 tags |
+| The compiler | **53,810 lines** of Heroes in **181** modules · the seed **733,838** lines of generated C, regenerated at step 5 and its fixpoint re-verified · runtime ABI **21**, unmoved by a milestone that added a runtime file, because an added declaration does not change a declaration's shape — all re-counted 2026-09-06 at the close |
+| The spec | **3830** tokens of a hard 4096 · headroom **266** — unmoved by this whole milestone, which cost **zero spec tokens**: threads arrive through `hero_os.h`, the door `read_file` and `args` already use. That also **scores panel 111's spec-warden prediction as HOLDING**, at the bound rather than under it |
+| Records | sittings **113** (112 `.md` plus panel 000, a directory) · journals **35** · measurements **18** · examples **55** programs, 118 files, 544 `test` blocks · open defects **0** — defect 014 was filed and repaired the same day · the site **46** pages |
+| Waiting on the author | **1 decision** in `DECIDE.md`, the graphics-library question and `compile`'s deferral · **35** in `SCHEDULED.md` · **0** in `DEFECTS.md` · **319** in `LEARN.md` (never a gate) · an **outstanding veto** of the rule that stands (`docs/panel/101` R3) |
+
+Every number above re-measured 2026-09-06 at M-isolated-threads' close. **Three
+suites green on this Mac**: the compiler's own **583**, the net **1576**, and the
+net's own tests **112**. **And the ten thread example programs run on all three
+platforms with byte-identical output, all 39 of their test blocks pass on all
+three, and zero are skipped anywhere** — the author's own acceptance criterion,
+measured on the string the harness skips on.
+
+---|---|
 | **Current milestone** | **M-isolated-threads** — **OPEN 2026-09-03**, row 35, re-scoped by `docs/panel/111` on 2026-09-05: it delivers Part 7.13's isolation or it delivers nothing, at **data parallelism only**, which is the design's own words at `:2563`. **It inherits three measured things from the milestone that closed ahead of it**: `_Atomic` appears **nowhere** in `runtime/`, so the refcount half of design.md's own v1 invariant is still prose; **16 of 22** mutable file-scope objects in `runtime/parts/*.c` are not `_Thread_local`, one of them the argv buffer on the closure list; and `pthread_t` has **two spellings and no portable one** — an opaque pointer here, an `unsigned long` on glibc — which is M-core-packages' platform-typedef question arriving in a second place. The witness it owes is writable for the first time: a loopback HTTP server with one connection per thread, which could not be written at all while a function value could not cross the FFI |
 | **Last closed** | **M-c-callbacks**, 2026-09-05, tag `m-c-callbacks` ([033](journal/033-c-callbacks.md)) — opened and closed the same day, six steps · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
 | Milestones closed | 34 of 56 · 34 tags |
@@ -169,9 +196,9 @@ and why one overtook another are under the table, in § Who scheduled what.
 | 32 | **M-robustness-guards** | done 2026-09-03 | `m-robustness-guards` | [031](journal/031-robustness-guards.md) | the guards that shut the holes §1.12 named: `@` on an immutable, the stack, the C pointer verdict, the harness scratch · §1.12 |
 | 33 | **M-corpus-depth** | done 2026-09-04 | `m-corpus-depth` | [032](journal/032-corpus-depth.md) | the rung between a program and the compiler: nine programs, and half of every frame · **§1.1** |
 | 34 | **M-c-callbacks** | done 2026-09-05 | `m-c-callbacks` | [033](journal/033-c-callbacks.md) | a Heroes function reaches a C callback parameter, and a foreign thread is refused by name rather than left to corrupt · **§1.11**, **§1.12** |
-| 35 | **M-isolated-threads** | **OPEN** 2026-09-03 | — | — | Part 7.13 concurrency: per-thread heaps, copying at the boundaries, no scheduler |
-| 36 | **M-declared-freer** | scheduled | — | — | `owned <C function>`: the string C hands you is freed by the name its own declaration gives · **§1.12**
-| 37 | **M-thread-stacks** | scheduled | — | — | the guard reads the calling thread's own stack, and the size stops being a string in one CI file · **§1.12**
+| 35 | **M-isolated-threads** | done 2026-09-06 | `m-isolated-threads` | [034](journal/034-isolated-threads.md) | Part 7.13 concurrency: three of four measured corruption classes closed, and the door was in the checker |
+| 36 | **M-thread-stacks** | scheduled | — | — | the guard reads the calling thread's own stack, and the size stops being a string in one CI file · **§1.12**
+| 37 | **M-declared-freer** | scheduled | — | — | `owned <C function>`: the string C hands you is freed by the name its own declaration gives · **§1.12**
 | 38 | **M-discard-refusal** | scheduled | — | — | `_ =` on a fallible value becomes a compile error · **§1.1**
 | 39 | **M-closures-verdict** | scheduled | — | — | the ruling on Part 7 items 1 and 12, closures and inline blocks — a decision, not a feature |
 | 40 | **M-interpolation-verdict** | scheduled | — | — | the ruling on design.md Part 7 item 7, string interpolation — a decision, not a feature |
@@ -781,36 +808,19 @@ objects introduced by the repair itself, and a step-3 unit test pinning a fact
 step 4 changed. None would have survived a re-reading, because the reasoning was
 right each time and the list was short.
 
-### M-declared-freer — the string C hands you, freed by name
-
-**Panel 109, ratified 2026-09-04**, and it is the one sitting of that day that
-adds rather than refuses. The fact underneath it was measured three ways: a
-caller-owned C string can be **freed or read, never both** — `@error: cstr`
-against `char **` is `error[ffi_writable_parameter]` (panel 058), `@error: ptr`
-then `.validated()` is `type_mismatch`, and from the spec alone no route from
-`cstr` to `free(void *)` exists. So the `sqlite3_exec` leak that convened panel
-108 was not carelessness: it was **a program the language cannot express**, which
-is a hole in design.md §1.11's *everything comes from C*.
-
-**What it delivers.** `owned <C function>` after a `cstr` result or a `@`
-parameter the header spells `char **`; the freer called **by name** in a
-generated per-freer release, verified by the probe; the NULL guard emitted,
-because `fclose(NULL)` segfaults on glibc; the `@` cell out-only; and **a call of
-the declared freer on an owned value is a compile error** — the condition four
-seats wrote independently, and the one that turns a silent double release at exit
-0 into a diagnostic.
-
-**Two splits come first**, and they are the compiler seat's condition rather than
-tidying: `selfhost/ir/lower.hero` at 1511 of 1511 and `selfhost/parse/decl.hero`
-at 638 of 638 have no line of room, and the feature lands in both. Their
-`DECIDED` rows are **lowered, not raised**.
-
-**Not in this milestone**: `ptr owned` as a counted value, refused under a
-standing veto whose return conditions are measured and written in the panel file,
-and the third case — C keeping a lent buffer — which needs a lifetime across two
-calls that a language without references cannot state.
-
 ### M-thread-stacks — every thread's stack, and what happens when it runs out
+
+**M-thread-stacks moved ahead of M-declared-freer on 2026-09-06, by author
+instruction** — *"I am putting this idea in the roadmap: bring the stack guard
+forward as the next step."* Given the hour `M-isolated-threads` step 6 landed,
+and the reason is that step: **the defect it names became reachable the moment a
+Heroes function could run on a thread.** Panel 107 measured it twice — a worker
+thread's stack overflow is **exit 132 with an empty stderr**, where the main
+thread says `panic: stack exhausted in deep.down` at 134 — and until today no
+Heroes program could get onto another thread at all, so nobody could meet it.
+Ten example programs can now, and `nqueens/` recurses. It is also the last of
+panel 111's four corruption classes with a measured defect behind it and no
+milestone in flight.
 
 **Panel 107, ratified 2026-09-04**, plus the divergence that hid defect 008. Two
 questions that look separate and are one: **how much stack there is**, and **what
@@ -849,6 +859,35 @@ else, on `selfhost/cli/flags.hero`'s precedent.
 **What inherits it**: M-isolated-threads, which needs the same bounds per thread
 and needs the size to live somewhere a thread creator can read — which a link
 flag is not.
+
+### M-declared-freer — the string C hands you, freed by name
+
+**Panel 109, ratified 2026-09-04**, and it is the one sitting of that day that
+adds rather than refuses. The fact underneath it was measured three ways: a
+caller-owned C string can be **freed or read, never both** — `@error: cstr`
+against `char **` is `error[ffi_writable_parameter]` (panel 058), `@error: ptr`
+then `.validated()` is `type_mismatch`, and from the spec alone no route from
+`cstr` to `free(void *)` exists. So the `sqlite3_exec` leak that convened panel
+108 was not carelessness: it was **a program the language cannot express**, which
+is a hole in design.md §1.11's *everything comes from C*.
+
+**What it delivers.** `owned <C function>` after a `cstr` result or a `@`
+parameter the header spells `char **`; the freer called **by name** in a
+generated per-freer release, verified by the probe; the NULL guard emitted,
+because `fclose(NULL)` segfaults on glibc; the `@` cell out-only; and **a call of
+the declared freer on an owned value is a compile error** — the condition four
+seats wrote independently, and the one that turns a silent double release at exit
+0 into a diagnostic.
+
+**Two splits come first**, and they are the compiler seat's condition rather than
+tidying: `selfhost/ir/lower.hero` at 1511 of 1511 and `selfhost/parse/decl.hero`
+at 638 of 638 have no line of room, and the feature lands in both. Their
+`DECIDED` rows are **lowered, not raised**.
+
+**Not in this milestone**: `ptr owned` as a counted value, refused under a
+standing veto whose return conditions are measured and written in the panel file,
+and the third case — C keeping a lent buffer — which needs a lifetime across two
+calls that a language without references cannot state.
 
 ### M-discard-refusal — `_ =` stops swallowing a failure
 
