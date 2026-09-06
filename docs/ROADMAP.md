@@ -1601,6 +1601,43 @@ and then whichever engine enforces it.
   output size, and the allow-list above. It also puts a service behind a site
   that is static today (Astro on Cloudflare Pages, `site/public/CNAME`).
 
+**No language change is owed, whichever engine wins** (panel 114; panel 036 as
+corrected by 114's spec-warden, which found the record had been reading a
+**deferral** of `compile` as a veto). 114 ruled that platform variation lives in
+the header a program ships, with the `#ifdef` inside — one `.hero` source, exit 0
+on macOS and Windows, `--emit-c` carrying **zero** platform words. A browser is a
+fourth platform under that ruling, so the mechanism for its arm exists already at
+zero spec tokens and this milestone opens no sitting to obtain one.
+
+**The stack is the browser route's first hard number, and it was measured for
+another platform** (M-thread-stacks, on the author's Windows box, 2026-09-06 at
+`bcf6c41a`). A recursive-descent compiler in wasm gets a fixed slice of linear
+memory chosen once at link time, which is structurally the Windows main thread's
+1 MB rather than a stack that grows. That box now builds the seed with **the
+contract's plain line**, no `/STACK` flag, and takes `build selfhost/lexer.hero
+--dump-ir` and `build selfhost/main.hero --emit-c` to exit 0 — the first being
+the module that in September died at **exit 127 with both streams empty**. So the
+compiler compiling itself fits under a megabyte, and the failure mode when it
+does not is silence, which is the one a browser would also give. CI now
+**asserts** the module case on the Windows leg rather than reporting it
+(`.github/workflows/ci.yml`); the whole-compiler case was measured and is not
+asserted.
+
+**And the spawn question is a build error there rather than a silence.** Read
+2026-09-06, correcting the note that carried the number above, which had it that
+the new floor goes inert on such a target. `runtime/parts/spawn.c:142-148` gates
+`hero_spawn_floor = 0` on **`_WIN32` alone** and not on the absence of an OS to
+ask, so a third platform takes the `#else`, and `hero_spawn_stack_of_self()` at
+`:120-134` splits again on `__APPLE__` — landing a wasm build in the glibc arm,
+on `pthread_getattr_np`. **There is no third arm**, so such a build either
+compiles to a real query or stops at that line; its author states the two-arm
+shape is deliberate on §11's loud-fallback rule, `_ => hero_unreachable()`
+beating `_ => false` at M5c, so a platform arriving there should stop the build
+until somebody decides that platform's answer. The two readings are opposite
+risks for this row: a silent skip is a defect found in a browser months later, a
+build failure is an arm somebody writes on purpose. Whether a wasm libc provides
+that function is untested here.
+
 **What is not measured, written as a question rather than as a premise**
 (CLAUDE.md §1). Apple clang 21.0.0 on the author's Mac has **no WebAssembly
 target compiled in** — `clang --target=wasm32 -c` answers *No available targets
