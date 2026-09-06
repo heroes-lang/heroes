@@ -1,0 +1,179 @@
+# What the lowering walk ASKS about a checked program, and none of it
+# emits an instruction (design.md Part 10 step 6).
+#
+# The membership rule is mechanical, which is what makes this a seam
+# and not a line count: **no `@b: build.Lowering` parameter**. Every
+# function here takes the checked tree and answers with a value — is
+# this declaration a record, what does this builtin name mean, which
+# IR operator does this surface operator become, what are this
+# variant's case names in tag order. Nothing here can change the
+# program being built, so a reader can hold the whole module at once
+# and a caller can read one answer without following an edge.
+#
+# It is a module rather than a section of `ir/flatten.hero` because
+# none of these calls back into the walk, which is the only property
+# the language cares about: Heroes refuses module cycles, so the
+# functions that call INWARDS only are exactly the ones that can leave.
+# Cut at M-declared-freer step 1, panel 109's condition.
+
+use token
+use ast
+use source
+use check/table
+use check/state
+use ir
+
+# The type a block produces: its last statement's, when that statement
+# is an expression. Read straight out of the checker's dense table —
+# lowering never re-derives a type it was given.
+function block_value_type(a: ast.Ast, c: state.Checked, body: ast.Block) -> i64
+    if body.stmts.len() == 0
+        return table.unit_ty(c.types)
+    last = a.stmts[body.stmts[body.stmts.len() - 1]]
+
+    return match last.kind
+        .expr_stmt e                                                   => c.expr_types[e.value]
+        .bind | .declare | .mutate | .return_stmt | .break_stmt        => table.unit_ty(c.types)
+        .continue_stmt | .assert_stmt | .while_stmt | .for_in | .error => table.unit_ty(c.types)
+
+# ok and fail are built-ins so that the names resolve; here they are
+# constructions, because that is what they do (panel 002: they are
+# check-only, so which T? is being built was decided by the checker).
+function fallible_constructor(name: str) -> ir.Shape?
+    if name == "ok"
+        return ok(.ok_shape)
+
+    if name == "fail"
+        return ok(.fail_shape)
+    return fail("absent", "not a fallible constructor")
+
+function is_fallible_operation(name: str) -> bool
+    return name == "must" || name == "default" || name == "is_err"
+
+function is_record(decls: [ast.Decl], decl: i64) -> bool
+    return match decls[decl].kind
+        .record_decl                                                 => true
+        .constant_decl | .function_decl | .variant_decl | .test_decl => false
+
+# The one call shape clang verifies nothing about (§4.19): print today,
+# TextFormat and sqlite3_mprintf at the boundary, where a wrong argument
+# count compiles, runs, and prints garbage.
+function is_variadic(name: str) -> bool
+    return name == "print"
+
+# Both ends, spaces and tabs: the trailing trim keeps a comment after
+# the expression — the statement span reaches one — out of the message.
+function trimmed(text: str) -> str
+    first: i64 @ 0
+    past: i64 @ text.len()
+
+    while first < past && (text[first] == ' ' || text[first] == '\t')
+        first @ first + 1
+
+    while past > first && (text[past - 1] == ' ' || text[past - 1] == '\t')
+        past @ past - 1
+
+    return text.slice(from: first, to: past)
+
+function comparison_op(op: ast.BinaryOp) -> ir.BinaryOp?
+    match op
+        .eq                                           => return ok(.eq)
+        .ne                                           => return ok(.ne)
+        .lt                                           => return ok(.lt)
+        .le                                           => return ok(.le)
+        .gt                                           => return ok(.gt)
+        .ge                                           => return ok(.ge)
+        .add | .sub | .mul | .div | .rem | .and | .or => return fail("no", "not a comparison")
+        .bit_and | .bit_or | .bit_xor | .shl | .shr   => return fail("no", "not a comparison")
+
+    return fail("no", "unreached")
+
+# The two cases of a T?, in tag order (§4.6): a T? IS a built-in
+# variant, and nothing here needs to know it was built in.
+constant FALLIBLE_CASES: [str]
+    ["ok", "err"]
+
+# The case names of whatever this match destructures, in tag order — or
+# absent where the subject is an i64 or a str and there are no cases to
+# switch on.
+function cases_of(c: state.Checked, s: source.Source, decls: [ast.Decl], subject: i64) -> [str]?
+    match table.get(c.types, subject)
+        .named n =>
+            match decls[n.decl].kind
+                .variant_decl v =>
+                    names: [str] @ []
+
+                    for one_case in v.cases
+                        names @ names.push(source.span_text(s, one_case.name))
+
+                    return ok(names)
+                .constant_decl | .function_decl | .record_decl | .test_decl => return fail("none", "not a variant")
+        .fallible                                                 => return ok(FALLIBLE_CASES)
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail("none", "no cases")
+        .array | .fixed | .map | .function_ty | .case_ty          => return fail("none", "no cases")
+        .failure | .generic | .error                              => return fail("none", "no cases")
+
+    return fail("none", "unreached")
+
+function case_position(names: [str], s: source.Source, name: token.Span) -> i64?
+    wanted = source.span_text(s, name)
+    at: i64 @ 0
+
+    for candidate in names
+        if candidate == wanted
+            return ok(at)
+        at @ at + 1
+
+    return fail("absent", "no such case")
+
+# The payload name a single-pattern arm binds, if it binds one. A
+# |-joined arm cannot: two cases have two payload types, so there is
+# nothing one name could be (§4.7).
+function binding_of(arm: ast.Arm) -> token.Span?
+    if arm.patterns.len() != 1
+        return fail("none", "joined patterns bind nothing")
+
+    match arm.patterns[0].kind
+        .variant_case vc              => return vc.binding
+        .wildcard | .literal | .error => return fail("none", "not a case pattern")
+
+    return fail("none", "unreached")
+
+function is_constant(decls: [ast.Decl], decl: i64) -> bool
+    return match decls[decl].kind
+        .constant_decl                                             => true
+        .function_decl | .record_decl | .variant_decl | .test_decl => false
+
+# Which callee a declaration is: an extern's name must not be mangled,
+# so the two cannot share a case.
+function callee_of(decls: [ast.Decl], decl: i64) -> ir.Callee
+    match decls[decl].kind
+        .function_decl fd =>
+            if fd.value.is_extern
+                return .extern_fn(decl: decl)
+            return .heroes_fn(decl: decl)
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return .heroes_fn(decl: decl)
+
+    return .heroes_fn(decl: decl)
+
+function binary_op(op: ast.BinaryOp) -> ir.BinaryOp
+    return match op
+        .add     => .add
+        .sub     => .sub
+        .mul     => .mul
+        .div     => .div
+        .rem     => .rem
+        .eq      => .eq
+        .ne      => .ne
+        .lt      => .lt
+        .le      => .le
+        .gt      => .gt
+        .ge      => .ge
+        .bit_and => .bit_and
+        .bit_or  => .bit_or
+        .bit_xor => .bit_xor
+        .shl     => .shl
+        .shr     => .shr
+        # Handled one level up: they branch.
+
+        .and | .or => .eq

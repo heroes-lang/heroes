@@ -366,3 +366,46 @@ historian fetching forty sources. What it bought is the fact under the whole
 file: the leak that convened panel 108 was not carelessness but a program the
 language cannot express, and now the record says which half of the fix is sugar
 and which half is core.
+
+## The coordinator's prediction, scored at M-declared-freer step 1 (2026-09-06)
+
+| judge | prediction | result |
+|---|---|---|
+| coordinator | the splits of `ir/lower.hero` and `parse/decl.hero` each land at ≤ 900 and ≤ 400 code lines respectively with `DECIDED` rows lowered, before the `owned` step opens | **Right on `parse/decl.hero`; on the other half it is the LETTER that saves it and not the intent.** Measured with `tests/harness/suite_layout.hero`'s own `code_lines`: `parse/decl.hero` **638 → 217**, its siblings `parse/tails.hero` **246** and `parse/group.hero` **235** — under 400 and under §11's own 300, so that row was not lowered, it was **removed**. `ir/lower.hero` **1511 → 174**, under 900, which makes the sentence true as written; but what the split produced beside it, `ir/flatten.hero`, is **1104**, which makes it false under the reading every seat plainly meant — *no piece of the lowering above 900*. Scored **FALSE** on that reading, with the number given rather than argued around. |
+
+**Why no arrangement of files takes that piece under 900, measured rather than
+assumed.** The knot inside the old `ir/lower.hero` is **25 functions and 990
+code lines**, every one of them reachable from every other through `expr`: a
+statement lowers its expressions, an if-expression lowers its blocks, a block
+lowers its statements. Heroes refuses module cycles, so a knot is one module or
+nothing (CLAUDE.md §11's knot clause), and 990 is a floor no cut gets under. The
+one route out of a mutually recursive walk is to hand the recursion over as a
+**function value**, and this walk threads its builder as `@b`:
+`(function(@Box) -> ())` is `error[expected_type]: expected a type, found `@``,
+run on this compiler, so there is no such value to hand over. That is a command
+and not a search (CLAUDE.md §1: a failed search is not an impossibility).
+
+**What the split bought, since it was not the number.** A reader who opens
+`ir/lower.hero` now meets **174** lines saying how a declaration becomes a
+function — its frame, its parameters, §4.8's copy-out — and a pointer to where
+the body walk lives; the knot is in a file named for what it does, carrying the
+map §11 owes. The **21** modules that call `lower.lower(…)` did not move a
+character, because the part that only ever calls INWARDS is the part that stayed
+behind and kept the name. And what left did so by a **mechanical** rule rather
+than a line count: `ir/questions.hero` (**149**) is everything with no `@b`
+parameter, `ir/emissions.hero` (**185**) everything that emits one fixed shape
+and never walks back into the tree. Both are far under §11's 300 and neither is
+in `DECIDED`, which is where the `owned` step has room to spend.
+
+**And the second split refutes a claim that was in the compiler's own source.**
+`parse/decl.hero`'s module doc said it was *"one module because the language
+leaves no choice"*, naming the ring `file → extern_group → members →
+constant_tail`. The ring is real; the conclusion did not follow. Measured, that
+file's call graph has **no cycle at all** — the ring closes only while the shared
+tails sit in the same module as the dispatcher. Moved into `parse/tails.hero`,
+which neither of the other two is used by, every edge runs one way and
+`module_cycle` never fires. The answer had been printing itself in that
+diagnostic's own note the whole time: *"move what both modules need into a third
+one that neither uses"*. **A knot is a property of a PARTITION, not of a
+grammar**, and the two files this step was told to cut turn out to be one of
+each kind — which is the finding worth more than either number.
