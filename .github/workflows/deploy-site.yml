@@ -81,7 +81,7 @@ jobs:
       # This step runs from `site/`, like every other step in the job. Wrangler
       # collects Pages Functions from a `functions/` directory in the working
       # directory it is run from, never from inside the output directory it is
-      # handed. There is no `site/functions/` today, because the pre-launch gate
+      # handed. There is no `site/functions/` since 2026-09-03, because the pre-launch gate
       # was disarmed by moving it to `site/parking/`, and that is exactly why
       # this comment stays: the day it is re-armed, this step's
       # `working-directory` and the catch-all's location are one decision. Get

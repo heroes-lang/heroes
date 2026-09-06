@@ -32,7 +32,7 @@
 # develops on, so its job re-runs `cargo test` on the one machine that has
 # already run it. Linux is the opposite trade: it is the cheapest leg *and* the
 # only one whose ASan carries a leak detector, so it runs on everything,
-# including a docs-only push — `crates/heroes-cli/tests/milestones.rs` reads
+# including a docs-only push — `crates/heroes-cli/tests/milestones.rs` (archived 2026-08-19) reads
 # `docs/` and a malformed record is a red `cargo test`.
 
 name: heroes
@@ -152,7 +152,7 @@ jobs:
       #     could hold it (author instruction 2026-08-14, "I want Windows too")
       #     and it ran the cargo legs, because `runtime/parts/f64.c` compiles
       #     under a Windows target — the 18 errors panel 049 measured were all in
-      #     that one file. Those legs left with `crates/`, and for five days the
+      #     that one file. Those legs left with `crates/` on 2026-08-19, and for five days the
       #     Heroes legs could not replace them: `selfhost/cli/io.hero` bound
       #     `extern "unistd.h"`, so there was no self-hosted compiler on a
       #     platform without POSIX headers, and what was left was a toolchain
@@ -305,7 +305,7 @@ jobs:
       # ─────────── Nothing here needs cargo, and nothing here is Rust ──────────
       #
       # These four steps need a **C compiler and nothing else**, which is what
-      # `crates/` → `archive/bootstrap-rs/` left behind: the seed is C, the
+      # `crates/` → `archive/bootstrap-rs/` on 2026-08-19 left behind: the seed is C, the
       # compiler it builds is Heroes, and the net is a Heroes program run by that
       # compiler.
       #
@@ -319,8 +319,8 @@ jobs:
       # NOT ON WINDOWS, and the reason is the compiler's own source rather than
       # this file's convenience: `selfhost/cli/io.hero` binds `extern
       # "unistd.h"`, so there is no self-hosted compiler on a platform without
-      # POSIX headers — the same condition `crates/heroes-cli/tests/
-      # differential.rs` asks of the machine, asked the same way. Windows keeps
+      # POSIX headers (2026-08-19) — the same condition `crates/heroes-cli/tests/
+      # differential.rs` (archived 2026-08-19) asked of the machine, asked the same way. Windows keeps
       # the cargo legs and says what it covers.
       - name: Build the compiler from the seed — no cargo, no Rust
         shell: bash

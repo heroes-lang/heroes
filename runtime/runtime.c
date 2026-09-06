@@ -32,7 +32,7 @@
  *     nobody outside. Splitting into TUs promotes all of them to public symbols
  *     and turns an internal contract into an ABI.
  *   - `Toolchain::runtime_object` compiles the runtime to ONE `.o` and caches it
- *     (`selfhost/cli_toolchain.hero`). Eleven objects would need
+ *     (`selfhost/cli/toolchain.hero`). Eleven objects would need
  *     an archive or `ld -r`, which is build machinery CLAUDE.md §10 does not
  *     want and this project does not need.
  *

@@ -1,6 +1,6 @@
 ---
 name: panel
-description: Convene the Heroes design panel on a proposal. Two lanes: the SOUNDNESS lane (compiler-engineer + ffi-pragmatist) for a change with no surface, no diagnostic and no spec token; the full five judges with differentiated inputs and falsifiable predictions for everything else. Mandatory before changing the language (spec/, design.md Parts 1-11, surface syntax/semantics, a diagnostic class, architecture). Never blocks — adopts a conservative provisional default and queues the author's ratification. Writes docs/panel/NNN and a DESIGN-LOG line.
+description: Convene the Heroes design panel on a proposal. Two lanes: the SOUNDNESS lane (compiler-engineer + ffi-pragmatist) for a change with no surface, no diagnostic and no spec token; the full five judges with differentiated inputs and falsifiable predictions for everything else. Mandatory before changing the language (spec/, design.md Parts 1-11, surface syntax/semantics, a diagnostic class, architecture). Never blocks — adopts a conservative provisional default and queues the author's ratification. Writes docs/panel/<NNN> and a DESIGN-LOG line.
 ---
 
 # /panel <proposal> — the design panel
@@ -42,7 +42,7 @@ is a full panel.
 
 2. **Prepare each judge's input** (this is the step that matters):
    - `compiler-engineer` ← the proposal + pointers into `selfhost/` and
-     `runtime/` (it must cite files and line counts). **Never `crates/`**: that
+     `runtime/` (it must cite files and line counts). **Never `crates/`** (archived 2026-08-19): that
      tree is `archive/bootstrap-rs/`, nothing builds it, and a seat sent there
      measures a compiler that no longer ships. Give it the cheap route in the
      brief too — the seed builds in 3.4 s (`clang -I runtime seed/heroes.c
@@ -116,4 +116,4 @@ is a full panel.
      track records.
 
 5. Append the DESIGN-LOG line. Commit the panel file (and, separately, any
-   resulting spec/design.md amendment, citing `docs/panel/NNN`).
+   resulting `spec/` or `design.md` amendment, citing the sitting's own file).

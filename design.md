@@ -323,7 +323,7 @@ twenty amendments away rather than sixty, and the argument this paragraph makes 
 was written to be. The live figures are two artifacts rather than one, and the split is
 panel 086's (2026-08-19, at the archive): the **history** is `docs/measurements/010-spec-budget-ledger.md`,
 one row per amendment with what it cost and what paid for it, moved verbatim out of the bootstrap
-before `crates/` was archived; the **figure** is `SPEC_TOKENS` in `tests/harness/suite_spec.hero`,
+before `crates/` was archived on 2026-08-19; the **figure** is `SPEC_TOKENS` in `tests/harness/suite_spec.hero`,
 which `heroes measure` re-derives and compares on every run, and which now also checks the ledger's
 newest row and its row count against itself. Read the history there and trust the figure here. Two checks are owed, both enforceable at
 2231 rather than at the ceiling, and both are queued rather than adopted here because they are
@@ -365,7 +365,7 @@ was written in Oberon. That is the right order of magnitude for one person.
 
 **The spec has a budget; the compiler does not, and that is now a decision rather than a gap**
 (author 2026-08-12, taken in `/decide`; recorded by panel 020's compiler-engineer as an open
-question). Measured the same day: `archive/bootstrap-rs/heroes/src` (then `crates/heroes/src`) is **25,482 non-test lines**, 27,399 across
+question). Measured the same day: `archive/bootstrap-rs/heroes/src` (named `crates/heroes/src` until 2026-08-19) is **25,482 non-test lines**, 27,399 across
 both crates — against Pascal-P4's ~4,000 — and 21 files are over CLAUDE.md §11's ~300. A global
 ceiling was considered and refused, for a reason worth stating so nobody re-derives it as an
 oversight: the bootstrap compiler is **scaffolding with an expiry date** (CLAUDE.md §10's declared

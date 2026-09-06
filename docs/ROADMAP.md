@@ -64,7 +64,7 @@ M-separate-compilation already did.
 | The compiler | **54,111** lines of Heroes in **186** modules · the seed **734,938** lines of C · runtime ABI **21**, unmoved: the floor is an argument to `pthread_create` and not a declaration |
 | The spec | **3824** of a hard 4096 · headroom **272** — it **shrank** while gaining a sentence, `; so does recursion too deep.` at +7 against a −12 removal (`docs/panel/115`) |
 | Records | sittings **114** · journals **36** · examples **55** programs, **118** files, **545** `test` blocks · open defects **0** · the site **46** pages, 23 English and 23 Italian |
-| Waiting on the author | **1** decision · **33** in `SCHEDULED.md` · **0** in `DEFECTS.md` · **319** in `LEARN.md` (never a gate) · an outstanding veto (`docs/panel/101` R3) |
+| Waiting on the author | **0** decisions · **34** in `SCHEDULED.md` · **0** in `DEFECTS.md` · **319** in `LEARN.md` (never a gate) · an outstanding veto (`docs/panel/101` R3) |
 
 Every number re-counted 2026-09-06 at M-declared-freer step 1, none carried. Three suites green: **584**, **1582**, **113** — four of those were a commit stale until this step, `e61fec3b` having stated 584 and 1582 in its own body while repairing defect 015 and touching neither document. What moved for THIS step is the compiler itself: **181 → 186** modules, and `ir/lower.hero` **1511 → 174**, the largest file in the tree until today (`tests/harness/suite_layout.hero` carries every number with its reason).
 
@@ -427,7 +427,7 @@ a test run in the working tree proves nothing about a *checkout*.
 
 **The archive left this milestone** (panel 085 B4) and became the two rows after
 it. Three reasons, all measured: the port read its standard library from
-`crates/` at run time, so the self-hosted compiler was already broken outside
+`crates/` (archived 2026-08-19) at run time, so the self-hosted compiler was already broken outside
 this repository and blamed the author's line for it; `tests/differential.rs` —
 the instrument that found that and two more — has the **bootstrap** as its
 expectation, so archiving it removes the only thing that can ask whether the two
@@ -454,7 +454,7 @@ status from `pclose`.
 
 ### M-bootstrap-archive — the third language dies *(closed 2026-08-19)*
 
-`crates/` → `archive/bootstrap-rs/`, and the move was the last commit rather than
+`crates/` → `archive/bootstrap-rs/` on 2026-08-19, and the move was the last commit rather than
 the first, because five things died with the bootstrap and each needed a
 successor first — every one measured against what it replaced: `tests/emission/`
 (142 programs, both compilers green on the same bytes), `heroes measure`
@@ -671,7 +671,7 @@ declared in three programs and never used across a `use`; direct self-recursion
 lives in three programs at depths bounded by tiny inputs; one program checks an
 answer somebody else wrote down (`sieve/`); one writes a file (`todo/`); and
 between `json/` at 671 lines and the compiler at 50,452 there is nothing, where
-Nim keeps `tests/manyloc/`, Zig `test/standalone/` and Rust `rustc-perf`'s pinned
+Nim keeps a `manyloc` corpus under its own `tests/`, Zig a `standalone` one under `test/`, and Rust `rustc-perf`'s pinned
 crates (nine languages surveyed that day, twelve recurring patterns, ten of them
 already here).
 
@@ -1242,7 +1242,7 @@ no such name when it does · **1** `strings` and `path`, and the copies leave
 it has landed) · **5** `time` · **6** `math` · **7** the byte buffer, in the
 sitting's route (M-corpus-depth's `checksum/` is the witness) · **8** `crypto` ·
 **9** `database/sql` (M-corpus-depth's `ledger/`) · **10** `net`, in the sitting's
-shape (the loopback program as `examples/echo/`) · **11** `net/http` client,
+shape (the loopback program, as an `echo` program under `examples/`) · **11** `net/http` client,
 against a `file://` URL · **12** `net/http` server, two requests on one
 connection · **13** — **moved to
 M-package-manager on 2026-09-03**, when the packages were placed ahead of the
@@ -1796,7 +1796,7 @@ So a number met in the record resolves here, and only here.
 | `M-selfhost-port` | M8b | `m-selfhost-port` | the port, and one hash for three compilers |
 | `M-selfhost-fixpoint` | M8c | `m-selfhost-fixpoint` | the fixpoint and the seed — **v1** |
 | `M-harness-port` | — | `m-harness-port` | the net in Heroes: the golden harness, the corpus, the record checks. **A new id and not part of M8c** (§14): panel 085 B4 split the archive off the fixpoint, and the archive's precondition is a milestone of its own — 4,279 lines of Rust harness, and the instrument that dies with the bootstrap is the one whose expectation *is* the bootstrap |
-| `M-bootstrap-archive` | M8c, in part | `m-bootstrap-archive` | `crates/` → `archive/bootstrap-rs/`. **The clause M8c was carrying and could not pay**: the port read its standard library from the directory being archived, so the compiler failed outside this repository, and `heroes measure` was still not in the port |
+| `M-bootstrap-archive` | M8c, in part | `m-bootstrap-archive` | `crates/` → `archive/bootstrap-rs/` (2026-08-19). **The clause M8c was carrying and could not pay**: the port read its standard library from the directory being archived, so the compiler failed outside this repository, and `heroes measure` was still not in the port |
 | `M-separate-compilation` | M9 | — | one `.c` per module, prototypes across TUs, the cache |
 | `M-package-layout` | — | — | `use` paths, the qualifier, where a program's files live. **A new id rather than an area annexed** (§14, author decision 2026-08-25): M-separate-compilation delivers the build architecture and M-package-manager delivers `heroes add`, so the directories question — which had been scheduled inside the latter since 2026-08-12 — is a third deliverable and takes a name of its own |
 | `M-corpus-coverage` | — | `m-corpus-coverage` | every language form has a program that runs it. **A new id rather than a reopening of `M-program-corpus`** (§14, author instruction 2026-09-02), which closed 2026-08-13 delivering *many whole programs, all of them run*; this one delivered *every language form has a program*. **Done 2026-09-02**: twenty programs, `examples/` 15 → 35, and the first program written to close the measured library gap found a compiler defect on its first run |

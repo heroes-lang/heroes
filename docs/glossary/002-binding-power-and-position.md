@@ -27,7 +27,7 @@ power 4. Only *position* can — left child or right child.
 ## What the parser does with it
 
 Precedence climbing needs one line for the whole of associativity
-(`crates/heroes/src/syntax/expr.rs`):
+(`archive/bootstrap-rs/heroes/src/syntax/expr.rs`):
 
 ```rust
 let right = binary(cur, ast, src, power + 1);
@@ -42,7 +42,7 @@ that character is the whole difference between `(1 - 2) - 3` and
 ## What the printer does with it
 
 The formatter runs the same asymmetry backwards
-(`crates/heroes/src/printer/fmt_expr.rs`):
+(`archive/bootstrap-rs/heroes/src/printer/fmt_expr.rs`):
 
 ```rust
 format!(

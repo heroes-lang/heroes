@@ -7,7 +7,7 @@
 # and between them there was nothing. So the corpus had never run the compiler
 # over the shape the compiler's own source has — many modules, several
 # directories, generics crossing a `use`, recursion that has to leave a module
-# and come back, and a tree deep enough to matter. Nim keeps `tests/manyloc/`
+# and come back, and a tree deep enough to matter. Nim keeps a `manyloc` corpus
 # and Zig `test/standalone/` for exactly this rung.
 #
 # Every other program here is checked against its own functions or against a

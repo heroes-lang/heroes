@@ -12,7 +12,7 @@
  * Written here rather than generated because there is no declaration in any
  * source file to generate them from, and because there is exactly one right
  * answer per scalar. Every other descriptor in a program is generated
- * (`crates/heroes/src/emit/perfn.rs`).
+ * (`selfhost/emit/perfn.hero`).
  *
  * `hash` is present on all four and on every generated one, never null — a call
  * through a null `hash` is a SEGV with no type name and no source line
