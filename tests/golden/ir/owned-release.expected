@@ -1,0 +1,68 @@
+strings
+    0  ""
+
+extern function free(p: ptr)
+    no body — C provides it
+
+extern function strdup(s: cstr) -> cstr
+    no body — C provides it
+
+function copy_of(text: str) -> str
+    slots  $owned0: cstr · $owned1: str? · $f0: str? · $r0: str · $own5: str?
+    bb0  entry
+        $t1: str = load text
+        $t2: cstr = cast str_to_cstr $t1
+        $t3: cstr = call extern strdup($t2)
+        store $owned0 <- $t3
+        $t4: cstr = load $owned0
+        $t5: str? = call heroes validated($t4)
+        $t20: str? = load $own5
+        store $own5 <- $t5
+        decref $t20
+        $t21: str? = load $owned1
+        incref $t5
+        store $owned1 <- $t5
+        decref $t21
+        $t6: cstr = const nullptr
+        $t7: cstr = load $owned0
+        $t8: bool = ne $t7, $t6
+        branch $t8 -> bb1 else bb2
+    bb1  owned: free    preds bb0
+        $t9: cstr = load $owned0
+        $t10: ptr = cast cstr_to_ptr $t9
+        call extern free($t10)
+        jump bb2
+    bb2  owned: done    preds bb0, bb1
+        $t11: str? = load $owned1
+        $t22: str? = load $f0
+        incref $t11
+        store $f0 <- $t11
+        decref $t22
+        $t12: str? = load $f0
+        $t13: i64 = tag $t12
+        $t14: i64 = const 0
+        $t15: bool = eq $t13, $t14
+        branch $t15 -> bb3 else bb4
+    bb3  default: ok    preds bb2
+        $t16: str? = load $f0
+        $t17: str = payload $t16 .ok
+        $t23: str = load $r0
+        incref $t17
+        store $r0 <- $t17
+        decref $t23
+        jump bb5
+    bb4  default: else    preds bb2
+        $t18: str = const str 0
+        $t24: str = load $r0
+        incref $t18
+        store $r0 <- $t18
+        decref $t24
+        jump bb5
+    bb5  default: join    preds bb3, bb4
+        $t19: str = load $r0
+        incref $t19
+        decref_slot $owned1
+        decref_slot $f0
+        decref_slot $r0
+        decref_slot $own5
+        return $t19

@@ -1,0 +1,232 @@
+# `owned <freer>`: the release, built in the lowering (design.md §4.19;
+# panels 109 and 116, both ratified).
+#
+# A `cstr` a C function hands back and marks `owned` never reaches the program
+# as a `cstr`. What reaches it is a `str?`, because the compiler does three
+# things between the call returning and the value being usable: it COPIES the
+# bytes out with the library's `validated`, it frees the original with the
+# function the declaration names, and it hands over the copy. That is what
+# makes the string readable at all — before this, a caller-owned C string was
+# freeable or readable and never both, which is the measurement three seats of
+# panel 109 reached independently and the reason Principle 0 admitted the form.
+#
+# **It is here and not in the emitter, and panel 116 is where that was fought
+# out.** Two seats vetoed each other and the resolution is their intersection:
+# the release is a slot, a call, a branch and a call — Part 5's own vocabulary —
+# so building it here keeps the emitter a printer, and `--dump-ir` can show a
+# `free()` that would otherwise happen in bytes nobody reads. The other route
+# was measured and refused twice over: composing a `str?` in raw C is the arm
+# design.md:476-480 already rejected for `read_file`, and calling
+# `h_library_validated` from generated C is `call to undeclared function` at
+# exit 2, because the library is pulled in by a walk over IR calls and a call
+# that exists only as a string is invisible to it.
+#
+# **The NULL guard is unconditional and it is emitted here.** Panel 109 made it
+# a condition because `fclose(NULL)` segfaults on glibc; panel 116 measured the
+# other half and it is worse — `fclose(NULL)` SURVIVES on this Mac, and a
+# release with the guard deleted exits 0 even under ASan and UBSan. **No run on
+# this machine can see the guard missing**, so it can never be justified by a
+# green local run and never left to the library's good manners.
+
+use token
+use ast
+use source
+use check/table
+use check/state
+use ir/build
+use ir/emissions
+use ir/questions
+use ir/inout
+
+# The `extern` this program declares under that name, if it has one. The mark
+# carries a NAME and the lowering needs the declaration, because a call is made
+# to an index and not to a word.
+function extern_named(decls: [ast.Decl], s: source.Source, name: str) -> i64?
+    at: i64 @ 0
+
+    for one in decls
+        match one.kind
+            .function_decl fd =>
+                if fd.value.is_extern && source.span_text(s, one.name) == name
+                    return ok(at)
+            .constant_decl | .record_decl | .variant_decl | .test_decl => at @ at
+
+        at @ at + 1
+
+    return fail("absent", "no extern is declared under that name")
+
+# The library's `validated`, which is what copies the bytes out (§4.19,
+# `selfhost/library_source.hero`). **Asked for by name AND by origin**: a
+# program is free to declare its own `validated`, and calling that one instead
+# would hand the release a function the compiler knows nothing about.
+function library_validated(decls: [ast.Decl], s: source.Source) -> i64?
+    at: i64 @ 0
+
+    for one in decls
+        match one.kind
+            .function_decl fd =>
+                if !fd.value.is_extern && source.span_text(s, one.name) == "validated" && source.is_library(s, one.span.start)
+                    return ok(at)
+            .constant_decl | .record_decl | .variant_decl | .test_decl => at @ at
+
+        at @ at + 1
+
+    return fail("absent", "the library carries no `validated`")
+
+# What the freer's one parameter is declared as, which is what the cast must
+# produce. Read from the declaration rather than assumed to be `ptr`: §4.19
+# lets a header's own spelling stand, and a cast to a type nobody declared is
+# how generated C stops compiling.
+function freer_parameter(c: state.Checked, decls: [ast.Decl], at: i64) -> i64?
+    match decls[at].kind
+        .function_decl fd =>
+            if fd.value.params.len() != 1
+                return fail("absent", "a freer takes exactly one pointer")
+
+            return state.written_type(c, fd.value.params[0].ty)
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return fail("absent", "not a function")
+
+    return fail("absent", "unreached")
+
+# The release itself: copy, guard, free, hand over.
+#
+# `raw` is the `cstr` the extern call produced and `ty` is the `str?` the
+# program will see. The pointer is read THREE times — to validate, to test, to
+# free — so it goes in a slot first: a call must not happen three times, which
+# is the same reason `hold` exists for `?`.
+function release(@b: build.Lowering, c: state.Checked, raw: i64, freer_at: i64, validated_at: i64, pointer_ty: i64, ty: i64, span: token.Span) -> i64
+    cstr_ty = build.value_ty(b, raw)
+    held = build.synthetic(@b, prefix: "owned", ty: cstr_ty)
+    build.store_slot(@b, slot_id: held, value: raw, span: span)
+
+    # The copy comes FIRST and the free second, and the order is the whole
+    # correctness of this shape: reading bytes after freeing them is a
+    # use-after-free that a plain build reports as nothing at all.
+    copied = emissions.emit_call(
+        @b,
+        target: .heroes_fn(decl: validated_at),
+        given: inout.Args(run: emissions.value_args(@b, [build.load_slot(@b, slot_id: held, span: span)]), after: []),
+        variadic: false,
+        ty: ty,
+        span: span
+    )
+    result = build.synthetic(@b, prefix: "owned", ty: ty)
+    build.store_slot(@b, slot_id: result, value: copied, span: span)
+    freeing = build.block(@b, note: "owned: free")
+    done = build.block(@b, note: "owned: done")
+    absent = build.emit(@b, op: .lit(value: .null_ptr), ty: cstr_ty, span: span)
+    live = build.emit(
+        @b,
+        op: .binary(op: .ne, left: build.load_slot(@b, slot_id: held, span: span), right: absent),
+        ty: table.bool_ty(c.types),
+        span: span
+    )
+    build.terminate(@b, .branch(cond: live, then_to: freeing, else_to: done))
+    build.switch_to(@b, target: freeing)
+    handed = build.emit(
+        @b,
+        op: .cast(kind: .cstr_to_ptr, operand: build.load_slot(@b, slot_id: held, span: span)),
+        ty: pointer_ty,
+        span: span
+    )
+    _ = emissions.emit_call(
+        @b,
+        target: .extern_fn(decl: freer_at),
+        given: inout.Args(run: emissions.value_args(@b, [handed]), after: []),
+        variadic: false,
+        ty: build.unit_ty(b),
+        span: span
+    )
+    build.terminate(@b, .jump(to: done))
+    build.switch_to(@b, target: done)
+    return build.load_slot(@b, slot_id: result, span: span)
+
+# The `owned <freer>` a declaration carries, if it carries one.
+function mark_of(decls: [ast.Decl], at: i64) -> token.Span?
+    match decls[at].kind
+        .function_decl fd                                          => return fd.value.owned_result
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return fail("absent", "not a function")
+
+    return fail("absent", "unreached")
+
+# A call to a top-level name, and its release when that name is marked.
+#
+# **All three of `ir/flatten.hero`'s call sites go through here** — the plain
+# call, the qualified method and the UFCS method — and that is panel 116's
+# second condition rather than tidiness: hooking one of them leaves `x.strdup()`
+# and `mod.strdup(…)` handing back a string nobody frees, in silence, on the two
+# spellings nobody would have thought to test.
+#
+# **A piece missing means the plain call**, and the silence is deliberate: every
+# way this can be incomplete — a freer no `extern` declares, a freer with the
+# wrong arity, a library without `validated` — is something the checker has
+# already refused with a diagnostic on the author's own line. A lowering that
+# invented a second opinion here would be reporting a program the frontend has
+# already reported (`ir/flatten.hero`'s own rule: `.missing` flows only from
+# what the checker said).
+function call_or_release(@b: build.Lowering, c: state.Checked, s: source.Source, decls: [ast.Decl], at: i64, handed: inout.Args, ty: i64, span: token.Span) -> i64
+    mark = mark_of(decls, at)
+
+    if mark.is_err()
+        return emissions.emit_call(
+            @b,
+            target: questions.callee_of(decls, at),
+            given: handed,
+            variadic: false,
+            ty: ty,
+            span: span
+        )
+    freer_at = extern_named(decls, s, name: source.span_text(s, mark.must()))
+    validated_at = library_validated(decls, s)
+
+    if freer_at.is_err() || validated_at.is_err()
+        return emissions.emit_call(
+            @b,
+            target: questions.callee_of(decls, at),
+            given: handed,
+            variadic: false,
+            ty: ty,
+            span: span
+        )
+    pointer_ty = freer_parameter(c, decls, freer_at.must())
+    declared = declared_result(c, decls, at)
+
+    if pointer_ty.is_err() || declared.is_err()
+        return emissions.emit_call(
+            @b,
+            target: questions.callee_of(decls, at),
+            given: handed,
+            variadic: false,
+            ty: ty,
+            span: span
+        )
+
+    # The call itself yields what the HEADER declares, a `cstr`; the `str?` is
+    # what the release hands on.
+    raw = emissions.emit_call(
+        @b,
+        target: questions.callee_of(decls, at),
+        given: handed,
+        variadic: false,
+        ty: declared.must(),
+        span: span
+    )
+    return release(
+        @b,
+        c,
+        raw: raw,
+        freer_at: freer_at.must(),
+        validated_at: validated_at.must(),
+        pointer_ty: pointer_ty.must(),
+        ty: ty,
+        span: span
+    )
+
+# What the signature says it returns, which for a marked one is not what the
+# program sees.
+function declared_result(c: state.Checked, decls: [ast.Decl], at: i64) -> i64?
+    match decls[at].kind
+        .function_decl fd                                          => return state.written_type(c, fd.value.result)
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return fail("absent", "not a function")
+
+    return fail("absent", "unreached")

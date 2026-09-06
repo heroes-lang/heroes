@@ -27,6 +27,7 @@ use token
 use ast
 use source
 use diag
+use check/table
 use parse
 
 # The `owned <freer>` mark that names this function, if any declaration in the
@@ -50,6 +51,29 @@ function marked_as_freer(decls: [ast.Decl], s: source.Source, name: str) -> toke
             .constant_decl | .record_decl | .variant_decl | .test_decl => continue
 
     return fail("absent", "nothing names this function as a freer")
+
+# What a marked call HANDS BACK, which is not what its signature declares.
+#
+# **§4.19's own sentence**: the compiler frees that string with that function
+# and *hands it over as a `str?`*. The `cstr` in the declaration is the C truth
+# — it is what clang checks the header against — and the `str?` is the Heroes
+# truth, because by the time the program can touch the value the bytes C gave
+# it are already copied and already freed. A program that saw the `cstr` would
+# hold a pointer into memory the compiler is about to release, which is the
+# whole hazard the mark exists to remove.
+#
+# **This and the release are ONE COMMIT OR NONE, measured.** Written alone on
+# 2026-09-06 it read correctly in both directions and then made clang refuse
+# the generated C — `assigning to 'h_0opt_…' from incompatible type 'const char
+# *'`, `internal error`, exit 2, the compiler blaming itself for a `.hero`
+# file. It was parked until `ir/owned_release.hero` existed.
+#
+# Asked here rather than written twice: `user_call` reaches it from the
+# plain-call arm and from the method arm, and two copies of one rule drift.
+function handed_back(@t: table.Types, fd: ast.FunctionDecl, declared: i64) -> i64
+    if fd.owned_result.is_err()
+        return declared
+    return table.intern(@t, .fallible(payload: table.str_ty(t)))
 
 # The diagnostic, when a call names one.
 function refusal(s: source.Source, name: str, mark: token.Span, span: token.Span) -> diag.Diagnostic

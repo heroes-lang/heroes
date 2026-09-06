@@ -50,6 +50,7 @@ use ir/layout
 use ir/inout
 use ir/questions
 use ir/emissions
+use ir/owned_release
 use inventory
 
 ## Statements
@@ -512,14 +513,7 @@ function call(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Che
                         span: span
                     )
                 handed = lower_args(@b, a, r, c, s, decls, given: given)
-                return emissions.emit_call(
-                    @b,
-                    target: questions.callee_of(decls, t.at),
-                    given: handed,
-                    variadic: false,
-                    ty: ty,
-                    span: span
-                )
+                return owned_release.call_or_release(@b, c, s, decls, at: t.at, handed: handed, ty: ty, span: span)
             .builtin bt =>
                 builtin_name = inventory.table()[bt.at].name
 
@@ -658,14 +652,7 @@ function method(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.C
                         ty: ty,
                         span: span
                     )
-                return emissions.emit_call(
-                    @b,
-                    target: questions.callee_of(decls, t.at),
-                    given: handed,
-                    variadic: false,
-                    ty: ty,
-                    span: span
-                )
+                return owned_release.call_or_release(@b, c, s, decls, at: t.at, handed: handed, ty: ty, span: span)
             .local | .builtin | .module | .unresolved => is_qualified @ is_qualified
 
     # .must(), .default(v) and .is_err() are branches, not calls
@@ -727,14 +714,7 @@ function method(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.C
             )
         .top t =>
             handed = with_receiver(@b, a, r, c, s, decls, receiver: receiver, given: given)
-            return emissions.emit_call(
-                @b,
-                target: questions.callee_of(decls, t.at),
-                given: handed,
-                variadic: false,
-                ty: ty,
-                span: span
-            )
+            return owned_release.call_or_release(@b, c, s, decls, at: t.at, handed: handed, ty: ty, span: span)
         # h.cb(n) where cb is a field holding a function value: the dot
         # is a FIELD READ, not a receiver (§4.11's first lookup, §4.13).
         # A module receiver never reaches here — the branch above

@@ -1154,7 +1154,12 @@ function signature_of(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, decls
             for p in fd.value.params
                 lowered @ lowered.push(lower.lower_ty(@c, a, r, p.ty))
 
-            result = lower.lower_ty(@c, a, r, fd.value.result)
+            declared_result = lower.lower_ty(@c, a, r, fd.value.result)
+
+            # §4.19: a marked `cstr` reaches the program as a `str?`, never as
+            # the `cstr` the header declares — by then the compiler has copied
+            # it and freed the original (`selfhost/ir/owned_release.hero`).
+            result = freer.handed_back(@c.out.types, fd.value, declared: declared_result)
             return table.intern_function(@c.out.types, lowered, result: result)
         .constant_decl | .record_decl | .variant_decl | .test_decl => return state.error_ty_of(c)
 
@@ -1464,7 +1469,12 @@ function user_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
             for p in fd.value.params
                 params @ params.push(lower.lower_ty(@c, a, r, p.ty))
 
-            result = lower.lower_ty(@c, a, r, fd.value.result)
+            declared_result = lower.lower_ty(@c, a, r, fd.value.result)
+
+            # §4.19: a marked `cstr` reaches the program as a `str?`, never as
+            # the `cstr` the header declares — by then the compiler has copied
+            # it and freed the original (`selfhost/ir/owned_release.hero`).
+            result = freer.handed_back(@c.out.types, fd.value, declared: declared_result)
 
             # §4.9's same-typed-argument rule: when two parameters share a
             # type, the call site names them — the rule that spends tokens
