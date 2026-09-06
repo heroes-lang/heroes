@@ -1,0 +1,1 @@
+tests/golden/check/ffi-callback-carries-a-container.hero:49:24: error[ffi_type]: `(function() -> [i64])` cannot cross the FFI boundary, and it is an `extern`'s parameter — the callback may stand there, but `[i64]` inside it cannot (§4.19)

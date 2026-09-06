@@ -25,6 +25,31 @@ function ffi_type(name: str, what: str, span: token.Span) -> diag.Diagnostic
         span: span
     )
 
+# A callback whose OWN parameter or result cannot cross (panel 113 R2,
+# defect 014, 2026-09-06).
+#
+# It reuses the `ffi_type` code for `ffi_result_position`'s reason — the
+# class already means "this extern's declared type is wrong" — and it may
+# not reuse the `ffi_type` MESSAGE, for that function's reason turned
+# around. That message ends by listing what a header can declare, and the
+# list includes *a function type as a parameter*: true, and here it reads
+# as a contradiction, because a function type as a parameter is exactly
+# what the reader wrote. The refusal is one level down, so the message
+# has to say which level.
+function ffi_callback_carries(callback: str, carried: str, what: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "ffi_type",
+        message: "`" + callback + "` cannot cross the FFI boundary, and it is " + what + " — the callback may stand there, but `" + carried + "` inside it cannot (§4.19)",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "a callback's parameters and result follow the same rule as any other extern type (spec, § FFI), so `" + carried + "` is refused inside one for the reason it is refused outside one: a C header cannot declare it, and a value C holds is a value this compiler stopped tracking"
+    )
+    d.notes @ d.notes.push(
+        "where C has to see the elements, hand it what C already understands — a `ptr` and a length, or one scalar at a time — and keep the container on the Heroes side of the call"
+    )
+    return d
+
 # A function type written as an extern's RESULT (§4.19, panel 111 R4).
 # It reuses `ffi_type` for the same reason ffi_parameter_position reuses
 # ffi_parameter_type: the class already means "this extern's declared

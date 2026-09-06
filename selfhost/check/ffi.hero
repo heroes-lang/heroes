@@ -42,6 +42,37 @@ use ffi_errors
 # arguments_may_stand's are asked separately. C spells a function
 # pointer everywhere it spells a type, so a vocabulary rule cannot be
 # the one that says where a callback may stand.
+#
+# **AND IT ANSWERS YES ONLY IF WHAT IT CARRIES CAN CROSS — the arm below
+# recurses, and it did not until defect 014** (panel 113 R2, 2026-09-06).
+# `.function_ty => return true` judged the callback and never what the
+# callback takes and returns, so a `[T]` or a `{K: V}` crossed inside a
+# callback signature, in both directions, at **exit 0 with an empty
+# stderr**. The bar was one forward declaration:
+#
+#     struct HeroArrayHeader;
+#     void hold(struct HeroArrayHeader *(*mk)(void),
+#               void (*run)(struct HeroArrayHeader *));
+#
+# `spec:224` had already refused it — *"a callback is a parameter, never
+# a result; ITS PARAMETERS FOLLOW THE SAME RULE"* — and the same rule is
+# this function, which refuses `.array` one line down. So this was the
+# compiler disagreeing with the specification (CLAUDE.md §12), not a
+# design question, and it cost no spec token to settle.
+#
+# WHY IT MATTERED MORE THAN IT LOOKS. That was the only route by which a
+# refcounted Heroes value could reach a thread the program did not start.
+# Panel 113 was convened on `cow.c`'s `if (refcount == 1)` and two seats
+# measured, independently and with a live positive control, that the
+# corruption does not arrive through there: a callback parameter comes in
+# BORROWED and the emitted body increfs before it can store, so `unshare`
+# never sees the window. The door was here.
+#
+# The recursion terminates for `poisoned`'s reason at
+# `selfhost/check/table.hero:278-285`, which walks the same interned
+# table the same way: a type id is an index into a table built before
+# this pass runs, so the walk is over a finite acyclic structure and not
+# over the program.
 function crosses_the_boundary(c: state.Checker, decls: [ast.Decl], ty: i64) -> bool
     match table.get(c.out.types, ty)
         .named n =>
@@ -49,9 +80,14 @@ function crosses_the_boundary(c: state.Checker, decls: [ast.Decl], ty: i64) -> b
                 .record_decl rec                                             => return !rec.header.is_err()
                 .constant_decl | .function_decl | .variant_decl | .test_decl => return false
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit | .error => return true
-        .function_ty                                                       => return true
-        .array | .fixed | .map | .fallible                                 => return false
-        .case_ty | .failure | .generic                                     => return false
+        .function_ty f =>
+            for p in table.params_of(c.out.types, f.params)
+                if !crosses_the_boundary(c, decls, p)
+                    return false
+
+            return crosses_the_boundary(c, decls, f.result)
+        .array | .fixed | .map | .fallible => return false
+        .case_ty | .failure | .generic     => return false
 
     return false
 
@@ -60,11 +96,7 @@ function crosses_the_boundary(c: state.Checker, decls: [ast.Decl], ty: i64) -> b
 # one so a type refused at both gets one message.
 function ffi_signature(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl], f: ast.FunctionDecl, result: i64, declared_name: token.Span)
     if !crosses_the_boundary(c, decls, result)
-        shown = state.show(c, s, decls, result)
-        state.push_diagnostic(
-            @c,
-            ffi_errors.ffi_type(name: shown, what: "an `extern`'s result", span: a.types[f.result].span)
-        )
+        refused(@c, s, decls, ty: result, what: "an `extern`'s result", span: a.types[f.result].span)
 
     for param in f.params
         written = state.written_type(c.out, param.ty)
@@ -73,14 +105,49 @@ function ffi_signature(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [
             continue
 
         if !crosses_the_boundary(c, decls, written.must())
-            shown = state.show(c, s, decls, written.must())
-            state.push_diagnostic(
-                @c,
-                ffi_errors.ffi_type(name: shown, what: "an `extern`'s parameter", span: a.types[param.ty].span)
-            )
+            refused(@c, s, decls, ty: written.must(), what: "an `extern`'s parameter", span: a.types[param.ty].span)
 
     result_may_stand(@c, a, s, decls, f: f, result: result, declared_name: declared_name)
     arguments_may_stand(@c, a, s, decls, f: f, declared_name: declared_name)
+
+# One refusal, and it picks the message by WHERE the refused type is.
+# A callback that is itself fine and carries something that is not gets
+# the level named; everything else gets the vocabulary message. Splitting
+# it here rather than at the two call sites is what keeps the result and
+# the parameter saying the same thing about the same type.
+function refused(@c: state.Checker, s: source.Source, decls: [ast.Decl], ty: i64, what: str, span: token.Span)
+    carried = carried_refusal(c, decls, ty)
+
+    if carried >= 0
+        state.push_diagnostic(
+            @c,
+            ffi_errors.ffi_callback_carries(callback: state.show(c, s, decls, ty), carried: state.show(c, s, decls, carried), what: what, span: span)
+        )
+        return
+    state.push_diagnostic(
+        @c,
+        ffi_errors.ffi_type(name: state.show(c, s, decls, ty), what: what, span: span)
+    )
+
+# The first type INSIDE a callback that cannot cross, or -1 when the
+# refusal is not of that shape. Parameters before the result, in the
+# order written, so the message names the leftmost thing the reader has
+# to change — which is where their eye already is.
+function carried_refusal(c: state.Checker, decls: [ast.Decl], ty: i64) -> i64
+    match table.get(c.out.types, ty)
+        .function_ty f =>
+            for p in table.params_of(c.out.types, f.params)
+                if !crosses_the_boundary(c, decls, p)
+                    return p
+
+            if !crosses_the_boundary(c, decls, f.result)
+                return f.result
+
+            return -1
+        .named _ | .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit | .error => return -1
+        .array | .fixed | .map | .fallible | .case_ty | .failure | .generic           => return -1
+
+    return -1
 
 # The type of an extern constant — a narrower question (panel 038). Two
 # of the seven boundary types cannot be a VALUE a header holds, and both
@@ -179,84 +246,6 @@ function fixed_outside_group(@c: state.Checker, s: source.Source, decls: [ast.De
         return
     shown = state.show(c, s, decls, ty)
     state.push_diagnostic(@c, ffi_errors.fixed_outside_a_group(shown, span))
-
-## The file-wide sweep — the rule at every position, not one
-
-# A fixed array may appear in exactly one place — as the declared type of
-# a field of a record inside an extern group — because that is the only
-# place a C compiler chose the layout. Panel 062 wired the rule to one
-# call site and three other positions SHIPPED: two aborted a built binary
-# at 134 under a #line pointing at the author's source, one died at exit
-# 2. It asks the value, not the world: the legal set is built by reading
-# the declarations in hand, so a position added later is refused by
-# default. And it walks written_types, never the syntax — panel 061's
-# map_keys walked TypeKind nodes and missed every type a literal interned.
-function fixed_only_in_a_group(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl])
-    owned: {i64: bool} @ {}
-
-    for decl in decls
-        match decl.kind
-            .record_decl rec =>
-                if !rec.header.is_err()
-                    for field in rec.fields
-                        claim(a, field.ty, @owned)
-            .constant_decl | .function_decl | .variant_decl | .test_decl => continue
-
-    # ORDER: ascending type-node id — span.start ties on nested fixed
-    # arrays, so a span sort cannot replace this key: it decides which
-    # diagnostic prints first. The Rust BTreeMap gave the order free; the
-    # port pays with one sort over the map's keys (§4.9).
-    for node in sort(keys(c.out.written_types))
-        if !owned[node].is_err()
-            continue
-        ty = c.out.written_types[node].must()
-
-        is_fixed = match table.get(c.out.types, ty)
-            .fixed                                                    => true
-            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
-            .array | .map | .fallible | .function_ty | .named         => false
-            .case_ty | .failure | .generic | .error                   => false
-
-        if !is_fixed
-            continue
-
-        # An ordinary record's field is already refused on the same rule,
-        # and reporting one mistake twice is the thing this compiler
-        # never does.
-        span = a.types[node].span
-        already: bool @ false
-
-        for d in c.out.diagnostics
-            if d.span == span
-                already @ true
-
-        if already
-            continue
-        shown = state.show(c, s, decls, ty)
-        state.push_diagnostic(@c, ffi_errors.fixed_outside_a_group(shown, span))
-
-# A group record's field type AND EVERYTHING WRITTEN INSIDE IT — the
-# whole node, not just its root: claiming only the outer one left the
-# sweep reporting `i32[2]` inside an already-refused `i32[2][3]`, one
-# mistake with two messages. Leaves are enumerated rather than caught
-# with `_`, so a type form added later is a compile error here instead of
-# a silently unclaimed child.
-function claim(a: ast.Ast, id: i64, @owned: {i64: bool})
-    owned[id] @ true
-
-    match a.types[id].kind
-        .fixed x        => claim(a, x.element, @owned)
-        .array_of inner => claim(a, inner.element, @owned)
-        .fallible o     => claim(a, o.inner, @owned)
-        .map_of m =>
-            claim(a, m.key, @owned)
-            claim(a, m.value, @owned)
-        .function_type f =>
-            for p in f.params
-                claim(a, p, @owned)
-
-            claim(a, f.result, @owned)
-        .named | .unit | .error => return
 
 ## The position — may it stand here?
 
@@ -393,28 +382,3 @@ test "a unit parameter cannot stand, though a unit result may"
 
     assert c.out.diagnostics.len() == 1
     assert c.out.diagnostics[0].code == "ffi_parameter_type"
-
-test "the file-wide sweep catches the three positions that shipped"
-    c: state.Checker @ prepared("function f()\n    xs: [i64] @ []\n    _ = xs\n")
-    _ = c
-    swept = prepared("record Holder\n    grid: i64\n\nfunction f(v: i32)\n    _ = v\n")
-    _ = swept
-
-    # A fixed array written OUTSIDE any group field: the sweep names it.
-    text = "function f(v: i64)\n    _ = v\n\nrecord Plain\n    cells: i32\n"
-    with_fixed = prepared("function g(m: {str: i64})\n    _ = m\n")
-    _ = with_fixed
-    p = parse.parse("extern \"r.h\"\n    record Color\n        parts: u8[4]\n")
-    s = source.new_source(name: "t.hero", text: "extern \"r.h\"\n    record Color\n        parts: u8[4]\n")
-    out = resolve.resolve(p.tree, s, p.decls, p.uses)
-    c2: state.Checker @ state.new_checker(out_of: out, expr_count: 0)
-    i: i64 @ 0
-
-    while i < p.tree.types.len()
-        _ = lower.lower_ty(@c2, p.tree, out, i)
-        i @ i + 1
-
-    # Claimed by the group field: the sweep stays quiet.
-    fixed_only_in_a_group(@c2, p.tree, s, p.decls)
-    assert c2.out.diagnostics.len() == 0
-    _ = text

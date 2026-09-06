@@ -2706,3 +2706,121 @@ Was | author instruction, 2026-08-14 | **A runtime function that joins two path 
 - [x] **M-isolated-threads** (OPEN) — sixteen shared mutable buffers the plan did not name, and one of them is on the closure list | `docs/panel/111`, measured by the ffi-pragmatist seat and confirmed by the compiler seat | **`runtime/parts/*.c` holds 22 mutable file-scope objects; 4 are `_Thread_local` and 18 are not.** The plan named two. The sixteen include `hero_eq_queue`/`_len`/`_cap`/`_running` — whose own comment at `runtime/parts/array.c:187-193` says *"the day it arrives, this queue is shared mutable state across threads and must become `_Thread_local`"*, so the adjacent shape was written down in the file; `hero_dir_names`/`_count`/`_room` (`runtime/parts/dir.c:40-42`), bound at `selfhost/cli/process.hero:50-52`; and `hero_run_words`/`_count`, the argv buffer for process spawn, **fixed at 257 slots and on §1.0's closure list** — a raced count walks off it and `execvp`s a half-built argv. Measured witnesses: `a == b` on nested arrays across 8 threads is exit 139 with an empty stderr, and ASan names `heap-buffer-overflow WRITE` in `hero_eq_push` from the author's own `if a == b`; a second seat reached the same buffer and got `heap-use-after-free` inside `hero_grow_kept` at `alloc.c:150`, the function step 0 had landed six hours earlier | runtime/parts/array.c:187-197 · runtime/parts/dir.c:40-42 · runtime/parts/run.c · docs/panel/111 | CLAUDE.md §1's repair-without-its-adjacent-shapes, where the adjacent shape is a comment in the same file || **CLOSED at M-isolated-threads step 4, 2026-09-06.** Ten objects became `_Thread_local` — `array.c`'s four comparison-scratch, `dir.c`'s three, and `run.c`'s three including the argv buffer on §1.0's closure list. **What made this a step rather than ten words is the parenthesis in `array.c`'s own comment**: *"the buffer then leaks one allocation per thread, which is why it is not that already"*. It was right. `hero_eq_queue` grows through `hero_grow_kept`, which neither counter weighs by design, so per-thread without a giver-back is a leak per thread that both of this project's instruments are blind to. So `parts/alloc.c` — where that file's own comment said the question belongs — now records this thread's kept buffer in a key whose destructor frees it. **The pointer is in the key and not in a `_Thread_local`, and that is panel 111's measurement rather than a preference**: on Darwin arm64 thread-local storage is already torn down when a destructor runs, so a destructor cannot be handed the buffer by the variable that names it. **Two platform spellings, both run before either was written in**: `pthread_key_create` on POSIX and `FlsAlloc` on Windows, which has no pthreads at all — `pthread.h` is not found under clang targeting MSVC, measured on the box the same day. C11's `<threads.h>` would have been one spelling for both and is unusable: present on Windows and glibc, **absent from the macOS SDK**. **The single slot is a falsifiable claim rather than an assumption** (CLAUDE.md §11): the key holds one pointer because `hero_grow_kept` has one caller, and `hero_kept_note` panics if the `old` handed in is not what this thread last noted, so a second kept buffer trips on its first growth instead of leaking in silence. **Cost: +0.20%, inside the noise** — three clean alternating runs per arm, 36.30/36.09/35.75 against 36.51/35.82/36.03, ranges overlapping. Two earlier runs of that same measurement are discarded and the reason is written here rather than hidden: the coordinator ran builds, three suites and the Windows sync WHILE the clock was going, and one arm read 937 s of wall against 33.7 s of CPU. The prediction that the cost would be inside the noise was written before the runs, on the ground that these ten sit on rare paths where measurement 018's +6.6% `_Thread_local` sat on every `str` operation
 
 - [x] **M-isolated-threads** (OPEN) — the count of shared mutable state was a count of FILE SCOPE, and five of these objects live inside function bodies | measured 2026-09-06 by the sweep added as rule 3 of `tests/harness/suite_runtime.hero`, at M-isolated-threads step 3; nobody had asked the question this way before | **28 objects survive between calls in `runtime/`, not 18** — 5 `_Thread_local`, 2 `_Atomic` since step 3, and **21 still shared**. Panel 111 counted *22 mutable file-scope objects, 4 of them `_Thread_local`*, and that count is right about what it counted. What it counted is file scope, and a `static` inside a function body is shared between threads exactly as much as one at the top of the file. The five nobody had listed: **`runtime/parts/f64.c:89`, `static hero_locale cached`**, and four `static int done = 0;` once-guards at `os.c:25`, `os.c:67`, `stack.c:318` and `stack.c:384`. **Four of the five are safe and one is not.** The `done` guards are all called from `hero_args_set`, which the generated `main` runs before a program's first line on the thread that owns the program — safe because of WHERE THEY ARE CALLED rather than how they are written, which is a premise about the world (CLAUDE.md §11) and is now written down where the sweep reads it. The locale is the live one: `hero_c_locale()` is reached from BOTH float renderers, `hero_f64_render` (`f64.c:97`) and `hero_f32_render` (`f64.c:147`), so any Heroes that prints an `f32` or an `f64` arrives there, and two threads that both find it empty both call `newlocale` and lose one handle. **That leak is invisible to both instruments this project has**: the leak gate counts this runtime's own blocks and the handle is the libc's, and ASan has no leak detector on Darwin arm64 (panel 021) — the Linux leg under `--sanitize` is the only place it could be seen. Unreachable today only because `runtime/parts/thread.c`'s guard stops a foreign thread by name before it gets there. **The repair is a compare-and-exchange, not a `_Thread_local`**: made thread-local it leaks one locale per thread instead of one per race, which is `hero_eq_queue`'s trap one file over | runtime/parts/f64.c:88-96 · runtime/parts/os.c:25, :67 · runtime/parts/stack.c:318, :384 · tests/harness/suite_runtime.hero § Rule 3 · docs/panel/111 | CLAUDE.md §1's newest rule met in the wild: every argument about the eighteen was sound, and nothing in a sound argument points at the row nobody wrote down || **CLOSED at M-isolated-threads step 4, 2026-09-06, and the answer is an INSTRUMENT rather than a corrected number.** `tests/harness/suite_runtime.hero`'s rule 3 takes the list from the tree on every run, so no count in this project has to be right again — it fails when an object nobody named appears, and it fails when a line names nothing, which is the direction a hand-written table never notices. **The live one of the five is repaired**: `f64.c`'s cached C locale is an `_Atomic` pointer set by compare-and-exchange, first thread wins and the loser frees what it made. A `_Thread_local` was the shorter edit and the wrong one — it trades one leaked locale per RACE for one per THREAD, and nothing could give that one back. The other four are `static int done = 0;` once-guards, all called from `hero_args_set` before a program's first line, and they are now written in the allow-list with that reason, so the day a second caller appears the entry is there to be found wrong. **And the instrument caught its own author three times in three hours**: the ten allow-list lines that stopped matching when their objects went thread-local; FOUR new shared objects introduced by the very hook written to fix the others (a key, a slot and two once-guards); and a unit test written at step 3 that pinned `f64.c cached` as allow-listed, which step 4 removed. None of the three would have survived a re-reading, because the reasoning was right each time and the LIST was short. Measured after step 4: **32 objects, 15 `_Thread_local`, 3 `_Atomic`, 14 still shared, 6 of them inside function bodies** — and ten of the fourteen are `M-thread-stacks`' or safe by where they are called
+
+- [x] **014 — a `[T]` or `{K: V}` crosses the FFI boundary inside a callback signature, and nothing says a word** | 2026-09-06, found by panel 113's compiler-engineer seat and reproduced independently by the coordinator the same hour | **OPEN** | the sitting convened on copy-on-write's test-and-mutate; this is what it found instead, and it is the channel the corruption actually came through | **§1.12** — it is the one route by which a refcounted Heroes value reaches a thread the program did not start, so it is the door panel 111's four corruption classes were measured behind
+
+    **The reproducer, eleven lines, run today.** A header that names a function
+    pointer taking and returning a container is enough; no runtime include, no
+    library:
+
+    ```c
+    /* shim.h */
+    struct HeroArrayHeader;
+    void hold(struct HeroArrayHeader *(*mk)(void), void (*run)(struct HeroArrayHeader *));
+    ```
+
+    ```
+    extern "shim.h"
+        function hold(mk: (function() -> [i64]), run: (function([i64]) -> ()))
+
+    function make() -> [i64]
+        return [1, 2, 3]
+
+    function bump(xs: [i64])
+        print(len(xs))
+
+    function main()
+        hold(mk: make, run: bump)
+    ```
+
+    `heroes build t.hero --emit-c` is **exit 0 with an empty stderr**, and the
+    emitted C carries the container across in both directions:
+
+    ```
+    HeroArrayHeader * h_t_make(void);
+    void h_t_bump(HeroArrayHeader * h0_xs);
+    ```
+
+    **The cause, one line.** `selfhost/check/ffi.hero:45-57` is
+    `crosses_the_boundary`, the single function that decides what a C header may
+    spell. It refuses containers at `:53` — `.array | .fixed | .map | .fallible
+    => return false` — and at `:52` it answers `.function_ty => return true`
+    **without recursing into that function type's own parameters and result**.
+    So the vocabulary rule is applied to the callback and not to what the
+    callback carries.
+
+    **The spec already says otherwise, so this is the compiler's bug and not a
+    design question** (CLAUDE.md §12: spec beats compiler). `spec:224`: *"A
+    callback is a **parameter**, never a result; **its parameters follow the
+    same rule** and `()` is `void`"*. The same rule is `crosses_the_boundary`,
+    which refuses `.array`.
+
+    **What it costs, and it is why this is filed at §1.12 rather than as a
+    tidiness item.** A `[T]` handed to C is a `HeroArrayHeader *` that C may
+    store and pass to a thread it made itself. Panel 111 measured four classes
+    of memory corruption from threads and attributed one of them to
+    copy-on-write's `if (refcount == 1)`; panel 113's compiler seat, with
+    `parts/thread.c`'s guard patched down in its own copy, ran **8 threads and
+    240,000 mutations** over nested `[[str]]` and `{str: i64}` under ASan and
+    ThreadSanitizer and got **exit 0 with zero warnings** — because C's own
+    reference holds the count above 1, so `unshare` never sees the window. The
+    crash it did reproduce lands in `hero_array_incref`, not in
+    `hero_array_unshare`: a C lifetime bug of panel 053's family. So the
+    corruption's door is this defect, and the `refcount == 1` window is a
+    separate question that may be narrower than the record says.
+
+    **What is owed**, pending panel 113's resolution: `crosses_the_boundary`
+    recurses through `.function_ty` into its parameters and result; a golden
+    under `tests/golden/check/` with its `#~` annotation (CLAUDE.md §9); and the
+    diagnostic names the container and the callback, because a program that
+    hands C a `[T]` is doing something the author believes is allowed.
+
+    **What must NOT be assumed while it is open.** That the guard in
+    `runtime/parts/thread.c` is redundant. It is what stops this program today:
+    with the guard up, the same eight-thread program is `panic: … ran on a
+    thread this program did not start`, exit 134. Today's safety is the guard,
+    not unreachability.
+
+    **THE REPAIR, M-isolated-threads step 5, 2026-09-06.** `crosses_the_boundary`
+    recurses through `.function_ty` into its parameters and its result — the same
+    walk over the same interned table that `selfhost/check/table.hero:278-285`
+    already does, so it terminates for that function's reason. The reproducer
+    above is now **exit 1** with a diagnostic on the `.hero` line.
+
+    **The message is its own, and the generic one would have been wrong.**
+    `ffi_type`'s text ends by listing what a C header can declare, and the list
+    includes *a function type as a parameter* — true, and here it reads as a
+    contradiction, because a function type as a parameter is exactly what the
+    author wrote. So `ffi_callback_carries` reuses the `ffi_type` CODE and not
+    its message, on `ffi_result_position`'s precedent three functions above:
+
+        error[ffi_type]: `(function() -> [i64])` cannot cross the FFI boundary,
+        and it is an `extern`'s parameter — the callback may stand there, but
+        `[i64]` inside it cannot (§4.19)
+
+    with two notes: why it is refused inside a callback for the reason it is
+    refused outside one, and what to hand C instead — a `ptr` and a length, or
+    one scalar at a time, keeping the container on the Heroes side.
+
+    **The golden went in the wrong drawer first and the harness said so.** It was
+    written under `tests/golden/fixedbugs/`, and `suite_emission` refused it:
+    that directory is for wrong FFI bindings that **clang** rejects at build
+    time, and `--emit-c` never calls clang, so every case there emits. This one
+    is refused by the checker before the emitter runs, so it belongs in
+    `tests/golden/check/` with an `.expected` — written by hand after reading the
+    output, because CLAUDE.md §9 forbids regenerating a golden in that directory.
+
+    **And the repair pushed `selfhost/check/ffi.hero` past CLAUDE.md §11's ~300
+    lines, which forced a cut that was worth making.** The obvious seam — *the
+    position*, which the file's own module doc calls a different question — is
+    the one that must NOT be cut: that doc says the two Rust files were merged
+    into one Heroes module on purpose, *"because the two questions read
+    together"*. The cut taken instead is the **file-wide sweep**, structurally a
+    third thing: a pass over every position rather than a question about a type
+    in hand, and called from `checker.hero` rather than from the signature check.
+    It is now `selfhost/check/ffi_sweep.hero`. **The compiler confirmed the seam
+    was already there**: after the move, `checker.hero` used nothing at all from
+    `check/ffi`, and `error[unused_binding]` made the import come out.
+
+    Green on this Mac at the repair: **583** compiler tests, **112** harness
+    tests, and the net **1526 passed, 0 failed** with the determinism diff empty.
