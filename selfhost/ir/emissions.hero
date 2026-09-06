@@ -1,0 +1,213 @@
+# The fixed shapes the lowering walk emits on request — one instruction
+# or two, always the same, wherever they are asked for (design.md Part
+# 10 step 6, §4.6, §4.8).
+#
+# IR instructions, not C: the C backend is `selfhost/emit/`. The
+# membership rule is mechanical, the mirror of `ir/questions.hero`'s:
+# every function here TAKES the builder and emits, and **not one of
+# them walks back into the tree**. A tag read, a payload read, an
+# arm's store into a join slot, the copy-out chain §4.8 owes on every
+# exit edge, a call and the write-backs it pays after it — each is a
+# shape several places in the walk need to spell identically, and
+# spelling it once here is what stops two of them from drifting.
+#
+# It is a module rather than a section of `ir/flatten.hero` because
+# nothing here calls the walk, and Heroes refuses module cycles: the
+# functions that only call inwards are exactly the ones that can leave.
+# Cut at M-declared-freer step 1, panel 109's condition.
+
+use token
+use ast
+use source
+use resolved
+use check/table
+use check/state
+use check/contextual
+use contextless_errors
+use ir
+use ir/build
+use ir/inout
+use ir/questions
+
+# §4.8's second half, on one exit edge: every @ parameter is written
+# back before control leaves. Copy-out happens ALWAYS — including on
+# early return and on `?` — so this is called from three places, and the
+# dump shows the instructions rather than leaving them to the emitter's
+# good intentions.
+function copy_out(@b: build.Lowering, c: state.Checked)
+    unit = table.unit_ty(c.types)
+
+    for param in build.mutable_params(b)
+        span = build.declaration_span(b)
+        build.emit_void(@b, op: .copy_out(param: param), ty: unit, span: span)
+
+function orphan(@b: build.Lowering, c: state.Checked, id: i64) -> i64
+    return build.slot(@b, name: "$orphan", ty: c.expr_types[id], kind: .synthetic_slot)
+
+# Writes an arm's value into the join slot, when there is one of each.
+function store_arm(@b: build.Lowering, result: i64?, value: i64?, span: token.Span)
+    if result.is_err() || value.is_err()
+        return
+    build.store_slot(@b, slot_id: result.must(), value: value.must(), span: span)
+
+# Closes a join: load the value if there is one, and say unreachable
+# when nothing reaches here — which happens when every arm jumped or
+# returned. A match all of whose arms diverge is legal in statement
+# position (panel 017 A), so this is a real shape and not a defensive
+# branch.
+function seal_join(@b: build.Lowering, meet: i64, result: i64?, span: token.Span) -> i64
+    if !build.has_preds(b, target: meet)
+        build.terminate(@b, .unreachable)
+        return build.unit_value()
+
+    if result.is_err()
+        return build.unit_value()
+    return build.load_slot(@b, slot_id: result.must(), span: span)
+
+function read_tag(@b: build.Lowering, c: state.Checked, subject: i64, span: token.Span) -> i64
+    held = build.load_slot(@b, slot_id: subject, span: span)
+    return build.emit(@b, op: .tag_of(value: held), ty: table.int_ty_id(c.types), span: span)
+
+# The branch all three operations share: tag 0 is ok.
+function branch_on_ok(@b: build.Lowering, c: state.Checked, subject: i64, good: i64, bad: i64, span: token.Span)
+    tag = read_tag(@b, c, subject: subject, span: span)
+    zero = build.emit(
+        @b,
+        op: .lit(value: .int_const(value: contextual.LitValue(negative: false, magnitude: 0))),
+        ty: table.int_ty_id(c.types),
+        span: span
+    )
+    fine = build.emit(@b, op: .binary(op: .eq, left: tag, right: zero), ty: table.bool_ty(c.types), span: span)
+    build.terminate(@b, .branch(cond: fine, then_to: good, else_to: bad))
+
+function payload_of(@b: build.Lowering, subject: i64, at: i64, ty: i64, span: token.Span) -> i64
+    held = build.load_slot(@b, slot_id: subject, span: span)
+    return build.emit(@b, op: .payload(base: held, at: at), ty: ty, span: span)
+
+# A call, with the one thing the C proved: AT MOST ONE DESTINATION.
+# `dst = call print(x)` is a hard clang error and raylib is almost
+# entirely void-returning, so a () result produces no destination at
+# all — the value handed back is the function-wide unit, which no
+# instruction defines. What the call owes AFTER the instruction — an `@`
+# argument handed over as a temporary, stored back through its indexed
+# place — is paid here, because only the call knows when it has returned
+# (`ir/inout.hero`).
+function emit_call(@b: build.Lowering, target: ir.Callee, given: inout.Args, variadic: bool, ty: i64, span: token.Span) -> i64
+    if ty == build.unit_ty(b)
+        build.emit_void(@b, op: .call(callee: target, arguments: given.run, variadic: variadic), ty: ty, span: span)
+        inout.write_back(@b, given.after, span: span)
+        return build.unit_value()
+    result = build.emit(@b, op: .call(callee: target, arguments: given.run, variadic: variadic), ty: ty, span: span)
+    inout.write_back(@b, given.after, span: span)
+    return result
+
+# The asserted expression AS THE AUTHOR WROTE IT: the statement's own
+# text with the keyword taken off the front. It used to be the
+# expression node's span, and that lost the parentheses — measured:
+# `assert (1 == 1) == (1 == 2)` reported `1 == 1) == (1 == 2`, because
+# a parenthesised operand's span covers what is INSIDE the brackets.
+# The statement span cannot lose a character the author typed; the
+# keyword is fixed and always leading, so stripping it is a fact about
+# the value rather than a guess about the shape (CLAUDE.md §11).
+function assert_text(@b: build.Lowering, c: state.Checked, s: source.Source, span: token.Span) -> i64
+    written = source.span_text(s, span)
+    expression: str @ written
+
+    if written.len() > 6 && written.slice(from: 0, to: 6) == "assert"
+        expression @ written.slice(from: 6, to: written.len())
+    expression @ questions.trimmed(expression)
+    at = build.intern(@b, expression)
+    return build.emit(@b, op: .lit(value: .str_const(at: at)), ty: table.str_ty(c.types), span: span)
+
+# The value-argument run a construct needs.
+function value_args(@b: build.Lowering, values: [i64]) -> ir.Run
+    list: [ir.Arg] @ []
+
+    for v in values
+        list @ list.push(.value_arg(value: v))
+
+    return build.args_run(@b, list)
+
+# A bare name: a local, a top-level declaration, or a built-in. The
+# three lower to three different things, and the resolver decided which
+# one this is — after UFCS erasure a re-resolution could legitimately
+# give the OTHER answer.
+function name_expr(@b: build.Lowering, r: resolved.Resolved, decls: [ast.Decl], id: i64, ty: i64, span: token.Span) -> i64
+    match r.uses[id]
+        # A module name standing alone is a resolver error, so a clean
+        # program never lowers one. It is a real Ref, though, so the arm
+        # is written rather than folded.
+        .module => return build.emit(@b, op: .missing, ty: ty, span: span)
+        .local l =>
+            slot = build.slot_of_local(b, l.at)
+
+            if slot.is_err()
+                return build.emit(@b, op: .missing, ty: ty, span: span)
+            return build.load_slot(@b, slot_id: slot.must(), span: span)
+        .top t =>
+            if questions.is_constant(decls, t.at)
+                # A constant is a zero-argument function, so reading its
+                # name is a call (§4.2: there are no mutable globals to
+                # read instead).
+                run = build.args_run(@b, [])
+                return build.emit(
+                    @b,
+                    op: .call(callee: .heroes_fn(decl: t.at), arguments: run, variadic: false),
+                    ty: ty,
+                    span: span
+                )
+
+            # A function used as a value (§4.13): a pointer, no
+            # environment.
+            return build.emit(@b, op: .func_ref(callee: questions.callee_of(decls, t.at)), ty: ty, span: span)
+        .builtin bt => return build.emit(@b, op: .func_ref(callee: .builtin_fn(at: bt.at)), ty: ty, span: span)
+        .unresolved => return build.emit(@b, op: .missing, ty: ty, span: span)
+
+    return build.emit(@b, op: .missing, ty: ty, span: span)
+
+# An i64 literal, decoded by the same sign-and-magnitude carrier the
+# checker used. The checker reports the range first, so this is the net
+# rather than the gate — a literal reaching here out of range is a
+# frontend bug, and the diagnostic stays because a net that has never
+# fired is indistinguishable from no net.
+function emit_int(@b: build.Lowering, a: ast.Ast, s: source.Source, id: i64, ty: i64, span: token.Span) -> i64
+    decoded = contextual.literal_value(a, s, id)
+
+    if decoded.is_err()
+        build.push_diagnostic(@b, contextless_errors.int_out_of_range(source.span_text(s, span), span))
+        return build.emit(
+            @b,
+            op: .lit(value: .int_const(value: contextual.LitValue(negative: false, magnitude: 0))),
+            ty: ty,
+            span: span
+        )
+    return build.emit(@b, op: .lit(value: .int_const(value: decoded.must())), ty: ty, span: span)
+
+# The negative-literal fold: `-` directly on an int literal becomes one
+# constant with the sign inside.
+function fold_negative(@b: build.Lowering, a: ast.Ast, s: source.Source, op: ast.UnaryOp, operand: i64, ty: i64, span: token.Span) -> i64?
+    is_neg: bool @ false
+
+    match op
+        .neg            => is_neg @ true
+        .not | .bit_not => is_neg @ false
+
+    if !is_neg
+        return fail("no", "not a negation")
+
+    match a.exprs[operand].kind
+        .int_lit =>
+            inner = contextual.literal_value(a, s, operand)
+
+            if inner.is_err()
+                return fail("no", "not a plain literal")
+            lit = inner.must()
+            return ok(
+                build.emit(@b, op: .lit(value: .int_const(value: contextual.LitValue(negative: true, magnitude: lit.magnitude))), ty: ty, span: span)
+            )
+        .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr => return fail("no", "not an int literal")
+        .name | .hole | .unary | .binary | .field | .index        => return fail("no", "not an int literal")
+        .call | .method | .variant_case | .array | .map           => return fail("no", "not an int literal")
+        .try_expr | .if_expr | .match_expr | .error               => return fail("no", "not an int literal")
+
+    return fail("no", "unreached")

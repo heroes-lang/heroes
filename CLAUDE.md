@@ -987,8 +987,8 @@ repeated; what follows is what they did not.
 ```
 clang -I runtime seed/heroes.c runtime/runtime.c -o heroes   # the compiler, from C alone (2.7 s)
 ./heroes build selfhost/main.hero -o heroes-next             # the compiler, from Heroes
-./heroes test selfhost/main.hero                             # its own tests (583, 2026-09-06; 37 s WARM)
-./heroes run tests/harness/main.hero -- ./heroes             # the net (1578 checks, 2026-09-06; 11m16s WARM, ~13m with runtime/ changed)
+./heroes test selfhost/main.hero                             # its own tests (584, 2026-09-06; 36 s WARM)
+./heroes run tests/harness/main.hero -- ./heroes             # the net (1582 checks, 2026-09-06; 11m17s WARM, ~13m with runtime/ changed)
 ./heroes test tests/harness/main.hero                        # THE NET'S OWN TESTS (113, 11 s) — the third suite
 
 ./heroes doctor                                              # toolchain check
@@ -1012,6 +1012,18 @@ build up — which is exactly the state in which a silent divergence goes unnoti
 block said 108 for the third suite while `docs/ROADMAP.md` said 112, because
 M-isolated-threads' close re-measured the ROADMAP and not the contract. A number
 that lives in two places drifts in the one nobody re-reads.
+
+**IT HAPPENED AGAIN THE SAME DAY, AND THIS TIME BOTH COPIES DRIFTED TOGETHER**
+(M-declared-freer step 1, 2026-09-06). `e61fec3b` repaired defect 015, added
+harness rows and moved two counts — **583 -> 584** and **1578 -> 1582** — and
+**its own commit body states both**, in the sentence *"Three suites green: the
+compiler's own 584, the net 1582, the net's own tests 113"*. Neither this block
+nor `docs/ROADMAP.md` was touched, so the repair that knew the new numbers
+shipped beside two documents still printing the old ones. The lesson above says
+a number drifts in the copy nobody re-reads; the sharper one is that a commit
+which MEASURES a number and writes it in prose is exactly the commit that can
+afford to put it where the number lives, and the ten seconds it costs is the
+whole difference between a record and a rumour.
 
 **There are THREE suites and this block named two until 2026-09-02**, when the
 third was found red at `d08062f` and had been red for six commits —

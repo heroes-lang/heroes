@@ -1,0 +1,1261 @@
+# The lowering walk over BODIES: statements, places and expressions
+# become instructions (design.md Part 10 step 6, §4.4, §4.7, §4.8,
+# §4.9). Port of `archive/bootstrap-rs/heroes/src/ir/stmts.rs` and its
+# eight siblings in that directory — places, exprs, control, fallible,
+# calls, ufcs, asserts, matches — nine Rust files as one module. The
+# tenth, decls.rs, is `selfhost/ir/lower.hero` beside this one.
+#
+# Flattening is the whole job: `2 + 3 * 4` is a tree in the syntax and
+# three instructions here, each naming temporaries and nothing nested.
+# That is what makes the C emitter a printer rather than a second
+# compiler, and what lets the ownership pass point at a single
+# instruction and say "this one produced a value somebody owns".
+#
+# THE KNOT'S MAP (CLAUDE.md §11's due for a module the language refuses
+# to split). Twenty-five functions here are mutually recursive by
+# construction — a statement lowers its expressions, an if-expression
+# lowers its blocks, a block lowers its statements — so no cut exists:
+# `module_cycle` fires on the `use` edge whatever it carries.
+#
+# Entry points, top to bottom: `block` runs statements in order;
+# `statement` dispatches; `expr` flattens one expression to a temporary;
+# `place` walks the left side of a mutation to a root and steps.
+# Who calls whom: block -> statement -> {expr, place, block (loops)};
+# expr -> {call, case_construct, if_expr, lower_match, method,
+# short_circuit, try_expr} and each of those -> expr again; arm_body ->
+# {block, statement}; lower_args and with_receiver -> {expr, place}.
+#
+# What is NOT in the knot left this module when it was cut, and the
+# rule for each is mechanical rather than a judgement call:
+# `ir/questions.hero` holds what the walk ASKS — no builder parameter,
+# no instruction emitted — and `ir/emissions.hero` holds what it emits
+# ONE shape of, on request, without ever walking back into the tree.
+#
+# The knot was grown with the Rust's own scaffolding trick — unported
+# forms emitted `.missing`, which the verifier rejects — and closed in
+# six steps. `.missing` now flows only from what the checker already
+# reported, exactly as in the original.
+
+use token
+use ast
+use source
+use resolved
+use check/table
+use check/state
+use check/contextual
+use escape
+use ir
+use ir/build
+use ir/layout
+use ir/inout
+use ir/questions
+use ir/emissions
+use inventory
+
+## Statements
+
+# Lowers a block's statements in order. A block is a straight line until
+# something branches. wants_value is the constant-and-arm case: a
+# block's value is its last statement when that statement is an
+# expression (§4.7). A function body wants nothing — it hands its value
+# back through return.
+function block(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], body: ast.Block, wants_value: bool) -> i64?
+    value: i64? @ fail("none", "no value yet")
+    index: i64 @ 0
+
+    for id in body.stmts
+        if build.is_terminated(b)
+            break
+        produced = statement(@b, a, r, c, s, decls, id)
+
+        if wants_value && index == body.stmts.len() - 1
+            value @ produced
+        index @ index + 1
+
+    return value
+
+# Lowers one statement. The fallible is its value, which only an
+# expression statement has.
+function statement(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], id: i64) -> i64?
+    span = a.stmts[id].span
+
+    match a.stmts[id].kind
+        .bind bd =>
+            bind_stmt(@b, a, r, c, s, decls, name: bd.name, value: bd.value, span: span)
+            return fail("none", "a bind produces nothing")
+        .declare dc =>
+            bind_stmt(@b, a, r, c, s, decls, name: dc.name, value: dc.value, span: span)
+            return fail("none", "a declare produces nothing")
+        .mutate m =>
+            target = place(@b, a, r, c, s, decls, id: m.place)
+            produced = expr(@b, a, r, c, s, decls, id: m.value)
+            ty = build.value_ty(b, produced)
+            build.emit_void(@b, op: .store(place: target, value: produced), ty: ty, span: span)
+            return fail("none", "a mutation produces nothing")
+        .return_stmt ret =>
+            if ret.value.is_err()
+                emissions.copy_out(@b, c)
+                build.terminate(@b, .return_term(value: fail("none", "bare return")))
+            else
+                produced = expr(@b, a, r, c, s, decls, id: ret.value.must())
+
+                # The copy-out chain goes AFTER the value is computed and
+                # before control leaves: the returned value was read from
+                # the pre-copy-out state, which is what "copy in, copy
+                # out" means.
+                emissions.copy_out(@b, c)
+                build.terminate(@b, .return_term(value: ok(produced)))
+            return fail("none", "a return produces nothing")
+        .break_stmt =>
+            if b.loops.len() > 0
+                build.terminate(@b, .jump(to: b.loops[b.loops.len() - 1].break_to))
+            return fail("none", "a break produces nothing")
+        .continue_stmt =>
+            if b.loops.len() > 0
+                build.terminate(@b, .jump(to: b.loops[b.loops.len() - 1].continue_to))
+            return fail("none", "a continue produces nothing")
+        .assert_stmt asrt =>
+            lower_assert(@b, a, r, c, s, decls, asserted: asrt.value, span: span)
+            return fail("none", "an assert produces nothing")
+        .while_stmt w =>
+            while_loop(@b, a, r, c, s, decls, cond: w.cond, body: w.block)
+            return fail("none", "a loop produces nothing")
+        .for_in fi =>
+            for_loop(@b, a, r, c, s, decls, name: fi.name, iterable: fi.iterable, body: fi.block)
+            return fail("none", "a loop produces nothing")
+        .expr_stmt e =>
+            # A statement's type must be () (panel 003), with one
+            # exception the checker allows and this pass honours: a
+            # match or if in statement position. Both lower the same way
+            # in either position — the value is simply not used.
+            return ok(expr(@b, a, r, c, s, decls, id: e.value))
+        .error => return fail("none", "an error lowers to nothing")
+
+    return fail("none", "unreached")
+
+# `x = 5` and `v: i64 @ 0` are both slots by here: §4.4's mutation rule
+# was enforced by the resolver, and the IR does not re-litigate it.
+function bind_stmt(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], name: token.Span, value: i64, span: token.Span)
+    produced = expr(@b, a, r, c, s, decls, id: value)
+
+    # `_ = f(x)` binds nothing (§4.7): the resolver made no local for
+    # it, so the call happens and the value is dropped.
+    local = build.local_at(b, name)
+
+    if local.is_err()
+        return
+    ty = c.local_types[local.must()]
+    slot = build.slot(@b, name: source.span_text(s, name), ty: ty, kind: .local_slot)
+    build.bind_local(@b, local: local.must(), slot_id: slot)
+    build.store_slot(@b, slot_id: slot, value: produced, span: span)
+
+## Places
+
+# §4.8 wrote the specification in one sentence — "every place has
+# exactly one root" — so a place is a slot plus a path of steps, never
+# an expression. Evaluation order is left to right: the path's index
+# expressions are lowered before the value being stored, because
+# `xs[f()] @ g()` calls f first.
+function place(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], id: i64) -> ir.Place
+    steps: [ir.PathStep] @ []
+    root = walk_place(@b, a, r, c, s, decls, id: id, steps: @steps)
+    path = build.steps_run(@b, steps)
+    return ir.Place(root: root, path: path)
+
+# Descends to the root, pushing steps on the way back out, so the path
+# reads root-first — the order the emitter needs to spell `l.pos` and
+# the order a reader expects.
+function walk_place(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], id: i64, @steps: [ir.PathStep]) -> i64
+    match a.exprs[id].kind
+        .name =>
+            match r.uses[id]
+                .local l =>
+                    slot = build.slot_of_local(b, l.at)
+
+                    if slot.is_err()
+                        return emissions.orphan(@b, c, id)
+                    return slot.must()
+                .top | .builtin | .module | .unresolved => return emissions.orphan(@b, c, id)
+        .field f =>
+            owner = c.expr_types[f.base]
+            root = walk_place(@b, a, r, c, s, decls, id: f.base, steps: @steps)
+            found = layout.field_index(decls, c, s, owner: owner, name: f.name)
+
+            if !found.is_err()
+                steps @ steps.push(.field_step(at: found.must()))
+            return root
+        .index ix =>
+            root = walk_place(@b, a, r, c, s, decls, id: ix.base, steps: @steps)
+            key = expr(@b, a, r, c, s, decls, id: ix.index)
+            steps @ steps.push(.index_step(value: key))
+            return root
+        # Unreachable on a tree that checked clean: the parser only
+        # accepts a name, a field path or an index path on the left of @
+        # (§4.4), and the resolver rejected a root that is not a
+        # binding. A slot is invented rather than aborting, because a
+        # pass that aborts on a shape it did not expect is a pass that
+        # cannot be trusted with the next one.
+
+        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr => return emissions.orphan(@b, c, id)
+        .hole | .unary | .binary | .call | .method | .variant_case           => return emissions.orphan(@b, c, id)
+        .array | .map | .try_expr | .if_expr | .match_expr | .error          => return emissions.orphan(@b, c, id)
+
+    return emissions.orphan(@b, c, id)
+
+## Control flow — three rows of Part 5's table erased
+
+# The IR has no `if`, no `for` and no `&&`. It has blocks and two-way
+# branches, and each surface form is a shape built out of them:
+# while = test/body/exit; for = test/body/STEP/exit; if = one test and
+# one arm per branch, then a join; && = the right side, then a join.
+# A branching expression's value is a SLOT: each arm stores into $r and
+# the join loads it — what replaces a phi node, and why a join needs no
+# argument list.
+
+# `while cond` — the condition loop (§4.7; panel 018 gave it its own
+# keyword). continue targets the test: a while has nothing to step.
+function while_loop(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], cond: i64, body: ast.Block)
+    head = build.block(@b, note: "while: test")
+    inside = build.block(@b, note: "while: body")
+    leave = build.block(@b, note: "while: exit")
+    build.terminate(@b, .jump(to: head))
+    build.switch_to(@b, target: head)
+    value = expr(@b, a, r, c, s, decls, id: cond)
+    build.terminate(@b, .branch(cond: value, then_to: inside, else_to: leave))
+    b.loops @ b.loops.push(build.LoopEdges(break_to: leave, continue_to: head))
+    build.switch_to(@b, target: inside)
+    _ = block(@b, a, r, c, s, decls, body: body, wants_value: false)
+    build.terminate(@b, .jump(to: head))
+    b.loops @ b.loops.slice(from: 0, to: b.loops.len() - 1)
+    build.switch_to(@b, target: leave)
+
+# `for x in xs` — Part 5's row, erased: a while with an index. The
+# iterable is evaluated ONCE, into a slot, because `for x in f()` must
+# not call f per iteration. The index is $i<n>: a name the author
+# cannot have written, so it cannot shadow anything and cannot be
+# reported unused (§4.4 twice).
+function for_loop(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], name: token.Span, iterable: i64, body: ast.Block)
+    int_id = table.int_ty_id(c.types)
+    bool_id = table.bool_ty(c.types)
+    sequence_ty = c.expr_types[iterable]
+    sequence = expr(@b, a, r, c, s, decls, id: iterable)
+    holder = build.synthetic(@b, prefix: "xs", ty: sequence_ty)
+    build.store_slot(@b, slot_id: holder, value: sequence, span: name)
+    index = build.synthetic(@b, prefix: "i", ty: int_id)
+    zero = build.emit(
+        @b,
+        op: .lit(value: .int_const(value: contextual.LitValue(negative: false, magnitude: 0))),
+        ty: int_id,
+        span: name
+    )
+    build.store_slot(@b, slot_id: index, value: zero, span: name)
+
+    # The loop variable is a real local: the resolver made it and the
+    # body reads it by name. `for _ in xs` names nothing (§4.7), so it
+    # gets no slot and the body never reads an element — the loop is
+    # being run for its count.
+    element: i64? @ fail("none", "no loop variable")
+    element_ty: i64 @ int_id
+    local = build.local_at(b, name)
+
+    if !local.is_err()
+        element_ty @ c.local_types[local.must()]
+        slot = build.slot(@b, name: source.span_text(s, name), ty: element_ty, kind: .local_slot)
+        build.bind_local(@b, local: local.must(), slot_id: slot)
+        element @ ok(slot)
+    head = build.block(@b, note: "for: test")
+    inside = build.block(@b, note: "for: body")
+    step = build.block(@b, note: "for: step")
+    leave = build.block(@b, note: "for: exit")
+    build.terminate(@b, .jump(to: head))
+    build.switch_to(@b, target: head)
+    i = build.load_slot(@b, slot_id: index, span: name)
+    xs = build.load_slot(@b, slot_id: holder, span: name)
+    length = build.emit(@b, op: .len_of(value: xs), ty: int_id, span: name)
+    more = build.emit(@b, op: .binary(op: .lt, left: i, right: length), ty: bool_id, span: name)
+    build.terminate(@b, .branch(cond: more, then_to: inside, else_to: leave))
+    build.switch_to(@b, target: inside)
+
+    if !element.is_err()
+        xs_again = build.load_slot(@b, slot_id: holder, span: name)
+        i_again = build.load_slot(@b, slot_id: index, span: name)
+        item = build.emit(@b, op: .index(base: xs_again, at: i_again), ty: element_ty, span: name)
+        build.store_slot(@b, slot_id: element.must(), value: item, span: name)
+
+    # continue lands on the STEP, not the test: the increment owes
+    # itself to that path as much as to the fall-through.
+    b.loops @ b.loops.push(build.LoopEdges(break_to: leave, continue_to: step))
+    _ = block(@b, a, r, c, s, decls, body: body, wants_value: false)
+    build.terminate(@b, .jump(to: step))
+    b.loops @ b.loops.slice(from: 0, to: b.loops.len() - 1)
+    build.switch_to(@b, target: step)
+    i_step = build.load_slot(@b, slot_id: index, span: name)
+    one = build.emit(
+        @b,
+        op: .lit(value: .int_const(value: contextual.LitValue(negative: false, magnitude: 1))),
+        ty: int_id,
+        span: name
+    )
+    next = build.emit(@b, op: .binary(op: .add, left: i_step, right: one), ty: int_id, span: name)
+    build.store_slot(@b, slot_id: index, value: next, span: name)
+    build.terminate(@b, .jump(to: head))
+    build.switch_to(@b, target: leave)
+
+# `if c` / `else if c` / `else` — an expression like everything else
+# (§4.7), so one routine serves both positions. In statement position
+# the join slot is simply never loaded.
+function if_expr(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], branches: [ast.Branch], otherwise: ast.Block?, ty: i64, span: token.Span) -> i64
+    wants_value = ty != build.unit_ty(b) && ty != table.error_ty(c.types)
+    result: i64? @ fail("none", "statement position")
+
+    if wants_value
+        result @ ok(build.synthetic(@b, prefix: "r", ty: ty))
+    meet = build.block(@b, note: "if: join")
+
+    for branch in branches
+        cond = expr(@b, a, r, c, s, decls, id: branch.cond)
+        then_block = build.block(@b, note: "if: then")
+        next = build.block(@b, note: "if: else")
+        build.terminate(@b, .branch(cond: cond, then_to: then_block, else_to: next))
+        build.switch_to(@b, target: then_block)
+        value = block(@b, a, r, c, s, decls, body: branch.block, wants_value: wants_value)
+        emissions.store_arm(@b, result: result, value: value, span: span)
+        build.terminate(@b, .jump(to: meet))
+        build.switch_to(@b, target: next)
+
+    # No else means the fall-through IS the missing arm. An if used as a
+    # value always has one (§4.7), so that only happens in statement
+    # position.
+    if !otherwise.is_err()
+        value = block(@b, a, r, c, s, decls, body: otherwise.must(), wants_value: wants_value)
+        emissions.store_arm(@b, result: result, value: value, span: span)
+    build.terminate(@b, .jump(to: meet))
+    build.switch_to(@b, target: meet)
+    return emissions.seal_join(@b, meet: meet, result: result, span: span)
+
+# `a && b` and `a || b` — not instructions. §4.14 makes them
+# short-circuit, so the right side is evaluated on one edge only, and
+# that is a branch. The asymmetry IS the operator: && evaluates the
+# right side when the left is true, || when it is false.
+function short_circuit(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], op: ast.BinaryOp, left: i64, right: i64, ty: i64, span: token.Span) -> i64
+    result = build.synthetic(@b, prefix: "b", ty: ty)
+    first = expr(@b, a, r, c, s, decls, id: left)
+    build.store_slot(@b, slot_id: result, value: first, span: span)
+    is_and: bool @ false
+
+    match op
+        .and                                                                 => is_and @ true
+        .add | .sub | .mul | .div | .rem | .eq | .ne | .lt | .le | .gt | .ge => is_and @ is_and
+        .or | .bit_and | .bit_or | .bit_xor | .shl | .shr                    => is_and @ is_and
+
+    rest: i64 @ 0
+    meet: i64 @ 0
+
+    if is_and
+        rest @ build.block(@b, note: "&&: right")
+        meet @ build.block(@b, note: "&&: join")
+        build.terminate(@b, .branch(cond: first, then_to: rest, else_to: meet))
+    else
+        rest @ build.block(@b, note: "||: right")
+        meet @ build.block(@b, note: "||: join")
+        build.terminate(@b, .branch(cond: first, then_to: meet, else_to: rest))
+    build.switch_to(@b, target: rest)
+    second = expr(@b, a, r, c, s, decls, id: right)
+    build.store_slot(@b, slot_id: result, value: second, span: span)
+    build.terminate(@b, .jump(to: meet))
+    build.switch_to(@b, target: meet)
+    return build.load_slot(@b, slot_id: result, span: span)
+
+## T? — the four rows of Part 5's table that read a tag (§4.6)
+
+# A T? is a built-in variant with two cases, ok at tag 0 and err at tag
+# 1. Everything below is that one fact, applied: ok/fail are
+# constructions; .is_err() is a tag read and one comparison, NO branch;
+# .must() is a branch to the payload or an abort; .default(v) is a
+# branch and a join slot; e? is a branch and an EARLY RETURN THAT
+# COPIES OUT — §4.8's own sentence names ? beside return, so the error
+# edge owes the same chain.
+
+# .must(), .default(v), .is_err() — Part 5 calls all three "match", and
+# only two of them need an edge.
+function fallible_operation(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], name: str, receiver: i64, given: [ast.Arg], ty: i64, span: token.Span) -> i64
+    subject = hold(@b, a, r, c, s, decls, held_expr: receiver, span: span)
+    int_id = table.int_ty_id(c.types)
+
+    if name == "is_err"
+        # A tag read and a comparison: no control flow at all, which is
+        # why this row of the table is the cheap one.
+        tag = emissions.read_tag(@b, c, subject: subject, span: span)
+        one = build.emit(
+            @b,
+            op: .lit(value: .int_const(value: contextual.LitValue(negative: false, magnitude: 1))),
+            ty: int_id,
+            span: span
+        )
+        return build.emit(@b, op: .binary(op: .eq, left: tag, right: one), ty: ty, span: span)
+
+    if name == "must"
+        good = build.block(@b, note: "must: ok")
+        bad = build.block(@b, note: "must: abort")
+        emissions.branch_on_ok(@b, c, subject: subject, good: good, bad: bad, span: span)
+        build.switch_to(@b, target: bad)
+
+        # THE FAILURE TRAVELS WITH THE ABORT. Without it the panic can
+        # only say that a .must() failed, which is the one thing the
+        # reader already knows; with it, it says the code and msg the
+        # author wrote (§4.6). The read happens INSIDE the abort block,
+        # so nothing counted crosses a block edge.
+        failure = emissions.payload_of(@b, subject: subject, at: 1, ty: table.failure_ty(c.types), span: span)
+        carried = build.args_run(@b, [.value_arg(value: failure)])
+        build.emit_void(@b, op: .abort_op(why: .must_abort, arguments: carried), ty: build.unit_ty(b), span: span)
+        build.terminate(@b, .unreachable)
+        build.switch_to(@b, target: good)
+        return emissions.payload_of(@b, subject: subject, at: 0, ty: ty, span: span)
+
+    # .default(v): two edges into one slot, the same shape an if with a
+    # value has.
+    result = build.synthetic(@b, prefix: "r", ty: ty)
+    good = build.block(@b, note: "default: ok")
+    fallback = build.block(@b, note: "default: else")
+    meet = build.block(@b, note: "default: join")
+    emissions.branch_on_ok(@b, c, subject: subject, good: good, bad: fallback, span: span)
+    build.switch_to(@b, target: good)
+    value = emissions.payload_of(@b, subject: subject, at: 0, ty: ty, span: span)
+    build.store_slot(@b, slot_id: result, value: value, span: span)
+    build.terminate(@b, .jump(to: meet))
+    build.switch_to(@b, target: fallback)
+    fallback_value: i64 @ 0
+
+    if given.len() > 0
+        fallback_value @ expr(@b, a, r, c, s, decls, id: given[0].value)
+    else
+        fallback_value @ build.emit(@b, op: .missing, ty: ty, span: span)
+    build.store_slot(@b, slot_id: result, value: fallback_value, span: span)
+    build.terminate(@b, .jump(to: meet))
+    build.switch_to(@b, target: meet)
+    return build.load_slot(@b, slot_id: result, span: span)
+
+# e? — propagate (§4.6). The error edge is an exit edge, so it copies
+# out. The error itself propagates UNCHANGED — err_shape wraps the
+# failure that already exists rather than re-reading its code and msg,
+# because a ? that rebuilt the error would lose whatever the callee put
+# there.
+function try_expr(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], inner: i64, ty: i64, span: token.Span) -> i64
+    subject = hold(@b, a, r, c, s, decls, held_expr: inner, span: span)
+    good = build.block(@b, note: "?: ok")
+    bad = build.block(@b, note: "?: propagate")
+    emissions.branch_on_ok(@b, c, subject: subject, good: good, bad: bad, span: span)
+    build.switch_to(@b, target: bad)
+    failure = emissions.payload_of(@b, subject: subject, at: 1, ty: table.failure_ty(c.types), span: span)
+
+    # The caller's T?, carrying the callee's failure unchanged. The
+    # result type is the enclosing function's, which ? already required
+    # to be fallible.
+    run = build.args_run(@b, [.value_arg(value: failure)])
+    wrapped = build.emit(
+        @b,
+        op: .construct(shape: .err_shape, arguments: run),
+        ty: build.result_type(b),
+        span: span
+    )
+    emissions.copy_out(@b, c)
+    build.terminate(@b, .return_term(value: ok(wrapped)))
+    build.switch_to(@b, target: good)
+    return emissions.payload_of(@b, subject: subject, at: 0, ty: ty, span: span)
+
+# Puts the subject in a slot. Every one of these forms reads it twice —
+# once for the tag, once for the payload — and f()? must not call f
+# twice.
+function hold(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], held_expr: i64, span: token.Span) -> i64
+    ty = c.expr_types[held_expr]
+    value = expr(@b, a, r, c, s, decls, id: held_expr)
+    slot = build.synthetic(@b, prefix: "f", ty: ty)
+    build.store_slot(@b, slot_id: slot, value: value, span: span)
+    return slot
+
+## Calls, construction, and UFCS erased (§4.9, §4.11, §4.13, §4.19)
+
+# Two of Part 5's rows cost nothing here, and the reason is a surface
+# rule: a label in Heroes does not REORDER an argument — the checker
+# verified the label at a position against the parameter AT that
+# position, so "named -> positional" is erased by simply not carrying
+# the label. Callee is where this file earns its keep (panel 019's most
+# expensive finding): a Heroes `function open` reaching C unmangled
+# replaces libc's, clang says nothing, and the program prints 7 instead
+# of a file descriptor. Recording the linkage here is what stops the
+# emitter from re-deriving it and getting it wrong.
+
+# `f(x)`, `Point(x: 3, y: 4)`, `ok(v)`, `fail(c, m)`, `h.cb(n)` — one
+# syntax, and what it IS depends on what the callee resolved to.
+function call(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], callee: i64, given: [ast.Arg], ty: i64, span: token.Span) -> i64
+    is_name: bool @ false
+
+    match a.exprs[callee].kind
+        .name                                                                       => is_name @ true
+        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr        => is_name @ is_name
+        .hole | .unary | .binary | .field | .index | .call | .method                => is_name @ is_name
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => is_name @ is_name
+
+    if is_name
+        match r.uses[callee]
+            .top t =>
+                # Record construction IS a call with named arguments
+                # (§4.9), so the surface needs no node of its own — but
+                # the IR does, because the layout decision belongs to the
+                # descriptor pass.
+                if questions.is_record(decls, t.at)
+                    run = lower_args(@b, a, r, c, s, decls, given: given).run
+                    return build.emit(
+                        @b,
+                        op: .construct(shape: .record_shape(decl: t.at), arguments: run),
+                        ty: ty,
+                        span: span
+                    )
+                handed = lower_args(@b, a, r, c, s, decls, given: given)
+                return emissions.emit_call(
+                    @b,
+                    target: questions.callee_of(decls, t.at),
+                    given: handed,
+                    variadic: false,
+                    ty: ty,
+                    span: span
+                )
+            .builtin bt =>
+                builtin_name = inventory.table()[bt.at].name
+
+                # `.cstr()` is a CAST, not a call: §4.3's no-implicit-
+                # conversions rule would be invisible in the dump if the
+                # conversion were hidden inside a call.
+                if builtin_name == "cstr"
+                    operand = expr(@b, a, r, c, s, decls, id: given[0].value)
+                    return build.emit(@b, op: .cast(kind: .str_to_cstr, operand: operand), ty: ty, span: span)
+
+                # ok/fail build the two sides of a T? (§4.6, panel 002).
+                shape = questions.fallible_constructor(builtin_name)
+
+                if !shape.is_err()
+                    run = lower_args(@b, a, r, c, s, decls, given: given).run
+                    return build.emit(@b, op: .construct(shape: shape.must(), arguments: run), ty: ty, span: span)
+                handed = lower_args(@b, a, r, c, s, decls, given: given)
+                return emissions.emit_call(
+                    @b,
+                    target: .builtin_fn(at: bt.at),
+                    given: handed,
+                    variadic: questions.is_variadic(builtin_name),
+                    ty: ty,
+                    span: span
+                )
+            # A local holding a function value (§4.13) — and geom(...),
+            # which the checker refused, since lowering only runs on a
+            # clean program.
+
+            .module | .local | .unresolved => is_name @ is_name
+    target = expr(@b, a, r, c, s, decls, id: callee)
+    handed = lower_args(@b, a, r, c, s, decls, given: given)
+    return emissions.emit_call(@b, target: .indirect(value: target), given: handed, variadic: false, ty: ty, span: span)
+
+# `.num(v: 12)` — a case construction: the type is the VARIANT, the
+# name picks the case, and both were the checker's decisions.
+function case_construct(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], name: token.Span, given: [ast.Arg], ty: i64, span: token.Span) -> i64
+    match table.get(c.types, ty)
+        .named n =>
+            found = layout.case_index(decls, s, decl: n.decl, name: name)
+
+            if found.is_err()
+                return build.emit(@b, op: .missing, ty: ty, span: span)
+            run = lower_args(@b, a, r, c, s, decls, given: given).run
+            return build.emit(
+                @b,
+                op: .construct(shape: .case_shape(decl: n.decl, at: found.must()), arguments: run),
+                ty: ty,
+                span: span
+            )
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return build.emit(
+            @b,
+            op: .missing,
+            ty: ty,
+            span: span
+        )
+        .array | .fixed | .map | .fallible | .function_ty => return build.emit(@b, op: .missing, ty: ty, span: span)
+        .case_ty | .failure | .generic | .error           => return build.emit(@b, op: .missing, ty: ty, span: span)
+
+    return build.emit(@b, op: .missing, ty: ty, span: span)
+
+# Lowers the written arguments, left to right. `@x` at the call site
+# becomes a PLACE, not a value: the callee copies in and copies out, so
+# it needs to know where to write back (§4.8). The label is dropped
+# here — it was checked against the parameter at this position and
+# carries no further meaning. A place that runs through an index is
+# handed over as a temporary, and the store back is what `after` owes.
+function lower_args(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], given: [ast.Arg]) -> inout.Args
+    lowered_args: [ir.Arg] @ []
+    after: [inout.WriteBack] @ []
+
+    for arg in given
+        if arg.mutable
+            spot = place(@b, a, r, c, s, decls, id: arg.value)
+            lowered_args @ lowered_args.push(
+                inout.argument(@b, a, r, c, s, decls, id: arg.value, spot: spot, after: @after)
+            )
+        else
+            value = expr(@b, a, r, c, s, decls, id: arg.value)
+            lowered_args @ lowered_args.push(.value_arg(value: value))
+
+    return inout.Args(run: build.args_run(@b, lowered_args), after: after)
+
+# The UFCS shape: the receiver becomes argument zero. §4.11 forbids
+# this where the first parameter is @, so the receiver is always a
+# value.
+function with_receiver(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], receiver: i64, given: [ast.Arg]) -> inout.Args
+    first = expr(@b, a, r, c, s, decls, id: receiver)
+    lowered_args: [ir.Arg] @ [.value_arg(value: first)]
+    after: [inout.WriteBack] @ []
+
+    for arg in given
+        if arg.mutable
+            spot = place(@b, a, r, c, s, decls, id: arg.value)
+            lowered_args @ lowered_args.push(
+                inout.argument(@b, a, r, c, s, decls, id: arg.value, spot: spot, after: @after)
+            )
+        else
+            value = expr(@b, a, r, c, s, decls, id: arg.value)
+            lowered_args @ lowered_args.push(.value_arg(value: value))
+
+    return inout.Args(run: build.args_run(@b, lowered_args), after: after)
+
+## `x.f(y)` — the three tokens with two meanings (§4.11, §4.13; panel 079)
+
+# The same three tokens are either a call to a free function with the
+# receiver first, or a read of a FIELD that holds a function value —
+# and only the receiver's type settles which. The two halves live in
+# one place on purpose: they used to disagree (the resolver answers
+# top whenever a free function of that name exists, whether or not the
+# receiver has the field), and the disagreement printed 50007 against
+# 100 at exit 0, then a clang type confusion at exit 2. One rule, asked
+# once: THE FIELD FIRST, then whatever the resolver said.
+function method(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], at: i64, receiver: i64, name: token.Span, given: [ast.Arg], ty: i64, span: token.Span) -> i64
+    # The resolver filed the method name's meaning at the method node
+    # itself: the name after the dot has no expression id of its own.
+    # The qualified form first: the receiver names a module, erased here
+    # exactly as it is erased in the C.
+    is_qualified: bool @ false
+
+    match r.uses[receiver]
+        .module                                => is_qualified @ true
+        .local | .top | .builtin | .unresolved => is_qualified @ is_qualified
+
+    if is_qualified
+        match r.uses[at]
+            .top t =>
+                handed = lower_args(@b, a, r, c, s, decls, given: given)
+
+                # A record is constructed, not called — the same split
+                # call makes.
+                if questions.is_record(decls, t.at)
+                    return build.emit(
+                        @b,
+                        op: .construct(shape: .record_shape(decl: t.at), arguments: handed.run),
+                        ty: ty,
+                        span: span
+                    )
+                return emissions.emit_call(
+                    @b,
+                    target: questions.callee_of(decls, t.at),
+                    given: handed,
+                    variadic: false,
+                    ty: ty,
+                    span: span
+                )
+            .local | .builtin | .module | .unresolved => is_qualified @ is_qualified
+
+    # .must(), .default(v) and .is_err() are branches, not calls
+    # (Part 5): they read a tag and choose an edge.
+    match r.uses[at]
+        .builtin bt =>
+            if questions.is_fallible_operation(inventory.table()[bt.at].name)
+                return fallible_operation(
+                    @b,
+                    a,
+                    r,
+                    c,
+                    s,
+                    decls,
+                    name: inventory.table()[bt.at].name,
+                    receiver: receiver,
+                    given: given,
+                    ty: ty,
+                    span: span
+                )
+        .local | .top | .module | .unresolved => is_qualified @ is_qualified
+
+    # §4.11's order, asked HERE too, because this pass used to answer it
+    # differently from the checker (panel 079): the field first, and
+    # only a field whose type is a function value.
+    field_ty = layout.field_type(decls, c, s, owner: c.expr_types[receiver], name: name)
+
+    if !field_ty.is_err()
+        is_function: bool @ false
+
+        match table.get(c.types, field_ty.must())
+            .function_ty                                              => is_function @ true
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => is_function @ is_function
+            .array | .fixed | .map | .fallible | .named               => is_function @ is_function
+            .case_ty | .failure | .generic | .error                   => is_function @ is_function
+
+        if is_function
+            return field_call(@b, a, r, c, s, decls, receiver: receiver, name: name, given: given, ty: ty, span: span)
+
+    match r.uses[at]
+        .builtin bt =>
+            builtin_name = inventory.table()[bt.at].name
+
+            # `s.cstr()` — the same cast the plain-call form makes, and
+            # the shape every program actually writes. Taken before the
+            # arguments are lowered, because a cast has exactly one
+            # operand and it is the receiver.
+            if builtin_name == "cstr"
+                operand = expr(@b, a, r, c, s, decls, id: receiver)
+                return build.emit(@b, op: .cast(kind: .str_to_cstr, operand: operand), ty: ty, span: span)
+            handed = with_receiver(@b, a, r, c, s, decls, receiver: receiver, given: given)
+            return emissions.emit_call(
+                @b,
+                target: .builtin_fn(at: bt.at),
+                given: handed,
+                variadic: questions.is_variadic(builtin_name),
+                ty: ty,
+                span: span
+            )
+        .top t =>
+            handed = with_receiver(@b, a, r, c, s, decls, receiver: receiver, given: given)
+            return emissions.emit_call(
+                @b,
+                target: questions.callee_of(decls, t.at),
+                given: handed,
+                variadic: false,
+                ty: ty,
+                span: span
+            )
+        # h.cb(n) where cb is a field holding a function value: the dot
+        # is a FIELD READ, not a receiver (§4.11's first lookup, §4.13).
+        # A module receiver never reaches here — the branch above
+        # returned.
+
+        .module | .local | .unresolved =>
+            return field_call(@b, a, r, c, s, decls, receiver: receiver, name: name, given: given, ty: ty, span: span)
+
+    return build.emit(@b, op: .missing, ty: ty, span: span)
+
+# h.cb(n): the dot is a field read. Split out (panel 079) so the two
+# callers cannot drift: the resolver's fallback reaches it, and so does
+# §4.11's field-first order above.
+function field_call(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], receiver: i64, name: token.Span, given: [ast.Arg], ty: i64, span: token.Span) -> i64
+    owner = c.expr_types[receiver]
+    base = expr(@b, a, r, c, s, decls, id: receiver)
+
+    # The field's OWN type, read from the declaration that wrote it —
+    # this used to be the call's result under an expired premise, and
+    # the emitted C blamed itself for a correct program (panel 068 F8).
+    # The fallback is deliberate: a field the checker could not resolve
+    # has already been reported, and lowering stays quiet.
+    function_ty: i64 @ ty
+    written = layout.field_type(decls, c, s, owner: owner, name: name)
+
+    if !written.is_err()
+        function_ty @ written.must()
+    found = layout.field_index(decls, c, s, owner: owner, name: name)
+    target: i64 @ 0
+
+    if found.is_err()
+        target @ build.emit(@b, op: .missing, ty: function_ty, span: span)
+    else
+        target @ build.emit(@b, op: .field(base: base, at: found.must()), ty: function_ty, span: span)
+    handed = lower_args(@b, a, r, c, s, decls, given: given)
+    return emissions.emit_call(@b, target: .indirect(value: target), given: handed, variadic: false, ty: ty, span: span)
+
+## assert — the source expression and both sides (§4.18, spec:157)
+
+# Part 5's row reads "if plus panic, with source text attached", and
+# the AND BOTH SIDES half is why the abort carries three operands where
+# the asserted expression is a comparison — the text, the left value,
+# the right value — and one where it is not. There is no panic in the
+# built-in inventory on purpose: the runtime has it, the user gets
+# assert, and the abort is an instruction rather than a call for
+# exactly that reason.
+
+# How an operand reaches the failure block: directly, or through a slot
+# because it carries a reference.
+variant Carried
+    direct
+        value: i64
+    through_slot
+        slot: i64
+
+function lower_assert(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], asserted: i64, span: token.Span)
+    text = emissions.assert_text(@b, c, s, span: span)
+    sides: [i64] @ []
+    cond = assert_condition(@b, a, r, c, s, decls, asserted: asserted, sides: @sides)
+
+    # A COUNTED OPERAND TRAVELS THROUGH A SLOT, NOT ACROSS THE EDGE.
+    # The two sides are computed here, in the test block, and read over
+    # there, in the failure block. For an i64 that is free. For a str it
+    # is a use-after-free, because the ownership pass releases an owning
+    # temporary at the end of the block that defines it, and a
+    # block-crossing read is precisely what it cannot see. Panel 021
+    # predicted this; it arrived early, on the gallery's own
+    # `assert sentence_of([...]) == "one two"`. A synthetic slot costs
+    # two instructions on a path that is about to abort the program.
+    carried: [Carried] @ []
+
+    for side in sides
+        ty = build.value_ty(b, side)
+
+        if !layout.is_refcounted(c, ty)
+            carried @ carried.push(.direct(value: side))
+        else
+            slot = build.synthetic(@b, prefix: "assert", ty: ty)
+            build.store_slot(@b, slot_id: slot, value: side, span: span)
+            carried @ carried.push(.through_slot(slot: slot))
+
+    good = build.block(@b, note: "assert: held")
+    bad = build.block(@b, note: "assert: failed")
+    build.terminate(@b, .branch(cond: cond, then_to: good, else_to: bad))
+    build.switch_to(@b, target: bad)
+    operands: [ir.Arg] @ [.value_arg(value: text)]
+
+    for one in carried
+        match one
+            .direct d => operands @ operands.push(.value_arg(value: d.value))
+            .through_slot t =>
+                loaded = build.load_slot(@b, slot_id: t.slot, span: span)
+                operands @ operands.push(.value_arg(value: loaded))
+
+    run = build.args_run(@b, operands)
+    build.emit_void(@b, op: .abort_op(why: .assert_abort, arguments: run), ty: build.unit_ty(b), span: span)
+    build.terminate(@b, .unreachable)
+    build.switch_to(@b, target: good)
+
+# The condition, and the two sides when there are two. A comparison is
+# lowered HERE rather than through expr so that the operands are named:
+# the same two temporaries feed the branch AND the failure message,
+# which is what lets the message quote values instead of re-evaluating
+# an expression that may have side effects.
+function assert_condition(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], asserted: i64, @sides: [i64]) -> i64
+    span = a.exprs[asserted].span
+
+    match a.exprs[asserted].kind
+        .binary bin =>
+            cmp = questions.comparison_op(bin.op)
+
+            if !cmp.is_err()
+                left = expr(@b, a, r, c, s, decls, id: bin.left)
+                right = expr(@b, a, r, c, s, decls, id: bin.right)
+                sides @ sides.push(left)
+                sides @ sides.push(right)
+                return build.emit(
+                    @b,
+                    op: .binary(op: cmp.must(), left: left, right: right),
+                    ty: table.bool_ty(c.types),
+                    span: span
+                )
+        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr => return expr(
+            @b,
+            a,
+            r,
+            c,
+            s,
+            decls,
+            id: asserted
+        )
+        .name | .hole | .unary | .field | .index | .call | .method => return expr(@b, a, r, c, s, decls, id: asserted)
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => return expr(
+            @b,
+            a,
+            r,
+            c,
+            s,
+            decls,
+            id: asserted
+        )
+
+    return expr(@b, a, r, c, s, decls, id: asserted)
+
+## match — the only destructuring construct, and it lowers two ways (§4.7)
+
+# There is NO match in the IR. There is a switch on a variant's tag,
+# exhaustive by the time it gets here and therefore with no default
+# edge; and there is a chain of two-way branches for i64 and str arms,
+# where exhaustiveness is impossible and _ is the only way to close the
+# match. Two shapes, because C has exactly the same two.
+
+# What both shapes need to know: where the subject is, where an arm's
+# value goes, and where control lands afterwards. Grouped because the
+# alternative is an eleven-parameter function twice over.
+record Plan
+    subject: i64
+    result: i64?
+    meet: i64
+    wants_value: bool
+    span: token.Span
+
+function lower_match(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], scrutinee: i64, arms: [ast.Arm], ty: i64, span: token.Span) -> i64
+    subject_ty = c.expr_types[scrutinee]
+    value = expr(@b, a, r, c, s, decls, id: scrutinee)
+
+    # The subject goes in a slot: every arm that binds a payload reads
+    # it again, and a match on a call must not call twice.
+    subject = build.synthetic(@b, prefix: "s", ty: subject_ty)
+    build.store_slot(@b, slot_id: subject, value: value, span: span)
+    wants_value = ty != build.unit_ty(b) && ty != table.error_ty(c.types)
+    result: i64? @ fail("none", "statement position")
+
+    if wants_value
+        result @ ok(build.synthetic(@b, prefix: "r", ty: ty))
+    meet = build.block(@b, note: "match: join")
+    plan = Plan(subject: subject, result: result, meet: meet, wants_value: wants_value, span: span)
+    names = questions.cases_of(c, s, decls, subject: subject_ty)
+
+    if names.is_err()
+        literals(@b, a, r, c, s, decls, plan: plan, arms: arms)
+    else
+        tagged(@b, a, r, c, s, decls, plan: plan, names: names.must(), arms: arms)
+    build.switch_to(@b, target: meet)
+    return emissions.seal_join(@b, meet: meet, result: result, span: span)
+
+# One arm's block, its arm index, and which case's payload it binds.
+record ArmPlan
+    block: i64
+    arm_at: i64
+    bound_case: i64?
+
+# A switch on the tag: one edge per case, dense, no default.
+function tagged(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], plan: Plan, names: [str], arms: [ast.Arm])
+    int_id = table.int_ty_id(c.types)
+    held = build.load_slot(@b, slot_id: plan.subject, span: plan.span)
+    tag = build.emit(@b, op: .tag_of(value: held), ty: int_id, span: plan.span)
+
+    # One block per arm; a |-joined arm is several tags pointing at one
+    # block. -1 is "no edge yet": block ids are indices and never
+    # negative, and the sentinel is read exactly once, below.
+    edges: [i64] @ []
+    i: i64 @ 0
+
+    while i < names.len()
+        edges @ edges.push(0 - 1)
+        i @ i + 1
+
+    bodies: [ArmPlan] @ []
+    arm_at: i64 @ 0
+
+    for arm in arms
+        arm_block = build.block(@b, note: "match: arm")
+        bound: i64? @ fail("none", "binds nothing")
+
+        for pattern in arm.patterns
+            match pattern.kind
+                .variant_case vc =>
+                    found = questions.case_position(names, s, name: vc.name)
+
+                    if !found.is_err()
+                        edges[found.must()] @ arm_block
+
+                        # `.num _` binds NOTHING (§4.7): no payload read,
+                        # no slot — a slot named _ would ask the checker
+                        # for the type of a binding it never made.
+                        if !vc.binding.is_err()
+                            if source.span_text(s, vc.binding.must()) != "_"
+                                bound @ found
+                # _ on a variant is forbidden (§4.7), so this only fires
+                # where it is legal — and it fills every case no arm
+                # claimed.
+
+                .wildcard =>
+                    fill: i64 @ 0
+
+                    while fill < edges.len()
+                        if edges[fill] < 0
+                            edges[fill] @ arm_block
+                        fill @ fill + 1
+                .literal | .error => continue
+
+        bodies @ bodies.push(ArmPlan(block: arm_block, arm_at: arm_at, bound_case: bound))
+        arm_at @ arm_at + 1
+
+    # Exhaustiveness was proved by the checker, so an unclaimed case
+    # cannot happen — and saying so with unreachable is CLAUDE.md §7's
+    # rule rather than a safety net.
+    unclaimed: bool @ false
+
+    for edge in edges
+        if edge < 0
+            unclaimed @ true
+
+    orphan_block: i64? @ fail("none", "every case claimed")
+
+    if unclaimed
+        orphan_block @ ok(build.block(@b, note: "match: unclaimed"))
+    cases: [i64] @ []
+
+    for edge in edges
+        if edge >= 0
+            cases @ cases.push(edge)
+        else
+            cases @ cases.push(orphan_block.must())
+
+    build.terminate(@b, .switch_term(tag: tag, cases: cases))
+
+    if !orphan_block.is_err()
+        build.switch_to(@b, target: orphan_block.must())
+        build.terminate(@b, .unreachable)
+
+    for one in bodies
+        build.switch_to(@b, target: one.block)
+
+        if !one.bound_case.is_err()
+            binding = questions.binding_of(arms[one.arm_at])
+
+            if !binding.is_err()
+                bind_payload(@b, c, s, plan: plan, case_at: one.bound_case.must(), name: binding.must())
+        value = arm_body(@b, a, r, c, s, decls, arm: arms[one.arm_at], wants_value: plan.wants_value)
+        emissions.store_arm(@b, result: plan.result, value: value, span: plan.span)
+        build.terminate(@b, .jump(to: plan.meet))
+
+# `.num n` — the payload of a known case, into a slot the body can read.
+function bind_payload(@b: build.Lowering, c: state.Checked, s: source.Source, plan: Plan, case_at: i64, name: token.Span)
+    held = build.load_slot(@b, slot_id: plan.subject, span: name)
+    ty: i64 @ table.error_ty(c.types)
+    local = build.local_at(b, name)
+
+    if !local.is_err()
+        ty @ c.local_types[local.must()]
+    payload_value = build.emit(@b, op: .payload(base: held, at: case_at), ty: ty, span: name)
+    slot = build.slot(@b, name: source.span_text(s, name), ty: ty, kind: .local_slot)
+
+    if !local.is_err()
+        build.bind_local(@b, local: local.must(), slot_id: slot)
+    build.store_slot(@b, slot_id: slot, value: payload_value, span: name)
+
+# A chain of equality tests: i64 and str arms, where exhaustiveness is
+# impossible and _ closes the match (§4.7).
+function literals(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], plan: Plan, arms: [ast.Arm])
+    bool_id = table.bool_ty(c.types)
+    blocks: [i64] @ []
+    arm_ats: [i64] @ []
+    arm_at: i64 @ 0
+
+    for arm in arms
+        arm_block = build.block(@b, note: "match: arm")
+        blocks @ blocks.push(arm_block)
+        arm_ats @ arm_ats.push(arm_at)
+        arm_at @ arm_at + 1
+        is_wild: bool @ false
+
+        for pattern in arm.patterns
+            match pattern.kind
+                .wildcard                         => is_wild @ true
+                .variant_case | .literal | .error => continue
+
+        if is_wild
+            build.terminate(@b, .jump(to: arm_block))
+            continue
+
+        for pattern in arm.patterns
+            match pattern.kind
+                .literal lt =>
+                    held = build.load_slot(@b, slot_id: plan.subject, span: plan.span)
+                    expected = expr(@b, a, r, c, s, decls, id: lt.value)
+                    same = build.emit(
+                        @b,
+                        op: .binary(op: .eq, left: held, right: expected),
+                        ty: bool_id,
+                        span: plan.span
+                    )
+                    next = build.block(@b, note: "match: test")
+                    build.terminate(@b, .branch(cond: same, then_to: arm_block, else_to: next))
+                    build.switch_to(@b, target: next)
+                .variant_case | .wildcard | .error => continue
+
+    # Falling past every arm cannot happen: the checker required _.
+    build.terminate(@b, .unreachable)
+    walk: i64 @ 0
+
+    while walk < blocks.len()
+        build.switch_to(@b, target: blocks[walk])
+        value = arm_body(@b, a, r, c, s, decls, arm: arms[arm_ats[walk]], wants_value: plan.wants_value)
+        emissions.store_arm(@b, result: plan.result, value: value, span: plan.span)
+        build.terminate(@b, .jump(to: plan.meet))
+        walk @ walk + 1
+
+# An arm's body: one statement inline, or a block whose value is its
+# last expression (§4.7, panel 014 — one form, seen two ways).
+function arm_body(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], arm: ast.Arm, wants_value: bool) -> i64?
+    match arm.body
+        .one_stmt st =>
+            produced = statement(@b, a, r, c, s, decls, id: st.at)
+
+            if wants_value
+                return produced
+            return fail("none", "statement position")
+        .block bl => return block(@b, a, r, c, s, decls, body: bl.block, wants_value: wants_value)
+
+    return fail("none", "unreached")
+
+## Expressions
+
+function expr(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], id: i64) -> i64
+    span = a.exprs[id].span
+    ty = c.expr_types[id]
+
+    match a.exprs[id].kind
+        .int_lit => return emissions.emit_int(@b, a, s, id: id, ty: ty, span: span)
+        .float_lit => return build.emit(
+            @b,
+            op: .lit(value: .float_const(text: source.span_text(s, span))),
+            ty: ty,
+            span: span
+        )
+        .bool_lit => return build.emit(
+            @b,
+            op: .lit(value: .bool_const(value: source.span_text(s, span) == "true")),
+            ty: ty,
+            span: span
+        )
+        .null_ptr => return build.emit(@b, op: .lit(value: .null_ptr), ty: ty, span: span)
+        .str_lit =>
+            decoded = escape.unescape(source.span_text(s, span))
+            at = build.intern(@b, decoded)
+            return build.emit(@b, op: .lit(value: .str_const(at: at)), ty: ty, span: span)
+        # §4.3: a character literal IS a number — the same decoder the
+        # checker used answers for both (panel 008's escapes included).
+
+        .char_lit => return emissions.emit_int(@b, a, s, id: id, ty: ty, span: span)
+        .name     => return emissions.name_expr(@b, r, decls, id: id, ty: ty, span: span)
+        .hole     => return build.emit(@b, op: .hole, ty: ty, span: span)
+        .unary u =>
+            # A negative literal is a literal, and it is folded HERE.
+            # Left as a negation of a positive, -128 against an i8 puts
+            # 128 in an int8_t before the minus reaches it — and the
+            # frontend already range-checked the value WITH the sign
+            # applied, so folding is what makes the two passes agree.
+            folded = emissions.fold_negative(@b, a, s, op: u.op, operand: u.operand, ty: ty, span: span)
+
+            if !folded.is_err()
+                return folded.must()
+            operand = expr(@b, a, r, c, s, decls, id: u.operand)
+            un: ir.UnaryOp @ .neg
+
+            match u.op
+                .neg     => un @ .neg
+                .not     => un @ .not_op
+                .bit_not => un @ .bit_not
+
+            return build.emit(@b, op: .unary(op: un, operand: operand), ty: ty, span: span)
+        .binary bin =>
+            match bin.op
+                .and | .or =>
+                    return short_circuit(
+                        @b,
+                        a,
+                        r,
+                        c,
+                        s,
+                        decls,
+                        op: bin.op,
+                        left: bin.left,
+                        right: bin.right,
+                        ty: ty,
+                        span: span
+                    )
+                .add | .sub | .mul | .div | .rem | .eq | .ne | .lt | .le | .gt | .ge | .bit_and | .bit_or | .bit_xor | .shl | .shr =>
+                    left = expr(@b, a, r, c, s, decls, id: bin.left)
+                    right = expr(@b, a, r, c, s, decls, id: bin.right)
+                    return build.emit(
+                        @b,
+                        op: .binary(op: questions.binary_op(bin.op), left: left, right: right),
+                        ty: ty,
+                        span: span
+                    )
+        .field f =>
+            # `grid.WALL` is one qualified name, not a field of a value —
+            # decided by the resolver and read back here rather than
+            # re-decided.
+            qualified: bool @ false
+
+            match r.uses[f.base]
+                .module                                => qualified @ true
+                .local | .top | .builtin | .unresolved => qualified @ false
+
+            if qualified
+                return emissions.name_expr(@b, r, decls, id: id, ty: ty, span: span)
+            owner = c.expr_types[f.base]
+            base = expr(@b, a, r, c, s, decls, id: f.base)
+            found = layout.field_index(decls, c, s, owner: owner, name: f.name)
+
+            if found.is_err()
+                return build.emit(@b, op: .missing, ty: ty, span: span)
+            return build.emit(@b, op: .field(base: base, at: found.must()), ty: ty, span: span)
+        .index ix =>
+            owner = c.expr_types[ix.base]
+            base = expr(@b, a, r, c, s, decls, id: ix.base)
+            key = expr(@b, a, r, c, s, decls, id: ix.index)
+
+            # A map access yields V? and cannot abort; an array index can
+            # (§4.9). Same syntax, two instructions.
+            is_map: bool @ false
+
+            match table.get(c.types, owner)
+                .map                                                      => is_map @ true
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => is_map @ is_map
+                .array | .fixed | .fallible | .function_ty | .named       => is_map @ is_map
+                .case_ty | .failure | .generic | .error                   => is_map @ is_map
+
+            if is_map
+                return build.emit(@b, op: .map_get(map: base, key: key), ty: ty, span: span)
+            return build.emit(@b, op: .index(base: base, at: key), ty: ty, span: span)
+        .array elements =>
+            values: [i64] @ []
+
+            for e in elements.elements
+                values @ values.push(expr(@b, a, r, c, s, decls, id: e))
+
+            run = emissions.value_args(@b, values)
+            return build.emit(@b, op: .construct(shape: .array_shape, arguments: run), ty: ty, span: span)
+        .map entries =>
+            # Key and value alternate in the run: a map literal is
+            # n-ary, and the pairing is positional rather than a second
+            # arena.
+            values: [i64] @ []
+
+            for entry in entries.entries
+                values @ values.push(expr(@b, a, r, c, s, decls, id: entry.key))
+                values @ values.push(expr(@b, a, r, c, s, decls, id: entry.value))
+
+            run = emissions.value_args(@b, values)
+            return build.emit(@b, op: .construct(shape: .map_shape, arguments: run), ty: ty, span: span)
+        .call cl =>
+            return call(@b, a, r, c, s, decls, callee: cl.callee, given: cl.args, ty: ty, span: span)
+        .method m =>
+            return method(
+                @b,
+                a,
+                r,
+                c,
+                s,
+                decls,
+                at: id,
+                receiver: m.receiver,
+                name: m.name,
+                given: m.args,
+                ty: ty,
+                span: span
+            )
+        .variant_case vc =>
+            return case_construct(@b, a, r, c, s, decls, name: vc.name, given: vc.args, ty: ty, span: span)
+        .try_expr t =>
+            return try_expr(@b, a, r, c, s, decls, inner: t.value, ty: ty, span: span)
+        .if_expr ie =>
+            return if_expr(@b, a, r, c, s, decls, branches: ie.branches, otherwise: ie.otherwise, ty: ty, span: span)
+        .match_expr mx =>
+            return lower_match(@b, a, r, c, s, decls, scrutinee: mx.scrutinee, arms: mx.arms, ty: ty, span: span)
+        .error => return build.emit(@b, op: .missing, ty: ty, span: span)
+
+    return build.emit(@b, op: .missing, ty: ty, span: span)

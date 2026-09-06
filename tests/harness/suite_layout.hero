@@ -174,13 +174,49 @@ constant CEILING: i64
 # says which sibling this is — the ceiling is what forced the count to be
 # read at all, which is the point of pinning it. Raised with room, as the
 # precedents above were.
+#
+# **TWO ROWS LEFT AND ONE ARRIVED ON 2026-09-06, M-declared-freer step 1**, and
+# the reason is a seat's condition rather than tidying: panel 109's `owned <C
+# function>` mark lands in both of those files and neither had a line of room.
+# `selfhost/ir/lower.hero` **1511 -> 174** and `selfhost/parse/decl.hero`
+# **638 -> 217**, both now under §11's own 300 and out of this table; the one
+# arrival is `selfhost/ir/flatten.hero` at **1110** against a measured 1104.
+#
+# **The two cuts are not the same kind of cut, and the difference is the
+# finding.** `parse/decl.hero` had NO knot — its call graph is a DAG — and the
+# ring its own module doc called unsplittable (*"one module because the
+# language leaves no choice"*) was a fact about where the shared tails LIVED,
+# never about the grammar. `file -> extern_group -> members -> constant_tail`
+# closes only while the tails sit beside the dispatcher. Moved into
+# `parse/tails.hero`, which neither of the other two is used by, the edges run
+# one way: **217 + 246 + 235**, no entry needed for any of the three. The
+# answer had been printing itself in `module_cycle`'s own note the whole time
+# — *"move what both modules need into a third one that neither uses"*.
+#
+# `ir/lower.hero` DOES have a knot, and it is why `flatten.hero` needs a row at
+# all: **25 functions, 990 code lines** by this file's own counting rule, all
+# reaching each other through `expr`. The declaration walk is the one part
+# that only ever calls INWARDS, so it stays behind as `ir/lower.hero` at 174
+# and keeps the name — which is why the **21** modules calling `lower.lower(…)`
+# did not move a character. What else could leave left by a mechanical rule
+# rather than a line count: `ir/questions.hero` (**149**) is everything with no
+# `@b` parameter, `ir/emissions.hero` (**185**) everything that emits one fixed
+# shape and never walks back into the tree.
+#
+# **That the knot cannot be cut is measured, not assumed** (CLAUDE.md §1: a
+# failed search is not an impossibility). The one route out of a mutually
+# recursive walk is to hand the recursion over as a function value, and this
+# walk threads its builder as `@b`: `(function(@Box) -> ())` is
+# `error[expected_type]: expected a type, found @`, so no such value exists to
+# hand over. Panel 109's coordinator predicted `ir/lower.hero` at **≤ 900**;
+# the entry landed at 174 and the knot beside it at 1104, and that prediction
+# is scored FALSE in the panel file with this number rather than argued around.
 constant DECIDED: [str]
     [
         "selfhost/check/walk.hero 1700"
-        "selfhost/ir/lower.hero 1511"
         "selfhost/print/fmt.hero 1150"
+        "selfhost/ir/flatten.hero 1110"
         "selfhost/grammar_expr.hero 1002"
-        "selfhost/parse/decl.hero 638"
         "selfhost/ir/print.hero 470"
         "selfhost/ast.hero 455"
         "selfhost/check/builtins.hero 374"
@@ -386,4 +422,12 @@ test "the ceiling is per file, and a decided file keeps its own"
     # direction this assert notices least loudly — a removal takes the table
     # below the number and a raise leaves it alone, so an addition is the one
     # that has to be written down here on purpose.
-    assert DECIDED.len() == 17
+    #
+    # **17 -> 16 on 2026-09-06**, M-declared-freer step 1, and it is the good
+    # direction twice over: `ir/lower.hero` and `parse/decl.hero` were CUT out
+    # of this table — 1511 -> 174 and 638 -> 217, both under §11's own 300 —
+    # and only one row arrived, `ir/flatten.hero`, which is the knot the
+    # language refuses to split. Two rows out and one in is a net of minus one,
+    # and the ceiling that was the highest in the lowering fell from 1511 to
+    # 1110. The reason for each number is above DECIDED.
+    assert DECIDED.len() == 16

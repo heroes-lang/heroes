@@ -58,15 +58,15 @@ M-separate-compilation already did.
 
 | | |
 |---|---|
-| **Current milestone** | **M-declared-freer** — next, row 37: `owned <C function>` on an `extern`, so a `cstr` C hands you is freed by the name its own declaration gives. Panel 109 ratified it 2026-09-04 |
+| **Current milestone** | **M-declared-freer** — **OPEN**, row 37: `owned <C function>` on an `extern`, so a `cstr` C hands you is freed by the name its own declaration gives. Panel 109 ratified it 2026-09-04; **step 1 landed 2026-09-06** — the sitting's condition 7, the two splits that had to come first |
 | **Last closed** | **M-thread-stacks**, 2026-09-06, tag `m-thread-stacks` ([035](journal/035-thread-stacks.md)) — four steps, one sitting, one defect opened. The guard speaks on every thread, and a worker's floor is the thread that ran `main` · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
 | Milestones closed | **36** of 57 · **36** tags |
-| The compiler | **53,810** lines of Heroes in **181** modules · the seed **733,838** lines of C · runtime ABI **21**, unmoved: the floor is an argument to `pthread_create` and not a declaration |
+| The compiler | **54,111** lines of Heroes in **186** modules · the seed **734,938** lines of C · runtime ABI **21**, unmoved: the floor is an argument to `pthread_create` and not a declaration |
 | The spec | **3824** of a hard 4096 · headroom **272** — it **shrank** while gaining a sentence, `; so does recursion too deep.` at +7 against a −12 removal (`docs/panel/115`) |
-| Records | sittings **114** · journals **36** · examples **55** programs, **118** files, **545** `test` blocks · open defects **1** (015) · the site **46** pages, 23 English and 23 Italian |
-| Waiting on the author | **3** decisions · **32** in `SCHEDULED.md` · **1** in `DEFECTS.md` · **319** in `LEARN.md` (never a gate) · an outstanding veto (`docs/panel/101` R3) |
+| Records | sittings **114** · journals **36** · examples **55** programs, **118** files, **545** `test` blocks · open defects **0** · the site **46** pages, 23 English and 23 Italian |
+| Waiting on the author | **1** decision · **33** in `SCHEDULED.md` · **0** in `DEFECTS.md` · **319** in `LEARN.md` (never a gate) · an outstanding veto (`docs/panel/101` R3) |
 
-Every number re-counted 2026-09-06 at the close, none carried. Three suites green: **583**, **1578**, **113** — and the net's one red was a blessed emission whose diff was read before it was re-blessed, `examples/threads/main.hero` gaining two functions.
+Every number re-counted 2026-09-06 at M-declared-freer step 1, none carried. Three suites green: **584**, **1582**, **113** — four of those were a commit stale until this step, `e61fec3b` having stated 584 and 1582 in its own body while repairing defect 015 and touching neither document. What moved for THIS step is the compiler itself: **181 → 186** modules, and `ir/lower.hero` **1511 → 174**, the largest file in the tree until today (`tests/harness/suite_layout.hero` carries every number with its reason).
 
 ---
 

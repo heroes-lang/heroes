@@ -1,0 +1,276 @@
+# What follows a declaration's NAME, and it is the same after an ordinary
+# head and after an `extern` group's member (design.md §4.1, §4.2, §4.19;
+# panels 036, 055, 060, 061).
+# Port of the tail half of `archive/bootstrap-rs/heroes/src/syntax/decl.rs`
+# and `archive/bootstrap-rs/heroes/src/syntax/data.rs`.
+#
+# A tail is everything a declaration has after its name: a constant's type
+# and value, a function's parameters, arrow and body, a record's fields and
+# its two contextual markers. Each is written once here and read twice —
+# by `parse/decl.hero`'s heads and by `parse/group.hero`'s members — which
+# is the whole reason this module exists rather than being a section of
+# either.
+#
+# **And it is why neither of those two has to be one module with the other**
+# (M-declared-freer step 1): with the tails living beside the dispatcher,
+# `file -> extern_group -> members -> constant_tail` closed a ring and
+# Heroes refuses module cycles. Nothing in here calls back out — every
+# function takes the cursor and the spans its caller already read — so the
+# ring becomes three one-way edges.
+#
+# `Linkage` lives here for the same reason and carries the same weight: it
+# is what the two callers DISAGREE about. An ordinary declaration is
+# `heroes`; a group's member is `from_c`, carrying the two strings the
+# group's head line read (§4.19, panel 036) — a copy per member rather than
+# a shared index, because the group exists only in the source text and
+# every later pass sees N ordinary declarations.
+
+use token
+use cursor
+use ast
+use parse/type
+use parse/members as parse_members
+use grammar_expr
+
+## Linkage — where a declaration's implementation comes from
+
+# Where a signature's implementation comes from, and — when it comes from C —
+# the two strings the group's head line carried (§4.19, panel 036). A copy
+# per member rather than a shared index: the group exists only in the source
+# text, and every later pass sees N ordinary declarations.
+#
+# Port note: Rust's `Linkage::Extern` cannot keep its name — `extern` is a
+# Heroes keyword — so the case says what it means instead: `from_c`.
+variant Linkage
+    heroes
+    from_c
+        header: token.Span
+        library: ast.Library?
+
+function is_from_c(l: Linkage) -> bool
+    return match l
+        .heroes   => false
+        .from_c _ => true
+
+function linkage_header(l: Linkage) -> token.Span?
+    return match l
+        .heroes   => fail("absent", "an ordinary declaration has no header")
+        .from_c x => ok(x.header)
+
+function linkage_library(l: Linkage) -> ast.Library?
+    return match l
+        .heroes   => fail("absent", "an ordinary declaration names no library")
+        .from_c x => x.library
+
+# Rust's `here_or` falls back to the declaration's own keyword when the
+# current token sits in the appended library text (§1.11), so a file ENDING
+# in a bodyless declaration never points at a line the author cannot open.
+# **This parser has no Source and no appended library yet**, so the fallback
+# arm cannot fire and the current span is always the author's file — a
+# premise that dies the day the Source port arrives, which is why the name
+# and the call sites are kept one-to-one with Rust: only this body changes.
+# The clamp lives on the cursor, which is the only thing that knows the
+# boundary. This was a STUB that threw the fallback away for the whole
+# port — so `variant Token` with no cases, as the file's last
+# declaration, was reported at the LIBRARY's line 26 and the port
+# exited 2 blaming itself for the author's mistake. Found 2026-08-17 by
+# the differential against the bootstrap, on
+# tests/golden/check/missing-body.hero, whose own comment describes the
+# hazard verbatim.
+function here_or(c: cursor.Cursor, fallback: token.Span) -> token.Span
+    return cursor.here_or(c, fallback)
+
+# Everything after a constant's name: its type, and — for a non-extern — the
+# indented value. Shared by `constant` and a group's members, exactly as
+# `function_tail` is (§4.2, §4.19).
+#
+# The symmetry is the whole rule this form rests on: **inside a group a
+# declaration is a signature, not a definition**, so `constant` gives up its
+# body for the same reason `function` gives up its own — C has the thing.
+function constant_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str, keyword: token.Span, doc: [token.Span], name: token.Span, linkage: Linkage)
+    if !cursor.expect(@c, text: text, kind: .colon, code: "expected_constant_type", what: "`:` and the constant's type — a `constant` declares a value, so it has one")
+        cursor.recover_to_next_decl(@c)
+        return
+    ty = type.parse_type(@c, @a, text)
+
+    # An `extern` constant has no body, and an indented one under it is the
+    # mistake `body_check` names. Everything else keeps the old shape.
+    body: ast.Block? @ fail("absent", "an extern constant's value is the header's")
+
+    if is_from_c(linkage)
+        body_check(@c, "constant")
+    else
+        b = grammar_expr.block(@c, @a, text: text, owner: "a `constant`")
+
+        if b.is_err()
+            cursor.recover_to_next_decl(@c)
+            return
+        body @ b
+    finish: token.Span @ cursor.previous_significant_span(c)
+
+    if !body.is_err()
+        finish @ body.must().span
+    decls @ decls.push(
+        ast.Decl(name: name, doc: doc, span: token.Span(start: keyword.start, end: finish.end), kind: .constant_decl(ty: ty, body: body, header: linkage_header(linkage), library: linkage_library(linkage)))
+    )
+
+# Everything after a function's name: generics, the signature, and — for a
+# non-extern — the body. Shared by `function` and a group's members.
+function function_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str, keyword: token.Span, doc: [token.Span], name: token.Span, linkage: Linkage)
+    is_extern = is_from_c(linkage)
+    generic_names = parse_members.generics(@c, text)
+
+    if !cursor.at(c, .lparen)
+        # `params` reports the missing `(` with its own message.
+        _ = parse_members.params(@c, @a, text)
+        cursor.recover_to_next_decl(@c)
+        return
+    parameters = parse_members.params(@c, @a, text)
+
+    # No `->` means no value. The `unit` node is synthesised at the end of the
+    # header so later passes never have to ask whether the arrow was written
+    # (§4.3: `()` is a type like any other).
+    result: i64 @ 0
+
+    if cursor.eat(@c, .arrow)
+        result @ type.parse_type(@c, @a, text)
+    else
+        here = cursor.current_span(c)
+        result @ ast.push_type(
+            @a.types,
+            ast.TypeNode(kind: .unit, span: token.Span(start: here.start, end: here.start))
+        )
+    body: ast.Block? @ fail("absent", "an extern function's code comes from C")
+
+    if is_extern
+        body_check(@c, "function")
+    else
+        b = grammar_expr.block(@c, @a, text: text, owner: "a `function`")
+
+        if b.is_err()
+            cursor.recover_to_next_decl(@c)
+            return
+        body @ b
+    finish: token.Span @ cursor.previous_significant_span(c)
+
+    if !body.is_err()
+        finish @ body.must().span
+    f = ast.FunctionDecl(
+        generics: generic_names,
+        params: parameters,
+        result: result,
+        body: body,
+        is_extern: is_extern,
+        header: linkage_header(linkage),
+        library: linkage_library(linkage)
+    )
+    decls @ decls.push(
+        ast.Decl(name: name, doc: doc, span: token.Span(start: keyword.start, end: finish.end), kind: .function_decl(value: f))
+    )
+
+# The same declaration when the caller has **already taken the doc comment** —
+# which is what a group member needs, because a group's own doc documents its
+# first member and `head` would take the run a second time (§4.1's adjacency
+# rule, applied to a block).
+function record_with_doc(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str, doc: [token.Span], linkage: Linkage)
+    keyword = cursor.current_span(c)
+    _ = cursor.bump(@c)
+
+    if !cursor.at(c, .ident)
+        if !cursor.at_reported_error(c)
+            cursor.error(
+                @c,
+                code: "expected_name",
+                message: "expected the C struct's name after `record`, found " + cursor.found(c, text) + " — `record Color`",
+                span: cursor.current_span(c)
+            )
+        cursor.skip_line(@c)
+        return
+    name = cursor.bump(@c).span
+    record_tail(@c, @a, @decls, text, keyword: keyword, doc: doc, name: name, linkage: linkage)
+
+# `tag stat` after a group `record`'s name, if it is there (panel 074).
+#
+# **Contextual exactly like `partial`, and for the same reason**: it is
+# consumed only in this position, so `tag` stays an ordinary identifier
+# everywhere in the language and a field named `tag` goes on compiling. What
+# follows it must be an identifier — C's tag — and a missing one is reported
+# here rather than left to the field block, which would say something about
+# indentation.
+#
+# **Order is `tag <name>` then `partial`**, and the other order is a parse
+# error on purpose: one order that parses is one order to learn.
+function tag_marker(@c: cursor.Cursor, text: str, in_group: bool) -> token.Span?
+    if !in_group || !cursor.at(c, .ident) || cursor.slice_of(text, cursor.current_span(c)) != "tag"
+        return fail("absent", "no tag clause")
+    keyword = cursor.bump(@c).span
+
+    if !cursor.at(c, .ident)
+        cursor.error(
+            @c,
+            code: "expected_declaration",
+            message: "`tag` names the struct tag C uses for this type: `record FileStat tag stat`",
+            span: here_or(c, keyword)
+        )
+        return fail("absent", "the tag's name is missing")
+    return ok(cursor.bump(@c).span)
+
+# `partial` after a group `record`'s name, if it is there.
+#
+# **A contextual keyword and not a reserved word** (panel 061). It is consumed
+# only here, in the one position where a declaration can carry it, so
+# `partial` stays an ordinary identifier everywhere in the language.
+# **Only inside a group**: an ordinary `record` has no header behind it, so
+# there is no struct for its field list to be a subset OF.
+function partial_marker(@c: cursor.Cursor, text: str, in_group: bool) -> bool
+    if !in_group || !cursor.at(c, .ident) || cursor.slice_of(text, cursor.current_span(c)) != "partial"
+        return false
+    _ = cursor.bump(@c)
+    return true
+
+function record_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str, keyword: token.Span, doc: [token.Span], name: token.Span, linkage: Linkage)
+    tag = tag_marker(@c, text, in_group: is_from_c(linkage))
+    partial = partial_marker(@c, text, in_group: is_from_c(linkage))
+    grammar_expr.eat_python_colon(@c)
+    cursor.skip_terminators(@c)
+
+    if !cursor.at(c, .indent)
+        if !cursor.at_reported_error(c)
+            cursor.error(
+                @c,
+                code: "empty_record",
+                message: "a `record` needs at least one field, indented one level below it",
+                span: here_or(c, keyword)
+            )
+        cursor.recover_to_next_decl(@c)
+        return
+    start = cursor.current_span(c)
+    fields = parse_members.field_block(@c, @a, text)
+    finish: token.Span @ start
+
+    if fields.len() > 0
+        finish @ fields[fields.len() - 1].name
+    decls @ decls.push(
+        ast.Decl(name: name, doc: doc, span: token.Span(start: keyword.start, end: finish.end), kind: .record_decl(fields: fields, header: linkage_header(linkage), library: linkage_library(linkage), partial: partial, tag: tag))
+    )
+
+# An `extern` with a body is a mistake worth naming: the body would never be
+# compiled, and silently ignoring it is the class of thing this language
+# exists to make loud.
+#
+# `kind` is what the member is, because the repair differs: a `function`'s
+# code comes from C, a `constant`'s VALUE does — and telling a reader who
+# wrote `constant SQLITE_OK: i64` with `0` under it that "it names a C
+# function" sends them looking for a function they never wrote (§4.17).
+function body_check(@c: cursor.Cursor, kind: str)
+    cursor.skip_terminators(@c)
+
+    if !cursor.at(c, .indent)
+        return
+    span = cursor.current_span(c)
+    what: str @ "an `extern` declaration has no body — it names a C function, and C provides the code"
+
+    if kind == "constant"
+        what @ "an `extern` declaration has no body — this `constant` names one the header already defines, so the value is the header's and never yours"
+    cursor.error(@c, code: "extern_has_body", message: what, span: span)
+    _ = cursor.balanced_block(@c)
