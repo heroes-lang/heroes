@@ -59,7 +59,13 @@ function writable_parameter(s: source.Source, decls: [ast.Decl], p: containers.P
 
     # The reader must compute the SAME probe line the emitter wrote, or its
     # column matching lands on the wrong parameter (panel 116).
-    parameters = extern_probe.parameter_list(names, c, f, frees: !freer.marked_as_freer(decls, s, name: name).is_err())
+    parameters = extern_probe.parameter_list(
+        names,
+        c,
+        decls,
+        f,
+        frees: !freer.marked_as_freer(decls, s, name: name).is_err()
+    )
 
     if parameters.is_err()
         return fail("none", "a parameter with no C spelling")
@@ -81,8 +87,18 @@ function writable_parameter(s: source.Source, decls: [ast.Decl], p: containers.P
     declared: str @ "cstr"
     index: i64 @ 0
 
+    # **The `char **` carve-out** (§4.19; panel 109's condition 5, spelled in the
+    # spec since M-declared-freer step 2). Panel 058's rule is right in general:
+    # lending a string's own bytes to a C that may write through them changes
+    # values this program never passed to C. A MARKED `@cstr` is the one case
+    # where C writes a pointer the program will OWN — the compiler frees it by
+    # the name the declaration gives — so the rule steps aside there and only
+    # there. Without this the spec describes a program the compiler refuses,
+    # which is the worse of the two ways to be wrong.
     for column in columns
         if column == at.must().col && index < f.params.len()
+            if freer.owned_parameter(decls, at: f.decl, index: index)
+                return fail("none", "a marked `@cstr` owns what C writes there")
             which @ "`" + f.slots[f.params[index]].name + "`"
             none: [str] = []
             declared @ render.render_ty(c.types, s, decls, f.slots[f.params[index]].ty, none)
@@ -130,7 +146,7 @@ test "a writable char * names the lent parameter and the owning repair"
             f0 @ f
             picked @ true
 
-    parameters = extern_probe.parameter_list(names, c, f0, frees: false).must()
+    parameters = extern_probe.parameter_list(names, c, parsed.decls, f0, frees: false).must()
     arguments = extern_probe.argument_names(count: 2)
     probe = extern_probe.probe_name(module: "t", name: "strtok")
     columns = probe_reply.argument_columns(
