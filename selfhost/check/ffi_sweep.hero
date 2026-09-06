@@ -1,0 +1,121 @@
+# The FFI rule asked at EVERY position in a file, rather than at one call
+# site (design.md §4.19; panels 061 and 062).
+#
+# WHY IT IS ITS OWN MODULE, since 2026-09-06. `check/ffi.hero` answers two
+# questions about one declaration — what may cross, and where it may
+# stand — and its own module doc says those two were deliberately merged
+# because they read together. This is a third thing and it does not read
+# with them: it is a **pass over the whole file**, not a question about a
+# type in hand, and it runs from `checker.hero` rather than from the
+# signature check. The file went past CLAUDE.md §11's ~300 lines when
+# defect 014's repair landed, and this is the seam that names a concern —
+# the other cut would have undone a merge somebody made on purpose.
+#
+# WHAT IT IS FOR. A fixed array may appear in exactly one place, as the
+# declared type of a field of a record inside an `extern` group, because
+# that is the only place a C compiler chose the layout. Panel 062 wired
+# that rule to one call site and three other positions SHIPPED: two
+# aborted a built binary at 134 under a `#line` pointing at the author's
+# own source, and one died at exit 2.
+
+use ast
+use source
+use parse
+use resolve
+use check/table
+use check/state
+use check/lower
+use ffi_errors
+
+# It asks the value, not the world: the legal set is built by reading the
+# declarations in hand, so a position added later is refused by default.
+# And it walks `written_types`, never the syntax — panel 061's `map_keys`
+# walked `TypeKind` nodes and missed every type a literal interned.
+function fixed_only_in_a_group(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl])
+    owned: {i64: bool} @ {}
+
+    for decl in decls
+        match decl.kind
+            .record_decl rec =>
+                if !rec.header.is_err()
+                    for field in rec.fields
+                        claim(a, field.ty, @owned)
+            .constant_decl | .function_decl | .variant_decl | .test_decl => continue
+
+    # ORDER: ascending type-node id — span.start ties on nested fixed
+    # arrays, so a span sort cannot replace this key: it decides which
+    # diagnostic prints first. The Rust BTreeMap gave the order free; the
+    # port pays with one sort over the map's keys (§4.9).
+    for node in sort(keys(c.out.written_types))
+        if !owned[node].is_err()
+            continue
+        ty = c.out.written_types[node].must()
+
+        is_fixed = match table.get(c.out.types, ty)
+            .fixed                                                    => true
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
+            .array | .map | .fallible | .function_ty | .named         => false
+            .case_ty | .failure | .generic | .error                   => false
+
+        if !is_fixed
+            continue
+
+        # An ordinary record's field is already refused on the same rule,
+        # and reporting one mistake twice is the thing this compiler
+        # never does.
+        span = a.types[node].span
+        already: bool @ false
+
+        for d in c.out.diagnostics
+            if d.span == span
+                already @ true
+
+        if already
+            continue
+        shown = state.show(c, s, decls, ty)
+        state.push_diagnostic(@c, ffi_errors.fixed_outside_a_group(shown, span))
+
+# A group record's field type AND EVERYTHING WRITTEN INSIDE IT — the
+# whole node, not just its root: claiming only the outer one left the
+# sweep reporting `i32[2]` inside an already-refused `i32[2][3]`, one
+# mistake with two messages. Leaves are enumerated rather than caught
+# with `_`, so a type form added later is a compile error here instead of
+# a silently unclaimed child.
+function claim(a: ast.Ast, id: i64, @owned: {i64: bool})
+    owned[id] @ true
+
+    match a.types[id].kind
+        .fixed x        => claim(a, x.element, @owned)
+        .array_of inner => claim(a, inner.element, @owned)
+        .fallible o     => claim(a, o.inner, @owned)
+        .map_of m =>
+            claim(a, m.key, @owned)
+            claim(a, m.value, @owned)
+        .function_type f =>
+            for p in f.params
+                claim(a, p, @owned)
+
+            claim(a, f.result, @owned)
+        .named | .unit | .error => return
+
+## Tests
+
+# The claimed case: a `u8[4]` inside a group record's field is the ONE
+# legal position, so the sweep must stay quiet on it. The moved version
+# of this test dropped four `prepared(...)` calls whose results were
+# discarded with `_ =` and which asserted nothing — they satisfied the
+# unused-binding rule and said nothing to a reader.
+test "the file-wide sweep stays quiet on the one legal position"
+    text = "extern \"r.h\"\n    record Color\n        parts: u8[4]\n"
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    c: state.Checker @ state.new_checker(out_of: out, expr_count: 0)
+    i: i64 @ 0
+
+    while i < p.tree.types.len()
+        _ = lower.lower_ty(@c, p.tree, out, i)
+        i @ i + 1
+
+    fixed_only_in_a_group(@c, p.tree, s, p.decls)
+    assert c.out.diagnostics.len() == 0

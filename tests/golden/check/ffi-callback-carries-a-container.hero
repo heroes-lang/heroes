@@ -1,0 +1,55 @@
+# fixedbugs, defect 014, M-isolated-threads step 5, 2026-09-06 (panel 113 R2).
+#
+# SYMPTOM: a `[T]` or a `{K: V}` crossed the FFI boundary inside a callback
+# signature, in both directions, at **exit 0 with an empty stderr**. The bar was
+# one forward declaration and no runtime include:
+#
+#     struct HeroArrayHeader;
+#     void hold(struct HeroArrayHeader *(*mk)(void),
+#               void (*run)(struct HeroArrayHeader *));
+#
+# `heroes build --emit-c` accepted it and wrote `HeroArrayHeader * h_t_make(void);`
+# and `void h_t_bump(HeroArrayHeader * h0_xs);`, so C received the header of a
+# refcounted Heroes value, could store it, and could hand it to threads of its
+# own.
+#
+# CAUSE: `selfhost/check/ffi.hero`'s `crosses_the_boundary` is the one function
+# that decides what a C header may spell. It refuses `.array | .fixed | .map |
+# .fallible` and answered `.function_ty => return true` **without recursing into
+# that function type's own parameters and result**. So the vocabulary rule was
+# applied to the callback and never to what the callback carries.
+#
+# The specification had already refused it. spec, § FFI: *"A callback is a
+# **parameter**, never a result; its parameters follow the same rule"* — and the
+# same rule is that function, which refuses `.array` one line below. So this was
+# the compiler disagreeing with the spec (CLAUDE.md §12), not a design question,
+# and it cost no spec token to settle.
+#
+# WHY IT MATTERED MORE THAN IT LOOKS. Panel 113 was convened on `cow.c`'s
+# `if (refcount == 1)` — a test followed by a mutate — and two seats measured,
+# independently, in separate checkouts, with a live positive control, that the
+# corruption does NOT arrive through there: with `parts/thread.c`'s guard patched
+# down, 8 threads and 240,000 mutations of nested `[[str]]` and `{str: i64}` were
+# exit 0 with **zero ThreadSanitizer warnings**, because a callback parameter
+# arrives borrowed and the emitted body increfs before it can store. The same
+# instrument named a hand-made race at `cow.c:80` in the same session, so its
+# silence is admissible. This declaration was the door.
+#
+# FIX: the `.function_ty` arm recurses through its parameters and its result.
+# Eight lines, one file, nothing under `runtime/` or `selfhost/emit/`. It broke
+# no program: measured over the whole tree the day it landed, there were **7
+# callback declarations inside `extern` groups and 0 of them named a container**.
+#
+# The header below is `stdlib.h` and the callback is `atexit`'s, deliberately: a
+# reader should see that the refusal is about the TYPE and not about the header,
+# and this case then needs no C file of its own. The refusal happens in the
+# checker, before any probe is compiled.
+
+extern "stdlib.h"
+    function atexit(f: (function() -> [i64])) -> i32  #~ ffi_type
+
+function make() -> [i64]
+    return [1, 2, 3]
+
+function main()
+    _ = atexit(f: make)

@@ -22,7 +22,13 @@ entry, not decoration.
 
 Format: `- [ ] **NNN — <title>** | <date, found by> | <status> | <where it came from> | <severity>`, then the body.
 
-**Nothing is open as of 2026-09-05, at M-c-callbacks' close.** This line said *one
+**Nothing is open as of 2026-09-06.** Defect 014 was filed and repaired the same
+day and is in `docs/work/DONE.md`: a `[T]` or a `{K: V}` crossed the FFI boundary
+inside a callback signature at exit 0, and `crosses_the_boundary` now recurses.
+The paragraph announcing it while it was open is deleted rather than left to
+outlive it, which is the failure this file recorded about itself one entry above.
+
+**Nothing was open as of 2026-09-05, at M-c-callbacks' close.** This line said *one
 defect is open* for part of that day — defect 013, filed by panel 112 and put to
 the author with it, because both of its candidate repairs cost something a
 measurement could not choose between. **It was repaired the same evening, by a
