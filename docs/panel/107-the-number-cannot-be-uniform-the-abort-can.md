@@ -302,6 +302,35 @@ that compiled rather than by argument.
 | spec-warden | if the vague sentence lands anyway, it produces **zero** new `.expected` diffs and **zero** corpus program changes while the spec sits at 3773 with headroom ≤ 323 | `heroes measure` + the golden harness | M-corpus-depth close |
 | coordinator | with the guard's bounds per thread, overflow inside SDL's audio callback becomes exit **134** with a named function, and the interpreter's ceilings in all three configurations move by **zero** levels | `overflow_thread.c` re-run; the corpus's three configurations | the milestone that lands the per-thread guard |
 
+## Predictions, scored at M-thread-stacks close (2026-09-06)
+
+Appended, never rewritten (CLAUDE.md §14). Two of the five rows came due here.
+
+**The coordinator's row — the ceilings half HOLDS, the callback half holds in
+outcome and is wrong in mechanism.** *"The interpreter's ceilings in all three
+configurations move by zero levels"*: binary-searched with a before-compiler and
+an after-compiler built from one tree, `-O0` **314 → 314**, `-O2` **585 → 585**,
+`--sanitize` **244 → 244**. Zero, as predicted. *"Overflow inside SDL's audio
+callback becomes exit 134 with a named function"*: it is exit 134 with a name,
+and **not from this repair** — panel 115's ffi seat deleted `hero_thread_guard`
+from the emitted C and rebuilt against the per-thread guard, getting exit 132
+with an empty stderr. The message comes from `parts/thread.c`'s isolation
+refusal, which is M-isolated-threads' work.
+
+**The ffi-pragmatist's row — one half LAPSED BY REFUSAL, one half held, one half
+falsified with its mechanism intact.** The Linux clause was conditional on
+shipping `-Wl,-z,stacksize=`, which this same sitting refused permanently: an
+antecedent that never happened is not scored and, under §1.6, not renewed.
+*"On Darwin the audio and stream callbacks still get 536,576 bytes"* **HOLDS**,
+re-measured with `pthread_get_stacksize_np`. *"And still exit 132 with empty
+stderr"* is **FALSE as an observation** and **right as a claim about this
+milestone**: the seat's underlying point, that the per-thread guard does nothing
+for a thread a C library made, is exactly what its own successor measured.
+
+**Three rows are not due here** and are left standing: the compiler seat's Linux
+flag row was already scored at M-corpus-depth, its 65,536-byte frame row is
+M-qbe-backend's, and the warden's row was scored at M-corpus-depth.
+
 ## Author's verdict
 
 **RATIFIED 2026-09-04** (author instruction, *"ratify and push"*, given

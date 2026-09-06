@@ -46,10 +46,25 @@
  * `hero_thread_claim` rides `hero_args_set` the way panel 104's stack guard
  * does, so the generated `main` is untouched.
  *
- * WHAT IS STILL OPEN, and it is named rather than hidden: a Heroes function
- * that allocates nothing and only recurses never reaches a guarded point on the
- * foreign thread's small stack and still dies at exit 132 with an empty stderr.
- * That is `M-thread-stacks`' half by name (panel 107), not this file's.
+ * WHAT IS CLOSED, AND IT IS THIS GUARD THAT CLOSED IT — corrected 2026-09-06 by
+ * panel 115's ffi seat, which measured both halves rather than reading this
+ * paragraph. It used to say that a Heroes function which allocates nothing and
+ * only recurses "still dies at exit 132 with an empty stderr. That is
+ * `M-thread-stacks`' half by name (panel 107)." Both clauses were wrong the
+ * moment M-isolated-threads shipped this file.
+ *
+ * The seat built the counterfactual: it took the emitted C of a program whose
+ * callback recurses, DELETED the one line `hero_thread_guard(...)`, and rebuilt
+ * against the M-thread-stacks runtime. **Exit 132, empty stderr.** So the
+ * per-thread stack guard does nothing whatever for a foreign thread —
+ * `hero_stack_guard_enter()` has exactly two callers, `hero_args_set` and
+ * `hero_spawn_enter`, and a library's own thread reaches neither. What stops the
+ * program is the line below, at its first instruction, before one frame of
+ * recursion.
+ *
+ * Why the correction matters more than the fact: a reader who later narrows
+ * `emit/callback_guard.hero`'s set would reopen a silent exit 132 while this
+ * comment told them the hole belonged to another milestone that had closed.
  */
 
 /* Zero on every thread the OS creates — C11 7.5: a thread-local object without

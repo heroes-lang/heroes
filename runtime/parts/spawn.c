@@ -57,6 +57,15 @@
 #include <windows.h>
 #else
 #include <pthread.h>
+/* `sysconf` and `_SC_PAGESIZE`, named here rather than inherited. `parts/stack.c`
+ * includes this header above us in the one translation unit and that is exactly
+ * why it must be repeated: stack.c's ASan arm compiles the whole POSIX half
+ * away, so under `--sanitize` the include vanishes and this file stops
+ * compiling. Measured 2026-09-06 while landing panel 115's floor — the ordinary
+ * build was green and `heroes build --sanitize` answered `internal error: the
+ * runtime did not compile`. A file that leans on another file's includes works
+ * until that file grows a configuration. */
+#include <unistd.h>
 #endif
 
 /* THE BOUND IS ON THREADS ALIVE AT ONCE, NOT ON THREADS EVER STARTED, and that
@@ -70,6 +79,73 @@
  * Overflow is a panic and never a truncation, for `run.c`'s reason: a program
  * that gets fewer threads than it asked for computes a wrong answer quietly. */
 #define HERO_SPAWN_SLOTS 256
+
+/* THE FLOOR IS THE THREAD THAT RAN `main` (panel 115, 2026-09-06). A thread this
+ * runtime starts never gets less stack than the thread the program started on.
+ *
+ * WHAT THAT REPAIRS, measured on this Mac rather than argued: the same recursion
+ * reaches **19** levels on a worker and **312** on `main` — 15.6:1, one machine,
+ * one program, one runtime — because Darwin hands a created thread 536,576 bytes
+ * against the process's 8,372,224. The surprise is not that platforms differ; it
+ * is that one machine gives its own two threads different answers, and a program
+ * that works when written works differently when moved onto a thread.
+ *
+ * WHY A FLOOR AND NOT A NUMBER. The sitting was convened on "the same size
+ * everywhere, 8 MiB" and every seat that looked found the number indefensible:
+ * it is glibc's default imported (spec-warden), it CUTS Windows eightfold from
+ * the 64 MiB `selfhost/cli/flags.hero` links for a measured reason (compiler and
+ * ffi seats, historian), and the Windows call that would deliver it sets the
+ * COMMIT and not the reserve without `STACK_SIZE_PARAM_IS_A_RESERVATION` — a
+ * defect libuv ships to this day (historian, Mozilla bug 958796). A floor needs
+ * no number: it is a fact about the machine in hand, so there is nothing to
+ * argue, nothing to age, and nothing to state in the spec. On glibc it is inert
+ * because a created thread already gets the process's 8 MiB; on Windows it does
+ * not run at all. It raises exactly one platform and lowers none.
+ *
+ * LLVM and Chromium reached the same answer from the same Darwin measurement,
+ * which is precedent rather than invention (panel 115, the historian's Q3).
+ *
+ * WINDOWS IS DELIBERATELY UNTOUCHED. `CreateThread(NULL, 0, ...)` below keeps
+ * the executable's own reserve, which Microsoft documents as the default "for
+ * all threads and fibers", so this project's `/STACK:67108864` already applies
+ * to every thread there and 67,108,864 is measured on both, main and worker. */
+static size_t hero_spawn_floor = 0;
+
+#if !defined(_WIN32)
+/* The calling thread's stack size, asked of the OS. Deliberately NOT
+ * `stack.c`'s `hero_stack_bounds()`: that arm is compiled out under the
+ * sanitiser, where the guard yields to ASan, and a floor that disappeared under
+ * `--sanitize` would be missing on exactly the leg CLAUDE.md § Commands sends
+ * every `extern` program to. */
+static size_t hero_spawn_stack_of_self(void) {
+#if defined(__APPLE__)
+    return pthread_get_stacksize_np(pthread_self());
+#else
+    pthread_attr_t attr;
+    void *addr = NULL;
+    size_t size = 0;
+
+    if (pthread_getattr_np(pthread_self(), &attr) == 0) {
+        pthread_attr_getstack(&attr, &addr, &size);
+        pthread_attr_destroy(&attr);
+    }
+    return size;
+#endif
+}
+#endif
+
+/* Measured once, on the thread that runs `main`, from `hero_args_set` — the one
+ * call every generated `main` makes before a program's first line, which is
+ * `parts/stack.c`'s precedent and `parts/thread.c`'s. It has to be captured
+ * there and not lazily: a spawned thread may itself spawn, and by then the
+ * calling thread is a worker whose size is the wrong reference. */
+static void hero_spawn_measure_home(void) {
+#if defined(_WIN32)
+    hero_spawn_floor = 0;
+#else
+    hero_spawn_floor = hero_spawn_stack_of_self();
+#endif
+}
 
 typedef int64_t (*HeroThreadBody)(int64_t);
 
@@ -123,6 +199,34 @@ static void hero_spawn_enter(HeroSpawnSlot *slot) {
      * Panel 107 could not place this call: on 2026-09-04 no Heroes function ran
      * on any thread but `main`, so there was no point at which to make it. */
     hero_stack_guard_enter();
+
+    /* WHAT THE OS GAVE, NEVER WHAT IT ANSWERED (panel 115, the ffi seat, and it
+     * is the trap this whole repair could have walked into). Measured on both
+     * platforms in that sitting, `pthread_attr_setstacksize` refuses OPPOSITE
+     * things: a size below the minimum returns 0 and clamps on Darwin but is
+     * EINVAL on glibc, while a size that is not a page multiple is EINVAL on
+     * Darwin and rounds on glibc — and on the arm that returns EINVAL the attr
+     * KEEPS ITS DEFAULT. An implementation that trusts the return code
+     * therefore restores the exact defect it was written to fix, silently, on
+     * one platform only. Demonstrated end to end in the sitting: 8 MiB + 1 with
+     * the return discarded gives `panic: stack exhausted in depth.down` at 20,000
+     * levels, blaming the author's recursion for a thread that got 536,576 bytes.
+     *
+     * So the check is here, after the thread exists, and it asks the OS. One
+     * page of slop, because Darwin returns 12,288 bytes MORE than asked
+     * (8,388,608 -> 8,400,896, measured) and a platform is free to round. */
+#if !defined(_WIN32)
+    if (hero_spawn_floor > 0) {
+        size_t got = hero_spawn_stack_of_self();
+        size_t slop = (size_t)sysconf(_SC_PAGESIZE);
+
+        if (got > 0 && got + slop < hero_spawn_floor) {
+            hero_panic("a thread was started with less stack than this runtime "
+                       "asked for — it asked for the stack the program itself "
+                       "runs on, and the operating system gave less");
+        }
+    }
+#endif
     slot->result = slot->body(slot->arg);
     /* The alternate stack goes back to the OS with the thread that took it: a
      * slot is reused (a bound on threads ALIVE, above), so a mapping kept per
@@ -168,8 +272,27 @@ int64_t hero_thread_spawn(HeroThreadBody body, int64_t arg) {
         CreateThread(NULL, 0, hero_spawn_trampoline, &hero_spawn_slots[at], 0, NULL);
     int made = hero_spawn_slots[at].handle != NULL;
 #else
-    int made = pthread_create(&hero_spawn_slots[at].handle, NULL, hero_spawn_trampoline,
+    /* The floor, asked for only when the platform's own default is BELOW it, so
+     * a machine that already gives a worker what `main` has is untouched and
+     * `attr` is never built there (glibc, measured: 8,388,608 both ways). */
+    pthread_attr_t attr;
+    pthread_attr_t *ask = NULL;
+    int asked = 0;
+
+    if (hero_spawn_floor > 0 && pthread_attr_init(&attr) == 0) {
+        size_t theirs = 0;
+        asked = 1;
+
+        if (pthread_attr_getstacksize(&attr, &theirs) == 0 && theirs < hero_spawn_floor) {
+            size_t page = (size_t)sysconf(_SC_PAGESIZE);
+            size_t want = (hero_spawn_floor + page - 1) / page * page;
+
+            if (pthread_attr_setstacksize(&attr, want) == 0) ask = &attr;
+        }
+    }
+    int made = pthread_create(&hero_spawn_slots[at].handle, ask, hero_spawn_trampoline,
                               &hero_spawn_slots[at]) == 0;
+    if (asked) pthread_attr_destroy(&attr);
 #endif
 
     if (!made) {

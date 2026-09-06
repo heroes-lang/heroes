@@ -335,6 +335,32 @@ jobs:
           clang -I runtime seed/heroes.c runtime/runtime.c $STACK -o heroes-from-seed${{ matrix.exe }}
           ./heroes-from-seed${{ matrix.exe }} --version
 
+      # THE CONTRACT'S OWN LINE, BUILT AND USED, on the one platform where it
+      # can fail. The step above builds with `-Wl,/STACK:67108864`, which is
+      # what `seed/README.md` prints for Windows; nothing in this file has ever
+      # built WITHOUT it, so the day this compiler's frames grow back past a
+      # 1 MB stack the leg would go on passing while the documented instruction
+      # was broken. That is exactly how defect 008 stayed green for as long as
+      # it existed.
+      #
+      # Measured on the author's Windows box 2026-09-06, at `bcf6c41a`: the
+      # plain line builds a compiler that does `build selfhost/lexer.hero
+      # --dump-ir` at exit 0 — the module that died at exit 127 with both
+      # streams empty in September — and `build selfhost/main.hero --emit-c`,
+      # the whole compiler, also at exit 0. So the flag is headroom now rather
+      # than the thing holding the build up.
+      #
+      # This step ASSERTS rather than reports, and the choice was deliberate:
+      # `docs/work/SCHEDULED.md` recommended a reporting step, and a step that
+      # only reports is a rule performed by nothing — CLAUDE.md §3's own story
+      # about `DECIDE.md` growing to 391 KB, told again in a CI file.
+      - name: The documented line, without the Windows flag, still compiles a module
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          clang -I runtime seed/heroes.c runtime/runtime.c -o heroes-plain${{ matrix.exe }}
+          ./heroes-plain${{ matrix.exe }} build selfhost/lexer.hero --dump-ir > /dev/null
+
       # The toolchain check as a machine with no Rust would run it. `doctor`
       # names clang, the linker's home, the architecture, the runtime and a
       # writable cache — and it has never asked about cargo, which is what makes
