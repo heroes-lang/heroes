@@ -1,0 +1,31 @@
+# A freer named by `owned` is checked against the header the way the program's
+# own call would be, and `fclose` cannot free a string (§4.19; panel 116,
+# ratified 2026-09-06).
+#
+# WHY THIS IS A COMPILE ERROR AND NOT A CRASH. The probe this compiler emits
+# per `extern` never runs — it exists so clang checks the name against the
+# header. Measured 2026-09-06 with the compiler's own flags: a probe typed
+# `void *` accepts `free` AND `fclose`, exit 0 with nothing said, because in C
+# a `void *` converts to anything. Typed `char *`, `free` is accepted and
+# `fclose` is refused in the header's own words. The FFI seat of panel 116
+# measured the same over ten real freers: **10 of 10 silent at `void *`, 6 of
+# 10 refused at `char *`** — and `fclose((FILE *)strdup("…"))` run here is
+# **exit 139, SIGSEGV**. So the probe's parameter type is the whole mechanism.
+#
+# THE CARET IS ON THE MARK, NOT ON THE DECLARATION, and that is the half worth
+# pinning: `function fclose(f: ptr) -> i32` below is a CORRECT declaration and
+# a reader sent there would fix what is already right. The program's mistake is
+# naming `fclose` as the thing that frees this string.
+#
+# The honest limit, enumerated from the header rather than from memory:
+# `curl.h` writes `typedef void CURL;`, so `curl_easy_cleanup(CURL *)` really
+# is `void *` and no probe can catch a wrong freer there. Six of ten.
+extern "stdio.h"
+    function fclose(f: ptr) -> i32
+
+extern "string.h"
+    function strdup(s: cstr) -> cstr owned fclose  #~ ffi_freer_type
+
+function main()
+    _ = strdup("hi".cstr())
+    print(0)

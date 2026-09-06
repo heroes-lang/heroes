@@ -1,0 +1,58 @@
+# Reading clang's reply back: which PARAMETER a column in a probe line names
+# (design.md §4.19; panels 058, 062, 116).
+#
+# The other half of `emit/extern_probe.hero`, and a different concern: that
+# module WRITES the probe so clang will check a name against its header, and
+# this one reads the verdict back — clang answers with a file, a line and a
+# COLUMN, and a column is only a parameter if you rebuild the exact string the
+# probe was written as. `ffi_mutable` and `ffi_narrowed` are its two callers,
+# and both exist to turn a clang line into a diagnostic on the author's own
+# `.hero` line rather than an `internal error` at exit 2 (CLAUDE.md §7).
+#
+# **It is a module of its own since 2026-09-06**, when the probe learned to
+# type a freer's parameter `char *` (panel 116) and `extern_probe.hero` crossed
+# §11's 300 at 321. The cut is the seam and not the count: nothing here writes
+# a probe, nothing there reads one, and the edge runs one way — this module
+# uses `extern_probe` for `probe_line` and `extern_probe` does not use this
+# one, so `module_cycle` never fires.
+
+use emit/extern_probe as extern_probe
+
+# Where each argument begins in probe_line's output, in the 1-based
+# column numbering clang reports. The caret of a conversion diagnostic
+# sits on the argument token, so this is what turns a column back into
+# a parameter index.
+function argument_columns(probe: str, name: str, parameters: [str], arguments: [str]) -> [i64]
+    line = extern_probe.probe_line(probe: probe, name: name, parameters: parameters, arguments: arguments)
+    opens = "(void)(" + name + ")("
+    found = extern_probe.find_text(line: line, needle: opens)
+
+    if found.is_err()
+        none: [i64] = []
+        return none
+    at: i64 @ found.must() + opens.len()
+    out: [i64] @ []
+
+    for argument in arguments
+        out @ out.push(at + 1)
+        at @ at + argument.len() + 2
+
+    return out
+
+test "argument columns point at each argument's own token"
+    parameters: [str] = ["int64_t a0", "double a1"]
+    arguments = extern_probe.argument_names(count: 2)
+    line = extern_probe.probe_line(
+        probe: "hero_ffi_probe_h_t_f",
+        name: "f",
+        parameters: parameters,
+        arguments: arguments
+    )
+    columns = argument_columns(probe: "hero_ffi_probe_h_t_f", name: "f", parameters: parameters, arguments: arguments)
+    assert columns.len() == 2
+
+    # The 1-based column lands on the first character of each argument.
+    cs = line.chars()
+    assert cs[columns[0] - 1] == "a"
+    assert cs[columns[1] - 1] == "a"
+    assert columns[1] == columns[0] + 4
