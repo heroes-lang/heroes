@@ -323,6 +323,14 @@ function emit(@w: writer.Writer, p: containers.Program, c: state.Checked, names:
                             @w,
                             text: "    " + target.must() + " = hero_str_cstr(" + mangle.value(ca.operand) + ");"
                         )
+                # The bytes are the program's now; the cast says so to C.
+
+                .cstr_to_ptr =>
+                    if !target.is_err()
+                        writer.line(
+                            @w,
+                            text: "    " + target.must() + " = (void *)(char *)" + mangle.value(ca.operand) + ";"
+                        )
         .hole | .missing => writer.line(@w, text: "    hero_unreachable(); /* the gate refuses this form */")
         .copy_out        => return
 
