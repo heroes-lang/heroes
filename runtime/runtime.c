@@ -126,6 +126,12 @@
  * claimed once from hero_args_set, in os.c below, for stack.c's own reason. */
 #include "parts/thread.c"
 
+/* Starting a thread and waiting for it (design.md Part 7.13). Immediately
+ * after `thread.c` because it calls that file's `hero_thread_claim` on the
+ * thread it starts — a thread this runtime made is not a foreign one — and
+ * before `alloc.c` because it allocates nothing at all. */
+#include "parts/spawn.c"
+
 /* The single allocation point and the live-block counter (design.md §4.20).
  * First after `panic.c`, because everything that allocates needs both. */
 #include "parts/alloc.c"
