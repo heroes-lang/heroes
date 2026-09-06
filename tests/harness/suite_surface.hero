@@ -275,6 +275,9 @@ function verb_probes() -> [probe.Probe]
         row(name: "a local may not take the name a use bound, and one mistake is one diagnostic", argv: "check tests/golden/surface-fixtures/localtakesamodule/main.hero", code: 1).err_has("error[shadowed_binding]").err_has("what this file calls the module `state`").err_has("use state as <other>").err_has("or rename this binding").err_lacks("module_is_not_a_value").err_lacks("internal error")
         row(name: "a ptr local wearing a module's name is two diagnostics, and the qualifying repair is a guess", argv: "check tests/golden/surface-fixtures/qualifyptr/main.hero", code: 1).err_has("error[shadowed_binding]").err_has("error[needs_qualifying]").err_lacks("fix (certain)").err_lacks("internal error")
         row(name: "apply on it leaves the text untouched, because a fix that reproduced itself was no fix", argv: "check tests/golden/surface-fixtures/qualifyptr/main.hero --apply", code: 0).out_is("use window\n\nfunction main()\n    window: ptr @ nullptr  #~ shadowed_binding\n    window @ nullptr\n    _ = window.destroy()  #~ needs_qualifying\n").out_lacks("window.window")
+        row(name: "both spellings of the failure constructor compile, and the label rule still binds a user function", argv: "run tests/golden/surface-fixtures/faillabels/main.hero", code: 0).out_is("1\n2\nthe rule still binds a user function\n").err_empty()
+        row(name: "a foreign word that is CALLED keeps its message and loses its certain fix (defect 015)", argv: "check tests/golden/surface-fixtures/calledforeign/main.hero", code: 1).err_has("error[reserved_word]").err_has("to_i64").err_has("fix (guess)").err_lacks("fix (certain)").err_lacks("internal error")
+        row(name: "and apply leaves that program untouched, because a fix that broke the program was no fix", argv: "check tests/golden/surface-fixtures/calledforeign/main.hero --apply", code: 0).out_has("n @ int(3)").out_has("n @ switch(3)").out_has("n @ const(3)").out_lacks("i64(3)").out_lacks("match(3)").out_lacks("constant(3)")
         row(name: "deep recursion stops with a word at -O0, on every platform", argv: "run tests/golden/surface-fixtures/deep/main.hero -O0", code: -1).err_has("panic: stack exhausted").out_empty()
         row(name: "and on a thread the program started, where it said nothing at all until M-thread-stacks", argv: "run tests/golden/surface-fixtures/deepthread/main.hero -O0", code: -1).err_has("panic: stack exhausted").out_empty()
         row(name: "a recursion of WIDE frames stops with the same word at -O0: the probe reaches the guard before sp does (defect 007, `docs/work/DONE.md`)", argv: "run tests/golden/surface-fixtures/wideframe/main.hero -O0", code: -1).err_has("panic: stack exhausted").out_empty()
@@ -378,7 +381,16 @@ test "the tables are what this module is, so they are counted"
     # and not the code for the row above's reason, and because Windows was
     # measured that day to have been right all along: its handler is the
     # process's, where POSIX's alternate stack is the thread's.
-    assert verb_probes().len() == 45
+    # 45 -> 47 on 2026-09-06, defect 015's repair: a foreign word in CALL
+    # position keeps its message and loses its `certain` fix, and `--apply`
+    # leaves that program untouched. Two rows because the pair is the claim —
+    # one asserts what is said, the other asserts what is NOT done, and §8's
+    # machine-applicable promise is only tested by the second.
+    # 47 -> 48 the same day, settling `DECIDE.md`'s question about whether the
+    # built-in constructors are inside `spec:106`'s mandatory-label rule. They
+    # are outside it and accept the labels anyway — both spellings compile — so
+    # the answer is pinned by a fixture rather than bought with spec tokens.
+    assert verb_probes().len() == 48
 
 test "a probe holds when everything it asks for is true"
     scratch = "build/harness-selftest"

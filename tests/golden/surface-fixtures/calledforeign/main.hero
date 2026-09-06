@@ -1,0 +1,45 @@
+# Defect 015, kept as the fixture that pins its repair (2026-09-06).
+#
+# THE SYMPTOM. Every foreign word in `selfhost/keywords.hero` carried a
+# word-for-word repair tagged `certain`, which CLAUDE.md §8 says is
+# machine-applicable. Measured with `check --apply`, some of them produced a
+# program that does not compile: the word `int` became a call to a TYPE NAME
+# (`error[unknown_name]`), and the word `switch` became a `match` with no arms
+# (`error[missing_match_arms]`). A `certain` fix that introduces an error OF ITS
+# OWN is the promise broken rather than a rough edge, and `--apply` rests on it.
+#
+# THE CAUSE, AND THE FIRST DRAFT OF THE REPAIR GOT IT WRONG. The obvious rule is
+# *a `(` after the word means it is called, so drop the fix*. That rule is FALSE,
+# and an adversarial case the author ratified on 2026-08-04 is what caught it:
+# `function apply(f: (fn(i64) -> i64), x: i64)` is a function TYPE, and there
+# `fn` becomes `function` correctly. Its own words are *"`fn` is one word with
+# one meaning — an error — in BOTH positions, and the same certain fix repairs
+# both"*. A `(` is not a call.
+#
+# THE RULE THAT SURVIVED. The question is not where the word STANDS, which the
+# lexer cannot know. It is whether the REPLACEMENT may legally precede a `(`.
+# `function` may, because a function type is spelled `function(A) -> B`. `i64`,
+# `record`, `variant`, `constant`, `match` and `use` may not. So exactly those
+# lose their machine-applicable fix in front of a `(`, and `fn`, `func` and `def`
+# keep theirs — which is why this file does not contain `fn(3)`, and why that
+# absence is deliberate rather than an oversight.
+#
+# `int(` is the one that also gets a better ANSWER rather than only a quieter
+# one, and it is a GUESS rather than a swap because the honest repair does not
+# fit in one word: `to_i64` is fallible (measured: `n @ to_i64(a)` is
+# `error[type_mismatch]: expected i64, found i64?`), so the reader still has to
+# choose `.must()` or `.default(v)`. That is the message's job and not a fix's.
+#
+# The repaired spellings are deliberately NOT written out above. The rows in
+# `tests/harness/suite_surface.hero` assert that `--apply` leaves this text
+# alone, and they ask whether those spellings appear in the output at all — so a
+# comment quoting them would satisfy the assertion from the wrong side. Measured
+# 2026-09-06: the first draft of this file did exactly that and the row failed,
+# correctly.
+
+function main()
+    n: i64 @ 0
+    n @ int(3)     #~ reserved_word
+    n @ switch(3)  #~ reserved_word
+    n @ const(3)   #~ reserved_word
+    print(n)

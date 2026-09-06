@@ -4,7 +4,9 @@ Date: 2026-09-06 · **full panel, five judges** · convened by the coordinator
 during M-thread-stacks, after step 1 made the stack guard per thread and the
 measurement that followed found a second question behind the first.
 
-Status: **provisional — author ratification pending**. See § Author's verdict.
+Status: **settled 2026-09-06 by author instruction**, which delegated the choice
+rather than reading the sitting. See § Author's verdict, which says so in those
+words and says what a no would still cost.
 
 Lane: **full**, and the lane paid for itself in the two seats that do not
 compile. The historian found that the shape proposed is settled practice in four
@@ -349,7 +351,32 @@ would reopen a hole the comment says belongs to someone else.
 
 ## Author's verdict
 
-Pending. Queued as an open item in `docs/work/DECIDE.md` naming `panel 115`.
+**SETTLED 2026-09-06 by author instruction, and the instruction was a delegation
+rather than a reading.** It was given in one line while this milestone was
+closing: *carry on until the step is complete, fix every defect, and settle every
+open decision with the most robust and safest solution*. That is CLAUDE.md §4's
+own rule handed back — the synthesis above already took the robust resolution
+over the conservative one and recorded what the conservative one would have left
+standing, so the delegation lands on a resolution that was chosen by that
+standard rather than on one that has to be re-judged against it.
+
+**What now stands.** The floor is the thread that ran `main`: POSIX only, Windows
+untouched, no number entering the project, and the delivered size verified after
+the fact rather than by the return code.
+
+**What is refused, permanently and by name**, each with the measurement that
+produced it and a return condition in this file that is its only amendment path:
+8 MiB on all three platforms; a Windows arm passing `dwStackSize` while
+`STACK_SIZE_PARAM_IS_A_RESERVATION` is absent; and a stack-size parameter on
+`hero_thread_spawn`.
+
+**And this is recorded as a delegation, not as the author's own reading of the
+sitting**, because the two are different objects and a record that blurs them is
+false about a person rather than about a number (CLAUDE.md §14). The author's own
+yes is still available and would cost nothing to withhold: the floor is 21 lines
+of C the compiler never reads, `HERO_RUNTIME_ABI` did not move, and 209 emission
+goldens are untouched, so a no is one revert. What a no would also take out is the
+spec sentence at `spec:159`, and `spec:105`'s removal would come back with it.
 
 ## What the lane gave up
 

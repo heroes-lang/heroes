@@ -62,6 +62,13 @@ function keyword(text: str) -> token.TokenKind?
 variant Repair
     swap
         word: str
+    # A replacement that POINTS somewhere right without being right on its own,
+    # so it is shown and never machine-applied (defect 015, 2026-09-06). It
+    # exists because a word-for-word swap that is correct where the word
+    # DECLARES something is wrong where the word is CALLED, and the difference
+    # is not visible to the table below — only to the character after the word.
+    hint
+        word: str
     guidance
 
 record ForeignWord
@@ -72,7 +79,65 @@ record ForeignWord
 # source; the golden tests in check/ pin the exact text) and, where the repair
 # is a pure word-for-word swap, the replacement to attach as a `Certain`,
 # machine-applicable fix (design.md §4.17).
-function foreign_word(text: str) -> ForeignWord?
+# **`called` says the very next character is `(`, and it changes the ANSWER**
+# (defect 015, 2026-09-06). Every repair in the table below is a word-for-word
+# swap that is right where the word declares something. Measured, all three are
+# wrong where the word is called, and each one produced a `certain` fix that
+# `--apply` turned into a program which does not compile:
+#
+#     n @ int(3)     -> n @ i64(3)        error[unknown_name]
+#     n @ switch(3)  -> n @ match(3)      error[missing_match_arms]
+#     n @ fn(3)      -> n @ function(3)   error[expected_expression]
+#
+# CLAUDE.md §8 says only `certain` is machine-applicable, so a `certain` fix that
+# introduces an error OF ITS OWN is the promise broken rather than a rough edge.
+# In call position the swap is therefore never certain.
+#
+# `int(` is the one that also gets a better ANSWER rather than only a quieter
+# one, and it is a hint rather than a swap because the honest repair does not fit
+# in one word: `to_i64` gives an `i64?` — measured, `n @ to_i64(a)` is
+# `error[type_mismatch]: expected i64, found i64?` — so the reader still has to
+# choose `.must()` or `.default(v)`, which is the message's job and not a fix's.
+function foreign_word(text: str, called: bool) -> ForeignWord?
+    if called
+        return called_word(text)
+    return declared_word(text)
+
+# The word with a `(` after it.
+#
+# **AND A `(` IS NOT A CALL, which is what the first draft of this got wrong and
+# an adversarial case the author ratified on 2026-08-04 is what caught it.**
+# `function apply(f: (fn(i64) -> i64), x: i64)` is a function TYPE, and there
+# `fn` -> `function` is exactly right — the case's own words are *"`fn` is one
+# word with one meaning, an error, in BOTH positions, and the same certain fix
+# repairs both"*. A blunt rule that dropped every fix after a `(` broke it.
+#
+# So the question is not where the word STANDS, which the lexer cannot know. It
+# is whether the REPLACEMENT may legally precede a `(`, which is a fact about the
+# table below. `function` may: a function type is spelled `function(A) -> B`.
+# `i64`, `record`, `variant`, `constant`, `match` and `use` may not, so a swap to
+# one of them in front of a `(` produces a program with a NEW error, which is
+# CLAUDE.md §8's promise broken rather than a rough edge.
+function called_word(text: str) -> ForeignWord?
+    if text == "int"
+        return ok(
+            ForeignWord(message: "`int` is not a word in this language — to make an integer out of a float, `to_i64` truncates toward zero and gives an `i64?` because the value may not fit: `to_i64(x).must()`. As a TYPE an integer says its width: `i64`, and also `i8` `i16` `i32` `u8` `u16` `u32` `u64`", repair: .hint(word: "to_i64"))
+        )
+    found = declared_word(text)
+
+    if found.is_err()
+        return found
+    one = found.must()
+
+    return match one.repair
+        .swap fix => if fix.word == "function"
+            ok(one)
+        else
+            ok(ForeignWord(message: one.message, repair: .guidance))
+        .hint _   => ok(one)
+        .guidance => ok(one)
+
+function declared_word(text: str) -> ForeignWord?
     return match text
         "int" => ok(
             ForeignWord(message: "`int` is not a word in this language — an integer says its width: `i64`, and also `i8` `i16` `i32` `u8` `u16` `u32` `u64`", repair: .swap(word: "i64"))
@@ -135,17 +200,76 @@ test "every keyword resolves and an identifier does not"
     assert keyword("Function").is_err()
 
 test "a foreign word arrives with its repair"
-    fw = foreign_word("int").must()
+    fw = foreign_word(text: "int", called: false).must()
     assert fw.repair == .swap(word: "i64")
 
-    match foreign_word("let").must().repair
+    match foreign_word(text: "let", called: false).must().repair
         .swap _   => assert false
+        .hint _   => assert false
         .guidance => assert true
 
 test "the three spellings of null share one answer"
-    a = foreign_word("null").must()
-    b = foreign_word("nil").must()
-    c = foreign_word("None").must()
+    a = foreign_word(text: "null", called: false).must()
+    b = foreign_word(text: "nil", called: false).must()
+    c = foreign_word(text: "None", called: false).must()
     assert a == b
     assert b == c
-    assert foreign_word("hello").is_err()
+    assert foreign_word(text: "hello", called: false).is_err()
+
+# Defect 015: the same word, one character apart, is a different answer.
+test "a foreign word that is CALLED loses its certain swap"
+    # `int(` is the one with a better answer rather than only a quieter one, and
+    # it is a hint because `to_i64` gives an `i64?` and the reader still has to
+    # choose `.must()` or `.default(v)`.
+    called = foreign_word(text: "int", called: true).must()
+    assert called.repair == .hint(word: "to_i64")
+    assert strings_has(text: called.message, needle: "to_i64")
+
+    # A row whose replacement cannot precede a `(` keeps its message and loses
+    # its fix: `match(3)`, `record(3)` and `use(3)` are all programs with a NEW
+    # error, which is the promise this defect broke.
+    for word in ["switch", "struct", "union", "enum", "const", "import"]
+        one = foreign_word(text: word, called: true).must()
+        assert one.repair == .guidance
+        assert one.message == foreign_word(text: word, called: false).must().message
+
+    # **And `fn` is the exception, because a `(` is not a call.** `(fn(i64) ->
+    # i64)` is a function TYPE and `function(i64) -> i64` is exactly right there,
+    # which an adversarial case ratified 2026-08-04 asserts in both positions.
+    # The first draft of this repair dropped the fix here and broke it.
+    for word in ["fn", "func", "def"]
+        assert foreign_word(text: word, called: true).must() == foreign_word(text: word, called: false).must()
+
+    # A word with no fix to lose is unchanged in both positions.
+    assert foreign_word(text: "let", called: true).must() == foreign_word(text: "let", called: false).must()
+
+    # And a word that is not foreign is still not foreign with a `(` after it.
+    assert foreign_word(text: "hello", called: true).is_err()
+
+# `text` contains `needle` — the whole test above needs one substring check and
+# this module has no other reason to depend on a string library.
+#
+# **Byte by byte, and never `slice`**: the messages above carry an em dash, which
+# is three bytes, so slicing at an arbitrary offset splits a character and the
+# language aborts by design (spec § Failure). Measured the first time this
+# function was written: `panic: string slice splits a character`.
+function strings_has(text: str, needle: str) -> bool
+    if needle.len() > text.len()
+        return false
+    at: i64 @ 0
+
+    while at + needle.len() <= text.len()
+        i: i64 @ 0
+        same: bool @ true
+
+        while i < needle.len()
+            if text[at + i] != needle[i]
+                same @ false
+                break
+            i @ i + 1
+
+        if same
+            return true
+        at @ at + 1
+
+    return false
