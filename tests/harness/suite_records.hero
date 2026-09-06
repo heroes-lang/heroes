@@ -170,12 +170,21 @@ constant QUOTES_THE_OLD_SPELLING: [str]
 # exists to give. `wasm` is also owed to the later half of Part 7 item 15
 # (`design.md:2645`), which is the ordinary §14 rule — an area a later milestone
 # needs stays free.
+# **`M-adversarial-corpus` and `M-compiler-survival` joined it 2026-09-06**, the
+# two runners-up to `M-generated-programs`, refused for the two halves of §14's
+# naming rule. The first names an AREA three milestones already share —
+# `M-program-corpus`, `M-corpus-coverage` and `M-corpus-depth` — and the area must
+# stay free for whatever touches it next. The second states a PROMISE, *the
+# compiler survives*, which a later milestone can falsify and which an id may
+# therefore never claim; it is `M-language`'s refusal again, one department over.
 constant REFUSED: [str]
     [
         "M-language"
         "M-foreign-ownership"
         "M-wasm-playground"
         "M-browser-compiler"
+        "M-adversarial-corpus"
+        "M-compiler-survival"
     ]
 
 # Measured 2026-08-25: 40 rows in the ROADMAP's alias table (39 until
@@ -267,8 +276,18 @@ constant REFUSED: [str]
 # id enters with its chain row in the same commit, so this number is moved by
 # hand here rather than read off a red run, and `REFUSED` gains two names in the
 # same move.
+#
+# **61 -> 62 on 2026-09-06**, `M-generated-programs`, scheduled by author
+# instruction: a generator that writes valid Heroes and knows the answer before
+# the compiler is asked. **It is the first id whose subject is this repository's
+# own instruments pointing the other way** — `heroes mutate` takes programs that
+# check clean and makes one plausible mistake per site, so everything here is
+# aimed at wrong programs, and of the fourteen defect entries in
+# `docs/work/DONE.md` every `found by` field names a person. The id enters with
+# its chain row in the same commit, so this number is moved by hand, and
+# `REFUSED` gains two names in the same move.
 constant ROWS: i64
-    61
+    62
 
 # The two documents whose citations are checked. They are the two a reader is sent
 # to for a rule, and the only two this project rewrites rather than appends to.
