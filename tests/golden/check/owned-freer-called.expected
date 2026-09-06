@@ -1,0 +1,1 @@
+tests/golden/check/owned-freer-called.hero:16:5: error[owned_freer_called]: `sqlite3_free` is what frees an `owned` string in this program, so the compiler already calls it — calling it here frees the string twice

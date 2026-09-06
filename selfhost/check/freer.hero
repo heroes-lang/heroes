@@ -1,0 +1,97 @@
+# Your own call of a declared freer is refused (design.md §4.19, spec § FFI;
+# panel 109, condition 2 of eight, ratified 2026-09-04).
+#
+# **The one condition four seats wrote independently**, and the only one that
+# turns a silent double release at exit 0 into a diagnostic. `owned
+# sqlite3_free` on a result or a `@` parameter tells the compiler to free that
+# string with that function. A program that ALSO calls `sqlite3_free` itself
+# frees it twice: on both platforms that is exit 0 with nothing on either
+# stream, which is the worst answer a memory bug can give.
+#
+# **It needs only the callee's NAME**, which is why it is a check and not a
+# dataflow pass: a function this program has named as a freer is a function
+# this program has handed to the compiler, and calling it from Heroes is asking
+# for the release to happen twice. The mark's own span is what the message
+# points at, because the repair is a choice between the two — keep the mark and
+# delete the call, or delete the mark and free it yourself.
+#
+# **Refusing every call and not only the provably-owned one is the robust
+# reading and it is deliberate** (CLAUDE.md §4: the most robust resolution,
+# never the cheapest). A freer called on some OTHER pointer is exactly the
+# shape that double-frees by accident the day the two pointers become one, and
+# no program in the closure list needs it: the compiler is doing the freeing.
+# The narrow reading would have to prove which value reaches the call, which is
+# the dataflow this file exists not to need.
+
+use token
+use ast
+use source
+use diag
+use parse
+
+# The `owned <freer>` mark that names this function, if any declaration in the
+# program has one. The FIRST is enough — a second mark naming the same freer
+# is the same refusal, and pointing at one is what a reader can act on.
+#
+# Both positions are searched, because both are the mark: a `cstr` result and a
+# parameter the header spells `char **`.
+function marked_as_freer(decls: [ast.Decl], s: source.Source, name: str) -> token.Span?
+    for one in decls
+        match one.kind
+            .function_decl fd =>
+                if !fd.value.owned_result.is_err()
+                    if source.span_text(s, fd.value.owned_result.must()) == name
+                        return ok(fd.value.owned_result.must())
+
+                for param in fd.value.params
+                    if !param.owned.is_err()
+                        if source.span_text(s, param.owned.must()) == name
+                            return ok(param.owned.must())
+            .constant_decl | .record_decl | .variant_decl | .test_decl => continue
+
+    return fail("absent", "nothing names this function as a freer")
+
+# The diagnostic, when a call names one.
+function refusal(s: source.Source, name: str, mark: token.Span, span: token.Span) -> diag.Diagnostic
+    at_line = source.elsewhere(s, here: span.start, there: mark.start)
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "owned_freer_called",
+        message: "`" + name + "` is what frees an `owned` string in this program, so the compiler already calls it — calling it here frees the string twice",
+        span: span
+    )
+    d.notes @ d.notes.push("the `owned " + name + "` that says so is " + at_line)
+    d.notes @ d.notes.push(
+        "§4.19: a marked string is handed over as a `str?`, already copied — the bytes C gave you are gone by the time you hold it"
+    )
+
+    # Two repairs and they are opposite, so neither can be `certain`: which one
+    # is right is a question about what the program means, not about its text.
+    d.notes @ d.notes.push(
+        "delete this call and let the compiler free it, or delete the `owned " + name + "` mark and free it yourself"
+    )
+    return d
+
+## Tests
+
+test "the mark is found at both positions, and another program's freer is not this one"
+    text = "extern \"x.h\"\n    function a(p: ptr) -> cstr owned release\n    function b(@e: cstr owned drop) -> i32\n    function other(p: ptr)\n\nfunction main()\n    print(0)\n"
+    parsed = parse.parse(text)
+    assert parsed.diagnostics.len() == 0
+    s = source.new_source(name: "t.hero", text: text)
+
+    # Both positions the mark can take, because a refusal that reads only the
+    # result position would let the `@` half through in silence.
+    assert !marked_as_freer(parsed.decls, s, name: "release").is_err()
+    assert !marked_as_freer(parsed.decls, s, name: "drop").is_err()
+
+    # **The two negative shapes, and they are the reason this is a refusal and
+    # not a ban**: a function nobody marked, and a name no mark carries. Get
+    # either wrong and every `extern` that frees anything stops compiling.
+    assert marked_as_freer(parsed.decls, s, name: "other").is_err()
+    assert marked_as_freer(parsed.decls, s, name: "sqlite3_free").is_err()
+
+test "a program with no mark at all names no freer"
+    text = "extern \"x.h\"\n    function a(p: ptr) -> cstr\n    function free_it(p: ptr)\n\nfunction main()\n    print(0)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    assert marked_as_freer(parsed.decls, s, name: "free_it").is_err()
