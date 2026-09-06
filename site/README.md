@@ -504,6 +504,23 @@ Two things that are easy to get wrong and are therefore rules:
   quoted the very shape it forbids. The check reads a backtick as a word
   boundary, so a living file cannot spell the token even to ban it. That is why
   this bullet describes the shape instead of showing it.
+- **The site says whose idea it was, and where it was the author's it says so**
+  (author instruction 2026-09-06, *"in the end change the attributions on the
+  site and the site's docs too"*). CLAUDE.md §14 gained that rule on 2026-09-05
+  for the records, because a public project that reads as merely vibe-coded
+  misrepresents who wrote it; this is the same rule on the pages a stranger
+  actually reads. **It cuts both ways and that is what keeps it honest**: name
+  the author where a question, a correction or a refusal of theirs produced the
+  finding, name the panel seat where a seat found it, and name nobody where the
+  work was ordinary. Crediting the author for something the assistant found is
+  the same falsehood wearing the flattering sign, and it is the one nobody would
+  check. Measured the day this was written: `thanks.html` had a strong
+  attribution culture pointing OUTWARD, stating its own standard for the prior
+  art it stands on, and nothing at all pointing in. The section that answers it
+  is *Who wrote this* on the author page, in both editions, and it carries
+  examples rather than a claim: a question of the author's that moved a safety
+  check from three wrong placements to the right one, and a sitting the author
+  ordered against the assistant's advice whose five judges then refused it.
 - Nods spent so far: sound and vision · fashion · quicksand, avoided ·
   changes · station to station · rebel rebel · always crashing in the same
   car · a new career in a new town · oh! you pretty things · hunky dory ·

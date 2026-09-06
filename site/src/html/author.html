@@ -140,6 +140,44 @@
     <a href="/panel/">How the panel works →</a>
   </p>
 
+  <h2>Who wrote this</h2>
+  <p>
+    The compiler is written by an AI assistant, working under a contract kept
+    in the repository and read at the start of every session. That contract is
+    not a prompt: it is a set of rules with dates and reasons, most of them
+    written the day something went wrong, and it is the reason this page can be
+    specific about who did what.
+  </p>
+  <p>
+    The author sets the direction, ratifies every design decision, and reads
+    the record. What is worth saying, because it is the part that does not show
+    in a diff, is that some of the outcomes came from a question rather than
+    from an instruction. When the cost of a safety check was being haggled over
+    as one number, the author asked a different question: is the cost paid when
+    the program is compiled, or while it runs? Answering it meant asking where a
+    foreign thread <i>enters</i> rather than where the damage shows, and that
+    moved the check from three wrong places to the right one.
+  </p>
+  <p>
+    It runs the other way too, and the record says so with the same plainness.
+    A design sitting on conditional compilation was ordered by the author over
+    the assistant&rsquo;s twice-stated recommendation to leave it where it was.
+    Five judges refused it, on three vetoes and none of them about cost, and the
+    mechanism the author had asked for turned out to exist already. The author
+    ratified the refusal in one line. In the same sitting the assistant expected
+    the author&rsquo;s preferred spelling to have no precedent anywhere, and the
+    historian found three languages that use it, one of them a compiled language
+    that emits C exactly as this one does.
+  </p>
+  <p>
+    The rule behind all of that is short: name the author where a question, a
+    correction or a refusal produced the finding, name the panel seat where a
+    seat found it, and name nobody where the work was ordinary. Crediting the
+    author for something the assistant found would be the same falsehood wearing
+    the flattering sign, and nobody would check that one.
+    <a href="/log/">The build log →</a>
+  </p>
+
   <p class="next">
     Elsewhere: <a href="https://giuseppearici.com/en/">giuseppearici.com</a>
     and <a href="https://github.com/giuseppearici">github.com/giuseppearici</a>.
