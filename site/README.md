@@ -94,7 +94,7 @@ Two consequences worth knowing:
 The pages, by the name of their source file. Each one is a fragment in
 `src/html/` and a four-line `.astro` beside it in `src/pages/`; the URL each
 answers at drops the extension and gains a slash, so `why.html` is `/why/` and
-`docs/maps.html` is `/docs/maps/` (§ The URLs, and why they end in a slash).
+`src/html/docs/maps.html` is `/docs/maps/` (§ The URLs, and why they end in a slash).
 
 | source file | what it is |
 |---|---|
@@ -197,7 +197,7 @@ property of the language, and `heroes build-site` would be the actual breach.
 
 **Syntax colouring is spans in the markup**, for the same reason. The token
 classes are the lexer's own tables rather than a guess — `.k` is
-`selfhost/keywords.hero`'s `keyword` (it was `crates/heroes/src/lexer/keywords.rs`
+`selfhost/keywords.hero`'s `keyword` (it was `crates/heroes/src/lexer/keywords.rs` until 2026-08-19
 until M-bootstrap-archive), `.t` is spec § Types — and a
 user's own type is deliberately left uncoloured, because inferring it from a
 capital letter is a premise about a convention the spec does not state. Blocks
@@ -331,7 +331,7 @@ Three details in there are load-bearing and each one fails **silently** if moved
   collects Functions from a `functions/` directory in the working directory it
   is run from, never from inside the output directory it is given. That is what
   makes the gate a file move, and it is the trap on the day it is re-armed: put
-  the catch-all anywhere but `site/functions/`, or move this step's
+  the catch-all anywhere but `site/functions/` (disarmed 2026-09-03), or move this step's
   `working-directory` away from it, and the deploy still succeeds with every URL
   of the site open and nothing in the log to say so.
 - **`--branch=main`** marks the upload as production even when the run came from
@@ -811,7 +811,7 @@ Three rules follow, and they bind every later edit:
   (2026-08-19). Both conditions this bullet named are met and were re-measured
   the day it was rewritten: `clang -I runtime seed/heroes.c runtime/runtime.c -o
   heroes` builds the compiler from a clean checkout with nothing but clang, and
-  `crates/` is now `archive/bootstrap-rs/`. What changed on the pages is the
+  `crates/` has been `archive/bootstrap-rs/` since 2026-08-19. What changed on the pages is the
   facts — the build instructions, the counts, and `selfhost.html`'s closing
   section — **not** the label: calling the language *v1* in public is a release
   decision and it is the author's, so it waits for them rather than arriving as

@@ -12,9 +12,9 @@ reason.
 
 | File | Lived at | Role |
 |---|---|---|
-| `[[path]].js` | `site/functions/[[path]].js` | the catch-all Pages Function: holding page for everyone, real site behind `?preview=starman` |
-| `_parking.html` | `site/public/_parking.html` | the holding page itself, self-contained, `noindex, follow` |
-| `_routes.json` | `site/public/_routes.json` | excludes `/_parking.html` from the Function, so the page it serves can be fetched at all |
+| `[[path]].js` | `site/functions/[[path]].js`, until 2026-09-03 | the catch-all Pages Function: holding page for everyone, real site behind `?preview=starman` |
+| `_parking.html` | `site/public/_parking.html`, until 2026-09-03 | the holding page itself, self-contained, `noindex, follow` |
+| `_routes.json` | `site/public/_routes.json`, until 2026-09-03 | excludes `/_parking.html` from the Function, so the page it serves can be fetched at all |
 
 **To re-arm the gate:** move each file back to its *lived at* path and push.
 Wrangler collects Pages Functions from a `functions/` directory in the working
@@ -24,7 +24,7 @@ again after one deploy, with no route, build command or domain to touch.
 Disarming is the same move in reverse.
 
 **Two traps, both of which fail silently.** The Function must sit in
-`site/functions/`, never inside `dist/`: wrangler never collects from the output
+`site/functions/` — where these lived until 2026-09-03 — never inside `dist/`: wrangler never collects from the output
 directory it is handed, so a gate in the wrong place deploys green with every URL
 of the site open and nothing in the log to say so. And `_routes.json` has to
 travel with it: without the exclusion the Function intercepts its own holding

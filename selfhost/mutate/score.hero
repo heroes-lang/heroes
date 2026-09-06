@@ -33,7 +33,7 @@ use mutate/ops
 
 # One program of the corpus: the file as it is on disk, and the name it is
 # COMPILED under. The two differ for a module below a nested program's root
-# — `examples/shapes/geom/area.hero` is compiled as `examples/shapes/area.hero`
+# — `examples/shapes/geom/area.hero` is compiled under `examples/shapes/` as its
 # with its own text, so that its `use` paths are read from the root, which is
 # how the compiler reads them when the program is compiled (panel 099 R1) —
 # and `name` stays the real path, because a survivor is reported where the
@@ -252,7 +252,7 @@ function lines_of(text: str) -> [str]
         out @ out.push(text.slice(from: start, to: text.len()))
     return out
 
-# The table, as text. Written to be pasted into `docs/measurements/NNN.md`.
+# The table, as text. Written to be pasted into `docs/measurements/<NNN>.md`.
 function report(scores: [Score]) -> str
     out: str @ "| operator | mutants | excluded | killed (check) | killed (--permissive) |\n|---|---|---|---|---|\n"
     mutants: i64 @ 0
@@ -271,7 +271,7 @@ function report(scores: [Score]) -> str
     return out + "\nNever pool these into one headline (panel 011): a per-operator rate is\nthe measurement, and `forget-at-decl` is excluded from any summary because the\nmistakes it plants are caught by construction: the ones it misses are\nmutations that changed nothing.\n"
 
 # The survivors as text, grouped by operator — written to be pasted into a
-# `docs/measurements/NNN.md` beside the table that raised the question.
+# `docs/measurements/<NNN>.md` beside the table that raised the question.
 #
 # Empty is a result and says so: an operator with no survivors is the outcome
 # the thesis predicts, and a silent blank would read as a broken flag.

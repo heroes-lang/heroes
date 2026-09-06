@@ -425,7 +425,7 @@ static void hero_stack_guard_install(void) {
 
 /* WINDOWS. A vectored exception handler, registered LAST so a library that
  * uses structured exceptions sees the fault first (panel 104's pragmatist,
- * from Rust's `sys/pal/windows/stack_overflow.rs`). `SetThreadStackGuarantee`
+ * from Rust's `sys/pal/windows/stack_overflow.rs`, read 2026-09-03). `SetThreadStackGuarantee`
  * reserves stack for the handler to run on; without it there is one page. The
  * message is written with `_write`, never `fprintf`. There is no frame walk
  * here yet — `SymFromAddr` needs dbghelp initialised before the fault and a

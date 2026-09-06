@@ -38,6 +38,16 @@ use strings
 constant VERDICT_HEADING: str
     "\n## Author's verdict"
 
+# **`docs/work/DONE.md` joined this list on 2026-09-06**, and it was missing for
+# the ten days it has existed. CLAUDE.md §3 calls it *"the record — append-only,
+# never rewritten (§14), and read by grep rather than by eye"*, which is the
+# definition of every other entry here; it was simply never added when the lists
+# were re-cut and `docs/debrief/` went away on 2026-08-26. Measured the day it was found: the
+# citation check, widened to the whole tree, wanted **34** repairs inside that
+# file, every one of them a path a dated entry had cited correctly on the day it
+# was written. A record does not follow a tree that moves; that is the whole
+# reason §14 forbids rewriting one, and an instrument that asks it to is asking
+# for the contract to be broken.
 constant RECORD: [str]
     [
         "docs/panel"
@@ -47,12 +57,13 @@ constant RECORD: [str]
         "tests/golden"
         "tests/emission"
         "DESIGN-LOG.md"
+        "docs/work/DONE.md"
         "vendor"
         "editors/vscode/icons"
         "archive"
     ]
 
-# **`site/log.html` was on that list and is not any more**, and it is deleted
+# **`site/log.html` was on that list and is not any more** (deleted 2026-08-18), and it is
 # rather than repointed. The entry stopped matching anything the day the site's
 # pages moved under `site/public/`, and it matched nothing again when they moved
 # to `site/src/html/`: measured 2026-08-28, `site/log.html` selects **0** of the
@@ -353,7 +364,7 @@ constant ITALIAN_MARKERS: [str]
 # Italian nav labels, because measured 2026-09-04 **not one of them fires**: a
 # wrapper carries one Italian title of five or six words and this check needs
 # six words on a line before it looks. A dead exemption is not free — the same
-# argument that deleted `site/log.html` from RECORD above — because it reads as
+# argument that deleted `site/log.html` (gone 2026-08-18) from RECORD above — because it reads as
 # a licence, and the next person to write a paragraph of Italian into a wrapper
 # would believe it had one. If that day comes the check goes red, which is the
 # point, and the entry is added then with a measurement beside it.
@@ -508,7 +519,7 @@ function run_all(scratch: str) -> report.Report?
     numbered(@r, living: living)
     named(@r, living: living)
     c_files(@r, living: living)
-    citations(@r, present: walked)
+    citations(@r, present: walked, ignored: ignored_paths(scratch))
     english(@r, present: walked)
     exemptions(@r, present: walked)
     expectations(@r, scratch: scratch)
@@ -539,7 +550,7 @@ function is_generated(path: str) -> bool
 
 # Every exemption still selects a file.
 #
-# This is the check `site/log.html` needed and did not have. That entry stopped
+# This is the check `site/log.html` (deleted 2026-08-18) needed and did not have. That entry stopped
 # matching anything the day the site's pages moved into `site/public/`, and it
 # went on sitting in RECORD reading like a rule — the walk skipped nothing, and
 # nothing said so. The comment above QUOTES_THE_OLD_SPELLING describes the same
@@ -700,31 +711,342 @@ function c_files(@r: report.Report, living: [str])
     else
         report.keep_pass(@r)
 
-# The two living documents may not cite a path that does not exist.
+# Directories this repository HAS HAD, beside the ones it has. **Panel 086's
+# measured hole, closed rather than recorded**: anchoring a claim on directories
+# that exist TODAY is self-adjusting in the wrong direction, because a citation
+# into a tree that was archived stops being a claim on the very day it most needs
+# to be one. Measured 2026-08-19, one commit after the check landed: 6 passed,
+# three dead citations unseen. These four are retirements the record already
+# documents, and this list grows only when something is retired.
+constant RETIRED_ROOTS: [str]
+    [
+        "crates"
+        "docs/debrief"
+        "docs/defects"
+        "docs/reasoning"
+    ]
+
+# Where this repository's prose puts a module when it writes the SHORT name.
+# `ir/lower.hero` means `selfhost/ir/lower.hero`, and every document in the tree
+# writes it that way; so does `parts/thread.c` for `runtime/parts/thread.c`. A
+# checker that does not know the house shorthand shouts at correct prose, which
+# is the 52%-false-positive rule panel 086 measured and refused.
+constant HOMES: [str]
+    [
+        ""
+        "selfhost/"
+        "tests/"
+        "tests/harness/"
+        "runtime/"
+        "examples/"
+        "docs/"
+        "site/"
+        "site/src/"
+        "tests/golden/"
+        ".claude/skills/"
+        "archive/bootstrap-rs/"
+        "archive/bootstrap-rs/heroes/"
+        "archive/bootstrap-rs/heroes/src/"
+        "archive/bootstrap-rs/heroes-cli/"
+        "archive/bootstrap-rs/heroes-cli/src/"
+    ]
+
+# Whether this line is a human writing to a human, which is the only place a
+# CITATION can be. A path inside a string literal is DATA: a `NOSUCH.md` under `docs/` in
+# a test is the fixture that proves the compiler says *no such file*, and a
+# checker that reads it reports the test as the defect. Measured before this
+# rule existed: of 299 candidates in live files, 5 whole classes were code and
+# not prose.
+function is_prose(document: str, row: str) -> bool
+    if strings.ends_with(text: document, suffix: ".md")
+        return true
+    t = strings.trimmed(row)
+
+    if strings.starts_with(text: t, prefix: "#")
+        return true
+
+    if strings.starts_with(text: t, prefix: "//")
+        return true
+
+    if strings.starts_with(text: t, prefix: "*")
+        return true
+    return strings.starts_with(text: t, prefix: "/*")
+
+# The punctuation a citation sits inside, turned to space so `words` can cut it:
+# backticks, quotes, brackets and the separators prose puts between two paths.
+function unpunctuated(row: str) -> str
+    out: [str] @ []
+
+    for ch in row.chars()
+        if ch == "`" || ch == "\"" || ch == "'" || ch == "(" || ch == ")" || ch == "[" || ch == "]" || ch == "," || ch == ";"
+            out @ out.push(" ")
+        else
+            out @ out.push(ch)
+
+    return out.join("")
+
+# A citation may end in a line or a line RANGE — `stack.c:202-213`, `x.hero:5:12`
+# — and the path claim is the half before the first `:` that is followed by a
+# digit. Cutting it is the same move `without_member` makes for `::name`.
+# **Byte offsets and not character offsets, and the difference is a panic.**
+# `.chars()` counts characters and `slice` cuts bytes; the two agree on ASCII
+# and part company on the first accented word in a comment. Measured: this
+# function read a character index into a byte slice and the suite died with
+# `panic: string slice splits a character` on the real tree.
+function without_position(token: str) -> str
+    i: i64 @ 0
+
+    while i + 1 < token.len()
+        if token[i] == ':' && is_digit(token[i + 1])
+            return token.slice(from: 0, to: i)
+        i @ i + 1
+
+    return token
+
+# Leading and trailing prose punctuation. A sentence ends and a citation does
+# not: `runtime/parts/desc.c.` names a file whose name has no full stop.
+function unedged(token: str) -> str
+    first: i64 @ 0
+    past: i64 @ token.len()
+
+    while first < past && (token[first] == '*' || token[first] == ':')
+        first @ first + 1
+
+    while past > first && (token[past - 1] == '.' || token[past - 1] == '*' || token[past - 1] == ':' || token[past - 1] == '?' || token[past - 1] == '!')
+        past @ past - 1
+
+    return token.slice(from: first, to: past)
+
+# `syntax/{decl,data}.rs` is TWO claims, and until 2026-09-06 it was none: the
+# brace form is one of the two shapes panel 086 measured this check cannot read,
+# and it is 26 citations in `selfhost/` alone. Expanding it is not a heuristic —
+# it is the shell's own semantics, exactly.
+function expanded(token: str) -> [str]
+    open_at = strings.index_of(text: token, needle: "{")
+
+    if open_at.is_err()
+        return [token]
+    close_at = strings.index_of(text: token, needle: "}")
+
+    if close_at.is_err() || close_at.must() < open_at.must()
+        # A brace form wrapped across two lines — `emit/{ctype,\n typedefs}.rs`.
+        # Half a token is half a promise, and neither half is checkable, so the
+        # line says nothing rather than something false.
+        return []
+    before = token.slice(from: 0, to: open_at.must())
+    after = token.slice(from: close_at.must() + 1, to: token.len())
+    out: [str] @ []
+
+    for part in strings.split_text(text: token.slice(from: open_at.must() + 1, to: close_at.must()), separator: ",")
+        for one in expanded(before + strings.trimmed(part) + after)
+            out @ out.push(one)
+
+    return out
+
+# Whether the line carries its own evidence for a path that does not resolve.
+# **This is what replaces an exemption list**, and it is not a new rule: it is
+# the sentence this check's own failure message already asks for — *if the claim
+# is dated history, say so in the sentence and point at where the bytes are
+# now*. A list of exempt paths is a second place where truth lives, and this
+# repository's record is a long account of second places going stale.
+function is_dated(row: str) -> bool
+    cs = row.chars()
+    i: i64 @ 0
+
+    while i + 9 < cs.len()
+        if four_digits(cs, at: i) && cs[i + 4] == "-" && two_digits(cs, at: i + 5) && cs[i + 7] == "-" && two_digits(cs, at: i + 8)
+            return true
+        i @ i + 1
+
+    return false
+
+function four_digits(cs: [str], at: i64) -> bool
+    return two_digits(cs, at: at) && two_digits(cs, at: at + 2)
+
+function two_digits(cs: [str], at: i64) -> bool
+    if at + 1 >= cs.len()
+        return false
+
+    if cs[at].len() != 1 || !is_digit(cs[at][0])
+        return false
+    return cs[at + 1].len() == 1 && is_digit(cs[at + 1][0])
+
+# Does this token name something, resolved the way a READER resolves it? From
+# the repository root when it starts at one; through the house shorthand
+# (`HOMES`); and from the citing file's own directory or any directory above
+# it, which is how a relative pointer inside a package is followed. Every
+# expansion of a brace form must name something: `syntax/{decl,data}.rs` is a
+# promise about two files and half a promise is a broken one.
+function names_something(token: str, document: str, known: {str: bool}, ignored: {str: bool}) -> bool
+    for part in expanded(token)
+        if !one_names(part: part, document: document, known: known, ignored: ignored)
+            return false
+
+    return true
+
+function one_names(part: str, document: str, known: {str: bool}, ignored: {str: bool}) -> bool
+    if is_ignored(part: part, ignored: ignored)
+        return true
+
+    if !known[part].is_err()
+        return true
+
+    for home in HOMES
+        if !known[home + part].is_err()
+            return true
+
+    dir: str @ document
+    walking: bool @ true
+
+    while walking
+        at = last_slash(dir)
+
+        if at.is_err()
+            walking @ false
+        else
+            dir @ dir.slice(from: 0, to: at.must())
+
+            if !known[dir + "/" + part].is_err()
+                return true
+
+    # The slug case, and it is the only one that pays a scan: a record cited by
+    # its number alone, `docs/panel/042`. Everything above is a map lookup,
+    # because `known` carries every directory as well as every file.
+    return exists_or_prefixes(token: part, known: known)
+
+function last_slash(text: str) -> i64?
+    at: i64? @ fail("none", "no slash")
+    i: i64 @ 0
+
+    while i < text.len()
+        if text[i] == '/'
+            at @ ok(i)
+        i @ i + 1
+
+    return at
+
+# Whether this bare word is a path CLAIM: it has a `/`, no glob or angle
+# bracket, and its first component is a directory this repository has or HAS
+# HAD. Braces are allowed here where `anchored` refuses them, because
+# `expanded` reads them exactly.
+function is_claim(token: str, roots: {str: bool}) -> bool
+    at = strings.index_of(text: token, needle: "/")
+
+    if at.is_err()
+        return false
+
+    if strings.starts_with(text: token, prefix: "/") || strings.starts_with(text: token, prefix: "http")
+        return false
+
+    for ch in token.chars()
+        if ch == " " || ch == "*" || ch == "<" || ch == ">" || ch == "?" || ch == "|" || ch == "\\"
+            return false
+
+    head = token.slice(from: 0, to: at.must())
+
+    if !roots[head].is_err()
+        return true
+
+    for retired in RETIRED_ROOTS
+        if head == retired || strings.starts_with(text: token, prefix: retired + "/")
+            return true
+
+    # **Panel 092's half, narrowed to the languages this repository writes its
+    # own source in.** A root that has DIED is not a root, so anchoring on
+    # today's directories goes green over exactly the citations this check
+    # exists for — which is how `commands/flags.rs::FLAGS` sat in `CLAUDE.md`
+    # for months. An extension is a fact about the token itself and survives the
+    # deletion of everything around it. **`.rs` and `.hero` and not `.h`**,
+    # measured 2026-09-06: a `.h` under an unknown root is a C library's header
+    # — `sys/stat.h`, `curl/curl.h`, `SDL3/SDL.h` — which is a name in C's world
+    # and not a path in this one, and reading them as claims put a whole class
+    # of correct prose on the report. **And not `.hero` either**, measured the
+    # same hour: a `.hero` under an unknown root is this language's own MODULE
+    # PATH being explained — `use syntax/decl`, `geom/point.hero`, `lib/util.hero`
+    # — which is vocabulary rather than citation, and reading it as a claim put
+    # fourteen correct sentences on the report. `.rs` is left because this
+    # repository writes no Rust any more: a `.rs` in live prose is a pointer
+    # into the bootstrap and nothing else.
+    return strings.ends_with(text: token, suffix: ".rs")
+
+# Every path claim on one line of prose.
+function claims_on(row: str, roots: {str: bool}) -> [str]
+    found: [str] @ []
+
+    for piece in strings.words(unpunctuated(row))
+        token = unedged(without_position(without_member(piece)))
+
+        if is_claim(token: token, roots: roots)
+            found @ found.push(token)
+
+    return found
+
+function slashes(token: str) -> i64
+    n: i64 @ 0
+
+    for ch in token.chars()
+        if ch == "/"
+            n @ n + 1
+
+    return n
+
+# EVERY living file may not cite a path that does not exist, and a path that
+# does not exist is accepted only when the line carries its own evidence.
 #
 # **This is the check Linux had to build.** `make refcheckdocs`
-# (`scripts/documentation-file-ref-check`) exists because live documentation kept
-# citing paths that had moved — a 27-patch *"docs: Fix more broken references"*
-# series in 2018 — and panel 086's historian named it as the documented failure
-# mode of leaving a citation pointing into an archive. This project was one commit
-# away from the same thing: `design.md` cited
-# `archive/bootstrap-rs/heroes/src/measure/gate.rs` twice as a LIVE home while `archive/bootstrap-rs/` was
-# being archived.
+# (`scripts/documentation-file-ref-check`) exists because live documentation
+# kept citing paths that had moved — a 27-patch *"docs: Fix more broken
+# references"* series in 2018 — and panel 086's historian named it as the
+# documented failure mode of leaving a citation pointing into an archive.
 #
-# THE RULE IS ANCHORED, AND THE ALTERNATIVE WAS MEASURED AND REFUSED. Panel 086's
-# compiler-engineer measured both: "any backticked token that looks like a path"
-# gives **145 occurrences, 84 distinct, 44 of them missing — 52% false positives**,
-# which is a check nobody would keep. Anchored — the token's FIRST component is an
-# existing directory of this repository, and the token holds no `*`, `<`, `>`, `{`,
-# `}` or space — gives **47 occurrences, 34 distinct, 2 misses**, and both misses
-# are directory prefixes without a slug (`docs/panel/042`), which prefix matching
-# accepts with no allow-list at all.
+# **IT READ TWO DOCUMENTS UNTIL 2026-09-06 AND WAS GREEN OVER 164 DEAD
+# POINTERS.** Measured 2026-09-06: `crates/` appeared 179 times in 145 files under
+# `selfhost/` and 19 under `tests/`, eighteen days after that tree became
+# `archive/bootstrap-rs/`, and one of the 164 was THIS FILE. Three reasons, and
+# each one is a line of code above: it read `design.md` and `CLAUDE.md` only;
+# it read backticked tokens only, while the compiler's own citations are bare;
+# and it could not read the brace form, which panel 086 measured and recorded as
+# a permanent limit — `expanded` reads it exactly now, because shell brace
+# expansion is semantics rather than a guess.
 #
-# Its honest limit, stated by the seat that measured it: it catches four of the six
-# citations in panel 086's own class. `CLAUDE.md`'s `{lexer,syntax,types}` brace
-# form and design.md's quoted `grep` command are outside the rule by construction —
-# a rule that tried to read those would be the 52% one.
-function citations(@r: report.Report, present: [str])
+# **THERE IS NO EXEMPTION LIST, AND THAT IS THE DESIGN.** Four shapes of
+# path-like prose are legitimate and would each have wanted a line in one: a
+# sentence that says a file is gone and where it went; a placeholder; a
+# deliberately absent path in a fixture; a generated artefact. An exemption list
+# is a second place where truth lives, and this repository's record is a long
+# account of second places going stale — `DECIDE.md` at 391 KB with zero open
+# items, a rule written in three documents and performed by none. So instead:
+# **the LINE carries its own evidence.** A path that does not resolve is
+# accepted when the line holds a date, or another path that does resolve. That
+# is not a new rule — it is the sentence this check's own failure message has
+# always asked for. Fixtures and generated artefacts fall out for free, because
+# `is_prose` reads comments and markdown and never a string literal.
+# What git deliberately does NOT track, asked of git rather than guessed at.
+# `site/dist/`, `/build`, `.claude/worktrees/`, `site/.cache/` are real things
+# this repository writes and refuses to keep, and prose about them is correct
+# prose. A checker that calls them dead citations is reading `.gitignore` as a
+# list of mistakes. One command, not a list in this file: the list already
+# exists and git is the thing that reads it.
+function ignored_paths(scratch: str) -> {str: bool}
+    out: {str: bool} @ {}
+    ran = shell.run(
+        scratch: scratch,
+        program: "git",
+        words: ["git", "ls-files", "--others", "--ignored", "--exclude-standard", "--directory"]
+    )
+
+    if ran.is_err()
+        return out
+
+    for line in strings.lines(ran.must().out)
+        entry = strings.trimmed(line)
+
+        if entry.len() > 0
+            out[strings.without_suffix(text: entry, suffix: "/")] @ true
+
+    return out
+
+function citations(@r: report.Report, present: [str], ignored: {str: bool})
     known: {str: bool} @ {}
     roots: {str: bool} @ {}
 
@@ -735,27 +1057,80 @@ function citations(@r: report.Report, present: [str])
         if !at.is_err()
             roots[path.slice(from: 0, to: at.must())] @ true
 
+        # every directory above it, so that naming a directory is a LOOKUP and
+        # not a scan over every path the repository has
+        dir: str @ path
+        walking: bool @ true
+
+        while walking
+            cut = last_slash(dir)
+
+            if cut.is_err()
+                walking @ false
+            else
+                dir @ dir.slice(from: 0, to: cut.must())
+                known[dir] @ true
+
     dead: [str] @ []
 
-    for document in WATCHED
+    for document in present
+        if is_record(document) || is_generated(document)
+            continue
         text = read_file(document)
 
         if text.is_err()
-            report.keep_failure(@r, label: "records/citations", detail: "  cannot read " + document)
-            return
+            continue
+        number: i64 @ 0
 
-        for token in path_tokens(text: text.must(), roots: roots)
-            if !exists_or_prefixes(token: token, known: known)
-                dead @ dead.push("    " + document + ": " + token)
+        for row in strings.lines(text.must())
+            number @ number + 1
+
+            if !is_prose(document: document, row: row)
+                continue
+            found = claims_on(row: row, roots: roots)
+
+            if found.len() > 0
+                read_the_line(
+                    dead: @dead,
+                    row: row,
+                    found: found,
+                    document: document,
+                    number: number,
+                    known: known,
+                    ignored: ignored
+                )
 
     if dead.len() > 0
         report.keep_failure(
             @r,
             label: "records/citations",
-            detail: "  a living document cites a path that does not exist:\n" + dead.join("\n") + "\n  A citation into a moved or deleted file is read as current by whoever follows\n  it. If the file moved, repoint the sentence; if the claim is dated history,\n  say so in the sentence and point at where the bytes are now."
+            detail: "  a living file cites a path that does not exist:\n" + dead.join("\n") + "\n  A citation into a moved or deleted file is read as current by whoever follows\n  it. If the file moved, repoint the sentence. If the claim is dated history,\n  the line needs its DATE or a path that still resolves — that is the evidence\n  this check accepts, and it is why there is no list of exemptions to edit."
         )
     else
         report.keep_pass(@r)
+
+# One line's verdict. Split out because `citations` is already a walk inside a
+# walk inside a walk, and this is the part with the rule in it.
+function read_the_line(@dead: [str], row: str, found: [str], document: str, number: i64, known: {str: bool}, ignored: {str: bool})
+    missing: [str] @ []
+
+    for token in found
+        if !names_something(token: token, document: document, known: known, ignored: ignored)
+            missing @ missing.push(token)
+
+    if missing.len() == 0
+        return
+
+    # **A DATE, and not a living path beside it.** A resolving sibling was
+    # accepted as evidence until it was measured: `runtime/parts/run.c` cites a
+    # golden that does not exist and names a live file on the same line, so the
+    # sibling rule silenced a real dead citation by coincidence. A date is a
+    # claim a reader can check against the history; a neighbour is an accident.
+    if is_dated(row)
+        return
+
+    for token in missing
+        dead @ dead.push("    " + document + ":" + number.to_str() + ": " + token)
 
 # **The repository's working text is English** (CLAUDE.md §11), and this is the
 # check that says so out loud instead of trusting whoever writes next.
@@ -817,7 +1192,7 @@ function reads_as_prose(path: str) -> bool
     return false
 
 # Prefix match, so a directory covers the files under it — `is_record`'s rule,
-# and the `/` guard is why `site/src/html/italy.md` would not be exempted by an
+# and the `/` guard is why an `italy.md` under `site/src/html/` would not be exempted by an
 # entry naming `site/src/html/it`.
 # This module itself, by exact name. A suffix match like `quoting`'s would also
 # exempt a copy of this file anywhere in the tree; there is one.
@@ -917,26 +1292,6 @@ function latin_words(line: str) -> [str]
 
     return out
 
-# Every backticked token that is anchored at a directory of this repository.
-function path_tokens(text: str, roots: {str: bool}) -> [str]
-    found: [str] @ []
-    inside: bool @ false
-    piece: [str] @ []
-
-    for ch in text.chars()
-        if ch == "`"
-            if inside
-                token = without_member(piece.join(""))
-
-                if anchored(token: token, roots: roots)
-                    found @ found.push(token)
-                piece @ piece.slice(from: 0, to: 0)
-            inside @ !inside
-        else if inside
-            piece @ piece.push(ch)
-
-    return found
-
 # A citation may name what is IN the file — `selfhost/cli/flags.hero::flags()` —
 # and the path claim is the half before the `::`. Cutting it is not cosmetic:
 # **it is what would have caught the citation that provoked this** (panel 092).
@@ -953,32 +1308,6 @@ function without_member(token: str) -> str
     if at.is_err()
         return token
     return token.slice(from: 0, to: at.must())
-
-# Whether this backticked token is a path claim: one word, no glob or brace, and
-# then EITHER its first component is a directory this repository has, OR it ends in
-# a file extension.
-#
-# **The second half is not belt-and-braces, it is the hole the first half had.**
-# Anchoring on existing directories is self-adjusting in the wrong direction: the
-# moment `archive/bootstrap-rs/` moved to `archive/bootstrap-rs/`, every citation of
-# `archive/bootstrap-rs/heroes/src/measure/gate.rs` stopped being a path claim — because its root
-# had ceased to exist — so the check went green over exactly the citations it was
-# built to catch. Measured 2026-08-19, one commit after it landed: 6 passed, three
-# dead citations unseen. A file extension is a fact about the token itself and
-# survives the deletion of everything around it.
-function anchored(token: str, roots: {str: bool}) -> bool
-    at = strings.index_of(text: token, needle: "/")
-
-    if at.is_err()
-        return false
-
-    for ch in token.chars()
-        if ch == " " || ch == "*" || ch == "<" || ch == ">" || ch == "{" || ch == "}" || ch == "\"" || ch == "`"
-            return false
-
-    if !roots[token.slice(from: 0, to: at.must())].is_err()
-        return true
-    return has_extension(token)
 
 # Whether the token's last component carries a `.suffix` of one to nine letters or
 # digits — `gate.rs`, `ci.yml`, `heroes-spec.md`. Not `docs/panel/042`, and not
@@ -1177,7 +1506,7 @@ function sitting_number(path: str) -> i64?
 # long as it likes, provided an OPEN item in `docs/work/DECIDE.md` names it.
 # The pair is the invariant; neither half alone is.
 #
-# **The constant was called `QUEUE` and held `docs/debrief/QUEUE.md`'s neighbour
+# **The constant was called `QUEUE` and held `docs/debrief/QUEUE.md`'s neighbour (gone 2026-08-26)
 # until 2026-08-26**, which is the confusion the rename fixed one level up: it
 # reads the DECISIONS list, and calling it the queue is what let `/panel`'s own
 # skill file tell a sitting to append its ratification item to the record instead
@@ -1200,7 +1529,7 @@ constant SCHEDULED: str
 # (repaired 2026-08-25, by this check firing on panel 091 — the first sitting to
 # reach it with a pending verdict). It read `"panel " + number.to_str()`, so for
 # `091-*.md` it hunted for `panel 91` while every reference in this repository
-# writes `panel 091`: measured that day, `docs/debrief/DECIDE.md` contains the
+# writes `panel 091`: measured 2026-08-26, `docs/debrief/DECIDE.md` contains the
 # padded form 30-odd times and the unpadded form **zero** times. So `queued`
 # could not return true for any sitting between 063 and 099 — the entire live
 # range — and the correction that gave this check its second half was inert from
@@ -1718,28 +2047,39 @@ test "a dead citation is caught, and the anchored rule ignores what it must"
     # A directory, with and without its slash.
     assert exists_or_prefixes(token: "selfhost/", known: known)
 
-    # What the rule must NOT read as a path claim: a brace form, a glob, a
-    # command with spaces, a bare word, and something rooted nowhere.
-    assert !anchored(token: "docs/heroes/src/{lexer,syntax}/", roots: roots)
-    assert !anchored(token: "docs/**/*.md", roots: roots)
-    assert !anchored(token: "grep -rn ORDER: selfhost/", roots: roots)
-    assert !anchored(token: "SPEC_TOKENS", roots: roots)
-    assert !anchored(token: "vendor/tokenizers", roots: roots)
+    # What the rule must NOT read as a path claim: a glob, a bare word, an
+    # absolute path and a URL. **A brace form IS one now**, where the old rule
+    # refused it: `expanded` reads it exactly, so it is two claims and not zero.
+    assert !is_claim(token: "docs/**/*.md", roots: roots)
+    assert !is_claim(token: "SPEC_TOKENS", roots: roots)
+    assert !is_claim(token: "/usr/include/stdio.h", roots: roots)
+    assert !is_claim(token: "https://example.com/a.md", roots: roots)
+    assert is_claim(token: "docs/heroes/src/{lexer,syntax}/mod.rs", roots: roots)
+    assert expanded("docs/x/{a,b}.rs") == ["docs/x/a.rs", "docs/x/b.rs"]
 
-    # And what it must read: an ordinary citation.
-    assert anchored(token: "docs/ROADMAP.md", roots: roots)
-    assert anchored(token: "selfhost/main.hero", roots: roots)
+    # And what it must read: an ordinary citation, and one whose root has DIED,
+    # which is the case panel 086 measured this check going green over.
+    assert is_claim(token: "docs/ROADMAP.md", roots: roots)
+    assert is_claim(token: "selfhost/main.hero", roots: roots)
+    assert is_claim(token: "crates/heroes/src/emit/gate.rs", roots: roots)
 
-    # The tokens come out of the backticks and nowhere else.
-    tokens = path_tokens(
-        text: "prose selfhost/main.hero is not in backticks, `selfhost/main.hero` is, and `plain` is not a path",
+    # **The tokens no longer come out of the backticks alone**, and that is the
+    # repair: the compiler's own citations carry none, which is how 164 files
+    # pointed at a moved tree while this check stayed green.
+    bare = claims_on(
+        row: "# Port of selfhost/main.hero, and `docs/ROADMAP.md` beside it, and plain is not a path",
         roots: roots
     )
-    assert tokens == ["selfhost/main.hero"]
+    assert bare == ["selfhost/main.hero", "docs/ROADMAP.md"]
+
+    # A line that carries its own evidence: a date, or a path that resolves.
+    assert is_dated("# it was `docs/debrief/QUEUE.md` until 2026-08-26")
+    assert !is_dated("# it is `docs/debrief/QUEUE.md`")
 
     # The check itself, firing: a stand-in document citing something absent.
     fired: report.Report @ report.empty()
-    citations(@fired, present: ["design.md"])
+    nothing: {str: bool} @ {}
+    citations(@fired, present: ["design.md"], ignored: nothing)
     assert fired.failed + fired.passed == 1
 
 test "the boundary rule catches the numbers and nothing else"
@@ -1955,9 +2295,9 @@ test "a citation that names a member is checked at its file, and that is the hol
     # the whole repair: it becomes visible to the check rather than skipped.
     roots: {str: bool} @ {}
     roots["selfhost"] @ true
-    assert anchored(token: without_member("commands/flags.rs::FLAGS"), roots: roots)
-    assert !anchored(token: "commands/flags.rs::FLAGS", roots: roots)
-    assert anchored(token: without_member("selfhost/cli/flags.hero::flags()"), roots: roots)
+    assert is_claim(token: without_member("commands/flags.rs::FLAGS"), roots: roots)
+    assert !is_claim(token: "commands/flags.rs::FLAGS", roots: roots)
+    assert is_claim(token: without_member("selfhost/cli/flags.hero::flags()"), roots: roots)
 
 test "the ROADMAP's § Where we are is counted to its own ceiling"
     # The real file, which is the point: this check exists because the section
@@ -1968,3 +2308,20 @@ test "the ROADMAP's § Where we are is counted to its own ceiling"
 
     # And the ceiling is a number this file states rather than one it remembers.
     assert WHERE_CEILING == 15
+
+# Whether git is deliberately not tracking this, or anything above it.
+function is_ignored(part: str, ignored: {str: bool}) -> bool
+    walk: str @ strings.without_suffix(text: part, suffix: "/")
+    looking: bool @ true
+
+    while looking
+        if !ignored[walk].is_err()
+            return true
+        cut = last_slash(walk)
+
+        if cut.is_err()
+            looking @ false
+        else
+            walk @ walk.slice(from: 0, to: cut.must())
+
+    return false

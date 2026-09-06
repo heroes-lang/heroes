@@ -142,9 +142,12 @@ static int hero_run_inherits(const char *path) {
  * backslash immediately before a quote — the closing one included — is doubled,
  * which is why `C:\dir\` at the end of a quoted word needs `C:\dir\\`.
  *
- * This function replaces one that had a test (`cli_shell.hero`'s `sq`), so it
- * ships with one of its own: `tests/golden/run/win-quote-round-trip.hero`
- * asserts the round trip on the words that break naive implementations.
+ * This function replaces one that had a test (`cli_shell.hero`'s `sq`) AND HAS
+ * NONE OF ITS OWN. This comment claimed a golden that was never written — `git
+ * log --diff-filter=A` finds zero commits adding it — and it said so from the
+ * day the function landed until 2026-09-06, when the citation check learned to
+ * read the compiler's own comments and reported it. The round trip is owed and
+ * is in `docs/work/SCHEDULED.md`.
  * **NOT VERIFIED on a real Windows CRT** — the round trip is checked against
  * this project's own parser on the platforms it can run on, and the first green
  * Windows tag run is what closes that gap. */

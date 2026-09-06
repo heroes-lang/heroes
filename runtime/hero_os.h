@@ -65,7 +65,7 @@ int64_t hero_file_write(const char *path, HeroStr text);
 /* One blob to the error stream, written whole, no newline added and no status
  * returned (author decision 2026-08-24; `runtime/parts/os.c` carries the whole
  * argument). It exists so the compiler's own `eprint` does not have to bind
- * POSIX: `selfhost/cli_io.hero` reached `write(2)` through `extern "unistd.h"`,
+ * POSIX: `selfhost/cli/io.hero` reached `write(2)` through `extern "unistd.h"`,
  * which put that header into `seed/heroes.c` and made the self-hosted compiler
  * unbuildable on a platform without POSIX headers.
  *

@@ -18,7 +18,7 @@
 // It lives beside the site because wrangler collects Functions from a
 // `functions/` directory in the WORKING DIRECTORY it is run from, never from
 // inside the output directory it is handed. The deploy step runs from `site/`,
-// so `site/functions/` and that step's `working-directory` are a single
+// so `site/functions/` (where this lived until 2026-09-03) and that step's `working-directory` are a single
 // decision: move one without the other and the deploy still succeeds, silently,
 // with every URL of the site open and nothing in the log to say so.
 //

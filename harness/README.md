@@ -30,5 +30,5 @@ by construction, so it carries no information.
 - `tasks/` — the frozen task suite (see its README for authorship rules).
 
 Provenance, on every run: spec sha, compiler sha, model id, prompt sha,
-suite sha, recorded into `docs/measurements/NNN.md` (directory born with the
+suite sha, recorded into `docs/measurements/<NNN>.md` (directory born with the
 first run). Never diff runs with different compiler shas unless flagged.

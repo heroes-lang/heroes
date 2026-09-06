@@ -673,7 +673,7 @@ seam is harder to read than a long one.
 port's measurement). Heroes refuses module cycles — `module_cycle` fires on the
 `use` edge, whatever it carries, measured both ways — and a recursive-descent
 grammar is mutually recursive by construction, so its knots cannot be split at
-all: over `archive/bootstrap-rs/heroes/src/syntax/` (then `crates/heroes/src/syntax/`), **`expr`+`primary`+`control`+`stmt`+
+all: over `archive/bootstrap-rs/heroes/src/syntax/` (named `crates/heroes/src/syntax/` until 2026-08-19), **`expr`+`primary`+`control`+`stmt`+
 `name_stmt` is 1025 lines and `decl`+`data`+`externs`+`extern_members` is 736**,
 each one module or nothing. This is `toolchain.rs`'s reason at its limit: there
 the cut merely ran against a seam, here **no cut exists**, and a rule that cannot

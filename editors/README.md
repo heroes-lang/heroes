@@ -92,7 +92,7 @@ four spaces (design.md §4.15), so tell the editor:
 ## Keeping it honest
 
 The grammar is a *second* description of the lexical surface, so it can
-drift from `crates/heroes/src/lexer/`. When a token kind, a keyword or an
+drift from `selfhost/lexer.hero`. When a token kind, a keyword or an
 escape rule changes, change it here in the same commit, then repackage. It
 is highlighting, not truth: the compiler is the only authority
 (CLAUDE.md § Precedence).

@@ -14,7 +14,7 @@ Your questions, in order:
    lowering AND the backend must all handle, or is it erased in the frontend?
 2. How many lines, and **where do they land** — lexer, checker, descriptors,
    ownership, emitter? You MUST ground this in the actual code: read the
-   relevant `crates/heroes/src/` modules and cite file + current line count.
+   relevant `selfhost/` and `runtime/` modules and cite file + current line count.
    A cost claim without a file citation is inadmissible.
 3. Does it still fit one person? (Pascal-P4 is ~4000 lines; that is the scale.)
 
