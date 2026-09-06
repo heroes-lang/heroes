@@ -1,0 +1,17 @@
+# `owned sqlite3_free` hands the freeing to the compiler, so the program calling
+# it too frees the string twice — exit 0 and silent on both platforms, which is
+# the worst answer a memory bug can give (§4.19, panel 109's condition 2, the
+# one four seats wrote independently).
+#
+# Written for the class and not for one witness: the mark rides a RESULT here,
+# and the refusal reads the callee's name, so it fires the same way for a mark
+# on a `@` parameter. Its two negative shapes are in `selfhost/check/freer.hero`
+# — no mark at all, and a mark naming a different freer — because a refusal
+# that cannot be turned off is not a refusal, it is a ban.
+extern "sqlite3.h" link "sqlite3"
+    function sqlite3_errmsg(db: ptr) -> cstr owned sqlite3_free
+    function sqlite3_free(p: ptr)
+
+function main()
+    sqlite3_free(nullptr)  #~ owned_freer_called
+    print(0)
