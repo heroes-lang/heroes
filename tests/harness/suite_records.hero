@@ -151,10 +151,20 @@ constant QUOTES_THE_OLD_SPELLING: [str]
 # claim a later milestone could falsify (CLAUDE.md §14). Writing that reasoning
 # down is what this list is for — a refused name is written *once*, in the
 # sentence that refuses it, and nowhere else.
+#
+# **`M-wasm-playground` and `M-browser-compiler` joined it 2026-09-06**, both
+# runners-up to `M-online-compiler`, and they are the first pair refused for the
+# same reason as each other: the milestone's opening question **is** which engine
+# runs the visitor's program, so either id would assert the answer the sitting
+# exists to give. `wasm` is also owed to the later half of Part 7 item 15
+# (`design.md:2645`), which is the ordinary §14 rule — an area a later milestone
+# needs stays free.
 constant REFUSED: [str]
     [
         "M-language"
         "M-foreign-ownership"
+        "M-wasm-playground"
+        "M-browser-compiler"
     ]
 
 # Measured 2026-08-25: 40 rows in the ROADMAP's alias table (39 until
@@ -235,8 +245,19 @@ constant REFUSED: [str]
 # sitting closing**, before the name had reached the alias table, which is the
 # order §14 asks for and the third time this count has caught its own case.
 # The id has no chain row: placing one is the author's (`SCHEDULED.md`).
+#
+# **60 -> 61 on 2026-09-06**, `M-online-compiler`, scheduled by author
+# instruction: the compiler reached without installing anything, for the visitor
+# who will not run even the one clang line M-install-channels builds every
+# channel from. **It half-reverses a recorded refusal, and the row says which
+# half** — `DESIGN-LOG.md:539` refused *a web playground* on 2026-09-03 because
+# wasm cannot call native C libraries, which is an argument about a Heroes
+# program compiled to wasm and not about the compiler running in a browser. The
+# id enters with its chain row in the same commit, so this number is moved by
+# hand here rather than read off a red run, and `REFUSED` gains two names in the
+# same move.
 constant ROWS: i64
-    60
+    61
 
 # The two documents whose citations are checked. They are the two a reader is sent
 # to for a rule, and the only two this project rewrites rather than appends to.
