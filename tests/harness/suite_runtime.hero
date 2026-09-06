@@ -1,6 +1,6 @@
 # design.md Part 7.13's two v1 invariants, enforced instead of assumed.
 #
-# WHAT THE RULES ARE. Part 7.13 (`design.md:2582-2588`) ends with *"two
+# WHAT THE RULES ARE. Part 7.13 (`design.md:2618-2624`) ends with *"two
 # rules, both already true, both now invariants"*. Reach the allocator
 # through a **single point**, which §4.20 (`design.md:2210-2222`) names as
 # `runtime/parts/alloc.c`; and keep `incref`/`decref` behind a **narrow,
@@ -32,6 +32,13 @@
 #    that names an `incref` or a `decref` is a PROTOTYPE — `;`-terminated,
 #    no body. The header is the one file the generated C includes, so
 #    anything defined there is code clang may smear into a caller.
+# 3. Every object in the runtime that survives between calls is
+#    `_Thread_local`, or `_Atomic`, or written down in this file with the
+#    reason it may stay shared and the milestone that will take it. Rule 3
+#    arrived at M-isolated-threads step 3, and § Rule 3 below carries the
+#    argument — including the five objects it found on its first run that
+#    no count in this project had ever seen, because they live inside
+#    function bodies and every count had looked at file scope.
 #
 # COMMENTS AND STRING LITERALS ARE NOT CODE, and this suite would be
 # noise without that. `runtime/parts/run.c:484` contains the sentence
@@ -98,6 +105,71 @@ constant LEAST_AT_THE_POINT: i64
 constant LEAST_REFCOUNT: i64
     6
 
+## Rule 3 — every piece of shared mutable state is named
+
+# WHAT THIS IS FOR. Part 7.13's model is isolated per-thread heaps, and
+# what stands between the runtime and that model is not one thing: it is
+# every object the C keeps between calls. Panel 111 measured four classes
+# of memory corruption from one line of ordinary Heroes each, and three
+# of them come from an object on the list below rather than from a
+# refcount.
+#
+# WHY IT IS A CHECK AND NOT A TABLE IN A DOCUMENT, and this is the whole
+# reason it exists. The number in the record is **22 mutable file-scope
+# objects, 4 of them `_Thread_local`** (panel 111, 2026-09-05), and that
+# number is right about what it counted. What it counted is FILE SCOPE.
+# Measured by this sweep on 2026-09-06, over the same 20 files: **28
+# mutable objects, and five of them live INSIDE a function** — `f64.c`'s
+# cached C locale and four `static int done = 0;` once-guards. A `static`
+# inside a function body is shared between threads exactly as much as one
+# at the top of the file, and no count in this project had ever seen one.
+#
+# That is CLAUDE.md §1's newest rule met in the wild: the argument was
+# sound and the LIST was short, and nothing in a correct argument points
+# at the row nobody wrote down. So the list is taken from the tree on
+# every run, and the allow-list below is the only thing that may be
+# written by hand.
+#
+# WHAT IS ALLOWED. `_Thread_local` and `_Atomic` need no entry: the
+# spelling itself says the object was thought about. Everything else must
+# be named here with the reason it may stay shared, and the check fails in
+# BOTH directions — an object nobody named is red, and an entry that names
+# nothing is red too, so the day one of these becomes thread-local its
+# line here has to go.
+
+# `<path> <name> | <why it may stay shared>`. One entry covers every
+# object of that name in that file, which is what lets the four `done`
+# once-guards be two lines: `os.c` has two and `stack.c` has two, one in
+# each of its platform arms, and each pair shares the one reason.
+constant SHARED_BY_DECISION: [str]
+    [
+        "runtime/parts/array.c hero_eq_queue | the work list of a deep `==`. Its own comment has predicted this since it was written: the day threads arrive it must become `_Thread_local`, and the buffer then leaks one allocation per thread unless the thread's exit gives it back. Panel 111 reached it from safe Heroes: `a == b` on nested arrays across 8 threads is exit 139 with an empty stderr, and ASan names `heap-buffer-overflow WRITE` in `hero_eq_push`. M-isolated-threads step 4"
+        "runtime/parts/array.c hero_eq_len | the same buffer's length, and it must move with it"
+        "runtime/parts/array.c hero_eq_cap | the same buffer's capacity"
+        "runtime/parts/array.c hero_eq_running | the flag that makes a nested comparison defer to the outermost one, so it is per walk and therefore per thread"
+        "runtime/parts/dir.c hero_dir_names | the names one directory scan collected, bound at `selfhost/cli/process.hero`. Scratch that outlives no call but the scan, so it is per thread the day a thread exists. M-isolated-threads step 4"
+        "runtime/parts/dir.c hero_dir_count | how many names that scan holds"
+        "runtime/parts/dir.c hero_dir_room | how many it has room for"
+        "runtime/parts/f64.c cached | THE ONE THIS SWEEP FOUND, and the reason it sweeps function bodies. A lazily made C locale, cached, reached from BOTH float renderers, `hero_f64_render` and `hero_f32_render` — so any Heroes that prints an `f32` or an `f64`, or asks one for `to_str`, gets here. Two threads can both find it empty, both call `newlocale`, and one handle is then lost: a leak the leak gate cannot see, because it is the libc's allocation and not this runtime's. Unreachable today only because `parts/thread.c`'s guard stops a foreign thread before it arrives. M-isolated-threads step 4"
+        "runtime/parts/os.c done | two once-guards, for byte-mode stdout on Windows and for unbuffered stderr. Safe because of WHERE THEY ARE CALLED and not because of how they are written: both run inside `hero_args_set`, which the generated `main` calls before a program's first line, on the thread that owns the program. If a second caller is ever added this entry is wrong"
+        "runtime/parts/os.c hero_argc | the process's own argument count, written once by `hero_args_set` before any thread can exist and only read afterwards. Process-wide by nature: `args()` must answer the same thing on every thread"
+        "runtime/parts/os.c hero_argv | the process's own argument vector, and the same reasoning"
+        "runtime/parts/run.c hero_run_words | the argument list being built for a spawn, 257 slots, and it is ON §1.0's CLOSURE LIST — a raced count walks off the end and `execvp`s a half-built argv. M-isolated-threads step 4"
+        "runtime/parts/run.c hero_run_count | how many words that list holds, and the count that would be raced"
+        "runtime/parts/run.c hero_run_limit_seconds | the deadline the next spawn gets. It pairs with the words above, so two threads spawning at once would take each other's limit; it moves when they do"
+        "runtime/parts/stack.c hero_stack_lo | the MAIN thread's stack floor, measured once at startup. Wrong on every other thread, which is why a worker overflow is exit 132 with an empty stderr where the main thread says `panic: stack exhausted`. That is `M-thread-stacks` and panel 107 by name, not this milestone's"
+        "runtime/parts/stack.c hero_stack_hi | the main thread's stack ceiling, and the same milestone"
+        "runtime/parts/stack.c hero_stack_prev_segv | the handler that was installed before this runtime's, so a fault it does not own is passed on. Installed once, on the main thread, and read from a signal handler; `M-thread-stacks`"
+        "runtime/parts/stack.c hero_stack_prev_bus | the same, for SIGBUS"
+        "runtime/parts/stack.c done | the guard-install once-flag, in both the POSIX arm and the Windows one. `hero_args_set`'s callee, exactly like `os.c`'s pair above, and `M-thread-stacks` owns the file"
+    ]
+
+# A floor rather than an equality, on `LEAST_FILES`' reason: what would
+# make this check pass while the tree went wrong is a sweep that reads
+# nothing, and 28 is what it read on 2026-09-06.
+constant LEAST_SHARED_STATE: i64
+    24
+
 function run_all(scratch: str) -> report.Report?
     nothing: [str] = []
     files = shell.list_tree(scratch: scratch, dir: RUNTIME, skip: nothing)?
@@ -110,6 +182,7 @@ function run_all(scratch: str) -> report.Report?
     r: report.Report @ report.empty()
     keep_single_point(@r, sources: sources)
     keep_boundary(@r)
+    keep_shared_state(@r, sources: sources)
     return ok(r)
 
 # Rule 1: every allocation in the runtime happens in one file.
@@ -203,6 +276,152 @@ function keep_boundary(@r: report.Report)
         )
     else
         report.keep_pass(@r)
+
+# Rule 3: no object survives between calls in the runtime without
+# somebody having decided whether a second thread may see it.
+function keep_shared_state(@r: report.Report, sources: [str])
+    unnamed: [str] @ []
+    seen: {str: bool} @ {}
+    total: i64 @ 0
+
+    for path in sources
+        if !strings.ends_with(text: path, suffix: ".c")
+            continue
+        text = read_file(path)
+
+        if text.is_err()
+            report.keep_failure(@r, label: "runtime/threads", detail: "  cannot read " + path)
+            continue
+        rows = code_lines(text.must())
+        at: i64 @ 0
+
+        while at < rows.len()
+            row = strings.trimmed(rows[at])
+
+            if !declares_object(row)
+                at @ at + 1
+                continue
+            total @ total + 1
+
+            # The spelling itself is the decision, so these need no entry.
+            if names_word(code: row, name: "_Thread_local") || names_word(code: row, name: "_Atomic")
+                at @ at + 1
+                continue
+            key = path + " " + object_name(row)
+
+            if named_here(key)
+                seen[key] @ true
+            else
+                unnamed @ unnamed.push("    " + path + ":" + (at + 1).to_str() + ": " + row)
+            at @ at + 1
+
+    if unnamed.len() > 0
+        report.keep_failure(
+            @r,
+            label: "runtime/threads",
+            detail: "  design.md Part 7.13 is isolated per-thread heaps, so an object the runtime keeps between calls is either per thread, or atomic, or a decision somebody wrote down (design.md:2618). These are none of the three:\n" + unnamed.join("\n") + "\n  Make it `_Thread_local` if it is scratch for one walk, `_Atomic` if it is a count the whole process shares, or add it to `SHARED_BY_DECISION` in this file with the reason it may stay shared and the milestone that will take it."
+        )
+    else
+        report.keep_pass(@r)
+
+    stale: [str] @ []
+
+    for entry in SHARED_BY_DECISION
+        wanted = entry_key(entry)
+
+        if seen[wanted].is_err()
+            stale @ stale.push("    " + wanted)
+
+    if stale.len() > 0
+        report.keep_failure(
+            @r,
+            label: "runtime/threads",
+            detail: "  these entries of `SHARED_BY_DECISION` matched nothing in the tree:\n" + stale.join("\n") + "\n  An entry that names nothing is a premise that has expired in silence (CLAUDE.md §11) — the object was renamed, moved, or has become `_Thread_local` or `_Atomic` and no longer needs an excuse. Delete the line, or fix the `<path> <name>` it names."
+        )
+    else
+        report.keep_pass(@r)
+
+    if total < LEAST_SHARED_STATE
+        report.keep_failure(
+            @r,
+            label: "runtime/threads",
+            detail: "  the sweep found " + total.to_str() + " objects that survive between calls and had " + LEAST_SHARED_STATE.to_str() + " — it is not reaching the tree, and then the check above passes by seeing nothing"
+        )
+    else
+        report.keep_pass(@r)
+
+# An object that survives between calls, at file scope OR inside a
+# function body — the second is the half every count in this project had
+# missed, and `f64.c`'s cached locale is why it is swept.
+#
+# `const` is left out because it cannot be written to, and a line holding
+# `(` is a function: a prototype, a definition, or a body on one line.
+# **That last one is a premise about the world and it is written as a
+# falsifiable claim** (CLAUDE.md §11): a function POINTER at file scope
+# would be an object this reads as a function and skips. There are none
+# on 2026-09-06, measured; the day one arrives, this sentence is what is
+# wrong, and the `LEAST_SHARED_STATE` floor is what will not notice.
+function declares_object(row: str) -> bool
+    if !strings.starts_with(text: row, prefix: "static")
+        return false
+
+    if row.len() < 8
+        return false
+
+    if word_byte(row[6])
+        return false
+
+    if !strings.ends_with(text: row, suffix: ";")
+        return false
+
+    if names_word(code: row, name: "const")
+        return false
+
+    return !strings.contains(text: row, needle: "(")
+
+# The declared name: the last identifier before whatever ends the
+# declarator — `=`, `[` or the `;` itself. Walking back from there is
+# what gets `hero_dir_names` out of `static char **hero_dir_names` and
+# `hero_run_words` out of an array declaration.
+function object_name(row: str) -> str
+    cs = row.chars()
+    stop: i64 @ cs.len()
+    at: i64 @ 0
+
+    while at < cs.len()
+        c = cs[at]
+
+        if c == "=" || c == "[" || c == ";"
+            stop @ at
+            break
+        at @ at + 1
+
+    i: i64 @ stop - 1
+
+    while i >= 0 && !word_byte(cs[i][0])
+        i @ i - 1
+
+    last = i + 1
+
+    while i >= 0 && word_byte(cs[i][0])
+        i @ i - 1
+
+    return cs.slice(from: i + 1, to: last).join("")
+
+function entry_key(entry: str) -> str
+    cut = strings.index_of(text: entry, needle: " | ")
+
+    if cut.is_err()
+        return strings.trimmed(entry)
+
+    return strings.trimmed(entry.slice(from: 0, to: cut.must()))
+
+function named_here(key: str) -> bool
+    for entry in SHARED_BY_DECISION
+        if entry_key(entry) == key
+            return true
+
+    return false
 
 # Does this line declare a refcount entry point? `counts` is the general
 # half and `hero_str_incref` above is the literal one, so a rename that
@@ -421,3 +640,40 @@ test "the inline ban reads a word and not a fragment"
     assert names_word(code: "static inline int64_t hero_len(HeroStr s)", name: "inline")
     assert !names_word(code: "    /* inlined */ int64_t hero_inlineness;", name: "inline")
     assert !names_word(code: "void hero_str_incref(HeroStr s);", name: "inline")
+
+test "an object that survives between calls is one, and a function is not"
+    assert declares_object("static int64_t hero_live_blocks = 0;")
+    assert declares_object("static char **hero_dir_names = NULL;")
+    assert declares_object("static struct sigaction hero_stack_prev_segv;")
+    assert declares_object("static char *hero_run_words[HERO_RUN_MAX_ARGS + 1];")
+
+    # A prototype, a one-line body and a definition are all functions.
+    assert !declares_object("static void hero_drop_array(void *elem);")
+    assert !declares_object("static void hero_drop_nothing(void *elem) { (void)elem; }")
+    assert !declares_object("static int hero_dir_walk(const char *root, const char *prefix,")
+
+    # A table nobody can write to needs no decision.
+    assert !declares_object("static const HeroDesc hero_desc_array = {sizeof(HeroArrayHeader *)};")
+
+    # And a word that merely starts with the six letters is not the keyword.
+    assert !declares_object("staticky_thing = 0;")
+
+test "the swept object is found inside a function body too"
+    # The half every count in this project had missed. `f64.c`'s cached
+    # locale is this shape, and it is reached by printing a float.
+    assert declares_object(strings.trimmed("    static hero_locale cached = HERO_NO_LOCALE;"))
+    assert declares_object(strings.trimmed("    static int done = 0;"))
+
+test "the name is the last identifier before what ends the declarator"
+    assert object_name("static int64_t hero_live_blocks = 0;") == "hero_live_blocks"
+    assert object_name("static char **hero_dir_names = NULL;") == "hero_dir_names"
+    assert object_name("static char *hero_run_words[HERO_RUN_MAX_ARGS + 1];") == "hero_run_words"
+    assert object_name("static struct sigaction hero_stack_prev_segv;") == "hero_stack_prev_segv"
+    assert object_name("static _Thread_local bool hero_drop_running = false;") == "hero_drop_running"
+    assert object_name("static int done = 0;") == "done"
+
+test "an allow-list entry is read up to its reason, and every one names something"
+    assert entry_key("runtime/parts/os.c hero_argc | the process's own count") == "runtime/parts/os.c hero_argc"
+    assert entry_key("runtime/parts/os.c done") == "runtime/parts/os.c done"
+    assert named_here("runtime/parts/f64.c cached")
+    assert !named_here("runtime/parts/f64.c a_name_nobody_wrote")

@@ -60,12 +60,25 @@ static _Thread_local HeroArrayHeader *hero_drop_arrays = NULL;
 static _Thread_local HeroMapHeader *hero_drop_maps = NULL;
 static _Thread_local bool hero_drop_running = false;
 
-_Static_assert(sizeof(void *) <= sizeof(int64_t),
+_Static_assert(sizeof(void *) <= sizeof(HeroRefcount),
                "the pending link is stored in a doomed block's dead refcount field");
 
 /* `memcpy` rather than a cast: a pointer parked in an `int64_t` through a cast is
  * `-Wstrict-aliasing` territory, and `FLAGS` carries `-Werror` on more than one
- * aliasing warning. Every compiler folds it to a store. */
+ * aliasing warning. Every compiler folds it to a store.
+ *
+ * AND IT STAYS A `memcpy` NOW THAT THE FIELD IS `_Atomic` (M-isolated-threads
+ * step 3), which is worth a sentence because it looks like exactly the mistake
+ * this project spends tokens to avoid: a plain byte-copy into an atomic object.
+ * It is not one, and the reason is what a block on these lists IS. A block
+ * reaches here only when its count went to zero, which means the thread holding
+ * this list holds the last reference to it — no other thread has a pointer to
+ * hand, so there is no second party for an atomic to order against. The field is
+ * not a count any more at that point; it is scratch space in a block on its way
+ * out, and the two lists and their flag are `_Thread_local` so the scratch is
+ * this thread's.
+ * An atomic store here would order this thread against itself and buy nothing.
+ * The assert above is what keeps the space wide enough for the pointer. */
 static void hero_drop_push_array(HeroArrayHeader *a) {
     HeroArrayHeader *next = hero_drop_arrays;
     memcpy(&a->refcount, &next, sizeof next);

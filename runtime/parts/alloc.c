@@ -57,28 +57,60 @@
  * unit (its own header explains the rest).
  */
 
+/* BOTH COUNTERS ARE ATOMIC AND BOTH STAY PROCESS-WIDE — panel 111 R5, ratified
+ * 2026-09-05, and it is the resolution that refused the cheaper one.
+ *
+ * The proposal that sitting was convened on made them `_Thread_local` and added
+ * a per-thread check at thread exit. M-isolated-threads step 2 built it and
+ * priced it: the race does go, and the cost is not measurable. Then it ran the
+ * program that matters — a worker thread that allocates a `str` and never gives
+ * it back. Shared counters say `panic: 1 heap blocks still live at exit`, exit
+ * 134. Thread-local counters said nothing at all and exited 0, because
+ * `hero_runtime_check_leaks()` runs on the main thread and reads one counter,
+ * and made thread-local that counter is the main thread's own balance. ASan has
+ * no leak detector on Darwin arm64 (panel 021), so that silence is total.
+ *
+ * The sitting's own words for it: *race present, instrument silent*. So the
+ * counters are made SAFE rather than SPLIT — one balance for the whole process,
+ * which is the number the gate is asking about, kept whole by the hardware
+ * instead of by luck. Two seats measured the price at 20M pairs and the sign of
+ * the difference flipped between runs.
+ *
+ * RELAXED on the way up and down, because the counter is read once, at exit,
+ * after every thread has been joined: the join is what orders it, and a relaxed
+ * read-modify-write still cannot lose an increment. The gate below reads the
+ * plain field, which on an `_Atomic` is a sequentially consistent load. */
+
 /* live heap-block balance: the leak detector that works on this platform */
-static int64_t hero_live_blocks = 0;
+static _Atomic int64_t hero_live_blocks = 0;
 
 /* live scratch balance: what a runtime call borrowed and has not given back */
-static int64_t hero_live_scratch = 0;
+static _Atomic int64_t hero_live_scratch = 0;
 
 int64_t hero_runtime_live(void) { return hero_live_blocks; }
 
+/* EACH COUNTER IS READ ONCE, into a local, and the message prints that local.
+ * The plain `hero_live_blocks != 0` followed by a second read inside the
+ * `fprintf` was two loads of one atomic object: correct while nothing else could
+ * be running, and a message that names a number the test never saw the moment
+ * something can. The gate is the last thing a program does, so this costs one
+ * load and removes a whole class of confusing report. */
 void hero_runtime_check_leaks(void) {
-    if (hero_live_blocks != 0) {
+    int64_t blocks = hero_live_blocks;
+    if (blocks != 0) {
         fflush(stdout);
         fprintf(stderr, "panic: %lld heap blocks still live at exit "
                         "(a missing decref) — this is a compiler bug\n",
-                (long long)hero_live_blocks);
+                (long long)blocks);
         abort();
     }
-    if (hero_live_scratch != 0) {
+    int64_t scratch = hero_live_scratch;
+    if (scratch != 0) {
         fflush(stdout);
         fprintf(stderr, "panic: %lld scratch buffers still live at exit "
                         "(a runtime call kept what it borrowed) — this is a "
                         "runtime bug\n",
-                (long long)hero_live_scratch);
+                (long long)scratch);
         abort();
     }
 }
@@ -97,12 +129,12 @@ static void *hero_malloc_raw(size_t size) {
  * Counted since 2026-08-30 — the header says why. */
 static void *hero_alloc(size_t size) {
     void *p = hero_malloc_raw(size);
-    hero_live_scratch += 1;
+    atomic_fetch_add_explicit(&hero_live_scratch, 1, memory_order_relaxed);
     return p;
 }
 
 static void hero_release(void *p) {
-    hero_live_scratch -= 1;
+    atomic_fetch_sub_explicit(&hero_live_scratch, 1, memory_order_relaxed);
     free(p);
 }
 
@@ -110,12 +142,12 @@ static void hero_release(void *p) {
  * table. Counted, and the count is the leak gate. */
 static void *hero_alloc_block(size_t size) {
     void *p = hero_malloc_raw(size);
-    hero_live_blocks += 1;
+    atomic_fetch_add_explicit(&hero_live_blocks, 1, memory_order_relaxed);
     return p;
 }
 
 static void hero_release_block(void *p) {
-    hero_live_blocks -= 1;
+    atomic_fetch_sub_explicit(&hero_live_blocks, 1, memory_order_relaxed);
     free(p);
 }
 

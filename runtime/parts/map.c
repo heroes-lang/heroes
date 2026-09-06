@@ -111,7 +111,8 @@ HeroMapHeader *hero_map_new(const HeroDesc *key, const HeroDesc *val, int64_t en
     size_t vals = (size_t)cap * val->size;
     HeroMapHeader *m = hero_alloc_block(head + states + keys + vals);
     if (m == NULL) hero_panic("out of memory");
-    m->refcount = 1;
+    /* Relaxed on a block no other thread can see yet — `str.c`'s reason. */
+    atomic_store_explicit(&m->refcount, 1, memory_order_relaxed);
     m->len = 0;
     m->cap = cap;
     m->key = key;
@@ -123,9 +124,10 @@ HeroMapHeader *hero_map_new(const HeroDesc *key, const HeroDesc *val, int64_t en
     return m;
 }
 
+/* The same two orders as `str.c` and `array.c`, for the same reason. */
 void hero_map_incref(HeroMapHeader *m) {
     if (m == NULL) return;
-    m->refcount += 1;
+    atomic_fetch_add_explicit(&m->refcount, 1, memory_order_relaxed);
 }
 
 /* `hero_array_decref`'s rule at the other container, and it must be the same
@@ -133,8 +135,7 @@ void hero_map_incref(HeroMapHeader *m) {
  * entries recursively would put the frames back that `drop.c` exists to remove. */
 void hero_map_decref(HeroMapHeader *m) {
     if (m == NULL) return;
-    m->refcount -= 1;
-    if (m->refcount > 0) return;
+    if (atomic_fetch_sub_explicit(&m->refcount, 1, memory_order_acq_rel) > 1) return;
     if (hero_drop_running) {
         hero_drop_push_map(m);
         return;

@@ -92,8 +92,19 @@ the normal case while hunting, since what is being tested is usually not committ
 yet:
 
 ```
-scp selfhost/cli/flags.hero win:/c/w/heroes/selfhost/cli/flags.hero
+scp selfhost/cli/flags.hero win:C:/w/heroes/selfhost/cli/flags.hero
 ```
+
+**That destination said `win:/c/w/heroes/…` until 2026-09-06 and it does not
+work**, measured that day while shipping a runtime change: every file comes back
+`scp: dest open "/c/w/heroes/…": No such file or directory`, and the same path in
+the same session is fine over plain `ssh`. The reason is that the two go through
+different servers. `ssh win '<bash>'` lands in Git Bash, where `/c/…` is MSYS's
+own spelling of the drive; `scp` speaks to the **SFTP subsystem**, which is
+Windows' and knows only Windows paths. So the one place in this document where a
+path is not typed into bash is the one place it must be spelled `C:/`. The tell
+is that the failure is a *destination* error and not an authentication one — and
+`git status` on the box right afterwards is what says whether the file arrived.
 
 **A deploy key was tried first and GitHub refused it**: `HTTP 422 — Deploy keys
 are disabled for this repository`, an organisation policy on `heroes-lang`.

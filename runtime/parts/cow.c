@@ -28,7 +28,19 @@ void hero_array_unshare(HeroArrayHeader **slot) {
     HeroArrayHeader *a = *slot;
     hero_array_require(a);
     /* Unique already: mutating in place is unobservable, which is the whole point
-     * of copy-on-write. */
+     * of copy-on-write.
+     *
+     * THIS TEST IS THE ONE THING THE ATOMIC REFCOUNT DOES NOT REPAIR, and it is
+     * named here rather than in a document because this is the line. Since
+     * M-isolated-threads step 3 the load below is whole — no thread can read half
+     * a count. It is still a TEST followed by a MUTATE: two threads can both read
+     * 1, both conclude they are unique, and both write. Panel 111 built it —
+     * `ys: [i64] @ xs` then `ys[0] @ mark`, two threads, exit 139 on all four
+     * runs, `attempting double-free` inside this function — and said in one line
+     * why the cheap half is not the fix: *"a test-and-mutate that atomics do not
+     * fix"*. What closes it is a protocol, not a stronger order, and it is this
+     * milestone's remaining work. Until it lands, `parts/thread.c`'s guard is
+     * what keeps any thread but the program's own out of here. */
     if (a->refcount == 1) return;
     HeroArrayHeader *b = hero_array_new(a->elem, a->len > 0 ? a->len : 1);
     const unsigned char *src = hero_array_data_const(a);

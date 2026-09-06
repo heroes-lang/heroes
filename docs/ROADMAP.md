@@ -727,7 +727,7 @@ atomic would not fix in any case.
 **OPEN 2026-09-03, re-scoped by `docs/panel/111` on 2026-09-05.** design.md Part
 7.13 — isolated per-thread heaps, copying at the boundaries, OS threads, **no
 scheduler**. Its width is settled and unopposed: **data parallelism only**, which
-is the design's own words at `:2563` (*"the first and probably only rung Heroes
+is the design's own words at `:2599` (*"the first and probably only rung Heroes
 needs"*); the mailbox stays deferred.
 
 **Panel 030 R6's rider is answered, and the answer is yes.** The C11 backend can
@@ -748,12 +748,24 @@ Part 7.13's isolation or it delivers nothing** — the route both compiling seat
 accept, and the only one with a precedent: Erlang is the single surveyed language
 that needed no type-system change, and per-process heaps are what it paid.
 
-**Two pieces of open work sit under it** in `docs/work/SCHEDULED.md`: the refcount
-half of design.md's own v1 invariant (`:2578-2586`), which step 0 discharged the
-allocator half of; and the **sixteen** shared mutable buffers the refused plan did
-not name — 22 exist in `runtime/parts/`, 4 are `_Thread_local`, and one of the
-sixteen is the argv buffer for process spawn, which is on §1.0's closure list.
-The stack-guard half is M-thread-stacks' and panel 107's, not this one's.
+**The refcount half of design.md's own v1 invariant (`:2618-2624`) closed at step
+3**, 2026-09-06, the way the document promised it would: one edit, because the
+boundary was narrow and never inlined. It cost a measured **+2.0%** on the
+compiler's own test suite, five alternating runs per arm from a cleared cache,
+which is the sitting's own +1.7% reproduced on a different workload, and CLAUDE.md §12 is what lets it land — robustness outranks
+speed, and this closes the class panel 111 measured at nine ASan runs in ten.
+
+**What is left is bigger than the plan said, and the sweep that says so is now an
+instrument.** `tests/harness/suite_runtime.hero`'s rule 3 takes the list from the
+tree on every run: **28** objects in `runtime/` survive between calls — 5
+`_Thread_local`, 2 `_Atomic` since step 3, **21 still shared**. The refused plan
+named two of them and panel 111 named eighteen, because both counted **file
+scope**; five live inside function bodies, and one of those five, `f64.c`'s cached
+C locale, is reached by ordinary Heroes printing a float. Two of the twenty-one
+are load-bearing by name: the argv buffer for process spawn, which is on §1.0's
+closure list, and `cow.c`'s `if (refcount == 1)`, a test-and-mutate that no memory
+order can close. The stack-guard four are M-thread-stacks' and panel 107's, not
+this one's.
 
 ### M-declared-freer — the string C hands you, freed by name
 

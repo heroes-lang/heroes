@@ -46,7 +46,14 @@ static void hero_str_require(HeroStr s) {
 static HeroStr hero_str_alloc(int64_t len) {
     if (len < 0) hero_panic("negative string length");
     HeroStrHeader *h = hero_alloc_block(sizeof(HeroStrHeader) + (size_t)len + 1);
-    h->refcount = 1;
+    /* RELAXED, and it is the third order this file asks for. A plain `= 1` on an
+     * `_Atomic` field is a sequentially consistent store, which is correct and
+     * pays for an ordering nobody needs: the block is one line old and its
+     * address has not left this function, so no other thread can be looking at
+     * it. What publishes it is the caller returning the `HeroStr`, and whatever
+     * hands that value to another thread is what carries the ordering. The same
+     * store, for the same reason, opens `hero_array_new` and `hero_map_new`. */
+    atomic_store_explicit(&h->refcount, 1, memory_order_relaxed);
     h->magic = HERO_STR_MAGIC;
     char *b = (char *)(void *)(h + 1);
     b[len] = '\0';
@@ -63,19 +70,38 @@ static HeroStrHeader *hero_str_hdr_checked(HeroStr s) {
     return h;
 }
 
+/* THE TWO MEMORY ORDERS, and they are the same pair at all three containers.
+ *
+ * `incref` is RELAXED: the thread making a new reference already holds one, so
+ * the block cannot go away underneath it and there is nothing this increment has
+ * to be ordered against. Only the count itself must not be lost, which is what
+ * an atomic read-modify-write buys and a `+= 1` does not.
+ *
+ * `decref` is ACQ_REL, and the release half is the one that is easy to leave
+ * out: the thread that drops the last reference has to SEE every write the other
+ * holders made before they let go, or it frees a block while another thread's
+ * store to it is still in flight. Release on the way down publishes those
+ * writes; acquire on the count reaching zero collects them.
+ *
+ * `atomic_fetch_sub_explicit` answers with the count BEFORE the subtraction, so
+ * `== 1` is "this call took it to zero" — the same test the plain `-= 1`
+ * followed by `== 0` was making, in one operation instead of two. */
 void hero_str_incref(HeroStr s) {
     if (s.ptr == NULL) return;
     HeroStrHeader *h = hero_str_hdr_checked(s);
-    if (h->refcount < 0) return; /* static literal */
-    h->refcount += 1;
+    /* A static literal's count never moves, so reading it relaxed is enough —
+     * and its block is `const` in read-only memory, which is why the assert in
+     * the header demands a lock-free 64-bit atomic: a load that took a lock
+     * would be a write to a page nobody may write. */
+    if (atomic_load_explicit(&h->refcount, memory_order_relaxed) < 0) return;
+    atomic_fetch_add_explicit(&h->refcount, 1, memory_order_relaxed);
 }
 
 void hero_str_decref(HeroStr s) {
     if (s.ptr == NULL) return; /* the zero-init non-value: a no-op */
     HeroStrHeader *h = hero_str_hdr_checked(s);
-    if (h->refcount < 0) return; /* static literal */
-    h->refcount -= 1;
-    if (h->refcount == 0) {
+    if (atomic_load_explicit(&h->refcount, memory_order_relaxed) < 0) return; /* static literal */
+    if (atomic_fetch_sub_explicit(&h->refcount, 1, memory_order_acq_rel) == 1) {
         hero_release_block(h);
     }
 }
