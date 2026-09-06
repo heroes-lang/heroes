@@ -1,0 +1,12 @@
+# `owned` says WHICH C function frees the string, so the name is not optional
+# (§4.19, panel 109). Written for the class rather than for one witness: the
+# mark can ride a result or a `@` parameter, and both are refused the same way.
+#
+# The word stays an ordinary identifier everywhere else, which is why this is a
+# diagnostic and not a lexer error — outside a group `owned` is just a name.
+extern "sqlite3.h" link "sqlite3"
+    function one(db: ptr) -> cstr owned  #~ expected_freer
+    function two(@e: cstr owned) -> i32  #~ expected_freer
+
+function main()
+    print(0)

@@ -538,16 +538,28 @@ function signature(tree: ast.Ast, s: source.Source, name: str, fd: ast.FunctionD
 
         if param.mutable
             marker @ "@"
+
+        # `owned <C function>` rides the parameter and the result, and a
+        # printer that drops it DELETES it: `fmt --in-place` would hand back a
+        # program whose string C allocated is never freed, at exit 0 and with
+        # no diagnostic. CLAUDE.md §9's list, and the reason it is a list.
         rendered @ rendered.push(
-            marker + source.span_text(s, param.name) + ": " + types.render_type(tree, param.ty, s)
+            marker + source.span_text(s, param.name) + ": " + types.render_type(tree, param.ty, s) + owned_suffix(s, param.owned)
         )
 
     out @ out + "(" + rendered.join(", ") + ")"
     result = types.render_type(tree, fd.result, s)
 
     if result != "()"
-        out @ out + " -> " + result
+        out @ out + " -> " + result + owned_suffix(s, fd.owned_result)
     return out
+
+# ` owned sqlite3_free`, or nothing. Written once and read from both
+# positions, so the two cannot learn the form apart (§4.19, panel 109).
+function owned_suffix(s: source.Source, mark: token.Span?) -> str
+    if mark.is_err()
+        return ""
+    return " owned " + source.span_text(s, mark.must())
 
 ## The statement walk (fmt_stmt)
 
@@ -1460,6 +1472,24 @@ test "fmt keeps a callback in an extern group, at every position the checker jud
     # runs before the checker and on programs that do not check), and the same
     # type in an ordinary signature beside them, which is the shape next door.
     for text in ["extern \"stdlib.h\"\n    function atexit(f: (function() -> ())) -> i32\n\nfunction main()\n    print(0)\n", "extern \"signal.h\"\n    function installer(h: (function(i32) -> ())) -> (function(i32) -> ())\n\nfunction main()\n    print(0)\n", "extern \"x.h\"\n    function grab(@slot: (function() -> ())) -> i32\n\nfunction main()\n    print(0)\n", "function twice(f: (function(i64) -> i64), x: i64) -> i64\n    return f(f(x))\n\nfunction main()\n    print(0)\n"]
+        parsed = parse.parse(text)
+        assert parsed.diagnostics.len() == 0
+        s = source.new_source(name: "t.hero", text: text)
+        assert format_file(parsed.tree, s, parsed.comments, parsed.uses, parsed.decls) == text
+
+test "fmt keeps `owned`, at both positions and beside the shapes that carry none"
+    # CLAUDE.md §9 again, and this form is the one with teeth: a formatter that
+    # drops `owned sqlite3_free` hands back a program that LEAKS, at exit 0 and
+    # with no diagnostic, and `fmt --in-place` writes it to disk. Measured
+    # before the repair, on this very file: both marks vanished.
+    #
+    # Six shapes, because the provoking case is a witness and not the class —
+    # the result position, the `@` position, BOTH in one signature, the same
+    # two shapes unmarked beside them (the mark must not be invented), a
+    # non-`@` parameter carrying it (the formatter runs before the checker and
+    # prints what it was given), and `owned` as an ordinary name outside a
+    # group, which is the whole reason it is a contextual word.
+    for text in ["extern \"string.h\"\n    function strdup(s: cstr) -> cstr owned free\n\nfunction main()\n    print(0)\n", "extern \"sqlite3.h\"\n    function run(db: ptr, @error: cstr owned sqlite3_free) -> i32\n\nfunction main()\n    print(0)\n", "extern \"x.h\"\n    function both(@slot: cstr owned release) -> cstr owned release\n\nfunction main()\n    print(0)\n", "extern \"string.h\"\n    function plain(s: cstr) -> cstr\n\nfunction main()\n    print(0)\n", "extern \"x.h\"\n    function borrowed(name: cstr owned free) -> i32\n\nfunction main()\n    print(0)\n", "function owned(n: i64) -> i64\n    return n + 1\n\nfunction main()\n    print(owned(2))\n"]
         parsed = parse.parse(text)
         assert parsed.diagnostics.len() == 0
         s = source.new_source(name: "t.hero", text: text)

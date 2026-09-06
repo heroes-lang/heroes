@@ -223,12 +223,15 @@ extern "sqlite3.h" link "sqlite3"
 ```
 A callback is a **parameter**, never a result; its parameters follow the same rule
 and `()` is `void`: `atexit(f: (function() -> ()))`.
+`owned sqlite3_free` after a `cstr` result or a `char **` out-parameter: the
+compiler frees that string with that function, hands it over as a `str?` (the
+`@` cell is only written), and refuses your own call of it. Unmarked pointers
+are never freed.
 Where a library lives is the machine's answer, not the program's, so a group may
 name a **package** instead of a library: `extern "raylib.h" package "raylib"`
-asks the system where its headers and libraries are and what else it needs —
-frameworks on macOS, `-lGL -lX11` on Linux — in one spelling that is the same
-everywhere. A package answering with anything this compiler does not pass on is
-refused, naming what it said.
+asks the system where its headers and libraries are and what else it needs. A
+package answering with anything this compiler does not pass on is refused,
+naming what it said.
 
 A group's `record` is the header's struct: all its fields, and the same name
 unless the header writes it after the word struct, which `tag` gives:
@@ -240,4 +243,4 @@ map key are compile errors — for it and for any value holding it. Its size sta
 C's, not the field list's.
 
 A group's `constant` has no body: the header holds the value. `s.cstr()` lends a
-`str` to C to read and `c.validated()` copies one back as a `str?`.
+`str` to C to read for that call and `c.validated()` copies one back as a `str?`.

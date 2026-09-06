@@ -166,10 +166,19 @@ function signature(tree: ast.Ast, s: source.Source, name: str, f: ast.FunctionDe
         if param.mutable
             marker @ "@"
         rendered @ rendered.push(
-            marker + source.span_text(s, param.name) + ": " + types.render_type(tree, param.ty, s)
+            marker + source.span_text(s, param.name) + ": " + types.render_type(tree, param.ty, s) + owned_suffix(s, param.owned)
         )
 
-    return out + "(" + rendered.join(", ") + ") -> " + types.render_type(tree, f.result, s)
+    return out + "(" + rendered.join(", ") + ") -> " + types.render_type(tree, f.result, s) + owned_suffix(s, f.owned_result)
+
+# ` owned sqlite3_free`, or nothing (§4.19, panel 109). **This dump is what
+# `heroes fmt` compares its own output against**, so a form missing HERE makes
+# the formatter's self-check agree with a formatter that is deleting it —
+# which is exactly how `as` shipped (CLAUDE.md §9).
+function owned_suffix(s: source.Source, mark: token.Span?) -> str
+    if mark.is_err()
+        return ""
+    return " owned " + source.span_text(s, mark.must())
 
 function case_lines(tree: ast.Ast, s: source.Source, one_case: ast.Case) -> str
     out: str @ "    case " + source.span_text(s, one_case.name) + "\n"
@@ -209,9 +218,16 @@ function alias_of(s: source.Source, used: ast.Use) -> str
 ## Tests
 
 test "the dump names every field the formatter can print"
-    text = "use geom\n\n# A point in the plane.\nrecord Point\n    x: i64\n    y: i64\n\nextern \"raylib.h\" package \"raylib\"\n    record Font tag FontT partial\n        size: i64\n    constant FLAG: i64\n    function draw(f: Font, n: i64)\n\nvariant Shape\n    dot\n    box\n        w: i64\n\nfunction dist<T>(a: T, @b: i64) -> i64\n    b @ b + 1\n    return b\n\ntest \"a title\"\n    assert 1 == 1\n"
+    # **This case's NAME is what obliges it to grow.** Every form the
+    # formatter learns, this printer owes too — and the two must not learn
+    # one apart, because `heroes fmt`'s own self-check compares two DUMPS:
+    # a form missing here makes the guard agree with a formatter that is
+    # deleting it, which is exactly how `as` shipped (CLAUDE.md §9).
+    # `owned <C function>` joined the list at M-declared-freer step 2, in
+    # both positions the mark can take.
+    text = "use geom\n\n# A point in the plane.\nrecord Point\n    x: i64\n    y: i64\n\nextern \"raylib.h\" package \"raylib\"\n    record Font tag FontT partial\n        size: i64\n    constant FLAG: i64\n    function draw(f: Font, n: i64)\n    function copy(s: cstr) -> cstr owned free\n    function run(@e: cstr owned drop) -> i64\n\nvariant Shape\n    dot\n    box\n        w: i64\n\nfunction dist<T>(a: T, @b: i64) -> i64\n    b @ b + 1\n    return b\n\ntest \"a title\"\n    assert 1 == 1\n"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     got = dump_ast(parsed.tree, s, parsed.uses, parsed.decls)
-    expected = "file t.hero\n  use geom\n  record Point\n    doc # A point in the plane.\n    field x: i64\n    field y: i64\n  extern \"raylib.h\" package \"raylib\" record Font tag FontT partial\n    field size: i64\n  extern \"raylib.h\" package \"raylib\" constant FLAG: i64\n  extern \"raylib.h\" package \"raylib\" function draw(f: Font, n: i64) -> ()\n  variant Shape\n    case dot\n    case box\n      field w: i64\n  function dist<T>(a: T, @b: i64) -> i64\n    mutate b @ (b + 1)\n    return b\n  test \"a title\"\n    assert (1 == 1)\n"
+    expected = "file t.hero\n  use geom\n  record Point\n    doc # A point in the plane.\n    field x: i64\n    field y: i64\n  extern \"raylib.h\" package \"raylib\" record Font tag FontT partial\n    field size: i64\n  extern \"raylib.h\" package \"raylib\" constant FLAG: i64\n  extern \"raylib.h\" package \"raylib\" function draw(f: Font, n: i64) -> ()\n  extern \"raylib.h\" package \"raylib\" function copy(s: cstr) -> cstr owned free\n  extern \"raylib.h\" package \"raylib\" function run(@e: cstr owned drop) -> i64\n  variant Shape\n    case dot\n    case box\n      field w: i64\n  function dist<T>(a: T, @b: i64) -> i64\n    mutate b @ (b + 1)\n    return b\n  test \"a title\"\n    assert (1 == 1)\n"
     assert got == expected

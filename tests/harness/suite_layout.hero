@@ -211,6 +211,20 @@ constant CEILING: i64
 # hand over. Panel 109's coordinator predicted `ir/lower.hero` at **≤ 900**;
 # the entry landed at 174 and the knot beside it at 1104, and that prediction
 # is scored FALSE in the panel file with this number rather than argued around.
+# **`ast.hero` 455 -> 475 on 2026-09-06, M-declared-freer step 2**, against a
+# measured 466 and raised with room as every precedent above was. Two fields
+# for panel 109's ratified `owned <C function>`: `FunctionDecl.owned_result`
+# and `Param.owned`, each a `token.Span?` holding the freer's NAME so a
+# diagnostic about it can point at the word the author wrote. **The knot clause
+# is what applies here and it applies without argument** — an AST is mutually
+# recursive by construction, `Expr` through `Stmt` through `Block` and back, so
+# no cut exists and the file is one module or nothing (this is the same row
+# panels 099 and 100 raised for `use` paths, for the same reason). **The code
+# is 2 lines and the comments are 13**, which is the ratio §11 asks for: each
+# field's comment says why it rides where it does — the result's because a
+# diagnostic needs the span, the parameter's because two parameters of one
+# signature can be owned by different functions and because the cell is
+# out-only.
 constant DECIDED: [str]
     [
         "selfhost/check/walk.hero 1700"
@@ -218,7 +232,7 @@ constant DECIDED: [str]
         "selfhost/ir/flatten.hero 1110"
         "selfhost/grammar_expr.hero 1002"
         "selfhost/ir/print.hero 470"
-        "selfhost/ast.hero 455"
+        "selfhost/ast.hero 475"
         "selfhost/check/builtins.hero 374"
         "selfhost/ir/mono.hero 380"
         "selfhost/emit/ctype.hero 365"

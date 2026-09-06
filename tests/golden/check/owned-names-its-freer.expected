@@ -1,0 +1,2 @@
+tests/golden/check/owned-names-its-freer.hero:8:59: error[expected_freer]: `owned` names the C function that frees this string: `-> cstr owned sqlite3_free`
+tests/golden/check/owned-names-its-freer.hero:9:32: error[expected_freer]: `owned` names the C function that frees this string: `-> cstr owned sqlite3_free`

@@ -171,7 +171,8 @@ function a_function_decl(name_start: i64, name_end: i64) -> ast.Decl
         body: fail("absent", "unused"),
         is_extern: false,
         header: fail("absent", "none"),
-        library: fail("absent", "none")
+        library: fail("absent", "none"),
+        owned_result: fail("none", "nothing to free")
     )
     span = token.Span(start: name_start, end: name_end)
     return ast.Decl(name: span, doc: doc, span: span, kind: .function_decl(value: f))
@@ -187,7 +188,8 @@ function an_extern_decl(name_start: i64, name_end: i64) -> ast.Decl
         body: fail("absent", "unused"),
         is_extern: true,
         header: ok(token.Span(start: 0, end: 4)),
-        library: fail("absent", "none")
+        library: fail("absent", "none"),
+        owned_result: fail("none", "nothing to free")
     )
     span = token.Span(start: name_start, end: name_end)
     return ast.Decl(name: span, doc: doc, span: span, kind: .function_decl(value: f))
