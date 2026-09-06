@@ -151,8 +151,8 @@ heroes test selfhost/main.hero                 # the compiler's own tests
 
 ## The chain
 
-One table, one row per milestone, **closed first and scheduled after**: rows 1–33
-are done, in the order they closed, and rows 34–55 are what is next, in the order
+One table, one row per milestone, **closed first and scheduled after**: rows 1–35
+are done, in the order they closed, and rows 36–57 are what is next, in the order
 they will be taken. `warrant` is why a milestone exists: **v1** (the self-hosting
 finish line), **closure list** (design.md §1.0 — the compiler needs it), **§1.1**
 (comprehension is the objective), or **scheduled, no warrant**.
@@ -217,7 +217,8 @@ and why one overtook another are under the table, in § Who scheduled what.
 | 53 | **M-journey-book** | scheduled | — | — | the journey — how this language came to be |
 | 54 | **M-guide-book** | scheduled | — | — | the guide, as a book you would find in a shop · **§1.1** |
 | 55 | **M-install-channels** | scheduled | — | — | a Homebrew tap, winget, a Nix flake, a Docker image, all built from the seed, and a version scheme |
-| 56 | **M-publication-gate** | scheduled | — | — | the last gate before anything goes outward · CLAUDE.md §14 |
+| 56 | **M-online-compiler** | scheduled | — | — | the compiler reached without installing anything: the site's visitor writes Heroes and gets its answer · scheduled, no warrant |
+| 57 | **M-publication-gate** | scheduled | — | — | the last gate before anything goes outward · CLAUDE.md §14 |
 
 Three closed milestones have no tag of their own because they were parents or
 sub-steps: **M-checker-core**, **M-data-declarations** and **M-rich-diagnostics**
@@ -394,6 +395,20 @@ row number, because a reorder moves a number and never a name (CLAUDE.md §14).
     that its two items had been parked on a `grep` since 2026-08-16 with no row to
     read them. The phrase is the record's own: *check accepts ⇒ build succeeds*,
     false today wherever a generic stands between the rule and the type.
+- **M-online-compiler** — **row 56, scheduled by author instruction 2026-09-06**,
+  placed immediately before the gate for M-install-channels' reason and not for
+  its subject: everything here is built and tested in private, and the outward
+  act is the gate's. **It reverses half of a recorded refusal, and the row says
+  which half.** `DESIGN-LOG.md:539` refused *a web playground* on 2026-09-03 —
+  one of five candidates `docs/work/DONE.md:2415` records as refused *so the
+  candidate is not proposed again as new* — with the parenthesis *Part 2 and Part
+  9: wasm breaks the FFI premise*. Both cited passages, `design.md:590` and
+  `design.md:2869`, are about a **Heroes program** targeting the web, and the
+  compiler is a different program: it reads text and writes diagnostics and C,
+  and needs no C library on the visitor's behalf. The half that stands is the
+  visitor's program, and it is the milestone's whole subject — measured the day
+  the row entered, **20 of 56** programs under `examples/` declare an `extern`,
+  so what a stranger may name is a decision before it is an engine.
 
 ---
 
@@ -1576,6 +1591,77 @@ is prepared and tested **in private** — a local tap, `brew install
 it is the gate's, which is why this row sits immediately before it (CLAUDE.md
 §14: publishing is a hard stop).
 
+### M-online-compiler — the compiler, reached without installing it
+
+**Scheduled, no warrant** (author instruction 2026-09-06, *"maybe it makes sense
+to add a step to the roadmap that says: let us make a compiler that runs inside a
+browser, so whoever wants to try the language can try it quickly on the site,
+compiling to wasm perhaps"*, and in the same minute the fallback, *"or if that
+cannot be done, a remote compiler, but with safeguards so it does not become a
+way to break into a machine or to burn resources forever"*). Installing Heroes is
+a `git clone` and one clang line (M-install-channels); this row is for the
+visitor who will not run even that.
+
+**The refusal this row half-reverses, and the half of it that still stands.**
+`DESIGN-LOG.md:539` refused *a web playground* on 2026-09-03, and
+`docs/work/DONE.md:2415` records it among five candidates given a recorded
+refusal *so the candidate is not proposed again as new*. The reason given was
+*Part 2 and Part 9: wasm breaks the FFI premise*, and both cited passages —
+`design.md:590` and `design.md:2869` — are about **a Heroes program targeting the
+web**, as is `design.md:520`'s *native compilation rather than wasm* among the
+decisions that are not revisited. All three rest on one fact: wasm cannot call
+native C libraries, so under §1.11 a Heroes program compiled to wasm has nothing
+to call. **The compiler is a different program** and the argument does not reach
+it. Where it still bites is the second half — whatever runs the **visitor's**
+program must reach the headers that program names.
+
+**The number that makes this hard, measured 2026-09-06.** Of **56** programs
+under `examples/`, **20** declare an `extern`: `hero_os.h` (10), `math.h` (3),
+`stdio.h` (2), `sqlite3.h` (2), `time.h`, `raylib.h`, `curl/curl.h`,
+`SDL3/SDL.h`, with two linking `raylib` and two `sdl3`. §1.11 is why — there is
+no standard library, so the programs that show what the language is *for* are
+exactly the ones that open a window, a socket or a database. **A playground that
+refuses `extern` demonstrates a language that does not exist; one that allows it
+on a public server is a remote shell**, and `extern "stdlib.h" { function
+system(cmd: cstr) -> i32 }` is one line the compiler is right to accept. The
+deliverable is therefore a **decision about what a stranger's program may name**,
+and then whichever engine enforces it.
+
+**The two engines, in the author's own order of preference.**
+
+- **In the browser.** `seed/heroes.c` is **733,838** lines of C and would be
+  compiled to wasm with `runtime/`; the visitor's program is then checked,
+  formatted, dumped and emitted as C entirely on their own machine, at zero
+  attack surface and zero running cost, inside a site that stays static. What it
+  cannot do is **run**: `runtime/parts/run.c` reaches the toolchain through
+  `execvp` and `CreateProcess`, and a browser has neither. Running there too
+  needs clang itself hosted in wasm, and would still reach only the **36**
+  programs that name no header.
+- **Remotely.** The real compiler, the real clang and the real libraries, so all
+  56 run, `sqlite` and `curl` included. The price is the sandbox the author
+  named: one container per request off the image M-install-channels already
+  builds, no network, a read-only tree, ceilings on wall clock, CPU, memory and
+  output size, and the allow-list above. It also puts a service behind a site
+  that is static today (Astro on Cloudflare Pages, `site/public/CNAME`).
+
+**What is not measured, written as a question rather than as a premise**
+(CLAUDE.md §1). Apple clang 21.0.0 on the author's Mac has **no WebAssembly
+target compiled in** — `clang --target=wasm32 -c` answers *No available targets
+are compatible with triple "wasm32"*, measured 2026-09-06 — and neither `emcc`
+nor `wasm-ld` nor a wasi-sdk is installed, so the browser route needs a **second
+toolchain**, against M-install-channels' rule that every channel builds from the
+seed with the one clang line. Whether the seed compiles under one is untested.
+Whether a wasm-hosted clang is a real option is untested. What the languages
+closest to this one actually ship is unverified and belongs to the historian, not
+to the convener.
+
+**Its opening convenes a panel** (CLAUDE.md §4 — this is the tool surface, and
+what a stranger's program may name is language-facing). Three questions for it:
+which engine; whether a wasm build of `heroes` is a second binary under §10 or
+the same program for another target; and whether the allow-list is a property of
+the playground or a `heroes` flag, which is §10's stopping rule asked about a
+capability with no other caller.
+
 ### M-publication-gate — the last gate
 
 The repository is **private** today and publishing is a hard stop that only the
@@ -1748,6 +1834,7 @@ So a number met in the record resolves here, and only here.
 | `M-declared-freer` | — | — | `owned <C function>`: an `extern` names the function that frees what C hands back, and the compiler calls it. **A new id and not a reopening of `M-ffi-ladder`** (§14), which closed 2026-08-12 delivering *Heroes calls C, SQLite with no shim*; panel 109 ratified this on 2026-09-04 and its item had been scheduled at the closed id. **Deliberately not `M-foreign-ownership`**: the `ptr owned` half is refused under a standing veto with measured return conditions, so the area stays free for the milestone that may deliver it, and an id must make no claim a later milestone can falsify |
 | `M-thread-stacks` | — | — | the stack guard reads the calling thread's own bounds and installs its own alternate stack, so an overflow on a library's thread stops with a message instead of an empty exit 132 — and the size stops being a link flag that exists in one CI file and no document. **A new id rather than a reopening of `M-robustness-guards`** (§14), which closed 2026-09-03 delivering the guard on the **main** thread; panel 107 found the rest of it on 2026-09-04. **Plural because panel 107 refused a uniform number** on six measurements: the number cannot be the same on three platforms, the abort can |
 | `M-check-completeness` | — | — | what `heroes check` accepts, `heroes build` compiles — through a generic too. **A new id and not a step of a checker milestone** (§14): `M-typed-frontend` and `M-checker-core` closed 2026-08-04 delivering the frontend itself, and what this delivers is a **promise about two commands agreeing**, which neither name claims. Scheduled 2026-09-04 by author instruction with **no warrant** — Principle 0 holds it, panel 082 R3 ruled the direction on 2026-08-16, and the trigger is a `grep` rather than a date |
+| `M-online-compiler` | — | — | the compiler reached without installing anything: the site's visitor writes Heroes and gets its answer. **A new id and not a step of `M-documentation-site` or `M-install-channels`** (§14): the site closed 2026-09-02 delivering pages anchored to programs that run, and the channels deliver installation, while this one delivers the case where nothing is installed at all. **Deliberately neither `M-wasm-playground` nor `M-browser-compiler`**: the engine is this milestone's own opening question, so an id naming either would claim exactly what the sitting exists to decide, and `wasm` has to stay free for the later half of Part 7 item 15 (`design.md:2645`). Scheduled 2026-09-06 by author instruction with **no warrant** |
 
 **`M8` has no row, because it meant three different things.** It was an umbrella
 that predates the a/b/c/e/p split and no heading has carried it since. In the
