@@ -119,3 +119,18 @@ test "a program with no mark at all names no freer"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     assert marked_as_freer(parsed.decls, s, name: "free_it").is_err()
+
+# Whether the parameter at this position carries `owned <freer>`. Read from the
+# declaration, because the mark rides the AST parameter and never becomes a
+# slot — and asked HERE because the probe writer and the diagnostic reader both
+# need it, and two copies of one question drift.
+function owned_parameter(decls: [ast.Decl], at: i64, index: i64) -> bool
+    match decls[at].kind
+        .function_decl fd =>
+            if index >= fd.value.params.len()
+                return false
+
+            return !fd.value.params[index].owned.is_err()
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return false
+
+    return false

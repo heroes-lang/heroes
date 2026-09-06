@@ -200,7 +200,13 @@ function parameter_width(s: source.Source, decls: [ast.Decl], p: containers.Prog
 
     # Same probe line the emitter wrote, or the columns are read against a
     # different string (panel 116).
-    parameters = extern_probe.parameter_list(names, c, f, frees: !freer.marked_as_freer(decls, s, name: name).is_err())
+    parameters = extern_probe.parameter_list(
+        names,
+        c,
+        decls,
+        f,
+        frees: !freer.marked_as_freer(decls, s, name: name).is_err()
+    )
 
     if parameters.is_err()
         return fail("none", "a parameter with no C spelling")
@@ -378,7 +384,7 @@ test "the width, the sign and the class, gated by the probe's own line"
             f0 @ f
             picked @ true
 
-    parameters = extern_probe.parameter_list(names, c, f0, frees: false).must()
+    parameters = extern_probe.parameter_list(names, c, parsed.decls, f0, frees: false).must()
     arguments = extern_probe.argument_names(count: 1)
     probe = extern_probe.probe_name(module: "t", name: "narrow")
     columns = probe_reply.argument_columns(
@@ -426,7 +432,7 @@ test "the float family: four directions, each with its own sentence"
             f0 @ f
             picked @ true
 
-    parameters = extern_probe.parameter_list(names, c, f0, frees: false).must()
+    parameters = extern_probe.parameter_list(names, c, parsed.decls, f0, frees: false).must()
     arguments = extern_probe.argument_names(count: 1)
     probe = extern_probe.probe_name(module: "t", name: "narrow")
     columns = probe_reply.argument_columns(

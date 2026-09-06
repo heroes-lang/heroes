@@ -111,7 +111,7 @@ function extern_probes(@w: writer.Writer, p: containers.Program, c: state.Checke
         # pointer parameter is typed `char *`, which is where a wrong
         # freer becomes a compile error rather than a SIGSEGV.
         frees = !freer.marked_as_freer(decls, s, name: name).is_err()
-        parameters = parameter_list(names, c, f, frees: frees)
+        parameters = parameter_list(names, c, decls, f, frees: frees)
 
         if parameters.is_err()
             continue
@@ -244,7 +244,7 @@ function argument_names(count: i64) -> [str]
 # `char *`. The reasoning, the ten-freer table and the honest limit — `curl.h`
 # writes `typedef void CURL;`, so six of ten and not ten of ten — are in
 # `docs/panel/116-where-the-release-lives.md` and in the golden that pins it.
-function parameter_list(names: ctype.Names, c: state.Checked, f: containers.Function, frees: bool) -> [str]?
+function parameter_list(names: ctype.Names, c: state.Checked, decls: [ast.Decl], f: containers.Function, frees: bool) -> [str]?
     out: [str] @ []
     index: i64 @ 0
 
@@ -270,6 +270,11 @@ function parameter_list(names: ctype.Names, c: state.Checked, f: containers.Func
         spelled: str @ c_type.must()
 
         if frees && spelled == "void *"
+            spelled @ "char *"
+
+        # A marked `@cstr` is the `char **` carve-out: the cell is not const,
+        # or the probe itself is what stops compiling (§4.19, panel 109).
+        if mutable && freer.owned_parameter(decls, at: f.decl, index: index) && spelled == "const char *"
             spelled @ "char *"
 
         if mutable
