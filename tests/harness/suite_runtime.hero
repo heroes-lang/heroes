@@ -178,11 +178,9 @@ constant SHARED_BY_DECISION: [str]
         "runtime/parts/os.c done | two once-guards, for byte-mode stdout on Windows and for unbuffered stderr. Safe because of WHERE THEY ARE CALLED and not because of how they are written: both run inside `hero_args_set`, which the generated `main` calls before a program's first line, on the thread that owns the program. If a second caller is ever added this entry is wrong"
         "runtime/parts/os.c hero_argc | the process's own argument count, written once by `hero_args_set` before any thread can exist and only read afterwards. Process-wide by nature: `args()` must answer the same thing on every thread"
         "runtime/parts/os.c hero_argv | the process's own argument vector, and the same reasoning"
-        "runtime/parts/stack.c hero_stack_lo | the MAIN thread's stack floor, measured once at startup. Wrong on every other thread, which is why a worker overflow is exit 132 with an empty stderr where the main thread says `panic: stack exhausted`. That is `M-thread-stacks` and panel 107 by name, not this milestone's"
-        "runtime/parts/stack.c hero_stack_hi | the main thread's stack ceiling, and the same milestone"
-        "runtime/parts/stack.c hero_stack_prev_segv | the handler that was installed before this runtime's, so a fault it does not own is passed on. Installed once, on the main thread, and read from a signal handler; `M-thread-stacks`"
+        "runtime/parts/stack.c hero_stack_prev_segv | the disposition installed before this runtime's, so a fault it does not own is passed on. Shared BY THE KERNEL'S OWN DEFINITION and not while waiting for a repair: `sigaction` sets a handler for the whole process, where `sigaltstack` and the bounds are the calling thread's, and reading that split the other way is exactly what made this guard silent on every thread but one until M-thread-stacks"
         "runtime/parts/stack.c hero_stack_prev_bus | the same, for SIGBUS"
-        "runtime/parts/stack.c done | the guard-install once-flag, in both the POSIX arm and the Windows one. `hero_args_set`'s callee, exactly like `os.c`'s pair above, and `M-thread-stacks` owns the file"
+        "runtime/parts/stack.c done | the once-flag over the PROCESS-wide half of the guard — the two dispositions on POSIX, the vectored handler on Windows — in each platform arm. The per-thread half moved out from under it at M-thread-stacks and is `_Thread_local`, so what is left here is genuinely the process's; `hero_args_set`'s callee, exactly like `os.c`'s pair above"
     ]
 
 # A floor rather than an equality, on `LEAST_FILES`' reason: what would

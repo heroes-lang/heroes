@@ -85,8 +85,13 @@
 
 #if defined(HERO_STACK_GUARD_YIELDS_TO_ASAN)
 
-/* ASan owns the signal; its report is the better one. */
+/* ASan owns the signal; its report is the better one. All three doors are empty
+ * here, and all three exist, because `parts/spawn.c` calls two of them on every
+ * thread it starts and a build configuration is not a place to discover that a
+ * function is missing. */
 static void hero_stack_guard_install(void) {}
+static void hero_stack_guard_enter(void) {}
+static void hero_stack_guard_leave(void) {}
 
 #elif !defined(_WIN32)
 
@@ -102,10 +107,31 @@ static void hero_stack_guard_install(void) {}
 #include <ucontext.h>
 #endif
 
-/* The main thread's stack, measured once at startup: `lo` is its lowest
- * address, and the guard region sits just below. */
-static uintptr_t hero_stack_lo = 0;
-static uintptr_t hero_stack_hi = 0;
+/* THE CALLING THREAD'S stack: `lo` is its lowest address, and the guard region
+ * sits just below. These were the MAIN thread's until M-thread-stacks, measured
+ * once at startup, and that single fact is the defect this milestone repairs.
+ * `in_guard` below compared a fault on a worker thread against a range
+ * belonging to a different thread, so it said no and the fault was passed on:
+ * measured 2026-09-06 on this Mac, the same recursion is `panic: stack
+ * exhausted in main.down` at exit 134 on the main thread and exit 132 with an
+ * empty stderr on a spawned one.
+ *
+ * C11 7.5 gives every thread its own zeroed copy, and zero is the honest answer
+ * for a thread nobody has measured: `in_guard` is then false — `0 -
+ * HERO_STACK_WINDOW` wraps to a huge address no fault is above — so an
+ * unclaimed thread's fault takes exactly the route it took before this file
+ * existed, which is what a guard that cannot see the stack should do. */
+static _Thread_local uintptr_t hero_stack_lo = 0;
+static _Thread_local uintptr_t hero_stack_hi = 0;
+
+/* The alternate stack this thread holds, kept so the thread can give it back.
+ * A signal stack is per thread by the kernel's own definition — `sigaltstack`
+ * sets it for the calling thread and for nobody else — and that is the OTHER
+ * half of why the guard could not speak on a worker: even with the bounds
+ * right, the handler had nowhere to run that was not the stack which had just
+ * run out. */
+static _Thread_local void *hero_stack_alt = NULL;
+static _Thread_local size_t hero_stack_alt_size = 0;
 
 /* What was installed before us, for SIGSEGV and SIGBUS. */
 static struct sigaction hero_stack_prev_segv;
@@ -314,13 +340,29 @@ static void hero_stack_handler(int signum, siginfo_t *si, void *ctx) {
     hero_stack_pass_on(signum, si, ctx);
 }
 
-static void hero_stack_guard_install(void) {
-    static int done = 0;
-    if (done) return;
-    done = 1;
+/* PER THREAD, and nothing here belongs to the process: the bounds are the
+ * calling thread's and a signal stack is the calling thread's. Two doors call
+ * it, both before the first line of Heroes code runs on the thread —
+ * `hero_args_set` for the thread that runs `main`, and `hero_spawn_enter` for
+ * every thread this runtime starts.
+ *
+ * A thread a C LIBRARY made for itself reaches neither door, and that hole is
+ * not this file's to close: `parts/thread.c` stops a Heroes function on an
+ * unclaimed thread by name (panel 111 R9) before it can recurse at all, so the
+ * program says which function C called back rather than running out of a stack
+ * nobody measured. Panel 107 left this half open because on 2026-09-04 there was
+ * no point on a foreign thread where Heroes code ran first; the milestone that
+ * closed two days later built one. */
+static void hero_stack_guard_enter(void) {
+    if (hero_stack_alt != NULL) return;
     hero_stack_bounds();
 
-    /* 256 KiB rather than SIGSTKSZ, with a guard page of its own below. */
+    /* 256 KiB rather than SIGSTKSZ, with a guard page of its own below. The
+     * size is the same on a worker as on `main` and deliberately so: what runs
+     * here is the frame walk, whose appetite is the handler's and not the
+     * thread's, and panel 104 measured SIGSTKSZ (8,192 on glibc) as a second
+     * overflow inside the first. It is a mapping of its own, so a 512 KiB
+     * worker stack is not spent on it. */
     size_t page = (size_t)sysconf(_SC_PAGESIZE);
     size_t size = 256 * 1024;
     char *mem = mmap(NULL, size + page, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
@@ -330,7 +372,45 @@ static void hero_stack_guard_install(void) {
     ss.ss_sp = mem + page;
     ss.ss_size = size;
     ss.ss_flags = 0;
-    if (sigaltstack(&ss, NULL) != 0) return;
+    if (sigaltstack(&ss, NULL) != 0) {
+        munmap(mem, size + page);
+        return;
+    }
+    hero_stack_alt = mem;
+    hero_stack_alt_size = size + page;
+}
+
+/* Given back by the thread that took it, because 257 KiB per spawn that is
+ * never returned is a leak nothing in this project can see: it is the kernel's
+ * mapping, not one of this runtime's blocks, so `hero_runtime_check_leaks()`
+ * counts none of it and LeakSanitizer on the Linux leg calls a live
+ * `sigaltstack` reachable.
+ *
+ * SS_DISABLE first and `munmap` second, and if the disable fails the mapping is
+ * KEPT: unmapping a stack the kernel still holds a pointer to is precisely the
+ * corruption design.md §1.12 forbids, and leaking 257 KiB is the cheaper of the
+ * two wrongs. */
+static void hero_stack_guard_leave(void) {
+    if (hero_stack_alt == NULL) return;
+    stack_t off;
+    memset(&off, 0, sizeof off);
+    off.ss_flags = SS_DISABLE;
+    if (sigaltstack(&off, NULL) == 0) munmap(hero_stack_alt, hero_stack_alt_size);
+    hero_stack_alt = NULL;
+    hero_stack_alt_size = 0;
+    hero_stack_lo = 0;
+    hero_stack_hi = 0;
+}
+
+/* ONCE PER PROCESS: the two dispositions, which `sigaction` sets for every
+ * thread at once. The split is the kernel's own and not a convention — a
+ * handler is the process's, an alternate stack is the thread's — and reading it
+ * the other way is what made this guard silent on every thread but one. */
+static void hero_stack_guard_install(void) {
+    static int done = 0;
+    if (done) return;
+    done = 1;
+    hero_stack_guard_enter();
 
     struct sigaction sa;
     memset(&sa, 0, sizeof sa);
@@ -380,12 +460,32 @@ static LONG WINAPI hero_stack_veh(EXCEPTION_POINTERS *ep) {
     return EXCEPTION_CONTINUE_SEARCH;
 }
 
+/* PER THREAD, like the POSIX arm above and for the same reason: the guarantee
+ * reserves stack for the handler to run in, and it is asked for on the thread
+ * that will need it. There is no alternate stack to give back, so `leave` is
+ * empty and says so rather than not existing.
+ *
+ * WHAT THIS PLATFORM ALREADY DID, MEASURED 2026-09-06 ON THE BOX rather than
+ * assumed: the same recursion on a spawned thread was ALREADY `panic: stack
+ * exhausted`, exit 127, before this change — because `AddVectoredExceptionHandler`
+ * registers with the PROCESS and every thread's fault walks that list, where
+ * `sigaltstack` and the bounds are the thread's. So Windows was never the
+ * platform this milestone repairs, and the guarantee below is the robust
+ * direction (CLAUDE.md §12) rather than a repair: without it a worker has one
+ * page to run the handler in, which was enough for this message today and is
+ * not a promise the OS makes. */
+static void hero_stack_guard_enter(void) {
+    ULONG guarantee = 64 * 1024;
+    SetThreadStackGuarantee(&guarantee);
+}
+
+static void hero_stack_guard_leave(void) {}
+
 static void hero_stack_guard_install(void) {
     static int done = 0;
     if (done) return;
     done = 1;
-    ULONG guarantee = 64 * 1024;
-    SetThreadStackGuarantee(&guarantee);
+    hero_stack_guard_enter();
     AddVectoredExceptionHandler(0, hero_stack_veh);
 }
 
