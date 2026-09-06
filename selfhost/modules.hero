@@ -1,6 +1,6 @@
 # Discovery: which files a compilation is made of, and in what order
 # (spec § Files and layout; panels 030 R1, 031 R6/R8/R10). Port of
-# crates/heroes/src/modules/{mod,graph}.rs — one module, because the
+# archive/bootstrap-rs/heroes/src/modules/{mod,graph}.rs — one module, because the
 # two halves share nothing but their subject and neither is 300 lines.
 #
 # `use geom` names geom.hero, and `use syntax/decl` names

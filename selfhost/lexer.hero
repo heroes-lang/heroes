@@ -1,5 +1,5 @@
 # The lexer: source text → tokens (design.md §4.15).
-# Port of the drive loop of crates/heroes/src/lexer/mod.rs (`lex_one`).
+# Port of the drive loop of archive/bootstrap-rs/heroes/src/lexer/mod.rs (`lex_one`).
 #
 # First station of the assembly line. It cuts the text into words and, because
 # Heroes has no braces and no semicolons, it also mints the two invisible

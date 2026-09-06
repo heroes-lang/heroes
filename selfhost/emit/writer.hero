@@ -1,5 +1,5 @@
 # The output, which has to count its own lines (design.md §3.1, panel
-# 020). Port of crates/heroes/src/emit/writer.rs.
+# 020). Port of archive/bootstrap-rs/heroes/src/emit/writer.rs.
 #
 # `#line N` anchors the NEXT line, and C then auto-increments. That one
 # sentence is why this is a record and not a str: "emit #line on

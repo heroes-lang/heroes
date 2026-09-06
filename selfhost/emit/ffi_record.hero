@@ -1,6 +1,6 @@
 # The classes where the header contradicts a RECORD (design.md §4.19;
 # panels 060, 061, 073, 077, 079). Port of
-# crates/heroes/src/emit/ffi_record.rs.
+# archive/bootstrap-rs/heroes/src/emit/ffi_record.rs.
 #
 # Two readers that fault the DECLARATION — a record naming too few of
 # the header's fields, and one whose header type is a union — where a

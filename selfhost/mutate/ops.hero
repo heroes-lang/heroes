@@ -1,6 +1,6 @@
 # The operator table — the *data* half of `heroes mutate` (design.md Part 11).
 #
-# Port of crates/heroes/src/mutate/operators.rs. The first rule of this
+# Port of archive/bootstrap-rs/heroes/src/mutate/operators.rs. The first rule of this
 # measurement is that the operators are DATA, not code: they live in
 # `harness/mutations/operators.md` with the plausible-mistake class each
 # imitates and the §-rule that should kill it. This file is that list plus the

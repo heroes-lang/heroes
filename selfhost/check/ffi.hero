@@ -1,7 +1,7 @@
 # What may cross the FFI boundary, asked of a declaration — and where a
 # boundary type may STAND, which is a different question (design.md
 # §4.19; panels 036, 038, 060, 062).
-# Port of crates/heroes/src/types/{ffi_decls,ffi_position}.rs — two Rust
+# Port of archive/bootstrap-rs/heroes/src/types/{ffi_decls,ffi_position}.rs — two Rust
 # files, one Heroes module: position is asked only by the signature
 # check, and the two questions read together.
 #

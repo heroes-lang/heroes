@@ -1,5 +1,5 @@
 # Scanning: the part of the lexer that reads *words* instead of shape.
-# Port of crates/heroes/src/lexer/scan.rs.
+# Port of archive/bootstrap-rs/heroes/src/lexer/scan.rs.
 #
 # `line_body` walks one physical line and dispatches on the first byte of
 # each token: `#` comment, `"` string, `'` char, digit, letter, or

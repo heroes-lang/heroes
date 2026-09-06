@@ -1,7 +1,7 @@
 # Written types, against the three things a type name can be: a primitive,
 # a declaration, or a type parameter of the enclosing function (design.md
 # §4.3, §4.12).
-# Port of crates/heroes/src/resolve/types.rs. `Prim` and `primitive()` live
+# Port of archive/bootstrap-rs/heroes/src/resolve/types.rs. `Prim` and `primitive()` live
 # in resolved.hero beside the `TypeRef` that names them — the one departure
 # from Rust's layout, recorded there.
 #

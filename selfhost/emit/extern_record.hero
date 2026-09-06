@@ -1,7 +1,7 @@
 # Where a group record's assertions GO, and the probe that asks about
 # the fields the program did NOT name (design.md §4.19; panels 060,
 # 061, 062, 072, 077). Port of
-# crates/heroes/src/emit/{extern_record,extern_complete}.rs — one file
+# archive/bootstrap-rs/heroes/src/emit/{extern_record,extern_complete}.rs — one file
 # again, as they were before the ceiling split: the walker and the
 # probe walk the same declarations.
 #

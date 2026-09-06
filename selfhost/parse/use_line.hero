@@ -1,6 +1,6 @@
 # `use geom` and `use syntax/decl` — the one declaration that names another
 # file (design.md §3.1, panels 031, 032, 099).
-# Port of crates/heroes/src/syntax/uses.rs.
+# Port of archive/bootstrap-rs/heroes/src/syntax/uses.rs.
 #
 # It is its own module for the reason the refusals below give: a `use` line
 # is where a model's memory of four other languages arrives, so the

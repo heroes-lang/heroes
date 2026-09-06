@@ -2,7 +2,7 @@
 
 One file per program: the C that **both** compilers emitted for it, byte for
 byte, on 2026-08-18 — the last day the bootstrap and the self-hosted compiler
-both existed and `crates/heroes-cli/tests/differential.rs` was green over all
+both existed and `archive/bootstrap-rs/heroes-cli/tests/differential.rs` was green over all
 142 of them.
 
 Nothing here is hand-written and nothing here is edited. The instrument that

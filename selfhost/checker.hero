@@ -1,6 +1,6 @@
 # The checker: every expression gets a type, or a diagnostic says why
 # not (design.md Part 10 step 5, §4.5 bidirectional checking).
-# Port of crates/heroes/src/types/mod.rs::check — the driver in its
+# Port of archive/bootstrap-rs/heroes/src/types/mod.rs::check — the driver in its
 # measured order.
 #
 # Bidirectional, and the two modes are the whole design (§4.5):

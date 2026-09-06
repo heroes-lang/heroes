@@ -1,6 +1,6 @@
 # What `sort` can order, and how the refusal explains itself (spec §
 # Strings, arrays, maps; panel 068 R2, ratified 2026-08-16; panel 084).
-# Port of crates/heroes/src/types/ordering.rs.
+# Port of archive/bootstrap-rs/heroes/src/types/ordering.rs.
 #
 # THE RULE: `sort` orders an array whose element is one of twelve types —
 # the eight integer widths, the two floats, `str`, and `bool`. The set is

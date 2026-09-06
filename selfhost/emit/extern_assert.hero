@@ -1,7 +1,7 @@
 # Making clang say whether the author's extern declaration matches the
 # real header (design.md §4.19; CLAUDE.md §7's one named exception;
 # panels 036, 038, 042, 052, 063, 083). Port of
-# crates/heroes/src/emit/extern_assert.rs.
+# archive/bootstrap-rs/heroes/src/emit/extern_assert.rs.
 #
 # The only place in the backend where a clang failure is the AUTHOR's
 # mistake rather than the compiler's: exit 1 and an ffi_return_type

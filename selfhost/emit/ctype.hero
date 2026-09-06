@@ -1,6 +1,6 @@
 # A Heroes type as a C type, and what every declared type is CALLED
 # (design.md §3.1; panels 020, 031 R10, 060, 062, 074).
-# Port of crates/heroes/src/emit/{ctype,typedefs,typedefs_generated,
+# Port of archive/bootstrap-rs/heroes/src/emit/{ctype,typedefs,typedefs_generated,
 # aggregate_name}.rs — one module, because what a type IS and what it
 # is NAMED reference each other in Rust and the cycle rule folds them:
 # the ninth knot.

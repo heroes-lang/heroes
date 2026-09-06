@@ -1,5 +1,5 @@
 # WHICH descriptors a program needs — the reachability half (design.md
-# §4.20; panel 022). Port of crates/heroes/src/emit/descriptor_set.rs.
+# §4.20; panel 022). Port of archive/bootstrap-rs/heroes/src/emit/descriptor_set.rs.
 #
 # Nothing here writes a byte of output; nothing in the naming half
 # walks the arena. The walk earns its own module because it is the part

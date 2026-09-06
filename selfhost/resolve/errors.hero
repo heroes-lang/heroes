@@ -1,7 +1,7 @@
 # Every name error the resolver can produce, in one file — because they are
 # one diagnostic class and design.md §4.17 judges them together: the error
 # carries what is needed to fix the program without opening another file.
-# Port of crates/heroes/src/resolve/errors.rs. (errors_modules.rs — the
+# Port of archive/bootstrap-rs/heroes/src/resolve/errors.rs. (errors_modules.rs — the
 # module-shaped half — is a later file: it needs nothing here and nothing
 # here needs it.)
 #

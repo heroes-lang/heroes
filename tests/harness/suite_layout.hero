@@ -1,6 +1,6 @@
 # CLAUDE.md §11's per-file ceiling, enforced instead of remembered.
 #
-# NOT a port. `layout.rs` walks `crates/**/*.rs`; the compiler is
+# NOT a port. `layout.rs` walks `archive/bootstrap-rs/**/*.rs`; the compiler is
 # `selfhost/**/*.hero` now — flat until M-selfhost-nesting, ten directories
 # after it — and three things about it change the check itself. This is the
 # rewrite panel 085 R4 said it would have to be.

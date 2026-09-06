@@ -1,6 +1,6 @@
 # The parser's front door: text → tree in one call (design.md §3.3 — a
 # library with a thin CLI on top; Part 10 step 2).
-# Port of crates/heroes/src/syntax/mod.rs::parse — the last piece of the
+# Port of archive/bootstrap-rs/heroes/src/syntax/mod.rs::parse — the last piece of the
 # syntax stage, and the one that makes the pipeline an implementation detail
 # of the frontend rather than of its clients.
 

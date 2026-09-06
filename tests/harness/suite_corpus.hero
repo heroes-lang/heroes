@@ -1,6 +1,6 @@
 # examples/ — real programs, in three configurations.
 #
-# Port of crates/heroes-cli/tests/corpus.rs, whose four cheap checks are
+# Port of archive/bootstrap-rs/heroes-cli/tests/corpus.rs, whose four cheap checks are
 # here; the fifth (the generated C compiles with no warnings) needs the
 # flag set and lands with it.
 #

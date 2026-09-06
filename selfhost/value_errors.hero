@@ -1,5 +1,5 @@
 # Mismatches, operators, and the two rules about where a value may stand.
-# Port of crates/heroes/src/types/errors/values.rs.
+# Port of archive/bootstrap-rs/heroes/src/types/errors/values.rs.
 #
 # The pair worth reading together is `discarded_value` and `bound_unit`:
 # panel 003 made a non-`()` expression alone on a line an error, and panel

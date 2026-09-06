@@ -1,6 +1,6 @@
 # The built-ins' type rules, the conversions, and the three T? readers
 # (design.md §4.20, §4.3, §4.6; panels 006, 042, 043, 044, 054, 060, 068).
-# Port of crates/heroes/src/types/{builtins,conversions,fallible_ops}.rs —
+# Port of archive/bootstrap-rs/heroes/src/types/{builtins,conversions,fallible_ops}.rs —
 # three Rust files held together by super:: (both satellites call
 # builtins::arg_error), one Heroes module because the language refuses
 # the cycle. Fourth time the module rule draws a boundary.

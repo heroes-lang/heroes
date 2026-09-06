@@ -1,7 +1,7 @@
 # The program's three edges, round-tripped (§1.11, panel 036).
 #
 # `read_file`, `write_file`, `args` and `exit` are written in Heroes, in
-# `crates/heroes/src/library/source.hero`, over `extern` declarations against
+# `archive/bootstrap-rs/heroes/src/library/source.hero`, over `extern` declarations against
 # `hero_os.h` — the same door SQLite and libm come through. So this case is not
 # only about file I/O: it is the proof that Tier 2 reaches the operating system
 # without a single new built-in and without a second composition form in the

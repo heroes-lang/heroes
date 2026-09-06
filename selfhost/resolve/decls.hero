@@ -1,6 +1,6 @@
 # One declaration at a time: its generics, its signature, its body (§4.2
 # the entities, §4.12 generics, §4.18 `test`, §4.19 `extern`).
-# Port of crates/heroes/src/resolve/decls.rs.
+# Port of archive/bootstrap-rs/heroes/src/resolve/decls.rs.
 #
 # Every declaration starts from an empty scope stack. That is the point of
 # the top-level table: nothing a function binds can be seen by another

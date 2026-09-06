@@ -1,6 +1,6 @@
 # What a value must satisfy: assigned once, and DEFINED ON EVERY PATH
 # THAT READS IT (design.md Part 10 step 6; panel 020 R4.10).
-# Port of crates/heroes/src/ir/values.rs.
+# Port of archive/bootstrap-rs/heroes/src/ir/values.rs.
 #
 # Why the emitter needs dominance: every temporary is hoisted to the C
 # function's prologue and nothing is initialised there, so a value read

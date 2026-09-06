@@ -17,7 +17,7 @@
 #
 # What makes this case a test rather than an anecdote is the invariant that scans
 # every `run/` golden: `no_generated_line_points_past_or_between_the_authors_lines`
-# in `crates/heroes-cli/tests/golden.rs`. Reverted against this tree it reports 550.
+# in `archive/bootstrap-rs/heroes-cli/tests/golden.rs`. Reverted against this tree it reports 550.
 # This file is shaped to be the worst case for it — the last statement of each
 # function is one that lowers to several C lines, which is what makes the drift run
 # off the end rather than onto a line that happens to exist.

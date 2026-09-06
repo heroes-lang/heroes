@@ -1,6 +1,6 @@
 # Source text and byte-offset spans: every file of one compilation in ONE
 # text (design.md §1.11, §4.1, §4.17; panels 031, 032).
-# Port of crates/heroes/src/source/{mod,files,locate,build}.rs — four files,
+# Port of archive/bootstrap-rs/heroes/src/source/{mod,files,locate,build}.rs — four files,
 # 511 lines; one module here NOT because of a cycle but because the record
 # and its questions are one concern.
 #

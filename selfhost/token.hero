@@ -1,5 +1,5 @@
 # The token vocabulary: every word-shape the language has, and nothing else.
-# Port of crates/heroes/src/lexer/token.rs (M-selfhost-probe).
+# Port of archive/bootstrap-rs/heroes/src/lexer/token.rs (M-selfhost-probe).
 #
 # A Token is deliberately tiny — a kind plus a byte span into the source text.
 # The text is never copied out: whoever needs it slices the source. The port

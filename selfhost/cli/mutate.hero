@@ -1,6 +1,6 @@
 # heroes mutate [dir] — metric 3, offline (design.md Part 11).
 #
-# Port of crates/heroes-cli/src/commands/mutate.rs. Takes every program in the
+# Port of archive/bootstrap-rs/heroes-cli/src/commands/mutate.rs. Takes every program in the
 # corpus that checks clean, makes **one plausible mistake per site**, and counts
 # how many the compiler catches — in two arms, so the number means something. A
 # language that rejects everything would score 100% and prove nothing, which is

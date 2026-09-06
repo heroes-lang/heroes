@@ -1,5 +1,5 @@
 # A value written between quotes (design.md §4.1; spec § Types; panel 008).
-# Port of crates/heroes/src/lexer/literals.rs, plus the escape VALIDATOR from
+# Port of archive/bootstrap-rs/heroes/src/lexer/literals.rs, plus the escape VALIDATOR from
 # escape.rs — in Rust it is an impl on LexState living beside the table; here
 # it lives beside its only two callers, and the table stays pure in escape.
 #

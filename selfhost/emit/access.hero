@@ -1,5 +1,5 @@
 # Reading one part of a composite value (design.md §4.6, §4.9, §4.20;
-# panels 022, 023). Port of crates/heroes/src/emit/access.rs.
+# panels 022, 023). Port of archive/bootstrap-rs/heroes/src/emit/access.rs.
 #
 # One shape asked five ways — tag, payload, field, index, len — and
 # what unites them is that each is a READ THAT CANNOT ALLOCATE. Two are

@@ -1,6 +1,6 @@
 # Which expressions have no type of their own (design.md §4.5; spec §
 # Types; panels 023, 042, 053, 060).
-# Port of crates/heroes/src/types/contextual.rs — the one list both of
+# Port of archive/bootstrap-rs/heroes/src/types/contextual.rs — the one list both of
 # §4.5's modes need first: is this form ⇐-only? Listed in one place
 # precisely so every rule agrees what the list is; two readings of it
 # would be two languages, and for one day on the Rust side they were.

@@ -1,6 +1,6 @@
 # The half of §4.19's guarantee that asks what an extern ACCEPTS
 # (design.md §4.19; panels 036, 042, 051, 052, 053). Port of
-# crates/heroes/src/emit/extern_probe.rs.
+# archive/bootstrap-rs/heroes/src/emit/extern_probe.rs.
 #
 # extern_assert asks what a header RETURNS, with a _Generic whose
 # controlling expression C11 does not evaluate — and that mechanism is

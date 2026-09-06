@@ -1,5 +1,5 @@
 # A value the C type system gives NO STORAGE — today, a fixed array
-# (design.md §3.1; panel 062). Port of crates/heroes/src/emit/storageless.rs.
+# (design.md §3.1; panel 062). Port of archive/bootstrap-rs/heroes/src/emit/storageless.rs.
 #
 # The unit rule's second instance: () is never declared because
 # `void t0;` is a hard error; a T[N] is never declared because C has no

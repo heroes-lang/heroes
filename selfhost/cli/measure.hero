@@ -1,7 +1,7 @@
 # heroes measure [file] — the spec budget, measured (design.md §1.6).
 #
-# Port of crates/heroes-cli/src/commands/measure.rs, and the reason it is in
-# the port at all: design.md §1.6 names `crates/heroes/src/measure/gate.rs`
+# Port of archive/bootstrap-rs/heroes-cli/src/commands/measure.rs, and the reason it is in
+# the port at all: design.md §1.6 names `archive/bootstrap-rs/heroes/src/measure/gate.rs`
 # as the budget's live enforcer, so archiving the bootstrap without this
 # would make a Part 1 sentence false and leave the ceiling defended by
 # nothing (panel 085, the spec-warden's veto).
@@ -23,7 +23,7 @@
 # for itself. The Rust resolves the repository root at COMPILE time
 # (`CARGO_MANIFEST_DIR`), which a Heroes program cannot do and should not
 # want to: panel 085 R5 measured what that class of trick costs when it
-# fails — the port read its standard library from `crates/` at run time,
+# fails — the port read its standard library from `archive/bootstrap-rs/` at run time,
 # and outside the repository every program was refused on the AUTHOR's line.
 # So the tables are read relative to the working directory, and their
 # absence is exit 2 in the tool's own name, never a silent empty table. That

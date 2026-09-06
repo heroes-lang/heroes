@@ -1,7 +1,7 @@
 # The names no file may declare — design.md §4.20's consolidated inventory,
 # which is also Principle 0's library closure list (§1.0), split by §1.11's
 # two tiers.
-# Port of crates/heroes/src/resolve/inventory.rs.
+# Port of archive/bootstrap-rs/heroes/src/resolve/builtins.rs.
 #
 # **The tier says where the implementation comes from, not whether the name
 # is taken.** Every name here is reserved everywhere: at the top level, as a

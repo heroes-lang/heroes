@@ -1,5 +1,5 @@
 # One rule for every branch join in the language.
-# Port of crates/heroes/src/types/join.rs.
+# Port of archive/bootstrap-rs/heroes/src/types/join.rs.
 #
 # An `if` used as a value, a `match` used as a value, and a block whose
 # value is its last statement all ask the same question: given these

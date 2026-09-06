@@ -1,6 +1,6 @@
 # What may be a map's KEY — one walk, every rule (§4.19, spec § Strings,
 # arrays, maps; panels 061 and 069).
-# Port of crates/heroes/src/types/map_keys.rs.
+# Port of archive/bootstrap-rs/heroes/src/types/map_keys.rs.
 #
 # A map key is the one refusal with no operator behind it: `==` fires on
 # a token the author typed; `m[k] @ v` fires on nothing — the hazard is

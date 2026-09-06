@@ -1,5 +1,5 @@
 # What must be true AFTER WHICH PASS (panel 021 R8).
-# Port of crates/heroes/src/ir/phases.rs.
+# Port of archive/bootstrap-rs/heroes/src/ir/phases.rs.
 #
 # Before the ownership pass there is no reference counting; after it,
 # every exit edge releases what it owns. Naming the phase is what makes

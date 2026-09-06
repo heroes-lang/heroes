@@ -1,6 +1,6 @@
 # The per-type functions C cannot write for itself: which ones exist,
 # and in what order (design.md §4.3, §4.10, §4.20; panel 022).
-# Port of crates/heroes/src/emit/perfn.rs.
+# Port of archive/bootstrap-rs/heroes/src/emit/perfn.rs.
 #
 # THIS MODULE IS THE ORDER, NOT THE C. Each function's body lives with
 # the invariant it serves — emit_counted for the two reference walks,

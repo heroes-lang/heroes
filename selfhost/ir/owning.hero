@@ -1,5 +1,5 @@
 # Which operations hand back a NEW reference (design.md §4.10; panels
-# 021, 022). Port of crates/heroes/src/owning.rs.
+# 021, 022). Port of archive/bootstrap-rs/heroes/src/owning.rs.
 #
 # The ownership pass decides WHERE an incref and a release go; this
 # decides WHAT needs one at all, and it is worth its own module because

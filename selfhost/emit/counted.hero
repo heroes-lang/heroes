@@ -1,6 +1,6 @@
 # Who owns a counted reference, and the retain/release that follows
 # (design.md §4.10, §4.20; panels 022, 034). Port of
-# crates/heroes/src/emit/counted.rs.
+# archive/bootstrap-rs/heroes/src/emit/counted.rs.
 #
 # Two questions, one concern: does this declaration own a reference,
 # and what is the one line that keeps it alive. Together because the

@@ -1,5 +1,5 @@
 # How a token is named in a diagnostic.
-# Port of crates/heroes/src/syntax/describe.rs.
+# Port of archive/bootstrap-rs/heroes/src/syntax/describe.rs.
 #
 # Parse errors read "expected X, found Y", and both halves come from here. The
 # names are prose, not source text, because the three tokens that matter most

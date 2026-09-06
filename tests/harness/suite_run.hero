@@ -2,7 +2,7 @@
 # expectation.
 #
 # Port of golden_run_cases_produce_their_output_at_both_optimisation
-# _levels (crates/heroes-cli/tests/golden.rs:707). The three
+# _levels (archive/bootstrap-rs/heroes-cli/tests/golden.rs:707). The three
 # configurations are the test, and each one exists for a measured reason:
 #
 # -O0        `build -o <binary>`, then the harness runs the binary

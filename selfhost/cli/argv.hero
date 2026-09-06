@@ -1,7 +1,7 @@
 # How one argv line is read against the table — cli_argv, so the
 # parse VERB keeps its own name (CLAUDE.md §10; panels
 # 016, 020, 055, 056). Port of the parse half of
-# crates/heroes-cli/src/cli.rs.
+# archive/bootstrap-rs/heroes-cli/src/cli.rs.
 #
 # Three properties this file exists to guarantee: STRICT (an unknown
 # flag, a flag on the wrong command, a second operand — each an error

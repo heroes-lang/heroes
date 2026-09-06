@@ -1,5 +1,5 @@
 # The verifier — GHC's Core Lint, without GHC's tree (panel 019 point 1).
-# Port of crates/heroes/src/ir/verify.rs.
+# Port of archive/bootstrap-rs/heroes/src/ir/verify.rs.
 #
 # GHC is the precedent usually cited for building a separate desugared
 # tree, and what Core actually bought GHC was not the tree: it was

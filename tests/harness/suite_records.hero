@@ -1,6 +1,6 @@
 # The record checks: what the repository must be true of ITSELF.
 #
-# Port of crates/heroes-cli/tests/milestones.rs, five checks that read no
+# Port of archive/bootstrap-rs/heroes-cli/tests/milestones.rs, five checks that read no
 # compiler output at all — they read the tree. Panel 085 named
 # `milestones.rs ×5` among the tests with no successor whatever, and this
 # is the module that answers it.
@@ -109,7 +109,7 @@ constant GENERATED: [str]
 # a failure by name, which is more than "a C file lives outside the
 # directories that own C".
 
-# **The archived bootstrap is a frozen tree, not a living file.** `crates/`
+# **The archived bootstrap is a frozen tree, not a living file.** `archive/bootstrap-rs/`
 # became `archive/bootstrap-rs/` at M-bootstrap-archive; nothing builds it,
 # nothing runs its tests, and its 25,482 lines of Rust name every milestone
 # this project ever had under the spelling it had then. Walking it would
@@ -708,7 +708,7 @@ function c_files(@r: report.Report, living: [str])
 # series in 2018 — and panel 086's historian named it as the documented failure
 # mode of leaving a citation pointing into an archive. This project was one commit
 # away from the same thing: `design.md` cited
-# `crates/heroes/src/measure/gate.rs` twice as a LIVE home while `crates/` was
+# `archive/bootstrap-rs/heroes/src/measure/gate.rs` twice as a LIVE home while `archive/bootstrap-rs/` was
 # being archived.
 #
 # THE RULE IS ANCHORED, AND THE ALTERNATIVE WAS MEASURED AND REFUSED. Panel 086's
@@ -960,8 +960,8 @@ function without_member(token: str) -> str
 #
 # **The second half is not belt-and-braces, it is the hole the first half had.**
 # Anchoring on existing directories is self-adjusting in the wrong direction: the
-# moment `crates/` moved to `archive/bootstrap-rs/`, every citation of
-# `crates/heroes/src/measure/gate.rs` stopped being a path claim — because its root
+# moment `archive/bootstrap-rs/` moved to `archive/bootstrap-rs/`, every citation of
+# `archive/bootstrap-rs/heroes/src/measure/gate.rs` stopped being a path claim — because its root
 # had ceased to exist — so the check went green over exactly the citations it was
 # built to catch. Measured 2026-08-19, one commit after it landed: 6 passed, three
 # dead citations unseen. A file extension is a fact about the token itself and

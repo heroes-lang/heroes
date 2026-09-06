@@ -1,6 +1,6 @@
 # The class where C WOULD WRITE THROUGH A CSTR (design.md §1.12,
 # §4.19; panel 058, ratified 2026-08-15). Port of
-# crates/heroes/src/emit/ffi_mutable.rs.
+# archive/bootstrap-rs/heroes/src/emit/ffi_mutable.rs.
 #
 # .cstr() is zero-copy (§4.20): it hands C the interior pointer of a
 # refcounted, copy-on-write buffer. A C function whose parameter is a

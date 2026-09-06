@@ -1,5 +1,5 @@
 # Layout: the part of the lexer that reads *shape* instead of words.
-# Port of crates/heroes/src/lexer/layout.rs.
+# Port of archive/bootstrap-rs/heroes/src/lexer/layout.rs.
 #
 # Heroes has no braces and no semicolons (design.md §4.15), so structure
 # travels in two invisible currencies, both minted here: Indent/Dedent from

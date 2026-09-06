@@ -1,6 +1,6 @@
 # heroes build, run and test — the three verbs that compile (design.md
 # §3.5, §4.18; panels 016, 020, 021, 070). Port of
-# crates/heroes-cli/src/commands/{build,run,test}.rs plus the
+# archive/bootstrap-rs/heroes-cli/src/commands/{build,run,test}.rs plus the
 # toolchain glue their shared pipeline ends in.
 #
 # build says `wrote build/<hash>/f` on STDERR because the measurement

@@ -9,7 +9,7 @@ _Static_assert(HERO_RUNTIME_ABI == 21, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
-#line 40 "tests/golden/fixedbugs/ffi-a-field-the-header-has-as-an-array.hero"
+#line 54 "tests/golden/fixedbugs/ffi-a-field-the-header-has-as-an-array.hero"
 _Static_assert(__builtin_classify_type(((struct dirent *)0)->d_name) == 1 && sizeof(((struct dirent *)0)->d_name) == sizeof(int8_t) && (_Generic(((struct dirent *)0)->d_name, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Dirent d_name");
 #line 15 "ffiafieldtheheaderhasasanarray.c"
 
@@ -94,19 +94,19 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_ffiafieldtheheaderhasasanarray_main(void);
 
-#line 42 "tests/golden/fixedbugs/ffi-a-field-the-header-has-as-an-array.hero"
+#line 56 "tests/golden/fixedbugs/ffi-a-field-the-header-has-as-an-array.hero"
 void h_ffiafieldtheheaderhasasanarray_main(void) {
 #line 100 "ffiafieldtheheaderhasasanarray.c"
     int64_t t1;
     goto bb0;
 bb0:
-#line 43 "tests/golden/fixedbugs/ffi-a-field-the-header-has-as-an-array.hero"
+#line 57 "tests/golden/fixedbugs/ffi-a-field-the-header-has-as-an-array.hero"
     t1 = INT64_C(1);
-#line 43 "tests/golden/fixedbugs/ffi-a-field-the-header-has-as-an-array.hero"
+#line 57 "tests/golden/fixedbugs/ffi-a-field-the-header-has-as-an-array.hero"
     hero_print_int(t1);
-#line 43 "tests/golden/fixedbugs/ffi-a-field-the-header-has-as-an-array.hero"
+#line 57 "tests/golden/fixedbugs/ffi-a-field-the-header-has-as-an-array.hero"
     hero_print_end();
-#line 43 "tests/golden/fixedbugs/ffi-a-field-the-header-has-as-an-array.hero"
+#line 57 "tests/golden/fixedbugs/ffi-a-field-the-header-has-as-an-array.hero"
     return;
 #line 112 "ffiafieldtheheaderhasasanarray.c"
 }

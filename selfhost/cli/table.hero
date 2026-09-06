@@ -1,6 +1,6 @@
 # Every command, as data (CLAUDE.md §10; panel 016) — the table that
 # both parses argv and prints --help, so the two cannot disagree.
-# Port of crates/heroes-cli/src/cli/table.rs.
+# Port of archive/bootstrap-rs/heroes-cli/src/cli/table.rs.
 #
 # The order is the pipeline's — stage by stage, then the tools —
 # because that is the order someone learning the compiler meets them

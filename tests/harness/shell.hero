@@ -2,7 +2,7 @@
 # capture its two streams and the status a shell would print, and list a
 # directory.
 #
-# Port of what crates/heroes-cli/tests/*.rs get from Rust's
+# Port of what archive/bootstrap-rs/heroes-cli/tests/*.rs get from Rust's
 # `std::process::Command` and `std::fs::read_dir`. design.md §1.11 is why
 # this file exists at all — Heroes has no standard library, so a process
 # and a directory arrive through C, and C's own `system()` is the one

@@ -1,6 +1,6 @@
 # A function's C body: the prologue, the blocks, and what is left out
 # (design.md §3.1; panels 020, 021, 029, 038). Port of
-# crates/heroes/src/emit/body.rs.
+# archive/bootstrap-rs/heroes/src/emit/body.rs.
 #
 # THE PROLOGUE EXISTS BECAUSE GOTO MAY NOT JUMP OVER AN INITIALISATION.
 # Every slot and temporary is declared at the top, and nothing is given

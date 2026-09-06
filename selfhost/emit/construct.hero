@@ -1,5 +1,5 @@
 # A composite value coming into existence (design.md §4.20, §4.6;
-# panels 021, 022, 023). Port of crates/heroes/src/emit/construct.rs.
+# panels 021, 022, 023). Port of archive/bootstrap-rs/heroes/src/emit/construct.rs.
 #
 # One question asked five times — WHERE DO THE ARGUMENTS GO — and the
 # five answers divide into two kinds, which is the whole content: a

@@ -1,5 +1,5 @@
 # What the author sees when the program stops (design.md §4.18; spec
-# line 163; panels 020, 042, 052). Port of crates/heroes/src/emit/abort.rs.
+# line 163; panels 020, 042, 052). Port of archive/bootstrap-rs/heroes/src/emit/abort.rs.
 #
 # The concern is single and it is not "aborting": it is THE TEXT A
 # PERSON READS AT THE MOMENT OF THE STOP. Everything here runs after

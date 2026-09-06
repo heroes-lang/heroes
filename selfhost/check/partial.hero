@@ -1,6 +1,6 @@
 # What a PARTIAL record may not do, and how far the refusal reaches
 # (spec § FFI; panel 061, ratified 2026-08-15).
-# Port of crates/heroes/src/types/partial.rs.
+# Port of archive/bootstrap-rs/heroes/src/types/partial.rs.
 #
 # A group's record marked `partial` names some of the header's struct.
 # Every operation that COPIES the value is safe at any size (124 of 124

@@ -1,5 +1,5 @@
 # What an instruction still means when NOBODY READS ITS RESULT.
-# Port of crates/heroes/src/emit/unread.rs.
+# Port of archive/bootstrap-rs/heroes/src/emit/unread.rs.
 #
 # Nothing here emits anything: inst answers "what does this look like
 # in C"; this answers "may it lose its destination, and may it

@@ -1,6 +1,6 @@
 # How a type is spelled inside an assertion that is NEVER EVALUATED
 # (design.md §4.19; panels 042, 058, 060, 062, 063, 083). Port of
-# crates/heroes/src/emit/assert_spelling.rs.
+# archive/bootstrap-rs/heroes/src/emit/assert_spelling.rs.
 #
 # _Generic's controlling expression is unevaluated (C11 6.5.1.1p3),
 # which is what makes the whole mechanism free — and why nothing here

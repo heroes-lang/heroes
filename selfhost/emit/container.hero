@@ -1,6 +1,6 @@
 # [T] and {K: V} as C: built through the runtime, read through a
 # descriptor, written with ONE UNSHARE PER STEP (design.md §4.9, §4.10;
-# panels 022, 062). Port of crates/heroes/src/emit/container.rs.
+# panels 022, 062). Port of archive/bootstrap-rs/heroes/src/emit/container.rs.
 #
 # One file because they are the same mechanism wearing two names:
 # neither is a C aggregate, both are a pointer to a runtime header, and

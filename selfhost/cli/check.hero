@@ -1,6 +1,6 @@
 # heroes check <file.hero> [flags] — names and types (design.md
 # §4.16, §4.17; CLAUDE.md §8, §10). Port of
-# crates/heroes-cli/src/commands/check.rs.
+# archive/bootstrap-rs/heroes-cli/src/commands/check.rs.
 #
 # The stages are ordered, not interleaved: EACH RUNS ONLY IF THE ONE
 # BEFORE IT SAID NOTHING. After a parse error the tree is recovery

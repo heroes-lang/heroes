@@ -1,6 +1,6 @@
 # A function's C signature: the prototype, and the name a monomorphised
 # instance gets (design.md §3.1, §4.12; panel 029 R5).
-# Port of crates/heroes/src/emit/signature.rs.
+# Port of archive/bootstrap-rs/heroes/src/emit/signature.rs.
 #
 # A prototype IS a signature and a semicolon, and a definition is the
 # same signature and a body — writing it in one place is what keeps a

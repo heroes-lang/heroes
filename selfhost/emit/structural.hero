@@ -1,6 +1,6 @@
 # The two functions that must agree: generated eq and generated hash
 # (design.md §4.3, §4.9; panels 022, 029, 061, 062). Port of
-# crates/heroes/src/emit/{structural,structural_fixed}.rs — one module,
+# archive/bootstrap-rs/heroes/src/emit/{structural,structural_fixed}.rs — one module,
 # because they are ONE invariant: two values that compare equal must
 # hash equal, and the moment the two walks disagree a map loses a key
 # it contains. That failure is silent on insert and loud only much

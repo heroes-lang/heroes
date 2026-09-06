@@ -1,5 +1,5 @@
 # What an instruction reads (design.md Part 5's ownership pass; panel
-# 019). Port of crates/heroes/src/ir/uses.rs.
+# 019). Port of archive/bootstrap-rs/heroes/src/ir/uses.rs.
 #
 # One function per question — the values an operation reads, the values
 # a terminator reads, the slots an operation names — and each is an

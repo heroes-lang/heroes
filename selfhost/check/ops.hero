@@ -1,5 +1,5 @@
 # §4.14's operators, and there are no promotions anywhere.
-# Port of crates/heroes/src/types/ops.rs.
+# Port of archive/bootstrap-rs/heroes/src/types/ops.rs.
 #
 # Every rule here is monomorphic on purpose: `1 + 2.0` is an error, and
 # the error names the conversion the spec provides. That is the whole of

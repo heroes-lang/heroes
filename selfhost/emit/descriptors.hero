@@ -1,6 +1,6 @@
 # Which types need a HeroDesc, what to call it, and the C that defines
 # one (design.md §4.20; panels 022, 061). Port of
-# crates/heroes/src/emit/descriptors.rs.
+# archive/bootstrap-rs/heroes/src/emit/descriptors.rs.
 #
 # The runtime works on an array through a descriptor because C has no
 # generic copy, drop, comparison or hash — and it must be a DESCRIPTOR

@@ -1,6 +1,6 @@
 # The diagnostics about what may cross the FFI boundary (design.md §4.19;
 # panels 036, 038, 060, 061, 062, 069).
-# Port of crates/heroes/src/types/errors/ffi.rs.
+# Port of archive/bootstrap-rs/heroes/src/types/errors/ffi.rs.
 #
 # Three codes and not one, because the reader's mistake differs in each: a
 # signature names a type C cannot spell; a `constant` names a type that is

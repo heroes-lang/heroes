@@ -1,6 +1,6 @@
 # The classes where THE MACHINE DOES NOT HAVE what the group named
 # (design.md §4.19; panels 048, 049, 050, 055). Port of
-# crates/heroes/src/emit/ffi_build.rs.
+# archive/bootstrap-rs/heroes/src/emit/ffi_build.rs.
 #
 # These four are not about the author's types at all — the declaration
 # may be perfect and the header still absent, the symbol still

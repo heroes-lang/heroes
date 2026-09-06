@@ -1,6 +1,6 @@
 # What a header CALLS the type: the tag it keeps in C's other
 # namespace, and the two ways naming it can go wrong (design.md §4.19;
-# panels 074, 077). Port of crates/heroes/src/emit/ffi_tag.rs.
+# panels 074, 077). Port of archive/bootstrap-rs/heroes/src/emit/ffi_tag.rs.
 #
 # The seam with emit_ffi_record: that file answers "what are this
 # struct's FIELDS", this one "what is this struct CALLED". A field

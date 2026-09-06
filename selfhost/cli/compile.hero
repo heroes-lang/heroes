@@ -1,6 +1,6 @@
 # The pipeline from a .hero file to a translation unit, shared by
 # build, run and test (design.md §3.1; panels 019, 020, 021, 029).
-# Port of crates/heroes-cli/src/commands/{compile,contract}.rs — the
+# Port of archive/bootstrap-rs/heroes-cli/src/commands/{compile,contract}.rs — the
 # halves that decide WHAT is built and how the command talks; handing
 # the C to clang is cli_toolchain's, the next crossing.
 #

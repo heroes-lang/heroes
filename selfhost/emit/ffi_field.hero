@@ -1,6 +1,6 @@
 # What the header says about ONE FIELD — its type, its absence, and
 # the one case where it has no size at all (design.md §4.19; panels
-# 060, 071, 079). Port of crates/heroes/src/emit/ffi_field.rs.
+# 060, 071, 079). Port of archive/bootstrap-rs/heroes/src/emit/ffi_field.rs.
 #
 # The seam with emit_ffi_record is the one the two halves already had:
 # that file answers "is this declaration the header's struct", this

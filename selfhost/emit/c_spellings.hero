@@ -1,6 +1,6 @@
 # What to declare a parameter as, given the C type clang reported
 # (design.md §4.19; panel 071). Port of
-# crates/heroes/src/emit/c_spellings.rs.
+# archive/bootstrap-rs/heroes/src/emit/c_spellings.rs.
 #
 # NOT a list of every C type and it must not become one: a row exists
 # because a real header used it and somebody bound it. size_t and

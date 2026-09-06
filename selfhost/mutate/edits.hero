@@ -1,7 +1,7 @@
 # One function per operator: every mutant it makes from one source, as text
 # edits guided by the tree (design.md Part 11, `harness/mutations/operators.md`).
 #
-# Port of crates/heroes/src/mutate/edits.rs. Each operator imitates a
+# Port of archive/bootstrap-rs/heroes/src/mutate/edits.rs. Each operator imitates a
 # *plausible* mistake — a habit carried from another language, a one-character
 # slip, a forgotten piece — and is applied to every applicable site, one mutant
 # per site, in arena order, so a run is reproducible from the compiler alone.

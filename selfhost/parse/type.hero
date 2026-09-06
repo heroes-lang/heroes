@@ -1,6 +1,6 @@
 # The type grammar (design.md §4.3 the type table, §4.6 `T?`, §4.13 function
 # types).
-# Port of crates/heroes/src/syntax/types.rs — **the port's first real grammar**:
+# Port of archive/bootstrap-rs/heroes/src/syntax/types.rs — **the port's first real grammar**:
 # everything before it was a table, a record or a cursor, and this is the first
 # file that consumes tokens and produces tree nodes.
 #

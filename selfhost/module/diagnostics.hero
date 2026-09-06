@@ -1,5 +1,5 @@
 # The module diagnostics (M-module-namespace, panel 031).
-# Port of crates/heroes/src/resolve/errors_modules.rs — in Rust a submodule
+# Port of archive/bootstrap-rs/heroes/src/resolve/errors_modules.rs — in Rust a submodule
 # re-exported through errors.rs; here its own file, because the §11
 # threshold is a reason to split where Rust's namespacing was a reason not
 # to bother.

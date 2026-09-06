@@ -1,6 +1,6 @@
 # heroes parse and heroes fmt — the two commands whose whole input is
 # the tree (design.md §3.5, §4.15). Port of
-# crates/heroes-cli/src/commands/{parse,fmt}.rs, one module because
+# archive/bootstrap-rs/heroes-cli/src/commands/{parse,fmt}.rs, one module because
 # each is a page and they share the refusal that matters.
 #
 # BOTH REFUSE A FILE WITH DIAGNOSTICS before doing their work: a tree

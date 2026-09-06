@@ -1,6 +1,6 @@
 # The half of §4.19 that asks whether a header's type is a UNION, and
 # stops the two operations that would answer wrongly (panels 073, 077).
-# Port of crates/heroes/src/emit/extern_union.rs.
+# Port of archive/bootstrap-rs/heroes/src/emit/extern_union.rs.
 #
 # A C union gives every member the same address. Bound as a record,
 # construction writes every field into one place and C's last
