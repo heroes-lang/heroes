@@ -64,7 +64,7 @@ M-separate-compilation already did.
 | The compiler | **54,111** lines of Heroes in **186** modules · the seed **734,938** lines of C · runtime ABI **21**, unmoved: the floor is an argument to `pthread_create` and not a declaration |
 | The spec | **3824** of a hard 4096 · headroom **272** — it **shrank** while gaining a sentence, `; so does recursion too deep.` at +7 against a −12 removal (`docs/panel/115`) |
 | Records | sittings **115** · journals **36** · examples **55** programs, **118** files, **545** `test` blocks · open defects **0** · the site **46** pages, 23 English and 23 Italian |
-| Waiting on the author | **0** decisions · **38** in `SCHEDULED.md` · **0** in `DEFECTS.md` · **319** in `LEARN.md` (never a gate) · an outstanding veto (`docs/panel/101` R3) |
+| Waiting on the author | **0** decisions · **39** in `SCHEDULED.md` · **0** in `DEFECTS.md` · **319** in `LEARN.md` (never a gate) · an outstanding veto (`docs/panel/101` R3) |
 
 Every number re-counted 2026-09-06 at M-declared-freer step 1, none carried. Three suites green: **584**, **1582**, **113** — four of those were a commit stale until this step, `e61fec3b` having stated 584 and 1582 in its own body while repairing defect 015 and touching neither document. What moved for THIS step is the compiler itself: **181 → 186** modules, and `ir/lower.hero` **1511 → 174**, the largest file in the tree until today (`tests/harness/suite_layout.hero` carries every number with its reason).
 
