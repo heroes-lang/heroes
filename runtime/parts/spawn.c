@@ -115,7 +115,19 @@ static pthread_mutex_t hero_spawn_lock = PTHREAD_MUTEX_INITIALIZER;
  * have to know that any of this exists. */
 static void hero_spawn_enter(HeroSpawnSlot *slot) {
     hero_thread_claim();
+    /* AND THE STACK GUARD IS CLAIMED HERE TOO, which is the whole of
+     * `M-thread-stacks`' door (panel 107). Its bounds and its alternate stack
+     * are the calling thread's, so a worker that recurses to the end of its
+     * stack was exit 132 with an empty stderr where `main` says `panic: stack
+     * exhausted in <function>` — measured on this Mac 2026-09-06, both ways.
+     * Panel 107 could not place this call: on 2026-09-04 no Heroes function ran
+     * on any thread but `main`, so there was no point at which to make it. */
+    hero_stack_guard_enter();
     slot->result = slot->body(slot->arg);
+    /* The alternate stack goes back to the OS with the thread that took it: a
+     * slot is reused (a bound on threads ALIVE, above), so a mapping kept per
+     * spawn would grow without bound in a program that spawns in a loop. */
+    hero_stack_guard_leave();
 }
 
 #if defined(_WIN32)

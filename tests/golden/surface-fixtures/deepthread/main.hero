@@ -1,0 +1,50 @@
+# The same recursion as `../deep/main.hero`, on a thread this program starts,
+# and it is the fixture that pins M-thread-stacks' repair.
+#
+# THE SYMPTOM, measured on this Mac 2026-09-06 before the repair: identical
+# programs, one calling `down` on the main thread and one calling it on a
+# spawned thread. The first said `panic: stack exhausted in main.down` and
+# exited 134. The second printed NOTHING and exited 132.
+#
+# THE CAUSE. `runtime/parts/stack.c` kept `hero_stack_lo` and `hero_stack_hi` —
+# where the stack begins and ends — in two ordinary file-scope objects, filled
+# once at startup, so on every thread but the first they described somebody
+# else's stack. The handler's first test asks whether the faulting address is
+# just below `lo`; against another thread's `lo` the answer is no, so the fault
+# was passed on to the default disposition and the thread died without a word.
+# The alternate stack the handler runs on is per thread by the kernel's own
+# definition, and it had been installed on the main thread alone, so even with
+# the bounds right there was nowhere for the handler to run.
+#
+# THE REPAIR. Both are `_Thread_local` now, and `hero_spawn_enter` claims the
+# guard on the thread it is about to run a Heroes function on — the same line
+# where it already claims the thread for `parts/thread.c`. Panel 107 adopted
+# this on 2026-09-04 and could not place it: on that day no Heroes function ran
+# anywhere but on `main`, so there was no such line to add it to. The milestone
+# that closed on 2026-09-06 wrote one.
+#
+# WHY TEN MILLION, and it is `../deep/main.hero`'s reason: a depth that fits on
+# one platform tests the platform and not the guard. A worker's stack is 536,576
+# bytes on Darwin and the executable's reserve on Windows, which the link line
+# sets to 64 MB — ten million frames fit in neither.
+#
+# WHY WINDOWS IS IN THIS ROW AND WAS NEVER BROKEN BY IT: measured on the box the
+# same day, the spawned thread there ALREADY said `panic: stack exhausted`,
+# because `AddVectoredExceptionHandler` registers with the process while
+# `sigaltstack` is the thread's. The row below asserts the message and not the
+# exit code, so it holds on all three platforms and would go red on any of them.
+
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
+
+function down(n: i64) -> i64
+    if n == 0
+        return 0
+    return 1 + down(n - 1)
+
+function worker(depth: i64) -> i64
+    return down(depth)
+
+function main()
+    print(hero_thread_join(handle: hero_thread_spawn(body: worker, arg: 10000000)))
