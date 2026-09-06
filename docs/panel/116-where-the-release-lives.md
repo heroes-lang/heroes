@@ -245,7 +245,28 @@ own.
 
 ## Author's verdict
 
-**PENDING.** The open item is in `docs/work/DECIDE.md` as `panel 116`, and work
+**RATIFIED 2026-09-06** (author instruction, *"I ratify"*), including item 7 —
+the reading of panel 109's *"generated per-freer release"* as per-freer at the C
+call site. That reading now stands as this sitting's, and the emission step
+builds on it.
+
+**What the yes settles**, and the shape is unusual enough to state: two seats
+vetoed each other and neither veto was overridden. The resolution is their
+intersection because they were answering different questions — one *which pass
+builds the release*, the other *what type the call carries at the C level* — and
+the FFI seat had written the exit into its own condition before the coordinator
+saw it. Nothing here was traded away to reach a middle.
+
+**What the yes does NOT settle**: the `ptr owned` half stays refused under panel
+109's standing veto with its own measured return conditions.
+
+**And the coordinator's contamination is ratified as part of the record, not
+around it.** The author read the sitting knowing that a supporting sentence in
+one verdict came from an uncommitted change in the coordinator's own binary.
+
+The text below is what was put to the author, kept as written.
+
+**PENDING (as it stood).** The open item is in `docs/work/DECIDE.md` as `panel 116`, and work
 proceeds on the provisional resolution above (CLAUDE.md §4: a panel never
 blocks). The author's verdict is appended here when given.
 
