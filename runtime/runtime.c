@@ -92,6 +92,17 @@
 #include <locale.h>
 #include <float.h>
 #include <math.h>
+/* C11's atomic operations, for the reference count and the leak gate's two
+ * counters (M-isolated-threads step 3). It is included HERE and deliberately not
+ * in `heroes_runtime.h`: the header is read by every generated translation unit
+ * — 170 of them for this compiler alone — and no generated line performs an
+ * atomic operation. The header needs the `_Atomic` keyword, which is the
+ * language and needs no include; only this file needs the functions.
+ *
+ * `atomic_fetch_add_explicit` and not clang's `__c11_atomic_*`: the two do the
+ * same thing, and one of them is C11 while the other is one compiler's. Nothing
+ * else in this runtime is spelled in a way only clang can read. */
+#include <stdatomic.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>

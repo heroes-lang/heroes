@@ -53,16 +53,19 @@ HeroArrayHeader *hero_array_new(const HeroDesc *elem, int64_t cap) {
         hero_panic("array too large");
     }
     HeroArrayHeader *a = hero_alloc_block(sizeof(HeroArrayHeader) + (size_t)cap * elem->size);
-    a->refcount = 1;
+    /* Relaxed on a block no other thread can see yet — `str.c`'s reason. */
+    atomic_store_explicit(&a->refcount, 1, memory_order_relaxed);
     a->len = 0;
     a->cap = cap;
     a->elem = elem;
     return a;
 }
 
+/* Relaxed up, acquire-release down — `str.c`'s two paragraphs carry the reason,
+ * and it is the same reason here because it is the same counter type. */
 void hero_array_incref(HeroArrayHeader *a) {
     if (a == NULL) return;
-    a->refcount += 1;
+    atomic_fetch_add_explicit(&a->refcount, 1, memory_order_relaxed);
 }
 
 /* Releasing an array releases what it holds, **iteratively** — see `drop.c` for
@@ -74,8 +77,11 @@ void hero_array_incref(HeroArrayHeader *a) {
  * arrays and maps unwinds without a frame per level. */
 void hero_array_decref(HeroArrayHeader *a) {
     if (a == NULL) return; /* the zero-init non-value: a no-op */
-    a->refcount -= 1;
-    if (a->refcount > 0) return;
+    /* `> 1` on the count BEFORE the subtraction is exactly the old `> 0` on the
+     * count after it, negative counts included — and a doomed block must reach
+     * the drop list on the path that used to read a negative, not be returned
+     * from as if it were still shared. */
+    if (atomic_fetch_sub_explicit(&a->refcount, 1, memory_order_acq_rel) > 1) return;
     if (hero_drop_running) {
         hero_drop_push_array(a);
         return;

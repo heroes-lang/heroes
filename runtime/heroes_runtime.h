@@ -75,11 +75,58 @@ typedef struct {
     int64_t len;     /* bytes, excluding the NUL */
 } HeroStr;
 
+/* -- the reference count, and why it has a name (design.md:2618-2624) --------
+ *
+ * design.md names two v1 invariants and this is the second one: keep refcount
+ * operations behind a narrow, never-inlined boundary *"so no inlining can smear
+ * refcount arithmetic across code that a thread-local counter would later have
+ * to change"*. The boundary was built and held. The counter behind it stayed a
+ * plain `int64_t` in three structs until M-isolated-threads step 3, and panel
+ * 111 measured what that costs the day C hands a Heroes function to a thread of
+ * its own: a shared `str` across 32 threads is `heap-use-after-free` or a double
+ * free in 9 ASan runs of 10, and without a sanitizer the count drifts to
+ * 6290-9785 where it should be 1.
+ *
+ * ONE TYPEDEF RATHER THAN THREE FIELDS, because the invariant is one: `str`,
+ * `[T]` and `{K: V}` are counted the same way, and three independent `_Atomic
+ * int64_t`s would be three places to forget. `_Atomic` and not a discipline of
+ * calling the right builtin on a plain integer: a plain field lets an ordinary
+ * `+= 1` compile and be wrong, where this one makes the same line correct (and
+ * sequentially consistent, which is slower and never wrong). The two hot paths
+ * ask for a weaker order explicitly, in `str.c`, `array.c` and `map.c`, and
+ * nowhere else.
+ *
+ * WHAT THIS DOES NOT FIX, named here because the cheap half is the easy half:
+ * `cow.c`'s `if (refcount == 1)` is a test and then a mutate, so two threads can
+ * both read 1 and both mutate. An atomic load makes that read whole; it does not
+ * make the pair one operation. That is a protocol, it is this milestone's, and
+ * `cow.c` carries the sentence at the line itself. */
+typedef _Atomic int64_t HeroRefcount;
+
+/* THE LAYOUT MUST NOT MOVE, and it is asserted rather than assumed. The emitter
+ * lays out a static literal's header with `HERO_STR_STATIC` below, so a wider or
+ * differently aligned counter would silently change what generated C emits.
+ * Lock-free matters for the same literal from the other side: its block is
+ * `static const`, so it can live in read-only memory, and a load that a lock had
+ * to guard would take a write lock on a page nobody may write.
+ *
+ * The lock-free question is asked with `__atomic_always_lock_free` rather than
+ * with `<stdatomic.h>`'s `ATOMIC_LLONG_LOCK_FREE`, for two reasons that are both
+ * facts about this repository: that macro names `long long`, and `int64_t` is
+ * `long` on one of the three platforms here, so it would answer about a type
+ * this header does not use; and the builtin needs no `#include`, which keeps
+ * this file — the one every generated translation unit reads — at the three
+ * includes it already had. */
+_Static_assert(sizeof(HeroRefcount) == sizeof(int64_t), "the refcount changed width");
+_Static_assert(_Alignof(HeroRefcount) == _Alignof(int64_t), "the refcount changed alignment");
+_Static_assert(__atomic_always_lock_free(sizeof(HeroRefcount), 0),
+               "a 64-bit atomic needs a lock here, and a str literal's block is read-only");
+
 /* The heap block header, immediately before ptr. Declared (not private) so the
  * emitter's static literals can be laid out by clang rather than by malloc.
  * refcount < 0 means "static, never freed". */
 typedef struct {
-    int64_t refcount;
+    HeroRefcount refcount;
     uint64_t magic; /* HERO_STR_MAGIC — see hero_str_decref */
 } HeroStrHeader;
 
@@ -301,7 +348,7 @@ extern const HeroDesc hero_desc_func;
  * rather than treating it as empty. */
 
 typedef struct HeroArrayHeader {
-    int64_t refcount;
+    HeroRefcount refcount;
     int64_t len;
     int64_t cap;
     const HeroDesc *elem;
@@ -438,7 +485,7 @@ void hero_array_push_owned(HeroArrayHeader **slot, const void *value);
  * through a shared one — `m[k] @ v` goes through `hero_map_set` on the slot. */
 
 typedef struct HeroMapHeader {
-    int64_t refcount;
+    HeroRefcount refcount;
     int64_t len;  /* live entries */
     int64_t cap;  /* buckets, always a power of two, always > len */
     const HeroDesc *key;

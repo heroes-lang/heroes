@@ -2551,7 +2551,25 @@ are *on* the closure list.
     receiver is not implicit, and no dynamic dispatch is needed since the body is copied at compile
     time. Requires an inlining pass in the lowering; likely lands together with closures.
 13. **Concurrency** — the largest gap. But value semantics puts you in the best possible position:
-    **no aliasing means no data race is expressible**, since there is no shared state to protect.
+    **no aliasing means no data race is expressible IN A PROGRAM'S OWN VALUES**, since the program
+    shares no state it would have to protect.
+
+    **Those last five words were not here until 2026-09-06, and they are the whole of what panel 111
+    found** (R7, ratified). The sentence is true of the values and false of the machinery holding
+    them up: two threads that alias no Heroes value whatsoever still meet on the **reference count**
+    of anything they both hold, which is not a value the program can see and therefore not one it can
+    be careful with. The sitting measured that rather than arguing it — a shared `str` across 32
+    threads is `heap-use-after-free` or a double free in 9 ASan runs of 10, and without a sanitizer
+    the count drifts to 6290-9785 where it should be 1. It is worth the correction because it is
+    precisely the sentence a reader would reach for to conclude that a worker thread is safe.
+    `spec:47`'s *"There are no mutable globals"* is the spec-side twin and **stays as written**: that
+    one is true, and it is true about the program rather than about the runtime under it.
+
+    **The refcount half is closed at M-isolated-threads step 3**, and this Part's own second
+    invariant below is why it was one edit rather than a redesign. What is still open is named at the
+    line that holds it, `runtime/parts/cow.c`: `if (refcount == 1)` is a test and then a mutate, and
+    an atomic makes that read whole without making the pair single.
+
     This is Erlang's 1986 insight (immutability plus message passing for concurrent systems) and the
     reason actors are natural there. The road is open and wide; it is simply far away. The shape is
     written down now — **isolated per-thread heaps, copying at the boundaries** — so the eventual
