@@ -16,39 +16,36 @@
 
   <h2>How to read this</h2>
   <p>
-    The Heroes specification sets the rules, but it is not a teaching text. It
-    stays short so the whole language fits in the few pages handed to a model.
-    It teaches the language the way a rulebook teaches a game. These twelve
-    chapters explain it one idea at a time, in order, without hiding the
-    reasoning. Together they cover the
-    whole language; the
-    <a href="https://github.com/heroes-lang/heroes/blob/main/spec/heroes-spec.md">specification,
-    237 lines</a>, is where to look when you want the rule rather than the
+    The specification sets the rules and is not a teaching text. It teaches the
+    language the way a rulebook teaches a game, and it stays under five pages so
+    the whole language fits in a prompt. These thirteen chapters explain it one
+    idea at a time, in order. Together they cover the language;
+    <a href="https://github.com/heroes-lang/heroes/blob/main/spec/heroes-spec.md">the
+    specification</a> is where to look when you want the rule rather than the
     explanation.
   </p>
   <p>
-    <b>Every code block in this documentation comes from a file in the
-    repository that compiles and runs.</b> Each block names its source file
-    underneath, so you can open it,
-    run it, and change it.
+    <b>Every code block here is cut from a file in <code>examples/</code> when
+    the site is built.</b> The block names that file underneath, and the build
+    refuses to ship a block that no longer matches it. Each of those programs is
+    compiled and run in three configurations on every commit.
+    <a href="/examples/">All of them, with their output &rarr;</a>
   </p>
 
   <h2>Errors, which are part of the language</h2>
   <p>
-    A diagnostic here is a finished part of the language. The page shows what
-    the compiler prints, the repairs it
-    can apply to your file for you, the holes it still has, and the measured
-    catch rate for each kind of mistake. Every error shown is real output,
-    copied from the repository and not trimmed to look better.
+    A diagnostic here is a finished part of the language. That page shows what
+    the compiler prints, the repairs it can apply to your file, the holes it
+    still has, and the measured catch rate per kind of mistake. Every error on
+    it is real output, not trimmed to look better.
     <a href="/errors/">Errors, and how to read one &rarr;</a>
   </p>
 
   <h2>The chapters</h2>
   <p>
-    Thirteen chapters, in teaching order rather than reference order. Start at the
-    top: each one assumes the ones above it and nothing else. The file named on
-    every line is the program that chapter is built from, copied into the page
-    rather than linked away.
+    In teaching order rather than reference order. Start at the top: each
+    chapter assumes the ones above it and nothing else. The file named on each
+    line is the program that chapter is built from.
   </p>
   <ol class="chapters">
     <li><a href="/docs/a-first-program/">A first program</a>
