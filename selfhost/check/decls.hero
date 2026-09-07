@@ -26,6 +26,7 @@ use check/state
 use check/lower
 use check/walk
 use check/ffi
+use check/freer as freer
 use check/generics
 use value_errors
 use flow_errors
@@ -116,6 +117,20 @@ function file(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Sou
                 # while the result beside it fired.
                 if fd.value.is_extern
                     ffi.ffi_signature(@c, a, s, decls, f: fd.value, result: result, declared_name: decl.name)
+
+                    # **Panel 109's condition 1, the half the probe cannot
+                    # ask.** The probe checks a freer's TYPE against its
+                    # header (step 4a), and a function no header declares has
+                    # no probe at all — so `owned bogus_name`, `owned` on a
+                    # Heroes function and `owned` on a two-parameter extern
+                    # were all `internal error` at exit 2 until 2026-09-07,
+                    # measured on all three: the release fell back to a plain
+                    # call and clang refused `assigning to 'h_0opt_…' from
+                    # incompatible type 'const char *'`. That is §7's own
+                    # forbidden shape — the compiler blaming itself for a typo
+                    # in a `.hero` file.
+                    for refused in freer.mark_refusals(s, decls, at: index)
+                        state.push_diagnostic(@c, refused)
 
                 if !fd.value.body.is_err()
                     got = walk.block(@c, a, r, s, decls, body: fd.value.body.must(), want: .nothing)

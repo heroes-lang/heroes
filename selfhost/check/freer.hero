@@ -75,6 +75,110 @@ function handed_back(@t: table.Types, fd: ast.FunctionDecl, declared: i64) -> i6
         return declared
     return table.intern(@t, .fallible(payload: table.str_ty(t)))
 
+# The same question for a marked `@` parameter: the CALLER's cell is a `str?`,
+# never the `cstr` the header spells. §4.19's *the `@` cell is only written*:
+# C writes a pointer into a hidden cell the lowering owns, and what reaches the
+# program's own cell is the copy, already validated, with the original freed
+# (`selfhost/ir/owned_release.hero`'s cells). A caller whose cell were a `cstr`
+# would hold the pointer the compiler is about to release.
+#
+# **The two halves land together or neither, measured a second time.** With
+# this alone, written 2026-09-07, `error: @problem` on a `str?` cell
+# type-checked and the same program was `internal error … passing 'h_0opt_… *'
+# to parameter of type 'char **'`, exit 2 — the result position's lesson, in
+# the same words, one day later.
+function handed_back_param(@t: table.Types, param: ast.Param, declared: i64) -> i64
+    if param.owned.is_err()
+        return declared
+    return table.intern(@t, .fallible(payload: table.str_ty(t)))
+
+# Whether the marks on this declaration name a freer the release can call —
+# an `extern` of THIS module, taking exactly one parameter — and the refusal
+# for each one that does not.
+#
+# **A mark naming nothing was `internal error` at exit 2 until 2026-09-07**:
+# `-> cstr owned bogus_name` type-checked (the result became a `str?`), the
+# lowering found no extern under that name and fell back to a plain call, and
+# clang refused `assigning to 'h_0opt_…' from incompatible type 'const char *'`
+# — the compiler blaming itself for a typo in a `.hero` file (CLAUDE.md §7).
+# The probe cannot catch it, because a function nobody declared has no probe.
+#
+# THIS module, because the release is a C call emitted in the marked
+# declaration's own unit, and that unit includes only its own groups' headers:
+# a freer declared in another module would be `call to undeclared function`.
+# One parameter, because the release hands the freer exactly one thing — the
+# string — and panel 109's condition 1 names the arity as what is verified.
+function mark_refusals(s: source.Source, decls: [ast.Decl], at: i64) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @ []
+
+    match decls[at].kind
+        .function_decl fd =>
+            if !fd.value.owned_result.is_err()
+                found = refusal_for_mark(s, decls, at: at, mark: fd.value.owned_result.must())
+
+                if !found.is_err()
+                    out @ out.push(found.must())
+
+            for param in fd.value.params
+                if !param.owned.is_err()
+                    found = refusal_for_mark(s, decls, at: at, mark: param.owned.must())
+
+                    if !found.is_err()
+                        out @ out.push(found.must())
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return out
+
+    return out
+
+# One mark's verdict: absent when the name is a one-parameter `extern` of the
+# marked declaration's module.
+function refusal_for_mark(s: source.Source, decls: [ast.Decl], at: i64, mark: token.Span) -> diag.Diagnostic?
+    name = source.span_text(s, mark)
+    module = source.component_at(s, decls[at].span.start)
+    heroes_function: bool @ false
+    arity: i64? @ fail("absent", "no extern declares it")
+
+    for one in decls
+        match one.kind
+            .function_decl fd =>
+                if source.span_text(s, one.name) == name
+                    if fd.value.is_extern && source.component_at(s, one.span.start) == module
+                        arity @ ok(fd.value.params.len())
+                    else if !fd.value.is_extern
+                        heroes_function @ true
+            .constant_decl | .record_decl | .variant_decl | .test_decl => continue
+
+    if arity.is_err()
+        d: diag.Diagnostic @ diag.new_diagnostic(
+            code: "unknown_freer",
+            message: "`" + name + "` frees nothing here: no `extern` in this module declares it, so `owned " + name + "` names a function the compiler cannot call",
+            span: mark
+        )
+
+        if heroes_function
+            d.notes @ d.notes.push(
+                "`" + name + "` is a Heroes function in this program; a freer is the C function that owns the allocation, declared in a group"
+            )
+        d.notes @ d.notes.push(
+            "declare `function " + name + "(p: ptr)` in a group of this module — the header that group names is what clang checks the freer against"
+        )
+        d.notes @ d.notes.push(
+            "§4.19: the compiler frees an `owned` string by calling the freer by name, so the name has to be one this module's headers know"
+        )
+        return ok(d)
+
+    if arity.must() != 1
+        d: diag.Diagnostic @ diag.new_diagnostic(
+            code: "freer_arity",
+            message: "`" + name + "` takes " + arity.must().to_str() + " parameters, and a freer for an `owned` string is handed exactly one: the string",
+            span: mark
+        )
+        d.notes @ d.notes.push(
+            "name the function that frees THIS string — `free` for `strdup`, `sqlite3_free` for SQLite's own — or drop the `owned " + name + "` mark and free it yourself"
+        )
+        return ok(d)
+
+    return fail("fine", "a one-parameter extern of this module")
+
 # The diagnostic, when a call names one.
 function refusal(s: source.Source, name: str, mark: token.Span, span: token.Span) -> diag.Diagnostic
     at_line = source.elsewhere(s, here: span.start, there: mark.start)

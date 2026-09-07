@@ -182,6 +182,15 @@ function failure_ty(t: Types) -> i64
     _ = t
     return 8
 
+# `cstr`. Added 2026-09-07 with the `owned` `@` cell, which needs to build a
+# hidden `cstr` slot in the LOWERING, where no value of that type is yet in
+# hand to read one off (`ir/inout.hero`). The prelude test below keeps the
+# number honest from both sides: it asserts the literal 7 as well, so an
+# accessor that agreed with a moved prelude would still be caught.
+function cstr_ty(t: Types) -> i64
+    _ = t
+    return 7
+
 function intern(@t: Types, ty: Ty) -> i64
     key = ty_key(ty)
     found = t.index[key]
@@ -302,6 +311,12 @@ test "the prelude ids match their accessors, in the fixed order"
     assert get(t, failure_ty(t)) == .failure
     assert get(t, 6) == .ptr
     assert get(t, 7) == .cstr
+
+    # `cstr` is asserted BOTH ways on purpose: by its accessor and by the
+    # literal above. An accessor checked only against itself agrees with a
+    # prelude that has moved, which is the one failure this test exists for.
+    assert get(t, cstr_ty(t)) == .cstr
+    assert cstr_ty(t) == 7
 
 test "interning is idempotent and equality of ids is equality of types"
     t: Types @ new_types()

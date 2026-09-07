@@ -1,0 +1,3 @@
+tests/golden/check/owned-freer-must-be-declarable.hero:30:44: error[unknown_freer]: `bogus_name` frees nothing here: no `extern` in this module declares it, so `owned bogus_name` names a function the compiler cannot call
+tests/golden/check/owned-freer-must-be-declarable.hero:31:53: error[unknown_freer]: `my_own_free` frees nothing here: no `extern` in this module declares it, so `owned my_own_free` names a function the compiler cannot call
+tests/golden/check/owned-freer-must-be-declarable.hero:37:48: error[freer_arity]: `fwrite` takes 4 parameters, and a freer for an `owned` string is handed exactly one: the string

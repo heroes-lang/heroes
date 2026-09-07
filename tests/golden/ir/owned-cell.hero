@@ -1,0 +1,49 @@
+# The `owned` mark on a `@` cell, pinned where nothing can regenerate it away
+# (§4.19; panel 109's conditions 4 and 8, ratified 2026-09-04).
+#
+# **The sibling of `owned-release.hero` and the half that took three more
+# steps.** The result position frees what a C function RETURNS; this is the
+# position where C writes a pointer into a cell the caller supplies —
+# `sqlite3_exec`'s `char **errmsg`, the shape the whole milestone was convened
+# for. §4.19's sentence is *the `@` cell is only written*, and the dump below
+# is what that sentence costs.
+#
+# **What the dump must show, in order, and every line is load-bearing:**
+#
+#   - a HIDDEN `cstr` slot, `$cell0`, which is what C is handed. The author's
+#     own binding is a `str?` and C writes a `char *`; they are not the same
+#     cell and cannot be.
+#   - `store $cell0 <- const nullptr` BEFORE the call. A C function that takes
+#     an error cell and returns success may simply not write it, and a release
+#     over an uninitialised cell frees whatever the stack was holding. With
+#     the store, an untouched cell takes the release's own NULL branch and the
+#     program is handed `fail("null_cstr", …)` — the truth, and a clean one.
+#
+#     **THIS FILE IS THE ONLY RUNNING INSTRUMENT FOR THAT STORE, measured.**
+#     Deleted from the lowering on 2026-09-07 and the compiler rebuilt,
+#     `tests/golden/run/ffi-owned-cell-is-freed.hero` — the case written for
+#     exactly this shape, with a C function that never writes the cell —
+#     printed its four lines unchanged at `-O0` and under
+#     `-fsanitize=address,undefined`, because an uninitialised C local
+#     happened to hold zero. The `run` suite was **0 failed**; this golden was
+#     the **1**, and `emission` the **3**. Panel 116 measured the same thing
+#     about the NULL guard and drew the same conclusion: a guard no run can
+#     falsify is one no green run may be allowed to delete.
+#   - the call taking `&$cell0` and not the author's place.
+#   - then the release, the same four steps `owned-release.hero` pins: the
+#     copy through the library's `validated` FIRST, the null test against
+#     `const nullptr`, `cast cstr_to_ptr`, the freer by name.
+#   - and only then the store into the place the author wrote.
+#
+# `UPDATE_GOLDEN=1` is forbidden in this directory (CLAUDE.md §9), so a later
+# change cannot quietly drop the null store or reorder the copy past the free.
+extern "stdlib.h"
+    function free(p: ptr)
+
+extern "err.h"
+    function describe(code: i32, @message: cstr owned free) -> i32
+
+function reason(code: i32) -> str
+    message: str? @ fail("none", "nothing yet")
+    _ = describe(code: code, message: @message)
+    return message.default("no reason given")

@@ -1,0 +1,46 @@
+# `owned <name>` has to name a function the compiler can actually call, and
+# until 2026-09-07 three ways of getting that wrong were `internal error` at
+# exit 2 — the compiler blaming itself for a typo in a `.hero` file, which is
+# the one shape CLAUDE.md §7 forbids (§4.19; panel 109's condition 1).
+#
+# WHY THE PROBE COULD NOT CATCH THESE. Step 4a made the probe type a freer's
+# parameter `char *`, so a freer whose header refutes it is `ffi_freer_type`.
+# A probe is emitted per `extern`, so **a name no `extern` declares has no
+# probe at all** — and a two-parameter freer's probe compiles perfectly well,
+# because the probe calls it with two arguments while the release calls it
+# with one. Both fell through to the lowering, which found no freer, fell back
+# to a plain call, and left clang refusing `assigning to 'h_0opt_…' from
+# incompatible type 'const char *'`.
+#
+# THE THREE SHAPES, each measured at exit 2 before the repair:
+#   1. a name nothing declares — a typo;
+#   2. a HEROES function of this program, which is the plausible mistake: the
+#      word `owned` reads as *this frees it*, and a reader reaches for the
+#      function they can see. It gets its own note, because the answer is not
+#      *rename it* but *a freer is C's*;
+#   3. an `extern` of the right name and the wrong arity, which its own header
+#      declares honestly — nothing about it is a typo, and only the release's
+#      one argument makes it wrong.
+#
+# This is a `check` case on purpose: `heroes check` never runs clang, so the
+# refusal is proved to rest on the DECLARATIONS alone and not on a header
+# being present. That is what makes it reachable in a bindings module nobody
+# has compiled yet.
+extern "string.h"
+    function strdup(s: cstr) -> cstr owned bogus_name  #~ unknown_freer
+    function strndup(s: cstr, n: u64) -> cstr owned my_own_free  #~ unknown_freer
+
+extern "stdio.h"
+    function fopen(path: cstr, mode: cstr) -> ptr
+    function fwrite(p: ptr, size: u64, n: u64, f: ptr) -> u64
+    # The arity refusal, on a name this group really does declare.
+    function tmpnam(buffer: ptr) -> cstr owned fwrite  #~ freer_arity
+
+# The Heroes function shape 2 reaches for. It is a real function of this
+# program, which is exactly why naming it as a freer has to be refused rather
+# than quietly accepted.
+function my_own_free(p: ptr)
+    _ = p
+
+function main()
+    print(0)
