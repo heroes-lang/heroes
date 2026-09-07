@@ -35,9 +35,14 @@ and zero open ones while the record had not been written to in eight days. The
 same applies to an item this step *finds* rather than finishes: it is filed as
 `- [ ]` in the list that matches what it asks — `SCHEDULED.md` if it names a
 milestone, `DECIDE.md` if it names a default the compiler is running on,
-`docs/learn/LEARN.md` if it only asks what is true — and **never as a bare
-bullet or a `## ` section**, which is a notation no count in this project can
-see.
+**`DEFECTS.md` if it is BROKEN** (a crash, a wrong answer at exit 0, a silence
+where a message is owed), `docs/learn/LEARN.md` if it only asks what is true —
+and **never as a bare bullet or a `## ` section**, which is a notation no count
+in this project can see. **`DEFECTS.md` was missing from this list until
+2026-09-07**, four days after the author instituted it, so no skill read or
+wrote the fourth list and an open defect was invisible in `/where`'s own status
+report: CLAUDE.md § 3's story about a rule with no executor, told about § 3's
+own list (`docs/contract/case-law.md` CL-044).
 
 **The shape of a filed item, since 2026-09-07:** one line of three fields,
 `- [ ] **<first field>** | <what, in one line> | <where to look>`, then an
@@ -55,19 +60,35 @@ shape landed, which the check caught before the commit. `records/lists` is what
 fails when any of it is not done.
 
 ## 2. Implement
-- If the step touches a panel path (CLAUDE.md § Panel), run `/panel` first —
-  asynchronous: adopt the conservative default, queue the ratification.
+- If the step touches a panel path (CLAUDE.md § 4), run `/panel` first, and
+  asynchronously: adopt **the provisional resolution CLAUDE.md § 4 requires**,
+  the most robust and complete one and never the cheapest, then queue the
+  ratification. This line said *the conservative default* until 2026-09-07
+  (`docs/contract/case-law.md` CL-040). **Ask once per milestone**, then convene
+  without asking again.
 - Write the code and the golden cases. Mark the milestone's 5 adversarial
   cases `# UNVERIFIED — pending debrief`; label bulk regression cases.
-- Run the tests, which since **M-bootstrap-archive** (2026-08-19) means the
-  **three** the one command gives:
+- **Format at the moment of writing**, `heroes fmt <file> --in-place`. Two of
+  the four failures that stopped a full net on 2026-09-06 were a file written
+  and not formatted, which costs nothing here and thirteen minutes there
+  (`docs/contract/case-law.md` CL-063). A `PostToolUse` hook notices it too.
+- Run the tests. **The gate for a SUB-STEP is the named suites, one at a time,
+  plus the compiler's own tests and the net's own tests**; the full net runs
+  once before a push and not at every commit (CLAUDE.md § Verification, CL-063).
+  Naming a suite runs only that one, which is what makes a fast loop possible:
+  `-- <compiler> records`. The three suites since **M-bootstrap-archive**
+  (2026-08-19), with their counts in `docs/ROADMAP.md` § Where we are and
+  nowhere else:
   - `heroes test selfhost/main.hero` — the compiler's own;
   - `heroes run tests/harness/main.hero -- <compiler>` — the net, which carries
     the double-emit determinism diff, the ASan `run/` goldens, the blessed
-    emissions and §11's file ceiling inside it;
-  - `heroes test tests/harness/main.hero` — **the net's own tests, 17 s**, which
-    is the one that goes red when an instrument's pinned number stops matching
-    what the instrument reads.
+    emissions and the file ceiling inside it;
+  - `heroes test tests/harness/main.hero` — **the net's own tests**, the one
+    that goes red when an instrument's pinned number stops matching what the
+    instrument reads.
+  **And run the suite you did not expect to move, after the last edit rather
+  than after the last interesting one** (CL-054): *my change cannot have touched
+  that* is an inference, so it is either run or written down as a guess.
 
   **This line said "the two" until 2026-09-02 and the third one was red for six
   commits.** `9599d97` re-baselined `suite_layout`'s ceiling table and left two
@@ -120,8 +141,13 @@ Milestone close — the checklist (this is its only copy):
   renewed with a new milestone name** (panel 046 R2). This bullet exists because
   the mechanism failed without it: panel 036's *"Score at M-ffi-ladder close"*
   survived that milestone's close untouched;
-- queue the milestone's `/learn` offers: walkthrough, golden ratification,
-  mutation drill, exit-quiz (all optional, author's call);
+- **WRITE** the milestone's `/learn` offers into `docs/learn/LEARN.md` as items
+  (walkthrough, golden ratification, mutation drill, exit-quiz), and **do not
+  put them to the author**. `/learn` is never convened by the assistant, not at
+  a milestone close and not as a suggestion at the end of a step; this bullet
+  and that rule used different verbs for the same act until 2026-09-07
+  (`docs/contract/case-law.md` CL-044 is the neighbouring shape, and the rule is
+  CLAUDE.md § 3);
 - append the closing block — the status paragraph and the milestone's chain entry —
   to `docs/journal/NNN-<slug>.md` § *What landed, and what carried forward*, and
   leave `docs/ROADMAP.md` § Where we are at **≤15 lines**. The ROADMAP says what is
@@ -132,6 +158,12 @@ Milestone close — the checklist (this is its only copy):
   its date, tag and journal link, the next row becomes `**OPEN**`, and the counts
   in the summary table are **re-measured, never carried** (CLAUDE.md §1); then the
   milestone's own section under § The milestones, one by one keeps only the
-  reasoning a future milestone has to honour, the rest going to the journal. Tag
-  `m-<name>`, push `--follow-tags`;
+  reasoning a future milestone has to honour, the rest going to the journal;
+- **tag `m-<name>` LOCALLY, and stop there.** This bullet said *push
+  `--follow-tags`* until 2026-09-07, and that command pushes the branch as well
+  as its tags: the site lives on this branch and `site/public/CNAME` names
+  `heroes-lang.org`, so a close that followed this checklist to the letter
+  published the site without asking. The push is asked for, with how many site
+  commits would travel, and it carries the tag when the author says yes
+  (CLAUDE.md § Hard stops, `docs/contract/case-law.md` CL-042);
 - site build log: only when the author asks (`site/README.md`).

@@ -20,10 +20,13 @@ answer.** No retrieval, no walkthrough, no drill, no glossary. If the author ask
 ## Procedure
 
 1. **Read `docs/work/DECIDE.md`.** The triage is already done — the queue was
-   split into three lists on 2026-08-12 — so this step is only checking that
-   nothing arrived in the wrong one. An item that asks *what is true* belongs in
-   `LEARN.md` however interesting, and one that names the milestone which will do
-   it belongs in `SCHEDULED.md`; move it rather than answering it.
+   split into three lists on 2026-08-12, and a fourth for what is broken arrived
+   on 2026-09-03 — so this step is only checking that nothing arrived in the
+   wrong one. An item that asks *what is true* belongs in `LEARN.md` however
+   interesting; one that names the milestone which will do it belongs in
+   `SCHEDULED.md`; one that describes a compiler **defect**, a crash or a wrong
+   answer at exit 0, belongs in `DEFECTS.md` and is not a decision at all. Move
+   it rather than answering it.
 
 2. **Verify before asking. This is the rule the skill exists for.** Run the
    thing. A queue entry is a claim from the day it was written, and entries

@@ -33,6 +33,11 @@ sed -n '/^## The chain/,/^## The milestones/p' docs/ROADMAP.md   # what is next,
                                   #  line count that stopped reaching the table it named.
                                   #  A pattern range cannot rot the same way.)
 cat docs/work/DECIDE.md           # open decisions = what the compiler is waiting on
+cat docs/work/DEFECTS.md          # what is BROKEN right now
+                                  # (missing from this block until 2026-09-07, four days
+                                  #  after the author instituted the list: no skill read
+                                  #  it, so an open defect was invisible in exactly the
+                                  #  report the author asks for. CL-044.)
 cat docs/work/SCHEDULED.md        # open work, each item naming the milestone that does it
                                   # (this said `QUEUE.md` until 2026-08-26 — the RECORD,
                                   #  which holds only closed items and had held zero open
@@ -70,10 +75,16 @@ has never heard the word *compiler*. Rules:
 
 ### 4. Your turn — the author's pending items (never blocking)
 Summarize the **open** items of `docs/work/DECIDE.md` (what the compiler is
-waiting on) and `docs/work/SCHEDULED.md` (work with a milestone), each with the
-file path and why it is worth their time — the vocabulary file keeps the
-sentence for the commonest reason, that guessing a cause before reading the fix
-is where the value is. Make clear nothing is waiting on them to proceed.
+waiting on), `docs/work/DEFECTS.md` (what is broken) and
+`docs/work/SCHEDULED.md` (work with a milestone), each with the file path and
+why it is worth their time — the vocabulary file keeps the sentence for the
+commonest reason, that guessing a cause before reading the fix is where the
+value is. Make clear nothing is waiting on them to proceed.
+
+**A defect is said in plain words and without cushioning**: what a program does
+wrong today, on the author's own line, not the module it lives in. It goes first
+when there is one, because a broken compiler outranks a pending decision, and
+saying so with force is CLAUDE.md § 11's *alive rather than flat*.
 
 **Two files this step must not read.** `docs/work/DONE.md` is the record: it is
 all closed, so summarising it reports finished work as owed. `docs/learn/LEARN.md`

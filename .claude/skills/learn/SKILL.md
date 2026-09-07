@@ -86,5 +86,13 @@ have to filter before you can read it is a list nobody opens:
 - **`SCHEDULED.md`** — work with a home, read by `/step` at the milestone that
   names it.
 
-`QUEUE.md` is the record: every ticked item, and the path every commit subject
-cites.
+`docs/work/DONE.md` is the record: every ticked item lands there and stays.
+
+**This paragraph named `QUEUE.md` until 2026-09-07 and that file has not existed
+since 2026-08-26**, when the lists were renamed. Worse, the reason it gave was
+*"the path every commit subject cites"*, which is the exact clause CLAUDE.md § 3
+records as **measured false**: 24 subjects of 792, 3.0%, over the 463 commits
+before the rename. `/decide` and `/where` were repaired in that same batch and
+this file was missed. No instrument caught it for twelve days, because the
+dead-citation check requires a `/` in the token and a bare `QUEUE.md` has none
+(`docs/contract/case-law.md` CL-031).
