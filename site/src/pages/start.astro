@@ -1,0 +1,8 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { page } from '../lib/figures.ts';
+import content from '../html/start.html?raw';
+---
+<BaseLayout url="/start/" title={'Start: run Heroes with a C compiler and one command'} description={'No installer. Clone the repository, compile one C file with clang, and run your first Heroes program. Four lines, under four seconds.'} current="start">
+<Fragment set:html={page(content, 'site/src/html/start.html')} />
+</BaseLayout>

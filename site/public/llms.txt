@@ -32,12 +32,12 @@ legal expression that reports what belongs in the gap instead of failing.
 
 - [Home](https://heroes-lang.org/): what the language is, one real sample, the claim
 - [Why Heroes](https://heroes-lang.org/why/): the founding constraint (no standard library), the thesis, the cost formula, the objections answered
-- [Self-hosted](https://heroes-lang.org/selfhost/): the fixpoint, 165 modules and 48,342 lines of Heroes emitting byte-identical C, and one C file per module with a build cache keyed on the headers it read
-- [The Zen](https://heroes-lang.org/zen/): twenty lines the binary prints from `heroes this`
-- [The panel](https://heroes-lang.org/panel/): how a change to the language is decided, five judges with differentiated briefs and four vetoes, the historian's seat, and what the design borrowed from Hylo, Swift, Cyclone, Go, Nim, Zig, Ada, Pascal and the rest
-- [The author](https://heroes-lang.org/author/): Giuseppe Arici, partner and CTO at Codermine in Brescia, author of *Heroes of code*, a history of programming languages framed as a dream journey with David Bowie as the guide, published on Amazon. He had never written a compiler before this one
+- [Self-hosted](https://heroes-lang.org/project/#self-hosted): the fixpoint, 165 modules and 48,342 lines of Heroes emitting byte-identical C, and one C file per module with a build cache keyed on the headers it read
+- [The Zen](https://heroes-lang.org/project/#zen): twenty lines the binary prints from `heroes this`
+- [The panel](https://heroes-lang.org/project/#panel): how a change to the language is decided, five judges with differentiated briefs and four vetoes, the historian's seat, and what the design borrowed from Hylo, Swift, Cyclone, Go, Nim, Zig, Ada, Pascal and the rest
+- [The author](https://heroes-lang.org/about/): Giuseppe Arici, partner and CTO at Codermine in Brescia, author of *Heroes of code*, a history of programming languages framed as a dream journey with David Bowie as the guide, published on Amazon. He had never written a compiler before this one
 - [Build log](https://heroes-lang.org/log/): one postcard per milestone, newest first
-- [Thanks](https://heroes-lang.org/thanks/): the designers of every language Heroes borrowed from, named one by one, with what each borrowing was; links go to English Wikipedia only where an article about that person was verified to exist
+- [Thanks](https://heroes-lang.org/about/thanks/): the designers of every language Heroes borrowed from, named one by one, with what each borrowing was; links go to English Wikipedia only where an article about that person was verified to exist
 - [Documentation](https://heroes-lang.org/docs/): the language page by page; every code block is a slice of a repository file that compiles and runs
 - [Errors](https://heroes-lang.org/errors/): part of the documentation and linked from its landing page: diagnostics as a deliverable, real output with machine-applicable fixes tagged `certain`, and the per-mistake catch rates against a control build (a dropped argument label 76% vs 0%, a shadowed name 94% vs 0%, a lazy catch-all 100% vs 63%)
 

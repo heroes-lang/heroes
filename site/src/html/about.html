@@ -1,0 +1,145 @@
+
+  <div class="page-head">
+    <h1 class="page">About</h1>
+    <span class="nod">· moonage daydream ·</span>
+  </div>
+  <!-- The two plates the portrait is printed with (site/README.md § The visual
+       system). Inline, not a data URI: a same-document fragment is the only
+       filter reference every browser resolves. The matrix takes the photograph
+       to luminance; the table maps black to the dark plate and white to the
+       light one, so every tone in between lands on the line between two inks. -->
+  <svg class="ink" aria-hidden="true" focusable="false">
+    <filter id="duotone" color-interpolation-filters="sRGB">
+      <feColorMatrix type="matrix" values="0.2126 0.7152 0.0722 0 0
+                                           0.2126 0.7152 0.0722 0 0
+                                           0.2126 0.7152 0.0722 0 0
+                                           0      0      0      1 0"/>
+      <feComponentTransfer>
+        <feFuncR type="gamma" exponent="0.72"/>
+        <feFuncG type="gamma" exponent="0.72"/>
+        <feFuncB type="gamma" exponent="0.72"/>
+      </feComponentTransfer>
+      <feComponentTransfer>
+        <feFuncR type="table" tableValues="0.0627 0.9490"/>
+        <feFuncG type="table" tableValues="0.1098 0.9176"/>
+        <feFuncB type="table" tableValues="0.2196 0.8510"/>
+      </feComponentTransfer>
+    </filter>
+  </svg>
+  <div class="byline">
+    <figure class="portrait">
+      <img src="/images/giuseppe-arici.jpg" alt="Giuseppe Arici, smiling, in a cap with a yellow bird on it.">
+    </figure>
+    <p class="lede">Giuseppe Arici has been writing software for over twenty
+    years: Java, C#, Rails, iOS, Go, microservices, DevOps. A cap for every
+    language. He is a co-founder and CTO at Codermine, in Brescia, and the author
+    of <i>Heroes of code</i>, a book on the history of programming languages,
+    published on Amazon. <b>He had never written a compiler before this
+    one.</b></p>
+  </div>
+
+  <h2>In his own words</h2>
+  <p>
+    I caught the tail end of COBOL, started out in Java, passed through C# and
+    the Microsoft world, until Rails made me jump to Unix. From there Linux, the
+    Mac, the iPhone: for years mobile was my line of work. Then Go came along,
+    the Gopher won me over, and with it microservices, backends and every kind
+    of architecture. These days I also handle DevOps. I code less than I would
+    like and manage more than I will admit, AI agents included.
+  </p>
+  <p>
+    I have consulted for companies of every stripe and walked away with one
+    conviction: the real problems are almost always organizational, not
+    technological. So I do not tie myself to one technology, even though I have
+    my favorites. A polyglot programmer, with all due modesty: a cap for every
+    language, a t-shirt for every conference. My heroes are John Backus, Dennis
+    Ritchie and Bob Kahn. I am passionate about history, and about the history
+    of computing in particular. I co-founded <i>#pragma mark</i>, the Italian
+    association that hosts conferences on the Apple ecosystem, and have spoken
+    at Pragma Conference and Codemotion.
+  </p>
+
+  <h2>The book <span class="nod">&middot; lady stardust &middot;</span></h2>
+  <p>
+    <a href="https://heroesofcode.com"><i>Heroes of code</i></a>, subtitled <i>A
+    journey through the years that shook programming languages</i>. In Italian,
+    <a href="https://glieroidelcodice.it"><i>Gli eroi del codice</i></a>.
+  </p>
+  <p>
+    It opens at midnight, on an empty file, with a programmer looking for the
+    words to tell the story of programming languages. Then a voice behind him:
+    David Bowie. What follows is a dream journey through the rooms where it all
+    started, Bletchley Park, MIT, Zurich, Bell Labs, Oslo, Silicon Valley, and
+    the people who invented the way we talk to machines. At dawn the dream ends,
+    the guide dissolves, and only the road is left.
+  </p>
+  <ul class="stats">
+    <li><span class="n">21</span><span class="what">narrative chapters</span></li>
+    <li><span class="n">2</span><span class="what">editions, Italian and English</span></li>
+    <li><span class="n">1</span><span class="what">night, midnight to dawn</span></li>
+  </ul>
+  <p>
+    Self-published as an A5 paperback, imprint &ldquo;Independently
+    published&rdquo;, on Amazon. ISBN 9798195884758 for the English edition,
+    9798195873790 for the Italian.
+  </p>
+  <p>
+    The book came first, and in that order. A language named after a Bowie album,
+    with song titles for section headings, is not a joke somebody had halfway
+    through: it is the same work seen from the other side, and the quotation
+    marks are the album's own, put there in 1977 to undercut the word. It also
+    explains a seat on the review panel. Somebody who has just spent twenty-one
+    chapters on FORTRAN, ALGOL, Lisp and Simula is badly placed to believe a
+    design question is new, so the panel keeps a historian: the one seat with no
+    veto and the strictest rule on evidence.
+    <a href="/project/#panel">How the panel works &rarr;</a>
+  </p>
+
+  <h2>Who wrote this</h2>
+  <p>
+    The compiler is written by an AI assistant, working under a contract kept in
+    the repository and read at the start of every session. That contract is not a
+    prompt: it is a set of rules with dates and reasons, most of them written the
+    day something went wrong, and it is the reason this page can be specific
+    about who did what.
+  </p>
+  <p>
+    The author sets the direction, ratifies every design decision, and reads the
+    record. Some outcomes came from a question rather than an instruction. When
+    the cost of a safety check was being haggled over as one number, the author
+    asked a different question: is the cost paid when the program is compiled, or
+    while it runs? Answering it meant asking where a foreign thread <i>enters</i>
+    rather than where the damage shows, and that moved the check from three wrong
+    places to the right one.
+  </p>
+  <p>
+    It runs the other way too. A design sitting was ordered by the author over
+    the assistant's twice-stated advice to leave the question alone. Five judges
+    refused it, on three vetoes and none of them about cost, and the mechanism
+    the author had asked for turned out to exist already. The author ratified the
+    refusal in one line.
+  </p>
+  <p>
+    The rule behind that is short: name the author where a question, a correction
+    or a refusal produced the finding, name the panel seat where a seat found it,
+    and name nobody where the work was ordinary. Crediting the author for
+    something the assistant found would be the same falsehood wearing the
+    flattering sign, and nobody would check that one.
+    <a href="/log/">The build log &rarr;</a>
+  </p>
+
+  <h2 id="thanks">Standing on other people's work</h2>
+  <p>
+    Every part of this language builds on somebody else's, usually from decades
+    ago and often described in a paper that also records its cost.
+    <a href="/about/thanks/">Their names, and what each idea was &rarr;</a>
+  </p>
+
+  <footer>
+    <p>Elsewhere: <a href="https://giuseppearici.com/en/">giuseppearici.com</a>
+    and <a href="https://github.com/giuseppearici">github.com/giuseppearici</a>.</p>
+    <p>Built by <a href="https://giuseppearici.com/en/">Giuseppe Arici</a>, CTO at Codermine, Brescia. Author of
+    <i>Heroes of code</i>. Standing on
+    <a href="/about/thanks/">a lot of other people&rsquo;s work</a>.</p>
+    <p>&copy; 2026 Giuseppe Arici &middot; heroes-lang.org</p>
+  </footer>

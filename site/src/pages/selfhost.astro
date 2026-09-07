@@ -1,8 +1,0 @@
----
-import BaseLayout from '../layouts/BaseLayout.astro';
-import { page } from '../lib/figures.ts';
-import content from '../html/selfhost.html?raw';
----
-<BaseLayout url="/selfhost/" title={'Self-hosted, Heroes compiles Heroes, and the fixpoint holds'} description={'The Heroes compiler is written in Heroes: 170 modules, 50,100 lines. Asked to compile itself, it writes out the very C file the repository ships, byte for byte.'} current="selfhost">
-<Fragment set:html={page(content, 'site/src/html/selfhost.html')} />
-</BaseLayout>

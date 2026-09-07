@@ -1,0 +1,8 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { page } from '../../lib/figures.ts';
+import content from '../../html/it/about.html?raw';
+---
+<BaseLayout url="/it/about/" title={'Autore: Giuseppe Arici, il libro, e chi ha scritto questo'} description={'Giuseppe Arici, CTO di Codermine a Brescia, autore di Gli eroi del codice. Non aveva mai scritto un compilatore prima di questo. E chi ha fatto cosa in questo progetto.'} current="about">
+<Fragment set:html={page(content, 'site/src/html/it/about.html')} />
+</BaseLayout>

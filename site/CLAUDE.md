@@ -36,6 +36,38 @@ do not want the dates. I absolutely do not want them."*
   somebody else's history, which is Bowie's 1973 and 1977 and the language dates
   on `thanks.html`.
 
+## A number on the page is generated, or it is a threshold
+
+Author instruction 2026-09-07: *"be careful about using numbers that go out of
+date straight away. Where there are orders of magnitude, use those, or
+greater-than and less-than."*
+
+Every number here is re-measured in the session that writes it (CLAUDE.md § RUN
+IT), and that rule says nothing about the session AFTER. A count typed into a
+paragraph is true on the day and wrong a week later, and nothing fails when it
+turns: the sentence around it goes on reading as correct. What provoked this was
+a page whose evidence was a hash of the compiler's own output, correct when
+written and wrong for months, beside a module count and a line count that had
+both moved.
+
+- **Generated beats exact.** A number the build computes from the tree cannot go
+  stale, so it may be as exact as it likes. The examples pages count their own
+  programs, files and lines this way. Prefer this wherever the number can be
+  derived.
+- **Otherwise write a threshold**, and write it so that the true value moving in
+  the expected direction keeps the sentence true: *more than 50,000 lines*, *under
+  four seconds*, *over a hundred sittings*, *twenty megabytes of C*. A ceiling
+  works the same way where a number shrinks.
+- **Some numbers are structural and stay exact**: no null and no exceptions and
+  no garbage collector, five seats and four vetoes, the twenty lines of the Zen,
+  the seven words that can begin a line. These change only when the language
+  changes, which is a decision and not a drift.
+- **A hash of a build is not evidence a page can keep.** It moves with every
+  release. Show the commands that prove the thing instead, and let the reader run
+  them: `cmp` printing nothing is a proof that stays true.
+- **A measurement still needs its machine named** where it is a timing, because
+  a threshold on one laptop is not a threshold on another.
+
 ## The reader is never assumed to be an expert
 
 Author instruction 2026-08-26: *"make it a rule that whoever lands on the site

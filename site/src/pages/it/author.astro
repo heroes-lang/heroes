@@ -1,8 +1,0 @@
----
-import BaseLayout from '../../layouts/BaseLayout.astro';
-import { page } from '../../lib/figures.ts';
-import content from '../../html/it/author.html?raw';
----
-<BaseLayout url="/it/author/" title={"L'autore: Giuseppe Arici, e il libro da cui nasce il linguaggio"} description={"Giuseppe Arici, co-fondatore e CTO di Codermine a Brescia, scrive software da oltre vent'anni e non aveva mai scritto un compilatore prima di questo. Autore di Gli eroi del codice, una storia dei linguaggi di programmazione pubblicata su Amazon."} current="author">
-<Fragment set:html={page(content, 'site/src/html/it/author.html')} />
-</BaseLayout>
