@@ -591,6 +591,7 @@ Two things that are easy to get wrong and are therefore rules:
   moonage daydream · lady stardust · sons of the silent age · ashes to ashes ·
   speed of life · repetition.
 - **"Ashes to Ashes" is spent** (2026-08-19), on the section of `selfhost.html`
+  (since 2026-09-06 the `#self-hosted` section of `project.html`)
   that reports the bootstrap's retirement — which is the event the bank was
   holding it for. M-bootstrap-archive closed the same day, so the section that
   used to be headed *What is left* now says both owed things are paid.
@@ -651,7 +652,7 @@ everything else is paper and ink.
   copy was cut too.
 - **The portrait is printed, not pasted** (author instruction 2026-08-19:
   *"use this image duotoned on the author page"*). The photograph on
-  `author.html` is duotoned to two of the site's inks — a deep blue in the
+  `about.html`, which absorbed the author page on 2026-09-06, is duotoned to two of the site's inks — a deep blue in the
   shadows, cream in the highlights — so it belongs to the palette instead of
   sitting on top of it. **Blue and cream, not blue and red**, because the red/blue
   pair is the hero wash and the first rule in this list spends it there and
@@ -811,8 +812,10 @@ them not a dead end but a door not yet open. **That site opened first, and both
 locales answer 200**, measured 2026-09-03: `/it/` and `/en/`. So those links now
 point at live pages, and the reasoning above survives as the precedent this site
 leans on for its own GitHub links in § Launch order. The two places are the ones
-the old rule named: the *Elsewhere / Altrove* line on `author.html`, and
-the byline in the footer, where the name itself is the link on all **44** pages
+the old rule named: the *Elsewhere / Altrove* line on `about.html` (then
+`author.html`), and the byline in the footer, where the name itself is the link
+on every hand-written page, 46 of the 180 (the generated example pages carry the
+same footer from one shared fragment)
 (22 per edition, one occurrence each, two sentence shapes in total, which is why
 one substitution per edition does the job). Two rules on those links. Each
 edition points at its own locale (`/en/`, `/it/`), because
