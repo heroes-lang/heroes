@@ -34,6 +34,14 @@ stage[0-9]
 # Scratch git worktrees created by panel judges (never project content).
 .claude/worktrees/
 
+# One assistant's local permission allow-list, which is per-machine and names
+# paths outside this repository. It was kept out by the author's GLOBAL ignore
+# file and by nothing here, so a fresh clone and a CI checkout had no rule for
+# it at all; the protection moves into the repository on 2026-09-08, where the
+# tree that needs it can carry it (M-open-repository). `.claude/settings.json`
+# is the shared one and stays tracked.
+**/.claude/settings.local.json
+
 # Secrets. The Cloudflare API token that deploys the site lives in `.env` at the
 # repository root, and nothing that runs here reads it: the deploy reads it from
 # GitHub's secret store instead. `.env.example` is the documented shape, carries

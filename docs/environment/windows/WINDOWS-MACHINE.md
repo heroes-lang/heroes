@@ -34,15 +34,25 @@ machine-free parts of the work while waiting.
 
 ## How to reach it
 
-Measured 2026-08-31, from the author's Mac (`venus`):
+Measured 2026-08-31, from the author's Mac.
+
+**This table gives the shape and not the values, since 2026-09-08**
+(M-open-repository): it named the machine's tailnet address, its login user, the
+path of the key that opens it and the exact OS build, which together are a
+targeting profile for a box whose whole defence is that it sits behind a private
+network. None of it was ever a credential and the address was never routable
+from the internet, so nothing here was leaked; it is removed because publishing
+it buys a reader nothing and costs the machine its obscurity. **The author's own
+`~/.ssh/config` holds every value**, which is where they belong and where the
+alias below already sends you.
 
 | | |
 |---|---|
-| Tailscale name | `apponfly-vps`, `100.88.88.100` |
-| SSH alias | `win` (and `apponfly`), in `~/.ssh/config` on the Mac |
-| User | `Administrator` |
-| Key | `~/.ssh/id_ed25519` on the Mac |
-| OS | Windows Server 2025, `10.0.26100.32690` |
+| Reached over | a private tailnet, by the SSH alias below |
+| SSH alias | `win` (and a second one naming the provider), in `~/.ssh/config` on the Mac |
+| User | the box's administrator account |
+| Key | an ed25519 key on the Mac, no passphrase in the loop |
+| OS | Windows Server 2025 |
 | Machine | **2 logical CPUs, 2.1 GB RAM, 85.6 GB free** |
 
 The size matters and is stated rather than discovered: this is a small box. One
