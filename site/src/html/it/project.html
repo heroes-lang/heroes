@@ -10,10 +10,10 @@
   <h2 id="self-hosted">Si compila da solo, e questa è la prova</h2>
   <p>
     Il compilatore di Heroes è scritto in Heroes. Un linguaggio resta un
-    giocattolo finché non riesce a scrivere il proprio compilatore: per farlo
+    giocattolo finché non riesce a scrivere il proprio compilatore. Per farlo
     servono dati annidati, tabelle di nomi, ricorsione, gestione degli errori
-    vera e programmi divisi su più file. Se un linguaggio regge tutto questo, la
-    discussione se sia reale è chiusa.
+    vera e programmi divisi su più file. Se un linguaggio regge tutto questo,
+    la discussione se sia reale è chiusa.
   </p>
   <p>
     La prova non è una suite di test. Il repository contiene il compilatore come
@@ -57,15 +57,15 @@ $ cmp out.c seed/heroes.c
     Il compilatore nuovo ha rifiutato il proprio codice, sostenendo che un pezzo
     della sua struttura contenesse se stesso, cosa falsa. Tirare quel filo ha
     prodotto cinque guasti veri nel compilatore nuovo e quattro in quello
-    vecchio. Compreso questo: la sottolineatura che mostra al lettore dove è
-    l'errore copriva la nota scritta su quella riga proprio per verificare
-    quella sottolineatura. Il figlio ha corretto il padre.
+    vecchio. Compreso questo. La sottolineatura che mostra al lettore dove è
+    l'errore copriva la nota scritta su quella riga per verificare quella
+    sottolineatura. Il figlio ha corretto il padre.
   </p>
   <p>
     Un compilatore puntato sul proprio codice è un corpus che nessuna suite di
     test riproduce. Contiene tutte le forme del linguaggio, nelle proporzioni in
     cui le ha il codice vero, ed è così che cinque di quei guasti sono venuti a
-    galla. Erano una sola trappola vestita in cinque modi: un salto di ciclo
+    galla. Erano una sola trappola vestita in cinque modi. Un salto di ciclo
     dentro un ramo di <code>match</code> saltava la riga che teneva aggiornato
     un indice mantenuto a mano.
   </p>
@@ -73,18 +73,19 @@ $ cmp out.c seed/heroes.c
     L'ultima cosa che separava i due file era un messaggio che il compilatore
     vecchio aveva lasciato scritto in tre posti per chi avrebbe fatto questo
     lavoro: <i>qui questa lista esce in ordine, e quello nuovo dovrà un
-    ordinamento esplicito</i>. Tre ordinamenti, non pagati, e il risultato erano
-    venti megabyte di C con tutte le righe uguali e l'ordine diverso, su qualche migliaio
-    di esse. Una mappa non ha un ordine: il linguaggio lo dice e lo intende
-    davvero, quindi quella nota era giusta il giorno in cui è stata scritta ed è
-    rimasta giusta per mesi, fino a quando è servita a qualcuno.
+    ordinamento esplicito</i>. Tre ordinamenti, non pagati. Il risultato erano
+    venti megabyte di C con tutte le righe uguali e l'ordine diverso, su
+    qualche migliaio di esse. Una mappa non ha un ordine: il linguaggio lo dice
+    e lo intende davvero. Quella nota era giusta il giorno in cui è stata
+    scritta, ed è rimasta giusta per mesi, fino a quando è servita a
+    qualcuno.
   </p>
 
   <h2 id="panel">Come si decide un cambiamento al linguaggio <span class="nod">&middot; five years &middot;</span></h2>
   <p>
-    Niente entra nel linguaggio perché è elegante. Un cambiamento alla sintassi,
-    alla semantica, a una classe di messaggi d'errore o alla forma del
-    compilatore passa prima da un collegio di cinque seggi, ognuno con
+    Niente entra nel linguaggio perché è elegante. Un cambiamento alla
+    sintassi, alla semantica, a una classe di messaggi d'errore o alla forma del
+    compilatore passa prima da un collegio di cinque seggi. Ogni seggio riceve
     materiale diverso di proposito, e quattro di loro possono rifiutare.
   </p>
   <ul class="seats">
@@ -96,10 +97,10 @@ $ cmp out.c seed/heroes.c
   </ul>
   <p>
     Il collegio non blocca mai il lavoro. Adotta la risoluzione più solida e
-    completa che riesce a trovare, mai la più economica e mai un compromesso, la
-    segna come in attesa della parola dell'autore, e il lavoro continua. Dove la
-    risposta solida e quella prudente non concordano, prende quella solida e
-    scrive cosa avrebbe detto l'altra, così l'autore può ancora scegliere.
+    completa che riesce a trovare, mai la più economica e mai un compromesso.
+    La segna come in attesa della parola dell'autore, e il lavoro continua.
+    Dove la risposta solida e quella prudente non concordano, prende quella
+    solida e scrive l'altra, così l'autore può ancora scegliere.
   </p>
   <p>
     Ogni seduta è un file nel repository, con i dossier, i verdetti e i veti. Ce

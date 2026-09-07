@@ -10,9 +10,10 @@
   <h2 id="self-hosted">It compiles itself, and here is the proof</h2>
   <p>
     The Heroes compiler is written in Heroes. A language stays a toy until it
-    can write its own compiler: doing that needs nested data, tables of names,
+    can write its own compiler. Doing that needs nested data, tables of names,
     recursion, real error handling and programs split across files. If a
-    language carries that, the argument about whether it is real is over.
+    language carries all of that, the argument about whether it is real is
+    over.
   </p>
   <p>
     The proof is not a test suite. The repository ships the compiler as one
@@ -56,33 +57,33 @@ $ cmp out.c seed/heroes.c
     The new compiler refused its own source, claiming a piece of its own
     structure contained itself, which was false. Pulling that thread produced
     five real faults in the new compiler and four in the old one. Including
-    this: the underline that shows a reader where an error is was covering the
-    note written on that line for the sole purpose of testing that underline.
-    The child corrected the parent.
+    this one. The underline that shows a reader where an error is was covering
+    the note written on that line to test that underline. The child corrected
+    the parent.
   </p>
   <p>
     A compiler pointed at its own source is a corpus no test suite reproduces.
     It holds every shape the language has, in the proportions real code has
     them, which is how five of those faults surfaced. They were one trap worn
-    five ways: a loop jump inside a match arm skipped the line that kept a
+    five ways. A loop jump inside a match arm skipped the line that kept a
     hand-maintained index up to date.
   </p>
   <p>
     The last thing standing between the two files was a message the old compiler
     had written down in three places for whoever would do this work: <i>this list
     comes out in order here, and the new one will owe an explicit sort</i>. Three
-    sorts, unpaid, and the result was twenty megabytes of C whose lines all
-    matched and whose order did not, on a few thousand of them. A map has no order: the
-    language says so and measurably means it, so the note was right when it was
-    written and stayed right for months until somebody needed it.
+    sorts, unpaid. The result was twenty megabytes of C whose lines all
+    matched and whose order did not, on a few thousand of them. A map has no
+    order: the language says so and measurably means it. The note was right the
+    day it was written, and stayed right for months until somebody needed it.
   </p>
 
   <h2 id="panel">How a change to the language gets decided <span class="nod">&middot; five years &middot;</span></h2>
   <p>
-    Nothing reaches the language because it is elegant. A change to the syntax,
-    the semantics, a class of error message or the shape of the compiler goes to
-    a panel of five seats first, each one given different material on purpose,
-    and four of them can refuse outright.
+    Nothing reaches the language because it is elegant. A change to the
+    syntax, the semantics, a class of error message or the shape of the
+    compiler goes to a panel of five seats first. Each seat is given different
+    material on purpose, and four of them can refuse outright.
   </p>
   <ul class="seats">
     <li><span class="who">The reader</span><span>Gets the specification and sample programs, and never the design document or the code. Its verdict is an experiment about whether the language can be read, not an opinion. <span class="veto">veto</span></span></li>
@@ -93,10 +94,10 @@ $ cmp out.c seed/heroes.c
   </ul>
   <p>
     The panel never blocks the work. It adopts the most robust and complete
-    resolution it can find, never the cheapest and never a compromise, marks it
-    as awaiting the author's word, and the work goes on. Where the robust answer
-    and the careful answer disagree, it takes the robust one and writes down
-    what the careful one would have been, so the author can still choose it.
+    resolution it can find, never the cheapest and never a compromise. It marks
+    that as awaiting the author's word, and the work goes on. Where the robust
+    answer and the careful one disagree, it takes the robust answer and writes
+    down the other, so the author can still choose it.
   </p>
   <p>
     Every sitting is a file in the repository, with the briefs, the verdicts and
