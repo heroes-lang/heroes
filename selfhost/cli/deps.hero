@@ -40,8 +40,8 @@
 # that to happen.
 #
 # AND IT CATCHES A CLANG UPGRADE, which was not the point and is worth
-# writing down. `Toolchain.fingerprint` is the HEROES version (`0.0.1`)
-# rather than clang's, so a new clang alone never moved the key. Its
+# writing down. `Toolchain.fingerprint` is the HEROES version (main.hero's
+# `VERSION`) rather than clang's, so a new clang alone never moved the key. Its
 # builtin headers live under a versioned path
 # (`.../clang/21/include/stdbool.h`), which every listing records, so a
 # major-version bump makes that path vanish, `digest_of` answers
