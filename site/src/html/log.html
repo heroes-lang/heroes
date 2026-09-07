@@ -24,7 +24,7 @@
     <li id="37">
       <span class="when">M-isolated-threads: one line, open the whole time</span>
       <b>Each thread gets its own memory, so ordinary code in one thread can no longer corrupt another one. The danger stops existing instead of being locked around.</b>
-      One function decides what a C header may say, and it stopped looking inside a callback, so a list could cross into C and back with the compiler reporting nothing.
+      One function decides what a C header may say, and it never looked inside a callback, so a list could cross into C and back with the compiler reporting nothing.
       <a class="more" href="/examples/threads/">Ten programs that use them</a>
     </li>
     <li id="36">
@@ -36,7 +36,7 @@
     <li id="35">
       <span class="when">M-corpus-depth: the judges refused the change and found a bigger one</span>
       <b>Nine more example programs, chosen for shape rather than for features: the corpus had nothing between a 671-line program and the compiler.</b>
-      Two judges vetoed the optimisation the sitting was convened for, and then one of them found that more than half of every frame the compiler declares was going to temporaries the proposal had never looked at.
+      Two judges vetoed the optimisation the sitting was convened for, and then one of them found that more than half of all the stack space one example program&rsquo;s frames declared, added together, was going to temporaries the proposal had never looked at.
       <a class="more" href="/examples/">The programs</a>
     </li>
     <li id="34">

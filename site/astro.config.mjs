@@ -3,6 +3,7 @@ import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
 import { readdirSync, statSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
+import { assertEveryClaimVisited, claimsSummary } from './src/lib/claims.ts';
 
 const ORIGIN = 'https://heroes-lang.org';
 
@@ -46,6 +47,25 @@ function withoutFinderDroppings() {
         };
         walk(dir.pathname);
         if (removed > 0) logger.info(`removed ${removed} .DS_Store from the output`);
+      },
+    },
+  };
+}
+
+// The prose's numbers were checked page by page as each rendered
+// (`src/lib/claims.ts`, through `page()`). What a per-page check cannot see is a
+// page that never rendered: rename or delete a fragment the claims table names
+// and its rows die in silence, which the language veteran's seat proved by
+// rendering the home under another path and watching every row skip. So the
+// build ends by asking whether every page the table names was actually seen,
+// and prints what the table holds, so a build log shows the check ran.
+function claimsAudit() {
+  return {
+    name: 'heroes:claims',
+    hooks: {
+      'astro:build:done': ({ logger }) => {
+        const pages = assertEveryClaimVisited();
+        logger.info(claimsSummary(pages));
       },
     },
   };
@@ -99,6 +119,7 @@ export default defineConfig({
   trailingSlash: 'always',
 
   integrations: [
+    claimsAudit(),
     withoutFinderDroppings(),
     sitemap({
       serialize(item) {

@@ -90,6 +90,13 @@ error[ffi_return_type]: `puts` does not return `cstr` — that is what `stdio.h`
     riga in cui smette di essere straniero è una riga che puoi vedere.
   </p>
 
+  <p>
+    Quello che nessun compilatore controlla: che il <code>ptr</code> che
+    restituisci sia quello che la libreria ti aveva dato, e che cosa ne fa il C
+    dall&rsquo;altra parte. I tipi rendono visibile il confine; non rendono sicuro
+    il C.
+  </p>
+
   <h3>Come si usano</h3>
   <figure class="example" data-src="examples/gallery/08-ffi.hero" data-lines="24-31">
 <pre><code><span class="c"># The hypotenuse, in the language's own arithmetic plus one C call.</span>
@@ -160,7 +167,8 @@ error[ffi_return_type]: `puts` does not return `cstr` — that is what `stdio.h`
   </p>
   <p>
     E una dichiarazione può nominare la funzione che libera quello che
-    restituisce, con <code>owned</code>. Una stringa che una libreria C alloca
+    consegna, con <code>owned</code>, sia come risultato sia attraverso un
+    parametro <code>@</code>. Una stringa che una libreria C alloca
     per te torna allora come un valore che il compilatore rilascia con quel
     nome, invece di perdersi perché nessuno si ricordava quale funzione disfa
     quale.

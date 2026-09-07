@@ -16,28 +16,46 @@
  * the day the fact moves the build goes red and names the page, instead of the
  * sentence going on reading as correct.
  *
+ * Three things the same seat found about the first version of this file, each
+ * now closed and each worth knowing about the shape of an instrument:
+ *
+ * - A row whose page never rendered was skipped in silence, so renaming a page
+ *   killed its claims without a sound. Every row is now ticked off as its page
+ *   passes through, and `assertEveryClaimVisited()` runs when the build ends.
+ * - A count is a weak fact. `topLevelWords()` counted `else if` arms and would
+ *   have read six if the first arm were spelled `if`. The parser carries a
+ *   SECOND enumeration of the same words, in the `expected_declaration`
+ *   message, so the two are read and asserted equal: a mismatch is the
+ *   compiler disagreeing with itself, which is a better red than a number.
+ * - A count survives a rename. Eleven verbs stayed eleven if `mutate` became
+ *   something else, and the page listing them went stale. The names themselves
+ *   are asserted on the page now, each as `<code>name</code>`.
+ *
  * What this does NOT do: it cannot verify a sentence it does not know about.
  * A claim enters this table when it is written, and a claim that is not here
  * is a claim only a reader checks. That is the honest scope.
  */
 
-import { readText, filesIn } from './repo.ts';
+import { appendFileSync, readFileSync, existsSync, unlinkSync, mkdirSync } from 'node:fs';
+import { dirname } from 'node:path';
+import { readText, filesIn, absolute } from './repo.ts';
 
 const AGENTS_DIR = '.claude/agents';
 const DECL_FILE = 'selfhost/parse/decl.hero';
 const TABLE_FILE = 'selfhost/cli/table.hero';
+const DOCTOR_FILE = 'selfhost/cli/doctor.hero';
 const CHAPTERS_DIR = 'site/src/html/docs';
 
 /* -- The facts, each read from the one place the tree keeps it ------------- */
 
 /** The seats of the language panel, and how many of them carry a veto. */
 function judges(): { seats: number; vetoes: number } {
-  // `filesIn` returns repository-relative paths, not basenames, so a file is
-  // read by the path it came back as and the index is excluded by its tail.
+  // `filesIn` returns repository-relative paths, so each brief is read by the
+  // path it came back as. Case-insensitive, because the historian's brief
+  // opens "Advisory panel judge" and the other four "Panel judge": the fifth
+  // seat is a seat without a veto, and a capital P silently made it four seats
+  // with four vetoes on the first run of this file.
   const briefs = filesIn(AGENTS_DIR).filter((f) => f.endsWith('.md'));
-  // Case-insensitive, because the historian's brief opens "Advisory panel judge"
-  // and the other four "Panel judge": the fifth seat is a seat without a veto,
-  // and a capital P was silently making it four seats and four vetoes.
   const panel = briefs.filter((f) => /panel judge/i.test(readText(f)));
   const vetoes = panel.filter((f) => /Has veto power/.test(readText(f)));
   if (panel.length < 3) {
@@ -47,45 +65,70 @@ function judges(): { seats: number; vetoes: number } {
 }
 
 /**
- * The words that can begin a top-level line: the keywords the parser's
- * top-level loop dispatches on, read from that loop. `kw_use` is among them,
- * `kw_return` is not, and the page must agree with the loop rather than with
- * whoever last counted.
+ * The words that can begin a top-level line, read TWICE from the parser and
+ * asserted equal: once from the keywords its top-level loop dispatches on,
+ * once from the `expected_declaration` message that lists them for a reader
+ * who typed something else. Both enumerations live in `selfhost/parse/decl.hero`.
  */
-function topLevelWords(): number {
+function topLevelWords(): Set<string> {
   const text = readText(DECL_FILE);
   const start = text.indexOf('function unexpected_top_level');
-  const loop = text.slice(0, start < 0 ? undefined : start);
-  const arms = new Set(loop.match(/else if k == \.kw_([a-z]+)/g) ?? []);
-  if (arms.size < 5) {
-    throw new Error(`${DECL_FILE}: read ${arms.size} top-level dispatch arms, and the language has seven.`);
+  if (start < 0) throw new Error(`${DECL_FILE}: no \`function unexpected_top_level\` to read the table from.`);
+
+  const loop = text.slice(0, start);
+  const dispatched = new Set([...loop.matchAll(/if k == \.kw_([a-z]+)/g)].map((m) => m[1]));
+
+  // The message reads: ... `use`, `constant`, `function`, `record`, `variant`,
+  // `test \"…\"`, or `extern`. Each word is the first token inside its backticks.
+  // The message is a concatenation of string pieces around `cursor.found(...)`,
+  // so the whole `message:` argument is read, from that label to the `span:`
+  // label that follows it. The first version read from the function to the end
+  // of the file and picked up `header` and `return` from unrelated messages
+  // further down, which is exactly the kind of premise this file exists to refuse.
+  const after = text.slice(start);
+  const label = after.indexOf('code: "expected_declaration"');
+  const from = label < 0 ? -1 : after.indexOf('message:', label);
+  const to = from < 0 ? -1 : after.indexOf('span:', from);
+  if (from < 0 || to < 0) throw new Error(`${DECL_FILE}: no expected_declaration message to read the words from.`);
+  const listed = new Set([...after.slice(from, to).matchAll(/`([a-z]+)[^`]*`/g)].map((m) => m[1]));
+
+  const same = dispatched.size === listed.size && [...dispatched].every((w) => listed.has(w));
+  if (!same) {
+    throw new Error(
+      `${DECL_FILE}: the top-level loop dispatches on {${[...dispatched].sort().join(' ')}} and the\n` +
+        `  expected_declaration message lists {${[...listed].sort().join(' ')}}. The compiler disagrees with\n` +
+        `  itself about which words can begin a line, and the site cannot say a number until it does not.`
+    );
   }
-  return arms.size;
+  if (dispatched.size < 5) {
+    throw new Error(`${DECL_FILE}: read ${dispatched.size} top-level words, and the language has seven.`);
+  }
+  return dispatched;
 }
 
-/** The verbs of the one command: the `Command(` rows of the argv table. */
-function verbs(): number {
-  const rows = readText(TABLE_FILE).match(/^\s*Command\(tag: \./gm) ?? [];
-  if (rows.length < 8) {
-    throw new Error(`${TABLE_FILE}: read ${rows.length} Command rows, and the table has eleven.`);
+/** The verbs of the one command: the names in the `Command(` rows of the argv table. */
+function verbs(): string[] {
+  const names = [...readText(TABLE_FILE).matchAll(/^\s*Command\(tag: \.[a-z_]+, name: "([a-z]+)"/gm)].map((m) => m[1]);
+  if (names.length < 8) {
+    throw new Error(`${TABLE_FILE}: read ${names.length} Command rows, and the table has eleven.`);
   }
-  return rows.length;
+  return names;
 }
 
 /**
  * The lines of the Zen: the numbered lines of the string `heroes this` prints,
- * read from the function that returns it. The site calls them "twenty lines"
- * and `site/CLAUDE.md` lists that among the numbers that stay exact, so a
- * twenty-first law would go red here before it went stale on the page.
+ * read from the function that returns it. `site/CLAUDE.md` lists "the twenty
+ * lines of the Zen" among the numbers that stay exact, so a twenty-first law
+ * goes red here before it goes stale on the page.
  */
 function zenLines(): number {
-  const text = readText('selfhost/cli/doctor.hero');
+  const text = readText(DOCTOR_FILE);
   const start = text.indexOf('function zen()');
-  if (start < 0) throw new Error('selfhost/cli/doctor.hero: no `function zen()` to count the Zen from.');
+  if (start < 0) throw new Error(`${DOCTOR_FILE}: no \`function zen()\` to count the Zen from.`);
   const body = text.slice(start, text.indexOf('\n\n', start));
   const numbered = body.match(/\\n\s?\d+\. /g) ?? [];
   if (numbered.length < 10) {
-    throw new Error(`selfhost/cli/doctor.hero: counted ${numbered.length} numbered Zen lines, and there are twenty.`);
+    throw new Error(`${DOCTOR_FILE}: counted ${numbered.length} numbered Zen lines, and there are twenty.`);
   }
   return numbered.length;
 }
@@ -127,16 +170,17 @@ interface Claim {
   shape: (n: string) => RegExp;
 }
 
-const en = (page: string) => (page.startsWith('site/src/html/it/') ? 'it' : 'en');
+const langOf = (page: string) => (page.startsWith('site/src/html/it/') ? 'it' : 'en');
 
 /**
- * The table. A claim's `shape` is matched case-insensitively, against the raw
+ * The table. A claim's `shape` is matched case-insensitively against the raw
  * fragment, and the number word is the edition's own. A page that stops
  * carrying a listed sentence altogether also fails, because a claim that
  * quietly leaves the page is the same drift in the other direction.
  */
 const CLAIMS: Claim[] = [
-  // The panel: five judges, four of whom can refuse.
+  // The panel: five judges, four of whom can refuse. Said on the home, on the
+  // project page where the five are listed, and on the thanks page.
   { page: 'site/src/html/index.html', what: 'the number of judges',
     fact: () => judges().seats, shape: (n) => new RegExp(`${n} judges`, 'i') },
   { page: 'site/src/html/index.html', what: 'the judges who can refuse',
@@ -145,22 +189,34 @@ const CLAIMS: Claim[] = [
     fact: () => judges().seats, shape: (n) => new RegExp(`${n} giudici`, 'i') },
   { page: 'site/src/html/it/index.html', what: 'the judges who can refuse',
     fact: () => judges().vetoes, shape: (n) => new RegExp(`${n} dei quali possono rifiutarlo`, 'i') },
+  { page: 'site/src/html/project.html', what: 'the seats of the panel',
+    fact: () => judges().seats, shape: (n) => new RegExp(`panel of ${n} seats`, 'i') },
+  { page: 'site/src/html/project.html', what: 'the seats that can refuse',
+    fact: () => judges().vetoes, shape: (n) => new RegExp(`${n} of them can refuse`, 'i') },
+  { page: 'site/src/html/it/project.html', what: 'the seats of the panel',
+    fact: () => judges().seats, shape: (n) => new RegExp(`collegio di ${n} seggi`, 'i') },
+  { page: 'site/src/html/it/project.html', what: 'the seats that can refuse',
+    fact: () => judges().vetoes, shape: (n) => new RegExp(`${n} di loro possono rifiutare`, 'i') },
+  { page: 'site/src/html/about/thanks.html', what: 'the number of judges',
+    fact: () => judges().seats, shape: (n) => new RegExp(`survive ${n} judges`, 'i') },
+  { page: 'site/src/html/it/about/thanks.html', what: 'the number of judges',
+    fact: () => judges().seats, shape: (n) => new RegExp(`sopravvivere a ${n} giudici`, 'i') },
 
   // The words that can begin a top-level line.
   { page: 'site/src/html/why.html', what: 'the words that can begin a line',
-    fact: topLevelWords, shape: (n) => new RegExp(`${n} words can begin a line`, 'i') },
+    fact: () => topLevelWords().size, shape: (n) => new RegExp(`${n} words can begin a line`, 'i') },
   { page: 'site/src/html/it/why.html', what: 'the words that can begin a line',
-    fact: topLevelWords, shape: (n) => new RegExp(`${n} parole possono aprire una riga`, 'i') },
+    fact: () => topLevelWords().size, shape: (n) => new RegExp(`${n} parole possono aprire una riga`, 'i') },
   { page: 'site/src/html/docs/the-c-boundary.html', what: 'the words that can begin a line',
-    fact: topLevelWords, shape: (n) => new RegExp(`${n} words that can start a\\s+top-level line`, 'i') },
+    fact: () => topLevelWords().size, shape: (n) => new RegExp(`${n} words that can start a\\s+top-level line`, 'i') },
   { page: 'site/src/html/it/docs/the-c-boundary.html', what: 'the words that can begin a line',
-    fact: topLevelWords, shape: (n) => new RegExp(`${n} parole che possono aprire una\\s+riga`, 'i') },
+    fact: () => topLevelWords().size, shape: (n) => new RegExp(`${n} parole che possono aprire una\\s+riga`, 'i') },
 
-  // The verbs of the one command.
+  // The verbs of the one command: the count in the heading.
   { page: 'site/src/html/start.html', what: 'the verbs of the command',
-    fact: verbs, shape: (n) => new RegExp(`One command, ${n} verbs`, 'i') },
+    fact: () => verbs().length, shape: (n) => new RegExp(`One command, ${n} verbs`, 'i') },
   { page: 'site/src/html/it/start.html', what: 'the verbs of the command',
-    fact: verbs, shape: (n) => new RegExp(`Un comando, ${n} verbi`, 'i') },
+    fact: () => verbs().length, shape: (n) => new RegExp(`Un comando, ${n} verbi`, 'i') },
 
   // The lines of the Zen.
   { page: 'site/src/html/project.html', what: 'the lines of the Zen',
@@ -176,6 +232,28 @@ const CLAIMS: Claim[] = [
 ];
 
 /**
+ * The pages that must name every verb, each as `<code>verb</code>`. A count
+ * survives a rename; the names do not.
+ */
+const NAME_EVERY_VERB = ['site/src/html/start.html', 'site/src/html/it/start.html'];
+
+/**
+ * The pages whose claims have been checked in this build, for the end-of-build
+ * audit. A FILE rather than a Set, and the reason is a module boundary: the
+ * pages run this code from Astro's prerender bundle, and the build-done hook in
+ * `astro.config.mjs` imports this file from source, so the two never share an
+ * in-memory variable. What they share is the output directory. The hook reads
+ * this file, runs the audit and deletes it, so it never ships.
+ */
+const VISITED_FILE = 'site/dist/.claims-visited';
+
+function markVisited(pagePath: string): void {
+  const file = absolute(VISITED_FILE);
+  mkdirSync(dirname(file), { recursive: true });
+  appendFileSync(file, `${pagePath}\n`);
+}
+
+/**
  * Check every claim a page carries. Throws with the page, the claim, what the
  * tree says and how the page would have to spell it, because "a claim drifted"
  * sends somebody reading twelve pages.
@@ -184,13 +262,22 @@ export function checkClaims(html: string, pagePath: string): void {
   const problems: string[] = [];
   for (const claim of CLAIMS) {
     if (claim.page !== pagePath) continue;
+    markVisited(pagePath);
     const n = claim.fact();
-    const spelled = word(n, en(pagePath));
+    const spelled = word(n, langOf(pagePath));
     if (!claim.shape(spelled).test(html)) {
       problems.push(
         `${pagePath}: ${claim.what} is ${n} in the tree, and the page does not say "${spelled}" where it should.\n` +
           `      expected a sentence matching: ${claim.shape(spelled)}`
       );
+    }
+  }
+  if (NAME_EVERY_VERB.includes(pagePath)) {
+    markVisited(pagePath);
+    for (const verb of verbs()) {
+      if (!html.includes(`<code>${verb}</code>`)) {
+        problems.push(`${pagePath}: the command has a verb \`${verb}\` and the page does not name it as <code>${verb}</code>.`);
+      }
     }
   }
   if (problems.length > 0) {
@@ -203,8 +290,31 @@ export function checkClaims(html: string, pagePath: string): void {
   }
 }
 
+/**
+ * Every page the table names must have passed through `checkClaims` by the time
+ * the build ends. Otherwise a renamed or deleted page takes its claims with it
+ * in silence, which the veteran's seat demonstrated by rendering the home under
+ * another path and watching every row skip. Returns how many pages were seen.
+ */
+export function assertEveryClaimVisited(): number {
+  const file = absolute(VISITED_FILE);
+  const visited = new Set(existsSync(file) ? readFileSync(file, 'utf-8').split('\n').filter(Boolean) : []);
+  if (existsSync(file)) unlinkSync(file);
+  const named = new Set([...CLAIMS.map((c) => c.page), ...NAME_EVERY_VERB]);
+  const missed = [...named].filter((p) => !visited.has(p)).sort();
+  if (missed.length > 0) {
+    throw new Error(
+      `${missed.length} page(s) named in the claims table never reached checkClaims():\n    ` +
+        missed.join('\n    ') +
+        `\n  A page that was renamed or removed takes its claims with it in silence unless this fires.\n` +
+        `  Point the row at the page's new path, or remove the row if the page is gone.`
+    );
+  }
+  return visited.size;
+}
+
 /** What the table holds, for the build's own report and for a test. */
-export function claimsSummary(): string {
+export function claimsSummary(pages: number): string {
   const j = judges();
-  return `${j.seats} judges, ${j.vetoes} vetoes, ${topLevelWords()} top-level words, ${verbs()} verbs, ${zenLines()} Zen lines, ${chapters()} chapters; ${CLAIMS.length} claims checked`;
+  return `${j.seats} judges, ${j.vetoes} vetoes, ${topLevelWords().size} top-level words, ${verbs().length} verbs, ${zenLines()} Zen lines, ${chapters()} chapters; ${CLAIMS.length} claims and ${NAME_EVERY_VERB.length} verb lists checked over ${pages} pages`;
 }
