@@ -8,17 +8,19 @@
       </svg>
       <p class="kicker">A compiled programming language</p>
       <h1><span class="q">&ldquo;</span>Heroes<span class="q">&rdquo;</span></h1>
-      <p class="promise">A whole language in one prompt. It <em>compiles itself</em>.</p>
+      <p class="promise">A whole language in one prompt, for the models writing
+      your code. It <em>compiles itself</em>.</p>
       <ul class="pillars">
-        <li>The whole language fits in five pages.</li>
+        <li>Designed so that a model's plausible mistake will not compile.</li>
         <li>No null, no exceptions, no garbage collector.</li>
         <li>No standard library: everything comes from C.</li>
-        <li>Native binaries, and nothing to install.</li>
+        <li>Native binaries, and no runtime to install.</li>
       </ul>
       <div class="cta">
-        <a class="primary" href="/start/">Get started</a>
-        <a class="ghost" href="/examples/">See the code</a>
+        <a class="primary" href="/examples/">See the code</a>
+        <a class="ghost" href="/start/">How to build it</a>
       </div>
+      <p class="version">heroes 0.1.0 &middot; not packaged yet</p>
     </div>
     <div>
       <div class="demo">
@@ -88,8 +90,9 @@
   fix (certain): rename to `total`</code></pre>
   <p>
     Swapped arguments of one type, a case left out, a keyword borrowed from
-    another language: none of those compile either. Every error carries its
-    fix. A fix marked <code>certain</code> can be applied by machine.
+    another language: none of those compile either. Every error says what was
+    expected and where. Where the repair is known it comes with the message, and
+    one marked <code>certain</code> can be applied by machine.
     <a href="/errors/">More real errors &rarr;</a>
   </p>
 
@@ -113,6 +116,21 @@
     <a href="/examples/#c">The C libraries, working &rarr;</a>
   </p>
 
+  <h2>The thesis</h2>
+  <blockquote>
+    A language designed so that every plausible LLM mistake is a compile error
+    will produce working programs in fewer total tokens than a conventional
+    language, even if each program costs more tokens to write.
+  </blockquote>
+  <p>
+    It is measured rather than asserted. <code>heroes mutate</code> takes
+    working programs, plants one realistic mistake at a time, and counts how
+    many the compiler stops. Then it runs again with the thesis rules switched
+    off. The distance between the two runs is the result, kept mistake by
+    mistake: an average would hide the interesting part.
+    <a href="/errors/">The measured table &rarr;</a>
+  </p>
+
   <h2>Run it <span class="nod">&middot; speed of life &middot;</span></h2>
   <div class="notice">
     <p><b>The repository is still private, so the clone below does not work
@@ -131,21 +149,6 @@ failed: not_a_digit (expected 0-9)
     from. Heroes wrote that C file, so clang is all you need. The line saying
     <code>failed</code> is the example refusing a character it cannot read.
     <a href="/start/">The whole way in &rarr;</a>
-  </p>
-
-  <h2>The claim</h2>
-  <blockquote>
-    A language designed so that every plausible LLM mistake is a compile error
-    will produce working programs in fewer total tokens than a conventional
-    language, even if each program costs more tokens to write.
-  </blockquote>
-  <p>
-    It is measured rather than asserted. <code>heroes mutate</code> takes
-    working programs, plants one realistic mistake at a time, and counts how
-    many the compiler stops. Then it runs again with the thesis rules switched
-    off. The distance between the two runs is the result, kept mistake by
-    mistake: an average would hide the interesting part.
-    <a href="/errors/">The measured table &rarr;</a>
   </p>
 
   <footer>

@@ -8,17 +8,19 @@
       </svg>
       <p class="kicker">Un linguaggio di programmazione compilato</p>
       <h1><span class="q">&ldquo;</span>Heroes<span class="q">&rdquo;</span></h1>
-      <p class="promise">Un intero linguaggio in un prompt. <em>Si compila da solo</em>.</p>
+      <p class="promise">Un intero linguaggio in un prompt, per i modelli che
+      scrivono il tuo codice. <em>Si compila da solo</em>.</p>
       <ul class="pillars">
-        <li>Tutto il linguaggio sta in cinque pagine.</li>
+        <li>Fatto perché lo sbaglio plausibile di un modello non compili.</li>
         <li>Niente null, niente eccezioni, niente garbage collector.</li>
         <li>Nessuna libreria standard: tutto arriva dal C.</li>
-        <li>Binari nativi, e niente da installare.</li>
+        <li>Binari nativi, e nessun runtime da installare.</li>
       </ul>
       <div class="cta">
-        <a class="primary" href="/it/start/">Comincia</a>
-        <a class="ghost" href="/it/examples/">Guarda il codice</a>
+        <a class="primary" href="/it/examples/">Guarda il codice</a>
+        <a class="ghost" href="/it/start/">Come si costruisce</a>
       </div>
+      <p class="version">heroes 0.1.0 &middot; non ancora impacchettato</p>
     </div>
     <div>
       <div class="demo">
@@ -51,7 +53,7 @@
 
   <ul class="figures">
     <li>
-      <span class="n">4,096</span>
+      <span class="n">4.096</span>
       <span class="what">token: il tetto sotto cui sta il linguaggio</span>
       <span class="how">La specifica è tutto il linguaggio, e sono cinque
       pagine. Dalla a un modello e resta spazio per il tuo programma.
@@ -90,9 +92,9 @@
   <p>
     Argomenti dello stesso tipo scambiati, un caso dimenticato, una parola
     chiave presa da un altro linguaggio: nemmeno quelli compilano. Ogni errore
-    porta con sé la riparazione. Una riparazione marcata <code>certain</code>
-    può essere applicata da una macchina.
-    <a href="/it/errors/">Altri errori veri &rarr;</a>
+    dice cosa si aspettava e dove. Dove la riparazione si conosce arriva col
+    messaggio, e una marcata <code>certain</code> può essere applicata da una
+    macchina. <a href="/it/errors/">Altri errori veri &rarr;</a>
   </p>
 
   <h2>Nessuna libreria standard, di proposito</h2>
@@ -116,6 +118,22 @@
     <a href="/it/examples/#c">Le librerie C, che funzionano &rarr;</a>
   </p>
 
+  <h2>La tesi</h2>
+  <blockquote>
+    Un linguaggio progettato perché ogni sbaglio plausibile di un modello sia
+    un errore di compilazione produrrà programmi funzionanti spendendo meno
+    token in totale di un linguaggio convenzionale, anche se ogni singolo
+    programma costa più token da scrivere.
+  </blockquote>
+  <p>
+    È misurata, non affermata. <code>heroes mutate</code> prende programmi che
+    funzionano, ci pianta uno sbaglio realistico alla volta, e conta quanti il
+    compilatore ne ferma. Poi rifà tutto con le regole della tesi disattivate.
+    La distanza tra le due passate è il risultato, tenuto sbaglio per sbaglio:
+    una media nasconderebbe la parte interessante.
+    <a href="/it/errors/">La tabella misurata &rarr;</a>
+  </p>
+
   <h2>Eseguilo <span class="nod">&middot; speed of life &middot;</span></h2>
   <div class="notice">
     <p><b>Il repository è ancora privato, quindi il clone qui sotto non
@@ -136,22 +154,6 @@ failed: not_a_digit (expected 0-9)
     che ti serve. La riga che dice <code>failed</code> è l'esempio che rifiuta
     un carattere che non sa leggere.
     <a href="/it/start/">Tutta la via d'ingresso &rarr;</a>
-  </p>
-
-  <h2>La tesi</h2>
-  <blockquote>
-    Un linguaggio progettato perché ogni sbaglio plausibile di un modello sia
-    un errore di compilazione produrrà programmi funzionanti spendendo meno
-    token in totale di un linguaggio convenzionale, anche se ogni singolo
-    programma costa più token da scrivere.
-  </blockquote>
-  <p>
-    È misurata, non affermata. <code>heroes mutate</code> prende programmi che
-    funzionano, ci pianta uno sbaglio realistico alla volta, e conta quanti il
-    compilatore ne ferma. Poi rifà tutto con le regole della tesi disattivate.
-    La distanza tra le due passate è il risultato, tenuto sbaglio per sbaglio:
-    una media nasconderebbe la parte interessante.
-    <a href="/it/errors/">La tabella misurata &rarr;</a>
   </p>
 
   <footer>

@@ -71,7 +71,7 @@ $ heroes run program.hero</code></pre>
   <p>
     Quel <code>heroes</code> è il binario che hai costruito tu:
     <code>./heroes</code>, a un comando clang di distanza da un clone pulito.
-    <a href="/it/#run">Come si costruisce →</a>
+    <a href="/it/start/">Come si costruisce →</a>
   </p>
 
   <h2>Parole di altri linguaggi, rifiutate con la risposta allegata</h2>
@@ -131,43 +131,48 @@ tests/golden/check/deleted-int.hero:23:8: <span class="k">error</span>[reserved_
     colonne è l&rsquo;unica parte che significa qualcosa.
   </p>
   <p>
-    La tabella qui sotto riporta una misurazione completata su 49 programmi in
-    <code>examples/</code>, con 6.254 errori iniettati. Contiene ogni operatore
-    usato in quella prova, compresi quelli dove il design non fa niente e i due
+    La tabella è una prova completa, e il comando qui sopra è come ottieni la
+    tua. Copre tutti i programmi in <code>examples/</code> e tutti gli operatori
+    che lo strumento ha, compresi quelli dove il design non fa niente e i due
     dove fallisce:
   </p>
-  <pre class="table"><code><span class="c">errore iniettato                            mutanti  presi   senza regole</span>
-etichetta di argomento saltata                  313      76%           0%
-nome che ne nasconde un altro                   285      94%           0%
-catch-all pigro su un variant                   219     100%          63%
-due argomenti dello stesso tipo scambiati       671      74%          61%
-@ dimenticata su una dichiarazione              234      90%          90%
-caso di variant saltato                          78     100%         100%
-? saltato                                        64      86%          86%
-coppia di booleani scambiata                    132     100%         100%
-nome mai dichiarato                             255     100%         100%
-errore di battitura in un nome                 3611     100%         100%
-aritmetica mista fra interi e float             376     100%         100%
-<span class="hi">errore di battitura in un codice d’errore</span>         4       0%           0%
-<span class="hi">errore di battitura in una cifra</span>                 12       0%           0%</code></pre>
+  <pre class="table"><code>$ heroes mutate examples
+
+<span class="c">errore iniettato                           mutanti  presi  senza le regole</span>
+due argomenti scambiati in una chiamata       1907    80%              58%
+argomento posizionale che vuole un nome       1331    66%               0%
+nome che ne nasconde un altro                  945    95%               0%
+catch-all pigro su un variant                  457   100%              47%
+locale che prende il nome di un modulo        1700   100%              96%
+? saltato                                      236    95%              82%
+@ dimenticata su una dichiarazione             758    99%              99%
+caso di variant saltato                        133   100%             100%
+coppia di booleani scambiata                   227   100%             100%
+nome mai dichiarato                            822   100%             100%
+errore di battitura in un nome               10443   100%             100%
+aritmetica mista fra interi e float           1492   100%             100%
+<span class="hi">errore di battitura in un codice d’errore</span>       59     0%               0%
+<span class="hi">errore di battitura in una cifra</span>                68     3%               3%</code></pre>
   <p>
     <b>Il progetto si rifiuta di fare la media di questi numeri in una cifra
     sola</b>, e lo strumento stampa quel rifiuto ogni volta che gira. Il motivo
-    sta nella tabella. Le prime quattro righe sono la misura: un&rsquo;etichetta
-    saltata e un nome che ne nasconde un altro vanno a zero senza le regole della
-    tesi, perché in un linguaggio convenzionale nessun altro li sta cercando. Le
-    righe centrali le prendono i nomi e i tipi in qualunque linguaggio, quindi
-    metterle nella media accrediterebbe al design un lavoro che non ha fatto. La
-    <code>@</code> dimenticata è esclusa da qualunque riassunto per istruzione
-    dello stesso progetto, perché gli errori che pianta sono presi per
-    costruzione: i due che sfuggono sono modifiche che non cambiavano niente.
+    sta nella tabella. Le prime quattro righe sono la misura: un'etichetta che
+    serve e un nome che ne nasconde un altro vanno a zero o quasi senza le
+    regole della tesi, perché in un linguaggio convenzionale nessun altro li sta
+    cercando. Le righe centrali le prendono i nomi e i tipi in qualunque
+    linguaggio, quindi metterle nella media accrediterebbe a questo design un
+    lavoro che non ha fatto. La <code>@</code> dimenticata è esclusa da
+    qualunque riassunto per istruzione dello stesso progetto: gli errori che
+    pianta sono presi per costruzione, e i pochi che sfuggono sono modifiche che
+    non cambiavano niente.
   </p>
   <p>
     Tre righe vanno lette contro quello che questo stesso sito dichiara in prima
-    pagina. Gli argomenti dello stesso tipo scambiati vengono presi il 74 per
-    cento delle volte, non il 100: dove l&rsquo;etichetta è facoltativa perché i
-    tipi già differiscono, non li sta cercando nessuno. E le ultime due righe non
-    vengono prese <b>mai</b>, in nessuno dei due casi. Un errore di battitura
+    pagina. Scambiare due argomenti in una chiamata viene preso quattro volte
+    su cinque, non sempre: dove i due hanno lo stesso tipo l&rsquo;etichetta è
+    obbligatoria e lo scambio non compila, e dove i tipi differiscono
+    l&rsquo;etichetta è facoltativa e non lo sta cercando nessuno. E le ultime due righe quasi non
+    vengono mai prese, in nessuno dei due casi. Un errore di battitura
     dentro un codice d&rsquo;errore è una stringa con una lettera cambiata, e
     nessuna regola vincola come si scrive una stringa. Un errore di battitura
     dentro un numero è un numero, e <code>10</code> è legale esattamente come

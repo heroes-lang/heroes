@@ -8,18 +8,19 @@
 > byte: asked to compile itself it writes out the very C file the repository
 > ships, and `cmp` finds nothing between them.
 
-The entire language specification is deliberately small, measured at 3592
-tokens against a hard ceiling of 4096, because the spec is the prompt, not
-documentation. If you are a language model asked to write Heroes, read the
-spec first; it is the whole language:
+The entire language specification is deliberately small: it is measured
+against a hard ceiling of 4096 tokens on every commit, because the spec is the
+prompt and not documentation. If you are a language model asked to write
+Heroes, read the spec first; it is the whole language:
 
-- [The specification](https://raw.githubusercontent.com/heroes-lang/heroes/main/spec/heroes-spec.md): the whole language in ~3592 tokens, written to be your prompt
+- [The specification](https://heroes-lang.org/spec/): the whole language, under a 4096-token ceiling, written to be your prompt
 
-**The repository is still private, so that link answers 404 today**, and so do
-the two under Source below. The addresses are final and open together with the
-code, once a round of consolidation on the project is finished. Until then the
-pages of this site are what a fetch can reach, and the documentation under
-`/docs/` is the language explained one idea at a time.
+**The repository is still private, so the two links under Source below answer
+404 today.** Their addresses are final and open together with the code, once a
+round of consolidation on the project is finished. Everything else here is on
+this site and answers now: the specification above, every program under
+`/examples/`, and the documentation under `/docs/`, which is the language
+explained one idea at a time.
 
 Ground rules a generated program must respect: exactly one way to write
 anything (a canonical formatter; 4-space indentation, tabs are errors); named
@@ -30,12 +31,12 @@ legal expression that reports what belongs in the gap instead of failing.
 
 ## Pages
 
-- [Home](https://heroes-lang.org/): what the language is, one real sample, the claim
+- [Home](https://heroes-lang.org/): what the language is, one real sample, one real diagnostic, the claim
+- [Examples](https://heroes-lang.org/examples/): every program in the repository, on the site, each with the exact command that runs it and the output it really prints. `/examples/index.json` is the same corpus as data, with a hash per file
+- [Start](https://heroes-lang.org/start/): the four lines that build the compiler, where `heroes run` looks for the runtime, and the eleven verbs
 - [Why Heroes](https://heroes-lang.org/why/): the founding constraint (no standard library), the thesis, the cost formula, the objections answered
-- [Self-hosted](https://heroes-lang.org/project/#self-hosted): the fixpoint, 165 modules and 48,342 lines of Heroes emitting byte-identical C, and one C file per module with a build cache keyed on the headers it read
-- [The Zen](https://heroes-lang.org/project/#zen): twenty lines the binary prints from `heroes this`
-- [The panel](https://heroes-lang.org/project/#panel): how a change to the language is decided, five judges with differentiated briefs and four vetoes, the historian's seat, and what the design borrowed from Hylo, Swift, Cyclone, Go, Nim, Zig, Ada, Pascal and the rest
-- [The author](https://heroes-lang.org/about/): Giuseppe Arici, partner and CTO at Codermine in Brescia, author of *Heroes of code*, a history of programming languages framed as a dream journey with David Bowie as the guide, published on Amazon. He had never written a compiler before this one
+- [The project](https://heroes-lang.org/project/): the fixpoint, over 180 modules and more than 55,000 lines of Heroes emitting byte-identical C; how a change to the language is decided by five judges; and the twenty lines `heroes this` prints
+- [The author](https://heroes-lang.org/about/), and the credits at `/about/thanks/`: Giuseppe Arici, partner and CTO at Codermine in Brescia, author of *Heroes of code*, a history of programming languages framed as a dream journey with David Bowie as the guide, published on Amazon. He had never written a compiler before this one
 - [Build log](https://heroes-lang.org/log/): one postcard per milestone, newest first
 - [Thanks](https://heroes-lang.org/about/thanks/): the designers of every language Heroes borrowed from, named one by one, with what each borrowing was; links go to English Wikipedia only where an article about that person was verified to exist
 - [Documentation](https://heroes-lang.org/docs/): the language page by page; every code block is a slice of a repository file that compiles and runs
@@ -50,7 +51,7 @@ in both, because they are quotations of real files and real output.
 ## Source
 
 - [Repository](https://github.com/heroes-lang/heroes): the compiler, the spec, the design record; build with `clang -I runtime seed/heroes.c runtime/runtime.c -o heroes`, then `./heroes run examples/gallery/00-first.hero`
-- [Examples](https://github.com/heroes-lang/heroes/tree/main/examples/gallery): twelve small programs, one per language idea; every code block on the site is anchored to one of these files, in the canonical form `heroes fmt` prints
+- Every example is on the site rather than here: <https://heroes-lang.org/examples/>, cut from `examples/` when the site is built, in the canonical form `heroes fmt` prints
 
 ## Notes
 

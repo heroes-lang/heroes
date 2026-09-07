@@ -236,7 +236,7 @@ export function renderExamplesIndex(lang: Lang): RenderedPage {
   // so the page cannot state a count the tree does not have.
   parts.push(
     `  <ul class="stats">\n` +
-      `    <li><span class="n">${number(count.programs, lang)}</span><span class="what">${t('programs', lang)}</span></li>\n` +
+      `    <li><span class="n">${number(count.programs + count.gallery, lang)}</span><span class="what">${t('programs', lang)}</span></li>\n` +
       `    <li><span class="n">${number(count.files, lang)}</span><span class="what">${t('files', lang)}</span></li>\n` +
       `    <li><span class="n">${number(count.lines, lang)}</span><span class="what">${t('lines', lang)}</span></li>\n` +
       `  </ul>`
@@ -270,8 +270,8 @@ export function renderExamplesIndex(lang: Lang): RenderedPage {
     title: lang === 'it' ? 'Esempi: ogni programma di Heroes' : 'Examples: every Heroes program',
     description:
       lang === 'it'
-        ? `${count.programs} programmi in Heroes, con il codice, il comando e l'output vero.`
-        : `${count.programs} programs written in Heroes, with the code, the command and the real output.`,
+        ? `${count.programs + count.gallery} programmi in Heroes, con il codice, il comando e l'output vero.`
+        : `${count.programs + count.gallery} programs written in Heroes, with the code, the command and the real output.`,
     html: `\n${parts.join('\n\n')}\n`,
   };
 }

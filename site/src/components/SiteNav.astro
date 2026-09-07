@@ -65,6 +65,9 @@ const entries = [
     {lang === 'en'
       ? <a class="lang" href={other} hreflang="it" lang="it" title="Questa pagina in italiano">IT</a>
       : <a class="lang" href={other} hreflang="en" lang="en" title="This page in English">EN</a>}
-    <a class="out" href="https://github.com/heroes-lang/heroes">GitHub ↗</a>
+    <a class="out" href="https://github.com/heroes-lang/heroes"
+       title={lang === 'it'
+         ? 'Il repository è privato: si apre insieme al codice'
+         : 'The repository is private: it opens with the code'}>GitHub ↗</a>
   </div>
 </nav>
