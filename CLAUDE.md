@@ -987,9 +987,9 @@ repeated; what follows is what they did not.
 ```
 clang -I runtime seed/heroes.c runtime/runtime.c -o heroes   # the compiler, from C alone (2.7 s)
 ./heroes build selfhost/main.hero -o heroes-next             # the compiler, from Heroes
-./heroes test selfhost/main.hero                             # its own tests (584, 2026-09-06; 36 s WARM)
-./heroes run tests/harness/main.hero -- ./heroes             # the net (1582 checks, 2026-09-06; 11m17s WARM, ~13m with runtime/ changed)
-./heroes test tests/harness/main.hero                        # THE NET'S OWN TESTS (113, 11 s) — the third suite
+./heroes test selfhost/main.hero                             # its own tests (588, 2026-09-07; 48 s WARM)
+./heroes run tests/harness/main.hero -- ./heroes             # the net (1609 checks, 2026-09-07; 13m05s WARM on a desktop in use, ~13m with runtime/ changed)
+./heroes test tests/harness/main.hero                        # THE NET'S OWN TESTS (113, 12 s) — the third suite
 
 ./heroes doctor                                              # toolchain check
 ./heroes <cmd>                                               # the one command
@@ -1007,6 +1007,17 @@ about `DECIDE.md` reaching 391 KB told a third time. **Measured on the box
 2026-09-06**: the plain line's 1 MB now builds a compiler that emits the whole of
 `selfhost/main.hero`, so the flag is headroom rather than the thing holding the
 build up — which is exactly the state in which a silent divergence goes unnoticed.
+
+**AND THE 2026-09-07 NET NUMBER IS A DIRTY CLOCK, SAID SO RATHER THAN QUOTED
+CLEAN.** 13m05s is `real 785.39` against `user 349.86 + sys 100.27` — 57% of
+the wall was waiting, and the reason was on the same machine: Chrome, the
+window server and a chat client held about three of load throughout, because
+the author was using the desktop. §15 says a run whose `real` sits far above
+`user` + `sys` is discarded rather than explained; this one is kept because it
+is a PASS/FAIL gate and not a measurement, all 1609 checks are green, and the
+duration is written down as the shape it is. **The number to fund a *do not
+make it slower* argument is not this one**, and the next session that wants one
+takes it on a still machine.
 
 **And the three numbers above were a milestone stale until 2026-09-06**: this
 block said 108 for the third suite while `docs/ROADMAP.md` said 112, because

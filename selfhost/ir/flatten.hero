@@ -505,14 +505,14 @@ function call(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Che
                 # the IR does, because the layout decision belongs to the
                 # descriptor pass.
                 if questions.is_record(decls, t.at)
-                    run = lower_args(@b, a, r, c, s, decls, given: given).run
+                    run = lower_args(@b, a, r, c, s, decls, given: given, callee: fail("none", "a record construction")).run
                     return build.emit(
                         @b,
                         op: .construct(shape: .record_shape(decl: t.at), arguments: run),
                         ty: ty,
                         span: span
                     )
-                handed = lower_args(@b, a, r, c, s, decls, given: given)
+                handed = lower_args(@b, a, r, c, s, decls, given: given, callee: ok(t.at))
                 return owned_release.call_or_release(@b, c, s, decls, at: t.at, handed: handed, ty: ty, span: span)
             .builtin bt =>
                 builtin_name = inventory.table()[bt.at].name
@@ -528,9 +528,9 @@ function call(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Che
                 shape = questions.fallible_constructor(builtin_name)
 
                 if !shape.is_err()
-                    run = lower_args(@b, a, r, c, s, decls, given: given).run
+                    run = lower_args(@b, a, r, c, s, decls, given: given, callee: fail("none", "ok or fail")).run
                     return build.emit(@b, op: .construct(shape: shape.must(), arguments: run), ty: ty, span: span)
-                handed = lower_args(@b, a, r, c, s, decls, given: given)
+                handed = lower_args(@b, a, r, c, s, decls, given: given, callee: fail("none", "a built-in"))
                 return emissions.emit_call(
                     @b,
                     target: .builtin_fn(at: bt.at),
@@ -545,7 +545,7 @@ function call(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Che
 
             .module | .local | .unresolved => is_name @ is_name
     target = expr(@b, a, r, c, s, decls, id: callee)
-    handed = lower_args(@b, a, r, c, s, decls, given: given)
+    handed = lower_args(@b, a, r, c, s, decls, given: given, callee: fail("none", "a function value"))
     return emissions.emit_call(@b, target: .indirect(value: target), given: handed, variadic: false, ty: ty, span: span)
 
 # `.num(v: 12)` — a case construction: the type is the VARIANT, the
@@ -557,7 +557,7 @@ function case_construct(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c:
 
             if found.is_err()
                 return build.emit(@b, op: .missing, ty: ty, span: span)
-            run = lower_args(@b, a, r, c, s, decls, given: given).run
+            run = lower_args(@b, a, r, c, s, decls, given: given, callee: fail("none", "a case construction")).run
             return build.emit(
                 @b,
                 op: .construct(shape: .case_shape(decl: n.decl, at: found.must()), arguments: run),
@@ -581,39 +581,48 @@ function case_construct(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c:
 # here — it was checked against the parameter at this position and
 # carries no further meaning. A place that runs through an index is
 # handed over as a temporary, and the store back is what `after` owes.
-function lower_args(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], given: [ast.Arg]) -> inout.Args
+function lower_args(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], given: [ast.Arg], callee: i64?) -> inout.Args
     lowered_args: [ir.Arg] @ []
     after: [inout.WriteBack] @ []
+    at: i64 @ 0
 
     for arg in given
         if arg.mutable
             spot = place(@b, a, r, c, s, decls, id: arg.value)
             lowered_args @ lowered_args.push(
-                inout.argument(@b, a, r, c, s, decls, id: arg.value, spot: spot, after: @after)
+                inout.argument(@b, a, r, c, s, decls, id: arg.value, spot: spot, callee: callee, at: at, after: @after)
             )
         else
             value = expr(@b, a, r, c, s, decls, id: arg.value)
             lowered_args @ lowered_args.push(.value_arg(value: value))
+        at @ at + 1
 
     return inout.Args(run: build.args_run(@b, lowered_args), after: after)
 
 # The UFCS shape: the receiver becomes argument zero. §4.11 forbids
 # this where the first parameter is @, so the receiver is always a
 # value.
-function with_receiver(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], receiver: i64, given: [ast.Arg]) -> inout.Args
+function with_receiver(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], receiver: i64, given: [ast.Arg], callee: i64?) -> inout.Args
     first = expr(@b, a, r, c, s, decls, id: receiver)
     lowered_args: [ir.Arg] @ [.value_arg(value: first)]
     after: [inout.WriteBack] @ []
+
+    # The receiver IS parameter zero, so every written argument sits one to
+    # the right of its own index — and a mark is read at the parameter's
+    # position. UFCS cannot reach an `@` first parameter (§4.11), so the
+    # offset never has to describe the receiver itself.
+    at: i64 @ 1
 
     for arg in given
         if arg.mutable
             spot = place(@b, a, r, c, s, decls, id: arg.value)
             lowered_args @ lowered_args.push(
-                inout.argument(@b, a, r, c, s, decls, id: arg.value, spot: spot, after: @after)
+                inout.argument(@b, a, r, c, s, decls, id: arg.value, spot: spot, callee: callee, at: at, after: @after)
             )
         else
             value = expr(@b, a, r, c, s, decls, id: arg.value)
             lowered_args @ lowered_args.push(.value_arg(value: value))
+        at @ at + 1
 
     return inout.Args(run: build.args_run(@b, lowered_args), after: after)
 
@@ -641,7 +650,7 @@ function method(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.C
     if is_qualified
         match r.uses[at]
             .top t =>
-                handed = lower_args(@b, a, r, c, s, decls, given: given)
+                handed = lower_args(@b, a, r, c, s, decls, given: given, callee: ok(t.at))
 
                 # A record is constructed, not called — the same split
                 # call makes.
@@ -703,7 +712,17 @@ function method(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.C
             if builtin_name == "cstr"
                 operand = expr(@b, a, r, c, s, decls, id: receiver)
                 return build.emit(@b, op: .cast(kind: .str_to_cstr, operand: operand), ty: ty, span: span)
-            handed = with_receiver(@b, a, r, c, s, decls, receiver: receiver, given: given)
+            handed = with_receiver(
+                @b,
+                a,
+                r,
+                c,
+                s,
+                decls,
+                receiver: receiver,
+                given: given,
+                callee: fail("none", "a built-in")
+            )
             return emissions.emit_call(
                 @b,
                 target: .builtin_fn(at: bt.at),
@@ -713,7 +732,7 @@ function method(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.C
                 span: span
             )
         .top t =>
-            handed = with_receiver(@b, a, r, c, s, decls, receiver: receiver, given: given)
+            handed = with_receiver(@b, a, r, c, s, decls, receiver: receiver, given: given, callee: ok(t.at))
             return owned_release.call_or_release(@b, c, s, decls, at: t.at, handed: handed, ty: ty, span: span)
         # h.cb(n) where cb is a field holding a function value: the dot
         # is a FIELD READ, not a receiver (§4.11's first lookup, §4.13).
@@ -749,7 +768,7 @@ function field_call(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: sta
         target @ build.emit(@b, op: .missing, ty: function_ty, span: span)
     else
         target @ build.emit(@b, op: .field(base: base, at: found.must()), ty: function_ty, span: span)
-    handed = lower_args(@b, a, r, c, s, decls, given: given)
+    handed = lower_args(@b, a, r, c, s, decls, given: given, callee: fail("none", "a field holding a function value"))
     return emissions.emit_call(@b, target: .indirect(value: target), given: handed, variadic: false, ty: ty, span: span)
 
 ## assert — the source expression and both sides (§4.18, spec:157)

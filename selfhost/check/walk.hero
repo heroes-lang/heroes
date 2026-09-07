@@ -1152,7 +1152,14 @@ function signature_of(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, decls
             lowered: [i64] @ []
 
             for p in fd.value.params
-                lowered @ lowered.push(lower.lower_ty(@c, a, r, p.ty))
+                # §4.19: a marked `@` cell is a `str?` on this side of the
+                # boundary too, for the same reason the result is — the
+                # `cstr` in the declaration is what clang checks against the
+                # header, and by the time the program can touch the cell the
+                # bytes are copied and the original freed.
+                lowered @ lowered.push(
+                    freer.handed_back_param(@c.out.types, p, declared: lower.lower_ty(@c, a, r, p.ty))
+                )
 
             declared_result = lower.lower_ty(@c, a, r, fd.value.result)
 
@@ -1467,7 +1474,9 @@ function user_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
             params: [i64] @ []
 
             for p in fd.value.params
-                params @ params.push(lower.lower_ty(@c, a, r, p.ty))
+                # §4.19's `@` half, and it is what makes `error: @problem` on
+                # a `str?` cell type-check where the declaration says `cstr`.
+                params @ params.push(freer.handed_back_param(@c.out.types, p, declared: lower.lower_ty(@c, a, r, p.ty)))
 
             declared_result = lower.lower_ty(@c, a, r, fd.value.result)
 

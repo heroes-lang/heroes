@@ -165,6 +165,18 @@ function mark_of(decls: [ast.Decl], at: i64) -> token.Span?
 # already reported (`ir/flatten.hero`'s own rule: `.missing` flows only from
 # what the checker said).
 function call_or_release(@b: build.Lowering, c: state.Checked, s: source.Source, decls: [ast.Decl], at: i64, handed: inout.Args, ty: i64, span: token.Span) -> i64
+    produced = result_or_release(@b, c, s, decls, at: at, handed: handed, ty: ty, span: span)
+
+    # **After the call, on every path, and that is the point of doing it
+    # here.** The two marks are independent — a declaration may carry `owned`
+    # on a `@` cell and nothing on its result — so a cell release hung off the
+    # result's branch would be skipped for exactly the program panel 109
+    # exists for, `sqlite3_exec`, which returns an `i32`.
+    release_cells(@b, c, s, decls, at: at, handed: handed, span: span)
+    return produced
+
+# The result half: the plain call, or the call plus its release.
+function result_or_release(@b: build.Lowering, c: state.Checked, s: source.Source, decls: [ast.Decl], at: i64, handed: inout.Args, ty: i64, span: token.Span) -> i64
     mark = mark_of(decls, at)
 
     if mark.is_err()
@@ -221,6 +233,74 @@ function call_or_release(@b: build.Lowering, c: state.Checked, s: source.Source,
         ty: ty,
         span: span
     )
+
+# The `@` half: every marked cell of this call, released into the place the
+# author wrote (§4.19, panel 109's conditions 4 and 8).
+#
+# **What the shape is, and why the cell is hidden.** C is handed a cell of the
+# compiler's own — `ir/inout.hero` allocates it and null-initialises it —
+# because the author's own binding is a `str?` and C writes a `char *`. After
+# the call the cell holds whatever C put there, and the release turns it into
+# the value the program declared: the bytes copied out, the original freed,
+# the copy stored through the author's place. The cell is *only written*,
+# which is the spec's own words for it: nothing is read out of the caller's
+# place on the way in, so a `str?` that already held something is simply
+# replaced.
+#
+# **A piece missing means nothing is emitted, and the silence is the same one
+# `result_or_release` keeps**: every way a mark can be broken — a freer no
+# `extern` of this module declares, a freer of the wrong arity, a library
+# without `validated` — is refused by `check/freer.hero` on the author's own
+# line, so a lowering that invented a second opinion here would report a
+# program the frontend has already reported.
+function release_cells(@b: build.Lowering, c: state.Checked, s: source.Source, decls: [ast.Decl], at: i64, handed: inout.Args, span: token.Span)
+    validated_at = library_validated(decls, s)
+
+    if validated_at.is_err()
+        return
+    handed_over = table.lookup(c.types, .fallible(payload: table.str_ty(c.types)))
+
+    if handed_over.is_err()
+        return
+
+    for owed in handed.after
+        if !owed.owned
+            continue
+        mark = parameter_mark(decls, at: at, index: owed.at)
+
+        if mark.is_err()
+            continue
+        freer_at = extern_named(decls, s, name: source.span_text(s, mark.must()))
+
+        if freer_at.is_err()
+            continue
+        pointer_ty = freer_parameter(c, decls, freer_at.must())
+
+        if pointer_ty.is_err()
+            continue
+        copied = release(
+            @b,
+            c,
+            raw: build.load_slot(@b, slot_id: owed.slot, span: span),
+            freer_at: freer_at.must(),
+            validated_at: validated_at.must(),
+            pointer_ty: pointer_ty.must(),
+            ty: handed_over.must(),
+            span: span
+        )
+        build.emit_void(@b, op: .store(place: owed.place, value: copied), ty: handed_over.must(), span: span)
+
+# The `owned <freer>` a parameter carries, if it carries one.
+function parameter_mark(decls: [ast.Decl], at: i64, index: i64) -> token.Span?
+    match decls[at].kind
+        .function_decl fd =>
+            if index >= fd.value.params.len()
+                return fail("absent", "no parameter at that position")
+
+            return fd.value.params[index].owned
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return fail("absent", "not a function")
+
+    return fail("absent", "unreached")
 
 # What the signature says it returns, which for a marked one is not what the
 # program sees.

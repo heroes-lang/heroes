@@ -58,15 +58,15 @@ M-separate-compilation already did.
 
 | | |
 |---|---|
-| **Current milestone** | **M-declared-freer** — **OPEN**, row 37: `owned <C function>` on an `extern`, so a `cstr` C hands you is freed by the name its own declaration gives. Panel 109 ratified it 2026-09-04; **step 1 landed 2026-09-06** — the sitting's condition 7, the two splits that had to come first |
-| **Last closed** | **M-thread-stacks**, 2026-09-06, tag `m-thread-stacks` ([035](journal/035-thread-stacks.md)) — four steps, one sitting, one defect opened. The guard speaks on every thread, and a worker's floor is the thread that ran `main` · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
-| Milestones closed | **36** of 58 · **36** tags |
-| The compiler | **54,111** lines of Heroes in **186** modules · the seed **734,938** lines of C · runtime ABI **21**, unmoved: the floor is an argument to `pthread_create` and not a declaration |
-| The spec | **3824** of a hard 4096 · headroom **272** — it **shrank** while gaining a sentence, `; so does recursion too deep.` at +7 against a −12 removal (`docs/panel/115`) |
-| Records | sittings **115** · journals **36** · examples **55** programs, **118** files, **545** `test` blocks · open defects **0** · the site **46** pages, 23 English and 23 Italian |
+| **Current milestone** | **M-discard-refusal** — **OPEN**, row 38: `_ =` on a fallible value becomes a compile error. The verdict is the author's and given (`/decide` answer `3a`, 2026-09-03); the sitting is still owed, because a spec clause and a diagnostic class are both language (CLAUDE.md §4) |
+| **Last closed** | **M-declared-freer**, 2026-09-07, tag `m-declared-freer` ([036](journal/036-declared-freer.md)) — five steps, two sittings, four `internal error`s repaired. `owned <C function>` frees the string C hands you, in both positions · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
+| Milestones closed | **37** of 58 · **37** tags |
+| The compiler | **55,050** lines of Heroes in **189** modules · the seed **747,095** lines of C · runtime ABI **21**, unmoved: the mark needed no runtime entry point, because the release is built out of instructions the IR already had |
+| The spec | **3871** of a hard 4096 · headroom **225** — spent at M-declared-freer step 2 on panel 109's wording, and **unmoved since**: the `@` cell the milestone finished with was already described by the sentence that step bought |
+| Records | sittings **115** · journals **37** · examples **55** programs, **118** files, **545** `test` blocks · open defects **0** · the site **46** pages, 23 English and 23 Italian |
 | Waiting on the author | **0** decisions · **39** in `SCHEDULED.md` · **0** in `DEFECTS.md` · **319** in `LEARN.md` (never a gate) · an outstanding veto (`docs/panel/101` R3) |
 
-Every number re-counted 2026-09-06 at M-declared-freer step 1, none carried. Three suites green: **584**, **1582**, **113** — four of those were a commit stale until this step, `e61fec3b` having stated 584 and 1582 in its own body while repairing defect 015 and touching neither document. What moved for THIS step is the compiler itself: **181 → 186** modules, and `ir/lower.hero` **1511 → 174**, the largest file in the tree until today (`tests/harness/suite_layout.hero` carries every number with its reason).
+Every number re-counted 2026-09-07 at M-declared-freer's close, none carried. Three suites green: **588**, **1609**, **113**. What moved for the milestone is the compiler and the shape of two files: **186 → 189** modules, `ir/lower.hero` **1511 → 174** and `parse/decl.hero` **638 → 217**, both now under §11's own 300 and out of `suite_layout.hero`'s `DECIDED` table altogether — panel 109's coordinator had predicted **≤ 900** and **≤ 400**. The number to watch is the other direction: `check/walk.hero` is at **1695 of a decided 1700**, five lines of room, and it is the file every new diagnostic reaches.
 
 ---
 
@@ -124,8 +124,8 @@ heroes test selfhost/main.hero                 # the compiler's own tests
 
 ## The chain
 
-One table, one row per milestone, **closed first and scheduled after**: rows 1–35
-are done, in the order they closed, and rows 36–57 are what is next, in the order
+One table, one row per milestone, **closed first and scheduled after**: rows 1–37
+are done, in the order they closed, and rows 38–57 are what is next, in the order
 they will be taken. `warrant` is why a milestone exists: **v1** (the self-hosting
 finish line), **closure list** (design.md §1.0 — the compiler needs it), **§1.1**
 (comprehension is the objective), or **scheduled, no warrant**.
@@ -171,8 +171,8 @@ and why one overtook another are under the table, in § Who scheduled what.
 | 34 | **M-c-callbacks** | done 2026-09-05 | `m-c-callbacks` | [033](journal/033-c-callbacks.md) | a Heroes function reaches a C callback parameter, and a foreign thread is refused by name rather than left to corrupt · **§1.11**, **§1.12** |
 | 35 | **M-isolated-threads** | done 2026-09-06 | `m-isolated-threads` | [034](journal/034-isolated-threads.md) | Part 7.13 concurrency: three of four measured corruption classes closed, and the door was in the checker |
 | 36 | **M-thread-stacks** | done 2026-09-06 | `m-thread-stacks` | [035](journal/035-thread-stacks.md) | the guard speaks on every thread, and a worker's floor is the thread that ran `main` · **§1.12**
-| 37 | **M-declared-freer** | **OPEN** | — | — | `owned <C function>`: the string C hands you is freed by the name its own declaration gives · **§1.12**
-| 38 | **M-discard-refusal** | scheduled | — | — | `_ =` on a fallible value becomes a compile error · **§1.1**
+| 37 | **M-declared-freer** | done 2026-09-07 | `m-declared-freer` | [036](journal/036-declared-freer.md) | `owned <C function>`: the string C hands you is freed by the name its own declaration gives · **§1.12**
+| 38 | **M-discard-refusal** | **OPEN** | — | — | `_ =` on a fallible value becomes a compile error · **§1.1**
 | 39 | **M-closures-verdict** | scheduled | — | — | the ruling on Part 7 items 1 and 12, closures and inline blocks — a decision, not a feature |
 | 40 | **M-interpolation-verdict** | scheduled | — | — | the ruling on design.md Part 7 item 7, string interpolation — a decision, not a feature |
 | 41 | **M-reflection-verdict** | scheduled | — | — | the ruling on reflection — at run time, and as compile-time derivation over a record's fields — a decision, not a feature |
@@ -866,34 +866,37 @@ narrowing `selfhost/emit/callback_guard.hero`'s set reopens a silent exit 132.
 a test and then a mutate, and two sittings have now failed to race it.
 
 
-### M-declared-freer — the string C hands you, freed by name
+### M-declared-freer — the string C hands you, freed by name *(closed 2026-09-07)*
 
-**Panel 109, ratified 2026-09-04**, and it is the one sitting of that day that
-adds rather than refuses. The fact underneath it was measured three ways: a
-caller-owned C string can be **freed or read, never both** — `@error: cstr`
-against `char **` is `error[ffi_writable_parameter]` (panel 058), `@error: ptr`
-then `.validated()` is `type_mismatch`, and from the spec alone no route from
-`cstr` to `free(void *)` exists. So the `sqlite3_exec` leak that convened panel
-108 was not carelessness: it was **a program the language cannot express**, which
-is a hole in design.md §1.11's *everything comes from C*.
+**What happened is [journal 036](journal/036-declared-freer.md).** Panels 109
+and 116, both ratified; five steps; `owned <C function>` in both positions, with
+the release built in the lowering. What stays here is only what a later
+milestone is bound by.
 
-**What it delivers.** `owned <C function>` after a `cstr` result or a `@`
-parameter the header spells `char **`; the freer called **by name** in a
-generated per-freer release, verified by the probe; the NULL guard emitted,
-because `fclose(NULL)` segfaults on glibc; the `@` cell out-only; and **a call of
-the declared freer on an owned value is a compile error** — the condition four
-seats wrote independently, and the one that turns a silent double release at exit
-0 into a diagnostic.
+**`ptr owned` as a counted value is REFUSED under a standing veto**, and the
+veto did not lapse with this milestone. Its return conditions are measured and
+written in `docs/panel/109`; the program they point at is
+`examples/ledger/main.hero`'s five leaking error paths. The area is deliberately
+still free: this id names the deliverable and not the topic (CLAUDE.md §14), so
+a milestone that delivers the `ptr` half takes a new id.
 
-**Two splits come first**, and they are the compiler seat's condition rather than
-tidying: `selfhost/ir/lower.hero` at 1511 of 1511 and `selfhost/parse/decl.hero`
-at 638 of 638 have no line of room, and the feature lands in both. Their
-`DECIDED` rows are **lowered, not raised**.
+**The third case — C keeping a lent buffer — is queued and not refused.** It
+needs a lifetime across two calls that a language without references cannot
+state, and the C-side spelling works today (`constant SQLITE_TRANSIENT: ptr`).
+A sitting of its own, when a program needs it.
 
-**Not in this milestone**: `ptr owned` as a counted value, refused under a
-standing veto whose return conditions are measured and written in the panel file,
-and the third case — C keeping a lent buffer — which needs a lifetime across two
-calls that a language without references cannot state.
+**Two facts a later sitting on the FFI must not re-derive.** A freer is verified
+by the probe, and **a probe exists per `extern`** — so a probe can never check a
+freer no `extern` declares, nor an arity the release contradicts, and those two
+refusals live in the checker (`selfhost/check/freer.hero`) rather than in the
+emitter. And **the probe's spelling is the question it asks**: a marked cell is
+`char **` in the probe and `(char **)&cell` at the call site, and the two must
+agree or clang is being asked two different things.
+
+**The freer's own module is the boundary.** The release is a C call emitted in
+the marked declaration's unit, and that unit includes only its own groups'
+headers, so a freer declared in another module cannot be called. Anything that
+later widens where an `extern` is reachable from touches this.
 
 ### M-discard-refusal — `_ =` stops swallowing a failure
 

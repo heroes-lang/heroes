@@ -45,19 +45,28 @@ extern "sqlite3.h" link "sqlite3"
     constant SQLITE_NULL: i64
     function sqlite3_open(filename: cstr, @out: ptr) -> i64
     function sqlite3_close(db: ptr) -> i64
-    # **The fifth argument is a plain `ptr` and NOT an `@` parameter, and that
-    # is a repair rather than a shortcut.** It is `char **errmsg`, and a
-    # non-NULL one makes SQLite allocate a copy of the message that the CALLER
-    # owns and must release with `sqlite3_free`. This program asked for that
-    # copy, never freed it and never even read it — the message it prints comes
-    # from `sqlite3_errmsg` — so every refused statement leaked 40 bytes.
-    # Declaring it as a value the program passes `nullptr` for is what SQLite
-    # documents as *do not allocate one*, and it removes the resource instead of
-    # adding a rule somebody has to remember. Measured on both platforms,
-    # sqlite 3.51.0 here and 3.46.1 in the Linux image: with the out-parameter
-    # and without it, `sqlite3_errmsg` answers the same `no such table:
-    # nothing_at_all`, so nothing is lost by not asking.
-    function sqlite3_exec(db: ptr, sql: cstr, callback: ptr, context: ptr, error: ptr) -> i64
+    # **The fifth argument is `char **errmsg`, and this program asks for it
+    # again** — panel 109's condition 8, the program the whole milestone was
+    # convened for. A non-NULL one makes SQLite allocate a copy of the message
+    # that the CALLER owns and must release with `sqlite3_free`, and `owned
+    # sqlite3_free` is how the declaration says so: the compiler copies the
+    # bytes out, calls `sqlite3_free` by name, and hands the program a `str?`.
+    # A call of `sqlite3_free` from this file would now be
+    # `error[owned_freer_called]`, because the compiler is already making it.
+    #
+    # **THE HISTORY IS KEPT BECAUSE IT IS THE ARGUMENT.** This was an `@error:
+    # ptr` until 2026-09-04: the program asked for the copy, never freed it and
+    # never even read it, so every refused statement leaked 40 bytes — found by
+    # the Linux leg of CI under `--sanitize`, because LeakSanitizer does not
+    # exist on Darwin arm64 (CLAUDE.md §7). The repair that day was to stop
+    # asking, and it was the right repair on that day, for the reason panel 109
+    # then measured three ways: **a caller-owned C string could be freed or
+    # read, never both**, so the program that reads the message and frees it
+    # could not be written in this language at all. It can now, and this is it.
+    function sqlite3_exec(db: ptr, sql: cstr, callback: ptr, context: ptr, @error: cstr owned sqlite3_free) -> i64
+    # The freer the mark names. It is declared and never called: calling it is
+    # a compile error precisely because the compiler already does.
+    function sqlite3_free(p: ptr)
     function sqlite3_errmsg(db: ptr) -> cstr
     function sqlite3_changes(db: ptr) -> i32
     function sqlite3_prepare_v2(db: ptr, sql: cstr, length: i32, @statement: ptr, @tail: ptr) -> i64
@@ -79,6 +88,13 @@ extern "sqlite3.h" link "sqlite3"
 # lines and bound a handful — and a number in a plan is worth checking
 # against the thing it produced. `grep -c '^    function' db/sqlite.hero`
 # answers it without trusting this sentence.
+#
+# **And it did not, until 2026-09-07.** This line has said *eighteen* since
+# the file was written and the answer was **17**; `sqlite3_free` arriving with
+# the `owned` mark is what made the sentence true, by accident, on the day
+# somebody finally ran the command it names. That is CLAUDE.md §1 in one file:
+# a count in prose is a claim, the command beside it is the instrument, and a
+# claim nobody runs is wrong for as long as nobody runs it.
 
 # Whether a prepared statement's column holds text, an integer, a float or
 # nothing. A `variant` and not the raw `i32`, so the reader below cannot
@@ -205,11 +221,23 @@ function closed(db: Db) -> i64
 # nothing freed it, and nothing read it either. What found it is the Linux leg
 # of CI under `--sanitize`, because **LeakSanitizer does not exist on Darwin
 # arm64** (CLAUDE.md §7) — so the program ran clean on the machine it was
-# written on, in all three configurations, while leaking on every failure. The
-# fix is in the `extern` group above: the parameter is not requested at all.
+# written on, in all three configurations, while leaking on every failure.
+#
+# **The repair that day was to stop asking; the repair now is to ask and be
+# given it**, which is a different thing and a better one. `owned
+# sqlite3_free` on the declaration makes the cell a `str?` the compiler has
+# already copied and already freed, so the message below is SQLite's own words
+# about *this statement* rather than the connection's last error — and there
+# is no rule left for anybody to remember.
+#
+# `why(db)` stays as the fallback rather than being deleted, and that is not
+# belt and braces: the cell is null when SQLite chooses not to fill it, and a
+# refusal with an empty reason is the shape this program exists to refuse.
 function run(db: Db, sql: str) -> ()?
-    if sqlite3_exec(db: db.handle, sql: sql.cstr(), callback: nullptr, context: nullptr, error: nullptr) != SQLITE_OK
-        return fail("statement_refused", sql + ": " + why(db))
+    problem: str? @ fail("none", "sqlite has not answered yet")
+
+    if sqlite3_exec(db: db.handle, sql: sql.cstr(), callback: nullptr, context: nullptr, error: @problem) != SQLITE_OK
+        return fail("statement_refused", sql + ": " + problem.default(why(db)))
     return ok()
 
 # How many rows the last statement changed — SQLite's own counter, which is

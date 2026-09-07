@@ -45,6 +45,7 @@ use source
 use resolved
 use check/table
 use check/state
+use check/freer as freer
 use ir
 use ir/containers
 use ir/build
@@ -56,23 +57,68 @@ record Args
     after: [WriteBack]
 
 # One temporary to store back through its place once the call returns.
+#
+# `at` is the parameter's position and `owned` says which of the two things
+# the call owes it: an ordinary cell is a STORE, paid here by `write_back`; a
+# cell whose parameter carries `owned <freer>` is a RELEASE — copy the bytes
+# out, free the original, hand over the `str?` — paid by
+# `ir/owned_release.hero`, which is where the freer and the library's
+# `validated` are reachable. This module cannot build one: it is used by
+# `owned_release`, and Heroes refuses module cycles.
 record WriteBack
     place: ir.Place
     slot: i64
+    at: i64
+    owned: bool
 
 # The inout argument for `spot`: the place itself when it is a C lvalue, a
-# temporary — recorded in `after` — when the place runs through an index.
-function argument(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], id: i64, spot: ir.Place, @after: [WriteBack]) -> ir.Arg
+# temporary — recorded in `after` — when the place runs through an index, and
+# a HIDDEN `cstr` cell when the parameter carries `owned <freer>`.
+#
+# `callee` is the declaration this argument is going to, absent for a record
+# construction, a built-in and an indirect call — none of which can carry a
+# mark, because a mark is written on an `extern`. `at` is this argument's
+# parameter position, which the mark is read at.
+function argument(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], id: i64, spot: ir.Place, callee: i64?, at: i64, @after: [WriteBack]) -> ir.Arg
+    span = a.exprs[id].span
+
+    # **The marked cell first, whatever the place is.** §4.19 says the cell is
+    # only WRITTEN, so nothing is read out of the caller's place and the index
+    # machinery below has nothing to do: C is handed a cell of its own, and
+    # what lands in the author's place afterwards is the copy.
+    if !callee.is_err() && freer.owned_parameter(decls, at: callee.must(), index: at)
+        cell = build.synthetic(@b, prefix: "cell", ty: table.cstr_ty(c.types))
+
+        # **Initialised to null, and that is robustness rather than tidiness**
+        # (§12; CLAUDE.md §7 makes a refcounted slot the only other exception
+        # to the no-initialisation rule). A C function that takes an error
+        # cell and returns success may never write it — SQLite does write a
+        # null, other libraries do not promise to — and a release over an
+        # uninitialised cell would free a stack pattern. With the store, an
+        # untouched cell takes the release's own NULL branch and the program
+        # sees `fail("null_cstr", …)`, which is the truth.
+        #
+        # **Nothing that RUNS on this Mac can see this store missing**, and
+        # that was measured rather than assumed (2026-09-07): with it deleted,
+        # the case written for the shape prints the same four lines at `-O0`
+        # and under `-fsanitize=address,undefined`, because the C local is
+        # indeterminate and happened to be zero. What guards it is
+        # `tests/golden/ir/owned-cell.hero`, where `UPDATE_GOLDEN=1` is
+        # forbidden. Panel 116 reached the same conclusion about the NULL
+        # guard three instructions below this one.
+        empty = build.emit(@b, op: .lit(value: .null_ptr), ty: table.cstr_ty(c.types), span: span)
+        build.store_slot(@b, slot_id: cell, value: empty, span: span)
+        after @ after.push(WriteBack(place: spot, slot: cell, at: at, owned: true))
+        return .inout_arg(place: build.whole(cell))
     indices = index_values(b, spot)
 
     if indices.len() == 0
         return .inout_arg(place: spot)
-    span = a.exprs[id].span
-    at: i64 @ 0
-    current = element_value(@b, a, r, c, s, decls, id: id, indices: indices, at: @at)
+    walked: i64 @ 0
+    current = element_value(@b, a, r, c, s, decls, id: id, indices: indices, at: @walked)
     holder = build.synthetic(@b, prefix: "e", ty: c.expr_types[id])
     build.store_slot(@b, slot_id: holder, value: current, span: span)
-    after @ after.push(WriteBack(place: spot, slot: holder))
+    after @ after.push(WriteBack(place: spot, slot: holder, at: at, owned: false))
     return .inout_arg(place: build.whole(holder))
 
 # Whether any `@` argument of the call still runs through an index — the
@@ -171,7 +217,14 @@ function is_map(c: state.Checked, ty: i64) -> bool
 # What `emit_call` pays after the instruction: each temporary stored back
 # through its place, in argument order — the indexed store the language
 # already has, unshare included.
+#
+# **A marked cell is skipped here and paid by `ir/owned_release.hero`**, which
+# owes it a release rather than a store. Skipping is not a silence: the
+# release runs from `call_or_release`, on every path, and the two are the same
+# list read once each.
 function write_back(@b: build.Lowering, after: [WriteBack], span: token.Span)
     for owed in after
+        if owed.owned
+            continue
         value = build.load_slot(@b, slot_id: owed.slot, span: span)
         build.emit_void(@b, op: .store(place: owed.place, value: value), ty: build.slot_type(b, owed.slot), span: span)

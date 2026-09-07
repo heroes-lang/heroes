@@ -11,6 +11,7 @@ use ast
 use source
 use check/table
 use check/state
+use check/freer as freer
 use ir
 use ir/containers
 use inventory
@@ -116,7 +117,7 @@ function call(@w: writer.Writer, p: containers.Program, f: containers.Function, 
 
         .extern_fn e =>
             extern_name = source.span_text(s, decls[e.decl].name)
-            guarded = guard_arguments(p, c, decl: e.decl, arguments: arguments)
+            guarded = guard_arguments(p, c, decls, decl: e.decl, arguments: arguments)
 
             # The result half of the const cast: sqlite3_column_blob
             # returns const void *, and without the cast the assignment
@@ -224,7 +225,7 @@ function print_call(@w: writer.Writer, f: containers.Function, c: state.Checked,
 # excluded: §4.8 makes it a pointer parameter, so the argument is the
 # address of a local, never null — a guard that cannot fail is read as
 # protection that is there (author decision 2026-08-15).
-function guard_arguments(p: containers.Program, c: state.Checked, decl: i64, arguments: [str]) -> [str]
+function guard_arguments(p: containers.Program, c: state.Checked, decls: [ast.Decl], decl: i64, arguments: [str]) -> [str]
     callee: containers.Function? @ fail("none", "not lowered")
 
     for candidate in p.functions
@@ -261,6 +262,17 @@ function guard_arguments(p: containers.Program, c: state.Checked, decl: i64, arg
             out @ out.push("hero_cstr_nonnull(" + argument + ")")
         else if cast
             out @ out.push("(void *)" + argument)
+        else if is_cstr && is_out && freer.owned_parameter(decls, at: decl, index: index)
+            # **A marked `@cstr` is handed over as `char **`, and this is step 4b's
+            # mechanism one level up.** The hidden cell is a `cstr`, which spells
+            # `const char *`, so its address is `const char **` — and against
+            # `sqlite3.h`'s `char **errmsg` that is `discards qualifiers in nested
+            # pointer types` under this compiler's own `-Werror`, measured. The
+            # probe already spells the cell without the `const` (`extern_probe`),
+            # so the call has to spell it the same way or the two ask clang
+            # different questions. Stripping the `const` is exactly what the mark
+            # licenses: the bytes are the program's the moment C writes them.
+            out @ out.push("(char **)" + argument)
         else
             out @ out.push(argument)
         index @ index + 1
