@@ -24,7 +24,7 @@ with `**Origin:**` and its date. Nothing lives outside the two banners —
 Format: `- [ ] **M-<milestone>** | <what, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 40**
+**OPEN: 44**
 
 - [ ] **M-reflection-verdict** | panel 117's sixth option: give `assert` both sides for an aggregate by walking to the first DIFFERING LEAF and naming the field, instead of rendering the value | `docs/panel/117-both-sides-of-an-assert-when-a-side-is-an-aggregate.md` · `selfhost/emit/structural.hero` · `runtime/parts/array.c`
 
@@ -1436,5 +1436,84 @@ Format: `- [ ] **M-<milestone>** | <what, in one line> | <where to look>`
     **Why it matters:** a debugger suite that passes without DWARF is a
     decoration, and a promise with no instrument is how this one went eighteen
     days unnoticed.
+
+- [ ] **M-publication-gate** | `main` still cannot fail, and the measurement says exactly how far `exit(code)` got | `docs/panel/030-the-build-order-revised.md:225` · `spec/heroes-spec.md:190-194` · `examples/`
+
+    **Origin:** M-open-repository, 2026-09-08. The gate's own checklist names
+    this as *"one defect that shows up on the second page of any tour"*, queued
+    from panel 030, and says it must not be true on the day the examples go up.
+
+    **Measured this session, on a rebuilt compiler**, three shapes rather than
+    the one the gate remembered. A program that receives a `fail`, matches it
+    and prints it exits **0** — panel 030's sentence, still exactly true. A
+    program that calls the built-in `exit(1)` exits **1**, so the escape hatch
+    the spec gained is real and works. An out-of-bounds index exits **134**, so
+    the guards are unaffected. **11 of the 54 example programs call `exit(`**
+    and none of the gallery's 12 do, which is the corpus half of the same
+    question: the ones that can fail mostly remember, and nothing makes them.
+
+    So the finding is narrower than *"main cannot fail"* and worse than
+    *"solved"*: **the language has a way to report failure and no way to oblige
+    it**, and the default for a program that handles its own error is to tell
+    the shell it succeeded. Changing what `main` returns is a language change
+    and owes a panel; that is why this is filed and not fixed here.
+
+    **Where to look also:** `docs/ROADMAP.md` § M-publication-gate.
+    **Why it matters:** a script that calls a Heroes program cannot tell whether
+    it worked, which is the one thing an exit code is for.
+
+- [ ] **M-publication-gate** | what a public repository actually costs in Actions minutes, measured on the account rather than read in a document | `.github/workflows/ci.yml` header · `.github/workflows/deploy-site.yml`
+
+    **Origin:** M-open-repository, 2026-09-08.
+
+    Four comments explained the CI matrix by the price of a runner minute, and
+    the narrowing to Linux between tags rests on it. GitHub's billing
+    documentation says *"the use of standard GitHub-hosted runners is free: in
+    public repositories"* and says nothing on that page about the operating
+    system, so whether the reason has gone away for three legs, two or none is
+    **unmeasured**. The comments were moved to the past tense rather than
+    replaced with a reading.
+
+    Owed: the account's own billing page after a real run of all three legs,
+    then either the matrix widens to every push or the comments state the new
+    reason it does not. Filed at the gate because the question exists only
+    because the repository became public, and the gate owns the outward state.
+
+    **Why it matters:** every platform fact here is measured on a platform, and
+    a cost is a platform fact.
+
+- [ ] **M-publication-gate** | the trademark question, in the narrow form that applies: the Aladdin Sane bolt | `site/README.md` § Style guide · `docs/assets/`
+
+    **Origin:** the gate's own checklist, restated at M-open-repository
+    2026-09-08 because opening the repository did not touch it.
+
+    The name is a common word and worries nobody. The bolt is iconography
+    attached to an actively managed estate, it is in the site's banner and in
+    this repository's own `docs/assets/`, and the style guide already keeps
+    lyrics out, which is the other half of the same care. **Unchanged by the
+    repository opening**: the site has carried it publicly since 2026-09-03, so
+    the exposure is the same today as yesterday and this stays where it was.
+
+    **Why it matters:** the gate's own words are that it is cheaper to answer
+    before publication than after, and publication is now closer.
+
+- [ ] **M-guide-book** | the held-out tasks must never be committed, now that the repository is public | `harness/tasks/README.md` · `design.md` Part 11
+
+    **Origin:** M-open-repository, 2026-09-08, and nobody had written it down.
+
+    Metric 2 is held out: 15 of the 20 tasks must be author-written, and the
+    whole point is that the model reading them has not seen them. **A public
+    repository makes committing them the act that burns them** — not only for a
+    scraped training set, but for anybody who reads the file before taking the
+    test. Nothing is burned today, because `harness/tasks/` holds **0 tasks**
+    and the five assistant drafts were pruned on 2026-08-03.
+
+    Owed at the moment the first task is written: a home outside this
+    repository, and a line in `harness/tasks/README.md` naming it. What can be
+    committed is the grading and the provenance, which say nothing about the
+    task's content.
+
+    **Why it matters:** a measurement whose instrument is public measures
+    something else.
 
 *******************************************************************************
