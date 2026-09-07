@@ -177,6 +177,20 @@ constant QUOTES_THE_OLD_SPELLING: [str]
 # stay free for whatever touches it next. The second states a PROMISE, *the
 # compiler survives*, which a later milestone can falsify and which an id may
 # therefore never claim; it is `M-language`'s refusal again, one department over.
+#
+# **`M-debugger`, `M-stopped-values` and `M-frame-values` joined it 2026-09-06**,
+# the three names not taken for `M-typed-inspection`, and they are refused on three
+# different halves of §14. `M-debugger` is ONE WORD, so it appropriates a topic, and
+# it would claim the line-level debugging a closed milestone already delivered —
+# M-selfhost-port carried `-g` in as a defect on 2026-08-17 so that lldb could break
+# on a `.hero` line at all — while leaving no name for the `heroes dap`
+# `docs/ROADMAP.md` already reserves under CLAUDE.md §10's stopping rule.
+# `M-stopped-values` ANNEXES ANOTHER SITTING: `print` and `assert` render values
+# too, and a `to_str` derived over a record's fields is `M-reflection-verdict`'s own
+# question. `M-frame-values` names the COMPILER's word for the place rather than the
+# author's word for the thing, and what is delivered is the value seen, not the
+# frame. The name taken is the one the record already used, twice, and both times as
+# the non-goal it retires (`design.md:594`).
 constant REFUSED: [str]
     [
         "M-language"
@@ -185,6 +199,9 @@ constant REFUSED: [str]
         "M-browser-compiler"
         "M-adversarial-corpus"
         "M-compiler-survival"
+        "M-debugger"
+        "M-stopped-values"
+        "M-frame-values"
     ]
 
 # Measured 2026-08-25: 40 rows in the ROADMAP's alias table (39 until
@@ -286,8 +303,19 @@ constant REFUSED: [str]
 # `docs/work/DONE.md` every `found by` field names a person. The id enters with
 # its chain row in the same commit, so this number is moved by hand, and
 # `REFUSED` gains two names in the same move.
+#
+# **62 -> 63 on 2026-09-06**, `M-typed-inspection`, scheduled by author
+# instruction: a stopped Heroes program shows Heroes values instead of the C
+# names underneath them. **It is the first id whose subject is a promise this
+# repository makes and does not test** — `design.md:616` and `docs/ROADMAP.md:452`
+# both say a golden runs lldb in batch mode, and that golden has been in
+# `archive/bootstrap-rs/` since M-bootstrap-archive on 2026-08-19, where nothing
+# builds it. The id enters with its chain row in the same commit, so this number
+# is moved by hand, and `REFUSED` gains THREE names in the same move, which is one
+# more than the two previous inserts: the author was offered three candidates and
+# the two not taken are refused here beside the name that never reached them.
 constant ROWS: i64
-    62
+    63
 
 # The two documents whose citations are checked. They are the two a reader is sent
 # to for a rule, and the only two this project rewrites rather than appends to.
