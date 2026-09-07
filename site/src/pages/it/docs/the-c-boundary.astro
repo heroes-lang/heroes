@@ -3,6 +3,6 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 import { page } from '../../../lib/figures.ts';
 import content from '../../../html/it/docs/the-c-boundary.html?raw';
 ---
-<BaseLayout url="/it/docs/the-c-boundary/" title={'Il confine con il C: documentazione di Heroes'} description={"Non esiste una libreria standard, per sempre. Tutto il resto arriva dal C con extern, e clang controlla ogni dichiarazione contro l'header della libreria: un tipo sbagliato è un errore di compilazione, non un crash."} current="docs">
+<BaseLayout url="/it/docs/the-c-boundary/" title={'Il confine con il C: documentazione di Heroes'} description={"Tutto quello che va oltre le basi arriva dal C. Tutto il resto arriva dal C con extern, e clang controlla ogni dichiarazione contro l'header della libreria: un tipo sbagliato è un errore di compilazione, non un crash."} current="docs">
 <Fragment set:html={page(content, 'site/src/html/it/docs/the-c-boundary.html')} />
 </BaseLayout>
