@@ -92,6 +92,13 @@ error[ffi_return_type]: `puts` does not return `cstr` — that is what `stdio.h`
     the library gave you, and what the C on the other side does with it. The
     types make the boundary visible; they do not make C safe.
   </p>
+  <p>
+    One more line the boundary draws at run time. A Heroes function handed to C
+    may be called back on a thread the library made, and there it is stopped at
+    its first instruction, with its name in the message, because each thread
+    here owns its memory and a foreign thread owns none of it. Call it from the
+    thread that called you, or start the thread from Heroes.
+  </p>
 
   <h3>Using them</h3>
   <figure class="example" data-src="examples/gallery/08-ffi.hero" data-lines="24-31">

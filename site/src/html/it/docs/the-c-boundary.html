@@ -96,6 +96,14 @@ error[ffi_return_type]: `puts` does not return `cstr` — that is what `stdio.h`
     dall&rsquo;altra parte. I tipi rendono visibile il confine; non rendono sicuro
     il C.
   </p>
+  <p>
+    Un&rsquo;altra riga che il confine traccia mentre il programma gira. Una
+    funzione Heroes passata al C può essere richiamata su un thread creato dalla
+    libreria, e lì viene fermata alla prima istruzione, con il suo nome nel
+    messaggio, perché qui ogni thread possiede la sua memoria e un thread
+    straniero non ne possiede nessuna. Chiamala dal thread che ti ha chiamato,
+    oppure avvia il thread da Heroes.
+  </p>
 
   <h3>Come si usano</h3>
   <figure class="example" data-src="examples/gallery/08-ffi.hero" data-lines="24-31">
