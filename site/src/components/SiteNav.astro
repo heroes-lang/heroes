@@ -65,9 +65,21 @@ const entries = [
     {lang === 'en'
       ? <a class="lang" href={other} hreflang="it" lang="it" title="Questa pagina in italiano">IT</a>
       : <a class="lang" href={other} hreflang="en" lang="en" title="This page in English">EN</a>}
+    <!-- The address stays, and the warning becomes visible.
+         `site/README.md` § Launch order records the author's decision that
+         these links stay clickable: the addresses are final, so a live link is
+         a door that is not open rather than a wrong address, and the day the
+         repository opens there is nothing to put back. What the marketing seat
+         measured is the other half of it: the only warning here was a `title`,
+         which does not exist on a phone and which nobody hovers before clicking
+         a link they mean to click, so 171 of 180 pages carried this with no
+         visible caveat at all. The word in the link says it now, and the day
+         the repository opens the repair is deleting two words. Repointing the
+         link is the seat's own proposal and it is the author's to take, because
+         it is their decision it would reverse. -->
     <a class="out" href="https://github.com/heroes-lang/heroes"
        title={lang === 'it'
          ? 'Il repository è privato: si apre insieme al codice'
-         : 'The repository is private: it opens with the code'}>GitHub ↗</a>
+         : 'The repository is private: it opens with the code'}>{lang === 'it' ? 'GitHub · presto' : 'GitHub · soon'}</a>
   </div>
 </nav>
