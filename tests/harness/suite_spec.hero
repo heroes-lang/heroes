@@ -88,6 +88,41 @@ constant REGISTRY_TOKENS: i64
 constant CEILING: i64
     4096
 
+# The operating contract, weighed on the same scale as the language.
+#
+# **Why it is here and not in `suite_records.hero`.** That suite gets no compiler
+# and this number comes from `heroes measure`, which is the same instrument, the
+# same tokeniser and the same *maximum over vendored rank sets* that decides the
+# spec's budget above. Two documents with ceilings belong on one scale.
+#
+# **What it is for, measured 2026-09-07.** `CLAUDE.md` was **1247 lines and 22689
+# tokens**, against 3871 for the whole language, having grown 118 -> 555 -> 1139
+# -> 1247 lines in 35 days over 90 commits: a paragraph per incident, each one a
+# correct rule in the shape of a diary. Claude Code's own documentation asks for
+# under 200 lines and warns that a longer file reduces adherence, so the cost is
+# not academic. It is 322 lines now, with the stories moved to
+# `docs/contract/case-law.md` and the tree-local rules to `.claude/rules/`.
+#
+# **A CEILING and not a pinned equality, which is the opposite of `SPEC_TOKENS`
+# above, deliberately.** The spec is budget-governed to the token, so any delta
+# there must be stated in the commit that makes it. The contract is amended by
+# author instruction and often by a sentence, so an exact pin would go red on a
+# typo and be raised mechanically until nobody believed it, which is the failure
+# mode of a number with no argument behind it. What this holds is the disease
+# rather than the byte: unbounded regrowth.
+#
+# **The number is the measured one plus room to amend, said so rather than
+# rounded.** The target was the language's own 4096 and the honest result was
+# 5127: everything binding only part of the tree had already moved out, and what
+# remains binds every session. Crossing this ceiling is not a disaster, it is the
+# prompt to move a story into the case law and cite it, which is the whole
+# mechanism this file now guards.
+constant CONTRACT: str
+    "CLAUDE.md"
+
+constant CONTRACT_CEILING: i64
+    5500
+
 # The floor for file I/O, `args()` and `exit(code)` — panel 030 R3, which
 # refuted "they are plain externs" by compiling it. The floor belongs to the
 # FFI rather than to the milestone that pays it, so the name says so.
@@ -126,6 +161,7 @@ function run_all(scratch: str, compiler: str) -> report.Report?
         report.keep_failure(@r, label: "spec", detail: "  cannot read " + SPEC)
         return ok(r)
     budget(@r, scratch: scratch, compiler: compiler)
+    contract(@r, scratch: scratch, compiler: compiler, ceiling: CONTRACT_CEILING)
     ledger(@r, scratch: scratch, compiler: compiler)
     reserved = names_in_table(path: BUILTIN_SOURCE, marker: "Builtin(name: ")
     refused = words_in_arms(path: KEYWORD_SOURCE, marker: "=> ok(ForeignWord(")
@@ -169,6 +205,26 @@ function budget(@r: report.Report, scratch: str, compiler: str)
             @r,
             label: "spec/headroom",
             detail: "  the spec plus the FFI floor is " + (SPEC_TOKENS + FFI_FLOOR).to_str() + " against the " + CEILING.to_str() + " ceiling — what is mortgaged no longer fits"
+        )
+    else
+        report.keep_pass(@r)
+
+# The operating contract against its ceiling, on the same scale as the spec.
+#
+# **The ceiling is a parameter and not read from the constant here**, so a test
+# can fire this check with a stub compiler and a ceiling of its own. §9 asks
+# every verifier check for a test that makes it fail, and a check that can only
+# be exercised by making the real contract enormous has no such test.
+function contract(@r: report.Report, scratch: str, compiler: str, ceiling: i64)
+    measured = maximum_of(scratch: scratch, compiler: compiler, path: CONTRACT)
+
+    if measured.is_err()
+        report.keep_failure(@r, label: "spec/contract", detail: "  cannot measure " + CONTRACT + " — " + why(measured))
+    else if measured.must() > ceiling
+        report.keep_failure(
+            @r,
+            label: "spec/contract",
+            detail: "  " + CONTRACT + " measures " + measured.must().to_str() + " tokens against a ceiling of " + ceiling.to_str() + " — over by " + (measured.must() - ceiling).to_str() + ".\n  Every session loads all of it on every turn, the five panel seats included,\n  and a longer contract is one whose rules are followed less: that is what the\n  1247-line, 22689-token file of 2026-09-07 cost, against 3871 for the whole\n  language.\n  The repair is not a bigger number. Move the STORY of a rule into\n  docs/contract/case-law.md and leave the rule citing its entry, or move a rule\n  that binds one part of the tree into .claude/rules/, where it loads only when\n  that part is touched. Raising CONTRACT_CEILING is an author decision and goes\n  in the commit body with its reason."
         )
     else
         report.keep_pass(@r)
@@ -607,6 +663,41 @@ test "every check here can fire — CLAUDE.md §9, a check nobody has seen fail 
     rejected(@starved, spec: "`print`", refused: empty_list)
     assert starved.failed == 2
     assert strings.contains(text: starved.failures[0], needle: "vacuously")
+
+test "the contract's ceiling fires, and a ceiling above it does not"
+    # A stub compiler, for the reason the next test gives: what is under test is
+    # the comparison and the message, not the real file, whose size the suite
+    # itself checks on every run.
+    if !shell.can_run_scripts()
+        return
+    scratch = "build/harness-selftest"
+    assert !shell.mkdir_all(scratch).is_err()
+    fat = scratch + "/stub-fat.sh"
+    assert !write_file(path: fat, text: "#!/bin/sh\necho 'CLAUDE.md'\necho '  maximum            9999   the binding number'\n").is_err()
+    assert !shell.run(scratch: scratch, program: "chmod", words: ["chmod", "+x", fat]).is_err()
+
+    over: report.Report @ report.empty()
+    contract(@over, scratch: scratch, compiler: fat, ceiling: 5500)
+    assert over.failed == 1
+
+    # The message has to send the reader to the two places a rule can move to,
+    # because "make the number bigger" is the wrong repair and the obvious one.
+    assert strings.contains(text: over.failures[0], needle: "docs/contract/case-law.md")
+    assert strings.contains(text: over.failures[0], needle: ".claude/rules/")
+
+    under: report.Report @ report.empty()
+    contract(@under, scratch: scratch, compiler: fat, ceiling: 10000)
+    assert under.failed == 0
+    assert under.passed == 1
+
+    # And a compiler that cannot answer is a failure rather than a pass, which is
+    # the shape a vacuous check would take here.
+    mute = scratch + "/stub-silent.sh"
+    assert !write_file(path: mute, text: "#!/bin/sh\necho 'no tables here'\n").is_err()
+    assert !shell.run(scratch: scratch, program: "chmod", words: ["chmod", "+x", mute]).is_err()
+    blind: report.Report @ report.empty()
+    contract(@blind, scratch: scratch, compiler: mute, ceiling: 10000)
+    assert blind.failed == 1
 
 test "the binding number is read off `measure`, whatever the compiler is"
     # POSIX is this case's subject, and this machine answers for itself
