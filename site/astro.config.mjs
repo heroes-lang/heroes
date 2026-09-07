@@ -1,8 +1,55 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
+import { readdirSync, statSync, unlinkSync } from 'node:fs';
+import { join } from 'node:path';
 
 const ORIGIN = 'https://heroes-lang.org';
+
+// Astro copies `public/` into the output verbatim, and macOS writes a
+// `.DS_Store` into any directory Finder has been asked to look at. Measured:
+// `site/public/.DS_Store` and `site/dist/.DS_Store` had the identical hash
+// after a build, so the file was reaching the output on every local run.
+// `.gitignore` carries a bare `.DS_Store`, which is why it appeared in nobody's
+// `git status`.
+//
+// WHAT THIS DOES NOT CLAIM, because the first draft of this comment claimed it
+// and it was false. Nothing was published. `.github/workflows/deploy-site.yml`
+// is the site's only automated deploy path, and it checks the repository out on
+// a Linux runner, builds there and uploads that dist. No `.DS_Store` is tracked
+// and none was ever committed, so on CI there is nothing in `public/` to copy.
+// The output that carried one existed only on one Mac.
+//
+// The guard is still worth its lines, for the path that is left: `README.md`
+// documents a `wrangler` run started by hand from a local `dist`, and that one
+// would carry it. A `.DS_Store` is a directory listing, naming every file that
+// was in the folder including the ones since deleted, which is why publishing
+// one is worse than untidy.
+//
+// Deleting the file is not the fix, because Finder writes it back. The fix has
+// to run at the moment the output is assembled, which is here.
+function withoutFinderDroppings() {
+  return {
+    name: 'heroes:no-ds-store',
+    hooks: {
+      'astro:build:done': ({ dir, logger }) => {
+        let removed = 0;
+        const walk = (path) => {
+          for (const entry of readdirSync(path)) {
+            const full = join(path, entry);
+            if (statSync(full).isDirectory()) walk(full);
+            else if (entry === '.DS_Store') {
+              unlinkSync(full);
+              removed += 1;
+            }
+          }
+        };
+        walk(dir.pathname);
+        if (removed > 0) logger.info(`removed ${removed} .DS_Store from the output`);
+      },
+    },
+  };
+}
 
 // The two editions live at mirrored paths, `/x/` and `/it/x/`, which is what
 // lets this be four lines instead of the pairing table an asymmetric site would
@@ -16,11 +63,21 @@ function alternates(pathname) {
   ];
 }
 
-// The same three tiers the hand-written sitemap carried: the two landings, the
-// pages the nav points at, the documentation chapters underneath them.
+// The tiers a crawler reads as this site's own ranking of itself: the two
+// landings, then the pages the nav points at, then the chapters and the
+// programs underneath them.
+//
+// The examples tier is the one this needed and did not have. 134 of the 180
+// pages are example programs, and they were all sitting at 0.8, the same figure
+// as the seven pages in the nav, which tells a crawler that `examples/nqueens/`
+// matters as much as the front door of the documentation. The INDEX of them
+// stays at 0.8, because that page is in the nav and is where a reader starts.
 function priority(pathname) {
   if (pathname === '/' || pathname === '/it/') return 1.0;
-  return pathname.includes('/docs/') ? 0.6 : 0.8;
+  const path = pathname.startsWith('/it/') ? pathname.slice(3) : pathname;
+  if (path === '/examples/') return 0.8;
+  if (path.startsWith('/examples/')) return 0.7;
+  return path.startsWith('/docs/') ? 0.6 : 0.8;
 }
 
 export default defineConfig({
@@ -42,6 +99,7 @@ export default defineConfig({
   trailingSlash: 'always',
 
   integrations: [
+    withoutFinderDroppings(),
     sitemap({
       serialize(item) {
         const url = new URL(item.url);
