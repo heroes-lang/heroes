@@ -12,9 +12,9 @@ hold the source, and each answers a different question:
 
 | directory | what is in it |
 |---|---|
-| `src/html/` | the pages themselves, one HTML fragment each: the inside of `<main>`, prose and code and footer, exactly as it has always been written |
+| `src/html/` | the pages themselves, one HTML fragment each: the inside of `<main>`, prose and code, and a `<footer>` holding only the closing paragraphs that belong to that page, if it has any |
 | `src/pages/` | one tiny `.astro` per page, carrying four facts and no content: its path, its title, its description, which nav entry is current |
-| `src/layouts/`, `src/components/` | the head and the nav, written **once** |
+| `src/layouts/`, `src/components/` | the head, the nav and the footer's shared tail, written **once** |
 | `public/` | the assets, copied into `dist/` untouched: `style.css`, `images/`, `robots.txt`, `llms.txt`, `CNAME`, and the pre-launch parking page |
 
 Beside them, **`site/.claude/skills/site-panel/`** holds the five-seat review
@@ -210,6 +210,35 @@ The current page is marked twice, in colour **and** with a
 rule under it: colour alone is a signal a large minority of readers receive less
 of. Adding an entry is now a line in `SiteNav.astro`'s list, and the 44 copies it
 used to mean are gone.
+
+**The footer is written once too, in `src/components/SiteFooter.astro`**
+(author instruction 2026-09-08: the footer was repeated on every page, and
+Astro can do better). Measured the day it moved: the 44 hand-written fragments
+carried 44 footers, 42 of them distinct, and every one was the same three parts
+in the same order, the page's own closing paragraphs, zero to two of them, then
+the byline, then the copyright line. Only the first part belongs to a page, so
+that is all a fragment keeps, inside the `<footer>` it always had; `BaseLayout`
+lifts that element out of the rendered page (`src/lib/footer.ts`) and
+`SiteFooter` renders its paragraphs above the shared tail, inside `<main>` where
+the CSS expects a footer, so no wrapper under `pages/` changed. The byline had
+drifted while it was copied: three wordings in Italian and two in English across
+the hand-written pages, the examples and the specification page, none of them
+decided. It is now one fragment per edition, `src/html/_byline.html` and
+`src/html/it/_byline.html`, a fragment rather than markup in the component
+because `records/english` reads every `.astro` file and admits Italian prose
+only under `src/html/it/`. A page whose own `<footer>` carries a byline or a
+copyright line fails the build, so the old shape cannot be pasted back one page
+at a time. Checked the way the layout's own comment asked: the site was built
+before and after and all 180 pages compared word by word, ignoring the
+whitespace between tags, and outside the footer nothing moved. Inside it, the
+byline took the wording the 21 hand-written pages of each edition carried, which
+is the one the site was written with; the 67 examples pages per edition had
+taken another in the copy pass of the day before, and the Italian specification
+page a third, so those read differently now. The about page links the book's
+title as every other page does, and the thanks page says it stands on other
+people's work like every other page does; both used to leave that out because
+the reader was already there, a courtesy two pages paid and the other 178 could
+not.
 
 **This paragraph used to end differently**, and the sentence it ended with is
 worth keeping as a record of how the decision was actually made: *"Adding a page
@@ -828,11 +857,11 @@ locales answer 200**, measured 2026-09-03: `/it/` and `/en/`. So those links now
 point at live pages, and the reasoning above survives as the precedent this site
 leans on for its own GitHub links in § Launch order. The two places are the ones
 the old rule named: the *Elsewhere / Altrove* line on `about.html` (then
-`author.html`), and the byline in the footer, where the name itself is the link
-on every hand-written page, 46 of the 180 (the generated example pages carry the
-same footer from one shared fragment)
-(22 per edition, one occurrence each, two sentence shapes in total, which is why
-one substitution per edition does the job). Two rules on those links. Each
+`author.html`), and the byline in the footer, where the name itself is the link,
+written once per edition in `src/html/_byline.html` and
+`src/html/it/_byline.html` and rendered on all 180 pages by
+`src/components/SiteFooter.astro` (§ The footer is written once, under the nav
+above). Two rules on those links. Each
 edition points at its own locale (`/en/`, `/it/`), because
 `giuseppearici.com`'s bilingual splash sits at `/` and would make the reader
 choose a language twice. And **no `?preview=` in the markup, ever**: the token

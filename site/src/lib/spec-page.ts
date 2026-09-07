@@ -48,6 +48,9 @@ function escape(text: string): string {
  * output. Neither is true here: there is no command, no recorded output, and
  * the one block comes from `spec/heroes-spec.md`. A false paragraph on the page
  * whose argument is byte fidelity is the worst place to put one.
+ *
+ * Only this page's own paragraph is here. The byline and the copyright line
+ * are `SiteFooter`'s, on this page as on every other.
  */
 function footer(lang: Lang): string {
   const first =
@@ -59,15 +62,7 @@ function footer(lang: Lang): string {
     sito viene generato, quindi non può scostarsi dal file su cui il
     compilatore viene misurato. Un test verifica il tetto dei token a ogni
     commit.</p>`;
-  const byline =
-    lang === 'en'
-      ? `<p>Built by <a href="https://giuseppearici.com/en/">Giuseppe Arici</a>, CTO at Codermine, Brescia. Author of
-    <a href="/about/"><i>Heroes of code</i></a>. Standing on
-    <a href="/about/thanks/">a lot of other people&rsquo;s work</a>.</p>`
-      : `<p>Fatto da <a href="https://giuseppearici.com/it/">Giuseppe Arici</a>, CTO di Codermine, Brescia. Autore di
-    <a href="/it/about/"><i>Gli eroi del codice</i></a>. Basato sul
-    <a href="/it/about/thanks/">lavoro di molte altre persone</a>.</p>`;
-  return `  <footer>\n    ${first}\n    ${byline}\n    <p>&copy; 2026 Giuseppe Arici &middot; heroes-lang.org</p>\n  </footer>`;
+  return `  <footer>\n    ${first}\n  </footer>`;
 }
 
 export function renderSpecPage(lang: Lang): SpecPage {

@@ -46,11 +46,14 @@ function root(lang: Lang): string {
 }
 
 /**
- * A shared fragment: the footer every page carries, and the two sentences that
- * say why a page shows no output.
+ * A shared fragment: the paragraph every examples footer opens with, saying
+ * that the blocks come from the file, and the sentences that say why a page
+ * shows no output.
  *
  * These are prose, so they live beside the pages rather than in `i18n.ts`. One
- * copy per edition, so 68 pages cannot disagree about them.
+ * copy per edition, so 68 pages cannot disagree about them. The byline and the
+ * copyright line are not among them: `SiteFooter` adds those to every page of
+ * the site, and `splitFooter` refuses a page that carries its own.
  */
 function shared(name: string, lang: Lang): string {
   const path = lang === 'en' ? `${HOME}/_${name}.html` : `site/src/html/it/examples/_${name}.html`;
@@ -60,8 +63,9 @@ function shared(name: string, lang: Lang): string {
   return readText(path).trim();
 }
 
+/** What the footer of an examples page says before the shared tail. */
 function footer(lang: Lang): string {
-  return shared('footer', lang);
+  return shared('from-examples', lang);
 }
 
 /** `671 lines · 3 modules · reads a file`, and only what is true. */
