@@ -74,7 +74,7 @@ graphics, audio, terminal  →  SDL, raylib, ncurses</code></pre>
     function that does not exist. That is a compile error too, and the answer
     does not come from any list this compiler keeps:
   </p>
-  <pre class="diag"><code><span class="k">error</span>[ffi_unknown_name]: `math.h` declares no `sqrtt` — clang read the header and could not find it
+  <pre class="diag"><code><span class="msg"><span class="k">error</span>[ffi_unknown_name]: `math.h` declares no `sqrtt` — clang read the header and could not find it</span>
   at ffi-demo.hero:2:5
     |
   2 |     <span class="k">function</span> sqrtt(x: <span class="t">f64</span>) -&gt; <span class="t">f64</span>

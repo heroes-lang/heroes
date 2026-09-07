@@ -24,14 +24,14 @@
     cosa sbagliata. Qui i nomi sono obbligatori proprio perché i tipi non possono
     aiutare:
   </p>
-  <pre class="diag"><code><span class="k">error</span>[needs_label]: two of `copy_text`'s parameters are `str`, so every one of them is named at the call site — this one is `from`
+  <pre class="diag"><code><span class="msg"><span class="k">error</span>[needs_label]: two of `copy_text`'s parameters are `str`, so every one of them is named at the call site — this one is `from`</span>
   at tests/golden/check/swapped-arguments.hero:16:21
      |
   16 |     print(copy_text("a", "b"))  <span class="c">#~ needs_label needs_label</span>
      |                     ^^^
   fix (certain): write `from: `
 
-<span class="k">error</span>[wrong_label]: `copy_text` has nothing called `to` at this position — it is `from`
+<span class="msg"><span class="k">error</span>[wrong_label]: `copy_text` has nothing called `to` at this position — it is `from`</span>
   at tests/golden/check/swapped-arguments.hero:18:21
      |
   18 |     print(copy_text(to: "b", from: "a"))  <span class="c">#~ wrong_label wrong_label</span>
@@ -90,10 +90,10 @@ $ heroes run program.hero</code></pre>
     compilazione che arriva con la soluzione già scritta, e questo lo rende un
     problema che si chiude in un colpo solo invece di una conversazione:
   </p>
-  <pre class="diag"><code>tests/golden/check/reserved-words.hero:2:1: <span class="k">error</span>[reserved_word]: `struct` is not a word in this language — use `record`: `record Point`
-tests/golden/check/reserved-words.hero:3:1: <span class="k">error</span>[reserved_word]: `let` is not a word in this language — bind with `=`: `x = 5`
-tests/golden/check/reserved-words.hero:4:1: <span class="k">error</span>[reserved_word]: `const` is not a word in this language — use `constant`: `constant MAX: i64`
-tests/golden/check/deleted-int.hero:23:8: <span class="k">error</span>[reserved_word]: `int` is not a word in this language — an integer says its width: `i64`, and also `i8` `i16` `i32` `u8` `u16` `u32` `u64`</code></pre>
+  <pre class="diag"><code><span class="msg">tests/golden/check/reserved-words.hero:2:1: <span class="k">error</span>[reserved_word]: `struct` is not a word in this language — use `record`: `record Point`</span>
+<span class="msg">tests/golden/check/reserved-words.hero:3:1: <span class="k">error</span>[reserved_word]: `let` is not a word in this language — bind with `=`: `x = 5`</span>
+<span class="msg">tests/golden/check/reserved-words.hero:4:1: <span class="k">error</span>[reserved_word]: `const` is not a word in this language — use `constant`: `constant MAX: i64`</span>
+<span class="msg">tests/golden/check/deleted-int.hero:23:8: <span class="k">error</span>[reserved_word]: `int` is not a word in this language — an integer says its width: `i64`, and also `i8` `i16` `i32` `u8` `u16` `u32` `u64`</span></code></pre>
   <p>
     Quella è la forma a una riga per diagnostica; la resa più ricca qui sopra è
     quello che stampa il comando. Tre di quelle quattro portano una riparazione

@@ -154,7 +154,34 @@ function ci(): { fixpointLinuxOnly: boolean; tagPlatforms: number } {
   while (head > 0 && !/^\s*- name:/.test(lines[head])) head -= 1;
   const step = lines.slice(head, at + 1).join('\n');
   const gate = /^\s*if:\s*(.+)$/m.exec(step);
-  const fixpointLinuxOnly = gate !== null && /runner\.os == 'Linux'/.test(gate[1]);
+  // Equality, not containment. `/Linux/.test(...)` read "Linux || macOS" as one
+  // leg and "Linux && tag" as every run; the seat measured five spellings. A
+  // gate spelled any other way is a shape this instrument cannot read, and it
+  // says so loudly rather than guessing, the way `topLevelWords()` does.
+  let fixpointLinuxOnly = false;
+  if (gate !== null) {
+    const expr = gate[1].trim();
+    if (expr === "runner.os == 'Linux'") fixpointLinuxOnly = true;
+    else throw new Error(`${CI_FILE}: the fixpoint step's gate is spelled \`${expr}\`, which this instrument cannot read; read the step and say so on the page.`);
+  }
+  // The FIRST command's claim, "on every milestone tag on three platforms", rests
+  // on the matrix alone unless the step that builds from the seed is read too:
+  // an `if:` added there would falsify the page with the build green.
+  const seedAt = lines.findIndex((l) => l.includes('seed/heroes.c runtime/runtime.c'));
+  if (seedAt < 0) throw new Error(`${CI_FILE}: no step compiles \`seed/heroes.c runtime/runtime.c\`, and /project/ says one runs on every leg.`);
+  let seedHead = seedAt;
+  while (seedHead > 0 && !/^\s*- name:/.test(lines[seedHead])) seedHead -= 1;
+  const seedStep = lines.slice(seedHead, seedAt + 1).join('\n');
+  if (/^\s*if:/m.test(seedStep)) {
+    throw new Error(`${CI_FILE}: the step that builds from the seed now carries an \`if:\`, and /project/ says it runs on every leg of every run.`);
+  }
+  // And the fallback arm, the one a plain push takes, must be one platform and Linux.
+  const fallback = /\|\|\s*'(\[[^\n]*\])'\s*\n\s*\)\s*\}\}/.exec(text);
+  if (fallback === null) throw new Error(`${CI_FILE}: no fallback matrix literal to read the push platform from.`);
+  const fallbackNames = (fallback[1].match(/"name":/g) ?? []).length;
+  if (fallbackNames !== 1 || !/"os":"ubuntu-latest"/.test(fallback[1])) {
+    throw new Error(`${CI_FILE}: the push matrix names ${fallbackNames} platform(s) and /project/ says a push runs on Linux alone.`);
+  }
   // The tag branch of the matrix is the one literal that names every platform.
   const tagArm = /github\.ref_type == 'tag'[^\n]*\n\s*&&\s*'(\[[^\n]*\])'/.exec(text);
   if (tagArm === null) throw new Error(`${CI_FILE}: no tag-branch matrix literal to count the platforms from.`);
@@ -378,10 +405,13 @@ function checkNoWrongTwin(html: string, pagePath: string): string[] {
   for (const rule of UNAMBIGUOUS) {
     if (!rule.page.test(pagePath)) continue;
     const right = word(rule.fact(), lang);
-    const re = new RegExp(`\\b([a-z]+)\\s+${rule.noun.source}\\b`, 'gi');
+    // A digit counts, and so does one adjective between the number and the noun:
+    // "4 judges" and "four separate judges" both slipped past the first version.
+    const re = new RegExp(`\\b([a-z0-9]+)\\s+(?:[a-z]+\\s+)?${rule.noun.source}\\b`, 'gi');
     for (const m of flat.matchAll(re)) {
       const w = m[1].toLowerCase();
-      if (WORDS[lang].includes(w) && w !== right) {
+      const asWord = /^\d+$/.test(w) ? (WORDS[lang][Number(w)] ?? w) : w;
+      if ((WORDS[lang].includes(asWord)) && asWord !== right) {
         out.push(`${pagePath}: says "${m[0]}" where the tree says ${right}. A wrong count beside the right one is still a wrong count.`);
       }
     }

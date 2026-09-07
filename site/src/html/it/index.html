@@ -57,7 +57,7 @@
       <span class="what">token: il tetto sotto cui sta il linguaggio</span>
       <span class="how">La specifica è tutto il linguaggio, e sta sotto le
       cinque pagine. Passala a un modello e resta spazio per il tuo programma.
-      <a href="/it/spec/">la specifica &rarr;</a> &middot;&nbsp;<a href="/it/why/">perché il design è questo &rarr;</a></span>
+      <a href="/it/spec/">la specifica &rarr;</a> <a href="/it/why/">perché il design è questo &rarr;</a></span>
     </li>
     <li>
       <span class="n">0</span>
@@ -83,7 +83,7 @@
     programma dà la risposta sbagliata in silenzio. Qui viene rifiutata, con la
     riparazione attaccata:
   </p>
-  <pre class="diag"><code><span class="k">error</span>[unknown_name]: nothing named `totl` is in scope — did you mean `total`?
+  <pre class="diag"><code><span class="msg"><span class="k">error</span>[unknown_name]: nothing named `totl` is in scope — did you mean `total`?</span>
   at tests/golden/check/typo-not-a-new-binding.hero:10:9
      |
   10 |         totl @ total + x  <span class="c">#~ unknown_name</span>

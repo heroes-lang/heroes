@@ -383,6 +383,10 @@ h2 {
       var(--line) 72%) 1;
 }
 main > h2:first-of-type { padding-top: 0; border-top: 0; margin-top: 2.6rem; }
+/* The counter is offset from the padding box, and the first heading drops its
+   1.5rem of padding without the counter following: measured, `01` sat 24px
+   below its heading on every reading page while `02` onward sat level. */
+main:not(.home) > h2:first-of-type::after { top: -0.15rem; }
 main.home > h2 { margin-top: 4.2rem; }
 
 h2::before {
@@ -601,6 +605,13 @@ pre .h { color: var(--red); font-style: italic; }  /* ??? — a hole is a questi
    the caret rows do survive, and the SOURCE line above them does not, so the
    caret ends up under nothing. Found by the design seat, which rendered it. */
 pre.diag { white-space: pre; overflow-x: auto; }
+/* The message line is the product, and at 1200px dark it was cut mid-sentence
+   on the page that exists to show it: "so every one of them is named at the
+   call" and then the frame. Only the message wraps; the excerpt and caret rows
+   below keep their columns, which is the whole reason the block stopped
+   wrapping in the first place. The span adds no text byte, so the output stays
+   verbatim. */
+pre.diag .msg { white-space: pre-wrap; overflow-wrap: anywhere; }
 
 /* A measured table, set as one row of monospace text. `.hi` is the row the
    prose singles out: caught none of the time, in either arm. It is marked
@@ -749,6 +760,7 @@ figure.example figcaption::before { content: '\21B3\00A0'; color: var(--dim); }
   display: block; margin-top: 0.3rem;
   font: 0.72rem/1.45 ui-monospace, 'SF Mono', Menlo, monospace;
   color: var(--dim);
+  text-wrap: balance;
 }
 /* Each number says in one sentence what was counted. A bare figure on a
    landing page is a boast; a figure with its method is evidence. */
@@ -757,7 +769,10 @@ figure.example figcaption::before { content: '\21B3\00A0'; color: var(--dim); }
   font-size: 0.88rem; line-height: 1.55;
   color: color-mix(in srgb, var(--fg) 76%, var(--dim));
 }
-.figures .how a { white-space: nowrap; }
+/* Stacked as a list rather than run on with a separator: the card is about
+   230px wide and the English pair can never share a line, so the middot that
+   bound them opened line two, right under a hero whose bullets are dashes. */
+.figures .how a { white-space: nowrap; display: block; }
 @media (max-width: 620px) {
   .figures { grid-template-columns: 1fr; }
   .figures li + li { border-left: 0; border-top: 1px solid var(--line-soft); padding-left: 0; }
@@ -809,6 +824,12 @@ figure.example figcaption::before { content: '\21B3\00A0'; color: var(--dim); }
   text-decoration: none; letter-spacing: 0.05em;
 }
 .cards a.more::after { content: ' \2192'; }
+
+/* The fold's last line, decided rather than left to the column's width: a
+   label over the one command that works today, the same lockup at 390 and at
+   1400. It had no rule at all and happened to break into two lines at 1200. */
+.hero .version { margin: 1rem 0 0; font-size: 0.95rem; color: var(--dim); }
+.hero .version code.cmd { display: block; width: max-content; margin-top: 0.3rem; color: var(--code); }
 
 /* == 9. subpage heads, docs =============================================== */
 
@@ -951,6 +972,14 @@ ol.chapters li.todo { color: var(--dim); }
 /* The way back. A chapter is read in order, so the box that offers the next
    one has to offer the previous one too, or the only way back is the browser
    button. Set quieter than the forward link: leaving is not the default. */
+/* Two identical red-edged boxes stacked at a chapter's end spend the "next
+   thing" signal twice in one viewport, and it stops pointing. The chapter's own
+   next keeps the red edge; the three doors become its quieter sibling, grouped
+   by the short gap. Where `.away` stands alone nothing changes. */
+.next + .next.away {
+  margin-top: 0.9rem; border-left-color: var(--line);
+  background: transparent; font-size: 0.92rem; color: var(--dim);
+}
 .next .back {
   display: block; margin-top: 0.75rem;
   padding-top: 0.7rem; border-top: 1px solid var(--line-soft);
@@ -974,7 +1003,10 @@ ol.log li::before {
   -webkit-mask: var(--bolt) no-repeat center / contain;
   mask: var(--bolt) no-repeat center / contain;
 }
-ol.log li:first-child::before { background-color: var(--gold); }
+/* The newest entry used to get a GOLD pin, and gold on this site is the
+   quotation colour and nothing else (README § The visual system). The lede
+   already says newest first. Recency is marked by weight instead. */
+ol.log li:first-child .when { color: var(--fg); }
 ol.log .when {
   font: 0.74rem/1.6 ui-monospace, 'SF Mono', Menlo, monospace;
   color: var(--dim); display: block;
@@ -1040,6 +1072,7 @@ ol.zen li:nth-child(1)::before, ol.zen li:nth-child(20)::before { color: var(--g
 .stats .what {
   font: 0.73rem/1.45 ui-monospace, 'SF Mono', Menlo, monospace;
   color: var(--dim); display: block; margin-top: 0.35rem;
+  text-wrap: balance;
 }
 
 /* Three generations, one hash: the hash is the evidence, so it is the gold. */
@@ -1328,8 +1361,10 @@ pre:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 
 /* Narrow screens: a code block scrolls rather than reflows, because wrapping
    4-space indentation destroys the only structure the language has. Shell
-   transcripts and diagnostics are the exception — there a clipped command is a
-   command nobody can type, and the caret lines are short enough to survive. */
+   transcripts are the exception, since a clipped command is a command nobody
+   can type. Diagnostics are NOT: `pre.diag` below keeps `pre`, wrapping only
+   its `.msg` line, because the caret rows point at a column and a wrapped
+   source line puts the caret under nothing. */
 @media (max-width: 620px) {
   pre { white-space: pre-wrap; }
   figure.example pre, .demo pre, pre.table { white-space: pre; }
