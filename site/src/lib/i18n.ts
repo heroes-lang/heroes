@@ -28,6 +28,12 @@ const PHRASES: Record<string, Phrase> = {
   module: { en: 'module', it: 'modulo' },
   programs: { en: 'programs', it: 'programmi' },
   files: { en: 'files', it: 'file' },
+  // The singular exists because the English needs one and the Italian does not:
+  // `file` is invariable, so the Italian generator was right on all 13 pages
+  // where the English printed `1 files`. On a site whose pitch is that it
+  // survives cross-checking, a plural that does not agree is the reader's first
+  // free reason to doubt the rest.
+  file: { en: 'file', it: 'file' },
   runIt: { en: 'Run it', it: 'Eseguilo' },
   theProgram: { en: 'The program', it: 'Il programma' },
   theInput: { en: 'Input', it: 'Input' },

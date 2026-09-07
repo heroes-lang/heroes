@@ -224,7 +224,7 @@ export function renderExamplePage(slug: string, lang: Lang): RenderedPage {
   parts.push(
     `  <p class="fingerprint">${t('fingerprint', lang)} sha256 ` +
       `<code class="hash" title="${example.fingerprint.hash}">${example.fingerprint.short}</code> ` +
-      `&middot; ${example.fingerprint.files.length} ${t('files', lang)} ` +
+      `&middot; ${example.fingerprint.files.length} ${t(example.fingerprint.files.length === 1 ? 'file' : 'files', lang)} ` +
       `&middot; <a href="/examples/index.json">index.json</a></p>`
   );
   parts.push(walkLinks(slug, lang));
