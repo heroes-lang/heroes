@@ -52,7 +52,7 @@ use cli/mutate
 # number, and the first line rewritten in every blessed file under
 # tests/emission/ and every `.expected` under tests/golden/emit/.
 constant VERSION: str
-    "0.1.0"
+    "0.2.0"
 
 function main()
     # `args_checked()` and not `args()`, and this is the compiler refusing
