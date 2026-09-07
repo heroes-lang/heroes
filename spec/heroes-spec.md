@@ -63,8 +63,7 @@ a written body computes over literals and other constants.
 
 - No implicit conversions, widths included: `a + b` needs both the same type, and
   `1 + 2.0` is an error. Convert with `to_<type>`, and the name says whether it
-  can fail: `to_str`, `to_f32` and `to_f64` cannot, so they give a value — a
-  `cstr` uses `validated`, a `str?`; `to_i8`
+  can fail: `to_str`, `to_f32` and `to_f64` cannot, so they give a value; `to_i8`
   … `to_u64` give a `T?`, because the number may not fit. `to_i64` takes a float
   too, truncating toward zero. Nothing fails to fit a float: too large is `inf`,
   and `to_f32` rounds.
@@ -185,7 +184,8 @@ Built-ins: `print(...)` · `len` · `push` · `slice(from:, to:)` (`to` excluded
 `to_u32` `to_u64` — and, written in
 Heroes: `map` · `filter` · `fold` · `find` · `any` · `all` · `range`.
 `print` writes its values with no
-separator and exactly one trailing newline. A float prints a point or
+separator and exactly one trailing newline, and takes the types this language
+renders as text: a number, `str` or `bool`. A float prints a point or
 exponent (`1.0`, `1e-06`), or `inf`, `-inf`, `nan`; a `bool` prints `true` or `false`.
 Files and the process, also provided: `read_file(path: str) -> str?` ·
 `write_file(path: str, text: str) -> ()?` · `args() -> [str]` (the arguments
@@ -199,7 +199,9 @@ test "3-4-5 triangle"
     assert dist2(a: Point(x: 0, y: 0), b: Point(x: 3, y: 4)) == 25
 ```
 `test` blocks run only when asked for; ordinary builds ignore them. An
-`assert` failure shows the source expression and both sides.
+`assert` failure shows the source expression, and both sides where `print`
+takes them; where a side is an aggregate it shows the expression alone, until
+this language renders one.
 
 `???` is a valid expression anywhere. It is not an error: the compiler
 reports what belongs there (the expected type, what is in scope). A program
