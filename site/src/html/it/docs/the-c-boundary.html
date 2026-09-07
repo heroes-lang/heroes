@@ -149,6 +149,22 @@ error[ffi_return_type]: `puts` does not return `cstr` — that is what `stdio.h`
     ricalca una struct C campo per campo. Tutti e due vengono controllati allo
     stesso modo, da clang, contro la cosa vera.
   </p>
+  <p>
+    Un parametro può anche essere una <b>funzione</b>: una tua, passata a una
+    libreria C che la richiamerà. Va di là e non torna indietro, quindi un
+    gruppo può prenderne una e non può restituirne una, e clang ne controlla la
+    firma contro l&rsquo;header come tutto il resto. Non tutte le callback del C
+    sono ancora raggiungibili. Dove l&rsquo;header qualifica ciò a cui puntano i
+    puntatori, e <code>qsort</code> è fra queste, il compilatore rifiuta sulla
+    tua riga e nomina il buco invece di tirare a indovinare.
+  </p>
+  <p>
+    E una dichiarazione può nominare la funzione che libera quello che
+    restituisce, con <code>owned</code>. Una stringa che una libreria C alloca
+    per te torna allora come un valore che il compilatore rilascia con quel
+    nome, invece di perdersi perché nessuno si ricordava quale funzione disfa
+    quale.
+  </p>
 
   <h3>Il programma</h3>
   <figure class="example" data-src="examples/gallery/08-ffi.hero" data-lines="41-43">
@@ -175,22 +191,22 @@ the 16:9 diagonal of a 1920-wide screen: 2202.9071700822983</code></pre>
 
   <h3>E quello è il linguaggio</h3>
   <p>
-    Questo è il linguaggio: sette parole che possono aprire una
+    Sette parole che possono aprire una
     riga di primo livello, un modo solo di smontare un valore, un modo solo di
     fallire, un modo solo di cambiare qualcosa, e una porta sola verso tutto il
-    resto.
+    resto. È tutto qui.
   </p>
 
   <p class="next">
-    Poi: <a href="/it/docs/modules/">I moduli e i file</a>, che è dove un
-    programma più grande di un file li mette.
+    Resta un capitolo: <a href="/it/docs/modules/">I moduli e i file</a>, che è
+    dove un programma più grande di un file li mette.
     <span class="back">&larr; Prima: <a href="/it/docs/tests-and-holes/">Test e buchi</a></span>
   </p>
 
   <p class="next away">
-    Eseguine uno: <a href="/it/start/">i quattro comandi</a>. Oppure prendi
-    <a href="/it/spec/">tutto il linguaggio in un file solo</a>, e
-    <a href="/it/examples/">tutti i programmi</a> scritti con quello.
+    Esegui un programma tuo: <a href="/it/start/">bastano quattro comandi</a>.
+    Oppure prendi <a href="/it/spec/">tutto il linguaggio in un file solo</a>, e
+    <a href="/it/examples/">tutti i programmi già scritti</a>.
   </p>
 
   <footer>
