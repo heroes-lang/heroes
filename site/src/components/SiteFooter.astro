@@ -1,0 +1,45 @@
+---
+// The footer every page ends in, written once.
+//
+// Measured on the day it was written, over the 44 hand-written fragments: 44
+// footers, 42 of them distinct, and every one the same three parts in the same
+// order. Zero, one or two paragraphs that belong to the page (which file its
+// blocks are cut from, which edit produced its diagnostic), then the byline,
+// then the copyright line. The byline had already drifted while it was copied:
+// three wordings in Italian (the hand-written pages, the examples, the
+// specification page) and two in English, none of them decided, each the
+// residue of whichever pass last touched that file. BaseLayout kept the footers
+// in the pages until a build comparison could check the extraction rather than
+// trust it; this is that extraction, and the comparison is in the commit that
+// landed it. Author instruction, 2026-09-08: the footer was repeated on every
+// page, and Astro can do better than that.
+//
+// The page's own paragraphs arrive through the slot. BaseLayout cuts them out
+// of the rendered page (site/src/lib/footer.ts) and passes them here, so a
+// fragment still ends in the <footer> a reader expects and carries nothing
+// that is shared.
+//
+// The byline is a FRAGMENT per edition rather than markup in this file, for
+// the reason i18n.ts holds nothing long: the net's `records/english` reads
+// every .astro file and admits Italian prose only under site/src/html/it/. A
+// paragraph of Italian here would be the first outside the edition, and the
+// check would be right to refuse it. The copyright line is in neither language
+// and sits here.
+import bylineEn from '../html/_byline.html?raw';
+import bylineIt from '../html/it/_byline.html?raw';
+
+interface Props {
+  /** The URL this page answers at, absolute, ending in `/`. */
+  url: string;
+}
+
+const { url } = Astro.props;
+
+const lang = url.startsWith('/it/') || url === '/it/' ? 'it' : 'en';
+const byline = (lang === 'it' ? bylineIt : bylineEn).trim();
+---
+<footer>
+  <slot />
+  <Fragment set:html={byline} />
+  <p>&copy; 2026 Giuseppe Arici &middot; heroes-lang.org</p>
+</footer>
