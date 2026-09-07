@@ -1,4 +1,9 @@
 User-agent: *
 Allow: /
 
+# The whole language as one plain-text file, which is what this site is for.
+# It is not an HTML page, so the sitemap does not carry it and a crawler would
+# otherwise reach it only through llms.txt.
+# https://heroes-lang.org/spec.md
+
 Sitemap: https://heroes-lang.org/sitemap-index.xml
