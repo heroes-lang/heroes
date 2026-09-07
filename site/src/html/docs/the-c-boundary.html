@@ -146,6 +146,21 @@ error[ffi_return_type]: `puts` does not return `cstr` — that is what `stdio.h`
     C struct field for field. Both are checked the same way, by clang, against
     the real thing.
   </p>
+  <p>
+    A parameter may also be a <b>function</b>: one of yours, handed to a C
+    library that will call it back. It goes out and never comes back, so a
+    group may take one and may not return one, and clang checks its signature
+    against the header like everything else. Not every C callback is reachable
+    yet. Where the header qualifies what the pointers point at,
+    <code>qsort</code> among them, the compiler refuses on your line and names
+    the hole rather than guessing.
+  </p>
+  <p>
+    And a declaration can name the function that frees what it returns, with
+    <code>owned</code>. A string a C library allocates for you then comes back
+    as a value the compiler releases by that name, instead of leaking because
+    nobody remembered which function undoes which.
+  </p>
 
   <h3>The program</h3>
   <figure class="example" data-src="examples/gallery/08-ffi.hero" data-lines="41-43">
@@ -172,21 +187,21 @@ the 16:9 diagonal of a 1920-wide screen: 2202.9071700822983</code></pre>
 
   <h3>That is the language</h3>
   <p>
-    That is the language: seven words that can start a
+    Seven words that can start a
     top-level line, one way to take a value apart, one way to fail, one way to
-    change something, and one door to everything else.
+    change something, and one door to everything else. That is the whole of it.
   </p>
 
   <p class="next">
-    Next: <a href="/docs/modules/">Modules and files</a>, which is where a
-    program bigger than one file puts them.
+    One chapter left: <a href="/docs/modules/">Modules and files</a>, which is
+    where a program bigger than one file puts them.
     <span class="back">&larr; Previous: <a href="/docs/tests-and-holes/">Tests and holes</a></span>
   </p>
 
   <p class="next away">
-    Run one yourself: <a href="/start/">the four commands</a>. Or take
-    <a href="/spec/">the whole language in one file</a>, and
-    <a href="/examples/">every program</a> written in it.
+    Run a program of your own: <a href="/start/">it takes four commands</a>. Or
+    take <a href="/spec/">the whole language in one file</a>, and
+    <a href="/examples/">every program already written in it</a>.
   </p>
 
   <footer>

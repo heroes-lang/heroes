@@ -11,38 +11,38 @@
   <ol class="log">
     <li id="39">
       <span class="when">M-declared-freer: the count nobody had run</span>
-      <b>A C library hands your program a string it allocated. Until this, you could free it or read it, never both.</b>
-      An <code>extern</code> declaration can now name the function that frees what it returns, and the compiler calls it for you. A comment in one example had said &ldquo;eighteen functions&rdquo; since the day it was written, with the command to check it on the next line. The answer was seventeen, and this milestone made the sentence true by accident.
+      <b>A C library hands your program a string it allocated. An <code>extern</code> declaration can now name the function that frees it, and the compiler calls that for you.</b>
+      A comment in one example had claimed eighteen such functions since the day it was written, with the command to check it on the line below, and the true answer was seventeen.
       <a class="more" href="/examples/ledger/">The program that found it</a>
     </li>
     <li id="38">
-      <span class="when">M-thread-stacks: the guard that guarded nothing</span>
-      <b>A thread that runs out of room used to die in silence. Now it says so.</b>
-      The tidy version of that story was false, and a reviewer proved it by deleting one line from the generated C and rebuilding: a thread a C library started still died silently, because it never reaches the code that would have spoken. What saves it is a different milestone entirely. And Windows had never been broken, though the record had said so for three days.
+      <span class="when">M-thread-stacks: the guard that guarded the wrong threads</span>
+      <b>A thread that runs out of room used to die in silence. The ones this language starts now say so; a judge proved the ones a C library starts still do not.</b>
+      He deleted one line from the generated C, rebuilt, and got the same silent death, because a foreign thread never reaches the code that would have spoken.
       <a class="more" href="/examples/threads/">Threads, and what may cross</a>
     </li>
     <li id="37">
       <span class="when">M-isolated-threads: one line, open the whole time</span>
-      <b>Each thread gets its own memory, so the ways ordinary code could corrupt another thread&rsquo;s stop existing rather than being locked around.</b>
-      One function decides what a C header is allowed to say. It refused lists and maps everywhere except inside a callback, where it stopped looking. So a list crossed into C and back, in both directions, with the compiler reporting nothing at all. The specification had already forbidden it; the compiler was disagreeing with its own rules.
+      <b>Each thread gets its own memory, so ordinary code in one thread can no longer corrupt another one. The danger stops existing instead of being locked around.</b>
+      One function decides what a C header may say, and it stopped looking inside a callback, so a list could cross into C and back with the compiler reporting nothing.
       <a class="more" href="/examples/threads/">Ten programs that use them</a>
     </li>
     <li id="36">
-      <span class="when">M-c-callbacks: the brief was working from a fortieth of its subject</span>
-      <b>A Heroes function can now be handed to a C library that asks for one, which is how <code>qsort</code>, <code>signal</code> and half of SQLite are called at all.</b>
-      The sitting convened to decide it opened with a claim about which spelling was the obstacle. A reviewer refused the eight hand-picked examples and measured the real SQLite header instead: that spelling accounts for one case in forty, and the actual obstacle, two thirds of them, was something nobody had named.
+      <span class="when">M-c-callbacks: eight examples said one thing, the real header said another</span>
+      <b>A Heroes function can now be handed to a C library that asks for one. <code>atexit</code> and <code>pthread_create</code> bind, compile and get called back; <code>qsort</code> and <code>signal</code> still do not, and the compiler says on your own line which wall each one hits.</b>
+      A judge refused the eight hand-picked examples, measured the real SQLite header, and found the obstacle everyone had named was one case in forty.
       <a class="more" href="/docs/the-c-boundary/">The C boundary</a>
     </li>
     <li id="35">
-      <span class="when">M-corpus-depth: the panel refused the change and found a bigger one</span>
+      <span class="when">M-corpus-depth: the judges refused the change and found a bigger one</span>
       <b>Nine more example programs, chosen for shape rather than for features: the corpus had nothing between a 671-line program and the compiler.</b>
-      A sitting was convened to approve one optimisation. Two reviewers vetoed it, one on soundness and one because it was worth a twentieth of a per cent. Then the same reviewer measured where the memory actually went and found a waste ten times larger, in a place the proposal had not looked. Removing it cut the compiler&rsquo;s own frames by more than a third.
+      Two judges vetoed the optimisation the sitting was convened for, and then one of them found that more than half of every frame the compiler declares was going to temporaries the proposal had never looked at.
       <a class="more" href="/examples/">The programs</a>
     </li>
     <li id="34">
       <span class="when">M-robustness-guards: the comment said it could not happen</span>
       <b>A comment in the compiler explained why a particular crash was impossible. The crash was real, and one line of ordinary code produced it.</b>
-      Passing one element of an array to a function that writes into it handed C the address of the whole array instead. Nobody had met it because the example programs did that with a field a hundred and fifty times and with an index not once. Four holes of that kind were closed.
+      Passing one element of an array to a function that writes into it handed C the address of the whole array, and the example programs had done that with a field a hundred and fifty times and with an index not once. It was one of four holes in the same promise shut that day.
       <a class="more" href="/errors/">What the compiler stops</a>
     </li>
     <li id="33">
