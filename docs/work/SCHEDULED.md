@@ -24,7 +24,7 @@ with `**Origin:**` and its date. Nothing lives outside the two banners —
 Format: `- [ ] **M-<milestone>** | <what, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 42**
+**OPEN: 40**
 
 - [ ] **M-reflection-verdict** | panel 117's sixth option: give `assert` both sides for an aggregate by walking to the first DIFFERING LEAF and naming the field, instead of rendering the value | `docs/panel/117-both-sides-of-an-assert-when-a-side-is-an-aggregate.md` · `selfhost/emit/structural.hero` · `runtime/parts/array.c`
 
@@ -305,64 +305,6 @@ Format: `- [ ] **M-<milestone>** | <what, in one line> | <where to look>`
     **Why it matters:** separate compilation was priced in LINES by the sitting
     and never in seconds, and the seconds say the payoff is behind a
     whole-program frontend.
-
-- [ ] **M-publication-gate** | the site's promise that every code block is a real file has no instrument | `site/README.md:889-893` · `tests/harness/suite_canonical.hero:84-85`
-
-    **Origin:** measured 2026-09-03; `site/README.md:889-893` says it in its own
-    words. The last gate before anything goes outward is where a claim the site
-    makes about itself must be an instrument.
-
-    `docs/ROADMAP.md` § M-documentation-site says a check *"asserts that each
-    block matches a program in the repository that compiles and runs"*, and
-    `site/README.md:889-893` says *"Nothing enforces it"* — the `check.py` it
-    once credited does not exist. Measured 2026-09-03 with `grep -rhoE
-    'data-src="examples/[^"]+"' site/src/html`: **160** references to **16**
-    files in **4** program directories (`gallery` 148, `shapes` 8, `calculator`
-    2, `adventure` 2), each with a `data-lines` slice. What every surveyed
-    language does instead is compile what its docs show, read 2026-09-03 and none
-    of the three paths this repository's: Zig's `tools/doctest.zig` (2026-09-03),
-    rust-by-example's `mdbook test`, and Hare's `make docs/html` (2026-09-03).
-    The shape here is a row in the net that reads every
-    `data-src`/`data-lines`, asserts the file exists and the slice is inside it,
-    and re-uses `suite_canonical.hero`'s tree walk — not a build of the site,
-    which §10 keeps out of `heroes`.
-
-    **Where to look also:** `docs/ROADMAP.md` § M-documentation-site.
-    **Why it matters:** documentation that cannot rot was the milestone's whole
-    argument, and today it can.
-
-- [ ] **M-publication-gate** | what is left of a site refresh, after the build log | `site/README.md` § Keeping it current · `site/src/html/index.html` · `site/src/html/why.html`
-
-    **Origin:** measured 2026-09-02, twice, and the first measurement was WRONG.
-    Its home since 2026-09-04: it had named no milestone at all.
-    `site/README.md` § Keeping it current gates a refresh on the AUTHOR ASKING,
-    and the author asked for the log the same evening, so that half is done and
-    this item is the remainder; the gate is where it belongs because that is
-    where every number the site states about itself is re-run before a stranger
-    reads it.
-
-    **The build log is current: 31 entries against 31 closed milestones, in both
-    editions.** The five that were missing are M-argv-execution,
-    M-package-layout, M-selfhost-nesting, M-corpus-coverage and
-    M-documentation-site, each distilled from `docs/book/beats.md` rather than
-    from the commit log, which is that section's own rule, and each verified to
-    carry no date and no em dash. **This item first said the log was THREE
-    behind and that was wrong twice over**: it counted `<li>` tags rather than
-    entries, so 28 markers read as 28 entries when they are 26 milestones plus
-    two on the project's origin, and the newest entry was M-separate-compilation
-    with FIVE closes after it. Counting the thing the question is actually about
-    — entry names against done rows — gives the answer in one line, and it gave
-    it only on the second try.
-
-    **What is still owed**: the badge on `index.html`, `why.html`'s objections
-    re-checked against design.md's current state, and every remaining number
-    re-run. The last is not hypothetical: M-documentation-site's close found
-    four stale numbers on the site and in its README, and the one its own
-    scheduling item had complained about was not among them.
-
-    **Where to look also:** `docs/book/beats.md`.
-    **Why it matters:** a count taken off the wrong token reads like a
-    measurement and is not.
 
 - [ ] **M-interpolation-verdict** | what a printed float guarantees, which the spec does not say | `spec:184-185` · `runtime/parts/f64.c:26-37` · `docs/panel/021`, `027`
 

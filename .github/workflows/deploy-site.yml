@@ -18,14 +18,23 @@ name: Deploy site
 # What it does spend is Actions minutes, against 2,000 a month on the free tier
 # for a private repository, and this job is under a minute.
 #
-# Triggered when the site changes, on demand from the Actions tab, and from
+# Triggered when the site or what it shows changes, on demand from the Actions
+# tab, and from
 # `release-site.yml` when a `site-v*` tag is pushed.
 
 on:
   push:
     branches: [main]
+    # The site is no longer built out of site/ alone. Since the examples
+    # browser landed, `npm run build` reads examples/ for the programs it shows,
+    # selfhost/keywords.hero for the keyword table it colours by, and
+    # spec/heroes-spec.md for the type words. A change to any of those changes a
+    # page, so a deploy that watched only site/ would serve yesterday's corpus.
     paths:
       - 'site/**'
+      - 'examples/**'
+      - 'selfhost/keywords.hero'
+      - 'spec/heroes-spec.md'
       - '.github/workflows/deploy-site.yml'
   workflow_dispatch:
   workflow_call:

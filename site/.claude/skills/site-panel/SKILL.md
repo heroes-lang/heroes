@@ -25,11 +25,18 @@ positioned to see.
 
 ## How to convene
 
-1. Launch five agents **in parallel**, one per seat. Each prompt: read your
+1. Launch the seats **in parallel**, one agent each. Each prompt: read your
    brief at `site/.claude/skills/site-panel/seat-<name>.md`, read the
-   constraints below, read every page in `site/public/`, and — for any seat
-   that judges appearance — **render before judging** (headless Chrome,
-   `--headless --screenshot`, dark and light, 1200px and 390px).
+   constraints below, read the pages in **`site/src/html/`** and the built site
+   in `site/dist/`, and — for any seat that judges appearance — **render before
+   judging** (headless Chrome, `--headless --screenshot`, dark and light, 1200px
+   and 390px; a width under about 590px has to be an iframe inside a wider
+   window, which is what `site/README.md` says).
+
+   **Both editions are judged.** The Italian is the edition the author reads,
+   and it was outside this panel's remit until 2026-09-07, which is why the
+   constraint list below used to end *English on every page*. A seat that reads
+   Italian judges `site/src/html/it/` by the same five bands.
 2. Demand ranked findings, each with the exact current text/CSS and the
    concrete replacement. A finding without a proposed edit is an opinion.
    Ask each seat for two things that already work and must not be broken.
@@ -42,8 +49,11 @@ positioned to see.
 ## Constraints every seat inherits (not up for debate)
 
 - Writes stay inside `site/` — another session owns the rest of the tree.
-- No JavaScript, no build step, no webfonts, no external assets; light/dark
-  via `prefers-color-scheme` (site/README.md).
+- No JavaScript **reaches the visitor**, no webfonts, no external assets;
+  light and dark come from `prefers-color-scheme` alone. **There IS a build
+  step**: the site is an Astro project and the examples pages are generated
+  from `examples/` at build time. This line used to say "no build step", which
+  stopped being true when the site was ported.
 - The Bowie register per site/README.md § Style guide — bolt, palette, nods
   as song/album titles only. The register is a given, not a finding.
 - Every claim must match the repository's measured state: no "v1", no
@@ -52,8 +62,17 @@ positioned to see.
   `examples/` file (`data-src`/`data-lines`), regenerated from the file.
 - The hero shows working code, never a diagnostic; says "a compiled
   programming language" before the name; names LLMs plainly (author,
-  2026-08-18).
-- English on every page.
+  2026-08-18). A diagnostic may appear in the first value prop UNDER the hero,
+  and one does.
+- The nav is **seven items** and a page enters it only by displacing one
+  (author instruction 2026-09-06). Proposing an eighth means naming which of
+  the seven leaves.
+- **A number on the page is generated from the tree or written as a threshold**
+  (author instruction 2026-09-07, `site/CLAUDE.md`). A seat that asks for an
+  exact count has to say what keeps it true next month.
+- **The reader is a working programmer, not an expert in language design**
+  (author instruction 2026-09-06). Glossing null or a garbage collector is
+  noise now; glossing fixpoint or canonical form is still owed.
 
 A finding that needs one of these relaxed goes to the author, not into an edit.
 

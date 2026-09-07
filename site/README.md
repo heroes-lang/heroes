@@ -98,21 +98,21 @@ answers at drops the extension and gains a slash, so `why.html` is `/why/` and
 
 | source file | what it is |
 |---|---|
-| `index.html` | the landing: hero, one sample, three cards, the claim. Short on purpose. |
+| `index.html` | the landing: hero, one sample, three cards, one real diagnostic, the claim. Short on purpose, and measured: 758 words where it was 1,979. |
 | | The hero says **&ldquo;a compiled programming language&rdquo;** above the name, because a visitor who has never heard of Heroes should not have to infer the category (author instruction 2026-08-17). Its code panel shows **working code, never a diagnostic** — *&ldquo;opening a language's site on an error is ugly&rdquo;*, same date. The errors have their own page. In that panel the `bar` names the file, so the figure carries no second caption. |
 | | **The three figure cards carry only at-a-glance numbers a stranger parses without context** (author instruction 2026-08-25: *&ldquo;put only at-a-glance figures that are easy to understand&rdquo;*). The mutation measurement is not one &mdash; *&ldquo;91% against 0%&rdquo;* needed three sentences of setup and still read as nothing &mdash; so the thesis table lives on `errors.html` only, and the home's § The claim explains the method in prose and links it. The cards are 231 lines · 0 null/exceptions/GC · 1 hash. |
 | | The promise line under the name **leans on something that is not an error** (author instruction 2026-08-24: *&ldquo;change the claim on the home page so it leans on something that is not an error&rdquo;*): it now reads *&ldquo;Small enough to fit in a prompt, real enough to compile itself&rdquo;*, both halves measured. The thesis has not left the page — it closed the tagline and it still owns § The claim — it just no longer leads. |
 | `why.html` | the founding constraint, the thesis, the cost formula, the rules, the objections |
 | `errors.html` | diagnostics as a deliverable — real output, fixes, holes, the mutation numbers. Not in the nav: it is a sub-page of `docs/`, linked from the docs landing, with a crumb and `Docs` marked current |
-| `selfhost.html` | the fixpoint: the hash, what it took, and what it found |
-| `zen.html` | `heroes this`, quoted verbatim — the twenty lines are the binary's own text, lyric fragments included, so the titles-only rule governs the page's nod and not the quotation |
-| `panel.html` | how a change is decided: the five seats and their differentiated briefs, the four vetoes, the historian's search obligation, the borrowed languages, and who is building this (author request 2026-08-18) |
-| `author.html` | Giuseppe Arici, the long bio in his own voice, the book, and what the book has to do with the language. Governed by § The author and the book below, which is not optional copy guidance |
-| `thanks.html` | the credits: the designers of every language the design borrowed from, named one by one, each with the borrowing beside them. Governed by § The thanks page below |
-| `log.html` | the build log, one postcard per milestone, newest first |
+| `start.html` | how to run it: the four lines, where `heroes run` looks for the runtime, your own first program, the eleven verbs |
+| `project.html` | three sections, and it replaced three pages (author instruction 2026-09-06): the fixpoint at `#self-hosted`, how a change is decided at `#panel`, and `heroes this` quoted verbatim at `#zen`. The twenty Zen lines are the binary's own text, lyric fragments included, so the titles-only rule governs the page's nod and not the quotation, and they stay English in both editions |
+| `about.html` | Giuseppe Arici, the bio in his own voice, the book, and *Who wrote this*, which says who did what. Governed by § The author and the book below, which is not optional copy guidance |
+| `about/thanks.html` | the credits: the designers of every language the design borrowed from, named one by one, each with the borrowing beside them. A **sub-page of `/about/`** since 2026-09-07, the way `errors.html` is one of `/docs/`, because the nav holds one entry for the author and the names may not be cut to fit a word budget. Governed by § The thanks page below |
+| `log.html` | the build log, one postcard per milestone, newest first. A postcard is the milestone name, the sentence in bold that is the news, one concrete sentence and a link: 1,517 words where it was 4,846 |
+| `examples/` | **the examples browser, generated from `examples/` at build time**: an index, one page per program and per gallery file, and `index.json`. Its own § below |
 | `docs/` | the documentation: landing + chapters |
 | `style.css` | the only cross-page *stylesheet* |
-| `images/` | the one binary asset the site has: `giuseppe-arici.jpg`, the author's portrait, used by both editions of `author.html` |
+| `images/` | the one binary asset the site has: `giuseppe-arici.jpg`, the author's portrait, used by both editions of `about.html` |
 
 **No JavaScript and no external assets**, on any page, still: light and dark come
 from `prefers-color-scheme` alone. There IS a build step now, and it is the one
@@ -143,35 +143,47 @@ the Italian edition, so its nav links carry no `../` at all. The stylesheet dept
 belongs to the layout and the nav depth to the component, and conflating them is
 how the language switch breaks on exactly the Italian pages.
 
-Nine items in a fixed order — Why Heroes · Docs ·
-Self-hosted · Zen · Panel · Thanks · Author · Log · GitHub — and the current page
-marks itself `class="here"`. At nine items the row no longer fits a phone, so
-under **800px** the list becomes **one horizontally scrolling line** with the mark
-and GitHub on the row above it: two rows of sticky chrome instead of three, no
-item dropped, and the item clipped at the right edge is the affordance. Adding a
-tenth item is the point where this stops working and something has to give.
+**Seven items, and each one is a question a visitor has** (author instruction
+2026-09-06) — Why · Examples · Docs · Start · Log · Project · About, plus the
+language badge and GitHub — and the current page marks itself `class="here"`.
+The order is the order somebody asks: why should I care, show me the code, teach
+it to me, how do I run it, is this alive, how is it built, who is behind it. It
+was eight items that were the project's own shelves instead, and neither a
+learning entry nor an install entry was among them, which every one of the nine
+language sites surveyed while planning has in its top nav.
 
-**That threshold was 700px until the Italian edition measured it** (2026-08-18).
-Italian nav labels are wider — *Perché Heroes*, plus the language badge — so the
-list goes from 517px to 540px, and at 701px the wrapped layout took **three rows**
-of sticky chrome, which is the exact thing the rule above forbids. Moving the
-query to 800px removes the wrapped state entirely: measured in both editions, one
-row down to 860px, then two rows all the way down, and no three-row band at any
-width. It is also **better for the English edition**, which used to spend 98px of
-chrome between 701 and 800px and now spends 80px. A layout number that only one
-language was ever measured at is a number that has not been measured.
+Three pages became `project.html` and two became `about.html`, which is what
+made room. **Measured after the change**, in Chrome, both editions, twelve
+widths from 1200px down to 390px:
 
-**The row stays at nine, so a page enters it only by displacing one** (author
-instruction 2026-08-18). `thanks.html` went in and `errors.html` came out, and
-the exchange is the rule rather than the exception: a tenth item was built,
-measured and removed. Measured in that sitting, at the home page's own nav:
-nine items are a 517px list that stays on **one row down to 800px**, then two
-rows to 701px, then the scrolling line; the tenth item took the list to 584px
-and produced **three rows** of chrome between 720px and 701px, which is what
-"something has to give" meant. The first thing tried instead — reaching the page
-from every footer plus a sentence inside `panel.html` — failed the only test that
-counts: the author could not find it. **A page nobody can see from the chrome is
-not linked, whatever the link count says.**
+| | English | Italian |
+|---|---|---|
+| the list's width | **394px** | **426px** |
+| one row of chrome (50px) | 801px and up | 801px and up |
+| two rows (80px) | 800px and down | 800px and down |
+| three rows | never | never |
+| the list scrolls sideways | never, down to 390px | at 390px |
+
+The nine-item row was 517px in English and 540px in Italian, so the row is
+**123px shorter** and the two-row band starts at the same place it did. The
+Italian list is 32px wider than the English one, which is `Esempi`, `Inizia`,
+`Progetto` and `Perché` costing what they cost, and at 390px it is the one that
+reaches for the scrolling line. That is the affordance working rather than a
+fault: no item is dropped.
+
+**The row stays at seven, so a page enters it only by displacing one.** That
+rule is unchanged from when the row was nine (author instruction 2026-08-18);
+only the number moved. The exchange that proved it: `thanks.html` went in and
+`errors.html` came out, and a tenth item was once built, measured and removed,
+because it produced **three rows** of chrome between 720px and 701px, which is
+the state the rule forbids. The first thing tried instead — reaching the page
+from every footer plus a sentence inside what is now `project.html` — failed the
+only test that counts: the author could not find it. **A page nobody can see
+from the chrome is not linked, whatever the link count says.**
+
+Two pages sit under an entry rather than in the row, for that reason and not by
+accident: `errors.html` under Docs, and `about/thanks.html` under About. Both
+carry a `.crumb` and both mark their parent as current.
 
 `errors.html` did not lose anything by moving: it is now a **sub-page of the
 documentation**, linked from the docs landing above the chapter list and carrying
@@ -318,7 +330,7 @@ a separate staging project.
 
 | file | what it does |
 |---|---|
-| `.github/workflows/deploy-site.yml` | on push to `main` touching `site/**`, and on demand: `npm ci`, `npm run build`, `wrangler pages deploy dist` |
+| `.github/workflows/deploy-site.yml` | on push to `main` touching `site/**`, `examples/**`, `selfhost/keywords.hero` or `spec/heroes-spec.md`, and on demand: `npm ci`, `npm run build`, `wrangler pages deploy dist`. The three paths outside `site/` are there because the examples browser reads them, so a change to a program changes a page |
 | `.github/workflows/release-site.yml` | `git tag site-v1 && git push origin site-v1` ships the tree by hand |
 
 Three details in there are load-bearing and each one fails **silently** if moved:
@@ -453,7 +465,7 @@ lie:
 - **Compiler output, diagnostics, file paths, commands and keywords.**
 - **The twenty Zen lines.** They are what `heroes this` prints, and they carry
   Bowie fragments; an Italian rendering would be both a false quotation of the
-  binary and a derivative of a lyric, which § Style guide refuses. `it/zen.html`
+  binary and a derivative of a lyric, which § Style guide refuses. `it/project.html`
   keeps the list in English under `lang="en"`, says in one paragraph why, and
   explains the lines in Italian prose underneath. **It does not gloss them line
   by line** — that was considered and refused for the same reason.
@@ -468,7 +480,7 @@ Two things that are easy to get wrong and are therefore rules:
   characters, and the first Italian mutation table was written straight over the
   English column stops and did not line up.
 - **The book is named in Italian**: *Gli eroi del codice* is the edition of
-  record, and its twenty-one chapter titles on `it/author.html` are the book's
+  record, and its twenty-one chapter titles on `it/about.html` are the book's
   own, copied from the manuscript rather than back-translated from the English
   page. The release wording rule in § The author and the book applies unchanged
   in Italian: *"pubblicato su Amazon"*, no day, and never *in libreria*.
@@ -903,13 +915,90 @@ never retyped. The showcase page follows the convention too, so the rule has no
 exceptions to explain later.
 
 The `in progress` tag and its `.todo` row are kept in the stylesheet although
-no chapter uses them now: a thirteenth chapter would be listed that way, with a
-dim tag and **no link** — never a dead one. The same rule governed the twelve
-while they were being written. **Nothing enforces it.** This paragraph credited
-a `check.py` dead-link pass for having never had anything to report, and there
-is no `check.py` in this repository — the rule has been kept by hand, and a
-sentence naming an instrument that does not exist is the more expensive half of
-that, because it stops anybody from writing the instrument.
+no chapter uses them now: a fourteenth chapter would be listed that way, with a
+dim tag and **no link** — never a dead one. The same rule governed the thirteen
+while they were being written.
+
+**The rule above is now enforced, and this paragraph is the record of how long
+it was not** (2026-09-07). It used to end *"Nothing enforces it"*, and to say
+that it had once credited a `check.py` dead-link pass that does not exist in
+this repository, which is the more expensive half of the failure, because a
+sentence naming an instrument stops anybody from writing it. The instrument is
+`site/src/lib/figures.ts`, wired into all 46 hand-written wrappers, one line
+each. It re-cuts every figure's slice from the file at build time and refuses
+the build when the two differ, naming the page, the figure's position, the file,
+the range and the first line that disagrees. It checks the `figcaption` too,
+which this file also asked for and nothing checked: a caption may not name a
+different file or a different range from the attribute beside it. It was made to
+fire rather than trusted, by planting one changed character.
+
+## `site/src/html/examples/` and the examples browser
+
+**Every program under `examples/` is a page on this site, generated from the
+file at build time** (author instruction 2026-09-06: the examples belong on the
+site, with a hash so a changed one can be noticed, and never a link out to
+GitHub). One index, one page per program, one per gallery file, in both
+editions, plus `/examples/index.json`.
+
+**There is no copy of a program under `site/`.** The pages are cut from
+`examples/` when the site is built, so nothing here can go stale, and the hash
+is not a drift detector: it is there to be quotable. What that costs is the one
+thing an Astro project does not normally do, reading files outside its own
+directory, and it is done in one place.
+
+| module | what it does |
+|---|---|
+| `src/lib/repo.ts` | finds the repository root by walking up from the working directory to the directory holding `examples/README.md`, `spec/heroes-spec.md` and `CLAUDE.md` together, and reads bytes from there. The only module that reads outside `src/` |
+| `src/lib/tables.ts` | parses the keyword table out of `selfhost/keywords.hero` and the type words out of `spec/heroes-spec.md` § Types, with a floor and a shape assertion on each, so the site holds no copy of the language |
+| `src/lib/highlight.ts` | the tokenizer, a reading of `selfhost/scan.hero`, `number.hero` and `literals.hero`, plus `assertRoundTrip`: strip the spans, decode the three entities, and the source must come back byte for byte |
+| `src/lib/expectation.ts` | the JavaScript twin of `tests/harness/expectation.hero`. The harness's ending marker never reaches a reader: `!exit: 1` renders as an exit status |
+| `src/lib/fingerprint.ts` | sha256 per file, then sha256 of the manifest in `shasum`'s own line format, and the one command that reproduces it |
+| `src/lib/examples-model.ts` | discovery, the run command, the badges from the program's tokens, the floors |
+| `src/lib/descriptions.ts` | the prose fragments, and the completeness check in both directions |
+| `src/lib/examples-render.ts` | the pages, in either language, off one reading of the corpus |
+| `src/lib/figures.ts` | the drift check on every hand-written figure, § above |
+| `src/data/examples.ts` | the shelves and the reading order. No prose |
+| `src/lib/i18n.ts` | the short labels a generated page needs in both languages. Nothing long, because this tree is not one where the net accepts Italian |
+
+**Why the root is found by walking up rather than taken from Astro.** Astro
+exposes it through `astro:config/server`, which works inside a build and not
+inside a plain `node` script. The round-trip gate is such a script, and so is
+every other check here, so tying the loader to Astro would put them out of
+reach.
+
+**What the build asserts, and each one throws rather than warning**: both tables
+parse and clear their floor; all 118 `.hero` files round-trip; a directory under
+`examples/` that is neither a program nor the gallery is an error and never a
+skip; an expectation with a marker on the wrong line is an error; every example
+has a fragment in both editions, each with a tagline, and every fragment names
+an example; a `main.args` that exists and is empty is an error; and every
+hand-written figure still matches its file.
+
+**Each `.hero` file is highlighted once and both editions embed that one
+string**, so an Italian page cannot show a different program from its English
+twin. Measured: 181 code blocks compared between the editions, zero
+differences. What does differ, by design, is the `figcaption`, where `lines`
+becomes `righe`.
+
+**The prose lives in `src/html/examples/`**, one fragment per example per
+edition, each a `<p class="tagline">` and at most two short paragraphs. The
+tagline is required, because it is the sentence under the title, the card's line
+on the index and the page's own meta description. Three shared fragments say why
+a page shows no output, and one is the footer.
+
+**A program page shows** the badges that are true of it, the exact command a
+reader would type, the output that program really prints, `main.hero` open with
+every further module in a closed `<details>`, the input files, the fingerprint,
+and previous and next. The gallery pages show no output pane, because no test
+records what those files print, and they say so.
+
+**`/examples/index.json`** carries the same corpus as data, including a hash per
+file, for whatever reads this site next. It has no date field: the hashes are
+the timestamp.
+
+The deploy workflow triggers on `examples/**`, `selfhost/keywords.hero` and
+`spec/heroes-spec.md` as well as on `site/**`, because a change to any of those
+changes a page.
 
 ## Keeping it current — on demand, not per milestone
 
