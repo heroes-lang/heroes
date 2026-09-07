@@ -1344,5 +1344,36 @@ of 2026-09-07 and the ceiling is pinned in `tests/harness/suite_records.hero`, s
 the next session that grows it past the ceiling finds out from a red check rather
 than from a reader.
 
+**Corrected the same day, underneath rather than in place, which is what this
+file is for.** That sentence names the wrong suite: the ceiling landed as
+`spec/contract` in `tests/harness/suite_spec.hero`, because that is where the
+compiler is in hand to run `heroes measure` and where a document is already
+weighed on the same scale. `tests/harness/suite_records.hero` gets `records/sections`
+instead, which resolves the pointers INTO the contract. The sentence was written
+before the two checks had homes and it was already stale when it was committed.
+
+**And the architecture above rested on two documented unknowns, so both were
+run.** The author's instruction was to make sure every context takes in its
+rules, and the documentation answers two of three questions. Measured by asking a
+subagent to report its own context after reading one file under `selfhost/emit/`:
+
+- **Path-scoped rules DO reach a non-fork subagent, and the scoping is per
+  FILE.** Of seven files in `.claude/rules/`, exactly the two whose `paths:`
+  match that file had arrived. `c-boundary.md`, scoped `selfhost/emit/ffi*`, sits
+  in the same directory and did not load. They arrive on the tool call rather
+  than at session start, with the frontmatter stripped.
+- **The contract reaches a subagent as a SESSION-START SNAPSHOT.** The agent held
+  the 1139-line version from this session's opening commit while the disk held
+  322, five commits later, and the proof does not rest on the line count:
+  `.claude/rules/` did not exist at that commit, so the rules content cannot have
+  come from that snapshot. **This strengthens the split rather than threatening
+  it**: a tree-local rule is not only cheaper than a paragraph here, it is
+  *fresher*. What it costs is that a judge convened after a contract edit reads
+  the old contract, which is why `.claude/agents/llm-ergonomist.md` now tells
+  that seat to ignore this file outright.
+- **Hooks fire inside a subagent**, which was documented neither way and was
+  answered for free: panel 117's ergonomist seat saved its experiment as `.txt`
+  and said in its verdict that the formatting hook had told it to.
+
 
 
