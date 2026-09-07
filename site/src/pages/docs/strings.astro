@@ -1,7 +1,8 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { page } from '../../lib/figures.ts';
 import content from '../../html/docs/strings.html?raw';
 ---
 <BaseLayout url="/docs/strings/" title={'Strings, Heroes documentation'} description={'A str is immutable UTF-8 measured in bytes. Indexing gives a byte and chars() gives characters: two different jobs the type system keeps apart. Six escapes exist and no others.'} current="docs">
-<Fragment set:html={content} />
+<Fragment set:html={page(content, 'site/src/html/docs/strings.html')} />
 </BaseLayout>

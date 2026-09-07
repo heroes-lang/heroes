@@ -1,7 +1,8 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { page } from '../../lib/figures.ts';
 import content from '../../html/it/index.html?raw';
 ---
 <BaseLayout url="/it/" title={'Heroes: un linguaggio di programmazione fatto per gli LLM'} description={'Heroes è un piccolo linguaggio compilato che sta in un prompt e compila se stesso. Produce eseguibili nativi, usa le librerie C e trasforma gli errori più comuni dei modelli in errori di compilazione.'} mainClass="home">
-<Fragment set:html={content} />
+<Fragment set:html={page(content, 'site/src/html/it/index.html')} />
 </BaseLayout>

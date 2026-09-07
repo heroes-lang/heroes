@@ -1,7 +1,8 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { page } from '../../lib/figures.ts';
 import content from '../../html/it/selfhost.html?raw';
 ---
 <BaseLayout url="/it/selfhost/" title={'Scritto in se stesso: il punto fisso di Heroes'} description={'Il compilatore di Heroes è scritto in Heroes: 170 moduli, 50.100 righe. Gli chiedi di compilare se stesso e riscrive esattamente il file C che il repository porta con sé, byte per byte.'} current="selfhost">
-<Fragment set:html={content} />
+<Fragment set:html={page(content, 'site/src/html/it/selfhost.html')} />
 </BaseLayout>

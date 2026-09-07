@@ -1,7 +1,8 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { page } from '../lib/figures.ts';
 import content from '../html/errors.html?raw';
 ---
 <BaseLayout url="/errors/" title={'Errors, Heroes diagnostics are a deliverable'} description={'Real compiler errors, fixes that can be applied automatically and a separate measurement for every kind of mistake.'} current="docs">
-<Fragment set:html={content} />
+<Fragment set:html={page(content, 'site/src/html/errors.html')} />
 </BaseLayout>

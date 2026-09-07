@@ -1,7 +1,8 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { page } from '../lib/figures.ts';
 import content from '../html/panel.html?raw';
 ---
 <BaseLayout url="/panel/" title={'The panel, how a change to Heroes gets decided'} description={'Five judges review every change to the Heroes language. Four have a veto, and each receives different evidence.'} current="panel">
-<Fragment set:html={content} />
+<Fragment set:html={page(content, 'site/src/html/panel.html')} />
 </BaseLayout>
