@@ -69,9 +69,11 @@ we can be heroes</code></pre>
   </p>
   <p>
     <code>heroes fmt</code> prints the one canonical form of a file: same
-    indentation, same line breaks, same order. Every Heroes file in the
-    repository comes back from it unchanged, byte for byte, so a difference
+    indentation, same line breaks, same order. Every Heroes file the project
+    calls source comes back from it unchanged, byte for byte, so a difference
     between two versions of a file is a difference in what the program does.
+    The exceptions are the test fixtures written to be refused, which the
+    formatter leaves alone because the text is the fixture.
   </p>
   <p>
     <a href="/examples/">Every example on this site</a> is a file in

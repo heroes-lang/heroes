@@ -106,9 +106,10 @@
 
   <h2>How small a language is allowed to be</h2>
   <p>
-    The specification has a hard ceiling measured in tokens, and the
-    self-hosting compiler has a size it is not allowed to exceed. Both numbers
-    were calibrated against work from the 1970s and 1980s rather than invented.
+    The specification has a hard ceiling measured in tokens. The compiler has
+    no such total, on purpose: what it has is a limit per file, so no single
+    file grows past what one person can read in a sitting. Both numbers were
+    calibrated against work from the 1970s and 1980s rather than invented.
   </p>
   <ul class="lineage">
     <li><b>Pascal, Modula, Oberon</b>: <a href="https://en.wikipedia.org/wiki/Niklaus_Wirth">Niklaus Wirth</a>,
@@ -117,7 +118,8 @@
     Gutknecht</a> on Oberon. <code>record</code> and <code>variant</code> come
     from here. So do both calibrations: the Oberon report at sixteen pages is
     how long a specification is allowed to be, and Pascal-P4 at roughly four
-    thousand lines is how big a self-hosting compiler is allowed to be. Wirth
+    thousand lines is the scale a self-hosting compiler was once shown to fit
+    in. Wirth
     also wrote an entire operating system in a language with no raw pointers, and
     nothing argues harder for this whole approach.</li>
   </ul>
