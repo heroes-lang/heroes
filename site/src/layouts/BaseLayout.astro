@@ -66,6 +66,154 @@ const alternates = lang === 'it'
 
 const favicon =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cpath fill='%23e5393e' d='M 14 0 L2 18 h8 L7 32 L22 12 h-9 z'/%3E%3C/svg%3E";
+
+// -- What a machine that is not a browser gets ------------------------------
+//
+// Everything below is computed from `url` for the same reason the canonical and
+// the hreflangs are: a card, a breadcrumb and a canonical that disagree are
+// worse than none, and the only way three derived facts cannot disagree is if
+// one expression derives all three. No page passes any of it in.
+//
+// The author asked for this, 2026-09-07, in as many words: all the SEO tags,
+// and push them hard.
+
+const AUTHOR = 'Giuseppe Arici';
+
+// The share card, per SECTION and per edition, which is twenty of them.
+//
+// Two site-wide cards were built first and they were the wrong shape for the
+// job: a link posted into a channel is a link to ONE page, and a card that says
+// only the name of the site tells the reader nothing about the page they were
+// sent. The section is the level that pays, because it is the level a card can
+// still describe honestly in one line. The 134 example pages all get the
+// examples card and the 30 chapters all get the docs card, which is right:
+// `examples/nqueens/` and `examples/sieve/` really are the same promise.
+//
+// 1200x630 is the size every network crops from. All twenty are rendered from
+// the site's own tokens and the site's own h1 face, so the card and the page
+// agree about what the wordmark looks like; the pass before this one set it in
+// a serif and the two disagreed. None carries a number, because a measured
+// number inside an image cannot be checked by whoever reads it (CLAUDE.md §11),
+// which is why the examples card does not say how many programs there are.
+//
+// The fallback is the home card rather than nothing, so a page in a section
+// nobody has drawn yet still shares as this site rather than as a bare link.
+const SECTION_CARDS = new Set([
+  'home', 'why', 'start', 'docs', 'spec', 'examples', 'errors', 'log', 'project', 'about',
+]);
+const section = (() => {
+  const path = lang === 'it' ? url.slice(3) : url;
+  const first = path.split('/').filter(Boolean)[0];
+  return first !== undefined && SECTION_CARDS.has(first) ? first : 'home';
+})();
+const card = `/images/card/${section}-${lang}.png`;
+// Both alts are short, and the Italian one is short for a REASON rather than
+// for brevity: `records/english` reads every living file outside
+// `src/html/it/` and fails a line carrying six or more Italian words, because
+// Italian prose belongs to the edition and not to a shared layout. It caught
+// this alt on its first run. The card's own words are in the image; the alt
+// names what the image is.
+const cardAlt = lang === 'it'
+  ? 'Heroes, un linguaggio compilato'
+  : 'Heroes, a compiled programming language';
+
+const locale = lang === 'it' ? 'it_IT' : 'en_US';
+const localeAlt = lang === 'it' ? 'en_US' : 'it_IT';
+
+// The breadcrumb a search result shows instead of the raw URL. Derived from the
+// path, so a page that moves takes its trail with it and a page nobody thought
+// about still has one. `/it/` is the Italian ROOT and not a crumb of its own,
+// which is why the segments are taken after it.
+const segments = (lang === 'it' ? url.slice(3) : url).split('/').filter(Boolean);
+const root = lang === 'it' ? '/it/' : '/';
+const crumbs = [{ name: 'Heroes', item: ORIGIN + root }];
+let walked = root;
+for (const segment of segments) {
+  walked += `${segment}/`;
+  // Every crumb is its own slug with the hyphens opened out, the last one
+  // included. The page's TITLE was tried there first and read worse in the one
+  // place a breadcrumb is ever seen: a search result rendered
+  // "Heroes / examples / examples/json/" and "Heroes / docs / Maps, Heroes
+  // documentation", because a title is written to stand alone and a crumb
+  // never does. The slug is already the short name, and it cannot repeat the
+  // crumb above it.
+  crumbs.push({ name: segment.replaceAll('-', ' '), item: ORIGIN + walked });
+}
+
+// What KIND of page this is, in the vocabulary a crawler already has. A site
+// whose pages are all `WebPage` has told a machine nothing it could not see.
+const kind = (() => {
+  const path = lang === 'it' ? url.slice(3) : url;
+  if (path === '/') return 'WebSite';
+  if (path.startsWith('/examples/')) return 'SoftwareSourceCode';
+  if (path.startsWith('/docs/') || path === '/spec/') return 'TechArticle';
+  if (path.startsWith('/about')) return 'AboutPage';
+  return 'WebPage';
+})();
+
+const publisher = {
+  '@type': 'Person',
+  name: AUTHOR,
+  url: 'https://giuseppearici.com/',
+};
+
+const page: Record<string, unknown> = {
+  '@context': 'https://schema.org',
+  '@type': kind,
+  name: title,
+  description,
+  url: canonical,
+  inLanguage: lang,
+  image: ORIGIN + card,
+  isPartOf: { '@type': 'WebSite', name: 'Heroes', url: ORIGIN + root },
+  author: publisher,
+  publisher,
+};
+if (kind === 'SoftwareSourceCode') {
+  page.programmingLanguage = { '@type': 'ComputerLanguage', name: 'Heroes' };
+  page.codeSampleType = 'full';
+}
+if (kind === 'WebSite') delete page.isPartOf;
+// `headline` is an article's property and schema.org's own validator says so.
+if (kind === 'TechArticle' || kind === 'SoftwareSourceCode') page.headline = title;
+
+const breadcrumbs = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: crumbs.map((crumb, index) => ({
+    '@type': 'ListItem',
+    position: index + 1,
+    name: crumb.name,
+    item: crumb.item,
+  })),
+};
+
+// The language itself, once, on the two landings. `ComputerLanguage` is the
+// type schema.org has for exactly this and almost nobody uses; the site is a
+// language's site, so it is the one type that describes the subject rather
+// than the document.
+const language = {
+  '@context': 'https://schema.org',
+  '@type': 'ComputerLanguage',
+  name: 'Heroes',
+  alternateName: 'Heroes language',
+  url: ORIGIN + root,
+  description,
+  author: publisher,
+  runtimePlatform: 'C11, compiled by clang',
+  // Read off `LICENSE` in the repository root rather than assumed. It was typed
+  // here as MIT first and the file says Apache 2.0, with a second file,
+  // `LICENSE-RUNTIME-EXCEPTION`, beside it. A licence a machine reads is a
+  // claim like any other.
+  license: 'https://www.apache.org/licenses/LICENSE-2.0',
+};
+
+// `og:type` follows the same decision. It was `website` on all 180 pages,
+// which tells a card renderer that a chapter and the front page are the same
+// kind of thing; `article` is what the eighty pages of prose actually are.
+const ogType = kind === 'WebSite' ? 'website' : (kind === 'WebPage' ? 'website' : 'article');
+
+const structured = kind === 'WebSite' ? [page, breadcrumbs, language] : [page, breadcrumbs];
 ---
 <!doctype html>
 <html lang={lang}>
@@ -79,17 +227,43 @@ const favicon =
 {alternates.map(([code, href]) => (
 <link rel="alternate" hreflang={code} href={ORIGIN + href}>
 ))}
-<meta name="theme-color" content="#0d0d12">
-<meta property="og:type" content="website">
+<meta name="theme-color" content="#0b0b10" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f7f2e6" media="(prefers-color-scheme: light)">
+<meta name="author" content={AUTHOR}>
+<meta name="application-name" content="Heroes">
+<meta name="apple-mobile-web-app-title" content="Heroes">
+<meta name="color-scheme" content="dark light">
+<!-- `index, follow` is the default, so it is written here for the three that
+     are NOT: an unbounded snippet, a large image preview, and no video cap.
+     Without them a crawler picks conservative defaults and the share card and
+     the description are cropped by somebody else's guess. -->
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+<meta property="og:type" content={ogType}>
 <meta property="og:site_name" content="Heroes">
 <meta property="og:title" content={title}>
 <meta property="og:description" content={description}>
 <meta property="og:url" content={canonical}>
-<meta name="twitter:card" content="summary">
+<meta property="og:locale" content={locale}>
+<meta property="og:locale:alternate" content={localeAlt}>
+<meta property="og:image" content={ORIGIN + card}>
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content={cardAlt}>
+<meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content={title}>
 <meta name="twitter:description" content={description}>
+<meta name="twitter:image" content={ORIGIN + card}>
+<meta name="twitter:image:alt" content={cardAlt}>
+<link rel="author" href="https://giuseppearici.com/">
+<link rel="sitemap" type="application/xml" href="/sitemap-index.xml">
 <link rel="alternate" type="application/atom+xml" title="Heroes: the build log" href="/log.xml">
+<link rel="alternate" type="text/markdown" title="Heroes: the whole language in one file" href="/spec.md">
+<link rel="preload" href="/style.css" as="style">
 <link rel="stylesheet" href="/style.css">
+{structured.map((thing) => (
+<script type="application/ld+json" set:html={JSON.stringify(thing)}></script>
+))}
 </head>
 <body>
 <SiteNav url={url} current={current} />
