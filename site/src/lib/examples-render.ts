@@ -139,7 +139,21 @@ function runBlock(example: Example, lang: Lang): string {
   );
 }
 
-/** Previous and next in reading order, the way a docs chapter does it. */
+/**
+ * Previous and next in reading order, the way a docs chapter does it, and then
+ * a way off the shelf entirely.
+ *
+ * The second line is the repair for a defect the marketing seat found by
+ * COUNTING rather than by walking, which is why nobody had seen it: every one
+ * of these pages has a next, a previous and a way back to the list, so walking
+ * them feels complete. Measured across the built site, example pages carrying a
+ * body link to `/start/`, `/docs/` or `/spec/`: **0 of 133**. A reader who
+ * lands on `/examples/json/` from a search result can reach every other program
+ * on the site and nothing else at all, which on 134 of 180 pages is most of the
+ * site being a closed shelf.
+ *
+ * It is one line here because it is one line in 268 places.
+ */
 function walkLinks(slug: string, lang: Lang): string {
   const order = readingOrder();
   const at = order.indexOf(slug);
@@ -157,7 +171,12 @@ function walkLinks(slug: string, lang: Lang): string {
       `<span class="back">&larr; ${t('previous', lang)}: <a href="${base}/${previous}/">${escape(nameOf(previous))}</a></span>`
     );
   }
-  return `  <p class="next">\n    ${parts.join('\n    ')}\n  </p>`;
+
+  const away = `  <p class="next away">\n    ${t('runOneYourself', lang)}: <a href="${root(lang)}/start/">${t('theFourCommands', lang)}</a>. ` +
+    `<a href="${root(lang)}/docs/">${t('learnTheLanguage', lang)}</a>, ` +
+    `${t('orTakeItWhole', lang)} <a href="${root(lang)}/spec/">${t('inOneFile', lang)}</a>.\n  </p>`;
+
+  return `  <p class="next">\n    ${parts.join('\n    ')}\n  </p>\n${away}`;
 }
 
 /** What an example is called in a link: the directory, or the gallery file. */
@@ -262,6 +281,24 @@ export function renderExamplesIndex(lang: Lang): RenderedPage {
     });
     parts.push(`  <ul class="cards">\n${cards.join('\n')}\n  </ul>`);
   }
+
+  // The shelf's own way off it. The 132 program pages gained one in
+  // `walkLinks`, and this page needed the same for the same measured reason:
+  // its body linked 66 example pages, eight anchors of its own, and nothing
+  // else on the site.
+  parts.push(
+    lang === 'it'
+      ? `  <p class="next away">\n` +
+          `    Poi: <a href="/it/docs/">il linguaggio, un&rsquo;idea alla volta</a>, oppure\n` +
+          `    <a href="/it/spec/">tutto quanto in un file solo</a> da dare a un modello.\n` +
+          `    <a href="/it/start/">Come si esegue uno qualsiasi di questi</a>.\n` +
+          `  </p>`
+      : `  <p class="next away">\n` +
+          `    Next: <a href="/docs/">the language, one idea at a time</a>, or\n` +
+          `    <a href="/spec/">the whole thing in one file</a> to hand to a model.\n` +
+          `    <a href="/start/">How to run any of these</a>.\n` +
+          `  </p>`
+  );
 
   parts.push(`  <footer>\n${footer(lang)}\n  </footer>`);
 
