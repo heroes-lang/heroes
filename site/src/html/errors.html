@@ -5,9 +5,9 @@
     <span class="nod">· always crashing in the same car ·</span>
   </div>
   <p class="lede">An error message here is a finished product, made with the
-  same care as the rest, and the claim behind it is measured mistake by mistake,
-  never averaged. Every error below really came out of the compiler, copied and
-  pasted.</p>
+  same care as the rest. Every error below came out of the compiler, copied and
+  pasted. The claim they carry is measured one mistake at a time, never averaged
+  into a single figure.</p>
 
   <p>
     A model does not have the project open in front of it. It gets one message
@@ -49,7 +49,8 @@
     A fix tagged <code>certain</code> is one the compiler worked out rather
     than guessed: the type it just inferred itself, the one similar name that
     exists at that point in the program. The <code>heroes check --apply</code>
-    command applies those, and what comes out compiles. A fix tagged
+    command applies those and leaves the rest alone, so what comes out is
+    nearer, not necessarily finished. A fix tagged
     <code>guess</code> is a suggestion for the reader, and no tool ever applies
     it for you: guessing a repair a model would apply blindly is worse than
     explaining.
@@ -90,9 +91,12 @@ tests/golden/check/reserved-words.hero:4:1: <span class="k">error</span>[reserve
 tests/golden/check/deleted-int.hero:23:8: <span class="k">error</span>[reserved_word]: `int` is not a word in this language — an integer says its width: `i64`, and also `i8` `i16` `i32` `u8` `u16` `u32` `u64`</code></pre>
   <p>
     That is the one-line-per-diagnostic form; the fuller rendering above is what
-    the command prints. Three of those
-    four carry a <code>certain</code> fix, so <code>--apply</code> migrates a
-    whole file of borrowed keywords in one pass.
+    the command prints. Three of those four carry a <code>certain</code> fix and
+    <code>--apply</code> rewrites those three. It leaves <code>let</code>
+    exactly where it is, because the honest repair there is a different binding
+    form and not a word swap, and applying a guess is the one thing this design
+    refuses. That is the trade in one file: a tool you can point at your source
+    without reading the result, and a shorter list of things it will do.
   </p>
 
   <h2>An unfinished program is not a broken one</h2>
@@ -103,27 +107,29 @@ tests/golden/check/deleted-int.hero:23:8: <span class="k">error</span>[reserved_
     no binary, and it exits <b>zero</b>, because a skeleton under construction
     is not an error:
   </p>
-  <pre><code>hole at examples/gallery/09-holes.hero:28:74
+  <pre><code>hole at examples/gallery/09-holes.hero:24:5
+  position: statement &mdash; any type, or none
+  this function returns: Entry
+  in scope:
+    entries: [Entry]
+hole at examples/gallery/09-holes.hero:28:74
   expected type: str
   in scope:
     entries: [Entry]
   functions that return it:
     summary_of(entries: [Entry])
-      <span class="c"># The hole can be one argument of an otherwise finished line.</span>
-    library.hero_args_at(index: i64)
-    library.hero_file_read(path: cstr, @status: i64)
-    library.hero_str_try_from_cstr(p: cstr, @status: i64)</code></pre>
+      <span class="c"># The hole can be one argument of an otherwise finished line.</span></code></pre>
   <p>
     That is what lets a program be written skeleton-first: sketch the shape, let
     the compiler tell you what each gap needs, fill them in. The hole is a
-    question the compiler answers, not a failure it reports. Two spellings in
-    that output belong to the C boundary and appear nowhere else:
-    <code>cstr</code> is a C string and <code>@status</code> marks a parameter
-    the callee may write into: a C out-parameter, named at the call site like
-    every other argument.
+    question the compiler answers, not a failure it reports. Two holes, two
+    different questions: the first stands where a whole statement is missing, so
+    the answer is what the function has to return; the second stands inside a
+    line that is otherwise finished, so the answer is one type and the functions
+    that produce it.
   </p>
 
-  <h2>How it is measured</h2>
+  <h2 id="measured">How it is measured</h2>
   <p>
     <code>heroes mutate</code> measures these claims. It takes working programs
     and injects one plausible

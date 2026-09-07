@@ -145,8 +145,7 @@ graphics, audio, terminal  →  SDL, raylib, ncurses</code></pre>
     The order you write declarations in never matters, and two functions can
     call each other with nothing announced in advance. Underneath, the language
     is smaller still: what the compiler really handles is <b>seven
-    constructs</b>, and everything else reduces to those before it is done. A
-    small core under a surface where one person can finish the job.
+    constructs</b>, and everything else reduces to those before it is done.
   </p>
 
   <h2>The rules it lives by <span class="nod">&middot; fashion &middot;</span></h2>
@@ -163,9 +162,14 @@ graphics, audio, terminal  →  SDL, raylib, ncurses</code></pre>
     elsewhere it names that line, and where a repair is known it comes tagged
     <code>certain</code> or <code>guess</code>. Writing <code>???</code> leaves
     a declared gap and asks what belongs in it.</li>
-    <li><b>A program must not crash.</b> Where two designs are acceptable and
-    one can be made to fall over, the other wins, whatever it costs in elegance
-    or in words.</li>
+    <li><b>A program must not corrupt memory.</b> It is allowed to stop.
+    Integer overflow at any width, a division by zero, an index past the end of
+    a list, a slice that would cut a character in half, recursion too deep, and
+    <code>.must()</code> on a value that failed: each of those ends the program
+    on the spot, loudly, on the line it happened. What none of them does is
+    carry on with memory that is wrong. Where two designs are acceptable and one
+    can be made to reach an address nobody checked, the other wins, whatever it
+    costs in elegance or in words.</li>
     <li><b>Small enough to compile itself.</b> The whole specification fits
     under a hard ceiling of 4,096 tokens, which a test asserts on every commit:
     five pages, written to be handed to a model rather than shelved.
