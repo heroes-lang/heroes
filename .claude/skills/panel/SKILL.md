@@ -1,6 +1,6 @@
 ---
 name: panel
-description: Convene the Heroes design panel on a proposal. Two lanes: the SOUNDNESS lane (compiler-engineer + ffi-pragmatist) for a change with no surface, no diagnostic and no spec token; the full five judges with differentiated inputs and falsifiable predictions for everything else. Mandatory before changing the language (spec/, design.md Parts 1-11, surface syntax/semantics, a diagnostic class, architecture). Never blocks — adopts a conservative provisional default and queues the author's ratification. Writes docs/panel/<NNN> and a DESIGN-LOG line.
+description: Convene the Heroes design panel on a proposal. Two lanes: the SOUNDNESS lane (compiler-engineer + ffi-pragmatist) for a change with no surface, no diagnostic and no spec token; the full five judges with differentiated inputs and falsifiable predictions for everything else. Mandatory before changing the language (spec/, design.md Parts 1-11, surface syntax/semantics, a diagnostic class, architecture). Never blocks: adopts the most robust and complete provisional resolution, never the cheapest and never a compromise, and queues the author's ratification. Writes docs/panel/<NNN> and a DESIGN-LOG line.
 ---
 
 # /panel <proposal> — the design panel
@@ -94,7 +94,13 @@ is a full panel.
      condition, per judge)
    - disagreements, stated plainly — do not smooth them over
    - **the decision is the author's, asynchronously.** The synthesis adopts
-     the most conservative resolution, marked `provisional — author
+     **the resolution CLAUDE.md § 4 requires**, which is the most robust and
+     complete one, never the cheapest and never a compromise; where robust and
+     conservative disagree it takes robust and records what conservative would
+     have been, so the author can choose it. This line read *the most
+     conservative resolution* until 2026-09-07, four days after the author
+     struck that word mid-sitting, and the two are not the same thing
+     (`docs/contract/case-law.md` CL-040). It is marked `provisional — author
      ratification pending`, records what a veto would compel, and appends an
      **open** item to `docs/work/DECIDE.md` naming the sitting as `panel NNN`.
      Work proceeds on the provisional
