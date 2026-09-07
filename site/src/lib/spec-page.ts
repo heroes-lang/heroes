@@ -40,13 +40,34 @@ function escape(text: string): string {
   return text.replace(/[&<>]/g, (ch) => (ch === '&' ? '&amp;' : ch === '<' ? '&lt;' : '&gt;'));
 }
 
-/** The specification's own first line, which says what it is. */
-function firstLine(text: string): string {
-  for (const line of text.split('\n')) {
-    const clean = line.replace(/^#+\s*/, '').trim();
-    if (clean.length > 0) return clean;
-  }
-  throw new Error(`${SPEC} is empty.`);
+/**
+ * This page's own footer, and it needs one.
+ *
+ * It used to borrow the examples footer, which says every block is cut from a
+ * file in `examples/` and that the block under each command is a recorded
+ * output. Neither is true here: there is no command, no recorded output, and
+ * the one block comes from `spec/heroes-spec.md`. A false paragraph on the page
+ * whose argument is byte fidelity is the worst place to put one.
+ */
+function footer(lang: Lang): string {
+  const first =
+    lang === 'en'
+      ? `<p>The block above is cut from <code>${SPEC}</code> when the site is
+    built, so it cannot drift from the file the compiler is measured against. A
+    test asserts the token ceiling on every commit.</p>`
+      : `<p>Il blocco qui sopra è ritagliato da <code>${SPEC}</code> quando il
+    sito viene costruito, quindi non può scostarsi dal file su cui il
+    compilatore viene misurato. Un test verifica il tetto dei token a ogni
+    commit.</p>`;
+  const byline =
+    lang === 'en'
+      ? `<p>Built by <a href="https://giuseppearici.com/en/">Giuseppe Arici</a>, CTO at Codermine, Brescia. Author of
+    <a href="/about/"><i>Heroes of code</i></a>. Standing on
+    <a href="/about/thanks/">a lot of other people&rsquo;s work</a>.</p>`
+      : `<p>Fatto da <a href="https://giuseppearici.com/it/">Giuseppe Arici</a>, CTO di Codermine, Brescia. Autore di
+    <a href="/it/about/"><i>Gli eroi del codice</i></a>. In piedi sul
+    <a href="/it/about/thanks/">lavoro di molte altre persone</a>.</p>`;
+  return `  <footer>\n    ${first}\n    ${byline}\n    <p>&copy; 2026 Giuseppe Arici &middot; heroes-lang.org</p>\n  </footer>`;
 }
 
 export function renderSpecPage(lang: Lang): SpecPage {
@@ -84,10 +105,7 @@ export function renderSpecPage(lang: Lang): SpecPage {
     lang === 'en'
       ? `  <p class="next">\n    Next: <b><a href="/docs/">the same language explained one idea at a time</a></b>.\n    <a href="/examples/">Every program</a>.\n  </p>`
       : `  <p class="next">\n    Poi: <b><a href="/it/docs/">lo stesso linguaggio spiegato un'idea alla volta</a></b>.\n    <a href="/it/examples/">Tutti i programmi</a>.\n  </p>`,
-    readText(lang === 'en' ? 'site/src/html/examples/_footer.html' : 'site/src/html/it/examples/_footer.html').trim().replace(
-      /^/,
-      '  <footer>\n'
-    ) + '\n  </footer>',
+    footer(lang),
   ].join('\n\n');
 
   return {
@@ -98,8 +116,8 @@ export function renderSpecPage(lang: Lang): SpecPage {
         : 'The specification: the whole language, on one page',
     description:
       lang === 'it'
-        ? `${firstLine(source)} Sotto un tetto di ${CEILING} token, perché la specifica è il prompt.`
-        : `${firstLine(source)} Under a ${CEILING}-token ceiling, because the specification is the prompt.`,
+        ? `Tutto il linguaggio Heroes, nel file che si dà a un modello: sotto un tetto di ${number(CEILING, lang)} token, perché la specifica è il prompt.`
+        : `The whole Heroes language, in the file a model is handed: under a ${CEILING.toLocaleString('en-US')}-token ceiling, because the specification is the prompt.`,
     html: `\n${html}\n`,
   };
 }

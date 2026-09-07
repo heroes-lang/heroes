@@ -13,8 +13,9 @@
     A model does not have the project open in front of it. It gets one message
     and has to fix the program with that and nothing else, or spend a whole
     round re-reading files, which is the most expensive thing that can happen.
-    So every error message carries three things: the exact place that is wrong,
-    the declaration it clashes with and the repair.
+    So every error message carries the exact place that is wrong. Where the
+    thing it clashes with is declared elsewhere it names that line, and where
+    the repair is known it comes with the message.
   </p>
 
   <h2>The classic inversion</h2>
