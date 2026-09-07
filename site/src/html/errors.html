@@ -65,7 +65,7 @@ $ heroes run program.hero</code></pre>
   <p>
     <code>heroes</code> there is the binary you built: <code>./heroes</code>,
     one clang command away from a fresh clone.
-    <a href="/#run">How to build it →</a>
+    <a href="/start/">How to build it →</a>
   </p>
 
   <h2>Words from other languages, refused with the answer attached</h2>
@@ -123,46 +123,49 @@ tests/golden/check/deleted-int.hero:23:8: <span class="k">error</span>[reserved_
     only part that means anything.
   </p>
   <p>
-    The table below records a completed run over 49 programs in
-    <code>examples/</code>, with 6,254 injected mistakes. Every operator used in
-    that run is here, including the
-    ones where the design does nothing and the two it fails at:
+    The table is one completed run, and the command above it is how you get your
+    own. It covers every program in <code>examples/</code>, and every operator
+    the tool has, including the ones where the design does nothing and the two
+    it fails at:
   </p>
-  <pre class="table"><code><span class="c">mistake injected                   mutants   caught   without the rules</span>
-a dropped argument label               313      76%          0%
-a shadowed name                        285      94%          0%
-a lazy catch-all on a variant          219     100%         63%
-two same-typed arguments swapped       671      74%         61%
-a forgotten @ on a declaration         234      90%         90%
-a dropped variant case                  78     100%        100%
-a dropped ?                             64      86%         86%
-a swapped pair of booleans             132     100%        100%
-a name that was never declared         255     100%        100%
-a typo in a name                      3611     100%        100%
-mixed integer and float arithmetic     376     100%        100%
-<span class="hi">a typo in an error code</span>                  4       0%          0%
-<span class="hi">a typo in a digit</span>                       12       0%          0%</code></pre>
+  <pre class="table"><code>$ heroes mutate examples
+
+<span class="c">mistake injected                       mutants  caught  without the rules</span>
+two arguments swapped in a call           1907     80%                58%
+a positional argument needing a label     1331     66%                 0%
+a shadowed name                            945     95%                 0%
+a lazy catch-all on a variant              457    100%                47%
+a local that takes a module's name        1700    100%                96%
+a dropped ?                                236     95%                82%
+a forgotten @ on a declaration             758     99%                99%
+a dropped variant case                     133    100%               100%
+a swapped pair of booleans                 227    100%               100%
+a name that was never declared             822    100%               100%
+a typo in a name                         10443    100%               100%
+mixed integer and float arithmetic        1492    100%               100%
+<span class="hi">a typo in an error code</span>                     59      0%                 0%
+<span class="hi">a typo in a digit</span>                           68      3%                 3%</code></pre>
   <p>
     <b>The project refuses to average these into one figure</b>, and the tool
-    prints the refusal every time it runs. The reason is in the table. The top
-    four rows are the measurement: a dropped label and a shadowed name go to
-    zero without the thesis rules, because nothing else in a conventional
-    language is looking for either. The middle rows are caught by names and
-    types in any language, so averaging them in would credit the design with
+    prints that refusal every time it runs. The reason is in the table. The
+    first four rows are the measurement: a label that is needed and a shadowed
+    name go to zero or near it without the thesis rules, because nothing else in
+    a conventional language is looking for either. The middle rows are caught by
+    names and types anywhere, so averaging them in would credit this design with
     work it did not do. The forgotten <code>@</code> is excluded from any
-    summary on the project&rsquo;s own instruction, because the mistakes it
-    plants are caught by construction: the two it misses are mutations that
-    changed nothing.
+    summary on the project's own instruction: the mistakes it plants are caught
+    by construction, and the few it misses are mutations that changed nothing.
   </p>
   <p>
-    Three rows are worth reading against the site&rsquo;s own headline. Swapped
-    same-typed arguments are caught 74 per cent of the time, not 100: where a
-    label is optional because the types already differ, nothing is looking. And
-    the last two rows are caught <b>none</b> of the time, in either arm. A typo
-    inside an error code is a string with a letter changed, and no rule
-    constrains how a string is spelled. A typo inside a number is a number, and
-    <code>10</code> is as legal as <code>100</code>. Those two are the honest
-    edge of the whole design: nothing in a type system can see them.
+    Three rows are worth reading against the headline. Swapping two arguments
+    in a call is caught four times in five, not always: where the two share a
+    type the label is mandatory and the swap cannot compile, and where the types
+    differ the label is optional and nothing is looking. And the last
+    two rows are caught almost never, in either arm. A typo inside an error code
+    is a string with a letter changed, and no rule constrains how a string is
+    spelled. A typo inside a number is a number, and <code>10</code> is as legal
+    as <code>100</code>. Those two are the honest edge of the whole design:
+    nothing in a type system can see them.
   </p>
   <p>
     A number that only flattered the design would be useless.

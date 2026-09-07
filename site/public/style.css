@@ -1115,6 +1115,27 @@ p.fingerprint .hash {
   .demo.run pre { font-size: 0.74rem; }
 }
 
+/* The shelf map on the examples index: eight anchors on one line, because the
+   button that brings a visitor here says "see the code" and the shelves are
+   below three paragraphs of prose. */
+p.shelves {
+  font: 0.78rem/1.9 ui-monospace, 'SF Mono', Menlo, monospace;
+  color: var(--dim); margin: 1.6rem 0 0; text-wrap: pretty;
+}
+p.shelves a { text-decoration: none; }
+p.shelves a:hover { text-decoration: underline; }
+
+/* The specification, shown verbatim in one block. It is markdown rather than
+   Heroes, so it is uncoloured, and it is long, so it gets a height and scrolls
+   inside its own frame: a reader who wants the whole thing selects it, and a
+   reader who is browsing is not made to scroll past 250 lines to reach the
+   footer. */
+figure.example.spec pre {
+  max-height: 34rem; overflow: auto; font-size: 0.76rem; line-height: 1.55;
+  color: var(--fg);
+}
+figure.example.spec { margin-bottom: 1.4rem; }
+
 /* == 14. footer =========================================================== */
 
 /* One line, raked from red to blue, with the bolt sitting on it: the last

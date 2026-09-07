@@ -30,7 +30,7 @@
     <a href="/it/errors/">La tabella misurata &rarr;</a>
   </p>
 
-  <h2>Una formula decide i compromessi</h2>
+  <h2>Perché togliere gli errori batte accorciare il codice</h2>
   <pre><code>costo reale = token del programma × (1 + tasso di riscrittura)</code></pre>
   <p>
     I due fattori non sono confrontabili. Una sintassi più compatta risparmia
@@ -86,11 +86,11 @@ graphics, audio, terminal  →  SDL, raylib, ncurses</code></pre>
   </p>
   <p>
     Una conseguenza a cui tutto il resto del design obbedisce: <b>quanto è
-    comodo il confine con il C conta tanto quanto quanto è chiaro il
-    linguaggio, non meno.</b> Una libreria che Heroes non riesce a raggiungere è
+    comodo il confine con il C conta quanto la chiarezza del linguaggio, non
+    meno.</b> Una libreria che Heroes non riesce a raggiungere è
     codice C che il suo autore deve continuare a scrivere a mano, ed è
     esattamente quello che questo rifiuto vuole evitare.
-    <a href="/it/examples/#c">Sei programmi che usano il C &rarr;</a>
+    <a href="/it/examples/#c">I programmi che usano il C &rarr;</a>
   </p>
 
   <h2>Perché il compilatore emette C</h2>
@@ -147,10 +147,11 @@ graphics, audio, terminal  →  SDL, raylib, ncurses</code></pre>
     una sola forma canonica, una parola sola per i cicli, e i nomi degli
     argomenti obbligatori dove i tipi non bastano a distinguerli.</li>
     <li><b>Errori scritti per essere letti da una macchina.</b> Ogni
-    messaggio porta cosa si aspettava il compilatore, dove è dichiarata la cosa
-    con cui va in conflitto, e la riparazione, marcata <code>certain</code>
-    oppure <code>guess</code>. Scrivere <code>???</code> lascia un buco
-    dichiarato e chiede cosa ci va dentro.</li>
+    messaggio porta cosa si aspettava il compilatore e dove; se la cosa con cui
+    va in conflitto è dichiarata altrove, nomina quella riga, e dove la
+    riparazione si conosce arriva marcata <code>certain</code> oppure
+    <code>guess</code>. Scrivere <code>???</code> lascia un buco dichiarato e
+    chiede cosa ci va dentro.</li>
     <li><b>Un programma non deve andare in crash.</b> Dove due design sono
     accettabili e uno dei due si può far cadere, vince l'altro, qualunque cosa
     costi in eleganza o in parole.</li>

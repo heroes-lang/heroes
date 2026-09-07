@@ -2,16 +2,19 @@
   <div class="page-head">
     <h1 class="page">Inizia</h1>
   </div>
-  <p class="lede">Non c'è nessun installer. Serve un compilatore C, e la lista
-  finisce lì.</p>
+  <p class="lede">Non c'è nessun installer. Serve clang 18 o più recente, e la
+  lista finisce lì.</p>
 
   <div class="notice">
     <p><b>Il repository è ancora privato, quindi la prima riga qui sotto non
-    funziona ancora.</b> Tutto quello che nomina è già lì. Gli indirizzi sono
-    definitivi e si aprono insieme al codice.</p>
+    funziona ancora.</b> Gli indirizzi sono definitivi e si aprono insieme al
+    codice. Quello che funziona oggi è su questo sito:
+    <a href="/it/spec/">la specifica</a> da dare a un modello, e
+    <a href="/it/examples/">ogni programma</a> con l'output che stampa
+    davvero.</p>
   </div>
 
-  <h2>Quattro righe</h2>
+  <h2>Quattro comandi</h2>
   <pre><code>$ git clone https://github.com/heroes-lang/heroes
 $ cd heroes
 $ clang -I runtime seed/heroes.c runtime/runtime.c -o heroes
@@ -20,11 +23,10 @@ read 42
 failed: not_a_digit (expected 0-9)
 20</code></pre>
   <p>
-    La terza riga prende <b>meno di quattro secondi</b> su un MacBook Air, che
-    è la macchina da cui viene ogni misura di questo sito. Compila Heroes partendo da
-    un solo file C che ha scritto Heroes stesso: il compilatore è scritto in
-    Heroes, quindi il repository contiene quello che il compilatore emette e
-    clang è l'unica cosa che ti serve.
+    La terza riga prende <b>meno di quattro secondi</b> su un MacBook Air, la
+    macchina da cui viene ogni misura di questo sito. Costruisce il compilatore
+    da un solo file C che il compilatore ha scritto da sé, ed è per questo che
+    ti basta clang.
   </p>
   <p>
     Quella riga in mezzo che dice <code>failed</code> non è la compilazione che
@@ -79,12 +81,21 @@ we can be heroes</code></pre>
     <code>examples/</code>, con il comando che lo esegue e l'output che stampa.
   </p>
 
+  <h2>Se qualcosa va storto</h2>
+  <p>
+    <code>./heroes doctor</code> ti dice cosa manca sulla tua macchina. Ogni
+    messaggio d'errore porta cosa si aspettava il compilatore e dove, e
+    <a href="/it/errors/">come si legge</a> è una pagina a sé. Non c'è ancora un
+    tracciatore di problemi: si apre insieme al codice, e il
+    <a href="/it/log/">registro dei lavori</a> è dove viene annunciato.
+  </p>
+
   <footer>
     <p>Heroes non è ancora impacchettato: nessun installer e nessuna release
     pubblica, quindi la via d'ingresso è un compilatore C e un comando.
     Installarlo con una riga è lavoro in programma e non fatto.</p>
     <p>Fatto da <a href="https://giuseppearici.com/it/">Giuseppe Arici</a>, CTO di Codermine, Brescia. Autore di
     <a href="/it/about/"><i>Gli eroi del codice</i></a>. In piedi sul
-    <a href="/it/about/#thanks">lavoro di molte altre persone</a>.</p>
+    <a href="/it/about/thanks/">lavoro di molte altre persone</a>.</p>
     <p>&copy; 2026 Giuseppe Arici &middot; heroes-lang.org</p>
   </footer>

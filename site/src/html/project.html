@@ -34,7 +34,7 @@ $ cmp out.c seed/heroes.c
     <code>cmp</code> prints nothing, which is how it says the files are the
     same. So the C in the repository is not a copy anybody maintains: it is what
     the compiler writes, and the compiler built from it writes it again. The
-    middle line takes well under a minute on a MacBook Air. Three lines, and
+    middle line takes under a minute on a MacBook Air. Three lines, and
     anybody can run them.
   </p>
   <ul class="stats">
@@ -56,8 +56,8 @@ $ cmp out.c seed/heroes.c
   <p>
     The new compiler refused its own source, claiming a piece of its own
     structure contained itself, which was false. Pulling that thread produced
-    five real faults in the new compiler and four in the old one. Including
-    this one. The underline that shows a reader where an error is was covering
+    five real faults in the new compiler and four in the old one. One of the four
+    was this: the underline that shows a reader where an error is was covering
     the note written on that line to test that underline. The child corrected
     the parent.
   </p>
@@ -147,6 +147,6 @@ $ cmp out.c seed/heroes.c
     still private and opens with the code.</p>
     <p>Built by <a href="https://giuseppearici.com/en/">Giuseppe Arici</a>, CTO at Codermine, Brescia. Author of
     <a href="/about/"><i>Heroes of code</i></a>. Standing on
-    <a href="/about/#thanks">a lot of other people&rsquo;s work</a>.</p>
+    <a href="/about/thanks/">a lot of other people&rsquo;s work</a>.</p>
     <p>&copy; 2026 Giuseppe Arici &middot; heroes-lang.org</p>
   </footer>

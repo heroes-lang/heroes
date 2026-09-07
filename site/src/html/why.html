@@ -28,7 +28,7 @@
     <a href="/errors/">The measured table &rarr;</a>
   </p>
 
-  <h2>One formula decides the trade-offs</h2>
+  <h2>Why removing errors beats shortening code</h2>
   <pre><code>real cost = program tokens × (1 + rewrite rate)</code></pre>
   <p>
     The two factors are not comparable. A more compact syntax saves maybe five
@@ -86,7 +86,7 @@ graphics, audio, terminal  →  SDL, raylib, ncurses</code></pre>
     boundary is ranks alongside how clear the language is, not below it.</b> A
     library Heroes cannot reach is C code its author has to keep writing by
     hand, which is what this refusal exists to prevent.
-    <a href="/examples/#c">Six programs that bind C &rarr;</a>
+    <a href="/examples/#c">The programs that bind C &rarr;</a>
   </p>
 
   <h2>Why the compiler emits C</h2>
@@ -141,9 +141,10 @@ graphics, audio, terminal  →  SDL, raylib, ncurses</code></pre>
     one word for loops, and argument names required where types cannot tell two
     arguments apart.</li>
     <li><b>Errors written to be read by a machine.</b> Every message carries
-    what was expected, where the thing it clashes with was declared, and the
-    repair, tagged <code>certain</code> or <code>guess</code>. Writing
-    <code>???</code> leaves a declared gap and asks what belongs in it.</li>
+    what was expected and where; where the thing it clashes with is declared
+    elsewhere it names that line, and where a repair is known it comes tagged
+    <code>certain</code> or <code>guess</code>. Writing <code>???</code> leaves
+    a declared gap and asks what belongs in it.</li>
     <li><b>A program must not crash.</b> Where two designs are acceptable and
     one can be made to fall over, the other wins, whatever it costs in elegance
     or in words.</li>

@@ -1,0 +1,9 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { renderSpecPage } from '../lib/spec-page.ts';
+
+const page = renderSpecPage('en');
+---
+<BaseLayout url={page.url} title={page.title} description={page.description} current="docs">
+<Fragment set:html={page.html} />
+</BaseLayout>

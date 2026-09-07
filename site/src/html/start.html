@@ -2,16 +2,18 @@
   <div class="page-head">
     <h1 class="page">Start</h1>
   </div>
-  <p class="lede">There is no installer. You need a C compiler, and that is the
-  whole list.</p>
+  <p class="lede">There is no installer. You need clang 18 or newer, and that is
+  the whole list.</p>
 
   <div class="notice">
     <p><b>The repository is still private, so the first line below does not work
-    yet.</b> Everything it names is already there. The addresses are final and
-    they open with the code.</p>
+    yet.</b> The addresses are final and they open with the code. What works
+    today is on this site: <a href="/spec/">the specification</a> to hand to a
+    model, and <a href="/examples/">every program</a> with the output it really
+    prints.</p>
   </div>
 
-  <h2>Four lines</h2>
+  <h2>Four commands</h2>
   <pre><code>$ git clone https://github.com/heroes-lang/heroes
 $ cd heroes
 $ clang -I runtime seed/heroes.c runtime/runtime.c -o heroes
@@ -20,10 +22,9 @@ read 42
 failed: not_a_digit (expected 0-9)
 20</code></pre>
   <p>
-    The third line takes <b>under four seconds</b> on a MacBook Air, which is
-    the machine every measurement on this site comes from. It compiles Heroes out of one C file
-    that Heroes wrote: the compiler is written in Heroes, so the repository
-    ships what it emits and clang is the only thing you need.
+    The third line takes <b>under four seconds</b> on a MacBook Air, the machine
+    every measurement here comes from. It builds the compiler from one C file
+    that the compiler wrote itself, which is why clang is all you need.
   </p>
   <p>
     That middle line saying <code>failed</code> is not the build breaking. It is
@@ -78,12 +79,21 @@ we can be heroes</code></pre>
     prints.
   </p>
 
+  <h2>If something goes wrong</h2>
+  <p>
+    <code>./heroes doctor</code> names what is missing on your machine. Every
+    error message carries what was expected and where, and
+    <a href="/errors/">how to read one</a> is its own page. There is no issue
+    tracker yet: it opens with the code, and the <a href="/log/">build log</a>
+    is where that is announced.
+  </p>
+
   <footer>
     <p>Heroes is not packaged yet: no installer and no public release, so the
     way in is a C compiler and one command. Installing it with one line is
     work that is scheduled and not done.</p>
     <p>Built by <a href="https://giuseppearici.com/en/">Giuseppe Arici</a>, CTO at Codermine, Brescia. Author of
     <a href="/about/"><i>Heroes of code</i></a>. Standing on
-    <a href="/about/#thanks">a lot of other people&rsquo;s work</a>.</p>
+    <a href="/about/thanks/">a lot of other people&rsquo;s work</a>.</p>
     <p>&copy; 2026 Giuseppe Arici &middot; heroes-lang.org</p>
   </footer>
