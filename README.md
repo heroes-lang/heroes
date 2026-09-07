@@ -9,9 +9,9 @@
 <h3 align="center">A whole language in one prompt. It <em>compiles itself</em>.</h3>
 
 <p align="center">
-  <b>233</b> lines: the whole language &nbsp;&middot;&nbsp;
-  <b>3592 / 4096</b> tokens of the spec budget<br>
-  <b>48,690</b> lines of Heroes that compile themselves &nbsp;&middot;&nbsp;
+  the whole language in <b>fewer than 300 lines</b> &nbsp;&middot;&nbsp;
+  measured against a hard ceiling of <b>4096</b> spec tokens<br>
+  <b>more than 50,000</b> lines of Heroes that compile themselves &nbsp;&middot;&nbsp;
   <b>0</b> bytes of difference at the fixpoint
 </p>
 
@@ -65,30 +65,35 @@ guessed, so `heroes check --apply` can write it for you.
 `selfhost/` is this compiler written in Heroes, and the C it emits for its own
 source is `seed/heroes.c`, byte for byte. The version number is a different
 thing: `heroes --version` says which release you hold, releases are tagged
-`vX.Y.Z`, and the number stays below `1.0.0` until a compatibility promise is
-written, because the language still changes between minor versions.
+`vX.Y.Z` and listed under
+[Releases](https://github.com/heroes-lang/heroes/releases), and the number stays
+below `1.0.0` until a compatibility promise is written. What `0.x` promises until
+then is one sentence: **before `1.0.0` the language may change between minor
+versions, and a patch version changes no sentence of the spec.**
 
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/assets/fixpoint-dark.svg">
     <source media="(prefers-color-scheme: light)" srcset="docs/assets/fixpoint-light.svg">
-    <img src="docs/assets/fixpoint-light.svg" alt="The fixpoint: clang compiles seed/heroes.c into the heroes binary in 3.7 s; that binary compiles the 167 files of selfhost/ in 37.8 s; the C it emits for its own source is identical to seed/heroes.c, byte for byte.">
+    <img src="docs/assets/fixpoint-light.svg" alt="The fixpoint: clang compiles seed/heroes.c into the heroes binary in seconds; that binary compiles every module of selfhost/; the C it emits for its own source is identical to seed/heroes.c, byte for byte.">
   </picture>
 </p>
 
-**26 of 37 milestones are closed**, the one in flight is `M-argv-execution` (the
-compiler starts a program by argument list, and the shell stops being the
-boundary), and the acceptance program still runs — a calculator with seven
-passing tests, now four modules rather than one file.
+**More than half the chain is closed.** Which milestone is in flight, and how
+many stand behind it, is `docs/ROADMAP.md` § Where we are — one place, re-measured
+at every close, rather than a number here that goes quietly stale. The acceptance
+program still runs: a calculator with seven passing tests, across four modules.
 
 | working today | not yet |
 |---|---|
-| lexer, parser, formatter, resolver, bidirectional type checker | packages: `use` paths, and where a program's files live |
-| three-address IR with basic blocks, ownership pass, C11 emission, one `.c` per module behind a build cache | threads |
-| value semantics with copy-on-write, refcounted `str`/`[T]`/`{K: V}` | a second backend — the proof that the IR is not C in disguise |
-| generics by monomorphisation, function values, `T?`, `test`/`assert` | an LSP server, and the editor extension |
-| modules, and an FFI that binds raylib, SDL, SQLite and curl with no shim | the rewrite rate — the thesis's third instrument, below |
-| `read_file`/`write_file`, `args()`, `exit(code)` | the two books, and the site |
+| lexer, parser, formatter, resolver, bidirectional type checker | a second backend — the proof that the IR is not C in disguise |
+| three-address IR with basic blocks, ownership pass, C11 emission, one `.c` per module behind a build cache | an LSP server, and the editor extension |
+| value semantics with copy-on-write, refcounted `str`/`[T]`/`{K: V}` | the rewrite rate — the thesis's third instrument, below |
+| generics by monomorphisation, function values, `T?`, `test`/`assert` | an installer of any kind: a tap, a manifest, a flake, an image |
+| packages: `use` paths, and where a program's files live | a compatibility promise, which is why the version stays below `1.0.0` |
+| threads, isolated, with a stack guard that speaks on every one | the two books |
+| an FFI that binds raylib, SDL, SQLite and curl with no shim | |
+| `read_file`/`write_file`, `args()`, `exit(code)` | |
 
 The chain from here is `docs/ROADMAP.md` § The chain. What is already built has
 one journal each, indexed at `docs/journal/README.md`.
@@ -100,17 +105,19 @@ written in C — what it emits when it compiles itself — so there is no chicke
 egg and no Rust:
 
 ```sh
-clang -I runtime seed/heroes.c runtime/runtime.c -o heroes   # 3.7 s, measured
+clang -I runtime seed/heroes.c runtime/runtime.c -o heroes   # seconds
 ./heroes doctor                                             # what this machine has
 ./heroes run examples/gallery/00-first.hero
 ./heroes test examples/calculator/main.hero
 ```
 
 The compiler you get is the real one: it compiles `selfhost/` — its own source,
-**48,690 lines of Heroes across 167 files**, 39,873 of them before the first test
-block — and what it emits for that is `seed/heroes.c` again, byte
-for byte, in 38 s. `seed/README.md` is that ritual, including how to get a compiler back if
-the seed ever stops building today's source.
+**more than 50,000 lines of Heroes across more than 180 files** — and what it
+emits for that is `seed/heroes.c` again, byte for byte, in under a minute.
+`seed/README.md` is that ritual, including how to get a compiler back if the seed
+ever stops building today's source. The digits behind those thresholds are
+whatever the four commands above print on your machine, which is the only place
+a timing means anything.
 
 Every capability is a subcommand or a flag of the one binary — never a second
 binary, never a script, never a Makefile; `heroes --help` prints the current
@@ -135,10 +142,11 @@ and this is it.
 
 The design rule is a cost formula: a construct's cost is its token count times
 one plus the rate at which a model rewrites it wrongly. Two of its three
-instruments have run — the spec's measured size (**3592** tokens of a hard 4096
-ceiling, 504 of headroom, counted by two vendored BPE tables so that neither can
-hide its own drift, with every amendment's cost in
-`docs/measurements/010-spec-budget-ledger.md`) and a mutation-based check over the compiler's own corpus. **The third,
+instruments have run — the spec's measured size, held **under a hard ceiling of
+4096** tokens by a test that fails the day it is crossed, counted by two vendored
+BPE tables so that neither can hide its own drift, with every amendment's cost in
+`docs/measurements/010-spec-budget-ledger.md` and the standing figure in
+`docs/ROADMAP.md` — and a mutation-based check over the compiler's own corpus. **The third,
 the rewrite rate, has not run**, so the formula remains the design rule it always
 was and is not yet an audited one. This is written here rather than discovered by
 a reader, because measurement beats opinion in this project — including the
@@ -167,15 +175,16 @@ reproduce. Attribution is owed by whoever redistributes Heroes itself.
 
 ## Contributing
 
-This is one person learning compilers, on a deliberately unusual set of rules —
-so issues and questions are welcome, and pull requests are not being accepted
-yet. The rules are not decoration: they are in `CLAUDE.md`, and the reason each
-exists is in `design.md` or in a panel session.
+**Issues and questions are welcome. Pull requests are not accepted.** This is one
+person learning compilers, on a deliberately unusual set of rules, and every line
+here goes through them: they are in `CLAUDE.md`, and the reason each one exists is
+in `design.md` or in a panel session. `CONTRIBUTING.md` says the whole policy,
+including what the licence lets you do anyway — Apache-2.0 grants the fork in
+writing, and that is not withdrawn by a repository that is not taking patches.
 
 <p align="center">
-  <sub><a href="https://heroes-lang.org">heroes-lang.org</a> is where this language will live, in
-  English and Italian; today the domain holds one page that says <i>work in progress</i>, and
-  the pages behind it land at <code>M-documentation-site</code>.<br>
+  <sub><a href="https://heroes-lang.org">heroes-lang.org</a> is this language's home, in
+  English and Italian: the guide, the examples that run, and the build log.<br>
   The name is an homage to David Bowie's <i>&ldquo;Heroes&rdquo;</i> (1977), and the
   quotation marks are his. The bolt is borrowed from 1973.</sub>
 </p>
