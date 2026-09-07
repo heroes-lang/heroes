@@ -47,8 +47,7 @@
   <p>
     <code>area.hero</code> e <code>point.hero</code> stanno nella stessa
     cartella, e <code>area.hero</code> scrive comunque il percorso intero. Un
-    vicino non ha una scrittura più corta di un estraneo. Sembra un costo,
-    finché non vedi cosa compra: la riga <code>use geom/point</code> è la
+    vicino non ha una scrittura più corta di un estraneo. Sembra un costo, finché non vedi cosa ci guadagni: la riga <code>use geom/point</code> è la
     stessa riga in <code>main.hero</code>, in <code>geom/area.hero</code> e in
     <code>render/ascii.hero</code>. Puoi copiarla, spostare il file che la
     contiene, leggerla al telefono a qualcuno che non ha l&rsquo;albero delle
@@ -129,10 +128,9 @@ error[module_binding_taken]: this file already calls `render/scale` by the name 
     <code>use render/scale as near_scale</code> dice come
     <em>questo file</em> chiama quel modulo. Un altro file dello stesso
     programma può chiamarlo <code>scale</code> e non nominare mai quello della
-    radice. Il rinomino è locale, e questo è il punto: una collisione la puoi
+    radice. La rinomina è locale, e questo è il punto: una collisione la puoi
     sempre risolvere nel file in cui capita, senza toccare un modulo che non
-    hai scritto tu. Il programma stampa <code>10</code> per lo scale della
-    radice e <code>3</code> per quello del vicino, quindi i due sono davvero
+    hai scritto tu. Il programma stampa <code>10</code> per lo <code>scale</code> della radice e <code>3</code> per quello del vicino, quindi i due sono davvero
     due.
   </p>
 
@@ -141,8 +139,9 @@ error[module_binding_taken]: this file already calls `render/scale` by the name 
     <code>use geom/point</code> mette <code>point</code> dentro il file come
     farebbe qualunque altra cosa, quindi nient&rsquo;altro in quel file può
     prenderselo. Una variabile chiamata <code>point</code> lì accanto è lo
-    stesso errore di ombreggiatura che ti ha già mostrato il
-    <a href="/it/docs/bindings-and-mutation/">capitolo 6</a>:
+    stesso errore che ti ha già mostrato il
+    <a href="/it/docs/bindings-and-mutation/">capitolo 6</a>, un nome che ne
+    nasconde un altro:
   </p>
   <pre><code>$ heroes check shapes/main.hero
 error[shadowed_binding]: `point` is what this file calls the module `geom/point`, so a local may not take it — shadowing is an error here
@@ -178,7 +177,7 @@ error[shadowed_binding]: `point` is what this file calls the module `geom/point`
     <a href="/it/errors/">la pagina degli errori</a>, che è l&rsquo;altra metà
     di questa documentazione &middot; <a href="/it/why/">perché il linguaggio
     è fatto così</a>.
-    <span class="back">&larr; Precedente: <a href="/it/docs/the-c-boundary/">Il confine con il C</a></span>
+    <span class="back">&larr; Prima: <a href="/it/docs/the-c-boundary/">Il confine con il C</a></span>
   </p>
 
   <p class="next away">
@@ -196,6 +195,6 @@ error[shadowed_binding]: `point` is what this file calls the module `geom/point`
     variabile rinominata in <code>point</code>.</p>
     <p>Fatto da <a href="https://giuseppearici.com/it/">Giuseppe Arici</a>, CTO di Codermine, Brescia. Autore di
     <a href="/it/about/"><i>Gli eroi del codice</i></a>. Sulle spalle
-    <a href="/it/about/thanks/">di un sacco di altre persone</a>.</p>
+    <a href="/it/about/thanks/">di molte altre persone</a>.</p>
     <p>&copy; 2026 Giuseppe Arici &middot; heroes-lang.org</p>
   </footer>

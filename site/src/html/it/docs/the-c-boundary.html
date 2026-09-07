@@ -97,7 +97,7 @@ error[ffi_return_type]: `puts` does not return `cstr` — that is what `stdio.h`
     il C.
   </p>
   <p>
-    Un&rsquo;altra riga che il confine traccia mentre il programma gira, oggi. Una
+    C&rsquo;è un&rsquo;altra riga che il confine traccia, e la traccia mentre il programma gira. Una
     funzione Heroes passata al C può essere richiamata su un thread creato dalla
     libreria, e lì viene fermata alla prima istruzione, con il suo nome nel
     messaggio, perché qui ogni thread possiede la sua memoria e un thread
@@ -161,16 +161,13 @@ error[ffi_return_type]: `puts` does not return `cstr` — that is what `stdio.h`
   <p>
     Un gruppo può anche dichiarare una <code>constant</code>, il cui valore
     arriva dall&rsquo;header e non dal tuo file, e un <code>record</code> che
-    ricalca una struct C campo per campo. Tutti e due vengono controllati allo
-    stesso modo, da clang, contro la cosa vera.
+    ricalca una struct C campo per campo. Tutti e due vengono controllati allo stesso modo, da clang, sulla cosa vera.
   </p>
   <p>
     Un parametro può anche essere una <b>funzione</b>: una tua, passata a una
     libreria C che la richiamerà. Va di là e non torna indietro, quindi un
-    gruppo può prenderne una e non può restituirne una, e clang ne controlla la
-    firma contro l&rsquo;header come tutto il resto. Non tutte le callback del C
-    sono ancora raggiungibili. Dove l&rsquo;header dice dei puntatori più di
-    quanto questo compilatore sappia ancora controllare, e quello di
+    gruppo può prenderne una e non può restituirne una, e clang ne controlla la firma sull&rsquo;header come tutto il resto. Non tutte le callback del C
+    sono ancora raggiungibili. Dove l&rsquo;header, sui puntatori, dice più di quanto questo compilatore sappia ancora controllare, e quello di
     <code>qsort</code> lo fa, il compilatore rifiuta sulla tua riga e nomina il
     buco invece di tirare a indovinare.
   </p>
@@ -202,8 +199,7 @@ error[ffi_return_type]: `puts` does not return `cstr` — that is what `stdio.h`
 the 16:9 diagonal of a 1920-wide screen: 2202.9071700822983</code></pre>
   <p>
     Due librerie C, quattro dichiarazioni, nessun wrapper e nessun generatore di
-    binding. Nel repository, SQLite, curl, SDL e raylib sono legati allo stesso
-    modo: un gruppo, un header, e le dichiarazioni che servono a quel programma.
+    binding. Nel repository, SQLite, curl, SDL e raylib sono collegati allo stesso modo: un gruppo, un header, e le dichiarazioni che servono a quel programma.
   </p>
 
   <h3>E quello è il linguaggio</h3>
@@ -215,8 +211,7 @@ the 16:9 diagonal of a 1920-wide screen: 2202.9071700822983</code></pre>
   </p>
 
   <p class="next">
-    Resta un capitolo: <a href="/it/docs/modules/">I moduli e i file</a>, che è
-    dove un programma più grande di un file li mette.
+    Resta un capitolo: <a href="/it/docs/modules/">I moduli e i file</a>, che è il posto in cui un programma più grande di un file li mette.
     <span class="back">&larr; Prima: <a href="/it/docs/tests-and-holes/">Test e buchi</a></span>
   </p>
 
@@ -233,6 +228,6 @@ the 16:9 diagonal of a 1920-wide screen: 2202.9071700822983</code></pre>
     cambiato, compilato come <code>ffi.hero</code>.</p>
     <p>Fatto da <a href="https://giuseppearici.com/it/">Giuseppe Arici</a>, CTO di Codermine, Brescia. Autore di
     <a href="/it/about/"><i>Gli eroi del codice</i></a>. Sulle spalle
-    <a href="/it/about/thanks/">di un sacco di altre persone</a>.</p>
+    <a href="/it/about/thanks/">di molte altre persone</a>.</p>
     <p>&copy; 2026 Giuseppe Arici &middot; heroes-lang.org</p>
   </footer>

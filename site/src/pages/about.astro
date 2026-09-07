@@ -3,6 +3,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import { page } from '../lib/figures.ts';
 import content from '../html/about.html?raw';
 ---
-<BaseLayout url="/about/" title={'About: Giuseppe Arici, the book, and who wrote this'} description={'Giuseppe Arici, CTO at Codermine in Brescia, author of Heroes of code. He had never written a compiler before this one. And who did what on this project.'} current="about">
+<BaseLayout url="/about/" title={'About: Giuseppe Arici, the book, and who wrote this'} description={'Giuseppe Arici, CTO at Codermine in Brescia, author of Heroes of code. He had never written a compiler before this one. Who did what on this project.'} current="about">
 <Fragment set:html={page(content, 'site/src/html/about.html')} />
 </BaseLayout>

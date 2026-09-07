@@ -32,8 +32,7 @@
   <pre><code>real cost = program tokens × (1 + rewrite rate)</code></pre>
   <p>
     The two factors are not comparable. A more compact syntax saves maybe five
-    per cent of a file. One correction round costs five hundred to two thousand
-    tokens, because the model reads the error, re-reads the file, rewrites a
+    per cent of a file. One correction round costs hundreds of tokens and often thousands, because the model reads the error, re-reads the file, rewrites a
     function and recompiles. On a three-thousand-token program,
     <b>one correction round eats ten syntax savings.</b>
   </p>
@@ -170,7 +169,7 @@ graphics, audio, terminal  →  SDL, raylib, ncurses</code></pre>
     carry on with memory that is wrong. Where two designs are acceptable and one
     can be made to reach an address nobody checked, the other wins, whatever it
     costs in elegance or in words.</li>
-    <li><b>Small enough to compile itself.</b> The whole specification fits
+    <li><b>Small enough to fit in a prompt.</b> The whole specification fits
     under a hard ceiling of 4,096 tokens, which a test asserts on every commit:
     five pages, written to be handed to a model rather than shelved.
     <a href="/spec/">Read it &rarr;</a></li>
@@ -203,7 +202,7 @@ graphics, audio, terminal  →  SDL, raylib, ncurses</code></pre>
     conversion is still written by hand, and the word <code>int</code> is an
     error that lists the sizes to choose from.</dd>
     <dt>Why is the formatting rigid, exactly four spaces, tabs an error?</dt>
-    <dd>So that "nearly right" is a compile failure instead of a silently
+    <dd>So that &ldquo;nearly right&rdquo; is a compile failure instead of a silently
     different program. A canonical formatter takes every style decision away
     from the writer, which means any textual difference between two programs
     is a difference in meaning.</dd>
@@ -227,9 +226,7 @@ graphics, audio, terminal  →  SDL, raylib, ncurses</code></pre>
     boundary is the one values already force: a thread gets its own memory, and
     whatever crosses into it or back out is copied rather than shared. So there
     is nothing to lock and nothing to race, and the compiler refuses a thread
-    body that tries to carry a list across. What this is good at is sending a
-    small thing and getting a number back. What it is bad at is shuttling large
-    values in and out to do very little with them, and that is a real limit
+    body that tries to carry a list across. It suits sending a small thing in and getting a number back. It is poor at shuttling large values in and out to do little with them, and that is a real limit
     rather than a missing feature.
     <a href="/examples/threads/">The program that does it &rarr;</a></dd>
     <dt>Is it not just a smaller version of an existing language?</dt>

@@ -33,9 +33,9 @@
     <figcaption>examples/shapes/main.hero, lines 19&ndash;23</figcaption>
   </figure>
   <p>
-    Six modules in three directories. Nothing there is surprising yet. What is
-    worth stopping on is the file two directories down, which reaches the
-    module sitting right next to it:
+    Six modules in three directories. Nothing there is surprising yet. Stop on
+    the file one directory down, which reaches the module sitting right next to
+    it:
   </p>
   <figure class="example" data-src="examples/shapes/geom/area.hero" data-lines="8-11">
 <pre><code><span class="k">use</span> geom/point
@@ -114,7 +114,7 @@ error[module_binding_taken]: this file already calls `render/scale` by the name 
      |     ^^^^^
   note: the two modules may both exist and both be used — `as` says what THIS file calls each one, and two files may name the same module differently</code></pre>
   <p>
-    The repair is on the line the compiler pointed at, and it is one clause:
+    The repair is the <code>as</code> clause on line 22 of the file above, and with it both names are usable:
   </p>
   <figure class="example" data-src="examples/shapes/main.hero" data-lines="38-39">
 <pre><code>    print(scale.factor())

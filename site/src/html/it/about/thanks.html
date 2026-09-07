@@ -30,8 +30,7 @@
     <a href="https://en.wikipedia.org/wiki/Ken_Thompson">Ken Thompson</a>, che ha
     scritto B, il linguaggio da cui è uscito il C, e Unix insieme a Ritchie; e
     <a href="https://en.wikipedia.org/wiki/Brian_Kernighan">Brian Kernighan</a>,
-    coautore del libro che l&rsquo;ha insegnato a tutti. Tutta la Parte 11 del
-    progetto si appoggia sul fatto che il loro linguaggio è ancora lì, e ancora
+    coautore del libro che l&rsquo;ha insegnato a tutti. Tutta la parte del progetto che parla con il C si appoggia sul fatto che il loro linguaggio è ancora lì, e ancora
     collegabile.</li>
     <li><b>LLVM, clang</b>: <a href="https://en.wikipedia.org/wiki/Chris_Lattner">Chris Lattner</a>.
     Heroes non verifica da sé una dichiarazione esterna: si organizza perché lo
@@ -59,7 +58,7 @@
     Value Semantics</i>. La frase su cui Heroes si appoggia è loro: i riferimenti
     non possono essere conservati in variabili o campi, quindi tutti i valori
     formano alberi separati. Tutto quello che a questo linguaggio non serve
-    (un borrow checker, un raccoglitore di cicli, le annotazioni sulla
+    (un borrow checker, un rilevatore di cicli, le annotazioni sulla
     durata di vita) è assente per via di quella riga.</li>
     <li><b>Swift</b>: <a href="https://en.wikipedia.org/wiki/Chris_Lattner">Chris Lattner</a>, Doug
     Gregor, John McCall, Ted Kremenek e Joe Groff. Il copy-on-write sopra il
@@ -122,7 +121,7 @@
     qui. E anche la taratura: il rapporto su Oberon in sedici pagine è quanto
     può essere lunga una specifica. Pascal-P4, circa quattromila righe, ha
     mostrato una volta quanto poco basta a un compilatore per compilare se
-    stesso; è storia, non una misura a cui questo progetto si tiene. Wirth ha
+    stesso; è storia, non un traguardo che questo progetto si è dato. Wirth ha
     anche
     scritto un intero sistema operativo in un linguaggio senza puntatori grezzi, e
     non c&rsquo;è argomento più forte a favore di tutto questo approccio.</li>
@@ -166,8 +165,7 @@
     senza generici.</li>
     <li><b>Nim</b>: <a href="https://nim-lang.org">Andreas Rumpf</a>. Il meccanismo per chiamare funzioni
     esterne, la cache di build per modulo, e <code>nim r</code>, che è
-    <code>heroes run</code>. E anche l&rsquo;avvertimento che il progetto si
-    ripete da solo: copia la superficie di Nim, mai la sua implementazione.</li>
+    <code>heroes run</code>. E anche l&rsquo;avvertimento che il progetto continua a ripetersi: copia la superficie di Nim, mai la sua implementazione.</li>
     <li><b>Zig</b>: Andrew Kelley. I test che vivono nel file che testano,
     e le stringhe terminate da NUL che possono passare nel C senza nessuna
     conversione.</li>
@@ -278,11 +276,8 @@
     quel motivo.</li>
     <li><b>APL</b> di nuovo, nella direzione opposta: la notazione
     ultracompatta è l&rsquo;unico punto in cui questo progetto cita
-    <a href="https://en.wikipedia.org/wiki/Kenneth_E._Iverson">Iverson</a> contro
-    se stesso: la brevità che un occhio umano può imparare è esattamente quello in
-    cui un modello linguistico fallisce.</li>
-    <li><b>R e MATLAB</b> di nuovo: documentano entrambi, onestamente, lo
-    stesso modo di fallire che ha Heroes: scrivi un ciclo che cambia un elemento
+    <a href="https://en.wikipedia.org/wiki/Kenneth_E._Iverson">Iverson</a> contro se stesso. La brevità che un occhio umano può imparare è esattamente il punto in cui un modello linguistico fallisce.</li>
+    <li><b>R e MATLAB</b> di nuovo: documentano entrambi, onestamente, lo stesso modo di fallire che ha Heroes. Scrivi un ciclo che cambia un elemento
     alla volta su una struttura condivisa e paghi una copia ogni volta. Il
     progetto lo dice ad alta voce invece di nasconderlo.</li>
     <li><b>Unison</b>: Paul Chiusano e Rúnar Bjarnason. Il codice

@@ -3,6 +3,6 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 import { page } from '../../../lib/figures.ts';
 import content from '../../../html/it/docs/a-first-program.html?raw';
 ---
-<BaseLayout url="/it/docs/a-first-program/" title={'Un primo programma, documentazione di Heroes'} description={"A un file Heroes non serve niente intorno: niente import, niente header, niente file di progetto. L'indentazione è la struttura, i commenti sono la documentazione, e un file è un modulo."} current="docs">
+<BaseLayout url="/it/docs/a-first-program/" title={'Un primo programma: documentazione di Heroes'} description={"A un file Heroes non serve niente intorno: niente import, niente header, niente file di progetto. L'indentazione è la struttura, i commenti sono la documentazione, e un file è un modulo."} current="docs">
 <Fragment set:html={page(content, 'site/src/html/it/docs/a-first-program.html')} />
 </BaseLayout>

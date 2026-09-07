@@ -74,7 +74,7 @@ error[non_exhaustive]: this `match` does not cover `.close`
   19 |     return match t
      |            ^</code></pre>
 
-  <h3>And there is no <code>_</code> to hide behind</h3>
+  <h3>There is no <code>_</code> to hide behind</h3>
   <p>
     In most languages you would answer that error with a catch-all arm. Here
     that arm does not exist over a variant, and the message says why:
@@ -87,8 +87,7 @@ error[wildcard_on_variant]: `_` is not allowed as an arm over `Token` — name e
      |         ^</code></pre>
   <p>
     <code>_</code> is still fine where being exhaustive is impossible
-    (matching on an <code>i64</code> or a <code>str</code>), because there
-    the alternative is not a check, it is an infinite list.
+    (matching on an <code>i64</code> or a <code>str</code>), because there the alternative is not a check but an infinite list.
   </p>
 
   <h3>Adding a case breaks every place that reads it</h3>
@@ -117,8 +116,7 @@ error[non_exhaustive]: this `match` does not cover `.minus`
   <p>
     Three errors, one per place in the file that reads a token, each pointing at
     the <code>match</code> that now has a hole in it. Nothing runs until a human
-    or a model has decided what a minus sign is called, what its
-    binding power is, and whether it is an operator. <b>A change to the shape of
+    or a model has decided what a minus sign is called, how tightly it binds, and whether it is an operator. <b>A change to the shape of
     the data breaks the code that reads it, loudly, at build time.</b> With a
     catch-all arm, all three of those questions would have been answered
     silently and wrongly, and the program would have run.

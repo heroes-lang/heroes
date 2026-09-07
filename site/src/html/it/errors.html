@@ -48,12 +48,12 @@
 
   <h2>Due tipi di riparazione, uno solo applicabile in automatico</h2>
   <p>
-    Una correzione marchiata <code>certain</code> è una correzione che il
+    Una correzione marcata <code>certain</code> è una correzione che il
     compilatore ha <i>calcolato</i>, non tirato a indovinare: il tipo che ha
     appena dedotto lui, l&rsquo;unico nome simile che esiste in quel punto del
     programma. Il comando <code>heroes check --apply</code> applica quelle e
     lascia stare le altre, quindi quello che ne esce è più vicino, non per forza
-    finito. Una correzione marchiata <code>guess</code> è un
+    finito. Una correzione marcata <code>guess</code> è un
     suggerimento per chi legge, e nessuno strumento la applica al posto tuo, mai:
     tirare a indovinare una correzione che un modello applicherebbe a occhi
     chiusi è peggio che spiegare.
@@ -75,11 +75,11 @@ $ heroes run program.hero</code></pre>
   </p>
   <p>
     Una famiglia di errori aspetta la compilazione. Una dichiarazione presa in
-    prestito dal C viene verificata contro l&rsquo;header vero della libreria, e chi
+    prestito dal C viene verificata sull&rsquo;header vero della libreria, e chi
     legge quell&rsquo;header è clang, che gira con <code>heroes build</code>. Quindi
     un file il cui unico sbaglio è una funzione C scritta male passa
     <code>heroes check</code> senza una parola e viene rifiutato un attimo dopo,
-    sulla stessa riga, con la risposta dell&rsquo;header attaccata.
+    sulla stessa riga, con la risposta dell&rsquo;header allegata.
     <a href="/it/docs/the-c-boundary/">Cosa dice la compilazione &rarr;</a>
   </p>
 
@@ -138,14 +138,13 @@ hole at examples/gallery/09-holes.hero:28:74
   <h2 id="measured">Come si misura</h2>
   <p>
     <code>heroes mutate</code> misura queste affermazioni. Prende programmi che funzionano,
-    inietta un errore plausibile alla volta, e conta quanti il compilatore
+    inietta uno sbaglio plausibile alla volta, e conta quanti il compilatore
     trasforma in errori di compilazione. Poi passa lo stesso corpus allo stesso
     compilatore con le regole della tesi disattivate. La differenza fra le due
     colonne è l&rsquo;unica parte che significa qualcosa.
   </p>
   <p>
-    La tabella è una prova completa, e il comando qui sopra è come ottieni la
-    tua. Copre tutti i programmi in <code>examples/</code> e tutti gli operatori
+    La tabella è una prova completa, e con il comando qui sopra te ne fai una tua. Copre tutti i programmi in <code>examples/</code> e tutti gli operatori
     che lo strumento ha, compresi quelli dove il design non fa niente e i due
     dove fallisce:
   </p>
@@ -189,16 +188,14 @@ aritmetica mista fra interi e float           1492   100%             100%
     non cambiavano niente.
   </p>
   <p>
-    Tre righe vanno lette contro quello che questo stesso sito dichiara in prima
-    pagina. Scambiare due argomenti in una chiamata viene preso quattro volte
+    Tre righe vanno confrontate con quello che questo stesso sito dichiara in prima pagina. Scambiare due argomenti in una chiamata viene preso quattro volte
     su cinque, non sempre: dove i due hanno lo stesso tipo l&rsquo;etichetta è
     obbligatoria e lo scambio non compila, e dove i tipi differiscono
-    l&rsquo;etichetta è facoltativa e non lo sta cercando nessuno. E le ultime due righe quasi non
-    vengono mai prese, in nessuno dei due casi. Un errore di battitura
+    l&rsquo;etichetta è facoltativa e non lo sta cercando nessuno. E le ultime due righe non vengono quasi mai prese, in nessuno dei due casi. Un errore di battitura
     dentro un codice d&rsquo;errore è una stringa con una lettera cambiata, e
     nessuna regola vincola come si scrive una stringa. Un errore di battitura
     dentro un numero è un numero, e <code>10</code> è legale esattamente come
-    <code>100</code>. Quelle due righe sono il bordo onesto di tutto il design:
+    <code>100</code>. Quelle due righe sono il limite onesto di tutto il design:
     non c&rsquo;è sistema di tipi che le possa vedere.
   </p>
   <p>
@@ -213,6 +210,6 @@ aritmetica mista fra interi e float           1492   100%             100%
   <footer>
     <p>Fatto da <a href="https://giuseppearici.com/it/">Giuseppe Arici</a>, CTO di Codermine, Brescia. Autore di
     <a href="/it/about/"><i>Gli eroi del codice</i></a>. Sulle spalle
-    <a href="/it/about/thanks/">di un sacco di altre persone</a>.</p>
+    <a href="/it/about/thanks/">di molte altre persone</a>.</p>
     <p>&copy; 2026 Giuseppe Arici &middot; heroes-lang.org</p>
   </footer>

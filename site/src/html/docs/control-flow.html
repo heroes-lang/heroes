@@ -51,8 +51,8 @@ error[not_bool]: an `if` condition must be `bool`, found `i64` — there is no t
     takes each element in turn and the variable is a fresh copy each time round.
   </p>
   <p>
-    The <code>@</code> on <code>best</code> is the other half of this chapter and
-    gets <a href="/docs/bindings-and-mutation/">the next chapter</a> to itself. In one line:
+    The <code>@</code> on <code>best</code> has
+    <a href="/docs/bindings-and-mutation/">the next chapter</a> to itself. For now:
     <code>best: i64 @ floor</code> declares a name that is allowed to change,
     and <code>best @ x</code> changes it. A name bound with <code>=</code>
     cannot change, ever, so the mutable parts of a program are exactly the lines

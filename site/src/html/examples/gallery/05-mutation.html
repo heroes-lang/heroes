@@ -1,3 +1,3 @@
 <p class="tagline">Every value is an independent copy. Nothing points at anything.</p>
 
-<p>After <code>b = a</code>, changing <code>b</code> cannot change <code>a</code>. A function that needs to change its argument says so with <code>@</code>, in the signature and at every call, so a call that modifies cannot look like a call that reads.</p>
+<p>After <code>b: [i64] @ a</code>, changing <code>b</code> cannot change <code>a</code>. A function that needs to change its argument says so with <code>@</code>, in the signature and at every call, so a call that modifies cannot look like a call that reads.</p>

@@ -93,7 +93,7 @@ error[ffi_return_type]: `puts` does not return `cstr` — that is what `stdio.h`
     types make the boundary visible; they do not make C safe.
   </p>
   <p>
-    One more line the boundary draws at run time, today. A Heroes function handed to C
+    One line the boundary draws while the program runs rather than at build time. A Heroes function handed to C
     may be called back on a thread the library made, and there it is stopped at
     its first instruction, with its name in the message, because each thread
     here owns its memory and a foreign thread owns none of it. Call it from the
@@ -163,9 +163,8 @@ error[ffi_return_type]: `puts` does not return `cstr` — that is what `stdio.h`
     library that will call it back. It goes out and never comes back, so a
     group may take one and may not return one, and clang checks its signature
     against the header like everything else. Not every C callback is reachable
-    yet. Where the header says more about the pointers than this compiler can
-    yet check, and <code>qsort</code>&rsquo;s does, the compiler refuses on your
-    line and names the hole rather than guessing.
+    yet. Where the header says more about the pointers than the compiler can
+    yet check, as <code>qsort</code>&rsquo;s does, it refuses on your line and names the hole rather than guessing.
   </p>
   <p>
     And a declaration can name the function that frees what it hands back, with

@@ -40,7 +40,7 @@ failed: not_a_digit (expected 0-9)
   </p>
   <pre><code>$ HEROES_RUNTIME=~/heroes/runtime heroes run hello.hero</code></pre>
   <p>
-    It says exactly that when it cannot find it, and it prints the way out. If
+    When <code>heroes run</code> cannot find the runtime it says so and prints that line. If
     something else is missing, <code>./heroes doctor</code> names it.
   </p>
 
@@ -69,11 +69,11 @@ we can be heroes</code></pre>
   </p>
   <p>
     <code>heroes fmt</code> prints the one canonical form of a file: same
-    indentation, same line breaks, same order. Every Heroes file the project
-    calls source comes back from it unchanged, byte for byte, so a difference
-    between two versions of a file is a difference in what the program does.
-    The exceptions are the test fixtures written to be refused, which the
-    formatter leaves alone because the text is the fixture.
+    indentation, same line breaks, same order. Every source file in the project,
+    the compiler included, comes back from it unchanged, byte for byte, so a
+    difference between two versions of a file is a difference in what the
+    program does. The only files it leaves alone are the test fixtures written to
+    be refused, because there the text is the fixture.
   </p>
   <p>
     <a href="/examples/">Every example on this site</a> is a file in

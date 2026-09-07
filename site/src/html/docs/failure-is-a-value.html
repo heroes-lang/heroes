@@ -18,10 +18,10 @@
     model, can see it without opening another file.
   </p>
 
-  <h3>A type that means "or an error"</h3>
+  <h3>A type that means &ldquo;or an error&rdquo;</h3>
   <p>
     Write <code>i64?</code> and you have said: this is a whole number, or an
-    error explaining why there isn&rsquo;t one. There is no third possibility, and
+    error explaining why there is not one. There is no third possibility, and
     there is no way to use the number without dealing with the other case.
     Inside such a function, <code>ok(v)</code> makes the good answer and
     <code>fail(code, msg)</code> makes the bad one:
@@ -39,8 +39,7 @@
     <b>code</b>, <code>"not_a_digit"</code>, is a short, stable name in
     snake_case, meant to be compared by a program: it is the part that does not
     change when somebody improves the wording. The <b>message</b> is for
-    whoever reads the failure. Codes are how you branch on what went wrong;
-    messages are how you explain it.
+    whoever reads the failure. 
   </p>
 
   <h3>Handing a failure upwards: <code>?</code></h3>
@@ -71,8 +70,7 @@
     function, but it does it from a line that looks like it cannot.
   </p>
   <p>
-    Three other things are visible in that function, and each one has a chapter
-    of its own.
+    Three other things are visible in that function, and two of them have chapters of their own.
   </p>
   <p>
     <code>total: i64 @ 0</code> declares something that will change: the
@@ -133,8 +131,8 @@
     after it: <code>.ok v</code> gives you the value as <code>v</code>, and
     <code>_</code> discards a payload you do not need. Both arms are required. A
     <code>match</code> that forgets a case does not compile. <b>A catch-all arm
-    is forbidden here</b>. You cannot write the arm that means "anything
-    else", because that arm is how a forgotten case silently becomes a handled
+    is forbidden here</b>. You cannot write the arm that means &ldquo;anything
+    else&rdquo;, because that arm is how a forgotten case silently becomes a handled
     one. If the language ever gains a third possibility, every
     <code>match</code> in every program stops compiling until somebody has
     looked at it. That is the intent: a change to the shape of the data should
@@ -205,9 +203,7 @@ failed: not_a_digit (expected 0-9)
     Every function&rsquo;s signature tells you whether it can fail. Every place a
     failure changes the control flow is marked on that line. Every way of
     handling one either deals with both cases or says out loud that it is
-    skipping the check. There is no <code>null</code> to forget and no throw to
-    miss, and the unhandled path: the one bug that no compiler catches in the
-    languages that allow it, has nowhere left to hide.
+    skipping the check. There is no <code>null</code> to forget and no throw to miss. The unhandled path, the one bug no compiler catches in the languages that allow it, has nowhere left to hide.
   </p>
 
   <p class="next">

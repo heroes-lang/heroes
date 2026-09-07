@@ -6,8 +6,7 @@
 
   <p>
     A map is written <code>{K: V}</code> and holds values under keys. When you
-    ask for a key that is not there, most languages introduce <code>null</code>,
-    gets in, or an exception, or a silently invented zero. Here it is a type.
+    ask for a key that is not there, most languages hand you <code>null</code>, or an exception, or a silently invented zero. Here you get a type.
   </p>
 
   <h3><code>m[k]</code> is a <code>V?</code>, not a <code>V</code></h3>
@@ -25,7 +24,7 @@ error[type_mismatch]: expected `i64`, found `i64?`
   <p>
     <code>i64?</code> is the fallible type from
     <a href="/docs/failure-is-a-value/">chapter 4</a>: a number, or an error
-    saying why there isn&rsquo;t one. For a missing key that error always has
+    saying why there is not one. For a missing key that error always has
     the code <code>missing_key</code>. The question <i>what if it is not there</i>
     is therefore part of the result&rsquo;s type. You cannot use the number until
     you answer it.
@@ -65,7 +64,7 @@ error[type_mismatch]: expected `i64`, found `i64?`
   </figure>
   <p>
     <b><code>.must()</code></b>: take the value, and stop the program if
-    there isn&rsquo;t one. It is safe here because the line above has just
+    there is not one. It is safe here because the line above has just
     checked, and that is the shape to use it in: <code>.must()</code> after a
     proof, never as a way to get past the type.
   </p>

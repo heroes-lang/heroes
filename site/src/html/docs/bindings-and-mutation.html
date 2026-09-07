@@ -5,7 +5,7 @@
   <p class="tagline">One symbol marks everything in a program that can change.</p>
 
   <p>
-    Two lines out of three in most code do not change anything. The trouble is
+    Most lines in most code do not change anything. The trouble is
     that they look exactly like the ones that do, so finding the part of a
     program that moves means reading all of it. Here the moving parts carry a
     mark, and there is only one.
@@ -84,14 +84,14 @@ error[shadowed_binding]: `start` is already in scope, bound at line 30 — shado
     detail does not change how you write the program.
   </p>
   <p>
-    Note also <code>b @ b.push(4)</code>. <code>push</code> hands back a new
+    <code>b @ b.push(4)</code> is the other thing to see. <code>push</code> hands back a new
     array rather than changing one in place, so the result has to be put
     somewhere, and the <code>@</code> is where it goes.
   </p>
 
   <h3>When a function does need to change its argument</h3>
   <p>
-    Copies everywhere would make a cursor over some text impossible to write, so
+    Copies everywhere would make a cursor over some text painful to write, so
     there is one exception, and it is spelled out on both sides of the call. A
     parameter marked <code>@</code> is changed by the function:
   </p>
