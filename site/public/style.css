@@ -63,6 +63,10 @@
   --blue: #3f7bff;
   --link: #7aa2ff;
   --gold: #e8b552;
+  /* The display gold is the same ink at quotation-mark size. In dark they are
+     one colour (#e8b552 measures 10.44:1 and needs no help); light splits them,
+     because a token bound by 11px text is brown at 90px. */
+  --gold-display: var(--gold);
   --code: #d6dcf2;
 
   /* The author's portrait is printed as two plates: `--plate-dark` for the
@@ -109,6 +113,7 @@
     --blue: #1f4fd8;
     --link: #1a45c4;
     --gold: #8a5a00;
+    --gold-display: #b87d20;
     --code: #23345a;
     --plate-light: #f6efe0;
     --grain-opacity: 0.05;
@@ -189,6 +194,7 @@ main > * { grid-column: text; }
 main > pre,
 main > figure,
 main > .stats,
+main > ul.cards,
 main > ol.chapters,
 main > ol.tracks,
 main > ul.seats,
@@ -216,7 +222,9 @@ main:not(.home) > h2::after {
   content: counter(sec, decimal-leading-zero);
   position: absolute; left: 0.1rem; top: 1.35rem;
   font-weight: 700; font-size: 2.1rem; line-height: 1;
-  color: color-mix(in srgb, var(--fg) 12%, transparent);
+  /* Measured at 1.36:1 dark and 1.30:1 light, which is not a wayfinding
+     device: on a dimmed screen it is not there at all. 22% is still quiet. */
+  color: color-mix(in srgb, var(--fg) 22%, transparent);
   letter-spacing: -0.02em; pointer-events: none;
 }
 @media (max-width: 900px) { main:not(.home) > h2::after { display: none; } }
@@ -329,7 +337,9 @@ h1 {
 }
 /* Bowie's own quotation marks, in the album's own irony. */
 h1 .q {
-  color: var(--gold); font-size: 0.82em; vertical-align: 0.05em;
+  /* The DISPLAY gold: `--gold` is bound by 11px nods and reads as mustard at
+     90px on paper, measured. In dark the two are one colour. */
+  color: var(--gold-display); font-size: 0.82em; vertical-align: 0.05em;
 }
 
 .bolt {
@@ -420,6 +430,9 @@ blockquote::before {
 }
 
 ul.pillars { list-style: none; padding: 0; margin: 1.4rem 0; }
+/* 1.6rem rather than 1.1: at a 1.72 leading the old gap put 46.5px between
+   bullets against 29.5px inside a wrapped one, and four claims read as one
+   paragraph with dashes. */
 ul.pillars li {
   margin: 1.1rem 0; padding-left: 1.5rem; position: relative;
   text-wrap: pretty;
@@ -500,9 +513,21 @@ pre {
   background-image:
     linear-gradient(to right, var(--card) 40%, transparent),
     linear-gradient(to left,  var(--card) 40%, transparent),
-    radial-gradient(farthest-side at 0 50%, rgba(0,0,0,0.28), transparent),
-    radial-gradient(farthest-side at 100% 50%, rgba(0,0,0,0.28), transparent);
-  background-position: left center, right center, left center, right center;
+    /* Two things were wrong here and only one of them was the colour.
+       The colour: `rgba(0,0,0,0.28)` over a #14141d card is #0e0e15, a black
+       shadow on a near-black ground. The edge takes its value from the ink
+       instead, so on the stage it is a lift and on paper a shade, one rule for
+       both themes.
+       The shape, and this was the bigger half: these were RADIAL, so they faded
+       vertically as well and a tall block showed its edge only at its own
+       mid-height. Fixing the colour alone still measured a luminance delta of
+       2.3 at the edge, because the sample was nowhere near that mid-height.
+       Linear, and the whole edge says it. Measured over the `interpreter`
+       page's tallest scrolling block, 4,689px, at 2%, 50% and 98% of its
+       height: dark 41.9 / 40.0 / 42.0, light 41.6 / 41.6 / 41.1. */
+    linear-gradient(to left, color-mix(in srgb, var(--fg) 26%, transparent), transparent),
+    linear-gradient(to right, color-mix(in srgb, var(--fg) 26%, transparent), transparent);
+  background-position: left center, right center, right center, left center;
   background-size: 3rem 100%, 3rem 100%, 1.1rem 100%, 1.1rem 100%;
   background-repeat: no-repeat;
   background-attachment: local, local, scroll, scroll;
@@ -541,7 +566,13 @@ pre .h { color: var(--red); font-style: italic; }  /* ??? — a hole is a questi
 /* Real diagnostics have long message lines and short caret lines. Wrapping
    lets the message reflow into the column while the caret rows — which are
    short — keep the alignment that makes them mean anything. */
-pre.diag { white-space: pre-wrap; }
+/* A diagnostic is a figure and not prose: the caret's meaning IS its column,
+   so the block scrolls rather than reflows. The rule here used to be
+   `pre-wrap`, on the premise that the message lines reflow while the short
+   caret lines keep their alignment. Rendered at 390px, that premise is false:
+   the caret rows do survive, and the SOURCE line above them does not, so the
+   caret ends up under nothing. Found by the design seat, which rendered it. */
+pre.diag { white-space: pre; overflow-x: auto; }
 
 /* A measured table, set as one row of monospace text. `.hi` is the row the
    prose singles out: caught none of the time, in either arm. It is marked
@@ -638,12 +669,14 @@ figure.example figcaption::before { content: '\21B3\00A0'; color: var(--dim); }
   background: color-mix(in srgb, var(--card) 60%, transparent);
   font: 0.71rem/1.5 ui-monospace, 'SF Mono', Menlo, monospace; color: var(--dim);
 }
+/* No window chrome. The bar names the file, and a poster is not a window; the
+   three dots also spent gold on decoration, and gold on this site is the
+   quotation colour and nothing else (site/README.md § The visual system). One
+   red mark stays, because the bolt's red is what marks a panel as this site's. */
 .demo .bar::before {
   content: ''; width: 0.5rem; height: 0.5rem; border-radius: 50%;
   background: var(--red); flex: none;
-  box-shadow: 0.75rem 0 0 color-mix(in srgb, var(--gold) 70%, transparent),
-              1.5rem 0 0 color-mix(in srgb, var(--blue) 70%, transparent);
-  margin-right: 1.5rem;
+  margin-right: 0.65rem;
 }
 /* The demo card's `bar` names the file, so it is that block's caption and the
    figure carries no second one. */
@@ -678,6 +711,10 @@ figure.example figcaption::before { content: '\21B3\00A0'; color: var(--dim); }
   font-weight: 700; letter-spacing: 0.01em; font-variant-numeric: tabular-nums;
 }
 .figures .what {
+  /* Two lines reserved, so a longer label in one edition cannot knock the three
+     columns out of line in the other: measured on the Italian home, where the
+     first label wraps and the other two do not. */
+  min-height: calc(2 * 1.45 * 0.72rem);
   display: block; margin-top: 0.3rem;
   font: 0.72rem/1.45 ui-monospace, 'SF Mono', Menlo, monospace;
   color: var(--dim);
@@ -835,7 +872,9 @@ main p.lede {
   color: var(--dim); margin: 0 0 2.2rem;
 }
 h1.chapter {
-  font-size: clamp(2rem, 5.5vw, 2.5rem); letter-spacing: 0.005em;
+  /* A path is the title on 132 pages, so it has to survive the longest one at
+     360px. 5.5vw never reaches the 2rem floor there, so the floor was the bug. */
+  font-size: clamp(1.5rem, 7vw, 2.5rem); letter-spacing: 0.005em;
   text-transform: none; line-height: 1.15;
   font-family: Georgia, 'Iowan Old Style', 'Times New Roman', serif;
   font-weight: 700; text-wrap: balance;
@@ -1131,10 +1170,62 @@ p.shelves a:hover { text-decoration: underline; }
    reader who is browsing is not made to scroll past 250 lines to reach the
    footer. */
 figure.example.spec pre {
-  max-height: 34rem; overflow: auto; font-size: 0.76rem; line-height: 1.55;
+  /* A whole number of lines, so the frame never severs one. It used to be a
+     round 34rem, which landed mid-glyph on a `64` and showed the reader an
+     amputated line on the page the primary button points at. And the scroll
+     shadows in § 7 are left and right only, so a block that scrolls DOWN said
+     nothing: these are the same technique rotated, the ink-coloured edge from
+     the same repair, and LINEAR for the same reason. A radial edge on a block
+     this wide is a lens: it says its piece in the middle of the width and
+     nothing at either end. Measured across the frame's own 784px at 1200px
+     wide, from left edge to right: 25.2 / 22.6 / 22.1 / 23.9 / 23.9. */
+  max-height: calc(30 * 0.76rem * 1.55 + 2.3rem);
+  overflow: auto; font-size: 0.76rem; line-height: 1.55;
   color: var(--fg);
+  background-image:
+    linear-gradient(to bottom, var(--card) 40%, transparent),
+    linear-gradient(to top,    var(--card) 40%, transparent),
+    linear-gradient(to top,    color-mix(in srgb, var(--fg) 26%, transparent), transparent),
+    linear-gradient(to bottom, color-mix(in srgb, var(--fg) 26%, transparent), transparent);
+  background-position: top center, bottom center, bottom center, top center;
+  background-size: 100% 2.4rem, 100% 2.4rem, 100% 0.8rem, 100% 0.8rem;
+  background-repeat: no-repeat;
+  background-attachment: local, local, scroll, scroll;
 }
 figure.example.spec { margin-bottom: 1.4rem; }
+
+/* What the design seat found by rendering at 390px, which nobody had done.
+   Each of these was measured before and after in a 390px iframe, because
+   Chrome on macOS will not open a window narrower than about 590px and a
+   `--window-size=390` screenshot silently renders at 590 and clips. */
+@media (max-width: 700px) {
+  /* A long heading wraps as one flex item and leaves `::before` behind, so the
+     bolt sits alone on a line above its own title. Inline instead, and the nod
+     drops below rather than fighting for the same row. */
+  h2 { display: block; }
+  h2::before { display: inline-block; margin-right: 0.55rem; vertical-align: -0.08em; }
+  h2 .nod { display: block; margin: 0.35rem 0 0; }
+}
+
+@media (max-width: 620px) {
+  /* Stacked, a pill sized by its own text reads as an accident beside a pill
+     sized by different text. One column, both full width, and the fill against
+     the outline is what says which is which. */
+  .cta { display: grid; grid-template-columns: 1fr; gap: 0.7rem; }
+  .cta a { text-align: center; }
+}
+
+/* The caption under the home's demo broke as "read this one" then a lone
+   arrow. An arrow on its own line is not a link, it is a stray glyph. */
+.demo .under a { white-space: nowrap; }
+
+/* A paragraph that opens with inline code lost its left margin, because the
+   code's own padding pushed the first letter 5px right of every other
+   paragraph on the page. Visible on /start/, twice. */
+p > code:first-child, li > code:first-child { margin-left: -0.3em; }
+
+/* A path is a title on 132 pages and some of them are 21 characters. */
+h1.chapter code { overflow-wrap: anywhere; }
 
 /* == 14. footer =========================================================== */
 
