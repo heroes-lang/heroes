@@ -26,13 +26,23 @@ themes, and the rules behind it live in `site/README.md` § Style guide and
    count taken in the session that writes it. Markdown is also greppable, which
    an SVG label is not in practice.
 
-2. **A number that does stay in a picture names its command and its date in the
-   file comment.** The fixpoint diagram keeps three, by author decision on the
-   same day: the seed build, the emission and the seed's size. Its comment says
-   what was run and when, so the next reader can re-run it instead of trusting
-   it. Where the figure moves at nearly every commit, the picture rounds it: the
-   seed says `22 MB` rather than its byte count, which changes whenever the
-   compiler regenerates it.
+2. **No picture here carries a measured number, and rule 1 now has no
+   exception** (author instruction 2026-09-08, *"do not put exact numbers in the
+   README, otherwise I have to update it a thousand times"*, applied to the
+   picture inside it). **This rule read the other way until then**: the fixpoint
+   diagram was allowed to keep three by author decision on 2026-08-31 — the seed
+   build, the emission and the seed's size — on the condition that its comment
+   named what was run and when, so a reader could re-run them instead of
+   trusting them.
+
+   **Nobody re-ran them, which is the finding.** By 2026-09-08 two of the three
+   had moved: the drawing said `167 files` where the compiler had 189, and a
+   seed build that is faster than the figure printed. The rounding that was
+   supposed to protect the third did not, either — `22 MB` is still a measured
+   quantity and still grows. The boxes now say the shape, `one file of C11`,
+   `seconds`, `every module`, and the digits come from the four commands in
+   `README.md` § Build and try it, run on the reader's own machine. What the
+   picture claims is the loop and its last line, and neither is a number.
 
 3. **Twins differ ONLY in their palette block.** A layout change is made twice or
    not at all. The palette block is the first thing in each file for exactly this
