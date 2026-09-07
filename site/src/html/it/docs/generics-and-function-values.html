@@ -147,6 +147,15 @@ error[type_mismatch]: expected `bool`, found `i64`
     una funzione che restituisce una stringa. Nessuno dei due punti di chiamata
     lo dice, e tutti e due sono controllati per intero.
   </p>
+  <p>
+    Come si compila merita una frase, perché decide quanto costa un generico. Il
+    compilatore fa una copia di <code>each</code> per ogni tipo concreto con cui
+    viene usato, quindi nel C che esce c&rsquo;è un <code>each</code> sugli
+    interi e un <code>each</code> separato sulle stringhe, ognuno diretto come
+    se l&rsquo;avessi scritto a mano. Niente viene cercato mentre il programma
+    gira e niente viene impacchettato. Il prezzo si paga nella dimensione del
+    binario, una volta per tipo, e mai nella velocità di una chiamata.
+  </p>
   <figure class="example" data-src="examples/gallery/06-generics.hero" data-lines="55-56">
 <pre><code><span class="k">function</span> main()
     print(combine([<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>, <span class="n">4</span>], <span class="n">0</span>, add))</code></pre>

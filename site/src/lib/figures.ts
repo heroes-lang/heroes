@@ -27,6 +27,7 @@
 import { readText, isFile } from './repo.ts';
 import { plain } from './highlight.ts';
 import { version } from './tables.ts';
+import { checkClaims } from './claims.ts';
 
 /** One figure, as the check reads it. */
 interface Figure {
@@ -143,6 +144,10 @@ export function checkFigures(html: string, pagePath: string): void {
  */
 export function page(html: string, pagePath: string): string {
   checkFigures(html, pagePath);
+  // The prose's own numbers, against the tree. The code blocks were the first
+  // thing this function checked and the prose around them was the last thing
+  // anybody did, which is where four false claims in one day came from.
+  checkClaims(html, pagePath);
   return fillVersion(html, pagePath);
 }
 

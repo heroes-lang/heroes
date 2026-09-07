@@ -603,7 +603,12 @@ is allowed to do, so a later edit does not spend the same accent twice. The page
 is a stage with **one light source, one motif, one quotation colour**, and
 everything else is paper and ink.
 
-- **One light.** The red/blue wash lives behind the home hero and nowhere else.
+- **One light.** The red/blue wash is drawn behind the home hero and nowhere
+  else, and its tail reaches under the three stat cards below it: the rule is
+  145% of the hero's height, so the ground under the cards measures about eight
+  levels of 255 off the paper, inside the grain budget below. Measured by the
+  design seat at 1200px light; recorded rather than corrected, because a light
+  that stopped dead at the hero's edge would read as a box.
   It is absolutely positioned and wider than the page on purpose, which is why
   `html, body { overflow-x: clip }` exists: without it a phone scrolls sideways
   into empty gradient. `clip` rather than `hidden`, or the sticky nav goes with
@@ -894,6 +899,22 @@ Three rules follow, and they bind every later edit:
   answers nothing). The compiler is
   `find selfhost -name '*.hero' | wc -l` (165) and `| xargs wc -l` (48,342), and
   the seed is `wc -l -c seed/heroes.c` (798,556 lines, 23,248,564 bytes).
+- **A number in prose is a claim, and the build checks the ones it knows.**
+  `src/lib/claims.ts` reads a fact from the one place the tree keeps it and
+  asserts the page spells it, in the edition's own number word: the seats of the
+  panel and how many carry a veto from `.claude/agents/`, the words that can
+  begin a top-level line from the parser's own dispatch loop, the verbs of the
+  one command from the argv table, the chapters from the directory. Twelve
+  claims across eight fragments today, run by `page()` on every hand-written
+  page. What provoked it is one sentence from the language veteran's seat after
+  four sittings: every false claim it had found was in hand-written prose making
+  a claim about a magnitude or a named thing, while everything a machine checked
+  was right. Four words that can start a line where the parser has seven; three
+  judges who can refuse where four do; twelve chapters beside thirteen. **A
+  claim not in the table is a claim only a reader checks**, so a sentence that
+  names a count enters the table when it is written. Broken on purpose to prove
+  it fires: `Six words can begin a line` stops the build and names the page,
+  the claim, the tree's seven and the sentence shape it expected.
 - **Compiler output shown on the page is verbatim**, path and test annotations
   included. A trimmed-for-looks diagnostic is a fabricated diagnostic: the
   first draft of this refresh shortened one and got the caret width, the line
