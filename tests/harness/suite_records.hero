@@ -315,8 +315,21 @@ constant REFUSED: [str]
 # is moved by hand, and `REFUSED` gains THREE names in the same move, which is one
 # more than the two previous inserts: the author was offered three candidates and
 # the two not taken are refused here beside the name that never reached them.
+#
+# **63 -> 64 on 2026-09-08**, `M-open-repository`, scheduled by author
+# instruction: the repository stops being private. **It is the first id inserted
+# ahead of an OPEN milestone rather than appended after the last scheduled one**
+# — it takes row 38 and `M-discard-refusal` goes back to `scheduled`, which is
+# honest because not a line of that milestone had landed. The insert renumbers
+# rows 38 to 59 into 39 to 60, so this file is not the only instrument the move
+# touches: eleven citations of a chain row by number inside `docs/ROADMAP.md`
+# were converted to the milestone's NAME instead of to a new number, on the
+# 2026-09-03 precedent that a reorder moves a number and never a name — and two
+# of those eleven were already pointing at the wrong row before this milestone
+# existed. The id enters with its chain row in the same commit, so this number
+# is moved by hand here rather than read off a red run.
 constant ROWS: i64
-    63
+    64
 
 # **`WATCHED` stood here until 2026-09-07 and nothing had read it since
 # 2026-08-19.** It listed `design.md` and `CLAUDE.md` as *"the two documents whose

@@ -33,9 +33,9 @@ with what each one measured in the git history and in `DESIGN-LOG.md`):
 
 | | |
 |---|---|
-| **Current milestone** | **M-discard-refusal** — **OPEN**, row 38: `_ =` on a fallible value becomes a compile error. The verdict is the author's and given (`/decide` answer `3a`, 2026-09-03); the sitting is still owed, because a spec clause and a diagnostic class are both language (CLAUDE.md §4) |
+| **Current milestone** | **M-open-repository** — **OPEN**, row 38: the repository stops being private, and the twenty-odd sentences that promise it will open stop promising. Inserted here by author instruction 2026-09-08, ahead of `M-discard-refusal`, which had no line of its own landed |
 | **Last closed** | **M-declared-freer**, 2026-09-07, tag `m-declared-freer` ([036](journal/036-declared-freer.md)) — five steps, two sittings, four `internal error`s repaired. `owned <C function>` frees the string C hands you, in both positions · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
-| Milestones closed | **37** of 59 · **37** tags |
+| Milestones closed | **37** of 60 · **37** tags |
 | The compiler | **55,050** lines of Heroes in **189** modules · the seed **747,095** lines of C · runtime ABI **21**, unmoved: the mark needed no runtime entry point, because the release is built out of instructions the IR already had |
 | The spec | **3903** of a hard 4096 · headroom **193** — moved at panel 117's ratification the same day, which narrowed the `assert` sentence and said what `print` takes; the cell said 3871 until the site rebuild re-ran `heroes measure` |
 | Records | sittings **115** · journals **37** · examples **54** programs plus the gallery's **12** single-file ones, **118** files, **545** `test` blocks · open defects **0** · the site **180** pages, 90 English and 90 Italian, of which **134** are the examples browser generated from `examples/` at build time |
@@ -149,28 +149,29 @@ and why one overtook another are under the table, in § Who scheduled what.
 | 35 | **M-isolated-threads** | done 2026-09-06 | `m-isolated-threads` | [034](journal/034-isolated-threads.md) | Part 7.13 concurrency: three of four measured corruption classes closed, and the door was in the checker |
 | 36 | **M-thread-stacks** | done 2026-09-06 | `m-thread-stacks` | [035](journal/035-thread-stacks.md) | the guard speaks on every thread, and a worker's floor is the thread that ran `main` · **§1.12**
 | 37 | **M-declared-freer** | done 2026-09-07 | `m-declared-freer` | [036](journal/036-declared-freer.md) | `owned <C function>`: the string C hands you is freed by the name its own declaration gives · **§1.12**
-| 38 | **M-discard-refusal** | **OPEN** | — | — | `_ =` on a fallible value becomes a compile error · **§1.1**
-| 39 | **M-closures-verdict** | scheduled | — | — | the ruling on Part 7 items 1 and 12, closures and inline blocks — a decision, not a feature |
-| 40 | **M-interpolation-verdict** | scheduled | — | — | the ruling on design.md Part 7 item 7, string interpolation — a decision, not a feature |
-| 41 | **M-reflection-verdict** | scheduled | — | — | the ruling on reflection — at run time, and as compile-time derivation over a record's fields — and, since 2026-09-06, on a general annotation mechanism · a decision, not a feature |
-| 42 | **M-deferral-ledger** | scheduled | — | — | every Part 7 item with no milestone gets a dated verdict or a return condition |
-| 43 | **M-check-completeness** | scheduled | — | — | what `heroes check` accepts, `heroes build` compiles — through a generic too · scheduled, no warrant
-| 44 | **M-core-packages** | scheduled | — | — | small packages that compose, organised as Go's tree, in Heroes or over C |
-| 45 | **M-package-manager** | scheduled | — | — | `heroes add`/`heroes fetch`; bindings instead of a standard library |
-| 46 | **M-web-framework** | scheduled | — | — | composes the core packages, Go/Echo style: explicit routes, records, no magic |
-| 47 | **M-doc-generator** | scheduled | — | — | `heroes doc`, the one direction Part 6's literate-source row promises · scheduled, no warrant |
-| 48 | **M-panic-location** | scheduled | — | — | a panic names the `.hero` file, line and function · **§1.12** |
-| 49 | **M-typed-inspection** | scheduled | — | — | a stopped program shows Heroes values: the name the author typed, and `[T]`, `{K: V}`, `T?`, a variant and a record shown as themselves · scheduled, no warrant |
-| 50 | **M-generated-programs** | scheduled | — | — | programs nobody wrote: a generator that composes valid Heroes and knows the answer before the compiler is asked · **§1.12** |
-| 51 | **M-thesis-harness** | scheduled | — | — | Part 11's metrics 2 and 4 run for the first time, as a Heroes program · **§1.1** |
-| 52 | **M-lsp-server** | scheduled | — | — | `heroes lsp`, and the incremental frontend it needs |
-| 53 | **M-vscode-extension** | scheduled | — | — | the extension, complete |
-| 54 | **M-qbe-backend** | scheduled | — | — | Part 7 item 15 — the proof that the IR is not C in disguise |
-| 55 | **M-journey-book** | scheduled | — | — | the journey — how this language came to be |
-| 56 | **M-guide-book** | scheduled | — | — | the guide, as a book you would find in a shop · **§1.1** |
-| 57 | **M-install-channels** | scheduled | — | — | a Homebrew tap, winget, a Nix flake, a Docker image, all built from the seed and pinned to a `v*` release tag; the version scheme itself was decided ahead, 2026-09-07 |
-| 58 | **M-online-compiler** | scheduled | — | — | the compiler reached without installing anything: the site's visitor writes Heroes and gets its answer · scheduled, no warrant |
-| 59 | **M-publication-gate** | scheduled | — | — | the last gate before anything goes outward · CLAUDE.md §14 |
+| 38 | **M-open-repository** | **OPEN** | — | — | the repository opens, and every page that says it is shut stops saying so · CLAUDE.md §14
+| 39 | **M-discard-refusal** | scheduled | — | — | `_ =` on a fallible value becomes a compile error · **§1.1**
+| 40 | **M-closures-verdict** | scheduled | — | — | the ruling on Part 7 items 1 and 12, closures and inline blocks — a decision, not a feature |
+| 41 | **M-interpolation-verdict** | scheduled | — | — | the ruling on design.md Part 7 item 7, string interpolation — a decision, not a feature |
+| 42 | **M-reflection-verdict** | scheduled | — | — | the ruling on reflection — at run time, and as compile-time derivation over a record's fields — and, since 2026-09-06, on a general annotation mechanism · a decision, not a feature |
+| 43 | **M-deferral-ledger** | scheduled | — | — | every Part 7 item with no milestone gets a dated verdict or a return condition |
+| 44 | **M-check-completeness** | scheduled | — | — | what `heroes check` accepts, `heroes build` compiles — through a generic too · scheduled, no warrant
+| 45 | **M-core-packages** | scheduled | — | — | small packages that compose, organised as Go's tree, in Heroes or over C |
+| 46 | **M-package-manager** | scheduled | — | — | `heroes add`/`heroes fetch`; bindings instead of a standard library |
+| 47 | **M-web-framework** | scheduled | — | — | composes the core packages, Go/Echo style: explicit routes, records, no magic |
+| 48 | **M-doc-generator** | scheduled | — | — | `heroes doc`, the one direction Part 6's literate-source row promises · scheduled, no warrant |
+| 49 | **M-panic-location** | scheduled | — | — | a panic names the `.hero` file, line and function · **§1.12** |
+| 50 | **M-typed-inspection** | scheduled | — | — | a stopped program shows Heroes values: the name the author typed, and `[T]`, `{K: V}`, `T?`, a variant and a record shown as themselves · scheduled, no warrant |
+| 51 | **M-generated-programs** | scheduled | — | — | programs nobody wrote: a generator that composes valid Heroes and knows the answer before the compiler is asked · **§1.12** |
+| 52 | **M-thesis-harness** | scheduled | — | — | Part 11's metrics 2 and 4 run for the first time, as a Heroes program · **§1.1** |
+| 53 | **M-lsp-server** | scheduled | — | — | `heroes lsp`, and the incremental frontend it needs |
+| 54 | **M-vscode-extension** | scheduled | — | — | the extension, complete |
+| 55 | **M-qbe-backend** | scheduled | — | — | Part 7 item 15 — the proof that the IR is not C in disguise |
+| 56 | **M-journey-book** | scheduled | — | — | the journey — how this language came to be |
+| 57 | **M-guide-book** | scheduled | — | — | the guide, as a book you would find in a shop · **§1.1** |
+| 58 | **M-install-channels** | scheduled | — | — | a Homebrew tap, winget, a Nix flake, a Docker image, all built from the seed and pinned to a `v*` release tag; the version scheme itself was decided ahead, 2026-09-07 |
+| 59 | **M-online-compiler** | scheduled | — | — | the compiler reached without installing anything: the site's visitor writes Heroes and gets its answer · scheduled, no warrant |
+| 60 | **M-publication-gate** | scheduled | — | — | the last gate before anything goes outward · CLAUDE.md §14 |
 
 Three closed milestones have no tag of their own because they were parents or
 sub-steps: **M-checker-core**, **M-data-declarations** and **M-rich-diagnostics**
@@ -281,18 +282,18 @@ row number, because a reorder moves a number and never a name (CLAUDE.md §14).
   step 13 was already `heroes fetch`, and question (ii) of their opening sitting
   decides where a package lives, which is what `fetch` has to know. The `fetch`
   step moves to M-package-manager together with the root-level driver.
-- **M-doc-generator** — row 42, **accepted against the recommendation**:
+- **M-doc-generator** — **accepted against the recommendation**:
   `heroes doc` is in the record once, as the promise in Part 6's literate-source
   row, and CLAUDE.md §10's stopping rule refused two ROADMAP-scheduled verbs
   before it (`docs/measurements/003` rider 3, `outline` and `explain`). It
   stands after M-web-framework so that its witness — the packages' own API —
   exists, and its entry names the rule as the first question of its opening.
-- **M-panic-location** — row 43, the cheapest half of *"a strong runtime"*: a
+- **M-panic-location** — the cheapest half of *"a strong runtime"*: a
   panic today prints `panic: <msg>` and aborts with no line and no function
   (`runtime/parts/panic.c`), while the emitted C already carries `#line`. Placed
   after the runtime leaves M-isolated-threads' hands; it depends on nothing else
   and may be taken the day the threads land.
-- **M-thesis-harness** — row 44: Part 11's metrics 2 and 4 have never run, and
+- **M-thesis-harness** — Part 11's metrics 2 and 4 have never run, and
   the instrument is a Heroes program over the HTTP client M-core-packages
   delivers. **The author's decision the same night**: a small seed of tasks
   written by the author at its opening, the bulk still at M-guide-book as decided
@@ -300,11 +301,11 @@ row number, because a reorder moves a number and never a name (CLAUDE.md §14).
 - **M-lsp-server takes the incremental frontend** — the `SCHEDULED.md` item that
   asked *which milestone does it* has its answer: a server that re-checks on every
   save cannot wait 8 s for `heroes check` on the compiler's own source.
-- **M-qbe-backend after the tools** — row 47, from 38: the proof that the IR is
+- **M-qbe-backend after the tools** — moved behind them at the reorder: the proof that the IR is
   target-agnostic is worth most when the IR has stopped moving, and every ruling
   above it may move it. Its cells said *Part 7.14* and now say item 15: item 14
   has been declaration visibility since panel 033 (`design.md:2562`, `:2579`).
-- **M-install-channels** — row 50, before the gate: a Homebrew tap, winget, a Nix
+- **M-install-channels** — before the gate: a Homebrew tap, winget, a Nix
   flake and a Docker image, all building from the seed with the one clang line,
   because `heroes` without clang compiles nothing and a prebuilt binary alone
   would be a decoy; prepared and tested in private, published as the gate's
@@ -347,7 +348,7 @@ row number, because a reorder moves a number and never a name (CLAUDE.md §14).
     that its two items had been parked on a `grep` since 2026-08-16 with no row to
     read them. The phrase is the record's own: *check accepts ⇒ build succeeds*,
     false today wherever a generic stands between the rule and the type.
-- **M-online-compiler** — **row 56, scheduled by author instruction 2026-09-06**,
+- **M-online-compiler** — **scheduled by author instruction 2026-09-06**,
   placed immediately before the gate for M-install-channels' reason and not for
   its subject: everything here is built and tested in private, and the outward
   act is the gate's. **It reverses half of a recorded refusal, and the row says
@@ -361,7 +362,7 @@ row number, because a reorder moves a number and never a name (CLAUDE.md §14).
   visitor's program, and it is the milestone's whole subject — measured the day
   the row entered, **20 of 56** programs under `examples/` declare an `extern`,
   so what a stranger may name is a decision before it is an engine.
-- **M-generated-programs** — **row 49, scheduled by author instruction
+- **M-generated-programs** — **scheduled by author instruction
   2026-09-06**, placed after M-panic-location by the author out of four options
   put with a recommendation: *"Consider adding a step to the roadmap, towards the
   end, called something like consolidation — you say when it makes sense, maybe
@@ -395,7 +396,7 @@ row number, because a reorder moves a number and never a name (CLAUDE.md §14).
   new verb — so §10's stopping rule is not touched and the tool convenes no
   sitting; what may convene one is a repair that reaches the language.
 
-- **M-typed-inspection** — **row 49, scheduled by author instruction 2026-09-06**:
+- **M-typed-inspection** — **scheduled by author instruction 2026-09-06**:
   *"I would like to add a step that implements a debugger for the Heroes language,
   a first thinking over all the possibilities, and then tell me as well where you
   want to put it in the roadmap."* Rows 49–58 each move down one; the numbers in
@@ -929,6 +930,51 @@ the marked declaration's unit, and that unit includes only its own groups'
 headers, so a freer declared in another module cannot be called. Anything that
 later widens where an `extern` is reachable from touches this.
 
+### M-open-repository — the repository opens
+
+**Scheduled and placed at row 38 by author instruction 2026-09-08**, ahead of
+M-discard-refusal, which had no line of its own landed and went back to
+`scheduled`. It is the mirror of 2026-09-03, when the author reversed the launch
+order and published the site with the repository shut
+(`site/README.md` § Launch order); the price that decision named was the
+sentences that say *not yet*, and this milestone pays it.
+
+**It is not M-publication-gate and does not open it.** The gate is the outward
+act of a finished thing: the thesis measured, the compatibility paragraph
+written, the channels installed from their public addresses. This milestone
+delivers one narrower fact, that the source can be read, and it is a new id
+rather than a step of the gate for the reason M-thesis-harness and
+M-install-channels are: what it delivers stands with or without the rest.
+
+**What the day actually turns on, and it is not the switch.** The site is
+already public and says in more than twenty sentences, over nine pages in two
+editions, that the repository is not — the download command *"is not available
+yet"*, the issue tracker *"will open when the code becomes public"*, and
+`GitHub · private` in the nav of every page. Nothing in the tree checks any of
+it: `site/src/lib/claims.ts` verifies numbers and named things and says so
+itself (*"it cannot verify a sentence it does not know about"*). So the work is
+the prose and the instrument that will catch it next time, and the switch is the
+last minute of it.
+
+**Three things measured on 2026-09-08 that the plan did not assume.** Forking
+cannot be disabled on a public repository — GitHub's policy covers private
+organisation repositories only, and Apache-2.0 grants the fork in writing, so
+the contribution policy is *declared* and `main` is *protected*, never enforced
+by a setting that does not exist. The vendored-licence re-check this file has
+owed since August was run against the upstreams rather than against this
+project's recollection, and it disagreed: `openai/tiktoken` is MIT as recorded,
+but `anthropics/anthropic-tokenizer-typescript` carries a **MIT** `LICENSE` and
+a `package.json` declaring **Apache-2.0** in the same archived commit, where
+`NOTICE` said MIT alone. And `docs/environment/windows/WINDOWS-MACHINE.md`
+published a rented machine's tailnet address, login user, key path and OS build,
+which is a targeting profile rather than a credential and is redacted to its
+shape.
+
+**What it does not deliver**, so that the gate keeps them: Part 11's metric 2,
+the 1.0.0 compatibility paragraph (only 0.x's one sentence is published here),
+the trademark question, the install channels, and any new release — the compiler
+does not move in this milestone, so `VERSION` does not either.
+
 ### M-discard-refusal — `_ =` stops swallowing a failure
 
 **Scheduled 2026-09-03 by author decision** (`/decide` answer `3a`), out of
@@ -1168,7 +1214,7 @@ general syntax pays CLAUDE.md §9's tooling bill once rather than once per word 
 true, and the cheap half, because the check each word carries in the checker is
 the expensive half and a general syntax does not pay it. A decorator in Python's
 sense, a function that takes a function and gives back another, needs a closure
-to build and is M-closures-verdict's (row 39), named here and not judged.
+to build and is M-closures-verdict's, named here and not judged.
 Measured 2026-09-07: `decorator` appears three times across design.md, `spec/`,
 `docs/panel/`, `DESIGN-LOG.md`, `docs/work/`, this file and CLAUDE.md — the prior's
 refusal in `spec/reserved-words.md:30` and FastAPI twice — and zero times in any
@@ -1392,7 +1438,7 @@ installing a package means recompiling the world on every build. **Since
 2026-08-25 there is a second one in front of it** — M-package-layout, which rules
 on how a fetched package's modules are named and reached; `heroes add` cannot
 place files it has no spelling for. **And since 2026-09-03 the packages themselves
-stand in front of it**: M-core-packages, row 39, whose step 13 — `heroes fetch`
+stand in front of it**: M-core-packages, whose step 13 — `heroes fetch`
 under the root, the root-level driver and the `heroes check` item panel 091 filed
 here — moved into this milestone, because one distributes what exists. **One
 question its sitting owes, found the same night**: pinning what `fetch` brings —
@@ -1433,7 +1479,7 @@ routes as a table of function values, `(function(Request) -> Response)` keyed by
 method and path — top-level functions are values (`spec:112-117`); records for
 request and response; middleware as a chain of functions, because v1 has no
 closures (`selfhost/emit/ctype.hero:375-380`) — or in whatever shape
-M-closures-verdict rules, which sits at row 35 so that this sentence is decided
+M-closures-verdict rules, which the chain puts first so that this sentence is decided
 before the framework is written; templates from `html/template`,
 bodies from `encoding/json`, rows from `database/sql`. No metaprogramming and no
 dynamic dispatch: the Rails and Django shape rests on Part 6's own rows
@@ -2160,6 +2206,8 @@ So a number met in the record resolves here, and only here.
 | `M-online-compiler` | — | — | the compiler reached without installing anything: the site's visitor writes Heroes and gets its answer. **A new id and not a step of `M-documentation-site` or `M-install-channels`** (§14): the site closed 2026-09-02 delivering pages anchored to programs that run, and the channels deliver installation, while this one delivers the case where nothing is installed at all. **Deliberately neither `M-wasm-playground` nor `M-browser-compiler`**: the engine is this milestone's own opening question, so an id naming either would claim exactly what the sitting exists to decide, and `wasm` has to stay free for the later half of Part 7 item 15 (`design.md:2645`). Scheduled 2026-09-06 by author instruction with **no warrant** |
 | `M-generated-programs` | — | — | programs nobody wrote, and the defects they find: a generator that composes valid Heroes by construction, knows what each program must print before the compiler is asked, and reduces every disagreement to a case. **A new id and not a fourth corpus** (§14, author instruction 2026-09-06): `M-program-corpus` delivered *many programs run*, `M-corpus-coverage` *every form has a program* and `M-corpus-depth` *size, depth and an external oracle* — all three are programs a person sat down and wrote, and this one delivers programs **nobody wrote**. It is also not a reopening of `M-robustness-guards`, which closed 2026-09-03 delivering the guards that shut four named holes: a guard is a hole you have found, and what this delivers is the machine that finds them. **Deliberately neither `M-adversarial-corpus` nor `M-compiler-survival`**: the first annexes an area three milestones already share, and the second states a promise a later milestone can falsify, which §14 forbids an id to do. Both runners-up are in `tests/harness/suite_records.hero`'s `REFUSED` |
 | `M-typed-inspection` | — | — | a stopped Heroes program shows Heroes values: `p p` under the name the author wrote, and `[T]`, `{K: V}`, `T?`, a variant and a record shown as themselves rather than as an opaque `HeroArrayHeader *`, a raw tagged union with a garbage `err` arm, and a hashed type name. **The id is a phrase the record already uses, and both times as the non-goal** (§14 prefers one the record uses over an invented one): `design.md:594` says *"No typed variable inspection in v1"* and this file's M-vscode-extension bullet said *"Typed inspection is not in v1"* until the row existed. **A new id and not a reopening of `M-selfhost-port`**, which closed 2026-08-17 and carried `-g` in as a defect so lldb could break on a `.hero` line at all: breaking, stepping and a backtrace at `.hero:line` work today, and what this delivers is what the frame SHOWS once the program has stopped. **It is also not a step of `M-vscode-extension`**, whose Debugging bullet rules that `lldb-dap` composes: an editor consumes formatters and never produces them, and the author debugs a compiler written in Heroes from a terminal with no editor open. **Deliberately not `M-debugger`**: one word where §14 asks for two, so it appropriates a topic, and it would claim the line-level half a closed milestone already delivered while leaving no name for the `heroes dap` this file already reserves. **Deliberately not `M-stopped-values`**: `print` and `assert` render values too, and that half is compile-time derivation over a record's fields, which is `M-reflection-verdict`'s question and not this row's. **And deliberately not `M-frame-values`**: it names the compiler's word for the place rather than the author's for the thing, and the deliverable is the value seen, not the frame. All three runners-up are in `tests/harness/suite_records.hero`'s `REFUSED`. Scheduled 2026-09-06 by author instruction with **no warrant** |
+
+| `M-open-repository` | — | — | the repository stops being private, and every sentence that promised it would open stops promising. **A new id rather than a step of `M-publication-gate`** (§14), for the reason `M-thesis-harness` and `M-install-channels` are: the gate is the outward act of a finished thing, and being readable is delivered with or without the thesis measured, the compatibility paragraph written or a channel installed. **Named for the act and not for the area**, which keeps `publication` free for the gate that still owes it |
 
 **`M8` has no row, because it meant three different things.** It was an umbrella
 that predates the a/b/c/e/p split and no heading has carried it since. In the
