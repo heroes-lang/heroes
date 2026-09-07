@@ -204,9 +204,21 @@ function the_levels_are_not_the_same_build(@r: report.Report, scratch: str, comp
 # Three promises about the ONE thing a test harness must get right, and
 # all three need a program written for the occasion — a passing corpus
 # cannot demonstrate a failure.
+#
+# **AND THE AGGREGATE ROW BELOW IS THE FOURTH, ADDED 2026-09-07 BY PANEL 117,
+# BECAUSE THIS CHECK WAS BLIND EXACTLY WHERE THE DEFECT WAS.** It pinned
+# `left:  4` and `right: 5` for a scalar and had no aggregate case at all,
+# while `assert [1, 2] == [1, 3]` printed the expression and NOTHING else —
+# no sides, no note that they were withheld. That is open defect 016, and the
+# watcher written to catch a missing side could not see it: CLAUDE.md §1's
+# repair-without-its-adjacent-shapes, inside the instrument. The row asserts
+# TODAY's behaviour on purpose, so the day a mechanism lands it goes red and
+# the sentence's expiry is found by a check rather than by a reader. Panel 117
+# schedules that mechanism (a walk to the first differing leaf, naming the
+# field rather than rendering the value) and does not land it.
 function a_failing_test_says_what_and_where(@r: report.Report, scratch: str, compiler: str)
     path = scratch + "/failing.hero"
-    body = "function twice(n: i64) -> i64\n    return n * 2\n\ntest \"holds\"\n    assert twice(2) == 4\n\ntest \"fails\"\n    assert twice(2) == 5\n\ntest \"brackets\"\n    assert (1 == 1) == (1 == 2)\n\ntest \"after the failure\"\n    assert true\n"
+    body = "function twice(n: i64) -> i64\n    return n * 2\n\ntest \"holds\"\n    assert twice(2) == 4\n\ntest \"fails\"\n    assert twice(2) == 5\n\ntest \"brackets\"\n    assert (1 == 1) == (1 == 2)\n\ntest \"an aggregate\"\n    assert [1, 2] == [1, 3]\n\ntest \"after the failure\"\n    assert true\n"
 
     if write_file(path: path, text: body).is_err()
         report.keep_failure(@r, label: "special/a failing test", detail: "  cannot write " + path)
@@ -244,6 +256,18 @@ function a_failing_test_says_what_and_where(@r: report.Report, scratch: str, com
 
     if !strings.contains(text: said.must().err, needle: "assert failed: (1 == 1) == (1 == 2)")
         wrong @ wrong.push("    the brackets the author typed are not kept")
+
+    # **The aggregate case, pinned at TODAY's behaviour by panel 117.** The
+    # expression is shown and the sides are not, which is defect 016. This row
+    # is written to GO RED the day that changes, because the spec sentence
+    # narrowed for it then expires and nothing else would notice.
+    if !strings.contains(text: said.must().err, needle: "assert failed: [1, 2] == [1, 3]")
+        wrong @ wrong.push("    an aggregate assert does not even show its expression")
+
+    if strings.contains(text: said.must().err, needle: "left:  [1, 2]")
+        wrong @ wrong.push(
+            "    an aggregate side is rendered now, so defect 016 is repaired and the spec sentence panel 117 narrowed has expired: read that sitting, unpin this row, and take the `fixedbugs` case per shape §9 owes"
+        )
 
     if wrong.len() > 0
         report.keep_failure(

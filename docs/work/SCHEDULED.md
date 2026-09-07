@@ -24,7 +24,42 @@ with `**Origin:**` and its date. Nothing lives outside the two banners —
 Format: `- [ ] **M-<milestone>** | <what, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 41**
+**OPEN: 42**
+
+- [ ] **M-reflection-verdict** | panel 117's sixth option: give `assert` both sides for an aggregate by walking to the first DIFFERING LEAF and naming the field, instead of rendering the value | `docs/panel/117-both-sides-of-an-assert-when-a-side-is-an-aggregate.md` · `selfhost/emit/structural.hero` · `runtime/parts/array.c`
+
+    **Origin:** panel 117, 2026-09-07, the sitting's own finding rather than
+    any brief's. The historian read Zig's `std.testing.expectEqual` from source:
+    it never renders the aggregate, it switches on the type and recurses, and
+    prints two values only on the scalar arm. Its doc comment says the point out
+    loud, that it shows exactly how the two are not equal.
+
+    **Why this route and not the four the brief carried.** It answers every
+    objection the sitting raised by construction, not by compromise. No
+    iteration order is promised, so the map measurement that killed every
+    rendering option stops being an obstacle. The walk is `eq`'s, which panel
+    076 already gave a worklist and no bound for a reason that makes it sound,
+    so no new depth question opens. Nothing is rendered, so the third invariant
+    clause *equal values render equal* is never owed and
+    `selfhost/emit/structural.hero`'s seven remaining lines under §11's ceiling
+    are not spent. `HeroDesc` and `HERO_RUNTIME_ABI` are untouched, so the FFI
+    seat's veto is satisfied without argument. And it is not a second copy of
+    what the language is, so the historian's D precedent — an assert-only
+    renderer that broke at the link boundary and still has open defects seven
+    years on — does not bind.
+
+    **Three things owed BEFORE it lands, because it is unrun.** A compiled
+    prototype, since no seat was asked about it and the cost is an estimate. The
+    map case run against the two `==`-equal maps the sitting measured, to show
+    the walk reports a differing key without promising an order. And the depth
+    case run to the frame count panel 076 measured, to show `eq`'s worklist
+    carries it.
+
+    **And §9 owes a `fixedbugs` case per shape the day it lands**, because the
+    provoking case is a witness and not the class: an array, a map, a record, an
+    optional, a variant, and a nested one of each. `tests/harness/suite_special.hero`'s
+    aggregate row goes red that day by design, and unpinning it is part of the
+    landing.
 
 - [ ] **M-guide-book** | metric 2's held-out tasks, written by the author | `harness/tasks/README.md` · `docs/panel/011`
 
