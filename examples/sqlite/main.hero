@@ -15,7 +15,7 @@
 # What is NOT here is as much of the point: no marshalling, no glue layer, no
 # generated binding file, and no `sqlite3.c` of our own.
 #
-# **This program builds with zero warnings, since panel 103 (2026-09-03).** It
+# **This program builds with zero warnings, since panel 103.** It
 # built with four, and they were true: `ptr` is C's `void *`, an out-parameter
 # was `void **` where the header wants `sqlite3 **`, and C converts `void *` to
 # any object pointer but never `void **`. Clang 22 made that an ERROR by
@@ -38,7 +38,7 @@ extern "sqlite3.h" link "sqlite3"
     # `sqlite3_free`. This program does not want one, so it is a plain `ptr`
     # the caller passes `nullptr` for — SQLite's documented *do not allocate*
     # — rather than an `@` parameter whose value nothing reads. It was an `@`
-    # until 2026-09-04, and `examples/ledger/` shipped the identical binding
+    # until a repair, and `examples/ledger/` shipped the identical binding
     # and leaked 40 bytes per refused statement; this program never leaked
     # because no statement here is ever refused, which is a fact about its SQL
     # and not a defence. Repaired as the class rather than the case

@@ -7,7 +7,7 @@
 # overflowing register. Where CRC-32 shows what Heroes refuses (`u32`
 # arithmetic), this shows what it does not have to refuse.
 #
-# THE DEFINITION, quoted from its source and fetched 2026-09-03 — RFC 1950
+# THE DEFINITION, quoted from its source and fetched — RFC 1950
 # § 2.2, the zlib format specification, where Adler-32 is normative:
 #
 #   Adler-32 is composed of two sums accumulated per byte: s1 is the sum of
@@ -17,7 +17,7 @@
 #
 # https://www.rfc-editor.org/rfc/rfc1950.txt
 #
-# THE ORACLE is Python 3's `zlib.adler32`, run 2026-09-03 — an implementation
+# THE ORACLE is Python 3's `zlib.adler32`, run — an implementation
 # this one shares no line with: `0x00000001` for the empty string, `0x00620062`
 # for `a`, `0x091e01de` for `123456789`, `0x08ab027a` for `foobar`,
 # `0x11e60398` for `Wikipedia` and `0x0231016d` for the two bytes of `é`. All
@@ -75,7 +75,7 @@ function is_prime(n: i64) -> bool
     return true
 
 test "six values from an implementation this one shares no line with"
-    # Python 3 `zlib.adler32`, run 2026-09-03.
+    # Python 3 `zlib.adler32`, run.
     assert adler32("") == 0x00000001
     assert adler32("a") == 0x00620062
     assert adler32("123456789") == 0x091e01de

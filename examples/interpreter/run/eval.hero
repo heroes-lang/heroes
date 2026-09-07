@@ -46,7 +46,7 @@ constant ERR_DEPTH: str
 # past the machine's stack: a script recursing 150 deep exited **139 in
 # silence** before the guard was ever consulted.
 #
-# **Re-measured 2026-09-04, after panel 106's repair, and it moved.** The
+# **Re-measured, after panel 106's repair, and it moved.** The
 # exit sweep stopped minting a load temporary per swept slot per returning
 # block — 58.5% of every declared frame — so one script call costs a good
 # deal less than it did. Nested script calls, one ceiling per configuration,

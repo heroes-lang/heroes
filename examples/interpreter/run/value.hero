@@ -13,7 +13,7 @@
 # statements — and Heroes refuses a module cycle, so one of them has to take
 # the other as a **function value**. A function type in this language cannot
 # carry an `@` parameter (`error[expected_type]: expected a type, found `@``,
-# measured 2026-09-03), so the state crosses that boundary by value or not at
+# measured), so the state crosses that boundary by value or not at
 # all. Copy-on-write is what makes it cheap: handing a `Frame` down costs a
 # refcount until something writes to it.
 #
@@ -138,7 +138,7 @@ function text_of(v: Value) -> str?
 # The one refusal `number_of` and `text_of` hand back, written ONCE: `A`
 # appears only in the result, and each caller's declared result says what it
 # is — `i64?` in `number_of`, `str?` in `text_of`. **This is the function that
-# found a compiler defect on 2026-09-03**: written exactly like this, `heroes
+# found a compiler defect**: written exactly like this, `heroes
 # check` accepted it at exit 0 and `heroes build` died at exit 134 with a bare
 # `assert failed: false`, because inference read the arguments only and left
 # `A` as a silent error type all the way to the emitter. It was rewritten as two

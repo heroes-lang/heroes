@@ -10,7 +10,7 @@
 # list a duplicate-parameter refusal has to quote, and `every` for the check
 # that a `fn`'s parameters are all names. `run/eval.hero` instantiates the same
 # templates at `run/value.hero`'s `Value`. That is the shape the corpus was
-# measured to be missing on 2026-09-03: three programs declared generics and
+# measured to be missing: three programs declared generics and
 # **none instantiated one across a module boundary**, so monomorphisation had
 # never been asked for two layouts from two callers that share nothing.
 #

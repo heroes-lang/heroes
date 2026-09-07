@@ -2,7 +2,7 @@
 # repository that calls the library through UFCS.
 #
 # Corpus and regression material (CLAUDE.md §9), and the gap it closes was
-# measured rather than guessed. On 2026-09-02, over `examples/`, `selfhost/`
+# measured rather than guessed. Over `examples/`, `selfhost/`
 # and `tests/`: `map`, `filter`, `fold`, `find`, `any` and `all` — the six the
 # spec's own § Built-ins calls *"written in Heroes"* — were called by exactly
 # ONE program in the repository, `tests/golden/run/library-higher-order.hero`,

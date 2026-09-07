@@ -7,7 +7,7 @@
 # this corpus was measured thin in: most of `examples/` asserts what its own
 # functions produce, and that catches a change without catching a mistake.
 #
-# THE TWO ORACLES, both fetched 2026-09-03 and quoted with their source.
+# THE TWO ORACLES, both fetched and quoted with their source.
 #
 #   1. The benchmarks game's published output for fannkuch-redux at N = 7:
 #      `228` then `Pfannkuchen(7) = 16`, which is what `main` prints.
@@ -31,7 +31,7 @@
 # before it was written. The maximum flip count does not depend on the order
 # the permutations are visited in; the checksum does, because it adds and
 # subtracts by turns. Visiting the 5040 permutations of seven cards in
-# DICTIONARY order and alternating the sign gives -502, measured 2026-09-03
+# DICTIONARY order and alternating the sign gives -502, measured
 # before a line of this was written. The published 228 belongs to the order
 # `advance` below produces — rotate a prefix, spend one of its counters —
 # which is the reference program's generator and not an incidental choice.
@@ -179,7 +179,7 @@ function main()
     print("Pfannkuchen(", n, ") = ", said.max_flips)
 
 test "the two published numbers for seven cards, which this program did not invent"
-    # benchmarks game, fannkuchredux-output.txt, fetched 2026-09-03:
+    # benchmarks game, fannkuchredux-output.txt, fetched:
     #   228
     #   Pfannkuchen(7) = 16
     said = fannkuch(7)

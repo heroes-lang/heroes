@@ -6,8 +6,8 @@
 #     game.hero    one turn — a state in, a state and some lines out
 #     world.hero   the map: rooms, the ways between them, and what is lying about
 #
-# **This is the corpus program that does not call `exit`** (author instruction
-# 2026-08-12), and it is here on purpose. `exit` bypasses
+# **This is the corpus program that does not call `exit`** (author
+# instruction), and it is here on purpose. `exit` bypasses
 # `hero_runtime_check_leaks()` by design — a program asking to stop now is not
 # asking for an audit, and running the gate there would report a leak for every
 # live value in every frame the exit unwinds past — but on Darwin arm64 that

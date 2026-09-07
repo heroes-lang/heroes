@@ -6,7 +6,7 @@
 # every three bytes, and the two padded shapes at the end that everybody gets
 # wrong.
 #
-# THE ORACLE, fetched 2026-09-03 and quoted whole — RFC 4648 § 10, *Test
+# THE ORACLE, fetched and quoted whole — RFC 4648 § 10, *Test
 # Vectors*, the section the standard provides for exactly this purpose:
 #
 #   BASE64("") = ""
@@ -196,7 +196,7 @@ function refusal_of(said: [u8]?) -> str
         .err e => e.code
 
 test "the seven vectors of RFC 4648, encoding"
-    # § 10 Test Vectors, fetched 2026-09-03.
+    # § 10 Test Vectors, fetched.
     assert encoded("") == ""
     assert encoded("f") == "Zg=="
     assert encoded("fo") == "Zm8="

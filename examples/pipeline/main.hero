@@ -1,7 +1,7 @@
 # Lines in, a report out — and the program that shows what `as` is FOR.
 #
 # Corpus and regression material (CLAUDE.md §9). The gap was measured on
-# 2026-09-02: `use ... as` appeared **once** in all of `examples/`, in
+# Measured: `use ... as` appeared **once** in all of `examples/`, in
 # `examples/shapes/main.hero`, where it renames a module that did not have to
 # be renamed. That use is real and it is not the feature's warrant.
 #

@@ -2,7 +2,7 @@
 # program for the seven conversions the corpus never called.
 #
 # Corpus and regression material (CLAUDE.md §9), and the gap was measured
-# rather than guessed. On 2026-09-02, over every `.hero` in `examples/`:
+# rather than guessed. Over every `.hero` in `examples/`:
 #
 #   to_i8 to_i16 to_i32 to_u8 to_u16 to_f32      ZERO uses
 #   to_u32 to_u64 to_f64                          4, 4 and 5 uses

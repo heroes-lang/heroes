@@ -10,12 +10,12 @@
 # WHAT THIS PROGRAM PRINTS is RFC 4648 § 10's BASE64 table, in the RFC's own
 # spelling, as this program computes it — so the first seven lines of
 # `main.expected` are the standard's test-vector block rather than this
-# program's opinion of itself. Measured 2026-09-03 with `diff` against the
+# program's opinion of itself. Measured with `diff` against the
 # lines fetched from `rfc-editor.org`: **identical**, once the RFC's
 # three-space indent is removed. Then the three numbers the other two
 # documents publish.
 #
-# WHAT IT IS FOR, beyond the oracles. The corpus was measured on 2026-09-03
+# WHAT IT IS FOR, beyond the oracles. The corpus was measured
 # and `u8`, `u16` and `u64` were **declared nowhere** in it: every program that
 # touched a width converted through it and went back to `i64`. Here the widths
 # are in the types — `Digest` holds two `u32` and a `u64`, `adler.Halves` holds

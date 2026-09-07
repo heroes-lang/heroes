@@ -2,7 +2,7 @@
 # program between a program and a compiler.
 #
 # Corpus material (CLAUDE.md §9), M-corpus-depth's rung. What this program is
-# for was measured on 2026-09-03 over the 78 files then in `examples/`: the
+# for was measured over the 78 files then in `examples/`: the
 # largest program here was `json/` at 671 lines and the compiler was 50,452,
 # and between them there was nothing. So the corpus had never run the compiler
 # over the shape the compiler's own source has — many modules, several
@@ -128,7 +128,7 @@ test "deep nesting works, and the depth it works to is measured rather than hope
     # never promote it, and together they were **58.5% of all declared frame
     # bytes**. The repair deletes them, and the ceilings roughly doubled.
     #
-    # Measured 2026-09-04 on this Mac, one nesting depth per configuration,
+    # Measured on this Mac, one nesting depth per configuration,
     # this program, binary-searched:
     #
     #                  before   after

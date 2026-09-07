@@ -1,7 +1,7 @@
 # A deck of anything, and the shuffle nobody can bias — the program that
 # declares its OWN generic functions instead of calling the library's.
 #
-# Corpus and regression material (CLAUDE.md §9). Measured 2026-09-02: over
+# Corpus and regression material (CLAUDE.md §9). Measured: over
 # `examples/`, `^function \w+<` — a generic declared by the program rather
 # than by the library — appears in `examples/calculator/` and nowhere else,
 # and every other generic in the corpus is one of the six the library ships.
