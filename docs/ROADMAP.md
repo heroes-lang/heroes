@@ -175,7 +175,7 @@ and why one overtook another are under the table, in § Who scheduled what.
 | 38 | **M-discard-refusal** | **OPEN** | — | — | `_ =` on a fallible value becomes a compile error · **§1.1**
 | 39 | **M-closures-verdict** | scheduled | — | — | the ruling on Part 7 items 1 and 12, closures and inline blocks — a decision, not a feature |
 | 40 | **M-interpolation-verdict** | scheduled | — | — | the ruling on design.md Part 7 item 7, string interpolation — a decision, not a feature |
-| 41 | **M-reflection-verdict** | scheduled | — | — | the ruling on reflection — at run time, and as compile-time derivation over a record's fields — a decision, not a feature |
+| 41 | **M-reflection-verdict** | scheduled | — | — | the ruling on reflection — at run time, and as compile-time derivation over a record's fields — and, since 2026-09-06, on a general annotation mechanism · a decision, not a feature |
 | 42 | **M-deferral-ledger** | scheduled | — | — | every Part 7 item with no milestone gets a dated verdict or a return condition |
 | 43 | **M-check-completeness** | scheduled | — | — | what `heroes check` accepts, `heroes build` compiles — through a generic too · scheduled, no warrant
 | 44 | **M-core-packages** | scheduled | — | — | small packages that compose, organised as Go's tree, in Heroes or over C |
@@ -1159,6 +1159,44 @@ nearest ruling, and its three return conditions bind here too.
 reflection. Whatever the ruling, that package is written after it. Full five
 seats; a refusal lands as a Part 6 row with its falsifier (CLAUDE.md §12).
 
+**A third question, and it is the author's** (2026-09-06: *"The other possibility
+is adding annotations like Java's or Python's, though not meant as decorators:
+simply tags one can put on some parts of the code, which the compiler can use —
+so system tags, or other tags that could be defined by the user to do something.
+If this does not complicate things. Because I see some keywords that look exactly
+like decorators, such as `owned fclose`."*). **(iii) A general annotation
+mechanism, Java's shape: user-defined tags on declarations.** The sitting rules
+on it with a Part 6 row and its falsifier (CLAUDE.md §12), because its only
+refusal today is the panel 018 bullet quoted above
+(`docs/panel/018-top-level-declaration-shape.md:97-100`), rejected along the way
+and named by no DESIGN-LOG row. **The author's observation is what split the
+question, and it is correct**: `owned fclose` IS an annotation. The language has
+six — `owned`, `tag`, `partial`, `link`, `package`, `as` — every one a contextual
+word matched by its text in `selfhost/parse/` and none in
+`selfhost/keywords.hero`'s table of 21, each read in one position after the thing
+it modifies, each carrying a check, so none is inert; measured 2026-09-07 from the
+parser, not from memory. Those six are §4.19's, so their shape rule is
+M-core-packages' question (vii) and not this sitting's. What this sitting is
+handed for (iii): panel 114 R7's clause that a tag set is *"closed and enumerated
+in the spec, so an unlisted tag is a compile error rather than a dead branch"*
+(`docs/panel/114-the-question-was-not-which-platform.md:244-252`) with its
+witness at `:150-156` — Rust's `#[cfg(feature = "widnows")]`, compiling clean and
+deleting a function in silence — which a user-DEFINED set cannot satisfy by
+construction; §1.3's *"constructs whose meaning lives elsewhere"*
+(`design.md:217`), since a tag the compiler cannot check is read by something the
+line does not show, and in Java that something is run-time reflection, this
+sitting's own first question; `design.md:1953`, which makes `@name` in prefix
+position a syntax error on purpose; **and the honest argument for it**, that one
+general syntax pays CLAUDE.md §9's tooling bill once rather than once per word —
+true, and the cheap half, because the check each word carries in the checker is
+the expensive half and a general syntax does not pay it. A decorator in Python's
+sense, a function that takes a function and gives back another, needs a closure
+to build and is M-closures-verdict's (row 39), named here and not judged.
+Measured 2026-09-07: `decorator` appears three times across design.md, `spec/`,
+`docs/panel/`, `DESIGN-LOG.md`, `docs/work/`, this file and CLAUDE.md — the prior's
+refusal in `spec/reserved-words.md:30` and FastAPI twice — and zero times in any
+sitting; spec headroom **225**.
+
 ### M-deferral-ledger — every Part 7 item gets a date
 
 **Scheduled by author instruction 2026-09-03.** Part 7's preamble defers its
@@ -1314,7 +1352,26 @@ byte against what the compiler emits on every leg, so emission that depends on
 the host breaks an instrument. The limit the sitting must name: the runtime is
 the only C a package can add to, since panel 036 P2 vetoed `compile "shim.c"` —
 so the shape Heroes has today serves the project's packages and nobody else's. A
-refusal of any shape lands as a Part 6 row with its falsifier.
+refusal of any shape lands as a Part 6 row with its falsifier; (vii) **the shape
+rule for compiler marks** (author question 2026-09-06, the `owned fclose`
+observation that opened M-reflection-verdict's question (iii); the two halves are
+homed apart because `docs/work/SCHEDULED.md`'s second-contextual-word item already
+sits here, moved from M-declared-freer on 2026-09-07). The language has six words
+a program writes after the thing they modify and the compiler reads — `owned`,
+`tag`, `partial`, `link`, `package`, `as` — every one a contextual word matched by
+its text in `selfhost/parse/` and none in `selfhost/keywords.hero`'s table of 21,
+every one gated to one position, every one carrying a check: `owned` types the
+probe `char *` and refuses the program's own call of the freer, `partial` refuses
+`==` and the map key, `tag` is matched against the header's struct. The rule that
+shape obeys is on the record three times and as a rule nowhere: panel 094 R3
+(*"a second notation for one idea"*, refused), panel 109 (*"a contextual word,
+never a keyword"*), panel 114 R7 (*"closed and enumerated in the spec"*, and *"a
+word, not `$if`"*). The question is whether design.md §4.19 names the family — a
+closed set, each word in the spec, after the thing it modifies, carrying a check
+— so that the buffer case M-declared-freer queued, panel 003's discardable mark
+and the `tag` for a colliding symbol this milestone's own item asks about follow
+it without a fourth re-derivation; and what a general annotation syntax would buy
+against it, which is CLAUDE.md §9's bill paid once and no more than that.
 
 **Step order** — one package or one gap per step, each step a corpus program on
 the three platforms or skipped by the missing-header rule: **0** three repairs
@@ -2102,7 +2159,7 @@ So a number met in the record resolves here, and only here.
 | `M-core-packages` | — | — | small packages that compose, organised as Go's tree, in Heroes or over C. **A new id rather than an area annexed** (§14, author instruction 2026-09-03): M-package-layout delivered how a `use` reaches a module, M-package-manager delivers `heroes add`/`heroes fetch` and where a fetched package lives, and this one delivers the packages themselves — a deliverable neither name claims. The word is Odin's `core:` collection, which §1.11 cites for the reason a package can be redesigned and a built-in cannot |
 | `M-web-framework` | — | — | the framework that composes the core packages, Go/Echo style. **A second id and not a step of the one above** (§14, author instruction 2026-09-03, *"then the web one that uses them all"*): the packages are a deliverable with or without a framework, and a framework is falsifiable on its own — it exists when the corpus's `todo` is served over HTTP on three platforms |
 | `M-closures-verdict` | — | — | the ruling on Part 7 items 1 and 12, closures and inline blocks. **The verdict is the deliverable and the name says so** (§14, author instruction 2026-09-03), on M-interpolation-verdict's precedent: an id naming the feature would claim what the sitting exists to decide |
-| `M-reflection-verdict` | — | — | the ruling on reflection, at run time and as compile-time derivation over a record's fields — a question the record had never given a row (§14, author instruction 2026-09-03) |
+| `M-reflection-verdict` | — | — | the ruling on reflection, at run time and as compile-time derivation over a record's fields — a question the record had never given a row (§14, author instruction 2026-09-03); and, since 2026-09-06, on a general annotation mechanism, the author's question (iii), whose only refusal was a footnote |
 | `M-deferral-ledger` | — | — | every Part 7 item with no milestone receives a dated verdict or a return condition. **The ledger is the deliverable** — not a feature and not a refusal, but the end of promises without a date (§14, author instruction 2026-09-03) |
 | `M-doc-generator` | — | — | `heroes doc`, the one direction Part 6's literate-source row promises. Scheduled against the recommendation, with CLAUDE.md §10's stopping rule as its opening question (§14, author instruction 2026-09-03) |
 | `M-panic-location` | — | — | a panic names the `.hero` file, line and function — §1.12's guard on the one abort that said nothing about where (§14, author instruction 2026-09-03) |
