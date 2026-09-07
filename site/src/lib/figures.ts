@@ -26,6 +26,7 @@
 
 import { readText, isFile } from './repo.ts';
 import { plain } from './highlight.ts';
+import { version } from './tables.ts';
 
 /** One figure, as the check reads it. */
 interface Figure {
@@ -142,5 +143,23 @@ export function checkFigures(html: string, pagePath: string): void {
  */
 export function page(html: string, pagePath: string): string {
   checkFigures(html, pagePath);
-  return html;
+  return fillVersion(html, pagePath);
+}
+
+/**
+ * `{{version}}` in a fragment becomes the version the compiler prints.
+ *
+ * One placeholder rather than a second templating idea: the fragments are plain
+ * HTML files anybody can edit, and this is the only value in them that a
+ * release moves. A fragment that carries the placeholder and gets no
+ * substitution would ship the braces at a reader, so the substitution is
+ * unconditional and the absence of the placeholder is simply nothing to do.
+ */
+export function fillVersion(html: string, pagePath: string): string {
+  if (!html.includes('{{version}}')) return html;
+  const value = version();
+  if (!/^[0-9]+\.[0-9]+\.[0-9]+$/.test(value)) {
+    throw new Error(`${pagePath}: the version read from the compiler is not X.Y.Z: ${value}`);
+  }
+  return html.replaceAll('{{version}}', value);
 }

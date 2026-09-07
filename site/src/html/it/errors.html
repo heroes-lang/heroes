@@ -73,6 +73,15 @@ $ heroes run program.hero</code></pre>
     <code>./heroes</code>, a un comando clang di distanza da un clone pulito.
     <a href="/it/start/">Come si costruisce →</a>
   </p>
+  <p>
+    Una famiglia di errori aspetta la compilazione. Una dichiarazione presa in
+    prestito dal C viene verificata contro l'header vero della libreria, e chi
+    legge quell'header è clang, che gira con <code>heroes build</code>. Quindi
+    un file il cui unico sbaglio è una funzione C scritta male passa
+    <code>heroes check</code> senza una parola e viene rifiutato un attimo dopo,
+    sulla stessa riga, con la risposta dell'header attaccata.
+    <a href="/it/docs/the-c-boundary/">Cosa dice la compilazione &rarr;</a>
+  </p>
 
   <h2>Parole di altri linguaggi, rifiutate con la risposta allegata</h2>
   <p>
@@ -153,6 +162,15 @@ errore di battitura in un nome               10443   100%             100%
 aritmetica mista fra interi e float           1492   100%             100%
 <span class="hi">errore di battitura in un codice d’errore</span>       59     0%               0%
 <span class="hi">errore di battitura in una cifra</span>                68     3%               3%</code></pre>
+  <p>
+    La percentuale è calcolata sui mutanti che continuano ad avere una
+    grammatica valida. Dove lo sbaglio piantato rompe anche la grammatica, quel
+    mutante misura la parte del compilatore che legge il testo e non quella che
+    ragiona, quindi viene messo da parte invece di essere contato come una
+    vittoria: 323 dei 20.578 qui sopra, e 102 di essi nella prima riga.
+    Contarli come presi porterebbe la prima riga dall'80 all'81 per cento, che è
+    la direzione in cui la scelta onesta costa.
+  </p>
   <p>
     <b>Il progetto si rifiuta di fare la media di questi numeri in una cifra
     sola</b>, e lo strumento stampa quel rifiuto ogni volta che gira. Il motivo

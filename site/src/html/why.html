@@ -69,6 +69,24 @@ graphics, audio, terminal  →  SDL, raylib, ncurses</code></pre>
     <figcaption>examples/gallery/08-ffi.hero, lines 12&ndash;15</figcaption>
   </figure>
   <p>
+    The obvious worry about a language with no library of its own is that
+    whoever writes the program, a person or a model, will confidently borrow a C
+    function that does not exist. That is a compile error too, and the answer
+    does not come from any list this compiler keeps:
+  </p>
+  <pre class="diag"><code><span class="k">error</span>[ffi_unknown_name]: `math.h` declares no `sqrtt` — clang read the header and could not find it
+  at ffi-demo.hero:2:5
+    |
+  2 |     <span class="k">function</span> sqrtt(x: <span class="t">f64</span>) -&gt; <span class="t">f64</span>
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: an `extern` names what the header already has (§4.19): check the spelling, or name the header that does declare `sqrtt`</code></pre>
+  <p>
+    Clang had the real header open. Get a width wrong instead of a name and the
+    answer comes from the same place, on the same line, before anything runs.
+    That is what the refusal buys: the library is not described here, so it
+    cannot be described wrongly here.
+  </p>
+  <p>
     Without that header nothing would verify what you wrote. And look at
     <code>pow(base:, exponent:)</code>: two values of the same type, so the call
     has to name them. The rule holds at the C boundary too, which is where
@@ -194,9 +212,22 @@ graphics, audio, terminal  →  SDL, raylib, ncurses</code></pre>
     <dd class="more">The price is real and the specification writes it down rather than
     hiding it. <code>+</code> on a <code>str</code> copies both sides, so a
     concatenation loop is quadratic and <code>join</code> exists to build in
-    one pass. Growing an array in place is the case where nothing else
-    holds it.
+    one pass. Growing an array in place is the case where nothing else holds
+    it. What is <i>not</i> a price is handing a big value to a function:
+    underneath, a copy shares the memory and splits only when somebody writes,
+    so passing five thousand rows costs nothing until one of them changes. One
+    of the programs on this site does exactly that, several times per query.
     <a href="/docs/values-all-the-way-down/">The chapter on this &rarr;</a></dd>
+    <dt>Can two things run at once?</dt>
+    <dd>Yes, and threads arrive from C like everything else. The rule at the
+    boundary is the one values already force: a thread gets its own memory, and
+    whatever crosses into it or back out is copied rather than shared. So there
+    is nothing to lock and nothing to race, and the compiler refuses a thread
+    body that tries to carry a list across. What this is good at is sending a
+    small thing and getting a number back. What it is bad at is shuttling large
+    values in and out to do very little with them, and that is a real limit
+    rather than a missing feature.
+    <a href="/examples/threads/">The program that does it &rarr;</a></dd>
     <dt>Is it not just a smaller version of an existing language?</dt>
     <dd>The semantics are familiar on purpose: values that copy, no inheritance,
     failure in the type. What is new is the constraint every rule was chosen

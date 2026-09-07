@@ -20,7 +20,7 @@
         <a class="primary" href="/spec/">Read the whole language</a>
         <a class="ghost" href="/examples/">See the code</a>
       </div>
-      <p class="version">heroes 0.1.0 &middot; not packaged yet</p>
+      <p class="version">heroes {{version}} &middot; not packaged yet</p>
     </div>
     <div>
       <div class="demo">
@@ -124,12 +124,17 @@
     language, even if each program costs more tokens to write.
   </blockquote>
   <p>
-    It is measured rather than asserted. <code>heroes mutate</code> takes
-    working programs, plants one realistic mistake at a time, and counts how
-    many the compiler stops. Then it runs again with the thesis rules switched
-    off. The distance between the two runs is the result, kept mistake by
-    mistake: an average would hide the interesting part.
-    <a href="/errors/">The measured table &rarr;</a>
+    Half of it is measured. <code>heroes mutate</code> takes working programs,
+    plants one realistic mistake at a time, and counts how many the compiler
+    stops. Then it runs again with the thesis rules switched off, and the
+    distance between the two runs is the result, kept mistake by mistake.
+  </p>
+  <p>
+    The other half is the token count itself, end to end against another
+    language, and that instrument is designed and not yet built. So the sentence
+    above is a bet with one leg on a measurement and one still in the air, and
+    this site would rather say which than let the table stand in for both.
+    <a href="/errors/">The measured half &rarr;</a>
   </p>
 
   <h2>Run it <span class="nod">&middot; speed of life &middot;</span></h2>

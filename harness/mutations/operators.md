@@ -18,6 +18,8 @@ here, never in code.
 | positional-named | Remove argument names where two params share a type | style transfer from Python | same-typed-argument rule (§4.9) |
 | mix-int-float | `1 + 2.0` at one site | implicit-conversion prior | no implicit conversions (§4.3) |
 | shadow | Redeclare an in-scope name | inner-scope habit | shadowing ban (§4.4) |
+| boolean-twin | Drop one character from `&&` or `\|\|`, giving the bitwise `&` or `\|` | the logical-to-bitwise slip, which in C, Java, Go and Python-with-numpy differs only by short-circuiting and by nothing a reader sees | §4.14 gives `&&`/`\|\|` `bool` only and the bitwise set `i64` only, so the two vocabularies do not overlap and every one of these must die. Panel 040 bought the bitwise set with a prediction that no survivor would ever be one of these, and `docs/measurements/007` scored it *held* over 892 survivors **vacuously**, because none of the twelve operators made the substitution: this row is that arm |
+| local-takes-a-module | Rename a local to the name a `use` bound in that file | a name a model reaches for without seeing the `use` block above it | a module's name is a binding like any other, so a local may not take it (panel 102, §4.4) |
 | drop-question | Remove one `?` from a fallible call in fallible context | forgotten propagation | type mismatch `T?` vs `T` (§4.6) |
 | typo-digit | Move the last digit of a `constant`'s value by one | 1-digit slip in a number copied from a header or a table | **nothing** — a number in the file has no authority to be checked against, and this row measures the subset where one exists (a C constant, §4.19) |
 

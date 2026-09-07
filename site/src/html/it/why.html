@@ -72,6 +72,25 @@ graphics, audio, terminal  →  SDL, raylib, ncurses</code></pre>
     <figcaption>examples/gallery/08-ffi.hero, righe 12&ndash;15</figcaption>
   </figure>
   <p>
+    La preoccupazione ovvia, per un linguaggio che non ha una libreria propria,
+    è che chi scrive il programma, persona o modello, prenda in prestito con
+    sicurezza una funzione C che non esiste. Anche quello è un errore di
+    compilazione, e la risposta non viene da nessuna lista che questo
+    compilatore si tiene:
+  </p>
+  <pre class="diag"><code><span class="k">error</span>[ffi_unknown_name]: `math.h` declares no `sqrtt` — clang read the header and could not find it
+  at ffi-demo.hero:2:5
+    |
+  2 |     <span class="k">function</span> sqrtt(x: <span class="t">f64</span>) -&gt; <span class="t">f64</span>
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: an `extern` names what the header already has (§4.19): check the spelling, or name the header that does declare `sqrtt`</code></pre>
+  <p>
+    Clang aveva aperto l'header vero. Sbaglia una larghezza invece di un nome e
+    la risposta arriva dallo stesso posto, sulla stessa riga, prima che qualcosa
+    parta. È questo che compra il rifiuto: la libreria qui non viene descritta,
+    quindi qui non la si può descrivere male.
+  </p>
+  <p>
     Senza quell'header niente verificherebbe quello che hai dichiarato. E
     guarda <code>pow(base:, exponent:)</code>: prende due valori dello stesso
     tipo, quindi la chiamata deve nominarli. La regola vale anche qui, sul
@@ -203,9 +222,23 @@ graphics, audio, terminal  →  SDL, raylib, ncurses</code></pre>
     <dd class="more">Il prezzo è reale e la specifica lo scrive invece di
     nasconderlo. <code>+</code> su una <code>str</code> copia entrambi i lati,
     quindi un ciclo di concatenazioni è quadratico ed esiste <code>join</code>
-    per costruire in una passata sola. Far crescere un array sul posto è il caso
-    in cui nessun altro lo tiene.
+    per costruire in una passata sola. Far crescere un array sul posto è il
+    caso in cui nessun altro lo tiene. Quello che <i>non</i> è un prezzo è
+    passare un valore grande a una funzione: sotto, una copia condivide la
+    memoria e si separa solo quando qualcuno scrive, quindi passare cinquemila
+    righe non costa niente finché una di esse non cambia. Uno dei programmi di
+    questo sito fa esattamente così, più volte per ogni query.
     <a href="/it/docs/values-all-the-way-down/">Il capitolo su questo &rarr;</a></dd>
+    <dt>Due cose possono girare insieme?</dt>
+    <dd>Sì, e i thread arrivano dal C come tutto il resto. La regola al confine
+    è quella che i valori già impongono: un thread ha la sua memoria, e quello
+    che entra o esce viene copiato invece che condiviso. Quindi non c'è niente
+    da bloccare e niente su cui correre, e il compilatore rifiuta il corpo di un
+    thread che prova a portarsi dietro una lista. Questo modello è bravo a
+    mandare una cosa piccola e riavere indietro un numero. È scarso a far
+    entrare e uscire valori grandi per farci pochissimo, ed è un limite vero e
+    non una funzione che manca.
+    <a href="/it/examples/threads/">Il programma che lo fa &rarr;</a></dd>
     <dt>Non è solo una versione più piccola di un linguaggio che esiste già?</dt>
     <dd>La semantica è familiare di proposito: valori che si copiano, nessuna
     ereditarietà, il fallimento nel tipo. Quello che è nuovo è il vincolo sotto
