@@ -147,12 +147,11 @@ error[type_mismatch]: expected `bool`, found `i64`
     at either call site says so, and both are checked completely.
   </p>
   <p>
-    How it compiles is worth one sentence, because it decides what a generic
-    costs. The compiler makes one copy of <code>each</code> for every concrete
+    How it compiles decides what a generic costs. The compiler makes one copy of <code>each</code> for every concrete
     type it is used with, so the C that comes out has an <code>each</code> over
     integers and a separate <code>each</code> over strings, each as direct as
-    if you had written it by hand. Nothing is looked up at run time and nothing
-    is boxed. The price is paid in the size of the binary, once per type, and
+    if you had written it by hand. Nothing is looked up at run time and no
+    value is wrapped up to make the types match. The price is paid in the size of the binary, once per type, and
     never in the speed of a call.
   </p>
   <figure class="example" data-src="examples/gallery/06-generics.hero" data-lines="55-56">

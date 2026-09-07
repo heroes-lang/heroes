@@ -35,7 +35,7 @@ $ ./heroes build selfhost/main.hero --emit-c -o out.c
 $ cmp out.c seed/heroes.c
 <span class="c">                    (cmp non stampa niente: non un byte di differenza)</span>
 
-  seed/heroes.c   il C che il repository contiene: la via d'ingresso
+  seed/heroes.c   il C che il repository contiene: la via d&rsquo;ingresso
   out.c           quello che il compilatore scrive compilando se stesso
 
 <span class="c">  oltre 22 megabyte di C, e più di 700.000 righe</span></code></pre>
@@ -95,7 +95,10 @@ $ cmp out.c seed/heroes.c
     Niente entra nel linguaggio perché è elegante. Un cambiamento alla
     sintassi, alla semantica, a una classe di messaggi d&rsquo;errore o alla forma del
     compilatore passa prima da un collegio di cinque seggi. Ogni seggio riceve
-    materiale diverso di proposito, e quattro di loro possono rifiutare.
+    materiale diverso di proposito, e quattro di loro possono rifiutare. Un
+    cambiamento che nessun programma potrebbe notare, senza sintassi nuova,
+    senza un nuovo messaggio d&rsquo;errore e senza una parola della specifica,
+    passa da due dei cinque.
   </p>
   <ul class="seats">
     <li><span class="who">Il lettore</span><span>Riceve la specifica e programmi d&rsquo;esempio, e mai il documento di design o il codice. Il suo verdetto è un esperimento sul fatto che il linguaggio si legga, non un&rsquo;opinione. <span class="veto">veto</span></span></li>
@@ -154,7 +157,8 @@ $ cmp out.c seed/heroes.c
   </p>
 
   <footer>
-    <p>I tre comandi qui sopra sono quelli che l&rsquo;integrazione continua esegue a
+    <p>I tre comandi della prova in cima a questa pagina sono quelli che
+    l&rsquo;integrazione continua esegue a
     ogni push, su Linux, e a ogni tag di milestone su tre piattaforme. Il record
     di ogni decisione, sedute e misure
     comprese, è tenuto nel
