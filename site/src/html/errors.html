@@ -68,6 +68,15 @@ $ heroes run program.hero</code></pre>
     one clang command away from a fresh clone.
     <a href="/start/">How to build it →</a>
   </p>
+  <p>
+    One family waits for the build. A declaration borrowed from C is checked
+    against the library's real header, and the thing that reads that header is
+    clang, which runs at <code>heroes build</code>. So a file whose only mistake
+    is a misspelled C function passes <code>heroes check</code> without a word
+    and is refused a moment later, on the same line, with the header's own
+    answer attached.
+    <a href="/docs/the-c-boundary/">What the build says &rarr;</a>
+  </p>
 
   <h2>Words from other languages, refused with the answer attached</h2>
   <p>
@@ -146,6 +155,14 @@ a typo in a name                         10443    100%               100%
 mixed integer and float arithmetic        1492    100%               100%
 <span class="hi">a typo in an error code</span>                     59      0%                 0%
 <span class="hi">a typo in a digit</span>                           68      3%                 3%</code></pre>
+  <p>
+    The percentage is of the mutants that still parse. Where a planted mistake
+    also breaks the grammar, that mutant measures the part of the compiler that
+    reads text rather than the part that reasons about it, so it is set aside
+    rather than counted as a win: 323 of the 20,578 above, and 102 of them in
+    the first row. Counting them as caught would take that first row from 80 to
+    81 per cent, which is the direction the honest choice costs.
+  </p>
   <p>
     <b>The project refuses to average these into one figure</b>, and the tool
     prints that refusal every time it runs. The reason is in the table. The

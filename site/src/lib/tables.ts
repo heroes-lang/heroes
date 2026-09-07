@@ -22,6 +22,7 @@ import { readText } from './repo.ts';
 
 const KEYWORDS_FILE = 'selfhost/keywords.hero';
 const SPEC_FILE = 'spec/heroes-spec.md';
+const MAIN_FILE = 'selfhost/main.hero';
 
 /**
  * The table has 21 rows today. The floor is 15 rather than 21 so that adding a
@@ -164,4 +165,30 @@ export function typeWords(): Set<string> {
 /** What the two parses found, for the build's own report and for a test. */
 export function tableSummary(): string {
   return `${keywords().size} keywords from ${KEYWORDS_FILE}, ${typeWords().size} type words from ${SPEC_FILE}`;
+}
+
+/**
+ * The version the compiler prints, read from the one constant that holds it.
+ *
+ * It was typed into both home pages by hand and went stale inside one release:
+ * the pages said 0.1.0 while `heroes --version` said 0.2.0, which the language
+ * veteran's seat found in its first minute. `site/CLAUDE.md` § A number on the
+ * page is generated, or it is a threshold already required this, and the
+ * version is exactly the number a stranger checks first, because checking it
+ * costs one command.
+ *
+ * `VERSION` moves only in the commit that carries a release tag
+ * (`.claude/rules/records.md` § Release tags), so reading it here means the
+ * page cannot disagree with the binary again.
+ */
+export function version(): string {
+  const text = readText(MAIN_FILE);
+  const found = /constant VERSION: str\n\s+"([0-9]+\.[0-9]+\.[0-9]+)"/.exec(text);
+  if (found === null) {
+    throw new Error(
+      `${MAIN_FILE}: no \`constant VERSION: str\` holding an X.Y.Z string.\n` +
+        `  the site prints the version the compiler prints, and reads it from that constant.`
+    );
+  }
+  return found[1];
 }
