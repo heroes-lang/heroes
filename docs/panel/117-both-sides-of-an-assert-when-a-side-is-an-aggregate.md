@@ -281,4 +281,34 @@ entry it matched.
 
 ## Author's verdict
 
-*Pending.* Queued as an open item in `docs/work/DECIDE.md` naming `panel 117`.
+**RATIFIED 2026-09-07** (author instruction, *"I ratify"*), all four parts of the
+adopted resolution, given the same day the sitting was convened and after the
+author had already overridden one seat's wording condition in the direction of
+the more robust text.
+
+What that settles, spelled out so nobody has to infer it from one word:
+
+1. **The aggregate row in `tests/harness/suite_special.hero` stands**, pinning
+   today's behaviour on purpose. It is now a ratified tripwire: the day a
+   mechanism lands it goes red, and unpinning it is part of that landing.
+2. **The spec sentence stands as landed**, the fuller wording at 3903 tokens
+   rather than the spec-warden's 3876. That seat's objection remains on the
+   record unwithdrawn, which is what a ratified override looks like here: the
+   author chose, the seat's reasoning is preserved, and neither is deleted.
+3. **The leaf walk is the ratified route** to the repair, not merely the
+   sitting's preference. It is an item at M-reflection-verdict with a compiled
+   prototype, the map case and the depth case owed before it lands. A future
+   sitting that wants a different mechanism is overturning a ratified decision
+   and owes the argument for it.
+4. **The two refusals are ratified refusals.** A sixth `HeroDesc` member is
+   refused with the FFI seat's compiled evidence behind it, and the per-type
+   renderer is refused *for now* with the compiler seat's map measurement
+   behind it — the second is the one that can return, and the condition is that
+   seat's: a deterministic `{K: V}` rendering that needs no total order over
+   non-scalar keys.
+
+**What ratification does NOT do.** It does not close the work. Defect 016 closed
+because the contradiction between two artifacts closed; the language still
+cannot render an aggregate, and an author debugging a failing aggregate test
+still reads one line. That is scheduled, and the schedule is now the author's
+decision rather than the sitting's proposal.
