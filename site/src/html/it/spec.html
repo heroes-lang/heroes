@@ -5,7 +5,7 @@
   </div>
   <p class="lede">Tutto il linguaggio, nel file che si dà a un modello.
   Prendilo intero: <a href="/spec.md"><code>heroes-lang.org/spec.md</code></a>,
-  oppure <code>curl -L heroes-lang.org/spec.md</code>. Il blocco qui sotto sono
+  oppure <code class="cmd">curl -L heroes-lang.org/spec.md</code>. Il blocco qui sotto sono
   gli stessi byte, e selezionarlo tutto dà lo stesso prompt.</p>
 
   <p>
@@ -13,7 +13,8 @@
     linguaggio: quando lei e il compilatore non concordano, è il compilatore che
     ha il difetto. Sta sotto un tetto rigido di 4.096 token, e un test lo
     verifica a ogni commit, perché deve lasciare spazio nel prompt al programma
-    che vuoi davvero.
+    che vuoi davvero. Il conto è fatto con i tokenizer che i modelli usano
+    davvero, due, e vale il più grande dei due.
   </p>
   <p>
     È mostrata qui esattamente come sta nel file, ritagliata dal repository

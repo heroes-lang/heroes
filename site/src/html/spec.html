@@ -5,7 +5,7 @@
   </div>
   <p class="lede">The whole language, in the file a model is handed. Take it
   whole: <a href="/spec.md"><code>heroes-lang.org/spec.md</code></a>, or
-  <code>curl -L heroes-lang.org/spec.md</code>. The block below is the same
+  <code class="cmd">curl -L heroes-lang.org/spec.md</code>. The block below is the same
   bytes, and selecting all of it gives you the same prompt.</p>
 
   <p>
@@ -13,7 +13,8 @@
     the language: when it and the compiler disagree, the compiler has the bug.
     It stays under a hard ceiling of 4,096 tokens, which a test asserts on every
     commit, because it has to leave room in the prompt for the program you
-    actually want.
+    actually want. Counted with the tokenizers the models actually use, two of
+    them, and the larger of the two is the one that binds.
   </p>
   <p>
     It is shown here exactly as the file holds it, cut from the repository when

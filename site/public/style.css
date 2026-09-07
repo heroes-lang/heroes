@@ -315,6 +315,15 @@ nav.site a.lang + .out { margin-left: 0; }
     order: 3; width: 100%; flex-wrap: nowrap; gap: 1rem;
     overflow-x: auto; overscroll-behavior-x: contain;
     scrollbar-width: none;
+    /* The clipped item WAS the affordance, by the note above, and rendered at
+       390px it reads as a rendering bug: "Autho", sliced flat. The row
+       dissolves at its right edge instead, which is the sentence the code
+       blocks already say with their scroll edge. Honest limit: CSS alone
+       cannot make this scroll-aware, so once the row is scrolled the left item
+       is cut flat again. A right-only fade is the whole of what is available
+       without JavaScript. */
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 2.2rem), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 2.2rem), transparent);
   }
   nav.site ul::-webkit-scrollbar { display: none; }
   nav.site ul li { flex: none; }
@@ -357,7 +366,13 @@ h2 {
   position: relative;
   font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em;
   font-size: 1.18rem; color: var(--red); margin: 3.4rem 0 1.1rem;
-  display: flex; align-items: baseline; gap: 0.6rem 1rem; flex-wrap: wrap;
+  /* `nowrap`, and the last fix of this got the scope wrong. The heading text
+     is an anonymous flex item whose hypothetical size is its max-content
+     width, so a heading long enough to wrap became a SECOND flex line and left
+     `::before`, the bolt, alone on the first. The repair went into a
+     `max-width: 700px` block, and the cause is width-independent: it is alive
+     at 1200px on /errors/ section 03. */
+  display: flex; align-items: baseline; gap: 0.6rem 1rem; flex-wrap: nowrap;
   padding-top: 1.5rem;
   border-top: 1px solid var(--line);
   /* The rule over a section is not a neutral hairline: it carries the two
@@ -544,7 +559,16 @@ code {
 p > code, li > code, dd > code, dt > code, figcaption code {
   background: color-mix(in srgb, var(--fg) 7%, transparent);
   border-radius: var(--radius-sm);
-  padding: 0.08em 0.3em;
+  /* THE TINT IS PAINTED, NOT PADDED, and the difference is a word space before
+     every comma. 0.3em of side padding widened the inline box, so a chip
+     followed by punctuation set as `heroes` , `lex` , `parse` , with the comma
+     floating clear of the word. On /start/ that is eleven floating commas, a
+     floating colon and a floating full stop in two lines of Georgia; on every
+     chapter that names a keyword it is in the tagline under the title.
+     A `box-shadow` spread paints outside the inline box without changing its
+     advance width, which is the technique `pre.table .hi` already uses. */
+  padding: 0.08em 0;
+  box-shadow: 0 0 0 0.28em color-mix(in srgb, var(--fg) 7%, transparent);
 }
 
 /* ------- syntax colouring, done in markup because there is no JavaScript ----
@@ -631,7 +655,10 @@ figure.example figcaption::before { content: '\21B3\00A0'; color: var(--dim); }
   display: flex; align-items: center; gap: 0.6rem;
   margin: 0 0 0.8rem;
   font: 0.75rem/1.6 ui-monospace, 'SF Mono', Menlo, monospace;
-  letter-spacing: 0.2em; text-transform: uppercase; color: var(--blue);
+  /* 0.16em rather than 0.2: the Italian kicker is six characters longer than
+     the English and wrapped, putting COMPILATO alone on a second line under a
+     rule that marked only the first. Measured, it was about nine pixels short. */
+  letter-spacing: 0.16em; text-transform: uppercase; color: var(--blue);
 }
 .hero .kicker::before {
   content: ''; width: 1.7rem; height: 1px; background: var(--blue); flex: none;
@@ -1161,7 +1188,9 @@ p.shelves {
   font: 0.78rem/1.9 ui-monospace, 'SF Mono', Menlo, monospace;
   color: var(--dim); margin: 1.6rem 0 0; text-wrap: pretty;
 }
-p.shelves a { text-decoration: none; }
+/* A shelf name is one object. Broken across a line, "Files" and "and the
+   command line" read as two shelves that do not exist. */
+p.shelves a { text-decoration: none; white-space: nowrap; }
 p.shelves a:hover { text-decoration: underline; }
 
 /* The specification, shown verbatim in one block. It is markdown rather than
@@ -1182,15 +1211,28 @@ figure.example.spec pre {
   max-height: calc(30 * 0.76rem * 1.55 + 2.3rem);
   overflow: auto; font-size: 0.76rem; line-height: 1.55;
   color: var(--fg);
+  /* Eight layers, not four. This rule REPLACES `pre`'s whole background set
+     rather than adding to it, so writing only the vertical pair silently
+     dropped the horizontal one and the frame said nothing about the axis it
+     scrolls furthest on: measured at 390px, a flat 209 to 211 right up to the
+     border while lines cut mid-word. Both axes now. */
   background-image:
     linear-gradient(to bottom, var(--card) 40%, transparent),
     linear-gradient(to top,    var(--card) 40%, transparent),
+    linear-gradient(to right,  var(--card) 40%, transparent),
+    linear-gradient(to left,   var(--card) 40%, transparent),
     linear-gradient(to top,    color-mix(in srgb, var(--fg) 26%, transparent), transparent),
-    linear-gradient(to bottom, color-mix(in srgb, var(--fg) 26%, transparent), transparent);
-  background-position: top center, bottom center, bottom center, top center;
-  background-size: 100% 2.4rem, 100% 2.4rem, 100% 0.8rem, 100% 0.8rem;
+    linear-gradient(to bottom, color-mix(in srgb, var(--fg) 26%, transparent), transparent),
+    linear-gradient(to left,   color-mix(in srgb, var(--fg) 26%, transparent), transparent),
+    linear-gradient(to right,  color-mix(in srgb, var(--fg) 26%, transparent), transparent);
+  background-position:
+    top center, bottom center, left center, right center,
+    bottom center, top center, right center, left center;
+  background-size:
+    100% 2.4rem, 100% 2.4rem, 3rem 100%, 3rem 100%,
+    100% 0.8rem, 100% 0.8rem, 1.1rem 100%, 1.1rem 100%;
   background-repeat: no-repeat;
-  background-attachment: local, local, scroll, scroll;
+  background-attachment: local, local, local, local, scroll, scroll, scroll, scroll;
 }
 figure.example.spec { margin-bottom: 1.4rem; }
 
@@ -1222,10 +1264,22 @@ figure.example.spec { margin-bottom: 1.4rem; }
 /* A paragraph that opens with inline code lost its left margin, because the
    code's own padding pushed the first letter 5px right of every other
    paragraph on the page. Visible on /start/, twice. */
-p > code:first-child, li > code:first-child { margin-left: -0.3em; }
+/* This pulled a leading chip back by the padding it used to carry. That
+   padding is gone, so the correction has to go with it or the first letter of
+   the paragraph sits left of every other paragraph on the page. */
+p > code:first-child, li > code:first-child { margin-left: 0; }
 
-/* A path is a title on 132 pages and some of them are 21 characters. */
-h1.chapter code { overflow-wrap: anywhere; }
+/* A path is a title on 132 pages and the longest is 33 characters. At the
+   inherited 0.9em it overran the measure by about 30px and the browser took
+   the hyphen, so `examples/gallery/06-generics.hero` arrived in two pieces
+   with the file's own name split. `overflow-wrap` stays for the phone, where
+   wrapping is unavoidable. */
+h1.chapter code { overflow-wrap: anywhere; font-size: 0.72em; }
+
+/* A command is one object. `curl -L …` broke after the flag's hyphen on
+   /spec/, the page the primary button points at, which put `curl -` at the end
+   of one line and `L …` at the start of the next and split the tint in two. */
+code.cmd { white-space: nowrap; }
 
 /* == 14. footer =========================================================== */
 

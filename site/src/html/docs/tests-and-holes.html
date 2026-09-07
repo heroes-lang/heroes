@@ -84,10 +84,7 @@ hole at holes.hero:28:74
     entries: [Entry]
   functions that return it:
     summary_of(entries: [Entry])
-      # The hole can be one argument of an otherwise finished line.
-    library.hero_args_at(index: i64)
-    library.hero_file_read(path: cstr, @status: i64)
-    library.hero_str_try_from_cstr(p: cstr, @status: i64)</code></pre>
+      # The hole can be one argument of an otherwise finished line.</code></pre>
   <p>
     Read the second one. The compiler worked out that a <code>str</code>
     belongs there. Then it listed what you have to hand at that point, and which
@@ -116,10 +113,7 @@ hole at holes.hero:28:74
     entries: [Entry]
   functions that return it:
     summary_of(entries: [Entry])
-      # The hole can be one argument of an otherwise finished line.
-    library.hero_args_at(index: i64)
-    library.hero_file_read(path: cstr, @status: i64)
-    library.hero_str_try_from_cstr(p: cstr, @status: i64)</code></pre>
+      # The hole can be one argument of an otherwise finished line.</code></pre>
   <p>
     The compiler can therefore check a half-written program without mistaking
     it for a finished one. A hole cannot reach an executable.
