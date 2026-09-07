@@ -34,7 +34,7 @@ Astro.
 ```
 cd site
 npm ci                  # exactly the lockfile, and fails if it disagrees with package.json
-npm run build           # src/ -> dist/, 46 pages
+npm run build           # src/ -> dist/, 180 pages
 npm run dev             # the fast loop, on localhost
 npm run preview         # dist/ over plain HTTP, as Astro serves it
 
@@ -218,6 +218,55 @@ capital letter is a premise about a convention the spec does not state. Blocks
 are generated *from* the source file, so highlighting and byte-fidelity arrive
 together.
 
+## What a machine that is not a browser gets
+
+Author instruction 2026-09-07: *all the SEO tags, and push them hard.* Every one
+of them is computed in `src/layouts/BaseLayout.astro` from the single `url`
+prop, for the reason the canonical and the hreflangs already were: a card, a
+breadcrumb and a canonical that disagree are worse than none, and the only way
+three derived facts cannot disagree is if one expression derives all three. **No
+page passes any of it in**, so a new page cannot forget it and cannot get it
+wrong.
+
+**Structured data, and a type that says something.** A site whose pages are all
+`WebPage` has told a machine nothing it could not see. The two landings are
+`WebSite`, the example pages are `SoftwareSourceCode` and carry
+`programmingLanguage`, the chapters and the specification are `TechArticle`, the
+author pages are `AboutPage`, and the landings additionally carry a
+`ComputerLanguage` block, which is the type schema.org has for exactly this
+subject. Every page carries a `BreadcrumbList` built from its own path, so a
+page that moves takes its trail with it.
+
+**The share cards.** Ten sections in both editions, twenty files, under
+`public/images/card/`, and `BaseLayout` picks one from the first path segment
+with the home card as the fallback, so all 180 pages resolve to a real file.
+1200x630, drawn from this stylesheet's own tokens and its own h1 face. Two
+site-wide cards were tried first and were the wrong shape: a link is a link to
+ONE page, and a card that says only the name of the site tells the reader
+nothing about the page they were sent. **No card carries a number**, by § A
+number on the page in `site/CLAUDE.md`: a measured number inside an image cannot
+be checked by whoever reads it, which is why the examples card does not say how
+many programs there are. The generator is not in the repository; regenerating a
+card is a build of one HTML file and a headless screenshot.
+
+**The sitemap's four tiers** are this site's own ranking of itself: the two
+landings at 1.0, the pages the nav points at at 0.8, the example programs at
+0.7, the chapters at 0.6. The examples tier is the one it needed and did not
+have: 134 of the 180 pages sat at 0.8, the same figure as the seven pages in the
+nav, which told a crawler that `examples/nqueens/` matters as much as the front
+door of the documentation.
+
+**One guard runs at the end of every build.** `astro:build:done` walks the
+output and unlinks every `.DS_Store`. Astro copies `public/` verbatim and macOS
+writes that file into any directory Finder has looked at, and `.gitignore`
+carries a bare `.DS_Store` so it appears in nobody's `git status`. What this does
+NOT claim: nothing was published. `deploy-site.yml` checks the repository out on
+a Linux runner and builds there, no `.DS_Store` is tracked and none was ever
+committed, so the automated path never had one to copy. The path the guard
+closes is the hand-run `wrangler` deploy from a local `dist` described under §
+The credentials, which would carry it. A `.DS_Store` is a directory listing,
+naming every file that was in the folder including the ones since deleted.
+
 ## Looking at it before it is published — `site/serve.py`
 
 The site answers on **its own name**, locally, over HTTPS, with a certificate the
@@ -229,7 +278,7 @@ browser accepts without a word:
     python3 site/serve.py --it                             # opens the Italian edition
 
 **Why the real name and not localhost.** Every absolute URL on these pages is
-`https://heroes-lang.org/...`: the `canonical` of all 46 pages, the three
+`https://heroes-lang.org/...`: the `canonical` of all 180 pages, the three
 `hreflang` alternates on each of them, the `og:url`, the sitemap's 44 entries.
 Those are generated from one path per page now rather than typed out, which is
 what the move to a layout bought: 176 absolute URLs that cannot disagree with
