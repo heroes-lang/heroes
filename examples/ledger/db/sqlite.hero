@@ -223,7 +223,7 @@ function closed(db: Db) -> i64
 # arm64** (CLAUDE.md §7) — so the program ran clean on the machine it was
 # written on, in all three configurations, while leaking on every failure.
 #
-# **The repair that day was to stop asking; the repair now is to ask and be
+# **The first repair was to stop asking; the repair now is to ask and be
 # given it**, which is a different thing and a better one. `owned
 # sqlite3_free` on the declaration makes the cell a `str?` the compiler has
 # already copied and already freed, so the message below is SQLite's own words

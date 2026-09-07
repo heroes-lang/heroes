@@ -51,8 +51,8 @@
 # program runs unattended on a headless runner in three configurations, so the
 # binding it exercises must need no screen. `ColorToInt`, `ColorAlpha`,
 # `GetSplinePointLinear` and `CheckCollisionPointRec` are all pure computation
-# over structs. The window *was* opened by hand from this same `package` line on
-# by hand, and that is recorded in `docs/panel/050` rather than asserted by a
+# over structs. The window *was* opened by hand from this same `package` line,
+# and that is recorded in `docs/panel/050` rather than asserted by a
 # test no runner can run.
 
 extern "raylib.h" package "raylib"

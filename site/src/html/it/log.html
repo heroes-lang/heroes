@@ -9,6 +9,42 @@
   la versione cartolina, e fino a quel giorno è tutto quello che c&rsquo;è.</p>
 
   <ol class="log">
+    <li id="39">
+      <span class="when">M-declared-freer: il conto che nessuno aveva mai eseguito</span>
+      <b>Una libreria C ti restituisce una stringa che ha allocato lei. Fino a qui potevi liberarla oppure leggerla, mai tutte e due.</b>
+      Una dichiarazione <code>extern</code> ora può nominare la funzione che libera quello che restituisce, e ci pensa il compilatore a chiamarla. Il commento di un esempio diceva &ldquo;diciotto funzioni&rdquo; da quando era stato scritto, con il comando per verificarlo sulla riga dopo. Erano diciassette, e questa milestone ha reso vera quella frase per caso.
+      <a class="more" href="/it/examples/ledger/">Il programma che l&rsquo;ha trovato</a>
+    </li>
+    <li id="38">
+      <span class="when">M-thread-stacks: la guardia che non sorvegliava niente</span>
+      <b>Un thread che finisce lo spazio moriva in silenzio. Adesso lo dice.</b>
+      La versione ordinata di quella storia era falsa, e un giudice l&rsquo;ha dimostrato togliendo una riga dal C generato e ricostruendo: un thread avviato da una libreria C moriva ancora in silenzio, perché non arriva mai al codice che avrebbe dovuto parlare. A salvarlo è tutt&rsquo;altra milestone. E Windows non era mai stato rotto, anche se il registro lo diceva da tre giorni.
+      <a class="more" href="/it/examples/threads/">I thread, e cosa può attraversare</a>
+    </li>
+    <li id="37">
+      <span class="when">M-isolated-threads: una riga, aperta da sempre</span>
+      <b>Ogni thread ha la sua memoria, così i modi in cui il codice normale poteva corrompere quella di un altro smettono di esistere invece di essere chiusi a chiave.</b>
+      Una sola funzione decide che cosa può dire un header C. Rifiutava liste e mappe dappertutto tranne che dentro una callback, dove smetteva di guardare. Così una lista passava nel C e tornava indietro, in tutte e due le direzioni, senza che il compilatore dicesse niente. La specifica lo vietava già: era il compilatore a non essere d&rsquo;accordo con le proprie regole.
+      <a class="more" href="/it/examples/threads/">Dieci programmi che li usano</a>
+    </li>
+    <li id="36">
+      <span class="when">M-c-callbacks: la relazione partiva da un quarantesimo del suo argomento</span>
+      <b>Una funzione Heroes ora si può passare a una libreria C che ne chiede una, che è il modo in cui si chiamano <code>qsort</code>, <code>signal</code> e metà di SQLite.</b>
+      La seduta convocata per deciderlo si apriva con un&rsquo;affermazione su quale scrittura fosse l&rsquo;ostacolo. Un giudice ha rifiutato gli otto esempi scelti a mano e ha misurato l&rsquo;header vero di SQLite: quella scrittura vale un caso su quaranta, e l&rsquo;ostacolo vero, due terzi dei casi, era una cosa che nessuno aveva nominato.
+      <a class="more" href="/it/docs/the-c-boundary/">Il confine con il C</a>
+    </li>
+    <li id="35">
+      <span class="when">M-corpus-depth: il collegio ha rifiutato la modifica e ne ha trovata una più grande</span>
+      <b>Nove programmi di esempio in più, scelti per forma e non per funzionalità: fra un programma di 671 righe e il compilatore non c&rsquo;era niente.</b>
+      Era stata convocata una seduta per approvare un&rsquo;ottimizzazione. Due giudici l&rsquo;hanno bocciata, uno per solidità e uno perché valeva un ventesimo di punto percentuale. Poi lo stesso giudice ha misurato dove finiva davvero la memoria e ha trovato uno spreco dieci volte più grande, in un punto che la proposta non aveva guardato. Toglierlo ha ridotto di oltre un terzo la memoria del compilatore stesso.
+      <a class="more" href="/it/examples/">I programmi</a>
+    </li>
+    <li id="34">
+      <span class="when">M-robustness-guards: il commento diceva che non poteva succedere</span>
+      <b>Un commento dentro il compilatore spiegava perché un certo crash fosse impossibile. Il crash era reale, e bastava una riga di codice normale.</b>
+      Passare un elemento di un array a una funzione che ci scrive dentro consegnava al C l&rsquo;indirizzo dell&rsquo;array intero. Nessuno l&rsquo;aveva incontrato perché i programmi di esempio lo facevano centocinquanta volte con un campo e nemmeno una con un indice. Di buchi così ne sono stati chiusi quattro.
+      <a class="more" href="/it/errors/">Che cosa ferma il compilatore</a>
+    </li>
     <li id="33">
       <span class="when">M-documentation-site: dove vanno i file</span>
       <b>Questo sito aveva tredici capitoli e nessuno diceva dove vanno i file di un programma.</b>
@@ -54,7 +90,7 @@
     <li id="26">
       <span class="when">M-harness-port: la rete, in Heroes</span>
       <b>Tutto quello che controlla il compilatore era scritto nel linguaggio che stava per andare in pensione, così la rete è stata riscritta nel linguaggio stesso.</b>
-      Un programma che usa il compilatore come lo userebbe una persona, in 688 controlli: scrive un comando, legge quello che torna, lo confronta con quello che era stato promesso.
+      Un programma che usa il compilatore come lo userebbe una persona, in centinaia di controlli: scrive un comando, legge quello che torna, lo confronta con quello che era stato promesso.
     </li>
     <li id="25">
       <span class="when">M-selfhost-fixpoint: il seme</span>

@@ -75,7 +75,7 @@ function is_prime(n: i64) -> bool
     return true
 
 test "six values from an implementation this one shares no line with"
-    # Python 3 `zlib.adler32`, run.
+    # Run against Python 3's `zlib.adler32`.
     assert adler32("") == 0x00000001
     assert adler32("a") == 0x00620062
     assert adler32("123456789") == 0x091e01de
