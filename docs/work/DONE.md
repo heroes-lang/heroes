@@ -16,25 +16,23 @@ that turns out to have been decided wrongly gets a *new* item saying so; the old
 one keeps its words, because a record that edits its own past cannot be used to
 check anything.
 
-**How an item gets here.** A list holds only open items. The moment one is
+**How an item gets here.** A live list holds open items only. The moment one is
 ticked — by `/decide`, by `/step`, by a panel's ratification — it moves here with
-the verdict written into it. That rule was written in three places and performed
-by nobody until 2026-08-26: `docs/work/DECIDE.md` had grown to 391 KB holding 138
-ticked items and zero open ones, and this file had not been touched in eight
-days. The rule now lives in the skills that must obey it, which is the only place
-a rule survives.
+the verdict written into it. The rule lives in the skills that must obey it,
+which is the only place a rule survives.
 
-**The name was `QUEUE.md` until 2026-08-26.** It was renamed because it holds
-finished work and its old name claimed the opposite, and because the reason given
-for keeping that name — *"every commit subject in this repository cites this
-path"* — was measured false: **24 subjects of 792, 3.0%**, the last of them 463
-commits earlier, on 2026-08-14. Dated records (`DESIGN-LOG.md`, `docs/panel/`,
-`docs/journal/`) keep the old spelling wherever they already used it, per §14.
+**One banner here and two in the live lists**, and the asymmetry is deliberate:
+entries are appended at the end of this file forever, so a closing fence would
+be a rule the next append breaks. What `records/lists` reads here is one thing —
+that no `- [ ]` line lives in the record, because an open item filed among the
+finished ones is work that reads as done and is not.
 
-Format, unchanged: `- [x] <origin> | <what> | <where to look> | <why it mattered>`
+Format: `- [x] <origin> | <what> | <where to look> | <why it mattered>`. The
+twenty-three items nearest the top predate the checkbox convention and are dated
+prose bullets from 2026-08-04, kept as written.
 
-Twenty-three items near the top predate the checkbox convention and are dated
-prose bullets from 2026-08-04. They are kept as written.
+*******************************************************************************
+**THE RECORD BEGINS HERE — oldest first, newest appended at the end**
 
 - [x] The record | author decision 2026-08-12 (2a) — **THE §11 SWEEP IS CLOSED, 2026-08-13.** Zero non-test files over ~300 lines, from 23 in breach when the decision was taken (26 counting the three the sweep itself pushed over). Twenty-two cut in one session, one commit each, every cut along a seam that names a concern. **The measurement that made "mechanical" a fact rather than a claim**: emitted C byte-identical over all 62 `run/` goldens at every single step — `adce2f13` from the first commit to the last — plus `heroes mutate` unchanged at 1255 mutants / 93% / 78%, 533 tests green, clippy clean, PORT-DEBT still 4, spec untouched at 2974. **Six defects were found by moving code that reading it had not found**: two docs describing rules the code no longer had (one of them one day old), a doc comment sitting on the wrong function, two parameters bound and discarded under prose saying they were used, a doubled computation shadowing itself, and a mutation operator with zero sites. **And one cost is on the record**: an index file grows by the act of tidying — `types/mod.rs` went 303 → 310 on `mod` lines alone before being cut to 224 | docs/debrief/DECIDE.md § the §11 sweep · CLAUDE.md §11 | a rule 23 files break is a preference, and it was the only thing watching the compiler's size after §1.6's global budget was refused
 

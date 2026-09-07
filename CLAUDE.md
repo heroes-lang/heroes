@@ -241,6 +241,60 @@ bullet is invisible to every count in this project — which is how nine live FF
 findings sat in a second, uncounted notation under `DECIDE.md`'s panel 051/052
 headings, two of them measurably stale, while the file reported itself empty.
 
+**AND ONE SHAPE, THE SAME IN ALL SIX FILES, WITH AN INSTRUMENT THAT HOLDS IT**
+(author instruction 2026-09-07, given in four parts over one session: the lists
+are to be more synthetic and regular — only the items with their state and their
+description, no surrounding prose; a closed item does not belong in `DECIDE.md`,
+because it is already in `DONE.md`; and one loud line marking where the items
+begin, so that a glance says whether anything is there — *"fix `DONE` too"*,
+*"fix `ROADMAP` too"*, *"format `LEARN.md` too"*). The shape: **one line of
+three fields per item**,
+`- [ ] **<first field>** | <what, in one line> | <where to look>`, then an
+optional **body indented four spaces** opening with `**Origin:**` and its date,
+and the whole item region **fenced between two lines of asterisks** — one only in
+`DONE.md`, which is appended to forever, so a closing fence there would be a rule
+the next append breaks. The item lists carry `**OPEN: N**` under the opening
+banner, and in `docs/learn/LEARN.md` that number is the open questions alone,
+because a ticked question STAYS there (`/learn`'s rule: the list is also its own
+record). `docs/ROADMAP.md` takes the banner and not the item shape — it is a
+chain and a section per milestone, not a list — and what it lost is fifty lines
+of preamble that were the history of its own three reorganisations, in front of
+its first line of status. **The first field is what the file's instrument
+reads**, and that is why it differs: the milestone in `SCHEDULED.md` (`homed`),
+`panel NNN` in `DECIDE.md` (`queued`, which scans the item LINE — a sitting cited
+in a body is invisible to it), the defect number in `DEFECTS.md`, the origin in
+`LEARN.md`.
+
+**What it cost to leave this to prose, measured 2026-09-07 while the shape was
+being written.** `DECIDE.md` was **3466 bytes of which zero were items** — three
+of its paragraphs narrated items it no longer held. `DEFECTS.md` carried one open
+defect and **2753 bytes about five repaired ones**, every one of them already in
+`DONE.md`. And `SCHEDULED.md`'s 41 items were single lines averaging **2092
+characters** and reaching 5068, which is 96% of the file: the surrounding prose
+was not the preamble, it was the item. `LEARN.md`'s 323 were 545. The three are
+now 176 characters per item line on average and `LEARN.md`'s are 370, with **no
+item's content lost** — the words moved into the body rather than out of the
+file, and `LEARN.md`'s 323 were re-laid-out by a script that reassembled every
+item from its parsed parts and demanded the original line back byte for byte.
+**`tests/harness/suite_records.hero`'s `records/lists` is the executor** — no
+`- [x]` in a work list, no `- [ ]` in the record, nothing outside the banners,
+and the banner's count equal to the items counted. This rule was stated in four
+documents and performed by none, which is this section's own story about
+`DECIDE.md` reaching 391 KB told a third time; the difference is that this time a
+check fails.
+
+**And the reshaping was itself caught by an instrument, twice, which is the part
+worth carrying.** Splitting a long item into a header and an indented body
+**moves a date off the line it was covering**, and `records/citations` reads one
+line at a time: seven dead-path citations in `SCHEDULED.md` and two in
+`LEARN.md` went red the moment the wrapping changed, every one of them a path
+that had been legal only because the item was a single line with a date somewhere
+on it. So when a body is written, **a line that carries an archived or
+never-written path carries its date too**. The `LEARN.md` script was made to
+predict its own damage before writing: it reported a hundred, of which ninety
+were its own false positives, because a record is citable by the prefix of its
+slug and a crude existence test does not know that.
+
 `/decide` takes the decisions the compiler is waiting on: fast, no teaching, every answer applied in the same session, and every item
 verified against the repository before it is put to the author. `/learn` takes
 the comprehension, **only when the author asks for it** — never convened by the
@@ -1042,8 +1096,8 @@ repeated; what follows is what they did not.
 clang -I runtime seed/heroes.c runtime/runtime.c -o heroes   # the compiler, from C alone (2.7 s)
 ./heroes build selfhost/main.hero -o heroes-next             # the compiler, from Heroes
 ./heroes test selfhost/main.hero                             # its own tests (588, 2026-09-07; 48 s WARM)
-./heroes run tests/harness/main.hero -- ./heroes             # the net (1609 checks, 2026-09-07; 13m05s WARM on a desktop in use, ~13m with runtime/ changed)
-./heroes test tests/harness/main.hero                        # THE NET'S OWN TESTS (113, 12 s) — the third suite
+./heroes run tests/harness/main.hero -- ./heroes             # the net (1610 checks, 2026-09-07; 12m55s on a desktop in use, ~13m with runtime/ changed)
+./heroes test tests/harness/main.hero                        # THE NET'S OWN TESTS (119, 2026-09-07; 26 s) — the third suite
 
 ./heroes doctor                                              # toolchain check
 ./heroes <cmd>                                               # the one command
