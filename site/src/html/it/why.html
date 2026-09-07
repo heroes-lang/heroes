@@ -24,8 +24,7 @@
   <p>
     È misurata, non affermata. Prendi programmi che funzionano, pianta in
     ognuno uno sbaglio plausibile, e conta quanti diventano un errore di
-    compilazione invece di un programma che gira e in silenzio fa altro. Poi
-    passa la stessa pila a una versione del compilatore con le regole della tesi
+    compilazione invece di un programma che gira e in silenzio fa altro. Poi passa gli stessi programmi a una versione del compilatore con le regole della tesi
     disattivate. La distanza tra le due colonne è tutta la misura.
     <a href="/it/errors/#measured">La tabella misurata &rarr;</a>
   </p>
@@ -62,7 +61,7 @@ grafica, audio, terminale      →  SDL, raylib, ncurses</code></pre>
   <p>
     Prenderne una in prestito si fa così. Tutto ruota intorno al nome sulla
     prima riga: è l&rsquo;header, il file dove la libreria dichiara la forma delle sue
-    funzioni, ed è contro quello che clang verifica quello che hai scritto.
+    funzioni, ed è su quello che clang verifica quello che hai scritto.
   </p>
   <figure class="example" data-src="examples/gallery/08-ffi.hero" data-lines="12-15">
 <pre><code><span class="k">extern</span> <span class="s">"math.h"</span> link <span class="s">"m"</span>
@@ -87,14 +86,14 @@ grafica, audio, terminale      →  SDL, raylib, ncurses</code></pre>
   <p>
     Clang aveva aperto l&rsquo;header vero. Sbaglia una larghezza invece di un nome e
     la risposta arriva dallo stesso posto, sulla stessa riga, prima che qualcosa
-    parta. È questo che compra il rifiuto: la libreria qui non viene descritta,
+    parta. È questo che il rifiuto ci fa guadagnare: la libreria qui non viene descritta,
     quindi qui non la si può descrivere male.
   </p>
   <p>
     Senza quell&rsquo;header niente verificherebbe quello che hai dichiarato. E
     guarda <code>pow(base:, exponent:)</code>: prende due valori dello stesso
     tipo, quindi la chiamata deve nominarli. La regola vale anche qui, sul
-    confine con il C, che è dove scambiare due argomenti costa di più.
+    confine con il C, che è il punto in cui scambiare due argomenti costa di più.
   </p>
   <p>
     Il minimo indispensabile è una trentina di nomi, sempre gli stessi:
@@ -116,8 +115,7 @@ grafica, audio, terminale      →  SDL, raylib, ncurses</code></pre>
   <p>
     Heroes traduce il tuo programma in C e lascia a un compilatore C il
     compito di produrre l&rsquo;eseguibile. Il motivo è il vincolo qui sopra. Una
-    funzione presa in prestito dal C va verificata contro l&rsquo;header vero della
-    libreria, non contro una descrizione che il compilatore di Heroes si
+    funzione presa in prestito dal C va verificata sull&rsquo;header vero della libreria, non su una descrizione che il compilatore di Heroes si
     inventa. Passare per il C vuol dire che clang lo fa a ogni compilazione,
     gratis. Un design precedente puntava direttamente al codice macchina, ed è
     stato abbandonato quando si è visto che il vincolo di partenza aveva già
@@ -214,19 +212,19 @@ grafica, audio, terminale      →  SDL, raylib, ncurses</code></pre>
     scrive ancora a mano, e la parola <code>int</code> è un errore che elenca
     le dimensioni tra cui scegliere.</dd>
     <dt>Perché la formattazione è rigida, esattamente quattro spazi, e i tab sono un errore?</dt>
-    <dd>Così che "quasi giusto" sia un errore di compilazione invece di un
+    <dd>Perché &ldquo;quasi giusto&rdquo; sia un errore di compilazione invece di un
     programma diverso in silenzio. Un formattatore canonico toglie a chi scrive
     ogni decisione di stile, e questo vuol dire che qualunque differenza di
     testo tra due programmi è una differenza di significato.</dd>
     <dt>Perché ogni assegnamento è una copia?</dt>
-    <dd>Così che un dato non abbia mai due nomi. Se nessun altro tiene quello
+    <dd>Perché un dato non abbia mai due nomi. Se nessun altro tiene quello
     che tieni tu, nessuna funzione lo cambia dietro le tue spalle e due parti di
     un programma che girano insieme non possono pestarsi i piedi. E non puoi
     costruire un cerchio in cui due valori si tengono in vita a vicenda, che è
     ciò che rende possibile liberare la memoria contando chi la tiene, senza
     nessun garbage collector.</dd>
     <dd class="more">Il prezzo è reale e la specifica lo scrive invece di
-    nasconderlo. <code>+</code> su una <code>str</code> copia entrambi i lati,
+    nasconderlo. <code>+</code> su uno <code>str</code> copia entrambi i lati,
     quindi un ciclo di concatenazioni è quadratico ed esiste <code>join</code>
     per costruire in una passata sola. Far crescere un array sul posto è il
     caso in cui nessun altro lo tiene. Quello che <i>non</i> è un prezzo è
@@ -238,12 +236,10 @@ grafica, audio, terminale      →  SDL, raylib, ncurses</code></pre>
     <dt>Due cose possono girare insieme?</dt>
     <dd>Sì, e i thread arrivano dal C come tutto il resto. La regola al confine
     è quella che i valori già impongono: un thread ha la sua memoria, e quello
-    che entra o esce viene copiato invece che condiviso. Quindi non c&rsquo;è niente
-    da bloccare e niente su cui correre, e il compilatore rifiuta il corpo di un
+    che entra o esce viene copiato invece che condiviso. Quindi non c&rsquo;è niente da bloccare e nessuna corsa critica possibile, e il compilatore rifiuta il corpo di un
     thread che prova a portarsi dietro una lista. Questo modello è bravo a
     mandare una cosa piccola e riavere indietro un numero. È scarso a far
-    entrare e uscire valori grandi per farci pochissimo, ed è un limite vero e
-    non una funzione che manca.
+    entrare e uscire valori grandi per farci pochissimo, ed è un limite vero e non una funzionalità che manca.
     <a href="/it/examples/threads/">Il programma che lo fa &rarr;</a></dd>
     <dt>Non è solo una versione più piccola di un linguaggio che esiste già?</dt>
     <dd>La semantica è familiare di proposito: valori che si copiano, nessuna
@@ -268,7 +264,7 @@ grafica, audio, terminale      →  SDL, raylib, ncurses</code></pre>
     scostarsi dal programma. Ognuno di quei programmi viene compilato ed
     eseguito in tre configurazioni a ogni commit.</p>
     <p>Fatto da <a href="https://giuseppearici.com/it/">Giuseppe Arici</a>, CTO di Codermine, Brescia. Autore di
-    <a href="/it/about/"><i>Gli eroi del codice</i></a>. In piedi sul
-    <a href="/it/about/thanks/">lavoro di molte altre persone</a>.</p>
+    <a href="/it/about/"><i>Gli eroi del codice</i></a>. Sulle spalle
+    <a href="/it/about/thanks/">di molte altre persone</a>.</p>
     <p>&copy; 2026 Giuseppe Arici &middot; heroes-lang.org</p>
   </footer>

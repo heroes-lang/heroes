@@ -13,7 +13,7 @@
 
   <h3>Prima: perché il modo ovvio non può funzionare</h3>
   <p>
-    Scrivi un caso che contiene un altro se stesso e il compilatore ti ferma, ti
+    Scrivi un caso che contiene se stesso e il compilatore ti ferma, ti
     spiega il conto e ti offre la via d&rsquo;uscita:
   </p>
   <pre><code>$ heroes check trees.hero
@@ -57,7 +57,7 @@ error[no_size]: `variant Expr` contains itself, so it has no size
   <p>
     Siccome niente può tenere un riferimento,
     <b>non si può costruire nessun ciclo</b>. Ed è quello che permette alla
-    memoria sotto di essere gestita contando i riferimenti, senza collector,
+    memoria sotto di essere gestita contando i riferimenti, senza garbage collector,
     senza rilevatore di cicli e senza annotazioni <code>weak</code> da
     azzeccare.
   </p>
@@ -196,6 +196,6 @@ error[cannot_infer]: `.multiply` does not say which variant it belongs to — th
     un&rsquo;annotazione tolta, controllato come <code>trees.hero</code>.</p>
     <p>Fatto da <a href="https://giuseppearici.com/it/">Giuseppe Arici</a>, CTO di Codermine, Brescia. Autore di
     <a href="/it/about/"><i>Gli eroi del codice</i></a>. Sulle spalle
-    <a href="/it/about/thanks/">di un sacco di altre persone</a>.</p>
+    <a href="/it/about/thanks/">di molte altre persone</a>.</p>
     <p>&copy; 2026 Giuseppe Arici &middot; heroes-lang.org</p>
   </footer>

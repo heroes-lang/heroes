@@ -72,7 +72,7 @@ error[indentation_not_multiple_of_4]: indentation must be exactly 4 spaces per l
   <p>
     There is no separate documentation syntax to learn, because a comment
     already is one. <code>#</code> runs to the end of the line and may contain
-    markdown; <code>##</code> opens a section, which is how a file gets a title
+    Markdown; <code>##</code> opens a section, which is how a file gets a title
     and a heading:
   </p>
   <figure class="example" data-src="examples/gallery/01-points.hero" data-lines="1-4">
@@ -106,7 +106,7 @@ error[indentation_not_multiple_of_4]: indentation must be exactly 4 spaces per l
   <p>
     That binds <code>eval.hero</code>, in the same directory, to the name
     <code>eval</code>. Everything it declares is then written with that name
-    in front: <code>eval.calculate(text, env)</code>. There are no aliases and
+    in front: <code>eval.calculate(text, env)</code>. There is no wildcard import, so a qualified name always says where it came from, and every module you use needs its own <code>use</code> line. (A module can be renamed for one file with <code>as</code>; chapter 13 shows when.) There are no aliases and
     no wildcard import, so a qualified name always says where it came from, and
     every module you use needs its own <code>use</code> line. When you meet an
     unfamiliar name, its prefix tells you which file to open.

@@ -3,6 +3,6 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import { page } from '../../lib/figures.ts';
 import content from '../../html/docs/index.html?raw';
 ---
-<BaseLayout url="/docs/" title={'Heroes, documentation'} description={'The Heroes language, explained page by page for a reader who has not read the specification. Every code block is a file in the repository that compiles and runs.'} current="docs">
+<BaseLayout url="/docs/" title={'Documentation: the Heroes language, one idea at a time'} description={'The Heroes language, explained page by page for a reader who has not read the specification. Every code block is a file in the repository that compiles and runs.'} current="docs">
 <Fragment set:html={page(content, 'site/src/html/docs/index.html')} />
 </BaseLayout>

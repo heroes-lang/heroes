@@ -3,7 +3,7 @@
     <h1 class="page">Il progetto</h1>
     <span class="nod">· a new career in a new town ·</span>
   </div>
-  <p class="lede">Come il compilatore dimostra se stesso, come si decide un
+  <p class="lede">Come il compilatore dà prova di sé, come si decide un
   cambiamento al linguaggio, e le venti righe che il binario stampa quando gli
   chiedi in cosa crede.</p>
 
@@ -57,7 +57,7 @@ $ cmp out.c seed/heroes.c
     parole, quella che trova la struttura, quella che lega ogni nome alla sua
     dichiarazione, il controllo dei tipi, la forma intermedia con il suo
     controllore, il passaggio che decide quando ogni valore viene liberato, la
-    traduzione in C, i controlli contro le librerie esterne, i messaggi
+    traduzione in C, i controlli sulle librerie esterne, i messaggi
     d&rsquo;errore, il formattatore e la riga di comando.
   </p>
 
@@ -81,9 +81,7 @@ $ cmp out.c seed/heroes.c
   <p>
     L&rsquo;ultima cosa che separava i due file era un messaggio che il compilatore
     vecchio aveva lasciato scritto in tre posti per chi avrebbe fatto questo
-    lavoro: <i>qui questa lista esce in ordine, e quello nuovo dovrà un
-    ordinamento esplicito</i>. Tre ordinamenti, non pagati. Il risultato erano
-    un file con tutte le righe uguali e l&rsquo;ordine diverso, su
+    lavoro: <i>qui questa lista esce in ordine, e a quello nuovo servirà un ordinamento esplicito</i>. Tre ordinamenti, non pagati. Il risultato era un file con tutte le righe uguali e l&rsquo;ordine diverso, su
     qualche migliaio di esse. Una mappa non ha un ordine: il linguaggio lo dice
     e lo intende davvero. Quella nota era giusta il giorno in cui è stata
     scritta, ed è rimasta giusta per mesi, fino a quando è servita a
@@ -103,7 +101,7 @@ $ cmp out.c seed/heroes.c
   <ul class="seats">
     <li><span class="who">Il lettore</span><span>Riceve la specifica e programmi d&rsquo;esempio, e mai il documento di design o il codice. Il suo verdetto è un esperimento sul fatto che il linguaggio si legga, non un&rsquo;opinione. <span class="veto">veto</span></span></li>
     <li><span class="who">L&rsquo;ingegnere del compilatore</span><span>Riceve l&rsquo;albero dei sorgenti vero e mette un prezzo al cambiamento in codice da scrivere e da mantenere. <span class="veto">veto</span></span></li>
-    <li><span class="who">Il pragmatico del C</span><span>Riceve il C che servirebbe a un collegamento vero e lo compila, oppure mostra perché non si può compilare. <span class="veto">veto</span></span></li>
+    <li><span class="who">Il pragmatico del C</span><span>Riceve il C che servirebbe a un binding vero e lo compila, oppure mostra perché non si può compilare. <span class="veto">veto</span></span></li>
     <li><span class="who">Il guardiano della specifica</span><span>Riceve il conteggio dei token misurato prima e dopo, mai una stima, e difende il budget in cui tutto il linguaggio deve stare. <span class="veto">veto</span></span></li>
     <li><span class="who">Lo storico</span><span>Deve cercare sul web e citare date e fonti: un precedente senza fonte è inammissibile. Consiglia e non può rifiutare.</span></li>
   </ul>
@@ -122,9 +120,8 @@ $ cmp out.c seed/heroes.c
 
   <h2 id="zen">Venti righe</h2>
   <p>
-    <code>heroes this</code> stampa queste. Viaggiano dentro il compilatore,
-    quindi sono l&rsquo;unico pezzo del progetto che non può andare fuori sincrono con
-    la documentazione. Restano in inglese perché sono quello che il binario
+    Sono le righe che <code>heroes this</code> stampa. Viaggiano dentro il compilatore,
+    quindi sono l&rsquo;unico pezzo del progetto che non può scollarsi dalla documentazione. Restano in inglese perché sono quello che il binario
     stampa, e due delle righe citano una canzone.
   </p>
   <pre lang="en"><code>The Zen of Heroes
@@ -160,14 +157,14 @@ $ cmp out.c seed/heroes.c
     <p>Il primo comando della prova in cima a questa pagina è quello che
     l&rsquo;integrazione continua esegue a ogni push che tocca il compilatore, su
     Linux, e a ogni tag di milestone su tre piattaforme. Gli altri due, il punto
-    fisso, girano solo sul ramo Linux qualunque cosa abbia avviato la corsa,
+    fisso, girano solo sul ramo Linux qualunque cosa abbia avviato l&rsquo;esecuzione,
     perché il C che il compilatore emette è lo stesso su ogni piattaforma. Il
     record di ogni decisione, sedute e misure
     comprese, è tenuto nel
     <a href="https://github.com/heroes-lang/heroes">repository</a>, che è ancora
     privato e si apre insieme al codice.</p>
     <p>Fatto da <a href="https://giuseppearici.com/it/">Giuseppe Arici</a>, CTO di Codermine, Brescia. Autore di
-    <a href="/it/about/"><i>Gli eroi del codice</i></a>. In piedi sul
-    <a href="/it/about/thanks/">lavoro di molte altre persone</a>.</p>
+    <a href="/it/about/"><i>Gli eroi del codice</i></a>. Sulle spalle
+    <a href="/it/about/thanks/">di molte altre persone</a>.</p>
     <p>&copy; 2026 Giuseppe Arici &middot; heroes-lang.org</p>
   </footer>

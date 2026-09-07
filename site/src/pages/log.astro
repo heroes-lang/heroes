@@ -3,6 +3,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import { page } from '../lib/figures.ts';
 import content from '../html/log.html?raw';
 ---
-<BaseLayout url="/log/" title={'The build log, Heroes, milestone by milestone'} description={'Every milestone in a few lines, newest first: what was built, what broke and what the reviewers found.'} current="log">
+<BaseLayout url="/log/" title={'The build log: Heroes, milestone by milestone'} description={'Every milestone in a few lines, newest first: what was built, what broke and what the reviewers found.'} current="log">
 <Fragment set:html={page(content, 'site/src/html/log.html')} />
 </BaseLayout>

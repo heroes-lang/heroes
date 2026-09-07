@@ -232,7 +232,7 @@ export function renderExamplePage(slug: string, lang: Lang): RenderedPage {
 
   return {
     url,
-    title: `${entry} · Heroes ${t('examples', lang).toLowerCase()}`,
+    title: `${entry} · ${lang === 'it' ? 'esempi Heroes' : 'Heroes examples'}`,
     description: description.tagline,
     html: `\n${parts.join('\n\n')}\n`,
   };
@@ -307,7 +307,7 @@ export function renderExamplesIndex(lang: Lang): RenderedPage {
     title: lang === 'it' ? 'Esempi: ogni programma di Heroes' : 'Examples: every Heroes program',
     description:
       lang === 'it'
-        ? `${count.programs + count.gallery} programmi in Heroes, con il codice, il comando e l'output vero.`
+        ? `${count.programs + count.gallery} programmi in Heroes, con il codice, il comando e l’output vero.`
         : `${count.programs + count.gallery} programs written in Heroes, with the code, the command and the real output.`,
     html: `\n${parts.join('\n\n')}\n`,
   };

@@ -3,6 +3,6 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 import { page } from '../../../lib/figures.ts';
 import content from '../../../html/it/docs/modules.html?raw';
 ---
-<BaseLayout url="/it/docs/modules/" title={'I moduli e i file, documentazione di Heroes'} description={'Un file è un modulo. Un percorso use parte dalla cartella del file che compili, quindi la stessa riga vuol dire lo stesso file da qualunque punto del programma.'} current="docs">
+<BaseLayout url="/it/docs/modules/" title={'I moduli e i file: documentazione di Heroes'} description={'Un file è un modulo. Un percorso use parte dalla cartella del file che compili, quindi la stessa riga vuol dire lo stesso file da qualunque punto del programma.'} current="docs">
 <Fragment set:html={page(content, 'site/src/html/it/docs/modules.html')} />
 </BaseLayout>

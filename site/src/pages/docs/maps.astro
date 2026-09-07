@@ -3,6 +3,6 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import { page } from '../../lib/figures.ts';
 import content from '../../html/docs/maps.html?raw';
 ---
-<BaseLayout url="/docs/maps/" title={'Maps, Heroes documentation'} description={'Looking up a key in a map returns a value or an error. You must handle the missing case before using the result.'} current="docs">
+<BaseLayout url="/docs/maps/" title={'Maps: Heroes documentation'} description={'Looking up a key in a map returns a value or an error. You must handle the missing case before using the result.'} current="docs">
 <Fragment set:html={page(content, 'site/src/html/docs/maps.html')} />
 </BaseLayout>

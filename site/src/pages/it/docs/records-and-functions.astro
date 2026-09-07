@@ -3,6 +3,6 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 import { page } from '../../../lib/figures.ts';
 import content from '../../../html/it/docs/records-and-functions.html?raw';
 ---
-<BaseLayout url="/it/docs/records-and-functions/" title={'Record e funzioni, documentazione di Heroes'} description={'I record tengono i campi per valore e si costruiscono sempre nominando i campi. Dove due parametri hanno lo stesso tipo, la chiamata deve nominarli: è così che due argomenti scambiati diventano un errore di compilazione.'} current="docs">
+<BaseLayout url="/it/docs/records-and-functions/" title={'Record e funzioni: documentazione di Heroes'} description={'I record tengono i campi per valore e si costruiscono sempre nominando i campi. Dove due parametri hanno lo stesso tipo, la chiamata deve nominarli: è così che due argomenti scambiati diventano un errore di compilazione.'} current="docs">
 <Fragment set:html={page(content, 'site/src/html/it/docs/records-and-functions.html')} />
 </BaseLayout>

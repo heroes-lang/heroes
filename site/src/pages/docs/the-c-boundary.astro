@@ -3,6 +3,6 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import { page } from '../../lib/figures.ts';
 import content from '../../html/docs/the-c-boundary.html?raw';
 ---
-<BaseLayout url="/docs/the-c-boundary/" title={'The C boundary, Heroes documentation'} description={"There is no standard library, permanently. Everything else comes from C through extern, and clang checks every declaration against the library's own header, so a wrong type is a compile error, not a crash."} current="docs">
+<BaseLayout url="/docs/the-c-boundary/" title={'The C boundary: Heroes documentation'} description={"There is no standard library and there never will be. Everything else comes from C through extern, and clang checks every declaration against the library's own header, so a wrong type is a compile error, not a crash."} current="docs">
 <Fragment set:html={page(content, 'site/src/html/docs/the-c-boundary.html')} />
 </BaseLayout>

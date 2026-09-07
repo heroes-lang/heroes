@@ -27,8 +27,7 @@
   <p>
     <code>s[i]</code> gives you a <code>u8</code>, a number from 0 to 255,
     because that is what a byte is. It is compared against <code>' '</code> in
-    single quotes, which is how you write a single character and counts as a
-    number too. With double quotes you would have a string, and the two do not
+    single quotes, which is how a single character is written, and a character is a number too. With double quotes you would have a string, and the two do not
     mix:
   </p>
   <pre><code>$ heroes check strings.hero
@@ -61,11 +60,10 @@ error[type_mismatch]: expected `u8`, found `str`
     one-character <code>str</code>, which is why this function compares against
     <code>" "</code> in double quotes while the previous one used
     <code>' '</code>. Use the byte loop for a protocol or a scanner; use
-    <code>chars()</code> for anything a person will read. The syntax makes the
-    choice between bytes and characters explicit.
+    <code>chars()</code> for anything a person will read. 
   </p>
   <p>
-    Slicing in the middle of a character is not silently allowed either: it
+    Slicing through the middle of a character stops the program rather than producing text that is no longer valid UTF-8: it
     stops the program rather than producing text that is no longer valid UTF-8.
   </p>
 

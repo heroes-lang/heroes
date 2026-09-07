@@ -3,6 +3,6 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 import { page } from '../../../lib/figures.ts';
 import content from '../../../html/it/docs/tests-and-holes.html?raw';
 ---
-<BaseLayout url="/it/docs/tests-and-holes/" title={'Test e buchi, documentazione di Heroes'} description={"I test fanno parte del linguaggio e stanno accanto al codice. ??? lascia un buco controllato: il compilatore verifica il resto e ti dice che cosa manca."} current="docs">
+<BaseLayout url="/it/docs/tests-and-holes/" title={'Test e buchi: documentazione di Heroes'} description={"I test fanno parte del linguaggio e stanno accanto al codice. ??? lascia un buco controllato: il compilatore verifica il resto e ti dice che cosa manca."} current="docs">
 <Fragment set:html={page(content, 'site/src/html/it/docs/tests-and-holes.html')} />
 </BaseLayout>

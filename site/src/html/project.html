@@ -43,7 +43,7 @@ $ cmp out.c seed/heroes.c
     same. So the C in the repository is not a copy anybody maintains: it is what
     the compiler writes, and the compiler built from it writes it again. The
     middle line takes under a minute on a MacBook Air. Three lines, and
-    anybody can run them.
+    anybody with the repository can run them.
   </p>
   <ul class="stats">
     <li><span class="n">180+</span><span class="what">modules of Heroes</span></li>
@@ -52,12 +52,11 @@ $ cmp out.c seed/heroes.c
     <li><span class="n">100+</span><span class="what">design sittings on the record</span></li>
   </ul>
   <p>
-    That is the whole compiler and not a subset: the part that breaks text into
-    words, the part that finds the structure, the part that ties every name to
-    its declaration, the type checker, the middle form with its own checker, the
-    pass that decides when each value is released, the translation into C, the
-    checks against foreign libraries, the error messages, the formatter and the
-    command line.
+    That is the whole compiler and not a subset. Text into words; words into
+    structure; every name tied to its declaration; the type checker; the middle
+    form with its own checker; the pass that decides when each value is
+    released; the translation into C; the checks against foreign libraries; the
+    error messages; the formatter; the command line.
   </p>
 
   <h3>What pointing it at itself found</h3>
@@ -83,7 +82,7 @@ $ cmp out.c seed/heroes.c
     sorts, unpaid. The result was a file whose lines all
     matched and whose order did not, on a few thousand of them. A map has no
     order: the language says so and measurably means it. The note was right the
-    day it was written, and stayed right for months until somebody needed it.
+    day it was written, and stayed right until somebody needed it.
   </p>
 
   <h2 id="panel">How a change to the language gets decided <span class="nod">&middot; five years &middot;</span></h2>
@@ -104,10 +103,8 @@ $ cmp out.c seed/heroes.c
     <li><span class="who">The historian</span><span>Has to search the web and cite dates and sources: unsourced precedent is inadmissible. It advises and cannot refuse.</span></li>
   </ul>
   <p>
-    The panel never blocks the work. It adopts the most robust and complete
-    resolution it can find, never the cheapest and never a compromise. It marks
-    that as awaiting the author&rsquo;s word, and the work goes on. Where the robust
-    answer and the careful one disagree, it takes the robust answer and writes
+    The panel never blocks the work. It adopts the strongest and most complete resolution it can find, never the cheapest and never a compromise. It marks
+    that as awaiting the author&rsquo;s word, and the work goes on. Where the strong answer and the cautious one disagree, it takes the strong one and writes
     down the other, so the author can still choose it.
   </p>
   <p>
@@ -154,7 +151,8 @@ $ cmp out.c seed/heroes.c
     <p>The first command in the proof at the top of this page is the one the
     continuous integration runs on every push that touches the compiler, on
     Linux, and on every milestone tag on three platforms. The other two, the
-    fixpoint itself, run on the Linux leg alone whatever started the run,
+    check that the compiler reproduces its own C, run on the Linux leg alone
+    whatever started the run,
     because the C the compiler emits is the same on every platform. The record
     of every decision, sittings and
     measurements included, is kept in the
