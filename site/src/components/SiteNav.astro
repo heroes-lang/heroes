@@ -33,8 +33,10 @@ const other = lang === 'en' ? `/it${url}` : url.slice(3);
 
 // Eight entries, and each one answers a question a visitor actually has, in
 // the order they ask it: why should I care, show me the code, teach it to me,
-// how do I run it, is this alive, how is it built, who is behind it, and on
-// whose shoulders. The eighth, Thanks, was seven's displaced page until the
+// how do I run it, how is it built, is this alive, who is behind it, and on
+// whose shoulders. Project stands before Log by author instruction
+// (2026-09-08): the log is the project's log, so the thing comes before its
+// diary. The eighth, Thanks, was seven's displaced page until the
 // author put it back (2026-09-07): the credits are the one page whose subject is
 // other people, and a nav that hides them reads as a project that forgot them.
 //
@@ -49,8 +51,8 @@ const entries = [
   { key: 'examples', slug: 'examples', en: 'Examples', it: 'Esempi' },
   { key: 'docs', slug: 'docs', en: 'Guide', it: 'Guida' },
   { key: 'start', slug: 'start', en: 'Start', it: 'Inizia' },
-  { key: 'log', slug: 'log', en: 'Log', it: 'Diario' },
   { key: 'project', slug: 'project', en: 'Project', it: 'Progetto' },
+  { key: 'log', slug: 'log', en: 'Log', it: 'Diario' },
   { key: 'about', slug: 'about', en: 'Author', it: 'Autore' },
   // `Grazie`, the page's own title, and not `Ringraziamenti`: the longer word
   // put the Italian row on two lines at 900px where the English held one.

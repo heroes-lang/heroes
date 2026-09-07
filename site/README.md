@@ -144,10 +144,12 @@ belongs to the layout and the nav depth to the component, and conflating them is
 how the language switch breaks on exactly the Italian pages.
 
 **Seven items, and each one is a question a visitor has** (author instruction
-2026-09-06) — Why · Examples · Docs · Start · Log · Project · About, plus the
+2026-09-06) — Why · Examples · Docs · Start · Project · Log · About, plus the
 language badge and GitHub — and the current page marks itself `class="here"`.
 The order is the order somebody asks: why should I care, show me the code, teach
-it to me, how do I run it, is this alive, how is it built, who is behind it. It
+it to me, how do I run it, how is it built, is this alive, who is behind it.
+Project stands before Log by author instruction 2026-09-08: the log is the
+project's log, so the thing comes before its diary. It
 was eight items that were the project's own shelves instead, and neither a
 learning entry nor an install entry was among them, which every one of the nine
 language sites surveyed while planning has in its top nav.
