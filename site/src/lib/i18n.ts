@@ -43,6 +43,14 @@ const PHRASES: Record<string, Phrase> = {
   bindsC: { en: 'binds C', it: 'usa C' },
   reads: { en: 'Read it', it: 'Leggilo' },
   reproduce: { en: 'Reproduce it', it: 'Riproducila' },
+  // The way OFF the examples shelf. Every label here stays under six words:
+  // `records/english` reads this file and Italian prose belongs to the edition,
+  // not to a table both editions share.
+  runOneYourself: { en: 'Run one yourself', it: 'Eseguine uno' },
+  theFourCommands: { en: 'the four commands', it: 'i quattro comandi' },
+  learnTheLanguage: { en: 'Learn the language', it: 'Impara il linguaggio' },
+  orTakeItWhole: { en: 'or take it whole', it: 'oppure prendilo tutto' },
+  inOneFile: { en: 'in one file', it: 'in un file solo' },
 };
 
 /**
