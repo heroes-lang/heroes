@@ -127,7 +127,7 @@ error[marker_mismatch]: `advance` changes this argument, so the call site writes
   </p>
   <p>
     The meaning is <b>copy in, copy out</b>: the function works on its own copy
-    and the caller's value is replaced when it returns. That happens on every
+    and the caller&rsquo;s value is replaced when it returns. That happens on every
     exit, early <code>return</code> included, so there is no path where half the
     changes arrive.
   </p>
