@@ -60,11 +60,11 @@ M-separate-compilation already did.
 |---|---|
 | **Current milestone** | **M-discard-refusal** — **OPEN**, row 38: `_ =` on a fallible value becomes a compile error. The verdict is the author's and given (`/decide` answer `3a`, 2026-09-03); the sitting is still owed, because a spec clause and a diagnostic class are both language (CLAUDE.md §4) |
 | **Last closed** | **M-declared-freer**, 2026-09-07, tag `m-declared-freer` ([036](journal/036-declared-freer.md)) — five steps, two sittings, four `internal error`s repaired. `owned <C function>` frees the string C hands you, in both positions · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
-| Milestones closed | **37** of 58 · **37** tags |
+| Milestones closed | **37** of 59 · **37** tags |
 | The compiler | **55,050** lines of Heroes in **189** modules · the seed **747,095** lines of C · runtime ABI **21**, unmoved: the mark needed no runtime entry point, because the release is built out of instructions the IR already had |
 | The spec | **3871** of a hard 4096 · headroom **225** — spent at M-declared-freer step 2 on panel 109's wording, and **unmoved since**: the `@` cell the milestone finished with was already described by the sentence that step bought |
-| Records | sittings **115** · journals **37** · examples **55** programs, **118** files, **545** `test` blocks · open defects **0** · the site **46** pages, 23 English and 23 Italian |
-| Waiting on the author | **0** decisions · **39** in `SCHEDULED.md` · **0** in `DEFECTS.md` · **319** in `LEARN.md` (never a gate) · an outstanding veto (`docs/panel/101` R3) |
+| Records | sittings **115** · journals **37** · examples **55** programs, **118** files, **545** `test` blocks · open defects **1** · the site **46** pages, 23 English and 23 Italian |
+| Waiting on the author | **0** decisions · **42** in `SCHEDULED.md` · **1** in `DEFECTS.md` (016, `assert` drops both sides for every aggregate against `spec:202`) · **319** in `LEARN.md` (never a gate) · an outstanding veto (`docs/panel/101` R3) |
 
 Every number re-counted 2026-09-07 at M-declared-freer's close, none carried. Three suites green: **588**, **1609**, **113**. What moved for the milestone is the compiler and the shape of two files: **186 → 189** modules, `ir/lower.hero` **1511 → 174** and `parse/decl.hero` **638 → 217**, both now under §11's own 300 and out of `suite_layout.hero`'s `DECIDED` table altogether — panel 109's coordinator had predicted **≤ 900** and **≤ 400**. The number to watch is the other direction: `check/walk.hero` is at **1695 of a decided 1700**, five lines of room, and it is the file every new diagnostic reaches.
 
@@ -125,7 +125,7 @@ heroes test selfhost/main.hero                 # the compiler's own tests
 ## The chain
 
 One table, one row per milestone, **closed first and scheduled after**: rows 1–37
-are done, in the order they closed, and rows 38–57 are what is next, in the order
+are done, in the order they closed, and rows 38–59 are what is next, in the order
 they will be taken. `warrant` is why a milestone exists: **v1** (the self-hosting
 finish line), **closure list** (design.md §1.0 — the compiler needs it), **§1.1**
 (comprehension is the objective), or **scheduled, no warrant**.
@@ -183,16 +183,17 @@ and why one overtook another are under the table, in § Who scheduled what.
 | 46 | **M-web-framework** | scheduled | — | — | composes the core packages, Go/Echo style: explicit routes, records, no magic |
 | 47 | **M-doc-generator** | scheduled | — | — | `heroes doc`, the one direction Part 6's literate-source row promises · scheduled, no warrant |
 | 48 | **M-panic-location** | scheduled | — | — | a panic names the `.hero` file, line and function · **§1.12** |
-| 49 | **M-generated-programs** | scheduled | — | — | programs nobody wrote: a generator that composes valid Heroes and knows the answer before the compiler is asked · **§1.12** |
-| 50 | **M-thesis-harness** | scheduled | — | — | Part 11's metrics 2 and 4 run for the first time, as a Heroes program · **§1.1** |
-| 51 | **M-lsp-server** | scheduled | — | — | `heroes lsp`, and the incremental frontend it needs |
-| 52 | **M-vscode-extension** | scheduled | — | — | the extension, complete |
-| 53 | **M-qbe-backend** | scheduled | — | — | Part 7 item 15 — the proof that the IR is not C in disguise |
-| 54 | **M-journey-book** | scheduled | — | — | the journey — how this language came to be |
-| 55 | **M-guide-book** | scheduled | — | — | the guide, as a book you would find in a shop · **§1.1** |
-| 56 | **M-install-channels** | scheduled | — | — | a Homebrew tap, winget, a Nix flake, a Docker image, all built from the seed, and a version scheme |
-| 57 | **M-online-compiler** | scheduled | — | — | the compiler reached without installing anything: the site's visitor writes Heroes and gets its answer · scheduled, no warrant |
-| 58 | **M-publication-gate** | scheduled | — | — | the last gate before anything goes outward · CLAUDE.md §14 |
+| 49 | **M-typed-inspection** | scheduled | — | — | a stopped program shows Heroes values: the name the author typed, and `[T]`, `{K: V}`, `T?`, a variant and a record shown as themselves · scheduled, no warrant |
+| 50 | **M-generated-programs** | scheduled | — | — | programs nobody wrote: a generator that composes valid Heroes and knows the answer before the compiler is asked · **§1.12** |
+| 51 | **M-thesis-harness** | scheduled | — | — | Part 11's metrics 2 and 4 run for the first time, as a Heroes program · **§1.1** |
+| 52 | **M-lsp-server** | scheduled | — | — | `heroes lsp`, and the incremental frontend it needs |
+| 53 | **M-vscode-extension** | scheduled | — | — | the extension, complete |
+| 54 | **M-qbe-backend** | scheduled | — | — | Part 7 item 15 — the proof that the IR is not C in disguise |
+| 55 | **M-journey-book** | scheduled | — | — | the journey — how this language came to be |
+| 56 | **M-guide-book** | scheduled | — | — | the guide, as a book you would find in a shop · **§1.1** |
+| 57 | **M-install-channels** | scheduled | — | — | a Homebrew tap, winget, a Nix flake, a Docker image, all built from the seed, and a version scheme |
+| 58 | **M-online-compiler** | scheduled | — | — | the compiler reached without installing anything: the site's visitor writes Heroes and gets its answer · scheduled, no warrant |
+| 59 | **M-publication-gate** | scheduled | — | — | the last gate before anything goes outward · CLAUDE.md §14 |
 
 Three closed milestones have no tag of their own because they were parents or
 sub-steps: **M-checker-core**, **M-data-declarations** and **M-rich-diagnostics**
@@ -416,6 +417,59 @@ row number, because a reorder moves a number and never a name (CLAUDE.md §14).
   placing, five oracles rather than crashes alone, and the harness rather than a
   new verb — so §10's stopping rule is not touched and the tool convenes no
   sitting; what may convene one is a repair that reaches the language.
+
+- **M-typed-inspection** — **row 49, scheduled by author instruction 2026-09-06**:
+  *"I would like to add a step that implements a debugger for the Heroes language,
+  a first thinking over all the possibilities, and then tell me as well where you
+  want to put it in the roadmap."* Rows 49–58 each move down one; the numbers in
+  the bullets above are the ones those rows had when they were written. Three
+  choices were put with a recommendation and the author took all three: the id,
+  the row, and opening the `assert` defect below in `docs/work/DEFECTS.md` rather
+  than carrying it only as a witness into another sitting. **What a stopped
+  program shows was measured before the row was written, and the surprise is that
+  half of it already works.** On this Mac, 2026-09-06: a breakpoint set on a
+  `.hero` line is hit and the source line is printed, `bt` names Heroes frames at
+  `.hero:line`, and a local carries the author's own spelling behind an index
+  (`h3_base = 7`). What is broken is four things. `p p` is
+  `error: use of undeclared identifier 'p'`, because the C name is `h0_p` and
+  lldb's expression parser is C++. A `[T]` and a `{K: V}` are an opaque
+  `HeroArrayHeader *` and nothing of the contents. A `T?` prints **both** arms,
+  including a garbage `err` half, under a hashed type name. And the frame is
+  flooded, because §7 hoists every local to the prologue: **139** in one blessed
+  emission (`tests/emission/run-adversarial-aggregate-overwrite.c`, 111 named and
+  28 temporaries) against the **247** in `syn/expr.hero::compared` that
+  M-qbe-backend's own item already carries. **Two findings placed the row rather
+  than the symptom list.** The promise has no instrument: the golden this file
+  cites at `:452` is `archive/bootstrap-rs/heroes-cli/tests/golden.rs:1012`,
+  nothing has built that tree since M-bootstrap-archive on 2026-08-19, and CI
+  installs lldb on the Linux leg for a test it never runs. And design.md's own
+  consolation is false — Part 2 (`design.md:594`) refuses typed inspection on the
+  ground that *"printing rich values is still `print`'s job"*, while `print(p)` on
+  a record is a **compile error** and `assert` shows its two sides only for what
+  `print` can print, so `assert [1, 2] == [1, 3]` prints the expression and no
+  sides at all, silently, against `spec:202`. **The cheap route was run and not
+  argued**: thirty lines of lldb Python read `len` from the header, resolved the
+  `elem` descriptor pointer to the symbol `hero_desc_str`, found the C type
+  `HeroStr` and printed `"ada"` and `"grace"`, with no compiler change and no
+  runtime change — and `nm` shows a user type links as `_h_desc_Room_desc`, so the
+  descriptor's own symbol is the type name the runtime does not carry. **Placed
+  after M-panic-location** because they are two halves of one sentence and this is
+  the expensive half: a program that stops says *where*, then says *what it was
+  holding*. **Placed before M-generated-programs** on that row's own argument, one
+  order up — its programs are the only ones here that nobody wrote, so reading the
+  source helps least exactly there. **Placed before M-vscode-extension**, whose
+  Debugging bullet states as a ceiling the thing this row removes, and that bullet
+  is amended in the same commit rather than left to expire in silence. **Placed
+  after M-reflection-verdict**, because a `to_str` derived over a record's fields
+  is that sitting's own question and this row must not take it. **No warrant**: the
+  §1.1 argument is available and is not claimed, because the only instrument that
+  could measure it is Part 11's metric 4, which has never run. **The row was
+  re-checked on 2026-09-07 by author instruction** (*"re-evaluate now, after other
+  people's commits"*) after ten commits from a peer session closed
+  M-declared-freer, which is the rule about reading a scheduling fact immediately
+  before writing it doing its job: rows 48 and 49 had not moved, one staleness this
+  commit was going to repair had already been repaired by that session, and two of
+  the numbers written above were re-run rather than carried.
 
 ---
 
@@ -1428,6 +1482,104 @@ be taken the day the threads land. Its witnesses are the corpus under
 `--sanitize` and Part 11's metric 4, whose turns-to-green a panic that names its
 line shortens.
 
+### M-typed-inspection — a stopped program shows Heroes values
+
+**Scheduled by author instruction 2026-09-06** — § Who scheduled what carries the
+instruction, the three choices the author took and the measurements that placed the
+row. **No warrant**, deliberately: the §1.1 argument is available and unclaimed,
+because the only instrument that could measure it is Part 11's metric 4, which has
+never run, and a place in the table is not a warrant.
+
+**The id is the sentence it retires.** `design.md:594` says *"No typed variable
+inspection in v1"* and this file's own M-vscode-extension bullet says *"Typed
+inspection is not in v1"*. Both clauses are dated to a v1 that was reached at
+M-selfhost-fixpoint on 2026-08-18.
+
+**Half of it already works, and a later reader should not re-derive that.** Measured
+on this Mac 2026-09-06, with lldb in batch mode over a hand-written program: a
+breakpoint on a `.hero` line resolves and is hit, the source line is printed with a
+caret, `bt` names Heroes frames at `.hero:line` (`h_dbg_total(...) at dbg.hero:19`),
+a local carries the author's own spelling behind an index (`h3_base = 7`), a `str`
+shows its text, and a record shows its fields (`h0_p = (f_x = 3, f_y = 4)`). `-g` is
+on every build and the object survives beside the `.c` so Darwin's DWARF resolves
+(`selfhost/cli/flags.hero`, `selfhost/cli/toolchain.hero`) — both repaired at
+M-selfhost-port, which is why the line half exists at all.
+
+**What it delivers is the other half, and it is four named failures.** `p p` is
+`error: use of undeclared identifier 'p'` — the C name is `h0_p` and lldb's
+expression parser is C++, so the author must know the mangling to ask a question. A
+`[T]` and a `{K: V}` are an opaque `HeroArrayHeader *` and nothing of the contents. A
+`T?` prints **both** arms, including a garbage `err` half, under a hashed type name
+(`h_0opt_e201354`). And the frame is flooded, because CLAUDE.md §7 hoists every local
+to the prologue and `frame variable` has no name filter: **139** in one blessed
+emission, 111 named and 28 temporaries, against the **247** in
+`syn/expr.hero::compared` that M-qbe-backend's item already carries.
+
+**The route was run rather than argued, and that is what makes this row cheap.**
+Thirty lines of lldb Python read `len` out of the array header, resolved the `elem`
+descriptor pointer to the symbol `hero_desc_str`, found the C type `HeroStr` and
+printed `"ada"` and `"grace"` — no compiler change, no runtime change, memory reads
+only. `nm` shows a user type links as `_h_desc_Room_desc`, so **the descriptor's own
+symbol name is the type name the runtime does not carry**, which is the same
+pointer-identity trick `runtime/parts/sort.c` already uses. A `name` field on
+`HeroDesc` is therefore refused before anybody proposes it: it would cost
+`HERO_RUNTIME_ABI` a bump to buy a string the linker is already holding.
+
+**The first step is the instrument, because the claim has none.** `design.md:616` and
+this file at `:452` both assert that a golden runs lldb in batch mode and asserts a
+breakpoint on a `.hero` line is hit. That golden is
+`archive/bootstrap-rs/heroes-cli/tests/golden.rs`, nothing has built that tree since
+M-bootstrap-archive on 2026-08-19, `tests/harness/` has no lldb suite, and
+`.github/workflows/ci.yml` installs lldb on the Linux leg for a test it never runs.
+The suite comes back wider than it went away: the three guards the archived test
+bought with failures (lldb wrote nothing on either stream · the breakpoint is pending
+with no locations · the file, the line and `stop reason`), plus the **stepping** half
+that never had a test at all. Its own falsifier is run once by hand and quoted —
+`-g` deleted, the suite must go red — because a debugger suite that passes without
+DWARF is a decoration. It also settles `docs/panel/085`'s B2 condition, which said in
+its own words that the lldb class *"was not tried"*.
+
+**The second step measures four premises before anything is designed on them**, and
+one of them decides the shape of the last: of those 139 and 247 locals, how many are
+`t<N>` temporaries, how many are `$`-synthetic slots the lowering invented, and how
+many are bindings the author wrote. The IR already knows — `SlotKind` carries
+`param_slot`/`local_slot`/`synthetic_slot` and `--dump-ir` prints the `$` — and the
+distinction dies in the mangler, which drops the leading `$`. If the census says the
+named locals are mostly synthetic, the frame filter is free; if it says they are real
+bindings spread over a long function, a slot table beside the binary is what buys
+scope, and that is a panel question rather than a decision taken here.
+
+**Not in this milestone**: making `print(p)` work. A `to_str` derived over a record's
+fields is M-reflection-verdict's own question in its own words, and taking it here
+would be a decision made at a sitting convened about something else. What this
+milestone does is make that sitting's exhibit: after it, the author can **see** a
+`[Token]` in a stopped frame and still cannot `print` one. Also not here: calling a
+generated renderer inside the stopped process. It is the obvious optimisation and it
+is unrun and unsafe on its face — the moment a debugger earns its keep is the moment
+the program has crashed, and allocating on that process's heap, on whatever thread
+lldb picks, after M-isolated-threads gave every thread its own, is a debugger that
+mutates what it came to look at.
+
+**What it honestly does not deliver is Windows.** `lldb.exe` exits `0xC0000135`
+before running a command, which `.github/workflows/ci.yml` records and CI reports
+rather than gates. The `#line` mapping itself is covered on all three legs by the
+suite that reads emitted C and needs no debugger. What Windows gets here is a
+`heroes doctor` row that says the tool is missing, because a named absence beats a
+silence, and the way back in is named as a question rather than a plan:
+`llvm-pdbutil` reads the CodeView in the 7.7 MB `.pdb` that `-g` already writes and,
+unlike `lldb.exe`, has no reason to link Python.
+
+**Why here.** After M-panic-location because they are two halves of one sentence and
+this is the expensive half: a program that stops says *where*, then says *what it was
+holding*, and most stops never reach a debugger once the panic names its function.
+Before M-generated-programs for that row's own reason one order up — its programs are
+the only ones in this project that nobody wrote, so reading the source, the ordinary
+triage instrument, helps least exactly there. Before M-lsp-server and
+M-vscode-extension so that the extension's variables pane is right on the day it
+ships. And independent of M-qbe-backend: the flood is filtered debugger-side over a
+convention the mangler already enforces, so this row does not wait on one that sits
+behind the books.
+
 ### M-generated-programs — programs nobody wrote
 
 **Scheduled by author instruction 2026-09-06** — § Who scheduled what carries the
@@ -1585,10 +1737,16 @@ extension somebody could install and forget about.
   the generated binary without this project writing a debug adapter — which is
   CLAUDE.md §10's *"nothing if two existing invocations already compose to it"*.
   If a launch configuration cannot be expressed that way, `heroes dap` enters
-  under the stopping rule like any other verb, with the reason recorded. The
-  known ceiling is design.md §2's: `p x` shows a mangled C temporary rather than
-  a Heroes value. Typed inspection is not in v1 and this milestone does not
-  smuggle it in.
+  under the stopping rule like any other verb, with the reason recorded. **The
+  ceiling stated here used to be design.md §2's, and M-typed-inspection is the row
+  that removes it** (amended 2026-09-06, in the commit that scheduled that row):
+  `p x` showing a mangled C temporary rather than a Heroes value was true of every
+  build until then, and the variables pane shows whatever lldb's formatters show,
+  so this milestone inherits the answer instead of documenting the ceiling. What is
+  unchanged is the ruling: `lldb-dap` composes, this project writes no debug
+  adapter, and an editor **consumes** formatters rather than producing them. The
+  sentence is corrected rather than deleted, because a bullet that states a limit
+  the compiler has already lifted funds the wrong decision at the next sitting.
 - **Packaging**: a `.vsix` that installs, with `heroes doctor` as the extension's
   own health check.
 
@@ -1956,6 +2114,7 @@ So a number met in the record resolves here, and only here.
 | `M-check-completeness` | — | — | what `heroes check` accepts, `heroes build` compiles — through a generic too. **A new id and not a step of a checker milestone** (§14): `M-typed-frontend` and `M-checker-core` closed 2026-08-04 delivering the frontend itself, and what this delivers is a **promise about two commands agreeing**, which neither name claims. Scheduled 2026-09-04 by author instruction with **no warrant** — Principle 0 holds it, panel 082 R3 ruled the direction on 2026-08-16, and the trigger is a `grep` rather than a date |
 | `M-online-compiler` | — | — | the compiler reached without installing anything: the site's visitor writes Heroes and gets its answer. **A new id and not a step of `M-documentation-site` or `M-install-channels`** (§14): the site closed 2026-09-02 delivering pages anchored to programs that run, and the channels deliver installation, while this one delivers the case where nothing is installed at all. **Deliberately neither `M-wasm-playground` nor `M-browser-compiler`**: the engine is this milestone's own opening question, so an id naming either would claim exactly what the sitting exists to decide, and `wasm` has to stay free for the later half of Part 7 item 15 (`design.md:2645`). Scheduled 2026-09-06 by author instruction with **no warrant** |
 | `M-generated-programs` | — | — | programs nobody wrote, and the defects they find: a generator that composes valid Heroes by construction, knows what each program must print before the compiler is asked, and reduces every disagreement to a case. **A new id and not a fourth corpus** (§14, author instruction 2026-09-06): `M-program-corpus` delivered *many programs run*, `M-corpus-coverage` *every form has a program* and `M-corpus-depth` *size, depth and an external oracle* — all three are programs a person sat down and wrote, and this one delivers programs **nobody wrote**. It is also not a reopening of `M-robustness-guards`, which closed 2026-09-03 delivering the guards that shut four named holes: a guard is a hole you have found, and what this delivers is the machine that finds them. **Deliberately neither `M-adversarial-corpus` nor `M-compiler-survival`**: the first annexes an area three milestones already share, and the second states a promise a later milestone can falsify, which §14 forbids an id to do. Both runners-up are in `tests/harness/suite_records.hero`'s `REFUSED` |
+| `M-typed-inspection` | — | — | a stopped Heroes program shows Heroes values: `p p` under the name the author wrote, and `[T]`, `{K: V}`, `T?`, a variant and a record shown as themselves rather than as an opaque `HeroArrayHeader *`, a raw tagged union with a garbage `err` arm, and a hashed type name. **The id is a phrase the record already uses, and both times as the non-goal** (§14 prefers one the record uses over an invented one): `design.md:594` says *"No typed variable inspection in v1"* and this file's M-vscode-extension bullet said *"Typed inspection is not in v1"* until the row existed. **A new id and not a reopening of `M-selfhost-port`**, which closed 2026-08-17 and carried `-g` in as a defect so lldb could break on a `.hero` line at all: breaking, stepping and a backtrace at `.hero:line` work today, and what this delivers is what the frame SHOWS once the program has stopped. **It is also not a step of `M-vscode-extension`**, whose Debugging bullet rules that `lldb-dap` composes: an editor consumes formatters and never produces them, and the author debugs a compiler written in Heroes from a terminal with no editor open. **Deliberately not `M-debugger`**: one word where §14 asks for two, so it appropriates a topic, and it would claim the line-level half a closed milestone already delivered while leaving no name for the `heroes dap` this file already reserves. **Deliberately not `M-stopped-values`**: `print` and `assert` render values too, and that half is compile-time derivation over a record's fields, which is `M-reflection-verdict`'s question and not this row's. **And deliberately not `M-frame-values`**: it names the compiler's word for the place rather than the author's for the thing, and the deliverable is the value seen, not the frame. All three runners-up are in `tests/harness/suite_records.hero`'s `REFUSED`. Scheduled 2026-09-06 by author instruction with **no warrant** |
 
 **`M8` has no row, because it meant three different things.** It was an umbrella
 that predates the a/b/c/e/p split and no heading has carried it since. In the
