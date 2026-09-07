@@ -73,6 +73,16 @@ positioned to see.
 - **The reader is a working programmer, not an expert in language design**
   (author instruction 2026-09-06). Glossing null or a garbage collector is
   noise now; glossing fixpoint or canonical form is still owed.
+- **The links into the repository stay clickable while it is private** (author
+  decision 2026-09-03, `site/README.md` § Launch order). The addresses are
+  final and open with the code, so a live link is a door that is not open
+  rather than a wrong address, and on the day it opens there is nothing to put
+  back. `github.com/heroes-lang/heroes` therefore answers 404 today, on every
+  page, **by decision**. A seat may say the warning around such a link is too
+  quiet, which is a finding and was one; a seat may not treat the 404 itself as
+  a defect, and the dead-link cap does not fire on it. Proposing to repoint one
+  is proposing to reverse an author decision, so it goes to the author with its
+  reasoning, never into an edit.
 
 A finding that needs one of these relaxed goes to the author, not into an edit.
 

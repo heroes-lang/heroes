@@ -158,18 +158,20 @@ widths from 1200px down to 390px:
 
 | | English | Italian |
 |---|---|---|
-| the list's width | **394px** | **426px** |
+| the list's width | **402px** | **426px** |
 | one row of chrome (50px) | 801px and up | 801px and up |
 | two rows (80px) | 800px and down | 800px and down |
 | three rows | never | never |
 | the list scrolls sideways | never, down to 390px | at 390px |
 
 The nine-item row was 517px in English and 540px in Italian, so the row is
-**123px shorter** and the two-row band starts at the same place it did. The
-Italian list is 32px wider than the English one, which is `Esempi`, `Inizia`,
-`Progetto` and `Perché` costing what they cost, and at 390px it is the one that
-reaches for the scrolling line. That is the affordance working rather than a
-fault: no item is dropped.
+**115px shorter** and the two-row band starts at the same place it did. The
+Italian list is 24px wider than the English one, which is `Esempi`, `Inizia`,
+`Progetto` and `Perché` costing what they cost. Both editions reach the
+scrolling line at 390px, which is the affordance working rather than a fault:
+no item is dropped. The English list gained 8px when the GitHub link stopped
+saying only `GitHub ↗` and started saying `GitHub · soon`, which is the visible
+half of a warning that used to live in a `title` nobody sees on a phone.
 
 **The row stays at seven, so a page enters it only by displacing one.** That
 rule is unchanged from when the row was nine (author instruction 2026-08-18);
