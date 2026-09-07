@@ -72,6 +72,24 @@ function verbs(): number {
   return rows.length;
 }
 
+/**
+ * The lines of the Zen: the numbered lines of the string `heroes this` prints,
+ * read from the function that returns it. The site calls them "twenty lines"
+ * and `site/CLAUDE.md` lists that among the numbers that stay exact, so a
+ * twenty-first law would go red here before it went stale on the page.
+ */
+function zenLines(): number {
+  const text = readText('selfhost/cli/doctor.hero');
+  const start = text.indexOf('function zen()');
+  if (start < 0) throw new Error('selfhost/cli/doctor.hero: no `function zen()` to count the Zen from.');
+  const body = text.slice(start, text.indexOf('\n\n', start));
+  const numbered = body.match(/\\n\s?\d+\. /g) ?? [];
+  if (numbered.length < 10) {
+    throw new Error(`selfhost/cli/doctor.hero: counted ${numbered.length} numbered Zen lines, and there are twenty.`);
+  }
+  return numbered.length;
+}
+
 /** The chapters of the documentation: every fragment under docs/ but the index. */
 function chapters(): number {
   return filesIn(CHAPTERS_DIR).filter((f) => f.endsWith('.html') && !f.endsWith('/index.html')).length;
@@ -144,6 +162,12 @@ const CLAIMS: Claim[] = [
   { page: 'site/src/html/it/start.html', what: 'the verbs of the command',
     fact: verbs, shape: (n) => new RegExp(`Un comando, ${n} verbi`, 'i') },
 
+  // The lines of the Zen.
+  { page: 'site/src/html/project.html', what: 'the lines of the Zen',
+    fact: zenLines, shape: (n) => new RegExp(`<h2 id="zen">${n} lines</h2>`, 'i') },
+  { page: 'site/src/html/it/project.html', what: 'the lines of the Zen',
+    fact: zenLines, shape: (n) => new RegExp(`<h2 id="zen">${n} righe</h2>`, 'i') },
+
   // The chapters of the documentation.
   { page: 'site/src/html/docs/index.html', what: 'the number of chapters',
     fact: chapters, shape: (n) => new RegExp(`These ${n} chapters`, 'i') },
@@ -182,5 +206,5 @@ export function checkClaims(html: string, pagePath: string): void {
 /** What the table holds, for the build's own report and for a test. */
 export function claimsSummary(): string {
   const j = judges();
-  return `${j.seats} judges, ${j.vetoes} vetoes, ${topLevelWords()} top-level words, ${verbs()} verbs, ${chapters()} chapters; ${CLAIMS.length} claims checked`;
+  return `${j.seats} judges, ${j.vetoes} vetoes, ${topLevelWords()} top-level words, ${verbs()} verbs, ${zenLines()} Zen lines, ${chapters()} chapters; ${CLAIMS.length} claims checked`;
 }
