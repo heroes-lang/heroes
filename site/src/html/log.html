@@ -11,479 +11,175 @@
     <li>
       <span class="when">M-documentation-site: where the files go</span>
       <b>This site had thirteen chapters and not one of them said where a program&rsquo;s files go.</b>
-      That is the part of the language that had changed most recently. A program
-      can now spread over folders, a line naming another file means the same
-      thing wherever you copy it to, and there is deliberately no way to reach
-      upward out of your own project. A reader arriving here could learn how
-      numbers work, how errors work, how to talk to C, and would leave with no
-      idea how to write a program in more than one file. So there is a
-      fourteenth chapter, in both languages, and the interesting part is what it
-      is built out of. Every piece of code on it is a slice of one real program
-      in the repository, quoted with the file name and the line numbers, and
-      checked automatically against the file so that documentation going stale
-      becomes a failing test rather than an embarrassment somebody notices
-      later. That buys something nobody planned: the program prints one number
-      for the folder at the top and a different one for the folder underneath,
-      so if the rule about where files are found ever changes, the program&rsquo;s
-      expected output changes, the tests go red, and the page cannot quietly
-      become a lie. The three error messages on it are real output, produced by
-      taking the working program and breaking it three ways on purpose, and one
-      of the three is a rule the compiler learned the same afternoon.
+      That is the part of the language that had changed most recently.
       <a class="more" href="/docs/modules/">Read the chapter</a>
     </li>
     <li>
       <span class="when">M-corpus-coverage: the library nobody called</span>
       <b>The job was twenty more programs, chosen so that between them they use every part of the language. The first one found a hole in the compiler.</b>
-      Not a subtle hole: a program the checker said was fine, which then refused
-      to build, with the compiler blaming itself rather than the person who wrote
-      it. The program was three lines of the most ordinary thing anybody does
-      with a list, take each item, turn it into a number, add the numbers up,
-      written the way the language&rsquo;s own one-page description teaches it.
-      And that spelling had never once been written down in this project. The six
-      little helpers the language ships for exactly this work were called by a
-      single test file, one of them by nothing at all, and the shorthand the
-      documentation uses to explain them appeared in zero programs. What was
-      wrong underneath only shows in a chain. Writing
-      <code>list.transform(f).total(g)</code>, the compiler recorded what each of
-      those two calls works on by remembering <i>where in the file it starts</i>,
-      and a chain like that starts, for both of them, at the same character. Two
-      different files in the compiler each carried a comment asserting this could
-      not happen, and the second one blessed the first. The repair rests on the
-      same asymmetry that caused it: a chained call starts where its receiver
-      starts, and it <i>ends</i> at its own closing bracket, so the ends are
-      always different. Then nineteen more programs, and the language corrected
-      the person writing them seven times.
+      Not a subtle hole: a program the checker said was fine, which then refused to build, with the compiler blaming itself rather than the person who wrote it.
       <a class="more" href="/docs/">The chapters</a>
     </li>
     <li>
       <span class="when">M-selfhost-nesting: the prefixes were load-bearing</span>
       <b>The compiler&rsquo;s own hundred and seventy files were named like a filing cabinet nobody had bought, and the job was to buy the cabinet.</b>
-      Put them in folders, let the names get short. It is the most boring change
-      imaginable and it found three things. The first is that the long names had
-      been doing a job nobody wrote down: nobody ever calls a variable
-      <code>emit_decls</code>, everybody calls one <code>decls</code>, so the
-      prefixes had been holding the module names apart from the ordinary words
-      for values, silently and for free. Taking them off let the two collide in
-      twenty-three places at once. The second is what the collisions were hiding.
-      A file that borrows a module called <code>state</code> and also has a
-      variable called <code>state</code> can write <code>state.value</code> twice
-      and mean two different things, and the compiler said nothing at all: it
-      printed one number on one line and a different one on the next and exited
-      happily. And the rule forbidding that had been decided months earlier, in
-      writing, and approved. The compiler simply never did it. Two of its own
-      comments claimed it did, and a test written on purpose asserted the wrong
-      behaviour was correct, so the contradiction sat in the repository with a
-      green tick on it.
+      Put them in folders, let the names get short.
       <a class="more" href="/project/#self-hosted">The compiler in its own language</a>
     </li>
     <li>
       <span class="when">M-package-layout: a module may be a path</span>
       <b>For a month the language had one rule about where files live: a module is one word, and every file a program reads sits beside the file that names it.</b>
-      Breaking that rule took three review sittings in one day. The third was
-      called because the author looked at the answer the first two had given and
-      asked whether the name could not simply be the folder and the file joined
-      together. It could, and it was better on almost every number anybody
-      measured: a hundred and twenty-seven of the compiler&rsquo;s own modules
-      would have kept the exact name their four thousand call sites already
-      wrote, the collisions would have gone to zero, and the specification would
-      have got shorter. Four of the five judges approved it. It was refused
-      anyway, on the one argument nobody else had made: the rule already shipped
-      can be widened later, and this one could only be swapped, and swapping it
-      rewrites every program ever written in the language. What the day actually
-      taught is smaller and lives in the formatter. A new word entered the
-      language and reached six different pieces of the compiler one at a time,
-      and the sixth was the tool that rewrites your file for you: it did not know
-      the new word, so it deleted it, silently, from a program that worked. The
-      guard that exists to catch exactly that was looking through the same broken
-      window, so it saw two identical pictures and said nothing.
+      Breaking that rule took three review sittings in one day.
       <a class="more" href="/docs/modules/">Modules and files</a>
     </li>
     <li>
       <span class="when">M-argv-execution: the shell stops being the boundary</span>
       <b>The compiler used to talk to the machine by writing a sentence and handing it to a shell.</b>
-      On Windows the shell reads a different language, so the very first sentence
-      made a directory named after one of its own options, and everything after
-      that was downstream of the mistake. The fix was not to learn the other
-      shell&rsquo;s grammar. It was to stop writing sentences: a program is now
-      handed a list of words, the platform difference lives in twenty lines of C
-      where a platform difference is an ordinary thing to write, and a
-      hand-maintained quoting function with a hundred and eighty-nine uses has
-      none. What the work actually taught is smaller and worse. Three defects
-      were sitting in code that runs on this machine every day, and only Windows
-      could see them, because all three were about what a failure <i>says</i> and
-      nothing ever failed. A message thrown away, an error passed up without a
-      word, eight different stopping points all calling themselves the same
-      thing. Windows was not the bug. Windows was the first reader.
+      On Windows the shell reads a different language, so the very first sentence made a directory named after one of its own options, and everything after that was downstream of the mistake.
       <a class="more" href="/why/">Why the language is shaped this way</a>
     </li>
     <li>
       <span class="when">M-separate-compilation: the cache that cannot lie</span>
       <b>Building the compiler used to mean writing out one enormous C file, nearly eight hundred thousand lines of it, even after changing a comma.</b>
-      The job was to split that into one piece per module, so that touching one
-      file rebuilds one piece. The first attempt failed with twenty complaints
-      from the C compiler, and that failure was worth more than a success would
-      have been: every <i>section</i> of a piece had been deciding for itself
-      what it needed, and four sections deciding separately cannot share one
-      file. Then came the deeper problem, the one this whole milestone existed to
-      find. Reusing yesterday&rsquo;s work is safe only if you can tell that
-      nothing it depended on has changed, and what was being used to tell was the
-      text the compiler had generated. But when a program borrows a number from a
-      C header, the compiler writes down the <i>name</i> and lets C fill in the
-      value later, so editing the header changes the answer and changes not one
-      character of the text. A program printed 1 while the file on disk said 2,
-      then printed 1 again while it said 7, both times at exit code zero. The
-      repair was to stop guessing and ask the C compiler itself, as it works,
-      which files it had actually opened. Then, almost by accident, the milestone
-      found where all the time had been going: checking the compiler&rsquo;s own
-      source took a minute and a half, and almost all of it was one small
-      function answering &ldquo;which line is this&rdquo; by counting from the top
-      of a file over a million characters long. Nobody wanted the line. Asking
-      for the distance instead took it to about five seconds.
+      The job was to split that into one piece per module, so that touching one file rebuilds one piece.
       <a class="more" href="/project/#self-hosted">One C file per module</a>
     </li>
     <li>
       <span class="when">M-bootstrap-archive: the attic</span>
       <b>The old compiler went into the attic, and half the project&rsquo;s instruments turned out to be living in it.</b>
-      Not the tests of the language: the instruments <i>about</i> it. The thing
-      that counts how big the specification is, the thing that injects one
-      plausible mistake at a time and counts what the compiler catches, the
-      question &ldquo;do the two compilers agree&rdquo;. So five successors were
-      built first, and each one had to prove itself against the thing it
-      replaced: the new counter agrees with the old one to the token, the
-      mutation report came back identical letter for letter, and the
-      two-compiler comparison was frozen into 142 files of generated C:
-      the last thing two independent implementations ever agreed on, written
-      down while both were still alive. The final check written that day, the
-      one that shouts when a document cites a file that is not there, promptly
-      found nine dead pointers that had been wrong long before the move. Nobody
-      had noticed. Nothing had looked.
+      Not the tests of the language: the instruments about it.
       <a class="more" href="/project/#self-hosted">The third language dies</a>
     </li>
     <li>
       <span class="when">M-harness-port: the net, in Heroes</span>
       <b>Everything that checks the compiler was written in the language being retired, so the net was rewritten in the language itself.</b>
-      A program that uses the compiler the way a person does, in 688 checks:
-      type a command, read what comes back, compare it to what was promised. Pointed at the new compiler testing itself, it went red on
-      two things nobody could have seen before. One was an error message with
-      nothing in it (no code, no line, no piece of the program),
-      printed in the one situation where the compiler is allowed to say the
-      mistake is yours. The other was an underline drawn too long, which the
-      old compiler&rsquo;s own golden file had been recording as correct since
-      the day it was written. No review found that one. What found it was a
-      second implementation disagreeing.
+      A program that uses the compiler the way a person does, in 688 checks: type a command, read what comes back, compare it to what was promised.
     </li>
     <li>
       <span class="when">M-selfhost-fixpoint: the seed</span>
       <b>The way in became one clang command, and taking the ladder away caught the compiler cheating.</b>
-      The repository now carries the compiler as one generated C file, so a
-      machine that has never heard of this language builds it with nothing but
-      a C compiler. Preparing to delete the bootstrap turned up two things. The
-      new compiler had been reading its own base library from a path pointing
-      into the very folder that was about to go. When the file was
-      missing it did not complain: it carried on with an empty library and
-      blamed the author&rsquo;s program. And the check that the two compilers
-      agree had never looked at the thing it is about: it compared what they
-      <i>say</i>, never the files they <i>write</i>. Asked properly, over 127
-      programs, 26 agreed. Three faults later the answer is 127 out of 127.
+      The repository now carries the compiler as one generated C file, so a machine that has never heard of this language builds it with nothing but a C compiler.
     </li>
     <li>
       <span class="when">M-selfhost-port: the fixpoint</span>
       <b>The compiler crosses into its own language, and the child corrects the parent.</b>
-      53,013 lines of Rust became 34,812 lines of Heroes, tests included on
-      both sides, since in Heroes they live in the file they test, module by
-      module, with the goldens and the program corpus as the net. And then the
-      two compilers were made to write out the same twenty-megabyte program in C
-      and compared letter by letter. Not one letter different, three generations
-      deep. Nine faults were found on the way and four of them were in the
-      <i>old</i> compiler, which is the argument for doing this at all: a
-      compiler pointed at its own source is a corpus no test suite reproduces.
-      Zero workarounds remain in the ported code.
+      53,013 lines of Rust became 34,812 lines of Heroes, tests included on both sides, since in Heroes they live in the file they test, module by module, with the goldens and the program corpus as the net.
       <a class="more" href="/project/#self-hosted">The fixpoint</a>
     </li>
     <li>
       <span class="when">M-selfhost-probe: the wall that was not there</span>
       <b>Port one file, expect to fail, write down what the language cannot say.</b>
-      The wall had been quietly removed three days earlier by a milestone about
-      something else, and nobody had gone back to re-read the plan's premise,
-      so the lexer went from &ldquo;this will fail on file one, cheaply&rdquo; to
-      working, in an afternoon. Twelve things the language could not say; eleven
-      cost a couple of lines each. The best find was better than a gap: the
-      original compiler once shipped a bug because a list of words that can end a
-      line forgot a newcomer, and the new language makes that exact bug
-      impossible to write. The machine being rebuilt refused, by design, the
-      mistake its own builders had made the first time.
+      The wall had been quietly removed three days earlier by a milestone about something else, and nobody had gone back to re-read the plan's premise, so the lexer went from &ldquo;this will fail on file one, cheaply&rdquo; to working, in an afternoon.
     </li>
     <li>
       <span class="when">M-complete-structs: a refusal is a claim</span>
       <b>From 191 bindable C declarations to 349, and not one step was a new capability.</b>
-      Each was a refusal with no way out. One told the author a description was
-      missing a part they had in fact written down; another told them to correct
-      a field when no correction existed, because the rule asked how the
-      library's own text was spelled rather than what the thing was. The lesson
-      is not that refusals should be softer: a refusal is a claim, and a claim no
-      program can satisfy is not conservative, it is wrong, and it is invisible
-      from the inside, because everything looks correctly strict.
+      Each was a refusal with no way out.
     </li>
     <li>
       <span class="when">M-struct-passing: the same size is not the same thing</span>
       <b>A third of everything a real C library offers had been out of reach.</b>
-      Bundles of values travelling as one thing could not cross the boundary. The
-      obvious fix, describe the bundle on both sides, then check the sizes and
-      positions agree, is wrong, and the way it is wrong is why this project
-      exists: on this machine two bundles can have identical sizes, identical
-      positions, pass every check anyone could write, and still arrive as
-      garbage, because whole numbers and fractional numbers travel in different
-      registers. The answer was to stop describing the bundle at all and use the
-      library's own description, then check each part with the question <i>is this
-      the same kind of thing</i> rather than <i>is it the same size</i>.
+      Bundles of values travelling as one thing could not cross the boundary.
     </li>
     <li>
       <span class="when">M-binding-fidelity, half a promise</span>
       <b>Declare a foreign function wrongly and the program will not build. It was true in one direction only.</b>
-      What a C function <i>hands back</i> had been checked since the boundary
-      existed; what it <i>takes</i> had never been checked at all. Two
-      independent readers demonstrated it the same way: pass a number too large
-      for the slot it is going into, compile without complaint, run, and print
-      something else. Forty-two per cent of everything anybody actually binds has
-      a slot like that. The cure is a small function nobody ever calls, written
-      only so the C compiler is obliged to look at the conversion, with its line
-      number pointed at the line the author wrote.
+      What a C function hands back had been checked since the boundary existed; what it takes had never been checked at all.
     </li>
     <li>
       <span class="when">M-program-corpus, programs as an instrument</span>
       <b>Seven real programs written, six compiler faults fell out.</b>
-      A JSON reader, a Markdown converter, a spreadsheet, a maze solver, a small
-      assembler with its own machine, a log summariser, a game. No existing test
-      could have found any of the six, and nobody found them by reading. Three
-      are the same fault wearing different clothes, and it is the one this
-      project keeps writing rules about: a decision that was correct when it was
-      made, resting on something about the world rather than on the value in
-      front of it, going quietly wrong later while the comment explaining it
-      still reads perfectly.
+      A JSON reader, a Markdown converter, a spreadsheet, a maze solver, a small assembler with its own machine, a log summariser, a game.
     </li>
     <li>
       <span class="when">M-sized-integers: the feared thing, one paragraph long</span>
       <b>Eight widths arrive, and the word <i>int</i> stops being a word.</b>
-      The design document had refused this in its strongest terms: never in this
-      version, the highest-risk thing we could add. Then it was asked for anyway
-     , and half the expense turned out to have been paid years earlier by an
-      unrelated decision. What makes multiple number sizes dangerous elsewhere is
-      the invisible conversion; this language had banned invisible conversions
-      from the start, for a completely different reason, so there was almost
-      nothing left to write down.
+      The design document had refused this in its strongest terms: never in this version, the highest-risk thing we could add.
     </li>
     <li>
       <span class="when">M-literal-bases: what 0700 means</span>
       <b>A reviewer wrote down the way everyone writes file permissions and asked what it meant.</b>
-      Nobody had ever asked. It meant seven hundred. In every language this one
-      borrows from it means four hundred and forty-eight, and a program using it
-      here would have compiled, run, set the wrong permissions, and passed its
-      own tests. The repair was not the obvious one: refusing the ambiguous form
-      closes the hole, but also giving the old meaning a spelling of its own adds
-      the notation the project wanted anyway, in the same three lines of spec.
-      Three other languages reached that answer separately, each after being
-      bitten.
+      Nobody had ever asked.
     </li>
     <li>
       <span class="when">M-header-constants: no digit left to be wrong</span>
       <b>A library's settings have names and numbers, and the language could only say the numbers.</b>
-      To name one option a program had to write 10002, with a comment above it
-      explaining that the library's documentation adds two to ten thousand:
-      arithmetic done by hand, checked by nothing. The project measured how bad
-      that was before fixing it, by building a tool that changes one digit and
-      seeing whether anything complains: five such numbers in the examples, and
-      nothing complained about any of them. Now the program names the setting and
-      the library's own header supplies the value. The comment explaining the
-      arithmetic was deleted along with the number: an explanation that exists
-      only because something cannot be checked disappears when it can.
+      To name one option a program had to write 10002, with a comment above it explaining that the library's documentation adds two to ten thousand: arithmetic done by hand, checked by nothing.
     </li>
     <li>
       <span class="when">M-ffi-ladder, 1, where it should print 1.41</span>
       <b>The promise the whole language was arranged around was false for the pair its own second example uses.</b>
-      The arrangement: when a program borrows a C function, the compiler does not
-      describe that function, it points at the library's description and lets
-      clang check the two against each other. That is why this language emits C
-      at all. But pointing at a description only checks what you <i>pass</i>,
-      never what you get back, so a program declaring that square root returns a
-      whole number compiled without a murmur and printed 1. Four wrong borrowings
-      out of six passed in silence. The repair is one line per borrowing and
-      costs nothing at runtime: a question put to the C compiler about a call's
-      type, without ever making the call.
+      The arrangement: when a program borrows a C function, the compiler does not describe that function, it points at the library's description and lets clang check the two against each other.
     </li>
     <li>
       <span class="when">M-module-namespace: the cheapest change was a verb</span>
       <b>Programs split into files, and eleven of thirteen decisions cost nothing.</b>
-      Multiple files need rules: what happens when a file's name collides with
-      one it imports, what happens when an import is never used. Both were
-      already written down: a name may not be reused while it is visible,
-      anything bound and never read is an error, so the whole question was which
-      word to use for what an import does. The panel chose <i>binds</i>, the word
-      the language already used for ordinary values, and the two existing rules
-      covered both cases with nothing added.
+      Multiple files need rules: what happens when a file's name collides with one it imports, what happens when an import is never used.
     </li>
     <li>
       <span class="when">M-generics-library: three vetoes, none by argument</span>
       <b>The language reaches feature-complete, and every open dispute is settled by a compiler rather than a debate.</b>
-      Should the runtime's per-type description gain a sixth entry? A judge wrote
-      the header, compiled the unchanged runtime against it, and found that C
-      fills a short initialiser list with zeros, so every existing description
-      would have carried a null pointer, silently, under every warning flag the
-      project uses. Could the small built-in library be compiled once and
-      shipped? Another wrote the only shape that is possible, passed a text
-      function where a number function belonged, and got no diagnostics and then
-      a crash. Should generic instances have readable names? A third found two
-      legal programs that spell the same one. None of it was reachable by
-      reading.
+      Should the runtime's per-type description gain a sixth entry?
     </li>
     <li>
       <span class="when">M-optional-map: the last two types, entangled</span>
       <b>Fallible values and maps could not be built in either order.</b>
-      Looking a key up in a map returns the value or an error, so the map needed
-      that type first. And that type, it turned out, has to count holders even
-      when all it holds is a plain number, because its error side carries two
-      strings. The container was built anyway, on the author's
-      instruction, with a standing disagreement written down rather than smoothed
-      over: an earlier review argued the map cannot be added to, and that
-      deleting it outright would give back more spec budget than finishing it
-      costs. If a later audit deletes it, the record will say that was known in
-      advance.
+      Looking a key up in a map returns the value or an error, so the map needed that type first.
     </li>
     <li>
       <span class="when">M-value-aggregates: a tree that contains itself</span>
       <b>Recursive data, in a language whose data model has no pointer and no reference type.</b>
-      There is nothing to put in a field that stands for &ldquo;somewhere
-      else&rdquo;, and yet the example the design was written around is a tree
-      of expressions holding its own children. The answer is that the
-      <i>array</i> is the one indirection there is: an array is a pointer
-      whatever it holds, so a shape that recurses through one has a finite size
-      and still copies like a value. The program compiles, prints fourteen, and
-      ends with every allocation accounted for. The reason it cannot leak is a
-      sentence about what a field may hold, not about how freeing works: a field
-      cannot contain a reference, so every value is a tree, and a counter that
-      frees at zero is complete.
+      There is nothing to put in a field that stands for &ldquo;somewhere else&rdquo;, and yet the example the design was written around is a tree of expressions holding its own children.
     </li>
     <li>
       <span class="when">M-strings-ownership: the check that refuted its own design</span>
       <b>The compiler learned to count references, and the watchdog fired twice in an hour.</b>
-      The rule was: a value that owns a string is released at the end of the
-      block that created it. The first refutation was instructive: an assertion
-      carries the text of what it asserted into the failure path, and a literal
-      is never freed, so it is safe there. The second was fatal: ask for half of
-      a number and use it in a sentence, and the sentence's first half is built
-      in one block and finished in another, because a fallible call opens a
-      branch mid-expression. That is what <i>every</i> expression containing a
-      fallible call looks like. The repair was to stop letting temporaries own
-      anything, which is exactly what an unfashionable representation chosen one
-      milestone earlier had been for.
+      The rule was: a value that owns a string is released at the end of the block that created it.
     </li>
     <li>
       <span class="when">M-scalars-run: the first native binary</span>
       <b>A program becomes an executable, and the longest argument was about a number between zero and two.</b>
-      When a program is correct and the compiler simply is not finished yet, what
-      exit code should it use? Two says &ldquo;the tool could not do its
-      job&rdquo;, which is literally true. One judge was handed that message and
-      asked what it would do next: it checked the compiler's version, ran the
-      diagnostic command, searched the whole repository for an internal
-      identifier, and then told its user the toolchain looked broken: a sentence
-      it afterwards reported as false. Another found that the C compiler
-      everybody uses has had a diagnostic for exactly this since 1994, printing
-      the word &ldquo;sorry&rdquo;, and then read one line further: it exits with
-      the ordinary failure code. The evidence that looked like it argued for two
-      settled the question at one.
+      When a program is correct and the compiler simply is not finished yet, what exit code should it use?
     </li>
     <li>
       <span class="when">M-ir-lowering, desugaring, and the middle of the compiler</span>
       <b>The textbook representation lost to a decade of evidence nobody had gone looking for.</b>
-      LLVM, whose whole existence is single-assignment form, tells the authors
-      of new languages not to build it: use stack slots and loads and stores, and
-      let a later pass clean up, because that is what clang itself does. Rust's
-      own middle representation chose the plain form in 2015 for the sake of
-      error messages rather than speed, and has not changed since. Every
-      migration anyone could verify was made to produce faster machine code, the
-      one thing this project has formally renounced.
+      LLVM, whose whole existence is single-assignment form, tells the authors of new languages not to build it: use stack slots and loads and stores, and let a later pass clean up, because that is what clang itself does.
     </li>
     <li>
       <span class="when">M-typed-frontend: the frontend, and the thesis gets a number</span>
       <b>Names, types, exhaustiveness, and the first measurement, whose useful half is the column that shows nothing.</b>
-      379 deliberate mistakes injected into working programs, 94% caught. But the
-      same compiler with the thesis rules switched off catches 76%, and
-      <i>that</i> is the measurement: 18 points, concentrated in three operators.
-      The lazy catch-all goes from 100% caught to 13%. Shadowing and dropped
-      argument labels go to zero, because nothing else in the language looks for
-      them. And typos score 100% in both arms, which means they are caught by
-      names and types like anywhere else: a fact that would have been very easy
-      not to write down.
+      379 deliberate mistakes injected into working programs, 94% caught.
     </li>
     <li>
       <span class="when">M-name-resolution: the resolver</span>
       <b>A 317-line calculator refused to resolve, at exactly two lines.</b>
-      It declares its own <code>map</code> and <code>fold</code>, and the
-      language reserves both names. That was the third time this one program
-      caught a rule nobody knew they had written: a variant case called
-      <code>.var</code>, an <code>assert</code> inside an arm, and now a name. It
-      had never been compiled and it was still the best test in the repository.
-      On the way it turned out to be calling a built-in that was in the design
-      document's inventory and missing from the spec: without it the language
-      could not put a number into a sentence, and nobody had noticed because
-      nobody had tried.
+      It declares its own map and fold, and the language reserves both names.
     </li>
     <li>
       <span class="when">M-syntax-tree: the parser, the tree, the formatter</span>
       <b>The parser's first act was to discover the language could not write down the type of a function.</b>
-      <code>fn</code> was in the registry of foreign words: an error with the
-      repair pre-written, and also in the spec's own syntax for a function type,
-      so a function-typed parameter failed to lex and every one of them in the
-      language was unwritable. Five judges were sent the question with a
-      recommendation attached, and four refused it: the project's own rules list
-      <code>fn</code> among the mistakes the registry exists to catch, seven
-      ancestor languages spell a function type with the word that declares a
-      function, and the tokeniser measures the two spellings identically. The
-      recommendation lost to the evidence, which is what the panel is for.
+      fn was in the registry of foreign words: an error with the repair pre-written, and also in the spec's own syntax for a function type, so a function-typed parameter failed to lex and every one of them in the language was unwritable.
     </li>
     <li>
       <span class="when">M-token-stream: the lexer</span>
       <b>The first real code, and three things it found by being written.</b>
-      Source text now becomes tokens. Indentation is rigid, and a tab is an
-      error rather than something to interpret. The end of a statement is
-      inferred, so the language needs no semicolons. And keywords stolen from
-      other languages (<i>struct</i>, <i>let</i>, <i>while</i>) fail with the
-      correction already written into the message. Writing it to the letter of the design
-      exposed three holes in the design itself: the rule for ending a line cited
-      Go but had dropped three of Go's words; strings had no way to hold a
-      newline, or a quotation mark at all; and the budget the project had been
-      defending for two days had never been counted. It was a third larger than
-      everyone believed.
+      Source text now becomes tokens.
     </li>
     <li>
       <span class="when">M-day-zero</span>
       <b>Foundations, and four programs written before the compiler.</b>
-      Git, a Rust workspace, a golden-test harness green with zero tests, and the
-      language spec frozen as the measurement baseline (budget: 1500 tokens,
-      still unmeasured: the counting came a day later, and changed the number).
-      Then four hand-written C programs: the exact shape the compiler must one
-      day emit, including a recursive tree with reference counting, verified
-      leak-free under AddressSanitizer. The machine found the first design bug
-      before any human did: an unused-label warning that changed how every
-      generated function will begin.
+      Git, a Rust workspace, a golden-test harness green with zero tests, and the language spec frozen as the measurement baseline (budget: 1500 tokens, still unmeasured: the counting came a day later, and changed the number).
     </li>
     <li>
       <span class="when">before the code</span>
       <b>The plan meets five hostile experts.</b>
-      Before a single token was lexed, the build plan was reviewed by five
-      adversarial reviewers, language design, compiler engineering, simplicity,
-      LLM ergonomics, didactics. Three said <i>object</i>. The thesis metric
-      gained a control arm, two missing compiler passes were discovered, and the
-      backend switched from QBE to C emission, for the FFI, not for speed. The
-      plan that survived is revision 2.
+      Before a single token was lexed, the build plan was reviewed by five adversarial reviewers, language design, compiler engineering, simplicity, LLM ergonomics, didactics.
     </li>
     <li>
       <span class="when">the beginning</span>
       <b>A 2000-line design document and one question.</b>
-      The language arrived as a long design conversation: a compiled language
-      with no standard library, built for the reader that isn't human. The first
-      engineering decision, which language writes the language, was overturned
-      within the hour by a one-line question about the backend. Everything since
-      has been argued in writing.
+      The language arrived as a long design conversation: a compiled language with no standard library, built for the reader that isn't human.
     </li>
   </ol>
 

@@ -3,16 +3,16 @@
     <h1 class="page">Why Heroes</h1>
     <span class="nod">· rebel rebel ·</span>
   </div>
-  <p class="lede">Two constraints, settled before the grammar was: the code
-  must be readable by a model, and the language carries no standard library.</p>
+  <p class="lede">Two constraints, settled before the grammar was. The code must
+  be readable by a model, and the language carries no standard library.</p>
 
-  <h2>The code must be readable by a model <span class="nod">· sound and vision ·</span></h2>
+  <h2>Models fail in catalogued ways <span class="nod">&middot; sound and vision &middot;</span></h2>
   <p>
-    Code is increasingly written by language models, by LLMs, and models fail
-    in specific, catalogued, repeating ways: they swap two arguments of the same
-    type, forget a case, change a name they never declared, invent a keyword
-    from another language. A language can treat all that as a run of accidents,
-    or take it as the brief to design from.
+    Code is increasingly written by language models, and they fail in specific,
+    repeating ways. They swap two arguments of the same type. They forget a
+    case. They rename something they never declared. They reach for a keyword
+    from another language. A language can treat all of that as a run of
+    accidents, or take it as the brief.
   </p>
   <blockquote>
     A language designed so that every plausible LLM mistake is a compile error
@@ -20,52 +20,46 @@
     language, even if each program costs more tokens to write.
   </blockquote>
   <p>
-    A token is the scrap of text that measures what it costs to put a model to
-    work, roughly a word. The claim is measured like this: take working
-    programs, put one plausible mistake in each, and
-    count how many turn into a <i>compile error</i> rather than a program that
-    runs and quietly does something else. Then pass the same pile of programs to
-    a build of the compiler with the thesis rules switched off, which serves as
-    the yardstick. The gap between the two columns is the whole measurement.
+    That is measured, not asserted. Take working programs, plant one plausible
+    mistake in each, and count how many become a compile error rather than a
+    program that runs and quietly does something else. Then pass the same pile
+    to a build with the thesis rules switched off. The gap between the two
+    columns is the whole measurement.
+    <a href="/errors/">The measured table &rarr;</a>
   </p>
 
   <h2>One formula decides the trade-offs</h2>
   <pre><code>real cost = program tokens × (1 + rewrite rate)</code></pre>
   <p>
-    The two factors in that multiplication are not comparable. A more compact
-    form saves maybe five per cent of a file's tokens. One
-    correction round costs five hundred to two thousand, because the model takes
-    the error, re-reads the file, rewrites a function and recompiles. On a
-    three-thousand-token program, <b>one correction round eats ten syntax
-    savings.</b>
+    The two factors are not comparable. A more compact syntax saves maybe five
+    per cent of a file. One correction round costs five hundred to two thousand
+    tokens, because the model reads the error, re-reads the file, rewrites a
+    function and recompiles. On a three-thousand-token program,
+    <b>one correction round eats ten syntax savings.</b>
   </p>
   <p>
-    The instinct says <i>shorten everything and be careful</i>. The formula
-    says <i>remove the errors, and shorten only when it costs nothing</i>. So
-    Heroes is wordy at the point where you declare things and terse at the point
-    where you use them: it spends words where an error lives, and nowhere
-    else.
+    So the instinct is wrong. It says shorten everything. The formula says
+    remove the errors, and shorten only where it costs nothing. Heroes is wordy
+    where you declare things and terse where you use them: it spends words where
+    an error lives, and nowhere else.
   </p>
 
   <h2>The founding constraint</h2>
   <p>
     The project did not start from a grammar. It started from a refusal:
-    <b>there is no standard library, and there never will be one.</b> The
-    standard library is the warehouse of ready-made functions a language carries
-    with it, from maths to networking. Writing a modern one is more work than
-    writing the compiler, and it is the thing that kills one-person languages.
-    So Heroes keeps the bare minimum and takes everything else from the enormous
-    amount of C that already exists:
+    <b>there is no standard library, and there never will be one.</b> Writing a
+    modern one is more work than writing the compiler, and it is what kills
+    one-person languages. So Heroes keeps a bare minimum and takes the rest
+    from the enormous amount of C that already exists.
   </p>
-  <pre><code>maths beyond arithmetic   <span class="c">→</span> libm          files, sockets  <span class="c">→</span> libc
-regular expressions       <span class="c">→</span> PCRE2         HTTP            <span class="c">→</span> libcurl
-JSON                      <span class="c">→</span> cJSON         SQL             <span class="c">→</span> SQLite
-graphics, audio, terminal <span class="c">→</span> SDL, raylib, ncurses</code></pre>
+  <pre class="table"><code>maths beyond arithmetic    →  libm          files, sockets   →  libc
+regular expressions        →  PCRE2         HTTP             →  libcurl
+JSON                       →  cJSON         SQL              →  SQLite
+graphics, audio, terminal  →  SDL, raylib, ncurses</code></pre>
   <p>
-    Borrowing a function from C looks like this. Everything turns on the name
-    on the first line, <code>math.h</code>: that is the header, the file where
-    the library declares how its functions are shaped. It is where clang, the C
-    compiler, goes to check whether what you wrote matches:
+    Borrowing one looks like this. Everything turns on the name on the first
+    line: that is the header, the file where the library declares the shape of
+    its functions, and it is what clang checks your declaration against.
   </p>
   <figure class="example" data-src="examples/gallery/08-ffi.hero" data-lines="12-15">
 <pre><code><span class="k">extern</span> <span class="s">"math.h"</span> link <span class="s">"m"</span>
@@ -75,61 +69,47 @@ graphics, audio, terminal <span class="c">→</span> SDL, raylib, ncurses</code>
     <figcaption>examples/gallery/08-ffi.hero, lines 12&ndash;15</figcaption>
   </figure>
   <p>
-    Without that file, nothing at all would verify what you declared. And look
-    at <code>pow(base:, exponent:)</code>: the two values it takes are the same
-    type, so the call has to name them. The rule holds here at the C boundary
-    too, which is where swapping two arguments costs the most.
+    Without that header nothing would verify what you wrote. And look at
+    <code>pow(base:, exponent:)</code>: two values of the same type, so the call
+    has to name them. The rule holds at the C boundary too, which is where
+    swapping two arguments costs most.
   </p>
   <p>
-    That &ldquo;nothing else&rdquo; needs one qualification: the
-    language does carry about thirty names, always the same ones. They are
-    <code>print</code>, <code>len</code>, <code>push</code>, <code>slice</code>,
-    <code>sort</code>, the conversions between types, and <code>map</code>,
-    <code>filter</code>, <code>fold</code>. They all fit in a list you can read
-    in a minute, so when you meet a function you never wonder where it came
-    from. That list changes only by a recorded decision, never by
-    accumulation.
+    The bare minimum is about thirty names, always the same ones:
+    <code>print</code>, <code>len</code>, <code>push</code>,
+    <code>slice</code>, <code>sort</code>, the conversions between types, and
+    <code>map</code>, <code>filter</code>, <code>fold</code>. That list changes
+    only by a recorded decision, never by accumulation.
   </p>
   <p>
-    Leaning on all the C that is already written makes a one-person language
-    workable, and it has a
-    consequence the rest of the design obeys. <b>How comfortable the C boundary
-    is ranks alongside how clear the language is, not below it.</b> A library
-    Heroes cannot connect to is C code its author has to keep writing by hand,
-    which is exactly what this refusal exists to prevent.
+    One consequence the rest of the design obeys: <b>how comfortable the C
+    boundary is ranks alongside how clear the language is, not below it.</b> A
+    library Heroes cannot reach is C code its author has to keep writing by
+    hand, which is what this refusal exists to prevent.
+    <a href="/examples/#c">Six programs that bind C &rarr;</a>
   </p>
 
   <h2>Why the compiler emits C</h2>
   <p>
-    Heroes does not produce machine language directly: it translates your
-    program into C first, and lets a C compiler turn that into an executable.
-    The reason is the one above. If you borrow a function from C, that function
-    has to be checked against the real library's own file, not against a
-    description the Heroes compiler invents and hopes is right. Going through C
-    means clang does that checking on every build, for free: declare a function
-    wrongly and you hear about it now, instead of discovering it once the
-    program is running. An earlier design aimed straight at machine code, and it
-    was dropped the day someone noticed the founding constraint had already
-    decided the question.
-  </p>
-  <p>
-    Speed did not decide this choice: it is neither a goal of this project nor
-    an excuse in it.
+    Heroes translates your program into C and lets a C compiler produce the
+    executable. The reason is the constraint above. A function borrowed from C
+    has to be checked against the real library's header, not against a
+    description the Heroes compiler invents. Going through C means clang does
+    that on every build, for free. An earlier design aimed straight at machine
+    code, and it was dropped once somebody noticed the founding constraint had
+    already decided the question. Speed did not decide it: speed is neither a
+    goal here nor an excuse.
   </p>
 
-  <h2>Seven words can begin a top-level line</h2>
+  <h2>Seven words can begin a line</h2>
   <p>
-    A file is a list of declarations, one after another, and each starts with
-    the word that says what you are declaring: a fixed value with
-    <code>constant</code>, a function with <code>function</code>, a group of
-    data with named fields with <code>record</code>, a value that comes in
-    several forms with <code>variant</code>. Three more heads exist and declare
-    nothing about your data: <code>use</code> for another file,
-    <code>test</code> for a test, <code>extern</code> for what comes from C. The
-    list ends there. There are no
-    classes, no interfaces, nothing that quietly changes what the next line
-    means, and nowhere in the language a global variable anybody can
-    modify.
+    A file is a list of declarations, each starting with the word for what it
+    declares. <code>constant</code> for a fixed value, <code>function</code>,
+    <code>record</code> for a group of named fields, <code>variant</code> for a
+    value that comes in several forms. Three more declare nothing about your
+    data: <code>use</code> for another file, <code>test</code>, and
+    <code>extern</code> for what comes from C. The list ends there. No classes,
+    no interfaces, and nowhere a global variable anybody can modify.
   </p>
   <figure class="example" data-src="examples/gallery/01-points.hero" data-lines="6-14">
 <pre><code><span class="c"># A position on the integer grid.</span>
@@ -144,205 +124,91 @@ graphics, audio, terminal <span class="c">→</span> SDL, raylib, ncurses</code>
     <figcaption>examples/gallery/01-points.hero, lines 6&ndash;14</figcaption>
   </figure>
   <p>
-    The order you write declarations in never matters, and two functions that
-    call each other need no announcement in advance: nothing depends on where it
-    sits in the file. Further down, the language is smaller still. What the
-    compiler really handles is <b>seven constructs</b>: name a value, define and
-    call a function, build and read a <code>record</code>, build and take apart
-    a <code>variant</code>, repeat with a loop, return a result, and the basic
-    operations like adding and comparing. Everything else you can write reduces
-    to those seven before the compiler is through with it, so it costs nothing
-    in the type checks or the translation. A small core, under a surface where
-    no two spellings mean the same thing, is what makes the compiler something
-    one person can finish.
+    The order you write declarations in never matters, and two functions can
+    call each other with nothing announced in advance. Underneath, the language
+    is smaller still: what the compiler really handles is <b>seven
+    constructs</b>, and everything else reduces to those before it is done. A
+    small core under a surface where one person can finish the job.
   </p>
 
-  <h2>Memory, and why nothing collects it</h2>
-  <p>
-    Every value behaves as a copy: <code>b = a</code> means <code>b</code> is
-    its own thing, independent of <code>a</code>, and that holds for a
-    <code>record</code>, a list and a map alike. That is the meaning.
-    Underneath, though, nothing is copied until it has to be: the program keeps
-    count of how many holders a piece of data has, and the real copy happens
-    only when somebody tries to modify it while somebody else is still using it.
-    If you are the only holder, it is modified in place.
-  </p>
-  <p>
-    The language has no value that merely says <i>where</i> another piece of
-    data is, so you cannot keep one in a variable or in a field. The consequence
-    is that every value is a tree: a name in the program at the root, and
-    everything that value contains below it. You cannot build circles, two pieces of
-    data referring back to each other, and those are exactly the case where
-    counting holders would fail. So the language needs <b>no garbage
-    collector</b>, no annotations to get right to break the loops, and no pause
-    for tidying up. Swift ships the same machinery and does need those
-    annotations, because Swift also has shared data. Heroes takes the half that
-    works and declines the half that brings the complication.
-  </p>
-  <p>
-    Freeing is not guesswork either: the compiler writes the counting into the
-    program as real instructions, and each function has a single exit path for
-    cleanup, so whichever route the code takes, what it took is given back.
-    Everything underneath this is 4,500 lines of C.
-  </p>
-  <p>
-    The language has one explicit goal: <b>a program must not crash and must not
-    wreck memory</b>. The
-    operations that go wrong quietly in C go wrong loudly here. A number that
-    overflows its space is always checked, remainder is guarded like division,
-    an index past the end of a list stops the program: always at the same place,
-    on every run, instead of carrying on with an invented value. And this is not
-    asserted, it is measured: with the tools that watch memory while the program
-    runs, with a check that reports at exit anything not given back, and with
-    the deliberately damaged programs. One hole remains, and it is declared: when you hand data to a C
-    function, what that function does with it is still C's business. Running
-    out of stack used to be the second hole, and it is closed. A program that
-    recurses deeply enough now stops with <code>panic: stack exhausted in
-    main.down</code>, naming the function, where it used to be the operating
-    system killing it without a word. On Windows the line names the failure
-    and not the function. Build with <code>--sanitize</code> and the
-    sanitizer names the function and the line instead.
-  </p>
-
-  <h2>The rules it lives by <span class="nod">· fashion ·</span></h2>
+  <h2>The rules it lives by <span class="nod">&middot; fashion &middot;</span></h2>
   <ul class="pillars">
-    <li><b>What counts is understanding a line by looking at that line.</b> Its meaning is decided by the line itself and the function around it, never by something written three files away. No inheritance, no macros, no exceptions, no automatic conversion between types, no null.</li>
-    <li><b>One way to write anything.</b> A command that puts code back into its single canonical shape, one word for loops, no automatic conversion between types, and argument names required where types are not enough to tell them apart. The mistakes models actually make become errors the compiler actually raises.</li>
-    <li><b>Errors written to be read by a machine.</b> Every message carries everything needed to fix the program in one go: what the compiler expected, where the thing it clashes with was declared, and the repair, tagged <code>certain</code> when it is sure and <code>guess</code> when it is a suggestion. And writing <code>???</code> leaves a declared gap and asks the compiler what belongs in it.</li>
-    <li><b>A program must not crash.</b> Where two designs are both acceptable and one of them can be made to fall over, the other wins, whatever it costs in elegance or in words. The section above has the argument and the one hole it leaves open.</li>
-    <li><b>Small enough to compile itself.</b> The whole specification measures 3,718 tokens against a hard ceiling of 4,096: five pages, written to be handed to a model rather than shelved.</li>
+    <li><b>A line is understood by looking at that line.</b> Its meaning is
+    decided by the line and the function around it, never by something written
+    three files away. No inheritance, no macros, no exceptions, no implicit
+    conversions, no null.</li>
+    <li><b>One way to write anything.</b> A formatter with one canonical form,
+    one word for loops, and argument names required where types cannot tell two
+    arguments apart.</li>
+    <li><b>Errors written to be read by a machine.</b> Every message carries
+    what was expected, where the thing it clashes with was declared, and the
+    repair, tagged <code>certain</code> or <code>guess</code>. Writing
+    <code>???</code> leaves a declared gap and asks what belongs in it.</li>
+    <li><b>A program must not crash.</b> Where two designs are acceptable and
+    one can be made to fall over, the other wins, whatever it costs in elegance
+    or in words.</li>
+    <li><b>Small enough to compile itself.</b> The whole specification fits
+    under a hard ceiling of 4,096 tokens, which a test asserts on every commit:
+    five pages, written to be handed to a model rather than shelved.</li>
   </ul>
 
-  <h2>The obvious objections <span class="nod">· quicksand, avoided ·</span></h2>
+  <h2>The obvious objections <span class="nod">&middot; quicksand, avoided &middot;</span></h2>
   <dl class="why">
     <dt>Why no null, and no exceptions?</dt>
-    <dd>Both produce the one kind of trouble no compiler can flag: the case
-    you forgot to handle. Here a value that might be missing is declared in the
-    type (<code>i64?</code>), an operation that went wrong returns a value
-    saying so (<code>fail(code, msg)</code>), and when that failure is passed up
-    to your caller you see it on the line, marked <code>?</code>. Anything that
-    jumps the program from one place to another without showing it is banned
-    wholesale: exceptions, inheritance, macros, operator overloading. The reader
-    has that line and nothing else, and cannot go hunting for a definition three
-    files away.
-    <a href="/docs/failure-is-a-value/">The chapter on this →</a></dd>
-
-    <dt>Why do arguments need names when two parameters share a type?</dt>
+    <dd>Both produce the one kind of trouble no compiler can flag: the case you
+    forgot to handle. Here a value that might be missing says so in its type
+    (<code>i64?</code>), an operation that went wrong returns a value saying
+    so, and passing that failure up to your caller is marked on the line
+    with <code>?</code>. Anything that jumps the program from one place to
+    another without showing it is banned outright.
+    <a href="/docs/failure-is-a-value/">The chapter on this &rarr;</a></dd>
+    <dt>Why must arguments be named when two parameters share a type?</dt>
     <dd>Swapping two arguments of the same type is a model classic, and since
-    the types match nobody notices: the program compiles and copies backwards.
-    Writing <code>copy(from: a, to: b)</code> costs four characters and spends
-    them exactly where that error lives. Where the types already tell the
-    arguments apart, as in <code>save(42, "mario")</code>, names stay
-    optional.</dd>
-
-    <dt>Why refuse one integer type, and then ship eight widths?</dt>
-    <dd>In C, the rules for how one kind of number becomes another are the
-    number-one source of trouble, and they are also the bulkiest thing to write
-    down: for a long time the answer here was one integer type and nothing else.
-    Then the different sizes were asked for anyway, and the expensive half
-    turned out to have been paid already. What makes eight number types
-    dangerous elsewhere is the conversion that happens <i>on its own</i>, and
-    those had been banned here from day one for an unrelated reason. So
-    <code>i8</code> through <code>u64</code>, plus the two types with a decimal
-    point, cost about a paragraph of specification: every conversion is still
-    written by hand, and the word <code>int</code> became an error that lists
-    the sizes to choose from.</dd>
-
-    <dt>Why is the formatting rigid, exactly 4 spaces, tabs are errors?</dt>
-    <dd>So that &ldquo;nearly right&rdquo; is a compile failure instead of a
-    silently different program. A canonical formatter removes every style
-    decision from the writer: any textual difference between two programs is a
-    difference in meaning.</dd>
-
+    the types match nobody notices: the program compiles and copies
+    backwards. <code>copy(from: a, to: b)</code> costs four characters and
+    spends them exactly where that error lives. Where the types already tell
+    the arguments apart, names stay optional.</dd>
+    <dt>Why refuse one integer type, then ship eight widths?</dt>
+    <dd>In C, the rules for turning one kind of number into another are the
+    first source of trouble and the bulkiest thing to write down. For a long
+    time the answer here was one integer type. Then the widths were asked
+    for anyway, and the expensive half had already been paid: what makes
+    eight number types dangerous elsewhere is the conversion that happens on
+    its own, and those were banned here from day one for an unrelated
+    reason. So the widths cost about a paragraph of specification, every
+    conversion is still written by hand, and the word <code>int</code> is an
+    error that lists the sizes to choose from.</dd>
+    <dt>Why is the formatting rigid, exactly four spaces, tabs an error?</dt>
+    <dd>So that "nearly right" is a compile failure instead of a silently
+    different program. A canonical formatter takes every style decision away
+    from the writer, which means any textual difference between two programs
+    is a difference in meaning.</dd>
     <dt>Why is every assignment a copy?</dt>
-    <dd>So that a piece of data never has two names. If nobody else can be
-    holding the same data you are holding, no function changes it behind your
-    back, and two parts of the program running at once cannot trample each
-    other. Nor can you build those circles where two values keep each other
-    alive, which is what makes it possible to free memory by counting holders,
-    with no garbage collector. On top of that, understanding
-    a line takes only that line. The price is real, though, and the spec writes
-    it down rather than hiding it:
-    <code>+</code> on <code>str</code> copies both sides, so a concatenation
-    loop is quadratic, and <code>join</code> and <code>repeat</code> exist to
-    build in one pass; <code>xs @ xs.push(4)</code> grows in place while
-    nothing else holds <code>xs</code>.</dd>
-
-    <dt>What is missing, and what is this language bad at?</dt>
-    <dd>Four things, said here rather than left for you to find on the way.
-    <b>You cannot do two things at once</b>: the design document calls it the
-    largest gap, and a deliberate one. <b>There are no anonymous functions</b>,
-    the kind written inline inside a call: a function you pass to another
-    function is an ordinary declared function, with a name. <b>Adding pieces to
-    a string in a loop costs more and more</b> as the string grows, because the
-    whole thing is copied each time (growing a list does not have this problem).
-    And functions can work across several types of data, but with no conditions
-    attached to those types and never written out at the call. The other half of
-    the honesty is what happens while the program runs: a number that overflows,
-    an index past the end of a list and a division by zero all stop the program,
-    always the same way, instead of letting it carry on with a meaningless
-    value.</dd>
-
-    <dt>How does a line end, if there are no semicolons?</dt>
-    <dd>
-      The compiler puts the semicolon in for you, but only when the line
-      <i>can</i> be over, meaning it finishes with a name, a value, a closing
-      bracket, or one of a short list of words. A line ending in <code>+</code>
-      is visibly half-said, so the sentence continues below. Long expressions
-      break inside brackets, where indentation stops counting; outside brackets
-      every indent counts, because it is what says where a block starts and
-      ends. The rule is taken from Go, and the first version written here was
-      wrong: the list of words had been copied incompletely, so
-      <code>break</code> alone on a line never ended its statement.
-    </dd>
-
-    <dt>What can a string hold?</dt>
-    <dd>
-      Inside a string, some characters are written with a backslash in front:
-      <code>\n</code> for a new line, <code>\t</code> for a tab,
-      <code>\r</code>, <code>\\</code> for the backslash itself and
-      <code>\"</code> for a quote, and <code>\'</code> in place of that last one
-      inside a character literal. There are six in total and no others, so
-      every character has exactly one spelling. Any other letter after the
-      backslash is a compile error, with the correction attached. Before this
-      check existed, <code>"a\nb"</code> compiled
-      happily and printed a backslash, which is exactly the sort of quiet wrong
-      answer this language exists to make impossible. One limit remains, and we
-      say so: <code>"C:\temp"</code> still contains a tab, because
-      <code>\t</code> is a legitimate spelling and no compiler can read your
-      mind.
-    </dd>
-
-    <dt>Can the same variable be passed twice to one call?</dt>
-    <dd>
-      No, not when both parameters can write into it. An argument a function
-      may modify is marked <code>@</code> at the call as well, and it is copied
-      in at the start and copied back out at the end. Point two of them at the
-      same variable and the result depends on which copy is written back last,
-      an order nothing specifies. Ada lived with that for three decades and
-      then made it illegal in 2012, for the reason this language is built
-      around: an answer that changes with the order the machine does things in
-      is nearly always a bug. Rejecting it is what makes the promise that a
-      piece of data never has two names actually true.
-    </dd>
-
-    <dt>And the spec is capped at 4096 tokens. Why cap it at all?</dt>
-    <dd>Because the spec is the text you hand a model before asking it for a
-    program, and space in a prompt runs out. Everything the language adds has to
-    pay rent in there, and a language whose whole definition fits in a few pages
-    is also a language one person can implement. It currently measures 3,663
-    tokens, leaving 433 to spend. The number is counted, not eyeballed: the old
-    word count made the specification look one-third smaller. Two separate
-    programs count it now, and where they
-    disagree the larger number binds.</dd>
+    <dd>So that a piece of data never has two names. If nobody else holds what
+    you hold, no function changes it behind your back and two parts of a
+    program running at once cannot trample each other. Nor can you build a
+    circle where two values keep each other alive, which is what makes it
+    possible to free memory by counting holders, with no garbage collector.</dd>
+    <dd class="more">The price is real and the specification writes it down rather than
+    hiding it. <code>+</code> on a <code>str</code> copies both sides, so a
+    concatenation loop is quadratic and <code>join</code> exists to build in
+    one pass. Growing an array in place is the case where nothing else
+    holds it.
+    <a href="/docs/values-all-the-way-down/">The chapter on this &rarr;</a></dd>
+    <dt>Is it not just a smaller version of an existing language?</dt>
+    <dd>The semantics are familiar on purpose: values that copy, no inheritance,
+    failure in the type. What is new is the constraint every rule was chosen
+    under, and the fact that the whole language has to fit in a prompt with
+    room left for your program. That budget is what refuses the features a
+    bigger language would have taken.
+    <a href="/project/#panel">How a change gets decided &rarr;</a></dd>
   </dl>
 
-  <p class="next">
-    Next: <a href="/errors/">what an error looks like</a>, the part
-    of the thesis you can read in one screen.
-  </p>
-
   <footer>
+    <p>Every code block on this page is cut from a file in
+    <code>examples/</code> when the site is built, so it cannot drift from the
+    program. Each of those programs is compiled and run in three configurations
+    on every commit.</p>
     <p>Built by <a href="https://giuseppearici.com/en/">Giuseppe Arici</a>, CTO at Codermine, Brescia. Author of
     <a href="/about/"><i>Heroes of code</i></a>. Standing on
     <a href="/about/thanks/">a lot of other people&rsquo;s work</a>.</p>

@@ -13,526 +13,175 @@
     <li>
       <span class="when">M-documentation-site: dove vanno i file</span>
       <b>Questo sito aveva tredici capitoli e nessuno diceva dove vanno i file di un programma.</b>
-      Ed è la parte del linguaggio cambiata più di recente. Un programma ora può
-      spargersi su più cartelle, una riga che nomina un altro file vuol dire la
-      stessa cosa in qualunque punto la copi, e non c&rsquo;è nessun modo, di
-      proposito, di allungare la mano verso l&rsquo;alto fuori dal tuo progetto.
-      Chi arrivava qui poteva imparare come funzionano i numeri, come funzionano
-      gli errori, come si parla con il C, e se ne andava senza avere idea di come
-      si scrive un programma in più di un file. Quindi c&rsquo;è un
-      quattordicesimo capitolo, in entrambe le lingue, e la parte interessante è
-      di che cosa è fatto. Ogni pezzo di codice che c&rsquo;è dentro è una fetta
-      di un programma vero del repository, citato con il nome del file e i numeri
-      di riga, e controllato in automatico contro il file: così una
-      documentazione che invecchia diventa un test che fallisce invece di un
-      imbarazzo che qualcuno nota dopo. E questo compra una cosa che nessuno
-      aveva pianificato: quel programma stampa un numero per la cartella in cima
-      e un numero diverso per quella sotto, quindi se la regola su dove si
-      trovano i file cambiasse, cambierebbe l&rsquo;output atteso del programma,
-      i test diventerebbero rossi, e la pagina non potrebbe diventare una bugia
-      in silenzio. I tre messaggi di errore che ci sono dentro sono output vero,
-      ottenuto prendendo il programma che funziona e rompendolo in tre modi di
-      proposito, e uno dei tre è una regola che il compilatore ha imparato lo
-      stesso pomeriggio.
+      Ed è la parte del linguaggio cambiata più di recente.
       <a class="more" href="/it/docs/modules/">Leggi il capitolo</a>
     </li>
     <li>
       <span class="when">M-corpus-coverage: la libreria che nessuno chiamava</span>
       <b>Il compito erano venti programmi in più, scelti perché insieme usassero ogni parte del linguaggio. Il primo ha trovato un buco nel compilatore.</b>
-      Non un buco sottile: un programma che il controllore diceva a posto, che
-      poi si rifiutava di costruirsi, con il compilatore che dava la colpa a sé
-      stesso invece che a chi l&rsquo;aveva scritto. Il programma erano tre righe
-      della cosa più ordinaria che si fa con una lista, prendi ogni elemento,
-      trasformalo in un numero, somma i numeri, scritte nel modo in cui la
-      descrizione del linguaggio, quella di una pagina, le insegna. E quella
-      scrittura non era mai stata messa per iscritto in tutto il progetto. I sei
-      piccoli aiutanti che il linguaggio porta con sé esattamente per questo
-      lavoro erano chiamati da un solo file di test, uno di loro da niente del
-      tutto, e la forma abbreviata che la documentazione usa per spiegarli
-      compariva in zero programmi. Quello che c&rsquo;era di sbagliato sotto si
-      vede solo in una catena. Scrivendo
-      <code>lista.trasforma(f).totale(g)</code>, il compilatore si segnava su che
-      cosa lavora ciascuna delle due chiamate ricordandosi <i>dove comincia nel
-      file</i>, e una catena così comincia, per entrambe, sullo stesso carattere.
-      Due file diversi del compilatore portavano ognuno un commento che diceva
-      che questo non poteva capitare, e il secondo benediceva il primo. La
-      riparazione sta sulla stessa asimmetria che l&rsquo;aveva causato: una
-      chiamata in catena comincia dove comincia il suo ricevente, e
-      <i>finisce</i> alla propria parentesi di chiusura, quindi le fini sono
-      sempre diverse. Poi altri diciannove programmi, e il linguaggio ha corretto
-      chi li scriveva sette volte.
+      Non un buco sottile: un programma che il controllore diceva a posto, che poi si rifiutava di costruirsi, con il compilatore che dava la colpa a sé stesso invece che a chi l&rsquo;aveva scritto.
       <a class="more" href="/it/docs/">I capitoli</a>
     </li>
     <li>
       <span class="when">M-selfhost-nesting: i prefissi tenevano su il muro</span>
       <b>I centosettanta file del compilatore stesso erano nominati come un archivio che nessuno aveva comprato, e il lavoro era comprare l&rsquo;archivio.</b>
-      Metterli in cartelle, lasciare che i nomi si accorcino. È la modifica più
-      noiosa che si possa immaginare e ha trovato tre cose. La prima è che i nomi
-      lunghi facevano un lavoro che nessuno aveva scritto da nessuna parte:
-      nessuno chiama mai una variabile <code>emit_decls</code>, tutti ne chiamano
-      una <code>decls</code>, quindi i prefissi tenevano i nomi dei moduli
-      separati dalle parole ordinarie dei valori, in silenzio e gratis.
-      Toglierli ha fatto scontrare le due cose in ventitré punti in un colpo. La
-      seconda è che cosa nascondevano quelle collisioni. Un file che prende in
-      prestito un modulo chiamato <code>state</code> e ha anche una variabile
-      chiamata <code>state</code> può scrivere <code>state.value</code> due volte
-      e voler dire due cose diverse, e il compilatore non diceva niente: stampava
-      un numero su una riga e un numero diverso su quella dopo e finiva
-      contento. E la regola che lo vieta era stata decisa mesi prima, per
-      iscritto, e approvata. Il compilatore semplicemente non l&rsquo;ha mai
-      fatto. Due suoi commenti dicevano di sì, e un test scritto di proposito
-      asseriva che il comportamento sbagliato era quello giusto, così la
-      contraddizione stava nel repository con la spunta verde accanto.
+      Metterli in cartelle, lasciare che i nomi si accorcino.
       <a class="more" href="/it/project/#self-hosted">Il compilatore nella sua lingua</a>
     </li>
     <li>
       <span class="when">M-package-layout: un modulo può essere un percorso</span>
       <b>Per un mese il linguaggio aveva una regola sola su dove vivono i file: un modulo è una parola, e ogni file che un programma legge sta accanto al file che lo nomina.</b>
-      Rompere quella regola ha richiesto tre sedute di revisione in un giorno. La
-      terza è stata convocata perché l&rsquo;autore ha guardato la risposta che
-      le prime due avevano dato e ha chiesto se il nome non potesse
-      semplicemente essere la cartella e il file uniti insieme. Poteva, ed era
-      meglio su quasi ogni numero che qualcuno abbia misurato: centoventisette
-      dei moduli del compilatore stesso avrebbero tenuto esattamente il nome che
-      i loro quattromila punti di chiamata già scrivevano, le collisioni
-      sarebbero andate a zero, e la specifica si sarebbe accorciata. Quattro
-      giudici su cinque hanno approvato. È stata rifiutata comunque, sull&rsquo;unico
-      argomento che nessun altro aveva portato: la regola già spedita si può
-      allargare dopo, questa si poteva solo scambiare, e scambiarla riscrive ogni
-      programma mai scritto nel linguaggio. Quello che la giornata ha insegnato
-      davvero è più piccolo e vive nel formattatore. Una parola nuova è entrata
-      nel linguaggio e ha raggiunto sei pezzi diversi del compilatore uno alla
-      volta, e il sesto era lo strumento che ti riscrive il file: non conosceva
-      la parola nuova, quindi l&rsquo;ha cancellata, in silenzio, da un programma
-      che funzionava. E la guardia che esiste per prendere esattamente quello
-      guardava dalla stessa finestra rotta, quindi ha visto due fotografie
-      identiche e non ha detto niente.
+      Rompere quella regola ha richiesto tre sedute di revisione in un giorno.
       <a class="more" href="/it/docs/modules/">I moduli e i file</a>
     </li>
     <li>
       <span class="when">M-argv-execution: la shell smette di essere il confine</span>
       <b>Il compilatore parlava con la macchina scrivendo una frase e passandola a una shell.</b>
-      Su Windows la shell legge un&rsquo;altra lingua, quindi la primissima frase
-      ha creato una cartella col nome di una delle proprie opzioni, e tutto
-      quello che veniva dopo stava a valle di quello sbaglio. La riparazione non
-      è stata imparare la grammatica dell&rsquo;altra shell. È stata smettere di
-      scrivere frasi: a un programma ora si passa una lista di parole, la
-      differenza fra le piattaforme vive in venti righe di C dove una differenza
-      fra piattaforme è una cosa ordinaria da scrivere, e una funzione di
-      quoting mantenuta a mano che aveva centottantanove usi non ne ha più
-      nessuno. Quello che il lavoro ha insegnato davvero è più piccolo e
-      peggiore. Tre difetti stavano in codice che gira su questa macchina ogni
-      giorno, e solo Windows riusciva a vederli, perché tutti tre riguardavano
-      che cosa <i>dice</i> un fallimento e niente falliva mai. Un messaggio
-      buttato via, un errore passato su senza una parola, otto punti di arresto
-      diversi che si chiamavano tutti nello stesso modo. Windows non era il bug.
-      Windows era il primo lettore.
+      Su Windows la shell legge un&rsquo;altra lingua, quindi la primissima frase ha creato una cartella col nome di una delle proprie opzioni, e tutto quello che veniva dopo stava a valle di quello sbaglio.
       <a class="more" href="/it/why/">Perché il linguaggio ha questa forma</a>
     </li>
     <li>
       <span class="when">M-separate-compilation: la cache che non può mentire</span>
       <b>Costruire il compilatore voleva dire riscrivere ogni volta un unico file C enorme, quasi ottocentomila righe, anche solo per aver cambiato una virgola.</b>
-      Il lavoro era spezzarlo in un pezzo per modulo, così che toccare un file
-      ne faccia ricostruire uno. Il primo tentativo è fallito con venti
-      lamentele del compilatore C, e quel fallimento è valso più di quanto
-      sarebbe valso un successo: ogni <i>sezione</i> di un pezzo stava decidendo
-      per conto proprio che cosa le serviva, e quattro sezioni che decidono
-      separatamente non possono condividere un file. Poi è arrivato il problema
-      vero, quello per cui questo pezzo di strada esisteva. Riusare il lavoro di
-      ieri è sicuro solo se sai dire che niente di ciò da cui dipendeva è
-      cambiato, e a dirlo si stava usando il testo che il compilatore aveva
-      generato. Ma quando un programma prende un numero dall&rsquo;header di una
-      libreria C, il compilatore scrive il <i>nome</i> e lascia che sia il C a
-      metterci il valore dopo: quindi cambiare l&rsquo;header cambia la risposta
-      e non cambia un carattere del testo. Un programma stampava 1 mentre il
-      file sul disco diceva 2, e poi stampava ancora 1 mentre diceva 7, tutte e
-      due le volte con codice di uscita zero. La riparazione è stata smettere di
-      indovinare e chiedere al compilatore C stesso, mentre lavora, quali file
-      ha aperto davvero. E poi, quasi per caso, si è scoperto dove finiva tutto
-      il tempo: controllare il codice del compilatore prendeva un minuto e
-      mezzo, e quasi tutto era una funzioncina che rispondeva &ldquo;su quale
-      riga sono&rdquo; contando dall&rsquo;inizio di un file di oltre un milione
-      di caratteri. Il numero di riga non serviva a nessuno. Chiedere la
-      distanza, invece, ha portato quel tempo a circa cinque secondi.
+      Il lavoro era spezzarlo in un pezzo per modulo, così che toccare un file ne faccia ricostruire uno.
       <a class="more" href="/it/project/#self-hosted">Un file C per modulo</a>
     </li>
     <li>
       <span class="when">M-bootstrap-archive: in soffitta</span>
       <b>Il vecchio compilatore è finito in soffitta, e si è scoperto che dentro ci abitava metà degli strumenti del progetto.</b>
-      Non i test del linguaggio: gli strumenti che parlano <i>del</i>
-      linguaggio. Quello che conta quanto è grande la specifica, quello che
-      inietta uno sbaglio plausibile alla volta e conta quanti il compilatore ne
-      prende, la domanda &ldquo;i due compilatori sono d&rsquo;accordo?&rdquo;.
-      Così prima sono stati costruiti cinque successori, e ognuno ha dovuto
-      dimostrare di valere quello che sostituiva: il contatore nuovo dà lo
-      stesso numero del vecchio, al token; il rapporto delle mutazioni è
-      tornato identico lettera per lettera; e il confronto fra i due
-      compilatori è stato congelato in 142 file di C generato:
-      l&rsquo;ultima cosa su cui due implementazioni indipendenti sono state
-      d&rsquo;accordo, messa per iscritto quando erano vive tutte e due.
-      L&rsquo;ultimo controllo scritto quel giorno, quello che urla quando un
-      documento cita un file che non esiste, ha trovato subito nove puntatori
-      morti, sbagliati da ben prima del trasloco. Nessuno se n&rsquo;era
-      accorto. Niente aveva guardato.
+      Non i test del linguaggio: gli strumenti che parlano del linguaggio.
       <a class="more" href="/it/project/#self-hosted">Il terzo linguaggio è morto</a>
     </li>
     <li>
       <span class="when">M-harness-port: la rete, in Heroes</span>
       <b>Tutto quello che controlla il compilatore era scritto nel linguaggio che stava per andare in pensione, così la rete è stata riscritta nel linguaggio stesso.</b>
-      Un programma che usa il compilatore come lo userebbe una persona,
-      in 688 controlli: scrive un comando, legge quello che torna, lo
-      confronta con quello che era stato promesso. Puntato sul compilatore nuovo
-      che prova se stesso, è andato in rosso su due cose che nessuno poteva
-      vedere prima. Una era un messaggio di errore vuoto (senza codice,
-      senza riga, senza il pezzo di programma sotto), stampato proprio
-      nell&rsquo;unico caso in cui il compilatore può dire &ldquo;lo sbaglio è
-      tuo&rdquo;. L&rsquo;altra era una sottolineatura troppo lunga, che il
-      file golden del compilatore vecchio registrava come giusta dal
-      giorno in cui era stata scritta. Quella non l&rsquo;ha trovata nessuna
-      rilettura: l&rsquo;ha trovata una seconda implementazione che non era
-      d&rsquo;accordo.
+      Un programma che usa il compilatore come lo userebbe una persona, in 688 controlli: scrive un comando, legge quello che torna, lo confronta con quello che era stato promesso.
     </li>
     <li>
       <span class="when">M-selfhost-fixpoint: il seme</span>
       <b>La porta d&rsquo;ingresso è diventata un solo comando clang, e togliere la scala ha colto il compilatore in fallo.</b>
-      Il repository adesso porta con sé il compilatore come un unico file C
-      generato, quindi una macchina che non ha mai sentito nominare questo
-      linguaggio lo costruisce con un compilatore C e basta. Preparando la
-      cancellazione del bootstrap sono saltate fuori due cose. Il compilatore
-      nuovo leggeva la sua libreria di base da un percorso che puntava dentro
-      la cartella che stava per sparire. E se il file mancava non
-      protestava: andava avanti con una libreria vuota e dava la colpa al
-      programma dell&rsquo;autore. E il controllo che i due compilatori siano
-      d&rsquo;accordo non aveva mai guardato la cosa di cui parla: confrontava
-      quello che <i>dicono</i>, mai i file che <i>scrivono</i>. Posta bene la
-      domanda, su 127 programmi, 26 erano d&rsquo;accordo. Tre difetti dopo, la
-      risposta è 127 su 127.
+      Il repository adesso porta con sé il compilatore come un unico file C generato, quindi una macchina che non ha mai sentito nominare questo linguaggio lo costruisce con un compilatore C e basta.
     </li>
     <li>
       <span class="when">M-selfhost-port: il punto fisso</span>
       <b>Il compilatore passa nel proprio linguaggio, e il figlio corregge il padre.</b>
-      53.013 righe di Rust sono diventate 34.812 righe di Heroes, test compresi da
-      entrambe le parti, perché in Heroes i test vivono nel file che provano,
-      modulo per modulo, con i test golden e il corpus di programmi come rete. E
-      poi i due compilatori sono stati messi a scrivere lo stesso programma da
-      venti megabyte in C, e i risultati confrontati lettera per lettera. Nemmeno
-      una lettera diversa, per tre generazioni di fila. Per strada sono usciti nove
-      difetti e quattro erano nel compilatore <i>vecchio</i>, che è
-      l&rsquo;argomento per fare questa cosa: un compilatore puntato sul proprio
-      sorgente è un corpus che nessuna suite di test riproduce. Nel codice portato
-      non è rimasto nemmeno un workaround.
+      53.013 righe di Rust sono diventate 34.812 righe di Heroes, test compresi da entrambe le parti, perché in Heroes i test vivono nel file che provano, modulo per modulo, con i test golden e il corpus di programmi come rete.
       <a class="more" href="/it/project/#self-hosted">Il punto fisso</a>
     </li>
     <li>
       <span class="when">M-selfhost-probe: il muro che non c&rsquo;era</span>
       <b>Porta un file, aspettati di fallire, e scrivi che cosa il linguaggio non riesce a dire.</b>
-      Il muro era stato tolto in silenzio tre giorni prima da una milestone che
-      parlava di altro, e nessuno era tornato a rileggere la premessa del piano:
-      così il lexer è passato da &ldquo;questo fallirà sul primo file, e ci costerà
-      poco&rdquo; a funzionante, in un pomeriggio. Dodici cose che il linguaggio
-      non riusciva a dire; undici sono costate un paio di righe ciascuna. Ma la
-      scoperta migliore è stata meglio di una lacuna: il compilatore originale un
-      giorno aveva rilasciato un bug perché la lista delle parole che possono
-      chiudere una riga si era dimenticata una nuova arrivata, e il linguaggio
-      nuovo rende quel bug esatto impossibile da scrivere. La macchina che si
-      stava ricostruendo ha rifiutato, per come è fatta, l&rsquo;errore che i suoi
-      stessi costruttori avevano fatto la prima volta.
+      Il muro era stato tolto in silenzio tre giorni prima da una milestone che parlava di altro, e nessuno era tornato a rileggere la premessa del piano: così il lexer è passato da &ldquo;questo fallirà sul primo file, e ci costerà poco&rdquo; a funzionante, in un pomeriggio.
     </li>
     <li>
       <span class="when">M-complete-structs: un rifiuto è un&rsquo;affermazione</span>
       <b>Da 191 dichiarazioni C collegabili a 349, e nemmeno un passo era una nuova funzionalità.</b>
-      Ognuno era un rifiuto senza via d&rsquo;uscita. Uno diceva all&rsquo;autore
-      che a una descrizione mancava un pezzo, e quel pezzo lui l&rsquo;aveva
-      scritto. Un altro gli chiedeva di correggere un campo quando nessuna
-      correzione era possibile: la regola guardava come era scritto il testo della
-      libreria, invece di guardare che cosa fosse quella cosa. La lezione non è che i rifiuti dovrebbero
-      essere più morbidi: un rifiuto è un&rsquo;affermazione, e
-      un&rsquo;affermazione che nessun programma può soddisfare non è
-      conservativa, è sbagliata, ed è invisibile da dentro, perché tutto sembra
-      severo nel modo giusto.
+      Ognuno era un rifiuto senza via d&rsquo;uscita.
     </li>
     <li>
       <span class="when">M-struct-passing: la stessa dimensione non è la stessa cosa</span>
       <b>Un terzo di tutto quello che offre una libreria C vera era fuori portata.</b>
-      I gruppi di valori che viaggiano come una cosa sola non riuscivano ad
-      attraversare il confine. La soluzione ovvia (descrivi il gruppo da
-      entrambi i lati, poi controlla che dimensioni e posizioni combacino) è
-      sbagliata, ed è proprio per come è sbagliata che questo progetto esiste: su questa macchina due gruppi possono avere dimensioni identiche,
-      posizioni identiche, passare qualunque controllo si possa scrivere, e
-      arrivare comunque come spazzatura, perché i numeri interi e quelli con la
-      virgola viaggiano in registri diversi. La risposta è stata smettere di
-      descrivere il gruppo, usare la descrizione della libreria stessa, e poi
-      controllare ogni parte con la domanda <i>è la stessa specie di cosa</i>
-      invece di <i>è della stessa dimensione</i>.
+      I gruppi di valori che viaggiano come una cosa sola non riuscivano ad attraversare il confine.
     </li>
     <li>
       <span class="when">M-binding-fidelity: metà di una promessa</span>
       <b>Dichiara male una funzione esterna e il programma non si costruisce. Era vero in una sola direzione.</b>
-      Quello che una funzione C <i>restituisce</i> era controllato da quando esiste
-      il confine; quello che <i>prende</i> non era controllato affatto, e due
-      lettori indipendenti l&rsquo;hanno dimostrato allo stesso modo: passa un
-      numero troppo grande per lo spazio in cui deve entrare, compila senza una
-      protesta, esegui, stampa qualcos&rsquo;altro. Il quarantadue per cento di
-      tutto quello che uno collega davvero ha uno spazio così. La cura è una
-      piccola funzione che nessuno chiama mai, scritta solo perché il compilatore
-      C sia obbligato a guardare la conversione, con il numero di riga puntato
-      sulla riga che ha scritto l&rsquo;autore.
+      Quello che una funzione C restituisce era controllato da quando esiste il confine; quello che prende non era controllato affatto, e due lettori indipendenti l&rsquo;hanno dimostrato allo stesso modo: passa un numero troppo grande per lo spazio in cui deve entrare, compila senza una protesta, esegui, stampa qualcos&rsquo;altro.
     </li>
     <li>
       <span class="when">M-program-corpus: i programmi come strumento di misura</span>
       <b>Sette programmi veri scritti, e sono saltati fuori sei difetti del compilatore.</b>
-      Un lettore di JSON, un convertitore Markdown, un foglio di calcolo, un
-      risolutore di labirinti, un piccolo assemblatore con la sua macchina, un
-      riassuntore di log, un gioco. Nessun test esistente avrebbe potuto trovare
-      nemmeno uno dei sei, e nessuno li ha trovati leggendo. Tre sono lo stesso
-      difetto vestito in modi diversi, ed è quello su cui questo progetto continua
-      a scrivere regole. Una decisione corretta nel momento in cui viene presa,
-      ma appoggiata su qualcosa che sta fuori invece che sul valore che ha
-      davanti. Col tempo quel qualcosa cambia, la decisione diventa sbagliata in
-      silenzio, e il commento che la spiegava continua a leggersi
-      perfettamente.
+      Un lettore di JSON, un convertitore Markdown, un foglio di calcolo, un risolutore di labirinti, un piccolo assemblatore con la sua macchina, un riassuntore di log, un gioco.
     </li>
     <li>
       <span class="when">M-sized-integers: la cosa temuta, lunga un paragrafo</span>
       <b>Arrivano otto larghezze, e la parola <i>int</i> smette di essere una parola.</b>
-      Il documento di progetto aveva rifiutato questa cosa nei termini più forti:
-      mai in questa versione, la cosa più rischiosa che potremmo aggiungere. Poi è
-      stata chiesta comunque, e si è scoperto che metà della spesa era già stata
-      pagata anni prima da una decisione che non c&rsquo;entrava niente. Quello che
-      rende pericolose più dimensioni di numero altrove è la conversione
-      invisibile; questo linguaggio aveva vietato le conversioni invisibili
-      dall&rsquo;inizio, per un motivo completamente diverso, quindi era rimasto
-      quasi niente da scrivere.
+      Il documento di progetto aveva rifiutato questa cosa nei termini più forti: mai in questa versione, la cosa più rischiosa che potremmo aggiungere.
     </li>
     <li>
       <span class="when">M-literal-bases: che cosa significa 0700</span>
       <b>Un revisore ha scritto i permessi di un file come li scrivono tutti, e ha chiesto che cosa volesse dire.</b>
-      Non l&rsquo;aveva chiesto mai nessuno. Significava settecento. In tutti i
-      linguaggi da cui questo prende in prestito significa quattrocentoquarantotto,
-      e un programma che l&rsquo;avesse usato qui avrebbe compilato, girato,
-      impostato i permessi sbagliati e passato i propri test. La riparazione non è
-      stata quella ovvia: rifiutare la forma ambigua chiude il buco, ma dare anche
-      al vecchio significato una scrittura tutta sua aggiunge la notazione che il
-      progetto voleva comunque, nelle stesse tre righe di specifica. Altri tre
-      linguaggi sono arrivati a quella risposta ognuno per conto suo, dopo
-      esserci cascato.
+      Non l&rsquo;aveva chiesto mai nessuno.
     </li>
     <li>
       <span class="when">M-header-constants: nessuna cifra che si possa ancora sbagliare</span>
       <b>Le impostazioni di una libreria hanno nomi e numeri, e il linguaggio sapeva dire solo i numeri.</b>
-      Per nominare un&rsquo;opzione, un programma doveva scrivere 10002, con un
-      commento sopra che spiegava che la documentazione della libreria somma due a
-      diecimila: aritmetica fatta a mano, controllata da niente. Il progetto ha
-      misurato quanto fosse grave prima di sistemarlo, costruendo uno strumento che
-      cambia una cifra e guarda se qualcuno protesta: cinque numeri di quel tipo
-      negli esempi, e nessuno ha protestato per nessuno dei cinque. Adesso il
-      programma nomina l&rsquo;impostazione e il valore lo fornisce l&rsquo;header
-      della libreria. Il commento che spiegava l&rsquo;aritmetica è stato
-      cancellato insieme al numero: una spiegazione che esiste solo perché una cosa
-      non si può controllare sparisce quando si può.
+      Per nominare un&rsquo;opzione, un programma doveva scrivere 10002, con un commento sopra che spiegava che la documentazione della libreria somma due a diecimila: aritmetica fatta a mano, controllata da niente.
     </li>
     <li>
       <span class="when">M-ffi-ladder: 1, dove doveva stampare 1.41</span>
       <b>La promessa intorno a cui era organizzato tutto il linguaggio era falsa proprio per la coppia usata dal suo stesso secondo esempio.</b>
-      L&rsquo;organizzazione era questa: quando un programma prende in prestito una
-      funzione C, il compilatore non la descrive, punta alla descrizione della
-      libreria e lascia che clang confronti le due. È il motivo per cui questo
-      linguaggio emette C. Ma puntare a una descrizione controlla solo quello che
-      <i>passi</i>, mai quello che ti torna indietro, quindi un programma che
-      dichiarava che la radice quadrata restituisce un numero intero compilava
-      senza fiatare e stampava 1. Quattro prestiti sbagliati su sei passavano in
-      silenzio. La riparazione è una riga per prestito e non costa niente a
-      runtime: una domanda posta al compilatore C sul tipo di una chiamata, senza
-      mai fare quella chiamata.
+      L&rsquo;organizzazione era questa: quando un programma prende in prestito una funzione C, il compilatore non la descrive, punta alla descrizione della libreria e lascia che clang confronti le due.
     </li>
     <li>
       <span class="when">M-module-namespace: il cambiamento più economico era un verbo</span>
       <b>I programmi si dividono in file, e undici decisioni su tredici sono costate zero.</b>
-      Più file hanno bisogno di regole: che succede quando il nome di un file va in
-      conflitto con uno che importa, che succede quando un import non viene mai
-      usato. Erano già scritte entrambe: un nome non può essere riutilizzato mentre
-      è visibile, e tutto quello che viene legato e mai letto è un errore. Quindi
-      tutta la questione era quale parola usare per dire che cosa fa un import. Il
-      panel ha scelto <i>lega</i>, la parola che il linguaggio usava già per i
-      valori normali, e le due regole esistenti hanno coperto entrambi i casi senza
-      aggiungere niente.
+      Più file hanno bisogno di regole: che succede quando il nome di un file va in conflitto con uno che importa, che succede quando un import non viene mai usato.
     </li>
     <li>
       <span class="when">M-generics-library: tre veti, nessuno per argomentazione</span>
       <b>Il linguaggio arriva a essere completo, e ogni disputa aperta viene chiusa da un compilatore invece che da un dibattito.</b>
-      La descrizione per tipo del runtime doveva guadagnare una sesta voce? Un
-      giudice ha scritto l&rsquo;header, ha compilato il runtime invariato contro
-      di esso, e ha scoperto che il C riempie di zeri una lista di
-      inizializzazione troppo corta: quindi ogni descrizione esistente avrebbe
-      portato un puntatore nullo, in silenzio, sotto tutti i flag di warning che il
-      progetto usa. La piccola libreria di base si poteva compilare una volta e
-      distribuire? Un altro ha scritto la sola forma possibile, ha passato una
-      funzione su testo dove serviva una funzione su numeri, e non ha ricevuto
-      nessuna diagnostica: ha ricevuto un crash. Le istanze generiche dovevano avere nomi
-      leggibili? Un terzo ha trovato due programmi legali che scrivono lo stesso
-      nome. Niente di tutto questo era raggiungibile leggendo.
+      La descrizione per tipo del runtime doveva guadagnare una sesta voce?
     </li>
     <li>
       <span class="when">M-optional-map: gli ultimi due tipi, intrecciati</span>
       <b>I valori che possono fallire e le mappe non si potevano costruire in nessuno dei due ordini.</b>
-      Cercare una chiave in una mappa restituisce il valore oppure un errore,
-      quindi prima della mappa serviva quel tipo. E quel tipo, si è scoperto,
-      deve contare le copie anche quando dentro c&rsquo;è un numero semplice,
-      perché il suo lato errore si porta dietro due stringhe. Il contenitore è
-      stato costruito comunque, per istruzione dell&rsquo;autore, con un
-      disaccordo permanente messo per iscritto invece di essere smussato: una
-      revisione precedente sosteneva che la mappa non si può estendere, e che
-      cancellarla del tutto restituirebbe più budget di specifica di quanto costi
-      finirla. Se una verifica futura la cancella, il registro dirà che si sapeva
-      in anticipo.
+      Cercare una chiave in una mappa restituisce il valore oppure un errore, quindi prima della mappa serviva quel tipo.
     </li>
     <li>
       <span class="when">M-value-aggregates: un albero che contiene se stesso</span>
       <b>Dati ricorsivi, in un linguaggio il cui modello dei dati non ha né puntatori né un tipo riferimento.</b>
-      Non c&rsquo;è niente da mettere in un campo che significhi &ldquo;da
-      qualche altra parte&rdquo;, e però l&rsquo;esempio intorno a cui è stato
-      scritto tutto il progetto è un albero di espressioni che tiene i propri figli.
-      La risposta è che l&rsquo;<i>array</i> è l&rsquo;unica indirezione che
-      esiste: un array è un puntatore qualunque cosa contenga, quindi una forma che
-      ricorre passando per un array ha una dimensione finita e continua a copiarsi
-      come un valore. Il programma compila, stampa quattordici, e finisce con ogni
-      allocazione in ordine. Il motivo per cui non può perdere memoria è una frase
-      su che cosa può contenere un campo, non su come funziona la liberazione: un
-      campo non può contenere un riferimento, quindi ogni valore è un albero, e un
-      contatore che libera a zero è completo.
+      Non c&rsquo;è niente da mettere in un campo che significhi &ldquo;da qualche altra parte&rdquo;, e però l&rsquo;esempio intorno a cui è stato scritto tutto il progetto è un albero di espressioni che tiene i propri figli.
     </li>
     <li>
       <span class="when">M-strings-ownership: il controllo che ha smentito il proprio progetto</span>
       <b>Il compilatore ha imparato a contare i riferimenti, e il cane da guardia ha abbaiato due volte in un&rsquo;ora.</b>
-      La regola era: un valore che possiede una stringa viene rilasciato alla fine
-      del blocco che l&rsquo;ha creato. La prima smentita è stata istruttiva: un
-      <code>assert</code> si porta il testo di quello che ha affermato dentro il percorso di
-      fallimento, e un letterale non viene mai liberato, quindi lì è al sicuro. La
-      seconda è stata fatale: chiedi la metà di un numero e usala in una frase, e
-      la prima metà della frase viene costruita in un blocco e finita in un altro,
-      perché una chiamata che può fallire apre una diramazione in mezzo
-      all&rsquo;espressione. Ed è l&rsquo;aspetto di <i>ogni</i> espressione che
-      contiene una chiamata che può fallire. La riparazione è stata smettere di
-      lasciare che i valori temporanei possiedano qualcosa, che è esattamente il
-      motivo per cui una rappresentazione fuori moda era stata scelta una milestone
-      prima.
+      La regola era: un valore che possiede una stringa viene rilasciato alla fine del blocco che l&rsquo;ha creato.
     </li>
     <li>
       <span class="when">M-scalars-run: il primo binario nativo</span>
       <b>Un programma diventa un eseguibile, e la discussione più lunga è stata su un numero fra zero e due.</b>
-      Quando un programma è corretto e il compilatore semplicemente non è ancora
-      finito, quale codice di uscita bisogna usare? Il due dice &ldquo;lo strumento
-      non è riuscito a fare il suo lavoro&rdquo;, che è letteralmente vero. A un
-      giudice è stato messo in mano quel messaggio e gli è stato chiesto che cosa
-      avrebbe fatto dopo: ha controllato la versione del compilatore, ha eseguito
-      il comando di diagnosi, ha cercato in tutto il repository un identificatore
-      interno, e poi ha detto al proprio utente che la toolchain sembrava rotta:
-      una frase che lui stesso ha poi giudicato falsa. Un altro ha trovato
-      che il compilatore C che usano tutti ha una diagnostica esattamente per
-      questo caso dal 1994, e stampa la parola &ldquo;sorry&rdquo;, e poi ha letto
-      una riga più in basso: esce con il normale codice di errore. La prova che
-      sembrava sostenere il due ha chiuso la questione sull&rsquo;uno.
+      Quando un programma è corretto e il compilatore semplicemente non è ancora finito, quale codice di uscita bisogna usare?
     </li>
     <li>
       <span class="when">M-ir-lowering: lo zucchero che sparisce, e il centro del compilatore</span>
       <b>La rappresentazione da manuale ha perso contro dieci anni di prove che nessuno era andato a cercare.</b>
-      LLVM, la cui esistenza intera è la forma a singolo assegnamento, dice agli
-      autori dei linguaggi nuovi di non costruirla: usa slot sullo stack con
-      letture e scritture, e lascia che un passaggio successivo faccia pulizia,
-      perché è quello che fa clang stesso. La rappresentazione intermedia di Rust
-      ha scelto la forma semplice nel 2015 per i messaggi di errore e non per la
-      velocità, e da allora non è cambiata. Ogni migrazione che si potesse
-      verificare era stata fatta per produrre codice macchina più veloce:
-      l&rsquo;unica cosa a cui questo progetto ha formalmente rinunciato.
+      LLVM, la cui esistenza intera è la forma a singolo assegnamento, dice agli autori dei linguaggi nuovi di non costruirla: usa slot sullo stack con letture e scritture, e lascia che un passaggio successivo faccia pulizia, perché è quello che fa clang stesso.
     </li>
     <li>
       <span class="when">M-typed-frontend: il frontend, e la tesi ottiene il suo primo numero</span>
       <b>Nomi, tipi, esaustività, e la prima misura, la cui metà utile è la colonna che non mostra niente.</b>
-      379 errori deliberati iniettati in programmi funzionanti, il 94% preso. Ma lo
-      stesso compilatore con le regole della tesi disattivate ne prende il 76%, ed è
-      <i>quella</i> la misura: 18 punti, concentrati in tre operatori. Il catch-all
-      pigro passa dal 100% preso al 13%. Nascondere un nome e saltare
-      un&rsquo;etichetta di argomento vanno a zero, perché nel linguaggio non c&rsquo;è
-      nient&rsquo;altro che li stia cercando. E gli errori di battitura fanno 100%
-      da entrambe le parti, cioè vengono presi da nomi e tipi come in qualunque
-      altro posto: un fatto che sarebbe stato molto facile non scrivere.
+      379 errori deliberati iniettati in programmi funzionanti, il 94% preso.
     </li>
     <li>
       <span class="when">M-name-resolution: il resolver</span>
       <b>Una calcolatrice da 317 righe non ha superato la risoluzione dei nomi, esattamente su due righe.</b>
-      Dichiara i propri <code>map</code> e <code>fold</code>, e il linguaggio si
-      riserva entrambi i nomi. Era la terza volta che quello stesso programma
-      prendeva una regola che nessuno sapeva di aver scritto: un caso di
-      <code>variant</code> chiamato <code>.var</code>, un <code>assert</code> dentro
-      un ramo, e adesso un nome. Non era mai stato compilato ed era comunque il
-      test migliore del repository. Per strada si è scoperto che chiamava una
-      funzione di base che stava nell&rsquo;inventario del documento di progetto e
-      mancava dalla specifica: senza quella il linguaggio non riusciva a mettere un
-      numero dentro una frase, e nessuno se ne era accorto perché nessuno aveva
-      provato.
+      Dichiara i propri map e fold, e il linguaggio si riserva entrambi i nomi.
     </li>
     <li>
       <span class="when">M-syntax-tree: il parser, l&rsquo;albero, il formatter</span>
       <b>Il primo atto del parser è stato scoprire che il linguaggio non riusciva a scrivere il tipo di una funzione.</b>
-      <code>fn</code> stava nel registro delle parole straniere (un errore
-      con la riparazione già scritta) e stava anche nella sintassi che la
-      specifica stessa usava per un tipo funzione: quindi un parametro di tipo
-      funzione non passava nemmeno il lexer, e ogni parametro di quel genere era
-      impossibile da scrivere. La domanda è stata mandata a cinque giudici con una
-      raccomandazione allegata, e quattro l&rsquo;hanno rifiutata: le regole dello
-      stesso progetto elencano <code>fn</code> fra gli errori che il registro esiste
-      per prendere, sette linguaggi antenati scrivono un tipo funzione con la
-      parola che dichiara una funzione, e il tokenizzatore misura le due scritture
-      in modo identico. La raccomandazione ha perso contro le prove, che è il motivo
-      per cui il panel esiste.
+      fn stava nel registro delle parole straniere (un errore con la riparazione già scritta) e stava anche nella sintassi che la specifica stessa usava per un tipo funzione: quindi un parametro di tipo funzione non passava nemmeno il lexer, e ogni parametro di quel genere era impossibile da scrivere.
     </li>
     <li>
       <span class="when">M-token-stream: il lexer</span>
       <b>Il primo codice vero, e tre cose che ha trovato solo perché è stato scritto.</b>
-      Il testo sorgente adesso diventa token. I rientri sono rigidi, e un tab è
-      un errore invece che una cosa da interpretare. La fine di
-      un&rsquo;istruzione la deduce il compilatore, così i punti e virgola non
-      servono. E le parole chiave rubate ad altri linguaggi
-      (<i>struct</i>, <i>let</i>, <i>while</i>) falliscono con la correzione già
-      scritta dentro il messaggio. Scriverlo
-      alla lettera seguendo il progetto ha scoperto tre buchi nel progetto stesso:
-      la regola per chiudere una riga citava Go ma aveva perso tre delle parole di
-      Go; le stringhe non avevano modo di contenere un ritorno a capo, né una
-      virgoletta; e il budget che il progetto difendeva da due giorni non era mai
-      stato contato. Era un terzo più grande di quanto credessero tutti.
+      Il testo sorgente adesso diventa token.
     </li>
     <li>
       <span class="when">M-day-zero</span>
       <b>Le fondazioni, e quattro programmi scritti prima del compilatore.</b>
-      Git, un workspace Rust, un&rsquo;infrastruttura per i test golden, verde con zero
-      test, e la specifica del linguaggio congelata come base della misura (budget:
-      1500 token, ancora non misurati: il conteggio è arrivato un giorno dopo, e ha
-      cambiato il numero). Poi quattro programmi C scritti a mano: la forma esatta
-      che il compilatore un giorno dovrà emettere, compreso un albero ricorsivo con
-      il conteggio dei riferimenti, verificato senza perdite di memoria sotto
-      AddressSanitizer. La macchina ha trovato il primo difetto di progetto prima di
-      qualunque essere umano: un warning su un&rsquo;etichetta non usata, che ha
-      cambiato il modo in cui inizierà ogni funzione generata.
+      Git, un workspace Rust, un&rsquo;infrastruttura per i test golden, verde con zero test, e la specifica del linguaggio congelata come base della misura (budget: 1500 token, ancora non misurati: il conteggio è arrivato un giorno dopo, e ha cambiato il numero).
     </li>
     <li>
       <span class="when">prima del codice</span>
       <b>Il piano incontra cinque esperti ostili.</b>
-      Prima che un singolo token passasse dal lexer, il piano di costruzione è stato
-      esaminato da cinque revisori ostili: progettazione di linguaggi, ingegneria
-      dei compilatori, semplicità, ergonomia per gli LLM, didattica. Tre hanno detto
-      <i>obietto</i>. La metrica della tesi si è guadagnata un braccio di controllo,
-      sono stati scoperti due passaggi mancanti nel compilatore, e il backend è
-      passato da QBE all&rsquo;emissione di C, per la FFI e non per la
-      velocità. Il piano che è sopravvissuto è la revisione 2.
+      Prima che un singolo token passasse dal lexer, il piano di costruzione è stato esaminato da cinque revisori ostili: progettazione di linguaggi, ingegneria dei compilatori, semplicità, ergonomia per gli LLM, didattica.
     </li>
     <li>
       <span class="when">l&rsquo;inizio</span>
       <b>Un documento di progetto da 2000 righe e una domanda.</b>
-      Il linguaggio è arrivato come una lunga conversazione di progetto: un
-      linguaggio compilato senza libreria standard, costruito per il lettore che non
-      è umano. La prima decisione ingegneristica (quale linguaggio scrive il
-      linguaggio) è stata rovesciata nell&rsquo;arco di un&rsquo;ora da una
-      domanda di una riga sul backend. Da allora tutto viene discusso per iscritto.
+      Il linguaggio è arrivato come una lunga conversazione di progetto: un linguaggio compilato senza libreria standard, costruito per il lettore che non è umano.
     </li>
   </ol>
 
