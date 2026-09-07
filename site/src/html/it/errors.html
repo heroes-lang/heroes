@@ -5,9 +5,9 @@
     <span class="nod">· always crashing in the same car ·</span>
   </div>
   <p class="lede">Qui un messaggio di errore è un prodotto finito, curato come
-  il resto, e la tesi che ci sta dietro si misura errore per errore, senza fare
-  medie. Tutti gli errori qui sotto sono usciti davvero dal compilatore, copiati
-  e incollati.</p>
+  il resto. Tutti gli errori qui sotto sono usciti dal compilatore, copiati e
+  incollati. La tesi che portano si misura uno sbaglio alla volta, senza mai
+  ridurla a una cifra sola.</p>
 
   <p>
     Un modello non ha il progetto aperto sotto gli occhi. Riceve un messaggio e
@@ -52,8 +52,9 @@
     Una correzione marchiata <code>certain</code> è una correzione che il
     compilatore ha <i>calcolato</i>, non tirato a indovinare: il tipo che ha
     appena dedotto lui, l&rsquo;unico nome simile che esiste in quel punto del
-    programma. Il comando <code>heroes check --apply</code> applica quelle, e
-    quello che ne esce compila. Una correzione marchiata <code>guess</code> è un
+    programma. Il comando <code>heroes check --apply</code> applica quelle e
+    lascia stare le altre, quindi quello che ne esce è più vicino, non per forza
+    finito. Una correzione marchiata <code>guess</code> è un
     suggerimento per chi legge, e nessuno strumento la applica al posto tuo, mai:
     tirare a indovinare una correzione che un modello applicherebbe a occhi
     chiusi è peggio che spiegare.
@@ -96,10 +97,13 @@ tests/golden/check/reserved-words.hero:4:1: <span class="k">error</span>[reserve
 tests/golden/check/deleted-int.hero:23:8: <span class="k">error</span>[reserved_word]: `int` is not a word in this language — an integer says its width: `i64`, and also `i8` `i16` `i32` `u8` `u16` `u32` `u64`</code></pre>
   <p>
     Quella è la forma a una riga per diagnostica; la resa più ricca qui sopra è
-    quello che stampa il comando. Tre di
-    quelle quattro portano una riparazione <code>certain</code>, quindi
-    <code>--apply</code> converte un file intero di parole chiave prese in
-    prestito in un solo passaggio.
+    quello che stampa il comando. Tre di quelle quattro portano una riparazione
+    <code>certain</code> e <code>--apply</code> riscrive quelle tre. Lascia
+    <code>let</code> dov&rsquo;è, perché lì la riparazione onesta è un&rsquo;altra
+    forma di dichiarazione e non uno scambio di parola, e applicare una
+    supposizione è l&rsquo;unica cosa che questo progetto si rifiuta di fare. È
+    il patto in un file solo: uno strumento che puoi puntare sul sorgente senza
+    rileggere il risultato, e una lista più corta di cose che fa.
   </p>
 
   <h2>Un programma incompiuto non è un programma rotto</h2>
@@ -110,28 +114,29 @@ tests/golden/check/deleted-int.hero:23:8: <span class="k">error</span>[reserved_
     funzioni restituiscono quel tipo. Non produce nessun binario, ed esce con
     codice <b>zero</b>, perché uno scheletro in costruzione non è un errore:
   </p>
-  <pre><code>hole at examples/gallery/09-holes.hero:28:74
+  <pre><code>hole at examples/gallery/09-holes.hero:24:5
+  position: statement &mdash; any type, or none
+  this function returns: Entry
+  in scope:
+    entries: [Entry]
+hole at examples/gallery/09-holes.hero:28:74
   expected type: str
   in scope:
     entries: [Entry]
   functions that return it:
     summary_of(entries: [Entry])
-      <span class="c"># The hole can be one argument of an otherwise finished line.</span>
-    library.hero_args_at(index: i64)
-    library.hero_file_read(path: cstr, @status: i64)
-    library.hero_str_try_from_cstr(p: cstr, @status: i64)</code></pre>
+      <span class="c"># The hole can be one argument of an otherwise finished line.</span></code></pre>
   <p>
     È questo che permette di scrivere un programma partendo dallo scheletro:
     abbozzi la forma, ti fai dire dal compilatore che cosa serve in ogni buco, e
     li riempi. Il buco è una domanda a cui il compilatore risponde, non un
-    fallimento che segnala. Due parole in quell&rsquo;output appartengono al
-    confine con il C e non compaiono da nessun&rsquo;altra parte:
-    <code>cstr</code> è una stringa C, e <code>@status</code> marca un parametro
-    su cui la funzione chiamata può scrivere: un parametro di uscita del C,
-    nominato al punto della chiamata come ogni altro argomento.
+    fallimento che segnala. Due buchi, due domande diverse: il primo sta dove
+    manca un&rsquo;istruzione intera, e allora la risposta è che cosa deve
+    restituire la funzione; il secondo sta dentro una riga per il resto finita,
+    e allora la risposta è un tipo solo e le funzioni che lo producono.
   </p>
 
-  <h2>Come si misura</h2>
+  <h2 id="measured">Come si misura</h2>
   <p>
     <code>heroes mutate</code> misura queste affermazioni. Prende programmi che funzionano,
     inietta un errore plausibile alla volta, e conta quanti il compilatore

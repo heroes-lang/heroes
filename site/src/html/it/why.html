@@ -55,10 +55,10 @@
     indispensabile e prende tutto il resto dall&rsquo;enorme quantità di C che esiste
     già.
   </p>
-  <pre class="table"><code>maths beyond arithmetic    →  libm          files, sockets   →  libc
-regular expressions        →  PCRE2         HTTP             →  libcurl
-JSON                       →  cJSON         SQL              →  SQLite
-graphics, audio, terminal  →  SDL, raylib, ncurses</code></pre>
+  <pre class="table"><code>matematica oltre l&rsquo;aritmetica  →  libm          file, socket   →  libc
+espressioni regolari           →  PCRE2         HTTP           →  libcurl
+JSON                           →  cJSON         SQL            →  SQLite
+grafica, audio, terminale      →  SDL, raylib, ncurses</code></pre>
   <p>
     Prenderne una in prestito si fa così. Tutto ruota intorno al nome sulla
     prima riga: è l&rsquo;header, il file dove la libreria dichiara la forma delle sue
@@ -171,9 +171,15 @@ graphics, audio, terminal  →  SDL, raylib, ncurses</code></pre>
     riparazione si conosce arriva marcata <code>certain</code> oppure
     <code>guess</code>. Scrivere <code>???</code> lascia un buco dichiarato e
     chiede cosa ci va dentro.</li>
-    <li><b>Un programma non deve andare in crash.</b> Dove due design sono
-    accettabili e uno dei due si può far cadere, vince l&rsquo;altro, qualunque cosa
-    costi in eleganza o in parole.</li>
+    <li><b>Un programma non deve corrompere la memoria.</b> Fermarsi gli è
+    concesso. Un intero che sfora, a qualunque larghezza, una divisione per
+    zero, un indice oltre la fine di una lista, una fetta che taglierebbe un
+    carattere a metà, una ricorsione troppo profonda, e <code>.must()</code> su
+    un valore che è fallito: ognuna di queste cose ferma il programma sul posto,
+    a voce alta, sulla riga dov&rsquo;è successo. Quello che nessuna di loro fa
+    è tirare avanti con la memoria sbagliata. Dove due design sono accettabili e
+    uno dei due si può portare a un indirizzo che nessuno ha controllato, vince
+    l&rsquo;altro, qualunque cosa costi in eleganza o in parole.</li>
     <li><b>Abbastanza piccolo da compilare se stesso.</b> Tutta la specifica
     sta sotto un tetto rigido di 4.096 token, e un test lo verifica a ogni
     commit: cinque pagine, scritte per essere date a un modello e non per stare
