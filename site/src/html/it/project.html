@@ -7,12 +7,6 @@
     Come verificare che il compilatore compila se stesso, come si valutano le modifiche al linguaggio e quali sono i venti principi stampati da <code>heroes this</code>.
   </p>
 
-  <div class="notice">
-    <p>
-    <b>Per eseguire i comandi qui sotto serve il repository, che è ancora privato.</b> Puoi già leggere <a href="/it/spec/">la specifica</a> e <a href="/it/examples/">gli esempi</a>, con l&rsquo;output registrato quando disponibile.
-  </p>
-  </div>
-
   <h2 id="self-hosted">Come verificare che compila se stesso</h2>
   <p>
     Il compilatore di Heroes è scritto in Heroes. Compilarlo richiede dati annidati, tabelle di nomi, ricorsione, gestione degli errori e programmi distribuiti su più file. È una prova concreta di come il linguaggio gestisce un programma complesso.
@@ -30,7 +24,7 @@ $ cmp out.c seed/heroes.c
 
 <span class="c">  oltre 22 megabyte di C, e più di 700.000 righe</span></code></pre>
   <p>
-    Se i file sono identici, <code>cmp</code> non stampa nulla. Il confronto verifica che il compilatore ricostruisca lo stesso C da cui è stato compilato. La riga centrale richiede meno di un minuto su un MacBook Air. Chi ha accesso al repository può ripetere la prova.
+    Se i file sono identici, <code>cmp</code> non stampa nulla. Il confronto verifica che il compilatore ricostruisca lo stesso C da cui è stato compilato. La riga centrale richiede meno di un minuto su un MacBook Air. La prova può ripeterla chiunque: il repository è aperto e i tre comandi sono tutto quello che serve.
   </p>
   <ul class="stats">
     <li><span class="n">180+</span><span class="what">moduli di Heroes</span></li>
@@ -103,6 +97,6 @@ $ cmp out.c seed/heroes.c
 
   <footer>
     <p>
-    Il sistema di integrazione continua, che esegue i controlli automatici, avvia il primo comando su Linux quando vengono inviate modifiche al compilatore. Quando viene registrata una versione di milestone, una fase completata del progetto, lo esegue su tre piattaforme. Gli altri due comandi vengono eseguiti solo su Linux: verificano che il compilatore riproduca il proprio C, uguale sulle diverse piattaforme. Decisioni, revisioni e misure sono nel <a href="https://github.com/heroes-lang/heroes">repository</a>, che sarà accessibile quando il codice diventerà pubblico.
+    Il sistema di integrazione continua, che esegue i controlli automatici, avvia il primo comando su Linux quando vengono inviate modifiche al compilatore. Quando viene registrata una versione di milestone, una fase completata del progetto, lo esegue su tre piattaforme. Gli altri due comandi vengono eseguiti solo su Linux: verificano che il compilatore riproduca il proprio C, uguale sulle diverse piattaforme. Decisioni, revisioni e misure sono nel <a href="https://github.com/heroes-lang/heroes">repository</a>, aperto in lettura.
   </p>
   </footer>

@@ -396,6 +396,7 @@ export function checkClaims(html: string, pagePath: string): void {
   problems.push(...checkChapterDiagnostics(html, pagePath));
   problems.push(...checkNoWrongTwin(html, pagePath));
   problems.push(...checkFixpointLeg(html, pagePath));
+  problems.push(...checkRepositoryIsOpen(html, pagePath));
   if (NAME_EVERY_VERB.includes(pagePath)) {
     markVisited(pagePath);
     for (const verb of verbs()) {
@@ -408,10 +409,64 @@ export function checkClaims(html: string, pagePath: string): void {
     throw new Error(
       `${problems.length} claim(s) on the page disagree with the repository, or left the page.\n    ` +
         problems.join('\n    ') +
-        `\n  A number in prose is a claim about the tree (site/src/lib/claims.ts). Change the sentence to\n` +
-        `  what the tree says, or if the sentence was deliberately removed, remove its row from the table.\n`
+        `\n  A number in prose is a claim about the tree, and so is a promise about what a reader\n` +
+        `  cannot do yet (site/src/lib/claims.ts). Change the sentence to what the tree says, or if\n` +
+        `  the sentence was deliberately removed, remove its row from the table.\n`
     );
   }
+}
+
+/**
+ * The repository is open, and no page may say otherwise.
+ *
+ * This is the check the site did not have on the day it needed one. For five
+ * days the site was public and the repository was not, and more than twenty
+ * sentences across nine pages in two editions said so: the download command
+ * *"is not available yet"*, the issue tracker *"will open when the code becomes
+ * public"*, `GitHub · private` in the nav of every page. The moment the
+ * repository opened, every one of them became false at once, and nothing here
+ * could tell: this file checks numbers and named things, and its own header
+ * says what that leaves out, that it cannot verify a sentence it does not know
+ * about.
+ *
+ * So the sentence is known about now. This is a forbidden-phrase check rather
+ * than a live one on purpose: the build is offline and deterministic, and
+ * asking GitHub at build time would make a page's correctness depend on a
+ * network call. What it actually guards is the realistic failure, a page or a
+ * paragraph restored from an older copy, which is how a promise like this comes
+ * back.
+ *
+ * A phrase leaves this list only when the repository stops being open.
+ */
+const CLOSED_REPOSITORY: { phrase: RegExp; lang: 'en' | 'it' }[] = [
+  { phrase: /repository is still private/i, lang: 'en' },
+  { phrase: /repository, still\s+private/i, lang: 'en' },
+  { phrase: /which is still private/i, lang: 'en' },
+  { phrase: /when the code is (?:made )?public/i, lang: 'en' },
+  { phrase: /when the code becomes public/i, lang: 'en' },
+  { phrase: /will open with the code/i, lang: 'en' },
+  { phrase: /GitHub · private/i, lang: 'en' },
+  { phrase: /repository è ancora privato/i, lang: 'it' },
+  { phrase: /repository, ancora\s+privato/i, lang: 'it' },
+  { phrase: /che è ancora privato/i, lang: 'it' },
+  { phrase: /quando il codice (?:verrà|sarà|diventerà)/i, lang: 'it' },
+  { phrase: /si apre insieme al codice/i, lang: 'it' },
+  { phrase: /GitHub · privato/i, lang: 'it' },
+];
+
+function checkRepositoryIsOpen(html: string, pagePath: string): string[] {
+  const out: string[] = [];
+  const flat = html.replace(/\s+/g, ' ');
+  for (const { phrase } of CLOSED_REPOSITORY) {
+    const m = flat.match(phrase);
+    if (m) {
+      out.push(
+        `${pagePath}: says "${m[0]}". The repository is open, so this promise is a false claim. ` +
+          `Write what a reader can do now, not what they will be able to do.`
+      );
+    }
+  }
+  return out;
 }
 
 /**

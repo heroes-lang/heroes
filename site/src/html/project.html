@@ -7,12 +7,6 @@
     How to verify that the compiler compiles itself, how language changes are reviewed and the twenty principles printed by <code>heroes this</code>.
   </p>
 
-  <div class="notice">
-    <p>
-    <b>The commands below require the repository, which is still private.</b> You can already read <a href="/spec/">the specification</a> and <a href="/examples/">the examples</a>, with recorded output where available.
-  </p>
-  </div>
-
   <h2 id="self-hosted">How to verify that it compiles itself</h2>
   <p>
     The Heroes compiler is written in Heroes. Compiling it requires nested data, name tables, recursion, error handling and programs spread across files. It is a practical test of how the language handles a complex program.
@@ -30,7 +24,7 @@ $ cmp out.c seed/heroes.c
 
 <span class="c">  over 22 megabytes of C, and more than 700,000 lines of it</span></code></pre>
   <p>
-    If the files are identical, <code>cmp</code> prints nothing. The comparison verifies that the compiler reproduces the C it was built from. The middle command takes under a minute on a MacBook Air. Anyone with access to the repository can repeat the test.
+    If the files are identical, <code>cmp</code> prints nothing. The comparison verifies that the compiler reproduces the C it was built from. The middle command takes under a minute on a MacBook Air. Anyone can repeat the test: the repository is open and the three commands are the whole of it.
   </p>
   <ul class="stats">
     <li><span class="n">180+</span><span class="what">modules of Heroes</span></li>
@@ -103,6 +97,6 @@ $ cmp out.c seed/heroes.c
 
   <footer>
     <p>
-    The continuous integration system, which runs automated checks, runs the first command on Linux when compiler changes are submitted. When a milestone version, a completed stage of the project, is tagged, it runs on three platforms. The other two commands run only on Linux: they check that the compiler reproduces its own C, which is the same across platforms. Decisions, reviews and measurements are in the <a href="https://github.com/heroes-lang/heroes">repository</a>, which will be accessible when the code is public.
+    The continuous integration system, which runs automated checks, runs the first command on Linux when compiler changes are submitted. When a milestone version, a completed stage of the project, is tagged, it runs on three platforms. The other two commands run only on Linux: they check that the compiler reproduces its own C, which is the same across platforms. Decisions, reviews and measurements are in the <a href="https://github.com/heroes-lang/heroes">repository</a>, open to read.
   </p>
   </footer>

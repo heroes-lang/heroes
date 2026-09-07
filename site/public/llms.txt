@@ -13,9 +13,9 @@ A test checks this limit on every commit.
 - [Specification as text](https://heroes-lang.org/spec.md): the complete file to include in a prompt.
 - [Specification page](https://heroes-lang.org/spec/): the same text, with an explanation of the size limit.
 
-The repository is still private. Its source links will become accessible when
-the code is public. The specification, examples and documentation are already
-available on this site.
+The repository is open to read, under the Apache 2.0 licence. The language is
+in beta: before version 1.0.0 a change in the middle number can change the
+language itself, and a change in the last number never does.
 
 Rules to follow when generating code: use four spaces for indentation, never
 tabs; name arguments when two parameters share a type; handle every variant
@@ -28,7 +28,7 @@ code, but produces no executable while holes remain.
 
 - [Home](https://heroes-lang.org/): an introduction, code examples and the project's hypothesis.
 - [Examples](https://heroes-lang.org/examples/): source code, commands and recorded output where available. `/examples/index.json` provides the same collection as data, with a hash for each file.
-- [Start](https://heroes-lang.org/start/): how to build the compiler, find its runtime and run a program once the repository is public.
+- [Start](https://heroes-lang.org/start/): how to build the compiler, find its runtime and run a program.
 - [Why Heroes](https://heroes-lang.org/why/): why the language uses explicit syntax and C libraries, what has been measured and what remains to be tested.
 - [The project](https://heroes-lang.org/project/): how to verify that the compiler reproduces its own C, how changes are reviewed and the principles printed by `heroes this`.
 - [The author](https://heroes-lang.org/about/): Giuseppe Arici, CTO at Codermine in Brescia and author of *Heroes of code*, a history of programming languages told as a dream journey with David Bowie. The book is published on Amazon. Arici had never written a compiler before Heroes.
@@ -43,12 +43,13 @@ output and twenty principles printed by `heroes this`.
 
 ## Source
 
-- [Repository](https://github.com/heroes-lang/heroes): the compiler, specification and design records. Once public, build with `clang -I runtime seed/heroes.c runtime/runtime.c -o heroes`, then run `./heroes run examples/gallery/00-first.hero`.
+- [Repository](https://github.com/heroes-lang/heroes): the compiler, specification and design records. Clone it, build with `clang -I runtime seed/heroes.c runtime/runtime.c -o heroes`, then run `./heroes run examples/gallery/00-first.hero`. Issues are welcome; pull requests are not accepted, and `CONTRIBUTING.md` says why.
 - [Example programs](https://heroes-lang.org/examples/): read directly from `examples/` when the site is built.
 
 ## Notes
 
-- There is no installer or public release yet. The current compiler is written
-  in Heroes; the earlier compiler is archived and no longer builds.
+- There is no installer yet, so the compiler is built from source with one
+  clang command. The current compiler is written in Heroes; the earlier
+  compiler is archived and no longer builds.
 - `heroes check --json` emits schema 1 with stable snake_case error codes,
   source locations, notes and suggested fixes.
