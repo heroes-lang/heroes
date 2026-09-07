@@ -39,14 +39,34 @@
 import { appendFileSync, readFileSync, existsSync, unlinkSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { readText, filesIn, absolute } from './repo.ts';
+import { number } from './i18n.ts';
 
 const AGENTS_DIR = '.claude/agents';
 const DECL_FILE = 'selfhost/parse/decl.hero';
 const TABLE_FILE = 'selfhost/cli/table.hero';
 const DOCTOR_FILE = 'selfhost/cli/doctor.hero';
 const CHAPTERS_DIR = 'site/src/html/docs';
+const SPEC_SUITE = 'tests/harness/suite_spec.hero';
 
 /* -- The facts, each read from the one place the tree keeps it ------------- */
+
+/**
+ * The specification's token ceiling, read from the suite that holds the
+ * specification under it on every commit, never typed here. The claim under
+ * the name on both home pages carries it and the specification page shows it,
+ * so a panel that raised it would otherwise leave three pages quoting the old
+ * number. It was a literal in `spec-page.ts` until the home started saying it.
+ */
+export function specCeiling(): number {
+  const text = readText(SPEC_SUITE);
+  const found = /^constant CEILING: i64\n\s+(\d+)$/m.exec(text);
+  if (found === null) {
+    throw new Error(`${SPEC_SUITE}: no \`constant CEILING: i64\` with its number on the line under it.`);
+  }
+  const n = Number(found[1]);
+  if (n < 1024) throw new Error(`${SPEC_SUITE}: the ceiling reads ${n}, below any budget the language has had.`);
+  return n;
+}
 
 /** The seats of the language panel, and how many of them carry a veto. */
 function judges(): { seats: number; vetoes: number } {
@@ -208,9 +228,14 @@ const WORDS: Record<'en' | 'it', string[]> = {
 
 function word(n: number, lang: 'en' | 'it'): string {
   const table = WORDS[lang];
-  if (n < 0 || n >= table.length) {
-    throw new Error(`no number word for ${n}: the claims table spells numbers up to twenty.`);
-  }
+  if (n < 0) throw new Error(`no number word for ${n}`);
+  // Up to twenty a page writes the word; above it the digits, grouped the way
+  // the edition groups them (`4,096` and `4.096`), which is the convention
+  // site/README.md sets for the Italian edition's numbers. Through the site's
+  // own `number` and not `toLocaleString`: the Italian locale in ICU puts no
+  // separator under five digits, so it spelled 4096 as "4096" and the check
+  // refused the home page that correctly said 4.096.
+  if (n >= table.length) return number(n, lang);
   return table[n];
 }
 
@@ -258,6 +283,14 @@ const CLAIMS: Claim[] = [
     fact: () => judges().seats, shape: (n) => new RegExp(`${n} judges review proposals`, 'i') },
   { page: 'site/src/html/it/about/thanks.html', what: 'the number of judges',
     fact: () => judges().seats, shape: (n) => new RegExp(`${n} giudici valutano le proposte`, 'i') },
+
+  // The specification's ceiling, which the claim under the name carries, in the
+  // author's own words (2026-09-08). The dot in the Italian figure is a
+  // character and not a wildcard.
+  { page: 'site/src/html/index.html', what: 'the specification ceiling in tokens',
+    fact: specCeiling, shape: (n) => new RegExp(`fewer than ${n} tokens`) },
+  { page: 'site/src/html/it/index.html', what: 'the specification ceiling in tokens',
+    fact: specCeiling, shape: (n) => new RegExp(`meno di ${n.replace('.', '\\.')} token`) },
 
   // The words that can begin a top-level line.
   { page: 'site/src/html/why.html', what: 'the words that can begin a line',
@@ -463,5 +496,5 @@ export function assertEveryClaimVisited(): number {
 export function claimsSummary(pages: number): string {
   const j = judges();
   const c = ci();
-  return `${j.seats} judges, ${j.vetoes} vetoes, ${topLevelWords().size} top-level words, ${verbs().length} verbs, ${zenLines()} Zen lines, ${chapters()} chapters, ${c.tagPlatforms} tag platforms, fixpoint ${c.fixpointLinuxOnly ? 'Linux-only' : 'every leg'}; ${CLAIMS.length} claims and ${NAME_EVERY_VERB.length} verb lists checked over ${pages} pages`;
+  return `${j.seats} judges, ${j.vetoes} vetoes, ${topLevelWords().size} top-level words, ${verbs().length} verbs, ${zenLines()} Zen lines, ${chapters()} chapters, ${specCeiling()}-token ceiling, ${c.tagPlatforms} tag platforms, fixpoint ${c.fixpointLinuxOnly ? 'Linux-only' : 'every leg'}; ${CLAIMS.length} claims and ${NAME_EVERY_VERB.length} verb lists checked over ${pages} pages`;
 }
