@@ -328,6 +328,12 @@ constant ROWS: i64
 # as a rule to whoever finds it next, which is the same failure the exemptions
 # check exists to catch one level up.
 
+# The operating contract, whose numbered sections `sections` below resolves. Its
+# token ceiling is `suite_spec.hero`'s, where the compiler is in hand to measure
+# it; this file only checks that the pointers into it land.
+constant CONTRACT: str
+    "CLAUDE.md"
+
 # `/step`'s milestone-close number for § Where we are. A threshold with an
 # instrument behind it, which is the only kind that holds.
 constant WHERE_CEILING: i64
@@ -568,6 +574,7 @@ function run_all(scratch: str) -> report.Report?
 
     numbered(@r, living: living)
     named(@r, living: living)
+    sections(@r, living: living)
     c_files(@r, living: living)
     citations(@r, present: walked, ignored: ignored_paths(scratch))
     english(@r, present: walked)
@@ -728,6 +735,150 @@ function named(@r: report.Report, living: [str])
         )
     else
         report.keep_pass(@r)
+
+# Every section of the operating contract a LIVING file points at is a section
+# that contract still has.
+#
+# **This is the third blind spot, and finding it is what turned a renumbering
+# into a refusal.** Measured 2026-09-07: `CLAUDE.md` section numbers are cited
+# 3280 times across this repository, **2599 of them inside records that §14
+# forbids anybody to rewrite** and **346 in commit bodies**, which cannot be
+# edited at all. Nothing verified a section number. So renaming `§7` to anything
+# would have made every one of those pointers wrong, in silence, with the whole
+# net green: the dead-citation check reads paths and stops at the first colon
+# followed by a digit, and a section number is neither a path nor a line.
+#
+# The numbers are therefore permanent, which the contract now says in its own
+# § Where the rest lives. What this check holds is the half still movable: a live
+# document may not point at a section that is not there. Records are exempt by
+# construction, because it walks `living`: a record's pointer is history, and
+# §14 has it corrected underneath rather than edited.
+#
+# Both spellings in use are read, `CLAUDE.md §14` and `CLAUDE.md § 7`. A named
+# section, `CLAUDE.md § Hard stops`, carries no number and is not this check's
+# business: nothing cites a title but the harness's own comments, and a title is
+# free to change.
+function sections(@r: report.Report, living: [str])
+    text = read_file(CONTRACT)
+
+    if text.is_err()
+        report.keep_failure(@r, label: "records/sections", detail: "  " + CONTRACT + " cannot be read")
+        return
+    present = numbered_headings(text.must())
+
+    # The floor, and it is the shape this check would fail in: a heading style
+    # this reader does not recognise leaves the map empty, and every citation in
+    # the tree then passes for the wrong reason.
+    if present.len() == 0
+        report.keep_failure(
+            @r,
+            label: "records/sections",
+            detail: "  " + CONTRACT + " has no `## N.` heading this reader can see, so every citation in the tree would pass vacuously"
+        )
+        return
+    known: {str: bool} @ {}
+
+    for number in present
+        known[number] @ true
+
+    offenders: [str] @ []
+
+    for path in living
+        body = read_file(path)
+
+        if body.is_err()
+            continue
+
+        for number in unknown_sections(text: body.must(), known: known)
+            offenders @ offenders.push("    " + path + ": section " + number)
+
+    if offenders.len() > 0
+        report.keep_failure(
+            @r,
+            label: "records/sections",
+            detail: "  a living file points at a section of " + CONTRACT + " that does not exist:\n" + offenders.join("\n") + "\n  The numbered sections do not move: they are cited 3280 times, 2599 of those\n  inside records nobody may rewrite and 346 in commit bodies. So this is a\n  citation to repair, never a section to renumber."
+        )
+    else
+        report.keep_pass(@r)
+
+# The `## N.` headings of the contract, by number.
+function numbered_headings(text: str) -> [str]
+    found: [str] @ []
+
+    for row in strings.lines(text)
+        if strings.starts_with(text: row, prefix: "## ")
+            at = strings.index_of(text: row, needle: ".")
+
+            if !at.is_err() && at.must() > 3
+                number = row.slice(from: 3, to: at.must())
+
+                if all_digits(number)
+                    found @ found.push(number)
+
+    return found
+
+# The sections a text cites and the contract does not have.
+function unknown_sections(text: str, known: {str: bool}) -> [str]
+    missing: [str] @ []
+
+    for number in sections_cited(text)
+        state = known[number]
+
+        if state.is_err()
+            missing @ missing.push(number)
+
+    return missing
+
+# Every contract section a text points at. A byte walk, like every other reader
+# in this file, and it has to know that `§` is TWO bytes in UTF-8, 0xC2 0xA7:
+# there is no character index here to trust.
+function sections_cited(text: str) -> [str]
+    found: [str] @ []
+    marker = CONTRACT + " "
+    i: i64 @ 0
+
+    while i < text.len()
+        if text[i] == marker[0] && marked_at(text: text, at: i, needle: marker)
+            at: i64 @ i + marker.len()
+
+            if at + 1 < text.len() && text[at] == 194 && text[at + 1] == 167
+                at @ at + 2
+
+                if at < text.len() && text[at] == 32
+                    at @ at + 1
+                last: i64 @ at
+
+                while last < text.len() && is_digit(text[last])
+                    last @ last + 1
+
+                if last > at
+                    found @ found.push(text.slice(from: at, to: last))
+                i @ last
+            else
+                i @ i + 1
+        else
+            i @ i + 1
+
+    return found
+
+# Whether `needle` sits at `at`. `strings.index_of` answers the same question
+# from the start of the text only, and this walk needs it at an offset.
+function marked_at(text: str, at: i64, needle: str) -> bool
+    if at + needle.len() > text.len()
+        return false
+    k: i64 @ 0
+
+    while k < needle.len()
+        if text[at + k] != needle[k]
+            return false
+        k @ k + 1
+
+    return true
+
+# `all_digits` is further down this file, where `item_milestone` already needed
+# it: one file is one module, so the second copy this check first carried was a
+# `declared_twice` error at the first build, which is the language doing the job
+# CLAUDE.md's preamble asks a reader to do.
 
 # No C file lives outside the directories that own C.
 #
@@ -2404,6 +2555,35 @@ test "a dead citation is caught, and the anchored rule ignores what it must"
     nothing: {str: bool} @ {}
     citations(@fired, present: ["design.md"], ignored: nothing)
     assert fired.failed + fired.passed == 1
+
+test "a pointer into a section the contract does not have is caught, and both spellings are read"
+    # The two spellings in use, and a bare `§` that belongs to another document.
+    assert sections_cited("see CLAUDE.md §7 and CLAUDE.md § 14 for the rest") == ["7", "14"]
+    assert sections_cited("design.md §1.6 sets the budget") == []
+    assert sections_cited("CLAUDE.md § Hard stops is a name, not a number") == []
+
+    # `§` is two bytes, so a walk that assumed one would read the second of them
+    # as the start of the number and answer 167 or nothing.
+    assert sections_cited("CLAUDE.md §11 twice, CLAUDE.md §11") == ["11", "11"]
+
+    # The headings, read off the shape the contract actually uses: numbered ones
+    # yes, named ones no.
+    assert numbered_headings("## 1. Re-read protocol\n## Hard stops\n## 15. Working instructions\n") == ["1", "15"]
+    assert numbered_headings("# 3. not a section heading\n") == []
+
+    # The detection firing: a document pointing at a section that is not on the
+    # map. It is tested here rather than by writing a broken file into the tree,
+    # because the walk would then read that file as a real offender.
+    known: {str: bool} @ {}
+    known["7"] @ true
+    assert unknown_sections(text: "CLAUDE.md §7 is fine", known: known) == []
+    assert unknown_sections(text: "CLAUDE.md §16 is not", known: known) == ["16"]
+
+    # And the vacuous-pass floor: a contract whose headings this reader cannot
+    # see must fail rather than bless every citation in the tree.
+    blind: report.Report @ report.empty()
+    sections(@blind, living: ["design.md"])
+    assert blind.failed + blind.passed == 1
 
 test "the boundary rule catches the numbers and nothing else"
     assert !numbered_in("scheduled for M8c").is_err()
