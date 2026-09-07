@@ -87,6 +87,11 @@ error[ffi_return_type]: `puts` does not return `cstr` — that is what `stdio.h`
     So a value that came from C is marked as such everywhere it goes, and the
     line where it stops being foreign is a line you can see.
   </p>
+  <p>
+    What no compiler checks: that the <code>ptr</code> you hand back is the one
+    the library gave you, and what the C on the other side does with it. The
+    types make the boundary visible; they do not make C safe.
+  </p>
 
   <h3>Using them</h3>
   <figure class="example" data-src="examples/gallery/08-ffi.hero" data-lines="24-31">
@@ -156,8 +161,9 @@ error[ffi_return_type]: `puts` does not return `cstr` — that is what `stdio.h`
     the hole rather than guessing.
   </p>
   <p>
-    And a declaration can name the function that frees what it returns, with
-    <code>owned</code>. A string a C library allocates for you then comes back
+    And a declaration can name the function that frees what it hands back, with
+    <code>owned</code>, whether as a result or through an <code>@</code>
+    parameter. A string a C library allocates for you then comes back
     as a value the compiler releases by that name, instead of leaking because
     nobody remembered which function undoes which.
   </p>
