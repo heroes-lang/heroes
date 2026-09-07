@@ -41,7 +41,7 @@ with what each one measured in the git history and in `DESIGN-LOG.md`):
 | Records | sittings **115** · journals **37** · examples **55** programs, **118** files, **545** `test` blocks · open defects **1** · the site **46** pages, 23 English and 23 Italian |
 | Waiting on the author | **0** decisions · **41** in `SCHEDULED.md` · **1** in `DEFECTS.md` (016, `assert` drops both sides for every aggregate against `spec:202`) · **323** in `LEARN.md` (never a gate) · an outstanding veto (`docs/panel/101` R3) |
 
-Every number re-counted 2026-09-07 at M-declared-freer's close, none carried — **except one, and the exception is worth reading**: the `LEARN.md` cell above said **319** against a real **323** until the lists were reshaped later that day, and it survived the very commit that corrected the cell beside it (`01a377ef` took `SCHEDULED.md` from 42 to 41, under a subject about a count made with the wrong pattern). A number that lives in two places drifts in the one nobody re-opens, which is why the three live lists now state their own count under a banner an instrument reads. Three suites green: **588**, **1610**, **119**. What moved for the milestone is the compiler and the shape of two files: **186 → 189** modules, `ir/lower.hero` **1511 → 174** and `parse/decl.hero` **638 → 217**, both now under §11's own 300 and out of `suite_layout.hero`'s `DECIDED` table altogether — panel 109's coordinator had predicted **≤ 900** and **≤ 400**. The number to watch is the other direction: `check/walk.hero` is at **1695 of a decided 1700**, five lines of room, and it is the file every new diagnostic reaches.
+Every number re-counted 2026-09-07 at M-declared-freer's close, none carried — **except one, and the exception is worth reading**: the `LEARN.md` cell above said **319** against a real **323** until the lists were reshaped later that day, and it survived the very commit that corrected the cell beside it (`01a377ef` took `SCHEDULED.md` from 42 to 41, under a subject about a count made with the wrong pattern). A number that lives in two places drifts in the one nobody re-opens, which is why the three live lists now state their own count under a banner an instrument reads. Three suites green: **588**, **1612**, **121**, re-counted 2026-09-07 after the contract's re-engineering added `spec/contract` and `records/sections`. What moved for the milestone is the compiler and the shape of two files: **186 → 189** modules, `ir/lower.hero` **1511 → 174** and `parse/decl.hero` **638 → 217**, both now under §11's own 300 and out of `suite_layout.hero`'s `DECIDED` table altogether — panel 109's coordinator had predicted **≤ 900** and **≤ 400**. The number to watch is the other direction: `check/walk.hero` is at **1695 of a decided 1700**, five lines of room, and it is the file every new diagnostic reaches.
 
 ---
 
@@ -52,7 +52,7 @@ Every number re-counted 2026-09-07 at M-declared-freer's close, none carried —
 ```sh
 clang -I runtime seed/heroes.c runtime/runtime.c -o heroes   # the compiler, from C alone (~3.5 s)
 ./heroes run tests/harness/main.hero -- ./heroes             # the net
-./heroes test tests/harness/main.hero                        # the net's own tests (108, 11 s, 2026-09-05)
+./heroes test tests/harness/main.hero                        # the net's own tests (121, 2026-09-07)
 ./heroes test selfhost/main.hero                             # the compiler's own tests
 ./heroes doctor                                              # the toolchain
 ```

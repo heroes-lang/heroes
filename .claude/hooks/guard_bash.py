@@ -24,13 +24,51 @@ import sys
 CONTRACT = "CLAUDE.md § Hard stops"
 
 
+HEREDOC = re.compile(r"<<-?\s*(?:'([^']+)'|\"([^\"]+)\"|([A-Za-z_][A-Za-z0-9_]*))")
+
+
+def without_heredocs(command):
+    """Drop every heredoc BODY, keeping the commands around it.
+
+    **A false positive is the worst failure this guard has, and it had one on
+    its first day.** A `python3 - <<'EOF'` writing a record entry was refused as
+    `git add .`, because the entry's own prose quoted that command while
+    explaining why it is forbidden. The guard was reading DATA as if it were a
+    command line, and it blocked twenty minutes of legitimate work with a
+    message about a rule the text was documenting.
+
+    A heredoc body is fed to a program's stdin. It is never executed by the
+    shell, so it is never this guard's business. Everything else stays: a
+    command after the body is still scanned, which the crude fix of truncating
+    at the first `<<` would have lost.
+    """
+    out = []
+    lines = command.split("\n")
+    i = 0
+
+    while i < len(lines):
+        line = lines[i]
+        out.append(line)
+        i += 1
+        # Several heredocs can open on one line (`a <<X b <<Y`); their bodies
+        # then arrive in order, so each delimiter is consumed in turn.
+        for match in HEREDOC.finditer(line):
+            marker = match.group(1) or match.group(2) or match.group(3)
+            while i < len(lines) and lines[i].strip() != marker:
+                i += 1
+            i += 1  # the delimiter line itself
+
+    return "\n".join(out)
+
+
 def segments(command):
     """Split a command line into the pieces a shell would run separately.
 
     A guard that only looks at the whole string is blind to
     `cd x && git add -A`, which is how these commands actually get typed.
     """
-    return [s.strip() for s in re.split(r"&&|\|\||[;\n|]", command) if s.strip()]
+    text = without_heredocs(command)
+    return [s.strip() for s in re.split(r"&&|\|\||[;\n|]", text) if s.strip()]
 
 
 def words(segment):
