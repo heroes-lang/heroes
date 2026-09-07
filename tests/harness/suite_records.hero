@@ -334,6 +334,13 @@ constant ROWS: i64
 constant CONTRACT: str
     "CLAUDE.md"
 
+# How many tokens one `git check-ignore` carries. `runtime/parts/run.c` panics
+# past `HERO_RUN_MAX_ARGS` 256 words, and a token costs two words, so 127 is the
+# hard ceiling and this leaves room for the two words the command itself takes
+# plus any that grow later. `ignored_by_git` carries the measurement.
+constant IGNORE_BATCH: i64
+    100
+
 # `/step`'s milestone-close number for § Where we are. A threshold with an
 # instrument behind it, which is the only kind that holds.
 constant WHERE_CEILING: i64
@@ -576,7 +583,7 @@ function run_all(scratch: str) -> report.Report?
     named(@r, living: living)
     sections(@r, living: living)
     c_files(@r, living: living)
-    citations(@r, present: walked, ignored: ignored_paths(scratch))
+    citations(@r, scratch: scratch, present: walked)
     english(@r, present: walked)
     exemptions(@r, present: walked)
     expectations(@r, scratch: scratch)
@@ -1079,17 +1086,14 @@ function two_digits(cs: [str], at: i64) -> bool
 # it, which is how a relative pointer inside a package is followed. Every
 # expansion of a brace form must name something: `syntax/{decl,data}.rs` is a
 # promise about two files and half a promise is a broken one.
-function names_something(token: str, document: str, known: {str: bool}, ignored: {str: bool}) -> bool
+function names_something(token: str, document: str, known: {str: bool}) -> bool
     for part in expanded(token)
-        if !one_names(part: part, document: document, known: known, ignored: ignored)
+        if !one_names(part: part, document: document, known: known)
             return false
 
     return true
 
-function one_names(part: str, document: str, known: {str: bool}, ignored: {str: bool}) -> bool
-    if is_ignored(part: part, ignored: ignored)
-        return true
-
+function one_names(part: str, document: str, known: {str: bool}) -> bool
     if !known[part].is_err()
         return true
 
@@ -1229,26 +1233,99 @@ function slashes(token: str) -> i64
 # prose. A checker that calls them dead citations is reading `.gitignore` as a
 # list of mistakes. One command, not a list in this file: the list already
 # exists and git is the thing that reads it.
-function ignored_paths(scratch: str) -> {str: bool}
+# **A path git IGNORES is not a dead citation, and the question goes to git's
+# RULES rather than to this disk.** This is the whole of the defect that kept the
+# net red on every platform but the one it was written on, from 2026-09-06 22:19
+# to 2026-09-07.
+#
+# The answer used to come from `git ls-files --others --ignored --directory`,
+# which lists the ignored paths that HAPPEN TO EXIST. `site/dist/`,
+# `site/.cache/` and `.claude/worktrees/` exist on a machine that has built the
+# site and made a worktree, so twelve live citations resolved here; a fresh
+# checkout has none of them, so the same twelve read as dead and the Linux leg
+# failed three runs running while this Mac was green in all three
+# configurations. **The machine that wrote the check could not see the defect**,
+# which is the shape the platform rules exist for.
+#
+# `git check-ignore` answers for a path that is not there, measured 2026-09-07:
+# `site/dist/index.html` comes back ignored on a tree where nothing under
+# `site/dist` was ever built. That is the difference between asking the rule and
+# asking the world, and it is CLAUDE.md § 11's narrowing rule in the instrument
+# that enforces CLAUDE.md's citations (`docs/contract/case-law.md` CL-004).
+#
+# **AND EVERY TOKEN IS ASKED TWICE, ONCE WITH A TRAILING SLASH.** The first
+# repair replaced the oracle and still asked it the wrong question: it cut the
+# Linux failure from twelve dead citations to five, and all five were bare
+# directory names. Measured in the container 2026-09-07, on a tree where the
+# directories are absent:
+#
+#     NOT      site/dist            IGNORED  site/dist/
+#     NOT      .claude/worktrees    IGNORED  .claude/worktrees/
+#
+# The reason is in `.gitignore` itself: the patterns are `dist/`, `.cache/` and
+# `.claude/worktrees/`, and a trailing slash there means *a directory only*. Git
+# decides whether a path IS a directory by looking at it, and it cannot look at
+# a path that is not there, so the pattern does not match the bare name. A file
+# INSIDE such a directory matched all along, because `site/.cache/key.pem` has
+# `.cache` as a directory component in the string itself.
+#
+# So the token is asked as written and as a directory. Either answer excuses it,
+# and neither form can be inferred from the other.
+#
+# At the end, over only the tokens that survived every other route: a run with
+# no dead citation never spawns git at all.
+#
+# **IN BATCHES, AND WINDOWS IS WHAT SAID SO.** `runtime/parts/run.c` sets
+# `HERO_RUN_MAX_ARGS` to 256 and panics past it, so one call per run is a
+# promise this function cannot keep: two words per token means 127 tokens is the
+# whole budget, and a tree with more unresolved citations than that kills the
+# suite instead of reporting them. Measured 2026-09-07 on the Windows box, whose
+# checkout sat at an older commit and therefore had plenty:
+#
+#     panic: a command line reached 256 arguments
+#
+# **Neither of the other two machines could see it.** The Mac excuses those
+# citations before they ever reach here, and the Linux container had five. That
+# is the second defect in one afternoon that only the third platform showed, and
+# the reason the contract asks for all three before a commit rather than after.
+function ignored_by_git(scratch: str, tokens: [str]) -> {str: bool}
     out: {str: bool} @ {}
-    ran = shell.run(
-        scratch: scratch,
-        program: "git",
-        words: ["git", "ls-files", "--others", "--ignored", "--exclude-standard", "--directory"]
-    )
+    at: i64 @ 0
 
-    if ran.is_err()
-        return out
+    while at < tokens.len()
+        words: [str] @ ["git", "check-ignore"]
+        taken: i64 @ 0
 
-    for line in strings.lines(ran.must().out)
-        entry = strings.trimmed(line)
+        while at < tokens.len() && taken < IGNORE_BATCH
+            token = tokens[at]
+            words @ words.push(token)
 
-        if entry.len() > 0
-            out[strings.without_suffix(text: entry, suffix: "/")] @ true
+            if !strings.ends_with(text: token, suffix: "/")
+                words @ words.push(token + "/")
+            taken @ taken + 1
+            at @ at + 1
+
+        ran = shell.run(scratch: scratch, program: "git", words: words)
+
+        # **Exit 1 here means *nothing matched*, not *the command failed*.** So
+        # the code is not read: only the output is, and a git that could not
+        # start leaves the tokens unexcused. The safe direction for a check is
+        # to speak.
+        if ran.is_err()
+            return out
+
+        if !ran.must().started
+            return out
+
+        for line in strings.lines(ran.must().out)
+            entry = strings.trimmed(line)
+
+            if entry.len() > 0
+                out[entry] @ true
 
     return out
 
-function citations(@r: report.Report, present: [str], ignored: {str: bool})
+function citations(@r: report.Report, scratch: str, present: [str])
     known: {str: bool} @ {}
     roots: {str: bool} @ {}
 
@@ -1275,6 +1352,11 @@ function citations(@r: report.Report, present: [str], ignored: {str: bool})
 
     dead: [str] @ []
 
+    # In lockstep with `dead`: entry i of one is the token of entry i of the
+    # other, so the git pass below can excuse a line without re-parsing the
+    # message written for a human.
+    tokens: [str] @ []
+
     for document in present
         if is_record(document) || is_generated(document)
             continue
@@ -1294,30 +1376,47 @@ function citations(@r: report.Report, present: [str], ignored: {str: bool})
             if found.len() > 0
                 read_the_line(
                     dead: @dead,
+                    tokens: @tokens,
                     row: row,
                     found: found,
                     document: document,
                     number: number,
-                    known: known,
-                    ignored: ignored
+                    known: known
                 )
 
-    if dead.len() > 0
+    # **The ignore pass, and it runs LAST on purpose.** Asking git costs a
+    # process, so it is asked once, about the handful of tokens that survived
+    # every cheaper route, and never at all on a clean run. `ignored_by_git`
+    # carries the measurement that made this the last step rather than the
+    # first.
+    excused = ignored_by_git(scratch: scratch, tokens: tokens)
+    speaking: [str] @ []
+    at: i64 @ 0
+
+    while at < dead.len()
+        token = tokens[at]
+
+        # Either form: `ignored_by_git` asks both and says why.
+        if excused[token].is_err() && excused[token + "/"].is_err()
+            speaking @ speaking.push(dead[at])
+        at @ at + 1
+
+    if speaking.len() > 0
         report.keep_failure(
             @r,
             label: "records/citations",
-            detail: "  a living file cites a path that does not exist:\n" + dead.join("\n") + "\n  A citation into a moved or deleted file is read as current by whoever follows\n  it. If the file moved, repoint the sentence. If the claim is dated history,\n  the line needs its DATE or a path that still resolves — that is the evidence\n  this check accepts, and it is why there is no list of exemptions to edit."
+            detail: "  a living file cites a path that does not exist:\n" + speaking.join("\n") + "\n  A citation into a moved or deleted file is read as current by whoever follows\n  it. If the file moved, repoint the sentence. If the claim is dated history,\n  the line needs its DATE or a path that still resolves — that is the evidence\n  this check accepts, and it is why there is no list of exemptions to edit."
         )
     else
         report.keep_pass(@r)
 
 # One line's verdict. Split out because `citations` is already a walk inside a
 # walk inside a walk, and this is the part with the rule in it.
-function read_the_line(@dead: [str], row: str, found: [str], document: str, number: i64, known: {str: bool}, ignored: {str: bool})
+function read_the_line(@dead: [str], @tokens: [str], row: str, found: [str], document: str, number: i64, known: {str: bool})
     missing: [str] @ []
 
     for token in found
-        if !names_something(token: token, document: document, known: known, ignored: ignored)
+        if !names_something(token: token, document: document, known: known)
             missing @ missing.push(token)
 
     if missing.len() == 0
@@ -1333,6 +1432,7 @@ function read_the_line(@dead: [str], row: str, found: [str], document: str, numb
 
     for token in missing
         dead @ dead.push("    " + document + ":" + number.to_str() + ": " + token)
+        tokens @ tokens.push(token)
 
 # **The repository's working text is English** (CLAUDE.md §11), and this is the
 # check that says so out loud instead of trusting whoever writes next.
@@ -2552,9 +2652,34 @@ test "a dead citation is caught, and the anchored rule ignores what it must"
 
     # The check itself, firing: a stand-in document citing something absent.
     fired: report.Report @ report.empty()
-    nothing: {str: bool} @ {}
-    citations(@fired, present: ["design.md"], ignored: nothing)
+    citations(@fired, scratch: "build/harness-selftest", present: ["design.md"])
     assert fired.failed + fired.passed == 1
+
+    # **The defect this check shipped with, named after itself** (§9: a fixed
+    # defect gets a case). An ignored path that does not exist must be excused,
+    # and this asserts it against git's rules rather than against the disk, so it
+    # answers the same on a fresh checkout as on a machine that has built the
+    # site. `site/dist` is in `.gitignore` and `site/dist/nosuch.html` has never
+    # existed anywhere.
+    if shell.can_run_scripts()
+        excused = ignored_by_git(
+            scratch: "build/harness-selftest",
+            tokens: ["site/dist/nosuch.html", "site/dist", "CLAUDE.md"]
+        )
+        assert !excused["site/dist/nosuch.html"].is_err()
+        assert excused["CLAUDE.md"].is_err()
+
+        # **The bare directory name, which is the half the first repair missed.**
+        # `.gitignore` says `dist/`, a directory-only pattern, and git cannot
+        # tell a path is a directory when the path is not there: five citations
+        # stayed red on Linux until the token was asked with a slash too. The
+        # slashed form is what must come back, and the bare one does not on a
+        # tree where `site/dist` has never been built.
+        assert !excused["site/dist/"].is_err()
+
+        # And no tokens means no process: the common case pays nothing.
+        none: [str] = []
+        assert ignored_by_git(scratch: "build/harness-selftest", tokens: none).len() == 0
 
 test "a pointer into a section the contract does not have is caught, and both spellings are read"
     # The two spellings in use, and a bare `§` that belongs to another document.
@@ -2813,18 +2938,8 @@ test "the ROADMAP's § Where we are is counted to its own ceiling"
     assert WHERE_CEILING == 15
 
 # Whether git is deliberately not tracking this, or anything above it.
-function is_ignored(part: str, ignored: {str: bool}) -> bool
-    walk: str @ strings.without_suffix(text: part, suffix: "/")
-    looking: bool @ true
-
-    while looking
-        if !ignored[walk].is_err()
-            return true
-        cut = last_slash(walk)
-
-        if cut.is_err()
-            looking @ false
-        else
-            walk @ walk.slice(from: 0, to: cut.must())
-
-    return false
+# **`is_ignored` stood here until 2026-09-07**, walking a map of the ignored
+# paths that existed on the machine running the check. `ignored_by_git` above
+# replaces it, and the parameter it needed is gone from `names_something` and
+# `one_names` with it: two oracles for one question, and the cheaper one was
+# wrong on every machine but the author's.
