@@ -35,12 +35,12 @@
   <p>
     I due fattori non sono confrontabili. Una sintassi più compatta risparmia
     forse il cinque per cento di un file. Un giro di correzione costa da
-    cinquecento a duemila token, perché il modello legge l'errore, rilegge il
+    cinquecento a duemila token, perché il modello legge l&rsquo;errore, rilegge il
     file, riscrive una funzione e ricompila. Su un programma da tremila token,
     <b>un giro di correzione si mangia dieci risparmi di sintassi.</b>
   </p>
   <p>
-    Quindi l'istinto sbaglia. L'istinto dice: accorcia tutto. La formula dice:
+    Quindi l&rsquo;istinto sbaglia. L&rsquo;istinto dice: accorcia tutto. La formula dice:
     togli gli errori, e accorcia solo dove non costa niente. Heroes è prolisso
     dove dichiari le cose e asciutto dove le usi. Spende parole dove abita un
     errore, e in nessun altro posto.
@@ -49,10 +49,10 @@
   <h2>Il vincolo di partenza</h2>
   <p>
     Il progetto non è partito da una grammatica. È partito da un rifiuto:
-    <b>non c'è una libreria standard, e non ci sarà mai.</b> Scriverne una
+    <b>non c&rsquo;è una libreria standard, e non ci sarà mai.</b> Scriverne una
     moderna è più lavoro che scrivere il compilatore, ed è la cosa che uccide i
     linguaggi fatti da una persona sola. Quindi Heroes tiene il minimo
-    indispensabile e prende tutto il resto dall'enorme quantità di C che esiste
+    indispensabile e prende tutto il resto dall&rsquo;enorme quantità di C che esiste
     già.
   </p>
   <pre class="table"><code>maths beyond arithmetic    →  libm          files, sockets   →  libc
@@ -61,7 +61,7 @@ JSON                       →  cJSON         SQL              →  SQLite
 graphics, audio, terminal  →  SDL, raylib, ncurses</code></pre>
   <p>
     Prenderne una in prestito si fa così. Tutto ruota intorno al nome sulla
-    prima riga: è l'header, il file dove la libreria dichiara la forma delle sue
+    prima riga: è l&rsquo;header, il file dove la libreria dichiara la forma delle sue
     funzioni, ed è contro quello che clang verifica quello che hai scritto.
   </p>
   <figure class="example" data-src="examples/gallery/08-ffi.hero" data-lines="12-15">
@@ -85,13 +85,13 @@ graphics, audio, terminal  →  SDL, raylib, ncurses</code></pre>
     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   note: an `extern` names what the header already has (§4.19): check the spelling, or name the header that does declare `sqrtt`</code></pre>
   <p>
-    Clang aveva aperto l'header vero. Sbaglia una larghezza invece di un nome e
+    Clang aveva aperto l&rsquo;header vero. Sbaglia una larghezza invece di un nome e
     la risposta arriva dallo stesso posto, sulla stessa riga, prima che qualcosa
     parta. È questo che compra il rifiuto: la libreria qui non viene descritta,
     quindi qui non la si può descrivere male.
   </p>
   <p>
-    Senza quell'header niente verificherebbe quello che hai dichiarato. E
+    Senza quell&rsquo;header niente verificherebbe quello che hai dichiarato. E
     guarda <code>pow(base:, exponent:)</code>: prende due valori dello stesso
     tipo, quindi la chiamata deve nominarli. La regola vale anche qui, sul
     confine con il C, che è dove scambiare due argomenti costa di più.
@@ -115,8 +115,8 @@ graphics, audio, terminal  →  SDL, raylib, ncurses</code></pre>
   <h2>Perché il compilatore emette C</h2>
   <p>
     Heroes traduce il tuo programma in C e lascia a un compilatore C il
-    compito di produrre l'eseguibile. Il motivo è il vincolo qui sopra. Una
-    funzione presa in prestito dal C va verificata contro l'header vero della
+    compito di produrre l&rsquo;eseguibile. Il motivo è il vincolo qui sopra. Una
+    funzione presa in prestito dal C va verificata contro l&rsquo;header vero della
     libreria, non contro una descrizione che il compilatore di Heroes si
     inventa. Passare per il C vuol dire che clang lo fa a ogni compilazione,
     gratis. Un design precedente puntava direttamente al codice macchina, ed è
@@ -149,7 +149,7 @@ graphics, audio, terminal  →  SDL, raylib, ncurses</code></pre>
     <figcaption>examples/gallery/01-points.hero, righe 6&ndash;14</figcaption>
   </figure>
   <p>
-    L'ordine in cui scrivi le dichiarazioni non conta mai, e due funzioni
+    L&rsquo;ordine in cui scrivi le dichiarazioni non conta mai, e due funzioni
     possono chiamarsi a vicenda senza dichiarare niente in anticipo. Sotto, il
     linguaggio è ancora più piccolo: quello che il compilatore maneggia
     davvero sono <b>sette costrutti</b>, e tutto il resto si riduce a quelli
@@ -172,7 +172,7 @@ graphics, audio, terminal  →  SDL, raylib, ncurses</code></pre>
     <code>guess</code>. Scrivere <code>???</code> lascia un buco dichiarato e
     chiede cosa ci va dentro.</li>
     <li><b>Un programma non deve andare in crash.</b> Dove due design sono
-    accettabili e uno dei due si può far cadere, vince l'altro, qualunque cosa
+    accettabili e uno dei due si può far cadere, vince l&rsquo;altro, qualunque cosa
     costi in eleganza o in parole.</li>
     <li><b>Abbastanza piccolo da compilare se stesso.</b> Tutta la specifica
     sta sotto un tetto rigido di 4.096 token, e un test lo verifica a ogni
@@ -183,18 +183,18 @@ graphics, audio, terminal  →  SDL, raylib, ncurses</code></pre>
   <h2>Le obiezioni ovvie <span class="nod">&middot; quicksand, avoided &middot;</span></h2>
   <dl class="why">
     <dt>Perché niente null e niente eccezioni?</dt>
-    <dd>Producono entrambi l'unico guaio che nessun compilatore può segnalare:
+    <dd>Producono entrambi l&rsquo;unico guaio che nessun compilatore può segnalare:
     il caso che ti sei dimenticato di gestire. Qui un valore che potrebbe
-    mancare lo dice nel suo tipo (<code>i64?</code>), un'operazione andata male
+    mancare lo dice nel suo tipo (<code>i64?</code>), un&rsquo;operazione andata male
     restituisce un valore che lo dice, e passare quel fallimento al chiamante è
     segnato sulla riga con <code>?</code>. Tutto quello che salta da un punto
-    all'altro del programma senza farsi vedere è vietato in blocco.
+    all&rsquo;altro del programma senza farsi vedere è vietato in blocco.
     <a href="/it/docs/failure-is-a-value/">Il capitolo su questo &rarr;</a></dd>
     <dt>Perché gli argomenti vanno nominati quando due parametri hanno lo stesso tipo?</dt>
     <dd>Scambiare due argomenti dello stesso tipo è un classico dei modelli, e
     siccome i tipi combaciano non se ne accorge nessuno: il programma compila e
     copia al contrario. <code>copy(from: a, to: b)</code> costa quattro
-    caratteri e li spende esattamente dove abita quell'errore. Dove i tipi
+    caratteri e li spende esattamente dove abita quell&rsquo;errore. Dove i tipi
     bastano già a distinguere gli argomenti, i nomi restano
     facoltativi.</dd>
     <dt>Perché rifiutare un tipo intero unico e poi offrirne otto?</dt>
@@ -232,7 +232,7 @@ graphics, audio, terminal  →  SDL, raylib, ncurses</code></pre>
     <dt>Due cose possono girare insieme?</dt>
     <dd>Sì, e i thread arrivano dal C come tutto il resto. La regola al confine
     è quella che i valori già impongono: un thread ha la sua memoria, e quello
-    che entra o esce viene copiato invece che condiviso. Quindi non c'è niente
+    che entra o esce viene copiato invece che condiviso. Quindi non c&rsquo;è niente
     da bloccare e niente su cui correre, e il compilatore rifiuta il corpo di un
     thread che prova a portarsi dietro una lista. Questo modello è bravo a
     mandare una cosa piccola e riavere indietro un numero. È scarso a far

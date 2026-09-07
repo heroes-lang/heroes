@@ -21,7 +21,7 @@
   <h3>A type that means "or an error"</h3>
   <p>
     Write <code>i64?</code> and you have said: this is a whole number, or an
-    error explaining why there isn't one. There is no third possibility, and
+    error explaining why there isn&rsquo;t one. There is no third possibility, and
     there is no way to use the number without dealing with the other case.
     Inside such a function, <code>ok(v)</code> makes the good answer and
     <code>fail(code, msg)</code> makes the bad one:
@@ -202,7 +202,7 @@ failed: not_a_digit (expected 0-9)
 
   <h3>What changes in the code</h3>
   <p>
-    Every function's signature tells you whether it can fail. Every place a
+    Every function&rsquo;s signature tells you whether it can fail. Every place a
     failure changes the control flow is marked on that line. Every way of
     handling one either deals with both cases or says out loud that it is
     skipping the check. There is no <code>null</code> to forget and no throw to

@@ -2,7 +2,7 @@
   <div class="page-head">
     <h1 class="page">Inizia</h1>
   </div>
-  <p class="lede">Non c'è nessun installer. Serve clang 18 o più recente, e la
+  <p class="lede">Non c&rsquo;è nessun installer. Serve clang 18 o più recente, e la
   lista finisce lì.</p>
 
   <div class="notice">
@@ -10,7 +10,7 @@
     funziona ancora.</b> Gli indirizzi sono definitivi e si aprono insieme al
     codice. Quello che funziona oggi è su questo sito:
     <a href="/it/spec/">la specifica</a> da dare a un modello, e
-    <a href="/it/examples/">ogni programma</a> con l'output che stampa
+    <a href="/it/examples/">ogni programma</a> con l&rsquo;output che stampa
     davvero.</p>
   </div>
 
@@ -30,7 +30,7 @@ failed: not_a_digit (expected 0-9)
   </p>
   <p>
     Quella riga in mezzo che dice <code>failed</code> non è la compilazione che
-    si rompe. È l'esempio che incontra un carattere che non sa leggere e lo
+    si rompe. È l&rsquo;esempio che incontra un carattere che non sa leggere e lo
     dice, che è quello che gli è stato chiesto di fare.
   </p>
 
@@ -38,12 +38,12 @@ failed: not_a_digit (expected 0-9)
   <p>
     <code>heroes run</code> cerca il runtime, cioè il codice di supporto che
     finisce dentro ogni binario, in <code>./runtime</code>. Quindi eseguilo
-    dalla cartella in cui hai clonato. Da qualunque altro posto, digli dov'è:
+    dalla cartella in cui hai clonato. Da qualunque altro posto, digli dov&rsquo;è:
   </p>
   <pre><code>$ HEROES_RUNTIME=~/heroes/runtime heroes run hello.hero</code></pre>
   <p>
-    Se non lo trova te lo dice con queste parole, e stampa la via d'uscita. Se
-    manca qualcos'altro, <code>./heroes doctor</code> lo nomina.
+    Se non lo trova te lo dice con queste parole, e stampa la via d&rsquo;uscita. Se
+    manca qualcos&rsquo;altro, <code>./heroes doctor</code> lo nomina.
   </p>
 
   <h2>Il tuo programma</h2>
@@ -58,7 +58,7 @@ we can be heroes</code></pre>
   <p>
     <code>heroes run</code> compila il file e lo lancia, lasciando i suoi file
     di lavoro in una cartella <code>build/</code> accanto a te. La seconda
-    esecuzione di un file non modificato riusa quello che c'è dentro.
+    esecuzione di un file non modificato riusa quello che c&rsquo;è dentro.
   </p>
 
   <h2>Un comando, undici verbi</h2>
@@ -67,32 +67,32 @@ we can be heroes</code></pre>
     <code>lex</code>, <code>parse</code>, <code>check</code>,
     <code>build</code>, <code>run</code>, <code>test</code>, <code>fmt</code>,
     <code>doctor</code>, <code>mutate</code>, <code>measure</code>,
-    <code>this</code>. Non c'è un secondo binario, non c'è un file di build e
+    <code>this</code>. Non c&rsquo;è un secondo binario, non c&rsquo;è un file di build e
     non ci sono plugin.
   </p>
   <p>
-    <code>heroes fmt</code> stampa l'unica forma canonica di un file: stessa
+    <code>heroes fmt</code> stampa l&rsquo;unica forma canonica di un file: stessa
     indentazione, stessi ritorni a capo, stesso ordine. Ogni file Heroes del
     repository torna da lì identico, byte per byte, quindi una differenza tra
     due versioni di un file è una differenza in quello che il programma fa.
   </p>
   <p>
     <a href="/it/examples/">Ogni esempio di questo sito</a> è un file in
-    <code>examples/</code>, con il comando che lo esegue e l'output che stampa.
+    <code>examples/</code>, con il comando che lo esegue e l&rsquo;output che stampa.
   </p>
 
   <h2>Se qualcosa va storto</h2>
   <p>
     <code>./heroes doctor</code> ti dice cosa manca sulla tua macchina. Ogni
-    messaggio d'errore porta cosa si aspettava il compilatore e dove, e
-    <a href="/it/errors/">come si legge</a> è una pagina a sé. Non c'è ancora un
+    messaggio d&rsquo;errore porta cosa si aspettava il compilatore e dove, e
+    <a href="/it/errors/">come si legge</a> è una pagina a sé. Non c&rsquo;è ancora un
     tracciatore di problemi: si apre insieme al codice, e il
     <a href="/it/log/">registro dei lavori</a> è dove viene annunciato.
   </p>
 
   <footer>
     <p>Heroes non è ancora impacchettato: nessun installer e nessuna release
-    pubblica, quindi la via d'ingresso è un compilatore C e un comando.
+    pubblica, quindi la via d&rsquo;ingresso è un compilatore C e un comando.
     Installarlo con una riga è lavoro in programma e non fatto.</p>
     <p>Fatto da <a href="https://giuseppearici.com/it/">Giuseppe Arici</a>, CTO di Codermine, Brescia. Autore di
     <a href="/it/about/"><i>Gli eroi del codice</i></a>. In piedi sul

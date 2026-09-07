@@ -12,7 +12,7 @@
     possono ancora eseguire.</b> Sono quello che dimostra tutto questo, sono
     definitivi, e si aprono insieme al codice. Quello che funziona oggi è su
     questo sito: <a href="/it/spec/">la specifica</a> e
-    <a href="/it/examples/">ogni programma</a> con l'output che stampa
+    <a href="/it/examples/">ogni programma</a> con l&rsquo;output che stampa
     davvero.</p>
   </div>
 
@@ -58,7 +58,7 @@ $ cmp out.c seed/heroes.c
     dichiarazione, il controllo dei tipi, la forma intermedia con il suo
     controllore, il passaggio che decide quando ogni valore viene liberato, la
     traduzione in C, i controlli contro le librerie esterne, i messaggi
-    d'errore, il formattatore e la riga di comando.
+    d&rsquo;errore, il formattatore e la riga di comando.
   </p>
 
   <h3>Cosa è venuto fuori puntandolo su se stesso</h3>
@@ -67,7 +67,7 @@ $ cmp out.c seed/heroes.c
     della sua struttura contenesse se stesso, cosa falsa. Tirare quel filo ha
     prodotto cinque guasti veri nel compilatore nuovo e quattro in quello
     vecchio. Uno dei quattro era questo: la sottolineatura che mostra al lettore dove è
-    l'errore copriva la nota scritta su quella riga per verificare quella
+    l&rsquo;errore copriva la nota scritta su quella riga per verificare quella
     sottolineatura. Il figlio ha corretto il padre.
   </p>
   <p>
@@ -79,11 +79,11 @@ $ cmp out.c seed/heroes.c
     un indice mantenuto a mano.
   </p>
   <p>
-    L'ultima cosa che separava i due file era un messaggio che il compilatore
+    L&rsquo;ultima cosa che separava i due file era un messaggio che il compilatore
     vecchio aveva lasciato scritto in tre posti per chi avrebbe fatto questo
     lavoro: <i>qui questa lista esce in ordine, e quello nuovo dovrà un
     ordinamento esplicito</i>. Tre ordinamenti, non pagati. Il risultato erano
-    venti megabyte di C con tutte le righe uguali e l'ordine diverso, su
+    venti megabyte di C con tutte le righe uguali e l&rsquo;ordine diverso, su
     qualche migliaio di esse. Una mappa non ha un ordine: il linguaggio lo dice
     e lo intende davvero. Quella nota era giusta il giorno in cui è stata
     scritta, ed è rimasta giusta per mesi, fino a quando è servita a
@@ -93,13 +93,13 @@ $ cmp out.c seed/heroes.c
   <h2 id="panel">Come si decide un cambiamento al linguaggio <span class="nod">&middot; five years &middot;</span></h2>
   <p>
     Niente entra nel linguaggio perché è elegante. Un cambiamento alla
-    sintassi, alla semantica, a una classe di messaggi d'errore o alla forma del
+    sintassi, alla semantica, a una classe di messaggi d&rsquo;errore o alla forma del
     compilatore passa prima da un collegio di cinque seggi. Ogni seggio riceve
     materiale diverso di proposito, e quattro di loro possono rifiutare.
   </p>
   <ul class="seats">
-    <li><span class="who">Il lettore</span><span>Riceve la specifica e programmi d'esempio, e mai il documento di design o il codice. Il suo verdetto è un esperimento sul fatto che il linguaggio si legga, non un'opinione. <span class="veto">veto</span></span></li>
-    <li><span class="who">L'ingegnere del compilatore</span><span>Riceve l'albero dei sorgenti vero e mette un prezzo al cambiamento in codice da scrivere e da mantenere. <span class="veto">veto</span></span></li>
+    <li><span class="who">Il lettore</span><span>Riceve la specifica e programmi d&rsquo;esempio, e mai il documento di design o il codice. Il suo verdetto è un esperimento sul fatto che il linguaggio si legga, non un&rsquo;opinione. <span class="veto">veto</span></span></li>
+    <li><span class="who">L&rsquo;ingegnere del compilatore</span><span>Riceve l&rsquo;albero dei sorgenti vero e mette un prezzo al cambiamento in codice da scrivere e da mantenere. <span class="veto">veto</span></span></li>
     <li><span class="who">Il pragmatico del C</span><span>Riceve il C che servirebbe a un collegamento vero e lo compila, oppure mostra perché non si può compilare. <span class="veto">veto</span></span></li>
     <li><span class="who">Il guardiano della specifica</span><span>Riceve il conteggio dei token misurato prima e dopo, mai una stima, e difende il budget in cui tutto il linguaggio deve stare. <span class="veto">veto</span></span></li>
     <li><span class="who">Lo storico</span><span>Deve cercare sul web e citare date e fonti: un precedente senza fonte è inammissibile. Consiglia e non può rifiutare.</span></li>
@@ -107,20 +107,20 @@ $ cmp out.c seed/heroes.c
   <p>
     Il collegio non blocca mai il lavoro. Adotta la risoluzione più solida e
     completa che riesce a trovare, mai la più economica e mai un compromesso.
-    La segna come in attesa della parola dell'autore, e il lavoro continua.
+    La segna come in attesa della parola dell&rsquo;autore, e il lavoro continua.
     Dove la risposta solida e quella prudente non concordano, prende quella
-    solida e scrive l'altra, così l'autore può ancora scegliere.
+    solida e scrive l&rsquo;altra, così l&rsquo;autore può ancora scegliere.
   </p>
   <p>
     Ogni seduta è un file nel repository, con i dossier, i verdetti e i veti. Ce
     ne sono più di cento. Un cambiamento al linguaggio che non ha una seduta dietro non
-    ha una via d'ingresso.
+    ha una via d&rsquo;ingresso.
   </p>
 
   <h2 id="zen">Venti righe</h2>
   <p>
     <code>heroes this</code> stampa queste. Viaggiano dentro il compilatore,
-    quindi sono l'unico pezzo del progetto che non può andare fuori sincrono con
+    quindi sono l&rsquo;unico pezzo del progetto che non può andare fuori sincrono con
     la documentazione. Restano in inglese perché sono quello che il binario
     stampa, e due delle righe citano una canzone.
   </p>
@@ -154,7 +154,7 @@ $ cmp out.c seed/heroes.c
   </p>
 
   <footer>
-    <p>I tre comandi qui sopra sono quelli che l'integrazione continua esegue a
+    <p>I tre comandi qui sopra sono quelli che l&rsquo;integrazione continua esegue a
     ogni push, su tre piattaforme. Il record di ogni decisione, sedute e misure
     comprese, è tenuto nel
     <a href="https://github.com/heroes-lang/heroes">repository</a>, che è ancora
