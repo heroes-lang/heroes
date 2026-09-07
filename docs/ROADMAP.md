@@ -191,7 +191,7 @@ and why one overtook another are under the table, in § Who scheduled what.
 | 54 | **M-qbe-backend** | scheduled | — | — | Part 7 item 15 — the proof that the IR is not C in disguise |
 | 55 | **M-journey-book** | scheduled | — | — | the journey — how this language came to be |
 | 56 | **M-guide-book** | scheduled | — | — | the guide, as a book you would find in a shop · **§1.1** |
-| 57 | **M-install-channels** | scheduled | — | — | a Homebrew tap, winget, a Nix flake, a Docker image, all built from the seed, and a version scheme |
+| 57 | **M-install-channels** | scheduled | — | — | a Homebrew tap, winget, a Nix flake, a Docker image, all built from the seed and pinned to a `v*` release tag; the version scheme itself was decided ahead, 2026-09-07 |
 | 58 | **M-online-compiler** | scheduled | — | — | the compiler reached without installing anything: the site's visitor writes Heroes and gets its answer · scheduled, no warrant |
 | 59 | **M-publication-gate** | scheduled | — | — | the last gate before anything goes outward · CLAUDE.md §14 |
 
@@ -1879,7 +1879,14 @@ run on its platform before its commit. **And a version scheme**: `heroes
 --version` printed `heroes 0.0.1` on 2026-09-03 and every tag is a milestone's
 name (CLAUDE.md §14), so nothing a formula can pin exists yet; what a version
 number promises is M-publication-gate's compatibility paragraph, and the two are
-written together.
+written together. **The scheme was decided ahead of this row, on 2026-09-07**
+(author question; the `DESIGN-LOG.md` row of that date, and the rule's home is
+CLAUDE.md §14 § Release tags): `vX.Y.Z` tags as a third namespace, `v0.1.0`
+first, `Y` when the spec moved and `Z` when it did not, and `1.0.0` left to the
+gate with its compatibility paragraph. So what a formula pins now exists, the
+release tag's source archive and its checksum, and what this row still owes is
+the channels themselves, each installed and `heroes doctor` run on its platform,
+in private.
 
 **Where the line is.** A formula, a manifest, a flake and a Dockerfile are the
 channels' own files, outside `heroes` and outside CLAUDE.md §10's *never a
@@ -2038,6 +2045,10 @@ across `runtime/`, and the attribution of the two vendored BPE tables.
 - **The version scheme is in force** — a number `heroes --version` prints and a
   formula can pin, with the compatibility paragraph above saying what it
   promises; `heroes 0.0.1` and milestone-named tags are what stood on 2026-09-03.
+  **In force since 2026-09-07** (CLAUDE.md §14 § Release tags): `vX.Y.Z` tags,
+  `v0.1.0` first, and what 0.x promises is one sentence. What this bullet still
+  owes is `1.0.0`, which is the day the compatibility paragraph above is
+  published and not before.
 ---
 
 ## Decisions this file records
