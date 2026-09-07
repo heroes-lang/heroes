@@ -11,12 +11,21 @@ this NOTICE. Attribution is owed by whoever redistributes Heroes itself.
 Third-party material redistributed in this repository:
 
   vendor/tokenizers/cl100k_base.tiktoken
-      The `cl100k_base` BPE table from OpenAI's `tiktoken` (MIT License).
+      The `cl100k_base` BPE table from OpenAI's `tiktoken`.
+      MIT License, Copyright (c) 2022 OpenAI, Shantanu Jain.
+      Its text travels with it: vendor/tokenizers/LICENSE-tiktoken.
 
   vendor/tokenizers/claude-legacy.json
-      The published tokeniser table from `@anthropic-ai/tokenizer` (MIT
-      License), Anthropic's tokeniser for Claude 1 and 2.
+      The published tokeniser table from `@anthropic-ai/tokenizer`,
+      Anthropic's tokeniser for Claude 1 and 2.
+      Copyright 2023 Anthropic, PBC.
+      Its text travels with it: vendor/tokenizers/LICENSE-anthropic-tokenizer.
+      Upstream states two licences and this notice states both: the archived
+      repository's LICENSE file carries the MIT permission text, and the
+      package.json in the same commit declares Apache-2.0. Both are permissive
+      and both are satisfied here, by shipping that text and by this
+      attribution.
 
-Both are vendored so that a spec measurement taken today is reproducible years
-from now, with no network and no dependency. Provenance and sha256 for each are
-recorded in vendor/tokenizers/README.md.
+Both tables are vendored so that a spec measurement taken today is reproducible
+years from now, with no network and no dependency. Provenance, sha256 and the
+licence re-check of 2026-09-08 are recorded in vendor/tokenizers/README.md.

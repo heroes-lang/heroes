@@ -14,13 +14,32 @@ today is reproducible in five years.
 
 Both tables ship inside the `heroes` binary (`measure` is in the one command,
 CLAUDE.md §10), which makes them part of what this project distributes rather
-than a development convenience. Their upstream terms are **MIT** in both cases —
-OpenAI's `tiktoken` for `cl100k_base.tiktoken`, and `@anthropic-ai/tokenizer`
-for `claude-legacy.json` — and both are named in the repository's `NOTICE` with
-the origins recorded in the table above. A formal re-check of both licence texts
-against their upstream repositories is a line item before anything is published
-(ROADMAP M18); until then, treat this paragraph as the project's stated
-understanding rather than as a verified audit.
+than a development convenience. Both are named in the repository's `NOTICE`, and
+**each upstream licence text is now vendored beside the table it covers** —
+`LICENSE-tiktoken` and `LICENSE-anthropic-tokenizer`, fetched byte for byte from
+the upstream repositories — because a permissive licence asks that its own text
+travel with the copy, which naming it does not do.
+
+**The re-check happened, on 2026-09-08 (M-open-repository), and it did not
+confirm what this paragraph used to say.** It read *"their upstream terms are
+MIT in both cases"* and deferred the audit to the publication gate. Run against
+the upstreams rather than against this project's recollection:
+
+- `openai/tiktoken` — `LICENSE` is the MIT text, `Copyright (c) 2022 OpenAI,
+  Shantanu Jain`. Confirmed, unchanged.
+- `anthropics/anthropic-tokenizer-typescript` — archived, last pushed
+  2024-03-04, and **it states two different licences in the same commit**:
+  `LICENSE` carries the MIT permission text under `Copyright 2023 Anthropic,
+  PBC.`, while `package.json` at version `0.0.4` declares
+  `"license": "Apache-2.0"`. `claude.json` there is the table vendored here, at
+  the same size and content.
+
+Neither reading costs this project anything: both licences are permissive, both
+are compatible with the Apache-2.0 this repository carries, and the obligations
+of each are attribution plus the licence text, which is what `NOTICE` and the
+two vendored files now do. **The disagreement is recorded rather than resolved**,
+because resolving it would mean deciding on an archived third party's behalf
+which of its two documents it meant.
 
 ## Why two
 
