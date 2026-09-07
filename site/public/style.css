@@ -491,12 +491,16 @@ dl.why dd {
    from the sentence it modifies reads as a banner and gets skipped.
 
    It borrows the gold bar from the pull quote rather than the red, and this is
-   the whole of the decision. Red is the bolt's colour and the site spends it on
-   the marquee and on the section bullets; a red-barred box would read as an
-   error, and nothing here is broken. Gold already means "somebody is speaking"
-   on this site, which is what a notice is. No icon, no background wash, no
-   uppercase label: the difference from a paragraph is a rule and a measure, and
-   that is enough to stop the eye. */
+   the whole of the decision. Gold already means "somebody is speaking" on this
+   site, which is what a notice and a quotation both are. Red on a bar means the
+   opposite: the SITE'S OWN FURNITURE speaking, the box that says where to go
+   next (`.next`) and the box that holds the measured numbers (`.stats`). Two
+   bars, two voices, and the design seat's render found the earlier version of
+   this comment claiming red would read as an error while `.next` carried it on
+   every chapter and every example page. The comment was wrong and the practice
+   was right: a reader learns the red box as "the way on" by the second page.
+   No icon, no background wash, no uppercase label: the difference from a
+   paragraph is a rule and a measure, and that is enough to stop the eye. */
 .notice {
   margin: 1.6rem 0;
   padding: 0.1rem 0 0.1rem 1.2rem;
