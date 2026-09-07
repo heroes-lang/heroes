@@ -709,16 +709,20 @@ everything else is paper and ink.
 - **Code blocks say when they scroll**: CSS-only scroll shadows, two `local`
   patches hiding two `scroll` shadows. On narrow screens source blocks scroll
   and never wrap (wrapping 4-space indentation destroys the only structure the
-  language has); shell transcripts and diagnostics wrap, because a clipped
-  command is a command nobody can type.
+  language has); shell transcripts wrap, because a clipped command is a command
+  nobody can type. A diagnostic wraps its MESSAGE line only, marked
+  `span.msg`: the excerpt and caret rows underneath stay rigid, because an
+  earlier design sitting rendered `pre-wrap` on the whole block at 390px and the
+  source line wrapped while the caret stayed put, pointing at nothing.
 
 **How to verify it, since the design seat judges from renders and not markup:**
 Chrome headless on macOS will not open a window narrower than about 590px, so a
 `--window-size=390` screenshot silently renders at 590 and clips, which reads as
 a layout bug that is not there. Load the page in a **390px iframe** inside a
-wider wrapper instead. Light mode has no headless flag either: extract the
-`prefers-color-scheme: light` token block into an override stylesheet and load
-it after `style.css`.
+wider wrapper instead. Light mode does have a flag, verified by run:
+`--blink-settings=preferredColorScheme=1` renders the light palette. The
+override-stylesheet method this paragraph used to prescribe still works and is
+no longer needed.
 
 ## The author and the book — the rules this copy is under
 

@@ -93,7 +93,7 @@ error[ffi_return_type]: `puts` does not return `cstr` — that is what `stdio.h`
     types make the boundary visible; they do not make C safe.
   </p>
   <p>
-    One more line the boundary draws at run time. A Heroes function handed to C
+    One more line the boundary draws at run time, today. A Heroes function handed to C
     may be called back on a thread the library made, and there it is stopped at
     its first instruction, with its name in the message, because each thread
     here owns its memory and a foreign thread owns none of it. Call it from the
