@@ -1,17 +1,57 @@
 {
   "permissions": {
+    "deny": [
+      "Bash(git add -A*)",
+      "Bash(git add --all*)",
+      "Bash(git add -u*)",
+      "Bash(git add --update*)",
+      "Bash(git add .)",
+      "Bash(git commit -a*)",
+      "Bash(git commit --all*)",
+      "Bash(git stash)",
+      "Bash(git stash push*)",
+      "Bash(git stash save*)",
+      "Bash(git push -f*)",
+      "Bash(git push --force*)"
+    ],
+    "ask": [
+      "Bash(git push*)"
+    ],
     "allow": [
-      "Bash(cargo build*)",
-      "Bash(cargo test*)",
-      "Bash(cargo run*)",
-      "Bash(cargo clippy*)",
       "Bash(clang *)",
-      "Bash(./target/debug/heroes *)",
+      "Bash(./heroes *)",
       "Bash(git status*)",
       "Bash(git log*)",
       "Bash(git diff*)",
       "Bash(git show*)",
+      "Bash(git ls-files*)",
+      "Bash(git describe*)",
+      "Bash(git tag --list*)",
       "Monitor"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"$CLAUDE_PROJECT_DIR/.claude/hooks/run.sh\" guard_bash.py"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"$CLAUDE_PROJECT_DIR/.claude/hooks/run.sh\" fmt_check.py"
+          }
+        ]
+      }
     ]
   }
 }

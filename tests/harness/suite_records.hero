@@ -58,6 +58,7 @@ constant RECORD: [str]
         "tests/emission"
         "DESIGN-LOG.md"
         "docs/work/DONE.md"
+        "docs/contract"
         "vendor"
         "editors/vscode/icons"
         "archive"
@@ -317,13 +318,15 @@ constant REFUSED: [str]
 constant ROWS: i64
     63
 
-# The two documents whose citations are checked. They are the two a reader is sent
-# to for a rule, and the only two this project rewrites rather than appends to.
-constant WATCHED: [str]
-    [
-        "design.md"
-        "CLAUDE.md"
-    ]
+# **`WATCHED` stood here until 2026-09-07 and nothing had read it since
+# 2026-08-19.** It listed `design.md` and `CLAUDE.md` as *"the two documents whose
+# citations are checked"*, and that stopped being true on 2026-09-06, when the
+# check began walking the whole tree with no list of exemptions. A grep for the
+# name returned exactly one line, its own declaration. It is deleted rather than
+# repaired because `records/exemptions` cannot see it: that check reads RECORD,
+# GENERATED and QUOTES_THE_OLD_SPELLING, and a fourth list nobody consults reads
+# as a rule to whoever finds it next, which is the same failure the exemptions
+# check exists to catch one level up.
 
 # `/step`'s milestone-close number for § Where we are. A threshold with an
 # instrument behind it, which is the only kind that holds.
