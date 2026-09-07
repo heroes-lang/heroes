@@ -1,15 +1,13 @@
 
-  <p class="crumb"><a href="/it/">Heroes</a> / <a href="/it/docs/">Docs</a> / capitolo 12</p>
+  <p class="crumb"><a href="/it/">Heroes</a> / <a href="/it/docs/">Guida</a> / capitolo 12</p>
 
   <h1 class="chapter">Il confine con il C</h1>
-  <p class="tagline">Tutto quello che il linguaggio non ha, e da dove arriva.</p>
+  <p class="tagline">
+    Dichiarare e usare funzioni, tipi e costanti delle librerie C.
+  </p>
 
   <p>
-    Heroes arriva al mondo attraverso il C. Tutto quello che
-    hai visto in questi capitoli (numeri, stringhe, array, mappe, la
-    stampa) è l&rsquo;inventario completo. File, socket, JSON, database, grafica e
-    matematica oltre l&rsquo;aritmetica non sono incorporati in Heroes: arrivano dal
-    C attraverso il solo meccanismo spiegato in questo capitolo.
+    Heroes usa le librerie C per funzionalità come socket, database, grafica e funzioni matematiche. Questo capitolo spiega come dichiararle e quali controlli esegue il compilatore.
   </p>
 
   <h3>Un gruppo nomina il suo header</h3>
@@ -21,18 +19,12 @@
     <figcaption>examples/gallery/08-ffi.hero, righe 12&ndash;15</figcaption>
   </figure>
   <p>
-    Queste tre funzioni C si possono usare dalla riga successiva. L&rsquo;header è il file
-    che descrive l&rsquo;interfaccia della libreria. <b>Clang lo legge e confronta
-    ogni dichiarazione del gruppo.</b> Un binding, cioè il collegamento tra
-    Heroes e una funzione C, è l&rsquo;unico punto in cui un programma può
-    raggiungere un indirizzo esterno: per questo il controllo avviene qui.
+    Dopo queste dichiarazioni puoi chiamare le tre funzioni C. L&rsquo;header è il file che descrive funzioni e tipi della libreria. <b>Clang lo legge e controlla le dichiarazioni del gruppo.</b> Questo collegamento tra Heroes e C si chiama binding.
   </p>
 
-  <h3>Che cosa prende, quel controllo</h3>
+  <h3>Quali errori rileva il controllo</h3>
   <p>
-    Sbaglia a scrivere un nome e non devi aspettare un errore del linker alla
-    fine di una compilazione lunga. Ricevi questo sulla tua riga, con allegata la
-    risposta dell&rsquo;header stesso:
+    Se scrivi male il nome di una funzione, il compilatore segnala l&rsquo;errore nella dichiarazione e mostra la risposta di clang:
   </p>
   <pre><code>$ heroes build ffi.hero
 error[ffi_unknown_name]: `math.h` declares no `flooor` — clang read the header and could not find it
@@ -43,9 +35,7 @@ error[ffi_unknown_name]: `math.h` declares no `flooor` — clang read the header
   note: an `extern` names what the header already has (§4.19): check the spelling, or name the header that does declare `flooor`
   fix (guess): the header declares `floor`</code></pre>
   <p>
-    Quell&rsquo;ultima riga il compilatore non l&rsquo;ha tirata a indovinare da
-    un elenco suo: l&rsquo;ha chiesta a clang, che aveva davanti l&rsquo;header
-    vero, e clang ha capito che cosa volevi scrivere.
+    Il suggerimento nell&rsquo;ultima riga viene da clang, che ha consultato l&rsquo;header della libreria.
   </p>
   <p>
     Sbaglia un tipo e la risposta arriva dallo stesso posto:
@@ -58,9 +48,7 @@ error[ffi_return_type]: `puts` does not return `cstr` — that is what `stdio.h`
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   note: an `extern` is checked against the real header (§4.19): correct the result type, or name the header that declares this `puts`</code></pre>
   <p>
-    In molti linguaggi nessuno verifica una dichiarazione verso l&rsquo;esterno:
-    sbagliala e il programma può compilare, partire e corrompere qualcosa. Qui
-    viene confrontata con la libreria vera.
+    Verificare le dichiarazioni sull&rsquo;header permette di rilevare errori che altrimenti potrebbero causare problemi durante l&rsquo;esecuzione.
   </p>
 
   <h3>Il confine si vede nei tipi</h3>
@@ -74,35 +62,17 @@ error[ffi_return_type]: `puts` does not return `cstr` — that is what `stdio.h`
     <figcaption>examples/gallery/08-ffi.hero, righe 17&ndash;22</figcaption>
   </figure>
   <p>
-    <code>cstr</code> è una stringa C e <code>ptr</code> è un puntatore opaco.
-    Nessuno dei due è uno <code>str</code>, e nessuna conversione avviene alle
-    tue spalle: <code>s.cstr()</code> presta al C una stringa di Heroes perché la
-    legga, e <code>c.validated()</code> ne ricopia una indietro come
-    <code>str?</code>, un valore oppure un errore. Il testo che arriva dal C è
-    una promessa, non un fatto: il puntatore può essere nullo, e i byte possono
-    non essere UTF-8. Lo gestisci come qualunque altro valore
-    fallibile. Anche la direzione opposta è protetta: un <code>cstr</code> nullo
-    passato a una funzione C ferma il programma con un panic che dice il perché,
-    invece di lasciare che sia il C a schiantarsi.
+    <code>cstr</code> rappresenta una stringa C e <code>ptr</code> un puntatore opaco, un indirizzo di cui Heroes non legge direttamente il contenuto. Sono tipi diversi da <code>str</code> e le conversioni sono esplicite. <code>s.cstr()</code> rende una stringa Heroes leggibile dal C per la durata della chiamata. <code>c.validated()</code> controlla e copia il testo C, restituendo uno <code>str?</code>: un valore oppure un errore se il puntatore è nullo o il testo non è UTF-8 valido. Passare un <code>cstr</code> nullo a una funzione C ferma il programma con un messaggio d&rsquo;errore.
   </p>
   <p>
-    Un valore che arriva dal C resta marcato come tale ovunque vada, e la
-    riga in cui smette di essere straniero è una riga che puoi vedere.
+    I tipi distinguono i dati provenienti dal C e le conversioni mostrano dove vengono trasformati in valori Heroes.
   </p>
 
   <p>
-    Quello che nessun compilatore controlla: che il <code>ptr</code> che
-    restituisci sia quello che la libreria ti aveva dato, e che cosa ne fa il C
-    dall&rsquo;altra parte. I tipi rendono visibile il confine; non rendono sicuro
-    il C.
+    Heroes non verifica che il <code>ptr</code> restituito a una libreria sia quello corretto, né come la libreria lo usi. I controlli sui tipi non eliminano i rischi del codice C.
   </p>
   <p>
-    C&rsquo;è un&rsquo;altra riga che il confine traccia, e la traccia mentre il programma gira. Una
-    funzione Heroes passata al C può essere richiamata su un thread creato dalla
-    libreria, e lì viene fermata alla prima istruzione, con il suo nome nel
-    messaggio, perché qui ogni thread possiede la sua memoria e un thread
-    straniero non ne possiede nessuna. Chiamala dal thread che ti ha chiamato,
-    oppure avvia il thread da Heroes.
+    Un altro controllo avviene durante l&rsquo;esecuzione. Se una libreria C richiama una funzione Heroes da un thread che ha creato da sé, l&rsquo;esecuzione si ferma e il messaggio nomina la funzione. Ogni thread Heroes gestisce memoria propria; il thread esterno non è inizializzato per farlo. La libreria deve richiamare la funzione dal thread della chiamata originale, oppure il thread va avviato da Heroes.
   </p>
 
   <h3>Come si usano</h3>
@@ -118,11 +88,7 @@ error[ffi_return_type]: `puts` does not return `cstr` — that is what `stdio.h`
     <figcaption>examples/gallery/08-ffi.hero, righe 24&ndash;31</figcaption>
   </figure>
   <p>
-    Una funzione C si chiama come tutte le altre, e la regola delle etichette
-    obbligatorie del <a href="/it/docs/records-and-functions/">capitolo 2</a> vale
-    anche per lei. E qui conta più che altrove: le interfacce numeriche del C
-    sono piene di coppie dello stesso tipo, e <code>pow(base:, exponent:)</code>
-    è esattamente la forma in cui invertire l&rsquo;ordine sarebbe silenzioso.
+    Una funzione C si chiama come una funzione Heroes. Si applica anche la regola delle etichette del <a href="/it/docs/records-and-functions/">capitolo 2</a>: in <code>pow(base:, exponent:)</code> i due argomenti hanno lo stesso tipo, quindi i loro nomi sono obbligatori.
   </p>
   <figure class="example" data-src="examples/gallery/08-ffi.hero" data-lines="33-35">
 <pre><code><span class="c"># No implicit conversions: an `i64` becomes an `f64` because you said so.</span>
@@ -137,26 +103,16 @@ error[ffi_return_type]: `puts` does not return `cstr` — that is what `stdio.h`
     <figcaption>examples/gallery/08-ffi.hero, righe 37&ndash;39</figcaption>
   </figure>
   <p>
-    Nessun numero cambia tipo da solo. <code>to_f64</code> funziona sempre,
-    quindi ti dà un valore; <code>to_i64</code> può fallire, perché il numero con
-    la virgola potrebbe non starci dentro, quindi ti dà un <code>i64?</code> e
-    questa riga risponde con <code>.must()</code>.
+    Le conversioni numeriche sono esplicite. <code>to_f64</code> restituisce direttamente un valore. <code>to_i64</code> può fallire se il valore non è rappresentabile come intero e restituisce quindi un <code>i64?</code>. Qui <code>.must()</code> estrae il risultato o ferma il programma in caso di errore.
   </p>
 
-  <h3>Dove sta la libreria è un problema della macchina</h3>
+  <h3>Trovare librerie e dipendenze</h3>
   <p>
-    <code>link "m"</code> nomina una libreria da collegare. Quando non basta
-    (e per qualunque cosa abbia dipendenze di sistema non basta) un
-    gruppo può nominare un <b>package</b> al suo posto:
+    <code>link "m"</code> indica la libreria da collegare al programma. Se servono anche percorsi o altre dipendenze, puoi indicare un <b>package</b>, un pacchetto di cui il sistema conosce le impostazioni:
   </p>
   <pre><code>extern "raylib.h" package "raylib"</code></pre>
   <p>
-    Quella riga chiede al sistema dove stanno header e librerie e che
-    cos&rsquo;altro serve a quella libreria: i framework su macOS,
-    <code>-lGL -lX11</code> su Linux, in una scrittura sola che è la stessa
-    dappertutto. Se la risposta contiene qualcosa che questo compilatore non è
-    disposto a passare avanti, viene rifiutata, e il messaggio dice che cosa
-    aveva chiesto il package.
+    Questa dichiarazione chiede al sistema i percorsi degli header, le librerie e le altre dipendenze necessarie, come i framework su macOS o <code>-lGL -lX11</code> su Linux. La sintassi Heroes resta uguale sulle diverse piattaforme. Se il pacchetto richiede opzioni non supportate, il compilatore le segnala e interrompe la compilazione.
   </p>
   <p>
     Un gruppo può anche dichiarare una <code>constant</code>, il cui valore
@@ -164,20 +120,10 @@ error[ffi_return_type]: `puts` does not return `cstr` — that is what `stdio.h`
     ricalca una struct C campo per campo. Tutti e due vengono controllati allo stesso modo, da clang, sulla cosa vera.
   </p>
   <p>
-    Un parametro può anche essere una <b>funzione</b>: una tua, passata a una
-    libreria C che la richiamerà. Va di là e non torna indietro, quindi un
-    gruppo può prenderne una e non può restituirne una, e clang ne controlla la firma sull&rsquo;header come tutto il resto. Non tutte le callback del C
-    sono ancora raggiungibili. Dove l&rsquo;header, sui puntatori, dice più di quanto questo compilatore sappia ancora controllare, e quello di
-    <code>qsort</code> lo fa, il compilatore rifiuta sulla tua riga e nomina il
-    buco invece di tirare a indovinare.
+    Puoi passare una tua <b>funzione</b> a una libreria C perché la richiami: è una callback. Heroes ammette callback come parametri, ma non come risultati di funzioni C. Clang ne verifica i tipi sull&rsquo;header. Alcune callback, come quella di <code>qsort</code>, richiedono controlli sui puntatori non ancora supportati; il compilatore segnala il limite sulla dichiarazione.
   </p>
   <p>
-    E una dichiarazione può nominare la funzione che libera quello che
-    consegna, con <code>owned</code>, sia come risultato sia attraverso un
-    parametro <code>@</code>. Una stringa che una libreria C alloca
-    per te torna allora come un valore che il compilatore rilascia con quel
-    nome, invece di perdersi perché nessuno si ricordava quale funzione disfa
-    quale.
+    Con <code>owned</code> puoi indicare la funzione C che libera una stringa allocata dalla libreria, ricevuta come risultato o tramite un parametro <code>@</code>. Il compilatore usa quella funzione per liberare la stringa e restituisce il testo come valore Heroes.
   </p>
 
   <h3>Il programma</h3>
@@ -202,12 +148,9 @@ the 16:9 diagonal of a 1920-wide screen: 2202.9071700822983</code></pre>
     binding. Nel repository, SQLite, curl, SDL e raylib sono collegati allo stesso modo: un gruppo, un header, e le dichiarazioni che servono a quel programma.
   </p>
 
-  <h3>E quello è il linguaggio</h3>
+  <h3>Le regole viste fin qui</h3>
   <p>
-    Sette parole che possono aprire una
-    riga di primo livello, un modo solo di smontare un valore, un modo solo di
-    fallire, un modo solo di cambiare qualcosa, e una porta sola verso tutto il
-    resto. È tutto qui.
+    Sette parole che possono aprire una riga di primo livello, regole esplicite per dati, errori e modifiche, e le librerie C per le funzionalità esterne: questi sono gli elementi del linguaggio descritti fin qui.
   </p>
 
   <p class="next">

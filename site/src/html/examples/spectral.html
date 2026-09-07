@@ -1,3 +1,3 @@
-<p class="tagline">The largest singular value of a matrix nobody stores.</p>
+<p class="tagline">Calculate the largest singular value of a matrix without storing the matrix.</p>
 
-<p>Every entry is computed from its two indices. The index arithmetic stays whole-number on purpose: doing it in floating point would give a different matrix and a plausible wrong answer, which is the kind of mistake a published number catches and a self-written assertion does not.</p>
+<p>A matrix is a grid of numbers. Its largest singular value measures how much it can stretch a vector, a list of numbers. The program calculates each matrix entry from its row and column when needed. Those index calculations use whole numbers: using floating-point arithmetic would produce a different matrix. A published result checks the answer.</p>

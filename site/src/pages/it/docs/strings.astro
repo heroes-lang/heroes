@@ -3,6 +3,6 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 import { page } from '../../../lib/figures.ts';
 import content from '../../../html/it/docs/strings.html?raw';
 ---
-<BaseLayout url="/it/docs/strings/" title={'Le stringhe: documentazione di Heroes'} description={"Uno str è UTF-8 immutabile misurato in byte. L'indice dà un byte e chars() dà i caratteri: due lavori diversi che il sistema dei tipi tiene separati. Gli escape sono sei e non uno di più."} current="docs">
+<BaseLayout url="/it/docs/strings/" title={"Le stringhe: documentazione di Heroes"} description={"Leggi le stringhe UTF-8 per byte o per caratteri, dividi e unisci il testo e usa le sequenze di escape supportate."} current="docs">
 <Fragment set:html={page(content, 'site/src/html/it/docs/strings.html')} />
 </BaseLayout>

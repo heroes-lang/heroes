@@ -3,59 +3,42 @@
     <h1 class="page">Documentazione</h1>
     <span class="nod">· hunky dory ·</span>
   </div>
-  <p class="lede">Il linguaggio, pagina per pagina, per chi non ha letto la
-  specifica e non dovrebbe essere costretto a farlo.</p>
+  <p class="lede">
+    Una guida al linguaggio, un concetto alla volta. Non serve aver letto la specifica.
+  </p>
 
   <div class="notice">
-    <p><b>Il repository è ancora privato, quindi i link di questa pagina che
-    portano dentro il codice non rispondono ancora.</b> La specifica sta lì
-    dentro, e con lei il file indicato sotto ogni blocco di codice di questi
-    capitoli. Il repository si apre quando è finito un giro di consolidamento, e
-    i link di questa pagina sono già scritti per quel giorno.</p>
+    <p>
+    <b>Il repository è ancora privato: i link ai file sorgenti non sono ancora accessibili.</b> Lo pubblicheremo al termine del lavoro di consolidamento. Nel frattempo puoi leggere la specifica e gli esempi su questo sito. I link al repository hanno già gli indirizzi definitivi.
+  </p>
   </div>
 
   <h2>Come leggere questi capitoli</h2>
   <p>
-    La specifica stabilisce le regole e non è un testo didattico. Insegna il
-    linguaggio come un regolamento insegna un gioco, e sta in meno di cinque pagine perché tutto il linguaggio deve entrare in un prompt. Questi tredici
-    capitoli lo spiegano un&rsquo;idea alla volta, in ordine. Messi insieme coprono il
-    linguaggio; la
-    <a href="/it/spec/">specifica</a>, su questo sito, è il punto in cui guardare quando vuoi la regola invece della spiegazione.
+    La specifica definisce le regole del linguaggio. È breve perché deve entrare in un prompt, il testo che fornisci a un modello. Questi tredici capitoli spiegano il linguaggio in ordine, un concetto alla volta. Consulta la <a href="/it/spec/">specifica</a> su questo sito quando ti serve una regola precisa.
   </p>
   <p>
-    <b>Ogni blocco di codice qui è ritagliato da un file in
-    <code>examples/</code> quando il sito viene costruito.</b> Sotto il blocco
-    c&rsquo;è il nome di quel file, e la build si rifiuta di pubblicare un blocco che non corrisponde più. Ognuno di quei programmi viene compilato ed
-    eseguito in tre configurazioni a ogni commit.
-    <a href="/it/examples/">Tutti, con il loro output &rarr;</a>
+    <b>Ogni esempio di codice proviene da un file in <code>examples/</code>.</b> Sotto ogni blocco trovi il nome del file. Durante la build, la procedura che genera il sito, un controllo verifica che il blocco corrisponda ancora al sorgente e interrompe la build se trova differenze. A ogni commit, cioè ogni modifica salvata nella cronologia del repository, questi programmi vengono compilati ed eseguiti in tre configurazioni. <a href="/it/examples/">Consulta gli esempi e il loro output &rarr;</a>
   </p>
 
   <h2>Gli errori, che sono parte del linguaggio</h2>
   <p>
-    Qui un messaggio di errore è un prodotto finito, curato come tutto il resto.
-    La pagina mostra che cosa stampa il compilatore,
-    quali correzioni sa applicare al tuo file al posto tuo, dove ancora non
-    arriva, e quanti sbagli ferma davvero, misurati per tipo di sbaglio. Ogni
-    errore mostrato è uscito davvero dal compilatore, copiato per intero e non
-    accorciato per far bella figura.
-    <a href="/it/errors/">Gli errori, e come se ne legge uno →</a>
+    La pagina degli errori mostra i messaggi del compilatore, le correzioni che può applicare ai tuoi file e i problemi che ancora non rileva. Trovi anche le misure degli errori rilevati, suddivise per tipo. I messaggi riportati sono completi e provengono da esecuzioni reali del compilatore. <a href="/it/errors/">Come leggere un messaggio di errore →</a>
   </p>
 
   <h2>I capitoli</h2>
   <p>
-    In ordine di insegnamento, non di consultazione. Comincia dall&rsquo;alto:
-    ognuno dà per letti quelli sopra e nient&rsquo;altro. Il file nominato su
-    ogni riga è il programma da cui quel capitolo è costruito.
+    Leggi i capitoli dall&rsquo;alto verso il basso: ciascuno usa i concetti spiegati nei precedenti. Accanto a ogni titolo trovi il programma usato negli esempi.
   </p>
   <ol class="chapters">
     <li><a href="/it/docs/a-first-program/">Un primo programma</a>
       <span class="src">file, disposizione, commenti come documentazione · <code>examples/gallery/00-first.hero</code></span>
     </li>
     <li><a href="/it/docs/records-and-functions/">Record e funzioni</a>
-      <span class="src">dichiarazioni, costruzione con i nomi, sintassi a chiamata di metodo · <code>examples/gallery/01-points.hero</code></span>
+      <span class="src">dichiarazioni, campi nominati, chiamate con il punto · <code>examples/gallery/01-points.hero</code></span>
     </li>
     <li><a href="/it/docs/variants-and-match/">Variant e match</a>
-      <span class="src">esaustivo per forza, nessun catch-all · <code>examples/gallery/02-tokens.hero</code></span>
+      <span class="src">tutti i casi vanno gestiti esplicitamente · <code>examples/gallery/02-tokens.hero</code></span>
     </li>
     <li><a href="/it/docs/failure-is-a-value/">Il fallimento è un valore</a>
       <span class="src">niente null, niente eccezioni · <code>examples/gallery/03-fallible.hero</code></span>
@@ -70,7 +53,7 @@
       <span class="src">una forma, molti tipi · <code>examples/gallery/06-generics.hero</code></span>
     </li>
     <li><a href="/it/docs/strings/">Le stringhe</a>
-      <span class="src">sei escape, e i byte quando ti servono · <code>examples/gallery/07-strings.hero</code></span>
+      <span class="src">caratteri speciali, byte e testo · <code>examples/gallery/07-strings.hero</code></span>
     </li>
     <li><a href="/it/docs/maps/">Le mappe</a>
       <span class="src">la ricerca restituisce un valore o un errore · <code>examples/gallery/10-maps.hero</code></span>
@@ -85,7 +68,7 @@
       <span class="src">extern, header, e che cosa controlla clang per te · <code>examples/gallery/08-ffi.hero</code></span>
     </li>
     <li><a href="/it/docs/modules/">I moduli e i file</a>
-      <span class="src">dove va a cercare il compilatore, e cosa lega il percorso · <code>examples/shapes/</code></span>
+      <span class="src">come trovare un modulo e usarne il nome · <code>examples/shapes/</code></span>
     </li>
   </ol>
 

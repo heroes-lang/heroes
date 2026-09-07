@@ -1,3 +1,3 @@
-<p class="tagline">Si apre una finestra, e una struct del C attraversa il confine per valore.</p>
+<p class="tagline">Un programma che usa raylib per fare calcoli su colori, punti e rettangoli, passando strutture C per valore.</p>
 
-<p>La libreria viene chiesta per nome invece di essere descritta, così è la macchina a rispondere dove si trova, in modo diverso su ogni piattaforma, a partire da una sola scrittura nel programma. Su una macchina senza raylib i test saltano questo esempio, e leggono il salto dalla diagnostica del compilatore invece che da una lista di nomi.</p>
+<p>Una struct del C raggruppa più campi; passarla per valore significa fornire alla funzione una copia di quei dati. Il programma indica la libreria per nome e il compilatore la cerca sul sistema. I calcoli funzionano anche senza schermo. Se raylib manca, i test saltano l&rsquo;esempio in base al messaggio del compilatore.</p>

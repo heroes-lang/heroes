@@ -1,3 +1,3 @@
-<p class="tagline">Una data di calendario smontata, attraverso una struct del C.</p>
+<p class="tagline">Anno, mese, giorno e ora letti da una struct del C, una struttura che li raggruppa.</p>
 
-<p>La struct è di 36 byte su una piattaforma e di 56 su un&rsquo;altra, entrambe misurate, con le stesse larghezze dei campi. I venti byte di differenza sono quello che la dichiarazione parziale protegge: il programma nomina i campi che usa e il compilatore non deve credere niente sul resto.</p>
+<p>La struttura può avere dimensioni diverse su piattaforme diverse anche quando i campi usati hanno la stessa dimensione. Con una dichiarazione parziale il programma indica solo i campi che gli servono; per la disposizione in memoria, il compilatore usa la definizione originale del C.</p>

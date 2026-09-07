@@ -8,16 +8,17 @@
       </svg>
       <p class="kicker">Un linguaggio di programmazione compilato</p>
       <h1><span class="q">&ldquo;</span>Heroes<span class="q">&rdquo;</span></h1>
-      <p class="promise">Un intero linguaggio in un prompt, per i modelli che
-      scrivono il tuo codice. Si <em>compila da solo</em>.</p>
+      <p class="promise">
+    Tutto il linguaggio in un prompt, il testo che dai al modello per chiedergli di scrivere codice. Il compilatore è <em>scritto in Heroes</em> e compila se stesso.
+  </p>
       <ul class="pillars">
-        <li>Lo sbaglio tipico di un modello qui è un errore di compilazione.</li>
+        <li>Il compilatore rileva gli errori tipici dei modelli.</li>
         <li>Niente null, niente eccezioni, niente garbage collector.</li>
         <li>File, socket, database, grafica: tutto dal C.</li>
-        <li>Binari nativi, e nessun runtime da installare.</li>
+        <li>Programmi eseguibili, senza software di supporto da installare.</li>
       </ul>
       <div class="cta">
-        <a class="primary" href="/it/spec/">Leggi tutto il linguaggio</a>
+        <a class="primary" href="/it/spec/">Leggi la specifica completa</a>
         <a class="ghost" href="/it/examples/">Guarda il codice</a>
       </div>
       <p class="version">heroes {{version}} &middot; tutto il linguaggio: <code class="cmd">curl -L heroes-lang.org/spec.md</code></p>
@@ -46,7 +47,7 @@
         .open     =&gt; <span class="s">"`(`"</span>
         .close    =&gt; <span class="s">"`)`"</span></code></pre>
         </figure>
-        <p class="under">ometti un caso e non compila &middot; <a href="/it/examples/gallery/02-tokens/">leggi questo →</a></p>
+        <p class="under">ometti un caso e non compila &middot; <a href="/it/examples/gallery/02-tokens/">leggi l&rsquo;esempio →</a></p>
       </div>
     </div>
   </header>
@@ -54,32 +55,27 @@
   <ul class="figures">
     <li>
       <span class="n">4.096</span>
-      <span class="what">token: il tetto sotto cui sta il linguaggio</span>
-      <span class="how">La specifica è tutto il linguaggio, e sta in meno di cinque pagine. Passala a un modello e resta spazio per il tuo programma.
-      <a href="/it/spec/">la specifica &rarr;</a> <a href="/it/why/">perché il design è questo &rarr;</a></span>
+      <span class="what">token: il limite per la specifica</span>
+      <span class="how">La specifica descrive tutto il linguaggio in meno di cinque pagine. Un token è un frammento di testo che il modello legge o genera. Con una specifica breve, nel prompt resta spazio per il tuo programma.
+      <a href="/it/spec/">la specifica &rarr;</a> <a href="/it/why/">perché è progettato così &rarr;</a></span>
     </li>
     <li>
       <span class="n">0</span>
       <span class="what">null, eccezioni, garbage collector</span>
-      <span class="how">Un valore che manca o un&rsquo;operazione che fallisce sono
-      dichiarati nel codice e si vedono sulla riga. La memoria si libera da sola,
-      senza nessun garbage collector che metta in pausa il programma.
-      <a href="/it/docs/failure-is-a-value/">come funziona il fallimento &rarr;</a></span>
+      <span class="how">Il codice indica dove un valore può mancare o un&rsquo;operazione può fallire. La memoria viene liberata automaticamente, senza un garbage collector, cioè un sistema che cerca i dati inutilizzati e può mettere in pausa il programma.
+      <a href="/it/docs/failure-is-a-value/">come gestire gli errori &rarr;</a></span>
     </li>
     <li>
       <span class="n">1</span>
-      <span class="what">comando, e nessun secondo binario</span>
-      <span class="how">Compilare, eseguire, testare, formattare e controllare
-      sono un solo eseguibile, e quell&rsquo;eseguibile è scritto in Heroes.
+      <span class="what">comando per tutti gli strumenti</span>
+      <span class="how">Un solo eseguibile permette di compilare, eseguire, testare, formattare e controllare il codice. È scritto in Heroes.
       <a href="/it/project/#self-hosted">si compila da solo &rarr;</a></span>
     </li>
   </ul>
 
-  <h2>Gli sbagli sono errori di compilazione</h2>
+  <h2>Il compilatore segnala gli errori</h2>
   <p>
-    Un modello scrive <code>totl</code> dove intendeva <code>total</code>. In
-    quasi tutti i linguaggi quella riga dichiara una variabile nuova e il
-    programma dà la risposta sbagliata in silenzio. Qui viene rifiutata, con la riparazione allegata:
+    Un modello scrive <code>totl</code> al posto di <code>total</code>. Nei linguaggi che permettono di dichiarare una variabile assegnandole un valore, un refuso del genere può creare una nuova variabile. Heroes distingue la dichiarazione dalla modifica: il compilatore rifiuta il nome sconosciuto e suggerisce la correzione:
   </p>
   <pre class="diag"><code><span class="msg"><span class="k">error</span>[unknown_name]: nothing named `totl` is in scope — did you mean `total`?</span>
   at tests/golden/check/typo-not-a-new-binding.hero:10:9
@@ -88,17 +84,12 @@
      |         ^^^^
   fix (certain): rename to `total`</code></pre>
   <p>
-    Argomenti dello stesso tipo scambiati, un caso dimenticato, una parola
-    chiave presa da un altro linguaggio: nemmeno quelli compilano. Ogni errore
-    dice cosa si aspettava e dove. Dove la riparazione si conosce, arriva col messaggio; quella marcata <code>certain</code> la può applicare una macchina. <a href="/it/errors/">Altri errori veri &rarr;</a>
+    Il compilatore segnala anche gli argomenti con etichetta scambiati, i casi mancanti e le parole chiave prese da altri linguaggi. Ogni messaggio indica il problema e la posizione nel codice. Quando può, suggerisce una correzione; quelle contrassegnate da <code>certain</code> si possono applicare automaticamente. <a href="/it/errors/">Altri esempi di errori &rarr;</a>
   </p>
 
-  <h2>Le librerie sono quelle del C, di proposito</h2>
+  <h2>Heroes usa le librerie C</h2>
   <p>
-    Matematica oltre l&rsquo;aritmetica, file, socket, database e grafica arrivano
-    dalle librerie C che il mondo usa da cinquant&rsquo;anni. Poche righe collegano
-    una libreria al tuo programma. Clang verifica quelle righe sull&rsquo;header della libreria stessa, quindi un tipo sbagliato è un errore di compilazione
-    e non un crash più tardi.
+    Per funzioni matematiche, file, socket, database e grafica, Heroes usa librerie C. Bastano poche righe per dichiarare le funzioni di una libreria nel tuo programma. Clang, il compilatore C, verifica queste dichiarazioni sull&rsquo;header della libreria, il file che ne descrive funzioni e tipi. Se i tipi non corrispondono, la compilazione si ferma.
   </p>
   <figure class="example" data-src="examples/gallery/08-ffi.hero" data-lines="12-15">
 <pre><code><span class="k">extern</span> <span class="s">"math.h"</span> link <span class="s">"m"</span>
@@ -108,9 +99,7 @@
     <figcaption>examples/gallery/08-ffi.hero, righe 12&ndash;15</figcaption>
   </figure>
   <p>
-    Un database, una finestra e una richiesta web sono tre dei programmi di
-    questo sito, ognuno con l&rsquo;output che stampa davvero.
-    <a href="/it/examples/#c">Le librerie C che funzionano &rarr;</a>
+    Tra gli esempi trovi programmi che usano un database, chiamano una libreria grafica e inviano una richiesta web. Le pagine mostrano anche l&rsquo;output registrato, quando disponibile. <a href="/it/examples/#c">Gli esempi con librerie C &rarr;</a>
   </p>
 
   <h2>La tesi</h2>
@@ -121,24 +110,17 @@
     programma costa più token da scrivere.
   </blockquote>
   <p>
-    Metà è misurata. <code>heroes mutate</code> prende programmi che
-    funzionano, ci pianta uno sbaglio realistico alla volta, e conta quanti il
-    compilatore ne ferma. Poi rifà tutto con le regole della tesi disattivate, e
-    la distanza tra le due passate è il risultato, tenuto sbaglio per sbaglio.
+    Una parte della tesi è già stata verificata. <code>heroes mutate</code> introduce un errore realistico alla volta in programmi funzionanti e conta quanti errori rileva il compilatore. Ripete poi la prova con i controlli specifici di Heroes disattivati. Il confronto mostra quali errori vengono rilevati grazie a quei controlli.
   </p>
   <p>
-    L&rsquo;altra metà è il conteggio dei token vero e proprio, da un capo all&rsquo;altro
-    e contro un altro linguaggio. Quello strumento è progettato e non ancora
-    costruito. Quindi metà della tesi ha un numero e metà è ancora una domanda,
-    e questa pagina dice quale.
-    <a href="/it/errors/#measured">La metà misurata &rarr;</a>
+    Resta da confrontare il numero totale di token necessari per ottenere un programma funzionante in Heroes e in un altro linguaggio, comprese le correzioni. Lo strumento per questo confronto è stato progettato, ma deve ancora essere costruito. <a href="/it/errors/#measured">I risultati disponibili &rarr;</a>
   </p>
 
   <h2>Eseguilo <span class="nod">&middot; speed of life &middot;</span></h2>
   <div class="notice">
-    <p><b>Il repository è ancora privato, quindi il clone qui sotto non
-    funziona ancora.</b> Gli indirizzi sono definitivi e si aprono insieme al
-    codice.</p>
+    <p>
+    <b>Il repository è ancora privato: il comando per scaricarlo non è ancora utilizzabile.</b> Lo sarà quando il codice verrà reso pubblico.
+  </p>
   </div>
   <pre><code>$ git clone https://github.com/heroes-lang/heroes
 $ cd heroes
@@ -148,28 +130,20 @@ read 42
 failed: not_a_digit (expected 0-9)
 20</code></pre>
   <p>
-    La terza riga costruisce il compilatore da un solo file C. Prende meno di
-    quattro secondi su un MacBook Air, la macchina da cui viene ogni misura di
-    questo sito. Quel file C lo ha scritto Heroes, quindi clang è l&rsquo;unica cosa
+    La terza riga costruisce il compilatore da un solo file C. Richiede meno di quattro secondi su un MacBook Air, la macchina da cui viene ogni misura di
+    questo sito. Quel file C è stato generato dal compilatore Heroes, quindi clang è l&rsquo;unica cosa
     che ti serve. La riga che dice <code>failed</code> è l&rsquo;esempio che rifiuta
     un carattere che non sa leggere.
-    <a href="/it/start/">Tutta la via d&rsquo;ingresso &rarr;</a> &middot;&nbsp;<a href="/it/docs/">il linguaggio, un&rsquo;idea alla volta &rarr;</a>
+    <a href="/it/start/">La guida per iniziare &rarr;</a> &middot;&nbsp;<a href="/it/docs/">il linguaggio, un&rsquo;idea alla volta &rarr;</a>
   </p>
 
   <h2>Chi lo sta costruendo</h2>
   <p>
-    Una persona che non aveva mai scritto un compilatore prima di questo, e un
-    assistente AI che lavora su un contratto tenuto nel repository. Il
-    linguaggio non lo decide nessuno dei due. Ogni cambiamento passa prima da un
-    collegio: cinque giudici, quattro dei quali possono rifiutarlo di netto.
-    L&rsquo;ultima parola è umana: ogni decisione aspetta la ratifica
-    dell&rsquo;autore, che può ribaltarla.
-    <a href="/it/about/">Chi ha scritto tutto questo &rarr;</a> &middot;&nbsp;<a href="/it/project/#panel">come si decide un cambiamento &rarr;</a>
+    Una persona che non aveva mai scritto un compilatore prima di questo e un assistente AI che segue regole scritte nel repository, l&rsquo;archivio del progetto. Ogni modifica al linguaggio viene esaminata da un collegio di cinque giudici, quattro dei quali possono porre un veto. L&rsquo;autore approva o respinge ogni decisione. <a href="/it/about/">Chi ha scritto tutto questo &rarr;</a> &middot;&nbsp;<a href="/it/project/#panel">come si valutano le modifiche &rarr;</a>
   </p>
 
   <footer>
-    <p>Heroes non è ancora impacchettato. Nessun installer e nessuna release
-    pubblica, quindi la via d&rsquo;ingresso è un compilatore C e un comando. Ogni
+    <p>Heroes non ha ancora un installer o una versione pubblica. Per compilarlo servono un compilatore C e un comando. Ogni
     decisione, seduta e misura è registrata nel
     <a href="https://github.com/heroes-lang/heroes">repository</a>, ancora
     privato, che si apre insieme al codice.</p>

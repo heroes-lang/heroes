@@ -1,3 +1,3 @@
-<p class="tagline">A tree that contains itself, in a language where no value points at another.</p>
+<p class="tagline">Build a tree whose nodes store their children as independent values.</p>
 
-<p>The array is the only indirection there is. <code>[Expr]</code> holds <code>Expr</code> values, so a node can hold its children and the whole tree stays a value that copies the way a number copies.</p>
+<p>An array of type <code>[Expr]</code> stores child nodes of type <code>Expr</code>. Each child can contain further children, forming a tree. Copying the tree produces an independent value, just as copying a number does.</p>

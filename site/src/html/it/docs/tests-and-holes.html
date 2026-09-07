@@ -1,13 +1,13 @@
 
-  <p class="crumb"><a href="/it/">Heroes</a> / <a href="/it/docs/">Docs</a> / capitolo 11</p>
+  <p class="crumb"><a href="/it/">Heroes</a> / <a href="/it/docs/">Guida</a> / capitolo 11</p>
 
   <h1 class="chapter">Test e buchi</h1>
-  <p class="tagline">Test che non devi installare, e un modo per chiedere al compilatore che cosa ci va qui.</p>
+  <p class="tagline">
+    Scrivere test nel sorgente e usare <code>???</code> per completare il codice.
+  </p>
 
   <p>
-    Un <code>test</code> sta nel file che prova. Un <code>???</code> chiede al
-    compilatore che cosa va in un punto che non hai ancora scritto. Non si
-    installa né l&rsquo;uno né l&rsquo;altro: fanno parte del linguaggio.
+    Un <code>test</code> verifica il codice nello stesso file. Con <code>???</code> puoi lasciare un&rsquo;espressione incompleta e chiedere al compilatore quale tipo si aspetta. Entrambe le forme fanno parte del linguaggio.
   </p>
 
   <h3><code>test</code> è una dichiarazione</h3>
@@ -18,17 +18,10 @@
     <figcaption>examples/gallery/09-holes.hero, righe 30&ndash;32</figcaption>
   </figure>
   <p>
-    Un <code>test</code> ha per nome una frase e per corpo quello che sta
-    indentato sotto. Vive accanto al codice di cui parla, nello stesso file, e
-    una compilazione normale lo ignora del tutto: nell&rsquo;eseguibile che
-    consegni dei test non arriva niente. Non devi scegliere nessuna libreria per
-    scriverli, non serve marcarli in qualche modo, non c&rsquo;è una cartella a
-    parte e non ci sono nomi di file da rispettare.
+    Un <code>test</code> ha una descrizione tra virgolette e un corpo indentato. Puoi scriverlo nello stesso file del codice da verificare. Le compilazioni ordinarie lo escludono dall&rsquo;eseguibile; non servono librerie aggiuntive, cartelle separate o nomi di file particolari.
   </p>
   <p>
-    <code>assert</code> vuole un <code>bool</code>. Quando uno fallisce ti mostra
-    l&rsquo;espressione che gli avevi dato e tutti e due i lati del confronto,
-    così non devi quasi mai aggiungere una stampa e rilanciare:
+    <code>assert</code> richiede un <code>bool</code>. Se il controllo fallisce, mostra l&rsquo;espressione. Nei confronti mostra anche i due valori quando sono stampabili, per esempio numeri, stringhe o booleani:
   </p>
   <pre><code>$ heroes test points.hero
 assert failed: dist2(a: Point(x: 0, y: 0), b: Point(x: 3, y: 4)) == 24
@@ -38,17 +31,12 @@ FAIL "the 3-4-5 triangle"
 ok   "a rectangle keeps its size when it moves"
 2 tests, 1 failed</code></pre>
   <p>
-    Gli altri test continuano a girare e mostrano il loro risultato. Il codice di uscita
-    non è zero, quindi la cosa funziona dentro uno script senza che nessuno
-    debba leggersi l&rsquo;output.
+    Gli altri test vengono eseguiti e mostrano i risultati. Il codice di uscita è diverso da zero, così uno script può rilevare il fallimento senza analizzare il testo dei messaggi.
   </p>
 
   <h3><code>???</code> è un&rsquo;espressione legale</h3>
   <p>
-    E adesso l&rsquo;altra metà. Scrivi <code>???</code> in qualunque punto dove
-    ci vuole un valore e il programma passa lo stesso il controllo dei tipi:
-    tutto quello che sta intorno al buco viene verificato come sempre, e il
-    compilatore ti dice che cosa ci va dentro.
+    Scrivi <code>???</code> dove manca un valore. Il compilatore verifica il codice circostante e indica il tipo necessario per completare l&rsquo;espressione.
   </p>
   <figure class="example" data-src="examples/gallery/09-holes.hero" data-lines="12-19">
 <pre><code><span class="c"># Written, tested, done.</span>
@@ -89,18 +77,12 @@ hole at holes.hero:28:74
     summary_of(entries: [Entry])
       # The hole can be one argument of an otherwise finished line.</code></pre>
   <p>
-    Leggi il secondo. Il compilatore ha capito che lì ci vuole uno
-    <code>str</code>. Poi ha elencato che cosa hai a disposizione in quel punto,
-    e quali funzioni restituiscono proprio uno <code>str</code>, ognuna con la
-    prima riga del suo commento: quella è la documentazione. È la risposta a &ldquo;che cosa ci potrebbe stare qui?&rdquo;, che è la
-    domanda che hai davvero, non un messaggio di errore travestito da aiuto.
+    Nel secondo messaggio il compilatore indica che serve uno <code>str</code>. Elenca poi i nomi disponibili e le funzioni che restituiscono quel tipo, insieme alla prima riga dei rispettivi commenti. Queste informazioni aiutano a scegliere come completare il codice.
   </p>
 
   <h3>Tutto il resto viene controllato lo stesso</h3>
   <p>
-    Un file con dei buchi viene controllato per intero: restituisce il codice 0 e mostra le
-    diagnostiche di qualunque cosa sia davvero sbagliata. Quello che non fa è
-    produrre un binario, e lo strumento dice quale riga glielo ha impedito:
+    Un file con espressioni incomplete viene controllato per intero. Il controllo restituisce il codice 0 solo se non ci sono altri errori. Finché resta un <code>???</code>, il compilatore non produce un eseguibile e indica il punto da completare:
   </p>
   <pre><code>$ heroes test holes.hero
 no binary: 2 holes in holes.hero
@@ -123,14 +105,7 @@ hole at holes.hero:28:74
 
   <h3>Perché sta nel linguaggio e non dentro un editor</h3>
   <p>
-    Chi legge un programma Heroes spesso è un modello linguistico, e un modello
-    che scrive codice ha esattamente questo problema: ha bisogno di sapere che
-    cosa è disponibile in un punto di un file che non ha finito. Scritta come
-    buco, quella domanda si fa con tre caratteri e riceve dal compilatore una
-    risposta in una forma leggibile sia da una persona sia da un modello,
-    senza un editor, senza un&rsquo;estensione e senza un language server acceso.
-    E quei tre caratteri segnano il punto nel file, così nessuno si dimentica
-    che lì c&rsquo;era una domanda.
+    Una persona o un modello può ottenere queste informazioni direttamente dal compilatore, senza installare un editor o estensioni. I tre caratteri <code>???</code> indicano nel sorgente il punto ancora da completare.
   </p>
   <figure class="example" data-src="examples/gallery/09-holes.hero" data-lines="34-35">
 <pre><code><span class="k">function</span> main()
@@ -138,9 +113,7 @@ hole at holes.hero:28:74
     <figcaption>examples/gallery/09-holes.hero, righe 34&ndash;35</figcaption>
   </figure>
   <p>
-    Riempi i due buchi e quel <code>main</code> parte. Fino ad allora, la parte
-    finita del file ha un test che passa e la parte non finita ha una domanda con
-    una risposta.
+    Completa le due espressioni per poter eseguire <code>main</code>. Nel frattempo il compilatore può già controllare il resto del file.
   </p>
 
   <p class="next">

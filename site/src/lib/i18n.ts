@@ -38,25 +38,25 @@ const PHRASES: Record<string, Phrase> = {
   theProgram: { en: 'The program', it: 'Il programma' },
   theInput: { en: 'Input', it: 'Input' },
   exit: { en: 'exit', it: 'exit' },
-  next: { en: 'Next', it: 'Poi' },
-  previous: { en: 'Previous', it: 'Prima' },
+  next: { en: 'Next', it: 'Successivo' },
+  previous: { en: 'Previous', it: 'Precedente' },
   backToTheList: { en: 'All the examples', it: 'Tutti gli esempi' },
   fingerprint: { en: 'fingerprint', it: 'impronta' },
   readsFile: { en: 'reads a file', it: 'legge un file' },
   writesFile: { en: 'writes a file', it: 'scrive un file' },
   commandLine: { en: 'command line', it: 'riga di comando' },
   threads: { en: 'threads', it: 'thread' },
-  bindsC: { en: 'binds C', it: 'usa C' },
-  reads: { en: 'Read it', it: 'Leggilo' },
-  reproduce: { en: 'Reproduce it', it: 'Riproducila' },
+  bindsC: { en: 'uses C', it: 'usa C' },
+  reads: { en: 'Read the code', it: 'Leggi il codice' },
+  reproduce: { en: 'Reproduce it', it: 'Riproduci il risultato' },
   // The way OFF the examples shelf. Every label here stays under six words:
   // `records/english` reads this file and Italian prose belongs to the edition,
   // not to a table both editions share.
   runOneYourself: { en: 'Run one yourself', it: 'Eseguine uno' },
   theFourCommands: { en: 'the four commands', it: 'i quattro comandi' },
   learnTheLanguage: { en: 'Learn the language', it: 'Impara il linguaggio' },
-  orTakeItWhole: { en: 'or take it whole', it: 'oppure prendilo tutto' },
-  inOneFile: { en: 'in one file', it: 'in un file solo' },
+  orTakeItWhole: { en: 'or read the full specification', it: 'oppure leggi la specifica completa' },
+  inOneFile: { en: 'in one file', it: 'in un solo file' },
 };
 
 /**

@@ -3,6 +3,6 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 import { page } from '../../../lib/figures.ts';
 import content from '../../../html/it/docs/generics-and-function-values.html?raw';
 ---
-<BaseLayout url="/it/docs/generics-and-function-values/" title={'Generici e valori funzione: documentazione di Heroes'} description={'I generici stanno solo sulle funzioni, non hanno vincoli e non si scrivono mai al punto di chiamata. Una funzione di primo livello è un valore, e le lambda non esistono: quello che passi ha un nome.'} current="docs">
+<BaseLayout url="/it/docs/generics-and-function-values/" title={"Generici e valori funzione: documentazione di Heroes"} description={"Scrivi funzioni utilizzabili con tipi diversi e passa funzioni con un nome come argomenti. Il compilatore deduce i parametri di tipo dalla chiamata."} current="docs">
 <Fragment set:html={page(content, 'site/src/html/it/docs/generics-and-function-values.html')} />
 </BaseLayout>

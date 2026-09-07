@@ -1,24 +1,27 @@
   <div class="page-head">
     <h1 class="page">Esempi</h1>
   </div>
-  <p class="lede">Tutti i programmi del repository, qui sul sito, con il comando
-  che li esegue e l&rsquo;output che stampano davvero.</p>
+  <p class="lede">Tutti i programmi di esempio, con il codice, i comandi per
+  eseguirli e i risultati verificati dai test, quando disponibili.</p>
 
   <p>
-    Non sono frammenti scritti per un sito. Sono i programmi su cui il compilatore viene messo alla prova. Ognuno viene compilato ed eseguito in tre
-    configurazioni a ogni commit, e sulla pagina di ogni programma il blocco
-    sotto il comando è il testo che quei test confrontano byte per byte. Un programma che smettesse di
-    funzionare farebbe diventare rosso un test prima che qualcuno legga questa
-    pagina.
+    Il sito legge il codice dai file del progetto. Gli esempi dopo il primo gruppo
+    servono anche a verificare il compilatore: a ogni modifica vengono compilati
+    ed eseguiti in tre configurazioni. Quando un programma ha un risultato
+    atteso, la pagina lo mostra sotto il comando e i test lo confrontano byte
+    per byte con quello ottenuto durante l&rsquo;esecuzione. Se manca una libreria
+    C necessaria, i test saltano l&rsquo;esempio.
   </p>
   <p>
-    Comincia dal primo gruppo. Sono scritti per essere letti, un&rsquo;idea
-    ciascuno, in ordine. Tutto quello che viene dopo è il corpus, ed è lì che il linguaggio lavora sul serio: un lettore di JSON, un interprete per un piccolo
-    linguaggio, un libro dei conti in SQLite, una finestra.
+    Comincia dal primo gruppo: ogni esempio spiega un aspetto del linguaggio,
+    seguendo un ordine di lettura. Questi file vengono controllati dal compilatore,
+    ma il loro output non viene ancora verificato dai test. Nei gruppi successivi
+    trovi programmi più completi, tra cui un lettore di JSON, un interprete,
+    un registro contabile in SQLite e calcoli con librerie grafiche.
   </p>
 
   <p class="shelves"><a href="#gallery">Da dove partire</a> &middot;
-  <a href="#text">Testo e parsing</a> &middot;
+  <a href="#text">Lettura e analisi del testo</a> &middot;
   <a href="#numbers">Numeri e algoritmi</a> &middot;
   <a href="#data">Strutture dati</a> &middot;
   <a href="#files">File e riga di comando</a> &middot;

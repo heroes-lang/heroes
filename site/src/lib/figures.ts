@@ -116,7 +116,7 @@ export function checkFigures(html: string, pagePath: string): void {
       if (!caption.includes(figure.src)) {
         problems.push(`${where}: the caption does not name that file: ${JSON.stringify(caption)}`);
       } else if (figure.from !== null) {
-        const numbers = caption.match(/\d+/g) ?? [];
+        const numbers: string[] = caption.match(/\d+/g) ?? [];
         if (!numbers.includes(String(figure.from)) || !numbers.includes(String(figure.to))) {
           problems.push(
             `${where}: the caption does not carry that range: ${JSON.stringify(caption)}`

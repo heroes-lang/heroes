@@ -5,20 +5,16 @@
     <h1 class="page">Thanks</h1>
     <span class="nod">· sons of the silent age ·</span>
   </div>
-  <p class="lede">Every part of this language builds on somebody else&rsquo;s work,
-  usually from decades ago and often described in a paper that also records its
-  cost. These are their names.</p>
+  <p class="lede">
+    Heroes draws on ideas from other languages and research. This page names the authors and each contribution.
+  </p>
 
   <p>
-    Where a language was designed by a team, the designers are named; where it
-    was one person, that is said too. Nobody here was asked, and nobody here is
-    responsible for what was done with their idea.
+    These credits name the people and teams who designed the languages. They were not consulted about Heroes and are not responsible for how it uses their ideas.
   </p>
-  <h2>The substrate, and the tools</h2>
+  <h2>The foundations and tools</h2>
   <p>
-    By design, everything a program touches outside itself arrives from C. The compiler emits C11 and hands it to clang, which
-    type-checks every foreign declaration against the real header. The bootstrap
-    compiler that got the project to self-hosting was written in Rust.
+    The compiler translates Heroes into C11 and uses clang to produce executables and check C library declarations against their headers, the files that describe functions and types. The first compiler, used to reach the one written in Heroes, was written in Rust.
   </p>
   <ul class="lineage">
     <li><b>C</b>: <a href="https://en.wikipedia.org/wiki/Dennis_Ritchie">Dennis Ritchie</a>,
@@ -26,25 +22,16 @@
     <a href="https://en.wikipedia.org/wiki/Ken_Thompson">Ken Thompson</a>, who
     wrote B, the language C came out of, and Unix with Ritchie; and
     <a href="https://en.wikipedia.org/wiki/Brian_Kernighan">Brian Kernighan</a>,
-    who co-wrote the book that taught it to everyone. The whole of Part 11 of
-    the design rests on the fact that their language is still there, and still
-    linkable.</li>
+    who co-wrote the book that taught it to everyone. Heroes uses C to access existing libraries.</li>
     <li><b>LLVM, clang</b>: <a href="https://en.wikipedia.org/wiki/Chris_Lattner">Chris Lattner</a>.
-    Heroes does not verify a foreign declaration itself; it arranges for clang
-    to do it. A compiler that outsources its hardest checking to another
-    compiler owes that compiler a mention.</li>
+    Heroes uses clang to check C function declarations against library headers.</li>
     <li><b>Rust</b>: the Rust team, and Graydon Hoare, who started it.
-    The bootstrap compiler is Rust written in a deliberately narrow subset, and
-    that subset is why porting it to Heroes was mechanical rather than a
-    rewrite.</li>
+    The first compiler used a restricted set of Rust features, chosen to make conversion to Heroes straightforward.</li>
   </ul>
 
-  <h2>The value model, which is the whole design</h2>
+  <h2>The value model</h2>
   <p>
-    One decision makes everything else small: values are never aliased, so
-    reference cycles cannot be built, so reference counting is complete with no
-    garbage collector. That is not this project&rsquo;s discovery. It is the
-    current research frontier, and it has a published argument.
+    In Heroes, changing a copy does not change the original. Values cannot form reference cycles, so memory can be freed by counting the references still in use. No garbage collector is needed to find cycles. This model draws on the work cited below.
   </p>
   <ul class="lineage">
     <li><b>Hylo, formerly Val</b>: Dimitri Racordon, Denys Shabalin,
@@ -53,37 +40,24 @@
     Abrahams</a> and Brennan Saeta, the authors of <i>Native Implementation of
     Mutable Value Semantics</i>. The sentence Heroes depends on is theirs:
     references cannot be stored in variables or fields, hence all values form
-    disjoint trees. Everything the language does not need (a borrow
-    checker, a cycle collector, lifetime annotations) is absent because of
-    that one line.</li>
+    disjoint trees. This restriction avoids the need to detect cycles or annotate how long references remain valid.</li>
     <li><b>Swift</b>: <a href="https://en.wikipedia.org/wiki/Chris_Lattner">Chris Lattner</a>, Doug
-    Gregor, John McCall, Ted Kremenek and Joe Groff. Copy-on-write over
-    reference counting, <code>inout</code> parameters (this language&rsquo;s
-    <code>@</code>), and leading-dot variants. Swift is also the reassuring
-    precedent, because it is not a research language: it has shipped this model
-    for over a decade. Heroes takes the half that works and declines
-    <code>class</code>, and with it <code>weak</code> and
-    <code>unowned</code>.</li>
+    Gregor, John McCall, Ted Kremenek and Joe Groff. Copy-on-write, which delays copying data until a change requires it, reference counting, <code>inout</code> parameters (this language&rsquo;s
+    <code>@</code>), and leading-dot variants. Heroes draws on these ideas without introducing <code>class</code> or the <code>weak</code> and <code>unowned</code> reference forms.</li>
     <li><b>APL, J, K</b>: <a href="https://en.wikipedia.org/wiki/Kenneth_E._Iverson">Kenneth E.
     Iverson</a>,
     <a href="https://en.wikipedia.org/wiki/Roger_Hui">Roger Hui</a> and
     <a href="https://en.wikipedia.org/wiki/Arthur_Whitney_(computer_scientist)">Arthur
-    Whitney</a>. Sixty years of value semantics over whole values, with no
-    references in the surface language, and the evidence that this model is not
-    what makes a language slow.</li>
+    Whitney</a>. These languages show how to work with whole values without exposing mutable references in the code.</li>
     <li><b>R</b>: <a href="https://en.wikipedia.org/wiki/Ross_Ihaka">Ross Ihaka</a> and
     <a href="https://en.wikipedia.org/wiki/Robert_Gentleman_(statistician)">Robert
     Gentleman</a>. <b>MATLAB</b>: <a href="https://en.wikipedia.org/wiki/Cleve_Moler">Cleve Moler</a>.
-    Copy-on-write value semantics in the two languages that carried statistics
-    and numerical computing for decades: millions of people who never needed a
-    mutable reference to do real work.</li>
+    Two examples of copy-on-write values used in statistics and numerical computing.</li>
   </ul>
 
   <h2>Safety without a garbage collector</h2>
   <p>
-    A Heroes program must not segfault and must not corrupt memory, and the
-    ways to get there without a collector were mapped out by other people
-    first.
+    Heroes aims to prevent invalid memory access and data corruption. The projects below explored safety without a garbage collector, the system that finds and frees unused data.
   </p>
   <ul class="lineage">
     <li><b>Cyclone</b>: Dan Grossman,
@@ -98,18 +72,12 @@
     <li><b>Modula-3</b>: <a href="https://en.wikipedia.org/wiki/Luca_Cardelli">Luca Cardelli</a>,
     James Donahue, Lucille Glassman, Mick Jordan, Bill Kalsow and
     <a href="https://en.wikipedia.org/wiki/Greg_Nelson_(computer_scientist)">Greg
-    Nelson</a>. Unsafety with a fence around it: the model for keeping every
-    dangerous operation inside one named, auditable place instead of spread
-    through the language.</li>
+    Nelson</a>. A model for concentrating unsafe operations in an identifiable part of the program that can be reviewed.</li>
   </ul>
 
-  <h2>How small a language is allowed to be</h2>
+  <h2>Keeping the language small</h2>
   <p>
-    The specification&rsquo;s ceiling is not invented: it is calibrated against
-    work from the 1970s. The compiler
-    has no such total, on purpose: what it has is a limit per file, and that one
-    comes from something simpler, which is how much of a file one person can
-    hold in their head at once.
+    Wirth&rsquo;s languages provided a reference for keeping the specification short. For the Heroes compiler, the limit instead applies to individual files: they should remain understandable to a reader.
   </p>
   <ul class="lineage">
     <li><b>Pascal, Modula, Oberon</b>: <a href="https://en.wikipedia.org/wiki/Niklaus_Wirth">Niklaus Wirth</a>,
@@ -124,16 +92,14 @@
     nothing argues harder for this whole approach.</li>
   </ul>
 
-  <h2>The types, and one idea deliberately declined</h2>
+  <h2>Types and alternatives considered</h2>
   <ul class="lineage">
     <li><b>ML</b>: <a href="https://en.wikipedia.org/wiki/Robin_Milner">Robin Milner</a> and
     the group at Edinburgh, among them
     <a href="https://en.wikipedia.org/wiki/Michael_J._C._Gordon">Michael J. C.
-    Gordon</a>. The product-and-sum pair Heroes calls <code>record</code> and
-    <code>variant</code>, and the tradition tagged unions come out of.</li>
+    Gordon</a>. Product and sum types, which group fields or represent alternative cases. Heroes expresses them with <code>record</code> and <code>variant</code>.</li>
     <li><b>The arrow</b>: <a href="https://en.wikipedia.org/wiki/Alonzo_Church">Alonzo Church</a>.
-    <code>-&gt;</code> in a function type is the single most familiar piece of
-    syntax in existence, and it reached Heroes through ML, Haskell, Rust, Swift
+    <code>-&gt;</code> in a function type is familiar notation, and it reached Heroes through ML, Haskell, Rust, Swift
     and Python&rsquo;s type hints without changing shape. It was kept exactly as
     it was found.</li>
     <li><b>The subroutine</b>: <a href="https://en.wikipedia.org/wiki/David_Wheeler_(computer_scientist)">David
@@ -143,16 +109,13 @@
     Hindley</a> and
     <a href="https://en.wikipedia.org/wiki/Robin_Milner">Robin Milner</a>. This
     one is a thank-you for something Heroes does <i>not</i> use: whole-program
-    inference is beautiful and it moves errors far away from their cause, which
-    this language cannot afford. Knowing precisely what was being given up, and
+    inference can make it harder to connect an error to its cause. Knowing precisely what was being given up, and
     why, is what their work makes possible.</li>
   </ul>
 
   <h2>What the language feels like to use</h2>
   <p>
-    The habits, the small refusals, and the shape of the command line. Almost
-    none of this is original either, and that is the point: a reader who knows
-    one of these languages already knows most of Heroes.
+    These languages influenced Heroes&rsquo; syntax, checks and commands. Readers who know them will find many familiar choices.
   </p>
   <ul class="lineage">
     <li><b>Go</b>: <a href="https://en.wikipedia.org/wiki/Robert_Griesemer">Robert
@@ -160,15 +123,11 @@
     <a href="https://en.wikipedia.org/wiki/Rob_Pike">Rob Pike</a> and
     <a href="https://en.wikipedia.org/wiki/Ken_Thompson">Ken Thompson</a>. One
     canonical format with no options, unused variables as errors, a line that
-    ends without a semicolon, and the nerve to ship for a decade without
-    generics.</li>
-    <li><b>Nim</b>: <a href="https://nim-lang.org">Andreas Rumpf</a>. The foreign-function mechanism, the
-    per-module build cache, and <code>nim r</code>, which is
+    ends without a semicolon, and the initial choice to omit generics.</li>
+    <li><b>Nim</b>: <a href="https://nim-lang.org">Andreas Rumpf</a>. The foreign-function mechanism, reusing previous compilation results for each module, and <code>nim r</code>, which is
     <code>heroes run</code>. Also the standing warning the project repeats to
     itself: copy Nim&rsquo;s surface, never its implementation.</li>
-    <li><b>Zig</b>: Andrew Kelley. Tests living in the file they test,
-    and NUL-terminated strings that can cross into C without a
-    conversion.</li>
+    <li><b>Zig</b>: Andrew Kelley. Tests in the same file as the code they check, and NUL-terminated strings, which use a zero byte to mark the end as C expects.</li>
     <li><b>ABC</b>: Leo Geurts,
     <a href="https://en.wikipedia.org/wiki/Lambert_Meertens">Lambert Meertens</a>
     and
@@ -184,29 +143,24 @@
     Rossum</a>, and
     <a href="https://en.wikipedia.org/wiki/Tim_Peters_(software_engineer)">Tim
     Peters</a> for <code>import this</code>, which became
-    <code>heroes this</code>, carried inside the binary rather than in a
-    document that drifts. <a href="/project/#zen">It is here.</a></li>
+    <code>heroes this</code>, included in the compiler. <a href="/project/#zen">It is here.</a></li>
     <li><b>Odin, Jai</b>: the author of Odin, who publishes as
     gingerBill, and
     <a href="https://en.wikipedia.org/wiki/Jonathan_Blow">Jonathan Blow</a>.
     One uniform way to write a declaration, whatever is being declared.</li>
     <li><b>Ruby</b>: <a href="https://en.wikipedia.org/wiki/Yukihiro_Matsumoto">Yukihiro
     Matsumoto</a>. The reading rhythm (named blocks, named arguments, dot
-    chains), taken as a target for how code should scan out loud, with the
-    metaprogramming underneath left firmly alone.</li>
+    chains), used as a guide to readability, without adopting metaprogramming, the ability to alter code behaviour through other code.</li>
   </ul>
 
-  <h2>Errors worth reading, and typed holes</h2>
+  <h2>Error messages and unfinished code</h2>
   <ul class="lineage">
     <li><b>Rust</b>: the Rust team, and <b>Elm</b>: Evan
     Czaplicki. Between them they proved that the quality of an error message
     changes the whole experience of a language, and that it is a design
-    deliverable rather than plumbing. Heroes aims the same effort at a different
-    reader: a diagnostic here has to be fixable without opening a second
-    file.</li>
+    deliverable rather than plumbing. Heroes aims to include the information needed to fix an error without opening other files.</li>
     <li><b>Idris</b>: Edwin Brady. <b>Agda</b>: Ulf Norell, and
-    Catarina Coquand on the first version. Typed holes, moved out of proof
-    assistants and into ordinary code: in Heroes, <code>???</code> is a legal
+    Catarina Coquand on the first version. Typed holes, unfinished expressions for which the tool reports the expected type: in Heroes, <code>???</code> is a legal
     expression, and the compiler answers it by saying what belongs in the
     gap.</li>
   </ul>
@@ -214,19 +168,12 @@
   <h2>Immutability at scale</h2>
   <ul class="lineage">
     <li><b>Erlang</b>: <a href="https://en.wikipedia.org/wiki/Joe_Armstrong_(programmer)">Joe
-    Armstrong</a>, Robert Virding and Mike Williams. Immutability enforced
-    absolutely, in systems with famously long uptimes, which is the proof that
-    this is not a toy constraint. The motive is inverted and the inversion is
-    the instructive part: Erlang gives up sharing to get isolation between
-    processes, Heroes gives it up to make a single function readable on its
-    own.</li>
+    Armstrong</a>, Robert Virding and Mike Williams. Immutable values and isolated processes provide a reference for managing data. In Heroes, independent values also help readers understand a function without looking for changes elsewhere.</li>
   </ul>
 
-  <h2>Compiling to C, an old unglamorous trick</h2>
+  <h2>Generating C code</h2>
   <p>
-    Heroes emits C and lets a C compiler do the machine-specific work. That was
-    the dominant technique for languages built by very few people, and it is
-    still the reason one person can finish this.
+    Heroes generates C and lets a C compiler handle the work needed for each machine. The languages below followed this approach before Heroes.
   </p>
   <ul class="lineage">
     <li><b>cfront</b>: <a href="https://en.wikipedia.org/wiki/Bjarne_Stroustrup">Bjarne
@@ -240,43 +187,31 @@
     all. Heroes took the same road for the same reason.</li>
     <li><b>Vala</b>: J&uuml;rg Billeter, Raffaele Sandrini and Rico
     Tzschichholz. <b>Chicken Scheme</b>: Felix Winkelmann.
-    <b>Cython</b>: Robert Bradshaw and Stefan Behnel. Three working
-    languages that went out through C, each one evidence the route is a choice
-    and not a compromise.</li>
+    <b>Cython</b>: Robert Bradshaw and Stefan Behnel. Three examples of languages that generate C.</li>
     <li><b>Early Haskell</b>: designed by a committee, among them
     <a href="https://en.wikipedia.org/wiki/Paul_Hudak">Paul Hudak</a>,
     <a href="https://en.wikipedia.org/wiki/John_Hughes_(computer_scientist)">John
     Hughes</a>,
     <a href="https://en.wikipedia.org/wiki/Simon_Peyton_Jones">Simon Peyton
     Jones</a> and
-    <a href="https://en.wikipedia.org/wiki/Philip_Wadler">Philip Wadler</a>. It
-    reached real machines through C as well, in a language nobody would call
-    low-level.</li>
+    <a href="https://en.wikipedia.org/wiki/Philip_Wadler">Philip Wadler</a>. Early implementations of this high-level language also used C.</li>
   </ul>
 
-  <h2>Cited as a warning, which is also a gift</h2>
+  <h2>Choices to consider carefully</h2>
   <p>
-    Some of these languages are here because of what they got wrong, or what
-    they paid for. A precedent that says <i>do not do this, here is the
-    bill</i> is worth as much as one that says <i>do this</i>. It is also much
-    rarer, because producing one usually costs somebody years.
+    The project also studied the limits and costs of other languages&rsquo; choices. These precedents help determine which approaches to adopt and which to avoid.
   </p>
   <ul class="lineage">
     <li><b>Lua</b>, with Nelua and Pallene:
     <a href="https://en.wikipedia.org/wiki/Roberto_Ierusalimschy">Roberto
     Ierusalimschy</a>, Luiz Henrique de Figueiredo and Waldemar Celes. The
-    precedent for a small language that compiles, and the lesson that one
-    universal boxed table makes every call into C require marshalling. Heroes
+    precedent for a small language that compiles, and the cost of converting data from a universal table before and after C calls. Heroes
     gave up the universal table for that reason.</li>
     <li><b>APL</b> again, in the other direction: ultra-compact notation
     is the one place where this project cites
     <a href="https://en.wikipedia.org/wiki/Kenneth_E._Iverson">Iverson</a>
-    against itself: brevity that a human eye can learn is exactly what a
-    language model fails at.</li>
-    <li><b>R and MATLAB</b> again: both document, honestly, the same
-    failure mode Heroes has: write a loop that changes one element at a time
-    over a shared structure and you pay for a copy every time. The design says
-    so out loud instead of hiding it.</li>
+    against itself: Heroes prefers more explicit forms to help models read and generate code.</li>
+    <li><b>R and MATLAB</b> again: both document the cost of copying shared data when it changes. In Heroes too, a change may require copying the structure, a cost to consider inside loops.</li>
     <li><b>Unison</b>: Paul Chiusano and R&uacute;nar Bjarnason. Code
     stored as a tree with names as labels: the origin of an idea that was
     explored here at length and then dropped in favour of one readable
@@ -291,18 +226,11 @@
 
   <h2>And the name</h2>
   <p>
-    <a href="https://en.wikipedia.org/wiki/David_Bowie">David Bowie</a>, for
-    <i>&ldquo;Heroes&rdquo;</i> (1977). The quotation marks are his own, and they stayed.
-    The name, the section titles on this site, and the book the language grew
-    out of all come from there. The rule the project holds itself to is that
-    the personality stays in the packaging: song titles as nods, never a lyric,
-    and never a word of it inside an error message or a library name.
+    <a href="https://en.wikipedia.org/wiki/David_Bowie">David Bowie</a>, for <i>&ldquo;Heroes&rdquo;</i> (1977). The name keeps the album&rsquo;s quotation marks. Bowie also inspired the section titles and the book from which the language grew. Musical references stay in the project&rsquo;s prose and do not appear in error messages or library names.
   </p>
 
   <p class="next">
-    Next: <a href="/project/#panel">the panel</a>, where each of these borrowings had
-    to survive five judges, and where the departures are argued rather than
-    assumed.
+    Next: <a href="/project/#panel">the panel</a>, where five judges review proposals and discuss how to adapt these ideas to Heroes.
   </p>
 
   <footer>

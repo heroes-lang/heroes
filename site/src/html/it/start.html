@@ -2,16 +2,12 @@
   <div class="page-head">
     <h1 class="page">Inizia</h1>
   </div>
-  <p class="lede">Non c&rsquo;è nessun installer. Serve clang 18 o più recente, e la
-  lista finisce lì.</p>
+  <p class="lede">Per compilare Heroes serve clang 18 o una versione più recente. Non c&rsquo;è ancora un installer.</p>
 
   <div class="notice">
-    <p><b>Il repository è ancora privato, quindi la prima riga qui sotto non
-    funziona ancora.</b> Gli indirizzi sono definitivi e si aprono insieme al
-    codice. Quello che funziona oggi è su questo sito:
-    <a href="/it/spec/">la specifica</a> da dare a un modello, e
-    <a href="/it/examples/">ogni programma</a> con l&rsquo;output che stampa
-    davvero.</p>
+    <p>
+    <b>Il repository è ancora privato: il primo comando non è ancora utilizzabile.</b> Lo sarà quando il codice verrà reso pubblico. Nel frattempo puoi leggere <a href="/it/spec/">la specifica</a> e <a href="/it/examples/">gli esempi</a>, con l&rsquo;output registrato quando disponibile.
+  </p>
   </div>
 
   <h2>Quattro comandi</h2>
@@ -23,15 +19,13 @@ read 42
 failed: not_a_digit (expected 0-9)
 20</code></pre>
   <p>
-    La terza riga prende <b>meno di quattro secondi</b> su un MacBook Air, la
+    La terza riga richiede <b>meno di quattro secondi</b> su un MacBook Air, la
     macchina da cui viene ogni misura di questo sito. Costruisce il compilatore
-    da un solo file C che il compilatore ha scritto da sé, ed è per questo che
+    da un solo file C generato da Heroes, ed è per questo che
     ti basta clang.
   </p>
   <p>
-    Quella riga in mezzo che dice <code>failed</code> non è la compilazione che
-    si rompe. È l&rsquo;esempio che incontra un carattere che non sa leggere e lo
-    dice, che è quello che gli è stato chiesto di fare.
+    La riga con <code>failed</code> è un risultato previsto dell&rsquo;esempio: il programma segnala un carattere che non riesce a convertire in numero. La compilazione è riuscita.
   </p>
 
   <h2>Eseguilo dalla cartella del repository</h2>
@@ -42,15 +36,12 @@ failed: not_a_digit (expected 0-9)
   </p>
   <pre><code>$ HEROES_RUNTIME=~/heroes/runtime heroes run hello.hero</code></pre>
   <p>
-    Se non lo trova te lo dice con queste parole, e stampa la via d&rsquo;uscita. Se
-    manca qualcos&rsquo;altro, <code>./heroes doctor</code> lo nomina.
+    Se il runtime manca, <code>heroes run</code> lo segnala e mostra il comando da usare. Per controllare gli altri requisiti, esegui <code>./heroes doctor</code>.
   </p>
 
   <h2>Il tuo programma</h2>
   <p>
-    Un file non ha bisogno di niente intorno. Nessuna riga di import in cima,
-    nessun file di progetto che elenchi gli altri file. Gli serve un
-    <code>main</code>, che è il punto da cui il programma parte.
+    Per questo programma basta un file con una funzione <code>main</code>, da cui inizia l&rsquo;esecuzione. Non servono dichiarazioni <code>import</code> né un file di progetto.
   </p>
   <pre><code>$ printf 'function main()\n    print("we can be heroes")\n' &gt; hello.hero
 $ ./heroes run hello.hero
@@ -63,7 +54,7 @@ we can be heroes</code></pre>
 
   <h2>Un comando, undici verbi</h2>
   <p>
-    Tutto quello che fa la toolchain passa da <code>heroes</code>:
+    Tutti gli strumenti si usano tramite <code>heroes</code>:
     <code>lex</code>, <code>parse</code>, <code>check</code>,
     <code>build</code>, <code>run</code>, <code>test</code>, <code>fmt</code>,
     <code>doctor</code>, <code>mutate</code>, <code>measure</code>,
@@ -71,12 +62,7 @@ we can be heroes</code></pre>
     non ci sono plugin.
   </p>
   <p>
-    <code>heroes fmt</code> stampa l&rsquo;unica forma canonica di un file: stessa
-    indentazione, stessi ritorni a capo, stesso ordine. Ogni file Heroes che il
-    progetto chiama sorgente torna da lì identico, byte per byte, quindi una
-    differenza tra due versioni di un file è una differenza in quello che il
-    programma fa. Fanno eccezione i file di prova scritti per essere rifiutati,
-    che il formattatore lascia stare perché lì il testo è la prova.
+    <code>heroes fmt</code> formatta il codice secondo regole fisse per indentazione, ritorni a capo e ordine. I sorgenti del progetto, compilatore compreso, seguono già queste regole: il formattatore li restituisce identici, byte per byte. Questo riduce le differenze dovute alla formattazione quando confronti due versioni. I file di test che contengono errori intenzionali vengono conservati così come sono.
   </p>
   <p>
     <a href="/it/examples/">Ogni esempio di questo sito</a> è un file in
@@ -85,22 +71,18 @@ we can be heroes</code></pre>
 
   <h2>Se qualcosa va storto</h2>
   <p>
-    <code>./heroes doctor</code> ti dice cosa manca sulla tua macchina. Ogni
-    messaggio d&rsquo;errore porta cosa si aspettava il compilatore e dove, e
-    <a href="/it/errors/">come si legge</a> è una pagina a sé. Non c&rsquo;è ancora un issue tracker: si apre insieme al codice, e l&rsquo;annuncio arriverà nel <a href="/it/log/">diario</a>.
+    <code>./heroes doctor</code> segnala cosa manca sul tuo computer. I messaggi d&rsquo;errore indicano cosa si aspettava il compilatore e in quale punto del codice. La guida spiega <a href="/it/errors/">come leggerli</a>. Il sistema per segnalare problemi, o issue tracker, sarà accessibile quando il codice diventerà pubblico. L&rsquo;annuncio comparirà nel <a href="/it/log/">diario</a>.
   </p>
 
   <p class="next away">
     Poi: <a href="/it/docs/a-first-program/">scrivi il tuo primo programma</a>,
-    un&rsquo;idea alla volta. Oppure prendi
+    un&rsquo;idea alla volta. Oppure leggi
     <a href="/it/spec/">tutto il linguaggio in un file</a> e chiedi un programma
     al tuo modello.
   </p>
 
   <footer>
-    <p>Heroes non è ancora impacchettato: nessun installer e nessuna release
-    pubblica, quindi la via d&rsquo;ingresso è un compilatore C e un comando.
-    Installarlo con una riga è lavoro in programma e non fatto.</p>
+    <p>Heroes non ha ancora un installer o una versione pubblica. Per compilarlo servono un compilatore C e un comando. L&rsquo;installazione con un solo comando è prevista, ma non è ancora disponibile.</p>
     <p>Fatto da <a href="https://giuseppearici.com/it/">Giuseppe Arici</a>, CTO di Codermine, Brescia. Autore di
     <a href="/it/about/"><i>Gli eroi del codice</i></a>. Sulle spalle
     <a href="/it/about/thanks/">di molte altre persone</a>.</p>

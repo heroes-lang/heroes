@@ -1,3 +1,3 @@
-<p class="tagline">Un file di celle con delle formule dentro, valutato.</p>
+<p class="tagline">Un programma che legge un foglio di calcolo e ne valuta le formule.</p>
 
-<p>Le celle leggono altre celle e una somma copre un rettangolo. Quello che vale la pena leggere è il ciclo: due celle che si aspettano a vicenda vengono segnalate come ciclo invece di far esplodere lo stack. È l&rsquo;unico programma qui che finisce con uno stato di errore di proposito.</p>
+<p>Le formule possono usare altre celle e sommare un intervallo rettangolare. Se due celle dipendono l&rsquo;una dall&rsquo;altra, il programma segnala un ciclo, evitando di ripetere il calcolo senza fine. Questo esempio termina apposta con un codice di errore, che il test verifica.</p>

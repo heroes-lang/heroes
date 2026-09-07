@@ -1,14 +1,13 @@
 
-  <p class="crumb"><a href="/it/">Heroes</a> / <a href="/it/docs/">Docs</a> / capitolo 2</p>
+  <p class="crumb"><a href="/it/">Heroes</a> / <a href="/it/docs/">Guida</a> / capitolo 2</p>
 
   <h1 class="chapter">Record e funzioni</h1>
-  <p class="tagline">Dati con una forma, e chiamate che non si possono leggere al contrario.</p>
+  <p class="tagline">
+    Raggruppare i dati in record e chiamare le funzioni con argomenti espliciti.
+  </p>
 
   <p>
-    Un record è un gruppo di campi con un nome. È l&rsquo;unico modo per dare
-    una forma ai dati, dietro non c&rsquo;è nient&rsquo;altro, e si comporta
-    come si comporta un numero: se lo passi a una funzione, la funzione ne
-    riceve una copia.
+    Un record raggruppa campi con nomi e tipi. Quando lo passi a una funzione, la funzione riceve una copia indipendente, come accade con un numero.
   </p>
 
   <h3>Come si dichiara</h3>
@@ -20,10 +19,7 @@
     <figcaption>examples/gallery/01-points.hero, righe 6&ndash;9</figcaption>
   </figure>
   <p>
-    Ogni campo è un nome e un tipo, uno per riga, indentato sotto la
-    dichiarazione. Un campo può essere un altro record, e il record continua a
-    tenerselo per valore: un <code>Rect</code> non punta a due punti, li
-    <i>contiene</i>:
+    Ogni campo dichiara un nome e un tipo su una riga indentata. Può contenere anche un altro record: <code>Rect</code> contiene due valori di tipo punto:
   </p>
   <figure class="example" data-src="examples/gallery/01-points.hero" data-lines="11-14">
 <pre><code><span class="c"># A rectangle, by two corners.</span>
@@ -46,9 +42,7 @@
     <figcaption>examples/gallery/01-points.hero, righe 45&ndash;49</figcaption>
   </figure>
   <p>
-    <code>Point(3, 4)</code> non esiste. Non &ldquo;è sconsigliato&rdquo;: è una
-    forma che il linguaggio non ha, quindi è un errore di compilazione con la
-    riparazione già allegata:
+    <code>Point(3, 4)</code> non è una forma valida: mancano i nomi dei campi. Il compilatore segnala l&rsquo;errore e suggerisce la correzione:
   </p>
   <pre><code>$ heroes check points.hero
 error[missing_label]: `Point`'s fields are always named — this one is `x`
@@ -58,10 +52,7 @@ error[missing_label]: `Point`'s fields are always named — this one is `x`
      |               ^
   fix (certain): write `x: `</code></pre>
   <p>
-    Costa quattro caratteri al punto di chiamata. In cambio,
-    <code>Point(y: 4, x: 3)</code> e <code>Point(x: 3, y: 4)</code> sono lo
-    stesso punto, e nessuno dei due può diventare l&rsquo;altro di nascosto.
-    I pochi token in più stanno esattamente dove uno sbaglio è probabile.
+    Con i nomi dei campi, <code>Point(y: 4, x: 3)</code> e <code>Point(x: 3, y: 4)</code> indicano lo stesso punto. L&rsquo;ordine degli argomenti non cambia quale valore viene assegnato a ciascun campo.
   </p>
 
   <h3>Le funzioni, e dove i nomi diventano obbligatori</h3>
@@ -73,18 +64,10 @@ error[missing_label]: `Point`'s fields are always named — this one is `x`
     <figcaption>examples/gallery/01-points.hero, righe 21&ndash;24</figcaption>
   </figure>
   <p>
-    La prima riga di una funzione si scrive sempre per intero: ogni valore che
-    prende ha il suo tipo, e quello che restituisce si annuncia dopo la freccia
-    <code>-&gt;</code>. Dentro, <code>dx = …</code> dà un nome a un valore una
-    volta sola, e il tipo non serve scriverlo perché il compilatore lo capisce
-    dalla riga. Quel lavoro di deduzione, però, non esce mai dalla funzione: la
-    prima riga resta esplicita, così per sapere che cosa prende e che cosa
-    restituisce non devi leggere il corpo.
+    La dichiarazione di una funzione specifica il tipo di ogni parametro e, dopo <code>-&gt;</code>, il tipo del risultato. Nel corpo, <code>dx = …</code> associa un nome a un valore e il compilatore ne deduce il tipo. Per conoscere i tipi in ingresso e in uscita basta quindi leggere la dichiarazione.
   </p>
   <p>
-    <b>Quando due parametri della stessa funzione hanno lo stesso tipo, chi
-    chiama deve nominarli.</b> <code>dist2</code> prende due <code>Point</code>, quindi
-    tocca a lui:
+    <b>Quando due parametri della stessa funzione hanno lo stesso tipo, la chiamata deve nominarli.</b> La regola si applica a <code>dist2</code>, che riceve due <code>Point</code>:
   </p>
   <pre><code>$ heroes check points.hero
 error[needs_label]: two of `dist2`'s parameters are `Point`, so every one of them is named at the call site — this one is `b`
@@ -94,20 +77,12 @@ error[needs_label]: two of `dist2`'s parameters are `Point`, so every one of the
      |                                         ^
   fix (certain): write `b: `</code></pre>
   <p>
-    Due argomenti dello stesso tipo nell&rsquo;ordine sbagliato sono lo sbaglio
-    che nessun controllo dei tipi può vedere, perché tutti e due gli ordini
-    stanno in piedi. Ed è anche lo sbaglio che un modello con il pilota
-    automatico fa più spesso. La regola spende token esattamente lì e da
-    nessun&rsquo;altra parte: dove i tipi sono già diversi, il compilatore
-    distingue gli argomenti da solo e nessuna etichetta è richiesta.
+    Il tipo da solo non distingue due argomenti dello stesso tipo. I nomi rendono esplicito il ruolo di ciascuno. Se i tipi sono diversi, il compilatore può distinguerli e le etichette sono facoltative.
   </p>
 
-  <h3>Una chiamata si può scrivere da tutte e due le parti</h3>
+  <h3>Chiamate con il punto</h3>
   <p>
-    <code>x.f(y)</code> vuol dire <code>f(x, y)</code>, e la regola finisce
-    qui. È solo un altro modo di scrivere la stessa chiamata: non esistono
-    metodi, cioè funzioni attaccate a un tipo di dato, e niente viene cercato
-    mentre il programma gira.
+    <code>x.f(y)</code> equivale a <code>f(x, y)</code>. La sintassi con il punto permette di scrivere una normale chiamata di funzione. Non definisce un metodo, cioè una funzione associata a un tipo; il compilatore stabilisce quale funzione chiamare prima dell&rsquo;esecuzione.
   </p>
   <figure class="example" data-src="examples/gallery/01-points.hero" data-lines="33-36">
 <pre><code><span class="c"># Reads as a sentence, and it is one function call: `translate(r, by)`.</span>
@@ -117,10 +92,7 @@ error[needs_label]: two of `dist2`'s parameters are `Point`, so every one of the
     <figcaption>examples/gallery/01-points.hero, righe 33&ndash;36</figcaption>
   </figure>
   <p>
-    Quindi <code>unit.translate(p).area()</code> e
-    <code>area(translate(unit, p))</code> sono la stessa chiamata, e scrivi
-    quella che si legge meglio da dove sei. Le catene restano da sinistra a
-    destra senza che nessuno debba definire una classe.
+    <code>unit.translate(p).area()</code> e <code>area(translate(unit, p))</code> eseguono le stesse chiamate. Puoi scegliere la forma più leggibile; quella con il punto permette di leggere le operazioni da sinistra a destra.
   </p>
 
   <h3>I test stanno accanto a quello che provano</h3>
@@ -134,24 +106,16 @@ error[needs_label]: two of `dist2`'s parameters are `Point`, so every one of the
     <figcaption>examples/gallery/01-points.hero, righe 38&ndash;43</figcaption>
   </figure>
   <p>
-    <code>test</code> è una dichiarazione di primo livello come le altre, e una
-    compilazione normale la ignora. Il secondo test dice che spostare un
-    rettangolo non lo ridimensiona. È una proprietà, non un
-    numero, e grazie alla scrittura col punto vista qui sopra si legge tutto
-    d&rsquo;un fiato.
+    Un blocco <code>test</code> si dichiara fuori dalle funzioni, accanto al codice da verificare. La compilazione ordinaria lo ignora. Qui il secondo test verifica che spostare un rettangolo non ne cambi l&rsquo;area.
   </p>
   <pre><code>$ heroes test examples/gallery/01-points.hero
 ok   "the 3-4-5 triangle"
 ok   "a rectangle keeps its size when it moves"
 2 tests, all passed</code></pre>
 
-  <h3>Che cosa manca, apposta</h3>
+  <h3>I limiti delle funzioni</h3>
   <p>
-    Nessuna ereditarietà, nessuna interfaccia, nessun overloading, nessun valore
-    di default per i parametri, nessuna funzione variadica scritta da te. Ognuna
-    di queste cose fa sì che alla domanda <i>quale codice esegue davvero questa
-    chiamata</i> si possa rispondere solo aprendo un altro file, e rispondere a
-    quella domanda in un posto solo è il senso del linguaggio.
+    Heroes non prevede ereditarietà, interfacce, overloading, cioè più funzioni con lo stesso nome, né valori predefiniti per i parametri. Non puoi definire funzioni con un numero variabile di argomenti. Questi limiti riducono le regole necessarie per capire una chiamata.
   </p>
 
   <p class="next">

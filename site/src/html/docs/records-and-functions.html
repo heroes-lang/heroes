@@ -1,13 +1,13 @@
 
-  <p class="crumb"><a href="/">Heroes</a> / <a href="/docs/">Docs</a> / chapter 2</p>
+  <p class="crumb"><a href="/">Heroes</a> / <a href="/docs/">Guide</a> / chapter 2</p>
 
   <h1 class="chapter">Records and functions</h1>
-  <p class="tagline">Data with a shape, and calls that cannot be read backwards.</p>
+  <p class="tagline">
+    Grouping data in records and calling functions with explicit arguments.
+  </p>
 
   <p>
-    A record is a named group of fields. It is the only way to give data a
-    shape, there is nothing behind it, and it behaves like a number does: when
-    you pass one to a function, the function gets a copy.
+    A record groups fields with names and types. When you pass it to a function, the function receives an independent copy, as it does with a number.
   </p>
 
   <h3>Declaring one</h3>
@@ -19,10 +19,7 @@
     <figcaption>examples/gallery/01-points.hero, lines 6&ndash;9</figcaption>
   </figure>
   <p>
-    Each field is a name and a type, one per line, indented under the
-    declaration. A field can be another record, and the record still holds it by
-    value: a <code>Rect</code> does not point at two points, it
-    <i>contains</i> them:
+    Each field declares a name and a type on an indented line. A field can contain another record: <code>Rect</code> contains two point values:
   </p>
   <figure class="example" data-src="examples/gallery/01-points.hero" data-lines="11-14">
 <pre><code><span class="c"># A rectangle, by two corners.</span>
@@ -45,9 +42,7 @@
     <figcaption>examples/gallery/01-points.hero, lines 45&ndash;49</figcaption>
   </figure>
   <p>
-    <code>Point(3, 4)</code> does not exist. Not &ldquo;discouraged&rdquo;: it is
-    not a form the language has, so it is a compile error with the repair
-    attached:
+    <code>Point(3, 4)</code> is invalid because the field names are missing. The compiler reports the error and suggests a fix:
   </p>
   <pre><code>$ heroes check points.hero
 error[missing_label]: `Point`'s fields are always named — this one is `x`
@@ -57,10 +52,7 @@ error[missing_label]: `Point`'s fields are always named — this one is `x`
      |               ^
   fix (certain): write `x: `</code></pre>
   <p>
-    The cost is four characters at the call site. What it buys is that
-    <code>Point(y: 4, x: 3)</code> and <code>Point(x: 3, y: 4)</code> are the
-    same point and neither can quietly become the other. The few extra tokens
-    sit exactly where a mistake is plausible.
+    With field names, <code>Point(y: 4, x: 3)</code> and <code>Point(x: 3, y: 4)</code> describe the same point. Argument order does not change which value is assigned to each field.
   </p>
 
   <h3>Functions, and where the names become mandatory</h3>
@@ -72,17 +64,10 @@ error[missing_label]: `Point`'s fields are always named — this one is `x`
     <figcaption>examples/gallery/01-points.hero, lines 21&ndash;24</figcaption>
   </figure>
   <p>
-    A function&rsquo;s first line is always written out in full: every value it takes
-    has its type, and what it gives back is announced after the arrow
-    <code>-&gt;</code>. Inside, <code>dx = …</code> gives a name to a value once,
-    and there is no type on it because the compiler can see it from the line.
-    That working-out never leaves the function, though: the first line stays
-    explicit, so you never have to read the body to learn what goes in and what
-    comes out.
+    A function declaration specifies the type of every parameter and, after <code>-&gt;</code>, the result type. Inside the body, <code>dx = …</code> gives a value a name and the compiler infers its type. You can therefore find the input and output types by reading the declaration.
   </p>
   <p>
-    <b>When two parameters of one function share a type, the call site must name
-    them.</b> <code>dist2</code> takes two <code>Point</code>s, so it does:
+    <b>When two parameters of a function share a type, the call must name them.</b> This applies to <code>dist2</code>, which takes two <code>Point</code> values:
   </p>
   <pre><code>$ heroes check points.hero
 error[needs_label]: two of `dist2`'s parameters are `Point`, so every one of them is named at the call site — this one is `b`
@@ -92,19 +77,12 @@ error[needs_label]: two of `dist2`'s parameters are `Point`, so every one of the
      |                                         ^
   fix (certain): write `b: `</code></pre>
   <p>
-    Passing two arguments of the same type in the wrong order is the mistake no type
-    checker can see, because both orders type-check. It is also the mistake a
-    model on autopilot makes most often. The rule spends tokens in exactly that
-    spot and nowhere else: where the types already differ, the compiler can tell
-    the arguments apart and no label is required.
+    A type alone cannot distinguish two arguments of that type. Names make each argument&rsquo;s role explicit. If the types differ, the compiler can distinguish them and labels are optional.
   </p>
 
-  <h3>A call can be written from either end</h3>
+  <h3>Calls with dot syntax</h3>
   <p>
-    <code>x.f(y)</code> means <code>f(x, y)</code>, and the rule ends there. It
-    is just another way of writing the same call: there are no methods, meaning
-    no functions attached to a type, and nothing is looked up while the program
-    runs.
+    <code>x.f(y)</code> means <code>f(x, y)</code>. Dot syntax is another way to write an ordinary function call. It does not define a method, a function attached to a type; the compiler determines which function to call before execution.
   </p>
   <figure class="example" data-src="examples/gallery/01-points.hero" data-lines="33-36">
 <pre><code><span class="c"># Reads as a sentence, and it is one function call: `translate(r, by)`.</span>
@@ -114,10 +92,7 @@ error[needs_label]: two of `dist2`'s parameters are `Point`, so every one of the
     <figcaption>examples/gallery/01-points.hero, lines 33&ndash;36</figcaption>
   </figure>
   <p>
-    So <code>unit.translate(p).area()</code> and
-    <code>area(translate(unit, p))</code> are the same call, and you write
-    whichever one reads better where you are standing. Chains stay left to right
-    without anyone having to define a class.
+    <code>unit.translate(p).area()</code> and <code>area(translate(unit, p))</code> perform the same calls. Choose the form that reads best; dot syntax lets you read the operations from left to right.
   </p>
 
   <h3>Tests live next to what they test</h3>
@@ -131,22 +106,16 @@ error[needs_label]: two of `dist2`'s parameters are `Point`, so every one of the
     <figcaption>examples/gallery/01-points.hero, lines 38&ndash;43</figcaption>
   </figure>
   <p>
-    <code>test</code> is a top-level declaration like any other, and an ordinary
-    build ignores it. The second test says that moving a rectangle does not
-    resize it. That is a property rather than a
-    number, and it reads as one sentence because of the call syntax above.
+    A <code>test</code> block is declared outside functions, beside the code it checks. Ordinary builds ignore it. Here the second test checks that moving a rectangle does not change its area.
   </p>
   <pre><code>$ heroes test examples/gallery/01-points.hero
 ok   "the 3-4-5 triangle"
 ok   "a rectangle keeps its size when it moves"
 2 tests, all passed</code></pre>
 
-  <h3>What is deliberately missing</h3>
+  <h3>Function limits</h3>
   <p>
-    No inheritance, no interfaces, no overloading, no default parameter values,
-    no variadic functions of your own. Every one of those makes the question
-    <i>which code does this call actually run</i> require reading a second file,
-    and answering that question in one place is the point of the language.
+    Heroes has no inheritance, interfaces, overloading, meaning multiple functions with the same name, or default parameter values. You cannot define functions with a variable number of arguments. These limits reduce the rules needed to understand a call.
   </p>
 
   <p class="next">

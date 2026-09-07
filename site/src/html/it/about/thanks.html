@@ -5,23 +5,17 @@
     <h1 class="page">Grazie</h1>
     <span class="nod">· sons of the silent age ·</span>
   </div>
-  <p class="lede">Ogni pezzo di questo linguaggio parte dal lavoro di qualcun
-  altro, di solito di decenni fa e spesso descritto in un articolo che ne
-  racconta anche il costo. Questi sono i loro nomi.</p>
-
-  <p>
-    Dove un linguaggio è stato progettato da un gruppo, sono nominati i
-    progettisti; dove era una persona sola, è detto anche quello. Nessuno di loro
-    è stato interpellato, e nessuno di loro è responsabile di quello che è stato
-    fatto con la sua idea.
+  <p class="lede">
+    Heroes riprende idee da altri linguaggi e da lavori di ricerca. Qui trovi gli autori e il contributo di ciascuno.
   </p>
 
-  <h2>Il substrato, e gli strumenti</h2>
   <p>
-    Per scelta, tutto quello che un programma tocca fuori di sé arriva dal C. Il compilatore emette C11 e lo passa a clang,
-    che controlla i tipi di ogni dichiarazione esterna sull&rsquo;header vero.
-    Il compilatore di bootstrap che ha portato il progetto fino al self-hosting
-    era scritto in Rust.
+    I crediti indicano le persone e i gruppi che hanno progettato questi linguaggi. Non sono stati consultati sul progetto Heroes e non sono responsabili del modo in cui ne usa le idee.
+  </p>
+
+  <h2>Le basi e gli strumenti</h2>
+  <p>
+    Il compilatore traduce Heroes in C11 e usa clang per produrre gli eseguibili e verificare le dichiarazioni delle librerie C sui loro header, i file che ne descrivono funzioni e tipi. Il primo compilatore, usato per arrivare a quello scritto in Heroes, era in Rust.
   </p>
   <ul class="lineage">
     <li><b>C</b>: <a href="https://en.wikipedia.org/wiki/Dennis_Ritchie">Dennis Ritchie</a>, che
@@ -29,25 +23,16 @@
     <a href="https://en.wikipedia.org/wiki/Ken_Thompson">Ken Thompson</a>, che ha
     scritto B, il linguaggio da cui è uscito il C, e Unix insieme a Ritchie; e
     <a href="https://en.wikipedia.org/wiki/Brian_Kernighan">Brian Kernighan</a>,
-    coautore del libro che l&rsquo;ha insegnato a tutti. Tutta la parte del progetto che parla con il C si appoggia sul fatto che il loro linguaggio è ancora lì, e ancora
-    collegabile.</li>
+    coautore del libro che l&rsquo;ha insegnato a tutti. Heroes usa il C per accedere alle librerie esistenti.</li>
     <li><b>LLVM, clang</b>: <a href="https://en.wikipedia.org/wiki/Chris_Lattner">Chris Lattner</a>.
-    Heroes non verifica da sé una dichiarazione esterna: si organizza perché lo
-    faccia clang. Un compilatore che dà in appalto a un altro compilatore il suo
-    controllo più difficile gli deve almeno una menzione.</li>
+    Heroes usa clang per controllare le dichiarazioni delle funzioni C sugli header delle librerie.</li>
     <li><b>Rust</b>: il team di Rust, e Graydon Hoare, che l&rsquo;ha
-    avviato. Il compilatore di bootstrap è Rust scritto in un sottoinsieme
-    volutamente ristretto, ed è quel sottoinsieme il motivo per cui portarlo in
-    Heroes è stato meccanico invece di essere una riscrittura.</li>
+    avviato. Il primo compilatore usava un insieme ristretto di funzionalità Rust, scelto per facilitarne la conversione in Heroes.</li>
   </ul>
 
-  <h2>Il modello dei valori, che è tutto il design</h2>
+  <h2>Il modello dei valori</h2>
   <p>
-    Una sola decisione rende piccolo tutto il resto: i valori non hanno mai due
-    nomi, quindi non si possono costruire cicli di riferimenti, quindi il
-    reference counting è completo senza garbage collector. E non è una scoperta di
-    questo progetto: è la frontiera di ricerca di oggi, e ha un&rsquo;argomentazione
-    pubblicata.
+    In Heroes, modificare una copia non cambia l&rsquo;originale. Non si possono creare cicli di riferimenti tra valori, quindi la memoria può essere liberata contando i riferimenti ancora in uso. Non serve un garbage collector che cerchi cicli. Questo modello si basa sui lavori citati qui sotto.
   </p>
   <ul class="lineage">
     <li><b>Hylo, prima Val</b>: Dimitri Racordon, Denys Shabalin, Daniel
@@ -56,37 +41,23 @@
     Abrahams</a> e Brennan Saeta, autori di <i>Native Implementation of Mutable
     Value Semantics</i>. La frase su cui Heroes si appoggia è loro: i riferimenti
     non possono essere conservati in variabili o campi, quindi tutti i valori
-    formano alberi separati. Tutto quello che a questo linguaggio non serve
-    (un borrow checker, un rilevatore di cicli, le annotazioni sulla
-    durata di vita) è assente per via di quella riga.</li>
+    formano alberi separati. Questa restrizione evita di dover rilevare cicli o scrivere annotazioni sulla durata dei riferimenti.</li>
     <li><b>Swift</b>: <a href="https://en.wikipedia.org/wiki/Chris_Lattner">Chris Lattner</a>, Doug
-    Gregor, John McCall, Ted Kremenek e Joe Groff. Il copy-on-write sopra il
-    reference counting, i parametri <code>inout</code> (che qui sono
-    <code>@</code>) e i <code>variant</code> col punto davanti. Swift è anche il
-    precedente rassicurante, perché non è un linguaggio di ricerca: porta avanti
-    questo modello da più di dieci anni. Heroes prende la metà che funziona e
-    rinuncia a <code>class</code>, e con esso a <code>weak</code> e
-    <code>unowned</code>.</li>
+    Gregor, John McCall, Ted Kremenek e Joe Groff. Il copy-on-write, che rinvia la copia dei dati fino a una modifica, il conteggio dei riferimenti e i parametri <code>inout</code> (che qui sono
+    <code>@</code>) e i <code>variant</code> col punto davanti. Heroes riprende queste idee senza introdurre <code>class</code> né le forme di riferimento <code>weak</code> e <code>unowned</code>.</li>
     <li><b>APL, J, K</b>: <a href="https://en.wikipedia.org/wiki/Kenneth_E._Iverson">Kenneth E.
     Iverson</a>,
     <a href="https://en.wikipedia.org/wiki/Roger_Hui">Roger Hui</a> e
     <a href="https://en.wikipedia.org/wiki/Arthur_Whitney_(computer_scientist)">Arthur
-    Whitney</a>. Sessant&rsquo;anni di semantica a valori presi per intero, senza
-    riferimenti nel linguaggio che si scrive, e la prova che non è questo modello
-    a rendere lento un linguaggio.</li>
+    Whitney</a>. Questi linguaggi mostrano come lavorare con valori interi senza esporre riferimenti modificabili nel codice.</li>
     <li><b>R</b>: <a href="https://en.wikipedia.org/wiki/Ross_Ihaka">Ross Ihaka</a> e
     <a href="https://en.wikipedia.org/wiki/Robert_Gentleman_(statistician)">Robert
-    Gentleman</a>. <b>MATLAB</b>: <a href="https://en.wikipedia.org/wiki/Cleve_Moler">Cleve Moler</a>. La
-    semantica a valori con copy-on-write nei due linguaggi che hanno portato sulle
-    spalle la statistica e il calcolo numerico per decenni: milioni di persone a
-    cui non è mai servito un riferimento modificabile per fare lavoro vero.</li>
+    Gentleman</a>. <b>MATLAB</b>: <a href="https://en.wikipedia.org/wiki/Cleve_Moler">Cleve Moler</a>. Due esempi di uso dei valori con copy-on-write nella statistica e nel calcolo numerico.</li>
   </ul>
 
   <h2>Sicurezza senza garbage collector</h2>
   <p>
-    Un programma Heroes non deve andare in segfault e non deve corrompere la
-    memoria, e le strade per arrivarci senza un garbage collector le hanno tracciate
-    altre persone prima.
+    Heroes punta a impedire gli accessi non validi alla memoria e la corruzione dei dati. I progetti qui sotto hanno studiato come ottenere sicurezza senza un garbage collector, il sistema che cerca e libera dati inutilizzati.
   </p>
   <ul class="lineage">
     <li><b>Cyclone</b>: Dan Grossman,
@@ -101,17 +72,12 @@
     <li><b>Modula-3</b>: <a href="https://en.wikipedia.org/wiki/Luca_Cardelli">Luca Cardelli</a>, James
     Donahue, Lucille Glassman, Mick Jordan, Bill Kalsow e
     <a href="https://en.wikipedia.org/wiki/Greg_Nelson_(computer_scientist)">Greg
-    Nelson</a>. Le operazioni pericolose, ma dentro un recinto: il modello per tenere
-    ogni operazione pericolosa dentro un unico posto, con un nome e verificabile,
-    invece di spargerla per tutto il linguaggio.</li>
+    Nelson</a>. Il modello per concentrare le operazioni non sicure in una parte riconoscibile e verificabile del programma.</li>
   </ul>
 
-  <h2>Quanto piccolo può essere un linguaggio</h2>
+  <h2>Mantenere piccolo il linguaggio</h2>
   <p>
-    Il tetto della specifica non è inventato: è tarato su un lavoro degli anni
-    Settanta. Il compilatore non ha un totale del genere, di proposito: ha un
-    limite per file, e quello viene da qualcosa di più semplice, cioè quanto di
-    un file una persona riesce a tenere in testa tutto insieme.
+    I linguaggi di Wirth hanno fornito un riferimento per mantenere breve la specifica. Per il compilatore Heroes, il limite riguarda invece la lunghezza dei singoli file: devono restare comprensibili a chi li legge.
   </p>
   <ul class="lineage">
     <li><b>Pascal, Modula, Oberon</b>: <a href="https://en.wikipedia.org/wiki/Niklaus_Wirth">Niklaus Wirth</a>, con
@@ -126,16 +92,14 @@
     non c&rsquo;è argomento più forte a favore di tutto questo approccio.</li>
   </ul>
 
-  <h2>I tipi, e un&rsquo;idea rifiutata di proposito</h2>
+  <h2>I tipi e le alternative valutate</h2>
   <ul class="lineage">
     <li><b>ML</b>: <a href="https://en.wikipedia.org/wiki/Robin_Milner">Robin Milner</a> e il
     gruppo di Edimburgo, fra cui
     <a href="https://en.wikipedia.org/wiki/Michael_J._C._Gordon">Michael J. C.
-    Gordon</a>. La coppia prodotto-somma che Heroes chiama <code>record</code> e
-    <code>variant</code>, e la tradizione da cui vengono le unioni etichettate.</li>
+    Gordon</a>. I tipi prodotto e somma, che raggruppano campi o rappresentano casi alternativi. Heroes li esprime con <code>record</code> e <code>variant</code>.</li>
     <li><b>La freccia</b>: <a href="https://en.wikipedia.org/wiki/Alonzo_Church">Alonzo Church</a>.
-    <code>-&gt;</code> in un tipo funzione è il pezzo di sintassi più familiare che
-    esista, ed è arrivato fino a Heroes passando per ML, Haskell, Rust, Swift e i
+    <code>-&gt;</code> in un tipo funzione è una notazione familiare, ed è arrivato fino a Heroes passando per ML, Haskell, Rust, Swift e i
     type hint di Python senza cambiare forma. È stato tenuto esattamente com&rsquo;era.</li>
     <li><b>La subroutine</b>: <a href="https://en.wikipedia.org/wiki/David_Wheeler_(computer_scientist)">David
     Wheeler</a>, su EDSAC nel 1951. Qualcuno ha dovuto inventare l&rsquo;idea di
@@ -144,30 +108,24 @@
     <li><b>L&rsquo;inferenza dei tipi</b>: <a href="https://en.wikipedia.org/wiki/J._Roger_Hindley">J. Roger Hindley</a> e
     <a href="https://en.wikipedia.org/wiki/Robin_Milner">Robin Milner</a>. Questo
     è un grazie per una cosa che Heroes <i>non</i> usa: l&rsquo;inferenza su tutto
-    il programma è bellissima e allontana gli errori dalla loro causa, cosa che
-    questo linguaggio non si può permettere. Sapere esattamente a che cosa si
+    il programma può rendere più difficile collegare un errore alla sua causa. Sapere esattamente a che cosa si
     stava rinunciando, e perché, è quello che il loro lavoro rende possibile.</li>
   </ul>
 
   <h2>Che effetto fa usarlo</h2>
   <p>
-    Le abitudini, i piccoli rifiuti, e la forma della riga di comando. Nemmeno
-    qui c&rsquo;è quasi niente di originale, ed è il punto: chi conosce uno di
-    questi linguaggi conosce già la maggior parte di Heroes.
+    Questi linguaggi hanno influenzato la sintassi, i controlli e i comandi di Heroes. Chi li conosce troverà molte scelte familiari.
   </p>
   <ul class="lineage">
     <li><b>Go</b>: <a href="https://en.wikipedia.org/wiki/Robert_Griesemer">Robert Griesemer</a>,
     <a href="https://en.wikipedia.org/wiki/Rob_Pike">Rob Pike</a> e
     <a href="https://en.wikipedia.org/wiki/Ken_Thompson">Ken Thompson</a>. Un solo
     formato canonico senza opzioni, le variabili non usate come errori, una riga
-    che finisce senza punto e virgola, e il coraggio di andare avanti dieci anni
-    senza generici.</li>
+    che finisce senza punto e virgola, e la scelta iniziale di non includere i generici.</li>
     <li><b>Nim</b>: <a href="https://nim-lang.org">Andreas Rumpf</a>. Il meccanismo per chiamare funzioni
-    esterne, la cache di build per modulo, e <code>nim r</code>, che è
+    esterne, il riuso dei risultati di compilazione per ogni modulo, e <code>nim r</code>, che è
     <code>heroes run</code>. E anche l&rsquo;avvertimento che il progetto continua a ripetersi: copia la superficie di Nim, mai la sua implementazione.</li>
-    <li><b>Zig</b>: Andrew Kelley. I test che vivono nel file che testano,
-    e le stringhe terminate da NUL che possono passare nel C senza nessuna
-    conversione.</li>
+    <li><b>Zig</b>: Andrew Kelley. I test nello stesso file del codice da verificare e le stringhe terminate da NUL, il byte zero usato dal C per indicarne la fine.</li>
     <li><b>ABC</b>: Leo Geurts,
     <a href="https://en.wikipedia.org/wiki/Lambert_Meertens">Lambert Meertens</a> e
     <a href="https://en.wikipedia.org/wiki/Steven_Pemberton">Steven Pemberton</a>,
@@ -184,8 +142,7 @@
     e
     <a href="https://en.wikipedia.org/wiki/Tim_Peters_(software_engineer)">Tim
     Peters</a> per <code>import this</code>, che è diventato
-    <code>heroes this</code>, portato dentro il binario invece che in un
-    documento che invecchia per conto suo. <a href="/it/project/#zen">È qui.</a></li>
+    <code>heroes this</code>, incluso nel compilatore. <a href="/it/project/#zen">È qui.</a></li>
     <li><b>Odin, Jai</b>: l&rsquo;autore di Odin, che pubblica come
     gingerBill, e
     <a href="https://en.wikipedia.org/wiki/Jonathan_Blow">Jonathan Blow</a>. Un
@@ -193,22 +150,17 @@
     dichiarando.</li>
     <li><b>Ruby</b>: <a href="https://en.wikipedia.org/wiki/Yukihiro_Matsumoto">Yukihiro
     Matsumoto</a>. Il ritmo di lettura (blocchi con un nome, argomenti con
-    un nome, catene di punti), preso come obiettivo per come dovrebbe suonare
-    il codice letto ad alta voce, lasciando perdere in blocco il metaprogramming
-    che c&rsquo;è sotto.</li>
+    un nome, catene di punti), usato come riferimento per la leggibilità, senza riprendere il metaprogramming, cioè la possibilità di modificare il comportamento del codice tramite altro codice.</li>
   </ul>
 
-  <h2>Errori che vale la pena leggere, e buchi tipati</h2>
+  <h2>Messaggi d&rsquo;errore e codice incompleto</h2>
   <ul class="lineage">
     <li><b>Rust</b>: il team di Rust, ed <b>Elm</b>: Evan
     Czaplicki. Insieme hanno dimostrato che la qualità di un messaggio di errore
     cambia l&rsquo;esperienza intera di un linguaggio, e che è una cosa che si progetta, non un
-    dettaglio tecnico. Heroes punta lo stesso sforzo su un lettore
-    diverso: qui una diagnostica deve essere risolvibile senza aprire un secondo
-    file.</li>
+    dettaglio tecnico. Heroes cerca di fornire nei messaggi le informazioni necessarie per correggere un errore senza aprire altri file.</li>
     <li><b>Idris</b>: Edwin Brady. <b>Agda</b>: Ulf Norell, e
-    Catarina Coquand sulla prima versione. I buchi tipati, portati fuori dagli
-    assistenti di dimostrazione e messi nel codice normale: in Heroes
+    Catarina Coquand sulla prima versione. I buchi tipati, punti incompleti per cui lo strumento indica il tipo atteso: in Heroes
     <code>???</code> è un&rsquo;espressione legale, e il compilatore risponde
     dicendo che cosa va nel buco.</li>
   </ul>
@@ -216,20 +168,12 @@
   <h2>Immutabilità su larga scala</h2>
   <ul class="lineage">
     <li><b>Erlang</b>: <a href="https://en.wikipedia.org/wiki/Joe_Armstrong_(programmer)">Joe
-    Armstrong</a>, Robert Virding e Mike Williams. Immutabilità imposta in modo
-    assoluto, in sistemi con tempi di attività leggendari, che è la prova che non
-    è un vincolo da giocattolo. Il motivo è invertito, e l&rsquo;inversione è la
-    parte istruttiva: Erlang rinuncia alla condivisione per ottenere isolamento
-    fra processi, Heroes ci rinuncia per rendere leggibile una singola funzione da
-    sola.</li>
+    Armstrong</a>, Robert Virding e Mike Williams. L&rsquo;immutabilità dei valori e l&rsquo;isolamento dei processi sono riferimenti per la gestione dei dati. In Heroes, l&rsquo;indipendenza dei valori serve anche a capire una funzione senza cercare modifiche altrove.</li>
   </ul>
 
-  <h2>Compilare verso C, un trucco vecchio e senza gloria</h2>
+  <h2>Generare codice C</h2>
   <p>
-    Heroes emette C e lascia che il lavoro specifico della macchina lo faccia un
-    compilatore C. È stata la tecnica dominante per i linguaggi costruiti da
-    pochissime persone, ed è ancora il motivo per cui una persona sola può
-    finire questo.
+    Heroes genera C e affida a un compilatore C il lavoro necessario per ciascuna macchina. I linguaggi citati qui sotto hanno seguito questa strada prima di Heroes.
   </p>
   <ul class="lineage">
     <li><b>cfront</b>: <a href="https://en.wikipedia.org/wiki/Bjarne_Stroustrup">Bjarne
@@ -244,41 +188,30 @@
     lo stesso motivo.</li>
     <li><b>Vala</b>: Jürg Billeter, Raffaele Sandrini e Rico Tzschichholz.
     <b>Chicken Scheme</b>: Felix Winkelmann. <b>Cython</b>: Robert
-    Bradshaw e Stefan Behnel. Tre linguaggi funzionanti che sono usciti
-    passando dal C, ognuno una prova che quella strada è una scelta e non un
-    compromesso.</li>
+    Bradshaw e Stefan Behnel. Tre esempi di linguaggi che generano C.</li>
     <li><b>Haskell degli inizi</b>: progettato da un comitato, fra cui
     <a href="https://en.wikipedia.org/wiki/Paul_Hudak">Paul Hudak</a>,
     <a href="https://en.wikipedia.org/wiki/John_Hughes_(computer_scientist)">John
     Hughes</a>,
     <a href="https://en.wikipedia.org/wiki/Simon_Peyton_Jones">Simon Peyton
     Jones</a> e
-    <a href="https://en.wikipedia.org/wiki/Philip_Wadler">Philip Wadler</a>. Anche
-    lui è arrivato alle macchine vere passando dal C, in un linguaggio che nessuno
-    definirebbe di basso livello.</li>
+    <a href="https://en.wikipedia.org/wiki/Philip_Wadler">Philip Wadler</a>. Anche le prime implementazioni di questo linguaggio di alto livello hanno usato il C.</li>
   </ul>
 
-  <h2>Citati come avvertimento, che è anche un regalo</h2>
+  <h2>Le scelte da valutare con cautela</h2>
   <p>
-    Alcuni di questi linguaggi sono qui per quello che hanno sbagliato, o per
-    quello che hanno pagato. Un precedente che dice <i>non farlo, ecco il
-    conto</i> vale quanto uno che dice <i>fallo</i>, ed è molto più raro, perché di
-    solito produrlo costa anni a qualcuno.
+    Il progetto ha studiato anche i limiti e i costi delle scelte di altri linguaggi. Questi precedenti aiutano a capire quali soluzioni adottare e quali evitare.
   </p>
   <ul class="lineage">
     <li><b>Lua</b>, con Nelua e Pallene:
     <a href="https://en.wikipedia.org/wiki/Roberto_Ierusalimschy">Roberto
     Ierusalimschy</a>, Luiz Henrique de Figueiredo e Waldemar Celes. Il precedente
-    di un linguaggio piccolo che compila, e la lezione che un&rsquo;unica tabella
-    universale con i valori incapsulati obbliga ogni chiamata verso il C a
-    impacchettare e spacchettare. Heroes ha rinunciato alla tabella universale per
+    di un linguaggio piccolo che compila, e il costo di convertire i dati di una tabella universale prima e dopo le chiamate C. Heroes ha rinunciato alla tabella universale per
     quel motivo.</li>
     <li><b>APL</b> di nuovo, nella direzione opposta: la notazione
     ultracompatta è l&rsquo;unico punto in cui questo progetto cita
-    <a href="https://en.wikipedia.org/wiki/Kenneth_E._Iverson">Iverson</a> contro se stesso. La brevità che un occhio umano può imparare è esattamente il punto in cui un modello linguistico fallisce.</li>
-    <li><b>R e MATLAB</b> di nuovo: documentano entrambi, onestamente, lo stesso modo di fallire che ha Heroes. Scrivi un ciclo che cambia un elemento
-    alla volta su una struttura condivisa e paghi una copia ogni volta. Il
-    progetto lo dice ad alta voce invece di nasconderlo.</li>
+    <a href="https://en.wikipedia.org/wiki/Kenneth_E._Iverson">Iverson</a> contro se stesso. Heroes preferisce forme più esplicite per aiutare i modelli a leggere e generare codice.</li>
+    <li><b>R e MATLAB</b> di nuovo: documentano i costi delle copie quando si modificano dati condivisi. Anche in Heroes, una modifica può richiedere di copiare la struttura: è un costo da considerare nei cicli.</li>
     <li><b>Unison</b>: Paul Chiusano e Rúnar Bjarnason. Il codice
     conservato come albero con i nomi come etichette: l&rsquo;origine di
     un&rsquo;idea che qui è stata esplorata a lungo e poi abbandonata in favore di
@@ -294,19 +227,11 @@
 
   <h2>E il nome</h2>
   <p>
-    <a href="https://en.wikipedia.org/wiki/David_Bowie">David Bowie</a>, per
-    <i>&ldquo;Heroes&rdquo;</i> (1977). Le virgolette sono le sue, e sono
-    rimaste. Il nome, i titoli di sezione di questo sito e il libro da cui il
-    linguaggio è nato vengono tutti da lì. La regola che il progetto si è dato è
-    che la personalità resti nella confezione: titoli di canzoni come occhiolini,
-    mai un verso, e mai una parola di tutto questo dentro un messaggio di errore o
-    nel nome di una libreria.
+    <a href="https://en.wikipedia.org/wiki/David_Bowie">David Bowie</a>, per <i>&ldquo;Heroes&rdquo;</i> (1977). Il nome conserva le virgolette dell&rsquo;album. Da Bowie vengono anche i titoli di sezione e il libro da cui è nato il linguaggio. I riferimenti musicali restano nei testi del progetto e non compaiono nei messaggi d&rsquo;errore o nei nomi delle librerie.
   </p>
 
   <p class="next">
-    Poi: <a href="/it/project/#panel">il panel</a>, dove ognuno di questi prestiti ha
-    dovuto sopravvivere a cinque giudici, e dove le deviazioni si discutono invece
-    di essere date per buone.
+    Poi: <a href="/it/project/#panel">il collegio</a>, dove cinque giudici valutano le proposte e discutono come adattare queste idee a Heroes.
   </p>
 
   <footer>

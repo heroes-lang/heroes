@@ -1,18 +1,16 @@
 
-  <p class="crumb"><a href="/it/">Heroes</a> / <a href="/it/docs/">Docs</a> / capitolo 7</p>
+  <p class="crumb"><a href="/it/">Heroes</a> / <a href="/it/docs/">Guida</a> / capitolo 7</p>
 
   <h1 class="chapter">Generici e valori funzione</h1>
-  <p class="tagline">Una forma sola per tanti tipi, e nessuna funzione anonima da nessuna parte.</p>
-
-  <p>
-    Riscrivere lo stesso ciclo per le liste di numeri, per quelle di parole e
-    poi per tutte le altre fa perdere un pomeriggio. Un sistema di tipi capace di
-    esprimere ogni condizione immaginabile può costare i dieci anni successivi.
-    Heroes sceglie la forma più piccola che funziona: una funzione può lasciare
-    in sospeso il tipo su cui lavora. Non c&rsquo;è altro.
+  <p class="tagline">
+    Una funzione può lavorare con tipi diversi e ricevere altre funzioni come argomenti.
   </p>
 
-  <h3>Una funzione con un buco nei tipi</h3>
+  <p>
+    Una funzione generica può eseguire la stessa operazione su tipi diversi. Per esempio, puoi scrivere una sola funzione per trasformare gli elementi di una lista, sia che contenga numeri sia che contenga stringhe. I tipi concreti vengono determinati dagli argomenti della chiamata.
+  </p>
+
+  <h3>Dichiarare i parametri di tipo</h3>
   <figure class="example" data-src="examples/gallery/06-generics.hero" data-lines="8-16">
 <pre><code><span class="c"># The parentheses around a function type are mandatory: without them</span>
 <span class="c"># `f: function(A) -&gt; B -&gt; [B]` would be a guessing game.</span>
@@ -26,31 +24,24 @@
     <figcaption>examples/gallery/06-generics.hero, righe 8&ndash;16</figcaption>
   </figure>
   <p>
-    <code>&lt;A, B&gt;</code> dopo il nome mette in campo due tipi che la
-    funzione ancora non conosce: glieli dirà chi la chiama. Dentro si usano come
-    tipi veri, quindi <code>[A]</code> è una lista dei primi e
-    <code>out: [B] @ []</code> è una lista dei secondi, ancora vuota. La lista
-    vuota vuole che le si dica il tipo per il solito motivo: dentro
-    <code>[]</code> non c&rsquo;è niente da cui capirlo.
+    <code>&lt;A, B&gt;</code> dichiara due parametri di tipo. Il compilatore determina i tipi concreti dagli argomenti della chiamata. Nel corpo, <code>[A]</code> indica una lista di elementi di tipo <code>A</code> e <code>out: [B] @ []</code> dichiara una lista vuota di elementi di tipo <code>B</code>. La lista vuota richiede un tipo esplicito perché non contiene elementi da cui dedurlo.
   </p>
 
-  <h3>Tre regole la tengono piccola</h3>
+  <h3>Le tre regole delle funzioni generiche</h3>
   <ul>
-    <li><b>Il tipo si può lasciare in sospeso solo nelle funzioni.</b> Un
-    <code>record</code> o un <code>variant</code> ha sempre tipi decisi. Se ti
-    serve un contenitore che vada bene per qualunque tipo, le liste e le mappe
-    lo sono già.</li>
+    <li>
+    <b>Solo le funzioni possono essere generiche.</b> I campi di un <code>record</code> o di un <code>variant</code> hanno tipi concreti. Per contenere elementi di tipi diversi puoi usare le liste e le mappe predefinite.
+  </li>
     <li><b>Nessuna condizione sui tipi.</b> Non puoi dire &ldquo;un
     <code>A</code> qualsiasi, purché si possa confrontare&rdquo;. Se alla
     funzione serve un&rsquo;operazione su <code>A</code>, quell&rsquo;operazione
     gliela passi come argomento, esattamente come <code>f</code> qui sopra.</li>
-    <li><b>Non si scrivono mai quando chiami.</b> I tipi il compilatore li
-    capisce dagli argomenti che gli dai, oppure è un errore.
-    <code>each&lt;i64, str&gt;(…)</code> non è una scrittura che esiste.</li>
+    <li>
+    <b>I tipi non si scrivono nella chiamata.</b> Il compilatore li deduce dagli argomenti. Se non può farlo, segnala un errore. La sintassi <code>each&lt;i64, str&gt;(…)</code> non è ammessa.
+  </li>
   </ul>
   <p>
-    Senza vincoli non c&rsquo;è niente da disambiguare. Scrivere un argomento di
-    tipo ripeterebbe solo quello che il compilatore sa già.
+    Scrivi quindi <code>each</code> con i soli argomenti: i loro tipi forniscono al compilatore le informazioni necessarie.
   </p>
 
   <h3>Le funzioni sono valori, e hanno un nome</h3>
@@ -70,20 +61,10 @@
     <figcaption>examples/gallery/06-generics.hero, righe 36&ndash;47</figcaption>
   </figure>
   <p>
-    Una funzione di primo livello, scritta senza parentesi, è un valore che puoi
-    passare. Le <b>lambda non esistono</b>: niente di anonimo, niente che si
-    porti dentro le variabili che ha intorno. Quindi la cosa che passi ha sempre
-    un nome, una firma e, di solito, un commento, e si può leggere,
-    testare e riusare per conto suo. Quello che perdi è la funzioncina scritta
-    lì sul momento dentro la chiamata; quello che ci guadagni è che ogni
-    pezzo di comportamento del programma sta in un posto che puoi indicare col
-    dito.
+    Il nome di una funzione dichiarata al livello principale del file, scritto senza parentesi, è un valore che puoi passare a un&rsquo;altra funzione. Heroes <b>non ha lambda, cioè funzioni anonime</b>, né funzioni che conservano le variabili del contesto in cui sono definite. Ogni funzione ha quindi un nome e una dichiarazione che puoi leggere, testare e riutilizzare.
   </p>
   <p>
-    Il tipo di una funzione si scrive <code>(function(A) -&gt; B)</code>, e
-    quelle parentesi esterne non sono decorazione. Senza,
-    <code>f: function(A) -&gt; B -&gt; [B]</code> si potrebbe leggere in due modi,
-    e il compilatore lo dice invece di sceglierne uno:
+    Il tipo di una funzione si scrive <code>(function(A) -&gt; B)</code>. Le parentesi esterne sono obbligatorie: senza di esse, <code>f: function(A) -&gt; B -&gt; [B]</code> sarebbe ambiguo. Il compilatore segnala l&rsquo;errore:
   </p>
   <pre><code>$ heroes check generics.hero
 error[expected_type]: expected a type, found `function` — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`
@@ -92,7 +73,7 @@ error[expected_type]: expected a type, found `function` — a type is `i64`, `f6
   18 | function keep_if&lt;A&gt;(xs: [A], ok_for: function(A) -&gt; bool) -&gt; [A]
      |                                      ^^^^^^^^</code></pre>
 
-  <h3>Filtrare, e mettere insieme</h3>
+  <h3>Filtrare e combinare gli elementi</h3>
   <figure class="example" data-src="examples/gallery/06-generics.hero" data-lines="18-25">
 <pre><code><span class="k">function</span> keep_if&lt;A&gt;(xs: [A], ok_for: (<span class="k">function</span>(A) -&gt; <span class="t">bool</span>)) -&gt; [A]
     out: [A] @ []
@@ -105,9 +86,7 @@ error[expected_type]: expected a type, found `function` — a type is `i64`, `f6
     <figcaption>examples/gallery/06-generics.hero, righe 18&ndash;25</figcaption>
   </figure>
   <p>
-    Qui un parametro di tipo solo, perché filtrare non cambia il tipo degli
-    elementi. Passagli una funzione della forma sbagliata e l&rsquo;errore
-    atterra sull&rsquo;argomento, nominando tutti e due i tipi:
+    Questa funzione ha un solo parametro di tipo perché il filtro mantiene il tipo degli elementi. Se passi una funzione con tipi incompatibili, il messaggio indica l&rsquo;argomento errato e i due tipi:
   </p>
   <pre><code>$ heroes check generics.hero
 error[type_mismatch]: expected `bool`, found `i64`
@@ -127,10 +106,7 @@ error[type_mismatch]: expected `bool`, found `i64`
     <figcaption>examples/gallery/06-generics.hero, righe 27&ndash;34</figcaption>
   </figure>
   <p>
-    <code>combine</code> è quella generale: percorre una lista di
-    <code>A</code>&nbsp;e costruisce un <code>B</code>, quindi sommare numeri,
-    unire stringhe e contare quanti passano un test sono la stessa funzione con
-    uno <code>step</code> diverso.
+    <code>combine</code> percorre una lista di <code>A</code> e calcola un risultato di tipo <code>B</code>. Cambiando la funzione <code>step</code> puoi sommare numeri, unire stringhe o contare gli elementi che soddisfano una condizione.
   </p>
 
   <h3>Un generico solo, tre tipi di elemento</h3>
@@ -143,17 +119,10 @@ error[type_mismatch]: expected `bool`, found `i64`
     <figcaption>examples/gallery/06-generics.hero, righe 49&ndash;53</figcaption>
   </figure>
   <p>
-    Lo stesso <code>each</code> restituisce una lista di stringhe se gli passi
-    una funzione che restituisce una stringa. Nessuno dei due punti di chiamata
-    lo dice, e tutti e due sono controllati per intero.
+    Se passi a <code>each</code> una funzione che restituisce <code>str</code>, il risultato è una lista <code>[str]</code>. In entrambe le chiamate il compilatore deduce e verifica i tipi.
   </p>
   <p>
-    Come si compila decide quanto costa un generico. Il compilatore fa una copia di <code>each</code> per ogni tipo concreto con cui
-    viene usato, quindi nel C che esce c&rsquo;è un <code>each</code> sugli
-    interi e un <code>each</code> separato sulle stringhe, ognuno diretto come
-    se l&rsquo;avessi scritto a mano. Niente viene cercato mentre il programma
-    gira e niente viene impacchettato. Il prezzo si paga nella dimensione del
-    binario, una volta per tipo, e mai nella velocità di una chiamata.
+    Il compilatore genera una versione di <code>each</code> per ogni combinazione di tipi concreti usata dal programma. Il codice C contiene quindi versioni separate per gli interi e per le stringhe. Il programma non deve scegliere i tipi durante l&rsquo;esecuzione né convertire i valori in un contenitore generico. Le versioni aggiuntive aumentano però la dimensione dell&rsquo;eseguibile.
   </p>
   <figure class="example" data-src="examples/gallery/06-generics.hero" data-lines="55-56">
 <pre><code><span class="k">function</span> main()
@@ -163,16 +132,11 @@ error[type_mismatch]: expected `bool`, found `i64`
   <pre><code>$ heroes run examples/gallery/06-generics.hero
 10</code></pre>
   <p>
-    <code>map</code>, <code>filter</code>, <code>fold</code>, <code>find</code>,
-    <code>any</code> e <code>all</code> esistono già con queste forme, e sono
-    scritte in Heroes invece che dentro il compilatore. Le tre funzioni qui sopra
-    sono quelle stesse forme con un altro nome, perché nessun file può
-    ridichiarare un nome predefinito.
+    Le funzioni <code>map</code>, <code>filter</code>, <code>fold</code>, <code>find</code>, <code>any</code> e <code>all</code> sono già disponibili e sono scritte in Heroes. Le tre funzioni di questo capitolo ne illustrano il funzionamento con nomi diversi, perché non puoi ridefinire un nome predefinito.
   </p>
 
   <p class="next">
-    Poi: <b><a href="/it/docs/strings/">Le stringhe</a></b>, dove i byte e i caratteri
-    sono due lavori diversi e il linguaggio si rifiuta di confonderli.
+    Poi: <b><a href="/it/docs/strings/">Le stringhe</a></b>, per distinguere i byte dai caratteri e scegliere le operazioni corrette.
     <a href="/it/docs/">Torna all&rsquo;elenco dei capitoli</a>.
     <span class="back">&larr; Prima: <a href="/it/docs/bindings-and-mutation/">Nomi e modifiche</a></span>
   </p>

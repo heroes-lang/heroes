@@ -55,8 +55,8 @@ export const groups: Group[] = [
   },
   {
     key: 'text',
-    en: 'Text and parsing',
-    it: 'Testo e parsing',
+    en: 'Reading and processing text',
+    it: 'Lettura e analisi del testo',
     slugs: [
       'calculator',
       'interpreter',

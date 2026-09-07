@@ -1,28 +1,18 @@
-  <p class="crumb"><a href="/it/">Heroes</a> / <a href="/it/docs/">Docs</a> / capitolo 13</p>
+  <p class="crumb"><a href="/it/">Heroes</a> / <a href="/it/docs/">Guida</a> / capitolo 13</p>
 
   <h1 class="chapter">I moduli e i file</h1>
   <p class="tagline">Un file è un modulo, e il percorso che scrivi vuol dire la stessa cosa da qualunque punto.</p>
 
   <p>
-    Un programma più grande di un file deve rispondere a due domande, e molti
-    linguaggi rispondono così male che poi la gente impara le risposte a forza
-    di sbagliare. Dove va a cercare il compilatore un file? E come si chiamano
-    le cose che ci sono dentro, una volta trovato?
+    Quando un programma usa più file, devi sapere dove il compilatore li cerca e come usare le dichiarazioni che contengono.
   </p>
   <p>
-    Heroes risponde a entrambe in tre frasi. Un file è un modulo.
-    <code>use geom/point</code> legge <code>geom/point.hero</code> partendo
-    dalla cartella del file che compili. E il nome che quella riga ti dà è
-    l&rsquo;ultimo pezzo del percorso, quindi tutto quello che viene da quel
-    modulo si scrive <code>point.qualcosa</code>.
+    In Heroes ogni file è un modulo. <code>use geom/point</code> legge <code>geom/point.hero</code> a partire dalla cartella del file che compili. Il nome del modulo è l&rsquo;ultima parte del percorso: le sue dichiarazioni si usano nella forma <code>point.qualcosa</code>.
   </p>
 
-  <h3>Il percorso parte da dove sei partito tu</h3>
+  <h3>I percorsi partono dalla radice del programma</h3>
   <p>
-    È la regola da tenere a mente, perché tutto il resto viene da lei. Lanci
-    <code>heroes run shapes/main.hero</code>, quindi <code>shapes/</code> è la
-    radice, e ogni <code>use</code> di ogni file di quel programma si scrive a
-    partire da lì.
+    Se esegui <code>heroes run shapes/main.hero</code>, la cartella <code>shapes/</code> è la radice del programma. Tutti i percorsi <code>use</code>, in qualsiasi file, partono da quella cartella.
   </p>
   <figure class="example" data-src="examples/shapes/main.hero" data-lines="19-23">
 <pre><code><span class="k">use</span> geom/point
@@ -33,9 +23,7 @@
     <figcaption>examples/shapes/main.hero, righe 19&ndash;23</figcaption>
   </figure>
   <p>
-    Sei moduli in tre cartelle. Fin qui niente di strano. Vale la pena
-    fermarsi sul file che sta due cartelle sotto e che raggiunge il modulo
-    appoggiato lì accanto a lui:
+    Il programma contiene sei moduli in tre cartelle. Ecco come un file usa un modulo nella stessa cartella:
   </p>
   <figure class="example" data-src="examples/shapes/geom/area.hero" data-lines="8-11">
 <pre><code><span class="k">use</span> geom/point
@@ -45,13 +33,7 @@
     <figcaption>examples/shapes/geom/area.hero, righe 8&ndash;11</figcaption>
   </figure>
   <p>
-    <code>area.hero</code> e <code>point.hero</code> stanno nella stessa
-    cartella, e <code>area.hero</code> scrive comunque il percorso intero. Un
-    vicino non ha una scrittura più corta di un estraneo. Sembra un costo, finché non vedi cosa ci guadagni: la riga <code>use geom/point</code> è la
-    stessa riga in <code>main.hero</code>, in <code>geom/area.hero</code> e in
-    <code>render/ascii.hero</code>. Puoi copiarla, spostare il file che la
-    contiene, leggerla al telefono a qualcuno che non ha l&rsquo;albero delle
-    cartelle davanti, e vuol dire sempre un file solo.
+    <code>area.hero</code> e <code>point.hero</code> sono nella stessa cartella, ma <code>area.hero</code> indica comunque il percorso dalla radice. La dichiarazione <code>use geom/point</code> è quindi identica in <code>main.hero</code>, <code>geom/area.hero</code> e <code>render/ascii.hero</code>. Spostare il file che la contiene dentro il programma non cambia il modulo a cui si riferisce.
   </p>
 
   <h3>Non si può salire</h3>
@@ -68,19 +50,12 @@ error[module_path_climbs]: a `use` path cannot climb — every `use` starts at t
     |     ^
   note: a module above that directory belongs to a different program: give this one its own root, or move the file in</code></pre>
   <p>
-    La nota in fondo è la metà interessante. Un file sopra la tua radice non è
-    un file che ti sei dimenticato di raggiungere: fa parte di un altro
-    programma, e tirarlo dentro vorrebbe dire che due programmi si dividono un
-    modulo e nessuno dei due ne è il proprietario. Se ti serve, spostalo dentro
-    oppure dai a tutto quanto una radice più larga. Sono entrambi un comando, e
-    ti lasciano un albero di cartelle che qualcun altro riesce a leggere.
+    Il programma può usare soltanto file dentro la propria radice. Per includere un file esterno, spostalo all&rsquo;interno oppure scegli come file iniziale uno in una cartella che contenga tutti i moduli necessari.
   </p>
 
   <h3>Il nome è l&rsquo;ultimo pezzo</h3>
   <p>
-    <code>use geom/point</code> lega <code>point</code>. Non
-    <code>geom_point</code>, non <code>geom.point</code>: solo l&rsquo;ultimo
-    pezzo, così il punto in cui chiami resta corto e la cartella ne sta fuori.
+    <code>use geom/point</code> rende disponibile il nome <code>point</code>, ricavato dall&rsquo;ultima parte del percorso. Le cartelle non entrano nel nome: non si usa <code>geom_point</code> né <code>geom.point</code>.
   </p>
   <figure class="example" data-src="examples/shapes/main.hero" data-lines="26-31">
 <pre><code>    corner = point.Point(x: <span class="n">0</span>, y: <span class="n">0</span>)
@@ -92,21 +67,12 @@ error[module_path_climbs]: a `use` path cannot climb — every `use` starts at t
     <figcaption>examples/shapes/main.hero, righe 26&ndash;31</figcaption>
   </figure>
   <p>
-    Un nome che viene da un altro modulo si scrive sempre con il suo
-    qualificatore davanti. Non c&rsquo;è modo di staccare <code>Point</code> da
-    <code>point</code> e usarlo nudo, e non c&rsquo;è nessun asterisco che lo
-    faccia per te. Così quando leggi <code>point.span(...)</code> sai due cose
-    senza uscire dalla riga: viene da un altro file, e il blocco di
-    <code>use</code> in cima a questo dice esattamente da quale.
+    Per usare una dichiarazione di un altro modulo devi specificare il nome del modulo, detto qualificatore. Un tipo <code>Point</code> del modulo <code>point</code> si scrive con quel prefisso. Allo stesso modo, <code>point.span(...)</code> indica una funzione del modulo identificato dalla dichiarazione <code>use</code>.
   </p>
 
   <h3>Due moduli possono finire con la stessa parola</h3>
   <p>
-    Siccome il qualificatore è solo l&rsquo;ultimo pezzo,
-    <code>scale.hero</code> nella radice e <code>render/scale.hero</code>
-    vogliono chiamarsi entrambi <code>scale</code>. Niente impedisce che
-    esistano tutti e due. Quello che viene rifiutato è un <em>file</em> che si
-    prende quel nome due volte:
+    <code>scale.hero</code> nella radice e <code>render/scale.hero</code> hanno entrambi il nome <code>scale</code>. Possono esistere nello stesso programma, ma un file che usa entrambi deve distinguerli:
   </p>
   <pre><code>$ heroes check shapes/main.hero
 error[module_binding_taken]: this file already calls `render/scale` by the name `scale`, so `scale` cannot have it too — a file may not bind one name twice
@@ -116,8 +82,7 @@ error[module_binding_taken]: this file already calls `render/scale` by the name 
      |     ^^^^^
   note: the two modules may both exist and both be used — `as` says what THIS file calls each one, and two files may name the same module differently</code></pre>
   <p>
-    La riparazione sta sulla riga che il compilatore ti ha indicato, ed è una
-    clausola sola:
+    Per risolvere il conflitto, aggiungi la clausola <code>as</code> alla dichiarazione indicata dal compilatore:
   </p>
   <figure class="example" data-src="examples/shapes/main.hero" data-lines="38-39">
 <pre><code>    print(scale.factor())
@@ -125,23 +90,12 @@ error[module_binding_taken]: this file already calls `render/scale` by the name 
     <figcaption>examples/shapes/main.hero, righe 38&ndash;39</figcaption>
   </figure>
   <p>
-    <code>use render/scale as near_scale</code> dice come
-    <em>questo file</em> chiama quel modulo. Un altro file dello stesso
-    programma può chiamarlo <code>scale</code> e non nominare mai quello della
-    radice. La rinomina è locale, e questo è il punto: una collisione la puoi
-    sempre risolvere nel file in cui capita, senza toccare un modulo che non
-    hai scritto tu. Il programma stampa <code>10</code> per lo <code>scale</code> della radice e <code>3</code> per quello del vicino, quindi i due sono davvero
-    due.
+    <code>use render/scale as near_scale</code> assegna al modulo il nome <code>near_scale</code> solo in questo file. Un altro file può continuare a chiamarlo <code>scale</code>. Puoi quindi risolvere il conflitto senza modificare il modulo. L&rsquo;esempio stampa <code>10</code> usando lo <code>scale</code> della radice e <code>3</code> usando quello in <code>render/</code>.
   </p>
 
-  <h3>Il nome di un modulo è un nome</h3>
+  <h3>Evitare conflitti tra nomi</h3>
   <p>
-    <code>use geom/point</code> mette <code>point</code> dentro il file come
-    farebbe qualunque altra cosa, quindi nient&rsquo;altro in quel file può
-    prenderselo. Una variabile chiamata <code>point</code> lì accanto è lo
-    stesso errore che ti ha già mostrato il
-    <a href="/it/docs/bindings-and-mutation/">capitolo 6</a>, un nome che ne
-    nasconde un altro:
+    <code>use geom/point</code> dichiara il nome <code>point</code> nel file. Una variabile nello stesso file non può usare quel nome: nasconderebbe il modulo, come spiegato nel <a href="/it/docs/bindings-and-mutation/">capitolo 6</a>:
   </p>
   <pre><code>$ heroes check shapes/main.hero
 error[shadowed_binding]: `point` is what this file calls the module `geom/point`, so a local may not take it — shadowing is an error here
@@ -151,25 +105,12 @@ error[shadowed_binding]: `point` is what this file calls the module `geom/point`
      |     ^^^^^
   note: rename the module for this file with `use geom/point as <other>`, which clears every collision in it at once, or rename this binding</code></pre>
   <p>
-    Senza quella regola, <code>point.x</code> in una funzione potrebbe voler
-    dire il modulo e in un&rsquo;altra funzione la variabile, nello stesso
-    file, e le due cose compilerebbero entrambe. La nota offre le due
-    riparazioni perché sono entrambe difendibili: rinominare il modulo sistema
-    tutte le collisioni del file in un colpo, rinominare la variabile ne
-    sistema una.
+    Questa regola evita che <code>point.x</code> indichi il modulo in una funzione e una variabile in un&rsquo;altra. Il messaggio suggerisce due possibilità: rinominare il modulo oppure rinominare la variabile.
   </p>
 
-  <h3>Cosa manca, di proposito</h3>
+  <h3>Le regole di accesso ai moduli</h3>
   <p>
-    Nessun <code>public</code> e nessun <code>private</code>: tutto quello che
-    un modulo dichiara è raggiungibile da qualunque file lo nomini. Nessun
-    import con l&rsquo;asterisco, quindi il qualificatore non è mai
-    facoltativo. Nessun import circolare, e il compilatore lo rifiuta sulla
-    riga <code>use</code> stessa invece che al momento del linker (il passo che
-    cuce insieme i pezzi compilati). E nessun file di progetto, nessun
-    manifest, nessuna configurazione: l&rsquo;albero delle cartelle sul disco è
-    tutta la disposizione, e il comando che scrivi è quello che decide la
-    radice.
+    Non esistono <code>public</code> e <code>private</code>: le dichiarazioni di un modulo sono accessibili a ogni file che lo usa. Il qualificatore è sempre obbligatorio. Il compilatore segnala gli import circolari sulla riga <code>use</code>. Non servono file di progetto o configurazione: le cartelle organizzano i moduli e il file passato al comando determina la radice.
   </p>
 
   <p class="next">
@@ -188,8 +129,7 @@ error[shadowed_binding]: `point` is what this file calls the module `geom/point`
 
   <footer>
     <p>Ogni blocco di codice di questa pagina è una fetta di
-    <code>examples/shapes/</code> nel repository, un programma di sei moduli in
-    tre cartelle che compila, gira e passa i suoi test. Le tre diagnostiche
+    <code>examples/shapes/</code> nel repository, un programma di sei moduli in tre cartelle che viene compilato, eseguito e verificato con i suoi test. Le tre diagnostiche
     sono quello stesso programma con una modifica ciascuna: una riga
     <code>use</code> che sale, la clausola <code>as</code> tolta, e una
     variabile rinominata in <code>point</code>.</p>

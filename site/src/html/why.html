@@ -3,16 +3,13 @@
     <h1 class="page">Why Heroes</h1>
     <span class="nod">· rebel rebel ·</span>
   </div>
-  <p class="lede">Two constraints, settled before the grammar was. The code must
-  be readable by a model, and the language reaches the world through C.</p>
+  <p class="lede">
+    Heroes starts with two constraints: the code must be easy for a model to read, and programs must be able to use C libraries.
+  </p>
 
-  <h2>Models fail in catalogued ways <span class="nod">&middot; sound and vision &middot;</span></h2>
+  <h2>Recurring model mistakes <span class="nod">&middot; sound and vision &middot;</span></h2>
   <p>
-    Code is increasingly written by language models, and they fail in specific,
-    repeating ways. They swap two arguments of the same type. They forget a
-    case. They rename something they never declared. They reach for a keyword
-    from another language. A language can treat all of that as a run of
-    accidents, or take it as the brief.
+    Models that generate code make recurring mistakes: they swap arguments of the same type, forget a case, use an undeclared name or borrow a keyword from another language. Heroes is designed to let the compiler catch these mistakes.
   </p>
   <blockquote>
     A language designed so that every plausible LLM mistake is a compile error
@@ -20,44 +17,28 @@
     language, even if each program costs more tokens to write.
   </blockquote>
   <p>
-    That is measured, not asserted. Take working programs, plant one plausible
-    mistake in each, and count how many become a compile error rather than a
-    program that runs and quietly does something else. Then pass the same pile
-    to a build with the thesis rules switched off. The gap between the two
-    columns is the whole measurement.
-    <a href="/errors/#measured">The measured table &rarr;</a>
+    One part of the thesis has been tested by introducing plausible mistakes into working programs and counting those the compiler catches. The same programs are then checked with the Heroes-specific rules disabled. The comparison measures the effect of those checks. The total token savings still need to be measured. Tokens are the pieces of text a model reads and generates. <a href="/errors/#measured">The test results &rarr;</a>
   </p>
 
-  <h2>Why removing errors beats shortening code</h2>
+  <h2>Why avoiding errors can save tokens</h2>
   <pre><code>real cost = program tokens × (1 + rewrite rate)</code></pre>
   <p>
-    The two factors are not comparable. A more compact syntax saves maybe five
-    per cent of a file. One correction round costs hundreds of tokens and often thousands, because the model reads the error, re-reads the file, rewrites a
-    function and recompiles. On a three-thousand-token program,
-    <b>one correction round eats ten syntax savings.</b>
+    Shorter syntax reduces the tokens needed to write a file. Fixing an error requires more steps: the model reads the message, rereads the code, rewrites a function and tries compiling again. Avoiding a correction can therefore save more tokens than shorter syntax.
   </p>
   <p>
-    So the instinct is wrong. It says shorten everything. The formula says
-    remove the errors, and shorten only where it costs nothing. Heroes is wordy
-    where you declare things and terse where you use them: it spends words where
-    an error lives, and nowhere else.
+    Heroes therefore uses explicit declarations and short forms for common operations. It requires extra words where they help the compiler recognise a mistake.
   </p>
 
-  <h2>The founding constraint</h2>
+  <h2>Using existing libraries</h2>
   <p>
-    The project did not start from a grammar. It started from a refusal:
-    <b>Heroes writes no library of its own for the world: files, sockets, databases and graphics come from C.</b> Writing a modern library is more work than writing the compiler, and it is what kills
-    one-person languages. So Heroes keeps a bare minimum and takes the rest
-    from the enormous amount of C that already exists.
+    <b>Heroes uses C libraries for files, sockets, databases and graphics.</b> Developing and maintaining its own libraries would require too much work for a project run by one person. Heroes provides the essential operations and uses existing C libraries for the rest.
   </p>
   <pre class="table"><code>maths beyond arithmetic    →  libm          files, sockets   →  libc
 regular expressions        →  PCRE2         HTTP             →  libcurl
 JSON                       →  cJSON         SQL              →  SQLite
 graphics, audio, terminal  →  SDL, raylib, ncurses</code></pre>
   <p>
-    Borrowing one looks like this. Everything turns on the name on the first
-    line: that is the header, the file where the library declares the shape of
-    its functions, and it is what clang checks your declaration against.
+    To use a library, declare the functions you need. The name on the first line identifies the header, the file that describes the library&rsquo;s functions and types. Clang, the C compiler, checks your declarations against that file.
   </p>
   <figure class="example" data-src="examples/gallery/08-ffi.hero" data-lines="12-15">
 <pre><code><span class="k">extern</span> <span class="s">"math.h"</span> link <span class="s">"m"</span>
@@ -67,10 +48,7 @@ graphics, audio, terminal  →  SDL, raylib, ncurses</code></pre>
     <figcaption>examples/gallery/08-ffi.hero, lines 12&ndash;15</figcaption>
   </figure>
   <p>
-    The obvious worry about a language with no library of its own is that
-    whoever writes the program, a person or a model, will confidently borrow a C
-    function that does not exist. That is a compile error too, and the answer
-    does not come from any list this compiler keeps:
+    A person or model might declare a C function that does not exist. The compiler catches this too by checking the library&rsquo;s header:
   </p>
   <pre class="diag"><code><span class="msg"><span class="k">error</span>[ffi_unknown_name]: `math.h` declares no `sqrtt` — clang read the header and could not find it</span>
   at ffi-demo.hero:2:5
@@ -79,42 +57,21 @@ graphics, audio, terminal  →  SDL, raylib, ncurses</code></pre>
     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   note: an `extern` names what the header already has (§4.19): check the spelling, or name the header that does declare `sqrtt`</code></pre>
   <p>
-    Clang had the real header open. Get a width wrong instead of a name and the
-    answer comes from the same place, on the same line, before anything runs.
-    That is what the refusal buys: the library is not described here, so it
-    cannot be described wrongly here.
+    Clang uses the library&rsquo;s actual header. It checks names and type widths where required, reporting errors before the program runs. Heroes does not need to maintain a second description of the library.
   </p>
   <p>
-    Without that header nothing would verify what you wrote. And look at
-    <code>pow(base:, exponent:)</code>: two values of the same type, so the call
-    has to name them. The rule holds at the C boundary too, which is where
-    swapping two arguments costs most.
+    The header makes it possible to check the declarations. Heroes&rsquo; own rules still apply: <code>pow(base:, exponent:)</code> takes two values of the same type, so the call must name its arguments.
   </p>
   <p>
-    The bare minimum is about thirty names, always the same ones:
-    <code>print</code>, <code>len</code>, <code>push</code>,
-    <code>slice</code>, <code>sort</code>, the conversions between types, and
-    <code>map</code>, <code>filter</code>, <code>fold</code>. That list changes
-    only by a recorded decision, never by accumulation.
+    The available operations include <code>print</code>, <code>len</code>, <code>push</code>, <code>slice</code>, <code>sort</code>, conversions between types, <code>map</code>, <code>filter</code> and <code>fold</code>. Every addition requires a recorded decision.
   </p>
   <p>
-    One consequence the rest of the design obeys: <b>how comfortable the C
-    boundary is ranks alongside how clear the language is, not below it.</b> A
-    library Heroes cannot reach is C code its author has to keep writing by
-    hand, which is what this refusal exists to prevent.
-    <a href="/examples/#c">The programs that bind C &rarr;</a>
+    <b>Using C libraries should be as straightforward as writing Heroes code.</b> When a library cannot be used from Heroes, the programmer has to write more C code. The project aims to reduce that need. <a href="/examples/#c">Programs that use C libraries &rarr;</a>
   </p>
 
   <h2>Why the compiler emits C</h2>
   <p>
-    Heroes translates your program into C and lets a C compiler produce the
-    executable. The reason is the constraint above. A function borrowed from C
-    has to be checked against the real library&rsquo;s header, not against a
-    description the Heroes compiler invents. Going through C means clang does
-    that on every build, for free. An earlier design aimed straight at machine
-    code, and it was dropped once somebody noticed the founding constraint had
-    already decided the question. Speed did not decide it: speed is neither a
-    goal here nor an excuse.
+    Heroes translates your program into C and lets clang produce the executable. This lets clang check the C function declarations against the libraries&rsquo; headers on every build. The initial plan was to generate machine code directly; it changed to make use of these checks. Library verification, rather than a speed advantage, drove the choice.
   </p>
 
   <h2>Seven words can begin a line</h2>
@@ -140,13 +97,10 @@ graphics, audio, terminal  →  SDL, raylib, ncurses</code></pre>
     <figcaption>examples/gallery/01-points.hero, lines 6&ndash;14</figcaption>
   </figure>
   <p>
-    The order you write declarations in never matters, and two functions can
-    call each other with nothing announced in advance. Underneath, the language
-    is smaller still: what the compiler really handles is <b>seven
-    constructs</b>, and everything else reduces to those before it is done.
+    You can write declarations in any order. Two functions can call each other without forward declarations. During compilation, Heroes reduces the code to <b>seven constructs</b>, the basic internal forms used to represent a program.
   </p>
 
-  <h2>The rules it lives by <span class="nod">&middot; fashion &middot;</span></h2>
+  <h2>The language rules <span class="nod">&middot; fashion &middot;</span></h2>
   <ul class="pillars">
     <li><b>A line is understood by looking at that line.</b> Its meaning is
     decided by the line and the function around it, never by something written
@@ -155,100 +109,41 @@ graphics, audio, terminal  →  SDL, raylib, ncurses</code></pre>
     <li><b>One way to write anything.</b> A formatter with one canonical form,
     one word for loops, and argument names required where types cannot tell two
     arguments apart.</li>
-    <li><b>Errors written to be read by a machine.</b> Every message carries
-    what was expected and where; where the thing it clashes with is declared
-    elsewhere it names that line, and where a repair is known it comes tagged
-    <code>certain</code> or <code>guess</code>. Writing <code>???</code> leaves
-    a declared gap and asks what belongs in it.</li>
-    <li><b>A program must not corrupt memory.</b> It is allowed to stop.
-    Integer overflow at any width, a division by zero, an index past the end of
-    a list, a slice that would cut a character in half, recursion too deep, and
-    <code>.must()</code> on a value that failed: each of those ends the program
-    on the spot, loudly, on the line it happened. What none of them does is
-    carry on with memory that is wrong. Where two designs are acceptable and one
-    can be made to reach an address nobody checked, the other wins, whatever it
-    costs in elegance or in words.</li>
-    <li><b>Small enough to fit in a prompt.</b> The whole specification fits
-    under a hard ceiling of 4,096 tokens, which a test asserts on every commit:
-    five pages, written to be handed to a model rather than shelved.
-    <a href="/spec/">Read it &rarr;</a></li>
+    <li><b>Error messages that machines can use.</b> Each message identifies the problem and its location in the code. If a declaration elsewhere is involved, it points there too. Suggested fixes are marked <code>certain</code> when they are certain or <code>guess</code> when they need review. Use <code>???</code> to leave an expression unfinished and ask the compiler which type it expects.</li>
+    <li><b>A program must not corrupt memory.</b> The program stops and reports the error location if an integer exceeds its range, integer division has a zero divisor, an index is outside a list, a string slice splits a character, recursion goes too deep or <code>.must()</code> receives an error. In design decisions, preventing unchecked memory access takes priority over elegance and brevity.</li>
+    <li><b>Small enough to fit in a prompt.</b> On every commit, or recorded change, a test checks that the specification stays below 4,096 tokens. You can give the whole specification to a model. <a href="/spec/">Read it &rarr;</a></li>
   </ul>
 
-  <h2>The obvious objections <span class="nod">&middot; quicksand, avoided &middot;</span></h2>
+  <h2>Common questions <span class="nod">&middot; quicksand, avoided &middot;</span></h2>
   <dl class="why">
     <dt>Why no null, and no exceptions?</dt>
-    <dd>Both produce the one kind of trouble no compiler can flag: the case you
-    forgot to handle. Here a value that might be missing says so in its type
-    (<code>i64?</code>), an operation that went wrong returns a value saying
-    so, and passing that failure up to your caller is marked on the line
-    with <code>?</code>. Anything that jumps the program from one place to
-    another without showing it is banned outright.
-    <a href="/docs/failure-is-a-value/">The chapter on this &rarr;</a></dd>
+    <dd>Heroes makes missing values and failed operations explicit. The type <code>i64?</code> means that the result can be a number or an error. The <code>?</code> operator propagates an error to the calling function, visibly on the line where you use it. <a href="/docs/failure-is-a-value/">How to handle errors &rarr;</a></dd>
     <dt>Why must arguments be named when two parameters share a type?</dt>
-    <dd>Swapping two arguments of the same type is a model classic, and since
-    the types match nobody notices: the program compiles and copies
-    backwards. <code>copy(from: a, to: b)</code> costs four characters and
-    spends them exactly where that error lives. Where the types already tell
-    the arguments apart, names stay optional.</dd>
-    <dt>Why refuse one integer type, then ship eight widths?</dt>
-    <dd>In C, the rules for turning one kind of number into another are the
-    first source of trouble and the bulkiest thing to write down. For a long
-    time the answer here was one integer type. Then the widths were asked
-    for anyway, and the expensive half had already been paid: what makes
-    eight number types dangerous elsewhere is the conversion that happens on
-    its own, and those were banned here from day one for an unrelated
-    reason. So the widths cost about a paragraph of specification, every
-    conversion is still written by hand, and the word <code>int</code> is an
-    error that lists the sizes to choose from.</dd>
+    <dd>When two arguments have the same type, the compiler cannot tell them apart by type alone. The names in <code>copy(from: a, to: b)</code> make the source and destination explicit. When types distinguish the arguments, the names are optional.</dd>
+    <dt>Why are there eight integer types?</dt>
+    <dd>Different widths are needed, among other things, to use C libraries with the types they require. Heroes avoids automatic conversions: every conversion between numeric types must be explicit. This allows eight integer types without C&rsquo;s implicit conversion rules. If you write <code>int</code>, the compiler reports an error and lists the available types.</dd>
     <dt>Why is the formatting rigid, exactly four spaces, tabs an error?</dt>
-    <dd>So that &ldquo;nearly right&rdquo; is a compile failure instead of a silently
-    different program. A canonical formatter takes every style decision away
-    from the writer, which means any textual difference between two programs
-    is a difference in meaning.</dd>
+    <dd>Indentation determines the program&rsquo;s structure. Strict rules let the compiler reject invalid forms. The formatter applies one style, reducing formatting differences when you compare two versions of the code.</dd>
     <dt>Why is every assignment a copy?</dt>
-    <dd>So that a piece of data never has two names. If nobody else holds what
-    you hold, no function changes it behind your back and two parts of a
-    program running at once cannot trample each other. Nor can you build a
-    circle where two values keep each other alive, which is what makes it
-    possible to free memory by counting holders, with no garbage collector.</dd>
-    <dd class="more">The price is real and the specification writes it down rather than
-    hiding it. <code>+</code> on a <code>str</code> copies both sides, so a
-    concatenation loop is quadratic and <code>join</code> exists to build in
-    one pass. Growing an array in place is the case where nothing else holds
-    it. What is <i>not</i> a price is handing a big value to a function:
-    underneath, a copy shares the memory and splits only when somebody writes,
-    so passing five thousand rows costs nothing until one of them changes. One
-    of the programs on this site does exactly that, several times per query.
-    <a href="/docs/values-all-the-way-down/">The chapter on this &rarr;</a></dd>
-    <dt>Can two things run at once?</dt>
-    <dd>Yes, and threads arrive from C like everything else. The rule at the
-    boundary is the one values already force: a thread gets its own memory, and
-    whatever crosses into it or back out is copied rather than shared. So there
-    is nothing to lock and nothing to race, and the compiler refuses a thread
-    body that tries to carry a list across. It suits sending a small thing in and getting a number back. It is poor at shuttling large values in and out to do little with them, and that is a real limit
-    rather than a missing feature.
-    <a href="/examples/threads/">The program that does it &rarr;</a></dd>
+    <dd>To keep values independent: changing a copy does not change the original. You cannot create cycles in which two values keep each other alive. The runtime, the code that supports the running program, can therefore free memory by counting references to data, without a garbage collector that searches for unused data.</dd>
+    <dd class="more"><code>+</code> on a <code>str</code> copies both strings. Repeating it in a loop can require work that grows with the square of the final length; <code>join</code> builds the result in one pass. An array can grow without being copied when no other value uses its memory. Passing a large value to a function does not immediately copy all its data: memory is shared until a change requires a copy. <a href="/docs/values-all-the-way-down/">How copies work &rarr;</a></dd>
+    <dt>Can operations run in parallel?</dt>
+    <dd>Yes, using threads, operations that run in parallel, through C libraries. Each Heroes thread has separate memory and can receive and return numbers, which are copied. The compiler rejects passing a list. This model suits computations with small inputs and a numeric result. <a href="/examples/threads/">A thread example &rarr;</a></dd>
     <dt>Is it not just a smaller version of an existing language?</dt>
-    <dd>The semantics are familiar on purpose: values that copy, no inheritance,
-    failure in the type. What is new is the constraint every rule was chosen
-    under, and the fact that the whole language has to fit in a prompt with
-    room left for your program. That budget is what refuses the features a
-    bigger language would have taken.
-    <a href="/project/#panel">How a change gets decided &rarr;</a></dd>
+    <dd>Heroes uses familiar ideas: independent values, no inheritance and errors represented in the type. The choices serve a specific constraint: describing the whole language in a prompt while leaving room for the program. That limit helps determine which features to include. <a href="/project/#panel">How changes are reviewed &rarr;</a></dd>
   </dl>
 
   <p class="next away">
-    Convinced, or nearly? <a href="/spec/">The whole language is one file</a>,
+    To continue: <a href="/spec/">The whole language is one file</a>,
     small enough to hand to a model with room left for your program.
     <a href="/examples/">Every program in the repository</a> is written in it,
     and <a href="/start/">four commands</a> build the compiler.
   </p>
 
   <footer>
-    <p>Every code block on this page is cut from a file in
-    <code>examples/</code> when the site is built, so it cannot drift from the
-    program. Each of those programs is compiled and run in three configurations
-    on every commit.</p>
+    <p>
+    The site checks code examples labelled with a file path against the files in <code>examples/</code>. These checks keep the displayed code consistent with the source.
+  </p>
     <p>Built by <a href="https://giuseppearici.com/en/">Giuseppe Arici</a>, CTO at Codermine, Brescia. Author of
     <a href="/about/"><i>Heroes of code</i></a>. Standing on
     <a href="/about/thanks/">a lot of other people&rsquo;s work</a>.</p>

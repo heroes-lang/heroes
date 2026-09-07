@@ -3,6 +3,6 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import { page } from '../../lib/figures.ts';
 import content from '../../html/it/project.html?raw';
 ---
-<BaseLayout url="/it/project/" title={'Il progetto: il punto fisso, il collegio e lo Zen'} description={'Il compilatore di Heroes è scritto in Heroes e riproduce il proprio C byte per byte. Come si decide un cambiamento al linguaggio con cinque giudici, e le venti righe che il binario stampa.'} current="project">
+<BaseLayout url="/it/project/" title={"Il progetto: verifiche del compilatore e scelte del linguaggio"} description={"Come verificare che il compilatore Heroes riproduca il proprio codice C, come si valutano le modifiche al linguaggio e i principi stampati da heroes this."} current="project">
 <Fragment set:html={page(content, 'site/src/html/it/project.html')} />
 </BaseLayout>

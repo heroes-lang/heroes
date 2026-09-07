@@ -1,3 +1,3 @@
-<p class="tagline">Una ricerca ti dà un valore oppure un errore, mai una sorpresa.</p>
+<p class="tagline">La ricerca in una mappa restituisce un valore oppure un errore se la chiave manca.</p>
 
-<p><code>m[k]</code> non restituisce un <code>V</code>. Restituisce un <code>V?</code>, perché la chiave potrebbe non esserci, quindi il compilatore ti fa dire cosa succede quando manca. Non c&rsquo;è nessun null da dimenticare.</p>
+<p>Una mappa associa chiavi a valori. <code>m[k]</code> cerca la chiave k e restituisce un <code>V?</code>: un valore di tipo <code>V</code> oppure un errore. Quando leggi il risultato, devi quindi gestire anche il caso in cui la chiave non esiste.</p>

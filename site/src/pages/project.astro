@@ -3,6 +3,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import { page } from '../lib/figures.ts';
 import content from '../html/project.html?raw';
 ---
-<BaseLayout url="/project/" title={'The project: the fixpoint, the panel, and the Zen'} description={'The Heroes compiler is written in Heroes and reproduces its own C byte for byte. How a change to the language is decided by five judges, and the twenty lines the binary prints.'} current="project">
+<BaseLayout url="/project/" title={"The project: compiler checks and design reviews"} description={"How to verify that the Heroes compiler reproduces its own C code, how language changes are reviewed and the principles printed by heroes this."} current="project">
 <Fragment set:html={page(content, 'site/src/html/project.html')} />
 </BaseLayout>

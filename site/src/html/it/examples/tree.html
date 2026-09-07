@@ -1,3 +1,3 @@
-<p class="tagline">Un&rsquo;espressione costruita come albero in un&rsquo;arena, poi letta in tre modi.</p>
+<p class="tagline">Un&rsquo;espressione rappresentata come albero, per calcolarne il valore, misurarne la profondità e stamparla.</p>
 
-<p>I nodi sono collegati per indice e non per puntatore, e il programma dichiara più forme di quante un singolo input ne costruisca, che è quello che fa ogni albero sintattico vero. È qui perché quella mancanza una volta ha nascosto un difetto del compilatore.</p>
+<p>I nodi sono conservati in un array, una sequenza di valori, e collegati tramite i loro indici. Il programma dichiara più tipi di nodo di quanti ne usi ogni singola espressione. Questo caso ha fatto emergere un difetto del compilatore e ora viene verificato dai test.</p>

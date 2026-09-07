@@ -3,6 +3,6 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 import { page } from '../../../lib/figures.ts';
 import content from '../../../html/it/docs/failure-is-a-value.html?raw';
 ---
-<BaseLayout url="/it/docs/failure-is-a-value/" title={'Il fallimento è un valore: documentazione di Heroes'} description={"Heroes non ha null e non ha eccezioni. L'assenza e il fallimento sono tipi, la propagazione si vede sulla riga, e il percorso non gestito è un errore di compilazione."} current="docs">
+<BaseLayout url="/it/docs/failure-is-a-value/" title={"Il fallimento è un valore: documentazione di Heroes"} description={"Rappresenta un risultato o un errore con T?, gestisci i due casi e propaga esplicitamente gli errori alla funzione chiamante."} current="docs">
 <Fragment set:html={page(content, 'site/src/html/it/docs/failure-is-a-value.html')} />
 </BaseLayout>

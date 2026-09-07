@@ -1,17 +1,16 @@
 
-  <p class="crumb"><a href="/">Heroes</a> / <a href="/docs/">Docs</a> / chapter 6</p>
+  <p class="crumb"><a href="/">Heroes</a> / <a href="/docs/">Guide</a> / chapter 6</p>
 
   <h1 class="chapter">Bindings and mutation</h1>
-  <p class="tagline">One symbol marks everything in a program that can change.</p>
-
-  <p>
-    Most lines in most code do not change anything. The trouble is
-    that they look exactly like the ones that do, so finding the part of a
-    program that moves means reading all of it. Here the moving parts carry a
-    mark, and there is only one.
+  <p class="tagline">
+    The <code>@</code> symbol marks mutable variables and the operations that change them.
   </p>
 
-  <h3><code>=</code> binds once. <code>@</code> declares something that changes</h3>
+  <p>
+    To understand a program, you need to know which operations change its data. In Heroes, the <code>@</code> symbol identifies those operations.
+  </p>
+
+  <h3><code>=</code> binds a fixed value, <code>@</code> a mutable one</h3>
   <!-- Two spaces before a trailing comment, because that is what `heroes fmt`
        produces: the column alignment this block used to carry is a style the
        formatter undoes the moment anybody runs it, and a page teaching the
@@ -20,18 +19,10 @@
 v: i64 @ 0  <span class="c"># a cell that may change, and the type is required</span>
 v @ v + 1  <span class="c"># changing it</span></code></pre>
   <p>
-    <code>=</code> gives a value a name and that is the end of it. <code>@</code>
-    does three jobs with one symbol: it declares a cell, it marks every line
-    that writes to one, and, later on this page, it marks a
-    function that changes what it is given. There is no separate assignment
-    operator, so a line that changes something can never be mistaken for a line
-    that introduces something.
+    <code>=</code> binds a name to a value that cannot be reassigned. <code>@</code> declares a cell, a variable whose value can change, and also assigns a new value to it. Later in this chapter, you will see how the same symbol marks parameters that a function can change.
   </p>
   <p>
-    The type on a cell is not optional, and that is deliberate: a name whose
-    value will change over time is a name whose type a reader cannot infer from
-    one line. Try to change a plain binding and the compiler explains the
-    difference:
+    You must declare a cell&rsquo;s type. Its value can change, but its type stays the same. If you try to change a name bound with <code>=</code>, the compiler reports an error:
   </p>
   <pre><code>$ heroes check mutation.hero
 error[not_mutable]: `start` was bound with `=`, which binds once, forever — a cell is declared with its type: `start: &lt;type&gt; @ &lt;value&gt;`
@@ -41,16 +32,12 @@ error[not_mutable]: `start` was bound with `=`, which binds once, forever — a 
      |     ^^^^^
   fix (guess): declare `start` as a cell: `start: &lt;type&gt; @ &lt;value&gt;`</code></pre>
   <p>
-    That fix is tagged <code>guess</code> rather than <code>certain</code>,
-    because the compiler cannot know which of the two you meant: you may
-    have wanted a cell, or you may have written to the wrong name. Only
-    <code>certain</code> fixes can be applied for you.
+    The fix is tagged <code>guess</code>, a suggestion to review, rather than <code>certain</code>, a definite correction. You may have intended to declare a cell or used the wrong name. The compiler can apply only <code>certain</code> fixes automatically.
   </p>
 
-  <h3>A name means one thing while you can see it</h3>
+  <h3>Each visible name has one definition</h3>
   <p>
-    A name already in use nearby cannot be reused, even when the new thing has
-    nothing to do with the old one:
+    You cannot reuse a name while its earlier declaration is visible at that point in the program:
   </p>
   <pre><code>$ heroes check mutation.hero
 error[shadowed_binding]: `start` is already in scope, bound at line 30 — shadowing is an error here: a name means one thing for as long as it is visible
@@ -59,10 +46,7 @@ error[shadowed_binding]: `start` is already in scope, bound at line 30 — shado
   31 |     start = r.pos + 1
      |     ^^^^^</code></pre>
   <p>
-    Shadowing is the mistake that produces no symptom: the code compiles, runs,
-    and quietly uses the wrong one of two things with the same name. It is also
-    near the top of what a model writing code gets wrong, which is why the
-    compiler treats it as an error rather than a warning.
+    Reusing a visible name is called shadowing: the new declaration hides the earlier one. In languages that allow it, you can end up using the wrong value without a compile error. Heroes rejects shadowing.
   </p>
 
   <h3>Every value is a copy</h3>
@@ -76,24 +60,15 @@ error[shadowed_binding]: `start` is already in scope, bound at line 30 — shado
     <figcaption>examples/gallery/05-mutation.hero, lines 46&ndash;51</figcaption>
   </figure>
   <p>
-    <code>b</code> starts as a copy of <code>a</code>, and pushing onto it leaves
-    <code>a</code> alone. This holds for arrays, maps, strings and records alike,
-    at any depth: nothing in this language aliases anything, so no change made
-    over here can appear over there. Under the surface the compiler shares the
-    memory until somebody writes, and copies only then. That implementation
-    detail does not change how you write the program.
+    <code>b</code> is a copy of <code>a</code>: adding an element to <code>b</code> does not change <code>a</code>. This holds for arrays, maps, strings and records, including nested values. To avoid unnecessary copies, the compiler can share memory until a value changes. This internal detail does not affect how copies behave in your program.
   </p>
   <p>
-    <code>b @ b.push(4)</code> is the other thing to see. <code>push</code> hands back a new
-    array rather than changing one in place, so the result has to be put
-    somewhere, and the <code>@</code> is where it goes.
+    In <code>b @ b.push(4)</code>, <code>push</code> returns a new array. <code>@</code> assigns the result to <code>b</code>.
   </p>
 
   <h3>When a function does need to change its argument</h3>
   <p>
-    Copies everywhere would make a cursor over some text painful to write, so
-    there is one exception, and it is spelled out on both sides of the call. A
-    parameter marked <code>@</code> is changed by the function:
+    A function can also change an argument, such as the current reading position in a text. Mark that parameter with <code>@</code>:
   </p>
   <figure class="example" data-src="examples/gallery/05-mutation.hero" data-lines="19-21">
 <pre><code><span class="c"># The `@` is the whole signature's news: this one moves.</span>
@@ -102,7 +77,7 @@ error[shadowed_binding]: `start` is already in scope, bound at line 30 — shado
     <figcaption>examples/gallery/05-mutation.hero, lines 19&ndash;21</figcaption>
   </figure>
   <p>
-    And the call site says so too, or it does not compile:
+    The call must also include <code>@</code>, or the program will not compile:
   </p>
   <figure class="example" data-src="examples/gallery/05-mutation.hero" data-lines="23-26">
 <pre><code><span class="c"># Consumes spaces. The caller sees `@r` and knows the reader moved.</span>
@@ -119,17 +94,10 @@ error[marker_mismatch]: `advance` changes this argument, so the call site writes
      |                 ^
   fix (certain): mark the argument: `@x`</code></pre>
   <p>
-    This is the difference between reading a call and reading a function. In
-    most languages, whether <code>advance(r)</code> modifies <code>r</code>
-    depends on <code>advance</code>, on the type of <code>r</code>, and
-    sometimes on the platform. Here the answer is in the character you are
-    looking at.
+    Reading <code>advance(@r)</code> tells you that the function can change <code>r</code>. You do not need to open the definition of <code>advance</code> to find out.
   </p>
   <p>
-    The meaning is <b>copy in, copy out</b>: the function works on its own copy
-    and the caller&rsquo;s value is replaced when it returns. That happens on every
-    exit, early <code>return</code> included, so there is no path where half the
-    changes arrive.
+    The behaviour is <b>copy in, copy out</b>: the function works on its own copy, then replaces the caller&rsquo;s value with the updated copy when it returns. This also happens on an early <code>return</code>.
   </p>
   <figure class="example" data-src="examples/gallery/05-mutation.hero" data-lines="28-35">
 <pre><code><span class="c"># Reads a run of letters and hands it back, leaving the reader after it.</span>
@@ -143,11 +111,7 @@ error[marker_mismatch]: `advance` changes this argument, so the call site writes
     <figcaption>examples/gallery/05-mutation.hero, lines 28&ndash;35</figcaption>
   </figure>
   <p>
-    A function may change its argument <i>and</i> return something, as this one
-    does: the reader moves past the word, and the word comes back. One thing it
-    cannot do is be called as a method: <code>r.word_at()</code> is not allowed
-    when the first parameter is <code>@</code>, because that spelling would hide
-    the mark this whole chapter is about.
+    A function can change its argument <i>and</i> return a value. Here <code>word_at</code> advances the position past the word and returns the word it read. A call with a dot, <code>r.word_at()</code>, is not allowed when the first parameter is <code>@</code>: write <code>word_at(@r)</code> to make the change visible.
   </p>
 
   <h3>A binding nobody reads is an error</h3>
@@ -158,11 +122,7 @@ error[unused_binding]: `spare` is bound and never read — remove the binding, o
   55 |     spare = 5
      |     ^^^^^</code></pre>
   <p>
-    An unused name is usually a leftover from an edit, or a line whose result was
-    supposed to be used and is not. The compiler stops in both cases. When you
-    do want to throw a result away, say so with <code>_ = f(x)</code>: the
-    discard is written down rather than implied, and <code>_</code> binds
-    nothing so it can be repeated.
+    The compiler reports a name that is declared but never read: it may be left over from an edit or indicate a forgotten result. To discard a result deliberately, write <code>_ = f(x)</code>. The symbol <code>_</code> binds no name and can be reused.
   </p>
 
   <h3>The program</h3>

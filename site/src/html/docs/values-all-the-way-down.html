@@ -1,20 +1,18 @@
 
-  <p class="crumb"><a href="/">Heroes</a> / <a href="/docs/">Docs</a> / chapter 10</p>
+  <p class="crumb"><a href="/">Heroes</a> / <a href="/docs/">Guide</a> / chapter 10</p>
 
   <h1 class="chapter">Values all the way down</h1>
-  <p class="tagline">A tree that contains itself, in a language where no value points at another.</p>
-
-  <p>
-    Every value here is an independent copy and no Heroes value points at another.
-    This chapter answers one question: how does a tree hold its own branches
-    when a branch is the same type as the
-    tree?
+  <p class="tagline">
+    Building and traversing trees while keeping copies of values independent.
   </p>
 
-  <h3>First, why the obvious way cannot work</h3>
   <p>
-    Write a case that holds one more of itself and the compiler stops you,
-    explains the arithmetic, and offers the way through:
+    In Heroes, changing a copy of a value does not change the original. You can still build a tree whose branches have the same type as the tree by using a container such as an array.
+  </p>
+
+  <h3>Why a field cannot directly contain its own type</h3>
+  <p>
+    If a case directly contains another value of its own type, the compiler reports the problem and suggests a solution:
   </p>
   <pre><code>$ heroes check trees.hero
 error[no_size]: `variant Expr` contains itself, so it has no size
@@ -26,14 +24,10 @@ error[no_size]: `variant Expr` contains itself, so it has no size
   note: `[T]` holds its contents elsewhere, so it is how a type contains itself
   fix (guess): hold them in an array: `[Expr]`</code></pre>
   <p>
-    A record or a variant holds its fields <i>inside itself</i>. If one of those
-    fields were another <code>Expr</code>, that one would hold another, and the
-    size of the type would be infinite. In a language with pointers you would
-    reach for one here without noticing you were making a decision. There are
-    none, so the decision is visible.
+    A record or variant includes the storage for its fields. If a field directly contained another <code>Expr</code>, which contained another, one value would require infinite memory. Heroes rejects this definition.
   </p>
 
-  <h3>The array is the indirection</h3>
+  <h3>Using an array for branches</h3>
   <figure class="example" data-src="examples/gallery/11-trees.hero" data-lines="8-16">
 <pre><code><span class="k">variant</span> Expr
     number
@@ -47,17 +41,10 @@ error[no_size]: `variant Expr` contains itself, so it has no size
     <figcaption>examples/gallery/11-trees.hero, lines 8&ndash;16</figcaption>
   </figure>
   <p>
-    <code>[Expr]</code> has a fixed size whatever it contains, because an array
-    keeps its elements elsewhere. So <code>Expr</code> is finite, the tree is as
-    deep as you like, and none of it is a pointer you can hold, compare or leave
-    dangling. <code>negate</code> takes a one-element list because that is the
-    recursive shape the language can express.
+    The representation of <code>[Expr]</code> has a fixed size: its array elements are stored separately. The <code>Expr</code> type can therefore contain other <code>Expr</code> values through the array without having infinite size. Here <code>negate</code> uses a list with one element. Maps can also represent recursive structures.
   </p>
   <p>
-    Because nothing can hold a reference, <b>no cycle can be
-    built</b>. That is what lets the memory underneath be reference-counted with
-    no collector, no cycle detector and no <code>weak</code> annotations to get
-    right.
+    With Heroes values, <b>you cannot build reference cycles</b>. The runtime, the code that supports execution, frees memory when its reference count reaches zero. No garbage collector is needed to find cycles, and no <code>weak</code> annotations are needed to mark weak references.
   </p>
 
   <h3>Walking it is one <code>match</code> and one <code>for</code></h3>
@@ -91,16 +78,10 @@ error[no_size]: `variant Expr` contains itself, so it has no size
     <figcaption>examples/gallery/11-trees.hero, lines 27&ndash;41</figcaption>
   </figure>
   <p>
-    <code>value_of</code> and <code>sum_of</code> call each other, and neither is
-    declared before the other. Declaration order never matters, so mutual
-    recursion needs no announcement, no header and no forward declaration.
+    <code>value_of</code> and <code>sum_of</code> call each other. You can declare them in either order without forward declarations.
   </p>
   <p>
-    The two starting values are <code>0</code> for a sum and <code>1</code>
-    for a product. That is why <code>value_of(.add(parts: []))</code> is
-    <code>0</code> and <code>value_of(.multiply(parts: []))</code> is
-    <code>1</code>, which the tests below pin down rather than leave to
-    folklore.
+    The initial value is <code>0</code> for a sum and <code>1</code> for a product. So <code>value_of(.add(parts: []))</code> returns <code>0</code> and <code>value_of(.multiply(parts: []))</code> returns <code>1</code>. The tests below check these results.
   </p>
 
   <h3>Building one</h3>
@@ -125,7 +106,7 @@ error[cannot_infer]: `.multiply` does not say which variant it belongs to — th
   81 |     three_times_four = .multiply(parts: [.number(v: 3), .number(v: 4)])
      |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^</code></pre>
 
-  <h3>What the tests fix in place</h3>
+  <h3>Checking empty cases</h3>
   <figure class="example" data-src="examples/gallery/11-trees.hero" data-lines="84-95">
 <pre><code><span class="k">test</span> <span class="s">"the tree evaluates and measures itself"</span>
     e = two_plus_three_times_four()
@@ -142,11 +123,7 @@ error[cannot_infer]: `.multiply` does not say which variant it belongs to — th
     <figcaption>examples/gallery/11-trees.hero, lines 84&ndash;95</figcaption>
   </figure>
   <p>
-    Every shape that contains itself has an empty case, and what it should mean
-    there is a
-    decision somebody has to make. Writing it down as four assertions means the
-    next person to touch <code>value_of</code> finds out at once if they changed
-    it by accident.
+    The tests check the result of the empty cases. The four assertions detect accidental changes to the behaviour of <code>value_of</code>.
   </p>
   <figure class="example" data-src="examples/gallery/11-trees.hero" data-lines="70-75">
 <pre><code><span class="c"># Two cases share one answer, so their patterns share one arm (`|`).</span>
@@ -165,10 +142,7 @@ error[cannot_infer]: `.multiply` does not say which variant it belongs to — th
   <pre><code>$ heroes run examples/gallery/11-trees.hero
 14</code></pre>
   <p>
-    Two plus three times four. That is a compiler&rsquo;s smallest interesting
-    data structure, in ninety lines, with no pointer anywhere in it. And
-    the same shape scaled up is what this project&rsquo;s own compiler uses to
-    hold the programs it reads.
+    This example represents and calculates two plus three times four using a tree of values. The Heroes compiler uses larger structures of the same kind to represent the programs it reads.
   </p>
 
   <p class="next">

@@ -3,6 +3,6 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import { page } from '../../lib/figures.ts';
 import content from '../../html/docs/modules.html?raw';
 ---
-<BaseLayout url="/docs/modules/" title={'Modules and files: Heroes documentation'} description={'One file is one module. A use path starts at the directory of the file you compile, so the same line means the same file from anywhere in the program.'} current="docs">
+<BaseLayout url="/docs/modules/" title={"Modules and files: Heroes documentation"} description={"Organise a program into modules, write use paths from the program root and resolve name conflicts with as."} current="docs">
 <Fragment set:html={page(content, 'site/src/html/docs/modules.html')} />
 </BaseLayout>

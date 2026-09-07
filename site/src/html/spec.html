@@ -1,24 +1,15 @@
-  <p class="crumb"><a href="/">Heroes</a> / <a href="/docs/">Docs</a> / specification</p>
+  <p class="crumb"><a href="/">Heroes</a> / <a href="/docs/">Guide</a> / specification</p>
 
   <div class="page-head">
     <h1 class="page">The specification</h1>
   </div>
-  <p class="lede">The whole language, in the file a model is handed. Take it
-  whole: <a href="/spec.md"><code>heroes-lang.org/spec.md</code></a>, or
-  <code class="cmd">curl -L heroes-lang.org/spec.md</code>. The block below is the same
-  bytes, and selecting all of it gives you the same prompt.</p>
+  <p class="lede">
+    The complete description of Heroes, ready to include in a model&rsquo;s prompt. Download it from <a href="/spec.md"><code>heroes-lang.org/spec.md</code></a> or use <code class="cmd">curl -L heroes-lang.org/spec.md</code>. You can also copy the entire block below: the content is identical.
+  </p>
 
   <p>
-    This is not a summary and there is no longer version. The specification <em>is</em>
-    the language: when it and the compiler disagree, the compiler has the bug.
-    It stays under a hard ceiling of 4,096 tokens, which a test asserts on every
-    commit, because it has to leave room in the prompt for the program you
-    actually want. Counted with the tokenizers the models actually use, two of
-    them, and the larger of the two is the one that binds.
+    The specification defines the whole language; there is no longer version. If the compiler behaves differently, the compiler has a bug. On every commit, or recorded change, a test checks that the text stays below 4,096 tokens. Tokens are the pieces into which a model divides text. The count uses two tokenizers, the tools that split the text, and takes the higher result. This leaves room in the prompt for the program you want to write.
   </p>
   <p>
-    It is shown here exactly as the file holds it, cut from the repository when
-    this page was built. Not rendered, not tidied: a table with a pipe moved or
-    a backtick turned into a quotation mark would no longer be the thing you
-    paste into a prompt.
+    When the site is built, this page reads the specification from the repository and displays it unchanged. Table separators, spaces and characters stay exactly as they are in the file, so you can copy it into a prompt without altering it.
   </p>

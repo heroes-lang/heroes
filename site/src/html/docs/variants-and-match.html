@@ -1,14 +1,13 @@
 
-  <p class="crumb"><a href="/">Heroes</a> / <a href="/docs/">Docs</a> / chapter 3</p>
+  <p class="crumb"><a href="/">Heroes</a> / <a href="/docs/">Guide</a> / chapter 3</p>
 
   <h1 class="chapter">Variants and match</h1>
-  <p class="tagline">A value that is one of several shapes, and the one construct that opens it.</p>
+  <p class="tagline">
+    Defining the cases of a value and handling them with <code>match</code>.
+  </p>
 
   <p>
-    A record says <i>and</i>: a point has an x <b>and</b> a y. A variant says
-    <i>or</i>: a token is a number <b>or</b> a word <b>or</b> a plus sign. Some
-    of its cases carry data and some are just themselves, and a value of that
-    type is exactly one of them at a time.
+    A record contains all its fields: a point has an x and a y. A variant represents exactly one declared case. For example, a token, an element of the text the compiler reads, can be a number, a word or a plus sign. Some cases contain additional data.
   </p>
 
   <h3>Declaring one</h3>
@@ -25,17 +24,12 @@
     <figcaption>examples/gallery/02-tokens.hero, lines 7&ndash;15</figcaption>
   </figure>
   <p>
-    Six cases. <code>number</code> and <code>word</code> carry a payload,
-    written as fields indented under the case name, exactly the way a record
-    writes its own. The other four carry nothing: <code>plus</code> is a
-    complete value on its own.
+    The type has six cases. <code>number</code> and <code>word</code> contain data declared as fields indented below the case name. The other four have no fields: <code>plus</code> is already a complete value.
   </p>
 
-  <h3>Opening one: <code>match</code></h3>
+  <h3>Reading one: <code>match</code></h3>
   <p>
-    <code>match</code> is the only construct in the language that takes a value
-    apart. There is no way to ask <i>which case is this</i> and then reach
-    inside; the question and the answer are one thing:
+    <code>match</code> identifies a variant&rsquo;s case and lets you access its fields in the same branch:
   </p>
   <figure class="example" data-src="examples/gallery/02-tokens.hero" data-lines="17-25">
 <pre><code><span class="c"># What a token is called in a message.</span>
@@ -50,11 +44,7 @@
     <figcaption>examples/gallery/02-tokens.hero, lines 17&ndash;25</figcaption>
   </figure>
   <p>
-    An arm names its case with a leading dot, then <code>=&gt;</code>, then the
-    answer. A case that carries a payload binds it to a name after the dotted
-    name: <code>.number n</code> would give you <code>n</code>, and
-    <code>n.value</code> is the number inside. Here nothing needs the payload,
-    so it is <code>_</code>, which binds nothing and can be repeated.
+    Each branch names the case with a leading dot, followed by <code>=&gt;</code> and the result. If the case contains data, you can give it a name: in <code>.number n</code>, <code>n.value</code> is the number inside. Here the data is unused, so the branch uses <code>_</code>, which declares no name and can be repeated.
   </p>
   <p>
     <code>match</code> is an expression: it has a value, which is why this whole
@@ -74,10 +64,9 @@ error[non_exhaustive]: this `match` does not cover `.close`
   19 |     return match t
      |            ^</code></pre>
 
-  <h3>There is no <code>_</code> to hide behind</h3>
+  <h3>A <code>_</code> branch is forbidden for variants</h3>
   <p>
-    In most languages you would answer that error with a catch-all arm. Here
-    that arm does not exist over a variant, and the message says why:
+    For a variant, Heroes forbids a <code>_</code> branch that would handle all unlisted cases. The message explains why:
   </p>
   <pre><code>$ heroes check tokens.hero
 error[wildcard_on_variant]: `_` is not allowed as an arm over `Token` — name every case, so that adding one breaks this `match` instead of silently falling through
@@ -86,14 +75,12 @@ error[wildcard_on_variant]: `_` is not allowed as an arm over `Token` — name e
   25 |         _         => "something else"
      |         ^</code></pre>
   <p>
-    <code>_</code> is still fine where being exhaustive is impossible
-    (matching on an <code>i64</code> or a <code>str</code>), because there the alternative is not a check but an infinite list.
+    You can use <code>_</code> in a <code>match</code> on an <code>i64</code> or a <code>str</code> to handle all unlisted values. For these types, writing a branch for every value would be impractical.
   </p>
 
-  <h3>Adding a case breaks every place that reads it</h3>
+  <h3>Adding a case requires updating each <code>match</code></h3>
   <p>
-    Add a seventh case to <code>Token</code>, say a <code>minus</code>, and ask
-    the compiler what it thinks:
+    Add a seventh case, <code>minus</code>, to <code>Token</code> and check the program again:
   </p>
   <pre><code>$ heroes check tokens.hero
 error[non_exhaustive]: this `match` does not cover `.minus`
@@ -114,18 +101,12 @@ error[non_exhaustive]: this `match` does not cover `.minus`
   38 |     return match t
      |            ^</code></pre>
   <p>
-    Three errors, one per place in the file that reads a token, each pointing at
-    the <code>match</code> that now has a hole in it. Nothing runs until a human
-    or a model has decided what a minus sign is called, how tightly it binds, and whether it is an operator. <b>A change to the shape of
-    the data breaks the code that reads it, loudly, at build time.</b> With a
-    catch-all arm, all three of those questions would have been answered
-    silently and wrongly, and the program would have run.
+    The compiler reports three errors, one for each <code>match</code> that does not handle the new case. You must decide what to call the minus sign, its precedence and whether it is an operator. Compilation can continue once all cases are handled.
   </p>
 
   <h3>Two cases, one answer</h3>
   <p>
-    When several cases share an answer, <code>|</code> joins their patterns
-    rather than repeating the arm:
+    When several cases produce the same result, <code>|</code> lets you list them in one branch:
   </p>
   <figure class="example" data-src="examples/gallery/02-tokens.hero" data-lines="36-39">
 <pre><code><span class="k">function</span> is_operator(t: Token) -&gt; <span class="t">bool</span>
@@ -135,10 +116,7 @@ error[non_exhaustive]: this `match` does not cover `.minus`
     <figcaption>examples/gallery/02-tokens.hero, lines 36&ndash;39</figcaption>
   </figure>
   <p>
-    Every case is still written down, so the new <code>minus</code> would still
-    break this
-    function, which is right, because whether a minus is an operator is a
-    real question.
+    Every case remains explicit. Adding <code>minus</code> therefore requires updating this function too, deciding whether it should return true or false for the new case.
   </p>
 
   <h3>Making one</h3>
@@ -160,12 +138,7 @@ a number
 a word
 `)`</code></pre>
   <p>
-    A case with no payload is written <code>.plus</code>; one with a payload is
-    a call whose fields are named, <code>.number(value: 12)</code>, the same
-    rule records follow. And the leading dot means the value knows which
-    <i>case</i> it is but not which <i>type</i> it belongs to, so the list needs
-    the annotation <code>: [Token]</code> to say it. Written once, it checks
-    every element.
+    Write a case without fields as <code>.plus</code>. For a case with fields, use <code>.number(value: 12)</code>, naming the fields as for a record. The leading dot identifies the case, but the compiler also needs its type. The annotation <code>: [Token]</code> supplies it for every element in the list.
   </p>
 
   <p class="next">

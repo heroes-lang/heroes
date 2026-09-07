@@ -1,24 +1,26 @@
   <div class="page-head">
     <h1 class="page">Examples</h1>
   </div>
-  <p class="lede">Every program in the repository, here on the site, with the
-  command that runs it and the output it really prints.</p>
+  <p class="lede">Browse every example in the repository, with its source code,
+  command and recorded output where available.</p>
 
   <p>
-    These are not snippets written for a website. They are the programs the
-    compiler is tested against. Each one is built and run in three
-    configurations on every commit, and on each program&rsquo;s page the block under
-    the command is the text those tests compare byte for byte. A program that
-    stopped working would turn a test red before anybody read this page.
+    The test corpus is the collection of programs used to check the compiler.
+    On every commit, the tests build and run them in three configurations;
+    examples that need an unavailable C library are skipped. Where a page shows
+    recorded output below the command, the tests compare the program&rsquo;s
+    output with that text byte for byte.
   </p>
   <p>
-    Start with the first group: written to be read, one idea each, in order. Everything after them is the corpus, which is where
-    the language does real work: a JSON reader, an interpreter for a small
-    language, a book of accounts in SQLite, a window.
+    Start with the first group, which introduces one idea at a time in reading
+    order. These files are checked for compilation errors and formatting, but
+    their output is not recorded or tested. The remaining groups make up the
+    test corpus, with programs such as a JSON reader, a small language
+    interpreter, a SQLite ledger and calculations using raylib.
   </p>
 
   <p class="shelves"><a href="#gallery">Start here</a> &middot;
-  <a href="#text">Text and parsing</a> &middot;
+  <a href="#text">Reading and processing text</a> &middot;
   <a href="#numbers">Numbers and algorithms</a> &middot;
   <a href="#data">Data structures</a> &middot;
   <a href="#files">Files and the command line</a> &middot;

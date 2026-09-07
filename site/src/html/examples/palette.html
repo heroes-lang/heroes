@@ -1,3 +1,3 @@
-<p class="tagline">Colours packed into one integer, taken apart and put back.</p>
+<p class="tagline">Pack a colour into one integer, extract its parts and combine them again.</p>
 
-<p>The only program here that writes hexadecimal, octal and binary literals. The lines stand as the formatter produced them, and it deleted the parentheses a C programmer would write around a mask test, because here the bitwise operator binds tighter than the comparison, the other way round from C.</p>
+<p>The code writes numbers in hexadecimal, octal and binary, using bases 16, 8 and 2. The formatter removes parentheses around a bit-mask test because Heroes applies the bitwise operator before the comparison. C applies them in the opposite order.</p>

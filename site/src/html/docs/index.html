@@ -3,58 +3,42 @@
     <h1 class="page">Documentation</h1>
     <span class="nod">· hunky dory ·</span>
   </div>
-  <p class="lede">The language, page by page, for a reader who has not read the
-  specification, and should not have to.</p>
+  <p class="lede">
+    Learn the language one concept at a time. You do not need to read the specification first.
+  </p>
 
   <div class="notice">
-    <p><b>The repository is still private, so the links on this page that point
-    into it do not answer yet.</b> The specification is in there, and so is the
-    file named under every code block in these chapters. The repository opens
-    once a round of consolidation is finished, and every link here is already
-    written for that day.</p>
+    <p>
+    <b>The repository is still private, so links to source files are not yet accessible.</b> We will publish it when the consolidation work is complete. You can read the specification and examples on this site in the meantime. The repository links already use their final addresses.
+  </p>
   </div>
 
   <h2>How to read this</h2>
   <p>
-    The specification sets the rules; it is not a teaching text. It reads the way
-    a rulebook reads, and it stays under five pages so the whole language fits
-    in a prompt. These thirteen chapters explain it one
-    idea at a time, in order. Together they cover the language;
-    <a href="/spec/">the specification</a>, on this site, is where to look when
-    you want the rule rather than the explanation.
+    The specification defines the language rules. It is short enough to fit in a prompt, the text you give a model. These thirteen chapters explain the language in order, one concept at a time. Consult <a href="/spec/">the specification</a> on this site when you need a precise rule.
   </p>
   <p>
-    <b>Every code block here is cut from a file in <code>examples/</code> when
-    the site is built.</b> The block names that file underneath, and the build
-    refuses to ship a block that no longer matches it. Each of those programs is
-    compiled and run in three configurations on every commit.
-    <a href="/examples/">All of them, with their output &rarr;</a>
+    <b>Every code example comes from a file in <code>examples/</code>.</b> Its filename appears below the block. During the build, the process that generates the site, a check compares each block with its source and stops the build if they differ. On every commit, a change saved in the repository history, these programs are compiled and run in three configurations. <a href="/examples/">Browse the examples and their output &rarr;</a>
   </p>
 
   <h2>Errors, which are part of the language</h2>
   <p>
-    A diagnostic here is a finished part of the language. That page shows what
-    the compiler prints, the repairs it can apply to your file, the holes it
-    still has, and the measured catch rate per kind of mistake. Every error on
-    it is real output, not trimmed to look better.
-    <a href="/errors/">Errors, and how to read one &rarr;</a>
+    The errors page shows compiler messages, the fixes it can apply to your files, and the problems it does not yet detect. It also reports measured detection rates for each kind of mistake. Every message is complete output from a real compiler run. <a href="/errors/">How to read an error message &rarr;</a>
   </p>
 
   <h2>The chapters</h2>
   <p>
-    In teaching order rather than reference order. Start at the top: each
-    chapter assumes the ones above it and nothing else. The file named on each
-    line is the program that chapter is built from.
+    Read the chapters from top to bottom: each uses concepts explained in the preceding ones. Beside each title you will find the program used for its examples.
   </p>
   <ol class="chapters">
     <li><a href="/docs/a-first-program/">A first program</a>
       <span class="src">files, layout, comments as documentation · <code>examples/gallery/00-first.hero</code></span>
     </li>
     <li><a href="/docs/records-and-functions/">Records and functions</a>
-      <span class="src">declarations, named construction, method-call syntax · <code>examples/gallery/01-points.hero</code></span>
+      <span class="src">declarations, named fields, calls with a dot · <code>examples/gallery/01-points.hero</code></span>
     </li>
     <li><a href="/docs/variants-and-match/">Variants and match</a>
-      <span class="src">exhaustive by force, no catch-all · <code>examples/gallery/02-tokens.hero</code></span>
+      <span class="src">handle every case explicitly · <code>examples/gallery/02-tokens.hero</code></span>
     </li>
     <li><a href="/docs/failure-is-a-value/">Failure is a value</a>
       <span class="src">no null, no exceptions · <code>examples/gallery/03-fallible.hero</code></span>
@@ -69,7 +53,7 @@
       <span class="src">one shape, many types · <code>examples/gallery/06-generics.hero</code></span>
     </li>
     <li><a href="/docs/strings/">Strings</a>
-      <span class="src">six escapes, and bytes when you need them · <code>examples/gallery/07-strings.hero</code></span>
+      <span class="src">special characters, bytes and text · <code>examples/gallery/07-strings.hero</code></span>
     </li>
     <li><a href="/docs/maps/">Maps</a>
       <span class="src">lookup returns a value or an error · <code>examples/gallery/10-maps.hero</code></span>
@@ -84,7 +68,7 @@
       <span class="src">extern, headers, and what clang checks for you · <code>examples/gallery/08-ffi.hero</code></span>
     </li>
     <li><a href="/docs/modules/">Modules and files</a>
-      <span class="src">where the compiler looks, and what the path binds · <code>examples/shapes/</code></span>
+      <span class="src">how to find a module and use its name · <code>examples/shapes/</code></span>
     </li>
   </ol>
 

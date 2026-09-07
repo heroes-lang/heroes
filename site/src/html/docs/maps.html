@@ -1,12 +1,13 @@
 
-  <p class="crumb"><a href="/">Heroes</a> / <a href="/docs/">Docs</a> / chapter 9</p>
+  <p class="crumb"><a href="/">Heroes</a> / <a href="/docs/">Guide</a> / chapter 9</p>
 
   <h1 class="chapter">Maps</h1>
-  <p class="tagline">A lookup hands you a value <i>or</i> an error, and never a surprise.</p>
+  <p class="tagline">
+    Looking up a key returns a value <i>or</i> an error.
+  </p>
 
   <p>
-    A map is written <code>{K: V}</code> and holds values under keys. When you
-    ask for a key that is not there, most languages hand you <code>null</code>, or an exception, or a silently invented zero. Here you get a type.
+    A map associates keys with values. Its type is written <code>{K: V}</code>, where <code>K</code> is the key type and <code>V</code> is the value type. A lookup can find the key or fail; the result type represents both cases.
   </p>
 
   <h3><code>m[k]</code> is a <code>V?</code>, not a <code>V</code></h3>
@@ -22,15 +23,10 @@ error[type_mismatch]: expected `i64`, found `i64?`
     |            ^^^^^^^^^^^^
   fix (guess): `.must()` — abort on the error case, giving `i64`</code></pre>
   <p>
-    <code>i64?</code> is the fallible type from
-    <a href="/docs/failure-is-a-value/">chapter 4</a>: a number, or an error
-    saying why there is not one. For a missing key that error always has
-    the code <code>missing_key</code>. The question <i>what if it is not there</i>
-    is therefore part of the result&rsquo;s type. You cannot use the number until
-    you answer it.
+    <code>i64?</code> is the fallible type from <a href="/docs/failure-is-a-value/">chapter 4</a>: an integer or an error. If the key is missing, the error code is <code>missing_key</code>. You must handle that possibility before using the number.
   </p>
 
-  <h3>Four answers, one line each</h3>
+  <h3>Four ways to handle a lookup</h3>
   <figure class="example" data-src="examples/gallery/10-maps.hero" data-lines="7-9">
 <pre><code><span class="c"># The four ways to read a `V?`, on one line each (§4.6).</span>
 <span class="k">function</span> score_of(scores: {<span class="t">str</span>: <span class="t">i64</span>}, name: <span class="t">str</span>) -&gt; <span class="t">i64</span>
@@ -38,9 +34,7 @@ error[type_mismatch]: expected `i64`, found `i64?`
     <figcaption>examples/gallery/10-maps.hero, lines 7&ndash;9</figcaption>
   </figure>
   <p>
-    <b><code>.default(v)</code></b>: the value, or this one if the key is
-    missing. The result is a plain <code>i64</code>, because the question has
-    been answered.
+    <b><code>.default(v)</code></b> returns the stored value or <code>v</code> if the key is missing. In this example, the result has type <code>i64</code>.
   </p>
   <figure class="example" data-src="examples/gallery/10-maps.hero" data-lines="11-12">
 <pre><code><span class="k">function</span> known(scores: {<span class="t">str</span>: <span class="t">i64</span>}, name: <span class="t">str</span>) -&gt; <span class="t">bool</span>
@@ -48,9 +42,7 @@ error[type_mismatch]: expected `i64`, found `i64?`
     <figcaption>examples/gallery/10-maps.hero, lines 11&ndash;12</figcaption>
   </figure>
   <p>
-    <b><code>.is_err()</code></b>: asking whether the key is there,
-    without taking the value out. This is the &ldquo;does it contain&rdquo; test, and it is
-    the same call you would use on any fallible value.
+    <b><code>.is_err()</code></b> returns <code>true</code> if the key is missing. It does not extract the value. To check that the key is present, the example negates the result with <code>!</code>.
   </p>
   <figure class="example" data-src="examples/gallery/10-maps.hero" data-lines="14-20">
 <pre><code><span class="c"># `.is_err()` asks without extracting; the `match` extracts without aborting.</span>
@@ -63,10 +55,7 @@ error[type_mismatch]: expected `i64`, found `i64?`
     <figcaption>examples/gallery/10-maps.hero, lines 14&ndash;20</figcaption>
   </figure>
   <p>
-    <b><code>.must()</code></b>: take the value, and stop the program if
-    there is not one. It is safe here because the line above has just
-    checked, and that is the shape to use it in: <code>.must()</code> after a
-    proof, never as a way to get past the type.
+    <b><code>.must()</code></b> returns the stored value and stops the program if the key is missing. Here the preceding line has already checked that the key exists. Use this form when you have verified that the lookup succeeds.
   </p>
   <figure class="example" data-src="examples/gallery/10-maps.hero" data-lines="22-26">
 <pre><code><span class="c"># The general way, and the only one that names the error: `match` on `.ok`/`.err`.</span>
@@ -77,9 +66,7 @@ error[type_mismatch]: expected `i64`, found `i64?`
     <figcaption>examples/gallery/10-maps.hero, lines 22&ndash;26</figcaption>
   </figure>
   <p>
-    <b><code>match</code></b>: the general one, and the only one that puts
-    the error itself in your hands. Both arms are required, as always, so
-    neither case can go unanswered.
+    <b><code>match</code></b> handles both results and lets you read the error&rsquo;s contents. Both branches are required.
   </p>
 
   <h3>Building one</h3>
@@ -91,18 +78,12 @@ error[type_mismatch]: expected `i64`, found `i64?`
     <figcaption>examples/gallery/10-maps.hero, lines 28&ndash;31</figcaption>
   </figure>
   <p>
-    Writing it out all at once is one way in. The other is to declare a
-    modifiable map with <code>@</code> and write into it one key at a time:
-    <code>m[k] @ v</code> puts the value in place of whatever was there. A map
-    that starts empty has to be told its type, like every empty container:
-    <code>m: {str: i64} @ {}</code>.
+    You can write all the pairs together or declare a mutable map with <code>@</code> and add them one at a time. <code>m[k] @ v</code> inserts the value for key <code>k</code>, replacing the previous value if it exists. An empty map needs an explicit type: <code>m: {str: i64} @ {}</code>.
   </p>
 
   <h3>A map has no order</h3>
   <p>
-    <code>keys(m)</code> gives you the keys in <b>no particular order</b>: two
-    runs may differ. When
-    the order matters, ask for it:
+    <code>keys(m)</code> returns the keys <b>without a guaranteed order</b>. The order may differ between runs. Use <code>sort</code> when you need a stable order:
   </p>
   <figure class="example" data-src="examples/adventure/world.hero" data-lines="80-86">
 <pre><code>    w = make()
@@ -115,14 +96,7 @@ error[type_mismatch]: expected `i64`, found `i64?`
     <figcaption>examples/adventure/world.hero, lines 80&ndash;86</figcaption>
   </figure>
   <p>
-    That is a real test from a bigger example, walking every room and every exit
-    in a fixed order so the test says the same thing every time it runs. The
-    same rule caught out this project&rsquo;s own compiler: three lists that came
-    out in map order made two builds of the same program differ, and the fix was
-    three <code>sort</code> calls somebody had written a note about long
-    before. <a href="/project/#self-hosted">The story is on the self-hosting
-    page</a>. Comparison, on the other hand, ignores order entirely: two maps
-    with the same pairs are <code>==</code> however they were built.
+    This test visits rooms and exits in a fixed order, so its output stays the same on each run. The Heroes compiler had a similar problem: some lists followed map order, making two builds of the same program differ. Adding the missing <code>sort</code> calls fixed it. <a href="/project/#self-hosted">Read the account in the section about the compiler written in Heroes</a>. Map comparison does not depend on order: two maps with the same key-value pairs compare equal with <code>==</code>.
   </p>
 
   <h3>The whole thing, running</h3>
@@ -154,14 +128,12 @@ error[type_mismatch]: expected `i64`, found `i64?`
   <pre><code>$ heroes run examples/gallery/10-maps.hero
 19</code></pre>
   <p>
-    Ten plus nine plus nothing. The absent third name contributed a zero because
-    <code>score_of</code> said out loud that it would, on the line where the
-    lookup happens.
+    The result is <code>10 + 9 + 0</code>. The third name is absent from the map; <code>score_of</code> explicitly uses zero as the default.
   </p>
 
   <p class="next">
     Next: <b><a href="/docs/values-all-the-way-down/">Values all the way down</a></b>,
-    where a tree contains itself in a language where no value points at another.
+    learn to build trees with independent values and no pointers.
     <a href="/docs/">Back to the chapter list</a>.
     <span class="back">&larr; Previous: <a href="/docs/strings/">Strings</a></span>
   </p>

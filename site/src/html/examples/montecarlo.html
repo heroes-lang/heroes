@@ -1,3 +1,3 @@
-<p class="tagline">Estimating pi by counting darts, one thread per seed.</p>
+<p class="tagline">Estimate pi by simulating dart throws, with a separate random seed for each thread.</p>
 
-<p>The lesson is what a thread is given: a seed rather than a stream of numbers. Two threads sharing a generator would be the classic data race, and here it cannot be written, because what crosses into a thread is one number.</p>
+<p>Each thread, a task that can run alongside the others, receives a seed: the number that starts its random sequence. It then generates its own dart positions. Threads cannot share a generator here because each receives only one integer.</p>

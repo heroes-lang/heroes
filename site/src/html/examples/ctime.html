@@ -1,3 +1,3 @@
-<p class="tagline">A calendar date taken apart, through a C struct.</p>
+<p class="tagline">Read the parts of a calendar date from a C struct.</p>
 
-<p>The struct is 36 bytes on one platform and 56 on another, both measured, with identical field widths. The twenty bytes of difference are what the partial declaration protects: the program names the fields it uses and the compiler does not have to believe anything about the rest.</p>
+<p>A struct groups related fields, such as the year, month and day. This one has different sizes on different platforms even though the fields used here have the same widths. A partial declaration names only those fields and leaves C to determine the full layout.</p>
