@@ -1,0 +1,15 @@
+# Blank issues stay ON. The two forms beside this file are the shapes worth
+# having, and a person with something to say that fits neither should not be
+# turned away by a form: the cost of an unstructured issue is a follow-up
+# question, and the cost of refusing one is never hearing it.
+blank_issues_enabled: true
+contact_links:
+  - name: The language itself
+    url: https://heroes-lang.org/spec/
+    about: The whole language, under five pages. Most questions are answered here before they are asked.
+  - name: The guide
+    url: https://heroes-lang.org/docs/
+    about: The language taught chapter by chapter, in English and Italian, every code block cut from a program that runs.
+  - name: A security report
+    url: https://github.com/heroes-lang/heroes/security/policy
+    about: A Heroes program that segfaults or corrupts memory goes here, privately, and not into a public issue.

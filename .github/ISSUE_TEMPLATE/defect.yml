@@ -1,0 +1,61 @@
+name: A program does the wrong thing
+description: A program that compiles and should not, one that fails and should not, or a diagnostic that does not tell you how to fix your program.
+labels: ["defect"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The language exists so that a wrong program does not compile. A wrong
+        program that compiles is a hole in the thesis rather than a nuisance,
+        so this is the most valuable thing this project can receive.
+
+        Everything below is asked for because a defect nobody can reproduce is a
+        rumour. If you have only some of it, send it anyway.
+  - type: textarea
+    id: program
+    attributes:
+      label: The program
+      description: The smallest `.hero` file that shows it. Paste the whole file rather than the interesting part of it.
+      render: text
+    validations:
+      required: true
+  - type: input
+    id: command
+    attributes:
+      label: The command you ran
+      placeholder: ./heroes run bug.hero
+    validations:
+      required: true
+  - type: textarea
+    id: happened
+    attributes:
+      label: What happened
+      description: The output, verbatim, and the exit code if you have it (`echo $?`). An abort message and a compiler diagnostic are both useful, and so is silence at exit 0 where you expected neither.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected instead, and why
+      description: >-
+        If the spec or the guide says so, name the sentence. If it says nothing,
+        say that: a silence in the spec is often the finding.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: The compiler
+      description: What `heroes --version` prints. If you built it from a commit rather than a tag, the commit.
+      placeholder: heroes 0.2.0
+    validations:
+      required: true
+  - type: input
+    id: machine
+    attributes:
+      label: The machine
+      description: Operating system, processor, and what `clang --version` says.
+      placeholder: macOS 26 arm64, Apple clang 21
+    validations:
+      required: true

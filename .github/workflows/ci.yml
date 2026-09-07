@@ -22,6 +22,19 @@
 # rather than beside it. It was `cargo test` until 2026-08-19, when `crates/` was
 # archived and the four cargo steps left this file.
 #
+# **The cost premise below expires when this repository goes public, and it is
+# not silently replaced** (2026-09-08, M-open-repository). GitHub's billing
+# documentation states that *"the use of standard GitHub-hosted runners is
+# free: in public repositories"*, and says nothing on that page about the
+# operating system, so the reason the matrix narrows to Linux between tags may
+# have gone away for all three legs, for two of them, or for none. **That is a
+# question and not a premise**: the account's own billing page answers it after
+# the flip, on a real run, and widening the matrix is filed in
+# `docs/work/SCHEDULED.md` rather than done here on a reading of a document.
+# The measurements below stay exactly as they are, because they were true when
+# they were taken and a record that loses its inconvenient half is worth less
+# than none.
+#
 # **Which machines run is a separate question from which machines exist**, and
 # the two answers differ because one leg is not paid for in the same currency
 # (author decision 2026-08-16). A macOS runner bills at $0.08/min against
@@ -72,10 +85,12 @@ on:
   pull_request:
   workflow_dispatch:
     # **One leg at a time, when one leg is what is being fixed.** A full run is
-    # three legs and ~7 minutes, and Darwin is billed at ten Linux minutes to
+    # three legs and ~7 minutes, and Darwin was billed at ten Linux minutes to
     # the minute — so a session repairing Windows was paying for two legs it
     # had already read, fifteen times over. `all` stays the default, because
     # the reason the three exist is that no platform's failure hides another's.
+    # (Past tense on the billing since 2026-09-08: see the header's note on the
+    # cost premise, which a public repository may have retired.)
     inputs:
       only:
         description: 'Which legs to run'
@@ -111,6 +126,16 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# The floor for every job, stated rather than inherited from a repository
+# setting (2026-09-08, M-open-repository). `pull_request` above is
+# `pull_request` and never `pull_request_target`, so a fork's run already gets a
+# read-only token and reaches no secret; this line makes that the workflow's own
+# guarantee instead of a property of a checkbox somebody could change without
+# reading this file. The `release` job raises itself to `contents: write` where
+# it is declared, which is the one place that needs it.
+permissions:
+  contents: read
+
 jobs:
   test:
     name: ${{ matrix.name }}
@@ -135,8 +160,10 @@ jobs:
       #     after it. This leg stays the judge; that file is the hunt.
       #   - **Darwin arm64 — tags and `workflow_dispatch`.** Not narrowed for
       #     being less informative but for being *already read*: it is the
-      #     author's machine, so a local run of the net is this job, and it is
-      #     the only leg billed at ten Linux minutes to the minute.
+      #     author's machine, so a local run of the net is this job, and it was
+      #     the only leg billed at ten Linux minutes to the minute (past tense
+      #     since 2026-09-08; the header's cost note says why, and that the
+      #     replacement is a measurement rather than a reading).
       #     **`macos-14` -> `macos-26` on 2026-09-03** (author decision,
       #     `/decide` answer `2a`), and the reason is that the leg was reporting
       #     NOTHING: in run 33781889835 it died in 16 seconds at `heroes doctor`,
