@@ -906,18 +906,27 @@ Three rules follow, and they bind every later edit:
   `src/lib/claims.ts` reads a fact from the one place the tree keeps it and
   asserts the page spells it, in the edition's own number word: the seats of the
   panel and how many carry a veto from `.claude/agents/`, the words that can
-  begin a top-level line from the parser's own dispatch loop, the verbs of the
-  one command from the argv table, the chapters from the directory. Twelve
-  claims across eight fragments today, run by `page()` on every hand-written
-  page. What provoked it is one sentence from the language veteran's seat after
-  four sittings: every false claim it had found was in hand-written prose making
-  a claim about a magnitude or a named thing, while everything a machine checked
-  was right. Four words that can start a line where the parser has seven; three
-  judges who can refuse where four do; twelve chapters beside thirteen. **A
-  claim not in the table is a claim only a reader checks**, so a sentence that
-  names a count enters the table when it is written. Broken on purpose to prove
-  it fires: `Six words can begin a line` stops the build and names the page,
-  the claim, the tree's seven and the sentence shape it expected.
+  begin a top-level line from the parser, the verbs of the one command from the
+  argv table, the lines of the Zen from the string `heroes this` prints, the
+  chapters from the directory. Twenty claims across fourteen fragments today,
+  run by `page()` on every hand-written page, plus three checks that are not
+  counts: both start pages must name every verb the table declares, each as
+  `<code>verb</code>`, because a count survives a rename; every chapter's footer
+  sentence "The N diagnostics are" is compared with the `heroes check` and
+  `heroes build` transcripts on that page; and the words that can begin a line
+  are read twice from the parser, from its dispatch loop and from its
+  `expected_declaration` message, and asserted equal, so a disagreement is the
+  compiler disagreeing with itself. An `astro:build:done` hook then asserts
+  every page the table names actually rendered, because a renamed fragment
+  would otherwise take its rows with it in silence, and prints what the table
+  holds so the build log shows the check ran. What provoked all of it is one
+  sentence from the language veteran's seat after four sittings: every false
+  claim it had found was in hand-written prose making a claim about a magnitude
+  or a named thing, while everything a machine checked was right. **A claim not
+  in the table is a claim only a reader checks**, so a sentence that names a
+  count enters the table when it is written. Every check was broken on purpose
+  to prove it fires, and each names the page, the claim, the tree's number and
+  the shape it expected.
 - **Compiler output shown on the page is verbatim**, path and test annotations
   included. A trimmed-for-looks diagnostic is a fabricated diagnostic: the
   first draft of this refresh shortened one and got the caret width, the line
