@@ -78,15 +78,15 @@ error[ffi_return_type]: `puts` does not return `cstr` — that is what `stdio.h`
     Nessuno dei due è uno <code>str</code>, e nessuna conversione avviene alle
     tue spalle: <code>s.cstr()</code> presta al C una stringa di Heroes perché la
     legga, e <code>c.validated()</code> ne ricopia una indietro come
-    <code>str?</code>: un valore oppure un errore, perché il testo che
-    arriva dal C è una promessa, non un fatto: il puntatore può essere nullo, e
-    i byte possono non essere UTF-8. Lo gestisci come qualunque altro valore
+    <code>str?</code>, un valore oppure un errore. Il testo che arriva dal C è
+    una promessa, non un fatto: il puntatore può essere nullo, e i byte possono
+    non essere UTF-8. Lo gestisci come qualunque altro valore
     fallibile. Anche la direzione opposta è protetta: un <code>cstr</code> nullo
     passato a una funzione C ferma il programma con un panic che dice il perché,
     invece di lasciare che sia il C a schiantarsi.
   </p>
   <p>
-    Così un valore che arriva dal C resta marcato come tale ovunque vada, e la
+    Un valore che arriva dal C resta marcato come tale ovunque vada, e la
     riga in cui smette di essere straniero è una riga che puoi vedere.
   </p>
 
@@ -161,9 +161,10 @@ error[ffi_return_type]: `puts` does not return `cstr` — that is what `stdio.h`
     libreria C che la richiamerà. Va di là e non torna indietro, quindi un
     gruppo può prenderne una e non può restituirne una, e clang ne controlla la
     firma contro l&rsquo;header come tutto il resto. Non tutte le callback del C
-    sono ancora raggiungibili. Dove l&rsquo;header qualifica ciò a cui puntano i
-    puntatori, e <code>qsort</code> è fra queste, il compilatore rifiuta sulla
-    tua riga e nomina il buco invece di tirare a indovinare.
+    sono ancora raggiungibili. Dove l&rsquo;header dice dei puntatori più di
+    quanto questo compilatore sappia ancora controllare, e quello di
+    <code>qsort</code> lo fa, il compilatore rifiuta sulla tua riga e nomina il
+    buco invece di tirare a indovinare.
   </p>
   <p>
     E una dichiarazione può nominare la funzione che libera quello che

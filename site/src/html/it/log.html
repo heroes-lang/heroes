@@ -5,7 +5,7 @@
   </div>
   <p class="lede">Dalla più recente, una voce per milestone. Il diario completo,
   con le decisioni, le revisioni, le previsioni e le cose che si sono rotte,
-  vive nel repository, ancora privato e che si apre insieme al codice; questa è
+  vive nel repository, che è ancora privato e si apre insieme al codice; questa è
   la versione cartolina, e fino a quel giorno è tutto quello che c&rsquo;è.</p>
 
   <ol class="log">
@@ -29,20 +29,20 @@
     </li>
     <li id="36">
       <span class="when">M-c-callbacks: otto esempi dicevano una cosa, l&rsquo;header vero ne diceva un&rsquo;altra</span>
-      <b>Una funzione Heroes ora si può passare a una libreria C che ne chiede una. <code>atexit</code> e <code>pthread_create</code> si legano, compilano e vengono richiamate; <code>qsort</code> e <code>signal</code> ancora no, e il compilatore dice sulla tua riga contro quale muro va a sbattere ciascuna.</b>
+      <b>Una funzione Heroes ora si può passare a una libreria C che ne chiede una. <code>atexit</code> e <code>pthread_create</code> vengono richiamate; <code>qsort</code> e <code>signal</code> non ancora, e il compilatore dice sulla tua riga contro quale muro va a sbattere ciascuna.</b>
       Un giudice ha rifiutato gli otto esempi scelti a mano, ha misurato l&rsquo;header vero di SQLite e ha scoperto che l&rsquo;ostacolo che tutti nominavano vale un caso su quaranta.
       <a class="more" href="/it/docs/the-c-boundary/">Il confine con il C</a>
     </li>
     <li id="35">
       <span class="when">M-corpus-depth: i giudici hanno rifiutato la modifica e ne hanno trovata una più grande</span>
       <b>Nove programmi di esempio in più, scelti per forma e non per funzionalità: fra un programma di 671 righe e il compilatore non c&rsquo;era niente.</b>
-      Due giudici hanno bocciato l&rsquo;ottimizzazione per cui la seduta era stata convocata, e poi uno dei due ha trovato che più della metà di tutto lo spazio dichiarato dai frame di un programma di esempio, sommati, finiva in temporanei che la proposta non aveva mai guardato.
+      Due giudici hanno bocciato l&rsquo;ottimizzazione per cui la seduta era stata convocata, e poi uno dei due ha trovato dove finiva davvero lo spazio sullo stack di un programma di esempio: più della metà in temporanei che la proposta non aveva mai guardato.
       <a class="more" href="/it/examples/">I programmi</a>
     </li>
     <li id="34">
       <span class="when">M-robustness-guards: il commento diceva che non poteva succedere</span>
       <b>Un commento dentro il compilatore spiegava perché un certo crash fosse impossibile. Il crash era reale, e bastava una riga di codice normale.</b>
-      Passare un elemento di un array a una funzione che ci scrive dentro consegnava al C l&rsquo;indirizzo dell&rsquo;array intero, e i programmi di esempio lo facevano centocinquanta volte con un campo e nemmeno una con un indice. Era uno dei quattro buchi nella stessa promessa chiusi quel giorno.
+      Passare un elemento di un array a una funzione che ci scrive dentro consegnava al C l&rsquo;indirizzo dell&rsquo;array intero, e i programmi di esempio lo facevano centocinquanta volte con un campo e nemmeno una con un indice.
       <a class="more" href="/it/errors/">Che cosa ferma il compilatore</a>
     </li>
     <li id="33">
@@ -121,7 +121,7 @@
     <li id="20">
       <span class="when">M-binding-fidelity: metà di una promessa</span>
       <b>Dichiara male una funzione esterna e il programma non si costruisce. Era vero in una sola direzione.</b>
-      Quello che una funzione C restituisce era controllato da quando esiste il confine; quello che prende non era controllato affatto, e due lettori indipendenti l&rsquo;hanno dimostrato allo stesso modo: passa un numero troppo grande per lo spazio in cui deve entrare, compila senza una protesta, esegui, stampa qualcos&rsquo;altro.
+      Quello che una funzione C restituisce era controllato da quando esiste il confine; quello che prende non era controllato affatto.
     </li>
     <li id="19">
       <span class="when">M-program-corpus: i programmi come strumento di misura</span>
