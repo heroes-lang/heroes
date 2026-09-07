@@ -1,0 +1,152 @@
+
+  <div class="page-head">
+    <h1 class="page">Autore</h1>
+    <span class="nod">· moonage daydream ·</span>
+  </div>
+  <!-- The two plates the portrait is printed with (site/README.md § The visual
+       system). Inline, not a data URI: a same-document fragment is the only
+       filter reference every browser resolves. The matrix takes the photograph
+       to luminance; the table maps black to the dark plate and white to the
+       light one, so every tone in between lands on the line between two inks. -->
+  <svg class="ink" aria-hidden="true" focusable="false">
+    <filter id="duotone" color-interpolation-filters="sRGB">
+      <feColorMatrix type="matrix" values="0.2126 0.7152 0.0722 0 0
+                                           0.2126 0.7152 0.0722 0 0
+                                           0.2126 0.7152 0.0722 0 0
+                                           0      0      0      1 0"/>
+      <feComponentTransfer>
+        <feFuncR type="gamma" exponent="0.72"/>
+        <feFuncG type="gamma" exponent="0.72"/>
+        <feFuncB type="gamma" exponent="0.72"/>
+      </feComponentTransfer>
+      <feComponentTransfer>
+        <feFuncR type="table" tableValues="0.0627 0.9490"/>
+        <feFuncG type="table" tableValues="0.1098 0.9176"/>
+        <feFuncB type="table" tableValues="0.2196 0.8510"/>
+      </feComponentTransfer>
+    </filter>
+  </svg>
+  <div class="byline">
+    <figure class="portrait">
+      <img src="/images/giuseppe-arici.jpg" alt="Giuseppe Arici, che sorride, con un cappellino con un uccellino giallo.">
+    </figure>
+    <p class="lede">Giuseppe Arici scrive software da oltre vent&rsquo;anni: Java,
+    C#, Rails, iOS, Go, microservizi, DevOps. Un cappellino per ogni linguaggio.
+    È co-fondatore e CTO di Codermine, a Brescia, e autore di <i>Gli eroi del
+    codice</i>, un libro sulla storia dei linguaggi di programmazione,
+    pubblicato su Amazon. <b>Non aveva mai scritto un compilatore prima di
+    questo.</b></p>
+  </div>
+
+  <h2>Con le sue parole</h2>
+  <p>
+    Ho preso la coda del COBOL, sono partito da Java, sono passato per C# e il
+    mondo Microsoft, finché Rails mi ha fatto saltare su Unix. Da lì Linux, il
+    Mac, l'iPhone: per anni il mobile è stato il mio mestiere. Poi è arrivato Go,
+    il Gopher mi ha conquistato, e con lui i microservizi, i backend e ogni
+    genere di architettura. Di questi tempi mi occupo anche di DevOps. Scrivo
+    codice meno di quanto vorrei e gestisco più di quanto ammetterò, agenti
+    intelligenti compresi.
+  </p>
+  <p>
+    Ho fatto consulenza per aziende di ogni tipo e me ne sono venuto via con una
+    convinzione: i problemi veri sono quasi sempre organizzativi, non
+    tecnologici. Per questo non mi lego a una sola tecnologia, anche se ho le mie
+    preferite. Mi definisco, con tutta la modestia possibile, un programmatore
+    poliglotta: un cappello per ogni linguaggio, una maglietta per ogni
+    conferenza. I miei eroi sono John Backus, Dennis Ritchie e Bob Kahn. Sono
+    appassionato di storia, e di storia dell'informatica in particolare. Ho
+    co-fondato <i>#pragma mark</i>, l'associazione italiana che organizza
+    conferenze sull'ecosistema Apple, e ho parlato a Pragma Conference e
+    Codemotion.
+  </p>
+
+  <h2>Il libro <span class="nod">&middot; lady stardust &middot;</span></h2>
+  <p>
+    <a href="https://glieroidelcodice.it"><i>Gli eroi del codice</i></a>,
+    sottotitolo <i>Un viaggio negli anni che hanno scosso i linguaggi di
+    programmazione</i>. In inglese,
+    <a href="https://heroesofcode.com"><i>Heroes of code</i></a>.
+  </p>
+  <p>
+    Si apre a mezzanotte, su un file vuoto, con un programmatore che cerca le
+    parole per raccontare la storia dei linguaggi di programmazione. Poi una voce
+    dietro di lui: David Bowie. Quello che segue è un viaggio onirico nelle
+    stanze dove tutto è cominciato, Bletchley Park, il MIT, Zurigo, i Bell Labs,
+    Oslo, la Silicon Valley, e tra le persone che hanno inventato il modo in cui
+    parliamo alle macchine. All'alba il sogno finisce, la guida si dissolve, e
+    resta solo la strada.
+  </p>
+  <ul class="stats">
+    <li><span class="n">21</span><span class="what">capitoli narrativi</span></li>
+    <li><span class="n">2</span><span class="what">edizioni, italiana e inglese</span></li>
+    <li><span class="n">1</span><span class="what">notte, da mezzanotte all'alba</span></li>
+  </ul>
+  <p>
+    Autopubblicato in brossura A5, marchio &ldquo;Independently published&rdquo;,
+    su Amazon. ISBN 9798195873790 per l'edizione italiana, 9798195884758 per
+    quella inglese.
+  </p>
+  <p>
+    Il libro è venuto prima, e in quest'ordine. Un linguaggio che porta il nome
+    di un album di Bowie, con titoli di canzoni come intestazioni di sezione, non
+    è una battuta venuta a metà strada: è lo stesso lavoro visto dall'altro lato,
+    e le virgolette sono quelle dell'album, messe lì nel 1977 per smorzare la
+    parola. Spiega anche un seggio del collegio di revisione. Chi ha appena
+    passato ventuno capitoli su FORTRAN, ALGOL, Lisp e Simula è nella posizione
+    peggiore per credere che una domanda di design sia nuova, quindi il collegio
+    tiene uno storico: l'unico seggio senza veto e con la regola più severa sulle
+    prove. <a href="/it/project/#panel">Come funziona il collegio &rarr;</a>
+  </p>
+
+  <h2>Chi ha scritto tutto questo</h2>
+  <p>
+    Il compilatore è scritto da un assistente basato su un modello, che lavora
+    sotto un contratto tenuto nel repository e letto all'inizio di ogni sessione.
+    Quel contratto non è un prompt: è un insieme di regole con date e ragioni, la
+    maggior parte scritte il giorno in cui qualcosa è andato storto, ed è il
+    motivo per cui questa pagina può essere precisa su chi ha fatto cosa.
+  </p>
+  <p>
+    L'autore dà la direzione, ratifica ogni decisione di design, e legge il
+    record. Alcuni risultati sono nati da una domanda e non da un'istruzione.
+    Mentre il costo di un controllo di sicurezza veniva contrattato come un
+    numero solo, l'autore ha fatto una domanda diversa: il costo si paga quando
+    il programma viene compilato, o mentre gira? Per rispondere bisognava
+    chiedersi dove un thread esterno <i>entra</i>, invece di dove si vede il
+    danno, e questo ha spostato il controllo da tre posti sbagliati a quello
+    giusto.
+  </p>
+  <p>
+    Vale anche nel verso opposto. Una seduta di design è stata ordinata
+    dall'autore contro il consiglio, dato due volte dall'assistente, di lasciare
+    stare la questione. Cinque giudici l'hanno rifiutata, con tre veti e nessuno
+    sul costo, e il meccanismo che l'autore chiedeva è risultato esistere già.
+    L'autore ha ratificato il rifiuto in una riga.
+  </p>
+  <p>
+    La regola dietro tutto questo è corta: nomina l'autore dove una sua domanda,
+    una correzione o un rifiuto hanno prodotto il risultato, nomina il seggio del
+    collegio dove è stato un seggio a trovarlo, e non nominare nessuno dove il
+    lavoro era ordinario. Dare all'autore il merito di qualcosa trovato
+    dall'assistente sarebbe la stessa falsità con il segno che fa piacere, e
+    quella nessuno andrebbe a controllarla.
+    <a href="/it/log/">Il registro dei lavori &rarr;</a>
+  </p>
+
+  <h2 id="thanks">In piedi sul lavoro di altri</h2>
+  <p>
+    Ogni parte di questo linguaggio poggia su quella di qualcun altro, di solito
+    di decenni fa e spesso descritta in un articolo che ne registra anche il
+    costo. <a href="/it/about/thanks/">I loro nomi, e cosa è stato preso da
+    ognuno &rarr;</a>
+  </p>
+
+  <footer>
+    <p>Altrove: <a href="https://giuseppearici.com/it/">giuseppearici.com</a>
+    e <a href="https://github.com/giuseppearici">github.com/giuseppearici</a>.</p>
+    <p>Fatto da <a href="https://giuseppearici.com/it/">Giuseppe Arici</a>, CTO di Codermine, Brescia. Autore di
+    <i>Gli eroi del codice</i>. In piedi sul
+    <a href="/it/about/thanks/">lavoro di molte altre persone</a>.</p>
+    <p>&copy; 2026 Giuseppe Arici &middot; heroes-lang.org</p>
+  </footer>

@@ -1,0 +1,89 @@
+
+  <div class="page-head">
+    <h1 class="page">Start</h1>
+  </div>
+  <p class="lede">There is no installer. You need a C compiler, and that is the
+  whole list.</p>
+
+  <div class="notice">
+    <p><b>The repository is still private, so the first line below does not work
+    yet.</b> Everything it names is already there. The addresses are final and
+    they open with the code.</p>
+  </div>
+
+  <h2>Four lines</h2>
+  <pre><code>$ git clone https://github.com/heroes-lang/heroes
+$ cd heroes
+$ clang -I runtime seed/heroes.c runtime/runtime.c -o heroes
+$ ./heroes run examples/gallery/03-fallible.hero
+read 42
+failed: not_a_digit (expected 0-9)
+20</code></pre>
+  <p>
+    The third line takes <b>under four seconds</b> on a MacBook Air, which is
+    the machine every measurement on this site comes from. It compiles Heroes out of one C file
+    that Heroes wrote: the compiler is written in Heroes, so the repository
+    ships what it emits and clang is the only thing you need.
+  </p>
+  <p>
+    That middle line saying <code>failed</code> is not the build breaking. It is
+    the example meeting a character it cannot read and saying so, which is what
+    it was asked to do.
+  </p>
+
+  <h2>Run it from the repository</h2>
+  <p>
+    <code>heroes run</code> looks for the runtime, the support code that goes
+    into every binary, in <code>./runtime</code>. So run it from the directory
+    you cloned into. From anywhere else, say where the runtime is:
+  </p>
+  <pre><code>$ HEROES_RUNTIME=~/heroes/runtime heroes run hello.hero</code></pre>
+  <p>
+    It says exactly that when it cannot find it, and it prints the way out. If
+    something else is missing, <code>./heroes doctor</code> names it.
+  </p>
+
+  <h2>Your own program</h2>
+  <p>
+    A file needs nothing around it. No import lines at the top, no project file
+    listing the other files. It needs a <code>main</code>, which is where the
+    program starts.
+  </p>
+  <pre><code>$ printf 'function main()\n    print("we can be heroes")\n' &gt; hello.hero
+$ ./heroes run hello.hero
+we can be heroes</code></pre>
+  <p>
+    <code>heroes run</code> compiles the file and launches it, leaving its
+    working files in a <code>build/</code> folder beside you. The second run of
+    an unchanged file reuses what is in there.
+  </p>
+
+  <h2>One command, eleven verbs</h2>
+  <p>
+    Everything the toolchain does goes through <code>heroes</code>:
+    <code>lex</code>, <code>parse</code>, <code>check</code>,
+    <code>build</code>, <code>run</code>, <code>test</code>, <code>fmt</code>,
+    <code>doctor</code>, <code>mutate</code>, <code>measure</code>,
+    <code>this</code>. There is no second binary, no build file and no plugin.
+  </p>
+  <p>
+    <code>heroes fmt</code> prints the one canonical form of a file: same
+    indentation, same line breaks, same order. Every Heroes file in the
+    repository comes back from it unchanged, byte for byte, so a difference
+    between two versions of a file is a difference in what the program does.
+  </p>
+  <p>
+    <a href="/examples/">Every example on this site</a> is a file in
+    <code>examples/</code>, with the command that runs it and the output it
+    prints.
+  </p>
+
+  <footer>
+    <p>Heroes is not packaged yet: no installer and no public release, so the
+    way in is a C compiler and one command. Installing it with one line is
+    work that is scheduled and not done.</p>
+    <p>Built by <a href="https://giuseppearici.com/en/">Giuseppe Arici</a>, CTO at Codermine, Brescia. Author of
+    <a href="/about/"><i>Heroes of code</i></a>. Standing on
+    <a href="/about/#thanks">a lot of other people&rsquo;s work</a>.</p>
+    <p>&copy; 2026 Giuseppe Arici &middot; heroes-lang.org</p>
+  </footer>

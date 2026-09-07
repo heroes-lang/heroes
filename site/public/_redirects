@@ -1,0 +1,28 @@
+# Where the five retired pages went.
+#
+# The nav went from eight entries that were the project's own shelves to seven
+# that answer a visitor's questions (author instruction 2026-09-06). Three pages
+# became one, /project/, and two became /about/. These URLs were never public,
+# because the site was published with the repository still private and nothing
+# links here yet, but they are in llms.txt and in the sitemap that has been
+# served, so they answer rather than 404.
+#
+# Cloudflare Pages reads this file from the build output directory, which is
+# where Astro copies site/public/ (Pages documentation, read 2026-09-06). The
+# syntax is `[source] [destination] [code]`, the code defaults to 302, and a
+# fragment in the destination is allowed.
+#
+# Internal links do not rely on these: every link inside the site was repointed
+# in the same commit, so a reader never pays the hop.
+
+/selfhost/     /project/#self-hosted     301
+/panel/        /project/#panel           301
+/zen/          /project/#zen             301
+/author/       /about/                   301
+/thanks/       /about/thanks/            301
+
+/it/selfhost/  /it/project/#self-hosted  301
+/it/panel/     /it/project/#panel        301
+/it/zen/       /it/project/#zen          301
+/it/author/    /it/about/                301
+/it/thanks/    /it/about/thanks/         301

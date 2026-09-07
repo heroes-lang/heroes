@@ -1,8 +1,0 @@
----
-import BaseLayout from '../../layouts/BaseLayout.astro';
-import { page } from '../../lib/figures.ts';
-import content from '../../html/it/zen.html?raw';
----
-<BaseLayout url="/it/zen/" title={'Lo Zen di Heroes, venti righe dentro il compilatore'} description={'Le venti righe stampate da heroes this, con la traduzione italiana e la spiegazione delle regole che rappresentano.'} current="zen">
-<Fragment set:html={page(content, 'site/src/html/it/zen.html')} />
-</BaseLayout>

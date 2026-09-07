@@ -1,0 +1,156 @@
+
+  <div class="page-head">
+    <h1 class="page">Il progetto</h1>
+    <span class="nod">· a new career in a new town ·</span>
+  </div>
+  <p class="lede">Come il compilatore dimostra se stesso, come si decide un
+  cambiamento al linguaggio, e le venti righe che il binario stampa quando gli
+  chiedi in cosa crede.</p>
+
+  <h2 id="self-hosted">Si compila da solo, e questa è la prova</h2>
+  <p>
+    Il compilatore di Heroes è scritto in Heroes. Un linguaggio resta un
+    giocattolo finché non riesce a scrivere il proprio compilatore: per farlo
+    servono dati annidati, tabelle di nomi, ricorsione, gestione degli errori
+    vera e programmi divisi su più file. Se un linguaggio regge tutto questo, la
+    discussione se sia reale è chiusa.
+  </p>
+  <p>
+    La prova non è una suite di test. Il repository contiene il compilatore come
+    un unico file C generato, che è il modo in cui una macchina senza Heroes
+    ottiene il primo compilatore. Compila quello, chiedi al compilatore che ne
+    esce di riscrivere il proprio codice in C, e confronta:
+  </p>
+  <pre class="fixpoint"><code>$ clang -I runtime seed/heroes.c runtime/runtime.c -o heroes
+$ ./heroes build selfhost/main.hero --emit-c -o out.c
+$ cmp out.c seed/heroes.c
+<span class="c">                    (cmp non stampa niente: non un byte di differenza)</span>
+
+  seed/heroes.c   il C che il repository contiene: la via d'ingresso
+  out.c           quello che il compilatore scrive compilando se stesso
+
+<span class="c">  oltre 22 megabyte di C, e più di 700.000 righe</span></code></pre>
+  <p>
+    <code>cmp</code> non stampa niente, ed è così che dice che i due file sono
+    uguali. Quindi il C nel repository non è una copia che qualcuno tiene
+    aggiornata: è quello che il compilatore scrive, e il compilatore costruito
+    da lì lo riscrive identico. La riga in mezzo prende ben meno di un minuto su un MacBook Air. Tre
+    righe, e chiunque può eseguirle.
+  </p>
+  <ul class="stats">
+    <li><span class="n">180+</span><span class="what">moduli di Heroes</span></li>
+    <li><span class="n">55k</span><span class="what">righe, e crescono</span></li>
+    <li><span class="n">0</span><span class="what">aggiramenti rimasti nel codice portato</span></li>
+    <li><span class="n">100+</span><span class="what">sedute di design nei record</span></li>
+  </ul>
+  <p>
+    È tutto il compilatore e non un pezzo: la parte che spezza il testo in
+    parole, quella che trova la struttura, quella che lega ogni nome alla sua
+    dichiarazione, il controllo dei tipi, la forma intermedia con il suo
+    controllore, il passaggio che decide quando ogni valore viene liberato, la
+    traduzione in C, i controlli contro le librerie esterne, i messaggi
+    d'errore, il formattatore e la riga di comando.
+  </p>
+
+  <h3>Cosa è venuto fuori puntandolo su se stesso</h3>
+  <p>
+    Il compilatore nuovo ha rifiutato il proprio codice, sostenendo che un pezzo
+    della sua struttura contenesse se stesso, cosa falsa. Tirare quel filo ha
+    prodotto cinque guasti veri nel compilatore nuovo e quattro in quello
+    vecchio. Compreso questo: la sottolineatura che mostra al lettore dove è
+    l'errore copriva la nota scritta su quella riga proprio per verificare
+    quella sottolineatura. Il figlio ha corretto il padre.
+  </p>
+  <p>
+    Un compilatore puntato sul proprio codice è un corpus che nessuna suite di
+    test riproduce. Contiene tutte le forme del linguaggio, nelle proporzioni in
+    cui le ha il codice vero, ed è così che cinque di quei guasti sono venuti a
+    galla. Erano una sola trappola vestita in cinque modi: un salto di ciclo
+    dentro un ramo di <code>match</code> saltava la riga che teneva aggiornato
+    un indice mantenuto a mano.
+  </p>
+  <p>
+    L'ultima cosa che separava i due file era un messaggio che il compilatore
+    vecchio aveva lasciato scritto in tre posti per chi avrebbe fatto questo
+    lavoro: <i>qui questa lista esce in ordine, e quello nuovo dovrà un
+    ordinamento esplicito</i>. Tre ordinamenti, non pagati, e il risultato erano
+    venti megabyte di C con tutte le righe uguali e l'ordine diverso, su qualche migliaio
+    di esse. Una mappa non ha un ordine: il linguaggio lo dice e lo intende
+    davvero, quindi quella nota era giusta il giorno in cui è stata scritta ed è
+    rimasta giusta per mesi, fino a quando è servita a qualcuno.
+  </p>
+
+  <h2 id="panel">Come si decide un cambiamento al linguaggio <span class="nod">&middot; five years &middot;</span></h2>
+  <p>
+    Niente entra nel linguaggio perché è elegante. Un cambiamento alla sintassi,
+    alla semantica, a una classe di messaggi d'errore o alla forma del
+    compilatore passa prima da un collegio di cinque seggi, ognuno con
+    materiale diverso di proposito, e quattro di loro possono rifiutare.
+  </p>
+  <ul class="seats">
+    <li><span class="who">Il lettore</span><span>Riceve la specifica e programmi d'esempio, e mai il documento di design o il codice. Il suo verdetto è un esperimento sul fatto che il linguaggio si legga, non un'opinione. <span class="veto">veto</span></span></li>
+    <li><span class="who">L'ingegnere del compilatore</span><span>Riceve l'albero dei sorgenti vero e mette un prezzo al cambiamento in codice da scrivere e da mantenere. <span class="veto">veto</span></span></li>
+    <li><span class="who">Il pragmatico del C</span><span>Riceve il C che servirebbe a un collegamento vero e lo compila, oppure mostra perché non si può compilare. <span class="veto">veto</span></span></li>
+    <li><span class="who">Il guardiano della specifica</span><span>Riceve il conteggio dei token misurato prima e dopo, mai una stima, e difende il budget in cui tutto il linguaggio deve stare. <span class="veto">veto</span></span></li>
+    <li><span class="who">Lo storico</span><span>Deve cercare sul web e citare date e fonti: un precedente senza fonte è inammissibile. Consiglia e non può rifiutare.</span></li>
+  </ul>
+  <p>
+    Il collegio non blocca mai il lavoro. Adotta la risoluzione più solida e
+    completa che riesce a trovare, mai la più economica e mai un compromesso, la
+    segna come in attesa della parola dell'autore, e il lavoro continua. Dove la
+    risposta solida e quella prudente non concordano, prende quella solida e
+    scrive cosa avrebbe detto l'altra, così l'autore può ancora scegliere.
+  </p>
+  <p>
+    Ogni seduta è un file nel repository, con i dossier, i verdetti e i veti. Ce
+    ne sono più di cento. Un cambiamento al linguaggio che non ha una seduta dietro non
+    ha una via d'ingresso.
+  </p>
+
+  <h2 id="zen">Venti righe <span class="nod">&middot; moonage daydream &middot;</span></h2>
+  <p>
+    <code>heroes this</code> stampa queste. Viaggiano dentro il compilatore,
+    quindi sono l'unico pezzo del progetto che non può andare fuori sincrono con
+    la documentazione. Restano in inglese perché sono quello che il binario
+    stampa, e due delle righe citano una canzone.
+  </p>
+  <pre lang="en"><code>The Zen of Heroes
+
+ 1. This language begins with a tribute to David Bowie.
+ 2. It is made for language models; people can read it too.
+ 3. A model may have read everything; each page must still explain itself.
+ 4. What the eye can see is all there is: sound and vision.
+ 5. There is one way to say each thing; every program sings in the same voice.
+ 6. That way may not be obvious at first; the Starman already knows it.
+ 7. The semantics are familiar; the syntax is new.
+ 8. Turn and face the strange: every strange choice here is deliberate.
+ 9. Nothing changes behind your back; every change signs its name.
+10. Every plausible mistake must become a compile error before the program runs.
+11. Unless you mark the unfinished place with ???.
+12. An honest hole beats a confident guess.
+13. A compile-time error is an answer; a runtime error is an ambush.
+14. An error should tell you how to fix the program. Anything less is a complaint.
+15. Repeating a word is cheap; forgetting one can cost the whole program.
+16. The specification stays small under pressure; every word must earn its place.
+17. Crashes and leaks are bugs. Ashes to ashes: what Heroes takes, it returns.
+18. When pretty code and safe code disagree, safe code wins.
+19. There is no standard library; C is the man who sold the world.
+20. We can be heroes, just for one day.</code></pre>
+  <p>
+    La riga 10 è la tesi, la 19 è il vincolo di partenza, e la 18 è la regola
+    che decide quando due principi tirano in direzioni opposte. Il resto è come
+    ci si sente a lavorare qui.
+    <a href="/it/why/">Perché il linguaggio è fatto così &rarr;</a>
+  </p>
+
+  <footer>
+    <p>I tre comandi qui sopra sono quelli che l'integrazione continua esegue a
+    ogni push, su tre piattaforme. Il record di ogni decisione, sedute e misure
+    comprese, è tenuto nel
+    <a href="https://github.com/heroes-lang/heroes">repository</a>, che è ancora
+    privato e si apre insieme al codice.</p>
+    <p>Fatto da <a href="https://giuseppearici.com/it/">Giuseppe Arici</a>, CTO di Codermine, Brescia. Autore di
+    <a href="/it/about/"><i>Gli eroi del codice</i></a>. In piedi sul
+    <a href="/it/about/#thanks">lavoro di molte altre persone</a>.</p>
+    <p>&copy; 2026 Giuseppe Arici &middot; heroes-lang.org</p>
+  </footer>

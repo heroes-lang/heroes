@@ -1,8 +1,0 @@
----
-import BaseLayout from '../layouts/BaseLayout.astro';
-import { page } from '../lib/figures.ts';
-import content from '../html/thanks.html?raw';
----
-<BaseLayout url="/thanks/" title={'Thanks: the people Heroes borrowed from'} description={'Ideas borrowed from C, Hylo, Swift, Cyclone, Go, Nim, Zig, Ada, Pascal, ML, Erlang, APL, Idris, Agda and other languages, with the names of the people who developed them.'} current="thanks">
-<Fragment set:html={page(content, 'site/src/html/thanks.html')} />
-</BaseLayout>
