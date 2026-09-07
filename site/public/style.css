@@ -828,11 +828,12 @@ figure.example figcaption::before { content: '\21B3\00A0'; color: var(--dim); }
 }
 .cards a.more::after { content: ' \2192'; }
 
-/* The fold's last line, decided rather than left to the column's width: a
-   label over the one command that works today, the same lockup at 390 and at
-   1400. It had no rule at all and happened to break into two lines at 1200. */
-.hero .version { margin: 1rem 0 0; font-size: 0.95rem; color: var(--dim); }
-.hero .version code.cmd { display: block; width: max-content; margin-top: 0.3rem; color: var(--code); }
+/* Under the band of three numbers rather than in the fold, and without the
+   version it used to carry (author instruction 2026-09-08): a label over the
+   one command that works today, the same lockup at 390 and at 1400. It had no
+   rule at all and happened to break into two lines at 1200. */
+.whole-language { margin: 1rem 0 0; font-size: 0.95rem; color: var(--dim); }
+.whole-language code.cmd { display: block; width: max-content; margin-top: 0.3rem; color: var(--code); }
 
 /* == 9. subpage heads, docs =============================================== */
 
