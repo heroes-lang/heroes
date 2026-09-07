@@ -28,7 +28,7 @@
   </svg>
   <div class="byline">
     <figure class="portrait">
-      <img src="/images/giuseppe-arici.jpg" alt="Giuseppe Arici, che sorride, con un cappellino con un uccellino giallo.">
+      <img src="/images/giuseppe-arici.jpg" alt="Giuseppe Arici sorride e indossa un cappellino con un uccellino giallo.">
     </figure>
     <p class="lede">Giuseppe Arici scrive software da oltre vent&rsquo;anni: Java,
     C#, Rails, iOS, Go, microservizi, DevOps. Un cappellino per ogni linguaggio.
@@ -40,7 +40,7 @@
 
   <h2>Con le sue parole</h2>
   <p>
-    Ho preso la coda del COBOL, sono partito da Java, sono passato per C# e il
+    Ho incrociato il COBOL, sono partito da Java, sono passato per C# e il
     mondo Microsoft, finché Rails mi ha fatto saltare su Unix. Da lì Linux, il
     Mac, l&rsquo;iPhone: per anni il mobile è stato il mio mestiere. Poi è arrivato Go,
     il Gopher mi ha conquistato, e con lui i microservizi, i backend e ogni
@@ -88,62 +88,30 @@
     quella inglese.
   </p>
   <p>
-    Il libro è venuto prima, e in quest&rsquo;ordine. Un linguaggio che porta il nome
-    di un album di Bowie, con titoli di canzoni come intestazioni di sezione, non è una trovata arrivata a metà strada: è lo stesso lavoro visto dall&rsquo;altro lato,
-    e le virgolette sono quelle dell&rsquo;album, messe lì nel 1977 per smorzare la
-    parola. Spiega anche un seggio del collegio. Chi ha appena
-    passato ventuno capitoli su FORTRAN, ALGOL, Lisp e Simula è nella posizione
-    peggiore per credere che una domanda di design sia nuova, quindi il collegio
-    tiene uno storico: l&rsquo;unico seggio senza veto e con la regola più severa sulle
-    prove. <a href="/it/project/#panel">Come funziona il collegio &rarr;</a>
+    Il libro è nato prima del linguaggio. Il nome Heroes e i titoli di canzoni nelle sezioni continuano quel lavoro sulla storia della programmazione. Le virgolette riprendono quelle dell&rsquo;album di Bowie del 1977. L&rsquo;attenzione alla storia spiega anche la presenza di uno storico nel collegio: chi ha studiato FORTRAN, ALGOL, Lisp e Simula sa quanto spesso una scelta abbia già dei precedenti. Lo storico non ha potere di veto e deve documentare ogni precedente con fonti verificabili. <a href="/it/project/#panel">Come funziona il collegio &rarr;</a>
   </p>
 
   <h2>Chi ha scritto tutto questo</h2>
   <p>
-    Il compilatore è scritto da un assistente basato su un modello, che lavora
-    sotto un contratto tenuto nel repository e letto all&rsquo;inizio di ogni sessione.
-    Quel contratto non è un prompt: è un insieme di regole con date e ragioni, la
-    maggior parte scritte il giorno in cui qualcosa è andato storto, ed è il
-    motivo per cui questa pagina può essere precisa su chi ha fatto cosa.
+    Il compilatore è scritto da un assistente AI che segue un insieme di regole conservato nel repository, l&rsquo;archivio del progetto. L&rsquo;assistente le legge all&rsquo;inizio di ogni sessione. Molte sono nate per evitare di ripetere errori già commessi e ne registrano il motivo.
   </p>
   <p>
-    L&rsquo;autore dà la direzione, ratifica ogni decisione di design, e legge il
-    record. Alcuni risultati sono nati da una domanda e non da un&rsquo;istruzione.
-    Mentre il costo di un controllo di sicurezza si discuteva come se fosse un numero solo, l&rsquo;autore ha fatto una domanda diversa: il costo si paga quando
-    il programma viene compilato, o mentre gira? Per rispondere bisognava
-    chiedersi dove un thread esterno <i>entra</i>, invece di dove si vede il
-    danno, e questo ha spostato il controllo da tre posti sbagliati a quello
-    giusto.
+    L&rsquo;autore sceglie la direzione, approva ogni decisione di progetto e legge i resoconti. Alcuni risultati sono nati dalle sue domande. Durante una discussione su un controllo di sicurezza ha chiesto se il costo si pagasse durante la compilazione o durante l&rsquo;esecuzione. La risposta ha portato a controllare il punto in cui un thread esterno, cioè un&rsquo;operazione avviata da una libreria, entra nel codice Heroes. Il controllo è stato così spostato nel punto corretto.
   </p>
   <p>
-    Vale anche nel verso opposto. Una seduta di design è stata ordinata
-    dall&rsquo;autore contro il consiglio, dato due volte dall&rsquo;assistente, di lasciare
-    stare la questione. Cinque giudici l&rsquo;hanno rifiutata, con tre veti e nessuno
-    sul costo, e il meccanismo che l&rsquo;autore chiedeva è risultato esistere già.
-    L&rsquo;autore ha ratificato il rifiuto in una riga.
+    L&rsquo;autore ha anche richiesto una revisione contro il consiglio dell&rsquo;assistente. Il collegio ha respinto la proposta e ha verificato che il meccanismo richiesto esisteva già. L&rsquo;autore ha approvato il rifiuto.
   </p>
   <p>
-    La regola dietro tutto questo è breve: nomina l&rsquo;autore dove una sua domanda,
-    una correzione o un rifiuto hanno prodotto il risultato, nomina il seggio del
-    collegio dove è stato un seggio a trovarlo, e non nominare nessuno dove il
-    lavoro era ordinario. Dare all&rsquo;autore il merito di qualcosa trovato
-    dall&rsquo;assistente sarebbe la stessa falsità con il segno che fa piacere, e
-    quella nessuno andrebbe a controllarla.
-    <a href="/it/log/">Il diario &rarr;</a>
+    I resoconti attribuiscono ogni risultato a chi lo ha prodotto: l&rsquo;autore, l&rsquo;assistente o un membro del collegio. Il lavoro ordinario non richiede un&rsquo;attribuzione personale. <a href="/it/log/">Il diario &rarr;</a>
   </p>
 
   <h2 id="thanks">Sulle spalle di altri</h2>
   <p>
-    Ogni parte di questo linguaggio poggia su quella di qualcun altro, di solito
-    di decenni fa e spesso descritta in un articolo che ne registra anche il
-    costo. <a href="/it/about/thanks/">I loro nomi, e cosa è stato preso da
-    ognuno &rarr;</a>
+    Heroes riprende idee di altri linguaggi e lavori di ricerca. La pagina dei ringraziamenti indica <a href="/it/about/thanks/">gli autori e i contributi usati &rarr;</a>
   </p>
 
   <p class="next away">
-    Il linguaggio che ha imparato a costruire è <a href="/it/spec/">un file
-    solo</a>, e <a href="/it/start/">quattro comandi</a> costruiscono il
-    compilatore che ha scritto se stesso.
+    La specifica completa è in <a href="/it/spec/">un solo file</a>. La guida per iniziare mostra i <a href="/it/start/">quattro comandi</a> per compilare Heroes ed eseguire un esempio.
   </p>
 
   <footer>

@@ -3,6 +3,6 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 import { page } from '../../../lib/figures.ts';
 import content from '../../../html/it/docs/control-flow.html?raw';
 ---
-<BaseLayout url="/it/docs/control-flow/" title={'Il flusso di controllo: documentazione di Heroes'} description={'Due cicli e una condizione. if vuole solo bool perché non esiste la verità implicita, for percorre una sequenza, while ripete su una condizione, e un intervallo è una normale chiamata di funzione.'} current="docs">
+<BaseLayout url="/it/docs/control-flow/" title={"Il flusso di controllo: documentazione di Heroes"} description={"Usa if per le condizioni, for per percorrere sequenze e while per ripetere operazioni finché una condizione è vera."} current="docs">
 <Fragment set:html={page(content, 'site/src/html/it/docs/control-flow.html')} />
 </BaseLayout>

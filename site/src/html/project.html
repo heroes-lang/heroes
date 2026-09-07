@@ -3,31 +3,22 @@
     <h1 class="page">The project</h1>
     <span class="nod">· a new career in a new town ·</span>
   </div>
-  <p class="lede">How the compiler proves itself, how a change to the language
-  gets decided, and the twenty lines the binary prints when you ask it what it
-  believes.</p>
+  <p class="lede">
+    How to verify that the compiler compiles itself, how language changes are reviewed and the twenty principles printed by <code>heroes this</code>.
+  </p>
 
   <div class="notice">
-    <p><b>The repository is still private, so the three commands below cannot be
-    run yet.</b> They are what proves this, they are final, and they open with
-    the code. What works today is on this site:
-    <a href="/spec/">the specification</a> and
-    <a href="/examples/">every program</a> with the output it really prints.</p>
+    <p>
+    <b>The commands below require the repository, which is still private.</b> You can already read <a href="/spec/">the specification</a> and <a href="/examples/">the examples</a>, with recorded output where available.
+  </p>
   </div>
 
-  <h2 id="self-hosted">It compiles itself, and here is the proof</h2>
+  <h2 id="self-hosted">How to verify that it compiles itself</h2>
   <p>
-    The Heroes compiler is written in Heroes. A language stays a toy until it
-    can write its own compiler. Doing that needs nested data, tables of names,
-    recursion, real error handling and programs split across files. If a
-    language carries all of that, the argument about whether it is real is
-    over.
+    The Heroes compiler is written in Heroes. Compiling it requires nested data, name tables, recursion, error handling and programs spread across files. It is a practical test of how the language handles a complex program.
   </p>
   <p>
-    The proof is not a test suite. The repository ships the compiler as one
-    generated C file, which is how a machine with no Heroes on it gets a first
-    compiler. Build that, ask the compiler it gives you to write its own source
-    out as C, and compare:
+    The repository, the project&rsquo;s archive, also contains the compiler as one generated C file. You can build it on a computer without Heroes installed. Then use the resulting compiler to translate its own source into C and compare the two files:
   </p>
   <pre class="fixpoint"><code>$ clang -I runtime seed/heroes.c runtime/runtime.c -o heroes
 $ ./heroes build selfhost/main.hero --emit-c -o out.c
@@ -39,11 +30,7 @@ $ cmp out.c seed/heroes.c
 
 <span class="c">  over 22 megabytes of C, and more than 700,000 lines of it</span></code></pre>
   <p>
-    <code>cmp</code> prints nothing, which is how it says the files are the
-    same. So the C in the repository is not a copy anybody maintains: it is what
-    the compiler writes, and the compiler built from it writes it again. The
-    middle line takes under a minute on a MacBook Air. Three lines, and
-    anybody with the repository can run them.
+    If the files are identical, <code>cmp</code> prints nothing. The comparison verifies that the compiler reproduces the C it was built from. The middle command takes under a minute on a MacBook Air. Anyone with access to the repository can repeat the test.
   </p>
   <ul class="stats">
     <li><span class="n">180+</span><span class="what">modules of Heroes</span></li>
@@ -52,72 +39,41 @@ $ cmp out.c seed/heroes.c
     <li><span class="n">100+</span><span class="what">design sittings on the record</span></li>
   </ul>
   <p>
-    That is the whole compiler and not a subset. Text into words; words into
-    structure; every name tied to its declaration; the type checker; the middle
-    form with its own checker; the pass that decides when each value is
-    released; the translation into C; the checks against foreign libraries; the
-    error messages; the formatter; the command line.
+    Heroes implements every part of the compiler: reading the words and structure of the code, connecting names to declarations, checking types, creating and checking an intermediate representation of the program, managing memory, generating C, checking external libraries, reporting errors, formatting code and handling commands.
   </p>
 
-  <h3>What pointing it at itself found</h3>
+  <h3>Errors found by compiling its own source</h3>
   <p>
-    The new compiler refused its own source, claiming a piece of its own
-    structure contained itself, which was false. Pulling that thread produced
-    five real faults in the new compiler and four in the old one. One of the four
-    was this: the underline that shows a reader where an error is was covering
-    the note written on that line to test that underline. The child corrected
-    the parent.
+    The new compiler initially rejected its own source, incorrectly reporting a structure that contained itself. Investigating this found defects in both the new compiler and its predecessor. One involved the underline in an error message: it covered the annotation that the test used to check its position.
   </p>
   <p>
-    A compiler pointed at its own source is a corpus no test suite reproduces.
-    It holds every shape the language has, in the proportions real code has
-    them, which is how five of those faults surfaced. They were one trap worn
-    five ways. A loop jump inside a match arm skipped the line that kept a
-    hand-maintained index up to date.
+    Compiling the compiler&rsquo;s source tests many language forms in one program. Several defects had the same cause: a loop jump inside a <code>match</code> branch skipped the instruction that updated a manually maintained index.
   </p>
   <p>
-    The last thing standing between the two files was a message the old compiler
-    had written down in three places for whoever would do this work: <i>this list
-    comes out in order here, and the new one will owe an explicit sort</i>. Three
-    sorts, unpaid. The result was a file whose lines all
-    matched and whose order did not, on a few thousand of them. A map has no
-    order: the language says so and measurably means it. The note was right the
-    day it was written, and stayed right until somebody needed it.
+    The final difference between the two files was the order of the lines. Some lists were already ordered in the previous compiler; the new one needed explicit sorting, as notes in the source had warned. Maps do not guarantee an order. Adding the missing sorts made the files identical.
   </p>
 
-  <h2 id="panel">How a change to the language gets decided <span class="nod">&middot; five years &middot;</span></h2>
+  <h2 id="panel">How language changes are reviewed <span class="nod">&middot; five years &middot;</span></h2>
   <p>
-    Nothing reaches the language because it is elegant. A change to the
-    syntax, the semantics, a class of error message or the shape of the
-    compiler goes to a panel of five seats first. Each seat is given different
-    material on purpose, and four of them can refuse outright. A change that
-    adds no syntax, touches no error message and moves no word of the
-    specification, the kind that lives only inside the compiler or its runtime,
-    goes to two of the five.
+    Changes to syntax, language rules, error messages or compiler structure are reviewed by a panel of five seats. Each seat receives different material, and four can veto a proposal. Internal compiler or runtime changes, which affect the code that supports execution, go to two of the five if they leave syntax, error messages and the specification unchanged.
   </p>
   <ul class="seats">
-    <li><span class="who">The reader</span><span>Gets the specification and sample programs, and never the design document or the code. Its verdict is an experiment about whether the language can be read, not an opinion. <span class="veto">veto</span></span></li>
-    <li><span class="who">The compiler engineer</span><span>Gets the actual source tree and prices the change in code that has to be written and kept. <span class="veto">veto</span></span></li>
-    <li><span class="who">The C pragmatist</span><span>Gets the C a real binding would need and compiles it, or shows why it cannot be compiled. <span class="veto">veto</span></span></li>
-    <li><span class="who">The spec warden</span><span>Gets the measured token count before and after, never an estimate, and guards the budget the whole language has to fit in. <span class="veto">veto</span></span></li>
-    <li><span class="who">The historian</span><span>Has to search the web and cite dates and sources: unsourced precedent is inadmissible. It advises and cannot refuse.</span></li>
+    <li><span class="who">The reader</span><span>Receives the specification and sample programs, without the design document or compiler source. Tests whether the language can be understood. <span class="veto">veto</span></span></li>
+    <li><span class="who">The compiler engineer</span><span>Examines the source and assesses how much code the change requires to write and maintain. <span class="veto">veto</span></span></li>
+    <li><span class="who">The C pragmatist</span><span>Compiles the C code needed to use a library from Heroes, or documents why compilation fails. <span class="veto">veto</span></span></li>
+    <li><span class="who">The spec warden</span><span>Compares token counts before and after the change and checks that the specification stays within its limit. Tokens are the pieces of text a model reads. <span class="veto">veto</span></span></li>
+    <li><span class="who">The historian</span><span>Has to search the web and cite dates and sources: unsourced precedent is inadmissible. Advises without veto power.</span></li>
   </ul>
   <p>
-    The panel never blocks the work. It adopts the strongest and most complete resolution it can find, never the cheapest and never a compromise. It marks
-    that as awaiting the author&rsquo;s word, and the work goes on. Where the strong answer and the cautious one disagree, it takes the strong one and writes
-    down the other, so the author can still choose it.
+    The panel chooses the solution it considers strongest and most complete, then submits it to the author for approval. Work continues while confirmation is pending. If there is a more cautious alternative, it is recorded so the author can consider it.
   </p>
   <p>
-    Every sitting is a file in the repository, with the briefs, the verdicts and
-    the vetoes. There are more than a hundred of them. A change to the language that has no
-    sitting behind it has no way in.
+    Each review is recorded in a repository file, including the material examined, the verdicts and any vetoes. There are more than a hundred reviews. Every language change requires this review process.
   </p>
 
   <h2 id="zen">Twenty lines</h2>
   <p>
-    <code>heroes this</code> prints these. They ship inside the compiler, so
-    they are the one piece of the project that cannot go out of date with the
-    documentation.
+    <code>heroes this</code> prints these principles, which are included in the compiler. They are reproduced here as the command prints them.
   </p>
   <pre><code>The Zen of Heroes
 
@@ -142,22 +98,13 @@ $ cmp out.c seed/heroes.c
 19. There is no standard library; C is the man who sold the world.
 20. We can be heroes, just for one day.</code></pre>
   <p>
-    Line 10 is the thesis, line 19 is the founding constraint, and line 18 is
-    the tie-break when two rules pull opposite ways. The rest is how it feels to
-    work here. <a href="/why/">Why the language is built this way &rarr;</a>
+    Line 10 states the thesis, line 19 the initial constraint and line 18 the priority when two principles conflict. <a href="/why/">Why the language is built this way &rarr;</a>
   </p>
 
   <footer>
-    <p>The first command in the proof at the top of this page is the one the
-    continuous integration runs on every push that touches the compiler, on
-    Linux, and on every milestone tag on three platforms. The other two, the
-    check that the compiler reproduces its own C, run on the Linux leg alone
-    whatever started the run,
-    because the C the compiler emits is the same on every platform. The record
-    of every decision, sittings and
-    measurements included, is kept in the
-    <a href="https://github.com/heroes-lang/heroes">repository</a>, which is
-    still private and opens with the code.</p>
+    <p>
+    The continuous integration system, which runs automated checks, runs the first command on Linux when compiler changes are submitted. When a milestone version, a completed stage of the project, is tagged, it runs on three platforms. The other two commands run only on Linux: they check that the compiler reproduces its own C, which is the same across platforms. Decisions, reviews and measurements are in the <a href="https://github.com/heroes-lang/heroes">repository</a>, which will be accessible when the code is public.
+  </p>
     <p>Built by <a href="https://giuseppearici.com/en/">Giuseppe Arici</a>, CTO at Codermine, Brescia. Author of
     <a href="/about/"><i>Heroes of code</i></a>. Standing on
     <a href="/about/thanks/">a lot of other people&rsquo;s work</a>.</p>

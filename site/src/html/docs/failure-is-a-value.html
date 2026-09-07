@@ -1,30 +1,19 @@
 
-  <p class="crumb"><a href="/">Heroes</a> / <a href="/docs/">Docs</a> / chapter 4</p>
+  <p class="crumb"><a href="/">Heroes</a> / <a href="/docs/">Guide</a> / chapter 4</p>
 
   <h1 class="chapter">Failure is a value</h1>
   <p class="tagline">There is no <code>null</code>, and there are no exceptions.</p>
 
   <p>
-    Most languages give you two ways for something to be missing or to go wrong,
-    and both of them are invisible in the code that uses them. A value might be
-    <code>null</code>, and nothing on the line tells you whether it is. A call
-    might throw, and nothing on the line tells you whether it does. Both produce
-    the same class of bug: <b>the unhandled path</b>, the one kind of mistake
-    that raises no compile error in any language that has it.
+    An operation may find no value or fail. Many languages represent these cases with <code>null</code>, which means no value, or exceptions, which interrupt normal execution. If the code does not handle them, the problem may only appear when the program runs.
   </p>
   <p>
-    That is the class Heroes exists to remove, so it has neither. Instead, a
-    function that can fail says so in its type, and every reader, human or
-    model, can see it without opening another file.
+    Heroes uses a type that represents both outcomes: a value or an error. It has no <code>null</code> or exceptions. A function&rsquo;s declaration tells you whether it can fail, without requiring you to read its body.
   </p>
 
   <h3>A type that means &ldquo;or an error&rdquo;</h3>
   <p>
-    Write <code>i64?</code> and you have said: this is a whole number, or an
-    error explaining why there is not one. There is no third possibility, and
-    there is no way to use the number without dealing with the other case.
-    Inside such a function, <code>ok(v)</code> makes the good answer and
-    <code>fail(code, msg)</code> makes the bad one:
+    <code>i64?</code> means an integer or an error. Before using the integer, you must handle the possibility of failure. In a function with this return type, <code>ok(v)</code> returns a value and <code>fail(code, msg)</code> returns an error:
   </p>
   <figure class="example" data-src="examples/gallery/03-fallible.hero" data-lines="7-11">
 <pre><code><span class="c"># Parses a decimal digit. Fails on anything else.</span>
@@ -35,18 +24,12 @@
     <figcaption>examples/gallery/03-fallible.hero, lines 7&ndash;11</figcaption>
   </figure>
   <p>
-    The error carries two things, and both are deliberate. The
-    <b>code</b>, <code>"not_a_digit"</code>, is a short, stable name in
-    snake_case, meant to be compared by a program: it is the part that does not
-    change when somebody improves the wording. The <b>message</b> is for
-    whoever reads the failure. 
+    The error contains a <b>code</b> and a <b>message</b>. The code, such as <code>"not_a_digit"</code>, is a stable name in snake_case: lowercase words separated by underscores. The program uses it to distinguish errors and decide how to handle them. The message explains the problem to the reader and can be improved without changing the code.
   </p>
 
-  <h3>Handing a failure upwards: <code>?</code></h3>
+  <h3>Returning an error to the caller: <code>?</code></h3>
   <p>
-    Most of the time a function that hits a failure has nothing useful to add
-    and wants to stop and pass it along. <code>?</code> does that <i>visibly, on
-    the line where it happens</i>:
+    To return an error to the caller without handling it here, add <code>?</code> to the call. The symbol <i>marks the point where the function can return early</i>:
   </p>
   <figure class="example" data-src="examples/gallery/03-fallible.hero" data-lines="13-22">
 <pre><code><span class="c"># Reads a whole non-negative number. Empty input is an error, not a zero.</span>
@@ -62,23 +45,13 @@
     <figcaption>examples/gallery/03-fallible.hero, lines 13&ndash;22</figcaption>
   </figure>
   <p>
-    Read the loop body. <code>digit_of(text[i])?</code> means: call it, and if
-    it failed, <b>stop this function now and return that same error to my
-    caller</b>. If it succeeded, carry on with the number it produced. One
-    character of syntax, in the exact place the control flow forks, which is
-    the whole difference from an exception. An exception also jumps out of the
-    function, but it does it from a line that looks like it cannot.
+    <code>digit_of(text[i])?</code> calls <code>digit_of</code>. If the result is an error, it <b>immediately exits the current function and returns that error to the caller</b>. Otherwise, it uses the returned number and continues the loop.
   </p>
   <p>
-    Three other things are visible in that function, and two of them have chapters of their own.
+    The example also uses a mutable variable, a range, and calls with a dot.
   </p>
   <p>
-    <code>total: i64 @ 0</code> declares something that will change: the
-    <code>@</code> marks it, and a name bound with plain <code>=</code> can
-    never be reassigned. The change is written the same way,
-    <code>total @ total * 10 + …</code>, with the <code>@</code> where the
-    value moves. There is no <code>=</code> for reassignment.
-    <a href="/docs/bindings-and-mutation/">The chapter on that &rarr;</a>
+    <code>total: i64 @ 0</code> declares a mutable variable. The line <code>total @ total * 10 + …</code> assigns a new value to it. The symbol <code>=</code> binds a name that cannot be reassigned. <a href="/docs/bindings-and-mutation/">Bindings and mutation &rarr;</a>
   </p>
   <p>
     <code>range(from: 0, to: text.len())</code> counts from <code>from</code> up
@@ -93,11 +66,7 @@
     type.
   </p>
   <p>
-    There is no <code>try</code>, <code>catch</code>, nesting or error variable
-    threaded through by hand.
-    The failure path costs one character and the happy path reads as if failure
-    were impossible. Here it is again in a function that averages a list, where the
-    first bad character anywhere in the input stops everything:
+    With <code>?</code>, you can return the error without writing <code>try</code> and <code>catch</code> blocks or repeating the check after each call. In this example, the function averages a list and returns an error at the first invalid character:
   </p>
   <figure class="example" data-src="examples/gallery/03-fallible.hero" data-lines="26-34">
 <pre><code><span class="k">function</span> average_of(parts: [<span class="t">str</span>]) -&gt; <span class="t">i64</span>?
@@ -112,11 +81,9 @@
     <figcaption>examples/gallery/03-fallible.hero, lines 26&ndash;34</figcaption>
   </figure>
 
-  <h3>Looking inside: <code>match</code></h3>
+  <h3>Handling the result: <code>match</code></h3>
   <p>
-    When a function does want to handle the failure rather than pass it on, it
-    looks with <code>match</code>: the one construct in the language for taking
-    a value apart:
+    Use <code>match</code> to handle the two possible results directly and access their contents:
   </p>
   <figure class="example" data-src="examples/gallery/03-fallible.hero" data-lines="36-40">
 <pre><code><span class="c"># Four ways to read a fallible value, in the order you reach for them.</span>
@@ -127,22 +94,12 @@
     <figcaption>examples/gallery/03-fallible.hero, lines 36&ndash;40</figcaption>
   </figure>
   <p>
-    An arm names the case with a leading dot and binds its payload to the name
-    after it: <code>.ok v</code> gives you the value as <code>v</code>, and
-    <code>_</code> discards a payload you do not need. Both arms are required. A
-    <code>match</code> that forgets a case does not compile. <b>A catch-all arm
-    is forbidden here</b>. You cannot write the arm that means &ldquo;anything
-    else&rdquo;, because that arm is how a forgotten case silently becomes a handled
-    one. If the language ever gains a third possibility, every
-    <code>match</code> in every program stops compiling until somebody has
-    looked at it. That is the intent: a change to the shape of the data should
-    break the code that reads it, loudly, at build time.
+    Each branch names a case with a leading dot and binds a name to its contents: <code>.ok v</code> makes the value available as <code>v</code>. The symbol <code>_</code> discards contents you do not need. Both branches are required; the program will not compile if one is missing. <b>A catch-all branch, which handles all other cases, is not allowed.</b> This rule requires you to revisit the code if the set of possible cases changes.
   </p>
 
   <h3>When failure already has an answer</h3>
   <p>
-    Sometimes a failure has an obvious answer, and writing a
-    <code>match</code> for it is noise. Two shorthands exist:
+    If you already know what to do on failure, you can use one of these two shorter forms:
   </p>
   <figure class="example" data-src="examples/gallery/03-fallible.hero" data-lines="42-43">
 <pre><code><span class="k">function</span> first_or_zero(parts: [<span class="t">str</span>]) -&gt; <span class="t">i64</span>
@@ -150,11 +107,7 @@
     <figcaption>examples/gallery/03-fallible.hero, lines 42&ndash;43</figcaption>
   </figure>
   <p>
-    <code>.default(0)</code> says: the value, or this if it failed. The result
-    is a plain <code>i64</code>: the failure has been dealt with, so the type
-    no longer carries one. Its sibling is <code>.must()</code>, which says the
-    failure cannot happen here and <b>stops the program</b> if it does. Use it
-    where you have already proved the value is good, and in tests:
+    <code>.default(0)</code> returns the value on success or <code>0</code> on failure. The result has type <code>i64</code>. <code>.must()</code> returns the value but <b>stops the program</b> if it finds an error. Use it when you have already verified that the operation succeeds, or in tests:
   </p>
   <figure class="example" data-src="examples/gallery/03-fallible.hero" data-lines="45-49">
 <pre><code><span class="k">test</span> <span class="s">"a good number and a bad one"</span>
@@ -165,17 +118,12 @@
     <figcaption>examples/gallery/03-fallible.hero, lines 45&ndash;49</figcaption>
   </figure>
   <p>
-    <code>test</code> is part of the language, not a library, and a test lives
-    next to the code it tests. <code>heroes test</code> runs every one in the
-    file.
+    You can write a <code>test</code> in the same file as the code it checks. The <code>heroes test</code> command runs every test in that file.
   </p>
 
   <h3>The whole thing, running</h3>
   <p>
-    The four ways of reading a fallible value, in the order you reach for them
-    (<code>?</code>, <code>match</code>, <code>.default()</code> and
-    <code>.must()</code>), are all in one fifty-line file. Its
-    <code>main</code>:
+    The example file shows all four ways to handle a fallible value: <code>?</code>, <code>match</code>, <code>.default()</code> and <code>.must()</code>. This is its <code>main</code> function:
   </p>
   <figure class="example" data-src="examples/gallery/03-fallible.hero" data-lines="51-54">
 <pre><code><span class="k">function</span> main()
@@ -190,20 +138,12 @@ read 42
 failed: not_a_digit (expected 0-9)
 20</code></pre>
   <p>
-    The middle line is the interesting one. <code>"4b2"</code> failed on its
-    second character, inside <code>digit_of</code>, and the error travelled up
-    through <code>number_of</code> to <code>report</code> carrying the code and
-    the message it was created with. The function in the middle says nothing
-    about error handling at all, beyond the single <code>?</code> on the line
-    where it happens.
+    The second line shows the error from <code>digit_of</code> at the <code>b</code> in <code>"4b2"</code>. The <code>?</code> in <code>number_of</code> returns it to <code>report</code>, preserving the original code and message.
   </p>
 
   <h3>What changes in the code</h3>
   <p>
-    Every function&rsquo;s signature tells you whether it can fail. Every place a
-    failure changes the control flow is marked on that line. Every way of
-    handling one either deals with both cases or says out loud that it is
-    skipping the check. There is no <code>null</code> to forget and no throw to miss. The unhandled path, the one bug no compiler catches in the languages that allow it, has nowhere left to hide.
+    The return type tells you whether a function can fail. In calls, <code>?</code> marks where an error can end the current function. To get the value, handle the error with <code>match</code> or <code>.default()</code>, or explicitly use <code>.must()</code> and accept that the program will stop on failure.
   </p>
 
   <p class="next">

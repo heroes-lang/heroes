@@ -1,3 +1,3 @@
-<p class="tagline">Un prodotto scalare di due vettori lunghi, diviso in fasce tra i thread.</p>
+<p class="tagline">Il prodotto scalare di due vettori, calcolato dividendo il lavoro tra più thread.</p>
 
-<p>La forma più semplice di questa famiglia: dividi l&rsquo;intervallo, somma ogni parte, somma le parti. Sta qui come riferimento con cui leggere gli altri.</p>
+<p>Il prodotto scalare si ottiene moltiplicando gli elementi nelle stesse posizioni e sommando i prodotti. Ogni thread, una parte del programma che può lavorare in parallelo, calcola la somma di un intervallo. Il programma somma poi i risultati parziali.</p>

@@ -1,3 +1,3 @@
-<p class="tagline">A configuration file read into sections, and four refusals with names.</p>
+<p class="tagline">Read a configuration file into sections and report invalid entries.</p>
 
-<p>The result is a map of maps. What makes it worth reading is the refusals: a line that is not a pair, a section that never closes, a key with no name, a duplicate. Each one is a value with a code rather than a crash.</p>
+<p>The program stores each section&rsquo;s keys and values in a map, then stores those maps by section name. It reports malformed lines, unclosed section brackets, empty section names, empty keys and duplicate keys. Each error is a value with its own code, so the caller can handle it.</p>

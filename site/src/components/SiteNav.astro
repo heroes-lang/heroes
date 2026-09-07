@@ -47,9 +47,9 @@ const other = lang === 'en' ? `/it${url}` : url.slice(3);
 const entries = [
   { key: 'why', slug: 'why', en: 'Why', it: 'Perché' },
   { key: 'examples', slug: 'examples', en: 'Examples', it: 'Esempi' },
-  { key: 'docs', slug: 'docs', en: 'Docs', it: 'Docs' },
+  { key: 'docs', slug: 'docs', en: 'Guide', it: 'Guida' },
   { key: 'start', slug: 'start', en: 'Start', it: 'Inizia' },
-  { key: 'log', slug: 'log', en: 'Log', it: 'Log' },
+  { key: 'log', slug: 'log', en: 'Log', it: 'Diario' },
   { key: 'project', slug: 'project', en: 'Project', it: 'Progetto' },
   { key: 'about', slug: 'about', en: 'Author', it: 'Autore' },
   // `Grazie`, the page's own title, and not `Ringraziamenti`: the longer word
@@ -91,7 +91,7 @@ const entries = [
          does this one now. Found by the marketing seat. -->
     <a class="out" href="https://github.com/heroes-lang/heroes"
        title={lang === 'it'
-         ? 'Il repository è privato: si apre insieme al codice'
-         : 'The repository is private: it opens with the code'}>{lang === 'it' ? 'GitHub · privato' : 'GitHub · private'}</a>
+         ? 'Il repository sarà accessibile quando il codice sarà pubblico'
+         : 'The repository will be accessible when the code is public'}>{lang === 'it' ? 'GitHub · privato' : 'GitHub · private'}</a>
   </div>
 </nav>

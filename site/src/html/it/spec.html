@@ -1,24 +1,15 @@
-  <p class="crumb"><a href="/it/">Heroes</a> / <a href="/it/docs/">Docs</a> / specifica</p>
+  <p class="crumb"><a href="/it/">Heroes</a> / <a href="/it/docs/">Guida</a> / specifica</p>
 
   <div class="page-head">
     <h1 class="page">La specifica</h1>
   </div>
-  <p class="lede">Tutto il linguaggio, nel file che si dà a un modello.
-  Prendilo intero: <a href="/spec.md"><code>heroes-lang.org/spec.md</code></a>,
-  oppure <code class="cmd">curl -L heroes-lang.org/spec.md</code>. Il blocco qui sotto sono
-  gli stessi byte, e selezionarlo tutto dà lo stesso prompt.</p>
+  <p class="lede">
+    La descrizione completa di Heroes, pronta da inserire nel prompt di un modello. Scarica il file da <a href="/spec.md"><code>heroes-lang.org/spec.md</code></a> oppure usa <code class="cmd">curl -L heroes-lang.org/spec.md</code>. Puoi anche copiare tutto il blocco qui sotto: il contenuto è identico.
+  </p>
 
   <p>
-    Non è un riassunto e non esiste una versione più lunga. La specifica <em>è</em> il
-    linguaggio: quando lei e il compilatore non concordano, è il compilatore che
-    ha il difetto. Sta sotto un tetto rigido di 4.096 token, e un test lo
-    verifica a ogni commit, perché deve lasciare spazio nel prompt al programma
-    che vuoi davvero. Il conto è fatto con i tokenizer che i modelli usano
-    davvero, due, e vale il più grande dei due.
+    La specifica definisce tutto il linguaggio: non esiste una versione più lunga. Se il compilatore si comporta diversamente, è il compilatore ad avere un difetto. Un test verifica a ogni commit, cioè a ogni modifica registrata, che il testo resti sotto il limite di 4.096 token. I token sono i frammenti in cui un modello suddivide il testo. Il conteggio usa due tokenizer, gli strumenti che eseguono questa suddivisione, e considera il risultato più alto. Così nel prompt resta spazio per il programma da scrivere.
   </p>
   <p>
-    È mostrata qui esattamente come sta nel file, ritagliata dal repository
-    quando questa pagina è stata costruita. Non impaginata, non ripulita: una tabella
-    con un separatore spostato o un apice trasformato in una virgoletta non
-    sarebbe più la cosa che incolli in un prompt.
+    Quando il sito viene generato, questa pagina legge la specifica dal repository e la mostra senza modificarla. Separazioni delle tabelle, spazi e caratteri restano quelli del file originale, così puoi copiarla nel prompt senza alterarla.
   </p>

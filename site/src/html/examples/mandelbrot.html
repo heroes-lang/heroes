@@ -1,3 +1,3 @@
-<p class="tagline">How many iterations a band of the Mandelbrot set needs, counted by several threads.</p>
+<p class="tagline">Count the calculation steps needed for points in the Mandelbrot set, using several threads.</p>
 
-<p>The two-dimensional member of this family: each thread takes a band of rows and the bands do not cost the same, because a point inside the set runs to the iteration limit and a point outside escapes early.</p>
+<p>The program samples points on a grid. Each thread, a task that can run alongside the others, handles a band of rows. Points inside the set reach the step limit; points outside can finish sooner. Bands with the same number of points can therefore take different amounts of time.</p>

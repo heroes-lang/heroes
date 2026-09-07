@@ -1,20 +1,18 @@
 
-  <p class="crumb"><a href="/it/">Heroes</a> / <a href="/it/docs/">Docs</a> / capitolo 10</p>
+  <p class="crumb"><a href="/it/">Heroes</a> / <a href="/it/docs/">Guida</a> / capitolo 10</p>
 
   <h1 class="chapter">Valori fino in fondo</h1>
-  <p class="tagline">Un albero che contiene se stesso, in un linguaggio dove nessun valore punta a un altro.</p>
-
-  <p>
-    Qui ogni valore è una copia indipendente e nessun valore Heroes punta a un altro. Questo
-    capitolo risponde a una domanda: come fa un albero a tenersi i propri rami,
-    se un ramo è dello
-    stesso tipo dell&rsquo;albero?
+  <p class="tagline">
+    Costruire e percorrere alberi mantenendo indipendenti le copie dei valori.
   </p>
 
-  <h3>Prima: perché il modo ovvio non può funzionare</h3>
   <p>
-    Scrivi un caso che contiene se stesso e il compilatore ti ferma, ti
-    spiega il conto e ti offre la via d&rsquo;uscita:
+    In Heroes, modificare una copia di un valore non cambia l&rsquo;originale. Puoi comunque costruire un albero i cui rami hanno lo stesso tipo dell&rsquo;albero: basta usare un contenitore come un array.
+  </p>
+
+  <h3>Perché un campo non può contenere direttamente se stesso</h3>
+  <p>
+    Se un caso contiene direttamente un altro valore dello stesso tipo, il compilatore segnala il problema e suggerisce una soluzione:
   </p>
   <pre><code>$ heroes check trees.hero
 error[no_size]: `variant Expr` contains itself, so it has no size
@@ -26,14 +24,10 @@ error[no_size]: `variant Expr` contains itself, so it has no size
   note: `[T]` holds its contents elsewhere, so it is how a type contains itself
   fix (guess): hold them in an array: `[Expr]`</code></pre>
   <p>
-    Un record o un variant si tiene i suoi campi <i>dentro di sé</i>. Se uno di
-    quei campi fosse un altro <code>Expr</code>, quello ne conterrebbe un altro
-    ancora, e la dimensione del tipo sarebbe infinita. In un linguaggio con i
-    puntatori qui ne prenderesti uno senza accorgerti di stare prendendo una
-    decisione. Qui non ce ne sono, quindi la decisione si vede.
+    Un record o un variant include lo spazio dei propri campi. Se un campo contenesse direttamente un altro <code>Expr</code>, e questo un altro ancora, servirebbe una quantità infinita di memoria per un solo valore. Heroes rifiuta questa definizione.
   </p>
 
-  <h3>L&rsquo;indirezione è l&rsquo;array</h3>
+  <h3>Usare un array per i rami</h3>
   <figure class="example" data-src="examples/gallery/11-trees.hero" data-lines="8-16">
 <pre><code><span class="k">variant</span> Expr
     number
@@ -47,19 +41,10 @@ error[no_size]: `variant Expr` contains itself, so it has no size
     <figcaption>examples/gallery/11-trees.hero, righe 8&ndash;16</figcaption>
   </figure>
   <p>
-    <code>[Expr]</code> ha una dimensione fissa qualunque cosa contenga, perché
-    un array tiene i suoi elementi da un&rsquo;altra parte. Quindi
-    <code>Expr</code> è finito, l&rsquo;albero è profondo quanto ti pare, e
-    niente di tutto questo è un puntatore che puoi tenere in mano, confrontare o
-    lasciare a penzoloni. <code>negate</code> prende una lista con un solo
-    elemento perché è questa la forma ricorsiva che il linguaggio sa esprimere.
+    La rappresentazione di <code>[Expr]</code> ha dimensione fissa: gli elementi dell&rsquo;array sono memorizzati separatamente. Il tipo <code>Expr</code> può quindi contenere altri <code>Expr</code> attraverso l&rsquo;array senza avere dimensione infinita. Qui <code>negate</code> usa una lista con un solo elemento. Anche le mappe possono rappresentare strutture ricorsive.
   </p>
   <p>
-    Siccome niente può tenere un riferimento,
-    <b>non si può costruire nessun ciclo</b>. Ed è quello che permette alla
-    memoria sotto di essere gestita contando i riferimenti, senza garbage collector,
-    senza rilevatore di cicli e senza annotazioni <code>weak</code> da
-    azzeccare.
+    Con i valori Heroes <b>non puoi costruire cicli di riferimenti</b>. Il runtime, il codice di supporto all&rsquo;esecuzione, libera la memoria quando il conteggio dei suoi riferimenti arriva a zero. Non serve un garbage collector che cerchi cicli, né annotazioni <code>weak</code> per indicare riferimenti deboli.
   </p>
 
   <h3>Percorrerlo è un <code>match</code> e un <code>for</code></h3>
@@ -93,17 +78,10 @@ error[no_size]: `variant Expr` contains itself, so it has no size
     <figcaption>examples/gallery/11-trees.hero, righe 27&ndash;41</figcaption>
   </figure>
   <p>
-    <code>value_of</code> e <code>sum_of</code> si chiamano a vicenda, e nessuna
-    delle due è dichiarata prima dell&rsquo;altra. L&rsquo;ordine delle
-    dichiarazioni non conta mai, quindi la ricorsione reciproca non vuole nessun
-    annuncio, nessun header e nessuna dichiarazione anticipata.
+    <code>value_of</code> e <code>sum_of</code> si chiamano a vicenda. Puoi dichiararle in qualsiasi ordine, senza dichiarazioni anticipate.
   </p>
   <p>
-    I due valori di partenza sono <code>0</code> per una somma e
-    <code>1</code> per un prodotto. È per questo che
-    <code>value_of(.add(parts: []))</code> fa <code>0</code> e
-    <code>value_of(.multiply(parts: []))</code> fa <code>1</code>, cosa che i
-    test qui sotto fissano invece di lasciarla al passaparola.
+    Il valore iniziale è <code>0</code> per la somma e <code>1</code> per il prodotto. Perciò <code>value_of(.add(parts: []))</code> restituisce <code>0</code> e <code>value_of(.multiply(parts: []))</code> restituisce <code>1</code>. I test qui sotto verificano questi risultati.
   </p>
 
   <h3>Come se ne costruisce uno</h3>
@@ -129,7 +107,7 @@ error[cannot_infer]: `.multiply` does not say which variant it belongs to — th
   81 |     three_times_four = .multiply(parts: [.number(v: 3), .number(v: 4)])
      |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^</code></pre>
 
-  <h3>Quello che i test inchiodano</h3>
+  <h3>Verificare i casi vuoti</h3>
   <figure class="example" data-src="examples/gallery/11-trees.hero" data-lines="84-95">
 <pre><code><span class="k">test</span> <span class="s">"the tree evaluates and measures itself"</span>
     e = two_plus_three_times_four()
@@ -146,12 +124,7 @@ error[cannot_infer]: `.multiply` does not say which variant it belongs to — th
     <figcaption>examples/gallery/11-trees.hero, righe 84&ndash;95</figcaption>
   </figure>
   <p>
-    Ogni struttura che contiene se stessa ha un caso vuoto, e che cosa debba
-    valere in quel caso
-    è una decisione che qualcuno deve prendere. Scriverla come quattro
-    <code>assert</code> vuol dire che il prossimo che mette mano a
-    <code>value_of</code> si accorge subito se l&rsquo;ha cambiata per
-    sbaglio.
+    I test verificano il risultato dei casi vuoti. I quattro <code>assert</code> permettono di rilevare una modifica involontaria al comportamento di <code>value_of</code>.
   </p>
   <figure class="example" data-src="examples/gallery/11-trees.hero" data-lines="70-75">
 <pre><code><span class="c"># Two cases share one answer, so their patterns share one arm (`|`).</span>
@@ -170,10 +143,7 @@ error[cannot_infer]: `.multiply` does not say which variant it belongs to — th
   <pre><code>$ heroes run examples/gallery/11-trees.hero
 14</code></pre>
   <p>
-    Due più tre per quattro. Quella è la struttura dati interessante più piccola
-    che abbia un compilatore, in novanta righe, senza un puntatore da nessuna
-    parte. E la stessa forma, ingrandita, è quella con cui il compilatore
-    di questo progetto si tiene i programmi che legge.
+    L&rsquo;esempio rappresenta e calcola due più tre per quattro usando un albero di valori. Il compilatore Heroes usa strutture dello stesso genere, più articolate, per rappresentare i programmi che legge.
   </p>
 
   <p class="next">

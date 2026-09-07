@@ -1,3 +1,3 @@
-<p class="tagline">Stimare pi greco contando freccette, un thread per seme.</p>
+<p class="tagline">Una stima di pi greco ottenuta simulando lanci casuali, con più thread.</p>
 
-<p>La lezione è cosa viene dato a un thread: un seme e non un flusso di numeri. Due thread che condividono un generatore sarebbero la classica corsa critica, e qui non si può scrivere, perché quello che entra in un thread è un numero.</p>
+<p>Ogni thread, una parte del programma che può lavorare in parallelo, riceve un seme: il numero iniziale da cui genera la propria sequenza di numeri pseudocasuali. I thread usano generatori separati. In questo modo non possono interferire modificando lo stesso generatore.</p>

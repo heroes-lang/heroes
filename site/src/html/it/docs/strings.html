@@ -1,14 +1,13 @@
 
-  <p class="crumb"><a href="/it/">Heroes</a> / <a href="/it/docs/">Docs</a> / capitolo 8</p>
+  <p class="crumb"><a href="/it/">Heroes</a> / <a href="/it/docs/">Guida</a> / capitolo 8</p>
 
   <h1 class="chapter">Le stringhe</h1>
-  <p class="tagline">Byte e caratteri sono due lavori, e il sistema dei tipi non ti lascia confonderli.</p>
+  <p class="tagline">
+    Leggere, dividere e unire stringhe distinguendo byte e caratteri.
+  </p>
 
   <p>
-    Uno <code>str</code> è testo UTF-8 che, una volta creato, non cambia più.
-    <code>len()</code> conta <b>byte</b>, non lettere, e lo stesso fa
-    <code>slice</code>. In UTF-8 una lettera può occupare da uno a quattro byte;
-    ignorarlo produce bug sulle stringhe.
+    Uno <code>str</code> contiene testo UTF-8, una codifica in cui un carattere può occupare più byte. Una stringa non cambia dopo la creazione. <code>len()</code> misura la lunghezza in <b>byte</b> e anche gli indici di <code>slice</code> si riferiscono ai byte.
   </p>
 
   <h3>L&rsquo;indice ti dà un byte</h3>
@@ -38,10 +37,7 @@ error[type_mismatch]: expected `u8`, found `str`
   12 |         if s[i] == " "
      |            ^^^^^^^^^^^</code></pre>
   <p>
-    In un linguaggio con un tipo stringa solo e le conversioni implicite, quella
-    riga compila e confronta un numero con una stringa secondo una regola che ti
-    devi ricordare. Qui i due lavori hanno due tipi, e lo sbaglio ferma la
-    compilazione.
+    Heroes usa tipi diversi per numeri e stringhe e non li converte automaticamente. Il confronto dell&rsquo;esempio è quindi un errore di compilazione.
   </p>
 
   <h3><code>chars()</code> ti dà i caratteri</h3>
@@ -66,11 +62,10 @@ error[type_mismatch]: expected `u8`, found `str`
     La sintassi rende esplicita la scelta tra byte e caratteri.
   </p>
   <p>
-    Nemmeno tagliare in mezzo a un carattere passa in silenzio: il programma si
-    ferma, invece di produrre testo che non è più UTF-8 valido.
+    Se una porzione di stringa taglia un carattere, il programma si ferma e segnala l&rsquo;errore. In questo modo non produce testo UTF-8 non valido.
   </p>
 
-  <h3>Dividere, senza una libreria dietro cui nascondersi</h3>
+  <h3>Dividere il testo in parole</h3>
   <figure class="example" data-src="examples/gallery/07-strings.hero" data-lines="27-40">
 <pre><code><span class="c"># Splitting on a single space, written out. There is no library to hide in.</span>
 <span class="k">function</span> words_of(s: <span class="t">str</span>) -&gt; [<span class="t">str</span>]
@@ -89,11 +84,7 @@ error[type_mismatch]: expected `u8`, found `str`
     <figcaption>examples/gallery/07-strings.hero, righe 27&ndash;40</figcaption>
   </figure>
   <p>
-    Uno <code>split</code> predefinito non c&rsquo;è perché Heroes tiene le funzioni incorporate al minimo. L&rsquo;esempio divide il testo sugli spazi in dodici righe, e
-    quell&rsquo;<code>if i &gt; start</code> è il pezzo che una libreria avrebbe
-    deciso al posto tuo: qui due spazi di fila non producono una parola vuota, e
-    questa scelta si vede nel codice invece che nella documentazione di qualcun
-    altro.
+    Heroes non include una funzione <code>split</code>. Questo esempio divide il testo in corrispondenza degli spazi. Il controllo <code>if i &gt; start</code> evita di aggiungere parole vuote quando due spazi sono consecutivi.
   </p>
   <p>
     <code>slice(from:, to:)</code> lavora in byte, con <code>to</code> escluso, e
@@ -121,21 +112,14 @@ error[type_mismatch]: expected `u8`, found `str`
     <figcaption>examples/gallery/07-strings.hero, righe 47&ndash;54</figcaption>
   </figure>
   <p>
-    Queste due fanno lo stesso tipo di lavoro a prezzi molto diversi.
-    <code>join</code> percorre la lista una volta e costruisce la risposta in una
-    passata. Il ciclo qui sopra invece costruisce una stringa nuova a ogni giro,
-    perché uno <code>str</code> non cambia mai e <code>+</code> può solo farne
-    una terza a partire da due: quindi una lista lunga costa la somma di tutti i
-    risultati intermedi. <code>join</code> e <code>repeat</code> esistono
-    esattamente per questo, e quattro iniziali non se ne accorgeranno mai.
+    <code>join</code> costruisce il risultato in una sola passata. Il ciclo di concatenazione crea invece una nuova stringa a ogni iterazione e ricopia anche il testo già accumulato. La differenza diventa rilevante con stringhe lunghe. <code>join</code> e <code>repeat</code> evitano queste copie ripetute.
   </p>
 
-  <h3>Sei escape, e nemmeno uno di più</h3>
+  <h3>Gli escape disponibili</h3>
   <p>
     Dentro una stringa: <code>\n</code>, <code>\t</code>, <code>\r</code>,
     <code>\\</code>, <code>\"</code>. Dentro un letterale di carattere,
-    <code>\'</code> prende il posto dell&rsquo;ultimo. La lista è tutta qui, e
-    qualunque altra cosa viene respinta sul posto con la riparazione allegata:
+    <code>\'</code> prende il posto dell&rsquo;ultimo. Un escape diverso produce un errore e un suggerimento di correzione:
   </p>
   <pre><code>$ heroes check strings.hero
 error[unknown_escape]: `\d` is not an escape sequence — the escapes are \n \t \r \\ \"; write `\\` for a literal backslash
@@ -145,12 +129,7 @@ error[unknown_escape]: `\d` is not an escape sequence — the escapes are \n \t 
      |                        ^^
   fix (certain): escape the backslash: `\\d`</code></pre>
   <p>
-    Quasi tutti i linguaggi lasciano passare un escape sconosciuto come se fosse
-    la lettera stessa: vuol dire che un&rsquo;espressione regolare incollata
-    dentro una stringa continua a funzionare fino al giorno in cui uno dei suoi
-    escape va a sbattere contro uno vero. Qui quello scontro è impossibile, e la
-    riparazione è applicabile da sola: il compilatore può scrivere
-    <code>\\d</code> dentro il tuo file al posto tuo.
+    Heroes segnala gli escape sconosciuti, cioè le sequenze con una barra inversa che non riconosce. Per inserire una barra inversa letterale devi raddoppiarla. Nell&rsquo;esempio il compilatore suggerisce <code>\\d</code> e può applicare la correzione automaticamente.
   </p>
 
   <h3>Il programma</h3>

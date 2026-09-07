@@ -1,3 +1,3 @@
-<p class="tagline">Six modules in three directories, and the same module reached from three depths.</p>
+<p class="tagline">Import the same module from files at different directory depths.</p>
 
-<p>The first program here whose files do not all sit beside each other. It prints one number for the root&rsquo;s own scale and another for its neighbour&rsquo;s, so if path resolution ever changed, the recorded output would change and a test would go red.</p>
+<p>Each module is a file, and this program spreads them across nested directories. It prints different scale values from neighbouring modules. If the compiler resolves an import to the wrong file, the output changes and the test fails.</p>

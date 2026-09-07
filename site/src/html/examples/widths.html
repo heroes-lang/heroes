@@ -1,3 +1,3 @@
-<p class="tagline">Numbers changing width, and what the change is allowed to cost.</p>
+<p class="tagline">Convert numbers between types and check what happens when they no longer fit.</p>
 
-<p>Seven conversions, each of which can fail, because a number may not fit in fewer bits. Here the failure is a value with a type, so a truncation cannot happen quietly.</p>
+<p>Integer conversions return an error value when the number is outside the target type&rsquo;s range. Floating-point conversions can round a value instead. The program checks both behaviours, along with conversion from a floating-point value to an integer, which discards the fractional part toward zero.</p>

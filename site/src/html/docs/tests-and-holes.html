@@ -1,13 +1,13 @@
 
-  <p class="crumb"><a href="/">Heroes</a> / <a href="/docs/">Docs</a> / chapter 11</p>
+  <p class="crumb"><a href="/">Heroes</a> / <a href="/docs/">Guide</a> / chapter 11</p>
 
   <h1 class="chapter">Tests and holes</h1>
-  <p class="tagline">Tests you do not install, and a way to ask the compiler what goes here.</p>
+  <p class="tagline">
+    Writing tests in the source and using <code>???</code> to complete code.
+  </p>
 
   <p>
-    A <code>test</code> lives in the file it tests. A <code>???</code> asks the
-    compiler what belongs in a place you have not written yet. Neither is
-    installed: both are part of the language.
+    A <code>test</code> checks code in the same file. Use <code>???</code> to leave an expression unfinished and ask the compiler which type it expects. Both forms are part of the language.
   </p>
 
   <h3><code>test</code> is a declaration</h3>
@@ -18,16 +18,10 @@
     <figcaption>examples/gallery/09-holes.hero, lines 30&ndash;32</figcaption>
   </figure>
   <p>
-    A <code>test</code> has a sentence for a name and whatever is indented
-    below it for a body. It sits next to the code it is about, in the same file,
-    and an ordinary build ignores it entirely: nothing about tests reaches the
-    executable you ship. There is no library to choose for writing them, nothing
-    to mark them with, no separate directory, and no file names to obey.
+    A <code>test</code> has a quoted description and an indented body. You can write it in the same file as the code it checks. Ordinary builds exclude it from the executable; no extra library, separate directory or special file name is required.
   </p>
   <p>
-    <code>assert</code> takes a <code>bool</code>. When one fails it shows the
-    expression it was given and both sides of the comparison, so you almost
-    never have to add a print and run it again:
+    <code>assert</code> requires a <code>bool</code>. If the check fails, it shows the expression. For comparisons, it also shows both values when they can be printed, such as numbers, strings or booleans:
   </p>
   <pre><code>$ heroes test points.hero
 assert failed: dist2(a: Point(x: 0, y: 0), b: Point(x: 3, y: 4)) == 24
@@ -43,9 +37,7 @@ ok   "a rectangle keeps its size when it moves"
 
   <h3><code>???</code> is a legal expression</h3>
   <p>
-    Now the other half. Write <code>???</code> anywhere a value belongs and the
-    program still type-checks: everything around the hole is verified as
-    usual, and the compiler tells you what belongs in it.
+    Write <code>???</code> where a value is missing. The compiler checks the surrounding code and reports the type needed to complete the expression.
   </p>
   <figure class="example" data-src="examples/gallery/09-holes.hero" data-lines="12-19">
 <pre><code><span class="c"># Written, tested, done.</span>
@@ -86,19 +78,12 @@ hole at holes.hero:28:74
     summary_of(entries: [Entry])
       # The hole can be one argument of an otherwise finished line.</code></pre>
   <p>
-    Read the second one. The compiler worked out that a <code>str</code>
-    belongs there. Then it listed what you have to hand at that point, and which
-    functions return a <code>str</code>, each with the first line of its comment:
-    that is the documentation.
-    It is the answer to &ldquo;what could go here?&rdquo;, which is the
-    question you actually have, not an error message dressed up as help.
+    In the second message, the compiler reports that a <code>str</code> is needed. It then lists available names and functions that return that type, along with the first line of each function&rsquo;s comment. This helps you choose how to complete the code.
   </p>
 
   <h3>Everything else still gets checked</h3>
   <p>
-    A file with holes is checked completely: exit 0, and diagnostics for
-    anything genuinely wrong. What it does not do is produce a binary, and the
-    tool says which line stopped it:
+    A file with unfinished expressions is checked in full. The check exits with status 0 only if there are no other errors. While a <code>???</code> remains, the compiler produces no executable and identifies the code to complete:
   </p>
   <pre><code>$ heroes test holes.hero
 no binary: 2 holes in holes.hero
@@ -121,13 +106,7 @@ hole at holes.hero:28:74
 
   <h3>Why this is in the language rather than in an editor</h3>
   <p>
-    The reader of a Heroes program is often a language model, and a model
-    writing code has exactly this problem: it needs to know what is available at
-    a point in a file it has not finished. Written as a hole, that question is
-    asked with three characters and answered by the compiler in a form both a
-    person and a model can read, without an editor, an extension, or a
-    running language server. The same three characters mark the place in the
-    file, so nobody forgets there was a question.
+    A person or model can get this information directly from the compiler, without installing an editor or extensions. The three characters <code>???</code> mark the unfinished code in the source.
   </p>
   <figure class="example" data-src="examples/gallery/09-holes.hero" data-lines="34-35">
 <pre><code><span class="k">function</span> main()
@@ -135,9 +114,7 @@ hole at holes.hero:28:74
     <figcaption>examples/gallery/09-holes.hero, lines 34&ndash;35</figcaption>
   </figure>
   <p>
-    Fill both holes and that <code>main</code> runs. Until then, the finished
-    part of the file has a test that passes and the unfinished part has a
-    question with an answer.
+    Complete both expressions to run <code>main</code>. Meanwhile, the compiler can already check the rest of the file.
   </p>
 
   <p class="next">

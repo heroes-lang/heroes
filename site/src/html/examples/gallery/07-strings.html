@@ -1,3 +1,3 @@
-<p class="tagline">Bytes and characters are two different jobs, and the language will not blur them.</p>
+<p class="tagline">Read text as bytes or as whole characters, depending on the task.</p>
 
-<p>A <code>str</code> is immutable UTF-8, measured in bytes. <code>s[i]</code> gives a number and <code>s.chars()</code> walks characters. Reaching for the wrong one is a mistake you make in the open instead of shipping it.</p>
+<p>A <code>str</code> stores text as immutable UTF-8: encoded bytes that cannot be changed in place. <code>s[i]</code> returns the numeric value of one byte, while <code>s.chars()</code> visits whole characters. One character can occupy several bytes, so choose the operation your task needs.</p>

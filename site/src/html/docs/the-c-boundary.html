@@ -1,15 +1,13 @@
 
-  <p class="crumb"><a href="/">Heroes</a> / <a href="/docs/">Docs</a> / chapter 12</p>
+  <p class="crumb"><a href="/">Heroes</a> / <a href="/docs/">Guide</a> / chapter 12</p>
 
   <h1 class="chapter">The C boundary</h1>
-  <p class="tagline">Everything the language does not have, and where it comes from.</p>
+  <p class="tagline">
+    Declaring and using functions, types and constants from C libraries.
+  </p>
 
   <p>
-    Heroes reaches the world through C. Everything you have seen
-    in these chapters (numbers, strings, arrays, maps, printing) is
-    the whole inventory. Files, sockets, JSON, databases, graphics and maths
-    beyond arithmetic are not built into Heroes. They come from C through the
-    one mechanism explained in this chapter.
+    Heroes uses C libraries for features such as sockets, databases, graphics and mathematical functions. This chapter explains how to declare them and what the compiler checks.
   </p>
 
   <h3>A group names its header</h3>
@@ -21,17 +19,12 @@
     <figcaption>examples/gallery/08-ffi.hero, lines 12&ndash;15</figcaption>
   </figure>
   <p>
-    These three C functions are usable from the next line on. A header is the file that
-    describes a library&rsquo;s interface. <b>Clang reads it and checks every
-    declaration in the group.</b> A binding connects Heroes to a C function and
-    is the one place a program can reach an external address, so the check
-    happens here.
+    After these declarations, you can call the three C functions. The header is the file that describes the library&rsquo;s functions and types. <b>Clang reads it and checks the group&rsquo;s declarations.</b> This connection between Heroes and C is called a binding.
   </p>
 
   <h3>What that check catches</h3>
   <p>
-    Misspell a name and you do not have to wait for a link error at the end of a
-    long build. You get this on your line, with the header&rsquo;s own answer attached:
+    If you misspell a function name, the compiler reports the error at the declaration and includes clang&rsquo;s response:
   </p>
   <pre><code>$ heroes build ffi.hero
 error[ffi_unknown_name]: `math.h` declares no `flooor` — clang read the header and could not find it
@@ -42,9 +35,7 @@ error[ffi_unknown_name]: `math.h` declares no `flooor` — clang read the header
   note: an `extern` names what the header already has (§4.19): check the spelling, or name the header that does declare `flooor`
   fix (guess): the header declares `floor`</code></pre>
   <p>
-    The compiler did not guess that last line from a
-    list it keeps: it asked clang, which had the real header open, and clang
-    knew what you meant.
+    The suggestion on the last line comes from clang, which has read the library&rsquo;s header.
   </p>
   <p>
     Get a type wrong and the answer comes from the same place:
@@ -57,9 +48,7 @@ error[ffi_return_type]: `puts` does not return `cstr` — that is what `stdio.h`
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   note: an `extern` is checked against the real header (§4.19): correct the result type, or name the header that declares this `puts`</code></pre>
   <p>
-    In many languages nobody verifies a foreign declaration: get it wrong and
-    the program may build, run and corrupt something. Here it is checked against
-    the real library.
+    Checking declarations against the header catches errors that could otherwise cause problems when the program runs.
   </p>
 
   <h3>The boundary is visible in the types</h3>
@@ -73,31 +62,16 @@ error[ffi_return_type]: `puts` does not return `cstr` — that is what `stdio.h`
     <figcaption>examples/gallery/08-ffi.hero, lines 17&ndash;22</figcaption>
   </figure>
   <p>
-    <code>cstr</code> is a C string and <code>ptr</code> is an opaque pointer.
-    Neither is a <code>str</code>, and no conversion happens behind your back:
-    <code>s.cstr()</code> lends a Heroes string to C to read, and
-    <code>c.validated()</code> copies one back as a <code>str?</code>, a
-    value or an error. Text arriving from C is a claim, not a fact: the pointer
-    may be null and the bytes may not be UTF-8. Handle it like any
-    other fallible value. The other direction is guarded too: a null
-    <code>cstr</code> handed to a C function stops the program with a panic
-    that says so, instead of letting C crash on it.
+    <code>cstr</code> represents a C string, and <code>ptr</code> an opaque pointer, an address whose contents Heroes does not read directly. Both differ from <code>str</code>, and conversions are explicit. <code>s.cstr()</code> lets C read a Heroes string for the duration of the call. <code>c.validated()</code> checks and copies C text, returning a <code>str?</code>: a value or an error if the pointer is null or the text is not valid UTF-8. Passing a null <code>cstr</code> to a C function stops the program with an error message.
   </p>
   <p>
-    A value that came from C is marked as such everywhere it goes, and the
-    line where it stops being foreign is a line you can see.
+    The types distinguish data from C, and explicit conversions show where it becomes a Heroes value.
   </p>
   <p>
-    What no compiler checks: that the <code>ptr</code> you hand back is the one
-    the library gave you, and what the C on the other side does with it. The
-    types make the boundary visible; they do not make C safe.
+    Heroes does not verify that a <code>ptr</code> returned to a library is the correct one or how the library uses it. Type checks do not remove the risks of C code.
   </p>
   <p>
-    One line the boundary draws while the program runs rather than at build time. A Heroes function handed to C
-    may be called back on a thread the library made, and there it is stopped at
-    its first instruction, with its name in the message, because each thread
-    here owns its memory and a foreign thread owns none of it. Call it from the
-    thread that called you, or start the thread from Heroes.
+    Another check runs during execution. If a C library calls a Heroes function from a thread it created itself, execution stops and the message names the function. Each Heroes thread manages its own memory; the external thread is not initialised to do so. The library must call the function from the original calling thread, or the thread must be started from Heroes.
   </p>
 
   <h3>Using them</h3>
@@ -113,11 +87,7 @@ error[ffi_return_type]: `puts` does not return `cstr` — that is what `stdio.h`
     <figcaption>examples/gallery/08-ffi.hero, lines 24&ndash;31</figcaption>
   </figure>
   <p>
-    A C function is called like any other, and the mandatory-label rule from
-    <a href="/docs/records-and-functions/">chapter 2</a> applies to it too. That
-    matters more here than anywhere: C&rsquo;s numeric interfaces are full of
-    same-typed pairs, and <code>pow(base:, exponent:)</code> is exactly the
-    shape where getting the order wrong would be silent.
+    You call a C function like a Heroes function. The label rule from <a href="/docs/records-and-functions/">chapter 2</a> also applies: in <code>pow(base:, exponent:)</code>, both arguments have the same type, so their names are required.
   </p>
   <figure class="example" data-src="examples/gallery/08-ffi.hero" data-lines="33-35">
 <pre><code><span class="c"># No implicit conversions: an `i64` becomes an `f64` because you said so.</span>
@@ -132,25 +102,16 @@ error[ffi_return_type]: `puts` does not return `cstr` — that is what `stdio.h`
     <figcaption>examples/gallery/08-ffi.hero, lines 37&ndash;39</figcaption>
   </figure>
   <p>
-    No number changes type on its own. <code>to_f64</code> always works, so it
-    gives a value; <code>to_i64</code> can fail, because the float may not fit,
-    so it gives an <code>i64?</code> and this line answers that with
-    <code>.must()</code>.
+    Numeric conversions are explicit. <code>to_f64</code> returns a value directly. <code>to_i64</code> can fail if the value cannot be represented as an integer, so it returns an <code>i64?</code>. Here <code>.must()</code> extracts the result or stops the program on error.
   </p>
 
-  <h3>Where the library lives is the machine&rsquo;s problem</h3>
+  <h3>Finding libraries and dependencies</h3>
   <p>
-    <code>link "m"</code> names a library to link against. When that is not
-    enough (and for anything with system dependencies it is not),
-    a group can name a <b>package</b> instead:
+    <code>link "m"</code> names the library to link with the program. If paths or other dependencies are also needed, you can name a <b>package</b> whose settings are known to the system:
   </p>
   <pre><code>extern "raylib.h" package "raylib"</code></pre>
   <p>
-    That asks the system where the headers and libraries are and what else the
-    library needs: frameworks on macOS, <code>-lGL -lX11</code> on Linux, in one
-    spelling that is the same everywhere. If the answer contains anything this
-    compiler will not pass on, it is refused, and the message says what the
-    package asked for.
+    This declaration asks the system for header paths, libraries and other required dependencies, such as frameworks on macOS or <code>-lGL -lX11</code> on Linux. The Heroes syntax stays the same across platforms. If the package requests unsupported options, the compiler lists them and stops the build.
   </p>
   <p>
     A group can also declare a <code>constant</code>, whose value comes from the
@@ -159,19 +120,10 @@ error[ffi_return_type]: `puts` does not return `cstr` — that is what `stdio.h`
     the real thing.
   </p>
   <p>
-    A parameter may also be a <b>function</b>: one of yours, handed to a C
-    library that will call it back. It goes out and never comes back, so a
-    group may take one and may not return one, and clang checks its signature
-    against the header like everything else. Not every C callback is reachable
-    yet. Where the header says more about the pointers than the compiler can
-    yet check, as <code>qsort</code>&rsquo;s does, it refuses on your line and names the hole rather than guessing.
+    You can pass one of your <b>functions</b> to a C library for it to call later: this is a callback. Heroes allows callbacks as parameters, but not as C function results. Clang checks their types against the header. Some callbacks, such as <code>qsort</code>&rsquo;s, need pointer checks that are not yet supported; the compiler reports the limit at the declaration.
   </p>
   <p>
-    And a declaration can name the function that frees what it hands back, with
-    <code>owned</code>, whether as a result or through an <code>@</code>
-    parameter. A string a C library allocates for you then comes back
-    as a value the compiler releases by that name, instead of leaking because
-    nobody remembered which function undoes which.
+    Use <code>owned</code> to name the C function that frees a library-allocated string, received as a result or through an <code>@</code> parameter. The compiler uses that function to free the string and returns the text as a Heroes value.
   </p>
 
   <h3>The program</h3>
@@ -197,11 +149,9 @@ the 16:9 diagonal of a 1920-wide screen: 2202.9071700822983</code></pre>
     header, and the declarations that program needs.
   </p>
 
-  <h3>That is the language</h3>
+  <h3>The rules covered so far</h3>
   <p>
-    Seven words that can start a
-    top-level line, one way to take a value apart, one way to fail, one way to
-    change something, and one door to everything else. That is the whole of it.
+    Seven words that can start a top-level line, explicit rules for data, errors and changes, and C libraries for external features: these are the language elements covered so far.
   </p>
 
   <p class="next">

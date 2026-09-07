@@ -290,13 +290,13 @@ export function renderExamplesIndex(lang: Lang): RenderedPage {
     lang === 'it'
       ? `  <p class="next away">\n` +
           `    Poi: <a href="/it/docs/">il linguaggio, un&rsquo;idea alla volta</a>, oppure\n` +
-          `    <a href="/it/spec/">tutto quanto in un file solo</a> da dare a un modello.\n` +
-          `    <a href="/it/start/">Come si esegue uno qualsiasi di questi</a>.\n` +
+          `    <a href="/it/spec/">la specifica completa in un file</a> da dare a un modello.\n` +
+          `    <a href="/it/start/">Come eseguire un esempio</a>.\n` +
           `  </p>`
       : `  <p class="next away">\n` +
           `    Next: <a href="/docs/">the language, one idea at a time</a>, or\n` +
-          `    <a href="/spec/">the whole thing in one file</a> to hand to a model.\n` +
-          `    <a href="/start/">How to run any of these</a>.\n` +
+          `    <a href="/spec/">the complete specification in one file</a> to hand to a model.\n` +
+          `    <a href="/start/">How to run an example</a>.\n` +
           `  </p>`
   );
 
@@ -307,8 +307,8 @@ export function renderExamplesIndex(lang: Lang): RenderedPage {
     title: lang === 'it' ? 'Esempi: ogni programma di Heroes' : 'Examples: every Heroes program',
     description:
       lang === 'it'
-        ? `${count.programs + count.gallery} programmi in Heroes, con il codice, il comando e l’output vero.`
-        : `${count.programs + count.gallery} programs written in Heroes, with the code, the command and the real output.`,
+        ? `${count.programs + count.gallery} programmi in Heroes, con codice, comandi e output registrato quando disponibile.`
+        : `${count.programs + count.gallery} programs written in Heroes, with code, commands and recorded output where available.`,
     html: `\n${parts.join('\n\n')}\n`,
   };
 }

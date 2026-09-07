@@ -1,3 +1,3 @@
-<p class="tagline">The shortest way out of a maze, drawn.</p>
+<p class="tagline">Find and draw the shortest path through a maze.</p>
 
-<p>A breadth-first search with a queue that only grows, because removing from the front of an array copies it. One map does both jobs at once: the set of places already seen, and the way back.</p>
+<p>The program uses breadth-first search: it checks all positions one step away, then two steps away, and so on. Its queue keeps earlier entries because removing them from the front would copy the array. One map records both the positions already visited and the steps needed to retrace the path.</p>

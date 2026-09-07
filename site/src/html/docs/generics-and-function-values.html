@@ -1,18 +1,16 @@
 
-  <p class="crumb"><a href="/">Heroes</a> / <a href="/docs/">Docs</a> / chapter 7</p>
+  <p class="crumb"><a href="/">Heroes</a> / <a href="/docs/">Guide</a> / chapter 7</p>
 
   <h1 class="chapter">Generics and function values</h1>
-  <p class="tagline">One shape for many types, and no anonymous functions anywhere.</p>
-
-  <p>
-    Rewriting the same loop for lists of numbers, lists of words and everything
-    else wastes an afternoon. A type system that can express every imaginable
-    condition on that loop can consume the next ten years. Heroes chooses the
-    smallest form that works: a function may leave the type it works on open.
-    The feature ends there.
+  <p class="tagline">
+    One function can work with different types and take other functions as arguments.
   </p>
 
-  <h3>A function with a hole in its types</h3>
+  <p>
+    A generic function can perform the same operation on different types. For example, you can write one function to transform list elements, whether they are numbers or strings. The arguments at each call determine the concrete types.
+  </p>
+
+  <h3>Declaring type parameters</h3>
   <figure class="example" data-src="examples/gallery/06-generics.hero" data-lines="8-16">
 <pre><code><span class="c"># The parentheses around a function type are mandatory: without them</span>
 <span class="c"># `f: function(A) -&gt; B -&gt; [B]` would be a guessing game.</span>
@@ -26,31 +24,24 @@
     <figcaption>examples/gallery/06-generics.hero, lines 8&ndash;16</figcaption>
   </figure>
   <p>
-    <code>&lt;A, B&gt;</code> after the name puts two types in play that the
-    function does not know yet: whoever calls it supplies them. Inside they
-    behave like real types, so <code>[A]</code> is a list of the first kind and
-    <code>out: [B] @ []</code> is a list of the second, still empty. The empty
-    list has to be told its type for the usual reason: there is nothing inside
-    <code>[]</code> to work it out from.
+    <code>&lt;A, B&gt;</code> declares two type parameters. The compiler determines the concrete types from the call arguments. In the body, <code>[A]</code> means a list of <code>A</code> values, and <code>out: [B] @ []</code> declares an empty list of <code>B</code> values. An empty list needs an explicit type because it has no elements to infer it from.
   </p>
 
-  <h3>Three rules keep it small</h3>
+  <h3>Three rules for generic functions</h3>
   <ul>
-    <li><b>Only functions can leave a type open.</b> A <code>record</code> or a
-    <code>variant</code> always has its types settled. When you need a container
-    that works for any type, a list or a map already is one.</li>
+    <li>
+    <b>Only functions can be generic.</b> Fields in a <code>record</code> or <code>variant</code> have concrete types. Built-in lists and maps can hold elements of different types.
+  </li>
     <li><b>No conditions on the types.</b> There is no way to say &ldquo;any
     <code>A</code>, as long as it can be compared&rdquo;. If a function needs an
     operation on <code>A</code>, you pass that operation in as an argument, like
     <code>f</code> above.</li>
-    <li><b>Never written when you call.</b> The compiler works the types out
-    from the arguments you give it, or it is an error.
-    <code>each&lt;i64, str&gt;(…)</code> is not a spelling the language
-    has.</li>
+    <li>
+    <b>Do not write type arguments in a call.</b> The compiler infers them from the arguments. If it cannot, it reports an error. The syntax <code>each&lt;i64, str&gt;(…)</code> is not allowed.
+  </li>
   </ul>
   <p>
-    With no constraints there is nothing to disambiguate. A type argument would
-    only repeat what the compiler already knows.
+    Call <code>each</code> with its ordinary arguments; their types give the compiler the information it needs.
   </p>
 
   <h3>Functions are values, and they have names</h3>
@@ -70,19 +61,10 @@
     <figcaption>examples/gallery/06-generics.hero, lines 36&ndash;47</figcaption>
   </figure>
   <p>
-    A top-level function used without brackets is a value you can pass. There
-    are <b>no lambdas</b>: nothing anonymous, nothing that captures the
-    variables around it. So the thing being passed always has a name, a
-    signature and, usually, a comment, and it can be read, tested and
-    reused on its own. What you give up is the one-liner written inline at the
-    call site; what you get back is that every piece of behaviour in the program
-    is somewhere you can point at.
+    The name of a function declared at the file&rsquo;s top level, written without parentheses, is a value you can pass to another function. Heroes has <b>no lambdas, or anonymous functions</b>, and no functions that capture surrounding variables. Every function therefore has a name and a declaration you can read, test and reuse.
   </p>
   <p>
-    A function type is written <code>(function(A) -&gt; B)</code>, and those
-    outer brackets are not decoration. Without them,
-    <code>f: function(A) -&gt; B -&gt; [B]</code> could be read two ways, and the
-    compiler says so rather than picking one:
+    Write a function type as <code>(function(A) -&gt; B)</code>. The outer parentheses are required: without them, <code>f: function(A) -&gt; B -&gt; [B]</code> would be ambiguous. The compiler reports the error:
   </p>
   <pre><code>$ heroes check generics.hero
 error[expected_type]: expected a type, found `function` — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`
@@ -91,7 +73,7 @@ error[expected_type]: expected a type, found `function` — a type is `i64`, `f6
   18 | function keep_if&lt;A&gt;(xs: [A], ok_for: function(A) -&gt; bool) -&gt; [A]
      |                                      ^^^^^^^^</code></pre>
 
-  <h3>Filtering, and putting things together</h3>
+  <h3>Filtering and combining elements</h3>
   <figure class="example" data-src="examples/gallery/06-generics.hero" data-lines="18-25">
 <pre><code><span class="k">function</span> keep_if&lt;A&gt;(xs: [A], ok_for: (<span class="k">function</span>(A) -&gt; <span class="t">bool</span>)) -&gt; [A]
     out: [A] @ []
@@ -104,9 +86,7 @@ error[expected_type]: expected a type, found `function` — a type is `i64`, `f6
     <figcaption>examples/gallery/06-generics.hero, lines 18&ndash;25</figcaption>
   </figure>
   <p>
-    One type parameter here, because filtering does not change the element type.
-    Hand it a function of the wrong shape and the error lands on the argument,
-    naming both types:
+    This function has one type parameter because filtering preserves the element type. If you pass a function with incompatible types, the error identifies the argument and shows both types:
   </p>
   <pre><code>$ heroes check generics.hero
 error[type_mismatch]: expected `bool`, found `i64`
@@ -126,10 +106,7 @@ error[type_mismatch]: expected `bool`, found `i64`
     <figcaption>examples/gallery/06-generics.hero, lines 27&ndash;34</figcaption>
   </figure>
   <p>
-    <code>combine</code> is the general one: it walks a list of
-    <code>A</code>&nbsp;and builds up a <code>B</code>, so summing numbers,
-    joining strings and counting matches are all the same function with a
-    different <code>step</code>.
+    <code>combine</code> iterates over a list of <code>A</code> values and calculates a result of type <code>B</code>. By changing the <code>step</code> function, you can sum numbers, join strings or count elements that meet a condition.
   </p>
 
   <h3>One generic, three element types</h3>
@@ -142,17 +119,10 @@ error[type_mismatch]: expected `bool`, found `i64`
     <figcaption>examples/gallery/06-generics.hero, lines 49&ndash;53</figcaption>
   </figure>
   <p>
-    The same <code>each</code>, given a function that returns <code>str</code>,
-    returns a <code>[str]</code>. Nothing
-    at either call site says so, and both are checked completely.
+    If you pass <code>each</code> a function that returns <code>str</code>, the result is a <code>[str]</code> list. The compiler infers and checks the types in both calls.
   </p>
   <p>
-    How it compiles decides what a generic costs. The compiler makes one copy of <code>each</code> for every concrete
-    type it is used with, so the C that comes out has an <code>each</code> over
-    integers and a separate <code>each</code> over strings, each as direct as
-    if you had written it by hand. Nothing is looked up at run time and no
-    value is wrapped up to make the types match. The price is paid in the size of the binary, once per type, and
-    never in the speed of a call.
+    The compiler generates a version of <code>each</code> for each combination of concrete types used by the program. The C output therefore contains separate versions for integers and strings. The program does not need to select types at run time or wrap values in a generic container. Additional versions do increase the executable&rsquo;s size.
   </p>
   <figure class="example" data-src="examples/gallery/06-generics.hero" data-lines="55-56">
 <pre><code><span class="k">function</span> main()
@@ -162,16 +132,11 @@ error[type_mismatch]: expected `bool`, found `i64`
   <pre><code>$ heroes run examples/gallery/06-generics.hero
 10</code></pre>
   <p>
-    <code>map</code>, <code>filter</code>, <code>fold</code>, <code>find</code>,
-    <code>any</code> and <code>all</code> already exist with these shapes, and
-    they are written in Heroes rather than built into the compiler. The three
-    functions above are those shapes under different names, because no file may
-    redeclare a built-in one.
+    The functions <code>map</code>, <code>filter</code>, <code>fold</code>, <code>find</code>, <code>any</code> and <code>all</code> are already available and are written in Heroes. This chapter&rsquo;s three functions illustrate how they work under different names, because you cannot redefine a built-in name.
   </p>
 
   <p class="next">
-    Next: <b><a href="/docs/strings/">Strings</a></b>, where bytes and characters
-    are two different jobs and the language refuses to blur them.
+    Next: <b><a href="/docs/strings/">Strings</a></b>, learn to distinguish bytes from characters and choose the right operations.
     <a href="/docs/">Back to the chapter list</a>.
     <span class="back">&larr; Previous: <a href="/docs/bindings-and-mutation/">Bindings and mutation</a></span>
   </p>

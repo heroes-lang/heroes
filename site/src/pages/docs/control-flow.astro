@@ -3,6 +3,6 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import { page } from '../../lib/figures.ts';
 import content from '../../html/docs/control-flow.html?raw';
 ---
-<BaseLayout url="/docs/control-flow/" title={'Control flow: Heroes documentation'} description={'Two loops and one conditional. if takes only bool because there is no truthiness, for walks a sequence, while repeats on a condition, and a range is an ordinary function call.'} current="docs">
+<BaseLayout url="/docs/control-flow/" title={"Control flow: Heroes documentation"} description={"Use if for conditions, for to iterate over sequences and while to repeat operations while a condition is true."} current="docs">
 <Fragment set:html={page(content, 'site/src/html/docs/control-flow.html')} />
 </BaseLayout>

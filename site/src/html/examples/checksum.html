@@ -1,3 +1,3 @@
-<p class="tagline">Three published instruments over the same bytes: CRC-32, Adler-32 and Base64.</p>
+<p class="tagline">Compute CRC-32 and Adler-32 checksums, and encode the same bytes as Base64.</p>
 
-<p>Each is checked against the document that defines it, and the printed output is one of those documents&rsquo; own table, identical to the lines fetched from the RFC Editor. Writing the decoder turned up a fact about the language: nothing here turns a byte value into a character, so it gives back bytes.</p>
+<p>Checksums help detect changes in data; Base64 represents bytes as text. Each implementation is checked against its defining document. The output matches the Base64 examples published by the RFC Editor byte for byte. The decoder returns bytes because Heroes has no built-in conversion from a byte value to a character.</p>

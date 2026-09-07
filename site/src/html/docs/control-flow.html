@@ -1,22 +1,18 @@
 
-  <p class="crumb"><a href="/">Heroes</a> / <a href="/docs/">Docs</a> / chapter 5</p>
+  <p class="crumb"><a href="/">Heroes</a> / <a href="/docs/">Guide</a> / chapter 5</p>
 
   <h1 class="chapter">Control flow</h1>
-  <p class="tagline">Two loops, one conditional, and no clever forms.</p>
+  <p class="tagline">
+    Choose with <code>if</code>; repeat with <code>for</code> or <code>while</code>.
+  </p>
 
   <p>
-    There is one way to choose and two ways to repeat something. No
-    <code>do…while</code>, no three-part <code>for(;;)</code> header, no
-    <code>switch</code> with fall-through, no ternary operator, no loop labels.
-    Each of those is a second way to write something the language already has,
-    and every second way is a place a reader can be surprised.
+    Control flow is the order in which statements run. Heroes provides <code>if</code> to choose which statements to run, <code>for</code> to iterate over a sequence, and <code>while</code> to repeat a block while a condition is true.
   </p>
 
   <h3><code>if</code>, and only <code>bool</code></h3>
   <p>
-    A condition is a <code>bool</code> or it is a compile error. There is no
-    rule about zero being false or an empty string being false, because there is
-    no truthiness at all:
+    A condition must have type <code>bool</code>, with a value of <code>true</code> or <code>false</code>. Numbers and strings are not automatically converted to conditions:
   </p>
   <pre><code>$ heroes check loops.hero
 error[not_bool]: an `if` condition must be `bool`, found `i64` — there is no truthiness in this language
@@ -25,11 +21,7 @@ error[not_bool]: an `if` condition must be `bool`, found `i64` — there is no t
   13 |         if x
      |            ^</code></pre>
   <p>
-    <code>if</code>, <code>else if</code> and <code>else</code> are the whole
-    set, the condition takes no brackets, and the body is what is indented under
-    it. <code>if</code> is also an <i>expression</i>, so a value can be chosen
-    with one instead of by assigning in two branches, which is why the
-    language has no ternary and does not miss it.
+    Use <code>if</code>, <code>else if</code> and <code>else</code> to define branches. The condition needs no parentheses; indentation defines the body. <code>if</code> is also an <i>expression</i>, meaning it can produce a value. You can use it to choose a value without assigning separately in two branches.
   </p>
 
   <h3><code>for x in xs</code>: walking a sequence</h3>
@@ -47,16 +39,10 @@ error[not_bool]: an `if` condition must be `bool`, found `i64` — there is no t
     <figcaption>examples/gallery/04-loops.hero, lines 7&ndash;16</figcaption>
   </figure>
   <p>
-    There is no index, no counter and no end condition to get wrong: the loop
-    takes each element in turn and the variable is a fresh copy each time round.
+    The loop visits one element at a time. On each iteration, the variable holds a fresh copy of that element. There is no index or counter to update.
   </p>
   <p>
-    The <code>@</code> on <code>best</code> has
-    <a href="/docs/bindings-and-mutation/">the next chapter</a> to itself. For now:
-    <code>best: i64 @ floor</code> declares a name that is allowed to change,
-    and <code>best @ x</code> changes it. A name bound with <code>=</code>
-    cannot change, ever, so the mutable parts of a program are exactly the lines
-    with an <code>@</code> on them and you can find them by looking.
+    The <a href="/docs/bindings-and-mutation/">next chapter</a> explains the <code>@</code> symbol. Here <code>best: i64 @ floor</code> declares a mutable variable, and <code>best @ x</code> assigns a new value to it. A name bound with <code>=</code> cannot be reassigned.
   </p>
 
   <h3>Leaving early: <code>break</code></h3>
@@ -89,10 +75,7 @@ error[not_bool]: an `if` condition must be `bool`, found `i64` — there is no t
     <figcaption>examples/gallery/04-loops.hero, lines 29&ndash;38</figcaption>
   </figure>
   <p>
-    Both jumps apply to the loop they are written in. There are no labels to
-    break out of an outer loop, so when you need that, the inner loop becomes a
-    function and <code>return</code> does the work, which also gives the
-    thing you were doing a name.
+    <code>break</code> ends the innermost loop; <code>continue</code> skips to its next iteration. You cannot name an outer loop with a label. To leave several loops, you can put them in a function and use <code>return</code> to exit it.
   </p>
 
   <h3><code>while</code>: repeating on a condition</h3>
@@ -111,10 +94,7 @@ error[not_bool]: an `if` condition must be `bool`, found `i64` — there is no t
     <figcaption>examples/gallery/04-loops.hero, lines 40&ndash;50</figcaption>
   </figure>
   <p>
-    A <code>while</code> takes a condition and nothing else. The classic
-    three-part header packs the start, the test and the step into one line where
-    the step is easy to forget; here the step is a statement in the body, in the
-    order it happens.
+    A <code>while</code> checks its condition before each iteration. If a counter needs updating, write that update in the body in the order it should run.
   </p>
 
   <h3>Counting: a range is a function call</h3>
@@ -131,19 +111,10 @@ error[not_bool]: an `if` condition must be `bool`, found `i64` — there is no t
     <figcaption>examples/gallery/04-loops.hero, lines 52&ndash;60</figcaption>
   </figure>
   <p>
-    <code>range</code> is an ordinary function that returns a
-    list of numbers, <code>from</code> included and <code>to</code> excluded, and
-    both arguments are named for the reason
-    <a href="/docs/records-and-functions/">chapter 2</a> gave: they are both
-    <code>i64</code>, so the compiler cannot tell them apart and makes you say
-    which is which. The off-by-one you would normally reread twice is written
-    down.
+    <code>range</code> returns a list of numbers, including <code>from</code> and excluding <code>to</code>. You must name both arguments because they share the type <code>i64</code>, as explained in <a href="/docs/records-and-functions/">chapter 2</a>.
   </p>
   <p>
-    <code>_</code> is the loop variable when there is nothing to call it. It is
-    the same <code>_</code> that discards a payload in a <code>match</code>: it
-    binds nothing, so it can never be an unused name, and an unused name
-    <i>is</i> an error here, which is what makes <code>_</code> worth having.
+    Use <code>_</code> as the loop variable when you do not need the element&rsquo;s value. As in a <code>match</code>, <code>_</code> discards the value without binding a name, so it cannot produce an unused-name error.
   </p>
 
   <h3>All of it, running</h3>
@@ -157,16 +128,12 @@ error[not_bool]: an `if` condition must be `bool`, found `i64` — there is no t
 --------------------
 digits in 2026: 4</code></pre>
   <p>
-    Adding to a string in a loop copies
-    the whole string every time, so it costs more the longer it gets;
-    <code>repeat</code> and <code>join</code> build in one pass and are the right
-    tools when the loop is long. Twenty dashes will never notice. The <a href="/docs/strings/">strings chapter</a> comes back to this.
+    Appending text to a string in a loop copies the entire string each time, so each iteration costs more. For long strings, use <code>repeat</code> or <code>join</code>, which build the result in one pass. The <a href="/docs/strings/">strings chapter</a> explains the difference.
   </p>
 
   <p class="next">
     Next: <b><a href="/docs/bindings-and-mutation/">Bindings and mutation</a></b>,
-    where <code>=</code> and <code>@</code> get the page they deserve, and
-    shadowing a name turns out to be an error.
+    learn to use <code>=</code> and <code>@</code> and avoid ambiguous names.
     <a href="/docs/">Back to the chapter list</a>.
     <span class="back">&larr; Previous: <a href="/docs/failure-is-a-value/">Failure is a value</a></span>
   </p>

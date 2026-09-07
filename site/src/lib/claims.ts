@@ -241,23 +241,23 @@ const CLAIMS: Claim[] = [
   { page: 'site/src/html/index.html', what: 'the number of judges',
     fact: () => judges().seats, shape: (n) => new RegExp(`${n} judges`, 'i') },
   { page: 'site/src/html/index.html', what: 'the judges who can refuse',
-    fact: () => judges().vetoes, shape: (n) => new RegExp(`${n}\\s+of whom can refuse`, 'i') },
+    fact: () => judges().vetoes, shape: (n) => new RegExp(`${n} can veto`, 'i') },
   { page: 'site/src/html/it/index.html', what: 'the number of judges',
     fact: () => judges().seats, shape: (n) => new RegExp(`${n} giudici`, 'i') },
   { page: 'site/src/html/it/index.html', what: 'the judges who can refuse',
-    fact: () => judges().vetoes, shape: (n) => new RegExp(`${n} dei quali possono rifiutarlo`, 'i') },
+    fact: () => judges().vetoes, shape: (n) => new RegExp(`${n} dei quali possono porre un veto`, 'i') },
   { page: 'site/src/html/project.html', what: 'the seats of the panel',
     fact: () => judges().seats, shape: (n) => new RegExp(`panel of ${n} seats`, 'i') },
   { page: 'site/src/html/project.html', what: 'the seats that can refuse',
-    fact: () => judges().vetoes, shape: (n) => new RegExp(`${n} of them can refuse`, 'i') },
+    fact: () => judges().vetoes, shape: (n) => new RegExp(`${n} can veto`, 'i') },
   { page: 'site/src/html/it/project.html', what: 'the seats of the panel',
     fact: () => judges().seats, shape: (n) => new RegExp(`collegio di ${n} seggi`, 'i') },
   { page: 'site/src/html/it/project.html', what: 'the seats that can refuse',
-    fact: () => judges().vetoes, shape: (n) => new RegExp(`${n} di loro possono rifiutare`, 'i') },
+    fact: () => judges().vetoes, shape: (n) => new RegExp(`${n} possono porre un veto`, 'i') },
   { page: 'site/src/html/about/thanks.html', what: 'the number of judges',
-    fact: () => judges().seats, shape: (n) => new RegExp(`survive ${n} judges`, 'i') },
+    fact: () => judges().seats, shape: (n) => new RegExp(`${n} judges review proposals`, 'i') },
   { page: 'site/src/html/it/about/thanks.html', what: 'the number of judges',
-    fact: () => judges().seats, shape: (n) => new RegExp(`sopravvivere a ${n} giudici`, 'i') },
+    fact: () => judges().seats, shape: (n) => new RegExp(`${n} giudici valutano le proposte`, 'i') },
 
   // The words that can begin a top-level line.
   { page: 'site/src/html/why.html', what: 'the words that can begin a line',
@@ -429,7 +429,7 @@ function checkFixpointLeg(html: string, pagePath: string): string[] {
   const it = pagePath === 'site/src/html/it/project.html';
   if (!en && !it) return [];
   const flat = html.replace(/\s+/g, ' ');
-  const says = en ? /run on the Linux leg alone/.test(flat) : /girano solo sul ramo Linux/.test(flat);
+  const says = en ? /run only on Linux/.test(flat) : /vengono eseguiti solo su Linux/.test(flat);
   const gated = ci().fixpointLinuxOnly;
   if (gated && !says) return [`${pagePath}: ${CI_FILE} gates the fixpoint step to Linux and the page no longer says so.`];
   if (!gated && says) return [`${pagePath}: the page says the fixpoint runs on the Linux leg alone and ${CI_FILE} no longer gates it.`];

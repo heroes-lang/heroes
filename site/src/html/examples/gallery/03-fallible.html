@@ -1,3 +1,3 @@
-<p class="tagline">No null and no exceptions. A failure is a value with a type.</p>
+<p class="tagline">Return failures as values and handle them explicitly.</p>
 
-<p><code>T?</code> is a <code>T</code> or an error. <code>fail</code> makes one, <code>?</code> hands it to the caller, and <code>match</code> looks at both halves. Nothing can be null, so there is nothing to forget to check.</p>
+<p>A function returning <code>T?</code> gives either a <code>T</code> value or an error. <code>fail</code> creates the error, <code>?</code> returns it to the caller, and <code>match</code> handles success and failure. Heroes has no exceptions: the return type says whether a call can fail.</p>

@@ -3,16 +3,13 @@
     <h1 class="page">Perché Heroes</h1>
     <span class="nod">· rebel rebel ·</span>
   </div>
-  <p class="lede">Due vincoli, decisi prima della grammatica. Il codice deve
-  essere leggibile da un modello, e il linguaggio arriva al mondo attraverso il C.</p>
+  <p class="lede">
+    Heroes nasce da due vincoli: il codice deve essere facile da leggere per un modello e deve poter usare le librerie C.
+  </p>
 
-  <h2>I modelli sbagliano in modi catalogati <span class="nod">&middot; sound and vision &middot;</span></h2>
+  <h2>Gli errori ricorrenti dei modelli <span class="nod">&middot; sound and vision &middot;</span></h2>
   <p>
-    Il codice lo scrivono sempre più i modelli, e sbagliano in modi precisi e
-    ripetuti. Scambiano due argomenti dello stesso tipo. Dimenticano un caso.
-    Rinominano qualcosa che non hanno mai dichiarato. Usano una parola chiave di
-    un altro linguaggio. Un linguaggio può trattare tutto questo come una serie
-    di incidenti, oppure prenderlo come specifica di partenza.
+    I modelli che generano codice commettono errori ricorrenti: scambiano argomenti dello stesso tipo, dimenticano un caso, usano un nome non dichiarato o una parola chiave di un altro linguaggio. Heroes è progettato per far rilevare questi errori al compilatore.
   </p>
   <blockquote>
     Un linguaggio progettato perché ogni sbaglio plausibile di un modello sia
@@ -21,45 +18,28 @@
     programma costa più token da scrivere.
   </blockquote>
   <p>
-    È misurata, non affermata. Prendi programmi che funzionano, pianta in
-    ognuno uno sbaglio plausibile, e conta quanti diventano un errore di
-    compilazione invece di un programma che gira e in silenzio fa altro. Poi passa gli stessi programmi a una versione del compilatore con le regole della tesi
-    disattivate. La distanza tra le due colonne è tutta la misura.
-    <a href="/it/errors/#measured">La tabella misurata &rarr;</a>
+    Una parte della tesi è stata verificata introducendo errori plausibili in programmi funzionanti e contando quelli rilevati dal compilatore. Gli stessi programmi vengono poi controllati con le regole specifiche di Heroes disattivate. Il confronto misura l&rsquo;effetto di quei controlli. Resta da misurare il risparmio totale di token, cioè dei frammenti di testo che un modello legge e genera. <a href="/it/errors/#measured">I risultati delle prove &rarr;</a>
   </p>
 
-  <h2>Perché togliere gli errori batte accorciare il codice</h2>
+  <h2>Perché evitare errori può far risparmiare token</h2>
   <pre><code>costo reale = token del programma × (1 + tasso di riscrittura)</code></pre>
   <p>
-    I due fattori non sono confrontabili. Una sintassi più compatta risparmia
-    forse il cinque per cento di un file. Un giro di correzione costa da
-    cinquecento a duemila token, perché il modello legge l&rsquo;errore, rilegge il
-    file, riscrive una funzione e ricompila. Su un programma da tremila token,
-    <b>un giro di correzione si mangia dieci risparmi di sintassi.</b>
+    Accorciare la sintassi riduce i token necessari per scrivere un file. Correggere un errore richiede invece altri passaggi: il modello legge il messaggio, rilegge il codice, riscrive una funzione e riprova la compilazione. Evitare una correzione può quindi far risparmiare più token di una sintassi più breve.
   </p>
   <p>
-    Quindi l&rsquo;istinto sbaglia. L&rsquo;istinto dice: accorcia tutto. La formula dice:
-    togli gli errori, e accorcia solo dove non costa niente. Heroes è prolisso
-    dove dichiari le cose e asciutto dove le usi. Spende parole dove abita un
-    errore, e in nessun altro posto.
+    Per questo Heroes usa dichiarazioni esplicite e forme brevi per le operazioni comuni. Richiede qualche parola in più dove serve a rendere riconoscibile un errore.
   </p>
 
-  <h2>Il vincolo di partenza</h2>
+  <h2>Usare le librerie esistenti</h2>
   <p>
-    Il progetto non è partito da una grammatica. È partito da un rifiuto:
-    <b>Heroes non scrive una libreria propria per il mondo: file, socket, database e grafica arrivano dal C.</b> Scriverne una moderna è più lavoro che scrivere il compilatore, ed è la cosa che uccide i
-    linguaggi fatti da una persona sola. Quindi Heroes tiene il minimo
-    indispensabile e prende tutto il resto dall&rsquo;enorme quantità di C che esiste
-    già.
+    <b>Heroes usa le librerie C per file, socket, database e grafica.</b> Sviluppare e mantenere librerie proprie richiederebbe troppo lavoro per un progetto seguito da una sola persona. Heroes fornisce quindi le operazioni essenziali e usa le librerie C esistenti per il resto.
   </p>
   <pre class="table"><code>matematica oltre l&rsquo;aritmetica  →  libm          file, socket   →  libc
 espressioni regolari           →  PCRE2         HTTP           →  libcurl
 JSON                           →  cJSON         SQL            →  SQLite
 grafica, audio, terminale      →  SDL, raylib, ncurses</code></pre>
   <p>
-    Prenderne una in prestito si fa così. Tutto ruota intorno al nome sulla
-    prima riga: è l&rsquo;header, il file dove la libreria dichiara la forma delle sue
-    funzioni, ed è su quello che clang verifica quello che hai scritto.
+    Per usare una libreria, dichiari le funzioni che ti servono. Il nome nella prima riga indica l&rsquo;header, il file che descrive le funzioni e i tipi della libreria. Clang, il compilatore C, verifica le tue dichiarazioni usando quel file.
   </p>
   <figure class="example" data-src="examples/gallery/08-ffi.hero" data-lines="12-15">
 <pre><code><span class="k">extern</span> <span class="s">"math.h"</span> link <span class="s">"m"</span>
@@ -69,11 +49,7 @@ grafica, audio, terminale      →  SDL, raylib, ncurses</code></pre>
     <figcaption>examples/gallery/08-ffi.hero, righe 12&ndash;15</figcaption>
   </figure>
   <p>
-    La preoccupazione ovvia, per un linguaggio che non ha una libreria propria,
-    è che chi scrive il programma, persona o modello, prenda in prestito con
-    sicurezza una funzione C che non esiste. Anche quello è un errore di
-    compilazione, e la risposta non viene da nessuna lista che questo
-    compilatore si tiene:
+    Una persona o un modello potrebbe dichiarare una funzione C che non esiste. Il compilatore segnala anche questo errore, verificando l&rsquo;header della libreria:
   </p>
   <pre class="diag"><code><span class="msg"><span class="k">error</span>[ffi_unknown_name]: `math.h` declares no `sqrtt` — clang read the header and could not find it</span>
   at ffi-demo.hero:2:5
@@ -82,43 +58,21 @@ grafica, audio, terminale      →  SDL, raylib, ncurses</code></pre>
     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   note: an `extern` names what the header already has (§4.19): check the spelling, or name the header that does declare `sqrtt`</code></pre>
   <p>
-    Clang aveva aperto l&rsquo;header vero. Sbaglia una larghezza invece di un nome e
-    la risposta arriva dallo stesso posto, sulla stessa riga, prima che qualcosa
-    parta. È questo che il rifiuto ci fa guadagnare: la libreria qui non viene descritta,
-    quindi qui non la si può descrivere male.
+    Clang usa l&rsquo;header reale della libreria. Verifica sia i nomi sia le dimensioni dei tipi nelle posizioni che lo richiedono e segnala gli errori prima dell&rsquo;esecuzione. Heroes non deve mantenere una seconda descrizione della libreria da aggiornare.
   </p>
   <p>
-    Senza quell&rsquo;header niente verificherebbe quello che hai dichiarato. E
-    guarda <code>pow(base:, exponent:)</code>: prende due valori dello stesso
-    tipo, quindi la chiamata deve nominarli. La regola vale anche qui, sul
-    confine con il C, che è il punto in cui scambiare due argomenti costa di più.
+    L&rsquo;header permette di verificare le dichiarazioni. Restano valide anche le regole di Heroes: <code>pow(base:, exponent:)</code> riceve due valori dello stesso tipo, quindi la chiamata deve specificare i nomi degli argomenti.
   </p>
   <p>
-    Il minimo indispensabile è una trentina di nomi, sempre gli stessi:
-    <code>print</code>, <code>len</code>, <code>push</code>,
-    <code>slice</code>, <code>sort</code>, le conversioni tra tipi, e
-    <code>map</code>, <code>filter</code>, <code>fold</code>. Quella lista
-    cambia solo per una decisione registrata, mai per accumulo.
+    Le operazioni disponibili comprendono <code>print</code>, <code>len</code>, <code>push</code>, <code>slice</code>, <code>sort</code>, le conversioni tra tipi, <code>map</code>, <code>filter</code> e <code>fold</code>. Ogni aggiunta richiede una decisione registrata.
   </p>
   <p>
-    Una conseguenza a cui tutto il resto del design obbedisce: <b>quanto è
-    comodo il confine con il C conta quanto la chiarezza del linguaggio, non
-    meno.</b> Una libreria che Heroes non riesce a raggiungere è
-    codice C che il suo autore deve continuare a scrivere a mano, ed è
-    esattamente quello che questo rifiuto vuole evitare.
-    <a href="/it/examples/#c">I programmi che usano il C &rarr;</a>
+    <b>Usare le librerie C deve essere semplice quanto scrivere in Heroes.</b> Se una libreria non è accessibile da Heroes, chi la vuole usare deve scrivere altro codice C. Il progetto cerca di ridurre questa necessità. <a href="/it/examples/#c">I programmi che usano il C &rarr;</a>
   </p>
 
   <h2>Perché il compilatore emette C</h2>
   <p>
-    Heroes traduce il tuo programma in C e lascia a un compilatore C il
-    compito di produrre l&rsquo;eseguibile. Il motivo è il vincolo qui sopra. Una
-    funzione presa in prestito dal C va verificata sull&rsquo;header vero della libreria, non su una descrizione che il compilatore di Heroes si
-    inventa. Passare per il C vuol dire che clang lo fa a ogni compilazione,
-    gratis. Un design precedente puntava direttamente al codice macchina, ed è
-    stato abbandonato quando si è visto che il vincolo di partenza aveva già
-    deciso la questione. Non ha deciso la velocità: qui la velocità non è né un
-    obiettivo né una scusa.
+    Heroes traduce il tuo programma in C e affida a clang la produzione dell&rsquo;eseguibile. Questo permette a clang di verificare le dichiarazioni delle funzioni C sugli header delle librerie a ogni compilazione. Il progetto iniziale prevedeva di generare direttamente codice macchina; è stato modificato per usare questi controlli. La scelta dipende dalla verifica delle librerie, non da un vantaggio di velocità.
   </p>
 
   <h2>Sette parole possono aprire una riga</h2>
@@ -145,14 +99,10 @@ grafica, audio, terminale      →  SDL, raylib, ncurses</code></pre>
     <figcaption>examples/gallery/01-points.hero, righe 6&ndash;14</figcaption>
   </figure>
   <p>
-    L&rsquo;ordine in cui scrivi le dichiarazioni non conta mai, e due funzioni
-    possono chiamarsi a vicenda senza dichiarare niente in anticipo. Sotto, il
-    linguaggio è ancora più piccolo: quello che il compilatore maneggia
-    davvero sono <b>sette costrutti</b>, e tutto il resto si riduce a quelli
-    prima che lui abbia finito.
+    Puoi scrivere le dichiarazioni in qualsiasi ordine. Due funzioni possono chiamarsi a vicenda senza dichiarazioni anticipate. Durante la compilazione, Heroes riconduce il codice a <b>sette costrutti</b> interni, le forme di base usate per rappresentare il programma.
   </p>
 
-  <h2>Le regole con cui vive <span class="nod">&middot; fashion &middot;</span></h2>
+  <h2>Le regole del linguaggio <span class="nod">&middot; fashion &middot;</span></h2>
   <ul class="pillars">
     <li><b>Una riga si capisce guardando quella riga.</b> Il suo significato è
     deciso dalla riga e dalla funzione intorno, mai da qualcosa scritto tre file
@@ -161,95 +111,32 @@ grafica, audio, terminale      →  SDL, raylib, ncurses</code></pre>
     <li><b>Un solo modo di scrivere qualunque cosa.</b> Un formattatore con
     una sola forma canonica, una parola sola per i cicli, e i nomi degli
     argomenti obbligatori dove i tipi non bastano a distinguerli.</li>
-    <li><b>Errori scritti per essere letti da una macchina.</b> Ogni
-    messaggio porta cosa si aspettava il compilatore e dove; se la cosa con cui
-    va in conflitto è dichiarata altrove, nomina quella riga, e dove la
-    riparazione si conosce arriva marcata <code>certain</code> oppure
-    <code>guess</code>. Scrivere <code>???</code> lascia un buco dichiarato e
-    chiede cosa ci va dentro.</li>
-    <li><b>Un programma non deve corrompere la memoria.</b> Fermarsi gli è
-    concesso. Un intero che sfora, a qualunque larghezza, una divisione per
-    zero, un indice oltre la fine di una lista, una fetta che taglierebbe un
-    carattere a metà, una ricorsione troppo profonda, e <code>.must()</code> su
-    un valore che è fallito: ognuna di queste cose ferma il programma sul posto,
-    a voce alta, sulla riga dov&rsquo;è successo. Quello che nessuna di loro fa
-    è tirare avanti con la memoria sbagliata. Dove due design sono accettabili e
-    uno dei due si può portare a un indirizzo che nessuno ha controllato, vince
-    l&rsquo;altro, qualunque cosa costi in eleganza o in parole.</li>
-    <li><b>Abbastanza piccolo da compilare se stesso.</b> Tutta la specifica
-    sta sotto un tetto rigido di 4.096 token, e un test lo verifica a ogni
-    commit: cinque pagine, scritte per essere date a un modello e non per stare
-    su uno scaffale. <a href="/it/spec/">Leggila &rarr;</a></li>
+    <li><b>Messaggi d&rsquo;errore utilizzabili anche da una macchina.</b> Ogni messaggio indica il problema e la posizione nel codice. Se coinvolge una dichiarazione in un altro punto, indica anche quella. Le correzioni suggerite sono contrassegnate da <code>certain</code> se sono certe o da <code>guess</code> se richiedono una verifica. Con <code>???</code> puoi lasciare un&rsquo;espressione incompleta e chiedere al compilatore quale tipo si aspetta.</li>
+    <li><b>Un programma non deve corrompere la memoria.</b> Il programma si ferma e segnala il punto dell&rsquo;errore se un intero supera il suo intervallo, una divisione intera ha divisore zero, un indice esce dai limiti di una lista, una porzione di stringa taglia un carattere, la ricorsione è troppo profonda o <code>.must()</code> riceve un errore. Nelle scelte di progetto, evitare l&rsquo;accesso a memoria non verificata ha la precedenza sull&rsquo;eleganza e sulla brevità del codice.</li>
+    <li><b>Abbastanza piccolo da stare in un prompt.</b> Un test verifica a ogni commit, cioè a ogni modifica registrata, che la specifica resti sotto il limite di 4.096 token. Puoi passarla intera a un modello. <a href="/it/spec/">Leggila &rarr;</a></li>
   </ul>
 
-  <h2>Le obiezioni ovvie <span class="nod">&middot; quicksand, avoided &middot;</span></h2>
+  <h2>Domande frequenti <span class="nod">&middot; quicksand, avoided &middot;</span></h2>
   <dl class="why">
     <dt>Perché niente null e niente eccezioni?</dt>
-    <dd>Producono entrambi l&rsquo;unico guaio che nessun compilatore può segnalare:
-    il caso che ti sei dimenticato di gestire. Qui un valore che potrebbe
-    mancare lo dice nel suo tipo (<code>i64?</code>), un&rsquo;operazione andata male
-    restituisce un valore che lo dice, e passare quel fallimento al chiamante è
-    segnato sulla riga con <code>?</code>. Tutto quello che salta da un punto
-    all&rsquo;altro del programma senza farsi vedere è vietato in blocco.
-    <a href="/it/docs/failure-is-a-value/">Il capitolo su questo &rarr;</a></dd>
+    <dd>Heroes rende espliciti i casi in cui un valore manca o un&rsquo;operazione fallisce. Il tipo <code>i64?</code> indica che il risultato può essere un numero oppure un errore. L&rsquo;operatore <code>?</code> propaga l&rsquo;errore alla funzione chiamante, direttamente sulla riga in cui lo usi. <a href="/it/docs/failure-is-a-value/">Come gestire gli errori &rarr;</a></dd>
     <dt>Perché gli argomenti vanno nominati quando due parametri hanno lo stesso tipo?</dt>
-    <dd>Scambiare due argomenti dello stesso tipo è un classico dei modelli, e
-    siccome i tipi combaciano non se ne accorge nessuno: il programma compila e
-    copia al contrario. <code>copy(from: a, to: b)</code> costa quattro
-    caratteri e li spende esattamente dove abita quell&rsquo;errore. Dove i tipi
-    bastano già a distinguere gli argomenti, i nomi restano
-    facoltativi.</dd>
-    <dt>Perché rifiutare un tipo intero unico e poi offrirne otto?</dt>
-    <dd>In C, le regole per trasformare un tipo di numero in un altro sono la
-    prima fonte di guai e la cosa più ingombrante da scrivere. Per molto tempo
-    qui la risposta è stata un tipo intero solo. Poi le larghezze sono state
-    chieste comunque, e la metà costosa era già stata pagata: quello che rende
-    pericolosi otto tipi numerici altrove è la conversione che avviene da sola,
-    e quelle qui erano vietate dal primo giorno per un motivo diverso. Così le
-    larghezze costano circa un paragrafo di specifica, ogni conversione si
-    scrive ancora a mano, e la parola <code>int</code> è un errore che elenca
-    le dimensioni tra cui scegliere.</dd>
+    <dd>Se due argomenti hanno lo stesso tipo, il compilatore non può distinguerli dal tipo soltanto. I nomi in <code>copy(from: a, to: b)</code> chiariscono quale valore è la sorgente e quale la destinazione. Quando i tipi bastano a distinguere gli argomenti, i nomi sono facoltativi.</dd>
+    <dt>Perché ci sono otto tipi di interi?</dt>
+    <dd>Le diverse dimensioni servono, tra l&rsquo;altro, a usare le librerie C con i tipi che richiedono. Heroes evita le conversioni automatiche: ogni passaggio da un tipo numerico a un altro va scritto esplicitamente. In questo modo può offrire otto tipi senza introdurre le regole di conversione implicita del C. Se scrivi <code>int</code>, il compilatore segnala un errore ed elenca i tipi disponibili.</dd>
     <dt>Perché la formattazione è rigida, esattamente quattro spazi, e i tab sono un errore?</dt>
-    <dd>Perché &ldquo;quasi giusto&rdquo; sia un errore di compilazione invece di un
-    programma diverso in silenzio. Un formattatore canonico toglie a chi scrive
-    ogni decisione di stile, e questo vuol dire che qualunque differenza di
-    testo tra due programmi è una differenza di significato.</dd>
+    <dd>L&rsquo;indentazione determina la struttura del programma. Regole rigide permettono al compilatore di segnalare le forme non valide. Il formattatore applica uno stile unico, riducendo le differenze di formattazione quando confronti due versioni del codice.</dd>
     <dt>Perché ogni assegnamento è una copia?</dt>
-    <dd>Perché un dato non abbia mai due nomi. Se nessun altro tiene quello
-    che tieni tu, nessuna funzione lo cambia dietro le tue spalle e due parti di
-    un programma che girano insieme non possono pestarsi i piedi. E non puoi
-    costruire un cerchio in cui due valori si tengono in vita a vicenda, che è
-    ciò che rende possibile liberare la memoria contando chi la tiene, senza
-    nessun garbage collector.</dd>
-    <dd class="more">Il prezzo è reale e la specifica lo scrive invece di
-    nasconderlo. <code>+</code> su uno <code>str</code> copia entrambi i lati,
-    quindi un ciclo di concatenazioni è quadratico ed esiste <code>join</code>
-    per costruire in una passata sola. Far crescere un array sul posto è il
-    caso in cui nessun altro lo tiene. Quello che <i>non</i> è un prezzo è
-    passare un valore grande a una funzione: sotto, una copia condivide la
-    memoria e si separa solo quando qualcuno scrive, quindi passare cinquemila
-    righe non costa niente finché una di esse non cambia. Uno dei programmi di
-    questo sito fa esattamente così, più volte per ogni query.
-    <a href="/it/docs/values-all-the-way-down/">Il capitolo su questo &rarr;</a></dd>
-    <dt>Due cose possono girare insieme?</dt>
-    <dd>Sì, e i thread arrivano dal C come tutto il resto. La regola al confine
-    è quella che i valori già impongono: un thread ha la sua memoria, e quello
-    che entra o esce viene copiato invece che condiviso. Quindi non c&rsquo;è niente da bloccare e nessuna corsa critica possibile, e il compilatore rifiuta il corpo di un
-    thread che prova a portarsi dietro una lista. Questo modello è bravo a
-    mandare una cosa piccola e riavere indietro un numero. È scarso a far
-    entrare e uscire valori grandi per farci pochissimo, ed è un limite vero e non una funzionalità che manca.
-    <a href="/it/examples/threads/">Il programma che lo fa &rarr;</a></dd>
+    <dd>Per rendere indipendenti i valori: modificare una copia non cambia l&rsquo;originale. Non puoi creare cicli in cui due valori si mantengono in vita a vicenda. Il runtime, cioè il codice che supporta il programma durante l&rsquo;esecuzione, può quindi liberare la memoria contando i riferimenti ai dati, senza un garbage collector che cerchi i dati inutilizzati.</dd>
+    <dd class="more"><code>+</code> su uno <code>str</code> copia entrambe le stringhe. Ripeterlo in un ciclo può richiedere un lavoro che cresce con il quadrato della lunghezza finale; <code>join</code> costruisce invece il risultato in una sola passata. Un array può crescere senza essere copiato se nessun altro valore usa la sua memoria. Passare un valore grande a una funzione non richiede subito di copiarne tutti i dati: la memoria viene condivisa finché una modifica rende necessaria una copia. <a href="/it/docs/values-all-the-way-down/">Come funzionano le copie &rarr;</a></dd>
+    <dt>Si possono eseguire operazioni in parallelo?</dt>
+    <dd>Sì, usando i thread, operazioni eseguite in parallelo, tramite le librerie C. Ogni thread Heroes ha memoria separata e può ricevere e restituire numeri, che vengono copiati. Il compilatore rifiuta il passaggio di una lista. Questo modello è adatto a calcoli con pochi dati in ingresso e un risultato numerico. <a href="/it/examples/threads/">Un esempio con thread &rarr;</a></dd>
     <dt>Non è solo una versione più piccola di un linguaggio che esiste già?</dt>
-    <dd>La semantica è familiare di proposito: valori che si copiano, nessuna
-    ereditarietà, il fallimento nel tipo. Quello che è nuovo è il vincolo sotto
-    cui ogni regola è stata scelta, e il fatto che tutto il linguaggio deve
-    stare in un prompt lasciando spazio al tuo programma. È quel budget che
-    rifiuta le funzionalità che un linguaggio più grande avrebbe preso.
-    <a href="/it/project/#panel">Come si decide un cambiamento &rarr;</a></dd>
+    <dd>Heroes usa idee già note: valori indipendenti, assenza di ereditarietà ed errori rappresentati nel tipo. Le scelte rispondono a un vincolo preciso: descrivere tutto il linguaggio in un prompt lasciando spazio per il programma. Il limite di spazio aiuta a decidere quali funzionalità includere. <a href="/it/project/#panel">Come si valutano le modifiche &rarr;</a></dd>
   </dl>
 
   <p class="next away">
-    Convinto, o quasi? <a href="/it/spec/">Tutto il linguaggio è un file
+    Per proseguire: <a href="/it/spec/">Tutto il linguaggio è un file
     solo</a>, abbastanza piccolo da darlo a un modello e lasciare spazio al tuo
     programma. <a href="/it/examples/">Tutti i programmi del repository</a> sono
     scritti così, e <a href="/it/start/">quattro comandi</a> costruiscono il
@@ -257,10 +144,9 @@ grafica, audio, terminale      →  SDL, raylib, ncurses</code></pre>
   </p>
 
   <footer>
-    <p>Ogni blocco di codice di questa pagina è ritagliato da un file in
-    <code>examples/</code> quando il sito viene costruito, quindi non può
-    scostarsi dal programma. Ognuno di quei programmi viene compilato ed
-    eseguito in tre configurazioni a ogni commit.</p>
+    <p>
+    Il sito verifica gli esempi di codice contrassegnati con un percorso confrontandoli con i file in <code>examples/</code>. Questi controlli impediscono che il codice mostrato diverga dai sorgenti.
+  </p>
     <p>Fatto da <a href="https://giuseppearici.com/it/">Giuseppe Arici</a>, CTO di Codermine, Brescia. Autore di
     <a href="/it/about/"><i>Gli eroi del codice</i></a>. Sulle spalle
     <a href="/it/about/thanks/">di molte altre persone</a>.</p>

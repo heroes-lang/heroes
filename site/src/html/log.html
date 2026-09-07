@@ -3,228 +3,186 @@
     <h1 class="page">The build log</h1>
     <span class="nod">· changes ·</span>
   </div>
-  <p class="lede">Newest first, one entry per milestone. This is the postcard
-  version. The full diary, with the decisions, the reviews, the predictions and
-  what broke, is in the repository, still private and opening with the code;
-  until that day these are the whole of it.</p>
+  <p class="lede">
+    One entry for each stage of the project, newest first. Full reports, including decisions, reviews and problems encountered, are in the repository. They will be available when the code becomes public.
+  </p>
 
   <ol class="log">
     <li id="39">
-      <span class="when">M-declared-freer: the count nobody had run</span>
-      <b>A C library hands your program a string it allocated. An <code>extern</code> declaration can now name the function that frees it, and the compiler calls that for you.</b>
-      The example that binds SQLite had said eighteen bound functions in a comment since the day it was written, with the command to check it on the line below; the true answer was seventeen, until the freeing function this milestone added made it eighteen by accident.
-      <a class="more" href="/examples/ledger/">The program that found it</a>
+      <span class="when">Freeing strings returned by C</span>
+      <b>An <code>extern</code> declaration can name the function that frees a string allocated by a C library. The compiler calls it automatically.</b> The change also exposed an incorrect count of the functions used in the SQLite example.
+      <a class="more" href="/examples/ledger/">The SQLite example</a>
     </li>
     <li id="38">
-      <span class="when">M-thread-stacks: the guard that guarded the wrong threads</span>
-      <b>A thread that runs out of room used to die in silence. The ones this language starts now say so; the ones a C library starts never reach that guard, and a judge proved it.</b>
-      That judge deleted one line from the generated C, rebuilt, and got the old silent death; with the line in place, a Heroes function on such a thread is stopped at its first instruction by a different refusal, which names it.
-      <a class="more" href="/examples/threads/">Threads, and what may cross</a>
+      <span class="when">Checking thread stack space</span>
+      <b>Threads started by Heroes now report when they run out of space for function calls.</b> A reviewer verified that a thread created by a C library is stopped by an earlier check that names the Heroes function involved.
+      <a class="more" href="/examples/threads/">How to use threads</a>
     </li>
     <li id="37">
-      <span class="when">M-isolated-threads: one line, open the whole time</span>
-      <b>Each thread gets its own memory, so ordinary code in one thread can no longer corrupt another&rsquo;s. The danger stops existing instead of being locked around.</b>
-      One function decides what a C header may say, and it never looked inside a callback, so a list could cross into C and back with the compiler reporting nothing.
-      <a class="more" href="/examples/#threads">Ten programs that use them</a>
+      <span class="when">Separate memory for each thread</span>
+      <b>Each Heroes thread, an operation running in parallel, manages separate memory.</b> The review found a missing check in callbacks, functions called back by C: it allowed a list to cross the C interface without being reported.
+      <a class="more" href="/examples/#threads">Thread examples</a>
     </li>
     <li id="36">
-      <span class="when">M-c-callbacks: eight examples said one thing, the real header said another</span>
-      <b>A Heroes function can now be handed to a C library that asks for one. <code>atexit</code> and <code>pthread_create</code> get called back; <code>qsort</code> and <code>signal</code> do not yet, and the compiler says on your line which wall each hits.</b>
-      A judge refused the eight hand-picked examples, measured the real SQLite header, and found the obstacle everyone had named was one case in forty.
+      <span class="when">Passing Heroes functions to C libraries</span>
+      <b>You can pass a Heroes function to <code>atexit</code> or <code>pthread_create</code>. The callbacks required by <code>qsort</code> and <code>signal</code> are not supported yet.</b> The compiler reports the limit at the declaration. A reviewer examined the full SQLite header and found different obstacles from those suggested by the initial examples.
       <a class="more" href="/docs/the-c-boundary/">The C boundary</a>
     </li>
     <li id="35">
-      <span class="when">M-corpus-depth: the judges refused the change and found a bigger one</span>
-      <b>Nine more example programs, chosen for shape rather than for features: the corpus had nothing between a 671-line program and the compiler.</b>
-      Two judges vetoed the optimisation the sitting was convened for, and one of them then found where one example program&rsquo;s stack space really went: more than half of it to temporaries the proposal had never looked at.
+      <span class="when">Larger examples to test the compiler</span>
+      <b>More complex programs were added to cover the gap between small examples and the compiler.</b> Two reviewers rejected the proposed optimisation. One then identified excessive memory use by temporary values that the proposal had not considered.
       <a class="more" href="/examples/">The programs</a>
     </li>
     <li id="34">
-      <span class="when">M-robustness-guards: the comment said it could not happen</span>
-      <b>A comment in the compiler explained why a particular crash was impossible. The crash was real, and one line of ordinary code produced it.</b>
-      Passing one element of an array to a function that writes into it handed C the address of the whole array, and the example programs had done that with a field a hundred and fifty times and with an index not once.
+      <span class="when">An error when passing array elements</span>
+      <b>A comment described a crash as impossible, but one line could reproduce it.</b> Passing an array element to a function that modifies it gave C the address of the whole array. The examples covered record fields but missed this case.
       <a class="more" href="/errors/">What the compiler stops</a>
     </li>
     <li id="33">
-      <span class="when">M-documentation-site: where the files go</span>
-      <b>This site had twelve chapters and not one of them said where a program&rsquo;s files go.</b>
-      That is the part of the language that had changed most recently.
+      <span class="when">Documenting modules</span>
+      <b>The documentation lacked an explanation of how to organise a program&rsquo;s files.</b> A chapter on modules was added.
       <a class="more" href="/docs/modules/">Read the chapter</a>
     </li>
     <li id="32">
-      <span class="when">M-corpus-coverage: the library nobody called</span>
-      <b>The job was twenty more programs, chosen so that between them they use every part of the language. The first one found a hole in the compiler.</b>
-      Not a subtle hole: a program the checker said was fine, which then refused to build, with the compiler blaming itself rather than the person who wrote it.
+      <span class="when">Expanding the examples</span>
+      <b>New programs were chosen to test more parts of the language.</b> The first found a defect: it passed type checking, but compilation failed with an internal error.
       <a class="more" href="/docs/">The chapters</a>
     </li>
     <li id="31">
-      <span class="when">M-selfhost-nesting: the prefixes were load-bearing</span>
-      <b>The compiler&rsquo;s own hundred and seventy files were named like a filing cabinet nobody had bought, and the job was to buy the cabinet.</b>
-      Put them in folders, let the names get short.
+      <span class="when">Organising source files into directories</span>
+      <b>The compiler&rsquo;s files were organised into directories.</b> Directory structure replaced long filename prefixes, allowing shorter names.
       <a class="more" href="/project/#self-hosted">The compiler in its own language</a>
     </li>
     <li id="30">
-      <span class="when">M-package-layout: a module may be a path</span>
-      <b>The language had one rule about where files live: a module is one word, and every file a program reads sits beside the file that names it.</b>
-      Breaking that rule took three review sittings.
+      <span class="when">Using paths for modules</span>
+      <b>Modules can be found in subdirectories using a path.</b> Previously, all files had to be in the same directory. The panel examined the new rules over several reviews.
       <a class="more" href="/docs/modules/">Modules and files</a>
     </li>
     <li id="29">
-      <span class="when">M-argv-execution: the shell stops being the boundary</span>
-      <b>The compiler used to talk to the machine by writing a sentence and handing it to a shell.</b>
-      On Windows the shell reads a different language, so the very first sentence made a directory named after one of its own options, and everything after that was downstream of the mistake.
+      <span class="when">Running commands without a shell</span>
+      <b>The compiler started tools by building a string for the shell, the program that interprets commands.</b> On Windows, the same options were interpreted differently and created a directory with the wrong name. The problem led to passing arguments directly to the process.
       <a class="more" href="/why/">Why the language is shaped this way</a>
     </li>
     <li id="28">
-      <span class="when">M-separate-compilation: the cache that cannot lie</span>
-      <b>Building the compiler used to mean writing out one enormous C file, nearly eight hundred thousand lines of it, even after changing a comma.</b>
-      The job was to split that into one piece per module, so that touching one file rebuilds one piece.
+      <span class="when">Compiling one module at a time</span>
+      <b>Compilation generated one large C file even after a small change.</b> Code generation was split by module so results for unchanged parts could be reused.
       <a class="more" href="/project/#self-hosted">One C file per module</a>
     </li>
     <li id="27">
-      <span class="when">M-bootstrap-archive: the attic</span>
-      <b>The old compiler went into the attic, and half the project&rsquo;s instruments turned out to be living in it.</b>
-      Not the tests of the language, but the instruments that measure it.
-      <a class="more" href="/project/#self-hosted">The third language dies</a>
+      <span class="when">Archiving the first compiler</span>
+      <b>The first compiler was archived.</b> The work revealed that it also contained several tools used to measure and check the project.
+      <a class="more" href="/project/#self-hosted">The current compiler</a>
     </li>
     <li id="26">
-      <span class="when">M-harness-port: the net, in Heroes</span>
-      <b>Everything that checks the compiler was written in the language being retired, so the net was rewritten in the language itself.</b>
-      A program that uses the compiler the way a person does, in hundreds of checks: type a command, read what comes back, compare it to what was promised.
+      <span class="when">Writing the test tools in Heroes</span>
+      <b>The tools that check the compiler were rewritten in Heroes.</b> They run commands, read the results and compare them with expected output, testing the compiler as a person would use it.
     </li>
     <li id="25">
-      <span class="when">M-selfhost-fixpoint: the seed</span>
-      <b>The way in became one clang command, and taking the ladder away caught the compiler cheating.</b>
-      The repository now carries the compiler as one generated C file, so a machine that has never heard of this language builds it with nothing but a C compiler.
+      <span class="when">Distributing the compiler as a C file</span>
+      <b>Building the compiler requires compiling one generated C file with clang.</b> The repository includes this file, so a computer without Heroes can build the compiler.
     </li>
     <li id="24">
-      <span class="when">M-selfhost-port: the fixpoint</span>
-      <b>The compiler crosses into its own language, and the child corrects the parent.</b>
-      53,013 lines of Rust became 34,812 lines of Heroes, tests included on both sides, since in Heroes they live in the file they test, module by module, with the goldens and the program corpus as the net.
-      <a class="more" href="/project/#self-hosted">The fixpoint</a>
+      <span class="when">The compiler written in Heroes</span>
+      <b>The compiler was converted from Rust to Heroes, together with its tests.</b> Compiling its own source exposed defects in both the new version and its predecessor. Examples and tests with expected results checked the conversion.
+      <a class="more" href="/project/#self-hosted">How to verify the compiler</a>
     </li>
     <li id="23">
-      <span class="when">M-selfhost-probe: the wall that was not there</span>
-      <b>Port one file, expect to fail, write down what the language cannot say.</b>
-      The wall had been quietly removed three days earlier by a milestone about something else, and nobody had gone back to re-read the plan&rsquo;s premise, so the lexer went from &ldquo;this will fail on file one, cheaply&rdquo; to working, in an afternoon.
+      <span class="when">Converting the first module</span>
+      <b>The first trial converted one file and recorded any limits encountered.</b> The expected limit had already been removed by another change. The lexer, which divides source text into recognisable elements, worked without the predicted obstacle.
     </li>
     <li id="22">
-      <span class="when">M-complete-structs: a refusal is a claim</span>
-      <b>From 191 bindable C declarations to 349, and not one step was a new capability.</b>
-      Each was a refusal with no way out.
+      <span class="when">Completing support for C structures</span>
+      <b>More C declarations became usable from Heroes.</b> The work corrected compiler rejections that prevented forms already allowed by the language.
     </li>
     <li id="21">
-      <span class="when">M-struct-passing: the same size is not the same thing</span>
-      <b>A third of everything a real C library offers had been out of reach.</b>
-      Bundles of values travelling as one thing could not cross the boundary.
+      <span class="when">Passing structures to C functions</span>
+      <b>C structures group several fields into one value, but Heroes could not yet pass them to functions.</b> This limitation blocked many operations in a real library.
     </li>
     <li id="20">
-      <span class="when">M-binding-fidelity: half a promise</span>
-      <b>Declare a foreign function wrongly and the program will not build. It was true in one direction only.</b>
-      What a C function hands back had been checked since the boundary existed; what it takes had never been checked at all.
+      <span class="when">Checking C function parameters</span>
+      <b>The compiler checked C function results but not their parameters.</b> Declaration checks were extended to input types.
     </li>
     <li id="19">
-      <span class="when">M-program-corpus: programs as an instrument</span>
-      <b>Seven real programs written, six compiler faults fell out.</b>
-      A JSON reader, a Markdown converter, a spreadsheet, a maze solver, a small assembler with its own machine, a log summariser, a game.
+      <span class="when">Finding defects with complete programs</span>
+      <b>The first complete programs found new compiler defects.</b> They included a JSON reader, Markdown converter, spreadsheet, maze solver, assembler, log analyser and game.
     </li>
     <li id="18">
-      <span class="when">M-sized-integers: the feared thing, one paragraph long</span>
-      <b>Eight widths arrive, and the word <i>int</i> stops being a word.</b>
-      The design document had refused this in its strongest terms: never in this version, the highest-risk thing we could add.
+      <span class="when">Integers of different widths</span>
+      <b>Heroes introduced eight integer types with explicit widths.</b> The word <i>int</i> is rejected because it does not specify a type. This required revisiting an initial design restriction.
     </li>
     <li id="17">
-      <span class="when">M-literal-bases: what 0700 means</span>
-      <b>A reviewer wrote down the way everyone writes file permissions and asked what it meant.</b>
-      Nobody had ever asked.
+      <span class="when">Making numeric bases explicit</span>
+      <b>A reviewer wrote 0700 for file permissions and asked how it was interpreted.</b> The question exposed the need for clear rules to distinguish numeric bases.
     </li>
     <li id="16">
-      <span class="when">M-header-constants: no digit left to be wrong</span>
-      <b>A library&rsquo;s settings have names and numbers, and the language could only say the numbers.</b>
-      To name one option a program had to write 10002, with a comment above it explaining that the library&rsquo;s documentation adds two to ten thousand: arithmetic done by hand, checked by nothing.
+      <span class="when">Using constants from C headers</span>
+      <b>C library options can be named in the program.</b> Previously, programs had to copy their numeric values by hand. Reading the value from the header removes that duplication.
     </li>
     <li id="15">
-      <span class="when">M-ffi-ladder: 1, where it should print 1.41</span>
-      <b>The promise the whole language was arranged around was false for the pair its own second example uses.</b>
-      The arrangement: when a program borrows a C function, the compiler does not describe that function, it points at the library&rsquo;s description and lets clang check the two against each other.
+      <span class="when">Checking declarations against headers</span>
+      <b>An example returned 1 where 1.41 was expected: C declaration checking had a defect.</b> Verification must compare the Heroes declaration with the actual header through clang.
     </li>
     <li id="14">
-      <span class="when">M-module-namespace: the cheapest change was a verb</span>
-      <b>Programs split into files, and eleven of thirteen decisions cost nothing.</b>
-      Multiple files need rules: what happens when a file&rsquo;s name collides with one it imports, what happens when an import is never used.
+      <span class="when">Defining module names</span>
+      <b>Programs can be split into files.</b> Rules were defined for name conflicts and imported modules that are not used.
     </li>
     <li id="13">
-      <span class="when">M-generics-library: three vetoes, none by argument</span>
-      <b>The language reaches feature-complete, and every open dispute is settled by a compiler rather than a debate.</b>
-      Should the runtime&rsquo;s per-type description gain a sixth entry?
+      <span class="when">Completing generics and core operations</span>
+      <b>Generic functions and core operations were completed.</b> Open questions were checked with the compiler, including how types are represented during execution.
     </li>
     <li id="12">
-      <span class="when">M-optional-map: the last two types, entangled</span>
-      <b>Fallible values and maps could not be built in either order.</b>
-      Looking a key up in a map returns the value or an error, so the map needed that type first.
+      <span class="when">Maps and fallible results</span>
+      <b>Implementing maps depended on values that represent a result or an error.</b> Looking up a key can return its associated value or an error if the key is missing.
     </li>
     <li id="11">
-      <span class="when">M-value-aggregates: a tree that contains itself</span>
-      <b>Recursive data, in a language whose data model has no pointer and no reference type.</b>
-      There is nothing to put in a field that stands for &ldquo;somewhere else&rdquo;, and yet the example the design was written around is a tree of expressions holding its own children.
+      <span class="when">Representing recursive data</span>
+      <b>Heroes can represent an expression tree without mutable references between values.</b> Each node holds its children through an array.
     </li>
     <li id="10">
-      <span class="when">M-strings-ownership: the check that refuted its own design</span>
-      <b>The compiler learned to count references, and the watchdog fired twice in an hour.</b>
-      The rule was: a value that owns a string is released at the end of the block that created it.
+      <span class="when">Managing string memory</span>
+      <b>The compiler introduced reference counting to free memory.</b> Checks challenged the initial rule, which released each string at the end of the block that created it.
     </li>
     <li id="9">
-      <span class="when">M-scalars-run: the first native binary</span>
-      <b>A program becomes an executable, and the longest argument was about a number between zero and two.</b>
-      When a program is correct and the compiler simply is not finished yet, what exit code should it use?
+      <span class="when">Producing the first executable</span>
+      <b>A Heroes program was compiled into a native executable.</b> The work also raised the question of which exit status to use when a program is valid but the compiler does not yet support everything it needs.
     </li>
     <li id="8">
-      <span class="when">M-ir-lowering: desugaring, and the middle of the compiler</span>
-      <b>The textbook representation lost to a decade of evidence nobody had gone looking for.</b>
-      LLVM, whose whole existence is single-assignment form, tells the authors of new languages not to build it: use stack slots and loads and stores, and let a later pass clean up, because that is what clang itself does.
+      <span class="when">Choosing the internal representation</span>
+      <b>The compiler&rsquo;s intermediate representation of a program was defined.</b> LLVM guidance led to starting with memory locations, reads and writes, leaving optimisation to a later pass.
     </li>
     <li id="7">
-      <span class="when">M-typed-frontend: the frontend, and the thesis gets a number</span>
-      <b>Names, types, exhaustiveness, and the first measurement, whose useful half is the column that shows nothing.</b>
-      379 deliberate mistakes injected into working programs, and the column that mattered was the one showing what a conventional language catches: nothing.
+      <span class="when">Measuring the first checks</span>
+      <b>Name, type and missing-case checks were tested by introducing mistakes into working programs.</b> Comparing them with the Heroes-specific checks disabled measured the effect of those rules.
     </li>
     <li id="6">
-      <span class="when">M-name-resolution: the resolver</span>
-      <b>A 317-line calculator refused to resolve, at exactly two lines.</b>
-      It declares its own map and fold, and the language reserves both names.
+      <span class="when">Connecting names to declarations</span>
+      <b>Name checking rejected two declarations in a calculator program.</b> The program defined map and fold, but both names were already reserved by the language.
     </li>
     <li id="5">
-      <span class="when">M-syntax-tree: the parser, the tree, the formatter</span>
-      <b>The parser&rsquo;s first act was to discover the language could not write down the type of a function.</b>
-      <code>fn</code> was in the registry of foreign words: an error with the repair pre-written, and also in the spec&rsquo;s own syntax for a function type, so a function-typed parameter failed to lex and every one of them in the language was unwritable.
+      <span class="when">Parsing and formatting code</span>
+      <b>Writing the parser, which recognises code structure, revealed a contradiction in the specification.</b> <code>fn</code> was both a forbidden word and the prescribed form for a function type. Parameters of that type could not be declared.
     </li>
     <li id="4">
-      <span class="when">M-token-stream: the lexer</span>
-      <b>The first real code, and three things it found by being written.</b>
-      Source text now becomes tokens, the pieces the compiler chops it into.
+      <span class="when">Splitting source into tokens</span>
+      <b>The first compiler component divides source text into tokens, the elements the compiler recognises.</b> Implementation exposed problems that the design alone had not revealed.
     </li>
     <li id="3">
-      <span class="when">M-day-zero</span>
-      <b>Foundations, and four programs written before the compiler.</b>
-      Git, a Rust workspace, a golden-test harness green with zero tests, and the language spec frozen as the measurement baseline (budget: 1500 tokens, still unmeasured: the counting came later, and changed the number).
+      <span class="when">Preparing the project and tests</span>
+      <b>The Rust project, test tools and first example programs were prepared.</b> The specification became the reference. Its initial size limit was still an estimate and changed when tokens were counted.
     </li>
     <li id="2">
-      <span class="when">before the code</span>
-      <b>The plan meets five hostile experts.</b>
-      Before a single token was lexed, the build plan was reviewed by five adversarial judges: language design, compiler engineering, simplicity, LLM ergonomics and didactics.
+      <span class="when">Reviewing the plan</span>
+      <b>Five reviewers critically examined the plan before implementation.</b> They assessed language design, compiler engineering, simplicity, use by models and teaching.
     </li>
     <li id="1">
-      <span class="when">the beginning</span>
-      <b>A 2000-line design document and one question.</b>
-      The language arrived as a long design conversation: a compiled language that takes its libraries from C, built for the reader that is not human.
+      <span class="when">The initial idea</span>
+      <b>The project began with a document and a discussion about the language.</b> The aim was a compiled language that used C libraries and was designed for models that generate code.
     </li>
   </ol>
 
-  <p class="next">These are the postcards. The letters, panels,
-  measurements, journals and every U-turn are in the
-  <a href="https://github.com/heroes-lang/heroes">repository</a>, which opens
-  with the code. <a href="/log.xml">A feed carries these entries</a>, and the day the
-  repository opens there will be one saying so.</p>
+  <p class="next">
+    Full reviews, measurements and journals are in the <a href="https://github.com/heroes-lang/heroes">repository</a>, which will open with the code. <a href="/log.xml">Follow the feed for updates</a>, including the announcement when the repository becomes public.
+  </p>
 
   <footer>
     <p>Built by <a href="https://giuseppearici.com/en/">Giuseppe Arici</a>, CTO at Codermine, Brescia. Author of

@@ -3,6 +3,6 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import { page } from '../../lib/figures.ts';
 import content from '../../html/about/thanks.html?raw';
 ---
-<BaseLayout url="/about/thanks/" title={'Thanks: the designers of every language Heroes borrowed from'} description={'Every part of this language builds on somebody else’s work. The designers are named one by one, each with the borrowing beside them.'} current="thanks">
+<BaseLayout url="/about/thanks/" title={"Thanks: the people and ideas behind Heroes"} description={"The language designers and researchers whose work influenced Heroes, with the contribution of each."} current="thanks">
 <Fragment set:html={page(content, 'site/src/html/about/thanks.html')} />
 </BaseLayout>

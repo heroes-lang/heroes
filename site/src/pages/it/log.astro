@@ -3,6 +3,6 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import { page } from '../../lib/figures.ts';
 import content from '../../html/it/log.html?raw';
 ---
-<BaseLayout url="/it/log/" title={'Il diario di costruzione di Heroes'} description={'Ogni milestone in poche righe, dalla più recente: che cosa è stato costruito, che cosa si è rotto e che cosa hanno trovato i giudici.'} current="log">
+<BaseLayout url="/it/log/" title={"Il diario di sviluppo di Heroes"} description={"Le fasi del progetto, dalla più recente: modifiche al compilatore, problemi riscontrati e decisioni prese durante le revisioni."} current="log">
 <Fragment set:html={page(content, 'site/src/html/it/log.html')} />
 </BaseLayout>

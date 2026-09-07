@@ -3,6 +3,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import { page } from '../lib/figures.ts';
 import content from '../html/index.html?raw';
 ---
-<BaseLayout url="/" title={'Heroes: a programming language made for LLMs'} description={'Heroes is a small compiled language that fits in a prompt and compiles itself. It produces native executables, uses C libraries and turns common model mistakes into compile errors.'} mainClass="home">
+<BaseLayout url="/" title={"Heroes: a programming language for AI models"} description={"Heroes is a small compiled language designed to catch common mistakes in generated code. Its compiler is written in Heroes, and programs can use C libraries."} mainClass="home">
 <Fragment set:html={page(content, 'site/src/html/index.html')} />
 </BaseLayout>

@@ -1,24 +1,18 @@
 
-  <p class="crumb"><a href="/it/">Heroes</a> / <a href="/it/docs/">Docs</a> / capitolo 5</p>
+  <p class="crumb"><a href="/it/">Heroes</a> / <a href="/it/docs/">Guida</a> / capitolo 5</p>
 
   <h1 class="chapter">Il flusso di controllo</h1>
-  <p class="tagline">Due cicli, una condizione, e nessuna forma furba.</p>
+  <p class="tagline">
+    Scegli con <code>if</code>, ripeti con <code>for</code> o <code>while</code>.
+  </p>
 
   <p>
-    C&rsquo;è un modo solo di scegliere e due modi di ripetere qualcosa.
-    Niente <code>do…while</code>, niente <code>for(;;)</code> con
-    l&rsquo;intestazione in tre pezzi, niente <code>switch</code> che cade da un
-    caso all&rsquo;altro, niente operatore ternario, niente etichette sui cicli.
-    Ognuna di quelle cose è un secondo modo di scrivere qualcosa che il
-    linguaggio ha già, e ogni secondo modo è un punto dove chi legge può
-    sorprendersi.
+    Il flusso di controllo è l&rsquo;ordine in cui vengono eseguite le istruzioni. Heroes offre <code>if</code> per scegliere quali eseguire, <code>for</code> per percorrere una sequenza e <code>while</code> per ripetere un blocco finché una condizione è vera.
   </p>
 
   <h3><code>if</code>, e solo <code>bool</code></h3>
   <p>
-    Una condizione è un <code>bool</code>, altrimenti è un errore di
-    compilazione. Non c&rsquo;è nessuna regola per cui zero è falso o una
-    stringa vuota è falsa, perché non esiste proprio la verità implicita:
+    Una condizione deve avere tipo <code>bool</code>, quindi valere <code>true</code> o <code>false</code>. Numeri e stringhe non vengono convertiti automaticamente in condizioni:
   </p>
   <pre><code>$ heroes check loops.hero
 error[not_bool]: an `if` condition must be `bool`, found `i64` — there is no truthiness in this language
@@ -27,12 +21,7 @@ error[not_bool]: an `if` condition must be `bool`, found `i64` — there is no t
   13 |         if x
      |            ^</code></pre>
   <p>
-    <code>if</code>, <code>else if</code> ed <code>else</code> sono tutto
-    l&rsquo;insieme, la condizione non vuole parentesi, e il corpo è quello che
-    sta indentato sotto. <code>if</code> è anche un&rsquo;<i>espressione</i>,
-    quindi un valore si può scegliere con uno di questi invece che assegnandolo
-    in due rami: ed è per questo che il linguaggio non ha l&rsquo;operatore
-    ternario e non ne sente la mancanza.
+    Usa <code>if</code>, <code>else if</code> ed <code>else</code> per definire i rami. La condizione non richiede parentesi; il rientro delimita il corpo. <code>if</code> è anche un&rsquo;<i>espressione</i>, cioè può produrre un valore. Puoi quindi usarlo per scegliere un valore senza assegnarlo separatamente nei due rami.
   </p>
 
   <h3><code>for x in xs</code>: percorrere una sequenza</h3>
@@ -50,18 +39,10 @@ error[not_bool]: an `if` condition must be `bool`, found `i64` — there is no t
     <figcaption>examples/gallery/04-loops.hero, righe 7&ndash;16</figcaption>
   </figure>
   <p>
-    Non c&rsquo;è un indice, non c&rsquo;è un contatore e non c&rsquo;è una
-    condizione di fine da sbagliare: il ciclo prende un elemento alla volta, e la
-    variabile è una copia nuova a ogni giro.
+    Il ciclo visita un elemento alla volta. A ogni iterazione la variabile contiene una nuova copia dell&rsquo;elemento, senza un indice o un contatore da aggiornare.
   </p>
   <p>
-    La <code>@</code> su <code>best</code> è l&rsquo;altra metà di questo
-    capitolo e si prende <a href="/it/docs/bindings-and-mutation/">tutto il capitolo
-    dopo</a>. In una riga:
-    <code>best: i64 @ floor</code> dichiara un nome a cui è permesso cambiare, e
-    <code>best @ x</code> lo cambia. Un nome legato con <code>=</code> non può
-    cambiare mai, quindi i pezzi mutevoli di un programma sono esattamente le
-    righe che hanno una <code>@</code> sopra, e si trovano guardando.
+    Il <a href="/it/docs/bindings-and-mutation/">prossimo capitolo</a> spiega il simbolo <code>@</code>. Qui <code>best: i64 @ floor</code> dichiara una variabile modificabile e <code>best @ x</code> le assegna un nuovo valore. Un nome definito con <code>=</code> non può essere riassegnato.
   </p>
 
   <h3>Uscire prima: <code>break</code></h3>
@@ -94,10 +75,7 @@ error[not_bool]: an `if` condition must be `bool`, found `i64` — there is no t
     <figcaption>examples/gallery/04-loops.hero, righe 29&ndash;38</figcaption>
   </figure>
   <p>
-    Tutti e due i salti valgono per il ciclo in cui sono scritti. Non ci sono
-    etichette per uscire da un ciclo più esterno: quando ti serve, il ciclo
-    interno diventa una funzione e il lavoro lo fa <code>return</code>,
-    che tra l&rsquo;altro dà un nome alla cosa che stavi facendo.
+    <code>break</code> termina il ciclo più interno; <code>continue</code> passa alla sua iterazione successiva. Non puoi indicare un ciclo esterno con un&rsquo;etichetta. Se devi uscire da più cicli, puoi spostarli in una funzione e usare <code>return</code> per terminarla.
   </p>
 
   <h3><code>while</code>: ripetere su una condizione</h3>
@@ -116,10 +94,7 @@ error[not_bool]: an `if` condition must be `bool`, found `i64` — there is no t
     <figcaption>examples/gallery/04-loops.hero, righe 40&ndash;50</figcaption>
   </figure>
   <p>
-    Un <code>while</code> prende una condizione e nient&rsquo;altro. La classica
-    intestazione in tre pezzi mette l&rsquo;inizio, il test e il passo tutti su
-    una riga, dove il passo è quello che ci si dimentica; qui il passo è
-    un&rsquo;istruzione nel corpo, nell&rsquo;ordine in cui succede.
+    Un <code>while</code> controlla la condizione prima di ogni iterazione. L&rsquo;eventuale aggiornamento del contatore si scrive nel corpo, nell&rsquo;ordine in cui deve essere eseguito.
   </p>
 
   <h3>Contare: un intervallo è una chiamata di funzione</h3>
@@ -136,19 +111,10 @@ error[not_bool]: an `if` condition must be `bool`, found `i64` — there is no t
     <figcaption>examples/gallery/04-loops.hero, righe 52&ndash;60</figcaption>
   </figure>
   <p>
-    <code>range</code> è una normale funzione che restituisce una
-    lista di numeri, con <code>from</code> incluso e <code>to</code> escluso, e i
-    due argomenti sono nominati per il motivo che ha dato il
-    <a href="/it/docs/records-and-functions/">capitolo 2</a>: sono tutti e due
-    <code>i64</code>, quindi il compilatore non riesce a distinguerli e ti obbliga a nominarli. Così non devi ricordare se l&rsquo;estremo finale è
-    incluso: sta scritto sulla riga.
+    <code>range</code> restituisce una lista di numeri: include <code>from</code> ed esclude <code>to</code>. Devi nominare entrambi gli argomenti perché hanno lo stesso tipo, <code>i64</code>, come spiegato nel <a href="/it/docs/records-and-functions/">capitolo 2</a>.
   </p>
   <p>
-    <code>_</code> è la variabile del ciclo quando non c&rsquo;è niente a cui
-    dare un nome. È lo stesso <code>_</code> che butta via un carico dentro un
-    <code>match</code>: non lega niente, quindi non può mai essere un nome
-    inutilizzato, e un nome inutilizzato qui <i>è</i> un errore, che è poi
-    il motivo per cui <code>_</code> serve.
+    Usa <code>_</code> come variabile del ciclo quando non ti serve il valore dell&rsquo;elemento. Come in un <code>match</code>, <code>_</code> scarta il valore senza dichiarare un nome. Non può quindi produrre un errore per un nome inutilizzato.
   </p>
 
   <h3>Tutto quanto, in esecuzione</h3>
@@ -162,17 +128,12 @@ error[not_bool]: an `if` condition must be `bool`, found `i64` — there is no t
 --------------------
 digits in 2026: 4</code></pre>
   <p>
-    Aggiungere a una stringa dentro un
-    ciclo ricopia tutta la stringa ogni volta, quindi costa sempre di più man
-    mano che cresce; <code>repeat</code> e <code>join</code> la costruiscono in
-    una passata sola e sono gli attrezzi giusti quando il ciclo è lungo. Venti
-    trattini non se ne accorgeranno mai. Il <a href="/it/docs/strings/">capitolo sulle stringhe</a> ci torna sopra.
+    Aggiungere testo a una stringa dentro un ciclo copia ogni volta l&rsquo;intera stringa, con un costo che cresce a ogni iterazione. Per stringhe lunghe usa <code>repeat</code> o <code>join</code>, che costruiscono il risultato in una sola passata. Il <a href="/it/docs/strings/">capitolo sulle stringhe</a> spiega la differenza.
   </p>
 
   <p class="next">
     Poi: <b><a href="/it/docs/bindings-and-mutation/">Nomi e modifiche</a></b>, dove
-    <code>=</code> e <code>@</code> si prendono la pagina che meritano, e si
-    scopre che nascondere un nome è un errore.
+    impari a usare <code>=</code> e <code>@</code> e a evitare nomi ambigui.
     <a href="/it/docs/">Torna all&rsquo;elenco dei capitoli</a>.
     <span class="back">&larr; Prima: <a href="/it/docs/failure-is-a-value/">Il fallimento è un valore</a></span>
   </p>

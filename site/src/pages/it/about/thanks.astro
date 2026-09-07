@@ -3,6 +3,6 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 import { page } from '../../../lib/figures.ts';
 import content from '../../../html/it/about/thanks.html?raw';
 ---
-<BaseLayout url="/it/about/thanks/" title={'Grazie: chi ha disegnato i linguaggi da cui Heroes ha preso'} description={'Ogni parte di questo linguaggio poggia sul lavoro di qualcun altro. I progettisti sono nominati uno per uno, con accanto quello che è stato preso da ognuno.'} current="thanks">
+<BaseLayout url="/it/about/thanks/" title={"Grazie: le persone e le idee alla base di Heroes"} description={"I progettisti di linguaggi e i ricercatori che hanno ispirato Heroes, con il contributo di ciascuno."} current="thanks">
 <Fragment set:html={page(content, 'site/src/html/it/about/thanks.html')} />
 </BaseLayout>

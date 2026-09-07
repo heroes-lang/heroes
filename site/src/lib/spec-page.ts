@@ -43,7 +43,7 @@ function escape(text: string): string {
 /**
  * This page's own footer, and it needs one.
  *
- * It used to borrow the examples footer, which says every block is cut from a
+ * It used to borrow the examples footer, which says every block is read from a
  * file in `examples/` and that the block under each command is a recorded
  * output. Neither is true here: there is no command, no recorded output, and
  * the one block comes from `spec/heroes-spec.md`. A false paragraph on the page
@@ -52,11 +52,11 @@ function escape(text: string): string {
 function footer(lang: Lang): string {
   const first =
     lang === 'en'
-      ? `<p>The block above is cut from <code>${SPEC}</code> when the site is
+      ? `<p>The block above is read from <code>${SPEC}</code> when the site is
     built, so it cannot drift from the file the compiler is measured against. A
     test asserts the token ceiling on every commit.</p>`
-      : `<p>Il blocco qui sopra è ritagliato da <code>${SPEC}</code> quando il
-    sito viene costruito, quindi non può scostarsi dal file su cui il
+      : `<p>Il blocco qui sopra viene letto da <code>${SPEC}</code> quando il
+    sito viene generato, quindi non può scostarsi dal file su cui il
     compilatore viene misurato. Un test verifica il tetto dei token a ogni
     commit.</p>`;
   const byline =
@@ -65,7 +65,7 @@ function footer(lang: Lang): string {
     <a href="/about/"><i>Heroes of code</i></a>. Standing on
     <a href="/about/thanks/">a lot of other people&rsquo;s work</a>.</p>`
       : `<p>Fatto da <a href="https://giuseppearici.com/it/">Giuseppe Arici</a>, CTO di Codermine, Brescia. Autore di
-    <a href="/it/about/"><i>Gli eroi del codice</i></a>. In piedi sul
+    <a href="/it/about/"><i>Gli eroi del codice</i></a>. Basato sul
     <a href="/it/about/thanks/">lavoro di molte altre persone</a>.</p>`;
   return `  <footer>\n    ${first}\n    ${byline}\n    <p>&copy; 2026 Giuseppe Arici &middot; heroes-lang.org</p>\n  </footer>`;
 }
@@ -84,19 +84,19 @@ export function renderSpecPage(lang: Lang): SpecPage {
     lang === 'en'
       ? `<ul class="stats">
     <li><span class="n">${number(lines, lang)}</span><span class="what">lines, the whole language</span></li>
-    <li><span class="n">${CEILING.toLocaleString('en-US')}</span><span class="what">tokens: the ceiling it fits under</span></li>
+    <li><span class="n">${CEILING.toLocaleString('en-US')}</span><span class="what">tokens: the specification limit</span></li>
     <li><span class="n">${number(Math.round(bytes / 1024), lang)}</span><span class="what">kilobytes of text</span></li>
   </ul>`
       : `<ul class="stats">
     <li><span class="n">${number(lines, lang)}</span><span class="what">righe, tutto il linguaggio</span></li>
-    <li><span class="n">${number(CEILING, lang)}</span><span class="what">token: il tetto sotto cui sta</span></li>
+    <li><span class="n">${number(CEILING, lang)}</span><span class="what">token: il limite della specifica</span></li>
     <li><span class="n">${number(Math.round(bytes / 1024), lang)}</span><span class="what">kilobyte di testo</span></li>
   </ul>`;
 
   const caption =
     lang === 'en'
-      ? `${SPEC}, ${number(lines, lang)} ${t('lines', lang)}, shown exactly as the file holds it`
-      : `${SPEC}, ${number(lines, lang)} ${t('lines', lang)}, mostrato esattamente come sta nel file`;
+      ? `${SPEC}, ${number(lines, lang)} ${t('lines', lang)}, identical to the source file`
+      : `${SPEC}, ${number(lines, lang)} ${t('lines', lang)}, identico al file originale`;
 
   const html = [
     readText(intro).trim(),
@@ -116,8 +116,8 @@ export function renderSpecPage(lang: Lang): SpecPage {
         : 'The specification: the whole language, on one page',
     description:
       lang === 'it'
-        ? `Tutto il linguaggio Heroes, nel file che si dà a un modello: sotto un tetto di ${number(CEILING, lang)} token, perché la specifica è il prompt.`
-        : `The whole Heroes language, in the file a model is handed: under a ${CEILING.toLocaleString('en-US')}-token ceiling, because the specification is the prompt.`,
+        ? `Tutto il linguaggio Heroes, in un file da inserire nel prompt: meno di ${number(CEILING, lang)} token per descrivere la sintassi e le regole.`
+        : `The whole Heroes language, in one file for a model’s prompt: under ${CEILING.toLocaleString('en-US')} tokens describing its syntax and rules.`,
     html: `\n${html}\n`,
   };
 }

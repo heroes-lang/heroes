@@ -1,14 +1,13 @@
 
-  <p class="crumb"><a href="/">Heroes</a> / <a href="/docs/">Docs</a> / chapter 8</p>
+  <p class="crumb"><a href="/">Heroes</a> / <a href="/docs/">Guide</a> / chapter 8</p>
 
   <h1 class="chapter">Strings</h1>
-  <p class="tagline">Bytes and characters are two jobs, and the type system will not let you confuse them.</p>
+  <p class="tagline">
+    Reading, splitting and joining strings while distinguishing bytes from characters.
+  </p>
 
   <p>
-    A <code>str</code> is UTF-8 text that never changes once it exists.
-    <code>len()</code> counts <b>bytes</b>, not letters, and so does
-    <code>slice</code>. In UTF-8 a letter can take between one and four bytes;
-    ignoring that produces string bugs.
+    A <code>str</code> contains UTF-8 text, an encoding in which a character can occupy multiple bytes. A string does not change after creation. <code>len()</code> measures length in <b>bytes</b>, and <code>slice</code> indices also refer to bytes.
   </p>
 
   <h3>Indexing gives you a byte</h3>
@@ -37,9 +36,7 @@ error[type_mismatch]: expected `u8`, found `str`
   12 |         if s[i] == " "
      |            ^^^^^^^^^^^</code></pre>
   <p>
-    In a language with one string type and implicit conversions, that line
-    compiles and compares a number to a string by some rule you have to
-    remember. Here the two jobs have two types and the mistake stops the build.
+    Heroes uses different types for numbers and strings and does not convert between them automatically. The comparison in the example is therefore a compile error.
   </p>
 
   <h3><code>chars()</code> gives you characters</h3>
@@ -63,11 +60,10 @@ error[type_mismatch]: expected `u8`, found `str`
     <code>chars()</code> for anything a person will read. 
   </p>
   <p>
-    Slicing through the middle of a character stops the program rather than producing text that is no longer valid UTF-8: it
-    stops the program rather than producing text that is no longer valid UTF-8.
+    Slicing through a character stops the program and reports an error. This prevents the operation from producing invalid UTF-8 text.
   </p>
 
-  <h3>Splitting, with no library to hide in</h3>
+  <h3>Splitting text into words</h3>
   <figure class="example" data-src="examples/gallery/07-strings.hero" data-lines="27-40">
 <pre><code><span class="c"># Splitting on a single space, written out. There is no library to hide in.</span>
 <span class="k">function</span> words_of(s: <span class="t">str</span>) -&gt; [<span class="t">str</span>]
@@ -86,10 +82,7 @@ error[type_mismatch]: expected `u8`, found `str`
     <figcaption>examples/gallery/07-strings.hero, lines 27&ndash;40</figcaption>
   </figure>
   <p>
-    There is no built-in <code>split</code>, because Heroes keeps its built-ins to a minimum. This example splits on spaces in twelve lines, and the
-    <code>if i &gt; start</code> is the part a library would have decided for
-    you: two spaces in a row produce no empty word here, and that is a choice
-    visible in the code rather than in someone&rsquo;s documentation.
+    Heroes has no built-in <code>split</code> function. This example splits text at spaces. The <code>if i &gt; start</code> check avoids adding empty words when two spaces appear in a row.
   </p>
   <p>
     <code>slice(from:, to:)</code> takes bytes, <code>to</code> excluded, and
@@ -117,21 +110,14 @@ error[type_mismatch]: expected `u8`, found `str`
     <figcaption>examples/gallery/07-strings.hero, lines 47&ndash;54</figcaption>
   </figure>
   <p>
-    These two do the same kind of work at very different prices. <code>join</code>
-    walks the list once and builds the answer in one pass. The loop underneath
-    it builds a new string on every round, because a <code>str</code> never
-    changes and <code>+</code> can only make a third one out of two, so a
-    long list costs the sum of every intermediate result. <code>join</code> and
-    <code>repeat</code> exist for exactly that reason, and a handful of initials
-    will never notice the difference.
+    <code>join</code> builds the result in one pass. The concatenation loop creates a new string on each iteration and copies the text already accumulated. The difference matters for long strings. <code>join</code> and <code>repeat</code> avoid these repeated copies.
   </p>
 
-  <h3>Six escapes, and no others</h3>
+  <h3>Available escapes</h3>
   <p>
     In a string: <code>\n</code>, <code>\t</code>, <code>\r</code>,
     <code>\\</code>, <code>\"</code>. In a character literal, <code>\'</code>
-    replaces the last of them. That is the whole list, and anything else is
-    rejected on the spot with the repair attached:
+    replaces the last of them. Other escape sequences produce an error and a suggested fix:
   </p>
   <pre><code>$ heroes check strings.hero
 error[unknown_escape]: `\d` is not an escape sequence — the escapes are \n \t \r \\ \"; write `\\` for a literal backslash
@@ -141,11 +127,7 @@ error[unknown_escape]: `\d` is not an escape sequence — the escapes are \n \t 
      |                        ^^
   fix (certain): escape the backslash: `\\d`</code></pre>
   <p>
-    Most languages pass an unknown escape through as the letter itself, which
-    means a regular expression pasted into a string keeps working until the day
-    one of its escapes collides with a real one. Here the collision is
-    impossible, and the fix is machine-applicable: the compiler can write
-    <code>\\d</code> into your file for you.
+    Heroes reports unknown escapes, backslash sequences it does not recognise. To include a literal backslash, double it. In this example the compiler suggests <code>\\d</code> and can apply the fix automatically.
   </p>
 
   <h3>The program</h3>

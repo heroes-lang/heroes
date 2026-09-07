@@ -1,3 +1,3 @@
-<p class="tagline">Byte e caratteri sono due lavori diversi, e il linguaggio non li confonde.</p>
+<p class="tagline">Come leggere i byte di una stringa e come scorrerne i caratteri.</p>
 
-<p>Uno <code>str</code> è UTF-8 immutabile, misurata in byte. <code>s[i]</code> dà un numero e <code>s.chars()</code> scorre i caratteri. Prendere quello sbagliato è uno sbaglio che fai alla luce del sole invece di consegnarlo.</p>
+<p>Una stringa <code>str</code> usa UTF-8, un formato in cui un carattere può occupare più byte, e non può essere modificata. La sua lunghezza si misura in byte: <code>s[i]</code> restituisce il valore numerico di un byte, mentre <code>s.chars()</code> scorre i caratteri. Le due operazioni hanno nomi diversi perché restituiscono risultati diversi.</p>

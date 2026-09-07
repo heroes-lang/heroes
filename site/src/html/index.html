@@ -8,16 +8,17 @@
       </svg>
       <p class="kicker">A compiled programming language</p>
       <h1><span class="q">&ldquo;</span>Heroes<span class="q">&rdquo;</span></h1>
-      <p class="promise">A whole language in one prompt, for the models writing
-      your code. It <em>compiles itself</em>.</p>
+      <p class="promise">
+    The whole language in one prompt, the text you give a model to ask it to write code. The compiler is <em>written in Heroes</em> and compiles itself.
+  </p>
       <ul class="pillars">
-        <li>A model&rsquo;s typical mistake is a compile error here.</li>
+        <li>The compiler catches common model mistakes.</li>
         <li>No null, no exceptions, no garbage collector.</li>
         <li>Files, sockets, databases, graphics: all from C.</li>
-        <li>Native binaries, and no runtime to install.</li>
+        <li>Executable programs, with no support software to install.</li>
       </ul>
       <div class="cta">
-        <a class="primary" href="/spec/">Read the whole language</a>
+        <a class="primary" href="/spec/">Read the full specification</a>
         <a class="ghost" href="/examples/">See the code</a>
       </div>
       <p class="version">heroes {{version}} &middot; the whole language: <code class="cmd">curl -L heroes-lang.org/spec.md</code></p>
@@ -46,7 +47,7 @@
         .open     =&gt; <span class="s">"`(`"</span>
         .close    =&gt; <span class="s">"`)`"</span></code></pre>
         </figure>
-        <p class="under">leave a case out and it does not compile &middot; <a href="/examples/gallery/02-tokens/">read this one →</a></p>
+        <p class="under">leave a case out and it does not compile &middot; <a href="/examples/gallery/02-tokens/">read the example →</a></p>
       </div>
     </div>
   </header>
@@ -54,33 +55,26 @@
   <ul class="figures">
     <li>
       <span class="n">4,096</span>
-      <span class="what">tokens: the ceiling the language fits under</span>
-      <span class="how">The specification is the whole language, and it stays
-      under five pages. Hand it to a model and there is room left for your
-      program. <a href="/spec/">the specification &rarr;</a> <a href="/why/">why that is the design &rarr;</a></span>
+      <span class="what">tokens: the specification limit</span>
+      <span class="how">The specification describes the whole language in under five pages. A token is a piece of text a model reads or generates. A short specification leaves room in the prompt for your program. <a href="/spec/">the specification &rarr;</a> <a href="/why/">why it is designed this way &rarr;</a></span>
     </li>
     <li>
       <span class="n">0</span>
       <span class="what">null, exceptions, garbage collector</span>
-      <span class="how">A missing value or a failed operation is declared in
-      the code and visible on the line. Memory frees itself with no collector
-      pausing your program.
-      <a href="/docs/failure-is-a-value/">how failure works &rarr;</a></span>
+      <span class="how">The code shows where a value may be missing or an operation may fail. Memory is freed automatically, without a garbage collector, a system that looks for unused data and can pause your program.
+      <a href="/docs/failure-is-a-value/">how to handle errors &rarr;</a></span>
     </li>
     <li>
       <span class="n">1</span>
-      <span class="what">command, and no second binary</span>
-      <span class="how">Build, run, test, format and check are one executable,
-      and that executable is written in Heroes.
+      <span class="what">command for all the tools</span>
+      <span class="how">One executable builds, runs, tests, formats and checks your code. It is written in Heroes.
       <a href="/project/#self-hosted">it compiles itself &rarr;</a></span>
     </li>
   </ul>
 
-  <h2>Mistakes are compile errors</h2>
+  <h2>The compiler reports mistakes</h2>
   <p>
-    A model writes <code>totl</code> where it meant <code>total</code>. In most
-    languages that line declares a new variable and the program quietly gets the
-    wrong answer. Here it is refused, with the repair attached:
+    A model writes <code>totl</code> instead of <code>total</code>. In languages that let an assignment declare a variable, a typo like this can create a new variable. Heroes uses different syntax for declaring and updating variables: the compiler rejects the unknown name and suggests a correction:
   </p>
   <pre class="diag"><code><span class="msg"><span class="k">error</span>[unknown_name]: nothing named `totl` is in scope — did you mean `total`?</span>
   at tests/golden/check/typo-not-a-new-binding.hero:10:9
@@ -89,19 +83,12 @@
      |         ^^^^
   fix (certain): rename to `total`</code></pre>
   <p>
-    Swapped arguments of one type, a case left out, a keyword borrowed from
-    another language: none of those compile either. Every error says what was
-    expected and where. Where the repair is known it comes with the message, and
-    one marked <code>certain</code> can be applied by machine.
-    <a href="/errors/">More real errors &rarr;</a>
+    The compiler also catches swapped labelled arguments, missing cases and keywords from other languages. Each message identifies the problem and its location in the code. When possible, it suggests a fix; fixes marked <code>certain</code> can be applied automatically. <a href="/errors/">More error examples &rarr;</a>
   </p>
 
-  <h2>The libraries are C&rsquo;s, on purpose</h2>
+  <h2>Heroes uses C libraries</h2>
   <p>
-    Maths beyond arithmetic, files, sockets, databases and graphics come from
-    the C libraries the world has used for fifty years. A few lines connect one
-    to your program. Clang checks those lines against the library&rsquo;s own header,
-    so a wrong type is a compile error rather than a crash later.
+    Heroes uses C libraries for maths, files, sockets, databases and graphics. A few lines declare the library functions your program needs. Clang, the C compiler, checks these declarations against the library&rsquo;s header, the file that describes its functions and types. If the types do not match, compilation stops.
   </p>
   <figure class="example" data-src="examples/gallery/08-ffi.hero" data-lines="12-15">
 <pre><code><span class="k">extern</span> <span class="s">"math.h"</span> link <span class="s">"m"</span>
@@ -111,9 +98,7 @@
     <figcaption>examples/gallery/08-ffi.hero, lines 12&ndash;15</figcaption>
   </figure>
   <p>
-    A database, a window and a web request are three of the programs on this
-    site, each with the output it really prints.
-    <a href="/examples/#c">The C libraries, working &rarr;</a>
+    The examples include programs that use a database, call a graphics library and send a web request. Their pages also show recorded output where available. <a href="/examples/#c">Examples using C libraries &rarr;</a>
   </p>
 
   <h2>The thesis</h2>
@@ -123,22 +108,17 @@
     language, even if each program costs more tokens to write.
   </blockquote>
   <p>
-    Half of it is measured. <code>heroes mutate</code> takes working programs,
-    plants one realistic mistake at a time, and counts how many the compiler
-    stops. Then it runs again with the thesis rules switched off, and the
-    distance between the two runs is the result, kept mistake by mistake.
+    One part of the thesis has been tested. <code>heroes mutate</code> introduces one realistic mistake at a time into working programs and counts how many the compiler catches. It repeats the test with the Heroes-specific checks disabled. The comparison shows which mistakes those checks catch.
   </p>
   <p>
-    The other half is the token count itself, end to end against another
-    language. That instrument is designed and not yet built. So half the thesis
-    has a number and half is still a question, and this page says which.
-    <a href="/errors/#measured">The measured half &rarr;</a>
+    The total number of tokens needed to produce a working program in Heroes and another language, including corrections, still needs to be compared. The tool for that comparison has been designed but has not been built yet. <a href="/errors/#measured">The available results &rarr;</a>
   </p>
 
   <h2>Run it <span class="nod">&middot; speed of life &middot;</span></h2>
   <div class="notice">
-    <p><b>The repository is still private, so the clone below does not work
-    yet.</b> The addresses are final and they open with the code.</p>
+    <p>
+    <b>The repository is still private, so the command to download it is not available yet.</b> It will work when the code is made public.
+  </p>
   </div>
   <pre><code>$ git clone https://github.com/heroes-lang/heroes
 $ cd heroes
@@ -150,24 +130,18 @@ failed: not_a_digit (expected 0-9)
   <p>
     The third line builds the compiler from a single C file. It takes under
     four seconds on a MacBook Air, the machine every measurement here comes
-    from. Heroes wrote that C file, so clang is all you need. The line saying
+    from. The Heroes compiler generated that C file, so clang is all you need. The line saying
     <code>failed</code> is the example refusing a character it cannot read.
-    <a href="/start/">The whole way in &rarr;</a> &middot;&nbsp;<a href="/docs/">the language, one idea at a time &rarr;</a>
+    <a href="/start/">The getting started guide &rarr;</a> &middot;&nbsp;<a href="/docs/">the language, one idea at a time &rarr;</a>
   </p>
 
   <h2>Who is building it</h2>
   <p>
-    One person who had never written a compiler before this one, and an AI
-    assistant that works to a contract kept in the repository. Neither of them
-    decides the language. Every change goes to a panel first: five judges, four
-    of whom can refuse it outright. The last word is human: every resolution
-    waits for the author to ratify it, and he can overturn it.
-    <a href="/about/">Who wrote this &rarr;</a> &middot;&nbsp;<a href="/project/#panel">how a change gets decided &rarr;</a>
+    One person who had never written a compiler before this one and an AI assistant that follows rules stored in the repository, the project&rsquo;s archive. A panel of five judges reviews every language change; four can veto it. The author approves or rejects each decision. <a href="/about/">Who wrote this &rarr;</a> &middot;&nbsp;<a href="/project/#panel">how changes are reviewed &rarr;</a>
   </p>
 
   <footer>
-    <p>Heroes is not packaged yet. No installer and no public release, so the
-    way in is a C compiler and one command. Every decision, sitting and
+    <p>Heroes has no installer or public release yet. Building it takes a C compiler and one command. Every decision, sitting and
     measurement is recorded in the
     <a href="https://github.com/heroes-lang/heroes">repository</a>, still
     private, opening with the code.</p>

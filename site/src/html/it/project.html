@@ -3,32 +3,22 @@
     <h1 class="page">Il progetto</h1>
     <span class="nod">· a new career in a new town ·</span>
   </div>
-  <p class="lede">Come il compilatore dà prova di sé, come si decide un
-  cambiamento al linguaggio, e le venti righe che il binario stampa quando gli
-  chiedi in cosa crede.</p>
+  <p class="lede">
+    Come verificare che il compilatore compila se stesso, come si valutano le modifiche al linguaggio e quali sono i venti principi stampati da <code>heroes this</code>.
+  </p>
 
   <div class="notice">
-    <p><b>Il repository è ancora privato, quindi i tre comandi qui sotto non si
-    possono ancora eseguire.</b> Sono quello che dimostra tutto questo, sono
-    definitivi, e si aprono insieme al codice. Quello che funziona oggi è su
-    questo sito: <a href="/it/spec/">la specifica</a> e
-    <a href="/it/examples/">ogni programma</a> con l&rsquo;output che stampa
-    davvero.</p>
+    <p>
+    <b>Per eseguire i comandi qui sotto serve il repository, che è ancora privato.</b> Puoi già leggere <a href="/it/spec/">la specifica</a> e <a href="/it/examples/">gli esempi</a>, con l&rsquo;output registrato quando disponibile.
+  </p>
   </div>
 
-  <h2 id="self-hosted">Si compila da solo, e questa è la prova</h2>
+  <h2 id="self-hosted">Come verificare che compila se stesso</h2>
   <p>
-    Il compilatore di Heroes è scritto in Heroes. Un linguaggio resta un
-    giocattolo finché non riesce a scrivere il proprio compilatore. Per farlo
-    servono dati annidati, tabelle di nomi, ricorsione, gestione degli errori
-    vera e programmi divisi su più file. Se un linguaggio regge tutto questo,
-    la discussione se sia reale è chiusa.
+    Il compilatore di Heroes è scritto in Heroes. Compilarlo richiede dati annidati, tabelle di nomi, ricorsione, gestione degli errori e programmi distribuiti su più file. È una prova concreta di come il linguaggio gestisce un programma complesso.
   </p>
   <p>
-    La prova non è una suite di test. Il repository contiene il compilatore come
-    un unico file C generato, che è il modo in cui una macchina senza Heroes
-    ottiene il primo compilatore. Compila quello, chiedi al compilatore che ne
-    esce di riscrivere il proprio codice in C, e confronta:
+    Il repository, l&rsquo;archivio del progetto, contiene il compilatore anche in un unico file C generato. Puoi compilarlo su un computer dove Heroes non è installato. Poi usi il compilatore ottenuto per tradurre i propri sorgenti in C e confronti i due file:
   </p>
   <pre class="fixpoint"><code>$ clang -I runtime seed/heroes.c runtime/runtime.c -o heroes
 $ ./heroes build selfhost/main.hero --emit-c -o out.c
@@ -40,11 +30,7 @@ $ cmp out.c seed/heroes.c
 
 <span class="c">  oltre 22 megabyte di C, e più di 700.000 righe</span></code></pre>
   <p>
-    <code>cmp</code> non stampa niente, ed è così che dice che i due file sono
-    uguali. Quindi il C nel repository non è una copia che qualcuno tiene
-    aggiornata: è quello che il compilatore scrive, e il compilatore costruito
-    da lì lo riscrive identico. La riga in mezzo prende meno di un minuto su un MacBook Air. Tre
-    righe, e chiunque può eseguirle.
+    Se i file sono identici, <code>cmp</code> non stampa nulla. Il confronto verifica che il compilatore ricostruisca lo stesso C da cui è stato compilato. La riga centrale richiede meno di un minuto su un MacBook Air. Chi ha accesso al repository può ripetere la prova.
   </p>
   <ul class="stats">
     <li><span class="n">180+</span><span class="what">moduli di Heroes</span></li>
@@ -53,76 +39,41 @@ $ cmp out.c seed/heroes.c
     <li><span class="n">100+</span><span class="what">sedute di design nei record</span></li>
   </ul>
   <p>
-    È tutto il compilatore e non un pezzo: la parte che spezza il testo in
-    parole, quella che trova la struttura, quella che lega ogni nome alla sua
-    dichiarazione, il controllo dei tipi, la forma intermedia con il suo
-    controllore, il passaggio che decide quando ogni valore viene liberato, la
-    traduzione in C, i controlli sulle librerie esterne, i messaggi
-    d&rsquo;errore, il formattatore e la riga di comando.
+    Heroes implementa tutte le parti del compilatore: l&rsquo;analisi delle parole e della struttura del codice, l&rsquo;associazione dei nomi alle dichiarazioni, il controllo dei tipi, la rappresentazione intermedia del programma e i suoi controlli, la gestione della memoria, la traduzione in C, le verifiche sulle librerie esterne, i messaggi d&rsquo;errore, il formattatore e i comandi.
   </p>
 
-  <h3>Cosa è venuto fuori puntandolo su se stesso</h3>
+  <h3>Gli errori trovati compilando i propri sorgenti</h3>
   <p>
-    Il compilatore nuovo ha rifiutato il proprio codice, sostenendo che un pezzo
-    della sua struttura contenesse se stesso, cosa falsa. Tirare quel filo ha
-    prodotto cinque guasti veri nel compilatore nuovo e quattro in quello
-    vecchio. Uno dei quattro era questo: la sottolineatura che mostra al lettore dove è
-    l&rsquo;errore copriva la nota scritta su quella riga per verificare quella
-    sottolineatura. Il figlio ha corretto il padre.
+    Il nuovo compilatore ha inizialmente rifiutato i propri sorgenti: segnalava, per errore, una struttura che conteneva se stessa. L&rsquo;indagine ha individuato difetti sia nel compilatore nuovo sia in quello precedente. Uno riguardava la sottolineatura dei messaggi d&rsquo;errore, che copriva l&rsquo;annotazione usata dal test per verificarla.
   </p>
   <p>
-    Un compilatore puntato sul proprio codice è un corpus che nessuna suite di
-    test riproduce. Contiene tutte le forme del linguaggio, nelle proporzioni in
-    cui le ha il codice vero, ed è così che cinque di quei guasti sono venuti a
-    galla. Erano una sola trappola vestita in cinque modi. Un salto di ciclo
-    dentro un ramo di <code>match</code> saltava la riga che teneva aggiornato
-    un indice mantenuto a mano.
+    Compilare i sorgenti del compilatore mette alla prova molte forme del linguaggio nello stesso programma. Diversi difetti avevano la stessa causa: un salto di ciclo dentro un ramo di <code>match</code> saltava l&rsquo;istruzione che aggiornava un indice gestito a mano.
   </p>
   <p>
-    L&rsquo;ultima cosa che separava i due file era un messaggio che il compilatore
-    vecchio aveva lasciato scritto in tre posti per chi avrebbe fatto questo
-    lavoro: <i>qui questa lista esce in ordine, e a quello nuovo servirà un ordinamento esplicito</i>. Tre ordinamenti, non pagati. Il risultato era un file con tutte le righe uguali e l&rsquo;ordine diverso, su
-    qualche migliaio di esse. Una mappa non ha un ordine: il linguaggio lo dice
-    e lo intende davvero. Quella nota era giusta il giorno in cui è stata
-    scritta, ed è rimasta giusta per mesi, fino a quando è servita a
-    qualcuno.
+    L&rsquo;ultima differenza tra i due file riguardava l&rsquo;ordine delle righe. Nel compilatore precedente alcune liste erano già ordinate; nel nuovo serviva un ordinamento esplicito, come indicavano le note lasciate nei sorgenti. Le mappe non garantiscono un ordine: aggiungendo gli ordinamenti mancanti, i file sono diventati identici.
   </p>
 
-  <h2 id="panel">Come si decide un cambiamento al linguaggio <span class="nod">&middot; five years &middot;</span></h2>
+  <h2 id="panel">Come si valutano le modifiche al linguaggio <span class="nod">&middot; five years &middot;</span></h2>
   <p>
-    Niente entra nel linguaggio perché è elegante. Un cambiamento alla
-    sintassi, alla semantica, a una classe di messaggi d&rsquo;errore o alla forma del
-    compilatore passa prima da un collegio di cinque seggi. Ogni seggio riceve
-    materiale diverso di proposito, e quattro di loro possono rifiutare. Un
-    cambiamento che non aggiunge sintassi, non tocca nessun messaggio
-    d&rsquo;errore e non sposta una parola della specifica, di quelli che vivono
-    solo dentro il compilatore o il suo runtime, passa da due dei cinque.
+    Le modifiche alla sintassi, alle regole del linguaggio, ai messaggi d&rsquo;errore o alla struttura del compilatore vengono esaminate da un collegio di cinque seggi. Ogni seggio riceve materiale diverso e quattro possono porre un veto. Le modifiche interne al compilatore o al runtime, il codice di supporto all&rsquo;esecuzione, passano da due dei cinque se non cambiano sintassi, messaggi d&rsquo;errore o specifica.
   </p>
   <ul class="seats">
-    <li><span class="who">Il lettore</span><span>Riceve la specifica e programmi d&rsquo;esempio, e mai il documento di design o il codice. Il suo verdetto è un esperimento sul fatto che il linguaggio si legga, non un&rsquo;opinione. <span class="veto">veto</span></span></li>
-    <li><span class="who">L&rsquo;ingegnere del compilatore</span><span>Riceve l&rsquo;albero dei sorgenti vero e mette un prezzo al cambiamento in codice da scrivere e da mantenere. <span class="veto">veto</span></span></li>
-    <li><span class="who">Il pragmatico del C</span><span>Riceve il C che servirebbe a un binding vero e lo compila, oppure mostra perché non si può compilare. <span class="veto">veto</span></span></li>
-    <li><span class="who">Il guardiano della specifica</span><span>Riceve il conteggio dei token misurato prima e dopo, mai una stima, e difende il budget in cui tutto il linguaggio deve stare. <span class="veto">veto</span></span></li>
-    <li><span class="who">Lo storico</span><span>Deve cercare sul web e citare date e fonti: un precedente senza fonte è inammissibile. Consiglia e non può rifiutare.</span></li>
+    <li><span class="who">Il lettore</span><span>Riceve la specifica e programmi d&rsquo;esempio, senza il documento di design né i sorgenti del compilatore. Verifica con prove concrete se il linguaggio si capisce. <span class="veto">veto</span></span></li>
+    <li><span class="who">L&rsquo;ingegnere del compilatore</span><span>Esamina i sorgenti e valuta quanto codice bisogna scrivere e mantenere per introdurre la modifica. <span class="veto">veto</span></span></li>
+    <li><span class="who">Il pragmatico del C</span><span>Compila il codice C necessario per usare una libreria da Heroes, oppure documenta perché la compilazione fallisce. <span class="veto">veto</span></span></li>
+    <li><span class="who">Il guardiano della specifica</span><span>Confronta il numero di token prima e dopo la modifica e verifica che la specifica rispetti il limite previsto. I token sono i frammenti di testo letti da un modello. <span class="veto">veto</span></span></li>
+    <li><span class="who">Lo storico</span><span>Deve cercare sul web e citare date e fonti: un precedente senza fonte è inammissibile. Dà consigli e non ha potere di veto.</span></li>
   </ul>
   <p>
-    Il collegio non blocca mai il lavoro. Adotta la risoluzione più solida e
-    completa che riesce a trovare, mai la più economica e mai un compromesso.
-    La segna come in attesa della parola dell&rsquo;autore, e il lavoro continua.
-    Dove la risposta solida e quella prudente non concordano, prende quella
-    solida e scrive l&rsquo;altra, così l&rsquo;autore può ancora scegliere.
+    Il collegio sceglie la soluzione che ritiene più solida e completa e la sottopone all&rsquo;autore per l&rsquo;approvazione. Il lavoro prosegue in attesa della conferma. Se esiste un&rsquo;alternativa più prudente, viene registrata perché l&rsquo;autore possa valutarla.
   </p>
   <p>
-    Ogni seduta è un file nel repository, con i dossier, i verdetti e i veti. Ce
-    ne sono più di cento. Un cambiamento al linguaggio che non ha una seduta dietro non
-    ha una via d&rsquo;ingresso.
+    Ogni seduta è registrata in un file nel repository, con i materiali esaminati, i verdetti e gli eventuali veti. Le sedute sono più di cento. Ogni modifica al linguaggio richiede questa revisione.
   </p>
 
   <h2 id="zen">Venti righe</h2>
   <p>
-    Sono le righe che <code>heroes this</code> stampa. Viaggiano dentro il compilatore,
-    quindi sono l&rsquo;unico pezzo del progetto che non può scollarsi dalla documentazione. Restano in inglese perché sono quello che il binario
-    stampa, e due delle righe citano una canzone.
+    <code>heroes this</code> stampa questi principi, inclusi nel compilatore. Qui sono riportati in inglese per rispettare il testo originale, comprese le citazioni di una canzone.
   </p>
   <pre lang="en"><code>The Zen of Heroes
 
@@ -147,22 +98,13 @@ $ cmp out.c seed/heroes.c
 19. There is no standard library; C is the man who sold the world.
 20. We can be heroes, just for one day.</code></pre>
   <p>
-    La riga 10 è la tesi, la 19 è il vincolo di partenza, e la 18 è la regola
-    che decide quando due principi tirano in direzioni opposte. Il resto è come
-    ci si sente a lavorare qui.
-    <a href="/it/why/">Perché il linguaggio è fatto così &rarr;</a>
+    La riga 10 esprime la tesi, la 19 il vincolo iniziale e la 18 stabilisce la priorità quando due principi sono in conflitto. <a href="/it/why/">Perché il linguaggio è fatto così &rarr;</a>
   </p>
 
   <footer>
-    <p>Il primo comando della prova in cima a questa pagina è quello che
-    l&rsquo;integrazione continua esegue a ogni push che tocca il compilatore, su
-    Linux, e a ogni tag di milestone su tre piattaforme. Gli altri due, il punto
-    fisso, girano solo sul ramo Linux qualunque cosa abbia avviato l&rsquo;esecuzione,
-    perché il C che il compilatore emette è lo stesso su ogni piattaforma. Il
-    record di ogni decisione, sedute e misure
-    comprese, è tenuto nel
-    <a href="https://github.com/heroes-lang/heroes">repository</a>, che è ancora
-    privato e si apre insieme al codice.</p>
+    <p>
+    Il sistema di integrazione continua, che esegue i controlli automatici, avvia il primo comando su Linux quando vengono inviate modifiche al compilatore. Quando viene registrata una versione di milestone, una fase completata del progetto, lo esegue su tre piattaforme. Gli altri due comandi vengono eseguiti solo su Linux: verificano che il compilatore riproduca il proprio C, uguale sulle diverse piattaforme. Decisioni, revisioni e misure sono nel <a href="https://github.com/heroes-lang/heroes">repository</a>, che sarà accessibile quando il codice diventerà pubblico.
+  </p>
     <p>Fatto da <a href="https://giuseppearici.com/it/">Giuseppe Arici</a>, CTO di Codermine, Brescia. Autore di
     <a href="/it/about/"><i>Gli eroi del codice</i></a>. Sulle spalle
     <a href="/it/about/thanks/">di molte altre persone</a>.</p>

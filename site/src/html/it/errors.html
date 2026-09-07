@@ -1,28 +1,20 @@
 
-  <p class="crumb"><a href="/it/">Heroes</a> / <a href="/it/docs/">Docs</a> / errori</p>
+  <p class="crumb"><a href="/it/">Heroes</a> / <a href="/it/docs/">Guida</a> / errori</p>
   <div class="page-head">
     <h1 class="page">Errori</h1>
     <span class="nod">· always crashing in the same car ·</span>
   </div>
-  <p class="lede">Qui un messaggio di errore è un prodotto finito, curato come
-  il resto. Tutti gli errori qui sotto sono usciti dal compilatore, copiati e
-  incollati.</p>
-
-  <p>
-    Un modello non ha il progetto aperto sotto gli occhi. Riceve un messaggio e
-    deve sistemare il programma con quello e nient&rsquo;altro, oppure spendere
-    un giro intero a rileggersi i file, che è la cosa più cara che possa
-    capitare. Per questo ogni messaggio d&rsquo;errore porta il punto esatto che è
-    sbagliato. Dove la cosa con cui va in conflitto è dichiarata altrove indica
-    quella riga, e dove la correzione si conosce arriva insieme al messaggio.
+  <p class="lede">
+    Ogni messaggio qui sotto è copiato dall&rsquo;output del compilatore. Gli esempi mostrano come individuare l&rsquo;errore e usare le correzioni suggerite.
   </p>
 
-  <h2>L&rsquo;inversione classica</h2>
   <p>
-    Due parametri dello stesso tipo, argomenti nell&rsquo;ordine sbagliato. Nella
-    maggior parte dei linguaggi passa il controllo dei tipi senza fare una piega e fa la
-    cosa sbagliata. Qui i nomi sono obbligatori proprio perché i tipi non possono
-    aiutare:
+    Per correggere un programma, un modello ha bisogno di sapere che cosa non funziona e dove. Un messaggio preciso può evitargli di rileggere interi file. Per questo gli errori di Heroes indicano il punto coinvolto, le eventuali dichiarazioni in conflitto e, quando possibile, una correzione.
+  </p>
+
+  <h2>Argomenti scambiati</h2>
+  <p>
+    Se due parametri hanno lo stesso tipo, il controllo dei tipi da solo non distingue un argomento dall&rsquo;altro. Heroes richiede quindi le etichette, cioè i nomi degli argomenti nella chiamata:
   </p>
   <pre class="diag"><code><span class="msg"><span class="k">error</span>[needs_label]: two of `copy_text`'s parameters are `str`, so every one of them is named at the call site — this one is `from`</span>
   at tests/golden/check/swapped-arguments.hero:16:21
@@ -38,25 +30,12 @@
      |                     ^^
   fix (certain): write `from:`</code></pre>
   <p>
-    Le annotazioni
-    <code>#~ needs_label</code> stanno nel sorgente di proposito: sono il modo in
-    cui la suite di test controlla che la sottolineatura cada dove il messaggio
-    dice che cade. E il caret è l&rsquo;estensione esatta del problema, non la
-    riga: in una chiamata lunga, l&rsquo;argomento sbagliato viene puntato invece
-    di essere descritto.
+    Le annotazioni <code>#~ needs_label</code> servono ai test per verificare la posizione della sottolineatura. I caratteri <code>^</code> indicano esattamente la porzione di codice coinvolta, così puoi individuare l&rsquo;argomento anche in una chiamata lunga.
   </p>
 
-  <h2>Due tipi di riparazione, uno solo applicabile in automatico</h2>
+  <h2>Correzioni automatiche e suggerimenti</h2>
   <p>
-    Una correzione marcata <code>certain</code> è una correzione che il
-    compilatore ha <i>calcolato</i>, non tirato a indovinare: il tipo che ha
-    appena dedotto lui, l&rsquo;unico nome simile che esiste in quel punto del
-    programma. Il comando <code>heroes check --apply</code> applica quelle e
-    lascia stare le altre, quindi quello che ne esce è più vicino, non per forza
-    finito. Una correzione marcata <code>guess</code> è un
-    suggerimento per chi legge, e nessuno strumento la applica al posto tuo, mai:
-    tirare a indovinare una correzione che un modello applicherebbe a occhi
-    chiusi è peggio che spiegare.
+    Una correzione contrassegnata da <code>certain</code> si basa su informazioni verificate dal compilatore, come il tipo dedotto o l&rsquo;unico nome simile disponibile. <code>heroes check --apply</code> applica queste correzioni. Può essere necessario correggere altri errori prima che il programma sia completo. Le correzioni contrassegnate da <code>guess</code> sono suggerimenti da valutare e non vengono applicate automaticamente dal comando.
   </p>
   <p>
     Gli stessi messaggi escono anche in JSON, il formato che i programmi
@@ -70,48 +49,28 @@ $ heroes check --apply --in-place program.hero
 $ heroes run program.hero</code></pre>
   <p>
     Quel <code>heroes</code> è il binario che hai costruito tu:
-    <code>./heroes</code>, a un comando clang di distanza da un clone pulito.
+    <code>./heroes</code>, ottenuto compilando con clang il codice scaricato.
     <a href="/it/start/">Come si costruisce →</a>
   </p>
   <p>
-    Una famiglia di errori aspetta la compilazione. Una dichiarazione presa in
-    prestito dal C viene verificata sull&rsquo;header vero della libreria, e chi
-    legge quell&rsquo;header è clang, che gira con <code>heroes build</code>. Quindi
-    un file il cui unico sbaglio è una funzione C scritta male passa
-    <code>heroes check</code> senza una parola e viene rifiutato un attimo dopo,
-    sulla stessa riga, con la risposta dell&rsquo;header allegata.
-    <a href="/it/docs/the-c-boundary/">Cosa dice la compilazione &rarr;</a>
+    Alcuni errori nelle dichiarazioni di funzioni C vengono rilevati da <code>heroes build</code>. Questo comando avvia clang, il compilatore C, che confronta le dichiarazioni con l&rsquo;header della libreria, il file che ne descrive funzioni e tipi. Un nome di funzione C scritto male può quindi superare <code>heroes check</code> ed essere segnalato durante la compilazione. <a href="/it/docs/the-c-boundary/">I controlli sulle librerie C &rarr;</a>
   </p>
 
-  <h2>Parole di altri linguaggi, rifiutate con la risposta allegata</h2>
+  <h2>Parole chiave di altri linguaggi</h2>
   <p>
-    L&rsquo;errore più probabile di un modello con il pilota automatico è una
-    parola chiave importata da un&rsquo;altra parte. Ognuna è un errore di
-    compilazione che arriva con la soluzione già scritta, e questo lo rende un
-    problema che si chiude in un colpo solo invece di una conversazione:
+    Un modello può usare per errore una parola chiave di un altro linguaggio. Heroes riconosce alcune di queste parole e indica la forma da usare:
   </p>
   <pre class="diag"><code><span class="msg">tests/golden/check/reserved-words.hero:2:1: <span class="k">error</span>[reserved_word]: `struct` is not a word in this language — use `record`: `record Point`</span>
 <span class="msg">tests/golden/check/reserved-words.hero:3:1: <span class="k">error</span>[reserved_word]: `let` is not a word in this language — bind with `=`: `x = 5`</span>
 <span class="msg">tests/golden/check/reserved-words.hero:4:1: <span class="k">error</span>[reserved_word]: `const` is not a word in this language — use `constant`: `constant MAX: i64`</span>
 <span class="msg">tests/golden/check/deleted-int.hero:23:8: <span class="k">error</span>[reserved_word]: `int` is not a word in this language — an integer says its width: `i64`, and also `i8` `i16` `i32` `u8` `u16` `u32` `u64`</span></code></pre>
   <p>
-    Quella è la forma a una riga per diagnostica; la resa più ricca qui sopra è
-    quello che stampa il comando. Tre di quelle quattro portano una riparazione
-    <code>certain</code> e <code>--apply</code> riscrive quelle tre. Lascia
-    <code>let</code> dov&rsquo;è, perché lì la riparazione onesta è un&rsquo;altra
-    forma di dichiarazione e non uno scambio di parola, e applicare una
-    supposizione è l&rsquo;unica cosa che questo progetto si rifiuta di fare. È
-    il patto in un file solo: uno strumento che puoi puntare sul sorgente senza
-    rileggere il risultato, e una lista più corta di cose che fa.
+    Qui ogni messaggio occupa una riga; negli esempi precedenti trovi la versione completa. Tre dei quattro errori hanno una correzione <code>certain</code> e <code>--apply</code> le applica. <code>let</code> resta invariato: la correzione richiede di scegliere una forma di dichiarazione, non soltanto di sostituire una parola.
   </p>
 
-  <h2>Un programma incompiuto non è un programma rotto</h2>
+  <h2>Completare un programma con l&rsquo;aiuto del compilatore</h2>
   <p>
-    <code>???</code> è un&rsquo;espressione legale in qualunque punto. Il
-    compilatore controlla i tipi di tutto quello che le sta intorno e poi dice che
-    cosa va nel buco: il tipo aspettato, che cosa c&rsquo;è in scope, e quali
-    funzioni restituiscono quel tipo. Non produce nessun binario, ed esce con
-    codice <b>zero</b>, perché uno scheletro in costruzione non è un errore:
+    Puoi scrivere <code>???</code> dove manca un&rsquo;espressione. Il compilatore controlla il codice circostante e indica il tipo atteso, i nomi disponibili e le funzioni che restituiscono quel tipo. Se non ci sono altri errori, il controllo termina con codice <b>zero</b>. Finché restano espressioni incomplete, non viene prodotto un eseguibile:
   </p>
   <pre><code>hole at examples/gallery/09-holes.hero:24:5
   position: statement &mdash; any type, or none
@@ -126,27 +85,15 @@ hole at examples/gallery/09-holes.hero:28:74
     summary_of(entries: [Entry])
       <span class="c"># The hole can be one argument of an otherwise finished line.</span></code></pre>
   <p>
-    È questo che permette di scrivere un programma partendo dallo scheletro:
-    abbozzi la forma, ti fai dire dal compilatore che cosa serve in ogni buco, e
-    li riempi. Il buco è una domanda a cui il compilatore risponde, non un
-    fallimento che segnala. Due buchi, due domande diverse: il primo sta dove
-    manca un&rsquo;istruzione intera, e allora la risposta è che cosa deve
-    restituire la funzione; il secondo sta dentro una riga per il resto finita,
-    e allora la risposta è un tipo solo e le funzioni che lo producono.
+    Puoi quindi abbozzare il programma e completarlo usando le indicazioni del compilatore. Nell&rsquo;esempio, il primo <code>???</code> sostituisce un&rsquo;istruzione intera: il compilatore indica che cosa deve restituire la funzione. Il secondo è dentro un&rsquo;istruzione e richiede un tipo preciso.
   </p>
 
   <h2 id="measured">Come si misura</h2>
   <p>
-    <code>heroes mutate</code> misura queste affermazioni. Prende programmi che funzionano,
-    inietta uno sbaglio plausibile alla volta, e conta quanti il compilatore
-    trasforma in errori di compilazione. Poi passa lo stesso corpus allo stesso
-    compilatore con le regole della tesi disattivate. La differenza fra le due
-    colonne è l&rsquo;unica parte che significa qualcosa.
+    <code>heroes mutate</code> introduce un errore plausibile alla volta in programmi funzionanti e conta quanti errori rileva il compilatore. Ripete poi il controllo sugli stessi programmi con le regole specifiche di Heroes disattivate. La differenza tra i risultati misura l&rsquo;effetto di queste regole.
   </p>
   <p>
-    La tabella è una prova completa, e con il comando qui sopra te ne fai una tua. Copre tutti i programmi in <code>examples/</code> e tutti gli operatori
-    che lo strumento ha, compresi quelli dove il design non fa niente e i due
-    dove fallisce:
+    La tabella riporta un&rsquo;esecuzione completa sui programmi in <code>examples/</code>, con tutti i tipi di modifica previsti dallo strumento. Include anche i casi in cui i controlli di Heroes non migliorano il risultato o non rilevano l&rsquo;errore. Il comando qui sopra permette di ripetere la prova:
   </p>
   <pre class="table"><code>$ heroes mutate examples
 
@@ -166,41 +113,15 @@ aritmetica mista fra interi e float           1492   100%             100%
 <span class="hi">errore di battitura in un codice d&rsquo;errore</span>       59     0%               0%
 <span class="hi">errore di battitura in una cifra</span>                68     3%               3%</code></pre>
   <p>
-    La percentuale è calcolata sui mutanti che continuano ad avere una
-    grammatica valida. Dove lo sbaglio piantato rompe anche la grammatica, quel
-    mutante misura la parte del compilatore che legge il testo e non quella che
-    ragiona, quindi viene messo da parte invece di essere contato come una
-    vittoria: 323 dei 20.578 qui sopra, e 102 di essi nella prima riga.
-    Contarli come presi porterebbe la prima riga dall&rsquo;80 all&rsquo;81 per cento, che è
-    la direzione in cui la scelta onesta costa.
+    La percentuale considera soltanto i mutanti, cioè i programmi modificati, che mantengono una sintassi valida. Se la modifica rende il testo non valido, viene rilevata già durante l&rsquo;analisi della sintassi. Questi casi vengono esclusi per misurare separatamente l&rsquo;effetto dei controlli successivi.
   </p>
   <p>
-    <b>Il progetto si rifiuta di fare la media di questi numeri in una cifra
-    sola</b>, e lo strumento stampa quel rifiuto ogni volta che gira. Il motivo
-    sta nella tabella. Le prime quattro righe sono la misura: un&rsquo;etichetta che
-    serve e un nome che ne nasconde un altro vanno a zero o quasi senza le
-    regole della tesi, perché in un linguaggio convenzionale nessun altro li sta
-    cercando. Le righe centrali le prendono i nomi e i tipi in qualunque
-    linguaggio, quindi metterle nella media accrediterebbe a questo design un
-    lavoro che non ha fatto. La <code>@</code> dimenticata è esclusa da
-    qualunque riassunto per istruzione dello stesso progetto: gli errori che
-    pianta sono presi per costruzione, e i pochi che sfuggono sono modifiche che
-    non cambiavano niente.
+    <b>Lo strumento non riassume i risultati in una media unica.</b> Le prime righe mostrano l&rsquo;effetto delle regole specifiche di Heroes, come le etichette obbligatorie e il divieto di nascondere un nome già dichiarato. Le righe centrali riguardano errori rilevabili con i normali controlli su nomi e tipi. La <code>@</code> dimenticata viene esclusa dai riepiloghi perché il modo in cui lo strumento modifica il codice rende quasi tutti questi errori rilevabili per costruzione.
   </p>
   <p>
-    Tre righe vanno confrontate con quello che questo stesso sito dichiara in prima pagina. Scambiare due argomenti in una chiamata viene preso quattro volte
-    su cinque, non sempre: dove i due hanno lo stesso tipo l&rsquo;etichetta è
-    obbligatoria e lo scambio non compila, e dove i tipi differiscono
-    l&rsquo;etichetta è facoltativa e non lo sta cercando nessuno. E le ultime due righe non vengono quasi mai prese, in nessuno dei due casi. Un errore di battitura
-    dentro un codice d&rsquo;errore è una stringa con una lettera cambiata, e
-    nessuna regola vincola come si scrive una stringa. Un errore di battitura
-    dentro un numero è un numero, e <code>10</code> è legale esattamente come
-    <code>100</code>. Quelle due righe sono il limite onesto di tutto il design:
-    non c&rsquo;è sistema di tipi che le possa vedere.
+    La tabella mostra anche i limiti dei controlli. Alcuni scambi di argomenti non vengono rilevati. Un refuso in una stringa usata come codice d&rsquo;errore resta una stringa valida. Lo stesso vale per un numero: <code>10</code> e <code>100</code> sono entrambi ammessi. I controlli di Heroes non possono stabilire quale valore intendevi scrivere.
   </p>
-  <p>
-    Un numero che facesse solo bella figura non servirebbe a niente.
-  </p>
+
 
   <p class="next">
     Poi: <a href="/it/project/#self-hosted">il compilatore, scritto nel suo stesso

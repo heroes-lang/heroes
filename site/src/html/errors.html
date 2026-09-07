@@ -1,27 +1,20 @@
 
-  <p class="crumb"><a href="/">Heroes</a> / <a href="/docs/">Docs</a> / errors</p>
+  <p class="crumb"><a href="/">Heroes</a> / <a href="/docs/">Guide</a> / errors</p>
   <div class="page-head">
     <h1 class="page">Errors</h1>
     <span class="nod">· always crashing in the same car ·</span>
   </div>
-  <p class="lede">An error message here is a finished product, made with the
-  same care as the rest. Every error below came out of the compiler, copied and
-  pasted.</p>
-
-  <p>
-    A model does not have the project open in front of it. It gets one message
-    and has to fix the program with that and nothing else, or spend a whole
-    round re-reading files, which is the most expensive thing that can happen.
-    So every error message carries the exact place that is wrong. Where the
-    thing it clashes with is declared elsewhere it names that line, and where
-    the repair is known it comes with the message.
+  <p class="lede">
+    Every message below is copied from the compiler&rsquo;s output. The examples show how to locate an error and use the suggested fixes.
   </p>
 
-  <h2>The classic inversion</h2>
   <p>
-    Two parameters of the same type, arguments the wrong way round. It
-    type-checks perfectly in most languages and does the wrong thing. Here the
-    names are mandatory precisely because the types cannot help:
+    To fix a program, a model needs to know what is wrong and where. A precise message can save it from rereading entire files. Heroes errors therefore identify the affected code, any conflicting declarations and, when possible, a fix.
+  </p>
+
+  <h2>Swapped arguments</h2>
+  <p>
+    When two parameters have the same type, type checking alone cannot tell one argument from the other. Heroes therefore requires labels, the argument names written in the call:
   </p>
   <pre class="diag"><code><span class="msg"><span class="k">error</span>[needs_label]: two of `copy_text`'s parameters are `str`, so every one of them is named at the call site — this one is `from`</span>
   at tests/golden/check/swapped-arguments.hero:16:21
@@ -37,22 +30,12 @@
      |                     ^^
   fix (certain): write `from:`</code></pre>
   <p>
-    The <code>#~ needs_label</code> notes are in the source on purpose: they are
-    how the test suite checks that the underline lands where the message says it
-    does. And the caret is the span, not the line: in a long call the wrong
-    argument is pointed at rather than described.
+    The <code>#~ needs_label</code> annotations let the tests verify the underline&rsquo;s position. The <code>^</code> characters mark the exact portion of code involved, so you can find the argument even in a long call.
   </p>
 
-  <h2>Two kinds of fix, only one applied automatically</h2>
+  <h2>Automatic fixes and suggestions</h2>
   <p>
-    A fix tagged <code>certain</code> is one the compiler worked out rather
-    than guessed: the type it just inferred itself, the one similar name that
-    exists at that point in the program. The <code>heroes check --apply</code>
-    command applies those and leaves the rest alone, so what comes out is
-    nearer, not necessarily finished. A fix tagged
-    <code>guess</code> is a suggestion for the reader, and no tool ever applies
-    it for you: guessing a repair a model would apply blindly is worse than
-    explaining.
+    A fix marked <code>certain</code> uses information checked by the compiler, such as an inferred type or the only similar name available. <code>heroes check --apply</code> applies these fixes. Other errors may still need correction before the program is complete. Fixes marked <code>guess</code> are suggestions to review; the command does not apply them automatically.
   </p>
   <p>
     The same messages also come out as JSON, the format programs read easily,
@@ -65,46 +48,28 @@ $ heroes check --apply --in-place program.hero
 $ heroes run program.hero</code></pre>
   <p>
     <code>heroes</code> there is the binary you built: <code>./heroes</code>,
-    one clang command away from a fresh clone.
+    built with clang from the downloaded source.
     <a href="/start/">How to build it →</a>
   </p>
   <p>
-    One family waits for the build. A declaration borrowed from C is checked
-    against the library&rsquo;s real header, and the thing that reads that header is
-    clang, which runs at <code>heroes build</code>. So a file whose only mistake
-    is a misspelled C function passes <code>heroes check</code> without a word
-    and is refused a moment later, on the same line, with the header&rsquo;s own
-    answer attached.
-    <a href="/docs/the-c-boundary/">What the build says &rarr;</a>
+    Some errors in C function declarations are caught by <code>heroes build</code>. This command runs clang, the C compiler, which checks the declarations against the library&rsquo;s header, the file that describes its functions and types. A misspelled C function name can therefore pass <code>heroes check</code> and be reported during the build. <a href="/docs/the-c-boundary/">Checks on C libraries &rarr;</a>
   </p>
 
-  <h2>Words from other languages, refused with the answer attached</h2>
+  <h2>Keywords from other languages</h2>
   <p>
-    The likeliest mistake from a model on autopilot is a keyword imported from
-    somewhere else. Each one is a compile error carrying its own solution,
-    which makes it a single-turn repair rather than a conversation:
+    A model can accidentally use a keyword from another language. Heroes recognises some of these words and suggests the correct form:
   </p>
   <pre class="diag"><code><span class="msg">tests/golden/check/reserved-words.hero:2:1: <span class="k">error</span>[reserved_word]: `struct` is not a word in this language — use `record`: `record Point`</span>
 <span class="msg">tests/golden/check/reserved-words.hero:3:1: <span class="k">error</span>[reserved_word]: `let` is not a word in this language — bind with `=`: `x = 5`</span>
 <span class="msg">tests/golden/check/reserved-words.hero:4:1: <span class="k">error</span>[reserved_word]: `const` is not a word in this language — use `constant`: `constant MAX: i64`</span>
 <span class="msg">tests/golden/check/deleted-int.hero:23:8: <span class="k">error</span>[reserved_word]: `int` is not a word in this language — an integer says its width: `i64`, and also `i8` `i16` `i32` `u8` `u16` `u32` `u64`</span></code></pre>
   <p>
-    That is the one-line-per-diagnostic form; the fuller rendering above is what
-    the command prints. Three of those four carry a <code>certain</code> fix and
-    <code>--apply</code> rewrites those three. It leaves <code>let</code>
-    exactly where it is, because the honest repair there is a different binding
-    form and not a word swap, and applying a guess is the one thing this design
-    refuses. That is the trade in one file: a tool you can point at your source
-    without reading the result, and a shorter list of things it will do.
+    Here each diagnostic, or compiler message, occupies one line; the earlier examples show the full version. Three of the four errors have a <code>certain</code> fix, which <code>--apply</code> applies. It leaves <code>let</code> unchanged: that fix requires choosing a declaration form, not just replacing a word.
   </p>
 
-  <h2>An unfinished program is not a broken one</h2>
+  <h2>Completing a program with the compiler&rsquo;s help</h2>
   <p>
-    <code>???</code> is a legal expression anywhere. The compiler type-checks
-    everything around it and then reports what belongs in the gap: the
-    expected type, what is in scope, and which functions return it. It produces
-    no binary, and it exits <b>zero</b>, because a skeleton under construction
-    is not an error:
+    You can write <code>???</code> where an expression is missing. The compiler checks the surrounding code and reports the expected type, the available names and functions that return that type. If there are no other errors, the check exits with status <b>zero</b>. No executable is produced while expressions remain unfinished:
   </p>
   <pre><code>hole at examples/gallery/09-holes.hero:24:5
   position: statement &mdash; any type, or none
@@ -119,29 +84,15 @@ hole at examples/gallery/09-holes.hero:28:74
     summary_of(entries: [Entry])
       <span class="c"># The hole can be one argument of an otherwise finished line.</span></code></pre>
   <p>
-    That is what lets a program be written skeleton-first: sketch the shape, let
-    the compiler tell you what each gap needs, fill them in. The hole is a
-    question the compiler answers, not a failure it reports. Two holes, two
-    different questions: the first stands where a whole statement is missing, so
-    the answer is what the function has to return; the second stands inside a
-    line that is otherwise finished, so the answer is one type and the functions
-    that produce it.
+    You can sketch the program, then complete it using the compiler&rsquo;s guidance. In this example, the first <code>???</code> replaces a whole statement, so the compiler reports what the function must return. The second sits inside a statement and requires a specific type.
   </p>
 
   <h2 id="measured">How it is measured</h2>
   <p>
-    <code>heroes mutate</code> measures these claims. It takes working programs
-    and injects one plausible
-    mistake at a time, and counts how many the compiler turns into compile
-    errors. Then it runs the same corpus against the same compiler with the
-    thesis rules switched off. The difference between the two columns is the
-    only part that means anything.
+    <code>heroes mutate</code> introduces one plausible mistake at a time into working programs and counts how many the compiler catches. It repeats the checks on the same programs with the Heroes-specific rules disabled. The difference measures the effect of these rules.
   </p>
   <p>
-    The table is one completed run, and the command above it is how you get your
-    own. It covers every program in <code>examples/</code>, and every operator
-    the tool has, including the ones where the design does nothing and the two
-    it fails at:
+    The table records a complete run on programs in <code>examples/</code>, using every kind of modification the tool supports. It includes cases where the Heroes checks do not improve the result or fail to catch the mistake. Use the command above to repeat the test:
   </p>
   <pre class="table"><code>$ heroes mutate examples
 
@@ -161,37 +112,15 @@ mixed integer and float arithmetic        1492    100%               100%
 <span class="hi">a typo in an error code</span>                     59      0%                 0%
 <span class="hi">a typo in a digit</span>                           68      3%                 3%</code></pre>
   <p>
-    The percentage is of the mutants that still parse. Where a planted mistake
-    also breaks the grammar, that mutant measures the part of the compiler that
-    reads text rather than the part that reasons about it, so it is set aside
-    rather than counted as a win: 323 of the 20,578 above, and 102 of them in
-    the first row. Counting them as caught would lift the first row from 80 to 81 per cent. The honest choice costs a point, and the point is left out.
+    The percentage includes only mutants, the modified programs, that still have valid syntax. If a modification makes the text invalid, it is caught while parsing, the step that reads the code&rsquo;s structure. These cases are excluded to measure the later checks separately.
   </p>
   <p>
-    <b>The project refuses to average these into one figure</b>, and the tool
-    prints that refusal every time it runs. The reason is in the table. The
-    first four rows are the measurement: a label that is needed and a shadowed
-    name go to zero or near it without the thesis rules, because nothing else in
-    a conventional language is looking for either. The middle rows are caught by
-    names and types anywhere, so averaging them in would credit this design with
-    work it did not do. The forgotten <code>@</code> is excluded from any
-    summary on the project&rsquo;s own instruction: the mistakes it plants are caught
-    by construction, and the few it misses are mutations that changed nothing.
+    <b>The tool does not summarise the results in one average.</b> The first rows show the effect of Heroes-specific rules, such as mandatory labels and the ban on hiding a previously declared name. The middle rows involve errors detectable through ordinary name and type checks. A forgotten <code>@</code> is excluded from summaries because the way the tool modifies the code makes almost all these errors detectable by construction.
   </p>
   <p>
-    Three rows are worth reading against what this site claims on its front page. Swapping two arguments
-    in a call is caught four times in five, not always: where the two share a
-    type the label is mandatory and the swap cannot compile, and where the types
-    differ the label is optional and nothing is looking. And the last
-    two rows are caught almost never, in either arm. A typo inside an error code
-    is a string with a letter changed, and no rule constrains how a string is
-    spelled. A typo inside a number is a number, and <code>10</code> is as legal
-    as <code>100</code>. Those two are the honest edge of the whole design:
-    nothing in a type system can see them.
+    The table also shows the limits of the checks. Some argument swaps go undetected. A typo in a string used as an error code is still a valid string. The same applies to a number: <code>10</code> and <code>100</code> are both allowed. Heroes&rsquo; checks cannot determine which value you meant to write.
   </p>
-  <p>
-    
-  </p>
+
 
   <p class="next">
     Next: <a href="/project/#self-hosted">the compiler, written in its own

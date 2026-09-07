@@ -1,3 +1,3 @@
-<p class="tagline">A JSON reader: a document in, its shape and its canonical form out.</p>
+<p class="tagline">Read a JSON document, describe its structure and print it in a consistent format.</p>
 
-<p>One byte of lookahead, and a value that recurses through both an array and a map. The numbers are built digit by digit, because a string has no conversion to a number in this language and nothing hides that.</p>
+<p>The reader looks one byte ahead to decide what to read next. Arrays and maps can contain further values of the same type, allowing nested documents. It builds numbers digit by digit because Heroes has no built-in conversion from text to a number.</p>

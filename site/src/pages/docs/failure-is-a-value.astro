@@ -3,6 +3,6 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import { page } from '../../lib/figures.ts';
 import content from '../../html/docs/failure-is-a-value.html?raw';
 ---
-<BaseLayout url="/docs/failure-is-a-value/" title={'Failure is a value: Heroes documentation'} description={'Heroes has no null and no exceptions. Absence and failure are types, propagation is visible on the line, and the unhandled path is a compile error.'} current="docs">
+<BaseLayout url="/docs/failure-is-a-value/" title={"Failure is a value: Heroes documentation"} description={"Represent a result or an error with T?, handle each case and explicitly propagate errors to the caller."} current="docs">
 <Fragment set:html={page(content, 'site/src/html/docs/failure-is-a-value.html')} />
 </BaseLayout>

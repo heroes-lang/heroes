@@ -3,6 +3,6 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import { page } from '../../lib/figures.ts';
 import content from '../../html/docs/values-all-the-way-down.html?raw';
 ---
-<BaseLayout url="/docs/values-all-the-way-down/" title={'Values all the way down: Heroes documentation'} description={'Heroes has no reference type and no value points at another, and it can still represent a recursive tree. Arrays make recursion possible without giving up independent copies.'} current="docs">
+<BaseLayout url="/docs/values-all-the-way-down/" title={"Values all the way down: Heroes documentation"} description={"Build recursive trees with arrays and keep copies independent. Learn why a type cannot directly contain another value of itself."} current="docs">
 <Fragment set:html={page(content, 'site/src/html/docs/values-all-the-way-down.html')} />
 </BaseLayout>

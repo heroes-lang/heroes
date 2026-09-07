@@ -84,57 +84,30 @@
     9798195873790 for the Italian.
   </p>
   <p>
-    The book came first. A language named after a Bowie album, with song titles for section headings, is the same work seen from the other side. The quotation marks are the album&rsquo;s own, put there in 1977 to undercut the word. It also
-    explains a seat on the review panel. Somebody who has just spent twenty-one
-    chapters on FORTRAN, ALGOL, Lisp and Simula is badly placed to believe a
-    design question is new, so the panel keeps a historian: the one seat with no
-    veto and the strictest rule on evidence.
-    <a href="/project/#panel">How the panel works &rarr;</a>
+    The book came before the language. The name Heroes and the song titles in section headings continue that work on programming history. The quotation marks come from Bowie&rsquo;s 1977 album. This interest in history also explains the historian&rsquo;s seat on the panel: studying FORTRAN, ALGOL, Lisp and Simula shows how often a design choice has precedents. The historian has no veto and must support each precedent with verifiable sources. <a href="/project/#panel">How the panel works &rarr;</a>
   </p>
 
   <h2>Who wrote this</h2>
   <p>
-    The compiler is written by an AI assistant, working under a contract kept in
-    the repository and read at the start of every session. That contract is not a
-    prompt: it is a set of rules with dates and reasons, most of them written the
-    day something went wrong, and it is the reason this page can be specific
-    about who did what.
+    The compiler is written by an AI assistant that follows rules stored in the repository, the project&rsquo;s archive. The assistant reads them at the start of each session. Many were written to prevent previous mistakes from recurring and record the reason for the rule.
   </p>
   <p>
-    The author sets the direction, ratifies every design decision, and reads the
-    record. Some outcomes came from a question rather than an instruction. When
-    the cost of a safety check was being haggled over as one number, the author
-    asked a different question: is the cost paid when the program is compiled, or
-    while it runs? Answering it meant asking where a foreign thread <i>enters</i>
-    rather than where the damage shows, and that moved the check from three wrong
-    places to the right one.
+    The author sets the direction, approves each design decision and reads the reports. Some results came from his questions. During a discussion about a safety check, he asked whether its cost occurred during compilation or execution. Answering led to checking the point where an external thread, an operation started by a library, enters Heroes code. The check was moved to the correct location.
   </p>
   <p>
-    The credit runs the other way too. A design sitting was ordered by the author over
-    the assistant&rsquo;s twice-stated advice to leave the question alone. Five judges
-    refused it, on three vetoes and none of them about cost, and the mechanism
-    the author had asked for turned out to exist already. The author ratified the
-    refusal in one line.
+    The author also requested a review against the assistant&rsquo;s advice. The panel rejected the proposal and found that the requested mechanism already existed. The author approved the rejection.
   </p>
   <p>
-    The rule behind that is short: name the author where a question, a correction
-    or a refusal produced the finding, name the panel seat where a seat found it,
-    and name nobody where the work was ordinary. Crediting the author for
-    something the assistant found would be the same falsehood wearing the
-    flattering sign, and nobody would check that one.
-    <a href="/log/">The build log &rarr;</a>
+    Reports credit whoever produced a result: the author, the assistant or a panel member. Routine work does not need a personal attribution. <a href="/log/">The build log &rarr;</a>
   </p>
 
   <h2 id="thanks">Standing on other people&rsquo;s work</h2>
   <p>
-    Every part of this language builds on somebody else&rsquo;s, usually from decades
-    ago and often described in a paper that also records its cost.
-    <a href="/about/thanks/">Their names, and what each idea was &rarr;</a>
+    Heroes draws on ideas from other languages and research. The credits page names <a href="/about/thanks/">the authors and the contributions used &rarr;</a>
   </p>
 
   <p class="next away">
-    The language is <a href="/spec/">one file</a>, and
-    <a href="/start/">four commands</a> build the compiler that wrote itself.
+    The full specification is in <a href="/spec/">one file</a>. The getting started guide shows the <a href="/start/">four commands</a> to build Heroes and run an example.
   </p>
 
   <footer>

@@ -1,31 +1,19 @@
 
-  <p class="crumb"><a href="/it/">Heroes</a> / <a href="/it/docs/">Docs</a> / capitolo 4</p>
+  <p class="crumb"><a href="/it/">Heroes</a> / <a href="/it/docs/">Guida</a> / capitolo 4</p>
 
   <h1 class="chapter">Il fallimento è un valore</h1>
   <p class="tagline">Non esiste <code>null</code>, e non esistono eccezioni.</p>
 
   <p>
-    La maggior parte dei linguaggi ti dà due modi in cui una cosa può mancare o andare male, e sono entrambi invisibili nel codice che li usa. Un valore potrebbe
-    essere <code>null</code>, e niente sulla riga ti dice se lo è. Una chiamata
-    potrebbe lanciare un&rsquo;eccezione, e niente sulla riga ti dice se lo fa.
-    Producono la stessa classe di bug: <b>il percorso non gestito</b>, l&rsquo;unico
-    tipo di errore che non fa scattare nessun errore di compilazione in nessuno
-    dei linguaggi che ce l&rsquo;hanno.
+    Un&rsquo;operazione può non trovare un valore oppure fallire. In molti linguaggi questi casi usano <code>null</code>, che indica l&rsquo;assenza di un valore, o le eccezioni, che interrompono l&rsquo;esecuzione normale. Se il codice non li gestisce, il problema può emergere solo durante l&rsquo;esecuzione.
   </p>
   <p>
-    È quella la classe che Heroes esiste per eliminare, quindi non ha né
-    l&rsquo;uno né l&rsquo;altro. Al loro posto, una funzione che può fallire lo
-    dice nel proprio tipo, e chi legge, persona o modello, lo vede
-    senza aprire un altro file.
+    Heroes usa un tipo che rappresenta entrambi i risultati: un valore oppure un errore. Non ha <code>null</code> né eccezioni. Dalla dichiarazione di una funzione puoi vedere se può fallire, senza leggerne il corpo.
   </p>
 
   <h3>Un tipo che significa &ldquo;oppure un errore&rdquo;</h3>
   <p>
-    Scrivi <code>i64?</code> e hai detto: questo è un numero intero, oppure un
-    errore che spiega perché non c&rsquo;è. Non esiste una terza possibilità, e non
-    esiste un modo di usare il numero senza affrontare l&rsquo;altro caso. Dentro
-    una funzione così, <code>ok(v)</code> costruisce la risposta buona e
-    <code>fail(code, msg)</code> quella cattiva:
+    <code>i64?</code> indica un numero intero oppure un errore. Prima di usare il numero devi gestire la possibilità di errore. In una funzione con questo tipo di ritorno, <code>ok(v)</code> restituisce il valore e <code>fail(code, msg)</code> restituisce un errore:
   </p>
   <figure class="example" data-src="examples/gallery/03-fallible.hero" data-lines="7-11">
 <pre><code><span class="c"># Parses a decimal digit. Fails on anything else.</span>
@@ -36,19 +24,12 @@
     <figcaption>examples/gallery/03-fallible.hero, righe 7&ndash;11</figcaption>
   </figure>
   <p>
-    L&rsquo;errore porta con sé due cose, ed entrambe sono volute. Il
-    <b>codice</b>, <code>"not_a_digit"</code>, è un nome corto e stabile in
-    snake_case, fatto per essere confrontato da un programma: è la parte che non
-    cambia quando qualcuno migliora il testo. Il <b>messaggio</b> è per chi legge
-    il fallimento. I codici sono il modo in cui scegli che strada prendere a seconda di che cosa
-    è andato storto; i messaggi sono il modo in cui lo spieghi.
+    L&rsquo;errore contiene un <b>codice</b> e un <b>messaggio</b>. Il codice, come <code>"not_a_digit"</code>, è un nome stabile in snake_case, cioè parole minuscole separate da trattini bassi. Il programma lo usa per distinguere gli errori e decidere come gestirli. Il messaggio spiega il problema a chi legge e può essere migliorato senza cambiare il codice.
   </p>
 
-  <h3>Passare un fallimento verso l&rsquo;alto: <code>?</code></h3>
+  <h3>Restituire un errore al chiamante: <code>?</code></h3>
   <p>
-    Il più delle volte una funzione che incontra un fallimento non ha niente di
-    utile da aggiungere: vuole fermarsi e passarlo avanti. <code>?</code> fa
-    proprio questo e resta <i>visibile sulla riga in cui succede</i>:
+    Per restituire un errore alla funzione chiamante senza gestirlo qui, aggiungi <code>?</code> alla chiamata. Il simbolo <i>indica il punto in cui la funzione può terminare</i>:
   </p>
   <figure class="example" data-src="examples/gallery/03-fallible.hero" data-lines="13-22">
 <pre><code><span class="c"># Reads a whole non-negative number. Empty input is an error, not a zero.</span>
@@ -64,25 +45,13 @@
     <figcaption>examples/gallery/03-fallible.hero, righe 13&ndash;22</figcaption>
   </figure>
   <p>
-    Leggi il corpo del ciclo. <code>digit_of(text[i])?</code> significa: chiamala,
-    e se è fallita <b>fermati subito e restituisci quello stesso errore a chi mi
-    ha chiamato</b>. Se è andata bene, continua con il numero che ha prodotto. Un
-    solo carattere di sintassi, esattamente nel punto in cui il flusso si biforca,
-    ed è tutta la differenza rispetto a un&rsquo;eccezione. Anche
-    un&rsquo;eccezione salta fuori dalla funzione, ma lo fa da una riga che sembra
-    non poterlo fare.
+    <code>digit_of(text[i])?</code> chiama <code>digit_of</code>. Se il risultato è un errore, <b>termina subito la funzione corrente e restituisce lo stesso errore al chiamante</b>. Altrimenti usa il numero restituito e continua il ciclo.
   </p>
   <p>
-    In quella funzione si vedono altre tre cose, e ognuna ha un capitolo suo.
+    Nell&rsquo;esempio compaiono anche la modifica di una variabile, gli intervalli e le chiamate con il punto.
   </p>
   <p>
-    <code>total: i64 @ 0</code> dichiara qualcosa che cambierà: la
-    <code>@</code> lo segna, e un nome legato con il semplice <code>=</code> non
-    può mai essere riassegnato. La modifica si scrive allo stesso modo,
-    <code>total @ total * 10 + …</code>, con la <code>@</code> nel punto in cui
-    il valore si sposta. Per la riassegnazione non c&rsquo;è nessun
-    <code>=</code>.
-    <a href="/it/docs/bindings-and-mutation/">Il capitolo dedicato &rarr;</a>
+    <code>total: i64 @ 0</code> dichiara una variabile modificabile. La riga <code>total @ total * 10 + …</code> le assegna un nuovo valore. Il simbolo <code>=</code> serve invece a definire un nome che non può essere riassegnato. <a href="/it/docs/bindings-and-mutation/">Nomi e modifiche &rarr;</a>
   </p>
   <p>
     <code>range(from: 0, to: text.len())</code> conta da <code>from</code> fino a
@@ -97,11 +66,7 @@
     funzione attaccata al tipo.
   </p>
   <p>
-    Non servono <code>try</code>, <code>catch</code>, annidamenti o variabili d&rsquo;errore infilate a mano da una funzione all&rsquo;altra. Il percorso del fallimento
-    costa un carattere e il percorso buono si legge come se fallire fosse
-    impossibile. Eccolo di nuovo in una funzione che fa la media di una lista,
-    dove il primo carattere sbagliato in qualunque punto dell&rsquo;input ferma
-    tutto:
+    Con <code>?</code> puoi restituire l&rsquo;errore senza scrivere blocchi <code>try</code> e <code>catch</code> o ripetere il controllo dopo ogni chiamata. Nell&rsquo;esempio seguente, la funzione calcola la media di una lista e termina al primo carattere non valido:
   </p>
   <figure class="example" data-src="examples/gallery/03-fallible.hero" data-lines="26-34">
 <pre><code><span class="k">function</span> average_of(parts: [<span class="t">str</span>]) -&gt; <span class="t">i64</span>?
@@ -116,11 +81,9 @@
     <figcaption>examples/gallery/03-fallible.hero, righe 26&ndash;34</figcaption>
   </figure>
 
-  <h3>Guardarci dentro: <code>match</code></h3>
+  <h3>Gestire il risultato: <code>match</code></h3>
   <p>
-    Quando una funzione vuole davvero gestire il fallimento invece di passarlo
-    avanti, ci guarda dentro con <code>match</code>: l&rsquo;unico costrutto del
-    linguaggio per smontare un valore.
+    Usa <code>match</code> per gestire direttamente i due risultati possibili e accedere al loro contenuto:
   </p>
   <figure class="example" data-src="examples/gallery/03-fallible.hero" data-lines="36-40">
 <pre><code><span class="c"># Four ways to read a fallible value, in the order you reach for them.</span>
@@ -131,24 +94,12 @@
     <figcaption>examples/gallery/03-fallible.hero, righe 36&ndash;40</figcaption>
   </figure>
   <p>
-    Un ramo nomina il caso con un punto davanti e lega il suo contenuto al nome
-    che segue: <code>.ok v</code> ti dà il valore come <code>v</code>, e
-    <code>_</code> butta via un contenuto che non ti serve. Entrambi i rami sono
-    obbligatori. Un <code>match</code> che dimentica un caso non compila.
-    <b>Qui un ramo catch-all è vietato</b>.
-    Non puoi scrivere il ramo che significa &ldquo;qualunque altra
-    cosa&rdquo;, perché è proprio quel ramo il modo in cui un caso dimenticato
-    diventa in silenzio un caso gestito. Se un giorno il linguaggio acquisisse una
-    terza possibilità, ogni <code>match</code> di ogni programma smetterebbe di
-    compilare finché qualcuno non l&rsquo;avesse guardato. È voluto: un cambiamento
-    nella forma dei dati deve rompere il codice che li legge, ad alta voce, al
-    momento della build.
+    Ogni ramo indica un caso con un punto iniziale e associa un nome al suo contenuto: <code>.ok v</code> rende disponibile il valore come <code>v</code>. Il simbolo <code>_</code> scarta un contenuto che non serve. Devi scrivere entrambi i rami: se ne manca uno, il programma non compila. <b>Non è ammesso un ramo catch-all, cioè un ramo per tutti gli altri casi.</b> Questa regola obbliga a rivedere il codice quando cambia l&rsquo;insieme dei casi possibili.
   </p>
 
   <h3>Quando il fallimento ha già una risposta</h3>
   <p>
-    A volte un fallimento ha una risposta ovvia, e scriverci un
-    <code>match</code> è solo rumore. Esistono due scorciatoie:
+    Se hai già deciso cosa fare in caso di errore, puoi usare una di queste due forme brevi:
   </p>
   <figure class="example" data-src="examples/gallery/03-fallible.hero" data-lines="42-43">
 <pre><code><span class="k">function</span> first_or_zero(parts: [<span class="t">str</span>]) -&gt; <span class="t">i64</span>
@@ -156,12 +107,7 @@
     <figcaption>examples/gallery/03-fallible.hero, righe 42&ndash;43</figcaption>
   </figure>
   <p>
-    <code>.default(0)</code> dice: il valore, oppure questo se è fallito. Il
-    risultato è un <code>i64</code> normale: il fallimento è stato affrontato,
-    quindi il tipo non ne porta più uno. Il suo fratello è <code>.must()</code>,
-    che dice che qui il fallimento non può succedere e <b>ferma il programma</b>
-    se succede. Usalo dove hai già dimostrato che il valore è buono, e nei
-    test:
+    <code>.default(0)</code> restituisce il valore in caso di successo oppure <code>0</code> in caso di errore. Il risultato ha tipo <code>i64</code>. <code>.must()</code> restituisce il valore ma <b>termina il programma</b> se trova un errore. Usalo quando hai già verificato che l&rsquo;operazione riesce, oppure nei test:
   </p>
   <figure class="example" data-src="examples/gallery/03-fallible.hero" data-lines="45-49">
 <pre><code><span class="k">test</span> <span class="s">"a good number and a bad one"</span>
@@ -172,17 +118,12 @@
     <figcaption>examples/gallery/03-fallible.hero, righe 45&ndash;49</figcaption>
   </figure>
   <p>
-    <code>test</code> fa parte del linguaggio, non di una libreria, e un test vive
-    accanto al codice che mette alla prova. <code>heroes test</code> esegue tutti quelli che
-    stanno nel file.
+    Puoi scrivere un <code>test</code> nello stesso file del codice da verificare. Il comando <code>heroes test</code> esegue tutti i test del file.
   </p>
 
   <h3>Tutto insieme, in esecuzione</h3>
   <p>
-    I quattro modi di leggere un valore che può fallire, nell&rsquo;ordine in cui
-    li cerchi (<code>?</code>, <code>match</code>, <code>.default()</code> e
-    <code>.must()</code>), stanno tutti in un file da cinquanta righe. Il suo
-    <code>main</code>:
+    Il file di esempio mostra tutti e quattro i modi di gestire un valore fallibile: <code>?</code>, <code>match</code>, <code>.default()</code> e <code>.must()</code>. Questa è la funzione <code>main</code>:
   </p>
   <figure class="example" data-src="examples/gallery/03-fallible.hero" data-lines="51-54">
 <pre><code><span class="k">function</span> main()
@@ -197,23 +138,12 @@ read 42
 failed: not_a_digit (expected 0-9)
 20</code></pre>
   <p>
-    La riga in mezzo è quella interessante. <code>"4b2"</code> è fallito sul
-    secondo carattere, dentro <code>digit_of</code>, e l&rsquo;errore è risalito
-    attraverso <code>number_of</code> fino a <code>report</code> portandosi il
-    codice e il messaggio con cui è stato creato. La funzione in mezzo non dice
-    assolutamente niente sulla gestione degli errori, a parte quel singolo
-    <code>?</code> sulla riga dove succede.
+    La seconda riga mostra l&rsquo;errore prodotto da <code>digit_of</code> sul carattere <code>b</code> di <code>"4b2"</code>. <code>number_of</code> lo restituisce a <code>report</code> tramite <code>?</code>, mantenendo il codice e il messaggio originali.
   </p>
 
   <h3>Che cosa cambia nel codice</h3>
   <p>
-    La firma di ogni funzione ti dice se può fallire. Ogni punto in cui un
-    fallimento cambia il flusso è segnato su quella riga. Ogni modo di gestirne
-    uno o affronta entrambi i casi oppure dice ad alta voce che sta saltando il
-    controllo. Non c&rsquo;è nessun <code>null</code> da dimenticare e nessuna
-    eccezione da lasciarsi scappare, e il percorso non gestito (l&rsquo;unico bug che
-    nessun compilatore prende, nei linguaggi che lo permettono) non ha più
-    nessun posto in cui nascondersi.
+    Il tipo di ritorno indica se una funzione può fallire. Nelle chiamate, <code>?</code> segnala dove un errore può terminare la funzione corrente. Per ottenere il valore devi gestire l&rsquo;errore con <code>match</code> o <code>.default()</code>, oppure usare esplicitamente <code>.must()</code> e accettare che il programma termini in caso di errore.
   </p>
 
   <p class="next">
