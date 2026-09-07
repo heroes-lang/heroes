@@ -20,14 +20,16 @@
  * § A number on the page is generated, or it is a threshold). The token count is
  * NOT among them: only `heroes measure` can say it, the site build must not
  * depend on the compiler, and the number the reader actually needs is the
- * ceiling, which is fixed and asserted by a suite on every commit.
+ * ceiling, which is asserted by a suite on every commit and read from that
+ * suite here (`specCeiling` in `claims.ts`), since the home says it too.
  */
 
 import { readText, countLines, isFile } from './repo.ts';
 import { t, number, type Lang } from './i18n.ts';
+import { specCeiling } from './claims.ts';
 
 const SPEC = 'spec/heroes-spec.md';
-const CEILING = 4096;
+const CEILING = specCeiling();
 
 export interface SpecPage {
   url: string;
