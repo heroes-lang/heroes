@@ -11,9 +11,22 @@
  * so too.
  *
  * One feed, from the English log, because a feed carries titles rather than
- * prose and the Italian edition's entries are the same milestones. The link in
- * each entry goes to the page in the reader's own edition of nothing: it goes
- * to /log/, which is where the entry lives.
+ * prose and the Italian edition's entries are the same milestones. Every entry
+ * links the anchor of its own postcard, and those ids count from the OLDEST
+ * entry so that a new one at the top does not renumber the rest: an id in a
+ * feed is a promise to a reader's feed reader, and renumbering would resend all
+ * thirty-three.
+ *
+ * **The one date on this site, and it is here on purpose.** `site/CLAUDE.md`
+ * forbids dates on the page, and RFC 4287 requires `updated` on a feed and on
+ * every entry: a feed without them is one a strict reader may refuse and a
+ * lenient one cannot sort. The rule is about the site saying "on this date this
+ * was measured", which is what the author objected to; this is the exchange
+ * format's own synchronisation field, the same job `Last-Modified` does on
+ * every response already. It is the build's time rather than any entry's,
+ * because the entries carry no dates and the order of the list is their
+ * chronology. If the author would rather have neither, the answer is to drop
+ * the feed rather than to ship an invalid one, and that is one line.
  */
 import type { APIRoute } from 'astro';
 import { readText } from '../lib/repo.ts';
@@ -65,6 +78,7 @@ const escape = (s: string) =>
 
 export const GET: APIRoute = () => {
   const all = entries();
+  const updated = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
   const body =
     `<?xml version="1.0" encoding="utf-8"?>\n` +
     `<feed xmlns="http://www.w3.org/2005/Atom">\n` +
@@ -73,13 +87,16 @@ export const GET: APIRoute = () => {
     `  <link href="${ORIGIN}/log/"/>\n` +
     `  <link rel="self" href="${ORIGIN}/log.xml"/>\n` +
     `  <id>${ORIGIN}/log/</id>\n` +
+    `  <updated>${updated}</updated>\n` +
+    `  <author><name>Giuseppe Arici</name></author>\n` +
     all
       .map(
         (e, i) =>
           `  <entry>\n` +
           `    <title>${escape(e.title)}</title>\n` +
-          `    <link href="${ORIGIN}/log/"/>\n` +
+          `    <link href="${ORIGIN}/log/#${all.length - i}"/>\n` +
           `    <id>${ORIGIN}/log/#${all.length - i}</id>\n` +
+          `    <updated>${updated}</updated>\n` +
           `    <summary>${escape(e.summary)}</summary>\n` +
           `  </entry>\n`
       )
