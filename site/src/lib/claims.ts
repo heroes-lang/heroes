@@ -133,6 +133,36 @@ function zenLines(): number {
   return numbered.length;
 }
 
+/**
+ * What the continuous integration actually does, read from the step and not from
+ * the trigger. A sentence on `/project/` said the fixpoint ran on three
+ * platforms at a tag; the matrix does widen at a tag, and the step that runs
+ * `cmp seed/heroes.c` carries `if: runner.os == 'Linux'` whatever started the
+ * run. The repair before this one read lines 40 to 52 and 186 to 200 of the
+ * workflow and never line 650, which is the fifth time a sentence about the
+ * record was written from part of the record. So the step is read here.
+ */
+const CI_FILE = '.github/workflows/ci.yml';
+
+function ci(): { fixpointLinuxOnly: boolean; tagPlatforms: number } {
+  const text = readText(CI_FILE);
+  const lines = text.split('\n');
+  const at = lines.findIndex((l) => l.includes('cmp seed/heroes.c'));
+  if (at < 0) throw new Error(`${CI_FILE}: no step runs \`cmp seed/heroes.c\`, and the fixpoint proof on /project/ says one does.`);
+  // Walk up from the `cmp` line to the step's `- name:` and collect its `if:`.
+  let head = at;
+  while (head > 0 && !/^\s*- name:/.test(lines[head])) head -= 1;
+  const step = lines.slice(head, at + 1).join('\n');
+  const gate = /^\s*if:\s*(.+)$/m.exec(step);
+  const fixpointLinuxOnly = gate !== null && /runner\.os == 'Linux'/.test(gate[1]);
+  // The tag branch of the matrix is the one literal that names every platform.
+  const tagArm = /github\.ref_type == 'tag'[^\n]*\n\s*&&\s*'(\[[^\n]*\])'/.exec(text);
+  if (tagArm === null) throw new Error(`${CI_FILE}: no tag-branch matrix literal to count the platforms from.`);
+  const tagPlatforms = (tagArm[1].match(/"name":/g) ?? []).length;
+  if (tagPlatforms < 2) throw new Error(`${CI_FILE}: the tag matrix names ${tagPlatforms} platform(s), and the site says three.`);
+  return { fixpointLinuxOnly, tagPlatforms };
+}
+
 /** The chapters of the documentation: every fragment under docs/ but the index. */
 function chapters(): number {
   return filesIn(CHAPTERS_DIR).filter((f) => f.endsWith('.html') && !f.endsWith('/index.html')).length;
@@ -224,6 +254,12 @@ const CLAIMS: Claim[] = [
   { page: 'site/src/html/it/project.html', what: 'the lines of the Zen',
     fact: zenLines, shape: (n) => new RegExp(`<h2 id="zen">${n} righe</h2>`, 'i') },
 
+  // What the continuous integration does, from the workflow's own steps.
+  { page: 'site/src/html/project.html', what: 'the platforms a milestone tag runs on',
+    fact: () => ci().tagPlatforms, shape: (n) => new RegExp(`on ${n} platforms`, 'i') },
+  { page: 'site/src/html/it/project.html', what: 'the platforms a milestone tag runs on',
+    fact: () => ci().tagPlatforms, shape: (n) => new RegExp(`su ${n} piattaforme`, 'i') },
+
   // The chapters of the documentation.
   { page: 'site/src/html/docs/index.html', what: 'the number of chapters',
     fact: chapters, shape: (n) => new RegExp(`These ${n} chapters`, 'i') },
@@ -298,6 +334,8 @@ export function checkClaims(html: string, pagePath: string): void {
     }
   }
   problems.push(...checkChapterDiagnostics(html, pagePath));
+  problems.push(...checkNoWrongTwin(html, pagePath));
+  problems.push(...checkFixpointLeg(html, pagePath));
   if (NAME_EVERY_VERB.includes(pagePath)) {
     markVisited(pagePath);
     for (const verb of verbs()) {
@@ -314,6 +352,58 @@ export function checkClaims(html: string, pagePath: string): void {
         `  what the tree says, or if the sentence was deliberately removed, remove its row from the table.\n`
     );
   }
+}
+
+/**
+ * Presence is not absence. Every row above asserts the right sentence exists;
+ * none said a wrong twin does not, so "five judges" in one paragraph and "four
+ * judges" in the next would have passed. For the nouns whose count is one fact
+ * on the whole page, every number word written before the noun must be that
+ * fact's word. Only nouns that mean one thing on the page: `judges` is always
+ * the panel, where `lines` is the Zen in one paragraph and Rust in another.
+ */
+const UNAMBIGUOUS: { page: RegExp; noun: RegExp; fact: () => number }[] = [
+  { page: /^site\/src\/html\/(index|project|about\/thanks)\.html$/, noun: /(judges|seats)/, fact: () => judges().seats },
+  { page: /^site\/src\/html\/it\/(index|project|about\/thanks)\.html$/, noun: /(giudici|seggi)/, fact: () => judges().seats },
+  { page: /^site\/src\/html\/start\.html$/, noun: /verbs/, fact: () => verbs().length },
+  { page: /^site\/src\/html\/it\/start\.html$/, noun: /verbi/, fact: () => verbs().length },
+  { page: /^site\/src\/html\/docs\/index\.html$/, noun: /chapters/, fact: chapters },
+  { page: /^site\/src\/html\/it\/docs\/index\.html$/, noun: /capitoli/, fact: chapters },
+];
+
+function checkNoWrongTwin(html: string, pagePath: string): string[] {
+  const out: string[] = [];
+  const lang = langOf(pagePath);
+  const flat = html.replace(/\s+/g, ' ');
+  for (const rule of UNAMBIGUOUS) {
+    if (!rule.page.test(pagePath)) continue;
+    const right = word(rule.fact(), lang);
+    const re = new RegExp(`\\b([a-z]+)\\s+${rule.noun.source}\\b`, 'gi');
+    for (const m of flat.matchAll(re)) {
+      const w = m[1].toLowerCase();
+      if (WORDS[lang].includes(w) && w !== right) {
+        out.push(`${pagePath}: says "${m[0]}" where the tree says ${right}. A wrong count beside the right one is still a wrong count.`);
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * The fixpoint proof's footer says which leg runs it. That sentence must be
+ * present exactly when the workflow gates the `cmp` step to Linux, and absent
+ * when it does not, because either drift is the page contradicting the step.
+ */
+function checkFixpointLeg(html: string, pagePath: string): string[] {
+  const en = pagePath === 'site/src/html/project.html';
+  const it = pagePath === 'site/src/html/it/project.html';
+  if (!en && !it) return [];
+  const flat = html.replace(/\s+/g, ' ');
+  const says = en ? /run on the Linux leg alone/.test(flat) : /girano solo sul ramo Linux/.test(flat);
+  const gated = ci().fixpointLinuxOnly;
+  if (gated && !says) return [`${pagePath}: ${CI_FILE} gates the fixpoint step to Linux and the page no longer says so.`];
+  if (!gated && says) return [`${pagePath}: the page says the fixpoint runs on the Linux leg alone and ${CI_FILE} no longer gates it.`];
+  return [];
 }
 
 /**
@@ -342,5 +432,6 @@ export function assertEveryClaimVisited(): number {
 /** What the table holds, for the build's own report and for a test. */
 export function claimsSummary(pages: number): string {
   const j = judges();
-  return `${j.seats} judges, ${j.vetoes} vetoes, ${topLevelWords().size} top-level words, ${verbs().length} verbs, ${zenLines()} Zen lines, ${chapters()} chapters; ${CLAIMS.length} claims and ${NAME_EVERY_VERB.length} verb lists checked over ${pages} pages`;
+  const c = ci();
+  return `${j.seats} judges, ${j.vetoes} vetoes, ${topLevelWords().size} top-level words, ${verbs().length} verbs, ${zenLines()} Zen lines, ${chapters()} chapters, ${c.tagPlatforms} tag platforms, fixpoint ${c.fixpointLinuxOnly ? 'Linux-only' : 'every leg'}; ${CLAIMS.length} claims and ${NAME_EVERY_VERB.length} verb lists checked over ${pages} pages`;
 }

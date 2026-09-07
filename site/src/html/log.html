@@ -12,20 +12,20 @@
     <li id="39">
       <span class="when">M-declared-freer: the count nobody had run</span>
       <b>A C library hands your program a string it allocated. An <code>extern</code> declaration can now name the function that frees it, and the compiler calls that for you.</b>
-      A comment in one example had claimed eighteen such functions since the day it was written, with the command to check it on the line below, and the true answer was seventeen.
+      The example that binds SQLite had said eighteen bound functions in a comment since the day it was written, with the command to check it on the line below; the true answer was seventeen, until the freeing function this milestone added made it eighteen by accident.
       <a class="more" href="/examples/ledger/">The program that found it</a>
     </li>
     <li id="38">
       <span class="when">M-thread-stacks: the guard that guarded the wrong threads</span>
-      <b>A thread that runs out of room used to die in silence. The ones this language starts now say so; a judge proved the ones a C library starts still do not.</b>
-      That judge deleted one line from the generated C, rebuilt, and got the same silent death: a foreign thread never reaches the code that would have spoken.
+      <b>A thread that runs out of room used to die in silence. The ones this language starts now say so; the ones a C library starts never reach that guard, and a judge proved it.</b>
+      That judge deleted one line from the generated C, rebuilt, and got the old silent death; with the line in place, a Heroes function on such a thread is stopped at its first instruction by a different refusal, which names it.
       <a class="more" href="/examples/threads/">Threads, and what may cross</a>
     </li>
     <li id="37">
       <span class="when">M-isolated-threads: one line, open the whole time</span>
       <b>Each thread gets its own memory, so ordinary code in one thread can no longer corrupt another&rsquo;s. The danger stops existing instead of being locked around.</b>
       One function decides what a C header may say, and it never looked inside a callback, so a list could cross into C and back with the compiler reporting nothing.
-      <a class="more" href="/examples/threads/">Ten programs that use them</a>
+      <a class="more" href="/examples/#threads">Ten programs that use them</a>
     </li>
     <li id="36">
       <span class="when">M-c-callbacks: eight examples said one thing, the real header said another</span>
