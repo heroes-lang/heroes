@@ -10,7 +10,7 @@
 # arithmetic inside the loop would not compile, and that is the language
 # refusing the shape rather than the author choosing one.
 #
-# THE ORACLE, fetched 2026-09-03 from the CRC catalogue and quoted whole:
+# THE ORACLE, fetched from the CRC catalogue and quoted whole:
 #
 #   CRC-32/ISO-HDLC
 #   width=32  poly=0x04c11db7  init=0xffffffff  refin=true  refout=true
@@ -95,11 +95,11 @@ function reversed_bits(value: i64, width: i64) -> i64
     return out
 
 test "the catalogue's check value, which this program did not invent"
-    # CRC-32/ISO-HDLC, check=0xcbf43926 over "123456789". Fetched 2026-09-03.
+    # CRC-32/ISO-HDLC, check=0xcbf43926 over "123456789". Fetched.
     assert crc32("123456789") == 0xcbf43926
 
 test "three more values from an implementation this one shares no line with"
-    # Python 3 `zlib.crc32`, run 2026-09-03.
+    # Python 3 `zlib.crc32`, run.
     assert crc32("") == 0x00000000
     assert crc32("a") == 0xe8b7be43
     assert crc32("foobar") == 0x9ef61f95
@@ -132,7 +132,7 @@ test "one changed byte changes the checksum, and so does one moved byte"
 test "the loop walks bytes and not characters"
     # A `str` is measured in bytes (spec § Types), so `é` is two of them and
     # the checksum covers both. The value is `zlib.crc32` on those two bytes,
-    # 195 and 169, run 2026-09-03 — and it is here because a loop over
+    # 195 and 169, run — and it is here because a loop over
     # `text.chars()` would give a different answer while looking just as
     # reasonable.
     assert "é".len() == 2

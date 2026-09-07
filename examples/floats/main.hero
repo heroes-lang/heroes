@@ -1,7 +1,7 @@
 # The two float values that are not numbers, and the one comparison that
 # still works on them — the program for `inf` and `nan`.
 #
-# Corpus and regression material (CLAUDE.md §9). Measured 2026-09-02 over
+# Corpus and regression material (CLAUDE.md §9). Measured over
 # every `.hero` in the repository: `nan` appears 4 times in `selfhost/` and
 # **zero** times in `examples/`; `inf` appears **zero times anywhere**. They
 # are in the spec twice — `spec:78` for equality and `spec:185` for printing —

@@ -12,7 +12,7 @@
 # So the interesting line in this file is not the counting. It is the walk.
 #
 # It also puts `chars()` to work on the job it exists for. Measured
-# 2026-09-02: `chars()` appeared twice in all of `examples/` and 102 times in
+# Measured: `chars()` appeared twice in all of `examples/` and 102 times in
 # `selfhost/`, which is the ratio you get when the corpus has no text
 # processing in it.
 

@@ -55,7 +55,7 @@ function band(index: i64) -> i64
 
     return total
 
-# A worker that RECURSES, and it is here because until 2026-09-06 it could not.
+# A worker that RECURSES, and it is here because for a long time it could not.
 #
 # A thread does not only need to run: it needs a stack to run in, and the one the
 # operating system hands a created thread is not the one your program started on.
@@ -66,7 +66,7 @@ function band(index: i64) -> i64
 #
 # WHY 5,000 AND NOT MORE. The corpus runs every program at `-O0`, at `-O2` and
 # under `--sanitize`, and the sanitiser pads every frame, so the tightest
-# configuration is the one that sets the number. Measured 2026-09-06, all three
+# configuration is the one that sets the number. Measured, all three
 # on this Mac: BEFORE the floor a worker under `--sanitize` aborted at 5,000 and
 # managed 3,000; AFTER it reaches 40,000. So 5,000 is the smallest depth that
 # WITNESSES the repair and sits eight times under the tightest ceiling it must

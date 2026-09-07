@@ -10,13 +10,13 @@
 # and `-lraylib` here, `-lGL -lX11 -lm -ldl` on Linux, frameworks where
 # frameworks are the answer — from one line with no platform name in it.
 #
-# The `record`s are M-struct-passing's, and until 2026-08-15 this file carried a
+# The `record`s are M-struct-passing's, and this file used to carry a
 # paragraph explaining what it could NOT do: *"383 of raylib's 600 entry points
 # pass or return a struct by value. `ClearBackground(Color)` does not compile,
 # because Heroes has seven boundary types and none of them is a struct."* That
 # paragraph is why the milestone existed, and it is deleted rather than softened.
 #
-# **The number, measured rather than claimed** (2026-08-15, re-taken four times in
+# **The number, measured rather than claimed** (re-taken four times in
 # one day because the first three were wrong). raylib declares **600** entry
 # points — `grep -c "^RLAPI"` and clang's own `FunctionDecl` count agree — and
 # **349** of them pass or return a struct by value. **All 349 bind, with every
@@ -52,7 +52,7 @@
 # binding it exercises must need no screen. `ColorToInt`, `ColorAlpha`,
 # `GetSplinePointLinear` and `CheckCollisionPointRec` are all pure computation
 # over structs. The window *was* opened by hand from this same `package` line on
-# 2026-08-14, and that is recorded in `docs/panel/050` rather than asserted by a
+# by hand, and that is recorded in `docs/panel/050` rather than asserted by a
 # test no runner can run.
 
 extern "raylib.h" package "raylib"

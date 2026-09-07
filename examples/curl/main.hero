@@ -1,6 +1,6 @@
 ## The ladder's fourth rung: libcurl
 #
-# Author instruction, 2026-08-12, and it earned its place in the first minute.
+# Author instruction, and it earned its place in the first minute.
 # SQLite is pure C with plain `i64` returns; libcurl is where the boundary meets
 # the two things §4.19 had only argued about.
 #
@@ -57,7 +57,7 @@ function main()
     # while the enumeration TYPE may be unsigned, so `CURLOPT_URL` is `i32`
     # and the `CURLoption` parameter is `u32` — two different declarations of
     # one enum, and both are what the header says. This line said `option:
-    # i32` and passed the constant straight through until 2026-08-25, when
+    # i32` and passed the constant straight through until the day when
     # panel 092's repair to the probe made clang able to see it at last.
     rc = curl_easy_setopt(handle, CURLOPT_URL.to_u32().must(), "https://example.invalid/".cstr())
 

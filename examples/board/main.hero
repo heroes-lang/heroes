@@ -1,7 +1,7 @@
 # A grid of cells that grow and die, and a scoreboard keyed twice — the
 # program for the four forms the corpus never wrote.
 #
-# Corpus and regression material (CLAUDE.md §9). Measured 2026-09-02 over
+# Corpus and regression material (CLAUDE.md §9). Measured over
 # every `.hero` in `examples/`, and every one of these is a ZERO against a
 # non-zero in `selfhost/`:
 #

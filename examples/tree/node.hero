@@ -1,6 +1,6 @@
 # A small expression tree, in the shape a compiler's own syntax tree has.
 #
-# **Why this program exists** (2026-08-16): the corpus had nine programs and not
+# **Why this program exists**: the corpus had nine programs and not
 # one of them was shaped like a *tree with a vocabulary* — nodes in an arena,
 # linked by index, over a variant that declares every shape the little language
 # has while any one program builds only some of them. That shape hid a compiler
@@ -121,7 +121,7 @@ test "nodes compare structurally, cases the program never builds included"
     # **This is the assertion that would have caught the defect.** Comparing
     # two `Node` values makes the compiler emit `==` for EVERY case of the
     # variant, including `.annotated`, whose payload is a `Note?` that nothing
-    # here constructs. Before 2026-08-16 that emitted C naming a descriptor
+    # here constructs. That used to emit C naming a descriptor
     # nobody defined, and the build died at exit 2.
     a: Node @ .number(value: 1)
     b: Node @ .number(value: 1)

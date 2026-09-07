@@ -3,7 +3,7 @@
 #     heroes run examples/sdl/main.hero
 #
 # **This program is the acceptance test for panel 055's allow-list.** Until
-# 2026-08-14 SDL could not be bound at all, and the shape of the failure is worth
+# panel 055 SDL could not be bound at all, and the shape of the failure is worth
 # keeping: it was unreachable through *both* clauses, and each diagnostic sent the
 # author to the other one.
 #

@@ -10,7 +10,7 @@
 # here — the simulation cannot take a step without it, and §1.11 says
 # everything beyond this language comes from C.
 #
-# THE ORACLE, fetched 2026-09-03 and quoted with its source. The benchmarks
+# THE ORACLE, fetched and quoted with its source. The benchmarks
 # game publishes the output of n-body at N = 1000:
 #
 #     -0.169075164
@@ -315,7 +315,7 @@ function padded(rest: i64) -> str
     return digits
 
 test "the two published energies, which this program did not invent"
-    # benchmarks game, nbody-output.txt, fetched 2026-09-03:
+    # benchmarks game, nbody-output.txt, fetched:
     #     -0.169075164
     #     -0.169087605
     start = offset_momentum(system())

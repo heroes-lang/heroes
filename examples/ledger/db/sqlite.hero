@@ -55,7 +55,7 @@ extern "sqlite3.h" link "sqlite3"
     # `error[owned_freer_called]`, because the compiler is already making it.
     #
     # **THE HISTORY IS KEPT BECAUSE IT IS THE ARGUMENT.** This was an `@error:
-    # ptr` until 2026-09-04: the program asked for the copy, never freed it and
+    # ptr` until it was repaired: the program asked for the copy, never freed it and
     # never even read it, so every refused statement leaked 40 bytes — found by
     # the Linux leg of CI under `--sanitize`, because LeakSanitizer does not
     # exist on Darwin arm64 (CLAUDE.md §7). The repair that day was to stop
@@ -89,7 +89,7 @@ extern "sqlite3.h" link "sqlite3"
 # against the thing it produced. `grep -c '^    function' db/sqlite.hero`
 # answers it without trusting this sentence.
 #
-# **And it did not, until 2026-09-07.** This line has said *eighteen* since
+# **And it did not, until somebody ran it.** This line has said *eighteen* since
 # the file was written and the answer was **17**; `sqlite3_free` arriving with
 # the `owned` mark is what made the sentence true, by accident, on the day
 # somebody finally ran the command it names. That is CLAUDE.md §1 in one file:
@@ -215,7 +215,7 @@ function closed(db: Db) -> i64
 
 # One statement run for its effect, with SQLite's own message on failure.
 #
-# **THIS FUNCTION LEAKED 40 BYTES PER REFUSED STATEMENT UNTIL 2026-09-04, and
+# **THIS FUNCTION LEAKED 40 BYTES PER REFUSED STATEMENT, and
 # only one of the three platforms could see it.** It passed `@error` to
 # `sqlite3_exec`, which allocates a copy of the message for the caller to free;
 # nothing freed it, and nothing read it either. What found it is the Linux leg

@@ -3,7 +3,7 @@
 #
 # Part of `examples/interpreter/` — the root `main.hero` carries the program's
 # argument. **This module exists to be used from elsewhere**, and that is its
-# point rather than a side effect: measured on 2026-09-03, generics were
+# point rather than a side effect: measured, generics were
 # declared in three programs in `examples/` (`calculator` 4, `deck` 5,
 # `gallery` 3) and **instantiated across a `use` by none of them**. A generic
 # that only its own file calls has never been asked the question

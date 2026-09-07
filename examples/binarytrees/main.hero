@@ -2,7 +2,7 @@
 # published output that says what each of them held.
 #
 # Corpus material (CLAUDE.md §9). It closes no measured form gap. What it adds
-# is two things the corpus was measured short of on 2026-09-03: an answer
+# is two things the corpus was measured short of: an answer
 # somebody else wrote down, and a recursive `variant` allocated at volume.
 # `examples/tree/` declares a tree and builds eight nodes; `examples/json/`
 # builds one the size of its input, and its input is a sample. Nothing here was
@@ -10,7 +10,7 @@
 # shape that finds a leak, a double free, and a refcount that is one out — on a
 # corpus where every program also runs under `--sanitize`.
 #
-# THE ORACLE, fetched 2026-09-03 and quoted with its source: the benchmarks
+# THE ORACLE, fetched and quoted with its source: the benchmarks
 # game's published output for binary-trees at N = 10, which is exactly what
 # `main` prints, tab characters included.
 # https://benchmarksgame-team.pages.debian.net/benchmarksgame/download/binarytrees-output.txt
@@ -36,7 +36,7 @@
 #         left: Node       # would have to be bigger than itself
 #         right: Node
 #
-# measured 2026-09-03, and the compiler says the whole of it:
+# measured, and the compiler says the whole of it:
 #
 #     error[no_size]: `record Node` contains itself, so it has no size
 #     note: every value is an independent copy, so `Node` holding one more
@@ -134,7 +134,7 @@ function main()
     print("long lived tree of depth ", DEPTH, "\t check: ", checked(long_lived))
 
 test "the published check values, which this program did not invent"
-    # binarytrees-output.txt, N = 10, fetched 2026-09-03. Every number on the
+    # binarytrees-output.txt, N = 10, fetched. Every number on the
     # right of a `check:` in that file, in the order it appears there.
     assert checked(grown(11)) == 4095
     assert 1024 * checked(grown(4)) == 31744
