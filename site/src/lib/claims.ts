@@ -238,6 +238,31 @@ const CLAIMS: Claim[] = [
 const NAME_EVERY_VERB = ['site/src/html/start.html', 'site/src/html/it/start.html'];
 
 /**
+ * A chapter's footer says how many diagnostics the page showed: "The two
+ * diagnostics are that file with one label removed ..." The number is a claim
+ * about the page itself, and it drifts the same way the others do, when a
+ * fourth transcript is added above a footer that still says three. Both are on
+ * the same page, so the check needs no tree fact: count the `$ heroes check` and
+ * `$ heroes build` transcripts and compare. Measured over all 26 chapters before
+ * this was written: every count matched, which is the moment to pin it.
+ */
+function checkChapterDiagnostics(html: string, pagePath: string): string[] {
+  if (!/\/docs\/[^/]+\.html$/.test(pagePath) || pagePath.endsWith('/index.html')) return [];
+  const flat = html.replace(/\s+/g, ' ');
+  const said = /The (\w+) diagnostics? (?:are|is) |Le (\w+) diagnostiche sono |(La) diagnostica /.exec(flat);
+  if (said === null) return [];
+  const w = (said[1] ?? said[2] ?? said[3]).toLowerCase();
+  const lang = langOf(pagePath);
+  const n = w === 'la' ? 1 : WORDS[lang].indexOf(w);
+  if (n < 0) return [`${pagePath}: the footer counts diagnostics with a word this table cannot read: "${w}".`];
+  const shown = (flat.match(/<pre><code>\$ heroes (?:check|build) /g) ?? []).length;
+  if (shown !== n) {
+    return [`${pagePath}: the footer says ${w} diagnostic(s) and the page shows ${shown} \`heroes check\`/\`heroes build\` transcript(s).`];
+  }
+  return [];
+}
+
+/**
  * The pages whose claims have been checked in this build, for the end-of-build
  * audit. A FILE rather than a Set, and the reason is a module boundary: the
  * pages run this code from Astro's prerender bundle, and the build-done hook in
@@ -272,6 +297,7 @@ export function checkClaims(html: string, pagePath: string): void {
       );
     }
   }
+  problems.push(...checkChapterDiagnostics(html, pagePath));
   if (NAME_EVERY_VERB.includes(pagePath)) {
     markVisited(pagePath);
     for (const verb of verbs()) {
