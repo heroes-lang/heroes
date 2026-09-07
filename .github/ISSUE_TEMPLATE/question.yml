@@ -1,0 +1,32 @@
+name: A question about why
+description: Why the language is the way it is, why something is refused, or something the written record does not answer.
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        If the answer is not already written down, the question has found a gap
+        in the record, and that is worth knowing. Four places hold the answers,
+        and saying which you looked in makes the reply better rather than
+        shorter:
+
+        - `spec/heroes-spec.md` is the whole language, under five pages;
+        - `design.md` is the reasoning, and its Part 6 lists what is refused on
+          purpose, each row naming the condition that would make the refusal
+          wrong;
+        - `docs/panel/` holds the design sessions, with the vetoes and what
+          lifted them;
+        - `DESIGN-LOG.md` is every decision, dated, one line.
+  - type: textarea
+    id: question
+    attributes:
+      label: The question
+    validations:
+      required: true
+  - type: textarea
+    id: looked
+    attributes:
+      label: Where you looked
+      description: Optional, and useful. If you found something that contradicts itself, that is a defect in the record and worth saying here.
+    validations:
+      required: false

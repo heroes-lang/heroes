@@ -15,8 +15,13 @@ name: Deploy site
 # `main`, most of which touch only the compiler. Use one path or the other and
 # never both: the native integration stays disabled.
 #
-# What it does spend is Actions minutes, against 2,000 a month on the free tier
-# for a private repository, and this job is under a minute.
+# What it does spend is Actions minutes, and this job is under a minute. **The
+# allowance it was measured against was 2,000 a month, the free tier for a
+# PRIVATE repository** — true until 2026-09-08 and left here as the figure of
+# its day, because the repository stopped being private and standard runners in
+# a public one are documented as free. Whether that covers every leg is the open
+# question `ci.yml`'s header states; it does not change this job either way,
+# which runs on Linux and takes seconds.
 #
 # Triggered when the site or what it shows changes, on demand from the Actions
 # tab, and from
