@@ -39,6 +39,21 @@ milestone, `DECIDE.md` if it names a default the compiler is running on,
 bullet or a `## ` section**, which is a notation no count in this project can
 see.
 
+**The shape of a filed item, since 2026-09-07:** one line of three fields,
+`- [ ] **<first field>** | <what, in one line> | <where to look>`, then an
+optional body indented four spaces opening with `**Origin:**` and its date, and
+the whole region fenced by two lines of asterisks (`docs/work/DECIDE.md` carries
+the rule and `/decide` § 6 the reasoning). The first field is what the
+instrument reads: a milestone in `SCHEDULED.md`, `panel NNN` in `DECIDE.md`, the
+number in `DEFECTS.md`, the origin in `docs/learn/LEARN.md`. **When an item is
+added, the `**OPEN: N**` line under the banner moves with it** — `records/lists`
+compares that number to the items it counts, so the count cannot drift the way
+one in a second document does. **A line that will carry a path into a body needs its
+date on that same physical line** — `records/citations` reads one line at a
+time, and re-wrapping a paragraph moved five dates off their paths the day this
+shape landed, which the check caught before the commit. `records/lists` is what
+fails when any of it is not done.
+
 ## 2. Implement
 - If the step touches a panel path (CLAUDE.md § Panel), run `/panel` first —
   asynchronous: adopt the conservative default, queue the ratification.

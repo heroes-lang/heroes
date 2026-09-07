@@ -56,11 +56,35 @@ answer.** No retrieval, no walkthrough, no drill, no glossary. If the author ask
    that keeps its own dead is not a list of what is owed.
 
 6. **One notation, and the file is only items.** `- [ ]` in the live lists,
-   `- [x]` in the record. No `## ` sections, no prose paragraphs, no
+   `- [x]` in the record. No `## ` sections, no free prose paragraphs, no
    `~~strikethrough~~`. Nine live FFI findings sat under two panel headings in
    `DECIDE.md` as bare bullets no count could see, and when they were finally
-   read **five were already closed** and two were measurably false. If an item
-   will not fit the one-line format, it is two items.
+   read **five were already closed** and two were measurably false.
+
+   **The shape, since 2026-09-07 and by author instruction — the same in all
+   three live lists.** One line per item, three fields:
+   `- [ ] **<origin>** | <the question, in one line> | <where to look>`, and
+   under it an optional body indented four spaces, opening with `**Origin:**`
+   and its date. The items live between two lines of asterisks so that a glance
+   says whether anything is owed. **An indented body is not the prose this rule
+   forbids** — every count in this project reads the `- [ ] ` line, and a body
+   under one is invisible to none of them; what is forbidden is prose at column
+   zero, which is how `DEFECTS.md` came to carry five paragraphs about defects
+   already in the record. Nothing lives outside the two banners.
+
+   **The first field is what the instrument reads, which is why it differs by
+   file**: the sitting in `DECIDE.md` (`panel NNN`, padded — `records/lists`'
+   neighbour `queued` scans the item LINE for it), the milestone in
+   `SCHEDULED.md`, the defect number in `DEFECTS.md`. Put a sitting's number in
+   a body and every pending panel reports as unqueued, silently.
+
+   `tests/harness/suite_records.hero`'s **`records/lists`** is the executor:
+   no `- [x]` in a work list, no `- [ ]` in the record, nothing outside the
+   banners, and the count in the banner equal to the items counted. It exists
+   because this rule was stated in four documents and performed by none.
+   `docs/learn/LEARN.md` takes the same shape with one rule fewer — a ticked
+   question stays in it, because that list is also its own record — so the check
+   reads it with `ticked_allowed` and its banner counts the open questions.
 
 Anything the author defers stays open **with its blocker named**, so the next
 session ranks it without re-deriving why.

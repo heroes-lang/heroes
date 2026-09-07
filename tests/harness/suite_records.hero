@@ -574,6 +574,7 @@ function run_all(scratch: str) -> report.Report?
     verdicts(@r, present: walked)
     where_we_are(@r)
     homed(@r)
+    lists(@r)
     return ok(r)
 
 # Whether this path is one of the dated records — the pruning `find` used to do
@@ -1568,6 +1569,39 @@ constant DECISIONS: str
 constant SCHEDULED: str
     "docs/work/SCHEDULED.md"
 
+# The list of compiler defects that are still open. No instrument opened this
+# file at all until 2026-09-07, which is how it came to carry 2753 bytes of
+# prose about five defects that had already moved to the record.
+constant DEFECTS: str
+    "docs/work/DEFECTS.md"
+
+# The line that fences the item region of all three live lists, at the top and
+# again at the bottom. It is a CONSTANT for the reason `VERDICT_HEADING` is one:
+# the files, the check and the message that explains the check must not be able
+# to disagree about it.
+constant BANNER: str
+    "*******************************************************************************"
+
+# `**OPEN: 41**`, the line under the opening banner. The number is in the file so
+# that a reader sees at a glance whether anything is owed, and it is READ here so
+# that it cannot be the kind of count that drifts in the copy nobody re-opens.
+constant OPEN_PREFIX: str
+    "**OPEN: "
+
+# The comprehension list. It takes the same shape as the three above and one
+# rule fewer: a ticked question stays in it (`/learn`'s rule — the list is also
+# its own record), so `records/lists` reads it with `ticked_allowed`.
+constant LEARNING: str
+    "docs/learn/LEARN.md"
+
+# The record the three lists empty into. **The same string appears in `RECORD`,
+# `QUOTES_THE_OLD_SPELLING` and `APPENDED` above, and it is not the same fact**:
+# those three answer *which walks skip this file*, and this one answers *which
+# file is the record* — the question `lists` asks it. A record carries one banner
+# and no closing fence, because it is appended to forever.
+constant RECORD_LIST: str
+    "docs/work/DONE.md"
+
 # Does an OPEN item in the queue name this sitting? The number is the key, because
 # a panel file's name changes and its number does not (CLAUDE.md §14: an id is
 # never renamed once it is in the record).
@@ -1893,6 +1927,245 @@ function head_of(row: str) -> str
     if row.len() <= 78
         return row
     return row.slice(from: 0, to: 78) + " …"
+
+# The three live lists hold OPEN items and nothing else — the shape the author
+# asked for on 2026-09-07: the items with their state and their description, no
+# prose around them, and one loud line where they begin, so that a glance says
+# whether anything is owed.
+#
+# **This is the executor of a rule four documents already stated.** CLAUDE.md §3
+# states it, `/decide` states it, `/step` states it, and each file's own preamble
+# states it — and nothing performed it, which is CLAUDE.md §3's own story about
+# `DECIDE.md` reaching 391 KB told for the third time. What it cost here is
+# measured rather than imagined: `DEFECTS.md` had grown 2753 bytes of prose about
+# FIVE already-repaired defects, every one of them already in `docs/work/DONE.md`,
+# and `DECIDE.md` carried three paragraphs about items it no longer held. A list
+# that describes items it does not hold reads exactly like a list that lost one.
+#
+# Four accusations, and each is a shape one of the three files has been in.
+function lists(@r: report.Report)
+    offenders: [str] @ []
+
+    for path in [DECISIONS, DEFECTS, SCHEDULED]
+        text = read_file(path)
+
+        if text.is_err()
+            offenders @ offenders.push("    " + path + ": cannot be read")
+        else
+            for complaint in list_offences(text.must(), ticked_allowed: false)
+                offenders @ offenders.push("    " + path + ": " + complaint)
+
+    questions = read_file(LEARNING)
+
+    if questions.is_err()
+        offenders @ offenders.push("    " + LEARNING + ": cannot be read")
+    else
+        for complaint in list_offences(questions.must(), ticked_allowed: true)
+            offenders @ offenders.push("    " + LEARNING + ": " + complaint)
+    kept = read_file(RECORD_LIST)
+
+    if kept.is_err()
+        offenders @ offenders.push("    " + RECORD_LIST + ": cannot be read")
+    else
+        for complaint in record_offences(kept.must())
+            offenders @ offenders.push("    " + RECORD_LIST + ": " + complaint)
+
+    if offenders.len() > 0
+        report.keep_failure(
+            @r,
+            label: "records/lists",
+            detail: "  a work list is not in the shape its own preamble states — a live list holds open items between two banners and nothing else, and the record holds no open item at all:\n" + offenders.join("\n")
+        )
+    else
+        report.keep_pass(@r)
+
+# The record's half, and it is one rule rather than four. `docs/work/DONE.md` is
+# appended to forever, so it carries the opening banner alone: a closing fence
+# would be a rule the next append breaks, which is the shape this whole check
+# exists to stop being written. What it must never hold is an OPEN item — work
+# filed among the finished reads as done and is not, and it is invisible to every
+# count that asks what is owed, because those count the live lists.
+function record_offences(text: str) -> [str]
+    out: [str] @ []
+    banners: i64 @ 0
+    number: i64 @ 0
+
+    for row in strings.lines(text)
+        number @ number + 1
+
+        if row == BANNER
+            banners @ banners + 1
+        else if strings.starts_with(text: row, prefix: "- [ ]")
+            out @ out.push(
+                "line " + number.to_str() + ": an OPEN item lives in the record: " + head_of(row)
+            )
+
+    if banners != 1
+        out @ out.push(
+            "the record opens with " + banners.to_str() + " banner lines, not 1"
+        )
+    return out
+
+# One list's text against that shape, as a list of complaints. **Pure, so the
+# tests below drive it with the exact lines the defect produced** rather than
+# with a file — which is `homed`/`item_milestone`'s division, for the same
+# reason: a check nobody has watched fail is a check nobody has watched.
+#
+# **`ticked_allowed` is `docs/learn/LEARN.md`, and it is one line rather than a
+# second function.** A ticked question STAYS in that file by `/learn`'s own rule,
+# because the list is also its own record: a question the author has answered is
+# a different object from a decision the compiler acted on. So there the first
+# accusation is switched off and a `- [x]` is skipped rather than counted, which
+# is what keeps the banner's number the OPEN one — what is still unanswered,
+# which is the only number that says anything about that file.
+function list_offences(text: str, ticked_allowed: bool) -> [str]
+    out: [str] @ []
+    banners: i64 @ 0
+    items: i64 @ 0
+    stated: i64 @ 0
+    counted: bool @ false
+    number: i64 @ 0
+
+    for row in strings.lines(text)
+        number @ number + 1
+
+        if row == BANNER
+            banners @ banners + 1
+            continue
+
+        if strings.starts_with(text: row, prefix: "- [x]")
+            if !ticked_allowed
+                out @ out.push(
+                    "line " + number.to_str() + ": a ticked item lives here, and a ticked item belongs to docs/work/DONE.md"
+                )
+            continue
+
+        if banners == 1 && strings.starts_with(text: row, prefix: OPEN_PREFIX)
+            found = count_stated(row)
+
+            if found.is_err()
+                out @ out.push("line " + number.to_str() + ": the count line is not a number: " + head_of(row))
+            else
+                stated @ found.must()
+                counted @ true
+            continue
+
+        if strings.starts_with(text: row, prefix: "- [ ] ")
+            items @ items + 1
+
+            if banners != 1
+                out @ out.push("line " + number.to_str() + ": an item outside the banners")
+            continue
+
+        if strings.trimmed(row).len() == 0 || banners == 0
+            continue
+
+        if banners == 1
+            # An item's body is indented under its line; anything at column zero
+            # between the banners is the free prose these files are cleared of.
+            if !strings.starts_with(text: row, prefix: "    ")
+                out @ out.push("line " + number.to_str() + ": prose between the banners: " + head_of(row))
+            continue
+        out @ out.push("line " + number.to_str() + ": prose after the closing banner: " + head_of(row))
+
+    if banners != 2
+        out @ out.push(
+            "the item region is fenced by " + banners.to_str() + " banner lines, not 2"
+        )
+
+    if !counted
+        out @ out.push("no `" + OPEN_PREFIX + "N**` line under the opening banner")
+    else if stated != items
+        out @ out.push(
+            "the banner says " + stated.to_str() + " open items and " + items.to_str() + " are here"
+        )
+    return out
+
+# `**OPEN: 41**` — the number the banner states.
+function count_stated(row: str) -> i64?
+    rest = strings.without_prefix(text: row, prefix: OPEN_PREFIX)
+    end = strings.index_of(text: rest, needle: "**")
+
+    if end.is_err()
+        return fail("shape", "the count is not closed")
+    return strings.to_number(text: rest.slice(from: 0, to: end.must()))
+
+test "a live list in the shape its preamble states has nothing to complain about"
+    good = "# T\n\nprose, above the banner, is the rules\n\n" + BANNER + "\n**OPEN: 1**\n\n- [ ] **M-x** | a thing | somewhere\n\n    **Origin:** 2026-09-07.\n\n" + BANNER + "\n"
+    assert list_offences(good, ticked_allowed: false).len() == 0
+
+    # And an empty list is a legal shape rather than a suspicious one: two
+    # banners, a zero, nothing between them.
+    empty = "# T\n\nthe rules\n\n" + BANNER + "\n**OPEN: 0**\n\n" + BANNER + "\n"
+    assert list_offences(empty, ticked_allowed: false).len() == 0
+
+test "the four shapes these three files have actually been in"
+    # 1. A ticked item in a live list. This is the rule four documents stated and
+    # nothing performed, so it is the one shape with no witness of its own — the
+    # files were cleared by hand every time somebody happened to look.
+    ticked = BANNER + "\n**OPEN: 0**\n\n- [x] **M-x** | done | here\n\n" + BANNER + "\n"
+    assert strings.contains(text: list_offences(ticked, ticked_allowed: false)[0], needle: "a ticked item lives here")
+
+    # 2. Prose after the closing banner: `DEFECTS.md`'s five paragraphs about
+    # defects that had already moved to the record.
+    trailing = BANNER + "\n**OPEN: 0**\n\n" + BANNER + "\n\n**Defect 015 was repaired the same day** and is in the record.\n"
+    assert strings.contains(
+        text: list_offences(trailing, ticked_allowed: false)[0],
+        needle: "prose after the closing banner"
+    )
+
+    # 3. A banner missing, which is how a region stops being a region.
+    unfenced = BANNER + "\n**OPEN: 1**\n\n- [ ] **M-x** | a thing | somewhere\n"
+    assert strings.contains(text: list_offences(unfenced, ticked_allowed: false)[0], needle: "fenced by 1 banner lines")
+
+    # 4. The count disagreeing with the items — the direction an ADDITION takes,
+    # which is the one an assert notices least loudly (CLAUDE.md § Commands).
+    miscounted = BANNER + "\n**OPEN: 1**\n\n- [ ] **M-a** | one | here\n\n- [ ] **M-b** | two | there\n\n" + BANNER + "\n"
+    assert strings.contains(
+        text: list_offences(miscounted, ticked_allowed: false)[0],
+        needle: "says 1 open items and 2 are here"
+    )
+
+test "in the comprehension list a ticked question stays, and the count stays the OPEN one"
+    # `/learn`'s rule: that list is also its own record, so a covered question is
+    # ticked in place rather than moved. The same text is an offence in a work
+    # list and none here, and the banner keeps counting what is unanswered — which
+    # is why the flag exists instead of a second copy of this function.
+    answered = BANNER + "\n**OPEN: 1**\n\n- [x] **M-ir-lowering.1** | covered | here\n\n- [ ] **M-ir-lowering.2** | still open | there\n\n" + BANNER + "\n"
+    assert list_offences(answered, ticked_allowed: true).len() == 0
+    assert strings.contains(
+        text: list_offences(answered, ticked_allowed: false)[0],
+        needle: "a ticked item lives here"
+    )
+
+test "prose at column zero between the banners is refused and an indented body is not"
+    # The distinction the shape rests on: a body is indented under its item, so
+    # it is invisible to no count — the count reads the `- [ ] ` line. Free prose
+    # at column zero is what these files were cleared of.
+    bodied = BANNER + "\n**OPEN: 1**\n\n- [ ] **M-x** | a thing | somewhere\n\n    **Origin:** 2026-09-07, measured.\n\n    A second paragraph of the same body.\n\n" + BANNER + "\n"
+    assert list_offences(bodied, ticked_allowed: false).len() == 0
+    loose = BANNER + "\n**OPEN: 1**\n\n- [ ] **M-x** | a thing | somewhere\n\nAnd this paragraph is not indented.\n\n" + BANNER + "\n"
+    assert strings.contains(text: list_offences(loose, ticked_allowed: false)[0], needle: "prose between the banners")
+
+test "the record holds no open item, and it is fenced at the top only"
+    good = "# DONE\n\nthe rules\n\n" + BANNER + "\n**THE RECORD BEGINS HERE**\n\n- [x] a thing | done | here\n"
+    assert record_offences(good).len() == 0
+
+    # The mirror failure of a ticked item in a live list: work filed among the
+    # finished, which every count of what is owed walks straight past.
+    open_in_record = BANNER + "\n\n- [x] a thing | done | here\n\n- [ ] another | not done | there\n"
+    assert strings.contains(text: record_offences(open_in_record)[0], needle: "an OPEN item lives in the record")
+
+    # A closing fence is refused rather than tolerated: the next append would
+    # land under it, and the rule would be broken by the act it exists for.
+    fenced_twice = BANNER + "\n\n- [x] a thing | done | here\n\n" + BANNER + "\n"
+    assert strings.contains(text: record_offences(fenced_twice)[0], needle: "opens with 2 banner lines")
+
+test "the count line is read rather than trusted"
+    assert count_stated("**OPEN: 41**").must() == 41
+    assert count_stated("**OPEN: 0**").must() == 0
+    assert count_stated("**OPEN: 41").is_err()
+    assert count_stated("**OPEN: many**").is_err()
 
 test "the section ends at a rule and not at anything that merely starts like one"
     # The shape the record was actually in on 2026-09-06: one good block, then a

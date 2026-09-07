@@ -1,56 +1,31 @@
 # ROADMAP — where the project is, and what is next
 
-Autonomous work sessions need the goal chain **in the repository**. This file is
-the distillation of the approved bootstrap plan (revision 2, reviewed by panel
-000); the build order's full rationale is design.md Part 10, and the
-language-level acceptance criteria are design.md Part 0. Revision 2 had deleted
-this file — *"tags say where you are"* — and it came back because tags say where
-you **are**, not what is **next**, and what is next must not live outside version
-control.
+Autonomous work sessions need the goal chain **in the repository**: tags say
+where the project **is**, not what is **next**. This file is the distillation of
+the approved bootstrap plan (revision 2, reviewed by panel 000); the build
+order's rationale is design.md Part 10 and the language-level acceptance criteria
+are design.md Part 0.
 
-**A closed milestone's record lives in its own journal**, indexed at
-`docs/journal/README.md`. That split exists because this file had accumulated 512
-lines about the past before its first line about the future, and was growing
-about 66 lines per close. `/step`'s checklist keeps § Where we are short and
-sends the closing block to the journal.
+**Five rules hold its shape**, each one bought by a reorganisation this file
+needed (author instructions 2026-08-25, 2026-08-26, 2026-09-03 and 2026-09-07,
+with what each one measured in the git history and in `DESIGN-LOG.md`):
 
-**Reorganised 2026-08-25 by author instruction** — *"rewrite it completely
-without losing any information, in a tidier way"*. Nothing was dropped.
-What changed is that the same milestones used to be listed in **three** separate
-tables — the order, the done list, and the name map — and are now in one, with
-the name map kept separately because CLAUDE.md §14 cites it and a cited record is
-not merged away.
-
-**Reorganised again 2026-08-26 by author instruction** — *"put the summary table
-at the top and then all the steps below it, in order"*. That pass merged the
-tables and left the **prose** in four sections that did not share an order: a
-milestone's row was in § The chain, the open one's story sat between the summary
-table and that chain — **154 lines of the past before the first line of the
-future**, the exact shape the journal split exists to prevent — the scheduled
-ones were under *what is next*, and four closed ones under *what the closed
-milestones settled*. Now every milestone that still has something to say has
-**one** section, and the sections run in the chain's order. The two verification
-blocks, which sat 700 lines apart, are one section under the summary table: two
-copies of the same duty at opposite ends of a file is how one of them rots.
-Nothing was dropped, and this time that is a **measurement** — the word frequency
-table of the file before and after differs only in the headings that changed and
-in the numbers that were re-measured.
-
-**Reordered a third time 2026-09-03 by author instruction** — *"reorder the roadmap
-with everything that has been done before everything that is still to do, and
-move all the notes out of the table … I want the table clean"*. Two
-changes, and neither drops a word. **The chain now runs closed-then-scheduled**:
-the one closed milestone that sat below five open ones — M-documentation-site,
-taken out of order the day it landed — moves up to the end of the closed run, so
-a reader meets the whole past before the first line of the future. That is the
-same rule the journal split already applies to this file's prose, applied to its
-table. And **the table carries the order and nothing else**: every scheduling
-note, panel ratification and author decision that lived inside a cell is now a
-line under it, keyed by name rather than by row number, because a reorder moves a
-number and never a name (CLAUDE.md §14). Two sections whose milestone had closed
-while they went on describing future work — M-package-layout and
-M-documentation-site — now say so in their headings, the way
-M-separate-compilation already did.
+- **The past never stands in front of the future.** A closed milestone's record
+  goes to its own journal, indexed at `docs/journal/README.md`; § Where we are is
+  held under **15 lines** by `/step`'s checklist and by `suite_records.hero`'s
+  `where_we_are`. This file once carried 512 lines about the past before its
+  first line about the future, growing about 66 lines per close.
+- **§ The chain carries the ORDER and nothing else.** Every scheduling note,
+  ratification and author decision that used to live inside a cell is a line
+  under the table, keyed **by name** — a reorder moves a number and never a name
+  (CLAUDE.md §14).
+- **The chain runs closed, then scheduled**, so a reader meets the whole past
+  before the first line of the future.
+- **One section per milestone that still has something to say**, in the chain's
+  order, and a section whose milestone has closed says so in its heading.
+- **One copy of a duty.** The two verification blocks used to sit 700 lines
+  apart, which is how one of them rots; they are one section under the summary
+  table.
 
 ---
 
@@ -64,9 +39,9 @@ M-separate-compilation already did.
 | The compiler | **55,050** lines of Heroes in **189** modules · the seed **747,095** lines of C · runtime ABI **21**, unmoved: the mark needed no runtime entry point, because the release is built out of instructions the IR already had |
 | The spec | **3871** of a hard 4096 · headroom **225** — spent at M-declared-freer step 2 on panel 109's wording, and **unmoved since**: the `@` cell the milestone finished with was already described by the sentence that step bought |
 | Records | sittings **115** · journals **37** · examples **55** programs, **118** files, **545** `test` blocks · open defects **1** · the site **46** pages, 23 English and 23 Italian |
-| Waiting on the author | **0** decisions · **41** in `SCHEDULED.md` · **1** in `DEFECTS.md` (016, `assert` drops both sides for every aggregate against `spec:202`) · **319** in `LEARN.md` (never a gate) · an outstanding veto (`docs/panel/101` R3) |
+| Waiting on the author | **0** decisions · **41** in `SCHEDULED.md` · **1** in `DEFECTS.md` (016, `assert` drops both sides for every aggregate against `spec:202`) · **323** in `LEARN.md` (never a gate) · an outstanding veto (`docs/panel/101` R3) |
 
-Every number re-counted 2026-09-07 at M-declared-freer's close, none carried. Three suites green: **588**, **1609**, **113**. What moved for the milestone is the compiler and the shape of two files: **186 → 189** modules, `ir/lower.hero` **1511 → 174** and `parse/decl.hero` **638 → 217**, both now under §11's own 300 and out of `suite_layout.hero`'s `DECIDED` table altogether — panel 109's coordinator had predicted **≤ 900** and **≤ 400**. The number to watch is the other direction: `check/walk.hero` is at **1695 of a decided 1700**, five lines of room, and it is the file every new diagnostic reaches.
+Every number re-counted 2026-09-07 at M-declared-freer's close, none carried — **except one, and the exception is worth reading**: the `LEARN.md` cell above said **319** against a real **323** until the lists were reshaped later that day, and it survived the very commit that corrected the cell beside it (`01a377ef` took `SCHEDULED.md` from 42 to 41, under a subject about a count made with the wrong pattern). A number that lives in two places drifts in the one nobody re-opens, which is why the three live lists now state their own count under a banner an instrument reads. Three suites green: **588**, **1610**, **119**. What moved for the milestone is the compiler and the shape of two files: **186 → 189** modules, `ir/lower.hero` **1511 → 174** and `parse/decl.hero` **638 → 217**, both now under §11's own 300 and out of `suite_layout.hero`'s `DECIDED` table altogether — panel 109's coordinator had predicted **≤ 900** and **≤ 400**. The number to watch is the other direction: `check/walk.hero` is at **1695 of a decided 1700**, five lines of room, and it is the file every new diagnostic reaches.
 
 ---
 
@@ -121,6 +96,8 @@ heroes test selfhost/main.hero                 # the compiler's own tests
 ```
 
 ---
+
+*******************************************************************************
 
 ## The chain
 

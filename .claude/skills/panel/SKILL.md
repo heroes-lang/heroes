@@ -101,6 +101,12 @@ is a full panel.
      default; the author's verdict is appended to this file when given (in
      `/decide` or whenever), with follow-up work if they overturn it.
 
+     **The sitting is the item's FIRST FIELD, since 2026-09-07** —
+     `- [ ] **panel 091** | <the question> | <where to look>`, with any
+     reasoning in the body indented under it. That is not layout: the check
+     below scans the item LINE, so a sitting cited only in a body is a sitting
+     no check can see.
+
      **The file and the spelling are both load-bearing, and this line named the
      wrong file until 2026-08-26.** `tests/harness/suite_records.hero`'s
      `verdicts` check reads `docs/work/DECIDE.md` and scans its `- [ ]` lines
