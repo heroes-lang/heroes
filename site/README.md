@@ -158,9 +158,18 @@ widths from 1200px down to 390px:
 
 | | English | Italian |
 |---|---|---|
-| the list's width | **402px** | **426px** |
-| one row of chrome (50px) | 801px and up | 801px and up |
-| two rows (80px) | 800px and down | 800px and down |
+| items | eight | eight |
+| one row of chrome (50px) | 801px and up | 880px and up |
+| two rows (80px) | 800px and down | 870px and down |
+
+The eighth item is Thanks, put back after Author by author instruction
+2026-09-07 (it had been seven since 2026-09-06). The Italian label is
+`Grazie`, the page's own title, and not `Ringraziamenti`: the longer word put
+the Italian row on two lines at 900px where the English held one. Even so the
+Italian row now breaks between 870 and 880px where it used to break with the
+English at 800: measured after the change, two rows at 870, one at 880. The
+widths in the earlier version of this table, 402px and 426px, were the
+seven-item list and are no longer true.
 | three rows | never | never |
 | the list scrolls sideways | never, down to 390px | at 390px |
 

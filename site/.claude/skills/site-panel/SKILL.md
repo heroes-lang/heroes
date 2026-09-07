@@ -64,7 +64,7 @@ positioned to see.
   programming language" before the name; names LLMs plainly (author,
   2026-08-18). A diagnostic may appear in the first value prop UNDER the hero,
   and one does.
-- The nav is **seven items** and a page enters it only by displacing one
+- The nav is **eight items** since 2026-09-07, when the author put Thanks back after Author; it was seven by author instruction 2026-09-06, and a page still enters it only by displacing one
   (author instruction 2026-09-06). Proposing an eighth means naming which of
   the seven leaves.
 - **A number on the page is generated from the tree or written as a threshold**

@@ -456,9 +456,12 @@ ul.pillars li {
   margin: 1.1rem 0; padding-left: 1.5rem; position: relative;
   text-wrap: pretty;
 }
+/* A small dot, not a dash. The author did not like the dashes as bullets
+   (2026-09-07), and a dash under a hero whose stat cards run links on with
+   arrows read as one more separator. */
 ul.pillars li::before {
-  content: ''; position: absolute; left: 0; top: 0.62em;
-  width: 0.7rem; height: 1px; background: var(--red);
+  content: ''; position: absolute; left: 0.15rem; top: 0.55em;
+  width: 0.4rem; height: 0.4rem; border-radius: 50%; background: var(--red);
 }
 ul.pillars b { font-style: normal; color: var(--fg); }
 

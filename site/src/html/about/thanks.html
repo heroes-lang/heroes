@@ -16,8 +16,7 @@
   </p>
   <h2>The substrate, and the tools</h2>
   <p>
-    Heroes has no standard library by design, so everything a program touches
-    arrives from C. The compiler emits C11 and hands it to clang, which
+    By design, everything a program touches outside itself arrives from C. The compiler emits C11 and hands it to clang, which
     type-checks every foreign declaration against the real header. The bootstrap
     compiler that got the project to self-hosting was written in Rust.
   </p>

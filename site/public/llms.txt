@@ -2,8 +2,8 @@
 
 > Heroes is a small compiled programming language designed so that every
 > plausible LLM mistake is a compile error. Made for LLMs, yet plain to human
-> eyes: no null, no exceptions, no implicit conversions, no standard library:
-> everything comes from C through an FFI that clang verifies against the real
+> eyes: no null, no exceptions, no implicit conversions; everything beyond the
+> basics comes from C through an FFI that clang verifies against the real
 > headers. The compiler is written in Heroes and reproduces itself byte for
 > byte: asked to compile itself it writes out the very C file the repository
 > ships, and `cmp` finds nothing between them.
@@ -34,7 +34,7 @@ legal expression that reports what belongs in the gap instead of failing.
 - [Home](https://heroes-lang.org/): what the language is, one real sample, one real diagnostic, the claim
 - [Examples](https://heroes-lang.org/examples/): every program in the repository, on the site, each with the exact command that runs it and the output it really prints. `/examples/index.json` is the same corpus as data, with a hash per file
 - [Start](https://heroes-lang.org/start/): the four lines that build the compiler, where `heroes run` looks for the runtime, and the eleven verbs
-- [Why Heroes](https://heroes-lang.org/why/): the founding constraint (no standard library), the thesis, the cost formula, the objections answered
+- [Why Heroes](https://heroes-lang.org/why/): the founding constraint (the libraries are C's), the thesis, the cost formula, the objections answered
 - [The project](https://heroes-lang.org/project/): the fixpoint, over 180 modules and more than 50,000 lines of Heroes emitting byte-identical C; how a change to the language is decided by five judges; and the twenty lines `heroes this` prints
 - [The author](https://heroes-lang.org/about/), and the credits at `/about/thanks/`: Giuseppe Arici, partner and CTO at Codermine in Brescia, author of *Heroes of code*, a history of programming languages framed as a dream journey with David Bowie as the guide, published on Amazon. He had never written a compiler before this one
 - [Build log](https://heroes-lang.org/log/): one postcard per milestone, newest first

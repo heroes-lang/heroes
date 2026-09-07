@@ -3,6 +3,6 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import { page } from '../../lib/figures.ts';
 import content from '../../html/it/why.html?raw';
 ---
-<BaseLayout url="/it/why/" title={'Perché Heroes: la tesi, e il vincolo di partenza'} description={"Heroes è nato da un rifiuto: nessuna libreria standard, mai. Tutto arriva dal C attraverso un'unica FFI che clang verifica. E ogni errore plausibile di un LLM è un errore di compilazione."} current="why">
+<BaseLayout url="/it/why/" title={'Perché Heroes: la tesi, e il vincolo di partenza'} description={"Heroes è nato da un rifiuto: nessuna libreria propria per il mondo. Tutto arriva dal C attraverso un'unica FFI che clang verifica. E ogni errore plausibile di un LLM è un errore di compilazione."} current="why">
 <Fragment set:html={page(content, 'site/src/html/it/why.html')} />
 </BaseLayout>
