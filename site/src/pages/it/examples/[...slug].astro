@@ -1,0 +1,13 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { renderExamplePage, exampleSlugs } from '../../../lib/examples-render.ts';
+
+export function getStaticPaths() {
+  return exampleSlugs().map((slug) => ({ params: { slug } }));
+}
+
+const page = renderExamplePage(Astro.params.slug!, 'it');
+---
+<BaseLayout url={page.url} title={page.title} description={page.description} current="examples">
+<Fragment set:html={page.html} />
+</BaseLayout>

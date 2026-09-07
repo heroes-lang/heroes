@@ -1,7 +1,8 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { page } from '../../lib/figures.ts';
 import content from '../../html/docs/generics-and-function-values.html?raw';
 ---
 <BaseLayout url="/docs/generics-and-function-values/" title={'Generics and function values, Heroes documentation'} description={'Generics live on functions only, take no constraints and are never written at the call site. A top-level function is a value, and there are no lambdas: the thing you pass has a name.'} current="docs">
-<Fragment set:html={content} />
+<Fragment set:html={page(content, 'site/src/html/docs/generics-and-function-values.html')} />
 </BaseLayout>

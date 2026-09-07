@@ -1,7 +1,8 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { page } from '../../lib/figures.ts';
 import content from '../../html/it/errors.html?raw';
 ---
 <BaseLayout url="/it/errors/" title={'Errori: le diagnostiche di Heroes, e i numeri dietro'} description={'Errori reali prodotti dal compilatore, correzioni applicabili in automatico e una misura separata per ogni tipo di sbaglio.'} current="docs">
-<Fragment set:html={content} />
+<Fragment set:html={page(content, 'site/src/html/it/errors.html')} />
 </BaseLayout>

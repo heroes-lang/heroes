@@ -34,8 +34,9 @@
     10  the build log
     11  the zen
     12  stats, the fixpoint, the panel page
-    13  footer
-    14  focus, motion, print
+    13  the examples, one page per program, generated from examples/
+    14  footer
+    15  focus, motion, print
    --------------------------------------------------------------------------- */
 
 /* == 1. tokens ============================================================ */
@@ -1036,7 +1037,85 @@ ul.lineage li::before {
 }
 ul.lineage b { color: var(--fg); }
 
-/* == 13. footer =========================================================== */
+/* == 13. the examples ===================================================== */
+
+/* These pages are generated from `examples/` at build time, one per program in
+   both editions, so everything here has to hold for 66 pages nobody proofreads
+   one by one. Nothing in this section invents a colour or a face: the badges
+   borrow the chapter list's pill, the terminal block is § 8's `.demo`, and the
+   fingerprint is the gold the fixpoint hash already uses, because gold on this
+   site means a quotation and a hash is the page's own evidence. */
+
+ul.badges {
+  display: flex; flex-wrap: wrap; gap: 0.4rem 0.45rem;
+  list-style: none; padding: 0; margin: 0 0 1.8rem;
+}
+ul.badges li {
+  margin: 0; white-space: nowrap;
+  font: 0.66rem/1.5 ui-monospace, 'SF Mono', Menlo, monospace;
+  text-transform: uppercase; letter-spacing: 0.1em; color: var(--dim);
+  border: 1px solid var(--line); border-radius: 999px; padding: 0.15rem 0.6rem;
+}
+ul.badges li code {
+  background: none; border: 0; padding: 0; font-size: inherit;
+  text-transform: none; letter-spacing: 0.02em; color: var(--dim);
+}
+
+/* The run block. `.demo` gives it the card, the bar and the caption; what it
+   needs on top is a command that reads as one, output that scrolls instead of
+   wrapping, and an exit status that is loud when it is not zero. Wrapping a
+   transcript would put a false line break inside a printed line, which on a
+   page whose whole promise is byte fidelity is the one thing it cannot do. */
+.demo.run { margin: 1.6rem 0 2rem; }
+.demo.run .bar { color: var(--fg); }
+.demo.run pre { overflow-x: auto; white-space: pre; padding: 0.85rem 0.95rem; }
+.demo.run .under { padding-top: 0.75rem; border-top: 1px solid var(--line-soft); }
+.demo.run .under .status { color: var(--red); }
+
+/* A module after the first is closed, because `examples/interpreter/` is
+   eleven modules and 2,636 lines: a page that opens all of it is a page nobody
+   scrolls to the end of. Find-in-page opens a closed one in both browsers
+   tested, so nothing is hidden from a search. */
+details.module {
+  margin: 0 0 0.5rem; border-top: 1px solid var(--line-soft);
+}
+details.module summary {
+  cursor: pointer; padding: 0.6rem 0.1rem;
+  font: 0.74rem/1.5 ui-monospace, 'SF Mono', Menlo, monospace; color: var(--dim);
+}
+details.module summary:hover { color: var(--fg); }
+details.module summary code {
+  background: none; border: 0; padding: 0; font-size: inherit; color: inherit;
+}
+details.module[open] summary { color: var(--fg); }
+details.module figure.example { margin-top: 0.4rem; }
+
+/* A data file is not Heroes, so it is shown uncoloured on purpose: colouring it
+   would claim the highlighter understands a format it has never read. */
+figure.example.data pre { color: var(--dim); }
+
+/* The index's cards gain one monospace line of facts under the name. */
+.cards .meta {
+  font: 0.7rem/1.5 ui-monospace, 'SF Mono', Menlo, monospace;
+  color: var(--dim); margin: 0 0 0.7rem;
+}
+
+/* The fingerprint, and the command that reproduces it. */
+p.fingerprint {
+  font: 0.72rem/1.7 ui-monospace, 'SF Mono', Menlo, monospace;
+  color: var(--dim); margin: 2rem 0 0;
+}
+p.fingerprint .hash {
+  color: var(--gold); background: none; border: 0; padding: 0;
+  font-size: inherit; letter-spacing: 0.03em;
+}
+
+@media (max-width: 620px) {
+  ul.badges { margin-bottom: 1.4rem; }
+  .demo.run pre { font-size: 0.74rem; }
+}
+
+/* == 14. footer =========================================================== */
 
 /* One line, raked from red to blue, with the bolt sitting on it: the last
    appearance of the motif, and the page's full stop. */
@@ -1060,7 +1139,7 @@ footer p { margin: 0 0 0.9rem; }
 footer p:last-child { margin: 0; font-size: 0.82rem; opacity: 0.8; }
 footer a { color: var(--link); }
 
-/* == 14. focus, motion, print ============================================= */
+/* == 15. focus, motion, print ============================================ */
 
 /* Nothing on this site was focusable-visible before: a keyboard reader had to
    guess where they were. */

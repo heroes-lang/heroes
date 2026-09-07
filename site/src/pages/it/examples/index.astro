@@ -1,0 +1,11 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { renderExamplesIndex } from '../../../lib/examples-render.ts';
+import { assertDescriptionsComplete } from '../../../lib/descriptions.ts';
+
+assertDescriptionsComplete();
+const page = renderExamplesIndex('it');
+---
+<BaseLayout url={page.url} title={page.title} description={page.description} current="examples">
+<Fragment set:html={page.html} />
+</BaseLayout>

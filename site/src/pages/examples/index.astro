@@ -1,0 +1,13 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { renderExamplesIndex } from '../../lib/examples-render.ts';
+import { assertDescriptionsComplete } from '../../lib/descriptions.ts';
+
+// The one place the whole set is checked, so a build cannot render a single
+// example page while a description or a shelf is missing.
+assertDescriptionsComplete();
+const page = renderExamplesIndex('en');
+---
+<BaseLayout url={page.url} title={page.title} description={page.description} current="examples">
+<Fragment set:html={page.html} />
+</BaseLayout>
