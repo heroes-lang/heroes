@@ -58,12 +58,15 @@ Every diagnostic carries three things: the place that is wrong, the other end of
 the story, and the repair. A fix tagged `certain` was worked out rather than
 guessed, so `heroes check --apply` can write it for you.
 
-## Status: v1 is reached, and the chain continues
+## Status: self-hosting is reached, and the chain continues
 
-**The compiler compiles itself.** That was the definition of v1 and it was
-reached at M-selfhost-fixpoint on 2026-08-18: `selfhost/` is this compiler
-written in Heroes, and the C it emits for its own source is `seed/heroes.c`,
-byte for byte.
+**The compiler compiles itself.** That is what this project calls v1
+(design.md §1.0), and it was reached at M-selfhost-fixpoint on 2026-08-18:
+`selfhost/` is this compiler written in Heroes, and the C it emits for its own
+source is `seed/heroes.c`, byte for byte. The version number is a different
+thing: `heroes --version` says which release you hold, releases are tagged
+`vX.Y.Z`, and the number stays below `1.0.0` until a compatibility promise is
+written, because the language still changes between minor versions.
 
 <p align="center">
   <picture>

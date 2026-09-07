@@ -861,6 +861,60 @@ home; `docs/ROADMAP.md` § The names carries the map and cites this.
   named a reasoning directory until 2026-09-04; its seven notes are seven entries
   in `docs/work/DONE.md`.)
 
+**Release tags are a third namespace, and a release is a commit, never a
+milestone** (author decision 2026-09-07, from the author's own question: *"let us
+work out how to handle releases and what number to start from: GitHub releases
+first and then the channels? and how do we number them? are we at 0.1, 0.9,
+1.0, 1.1?"*; the measurements and the six choices, each put with a
+recommendation and all six taken, are the `DESIGN-LOG.md` row of that date). The
+milestone tags above are `m-*` and widen the CI matrix; the site's are `site-v*`
+(`.github/workflows/release-site.yml`); a release of the language is `vX.Y.Z`,
+and nothing else starts with `v`.
+- **The number is `X.Y.Z`, and `heroes --version` prints it.** It is one constant,
+  `VERSION` in `selfhost/main.hero`, and that constant is also the first line of
+  every emitted C file and the build cache's fingerprint. It moves **only in the
+  commit that carries the tag** and stays there until the next release: between
+  releases the binary says the last release and `main` is ahead of it. There is
+  no `-dev` suffix, because every move of the number regenerates the seed one
+  generation further than usual and rewrites the first line of every file under
+  `tests/emission/` and of every `.expected` under `tests/golden/emit/` (213 and
+  6 on the day this was written; the second store was found by the net, not by
+  the grep, which had printed it into an output nobody read to the end), and
+  paying that twice per release buys one word.
+- **While `X` is 0, `Y` moves when the spec moved and `Z` when it did not.**
+  `spec/heroes-spec.md` is the whole language, by its own first line, so *the
+  language changed* means `git diff vA vB -- spec/heroes-spec.md` is not empty:
+  a command, not a judgement. What 0.x promises is one sentence, and it is the
+  whole promise until the gate: *before 1.0.0 the language may change between
+  minor versions; a patch version changes no sentence of the spec.* `1.0.0` is
+  M-publication-gate's, written together with the compatibility paragraph that
+  entry owes, because in every language people install `1.0` means *your
+  programs keep compiling* and nobody has written that promise for Heroes. The
+  project's own word `v1` (design.md §1.0: the compiler compiles itself, reached
+  2026-08-18) is a milestone's name and not this number, and the two are spelled
+  apart on purpose wherever a stranger might read them side by side.
+- **A release is the author's act, on a clean `main`, resting on the last closed
+  milestone**, and it does not coincide with one: the chain closed 37 milestones
+  in 35 days. The tag is annotated, and its message is the one paragraph a human
+  writes; the workflow assembles the rest.
+- **The instrument is the CI, not this list.** A `v*` tag runs the three-platform
+  matrix like an `m-*` tag, asserts on every leg that the seed-built compiler's
+  `--version` is the tag's number, asserts that a spec that differs from the
+  previous release moved `Y`, and only then creates the GitHub Release: the tag's
+  own source archive, with the seed inside it where `seed/README.md` says a seed
+  belongs, the notes, and **no uploaded binary** (`DESIGN-LOG.md:539` refused
+  prebuilt binaries as a decoy without clang, and a release is not where that
+  refusal expires). The notes are the annotated tag's message, the milestone
+  tags between the two releases, and the spec's diff between them, which is the
+  language's changelog because the spec is the language. No CHANGELOG file: it
+  would be a second copy of the record.
+- **The channels pin the tag** (M-install-channels): a formula, a manifest, a
+  flake and an image name `vX.Y.Z`'s archive and its checksum and run the one
+  clang line. The repository is private, so a release made today is the private
+  rehearsal that entry asks for; every release made before the gate becomes
+  visible on the day the gate lifts, so its notes are written for a stranger
+  from the first one.
+
 ## 15. Working instructions that lived in the assistant's memory until 2026-09-03
 Each of these was an author instruction kept in a per-machine memory file until
 the author said, for the second time, that nothing lives there (§3). Dates and

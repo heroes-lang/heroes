@@ -45,7 +45,11 @@ on:
     # --follow-tags` therefore starts two runs — the branch's Linux-only one and
     # the tag's full one — because `concurrency` keys on `github.ref` and a
     # branch is not its tag. That duplicate is one Linux job per milestone.
-    tags: ['m-*']
+    # Release tags (CLAUDE.md §14, release tags: `vX.Y.Z`, a third namespace
+    # beside the milestones' and the site's `site-v*`) run the same full matrix,
+    # gain one assert per leg below, and are the only ref the `release` job at
+    # the end of this file accepts.
+    tags: ['m-*', 'v*']
     # The showcase site compiles nothing. `site/` holds HTML, a stylesheet and
     # an Astro build; no file under it is read by the compiler, by the golden
     # harness or by the net, and `heroes` has no site subcommand by §10's
@@ -334,6 +338,22 @@ jobs:
           if [ "$RUNNER_OS" = "Windows" ]; then STACK="-Wl,/STACK:67108864"; else STACK=""; fi
           clang -I runtime seed/heroes.c runtime/runtime.c $STACK -o heroes-from-seed${{ matrix.exe }}
           ./heroes-from-seed${{ matrix.exe }} --version
+
+      # THE TAG'S NUMBER IS THE BINARY'S NUMBER, asserted on the one ref where
+      # the two can disagree (CLAUDE.md §14, release tags). The version lives in
+      # one constant, `VERSION` in `selfhost/main.hero`, and moves only in the
+      # commit that carries `v<number>`; a tag pushed on a commit that forgot to
+      # move it, or moved it to something else, is red here on all three legs
+      # before anything is released. `GITHUB_REF_NAME` is the tag itself.
+      - name: The release tag names the version the compiler prints
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        run: |
+          want="heroes ${GITHUB_REF_NAME#v}"
+          got="$(./heroes-from-seed${{ matrix.exe }} --version)"
+          echo "the tag says:    $want"
+          echo "the binary says: $got"
+          test "$got" = "$want"
 
       # THE CONTRACT'S OWN LINE, BUILT AND USED, on the one platform where it
       # can fail. The step above builds with `-Wl,/STACK:67108864`, which is
@@ -631,3 +651,99 @@ jobs:
         run: |
           ./heroes-from-seed${{ matrix.exe }} build selfhost/main.hero --emit-c -o /tmp/seed-fresh.c
           cmp seed/heroes.c /tmp/seed-fresh.c
+
+  # THE RELEASE, made by the machine after the three legs agree (CLAUDE.md §14,
+  # release tags). What it publishes is the tag's own source archive, which
+  # GitHub makes from the tag and which carries the seed inside it, where
+  # `seed/README.md` § Why there is no uploaded executable says a seed belongs,
+  # and a body assembled from three things already in git: the annotated tag's
+  # message (the one paragraph a human writes), the milestone tags between the
+  # previous release and this one (the chain), and the diff of
+  # `spec/heroes-spec.md` between the two (the language's changelog, because
+  # the spec is the whole language). NO BINARY IS UPLOADED: `DESIGN-LOG.md:539`
+  # refused prebuilt binaries as a decoy without clang, and a release is not
+  # where that refusal expires.
+  #
+  # The spec assert lives here rather than in the matrix because it needs the
+  # previous release tag, which the matrix's `fetch-depth: 1` checkout does not
+  # have: while the major is 0, a spec that differs between two releases must
+  # have moved the minor (CLAUDE.md §14). On the first release there is no
+  # previous tag, and the step says so and passes.
+  #
+  # `contents: write` is the one permission `gh release create` needs, and it
+  # is granted to this job alone; the matrix above keeps the default.
+  release:
+    name: GitHub Release
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: A moved spec moved the minor
+        shell: bash
+        run: |
+          this="$GITHUB_REF_NAME"
+          prev="$(git tag --list 'v*' --sort=creatordate --merged "$this" | grep -v "^${this}\$" | tail -n 1)"
+          if [ -z "$prev" ]; then
+            echo "first release: no previous v* tag to compare the spec against"
+            exit 0
+          fi
+          echo "previous release: $prev"
+          if git diff --quiet "$prev" "$this" -- spec/heroes-spec.md; then
+            echo "spec/heroes-spec.md is identical between $prev and $this"
+            exit 0
+          fi
+          major="$(echo "${this#v}" | cut -d. -f1)"
+          if [ "$major" != "0" ]; then
+            echo "major is $major: the 0.x rule does not apply, and what 1.x promises is the gate's paragraph"
+            exit 0
+          fi
+          pm="$(echo "${prev#v}" | cut -d. -f2)"
+          tm="$(echo "${this#v}" | cut -d. -f2)"
+          echo "the spec moved between $prev and $this; minor $pm -> $tm"
+          test "$tm" -gt "$pm" \
+            || { echo "::error::spec/heroes-spec.md differs between $prev and $this and the minor did not move (CLAUDE.md §14, release tags)"; exit 1; }
+
+      - name: Assemble the notes from git
+        shell: bash
+        run: |
+          this="$GITHUB_REF_NAME"
+          prev="$(git tag --list 'v*' --sort=creatordate --merged "$this" | grep -v "^${this}\$" | tail -n 1)"
+          {
+            git for-each-ref "refs/tags/$this" --format='%(contents)'
+            echo
+            echo "## Milestones closed since ${prev:-the beginning}"
+            echo
+            if [ -n "$prev" ]; then
+              comm -13 <(git tag --list 'm-*' --merged "$prev" | sort) <(git tag --list 'm-*' --merged "$this" | sort) | sed 's/^/- /'
+            else
+              git tag --list 'm*' --merged "$this" --sort=creatordate | sed 's/^/- /'
+            fi
+            echo
+            echo "## The language: spec/heroes-spec.md since ${prev:-the beginning}"
+            echo
+            if [ -n "$prev" ]; then
+              if git diff --quiet "$prev" "$this" -- spec/heroes-spec.md; then
+                echo "No sentence of the spec changed: this is a patch release."
+              else
+                echo '```diff'
+                git diff "$prev" "$this" -- spec/heroes-spec.md
+                echo '```'
+              fi
+            else
+              echo "A first release has no diff to show: the whole of spec/heroes-spec.md at this tag is the language."
+            fi
+          } > build-notes.md
+          cat build-notes.md
+
+      - name: Create the release, with no uploaded binary
+        shell: bash
+        run: gh release create "$GITHUB_REF_NAME" --verify-tag --title "heroes ${GITHUB_REF_NAME#v}" --notes-file build-notes.md
