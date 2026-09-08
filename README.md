@@ -199,6 +199,10 @@ The name of this language comes from there, and so does the bolt. It is also why
 the design panel has a historian's seat: a design choice usually has precedents,
 and the seat exists to find them and to be refused when it cannot source them.
 
+**It is also how to support this.** No code contributions are accepted here
+yet, and nobody is asked for money, so if you want the language to keep going, a
+copy of the book is the one thing that funds the time.
+
 Published on Amazon, in
 [English](https://www.amazon.it/Heroes-code-journey-programming-languages/dp/B0HHLBWWZH/)
 and in

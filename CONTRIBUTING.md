@@ -56,6 +56,19 @@ that back.** Fork it, cut it up, build something else out of it. Attribution is
 owed by whoever redistributes Heroes itself, never by somebody who merely uses
 it. If you do build something, an issue saying so would be read with pleasure.
 
+## If you want to support it
+
+Buy the book. *Heroes of code* is the author's history of programming languages,
+and it came before this compiler did: the name, the bolt and the panel's
+historian seat all come out of it. This project takes no code contributions yet
+and asks for nobody's money, so a copy is the one thing that funds the time the
+language is built in.
+
+Published on Amazon, in
+[English](https://www.amazon.it/Heroes-code-journey-programming-languages/dp/B0HHLBWWZH/)
+and in
+[Italian](https://www.amazon.it/Gli-eroi-del-codice-programmazione/dp/B0HHL2YQ1S/).
+
 ## What is genuinely useful
 
 - **A program that should compile and does not, or compiles and does the wrong

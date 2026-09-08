@@ -157,7 +157,14 @@ body::after {
 
 ::selection { background: var(--red); color: #fff; }
 
-img, svg { max-width: 100%; }
+/* `height: auto` is not decoration: without it an image whose own rule has not
+   loaded takes the column's width from `max-width` and keeps the HEIGHT
+   attribute from its tag, which renders it stretched rather than merely large.
+   Found on 2026-09-08 on the book cover, 800x1135, against a cached stylesheet.
+   `svg` keeps its own sizing, because the inline marks here set width and
+   height in CSS on purpose. */
+img { max-width: 100%; height: auto; }
+svg { max-width: 100%; }
 
 /* == 3. shell ============================================================= */
 
@@ -540,12 +547,15 @@ dl.why dd {
 
 /* The cover, small on purpose: it is a token of a book and not a poster, and it
    keeps its own aspect so a slow connection reflows nothing. `flex: none` so it
-   does not shrink when the paragraph beside it is long. */
+   does not shrink when the paragraph beside it is long, and `aspect-ratio`
+   stated as well as the tag's attributes, so no missing stylesheet and no
+   later rule can stretch it (author, 2026-09-08: it was too big and out of
+   proportion, and both halves of that were true for the same reason). */
 .book-cover { flex: none; display: block; line-height: 0; }
 .book-cover img {
-  width: 92px; height: auto; display: block;
-  border-radius: 3px;
-  box-shadow: 0 1px 3px rgb(0 0 0 / 0.35);
+  width: 72px; height: auto; aspect-ratio: 800 / 1135; display: block;
+  border-radius: 2px;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.3);
 }
 
 /* The same pair on the About page, where the book has a section of its own:
@@ -555,14 +565,14 @@ dl.why dd {
 .book-plate > div { flex: 1 1 auto; min-width: 0; }
 .book-plate p { margin: 0; text-wrap: pretty; }
 .book-plate p + p { margin-top: 0.7rem; }
-.book-plate .book-cover img { width: 150px; }
+.book-plate .book-cover img { width: 112px; }
 
 /* Under 34rem the row becomes a column, because 92px of cover beside two
    sentences leaves the sentences about twelve characters wide on a phone. */
 @media (max-width: 34rem) {
   .book, .book-plate { display: block; }
   .book-cover { margin-bottom: 0.9rem; }
-  .book-cover img, .book-plate .book-cover img { width: 108px; }
+  .book-cover img, .book-plate .book-cover img { width: 96px; }
 }
 
 /* == 7. code ============================================================== */
