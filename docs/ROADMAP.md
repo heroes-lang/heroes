@@ -39,9 +39,9 @@ with what each one measured in the git history and in `DESIGN-LOG.md`):
 | The compiler | **55,414** lines of Heroes in **190** modules · the seed **752,025** lines of C · runtime ABI **21**, unmoved: a refusal needs no runtime entry point |
 | The spec | **3995** of a hard 4096, and the number to spend against is the check's: `SPEC_TOKENS + FFI_FLOOR >= CEILING` is red, so the spec's own ceiling is **4035** and **40** tokens are free — the 71 written on 2026-09-08 was one too many, an excluded bound read as included |
 | Records | sittings **118** · journals **40** · examples **118** files, **545** `test` blocks · open defects **0** · mutation: `drop-question` **236 of 236 killed**, `--permissive` 193, so **43** are caught only by the thesis |
-| Waiting on the author | **7** decisions — 4 `panel 118`, `panel 119`, `panel 120`, and the instrument for a `guess` fix's text · **42** in `SCHEDULED.md` · **0** in `DEFECTS.md` · **335** in `LEARN.md` (never a gate) · an outstanding veto (`docs/panel/101` R3) · **o200k**, whose own 2026-08-26 trigger is met: the spread is 78 and the headroom is 40 |
+| Waiting on the author | **0** decisions — the seven were settled and the three sittings ratified on 2026-09-08, and this row said 7 until it was re-counted here · **46** in `SCHEDULED.md` · **0** in `DEFECTS.md` · **335** in `LEARN.md` (never a gate) · an outstanding veto (`docs/panel/101` R3) · **o200k**, whose own 2026-08-26 trigger is met: the spread is 78 and the headroom is 40 |
 
-**Re-measured 2026-09-08 at the close, not carried**: the three suites are **591**, **1632** and **122**, all green against a compiler rebuilt from `selfhost/` in 44.89 s rather than the seed binary. Least room: `check/walk.hero` at **1697 of a decided 1700**, which is why defect 021 shipped the loud fallback instead of threading the callee's letters, and `selfhost/check/builtins.hero` at **374 of 374**.
+**Re-measured 2026-09-08 at M-interpolation-verdict step 1, not carried**: the three suites are **591**, **1632** and **124**, the middle one **unrun since the close** earlier the same day, where it was green against a compiler rebuilt from `selfhost/` in 44.89 s rather than the seed binary; the full net runs once before a push. Step 1 measured the other two against the seed-built compiler (3.00 s): the compiler's own **591** in 53.17 s (`/usr/bin/time -p`, user 49.21, sys 2.00), the net's own **124**, plus `records` **15 of 15** and `spec` **10 of 10**. **The net's own tests read 122 here until this re-count**: 122 at the tag, 124 at `HEAD`, and the two arrived with `23795b48`, which stopped `records/tagged` reading a finding as a ratification. Least room: `check/walk.hero` at **1697 of a decided 1700**, which is why defect 021 shipped the loud fallback instead of threading the callee's letters, and `selfhost/check/builtins.hero` at **374 of 374**.
 
 ---
 
@@ -1092,7 +1092,22 @@ design.md** — measured 2026-09-02 with `grep -rn -i interpolat` over `docs/pan
 `docs/journal/` and `docs/measurements/`: **zero hits**. There is no ruling to read
 forward from (CLAUDE.md §1), which is why this is a milestone and not a footnote.
 
-**What its absence costs today, every number measured 2026-09-02.**
+**Corrected 2026-09-08 by step 1's own count,
+`docs/measurements/021-what-would-stand-inside-a-hole.md`.** Every number in the
+list below was re-measured and three of the four moved, which is expected on a
+tree that grew by 3,626 lines. **What did not survive is the sentence that reads
+them**: *"this compiler's own diagnostics being assembled by hand, and it is the
+largest single body of evidence in the repository"* is false. The nine modules
+that carry diagnostics hold **286** of the **2536** holes, 11.3%, while
+`selfhost/emit`, `selfhost/print` and `selfhost/ir` hold **1241**, 48.9%. The
+largest body of hand assembly is the code generator and the two program
+printers, and the densest is `tests/harness/`, which these counts never read.
+The sitting inherits the corrected reading: the thesis is its only available
+warrant, and the corpus that warrant would have to be argued over is the
+compiler's own emitter.
+
+**What its absence costs today, every number measured 2026-09-02** (and
+re-measured 2026-09-08 in 021, which is the current answer).
 
 - **945** lines of `selfhost/` hold the sequence `" + ` — a string literal
   concatenated to something — and **146** hold a `to_str()` call. That is this
@@ -1116,7 +1131,12 @@ forward from (CLAUDE.md §1), which is why this is a milestone and not a footnot
 
 1. **What may stand inside a hole**: a name, an expression, a call? A bare name is
    the cheapest rule to write and to lex, and it is the one that reads worst on the
-   day somebody wants `{count + 1}`.
+   day somebody wants `{count + 1}`. **Answered by a count on 2026-09-08** (021):
+   over 1461 chains, a bare-name rule admits **56.9%** of the 2536 holes and lets
+   **48.7%** of the chains be rewritten whole; a rule admitting any postfix run, a
+   call or an index, reaches **99.7%** and **99.5%**. The whole distance between
+   the two is **seven holes**, six of them arithmetic and the seventh `???`, which
+   the spec calls valid *anywhere*.
 2. **How a value renders.** This half is already normative and costs nothing: every
    type has a canonical `to_str`, and design.md fixes `f64`'s as round-trip-exact
    rather than shortest. An interpolation that rendered differently would introduce
