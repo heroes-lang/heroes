@@ -3037,3 +3037,86 @@ Was | author instruction, 2026-08-14 | **A runtime function that joins two path 
     it carries a test that makes it fire, with a stub compiler that prints a
     drifted sum. The `spec` suite goes 9 checks to 10 and the net's own tests
     121 to 122.
+
+- [x] **M-discard-refusal** | `_ =` on a fallible value must become a compile error | `spec:97-98` · `selfhost/check/walk.hero` · `docs/measurements/014-mutate-over-thirty-five.md`
+
+    **Origin:** author decision 2026-09-03, `/decide` answer `3a`, out of
+    measurement 014's survivor listing. It has its chain row since 2026-09-04,
+    placed with the language's other rulings by author instruction; the id stood
+    in this list before it had a row, which is the order CLAUDE.md §14 asks for
+    and the one the `records/names` check found last time. The sitting first,
+    then the compiler.
+
+    **Both halves of that are language, so nothing lands before a full sitting**
+    (CLAUDE.md §4: a diagnostic class and a spec sentence). What is measured and
+    not in dispute: `_ = risky(0 - 1)` compiles and the program exits **0**
+    having swallowed the error, while `x = risky(3)` followed by `x + 1` is
+    `error[bad_operand] ... found i64?` — re-run on this Mac 2026-09-03 from the
+    seed-built compiler; and the corpus carries **nine** witnesses, all one
+    shape, `_ = expect(line, 2)?` with the `?` gone (six in
+    `examples/assembler/assemble.hero`, one in its `machine.hero`, two in
+    `examples/maze/grid.hero`), which is every `drop-question` survivor
+    measurement 014 found.
+
+    **And the price is measured, exactly, before anybody starts**: stripping
+    `_ = ` from a line makes the compiler refuse it and NAME the type, so a copy
+    of the tree with every discard stripped is a census — `selfhost/` has
+    **237** discard lines and **54** of them throw away a fallible value (28
+    `()?`, 24 `i64?`, 2 `Exit?`), `tests/harness/` 14 and **6**, `examples/` 18
+    and **1** (`pipeline/`). **61 lines stop compiling on the day this lands,
+    the compiler's own source included**, so the repair is part of the step and
+    not a follow-up. Two sampled shapes show the repair is not uniform: `_ =
+    process.mkdir_all(dir)` (`cli/doctor.hero:40`) is a deliberate best-effort
+    discard that wants (a)'s own escape hatch, `.is_err()`, while `_ =
+    write_file(path: watched, …)` inside `cli/deps.hero`'s test is a hole that
+    would let the test pass for the wrong reason.
+
+    **What the sitting is for, given the verdict is already the author's**: the
+    spec-warden's count at `spec:97-98` (the sentence is one clause on an
+    existing line, not a new paragraph, and headroom was 378 tokens that
+    evening), the ergonomist's read of whether the diagnostic can name both
+    legal spellings without the reader opening a second file (§4.17), the
+    compiler-engineer on where a discard is typed (`selfhost/check/walk.hero`)
+    and whether the rule can see through a generic — the same wall panels 082 R3
+    and 084 hit, since `_ = f()` inside `function drop<A>(x: A)` is a discard of
+    a type parameter that may or may not be fallible at the call — and the
+    ffi-pragmatist on `()?`, which is option (c)'s narrower shape and the one
+    every `write_file` caller writes.
+
+    **What it owes on landing**: the diagnostic with its `#~` annotation and a
+    `.fixed` case (the certain fix is `_ = f()?` only where the enclosing
+    function is itself fallible, and a *guess* otherwise, which is §8's
+    distinction doing real work), the nine corpus witnesses repaired in the same
+    commit, and `heroes mutate` re-scored — the `drop-question` operator's rate
+    is what moves, so the number goes on the record beside measurement 014's
+    rather than replacing it.
+
+    **Where to look also:** `spec:141-152` · `docs/panel/082` R3, `084` ·
+    `docs/work/DONE.md`, the decision `3a`.
+    **Why it matters:** the author has ruled and the language has not been
+    changed yet, which is exactly the gap §4 exists to keep honest.
+
+    **Closed 2026-09-08 at M-discard-refusal, four steps and one full sitting**
+    (`docs/panel/118`, journal [038](../journal/038-discard-refusal.md)). The
+    rule closes TWO positions and states the third: `_ = e` on a written `T?`
+    and a `_` parameter written one are refused, and a discard of a type
+    parameter is not, because refusing it relocates the hole instead of closing
+    it — `function drop<A>(_: A)` swallows a failure with no discard statement
+    anywhere, and refusing that too leaves `_ = [x]`, which works on a KNOWN
+    fallible. No fix is `certain`: the same line's three repairs print 1, 9 and
+    a panic.
+
+    **This item's own census was stale and is corrected here rather than in
+    place**: it said 269 discard sites with 61 fallible, priced 2026-09-03. Re-run
+    2026-09-08 from the seed-built compiler: **299** discard sites and **63**
+    that stop compiling — 53 in `selfhost/`, 2 inside test-program string
+    literals the strip method could not see, 6 in `tests/harness/`, 1 in
+    `examples/` and 1 in the golden corpus. `examples/` had grown 18 → 47 discard
+    lines. The repairs are 6 `?`, 14 `_ = e.is_err()` and 36
+    `assert !e.is_err()`.
+
+    **What it bought, measured:** `heroes mutate --operator drop-question
+    --survivors` reports **236 mutants, 236 killed, no survivors**, against 9 of
+    84 in measurement 014; `--permissive` kills 193, so 43 of the 236 are caught
+    only by the thesis rules. The spec clause cost **+62** (`SPEC_TOKENS` 3903 →
+    3965, ledger row 56) and the fixpoint holds byte for byte.

@@ -28,7 +28,43 @@ per item, `- [ ] **<origin>** | <the question>`, then the body indented four
 spaces. Nothing lives outside the two banners.
 
 *******************************************************************************
-**OPEN: 323**
+**OPEN: 327**
+
+- [ ] **M-discard-refusal step 3** | Three repairs of one refused line print three different answers. Predict them before you look, then say which of the three a `certain` fix could ever have been | `docs/panel/118` R3 · `selfhost/value_errors.hero` `discarded_failure` | this is the whole argument for shipping no automatic repair, and it is two commands long
+
+    **Origin:** M-discard-refusal step 3, 2026-09-08. The program is four lines:
+    `risky` fails on a negative, `run()` returns `i64?` and contains the
+    refused line, `main` prints `run().default(1)`. Write the three repairs —
+    `_ = risky(0 - 1)?`, `_ = risky(0 - 1).is_err()`, `_ = risky(0 - 1).must()`
+    — and predict each printed answer. Then run them.
+    **The question after:** one of the three preserves the program's meaning
+    exactly. It is also the one that preserves the bug. Say what that means for
+    what `heroes check --apply` is allowed to do.
+
+- [ ] **M-discard-refusal step 3** | A wall with a door beside it: work out, from the spec alone, how to defeat the rule on a KNOWN fallible in five characters | `spec/heroes-spec.md` § Bindings · `docs/panel/118` § Amendments | the sitting adopted a refusal that closed nothing, and the fact that killed it is one program long
+
+    **Origin:** M-discard-refusal step 3, 2026-09-08 — the amendment that
+    withdrew R1's third position. Read the clause at `spec:99` and then answer:
+    if `_ = e` refuses a `T?`, what is `_ = [e]`? Then say why the spec spends
+    tokens naming that hole instead of closing it, and what would have to be
+    true for closing it to be possible without reading another file.
+
+- [ ] **M-discard-refusal step 2** | Two repairs for one clang warning: one deletes the assignment, one keeps it and says the silence is deliberate. Both work on the shape that provoked them. Say which shapes separate them | `selfhost/emit/body.hero` · `selfhost/emit/unread.hero` `may_lose_its_destination` | the first was built, measured clean, and thrown away, and the reason is a runtime call carrying a check
+
+    **Origin:** M-discard-refusal step 2, 2026-09-08. `_ = a == b` on two
+    integers, on two `str`, and on two arrays. For each, say what the emitter
+    prints and whether dropping the assignment would delete anything worth
+    keeping. `runtime/parts/array.c`'s `hero_array_require` and
+    `selfhost/emit/structural.hero`'s deliberate `hero_panic` are the answer's
+    two halves.
+
+- [ ] **M-discard-refusal close** | The mutation table's second column, and what it measures that the first does not | `docs/journal/038-discard-refusal.md` · `heroes mutate --operator drop-question --survivors` | 236 killed is the headline and 193 is the number that says what the thesis buys
+
+    **Origin:** M-discard-refusal close, 2026-09-08. Run it. The `check` column
+    says 236 of 236; the `--permissive` column says 193. Say in one sentence
+    what the 43 are, and then say why `--permissive` exists at all — design.md
+    Part 11 calls it a control arm, and this is the first table in this project
+    where the arm's own number is worth reading on its own.
 
 - [ ] **M-ir-lowering.1** | First IR. `x = 2 + 3 * 4` becomes how many instructions — 3, 4, or 5? And which of them proves the precedence table, given the tree is gone by then?
 
