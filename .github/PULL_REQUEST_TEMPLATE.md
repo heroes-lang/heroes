@@ -6,13 +6,14 @@
   locked.
 -->
 
-**Pull requests are not accepted on this repository.** This is not about your
-patch, which nobody has read yet, and it is not temporary phrasing: it is the
-policy in force for everybody.
+**Code is not accepted on this repository yet.** This is not about your patch,
+which nobody has read, and it is not permanent: contributions are meant to open
+later, and `CONTRIBUTING.md` names the three conditions that have to be true
+first, so you can check them yourself instead of waiting to be told.
 
-The reason is in `CONTRIBUTING.md`, in one paragraph: every line here goes
-through a written contract, a five-judge panel and a dated record, and a patch
-from outside cannot carry those with it.
+The short reason: every line here goes through a written contract, a five-judge
+panel and a dated record, and a patch from outside cannot carry those with it
+while the process that produces them still lives inside one working session.
 
 **What to do instead**
 

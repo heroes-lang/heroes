@@ -34,6 +34,14 @@ stage[0-9]
 # Scratch git worktrees created by panel judges (never project content).
 .claude/worktrees/
 
+# Python's bytecode cache. The only Python here is `.claude/hooks/`, and it
+# leaves no cache when the harness runs it as a script; a cache appears the
+# moment somebody IMPORTS a hook to test it, which is how the guard's
+# seventeen shapes were checked on 2026-09-08. Nothing here should ever be
+# committed and nothing reads it.
+__pycache__/
+*.pyc
+
 # One assistant's local permission allow-list, which is per-machine and names
 # paths outside this repository. It was kept out by the author's GLOBAL ignore
 # file and by nothing here, so a fresh clone and a CI checkout had no rule for

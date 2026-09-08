@@ -1377,3 +1377,48 @@ subagent to report its own context after reading one file under `selfhost/emit/`
 
 
 
+
+## CL-070 — A commit limits itself by pathspec, because naming the paths to `git add` limits nothing
+2026-09-08 · found while breaking it · § Hard stops, and `.claude/rules/records.md`
+
+CL-041 says a commit stages ONLY the files this conversation touched, each one
+named on the command line, and gives the reason: more than one session works in
+this checkout, and a sweep ships somebody else's unfinished work under this
+session's subject. **The procedure it implies does not achieve what it asks.**
+`git add <paths>` followed by a bare `git commit` commits the whole staging
+area, so a parallel session's `git add` decides the contents of this session's
+commit and no amount of care at the `add` step prevents it.
+
+Measured the day it was written, by doing it: a commit that named **fourteen**
+paths carried **sixteen**, the two extra being the site's landing pages, which a
+parallel session had staged while this one was editing the same files. The
+commit body stated, in a sentence written before the commit ran, that those two
+pages were *not* in it. They were, and that is a false record under §12, which
+is the more expensive half: the sweep itself lost nothing, since the author was
+driving both sessions, but the log said something untrue about itself and only
+a `git show --stat` afterwards caught it.
+
+**The form that actually limits is `git commit -- <paths>`**, which ignores the
+index and commits exactly the paths given. CL-041's `git status` step stands and
+is not sufficient on its own: reading the tree tells you what is dirty, and only
+the pathspec keeps it out.
+
+The general shape, and it is why this is its own entry rather than a line under
+CL-041: **a rule and the command that is supposed to enforce it are two
+different things, and the gap between them is invisible while the situation the
+rule was written for does not occur.** This one sat unnoticed for five days
+because no parallel session had staged anything in that window.
+
+**Giving the rule an executor found a second defect, in the guard itself.**
+`.claude/hooks/guard_bash.py` gained the refusal the same day, and its first run
+blocked a test script that ran no git at all. The cause was one level below the
+new rule: `segments()` split the raw command text on `&&`, `||`, `;` and `|`
+without regard for quoting, so `echo "cd x && git commit -m y"` produced a
+segment reading `git commit -m y"` and the guard read **a quoted mention as a
+command**. The bug was already there and had cost nothing, because the rules
+before this one watched `git add -A`, a string nobody writes in passing, while
+`git commit` is written in documentation and test scripts constantly. The split
+is quote-aware now, verified on seventeen shapes including the two that must
+pass and the fifteen that must not change: **the same lesson as
+`without_heredocs` one level up, that data is not a command line, and a guard
+learns it once per layer.**

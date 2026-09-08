@@ -30,13 +30,18 @@ Refusals, not trade-offs; no measurement and no deadline outranks them.
 ones (CL-041).
 
 - **Never `git add -A`, `git add .`, `git add -u`, `git commit -a`, `git
-  stash`.** A commit stages only this conversation's files, each named on the
-  command line. Read `git status` first; a dirty path nobody here touched stays
-  out and is reported. Other sessions share this checkout (CL-041).
+  stash`.** A commit carries only this conversation's files, and **the pathspec
+  is what limits it**: `git commit -- <paths>`. Naming them to `git add` limits
+  nothing, because a bare `git commit` takes the whole index, another session's
+  staged work included (CL-070). Read `git status` first; a dirty path nobody
+  here touched stays out and is reported. Other sessions share this checkout
+  (CL-041).
 - **Pushing `main`, publishing the site, anything outward-facing: asked for,
   every time.** The site is on this branch and `site/public/CNAME` names
   `heroes-lang.org`, so a push can publish it. Commit and tag locally, say how
-  many site commits would travel, wait for a yes (CL-042).
+  many site commits would travel, wait for a yes (CL-042). **The repository
+  itself opens at `M-open-repository`**: from the moment the author flips it,
+  every push is outward-facing and a commit body is read by strangers.
 - **Destructive operations are asked for.**
 - **`UPDATE_GOLDEN=1` does not exist**, and in `tests/golden/check/` and
   `tests/golden/ir/` it is forbidden outright.

@@ -2033,6 +2033,24 @@ The repository is **private** today and publishing is a hard stop that only the
 author lifts (CLAUDE.md §14). This entry is the checklist that has to be true
 first, and it exists because most of its items get worse the longer they wait.
 
+**Overtaken in part on 2026-09-08 by `M-open-repository`** (author instruction;
+this paragraph is written underneath rather than in place of the sentence above,
+which was true when it was written). That milestone opens the repository, and
+three of the bullets below were banked by it rather than by this one. **The licence re-check ran** and disagreed with what `NOTICE` said, which
+is recorded there and in `vendor/tokenizers/README.md`. **The contribution
+policy is in force**, and the finding is that neither half of it is a repository
+setting: forking cannot be disabled on a public repository and pull requests
+cannot be closed, so the policy is declared in `CONTRIBUTING.md` and a template
+and `main` is protected instead. **The `main`-cannot-fail defect is measured**
+rather than remembered, and it is in `docs/work/SCHEDULED.md` with its three
+exit codes.
+
+**What this entry still owns is unchanged**: the thesis measured, the
+compatibility paragraph and the `1.0.0` it governs, the trademark question, and
+the outward act of the channels. Only `0.x`'s one sentence is published so far.
+The gate is now the gate for *a finished thing being announced*, which was
+always its subject, and no longer the gate for the source being readable.
+
 **Already done, ahead of the milestone** (2026-08-11, because a repository
 accumulates history and history cannot be relicensed retroactively): `LICENSE`
 (Apache-2.0), `LICENSE-RUNTIME-EXCEPTION` — so a program compiled with Heroes
