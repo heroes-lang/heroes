@@ -140,7 +140,7 @@ test "parse checks silently, dumps only a clean tree, and fmt round-trips"
     # fmt to a real file: --in-place canonicalises once, then leaves
     # the canonical file alone.
     messy = "function main()\n    print(2 + (3 * 4))\n"
-    _ = write_file(path: "build/selftest_fmt.hero", text: messy)
+    assert !write_file(path: "build/selftest_fmt.hero", text: messy).is_err()
     fs = source.new_source(name: "build/selftest_fmt.hero", text: messy)
     in_place: [argv.FlagHit] = [argv.FlagHit(spelling: "--in-place", value: fail("none", "no value"))]
     finv = argv.Invocation(tag: .fmt_cmd, file: ok("build/selftest_fmt.hero"), program_args: [], flags: in_place)
@@ -149,7 +149,7 @@ test "parse checks silently, dumps only a clean tree, and fmt round-trips"
     assert canon == "function main()\n    print(2 + 3 * 4)\n"
 
     # And the refusal: a file with diagnostics is not touched.
-    _ = write_file(path: "build/selftest_fmt.hero", text: "function main(\n")
+    assert !write_file(path: "build/selftest_fmt.hero", text: "function main(\n").is_err()
     bs = source.new_source(name: "build/selftest_fmt.hero", text: "function main(\n")
     assert run_fmt(path: "build/selftest_fmt.hero", s: bs, inv: finv) == .diagnostics_exit
     assert read_file("build/selftest_fmt.hero").must() == "function main(\n"
@@ -212,7 +212,7 @@ test "the tree check fires on output that parses and is a fixpoint and means som
     assert quiet.is_err()
 
     # And the real command formats that record now instead of refusing it.
-    _ = write_file(path: "build/selftest_fmt_tree.hero", text: remark)
+    assert !write_file(path: "build/selftest_fmt_tree.hero", text: remark).is_err()
     rs = source.new_source(name: "build/selftest_fmt_tree.hero", text: remark)
     marks: [argv.FlagHit] = [argv.FlagHit(spelling: "--in-place", value: fail("none", "no value"))]
     rinv = argv.Invocation(tag: .fmt_cmd, file: ok("build/selftest_fmt_tree.hero"), program_args: [], flags: marks)
@@ -246,7 +246,7 @@ test "the parse and fixpoint checks fire, and the input's own errors are not bla
     # PARSER refuses is exit 1 with the diagnostic on the author's line,
     # not exit 2 with the compiler accusing itself.
     refused_input = "function f(c: str) -> str\n    return match c\n        \"a\" => \"b\"\n        _ => c\n    + \"x\"\n"
-    _ = write_file(path: "build/selftest_fmt_guard.hero", text: refused_input)
+    assert !write_file(path: "build/selftest_fmt_guard.hero", text: refused_input).is_err()
     gs = source.new_source(name: "build/selftest_fmt_guard.hero", text: refused_input)
     hits: [argv.FlagHit] = [argv.FlagHit(spelling: "--in-place", value: fail("none", "no value"))]
     ginv = argv.Invocation(tag: .fmt_cmd, file: ok("build/selftest_fmt_guard.hero"), program_args: [], flags: hits)

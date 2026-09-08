@@ -37,7 +37,7 @@ record Check
 # report about the machine.
 function capture(program: str, words: [str], build_dir: str) -> str?
     out_path = build_dir + "/doctor-out.txt"
-    _ = process.mkdir_all(build_dir)
+    process.mkdir_all(build_dir)?
     ran = process.run(program: program, words: words, out: out_path, err: process.discard())
 
     if !ran.started
@@ -133,7 +133,7 @@ function checks(build_dir: str, runtime_hint: str) -> [Check]
 
         if !write_file(path: probe, text: "ok").is_err() && !read_file(probe).is_err()
             cache_ok @ true
-            _ = process.remove_file(probe)
+            _ = process.remove_file(probe).is_err()
     detail: str @ "cannot write to " + build_dir + "/"
 
     if cache_ok

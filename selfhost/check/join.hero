@@ -91,7 +91,7 @@ test "the first branch sets the type and the disagreement is blamed"
         Branch(value: ok(int_id), span: token.Span(start: 0, end: 1))
         Branch(value: ok(str_id), span: token.Span(start: 2, end: 3))
     ]
-    _ = join_branches(@c, s, d, mixed)
+    assert !join_branches(@c, s, d, mixed).is_err()
     assert c.out.diagnostics.len() == 1
     assert c.out.diagnostics[0].message == "expected `i64`, found `str`"
 

@@ -201,7 +201,7 @@ function kind_named(short: str) -> widths.IntKind?
 ## Tests
 
 test "narrowing tests both bounds, widening emits none, u64 tests only the floor"
-    text = "function main()\n    n: i64 @ 200\n    small = n.to_i8()\n    big = n.to_u64()\n    _ = small\n    _ = big\n    print(n)\n"
+    text = "function main()\n    n: i64 @ 200\n    small = n.to_i8()\n    big = n.to_u64()\n    _ = small.is_err()\n    _ = big.is_err()\n    print(n)\n"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)

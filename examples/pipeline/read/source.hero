@@ -58,5 +58,5 @@ test "empty text has no lines at all"
 test "a blank line in the middle is kept"
     r: Reader @ new_reader("a\n\nb\n")
     assert r.remaining() == 3
-    _ = next_line(@r)
+    assert !next_line(@r).is_err()
     assert next_line(@r).must() == ""

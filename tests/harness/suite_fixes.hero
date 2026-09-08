@@ -170,8 +170,8 @@ function run_fixtures(scratch: str, compiler: str, dir: str, least: i64) -> repo
             # The repaired PROGRAM checks clean: the directory, with the one
             # file replaced, and every `.hero` in it re-checked.
             copy = scratch + "/fixed/" + strings.base_name(path: case_dir)
-            _ = shell.remove_tree(copy)
-            _ = shell.mkdir_all(copy)
+            shell.remove_tree(copy)?
+            shell.mkdir_all(copy)?
             broken: str @ ""
 
             for file in entries

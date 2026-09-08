@@ -66,7 +66,7 @@ function text_after(text: str, marker: str) -> str?
 # and by `heroes doctor`; a few milliseconds beside a link.
 function version_line(build_dir: str) -> str?
     out_path = build_dir + "/clang-version.txt"
-    _ = process.mkdir_all(build_dir)
+    process.mkdir_all(build_dir)?
     ran = process.run(program: "clang", words: ["clang", "--version"], out: out_path, err: process.discard())
 
     if !ran.started || ran.code != 0

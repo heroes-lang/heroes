@@ -251,9 +251,9 @@ function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
 
     if checked.is_err()
         text = failure_text(checked)
-        _ = write_file(path: verdict, text: text)
+        write_file(path: verdict, text: text)?
         return fail("clang", text)
-    _ = write_file(path: verdict, text: "ok\n")
+    write_file(path: verdict, text: "ok\n")?
     return ok()
 
 # Where a verdict lives: under the dump's directory, named by the digest of

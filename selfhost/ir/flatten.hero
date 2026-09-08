@@ -225,7 +225,7 @@ function while_loop(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: sta
     build.terminate(@b, .branch(cond: value, then_to: inside, else_to: leave))
     b.loops @ b.loops.push(build.LoopEdges(break_to: leave, continue_to: head))
     build.switch_to(@b, target: inside)
-    _ = block(@b, a, r, c, s, decls, body: body, wants_value: false)
+    _ = block(@b, a, r, c, s, decls, body: body, wants_value: false).is_err()
     build.terminate(@b, .jump(to: head))
     b.loops @ b.loops.slice(from: 0, to: b.loops.len() - 1)
     build.switch_to(@b, target: leave)
@@ -286,7 +286,7 @@ function for_loop(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state
     # continue lands on the STEP, not the test: the increment owes
     # itself to that path as much as to the fall-through.
     b.loops @ b.loops.push(build.LoopEdges(break_to: leave, continue_to: step))
-    _ = block(@b, a, r, c, s, decls, body: body, wants_value: false)
+    _ = block(@b, a, r, c, s, decls, body: body, wants_value: false).is_err()
     build.terminate(@b, .jump(to: step))
     b.loops @ b.loops.slice(from: 0, to: b.loops.len() - 1)
     build.switch_to(@b, target: step)

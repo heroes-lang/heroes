@@ -109,7 +109,8 @@ void h_ffiafreerthatcannotfreeastring_main(void) {
 #line 110 "ffiafreerthatcannotfreeastring.c"
     const char * h0_owned0;
     h_0opt_f87774a h1_owned1 = {0};
-    h_0opt_f87774a h2_own2 = {0};
+    h_0opt_f87774a h2_f0 = {0};
+    h_0opt_f87774a h3_own3 = {0};
     HeroStr t1 = {0};
     const char * t2;
     const char * t3;
@@ -120,80 +121,107 @@ void h_ffiafreerthatcannotfreeastring_main(void) {
     bool t8;
     const char * t9;
     void * t10;
-    int64_t t12;
-    h_0opt_f87774a t13 = {0};
-    h_0opt_f87774a t14 = {0};
+    h_0opt_f87774a t11 = {0};
+    h_0opt_f87774a t12 = {0};
+    int64_t t13;
+    int64_t t14;
+    __attribute__((unused)) bool t15;
+    int64_t t16;
+    h_0opt_f87774a t17 = {0};
+    h_0opt_f87774a t18 = {0};
+    h_0opt_f87774a t19 = {0};
     goto bb0;
 bb0:
-#line 30 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
+#line 32 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
     t1 = HERO_STR_LIT(hero_str_35a1);
-#line 30 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
+#line 32 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
     t2 = hero_str_cstr(t1);
-#line 30 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
+#line 32 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
     t3 = (const char *)strdup(hero_cstr_nonnull(t2));
-#line 30 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
+#line 32 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
     h0_owned0 = t3;
-#line 30 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
+#line 32 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
     t4 = h0_owned0;
-#line 30 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
+#line 32 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
     t5 = h_library_validated(t4);
-#line 30 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
-    t13 = h2_own2;
-#line 30 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
-    h2_own2 = t5;
-#line 145 "ffiafreerthatcannotfreeastring.c"
-    h_0opt_f87774a_release(&t13);
-#line 30 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
-    t14 = h1_owned1;
-#line 149 "ffiafreerthatcannotfreeastring.c"
+#line 32 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
+    t17 = h3_own3;
+#line 32 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
+    h3_own3 = t5;
+#line 152 "ffiafreerthatcannotfreeastring.c"
+    h_0opt_f87774a_release(&t17);
+#line 32 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
+    t18 = h1_owned1;
+#line 156 "ffiafreerthatcannotfreeastring.c"
     h_0opt_f87774a_retain(&t5);
-#line 30 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
+#line 32 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
     h1_owned1 = t5;
-#line 153 "ffiafreerthatcannotfreeastring.c"
-    h_0opt_f87774a_release(&t14);
-#line 30 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
+#line 160 "ffiafreerthatcannotfreeastring.c"
+    h_0opt_f87774a_release(&t18);
+#line 32 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
     t6 = ((void *)0);
-#line 30 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
+#line 32 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
     t7 = h0_owned0;
-#line 30 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
+#line 32 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
     t8 = t7 != t6;
-#line 30 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
+#line 32 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
     if (t8) goto bb1; else goto bb2;
-#line 30 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
+#line 32 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
 bb1:
-#line 30 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
+#line 32 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
     t9 = h0_owned0;
-#line 30 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
+#line 32 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
     t10 = (void *)(char *)t9;
-#line 30 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
+#line 32 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
     (void)fclose(t10);
-#line 30 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
+#line 32 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
     goto bb2;
-#line 30 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
+#line 32 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
 bb2:
-#line 31 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
-    t12 = INT64_C(0);
-#line 31 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
-    hero_print_int(t12);
-#line 31 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
+#line 32 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
+    t11 = h1_owned1;
+#line 32 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
+    t19 = h2_f0;
+#line 186 "ffiafreerthatcannotfreeastring.c"
+    h_0opt_f87774a_retain(&t11);
+#line 32 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
+    h2_f0 = t11;
+#line 190 "ffiafreerthatcannotfreeastring.c"
+    h_0opt_f87774a_release(&t19);
+#line 32 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
+    t12 = h2_f0;
+#line 32 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
+    t13 = t12.tag;
+#line 32 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
+    t14 = INT64_C(1);
+#line 32 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
+    t15 = t13 == t14;
+#line 33 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
+    t16 = INT64_C(0);
+#line 33 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
+    hero_print_int(t16);
+#line 33 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
     hero_print_end();
-#line 181 "ffiafreerthatcannotfreeastring.c"
+#line 206 "ffiafreerthatcannotfreeastring.c"
     h_0opt_f87774a_release(&h1_owned1);
-#line 31 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
-#line 184 "ffiafreerthatcannotfreeastring.c"
-    h_0opt_f87774a_release(&h2_own2);
+#line 33 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
+#line 209 "ffiafreerthatcannotfreeastring.c"
+    h_0opt_f87774a_release(&h2_f0);
+#line 33 "tests/golden/fixedbugs/ffi-a-freer-that-cannot-free-a-string.hero"
+#line 212 "ffiafreerthatcannotfreeastring.c"
+    h_0opt_f87774a_release(&h3_own3);
     return;
 }
 
 #line 122 "<heroes library>"
 int64_t h_library_HERO_STR_OK(void) {
-#line 191 "ffiafreerthatcannotfreeastring.c"
+#line 219 "ffiafreerthatcannotfreeastring.c"
     return HERO_STR_OK;
 }
 
 #line 152 "<heroes library>"
 h_0opt_f87774a h_library_validated(const char * h0_c) {
-#line 197 "ffiafreerthatcannotfreeastring.c"
+#line 225 "ffiafreerthatcannotfreeastring.c"
     int64_t h1_status;
     HeroStr h2_text = {0};
     HeroStr h3_own3 = {0};
@@ -246,15 +274,15 @@ bb1:
     t18 = h3_own3;
 #line 156 "<heroes library>"
     h3_own3 = t9;
-#line 250 "ffiafreerthatcannotfreeastring.c"
+#line 278 "ffiafreerthatcannotfreeastring.c"
     hero_str_decref(t18);
 #line 156 "<heroes library>"
     t19 = h2_text;
-#line 254 "ffiafreerthatcannotfreeastring.c"
+#line 282 "ffiafreerthatcannotfreeastring.c"
     hero_str_incref(t9);
 #line 156 "<heroes library>"
     h2_text = t9;
-#line 258 "ffiafreerthatcannotfreeastring.c"
+#line 286 "ffiafreerthatcannotfreeastring.c"
     hero_str_decref(t19);
 #line 157 "<heroes library>"
     t10 = h1_status;
@@ -270,10 +298,10 @@ bb2:
     t4 = HERO_STR_LIT(hero_str_4a05a740);
 #line 154 "<heroes library>"
     t5 = HERO_STR_LIT(hero_str_5263489);
-#line 274 "ffiafreerthatcannotfreeastring.c"
+#line 302 "ffiafreerthatcannotfreeastring.c"
     hero_str_incref(t4);
 #line 154 "<heroes library>"
-#line 277 "ffiafreerthatcannotfreeastring.c"
+#line 305 "ffiafreerthatcannotfreeastring.c"
     hero_str_incref(t5);
 #line 154 "<heroes library>"
     t6 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t4, .msg = t5}};
@@ -281,25 +309,25 @@ bb2:
     t20 = h4_own4;
 #line 154 "<heroes library>"
     h4_own4 = t6;
-#line 285 "ffiafreerthatcannotfreeastring.c"
+#line 313 "ffiafreerthatcannotfreeastring.c"
     h_0opt_f87774a_release(&t20);
 #line 154 "<heroes library>"
-#line 288 "ffiafreerthatcannotfreeastring.c"
+#line 316 "ffiafreerthatcannotfreeastring.c"
     h_0opt_f87774a_retain(&t6);
 #line 154 "<heroes library>"
-#line 291 "ffiafreerthatcannotfreeastring.c"
+#line 319 "ffiafreerthatcannotfreeastring.c"
     hero_str_decref(h2_text);
 #line 154 "<heroes library>"
-#line 294 "ffiafreerthatcannotfreeastring.c"
+#line 322 "ffiafreerthatcannotfreeastring.c"
     hero_str_decref(h3_own3);
 #line 154 "<heroes library>"
-#line 297 "ffiafreerthatcannotfreeastring.c"
+#line 325 "ffiafreerthatcannotfreeastring.c"
     h_0opt_f87774a_release(&h4_own4);
 #line 154 "<heroes library>"
-#line 300 "ffiafreerthatcannotfreeastring.c"
+#line 328 "ffiafreerthatcannotfreeastring.c"
     h_0opt_f87774a_release(&h5_own5);
 #line 154 "<heroes library>"
-#line 303 "ffiafreerthatcannotfreeastring.c"
+#line 331 "ffiafreerthatcannotfreeastring.c"
     h_0opt_f87774a_release(&h6_own6);
     return t6;
 bb3:
@@ -309,10 +337,10 @@ bb4:
     t15 = HERO_STR_LIT(hero_str_34624695);
 #line 159 "<heroes library>"
     t16 = HERO_STR_LIT(hero_str_4bb64adb);
-#line 313 "ffiafreerthatcannotfreeastring.c"
+#line 341 "ffiafreerthatcannotfreeastring.c"
     hero_str_incref(t15);
 #line 159 "<heroes library>"
-#line 316 "ffiafreerthatcannotfreeastring.c"
+#line 344 "ffiafreerthatcannotfreeastring.c"
     hero_str_incref(t16);
 #line 159 "<heroes library>"
     t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}};
@@ -320,31 +348,31 @@ bb4:
     t21 = h5_own5;
 #line 159 "<heroes library>"
     h5_own5 = t17;
-#line 324 "ffiafreerthatcannotfreeastring.c"
+#line 352 "ffiafreerthatcannotfreeastring.c"
     h_0opt_f87774a_release(&t21);
 #line 159 "<heroes library>"
-#line 327 "ffiafreerthatcannotfreeastring.c"
+#line 355 "ffiafreerthatcannotfreeastring.c"
     h_0opt_f87774a_retain(&t17);
 #line 159 "<heroes library>"
-#line 330 "ffiafreerthatcannotfreeastring.c"
+#line 358 "ffiafreerthatcannotfreeastring.c"
     hero_str_decref(h2_text);
 #line 159 "<heroes library>"
-#line 333 "ffiafreerthatcannotfreeastring.c"
+#line 361 "ffiafreerthatcannotfreeastring.c"
     hero_str_decref(h3_own3);
 #line 159 "<heroes library>"
-#line 336 "ffiafreerthatcannotfreeastring.c"
+#line 364 "ffiafreerthatcannotfreeastring.c"
     h_0opt_f87774a_release(&h4_own4);
 #line 159 "<heroes library>"
-#line 339 "ffiafreerthatcannotfreeastring.c"
+#line 367 "ffiafreerthatcannotfreeastring.c"
     h_0opt_f87774a_release(&h5_own5);
 #line 159 "<heroes library>"
-#line 342 "ffiafreerthatcannotfreeastring.c"
+#line 370 "ffiafreerthatcannotfreeastring.c"
     h_0opt_f87774a_release(&h6_own6);
     return t17;
 bb5:
 #line 158 "<heroes library>"
     t13 = h2_text;
-#line 348 "ffiafreerthatcannotfreeastring.c"
+#line 376 "ffiafreerthatcannotfreeastring.c"
     hero_str_incref(t13);
 #line 158 "<heroes library>"
     t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t13};
@@ -352,25 +380,25 @@ bb5:
     t22 = h6_own6;
 #line 158 "<heroes library>"
     h6_own6 = t14;
-#line 356 "ffiafreerthatcannotfreeastring.c"
+#line 384 "ffiafreerthatcannotfreeastring.c"
     h_0opt_f87774a_release(&t22);
 #line 158 "<heroes library>"
-#line 359 "ffiafreerthatcannotfreeastring.c"
+#line 387 "ffiafreerthatcannotfreeastring.c"
     h_0opt_f87774a_retain(&t14);
 #line 158 "<heroes library>"
-#line 362 "ffiafreerthatcannotfreeastring.c"
+#line 390 "ffiafreerthatcannotfreeastring.c"
     hero_str_decref(h2_text);
 #line 158 "<heroes library>"
-#line 365 "ffiafreerthatcannotfreeastring.c"
+#line 393 "ffiafreerthatcannotfreeastring.c"
     hero_str_decref(h3_own3);
 #line 158 "<heroes library>"
-#line 368 "ffiafreerthatcannotfreeastring.c"
+#line 396 "ffiafreerthatcannotfreeastring.c"
     h_0opt_f87774a_release(&h4_own4);
 #line 158 "<heroes library>"
-#line 371 "ffiafreerthatcannotfreeastring.c"
+#line 399 "ffiafreerthatcannotfreeastring.c"
     h_0opt_f87774a_release(&h5_own5);
 #line 158 "<heroes library>"
-#line 374 "ffiafreerthatcannotfreeastring.c"
+#line 402 "ffiafreerthatcannotfreeastring.c"
     h_0opt_f87774a_release(&h6_own6);
     return t14;
 bb6:

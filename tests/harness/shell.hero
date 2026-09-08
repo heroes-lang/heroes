@@ -122,7 +122,7 @@ function spawned(scratch: str, program: str, words: [str], in_path: str) -> Run?
     # over from an earlier run. A test that passes on the strength of another
     # test's side effect passes for the wrong reason, and 28 call sites share
     # that directory — so the fix is the one place none of them can forget.
-    _ = mkdir_all(scratch)
+    mkdir_all(scratch)?
     out_path = scratch + "/stdout"
     err_path = scratch + "/stderr"
     hero_run_reset()
@@ -248,7 +248,7 @@ function project_files(scratch: str) -> [str]?
             "cannot_walk",
             "`git ls-files` could not list this project's files — the record checks ask git what belongs here, and there is no sound fallback: a `find` reported a gitignored TLS key as a milestone identifier, which is why this function exists"
         )
-    _ = write_file(path: listing, text: ran.out)
+    write_file(path: listing, text: ran.out)?
     entries: [str] @ []
 
     for piece in strings.split_on(text: ran.out, byte: 0)

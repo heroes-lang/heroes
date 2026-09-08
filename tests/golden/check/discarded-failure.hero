@@ -1,0 +1,81 @@
+# UNVERIFIED — pending debrief
+# Adversarial case for panel 118: `_ = e` on a `T?` is refused, because it is
+# the one discard the type system cannot see through. The witness this milestone
+# was filed on is the first function below — it compiled and exited 0.
+#
+# What the case is really for is the BOUNDARY, which moved twice during the
+# sitting. The rule reads the OUTERMOST written type and two positions only, so
+# every legal neighbour is here beside every refusal: get the boundary wrong in
+# either direction and this file says which way.
+#
+# The message is per-site and not a template: `?` is named only where the
+# enclosing function can fail, and `.default(v)` only where the payload is a
+# value a reader could write — a `()?` has none, and `.default(())` is a parse
+# error on §4.19's own ground.
+
+function risky(n: i64) -> i64?
+    if n < 0
+        return fail("negative", "n is negative")
+    return ok(n + 1)
+
+function cleanup(n: i64) -> ()?
+    if n < 0
+        return fail("negative", "n is negative")
+    return ok()
+
+# In `main` or any infallible function, `?` is not offered: it would send the
+# reader to `try_in_infallible`, which is a second error about the same line.
+function infallible()
+    _ = risky(1)  #~ discarded_failure
+    _ = cleanup(1)  #~ discarded_failure
+
+# Here `?` IS offered, and it is the first fix, because the failure has
+# somewhere to go.
+function fallible() -> i64?
+    _ = risky(1)  #~ discarded_failure
+    return ok(0)
+
+# A `_` PARAMETER written `T?` is the same hole at the position where nothing on
+# the line can answer it: `_` binds nothing, so the body cannot reach the value.
+# Found by running, not by reading — this shape exited 0 with the error gone.
+function swallow(_: i64?)  #~ discarded_failure
+    print("swallowed")
+
+# A bare fallible statement is `discarded_value`, and its `_ = ` fix is
+# WITHDRAWN rather than downgraded: `heroes check --apply` used to write the
+# exact form the rule above refuses.
+function bare()
+    risky(1)  #~ discarded_value
+
+# Every legal neighbour. None of these may fire, and each one is here because
+# getting it wrong is a plausible implementation.
+function answered() -> i64?
+    # the four answers
+    _ = risky(1)?
+    _ = risky(1).is_err()
+    _ = risky(1).must()
+    _ = risky(1).default(0)
+
+    # a `()?` answered with `?` stands alone: its payload is `()`
+    cleanup(1)?
+
+    # the OUTERMOST type is what counts: a fallible inside a container is not
+    # a fallible, and the spec says so rather than pretending otherwise
+    xs: [i64?] = []
+    _ = xs
+    _ = [risky(1)]
+
+    # a hole is quiet: one mistake, one report
+    _ = ???
+
+    # a failure KEPT in a name is the correct program, not a discard
+    kept = risky(1)
+    _ = kept.is_err()
+    return ok(0)
+
+function main()
+    infallible()
+    swallow(risky(1))
+    bare()
+    _ = fallible().is_err()
+    _ = answered().is_err()

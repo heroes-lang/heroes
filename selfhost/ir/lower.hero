@@ -123,7 +123,7 @@ function declaration(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: st
                 span: decls[index].span
             )
             build.entry(@b)
-            _ = flatten.block(@b, a, r, c, s, decls, body: t.body, wants_value: false)
+            _ = flatten.block(@b, a, r, c, s, decls, body: t.body, wants_value: false).is_err()
 
             if !build.is_terminated(b)
                 build.terminate(@b, .return_term(value: fail("none", "a test returns nothing")))
@@ -171,7 +171,7 @@ function lower_function(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c:
         build.end_fn(@b)
     else
         build.entry(@b)
-        _ = flatten.block(@b, a, r, c, s, decls, body: f.body.must(), wants_value: false)
+        _ = flatten.block(@b, a, r, c, s, decls, body: f.body.must(), wants_value: false).is_err()
         close(@b, c)
         build.end_fn(@b)
 

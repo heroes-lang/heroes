@@ -224,7 +224,7 @@ test "a program that never started is not a program that failed"
 
 test "the filesystem answers the shell utility's question, not C's"
     root = "build/argv-fs"
-    _ = remove_file(root + "/deep/here")
+    assert !remove_file(root + "/deep/here").is_err()
     assert !mkdir_all(root + "/deep/here").is_err()
 
     # Twice is success, which is what `mkdir -p` meant.
