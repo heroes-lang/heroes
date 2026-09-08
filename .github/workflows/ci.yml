@@ -22,16 +22,24 @@
 # rather than beside it. It was `cargo test` until 2026-08-19, when `crates/` was
 # archived and the four cargo steps left this file.
 #
-# **The cost premise below expires when this repository goes public, and it is
-# not silently replaced** (2026-09-08, M-open-repository). GitHub's billing
-# documentation states that *"the use of standard GitHub-hosted runners is
-# free: in public repositories"*, and says nothing on that page about the
-# operating system, so the reason the matrix narrows to Linux between tags may
-# have gone away for all three legs, for two of them, or for none. **That is a
-# question and not a premise**: the account's own billing page answers it after
-# the flip, on a real run, and widening the matrix is filed in
-# `docs/work/SCHEDULED.md` rather than done here on a reading of a document.
-# The measurements below stay exactly as they are, because they were true when
+# **The cost premise below has expired, and it was measured rather than read**
+# (2026-09-08, M-open-repository). The morning this repository went public, the
+# question was left open here on purpose: the documentation says standard
+# runners are free in public repositories and says nothing about the operating
+# system, and a reading is not a measurement. The account answered it the same
+# day, per day, either side of the flip:
+#
+#     07 Sep, private:  Linux 196 min $1.18 · macOS 50 min $3.10 · Windows 86 min $0.86  ->  $5.14
+#     08 Sep, public:   Linux 110 min · macOS 37 min · Windows 50 min · gross $3.45  ->  $0.00
+#
+# The day before, the monthly allowance was exhausted and every minute was
+# charged. The day of the flip the gross is discounted in full, **macOS
+# included**. One day of data, so it is a measurement and not yet a law.
+#
+# **So the reason this matrix narrows to Linux between tags is gone, and
+# widening it is a decision the author has not taken yet**
+# (`docs/work/SCHEDULED.md`, at the gate). Until then it runs as it did, and
+# the measurements below stay exactly as they are, because they were true when
 # they were taken and a record that loses its inconvenient half is worth less
 # than none.
 #
