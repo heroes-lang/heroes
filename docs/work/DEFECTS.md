@@ -20,14 +20,79 @@ them already in the record.
 **Numbers are never reused, and 014 was issued twice** — `docs/work/DONE.md`
 carries a Windows-diagnostic defect and an FFI-boundary defect both numbered
 014, filed a day apart. A record is not rewritten (CLAUDE.md §14), so the
-collision stands there; the next number to issue is **020** — 017 was issued
-and closed the same day, 2026-09-08, and is in the record, and 018 and 019 were
+collision stands there; the next number to issue is **022** — 017 was issued
+and closed the same day, 2026-09-08, and is in the record, and 018 to 021 were
 issued the same day and are open below.
 
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 2**
+**OPEN: 4**
+
+- [ ] **020 — the library's `extern` constants are readable from every program** | `print(HERO_OS_OK)` runs and prints `0` in a plain user program, while the library's `extern` FUNCTIONS are properly walled off | `selfhost/resolve/names.hero:60` · `:53` · `:105` · `selfhost/library_source.hero:135-137` · `docs/panel/033` R5
+
+    **Origin:** the compiler-engineer's seat, panel 120, 2026-09-08, found while
+    enumerating the embedded library to answer whether the spec's list of seven
+    is complete.
+
+    Reproducer, run on this Mac 2026-09-08:
+    ```
+    $ heroes run ext3.hero          # print(HERO_OS_OK) · print(HERO_OS_NOT_FOUND)
+    0
+    1
+    ```
+    **The wall exists and has a hole in exactly one match arm.** A user program
+    writing `function filter` gets `error[builtin_name_taken]`, and one calling
+    `hero_args_count()` gets `error[extern_across_modules]` with a §4.19 note. But
+    `selfhost/resolve/names.hero:60` reads
+    `.constant_decl | .record_decl | .test_decl => state.record_use(…)` with **no
+    `is_extern` guard**, while `.function_decl` carries one at `:53` and again at
+    `:105`. Panel 033 R5's rule was applied to one kind of extern and not the
+    other.
+
+    **It is `.claude/rules/module-shape.md`'s narrowing-on-a-premise**: the arm
+    groups `constant_decl` with kinds that cannot be extern, and `constant_decl`
+    can — `library_source.hero:135-137` and `:148` declare four of them. The
+    discriminator already exists: `ast.hero:425-429` gives `constant_decl` a
+    `header: token.Span?`, set at `parse/tails.hero:114`. The seat priced the
+    repair at **~7 lines, one arm**, plus one golden with its `#~` annotation.
+
+    **Why it matters:** four names a program never declared are in its scope, and
+    a program that reads one is relying on the compiler's own plumbing.
+
+- [ ] **021 — a diagnostic shows a reader `#0`, which is not a type anyone can write** | a six-line program with an ordinary generic function is told `found [#0]`, where the file that renders it states in writing that this cannot happen to a user | `selfhost/check/render.hero:19-23` · `:51-53` · `selfhost/check/state.hero:198` · `selfhost/check/walk.hero:1539` · `:1617`
+
+    **Origin:** the compiler-engineer's seat, panel 120, 2026-09-08, and the
+    coordinator's own reproducer is shorter than the seat's.
+
+    Reproducer, run on this Mac 2026-09-08:
+    ```
+    $ heroes check z.hero
+    error[bad_operand]: `join` takes `[str]` and `str`, found `[#0]`
+    ```
+    from six lines: `function id<T>(x: T) -> T` returning `x`, and
+    `print(join(xs.map(id).map(id), ", "))`.
+
+    **The premise is stated and it is dead.** `render.hero:19-23` says an empty
+    generic-name list *"is legal and prints `#0`, which only happens where a
+    caller outside the checker has no function in hand"*, and `:51` says *"A type
+    parameter prints as it was declared: `A`, not `#0`"*. Both are false of a
+    user program. Cause: `check/state.hero:198` renders with `c.generic_names` —
+    the **caller's** letters — so a callee's type parameter has no name inside
+    `main()`.
+
+    **The machinery to fix it already exists**: `check/walk.hero:1539` and `:1617`
+    already pass `callee_generics`/`callee_letters` for two other messages. The
+    seat priced it at 3-4 lines for a loud fallback or ~20 to thread the callee's
+    letters. **No golden asserts `#0`** — the one hit,
+    `tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero:4`,
+    is a comment.
+
+    **Why it matters:** design.md §4.17 asks a diagnostic to carry everything
+    needed to fix the program without opening another file, and `#0` is a
+    placeholder from the checker's own tables. The seat's note is the sharpest
+    part: this fires on the exact misreading of `fold`'s argument order that
+    panel 120's new sentence exists to prevent.
 
 - [ ] **018 — `<` names two of the ten types it accepts** | a comparison refused between two values of one non-ordered type says "takes `i64` or `f64`", where the checker accepts every integer and float width | `selfhost/check/ops.hero:81-90` · `:131` · `:168` · `:270`
 

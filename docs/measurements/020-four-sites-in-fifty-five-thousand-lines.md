@@ -312,6 +312,33 @@ positions"*, and a Heroes function reaches a C callback **parameter** today.
 pointer *"because v1 has no closures"*, and that is what makes `qsort` and every
 raylib callback expressible — so the condition is live and its wording is not.
 
+## Corrected 2026-09-08 by panel 120's spec-warden: the free budget is 70, not 71
+
+Every figure above that says **71 free** is off by one, and the error is this
+file's arithmetic rather than the instrument's. `heroes measure` prints
+*"Headroom: 131 against the 4096 ceiling — but the FFI floor mortgages 60 of it,
+so what is measured against the ceiling is 4025 and the check goes red at
+4096"*, which is exact: `tests/harness/suite_spec.hero:204` reads
+`if SPEC_TOKENS + FFI_FLOOR >= CEILING`, so **4096 itself is red**, the last
+green total is 4095, the spec's own ceiling is **4035**, and the spec may grow by
+**70**. This file read the printed 131, subtracted the mortgaged 60, and treated
+an excluded bound as included.
+
+**No conclusion above moves.** +118 breaches at 70 as it does at 71; the terse
+capturing clause at +68 fits with 2 to spare rather than 3, which if anything
+sharpens the warden's *"a verdict inside its own error bar"*; the four
+signatures at +63 leave 7; and panel 120's own X3 draft at +35 leaves 35 either
+way. The number is corrected because a record with a wrong number in it is worth
+less than none, not because it changed an answer.
+
+**And a live condition of the author's own decision is already met**, reported by
+that seat rather than found later: `vendor/tokenizers/README.md` carries the
+2026-08-26 ruling that o200k is not vendored, with two triggers — *"vendor it
+before any verdict lands within 10 tokens of a ceiling"* and *"If the headroom
+ever falls below the spread, this paragraph is what should be re-read."* The
+printed spread is **76** and the usable headroom is **70**. The second trigger is
+true today, independent of anything either sitting decides.
+
 *******************************************************************************
 
 **Every command in this file was run on this Mac on 2026-09-08**, against
