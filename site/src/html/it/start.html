@@ -28,6 +28,51 @@ failed: not_a_digit (expected 0-9)
     La riga con <code>failed</code> è un risultato previsto dell&rsquo;esempio: il programma segnala un carattere che non riesce a convertire in numero. La compilazione è riuscita.
   </p>
 
+  <h2>Se non hai clang</h2>
+  <p>
+    clang è un compilatore C, cioè il programma che trasforma il C in qualcosa
+    che il tuo computer esegue. A Heroes serve la versione 18 o più recente,
+    perché è la più vecchia su cui è misurato. Chiedi al tuo quale sia:
+  </p>
+  <pre><code>$ clang --version</code></pre>
+  <p>
+    Il prefisso del fornitore non conta, quindi vanno bene sia
+    <code>Apple clang version 21</code> sia <code>Debian clang version 22</code>:
+    conta solo il primo numero. Se hai già compilato Heroes,
+    <code>./heroes doctor</code> risponde alla stessa domanda e dice cosa manca
+    quando manca qualcosa.
+  </p>
+  <p><b>macOS.</b> I Command Line Tools portano il clang di Apple:</p>
+  <pre><code>$ xcode-select --install</code></pre>
+  <p>
+    Se ti dà un numero sotto il 18, cosa che succede su un macOS più vecchio,
+    installa un clang aggiornato accanto a quello con
+    <a href="https://brew.sh">Homebrew</a> e usa quello:
+  </p>
+  <pre><code>$ brew install llvm
+$ "$(brew --prefix llvm)/bin/clang" -I runtime seed/heroes.c runtime/runtime.c -o heroes</code></pre>
+  <p><b>Debian e Ubuntu.</b></p>
+  <pre><code>$ sudo apt install clang</code></pre>
+  <p>
+    Se il clang della tua distribuzione è più vecchio del 18, su
+    <a href="https://apt.llvm.org">apt.llvm.org</a> ci sono i pacchetti
+    aggiornati.
+  </p>
+  <p><b>Windows.</b></p>
+  <pre><code>$ winget install LLVM.LLVM</code></pre>
+  <p>
+    Su Windows la riga di compilazione vuole <b>un flag in più, e non è una
+    preferenza</b>:
+  </p>
+  <pre><code>$ clang -I runtime seed/heroes.c runtime/runtime.c -Wl,/STACK:67108864 -o heroes</code></pre>
+  <p>
+    Windows dà al primo thread di un programma 1 MB di spazio per le chiamate di
+    funzione, dove macOS e Linux ne danno 8, e questo compilatore si richiama in
+    profondità mentre legge un programma. Senza quel flag si compila, parte e
+    compila un programma piccolo, poi muore senza dire niente la prima volta che
+    lo punti su uno dei suoi moduli.
+  </p>
+
   <h2>Eseguilo dalla cartella del repository</h2>
   <p>
     <code>heroes run</code> cerca il runtime, cioè il codice di supporto che

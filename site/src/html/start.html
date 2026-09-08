@@ -27,6 +27,51 @@ failed: not_a_digit (expected 0-9)
     The line containing <code>failed</code> is expected output: the example reports a character it cannot convert to a number. Compilation succeeded.
   </p>
 
+  <h2>If you do not have clang</h2>
+  <p>
+    clang is a C compiler, the program that turns C into something your computer
+    runs. Heroes needs version 18 or newer, because that is the oldest one it is
+    measured on. Ask yours what it is:
+  </p>
+  <pre><code>$ clang --version</code></pre>
+  <p>
+    Any vendor prefix is fine, so <code>Apple clang version 21</code> and
+    <code>Debian clang version 22</code> both count. Only the first number
+    matters. If you already have Heroes built,
+    <code>./heroes doctor</code> answers the same question and says what is
+    missing when something is.
+  </p>
+  <p><b>macOS.</b> The Command Line Tools bring Apple&rsquo;s clang:</p>
+  <pre><code>$ xcode-select --install</code></pre>
+  <p>
+    If that gives you a number below 18, which happens on an older macOS, install
+    a current clang beside it with <a href="https://brew.sh">Homebrew</a> and use
+    that one:
+  </p>
+  <pre><code>$ brew install llvm
+$ "$(brew --prefix llvm)/bin/clang" -I runtime seed/heroes.c runtime/runtime.c -o heroes</code></pre>
+  <p><b>Debian and Ubuntu.</b></p>
+  <pre><code>$ sudo apt install clang</code></pre>
+  <p>
+    If your distribution&rsquo;s clang is older than 18,
+    <a href="https://apt.llvm.org">apt.llvm.org</a> publishes current packages
+    for it.
+  </p>
+  <p><b>Windows.</b></p>
+  <pre><code>$ winget install LLVM.LLVM</code></pre>
+  <p>
+    On Windows the build line takes <b>one more flag, and it is not a
+    preference</b>:
+  </p>
+  <pre><code>$ clang -I runtime seed/heroes.c runtime/runtime.c -Wl,/STACK:67108864 -o heroes</code></pre>
+  <p>
+    Windows gives a program&rsquo;s first thread 1 MB of room for function calls
+    where macOS and Linux give 8, and this compiler calls itself deeply while
+    reading a program. Without the flag it builds, runs and compiles a small
+    program, then dies without a word the first time you point it at one of its
+    own modules.
+  </p>
+
   <h2>Run it from the repository</h2>
   <p>
     <code>heroes run</code> looks for the runtime, the support code that goes
