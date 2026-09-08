@@ -6,11 +6,13 @@
    the only loud colours, gold for the quotation marks, poster-condensed caps
    on the system stack (never a webfont), Georgia serif body.
 
-   Why a file and not a <style> block per page: the site is eight pages now and
-   twelve chapters eventually, with no build step to keep copies honest. A
-   duplicated palette drifts invisibly — one page's dark mode goes stale and
-   nothing fails. This is the only cross-page asset; the bolt stays inline SVG
-   in each page, because it is markup.
+   Why a file and not a <style> block per page: the site is more than a hundred
+   pages now, with its documentation written rather than promised, and a
+   duplicated palette drifts invisibly, one page's dark mode going stale with
+   nothing to fail. There is a build step today and one file still beats it:
+   one palette, one place. This is the only cross-page asset; the bolt is
+   inline SVG, written once in the layout and served in every page, because it
+   is markup.
 
    The art direction, in one paragraph, so a later edit knows what it is
    editing. The page is a stage: one light source (the red/blue wash behind the
