@@ -1,0 +1,67 @@
+# FIXED DEFECT, 2026-09-08. Symptom: a discarded TEMPORARY whose op has to keep
+# its destination drew `warning: variable 't6' set but not used
+# [-Wunused-but-set-variable]`. The corpus holds a zero-warning bar, so the
+# shapes below were the ones that could not meet it.
+#
+# The sibling case is `fixedbugs-a-discarded-binding-warns-in-c.hero`, 2026-08-16,
+# which closed the same class for a NAMED binding's slot. This is the temporary
+# half, and it was found at panel 118 while pricing what a program writes once
+# `_ = f()` on a fallible is refused: the deliberate drop is `_ = f().is_err()`,
+# which lowers to a tag read and one comparison — and the comparison is a
+# `.binary`, which may not lose its destination.
+#
+# CAUSE: `emit/unread.may_lose_its_destination` says no to Index, Cast, Unary,
+# Binary, Construct and MapGet, and the reason is sound — every one of them can
+# ABORT, and their emitters print the check WITH the assignment. So the
+# declaration and the assignment both stand while nothing reads the result.
+#
+# FIX: the temporary is declared `__attribute__((unused))`, the same idiom the
+# slot half writes. NOT dropping the destination, which was tried first and is
+# narrower: for `==` on a scalar the assignment could simply go, but on an
+# AGGREGATE it is a runtime call carrying its own check — `hero_array_require`,
+# and a partial record's deliberate `hero_panic` — so dropping it would delete a
+# tripwire on exactly the lines nobody reads the answer of. The attribute keeps
+# every check, needs no per-operator list to stay true, and closes four shapes
+# where the narrower repair closed two.
+#
+# The shapes around it, measured before this case was written:
+#   - `_ = f(x)` on a plain call was already right: the op MAY lose its
+#     destination, so nothing is declared and nothing is assigned.
+#   - a used comparison gets no attribute, which the last line proves.
+#   - the attribute is conservative in the safe direction: it means MAY be
+#     unused, so an over-count silences nothing.
+# Named after the defect, per Go's `test/fixedbugs` (CLAUDE.md §9).
+
+function risky(n: i64) -> i64?
+    if n < 0
+        return fail("negative", "n is negative")
+    return ok(n + 1)
+
+function unit_risky(n: i64) -> ()?
+    if n < 0
+        return fail("negative", "n is negative")
+    return ok()
+
+function main()
+    # The deliberate drop of a failure, at both payload shapes: the
+    # comparison is kept and its answer is not.
+    _ = risky(0 - 1).is_err()
+    _ = unit_risky(0 - 1).is_err()
+
+    # A discarded equality on a `str` and on an array: the assignment is a
+    # runtime CALL, so the destination must stay and the attribute is the
+    # only repair that keeps the call.
+    a = "ziggy"
+    b = "aladdin"
+    _ = a == b
+    xs: [i64] = [1, 2]
+    ys: [i64] = [1, 2]
+    _ = xs == ys
+
+    # A discarded equality on two floats, where `==` carries no nan panic
+    # but the orderings do.
+    _ = 1.5 == 2.5
+
+    # And an equality that IS read, to prove the attribute is not blanket.
+    if a == a
+        print(42)

@@ -190,9 +190,34 @@ function prologue(@w: writer.Writer, c: state.Checked, names: ctype.Names, f: co
 
                 if layout.is_refcounted(c, ty)
                     initialiser @ " = {0}"
+
+                # The TEMPORARY half of the attribute above (panel 118).
+                # An op that may NOT lose its destination still prints
+                # its assignment, because the overflow guard, the nan
+                # panic and an aggregate's generated `eq` are printed
+                # WITH it — so a result nothing reads leaves both the
+                # declaration and the assignment standing, and clang
+                # says `set but not used`. Measured: every
+                # `_ = f().is_err()`, and `_ = a == b` on a `str` and
+                # on an array.
+                #
+                # The attribute rather than dropping the destination,
+                # which is the narrower repair and was tried first: on
+                # an AGGREGATE the assignment is a runtime call
+                # carrying its own check — `hero_array_require`, and a
+                # partial record's deliberate `hero_panic` in
+                # `emit/structural.hero` — so dropping it would delete
+                # a tripwire on exactly the lines nobody reads the
+                # answer of. Saying the silence is deliberate keeps
+                # every check and needs no per-operator list to stay
+                # true.
+                deliberate: str @ ""
+
+                if read[value_at].is_err()
+                    deliberate @ "__attribute__((unused)) "
                 writer.line(
                     @w,
-                    text: "    " + spelled.must() + " " + mangle.value(value_at) + initialiser + ";"
+                    text: "    " + deliberate + spelled.must() + " " + mangle.value(value_at) + initialiser + ";"
                 )
         value_at @ value_at + 1
 
