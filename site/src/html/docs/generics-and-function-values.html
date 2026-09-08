@@ -64,6 +64,26 @@
     The name of a function declared at the file&rsquo;s top level, written without parentheses, is a value you can pass to another function. Heroes has <b>no lambdas, or anonymous functions</b>, and no functions that capture surrounding variables. Every function therefore has a name and a declaration you can read, test and reuse.
   </p>
   <p>
+    This is not a postponement, it is a decision that was taken. Anonymous
+    functions were examined and refused, and what settled it is not an argument
+    but a measurement: underneath, a function you pass around is a single memory
+    address, a number saying where the code sits, and that is exactly what a C
+    library expects to receive. A function carrying values with it would take up
+    several times as much room. Tried against a real C library, with every one of
+    the compiler&rsquo;s checks turned on, the compilation reported nothing and
+    the program crashed as soon as it ran.
+  </p>
+  <p>
+    The gain, measured, was small. In the Heroes compiler, which is written in
+    Heroes and runs to more than fifty thousand lines, a function is passed to
+    another one in fewer than five places. The one-line named functions a lambda
+    would have deleted come to fewer than twenty-five, all of them in the example
+    programs, and more than half the files holding them are the very examples
+    whose subject this is: they are the demonstration, not the nuisance. Nor is
+    the choice an isolated one: other languages built under the same constraints
+    refuse the same thing, and say so in their own documentation.
+  </p>
+  <p>
     Write a function type as <code>(function(A) -&gt; B)</code>. The outer parentheses are required: without them, <code>f: function(A) -&gt; B -&gt; [B]</code> would be ambiguous. The compiler reports the error:
   </p>
   <pre><code>$ heroes check generics.hero

@@ -64,6 +64,28 @@
     Il nome di una funzione dichiarata al livello principale del file, scritto senza parentesi, è un valore che puoi passare a un&rsquo;altra funzione. Heroes <b>non ha lambda, cioè funzioni anonime</b>, né funzioni che conservano le variabili del contesto in cui sono definite. Ogni funzione ha quindi un nome e una dichiarazione che puoi leggere, testare e riutilizzare.
   </p>
   <p>
+    Non è un rinvio, è una decisione presa. Le funzioni anonime sono state
+    esaminate e rifiutate, e quello che ha chiuso la questione non è un
+    argomento ma una misura: sotto, una funzione che si passa in giro è un solo
+    indirizzo di memoria, cioè un numero che dice dove il codice si trova, ed è
+    esattamente quello che una libreria C si aspetta di ricevere. Una funzione
+    che si portasse dietro dei valori occuperebbe diverse volte tanto. Provata
+    contro una libreria C vera, con tutti i controlli del compilatore accesi, la
+    compilazione non ha segnalato nulla e il programma è andato in crash appena
+    eseguito.
+  </p>
+  <p>
+    Il guadagno, misurato, era piccolo. Nel compilatore di Heroes, che è scritto
+    in Heroes e conta più di cinquantamila righe, una funzione viene passata a
+    un&rsquo;altra in meno di cinque punti. Le funzioni di una riga con un nome
+    che una lambda avrebbe cancellato sono meno di venticinque e stanno tutte nei
+    programmi d&rsquo;esempio, e più di metà dei file che le contengono sono
+    proprio gli esempi il cui argomento è questo: sono la dimostrazione, non il
+    fastidio. E non è una scelta isolata: altri linguaggi costruiti con gli
+    stessi vincoli rifiutano la stessa cosa e lo scrivono nella loro
+    documentazione.
+  </p>
+  <p>
     Il tipo di una funzione si scrive <code>(function(A) -&gt; B)</code>. Le parentesi esterne sono obbligatorie: senza di esse, <code>f: function(A) -&gt; B -&gt; [B]</code> sarebbe ambiguo. Il compilatore segnala l&rsquo;errore:
   </p>
   <pre><code>$ heroes check generics.hero
