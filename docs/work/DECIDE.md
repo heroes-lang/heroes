@@ -21,7 +21,37 @@ lives outside the two banners: `records/lists` is the executor of that.
 Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 5**
+**OPEN: 6**
+
+- [ ] **panel 119 finding** | should the spec's last 71 tokens buy the four higher-order signatures it never wrote, at +63? `map`'s is the only one there | `spec/heroes-spec.md:121` · `:188` · `selfhost/library_source.hero:69-108`
+
+    **Origin:** the llm-ergonomist, panel 119, 2026-09-08, from a seat that reads the spec and nothing else and was asked about closures.
+    **The default the compiler is running on** is silence. The spec writes
+    `function map<A, B>(xs: [A], f: (function(A) -> B)) -> [B]` and then names
+    `filter`, `fold`, `find`, `any` and `all` as functions written in Heroes,
+    with no type for any of them. That seat had to invent `filter`'s to write
+    its task at all, and reported the invention as what gated **all three of
+    its tasks in all five arms** — ahead of anything closures would have
+    changed. Checked afterwards against the real declarations, its guess for
+    `filter` was exactly right and **`find`'s `-> A?` is the one no reader can
+    derive**.
+    **Measured 2026-09-08**: the four missing signatures, compressed, cost
+    **+63** of the **71** free, so they fit with 8 to spare — and a closure
+    clause that states its rules costs +118, so the two never both fit. This is
+    the rival claim on the same budget, and panel 119 recorded it rather than
+    spending it, because `spec/` is panel-gated and 119 was convened on
+    closures.
+    **A second half, cheaper to state and possibly not wanted**: `<` refuses
+    `str` while `sort` orders `str`, so a program sorting rows by a column
+    hand-writes a comparison beside a built-in that already knows one. That
+    seat predicts the modal first-try failure of its third task, in every arm,
+    is `a < b` on two `str`.
+    **Recommendation: buy the four signatures, in their own sitting, and leave
+    the `<`-versus-`sort` asymmetry alone.** The signatures are a silence about
+    what the language already has, which is the cheapest kind of token to spend
+    and the kind §1.1 is about; the asymmetry is a feature request wearing a
+    diagnostic's clothes, and defect 018 repairs the part of it that is
+    actually broken for free.
 
 - [ ] **panel 119** | ratify or overturn the verdict on Part 7 items 1 and 12: closures REFUSED with a Part 6 row, inline blocks EXAMINED AND UNPLACED, and three design.md sentences corrected | `docs/panel/119-the-warning-that-does-not-fit.md`
 
