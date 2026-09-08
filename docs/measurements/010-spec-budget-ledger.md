@@ -100,3 +100,24 @@ parameter exists in `examples/`) and its second half holds; the llm-ergonomist's
 half of that payment is **lapsed** and is in `DECIDE.md` with it.
 
 | 3965 | `docs/panel/118`, landed at M-discard-refusal step 3, 2026-09-08 | **a `_` never drops a failure, and the sentence carries its own boundary**, **net +62** — gross +62 against no removal, read with `./heroes measure spec/heroes-spec.md` from the repository root at the landing edit, headroom **193 → 131** by `measure`'s reckoning and **73** against the check that actually goes red (`SPEC_TOKENS + FFI_FLOOR >= CEILING`, which is defect 017, filed the same day). **What landed** is three wrapped lines at `spec:99`, after the sentence that legalises the discard: *"A `_` never drops a `T?`: not `_ = e`, and not a `_` parameter written one. Answer the error. Both read the OUTERMOST type, so a `[T?]`, a record holding one, or a type parameter that arrived fallible is still dropped."* **The payment is a registered prediction and no removal is owed**, which is the spec-warden's ruling at the sitting: `spec:98-99` does not turn false, because it already carries an exception — *"which a `()` line refuses"* — so this amendment extends an exception list in place rather than falsifying a sentence, and a change must not shop for an unrelated removal to pay a bill it did not create. **Registered:** at **M-discard-refusal close**, `heroes mutate examples --survivors` reports **0** `drop-question` survivors, against **9 of 84, 75 killed (89%)** in `docs/measurements/014-mutate-over-thirty-five.md`; the instrument is `heroes mutate --survivors` and it exists today. Falsified by one surviving `drop-question` mutant. **The warden's own figure is NOT the one that landed and that is recorded rather than adjusted**: it registered *"`heroes measure` reads ≤ 3923"* against its cheapest true sentence, W4g at +15, which named ONE position and left two measured holes unstated. The sitting adopted the boundary-carrying wording at +62 under the author's standing instruction of 2026-09-08, *in doubt prefer robustness to token economy*, so that half of the warden's prediction is **falsified by the resolution and not by the world**, and the milestone's journal scores it that way. What the extra 47 tokens buy is named: the `_` parameter position, which was measured swallowing a failure at exit 0 on 2026-09-08 and cost zero migration sites to close, and the outermost-only boundary, which a reader would otherwise fill in with the stronger wrong guess — `_ = args_checked()` drops a whole `[str?]` with no generic in sight.
+
+**Correction to row 56, 2026-09-08, the same day it was written.** That row says
+the spec had **73** tokens left against the check that actually goes red. It has
+**70**. `tests/harness/suite_spec.hero` fires at `SPEC_TOKENS + FFI_FLOOR >=
+CEILING`, so the largest green `SPEC_TOKENS` is **4035** and not 4036, and from
+3965 that is 70. The row's own 73 came from `4096 - 60 - 3963`, taken before the
+clause was wrapped to 80 columns and computed as though the condition were `>`.
+The figure is left standing above and corrected here, per CLAUDE.md §14.
+
+**The same off-by-one reached another session before it was caught here**, which
+is the part worth recording: `heroes measure` printed *"71 usable"* in defect
+017's first repair, panel 119's brief spent that figure as *"the spec's last 71
+tokens"*, and the commit that corrected it — *"The free budget was 70 and not
+71"* — was written by that sitting rather than by the session that produced the
+number. What shipped in `selfhost/cli/measure.hero` states both sides of the
+comparison instead of a subtraction (*"what is measured against the ceiling is
+4025 and the check goes red at 4096"*), so the tool now leaves no arithmetic for
+a reader to get wrong; the two records that had already spent the wrong number
+are corrected where they stand. **A number is measured in the session that writes
+it (CL-017), and a number DERIVED from a measurement is not the measurement**:
+this one was subtracted, not read, and the derivation is where it went wrong.
