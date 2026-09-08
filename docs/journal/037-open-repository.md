@@ -160,3 +160,33 @@ and checked by nothing, and the instrument that checks this site's prose says in
 its own header that it cannot verify a sentence it does not know about. Numbers
 were guarded and promises were not. A promise that comes true is a false claim
 exactly as a number that moves is, and it fails more quietly.
+
+## Verified from outside, after the tag
+
+Appended 2026-09-08, after the close, because the proof needed a public
+repository and the close needed the proof to be possible rather than done.
+
+**A stranger's path, run as a stranger**: a clone into an empty directory with
+no credentials in the environment and no global git config, then the first line
+of `README.md` and the three under it.
+
+```
+git clone https://github.com/heroes-lang/heroes.git      37.8 s, 161 MB
+clang -I runtime seed/heroes.c runtime/runtime.c -o heroes    2.89 s
+./heroes --version                                       heroes 0.2.0
+./heroes doctor                                          every row ok
+./heroes run examples/gallery/00-first.hero              20, exit 0
+```
+
+On a MacBook Air, which is the machine every timing in this repository comes
+from. **This is the sentence the site prints turned into a command somebody
+ran**: a C compiler is the only thing you need, and until today nobody outside
+this laptop could test it.
+
+**The settings, read back rather than remembered**: public · issues on ·
+discussions and wiki off · Apache-2.0 · eight topics · secret scanning and push
+protection enabled · `main` carries `deletion` and `non_fast_forward` rules, the
+protection a free plan grants only a public repository · workflows from a fork
+need approval from every external contributor, not only a first-time one.
+Forking stays possible, because it cannot be otherwise and because the licence
+grants it in writing.
