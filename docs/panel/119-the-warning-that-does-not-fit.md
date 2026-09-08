@@ -325,11 +325,22 @@ unliftable in option B's shape at any price.
 
 ## Author's verdict
 
-**Pending**, queued as `- [ ] **panel 119**` in `docs/work/DECIDE.md`. Work
-proceeds on the resolution above; the verdict is appended here when given, with
-follow-up work if it is overturned.
+**RATIFIED 2026-09-08** (author instruction, *"all the decisions as you
+suggested, all a"*), in full, on the day the sitting was held — **so the first
+Part 7 item this project ever judged is refused, and the refusal is ratified
+within hours of being written.**
 
-What a `yes` would settle: that Part 7 item 1 leaves Part 7 for a **Part 6 row**
+The alternative the coordinator named and the author declined was R5: deferring
+inline blocks with a date instead of leaving them **examined and deliberately
+unplaced**, which would have saved a design.md paragraph. It was declined in the
+same word as the rest, and the reason the recommendation gave stands as this
+sitting's: the spec-warden objected that a dated condition is precisely the
+mechanism §1.6's own record shows failing, and the ffi seat objected that a
+deferral leaves three pieces of design.md prose reading as true when they are
+not. **What conservative would have been is preserved in this file's own
+section** and the author chose against it with both objections in front of them.
+
+What the `yes` settles: that Part 7 item 1 leaves Part 7 for a **Part 6 row**
 refused on cost alone (R1); that the row's falsifier rests on compiler need, a
 measured Part 11 effect and a compiled representation, and **not** on capture by
 copy being hazardous, which the historian showed history contradicts (R2); that

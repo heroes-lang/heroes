@@ -122,3 +122,16 @@ a reader to get wrong; the two records that had already spent the wrong number
 are corrected where they stand. **A number is measured in the session that writes
 it (CL-017), and a number DERIVED from a measurement is not the measurement**:
 this one was subtracted, not read, and the derivation is where it went wrong.
+
+**Row 3995's `ratification pending` was answered the same day, 2026-09-08**, and
+the row keeps its words per CLAUDE.md §14. Panel 120 is **RATIFIED in full** by
+author instruction (*"all the decisions as you suggested, all a"*), R5 included,
+so the mandatory-named-argument bullet at `spec:108-109` stays and the **−35**
+removal this row priced is refused rather than merely unspent. What that fixes
+for the next sitting that goes shopping for a removal: that bullet is not
+available, its falsifier is live and unmet — *nobody has named a clause that
+needs 75 tokens and cannot fit in 40* — and the spec's free budget is **40**,
+re-measured with `./heroes measure spec/heroes-spec.md` from the repository root
+at this ratification, 2026-09-08: 3995 against a green ceiling of 4035, which is
+`CEILING 4096` less the `FFI_FLOOR 60` mortgaged by panel 030 R3, less one
+because `tests/harness/suite_spec.hero` fires at `>=`.
