@@ -1474,10 +1474,26 @@ Format: `- [ ] **M-<milestone>** | <what, in one line> | <where to look>`
     **unmeasured**. The comments were moved to the past tense rather than
     replaced with a reading.
 
-    Owed: the account's own billing page after a real run of all three legs,
-    then either the matrix widens to every push or the comments state the new
-    reason it does not. Filed at the gate because the question exists only
-    because the repository became public, and the gate owns the outward state.
+    **Measured 2026-09-08, and the answer is zero for all three legs.** The
+    endpoint the first attempt reached is retired (410); the current one is
+    `/organizations/<org>/settings/billing/usage` and it needs no extra scope.
+    Per day, either side of the flip:
+
+        07 Sep, private:  Linux 196 min $1.18 · macOS 50 min $3.10 · Windows 86 min $0.86  ->  $5.14
+        08 Sep, public:   Linux 110 min · macOS 37 min · Windows 50 min · gross $3.45  ->  $0.00
+
+    The day before, the monthly allowance was exhausted and every minute was
+    charged, macOS at ten times Linux. The day of the flip the gross is
+    discounted in full, **macOS included**, which is the operating-system half
+    the documentation did not answer. One day of data, so it is a measurement
+    and not yet a law.
+
+    **What is still owed is a decision and not a number**: the matrix narrows to
+    Linux between tags for a reason that has now expired, so either it widens to
+    every push or `ci.yml`'s header states the new reason it does not. Widening
+    would find a Windows or macOS break on the day it is made rather than at the
+    next tag. Filed at the gate because the question exists only because the
+    repository became public, and the gate owns the outward state.
 
     **Why it matters:** every platform fact here is measured on a platform, and
     a cost is a platform fact.
