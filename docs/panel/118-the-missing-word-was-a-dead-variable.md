@@ -416,17 +416,39 @@ is applied, and a bare fallible line stays an error however it is repaired, so n
 
 ## Author's verdict
 
-**Pending**, queued as `- [ ] **panel 118**` in `docs/work/DECIDE.md`. Work
-proceeds on the resolution above; the verdict is appended here when given, with
-follow-up work if it is overturned.
+**RATIFIED 2026-09-08** (author instruction, *"all the decisions as you
+suggested, all a"*), in full, over the coordinator's recommendation of option
+(a) and with the two named alternatives declined: the +15 clause covering one
+position, and the `ignore` built-in that two seats wanted.
 
-What a `yes` would settle: that the rule closes three positions and not one
-(R1), that the refusal reads the discarded expression's own static type (R2),
-that no repair ships as `certain` (R3), that `discarded_value` is de-certified on
-a fallible in the same commit (R4), that the deliberate drop stays
-`_ = f().is_err()` and is paid for by the narrow emitter relaxation rather than
-by a new built-in (R5), and that the clause spends 49 tokens naming all three
-positions rather than 15 naming one (R6).
+**WHAT WAS RATIFIED IS THE RESOLUTION AS LANDED, WHICH IS NOT THE RESOLUTION AS
+ADOPTED**, and the distinction is not pedantry: the item in `docs/work/DECIDE.md`
+described this sitting for a day in the words of the ballot rather than of §
+Corrections below, and `/decide` corrected it before the question was put,
+because ratifying a description this file contradicts settles nothing. Three
+facts moved between the two, all recorded in that section with their
+measurements: **R1's third position was withdrawn** after it was run —
+`drop(risky(0 - 1))` through `function drop<A>(_: A)` prints and exits 0 with the
+failure gone and no discard statement anywhere, and `_ = [x]` transfers the hole
+to the position the rule exists to protect; **R5 was replaced**, the emitter
+relaxation built, measured and thrown away for closing two shapes of four, and
+what shipped declares the temporary `__attribute__((unused))`; and **R6 cost
++62** rather than the adopted +49, because the clause that landed carries the
+outermost-type boundary that `args_checked() -> [str?]` makes owed.
+
+What the `yes` settles, in the terms the sitting asked it: that the rule closes
+the two positions that survived (R1), that the refusal reads the discarded
+expression's own static type (R2), that no repair ships as `certain` (R3), that
+`discarded_value` is de-certified on a fallible in the same commit (R4), that the
+deliberate drop stays `_ = f().is_err()` and is paid for inside the emitter
+rather than by a new built-in (R5 as replaced), and that the clause spends the
+tokens to name the boundary rather than the cheapest true sentence (R6).
+
+**And the three findings filed beside this ratification are closed**, all three
+on 2026-09-08 by `/decide` and none of them by this yes: the `certain`-fix rule
+is written into `.claude/rules/diagnostics-and-goldens.md`, the runtime null
+rejection was answered by design.md §1.12 before it was asked, and the two spec
+silences are split between M-interpolation-verdict and M-thesis-harness.
 
 What a `yes` would **not** settle: the `ignore` built-in, which two seats argued
 for and which is blocked by a ceiling raise that is a sitting of its own; the

@@ -256,11 +256,28 @@ lands — is met in the amending commit rather than here.
 
 ## Author's verdict
 
-**Pending**, queued as `- [ ] **panel 120**` in `docs/work/DECIDE.md`. Work
-proceeds on the resolution above; the verdict is appended here when given, with
-follow-up work if it is overturned.
+**RATIFIED 2026-09-08** (author instruction, *"all the decisions as you
+suggested, all a"*), in full, on the day the sitting was held and hours after the
+author had opened it mid-step.
 
-What a `yes` would settle: that the spec spends **+30** of its last 70 tokens on
+**R5 is ratified with the rest, and it is the part the recommendation flagged as
+the author's most likely overturn**: the removal of the mandatory-named-argument
+bullet measured **−35** in isolation and in place, which would have left the spec
+**smaller than it started**, and it was refused on evidence the token count
+cannot see rather than on a number. That evidence is now ratified as this
+project's: the bullet is the conversion function from a listed signature to a
+written call, `write_file(path: str, text: str)` is a built-in every program uses
+whose call the spec never shows, and the rule governs the **writer** — not
+knowing it, `relabel_d(a: str, b: str)` compiles, runs correctly and is
+permanently worse at every call site, which the `certain` fix entrenches by
+repairing the call site after the signature exists. Its falsifier stands unmet
+and stays live: nobody has named a clause that needs 75 tokens and cannot fit in
+40.
+
+So the spec stands at **3995** with **40** free, and the ledger row for this
+amendment stops reading *ratification pending*.
+
+What the `yes` settles: that the spec spends **+30** of its last 70 tokens on
 **prose rather than signatures** (R1-R4); that the absence of anonymous functions
 is stated rather than inferred, which is panel 119's refusal made visible to a
 reader (R1); that `filter`'s polarity and `find`'s firstness and failure code are

@@ -674,17 +674,35 @@ function tagged(@r: report.Report, scratch: str)
     if open_decisions.is_err()
         report.keep_failure(@r, label: "records/tagged", detail: "  cannot read DECIDE.md at " + newest)
         return
-    unqueued: [str] @ []
+    strict = carried_the_rule(scratch: scratch, tag: newest)
 
-    for row in open_decisions.must()
-        if !strings.contains(text: row, needle: "panel ")
-            unqueued @ unqueued.push(row)
-
-    if unqueued.len() > 0
+    if strict.is_err()
         report.keep_failure(
             @r,
             label: "records/tagged",
-            detail: "  " + newest + " was placed over " + unqueued.len().to_str() + " open decision(s) that are not a sitting's ratification:\n    " + unqueued.join("\n    ") + "\n  A pending `panel NNN` is allowed to stand at a tag, because § 4 says the\n  panel never blocks. Anything else is a decision this milestone could have\n  settled and left hanging instead (CLAUDE.md § Verification)."
+            detail: "  cannot read " + EXECUTOR + " at " + newest + "\n  Without it this check cannot tell whether that tag was placed under the\n  strict reading of a ratification or the historical one, and reading the\n  silence as either would weaken this check without saying so."
+        )
+        return
+    unqueued: [str] @ []
+
+    for row in open_decisions.must()
+        held: bool @ strings.contains(text: row, needle: "panel ")
+
+        if strict.must()
+            held @ is_ratification(row: row)
+
+        if !held
+            unqueued @ unqueued.push(row)
+
+    if unqueued.len() > 0
+        reading: str @ "the historical reading, the substring `panel `, because that tag's own\n  tree did not carry the strict one"
+
+        if strict.must()
+            reading @ "the strict reading: the origin field is `panel NNN` and nothing more, so\n  a sitting's FINDING does not count as its ratification"
+        report.keep_failure(
+            @r,
+            label: "records/tagged",
+            detail: "  " + newest + " was placed over " + unqueued.len().to_str() + " open decision(s) that are not a sitting's ratification:\n    " + unqueued.join("\n    ") + "\n  A pending `panel NNN` is allowed to stand at a tag, because § 4 says the\n  panel never blocks. Anything else is a decision this milestone could have\n  settled and left hanging instead (CLAUDE.md § Verification).\n  Applied: " + reading + "."
         )
         return
     report.keep_pass(@r)
@@ -704,6 +722,103 @@ function open_items_at(scratch: str, tag: str, path: str) -> [str]?
             open_rows @ open_rows.push(strings.trimmed(row))
 
     return ok(open_rows)
+
+# THE STRICT READING OF *a sitting's ratification*, AND WHY IT ASKS THE TAG'S
+# OWN TREE WHETHER IT CARRIED THIS RULE.
+#
+# `tagged` accepted any row containing the substring `panel `, which accepts
+# `- [ ] **panel 118 finding**` as though it were a ratification. It is not
+# one. A pending `panel NNN` is waiting on the AUTHOR, which is why § 4 lets it
+# stand at a tag; a FINDING is a decision the milestone could have settled and
+# left hanging, which is the exact thing this check exists to refuse. The
+# measurement that settles it rather than an opinion: `m-closures-verdict` was
+# placed over three `panel 118 finding` items on 2026-09-08 and **all three
+# were settled by one `/decide` session** the same day, two of them without
+# needing the author at all — one was already answered by design.md §1.12
+# before it was asked. Found by reading this function while zeroing the list;
+# the author asked for the repair the same day.
+#
+# So the rule reads the ORIGIN FIELD — `**panel NNN**` and nothing more.
+#
+# **AND IT BINDS ONLY ON A TAG WHOSE OWN TREE CARRIED IT**, which is this
+# neighbourhood's own comment turned into code instead of left as a sentence:
+# *a rule cannot be applied to a commit made before it existed*, and
+# `m-closures-verdict` was placed under the loose reading, and a record is not
+# rewritten (CLAUDE.md §14). The alternative was a constant naming that tag,
+# and this file already carries a check — `exemptions` — that exists because a
+# dead entry sat for weeks reading like a live rule. Asking the tree needs no
+# such constant and retires itself.
+#
+# The three outcomes are kept apart deliberately: the marker present is the
+# strict reading, the marker absent is the historical one, and the executor
+# **unreadable** at that tag is a reported failure. Collapsing the third into
+# the second is what would make a rename weaken this check in silence, which is
+# the one direction this repository refuses.
+constant EXECUTOR: str
+    "tests/harness/suite_records.hero"
+
+# The sentence a tag's tree must carry for the strict reading to bind. A
+# CONSTANT for `VERDICT_HEADING`'s reason, and its value reaches the tree by
+# being written here, which is the whole mechanism: this file contains it
+# because this line is in it.
+constant RATIFICATION_MARKER: str
+    "tagged reads the origin field and not the substring"
+
+# Whether `newest`'s own tree carried the strict rule. An error means the
+# executor could not be read there and is never read as either answer.
+function carried_the_rule(scratch: str, tag: str) -> bool?
+    shown = shell.run(scratch: scratch, program: "git", words: ["git", "show", tag + ":" + EXECUTOR])?
+
+    if shown.code != 0
+        return fail("no_such_file", EXECUTOR + " does not exist at " + tag)
+
+    return ok(strings.contains(text: shown.out, needle: RATIFICATION_MARKER))
+
+# A ratification row's origin field is `panel NNN` and nothing else. The
+# padded spelling is `docs/work/DECIDE.md`'s own rule, written there for
+# `queued`'s sake, so this reads what that file already promises rather than
+# inventing a second shape.
+function is_ratification(row: str) -> bool
+    at = strings.index_of(text: row, needle: "**")
+
+    if at.is_err()
+        return false
+    rest = row.slice(from: at.must() + 2, to: row.len())
+    close = strings.index_of(text: rest, needle: "**")
+
+    if close.is_err()
+        return false
+    field = rest.slice(from: 0, to: close.must())
+
+    if !strings.starts_with(text: field, prefix: "panel ")
+        return false
+    number = strings.to_number(text: strings.without_prefix(text: field, prefix: "panel "))
+
+    # `to_number` reads a leading `-`, so the sign is refused here rather than
+    # left to a spelling nobody writes today (`.claude/rules/module-shape.md`:
+    # close the class, not the reachable case).
+    return !number.is_err() && number.must() > 0
+
+test "a ratification row is `panel NNN` and a finding row is not"
+    assert is_ratification(row: "- [ ] **panel 120** | ratify or overturn | `docs/panel/120`")
+    assert is_ratification(row: "- [ ] **panel 7** | one digit is a sitting too | x")
+
+    # The row this whole repair exists for. It contains `panel ` and it is not
+    # a ratification, which is what the substring test could not tell.
+    assert !is_ratification(row: "- [ ] **panel 118 finding** | may a `certain` fix preserve the bug? | x")
+    assert strings.contains(text: "- [ ] **panel 118 finding** | x", needle: "panel ")
+
+test "the shapes beside a ratification row, one at a time"
+    # No origin field at all, an unclosed one, an empty one, a non-sitting
+    # origin, a sitting with no number, and a number that is not one.
+    assert !is_ratification(row: "- [ ] panel 120 | no bold at all | x")
+    assert !is_ratification(row: "- [ ] **panel 120 | unclosed | x")
+    assert !is_ratification(row: "- [ ] **** | empty | x")
+    assert !is_ratification(row: "- [ ] **M-core-packages** | a milestone, not a sitting | x")
+    assert !is_ratification(row: "- [ ] **panel ** | no number | x")
+    assert !is_ratification(row: "- [ ] **panel twelve** | a word, not a number | x")
+    assert !is_ratification(row: "- [ ] **panel -5** | a sign is not a sitting | x")
+    assert !is_ratification(row: "- [ ] **panel 118 R5** | a resolution, not a sitting | x")
 
 # Whether this path is one of the dated records — the pruning `find` used to do
 # with `-not -path`, done here now that the listing comes from git. Same rule as
