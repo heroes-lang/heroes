@@ -33,15 +33,15 @@ with what each one measured in the git history and in `DESIGN-LOG.md`):
 
 | | |
 |---|---|
-| **Current milestone** | **M-discard-refusal** — **OPEN**, row 39: `_ =` on a fallible value becomes a compile error. The verdict is the author's and given (`/decide` answer `3a`, 2026-09-03); the sitting is still owed, because a spec clause and a diagnostic class are both language (CLAUDE.md §4) |
-| **Last closed** | **M-open-repository**, 2026-09-08, tag `m-open-repository` ([037](journal/037-open-repository.md)) — ten steps, no sitting. The repository is public: verified unauthenticated at 200, with `releases` and the security policy answering too · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
-| Milestones closed | **38** of 60 · **38** tags |
-| The compiler | **55,054** lines of Heroes in **189** modules · the seed **747,095** lines of C · runtime ABI **21**, unmoved: the mark needed no runtime entry point, because the release is built out of instructions the IR already had |
-| The spec | **3903** of a hard 4096 · headroom **193** — moved at panel 117's ratification the same day, which narrowed the `assert` sentence and said what `print` takes; the cell said 3871 until the site rebuild re-ran `heroes measure` |
-| Records | sittings **115** · journals **38** · examples **54** programs plus the gallery's **12** single-file ones, **118** files, **545** `test` blocks · open defects **0** · the site **180** pages, 90 English and 90 Italian, of which **134** are the examples browser generated from `examples/` at build time |
-| Waiting on the author | **0** decisions · **44** in `SCHEDULED.md` · **0** in `DEFECTS.md` · **323** in `LEARN.md` (never a gate) · an outstanding veto (`docs/panel/101` R3) · **the repository's settings**, which only the author can set: the branch ruleset that free plans grant a public repository, the approval gate on workflows from a fork, and secret scanning with push protection |
+| **Current milestone** | **M-closures-verdict** — **OPEN**, row 40: the ruling on Part 7 items 1 and 12, closures and inline blocks. A decision and not a feature |
+| **Last closed** | **M-discard-refusal**, 2026-09-08, tag `m-discard-refusal` ([038](journal/038-discard-refusal.md)) — four steps, one sitting whose adopted resolution its own measurements overturned twice · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
+| Milestones closed | **39** of 60 · **39** tags |
+| The compiler | **55,361** lines of Heroes in **190** modules · the seed **752,025** lines of C · runtime ABI **21**, unmoved: a refusal needs no runtime entry point |
+| The spec | **3965** of a hard 4096, and the number to spend against is the check's: the FFI floor mortgages 60, so the spec plus the floor is **4025** and the suite goes red at 4096 — `heroes measure` says so itself since defect 017 closed today |
+| Records | sittings **116** · journals **39** · examples **118** files, **545** `test` blocks · open defects **0** · mutation: `drop-question` **236 of 236 killed**, `--permissive` 193, so **43** are caught only by the thesis |
+| Waiting on the author | **4** decisions, all `panel 118` · **43** in `SCHEDULED.md` · **0** in `DEFECTS.md` · **327** in `LEARN.md` (never a gate) · an outstanding veto (`docs/panel/101` R3) · **the repository's settings** |
 
-**Re-measured on 2026-09-08**, during M-open-repository and not carried: the compiler **55,054** lines in **189** modules, the spec **3903** with **193** of headroom, the site **180** pages, the examples **118** files and **545** `test` blocks, and the three suites **588**, **1612**, **121**, all green. **The net's wall clock is discarded rather than written down**: `real` 1537s against `user` plus `sys` of 457, so it spent most of its time waiting while site builds, git operations and a parallel session shared the machine, and a clock read on a moving machine is not a timing (CLAUDE.md § Verification). The number still worth watching is the one that shrinks: `check/walk.hero` sits at **1695 of a decided 1700**, five lines of room, and it is the file every new diagnostic reaches. What M-declared-freer's own close counted is journal [036](journal/036-declared-freer.md).
+**Re-measured 2026-09-08 at the close, not carried**: the three suites are **591**, **1624** and **122**, all green, and the fixpoint holds byte for byte. The net's wall clock is discarded — `real` 736s against `user`+`sys` of 454. Least room: `check/walk.hero` at **1697 of a decided 1700**, and `selfhost/check/builtins.hero` at **374 of 374**, which is why the `ignore` built-in is queued rather than refused.
 
 ---
 
@@ -150,8 +150,8 @@ and why one overtook another are under the table, in § Who scheduled what.
 | 36 | **M-thread-stacks** | done 2026-09-06 | `m-thread-stacks` | [035](journal/035-thread-stacks.md) | the guard speaks on every thread, and a worker's floor is the thread that ran `main` · **§1.12**
 | 37 | **M-declared-freer** | done 2026-09-07 | `m-declared-freer` | [036](journal/036-declared-freer.md) | `owned <C function>`: the string C hands you is freed by the name its own declaration gives · **§1.12**
 | 38 | **M-open-repository** | done 2026-09-08 | `m-open-repository` | [037](journal/037-open-repository.md) | the repository opens, and every page that says it is shut stops saying so · CLAUDE.md §14
-| 39 | **M-discard-refusal** | **OPEN** | — | — | `_ =` on a fallible value becomes a compile error · **§1.1**
-| 40 | **M-closures-verdict** | scheduled | — | — | the ruling on Part 7 items 1 and 12, closures and inline blocks — a decision, not a feature |
+| 39 | **M-discard-refusal** | done 2026-09-08 | `m-discard-refusal` | [038](journal/038-discard-refusal.md) | `_ =` on a fallible value becomes a compile error, in two positions and not three · **§1.1**
+| 40 | **M-closures-verdict** | **OPEN** | — | — | the ruling on Part 7 items 1 and 12, closures and inline blocks — a decision, not a feature |
 | 41 | **M-interpolation-verdict** | scheduled | — | — | the ruling on design.md Part 7 item 7, string interpolation — a decision, not a feature |
 | 42 | **M-reflection-verdict** | scheduled | — | — | the ruling on reflection — at run time, and as compile-time derivation over a record's fields — and, since 2026-09-06, on a general annotation mechanism · a decision, not a feature |
 | 43 | **M-deferral-ledger** | scheduled | — | — | every Part 7 item with no milestone gets a dated verdict or a return condition |
@@ -977,31 +977,46 @@ does not move in this milestone, so `VERSION` does not either.
 
 ### M-discard-refusal — `_ =` stops swallowing a failure
 
-**Scheduled 2026-09-03 by author decision** (`/decide` answer `3a`), out of
-measurement 014's survivor listing; **the chain row is 2026-09-04's**, and its
-absence was the first thing the item itself asked for.
+**Closed 2026-09-08**, tag `m-discard-refusal`, journal
+[038](journal/038-discard-refusal.md), sitting `docs/panel/118`. What the
+milestone measured, broke and repaired is there; what a later milestone has to
+honour is here.
 
-**What is measured and not in dispute.** `_ = risky(0 - 1)` compiles and the
-program exits **0** having swallowed the error, while `x = risky(3)` followed by
-`x + 1` is `error[bad_operand] … found i64?`. The corpus carries **nine**
-witnesses, all one shape — `_ = expect(line, 2)?` with the `?` gone — which is
-every `drop-question` survivor the mutation score found.
+**The rule closes TWO positions and states the third, and the third is a ruling
+rather than an omission.** `_ = e` on a written `T?` and a `_` parameter written
+one are refused. A discard of a **type parameter** is not, because refusing it
+relocates the hole instead of closing it — `function drop<A>(_: A)` swallows a
+failure with no discard statement anywhere — and refusing that too leaves
+`_ = [x]`, which is legal, means the same, and works on a **known** fallible, so
+`_ = [make_dir(path: p)]` defeats the rule itself. **Anything that reopens this
+owes a local rule that catches `_ = [x]`**, and the sitting's blind reader holds a
+veto against closing it non-locally: a line whose legality depends on a call site
+in another file is what that veto is for.
 
-**The price was measured before the milestone was filed**, by stripping `_ = `
-from every discard in a copy of the tree and reading what stopped compiling:
-`selfhost/` has **237** discard lines of which **54** throw away a fallible value,
-`tests/harness/` 14 and **6**, `examples/` 18 and **1**. **61 lines stop
-compiling on the day this lands, the compiler's own source included**, so the
-repair is part of the step and not a follow-up — and the two sampled shapes show
-it is not uniform: one is a deliberate best-effort discard that wants an escape
-hatch, the other is a hole that lets a test pass for the wrong reason.
+**The guarantee is outermost-only and the spec says so.** A fallible inside a
+container or a record survives, and that is reachable with the spec's own
+vocabulary and no generic: `_ = args_checked()` drops a whole `[str?]` in one
+line. The class the rule does not reach — a fallible stashed in a container and
+never inspected — needs **reachability** rather than a type judgment, and is
+filed rather than owed here.
 
-**The verdict is the author's and is given; the sitting is still owed**, because
-both halves are language (CLAUDE.md §4): a clause at `spec:97-98`, and a
-diagnostic class whose `certain` fix is `_ = f()?` only where the enclosing
-function is itself fallible and a *guess* otherwise. The wall it shares with
-M-check-completeness is named there: `_ = f()` inside `function drop<A>(x: A)` is
-a discard of a type parameter that may or may not be fallible at the call.
+**No fix is `certain`, measured**: the same line's three repairs print 1, 9 and a
+panic. A rule that exists to make a decision visible must not ship a repair that
+takes the decision. **`M-check-completeness` inherits nothing from this** except
+the generic hole's shape, which is now written in `spec:99` instead of waiting
+for it.
+
+**The `ignore` built-in is queued and not refused.** Two seats argued for a
+named, greppable form; it is blocked by `selfhost/check/builtins.hero` sitting at
+**374 of a DECIDED 374**, so it needs a ceiling raise, which is a sitting of its
+own. The historian's naming ruling stands if it ever lands: `ignore`, being
+Midori's own keyword for this job, where Rust's `drop` imports destructor timing
+and Haskell's `void` returns a still-wrapped value.
+
+**The departure is deliberate and recorded**: Hare 0.26.0, released 2026-02-13,
+introduced `_ = os::remove(path)` as *the* explicit way to ignore an error. Zig
+ships the rule this milestone adopted and has not retreated from it. Across
+seventeen languages searched, none banned the silent drop with no valve at all.
 
 ### M-closures-verdict — the ruling on closures and inline blocks
 
