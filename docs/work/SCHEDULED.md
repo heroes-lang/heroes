@@ -24,7 +24,7 @@ with `**Origin:**` and its date. Nothing lives outside the two banners —
 Format: `- [ ] **M-<milestone>** | <what, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 43**
+**OPEN: 45**
 
 - [ ] **M-reflection-verdict** | panel 117's sixth option: give `assert` both sides for an aggregate by walking to the first DIFFERING LEAF and naming the field, instead of rendering the value | `docs/panel/117-both-sides-of-an-assert-when-a-side-is-an-aggregate.md` · `selfhost/emit/structural.hero` · `runtime/parts/array.c`
 
@@ -329,6 +329,80 @@ Format: `- [ ] **M-<milestone>** | <what, in one line> | <where to look>`
     **Where to look also:** `DESIGN-LOG:92`, `:100`.
     **Why it matters:** a spec that is silent where the runtime is specific is
     §12's own case.
+
+- [ ] **M-interpolation-verdict** | `.must()` says "abort" and the spec never says what an abort does | `spec:156` · `spec:197-198` · `selfhost/value_errors.hero:145` · `docs/measurements/010-spec-budget-ledger.md`
+
+    **Origin:** the llm-ergonomist, panel 118, 2026-09-08, reported as an
+    appetite rather than a request, from the seat that reads the spec and nothing
+    else. Filed in `DECIDE.md` and settled by `/decide` 2026-09-08: buy it, and
+    home it here because this sitting's agenda already carries a *the spec is
+    silent where the runtime is specific* question — the printed-float item above
+    — and both are paid from one budget. Naming a sitting whose AGENDA holds the
+    question is what this file asks for, rather than *the next sitting that
+    touches the spec*.
+
+    **Measured 2026-09-08.** The spec writes `abort` **8 times on 7 lines**
+    (`:71`, `:156`, `:162` twice, `:169`, `:171`, `:186`, `:197`) and defines it
+    **nowhere**. It says *ends the program* exactly **once** in the whole
+    document, wrapped across `:197-198`, and that once is `exit(code: i64)`'s
+    parenthetical — so the phrase a reader needs is already in the spec, spent on
+    the one operation nobody could misread. `.must()` gets three words, *extract
+    or abort*, with no consequence attached, and that is what made it the
+    ergonomist's attractive repair in the one situation where it was
+    catastrophic.
+
+    **The compiler says it and the spec does not.** `.must()` ends the program
+    appears at three message sites in `selfhost/value_errors.hero` (`:145`,
+    `:165`, `:187`, plus `:349`, the test that pins the third), and
+    `selfhost/ir/verify.hero:223` opens with *an abort ends the program*.
+    `spec:3` says *"This document is the whole language"*, so today the
+    diagnostic is better documentation than the specification.
+
+    **THE OPTION SET IS WIDER THAN THE BALLOT THIS ARRIVED WITH (CL-057).** It
+    was filed as *should `.must()`'s abort say it ends the program*, one clause at
+    one site. The measurement says there are two routes and the sitting prices
+    both: **(a)** the local clause, `.must()` alone — cheapest, and it leaves
+    seven aborts undefined; **(b)** one definition of *abort*, that it ends the
+    program, which covers all eight sites and is the only route that also makes
+    `:162`'s *recursion too deep* and `:71`'s *overflow aborts at every width*
+    legible. Nobody has priced (b). It is dearer than (a) and may be cheaper than
+    (a) written eight times, and the spec has **40** free tokens (`./heroes
+    measure spec/heroes-spec.md`: 3995 against a green ceiling of 4035), so the
+    price is what decides and both are measured before the sitting, not during.
+
+    **Why it matters:** a language whose thesis is that every plausible mistake
+    is a compile error tells its reader eight times that something *aborts*, and
+    never once what that costs them.
+
+- [ ] **M-thesis-harness** | should the spec exhibit one worked diagnostic, when today it exhibits zero | `spec/heroes-spec.md` · `design.md` Part 11 · `docs/measurements/007-two-predictions-collected.md:24-25`
+
+    **Origin:** the llm-ergonomist, panel 118, 2026-09-08, the other half of the
+    same appetite. `/decide` 2026-09-08 split the two and refused to settle this
+    one by a date: it is **decided by an instrument**, which is what CLAUDE.md §2
+    asks of anything entering on the thesis rather than on compiler need.
+
+    **The claim, in the seat's own terms**: a language whose thesis is that every
+    plausible mistake is a compile error shows its reader **zero** compile errors,
+    so a model cannot predict what it is about to be told. That is a falsifiable
+    claim about metric 2 — first-try completion under a spec-only context — and
+    metric 2 has never run.
+
+    **Why the instrument and not a date.** A worked diagnostic is dearer than the
+    **40** tokens free after M-closures-verdict, so it cannot be bought on an
+    appetite; Principle 0 admits it on a **measured design.md Part 11 effect**,
+    and this milestone is what produces one. The sitting that buys or refuses it
+    is therefore the one that can read the number, and a refusal then owes a
+    Part 6 row carrying its falsifier (CLAUDE.md §12).
+
+    **What it has to beat, in the same currency.** Panel 120 measured one
+    silent-class fact at **+30** where four signature drafts cost +63 to +86 and
+    bought nothing for the class the sitting was convened about. The exhibit's own
+    price is owed measured rather than estimated before it is compared with
+    whatever clause the same budget could buy instead.
+
+    **Why it matters:** the one thing this spec never shows is the thing the whole
+    language is for, and whether that costs a reader anything is a measurement
+    nobody has taken.
 
 - [ ] **M-core-packages** | the opening sitting, full five seats, and no step lands before it | `design.md` §1.11, §4.15, §4.19, Part 6 · `docs/panel/028`, `032`, `036`, `039`, `049`, `097`, `099`
 
