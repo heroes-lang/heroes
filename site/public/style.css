@@ -518,6 +518,22 @@ dl.why dd {
 .notice p { margin: 0.7rem 0; }
 .notice b { color: var(--fg); }
 
+/* The author's book, on the two landings and nowhere else. A card rather than a
+   bar across the top: this site sells nothing, so the one block that points
+   outward sits low on the page, where the author has just been introduced, and
+   a reader who does not care scrolls past it. Gold on the left, like a notice,
+   because it is an aside and not a claim about the language. */
+.book {
+  margin: 2.2rem 0;
+  padding: 1.1rem 1.35rem;
+  background-color: var(--card);
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--gold);
+  border-radius: var(--radius);
+}
+.book p { margin: 0; text-wrap: pretty; }
+.book b { color: var(--fg); }
+
 /* == 7. code ============================================================== */
 
 pre {
