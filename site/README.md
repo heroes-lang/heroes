@@ -114,11 +114,15 @@ answers at drops the extension and gains a slash, so `why.html` is `/why/` and
 | `style.css` | the only cross-page *stylesheet* |
 | `images/` | the one binary asset the site has: `giuseppe-arici.jpg`, the author's portrait, used by both editions of `about.html` |
 
-**No JavaScript and no external assets**, on any page, still: light and dark come
-from `prefers-color-scheme` alone. There IS a build step now, and it is the one
-thing the move to Astro changed about what a visitor receives — which is nothing.
-Astro ships no JavaScript unless a page asks for one, and no page here asks. The
-domain (heroes-lang.org) is already owned by the author.
+**No JavaScript of its own, and no external assets**, on any page: light and dark
+come from `prefers-color-scheme` alone, the bolt and the grain are markup, and
+Astro ships no JavaScript unless a page asks for one, which no page here does.
+There IS a build step now, and for as long as the site had no visitor count it
+changed nothing at all about what a visitor receives. **One script does reach the
+visitor, and it is not written here**: Cloudflare Pages injects its Web Analytics
+beacon at deploy time, and that beacon uses no cookie and no client-side state.
+§ The visitor count carries what it counts, what it cannot see, and how to check
+that it is there. The domain (heroes-lang.org) is already owned by the author.
 
 **No Tailwind either, and that is a deliberate difference from the author's other
 site**, which uses it. This site has its own hand-written 45 KB `style.css` and
@@ -521,7 +525,47 @@ are gone with it.** What still has to be true after a publish, and is worth
 re-running rather than assuming: both landings and a nested chapter in each
 edition answer 200, a missing page answers 404, `robots.txt` and
 `sitemap-index.xml` answer 200, no response carries `noindex`, `www` still
-answers 301 to the apex, and the certificate still names the apex.
+answers 301 to the apex, the certificate still names the apex, and the visitor
+count's beacon is in the served HTML (the one-line check is in § The visitor
+count below).
+
+### The visitor count
+
+**Cloudflare Web Analytics, on the Pages project.** The switch is *Workers &
+Pages* → `heroes-lang-site` → *Metrics* → **Enable** under *Web Analytics*, and
+Cloudflare injects the beacon itself, **on the next deployment and not before**:
+turning it on changes nothing until a deploy runs. There is no snippet in this
+repository and no key to carry, which is why `.env.example` says Web Analytics
+has no token permission at all. It cannot be turned on from CI, and it does not
+need to be.
+
+**What it counts**: page views, visits, referrers, paths, browsers and
+countries, with no cookie, no `localStorage` and no fingerprinting. That is the
+whole reason it can be here without asking a reader for consent, and it is why
+the file inventory above now says *no JavaScript of its own* instead of none.
+
+**What it cannot see**: any request without a browser running JavaScript, and
+that includes `curl https://heroes-lang.org/spec.md`, which is the gesture the
+home page itself offers under the buttons. Those requests exist only in the
+zone's own traffic analytics, which is server-side and needs nothing installed.
+
+**The two measures are not interchangeable, and the free plan is why.** The zone
+gives *Requests*, *Bandwidth*, *Unique Visitors* and requests by country on the
+free plan; page views, visits and filtering by path or referrer host start at
+Pro. So the beacon is the only free way to learn which pages are read and where
+readers arrive from, and the zone is the only way to see traffic with no browser
+behind it. Neither replaces the other, and both are read from the dashboard:
+there is no `heroes` subcommand for this and there is not meant to be.
+
+Checking that the beacon is actually there is one line:
+
+```
+curl -s https://heroes-lang.org/ | grep -c cloudflareinsights
+```
+
+`1` is the beacon present, `0` is a deploy that has not carried it yet. A page
+served with `Cache-Control: public, no-transform` never gets the injection, so
+if that header ever arrives the count stops and nothing says so.
 
 ## The Italian edition — `site/src/html/it/`
 

@@ -250,8 +250,8 @@ main.home > footer p { max-width: 41rem; }
 
 /* == 4. nav =============================================================== */
 
-/* Duplicated in each file's markup rather than injected, because the site has
-   no build step and no JavaScript. Keep the items and their order in sync; the
+/* The nav is one component, `src/components/SiteNav.astro`, rather than markup
+   repeated in every page. Keep the items and their order in sync there; the
    current page marks itself with class="here". */
 
 nav.site {
@@ -639,7 +639,7 @@ p > code, li > code, dd > code, dt > code, figcaption code {
   box-shadow: 0 0 0 0.28em color-mix(in srgb, var(--fg) 7%, transparent);
 }
 
-/* ------- syntax colouring, done in markup because there is no JavaScript ----
+/* ------- syntax colouring, done in markup rather than by a script ----------
    The token classes are the lexer's own tables, not a guess: `.k` is
    `lexer/keywords.rs::keyword`, `.t` is spec § Types. Three accents only, as
    the style guide demands — red for the words the language reserves, blue for
@@ -923,8 +923,8 @@ figure.example figcaption::before { content: '\21B3\00A0'; color: var(--dim); }
    mapping is an SVG filter, inline in the page the way the bolt is: one
    `feColorMatrix` takes the photograph to luminance, and one
    `feComponentTransfer` maps 0 to the dark plate and 1 to the light one, per
-   channel. No build step, no script, no request — and the file that ships stays
-   the photograph, so replacing it needs no tool.
+   channel. No script of the site's own, no request, and the file that ships
+   stays the photograph, so replacing it needs no tool.
 
    A filter cannot read a custom property, so the two inks are written into the
    filter's own tables; `--plate-light` here is the same colour, and it is what
