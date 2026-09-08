@@ -1,0 +1,34 @@
+# fixedbugs, 2026-09-08 (defect 018, found while grounding panel 119's
+# llm-ergonomist, which had predicted that the modal first-try failure in
+# every arm of its experiment is `a < b` on two `str`).
+#
+# SYMPTOM: the message that greets exactly that failure named two of the ten
+# types it accepts — "`<` takes `i64` or `f64`, found `str`" — so a reader
+# holding a `u8` was told the language compares only `i64` and `f64`, and
+# converted a value that needed no conversion.
+#
+# CAUSE: `selfhost/check/ops.hero` accepts `.int_ty | .float_ty`, which is all
+# eight integer widths and both floats, and then handed the literal string
+# "`i64` or `f64`" to `value_errors.bad_operand` at three sites: the
+# comparison, a `str` under an arithmetic operator, and unary `-`. The
+# checker was right and its own text was wrong.
+#
+# FIX: "any integer or a float", which is the vocabulary `print`'s own message
+# already used ("`print` takes any integer, a float, `bool` or `str`"). The
+# sibling `mixed_arithmetic` had been saying the true thing the whole time —
+# "two integers of the SAME width, or two floats of the same width" — and it
+# fires whenever the two sides DIFFER, which is why the wrong text was only
+# ever reached by two sides of one non-ordered type: the shape a reader writes
+# first.
+#
+# This case pins all three sites and both of the shapes that reach the first.
+
+function main()
+    a = "apple"
+    b = "banana"
+    print(a < b)  #~ bad_operand
+    yes = true
+    no = false
+    print(yes < no)  #~ bad_operand
+    print(-a)  #~ bad_operand
+    print("x" * "y")  #~ bad_operand

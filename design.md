@@ -1707,6 +1707,22 @@ captured values plus a function pointer — no shared cells, no lifetime problem
 interaction. The cost we feared was the cost of closures *with* aliasing. Still ~150 lines and ~60
 spec tokens, and the code works without them, so: **first thing after the first running program.**
 
+**Every number in the paragraph above is false, and closures are refused rather than deferred**
+(panel 119, 2026-09-08, `docs/panel/119-the-warning-that-does-not-fit.md`; the row is in Part 6 and
+the reasoning is under Part 6's table). The paragraph is left standing because it is what the
+project believed on 2026-08-04 and the correction is worth more beside it than in place of it.
+Measured on the day the sitting ran, none of it estimated. **~150 lines** is **282
+exhaustive-match arms in 74 of 190 modules** — the compiler was made to count them rather than
+read them — with a floor of 197 widened lines plus 86 real arms, five DECIDED file ceilings
+breached, and no legal home for the parser, a module of its own giving `error[module_cycle]`.
+**~60 spec tokens** is **+118** on one draft and **+141** on a second, independent one, against
+**70** free; the estimate is right only for a sentence that states no rule. And **"no refcount
+interaction"** is false: `selfhost/check/counted.hero:91` answers `false` for `.function_ty`, so a
+captured `str` is a leak, and `runtime/parts/desc.c` gives `hero_desc_func` a bare-assignment copy
+and `hero_drop_nothing` — written on the premise that v1 has no closures, which is exactly the
+premise a closure removes. **The sentence two paragraphs above this one is a different claim and is
+still true**: a top-level function captures nothing, so it really is just a pointer.
+
 Note the price being paid meanwhile: every example program needs a handful of named one-line
 functions (`double`, `plus`, `is_even`, `price_of`) purely to pass them around. Those same functions
 are the ones where the entity form is most disproportionate (see Part 7), which makes this the
@@ -2445,6 +2461,89 @@ in `tests/golden/`; where it is a measurement, it belongs in `docs/measurements/
 | Style-insensitive identifiers (Nim's `fooBar` ≡ `foo_bar`) | two spellings for one thing, against §4.15's "exactly one correct way"; for a model it is pure confusion |
 | Private record fields | it is an *opaque type* wearing a field annotation's name: §4.9 makes field-named construction mandatory, so a hidden field makes the type unconstructible from outside, and §4.3's structural `==` compares a field the caller cannot name. The precedented form (Haskell 2010 §5.2, Ada 83) hides the **type**, never the field — and §4.20 makes a record a C struct by value, so a shim reads the "private" field at its offset anyway (panel 033) |
 | Private variant cases | it forces `_` to be legal on a variant whose hidden case the reader may not see, so a line's legality depends on a declaration nobody may read — and §4.7 bans `_` on variants precisely to keep exhaustiveness meaning something. Rust shipped this (`priv` variants), deleted it in 2014 as rarely used, re-added it per-**type** as `#[non_exhaustive]` in 1.40, and documents the price as the loss of exhaustiveness checking (panel 033) |
+| Closures that capture | **refused on cost alone**, which this Part's own preamble licenses and §1.1 makes legitimate by making simplicity the ceiling — Part 7 item 1 until panel 119, 2026-09-08. **282 exhaustive-match arms in 74 of 190 modules**, five DECIDED file ceilings breached, no legal home for the parser, **+118 spec tokens** against 70 free with six removals priced and none admissible, and four **compiled** corruption classes at the C boundary. **The falsifier**: a program on the §1.0 closure list, or a measured Part 11 effect, that a named top-level function cannot express — *together with* a representation, written down and compiled, in which a capturing closure has one type per signature, lets the ownership pass decide release from the type alone with no runtime descriptor pointer, and keeps eight bytes at every `extern` position. The paragraph below the table carries the measurements, and the **capture-free** narrowing is named there as the form that returns |
+
+**What the closures row rests on, since a refusal is held to a feature's standard** (§12 of
+CLAUDE.md; panel 119, and every number below was run on 2026-09-08 rather than recalled).
+
+**§1.7's subtraction is 21 declarations.** Part 7 item 1 promised to *"delete the handful of named
+one-line helper functions that currently exist only to be passed around"*. Under that exact
+wording — passed by name and never called — the whole tree holds **21 declarations and 66 lines,
+every one of them in an example program**, in seven files, four of which are the programs whose
+*subject* is the higher-order function. `selfhost/` holds **none** counting every use, and one
+counting production uses only. The compiler, 190 modules and 55,361 lines, passes a function as a
+value at **4 production sites** — none of which captures anything — with 13 of its 17 value sites
+being `test` doubles, and it calls `map`, `filter`, `fold`, `find`, `any` and `all` at **zero**
+sites: it writes loops. `docs/measurements/020-four-sites-in-fifty-five-thousand-lines.md`.
+
+**The reader-facing cost is the `@` cell, and it is unrefusable.** A `total: i64 @ 0` captured by
+copy freezes at the moment of capture, and a later read yields the stale value. A *write* to a
+captured cell is refusable by a checker; a *read* is not, because whether the frozen value was the
+one wanted is undecidable, and §1.2 cannot price it — there is no error round trip. Every language
+a model has read captures by **reference**, which makes the accumulating closure the textbook
+idiom, so this language would compile it and print the wrong number. **Java 8's rule is the
+precedented repair** — *"lambda expressions close over values, not variables"*, mutable capture
+refused outright — and it costs spec tokens this language does not have: the only draft that states
+what happens to a captured `@` cell is the **+118** one. That is what the sitting is named after.
+
+**The falsifier does not rest on capture by copy being dangerous, and that is deliberate.** History
+says the opposite: Go shipped a breaking change at **1.22** (2024-02-06) and C# moved the `foreach`
+variable inside the loop at **5.0** (2012), both to repair capture by *reference*, and **no language
+that shipped capture by copy has reversed it**. So the row's falsifier is compiler need or a
+measured Part 11 effect, plus a representation — never an argument about copying.
+
+**The C boundary is where the refusal stops being about price.** `hero_desc_func`
+(`runtime/parts/desc.c`) declares **8 bytes**; a closure over one `i64` and one `str` is **32**.
+Compiled against a real `sqlite3.h`: the cast at `sqlite3_busy_handler` passes clang at **exit 0
+with zero diagnostics under all fourteen flags** and dies **exit 139** at run time; the array route
+is a heap-buffer-overflow with 24 of 32 bytes silently truncated; `hero_copy_func` is a bare
+assignment with `hero_drop_nothing`, so a captured `str` is use-after-free the moment its source
+binding is released; and `hero_eq_func` reads 8 of 32, so **either field order answers EQUAL about a
+case it should not**. Panel 013's 2026-08-04 condition — *"the type system will have to distinguish
+capture-free at the boundary"* — is discharged and sharpened: the `_Static_assert` probe is
+generated from the **declared type**, so it is not *distinguish at the boundary* but **distinguish
+everywhere**, and `selfhost/emit/callback_guard.hero`'s own falsifiable claim — *"it dies the day a
+function value can be produced without a `func_ref`"* — is falsified by construction, because a
+closure is constructed rather than address-taken.
+
+**The capture-free narrowing is the form that returns**, and two things a future sitting need not
+re-derive. It carries no veto, fits at **+57**, changes nothing at the boundary — an unnamed
+capture-free function is still a function whose address `func_ref` takes — and is refused here only
+by Principle 0: no measured Part 11 effect exists, and the seat that approved it measured that it
+buys **nothing** on all three of its tasks. First: a generated name must come from **module plus
+source-order index**, never from the type, because `selfhost/emit/synth.hero`'s `content_key` is a
+function of the type's rendering and two unnamed functions of one type would collide.
+Second: **Zig accepted that exact proposal in 2020 and rejected it in 2023**
+(`ziglang/zig#1717`, closed `not_planned`).
+
+**And refusing is the mainstream position under this language's constraints, not an eccentric one.**
+Four languages with manual memory, a C ABI and no hidden allocation refuse capture in writing —
+Zig (`ziglang/zig#229`, 2020: *"too easy to accidentally close over a pointer to stack memory and
+clobber your stack"*), Odin, C3, and **Oberon, since 1988 and never reversed**, whose report forbids
+assigning a nested procedure to a procedure variable and which self-hosts. Only Hare leaves the door
+open, and has for five years. Against that, **no study in any language measures how much code
+closures deleted**: the literature counts sites converted and lambdas written, and the one
+randomised trial on the ergonomic half found participants *"spent more time with compiler errors,
+and have more errors, when using lambdas as compared to iterators"* (ICSE 2016). The 21 above is
+the only measured number.
+
+**Inline blocks (Kotlin-style, Part 7 item 12 until panel 119) are examined and deliberately
+*unplaced* — they are neither on this list nor on Part 7's.** Not on this one, because the seat
+that vetoed the drafted form then named a form it *would* approve, so a permanent refusal would
+refuse something a judge said yes to. Not on Part 7's, because that preamble claims its items lose
+*only* on simplicity, and this one also loses on **locality**: the meaning of an indented line would
+depend on a signature that is not on the screen, and the spec's *"significant and rigid"* would stop
+being true. It is also weaker than it looks — a block is expanded at one call site, so it cannot be
+stored in a parameter, cannot cross a recursive call, and **removes not one parameter** from the
+corpus's largest context-threading site, which is a recursive dispatcher; and it contributes **zero**
+new C symbols, which is a null result in the good direction. **Three conditions return it,
+jointly**: a **caller-side marker** that makes the construct local, in the spirit of `@` at the call
+site · a ruling on `return`, `break` and `continue` crossing the block boundary, which item 12's own
+text never asked and which Kotlin (legal, and needing `crossinline` to forbid), Ruby (legal, and a
+`LocalJumpError` when orphaned) and Smalltalk (returns from the home method) answer three different
+ways · and **the inlining pass priced** against `selfhost/ir/mono.hero`'s 368 code lines, the
+compiler seat having reported the pass as *unrun* rather than estimating it. No such pass exists
+today: all 18 hits for `inlin` in `selfhost/` are the word in other senses.
 
 **Compile-time evaluation (`comptime`, `constexpr`, CTFE) is examined and
 deliberately *unplaced* — it is neither on this list nor on Part 7's** (panel 039,
@@ -2479,13 +2578,26 @@ where this does not.
 These lose only on the *simplicity* vertex, which means they are postponed rather than refused. The
 distinction matters and depends on which vertex said no.
 
+**Two items have left this list and their numbers are kept struck rather than reused** (panel 119,
+2026-09-08): item **1**, closures, to Part 6, and item **12**, inline blocks, to the *unplaced*
+paragraph under Part 6's table. Both left because the preamble above stopped being true of them —
+closures lose on more than simplicity, and inline blocks lose on locality, which is a veto rather
+than a price. A number is never reused, because Part 7's numbers are cited across the record.
+
 **Nothing on this list is considered until the Principle 0 closure list (§1.0) compiles itself.**
 The ordering below is not negotiable before the fixpoint; items 2–4 are the exception because they
 are *on* the closure list.
 
-1. **Closures** — v1.5, immediately after the first running program. Much cheaper than usual thanks
-   to value semantics (capture by copy = a record plus a function pointer). Will delete the handful
-   of named one-line helper functions that currently exist only to be passed around.
+1. ~~**Closures** — v1.5, immediately after the first running program. Much cheaper than usual
+   thanks to value semantics (capture by copy = a record plus a function pointer). Will delete the
+   handful of named one-line helper functions that currently exist only to be passed around.~~
+   **Left this list for Part 6 at panel 119, 2026-09-08**: refused on cost alone, with its falsifier
+   in the row and the measurements under Part 6's table. The number stays 1 because Part 7's numbers
+   are cited. Every claim in the struck text was measured false that day — the handful is 21
+   declarations and all of them are in example programs, the cost is 282 match arms in 74 of 190
+   modules and +118 spec tokens against 70 free, and *"capture by copy = a record plus a function
+   pointer"* is the sentence the C boundary refuses, because `hero_desc_func` declares 8 bytes and
+   that record is 32. The **capture-free** narrowing is named in Part 6 as the form that returns.
 2. **File I/O** — `read_file(path) -> str?`, `write_file(path, s) -> ()?`. Two functions via FFI to
    `fopen`/`fread`. **Required for self-hosting.**
 3. **Command-line arguments** — `args() -> [str]`. One function. **Required for self-hosting.**
@@ -2545,11 +2657,18 @@ are *on* the closure list.
     then the check does the work the vocabulary would have: `ffi_parameter_type` refuses the
     binding rather than letting a width be guessed.
 11. **A `raw` module for low-level access** — see Part 9.
-12. **Inline blocks (Kotlin-style)** — `repeat 3` / `with file("x")` where the last parameter is a
-    block expanded at the call site rather than becoming a closure. This is the acceptable substitute
-    for Ruby DSLs, because the function name is *written on the line* so you know where to look, the
-    receiver is not implicit, and no dynamic dispatch is needed since the body is copied at compile
-    time. Requires an inlining pass in the lowering; likely lands together with closures.
+12. ~~**Inline blocks (Kotlin-style)** — `repeat 3` / `with file("x")` where the last parameter is a
+    block expanded at the call site rather than becoming a closure. This is the acceptable
+    substitute for Ruby DSLs, because the function name is *written on the line* so you know where
+    to look, the receiver is not implicit, and no dynamic dispatch is needed since the body is
+    copied at compile time. Requires an inlining pass in the lowering; likely lands together with
+    closures.~~ **Left this list at panel 119, 2026-09-08, and did not go to Part 6 either: it is
+    examined and deliberately *unplaced*, in the paragraph under Part 6's table**, with three joint
+    return conditions. The number stays 12 because Part 7's numbers are cited. Neither list fits,
+    and the struck text is why one of them does not: it says the body is copied at compile time and
+    never asks what `return` inside it means, which is the first question three languages answer
+    three different ways. *"Likely lands together with closures"* is also now moot in both
+    directions.
 13. **Concurrency** — the largest gap. But value semantics puts you in the best possible position:
     **no aliasing means no data race is expressible IN A PROGRAM'S OWN VALUES**, since the program
     shares no state it would have to protect.
@@ -2926,7 +3045,10 @@ than six months of design on paper.
     workaround compiling is the proof that the compiler did not need the form.
 17. Then the port to Heroes, finished by the **fixpoint**: A builds `B.c`, B builds `C.c`, `diff
     B.c C.c` empty, clang version pinned and recorded. The bootstrap compiler is archived here.
-    (Closures, being off the closure list, wait for the fixpoint.)
+    (Closures, being off the closure list, wait for the fixpoint. **They waited, they were judged
+    on 2026-09-08, and they are refused** — panel 119, the row in Part 6. The sentence is left
+    because it records what step 17 was for: the fixpoint is what made Part 7 admissible, and the
+    first item it admitted was the first one it refused.)
 18. **Separate compilation** — one `.c` per module, prototypes across translation units, the
     per-module cache. After the fixpoint, and never before it: the cache is where §4.19's
     guarantee dies quietly, since a caller in another translation unit sees a generated prototype

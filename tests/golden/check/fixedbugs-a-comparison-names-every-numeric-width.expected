@@ -1,0 +1,4 @@
+tests/golden/check/fixedbugs-a-comparison-names-every-numeric-width.hero:29:11: error[bad_operand]: `<` takes any integer or a float, found `str`
+tests/golden/check/fixedbugs-a-comparison-names-every-numeric-width.hero:32:11: error[bad_operand]: `<` takes any integer or a float, found `bool`
+tests/golden/check/fixedbugs-a-comparison-names-every-numeric-width.hero:33:11: error[bad_operand]: `-` takes any integer or a float, found `str`
+tests/golden/check/fixedbugs-a-comparison-names-every-numeric-width.hero:34:11: error[bad_operand]: `*` takes any integer or a float, found `str`

@@ -21,6 +21,17 @@ use check/table
 # one), so `A` prints as `A`. An empty list is legal and prints `#0`,
 # which only happens where a caller outside the checker has no function
 # in hand.
+#
+# **THAT LAST SENTENCE WAS FALSE AND IS DEFECT 021** (panel 120,
+# 2026-09-08). `generics` is the letter list of the function the message
+# is written FROM, not the one the type came from, so a callee's type
+# parameter has no name here — and six lines of ordinary generic code
+# reached it: `function id<T>(x: T) -> T` and `join(xs.map(id).map(id))`
+# gave *`join` takes `[str]` and `str`, found `[#0]`*. `#0` is an index
+# into the checker's own tables and is not a type anyone can write, which
+# §4.17 forbids in a message a reader is meant to act on. The premise is
+# left above rather than deleted, because what it claimed is why nobody
+# looked.
 function render_ty(t: table.Types, s: source.Source, decls: [ast.Decl], id: i64, generics: [str]) -> str
     return match table.get(t, id)
         .int_ty k => widths.int_name(k.kind)
@@ -54,7 +65,14 @@ function render_ty(t: table.Types, s: source.Source, decls: [ast.Decl], id: i64,
             if g.at < generics.len()
                 generics[g.at]
             else
-                "#" + g.at.to_str()
+
+                # The loud honest noun, not a table index. Threading the
+                # callee's letters is the fuller repair and
+                # `selfhost/check/walk.hero` already does it for two other
+                # messages — but that file stands at 1697 of a DECIDED 1700,
+                # so the thread waits for a ceiling raise and this says the
+                # true thing meanwhile.
+                "a type parameter"
         .error => "?"
 
 function case_name(s: source.Source, decls: [ast.Decl], decl: i64, at: i64) -> str
@@ -107,5 +125,9 @@ test "a case prints its variant's dot spelling, a generic its own name"
     a = table.intern(@t, .generic(at: 0))
     names: [str] = ["A", "B"]
     assert render_ty(t, s, p.decls, a, names) == "A"
-    assert render_ty(t, s, p.decls, a, none) == "#0"
+
+    # Defect 021: this asserted `#0` until 2026-09-08, which is how the
+    # module doc's dead premise stayed comfortable — the case it called
+    # unreachable had a test pinning its output.
+    assert render_ty(t, s, p.decls, a, none) == "a type parameter"
     assert render_ty(t, s, p.decls, table.error_ty(t), none) == "?"

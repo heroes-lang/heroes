@@ -57,7 +57,38 @@ function bare_name(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast
                     )
                 else
                     state.record_use(@r, at: id, to: .top(at: decl))
-            .constant_decl | .record_decl | .test_decl => state.record_use(@r, at: id, to: .top(at: decl))
+            # **Panel 033 R5 reached the arm above and not this one**, so the
+            # library's four extern CONSTANTS were readable from every program
+            # while its extern functions were refused: `print(HERO_OS_OK)`
+            # printed `0` from a plain program (defect 020, panel 120,
+            # 2026-09-08). The grouped arm could not ask the question, which is
+            # why it was wrong — it put `constant_decl` beside kinds it assumed
+            # cannot be extern, and that is a premise about the world.
+            #
+            # A constant is extern exactly when it has a **header** where an
+            # ordinary one has a body, and a record the same, so the guard asks
+            # the declaration in hand. `record_decl` is guarded WITH NO WITNESS
+            # TODAY — the library declares no records — deliberately: the class
+            # is closed rather than the case that happened to be reachable, and
+            # the day a group declares one this arm already answers.
+
+            .constant_decl cd =>
+                if !cd.header.is_err() && source.is_library(s, decls[decl].name.start) && !source.is_library(s, span.start)
+                    state.push_diagnostic(
+                        @r,
+                        diagnostics.extern_across_modules(name: text, module: source.LIBRARY_MODULE, is_library: true, span: span)
+                    )
+                else
+                    state.record_use(@r, at: id, to: .top(at: decl))
+            .record_decl rd =>
+                if !rd.header.is_err() && source.is_library(s, decls[decl].name.start) && !source.is_library(s, span.start)
+                    state.push_diagnostic(
+                        @r,
+                        diagnostics.extern_across_modules(name: text, module: source.LIBRARY_MODULE, is_library: true, span: span)
+                    )
+                else
+                    state.record_use(@r, at: id, to: .top(at: decl))
+            .test_decl => state.record_use(@r, at: id, to: .top(at: decl))
 
         return
     builtin = inventory.index_of(text)

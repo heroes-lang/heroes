@@ -29,7 +29,7 @@ function mixed_arithmetic(op: str, left: str, right: str, span: token.Span) -> d
         span: span
     )
     d.fixes @ d.fixes.push(
-        diag.Fix(title: "convert one side: `to_f64(x)`, `to_i64(x)`, or `fit_<width>(x)` between widths", replacement: "", span: span, certainty: .guess)
+        diag.Fix(title: "convert one side: `to_f64(x)` cannot fail, and `to_i64(x)` or another `to_<width>(x)` gives a `T?` because the number may not fit", replacement: "", span: span, certainty: .guess)
     )
     return d
 

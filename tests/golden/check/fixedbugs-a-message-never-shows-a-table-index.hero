@@ -1,0 +1,27 @@
+# fixedbugs, 2026-09-08 (defect 021, found by panel 120's compiler-engineer;
+# the reproducer below is shorter than the seat's).
+#
+# SYMPTOM: six lines with an ordinary generic identity function produced
+# "`join` takes `[str]` and `str`, found `[#0]`". `#0` is an index into the
+# checker's own type tables and is not a type anyone can write, which §4.17
+# forbids in a message a reader is meant to act on.
+#
+# CAUSE: `selfhost/check/render.hero` renders a type parameter from
+# `generics`, the letter list of the function the message is written FROM, and
+# `check/state.hero` passes the CALLER's letters — so a callee's type
+# parameter has no name there. The module doc said this "only happens where a
+# caller outside the checker has no function in hand", and that premise was
+# false of any user program. The premise had a test pinning `#0`, which is how
+# it stayed comfortable.
+#
+# FIX: the loud honest noun, "a type parameter". Threading the callee's letters
+# is the fuller repair and `check/walk.hero` already does it for two other
+# messages, but that file stands at 1697 of a DECIDED 1700, so the thread
+# waits for a ceiling raise and the message says the true thing meanwhile.
+
+function id<T>(x: T) -> T
+    return x
+
+function main()
+    xs = [1, 2, 3]
+    print(join(xs.map(id).map(id), ", "))  #~ bad_operand type_mismatch

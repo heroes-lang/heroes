@@ -227,12 +227,12 @@ function suggestion(module: str) -> str
 function extern_across_modules(name: str, module: str, is_library: bool, span: token.Span) -> diag.Diagnostic
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "extern_across_modules",
-        message: "`" + name + "` is an `extern` of module `" + module + "` — an extern is never callable across a module boundary, because only `" + module + "` carries the header that checks it",
+        message: "`" + name + "` is an `extern` of module `" + module + "` — an extern is never reachable across a module boundary, because only `" + module + "` carries the header that checks it",
         span: span
     )
 
     if is_library
-        d.message @ "`" + name + "` is the library's own `extern` — an extern is never callable across a module boundary, and the library is a module"
+        d.message @ "`" + name + "` is the library's own `extern` — an extern is never reachable across a module boundary, and the library is a module"
         d.notes @ d.notes.push(
             "§4.19: every extern the library declares is wrapped by a library function, and the wrapper is the route — it adds the checks the raw extern does not have"
         )

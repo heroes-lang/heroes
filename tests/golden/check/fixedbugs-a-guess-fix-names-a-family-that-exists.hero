@@ -1,0 +1,32 @@
+# fixedbugs, 2026-09-08 (defect 019, found by following defect 018's own
+# reproducer one step further: reading the fix the compiler offers, and then
+# running it).
+#
+# SYMPTOM: `mixed_arithmetic`'s `guess` fix read "convert one side:
+# `to_f64(x)`, `to_i64(x)`, or `fit_<width>(x)` between widths", and
+# `fit_i32` is `error[unknown_name]: nothing named `fit_i32` is in scope`. A
+# reader who followed the compiler's own advice got a second error.
+#
+# CAUSE: the `fit_` family SHIPPED, at M-sized-integers step 7, and was then
+# withdrawn — `design.md` records why, in panel 017's naming rule: "the three
+# conversions share one scheme and a model can derive the third from the two
+# the spec already lists", and "a family called `fit_` broke exactly that".
+# Two diagnostics went on recommending the name the project had decided
+# against, one of them here and one in `check/builtins.hero`'s note about a
+# conversion that cannot fail.
+#
+# FIX: the fix names `to_f64`, which the spec says cannot fail, and
+# `to_<width>`, which gives a `T?` because the number may not fit. Both exist.
+#
+# NOTHING WATCHES THIS, and that is filed rather than papered over: `.expected`
+# pins the MESSAGE and not the fix line, and `suite_fixes` tests only `certain`
+# fixes through `.fixed`. So a `guess` fix's text has no instrument, which is
+# how this one shipped a withdrawn name. The gap is an item in
+# `docs/work/DECIDE.md`.
+
+function main()
+    a: u8 @ 3
+    b: i32 @ 4
+    print(a < b)  #~ mixed_arithmetic
+    c: f32 @ 1.5
+    print(c + b)  #~ mixed_arithmetic

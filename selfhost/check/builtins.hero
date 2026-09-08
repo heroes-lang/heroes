@@ -396,7 +396,7 @@ function unwrapping_nothing(@c: state.Checker, s: source.Source, decls: [ast.Dec
     shown = state.show(c, s, decls, got)
     d: diag.Diagnostic @ value_errors.bad_operand(op: name, allowed: "a fallible value", got: shown, span: span)
     d.notes @ d.notes.push(
-        "`" + shown + "` cannot fail, so there is no error case to handle — this is the shape a `fit_<width>` that widens hands back, because a widening cannot fail"
+        "`" + shown + "` cannot fail, so there is no error case to handle — this is the shape `to_str` and `to_f64` hand back, because neither of those can fail either"
     )
     text = source.span_text(s, span)
     suffix = "." + name + "("
