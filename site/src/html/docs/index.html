@@ -9,15 +9,10 @@
 
   <h2>How to read this</h2>
   <p>
-    The specification defines the language rules. It is short enough to fit in a prompt, the text you give a model. These thirteen chapters explain the language in order, one concept at a time. Consult <a href="/spec/">the specification</a> on this site when you need a precise rule.
+    The specification defines the language rules. It is short enough to fit in a prompt, the text you give a model. These fourteen chapters explain the language in order, one concept at a time. Consult <a href="/spec/">the specification</a> on this site when you need a precise rule.
   </p>
   <p>
     <b>Every code example comes from a file in <code>examples/</code>.</b> Its filename appears below the block. During the build, the process that generates the site, a check compares each block with its source and stops the build if they differ. On every commit, a change saved in the repository history, these programs are compiled and run in three configurations. <a href="/examples/">Browse the examples and their output &rarr;</a>
-  </p>
-
-  <h2>Errors, which are part of the language</h2>
-  <p>
-    The errors page shows compiler messages, the fixes it can apply to your files, and the problems it does not yet detect. It also reports measured detection rates for each kind of mistake. Every message is complete output from a real compiler run. <a href="/errors/">How to read an error message &rarr;</a>
   </p>
 
   <h2>The chapters</h2>
@@ -27,6 +22,9 @@
   <ol class="chapters">
     <li><a href="/docs/a-first-program/">A first program</a>
       <span class="src">files, layout, comments as documentation · <code>examples/gallery/00-first.hero</code></span>
+    </li>
+    <li><a href="/docs/errors/">Errors</a>
+      <span class="src">read a compiler message, apply its fix, and see what it does not catch · <code>tests/golden/</code></span>
     </li>
     <li><a href="/docs/records-and-functions/">Records and functions</a>
       <span class="src">declarations, named fields, calls with a dot · <code>examples/gallery/01-points.hero</code></span>
@@ -55,14 +53,14 @@
     <li><a href="/docs/values-all-the-way-down/">Values all the way down</a>
       <span class="src">copies, and a tree with no pointer in it · <code>examples/gallery/11-trees.hero</code></span>
     </li>
+    <li><a href="/docs/modules/">Modules and files</a>
+      <span class="src">how to find a module and use its name · <code>examples/shapes/</code></span>
+    </li>
     <li><a href="/docs/tests-and-holes/">Tests and holes</a>
       <span class="src">tests in the language, and ??? as a question · <code>examples/gallery/09-holes.hero</code></span>
     </li>
     <li><a href="/docs/the-c-boundary/">The C boundary</a>
       <span class="src">extern, headers, and what clang checks for you · <code>examples/gallery/08-ffi.hero</code></span>
-    </li>
-    <li><a href="/docs/modules/">Modules and files</a>
-      <span class="src">how to find a module and use its name · <code>examples/shapes/</code></span>
     </li>
   </ol>
 

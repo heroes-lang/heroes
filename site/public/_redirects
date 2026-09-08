@@ -25,3 +25,10 @@
 /it/zen/       /it/project/#zen          301
 /it/author/    /it/about/                301
 /it/thanks/    /it/about/thanks/         301
+
+# The errors page became chapter 2 of the guide (author instruction 2026-09-08):
+# a separate page for errors said they were beside the language rather than in
+# it. These two URLs were public and linked from the site's own nav history, so
+# they answer rather than 404.
+/errors/       /docs/errors/             301
+/it/errors/    /it/docs/errors/          301

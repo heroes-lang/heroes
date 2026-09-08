@@ -378,7 +378,7 @@ h2 {
      width, so a heading long enough to wrap became a SECOND flex line and left
      `::before`, the bolt, alone on the first. The repair went into a
      `max-width: 700px` block, and the cause is width-independent: it is alive
-     at 1200px on /errors/ section 03. */
+     at 1200px on /docs/errors/ section 03. */
   display: flex; align-items: baseline; gap: 0.6rem 1rem; flex-wrap: nowrap;
   padding-top: 1.5rem;
   border-top: 1px solid var(--line);

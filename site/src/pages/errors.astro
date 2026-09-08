@@ -1,8 +1,0 @@
----
-import BaseLayout from '../layouts/BaseLayout.astro';
-import { page } from '../lib/figures.ts';
-import content from '../html/errors.html?raw';
----
-<BaseLayout url="/errors/" title={"Errors: understanding compiler messages"} description={"Read real compiler messages, apply verified fixes and use incomplete expressions while writing code. See which mistakes the compiler catches."} current="docs">
-<Fragment set:html={page(content, 'site/src/html/errors.html')} />
-</BaseLayout>

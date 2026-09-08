@@ -1,8 +1,0 @@
----
-import BaseLayout from '../../layouts/BaseLayout.astro';
-import { page } from '../../lib/figures.ts';
-import content from '../../html/it/errors.html?raw';
----
-<BaseLayout url="/it/errors/" title={"Errori: capire i messaggi del compilatore"} description={"Come leggere i messaggi del compilatore, applicare le correzioni e completare il codice. Le prove mostrano quali errori vengono rilevati."} current="docs">
-<Fragment set:html={page(content, 'site/src/html/it/errors.html')} />
-</BaseLayout>
