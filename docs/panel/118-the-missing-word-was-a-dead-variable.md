@@ -334,6 +334,86 @@ no valve at all**, across seventeen searched; the negative rests on that list.
   consequence attached, which is what made it the attractive repair in that
   seat's own trial. Both filed.
 
+## Amendments, 2026-09-08, after the resolution was written
+
+Records are append-only: what the sitting adopted stands above, and what
+measurement overturned is corrected here with its date. Two of the nine
+resolutions moved, and one seat changed its own verdict when shown the gate it
+had measured against.
+
+**R1's third position is WITHDRAWN.** The sitting adopted refusing `_ = x` where
+`x`'s type is a type parameter, on the warden's ground that it costs zero
+migration sites. Then it was run:
+
+```
+function drop<A>(_: A)
+    print("dropped")
+
+function main()
+    drop(risky(0 - 1))
+```
+
+prints and exits 0 with the failure gone and **no discard statement anywhere**,
+so the refusal relocates the hole rather than closing it. Sent back with that
+fact, the llm-ergonomist ruled `(C)` — *state the limit* — and said in the words
+it was asked for that **the sitting's adopted resolution is wrong**, then showed
+the relocation goes one step further: `_ = [x]` is legal, means the same, and
+`[A]` is not a type parameter, so refusing both leaves an escape that
+**transfers to the position the rule exists to protect** — `_ = [make_dir(path: p)]`
+discards a `[()?]` and the rule never fires. A refusal that manufactures the
+idiom defeating it is worse than one that is missing. Verified here, all three
+run: `_ = [x]`, `_ = x == x` and `_ = args_checked()` compile and drop the
+failure.
+
+That last one is why the boundary sentence is owed with or without generics:
+`args_checked() -> [str?]` is the spec's own built-in and one line drops every
+non-UTF-8 failure it carries. R6's clause therefore names the boundary, at a
+measured **+62** rather than the warden's cheapest true sentence at +15.
+
+**R5 is REPLACED, and the repair that shipped is not the one that was priced.**
+The emitter relaxation was built, and it worked: zero warnings, four dead
+assignments and four declarations gone, byte-identical on a second emission,
+`warnings` 162/0, `emission` 427/0, `determinism` 130/0, 589 compiler tests. It
+was thrown away after the shapes beside it were attacked, because it closed **two
+of four**: `_ = a == b` on a `str` and on an array still warned, before and
+after, their assignment being a runtime call rather than an operator. What ships
+declares the temporary `__attribute__((unused))`, which is the idiom the sibling
+half of this class already wrote for a named binding's slot on 2026-08-16. It
+closes all four, keeps every abort check and every runtime call, and rests on no
+premise about what another file prints.
+
+**The convener asked the compiler seat the wrong question**, and that is CL-057
+turned on the person who wrote the brief: *may a `.binary` lose its destination*
+rather than *how does a discarded temporary avoid the warning*. The seat answered
+the question it was given, correctly and in detail, and the better answer had
+been in the tree for three weeks.
+
+**One absolute is withdrawn on both sides.** The ergonomist's Task 3 said no
+`certain` fix exists in this area; it later argued the `_: T?` refusal has one,
+behaviour-identical. Neither survives the mechanism: a `Fix` carries **one**
+replacement and that repair is two edits — name the parameter, then answer the
+error in the body — so it ships as a `guess` whose title names both.
+
+**Prediction 4's instrument does not exist and cannot.** The compiler seat
+registered `suite_fixes.hero`'s `LEAST` rising from 6 to 7 with a `.fixed` golden
+carrying a fallible-valued bare line. A `.fixed` case must COMPILE after the fix
+is applied, and a bare fallible line stays an error however it is repaired, so no
+`.fixed` file can carry the shape. What does the job is the unit test asserting
+`bare.fixes.len() == 0` on a fallible, in `selfhost/value_errors.hero`.
+
+## Predictions, scored 2026-09-08 at the milestone's own close
+
+| # | seat | outcome | what was run |
+|---|---|---|---|
+| 1 | spec-warden | **HELD, and better** | `heroes mutate --operator drop-question --survivors`: **236 mutants, 236 killed (100%), no survivors**, against 9 of 84 (89%) in measurement 014. The corpus is 118 programs and the mutant count grew from 84 because the repairs ADDED sites the operator can attack. `--permissive` kills 193 of 236, so **43 of them are caught only by the thesis rules**: a direct reading of what §1 buys on this operator |
+| 1b | spec-warden | **FALSIFIED BY THE RESOLUTION, not by the world** | it registered the spec reading ≤ 3923 against W4g at +15, which the sitting did not adopt; the clause landed at **3965**. Recorded in ledger row 56 rather than adjusted |
+| 2 | spec-warden | **HELD** | **36** of the 63 repairs are `assert !e.is_err()` in test blocks, against the ≥ 20 it asked for, and **0** are `.must()`, against the ≤ 6 it allowed. `.must()` was the first draft and was changed on a measurement: it aborts, and an abort inside `heroes test` kills the whole run instead of failing one case |
+| 3 | compiler-engineer | **HELD** | `warnings` **163** passed / 0 failed — 163 and not 162 because this milestone's own `fixedbugs` case joined the bar. `emit/unread.hero` **183** ≤ 200, `emit/inst.hero` exactly **350**, `ir.hero` exactly **310**, all by `layout` |
+| 4 | compiler-engineer | **FALSIFIED IN ITS MECHANISM** | `LEAST` is still 6; see the amendment above. The instrument it named cannot carry the shape |
+| 5 | ffi-pragmatist | **HELD** | `git diff HEAD~1 HEAD -- examples/` touches `examples/pipeline/read/source.hero` and nothing else. No line of `examples/sqlite/` needed editing |
+| 6 | historian | **HELD** | `_ = [risky(1)]` compiles with no diagnostic, run against the built compiler. The rule is a type judgment on the discarded expression's outermost type, exactly as the seat said, and the spec now states it |
+| 7 | llm-ergonomist | **NOT SCORED** | it needs a written trial with a model and no instrument here runs one. Filed in `docs/learn/LEARN.md` rather than lapsed, because the trial is cheap the day somebody wants it |
+
 ## Author's verdict
 
 **Pending**, queued as `- [ ] **panel 118**` in `docs/work/DECIDE.md`. Work

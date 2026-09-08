@@ -605,7 +605,99 @@ function run_all(scratch: str) -> report.Report?
     where_we_are(@r)
     homed(@r)
     lists(@r)
+    tagged(@r, scratch: scratch)
     return ok(r)
+
+# A MILESTONE IS TAGGED ONLY OVER A CLEAN LIST (author instruction
+# 2026-09-08, and CLAUDE.md § Verification is the rule's home).
+#
+# The author asked for zero open decisions and zero open defects at a tag.
+# Zero defects is taken whole: an open defect is something BROKEN, and
+# nothing depends on it staying open. Zero decisions is taken with one
+# exception, named rather than assumed, because the literal rule would
+# block every milestone that held a sitting: § 4 says a panel never
+# blocks, so each one leaves a `panel NNN` item, and
+# `records/verdicts` above catches an unratified sitting only while that
+# item exists. A ratification pending is waiting on the AUTHOR, not
+# broken.
+#
+# IT READS THE NEWEST TAG'S OWN COMMIT and not the working tree, which is
+# what makes the rule livable: a defect filed at 10am and repaired at 4pm
+# is ordinary work, and only a tag placed over it is the mistake. So this
+# check is silent all through a milestone and speaks once, at its close.
+#
+# It binds from the tag it first sees onwards. Older tags are not
+# re-judged, which is not leniency but § 14: a record is not rewritten,
+# and a rule cannot be applied to a commit made before it existed.
+function tagged(@r: report.Report, scratch: str)
+    listed = shell.run(
+        scratch: scratch,
+        program: "git",
+        words: ["git", "tag", "--list", "m-*", "--sort=-creatordate"]
+    )
+
+    if listed.is_err()
+        report.keep_failure(@r, label: "records/tagged", detail: "  cannot list the milestone tags")
+        return
+    newest: str @ ""
+
+    for row in strings.lines(listed.must().out)
+        if newest == "" && strings.trimmed(row) != ""
+            newest @ strings.trimmed(row)
+
+    if newest == ""
+        # No milestone has been tagged yet, which is a true state of this
+        # repository's first day and not a failure.
+        report.keep_pass(@r)
+        return
+    open_defects = open_items_at(scratch: scratch, tag: newest, path: "docs/work/DEFECTS.md")
+
+    if open_defects.is_err()
+        report.keep_failure(@r, label: "records/tagged", detail: "  cannot read DEFECTS.md at " + newest)
+        return
+
+    if open_defects.must().len() > 0
+        report.keep_failure(
+            @r,
+            label: "records/tagged",
+            detail: "  " + newest + " was placed over " + open_defects.must().len().to_str() + " open defect(s):\n    " + open_defects.must().join("\n    ") + "\n  A milestone is tagged only over a clean list (CLAUDE.md § Verification).\n  An open defect is something BROKEN, and a tag over one says the opposite."
+        )
+        return
+    open_decisions = open_items_at(scratch: scratch, tag: newest, path: "docs/work/DECIDE.md")
+
+    if open_decisions.is_err()
+        report.keep_failure(@r, label: "records/tagged", detail: "  cannot read DECIDE.md at " + newest)
+        return
+    unqueued: [str] @ []
+
+    for row in open_decisions.must()
+        if !strings.contains(text: row, needle: "panel ")
+            unqueued @ unqueued.push(row)
+
+    if unqueued.len() > 0
+        report.keep_failure(
+            @r,
+            label: "records/tagged",
+            detail: "  " + newest + " was placed over " + unqueued.len().to_str() + " open decision(s) that are not a sitting's ratification:\n    " + unqueued.join("\n    ") + "\n  A pending `panel NNN` is allowed to stand at a tag, because § 4 says the\n  panel never blocks. Anything else is a decision this milestone could have\n  settled and left hanging instead (CLAUDE.md § Verification)."
+        )
+        return
+    report.keep_pass(@r)
+
+# The `- [ ] ` lines of a list AS IT WAS at a tag, which is the only way to
+# ask what a tag was placed over. `git show <tag>:<path>` and not the
+# working tree, deliberately: see `tagged`.
+function open_items_at(scratch: str, tag: str, path: str) -> [str]?
+    shown = shell.run(scratch: scratch, program: "git", words: ["git", "show", tag + ":" + path])?
+
+    if shown.code != 0
+        return fail("no_such_file", path + " does not exist at " + tag)
+    open_rows: [str] @ []
+
+    for row in strings.lines(shown.out)
+        if strings.starts_with(text: row, prefix: "- [ ] ")
+            open_rows @ open_rows.push(strings.trimmed(row))
+
+    return ok(open_rows)
 
 # Whether this path is one of the dated records — the pruning `find` used to do
 # with `-not -path`, done here now that the listing comes from git. Same rule as

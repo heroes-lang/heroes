@@ -57,6 +57,35 @@ constant CEILING: i64
 constant SOFT: i64
     2000
 
+# WHAT THE CEILING ALREADY OWES, and it is defect 017's repair (filed and
+# closed 2026-09-08, found by panel 118's spec-warden about its own
+# instrument). §1.6's 4096 is not all spendable: panel 030 R3 mortgages a
+# floor against it for file I/O, `args()` and `exit(code)` — the FFI's own
+# clause, which the spec must be able to state — and
+# `tests/harness/suite_spec.hero` goes red at `SPEC_TOKENS + FFI_FLOOR >=
+# CEILING`. Printing `CEILING - highest` therefore told a session it had 60
+# tokens it did not have, and a session that trusts the instrument it is
+# told to trust would find out from a red suite instead. The same number in
+# two places, one printed and one checked, and the harness asserts this
+# line says what it computes.
+constant FFI_FLOOR: i64
+    60
+
+# THE OPERATING CONTRACT IS WEIGHED ON THIS SCALE AND NOT AGAINST THIS
+# CEILING, which is defect 017's own class rather than its witness: the
+# spec's number was 60 too generous, and this file's was a BREACH that is
+# not one. `tests/harness/suite_spec.hero` holds `CLAUDE.md` to
+# `CONTRACT_CEILING`, deliberately a ceiling and not a pin, because the
+# contract is amended by author instruction and often by a sentence. A
+# tool that shouts BREACH at a file 111 tokens inside its own limit
+# invites the one repair that is always wrong here — cutting a rule to
+# make a number smaller.
+constant CONTRACT: str
+    "CLAUDE.md"
+
+constant CONTRACT_CEILING: i64
+    5500
+
 record Instrument
     file: str
     name: str
@@ -146,20 +175,43 @@ function reported(path: str, readings: [Reading]) -> cli_table.Exit
     )
     print("")
 
-    if highest > CEILING
-        print("BREACH: " + highest.to_str() + " over the " + CEILING.to_str() + "-token ceiling (design.md §1.6).")
+    ceiling: i64 @ CEILING
+
+    if path == CONTRACT
+        ceiling @ CONTRACT_CEILING
+
+    if highest > ceiling
+        print("BREACH: " + highest.to_str() + " over the " + ceiling.to_str() + "-token ceiling (design.md §1.6).")
         print("An amendment must be net-negative, or the ceiling moves — with a")
         print("measurement, a panel, and a named alternative (panel 012).")
         return .diagnostics_exit
 
     if highest > SOFT
         print("Above the soft " + SOFT.to_str() + ": an addition needs a named removal or a")
-        print("pre-registered falsifiable prediction (panel 012). Headroom: " + (CEILING - highest).to_str() + ".")
+        print("pre-registered falsifiable prediction (panel 012). " + room(path: path, highest: highest))
     else
-        print(
-            "Under the soft " + SOFT.to_str() + ": Principle 0 alone. Headroom: " + (CEILING - highest).to_str() + "."
-        )
+        print("Under the soft " + SOFT.to_str() + ": Principle 0 alone. " + room(path: path, highest: highest))
     return .ok_exit
+
+# How much of the ceiling is left, and how much of THAT is spendable. Only
+# the spec carries a mortgage today, so only the spec is told about one:
+# saying it of every file would be a claim about a ceiling those files do
+# not share.
+function room(path: str, highest: i64) -> str
+    if path == CONTRACT
+        return "Headroom: " + (CONTRACT_CEILING - highest).to_str() + " against the contract's own " + CONTRACT_CEILING.to_str() + ", which is a ceiling and not a pin: the repair for crossing it is to move a story into docs/contract/case-law.md, never a bigger number."
+    left = CEILING - highest
+
+    if path != SPEC
+        return "Headroom: " + left.to_str() + "."
+
+    # THE SUM THE CHECK COMPARES, and not a subtraction of my own: the
+    # harness goes red at `SPEC_TOKENS + FFI_FLOOR >= CEILING`, so a
+    # "usable room" figure computed here is off by one the moment that
+    # `>=` is read as `>`. It was, in the first version of this line,
+    # 2026-09-08. Stating both sides of the comparison leaves the reader
+    # no arithmetic to get wrong.
+    return "Headroom: " + left.to_str() + " against the " + CEILING.to_str() + " ceiling — but the FFI floor mortgages " + FFI_FLOOR.to_str() + " of it (panel 030 R3), so what is measured against the ceiling is " + (highest + FFI_FLOOR).to_str() + " and the check goes red at " + CEILING.to_str() + "."
 
 # Left-aligned in `width` columns, counted in characters.
 function padded(text: str, width: i64) -> str
