@@ -28,7 +28,44 @@ per item, `- [ ] **<origin>** | <the question>`, then the body indented four
 spaces. Nothing lives outside the two banners.
 
 *******************************************************************************
-**OPEN: 335**
+**OPEN: 338**
+
+- [ ] **M-interpolation-verdict step 1** | Write `x = "a" + b + c` in a file and predict what `heroes parse --dump-ast` prints for that line, out of four candidate shapes, before running it | `heroes parse <file> --dump-ast` · `spec/heroes-spec.md` § Operators | the answer is why the dump can be used as a measuring instrument, and the wrong answers are why raw text cannot
+
+    **Origin:** M-interpolation-verdict step 1, 2026-09-08, the step that used
+    the dump to count 2536 holes in 1461 concatenations.
+    **The four candidates:** (a) `x = "a" + b + c`, unchanged; (b)
+    `bind x = ("a" + b + c)`; (c) `bind x = (("a" + b) + c)`; (d)
+    `bind x = ("a" + (b + c))`. Exactly one is right, and which one it is
+    settles two things a text search has to guess: where the operator's
+    precedence put the grouping, and whether a chain broken across three source
+    lines comes back as one.
+    **The question after:** `+` on `str` is left-associative here. Name one
+    program whose PRINTED result would differ if it were right-associative, and
+    one where it could not.
+
+- [ ] **M-interpolation-verdict step 2** | Four candidate rules for what may stand inside `{...}`. Rank them by what they cost the SPEC, before reading the number | `docs/measurements/022-the-narrow-rule-costs-more-than-the-wide-one.md` · `design.md` §1.2 | the ranking most readers write down is upside down, and seeing why is seeing what §1.2 actually prices
+
+    **Origin:** M-interpolation-verdict step 2, 2026-09-08.
+    **The four:** only a bare name · a name and its `.field` steps · any
+    postfix run, a call or an index included · any expression at all. Rank them
+    cheapest-first in spec tokens, with the opening sentence, the example and
+    the escape rule held identical in all four so only the rule sentence moves.
+    **The question after:** the ROADMAP's entry calls the bare name *"the
+    cheapest rule to write and to lex"*, and it is right about the lexer. Say
+    in one sentence why that does not make it the cheapest rule, and which of
+    the two costs §1.2's formula counts.
+
+- [ ] **M-interpolation-verdict step 2** | 312 string literals in this tree hold a brace and 24 of them look exactly like a hole. Work out, from the spec, whether those 24 would break loudly or quietly | `examples/template/main.hero:145-235` · `spec/heroes-spec.md` § Bindings, § Files and layout | the difference between a loud and a quiet migration is the whole of §1.12, and here it is decided by three rules a reader can check
+
+    **Origin:** M-interpolation-verdict step 2, 2026-09-08.
+    **The setup:** all 24 are in `examples/template/main.hero`, which
+    implements `{key}` substitution by hand, and they read `"Hello, {name}."`,
+    `"{name} the {role}"`, `"{anything}"`. Suppose `{n}` became a hole naming a
+    binding. Say whether each of the 24 would still compile.
+    **The question after:** the answer rests on three separate rules of the
+    language, not one. Name them, and then name the one thing that would have
+    to be true of that file for the answer to flip to quiet.
 
 - [ ] **M-discard-refusal step 3** | Three repairs of one refused line print three different answers. Predict them before you look, then say which of the three a `certain` fix could ever have been | `docs/panel/118` R3 · `selfhost/value_errors.hero` `discarded_failure` | this is the whole argument for shipping no automatic repair, and it is two commands long
 
