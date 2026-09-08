@@ -434,19 +434,25 @@ constant ITALIAN_MARKERS: [str]
 # declared exception, a translation somebody reads on purpose. Prefix match, the
 # same shape as `is_record`.
 #
-# **Two entries, and the tree that is missing from them is deliberate.** The
-# Italian edition's page sources are here; its 23 `.astro` wrappers under
-# `site/src/pages/it/` are NOT, and neither is `SiteNav.astro`'s table of
-# Italian nav labels, because measured 2026-09-04 **not one of them fires**: a
-# wrapper carries one Italian title of five or six words and this check needs
-# six words on a line before it looks. A dead exemption is not free — the same
-# argument that deleted `site/log.html` (gone 2026-08-18) from RECORD above — because it reads as
-# a licence, and the next person to write a paragraph of Italian into a wrapper
-# would believe it had one. If that day comes the check goes red, which is the
-# point, and the entry is added then with a measurement beside it.
+# **Three entries, and the third arrived on 2026-09-08 exactly as the paragraph
+# it replaces predicted.** The Italian edition's page sources are here, and its
+# `.astro` wrappers under `site/src/pages/it/` are here now as well. They were
+# left out for as long as they could not fire: measured 2026-09-04, **not one of
+# the 23 did**, because a wrapper carries one Italian title of five or six words
+# and this check needs six words on a line before it looks. `it/404.astro` is
+# the first that fires, of 26 wrappers today, because a not-found page owes a
+# whole sentence of description where every other page owes a title, and the
+# check went red on it before the commit rather than after. `SiteNav.astro`'s
+# table of Italian nav labels is still NOT here, on the same measurement and the
+# same reasoning. A dead exemption is not free — the same argument that deleted
+# `site/log.html` (gone 2026-08-18) from RECORD above — because it reads as a
+# licence, and the next person to write a paragraph of Italian into a wrapper
+# would believe it had one. A live one is the record of a deliverable, which is
+# what §11's second exception exists for.
 constant ITALIAN_BY_DESIGN: [str]
     [
         "site/src/html/it"
+        "site/src/pages/it"
         ".claude/skills/where/italian-vocabulary.md"
     ]
 
