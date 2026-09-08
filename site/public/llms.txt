@@ -35,7 +35,7 @@ code, but produces no executable while holes remain.
 - [Development log](https://heroes-lang.org/log/): project changes and review findings, newest first.
 - [Thanks](https://heroes-lang.org/about/thanks/): the language designers and researchers whose work influenced Heroes, with each contribution.
 - [Documentation](https://heroes-lang.org/docs/): chapters explaining values, functions, errors, loops, modules and C libraries, with code checked against repository files.
-- [Errors](https://heroes-lang.org/errors/): compiler messages, automatic fixes marked `certain` and measured detection rates for different kinds of mistake.
+- [Errors](https://heroes-lang.org/docs/errors/): compiler messages, automatic fixes marked `certain` and measured detection rates for different kinds of mistake.
 
 Each page also has an Italian version under `/it/`, linked through the language
 switch and `hreflang` metadata. Both versions preserve the same code, compiler
