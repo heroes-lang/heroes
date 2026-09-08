@@ -31,14 +31,25 @@ const root = lang === 'it' ? '/it' : '';
 // The other edition's copy of this same page.
 const other = lang === 'en' ? `/it${url}` : url.slice(3);
 
-// Eight entries, and each one answers a question a visitor actually has, in
-// the order they ask it: why should I care, show me the code, teach it to me,
-// how do I run it, how is it built, is this alive, who is behind it, and on
-// whose shoulders. Project stands before Log by author instruction
-// (2026-09-08): the log is the project's log, so the thing comes before its
-// diary. The eighth, Thanks, was seven's displaced page until the
-// author put it back (2026-09-07): the credits are the one page whose subject is
-// other people, and a nav that hides them reads as a project that forgot them.
+// Eight entries, each answering a question a visitor actually has.
+//
+// **The order is the author's, set 2026-09-08, and it reverses the first four
+// deliberately.** The row read why · examples · guide · start, which is the
+// order somebody ASKS: why should I care, show me the code, teach it to me, how
+// do I run it. It now reads start · guide · examples · why, which is the order
+// somebody ACTS: a visitor who has decided to try this should meet the way in
+// first and the argument for it last. The old reasoning is kept here rather
+// than deleted, because it was not wrong, it was answering a different
+// question: a nav sorted by curiosity serves a reader, and one sorted by
+// intent serves a user, and this site now has a repository behind it that a
+// reader can actually go and use.
+//
+// The back half is unchanged: project · log · about · thanks. Project stands
+// before Log by author instruction (2026-09-08 as well): the log is the
+// project's log, so the thing comes before its diary. The eighth, Thanks, was
+// seven's displaced page until the author put it back (2026-09-07): the credits
+// are the one page whose subject is other people, and a nav that hides them
+// reads as a project that forgot them.
 //
 // It was eight, and the eight were the project's own shelves rather than the
 // visitor's: Docs, Zen, Why, Self-hosted, Log, Panel, Thanks, Author. Three of
@@ -47,10 +58,10 @@ const other = lang === 'en' ? `/it${url}` : url.slice(3);
 // Start without the row growing. Every surveyed language site has a learning
 // entry and an install entry in its top nav; this one had neither.
 const entries = [
-  { key: 'why', slug: 'why', en: 'Why', it: 'Perché' },
-  { key: 'examples', slug: 'examples', en: 'Examples', it: 'Esempi' },
-  { key: 'docs', slug: 'docs', en: 'Guide', it: 'Guida' },
   { key: 'start', slug: 'start', en: 'Start', it: 'Inizia' },
+  { key: 'docs', slug: 'docs', en: 'Guide', it: 'Guida' },
+  { key: 'examples', slug: 'examples', en: 'Examples', it: 'Esempi' },
+  { key: 'why', slug: 'why', en: 'Why', it: 'Perché' },
   { key: 'project', slug: 'project', en: 'Project', it: 'Progetto' },
   { key: 'log', slug: 'log', en: 'Log', it: 'Diario' },
   { key: 'about', slug: 'about', en: 'Author', it: 'Autore' },

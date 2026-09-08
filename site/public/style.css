@@ -531,8 +531,39 @@ dl.why dd {
   border-left: 2px solid var(--gold);
   border-radius: var(--radius);
 }
+.book { display: flex; gap: 1.35rem; align-items: flex-start; }
+.book > div { flex: 1 1 auto; min-width: 0; }
 .book p { margin: 0; text-wrap: pretty; }
+.book p + p { margin-top: 0.65rem; }
 .book b { color: var(--fg); }
+.book-buy { color: var(--dim); }
+
+/* The cover, small on purpose: it is a token of a book and not a poster, and it
+   keeps its own aspect so a slow connection reflows nothing. `flex: none` so it
+   does not shrink when the paragraph beside it is long. */
+.book-cover { flex: none; display: block; line-height: 0; }
+.book-cover img {
+  width: 92px; height: auto; display: block;
+  border-radius: 3px;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.35);
+}
+
+/* The same pair on the About page, where the book has a section of its own:
+   no card around it, because it is the page's subject there rather than an
+   aside, and a larger cover because there is room for one. */
+.book-plate { display: flex; gap: 1.5rem; align-items: flex-start; margin: 1.6rem 0; }
+.book-plate > div { flex: 1 1 auto; min-width: 0; }
+.book-plate p { margin: 0; text-wrap: pretty; }
+.book-plate p + p { margin-top: 0.7rem; }
+.book-plate .book-cover img { width: 150px; }
+
+/* Under 34rem the row becomes a column, because 92px of cover beside two
+   sentences leaves the sentences about twelve characters wide on a phone. */
+@media (max-width: 34rem) {
+  .book, .book-plate { display: block; }
+  .book-cover { margin-bottom: 0.9rem; }
+  .book-cover img, .book-plate .book-cover img { width: 108px; }
+}
 
 /* == 7. code ============================================================== */
 
