@@ -143,14 +143,23 @@ the Italian edition, so its nav links carry no `../` at all. The stylesheet dept
 belongs to the layout and the nav depth to the component, and conflating them is
 how the language switch breaks on exactly the Italian pages.
 
-**Seven items, and each one is a question a visitor has** (author instruction
-2026-09-06) — Why · Examples · Docs · Start · Project · Log · About, plus the
-language badge and GitHub — and the current page marks itself `class="here"`.
-The order is the order somebody asks: why should I care, show me the code, teach
-it to me, how do I run it, how is it built, is this alive, who is behind it.
-Project stands before Log by author instruction 2026-09-08: the log is the
-project's log, so the thing comes before its diary. It
-was eight items that were the project's own shelves instead, and neither a
+**Eight items, and each one is a question a visitor has** (author instruction
+2026-09-06) — Start · Guide · Examples · Why · Project · Log · Author · Thanks,
+plus the language badge and GitHub — and the current page marks itself
+`class="here"`.
+
+**The first four were reversed by author instruction on 2026-09-08**, the day
+the repository opened. They read Why · Examples · Guide · Start, which is the
+order somebody **asks**: why should I care, show me the code, teach it to me,
+how do I run it. They now read Start · Guide · Examples · Why, which is the
+order somebody **acts**. The old reasoning is kept because it was not wrong, it
+was answering a different question, and what changed under it is the site: a nav
+sorted by curiosity serves a reader, one sorted by intent serves a user, and
+until that morning the *Start* page ended at a command nobody could run. Project
+stands before Log by author instruction the same day: the log is the project's
+log, so the thing comes before its diary.
+
+It was eight items that were the project's own shelves instead, and neither a
 learning entry nor an install entry was among them, which every one of the nine
 language sites surveyed while planning has in its top nav.
 

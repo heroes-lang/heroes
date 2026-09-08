@@ -184,6 +184,26 @@ can check them rather than wait. It also says what the licence lets you do
 meanwhile: Apache-2.0 grants the fork in writing, and a repository that is not
 yet taking patches does not take that back.
 
+## The book this came out of
+
+<a href="https://www.amazon.it/Heroes-code-journey-programming-languages/dp/B0HHLBWWZH/"><img src="site/public/images/book/cover-en.webp" alt="Heroes of code, front cover" width="132" align="right"></a>
+
+**The book came before the language.** *Heroes of code*, subtitled *A journey
+through the years that shook programming languages*, is a history of programming
+languages whose form is a dream journey: it opens at midnight on an empty file,
+with a programmer looking for the words, and the voice behind him is David
+Bowie. What follows is Bletchley Park, MIT, Zurich, Bell Labs, Oslo and Silicon
+Valley, and the people who invented the way we talk to machines.
+
+The name of this language comes from there, and so does the bolt. It is also why
+the design panel has a historian's seat: a design choice usually has precedents,
+and the seat exists to find them and to be refused when it cannot source them.
+
+Published on Amazon, in
+[English](https://www.amazon.it/Heroes-code-journey-programming-languages/dp/B0HHLBWWZH/)
+and in
+[Italian](https://www.amazon.it/Gli-eroi-del-codice-programmazione/dp/B0HHL2YQ1S/).
+
 <p align="center">
   <sub><a href="https://heroes-lang.org">heroes-lang.org</a> is this language's home, in
   English and Italian: the guide, the examples that run, and the build log.<br>
