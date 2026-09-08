@@ -19,6 +19,30 @@ Every `Diagnostic` carries `Fix`es tagged `certain` or `guess`, and only
 `certain` is machine-applicable. An error carries everything needed to fix the
 program without opening another file (design.md §4.17).
 
+**A `certain` fix repairs the defect the diagnostic names. A fix that leaves the
+defect standing is a `guess`, however well it compiles** (`/decide` 2026-09-08,
+on the compiler seat's finding at panel 118). design.md §4.17 answers the
+inverse case only — a fix that *changes* meaning, "change save's signature to
+accept a str id" — and panel 071 answers the same inverse. This is the case
+where meaning is preserved **and so is the bug**: `.is_err()` on a discarded
+fallible is behaviour-identical and keeps the swallow, so certifying it would
+make `heroes check --apply` automate defeating the rule M-discard-refusal
+landed. **Compiling is not the bar**: `_ = xs.push(4)` compiles at exit 0 and
+loses the element, which is why panel 071 made that fix a `guess` whenever a
+receiver is in hand.
+
+The discipline is a writer's and a reviewer's, and that is stated rather than
+dressed as an instrument: no check can decide "repairs the defect" in general,
+and panel 118 already recorded a prediction whose instrument could not exist.
+What IS mechanical is the weaker half below — CI applies the fix and the result
+must compile. Read at all **23** sites that can ship a `certain` fix (measured
+2026-09-08: 53 `Fix(` sites in `selfhost/`, 22 unconditional, one conditional in
+`grammar_expr.hero`, one forwarder in `lexer.hero`); none violates the rule, and
+the two nearest the line obey it by construction — `value_errors.hero`'s
+`discarded_value` de-certifies on a fallible and downgrades on a receiver, and
+`resolve/errors.hero`'s rename-to-`_` fires for a loop variable and a match
+payload and never for a binding.
+
 Golden convention: `x.hero` plus `x.expected`, plus `x.fixed` where a certain
 fix exists, and CI asserts the applied fix compiles.
 
