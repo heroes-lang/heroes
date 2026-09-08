@@ -72,11 +72,11 @@ function statement(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast
 
             if !b.ty.is_err()
                 types.resolve_type(@r, a, s, decls, b.ty.must())
-            _ = state.declare(@r, s, decls, b.name, resolve_binding.bind_binding(ty: b.ty, value: b.value))
+            _ = state.declare(@r, s, decls, b.name, resolve_binding.bind_binding(ty: b.ty, value: b.value)).is_err()
         .declare d =>
             expr(@r, a, s, decls, d.value)
             types.resolve_type(@r, a, s, decls, d.ty)
-            _ = state.declare(@r, s, decls, d.name, resolve_binding.cell_binding(ty: d.ty, value: d.value))
+            _ = state.declare(@r, s, decls, d.name, resolve_binding.cell_binding(ty: d.ty, value: d.value)).is_err()
         # The initialiser above is not counted as a write: a cell that is
         # only ever initialised has been written once by definition, and
         # counting it would blind the unused rule to every cell.
@@ -98,7 +98,7 @@ function statement(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast
             # x` must not find its own binding.
             expr(@r, a, s, decls, f.iterable)
             state.open_scope(@r)
-            _ = state.declare(@r, s, decls, f.name, resolve_binding.loop_binding(iterable: f.iterable))
+            _ = state.declare(@r, s, decls, f.name, resolve_binding.loop_binding(iterable: f.iterable)).is_err()
             statements(@r, a, s, decls, f.block.stmts)
             state.close_scope(@r)
 
@@ -206,7 +206,7 @@ function bind_payload(@r: state.Resolver, s: source.Source, decls: [ast.Decl], b
     if text != "_" && state.bound_in_current_scope(r, text)
         state.push_diagnostic(@r, errors.duplicate_pattern_binding(text, span: binding))
         return
-    _ = state.declare(@r, s, decls, binding, resolve_binding.payload_binding())
+    _ = state.declare(@r, s, decls, binding, resolve_binding.payload_binding()).is_err()
 
 ## The left of `@`
 
@@ -267,12 +267,7 @@ function walked(text: str) -> state.Resolver
                 state.open_scope(@r)
 
                 for param in fd.value.params
-                    _ = state.declare(
-                        @r,
-                        s,
-                        p.decls,
-                        param.name,
-                        resolve_binding.param_binding(ty: param.ty, mutable: param.mutable)
+                    _ = state.declare(@r, s, p.decls, param.name, resolve_binding.param_binding(ty: param.ty, mutable: param.mutable)).is_err(
                     )
 
                 if !fd.value.body.is_err()

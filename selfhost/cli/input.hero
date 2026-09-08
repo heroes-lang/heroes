@@ -63,7 +63,7 @@ test "the root read fails loud, a missing module stays the graph's"
             assert e.msg == "cannot read `build/selftest_no_such_file.hero`"
 
     text = "use selftest_absent_module\n\nfunction main()\n    print(1)\n"
-    _ = write_file(path: "build/selftest_input_root.hero", text: text)
+    assert !write_file(path: "build/selftest_input_root.hero", text: text).is_err()
     s = read_compilation(path: "build/selftest_input_root.hero", library: "")
     assert !s.is_err()
     assert s.must().files.len() == 2

@@ -97,6 +97,9 @@ All bindings are initialised. An unused binding or parameter is a compile
 error; a read is a use and a write is not, except through an `@` parameter.
 A line that computes a value must use it: bind it, or discard it on purpose with
 `_ = f(x)`, which a `()` line refuses: it stands alone.
+A `_` never drops a `T?`: not `_ = e`, and not a `_` parameter written one.
+Answer the error. Both read the OUTERMOST type, so a `[T?]`, a record holding
+one, or a type parameter that arrived fallible is still dropped.
 Shadowing is a compile error: a `use` binds its name for the whole file, so nothing else in the file may take it.
 
 ## Functions and calls

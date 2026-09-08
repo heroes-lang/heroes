@@ -361,7 +361,7 @@ test "the toolchain finds the real runtime and compiles it through system()"
     assert again.must() == object.must()
 
     # A broken unit fails with clang's own words carried back.
-    _ = write_file(path: "build/selftest_broken.c", text: "int main(void) { return undeclared_name; }\n")
+    assert !write_file(path: "build/selftest_broken.c", text: "int main(void) { return undeclared_name; }\n").is_err()
     bad = run_clang(
         line: ["clang", "-c", "build/selftest_broken.c", "-o", "build/selftest_broken.o"],
         what: "compiling the generated C",

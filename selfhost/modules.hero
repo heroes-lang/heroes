@@ -436,8 +436,8 @@ test "the graph: an absent module, the reserved name, a collision, a ring"
 
 test "load_text walks siblings depth-first and appends the library last"
     root = "use selftest_mod_leaf\n\nfunction main()\n    print(selftest_mod_leaf.leaf())\n"
-    _ = write_file(path: "build/selftest_mod_root.hero", text: root)
-    _ = write_file(path: "build/selftest_mod_leaf.hero", text: "function leaf() -> i64\n    return 3\n")
+    assert !write_file(path: "build/selftest_mod_root.hero", text: root).is_err()
+    assert !write_file(path: "build/selftest_mod_leaf.hero", text: "function leaf() -> i64\n    return 3\n").is_err()
     s = load_text(path: "build/selftest_mod_root.hero", root_text: root, library: "")
     assert s.files.len() == 3
     assert s.files[0].module == "selftest_mod_root"
@@ -448,6 +448,6 @@ test "load_text walks siblings depth-first and appends the library last"
     # A use nobody can read is not an error HERE: discovery skips it
     # and the graph pass owns the caret.
     ghost = "use selftest_mod_ghost\n\nfunction main()\n    print(1)\n"
-    _ = write_file(path: "build/selftest_mod_root.hero", text: ghost)
+    assert !write_file(path: "build/selftest_mod_root.hero", text: ghost).is_err()
     g = load_text(path: "build/selftest_mod_root.hero", root_text: ghost, library: "")
     assert g.files.len() == 2

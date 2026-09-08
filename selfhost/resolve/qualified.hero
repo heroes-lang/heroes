@@ -246,13 +246,7 @@ test "a local wearing the module's name turns the dot back into UFCS — in a pr
     r.module @ "t"
     resolved.declare_use(@r.out, from: "t", binding: "geom", module: "geom")
     state.open_scope(@r)
-    _ = state.declare(
-        @r,
-        s,
-        decls,
-        token.Span(start: 0, end: 4),
-        resolve_binding.bind_binding(ty: fail("absent", "inferred"), value: 0)
-    )
+    assert !state.declare(@r, s, decls, token.Span(start: 0, end: 4), resolve_binding.bind_binding(ty: fail("absent", "inferred"), value: 0)).is_err()
     handled = qualified(@r, a, s, decls, at: 0, receiver: receiver, called: token.Span(start: 5, end: 10))
     assert !handled
 

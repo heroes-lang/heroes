@@ -27,5 +27,7 @@ extern "string.h"
     function strdup(s: cstr) -> cstr owned fclose  #~ ffi_freer_type
 
 function main()
-    _ = strdup("hi".cstr())
+    # Answered rather than discarded: a checker error would stop the pipeline
+    # before the emitter probe this case exists for ever ran (panel 118).
+    _ = strdup("hi".cstr()).is_err()
     print(0)

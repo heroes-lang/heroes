@@ -54,6 +54,7 @@ use check/contextual
 use check/join
 use check/builtins
 use check/generics as check_generics
+use check/discard
 use value_errors
 use data_errors
 use flow_errors
@@ -698,6 +699,7 @@ function statement(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
             if bound == table.unit_ty(c.out.types)
                 state.push_diagnostic(@c, value_errors.bound_unit(source.span_text(s, b.name), b.name))
                 bound @ state.error_ty_of(c)
+            discard.refuse(@c, a, s, decls, name: b.name, value: b.value, ty: bound, span: span)
             state.bind_local(@c, b.name, ty: bound)
             return falls_with_nothing()
         .declare d =>
@@ -917,7 +919,7 @@ function valued_expression(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, 
                 receiver = returns_its_receiver(c, a, s, value: value, got: got)
                 state.push_diagnostic(
                     @c,
-                    value_errors.discarded_value(got: shown, receiver: receiver, span: span)
+                    value_errors.discarded_value(got: shown, receiver: receiver, fallible: discard.is_fallible(c, got), span: span)
                 )
             return falls_with_nothing()
 

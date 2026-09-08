@@ -90,6 +90,7 @@ function is_thesis_rule(d: Diagnostic) -> bool
         "shadowed_binding"
         "builtin_name_taken"
         "discarded_value"
+        "discarded_failure"
         "bound_unit"
         "wildcard_on_variant"
         "marker_mismatch"

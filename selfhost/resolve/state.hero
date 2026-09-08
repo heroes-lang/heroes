@@ -405,13 +405,7 @@ test "a sibling scope's binding is invisible, a parent's shadows"
 
     # A sibling block: open, bind y, close — then a second block binds y again.
     open_scope(@r)
-    _ = declare(
-        @r,
-        s,
-        decls,
-        span_at(start: 2, end: 3),
-        resolve_binding.bind_binding(ty: fail("absent", "inferred"), value: 0)
-    )
+    assert !declare(@r, s, decls, span_at(start: 2, end: 3), resolve_binding.bind_binding(ty: fail("absent", "inferred"), value: 0)).is_err()
     close_scope(@r)
     open_scope(@r)
     again = declare(
@@ -464,14 +458,8 @@ test "the unused sweep spares the hole's module, the @ write, the suggestion"
     decls: [ast.Decl] = []
     r: Resolver @ new_resolver(expr_count: 0, type_count: 0)
     open_scope(@r)
-    _ = declare(
-        @r,
-        s,
-        decls,
-        span_at(start: 0, end: 1),
-        resolve_binding.bind_binding(ty: fail("absent", "inferred"), value: 0)
-    )
-    _ = declare(@r, s, decls, span_at(start: 2, end: 3), resolve_binding.param_binding(ty: 0, mutable: true))
+    assert !declare(@r, s, decls, span_at(start: 0, end: 1), resolve_binding.bind_binding(ty: fail("absent", "inferred"), value: 0)).is_err()
+    assert !declare(@r, s, decls, span_at(start: 2, end: 3), resolve_binding.param_binding(ty: 0, mutable: true)).is_err()
     r.out.locals[1].writes @ 1
     report_unused(@r, s)
 
@@ -482,13 +470,7 @@ test "the unused sweep spares the hole's module, the @ write, the suggestion"
     # A hole in the module suspends the rule file-wide.
     quiet: Resolver @ new_resolver(expr_count: 0, type_count: 0)
     open_scope(@quiet)
-    _ = declare(
-        @quiet,
-        s,
-        decls,
-        span_at(start: 0, end: 1),
-        resolve_binding.bind_binding(ty: fail("absent", "inferred"), value: 0)
-    )
+    assert !declare(@quiet, s, decls, span_at(start: 0, end: 1), resolve_binding.bind_binding(ty: fail("absent", "inferred"), value: 0)).is_err()
     resolved.note_hole(@quiet.out, "t")
     report_unused(@quiet, s)
     assert quiet.out.diagnostics.len() == 0
@@ -496,13 +478,7 @@ test "the unused sweep spares the hole's module, the @ write, the suggestion"
     # A suggested name is already spoken for.
     offered: Resolver @ new_resolver(expr_count: 0, type_count: 0)
     open_scope(@offered)
-    _ = declare(
-        @offered,
-        s,
-        decls,
-        span_at(start: 0, end: 1),
-        resolve_binding.bind_binding(ty: fail("absent", "inferred"), value: 0)
-    )
+    assert !declare(@offered, s, decls, span_at(start: 0, end: 1), resolve_binding.bind_binding(ty: fail("absent", "inferred"), value: 0)).is_err()
     candidates: [str] = ["x"]
     offered.module @ "t"
     _ = near_names(@offered, "z", candidates)

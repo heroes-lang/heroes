@@ -319,7 +319,7 @@ function blamed(message: str, art: compile.Artifact, s: source.Source, answered:
 
     if theirs.len() == 0
         return false
-    _ = compile.stage(theirs, s)
+    _ = compile.stage(theirs, s).is_err()
     return true
 
 # The message of a failed `()?` — the clang floor's and the unit's alike.

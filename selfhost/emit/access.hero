@@ -143,7 +143,7 @@ function field_read(@w: writer.Writer, c: state.Checked, s: source.Source, decls
 ## Tests
 
 test "len splits three ways, tag and payload split on the operand"
-    text = "record Point\n    x: i64\n\nvariant Tok\n    word\n        text: str\n    plus\n\nfunction main()\n    t: Tok = .word(text: \"hi\")\n    m: i64? = ok(3)\n    _ = t\n    _ = m\n    print(len(\"ab\"))\n"
+    text = "record Point\n    x: i64\n\nvariant Tok\n    word\n        text: str\n    plus\n\nfunction main()\n    t: Tok = .word(text: \"hi\")\n    m: i64? = ok(3)\n    _ = t\n    _ = m.is_err()\n    print(len(\"ab\"))\n"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)

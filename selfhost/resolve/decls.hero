@@ -71,12 +71,7 @@ function function_declaration(@r: state.Resolver, a: ast.Ast, s: source.Source, 
     state.open_scope(@r)
 
     for param in f.params
-        _ = state.declare(
-            @r,
-            s,
-            decls,
-            param.name,
-            resolve_binding.param_binding(ty: param.ty, mutable: param.mutable)
+        _ = state.declare(@r, s, decls, param.name, resolve_binding.param_binding(ty: param.ty, mutable: param.mutable)).is_err(
         )
 
     walk.block(@r, a, s, decls, f.body.must())

@@ -452,7 +452,7 @@ test "the conversions answer by name: fallible to a width, plain to a float"
     assert table.get(c.out.types, widened) == .float_ty(kind: .f32)
     assert c.out.diagnostics.len() == 0
     str_in: [i64] = [table.str_ty(c.out.types)]
-    _ = builtin_call(@c, s, d, name: "to_u8", given: str_in, span: token.Span(start: 0, end: 1))
+    assert !builtin_call(@c, s, d, name: "to_u8", given: str_in, span: token.Span(start: 0, end: 1)).is_err()
     assert c.out.diagnostics.len() == 1
     assert c.out.diagnostics[0].message == "`to_u8` takes an integer, found `str`"
 
@@ -470,7 +470,7 @@ test "print takes any width and refuses the rest with the true set"
     printed = builtin_call(@c, s, d, name: "print", given: four, span: token.Span(start: 0, end: 1)).must()
     assert printed == table.unit_ty(c.out.types)
     ptr_in: [i64] = [table.intern(@c.out.types, .ptr)]
-    _ = builtin_call(@c, s, d, name: "print", given: ptr_in, span: token.Span(start: 0, end: 1))
+    assert !builtin_call(@c, s, d, name: "print", given: ptr_in, span: token.Span(start: 0, end: 1)).is_err()
     assert c.out.diagnostics[0].message == "`print` takes any integer, a float, `bool` or `str`, found `ptr`"
 
 test "the list answers by shape: push, slice, keys, repeat, join, sort"
@@ -483,7 +483,7 @@ test "the list answers by shape: push, slice, keys, repeat, join, sort"
     push_ok: [i64] = [xs, int_id]
     assert builtin_call(@c, s, d, name: "push", given: push_ok, span: token.Span(start: 0, end: 1)).must() == xs
     push_bad: [i64] = [xs, str_id]
-    _ = builtin_call(@c, s, d, name: "push", given: push_bad, span: token.Span(start: 0, end: 1))
+    assert !builtin_call(@c, s, d, name: "push", given: push_bad, span: token.Span(start: 0, end: 1)).is_err()
     assert c.out.diagnostics[0].message == "expected `i64`, found `str`"
     keys_in: [i64] = [table.intern(@c.out.types, .map(key: str_id, value: int_id))]
     keyed = builtin_call(@c, s, d, name: "keys", given: keys_in, span: token.Span(start: 0, end: 1)).must()
@@ -492,13 +492,13 @@ test "the list answers by shape: push, slice, keys, repeat, join, sort"
     rep_ok: [i64] = [str_id, u64_id]
     assert builtin_call(@c, s, d, name: "repeat", given: rep_ok, span: token.Span(start: 0, end: 1)).must() == str_id
     rep_bad: [i64] = [str_id, int_id]
-    _ = builtin_call(@c, s, d, name: "repeat", given: rep_bad, span: token.Span(start: 0, end: 1))
+    assert !builtin_call(@c, s, d, name: "repeat", given: rep_bad, span: token.Span(start: 0, end: 1)).is_err()
     assert c.out.diagnostics[1].message == "`repeat` takes `str` and `u64`, found `str`"
     sorted_ok: [i64] = [xs]
     assert builtin_call(@c, s, d, name: "sort", given: sorted_ok, span: token.Span(start: 0, end: 1)).must() == xs
     maps = table.intern(@c.out.types, .array(element: keys_in[0]))
     sort_bad: [i64] = [maps]
-    _ = builtin_call(@c, s, d, name: "sort", given: sort_bad, span: token.Span(start: 0, end: 1))
+    assert !builtin_call(@c, s, d, name: "sort", given: sort_bad, span: token.Span(start: 0, end: 1)).is_err()
     assert c.out.diagnostics[2].code == "unordered_element"
 
     # An arity miss is nobody's here: the caller reports it once.
@@ -516,7 +516,7 @@ test "must unwraps, and on a sure value offers the certain removal"
     good: [i64] = [maybe]
     assert builtin_call(@c, s, d, name: "must", given: good, span: token.Span(start: 0, end: 8)).must() == int_id
     sure: [i64] = [int_id]
-    _ = builtin_call(@c, s, d, name: "must", given: sure, span: token.Span(start: 0, end: 8))
+    assert !builtin_call(@c, s, d, name: "must", given: sure, span: token.Span(start: 0, end: 8)).is_err()
     assert c.out.diagnostics.len() == 1
     assert c.out.diagnostics[0].fixes.len() == 1
     assert c.out.diagnostics[0].fixes[0].replacement == "x"
@@ -525,7 +525,7 @@ test "must unwraps, and on a sure value offers the certain removal"
     # default's fallback must match the payload.
     str_id = table.str_ty(c.out.types)
     mixed: [i64] = [maybe, str_id]
-    _ = builtin_call(@c, s, d, name: "default", given: mixed, span: token.Span(start: 0, end: 8))
+    assert !builtin_call(@c, s, d, name: "default", given: mixed, span: token.Span(start: 0, end: 8)).is_err()
     assert c.out.diagnostics[1].message == "expected `i64`, found `str`"
 
 test "an expectation is handed down where the ⇐-only forms need one"

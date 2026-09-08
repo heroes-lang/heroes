@@ -298,20 +298,20 @@ test "no record means not fresh"
 # listing is hand-written, because what is under test is the record.
 test "a record goes stale when what it recorded changes"
     dir = "build/selftest-deps"
-    _ = process.mkdir_all(dir)
+    assert !process.mkdir_all(dir).is_err()
 
     # OUTSIDE `dir` on purpose: what lives under the key's own
     # directory is deliberately not recorded, so a watched file placed
     # in there would make this case pass for the wrong reason — which
     # is exactly what it did when this test was first written.
     watched = "build/selftest-deps-watched.h"
-    _ = write_file(path: watched, text: "#define LIMIT 1\n")
-    _ = write_file(path: dir + "/listing.d", text: "dep: " + watched + "\n")
+    assert !write_file(path: watched, text: "#define LIMIT 1\n").is_err()
+    assert !write_file(path: dir + "/listing.d", text: "dep: " + watched + "\n").is_err()
     writing: {str: str} @ {}
     assert !record_deps(record_path: dir + "/deps.txt", depfile: dir + "/listing.d", skip: dir + "/", @writing).is_err()
     reading: {str: str} @ {}
     assert fresh(dir + "/deps.txt", @reading)
-    _ = write_file(path: watched, text: "#define LIMIT 2\n")
+    assert !write_file(path: watched, text: "#define LIMIT 2\n").is_err()
     after: {str: str} @ {}
     assert !fresh(dir + "/deps.txt", @after)
 
@@ -328,9 +328,9 @@ test "a prefix test on a path with an accent in it does not abort"
 
 test "what the key already names is not recorded"
     dir = "build/selftest-deps-own"
-    _ = process.mkdir_all(dir)
-    _ = write_file(path: dir + "/watched.h", text: "#define X 1\n")
-    _ = write_file(path: dir + "/listing.d", text: "dep: " + dir + "/unit.c " + dir + "/watched.h\n")
+    assert !process.mkdir_all(dir).is_err()
+    assert !write_file(path: dir + "/watched.h", text: "#define X 1\n").is_err()
+    assert !write_file(path: dir + "/listing.d", text: "dep: " + dir + "/unit.c " + dir + "/watched.h\n").is_err()
     memo: {str: str} @ {}
     assert !record_deps(record_path: dir + "/deps.txt", depfile: dir + "/listing.d", skip: dir + "/", @memo).is_err()
 
@@ -343,15 +343,15 @@ test "what the key already names is not recorded"
 
 test "a record line this format did not write is not fresh, and does not abort"
     dir = "build/selftest-deps-shape"
-    _ = process.mkdir_all(dir)
+    assert !process.mkdir_all(dir).is_err()
     memo: {str: str} @ {}
 
     # A path with a newline in it, which is what `lines` would hand
     # back in two pieces — the second piece has no digest and no space
     # at byte 16, and slicing it at 17 would split the `à`.
-    _ = write_file(path: dir + "/deps.txt", text: "0123456789abcdef /a/b.h\nCartellà-continued-name.h\n")
+    assert !write_file(path: dir + "/deps.txt", text: "0123456789abcdef /a/b.h\nCartellà-continued-name.h\n").is_err()
     assert !fresh(dir + "/deps.txt", @memo)
-    _ = write_file(path: dir + "/deps.txt", text: "short\n")
+    assert !write_file(path: dir + "/deps.txt", text: "short\n").is_err()
     assert !fresh(dir + "/deps.txt", @memo)
 
 test "text splits into lines, the last one without a newline"

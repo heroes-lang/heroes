@@ -352,7 +352,7 @@ function a_search_path_is_one_word(@r: report.Report, scratch: str, compiler: st
     # The witness is removed first, so its ABSENCE afterwards means
     # something. A test that never removed it would pass on a machine
     # where it was never created.
-    _ = shell.run(scratch: scratch, program: "rm", words: ["rm", "-f", witness])
+    _ = shell.run(scratch: scratch, program: "rm", words: ["rm", "-f", witness]).is_err()
     said = shell.run(
         scratch: scratch,
         program: compiler,
@@ -377,7 +377,7 @@ function a_search_path_is_one_word(@r: report.Report, scratch: str, compiler: st
             label: "special/one argv word",
             detail: "  `" + witness + "` exists: the search path was split by a shell somewhere between argv and clang"
         )
-        _ = shell.run(scratch: scratch, program: "rm", words: ["rm", "-f", witness])
+        _ = shell.run(scratch: scratch, program: "rm", words: ["rm", "-f", witness]).is_err()
         return
     report.keep_pass(@r)
 

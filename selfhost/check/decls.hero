@@ -28,6 +28,7 @@ use check/walk
 use check/ffi
 use check/freer as freer
 use check/generics
+use check/discard
 use value_errors
 use flow_errors
 use contextless_errors
@@ -40,7 +41,7 @@ function file(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Sou
             .constant_decl k =>
                 declared = lower.lower_ty(@c, a, r, k.ty)
                 c.result @ declared
-                c.fallible @ is_fallible_ty(c, declared)
+                c.fallible @ discard.is_fallible(c, declared)
                 clear_generics(@c)
 
                 if !k.body.is_err()
@@ -80,12 +81,13 @@ function file(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Sou
                     state.push_diagnostic(@c, value_errors.main_returns(want, a.types[fd.value.result].span))
                 c.out.results[index] @ result
                 c.result @ result
-                c.fallible @ is_fallible_ty(c, result)
+                c.fallible @ discard.is_fallible(c, result)
 
                 param_tys: [i64] @ []
 
                 for param in fd.value.params
                     ty = lower.lower_ty(@c, a, r, param.ty)
+                    discard.refuse_parameter(@c, s, decls, name: param.name, ty: ty)
                     state.bind_local(@c, param.name, ty: ty)
                     param_tys @ param_tys.push(ty)
 
@@ -191,13 +193,6 @@ function file(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Sou
 function clear_generics(@c: state.Checker)
     empty: [str] = []
     c.generic_names @ empty
-
-function is_fallible_ty(c: state.Checker, ty: i64) -> bool
-    return match table.get(c.out.types, ty)
-        .fallible                                                 => true
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
-        .array | .fixed | .map | .function_ty | .named            => false
-        .case_ty | .failure | .generic | .error                   => false
 
 ## Tests
 

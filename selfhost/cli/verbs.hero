@@ -186,7 +186,7 @@ function exit_of(failed: produce.Produced?) -> cli_table.Exit
 test "end to end: the port compiles a Heroes program and runs it"
     library = library_source.text()
     program = "function double_it(n: i64) -> i64\n    return n * 2\n\ntest \"doubling\"\n    assert double_it(n: 21) == 42\n\nfunction main()\n    print(double_it(n: 21))\n"
-    _ = write_file(path: "build/selftest_e2e.hero", text: program)
+    assert !write_file(path: "build/selftest_e2e.hero", text: program).is_err()
     s = input.read_compilation(path: "build/selftest_e2e.hero", library: library).must()
     t = toolchain.locate_toolchain(hint: "", fingerprint: "port-e2e").must()
     empty: [argv.FlagHit] = []

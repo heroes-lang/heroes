@@ -118,15 +118,34 @@ function main_returns(got: str, span: token.Span) -> diag.Diagnostic
 # element — a certain fix converting a caught mistake into a silent wrong
 # answer. With a receiver in hand, BOTH repairs are guesses, because the
 # compiler genuinely cannot tell them apart.
-function discarded_value(got: str, receiver: str?, span: token.Span) -> diag.Diagnostic
+#
+# `fallible` DE-CERTIFIES the `_ = …` fix, and it is the third half of
+# panel 118 rather than a refinement: once `_ = e` on a `T?` is refused,
+# a `certain` fix inserting `_ = ` is a machine that writes programs the
+# next pass rejects, and `heroes check --apply --in-place` was run on a
+# bare `write_file(…)` and wrote exactly that. The repair is not to
+# downgrade the fix to a guess — a guess that cannot compile is still
+# wrong — but to withdraw it and say what does answer a failure.
+function discarded_value(got: str, receiver: str?, fallible: bool, span: token.Span) -> diag.Diagnostic
     insertion = token.Span(start: span.start, end: span.start)
+    refused: str @ ""
+
+    if fallible
+        refused @ ", and `_ = …` will not do either: a `T?` may not be discarded"
 
     if receiver.is_err()
         d: diag.Diagnostic @ diag.new_diagnostic(
             code: "discarded_value",
-            message: "this line's value has type `" + got + "` and nothing receives it — write `_ = …` to discard it on purpose",
+            message: "this line's value has type `" + got + "` and nothing receives it" + refused,
             span: span
         )
+
+        if fallible
+            d.notes @ d.notes.push(
+                "answer the error instead: `?` sends it to your caller, `.must()` ends the program, `.default(v)` falls back, `.is_err()` drops it on purpose"
+            )
+            return d
+        d.message @ d.message + " — write `_ = …` to discard it on purpose"
         d.fixes @ d.fixes.push(
             diag.Fix(title: "discard it explicitly", replacement: "_ = ", span: insertion, certainty: .certain)
         )
@@ -134,14 +153,98 @@ function discarded_value(got: str, receiver: str?, span: token.Span) -> diag.Dia
     name = receiver.must()
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "discarded_value",
-        message: "this line's value has type `" + got + "` and nothing receives it — every value here is a copy, so `" + name + "` is unchanged: write `" + name + " @ …` to keep the result, or `_ = …` to discard it on purpose",
+        message: "this line's value has type `" + got + "` and nothing receives it — every value here is a copy, so `" + name + "` is unchanged: write `" + name + " @ …` to keep the result" + refused,
         span: span
     )
     d.fixes @ d.fixes.push(
         diag.Fix(title: "assign it back to `" + name + "`", replacement: name + " @ ", span: insertion, certainty: .guess)
     )
+
+    if fallible
+        d.notes @ d.notes.push(
+            "answer the error instead: `?` sends it to your caller, `.must()` ends the program, `.default(v)` falls back, `.is_err()` drops it on purpose"
+        )
+        return d
+    d.message @ d.message + ", or `_ = …` to discard it on purpose"
     d.fixes @ d.fixes.push(
         diag.Fix(title: "discard it explicitly", replacement: "_ = ", span: insertion, certainty: .guess)
+    )
+    return d
+
+# The ways a `T?`'s error can be answered, listed for a reader who has
+# just been refused (§4.17: everything needed without opening another
+# file). Two things are decided per site rather than printed blindly:
+# `?` is named only where the enclosing function can fail, because
+# offering it elsewhere sends the reader to `try_in_infallible`; and
+# `.default(v)` is named only where the payload is a value, because a
+# `()?` has none to write — `.default(())` is `expected_expression`,
+# which panel 118's blind reader found by trying it.
+function answers(propagates: bool, has_payload: bool) -> str
+    out: str @ ""
+
+    if propagates
+        out @ out + "`?` sends the failure to your caller, "
+    out @ out + "`.must()` ends the program here, "
+
+    if has_payload
+        out @ out + "`.default(v)` falls back, "
+    out @ out + "`.is_err()` drops the failure on purpose"
+
+    if !propagates
+        out @ out + " — `?` would need this function to return a `T?` itself"
+
+    return out
+
+# `_ = e` where `e` is a `T?` (§4.4, panel 118). Panel 003 made a
+# non-`()` statement an error and named `_ = e` the deliberate discard;
+# this is the hole that discard left, and it is the ONE place a failure
+# goes missing without the type system noticing.
+#
+# EVERY FIX IS A GUESS, and that is the ruling rather than an omission
+# (panel 118 R3, measured): the same line's three repairs print 1, 9
+# and a panic, so `?` is not meaning-preserving, `.is_err()` preserves
+# the bug, and `.must()` ends the program. A rule that exists to make a
+# decision visible must not ship a repair that takes the decision.
+function discarded_failure(got: str, propagates: bool, has_payload: bool, span: token.Span, value: token.Span) -> diag.Diagnostic
+    after = token.Span(start: value.end, end: value.end)
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "discarded_failure",
+        message: "`_ =` would drop the error in this `" + got + "`, and that is the one discard the type system cannot see through — " + answers(propagates: propagates, has_payload: has_payload),
+        span: span
+    )
+
+    if propagates
+        d.fixes @ d.fixes.push(
+            diag.Fix(title: "send the failure to your caller", replacement: "?", span: after, certainty: .guess)
+        )
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "end the program if it fails", replacement: ".must()", span: after, certainty: .guess)
+    )
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "drop the failure on purpose", replacement: ".is_err()", span: after, certainty: .guess)
+    )
+    return d
+
+# The same rule at the other position a `_` reaches, and it was found
+# by running rather than reading (panel 118): `function swallow(_: i64?)`
+# with `swallow(risky(0 - 1))` checks, runs, exits 0, and the error is
+# gone. A parameter is the WORSE half, because the line has nothing
+# available on it: the value arrives already bound to a name that binds
+# nothing, so `.is_err()` cannot be reached from here at all.
+#
+# One fix and it is a GUESS, because a Fix carries one replacement and
+# the repair is two edits: name the parameter, then answer the error in
+# the body. The sitting's blind reader called this repair `certain`; it
+# is behaviour-identical, which is what that seat measured, and still
+# not expressible as one edit.
+function discarded_failure_parameter(got: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "discarded_failure",
+        message: "a `_` parameter written `" + got + "` drops its error where nothing can answer it — `_` binds nothing, so the body cannot reach the value at all",
+        span: span
+    )
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "give it a name, and answer the error in the body", replacement: "", span: span, certainty: .guess)
     )
     return d
 
@@ -197,15 +300,96 @@ test "the cstr stop carries its route, every other operand does not"
 
 test "a discarded value splits on the receiver, and certainty follows"
     span = token.Span(start: 12, end: 20)
-    bare = discarded_value(got: "[i64]", receiver: fail("absent", "no receiver"), span: span)
+    bare = discarded_value(got: "[i64]", receiver: fail("absent", "no receiver"), fallible: false, span: span)
     assert bare.fixes.len() == 1
     assert bare.fixes[0].certainty == .certain
     assert bare.fixes[0].span.start == 12 && bare.fixes[0].span.end == 12
-    named = discarded_value(got: "[i64]", receiver: ok("xs"), span: span)
+    named = discarded_value(got: "[i64]", receiver: ok("xs"), fallible: false, span: span)
     assert named.fixes.len() == 2
     assert named.fixes[0].certainty == .guess
     assert named.fixes[1].certainty == .guess
     assert named.fixes[0].replacement == "xs @ "
+
+# Panel 118's third half: once `_ = e` on a fallible is refused, the
+# `_ = ` fix must not be OFFERED, let alone offered as `certain`, or
+# `heroes check --apply` writes a program the next pass rejects.
+test "a discarded FALLIBLE offers no `_ = ` at all, and says what answers an error instead"
+    span = token.Span(start: 12, end: 20)
+    bare = discarded_value(got: "()?", receiver: fail("absent", "no receiver"), fallible: true, span: span)
+    assert bare.fixes.len() == 0
+    assert bare.notes.len() == 1
+    assert bare.message == "this line's value has type `()?` and nothing receives it, and `_ = …` will not do either: a `T?` may not be discarded"
+    named = discarded_value(got: "[i64]?", receiver: ok("xs"), fallible: true, span: span)
+    assert named.fixes.len() == 1
+    assert named.fixes[0].replacement == "xs @ "
+    assert named.notes.len() == 1
+
+test "the refusal of a discarded failure names only the answers that are reachable"
+    span = token.Span(start: 4, end: 24)
+    value = token.Span(start: 8, end: 24)
+
+    # Inside a fallible function, with a payload: all four are offered.
+    rich = discarded_failure(got: "i64?", propagates: true, has_payload: true, span: span, value: value)
+    assert rich.code == "discarded_failure"
+    assert rich.fixes.len() == 3
+    assert rich.fixes[0].replacement == "?"
+    assert rich.fixes[0].span.start == 24 && rich.fixes[0].span.end == 24
+    assert rich.fixes[0].certainty == .guess
+    assert rich.fixes[1].certainty == .guess
+    assert rich.fixes[2].certainty == .guess
+
+    # In `main` or a test, on a `()?`: `?` is not offered, because it
+    # would send the reader to `try_in_infallible`, and `.default(v)` is
+    # not named, because there is no `()` to write.
+    poor = discarded_failure(got: "()?", propagates: false, has_payload: false, span: span, value: value)
+    assert poor.fixes.len() == 2
+    assert poor.fixes[0].replacement == ".must()"
+    assert !has(text: poor.message, needle: "`.default(v)`")
+    assert has(text: poor.message, needle: "`?` would need this function to return a `T?` itself")
+    assert has(text: poor.message, needle: "`.must()` ends the program here")
+
+test "a wildcard parameter of fallible type is refused where nothing on the line can answer"
+    d = discarded_failure_parameter(got: "i64?", span: token.Span(start: 9, end: 10))
+    assert d.code == "discarded_failure"
+    assert d.fixes.len() == 1
+    assert d.fixes[0].certainty == .guess
+    assert has(text: d.message, needle: "`_` binds nothing")
+
+# Substring, so a message assertion can name the clause it cares about
+# rather than pinning a whole sentence that a later wording moves.
+#
+# BYTE BY BYTE AND NEVER BY SLICE, which is the opposite of the ten
+# other `has` helpers in this compiler, and the difference is a panic.
+# A slice that splits a character aborts (§4.9), and a sliding window
+# lands inside one the moment the text is not ASCII: every one of those
+# helpers searches emitted C and is safe by a premise nobody wrote
+# down, while a diagnostic MESSAGE carries `—` and `…`. Measured here,
+# by writing the slice version first: `panic: string slice splits a
+# character`, twice, in this file's own tests.
+function has(text: str, needle: str) -> bool
+    if needle.len() == 0
+        return true
+
+    if needle.len() > text.len()
+        return false
+    stop = text.len() - needle.len()
+    at: i64 @ 0
+
+    while at <= stop
+        same: bool @ true
+        k: i64 @ 0
+
+        while k < needle.len()
+            if text[at + k] != needle[k]
+                same @ false
+                break
+            k @ k + 1
+
+        if same
+            return true
+        at @ at + 1
+
+    return false
 
 test "sort's refusal names the set, the member, or the route"
     span = token.Span(start: 0, end: 4)

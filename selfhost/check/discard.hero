@@ -1,0 +1,88 @@
+# The one discard the type system cannot see through, refused
+# (design.md §4.4, §4.6; panel 118, 2026-09-08).
+#
+# `_ = e` throws a value away on purpose, and panel 003 put it in the
+# language for exactly that. It is right for a value and wrong for a
+# FAILURE: the error goes with the value, nothing in the program says
+# so, and the run exits 0. Measured before this module existed:
+# `_ = risky(0 - 1)` compiled and the program printed its next line.
+#
+# TWO POSITIONS, AND THE THIRD IS DELIBERATELY NOT HERE. A `_ = e` and
+# a `_` parameter written `T?` are refused. A discard of a TYPE
+# PARAMETER is not, and that is a ruling rather than an omission: the
+# sitting first adopted it, then measured that it closes nothing —
+# `function drop<A>(_: A)` swallows a failure with no discard statement
+# anywhere, and refusing that too leaves `_ = [x]`, which is legal,
+# means the same thing, and works on a KNOWN fallible as well. A
+# refusal whose workaround defeats the rule elsewhere teaches the
+# escape. So the spec states the boundary instead (§4.4): a `_` reads
+# the outermost type, and `_ = args_checked()` drops a whole `[str?]`
+# with no generic in sight.
+#
+# What this module does NOT do is decide the repair. Every fix is a
+# guess and `value_errors` says why.
+
+use ast
+use source
+use token
+use check/state
+use check/table
+use value_errors
+
+# Whether this type is a `T?`. One home for the question: `check/decls`
+# asks it of a signature's result to set `Checker.fallible`, and both
+# refusals below ask it of a value. A type parameter is FALSE here, see
+# the module doc.
+#
+# A POISONED TYPE IS NOT HANDLED HERE, and the first version of this
+# comment claimed it fell out by itself "because a poisoned type is not
+# `.fallible`". That was false and it was caught the same hour, by
+# `tests/golden/check/type-parameter-needs-context`: a `T?` whose
+# payload is poisoned IS `.fallible`, so the refusal fired on a line
+# that already carried `cannot_infer` and printed the type as `??`. One
+# mistake, one report — so both refusals below ask `table.poisoned`
+# first, which recurses into the payload.
+function is_fallible(c: state.Checker, ty: i64) -> bool
+    return match table.get(c.out.types, ty)
+        .fallible                                                 => true
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
+        .array | .fixed | .map | .function_ty | .named            => false
+        .case_ty | .failure | .generic | .error                   => false
+
+# Whether the failure's payload is a value somebody could write, which
+# decides whether `.default(v)` is offered: a `()?` has none, and
+# `.default(())` is `expected_expression` on §4.19's own ground.
+function carries_a_payload(c: state.Checker, ty: i64) -> bool
+    return match table.get(c.out.types, ty)
+        .fallible o                                               => o.payload != table.unit_ty(c.out.types)
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
+        .array | .fixed | .map | .function_ty | .named            => false
+        .case_ty | .failure | .generic | .error                   => false
+
+# `_ = e`. THE TYPE IS ASKED FIRST AND THE NAME TEXT SECOND, and the
+# order is the point: `source.span_text` slices the source, which
+# allocates, so asking the name of every `x = …` in every checked file
+# would cost one string per line for an answer the type has already
+# settled. A `T?` bound to a real name is somebody keeping the failure,
+# which is the correct program.
+function refuse(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl], name: token.Span, value: i64, ty: i64, span: token.Span)
+    if table.poisoned(c.out.types, ty) || !is_fallible(c, ty)
+        return
+
+    if source.span_text(s, name) != "_"
+        return
+    state.push_diagnostic(
+        @c,
+        value_errors.discarded_failure(got: state.show(c, s, decls, ty), propagates: c.fallible, has_payload: carries_a_payload(c, ty), span: span, value: a.exprs[value].span)
+    )
+
+# A `_` parameter whose declared type is a `T?`. The same hole at the
+# position where nothing can be done about it on the line, since `_`
+# binds nothing and the body cannot reach the value at all.
+function refuse_parameter(@c: state.Checker, s: source.Source, decls: [ast.Decl], name: token.Span, ty: i64)
+    if table.poisoned(c.out.types, ty) || !is_fallible(c, ty)
+        return
+
+    if source.span_text(s, name) != "_"
+        return
+    state.push_diagnostic(@c, value_errors.discarded_failure_parameter(got: state.show(c, s, decls, ty), span: name))

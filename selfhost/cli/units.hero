@@ -144,7 +144,7 @@ function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str
     captured = read_file(err_path)
 
     if !captured.is_err() && captured.must().len() > 0
-        _ = write_file(path: saved, text: captured.must())
+        write_file(path: saved, text: captured.must())?
 
     # Recorded BEFORE the object is published: an object on disk with no
     # record beside it would be a hit this cache cannot justify. The
