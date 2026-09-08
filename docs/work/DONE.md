@@ -2982,3 +2982,58 @@ Was | author instruction, 2026-08-14 | **A runtime function that joins two path 
 - [x] **the `v0.1.0` tag run, 2026-09-07** | the release tag's three-platform matrix went red on every leg at one suite, `records/citations`, with 1594, 1606 and 1581 of the rest green: at `ca06cad0` the citation check asked THIS DISK whether `site/dist/` and `site/.cache/` existed, and a fresh CI checkout has neither, which is the defect `18d6396a` fixed the next day; `v0.1.0` predates the fix and `v0.2.0` contains it, so `v0.2.0`'s legs are green on the same instrument. The `GitHub Release` job for `v0.1.0` was skipped | github.com/heroes-lang/heroes/actions/runs/34163395923 · `tests/harness/suite_records.hero` · `18d6396a` | a release tag on an older commit runs that commit's own instruments, so a since-fixed instrument bug comes back for exactly that run; the tag truthfully marks the commit that moved `VERSION` to 0.1.0 and the red run is an honest record of the bug, so nothing here was moved or deleted. Whether `v0.1.0` stays on `origin` with a red run and no Release, or is deleted there as a rehearsal tag that never had one, is the author's decision and is asked for, not taken
 
 - [x] **The site counts its visitors, and the claim that said it could not is repaired** | author instruction 2026-09-08 (*"I would like to check the site's visits"*), closed the same day | Cloudflare Web Analytics enabled on the `heroes-lang-site` Pages project, by the author in the dashboard: there is no snippet in this repository, no key to carry, and **no token permission that could do it from CI**, which `.env.example` had already found and written down. The beacon arrives with the next deploy, so the switch and the repaired text land together and the site never serves a false sentence. `site/README.md` § Deployment gains § The visitor count: the switch, what the beacon counts, what it cannot see, the free plan's limit, and the one-line check `curl -s https://heroes-lang.org/ | grep -c cloudflareinsights`, which is also added to the post-publish list. **Measured before deciding, not after**: the served HTML carried no beacon and no `gtag`, there is no CSP and no `site/public/_headers` that could block one, the deploy token sees both Pages projects but answers `Authentication error` on Web Analytics and returns an empty zone list, and the free plan gives requests, bandwidth, unique visitors and countries while page views, visits and path or referrer filtering start at Pro. **Four texts were repaired and two of them were false before this work**: the nav comment in `site/public/style.css` still said the site had no build step and that the nav was duplicated per page, months after `SiteNav.astro` and the move to Astro, and the photograph comment still said no build step; the other two are the README's promise and `.env.example`'s line about the day heroes-lang.org would move onto Cloudflare, which it already had. No page promises a reader anything about tracking, over all 180 pages of both editions, so nothing outward-facing was written and no privacy page exists | `site/README.md` § The visitor count · `site/public/style.css` · `.env.example` · `DESIGN-LOG.md` | the free plan gives no page views, so the choice was between not knowing which pages are read and rewriting a promise, and the promise turned out to have been false in two places already for a reason that had nothing to do with counting visitors
+
+- [x] **017 — `heroes measure` overstates the spec's usable room by 60 tokens** | the number a session consults before amending the spec is 60 larger than the number the net goes red at, and both are printed by this repository | `selfhost/cli/measure.hero:157` · `tests/harness/suite_spec.hero:203`
+
+    **Origin:** the spec-warden seat, panel 118, 2026-09-08, which said "the warden's own instrument overstates usable room by 60 tokens — file it"; verified by the coordinator by reading both sites, 2026-09-08.
+
+    **Reproducer**, run 2026-09-08 from the seed-built compiler:
+
+        $ ./heroes measure spec/heroes-spec.md
+          maximum            3903   the binding number
+        Above the soft 2000: an addition needs a named removal or a
+        pre-registered falsifiable prediction (panel 012). Headroom: 193.
+
+    **The wrong answer at exit 0.** `selfhost/cli/measure.hero:157` prints
+    `CEILING - highest`, which is 4096 - 3903 = 193. The net's own check is
+    `SPEC_TOKENS + FFI_FLOOR >= CEILING` at `tests/harness/suite_spec.hero:203`,
+    with `FFI_FLOOR` 60, so the largest green `SPEC_TOKENS` is 4035 and the real
+    room is **132**. A session that trusts the tool it is told to trust can spend
+    193 and find out from a red suite, which is the failure the tool exists to
+    prevent.
+
+    **Cause.** `measure` is a general instrument and knows nothing of a
+    spec-specific mortgage; the mortgage lives only in the harness. So the
+    number is right for any other file and wrong for the one document whose
+    budget it was built to settle.
+
+    **What is owed.** Not obviously the tool: making `measure` subtract a
+    harness constant couples the compiler to the test suite. The cheaper repair
+    is for `measure` to name the mortgage where it knows the file, or for the
+    printed line to stop calling itself headroom. Either way it is a **class**
+    and not a witness: any second claim on the same ceiling has the same shape.
+    A `tests/harness/` case that asserts the two numbers agree is the instrument.
+
+    **The repair, 2026-09-08, M-discard-refusal step 4.** `measure` stops
+    printing a subtraction of its own and states the SUM this check compares:
+    *"Headroom: 131 against the 4096 ceiling — but the FFI floor mortgages 60 of
+    it (panel 030 R3), so what is measured against the ceiling is 4025 and the
+    check goes red at 4096."* The mortgage is a constant in
+    `selfhost/cli/measure.hero` beside the ceiling it qualifies, and it is named
+    only for the spec, because saying it of every file would be a claim about a
+    ceiling those files do not share.
+
+    **The repair's own first version was wrong, in the direction the defect is
+    about.** It printed *"and 71 usable"*, computed as `CEILING - FFI_FLOOR -
+    highest`. The harness goes red at `SPEC_TOKENS + FFI_FLOOR >= CEILING`, so
+    the largest green addition is **70**, not 71: a "usable room" figure is off
+    by one the moment that `>=` is read as `>`. Caught by comparing the printed
+    number against the check's actual condition rather than against the
+    intention. Stating both sides of the comparison leaves no arithmetic for
+    anybody to get wrong, which is why that is what shipped.
+
+    **The instrument is `spec/spendable`** in `tests/harness/suite_spec.hero`,
+    which asks that the sum `measure` prints is the sum the suite computes, and
+    it carries a test that makes it fire, with a stub compiler that prints a
+    drifted sum. The `spec` suite goes 9 checks to 10 and the net's own tests
+    121 to 122.

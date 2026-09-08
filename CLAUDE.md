@@ -283,6 +283,14 @@ CL-035, CL-038, CL-042, CL-046, CL-047, CL-049, CL-050, CL-056 and CL-060.
   ratio, because `real` far above `user` plus `sys` means the run was waiting;
   discard it and write down why. **A suite reading the tree owns the tree until
   it exits** (CL-025).
+- **A milestone is tagged only over a clean list** (author instruction
+  2026-09-08): zero open items in `docs/work/DEFECTS.md`, and nothing open in
+  `docs/work/DECIDE.md` that is not a `panel NNN` ratification. The author asked
+  for zero of both; a pending sitting is **waiting on the author rather than
+  broken**, and § 4's queue catches an unratified one only while that item
+  exists, so the exception is named rather than the rule weakened. The executor
+  is `records/tagged` and it reads the newest `m-*` tag's own commit, so an open
+  defect mid-milestone stays legal and a tag over one does not.
 - **A platform fact is run on a platform or it is an inference**, and the three
   are measured from this Mac before the commit: `.claude/rules/platforms.md`
   (CL-048, CL-049, CL-050, CL-055).

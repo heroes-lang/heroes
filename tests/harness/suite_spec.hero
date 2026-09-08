@@ -162,6 +162,7 @@ function run_all(scratch: str, compiler: str) -> report.Report?
         return ok(r)
     budget(@r, scratch: scratch, compiler: compiler)
     contract(@r, scratch: scratch, compiler: compiler, ceiling: CONTRACT_CEILING)
+    spendable(@r, scratch: scratch, compiler: compiler)
     ledger(@r, scratch: scratch, compiler: compiler)
     reserved = names_in_table(path: BUILTIN_SOURCE, marker: "Builtin(name: ")
     refused = words_in_arms(path: KEYWORD_SOURCE, marker: "=> ok(ForeignWord(")
@@ -333,6 +334,53 @@ function maximum_of(scratch: str, compiler: str, path: str) -> i64?
                 return strings.to_number(words[1])
 
     return fail("cannot_measure", "`measure` printed no binding number")
+
+# THE TWO INSTRUMENTS AGREE ON WHAT IS SPENDABLE, which is defect 017's
+# repair (2026-09-08, found by panel 118's spec-warden about its own
+# instrument). `heroes measure` printed `CEILING - highest` and knew
+# nothing of `FFI_FLOOR`, so the number a session reads before amending the
+# spec was 60 larger than the number this file goes red at, and the looser
+# of the two is the one reached for first. `measure` now states the SUM
+# this check compares rather than a subtraction of its own — a "usable
+# room" figure is off by one the moment `>=` is read as `>`, which it was,
+# in that repair's own first version — and this asks that the sum it prints
+# is the sum computed here.
+function spendable(@r: report.Report, scratch: str, compiler: str)
+    said = shell.run(scratch: scratch, program: compiler, words: [compiler, "measure", SPEC])
+
+    if said.is_err()
+        report.keep_failure(@r, label: "spec/spendable", detail: "  cannot run `measure " + SPEC + "`")
+        return
+    want = "is " + (SPEC_TOKENS + FFI_FLOOR).to_str() + " and the check goes red at " + CEILING.to_str()
+
+    if !strings.contains(text: said.must().out, needle: want)
+        report.keep_failure(
+            @r,
+            label: "spec/spendable",
+            detail: "  `measure " + SPEC + "` does not say \"" + want + "\".\n  The two instruments have drifted: this file goes red at SPEC_TOKENS + FFI_FLOOR\n  >= CEILING, and what `measure` prints is what a session reads BEFORE amending\n  the spec. Whichever of the two moved, the other has to move with it — the\n  number is one number in two places, one printed and one checked (defect 017)."
+        )
+        return
+
+    # The same question of the contract, whose ceiling ALSO lives in two
+    # places now: `measure` shouted BREACH at `CLAUDE.md` for every token
+    # above 4096 while this file held it to CONTRACT_CEILING, so the tool
+    # invited the one repair that is always wrong here — cutting a rule to
+    # make a number smaller. Defect 017's class, second witness.
+    told = shell.run(scratch: scratch, program: compiler, words: [compiler, "measure", CONTRACT])
+
+    if told.is_err()
+        report.keep_failure(@r, label: "spec/spendable", detail: "  cannot run `measure " + CONTRACT + "`")
+        return
+    owns = "against the contract's own " + CONTRACT_CEILING.to_str()
+
+    if !strings.contains(text: told.must().out, needle: owns)
+        report.keep_failure(
+            @r,
+            label: "spec/spendable",
+            detail: "  `measure " + CONTRACT + "` does not say \"" + owns + "\".\n  The contract is weighed on this scale and not against §1.6's 4096, and the\n  number is one number in two places (defect 017)."
+        )
+        return
+    report.keep_pass(@r)
 
 # Every name the compiler reserves appears in the spec.
 function named(@r: report.Report, spec: str, reserved: [str])
@@ -663,6 +711,45 @@ test "every check here can fire — CLAUDE.md §9, a check nobody has seen fail 
     rejected(@starved, spec: "`print`", refused: empty_list)
     assert starved.failed == 2
     assert strings.contains(text: starved.failures[0], needle: "vacuously")
+
+test "the drift check fires when the two instruments disagree on the sum"
+    # A stub compiler again, and for the same reason: what is under test is the
+    # comparison, not the real spec, whose size this suite reads on every run.
+    if !shell.can_run_scripts()
+        return
+    scratch = "build/harness-selftest"
+    assert !shell.mkdir_all(scratch).is_err()
+    line = "pre-registered falsifiable prediction (panel 012). Headroom: 131 against the 4096 ceiling"
+
+    # Says a sum, and it is the wrong one: the shape a drifted `measure` has.
+    stale = scratch + "/stub-stale.sh"
+    assert !write_file(path: stale, text: "#!/bin/sh\necho '" + line + " is 1 and the check goes red at 4096'\n").is_err()
+    assert !shell.run(scratch: scratch, program: "chmod", words: ["chmod", "+x", stale]).is_err()
+    drifted: report.Report @ report.empty()
+    spendable(@drifted, scratch: scratch, compiler: stale)
+    assert drifted.failed == 1
+
+    # The message has to name BOTH places, because "make the printed number
+    # match" is as likely to be the wrong repair as the right one.
+    assert strings.contains(text: drifted.failures[0], needle: "one printed and one checked")
+
+    # And the sum this file computes passes.
+    good = scratch + "/stub-good.sh"
+    want = "is " + (SPEC_TOKENS + FFI_FLOOR).to_str() + " and the check goes red at " + CEILING.to_str()
+    owns = "against the contract's own " + CONTRACT_CEILING.to_str()
+
+    # The stub ignores its argument, so it has to satisfy BOTH halves: the
+    # check asks the spec's sum and the contract's own ceiling of the same
+    # compiler, and a stub that answers one is a stub that fails the other.
+    # DOUBLE quotes on the second line and single on the first, which is not
+    # taste: the contract's sentence carries an apostrophe, and an apostrophe
+    # inside `echo '…'` closes the quote and takes the rest of the line with
+    # it. The first version of this stub did exactly that.
+    assert !write_file(path: good, text: "#!/bin/sh\necho '" + line + " " + want + "'\necho \"" + owns + "\"\n").is_err()
+    assert !shell.run(scratch: scratch, program: "chmod", words: ["chmod", "+x", good]).is_err()
+    agreed: report.Report @ report.empty()
+    spendable(@agreed, scratch: scratch, compiler: good)
+    assert agreed.failed == 0
 
 test "the contract's ceiling fires, and a ceiling above it does not"
     # A stub compiler, for the reason the next test gives: what is under test is
