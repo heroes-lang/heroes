@@ -34,7 +34,7 @@ Astro.
 ```
 cd site
 npm ci                  # exactly the lockfile, and fails if it disagrees with package.json
-npm run build           # src/ -> dist/, 180 pages
+npm run build           # src/ -> dist/, every page of both editions
 npm run dev             # the fast loop, on localhost
 npm run preview         # dist/ over plain HTTP, as Astro serves it
 
@@ -111,6 +111,7 @@ answers at drops the extension and gains a slash, so `why.html` is `/why/` and
 | `log.html` | the build log, one postcard per milestone, newest first. A postcard is the milestone name, the sentence in bold that is the news, one concrete sentence and a link: 1,517 words where it was 4,846 |
 | `examples/` | **the examples browser, generated from `examples/` at build time**: an index, one page per program and per gallery file, and `index.json`. Its own § below |
 | `docs/` | the documentation: landing + chapters |
+| `404.html` | what a reader gets for an address that does not exist, one per edition, with four links out: home, guide, examples, the language in one file. **Without it Cloudflare Pages assumes a single-page application** and answers every unknown path with the home page at status 200, which was measured on this deployment and on the two before it. The nested one has to reach the output as `it/404.html` rather than `it/404/index.html`, which is what `astro.config.mjs`'s `heroes:nested-404` does and says why |
 | `style.css` | the only cross-page *stylesheet* |
 | `images/` | the one binary asset the site has: `giuseppe-arici.jpg`, the author's portrait, used by both editions of `about.html` |
 
@@ -293,7 +294,7 @@ page that moves takes its trail with it.
 
 **The share cards.** Ten sections in both editions, twenty files, under
 `public/images/card/`, and `BaseLayout` picks one from the first path segment
-with the home card as the fallback, so all 180 pages resolve to a real file.
+with the home card as the fallback, so every page resolves to a real file.
 1200x630, drawn from this stylesheet's own tokens and its own h1 face. Two
 site-wide cards were tried first and were the wrong shape: a link is a link to
 ONE page, and a card that says only the name of the site tells the reader
@@ -332,7 +333,7 @@ browser accepts without a word:
     python3 site/serve.py --it                             # opens the Italian edition
 
 **Why the real name and not localhost.** Every absolute URL on these pages is
-`https://heroes-lang.org/...`: the `canonical` of all 180 pages, the three
+`https://heroes-lang.org/...`: the `canonical` of every page, the three
 `hreflang` alternates on each of them, the `og:url`, the sitemap's 44 entries.
 Those are generated from one path per page now rather than typed out, which is
 what the move to a layout bought: 176 absolute URLs that cannot disagree with
@@ -913,7 +914,7 @@ leans on for its own GitHub links in § Launch order. The two places are the one
 the old rule named: the *Elsewhere / Altrove* line on `about.html` (then
 `author.html`), and the byline in the footer, where the name itself is the link,
 written once per edition in `src/html/_byline.html` and
-`src/html/it/_byline.html` and rendered on all 180 pages by
+`src/html/it/_byline.html` and rendered on every page by
 `src/components/SiteFooter.astro` (§ The footer is written once, under the nav
 above). Two rules on those links. Each
 edition points at its own locale (`/en/`, `/it/`), because

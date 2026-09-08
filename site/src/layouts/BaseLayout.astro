@@ -31,6 +31,14 @@
 // In the source these pages come from, `<footer>` sits INSIDE `<main>`. The CSS
 // is written against that (`main > footer`), so the component renders inside
 // `<main>` too.
+//
+// `noindex` is the two 404 pages and nothing else. Cloudflare Pages serves a
+// not-found path with a 404 status, which already tells a crawler everything,
+// but the file also sits at an address of its own, `/404/` and `/it/404/`,
+// where it would answer 200 and be indexable like any page. `follow` stays on,
+// because the four links out of that page are the only useful thing about it.
+// The sitemap keeps both out separately, in `astro.config.mjs`: one guard for
+// what the site advertises, one for a crawler that arrives anyway.
 
 import SiteNav from '../components/SiteNav.astro';
 import SiteFooter from '../components/SiteFooter.astro';
@@ -45,9 +53,11 @@ interface Props {
   current?: string;
   /** `home` on the two landings, absent everywhere else. */
   mainClass?: string;
+  /** The two 404 pages, and nothing else: see the robots tag below. */
+  noindex?: boolean;
 }
 
-const { url, title, description, current, mainClass } = Astro.props;
+const { url, title, description, current, mainClass, noindex } = Astro.props;
 
 // The page, rendered, then cut once: its own closing paragraphs go to the
 // footer and everything else is the body.
@@ -245,8 +255,11 @@ const structured = kind === 'WebSite' ? [page, breadcrumbs, language] : [page, b
 <!-- `index, follow` is the default, so it is written here for the three that
      are NOT: an unbounded snippet, a large image preview, and no video cap.
      Without them a crawler picks conservative defaults and the share card and
-     the description are cropped by somebody else's guess. -->
-<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+     the description are cropped by somebody else's guess. The `noindex` branch
+     is the two 404 pages, and the block at the top of this file says why. -->
+<meta name="robots" content={noindex
+  ? 'noindex, follow'
+  : 'index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1'}>
 <meta property="og:type" content={ogType}>
 <meta property="og:site_name" content="Heroes">
 <meta property="og:title" content={title}>

@@ -1,0 +1,8 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { page } from '../../lib/figures.ts';
+import content from '../../html/it/404.html?raw';
+---
+<BaseLayout url="/it/404/" title={"Pagina non trovata"} description={"Questo indirizzo non esiste su questo sito. La pagina iniziale, la guida, gli esempi e tutto il linguaggio in un file sono a un link di distanza."} noindex>
+<Fragment set:html={page(content, 'site/src/html/it/404.html')} />
+</BaseLayout>

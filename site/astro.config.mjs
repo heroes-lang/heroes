@@ -1,7 +1,7 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
-import { readdirSync, statSync, unlinkSync } from 'node:fs';
+import { readdirSync, statSync, unlinkSync, renameSync, rmdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { assertEveryClaimVisited, claimsSummary } from './src/lib/claims.ts';
 
@@ -47,6 +47,43 @@ function withoutFinderDroppings() {
         };
         walk(dir.pathname);
         if (removed > 0) logger.info(`removed ${removed} .DS_Store from the output`);
+      },
+    },
+  };
+}
+
+// The Italian edition's own not-found page, moved to the one name its host
+// looks for.
+//
+// Cloudflare Pages, asked for a path that does not exist, walks up the
+// directory tree for the closest `404.html` and ends at `/404.html` (Pages
+// documentation, § Serving Pages). And with NO top-level `404.html` at all it
+// assumes a single-page application and answers every unknown path with `/`,
+// at status 200: measured against this project's own deployments on
+// 2026-09-08, where `/pagina-che-non-esiste/` returned 200 carrying the home
+// page, on the two deploys before this one as well as on the live site.
+//
+// Astro writes the top-level one as `dist/404.html` even under
+// `format: 'directory'`, which is the name Pages wants. It writes the nested
+// one as `dist/it/404/index.html`, which is a page at `/it/404/` and not a
+// not-found handler, so a reader who mistypes a path under `/it/` would get
+// the English page. This renames it, and takes the now-empty directory with
+// it: `/it/404/` was never an address anybody needs.
+function nestedNotFound() {
+  return {
+    name: 'heroes:nested-404',
+    hooks: {
+      'astro:build:done': ({ dir, logger }) => {
+        const nested = join(dir.pathname, 'it', '404', 'index.html');
+        if (!existsSync(nested)) {
+          throw new Error(
+            'the Italian 404 was not built: src/pages/it/404.astro is missing, ' +
+            'or Astro has changed where it writes a nested 404',
+          );
+        }
+        renameSync(nested, join(dir.pathname, 'it', '404.html'));
+        rmdirSync(join(dir.pathname, 'it', '404'));
+        logger.info('it/404/index.html -> it/404.html, the name Pages looks for');
       },
     },
   };
@@ -121,7 +158,15 @@ export default defineConfig({
   integrations: [
     claimsAudit(),
     withoutFinderDroppings(),
+    nestedNotFound(),
     sitemap({
+      // The two not-found pages are addresses, so Astro hands them to the
+      // sitemap like any other page, and a sitemap that lists them asks a
+      // crawler to index the page that says a page is missing. They carry
+      // `noindex` as well, in `BaseLayout.astro`, and the two guards are worth
+      // having separately: this one keeps them out of what we advertise, and
+      // that one answers a crawler that finds the address anyway.
+      filter: (page) => !/\/404\/?$/.test(new URL(page).pathname),
       serialize(item) {
         const url = new URL(item.url);
         item.links = alternates(url.pathname);
