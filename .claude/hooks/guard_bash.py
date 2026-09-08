@@ -66,9 +66,51 @@ def segments(command):
 
     A guard that only looks at the whole string is blind to
     `cd x && git add -A`, which is how these commands actually get typed.
+
+    **The split is quote-aware, since 2026-09-08.** It was a plain `re.split`
+    over the raw text, which cut inside quotes as happily as outside them, so
+    `echo "cd x && git commit -m y"` produced a segment reading
+    `git commit -m y"` and the guard read a QUOTED MENTION as a command. It cost
+    nothing while the rules only watched `git add -A`, a string nobody writes in
+    passing, and it fired the day a rule started watching `git commit`, which
+    documentation and test scripts write all the time. Same lesson as
+    `without_heredocs` above, one level up: data is not a command line.
     """
     text = without_heredocs(command)
-    return [s.strip() for s in re.split(r"&&|\|\||[;\n|]", text) if s.strip()]
+    out, buf, quote = [], [], None
+    i = 0
+    while i < len(text):
+        c = text[i]
+        if quote:
+            buf.append(c)
+            # Inside double quotes a backslash escapes the next character;
+            # inside single quotes it does not, which is why `'\''` closes.
+            if c == "\\" and quote == '"' and i + 1 < len(text):
+                i += 1
+                buf.append(text[i])
+            elif c == quote:
+                quote = None
+            i += 1
+            continue
+        if c in "'\"":
+            quote = c
+            buf.append(c)
+            i += 1
+            continue
+        if text.startswith("&&", i) or text.startswith("||", i):
+            out.append("".join(buf))
+            buf = []
+            i += 2
+            continue
+        if c in ";\n|":
+            out.append("".join(buf))
+            buf = []
+            i += 1
+            continue
+        buf.append(c)
+        i += 1
+    out.append("".join(buf))
+    return [s.strip() for s in out if s.strip()]
 
 
 def words(segment):
@@ -137,6 +179,24 @@ def verdict(command):
             return (
                 "refused: `git commit -a` stages files this conversation may "
                 "not have read. Stage by name, then commit. " + CONTRACT
+            )
+
+        # **A bare `git commit` takes the whole index, and naming the paths to
+        # `git add` limits nothing.** Measured on 2026-09-08, by doing it: a
+        # commit that named fourteen paths carried sixteen, the two extra being
+        # files a parallel session had staged in this shared checkout, and the
+        # commit body said in so many words that they were not in it
+        # (docs/contract/case-law.md CL-070). The rule above it, CL-041, asks
+        # for exactly what this prevents and its own procedure could not deliver
+        # it. The pathspec is the only thing that limits a commit, so this guard
+        # asks for the pathspec rather than for care.
+        if rest is not None and "--" not in rest:
+            return (
+                "refused: `git commit` with no `--` takes the WHOLE index, "
+                "including whatever a parallel session has staged in this "
+                "shared checkout. Naming the paths to `git add` does not limit "
+                "the commit; only the pathspec does. Write "
+                "`git commit -- <paths>`. " + CONTRACT + " (CL-070)"
             )
 
         rest = git_args(w, "stash")

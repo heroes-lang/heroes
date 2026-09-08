@@ -175,12 +175,14 @@ reproduce. Attribution is owed by whoever redistributes Heroes itself.
 
 ## Contributing
 
-**Issues and questions are welcome. Pull requests are not accepted.** This is one
-person learning compilers, on a deliberately unusual set of rules, and every line
-here goes through them: they are in `CLAUDE.md`, and the reason each one exists is
-in `design.md` or in a panel session. `CONTRIBUTING.md` says the whole policy,
-including what the licence lets you do anyway — Apache-2.0 grants the fork in
-writing, and that is not withdrawn by a repository that is not taking patches.
+**Issues and questions are welcome. Code is not, yet.** This is one person
+learning compilers, on a deliberately unusual set of rules, and every line here
+goes through them: they are in `CLAUDE.md`, and the reason each one exists is in
+`design.md` or in a panel session. Contributions are meant to open later, and
+`CONTRIBUTING.md` names the three conditions that have to be true first, so you
+can check them rather than wait. It also says what the licence lets you do
+meanwhile: Apache-2.0 grants the fork in writing, and a repository that is not
+yet taking patches does not take that back.
 
 <p align="center">
   <sub><a href="https://heroes-lang.org">heroes-lang.org</a> is this language's home, in

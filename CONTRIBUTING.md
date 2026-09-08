@@ -1,11 +1,13 @@
 # Contributing
 
-**Issues and questions are welcome. Pull requests are not accepted.**
+**Issues and questions are welcome. Code is not, yet.**
 
-That is the whole policy. The rest of this file is why, and what you can do
-instead, because a refusal with no reason reads as a door with no handle.
+Today this repository takes reports and questions, and not patches. Code
+contributions are meant to open later, and the rest of this file says why they
+are shut now and what has to be true before they are not, because a refusal with
+no reason reads as a door with no handle, and one with no date reads as a wall.
 
-## Why no pull requests
+## Why not code, yet
 
 This repository is one person learning compilers, and the way it is built is the
 point of it rather than a detail of it. Every line goes through a written
@@ -14,11 +16,35 @@ with differentiated inputs, recorded in `docs/panel/`; every decision is one
 dated line in `DESIGN-LOG.md`; every claim is measured in the session that writes
 it, or it says out loud that it is unmeasured. A patch arriving from outside that
 process cannot carry its own panel session, its own measurement or its own case
-law, and the honest options would be to merge it without them, which breaks the
-thing being demonstrated, or to redo it here, which wastes your afternoon.
+law, and the honest options today would be to merge it without them, which breaks
+the thing being demonstrated, or to redo it here, which wastes your afternoon.
 
-So the answer is no, and it is no for everybody, today. It is not a judgement of
-your patch, which nobody has read.
+So it is not a judgement of your patch, which nobody has read. It is that the
+process a patch would have to enter is still being written, in public, by the
+person writing the compiler.
+
+## What has to be true before code opens
+
+Stated so that it is a condition and not a mood, and so that you can check it
+yourself rather than wait to be told:
+
+- **The language stops moving under a patch.** While the version is below
+  `1.0.0` the surface still changes between minor versions, which means a patch
+  can be made stale by a decision it never heard about. The compatibility
+  paragraph that `1.0.0` owes is the same milestone that makes an outside patch
+  survivable.
+- **The process a change goes through is reachable from outside.** A design
+  change here needs a panel session and a design-log line; today both are things
+  that happen inside one working session, and neither has a shape somebody
+  outside can take part in.
+- **The rules a patch must satisfy are checkable before it is sent.** Most of
+  them already are, and the three suites in `README.md` are how: what is missing
+  is the part of the contract that lives in a session rather than in a test.
+
+None of the three has a date, and this file will say so plainly rather than
+inventing one. When they are met, this section is replaced by the shape a
+contribution takes, and the change is announced where everything else here is,
+in the build log at heroes-lang.org.
 
 ## What the licence lets you do anyway, and that is not withdrawn
 

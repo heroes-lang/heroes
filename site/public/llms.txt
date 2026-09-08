@@ -43,7 +43,7 @@ output and twenty principles printed by `heroes this`.
 
 ## Source
 
-- [Repository](https://github.com/heroes-lang/heroes): the compiler, specification and design records. Clone it, build with `clang -I runtime seed/heroes.c runtime/runtime.c -o heroes`, then run `./heroes run examples/gallery/00-first.hero`. Issues are welcome; pull requests are not accepted, and `CONTRIBUTING.md` says why.
+- [Repository](https://github.com/heroes-lang/heroes): the compiler, specification and design records. Clone it, build with `clang -I runtime seed/heroes.c runtime/runtime.c -o heroes`, then run `./heroes run examples/gallery/00-first.hero`. Issues are welcome; code contributions are not open yet, and `CONTRIBUTING.md` names the conditions that have to be met first.
 - [Example programs](https://heroes-lang.org/examples/): read directly from `examples/` when the site is built.
 
 ## Notes

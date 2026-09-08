@@ -89,6 +89,16 @@ never from the copy read at session start (CL-047). For a multi-anchor edit to a
 shared record: script the pairs, assert each anchor matches exactly once,
 dry-run, then apply.
 
+**A commit limits itself by PATHSPEC, never by what was added**:
+`git commit -- <paths>`. CLAUDE.md § Hard stops asks that a commit carry only
+this conversation's files, each named on the command line, and `git add <paths>`
+followed by a bare `git commit` does not do that: the bare commit takes the
+whole staging area, so anything a parallel session has staged rides along under
+this session's message. Found on 2026-09-08, when a commit that named fourteen
+paths carried sixteen and said in its own body that it had not. Read
+`git status` first as the hard stop says, and then let the pathspec, not the
+index, decide.
+
 **The repository pushes to `origin`, github.com/heroes-lang/heroes.** The old
 name redirects, and creating a repository there would kill the redirects
 permanently, so that name is never reused (CL-033).
