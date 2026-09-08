@@ -76,6 +76,29 @@ Every diagnostic carries three things: the place that is wrong, the other end of
 the story, and the repair. A fix tagged `certain` was worked out rather than
 guessed, so `heroes check --apply` can write it for you.
 
+## Five judges, and they are not shown the same thing
+
+Nothing enters the language without a sitting, and the five seats are handed
+deliberately different material, because a panel given one brief returns one
+opinion five times.
+
+| seat | what it is given | veto |
+|---|---|---|
+| compiler engineer | pointers into the live compiler, `selfhost/` and `runtime/`, and prices the work | yes |
+| FFI pragmatist | the C a real binding would need, and compiles it or shows why it cannot | yes |
+| spec warden | the real token count before and after, never an estimate | yes |
+| LLM ergonomist | **only `spec/heroes-spec.md` and sample programs**, never `design.md` and never this repository | yes |
+| historian | whatever it can source, and unsourced precedent is inadmissible | no |
+
+The ergonomist's blindness is the point: it is the seat that speaks for the
+reader the language is designed around, so it is kept from everything that would
+tell it what the answer is supposed to be, and its verdict is an experiment
+rather than an opinion. The historian advises and cannot veto, because precedent
+is a reason and not a permission.
+
+The briefs are in `.claude/agents/`, and every sitting is in `docs/panel/`:
+verdicts, the vetoes, and what lifted them.
+
 ## Status: self-hosting is reached, and the chain continues
 
 **The compiler compiles itself**, which is what this project calls v1
