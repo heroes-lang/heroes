@@ -66,12 +66,12 @@ jobs:
         working-directory: site
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
 
       # Node 22 rather than the newest: it is Astro's current LTS target and the
       # version the other site in this account builds under, so a break here is
       # a break in the site rather than in the runner's Node.
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
         with:
           node-version: 22
           cache: npm
@@ -104,12 +104,26 @@ jobs:
       #
       # `--branch=main` marks the upload as PRODUCTION, including when the run
       # was started by a tag rather than by a push to main.
+      #
+      # **Wrangler is installed by `npm ci` above and run from `node_modules`,
+      # never fetched here** (2026-09-08). This step said
+      # `npx --yes wrangler@4 pages deploy`, which downloads wrangler from the
+      # registry AT THIS POINT, unpinned past the major and unverified, and runs
+      # it with `CLOUDFLARE_API_TOKEN` already in its environment. Everything
+      # else about this job was built to keep that credential away from code
+      # nobody vouched for: the secret is on this step and not on the job, so
+      # `npm ci` and `npm run build` never see it. The one thing left with the
+      # token in hand was fetching a program over the network. It is now a
+      # dependency at an exact version, whose integrity hash the committed
+      # lockfile carries, installed in the step that has no secret, and merely
+      # EXECUTED here. The cost is 83 more packages in the build, none of which
+      # can reach the token either.
       - name: Deploy to Cloudflare Pages
         if: env.CF_DEPLOY == 'true'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          npx --yes wrangler@4 pages deploy dist \
+          ./node_modules/.bin/wrangler pages deploy dist \
             --project-name=heroes-lang-site \
             --branch=main

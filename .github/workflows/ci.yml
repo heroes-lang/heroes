@@ -228,7 +228,7 @@ jobs:
           ) }}
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
 
       # The two FFI examples bind real libraries: `examples/sqlite/` against the
       # SDK's own `sqlite3.h` with no shim, and `examples/curl/` against
@@ -709,7 +709,7 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           fetch-depth: 0
           fetch-tags: true
