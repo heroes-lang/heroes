@@ -108,7 +108,8 @@ Shadowing is a compile error: a `use` binds its name for the whole file, so noth
 - When two parameters in a signature share a type, named arguments are
   mandatory at the call site: `copy(from: a, to: b)`.
 - `x.f(y)` is sugar for `f(x, y)` (UFCS). There are no methods, no
-  inheritance, no overloading, no default values, no user variadics.
+  inheritance, no overloading, no default values, no user variadics, no
+  anonymous functions.
 - Mutable parameters are marked `@` in the signature and at the call site:
   `function advance(@l: Lex)` … `advance(@l)`. Semantics: copy in, copy
   out (copy-out always happens, including on early return and `?`). UFCS does
@@ -157,7 +158,7 @@ snake_case strings; read `e.code` and `e.msg`. No exceptions exist.
 | `.is_err()` | boolean test |
 
 Map access `m[k]` returns
-`V?` with code `missing_key`. An out-of-bounds index or slice
+`V?` with code `missing_key`, and `find` fails `not_found`. An out-of-bounds index or slice
 aborts, and so does a slice that splits a character; integer division by zero aborts; so does recursion too deep. `/` and `%` truncate
 toward zero, so `-7 / 3` is `-2` and `-7 % 3` is `-1`.
 
@@ -184,8 +185,9 @@ holds `xs`.
 Built-ins: `print(...)` · `len` · `push` · `slice(from:, to:)` (`to` excluded) ·
 `chars` · `keys` · `join(xs, sep)` · `repeat(s, n)` · `sort` (a number, `str` or `bool`, never a type parameter; a `nan` aborts) ·
 `to_f32` · `to_f64` · `to_str` · `to_i8` `to_i16` `to_i32` `to_i64` `to_u8` `to_u16`
-`to_u32` `to_u64` — and, written in
-Heroes: `map` · `filter` · `fold` · `find` · `any` · `all` · `range`.
+`to_u32` `to_u64` — and, written in Heroes: `map` · `filter`, keeping what
+the function accepts · `fold` · `find`, the first it accepts, or an error ·
+`any` · `all` · `range`.
 `print` writes its values with no
 separator and exactly one trailing newline, and takes the types this language
 renders as text: a number, `str` or `bool`. A float prints a point or

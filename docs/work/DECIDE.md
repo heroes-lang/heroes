@@ -23,35 +23,28 @@ Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
 *******************************************************************************
 **OPEN: 6**
 
-- [ ] **panel 119 finding** | should the spec's last 71 tokens buy the four higher-order signatures it never wrote, at +63? `map`'s is the only one there | `spec/heroes-spec.md:121` · `:188` · `selfhost/library_source.hero:69-108`
+- [ ] **panel 120** | ratify or overturn the verdict on the spec's higher-order silences: prose bought at +30, the type signatures refused, and the −35 removal priced and not taken | `docs/panel/120-the-signature-cannot-say-which-half-it-keeps.md`
 
-    **Origin:** the llm-ergonomist, panel 119, 2026-09-08, from a seat that reads the spec and nothing else and was asked about closures.
-    **The default the compiler is running on** is silence. The spec writes
-    `function map<A, B>(xs: [A], f: (function(A) -> B)) -> [B]` and then names
-    `filter`, `fold`, `find`, `any` and `all` as functions written in Heroes,
-    with no type for any of them. That seat had to invent `filter`'s to write
-    its task at all, and reported the invention as what gated **all three of
-    its tasks in all five arms** — ahead of anything closures would have
-    changed. Checked afterwards against the real declarations, its guess for
-    `filter` was exactly right and **`find`'s `-> A?` is the one no reader can
-    derive**.
-    **Measured 2026-09-08**: the four missing signatures, compressed, cost
-    **+63** of the **71** free, so they fit with 8 to spare — and a closure
-    clause that states its rules costs +118, so the two never both fit. This is
-    the rival claim on the same budget, and panel 119 recorded it rather than
-    spending it, because `spec/` is panel-gated and 119 was convened on
-    closures.
-    **A second half, cheaper to state and possibly not wanted**: `<` refuses
-    `str` while `sort` orders `str`, so a program sorting rows by a column
-    hand-writes a comparison beside a built-in that already knows one. That
-    seat predicts the modal first-try failure of its third task, in every arm,
-    is `a < b` on two `str`.
-    **Recommendation: buy the four signatures, in their own sitting, and leave
-    the `<`-versus-`sort` asymmetry alone.** The signatures are a silence about
-    what the language already has, which is the cheapest kind of token to spend
-    and the kind §1.1 is about; the asymmetry is a feature request wearing a
-    diagnostic's clothes, and defect 018 repairs the part of it that is
-    actually broken for free.
+    **Origin:** the sitting of 2026-09-08, opened by author instruction mid-step — four seats, provisional pending this answer.
+    **The default the compiler is running on** is the resolution as adopted and
+    landed: R1 states *no anonymous functions* in the enumeration of absences at
+    `spec:110-111`; R2 puts `filter`'s polarity and `find`'s firstness into the
+    `Built-ins:` sentence in prose; R3 names `not_found` beside `missing_key`;
+    R4 refuses the type signatures; R5 keeps the mandatory-named-argument
+    bullet. Total **+30**, the spec at **3995**, **40** tokens free.
+    **The finding that replaced the whole ballot**, the historian's: a signature
+    is **byte-identical for keep and for reject**, so every draft on the ballot
+    bought the loud class and nothing of the silent one. Prose closes it at less
+    than half the price.
+    **What conservative would have been**: refuse, the spec stays silent, 70
+    tokens free and no ledger row. Two seats argued against it.
+    **Recommendation: ratify.** No seat vetoed the adopted resolution; the two
+    facts bought are the only two in the sitting whose wrong guess compiles and
+    lies; and R1 is what panel 119's refusal of closures owes a reader, since
+    that refusal lives in design.md and design.md is not what a reader gets.
+    The one part the author may want to overturn is R5: the removal would have
+    left the spec smaller than it started, and it was refused on an ergonomic
+    argument rather than a measured one.
 
 - [ ] **panel 119** | ratify or overturn the verdict on Part 7 items 1 and 12: closures REFUSED with a Part 6 row, inline blocks EXAMINED AND UNPLACED, and three design.md sentences corrected | `docs/panel/119-the-warning-that-does-not-fit.md`
 
