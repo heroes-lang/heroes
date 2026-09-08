@@ -28,7 +28,7 @@ per item, `- [ ] **<origin>** | <the question>`, then the body indented four
 spaces. Nothing lives outside the two banners.
 
 *******************************************************************************
-**OPEN: 327**
+**OPEN: 331**
 
 - [ ] **M-discard-refusal step 3** | Three repairs of one refused line print three different answers. Predict them before you look, then say which of the three a `certain` fix could ever have been | `docs/panel/118` R3 · `selfhost/value_errors.hero` `discarded_failure` | this is the whole argument for shipping no automatic repair, and it is two commands long
 
@@ -1680,5 +1680,25 @@ spaces. Nothing lives outside the two banners.
 
     **Where to look:** selfhost/check/freer.hero § mark_refusals, refusal_for_mark · selfhost/emit/extern_probe.hero
     **Why it matters:** a probe is emitted per `extern`, so a name nobody declares has no probe — the shape of the instrument decides what it can never see
+
+- [ ] **M-closures-verdict step 1** | `hero_desc_func` in `runtime/parts/desc.c` declares a size, a copy function and a drop function. Read those three fields and answer: how many bytes does a function value occupy, what does its copy function do, and what does its drop function do. Then say what each of the three would have to become if a function value could carry two captured `i64`s
+
+    **Where to look:** runtime/parts/desc.c § hero_desc_func · runtime/heroes_runtime.h § HeroFn
+    **Why it matters:** the descriptor is the one place the runtime states what a value IS, and a panel refused a feature because that statement and the feature disagreed by 24 bytes
+
+- [ ] **M-closures-verdict step 1** | `--dump-ir` on a whole program prints `funcref` once for every place a function is used as a value. Run it on `examples/calculator/main.hero` and count them. Then run it on `selfhost/main.hero` and count them, and explain why the second number is not the compiler's total
+
+    **Where to look:** selfhost/ir/print.hero § the .func_ref arm · selfhost/ir/emissions.hero
+    **Why it matters:** the second number is 1 and the compiler has 190 modules — the reason is separate compilation, and mistaking it for a total is how a measurement goes wrong
+
+- [ ] **M-closures-verdict step 1** | Three of the compiler's four production function values are in `selfhost/measure/pieces.hero`. Read `run_of` and the three predicates it is handed, and say what a single function taking a `kind` parameter buys over three near-identical loops. Then say which of the three predicates a closure would delete, and why the answer is none
+
+    **Where to look:** selfhost/measure/pieces.hero § run_of, is_letter, is_digit, is_other
+    **Why it matters:** §1.7's test is subtraction, and a feature that deletes nothing has to earn its place some other way
+
+- [ ] **M-closures-verdict step 1** | `heroes check` refuses a comparison of two `str` with a message naming two types, while `ops.hero` accepts ten. Write the four-line program that provokes it, then find the three places one string is passed to `value_errors.bad_operand`, and say which of the three fires for `-"x"`
+
+    **Where to look:** selfhost/check/ops.hero:81-90, :131, :168 · docs/work/DEFECTS.md 018
+    **Why it matters:** errors are a deliverable here, and this one tells a reader holding a `u8` to convert a value that needed no conversion
 
 *******************************************************************************

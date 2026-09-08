@@ -24,7 +24,7 @@ with `**Origin:**` and its date. Nothing lives outside the two banners —
 Format: `- [ ] **M-<milestone>** | <what, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 43**
+**OPEN: 42**
 
 - [ ] **M-reflection-verdict** | panel 117's sixth option: give `assert` both sides for an aggregate by walking to the first DIFFERING LEAF and naming the field, instead of rendering the value | `docs/panel/117-both-sides-of-an-assert-when-a-side-is-an-aggregate.md` · `selfhost/emit/structural.hero` · `runtime/parts/array.c`
 
@@ -455,29 +455,6 @@ Format: `- [ ] **M-<milestone>** | <what, in one line> | <where to look>`
 
     **Why it matters:** a document that omits what shipped briefs the next
     sitting wrong.
-
-- [ ] **M-closures-verdict** | the count the sitting is owed before it sits | `design.md` Part 7 items 1, 12 · `docs/panel/013` · `selfhost/emit/ctype.hero:375-380`
-
-    **Origin:** author instruction 2026-09-03, scheduled out of the reorder
-    session, `DESIGN-LOG.md:539`.
-
-    **Part 8 wart 1 says the one-line helpers exist mostly to be passed around,
-    and nobody has counted them.** Owed at the opening, over `selfhost/` and
-    `examples/`: the top-level functions of one statement that appear as a call
-    argument, by name — the number the ergonomist's seat argues from and the
-    number §1.7's subtraction test needs. Measured the night it was scheduled,
-    and true today: `selfhost/emit/ctype.hero:375-380` emits a function value as
-    a bare C function pointer *"because v1 has no closures"*,
-    `selfhost/check/ffi.hero:45` refuses `.function_ty` in every extern
-    position, and the watch-list condition of panel 013
-    (`docs/panel/013-function-type-marker.md:185-189`) says a capturing closure
-    must be told apart from a capture-free one at the boundary. Spec headroom
-    that night: **378** (`heroes measure`, 3718 of 4096).
-
-    **Where to look also:** `design.md` Part 8 wart 1 ·
-    `selfhost/check/ffi.hero:45`.
-    **Why it matters:** a sitting that rules on a form nobody counted rules on a
-    feeling.
 
 - [ ] **M-reflection-verdict** | the witnesses, re-measured at the opening, plus the author's annotation question | `examples/json/` · `design.md` Part 6 · `docs/panel/018`
 

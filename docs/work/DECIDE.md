@@ -21,7 +21,35 @@ lives outside the two banners: `records/lists` is the executor of that.
 Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 4**
+**OPEN: 5**
+
+- [ ] **panel 119** | ratify or overturn the verdict on Part 7 items 1 and 12: closures REFUSED with a Part 6 row, inline blocks EXAMINED AND UNPLACED, and three design.md sentences corrected | `docs/panel/119-the-warning-that-does-not-fit.md`
+
+    **Origin:** the sitting of 2026-09-08, M-closures-verdict step 1 — full panel, five seats, provisional pending this answer.
+    **The default the compiler is running on** is the resolution as adopted:
+    R1 refuses closures with capture on cost alone, R2 gives the row a falsifier
+    that deliberately does NOT rest on capture being hazardous, R4 names the
+    capture-free narrowing as the form that returns on a measured Part 11
+    effect, R5 puts inline blocks in `comptime`'s *unplaced* shape with three
+    joint return conditions, and R6 corrects *"~150 lines"*, *"~60 spec
+    tokens"* and *"no refcount interaction"* in design.md.
+    **The measurements that decided it**, all 2026-09-08: 282 match arms in 74
+    of 190 modules and five DECIDED ceilings breached; **+118** spec tokens
+    against **71** free, with six removals priced and none admissible; four
+    compiled corruption classes, one of them clang-clean under all fourteen
+    flags and **exit 139** at run time; and the subtraction test worth **21
+    declarations, all in example programs, none in the compiler**.
+    **What conservative would have been** is in the file's own section: option
+    F for both, a dated deferral, cheaper by two documents and objected to by
+    two seats — the warden because a dated condition is the mechanism §1.6 names
+    as the one the record shows failing, the ffi seat because it leaves three
+    pieces of prose reading as true when they are not.
+    **Recommendation: ratify.** Three seats vetoed the feature and the two that
+    compile both approved the refusal; the historian found the refusal is a
+    mainstream position under this language's exact constraints, four languages
+    in writing and one of them self-hosting since 1988. The one thing the author
+    may want to overturn is R5: putting inline blocks *unplaced* rather than
+    deferring them costs a design.md paragraph that a deferral would not.
 
 - [ ] **panel 118** | ratify or overturn the resolution on `_ =` and a fallible: three positions closed, no `certain` fix, and the deliberate drop paid for by a narrow emitter relaxation rather than a new built-in | `docs/panel/118-the-missing-word-was-a-dead-variable.md`
 
