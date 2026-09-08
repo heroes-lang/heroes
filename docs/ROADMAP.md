@@ -33,15 +33,15 @@ with what each one measured in the git history and in `DESIGN-LOG.md`):
 
 | | |
 |---|---|
-| **Current milestone** | **M-closures-verdict** — **OPEN**, row 40: the ruling on Part 7 items 1 and 12, closures and inline blocks. A decision and not a feature |
-| **Last closed** | **M-discard-refusal**, 2026-09-08, tag `m-discard-refusal` ([038](journal/038-discard-refusal.md)) — four steps, one sitting whose adopted resolution its own measurements overturned twice · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
-| Milestones closed | **39** of 60 · **39** tags |
-| The compiler | **55,361** lines of Heroes in **190** modules · the seed **752,025** lines of C · runtime ABI **21**, unmoved: a refusal needs no runtime entry point |
-| The spec | **3965** of a hard 4096, and the number to spend against is the check's: the FFI floor mortgages 60, so the spec plus the floor is **4025** and the suite goes red at 4096 — `heroes measure` says so itself since defect 017 closed today |
-| Records | sittings **116** · journals **39** · examples **118** files, **545** `test` blocks · open defects **0** · mutation: `drop-question` **236 of 236 killed**, `--permissive` 193, so **43** are caught only by the thesis |
-| Waiting on the author | **4** decisions, all `panel 118` · **43** in `SCHEDULED.md` · **0** in `DEFECTS.md` · **327** in `LEARN.md` (never a gate) · an outstanding veto (`docs/panel/101` R3) · **the repository's settings** |
+| **Current milestone** | **M-interpolation-verdict** — row 41: the ruling on design.md Part 7 item 7, string interpolation. A decision and not a feature, and it inherits M-closures-verdict's shape |
+| **Last closed** | **M-closures-verdict**, 2026-09-08, tag `m-closures-verdict` ([039](journal/039-closures-verdict.md)) — three steps, two sittings, the first Part 7 item ever judged and it was refused · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
+| Milestones closed | **40** of 60 · **41** tags |
+| The compiler | **55,414** lines of Heroes in **190** modules · the seed **752,025** lines of C · runtime ABI **21**, unmoved: a refusal needs no runtime entry point |
+| The spec | **3995** of a hard 4096, and the number to spend against is the check's: `SPEC_TOKENS + FFI_FLOOR >= CEILING` is red, so the spec's own ceiling is **4035** and **40** tokens are free — the 71 written on 2026-09-08 was one too many, an excluded bound read as included |
+| Records | sittings **118** · journals **40** · examples **118** files, **545** `test` blocks · open defects **0** · mutation: `drop-question` **236 of 236 killed**, `--permissive` 193, so **43** are caught only by the thesis |
+| Waiting on the author | **7** decisions — 4 `panel 118`, `panel 119`, `panel 120`, and the instrument for a `guess` fix's text · **42** in `SCHEDULED.md` · **0** in `DEFECTS.md` · **335** in `LEARN.md` (never a gate) · an outstanding veto (`docs/panel/101` R3) · **o200k**, whose own 2026-08-26 trigger is met: the spread is 78 and the headroom is 40 |
 
-**Re-measured 2026-09-08 at the close, not carried**: the three suites are **591**, **1624** and **122**, all green, and the fixpoint holds byte for byte. The net's wall clock is discarded — `real` 736s against `user`+`sys` of 454. Least room: `check/walk.hero` at **1697 of a decided 1700**, and `selfhost/check/builtins.hero` at **374 of 374**, which is why the `ignore` built-in is queued rather than refused.
+**Re-measured 2026-09-08 at the close, not carried**: the three suites are **591**, **1632** and **122**, all green against a compiler rebuilt from `selfhost/` in 44.89 s rather than the seed binary. Least room: `check/walk.hero` at **1697 of a decided 1700**, which is why defect 021 shipped the loud fallback instead of threading the callee's letters, and `selfhost/check/builtins.hero` at **374 of 374**.
 
 ---
 
@@ -151,8 +151,8 @@ and why one overtook another are under the table, in § Who scheduled what.
 | 37 | **M-declared-freer** | done 2026-09-07 | `m-declared-freer` | [036](journal/036-declared-freer.md) | `owned <C function>`: the string C hands you is freed by the name its own declaration gives · **§1.12**
 | 38 | **M-open-repository** | done 2026-09-08 | `m-open-repository` | [037](journal/037-open-repository.md) | the repository opens, and every page that says it is shut stops saying so · CLAUDE.md §14
 | 39 | **M-discard-refusal** | done 2026-09-08 | `m-discard-refusal` | [038](journal/038-discard-refusal.md) | `_ =` on a fallible value becomes a compile error, in two positions and not three · **§1.1**
-| 40 | **M-closures-verdict** | **OPEN** | — | — | the ruling on Part 7 items 1 and 12, closures and inline blocks — a decision, not a feature |
-| 41 | **M-interpolation-verdict** | scheduled | — | — | the ruling on design.md Part 7 item 7, string interpolation — a decision, not a feature |
+| 40 | **M-closures-verdict** | done 2026-09-08 | `m-closures-verdict` | [039](journal/039-closures-verdict.md) | the ruling on Part 7 items 1 and 12: both refused, closures to Part 6 and inline blocks left unplaced · **§1.1**
+| 41 | **M-interpolation-verdict** | **OPEN** | — | — | the ruling on design.md Part 7 item 7, string interpolation — a decision, not a feature |
 | 42 | **M-reflection-verdict** | scheduled | — | — | the ruling on reflection — at run time, and as compile-time derivation over a record's fields — and, since 2026-09-06, on a general annotation mechanism · a decision, not a feature |
 | 43 | **M-deferral-ledger** | scheduled | — | — | every Part 7 item with no milestone gets a dated verdict or a return condition |
 | 44 | **M-check-completeness** | scheduled | — | — | what `heroes check` accepts, `heroes build` compiles — through a generic too · scheduled, no warrant
@@ -1018,51 +1018,42 @@ introduced `_ = os::remove(path)` as *the* explicit way to ignore an error. Zig
 ships the rule this milestone adopted and has not retreated from it. Across
 seventeen languages searched, none banned the silent drop with no valve at all.
 
-### M-closures-verdict — the ruling on closures and inline blocks
+### M-closures-verdict — CLOSED 2026-09-08, and what a later milestone must honour
 
-**Scheduled by author instruction 2026-09-03** (§ Who scheduled what), and what it
-delivers is a **decision**, not a feature — the same shape as
-M-interpolation-verdict, and for the same reason: the milestone must be able to
-close with a refusal.
+The retrospective is [039](journal/039-closures-verdict.md) and the reasoning is
+`docs/panel/119-the-warning-that-does-not-fit.md`. What stays here is only what
+binds work that has not happened yet.
 
-**What it rules on.** design.md Part 7 item 1, *"Closures — v1.5, immediately
-after the first running program"* (`design.md:2441-2443`), and item 12, inline
-blocks, *"likely lands together with closures"* (`:2503-2507`). The first running
-program was M-scalars-run, 2026-08-04; the fixpoint that makes Part 7 admissible
-at all was 2026-08-18. Neither item is on the closure list — the compiler
-self-hosts with named functions — so the whole warrant is Principle 0's second
-branch: a measured Part 11 effect, or a §1 argument the panel accepts.
+**Both items are refused and neither is on Part 7 any more.** Closures with
+capture are a **Part 6 row**, refused on cost alone, and the row carries the
+falsifier: a program on the §1.0 closure list, or a measured Part 11 effect, that
+a named top-level function cannot express — *together with* a representation,
+compiled, in which a capturing closure has one type per signature, lets the
+ownership pass decide release from the type alone with no runtime descriptor
+pointer, and keeps eight bytes at every `extern` position. Inline blocks are
+**examined and deliberately unplaced**, in `comptime`'s shape, with three joint
+return conditions: a caller-side marker that makes the construct local, a ruling
+on `return`/`break`/`continue` crossing the block boundary, and the inlining pass
+priced against `selfhost/ir/mono.hero`'s 368 code lines. **Part 7's numbers 1 and
+12 are struck and never reused**, because they are cited across the record.
 
-**What the seats are handed, each measured on the day.** Part 8 wart 1
-(`design.md:2608-2613`): the one-line helpers that exist to be passed around,
-counted with a grep over `selfhost/` and `examples/` at the opening — that number
-was not taken the night this was scheduled and is not guessed here. The
-condition panel 013's ffi-pragmatist left
-(`docs/panel/013-function-type-marker.md:185-189`, which is where the sitting
-itself wrote it; the watch list that also carried it was retired 2026-09-04):
-a capturing closure is a record plus a
-pointer, so the type system must distinguish capture-free at the C boundary —
-against `selfhost/emit/ctype.hero:375-380`, which today emits a function value as
-a bare C function pointer *"because v1 has no closures"*, and that is what makes
-`qsort` and every raylib callback expressible. The M-web-framework entry below,
-which plans middleware *"as a chain of functions, because v1 has no closures"*.
-And Part 7's own price: capture by copy, which value semantics makes *"a record
-plus a function pointer"*.
+**What this binds downstream, and M-web-framework is the one that has to read
+it.** That entry planned middleware *"as a chain of functions, because v1 has no
+closures — or in whatever shape M-closures-verdict rules"*. It ruled: the shape is
+named top-level functions, and the framework's own question — whether a framework
+with no closures reaches Echo's level or collapses into `net/http` itself — is
+now answerable rather than contingent. The ffi seat's prediction is scored there:
+**a middleware chain over C sockets needs zero closures at the boundary**, because
+every callback it would bind carries a `void *` context (41 of 43 in `sqlite3.h`),
+and raylib's ten carry none at all while two use the callback as an **identity**
+for removal, which a struct-valued closure does not have.
 
-**Three questions, in the order they bite.** Whether a closure may capture at all,
-or only by copy (Part 7 fixes copy); whether a capturing value may cross the FFI
-(panel 013's condition says the type must know); and what the form deletes, since
-§1.7's test is subtraction. **A refusal costs the same as a feature** (CLAUDE.md
-§12): if the answer is no, a Part 6 row with its falsifier, and item 12 follows
-it.
-
-**Why it stands here, before the packages.** The packages and the framework are
-written in Heroes against the spec, and they are the largest body of Heroes this
-project will write after the compiler. A form that lands after them is a form
-they were written without. That is the argument M-interpolation-verdict's entry
-made for the books, applied to the code — and it is why all four rulings sit at
-rows 35–38. Full five seats: the form has surface, a spec cost and at least one
-diagnostic class. Headroom the evening it was scheduled: **378** tokens.
+**And the capture-free narrowing is the form that returns**, named in the Part 6
+row so that whoever takes it re-derives nothing: a generated name must come from
+**module plus source-order index** and never from the type, because
+`selfhost/emit/synth.hero`'s `content_key` renders the type and two unnamed
+functions of one type would collide; and `ziglang/zig#1717` accepted that exact
+proposal in 2020 and rejected it in 2023.
 
 ### M-interpolation-verdict — the ruling on string interpolation
 
@@ -1493,9 +1484,11 @@ composes M-core-packages' packages in Go's and Echo's shape, everything explicit
 routes as a table of function values, `(function(Request) -> Response)` keyed by
 method and path — top-level functions are values (`spec:112-117`); records for
 request and response; middleware as a chain of functions, because v1 has no
-closures (`selfhost/emit/ctype.hero:375-380`) — or in whatever shape
-M-closures-verdict rules, which the chain puts first so that this sentence is decided
-before the framework is written; templates from `html/template`,
+closures (`selfhost/emit/ctype.hero:375-380`) — and **that is now the ruling and
+not a placeholder**: M-closures-verdict refused them on 2026-09-08, so the chain
+of named top-level functions is the shape, and the ffi seat's prediction is scored
+here (a middleware chain over C sockets needs zero closures at the boundary,
+because every callback it binds carries a `void *` context); templates from `html/template`,
 bodies from `encoding/json`, rows from `database/sql`. No metaprogramming and no
 dynamic dispatch: the Rails and Django shape rests on Part 6's own rows
 (`design.md:2382-2404`), and `design.md:2395` says why — *"this is why LLMs err

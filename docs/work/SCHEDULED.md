@@ -24,7 +24,7 @@ with `**Origin:**` and its date. Nothing lives outside the two banners —
 Format: `- [ ] **M-<milestone>** | <what, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 42**
+**OPEN: 43**
 
 - [ ] **M-reflection-verdict** | panel 117's sixth option: give `assert` both sides for an aggregate by walking to the first DIFFERING LEAF and naming the field, instead of rendering the value | `docs/panel/117-both-sides-of-an-assert-when-a-side-is-an-aggregate.md` · `selfhost/emit/structural.hero` · `runtime/parts/array.c`
 
@@ -456,6 +456,36 @@ Format: `- [ ] **M-<milestone>** | <what, in one line> | <where to look>`
     **Why it matters:** a document that omits what shipped briefs the next
     sitting wrong.
 
+- [ ] **M-check-completeness** | nothing watches the TEXT of a `guess` fix, and one shipped a name the language had withdrawn | `tests/harness/suite_fixes.hero` · `tests/harness/suite_golden.hero:160-171` · `selfhost/value_errors.hero:32`
+
+    **Origin:** found 2026-09-08 while writing defect 019's golden case at M-closures-verdict step 3 — the case would not pin the thing the defect was. **Filed in `DECIDE.md` first and moved here the same day**: there is no question to answer, since nobody would argue that a diagnostic should recommend a name the language does not have. It is work, and work with a milestone belongs here.
+
+    **What is unwatched, measured**: `.expected` compares the stderr of
+    `check --brief`, which carries one line per diagnostic and **no `fix (…)`
+    line**; `suite_fixes` tests only `certain` fixes, through `.fixed`, because
+    §8 makes only those machine-applicable. So the four cases written at that
+    step pin every message and not one fix title, and `mixed_arithmetic`
+    recommended `fit_<width>(x)` for as long as the family had been gone — the
+    only reason it was noticed is that a reader ran the compiler's own advice.
+    A `guess` fix is *more* likely to be read by a human than a `certain` one,
+    which is applied without being read.
+
+    **Why this milestone.** A `certain` fix that does not compile and a `guess`
+    fix that names nothing are one family: the compiler's own advice must be
+    sound, which is this row's subject applied to the repair rather than to the
+    program.
+
+    **The shape, and the reason it is not a one-liner**: assert that every
+    backticked identifier in a fix title is a name the language has. The
+    difficulty is telling a name from a fragment — titles carry `` `from: ` ``
+    and `` `to_i64(x)` `` alike — so a hasty rule either misses the class or
+    cries wolf, and the alternative of pinning fix text in `.expected` makes
+    every golden churn whenever a wording improves, which is why the compact
+    form exists.
+    **Why it matters:** the compiler telling a reader to write something that
+    does not exist is the same failure as a diagnostic that lies, and this is
+    the one kind no instrument here can see.
+
 - [ ] **M-reflection-verdict** | the witnesses, re-measured at the opening, plus the author's annotation question | `examples/json/` · `design.md` Part 6 · `docs/panel/018`
 
     **Origin:** author instruction 2026-09-03, the author's own example;
@@ -496,7 +526,9 @@ Format: `- [ ] **M-<milestone>** | <what, in one line> | <where to look>`
     headroom **225**. The system marks the compiler already reads — six
     contextual words in `selfhost/parse/` — are M-core-packages' question (vii),
     and a Python decorator is M-closures-verdict's; both named, neither judged
-    here.
+    here — and since 2026-09-08 that half is **answered**: closures are refused,
+    so a decorator in Python's sense is not buildable and this sitting's question
+    (iii) is about tags alone.
 
     **Where to look also:** `design.md` Part 6 (`:2395`, `:2406-2428`), `:217`,
     `:1953` · `docs/panel/039` § Appended 2026-09-04 (row C4) ·
@@ -521,7 +553,9 @@ Format: `- [ ] **M-<milestone>** | <what, in one line> | <where to look>`
     Each gets one sitting, in this order, and one of three dated verdicts:
     enters, refused with its falsifier (CLAUDE.md §12), or deferred with a
     return condition written as a falsifiable claim. Not on this list, because
-    they have homes: items 1 and 12 (M-closures-verdict), 7
+    they have homes: items 1 and 12 (**M-closures-verdict, both refused
+    2026-09-08** — 1 to Part 6, 12 to the unplaced paragraph, so neither is on
+    Part 7 for this ledger to date), 7
     (M-interpolation-verdict), 10 and conditional compilation
     (M-core-packages' sitting, questions v and vi), 13 (M-isolated-threads), 15
     (M-qbe-backend).

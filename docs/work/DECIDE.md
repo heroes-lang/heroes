@@ -21,29 +21,7 @@ lives outside the two banners: `records/lists` is the executor of that.
 Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 7**
-
-- [ ] **defect 019 finding** | nothing in this project watches the TEXT of a `guess` fix, which is how one shipped a name the language had withdrawn | `tests/harness/suite_fixes.hero` · `tests/harness/suite_golden.hero:160-171` · `selfhost/value_errors.hero:32`
-
-    **Origin:** found 2026-09-08 while writing defect 019's golden case, M-closures-verdict step 3 — the case would not pin the thing the defect was.
-    **The default the compiler is running on** is that a `guess` fix's wording is
-    unchecked. `.expected` compares the stderr of `check --brief`, which carries
-    one line per diagnostic and **not** the `fix (…)` line; `suite_fixes` tests
-    only `certain` fixes, through `.fixed`, because §8 makes only those
-    machine-applicable. So the four cases written today pin every message and
-    not one fix title.
-    **What that cost, measured**: `mixed_arithmetic` recommended
-    `fit_<width>(x)` for as long as the family had been gone, and the only
-    reason it was ever noticed is that a reader ran the compiler's own advice.
-    A `guess` fix is *more* likely to be read by a human than a `certain` one,
-    which is applied without being read.
-    **Recommendation: assert that every backticked identifier in a fix title is
-    a name the language has.** `inventory.index_of` already answers that for a
-    built-in, so the check is small and it closes the class rather than the
-    witness; the alternative — pinning fix text in `.expected` — makes every
-    golden churn whenever a wording improves, which is the reason the compact
-    form exists. It is a new harness check and therefore its own step, not a
-    line snuck into a repair.
+**OPEN: 6**
 
 - [ ] **panel 120** | ratify or overturn the verdict on the spec's higher-order silences: prose bought at +30, the type signatures refused, and the −35 removal priced and not taken | `docs/panel/120-the-signature-cannot-say-which-half-it-keeps.md`
 
@@ -80,7 +58,7 @@ Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
     tokens"* and *"no refcount interaction"* in design.md.
     **The measurements that decided it**, all 2026-09-08: 282 match arms in 74
     of 190 modules and five DECIDED ceilings breached; **+118** spec tokens
-    against **71** free, with six removals priced and none admissible; four
+    against **70** free (the sitting's own 71 was corrected by panel 120 the same day), with six removals priced and none admissible; four
     compiled corruption classes, one of them clang-clean under all fourteen
     flags and **exit 139** at run time; and the subtraction test worth **21
     declarations, all in example programs, none in the compiler**.
