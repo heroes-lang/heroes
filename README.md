@@ -2,7 +2,7 @@
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/assets/banner-dark.svg">
     <source media="(prefers-color-scheme: light)" srcset="docs/assets/banner-light.svg">
-    <img src="docs/assets/banner-light.svg" alt="Heroes, a compiled programming language.">
+    <img src="docs/assets/banner-light.svg" alt="Heroes, a simple programming language.">
   </picture>
 </p>
 
