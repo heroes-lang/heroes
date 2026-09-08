@@ -33,6 +33,24 @@ that the wrong program does not compile, and the diagnostic arrives with the
 repair already written. The bet is stated as a cost formula and measured rather
 than asserted; where the measurement is missing, this file says so.
 
+## Why this exists
+
+**A book came first.** *Heroes of code* is a history of programming languages,
+written as one night's journey through the rooms where they were made: Bletchley
+Park, MIT, Zurich, Bell Labs, Oslo, Silicon Valley, and the people who invented
+the way we talk to machines.
+
+I finished it and something was missing. I had spent all that time with people
+who built languages, and I had never built one. Writing about them and stopping
+there felt like the wrong way to leave it, so I tried. I had never written a
+compiler before this one, and attempting what someone attempted is the only way
+I know to learn from them properly.
+
+That is what this repository is: a piece of work made out of respect for the
+people it learned from, and the only thank-you I knew how to write. The name
+comes from the book, and so does the bolt, and so does the historian's seat on
+the design panel.
+
 ```
 function main()
     scores: {str: i64} = {"ziggy": 12, "aladdin": 9}
@@ -58,40 +76,19 @@ Every diagnostic carries three things: the place that is wrong, the other end of
 the story, and the repair. A fix tagged `certain` was worked out rather than
 guessed, so `heroes check --apply` can write it for you.
 
-## Why this exists
-
-<a href="https://www.amazon.it/Heroes-code-journey-programming-languages/dp/B0HHLBWWZH/"><img src="site/public/images/book/cover-en.webp" alt="Heroes of code, front cover" width="132" align="right"></a>
-
-**The book came first.** *Heroes of code* is a history of programming languages,
-written as one night's journey through the rooms where they were made: Bletchley
-Park, MIT, Zurich, Bell Labs, Oslo, Silicon Valley, and the people who invented
-the way we talk to machines.
-
-I finished it and something was missing. I had spent all that time with people
-who built languages, and I had never built one. Writing about them and stopping
-there felt like the wrong way to leave it, so I tried. I had never written a
-compiler before this one, and attempting what someone attempted is the only way
-I know to learn from them properly.
-
-That is what this repository is: a piece of work made out of respect for the
-people it learned from, and the only thank-you I knew how to write. The name
-comes from the book, and so does the bolt, and so does the historian's seat on
-the design panel.
-
-**Buying the book is also how to support this.** No code contributions are
-accepted here yet, and nobody is asked for money, so if you want the language to
-keep going, a copy is the one thing that funds the time. Published on Amazon, in
-[English](https://www.amazon.it/Heroes-code-journey-programming-languages/dp/B0HHLBWWZH/)
-and in
-[Italian](https://www.amazon.it/Gli-eroi-del-codice-programmazione/dp/B0HHL2YQ1S/).
-
 ## Status: self-hosting is reached, and the chain continues
 
-**The compiler compiles itself.** That is what this project calls v1
-(design.md §1.0), and it was reached at M-selfhost-fixpoint on 2026-08-18:
-`selfhost/` is this compiler written in Heroes, and the C it emits for its own
-source is `seed/heroes.c`, byte for byte. The version number is a different
-thing: `heroes --version` says which release you hold, releases are tagged
+**The compiler compiles itself**, which is what this project calls v1
+(design.md §1.0). `selfhost/` is this compiler written in Heroes, and the C it
+emits for its own source is `seed/heroes.c`, byte for byte. Two commands check
+that, and `cmp` printing nothing is the whole proof:
+
+```sh
+./heroes build selfhost/main.hero --emit-c -o /tmp/self.c
+cmp seed/heroes.c /tmp/self.c
+```
+
+The version number is a different thing: `heroes --version` says which release you hold, releases are tagged
 `vX.Y.Z` and listed under
 [Releases](https://github.com/heroes-lang/heroes/releases), and the number stays
 below `1.0.0` until a compatibility promise is written. What `0.x` promises until
@@ -108,8 +105,8 @@ versions, and a patch version changes no sentence of the spec.**
 
 **More than half the chain is closed.** Which milestone is in flight, and how
 many stand behind it, is `docs/ROADMAP.md` § Where we are, one place re-measured
-at every close rather than a number here that goes quietly stale. The acceptance
-program still runs: a calculator with seven passing tests, across four modules.
+at every close rather than a number here that goes quietly stale. The program that has to keep
+working is a calculator, spread over four modules, with its own tests.
 
 | working today | not yet |
 |---|---|
@@ -118,7 +115,7 @@ program still runs: a calculator with seven passing tests, across four modules.
 | value semantics with copy-on-write, refcounted `str`/`[T]`/`{K: V}` | the rewrite rate, the thesis's third instrument, below |
 | generics by monomorphisation, function values, `T?`, `test`/`assert` | an installer of any kind: a tap, a manifest, a flake, an image |
 | packages: `use` paths, and where a program's files live | a compatibility promise, which is why the version stays below `1.0.0` |
-| threads, isolated, with a stack guard that speaks on every one | the two books |
+| threads, isolated, with a stack guard that speaks on every one | a guide and a book about the build, neither written |
 | an FFI that binds raylib, SDL, SQLite and curl with no shim | |
 | `read_file`/`write_file`, `args()`, `exit(code)` | |
 
@@ -149,21 +146,17 @@ a timing means anything.
 Every capability is a subcommand or a flag of the one binary, never a second
 binary, never a script, never a Makefile; `heroes --help` prints the current
 surface. The Rust bootstrap that used to be the way in is
-`archive/bootstrap-rs/`, archived at M-bootstrap-archive and not maintained: the
-exception that let `cargo` build the compiler had an expiry date written into it,
-and this is it.
+`archive/bootstrap-rs/`, kept as a record and not maintained. The exception that
+let `cargo` build the compiler had an expiry date written into it, and it
+expired the day the compiler could build itself.
 
 > [!NOTE]
-> Developed on macOS arm64; CI runs every push on Linux x86-64, and widens to all
-> three platforms at a tag. Windows was added on 2026-08-24, when the compiler
-> stopped binding `unistd.h` and the last POSIX header left `seed/heroes.c`,
-> and the first tag that was supposed to confirm it did the opposite: the
-> `m-separate-compilation` run of 2026-08-26 was red on all three platforms at
-> three different steps, Windows at `heroes doctor`. **Confirmed since:** after
-> the M-argv-execution CI repairs, the full dispatch of 2026-08-31 (run
-> 33419946408) is green on all three platforms, with Windows x86-64 in 20m28s.
-> This file said the red out loud rather than letting a partial green imply
-> otherwise, and it says the green the same way: by run id.
+> Developed on macOS arm64. CI runs every push on Linux x86-64 and widens to all
+> three platforms at a tag, macOS and Windows included. Windows cost the most to
+> reach: it arrived only once the last POSIX header left `seed/heroes.c`, and the
+> first tag meant to confirm it was red on all three platforms at three different
+> steps. It is green on all three now. This file said the red out loud rather
+> than letting a partial green imply otherwise.
 
 ## The thesis, and how much of it is measured
 
@@ -210,6 +203,15 @@ goes through them: they are in `CLAUDE.md`, and the reason each one exists is in
 can check them rather than wait. It also says what the licence lets you do
 meanwhile: Apache-2.0 grants the fork in writing, and a repository that is not
 yet taking patches does not take that back.
+
+<a href="https://www.amazon.it/Heroes-code-journey-programming-languages/dp/B0HHLBWWZH/"><img src="site/public/images/book/cover-en.webp" alt="Heroes of code, front cover" width="120" align="right"></a>
+
+**What does help is buying the book.** Nobody is asked for money here and no
+patch is taken, so a copy of *Heroes of code* is the one thing that funds the
+time this is built in. Published on Amazon, in
+[English](https://www.amazon.it/Heroes-code-journey-programming-languages/dp/B0HHLBWWZH/)
+and in
+[Italian](https://www.amazon.it/Gli-eroi-del-codice-programmazione/dp/B0HHL2YQ1S/).
 
 <p align="center">
   <sub><a href="https://heroes-lang.org">heroes-lang.org</a> is this language's home, in
