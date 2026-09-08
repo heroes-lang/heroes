@@ -28,8 +28,8 @@
 A small compiled language designed so that **every plausible mistake an LLM
 makes is a compile error**.
 
-Not a language that tolerates a machine writing it — one whose surface is chosen
-so that the wrong program does not compile, and the diagnostic arrives with the
+Not a language that tolerates a machine writing it. Its surface is chosen so
+that the wrong program does not compile, and the diagnostic arrives with the
 repair already written. The bet is stated as a cost formula and measured rather
 than asserted; where the measurement is missing, this file says so.
 
@@ -58,6 +58,33 @@ Every diagnostic carries three things: the place that is wrong, the other end of
 the story, and the repair. A fix tagged `certain` was worked out rather than
 guessed, so `heroes check --apply` can write it for you.
 
+## Why this exists
+
+<a href="https://www.amazon.it/Heroes-code-journey-programming-languages/dp/B0HHLBWWZH/"><img src="site/public/images/book/cover-en.webp" alt="Heroes of code, front cover" width="132" align="right"></a>
+
+**The book came first.** *Heroes of code* is a history of programming languages,
+written as one night's journey through the rooms where they were made: Bletchley
+Park, MIT, Zurich, Bell Labs, Oslo, Silicon Valley, and the people who invented
+the way we talk to machines.
+
+I finished it and something was missing. I had spent all that time with people
+who built languages, and I had never built one. Writing about them and stopping
+there felt like the wrong way to leave it, so I tried. I had never written a
+compiler before this one, and attempting what someone attempted is the only way
+I know to learn from them properly.
+
+That is what this repository is: a piece of work made out of respect for the
+people it learned from, and the only thank-you I knew how to write. The name
+comes from the book, and so does the bolt, and so does the historian's seat on
+the design panel.
+
+**Buying the book is also how to support this.** No code contributions are
+accepted here yet, and nobody is asked for money, so if you want the language to
+keep going, a copy is the one thing that funds the time. Published on Amazon, in
+[English](https://www.amazon.it/Heroes-code-journey-programming-languages/dp/B0HHLBWWZH/)
+and in
+[Italian](https://www.amazon.it/Gli-eroi-del-codice-programmazione/dp/B0HHL2YQ1S/).
+
 ## Status: self-hosting is reached, and the chain continues
 
 **The compiler compiles itself.** That is what this project calls v1
@@ -80,15 +107,15 @@ versions, and a patch version changes no sentence of the spec.**
 </p>
 
 **More than half the chain is closed.** Which milestone is in flight, and how
-many stand behind it, is `docs/ROADMAP.md` § Where we are — one place, re-measured
-at every close, rather than a number here that goes quietly stale. The acceptance
+many stand behind it, is `docs/ROADMAP.md` § Where we are, one place re-measured
+at every close rather than a number here that goes quietly stale. The acceptance
 program still runs: a calculator with seven passing tests, across four modules.
 
 | working today | not yet |
 |---|---|
-| lexer, parser, formatter, resolver, bidirectional type checker | a second backend — the proof that the IR is not C in disguise |
+| lexer, parser, formatter, resolver, bidirectional type checker | a second backend, the proof that the IR is not C in disguise |
 | three-address IR with basic blocks, ownership pass, C11 emission, one `.c` per module behind a build cache | an LSP server, and the editor extension |
-| value semantics with copy-on-write, refcounted `str`/`[T]`/`{K: V}` | the rewrite rate — the thesis's third instrument, below |
+| value semantics with copy-on-write, refcounted `str`/`[T]`/`{K: V}` | the rewrite rate, the thesis's third instrument, below |
 | generics by monomorphisation, function values, `T?`, `test`/`assert` | an installer of any kind: a tap, a manifest, a flake, an image |
 | packages: `use` paths, and where a program's files live | a compatibility promise, which is why the version stays below `1.0.0` |
 | threads, isolated, with a stack guard that speaks on every one | the two books |
@@ -101,8 +128,8 @@ one journal each, indexed at `docs/journal/README.md`.
 ## Build and try it
 
 **A C compiler is the only thing you need.** `seed/heroes.c` is this compiler
-written in C — what it emits when it compiles itself — so there is no chicken and
-egg and no Rust:
+written in C, which is what it emits when it compiles itself, so there is no
+chicken and egg and no Rust:
 
 ```sh
 clang -I runtime seed/heroes.c runtime/runtime.c -o heroes   # seconds
@@ -111,15 +138,15 @@ clang -I runtime seed/heroes.c runtime/runtime.c -o heroes   # seconds
 ./heroes test examples/calculator/main.hero
 ```
 
-The compiler you get is the real one: it compiles `selfhost/` — its own source,
-**more than 50,000 lines of Heroes across more than 180 files** — and what it
+The compiler you get is the real one. It compiles `selfhost/`, its own source,
+**more than 50,000 lines of Heroes across more than 180 files**, and what it
 emits for that is `seed/heroes.c` again, byte for byte, in under a minute.
 `seed/README.md` is that ritual, including how to get a compiler back if the seed
 ever stops building today's source. The digits behind those thresholds are
 whatever the four commands above print on your machine, which is the only place
 a timing means anything.
 
-Every capability is a subcommand or a flag of the one binary — never a second
+Every capability is a subcommand or a flag of the one binary, never a second
 binary, never a script, never a Makefile; `heroes --help` prints the current
 surface. The Rust bootstrap that used to be the way in is
 `archive/bootstrap-rs/`, archived at M-bootstrap-archive and not maintained: the
@@ -134,7 +161,7 @@ and this is it.
 > `m-separate-compilation` run of 2026-08-26 was red on all three platforms at
 > three different steps, Windows at `heroes doctor`. **Confirmed since:** after
 > the M-argv-execution CI repairs, the full dispatch of 2026-08-31 (run
-> 33419946408) is green on all three platforms — Windows x86-64 in 20m28s.
+> 33419946408) is green on all three platforms, with Windows x86-64 in 20m28s.
 > This file said the red out loud rather than letting a partial green imply
 > otherwise, and it says the green the same way: by run id.
 
@@ -142,22 +169,22 @@ and this is it.
 
 The design rule is a cost formula: a construct's cost is its token count times
 one plus the rate at which a model rewrites it wrongly. Two of its three
-instruments have run — the spec's measured size, held **under a hard ceiling of
-4096** tokens by a test that fails the day it is crossed, counted by two vendored
-BPE tables so that neither can hide its own drift, with every amendment's cost in
-`docs/measurements/010-spec-budget-ledger.md` and the standing figure in
-`docs/ROADMAP.md` — and a mutation-based check over the compiler's own corpus. **The third,
-the rewrite rate, has not run**, so the formula remains the design rule it always
+instruments have run. The first is the spec's measured size, held **under a hard
+ceiling of 4096** tokens by a test that fails the day it is crossed, counted by
+two vendored BPE tables so that neither can hide its own drift, with every
+amendment's cost in `docs/measurements/010-spec-budget-ledger.md` and the
+standing figure in `docs/ROADMAP.md`. The second is a mutation-based check over
+the compiler's own corpus. **The third, the rewrite rate, has not run**, so the formula remains the design rule it always
 was and is not yet an audited one. This is written here rather than discovered by
-a reader, because measurement beats opinion in this project — including the
-author's.
+a reader, because measurement beats opinion in this project, the author's
+included.
 
 ## Where things are written down
 
 | file | what it is |
 |---|---|
 | `design.md` | the source of truth for the language, and the reasoning behind it |
-| `spec/heroes-spec.md` | the contract, budgeted at 4096 tokens — a control instrument, never a tutorial |
+| `spec/heroes-spec.md` | the contract, budgeted at 4096 tokens, a control instrument and never a tutorial |
 | `docs/ROADMAP.md` | the milestone chain, in execution order |
 | `DESIGN-LOG.md` | every decision, dated, one line, with its reason |
 | `docs/panel/` | the design reviews: five judges with differentiated inputs, their vetoes, and what lifted them |
@@ -170,7 +197,7 @@ bug), and measurement beats opinion.
 
 Apache-2.0 (`LICENSE`), with the **Heroes runtime exception**
 (`LICENSE-RUNTIME-EXCEPTION`): a program you compile with Heroes contains part of
-the C runtime and owes nothing for it — no copy of the license, no notice to
+the C runtime and owes nothing for it: no copy of the license, no notice to
 reproduce. Attribution is owed by whoever redistributes Heroes itself.
 
 ## Contributing
@@ -183,30 +210,6 @@ goes through them: they are in `CLAUDE.md`, and the reason each one exists is in
 can check them rather than wait. It also says what the licence lets you do
 meanwhile: Apache-2.0 grants the fork in writing, and a repository that is not
 yet taking patches does not take that back.
-
-## The book this came out of
-
-<a href="https://www.amazon.it/Heroes-code-journey-programming-languages/dp/B0HHLBWWZH/"><img src="site/public/images/book/cover-en.webp" alt="Heroes of code, front cover" width="132" align="right"></a>
-
-**The book came before the language.** *Heroes of code*, subtitled *A journey
-through the years that shook programming languages*, is a history of programming
-languages whose form is a dream journey: it opens at midnight on an empty file,
-with a programmer looking for the words, and the voice behind him is David
-Bowie. What follows is Bletchley Park, MIT, Zurich, Bell Labs, Oslo and Silicon
-Valley, and the people who invented the way we talk to machines.
-
-The name of this language comes from there, and so does the bolt. It is also why
-the design panel has a historian's seat: a design choice usually has precedents,
-and the seat exists to find them and to be refused when it cannot source them.
-
-**It is also how to support this.** No code contributions are accepted here
-yet, and nobody is asked for money, so if you want the language to keep going, a
-copy of the book is the one thing that funds the time.
-
-Published on Amazon, in
-[English](https://www.amazon.it/Heroes-code-journey-programming-languages/dp/B0HHLBWWZH/)
-and in
-[Italian](https://www.amazon.it/Gli-eroi-del-codice-programmazione/dp/B0HHL2YQ1S/).
 
 <p align="center">
   <sub><a href="https://heroes-lang.org">heroes-lang.org</a> is this language's home, in
