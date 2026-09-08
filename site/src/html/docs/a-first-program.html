@@ -49,6 +49,15 @@ error[indentation_not_multiple_of_4]: indentation must be exactly 4 spaces per l
   <p>
     Tabs produce a separate error. Consistent indentation makes versions of a file easier to compare. <code>heroes fmt</code> prints code in the language&rsquo;s standard format. Files already in that format remain unchanged, byte for byte.
   </p>
+  <p>
+    The rule is older than it looks. Python did not invent it: it took it from
+    ABC, a teaching language from the same lab, and Guido van Rossum says so
+    himself in Python&rsquo;s own documentation, calling ABC
+    <i>the origin of many Python features, including the use of indentation for
+    statement grouping</i>. Heroes takes the same idea and makes it stricter,
+    because a rule with one spelling is a rule a model cannot get subtly wrong:
+    exactly four spaces, never a tab.
+  </p>
 
   <h3>Comments are where the documentation lives</h3>
   <p>
