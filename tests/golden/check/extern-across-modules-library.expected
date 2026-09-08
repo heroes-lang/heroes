@@ -1,3 +1,3 @@
-tests/golden/check/extern-across-modules-library.hero:10:9: error[extern_across_modules]: `hero_args_count` is the library's own `extern` — an extern is never callable across a module boundary, and the library is a module
-tests/golden/check/extern-across-modules-library.hero:12:9: error[extern_across_modules]: `hero_exit` is the library's own `extern` — an extern is never callable across a module boundary, and the library is a module
-tests/golden/check/extern-across-modules-library.hero:14:20: error[extern_across_modules]: `hero_file_read` is the library's own `extern` — an extern is never callable across a module boundary, and the library is a module
+tests/golden/check/extern-across-modules-library.hero:10:9: error[extern_across_modules]: `hero_args_count` is the library's own `extern` — an extern is never reachable across a module boundary, and the library is a module
+tests/golden/check/extern-across-modules-library.hero:12:9: error[extern_across_modules]: `hero_exit` is the library's own `extern` — an extern is never reachable across a module boundary, and the library is a module
+tests/golden/check/extern-across-modules-library.hero:14:20: error[extern_across_modules]: `hero_file_read` is the library's own `extern` — an extern is never reachable across a module boundary, and the library is a module

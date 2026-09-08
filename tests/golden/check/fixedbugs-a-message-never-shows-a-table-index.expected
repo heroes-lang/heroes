@@ -1,0 +1,2 @@
+tests/golden/check/fixedbugs-a-message-never-shows-a-table-index.hero:27:11: error[bad_operand]: `join` takes `[str]` and `str`, found `[a type parameter]`
+tests/golden/check/fixedbugs-a-message-never-shows-a-table-index.hero:27:23: error[type_mismatch]: expected `i64`, found `a type parameter`

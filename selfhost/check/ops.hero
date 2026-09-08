@@ -87,7 +87,7 @@ function binary(@c: state.Checker, s: source.Source, decls: [ast.Decl], op: ast.
                 got = state.show(c, s, decls, left)
                 state.push_diagnostic(
                     @c,
-                    value_errors.bad_operand(op: op_name(op), allowed: "`i64` or `f64`", got: got, span: span)
+                    value_errors.bad_operand(op: op_name(op), allowed: "any integer or a float", got: got, span: span)
                 )
                 return state.error_ty_of(c)
 
@@ -128,7 +128,7 @@ function arithmetic(@c: state.Checker, s: source.Source, decls: [ast.Decl], op: 
             return table.str_ty(c.out.types)
         state.push_diagnostic(
             @c,
-            value_errors.bad_operand(op: op_name(op), allowed: "`i64` or `f64`", got: "str", span: span)
+            value_errors.bad_operand(op: op_name(op), allowed: "any integer or a float", got: "str", span: span)
         )
         return state.error_ty_of(c)
 
@@ -165,7 +165,7 @@ function unary(@c: state.Checker, s: source.Source, decls: [ast.Decl], op: ast.U
             got = state.show(c, s, decls, operand)
             state.push_diagnostic(
                 @c,
-                value_errors.bad_operand(op: "-", allowed: "`i64` or `f64`", got: got, span: span)
+                value_errors.bad_operand(op: "-", allowed: "any integer or a float", got: got, span: span)
             )
             return state.error_ty_of(c)
         .not =>
@@ -267,7 +267,7 @@ test "equality wants one type, ordering wants a number, logic wants bool"
     assert c.out.diagnostics[0].code == "type_mismatch"
     _ = binary(@c, s, no_decls(), .lt, left: str_id, right: str_id, span: anywhere())
     assert c.out.diagnostics[1].code == "bad_operand"
-    assert c.out.diagnostics[1].message == "`<` takes `i64` or `f64`, found `str`"
+    assert c.out.diagnostics[1].message == "`<` takes any integer or a float, found `str`"
     _ = binary(@c, s, no_decls(), .and, left: int_id, right: wanted, span: anywhere())
     assert c.out.diagnostics[2].message == "`&&` takes `bool`, found `i64`"
     _ = binary(@c, s, no_decls(), .bit_and, left: wanted, right: wanted, span: anywhere())

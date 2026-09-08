@@ -1,0 +1,2 @@
+tests/golden/check/fixedbugs-a-guess-fix-names-a-family-that-exists.hero:30:11: error[mixed_arithmetic]: `<` takes two of one type — two integers of the SAME width, or two floats of the same width — and found `u8` and `i32`
+tests/golden/check/fixedbugs-a-guess-fix-names-a-family-that-exists.hero:32:11: error[mixed_arithmetic]: `+` takes two of one type — two integers of the SAME width, or two floats of the same width — and found `f32` and `i32`

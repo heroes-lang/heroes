@@ -1,0 +1,33 @@
+# fixedbugs, 2026-09-08 (defect 020, found by panel 120's compiler-engineer
+# while enumerating the embedded library to answer whether the spec's list of
+# built-ins is complete).
+#
+# SYMPTOM: `print(HERO_OS_OK)` ran and printed `0` from a plain user program.
+# Four names the program never declared were in its scope, and reading one
+# meant relying on the compiler's own plumbing.
+#
+# CAUSE: panel 033 R5 walled off the library's extern FUNCTIONS —
+# `function filter` is `builtin_name_taken`, `hero_args_count()` is
+# `extern_across_modules` — and `selfhost/resolve/names.hero` grouped
+# `.constant_decl` with `.record_decl` and `.test_decl` in one arm with no
+# `is_extern` guard, where `.function_decl` carried one twice. The grouped arm
+# could not ask the question, which is why it was wrong: it rested on a premise
+# about the world, that a constant cannot be extern, and the library declares
+# four that are.
+#
+# FIX: the arm splits and asks the declaration in hand. A constant is extern
+# exactly when it has a HEADER where an ordinary one has a body, and a record
+# the same, so `record_decl` is guarded too — WITH NO WITNESS TODAY, because
+# the library declares no records. The class is closed rather than the case
+# that happened to be reachable (`.claude/rules/module-shape.md`: a narrowing
+# asks the value, never the world).
+#
+# The message lost the word "callable" in the same commit and gained
+# "reachable", which the neighbouring module doc had used all along: a
+# constant is read rather than called, and before this repair no constant ever
+# reached that sentence.
+
+function main()
+    print(HERO_OS_OK)  #~ extern_across_modules
+    print(HERO_OS_NOT_FOUND)  #~ extern_across_modules
+    print(HERO_STR_OK)  #~ extern_across_modules
