@@ -28,7 +28,7 @@ per item, `- [ ] **<origin>** | <the question>`, then the body indented four
 spaces. Nothing lives outside the two banners.
 
 *******************************************************************************
-**OPEN: 331**
+**OPEN: 335**
 
 - [ ] **M-discard-refusal step 3** | Three repairs of one refused line print three different answers. Predict them before you look, then say which of the three a `certain` fix could ever have been | `docs/panel/118` R3 · `selfhost/value_errors.hero` `discarded_failure` | this is the whole argument for shipping no automatic repair, and it is two commands long
 
@@ -1700,5 +1700,25 @@ spaces. Nothing lives outside the two banners.
 
     **Where to look:** selfhost/check/ops.hero:81-90, :131, :168 · docs/work/DEFECTS.md 018
     **Why it matters:** errors are a deliverable here, and this one tells a reader holding a `u8` to convert a value that needed no conversion
+
+- [ ] **M-closures-verdict close — walkthrough** | The route a capturing closure would have taken through the compiler, opened one file at a time: where the parser would put it and why a module of its own is `error[module_cycle]`, what `.func_ref` becomes in the IR, and the three tables that would each need a new case. Read `selfhost/ir/emissions.hero`'s `.func_ref` arm and `selfhost/emit/ctype.hero`'s comment, then say which of the two would have to change first
+
+    **Where to look:** selfhost/ir/emissions.hero · selfhost/emit/ctype.hero · selfhost/grammar_expr.hero's knot map
+    **Why it matters:** the refusal rests on a count of places, and the walk is what makes the count mean something rather than being a number
+
+- [ ] **M-closures-verdict close — golden ratification** | Four cases were written this milestone and none is marked UNVERIFIED, because all four are repairs of measured defects rather than adversarial cases. Read them and rule on whether each one's `#~` annotations cover every diagnostic the program provokes — that is the half a regenerator cannot fake, and the last case needed two codes on one line before it did
+
+    **Where to look:** tests/golden/check/fixedbugs-a-comparison-names-every-numeric-width.hero and the other three
+    **Why it matters:** the annotation is the only part of a golden a machine cannot invent, so its correctness is the author's to confirm
+
+- [ ] **M-closures-verdict close — mutation drill** | Reverse the four repairs one at a time, in your head, and say for each which suite goes red and which stays green. Three of the four were invisible to all twenty-three suites before their cases existed, and the fourth had a test pinning the wrong answer — find that one without looking it up
+
+    **Where to look:** selfhost/check/ops.hero · selfhost/value_errors.hero · selfhost/resolve/names.hero · selfhost/check/render.hero
+    **Why it matters:** a wrong message is not a wrong answer, and no instrument here was watching that class
+
+- [ ] **M-closures-verdict close — exit quiz** | Four closed questions. (1) Why can a signature not state whether `filter` keeps or discards what its function accepts? (2) The compiler passes a function as a value at four production sites — name what all four have in common that makes closures useless to them. (3) A `total: i64 @ 0` captured by copy: say which of a read and a write a checker can refuse, and why the other cannot. (4) The free spec budget is 70 and not 71 — say which character in `suite_spec.hero` decides that
+
+    **Where to look:** docs/panel/119-the-warning-that-does-not-fit.md · docs/panel/120-the-signature-cannot-say-which-half-it-keeps.md · docs/measurements/020-four-sites-in-fifty-five-thousand-lines.md · tests/harness/suite_spec.hero:204
+    **Why it matters:** each of the four is a place this milestone's own coordinator or a seat got it wrong first
 
 *******************************************************************************
