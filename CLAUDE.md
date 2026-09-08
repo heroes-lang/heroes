@@ -39,9 +39,9 @@ ones (CL-041).
 - **Pushing `main`, publishing the site, anything outward-facing: asked for,
   every time.** The site is on this branch and `site/public/CNAME` names
   `heroes-lang.org`, so a push can publish it. Commit and tag locally, say how
-  many site commits would travel, wait for a yes (CL-042). **The repository
-  itself opens at `M-open-repository`**: from the moment the author flips it,
-  every push is outward-facing and a commit body is read by strangers.
+  many site commits would travel, wait for a yes (CL-042). **The repository is
+  public since 2026-09-08** (M-open-repository), so every push is outward-facing
+  and a commit body is read by strangers.
 - **Destructive operations are asked for.**
 - **`UPDATE_GOLDEN=1` does not exist**, and in `tests/golden/check/` and
   `tests/golden/ir/` it is forbidden outright.

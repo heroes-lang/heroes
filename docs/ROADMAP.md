@@ -33,13 +33,13 @@ with what each one measured in the git history and in `DESIGN-LOG.md`):
 
 | | |
 |---|---|
-| **Current milestone** | **M-open-repository** — **OPEN**, row 38: the repository stops being private, and the twenty-odd sentences that promise it will open stop promising. Inserted here by author instruction 2026-09-08, ahead of `M-discard-refusal`, which had no line of its own landed |
-| **Last closed** | **M-declared-freer**, 2026-09-07, tag `m-declared-freer` ([036](journal/036-declared-freer.md)) — five steps, two sittings, four `internal error`s repaired. `owned <C function>` frees the string C hands you, in both positions · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
-| Milestones closed | **37** of 60 · **37** tags |
+| **Current milestone** | **M-discard-refusal** — **OPEN**, row 39: `_ =` on a fallible value becomes a compile error. The verdict is the author's and given (`/decide` answer `3a`, 2026-09-03); the sitting is still owed, because a spec clause and a diagnostic class are both language (CLAUDE.md §4) |
+| **Last closed** | **M-open-repository**, 2026-09-08, tag `m-open-repository` ([037](journal/037-open-repository.md)) — ten steps, no sitting. The repository is public: verified unauthenticated at 200, with `releases` and the security policy answering too · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
+| Milestones closed | **38** of 60 · **38** tags |
 | The compiler | **55,054** lines of Heroes in **189** modules · the seed **747,095** lines of C · runtime ABI **21**, unmoved: the mark needed no runtime entry point, because the release is built out of instructions the IR already had |
 | The spec | **3903** of a hard 4096 · headroom **193** — moved at panel 117's ratification the same day, which narrowed the `assert` sentence and said what `print` takes; the cell said 3871 until the site rebuild re-ran `heroes measure` |
 | Records | sittings **115** · journals **38** · examples **54** programs plus the gallery's **12** single-file ones, **118** files, **545** `test` blocks · open defects **0** · the site **180** pages, 90 English and 90 Italian, of which **134** are the examples browser generated from `examples/` at build time |
-| Waiting on the author | **0** decisions · **44** in `SCHEDULED.md` · **0** in `DEFECTS.md` · **323** in `LEARN.md` (never a gate) · an outstanding veto (`docs/panel/101` R3) · **one act, and it is urgent**: the repository's visibility. The site already says the code is open, because a push during M-open-repository deployed it, and `github.com/heroes-lang/heroes` still answers 404 to a stranger |
+| Waiting on the author | **0** decisions · **44** in `SCHEDULED.md` · **0** in `DEFECTS.md` · **323** in `LEARN.md` (never a gate) · an outstanding veto (`docs/panel/101` R3) · **the repository's settings**, which only the author can set: the branch ruleset that free plans grant a public repository, the approval gate on workflows from a fork, and secret scanning with push protection |
 
 **Re-measured on 2026-09-08**, during M-open-repository and not carried: the compiler **55,054** lines in **189** modules, the spec **3903** with **193** of headroom, the site **180** pages, the examples **118** files and **545** `test` blocks, and the three suites **588**, **1612**, **121**, all green. **The net's wall clock is discarded rather than written down**: `real` 1537s against `user` plus `sys` of 457, so it spent most of its time waiting while site builds, git operations and a parallel session shared the machine, and a clock read on a moving machine is not a timing (CLAUDE.md § Verification). The number still worth watching is the one that shrinks: `check/walk.hero` sits at **1695 of a decided 1700**, five lines of room, and it is the file every new diagnostic reaches. What M-declared-freer's own close counted is journal [036](journal/036-declared-freer.md).
 
@@ -149,8 +149,8 @@ and why one overtook another are under the table, in § Who scheduled what.
 | 35 | **M-isolated-threads** | done 2026-09-06 | `m-isolated-threads` | [034](journal/034-isolated-threads.md) | Part 7.13 concurrency: three of four measured corruption classes closed, and the door was in the checker |
 | 36 | **M-thread-stacks** | done 2026-09-06 | `m-thread-stacks` | [035](journal/035-thread-stacks.md) | the guard speaks on every thread, and a worker's floor is the thread that ran `main` · **§1.12**
 | 37 | **M-declared-freer** | done 2026-09-07 | `m-declared-freer` | [036](journal/036-declared-freer.md) | `owned <C function>`: the string C hands you is freed by the name its own declaration gives · **§1.12**
-| 38 | **M-open-repository** | **OPEN** | — | — | the repository opens, and every page that says it is shut stops saying so · CLAUDE.md §14
-| 39 | **M-discard-refusal** | scheduled | — | — | `_ =` on a fallible value becomes a compile error · **§1.1**
+| 38 | **M-open-repository** | done 2026-09-08 | `m-open-repository` | [037](journal/037-open-repository.md) | the repository opens, and every page that says it is shut stops saying so · CLAUDE.md §14
+| 39 | **M-discard-refusal** | **OPEN** | — | — | `_ =` on a fallible value becomes a compile error · **§1.1**
 | 40 | **M-closures-verdict** | scheduled | — | — | the ruling on Part 7 items 1 and 12, closures and inline blocks — a decision, not a feature |
 | 41 | **M-interpolation-verdict** | scheduled | — | — | the ruling on design.md Part 7 item 7, string interpolation — a decision, not a feature |
 | 42 | **M-reflection-verdict** | scheduled | — | — | the ruling on reflection — at run time, and as compile-time derivation over a record's fields — and, since 2026-09-06, on a general annotation mechanism · a decision, not a feature |
@@ -2035,8 +2035,9 @@ first, and it exists because most of its items get worse the longer they wait.
 
 **Overtaken in part on 2026-09-08 by `M-open-repository`** (author instruction;
 this paragraph is written underneath rather than in place of the sentence above,
-which was true when it was written). That milestone opens the repository, and
-three of the bullets below were banked by it rather than by this one. **The licence re-check ran** and disagreed with what `NOTICE` said, which
+which was true when it was written). **The repository is public since
+2026-09-08**, verified unauthenticated, and three of the bullets below were
+banked by that milestone rather than by this one. **The licence re-check ran** and disagreed with what `NOTICE` said, which
 is recorded there and in `vendor/tokenizers/README.md`. **The contribution
 policy is in force**, and the finding is that neither half of it is a repository
 setting: forking cannot be disabled on a public repository and pull requests

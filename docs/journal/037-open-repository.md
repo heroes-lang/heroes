@@ -117,3 +117,46 @@ dated, rather than an amended history. **The general shape is the finding**: a
 rule and the command meant to enforce it are two different things, and the gap
 between them stays invisible for as long as the situation the rule exists for
 does not occur.
+
+## What landed, and what carried forward
+
+**The repository is public**, verified from outside rather than from the
+setting: unauthenticated, `github.com/heroes-lang/heroes` answers 200, and so do
+`releases` and the security policy, the two addresses this milestone's own files
+point a stranger at and which returned 404 while it was being written. The
+author threw the switch; everything before it was making the switch safe to
+throw.
+
+**Ten steps, no sitting.** Opening a repository is none of CLAUDE.md §4's five
+triggers, and nothing here touched the language: the spec is unmoved at 3903,
+the compiler unmoved at 55,054 lines in 189 modules, the runtime ABI unmoved at
+21. Three suites green, 588, 1612 and 121. The net's wall clock is discarded and
+the ROADMAP says why.
+
+**No predictions were registered against this milestone**, which the close
+checked rather than assumed: it convened no panel and spent no spec token, so
+there was nothing to score and nothing to lapse.
+
+**What carried forward**, all of it filed with a home rather than left in this
+page: the CI cost premise, whose replacement is a measurement on the account
+after a real run and not a reading of a documentation page; the trademark
+question, restated and explicitly unmoved by the opening; the `main`-cannot-fail
+defect, now measured to three exit codes instead of remembered as one sentence;
+and the held-out tasks, which a public repository would burn the day they are
+written and which nobody had written that down about. `M-publication-gate` keeps
+what it always owned, the thesis measured and the compatibility paragraph that
+`1.0.0` is, and its entry now records underneath which of its bullets this
+milestone banked.
+
+**Two rules came out of the day and both have executors.** `git commit --
+<paths>`, because naming paths to `git add` limits nothing and this milestone
+proved it on its own record; and quote-aware command splitting in the guard,
+because the first rule's executor read a quoted mention as a command on its
+first run. CL-070 carries both, and seventeen shapes hold them.
+
+**The thing worth remembering** is smaller than any of that. The site had told
+visitors for five days that the code was shut, in sentences written carefully
+and checked by nothing, and the instrument that checks this site's prose says in
+its own header that it cannot verify a sentence it does not know about. Numbers
+were guarded and promises were not. A promise that comes true is a false claim
+exactly as a number that moves is, and it fails more quietly.
