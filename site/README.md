@@ -211,11 +211,12 @@ Two pages sit under an entry rather than in the row, for that reason and not by
 accident: `errors.html` under Docs, and `about/thanks.html` under About. Both
 carry a `.crumb` and both mark their parent as current.
 
-`errors.html` did not lose anything by moving: it is now a **sub-page of the
-documentation**, linked from the docs landing above the chapter list and carrying
-a `.crumb` (`Heroes / Docs / errors`) like a chapter does, and its nav marks
-**Docs** as the current item. That is the right shelf for it — diagnostics are
-documentation, and the page was competing with `why.html` for the same visitor.
+`errors.html` did not lose anything by moving: it is a **chapter of the
+documentation**, the second one, carrying a `.crumb` (`Heroes / Docs / errors`)
+like every other chapter does, and its nav marks **Docs** as the current item.
+It was a sub-page linked above the chapter list first, which was still outside
+the guide. That is the right shelf for it, diagnostics are documentation, and
+the page was competing with `why.html` for the same visitor.
 Its old routes are untouched: the home page's card, `why.html` and the docs
 chapter all still link it.
 
@@ -1029,10 +1030,11 @@ Three rules follow, and they bind every later edit:
   first draft of this refresh shortened one and got the caret width, the line
   content and the fix text wrong in the process.
 
-## `site/src/html/docs/` — twelve chapters, written
+## `site/src/html/docs/` — the chapters, written
 
-The landing page lists all twelve chapters and links `errors.html` above them,
-which lives at the site root but belongs to this section. **All twelve are
+The landing page lists every chapter, `errors.html` among them: it used to live
+at the site root and be linked above the list, and it is the guide's second
+chapter now, in this directory with the rest. **All of them are
 written, in both editions** (2026-08-19), on the conventions
 `failure-is-a-value.html` fixed as the exemplar. The rule they all obey:
 
