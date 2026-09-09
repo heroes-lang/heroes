@@ -22,15 +22,34 @@ function mismatch(expected: str, got: str, span: token.Span) -> diag.Diagnostic
 # The two numeric types never mix (§4.14), and the repair is the
 # conversion the spec names — a guess, because which side to convert is
 # the author's.
+#
+# TWO FIXES, BECAUSE THE READER'S MISTAKE DIFFERS (defect 023, 2026-09-09,
+# out of the spec-warden's steelman at panel 121). The title below was
+# written for two numbers of different widths and was emitted unchanged
+# when one side is a `str`, where NO `to_<width>` can help: measured, a
+# reader who followed it got the identical diagnostic back with `str` and
+# `f64`, and `n.to_str()` — the one repair that works, and a built-in the
+# spec lists — was never named. Following a compiler's advice must not be
+# a loop.
+#
+# **AND NOTHING BUT THIS MODULE'S OWN TESTS CAN SEE IT**, which is why they
+# are below. `.expected` compares `check --brief`'s stderr, which carries no
+# `fix (…)` line, and `suite_fixes` tests only `certain` fixes through
+# `.fixed`, so a `guess` fix's TEXT is unwatched by every golden — the gap
+# `docs/journal/039-closures-verdict.md` filed rather than tapped shut, and
+# the reason the `fit_` fix could have stood indefinitely.
 function mixed_arithmetic(op: str, left: str, right: str, span: token.Span) -> diag.Diagnostic
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "mixed_arithmetic",
         message: "`" + op + "` takes two of one type — two integers of the SAME width, or two floats of the same width — and found `" + left + "` and `" + right + "`",
         span: span
     )
-    d.fixes @ d.fixes.push(
-        diag.Fix(title: "convert one side: `to_f64(x)` cannot fail, and `to_i64(x)` or another `to_<width>(x)` gives a `T?` because the number may not fit", replacement: "", span: span, certainty: .guess)
-    )
+
+    title = if left == "str" || right == "str"
+        "one side is text, so no `to_<width>` can help — those answer a number, and `+` on a `str` wants a `str`. Render the other side: `\"n is \" + n.to_str()`"
+    else
+        "convert one side: `to_f64(x)` cannot fail, and `to_i64(x)` or another `to_<width>(x)` gives a `T?` because the number may not fit"
+    d.fixes @ d.fixes.push(diag.Fix(title: title, replacement: "", span: span, certainty: .guess))
     return d
 
 # A `cstr` gets a route, because a hard stop without one is what produced
@@ -425,3 +444,22 @@ test "arity cites the declaration only when one exists"
     builtin = arity(name: "len", expected: 1, got: 2, declared: fail("absent", "a built-in has no line"), span: span)
     assert builtin.notes.len() == 0
     assert builtin.message == "`len` takes 1 argument(s), found 2"
+
+# Defect 023's two branches, pinned here because no golden can see a
+# `guess` fix's text. The titles are asserted WHOLE rather than by
+# substring: `contains` lives in `ir/mono` and importing it into a leaf
+# every module uses would buy a cycle, and an exact title is what a golden
+# would have pinned anyway.
+test "the mixed-arithmetic fix names `to_str` when one side is text"
+    span = token.Span(start: 0, end: 1)
+    left_text = mixed_arithmetic(op: "+", left: "str", right: "i64", span: span)
+    assert left_text.fixes.len() == 1
+    assert left_text.fixes[0].title == "one side is text, so no `to_<width>` can help — those answer a number, and `+` on a `str` wants a `str`. Render the other side: `\"n is \" + n.to_str()`"
+    right_text = mixed_arithmetic(op: "+", left: "i64", right: "str", span: span)
+    assert right_text.fixes[0].title == "one side is text, so no `to_<width>` can help — those answer a number, and `+` on a `str` wants a `str`. Render the other side: `\"n is \" + n.to_str()`"
+
+test "and it still names the widths when both sides are numbers"
+    span = token.Span(start: 0, end: 1)
+    widths = mixed_arithmetic(op: "+", left: "i32", right: "i64", span: span)
+    assert widths.fixes.len() == 1
+    assert widths.fixes[0].title == "convert one side: `to_f64(x)` cannot fail, and `to_i64(x)` or another `to_<width>(x)` gives a `T?` because the number may not fit"
