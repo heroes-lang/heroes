@@ -137,3 +137,20 @@ Defect **024 closed**, with its limit named: a lease C retains past the
 author instruction; panel 125's ratification; the ffi seat's unscored
 prediction about a held helper in the ledger; and the interpolation
 implementation, which is unblocked and next.
+
+**Appended 2026-09-09, the two other platforms run before the push.** The ffi
+seat's two predictions that were confirmed "on the Mac half" above are now
+confirmed on all three. **Linux**, in the container `docs/environment/linux/`
+describes: the seed builds from C alone, the compiler's 618 tests pass,
+`examples/ledger` with `SQLITE_TRANSIENT` is byte-identical to `main.expected`
+under `--sanitize` with **LeakSanitizer** on, which exists on that leg and on no
+other; `lease-c-keeps-the-pointer`, `lease-tail-points-into-the-bytes` and
+`lend-inside-a-loop` are clean there, and `abort-lease-never-ended` exits 134
+with its message and no sanitizer report. **Windows**, on the box: the seed
+builds with `seed/README.md`'s stack flag, 618 own tests and 125 harness tests
+pass, the three run goldens print their expected output, and the abort case
+exits 127, which is what the shipped `abort-null-cstr-into-c` exits there too.
+**And Windows found a defect the other two could not**: the golden's C side
+declared `stash_len` as `unsigned long`, which is 32 bits on Windows and 64 on
+the others, and the FFI's own `_Static_assert` refused it against the `.hero`'s
+`u64`. It answers `size_t` now, which is what `strlen` answers on all three.

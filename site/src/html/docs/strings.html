@@ -142,6 +142,24 @@ error[unknown_escape]: `\d` is not an escape sequence — the escapes are \n \t 
 the quick brown fox
 tqbf</code></pre>
 
+  <h2>Text with holes in it</h2>
+  <p>
+    A string can carry values. An <code>f</code> before the opening quote turns <code>{n}</code> into the text of <code>n</code>, written the way <code>to_str</code> would write it. Any expression may stand in a hole, and the hole ends at the brace that closes it, so a call or a lookup inside it reads as it would anywhere. Two braces write one brace. A string without the <code>f</code> is exactly what it was.
+  </p>
+  <figure class="example" data-src="examples/gallery/12-interpolation.hero" data-lines="17-18">
+<pre><code><span class="k">function</span> line(at: <span class="t">i64</span>, of: <span class="t">i64</span>, star: Star) -&gt; <span class="t">str</span>
+    <span class="k">return</span> <span class="s">f"{at}/{of} {star.name} at magnitude {star.magnitude}"</span></code></pre>
+    <figcaption>examples/gallery/12-interpolation.hero, lines 17&ndash;18</figcaption>
+  </figure>
+  <p>
+    A hole may hold what <code>to_str</code> can render: an integer, a float, <code>bool</code> or <code>str</code>. A record or a list has no text of its own, and a value that may be missing has to be made whole with <code>.must()</code> first. The compiler refuses the hole and its note says what to write instead.
+  </p>
+  <pre><code>$ heroes run examples/gallery/12-interpolation.hero
+1/2 Sirius at magnitude -1.46
+2/2 Vega at magnitude 0.03
+seen Sirius 2 times, {like this}
+nested: 2 stars</code></pre>
+
   <p class="next">
     Next: <b><a href="/docs/maps/">Maps</a></b>, where looking a key up hands you a
     value <i>or</i> an error, and there is no null to forget.
@@ -157,7 +175,9 @@ tqbf</code></pre>
 
   <footer>
     <p>Every code block on this page is a slice of
-    <code>examples/gallery/07-strings.hero</code> in the repository. The two
-    diagnostics are that file with one comparison and one separator changed,
+    <code>examples/gallery/07-strings.hero</code> in the repository, except the
+    last section&rsquo;s, which is a slice of
+    <code>examples/gallery/12-interpolation.hero</code>. The two
+    diagnostics are the first file with one comparison and one separator changed,
     checked as <code>strings.hero</code>.</p>
   </footer>
