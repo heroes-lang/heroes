@@ -293,7 +293,29 @@ the declaration.
 
 ## Author's verdict
 
-*Pending.*
+**RATIFIED 2026-09-09** (author instruction, `1a 2a 3a 4a`, meaning all four
+sittings as recommended), R1 to R10 in full, **including the retirement of the
+2000-token soft line**, which was the item the recommendation flagged as a rule
+of §1.6 going away.
+
+**The ground for retiring it is a measurement rather than a preference**: on the
+real instrument the spec has been above 2000 since v0, so that line was never
+once slack and its branch was unreachable in practice, while §1.6 forbade
+rescaling it with the ceiling. What replaces it is stricter: the payment rule is
+now **unconditional**, so every amendment owes a named removal or a registered
+prediction naming an instrument that exists today, at every level.
+
+**The floor's withdrawal is ratified as a correction and not as a decision.**
+Nothing had been decided on it, so nothing is undone; the author was told the
+spec lives in a band with both ends measured, and one end was a vendor's price
+list about a different kind of request.
+
+**And the whole resolution had landed before the ratification, with one part
+landing after the sitting's own commit.** `--refresh` shipped 2026-09-09 in
+`757a14af` and, run against the endpoint, **reproduced the hand-measured record
+exactly**: 5128, `claude-opus-5`, 2026-09-09, digest `6022a8bc2f16ca0e`. The
+ordering veto in this sitting's own record is therefore satisfied, verified at
+`design.md:256` and `:277`.
 
 ## Predictions to score
 

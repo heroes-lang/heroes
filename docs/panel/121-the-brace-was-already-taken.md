@@ -325,7 +325,37 @@ places (`.claude/rules/records.md`).
 
 ## Author's verdict
 
-*Pending.*
+**RATIFIED 2026-09-09** (author instruction, `1a 2a 3a 4a`, meaning all four
+sittings as recommended), R1 to R10 in full, **the override of the spec-warden's
+Principle 0 veto included** — which is the part the recommendation flagged as
+the author's rather than the coordinator's. No reader has been put in front of
+either form and metric 2, which would settle it, has never run; what would have
+met the burden is written in this sitting so a later one can collect it.
+
+**Two of the three items put to the author were not questions by the time they
+were asked, and `/decide` verified that before asking rather than after.** R7's
+ceiling of 4253 is **void as arithmetic**, superseded by
+`docs/measurements/023-the-instrument-was-not-the-readers.md`: it was computed on
+`cl100k_base`, which is OpenAI's, and the ceiling is **6144** by author decision
+2026-09-09. And the spelling was **already settled** the same day, by the author,
+in favour of the `f` prefix on the ground that it is the standard one, so it was
+ticked rather than put to them a second time.
+
+**What this unblocks, and it was verified rather than assumed.** Panel 123's
+spec-warden held a live veto on any commit adding a token to
+`spec/heroes-spec.md` before §1.6 stated a ceiling **with its pinned model id
+and date**. Checked at this ratification: `design.md:256` and `:277` state 6144
+as `claude-opus-5`'s count through `POST /v1/messages/count_tokens`, content less
+that model's own measured offset, with the spec's reading on the day it was set.
+**The veto's condition is met, so the f-string clause is no longer blocked by the
+budget instrument.**
+
+**One measurement is owed before the clause is written.** The adopted clause was
+priced at **+151** real tokens, and that delta was measured on the document as it
+stood on 2026-09-09 **before** panel 122's lend sentence landed. Panel 123 R8's
+rule is that a figure from a dated record is read as a delta and never as a
+level, so the clause is re-measured against today's spec, which reads **5128**
+with **956** free net of the FFI floor.
 
 ## Predictions to score
 
