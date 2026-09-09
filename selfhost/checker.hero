@@ -31,6 +31,7 @@ use check/sized
 use check/decls as check_decls
 use check/map_keys
 use check/ffi_sweep
+use check/lending
 use check/counted
 
 # Check one resolved program. The resolver ran first and its answers are
@@ -56,6 +57,11 @@ function check(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.D
     # panel 062 wired its rule to one call site and three other positions
     # shipped.
     ffi_sweep.fixed_only_in_a_group(@c, a, s, decls)
+
+    # §4.20's lend, asked at every position rather than at the one call
+    # site that types it: defect 022 was a `cstr` RETURNED, and a rule
+    # wired to `check/builtins.hero` would have typed it and let it go.
+    lending.lent_only_into_c(@c, a, r, s, decls)
 
     # §4.16's FILE-WIDE hole exemption, the same one the unused rule
     # takes: a body that is ??? falls off its end by construction — that

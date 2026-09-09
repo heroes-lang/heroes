@@ -1,0 +1,28 @@
+# fixedbugs, defect 022, panel 122, 2026-09-09.
+#
+# SYMPTOM: `heroes check` silent, `heroes build` wrote the binary, and reading
+# the field under `--sanitize` reports `AddressSanitizer: heap-use-after-free`,
+# READ of size 7.
+#
+# CAUSE: `selfhost/emit/gate.hero` refused `cstr` as the element of an array, a
+# map and a `T?`, and a record FIELD was the hole. Worse, that refusal's own
+# note prescribed this shape: *"hold the pointer in a `record` and make an
+# array of that instead"*. The emitter was sending readers through the one
+# door nobody had shut.
+#
+# FIX: panel 122 R4, and the note was rewritten in the same commit. A group's
+# `record` may still hold a `cstr` — there the fields are the header's and C
+# owns the bytes, which § FFI states — so the clause is scoped to records
+# outside a group. Measured free: no such field existed in this tree.
+
+extern "string.h"
+    function strlen(s: cstr) -> u64
+
+record Holder
+    c: cstr  #~ cstr_in_a_record
+
+function held(n: i64) -> Holder
+    return Holder(c: ("heap-" + n.to_str()).cstr())
+
+function main()
+    print(strlen(s: held(n: 7).c).to_str())

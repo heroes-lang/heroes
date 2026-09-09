@@ -1,0 +1,244 @@
+# The one position a lent C pointer may stand in, asked at EVERY position
+# in the file (design.md §4.20; spec § FFI; defect 022, found by the
+# ffi-pragmatist at panel 121).
+#
+# WHY IT IS ITS OWN MODULE. The question is about a POSITION, not about a
+# type in hand: `check/builtins.hero` types `s.cstr()` and answers `cstr`,
+# which is right and says nothing about where that answer may go. That
+# file is also at its decided ceiling with no room. The shape here is
+# `check/ffi_sweep.hero`'s, and for that module's own reason: a pass over
+# the whole file rather than a question at one call site.
+#
+# WHAT IT REFUSES, and the count that first justified it was wrong three
+# ways. `spec:253` says `.cstr()` lends a `str` to C to read **for that
+# call**, and panel 122 turned that into three clauses: a lend stands only
+# as an argument of a call (R2), no function outside an `extern` group
+# answers `cstr` (R3), and no record outside a group holds one (R4).
+# Measured after the sitting: **0 of 638** files in this tree change
+# verdict, so the whole rule costs this corpus nothing.
+#
+# The first version of this doc claimed 67 of 67 `.cstr()` sites were
+# already arguments of an extern call. It was 66; two of the four
+# re-reads were not externs at all — `bind.system(...)` is the NEGATIVE
+# fixture `tests/golden/surface-fixtures/externroute/wrong.hero` and
+# `as_text.say(...)` is a Heroes wrapper — and the blast radius that came
+# with it undercounted sites threefold. A grep line was read where a file
+# had to be opened, three times running.
+#
+# IT ASKS THE VALUE AND NOT THE WORLD (CLAUDE.md §11). The legal position
+# is built by reading the call nodes in hand, so a position the AST gains
+# tomorrow is refused by default rather than admitted in silence. That is
+# what closes `xs.push(s.cstr())` and `Rec(field: s.cstr())`, which the
+# first draft of this rule would have allowed: both are argument
+# positions, and only an `extern` call is one that reads the bytes and
+# returns.
+#
+# WHY THE EXTERN DISCRIMINATOR IS NOT HERE. It was, and panel 122 removed
+# it on three grounds: two qualified calls that look identical differ in
+# legality by what another file declares (the ergonomist's veto), no
+# language uses which KIND of function is called as a lifetime criterion
+# (the historian found none), and it refused three SOUND sites in the
+# wrapper §4.19 prescribes as the route out of a module.
+#
+# WHY THE LITERAL CASE GOES TOO. `return "lit".cstr()` is sound today,
+# because `HERO_STR_STATIC` gives a literal static storage and an
+# immortal refcount, while `return ("a" + n.to_str()).cstr()` is a
+# use-after-free that builds with zero diagnostics and prints an empty
+# line at exit 0. The two are one brace apart and what separates them is
+# invisible at the call site, so the rule refuses both rather than
+# teaching a reader to tell them apart (author decision 2026-09-09,
+# choosing the strict rule over the escape-only one).
+
+use ast
+use source
+use parse
+use resolve
+use check/lower
+use resolved
+use inventory
+use check/state
+use check/table
+use ffi_errors
+
+# Whether this expression is a lend: `s.cstr()` or `cstr(s)`. The
+# RESOLVER answers, not the text — a name is only a builtin because the
+# resolver said so, and `check/builtins.hero`'s own dispatch reads the
+# same table.
+function is_lend(a: ast.Ast, r: resolved.Resolved, at: i64) -> bool
+    named = match a.exprs[at].kind
+        .method                                                                     => at
+        .call cl                                                                    => cl.callee
+        .name | .int_lit | .char_lit | .float_lit | .str_lit | .bool_lit            => 0 - 1
+        .null_ptr | .hole | .unary | .binary | .field | .index                      => 0 - 1
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => 0 - 1
+
+    if named < 0
+        return false
+
+    match r.uses[named]
+        .builtin b                            => return inventory.table()[b.at].name == "cstr"
+        .top | .local | .module | .unresolved => return false
+
+# The call this expression is an argument of, for every expression in the
+# file. A UFCS receiver IS the first argument (§4.11), which is what makes
+# `"p".cstr().hero_file_read(@status)` legal.
+#
+# THE MATCH IS IN A FUNCTION OF ITS OWN so that the arms which record
+# nothing can be a `return`. Written inline in the `while` below, they
+# were a `continue` — which the spec forbids for exactly this reason,
+# § Control flow: *"An arm that does nothing is a block holding `_ = 0` —
+# `continue` is not one"*. In a `while` it jumps past the increment, and
+# the sweep hung on its first run.
+function record_arguments(a: ast.Ast, at: i64, @into: {i64: i64})
+    match a.exprs[at].kind
+        .call cl =>
+            for arg in cl.args
+                into[arg.value] @ at
+        .method m =>
+            into[m.receiver] @ at
+
+            for arg in m.args
+                into[arg.value] @ at
+        .name | .int_lit | .char_lit | .float_lit | .str_lit | .bool_lit            => return
+        .null_ptr | .hole | .unary | .binary | .field | .index                      => return
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => return
+
+function argument_of(a: ast.Ast) -> {i64: i64}
+    into: {i64: i64} @ {}
+    at: i64 @ 0
+
+    while at < a.exprs.len()
+        record_arguments(a, at, @into)
+        at @ at + 1
+
+    return into
+
+# A function outside an `extern` group may not answer `cstr` (panel 122 R3).
+#
+# WHY THIS AND NOT A FLOW ANALYSIS. `return pass(c: s.cstr())` puts the lend in
+# an argument position, which the rule above blesses, and returns a CALL
+# RESULT, which no rule about lends can see. Both compiling seats at panel 122
+# built it: silent at `check`, heap-use-after-free under the sanitizer. One
+# signature rule closes the whole two-hop route, and it is measured FREE —
+# every `-> cstr` in `selfhost/`, `examples/` and `tests/` is already inside an
+# `extern` group.
+#
+# It has no `written_types` hole, and that was measured rather than assumed: a
+# generic body cannot answer `cstr`, because `function escape<T>(...) -> T`
+# returning a lend is `error[type_mismatch]` at the definition, before
+# `ir/mono.hero` instantiates anything.
+function no_cstr_out_of_heroes(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl])
+    for decl in decls
+        match decl.kind
+            .function_decl fd =>
+                if fd.value.is_extern
+                    continue
+                declared = c.out.written_types[fd.value.result]
+
+                if declared.is_err()
+                    continue
+
+                if table.get(c.out.types, declared.must()) == .cstr
+                    state.push_diagnostic(
+                        @c,
+                        ffi_errors.cstr_out_of_heroes(source.span_text(s, decl.name), a.types[fd.value.result].span)
+                    )
+            .record_decl | .constant_decl | .variant_decl | .test_decl => continue
+
+# A `cstr` field on a record outside an `extern` group (panel 122 R4).
+#
+# `selfhost/emit/gate.hero` already refuses `cstr` as the element of an array, a
+# map or a `T?`. A record FIELD was the hole, and it was the hole the emitter's
+# own note sent people through: *"hold the pointer in a `record` and make an
+# array of that instead"*. Measured at panel 122: silent at `check`, and the
+# binary writes — heap-use-after-free on read. That note is rewritten in the
+# same commit as this clause, because a diagnostic that prescribes a compile
+# error is worse than one that says nothing.
+#
+# A GROUP'S record is untouched: there the fields are the header's, C owns the
+# bytes, and § FFI says in as many words that a group field may be a `cstr`.
+# Enumerated over the tree at the sitting: no `cstr` field outside a group
+# exists, so the clause costs this corpus nothing.
+function no_cstr_in_a_record(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl])
+    for decl in decls
+        match decl.kind
+            .record_decl rec =>
+                if !rec.header.is_err()
+                    continue
+
+                for field in rec.fields
+                    declared = c.out.written_types[field.ty]
+
+                    if declared.is_err()
+                        continue
+
+                    if table.get(c.out.types, declared.must()) == .cstr
+                        state.push_diagnostic(
+                            @c,
+                            ffi_errors.cstr_in_a_record(holder: source.span_text(s, decl.name), field: source.span_text(s, field.name), span: a.types[field.ty].span)
+                        )
+            .function_decl | .constant_decl | .variant_decl | .test_decl => continue
+
+# The sweep. A lend may stand only as an argument of a call (panel 122 R2).
+#
+# THE EXTERN DISCRIMINATOR WAS DROPPED AT THAT SITTING, on three grounds: the
+# ergonomist vetoed it because two identical-looking qualified calls differ in
+# legality by what another file declares; the historian could source no
+# language that uses which KIND of function is called as a lifetime criterion;
+# and the engineer measured that it refuses three SOUND sites in the wrapper
+# §4.19 prescribes as the route out of a module.
+function lent_only_into_c(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl])
+    no_cstr_out_of_heroes(@c, a, s, decls)
+    no_cstr_in_a_record(@c, a, s, decls)
+
+    # The early exit panel 122 R8 asks for: 637 of 638 files in this tree hold
+    # no lend at all, and building a parent map over every expression of every
+    # one of them cost 1.3% of `heroes check` for nothing.
+    if !holds_a_lend(a, r)
+        return
+    into = argument_of(a)
+    at: i64 @ 0
+
+    while at < a.exprs.len()
+        if is_lend(a, r, at) && into[at].is_err()
+            state.push_diagnostic(@c, ffi_errors.cstr_escapes(a.exprs[at].span))
+        at @ at + 1
+
+function holds_a_lend(a: ast.Ast, r: resolved.Resolved) -> bool
+    at: i64 @ 0
+
+    while at < a.exprs.len()
+        if is_lend(a, r, at)
+            return true
+        at @ at + 1
+
+    return false
+
+# Every clause fires, and the legal shape stays quiet. `check/ffi_sweep.hero`'s
+# own test is the model, and the lowering loop is not decoration: R3 and R4
+# read `written_types`, which `lower_ty` is what fills.
+function swept(text: str) -> i64
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    c: state.Checker @ state.new_checker(out_of: out, expr_count: p.tree.exprs.len())
+    i: i64 @ 0
+
+    while i < p.tree.types.len()
+        _ = lower.lower_ty(@c, p.tree, out, i)
+        i @ i + 1
+
+    lent_only_into_c(@c, p.tree, out, s, p.decls)
+    return c.out.diagnostics.len()
+
+test "a lend bound instead of passed is refused"
+    assert swept("extern \"s.h\"\n    function n(s: cstr) -> u64\n\nfunction f(x: str) -> u64\n    c = x.cstr()\n    return n(s: c)\n") == 1
+
+test "a Heroes function may not answer cstr"
+    assert swept("function f(x: str) -> cstr\n    return x.cstr()\n") == 2
+
+test "a record outside a group may not hold a cstr"
+    assert swept("record H\n    c: cstr\n\nfunction f(h: H) -> H\n    return h\n") == 1
+
+test "the legal shape stays quiet: a lend as an argument, and a group's own record"
+    assert swept("extern \"s.h\"\n    record C\n        name: cstr\n    function n(s: cstr) -> u64\n\nfunction f(x: str) -> u64\n    return n(s: x.cstr())\n") == 0

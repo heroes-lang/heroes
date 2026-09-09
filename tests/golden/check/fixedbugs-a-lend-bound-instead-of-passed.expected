@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-a-lend-bound-instead-of-passed.hero:24:9: error[cstr_escapes]: `.cstr()` lends this string to C for the length of one call (§4.19), and a lend may stand only as an argument of a call — here it stands somewhere the pointer outlives the bytes it points into

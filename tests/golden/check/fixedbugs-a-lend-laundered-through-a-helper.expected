@@ -1,0 +1,2 @@
+tests/golden/check/fixedbugs-a-lend-laundered-through-a-helper.hero:19:27: error[cstr_out_of_heroes]: `pass` answers `cstr`, and a `cstr` is C's pointer rather than this language's string (§4.19) — only a function inside an `extern` group may answer one
+tests/golden/check/fixedbugs-a-lend-laundered-through-a-helper.hero:22:27: error[cstr_out_of_heroes]: `outer` answers `cstr`, and a `cstr` is C's pointer rather than this language's string (§4.19) — only a function inside an `extern` group may answer one

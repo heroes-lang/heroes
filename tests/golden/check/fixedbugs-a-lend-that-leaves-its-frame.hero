@@ -1,0 +1,31 @@
+# fixedbugs, defect 022, panel 122, 2026-09-09.
+#
+# SYMPTOM: this file built at **exit 0 with zero diagnostics** under all
+# fourteen flags, and the program printed `0` where `17` is the answer, three
+# runs of three. Under `--sanitize`: `AddressSanitizer: heap-use-after-free`,
+# READ of size 18, freed by `hero_release_block` at `runtime/parts/alloc.c:151`.
+# The same file with a literal receiver printed the right answer, so the two
+# spellings differed in soundness and not in shape, one brace apart.
+#
+# CAUSE: `.cstr()` hands C the interior pointer of a Heroes `str` (§4.20, free
+# rather than a copy). The synthetic owner slot that keeps the built `str`
+# alive is decref'd when the function returns, so a `cstr` RETURNED from that
+# function points into freed bytes. `spec:253` promised the lend only "for
+# that call" and nothing enforced it. Found by the ffi-pragmatist at panel 121
+# while pricing string interpolation, which neither causes it nor is needed to
+# reach it.
+#
+# FIX: panel 122 R3. A function outside an `extern` group may not answer
+# `cstr` — measured free, because every `-> cstr` in this tree is already
+# inside a group. The repair for a program like this one is to answer the
+# `str` and let the caller lend it at the call that reads it, which is what
+# `tests/golden/surface-fixtures/externroute/bind.hero` does.
+
+extern "string.h"
+    function strlen(s: cstr) -> u64
+
+function built(n: i64) -> cstr  #~ cstr_out_of_heroes
+    return ("heap-and-doomed-" + n.to_str()).cstr()  #~ cstr_escapes
+
+function main()
+    print(strlen(s: built(n: 7)).to_str())
