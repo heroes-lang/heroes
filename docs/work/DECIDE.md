@@ -46,14 +46,18 @@ Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
     cheaper one is still cheaper, by 25 tokens rather than 19, and at 6144 it
     costs 12.7% of the free budget instead of being unaffordable.
 
-    **(ii) The cheaper spelling is live, not rejected.** `\(e)` costs **-24**
-    tokens against the adopted `f"…"` (+94 against +118, both deciding every
-    open case), touches **zero** existing literals because `\(` is
-    `error[unknown_escape]` today with 0 occurrences, and lands in
-    `selfhost/escape.hero`, which has room. The compiler-engineer prefers it. It
-    is not adopted because `docs/panel/008-escape-sequences.md` R3 rules that a
-    new escape reconvenes that panel, so taking it costs a sitting rather than
-    tokens.
+    **(ii) SETTLED 2026-09-09 by author decision: the `f` prefix, because it is
+    the standard one** (*"preferisco l'f-string alla Python, è più standard"*).
+    R3 stands as the sitting adopted it, and the two rival spellings that day
+    produced are closed: the compiler-engineer's `\(e)`, and the author's own
+    `\{e}`, which the coordinator had recommended at **-25** real tokens.
+    Neither is taken, so `docs/panel/008-escape-sequences.md` R3 is not
+    triggered and no second sitting is owed, which is worth more than the
+    tokens. Re-measured on the real instrument (023), the adopted clause is
+    **+151** against `\{e}`'s **+126**, and against the 6144 ceiling's 989 free
+    that gap is 2.5% of the budget, where on 2026-09-08's false arithmetic it
+    had been the whole argument. The deciding scale was familiarity, which is
+    the one the thesis rests on, rather than the one the budget measures.
 
     **(iii) Principle 0's burden is unmet and the resolution says so.** The
     spec-warden vetoed on it: no reader has been put in front of either form,
