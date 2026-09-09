@@ -29,6 +29,8 @@ COUNT_TOKENS = "/v1/messages/count_tokens"
 CLIENTS = frozenset({"curl", "wget", "http", "https", "xh", "httpie",
                      "python", "python3", "node", "deno"})
 PRINTERS = frozenset({"echo", "printf", "print", "printenv", "env", "set"})
+# The ones that print the WHOLE environment when given nothing to print.
+DUMPERS = frozenset({"env", "printenv", "set", "export", "declare"})
 READERS = frozenset({"cat", "less", "more", "head", "tail", "bat", "open",
                      "nl", "strings"})
 SECRETS = ("$ANTHROPIC_API_KEY", "${ANTHROPIC_API_KEY}",
@@ -270,6 +272,19 @@ def verdict(command):
                         "Test it without printing it, or print `${#VAR}`. "
                         "`.env.example`"
                     )
+
+        # **A bare dump names no secret and prints every one of them**, which is
+        # the hole the rule above had on its first hour: it read the words for a
+        # secret's name, and `env` on its own has no words. Found by the author
+        # asking what the guard actually costs, 2026-09-09. A dump with
+        # ARGUMENTS is somebody's legitimate `env FOO=1 cmd` prefix or
+        # `printenv PATH`, so only the bare form goes.
+        if w[0] in DUMPERS and len(w) == 1:
+            return (
+                "refused: a bare `" + w[0] + "` prints every variable in the "
+                "environment, the live keys included. Name the one you want. "
+                "`.env.example`"
+            )
         if w[0] in READERS and any(t == ".env" or t.endswith("/.env") for t in w):
             return (
                 "refused: `.env` holds the live keys. `.env.example` is the "
