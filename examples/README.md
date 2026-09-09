@@ -131,6 +131,8 @@ directory count.
 | `09-holes.hero`     | `???`, and working skeleton-first |
 | `10-maps.hero`      | `{K: V}`, and `m[k]` returning a `V?` — absence as a type |
 | `11-trees.hero`     | a recursive variant: the array is the only indirection |
+| `12-interpolation.hero` | `f"…{e}…"`: a string that carries values, any expression in a hole, `{{` one brace |
+| `13-lease.hero`     | text a C library keeps: `s.lease()` hands C a copy that lives until `end_lease(@x)` |
 
 What holds the gallery, today, and by which instrument — because an example
 nobody runs is an example that rots. Every file **checks clean**: `heroes mutate

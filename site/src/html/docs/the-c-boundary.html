@@ -70,6 +70,15 @@ error[ffi_return_type]: `puts` does not return `cstr` — that is what `stdio.h`
   <p>
     A string lent with <code>.cstr()</code> may stand only as an argument of the call that reads it. Kept anywhere else it would outlive its own bytes, and the compiler refuses that shape before anything runs. When a library keeps the text past the call, the program says so and stays in charge of the bytes: <code>x: cstr @ s.lease()</code> hands C a copy that lives until <code>end_lease(@x)</code>, and a lease nobody ends is named when the program exits.
   </p>
+  <figure class="example" data-src="examples/gallery/13-lease.hero" data-lines="22-27">
+<pre><code>    <span class="k">while</span> at &lt; 3
+        label: <span class="t">cstr</span> @ <span class="s">f"row-{at}-payload"</span>.lease()
+        keep_label(s: label)
+        print(<span class="s">f"C still reads {kept_label_length()} bytes"</span>)
+        end_lease(@label)
+        at @ at + 1</code></pre>
+    <figcaption>examples/gallery/13-lease.hero, lines 22&ndash;27</figcaption>
+  </figure>
   <p>
     Heroes does not verify that a <code>ptr</code> returned to a library is the correct one or how the library uses it. Type checks do not remove the risks of C code.
   </p>
@@ -171,7 +180,8 @@ the 16:9 diagonal of a 1920-wide screen: 2202.9071700822983</code></pre>
 
   <footer>
     <p>Every code block on this page is a slice of
-    <code>examples/gallery/08-ffi.hero</code> in the repository. The two
-    diagnostics are that file with one name misspelled and one result type
-    changed, built as <code>ffi.hero</code>.</p>
+    <code>examples/gallery/08-ffi.hero</code> in the repository, except the
+    lease&rsquo;s, which is a slice of <code>examples/gallery/13-lease.hero</code>.
+    The two diagnostics are the first file with one name misspelled and one
+    result type changed, built as <code>ffi.hero</code>.</p>
   </footer>

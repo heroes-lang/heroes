@@ -117,3 +117,9 @@ this example on it; the Linux and Windows legs before the push; a `--dump-ast`
 that shows a hole's structure rather than the literal verbatim, which the
 test-section printer already does and the production printer could; and panel
 125's ratification.
+
+**Appended 2026-09-09, the two other platforms run before the push.**
+`interpolation-holes-and-braces` and `examples/gallery/12-interpolation.hero`
+are clean under `--sanitize` in the Linux container and print their expected
+output on the Windows box; the compiler's 618 tests and the harness's 125 pass on
+both. Nothing carried forward from the platform list.

@@ -52,6 +52,7 @@ export const groups: Group[] = [
       'gallery/10-maps',
       'gallery/11-trees',
       'gallery/12-interpolation',
+      'gallery/13-lease',
     ],
   },
   {

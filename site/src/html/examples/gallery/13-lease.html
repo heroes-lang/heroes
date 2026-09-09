@@ -1,0 +1,3 @@
+<p class="tagline">Hand a C library text it will keep, and say when you are done with it.</p>
+
+<p>A string lent with <code>.cstr()</code> is C&rsquo;s to read for one call, and some libraries keep the pointer and read it later. The header cannot say which, so the program does: <code>x: cstr @ s.lease()</code> hands C a copy of the bytes that lives until <code>end_lease(@x)</code> frees it and empties the cell. The name of a lease may stand only as an argument of a call and nothing else writes its cell, which is what makes a second release impossible. A lease nobody ends is named when the program exits. The C side here is the smallest library that keeps what it is given, in a header beside the file.</p>

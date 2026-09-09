@@ -144,6 +144,24 @@ error[unknown_escape]: `\d` is not an escape sequence — the escapes are \n \t 
 the quick brown fox
 tqbf</code></pre>
 
+  <h2>Testo con dei buchi dentro</h2>
+  <p>
+    Una stringa può portare dei valori. Una <code>f</code> prima della virgoletta d&rsquo;apertura trasforma <code>{n}</code> nel testo di <code>n</code>, scritto come lo scriverebbe <code>to_str</code>. In un buco può stare qualsiasi espressione, e il buco finisce alla graffa che lo chiude, così una chiamata o una ricerca al suo interno si legge come si leggerebbe ovunque. Due graffe scrivono una graffa. Una stringa senza la <code>f</code> è esattamente quella di prima.
+  </p>
+  <figure class="example" data-src="examples/gallery/12-interpolation.hero" data-lines="17-18">
+<pre><code><span class="k">function</span> line(at: <span class="t">i64</span>, of: <span class="t">i64</span>, star: Star) -&gt; <span class="t">str</span>
+    <span class="k">return</span> <span class="s">f"{at}/{of} {star.name} at magnitude {star.magnitude}"</span></code></pre>
+    <figcaption>examples/gallery/12-interpolation.hero, righe 17&ndash;18</figcaption>
+  </figure>
+  <p>
+    In un buco può stare ciò che <code>to_str</code> sa rendere: un intero, un numero con la virgola, un <code>bool</code> o una <code>str</code>. Un record o una lista non hanno un testo proprio, e un valore che potrebbe mancare va prima reso certo con <code>.must()</code>. Il compilatore rifiuta il buco e la sua nota dice cosa scrivere al suo posto.
+  </p>
+  <pre><code>$ heroes run examples/gallery/12-interpolation.hero
+1/2 Sirius at magnitude -1.46
+2/2 Vega at magnitude 0.03
+seen Sirius 2 times, {like this}
+nested: 2 stars</code></pre>
+
   <p class="next">
     Poi: <b><a href="/it/docs/maps/">Le mappe</a></b>, dove cercare una chiave ti
     restituisce un valore <i>oppure</i> un errore, e non c&rsquo;è nessun null
@@ -160,7 +178,9 @@ tqbf</code></pre>
 
   <footer>
     <p>Ogni blocco di codice di questa pagina è una fetta di
-    <code>examples/gallery/07-strings.hero</code> nel repository. Le due
-    diagnostiche sono quello stesso file con un confronto e un separatore
+    <code>examples/gallery/07-strings.hero</code> nel repository, tranne quelli
+    dell&rsquo;ultima sezione, che vengono da
+    <code>examples/gallery/12-interpolation.hero</code>. Le due
+    diagnostiche sono il primo file con un confronto e un separatore
     cambiati, controllato come <code>strings.hero</code>.</p>
   </footer>
