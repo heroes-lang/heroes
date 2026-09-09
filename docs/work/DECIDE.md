@@ -52,4 +52,14 @@ Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
     counter accuse the compiler on the same path. The Linux `--sanitize` leg is
     the instrument named instead.
 
+    **(iv) The spec's word for that path, found by the site panel 2026-09-09.**
+    `spec/heroes-spec.md:246` says *a lease nobody ends is named at exit*, and
+    what runs is `panic: 1 lease(s) never ended`, a COUNT, printed when `main`
+    returns and never on `exit()` (both run: exit 134 with the count, exit 0 in
+    silence). Naming the lease would take the registry (i) refuses, so the
+    recommendation is the wording: *a lease nobody ends is counted when `main`
+    returns*, its token cost measured with `heroes measure --refresh` when
+    ratified, and the site already says the measured thing on every page that
+    mentions it.
+
 *******************************************************************************
