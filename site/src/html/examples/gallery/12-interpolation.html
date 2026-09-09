@@ -1,0 +1,3 @@
+<p class="tagline">Put a value inside a string, and let the compiler say when it has no text.</p>
+
+<p>An <code>f</code> before the opening quote lets a string carry values: <code>f"{at}/{of} {star.name}"</code> writes each hole as <code>to_str</code> would write it. Any expression may stand in a hole, including a call or another string of the same kind, and two braces write one brace. A hole may hold what <code>to_str</code> can render, an integer, a float, <code>bool</code> or <code>str</code>; a record, a list, or a value that may be missing is refused at the hole, with a note saying what to write instead.</p>

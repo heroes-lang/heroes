@@ -68,6 +68,9 @@ error[ffi_return_type]: `puts` does not return `cstr` — that is what `stdio.h`
     The types distinguish data from C, and explicit conversions show where it becomes a Heroes value.
   </p>
   <p>
+    A string lent with <code>.cstr()</code> may stand only as an argument of the call that reads it. Kept anywhere else it would outlive its own bytes, and the compiler refuses that shape before anything runs. When a library keeps the text past the call, the program says so and stays in charge of the bytes: <code>x: cstr @ s.lease()</code> hands C a copy that lives until <code>end_lease(@x)</code>, and a lease nobody ends is named when the program exits.
+  </p>
+  <p>
     Heroes does not verify that a <code>ptr</code> returned to a library is the correct one or how the library uses it. Type checks do not remove the risks of C code.
   </p>
   <p>

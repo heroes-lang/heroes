@@ -67,6 +67,9 @@ error[ffi_return_type]: `puts` does not return `cstr` — that is what `stdio.h`
   <p>
     I tipi distinguono i dati provenienti dal C e le conversioni mostrano dove vengono trasformati in valori Heroes.
   </p>
+  <p>
+    Una stringa prestata con <code>.cstr()</code> può stare solo come argomento della chiamata che la legge. Tenuta altrove sopravviverebbe ai propri byte, e il compilatore rifiuta quella forma prima che qualcosa giri. Quando una libreria tiene il testo oltre la chiamata, il programma lo dice e resta padrone dei byte: <code>x: cstr @ s.lease()</code> consegna al C una copia che vive fino a <code>end_lease(@x)</code>, e una locazione che nessuno chiude viene nominata all&rsquo;uscita del programma.
+  </p>
 
   <p>
     Heroes non verifica che il <code>ptr</code> restituito a una libreria sia quello corretto, né come la libreria lo usi. I controlli sui tipi non eliminano i rischi del codice C.

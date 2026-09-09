@@ -8,6 +8,26 @@
   </p>
 
   <ol class="log">
+    <li id="44">
+      <span class="when">Text with holes in it</span>
+      <b>A string can now carry values: <code>f"line {n}: {word}"</code> writes each hole as <code>to_str</code> would.</b> Any expression may stand in a hole, two braces write one brace, and a plain string is unchanged. The compiler refuses a hole whose value has no text and says which.
+      <a class="more" href="/examples/gallery/12-interpolation/">The example</a>
+    </li>
+    <li id="43">
+      <span class="when">The ruling on interpolation</span>
+      <b>Three counts decided how a string may hold a value, and the counts corrected the first guess twice.</b> Admitting any expression costs fewer words in the specification than admitting only a name, and the brace was already in use in the compiler&rsquo;s own source, so the form is gated behind an <code>f</code>.
+      <a class="more" href="/spec/">The specification</a>
+    </li>
+    <li id="42">
+      <span class="when">Bytes a C library may keep</span>
+      <b>A program can hand a C library text it will keep, and say when it is done with it: <code>x: cstr @ s.lease()</code>, then <code>end_lease(@x)</code>.</b> Every candidate rule that refused such programs was refused by a measurement, and what closed the class was a capability instead. A lease nobody ends is named when the program exits.
+      <a class="more" href="/docs/the-c-boundary/">The C boundary</a>
+    </li>
+    <li id="41">
+      <span class="when">A lent string stays where it was lent</span>
+      <b>A string lent to C with <code>.cstr()</code> may stand only as an argument of the call that reads it.</b> Kept anywhere else, it outlived the bytes it pointed into and the program read freed memory; the compiler now refuses that shape, with its reason, before anything runs.
+      <a class="more" href="/docs/the-c-boundary/">The C boundary</a>
+    </li>
     <li id="40">
       <span class="when">The repository is open</span>
       <b>The compiler&rsquo;s source, the specification and every record the project keeps can now be read by anyone.</b> The licence is Apache 2.0, so the code can be used, changed and built on. Questions and problem reports are welcome; changes sent in are not accepted, and the repository explains why in one paragraph.

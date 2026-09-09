@@ -68,6 +68,18 @@ export function specCeiling(): number {
   return n;
 }
 
+/**
+ * The ceiling as the pages say it: `6K`, the author's own word for it (2026-09-09,
+ * *"fewer than 6K tokens"*). Derived, never typed, and refused if the ceiling
+ * stops being a whole number of K: a claim that rounds would be a claim the
+ * tree does not make.
+ */
+export function ceilingK(): string {
+  const n = specCeiling();
+  if (n % 1024 !== 0) throw new Error(`${SPEC_SUITE}: the ceiling ${n} is not a whole number of K, and the pages say it in K.`);
+  return `${n / 1024}K`;
+}
+
 /** The seats of the language panel, and how many of them carry a veto. */
 function judges(): { seats: number; vetoes: number } {
   // `filesIn` returns repository-relative paths, so each brief is read by the
@@ -284,13 +296,22 @@ const CLAIMS: Claim[] = [
   { page: 'site/src/html/it/about/thanks.html', what: 'the number of judges',
     fact: () => judges().seats, shape: (n) => new RegExp(`${n} giudici valutano le proposte`, 'i') },
 
-  // The specification's ceiling, which the claim under the name carries, in the
-  // author's own words (2026-09-08). The dot in the Italian figure is a
-  // character and not a wildcard.
+  // The specification's ceiling, in the author's own word for it, `6K`
+  // (2026-09-09), derived from the suite by `ceilingK` and said on the two
+  // home pages, the two why pages and the two specification pages. The shape
+  // ignores the formatted number it is handed and reads the K form itself.
   { page: 'site/src/html/index.html', what: 'the specification ceiling in tokens',
-    fact: specCeiling, shape: (n) => new RegExp(`fewer than ${n} tokens`) },
+    fact: specCeiling, shape: () => new RegExp(`fewer than ${ceilingK()} tokens`) },
   { page: 'site/src/html/it/index.html', what: 'the specification ceiling in tokens',
-    fact: specCeiling, shape: (n) => new RegExp(`meno di ${n.replace('.', '\\.')} token`) },
+    fact: specCeiling, shape: () => new RegExp(`meno di ${ceilingK()} token`) },
+  { page: 'site/src/html/why.html', what: 'the specification ceiling in tokens',
+    fact: specCeiling, shape: () => new RegExp(`below ${ceilingK()} tokens`) },
+  { page: 'site/src/html/it/why.html', what: 'the specification ceiling in tokens',
+    fact: specCeiling, shape: () => new RegExp(`sotto il limite di ${ceilingK()} token`) },
+  { page: 'site/src/html/spec.html', what: 'the specification ceiling in tokens',
+    fact: specCeiling, shape: () => new RegExp(`below ${ceilingK()} tokens`) },
+  { page: 'site/src/html/it/spec.html', what: 'the specification ceiling in tokens',
+    fact: specCeiling, shape: () => new RegExp(`sotto il limite di ${ceilingK()} token`) },
 
   // The words that can begin a top-level line.
   { page: 'site/src/html/why.html', what: 'the words that can begin a line',

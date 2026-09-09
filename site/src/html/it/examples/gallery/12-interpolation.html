@@ -1,0 +1,3 @@
+<p class="tagline">Mettere un valore dentro una stringa, e lasciare che il compilatore dica quando non ha un testo.</p>
+
+<p>Una <code>f</code> prima della virgoletta d&rsquo;apertura permette a una stringa di portare dei valori: <code>f"{at}/{of} {star.name}"</code> scrive ogni buco come lo scriverebbe <code>to_str</code>. In un buco può stare qualsiasi espressione, compresa una chiamata o un&rsquo;altra stringa dello stesso tipo, e due graffe scrivono una graffa. Un buco può contenere ciò che <code>to_str</code> sa rendere, cioè un intero, un numero con la virgola, un <code>bool</code> o una <code>str</code>; un record, una lista o un valore che potrebbe mancare vengono rifiutati al buco, con una nota che dice cosa scrivere al loro posto.</p>
