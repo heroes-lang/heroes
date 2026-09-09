@@ -21,7 +21,51 @@ lives outside the two banners: `records/lists` is the executor of that.
 Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 3**
+**OPEN: 4**
+
+- [ ] **panel 124** | ratify defect 024's answer: all four candidate refusals are refused, §4.19 gains a FOURTH case (Heroes' bytes with C's reach) as a reserved word that is a copy and never a pin with the release written and never inferred, the four cases share one field, the ledger ships SQLITE_TRANSIENT now, and 024 shrinks rather than closes | `docs/panel/124-the-remedy-was-missing-not-the-refusal.md` § The resolution
+
+    **Origin:** the sitting of 2026-09-09, five seats, four rounds for the ffi
+    seat. Three candidates went out and each came back with a veto; a fourth,
+    the coordinator's, was raised mid-sitting and vetoed on measurement by the
+    seat whose own sentence had suggested it. The adopted resolution is a fifth
+    thing and it is **not a refusal at all**.
+
+    **FOUR THINGS IN IT ARE THE AUTHOR'S TO OVERTURN.**
+
+    **(i) No keyword refuses anything, and the language GAINS a capability
+    instead.** Every candidate on the table was a rule that refuses a program.
+    What is adopted is a way to hold bytes for as long as C reads them, because
+    the ffi seat measured that both shapes no refusal could close —
+    `x10h` and `x12h` — run correct and sanitizer-clean today once the program
+    can hold its own buffer, so **024 can close without escape analysis**. The
+    author may prefer the conservative route recorded beside it: ship only the
+    ledger's repair, leave 024 open, and let the word wait for a program that
+    needs it.
+
+    **(ii) It enters on ROBUSTNESS and not on Principle 0, and the warden said
+    so plainly against its own case.** `runtime/` holds zero retained `char *`,
+    all 9 `selfhost/` bindings are transient, the compiler self-hosts with no
+    marks, and the thesis branch names metric 2, which has never run. So both
+    branches of §2 are unmet and this lands on precedence rank 3, which
+    licenses the narrowest thing that closes the class and nothing wider.
+
+    **(iii) The reason a word is needed at all is a SEGFAULT class.** The route
+    is expressible today with `malloc` and a `ptr` parameter, and it costs four
+    guarantees: `puts(s: cstr)` with `nullptr` is a named panic at exit 134 while
+    `atoi(s: ptr)` with `nullptr` is **exit 139, SIGSEGV, no message**; §4.20's
+    NUL-termination becomes the author's `strcpy`; the leak gate stops counting
+    the block, so a forgotten release is exit 0 in silence at 33.6 MB; and the
+    pointer cannot travel through `T?`. §1.12 says a Heroes program must not
+    segfault, so the cheap spelling trades one violation for a worse one.
+
+    **(iv) The relay hole is deliberately NOT decided here.** The compiler seat
+    prototyped candidate A and found that any declaration-site rule leaves a
+    Heroes function relaying a lend at exit 0 with a use-after-free. Three
+    routes close it, one is refused by its own target's comment
+    (`selfhost/library_source.hero:178`), and neither of the other two has been
+    prototyped. A resolution over an unrun option set is what CL-057 exists to
+    stop, so `M-held-bytes` picks with a measurement.
 
 - [ ] **panel 123** | ratify the budget's instrument: the gate never touches the network, one pinned model id binds, `--refresh` prints for a human to paste, the 2000 soft line is retired as the removal, and the 38 ledger rows are renamed rather than restated | `docs/panel/123-the-vendored-half-that-never-changed.md` § Resolution
 

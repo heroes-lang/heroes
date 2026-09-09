@@ -35,7 +35,7 @@ with what each one measured in the git history and in `DESIGN-LOG.md`):
 |---|---|
 | **Current milestone** | **M-interpolation-verdict** — the ruling on design.md Part 7 item 7. The verdict is given: the form ENTERS as an `f` prefix by author decision, so what remains is the implementation, which panel 121 R5 blocks until `selfhost/grammar_expr.hero` has a legal home |
 | **Last closed** | **M-cstr-lifetime**, 2026-09-09, **NO TAG** ([040](journal/040-cstr-lifetime.md)) — five steps, one sitting, two defects repaired and a third filed. Untagged on purpose: § Verification tags only over a clean list, and defect **024** is open by panel 122 R5's design · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
-| Milestones closed | **41** of 61 · **41** tags, so one closed milestone carries none |
+| Milestones closed | **41** of 62 · **41** tags, so one closed milestone carries none |
 | The compiler | **55,785** lines of Heroes in **191** modules · the seed **755,216** lines of C, regenerated four times today with the fixpoint verified by `cmp` each time · runtime ABI **21**, unmoved: a checker-only rule needs no entry point |
 | The spec | **5128 real tokens** on `claude-opus-5` through `count_tokens`, offset 6 probed twice; **4020** on the vendored ranks, which is what `SPEC_TOKENS` pins and all the tool still reports. **The ceiling is 6144** by author decision 2026-09-09 and it now carries its instrument in design.md §1.6, leaving **955** free net of the FFI floor. `cl100k_base` is OpenAI's and undercounts this document by 27.5%, so the old *"3995 of a hard 4096 with 40 free"* was never the reader's number ([023](measurements/023-the-instrument-was-not-the-readers.md)); the 4096 floor this row once claimed is withdrawn by panel 123. The `real` row and `--refresh` both landed 2026-09-09, and the flag reproduced the hand-measured record exactly — 5128, `claude-opus-5`, 2026-09-09, digest `6022a8bc2f16ca0e` |
 | Records | sittings **121** · journals **41** · examples **118** files, **545** `test` blocks · open defects **1**, and it blocks a tag · mutation: `drop-question` **236 of 236 killed**, `--permissive` 193, so **43** are caught only by the thesis |
@@ -154,25 +154,26 @@ and why one overtook another are under the table, in § Who scheduled what.
 | 40 | **M-closures-verdict** | done 2026-09-08 | `m-closures-verdict` | [039](journal/039-closures-verdict.md) | the ruling on Part 7 items 1 and 12: both refused, closures to Part 6 and inline blocks left unplaced · **§1.1**
 | 41 | **M-cstr-lifetime** | done 2026-09-09, **untagged** | — | [040](journal/040-cstr-lifetime.md) | a `cstr` may not outlive the `str` it was lent from: three positional clauses, 0 of 638 files moved. **Untagged because the list is not clean** — defect 024, the lend C RETAINS, is open by panel 122 R5's design · **§1.12**
 | 42 | **M-interpolation-verdict** | **OPEN** | — | — | the ruling on design.md Part 7 item 7, string interpolation — a decision, not a feature |
-| 43 | **M-reflection-verdict** | scheduled | — | — | the ruling on reflection — at run time, and as compile-time derivation over a record's fields — and, since 2026-09-06, on a general annotation mechanism · a decision, not a feature |
-| 44 | **M-deferral-ledger** | scheduled | — | — | every Part 7 item with no milestone gets a dated verdict or a return condition |
-| 45 | **M-check-completeness** | scheduled | — | — | what `heroes check` accepts, `heroes build` compiles — through a generic too · scheduled, no warrant
-| 46 | **M-core-packages** | scheduled | — | — | small packages that compose, organised as Go's tree, in Heroes or over C |
-| 47 | **M-package-manager** | scheduled | — | — | `heroes add`/`heroes fetch`; bindings instead of a standard library |
-| 48 | **M-web-framework** | scheduled | — | — | composes the core packages, Go/Echo style: explicit routes, records, no magic |
-| 49 | **M-doc-generator** | scheduled | — | — | `heroes doc`, the one direction Part 6's literate-source row promises · scheduled, no warrant |
-| 50 | **M-panic-location** | scheduled | — | — | a panic names the `.hero` file, line and function · **§1.12** |
-| 51 | **M-typed-inspection** | scheduled | — | — | a stopped program shows Heroes values: the name the author typed, and `[T]`, `{K: V}`, `T?`, a variant and a record shown as themselves · scheduled, no warrant |
-| 52 | **M-generated-programs** | scheduled | — | — | programs nobody wrote: a generator that composes valid Heroes and knows the answer before the compiler is asked · **§1.12** |
-| 53 | **M-thesis-harness** | scheduled | — | — | Part 11's metrics 2 and 4 run for the first time, as a Heroes program · **§1.1** |
-| 54 | **M-lsp-server** | scheduled | — | — | `heroes lsp`, and the incremental frontend it needs |
-| 55 | **M-vscode-extension** | scheduled | — | — | the extension, complete |
-| 56 | **M-qbe-backend** | scheduled | — | — | Part 7 item 15 — the proof that the IR is not C in disguise |
-| 57 | **M-journey-book** | scheduled | — | — | the journey — how this language came to be |
-| 58 | **M-guide-book** | scheduled | — | — | the guide, as a book you would find in a shop · **§1.1** |
-| 59 | **M-install-channels** | scheduled | — | — | a Homebrew tap, winget, a Nix flake, a Docker image, all built from the seed and pinned to a `v*` release tag; the version scheme itself was decided ahead, 2026-09-07 |
-| 60 | **M-online-compiler** | scheduled | — | — | the compiler reached without installing anything: the site's visitor writes Heroes and gets its answer · scheduled, no warrant |
-| 61 | **M-publication-gate** | scheduled | — | — | the last gate before anything goes outward · CLAUDE.md §14 |
+| 43 | **M-held-bytes** | scheduled | — | — | §4.19's FOURTH case, which that section does not name: bytes Heroes holds, Heroes frees, and C may read for as long as the program says. Panel 124, and what closes defect 024 · **§1.12**
+| 44 | **M-reflection-verdict** | scheduled | — | — | the ruling on reflection — at run time, and as compile-time derivation over a record's fields — and, since 2026-09-06, on a general annotation mechanism · a decision, not a feature |
+| 45 | **M-deferral-ledger** | scheduled | — | — | every Part 7 item with no milestone gets a dated verdict or a return condition |
+| 46 | **M-check-completeness** | scheduled | — | — | what `heroes check` accepts, `heroes build` compiles — through a generic too · scheduled, no warrant
+| 47 | **M-core-packages** | scheduled | — | — | small packages that compose, organised as Go's tree, in Heroes or over C |
+| 48 | **M-package-manager** | scheduled | — | — | `heroes add`/`heroes fetch`; bindings instead of a standard library |
+| 49 | **M-web-framework** | scheduled | — | — | composes the core packages, Go/Echo style: explicit routes, records, no magic |
+| 50 | **M-doc-generator** | scheduled | — | — | `heroes doc`, the one direction Part 6's literate-source row promises · scheduled, no warrant |
+| 51 | **M-panic-location** | scheduled | — | — | a panic names the `.hero` file, line and function · **§1.12** |
+| 52 | **M-typed-inspection** | scheduled | — | — | a stopped program shows Heroes values: the name the author typed, and `[T]`, `{K: V}`, `T?`, a variant and a record shown as themselves · scheduled, no warrant |
+| 53 | **M-generated-programs** | scheduled | — | — | programs nobody wrote: a generator that composes valid Heroes and knows the answer before the compiler is asked · **§1.12** |
+| 54 | **M-thesis-harness** | scheduled | — | — | Part 11's metrics 2 and 4 run for the first time, as a Heroes program · **§1.1** |
+| 55 | **M-lsp-server** | scheduled | — | — | `heroes lsp`, and the incremental frontend it needs |
+| 56 | **M-vscode-extension** | scheduled | — | — | the extension, complete |
+| 57 | **M-qbe-backend** | scheduled | — | — | Part 7 item 15 — the proof that the IR is not C in disguise |
+| 58 | **M-journey-book** | scheduled | — | — | the journey — how this language came to be |
+| 59 | **M-guide-book** | scheduled | — | — | the guide, as a book you would find in a shop · **§1.1** |
+| 60 | **M-install-channels** | scheduled | — | — | a Homebrew tap, winget, a Nix flake, a Docker image, all built from the seed and pinned to a `v*` release tag; the version scheme itself was decided ahead, 2026-09-07 |
+| 61 | **M-online-compiler** | scheduled | — | — | the compiler reached without installing anything: the site's visitor writes Heroes and gets its answer · scheduled, no warrant |
+| 62 | **M-publication-gate** | scheduled | — | — | the last gate before anything goes outward · CLAUDE.md §14 |
 
 Three closed milestones have no tag of their own because they were parents or
 sub-steps: **M-checker-core**, **M-data-declarations** and **M-rich-diagnostics**
@@ -2268,6 +2269,7 @@ So a number met in the record resolves here, and only here.
 | `M-vscode-extension` | M14 | — | the extension, complete |
 | `M-documentation-site` | M15 | `m-documentation-site` | the site. **Done 2026-09-02, out of chain order by author instruction**: the module system had just landed and the site had no page about it, so a reader could learn how numbers, errors and the C boundary work and leave with no idea how to write a program in more than one file |
 | `M-cstr-lifetime` | — | `m-cstr-lifetime` | a `cstr` may not outlive the `str` it was lent from, which is defect 022: `return ("a" + n.to_str()).cstr()` builds with zero diagnostics under all fourteen flags and hands C a pointer into freed memory. **Named for the guarantee and not for the bug** (§14): the deliverable is a rule about how long a lent string lives, which is why `M-cstr-escape` was refused — it names the symptom, and a symptom is not a deliverable. **Deliberately not `M-use-after-free`**, which annexes a whole class of failure this language can reach by other routes and would leave no name for the next one; §14 forbids an id to make a claim a later milestone can falsify. Both runners-up are in `tests/harness/suite_records.hero`'s `REFUSED`. Placed first and alone by author decision 2026-09-09 · **§1.12** |
+| `M-held-bytes` | — | — | §4.19's **fourth** case, which that section does not name: all three it reserved are about a pointer **C** made, and this is bytes **Heroes** made, that **Heroes** frees, which C may read for as long as the program says. **Named for what it delivers and not for what it refuses** (§14): panel 124 refused four candidate refusals, and the one thing that closed the two shapes no refusal could reach was a capability, so an id naming a rule would name the half of the sitting that failed. **Deliberately not `M-borrowed-pointer`**, which was the coordinator's suggestion in the brief and which names §4.19's case 2 — the case panel 124 measured to be unreachable from any declaration, because `sqlite3.h:4888` puts the retention decision in the fifth ARGUMENT. **And not `M-pinned-bytes`**, because a pin is what panel 124 R3 refuses: the buffer is a copy, or `s.cstr()` and the held pointer alias and a copy-on-write mutation rewrites what C is reading · **§1.12** |
 | `M-interpolation-verdict` | — | — | the ruling on string interpolation — design.md Part 7 item 7, evaluated for the first time since the fixpoint made Part 7 admissible at all. **The verdict is the deliverable and the name says so** (§14, author instruction 2026-09-02): the milestone has to be able to close with a refusal, so an id naming the feature would claim the very thing the sitting exists to decide, and a later milestone could falsify it |
 | `M-journey-book` | M16 | — | the journey |
 | `M-guide-book` | M17 | — | the guide |
