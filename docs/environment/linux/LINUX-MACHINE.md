@@ -34,18 +34,24 @@ Measured 2026-09-03 on the author's Mac (`venus`, arm64, macOS 26.6.2):
 | Emulation | Rosetta (`UseVirtualizationFrameworkRosetta: true`); `uname -m` inside says `x86_64` |
 | Visible to a container | 8 CPUs, 7.8 GB |
 | Base image | `silkeh/clang:22`, the same digest as `:latest` that day (`sha256:ca3544b0…`), 1.82 GB |
-| Built image | `heroes-linux`, 1.93 GB |
-| Inside | Debian 13.6 (trixie), Debian clang 22.1.8, lld, lldb 22.1.8, glibc 2.41, pkg-config, sqlite 3.46.1, libcurl 8.14.1 |
+| Built image | `heroes-linux`, 1.93 GB; 1.99 GB since git joined (2026-09-09) |
+| Inside | Debian 13.6 (trixie), Debian clang 22.1.8, lld, lldb 22.1.8, glibc 2.41, pkg-config, sqlite 3.46.1, libcurl 8.14.1, git 2.47.3 |
 
 ## The one file, and how to build it
 
 The `Dockerfile` beside this file is the whole machine. It names the base
 image by major version, so that a `latest` moving to clang 23 cannot move this
-instrument in silence, and it installs the four things the bare image lacks and
-the CI leg has: `lldb-22`, `pkg-config`, `libsqlite3-dev`, `libcurl4-openssl-dev`
-(the same list as the CI's Linux install step, minus `clang`, which the image
-is). raylib is left out on purpose, as in CI, so `examples/raylib/` goes on
-exercising the skip rule. From the repository root:
+instrument in silence, and it installs the five things the bare image lacks and
+the CI leg has: `git`, `lldb-22`, `pkg-config`, `libsqlite3-dev`,
+`libcurl4-openssl-dev` (the CI's Linux install step, minus `clang`, which the
+image is, plus `git`, which the CI runner ships and the bare image does not).
+raylib is left out on purpose, as in CI, so
+`examples/raylib/` goes on exercising the skip rule. `git` was the fifth and
+arrived last (2026-09-09): the net's own tests have asked `git check-ignore`
+since 2026-09-07 and one of them was red here, unreported, until a run read the
+count instead of the goldens; and the `records` suite reads commits and tags, so
+a copy that carries `.git` can now run all three suites on this machine. From
+the repository root:
 
 ```
 docker build -t heroes-linux docs/environment/linux
@@ -77,6 +83,13 @@ docker run --rm -v "$PWD":/src:ro heroes-linux bash -c '
 The copy is **3.8 s for 273 MB**; the seed build is **6.1 s** (3.5 s on the Mac,
 7.7 s on the Windows box). `--rm` discards the copy with the container, which
 is the point: nothing this machine builds survives into the Mac's tree.
+
+**Drop `--exclude=.git` when the run is the net's own tests or the `records`
+suite.** Both ask git: the citation test for its ignore rules, `records` for
+the commits and tags. Without `.git` the net prints *the record checks could
+not run* and the own tests carry one red case, and neither is a defect of the
+tree. The exclusion stays in the line above because a golden or a single suite
+needs none of it and the copy is a fifth smaller without it.
 
 **Why it is copied and not mounted writable, measured.** The first run of the
 day, before this file existed, mounted the repository at `/w` and ran

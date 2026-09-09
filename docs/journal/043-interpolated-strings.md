@@ -123,3 +123,14 @@ test-section printer already does and the production printer could; and panel
 are clean under `--sanitize` in the Linux container and print their expected
 output on the Windows box; the compiler's 618 tests and the harness's 125 pass on
 both. Nothing carried forward from the platform list.
+
+**Corrected 2026-09-09, the same evening.** *The harness's 125 pass on both*
+was true of the Windows box and unrun on Linux: the Linux run whose output this
+appendix rests on printed the compiler's 618 and the goldens, and no harness
+count. Run later that evening, the harness's own tests on the Linux image read
+**126 tests, 1 failed**, the failing case being the citation test that asks
+`git check-ignore`, and the image had no `git` at all, so that case had been red
+there since 2026-09-07 with nobody reading the count. `git` is in the
+`Dockerfile` now, and over a copy that carries `.git` the Linux leg reads **126
+passed** and `records` **15 passed**, which it could never run before. The 126th
+test joined this evening with `records/c`'s claim clause.
