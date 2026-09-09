@@ -68,12 +68,17 @@ a written body computes over literals and other constants.
   too, truncating toward zero. Nothing fails to fit a float: too large is `inf`,
   and `to_f32` rounds.
 - A literal takes the type its context asks for — `b: u8 @ 255`, and `b + 1` is a
-  `u8` — otherwise `i64`. Overflow aborts at every width.
+  `u8` — otherwise `i64`. Overflow aborts at every width; an abort ends the
+  program, saying why.
 - A character literal is an integer: `'a'`, `'0'`, `' '`.
 - One `i64` is `0x1f` `0o37` `0b11111` or `31`, with `_` between any two digits.
   A leading zero is an error, never octal. Every base writes a value, so a literal must fit its type.
 - Six escapes, and no others: `\n` `\t` `\r` `\\` `\"` in a string, `\'` instead
   of `\"` in a character literal. Any other escape is a compile error.
+- An `f` before a literal's opening quote makes `{e}` write that value as
+  `to_str` does: `f"line {n}: {word}"`. Any expression may stand there, and the
+  hole ends at the `}` that closes it, nested brackets and literals skipped;
+  `{{` writes one brace. A literal without the `f` is unchanged.
 - `==` is structural equality on any two values of one type, recursively; a map's
   insertion order does not affect it. A `ptr`, a `cstr` and a function value compare
   as an address, and `nan` equals nothing, itself included, so `x != x` asks whether it is one.
@@ -191,7 +196,8 @@ the function accepts · `fold` · `find`, the first it accepts, or an error ·
 `print` writes its values with no
 separator and exactly one trailing newline, and takes the types this language
 renders as text: a number, `str` or `bool`. A float prints a point or
-exponent (`1.0`, `1e-06`), or `inf`, `-inf`, `nan`; a `bool` prints `true` or `false`.
+exponent (`1.0`, `1e-06`), or `inf`, `-inf`, `nan`, and reads back as the same value; a
+`bool` prints `true` or `false`.
 Files and the process, also provided: `read_file(path: str) -> str?` ·
 `write_file(path: str, text: str) -> ()?` · `args() -> [str]` (the arguments
 after the program name; one that is not UTF-8 aborts) · `exit(code: i64)` (ends

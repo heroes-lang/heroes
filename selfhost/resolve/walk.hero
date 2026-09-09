@@ -113,8 +113,11 @@ function expr(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl
 
         .hole                                                    => resolved.note_hole(@r.out, r.module)
         .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit => return
-        .null_ptr | .error                                       => return
-        .unary u                                                 => expr(@r, a, s, decls, u.operand)
+        .interp ip =>
+            for h in ip.holes
+                expr(@r, a, s, decls, h)
+        .null_ptr | .error => return
+        .unary u           => expr(@r, a, s, decls, u.operand)
         .binary b =>
             expr(@r, a, s, decls, b.left)
             expr(@r, a, s, decls, b.right)
@@ -236,10 +239,10 @@ function place(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Dec
             place(@r, a, s, decls, i.base)
         # Not a place at all — the parser already said so (`not_a_place`).
 
-        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit => expr(@r, a, s, decls, id)
-        .null_ptr | .hole | .unary | .binary | .call             => expr(@r, a, s, decls, id)
-        .method | .variant_case | .array | .map | .try_expr      => expr(@r, a, s, decls, id)
-        .if_expr | .match_expr | .error                          => expr(@r, a, s, decls, id)
+        .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit => expr(@r, a, s, decls, id)
+        .null_ptr | .hole | .unary | .binary | .call                       => expr(@r, a, s, decls, id)
+        .method | .variant_case | .array | .map | .try_expr                => expr(@r, a, s, decls, id)
+        .if_expr | .match_expr | .error                                    => expr(@r, a, s, decls, id)
 
 ## Tests
 

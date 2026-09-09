@@ -51,6 +51,7 @@ use ir/inout
 use ir/questions
 use ir/emissions
 use ir/owned_release
+use ir/interp
 use inventory
 
 ## Statements
@@ -197,9 +198,13 @@ function walk_place(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: sta
         # pass that aborts on a shape it did not expect is a pass that
         # cannot be trusted with the next one.
 
-        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr => return emissions.orphan(@b, c, id)
-        .hole | .unary | .binary | .call | .method | .variant_case           => return emissions.orphan(@b, c, id)
-        .array | .map | .try_expr | .if_expr | .match_expr | .error          => return emissions.orphan(@b, c, id)
+        .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => return emissions.orphan(
+            @b,
+            c,
+            id
+        )
+        .hole | .unary | .binary | .call | .method | .variant_case  => return emissions.orphan(@b, c, id)
+        .array | .map | .try_expr | .if_expr | .match_expr | .error => return emissions.orphan(@b, c, id)
 
     return emissions.orphan(@b, c, id)
 
@@ -492,10 +497,10 @@ function call(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Che
     is_name: bool @ false
 
     match a.exprs[callee].kind
-        .name                                                                       => is_name @ true
-        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr        => is_name @ is_name
-        .hole | .unary | .binary | .field | .index | .call | .method                => is_name @ is_name
-        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => is_name @ is_name
+        .name                                                                          => is_name @ true
+        .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => is_name @ is_name
+        .hole | .unary | .binary | .field | .index | .call | .method                   => is_name @ is_name
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error    => is_name @ is_name
 
     if is_name
         match r.uses[callee]
@@ -856,7 +861,7 @@ function assert_condition(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, 
                     ty: table.bool_ty(c.types),
                     span: span
                 )
-        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr => return expr(
+        .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => return expr(
             @b,
             a,
             r,
@@ -1123,6 +1128,16 @@ function expr(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Che
             decoded = escape.unescape(source.span_text(s, span))
             at = build.intern(@b, decoded)
             return build.emit(@b, op: .lit(value: .str_const(at: at)), ty: ty, span: span)
+        # `f"…{e}…"`: the holes are lowered here, because only this walk can,
+        # and the concatenation is `ir/interp.hero`'s (panel 121 R4).
+
+        .interp ip =>
+            values: [i64] @ []
+
+            for h in ip.holes
+                values @ values.push(expr(@b, a, r, c, s, decls, id: h))
+
+            return interp.desugar(@b, c, s, pieces: ip.pieces, holes: ip.holes, values: values, span: span)
         # §4.3: a character literal IS a number — the same decoder the
         # checker used answers for both (panel 008's escapes included).
 

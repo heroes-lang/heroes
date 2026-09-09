@@ -1,0 +1,30 @@
+## Text with holes in it
+#
+# An `f` before the opening quote lets a string carry values: `{n}` writes `n`
+# as `to_str` would. Any expression may stand in a hole — a sum, a call, a
+# field, another `f"…"` — and the hole ends at the `}` that closes it, so a
+# map index or a nested literal inside it is read as it would be anywhere.
+# `{{` writes one brace. A literal without the `f` is exactly what it was.
+#
+# What a hole may hold is what `to_str` renders: an integer, a float, `bool`
+# or `str`. A record or an array has no text of its own, and a map index
+# answers a `V?` that must be made whole first — `check` says so, at the hole.
+
+record Star
+    name: str
+    magnitude: f64
+
+function line(at: i64, of: i64, star: Star) -> str
+    return f"{at}/{of} {star.name} at magnitude {star.magnitude}"
+
+function main()
+    stars = [Star(name: "Sirius", magnitude: -1.46), Star(name: "Vega", magnitude: 0.03)]
+    at: i64 @ 1
+
+    for star in stars
+        print(line(at: at, of: stars.len(), star: star))
+        at @ at + 1
+
+    seen: {str: i64} @ {"Sirius": 2}
+    print(f"seen Sirius {seen["Sirius"].must()} times, {{like this}")
+    print(f"nested: {f"{stars.len()} stars"}")

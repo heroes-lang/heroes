@@ -1,0 +1,77 @@
+# `f"a {n} b"` lowered: `"a " + to_str(n) + " b"` (spec § Values; panel 121 R4,
+# ratified 2026-09-09).
+#
+# IN THE LOWERING AND NOT IN THE PARSER, and the sitting fought that out: a
+# parser desugar would let the formatter erase the form from its own tree, and a
+# payload on `.str_lit` would leave 59 walks treating an interpolated string as
+# a childless leaf. Here the checker has already run, so a hole whose type is
+# `str` is concatenated as it stands and never passes through `to_str` — the
+# ffi seat's condition, so that a `str` hole emits no identity call — and every
+# other hole is the `to_str` built-in call the author could have written.
+#
+# THE TEXT PIECES DECODE THROUGH `lex_interp.piece_text`: delimiters off, `{{`
+# to `{`, and the six escapes as a plain literal decodes them. An empty piece
+# adds nothing, so `f"{n}"` is `to_str(n)` and not `"" + to_str(n) + ""`.
+#
+# WHY A MODULE. `ir/flatten.hero` is a knot near its decided ceiling; its
+# `.interp` arm lowers each hole by recursion, which only the knot can do, and
+# hands the values here. The concatenation needs nothing from the knot.
+
+use token
+use source
+use check/table
+use check/state
+use ir/build
+use ir/inout
+use ir/emissions
+use lex_interp
+use inventory
+
+# The whole literal as one `str` value. `values[i]` is the lowered hole
+# `holes[i]`; `pieces` has one more entry than `holes`.
+function desugar(@b: build.Lowering, c: state.Checked, s: source.Source, pieces: [token.Span], holes: [i64], values: [i64], span: token.Span) -> i64
+    str_id = table.str_ty(c.types)
+    parts: [i64] @ []
+    at: i64 @ 0
+
+    while at < pieces.len()
+        text = lex_interp.piece_text(source.span_text(s, pieces[at]))
+
+        if text.len() > 0
+            parts @ parts.push(literal(@b, text: text, ty: str_id, span: span))
+
+        if at < holes.len()
+            parts @ parts.push(
+                rendered(@b, c, value: values[at], ty: c.expr_types[holes[at]], str_id: str_id, span: span)
+            )
+        at @ at + 1
+
+    if parts.len() == 0
+        return literal(@b, text: "", ty: str_id, span: span)
+    acc: i64 @ parts[0]
+    next: i64 @ 1
+
+    while next < parts.len()
+        acc @ build.emit(@b, op: .binary(op: .add, left: acc, right: parts[next]), ty: str_id, span: span)
+        next @ next + 1
+
+    return acc
+
+# One hole as text: a `str` as it stands, anything else through `to_str`.
+function rendered(@b: build.Lowering, c: state.Checked, value: i64, ty: i64, str_id: i64, span: token.Span) -> i64
+    if table.get(c.types, ty) == .str
+        return value
+    renderer = inventory.index_of("to_str")
+    run = build.args_run(@b, [.value_arg(value: value)])
+    return emissions.emit_call(
+        @b,
+        target: .builtin_fn(at: renderer.must()),
+        given: inout.Args(run: run, after: []),
+        variadic: false,
+        ty: str_id,
+        span: span
+    )
+
+function literal(@b: build.Lowering, text: str, ty: i64, span: token.Span) -> i64
+    at = build.intern(@b, text)
+    return build.emit(@b, op: .lit(value: .str_const(at: at)), ty: ty, span: span)

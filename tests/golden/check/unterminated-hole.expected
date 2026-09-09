@@ -1,0 +1,1 @@
+tests/golden/check/unterminated-hole.hero:8:42: error[unterminated_string]: this string never closes — a hole opened with `{` and the line ended before its `}` and the closing `"`

@@ -1,0 +1,50 @@
+# What may stand in a hole of `f"…{e}…"`: a value `to_str` renders (spec
+# § Values, *writes that value as `to_str` does*; panel 121 R1 and R4).
+#
+# R1 admits ANY EXPRESSION syntactically — the parser puts no rule below the
+# brace, because the narrow rules cost more spec tokens than the wide one and
+# refused a `???` the spec promises is valid anywhere (`docs/measurements/022`).
+# The TYPE is another matter and it is `to_str`'s own set: an integer of any
+# width, a float, `bool` or `str`. A record, an array, a map, a `T?` or a
+# pointer has no rendering in this language today, and a hole that holds one is
+# refused here with the same words `to_str` would use, so the two never
+# disagree about what is text.
+#
+# WHY A MODULE. `check/walk.hero` is a knot at its decided ceiling; its `.interp`
+# arm types each hole by recursion, which only the knot can do, and hands the
+# type here to be judged. The judgement needs nothing from the knot.
+
+use token
+use diag
+use ast
+use source
+use check/table
+use check/state
+
+# One hole, its type already found by the walk. A poisoned type has already
+# been reported and adds nothing.
+function hole(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl], at: i64, ty: i64)
+    if table.poisoned(c.out.types, ty)
+        return
+
+    match table.get(c.out.types, ty)
+        .int_ty | .float_ty | .bool | .str                        => return
+        .ptr | .cstr | .unit | .fixed | .map | .array | .fallible => report(@c, a, s, decls, at: at, ty: ty)
+        .function_ty | .named | .case_ty | .failure | .generic    => report(@c, a, s, decls, at: at, ty: ty)
+        .error                                                    => return
+
+function report(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl], at: i64, ty: i64)
+    state.push_diagnostic(@c, hole_not_renderable(shown: state.show(c, s, decls, ty), span: a.exprs[at].span))
+
+# The diagnostic. Its allowed set is spelled the way `to_str`'s own refusal
+# spells it, on purpose.
+function hole_not_renderable(shown: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "hole_not_renderable",
+        message: "a hole in an `f\"…\"` literal writes its value as `to_str` does, and `to_str` takes an integer, a float, `bool` or `str` — this one holds a `" + shown + "`, which has no text",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "write the part of it that is text: a field, `.len()`, `.must()` on a `T?` you have checked, or a `to_str()` call of your own. A record, an array or a map has no rendering in this language today"
+    )
+    return d

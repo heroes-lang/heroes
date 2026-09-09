@@ -173,11 +173,11 @@ function mix_int_float(a: ast.Ast, s: source.Source) -> [str]
 
                     if sites.is_int(operand) && !based
                         out @ out.push(sites.edit(s: s, span: operand.span, replacement: text + ".0"))
-            .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit => out @ out
-            .null_ptr | .name | .hole | .error                       => out @ out
-            .unary | .field | .index                                 => out @ out
-            .call | .method | .variant_case                          => out @ out
-            .array | .map | .try_expr | .if_expr | .match_expr       => out @ out
+            .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit => out @ out
+            .null_ptr | .name | .hole | .error                                 => out @ out
+            .unary | .field | .index                                           => out @ out
+            .call | .method | .variant_case                                    => out @ out
+            .array | .map | .try_expr | .if_expr | .match_expr                 => out @ out
 
     return out
 
@@ -260,11 +260,11 @@ function drop_question(a: ast.Ast, s: source.Source) -> [str]
 
                 if source.span_text(s, span) == "?"
                     out @ out.push(sites.edit(s: s, span: span, replacement: ""))
-            .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit => out @ out
-            .null_ptr | .name | .hole | .error                       => out @ out
-            .unary | .binary | .field | .index                       => out @ out
-            .call | .method | .variant_case                          => out @ out
-            .array | .map | .if_expr | .match_expr                   => out @ out
+            .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit => out @ out
+            .null_ptr | .name | .hole | .error                                 => out @ out
+            .unary | .binary | .field | .index                                 => out @ out
+            .call | .method | .variant_case                                    => out @ out
+            .array | .map | .if_expr | .match_expr                             => out @ out
 
     return out
 
@@ -306,11 +306,11 @@ function boolean_twin(a: ast.Ast, s: source.Source) -> [str]
                         out @ out.push(
                             sites.edit(s: s, span: operator, replacement: written.slice(from: 0, to: 1))
                         )
-            .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit => out @ out
-            .null_ptr | .name | .hole | .error                       => out @ out
-            .unary | .field | .index                                 => out @ out
-            .call | .method | .variant_case                          => out @ out
-            .array | .map | .try_expr | .if_expr | .match_expr       => out @ out
+            .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit => out @ out
+            .null_ptr | .name | .hole | .error                                 => out @ out
+            .unary | .field | .index                                           => out @ out
+            .call | .method | .variant_case                                    => out @ out
+            .array | .map | .try_expr | .if_expr | .match_expr                 => out @ out
 
     return out
 

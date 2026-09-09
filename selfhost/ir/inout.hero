@@ -186,7 +186,7 @@ function element_value(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: 
         # The parser refuses every other shape after `@` (`not_a_place`), so
         # this is a tree the parser did not produce.
 
-        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr => return build.emit(
+        .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => return build.emit(
             @b,
             op: .missing,
             ty: ty,

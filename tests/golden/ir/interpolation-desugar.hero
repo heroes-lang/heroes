@@ -1,0 +1,12 @@
+# M-interpolated-strings, panel 121 R4: the form is ONE AST node, desugared in
+# the LOWERING and not in the parser — so the formatter re-prints the literal
+# as written, and here the IR shows what it became: each text piece a `str`
+# constant, each hole that is not already a `str` a `to_str` built-in call, the
+# whole chained with `add`. A `str` hole passes through with no call at all,
+# which is the ffi seat's condition (no identity call on a `str`).
+
+function main()
+    n = 3
+    word = "stars"
+    s = f"line {n}: {word} and {n + 1}"
+    print(s)

@@ -31,6 +31,10 @@ variant TokenKind
     int_lit
     float_lit
     str_lit
+    # One piece of an interpolated literal, `f"a {` or `} b {` or `} c"`: the
+    # text says which (panel 121; `lex_interp.hero`). The hole's own tokens
+    # stand between two pieces as ordinary tokens.
+    str_piece
     char_lit
     kw_constant
     kw_function
@@ -107,6 +111,7 @@ function kind_name(kind: TokenKind) -> str
         .int_lit     => "int"
         .float_lit   => "float"
         .str_lit     => "str"
+        .str_piece   => "str_piece"
         .char_lit    => "char"
         .kw_constant => "kw_constant"
         .kw_function => "kw_function"

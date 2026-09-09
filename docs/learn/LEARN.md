@@ -28,7 +28,24 @@ per item, `- [ ] **<origin>** | <the question>`, then the body indented four
 spaces. Nothing lives outside the two banners.
 
 *******************************************************************************
-**OPEN: 349**
+**OPEN: 353**
+
+- [ ] **M-interpolated-strings, walkthrough** | Read `selfhost/lex_interp.hero` and say, before opening `scan.hero`, how a `}` inside a map literal in a hole is told apart from the `}` that closes the hole, and where the number it is compared against comes from | `selfhost/lex_interp.hero` · `selfhost/state.hero` § Emitting | the skipping scan the sitting priced is free because bracket depth was already counted for the layout rule
+
+    **Origin:** M-interpolated-strings close, 2026-09-09.
+
+- [ ] **M-interpolated-strings, golden ratification** | Five cases were written and marked nothing; read `interpolation-holes-and-braces` and predict its output line by line before opening the `.expected`, then say why `{{braces}}` prints `{braces}}` | `tests/golden/run/interpolation-holes-and-braces.hero` · `tests/golden/ir/interpolation-desugar.hero` | only `{{` is doubled, because a `}` in text mode is text — Python doubles both for a grammar this lexer does not have
+
+    **Origin:** M-interpolated-strings close, 2026-09-09.
+
+- [ ] **M-interpolated-strings, mutation drill** | Delete the `.interp` arm from `selfhost/resolve/walk.hero`'s expression walk and say which program still compiles and what it does at run time — then say why panel 121 R4 refused a payload on `.str_lit` for exactly this | `selfhost/resolve/walk.hero` · `docs/panel/121-the-brace-was-already-taken.md` § Resolution | a leaf with children nobody walks is how a name in a hole goes unresolved and a call in a hole leaves the call graph
+
+    **Origin:** M-interpolated-strings close, 2026-09-09.
+
+- [ ] **M-interpolated-strings, exit quiz** | Three questions with one right answer each: why does `f"{m["k"]}"` not compile and what does the note say to write; why is the desugar in the lowering and not in the parser; and why did four decided ceilings move rather than four helper modules taking the code | `tests/golden/check/hole-not-renderable.hero` · `tests/harness/suite_layout.hero` § DECIDED | a helper that calls back into a knot is a `use` cycle, and the knot clause is what the ceiling is for
+
+    **Origin:** M-interpolated-strings close, 2026-09-09.
+
 
 - [ ] **M-interpolation-verdict, walkthrough** | Read `docs/measurements/021` and `022` in order and say, before reaching 022's table, which of the four hole rules you expect to cost the fewest spec tokens and why the answer is the opposite | `docs/measurements/021-what-would-stand-inside-a-hole.md` · `docs/measurements/022-the-narrow-rule-costs-more-than-the-wide-one.md` | enumerating what is admitted costs more words than admitting everything, and a count made without trusting the count before it is what found it
 

@@ -96,9 +96,9 @@ function inout_root(@r: state.Resolver, a: ast.Ast, s: source.Source, id: i64)
             inout_root(@r, a, s, f.base)
         .index i => inout_root(@r, a, s, i.base)
 
-        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr => return
-        .hole | .unary | .binary | .call | .method | .variant_case           => return
-        .array | .map | .try_expr | .if_expr | .match_expr | .error          => return
+        .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => return
+        .hole | .unary | .binary | .call | .method | .variant_case                     => return
+        .array | .map | .try_expr | .if_expr | .match_expr | .error                    => return
 
 ## Two `@` arguments of one call
 
@@ -180,7 +180,7 @@ function place_path(r: state.Resolver, a: ast.Ast, s: source.Source, id: i64) ->
 
             return ok(base.must().push(index_step(a, s, i.index)))
 
-        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr => return fail(
+        .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => return fail(
             "not_a_place",
             "the parser refuses this after `@`"
         )
@@ -205,10 +205,10 @@ function index_step(a: ast.Ast, s: source.Source, id: i64) -> str
 
             return UNDECIDED_STEP
 
-        .name | .field | .index | .float_lit | .str_lit | .char_lit => return UNDECIDED_STEP
-        .bool_lit | .null_ptr | .hole | .unary | .binary | .call    => return UNDECIDED_STEP
-        .method | .variant_case | .array | .map | .try_expr         => return UNDECIDED_STEP
-        .if_expr | .match_expr | .error                             => return UNDECIDED_STEP
+        .name | .field | .index | .float_lit | .str_lit | .interp | .char_lit => return UNDECIDED_STEP
+        .bool_lit | .null_ptr | .hole | .unary | .binary | .call              => return UNDECIDED_STEP
+        .method | .variant_case | .array | .map | .try_expr                   => return UNDECIDED_STEP
+        .if_expr | .match_expr | .error                                       => return UNDECIDED_STEP
 
 # Digits and nothing else, so the text IS the value. `_` between digits,
 # a base prefix and a sign all say no: this pass compares spellings and

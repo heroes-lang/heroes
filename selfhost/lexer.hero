@@ -260,3 +260,29 @@ test "fixedbugs: a file's brackets and indent do not cross into the next"
     assert last.kind == .eof
     assert last.span.start == source_extent.root_end(s)
     assert source.is_root(s, last.span.start)
+
+# `f"…"` lexes as pieces with the holes' own tokens between them (panel 121;
+# `lex_interp.hero`). The kinds are the whole claim: a hole's tokens are the
+# tokens they would be anywhere, and a `}` inside a map literal in a hole does
+# not close the hole.
+test "an interpolated literal is pieces around ordinary tokens"
+    out = lex_one("s = f\"a {n} b\"\n")
+    assert out.diagnostics.len() == 0
+    assert kind_line(out.tokens) == "ident eq str_piece ident str_piece terminator eof"
+
+# A hole whose expression begins with `{` needs a space after the opener,
+# because `{{` is one brace of text — Python's rule, for Python's reason.
+test "a map literal inside a hole keeps its own braces, and a nested literal is a plain string"
+    out = lex_one("s = f\"{m[\"k\"]} and {{x}} { {1: 2}[1]}\"\n")
+    assert out.diagnostics.len() == 0
+    assert kind_line(out.tokens) == "ident eq str_piece ident lbracket str rbracket str_piece lbrace int colon int rbrace lbracket int rbracket str_piece terminator eof"
+
+test "a doubled brace at a hole's edge is text, not a hole"
+    out = lex_one("s = f\"{{1: 2}[1]}\"\n")
+    assert out.diagnostics.len() == 0
+    assert kind_line(out.tokens) == "ident eq str_piece terminator eof"
+
+test "a hole the line does not close is an unterminated string, and the next line starts clean"
+    out = lex_one("s = f\"a {n\ny = 1\n")
+    assert out.diagnostics.len() == 1
+    assert out.diagnostics[0].code == "unterminated_string"

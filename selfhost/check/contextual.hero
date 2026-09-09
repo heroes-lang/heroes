@@ -43,9 +43,9 @@ function contextual(a: ast.Ast, id: i64) -> bool
         # `ptr` and `cstr` alike, so fixing it at `ptr` made `v == nullptr`
         # unwritable for a `cstr`.
 
-        .null_ptr                                                     => true
-        .int_lit | .char_lit | .float_lit | .unary                    => number_literal(a, id) || float_literal(a, id)
-        .str_lit | .bool_lit | .name | .binary | .field | .index      => false
+        .null_ptr => true
+        .int_lit | .char_lit | .float_lit | .unary => number_literal(a, id) || float_literal(a, id)
+        .str_lit | .interp | .bool_lit | .name | .binary | .field | .index => false
         .call | .method | .try_expr | .if_expr | .match_expr | .error => false
 
 # Whether this expression IS a number literal, sign included. `-128` is
@@ -63,9 +63,9 @@ function number_literal(a: ast.Ast, id: i64) -> bool
                 number_literal(a, u.operand)
             else
                 false
-        .float_lit | .str_lit | .bool_lit | .null_ptr | .name | .hole => false
-        .binary | .field | .index | .call | .method | .variant_case   => false
-        .array | .map | .try_expr | .if_expr | .match_expr | .error   => false
+        .float_lit | .str_lit | .interp | .bool_lit | .null_ptr | .name | .hole => false
+        .binary | .field | .index | .call | .method | .variant_case             => false
+        .array | .map | .try_expr | .if_expr | .match_expr | .error             => false
 
 # The same question for a FLOAT literal, which f32 made a real one (panel
 # 060). Separate from number_literal rather than folded in, and the
@@ -80,7 +80,7 @@ function float_literal(a: ast.Ast, id: i64) -> bool
                 float_literal(a, u.operand)
             else
                 false
-        .int_lit | .char_lit | .str_lit | .bool_lit | .null_ptr | .name             => false
+        .int_lit | .char_lit | .str_lit | .interp | .bool_lit | .null_ptr | .name   => false
         .hole | .binary | .field | .index | .call | .method                         => false
         .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => false
 
@@ -108,7 +108,7 @@ function adopts(c: state.Checker, a: ast.Ast, id: i64, offered: i64) -> bool
 
     is_null = match a.exprs[id].kind
         .null_ptr                                                                   => true
-        .int_lit | .char_lit | .float_lit | .str_lit | .bool_lit | .name            => false
+        .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .name  => false
         .hole | .unary | .binary | .field | .index | .call | .method                => false
         .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => false
 
@@ -159,9 +159,12 @@ function literal_value(a: ast.Ast, s: source.Source, id: i64) -> LitValue?
                 return inner
             flipped = inner.must()
             return ok(LitValue(negative: !flipped.negative, magnitude: flipped.magnitude))
-        .float_lit | .str_lit | .bool_lit | .null_ptr | .name | .hole => return fail("no_value", "not a number literal")
-        .binary | .field | .index | .call | .method | .variant_case   => return fail("no_value", "not a literal")
-        .array | .map | .try_expr | .if_expr | .match_expr | .error   => return fail("no_value", "not a literal")
+        .float_lit | .str_lit | .interp | .bool_lit | .null_ptr | .name | .hole => return fail(
+            "no_value",
+            "not a number literal"
+        )
+        .binary | .field | .index | .call | .method | .variant_case => return fail("no_value", "not a literal")
+        .array | .map | .try_expr | .if_expr | .match_expr | .error => return fail("no_value", "not a literal")
 
     return fail("no_value", "unreached")
 

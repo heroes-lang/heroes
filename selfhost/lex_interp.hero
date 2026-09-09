@@ -1,0 +1,145 @@
+# `f"line {n}: {word}"` — the lexer's half of string interpolation (spec
+# § Values; design.md Part 7 item 7; panel 121 R1 to R4, ratified 2026-09-09).
+#
+# ONE TOKEN KIND, `str_piece`, AND THE TEXT SAYS WHICH PIECE IT IS. The head
+# starts with `f"`; every later piece starts with the `}` that closed a hole; a
+# piece that ends with `{` opens a hole and one that ends with `"` closes the
+# literal. So `f"a {n} b"` is three tokens, `f"a {`, `n`, `} b"`, and the hole's
+# own tokens are lexed by `scan.line_body` exactly as they would be anywhere
+# else. That is what makes R1's *skipping scan* free: a nested literal inside a
+# hole is a `str_lit` because `"` starts one; a map literal or a call is
+# brackets, and `state.emit` already counts them — so a `}` closes the hole only
+# when the depth is back to what it was when the hole opened.
+#
+# `{{` writes one brace and opens nothing. A `}` inside the text is content,
+# because a piece is text mode and only the hole's closer is read as a `}`.
+#
+# WHY A MODULE OF ITS OWN. `literals.hero` lexes one token and returns; this is
+# a state machine that spans several tokens and the ordinary tokens between
+# them, and it borrows `literals.hero`'s escape step rather than copying it.
+#
+# THE TEXT OF A PIECE is decoded here too, for the lowering: the delimiters
+# come off, `{{` becomes `{`, and the six escapes decode through the same
+# `unescape` a plain literal uses, so a form that looks like a string escapes
+# like one.
+
+use token
+use diag
+use state
+use layout
+use literals
+use escape
+
+# `f"` at the cursor: the head piece.
+function head(@l: state.LexState, text: str)
+    start = l.pos
+    l.pos @ l.pos + 2
+    scan_piece(@l, text, start: start)
+
+# A `}` at the cursor that closes a hole: the piece that follows it.
+function piece(@l: state.LexState, text: str)
+    start = l.pos
+    l.pos @ l.pos + 1
+    l.holes @ l.holes.slice(from: 0, to: l.holes.len() - 1)
+    scan_piece(@l, text, start: start)
+
+# Whether a `}` here closes a hole rather than a map literal: a hole is open,
+# and every bracket opened since it has been closed again.
+function closes_a_hole(l: state.LexState) -> bool
+    if l.holes.len() == 0
+        return false
+    return l.open_brackets.len() == l.holes[l.holes.len() - 1]
+
+# A line ended with a hole still open: the literal never closed, and the next
+# line must not inherit the hole.
+function line_ends(@l: state.LexState, at: i64)
+    if l.holes.len() == 0
+        return
+    l.holes @ []
+    span = token.Span(start: at, end: at)
+    state.error_token(
+        @l,
+        diag.new_diagnostic(code: "unterminated_string", message: "this string never closes — a hole opened with `{` and the line ended before its `}` and the closing `\"`", span: span)
+    )
+
+function scan_piece(@l: state.LexState, text: str, start: i64)
+    while true
+        if l.pos >= text.len() || text[l.pos] == '\n'
+            break
+        b = text[l.pos]
+
+        if b == '"'
+            l.pos @ l.pos + 1
+            state.emit(@l, .str_piece, start)
+            return
+
+        if b == '{'
+            if l.pos + 1 < text.len() && text[l.pos + 1] == '{'
+                l.pos @ l.pos + 2
+            else
+                l.pos @ l.pos + 1
+                state.emit(@l, .str_piece, start)
+                l.holes @ l.holes.push(l.open_brackets.len())
+                return
+        else if b == '\\'
+            if !literals.escape_step(@l, text, .in_str)
+                break
+        else
+            if b == layout.CR
+                literals.raw_carriage_return(@l, l.pos, .in_str)
+            l.pos @ l.pos + 1
+
+    span = token.Span(start: start, end: l.pos)
+    state.error_token(
+        @l,
+        diag.new_diagnostic(code: "unterminated_string", message: "this string never closes — strings are single-line, `\"` to `\"`", span: span)
+    )
+
+# Whether a piece's text closes the literal: its last byte is the quote.
+function ends_closed(text: str) -> bool
+    return text.len() > 0 && text[text.len() - 1] == '"'
+
+# The text a piece contributes, decoded: delimiters off, `{{` to `{`, and the
+# six escapes as a plain literal decodes them.
+function piece_text(text: str) -> str
+    from: i64 @ 1
+
+    if text.len() >= 2 && text[0] == 'f' && text[1] == '"'
+        from @ 2
+
+    if text.len() <= from
+        return ""
+    inner = text.slice(from: from, to: text.len() - 1)
+    undoubled: str @ ""
+    at: i64 @ 0
+
+    while at < inner.len()
+        if inner[at] == '{' && at + 1 < inner.len() && inner[at + 1] == '{'
+            undoubled @ undoubled + "{"
+            at @ at + 2
+        else
+            undoubled @ undoubled + inner.slice(from: at, to: at + 1)
+            at @ at + 1
+
+    return escape.unescape("\"" + undoubled + "\"")
+
+## Tests
+
+test "a piece's text loses its delimiters, whichever pair it has"
+    assert piece_text("f\"line \"") == "line "
+    assert piece_text("f\"line {") == "line "
+    assert piece_text("}: {") == ": "
+    assert piece_text("} end\"") == " end"
+    assert piece_text("f\"{") == ""
+    assert piece_text("}\"") == ""
+
+test "a doubled brace is one brace, and an escape decodes as in a plain literal"
+    assert piece_text("f\"{{x}}\"") == "{x}}"
+    assert piece_text("f\"a\\tb {") == "a\tb "
+    assert piece_text("}\\\"q\\\"\"") == "\"q\""
+
+test "the closing piece is the one that ends with the quote"
+    assert ends_closed("} b\"")
+    assert ends_closed("f\"plain\"")
+    assert !ends_closed("f\"a {")
+    assert !ends_closed("} {")

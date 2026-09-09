@@ -81,7 +81,7 @@ function is_builtin_named(a: ast.Ast, r: resolved.Resolved, at: i64, name: str) 
     named = match a.exprs[at].kind
         .method                                                                     => at
         .call cl                                                                    => cl.callee
-        .name | .int_lit | .char_lit | .float_lit | .str_lit | .bool_lit            => 0 - 1
+        .name | .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit  => 0 - 1
         .null_ptr | .hole | .unary | .binary | .field | .index                      => 0 - 1
         .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => 0 - 1
 
@@ -137,7 +137,7 @@ function record_arguments(a: ast.Ast, at: i64, @into: {i64: i64})
 
             for arg in m.args
                 into[arg.value] @ at
-        .name | .int_lit | .char_lit | .float_lit | .str_lit | .bool_lit            => return
+        .name | .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit  => return
         .null_ptr | .hole | .unary | .binary | .field | .index                      => return
         .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => return
 
