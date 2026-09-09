@@ -271,7 +271,8 @@ CL-035, CL-038, CL-042, CL-046, CL-047, CL-049, CL-050, CL-056 and CL-060.
 
 - **A sub-step is gated by the named suites**, one at a time, plus the
   compiler's own tests and the net's own tests. **The full net runs once, before
-  a push** (CL-063).
+  a push** (CL-063), and which suites those are is
+  `.claude/rules/verification.md` (CL-072).
 - **Run the suite you did not expect to move, after the last edit rather than
   after the last interesting one.** *My change cannot have touched that* is an
   inference. A ticked item is a question, not a task (CL-054).
@@ -282,7 +283,8 @@ CL-035, CL-038, CL-042, CL-046, CL-047, CL-049, CL-050, CL-056 and CL-060.
   stays still**: no build, no second suite, no copy to another box. Read the
   ratio, because `real` far above `user` plus `sys` means the run was waiting;
   discard it and write down why. **A suite reading the tree owns the tree until
-  it exits** (CL-025).
+  it exits** (CL-025), so work beside a gate goes in the scratchpad or a
+  detached worktree: free while one DECIDES, never while one is TIMED (CL-071).
 - **A milestone is tagged only over a clean list** (author instruction
   2026-09-08): zero open items in `docs/work/DEFECTS.md`, and nothing open in
   `docs/work/DECIDE.md` that is not a `panel NNN` ratification. The author asked
@@ -324,6 +326,7 @@ these rules reach the sessions that need them and cost nothing in the others.
 | the C boundary and the FFI | `.claude/rules/c-boundary.md` |
 | the three platforms and the Windows box | `.claude/rules/platforms.md` |
 | file length and what a narrowing rests on | `.claude/rules/module-shape.md` |
+| which suites judge a change, and what may run beside a gate | `.claude/rules/verification.md` |
 | the records, names, releases and lists | `.claude/rules/records.md` |
 | the site's copy and every outward-facing text | `site/CLAUDE.md` |
 

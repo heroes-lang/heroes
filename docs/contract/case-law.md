@@ -1422,3 +1422,42 @@ is quote-aware now, verified on seventeen shapes including the two that must
 pass and the fifteen that must not change: **the same lesson as
 `without_heredocs` one level up, that data is not a command line, and a guard
 learns it once per layer.**
+
+## CL-071 — Work in parallel while a gate decides, never while a clock runs
+2026-09-09 · author instruction · § Verification
+
+*"non puoi staccare un work tree dove tu vai avanti a lavorare?"* — asked while
+a thirteen-minute net was running and the session was idle. The answer is yes
+for correctness and no for duration, and both halves were paid for the same
+week. Free: a pass-or-fail suite decides green or red, and nothing another
+process does changes whether an assertion holds, which is why five panel judges
+already run at once. Forbidden: a `/usr/bin/time -p` run, because CL-025 says
+the machine stays still — on 2026-09-08 a timed suite read `real 1870.49`
+against `user 65.37`, the ratio said it had been waiting, and the number was
+discarded for an honest re-run at 67 s. And forbidden: editing what the running
+suite reads. `records` reads `CLAUDE.md`, `.claude/**` and all of `docs/`, so
+amending the contract mid-net is panel 056's story with the coordinator in the
+judge's chair. The two routes that are better than waiting idle are the
+scratchpad, where nothing in the tree moves, and a **detached worktree**, which
+has its own index — the thing CL-041 and CL-070 are both about a shared one
+carrying away another session's work.
+
+## CL-072 — The named suites are a map, and the map is a command
+2026-09-09 · author instruction · § Verification
+
+*"prima testare ciò che è impattato dalla modifica, e soltanto alla fine la
+suite completa"* — which § Verification and CL-063 already required. What was
+missing was not the rule but the map: **"the named suites" was a judgement call
+made fresh every time**, and on 2026-09-09 it was made wrong. Four new
+`tests/golden/fixedbugs/` cases were gated on `annotations`, `canonical` and the
+check goldens, and `emission` — which nobody had thought to name — went red,
+because that suite's written premise is *"those cases are wrong FFI bindings,
+and the thing that refuses them is clang, at build time"*, and the four were
+refused by the CHECKER instead. The premise failed loudly, which is what a
+premise written down is for. The map now lives in
+`.claude/rules/verification.md` **as the command that produces it plus today's
+answer**, because a table of which suite reads which directory is a premise
+about the world and expires in silence (`.claude/rules/module-shape.md`). The
+same run found that `golden` is not among the twenty names the net registers, so
+`-- <compiler> golden` selects nothing and prints no line: a green run that
+tested nothing.
