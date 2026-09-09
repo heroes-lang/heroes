@@ -203,6 +203,8 @@ constant REFUSED: [str]
         "M-debugger"
         "M-stopped-values"
         "M-frame-values"
+        "M-cstr-escape"
+        "M-use-after-free"
     ]
 
 # Measured 2026-08-25: 40 rows in the ROADMAP's alias table (39 until
@@ -328,8 +330,20 @@ constant REFUSED: [str]
 # of those eleven were already pointing at the wrong row before this milestone
 # existed. The id enters with its chain row in the same commit, so this number
 # is moved by hand here rather than read off a red run.
+#
+# **64 -> 65 on 2026-09-09**, `M-cstr-lifetime`, placed FIRST and alone by author
+# decision out of three the coordinator recommended: a `cstr` may not outlive the
+# `str` it was lent from, which is defect 022, a use-after-free that builds with
+# zero diagnostics and answers wrong at exit 0. **This number was read off a red
+# run rather than moved by hand**, which is the direction the tripwire was written
+# for and the first time it has been used that way: the row went in, `records/table`
+# said *"the alias table has 65 rows, not 64"*, and the constant followed the
+# instrument instead of the instrument following a guess. `REFUSED` gains two
+# names in the same move, `M-cstr-escape` and `M-use-after-free` — the first names
+# the symptom where §14 asks for the deliverable, and the second annexes a class
+# the language can reach by other routes, which would leave the next one nameless.
 constant ROWS: i64
-    64
+    65
 
 # **`WATCHED` stood here until 2026-09-07 and nothing had read it since
 # 2026-08-19.** It listed `design.md` and `CLAUDE.md` as *"the two documents whose
