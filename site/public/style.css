@@ -694,7 +694,7 @@ figure.example { margin: 1.8rem 0; }
 figure.example pre { margin: 0 0 0.45rem; }
 figure.example figcaption {
   font: 0.74rem/1.5 ui-monospace, 'SF Mono', Menlo, monospace;
-  color: var(--dim); text-align: right;
+  color: var(--dim); text-align: right; text-wrap: balance;
 }
 figure.example figcaption::before { content: '\21B3\00A0'; color: var(--dim); }
 
@@ -835,6 +835,14 @@ figure.example figcaption::before { content: '\21B3\00A0'; color: var(--dim); }
    230px wide and the English pair can never share a line, so the middot that
    bound them opened line two, right under a hero whose bullets are dashes. */
 .figures .how a { white-space: nowrap; display: block; }
+/* The method behind the first number, under the band rather than inside its
+   cell: in the cell it ran ten lines beside three and six, and the hairline hung
+   five empty lines under the third figure (design seat, 2026-09-09). */
+.figures-note {
+  margin: 0.9rem 0 0; max-width: 41rem;
+  font-size: 0.88rem; line-height: 1.55;
+  color: color-mix(in srgb, var(--fg) 76%, var(--dim));
+}
 @media (max-width: 620px) {
   .figures { grid-template-columns: 1fr; }
   .figures li + li { border-left: 0; border-top: 1px solid var(--line-soft); padding-left: 0; }
@@ -981,6 +989,9 @@ main p.lede {
   font-size: 1.32rem; line-height: 1.45; color: var(--fg); font-style: normal;
   margin: 0 0 2.4rem; max-width: 33rem; text-wrap: pretty;
 }
+/* The site's own address does not break at its hyphen: `heroes-` / `lang.org`
+   is what the specification page's lede did at every width. */
+main p.lede code { white-space: nowrap; }
 
 .crumb {
   font: 0.78rem/1.6 ui-monospace, 'SF Mono', Menlo, monospace;
@@ -1402,7 +1413,9 @@ footer::after {
   mask: var(--bolt) no-repeat center / contain;
 }
 footer p { margin: 0 0 0.9rem; }
-footer p:last-child { margin: 0; font-size: 0.82rem; opacity: 0.8; }
+/* No opacity on the copyright line: at 80% the light theme read 3.48:1, under
+   AA; the smaller size already marks it as the quiet line. */
+footer p:last-child { margin: 0; font-size: 0.82rem; }
 footer a { color: var(--link); }
 
 /* == 15. focus, motion, print ============================================ */

@@ -74,7 +74,118 @@ export function decodeEntities(html: string): string {
 const isDigit = (ch: string) => ch >= '0' && ch <= '9';
 const isAlpha = (ch: string) => (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z');
 const isAlnum = (ch: string) => isAlpha(ch) || isDigit(ch);
+const isIdentChar = (ch: string) => isAlnum(ch) || ch === '_';
 const isHex = (ch: string) => isDigit(ch) || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F');
+
+/**
+ * Where a plain string or character literal starting at `start` ends: after
+ * its closing quote, or at the end of the line, which is as far as one can run
+ * (`literals.hero`). A backslash consumes what follows it.
+ */
+function literalEnd(source: string, start: number): number {
+  const quote = source[start];
+  let end = start + 1;
+  while (end < source.length && source[end] !== '\n' && source[end] !== quote) {
+    end += source[end] === '\\' ? 2 : 1;
+  }
+  if (end < source.length && source[end] === quote) end += 1;
+  return Math.min(end, source.length);
+}
+
+/**
+ * Where the piece of a string with holes that starts at `start` ends: after
+ * the `{` that opens a hole, after the `"` that closes the literal, or at the
+ * end of the line. `{{` is one brace of text and stays inside the piece; a
+ * lone `}` is text too, because only the opening brace is ever special
+ * (`spec/heroes-spec.md`, "`{{` writes one brace").
+ */
+function pieceEnd(source: string, start: number): { end: number; opensHole: boolean } {
+  let end = start;
+  while (end < source.length && source[end] !== '\n') {
+    const ch = source[end];
+    if (ch === '\\') {
+      end += 2;
+      continue;
+    }
+    if (ch === '"') return { end: end + 1, opensHole: false };
+    if (ch === '{') {
+      if (source[end + 1] === '{') {
+        end += 2;
+        continue;
+      }
+      return { end: end + 1, opensHole: true };
+    }
+    end += 1;
+  }
+  return { end: Math.min(end, source.length), opensHole: false };
+}
+
+/**
+ * Where the hole whose code starts at `start` closes: the index of the `}`
+ * that brings the bracket depth back to zero, with nested literals and nested
+ * strings with holes skipped whole. The compiler's lexer does the same by
+ * recording the bracket depth when a hole opens (`lex_interp.hero`).
+ */
+function holeEnd(source: string, start: number): number {
+  let depth = 0;
+  let at = start;
+  while (at < source.length && source[at] !== '\n') {
+    const ch = source[at];
+    if (ch === 'f' && source[at + 1] === '"' && !isIdentChar(source[at - 1] ?? ' ')) {
+      at = interpolatedEnd(source, at);
+      continue;
+    }
+    if (ch === '"' || ch === "'") {
+      at = literalEnd(source, at);
+      continue;
+    }
+    if (ch === '(' || ch === '[' || ch === '{') depth += 1;
+    if (ch === ')' || ch === ']') depth -= 1;
+    if (ch === '}') {
+      if (depth === 0) return at;
+      depth -= 1;
+    }
+    at += 1;
+  }
+  return at;
+}
+
+/** Where the string with holes that starts at `start` (its `f`) ends. */
+function interpolatedEnd(source: string, start: number): number {
+  // The head piece begins at the `f` and includes the quote after it.
+  let at = start + 2;
+  for (;;) {
+    const piece = pieceEnd(source, at);
+    if (!piece.opensHole) return piece.end;
+    const close = holeEnd(source, piece.end);
+    if (close >= source.length || source[close] !== '}') return close;
+    at = close;
+  }
+}
+
+/**
+ * The tokens of one whole string with holes: its pieces as strings, the code
+ * inside each hole tokenized as the code it is. Every character of `text`
+ * lands in exactly one token, which is what the round trip checks.
+ */
+function interpolatedTokens(text: string): Token[] {
+  const out: Token[] = [];
+  let at = 0;
+  // The head piece includes the `f` and the quote, so it starts at 0 and the
+  // scan for its end starts after them.
+  let scanFrom = 2;
+  for (;;) {
+    const piece = pieceEnd(text, scanFrom);
+    out.push({ kind: 's', text: text.slice(at, piece.end) });
+    if (!piece.opensHole) return out;
+    const close = holeEnd(text, piece.end);
+    for (const token of tokenize(text.slice(piece.end, close))) out.push(token);
+    if (close >= text.length) return out;
+    // The `}` that closed the hole is the first character of the next piece.
+    at = close;
+    scanFrom = close + 1;
+  }
+}
 
 /** The digits each base admits, `_` included: `selfhost/number.hero`'s Base table. */
 function inBase(ch: string, marker: string): boolean {
@@ -139,16 +250,28 @@ export function tokenize(source: string): Token[] {
       continue;
     }
 
+    // A string with holes, `f"line {n}: {word}"`, read as the compiler's lexer
+    // reads it (`selfhost/lex_interp.hero`): `f"` opens one token that runs to
+    // the first `{` that is not `{{`, each hole is ordinary code up to the `}`
+    // that closes it at its own bracket depth, and the piece after that `}`
+    // runs to the next hole or the closing quote. Before this, the string
+    // class ran from the opening quote to the FIRST quote it met, so a hole
+    // holding a nested literal, `f"seen {seen["Sirius"]}"`, ended the string
+    // in the middle of the hole and coloured the rest of the line as code, on
+    // the one page whose prose says a hole may hold a nested literal. The `f`
+    // is inside the string token because that is where the lexer puts it.
+    if (ch === 'f' && source[i + 1] === '"' && !isIdentChar(source[i - 1] ?? ' ')) {
+      const end = interpolatedEnd(source, i);
+      for (const token of interpolatedTokens(source.slice(i, end))) push(token.kind, token.text);
+      i = end;
+      continue;
+    }
+
     // A string and a character literal both stop at the end of the line: a
     // string is not multi-line in this language, so an unterminated one has a
     // known extent (`literals.hero`). A backslash consumes what follows it.
     if (ch === '"' || ch === "'") {
-      const quote = ch;
-      let end = i + 1;
-      while (end < source.length && source[end] !== '\n' && source[end] !== quote) {
-        end += source[end] === '\\' ? 2 : 1;
-      }
-      if (end < source.length && source[end] === quote) end += 1;
+      const end = literalEnd(source, i);
       // Both quoted forms take the string class. A character literal IS an
       // integer by the specification's Types table, so the number class would
       // be defensible, and the stylesheet paints `.s` and `.n` the same gold
@@ -156,8 +279,8 @@ export function tokenize(source: string): Token[] {
       // they were written by hand, read by the author and ratified, and they
       // say `.s`. Agreeing with them costs nothing and leaves the drift check
       // comparing markup with markup.
-      push('s', source.slice(i, Math.min(end, source.length)));
-      i = Math.min(end, source.length);
+      push('s', source.slice(i, end));
+      i = end;
       continue;
     }
 

@@ -26,13 +26,13 @@
   <p>
     If you misspell a function name, the compiler reports the error at the declaration and includes clang&rsquo;s response:
   </p>
-  <pre><code>$ heroes build ffi.hero
-error[ffi_unknown_name]: `math.h` declares no `flooor` — clang read the header and could not find it
+  <pre class="diag"><code>$ heroes build ffi.hero
+<span class="msg">error[ffi_unknown_name]: `math.h` declares no `flooor` — clang read the header and could not find it</span>
   at ffi.hero:15:5
      |
   15 |     function flooor(x: f64) -&gt; f64
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` names what the header already has (§4.19): check the spelling, or name the header that does declare `flooor`
+<span class="msg">  note: an `extern` names what the header already has (§4.19): check the spelling, or name the header that does declare `flooor`</span>
   fix (guess): the header declares `floor`</code></pre>
   <p>
     The suggestion on the last line comes from clang, which has read the library&rsquo;s header.
@@ -40,13 +40,13 @@ error[ffi_unknown_name]: `math.h` declares no `flooor` — clang read the header
   <p>
     Get a type wrong and the answer comes from the same place:
   </p>
-  <pre><code>$ heroes build ffi.hero
-error[ffi_return_type]: `puts` does not return `cstr` — that is what `stdio.h` says, and clang read it
+  <pre class="diag"><code>$ heroes build ffi.hero
+<span class="msg">error[ffi_return_type]: `puts` does not return `cstr` — that is what `stdio.h` says, and clang read it</span>
   at ffi.hero:22:5
      |
   22 |     function puts(s: cstr) -&gt; cstr
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` is checked against the real header (§4.19): correct the result type, or name the header that declares this `puts`</code></pre>
+<span class="msg">  note: an `extern` is checked against the real header (§4.19): correct the result type, or name the header that declares this `puts`</span></code></pre>
   <p>
     Checking declarations against the header catches errors that could otherwise cause problems when the program runs.
   </p>
@@ -68,17 +68,20 @@ error[ffi_return_type]: `puts` does not return `cstr` — that is what `stdio.h`
     The types distinguish data from C, and explicit conversions show where it becomes a Heroes value.
   </p>
   <p>
-    A string lent with <code>.cstr()</code> may stand only as an argument of the call that reads it. Kept anywhere else it would outlive its own bytes, and the compiler refuses that shape before anything runs. When a library keeps the text past the call, the program says so and stays in charge of the bytes: <code>x: cstr @ s.lease()</code> hands C a copy that lives until <code>end_lease(@x)</code>, and a lease nobody ends is named when the program exits.
+    A string lent with <code>.cstr()</code> may stand only as an argument of the call that reads it. Kept anywhere else, the pointer would outlive the bytes it points into, and the compiler refuses that shape before anything runs. When a library keeps the text past the call, the program says so and stays in charge of the bytes: <code>x: cstr @ s.lease()</code> hands C a copy that lives until <code>end_lease(@x)</code>, and a lease nobody ends stops the program when <code>main</code> returns, with the count of what was left open; a program that leaves through <code>exit()</code> is not checked. In the example, <code>keep_label</code> is a C function that keeps the pointer and <code>kept_label_length</code> reads it later:
   </p>
   <figure class="example" data-src="examples/gallery/13-lease.hero" data-lines="22-27">
-<pre><code>    <span class="k">while</span> at &lt; 3
-        label: <span class="t">cstr</span> @ <span class="s">f"row-{at}-payload"</span>.lease()
+<pre><code>    <span class="k">while</span> at &lt; <span class="n">3</span>
+        label: <span class="t">cstr</span> @ <span class="s">f"row-{</span>at<span class="s">}-payload"</span>.lease()
         keep_label(s: label)
-        print(<span class="s">f"C still reads {kept_label_length()} bytes"</span>)
+        print(<span class="s">f"C still reads {</span>kept_label_length()<span class="s">} bytes"</span>)
         end_lease(@label)
-        at @ at + 1</code></pre>
+        at @ at + <span class="n">1</span></code></pre>
     <figcaption>examples/gallery/13-lease.hero, lines 22&ndash;27</figcaption>
   </figure>
+  <p>
+    The copy is taken when the lease begins, so later changes to the string do not reach C. And if the library still reads the text after <code>end_lease</code>, no compiler can see it: the header does not say how long C keeps a pointer, so that mistake stays yours, and the memory checker the Linux build runs with, the sanitizer, is what finds it. <a href="/examples/gallery/13-lease/">The whole example, with its header &rarr;</a>
+  </p>
   <p>
     Heroes does not verify that a <code>ptr</code> returned to a library is the correct one or how the library uses it. Type checks do not remove the risks of C code.
   </p>
@@ -182,6 +185,7 @@ the 16:9 diagonal of a 1920-wide screen: 2202.9071700822983</code></pre>
     <p>Every code block on this page is a slice of
     <code>examples/gallery/08-ffi.hero</code> in the repository, except the
     lease&rsquo;s, which is a slice of <code>examples/gallery/13-lease.hero</code>.
-    The two diagnostics are the first file with one name misspelled and one
-    result type changed, built as <code>ffi.hero</code>.</p>
+    The two diagnostics are the first file with <code>floor</code> misspelled at
+    its declaration and at its one call, and with one result type changed, built
+    as <code>ffi.hero</code>.</p>
   </footer>

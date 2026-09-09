@@ -80,7 +80,7 @@ $ "$(brew --prefix llvm)/bin/clang" -I runtime seed/heroes.c runtime/runtime.c -
   </p>
   <pre><code>$ HEROES_RUNTIME=~/heroes/runtime heroes run hello.hero</code></pre>
   <p>
-    When <code>heroes run</code> cannot find the runtime it says so and prints that line. If
+    When <code>heroes run</code> cannot find the runtime it says so and names the variable to set. If
     something else is missing, <code>./heroes doctor</code> names it.
   </p>
 

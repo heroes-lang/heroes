@@ -3,7 +3,7 @@
 
   <h1 class="chapter">Le stringhe</h1>
   <p class="tagline">
-    Leggere, dividere e unire stringhe distinguendo byte e caratteri.
+    Leggere, dividere e unire stringhe, distinguere byte e caratteri, e mettere un valore dentro una stringa.
   </p>
 
   <p>
@@ -121,8 +121,8 @@ error[type_mismatch]: expected `u8`, found `str`
     <code>\\</code>, <code>\"</code>. Dentro un letterale di carattere,
     <code>\'</code> prende il posto dell&rsquo;ultimo. Un escape diverso produce un errore e un suggerimento di correzione:
   </p>
-  <pre><code>$ heroes check strings.hero
-error[unknown_escape]: `\d` is not an escape sequence — the escapes are \n \t \r \\ \"; write `\\` for a literal backslash
+  <pre class="diag"><code>$ heroes check strings.hero
+<span class="msg">error[unknown_escape]: `\d` is not an escape sequence — the escapes are \n \t \r \\ \"; write `\\` for a literal backslash</span>
   at strings.hero:45:24
      |
   45 |     return words.join("\d")
@@ -146,15 +146,15 @@ tqbf</code></pre>
 
   <h2>Testo con dei buchi dentro</h2>
   <p>
-    Una stringa può portare dei valori. Una <code>f</code> prima della virgoletta d&rsquo;apertura trasforma <code>{n}</code> nel testo di <code>n</code>, scritto come lo scriverebbe <code>to_str</code>. In un buco può stare qualsiasi espressione, e il buco finisce alla graffa che lo chiude, così una chiamata o una ricerca al suo interno si legge come si leggerebbe ovunque. Due graffe scrivono una graffa. Una stringa senza la <code>f</code> è esattamente quella di prima.
+    Una stringa può portare dei valori. Una <code>f</code> prima della virgoletta d&rsquo;apertura trasforma <code>{n}</code> nel testo di <code>n</code>, scritto come lo scriverebbe <code>to_str</code>. In un buco può stare qualsiasi espressione, e il buco finisce alla graffa che lo chiude, così una chiamata o una ricerca al suo interno si legge come si leggerebbe ovunque. <code>{{</code> scrive una graffa aperta; la graffa chiusa non è mai speciale, quindi <code>}</code> resta com&rsquo;è. Una stringa senza la <code>f</code> è esattamente quella di prima.
   </p>
   <figure class="example" data-src="examples/gallery/12-interpolation.hero" data-lines="17-18">
 <pre><code><span class="k">function</span> line(at: <span class="t">i64</span>, of: <span class="t">i64</span>, star: Star) -&gt; <span class="t">str</span>
-    <span class="k">return</span> <span class="s">f"{at}/{of} {star.name} at magnitude {star.magnitude}"</span></code></pre>
+    <span class="k">return</span> <span class="s">f"{</span>at<span class="s">}/{</span>of<span class="s">} {</span>star.name<span class="s">} at magnitude {</span>star.magnitude<span class="s">}"</span></code></pre>
     <figcaption>examples/gallery/12-interpolation.hero, righe 17&ndash;18</figcaption>
   </figure>
   <p>
-    In un buco può stare ciò che <code>to_str</code> sa rendere: un intero, un numero con la virgola, un <code>bool</code> o una <code>str</code>. Un record o una lista non hanno un testo proprio, e un valore che potrebbe mancare va prima reso certo con <code>.must()</code>. Il compilatore rifiuta il buco e la sua nota dice cosa scrivere al suo posto.
+    In un buco può stare ciò che <code>to_str</code> sa rendere: un intero, un numero con la virgola, un <code>bool</code> o una <code>str</code>. Un record o un array non hanno un testo proprio, e un valore che potrebbe mancare va prima reso certo con <code>.must()</code>. Il compilatore rifiuta il buco e la sua nota dice cosa scrivere al suo posto. <a href="/it/examples/gallery/12-interpolation/">L&rsquo;esempio intero &rarr;</a>
   </p>
   <pre><code>$ heroes run examples/gallery/12-interpolation.hero
 1/2 Sirius at magnitude -1.46

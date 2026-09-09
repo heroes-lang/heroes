@@ -27,6 +27,7 @@
 import { readText, countLines, isFile } from './repo.ts';
 import { t, number, type Lang } from './i18n.ts';
 import { ceilingK, checkClaims } from './claims.ts';
+import { fillMeasured } from './figures.ts';
 
 const SPEC = 'spec/heroes-spec.md';
 // The ceiling as the pages say it, `6K`, the author's word (2026-09-09); the exact
@@ -121,6 +122,8 @@ export function renderSpecPage(lang: Lang): SpecPage {
       lang === 'it'
         ? `Tutto il linguaggio Heroes, in un file da inserire nel prompt: meno di ${K} token per descrivere la sintassi e le regole.`
         : `The whole Heroes language, in one file for a model’s prompt: under ${K} tokens describing its syntax and rules.`,
-    html: `\n${html}\n`,
+    // The measured count and its model are filled last, after the claims were
+    // checked on the prose as written, exactly as the fragment pipeline does.
+    html: `\n${fillMeasured(html)}\n`,
   };
 }

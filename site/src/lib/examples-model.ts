@@ -213,7 +213,7 @@ function buildExample(slug: string, kind: 'program' | 'gallery', dir: string, he
     writesFile: vocabulary.has('write_file'),
     usesArgs: vocabulary.has('args') || vocabulary.has('args_checked'),
     fingerprint: fingerprintOf(dir, allPaths),
-    reproduce: reproduceCommand(dir),
+    reproduce: reproduceCommand(dir, kind === 'gallery' ? allPaths : null),
   };
 }
 
@@ -246,10 +246,19 @@ export function examples(): Example[] {
     );
   }
 
+  // A gallery file's other files are the headers it names in an `extern` and
+  // that live beside it: `13-lease.hero` binds `13-lease.h`, seven lines of C
+  // no library the three platforms share could stand in for, and a page that
+  // showed the program without the header showed a program nobody could run
+  // (found by the devex and marketing seats, 2026-09-09). A header the machine
+  // provides, `math.h`, is not beside the file and is not shown.
   const gallery: Example[] = [];
   for (const path of walk(GALLERY).filter((one) => one.endsWith('.hero'))) {
     const name = basename(path).replace(/\.hero$/, '');
-    gallery.push(buildExample(`gallery/${name}`, 'gallery', GALLERY, [path], []));
+    const beside = externGroups(readText(path))
+      .map((group) => `${GALLERY}/${group.header}`)
+      .filter((header) => isFile(header));
+    gallery.push(buildExample(`gallery/${name}`, 'gallery', GALLERY, [path], beside));
   }
 
   if (programs.length < PROGRAM_FLOOR) {
