@@ -23,6 +23,17 @@ import sys
 
 CONTRACT = "CLAUDE.md § Hard stops"
 
+# The one endpoint the Anthropic key is in `.env` for, and the clients that can
+# actually reach it. A python one-liner is a client; `grep` is a reader.
+COUNT_TOKENS = "/v1/messages/count_tokens"
+CLIENTS = frozenset({"curl", "wget", "http", "https", "xh", "httpie",
+                     "python", "python3", "node", "deno"})
+PRINTERS = frozenset({"echo", "printf", "print", "printenv", "env", "set"})
+READERS = frozenset({"cat", "less", "more", "head", "tail", "bat", "open",
+                     "nl", "strings"})
+SECRETS = ("$ANTHROPIC_API_KEY", "${ANTHROPIC_API_KEY}",
+           "$CLOUDFLARE_API_TOKEN", "${CLOUDFLARE_API_TOKEN}")
+
 
 HEREDOC = re.compile(r"<<-?\s*(?:'([^']+)'|\"([^\"]+)\"|([A-Za-z_][A-Za-z0-9_]*))")
 
@@ -222,6 +233,47 @@ def verdict(command):
             return (
                 "refused: UPDATE_GOLDEN does not exist and must not; a red "
                 "golden is read and repaired, never regenerated. " + CONTRACT
+            )
+
+        # **The Anthropic key counts tokens and does nothing else** (author
+        # instruction 2026-09-09, the hour the key was put in `.env`). It was
+        # added for one job: `spec/heroes-spec.md` is budgeted against two
+        # VENDORED tokenisers and one of them, `cl100k_base`, is OpenAI's, so the
+        # binding number was never the one the reader's tokeniser gives. Counting
+        # is a read. Inference is spending somebody's money from a shell that
+        # also has the deploy token, and it is not why the key is here.
+        #
+        # It fires only when the segment's own COMMAND is a client that can make
+        # the request. `grep -rn api.anthropic.com .claude/` is how somebody
+        # checks this rule still holds, and a guard that refuses reading is the
+        # failure `without_heredocs` above was written for.
+        if w[0] in CLIENTS and "api.anthropic.com" in segment:
+            if COUNT_TOKENS not in segment:
+                return (
+                    "refused: the Anthropic key is for `" + COUNT_TOKENS + "` "
+                    "and nothing else. Inference, agents and the organisation "
+                    "endpoints are not why it is in `.env`. "
+                    "`.env.example` § Anthropic"
+                )
+
+        # **A secret in a transcript is a leaked secret**, and the transcript is
+        # written whether anybody rereads it or not. `${#VAR}` is a length and
+        # `source .env` is how the key is loaded, so neither is touched; what is
+        # refused is expanding the VALUE into output, and reading `.env` itself.
+        # `.env.example` stays legal because it carries no value, which is the
+        # whole reason that file exists.
+        if w[0] in PRINTERS:
+            for token in w:
+                if any(secret in token for secret in SECRETS):
+                    return (
+                        "refused: that expands a secret into the transcript. "
+                        "Test it without printing it, or print `${#VAR}`. "
+                        "`.env.example`"
+                    )
+        if w[0] in READERS and any(t == ".env" or t.endswith("/.env") for t in w):
+            return (
+                "refused: `.env` holds the live keys. `.env.example` is the "
+                "shape and carries no value. `.env.example`"
             )
 
         # Only when it is being PASSED to the compiler, for the same reason.
