@@ -63,7 +63,19 @@ positioned to see.
 - The hero shows working code, never a diagnostic; says "a compiled
   programming language" before the name; names LLMs plainly (author,
   2026-08-18). A diagnostic may appear in the first value prop UNDER the hero,
-  and one does.
+  and one does. **The kicker is "A simple programming language", the author's
+  word (decision 2026-09-09, asked by two seats), and "compiled" arrives in the
+  claim under the name**: a seat that asks to move it up is re-arguing a
+  decision, not finding a defect.
+- **The first half of the hero claim, "Decades of programming-language
+  history", is the author's thesis sentence and not a measurable claim**
+  (decision 2026-09-09, on the marketing seat's finding). The second half is
+  asserted by the build. Neither is a finding.
+- **Postcards link inside the site.** The site carries no deep link into the
+  repository's records, and the author kept it so when the marketing seat
+  proposed one for the sitting behind postcard 43 (decision 2026-09-09). A
+  seat may report where a reader would want the record; it may not propose the
+  link as an edit.
 - The nav is **eight items** since 2026-09-07, when the author put Thanks back after Author; it was seven by author instruction 2026-09-06, and a page still enters it only by displacing one
   (author instruction 2026-09-06). Proposing an eighth means naming which of
   the seven leaves.
