@@ -205,6 +205,8 @@ constant REFUSED: [str]
         "M-frame-values"
         "M-cstr-escape"
         "M-use-after-free"
+        "M-borrowed-pointer"
+        "M-pinned-bytes"
     ]
 
 # Measured 2026-08-25: 40 rows in the ROADMAP's alias table (39 until
@@ -342,8 +344,20 @@ constant REFUSED: [str]
 # names in the same move, `M-cstr-escape` and `M-use-after-free` — the first names
 # the symptom where §14 asks for the deliverable, and the second annexes a class
 # the language can reach by other routes, which would leave the next one nameless.
+#
+# **65 -> 66 on 2026-09-09**, `M-held-bytes`, from panel 124 — and read off a red
+# run again, which is now twice in one day and the tripwire working as written.
+# It is §4.19's FOURTH case, which that section does not name: all three it
+# reserved are about a pointer C made, and this is bytes Heroes made and frees
+# which C may read for as long as the program says. `REFUSED` gains two more,
+# `M-borrowed-pointer` and `M-pinned-bytes`: the first was the coordinator's own
+# suggestion in the brief and names §4.19's case 2, which the sitting measured to
+# be unreachable from any declaration because `sqlite3.h:4888` puts the decision
+# in the fifth ARGUMENT; the second names the one shape panel 124 R3 refuses,
+# since a pin aliases `s.cstr()` and a copy-on-write mutation would rewrite what
+# C is reading.
 constant ROWS: i64
-    65
+    66
 
 # **`WATCHED` stood here until 2026-09-07 and nothing had read it since
 # 2026-08-19.** It listed `design.md` and `CLAUDE.md` as *"the two documents whose
