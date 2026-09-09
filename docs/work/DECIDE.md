@@ -21,7 +21,52 @@ lives outside the two banners: `records/lists` is the executor of that.
 Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 2**
+**OPEN: 3**
+
+- [ ] **panel 123** | ratify the budget's instrument: the gate never touches the network, one pinned model id binds, `--refresh` prints for a human to paste, the 2000 soft line is retired as the removal, and the 38 ledger rows are renamed rather than restated | `docs/panel/123-the-vendored-half-that-never-changed.md` § Resolution
+
+    **Origin:** the sitting of 2026-09-09, four seats — the llm-ergonomist was
+    not convened because the spec is not amended here and it would have had
+    nothing to be differentiated about, and the ffi-pragmatist was dropped
+    mid-sitting when the compiler seat measured that the route needs no FFI at
+    all.
+
+    **THREE THINGS IN IT ARE THE AUTHOR'S TO OVERTURN.**
+
+    **(i) The 2000 soft line is retired, and that is a rule of §1.6 going
+    away.** It is the named removal this change pays with: it was set on the
+    vendored instrument when the spec was 2231, and on the real one the spec has
+    been above it since v0, so it has never once been slack. Retiring it makes
+    the payment rule **unconditional** — every amendment owes a removal or a
+    registered prediction, at every level — which is stricter, not looser. But
+    it deletes a line panel 024 called the load-bearing half of its own raise.
+
+    **(ii) The floor the coordinator put to the author is withdrawn.** On
+    2026-09-09 the author was told the spec lives in a band, 4096 to 6144, with
+    both ends measured or sourced. It is one end decided and one end a vendor's
+    price list about a different kind of request: a minimum cacheable prefix is
+    a property of a request PREFIX, `CLAUDE.md` alone clears 4096 by 1451 on
+    Haiku 4.5, a floor makes a removal a violation, and the margin was 31 tokens
+    inside a 78-token error bar. Withdrawn in `023`, in the ROADMAP and in the
+    log. Nothing was decided on it, so nothing is undone — but the author was
+    told a false thing and is owed the correction plainly.
+
+    **(iii) Which number binds, where two seats disagreed.** The compiler seat
+    wanted the maximum over the model ids measured, so a new model can only
+    raise it. The resolution takes the warden's instead — **one pinned model
+    id**, `claude-opus-5`, moved only by author decision — because Opus 4.7
+    counts the same content as Opus 5 and wraps it differently, so a maximum
+    over a set is not a property of the document at all.
+
+    **And a live ordering constraint the author should know about**: the warden
+    **vetoes any commit that adds a token to `spec/heroes-spec.md` before §1.6
+    states a ceiling with its pinned model id and date**, the interpolation
+    clause included. So the budget instrument lands before the f-string, which
+    is the order the coordinator recommended before any of this was measured.
+
+    **Why it matters:** the project's central number moved 27.5% without a
+    character of the document changing, and the repair has to be one that cannot
+    happen again — which means the instrument's name travels with the number.
 
 - [ ] **panel 122** | ratify the lend rule: positional and never typed, the extern discriminator dropped, two clauses measured free, and defect 022 split because no position rule closes the half where C keeps the pointer | `docs/panel/122-the-lend-was-two-defects.md` § Resolution
 
