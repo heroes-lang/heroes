@@ -16,15 +16,19 @@
 #
 # THE TWO SHAPES WORTH READING BEFORE THE LIST:
 #
-# - `sqlite3_bind_text`'s last parameter is a **destructor**, and `nullptr`
-#   there is SQLite's `SQLITE_STATIC`: it means *I keep the bytes alive, do
-#   not copy them*. So the `str` whose `.cstr()` is handed over must outlive
-#   the `step` that reads it — which it does, because a Heroes binding lives
-#   in its slot until the function returns (design.md §4.10). This is the
-#   one place in this program where the language's lifetime rule and C's
-#   expectation have to be read together, and it is written down rather
-#   than assumed. `docs/panel/106` is where that shape was compiled and
-#   measured, by the seat that refused a proposal because of it.
+# - `sqlite3_bind_text`'s last parameter is a **destructor**, and it is the
+#   argument that decides how long SQLite keeps the bytes: `SQLITE_STATIC`,
+#   which is `nullptr`, means *keep the caller's bytes*, and
+#   `SQLITE_TRANSIENT` means *copy them before returning*. **This program
+#   passes `SQLITE_TRANSIENT`**, so there is no lifetime to reason about at
+#   all: the copy happens inside the call and the lend is over when the call
+#   returns. Until 2026-09-09 it passed `nullptr` with eleven lines above it
+#   explaining why that was safe, and panel 124 measured that the explanation
+#   was subtly wrong — it named the frame, and the thing actually keeping the
+#   bytes alive was the refcount of a record field the loop variable owned.
+#   Both spellings are `const char *` in the header, so **nothing about the
+#   Heroes side can tell them apart**: the fact lives in argument five, which
+#   is why clang can check it and a rule about Heroes cannot.
 # - `sqlite3_column_text` answers `const unsigned char *`, which is a
 #   `cstr` here, and a `cstr` becomes a `str` only through `validated` —
 #   which can fail, because the bytes are the database's and not this
@@ -43,6 +47,11 @@ extern "sqlite3.h" link "sqlite3"
     constant SQLITE_FLOAT: i64
     constant SQLITE_TEXT: i64
     constant SQLITE_NULL: i64
+    # `((sqlite3_destructor_type)-1)` in the header, which is a cast of -1 to
+    # a function pointer, so it is a `ptr` here and the group's own two
+    # assertions check it: `HERO_RET_PTR` on the type and
+    # `__builtin_constant_p` on it being a value rather than an object.
+    constant SQLITE_TRANSIENT: ptr
     function sqlite3_open(filename: cstr, @out: ptr) -> i64
     function sqlite3_close(db: ptr) -> i64
     # **The fifth argument is `char **errmsg`, and this program asks for it
@@ -296,16 +305,11 @@ function bind_float(statement: Statement, at: i64, value: f64) -> ()?
         return fail("cannot_bind", "sqlite refused a float at " + at.to_str())
     return ok()
 
-# **The one binding with a lifetime rule**, and the module doc above is its
-# argument: the last parameter is a destructor, `nullptr` is SQLite's
-# `SQLITE_STATIC`, and it means the library keeps the caller's bytes rather
-# than copying them. `text` is a parameter, so it lives in this function's
-# slot until this function returns — which is past the `bind` and not past
-# the `step`. **So a caller must step before it drops the string**, and
-# every caller here does, in the next line. Written down because it is the
-# one place a correct-looking rearrangement would be a use-after-free.
+# `SQLITE_TRANSIENT` asks SQLite to copy the bytes before it returns, so this
+# binding has no lifetime rule and no caller obligation: a rearrangement that
+# moves the `step` cannot break it (panel 124, ratified 2026-09-09).
 function bind_text(statement: Statement, at: i64, text: str) -> ()?
-    if sqlite3_bind_text(statement: statement.handle, column: to_i32(at).must(), text: text.cstr(), length: -1, destructor: nullptr) != SQLITE_OK
+    if sqlite3_bind_text(statement: statement.handle, column: to_i32(at).must(), text: text.cstr(), length: -1, destructor: SQLITE_TRANSIENT) != SQLITE_OK
         return fail("cannot_bind", "sqlite refused text at " + at.to_str())
     return ok()
 

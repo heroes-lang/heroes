@@ -70,4 +70,47 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     previous iteration's bytes while C still holds the pointer. This is the
     shape a working FFI program reaches for, on §4.19's own acceptance ladder.
 
+    **RULED ON 2026-09-09 by panel 124, ratified the same day, and the item is
+    AMENDED rather than closed.** Four candidate rules went out and every one was
+    refused, the fourth being the coordinator's own. The reason no rule works is
+    the header: `sqlite3.h:4888` says the FIFTH ARGUMENT *"controls or indicates
+    the lifetime of the object referenced by the third parameter"*, and its three
+    options ARE §4.19's three reserved cases on the same parameter of the same
+    declaration, chosen at runtime. `man 3 CURLOPT_POSTFIELDS` repeats it inside
+    one `curl_easy_setopt`. And **0 of 71 `cstr` parameters in this tree are
+    decidable from a header**, because they are all `const char *` and `const`
+    promises no write, not no retention.
+
+    **What is repaired now**, and it is this item's own witness:
+    `examples/ledger/db/sqlite.hero` ships `SQLITE_TRANSIENT` as of 2026-09-09,
+    so SQLite copies the bytes inside the call and there is no lifetime left to
+    reason about. Run: exit 0, output **byte-identical** to
+    `examples/ledger/main.expected`, clean under `--sanitize`, and the emitted C
+    shows the change directly — the destructor argument was `((void *)0)` and is
+    now the accessor for `SQLITE_TRANSIENT`. **The eleven-line comment is
+    deleted, and it was subtly wrong**: it said *"a caller must step before it
+    drops the string"*, naming the frame, while what actually kept the bytes
+    alive was the refcount of a record field the loop variable owned.
+
+    **What is still open, and it is why this item is not ticked.** Two shapes
+    that no refusal reaches: a helper that builds its own bytes and hands them to
+    a C side that outlives the helper's frame, and an out-parameter that points
+    INTO the lent bytes (`sqlite3_prepare_v2`'s `@tail`; `sqlite3.h:4472`). They
+    are one class — *C, or C's answer, outlives the frame that owns the bytes* —
+    so one vocabulary covers both and no new number is issued.
+
+    **What closes it: `M-held-bytes`**, §4.19's fourth case, which that section
+    does not name because all three it reserved are about a pointer C made. Both
+    open shapes were RUN closed on the shipping compiler once the program can
+    hold its own buffer, which is why the class can close without escape
+    analysis; the capability needs a reserved word rather than the raw `ptr`
+    spelling because `atoi(s: ptr)` with `nullptr` is exit 139 with no message
+    where `cstr` gives a named panic.
+
+    **And a rider found while prototyping, which binds whatever lands:** **no
+    golden lends inside a loop**, and the three computed-lend cases are
+    `check`-only negatives refused before the emitter, so nothing that RUNS
+    exercises a computed lend today and all four candidates could have shipped
+    green.
+
 *******************************************************************************

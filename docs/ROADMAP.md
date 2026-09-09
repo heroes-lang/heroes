@@ -33,7 +33,7 @@ with what each one measured in the git history and in `DESIGN-LOG.md`):
 
 | | |
 |---|---|
-| **Current milestone** | **M-interpolation-verdict** — the ruling on design.md Part 7 item 7. The verdict is given: the form ENTERS as an `f` prefix by author decision, so what remains is the implementation, which panel 121 R5 blocks until `selfhost/grammar_expr.hero` has a legal home |
+| **Current milestone** | **M-held-bytes** — §4.19's fourth case, opened 2026-09-09 on panel 124 ratified, and what closes defect **024**, which blocks every tag. **M-interpolation-verdict stays open behind it** by author decision 2026-09-09 (the defect first, then the f-string, then the site): its verdict is given, the form ENTERS as an `f` prefix, and its implementation is no longer blocked by the budget instrument — panel 123's ordering veto is satisfied, verified at `design.md:256` and `:277` |
 | **Last closed** | **M-cstr-lifetime**, 2026-09-09, **NO TAG** ([040](journal/040-cstr-lifetime.md)) — five steps, one sitting, two defects repaired and a third filed. Untagged on purpose: § Verification tags only over a clean list, and defect **024** is open by panel 122 R5's design · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
 | Milestones closed | **41** of 62 · **41** tags, so one closed milestone carries none |
 | The compiler | **55,785** lines of Heroes in **191** modules · the seed **755,216** lines of C, regenerated four times today with the fixpoint verified by `cmp` each time · runtime ABI **21**, unmoved: a checker-only rule needs no entry point |
@@ -154,7 +154,7 @@ and why one overtook another are under the table, in § Who scheduled what.
 | 40 | **M-closures-verdict** | done 2026-09-08 | `m-closures-verdict` | [039](journal/039-closures-verdict.md) | the ruling on Part 7 items 1 and 12: both refused, closures to Part 6 and inline blocks left unplaced · **§1.1**
 | 41 | **M-cstr-lifetime** | done 2026-09-09, **untagged** | — | [040](journal/040-cstr-lifetime.md) | a `cstr` may not outlive the `str` it was lent from: three positional clauses, 0 of 638 files moved. **Untagged because the list is not clean** — defect 024, the lend C RETAINS, is open by panel 122 R5's design · **§1.12**
 | 42 | **M-interpolation-verdict** | **OPEN** | — | — | the ruling on design.md Part 7 item 7, string interpolation — a decision, not a feature |
-| 43 | **M-held-bytes** | scheduled | — | — | §4.19's FOURTH case, which that section does not name: bytes Heroes holds, Heroes frees, and C may read for as long as the program says. Panel 124, and what closes defect 024 · **§1.12**
+| 43 | **M-held-bytes** | **OPEN** | — | — | §4.19's FOURTH case, which that section does not name: bytes Heroes holds, Heroes frees, and C may read for as long as the program says. Panel 124, and what closes defect 024 · **§1.12**
 | 44 | **M-reflection-verdict** | scheduled | — | — | the ruling on reflection — at run time, and as compile-time derivation over a record's fields — and, since 2026-09-06, on a general annotation mechanism · a decision, not a feature |
 | 45 | **M-deferral-ledger** | scheduled | — | — | every Part 7 item with no milestone gets a dated verdict or a return condition |
 | 46 | **M-check-completeness** | scheduled | — | — | what `heroes check` accepts, `heroes build` compiles — through a generic too · scheduled, no warrant
