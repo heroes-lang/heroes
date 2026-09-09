@@ -28,8 +28,13 @@ const { url, current } = Astro.props;
 const lang = url.startsWith('/it/') || url === '/it/' ? 'it' : 'en';
 const root = lang === 'it' ? '/it' : '';
 
-// The other edition's copy of this same page.
-const other = lang === 'en' ? `/it${url}` : url.slice(3);
+// The other edition's copy of this same page. The 404 page has no copy: it is
+// served at whatever address was not found, and `/it/404/` is itself an
+// address that does not exist, so its language link goes to the other
+// edition's home (a dead link on the one page about dead links, found by the
+// devex seat, 2026-09-09).
+const other =
+  url === '/404/' ? '/it/' : url === '/it/404/' ? '/' : lang === 'en' ? `/it${url}` : url.slice(3);
 
 // Eight entries, each answering a question a visitor actually has.
 //

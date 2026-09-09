@@ -220,9 +220,17 @@ export function renderExamplePage(slug: string, lang: Lang): RenderedPage {
     );
   }
 
-  if (example.inputs.length > 0) {
+  // A C header the program names and that lives beside it is shown under its
+  // own heading: it is the other half of the program, not data it reads.
+  const headers = example.inputs.filter((input) => input.path.endsWith('.h'));
+  const data = example.inputs.filter((input) => !input.path.endsWith('.h'));
+  if (headers.length > 0) {
+    parts.push(`  <h2>${t('theCSide', lang)}</h2>`);
+    for (const header of headers) parts.push(inputFigure(header, lang));
+  }
+  if (data.length > 0) {
     parts.push(`  <h2>${t('theInput', lang)}</h2>`);
-    for (const input of example.inputs) parts.push(inputFigure(input, lang));
+    for (const input of data) parts.push(inputFigure(input, lang));
   }
 
   parts.push(

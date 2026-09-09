@@ -37,6 +37,9 @@ const PHRASES: Record<string, Phrase> = {
   runIt: { en: 'Run it', it: 'Eseguilo' },
   theProgram: { en: 'The program', it: 'Il programma' },
   theInput: { en: 'Input', it: 'Input' },
+  // A header a gallery file binds is shown beside it, and it is not input: it
+  // is the other half of the program.
+  theCSide: { en: 'The C side', it: 'Il lato C' },
   exit: { en: 'exit', it: 'exit' },
   next: { en: 'Next', it: 'Successivo' },
   previous: { en: 'Previous', it: 'Precedente' },

@@ -10,17 +10,17 @@
   <ol class="log">
     <li id="44">
       <span class="when">Testo con dei buchi dentro</span>
-      <b>Una stringa ora può portare dei valori: <code>f"line {n}: {word}"</code> scrive ogni buco come lo scriverebbe <code>to_str</code>.</b> In un buco può stare qualsiasi espressione, due graffe scrivono una graffa, e una stringa semplice resta quella di prima. Il compilatore rifiuta un buco il cui valore non ha un testo, e dice quale.
+      <b>Una stringa ora può portare dei valori: <code>f"line {n}: {word}"</code> scrive ogni buco come lo scriverebbe <code>to_str</code>.</b> In un buco può stare qualsiasi espressione, <code>{{</code> scrive una graffa e una <code>}</code> da sola resta una graffa, e una stringa semplice resta quella di prima. Il compilatore rifiuta un buco il cui valore non ha un testo, e la sua nota dice cosa scrivere al suo posto.
       <a class="more" href="/it/examples/gallery/12-interpolation/">L&rsquo;esempio</a>
     </li>
     <li id="43">
       <span class="when">La decisione sull&rsquo;interpolazione</span>
-      <b>Tre conteggi hanno deciso come una stringa possa contenere un valore, e i conteggi hanno corretto due volte la prima ipotesi.</b> Ammettere qualsiasi espressione costa meno parole nella specifica che ammettere solo un nome, e la graffa era già in uso nel codice stesso del compilatore, quindi la forma sta dietro una <code>f</code>.
+      <b>Tre conteggi hanno deciso come una stringa possa contenere un valore, e i conteggi hanno corretto due volte la prima ipotesi.</b> Ammettere qualsiasi espressione costa meno parole nella specifica che ammettere solo un nome, e la graffa lavorava già nelle stringhe del compilatore stesso: una stringa con dei buchi si annuncia con una <code>f</code>, e una stringa normale resta com&rsquo;era.
       <a class="more" href="/it/spec/">La specifica</a>
     </li>
     <li id="42">
       <span class="when">Byte che una libreria C può tenere</span>
-      <b>Un programma può passare a una libreria C un testo che quella terrà, e dire quando ha finito: <code>x: cstr @ s.lease()</code>, poi <code>end_lease(@x)</code>.</b> Ogni regola candidata che rifiutava questi programmi è stata rifiutata da una misura, e a chiudere la classe è stata una capacità. Una locazione che nessuno chiude viene nominata all&rsquo;uscita del programma.
+      <b>Un programma può passare a una libreria C un testo che quella terrà, e dire quando ha finito: <code>x: cstr @ s.lease()</code>, poi <code>end_lease(@x)</code>.</b> Ogni regola proposta per vietare questi programmi è stata misurata e rifiutata a sua volta; a chiudere la falla è stato un modo per dirlo, non un divieto. Un lease che nessuno chiude ferma il programma quando <code>main</code> termina, dicendo quanti ne restano aperti.
       <a class="more" href="/it/docs/the-c-boundary/">Il confine con il C</a>
     </li>
     <li id="41">

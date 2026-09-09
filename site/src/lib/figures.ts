@@ -27,7 +27,7 @@
 import { readText, isFile } from './repo.ts';
 import { plain } from './highlight.ts';
 import { version } from './tables.ts';
-import { checkClaims } from './claims.ts';
+import { checkClaims, specReal } from './claims.ts';
 
 /** One figure, as the check reads it. */
 interface Figure {
@@ -148,7 +148,23 @@ export function page(html: string, pagePath: string): string {
   // thing this function checked and the prose around them was the last thing
   // anybody did, which is where four false claims in one day came from.
   checkClaims(html, pagePath);
-  return fillVersion(html, pagePath);
+  return fillMeasured(fillVersion(html, pagePath));
+}
+
+/**
+ * `{{realTokens}}` and `{{realModel}}` in a fragment become the specification's
+ * measured count and the model that counted it, read from the suite that pins
+ * them (`claims.ts::specReal`). Same shape as `{{version}}` and for the same
+ * reason: the fragments stay plain HTML, and the two values a measurement moves
+ * are filled by the build rather than typed by a hand that will forget.
+ */
+export function fillMeasured(html: string): string {
+  if (!html.includes('{{realTokens}}') && !html.includes('{{realModel}}')) return html;
+  const real = specReal();
+  // No thousands separator: a comma is English and a dot is Italian, and a
+  // token count is a number a reader compares with `heroes measure`'s output,
+  // which prints it bare.
+  return html.replaceAll('{{realTokens}}', String(real.tokens)).replaceAll('{{realModel}}', real.model);
 }
 
 /**

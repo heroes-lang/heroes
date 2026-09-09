@@ -26,13 +26,13 @@
   <p>
     Se scrivi male il nome di una funzione, il compilatore segnala l&rsquo;errore nella dichiarazione e mostra la risposta di clang:
   </p>
-  <pre><code>$ heroes build ffi.hero
-error[ffi_unknown_name]: `math.h` declares no `flooor` — clang read the header and could not find it
+  <pre class="diag"><code>$ heroes build ffi.hero
+<span class="msg">error[ffi_unknown_name]: `math.h` declares no `flooor` — clang read the header and could not find it</span>
   at ffi.hero:15:5
      |
   15 |     function flooor(x: f64) -&gt; f64
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` names what the header already has (§4.19): check the spelling, or name the header that does declare `flooor`
+<span class="msg">  note: an `extern` names what the header already has (§4.19): check the spelling, or name the header that does declare `flooor`</span>
   fix (guess): the header declares `floor`</code></pre>
   <p>
     Il suggerimento nell&rsquo;ultima riga viene da clang, che ha consultato l&rsquo;header della libreria.
@@ -40,13 +40,13 @@ error[ffi_unknown_name]: `math.h` declares no `flooor` — clang read the header
   <p>
     Sbaglia un tipo e la risposta arriva dallo stesso posto:
   </p>
-  <pre><code>$ heroes build ffi.hero
-error[ffi_return_type]: `puts` does not return `cstr` — that is what `stdio.h` says, and clang read it
+  <pre class="diag"><code>$ heroes build ffi.hero
+<span class="msg">error[ffi_return_type]: `puts` does not return `cstr` — that is what `stdio.h` says, and clang read it</span>
   at ffi.hero:22:5
      |
   22 |     function puts(s: cstr) -&gt; cstr
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` is checked against the real header (§4.19): correct the result type, or name the header that declares this `puts`</code></pre>
+<span class="msg">  note: an `extern` is checked against the real header (§4.19): correct the result type, or name the header that declares this `puts`</span></code></pre>
   <p>
     Verificare le dichiarazioni sull&rsquo;header permette di rilevare errori che altrimenti potrebbero causare problemi durante l&rsquo;esecuzione.
   </p>
@@ -68,17 +68,20 @@ error[ffi_return_type]: `puts` does not return `cstr` — that is what `stdio.h`
     I tipi distinguono i dati provenienti dal C e le conversioni mostrano dove vengono trasformati in valori Heroes.
   </p>
   <p>
-    Una stringa prestata con <code>.cstr()</code> può stare solo come argomento della chiamata che la legge. Tenuta altrove sopravviverebbe ai propri byte, e il compilatore rifiuta quella forma prima che qualcosa giri. Quando una libreria tiene il testo oltre la chiamata, il programma lo dice e resta padrone dei byte: <code>x: cstr @ s.lease()</code> consegna al C una copia che vive fino a <code>end_lease(@x)</code>, e una locazione che nessuno chiude viene nominata all&rsquo;uscita del programma.
+    Una stringa prestata con <code>.cstr()</code> può stare solo come argomento della chiamata che la legge. Tenuta altrove, il puntatore sopravviverebbe ai byte a cui punta, e il compilatore rifiuta quella forma prima che qualcosa giri. Quando una libreria tiene il testo oltre la chiamata, il programma lo dice e resta padrone dei byte. <code>x: cstr @ s.lease()</code> consegna al C una copia dei byte, un lease, cioè un prestito che finisce quando lo dici tu: la copia vive fino a <code>end_lease(@x)</code>, e un lease che nessuno chiude ferma il programma quando <code>main</code> termina, dicendo quanti ne restano aperti; un programma che esce con <code>exit()</code> non viene controllato. Nell&rsquo;esempio, <code>keep_label</code> è una funzione C che tiene il puntatore e <code>kept_label_length</code> lo legge dopo:
   </p>
   <figure class="example" data-src="examples/gallery/13-lease.hero" data-lines="22-27">
-<pre><code>    <span class="k">while</span> at &lt; 3
-        label: <span class="t">cstr</span> @ <span class="s">f"row-{at}-payload"</span>.lease()
+<pre><code>    <span class="k">while</span> at &lt; <span class="n">3</span>
+        label: <span class="t">cstr</span> @ <span class="s">f"row-{</span>at<span class="s">}-payload"</span>.lease()
         keep_label(s: label)
-        print(<span class="s">f"C still reads {kept_label_length()} bytes"</span>)
+        print(<span class="s">f"C still reads {</span>kept_label_length()<span class="s">} bytes"</span>)
         end_lease(@label)
-        at @ at + 1</code></pre>
+        at @ at + <span class="n">1</span></code></pre>
     <figcaption>examples/gallery/13-lease.hero, righe 22&ndash;27</figcaption>
   </figure>
+  <p>
+    La copia viene presa quando il lease comincia, quindi le modifiche successive alla stringa non arrivano al C. E se la libreria legge ancora il testo dopo <code>end_lease</code>, nessun compilatore può vederlo: l&rsquo;header non dice per quanto il C tiene un puntatore, quindi quell&rsquo;errore resta tuo, e a trovarlo è il controllo di memoria con cui gira il ramo Linux, il sanitizer. <a href="/it/examples/gallery/13-lease/">L&rsquo;esempio intero, con il suo header &rarr;</a>
+  </p>
 
   <p>
     Heroes non verifica che il <code>ptr</code> restituito a una libreria sia quello corretto, né come la libreria lo usi. I controlli sui tipi non eliminano i rischi del codice C.
@@ -180,8 +183,9 @@ the 16:9 diagonal of a 1920-wide screen: 2202.9071700822983</code></pre>
 
   <footer>
     <p>Ogni blocco di codice di questa pagina è una fetta di
-    <code>examples/gallery/08-ffi.hero</code> nel repository, tranne quello della
-    locazione, che viene da <code>examples/gallery/13-lease.hero</code>. Le due
-    diagnostiche sono il primo file con un nome scritto male e un tipo di ritorno
-    cambiato, compilato come <code>ffi.hero</code>.</p>
+    <code>examples/gallery/08-ffi.hero</code> nel repository, tranne quello del
+    lease, che viene da <code>examples/gallery/13-lease.hero</code>. Le due
+    diagnostiche sono il primo file con <code>floor</code> scritto male sia nella
+    dichiarazione sia nella sua unica chiamata, e con un tipo di ritorno cambiato,
+    compilato come <code>ffi.hero</code>.</p>
   </footer>

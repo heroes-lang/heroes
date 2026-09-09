@@ -3,7 +3,7 @@
 
   <h1 class="chapter">Strings</h1>
   <p class="tagline">
-    Reading, splitting and joining strings while distinguishing bytes from characters.
+    Reading, splitting and joining strings, distinguishing bytes from characters, and putting a value inside one.
   </p>
 
   <p>
@@ -119,8 +119,8 @@ error[type_mismatch]: expected `u8`, found `str`
     <code>\\</code>, <code>\"</code>. In a character literal, <code>\'</code>
     replaces the last of them. Other escape sequences produce an error and a suggested fix:
   </p>
-  <pre><code>$ heroes check strings.hero
-error[unknown_escape]: `\d` is not an escape sequence — the escapes are \n \t \r \\ \"; write `\\` for a literal backslash
+  <pre class="diag"><code>$ heroes check strings.hero
+<span class="msg">error[unknown_escape]: `\d` is not an escape sequence — the escapes are \n \t \r \\ \"; write `\\` for a literal backslash</span>
   at strings.hero:45:24
      |
   45 |     return words.join("\d")
@@ -144,15 +144,15 @@ tqbf</code></pre>
 
   <h2>Text with holes in it</h2>
   <p>
-    A string can carry values. An <code>f</code> before the opening quote turns <code>{n}</code> into the text of <code>n</code>, written the way <code>to_str</code> would write it. Any expression may stand in a hole, and the hole ends at the brace that closes it, so a call or a lookup inside it reads as it would anywhere. Two braces write one brace. A string without the <code>f</code> is exactly what it was.
+    A string can carry values. An <code>f</code> before the opening quote turns <code>{n}</code> into the text of <code>n</code>, written the way <code>to_str</code> would write it. Any expression may stand in a hole, and the hole ends at the brace that closes it, so a call or a lookup inside it reads as it would anywhere. <code>{{</code> writes one opening brace; a closing brace is never special, so <code>}</code> is written as it is. A string without the <code>f</code> is exactly what it was.
   </p>
   <figure class="example" data-src="examples/gallery/12-interpolation.hero" data-lines="17-18">
 <pre><code><span class="k">function</span> line(at: <span class="t">i64</span>, of: <span class="t">i64</span>, star: Star) -&gt; <span class="t">str</span>
-    <span class="k">return</span> <span class="s">f"{at}/{of} {star.name} at magnitude {star.magnitude}"</span></code></pre>
+    <span class="k">return</span> <span class="s">f"{</span>at<span class="s">}/{</span>of<span class="s">} {</span>star.name<span class="s">} at magnitude {</span>star.magnitude<span class="s">}"</span></code></pre>
     <figcaption>examples/gallery/12-interpolation.hero, lines 17&ndash;18</figcaption>
   </figure>
   <p>
-    A hole may hold what <code>to_str</code> can render: an integer, a float, <code>bool</code> or <code>str</code>. A record or a list has no text of its own, and a value that may be missing has to be made whole with <code>.must()</code> first. The compiler refuses the hole and its note says what to write instead.
+    A hole may hold what <code>to_str</code> can render: an integer, a float, <code>bool</code> or <code>str</code>. A record or an array has no text of its own, and a value that may be missing has to be made whole with <code>.must()</code> first. The compiler refuses the hole and its note says what to write instead. <a href="/examples/gallery/12-interpolation/">The whole example &rarr;</a>
   </p>
   <pre><code>$ heroes run examples/gallery/12-interpolation.hero
 1/2 Sirius at magnitude -1.46

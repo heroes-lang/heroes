@@ -80,6 +80,27 @@ export function ceilingK(): string {
   return `${n / 1024}K`;
 }
 
+/**
+ * The specification's REAL count and the model that produced it, read from the
+ * same suite, which pins them under the ceiling on every commit and refuses a
+ * text that moved without them (the suite's `real` row and `SPEC_DIGEST`). The specification
+ * page says the number beside the ceiling because a reader about to paste the
+ * document into a prompt asks "how much fewer?", and a threshold alone left the
+ * question open (marketing seat, 2026-09-09). Generated, so it cannot go stale;
+ * the date the count was taken stays off the page (`site/CLAUDE.md`).
+ */
+export function specReal(): { tokens: number; model: string } {
+  const text = readText(SPEC_SUITE);
+  const tokens = /^constant REAL_TOKENS: i64\n\s+(\d+)$/m.exec(text);
+  const model = /^constant REAL_MODEL: str\n\s+"([a-z0-9.-]+)"$/m.exec(text);
+  if (tokens === null || model === null) {
+    throw new Error(`${SPEC_SUITE}: no \`constant REAL_TOKENS: i64\` and \`constant REAL_MODEL: str\` with their values on the line under them.`);
+  }
+  const n = Number(tokens[1]);
+  if (n >= specCeiling()) throw new Error(`${SPEC_SUITE}: the real count ${n} is not below the ceiling ${specCeiling()}, and the pages say it is.`);
+  return { tokens: n, model: model[1] };
+}
+
 /** The seats of the language panel, and how many of them carry a veto. */
 function judges(): { seats: number; vetoes: number } {
   // `filesIn` returns repository-relative paths, so each brief is read by the
@@ -372,7 +393,10 @@ function checkChapterDiagnostics(html: string, pagePath: string): string[] {
   const lang = langOf(pagePath);
   const n = w === 'la' ? 1 : WORDS[lang].indexOf(w);
   if (n < 0) return [`${pagePath}: the footer counts diagnostics with a word this table cannot read: "${w}".`];
-  const shown = (flat.match(/<pre><code>\$ heroes (?:check|build) /g) ?? []).length;
+  // A transcript is a `<pre>` whatever class it carries: `pre.diag` marks the
+  // ones whose message may wrap, and this count saw one of two the day that
+  // class reached the chapters (2026-09-09).
+  const shown = (flat.match(/<pre(?: class="[^"]*")?><code>\$ heroes (?:check|build) /g) ?? []).length;
   if (shown !== n) {
     return [`${pagePath}: the footer says ${w} diagnostic(s) and the page shows ${shown} \`heroes check\`/\`heroes build\` transcript(s).`];
   }

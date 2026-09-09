@@ -71,8 +71,21 @@ export function fingerprintOf(dir: string, paths: string[]): Fingerprint {
   return { hash, short: hash.slice(0, 12), files, manifest };
 }
 
-/** The command a reader runs to get the same 64 characters back. */
-export function reproduceCommand(dir: string): string {
+/**
+ * The command a reader runs to get the same 64 characters back.
+ *
+ * A program owns its directory, so the command hashes every file in it. A
+ * gallery example shares `examples/gallery/` with a dozen others, so its
+ * fingerprint covers only its own files and the command names them, in the
+ * manifest's own bytewise order: `shasum` prints its lines in argument order,
+ * and a `find` over the directory reproduced a hash no page showed (found by
+ * the devex seat, 2026-09-09).
+ */
+export function reproduceCommand(dir: string, files: string[] | null = null): string {
+  if (files !== null) {
+    const names = files.map((path) => path.slice(dir.length + 1)).sort(byBytes);
+    return `cd ${dir} && shasum -a 256 ${names.join(' ')} | shasum -a 256`;
+  }
   return (
     `cd ${dir} && LC_ALL=C find . -type f ! -name '.*' | sed 's|^\\./||' | sort ` +
     `| xargs shasum -a 256 | shasum -a 256`
