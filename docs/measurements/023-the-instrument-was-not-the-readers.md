@@ -175,3 +175,57 @@ minimum task budget.
 - **What the site says.** `site/src/lib/claims.ts` reads `constant CEILING` out
   of `tests/harness/suite_spec.hero` and checks that both home pages state it,
   so a change of unit moves that machinery and two published sentences with it.
+
+## Corrected 2026-09-09 by panel 123, two errors in this file's own method
+
+**The request offset is model-dependent and this file states it as one
+constant.** Probed twice per model over six ids by the spec-warden at that
+sitting: **6** on `claude-opus-5`, `claude-sonnet-5` and `claude-opus-4-8`;
+**7** on `claude-opus-4-6` and `claude-haiku-4-5`; **11** on
+`claude-opus-4-7`. So the figure above for the older pair is **4127** and not
+4128 — which panel 122 had already caught once — and the inter-generation gap
+is **967** rather than 966. And Opus 4.7 counts the same CONTENT as Opus 5 while
+wrapping it differently, so *newest* and *largest* are independent axes: a
+maximum over a set of model ids is not a property of the document.
+
+**THE FLOOR SECTION ABOVE IS WITHDRAWN.** This file recorded Anthropic's minimum
+cacheable prefix and the coordinator built a *band* out of it — 4096 to 6144,
+"both ends measured or sourced" — and put it to the author in those words.
+Panel 123's spec-warden refused it on four grounds, and each is enough:
+
+- it is a property of a request **prefix**, not of a file, and `CLAUDE.md` alone
+  measures **5547** on Haiku 4.5, clearing 4096 by 1451 before one spec token is
+  loaded — while CLAUDE.md §1 has the spec read inside a session that has
+  already loaded the contract, so on the only workload this project runs the
+  threshold is cleared before the spec is opened;
+- a floor makes a **removal a violation** and turns §1.6's forcing function into
+  a band to centre, paying in the factor §1.2 says dominates;
+- a vendor price list for three legacy models is a premise about the world that
+  expires silently **and upward-invisibly** (`.claude/rules/module-shape.md`);
+- the margin is **31** content tokens, inside the 78-token spread this project
+  was calling its error bar — indistinguishable from noise at its own precision.
+
+**And the numbers were never measured here.** The seat that would have verified
+them was refused by this session's own guard — `/v1/models` answered *"the
+Anthropic key is for `/v1/messages/count_tokens` and nothing else"* — so they
+are vendor-sourced and enter the record as a question rather than a premise
+(CLAUDE.md § RUN IT). What may be claimed: the minimum exists, is
+model-dependent and non-monotonic, is 4096 on three named legacy ids, applies to
+a cached prefix and not to a file, and is already cleared by `CLAUDE.md` alone.
+What may not: that the spec lives in a band, that 4096 is a floor, or that both
+ends are measured.
+
+**And the 27.5% is not corroborated by Anthropic's ~30%.** The vendor's figure
+is Claude-pre-4.7 against Claude-4.7-and-later; this file's is `cl100k_base`
+against Claude. Two different comparisons of similar magnitude, and the
+historian at panel 123 insisted they not be written as agreeing with each other,
+because that is how a false citation is born three documents later. The figure
+that belongs beside the vendor's 30% is the **967**-token inter-generation gap.
+
+**One thing this file said that panel 123 strengthened rather than corrected.**
+Vendoring the rank files pinned *the half that never changed*: `expected_hash`
+content-addresses the ranks, while `pat_str` — the pre-tokenizer regex that
+decides where text splits — lives in library **code** and was edited twice under
+the fixed name `cl100k_base`, in `tiktoken` PRs #234 and #258, merged on a
+round-trip test with no proof of output equivalence. So *"we vendor it, so it is
+reproducible"* was never true of the part that moved.
