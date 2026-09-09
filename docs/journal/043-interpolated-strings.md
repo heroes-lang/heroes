@@ -134,3 +134,11 @@ there since 2026-09-07 with nobody reading the count. `git` is in the
 `Dockerfile` now, and over a copy that carries `.git` the Linux leg reads **126
 passed** and `records` **15 passed**, which it could never run before. The 126th
 test joined this evening with `records/c`'s claim clause.
+
+**Also appended 2026-09-09: the spec's figures above moved once more, and this
+milestone's number is not the last one.** Panel 125's ratification reworded the
+lease clause's fourth line the same evening, at **+4** on the reader's
+instrument, so the document stands at **5373** on `claude-opus-5` with **711**
+free net of the FFI floor, and `SPEC_TOKENS` at **4206**. The **+138** this
+milestone paid is unchanged and so is every number above it: a later amendment
+moving the total is what an append-only record looks like when it is working.

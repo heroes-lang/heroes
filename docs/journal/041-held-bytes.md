@@ -154,3 +154,20 @@ exits 127, which is what the shipped `abort-null-cstr-into-c` exits there too.
 declared `stash_len` as `unsigned long`, which is 32 bits on Windows and 64 on
 the others, and the FFI's own `_Static_assert` refused it against the `.hero`'s
 `u64`. It answers `size_t` now, which is what `strlen` answers on all three.
+
+**Appended 2026-09-09, panel 125 ratified and one of its four lines reworded.**
+The author ratified the sitting as adopted and declined the registry recorded
+beside it. The fourth point came from the site panel that evening and is worth
+keeping here, because this milestone wrote the sentence: the clause said *a
+lease nobody ends is named at exit*, and what runs is `panic: 1 lease(s) never
+ended`, a COUNT, when `main` returns, with nothing at all on the `exit()` path
+(exit 134 and exit 0, both run). The document had taken R5's own note as a
+promise it could not keep. The word moved rather than the mechanism, since
+naming the lease needs the refused registry, so the clause now reads *is
+counted when `main` returns*: **+3** vendored and **+4** on the reader's
+instrument, 5369 to 5373 on `claude-opus-5`, which makes the capability's total
+**+107** rather than the +103 above. The example this milestone shipped,
+`examples/gallery/13-lease.hero`, carried the same sentence in its module doc
+and carries the measured one now. The lesson is the one CLAUDE.md § RUN IT
+already states and this milestone paid for twice: the sentence a record writes
+about a runtime message is a claim, and the message is one command away.
