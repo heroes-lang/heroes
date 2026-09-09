@@ -303,7 +303,23 @@ allocation site. Recorded so the author can choose it.
 
 ## Author's verdict
 
-*Pending.*
+**Ratified as adopted, 2026-09-09** (`/decide`, answer `1a 2a` to the two
+questions the queue item carried). The cell is the authority and is nulled on
+release; a lease's name stands only as an argument of a call and takes no other
+write; `end_lease` takes only a lease cell; the runtime reads no memory it was
+not handed; the registry stays refused on Part 7.13; the spelling is `lease` and
+`end_lease`. The conservative route recorded above was put to the author as the
+alternative and declined.
+
+**And the fourth point, raised after the sitting by the site panel
+(2026-09-09) and answered with it.** `spec/heroes-spec.md:246` said *a lease
+nobody ends is named at exit*; what runs is `panic: 1 lease(s) never ended`, a
+count, when `main` returns, and nothing on `exit()` (R5 above). Naming the
+lease would take the registry this verdict refuses, so the author took the
+wording: the spec says *counted when `main` returns*, and its cost is measured
+with `heroes measure --refresh` in the commit that carries this verdict. The
+example `examples/gallery/13-lease.hero` and the site had already been brought
+to the measured sentence by the site panel's seats the same evening.
 
 ## Predictions to score
 
