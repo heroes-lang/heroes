@@ -1,0 +1,28 @@
+# fixedbugs, defect 022, panel 122, 2026-09-09.
+#
+# SYMPTOM: accepted, and sound only by an accident of the emitter — the owner
+# slot happens to live past the binding. Panel 122 measured what that slot
+# actually promises: one per expression SITE, released at function exit **or
+# when its site re-executes, whichever comes first**. In a loop the emitted C
+# frees the previous iteration's bytes while the binding still names them.
+#
+# CAUSE: nothing tied the lend to the call it was lent for. `spec:253` says
+# `.cstr()` lends a `str` to C to read for that call, and a binding is not a
+# call.
+#
+# FIX: panel 122 R2. A lend may stand only as an argument of a call. This
+# refuses a program that is sound today, deliberately: what makes it sound is
+# invisible at the line, and the alternative is a rule resting on when an
+# ownership pass releases a slot — a premise about the world, which
+# `.claude/rules/module-shape.md` says expires in silence. It is already dead
+# inside a loop.
+
+extern "string.h"
+    function strlen(s: cstr) -> u64
+
+function measured(s: str) -> u64
+    c = s.cstr()  #~ cstr_escapes
+    return strlen(s: c)
+
+function main()
+    print(measured(s: "abc").to_str())

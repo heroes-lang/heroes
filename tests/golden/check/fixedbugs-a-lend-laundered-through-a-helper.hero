@@ -1,0 +1,26 @@
+# fixedbugs, defect 022, panel 122, 2026-09-09.
+#
+# SYMPTOM: silent at `heroes check`, and `--sanitize` reports
+# `AddressSanitizer: heap-use-after-free`, READ of size 7. Both compiling
+# seats at panel 122 built this shape independently, from opposite ends.
+#
+# CAUSE: the lend stands in an ARGUMENT position, which the position rule
+# blesses, and what leaves the frame is the helper's RESULT. No rule about
+# where a `.cstr()` may stand can see it, which is why the sitting's first
+# recommendation — the coordinator's — had this hole and shipped nothing.
+#
+# FIX: panel 122 R3, the signature rule, which closes the whole route at the
+# declaration instead of chasing the flow. Both functions here are refused,
+# and that is the point: each one answers `cstr` outside a group.
+
+extern "string.h"
+    function strlen(s: cstr) -> u64
+
+function pass(c: cstr) -> cstr  #~ cstr_out_of_heroes
+    return c
+
+function outer(n: i64) -> cstr  #~ cstr_out_of_heroes
+    return pass(c: ("heap-" + n.to_str()).cstr())
+
+function main()
+    print(strlen(s: outer(n: 7)).to_str())

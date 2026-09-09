@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-a-lend-parked-in-a-record.hero:22:8: error[cstr_in_a_record]: `Holder.c` holds a `cstr`, and `Holder` is not a record of an `extern` group — a C pointer parked in a Heroes record outlives the bytes it points into (§4.19)

@@ -169,7 +169,7 @@ function what_the_author_can_do(code: str) -> str
         return "no change to this file will fix this"
 
     if code == "pointer_element"
-        return "hold the pointer in a `record` and make an array of that instead"
+        return "hold a `str` and lend it with `.cstr()` at the call that reads it — a `cstr` parked in a Heroes record is refused for the same reason (panel 122 R4)"
 
     if code == "unit_element" || code == "unit_field"
         return "give it a type that carries a value"
@@ -452,4 +452,4 @@ test "a pointer element is refused with the record route, at its first appearanc
     assert got.len() == 1
     assert got[0].code == "pointer_element"
     assert got[0].message == "`ptr` as the element of an array is not emitted yet"
-    assert got[0].notes[0] == "hold the pointer in a `record` and make an array of that instead"
+    assert got[0].notes[0] == "hold a `str` and lend it with `.cstr()` at the call that reads it — a `cstr` parked in a Heroes record is refused for the same reason (panel 122 R4)"

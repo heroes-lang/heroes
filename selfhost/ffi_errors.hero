@@ -212,3 +212,79 @@ test "a float key splits on is-a-float versus reaches-one"
     inside = float_map_key(key: "Reading", reached: "Reading.value", span: span)
     assert inside.message == "`Reading` cannot be a map key, because `Reading.value` is a float"
     assert inside.notes.len() == 1
+
+# A lent C pointer standing anywhere but in the call that reads it
+# (defect 022, found by the ffi-pragmatist at panel 121; author decision
+# 2026-09-09 for the strict rule over the escape-only one).
+#
+# ONE CODE AND NOT TWO, though the reader arrives by two roads. A lend
+# built from an expression is a use-after-free and a lend built from a
+# literal is sound, because a literal has static storage; the message
+# does not split them, because the two spellings are one brace apart and
+# a rule that held only for one of them would teach the difference
+# instead of the rule. The note carries the repair, which is a different
+# shape of program rather than a different expression, so there is no
+# `Fix` here: nothing mechanical turns an escaping pointer into a
+# correct one.
+#
+# THREE SENTENCES OF THIS DIAGNOSTIC WERE WRONG UNTIL PANEL 122, and the
+# spec-warden and the ffi seat caught them separately. It said "not an
+# argument of an EXTERN call", from a rule the sitting dropped. It said
+# the bytes are "released when the function that built it returns",
+# which is false in general — the slot is released on re-execution too,
+# so a loop frees the previous iteration — and false of every site where
+# it then fired, which were literals. And its note prescribed writing
+# `.cstr()` inside the extern call, which `extern_across_modules`
+# refuses: the two diagnostics pointed at each other, and a reader
+# following either arrived at the other.
+function cstr_escapes(span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "cstr_escapes",
+        message: "`.cstr()` lends this string to C for the length of one call (§4.19), and a lend may stand only as an argument of a call — here it stands somewhere the pointer outlives the bytes it points into",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "pass it directly as an argument of the call that reads it. The bytes belong to the `str`, and the slot holding one is released when its function returns OR when the same expression runs again, whichever comes first — so a lend kept past its call is reading freed memory by the next iteration. A wrapper that reaches C from another module takes a `str` and lends inside itself"
+    )
+    return d
+
+# A Heroes function whose result is `cstr` (panel 122 R3, defect 022).
+#
+# WHY A SIGNATURE AND NOT A FLOW ANALYSIS. `return pass(c: s.cstr())` puts the
+# lend in an argument position, which the position rule blesses, and returns a
+# call RESULT, which no rule about lends can see; both compiling seats built it
+# and it is heap-use-after-free under the sanitizer. Refusing the SIGNATURE
+# closes the whole route, and it was measured free: every `-> cstr` in this
+# tree is already inside an `extern` group.
+#
+# The repair is the one the corpus already ships, so the note names it rather
+# than guessing: answer the `str` and let the caller lend it. That is what
+# `tests/golden/surface-fixtures/externroute/bind.hero` does.
+function cstr_out_of_heroes(name: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "cstr_out_of_heroes",
+        message: "`" + name + "` answers `cstr`, and a `cstr` is C's pointer rather than this language's string (§4.19) — only a function inside an `extern` group may answer one",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "answer `str` and let the caller lend it with `.cstr()` at the call that reads it. A `cstr` handed out of a Heroes function points into bytes this function stops owning when it returns"
+    )
+    return d
+
+# A `cstr` field on a record that is not the header's (panel 122 R4).
+#
+# The reader's mistake differs from `cstr_out_of_heroes`, which is why this is
+# its own code: there the pointer leaves through a result, here it is PARKED,
+# and the repair is a different field type rather than a different signature.
+# Measured at the sitting: no such field exists in this tree, and the emitter's
+# `pointer_element` note used to send people here.
+function cstr_in_a_record(holder: str, field: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "cstr_in_a_record",
+        message: "`" + holder + "." + field + "` holds a `cstr`, and `" + holder + "` is not a record of an `extern` group — a C pointer parked in a Heroes record outlives the bytes it points into (§4.19)",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "hold a `str` in the field and lend it with `.cstr()` at the call that reads it. A group's `record` may hold a `cstr`, because there the fields are the header's and C owns the bytes"
+    )
+    return d
