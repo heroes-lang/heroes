@@ -425,3 +425,101 @@ Its numbers are corroboration on a refused rule and an independent reading of
 the memory question, and they are appended below when they arrive rather than
 waited for, because the tree is frozen while this sitting is open and R7's
 repair is owed.
+
+## Appended 2026-09-09: the compiler seat's round two, and two premises of the brief falsified
+
+It arrived after the resolution above was written and committed, which is why it
+is here rather than in the table. **It does not overturn the resolution and it
+corrects three things in it, one of them a number this file already carries.**
+
+**It conceded the ffi seat's veto in its own first paragraph**, having gone and
+read the header itself:
+`/Library/Developer/CommandLineTools/SDKs/MacOSX26.5.sdk/usr/include/sqlite3.h:4888-4889`,
+with `#define SQLITE_STATIC ((sqlite3_destructor_type)0)` and
+`SQLITE_TRANSIENT ((sqlite3_destructor_type)-1)` at `:6354-6355`. *"Three cases,
+one parameter, chosen at runtime. No declaration-site mark can express that."*
+So the header is now read by two seats independently and they agree.
+
+**TWO PREMISES OF THE COORDINATOR'S ROUND-TWO BRIEF ARE FALSE, and this is the
+correction that matters most.** The brief said defect 024's own reproducer
+prints 0 today; **it prints 13, sanitizer clean**, because the last iteration's
+slot survives to frame exit. And the brief said *"every measured failure in this
+sitting is the second half"*, meaning the site re-executing. **It is not.** The
+wrapper-frame shape, which is 024's ACTUAL failure, and the relay shape both die
+on the **first** half, the frame's own exit sweep, which candidate D keeps:
+
+| shape | today | under D |
+|---|---|---|
+| loop, read in the same frame | **13, clean** | 13 plus `panic: 2 heap blocks still live at exit` |
+| N pointers live at the read (the ffi seat's bind-all-then-step) | 14, two use-after-frees | **39, fixed**, plus the same panic |
+| **wrapper frame, 024's actual failure** | 0, two use-after-frees | **0, two use-after-frees, unchanged** |
+| the relay from its own prediction | 0, two use-after-frees | **0, unchanged** |
+
+So D fixed **one** shape of four and left 024's own witness exactly where it
+was. The coordinator's sentence *a duration rule does not care which function
+the lend was passed to* was right and was an argument against D rather than for
+it.
+
+**D leaks rather than defers, which is a sharper mechanism than the ffi seat's
+measurement of the same thing.** The slot holds ONE value, so deleting the early
+release does not postpone a release, it **drops the previous reference on the
+floor**: the measured leak is exactly N-1, at 99,999 blocks for 1e5 lends and
+**999,999 blocks and 49,741,824 bytes** for 1e6, against a base **flat at ~1.4
+MB across both sizes**, each run ending at **exit 134**. Implemented honestly it
+needs a per-frame deferred-release structure: new runtime structure, new IR op,
+emitter and cleanup-chain work. *"No keyword, zero migration"* is true of the
+surface and false of the compiler, so **D is the largest route rather than the
+smallest**.
+
+**The bounded alternative is worse than D, hand-lowered and run.** Statement
+scope gives 0 where 13 is right and today is correct, and 6 where 39 is right
+against today's 14. It leaves the bind-all shape broken **and regresses a
+program that works today**.
+
+**The compiler is not a witness for any of this, and the seat says so against
+its own instrument.** The 43 `selfhost/` `.cstr()` sites replicate, but **12 are
+inside `selfhost/check/lending.hero`'s own test strings and 5 are diagnostic
+text in `selfhost/ffi_errors.hero`**, and every real one lends a **borrowed**
+value (`selfhost/cli/process.hero:114-166` is `path.cstr()`, `dir.cstr()`,
+`from.cstr()`, `name.cstr()`). Part 5 rule 1 excludes a borrowed parameter from
+the sweep, so there is no owner slot to defer. Peak RSS building the compiler
+with D went **down**, 300,154,880 to 296,042,496, and that is not good news: it
+means the workload never reaches the change.
+
+**THE TIMING NUMBER IN THE TABLE ABOVE IS SUPERSEDED, and candidate A is
+CHEAPER than this file reported.** The +4.3% was attributed as UNRUN with a
+hypothesis; the hypothesis is confirmed and then bettered. base **12.83**,
+field-only `token.Span?` **13.58**, full candidate A **13.63** — so the whole
+cost was the field, and the field's cost is its **failure payload**:
+`fail("none", "not kept")` is two refcounted strings, putting incref and decref
+traffic on every `ast.Param` copy in the checker. Spelled `kept: bool` instead:
+**12.95, +0.9%, inside the base spread.** And candidate A never reads that span
+— **the compiler said so itself**, `unused_binding` on the seat's own
+`kept_suffix(s: source.Source, …)`. Two runs were discarded for waiting, with
+their ratios given.
+
+**THE MANDATORY RIDER, and it is the most useful thing in this round.** **Zero
+goldens lend inside a loop.** The three computed-lend cases
+(`tests/golden/check/fixedbugs-a-lend-*`) are `check`-only negatives, refused
+before the emitter ever runs. So **nothing that RUNS exercises a computed lend
+today, and all four candidates could have shipped green.** Whoever wins owes a
+`tests/golden/run/` case that lends a computed string in a loop and asserts both
+the answer and the leak gate. `heroes-dur` self-hosted and **607 tests all
+passed**, which is evidence the suite does not reach the change (CL-054) rather
+than evidence that the change is safe.
+
+**One claim of its own that does not reproduce, checked before this was
+written.** It reported the `cmp` fixpoint differing at char 1449 of line 2 and
+called it pre-existing because its base differed identically. Run in the real
+tree at this append: `./heroes build selfhost/main.hero --emit-c` against
+`seed/heroes.c` is **silent**, as it was three times earlier today. So that is
+an artefact of its copy and not of the repository, and it is recorded here
+because a fixpoint claim is exactly the kind that must not stand unchecked.
+
+**Where it leaves the ballot, in its own words**: A and B are cheaper than it
+reported, the duration change and A are **not exclusive**, and *"the ffi seat is
+right that `sqlite3_bind_text` is unspellable by all four. That residue is real,
+and the honest resolution names it rather than picking a route that hides it."*
+**R1 and R10 above are that naming**, so the resolution stands as written, with
+R5's field cost now measured at +0.9% for a payload-free mark rather than the
++4.3% the table carries.
