@@ -1,0 +1,187 @@
+# The reader's own token count, asked for by hand and recorded, never by a
+# check (design.md §1.6 as amended 2026-09-09; panel 123 R1, R4 and R5).
+#
+# WHY A FLAG AND NOT A CHECK. `heroes measure` answers from two VENDORED
+# tokenisers and the larger of those is OpenAI's `cl100k_base`, so the number
+# the budget was judged against was never the reader's: measured 2026-09-09,
+# the spec was 5094 real tokens against a stated ceiling of 4096, 998 over a
+# line it was told it was 40 under. The repair is not to put the endpoint in
+# the gate. design.md Part 11 metric 1 forbids that in as many words — *no API
+# key, no network* — and panel 123 measured why it could not work anyway: the
+# repository is public, GitHub passes no secrets to a fork's pull request, so a
+# key-gated check is structurally red on every fork PR forever. **The network
+# is admissible only where the answer is pre-recorded**, which is Bazel's
+# `sha256`, pip's hash-checking mode and Nix's fixed-output derivations, and
+# this flag is their `nix-prefetch`.
+#
+# AND IT PRINTS RATHER THAN WRITES. The four constants go to stdout for a
+# person to paste into `tests/harness/suite_spec.hero`. A constant-rewriting
+# mutator inside the compiler is more code and its own goldens for nothing, and
+# `.claude/rules/cli-surface.md` already says an artifact goes to stdout.
+#
+# WHAT IS IN THIS FILE is the half that needs no network: the escaping, the
+# reading of an answer, and the lines to print. `selfhost/cli/refresh.hero` is
+# the half that opens a socket, and the two are separate files because
+# **every mistake this feature can make QUIETLY lives in the escaping of a
+# 12-kilobyte document into a JSON string**, and that is testable without a
+# key. Written as one file first, at 303 lines against §11's 300, and
+# `suite_layout.hero` refused it: the seam the rule asked for was the one this
+# paragraph had already named in a comment.
+
+use cli/digest
+use measure/bpe
+
+# The model the ceiling is judged against, pinned (panel 123 R3). ONE id
+# binds and it moves only by author decision: a maximum over a SET can only
+# rise as the set grows, so the document would shrink because a vendor
+# shipped — the failure that cost 998 tokens, with the sign flipped. And
+# `newest` is not a rule either, because Opus 4.7 counts the same content as
+# Opus 5 and wraps it differently, so the two axes are independent.
+constant PINNED_MODEL: str
+    "claude-opus-5"
+
+# One character of a JSON string, escaped. The six that must be escaped are
+# the two structural ones and the four whitespace controls C's own escapes
+# name; everything else below 0x20 goes as `\u00XX`, which is the only form
+# JSON has for them.
+function escaped_byte(byte: u8) -> str
+    if byte == 34
+        return "\\\""
+
+    if byte == 92
+        return "\\\\"
+
+    if byte == 10
+        return "\\n"
+
+    if byte == 13
+        return "\\r"
+
+    if byte == 9
+        return "\\t"
+
+    if byte == 8
+        return "\\b"
+
+    if byte == 12
+        return "\\f"
+
+    if byte < 32
+        # `.must()` where it cannot fail, and the language is right to ask:
+        # `to_i64` answers a `T?` because a conversion may not fit, and a
+        # `u8` fitting an `i64` is the one case where that is impossible.
+        wide = to_i64(byte).must()
+        return "\\u00" + nibble(wide / 16) + nibble(wide % 16)
+    return ""
+
+# One hex digit. Written here rather than reached for, because the only
+# candidate — `digest.hex8` — answers eight of them and slicing two off the
+# end would rest on a premise about its width.
+function nibble(value: i64) -> str
+    digits = "0123456789abcdef"
+    return digits.slice(from: value, to: value + 1)
+
+# A `str` as a JSON string, WITHOUT the surrounding quotes.
+#
+# IT WALKS BYTES AND NOT CHARACTERS, on purpose. Every byte above 0x7f is
+# passed through untouched, which is correct because the transport is UTF-8
+# and JSON requires no escaping there — and because walking characters would
+# have to decide what a character is, which `s.chars()` answers and `s[i]`
+# does not. The spec is ASCII-only syntax but its prose is not: it carries
+# em dashes and section signs, and a version of this that escaped them by
+# hand would have counted a different document than the one on disk.
+function json_string(text: str) -> str
+    out: str @ ""
+    at: i64 @ 0
+    plain: i64 @ 0
+
+    while at < text.len()
+        one = escaped_byte(text[at])
+
+        if one.len() > 0
+            out @ out + text.slice(from: plain, to: at) + one
+            plain @ at + 1
+        at @ at + 1
+
+    return out + text.slice(from: plain, to: text.len())
+
+# The request body: one user message holding the whole document.
+function request(model: str, content: str) -> str
+    return "{\"model\":\"" + model + "\",\"messages\":[{\"role\":\"user\",\"content\":\"" + json_string(content) + "\"}]}"
+
+# `input_tokens` out of the answer.
+#
+# A TARGETED READ AND NOT A JSON PARSER, said out loud because the difference
+# matters: this looks for one key and refuses when it is absent, which is the
+# whole contract. A parser would be a hundred lines to be wrong in more ways,
+# and the day the shape changes this fails loudly with the body in hand rather
+# than answering a plausible number.
+function input_tokens(answer: str) -> i64?
+    key = "\"input_tokens\":"
+    at = bpe.index_of(text: answer, needle: key)
+
+    if at.is_err()
+        return fail("no_count", "the answer carries no `input_tokens`: " + answer)
+    from = at.must() + key.len()
+    end: i64 @ from
+    value: i64 @ 0
+
+    while end < answer.len() && answer[end] >= 48 && answer[end] <= 57
+        value @ value * 10 + to_i64(answer[end]).must() - 48
+        end @ end + 1
+
+    if end == from
+        return fail("no_count", "`input_tokens` is not followed by digits: " + answer)
+    return ok(value)
+
+# The four lines a person pastes into `tests/harness/suite_spec.hero`.
+#
+# THE MODEL ID AND THE DATE TRAVEL WITH THE NUMBER, which is the whole point
+# and is Go's `toolchain` line: it writes the name of the tool beside the
+# pinned data *"for reproducibility"*. A count without the model that produced
+# it is not a measurement, and design.md:3101 already asked for exactly this
+# under Part 11's provenance rule.
+function constants(tokens: i64, model: str, taken: str, of: str) -> [str]
+    return [
+        "constant REAL_TOKENS: i64"
+        "    " + tokens.to_str()
+        "constant REAL_MODEL: str"
+        "    \"" + model + "\""
+        "constant REAL_TAKEN: str"
+        "    \"" + taken + "\""
+        "constant SPEC_DIGEST: str"
+        "    \"" + digest.digest(of) + "\""
+    ]
+
+## Tests
+
+test "the two structural characters and the whitespace controls are escaped"
+    assert json_string("a\"b") == "a\\\"b"
+    assert json_string("a\\b") == "a\\\\b"
+    assert json_string("one\ntwo") == "one\\ntwo"
+    assert json_string("a\tb") == "a\\tb"
+    assert json_string("a\rb") == "a\\rb"
+
+test "a run of plain text is copied once rather than byte by byte"
+    assert json_string("nothing to escape here") == "nothing to escape here"
+    assert json_string("") == ""
+
+test "bytes above ASCII pass through, because the transport is UTF-8"
+    assert json_string("an em dash — and a section §1.6") == "an em dash — and a section §1.6"
+
+test "the request names the model and quotes the content"
+    assert request(model: "m", content: "a\"b") == "{\"model\":\"m\",\"messages\":[{\"role\":\"user\",\"content\":\"a\\\"b\"}]}"
+
+test "the count is read out of the answer, and an absent one is a failure"
+    assert input_tokens("{\"input_tokens\":5128}").must() == 5128
+    assert input_tokens("{\"input_tokens\":7,\"other\":1}").must() == 7
+    assert input_tokens("{\"type\":\"error\"}").is_err()
+    assert input_tokens("{\"input_tokens\":\"nine\"}").is_err()
+
+test "the printed constants carry the model and the date beside the number"
+    lines = constants(tokens: 5128, model: "claude-opus-5", taken: "2026-09-09", of: "the spec")
+    assert lines.len() == 8
+    assert lines[1] == "    5128"
+    assert lines[3] == "    \"claude-opus-5\""
+    assert lines[5] == "    \"2026-09-09\""
+    assert lines[7] == "    \"" + digest.digest("the spec") + "\""

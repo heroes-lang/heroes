@@ -128,7 +128,7 @@ function main()
         .doctor_cmd => exit(
             code: cli_table.exit_code(doctor.run_doctor(build_dir: "build", runtime_hint: runtime_hint()))
         )
-        .measure_cmd => exit(code: cli_table.exit_code(measure.run(inv.file)))
+        .measure_cmd => exit(code: cli_table.exit_code(measure.run(inv)))
         .mutate_cmd  => exit(code: cli_table.exit_code(mutate.run(inv)))
         # The seven that read a program fall through to the walk
         # below. The arm is a no-op MUTATION and not a print: a

@@ -96,6 +96,32 @@ constant REGISTRY_TOKENS: i64
 constant CEILING: i64
     6144
 
+# THE RECORD: the reader's own count, and the same four constants
+# `selfhost/cli/measure.hero` holds — for the reason `CEILING` is in two
+# places, one printed and one checked, with `recorded` below as what stops
+# them drifting (defect 017's class). **This is the number the ceiling is
+# judged against**, and `SPEC_TOKENS` above is not: that one is vendored and
+# answers a different question, *did the spec move and nobody say so*, which
+# it always answered correctly. Refreshed by hand, by
+# `heroes measure spec/heroes-spec.md --refresh`, never by a check: panel 123
+# R1 refused a key-gated gate, because the repository is public and GitHub
+# passes no secret to a fork's pull request, so such a check is structurally
+# red on every fork PR forever.
+constant REAL_TOKENS: i64
+    5128
+
+constant REAL_MODEL: str
+    "claude-opus-5"
+
+constant REAL_TAKEN: str
+    "2026-09-09"
+
+# The spec this count is OF, content-addressed, so a stale number is loud
+# rather than reassuring. `selfhost/cli/digest.hero` computes it and
+# `measure` refuses to give a verdict when it disagrees.
+constant SPEC_DIGEST: str
+    "6022a8bc2f16ca0e"
+
 # The operating contract, weighed on the same scale as the language.
 #
 # **Why it is here and not in `suite_records.hero`.** That suite gets no compiler
@@ -171,6 +197,7 @@ function run_all(scratch: str, compiler: str) -> report.Report?
     budget(@r, scratch: scratch, compiler: compiler)
     contract(@r, scratch: scratch, compiler: compiler, ceiling: CONTRACT_CEILING)
     spendable(@r, scratch: scratch, compiler: compiler)
+    recorded(@r, scratch: scratch, compiler: compiler)
     ledger(@r, scratch: scratch, compiler: compiler)
     reserved = names_in_table(path: BUILTIN_SOURCE, marker: "Builtin(name: ")
     refused = words_in_arms(path: KEYWORD_SOURCE, marker: "=> ok(ForeignWord(")
@@ -209,11 +236,17 @@ function budget(@r: report.Report, scratch: str, compiler: str)
 
     # The headroom, which is the one thing §1.6 says must survive every
     # raise: it is real, not notional.
-    if SPEC_TOKENS + FFI_FLOOR >= CEILING
+    #
+    # **REAL_TOKENS and not SPEC_TOKENS, since 2026-09-09.** This is the one
+    # question the vendored figure was never able to answer: it read 3995
+    # against 4096 and reported 40 free while the reader's own tokeniser read
+    # 5094, so the document was 998 over a line it was told it was under
+    # (docs/measurements/023). What a ceiling judges is what the READER pays.
+    if REAL_TOKENS + FFI_FLOOR >= CEILING
         report.keep_failure(
             @r,
             label: "spec/headroom",
-            detail: "  the spec plus the FFI floor is " + (SPEC_TOKENS + FFI_FLOOR).to_str() + " against the " + CEILING.to_str() + " ceiling — what is mortgaged no longer fits"
+            detail: "  the reader's count plus the FFI floor is " + (REAL_TOKENS + FFI_FLOOR).to_str() + " against the " + CEILING.to_str() + " ceiling — what is mortgaged no longer fits"
         )
     else
         report.keep_pass(@r)
@@ -368,13 +401,13 @@ function spendable(@r: report.Report, scratch: str, compiler: str)
     if said.is_err()
         report.keep_failure(@r, label: "spec/spendable", detail: "  cannot run `measure " + SPEC + "`")
         return
-    want = "is " + (SPEC_TOKENS + FFI_FLOOR).to_str() + " and the check goes red at " + CEILING.to_str()
+    want = "is " + (REAL_TOKENS + FFI_FLOOR).to_str() + " and the check goes red at " + CEILING.to_str()
 
     if !strings.contains(text: said.must().out, needle: want)
         report.keep_failure(
             @r,
             label: "spec/spendable",
-            detail: "  `measure " + SPEC + "` does not say \"" + want + "\".\n  The two instruments have drifted: this file goes red at SPEC_TOKENS + FFI_FLOOR\n  >= CEILING, and what `measure` prints is what a session reads BEFORE amending\n  the spec. Whichever of the two moved, the other has to move with it — the\n  number is one number in two places, one printed and one checked (defect 017)."
+            detail: "  `measure " + SPEC + "` does not say \"" + want + "\".\n  The two instruments have drifted: this file goes red at REAL_TOKENS + FFI_FLOOR\n  >= CEILING, and what `measure` prints is what a session reads BEFORE amending\n  the spec. Whichever of the two moved, the other has to move with it — the\n  number is one number in two places, one printed and one checked (defect 017)."
         )
         return
 
@@ -642,6 +675,38 @@ function advance_past(text: str, from: i64) -> i64
 
     return i - from
 
+# The record is cross-checked against what the tool prints (panel 123 R5).
+#
+# **Whether it is under the ceiling is the headroom question in `budget` above,
+# and it is not asked twice here** — one rule in one place. What this asks is
+# the pair the old instrument could not: does the tool print the same record
+# this file holds, model id and date included, and does it still call THAT the
+# binding number rather than the vendored maximum.
+function recorded(@r: report.Report, scratch: str, compiler: str)
+    said = shell.run(scratch: scratch, program: compiler, words: [compiler, "measure", SPEC])
+
+    if said.is_err()
+        report.keep_failure(@r, label: "spec/real", detail: "  cannot run `measure " + SPEC + "`")
+        return
+    row = REAL_TOKENS.to_str() + "   " + REAL_MODEL + ", " + REAL_TAKEN
+
+    if !strings.contains(text: said.must().out, needle: row)
+        report.keep_failure(
+            @r,
+            label: "spec/real",
+            detail: "  `measure " + SPEC + "` does not print \"" + row + "\".\n  The record is in two places, this file and `selfhost/cli/measure.hero`, for\n  the reason CEILING is: one printed and one checked. Whichever moved, the\n  other moves with it (defect 017's class), and the model id and the date\n  travel WITH the number because a count without them is not a measurement."
+        )
+        return
+
+    if !strings.contains(text: said.must().out, needle: "the binding number")
+        report.keep_failure(
+            @r,
+            label: "spec/real",
+            detail: "  `measure " + SPEC + "` prints no row calling the reader's count binding.\n  Until 2026-09-09 it called the VENDORED maximum that, and the vendored\n  maximum is OpenAI's tokeniser: the label is what a reader trusted, and it\n  cost 998 tokens (docs/measurements/023)."
+        )
+        return
+    report.keep_pass(@r)
+
 test "the ledger's rows are read, and only the rows"
     figures = ledger_figures(
         "| value | when | what moved it |\n|---|---|---|\n| 2231 | panel 023 | the first |\n| 3512 | panel 084 | the newest |\n"
@@ -752,7 +817,7 @@ test "the drift check fires when the two instruments disagree on the sum"
 
     # And the sum this file computes passes.
     good = scratch + "/stub-good.sh"
-    want = "is " + (SPEC_TOKENS + FFI_FLOOR).to_str() + " and the check goes red at " + CEILING.to_str()
+    want = "is " + (REAL_TOKENS + FFI_FLOOR).to_str() + " and the check goes red at " + CEILING.to_str()
     owns = "against the contract's own " + CONTRACT_CEILING.to_str()
 
     # The stub ignores its argument, so it has to satisfy BOTH halves: the
@@ -767,6 +832,43 @@ test "the drift check fires when the two instruments disagree on the sum"
     agreed: report.Report @ report.empty()
     spendable(@agreed, scratch: scratch, compiler: good)
     assert agreed.failed == 0
+
+test "the record has to be printed by the tool, and still be called the binding number"
+    if !shell.can_run_scripts()
+        return
+    scratch = "build/harness-selftest"
+    assert !shell.mkdir_all(scratch).is_err()
+    row = "  real                 " + REAL_TOKENS.to_str() + "   " + REAL_MODEL + ", " + REAL_TAKEN
+
+    # The tool as it stands: the record, then the label.
+    speaks = scratch + "/stub-real.sh"
+    assert !write_file(path: speaks, text: "#!/bin/sh\necho '" + row + " — the binding number'\n").is_err()
+    assert !shell.run(scratch: scratch, program: "chmod", words: ["chmod", "+x", speaks]).is_err()
+    agrees: report.Report @ report.empty()
+    recorded(@agrees, scratch: scratch, compiler: speaks)
+    assert agrees.failed == 0
+
+    # A number this file does not hold. The count that produced this check was
+    # 5094 and the repair moved it to 5128, so the drift under test is the one
+    # that actually happened.
+    older = scratch + "/stub-older.sh"
+    assert !write_file(path: older, text: "#!/bin/sh\necho '  real                 5094   " + REAL_MODEL + ", " + REAL_TAKEN + " — the binding number'\n").is_err()
+    assert !shell.run(scratch: scratch, program: "chmod", words: ["chmod", "+x", older]).is_err()
+    drifted: report.Report @ report.empty()
+    recorded(@drifted, scratch: scratch, compiler: older)
+    assert drifted.failed == 1
+    assert strings.contains(text: drifted.failures[0], needle: "one printed and one checked")
+
+    # And the number right with the LABEL wrong, which is the state this
+    # project was in for four milestones: a figure a reader had every reason
+    # to trust, attached to OpenAI's tokeniser.
+    mislabelled = scratch + "/stub-label.sh"
+    assert !write_file(path: mislabelled, text: "#!/bin/sh\necho '" + row + " — a lower bound, not the reader s tokeniser'\n").is_err()
+    assert !shell.run(scratch: scratch, program: "chmod", words: ["chmod", "+x", mislabelled]).is_err()
+    trusted: report.Report @ report.empty()
+    recorded(@trusted, scratch: scratch, compiler: mislabelled)
+    assert trusted.failed == 1
+    assert strings.contains(text: trusted.failures[0], needle: "cost 998 tokens")
 
 test "the contract's ceiling fires, and a ceiling above it does not"
     # A stub compiler, for the reason the next test gives: what is under test is
