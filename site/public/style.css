@@ -673,7 +673,7 @@ pre.diag { white-space: pre; overflow-x: auto; }
    below keep their columns, which is the whole reason the block stopped
    wrapping in the first place. The span adds no text byte, so the output stays
    verbatim. */
-pre.diag .msg { white-space: pre-wrap; overflow-wrap: anywhere; }
+pre.diag .msg { white-space: pre-wrap; overflow-wrap: anywhere; text-wrap: pretty; }
 
 /* A measured table, set as one row of monospace text. `.hi` is the row the
    prose singles out: caught none of the time, in either arm. It is marked

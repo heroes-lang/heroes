@@ -47,7 +47,7 @@
         .open     =&gt; <span class="s">"`(`"</span>
         .close    =&gt; <span class="s">"`)`"</span></code></pre>
         </figure>
-        <p class="under">ometti un caso e non compila &middot; <a href="/it/examples/gallery/02-tokens/">leggi l&rsquo;esempio →</a></p>
+        <p class="under">ometti un caso e non compila &middot; <a href="/it/examples/gallery/02-tokens/">leggi l&rsquo;esempio&nbsp;→</a></p>
       </div>
     </div>
   </header>
@@ -57,19 +57,19 @@
       <span class="n">6K</span>
       <span class="what">token: il tetto della specifica</span>
       <span class="how">La specifica descrive tutto il linguaggio in meno di cinque pagine. Un token è un frammento di testo che il modello legge o genera. Con una specifica breve, nel prompt resta spazio per il tuo programma.
-      <a href="/it/spec/">la specifica &rarr;</a> <a href="/it/why/">perché è progettato così &rarr;</a></span>
+      <a href="/it/spec/">la specifica&nbsp;&rarr;</a> <a href="/it/why/">perché è progettato così&nbsp;&rarr;</a></span>
     </li>
     <li>
       <span class="n">0</span>
       <span class="what">null, eccezioni, garbage collector</span>
       <span class="how">Il codice indica dove un valore può mancare o un&rsquo;operazione può fallire. La memoria viene liberata automaticamente, senza un garbage collector, cioè un sistema che cerca i dati inutilizzati e può mettere in pausa il programma.
-      <a href="/it/docs/failure-is-a-value/">come gestire gli errori &rarr;</a></span>
+      <a href="/it/docs/failure-is-a-value/">come gestire gli errori&nbsp;&rarr;</a></span>
     </li>
     <li>
       <span class="n">1</span>
       <span class="what">comando per tutti gli strumenti</span>
       <span class="how">Un solo eseguibile permette di compilare, eseguire, testare, formattare e controllare il codice. È scritto in Heroes.
-      <a href="/it/project/#self-hosted">si compila da solo &rarr;</a></span>
+      <a href="/it/project/#self-hosted">si compila da solo&nbsp;&rarr;</a></span>
     </li>
   </ul>
   <p class="figures-note">Il conteggio dietro i 6K è quello del modello stesso, preso attraverso l&rsquo;API di conteggio dei token di Claude e registrato insieme al modello che lo ha prodotto; un test tiene la specifica sotto quel tetto a ogni commit.</p>
@@ -86,7 +86,7 @@
      |         ^^^^
   fix (certain): rename to `total`</code></pre>
   <p>
-    Il compilatore segnala anche gli argomenti con etichetta scambiati, i casi mancanti e le parole chiave prese da altri linguaggi. Ogni messaggio indica il problema e la posizione nel codice. Quando può, suggerisce una correzione; quelle contrassegnate da <code>certain</code> si possono applicare automaticamente. <a href="/it/docs/errors/">Altri esempi di errori &rarr;</a>
+    Il compilatore segnala anche gli argomenti con etichetta scambiati, i casi mancanti e le parole chiave prese da altri linguaggi. Ogni messaggio indica il problema e la posizione nel codice. Quando può, suggerisce una correzione; quelle contrassegnate da <code>certain</code> si possono applicare automaticamente. <a href="/it/docs/errors/">Altri esempi di errori&nbsp;&rarr;</a>
   </p>
 
   <h2>Heroes usa le librerie C</h2>
@@ -101,7 +101,7 @@
     <figcaption>examples/gallery/08-ffi.hero, righe 12&ndash;15</figcaption>
   </figure>
   <p>
-    Tra gli esempi trovi programmi che usano un database, chiamano una libreria grafica e inviano una richiesta web. Le pagine mostrano anche l&rsquo;output registrato, quando disponibile. <a href="/it/examples/#c">Gli esempi con librerie C &rarr;</a>
+    Tra gli esempi trovi programmi che usano un database, chiamano una libreria grafica e inviano una richiesta web. Le pagine mostrano anche l&rsquo;output registrato, quando disponibile. <a href="/it/examples/#c">Gli esempi con librerie C&nbsp;&rarr;</a>
   </p>
 
   <h2>La tesi</h2>
@@ -115,7 +115,7 @@
     Una parte della tesi è già stata verificata. <code>heroes mutate</code> introduce un errore realistico alla volta in programmi funzionanti e conta quanti errori rileva il compilatore. Ripete poi la prova con i controlli specifici di Heroes disattivati. Il confronto mostra quali errori vengono rilevati grazie a quei controlli.
   </p>
   <p>
-    Resta da confrontare il numero totale di token necessari per ottenere un programma funzionante in Heroes e in un altro linguaggio, comprese le correzioni. Lo strumento per questo confronto è stato progettato, ma deve ancora essere costruito. <a href="/it/docs/errors/#measured">I risultati disponibili &rarr;</a>
+    Resta da confrontare il numero totale di token necessari per ottenere un programma funzionante in Heroes e in un altro linguaggio, comprese le correzioni. Lo strumento per questo confronto è stato progettato, ma deve ancora essere costruito. <a href="/it/docs/errors/#measured">I risultati disponibili&nbsp;&rarr;</a>
   </p>
 
   <h2>Eseguilo <span class="nod">&middot; speed of life &middot;</span></h2>
@@ -136,12 +136,12 @@ failed: not_a_digit (expected 0-9)
     questo sito. Quel file C è stato generato dal compilatore Heroes, quindi clang è l&rsquo;unica cosa
     che ti serve. La riga che dice <code>failed</code> è l&rsquo;esempio che rifiuta
     un carattere che non sa leggere.
-    <a href="/it/start/">La guida per iniziare &rarr;</a> &middot;&nbsp;<a href="/it/docs/">il linguaggio, un&rsquo;idea alla volta &rarr;</a>
+    <a href="/it/start/">La guida per iniziare&nbsp;&rarr;</a>&nbsp;&middot; <a href="/it/docs/">il linguaggio, un&rsquo;idea alla volta&nbsp;&rarr;</a>
   </p>
 
   <h2>Chi lo sta costruendo</h2>
   <p>
-    Una persona che non aveva mai scritto un compilatore prima di questo e un assistente AI che segue regole scritte nel repository, l&rsquo;archivio del progetto. Ogni modifica al linguaggio viene esaminata da un collegio di cinque giudici, quattro dei quali possono porre un veto. L&rsquo;autore approva o respinge ogni decisione. <a href="/it/about/">Chi ha scritto tutto questo &rarr;</a> &middot;&nbsp;<a href="/it/project/#panel">come si valutano le modifiche &rarr;</a>
+    Una persona che non aveva mai scritto un compilatore prima di questo e un assistente AI che segue regole scritte nel repository, l&rsquo;archivio del progetto. Ogni modifica al linguaggio viene esaminata da un collegio di cinque giudici, quattro dei quali possono porre un veto. L&rsquo;autore approva o respinge ogni decisione. <a href="/it/about/">Chi ha scritto tutto questo&nbsp;&rarr;</a>&nbsp;&middot; <a href="/it/project/#panel">come si valutano le modifiche&nbsp;&rarr;</a>
   </p>
 
   <aside class="book">
@@ -159,7 +159,7 @@ failed: not_a_digit (expected 0-9)
       libro.</b> Qui il codice non si accetta ancora, quindi non c&rsquo;è una
       patch da mandare, e il libro è quello che finanzia il tempo in cui questo
       viene costruito. Pubblicato su Amazon, in italiano e in inglese.
-      <a href="/it/about/">Di cosa parla &rarr;</a></p>
+      <a href="/it/about/">Di cosa parla&nbsp;&rarr;</a></p>
     </div>
   </aside>
 

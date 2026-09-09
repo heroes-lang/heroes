@@ -80,7 +80,7 @@
     <figcaption>examples/gallery/13-lease.hero, lines 22&ndash;27</figcaption>
   </figure>
   <p>
-    The copy is taken when the lease begins, so later changes to the string do not reach C. And if the library still reads the text after <code>end_lease</code>, no compiler can see it: the header does not say how long C keeps a pointer, so that mistake stays yours, and the memory checker the Linux build runs with, the sanitizer, is what finds it. <a href="/examples/gallery/13-lease/">The whole example, with its header &rarr;</a>
+    The copy is taken when the lease begins, so later changes to the string do not reach C. And if the library still reads the text after <code>end_lease</code>, no compiler can see it: the header does not say how long C keeps a pointer, so that mistake stays yours, and the memory checker the Linux build runs with, the sanitizer, is what finds it. <a href="/examples/gallery/13-lease/">The whole example, with its header&nbsp;&rarr;</a>
   </p>
   <p>
     Heroes does not verify that a <code>ptr</code> returned to a library is the correct one or how the library uses it. Type checks do not remove the risks of C code.

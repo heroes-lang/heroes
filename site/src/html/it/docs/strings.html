@@ -144,7 +144,7 @@ error[type_mismatch]: expected `u8`, found `str`
 the quick brown fox
 tqbf</code></pre>
 
-  <h2>Testo con dei buchi dentro</h2>
+  <h3>Testo con dei buchi dentro</h3>
   <p>
     Una stringa può portare dei valori. Una <code>f</code> prima della virgoletta d&rsquo;apertura trasforma <code>{n}</code> nel testo di <code>n</code>, scritto come lo scriverebbe <code>to_str</code>. In un buco può stare qualsiasi espressione, e il buco finisce alla graffa che lo chiude, così una chiamata o una ricerca al suo interno si legge come si leggerebbe ovunque. <code>{{</code> scrive una graffa aperta; fuori da un buco la graffa chiusa non è speciale, quindi <code>}</code> resta com&rsquo;è. Una stringa senza la <code>f</code> è esattamente quella di prima.
   </p>
@@ -154,7 +154,7 @@ tqbf</code></pre>
     <figcaption>examples/gallery/12-interpolation.hero, righe 17&ndash;18</figcaption>
   </figure>
   <p>
-    In un buco può stare ciò che <code>to_str</code> sa rendere: un intero, un numero con la virgola, un <code>bool</code> o una <code>str</code>. Un record o un array non hanno un testo proprio, e un valore che potrebbe mancare va prima reso certo con <code>.must()</code>. Il compilatore rifiuta il buco e la sua nota dice cosa scrivere al suo posto. <a href="/it/examples/gallery/12-interpolation/">L&rsquo;esempio intero &rarr;</a>
+    In un buco può stare ciò che <code>to_str</code> sa rendere: un intero, un numero con la virgola, un <code>bool</code> o una <code>str</code>. Un record o un array non hanno un testo proprio, e un valore che potrebbe mancare va prima reso certo con <code>.must()</code>. Il compilatore rifiuta il buco e la sua nota dice cosa scrivere al suo posto. <a href="/it/examples/gallery/12-interpolation/">L&rsquo;esempio intero&nbsp;&rarr;</a>
   </p>
   <pre><code>$ heroes run examples/gallery/12-interpolation.hero
 1/2 Sirius at magnitude -1.46
