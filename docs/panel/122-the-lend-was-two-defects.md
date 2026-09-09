@@ -272,7 +272,24 @@ Part 5's test and the only version of any candidate that breaches a ceiling.
 
 ## Author's verdict
 
-*Pending.*
+**RATIFIED 2026-09-09** (author instruction, `1a 2a 3a 4a`, meaning all four
+sittings as recommended), in full, **R5 included** — which is the part the
+recommendation flagged, because ratifying it is agreeing that a milestone closed
+over a defect that is still open.
+
+**That reading is the honest one rather than the tidy one, and the split is what
+made the tag rule work rather than something the tag rule had to be argued
+around.** `M-cstr-lifetime` closed **untagged** on 2026-09-09 because
+`docs/work/DEFECTS.md` holds defect **024**, and § Verification says a milestone
+is tagged only over a clean list. A tag says the tree is clean; it was not.
+
+**The half that was split off was ruled on the same day.** Panel 124 measured
+that no declaration-site mark can express it either, because
+`sqlite3.h:4888` puts the retention decision in the FIFTH ARGUMENT of the same
+declaration, and adopted a capability instead of a refusal. So R5's claim — that
+this is a different class and no position rule can see it — is now confirmed by a
+second sitting reading the header directly, and both compiling seats there agreed
+independently.
 
 ## Predictions to score
 

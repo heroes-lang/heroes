@@ -401,7 +401,42 @@ and it leaves `x10` and `x12` accepted at exit 0 with a use-after-free.
 
 ## Author's verdict
 
-*Pending.*
+**RATIFIED 2026-09-09** (author instruction, `1a 2a 3a 4a`, meaning all four
+sittings as recommended), the resolution in full, **hours after the sitting
+closed and with all four flagged items taken as adopted**:
+
+**(i) The language GAINS a capability rather than a refusal.** Every candidate
+on the table was a rule that refuses a program, and all four were refused. The
+conservative route recorded beside the resolution — ship only the ledger's
+repair, leave 024 open, let the word wait for a program that needs it — was
+**not** taken.
+
+**(ii) It enters on robustness at precedence rank 3, with Principle 0 unmet and
+said so.** `runtime/` holds zero retained `char *`, all 9 `selfhost/` bindings
+are transient, the compiler self-hosts with no marks, and the thesis branch
+names metric 2, which has never run. Rank 3 licenses the narrowest thing that
+closes the class, so R3 to R6 bind: a copy and never a pin, a written release
+and never an inferred one, one variant-valued field for all four cases, and a
+forgotten release that accuses the program.
+
+**(iii) The word rather than the raw `ptr` spelling, because the cheap route
+opens a segfault class.** `atoi(s: ptr)` with `nullptr` is exit 139 with no
+message where `cstr` gives a named panic, and §1.12 does not allow trading one
+violation for a worse one.
+
+**(iv) The relay hole stays undecided here**, as the resolution asked: three
+routes, one refused by its own target's comment, and neither of the other two
+prototyped. `M-held-bytes` picks with a measurement.
+
+**So R7 is now owed as work rather than as a proposal**:
+`examples/ledger/db/sqlite.hero` ships `SQLITE_TRANSIENT` and its eleven-line
+comment is deleted, because that comment names the frame while the invariant is
+the refcount.
+
+**And defect 024 stays OPEN by this ratification's own design**, which means no
+tag until `M-held-bytes` closes it. The author asked for zero open defects
+before a tag, and this is the second sitting in two days to close over that rule
+rather than around it.
 
 ## Predictions to score
 
