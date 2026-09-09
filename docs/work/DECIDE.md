@@ -33,13 +33,18 @@ Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
     **The recommendation is R1 to R10 as adopted**, and three items in it are
     the author's to overturn rather than mine:
 
-    **(i) The ceiling is 4253 and not 4224.** The confirmed 4224 rested on the
-    coordinator's arithmetic that 87 free is *"one more than the 78-token
-    spread"*; it is nine more, which the spec-warden caught. The resolution's
-    own spec figure is **4113** measured, the FFI floor mortgages 60, the check
-    fires at `>=`, and the spread at that size is **79**, so the costed ceiling
-    is 4253 and 4224 would leave 50 free inside a 79-token instrument
-    disagreement.
+    **(i) R7 IS VOID AS ARITHMETIC, and so is everything that argued about it.**
+    Superseded 2026-09-09 by `docs/measurements/023-the-instrument-was-not-the-readers.md`:
+    the binding instrument was `cl100k_base`, which is OpenAI's, and it
+    undercounts this document by **27.5%**. The spec is **5094** real tokens,
+    not 3995, so it was **998 over** the hard 4096 rather than 40 under it, and
+    the whole ladder of numbers this item was written to settle — the 4224 the
+    author confirmed, the 4237 recommended, R7's 4253 — is arithmetic on the
+    wrong scale. **The ceiling is 6144 tokens** by author decision 2026-09-09.
+    What survives is the RANKING, re-measured on the real instrument: the
+    adopted `f"…"` clause is **+151** and the `\{e}` spelling **+126**, so the
+    cheaper one is still cheaper, by 25 tokens rather than 19, and at 6144 it
+    costs 12.7% of the free budget instead of being unaffordable.
 
     **(ii) The cheaper spelling is live, not rejected.** `\(e)` costs **-24**
     tokens against the adopted `f"…"` (+94 against +118, both deciding every
