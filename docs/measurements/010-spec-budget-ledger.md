@@ -135,3 +135,39 @@ re-measured with `./heroes measure spec/heroes-spec.md` from the repository root
 at this ratification, 2026-09-08: 3995 against a green ceiling of 4035, which is
 `CEILING 4096` less the `FFI_FLOOR 60` mortgaged by panel 030 R3, less one
 because `tests/harness/suite_spec.hero` fires at `>=`.
+
+---
+
+## Appended 2026-09-09 — every figure above is on an instrument that is not a Claude tokeniser
+
+Every figure in every row is `heroes measure`'s answer: the maximum over the
+vendored rank sets `claude-legacy` and `cl100k_base`. **`cl100k_base` is
+OpenAI's**, and against `POST /v1/messages/count_tokens` on 2026-09-09 it
+undercounts this document by **27.5%** and `CLAUDE.md` by **33.4%**
+(`docs/measurements/023-the-instrument-was-not-the-readers.md`; the author's key
+and the author's question are what produced the measurement).
+
+**So read these rows as deltas and never as levels.** As deltas on one pinned
+offline instrument they are worth exactly what they were, and the ranking they
+established survived re-measurement: record 022's +118 and +99 became **+151**
+and **+126**, and the cheaper spelling stayed the cheaper one. As levels against
+a ceiling they are void, and so is every headroom figure derived from them —
+this file's own 40 free tokens, and the 70 of the row above it. **No row is
+convertible**: 1.275 is a property of one day's mix of prose and code spans, not
+a factor.
+
+**The figure a row carries stays the vendored one, deliberately**, so that the
+next row is comparable with the first and `tests/harness/suite_spec.hero`'s
+three-way check keeps working. The number the ceiling is judged against is a
+second number with a model id and a date beside it, and it lives in that file
+rather than here.
+
+**Why annotate rather than restate**, since the temptation was to convert all
+thirty-eight (panel 123, and the precedent is unanimous). SPEC's Fair Use rules
+forbid implying to a reasonable reader that a non-compliant number is a
+compliant result, and prescribe labelling it instead. Wikimedia renamed its old
+pageview series **Legacy Pageviews** rather than correcting it, and documented
+the discontinuity — *"there is a discontinuity in traffic on May 2015 because
+that is when the current pageview definition is used"*. The RFC series attaches
+errata and never edits the document. **This series is named for its instrument,
+the boundary is dated, and nothing above is restated.**
