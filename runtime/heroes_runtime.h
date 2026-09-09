@@ -34,7 +34,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define HERO_RUNTIME_ABI 21
+#define HERO_RUNTIME_ABI 22
 
 _Noreturn void hero_panic(const char *msg);
 _Noreturn void hero_panic_overflow(void);
@@ -138,6 +138,27 @@ typedef struct {
  * silent corruption of foreign memory. The tag turns it into a panic. */
 #define HERO_STR_MAGIC UINT64_C(0x4845524f53535452) /* "HEROSSTR" */
 
+/* -- a lease, the held buffer (design.md §4.19's fourth case, panel 124) ---------------
+ * Bytes the PROGRAM owns, copied out of a `str`, which C may read for as long
+ * as the program says and which `end_lease` frees. It is the mirror of `owned`:
+ * that is C's pointer on Heroes' schedule, this is Heroes' bytes on C's reach.
+ *
+ * A COPY AND NEVER A PIN, which panel 124 R3 makes binding: sharing the `str`'s
+ * own allocation would alias `.cstr()`, and a copy-on-write mutation through the
+ * `str` would then rewrite what C is reading — §4.20's "they may be shared with
+ * other values" is the sentence that makes that a corruption class.
+ *
+ * The header sits immediately before the bytes, exactly as a `str`'s does, and
+ * carries its own magic word for the same reason: `end_lease` on a pointer this
+ * runtime never handed out, or on one it has already taken back, is a panic
+ * with a name rather than a free of somebody else's memory. */
+typedef struct {
+    uint64_t magic; /* HERO_HELD_MAGIC, or 0 once released */
+    int64_t len;
+} HeroHeldHeader;
+
+#define HERO_HELD_MAGIC UINT64_C(0x4845524f48454c44) /* "HEROHELD" */
+
 /* A literal is a static const block: no allocation, no runtime call, and a
  * negative refcount so decref is a no-op. The emitter writes one of these per
  * distinct literal at file scope and then `s = HERO_STR_LIT(name);`. */
@@ -170,6 +191,10 @@ void hero_print_str(HeroStr s);
 
 /* cstr: the FFI spelling (design.md §4.19). Free because of the NUL. */
 const char *hero_str_cstr(HeroStr s);
+
+/* A copy of s's bytes, NUL-terminated, that the program owns and frees. */
+const char *hero_str_held(HeroStr s);
+void hero_held_release(const char **slot); /* nulls the cell: the second release is caught before any read */
 
 /* THE MISSING PRIMITIVE (panel 021). §4.19's ladder step 3 is "open a database,
  * run a query, READ A RESULT, close". sqlite3_column_text hands back a borrowed

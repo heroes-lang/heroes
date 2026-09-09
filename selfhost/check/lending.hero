@@ -40,6 +40,14 @@
 # (the historian found none), and it refused three SOUND sites in the
 # wrapper §4.19 prescribes as the route out of a module.
 #
+# THE LEASE IS `check/leasing.hero`'S, since M-held-bytes (panel 124, ratified
+# 2026-09-09; panel 125). It is §4.19's FOURTH case, the mirror of the lend,
+# and it borrows this file's two instruments — `is_builtin_named` and
+# `argument_of` — because its rule is the lend's position rule applied to a
+# cell. It was written into this file first, which put it at 366 lines in
+# `suite_layout.hero`'s unit against §11's 300, and the suite said so; the
+# seam it went out along is the one this paragraph names.
+#
 # WHY THE LITERAL CASE GOES TOO. `return "lit".cstr()` is sound today,
 # because `HERO_STR_STATIC` gives a literal static storage and an
 # immortal refcount, while `return ("a" + n.to_str()).cstr()` is a
@@ -50,6 +58,7 @@
 # choosing the strict rule over the escape-only one).
 
 use ast
+use token
 use source
 use parse
 use resolve
@@ -59,12 +68,16 @@ use inventory
 use check/state
 use check/table
 use ffi_errors
+use value_errors
 
 # Whether this expression is a lend: `s.cstr()` or `cstr(s)`. The
 # RESOLVER answers, not the text — a name is only a builtin because the
 # resolver said so, and `check/builtins.hero`'s own dispatch reads the
 # same table.
 function is_lend(a: ast.Ast, r: resolved.Resolved, at: i64) -> bool
+    return is_builtin_named(a, r, at, name: "cstr")
+
+function is_builtin_named(a: ast.Ast, r: resolved.Resolved, at: i64, name: str) -> bool
     named = match a.exprs[at].kind
         .method                                                                     => at
         .call cl                                                                    => cl.callee
@@ -76,8 +89,33 @@ function is_lend(a: ast.Ast, r: resolved.Resolved, at: i64) -> bool
         return false
 
     match r.uses[named]
-        .builtin b                            => return inventory.table()[b.at].name == "cstr"
+        .builtin b                            => return inventory.table()[b.at].name == name
         .top | .local | .module | .unresolved => return false
+
+# The typing of the lend AND the lease, moved here from `check/builtins.hero`,
+# which is at its decided ceiling. A lend and a lease both take a `str` and
+# answer `cstr`; `end_lease` takes a `cstr` and answers nothing. Whether that
+# `cstr` is a lease CELL is not a type fact and is `check/leasing.hero`'s
+# question, asked over the whole file; the three are typed together because
+# they are one family and `builtins.hero` may make exactly one call out.
+function lend_call(@c: state.Checker, s: source.Source, decls: [ast.Decl], name: str, given: [i64], span: token.Span) -> i64?
+    if (name == "cstr" || name == "lease") && given.len() == 1
+        if table.get(c.out.types, given[0]) == .str
+            return ok(table.intern(@c.out.types, .cstr))
+        return ok(refused_operand(@c, s, decls, name: name, allowed: "`str`", got: given[0], span: span))
+
+    if name == "end_lease" && given.len() == 1
+        if table.get(c.out.types, given[0]) == .cstr
+            return ok(table.unit_ty(c.out.types))
+        return ok(
+            refused_operand(@c, s, decls, name: name, allowed: "`@x` where `x: cstr @ s.lease()`", got: given[0], span: span)
+        )
+    return fail("untypeable", "not a lend, a lease or a release")
+
+function refused_operand(@c: state.Checker, s: source.Source, decls: [ast.Decl], name: str, allowed: str, got: i64, span: token.Span) -> i64
+    shown = state.show(c, s, decls, got)
+    state.push_diagnostic(@c, value_errors.bad_operand(op: name, allowed: allowed, got: shown, span: span))
+    return state.error_ty_of(c)
 
 # The call this expression is an argument of, for every expression in the
 # file. A UFCS receiver IS the first argument (§4.11), which is what makes

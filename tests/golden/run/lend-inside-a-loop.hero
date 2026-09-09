@@ -1,0 +1,20 @@
+# The rider panel 124's compiler seat asked for, and it binds whatever the
+# lifetime rule is: until 2026-09-09 NOTHING that ran lent a computed string
+# inside a loop, and the three computed-lend goldens were `check`-only
+# negatives refused before the emitter — so every candidate rule that day could
+# have shipped green. This one runs. Each lend is read by C inside its own call
+# and freed when its site runs again, which is the lend's contract, and the
+# leak gate is green at exit because the site's last value dies with the frame.
+
+extern "string.h"
+    function strlen(s: cstr) -> u64
+
+function main()
+    at: i64 @ 0
+    total: u64 @ 0
+
+    while at < 5
+        total @ total + strlen(s: ("row-" + at.to_str()).cstr())
+        at @ at + 1
+
+    print(total)

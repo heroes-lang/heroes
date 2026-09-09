@@ -1,0 +1,17 @@
+# M-held-bytes, panel 125. The only write a lease cell takes after its
+# declaration is its own `end_lease`: a value stored over it would leak the
+# bytes it held, and a function given `@c` could store anything there — a
+# lend, a literal, a pointer from C — for `end_lease` to free later.
+
+extern "string.h"
+    function strlen(s: cstr) -> u64
+
+function wipe(@x: cstr)
+    x @ nullptr
+
+function main()
+    c: cstr @ "abc".lease()
+    c @ nullptr  #~ lease_written
+    wipe(@c)  #~ lease_written
+    print(strlen(s: c))
+    end_lease(@c)

@@ -339,3 +339,70 @@ const char *hero_str_cstr(HeroStr s) {
     hero_str_require(s);
     return s.ptr; /* the NUL is already there: §4.20's zero-copy .cstr() */
 }
+
+/* -- the held buffer: §4.19's fourth case, panel 124 -------------------------
+ *
+ * `s.lease()` answers a COPY of the bytes that the program owns and frees, so C
+ * may read them after the call that took them. `.cstr()` above is the lend: the
+ * same pointer as the `str`'s, zero copies, alive as long as its owner slot is.
+ * This is the other thing entirely, and the two must not be confused, which is
+ * why this one carries its own header and its own magic word.
+ *
+ * WHY A COPY. Handing out `s.ptr` and calling it held would make one allocation
+ * with two owners: a copy-on-write mutation through the `str` unshares and
+ * rewrites, and C would be reading a block the language believes it owns alone.
+ * §4.20 says a str's bytes "may be shared with other values", which is the
+ * sentence `ffi_writable_parameter` already cites, so the pin is a corruption
+ * class and panel 124 R3 refuses it before it can be written. */
+const char *hero_str_held(HeroStr s) {
+    hero_str_require(s);
+    HeroHeldHeader *h = hero_alloc_held(sizeof(HeroHeldHeader) + (size_t)s.len + 1);
+    h->magic = HERO_HELD_MAGIC;
+    h->len = s.len;
+    char *b = (char *)(void *)(h + 1);
+    if (s.len > 0) memcpy(b, s.ptr, (size_t)s.len);
+    b[s.len] = '\0'; /* §4.20's NUL, kept by the runtime rather than by a caller */
+    return b;
+}
+
+/* The release the program writes, and it takes the CELL and not the pointer.
+ *
+ * WHY THE CELL. Panel 125's two seats measured the same thing from two sides: a
+ * guard that validates a pointer by reading a magic word BEFORE it is undefined
+ * behaviour on three of the four inputs its message would name — a C literal,
+ * a `malloc` from C and a stack buffer all read memory this runtime was never
+ * handed (global-, heap- and stack-buffer overflow under ASan) — and a double
+ * release cannot be told from a never-held pointer by any such read, because
+ * the block is gone. So the discriminator is not in the runtime at all. The
+ * COMPILER admits `end_lease` only on a cell whose initialiser is a `.lease()`
+ * call and refuses every other write to it (`selfhost/check/lending.hero`),
+ * and this function nulls the cell on the way out. In an accepted program the
+ * pointer here is therefore either NULL, which is the second release and is
+ * caught before any read, or a live block this runtime made — in-bounds by
+ * construction. The magic check below is defence in depth against an EMITTER
+ * bug, never the guard against a program, and it says so.
+ *
+ * TWO refusals, not three: a null cell, and a block this runtime did not make.
+ * A first draft claimed a third, "already released", from a zeroed magic in
+ * freed memory; five runs printed the wrong message five times, because freed
+ * memory owes nobody its contents. */
+void hero_held_release(const char **slot) {
+    if (slot == NULL) {
+        hero_panic("release with no cell — this is a compiler bug, please report it");
+    }
+    const char *p = *slot;
+    if (p == NULL) {
+        hero_panic("end_lease of a lease that is already over — every `.lease()` "
+                   "owes exactly one `end_lease`, and this cell has had its one");
+    }
+    HeroHeldHeader *h =
+        (HeroHeldHeader *)(void *)((char *)(void *)(uintptr_t)p - sizeof(HeroHeldHeader));
+    if (h->magic != HERO_HELD_MAGIC) {
+        hero_panic("end_lease of a pointer no `.lease()` made — the checker admits "
+                   "`end_lease` only on a lease cell, so this is a compiler bug, please "
+                   "report it");
+    }
+    h->magic = 0;
+    *slot = NULL;
+    hero_release_held(h);
+}

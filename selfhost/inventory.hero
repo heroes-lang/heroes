@@ -86,6 +86,8 @@ function table() -> [Builtin]
         Builtin(name: "to_u64", tier: .runtime)
         Builtin(name: "to_u8", tier: .runtime)
         Builtin(name: "write_file", tier: .heroes)
+        Builtin(name: "lease", tier: .runtime)
+        Builtin(name: "end_lease", tier: .runtime)
     ]
 
 # The banner, and only the banner (panel 054): the one program
@@ -119,9 +121,14 @@ test "a reserved name answers with its index, a free one with absence"
     assert index_of("Builder").is_err()
     assert index_of("banner").is_err()
 
-test "the inventory is thirty-seven names and the order is identity"
+test "the inventory is thirty-nine names and the order is identity"
     entries = table()
-    assert entries.len() == 37
+
+    # 37 -> 39 on 2026-09-09: `lease` and `end_lease`, §4.19's fourth case
+    # (panel 124), appended at the END so that no existing index moved.
+    assert entries.len() == 39
+    assert entries[37].name == "lease"
+    assert entries[38].name == "end_lease"
 
     # The two deliberate departures from alphabetical order, pinned so a
     # helpful future sort is caught: the index is meaning, not presentation.

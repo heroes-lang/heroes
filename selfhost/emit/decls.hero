@@ -76,7 +76,7 @@ function prelude(@w: writer.Writer, p: containers.Program, target: BuildTarget, 
         writer.line(@w, text: "#include <" + header + ">")
 
     writer.line(@w, text: "")
-    writer.line(@w, text: "_Static_assert(HERO_RUNTIME_ABI == 21, \"heroes_runtime.h is from another compiler\");")
+    writer.line(@w, text: "_Static_assert(HERO_RUNTIME_ABI == 22, \"heroes_runtime.h is from another compiler\");")
 
     # What a per-type function and a monomorphised instance are LINKED
     # as. One fused unit needs no linkage word; a per-module unit
@@ -332,7 +332,7 @@ test "the prelude stamps the ABI and emits only the strings a build reads"
         tu_local: ""
     )
     got = writer.finish(w)
-    assert has(text: got, needle: "_Static_assert(HERO_RUNTIME_ABI == 21")
+    assert has(text: got, needle: "_Static_assert(HERO_RUNTIME_ABI == 22")
     assert has(text: got, needle: "run me")
 
     # The test block's literal is invisible to a program build — and

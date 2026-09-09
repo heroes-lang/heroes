@@ -288,3 +288,48 @@ function cstr_in_a_record(holder: str, field: str, span: token.Span) -> diag.Dia
         "hold a `str` in the field and lend it with `.cstr()` at the call that reads it. A group's `record` may hold a `cstr`, because there the fields are the header's and C owns the bytes"
     )
     return d
+
+# A lease cell's name where it may not stand (M-held-bytes, panel 124 R2 to R4
+# and panel 125's soundness lane).
+#
+# A lease is `x: cstr @ s.lease()`: a COPY of the bytes that the program owns
+# and C may read until `end_lease(@x)` frees it. What makes a second release
+# impossible is that the release nulls the CELL, so the pointer may live only
+# in that one cell: a copy of it — `g = x`, `g: cstr @ x`, a field, a return —
+# would go on pointing at the bytes after the cell was nulled, and reading it
+# through C is a use-after-free `check` could not see. So the name of a lease
+# cell may stand only as an argument of a call, exactly where a lend may.
+function lease_escapes(name: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "lease_escapes",
+        message: "`" + name + "` is a lease — a copy of the bytes that C may read until `end_lease(@" + name + ")` — and its name may stand only as an argument of a call; here it is copied, and the copy would outlive the release",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "pass `" + name + "` directly to the call that reads it. The release nulls this one cell, so a pointer that lives anywhere else keeps pointing at freed bytes"
+    )
+    return d
+
+# A write to a lease cell that is not its own `end_lease`.
+function lease_written(name: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "lease_written",
+        message: "`" + name + "` is a lease, and the only write a lease cell takes after its declaration is `end_lease(@" + name + ")` — a value stored over it would leak the bytes it held, or free bytes nobody leased",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "declare a second cell for the second lease. One cell, one `.lease()`, one `end_lease`"
+    )
+    return d
+
+# `end_lease` on something that is not a lease cell.
+function end_lease_of_no_lease(span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "end_lease_of_no_lease",
+        message: "`end_lease` frees what `.lease()` made, and it takes the cell that holds it: `end_lease(@x)` where `x: cstr @ s.lease()` — this argument is not such a cell",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "a lend (`.cstr()`), a pointer from C and a literal are freed by whoever owns them, and this program does not; a lease copied into another cell cannot be released from there, because the release must null the one cell the pointer lives in"
+    )
+    return d

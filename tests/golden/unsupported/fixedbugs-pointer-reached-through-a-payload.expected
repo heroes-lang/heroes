@@ -4,4 +4,4 @@ unsupported[pointer_element]: a map key that reaches `ptr` — it has no hash is
   21 |     by_handle: {Handle: i64} @ {}  #~ pointer_element
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   note: hold a `str` and lend it with `.cstr()` at the call that reads it — a `cstr` parked in a Heroes record is refused for the same reason (panel 122 R4)
-  note: the backend emits every type in the language, `if`, `while`, `for`, `match`, functions, and the built-ins `chars`, `join`, `keys`, `len`, `print`, `push`, `repeat`, `slice`, `sort`, `to_f32`, `to_f64`, `to_i64`, `to_str`, `to_i8`, `to_i16`, `to_i32`, `to_u8`, `to_u16`, `to_u32`, `to_u64` — no other built-in is emitted yet
+  note: the backend emits every type in the language, `if`, `while`, `for`, `match`, functions, and the built-ins `chars`, `end_lease`, `join`, `lease`, `keys`, `len`, `print`, `push`, `repeat`, `slice`, `sort`, `to_f32`, `to_f64`, `to_i64`, `to_str`, `to_i8`, `to_i16`, `to_i32`, `to_u8`, `to_u16`, `to_u32`, `to_u64` — no other built-in is emitted yet

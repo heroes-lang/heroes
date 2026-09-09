@@ -2178,6 +2178,22 @@ these annotations (an earlier draft suggested `@owned`, before `@` was assigned 
 Reserve a keyword. Until this exists, treat every `ptr` as opaque and free it explicitly through a
 shim function.
 
+**A fourth case, which the three above do not name, landed first (panel 124, ratified 2026-09-09;
+M-held-bytes).** All three reserved cases are about a pointer **C** made. The case that closed
+defect 024 is bytes **Heroes** made and **Heroes** frees, which C may read for as long as the
+program says: `x: cstr @ s.lease()` is a COPY of the bytes, `end_lease(@x)` frees it and empties
+the cell. It is the mirror of `owned` — C's pointer on Heroes' schedule against Heroes' bytes on
+C's reach — and it entered on §1.12 rather than on Principle 0, because the sitting measured that
+no declaration-site mark can express retention at all: `sqlite3.h:4888` puts the decision in the
+**fifth argument** of one declaration, `curl_easy_setopt` in its second, and 0 of 71 `cstr`
+parameters in this tree are decidable from a header. **Four constraints bind the spelling** (panel
+124 R3 to R6, panel 125): it is a copy and never a pin, since a pin would alias `.cstr()` and a
+copy-on-write mutation would rewrite what C reads; the release is written by the author and never
+inferred, since an inferred release is the escape analysis panel 122 refused; the pointer lives in
+the one cell the release empties, so the cell's name stands only as an argument of a call and takes
+no other write; and a lease nobody ends is a panic that accuses the **program**, on its own counter,
+because the block counter's message says *this is a compiler bug* and here it would not be.
+
 **FFI callbacks are `ptr` until a C-width type vocabulary exists** (panel 013, verified by
 compiling against the real headers). §4.13's function type is a Heroes-internal feature and must
 never be presented as the FFI callback spelling: Heroes' `i64` is `int64_t` while every real

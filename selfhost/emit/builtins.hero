@@ -34,7 +34,9 @@ use checker
 constant EMITTED: [str]
     [
         "chars"
+        "end_lease"
         "join"
+        "lease"
         "keys"
         "len"
         "print"
@@ -122,6 +124,16 @@ function entry(name: str, f: containers.Function, c: state.Checked, run: ir.Run)
 
     if name == "chars"
         return "hero_str_chars"
+
+    # §4.19's fourth case (panel 124): a COPY of the bytes the program owns,
+    # and the release that frees it — which takes the CELL, so it can null
+    # it, which is what makes a second release a named panic rather than a
+    # read of freed memory (panel 125).
+    if name == "lease"
+        return "hero_str_held"
+
+    if name == "end_lease"
+        return "hero_held_release"
 
     if name == "join"
         return "hero_str_join"

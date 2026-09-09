@@ -87,6 +87,16 @@ static _Atomic int64_t hero_live_blocks = 0;
 /* live scratch balance: what a runtime call borrowed and has not given back */
 static _Atomic int64_t hero_live_scratch = 0;
 
+/* live HELD balance: buffers the PROGRAM asked for and has not released.
+ * A FOURTH SHAPE (a LEASE, `s.lease()`), and it is a pair like the first two — what makes it its own
+ * counter is who is at fault when it is not zero. An unbalanced block count is a
+ * missing decref, which is the compiler's; an unbalanced scratch count is a
+ * runtime call that kept what it borrowed. An unbalanced HELD count is a
+ * `end_lease` the PROGRAM did not write, so the gate must say so: the message
+ * that blames the compiler for a program's own omission is the one that gets
+ * a reader to file a bug against the wrong thing (panel 124 R6). */
+static _Atomic int64_t hero_live_held = 0;
+
 int64_t hero_runtime_live(void) { return hero_live_blocks; }
 
 /* EACH COUNTER IS READ ONCE, into a local, and the message prints that local.
@@ -111,6 +121,18 @@ void hero_runtime_check_leaks(void) {
                         "(a runtime call kept what it borrowed) — this is a "
                         "runtime bug\n",
                 (long long)scratch);
+        abort();
+    }
+    /* THIRD, AND IT ACCUSES THE PROGRAM RATHER THAN THIS COMPILER. Held bytes
+     * are the one allocation a Heroes program asks for by name, so a leak of
+     * them is the one leak that is not a bug in the language. */
+    int64_t held = hero_live_held;
+    if (held != 0) {
+        fflush(stdout);
+        fprintf(stderr, "panic: %lld lease(s) never ended — every `.lease()` owes "
+                        "one `end_lease`, and this program is missing that "
+                        "many\n",
+                (long long)held);
         abort();
     }
 }
@@ -148,6 +170,19 @@ static void *hero_alloc_block(size_t size) {
 
 static void hero_release_block(void *p) {
     atomic_fetch_sub_explicit(&hero_live_blocks, 1, memory_order_relaxed);
+    free(p);
+}
+
+/* A block the PROGRAM owns: bytes it held for C and will release itself. Its own
+ * pair, for the reason the counter's comment gives — who is at fault at exit. */
+static void *hero_alloc_held(size_t size) {
+    void *p = hero_malloc_raw(size);
+    atomic_fetch_add_explicit(&hero_live_held, 1, memory_order_relaxed);
+    return p;
+}
+
+static void hero_release_held(void *p) {
+    atomic_fetch_sub_explicit(&hero_live_held, 1, memory_order_relaxed);
     free(p);
 }
 

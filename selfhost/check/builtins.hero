@@ -29,6 +29,7 @@ use widths
 use check/table
 use check/state
 use check/ordering
+use check/lending
 use value_errors
 
 ## What a built-in expects of an argument
@@ -271,14 +272,11 @@ function builtin_call(@c: state.Checker, s: source.Source, decls: [ast.Decl], na
             return ok(arg_error(@c, s, decls, name: "join", allowed: "`[str]` and `str`", got: given[0], span: span))
         return ok(str_id)
 
-    # §4.19's one conversion: a str lent to C for the duration of a call.
-    # Free rather than a copy, because every Heroes string allocates len+1
-    # and is NUL-terminated — the single highest-return decision in the
-    # string design.
-    if name == "cstr" && given.len() == 1
-        if table.get(c.out.types, given[0]) == .str
-            return ok(table.intern(@c.out.types, .cstr))
-        return ok(arg_error(@c, s, decls, name: "cstr", allowed: "`str`", got: given[0], span: span))
+    # §4.19's lend and lease, typed beside the position rule they answer to.
+    lent = lending.lend_call(@c, s, decls, name: name, given: given, span: span)
+
+    if !lent.is_err()
+        return lent
 
     # The element rule is here rather than in the emitter (panel 068 R2):
     # a program the checker accepts must build.

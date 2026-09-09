@@ -1,0 +1,14 @@
+# M-held-bytes, panel 125. `end_lease` frees what `.lease()` made and takes the
+# cell that holds it. Anything else — a pointer C handed back, a lend, a lease
+# passed by value rather than by cell — is refused, because the release must
+# null the one cell the pointer lives in, and these have no such cell.
+
+extern "stdlib.h"
+    function getenv(name: cstr) -> cstr
+
+function main()
+    d: cstr @ getenv(name: "HOME".cstr())
+    end_lease(@d)  #~ end_lease_of_no_lease
+    c: cstr @ "abc".lease()
+    end_lease(c)  #~ end_lease_of_no_lease
+    end_lease(@c)
