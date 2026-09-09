@@ -250,4 +250,6 @@ map key are compile errors — for it and for any value holding it. Its size sta
 C's, not the field list's.
 
 A group's `constant` has no body: the header holds the value. `s.cstr()` lends a
-`str` to C to read for that call and `c.validated()` copies one back as a `str?`.
+`str` to C, and the lend may stand only as an argument of a call; outside a
+group nothing answers `cstr` and no record holds one. `c.validated()` copies one
+back as a `str?`.
