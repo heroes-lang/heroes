@@ -21,7 +21,43 @@ lives outside the two banners: `records/lists` is the executor of that.
 Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 1**
+**OPEN: 2**
+
+- [ ] **panel 122** | ratify the lend rule: positional and never typed, the extern discriminator dropped, two clauses measured free, and defect 022 split because no position rule closes the half where C keeps the pointer | `docs/panel/122-the-lend-was-two-defects.md` § Resolution
+
+    **Origin:** the sitting of 2026-09-09, M-cstr-lifetime, five seats,
+    convened by the author in one word after the coordinator put a fork to
+    them that rested on its own bad measurement.
+
+    **What is being ratified is not the ballot.** Three candidates went out and
+    the resolution is a fourth: every clause a rule on the POSITION of the
+    `.cstr()` expression and never on the type `cstr`, which is what makes it
+    compatible with `owned`, with a C-returned `cstr`, with a `cstr` in an `@`
+    cell and with a binding — all of which ship and run, and all of which a
+    type-shaped rule refused. Two seats vetoed the type reading from opposite
+    directions and both vetoes are honoured rather than overridden.
+
+    **Two clauses the ballot lacked, both measured free.** A function outside an
+    `extern` group may not answer `cstr` (every `-> cstr` in the tree is already
+    inside a group), which closes a two-hop laundering that a position rule
+    alone blesses; and a `cstr` may not be a record field outside a group (no
+    such field exists in the tree), which requires rewriting
+    `selfhost/emit/gate.hero:172`'s note in the same commit, because that note
+    currently prescribes the shape the clause refuses.
+
+    **R5 IS THE ONE THAT NEEDS THE AUTHOR'S EYE.** Defect 022 splits. What lands
+    here closes the lend that escapes its frame; the lend the **C side retains
+    past the call** is a different class, its discriminator is an argument of
+    the C function rather than a Heroes position, and no position rule can see
+    it. Both compiling seats built it and it is accepted at exit 0 with a wrong
+    answer today. It is re-filed as defect 024 against §4.19's reserved borrow
+    keyword — case 2 of the three that paragraph reserves, of which `owned` is
+    case 1. Ratifying R5 is agreeing that the milestone closes over a defect
+    that is still open, which is the honest reading and not the tidy one.
+
+    **Why it matters:** the milestone was opened first and alone because a
+    silent wrong answer outranks everything else in § Precedence; the sitting
+    found that the shape it was opened for was half a class.
 
 - [ ] **panel 121** | ratify the shape of string interpolation: the gate, the spelling, the ceiling at 4253 rather than the 4224 already confirmed, and a veto the author's own decision overrides | `docs/panel/121-the-brace-was-already-taken.md` § Resolution
 
