@@ -40,8 +40,15 @@ FROM --platform=linux/amd64 silkeh/clang:22
 # raylib is left out on purpose, exactly as in CI, so `examples/raylib/` keeps
 # exercising the skip rule. LLVM's apt packages install versioned names only
 # and the image links its own tools to the bare name; lldb gets the same.
+#
+# `git` joined on 2026-09-09, and until then the net's own tests had one red
+# case on this machine that nothing reported: `suite_records.hero`'s citation
+# test asks `git check-ignore` (since 2026-09-07), and the `records` suite
+# reads commits and tags. The CI leg has git, so this is the image catching up
+# with the judge it stands in for; with it, a run that copies `.git` can run
+# all three suites here and not two.
 RUN apt-get update \
- && apt-get install -y --no-install-recommends lldb-22 pkg-config libsqlite3-dev libcurl4-openssl-dev \
+ && apt-get install -y --no-install-recommends git lldb-22 pkg-config libsqlite3-dev libcurl4-openssl-dev \
  && ([ -e /usr/bin/lldb ] || ln -s /usr/bin/lldb-22 /usr/bin/lldb) \
  && rm -rf /var/lib/apt/lists/*
 
