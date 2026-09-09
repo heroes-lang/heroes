@@ -28,7 +28,51 @@ per item, `- [ ] **<origin>** | <the question>`, then the body indented four
 spaces. Nothing lives outside the two banners.
 
 *******************************************************************************
-**OPEN: 338**
+**OPEN: 342**
+
+- [ ] **M-cstr-lifetime, walkthrough** | Read `selfhost/check/lending.hero` top to bottom and say, before looking at the tests, which of its three clauses would catch each of five programs | `selfhost/check/lending.hero` · `tests/golden/check/fixedbugs-a-lend-*.hero` | three clauses that look like one rule are three different kinds of rule, and telling them apart is the whole lesson
+
+    **Origin:** M-cstr-lifetime close, 2026-09-09.
+    **The five programs**, and each is one of the golden cases or a near miss:
+    `return ("a" + n.to_str()).cstr()` · `return pass(c: s.cstr())` where
+    `pass` answers `cstr` · `record H` with a `c: cstr` field · `c = s.cstr()`
+    then two extern calls · `strlen(s: "legal".cstr())`. For each, name which
+    clause fires, or say none.
+    **The question after:** one of those five is refused by TWO clauses at
+    once, and one is sound today and refused anyway. Say which, and say what
+    the second one buys.
+
+- [ ] **M-cstr-lifetime, golden ratification** | Four cases were written and marked nothing; read them and decide whether each pins what it claims to pin | `tests/golden/check/fixedbugs-a-lend-*.hero` and their `.expected` | a golden that pins the wrong thing is worse than none, and the only way to know is to read the case against the rule
+
+    **Origin:** M-cstr-lifetime close, 2026-09-09. The four are the returned
+    lend, the two-hop laundering, the record field and the bound lend.
+    **The question after:** one of the four provokes two diagnostics and its
+    annotations say so. Work out why the OTHER three provoke exactly one each,
+    and then say which clause would have to change for that count to move.
+
+- [ ] **M-cstr-lifetime, mutation drill** | Break the rule four ways in `selfhost/check/lending.hero` and predict which suite goes red for each, before running any | `selfhost/check/lending.hero` · `.claude/rules/verification.md` § What gates what | the map exists so that "which suites" stops being a guess, and this is the drill that proves you can read it
+
+    **Origin:** M-cstr-lifetime close, 2026-09-09.
+    **The four mutations:** delete the early exit; change `argument_of` to
+    record only a call's args and not a UFCS receiver; drop the `is_extern`
+    guard in `no_cstr_out_of_heroes`; and make `no_cstr_in_a_record` ignore
+    `rec.header`. For each, name the suite that catches it and the case that
+    fires.
+    **The question after:** exactly one of the four is caught by NO suite in
+    the tree today. Say which, and what case would have to exist.
+
+- [ ] **M-cstr-lifetime, exit quiz** | Six questions with one answer each, and five of the six were got wrong by somebody during this milestone | `docs/journal/040-cstr-lifetime.md` · `docs/panel/122-the-lend-was-two-defects.md` | every question here is a place a measurement replaced a belief, and four of them replaced the coordinator's
+
+    **Origin:** M-cstr-lifetime close, 2026-09-09.
+    **The six:** (a) how long does the slot holding a lent `str` live, exactly?
+    (b) why is a rule about the TYPE `cstr` wrong when a rule about the
+    POSITION of `.cstr()` is right? (c) what does `§4.19` prescribe for calling
+    an extern in another module, and what does it NOT prescribe? (d) why can no
+    position rule close defect 024? (e) which of the two 2026-09-08 numbers
+    about the corpus was wrong, and by how much? (f) why was this milestone
+    left untagged?
+    **The question after:** answer (f) in one sentence that does not mention
+    defect 024, and say whether your sentence is still true.
 
 - [ ] **M-interpolation-verdict step 1** | Write `x = "a" + b + c` in a file and predict what `heroes parse --dump-ast` prints for that line, out of four candidate shapes, before running it | `heroes parse <file> --dump-ast` · `spec/heroes-spec.md` § Operators | the answer is why the dump can be used as a measuring instrument, and the wrong answers are why raw text cannot
 
