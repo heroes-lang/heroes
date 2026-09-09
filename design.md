@@ -2657,7 +2657,18 @@ are *on* the closure list.
    also leaves the door open for v2 **distinct types** (`UserId` and `PostId` both ints but not
    interchangeable), which catch a real class of error but cost conversion syntax.
 6. **Doctests** — v2, once the `test` mechanism is proven.
-7. **String interpolation** — deferred; `print` takes multiple arguments.
+7. **String interpolation** — **ENTERS**, ruled 2026-09-09 (`M-interpolation-verdict`; panel 121,
+   ratified the same day; the spelling the author's): `f"line {n}: {word}"`, the brace active only
+   behind an `f`, a hole admitting any expression with the scan stated, one AST node carrying the
+   whole literal's span and desugared in lowering, `{{` writing one brace. Until that day this line
+   said *deferred; `print` takes multiple arguments*, and three counts moved it: a bare-name hole
+   would cover 56.9% of the holes real programs write (`docs/measurements/021`); the narrow rule
+   costs MORE spec tokens than the wide one and refuses a `???` the spec promises is valid anywhere
+   (`022`); and 211 literals in 39 of the compiler's own modules already hold a `{`, which is what
+   gated the form behind a letter. The implementation is `M-interpolated-strings`, and it inherits
+   panel 121 R5: `selfhost/grammar_expr.hero` is a knot at its decided ceiling, a helper module that
+   calls `parse_expr` closes a `use` cycle, so the hook that reads the holes stays in the knot and
+   the ceiling rises by its lines with the reason written (CLAUDE.md §11's knot clause).
 8. **Traits / interfaces** — genuinely useful, but instance resolution is expensive. Their absence
    means there is no user-extensible iteration protocol: `for x in ...` stays a compiler special case
    for arrays, maps and ranges.

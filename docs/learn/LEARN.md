@@ -28,7 +28,20 @@ per item, `- [ ] **<origin>** | <the question>`, then the body indented four
 spaces. Nothing lives outside the two banners.
 
 *******************************************************************************
-**OPEN: 346**
+**OPEN: 349**
+
+- [ ] **M-interpolation-verdict, walkthrough** | Read `docs/measurements/021` and `022` in order and say, before reaching 022's table, which of the four hole rules you expect to cost the fewest spec tokens and why the answer is the opposite | `docs/measurements/021-what-would-stand-inside-a-hole.md` · `docs/measurements/022-the-narrow-rule-costs-more-than-the-wide-one.md` | enumerating what is admitted costs more words than admitting everything, and a count made without trusting the count before it is what found it
+
+    **Origin:** M-interpolation-verdict close, 2026-09-09.
+
+- [ ] **M-interpolation-verdict, exit quiz** | Three questions with one right answer each: why is the brace active only behind an `f`; why is the form one AST node rather than a payload on the existing string literal; and why is every ceiling number panel 121 computed void while its ranking of the two spellings survives | `docs/panel/121-the-brace-was-already-taken.md` § Resolution · `docs/measurements/023-the-instrument-was-not-the-readers.md` | a level measured on the wrong instrument is void and a delta measured on it is not, which is panel 123 R8's rule and the reason the ledger reads as deltas
+
+    **Origin:** M-interpolation-verdict close, 2026-09-09.
+
+- [ ] **M-interpolation-verdict, mutation drill** | Take `examples/template/main.hero`, whose 24 literals are the only hole-shaped braces in the tree, and say what would happen to each under an ungated brace, then under the `f` gate; count the loud failures and the silent ones | `examples/template/main.hero` · `docs/measurements/022` § The brace migration | 312 literals hold a brace, 211 in the compiler itself, and the gate is what made a syntax change not a two-stage bootstrap
+
+    **Origin:** M-interpolation-verdict close, 2026-09-09.
+
 
 - [ ] **M-held-bytes, walkthrough** | Read `selfhost/check/leasing.hero` and say, before opening the tests, why the rule is THREE clauses and which program each one refuses — then say which clause the sitting did not have and how it was found | `selfhost/check/leasing.hero` · `docs/panel/125-the-guard-that-read-freed-memory.md` | a rule that makes a double release impossible is a rule about where a pointer may LIVE, and the third clause is the one that closes the copy
 

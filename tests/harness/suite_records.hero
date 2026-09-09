@@ -356,8 +356,13 @@ constant REFUSED: [str]
 # in the fifth ARGUMENT; the second names the one shape panel 124 R3 refuses,
 # since a pin aliases `s.cstr()` and a copy-on-write mutation would rewrite what
 # C is reading.
+# **66 -> 67 on 2026-09-09**, `M-interpolated-strings`: the implementation panel
+# 121 R10 said takes an id of its own, because `M-interpolation-verdict` was
+# named for a ruling so that it could close with a refusal, and an id may not
+# claim what the sitting existed to decide. Named for the deliverable, the
+# literal a reader writes, and not for the feature's area.
 constant ROWS: i64
-    66
+    67
 
 # **`WATCHED` stood here until 2026-09-07 and nothing had read it since
 # 2026-08-19.** It listed `design.md` and `CLAUDE.md` as *"the two documents whose

@@ -24,7 +24,7 @@ with `**Origin:**` and its date. Nothing lives outside the two banners —
 Format: `- [ ] **M-<milestone>** | <what, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 46**
+**OPEN: 45**
 
 - [ ] **M-reflection-verdict** | panel 117's sixth option: give `assert` both sides for an aggregate by walking to the first DIFFERING LEAF and naming the field, instead of rendering the value | `docs/panel/117-both-sides-of-an-assert-when-a-side-is-an-aggregate.md` · `selfhost/emit/structural.hero` · `runtime/parts/array.c`
 
@@ -306,7 +306,7 @@ Format: `- [ ] **M-<milestone>** | <what, in one line> | <where to look>`
     and never in seconds, and the seconds say the payoff is behind a
     whole-program frontend.
 
-- [ ] **M-interpolation-verdict** | what a printed float guarantees, which the spec does not say | `spec:184-185` · `runtime/parts/f64.c:26-37` · `docs/panel/021`, `027`
+- [ ] **M-interpolated-strings** | what a printed float guarantees, which the spec does not say — panel 121 R6 lands it WITH the interpolation clause, at +9 | `spec:184-185` · `runtime/parts/f64.c:26-37` · `docs/panel/021`, `027`
 
     **Origin:** `/decide` 2026-09-03, author instruction — the robust form is a
     stated guarantee, not a silence. Moved ahead of the packages late on
@@ -330,7 +330,7 @@ Format: `- [ ] **M-<milestone>** | <what, in one line> | <where to look>`
     **Why it matters:** a spec that is silent where the runtime is specific is
     §12's own case.
 
-- [ ] **M-interpolation-verdict** | `.must()` says "abort" and the spec never says what an abort does | `spec:156` · `spec:197-198` · `selfhost/value_errors.hero:145` · `docs/measurements/010-spec-budget-ledger.md`
+- [ ] **M-interpolated-strings** | `.must()` says "abort" and the spec never says what an abort does — panel 121 R6 lands one definition of *abort* WITH the interpolation clause, at +12, covering all eight sites | `spec:156` · `spec:197-198` · `selfhost/value_errors.hero:145` · `docs/measurements/010-spec-budget-ledger.md`
 
     **Origin:** the llm-ergonomist, panel 118, 2026-09-08, reported as an
     appetite rather than a request, from the seat that reads the spec and nothing
@@ -373,27 +373,6 @@ Format: `- [ ] **M-<milestone>** | <what, in one line> | <where to look>`
     **Why it matters:** a language whose thesis is that every plausible mistake
     is a compile error tells its reader eight times that something *aborts*, and
     never once what that costs them.
-
-- [ ] **M-interpolation-verdict** | a hole rule below `any expression` makes the spec's *"valid anywhere"* false for `???`, and the sitting either excepts it or pays for it | `spec/heroes-spec.md` § Tests and holes · `examples/gallery/09-holes.hero:28` · `docs/measurements/021-what-would-stand-inside-a-hole.md`
-
-    **Origin:** step 1's own count, 2026-09-08, the one hole of 2536 that no
-    rule short of the widest admits. Filed rather than left in the measurement
-    because the measurement is a record and the agenda is this list.
-
-    **The spec says *anywhere* and a corpus program takes it at its word.**
-    `spec/heroes-spec.md` § Tests and holes: *"`???` is a valid expression
-    anywhere"*, and `examples/gallery/09-holes.hero:28` writes one as the last
-    operand of a concatenation. Of the four candidate hole rules 021 priced,
-    the three narrow ones admit a name, a `.field` run and a postfix run, and
-    none of them admits `???`. So a hole is a place in a program where
-    *anywhere* stops being true, and there are only two honest routes: the spec
-    grows an exception, which costs tokens against **40** free, or the hole
-    admits any expression, which is the rule the same measurement already
-    recommends on its own grounds because the alternative costs seven holes.
-
-    **Why it matters:** the language's own claim about `???` is the kind a model
-    reads once and relies on, and the diagnostic for a rejected `{???}` would
-    have to contradict a sentence the spec states without exception.
 
 - [ ] **M-thesis-harness** | should the spec exhibit one worked diagnostic, when today it exhibits zero | `spec/heroes-spec.md` · `design.md` Part 11 · `docs/measurements/007-two-predictions-collected.md:24-25`
 
