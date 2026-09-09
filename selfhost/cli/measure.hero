@@ -43,19 +43,29 @@ constant SPEC: str
 constant VENDOR: str
     "vendor/tokenizers"
 
-# design.md §1.6, raised to 4096 by author decision (2026-08-10, panel 024
-# retro-record). Measured, never estimated — that is the point of a budget.
+# design.md §1.6, raised to 6144 by author decision (2026-09-09), and THE
+# NUMBER CARRIES ITS INSTRUMENT because the last one did not. It was 4096
+# taken as the maximum over two VENDORED tokenisers, and the larger of those
+# is `cl100k_base`, which is OpenAI's: measured 2026-09-09 against
+# `POST /v1/messages/count_tokens`, the spec was 5094 real tokens on
+# `claude-opus-5` against a stated 4096, so the document had been 998 OVER a
+# ceiling it was told it was 40 under (`docs/measurements/023`). One pinned
+# model id binds and moves only by author decision (panel 123 R3); the spread
+# over other ids is published beside it and gates nothing, because Opus 4.7
+# counts the same content as Opus 5 and wraps it differently, so a maximum
+# over a SET is not a property of the document.
 constant CEILING: i64
-    4096
+    6144
 
-# The soft threshold, and it is deliberately NOT rescaled with the ceiling.
-# What the soft line is for is the moment an addition starts owing a named
-# removal or a pre-registered falsifiable prediction (panel 012). Rescaling
-# it in proportion would drop that burden overnight, which is the one thing
-# §1.6 says must survive a raise: "a spec that grows to fill the budget
-# because it can has failed §1.2 just as surely as one that breaches it".
-constant SOFT: i64
-    2000
+# THE SOFT LINE IS RETIRED, and it is the named removal that pays for the
+# raise above (panel 123 R7). It was 2000, set when the spec measured 2231 on
+# the vendored instrument; on the real one the spec has been above it since
+# v0, so it was never once slack and its `else` branch was unreachable in
+# practice. §1.6 forbade rescaling it with the ceiling, which left it drifting
+# further from meaning anything at every raise. What replaces it is stricter:
+# the payment rule is now UNCONDITIONAL — every amendment owes a named removal
+# or a registered prediction naming an instrument that exists today (panel
+# 012, as amended by panel 046), at every level.
 
 # WHAT THE CEILING ALREADY OWES, and it is defect 017's repair (filed and
 # closed 2026-09-08, found by panel 118's spec-warden about its own
@@ -141,7 +151,7 @@ function run(file: str?) -> cli_table.Exit
     return reported(path: path, readings: readings)
 
 # The report, byte for byte the bootstrap's: two readings, the binding
-# number, the error bar, and the verdict against the ceiling. A breach is
+# number, the spread, and the verdict against the ceiling. A breach is
 # exit 1 — the input has something wrong with it — while an unreadable file
 # is exit 2, the tool unable to run (panel 016's contract).
 function reported(path: str, readings: [Reading]) -> cli_table.Exit
@@ -168,10 +178,10 @@ function reported(path: str, readings: [Reading]) -> cli_table.Exit
     if highest > 0
         percent @ spread * 100 / highest
     print(
-        "  " + padded(text: "maximum", width: 16) + " " + aligned(number: highest, width: 6) + "   the binding number"
+        "  " + padded(text: "maximum", width: 16) + " " + aligned(number: highest, width: 6) + "   a lower bound, not the reader's tokeniser"
     )
     print(
-        "  " + padded(text: "spread", width: 16) + " " + aligned(number: spread, width: 6) + "   the error bar (" + percent.to_str() + "%)"
+        "  " + padded(text: "spread", width: 16) + " " + aligned(number: spread, width: 6) + "   between the two vendored tables (" + percent.to_str() + "%) — the gap between two REAL tokeniser generations was 967"
     )
     print("")
 
@@ -186,11 +196,8 @@ function reported(path: str, readings: [Reading]) -> cli_table.Exit
         print("measurement, a panel, and a named alternative (panel 012).")
         return .diagnostics_exit
 
-    if highest > SOFT
-        print("Above the soft " + SOFT.to_str() + ": an addition needs a named removal or a")
-        print("pre-registered falsifiable prediction (panel 012). " + room(path: path, highest: highest))
-    else
-        print("Under the soft " + SOFT.to_str() + ": Principle 0 alone. " + room(path: path, highest: highest))
+    print("An addition needs a named removal or a pre-registered falsifiable")
+    print("prediction (panel 012). " + room(path: path, highest: highest))
     return .ok_exit
 
 # How much of the ceiling is left, and how much of THAT is spendable. Only

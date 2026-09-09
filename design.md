@@ -22,7 +22,7 @@ Two practical notes for the implementation:
 - **Bowie references belong in prose, never in the language surface.** Section headings in example
   files, chapter epigraphs, the README, the book — all fair game. But keyword names, error message
   text, and library function names stay plain and literal, because they are read by a machine that
-  has to parse them and by a model that has to learn them from a 4096-token spec. A cute error
+  has to parse them and by a model that has to learn them from a 6144-token spec. A cute error
   message costs spec tokens and comprehension; a cute README costs nothing. This is the same
   discipline as Part 1.10 (ASCII-only syntax): personality in the packaging, precision in the
   substrate.
@@ -252,8 +252,11 @@ annotations at use sites; anything derivable is derived. Note this is the *oppos
 
 ### 1.6 The spec budget
 
-**The entire language specification — syntax, semantics, built-in library — must fit in 4096
-tokens, measured.** About five pages. That document is not documentation, it is *the prompt*.
+**The entire language specification — syntax, semantics, built-in library — must fit in 6144
+tokens, measured by `claude-opus-5` through `POST /v1/messages/count_tokens`.** About five pages.
+That document is not documentation, it is *the prompt*, so the tokeniser that counts it must be the
+one that reads it — a sentence this section did not contain until 2026-09-09, and its absence cost
+998 tokens (`docs/measurements/023-the-instrument-was-not-the-readers.md`).
 
 This is the forcing function that makes the whole project coherent, because it merges two goals into
 one: every feature has to pay rent in spec tokens, and a language whose spec fits in a few pages is
@@ -269,17 +272,33 @@ ceiling that replaced it was already breached on the pessimistic bound the hour 
 in this project's history set against a measurement rather than a guess.** It left ~950 tokens of
 headroom on the binding instrument, which was taken to be roughly what §1.0's mortgaged closure items
 (modules, file I/O, `args()`, `exit`) plus the deferred sentences would cost. **Raised again to 4096
-by author decision (2026-08-10; panel 024, retro-record.)** The budget is a **hard measured ceiling
-of 4096**, taken as the maximum over the vendored instruments — which reconciles the number with the
-panel's veto threshold. The reader's real tokeniser is unpublished, so the ~2% spread applies to the
-ceiling too: the effective bound is 4010–4096.
+by author decision (2026-08-10; panel 024, retro-record.)** **Raised again to 6144 by author
+decision 2026-09-09**, and this time **the number carries its instrument**, because the last one did
+not. It is `claude-opus-5`'s count through `POST /v1/messages/count_tokens`, content less that
+model's own measured request offset, and the spec read **5094** on the day it was set.
 
-**The soft line stays at 2000, and that is the load-bearing half of the raise.** It is not a fraction
-of the ceiling. It is the point where growth stops being free — where an addition owes a named
-removal or a pre-registered falsifiable prediction (panel 012) — so rescaling it in proportion
-(2:3 would give ~2730) would put the spec, at 2231, *under* it and grant a blanket exemption to the
-next ~500 tokens. Panel 024's warden put the reason in one line: **a soft line that moves whenever
-the document approaches it is a thermometer, not a thermostat.**
+**What the 4096 was, and why it was never the reader's number.** It was the maximum over the two
+VENDORED instruments, and the larger of those is `cl100k_base`, which is **OpenAI's**. Measured
+2026-09-09: the spec was 5094 real against a stated 4096, so the document had been **998 over** a
+ceiling it was told it was 40 under, and it was over on the older Claude generation too, at 4127.
+The sentence this paragraph used to carry — *the reader's real tokeniser is unpublished, so the ~2%
+spread applies to the ceiling* — was right to worry and an order of magnitude short: the gap between
+two live Claude generations is **967**, against a vendored spread of 78. **One pinned model id binds
+and moves only by author decision** (panel 123 R3); the spread over other ids is published beside it
+and gates nothing, because Opus 4.7 counts the same content as Opus 5 and wraps it differently, so a
+maximum over a SET is not a property of the document. The offline vendored count stays as what it
+always correctly was: the detector that answers *did the spec move and nobody say so*.
+
+**The soft line was 2000, and it is RETIRED as of 2026-09-09** — panel 123 R7, and it is the named
+removal that pays for the raise above. It was never rescaled with the ceiling, deliberately, and
+panel 024's warden gave the reason in a line that still holds: *a soft line that moves whenever the
+document approaches it is a thermometer, not a thermostat.* What retires it is not that argument but
+a measurement: it was set when the spec read 2231 on the vendored instrument, and on the real one the
+spec has been above 2000 since v0 — about 2600 real against 1989 vendored — so it was **never once
+slack** and the branch below it was unreachable in practice. **What replaces it is stricter, not
+looser: the payment rule is unconditional.** Every amendment owes a named removal or a registered
+prediction naming an instrument that exists today (panel 012, as amended by panel 046), at every
+level, with no threshold to be under.
 
 **The two payments are held to the same standard, which they were not** (panel 046, ratified by the
 author 2026-08-13). A **named removal** is measured in the commit that spends it. A
@@ -3059,7 +3078,7 @@ that compiles and diffs. This is the only thing that makes it possible to evolve
 silently breaking it.
 
 **Write the spec in condensed English early — around step 7, not at the end.** It is the control
-instrument: if it doesn't fit in 4096 tokens, too much has been added, and you find out in an hour
+instrument: if it doesn't fit in 6144 tokens, too much has been added, and you find out in an hour
 instead of three months. Count it with a real tokeniser, not by estimation — the BPE vocabulary
 contains arbitrary choices nobody predicts.
 
@@ -3097,6 +3116,22 @@ falsifiable claim.
    corpus; per-operator kill rate. Deterministic, free, no API needed.
 4. **Turns-to-green.** Given a broken program, how many exchanges to make it compile — capped at 5,
    non-convergence counted separately. Measures the rich errors, otherwise unfalsifiable.
+
+   **Corrected 2026-09-09, and this clause is the root cause rather than a symptom** (panel 123).
+   The offline commitment above stands and is right: no gate here ever touches the network. What was
+   wrong is the sentence calling the undercount claim unsourced. It is sourced now — Anthropic's own
+   documentation says not to use `cl100k_base` for Claude — and measured:
+   **+27.5%** on `spec/heroes-spec.md` and **+33.4%** on `CLAUDE.md`
+   (`docs/measurements/023-the-instrument-was-not-the-readers.md`). The error in the reasoning is
+   visible in the sentence itself: it compared two instruments **neither of which is a Claude
+   tokeniser**, found them 3% apart, and concluded the vendor was wrong. Two instruments agreeing
+   tells you nothing about a third. **So the maximum over instruments no longer binds** — it is a
+   lower bound, published for its determinism — and one pinned model id does, recorded with its date
+   (panel 123 R3). The spread stays published and is no longer called an error bar: the honest
+   figure beside it is the **967**-token gap between two live Claude generations, against the 78 this
+   clause was quoting. And vendoring pinned the wrong half: `expected_hash` content-addresses the
+   ranks, while `pat_str` — the regex that decides where text splits — lives in library code and was
+   edited twice under the fixed name `cl100k_base`.
 
 Every measurement records provenance: spec sha, compiler sha, model id, prompt sha, suite sha.
 Never diff runs with different compiler shas unless explicitly flagged — a stricter checker lowers

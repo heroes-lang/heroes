@@ -84,9 +84,17 @@ constant SPEC_TOKENS: i64
 constant REGISTRY_TOKENS: i64
     916
 
-# The ceiling panel 024 set. Raising it is a panel.
+# The ceiling, 6144 by author decision 2026-09-09, and it carries its
+# instrument (panel 123 R3): `claude-opus-5` through
+# `POST /v1/messages/count_tokens`, where the spec measured 5094 on the day it
+# was set. Panel 024's 4096 was the maximum over two VENDORED tokenisers and
+# the larger of those is OpenAI's, so the document was 998 over a ceiling it
+# was told it was 40 under. `SPEC_TOKENS` above stays the VENDORED figure
+# deliberately: it answers "did the spec move and nobody say so", which it
+# always answered correctly, and re-basing it would make the next ledger row
+# incomparable with the first thirty-eight.
 constant CEILING: i64
-    4096
+    6144
 
 # The operating contract, weighed on the same scale as the language.
 #
@@ -317,9 +325,18 @@ function why(got: i64?) -> str
         .ok _  => ""
         .err e => e.msg
 
-# `heroes measure <path>`'s binding number. Exit 1 is a BREACH rather than a
+# `heroes measure <path>`'s vendored maximum. Exit 1 is a BREACH rather than a
 # failure to run, so the number is read either way and the verdict is this
 # suite's own.
+#
+# **IT KEYS ON THE ROW'S NAME AND NOT ON ITS PROSE, since 2026-09-09.** It used
+# to look for the words *"the binding number"*, and panel 123 R6 renamed that
+# label to *"a lower bound, not the reader's tokeniser"* — because the vendored
+# maximum is not the reader's number and calling it binding is what cost 998
+# tokens. The rename turned this suite red with `measure printed no binding
+# number`, which is the right failure for the wrong reason: a check that reads a
+# human-facing label breaks when the label is corrected. `maximum` is the row's
+# identity and prose is not.
 function maximum_of(scratch: str, compiler: str, path: str) -> i64?
     said = shell.run(scratch: scratch, program: compiler, words: [compiler, "measure", path])?
 
@@ -327,13 +344,13 @@ function maximum_of(scratch: str, compiler: str, path: str) -> i64?
         return fail("cannot_measure", "`measure` exited " + said.code.to_str() + ": " + said.err)
 
     for row in strings.lines(said.out)
-        if strings.contains(text: row, needle: "the binding number")
+        if strings.starts_with(text: row, prefix: "  maximum")
             words = strings.words(row)
 
             if words.len() >= 2
                 return strings.to_number(words[1])
 
-    return fail("cannot_measure", "`measure` printed no binding number")
+    return fail("cannot_measure", "`measure` printed no `maximum` row")
 
 # THE TWO INSTRUMENTS AGREE ON WHAT IS SPENDABLE, which is defect 017's
 # repair (2026-09-08, found by panel 118's spec-warden about its own
@@ -760,7 +777,7 @@ test "the contract's ceiling fires, and a ceiling above it does not"
     scratch = "build/harness-selftest"
     assert !shell.mkdir_all(scratch).is_err()
     fat = scratch + "/stub-fat.sh"
-    assert !write_file(path: fat, text: "#!/bin/sh\necho 'CLAUDE.md'\necho '  maximum            9999   the binding number'\n").is_err()
+    assert !write_file(path: fat, text: "#!/bin/sh\necho 'CLAUDE.md'\necho '  maximum            9999   any prose at all, because the parser reads the row NAME'\n").is_err()
     assert !shell.run(scratch: scratch, program: "chmod", words: ["chmod", "+x", fat]).is_err()
 
     over: report.Report @ report.empty()
@@ -786,7 +803,7 @@ test "the contract's ceiling fires, and a ceiling above it does not"
     contract(@blind, scratch: scratch, compiler: mute, ceiling: 10000)
     assert blind.failed == 1
 
-test "the binding number is read off `measure`, whatever the compiler is"
+test "the vendored maximum is read off `measure`, whatever the compiler is"
     # POSIX is this case's subject, and this machine answers for itself
     # (can_run_scripts carries the measurement).
     if !shell.can_run_scripts()
@@ -794,7 +811,7 @@ test "the binding number is read off `measure`, whatever the compiler is"
     scratch = "build/harness-selftest"
     assert !shell.mkdir_all(scratch).is_err()
     path = scratch + "/stub-measure.sh"
-    assert !write_file(path: path, text: "#!/bin/sh\necho 'spec/heroes-spec.md'\necho '  maximum            9999   the binding number'\n").is_err()
+    assert !write_file(path: path, text: "#!/bin/sh\necho 'spec/heroes-spec.md'\necho '  maximum            9999   any prose at all, because the parser reads the row NAME'\n").is_err()
     assert !shell.run(scratch: scratch, program: "chmod", words: ["chmod", "+x", path]).is_err()
     assert maximum_of(scratch: scratch, compiler: path, path: SPEC).default(-1) == 9999
 
