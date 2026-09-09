@@ -146,7 +146,7 @@ tqbf</code></pre>
 
   <h2>Testo con dei buchi dentro</h2>
   <p>
-    Una stringa può portare dei valori. Una <code>f</code> prima della virgoletta d&rsquo;apertura trasforma <code>{n}</code> nel testo di <code>n</code>, scritto come lo scriverebbe <code>to_str</code>. In un buco può stare qualsiasi espressione, e il buco finisce alla graffa che lo chiude, così una chiamata o una ricerca al suo interno si legge come si leggerebbe ovunque. <code>{{</code> scrive una graffa aperta; la graffa chiusa non è mai speciale, quindi <code>}</code> resta com&rsquo;è. Una stringa senza la <code>f</code> è esattamente quella di prima.
+    Una stringa può portare dei valori. Una <code>f</code> prima della virgoletta d&rsquo;apertura trasforma <code>{n}</code> nel testo di <code>n</code>, scritto come lo scriverebbe <code>to_str</code>. In un buco può stare qualsiasi espressione, e il buco finisce alla graffa che lo chiude, così una chiamata o una ricerca al suo interno si legge come si leggerebbe ovunque. <code>{{</code> scrive una graffa aperta; fuori da un buco la graffa chiusa non è speciale, quindi <code>}</code> resta com&rsquo;è. Una stringa senza la <code>f</code> è esattamente quella di prima.
   </p>
   <figure class="example" data-src="examples/gallery/12-interpolation.hero" data-lines="17-18">
 <pre><code><span class="k">function</span> line(at: <span class="t">i64</span>, of: <span class="t">i64</span>, star: Star) -&gt; <span class="t">str</span>

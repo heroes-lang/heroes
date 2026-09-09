@@ -102,7 +102,7 @@ graphics, audio, terminal  →  SDL, raylib, ncurses</code></pre>
 
   <h2>Text with holes in it</h2>
   <p>
-    A string can carry values. An <code>f</code> before the opening quote turns <code>{n}</code> into the text of <code>n</code>, written the way <code>to_str</code> would write it. Any expression may stand in a hole: a sum, a call, a field, another string of the same kind. <code>{{</code> writes one opening brace; a closing brace is never special, so <code>}</code> is written as it is. A string without the <code>f</code> is exactly what it was.
+    A string can carry values. An <code>f</code> before the opening quote turns <code>{n}</code> into the text of <code>n</code>, written the way <code>to_str</code> would write it. Any expression may stand in a hole: a sum, a call, a field, another string of the same kind. <code>{{</code> writes one opening brace; outside a hole a closing brace is not special, so <code>}</code> is written as it is. A string without the <code>f</code> is exactly what it was.
   </p>
   <figure class="example" data-src="examples/gallery/12-interpolation.hero" data-lines="17-18">
 <pre><code><span class="k">function</span> line(at: <span class="t">i64</span>, of: <span class="t">i64</span>, star: Star) -&gt; <span class="t">str</span>
@@ -123,8 +123,8 @@ graphics, audio, terminal  →  SDL, raylib, ncurses</code></pre>
     one word for loops, and argument names required where types cannot tell two
     arguments apart.</li>
     <li><b>Error messages that machines can use.</b> Each message identifies the problem and its location in the code. If a declaration elsewhere is involved, it points there too. Suggested fixes are marked <code>certain</code> when they are certain or <code>guess</code> when they need review. Use <code>???</code> to leave an expression unfinished and ask the compiler which type it expects.</li>
-    <li><b>A program must not corrupt memory.</b> The program stops and reports the error location if an integer exceeds its range, integer division has a zero divisor, an index is outside a list, a string slice splits a character, recursion goes too deep or <code>.must()</code> receives an error. In design decisions, preventing unchecked memory access takes priority over elegance and brevity.</li>
-    <li><b>Small enough to fit in a prompt.</b> The specification stays below 6K tokens, counted the way the model itself counts, through Claude&rsquo;s token-counting API. The count is recorded with the model that made it, and a test on every commit, or recorded change, holds the record under the ceiling and refuses a text that moved without a new count. You can give the whole specification to a model. <a href="/spec/">Read it &rarr;</a></li>
+    <li><b>A program must not corrupt memory.</b> The program stops and reports the error location if an integer exceeds its range, integer division has a zero divisor, an index is outside an array, a string slice splits a character, recursion goes too deep or <code>.must()</code> receives an error. In design decisions, preventing unchecked memory access takes priority over elegance and brevity.</li>
+    <li><b>Small enough to fit in a prompt.</b> The specification stays below 6K tokens, counted the way the model itself counts, through Claude&rsquo;s token-counting API. The count is recorded with the model that made it, and a test on every commit, or recorded change, holds the recorded count under the ceiling and refuses a text that moved without a new count. You can give the whole specification to a model. <a href="/spec/">Read it &rarr;</a></li>
   </ul>
 
   <h2>Common questions <span class="nod">&middot; quicksand, avoided &middot;</span></h2>
@@ -141,7 +141,7 @@ graphics, audio, terminal  →  SDL, raylib, ncurses</code></pre>
     <dd>To keep values independent: changing a copy does not change the original. You cannot create cycles in which two values keep each other alive. The runtime, the code that supports the running program, can therefore free memory by counting references to data, without a garbage collector that searches for unused data.</dd>
     <dd class="more"><code>+</code> on a <code>str</code> copies both strings. Repeating it in a loop can require work that grows with the square of the final length; <code>join</code> builds the result in one pass. An array can grow without being copied when no other value uses its memory. Passing a large value to a function does not immediately copy all its data: memory is shared until a change requires a copy. <a href="/docs/values-all-the-way-down/">How copies work&nbsp;&rarr;</a></dd>
     <dt>Can operations run in parallel?</dt>
-    <dd>Yes, using threads, operations that run in parallel, through C libraries. Each Heroes thread has separate memory and can receive and return numbers, which are copied. The compiler rejects passing a list. This model suits computations with small inputs and a numeric result. <a href="/examples/threads/">A thread example &rarr;</a></dd>
+    <dd>Yes, using threads, operations that run in parallel, through C libraries. Each Heroes thread has separate memory and can receive and return numbers, which are copied. The compiler rejects passing an array. This model suits computations with small inputs and a numeric result. <a href="/examples/threads/">A thread example &rarr;</a></dd>
     <dt>Is it not just a smaller version of an existing language?</dt>
     <dd>Heroes uses familiar ideas: independent values, no inheritance and errors represented in the type. The choices serve a specific constraint: describing the whole language in a prompt while leaving room for the program. That limit helps determine which features to include. <a href="/project/#panel">How changes are reviewed&nbsp;&rarr;</a></dd>
   </dl>
