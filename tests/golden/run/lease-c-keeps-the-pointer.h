@@ -4,4 +4,4 @@
 #include <string.h>
 static const char *held_by_c;
 static void stash_put(const char *s) { held_by_c = s; }
-static unsigned long stash_len(void) { return strlen(held_by_c); }
+static size_t stash_len(void) { return strlen(held_by_c); }
