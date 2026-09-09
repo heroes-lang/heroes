@@ -110,6 +110,15 @@ function commands() -> [Command]
         plain(spelling: "--survivors", what: "print the mutants the compiler accepted, not only the rates")
         valued(spelling: "--operator", what: "score this operator alone, by its id")
     ]
+
+    # The one flag in this table that reaches the network, and the only one
+    # anywhere in the tool. It PRINTS the constants for a person to paste and
+    # rewrites nothing (panel 123 R4): a check that needed a key would be red
+    # on every fork's pull request forever, because the repository is public
+    # and GitHub passes no secret to a fork.
+    measure_flags: [Flag] = [
+        plain(spelling: "--refresh", what: "ask the model's own tokeniser and print the constants to paste (needs ANTHROPIC_API_KEY and curl 8.3.0)")
+    ]
     return [
         Command(tag: .lex_cmd, name: "lex", operand: .file_operand, flags: lex_flags, summary: "check the token stream")
         Command(tag: .parse_cmd, name: "parse", operand: .file_operand, flags: parse_flags, summary: "check the syntax")
@@ -120,7 +129,7 @@ function commands() -> [Command]
         Command(tag: .fmt_cmd, name: "fmt", operand: .file_operand, flags: fmt_flags, summary: "print the canonical form")
         Command(tag: .doctor_cmd, name: "doctor", operand: .no_operand, flags: no_flags, summary: "check the toolchain (clang, CLT, arch, runtime, cache)")
         Command(tag: .mutate_cmd, name: "mutate", operand: .optional_operand, flags: mutate_flags, summary: "metric 3: make one plausible mistake per site and count what the compiler catches (default: examples/)")
-        Command(tag: .measure_cmd, name: "measure", operand: .optional_operand, flags: no_flags, summary: "count a spec file against its ceiling (default: spec/heroes-spec.md)")
+        Command(tag: .measure_cmd, name: "measure", operand: .optional_operand, flags: measure_flags, summary: "count a spec file against its ceiling (default: spec/heroes-spec.md)")
         Command(tag: .this_cmd, name: "this", operand: .no_operand, flags: no_flags, summary: "print The Zen of Heroes")
     ]
 

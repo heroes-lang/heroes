@@ -1,0 +1,243 @@
+# `heroes measure --refresh`: go and ask the model's own tokeniser, and print
+# the record for a person to paste (panel 123 R4 and R5).
+#
+# THIS IS THE ONLY PLACE IN THE COMPILER THAT REACHES THE NETWORK, and every
+# other command stays offline for a reason design.md Part 11 metric 1 states in
+# as many words — *no API key, no network*. The gate may not do this: the
+# repository is public and GitHub passes no secret to a fork's pull request, so
+# a key-gated check would be structurally red on every fork PR forever. **The
+# network is admissible only where the answer is pre-recorded**, which is
+# Bazel's `sha256`, pip's hash-checking mode and Nix's fixed-output
+# derivations; this flag is their `nix-prefetch`.
+#
+# ONE ADDRESS, WRITTEN AS A CONSTANT, and that is the author's rule of
+# 2026-09-09 kept where an instrument can read it: the key counts tokens and
+# does nothing else. `.claude/hooks/guard_bash.py` fences a session's own
+# commands to that one endpoint and cannot see inside a compiled binary, so
+# what stands in for it here is that `ENDPOINT` is one `grep` away and no
+# other URL exists in this tree.
+#
+# `selfhost/cli/count_tokens.hero` is the half that needs no socket: the
+# escaping, the reading of an answer and the lines to print all live there,
+# with their tests. What is here is tested by the run recorded in its commit
+# body, because a `test` block that needs a key is a block that is red for
+# everyone who has not got one.
+
+use cli/count_tokens
+use cli/process
+use measure/bpe
+
+# The one address this program ever reaches. See the module doc.
+constant ENDPOINT: str
+    "https://api.anthropic.com/v1/messages/count_tokens"
+
+# The variable the key lives in — and CURL reads it, not this program. See
+# `asked` below for why that distinction is the whole security of this file.
+constant KEY_NAME: str
+    "ANTHROPIC_API_KEY"
+
+# Where the bodies and the answers land. Under `build/`, which is ignored, and
+# they are left behind on purpose: when an answer is not what it should be, the
+# request that produced it is the first thing anybody wants to read.
+constant SCRATCH: str
+    "build/measure-refresh"
+
+# The two probes that measure the request structure, and what their difference
+# must be if `x` is one token and each ` x` after it is one more.
+constant PROBE_ONE: str
+    "x"
+
+constant PROBE_FIVE: str
+    "x x x x x"
+
+constant PROBE_SPREAD: i64
+    4
+
+# One request, and its answer.
+#
+# THE KEY IS IN NEITHER ARGV NOR ANY FILE, which is the one thing this function
+# is careful about. `--variable %NAME` tells curl to read the environment
+# variable ITSELF, and `--expand-header` substitutes it inside the header curl
+# sends: the secret goes from the environment into the socket without passing
+# through this process's argument list, where `ps` shows it to every user on
+# the machine, or through a config file, where the default umask makes it
+# world-readable.
+#
+# **There is no fallback to `-H "x-api-key: …"`, deliberately.** That spelling
+# works on every curl ever shipped and leaks the key to every process on the
+# box, so the cheaper route is the one that fails silently and forever. What
+# this needs instead is curl **8.3.0** (2023-09-13), and an older one refuses
+# the option by name — a loud failure a reader fixes in one command, against a
+# quiet one nobody ever sees.
+function asked(body: str, tag: str) -> str?
+    into = SCRATCH + "/" + tag + "-body.json"
+    back = SCRATCH + "/" + tag + "-answer.json"
+    said = SCRATCH + "/" + tag + "-curl.txt"
+
+    if write_file(path: into, text: body).is_err()
+        return fail("no_scratch", "cannot write " + into)
+    ran = process.run(
+        program: "curl",
+        words: ["curl", "--silent", "--show-error", "--variable", "%" + KEY_NAME, "--expand-header", "x-api-key: {{" + KEY_NAME + "}}", "--header", "anthropic-version: 2023-06-01", "--header", "content-type: application/json", "--data-binary", "@" + into, ENDPOINT],
+        out: back,
+        err: said
+    )
+
+    if !ran.started
+        return fail(
+            "no_curl",
+            "cannot start `curl`, which is how this one flag reaches the network — every other command here is offline and stays that way (design.md Part 11 metric 1)"
+        )
+
+    if ran.code != 0
+        told = read_file(said).default("")
+        return fail("curl_failed", "`curl` exited " + ran.code.to_str() + ": " + told + version_note(told))
+    answer = read_file(back)
+
+    if answer.is_err()
+        return fail("no_answer", "`curl` exited 0 and wrote nothing to " + back)
+    return ok(answer.must())
+
+# The sentence an old curl earns, and only an old curl: its own refusal names
+# the option, so this reads the refusal rather than guessing at a version.
+function version_note(told: str) -> str
+    if bpe.index_of(text: told, needle: "--variable").is_err() && bpe.index_of(text: told, needle: "--expand-header").is_err()
+        return ""
+    return "\n  This curl does not know that option. It arrived in curl 8.3.0 (2023-09-13), and it is how the key reaches curl WITHOUT standing in this program's argument list, where `ps` would show it to every user on the machine. There is deliberately no fallback that puts it there: upgrade curl."
+
+# Today, from the machine. This compiler has no clock and gains no extern for
+# one (panel 123 R4): `date` is a program, and running a named program is the
+# mechanism this whole flag is already built on.
+#
+# READ BEFORE ANY REQUEST IS SPENT, and a failure here refuses the refresh
+# rather than printing a count with no date. A count without the model and the
+# date that produced it is not a measurement (panel 123 R3), and the reason
+# this file exists at all is that a number nobody could attribute stood for
+# four milestones.
+function today() -> str?
+    back = SCRATCH + "/date.txt"
+    ran = process.run(program: "date", words: ["date", "+%Y-%m-%d"], out: back, err: process.discard())
+
+    if !ran.started || ran.code != 0
+        return fail(
+            "no_date",
+            "cannot run `date +%Y-%m-%d` here, and a count without its date is not a measurement (panel 123 R3). Where `date` is not a program — Windows outside a POSIX shell — refresh on a machine where it is, rather than writing a date this tool did not read"
+        )
+    said = read_file(back)
+
+    if said.is_err()
+        return fail("no_date", "`date` wrote nothing to " + back)
+    return ok(first_line(said.must()))
+
+# Up to the first line break. `date` answers one line and a newline, and there
+# is no `trimmed` to reach for inside the compiler.
+function first_line(text: str) -> str
+    at: i64 @ 0
+
+    while at < text.len() && text[at] != 10 && text[at] != 13
+        at @ at + 1
+
+    return text.slice(from: 0, to: at)
+
+# What one content costs, wrapper included.
+function counted(content: str, tag: str) -> i64?
+    answer = asked(body: count_tokens.request(model: count_tokens.PINNED_MODEL, content: content), tag: tag)
+
+    if answer.is_err()
+        return fail("not_asked", why_text(answer))
+    return count_tokens.input_tokens(answer.must())
+
+# What the request STRUCTURE costs, measured in the same invocation rather than
+# recorded (panel 123 R4). It is a property of the MODEL and not a constant:
+# probed 2026-09-09, **6** on `claude-opus-5`, `claude-sonnet-5` and
+# `claude-opus-4-8`, **7** on `claude-opus-4-6` and `claude-haiku-4-5`, **11**
+# on `claude-opus-4-7`. `docs/measurements/023` stated it as one number and
+# panel 123's spec-warden caught that by probing six ids.
+#
+# TWO PROBES AND NOT ONE, because one probe cannot tell a wrapper of 6 from a
+# tokeniser that reads `x` as two tokens. If the second is not four tokens
+# above the first, `x` is not one token here and NOTHING may be subtracted:
+# that is a refusal, not a rounding.
+function probed() -> i64?
+    one = counted(content: PROBE_ONE, tag: "probe-one")
+
+    if one.is_err()
+        return fail("no_offset", why_count(one))
+    five = counted(content: PROBE_FIVE, tag: "probe-five")
+
+    if five.is_err()
+        return fail("no_offset", why_count(five))
+    apart = five.must() - one.must()
+
+    if apart != PROBE_SPREAD
+        return fail(
+            "no_offset",
+            "the two probes answered " + one.must().to_str() + " and " + five.must().to_str() + ", " + apart.to_str() + " apart where `" + PROBE_FIVE + "` is " + PROBE_SPREAD.to_str() + " tokens above `" + PROBE_ONE + "`. So `" + PROBE_ONE + "` is not one token for " + count_tokens.PINNED_MODEL + " and the wrapper cannot be subtracted from the document's answer. Measure the structure by hand before this flag is trusted again"
+        )
+    return ok(one.must() - 1)
+
+# The whole refresh: the date, the offset, the document, the four lines.
+function refreshed(text: str) -> [str]?
+    if process.env(name: KEY_NAME).len() == 0
+        return fail(
+            "no_key",
+            "`" + KEY_NAME + "` is unset. `.env.example` § Anthropic carries the shape; the real `.env` is ignored by git and stays that way — the repository is public"
+        )
+
+    if process.mkdir_all(SCRATCH).is_err()
+        return fail("no_scratch", "cannot create " + SCRATCH)
+    when = today()
+
+    if when.is_err()
+        return fail("no_date", why_text(when))
+    offset = probed()
+
+    if offset.is_err()
+        return fail("no_offset", why_count(offset))
+    whole = counted(content: text, tag: "document")
+
+    if whole.is_err()
+        return fail("not_asked", why_count(whole))
+    return ok(
+        count_tokens.constants(tokens: whole.must() - offset.must(), model: count_tokens.PINNED_MODEL, taken: when.must(), of: text)
+    )
+
+# The three failure readers. One per fallible type, which is the idiom here
+# (`selfhost/cli/mutate.hero:182`), and they exist so a failure three calls
+# deep arrives at the reader with the sentence that named it.
+function why_text(got: str?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.msg
+
+function why_count(got: i64?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.msg
+
+function why_lines(got: [str]?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.msg
+
+## Tests
+
+# The two pure functions here, which are pure so that they can be tested at
+# all: everything else in this file needs a key.
+
+test "a date is read up to the line break, and a line without one survives"
+    assert first_line("2026-09-09\n") == "2026-09-09"
+    assert first_line("2026-09-09\r\n") == "2026-09-09"
+    assert first_line("2026-09-09") == "2026-09-09"
+    assert first_line("") == ""
+
+test "the version sentence is earned by an old curl and by nothing else"
+    # curl refuses by naming the option, so this reads the refusal rather
+    # than guessing at a version.
+    assert version_note("curl: option --variable: is unknown").len() > 0
+    assert version_note("curl: option --expand-header: is unknown").len() > 0
+    assert !bpe.index_of(text: version_note("curl: option --variable: is unknown"), needle: "8.3.0").is_err()
+
+    # And a network failure earns nothing: it is not curl's age.
+    assert version_note("curl: (6) Could not resolve host: api.anthropic.com") == ""
+    assert version_note("") == ""
