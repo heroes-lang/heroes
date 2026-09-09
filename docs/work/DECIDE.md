@@ -21,45 +21,6 @@ lives outside the two banners: `records/lists` is the executor of that.
 Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 1**
-
-- [ ] **panel 125** | ratify the lease's soundness: the cell is the authority and it is nulled on release, a lease's name stands only as an argument of a call and takes no other write, `end_lease` takes only a lease cell, the runtime reads no memory it was not handed in any accepted program, the registry is refused on Part 7.13, and the spelling is `lease`/`end_lease` | `docs/panel/125-the-guard-that-read-freed-memory.md` § The resolution
-
-    **Origin:** the soundness lane of 2026-09-09, two seats, convened by the
-    coordinator on its own runtime guard after measuring that a double release
-    was caught by luck — `malloc` had left a zeroed magic word readable in a
-    freed block.
-
-    **THREE THINGS IN IT ARE THE AUTHOR'S TO OVERTURN.**
-
-    **(i) The registry was approved by one seat and refused by the other, and
-    the resolution took the refusal.** The ffi seat prototyped a runtime-owned
-    list that catches every bad shape including a pointer laundered through C;
-    the compiler seat measured that `hero_grow_kept`'s one-caller assertion
-    FIRES on a second buffer and that widening it is design.md Part 7.13's
-    second allocation site. The conservative route is the registry, and it is
-    recorded so the author can choose it.
-
-    **(ii) The spelling.** `held`/`release`, the coordinator's, cost 29 errors
-    across 11 files by the reservation mechanism itself; `lease`/`end_lease`
-    cost zero by the same mechanism. Panel 121's precedent gave the author the
-    spelling last time, and this one is theirs to rename before it reaches a
-    reader.
-
-    **(iii) The exit path is named, not closed.** A lease outstanding when the
-    program leaves through `exit(code)` is not accused, because the gate runs
-    at the end of `main` and registering it with `atexit` would make the block
-    counter accuse the compiler on the same path. The Linux `--sanitize` leg is
-    the instrument named instead.
-
-    **(iv) The spec's word for that path, found by the site panel 2026-09-09.**
-    `spec/heroes-spec.md:246` says *a lease nobody ends is named at exit*, and
-    what runs is `panic: 1 lease(s) never ended`, a COUNT, printed when `main`
-    returns and never on `exit()` (both run: exit 134 with the count, exit 0 in
-    silence). Naming the lease would take the registry (i) refuses, so the
-    recommendation is the wording: *a lease nobody ends is counted when `main`
-    returns*, its token cost measured with `heroes measure --refresh` when
-    ratified, and the site already says the measured thing on every page that
-    mentions it.
+**OPEN: 0**
 
 *******************************************************************************

@@ -524,7 +524,7 @@ HERO_STR_STATIC(hero_str_70921616, "spec/heroes-spec.md");
 HERO_STR_STATIC(hero_str_2c04ec8a, "vendor/tokenizers");
 HERO_STR_STATIC(hero_str_307ad4e3, "claude-opus-5");
 HERO_STR_STATIC(hero_str_17284788, "2026-09-09");
-HERO_STR_STATIC(hero_str_65f557c2, "02cb53750074db38");
+HERO_STR_STATIC(hero_str_55dfbca6, "5a9b288604a587fa");
 HERO_STR_STATIC(hero_str_3ba1717a, "CLAUDE.md");
 HERO_STR_STATIC(hero_str_452c2468, "claude-legacy.json");
 HERO_STR_STATIC(hero_str_7af243a1, "claude-legacy");
@@ -54789,7 +54789,7 @@ int64_t h_climeasure_REAL_TOKENS(void) {
     goto bb0;
 bb0:
 #line 80 "selfhost/cli/measure.hero"
-    t1 = INT64_C(5369);
+    t1 = INT64_C(5373);
 #line 80 "selfhost/cli/measure.hero"
     return t1;
 #line 54796 "main.c"
@@ -54828,7 +54828,7 @@ HeroStr h_climeasure_SPEC_DIGEST(void) {
     goto bb0;
 bb0:
 #line 89 "selfhost/cli/measure.hero"
-    t1 = HERO_STR_LIT(hero_str_65f557c2);
+    t1 = HERO_STR_LIT(hero_str_55dfbca6);
 #line 54833 "main.c"
     hero_str_incref(t1);
     return t1;
