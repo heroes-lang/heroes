@@ -63,9 +63,9 @@ function check(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl
                         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => at @ at
                         .array | .fixed | .fallible | .function_ty | .named => at @ at
                         .case_ty | .failure | .generic | .error => at @ at
-            .int_lit | .char_lit | .float_lit | .str_lit | .bool_lit | .null_ptr => at @ at
-            .name | .hole | .unary | .binary | .field | .index | .call | .method => at @ at
-            .variant_case | .array | .try_expr | .if_expr | .match_expr | .error => at @ at
+            .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => at @ at
+            .name | .hole | .unary | .binary | .field | .index | .call | .method           => at @ at
+            .variant_case | .array | .try_expr | .if_expr | .match_expr | .error           => at @ at
 
         at @ at + 1
 

@@ -32,6 +32,11 @@ record LexState
     # Spans of the openers ( [ { not yet closed; its length is the bracket
     # depth. Inside brackets, indentation is not structural (panel 007).
     open_brackets: [token.Span]
+    # One entry per interpolation hole still open, holding `open_brackets`'s
+    # length at the moment the hole opened: a `}` closes the hole only when the
+    # depth is back to that number, which is how a map literal or a nested
+    # call inside a hole costs the scan nothing (panel 121 R1; `lex_interp`).
+    holes: [i64]
     tokens: [token.Token]
     diagnostics: [diag.Diagnostic]
     # Kind of the current line's last significant (non-comment) token — the
@@ -40,12 +45,14 @@ record LexState
 
 function new_state() -> LexState
     brackets: [token.Span] = []
+    holes: [i64] = []
     tokens: [token.Token] = []
     diagnostics: [diag.Diagnostic] = []
     return LexState(
         pos: 0,
         level: 0,
         open_brackets: brackets,
+        holes: holes,
         tokens: tokens,
         diagnostics: diagnostics,
         last_significant: fail(ERR_NO_SIGNIFICANT, "no significant token yet")

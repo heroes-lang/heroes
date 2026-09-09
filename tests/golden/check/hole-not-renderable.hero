@@ -1,0 +1,21 @@
+# M-interpolated-strings, panel 121 R1 and R4 (ratified 2026-09-09).
+#
+# A hole admits ANY EXPRESSION syntactically — the narrow rules cost more spec
+# tokens than the wide one and refused a `???` the spec promises is valid
+# anywhere. The TYPE is `to_str`'s own set: an integer, a float, `bool` or `str`.
+# A record, an array, a map or a `T?` has no rendering in this language today,
+# and a hole holding one is refused with the words `to_str` would use, so the
+# two never disagree about what is text. The third line is the case a reader
+# meets first: a map index answers `V?`, and the note says to `.must()` it.
+
+record P
+    x: i64
+
+function main()
+    p = P(x: 1)
+    xs: [i64] = [1, 2]
+    m: {str: i64} @ {"k": 7}
+    print(f"a record {p} has no text")  #~ hole_not_renderable
+    print(f"nor does {xs}")  #~ hole_not_renderable
+    print(f"nor a maybe {m["k"]}")  #~ hole_not_renderable
+    print(f"but this does: {m["k"].must()} and {p.x} and {xs.len()}")

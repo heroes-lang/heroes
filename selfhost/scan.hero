@@ -20,6 +20,7 @@ use layout
 use keywords
 use number
 use literals
+use lex_interp
 use bytes
 
 ## One line of words
@@ -51,6 +52,7 @@ function line_body(@l: state.LexState, text: str)
                 )
             l.pos @ l.pos + 1
         else if b == '\n'
+            lex_interp.line_ends(@l, at: l.pos)
             layout.maybe_terminator(@l)
             l.pos @ l.pos + 1
             l.last_significant @ fail(state.ERR_NO_SIGNIFICANT, "line ended")
@@ -59,12 +61,19 @@ function line_body(@l: state.LexState, text: str)
             comment(@l, text)
         else if b == '"'
             literals.string(@l, text)
+        else if b == 'f' && number.byte_at(text, l.pos + 1) == '"'
+            # `f"…"` — an interpolated literal, lexed as pieces with the holes'
+            # own tokens between them (panel 121; `lex_interp.hero`).
+            lex_interp.head(@l, text)
         else if b == '\''
             literals.char_lit(@l, text)
         else if bytes.is_digit(b)
             number.number(@l, text)
         else if bytes.is_alpha(b) || b == '_'
             ident(@l, text)
+        else if b == '}' && lex_interp.closes_a_hole(l)
+            # This `}` closes a hole and not a map: the piece after it is text.
+            lex_interp.piece(@l, text)
         else
             punct(@l, text)
 

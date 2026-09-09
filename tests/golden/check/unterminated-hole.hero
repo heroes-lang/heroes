@@ -1,0 +1,9 @@
+# M-interpolated-strings. A hole the line does not close is an unterminated
+# string, reported once at the hole, and the next line lexes clean — the
+# lexer's open-hole stack is emptied at the line end so nothing leaks into
+# the statement after it.
+
+function main()
+    n = 3
+    s = f"open {n  #~ unterminated_string
+    print(s)

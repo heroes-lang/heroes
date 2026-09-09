@@ -119,11 +119,11 @@ function module_at(r: state.Resolver, a: ast.Ast, s: source.Source, id: i64) -> 
 # from compiling instead of quietly answering false.
 function is_bare_name(a: ast.Ast, id: i64) -> bool
     return match a.exprs[id].kind
-        .name                                                    => true
-        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit => false
-        .null_ptr | .hole | .unary | .binary | .field            => false
-        .index | .call | .method | .variant_case | .array        => false
-        .map | .try_expr | .if_expr | .match_expr | .error       => false
+        .name                                                              => true
+        .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit => false
+        .null_ptr | .hole | .unary | .binary | .field                      => false
+        .index | .call | .method | .variant_case | .array                  => false
+        .map | .try_expr | .if_expr | .match_expr | .error                 => false
 
 # The name is real and lives somewhere else. Panel 031 R5's diagnostic,
 # which is what the spec buys instead of a sentence about qualification.

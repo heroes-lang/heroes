@@ -61,6 +61,7 @@ use flow_errors
 use contextless_errors
 use ffi_errors
 use check/freer as freer
+use check/interp
 
 ## The two statement-side answers
 
@@ -104,7 +105,16 @@ function synth(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
         .char_lit  => return state.record_expr(@c, at: id, ty: table.int_ty_id(c.out.types))
         .float_lit => return state.record_expr(@c, at: id, ty: table.f64_ty(c.out.types))
         .str_lit   => return state.record_expr(@c, at: id, ty: table.str_ty(c.out.types))
-        .bool_lit  => return state.record_expr(@c, at: id, ty: table.bool_ty(c.out.types))
+        # `f"…{e}…"`: each hole is typed here, because only this walk can, and
+        # judged in `check/interp.hero` (panel 121 R1: any expression; the TYPE
+        # is `to_str`'s set). The literal itself is `str`.
+
+        .interp ip =>
+            for h in ip.holes
+                interp.hole(@c, a, s, decls, at: h, ty: synth(@c, a, r, s, decls, h))
+
+            return state.record_expr(@c, at: id, ty: table.str_ty(c.out.types))
+        .bool_lit => return state.record_expr(@c, at: id, ty: table.bool_ty(c.out.types))
         # §4.19: the one ptr a program can write. No Want here: ptr is
         # opaque, so a null of one pointer type is a null of every one.
 
@@ -349,10 +359,10 @@ function check(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
     # §4.16: the hole reports the type it was checked against — the
     # information the compiler already had and used to throw away.
     is_hole = match a.exprs[id].kind
-        .hole                                                                       => true
-        .int_lit | .char_lit | .float_lit | .str_lit | .bool_lit | .null_ptr        => false
-        .name | .unary | .binary | .field | .index | .call | .method                => false
-        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => false
+        .hole                                                                          => true
+        .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => false
+        .name | .unary | .binary | .field | .index | .call | .method                   => false
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error    => false
 
     if is_hole
         c.out.holes @ c.out.holes.push(state.Hole(at: id, span: span, expected: expected))
@@ -364,7 +374,7 @@ function check(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
     # `s: str @ nullptr` compile for one afternoon.
     is_null = match a.exprs[id].kind
         .null_ptr                                                                   => true
-        .int_lit | .char_lit | .float_lit | .str_lit | .bool_lit | .hole            => false
+        .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .hole  => false
         .name | .unary | .binary | .field | .index | .call | .method                => false
         .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => false
 
@@ -559,9 +569,9 @@ function check(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
             _ = state.record_expr(@c, at: id, ty: got)
             compare(@c, s, decls, expected: expected, got: got, span: span)
             return
-        .int_lit | .char_lit | .float_lit | .str_lit | .bool_lit | .null_ptr => fall_through()
-        .name | .unary | .binary | .field | .index | .hole                   => fall_through()
-        .try_expr | .error                                                   => fall_through()
+        .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => fall_through()
+        .name | .unary | .binary | .field | .index | .hole                             => fall_through()
+        .try_expr | .error                                                             => fall_through()
 
     got = synth(@c, a, r, s, decls, id)
     compare(@c, s, decls, expected: expected, got: got, span: span)
@@ -616,9 +626,9 @@ function record_through_neg(@c: state.Checker, a: ast.Ast, id: i64, ty: i64)
                     at @ u.operand
                 else
                     walking @ false
-            .int_lit | .char_lit | .float_lit | .str_lit | .bool_lit | .null_ptr        => walking @ false
-            .name | .hole | .binary | .field | .index | .call | .method                 => walking @ false
-            .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => walking @ false
+            .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => walking @ false
+            .name | .hole | .binary | .field | .index | .call | .method                    => walking @ false
+            .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error    => walking @ false
 
 function compare(@c: state.Checker, s: source.Source, decls: [ast.Decl], expected: i64, got: i64, span: token.Span)
     if expected == got || table.poisoned(c.out.types, expected) || table.poisoned(c.out.types, got)
@@ -820,9 +830,9 @@ function write_target(c: state.Checker, a: ast.Ast, place: i64, read: i64) -> i6
                     .array | .fixed | .map | .function_ty | .named            => return read
                     .case_ty | .failure | .generic | .error                   => return read
             return read
-        .int_lit | .char_lit | .float_lit | .str_lit | .bool_lit | .null_ptr        => return read
-        .name | .hole | .unary | .binary | .field | .call | .method                 => return read
-        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => return read
+        .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => return read
+        .name | .hole | .unary | .binary | .field | .call | .method                    => return read
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error    => return read
 
     return read
 
@@ -864,7 +874,7 @@ function expression_statement(@c: state.Checker, a: ast.Ast, r: resolved.Resolve
                 _ = state.record_expr(@c, at: value, ty: table.unit_ty(c.out.types))
                 return Outcome(jumps: all_jump, value: fail("none", "a statement produces no value"))
             return valued_expression(@c, a, r, s, decls, value: value, want: want, span: span)
-        .int_lit | .char_lit | .float_lit | .str_lit | .bool_lit | .null_ptr => return valued_expression(
+        .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => return valued_expression(
             @c,
             a,
             r,
@@ -934,10 +944,10 @@ function returns_its_receiver(c: state.Checker, a: ast.Ast, s: source.Source, va
     match a.exprs[value].kind
         .method m =>
             is_name = match a.exprs[m.receiver].kind
-                .name                                                                       => true
-                .int_lit | .char_lit | .float_lit | .str_lit | .bool_lit | .null_ptr        => false
-                .hole | .unary | .binary | .field | .index | .call | .method                => false
-                .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => false
+                .name                                                                          => true
+                .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => false
+                .hole | .unary | .binary | .field | .index | .call | .method                   => false
+                .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error    => false
 
             if !is_name
                 return fail("absent", "the receiver is not a bare name")
@@ -945,7 +955,7 @@ function returns_its_receiver(c: state.Checker, a: ast.Ast, s: source.Source, va
             if c.out.expr_types[m.receiver] != got
                 return fail("absent", "the result is not the receiver's own type")
             return ok(source.span_text(s, a.exprs[m.receiver].span))
-        .int_lit | .char_lit | .float_lit | .str_lit | .bool_lit | .null_ptr => return fail(
+        .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => return fail(
             "absent",
             "not a method call"
         )
@@ -1183,10 +1193,10 @@ function dispatch_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: s
     span = a.exprs[at].span
 
     callee_is_name = match a.exprs[callee].kind
-        .name                                                                       => true
-        .int_lit | .char_lit | .float_lit | .str_lit | .bool_lit | .null_ptr        => false
-        .hole | .unary | .binary | .field | .index | .call | .method                => false
-        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => false
+        .name                                                                          => true
+        .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => false
+        .hole | .unary | .binary | .field | .index | .call | .method                   => false
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error    => false
 
     if callee_is_name
         direct = named_call(@c, a, r, s, decls, callee: callee, given: given, span: span, expected: expected)
@@ -1775,10 +1785,10 @@ function case_construct(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: 
 # fail here = this call is not one of the two constructors.
 function fallible_constructor(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], callee: i64, given: [ast.Arg], expected: i64, span: token.Span) -> i64?
     callee_is_name = match a.exprs[callee].kind
-        .name                                                                       => true
-        .int_lit | .char_lit | .float_lit | .str_lit | .bool_lit | .null_ptr        => false
-        .hole | .unary | .binary | .field | .index | .call | .method                => false
-        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => false
+        .name                                                                          => true
+        .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => false
+        .hole | .unary | .binary | .field | .index | .call | .method                   => false
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error    => false
 
     if !callee_is_name
         return fail("not_mine", "the callee is not a bare name")

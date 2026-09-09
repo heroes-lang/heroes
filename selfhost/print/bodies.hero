@@ -84,10 +84,10 @@ function write_stmt(tree: ast.Ast, s: source.Source, id: i64, indent: i64, head:
             is_control: bool @ false
 
             match tree.exprs[e.value].kind
-                .if_expr | .match_expr                                               => is_control @ true
-                .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr => is_control @ is_control
-                .name | .hole | .unary | .binary | .field | .index                   => is_control @ is_control
-                .call | .method | .variant_case | .array | .map | .try_expr | .error => is_control @ is_control
+                .if_expr | .match_expr                                                         => is_control @ true
+                .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => is_control @ is_control
+                .name | .hole | .unary | .binary | .field | .index                             => is_control @ is_control
+                .call | .method | .variant_case | .array | .map | .try_expr | .error           => is_control @ is_control
 
             if is_control
                 return write_valued(tree, s, head: head, value: e.value, indent: indent)
@@ -138,7 +138,7 @@ function write_valued(tree: ast.Ast, s: source.Source, head: str, value: i64, in
                         out @ out + write_block(tree, s, block: blk.block, indent: indent + 4)
 
             return out
-        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr => return pad(indent) + head + render_expr(tree, value, s) + "\n"
+        .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => return pad(indent) + head + render_expr(tree, value, s) + "\n"
         .name | .hole | .unary | .binary | .field | .index => return pad(indent) + head + render_expr(tree, value, s) + "\n"
         .call | .method | .variant_case | .array | .map | .try_expr | .error => return pad(indent) + head + render_expr(tree, value, s) + "\n"
 
@@ -164,7 +164,10 @@ function render_expr(tree: ast.Ast, id: i64, s: source.Source) -> str
         # only place that stores it. An int goes through the same
         # canonicalisation the goldens pin (0xFF -> 0xff).
         .int_lit => return digits.canonical_int(source.span_text(s, node.span))
-        .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr | .name => return source.span_text(s, node.span)
+        .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr | .name => return source.span_text(
+            s,
+            node.span
+        )
         .hole => return "???"
         .unary u =>
             op: str @ "-"

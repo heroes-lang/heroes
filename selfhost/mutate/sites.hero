@@ -71,13 +71,13 @@ function args_of(e: ast.Expr) -> [ast.Arg]
     none: [ast.Arg] = []
 
     return match e.kind
-        .call c                                                  => c.args
-        .method m                                                => m.args
-        .variant_case v                                          => v.args
-        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit => none
-        .null_ptr | .name | .hole | .error                       => none
-        .unary | .binary | .field | .index                       => none
-        .array | .map | .try_expr | .if_expr | .match_expr       => none
+        .call c                                                            => c.args
+        .method m                                                          => m.args
+        .variant_case v                                                    => v.args
+        .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit => none
+        .null_ptr | .name | .hole | .error                                 => none
+        .unary | .binary | .field | .index                                 => none
+        .array | .map | .try_expr | .if_expr | .match_expr                 => none
 
 # An argument's full extent — its label, where it has one, through its value.
 function whole_arg(a: ast.Ast, arg: ast.Arg) -> token.Span
@@ -91,21 +91,21 @@ function arms_of(e: ast.Expr) -> [ast.Arm]
     none: [ast.Arm] = []
 
     return match e.kind
-        .match_expr m                                            => m.arms
-        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit => none
-        .null_ptr | .name | .hole | .error                       => none
-        .unary | .binary | .field | .index                       => none
-        .call | .method | .variant_case                          => none
-        .array | .map | .try_expr | .if_expr                     => none
+        .match_expr m                                                      => m.arms
+        .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit => none
+        .null_ptr | .name | .hole | .error                                 => none
+        .unary | .binary | .field | .index                                 => none
+        .call | .method | .variant_case                                    => none
+        .array | .map | .try_expr | .if_expr                               => none
 
 function is_name(e: ast.Expr) -> bool
     return match e.kind
-        .name                                                    => true
-        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit => false
-        .null_ptr | .hole | .error                               => false
-        .unary | .binary | .field | .index                       => false
-        .call | .method | .variant_case                          => false
-        .array | .map | .try_expr | .if_expr | .match_expr       => false
+        .name                                                              => true
+        .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit => false
+        .null_ptr | .hole | .error                                         => false
+        .unary | .binary | .field | .index                                 => false
+        .call | .method | .variant_case                                    => false
+        .array | .map | .try_expr | .if_expr | .match_expr                 => false
 
 function is_case(p: ast.Pattern) -> bool
     return match p.kind
@@ -114,12 +114,12 @@ function is_case(p: ast.Pattern) -> bool
 
 function is_int(e: ast.Expr) -> bool
     return match e.kind
-        .int_lit                                           => true
-        .float_lit | .str_lit | .char_lit | .bool_lit      => false
-        .null_ptr | .name | .hole | .error                 => false
-        .unary | .binary | .field | .index                 => false
-        .call | .method | .variant_case                    => false
-        .array | .map | .try_expr | .if_expr | .match_expr => false
+        .int_lit                                                => true
+        .float_lit | .str_lit | .interp | .char_lit | .bool_lit => false
+        .null_ptr | .name | .hole | .error                      => false
+        .unary | .binary | .field | .index                      => false
+        .call | .method | .variant_case                         => false
+        .array | .map | .try_expr | .if_expr | .match_expr      => false
 
 function trim_end(text: str) -> str
     cs = text.chars()

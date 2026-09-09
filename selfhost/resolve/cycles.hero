@@ -145,14 +145,14 @@ function bodies(@out: resolved.Resolved, a: ast.Ast, s: source.Source, decls: [a
         # two constructs that choose between values — walks on; the four
         # kinds that make a computation are named.
         what = match expr.kind
-            .call                                                    => "a call"
-            .method                                                  => "a call written with `.`"
-            .try_expr                                                => "a `?`"
-            .hole                                                    => "a `???`"
-            .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit => continue
-            .null_ptr | .name | .unary | .binary | .field            => continue
-            .index | .variant_case | .array | .map                   => continue
-            .if_expr | .match_expr | .error                          => continue
+            .call                                                              => "a call"
+            .method                                                            => "a call written with `.`"
+            .try_expr                                                          => "a `?`"
+            .hole                                                              => "a `???`"
+            .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit => continue
+            .null_ptr | .name | .unary | .binary | .field                      => continue
+            .index | .variant_case | .array | .map                             => continue
+            .if_expr | .match_expr | .error                                    => continue
 
         holder = owner(extent, expr.span.start)
 

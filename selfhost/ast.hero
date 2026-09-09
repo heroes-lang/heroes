@@ -113,6 +113,14 @@ variant ExprKind
     str_lit
     char_lit
     bool_lit
+    # `f"line {n}: {word}"` — ONE node carrying the whole literal's span, its
+    # holes as children (panel 121 R4). `pieces` are the text spans between
+    # the holes, delimiters included, one more than `holes`; the desugar is
+    # the lowering's (`ir/interp.hero`). Never a payload on `str_lit`: a leaf
+    # with children nobody walks is how a name in a hole would go unresolved.
+    interp
+        pieces: [token.Span]
+        holes: [i64]
     # `nullptr` — the one `ptr` value the language can write (§4.19).
     null_ptr
     # A bare name: a local, a parameter, a top-level function or constant.
@@ -499,6 +507,7 @@ function depth(a: Ast, at: i64) -> i64
         .index i => 1 + max_of(a: depth(a, i.base), b: depth(a, i.index))
         .try_expr t => 1 + depth(a, t.value)
         .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit => 1
+        .interp ip => 1 + holes_depth(a, ip.holes)
         .null_ptr | .name | .hole | .error => 1
         # The compound shapes a depth this simple does not descend into: they
         # carry lists, and a list walk is the parser's own job rather than
@@ -506,6 +515,19 @@ function depth(a: Ast, at: i64) -> i64
 
         .call | .method | .variant_case        => 1
         .array | .map | .if_expr | .match_expr => 1
+
+# The deepest hole, or nothing: an interpolated literal is one node whose
+# children are its holes.
+function holes_depth(a: Ast, holes: [i64]) -> i64
+    deepest: i64 @ 0
+
+    for h in holes
+        d = depth(a, h)
+
+        if d > deepest
+            deepest @ d
+
+    return deepest
 
 function max_of(a: i64, b: i64) -> i64
     if a > b

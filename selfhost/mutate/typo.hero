@@ -81,11 +81,11 @@ function code_literal(a: ast.Ast, s: source.Source, e: ast.Expr) -> i64?
                 code_side(a: a, s: s, left: b.left, right: b.right)
             else
                 fail("no_code", "not an equality")
-        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit => fail("no_code", "a literal holds no code")
-        .null_ptr | .name | .hole | .error                       => fail("no_code", "nothing to read here")
-        .unary | .field | .index                                 => fail("no_code", "nothing to read here")
-        .method | .variant_case                                  => fail("no_code", "nothing to read here")
-        .array | .map | .try_expr | .if_expr | .match_expr       => fail("no_code", "nothing to read here")
+        .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit => fail("no_code", "a literal holds no code")
+        .null_ptr | .name | .hole | .error                                 => fail("no_code", "nothing to read here")
+        .unary | .field | .index                                           => fail("no_code", "nothing to read here")
+        .method | .variant_case                                            => fail("no_code", "nothing to read here")
+        .array | .map | .try_expr | .if_expr | .match_expr                 => fail("no_code", "nothing to read here")
 
 function is_equality(op: ast.BinaryOp) -> bool
     return match op
@@ -112,22 +112,22 @@ function code_side(a: ast.Ast, s: source.Source, left: i64, right: i64) -> i64?
 
 function is_str(e: ast.Expr) -> bool
     return match e.kind
-        .str_lit                                           => true
-        .int_lit | .float_lit | .char_lit | .bool_lit      => false
-        .null_ptr | .name | .hole | .error                 => false
-        .unary | .binary | .field | .index                 => false
-        .call | .method | .variant_case                    => false
-        .array | .map | .try_expr | .if_expr | .match_expr => false
+        .str_lit                                                => true
+        .int_lit | .float_lit | .char_lit | .bool_lit | .interp => false
+        .null_ptr | .name | .hole | .error                      => false
+        .unary | .binary | .field | .index                      => false
+        .call | .method | .variant_case                         => false
+        .array | .map | .try_expr | .if_expr | .match_expr      => false
 
 # Whether this expression is `<something>.code`.
 function reads_code(a: ast.Ast, s: source.Source, id: i64) -> bool
     return match a.exprs[id].kind
-        .field f                                                 => source.span_text(s, f.name) == "code"
-        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit => false
-        .null_ptr | .name | .hole | .error                       => false
-        .unary | .binary | .index                                => false
-        .call | .method | .variant_case                          => false
-        .array | .map | .try_expr | .if_expr | .match_expr       => false
+        .field f                                                           => source.span_text(s, f.name) == "code"
+        .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit => false
+        .null_ptr | .name | .hole | .error                                 => false
+        .unary | .binary | .index                                          => false
+        .call | .method | .variant_case                                    => false
+        .array | .map | .try_expr | .if_expr | .match_expr                 => false
 
 # A code literal's text, without its quotes. Skipped when it carries a
 # backslash — dropping the middle character of an escape measures the lexer,
@@ -197,12 +197,12 @@ function single_int(a: ast.Ast, body: ast.Block) -> i64?
 
 function is_int_literal(e: ast.Expr) -> bool
     return match e.kind
-        .int_lit                                           => true
-        .float_lit | .str_lit | .char_lit | .bool_lit      => false
-        .null_ptr | .name | .hole | .error                 => false
-        .unary | .binary | .field | .index                 => false
-        .call | .method | .variant_case                    => false
-        .array | .map | .try_expr | .if_expr | .match_expr => false
+        .int_lit                                                => true
+        .float_lit | .str_lit | .interp | .char_lit | .bool_lit => false
+        .null_ptr | .name | .hole | .error                      => false
+        .unary | .binary | .field | .index                      => false
+        .call | .method | .variant_case                         => false
+        .array | .map | .try_expr | .if_expr | .match_expr      => false
 
 # The last digit, moved by one — and the TOP digit of the base goes *down*
 # rather than carrying, because a carry changes how many digits the number has

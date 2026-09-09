@@ -22,6 +22,7 @@ function describe(kind: token.TokenKind) -> str
         .shl         => "`<<`"
         .shr         => "`>>`"
         .ident       => "a name"
+        .str_piece   => "a piece of an interpolated string"
         .int_lit     => "a number"
         .float_lit   => "a number"
         .str_lit     => "a string"

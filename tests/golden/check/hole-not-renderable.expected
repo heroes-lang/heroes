@@ -1,0 +1,3 @@
+tests/golden/check/hole-not-renderable.hero:18:23: error[hole_not_renderable]: a hole in an `f"…"` literal writes its value as `to_str` does, and `to_str` takes an integer, a float, `bool` or `str` — this one holds a `P`, which has no text
+tests/golden/check/hole-not-renderable.hero:19:23: error[hole_not_renderable]: a hole in an `f"…"` literal writes its value as `to_str` does, and `to_str` takes an integer, a float, `bool` or `str` — this one holds a `[i64]`, which has no text
+tests/golden/check/hole-not-renderable.hero:20:26: error[hole_not_renderable]: a hole in an `f"…"` literal writes its value as `to_str` does, and `to_str` takes an integer, a float, `bool` or `str` — this one holds a `i64?`, which has no text

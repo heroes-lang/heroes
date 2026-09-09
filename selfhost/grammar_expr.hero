@@ -57,6 +57,7 @@ use token
 use diag
 use ast
 use cursor
+use lex_interp
 use parse/type
 
 ## The precedence table — §4.14, read from the bottom up
@@ -114,7 +115,10 @@ function binary_op(kind: token.TokenKind) -> Operator?
         # answering. These are the arms §4.7's ban costs — one list now instead
         # of two, and each one a refusal rather than an invented `.add`.
 
-        .ident | .int_lit | .float_lit | .str_lit | .char_lit => fail("not_an_operator", "a value is not an operator")
+        .ident | .int_lit | .float_lit | .str_lit | .str_piece | .char_lit => fail(
+            "not_an_operator",
+            "a value is not an operator"
+        )
         .kw_constant | .kw_function | .kw_record | .kw_variant | .kw_match => fail(
             "not_an_operator",
             "a declaration keyword is not an operator"
@@ -155,10 +159,10 @@ function parse_expr(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
 # silently — which is the shape panel 060 paid for in the formatter.
 function ends_the_expression(a: ast.Ast, id: i64) -> bool
     return match a.exprs[id].kind
-        .if_expr | .match_expr                                               => true
-        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr => false
-        .name | .hole | .unary | .binary | .field | .index                   => false
-        .call | .method | .variant_case | .array | .map | .try_expr | .error => false
+        .if_expr | .match_expr                                                         => true
+        .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => false
+        .name | .hole | .unary | .binary | .field | .index                             => false
+        .call | .method | .variant_case | .array | .map | .try_expr | .error           => false
 
 # Everything at `min_power` or tighter. All of Heroes' binary operators are
 # left-associative, so the recursive call asks for `power + 1`.
@@ -353,6 +357,9 @@ function primary(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
 
     if k == .kw_match
         return match_expr(@c, @a, text)
+
+    if k == .str_piece
+        return interpolation(@c, @a, text)
     simple = atom_kind(k)
 
     if simple.is_err()
@@ -368,6 +375,31 @@ function primary(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
         return ast.push_expr(@a.exprs, ast.Expr(kind: .error, span: s))
     _ = cursor.bump(@c)
     return ast.push_expr(@a.exprs, ast.Expr(kind: simple.must(), span: s))
+
+# `f"a {n} b"`: the pieces are the tokens and the holes are parsed between them
+# (panel 121 R1, R4). One node carries the whole literal's span with the holes
+# as its children, so every walk sees them. IN THE KNOT AND NOT IN A MODULE OF
+# ITS OWN, because it calls `parse_expr` (R5): a helper that calls back into
+# this file closes a `use` cycle, and the knot clause of CLAUDE.md §11 is what
+# lets the decided ceiling move by these lines with the reason written.
+function interpolation(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
+    first = cursor.bump(@c)
+    pieces: [token.Span] @ [first.span]
+    holes: [i64] @ []
+    last: token.Span @ first.span
+
+    while !lex_interp.ends_closed(cursor.slice_of(text, last))
+        holes @ holes.push(parse_expr(@c, @a, text))
+
+        if !cursor.expect(@c, text: text, kind: .str_piece, code: "expected_hole_close", what: "`}` to close the hole")
+            break
+        last @ cursor.previous_significant_span(c)
+        pieces @ pieces.push(last)
+
+    return ast.push_expr(
+        @a.exprs,
+        ast.Expr(kind: .interp(pieces: pieces, holes: holes), span: token.Span(start: first.span.start, end: last.end))
+    )
 
 # The one-token atoms. `fail` is a name like any other here: `fail(code, msg)`
 # is a call, and the compiler knows the callee (§4.6). Keeping it out of the
@@ -875,12 +907,12 @@ function expression_or_mutation(@c: cursor.Cursor, @a: ast.Ast, text: str) -> as
 # alias test a comparison of roots rather than a dataflow analysis.
 function is_place(a: ast.Ast, at: i64) -> bool
     return match a.exprs[at].kind
-        .name                                                                        => true
-        .field f                                                                     => is_place(a, f.base)
-        .index i                                                                     => is_place(a, i.base)
-        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr | .hole => false
-        .unary | .binary | .call | .method | .variant_case                           => false
-        .array | .map | .try_expr | .if_expr | .match_expr | .error                  => false
+        .name                                                                                  => true
+        .field f                                                                               => is_place(a, f.base)
+        .index i                                                                               => is_place(a, i.base)
+        .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr | .hole => false
+        .unary | .binary | .call | .method | .variant_case                                     => false
+        .array | .map | .try_expr | .if_expr | .match_expr | .error                            => false
 
 ## `if` and `match`, which are expressions (§4.7)
 
@@ -1124,6 +1156,21 @@ function tok(kind: token.TokenKind, start: i64, end: i64) -> token.Token
 
 # The tree, written back out fully parenthesised. A precedence table is only
 # testable through what it BUILDS, and this is the cheapest way to see it.
+# `(interp f"a { n } b")`: the pieces verbatim and each hole re-printed, so a
+# call inside a hole shows in the dump as it shows anywhere.
+function interp_render(a: ast.Ast, pieces: [token.Span], holes: [i64], text: str) -> str
+    out: str @ "(interp"
+    i: i64 @ 0
+
+    while i < pieces.len()
+        out @ out + " " + cursor.slice_of(text, pieces[i])
+
+        if i < holes.len()
+            out @ out + " " + render(a, holes[i], text)
+        i @ i + 1
+
+    return out + ")"
+
 function render(a: ast.Ast, at: i64, text: str) -> str
     node = a.exprs[at]
 
@@ -1138,6 +1185,7 @@ function render(a: ast.Ast, at: i64, text: str) -> str
         .variant_case v                                          => "." + cursor.slice_of(text, v.name)
         .array ar                                                => "[" + ar.elements.len().to_str() + "]"
         .map mp                                                  => "{" + mp.entries.len().to_str() + "}"
+        .interp ip                                               => interp_render(a, ip.pieces, ip.holes, text)
         .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit => cursor.slice_of(text, node.span)
         .name                                                    => cursor.slice_of(text, node.span)
         .null_ptr                                                => "nullptr"
@@ -1507,10 +1555,10 @@ test "the ring is closed: if is an expression with a block inside it"
                 .if_expr i =>
                     assert i.branches.len() == 1
                     assert !i.otherwise.is_err()
-                .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit => assert false
-                .null_ptr | .name | .hole | .unary | .binary | .field    => assert false
-                .index | .call | .method | .variant_case | .array        => assert false
-                .map | .try_expr | .match_expr | .error                  => assert false
+                .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit => assert false
+                .null_ptr | .name | .hole | .unary | .binary | .field              => assert false
+                .index | .call | .method | .variant_case | .array                  => assert false
+                .map | .try_expr | .match_expr | .error                            => assert false
         .declare | .mutate | .return_stmt | .break_stmt | .continue_stmt => assert false
         .assert_stmt | .while_stmt | .for_in | .expr_stmt | .error       => assert false
 

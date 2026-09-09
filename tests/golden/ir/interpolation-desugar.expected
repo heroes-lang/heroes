@@ -1,0 +1,68 @@
+strings
+    0  "stars"
+    1  "line "
+    2  ": "
+    3  " and "
+
+function main()
+    slots  n: i64 · word: str · s: str · $own3: str · $own4: str · $own5: str · $own6: str · $own7: str · $own8: str · $own9: str
+    bb0  entry
+        $t1: i64 = const 3
+        store n <- $t1
+        $t2: str = const str 0
+        $t19: str = load word
+        incref $t2
+        store word <- $t2
+        decref $t19
+        $t3: i64 = load n
+        $t4: str = load word
+        $t5: i64 = load n
+        $t6: i64 = const 1
+        $t7: i64 = add! $t5, $t6
+        $t8: str = const str 1
+        $t9: str = call builtin to_str($t3)
+        $t20: str = load $own3
+        store $own3 <- $t9
+        decref $t20
+        $t10: str = const str 2
+        $t11: str = const str 3
+        $t12: str = call builtin to_str($t7)
+        $t21: str = load $own4
+        store $own4 <- $t12
+        decref $t21
+        $t13: str = add $t8, $t9
+        $t22: str = load $own5
+        store $own5 <- $t13
+        decref $t22
+        $t14: str = add $t13, $t10
+        $t23: str = load $own6
+        store $own6 <- $t14
+        decref $t23
+        $t15: str = add $t14, $t4
+        $t24: str = load $own7
+        store $own7 <- $t15
+        decref $t24
+        $t16: str = add $t15, $t11
+        $t25: str = load $own8
+        store $own8 <- $t16
+        decref $t25
+        $t17: str = add $t16, $t12
+        $t26: str = load $own9
+        store $own9 <- $t17
+        decref $t26
+        $t27: str = load s
+        incref $t17
+        store s <- $t17
+        decref $t27
+        $t18: str = load s
+        call builtin print($t18) variadic
+        decref_slot word
+        decref_slot s
+        decref_slot $own3
+        decref_slot $own4
+        decref_slot $own5
+        decref_slot $own6
+        decref_slot $own7
+        decref_slot $own8
+        decref_slot $own9
+        return

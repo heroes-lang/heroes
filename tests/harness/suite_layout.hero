@@ -132,6 +132,27 @@ constant CEILING: i64
 # place is refused where `1 @ 2` already is, six lines of code beside
 # `is_place`, which is the function that decides both.
 #
+# **Four moved on 2026-09-09 for panel 121, M-interpolated-strings, and the
+# sitting predicted the first of them.** The `f"…"` literal is ONE AST node with
+# its holes as children (R4), and R5 measured that a helper module which calls
+# `parse_expr` closes a `use` cycle — so the hook that reads the holes stays in
+# the grammar's knot, which is the case CLAUDE.md §11's knot clause exists for.
+# `grammar_expr.hero` 1002 -> **1041**: `interpolation`, the loop that parses
+# each hole between two pieces, with its comment (17); `interp_render`, the
+# test section's fully-parenthesised re-print, which calls `render` and so
+# cannot leave the file either (15); one `use`, the hook in `primary`, one
+# token in the operator table and three arms joining a literal group. The
+# compiler seat's prediction at panel 121 — *strictly greater than 1002* — is
+# confirmed by this row. `check/walk.hero` 1700 -> **1708**: the typing arm,
+# which walks each hole by recursion only this knot can do and hands the type
+# to `check/interp.hero` to judge; one `use`. `ir/flatten.hero` 1110 -> **1114**:
+# the lowering arm, which lowers each hole by the recursion only this knot can
+# do and hands the values to `ir/interp.hero` for the concatenation; one `use`.
+# `ast.hero` 475 -> **484**: the node itself with its comment, and `holes_depth`
+# beside the test section's `depth`, which is where the tree's own tests
+# measure nesting. The three helper modules — `lex_interp.hero`, `check/interp.hero`,
+# `ir/interp.hero` — hold everything that needed no call back into a knot.
+#
 # **Two moved on 2026-09-03 for panel 105, ratified the evening it sat**: a
 # type parameter the arguments leave unbound takes the type the context asks
 # for. `check/walk.hero` 1583 -> **1700** against a measured 1664: `check()`'s
@@ -227,12 +248,12 @@ constant CEILING: i64
 # out-only.
 constant DECIDED: [str]
     [
-        "selfhost/check/walk.hero 1700"
+        "selfhost/check/walk.hero 1708"
         "selfhost/print/fmt.hero 1150"
-        "selfhost/ir/flatten.hero 1110"
-        "selfhost/grammar_expr.hero 1002"
+        "selfhost/ir/flatten.hero 1114"
+        "selfhost/grammar_expr.hero 1041"
         "selfhost/ir/print.hero 470"
-        "selfhost/ast.hero 475"
+        "selfhost/ast.hero 484"
         "selfhost/check/builtins.hero 374"
         "selfhost/ir/mono.hero 380"
         "selfhost/emit/ctype.hero 365"
@@ -408,7 +429,7 @@ test "the ceiling is per file, and a decided file keeps its own"
     #
     # The witness is now the entry nearest CEILING **by lookup rather than by
     # name**, which is what the sentence above always claimed it was.
-    assert ceiling_for("selfhost/check/walk.hero") == 1700
+    assert ceiling_for("selfhost/check/walk.hero") == 1708
     assert ceiling_for("selfhost/parse/use_line.hero") == 310
     assert ceiling_for("selfhost/anything-else.hero") == CEILING
 

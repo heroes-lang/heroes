@@ -614,9 +614,9 @@ function value_block_shape(tree: ast.Ast, id: i64) -> i64
             if tail.is_err()
                 return NO_BLOCK
             return value_block_shape(tree, id: tail.must())
-        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr => return NO_BLOCK
-        .name | .hole | .unary | .field | .index                             => return NO_BLOCK
-        .call | .method | .variant_case | .array | .map | .try_expr | .error => return NO_BLOCK
+        .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => return NO_BLOCK
+        .name | .hole | .unary | .field | .index                                       => return NO_BLOCK
+        .call | .method | .variant_case | .array | .map | .try_expr | .error           => return NO_BLOCK
 
     return NO_BLOCK
 
@@ -847,7 +847,7 @@ function valued(@f: Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span]
                         fmt_block(@f, tree, s, comments, block: blk.block, indent: indent + 8)
 
                 index @ index + 1
-        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr => plain_valued(
+        .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => plain_valued(
             @f,
             tree,
             s,
@@ -945,7 +945,7 @@ function broken(@f: Fmt, tree: ast.Ast, s: source.Source, head: str, value: i64,
                 )
             else
                 put_line(@f, indent: indent, text: head + render(tree, s, id: value))
-        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr => put_line(
+        .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => put_line(
             @f,
             indent: indent,
             text: head + render(tree, s, id: value)
@@ -978,7 +978,7 @@ function binary_control_tail(tree: ast.Ast, id: i64) -> i64?
     match tree.exprs[id].kind
         .if_expr | .match_expr => return ok(id)
         .binary b              => return binary_control_tail(tree, id: b.right)
-        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr => return fail(
+        .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => return fail(
             "none",
             "not a control form"
         )
@@ -998,10 +998,10 @@ function binary_prefix(tree: ast.Ast, s: source.Source, id: i64) -> str
         .binary b =>
             mine = power(tree, id)
             return wrapped(tree, s, id: b.left, needed: mine) + " " + bodies.binary_op(b.op) + " " + binary_prefix(tree, s, id: b.right)
-        .if_expr | .match_expr                                               => return ""
-        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr => return ""
-        .name | .hole | .unary | .field | .index                             => return ""
-        .call | .method | .variant_case | .array | .map | .try_expr | .error => return ""
+        .if_expr | .match_expr                                                         => return ""
+        .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => return ""
+        .name | .hole | .unary | .field | .index                                       => return ""
+        .call | .method | .variant_case | .array | .map | .try_expr | .error           => return ""
 
     return ""
 
@@ -1172,10 +1172,10 @@ function spans_lines(tree: ast.Ast, s: source.Source, value: i64) -> bool
     is_control: bool @ false
 
     match node.kind
-        .if_expr | .match_expr                                               => is_control @ true
-        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr => is_control @ is_control
-        .name | .hole | .unary | .binary | .field | .index                   => is_control @ is_control
-        .call | .method | .variant_case | .array | .map | .try_expr | .error => is_control @ is_control
+        .if_expr | .match_expr                                                         => is_control @ true
+        .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => is_control @ is_control
+        .name | .hole | .unary | .binary | .field | .index                             => is_control @ is_control
+        .call | .method | .variant_case | .array | .map | .try_expr | .error           => is_control @ is_control
 
     if is_control
         return false
@@ -1247,10 +1247,10 @@ function power(tree: ast.Ast, id: i64) -> i64
         # A control form spans lines; the loosest thing there is, so a
         # parenthesis is never printed around it.
 
-        .if_expr | .match_expr                                               => return 0
-        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr => return POSTFIX_POWER
-        .name | .hole | .field | .index | .call | .method                    => return POSTFIX_POWER
-        .variant_case | .array | .map | .try_expr | .error                   => return POSTFIX_POWER
+        .if_expr | .match_expr                                                         => return 0
+        .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => return POSTFIX_POWER
+        .name | .hole | .field | .index | .call | .method                              => return POSTFIX_POWER
+        .variant_case | .array | .map | .try_expr | .error                             => return POSTFIX_POWER
 
     return POSTFIX_POWER
 
@@ -1263,7 +1263,10 @@ function render(tree: ast.Ast, s: source.Source, id: i64) -> str
         # one-spelling rule is settled here rather than by refusing
         # the paste.
         .int_lit => return digits.canonical_int(source.span_text(s, node.span))
-        .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr | .name => return source.span_text(s, node.span)
+        .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr | .name => return source.span_text(
+            s,
+            node.span
+        )
         .hole => return "???"
         .unary u =>
             op: str @ "-"
@@ -1324,10 +1327,10 @@ function wrapped(tree: ast.Ast, s: source.Source, id: i64, needed: i64) -> str
     is_control: bool @ false
 
     match tree.exprs[id].kind
-        .if_expr | .match_expr                                               => is_control @ true
-        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr => is_control @ is_control
-        .name | .hole | .unary | .binary | .field | .index                   => is_control @ is_control
-        .call | .method | .variant_case | .array | .map | .try_expr | .error => is_control @ is_control
+        .if_expr | .match_expr                                                         => is_control @ true
+        .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => is_control @ is_control
+        .name | .hole | .unary | .binary | .field | .index                             => is_control @ is_control
+        .call | .method | .variant_case | .array | .map | .try_expr | .error           => is_control @ is_control
 
     if power(tree, id) < needed && !is_control
         return "(" + text + ")"
