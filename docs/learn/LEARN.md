@@ -28,7 +28,24 @@ per item, `- [ ] **<origin>** | <the question>`, then the body indented four
 spaces. Nothing lives outside the two banners.
 
 *******************************************************************************
-**OPEN: 342**
+**OPEN: 346**
+
+- [ ] **M-held-bytes, walkthrough** | Read `selfhost/check/leasing.hero` and say, before opening the tests, why the rule is THREE clauses and which program each one refuses — then say which clause the sitting did not have and how it was found | `selfhost/check/leasing.hero` · `docs/panel/125-the-guard-that-read-freed-memory.md` | a rule that makes a double release impossible is a rule about where a pointer may LIVE, and the third clause is the one that closes the copy
+
+    **Origin:** M-held-bytes close, 2026-09-09.
+
+- [ ] **M-held-bytes, golden ratification** | Seven cases were written and marked nothing; read the four `run` cases and say what each one would have printed under a lend, and whether `abort-lease-never-ended` accuses the right party | `tests/golden/run/lease-*.hero` · `tests/golden/run/abort-lease-never-ended.hero` · `tests/golden/run/lend-inside-a-loop.hero` | until this milestone nothing that RAN lent a computed string inside a loop, so every candidate rule could have shipped green
+
+    **Origin:** M-held-bytes close, 2026-09-09.
+
+- [ ] **M-held-bytes, mutation drill** | Take `runtime/parts/str.c`'s `hero_held_release` and delete the NULL test on the cell; say which golden goes red, and why the magic check below it cannot take the NULL test's place for a foreign pointer | `runtime/parts/str.c` · `docs/panel/125-the-guard-that-read-freed-memory.md` § What the two seats measured | a guard that must dereference before it can validate is undefined on exactly the inputs it promises to catch
+
+    **Origin:** M-held-bytes close, 2026-09-09.
+
+- [ ] **M-held-bytes, exit quiz** | Three questions with one right answer each: why is the lease a COPY and never a pin; why is `end_lease(@x)` written by the author and never inferred; and why does `sqlite3_bind_text` make every declaration-site mark either a false refusal or an empty comment | `docs/panel/124-the-remedy-was-missing-not-the-refusal.md` § The resolution · `sqlite3.h:4888` | the retention decision is C's fifth argument, and both spellings are `const char *`
+
+    **Origin:** M-held-bytes close, 2026-09-09.
+
 
 - [ ] **M-cstr-lifetime, walkthrough** | Read `selfhost/check/lending.hero` top to bottom and say, before looking at the tests, which of its three clauses would catch each of five programs | `selfhost/check/lending.hero` · `tests/golden/check/fixedbugs-a-lend-*.hero` | three clauses that look like one rule are three different kinds of rule, and telling them apart is the whole lesson
 

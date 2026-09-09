@@ -1,0 +1,2 @@
+tests/golden/check/lease-cell-written-by-another-hand.hero:14:5: error[lease_written]: `c` is a lease, and the only write a lease cell takes after its declaration is `end_lease(@c)` — a value stored over it would leak the bytes it held, or free bytes nobody leased
+tests/golden/check/lease-cell-written-by-another-hand.hero:15:11: error[lease_written]: `c` is a lease, and the only write a lease cell takes after its declaration is `end_lease(@c)` — a value stored over it would leak the bytes it held, or free bytes nobody leased

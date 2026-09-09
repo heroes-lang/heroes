@@ -1,0 +1,2 @@
+12
+!panic: 1 lease(s) never ended — every `.lease()` owes one `end_lease`, and this program is missing that many

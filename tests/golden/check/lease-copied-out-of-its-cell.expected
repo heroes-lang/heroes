@@ -1,0 +1,2 @@
+tests/golden/check/lease-copied-out-of-its-cell.hero:20:9: error[lease_escapes]: `c` is a lease — a copy of the bytes that C may read until `end_lease(@c)` — and its name may stand only as an argument of a call; here it is copied, and the copy would outlive the release
+tests/golden/check/lease-copied-out-of-its-cell.hero:21:15: error[lease_escapes]: `c` is a lease — a copy of the bytes that C may read until `end_lease(@c)` — and its name may stand only as an argument of a call; here it is copied, and the copy would outlive the release

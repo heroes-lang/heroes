@@ -1,0 +1,24 @@
+# M-held-bytes, panel 124 (ratified 2026-09-09) and panel 125's soundness lane.
+#
+# A lease, `c: cstr @ s.lease()`, is a COPY of the bytes that C may read until
+# `end_lease(@c)` frees it. What makes a second release impossible is that the
+# release nulls the CELL — so the pointer may live in that one cell and nowhere
+# else. A copy of it, whether by `=` or into a second cell, would go on pointing
+# at the bytes after the cell was nulled, and a read through C would be a
+# use-after-free `check` could never see. Panel 125's compiler seat found the
+# cell forms; the coordinator found the `=` form by running it. The copies are
+# READ below on purpose: an unread one is `unused_binding` from the resolver,
+# which stops the check before the lease sweep is reached, and this case is
+# about the sweep.
+
+extern "string.h"
+    function strlen(s: cstr) -> u64
+
+function main()
+    s = "abc"
+    c: cstr @ s.lease()
+    g = c  #~ lease_escapes
+    h: cstr @ c  #~ lease_escapes
+    print(strlen(s: g))
+    print(strlen(s: h))
+    end_lease(@c)

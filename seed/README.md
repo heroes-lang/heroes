@@ -92,7 +92,12 @@ cannot see:
 1. **`HERO_RUNTIME_ABI` moves.** The seed carries
    `_Static_assert(HERO_RUNTIME_ABI == N, ...)` on its eighth line, so a runtime
    from another compiler stops the build with that message rather than linking
-   quietly. `the_seed_builds_from_a_clean_checkout` asserts the two numbers agree.
+   quietly. **No named test asserts the two numbers agree** — this sentence
+   said one did, `the_seed_builds_from_a_clean_checkout`, and panel 125's compiler
+   seat measured on 2026-09-09 that it exists nowhere outside this file's prose:
+   the instrument is the `_Static_assert` itself, which turns a skew into a
+   clang error on the first command in CLAUDE.md § Commands, and that is what
+   fired when the stamp moved 21 to 22 before the seed did.
 2. **`selfhost/` uses a form the committed seed cannot parse.** The cheap check
    is the build above — it is 3.4 s and it runs in the test. The expensive one is
    the full fixpoint (`heroes build selfhost/main.hero --emit-c` from the

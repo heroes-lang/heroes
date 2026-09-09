@@ -1,0 +1,23 @@
+# M-held-bytes, panel 124 (ratified 2026-09-09), closing defect 024's witness.
+#
+# The C side KEEPS the pointer past the call and reads it later. Written with
+# a lend, `stash_put(s: label.cstr())`, this printed 0 where 13 is right and was
+# a heap-use-after-free under `--sanitize`, because a lend's bytes die when its
+# site runs again — iteration n+1 freed iteration n's. A lease is a COPY the
+# program owns until `end_lease(@label)`, so C reads live bytes and the cell is
+# emptied when the program says. Three iterations, three correct lengths, and
+# the leak gate green at exit because every `.lease()` met its `end_lease`.
+
+extern "lease-c-keeps-the-pointer.h"
+    function stash_put(s: cstr)
+    function stash_len() -> u64
+
+function main()
+    at: i64 @ 0
+
+    while at < 3
+        label: cstr @ ("row-" + at.to_str() + "-payload").lease()
+        stash_put(s: label)
+        print(stash_len())
+        end_lease(@label)
+        at @ at + 1

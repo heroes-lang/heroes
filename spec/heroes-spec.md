@@ -234,6 +234,10 @@ and `()` is `void`: `atexit(f: (function() -> ()))`.
 compiler frees that string with that function, hands it over as a `str?` (the
 `@` cell is only written), and refuses your own call of it. Unmarked pointers
 are never freed.
+`x: cstr @ s.lease()` is a COPY of the bytes that C may read for as long as the
+program says, and `end_lease(@x)` frees it and empties the cell. The name of a
+lease stands only as an argument of a call, nothing else writes its cell, and a
+lease nobody ends is named at exit.
 Where a library lives is the machine's answer, not the program's, so a group may
 name a **package** instead of a library: `extern "raylib.h" package "raylib"`
 asks the system where its headers and libraries are and what else it needs. A

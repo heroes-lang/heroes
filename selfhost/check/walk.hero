@@ -1244,12 +1244,15 @@ function builtin_dispatch(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s
         collected @ collected.push(receiver.must())
 
     for arg in given
-        # §4.8's marker, on this side of the table too: NO built-in takes
-        # an @ parameter — push returns a new array, sort a new one — so
-        # an @ here is always a claim about the call that is false. It
-        # went unchecked until a spec-only reader guessed otherwise and
-        # the failure said nothing about the @ (fixedbugs 2026-08-13).
-        if arg.mutable
+        # §4.8's marker, on this side of the table too: ONE built-in takes
+        # an @ parameter — `end_lease(@x)`, which nulls the cell it frees
+        # (panel 125) — and every other one answers a new value, push a new
+        # array, sort a new one, so an @ on those is a claim about the call
+        # that is false. It went unchecked until a spec-only reader guessed
+        # otherwise and the failure said nothing about the @ (fixedbugs
+        # 2026-08-13). Whether the @ is on the RIGHT thing is
+        # `check/lending.hero`'s question, asked over the whole file.
+        if arg.mutable && name != "end_lease"
             state.push_diagnostic(
                 @c,
                 data_errors.marker_mismatch(name: name, wants: false, span: a.exprs[arg.value].span)

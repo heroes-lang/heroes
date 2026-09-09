@@ -1,0 +1,242 @@
+# The lease: §4.19's fourth case, asked at every position in the file
+# (design.md §4.19 as amended 2026-09-09; spec § FFI; panel 124, ratified the
+# same day; panel 125's soundness lane).
+#
+# `x: cstr @ s.lease()` is a COPY of the bytes that the program owns and C may
+# read until `end_lease(@x)` frees it — Heroes' bytes on C's reach, the mirror
+# of `owned`, which is C's pointer on Heroes' schedule. It closed defect 024,
+# the lend a C function RETAINS past the call, which no rule about a Heroes
+# position can see: the retention decision is the C function's own argument
+# (`sqlite3.h:4888` puts it in the fifth) and the header types both spellings
+# `const char *`.
+#
+# WHAT MAKES A SECOND RELEASE IMPOSSIBLE, AND WHY THAT IS THREE CLAUSES. The
+# runtime nulls the CELL on release, so a second `end_lease(@x)` finds a null
+# before any read. That is sound only if the pointer lives in that one cell and
+# nowhere else — a copy of it, `g = x` or `g: cstr @ x`, would go on pointing at
+# the bytes after the cell was nulled, and a read of the copy through C is a
+# use-after-free `check` could never see. So: the name of a lease cell stands
+# only as an argument of a call, exactly where a lend may (clause 1); the only
+# write it takes after its declaration is its own `end_lease` (clause 2); and
+# `end_lease` takes only such a cell (clause 3). The first clause is the one
+# panel 125's compiler seat did not have; it was found by running that seat's
+# own table of what a `cstr` cell may do.
+#
+# IT ASKS THE VALUE AND NOT THE WORLD. A lease cell is recognised by its
+# declaration's INITIALISER being the lease call, through the resolver — a fact
+# about the cell in hand. `h: cstr @ grab()` and `h: cstr @ s.lease()` are the
+# same type and different origins, and origin is what `end_lease` may act on.
+# No flow analysis: `is_builtin_named` is fourteen lines and `argument_of` is
+# the lend's own parent map, both borrowed from `check/lending.hero`.
+#
+# WHY THE RUNTIME GUARD IS NOT THE RULE. The first version of this feature
+# validated the pointer with a magic word read eight bytes before it, and
+# panel 125 measured that read undefined on three of the four inputs the
+# message named — a C literal, a C `malloc` and a stack buffer — and the
+# double release caught only because `malloc` had left the zeroed word
+# readable. A guard that must dereference before it can validate cannot be the
+# discriminator for a foreign pointer. The checker is; the runtime's remaining
+# check catches an emitter bug and says so.
+
+use ast
+use source
+use parse
+use resolve
+use check/lower
+use resolved
+use check/state
+use check/lending
+use ffi_errors
+
+function is_lease(a: ast.Ast, r: resolved.Resolved, at: i64) -> bool
+    return lending.is_builtin_named(a, r, at, name: "lease")
+
+function is_end_lease(a: ast.Ast, r: resolved.Resolved, at: i64) -> bool
+    return lending.is_builtin_named(a, r, at, name: "end_lease")
+
+# A cell declared as `x: cstr @ s.lease()`: mutable, and its initialiser IS the
+# lease. The initialiser is asked syntactically, through the resolver, which is
+# a fact about the value in hand and not a flow analysis — `h: cstr @ grab()`
+# and `h: cstr @ s.lease()` are the same type and different origins, and the
+# origin is what `end_lease` may act on.
+function is_lease_cell(a: ast.Ast, r: resolved.Resolved, local: i64) -> bool
+    held = r.locals[local]
+
+    if !held.mutable || held.value.is_err()
+        return false
+    return is_lease(a, r, held.value.must())
+
+# The sweep, and the three clauses. Called from `checker.hero` BESIDE the
+# lend's sweep rather than from inside it, because `check/lending.hero` is
+# this module's import and a call back would be a cycle. The early exit is
+# the lend's own (panel 122 R8): a file with no lease pays nothing.
+function leases_stay_in_their_cell(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source)
+    if !holds_a_lease(a, r)
+        return
+    into = lending.argument_of(a)
+
+    # The left side of a mutation is a place and not an argument, so it is
+    # judged first, as a write, and then skipped by the walk over names.
+    written = written_roots(a)
+    at: i64 @ 0
+
+    while at < a.exprs.len()
+        lease_name_at(@c, a, r, s, at: at, into: into, written: written)
+        end_lease_at(@c, a, r, at: at)
+        at @ at + 1
+
+# One `.name` expression that resolves to a lease cell, judged by where it
+# stands. A function of its own so that every arm that has nothing to say can
+# `return` — the lesson `record_arguments` above paid for.
+function lease_name_at(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, at: i64, into: {i64: i64}, written: {i64: bool})
+    if !is_name(a, at)
+        return
+    local: i64 @ 0 - 1
+
+    match r.uses[at]
+        .local l                                => local @ l.at
+        .top | .builtin | .module | .unresolved => return
+
+    if !is_lease_cell(a, r, local)
+        return
+    name = source.span_text(s, r.locals[local].name)
+
+    if !written[at].is_err()
+        state.push_diagnostic(@c, ffi_errors.lease_written(name: name, span: a.exprs[at].span))
+        return
+
+    if into[at].is_err()
+        state.push_diagnostic(@c, ffi_errors.lease_escapes(name: name, span: a.exprs[at].span))
+        return
+
+    # An `@` on it is a write, and the one writer allowed is its own release.
+    call = into[at].must()
+
+    if marked_in(a, call: call, value: at) && !is_end_lease(a, r, call)
+        state.push_diagnostic(@c, ffi_errors.lease_written(name: name, span: a.exprs[at].span))
+
+# Whether `value` is an `@` argument of `call`.
+function marked_in(a: ast.Ast, call: i64, value: i64) -> bool
+    match a.exprs[call].kind
+        .call cl =>
+            for arg in cl.args
+                if arg.value == value
+                    return arg.mutable
+        .method m =>
+            for arg in m.args
+                if arg.value == value
+                    return arg.mutable
+        .name | .int_lit | .char_lit | .float_lit | .str_lit | .bool_lit            => return false
+        .null_ptr | .hole | .unary | .binary | .field | .index                      => return false
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => return false
+
+    return false
+
+# An `end_lease` call takes exactly one `@` argument naming a lease cell.
+function end_lease_at(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, at: i64)
+    if !is_end_lease(a, r, at)
+        return
+    given = arguments_of(a, at)
+
+    if given.len() != 1 || !given[0].mutable || !names_a_lease_cell(a, r, at: given[0].value)
+        state.push_diagnostic(@c, ffi_errors.end_lease_of_no_lease(a.exprs[at].span))
+
+function names_a_lease_cell(a: ast.Ast, r: resolved.Resolved, at: i64) -> bool
+    if !is_name(a, at)
+        return false
+
+    match r.uses[at]
+        .local l                                => return is_lease_cell(a, r, l.at)
+        .top | .builtin | .module | .unresolved => return false
+
+function is_name(a: ast.Ast, at: i64) -> bool
+    return match a.exprs[at].kind
+        .name                                                                       => true
+        .call | .method | .int_lit | .char_lit | .float_lit | .str_lit | .bool_lit  => false
+        .null_ptr | .hole | .unary | .binary | .field | .index                      => false
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => false
+
+function arguments_of(a: ast.Ast, at: i64) -> [ast.Arg]
+    match a.exprs[at].kind
+        .call cl                                                                    => return cl.args
+        .method m                                                                   => return m.args
+        .name | .int_lit | .char_lit | .float_lit | .str_lit | .bool_lit            => return []
+        .null_ptr | .hole | .unary | .binary | .field | .index                      => return []
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => return []
+
+    return []
+
+# The root name of every mutation's left side, `v @ …`, `v.f @ …`, `v[i] @ …`.
+function written_roots(a: ast.Ast) -> {i64: bool}
+    roots: {i64: bool} @ {}
+
+    for stmt in a.stmts
+        match stmt.kind
+            .mutate m =>
+                root = place_root(a, at: m.place)
+
+                if !root.is_err()
+                    roots[root.must()] @ true
+            .bind | .declare | .return_stmt | .break_stmt | .continue_stmt | .assert_stmt => roots @ roots
+            .while_stmt | .for_in | .expr_stmt | .error                                   => roots @ roots
+
+    return roots
+
+function place_root(a: ast.Ast, at: i64) -> i64?
+    match a.exprs[at].kind
+        .name                                                                      => return ok(at)
+        .field f                                                                   => return place_root(a, at: f.base)
+        .index i                                                                   => return place_root(a, at: i.base)
+        .call | .method | .int_lit | .char_lit | .float_lit | .str_lit | .bool_lit => return fail("none", "not a place")
+        .null_ptr | .hole | .unary | .binary                                       => return fail("none", "not a place")
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => return fail(
+            "none",
+            "not a place"
+        )
+
+    return fail("none", "not a place")
+
+function holds_a_lease(a: ast.Ast, r: resolved.Resolved) -> bool
+    at: i64 @ 0
+
+    while at < a.exprs.len()
+        if is_lease(a, r, at) || is_end_lease(a, r, at)
+            return true
+        at @ at + 1
+
+    return false
+
+## Tests
+
+# Built the way `check/lending.hero`'s test builds its checker, so a change to
+# that shape is caught in both places. The lowering loop is not decoration:
+# `is_lease_cell` reads the resolver, which the loop does not touch, but the
+# checker it runs inside is the real one.
+function swept(text: str) -> i64
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    c: state.Checker @ state.new_checker(out_of: out, expr_count: p.tree.exprs.len())
+    i: i64 @ 0
+
+    while i < p.tree.types.len()
+        _ = lower.lower_ty(@c, p.tree, out, i)
+        i @ i + 1
+
+    leases_stay_in_their_cell(@c, p.tree, out, s)
+    return c.out.diagnostics.len()
+
+constant GROUP: str
+    "extern \"s.h\"\n    function n(s: cstr) -> u64\n    function g() -> cstr\n\n"
+
+test "a lease as an argument, then its own end_lease, is the legal shape"
+    assert swept(GROUP + "function f(x: str) -> u64\n    c: cstr @ x.lease()\n    k = n(s: c)\n    end_lease(@c)\n    return k\n") == 0
+
+test "a lease copied by = or into a second cell escapes"
+    assert swept(GROUP + "function f(x: str) -> u64\n    c: cstr @ x.lease()\n    y = c\n    h: cstr @ c\n    k = n(s: y) + n(s: h)\n    end_lease(@c)\n    return k\n") == 2
+
+test "a write to a lease cell that is not its end_lease is refused"
+    assert swept(GROUP + "function w(@y: cstr)\n    y @ nullptr\n\nfunction f(x: str) -> u64\n    c: cstr @ x.lease()\n    c @ nullptr\n    w(@c)\n    k = n(s: c)\n    end_lease(@c)\n    return k\n") == 2
+
+test "end_lease takes only a lease cell: not a lend cell, not a lease by value"
+    assert swept(GROUP + "function f(x: str) -> u64\n    d: cstr @ g()\n    end_lease(@d)\n    c: cstr @ x.lease()\n    end_lease(c)\n    k = n(s: c)\n    end_lease(@c)\n    return k\n") == 2

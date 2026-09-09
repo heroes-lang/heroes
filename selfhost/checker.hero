@@ -32,6 +32,7 @@ use check/decls as check_decls
 use check/map_keys
 use check/ffi_sweep
 use check/lending
+use check/leasing
 use check/counted
 
 # Check one resolved program. The resolver ran first and its answers are
@@ -62,6 +63,11 @@ function check(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.D
     # site that types it: defect 022 was a `cstr` RETURNED, and a rule
     # wired to `check/builtins.hero` would have typed it and let it go.
     lending.lent_only_into_c(@c, a, r, s, decls)
+
+    # §4.19's fourth case, the lease, asked at every position the same way and
+    # for the same reason: a copy of the pointer anywhere but in its one cell
+    # is a use-after-free the moment that cell is emptied (panel 125).
+    leasing.leases_stay_in_their_cell(@c, a, r, s)
 
     # §4.16's FILE-WIDE hole exemption, the same one the unused rule
     # takes: a body that is ??? falls off its end by construction — that
