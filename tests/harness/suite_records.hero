@@ -1146,12 +1146,23 @@ function marked_at(text: str, at: i64, needle: str) -> bool
 # `declared_twice` error at the first build, which is the language doing the job
 # CLAUDE.md's preamble asks a reader to do.
 
-# No C file lives outside the directories that own C.
+# No C file lives outside the directories that own C, unless a program beside
+# it names it in an `extern`.
 #
 # This exists because a throwaway that measured `__builtin_classify_type`
 # was left in the repository root and `git add -A` committed and pushed it
 # (2026-08-14). The list is of DIRECTORIES that own C, not of file names:
 # a new runtime part or a fifth spike needs no edit here.
+#
+# **And a header a program claims is owned by that program** (2026-09-09).
+# `examples/gallery/13-lease.hero` teaches text that a C library KEEPS, and no
+# library the three platforms share keeps a `const char *` it is handed, so the
+# lesson carries its own seven lines of C beside it, as
+# `tests/golden/run/lease-c-keeps-the-pointer.h` already did inside a record.
+# The cheap repair was to list `examples/gallery/` here, and a directory is
+# wider than the fact: the header is legitimate because a `.hero` in the same
+# directory says `extern "13-lease.h"`, so that is what is read, and a stray
+# `probe.c` in the gallery is still reported.
 function c_files(@r: report.Report, living: [str])
     # No leading `./`: `git ls-files` spells a path from the repository root,
     # where `find .` spelled it from the current directory.
@@ -1167,17 +1178,68 @@ function c_files(@r: report.Report, living: [str])
             if strings.starts_with(text: path, prefix: dir)
                 owned @ true
 
-        if !owned
+        if !owned && !claimed(path: path, living: living)
             strays @ strays.push("    " + path)
 
     if strays.len() > 0
         report.keep_failure(
             @r,
             label: "records/c",
-            detail: "  a C file outside the directories that own C:\n" + strays.join("\n")
+            detail: "  a C file outside the directories that own C, and no program beside it names it in an `extern`:\n" + strays.join("\n")
         )
     else
         report.keep_pass(@r)
+
+# Whether a `.hero` in the same directory as this C file names it in an
+# `extern`. Only programs BESIDE the file count: the compiler resolves a quoted
+# header next to the program that names it, so a claim from another directory
+# would be a claim the build itself does not honour.
+function claimed(path: str, living: [str]) -> bool
+    header = strings.base_name(path)
+    dir = path.slice(from: 0, to: path.len() - header.len())
+
+    for other in living
+        if !strings.ends_with(text: other, suffix: ".hero") || !beside(other: other, dir: dir)
+            continue
+        text = read_file(other)
+
+        if !text.is_err() && names_header(text: text.must(), header: header)
+            return true
+
+    return false
+
+# Whether `text` carries a line `extern "<header>"` at column zero, which is
+# where every `extern` in this tree stands. A quoted header is the one the
+# compiler looks for beside the program; `<header>` is the system's and claims
+# nothing here. A mention in a comment or in prose is not a claim.
+function names_header(text: str, header: str) -> bool
+    for line in strings.lines(text)
+        if strings.starts_with(text: line, prefix: "extern \"" + header + "\"")
+            return true
+
+    return false
+
+# Whether `other` lives in exactly `dir`, the directory spelled with its
+# trailing slash as `claimed` cuts it.
+function beside(other: str, dir: str) -> bool
+    base = strings.base_name(other)
+    return other.slice(from: 0, to: other.len() - base.len()) == dir
+
+test "a C file is claimed by an `extern` at column zero in a program beside it, and by nothing else"
+    assert names_header(text: "use strings\n\nextern \"13-lease.h\"\n", header: "13-lease.h")
+    assert names_header(text: "extern \"13-lease.h\" link \"m\"\n", header: "13-lease.h")
+
+    # A mention in prose, the system spelling, a different header, and the
+    # same header indented, which no `extern` in this tree is.
+    assert !names_header(text: "# see `13-lease.h`, beside this file\n", header: "13-lease.h")
+    assert !names_header(text: "extern <13-lease.h>\n", header: "13-lease.h")
+    assert !names_header(text: "extern \"sqlite3.h\" link \"sqlite3\"\n", header: "13-lease.h")
+    assert !names_header(text: "    extern \"13-lease.h\"\n", header: "13-lease.h")
+
+    assert beside(other: "examples/gallery/13-lease.hero", dir: "examples/gallery/")
+    assert !beside(other: "examples/13-lease.hero", dir: "examples/gallery/")
+    assert !beside(other: "examples/gallery/deeper/13-lease.hero", dir: "examples/gallery/")
+    assert !beside(other: "tests/golden/run/13-lease.hero", dir: "examples/gallery/")
 
 # Directories this repository HAS HAD, beside the ones it has. **Panel 086's
 # measured hole, closed rather than recorded**: anchoring a claim on directories
