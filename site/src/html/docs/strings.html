@@ -144,7 +144,7 @@ tqbf</code></pre>
 
   <h2>Text with holes in it</h2>
   <p>
-    A string can carry values. An <code>f</code> before the opening quote turns <code>{n}</code> into the text of <code>n</code>, written the way <code>to_str</code> would write it. Any expression may stand in a hole, and the hole ends at the brace that closes it, so a call or a lookup inside it reads as it would anywhere. <code>{{</code> writes one opening brace; a closing brace is never special, so <code>}</code> is written as it is. A string without the <code>f</code> is exactly what it was.
+    A string can carry values. An <code>f</code> before the opening quote turns <code>{n}</code> into the text of <code>n</code>, written the way <code>to_str</code> would write it. Any expression may stand in a hole, and the hole ends at the brace that closes it, so a call or a lookup inside it reads as it would anywhere. <code>{{</code> writes one opening brace; outside a hole a closing brace is not special, so <code>}</code> is written as it is. A string without the <code>f</code> is exactly what it was.
   </p>
   <figure class="example" data-src="examples/gallery/12-interpolation.hero" data-lines="17-18">
 <pre><code><span class="k">function</span> line(at: <span class="t">i64</span>, of: <span class="t">i64</span>, star: Star) -&gt; <span class="t">str</span>

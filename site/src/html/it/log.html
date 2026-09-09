@@ -20,7 +20,7 @@
     </li>
     <li id="42">
       <span class="when">Byte che una libreria C può tenere</span>
-      <b>Un programma può passare a una libreria C un testo che quella terrà, e dire quando ha finito: <code>x: cstr @ s.lease()</code>, poi <code>end_lease(@x)</code>.</b> Ogni regola proposta per vietare questi programmi è stata misurata e rifiutata a sua volta; a chiudere la falla è stato un modo per dirlo, non un divieto. Un lease che nessuno chiude ferma il programma quando <code>main</code> termina, dicendo quanti ne restano aperti.
+      <b>Un programma può passare a una libreria C un testo che quella terrà, e dire quando ha finito: <code>x: cstr @ s.lease()</code>, poi <code>end_lease(@x)</code>.</b> Ogni regola proposta per vietare questi programmi è stata misurata e rifiutata a sua volta; a chiudere la falla è stato un modo per dirlo, non un divieto. Un lease è un prestito che finisce quando lo dici tu; uno che nessuno chiude ferma il programma quando <code>main</code> termina, dicendo quanti ne restano aperti.
       <a class="more" href="/it/docs/the-c-boundary/">Il confine con il C</a>
     </li>
     <li id="41">

@@ -7,8 +7,10 @@
 > Heroes and reproduces the C file from which it was built.
 
 Read the specification before writing Heroes code. It defines the complete
-language and stays below 4096 tokens, leaving room in the prompt for the program.
-A test checks this limit on every commit.
+language and stays below {{ceilingK}} tokens; today it measures {{realTokens}},
+counted by {{realModel}} through Claude's token-counting API, which leaves room
+in the prompt for the program. A test holds the recorded count under that
+ceiling on every commit.
 
 - [Specification as text](https://heroes-lang.org/spec.md): the complete file to include in a prompt.
 - [Specification page](https://heroes-lang.org/spec/): the same text, with an explanation of the size limit.
