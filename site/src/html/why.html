@@ -100,6 +100,19 @@ graphics, audio, terminal  →  SDL, raylib, ncurses</code></pre>
     You can write declarations in any order. Two functions can call each other without forward declarations. During compilation, Heroes reduces the code to <b>seven constructs</b>, the basic internal forms used to represent a program.
   </p>
 
+  <h2>Text with holes in it</h2>
+  <p>
+    A string can carry values. An <code>f</code> before the opening quote turns <code>{n}</code> into the text of <code>n</code>, written the way <code>to_str</code> would write it. Any expression may stand in a hole: a sum, a call, a field, another string of the same kind. Two braces write one brace. A string without the <code>f</code> is exactly what it was.
+  </p>
+  <figure class="example" data-src="examples/gallery/12-interpolation.hero" data-lines="17-18">
+<pre><code><span class="k">function</span> line(at: <span class="t">i64</span>, of: <span class="t">i64</span>, star: Star) -&gt; <span class="t">str</span>
+    <span class="k">return</span> <span class="s">f"{at}/{of} {star.name} at magnitude {star.magnitude}"</span></code></pre>
+    <figcaption>examples/gallery/12-interpolation.hero, lines 17&ndash;18</figcaption>
+  </figure>
+  <p>
+    What a hole may hold is what <code>to_str</code> can render: an integer, a float, <code>bool</code> or <code>str</code>. A record or a list has no text of its own, and a value that may be missing has to be made whole first; the compiler refuses the hole and says which. <a href="/examples/gallery/12-interpolation/">The whole example &rarr;</a>
+  </p>
+
   <h2>The language rules <span class="nod">&middot; fashion &middot;</span></h2>
   <ul class="pillars">
     <li><b>A line is understood by looking at that line.</b> Its meaning is
@@ -111,7 +124,7 @@ graphics, audio, terminal  →  SDL, raylib, ncurses</code></pre>
     arguments apart.</li>
     <li><b>Error messages that machines can use.</b> Each message identifies the problem and its location in the code. If a declaration elsewhere is involved, it points there too. Suggested fixes are marked <code>certain</code> when they are certain or <code>guess</code> when they need review. Use <code>???</code> to leave an expression unfinished and ask the compiler which type it expects.</li>
     <li><b>A program must not corrupt memory.</b> The program stops and reports the error location if an integer exceeds its range, integer division has a zero divisor, an index is outside a list, a string slice splits a character, recursion goes too deep or <code>.must()</code> receives an error. In design decisions, preventing unchecked memory access takes priority over elegance and brevity.</li>
-    <li><b>Small enough to fit in a prompt.</b> On every commit, or recorded change, a test checks that the specification stays below 4,096 tokens. You can give the whole specification to a model. <a href="/spec/">Read it &rarr;</a></li>
+    <li><b>Small enough to fit in a prompt.</b> On every commit, or recorded change, a test checks that the specification stays below 6K tokens, counted the way the model itself counts, through Claude&rsquo;s token-counting API. You can give the whole specification to a model. <a href="/spec/">Read it &rarr;</a></li>
   </ul>
 
   <h2>Common questions <span class="nod">&middot; quicksand, avoided &middot;</span></h2>

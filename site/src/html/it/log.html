@@ -8,6 +8,26 @@
   </p>
 
   <ol class="log">
+    <li id="44">
+      <span class="when">Testo con dei buchi dentro</span>
+      <b>Una stringa ora può portare dei valori: <code>f"line {n}: {word}"</code> scrive ogni buco come lo scriverebbe <code>to_str</code>.</b> In un buco può stare qualsiasi espressione, due graffe scrivono una graffa, e una stringa semplice resta quella di prima. Il compilatore rifiuta un buco il cui valore non ha un testo, e dice quale.
+      <a class="more" href="/it/examples/gallery/12-interpolation/">L&rsquo;esempio</a>
+    </li>
+    <li id="43">
+      <span class="when">La decisione sull&rsquo;interpolazione</span>
+      <b>Tre conteggi hanno deciso come una stringa possa contenere un valore, e i conteggi hanno corretto due volte la prima ipotesi.</b> Ammettere qualsiasi espressione costa meno parole nella specifica che ammettere solo un nome, e la graffa era già in uso nel codice stesso del compilatore, quindi la forma sta dietro una <code>f</code>.
+      <a class="more" href="/it/spec/">La specifica</a>
+    </li>
+    <li id="42">
+      <span class="when">Byte che una libreria C può tenere</span>
+      <b>Un programma può passare a una libreria C un testo che quella terrà, e dire quando ha finito: <code>x: cstr @ s.lease()</code>, poi <code>end_lease(@x)</code>.</b> Ogni regola candidata che rifiutava questi programmi è stata rifiutata da una misura, e a chiudere la classe è stata una capacità. Una locazione che nessuno chiude viene nominata all&rsquo;uscita del programma.
+      <a class="more" href="/it/docs/the-c-boundary/">Il confine con il C</a>
+    </li>
+    <li id="41">
+      <span class="when">Una stringa prestata resta dove è prestata</span>
+      <b>Una stringa prestata al C con <code>.cstr()</code> può stare solo come argomento della chiamata che la legge.</b> Tenuta altrove, sopravviveva ai byte a cui puntava e il programma leggeva memoria liberata; il compilatore ora rifiuta quella forma, con la sua ragione, prima che qualcosa giri.
+      <a class="more" href="/it/docs/the-c-boundary/">Il confine con il C</a>
+    </li>
     <li id="40">
       <span class="when">Il repository è aperto</span>
       <b>Il codice del compilatore, la specifica e tutti i registri del progetto sono ora leggibili da chiunque.</b> La licenza è Apache 2.0, quindi il codice si può usare, modificare e riutilizzare. Domande e segnalazioni di problemi sono benvenute; le modifiche inviate non vengono accettate, e il repository spiega perché in un paragrafo.

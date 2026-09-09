@@ -26,10 +26,12 @@
 
 import { readText, countLines, isFile } from './repo.ts';
 import { t, number, type Lang } from './i18n.ts';
-import { specCeiling } from './claims.ts';
+import { ceilingK, checkClaims } from './claims.ts';
 
 const SPEC = 'spec/heroes-spec.md';
-const CEILING = specCeiling();
+// The ceiling as the pages say it, `6K`, the author's word (2026-09-09); the exact
+// number is the suite's and `ceilingK` refuses one that is not a whole number of K.
+const K = ceilingK();
 
 export interface SpecPage {
   url: string;
@@ -81,12 +83,12 @@ export function renderSpecPage(lang: Lang): SpecPage {
     lang === 'en'
       ? `<ul class="stats">
     <li><span class="n">${number(lines, lang)}</span><span class="what">lines, the whole language</span></li>
-    <li><span class="n">${CEILING.toLocaleString('en-US')}</span><span class="what">tokens: the specification limit</span></li>
+    <li><span class="n">${K}</span><span class="what">tokens: the specification&rsquo;s ceiling, held by a test</span></li>
     <li><span class="n">${number(Math.round(bytes / 1024), lang)}</span><span class="what">kilobytes of text</span></li>
   </ul>`
       : `<ul class="stats">
     <li><span class="n">${number(lines, lang)}</span><span class="what">righe, tutto il linguaggio</span></li>
-    <li><span class="n">${number(CEILING, lang)}</span><span class="what">token: il limite della specifica</span></li>
+    <li><span class="n">${K}</span><span class="what">token: il tetto della specifica, tenuto da un test</span></li>
     <li><span class="n">${number(Math.round(bytes / 1024), lang)}</span><span class="what">kilobyte di testo</span></li>
   </ul>`;
 
@@ -104,6 +106,10 @@ export function renderSpecPage(lang: Lang): SpecPage {
       : `  <p class="next">\n    Poi: <b><a href="/it/docs/">lo stesso linguaggio spiegato un'idea alla volta</a></b>.\n    <a href="/it/examples/">Tutti i programmi</a>.\n  </p>`,
     footer(lang),
   ].join('\n\n');
+  // This page is assembled here and not by the fragment pipeline, so the claims
+  // table's two spec rows are checked on the assembled page, or they would be
+  // rows nobody visits — which `assertEveryClaimVisited` refuses at build end.
+  checkClaims(html, intro);
 
   return {
     url: lang === 'it' ? '/it/spec/' : '/spec/',
@@ -113,8 +119,8 @@ export function renderSpecPage(lang: Lang): SpecPage {
         : 'The specification: the whole language, on one page',
     description:
       lang === 'it'
-        ? `Tutto il linguaggio Heroes, in un file da inserire nel prompt: meno di ${number(CEILING, lang)} token per descrivere la sintassi e le regole.`
-        : `The whole Heroes language, in one file for a model’s prompt: under ${CEILING.toLocaleString('en-US')} tokens describing its syntax and rules.`,
+        ? `Tutto il linguaggio Heroes, in un file da inserire nel prompt: meno di ${K} token per descrivere la sintassi e le regole.`
+        : `The whole Heroes language, in one file for a model’s prompt: under ${K} tokens describing its syntax and rules.`,
     html: `\n${html}\n`,
   };
 }
