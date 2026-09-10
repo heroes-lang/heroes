@@ -26,6 +26,7 @@
 
 import { readText, isFile } from './repo.ts';
 import { plain } from './highlight.ts';
+import { tracklist } from './nods.ts';
 import { version } from './tables.ts';
 import { checkClaims, specReal } from './claims.ts';
 
@@ -148,7 +149,22 @@ export function page(html: string, pagePath: string): string {
   // thing this function checked and the prose around them was the last thing
   // anybody did, which is where four false claims in one day came from.
   checkClaims(html, pagePath);
-  return fillMeasured(fillVersion(html, pagePath));
+  return fillTracklist(fillMeasured(fillVersion(html, pagePath)), pagePath);
+}
+
+/**
+ * `{{tracklist}}` in a fragment becomes the twelve nods, each linked to where
+ * the song can be heard, with the record it comes from.
+ *
+ * Generated for the reason `site/src/lib/nods.ts` gives at length: the ledger
+ * that tracked these by hand drifted to twenty against a markup carrying
+ * thirteen, and nothing could tell. A row cannot go missing from a list the
+ * build prints, and a nod whose data is missing is a red build.
+ */
+export function fillTracklist(html: string, pagePath: string): string {
+  if (!html.includes('{{tracklist}}')) return html;
+  const lang = pagePath.startsWith('site/src/html/it/') ? 'it' : 'en';
+  return html.replaceAll('{{tracklist}}', tracklist(lang));
 }
 
 /**
