@@ -33,15 +33,15 @@ with what each one measured in the git history and in `DESIGN-LOG.md`):
 
 | | |
 |---|---|
-| **Current milestone** | **none open.** Next in the chain is **M-reflection-verdict**; before it, by author instruction 2026-09-09, the site is brought up to date (the 6K claim with its instrument, the new numbers, `f"…"` examples from `examples/gallery/12-interpolation.hero`), then the full net and the Linux and Windows legs run once, and the push is asked for |
-| **Last closed** | **M-interpolated-strings**, 2026-09-09, `m-interpolated-strings` ([043](journal/043-interpolated-strings.md)) — the form panel 121 ruled in that morning, landed the same evening; the third milestone and the third tag of the day, after `m-held-bytes` ([041](journal/041-held-bytes.md)) and `m-interpolation-verdict` ([042](journal/042-interpolation-verdict.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
-| Milestones closed | **44** of 68 · **44** milestone tags. **Five rows entered 2026-09-10** by author decision: four from the chain's first reading against a written production-readiness criterion (§ What production-ready means), M-cleanup-verdict, M-arm-platform, M-deployable-binary and M-compatibility-promise, and M-microcontroller-verdict later the same day, from the question whether a program could run on an ESP32, with its measurements in `docs/measurements/026-the-two-facts-a-32-bit-target-refuses.md`. M-cstr-lifetime closed with defect 024 open by its own design and carried none until the author asked for it (2026-09-09); its tag stands on the commit that ratified panel 125, the first where every list that milestone left open is clean, and the tag's own message says so |
+| **Current milestone** | **none open.** Next in the chain is **M-reflection-verdict**. Before it: **defect 025**, filed 2026-09-11 by panel 126's own experiment, which is what leaves M-anchored-spec untagged, and `panel 126`'s ratification, whose one question is whether the specification's two worked examples stay |
+| **Last closed** | **M-anchored-spec**, 2026-09-11, untagged ([044](journal/044-anchored-spec.md)) — the specification re-shaped into thirteen numbered sections, its form now a rule with two checks, and its numbers the citation anchors; the tag waits on defect 025, on `M-cstr-lifetime`'s precedent · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
+| Milestones closed | **45** of 69 · **44** milestone tags, 32 of them `m-*` and twelve legacy, and **M-anchored-spec is closed untagged** because defect 025 was open when it finished. **Six rows entered 2026-09-10** by author decision: M-anchored-spec in the evening at row 45, and five earlier — four from the chain's first reading against a written production-readiness criterion (§ What production-ready means), M-cleanup-verdict, M-arm-platform, M-deployable-binary and M-compatibility-promise, and M-microcontroller-verdict from the question whether a program could run on an ESP32 |
 | The compiler | **57,120** lines of Heroes in **197** modules · the seed **773,509** lines of C at runtime ABI **22**, regenerated at the close with the fixpoint verified by `cmp` · one token kind, one AST node and three helper modules for `f"…"`, and four decided ceilings moved by their measured lines |
-| The spec | **5378 real tokens** on `claude-opus-5` through `count_tokens`, read by `heroes measure --refresh` at the landing, digest `527e1b762302f9ca`; **4210** on the vendored ranks, which is what `SPEC_TOKENS` pins. **The ceiling is 6144** with its instrument named; **766** free net of the FFI floor. **All four moved with `7965174d` on 2026-09-10** and this row carried 5373 / 4203 / 711 / `5a9b2886` until then; the live values are `REAL_TOKENS` and `SPEC_DIGEST` in `tests/harness/suite_spec.hero`, and `./heroes measure` refuses a verdict when the digest disagrees. Today's two clauses cost **+103** (the lease) and **+138** (interpolation with R6's two sentences), each priced alone before it was written, and the lease clause's word for the forgotten release cost **+4** more when panel 125's ratification made it say what runs |
-| Records | sittings **125** · journals **44** · examples **119** files, **545** `test` blocks · open defects **0** · mutation: `drop-question` **236 of 236 killed**, `--permissive` 193, so **43** are caught only by the thesis |
-| Waiting on the author | **0** decisions: `panel 125` ratified 2026-09-09, its conservative route (a runtime registry) recorded beside it and declined · **52** in `SCHEDULED.md` (re-counted 2026-09-10 with `grep -c '^- \[ \]'`; this row said 43 against a measured 51 before the microcontroller row joined) · **0** in `DEFECTS.md` · **353** in `LEARN.md` (never a gate) · an outstanding veto (`docs/panel/101` R3) · **o200k**, whose trigger is met and whose premise panel 123 changed |
+| The spec | **5598 real tokens** on `claude-opus-5` through `count_tokens`, read by `heroes measure --refresh` at the landing, digest `319c66850e1586bb`; **4410** on the vendored ranks, which is what `SPEC_TOKENS` pins. **The ceiling is 6144** with its instrument named; **486** free net of the FFI floor. **Thirteen numbered sections since 2026-09-11** (M-anchored-spec, panel 126), in the order the language Reports use, each rule with one home, and the numbers are the citation anchors: a `spec:NNN` written before that day reads against the layout at `834d804f`. The re-shaping was +50 vendored for the move, −59 for twenty merges and +209 for eight additions, each priced alone; `docs/measurements/010` row 63 says what paid and what did not |
+| Records | sittings **126** · journals **45** · examples **120** files, **545** `test` blocks · **open defects 1**, number 025, the label rule stopping at the compiler's own built-ins · mutation last scored at M-interpolated-strings, `drop-question` **236 of 236 killed**, `--permissive` 193, so **43** are caught only by the thesis |
+| Waiting on the author | **1** decision: `panel 126`, whose one question is whether the specification's two worked examples stay, with the recommendation in the queue item · **54** in `SCHEDULED.md` · **1** in `DEFECTS.md` · **353** in `LEARN.md` (never a gate) · an outstanding veto (`docs/panel/101` R3) · **o200k**, whose trigger is met and whose premise panel 123 changed |
 
-**Re-measured 2026-09-09 at M-interpolated-strings' close, not carried**: the compiler's own suite is **618** and the net's own **126** (125 at the close; one test joined the same evening with `records/c`'s claim clause, which reads a program's `extern` beside a C file rather than widening the list of directories that own C). Every suite is green on the closing compiler, the seed regenerated: `check` 104, `annotations` 140, `fixes` 7, `run` 108, `ir` 23, `emit` 6, `unsupported` 12, `emission` 441, `corpus` 54, `warnings` 168, `determinism` 137, `lines` 108, `canonical` 1, `layout` 1, `order` 2, `spec` 11, `special` 10, `records` 15. **The full net ran on this Mac before the push, 1691 passed and 0 failed, and the Linux and Windows legs ran the same evening**: the seed builds on all three, the compiler's 618 tests pass on all three, the harness's own 126 pass on all three (on Linux only once `git` joined the image, which the journal's dated correction explains), the new goldens are clean under Linux's LeakSanitizer, and Windows refused a header width the other two accepted. Least room: `check/walk.hero` at **1708 of a decided 1708**, `grammar_expr.hero` **1041 of 1041**, `ir/flatten.hero` **1114 of 1114**, `ast.hero` **484 of 484** — four knots moved to their measured size this evening and standing on it; `check/builtins.hero` **371 of 374**. **Re-run 2026-09-09 after panel 125's ratification, which moved a spec sentence and so the record constants and the seed.** On this Mac the full net reads **1691 passed, 0 failed** again, on the regenerated seed, with `heroes measure` printing 5373 as the binding number and no staleness note. On the Linux image the regenerated seed builds from C alone and `measure`, `spec` 11, `records` 15 and the harness's own 126 all pass there. The Windows box, off when this was first written and started by the author minutes later, builds the regenerated seed with `seed/README.md`'s stack flag and answers the same 5373 with its 618 and 126 passing, so all three legs are on the ratified tree.
+**Re-measured 2026-09-11 at M-anchored-spec's close, not carried**: the compiler's own suite is **618** and the net's own **129** (126 at the last close; three joined with this milestone's two checks and the section reader). The full net ran on this Mac on the closing tree and reads **1693 passed, 0 failed** once the five pins moved, on the regenerated seed whose fixpoint `cmp` confirmed silent. Every suite green: `check` 104, `annotations` 140, `fixes` 7, `run` 108, `ir` 23, `emit` 6, `unsupported` 12, `emission` 441, `descriptors` 221, `cache` 5, `units` 3, `corpus` 54, `warnings` 168, `determinism` 137, `lines` 108, `canonical` 1, `layout` 1, `order` 2, `runtime` 7, `surface` 107, `special` 10, **`spec` 13** where it was 11 before this milestone, and `records` 15. **Two suites went red on the way and both were this session's own doing**: `emission` on five comment lines added at the top of a golden, which moved every `#line` in its blessed trace, and the pin class in `spec` and `surface`, which is what a spec amendment is supposed to do. **The Linux and Windows legs are unrun on this tree** and the CI runs the three legs on every push since 2026-09-10, so the first push is what measures them.
 
 ---
 
@@ -206,30 +206,31 @@ and why one overtook another are under the table, in § Who scheduled what.
 | 42 | **M-interpolation-verdict** | done 2026-09-09 | `m-interpolation-verdict` | [042](journal/042-interpolation-verdict.md) | the ruling on design.md Part 7 item 7: string interpolation ENTERS as `f"line {n}: {word}"`, three counts and one sitting, the spelling the author's; closed with the verdict and not the form, as it was named to · **§1.1** |
 | 43 | **M-held-bytes** | done 2026-09-09 | `m-held-bytes` | [041](journal/041-held-bytes.md) | §4.19's FOURTH case: `x: cstr @ s.lease()` is a COPY C may read until `end_lease(@x)`. Two sittings, four refused rules, one capability; defect 024 CLOSED with its limit named, and the first tag since 2026-09-08 because the list is clean · **§1.12**
 | 44 | **M-interpolated-strings** | done 2026-09-09 | `m-interpolated-strings` | [043](journal/043-interpolated-strings.md) | `f"line {n}: {word}"`: one token kind, one AST node, three helper modules, four decided ceilings moved by their measured lines, the spec at +138 real with R6's two sentences, and `heroes mutate` reaching the holes · **§1.1**
-| 45 | **M-reflection-verdict** | scheduled | — | — | the ruling on reflection — at run time, and as compile-time derivation over a record's fields — and, since 2026-09-06, on a general annotation mechanism · a decision, not a feature |
-| 46 | **M-deferral-ledger** | scheduled | — | — | every Part 7 item with no milestone gets a dated verdict or a return condition |
-| 47 | **M-cleanup-verdict** | scheduled | — | — | the ruling on a scope-bound release — `defer` or another form — for the two obligations `owned` and `lease` put on every path · a decision, not a feature |
-| 48 | **M-check-completeness** | scheduled | — | — | what `heroes check` accepts, `heroes build` compiles — through a generic too · scheduled, no warrant
-| 49 | **M-arm-platform** | scheduled | — | — | the fourth real machine: arm64 Linux, where a container runs and where `char` is unsigned · **§1.12** |
-| 50 | **M-core-packages** | scheduled | — | — | small packages that compose, organised as Go's tree, in Heroes or over C |
-| 51 | **M-package-manager** | scheduled | — | — | `heroes add`/`heroes fetch`; bindings instead of a standard library |
-| 52 | **M-web-framework** | scheduled | — | — | composes the core packages, Go/Echo style: explicit routes, records, no magic |
-| 53 | **M-doc-generator** | scheduled | — | — | `heroes doc`, the one direction Part 6's literate-source row promises · scheduled, no warrant |
-| 54 | **M-panic-location** | scheduled | — | — | a panic names the `.hero` file, line and function · **§1.12** |
-| 55 | **M-typed-inspection** | scheduled | — | — | a stopped program shows Heroes values: the name the author typed, and `[T]`, `{K: V}`, `T?`, a variant and a record shown as themselves · scheduled, no warrant |
-| 56 | **M-generated-programs** | scheduled | — | — | programs nobody wrote: a generator that composes valid Heroes and knows the answer before the compiler is asked · **§1.12** |
-| 57 | **M-thesis-harness** | scheduled | — | — | Part 11's metrics 2 and 4 run for the first time, as a Heroes program · **§1.1** |
-| 58 | **M-lsp-server** | scheduled | — | — | `heroes lsp`, and the incremental frontend it needs |
-| 59 | **M-vscode-extension** | scheduled | — | — | the extension, complete |
-| 60 | **M-qbe-backend** | scheduled | — | — | Part 7 item 15 — the proof that the IR is not C in disguise |
-| 61 | **M-journey-book** | scheduled | — | — | the journey — how this language came to be |
-| 62 | **M-guide-book** | scheduled | — | — | the guide, as a book you would find in a shop · **§1.1** |
-| 63 | **M-deployable-binary** | scheduled | — | — | what the machine that RUNS a Heroes program needs, on the three platforms, and which `-O` a shipped artifact carries |
-| 64 | **M-microcontroller-verdict** | scheduled | — | — | the ruling on a Heroes program running on a microcontroller under an RTOS, RISC-V first; the two facts a 32-bit build refuses today are its brief · **§1.12**, Part 2 |
-| 65 | **M-install-channels** | scheduled | — | — | a Homebrew tap, winget, a Nix flake, a Docker image, all built from the seed and pinned to a `v*` release tag; the version scheme itself was decided ahead, 2026-09-07 |
-| 66 | **M-online-compiler** | scheduled | — | — | the compiler reached without installing anything: the site's visitor writes Heroes and gets its answer · scheduled, no warrant |
-| 67 | **M-compatibility-promise** | scheduled | — | — | the paragraph `1.0.0` rests on, and the suite that makes a broken promise red · CLAUDE.md §14 |
-| 68 | **M-publication-gate** | scheduled | — | — | the last gate before anything goes outward · CLAUDE.md §14 |
+| 45 | **M-anchored-spec** | done 2026-09-11 | **untagged**, defect 025 | [044](journal/044-anchored-spec.md) | the specification takes the shape of a Report: thirteen numbered sections in reference order, one home per rule, the numbers as the citation anchors, two checks that keep the form, 81 citations converted, and the site's page copying the text in one click · **§1.6** |
+| 46 | **M-reflection-verdict** | scheduled | — | — | the ruling on reflection — at run time, and as compile-time derivation over a record's fields — and, since 2026-09-06, on a general annotation mechanism · a decision, not a feature |
+| 47 | **M-deferral-ledger** | scheduled | — | — | every Part 7 item with no milestone gets a dated verdict or a return condition |
+| 48 | **M-cleanup-verdict** | scheduled | — | — | the ruling on a scope-bound release — `defer` or another form — for the two obligations `owned` and `lease` put on every path · a decision, not a feature |
+| 49 | **M-check-completeness** | scheduled | — | — | what `heroes check` accepts, `heroes build` compiles — through a generic too · scheduled, no warrant
+| 50 | **M-arm-platform** | scheduled | — | — | the fourth real machine: arm64 Linux, where a container runs and where `char` is unsigned · **§1.12** |
+| 51 | **M-core-packages** | scheduled | — | — | small packages that compose, organised as Go's tree, in Heroes or over C |
+| 52 | **M-package-manager** | scheduled | — | — | `heroes add`/`heroes fetch`; bindings instead of a standard library |
+| 53 | **M-web-framework** | scheduled | — | — | composes the core packages, Go/Echo style: explicit routes, records, no magic |
+| 54 | **M-doc-generator** | scheduled | — | — | `heroes doc`, the one direction Part 6's literate-source row promises · scheduled, no warrant |
+| 55 | **M-panic-location** | scheduled | — | — | a panic names the `.hero` file, line and function · **§1.12** |
+| 56 | **M-typed-inspection** | scheduled | — | — | a stopped program shows Heroes values: the name the author typed, and `[T]`, `{K: V}`, `T?`, a variant and a record shown as themselves · scheduled, no warrant |
+| 57 | **M-generated-programs** | scheduled | — | — | programs nobody wrote: a generator that composes valid Heroes and knows the answer before the compiler is asked · **§1.12** |
+| 58 | **M-thesis-harness** | scheduled | — | — | Part 11's metrics 2 and 4 run for the first time, as a Heroes program · **§1.1** |
+| 59 | **M-lsp-server** | scheduled | — | — | `heroes lsp`, and the incremental frontend it needs |
+| 60 | **M-vscode-extension** | scheduled | — | — | the extension, complete |
+| 61 | **M-qbe-backend** | scheduled | — | — | Part 7 item 15 — the proof that the IR is not C in disguise |
+| 62 | **M-journey-book** | scheduled | — | — | the journey — how this language came to be |
+| 63 | **M-guide-book** | scheduled | — | — | the guide, as a book you would find in a shop · **§1.1** |
+| 64 | **M-deployable-binary** | scheduled | — | — | what the machine that RUNS a Heroes program needs, on the three platforms, and which `-O` a shipped artifact carries |
+| 65 | **M-microcontroller-verdict** | scheduled | — | — | the ruling on a Heroes program running on a microcontroller under an RTOS, RISC-V first; the two facts a 32-bit build refuses today are its brief · **§1.12**, Part 2 |
+| 66 | **M-install-channels** | scheduled | — | — | a Homebrew tap, winget, a Nix flake, a Docker image, all built from the seed and pinned to a `v*` release tag; the version scheme itself was decided ahead, 2026-09-07 |
+| 67 | **M-online-compiler** | scheduled | — | — | the compiler reached without installing anything: the site's visitor writes Heroes and gets its answer · scheduled, no warrant |
+| 68 | **M-compatibility-promise** | scheduled | — | — | the paragraph `1.0.0` rests on, and the suite that makes a broken promise red · CLAUDE.md §14 |
+| 69 | **M-publication-gate** | scheduled | — | — | the last gate before anything goes outward · CLAUDE.md §14 |
 
 Three closed milestones have no tag of their own because they were parents or
 sub-steps: **M-checker-core**, **M-data-declarations** and **M-rich-diagnostics**
@@ -1311,6 +1312,44 @@ is the bill a new form arrives with — the formatter, every `--dump-<stage>` pr
 `heroes mutate`, the diagnostics that quote a program back, and `heroes measure`
 where the form has spec text — and it was written the day `as` reached six consumers
 one at a time, with the formatter silently deleting it from a working program.
+
+### M-anchored-spec — the specification takes the shape of a Report
+
+**Scheduled and opened 2026-09-10 by author decision**, out of the session that
+found `spec/heroes-spec.md` disorganised: 74 commits and not one heading ever
+moved, so every rule added since v0 had landed where it happened to fall, and
+the text that a model receives as its whole briefing (design.md §1.6) said
+`range` in two sections, explained `_` in two halves, and defined *abort* inside
+§ Types. The author asked for the face of a specification, with up to a tenth
+more tokens to buy it, and for the work to pay homage to the tradition of the
+language Reports it descends from.
+
+**What it delivers.** Thirteen numbered sections in reference order, Files and
+layout to FFI, every rule with one home in the section of the operation it
+governs; twenty duplications merged; six additions each priced alone, among
+them the first example of `fail` and `ok` the document has ever shown and the
+title in the Reports' form; the section numbers as the citation anchors, on
+CL-069's precedent, with the `shape` and `anchors` checks in
+`tests/harness/suite_spec.hero` keeping the form and the citations honest; the
+rule that says the form, `.claude/rules/spec-shape.md`; and the site's
+specification page copying the text in one click, under a new site rule that
+JavaScript is never the only way. The whole of it is checked by blind readers
+before the new text is called the specification: readers who saw neither the
+repository nor the mapping inventory both texts and list what one says and the
+other does not.
+
+**What it does not deliver, so that nothing pretends otherwise.** Part 11's
+metric 2 has never run, so the effect of the new form on a model's first-try
+rate is **unmeasured**, and the author decided the token ceiling for this
+operation knowing it; the sitting that judged the change (panel 126) records
+the fact rather than arguing it away. The numbers are the journal's and the
+ledger's: `docs/measurements/010-spec-budget-ledger.md` row 63.
+
+**Why here.** Before M-reflection-verdict, whose ruling may add a sentence to
+the spec and should add it to the ordered one; and before M-core-packages, for
+the reason § The chain gives for every ruling on the language's shape: the
+packages are the largest body of Heroes that will be written against this
+document, and a form that lands after them is a form they were written without.
 
 ### M-reflection-verdict — the ruling on reflection
 
@@ -2686,6 +2725,7 @@ So a number met in the record resolves here, and only here.
 | `M-arm-platform` | — | — | arm64 Linux as a measured platform. **Not a step of `M-install-channels`** (§14): that row delivers the channels, this one the architecture they would otherwise ship for unmeasured, and the two are separable in both directions. **Deliberately not `M-fourth-platform`**, because `M-online-compiler` already calls a browser the fourth platform under panel 114, so the number would name two things; **and not `M-arm-linux`**, because what is delivered is a platform under `.claude/rules/platforms.md`'s own rules, three legs becoming four, rather than an operating-system port. Both runners-up are in `tests/harness/suite_records.hero`'s `REFUSED`. Scheduled 2026-09-10 by author decision · **§1.12** |
 | `M-deployable-binary` | — | — | what the machine that RUNS a Heroes program needs, and which `-O` a shipped artifact carries. **Not a step of `M-install-channels`** (§14): that row delivers *how a person gets the compiler* and this one *what a person needs to run what the compiler made*, which are two deliverables and two audiences. **Named for the artifact and not for the act**, so `deployment` and `release` stay free — this row publishes nothing. Scheduled 2026-09-10 by author decision with **no warrant** |
 | `M-microcontroller-verdict` | — | — | the ruling on a Heroes program running on a microcontroller under an RTOS. **Named for the deliverable, which is a verdict** (§14), on `M-cleanup-verdict`'s precedent: a milestone named for the ruling can close with a refusal, and one named for the device or its area would claim what the sitting exists to decide. **Not a step of `M-arm-platform`**: that row adds a machine the compiler runs on, this one asks about a machine only the program can reach. Scheduled 2026-09-10 by author decision · `docs/measurements/026-the-two-facts-a-32-bit-target-refuses.md` |
+| `M-anchored-spec` | — | — | the specification re-shaped into thirteen numbered sections in reference order, the numbers as the citation anchors, the checks that keep the form, and the site's page copying the text in one click. **Named for the deliverable** (§14): a specification with stable anchors; `M-numbered-spec`, `M-spec-anchors` and `M-ordered-spec` were the runner-up names and stayed in the session's plan |
 | `M-compatibility-promise` | — | — | the paragraph `1.0.0` rests on, and the suite that makes a broken promise red. **Not a step of `M-publication-gate`** (§14), which owns that paragraph as one bullet of a checklist of outward acts: this is a suite, built and tested in private like everything else. **Named for the promise and not for the version**, since `1.0.0` is the author's act on a clean `main` and never a milestone's (`.claude/rules/records.md` § Release tags). Scheduled 2026-09-10 by author decision · CLAUDE.md §14 |
 
 **`M8` has no row, because it meant three different things.** It was an umbrella
