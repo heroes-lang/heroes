@@ -181,19 +181,31 @@ that rots, which is CL-069's finding about this project's own contract.
 
 ## Author's verdict
 
-**Pending.** The queue item is `panel 126` in `docs/work/DECIDE.md`, and it
-names the one thing a ratification settles: whether the two worked examples
-stay. Work proceeded on the adopted resolution, which is the text that landed
-with M-anchored-spec, so a verdict that cuts them is a spec amendment with its
-own row in the ledger and the warden's prediction to score. The three routes and
-the recommendation are in the queue item's body.
+**Ratified as adopted, 2026-09-11** (the author's word, `ratifica 126`). The
+thirteen numbered sections in reference order with Literals before Types stand;
+each rule keeps one home; the numbers are the citation anchors and a number once
+assigned never changes; the eight additions stand, **the two worked examples
+included**. The conservative route recorded above, the reorder and the merges
+alone at 5358 real tokens, was put as the alternative and declined.
+
+**What the ratification settles about the payment**, since that is what the
+sitting split over: the two examples stay on the author's decision of 2026-09-10
+and on this word, and not on a measurement. Row 63 of the ledger says so in its
+own sentences, names no instrument that does not exist, and does not claim the
+merges paid for them. The spec-warden's condition is met in the form it asked
+for, which was a record that tells the truth about what pays; its objection
+stands on the record beside the ratification rather than being smoothed away.
+
+**What it does not settle.** Defect 025 stays open, so the milestone stays
+untagged (CLAUDE.md § Verification), and the three holes the ergonomist found in
+both texts stay filed at M-check-completeness.
 
 ## Predictions to score
 
 | seat | prediction | scored at | state |
 |---|---|---|---|
 | historian | the next form lands inside one of the thirteen sections | the first spec amendment that adds a construct | open, checkable by the `shape` check |
-| spec-warden | the text minus both examples refreshes to 5412 ± 12 real | the day the examples are cut | open, and unscorable while they stay |
+| spec-warden | the text minus both examples refreshes to 5412 ± 12 real | the day the examples are cut | **not renewed** (panel 046 R2): the ratification of 2026-09-11 keeps them, so the counterfactual has no milestone to be scored at and stands as an observation |
 | compiler-engineer | the selfhost diff outside comments is empty but for one diagnostic string | the `m-anchored-spec` tag | open |
 | ffi-pragmatist | the two example programs compile unchanged | the tag | open |
 | ergonomist 1 | one of the two lexers fails on its `fail` line | this sitting | **FALSIFIED**, measured: neither does, and defect 025 is what the measurement found |
