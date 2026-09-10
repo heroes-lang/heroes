@@ -10,7 +10,7 @@
     To fix a program, a model needs to know what is wrong and where. A precise message can save it from rereading entire files. Heroes errors therefore identify the affected code, any conflicting declarations and, when possible, a fix.
   </p>
 
-  <h2>Swapped arguments</h2>
+  <h3>Swapped arguments</h3>
   <p>
     When two parameters have the same type, type checking alone cannot tell one argument from the other. Heroes therefore requires labels, the argument names written in the call:
   </p>
@@ -31,7 +31,7 @@
     The <code>#~ needs_label</code> annotations let the tests verify the underline&rsquo;s position. The <code>^</code> characters mark the exact portion of code involved, so you can find the argument even in a long call.
   </p>
 
-  <h2>Automatic fixes and suggestions</h2>
+  <h3>Automatic fixes and suggestions</h3>
   <p>
     A fix marked <code>certain</code> uses information checked by the compiler, such as an inferred type or the only similar name available. <code>heroes check --apply</code> applies these fixes. Other errors may still need correction before the program is complete. Fixes marked <code>guess</code> are suggestions to review; the command does not apply them automatically.
   </p>
@@ -53,7 +53,7 @@ $ heroes run program.hero</code></pre>
     Some errors in C function declarations are caught by <code>heroes build</code>. This command runs clang, the C compiler, which checks the declarations against the library&rsquo;s header, the file that describes its functions and types. A misspelled C function name can therefore pass <code>heroes check</code> and be reported during the build. <a href="/docs/the-c-boundary/">Checks on C libraries&nbsp;&rarr;</a>
   </p>
 
-  <h2>Keywords from other languages</h2>
+  <h3>Keywords from other languages</h3>
   <p>
     A model can accidentally use a keyword from another language. Heroes recognises some of these words and suggests the correct form:
   </p>
@@ -65,7 +65,7 @@ $ heroes run program.hero</code></pre>
     Here each diagnostic, or compiler message, occupies one line; the earlier examples show the full version. Three of the four errors have a <code>certain</code> fix, which <code>--apply</code> applies. It leaves <code>let</code> unchanged: that fix requires choosing a declaration form, not just replacing a word.
   </p>
 
-  <h2>Completing a program with the compiler&rsquo;s help</h2>
+  <h3>Completing a program with the compiler&rsquo;s help</h3>
   <p>
     You can write <code>???</code> where an expression is missing. The compiler checks the surrounding code and reports the expected type, the available names and functions that return that type. If there are no other errors, the check exits with status <b>zero</b>. No executable is produced while expressions remain unfinished:
   </p>
@@ -85,7 +85,7 @@ hole at examples/gallery/09-holes.hero:28:74
     You can sketch the program, then complete it using the compiler&rsquo;s guidance. In this example, the first <code>???</code> replaces a whole statement, so the compiler reports what the function must return. The second sits inside a statement and requires a specific type.
   </p>
 
-  <h2 id="measured">How it is measured</h2>
+  <h3 id="measured">How it is measured</h3>
   <p>
     <code>heroes mutate</code> introduces one plausible mistake at a time into working programs and counts how many the compiler catches. It repeats the checks on the same programs with the Heroes-specific rules disabled. The difference measures the effect of these rules.
   </p>

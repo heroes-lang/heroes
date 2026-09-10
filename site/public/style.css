@@ -666,14 +666,18 @@ pre .h { color: var(--red); font-style: italic; }  /* ??? — a hole is a questi
    caret lines keep their alignment. Rendered at 390px, that premise is false:
    the caret rows do survive, and the SOURCE line above them does not, so the
    caret ends up under nothing. Found by the design seat, which rendered it. */
-pre.diag { white-space: pre; overflow-x: auto; }
+/* `text-wrap` applies to a block container, so the declaration that stood on
+   `.msg` below did nothing: the design seat served a patched copy and the
+   render was byte-identical to the live one, orphan intact (2026-09-10). It
+   belongs here, where the message's own line breaks are decided. */
+pre.diag { white-space: pre; overflow-x: auto; text-wrap: pretty; }
 /* The message line is the product, and at 1200px dark it was cut mid-sentence
    on the page that exists to show it: "so every one of them is named at the
    call" and then the frame. Only the message wraps; the excerpt and caret rows
    below keep their columns, which is the whole reason the block stopped
    wrapping in the first place. The span adds no text byte, so the output stays
    verbatim. */
-pre.diag .msg { white-space: pre-wrap; overflow-wrap: anywhere; text-wrap: pretty; }
+pre.diag .msg { white-space: pre-wrap; overflow-wrap: anywhere; }
 
 /* A measured table, set as one row of monospace text. `.hi` is the row the
    prose singles out: caught none of the time, in either arm. It is marked
@@ -835,6 +839,13 @@ figure.example figcaption::before { content: '\21B3\00A0'; color: var(--dim); }
    230px wide and the English pair can never share a line, so the middot that
    bound them opened line two, right under a hero whose bullets are dashes. */
 .figures .how a { white-space: nowrap; display: block; }
+/* The caption under the home's demo is text, then a mark, then a link, so the
+   `&nbsp;` pass that bound every arrow to its word could not reach this one:
+   the mark's left neighbour is not an element. Under 560px the two halves
+   already stack, and a `&middot;` at the end of a line is a mark pointing at
+   nothing, so it goes away there (design seat, 2026-09-10). */
+.demo .under .sep { white-space: nowrap; }
+@media (max-width: 560px) { .demo .under .sep { display: none; } }
 /* The method behind the first number, under the band rather than inside its
    cell: in the cell it ran ten lines beside three and six, and the hairline hung
    five empty lines under the third figure (design seat, 2026-09-09). */
@@ -975,7 +986,7 @@ svg.ink { position: absolute; width: 0; height: 0; overflow: hidden; }
 }
 h1.page {
   font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em;
-  font-size: clamp(2.1rem, 6.5vw, 3rem); margin: 0; line-height: 1.02;
+  font-size: clamp(2.1rem, 6.5vw, 3rem); margin: 0; line-height: 1.06;
 }
 .page-head .nod {
   display: block; font: 0.7rem/1.6 ui-monospace, 'SF Mono', Menlo, monospace;
