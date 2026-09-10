@@ -115,9 +115,23 @@ answers at drops the extension and gains a slash, so `why.html` is `/why/` and
 | `style.css` | the only cross-page *stylesheet* |
 | `images/` | the one binary asset the site has: `giuseppe-arici.jpg`, the author's portrait, used by both editions of `about.html` |
 
-**No JavaScript of its own, and no external assets**, on any page: light and dark
-come from `prefers-color-scheme` alone, the bolt and the grain are markup, and
-Astro ships no JavaScript unless a page asks for one, which no page here does.
+**JavaScript is never the only way, and no external assets**, on any page: light
+and dark come from `prefers-color-scheme` alone, the bolt and the grain are
+markup, and Astro ships no JavaScript unless a page asks for one. **This
+paragraph read *no JavaScript of its own* until 2026-09-10**, when the author
+allowed a little, vanilla, for one thing, and named the rule that replaces the
+old one: a page works in full without scripts, every text readable, selectable
+and copyable and every link followable, and a script may only make one of those
+easier. **One page asks for one**: the specification page carries a script of
+about thirty lines, generated in `src/lib/spec-page.ts` beside the block it
+serves, that copies the specification to the clipboard on a click and, where
+the clipboard is refused, selects the block and says which key to press. Without
+scripts the same block selects itself whole on one click, and the file is a link
+and a `curl` line away, so the script is the only way to nothing. It is inline,
+sets no cookie, touches no storage, fingerprints nobody, loads nothing and sends
+nothing anywhere, which keeps the sharper rule below true word for word, and
+`src/lib/scripts.ts` reads every page the build writes and refuses a script that
+is not declared there, that has a `src`, or that names a cookie or a store.
 There IS a build step now, and for as long as the site had no visitor count it
 changed nothing at all about what a visitor receives. **One script does reach the
 visitor, and it is not written here**: Cloudflare Pages injects its Web Analytics

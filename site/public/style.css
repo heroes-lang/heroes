@@ -1462,6 +1462,27 @@ figure.example.spec pre {
 }
 figure.example.spec { margin-bottom: 1.4rem; }
 
+/* Two ways to take the block whole, and neither is the only one (site/README.md,
+   "JavaScript is never the only way"). Without scripts, `html` carries no `js`
+   class and one click selects the whole block, so Cmd+C or Ctrl+C copies the
+   specification; the price is that a piece of it cannot be selected on its own,
+   and that reader has the guide for a paragraph and `/spec.md` for the file.
+   With scripts the class is set, selection is ordinary again, and the button
+   below the block does the copying. */
+html:not(.js) figure.example.spec pre { -webkit-user-select: all; user-select: all; }
+
+/* The copy button, in the pill the home page's calls to action wear, small, and
+   rendered `hidden` until the script that gives it something to do has run. */
+figure.example.spec button.copy {
+  display: inline-block; margin: 0.35rem 0 0.2rem; padding: 0.35rem 0.95rem;
+  border-radius: 999px; border: 1px solid var(--red); background: transparent;
+  color: var(--red); font: inherit; font-weight: 700; font-size: 0.78rem;
+  text-transform: uppercase; letter-spacing: 0.09em; cursor: pointer;
+  transition: background-color 140ms ease, color 140ms ease;
+}
+figure.example.spec button.copy:hover,
+figure.example.spec button.copy:focus-visible { background: var(--red); color: var(--bg); }
+
 /* What the design seat found by rendering at 390px, which nobody had done.
    Each of these was measured before and after in a 390px iframe, because
    Chrome on macOS will not open a window narrower than about 590px and a
