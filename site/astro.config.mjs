@@ -5,6 +5,8 @@ import { readdirSync, statSync, unlinkSync, renameSync, rmdirSync, existsSync } 
 import { join } from 'node:path';
 import { assertEveryClaimVisited, claimsSummary } from './src/lib/claims.ts';
 import { assertNodsMirrored } from './src/lib/nods.ts';
+import { lastmodFor, assertHistoryAvailable, assertSitemapDated } from './src/lib/lastmod.ts';
+import { assertHeadsUsable } from './src/lib/seo.ts';
 
 const ORIGIN = 'https://heroes-lang.org';
 
@@ -114,6 +116,31 @@ function claimsAudit() {
   };
 }
 
+// The sitemap says when each page last changed, and says it about every page.
+//
+// Two hooks, at the two ends, and both positions were paid for. The history
+// check runs at `astro:build:start` because `@astrojs/sitemap` CATCHES what
+// `serialize` throws: measured in a `--depth 1` clone, the refusal fired, the
+// message printed, every entry was dropped and the build wrote an empty sitemap
+// and exited 0. The audit runs at `astro:build:done` and reads the file that was
+// written, not a list this config kept while writing it, because the first
+// version kept such a list and that is exactly the run it passed.
+//
+// This integration is listed AFTER `sitemap()`, since hooks of one name run in
+// integration order and the sitemap is generated in `astro:build:done` too.
+function lastmodAudit() {
+  return {
+    name: 'heroes:lastmod',
+    hooks: {
+      'astro:build:start': () => assertHistoryAvailable(),
+      'astro:build:done': ({ dir, logger }) => {
+        logger.info(assertSitemapDated(dir.pathname));
+        logger.info(assertHeadsUsable(dir.pathname));
+      },
+    },
+  };
+}
+
 // The two editions live at mirrored paths, `/x/` and `/it/x/`, which is what
 // lets this be four lines instead of the pairing table an asymmetric site would
 // need.
@@ -177,8 +204,12 @@ export default defineConfig({
         const url = new URL(item.url);
         item.links = alternates(url.pathname);
         item.priority = priority(url.pathname);
+        // When this page's own sources last changed, from git. `src/lib/lastmod.ts`
+        // says why it is not the build time, and what it refuses to guess.
+        item.lastmod = lastmodFor(url.pathname);
         return item;
       },
     }),
+    lastmodAudit(),
   ],
 });

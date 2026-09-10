@@ -1,9 +1,54 @@
+# Everything here is open to everything, and the blocks below say so by name.
+#
+# `User-agent: *` already allows every crawler that exists, so naming the model
+# crawlers changes no behaviour at all. It is here because silence is the one
+# answer this site cannot give: a language whose whole point is being read by a
+# model, staying quiet about the crawlers that feed models, would be leaving its
+# own position to be guessed. The tokens are the ones each vendor documents,
+# read from their own pages rather than recalled.
+
 User-agent: *
 Allow: /
 
-# The whole language as one plain-text file, which is what this site is for.
-# It is not an HTML page, so the sitemap does not carry it and a crawler would
-# otherwise reach it only through llms.txt.
-# https://heroes-lang.org/spec.md
+# Anthropic: ClaudeBot trains, Claude-User fetches for somebody who asked, and
+# Claude-SearchBot indexes for search.
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-User
+Allow: /
+
+User-agent: Claude-SearchBot
+Allow: /
+
+# OpenAI: GPTBot trains, OAI-SearchBot indexes for ChatGPT search, ChatGPT-User
+# fetches for somebody who asked, and OAI-AdsBot checks pages submitted as ads.
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: OAI-AdsBot
+Allow: /
+
+# Google keeps training separate from search: Googlebot is the search crawler,
+# and Google-Extended is the one that governs training and grounding.
+User-agent: Googlebot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+# Three addresses that are not HTML pages, so the sitemap does not carry them.
+# Every page's `<head>` links them, and this is where somebody reading the
+# robots file finds them.
+#
+#   https://heroes-lang.org/spec.md      the whole language as one plain-text file
+#   https://heroes-lang.org/llms.txt     what the site holds, written for a model
+#   https://heroes-lang.org/log.xml      the build log as a feed
 
 Sitemap: https://heroes-lang.org/sitemap-index.xml

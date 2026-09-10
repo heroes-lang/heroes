@@ -69,7 +69,17 @@ jobs:
         working-directory: site
 
     steps:
+      # `fetch-depth: 0` is the whole history, and the sitemap needs it. Each
+      # page's `<lastmod>` is the date of the last commit that touched that
+      # page's own sources (`site/src/lib/lastmod.ts`), and the default checkout
+      # is shallow: one commit, so `git log` would answer the same date for all
+      # 184 addresses and the field would carry no information at all. That
+      # failure has no symptom, because a sitemap full of identical dates is a
+      # valid sitemap and the build stays green, so the module refuses to run in
+      # a shallow clone rather than emitting them.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 0
 
       # Node 22 rather than the newest: it is Astro's current LTS target and the
       # version the other site in this account builds under, so a break here is

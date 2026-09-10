@@ -3,6 +3,6 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import { page } from '../../lib/figures.ts';
 import content from '../../html/it/index.html?raw';
 ---
-<BaseLayout url="/it/" title={"Heroes: un linguaggio di programmazione per i modelli AI"} description={"Heroes è un piccolo linguaggio compilato progettato per rilevare errori comuni nel codice generato dai modelli. Il compilatore è scritto in Heroes e i programmi possono usare librerie C."} mainClass="home">
+<BaseLayout url="/it/" title={"Heroes: un linguaggio di programmazione per i modelli AI"} description={"Heroes è un piccolo linguaggio compilato che intercetta errori comuni nel codice generato dai modelli. Il compilatore è scritto in Heroes e usa librerie C."} mainClass="home">
 <Fragment set:html={page(content, 'site/src/html/it/index.html')} />
 </BaseLayout>
