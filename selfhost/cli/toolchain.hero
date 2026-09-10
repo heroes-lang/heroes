@@ -118,7 +118,7 @@ function without_returns(text: str) -> str
     at: i64 @ 0
 
     # Whole segments between the pairs, never byte-by-byte: `slice` aborts on
-    # a split character (spec:148), clang's stderr quotes this compiler's own
+    # a split character (spec § 10 Strings, arrays, maps), clang's stderr quotes this compiler's own
     # messages back — em dashes included — and every cut here lands beside an
     # ASCII `\r` or at a segment edge, which no character can straddle.
     while at < text.len()

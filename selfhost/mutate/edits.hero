@@ -203,7 +203,7 @@ function shadow(a: ast.Ast, s: source.Source) -> [str]
 
 # **A local wearing a module's name** — the fourteenth operator, and the one
 # panel 102 asked for: a `use` binds its name for the whole file, so nothing
-# else in the file may take it (`spec:99`), and the mistake this imitates is
+# else in the file may take it (`spec § 5 Bindings`), and the mistake this imitates is
 # the commonest way to break that rule without noticing. A reader who has
 # `use table` at the top and writes `table = rows.sort()` twenty lines down
 # has not done anything a habit from another language would warn them about.

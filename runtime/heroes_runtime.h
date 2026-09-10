@@ -280,7 +280,7 @@ void hero_failure_release(HeroFailure *v);
 bool hero_failure_eq(const HeroFailure *a, const HeroFailure *b);
 uint64_t hero_failure_hash(const void *elem);
 
-/* The failure `m[k]` produces when the key is absent (spec line 125-126: code
+/* The failure `m[k]` produces when the key is absent (spec § 10 Strings, arrays, maps: code
  * `missing_key`). Both strings are static blocks, so a lookup that misses
  * allocates nothing — which matters because a miss is the common case in a
  * `.default(v)` chain. */
@@ -385,7 +385,7 @@ void hero_array_incref(HeroArrayHeader *a);
 void hero_array_decref(HeroArrayHeader *a); /* no-op on NULL */
 int64_t hero_array_len(const HeroArrayHeader *a);
 
-/* Read one element. Aborts out of range (spec line 126) — never reads
+/* Read one element. Aborts out of range (spec § 10 Strings, arrays, maps) — never reads
  * arbitrary memory, which is the guarantee §4.9 states. */
 const void *hero_array_at(const HeroArrayHeader *a, int64_t index);
 
@@ -444,7 +444,7 @@ HeroStr hero_str_join(const HeroArrayHeader *parts, HeroStr sep);
  *
  * WHY PER STEP, measured: with a single unshare at the primitive, `h = g` then
  * `g.rows[0].cells[0] @ 7` changes `h` too — ASan clean, leak counter zero, exit
- * 0. A green harness on a program that violates spec line 60 ("No aliasing exists
+ * 0. A green harness on a program that violates spec § 3 Types ("No aliasing exists
  * anywhere"). It is *necessarily* wrong, not accidentally: unsharing level 1
  * copies its elements, whose `copy` increfs level 2, so level 2 is shared exactly
  * when level 1 was copied.

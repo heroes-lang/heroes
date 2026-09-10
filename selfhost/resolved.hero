@@ -10,7 +10,7 @@
 #
 # **1. A compound map key is a record, and that works.** Rust keys `top` and
 # `module_uses` by `(String, String)`. Heroes has no tuples — but a record IS a
-# usable key: `==` is structural on records (spec § Types), and measured here,
+# usable key: `==` is structural on records (spec § 7 Operators), and measured here,
 # `m[Key(module: "geom", name: "dist2")]` inserts, reads and misses correctly.
 #
 # **2. `sort` cannot order records, and that decides the shape of this file.**

@@ -50,7 +50,7 @@ function size(r: Ranks) -> i64
 # is not a corrupt table.
 #
 # The scan is over bytes and inserts as it goes. Collecting 100,256 lines
-# into an array first would be the quadratic shape spec:167 warns about, and
+# into an array first would be the quadratic shape spec § 10 Strings, arrays, maps warns about, and
 # the map does not need it.
 function from_tiktoken(text: str) -> Ranks
     r: Ranks @ empty()

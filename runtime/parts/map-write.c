@@ -112,7 +112,7 @@ static HeroMapHeader *hero_map_grown(HeroMapHeader *m) {
  *
  * `hero_array_unshare`'s twin, and it was missing for one commit: M-generics-library step 2 wrote
  * `hero_map_set` to write in place with no refcount check, so `n = m` followed by
- * `m["b"] @ 2` changed `n` as well — `2 2 2` where spec line 60 requires `1 2 -1`.
+ * `m["b"] @ 2` changed `n` as well — `2 2 2` where spec § 3 Types requires `1 2 -1`.
  * ASan clean, leak counter zero, exit 0: a green harness on a program that
  * violates "no aliasing exists anywhere", which is exactly the shape panel 022
  * measured for arrays and exactly the container that landed after it.

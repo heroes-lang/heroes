@@ -20,7 +20,7 @@
  * carries it in full, and `tests/golden/run/adversarial-cow-per-step.hero` is
  * the program that fails without it while every instrument reports success.
  *
- * design.md §4.10, spec line 60, panel 022.
+ * design.md §4.10, spec § 3 Types, panel 022.
  */
 
 void hero_array_unshare(HeroArrayHeader **slot) {

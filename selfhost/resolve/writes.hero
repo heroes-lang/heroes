@@ -1,5 +1,5 @@
 # The root that a WRITE reaches, and the rule it answers to (design.md
-# §4.4 the three line shapes, §4.8 `@` parameters, spec:88 *only a declared
+# §4.4 the three line shapes, §4.8 `@` parameters, spec § 5 Bindings *only a declared
 # `@` name can be mutated*; panels 010, 015). Two callers in
 # `resolve/walk.hero`, and they are the two ways a program writes a value:
 # the left of a mutation statement, and an `@` argument at a call site.
@@ -108,7 +108,7 @@ function inout_root(@r: state.Resolver, a: ast.Ast, s: source.Source, id: i64)
 # which copy-out lands last: `10` under left-to-right, `11` under the
 # reference reading every mainstream language installs. Nothing specifies
 # the order, so the form is refused — and the refusal is the precondition
-# that makes spec:80's *"No aliasing exists anywhere"* true, because two
+# that makes spec § 3 Types's *"No aliasing exists anywhere"* true, because two
 # copy-outs landing on one place is aliasing of the destination.
 #
 # **PLACES, not roots, and the difference is two working programs**

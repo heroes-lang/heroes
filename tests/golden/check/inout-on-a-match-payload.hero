@@ -22,3 +22,8 @@ function reader(h: Holder)
 
 function main()
     reader(.some(bag: Bag(items: ["a"])))
+
+# Since 2026-09-10 the specification's sections are numbered and a citation names
+# the section, never a line (CL-037). The line numbers above were written against
+# the layout at commit 834d804f; read today they are:
+#   spec:88 is spec § 5 Bindings

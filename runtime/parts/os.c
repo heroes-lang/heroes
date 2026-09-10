@@ -196,7 +196,7 @@ HeroStr hero_file_read(const char *path, int64_t *status) {
      * conversion. Asking first is what turns the fourth program state into a
      * `status` the wrapper can translate.
      *
-     * Before this, `read_file` was typed `-> str?` (spec:179) and killed the
+     * Before this, `read_file` was typed `-> str?` (spec § 11 Built-ins) and killed the
      * process on a photograph: a program handling both `.ok` and `.err` reached
      * neither arm. The Rust bootstrap's own record walk survived the same input
      * because `read_to_string` returns `Err`, and the Heroes port transcribed

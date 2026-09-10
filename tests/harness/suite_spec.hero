@@ -60,7 +60,7 @@ constant LEDGER: str
 # table's is — it is the tripwire that makes a SILENTLY DROPPED row fail, which
 # comparing the newest row alone would not.
 constant LEDGER_ROWS: i64
-    62
+    63
 
 # design.md §1.6's figure, pinned — the number `heroes measure` computes from the
 # spec, restated here because something re-derives and compares it on every run.
@@ -74,7 +74,7 @@ constant LEDGER_ROWS: i64
 # check does not enforce that rule: it makes its question unavoidable, and
 # the answer lands in the commit body where a reader can audit it.
 constant SPEC_TOKENS: i64
-    4210
+    4410
 
 # The registry's own size, gated separately — it is NOT part of §1.6's budget
 # (panel 035 D: the spec is *the prompt*, and compiler output can never be in
@@ -108,19 +108,19 @@ constant CEILING: i64
 # passes no secret to a fork's pull request, so such a check is structurally
 # red on every fork PR forever.
 constant REAL_TOKENS: i64
-    5378
+    5598
 
 constant REAL_MODEL: str
     "claude-opus-5"
 
 constant REAL_TAKEN: str
-    "2026-09-09"
+    "2026-09-11"
 
 # The spec this count is OF, content-addressed, so a stale number is loud
 # rather than reassuring. `selfhost/cli/digest.hero` computes it and
 # `measure` refuses to give a verdict when it disagrees.
 constant SPEC_DIGEST: str
-    "527e1b762302f9ca"
+    "319c66850e1586bb"
 
 # The operating contract, weighed on the same scale as the language.
 #
@@ -187,6 +187,28 @@ constant ABOVE_ASCII: [str]
         "→"
     ]
 
+# The thirteen sections, by number and name, in order: the shape
+# `.claude/rules/spec-shape.md` names, pinned here so a heading moved, renamed
+# or renumbered is a red check and not a reader's impression. A number, once
+# assigned, never changes, and a new section goes at the end (CL-069: the
+# contract's `§1`–`§15` survived a rewrite for exactly this reason).
+constant SECTIONS: [str]
+    [
+        "Files and layout"
+        "Literals"
+        "Types"
+        "Top-level declarations"
+        "Bindings"
+        "Failure: `T?`"
+        "Operators"
+        "Control flow"
+        "Functions and calls"
+        "Strings, arrays, maps"
+        "Built-ins"
+        "Tests and holes"
+        "FFI"
+    ]
+
 function run_all(scratch: str, compiler: str) -> report.Report?
     r: report.Report @ report.empty()
     text = read_file(SPEC)
@@ -205,6 +227,8 @@ function run_all(scratch: str, compiler: str) -> report.Report?
     offered(@r, spec: text.must(), reserved: reserved)
     rejected(@r, spec: text.must(), refused: refused)
     inventory(@r, spec: text.must())
+    shape(@r, spec: text.must())
+    anchors(@r)
     return ok(r)
 
 # The two gated numbers, and the headroom.
@@ -551,6 +575,241 @@ function inventory(@r: report.Report, spec: str)
         label: "spec/inventory",
         detail: "  the spec now holds " + got.join(" ") + " above ASCII, and the record says " + ABOVE_ASCII.join(" ") + ".\n  `selfhost/measure/pieces.hero` reads a letter as A-Z a-z and a digit as 0-9\n  where the Rust it ports asks Unicode. Ask of the new character: is it a\n  letter or a digit in any language? If it is, that claim is dead and the\n  token count has quietly drifted. If it is punctuation, add it here."
     )
+
+# The headings are the thirteen `SECTIONS` names, numbered from 1, in order,
+# and nothing else opens with `## `.
+function shape(@r: report.Report, spec: str)
+    found: [str] @ []
+    in_fence: bool @ false
+
+    for line in strings.lines(spec)
+        # A `## ` inside a fence is a Heroes section heading (spec § 1), not
+        # one of the document's; panel 126's compiler seat showed the hole.
+        if strings.starts_with(text: line, prefix: "```")
+            in_fence @ !in_fence
+
+        if !in_fence && strings.starts_with(text: line, prefix: "## ")
+            found @ found.push(strings.without_prefix(text: line, prefix: "## "))
+
+    if found == numbered_sections()
+        report.keep_pass(@r)
+        return
+    report.keep_failure(
+        @r,
+        label: "spec/shape",
+        detail: "  the spec's headings read:\n    " + found.join("\n    ") + "\n  and `.claude/rules/spec-shape.md` names:\n    " + numbered_sections().join("\n    ") + "\n  A number, once assigned, never changes, and a new section goes at the end (CL-069)."
+    )
+
+# `1. Files and layout` … `13. FFI`: what the headings read after `## `.
+function numbered_sections() -> [str]
+    out: [str] @ []
+    i: i64 @ 0
+
+    while i < SECTIONS.len()
+        out @ out.push(to_str(i + 1) + ". " + SECTIONS[i])
+        i @ i + 1
+
+    return out
+
+# Every citation of the spec BY SECTION in the compiler's source and the tests
+# names a section that exists: `spec § 7` by number, `spec § Operators` by
+# title. A citation is judged when the text before its `§` names the spec, so
+# `CLAUDE.md § 3` and design.md's `§4.19` are not this check's business; and a
+# line number, `spec:187`, is not judged at all, because it cannot be: it is the
+# one citation shape no instrument can see (CL-037), which is why
+# `.claude/rules/spec-shape.md` asks for the section instead.
+function anchors(@r: report.Report)
+    offenders: [str] @ []
+    other = other_headings()
+
+    for dir in ["selfhost", "tests"]
+        files = shell.found_under(dir: dir, suffix: ".hero", reference: "")
+
+        if files.is_err()
+            report.keep_failure(@r, label: "spec/anchors", detail: "  cannot walk " + dir)
+            return
+
+        for path in files.must()
+            # The instrument's own file carries the citation forms as strings
+            # and as test cases, and is the one file that cannot be judged by
+            # itself.
+            if strings.ends_with(text: path, suffix: "harness/suite_spec.hero")
+                continue
+            body = read_file(path)
+
+            if body.is_err()
+                continue
+            number: i64 @ 1
+
+            for line in strings.lines(body.must())
+                for bad in unknown_anchors(line, other: other)
+                    offenders @ offenders.push("    " + path + ":" + to_str(number) + " cites § " + bad)
+
+                number @ number + 1
+
+    if offenders.len() == 0
+        report.keep_pass(@r)
+        return
+    report.keep_failure(
+        @r,
+        label: "spec/anchors",
+        detail: "  these cite a section of the spec that does not exist:\n" + offenders.join("\n") + "\n  A citation is `spec § N` or `spec § <title>`, with N and the title from\n  `.claude/rules/spec-shape.md`; a title never changes and a number never moves."
+    )
+
+# The section citations in one line that name nothing. A `§ ` is judged when
+# the 32 characters before it name the spec as a word (`inspect` and `respect`
+# do not, and that was a probe of panel 126's compiler seat), or when they name
+# no document at all and a title follows: a bare `(§ Widths)` is a citation of
+# nothing, and a bare `(§ Functions and calls)` is judged and holds. A `§ ` in
+# a window that names another document, CLAUDE.md, design.md, the ROADMAP, a
+# README, the reserved-word registry, is that document's business; and a bare
+# `§ Commands` that is one of THEIR headings passes through `other`, read from
+# those files once by `anchors`.
+function unknown_anchors(line: str, other: [str]) -> [str]
+    cs = line.chars()
+    out: [str] @ []
+    i: i64 @ 0
+
+    while i + 1 < cs.len()
+        if cs[i] == "§" && cs[i + 1] == " "
+            before = cs.slice(from: window_start(i), to: i).join("")
+            rest = cs.slice(from: i + 2, to: cs.len())
+
+            if names_another_document(before)
+                i @ i + 1
+                continue
+
+            if mentions_spec(before) || rest.len() > 0 && is_capital(rest[0]) && !opens_with_any(rest: rest, titles: other)
+                if !names_a_section(rest)
+                    out @ out.push(rest.slice(from: 0, to: shortest(a: rest.len(), b: 24)).join(""))
+        i @ i + 1
+
+    return out
+
+# `spec` as a word: at the start of the window or after a character that is
+# not a letter, so `spec § 7`, `(spec, § FFI)` and `heroes-spec.md` count and
+# `inspect` and `respect` do not.
+function mentions_spec(before: str) -> bool
+    cs = before.chars()
+    i: i64 @ 0
+
+    while i + 4 <= cs.len()
+        if cs.slice(from: i, to: i + 4).join("") == "spec"
+            if i == 0 || !is_letter(cs[i - 1])
+                return true
+        i @ i + 1
+
+    return false
+
+function names_another_document(before: str) -> bool
+    for name in ["CLAUDE", "design", "reserved-words", "ROADMAP", "README", "DESIGN-LOG", "case-law", "journal", "panel", "measurements", "site/", "DONE", "SCHEDULED", "DECIDE", "DEFECTS", "LEARN", ".env"]
+        if strings.contains(text: before, needle: name)
+            return true
+
+    return false
+
+function opens_with_any(rest: [str], titles: [str]) -> bool
+    text = rest.join("")
+
+    for title in titles
+        if title.len() > 0 && strings.starts_with(text: text, prefix: title)
+            return true
+
+    # A title cut by a line wrap, `§ Where we` for `Where we are`, three
+    # characters or more, is taken as the title it opens.
+    head = strings.trimmed(text)
+
+    if head.len() >= 3
+        for title in titles
+            if title.len() >= 3 && strings.starts_with(text: title, prefix: head)
+                return true
+
+    return false
+
+function is_letter(ch: str) -> bool
+    if ch.len() != 1
+        return false
+    return ch[0] >= 65 && ch[0] <= 90 || ch[0] >= 97 && ch[0] <= 122
+
+function is_capital(ch: str) -> bool
+    if ch.len() != 1
+        return false
+    return ch[0] >= 65 && ch[0] <= 90
+
+# The `## ` headings of the other documents whose sections code cites bare,
+# with a leading `N. ` stripped: CLAUDE.md's, the ROADMAP's, the site README's.
+function other_headings() -> [str]
+    out: [str] @ []
+
+    for path in ["CLAUDE.md", "docs/ROADMAP.md", "site/README.md"]
+        text = read_file(path)
+
+        if text.is_err()
+            continue
+
+        for line in strings.lines(text.must())
+            if strings.starts_with(text: line, prefix: "## ")
+                out @ out.push(
+                    strings.trimmed(spec_text.without_number(strings.without_prefix(text: line, prefix: "## ")))
+                )
+
+    return out
+
+function window_start(i: i64) -> i64
+    if i < 32
+        return 0
+    return i - 32
+
+function shortest(a: i64, b: i64) -> i64
+    if a < b
+        return a
+    return b
+
+# Whether `rest` opens with a section number in range or with a section's
+# title. `Failure: `T?`` is cited as `Failure`, so a title matches up to its
+# colon as well as whole.
+function names_a_section(rest: [str]) -> bool
+    if rest.len() == 0
+        return false
+
+    if spec_text.is_digit(rest[0])
+        digits: [str] @ []
+        i: i64 @ 0
+
+        while i < rest.len() && spec_text.is_digit(rest[i])
+            digits @ digits.push(rest[i])
+            i @ i + 1
+
+        # `spec § 4.19` is design.md's numbering written against the wrong
+        # document: a dotted number is nobody's section here.
+        if i + 1 < rest.len() && rest[i] == "." && spec_text.is_digit(rest[i + 1])
+            return false
+        n = strings.to_number(digits.join(""))
+        return !n.is_err() && n.must() >= 1 && n.must() <= SECTIONS.len()
+    text = rest.join("")
+
+    for title in SECTIONS
+        if strings.starts_with(text: text, prefix: title) || strings.starts_with(text: text, prefix: before_colon(title))
+            return true
+
+    # A title wrapped at the end of a comment line arrives cut, `Strings,` or
+    # `Functions and`; a cut of three characters or more that opens a title is
+    # taken as that title, because this check reads one line at a time.
+    head = strings.trimmed(text)
+
+    if head.len() >= 3
+        for title in SECTIONS
+            if strings.starts_with(text: title, prefix: head)
+                return true
+
+    return false
+
+function before_colon(title: str) -> str
+    at = strings.index_of(text: title, needle: ":")
+
+    if at.is_err()
+        return title
+    return title.slice(from: 0, to: at.must())
 
 # Every quoted name after `marker` on its own line — the compiler's table,
 # read from the compiler's own source.
@@ -935,3 +1194,43 @@ test "a quoted word is read, and an unquoted line is refused"
 
     # An unterminated quote is not half a word.
     assert first_quoted(text: "a \"open", from: 0).is_err()
+
+test "the headings are the thirteen sections, numbered from 1 and in order"
+    numbered = numbered_sections()
+    assert numbered.len() == SECTIONS.len()
+    assert numbered[0] == "1. Files and layout"
+    assert numbered[12] == "13. FFI"
+
+test "a section citation is judged where it names the spec, by title or by number"
+    none: [str] = []
+    assert unknown_anchors("as spec § Types says", other: none).len() == 0
+    assert unknown_anchors("(spec, § FFI; panel 090)", other: none).len() == 0
+    assert unknown_anchors("the code is spec § Failure).", other: none).len() == 0
+    assert unknown_anchors("see spec § 7 and spec § 13", other: none).len() == 0
+    assert unknown_anchors("but spec § 14 is nobody", other: none).len() == 1
+    assert unknown_anchors("and spec § Widths is gone", other: none) == ["Widths is gone"]
+
+    # Another document's section is that document's business: CLAUDE.md's,
+    # design.md's, the reserved-word registry's.
+    assert unknown_anchors("CLAUDE.md § Verification and design.md §4.19", other: none).len() == 0
+    assert unknown_anchors("(spec § Types; design.md § 4.3)", other: none).len() == 0
+    assert unknown_anchors("from spec/reserved-words.md § keywords", other: none).len() == 0
+
+    # A bare `§ Title` with no document named is judged: a real section holds,
+    # a made-up one is caught, and another document's heading passes through
+    # `other`, which `anchors` reads from those documents.
+    assert unknown_anchors("syntax (§ Functions and calls)", other: none).len() == 0
+    assert unknown_anchors("the rule (§ Widths) states", other: none).len() == 1
+    assert unknown_anchors("# § Commands", other: ["Commands"]).len() == 0
+    assert unknown_anchors("# § Commands", other: none).len() == 1
+
+    # `spec` is a word: `inspect` and `respect` are not it (panel 126's
+    # compiler seat, with a probe), and a dotted number is design.md's.
+    assert unknown_anchors("inspect § Verification first", other: ["Verification"]).len() == 0
+    assert unknown_anchors("respect § 14 of the contract", other: none).len() == 0
+    assert unknown_anchors("spec § 4.19 says", other: none).len() == 1
+
+    # A title cut by a line wrap is still the title; two letters are not.
+    assert unknown_anchors("(§4.19, spec § Strings,", other: none).len() == 0
+    assert unknown_anchors("is `@` (spec § Functions and", other: none).len() == 0
+    assert unknown_anchors("see spec § Fu", other: none).len() == 1

@@ -329,11 +329,10 @@ these rules reach the sessions that need them and cost nothing in the others.
 | file length and what a narrowing rests on | `.claude/rules/module-shape.md` |
 | which suites judge a change, and what may run beside a gate | `.claude/rules/verification.md` |
 | the records, names, releases and lists | `.claude/rules/records.md` |
+| the shape of the specification and its instruments | `.claude/rules/spec-shape.md` |
 | the site's copy and every outward-facing text | `site/CLAUDE.md` |
 
 The skills are the process: `/step` (its protocol and the milestone-close
 checklist), `/decide`, `/learn`, `/panel`, `/where`. The seats are
-`.claude/agents/`. **Section numbers `§ 1` to `§ 15` never change**: they are
-cited 3280 times here, 2599 in records that are never rewritten and 346 in
-commit bodies, and no instrument verifies a section number, so a renumbering
-would break every one in silence (CL-069).
+`.claude/agents/`. **Section numbers `§ 1` to `§ 15` never change** (CL-069
+carries the count of citations that would break in silence).

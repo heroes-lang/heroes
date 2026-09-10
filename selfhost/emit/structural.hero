@@ -89,7 +89,7 @@ function equality_body(@w: writer.Writer, c: state.Checked, names: ctype.Names, 
 # The comparison of one field, as a C expression.
 function field_eq_expr(c: state.Checked, names: ctype.Names, ty: i64, member: str) -> str
     match table.get(c.types, ty)
-        # ptr and cstr compare as ADDRESSES — spec:72 since panel 053,
+        # ptr and cstr compare as ADDRESSES — spec § 7 Operators since panel 053,
         # and the two rows the emitter once dropped to the loud arm:
         # == on a complete group record holding either was
         # hero_unreachable() at exit 134 on a correct program (panel

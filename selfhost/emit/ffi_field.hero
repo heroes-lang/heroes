@@ -162,7 +162,7 @@ function field_span(s: source.Source, decls: [ast.Decl], type_name: str, member:
 # number the header does not have: §4.17 inverted. The emitter can
 # tell the two apart because C makes the fact a constant — a flexible
 # array member's tail is 0, measured {4, 4, 0} against {12, 4, 8} —
-# and the route named is spec:222's own: omit the field, mark the
+# and the route named is spec § 13 FFI's own: omit the field, mark the
 # record partial, reach the bytes through the header's functions.
 function flexible_array_member(s: source.Source, tree: ast.Ast, decls: [ast.Decl], line: str) -> diag.Diagnostic?
     if !ffi_lookup.has(text: line, needle: ffi_lookup.FAILED)

@@ -421,7 +421,7 @@ function both(first: [str], second: [str]) -> [str]
     return out
 
 # One environment variable, or "" where it is unset. The null test is the
-# contract, not caution: converting a null `cstr` aborts (spec:229).
+# contract, not caution: converting a null `cstr` aborts (spec § 13 FFI).
 function env(name: str) -> str
     got = getenv(name: name.cstr())
 

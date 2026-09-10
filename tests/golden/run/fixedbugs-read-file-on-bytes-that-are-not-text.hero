@@ -80,3 +80,8 @@ function main()
     match read_file("build/heroes-golden-no-such-file")
         .ok _  => print("unexpected")
         .err e => print("missing: ", e.code)
+
+# Since 2026-09-10 the specification's sections are numbered and a citation names
+# the section, never a line (CL-037). The line numbers above were written against
+# the layout at commit 834d804f; read today they are:
+#   spec:51 is spec § 3 Types

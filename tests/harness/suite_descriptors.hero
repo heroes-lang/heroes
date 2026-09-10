@@ -147,7 +147,7 @@ function defined_in(c: str) -> {str: bool}
         # `s` is the opener's first byte: the cheap test that keeps this
         # to one comparison per byte. The match itself compares BYTES and
         # never slices — a slice at an arbitrary offset aborts where it
-        # would split a character (spec:148), and this text is somebody
+        # would split a character (spec § 10 Strings, arrays, maps), and this text is somebody
         # else's file rather than a value with a known shape.
         if c[at] != 's' || !matches_at(c: c, at: at, needle: opener)
             at @ at + 1

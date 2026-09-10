@@ -294,7 +294,7 @@ test "payloads come before their variant, and every option gets four functions"
     # were 30 and 21 bytes until `HERO_TU_LOCAL ` was prefixed to every
     # per-type function, which made them 44 and 35 and left this bound
     # 14 bytes short — so the last slice ran past the end of the string
-    # and the test aborted, exactly as spec:151 promises. The needle and
+    # and the test aborted, exactly as spec § 10 Strings, arrays, maps promises. The needle and
     # the bound have to move together.
     stop = body_text.len() - 44
 

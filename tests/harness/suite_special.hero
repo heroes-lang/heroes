@@ -14,6 +14,7 @@
 use expectation
 use report
 use shell
+use spec_text
 use strings
 
 function run_all(scratch: str, compiler: str) -> report.Report?
@@ -290,10 +291,18 @@ function the_specs_own_example_opens_a_database(@r: report.Report, scratch: str,
     if spec.is_err()
         report.keep_failure(@r, label: "special/the spec's example", detail: "  cannot read spec/heroes-spec.md")
         return
-    after = strings.index_of(text: spec.must(), needle: "## FFI")
+
+    # By title and not by the literal text `## FFI`: the heading carries a
+    # section number since M-anchored-spec, and a needle that included the
+    # number would go stale the day a section is inserted before it.
+    after = spec_text.section_named(text: spec.must(), name: "FFI")
 
     if after.is_err()
-        report.keep_failure(@r, label: "special/the spec's example", detail: "  the spec has no `## FFI` section")
+        report.keep_failure(
+            @r,
+            label: "special/the spec's example",
+            detail: "  the spec has no `## FFI` section, numbered or not"
+        )
         return
     rest = spec.must().slice(from: after.must(), to: spec.must().len())
     blocks = strings.split_text(text: rest, separator: "```")
@@ -480,7 +489,7 @@ test "the expectation module reads what a special case needs"
 # dev loop, and only a built binary can use it.
 #
 # **It is not a fix that was skipped, it is a limit that has to be
-# decided.** A Heroes `str` IS UTF-8 (spec:52), so the compiler cannot
+# decided.** A Heroes `str` IS UTF-8 (spec § 3 Types), so the compiler cannot
 # represent that argument in order to hand it on: the most `heroes run`
 # could ever do is refuse it with a diagnostic instead of aborting.
 # That choice is in `docs/work/DECIDE.md`.
@@ -513,7 +522,7 @@ function one_bad_argument_does_not_kill_the_other_two(@r: report.Report, scratch
     # argument has to be bytes that are NOT text — `\377\376` — because
     # what is under test is a program receiving exactly that. But
     # `hero_run_arg` takes a `str`, and a `str` is UTF-8 by definition
-    # (spec:52), so there is no Heroes value that can carry the argument
+    # (spec § 3 Types), so there is no Heroes value that can carry the argument
     # this test needs. A shell can, because it deals in bytes.
     #
     # So `/bin/sh` is the program here, deliberately, and the words are
@@ -567,7 +576,7 @@ function one_bad_argument_does_not_kill_the_other_two(@r: report.Report, scratch
 
     if plain.must().code != 134
         wrong @ wrong.push(
-            "    `args()` exited " + plain.must().code.to_str() + " where spec:186 says it aborts on an argument that is not UTF-8"
+            "    `args()` exited " + plain.must().code.to_str() + " where spec § 11 Built-ins says it aborts on an argument that is not UTF-8"
         )
 
     if wrong.len() > 0

@@ -285,7 +285,7 @@ HeroStr hero_str_identity(HeroStr s) {
     return s;
 }
 
-/* -- the numeric conversions (spec line 150) --------------------------------
+/* -- the numeric conversions (spec § 11 Built-ins) --------------------------------
  *
  * `(int64_t)v` where the truncated `v` is outside int64's range is UNDEFINED
  * BEHAVIOUR (C11 6.3.1.4p1), which CLAUDE.md §7 forbids reaching — so this check

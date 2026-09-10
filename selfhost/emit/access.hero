@@ -47,7 +47,7 @@ function len_read(@w: writer.Writer, c: state.Checked, f: containers.Function, v
         return
     writer.line(@w, text: "    " + target.must() + " = " + counter + "(" + mangle.value(value) + ");")
 
-# s[i]: a byte, aborting out of range (spec line 142).
+# s[i]: a byte, aborting out of range (spec § 10 Strings, arrays, maps).
 function string_byte(@w: writer.Writer, base: i64, index: i64, target: str?)
     if target.is_err()
         return

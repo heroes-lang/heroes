@@ -776,7 +776,7 @@ function field_call(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: sta
     handed = lower_args(@b, a, r, c, s, decls, given: given, callee: fail("none", "a field holding a function value"))
     return emissions.emit_call(@b, target: .indirect(value: target), given: handed, variadic: false, ty: ty, span: span)
 
-## assert — the source expression and both sides (§4.18, spec:157)
+## assert — the source expression and both sides (§4.18, spec § 12 Tests and holes)
 
 # Part 5's row reads "if plus panic, with source text attached", and
 # the AND BOTH SIDES half is why the abort carries three operands where

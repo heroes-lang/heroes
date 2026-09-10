@@ -10,7 +10,7 @@
 # the whole file rather than a question at one call site.
 #
 # WHAT IT REFUSES, and the count that first justified it was wrong three
-# ways. `spec:253` says `.cstr()` lends a `str` to C to read **for that
+# ways. `spec § 13 FFI` says `.cstr()` lends a `str` to C to read **for that
 # call**, and panel 122 turned that into three clauses: a lend stands only
 # as an argument of a call (R2), no function outside an `extern` group
 # answers `cstr` (R3), and no record outside a group holds one (R4).

@@ -1,6 +1,6 @@
 # The byte-level string work every suite needs, in one place.
 #
-# The spec's built-in list (§ Strings, arrays, maps) has `len`, `slice`,
+# The spec's built-in list (spec § 11 Built-ins) has `len`, `slice`,
 # `chars` and `join`; it has no `ends_with`, no split and no basename, so
 # the harness writes them once here rather than four times in four
 # suites — a second copy is a second place for `ends_with` to be subtly
@@ -12,7 +12,7 @@
 # Heroes does not have).
 #
 # WHY THESE COMPARE BYTES AND DO NOT SLICE. `slice` aborts when it splits
-# a character (spec:148), so `text.slice(from: len - suffix.len(), ...)`
+# a character (spec § 10 Strings, arrays, maps), so `text.slice(from: len - suffix.len(), ...)`
 # on a name holding one multi-byte character is an abort rather than a
 # `false` — and a harness that dies on a filename is worse than no
 # harness. Indexing gives a `u8` for any in-range index and cannot abort,
@@ -49,7 +49,7 @@ function without_suffix(text: str, suffix: str) -> str
 #
 # The separator is a byte and not a `str` because the one caller that
 # matters passes NUL, which no Heroes literal can spell: the language has
-# six escapes and `\0` is not one of them (spec:68). `find -print0`
+# six escapes and `\0` is not one of them (spec § 2 Literals). `find -print0`
 # writes that byte, and reading it is what makes a directory walk sound —
 # see shell.list_entries.
 function split_on(text: str, byte: u8) -> [str]

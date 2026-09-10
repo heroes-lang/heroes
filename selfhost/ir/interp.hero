@@ -1,5 +1,6 @@
-# `f"a {n} b"` lowered: `"a " + to_str(n) + " b"` (spec § Values; panel 121 R4,
-# ratified 2026-09-09).
+# `f"a {n} b"` lowered: `"a " + to_str(n) + " b"` (spec § 2 Literals; panel 121
+# R4, ratified 2026-09-09). This line cited a section called Values, which the spec never had, and
+# the check that reads section citations found it on its first run (2026-09-10).
 #
 # IN THE LOWERING AND NOT IN THE PARSER, and the sitting fought that out: a
 # parser desugar would let the formatter erase the form from its own tree, and a

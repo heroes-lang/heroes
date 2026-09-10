@@ -1,5 +1,5 @@
 # `f"line {n}: {word}"` — the lexer's half of string interpolation (spec
-# § Values; design.md Part 7 item 7; panel 121 R1 to R4, ratified 2026-09-09).
+# § 2 Literals; design.md Part 7 item 7; panel 121 R1 to R4, ratified 2026-09-09).
 #
 # ONE TOKEN KIND, `str_piece`, AND THE TEXT SAYS WHICH PIECE IT IS. The head
 # starts with `f"`; every later piece starts with the `}` that closed a hole; a

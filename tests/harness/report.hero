@@ -35,7 +35,7 @@ function mismatch(what: str, expected: str, actual: str) -> str
     return "  " + what + "\n--- expected ---\n" + expected + "--- actual ---\n" + actual + "--- end ---"
 
 function tally(one: Report, two: Report) -> Report
-    # `+` joins numbers and strings, never arrays (spec:153), so the
+    # `+` joins numbers and strings, never arrays (spec § 7 Operators), so the
     # failures are pushed one at a time.
     merged: [str] @ one.failures
 

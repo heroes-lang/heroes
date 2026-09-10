@@ -119,10 +119,13 @@ export function typeWords(): Set<string> {
   if (cachedTypes !== null) return cachedTypes;
 
   const text = readText(SPEC_FILE);
-  const heading = /^##\s+Types\s*$/m.exec(text);
+  // The heading may carry a section number, `## 2. Types`, since the
+  // specification took numbered sections (M-anchored-spec); the number is
+  // what this pattern looks past, and nothing else.
+  const heading = /^##\s+(?:\d+\.\s+)?Types\s*$/m.exec(text);
   if (heading === null) {
     throw new Error(
-      `${SPEC_FILE}: no \`## Types\` heading to read the type words from.\n` +
+      `${SPEC_FILE}: no \`## Types\` heading, numbered or not, to read the type words from.\n` +
         `  the site colours built-in types by that table (site/README.md, Syntax colouring).`
     );
   }
