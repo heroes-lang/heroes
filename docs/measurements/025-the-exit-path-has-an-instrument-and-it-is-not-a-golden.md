@@ -73,3 +73,29 @@ than the world*. The session ran one command, got silence, and generalised to
 "nothing accuses this program on any of the three platforms" — a claim about
 every instrument, from one invocation of one of them. The suite's own command
 was one line away in the file the claim was being written into.
+
+## Corrected 2026-09-10, later the same day, by the workflow that turned this into case law
+
+Three sentences above are wrong, and CL-074 quotes them, so they are corrected
+here rather than edited:
+
+1. **"three C programs"** counts an enumeration of two. The probe was two
+   programs, `malloc` and return and `malloc` and `exit(0)`, run three times,
+   the first of them twice, once with `ASAN_OPTIONS=detect_leaks=1`. Two
+   programs, three runs.
+2. **"The suite's own command was one line away in the file the claim was being
+   written into"** is false. The command is in `tests/harness/suite_run.hero`,
+   a different file in a different directory, at the line that runs the third
+   configuration. What stood one line away, in the case's own comment, was the
+   sentence the correction was replacing.
+3. **"CLAUDE.md § RUN IT's third shape"** names the wrong shape. The sentence
+   quoted beside it, *a negative claim rests on the searcher's vocabulary
+   rather than the world*, is the SECOND shape's, CL-018's; the third is *the
+   list is a measurement too*, CL-057. Both were in play and neither is the
+   whole of it, which is why CL-074 exists: the command ran and answered a
+   question nobody had asked, and the remedy is the gate's own invocation
+   rather than a hedge.
+
+`DESIGN-LOG.md`'s row for this file carries the same third-shape mislabel and
+the same closing sentence; it is a record too, and CL-074 corrects both where a
+reader of the contract will meet them.
