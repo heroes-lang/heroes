@@ -12,6 +12,15 @@ node_modules/
 dist/
 .astro/
 
+# Any OTHER output directory `astro build --outDir` is pointed at, and the
+# reason is a red gate rather than tidiness. A session that must verify a build
+# while another process is reading `dist/` builds beside it instead, and the
+# record walk reads untracked files: an output directory named anything but
+# `dist/` therefore reaches `records/english` as 93 pages of Italian prose and
+# fails a suite that is measuring nothing. Found 2026-09-10, on a build made
+# into `dist-lang/` so as not to disturb a panel seat mid-render.
+dist-*/
+
 # Site-level environment. The deploy needs no secret at build time, so these
 # should stay empty; they are listed because a tool that invents one of these
 # names must not be able to commit it.
