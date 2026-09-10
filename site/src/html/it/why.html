@@ -121,8 +121,9 @@ grafica, audio, terminale      →  SDL, raylib, ncurses</code></pre>
     deciso dalla riga e dalla funzione intorno, mai da qualcosa scritto tre file
     più in là. Niente ereditarietà, niente macro, niente eccezioni, niente
     conversioni automatiche, niente null: l&rsquo;assenza è un tipo,
-    <code>i64?</code>, e l&rsquo;unico puntatore a zero è <code>nullptr</code>,
-    al confine con il C.</li>
+    <code>i64?</code>. Il puntatore a zero del C conserva il suo nome,
+    <code>nullptr</code>, e un <code>ptr</code> è opaco: nessun codice Heroes
+    ci legge dentro.</li>
     <li><b>Un solo modo di scrivere qualunque cosa.</b> Un formattatore con
     una sola forma canonica, una parola sola per i cicli, e i nomi degli
     argomenti obbligatori dove i tipi non bastano a distinguerli.</li>

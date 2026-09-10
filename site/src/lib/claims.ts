@@ -349,9 +349,9 @@ const CLAIMS: Claim[] = [
   // closes the other half by refusing a row no nod spends. The ledger that
   // tracked these by hand said twenty against a markup carrying thirteen.
   { page: 'site/src/html/about/thanks.html', what: 'the titles spent as section nods',
-    fact: nodCount, shape: (n) => new RegExp(`All ${n} are here`, 'i') },
+    fact: nodCount, shape: (n) => new RegExp(`All ${n} are above`, 'i') },
   { page: 'site/src/html/it/about/thanks.html', what: 'the titles spent as section nods',
-    fact: nodCount, shape: (n) => new RegExp(`Sono tutte e ${n} qui sotto`, 'i') },
+    fact: nodCount, shape: (n) => new RegExp(`Sono tutte e ${n} qui sopra`, 'i') },
 
   // The specification's ceiling, in the author's own word for it, `6K`
   // (2026-09-09), derived from the suite by `ceilingK` and said on the two
@@ -448,6 +448,51 @@ function checkChapterDiagnostics(html: string, pagePath: string): string[] {
 }
 
 /**
+ * What number each chapter says it is, from its own crumb.
+ *
+ * A chapter's number is the site's own structure, which makes it the cheapest
+ * fact on the site to check and, until this existed, the only class of number
+ * with no instrument behind it. The guide renumbered when Errors became chapter
+ * 2: every crumb was updated and five prose cross-references were not, ten
+ * across the two editions, each linking a chapter whose own crumb said a
+ * different number. The languages seat found them by reading; nothing could
+ * have told.
+ */
+function chapterNumbers(): Map<string, number> {
+  const out = new Map<string, number>();
+  for (const file of filesIn(CHAPTERS_DIR)) {
+    if (!file.endsWith('.html') || file.includes('/index.html')) continue;
+    const said = /\/\s*(?:chapter|capitolo)\s+(\d+)/.exec(readText(file));
+    if (said) out.set(file.replace(`${CHAPTERS_DIR}/`, '').replace('.html', ''), Number(said[1]));
+  }
+  return out;
+}
+
+/**
+ * Every linked "chapter N" on a page names the number that chapter claims.
+ *
+ * Covers the linked form, which is how the site writes a cross-reference. A
+ * bare "as chapter 12 shows" with no link beside it is not reachable from here
+ * and stays a sentence only a reader checks.
+ */
+function checkChapterRefs(html: string, pagePath: string): string[] {
+  if (!pagePath.startsWith('site/src/html/')) return [];
+  const numbers = chapterNumbers();
+  const problems: string[] = [];
+  const REF = /href="\/(?:it\/)?docs\/([a-z0-9-]+)\/">(?:chapter|capitolo)\s+(\d+)</g;
+  for (const [, slug, said] of html.matchAll(REF)) {
+    const real = numbers.get(slug);
+    if (real !== undefined && real !== Number(said)) {
+      problems.push(
+        `${pagePath}: the prose says chapter ${said} and links /docs/${slug}/, whose own crumb ` +
+          `says chapter ${real}. The guide's numbering moved and this sentence stayed behind.`
+      );
+    }
+  }
+  return problems;
+}
+
+/**
  * The pages whose claims have been checked in this build, for the end-of-build
  * audit. A FILE rather than a Set, and the reason is a module boundary: the
  * pages run this code from Astro's prerender bundle, and the build-done hook in
@@ -483,6 +528,7 @@ export function checkClaims(html: string, pagePath: string): void {
     }
   }
   problems.push(...checkChapterDiagnostics(html, pagePath));
+  problems.push(...checkChapterRefs(html, pagePath));
   problems.push(...checkNods(html, pagePath));
   problems.push(...checkNoWrongTwin(html, pagePath));
   problems.push(...checkFixpointLeg(html, pagePath));

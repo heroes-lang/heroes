@@ -30,7 +30,7 @@
   <h3>Le tre regole delle funzioni generiche</h3>
   <ul>
     <li>
-    <b>Solo le funzioni possono essere generiche.</b> I campi di un <code>record</code> o di un <code>variant</code> hanno tipi concreti. Per contenere elementi di tipi diversi puoi usare le liste e le mappe predefinite.
+    <b>Solo le funzioni possono essere generiche.</b> Un campo di un <code>record</code> o di un <code>variant</code> ha un tipo concreto, e <code>record Box[T]</code> non esiste. Le liste e le mappe prendono un tipo di elemento, e ognuna contiene un solo tipo alla volta: <code>ys = [1, &quot;a&quot;]</code> dà <code>error[type_mismatch]</code>. Per tenere valori di tipi diversi in una sola lista, dichiara un <code>variant</code> e fai una lista di quello.
   </li>
     <li><b>Nessuna condizione sui tipi.</b> Non puoi dire &ldquo;un
     <code>A</code> qualsiasi, purché si possa confrontare&rdquo;. Se alla

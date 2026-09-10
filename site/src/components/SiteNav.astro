@@ -114,7 +114,12 @@ const entries = [
          one had no date behind it. Every other caveat on this site states a
          CONDITION instead, "it opens with the code", which cannot go stale. So
          does this one now. Found by the marketing seat. -->
-    <a class="out" href="https://github.com/heroes-lang/heroes"
+    <!-- `target` and `rel` are written here rather than added by
+         `fillOutbound` in `src/lib/figures.ts`, which is where every other
+         outbound link on the site gets them: the nav is a component and the
+         byline is a partial, so neither passes through `page()`. Two places by
+         hand, so that the rule itself keeps its no exceptions. -->
+    <a class="out" target="_blank" rel="noopener" href="https://github.com/heroes-lang/heroes"
        title={lang === 'it'
          ? 'Il codice del compilatore, la specifica e tutti i registri del progetto'
          : 'The compiler, the specification and every record the project keeps'}>GitHub</a>

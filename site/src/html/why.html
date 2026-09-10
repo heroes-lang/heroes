@@ -118,8 +118,9 @@ graphics, audio, terminal  →  SDL, raylib, ncurses</code></pre>
     <li><b>A line is understood by looking at that line.</b> Its meaning is
     decided by the line and the function around it, never by something written
     three files away. No inheritance, no macros, no exceptions, no implicit
-    conversions, no null: absence is a type, <code>i64?</code>, and the only
-    zero pointer is <code>nullptr</code>, at the C boundary.</li>
+    conversions, no null: absence is a type, <code>i64?</code>. C&rsquo;s zero
+    pointer keeps its own name, <code>nullptr</code>, and a <code>ptr</code> is
+    opaque, so no Heroes code reads through one.</li>
     <li><b>One way to write anything.</b> A formatter with one canonical form,
     one word for loops, and argument names required where types cannot tell two
     arguments apart.</li>

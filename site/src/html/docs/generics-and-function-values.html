@@ -30,7 +30,7 @@
   <h3>Three rules for generic functions</h3>
   <ul>
     <li>
-    <b>Only functions can be generic.</b> Fields in a <code>record</code> or <code>variant</code> have concrete types. Built-in lists and maps can hold elements of different types.
+    <b>Only functions can be generic.</b> A field of a <code>record</code> or a <code>variant</code> has one concrete type, and there is no <code>record Box[T]</code>. A list and a map each take an element type, and each one holds a single type at a time: <code>ys = [1, &quot;a&quot;]</code> is an <code>error[type_mismatch]</code>. To keep values of different kinds in one list, declare a <code>variant</code> and make a list of that.
   </li>
     <li><b>No conditions on the types.</b> There is no way to say &ldquo;any
     <code>A</code>, as long as it can be compared&rdquo;. If a function needs an
