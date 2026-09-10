@@ -102,9 +102,9 @@ grafica, audio, terminale      →  SDL, raylib, ncurses</code></pre>
     Puoi scrivere le dichiarazioni in qualsiasi ordine. Due funzioni possono chiamarsi a vicenda senza dichiarazioni anticipate. Durante la compilazione, Heroes riconduce il codice a <b>sette costrutti</b> interni, le forme di base usate per rappresentare il programma.
   </p>
 
-  <h2>Testo con dei buchi dentro</h2>
+  <h2>Perché le stringhe hanno dei buchi</h2>
   <p>
-    Una stringa può portare dei valori. Una <code>f</code> prima della virgoletta d&rsquo;apertura trasforma <code>{n}</code> nel testo di <code>n</code>, scritto come lo scriverebbe <code>to_str</code>. In un buco può stare qualsiasi espressione: una somma, una chiamata, un campo, un&rsquo;altra stringa dello stesso tipo. <code>{{</code> scrive una graffa aperta; fuori da un buco la graffa chiusa non è speciale, quindi <code>}</code> resta com&rsquo;è. Una stringa senza la <code>f</code> è esattamente quella di prima.
+    Una stringa può portare dei valori, e a trasformare <code>{n}</code> nel testo di <code>n</code> è una <code>f</code> prima della virgoletta d&rsquo;apertura.
   </p>
   <figure class="example" data-src="examples/gallery/12-interpolation.hero" data-lines="17-18">
 <pre><code><span class="k">function</span> line(at: <span class="t">i64</span>, of: <span class="t">i64</span>, star: Star) -&gt; <span class="t">str</span>
@@ -112,7 +112,7 @@ grafica, audio, terminale      →  SDL, raylib, ncurses</code></pre>
     <figcaption>examples/gallery/12-interpolation.hero, righe 17&ndash;18</figcaption>
   </figure>
   <p>
-    Perché la <code>f</code>: dentro le stringhe normali la graffa era già in uso, e oltre duecento stringhe del compilatore stesso ne contengono una, quindi una stringa con dei buchi lo dice dal primo carattere e tutte le altre restano come prima. Perché qualsiasi espressione: elencare le forme ammesse costava più token di specifica che ammetterle tutte, e a decidere è stato il conteggio. In un buco può stare ciò che <code>to_str</code> sa rendere: un intero, un numero con la virgola, un <code>bool</code> o una <code>str</code>. Un record o un array non hanno un testo proprio, e un valore che potrebbe mancare va prima reso certo; il compilatore rifiuta il buco e la sua nota dice cosa scrivere al suo posto. <a href="/it/examples/gallery/12-interpolation/">L&rsquo;esempio intero&nbsp;&rarr;</a>
+    Perché la <code>f</code>: dentro le stringhe normali la graffa era già in uso, e oltre duecento stringhe del compilatore stesso ne contengono una, quindi una stringa con dei buchi lo dice dal primo carattere e tutte le altre restano come prima. Perché qualsiasi espressione: elencare le forme ammesse costava più token di specifica che ammetterle tutte, e a decidere è stato il conteggio. Cosa può stare in un buco, cosa scrive <code>{{</code> e cosa dice il compilatore davanti a un buco senza testo stanno nel capitolo. <a href="/it/docs/strings/">Le stringhe, buchi compresi&nbsp;&rarr;</a> <a href="/it/examples/gallery/12-interpolation/">L&rsquo;esempio intero&nbsp;&rarr;</a>
   </p>
 
   <h2>Le regole del linguaggio <span class="nod">&middot; fashion &middot;</span></h2>
@@ -120,12 +120,14 @@ grafica, audio, terminale      →  SDL, raylib, ncurses</code></pre>
     <li><b>Una riga si capisce guardando quella riga.</b> Il suo significato è
     deciso dalla riga e dalla funzione intorno, mai da qualcosa scritto tre file
     più in là. Niente ereditarietà, niente macro, niente eccezioni, niente
-    conversioni automatiche, niente null.</li>
+    conversioni automatiche, niente null: l&rsquo;assenza è un tipo,
+    <code>i64?</code>, e l&rsquo;unico puntatore a zero è <code>nullptr</code>,
+    al confine con il C.</li>
     <li><b>Un solo modo di scrivere qualunque cosa.</b> Un formattatore con
     una sola forma canonica, una parola sola per i cicli, e i nomi degli
     argomenti obbligatori dove i tipi non bastano a distinguerli.</li>
     <li><b>Messaggi d&rsquo;errore utilizzabili anche da una macchina.</b> Ogni messaggio indica il problema e la posizione nel codice. Se coinvolge una dichiarazione in un altro punto, indica anche quella. Le correzioni suggerite sono contrassegnate da <code>certain</code> se sono certe o da <code>guess</code> se richiedono una verifica. Con <code>???</code> puoi lasciare un&rsquo;espressione incompleta e chiedere al compilatore quale tipo si aspetta.</li>
-    <li><b>Un programma non deve corrompere la memoria.</b> Il programma si ferma e segnala il punto dell&rsquo;errore se un intero supera il suo intervallo, una divisione intera ha divisore zero, un indice esce dai limiti di un array, una porzione di stringa taglia un carattere, la ricorsione è troppo profonda o <code>.must()</code> riceve un errore. Nelle scelte di progetto, evitare l&rsquo;accesso a memoria non verificata ha la precedenza sull&rsquo;eleganza e sulla brevità del codice.</li>
+    <li><b>Un programma non deve corrompere la memoria.</b> Il programma si ferma e segnala il punto dell&rsquo;errore in casi come questi: un intero supera il suo intervallo, una divisione intera ha divisore zero, un indice esce dai limiti di un array, una porzione di stringa taglia un carattere, la ricorsione è troppo profonda o <code>.must()</code> riceve un errore. Nelle scelte di progetto, evitare l&rsquo;accesso a memoria non verificata ha la precedenza sull&rsquo;eleganza e sulla brevità del codice.</li>
     <li><b>Abbastanza piccolo da stare in un prompt.</b> La specifica resta sotto il limite di 6K token, contati come li conta il modello stesso, attraverso l&rsquo;API di conteggio dei token di Claude. Il conteggio è registrato insieme al modello che lo ha prodotto, e un test a ogni commit, cioè a ogni modifica registrata, tiene il conteggio registrato sotto il tetto e rifiuta un testo cambiato senza un nuovo conteggio. Puoi passarla intera a un modello. <a href="/it/spec/">Leggila&nbsp;&rarr;</a></li>
   </ul>
 

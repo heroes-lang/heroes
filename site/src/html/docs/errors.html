@@ -90,7 +90,11 @@ hole at examples/gallery/09-holes.hero:28:74
     <code>heroes mutate</code> introduces one plausible mistake at a time into working programs and counts how many the compiler catches. It repeats the checks on the same programs with the Heroes-specific rules disabled. The difference measures the effect of these rules.
   </p>
   <p>
-    The table records a complete run on programs in <code>examples/</code>, using every kind of modification the tool supports. It includes cases where the Heroes checks do not improve the result or fail to catch the mistake. Use the command above to repeat the test:
+    The table records a complete run on the 118 programs <code>examples/</code>
+    held then, using every kind of modification the tool supports. It includes
+    cases where the Heroes checks do not improve the result or fail to catch the
+    mistake. Repeat it yourself with the command below: the corpus grows, so
+    your counts will be higher and the percentages about the same.
   </p>
   <pre class="table"><code>$ heroes mutate examples
 
