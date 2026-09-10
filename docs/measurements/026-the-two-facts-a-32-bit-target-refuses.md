@@ -220,3 +220,9 @@ check can stand where `stack.c`'s two branches stand; whether the emitted C
 compiles under GCC, which is what ESP-IDF ships, against `.claude/rules/generated-c.md`'s
 *clang type-checks it*; and anything about the Xtensa chips. Each is a question
 for the row's measuring session, on a toolchain this Mac does not have yet.
+
+**Later the same evening, 2026-09-10**: the toolchain arrived, ESP-IDF v6.1
+through `eim`, and the first three of those questions are answered in
+`027-behind-the-first-refusal-two-files-and-one-symbol.md`. The 73 names above
+were this Mac's assembler's list; the target's own list, from `nm -u` on a
+RISC-V object, is 83, and 027 carries it. The Xtensa chips stay unrun.
