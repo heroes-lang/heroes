@@ -35,7 +35,7 @@
 # 3. Every object in the runtime that survives between calls is
 #    `_Thread_local`, or `_Atomic`, or written down in this file with the
 #    reason it may stay shared and the milestone that will take it. Rule 3
-#    arrived at M-isolated-threads step 3, and § Rule 3 below carries the
+#    arrived at M-isolated-threads step 3, and Rule 3 below carries the
 #    argument — including the five objects it found on its first run that
 #    no count in this project had ever seen, because they live inside
 #    function bodies and every count had looked at file scope.

@@ -1,5 +1,5 @@
 # to_<width> as C: the one built-in that builds its own T? inline
-# (spec § Types; design.md §4.3; panels 042-045, 060). Port of
+# (spec § 11 Built-ins; design.md §4.3; panels 042-045, 060). Port of
 # archive/bootstrap-rs/heroes/src/emit/convert.rs.
 #
 # It sits apart from the other built-ins for the reason its own body

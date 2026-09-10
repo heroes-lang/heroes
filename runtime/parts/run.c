@@ -59,7 +59,7 @@ void hero_run_reset(void) {
  * be gone before `hero_run_go` is called.
  *
  * A NUL inside the word is a panic rather than a truncation: a `str`'s `len` is
- * authoritative (spec:52) and `execvp` reads to the first NUL, so the two
+ * authoritative (spec § 3 Types) and `execvp` reads to the first NUL, so the two
  * disagree exactly when an argument would silently become a shorter one. */
 void hero_run_arg(HeroStr word) {
     if (hero_run_count >= HERO_RUN_MAX_ARGS) {

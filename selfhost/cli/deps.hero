@@ -183,7 +183,7 @@ function record_deps(record_path: str, depfile: str, skip: str, @memo: {str: str
     return write_file(path: record_path, text: rows.join("\n"))
 
 # Prefix test by BYTES, never by slicing: a path is arbitrary UTF-8 and
-# `slice` aborts where it would split a character (spec:151), so cutting
+# `slice` aborts where it would split a character (spec § 10 Strings, arrays, maps), so cutting
 # a path at the prefix's length is a crash waiting for a directory with
 # an accent in its name. Comparing bytes cannot abort.
 function under(path: str, prefix: str) -> bool
@@ -213,7 +213,7 @@ function fresh(record_path: str, @memo: {str: str}) -> bool
 
         # `<16 hex><space><path>`, and the SPACE is checked before
         # anything is sliced. Not tidiness: `slice` aborts where it
-        # would split a character (spec:151), so cutting at byte 17 of
+        # would split a character (spec § 10 Strings, arrays, maps), so cutting at byte 17 of
         # a line this format did not write is a crash. A space at 16
         # makes 16 and 17 character boundaries, because a space is one
         # whole character and the byte after it begins the next.
@@ -322,7 +322,7 @@ test "a prefix test on a path with an accent in it does not abort"
 
     # A genuine prefix that stops mid-`à`, and two paths that differ
     # INSIDE a multi-byte character. Cutting either with `slice` at the
-    # prefix's length would abort (spec:151); comparing bytes answers.
+    # prefix's length would abort (spec § 10 Strings, arrays, maps); comparing bytes answers.
     assert under(path: "/Cartellà/x.h", prefix: "/Cartel")
     assert !under(path: "/Cartellá/x.h", prefix: "/Cartellà/")
 

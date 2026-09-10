@@ -21,7 +21,12 @@
 
 record Node
     value: i64
-    next: Node?    #~ no_size
+    next: Node?  #~ no_size
 
 function main()
     print(1)
+
+# Since 2026-09-10 the specification's sections are numbered and a citation names
+# the section, never a line (CL-037). The line numbers above were written against
+# the layout at commit 834d804f; read today they are:
+#   spec line 53 is spec § 3 Types says "Absence is a different type (`T?`

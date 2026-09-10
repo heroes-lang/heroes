@@ -13,7 +13,7 @@
 # fenced blocks and backticked fragments only.
 #
 # EVERYTHING HERE WALKS CHARACTERS, NOT BYTES, AND THE FIRST DRAFT DID NOT.
-# `slice` aborts when it splits a character (spec:148), so a scan that indexes
+# `slice` aborts when it splits a character (spec § 10 Strings, arrays, maps), so a scan that indexes
 # bytes and then slices one — the obvious port of Rust's `char_indices` — dies
 # on the spec's own em dash: `panic: string slice splits a character`, measured
 # on the real document the first time this ran. `chars()` gives one-character
@@ -221,6 +221,56 @@ function above_ascii(text: str) -> [str]
 
     return keys(seen).sort()
 
+# Where the section called `name` begins, in bytes: the start of the `## `
+# line whose title is `name`, with or without a section number in front of it.
+#
+# The spec's headings carry a number since M-anchored-spec, `## 13. FFI`, and
+# the reader that looked for the bare text `## FFI` would have stopped finding
+# the section the day the number arrived, silently and with the sqlite example
+# unrun. So the number is what this function looks past, and nothing else. A
+# byte offset is safe here because a line starts right after a newline, one
+# byte, so a slice from it never splits a character.
+function section_named(text: str, name: str) -> i64?
+    at: i64 @ 0
+    in_fence: bool @ false
+
+    for line in strings.lines(text)
+        # A `## ` inside a fenced block is a Heroes section heading, which the
+        # spec's own § 1 says exists, and not a heading of the spec (panel 126's
+        # compiler seat, with a probe).
+        if strings.starts_with(text: line, prefix: "```")
+            in_fence @ !in_fence
+
+        if !in_fence && strings.starts_with(text: line, prefix: "## ")
+            title = strings.without_prefix(text: line, prefix: "## ")
+
+            if strings.trimmed(without_number(title)) == name
+                return ok(at)
+        at @ at + line.len() + 1
+
+    return fail("absent", "no `## " + name + "` section, numbered or not")
+
+# `13. FFI` becomes `FFI`; `FFI` stays. A number is digits, a full stop and a
+# space, and nothing else is looked past, so `1.0 release` keeps its title.
+function without_number(title: str) -> str
+    cs = title.chars()
+    i: i64 @ 0
+
+    while i < cs.len() && is_digit(cs[i])
+        i @ i + 1
+
+    if i == 0 || i + 1 >= cs.len()
+        return title
+
+    if cs[i] != "." || cs[i + 1] != " "
+        return title
+    return cs.slice(from: i + 2, to: cs.len()).join("")
+
+function is_digit(ch: str) -> bool
+    if ch.len() != 1
+        return false
+    return ch[0] >= 48 && ch[0] <= 57
+
 test "identifiers are read out of code spans and fences, never out of prose"
     assert identifiers_in_code("plain words only").len() == 0
     assert identifiers_in_code("a `len` and a `push`") == ["len", "push"]
@@ -273,3 +323,19 @@ test "the marker is found in character space"
 test "the characters above ASCII are a set, sorted"
     assert above_ascii("plain").len() == 0
     assert above_ascii("a — b · c —") == ["·", "—"]
+
+test "a section is found with or without its number, at the start of its line"
+    plain = "intro\n\n## FFI\nbody\n"
+    numbered = "intro\n\n## 13. FFI\nbody\n"
+    assert section_named(text: plain, name: "FFI").default(-1) == 7
+    assert section_named(text: numbered, name: "FFI").default(-1) == 7
+    assert section_named(text: numbered, name: "Types").is_err()
+
+    # The title has to be the whole title: `FFI` is not a prefix match.
+    assert section_named(text: "## FFI and more\n", name: "FFI").is_err()
+
+    # A number is digits, a stop and a space; anything else is the title.
+    assert without_number("13. FFI") == "FFI"
+    assert without_number("FFI") == "FFI"
+    assert without_number("1.0 release") == "1.0 release"
+    assert without_number("7.Types") == "7.Types"

@@ -1,5 +1,5 @@
 # The `extern` group: one head line, N members, and no trace of it
-# afterwards (design.md §4.19, spec:208-243; panels 036, 060, 061, 074).
+# afterwards (design.md §4.19, spec § 13 FFI; panels 036, 060, 061, 074).
 # Port of `archive/bootstrap-rs/heroes/src/syntax/externs.rs` and
 # `archive/bootstrap-rs/heroes/src/syntax/extern_members.rs`.
 #

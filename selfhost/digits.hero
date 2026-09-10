@@ -14,7 +14,7 @@
 #   here is never negative and u64 holds every literal a program can write.
 #   The signed LOWER bound moves to where negation lives — the checker port
 #   will answer `-128` fitting an `i8` there, not here.
-# - Overflow ABORTS in Heroes (spec § Types) — it does not fail politely. So
+# - Overflow ABORTS in Heroes (spec § 7 Operators) — it does not fail politely. So
 #   the accumulator guards each step (`value > (U64_MAX - d) / radix`) instead
 #   of multiplying first and asking after, which is the shape Rust hides
 #   inside from_str_radix.

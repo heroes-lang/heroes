@@ -137,7 +137,7 @@ function without_trailing_zeros(digits: str) -> str
 # own words for the same routine.
 #
 # The order of the tests is forced by the language and not by taste:
-# `nan` first, because `<` on one ABORTS (spec:155), and `1.0 / x` for
+# `nan` first, because `<` on one ABORTS (spec § 7 Operators), and `1.0 / x` for
 # the sign of a zero, because that is the only test this language has
 # for it — `+0.0` and `-0.0` are `==`.
 function hex_float(text: str) -> str

@@ -28,10 +28,17 @@ record Point
 
 function main()
     ps = [Point(x: 2, y: 1), Point(x: 1, y: 2)]
-    ordered = sort(ps)                  #~ unordered_element
+    ordered = sort(ps)  #~ unordered_element
     print(len(ordered))
+
     # The four that DO have an order stay in the file, so the refusal above is
     # provably about the element type and not about the built-in's name. `bool`
     # is the one panel 068 added, and it is here because a set nobody exercises
     # is a set that rots.
     print(join(sort(["b", "a"]), ""), sort([2, 1])[0], sort([2.0, 1.0])[0], sort([true, false])[0])
+
+# Since 2026-09-10 the specification's sections are numbered and a citation names
+# the section, never a line (CL-037). The line numbers above were written against
+# the layout at commit 834d804f; read today they are:
+#   spec:85 is spec § 10 Strings
+#   spec line 71 is spec § 10 Strings

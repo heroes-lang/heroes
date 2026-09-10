@@ -30,3 +30,8 @@ function main()
     print(len(n))
     print(len(m))
     print(n["b"].default(-1))
+
+# Since 2026-09-10 the specification's sections are numbered and a citation names
+# the section, never a line (CL-037). The line numbers above were written against
+# the layout at commit 834d804f; read today they are:
+#   spec line 60 is spec § 3 Types

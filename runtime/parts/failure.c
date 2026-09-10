@@ -95,7 +95,7 @@ _Noreturn void hero_panic_must(HeroFailure f) {
     abort();
 }
 
-/* -- `assert` (§4.18, spec line 163) ---------------------------------------
+/* -- `assert` (§4.18, spec § 12 Tests and holes) ---------------------------------------
  *
  * "An `assert` failure shows the source expression and both sides." Both halves
  * matter and the second is the one a bare `assert failed` loses: `dist2(3, 4)

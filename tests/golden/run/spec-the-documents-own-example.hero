@@ -39,3 +39,11 @@ test "3-4-5 triangle"
 # and the one it prints.
 function main()
     print(dist2(a: Point(x: 0, y: 0), b: Point(x: 3, y: 4)))
+
+# Since 2026-09-10 the specification's sections are numbered, and the two named
+# above are `spec § 9 Functions and calls` and `spec § 12 Tests and holes`:
+# still the rule before the example, no longer ninety lines apart. The sentences
+# above stand as they were written, because they were true when they were, and
+# this note is at the END of the file on purpose: five lines added at the top
+# moved every `#line` in the blessed emission trace, which is how a comment
+# turns a suite red.

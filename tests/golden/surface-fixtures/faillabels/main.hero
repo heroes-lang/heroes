@@ -36,3 +36,9 @@ function main()
     print(positional().default(1))
     print(labelled().default(2))
     print(joined(a: "the rule ", b: "still binds a user function"))
+
+# Since 2026-09-10 the specification's sections are numbered and a citation names
+# the section, never a line (CL-037). The line numbers above were written against
+# the layout at commit 834d804f; read today they are:
+#   spec:106 is spec § 9 Functions and calls` says that when two parameters in a
+#   spec:146 is spec § 6 Failure` presents the failure constructor as `fail(code

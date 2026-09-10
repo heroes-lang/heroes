@@ -38,3 +38,8 @@ function main()
 
     # The `str` half stays in the file, so the two are provably one built-in.
     print(slice("abcde", from: 1, to: 3))
+
+# Since 2026-09-10 the specification's sections are numbered and a citation names
+# the section, never a line (CL-037). The line numbers above were written against
+# the layout at commit 834d804f; read today they are:
+#   spec line 148 is spec § 11 Built-ins lists `slice` among the built-ins and does not

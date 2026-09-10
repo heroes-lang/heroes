@@ -29,3 +29,8 @@ function built(n: i64) -> cstr  #~ cstr_out_of_heroes
 
 function main()
     print(strlen(s: built(n: 7)).to_str())
+
+# Since 2026-09-10 the specification's sections are numbered and a citation names
+# the section, never a line (CL-037). The line numbers above were written against
+# the layout at commit 834d804f; read today they are:
+#   spec:253 is spec § 13 FFI` promised the lend only "for

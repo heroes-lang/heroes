@@ -376,7 +376,7 @@ function reported_with_file(text: str) -> [str]
     return found
 
 # Both sides are compared as sorted `<line>:<code>` strings: Heroes sorts
-# numbers, strings and bools and not records (spec:172), and the pair is
+# numbers, strings and bools and not records (spec § 11 Built-ins), and the pair is
 # what the comparison is about. The order is the same on both sides, which
 # is all a set comparison needs.
 function sorted(marks: [str]) -> [str]

@@ -42,7 +42,7 @@ function must_stop(@w: writer.Writer, f: containers.Function, run: ir.Run)
             return
     writer.line(@w, text: "    hero_unreachable(); /* a must with no failure */")
 
-# assert (§4.18, spec line 163: "shows the source expression and both
+# assert (§4.18, spec § 12 Tests and holes: "shows the source expression and both
 # sides"). The IR carries three operands where the asserted expression
 # is a comparison and one where it is not, and each side is rendered
 # through the SAME to_str entry point print uses — so a side with no

@@ -22,7 +22,7 @@
  * Writing is `parts/map-write.c`. The split is by direction rather than by size:
  * everything here is safe on a shared map, and nothing there is.
  *
- * design.md §4.9, §4.20, spec line 58, panels 006, 022 and 026.
+ * design.md §4.9, §4.20, spec § 7 Operators, panels 006, 022 and 026.
  */
 
 /* Every region starts at a multiple of this, so no element is ever misaligned

@@ -20,7 +20,7 @@
 # language rather than a preference: UFCS does not cross a module
 # boundary. `box.make(1).plus(2)` is `error[needs_qualifying]` — measured
 # on both compilers, with and without an argument — because a name from
-# another module is always written qualified (spec:8), and `x.f(y)` names
+# another module is always written qualified (spec § 1 Files and layout), and `x.f(y)` names
 # `f` unqualified. So `probe.Probe` travels between modules and the sugar
 # that builds one does not.
 

@@ -30,3 +30,8 @@ function main()
     state = Box(value: 7)  #~ shadowed_binding
     print(to_str(state.value))
     print(to_str(elsewhere()))
+
+# Since 2026-09-10 the specification's sections are numbered and a citation names
+# the section, never a line (CL-037). The line numbers above were written against
+# the layout at commit 834d804f; read today they are:
+#   spec:99 is spec § 5 Bindings plus

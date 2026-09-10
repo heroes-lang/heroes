@@ -40,7 +40,7 @@
 #define HERO_OS_NOT_FOUND 1
 #define HERO_OS_FAILED 2
 /* The file was there, it read whole, and its bytes are not text. A `str` is
- * UTF-8 by definition (spec:51), so this is the one failure a caller cannot
+ * UTF-8 by definition (spec § 3 Types), so this is the one failure a caller cannot
  * discover by looking at the value it got back — and until panel 087 it was not
  * a failure at all but an abort inside `hero_str_from_bytes`, unreachable by any
  * Heroes branch. The Tier-2 wrapper answers `not_text` for it since 2026-09-03 —

@@ -114,7 +114,7 @@ function conversion_call(@c: state.Checker, s: source.Source, decls: [ast.Decl],
         return ok(arg_error(@c, s, decls, name: "to_f32", allowed: "an integer or a float", got: given[0], span: span))
 
     if name == "to_str" && given.len() == 1
-        # A `cstr` is not here: it aborted where `spec:60` promised it could not (panel 090).
+        # A `cstr` is not here: it aborted where `spec § 11 Built-ins` promised it could not (panel 090).
         keeps = match table.get(c.out.types, given[0])
             .int_ty | .float_ty | .bool | .str => true
             .cstr | .ptr | .unit | .array | .fixed | .map | .fallible | .function_ty | .named | .case_ty | .failure | .generic | .error => false

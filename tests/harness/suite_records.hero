@@ -393,8 +393,15 @@ constant REFUSED: [str]
 # target, on `M-cleanup-verdict`'s precedent, so that it can close with a
 # refusal. Moved by hand again, with the row, in one commit. `REFUSED` gains
 # nothing: no runner-up name was written into a living file.
+#
+# **72 -> 73 on 2026-09-10**, `M-anchored-spec`, the same evening: the author
+# found the specification disorganised and decided its re-shaping into thirteen
+# numbered sections, so the row enters at 45, before `M-reflection-verdict`,
+# because a verdict that adds a sentence to the spec should add it to the
+# ordered one. Moved by hand, with the row, in one commit. `REFUSED` gains
+# nothing: the runner-up names stayed in the session's plan, outside the tree.
 constant ROWS: i64
-    72
+    73
 
 # **`WATCHED` stood here until 2026-09-07 and nothing had read it since
 # 2026-08-19.** It listed `design.md` and `CLAUDE.md` as *"the two documents whose
@@ -2870,7 +2877,7 @@ function numbered_in(text: str) -> str?
     while i < text.len()
         if text[i] == 77 && opens_at(text: text, at: i) && i + 1 < text.len() && is_digit(text[i + 1])
             # **Four bytes AT MOST, and never across a character.** `slice`
-            # aborts when it splits one (spec:148), and the Rust twin cannot:
+            # aborts when it splits one (spec § 10 Strings, arrays, maps), and the Rust twin cannot:
             # it reaches for `String::from_utf8_lossy`, which replaces a broken
             # byte instead of stopping. Heroes has no lossy conversion, so the
             # window stops at the first byte above ASCII — every byte in the

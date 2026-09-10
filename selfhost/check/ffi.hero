@@ -54,7 +54,7 @@ use ffi_errors
 #     void hold(struct HeroArrayHeader *(*mk)(void),
 #               void (*run)(struct HeroArrayHeader *));
 #
-# `spec:224` had already refused it — *"a callback is a parameter, never
+# `spec § 13 FFI` had already refused it — *"a callback is a parameter, never
 # a result; ITS PARAMETERS FOLLOW THE SAME RULE"* — and the same rule is
 # this function, which refuses `.array` one line down. So this was the
 # compiler disagreeing with the specification (CLAUDE.md §12), not a
