@@ -19,5 +19,8 @@
     "@astrojs/check": "^0.9.4",
     "typescript": "^5.7.2",
     "wrangler": "4.129.1"
+  },
+  "overrides": {
+    "sharp": "^0.35.4"
   }
 }
