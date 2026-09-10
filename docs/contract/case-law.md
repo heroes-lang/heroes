@@ -1461,3 +1461,62 @@ about the world and expires in silence (`.claude/rules/module-shape.md`). The
 same run found that `golden` is not among the twenty names the net registers, so
 `-- <compiler> golden` selects nothing and prints no line: a green run that
 tested nothing.
+
+## CL-073 — A push is an act on the BRANCH, so on a shared checkout the session that respects the hard stop is not the one who decides
+2026-09-10 · found by measuring what a push would carry, twice, and getting two different answers · § Hard stops, and CL-042
+
+§ Hard stops says *"Pushing `main`, publishing the site, anything outward-facing:
+asked for, every time"*, and CL-042 gives it a procedure: commit and tag locally,
+**say how many site commits would travel**, wait for a yes. **The procedure is
+correct and it is not sufficient, because a push does not carry a session's
+commits. It carries the branch.**
+
+What happened, in the order it happened. This session pushed `09b6b01f` at 13:04
+with the author's yes, and the sentence it wrote in the asking was true and
+measured: **one commit ahead, zero of them touching `site/`**. At **13:47** a
+parallel session committed `56edfb96` in the same checkout, 23 files, **22 of
+them under `site/`** — real page copy in both editions. This session then
+committed `03cefaf2` at 13:55:29 and `8a9a50bf` at 13:55:44, re-measured what a
+push would now carry, and told the author the honest second answer: **three
+commits, and 22 site files it had not written**. The author was given three
+routes and chose to publish all three. **And then, before this session ran
+`git push`, `origin/main` and `HEAD` were both `8a9a50bf`: zero ahead, zero
+behind.** The parallel session had pushed, the branch carried this session's two
+commits, and the outward act happened without the session that owed the question
+performing it.
+
+**It went well here only because the answer happened to be yes.** Of the three
+routes offered, one was *wait*. Had the author taken it, the lockfile commit
+would have reached the public branch anyway, minutes after the refusal, and
+nothing in the contract or the hooks would have fired.
+
+The general shape, and it is why this is its own entry rather than a line under
+CL-042: **CL-041 is about a shared index, CL-070 about a shared staging area, and
+this is one level up again — a shared branch.** All three come from the same
+fact, that more than one session works in this checkout, and each one bites a
+different verb. A rule about `git add` is obeyed at `git add`; a rule about
+`git commit` is obeyed by a pathspec; but **a rule about `git push` cannot be
+obeyed by one session at all**, because the thing published is not the thing that
+session did. It can only be obeyed by every session at once, which is not a
+property a session can check.
+
+**What this does not touch.** CL-041 and CL-070 stand exactly as written, and the
+pathspec did its job here: both of this session's commits carried only the paths
+named on their command lines, and the parallel session's 23 files stayed out of
+them. The failure is downstream of the commit and upstream of nothing — there is
+no later gate.
+
+**Three routes, named rather than chosen, because the amendment is the author's**
+(author decision 2026-09-10 to record the fact and decide the rule separately).
+A session that has not been given its yes keeps the work **uncommitted**, or on a
+branch of its own, until it has one — which costs the local commit that CL-042's
+own procedure asks for. Or **the question moves earlier on a shared checkout**,
+to the commit rather than to the push, since the commit is the last moment a
+session controls alone. Or **the hard stop names the condition it actually
+needs**: nothing reaches the shared branch before its yes, which makes every
+session's commit an outward-facing act while a peer may push, and says so.
+
+**And one measurement for whoever writes the rule**: the window here was **eight
+minutes**, 13:47 to 13:55, and neither session knew the other was in it. The
+first this session learned of `56edfb96` was reading `git log` after its own
+commit succeeded.
