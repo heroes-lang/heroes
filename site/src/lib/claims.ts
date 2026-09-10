@@ -221,7 +221,7 @@ function zenLines(): number {
  */
 const CI_FILE = '.github/workflows/ci.yml';
 
-function ci(): { fixpointLinuxOnly: boolean; tagPlatforms: number } {
+function ci(): { fixpointLinuxOnly: boolean; pushPlatforms: number } {
   const text = readText(CI_FILE);
   const lines = text.split('\n');
   const at = lines.findIndex((l) => l.includes('cmp seed/heroes.c'));
@@ -241,7 +241,7 @@ function ci(): { fixpointLinuxOnly: boolean; tagPlatforms: number } {
     if (expr === "runner.os == 'Linux'") fixpointLinuxOnly = true;
     else throw new Error(`${CI_FILE}: the fixpoint step's gate is spelled \`${expr}\`, which this instrument cannot read; read the step and say so on the page.`);
   }
-  // The FIRST command's claim, "on every milestone tag on three platforms", rests
+  // The FIRST command's claim, "on three platforms on every push", rests
   // on the matrix alone unless the step that builds from the seed is read too:
   // an `if:` added there would falsify the page with the build green.
   const seedAt = lines.findIndex((l) => l.includes('seed/heroes.c runtime/runtime.c'));
@@ -252,19 +252,21 @@ function ci(): { fixpointLinuxOnly: boolean; tagPlatforms: number } {
   if (/^\s*if:/m.test(seedStep)) {
     throw new Error(`${CI_FILE}: the step that builds from the seed now carries an \`if:\`, and /project/ says it runs on every leg of every run.`);
   }
-  // And the fallback arm, the one a plain push takes, must be one platform and Linux.
+  // **The arm a plain push takes is the LAST one, and since 2026-09-10 it is
+  // every platform.** This read one platform and asserted Linux, because the
+  // matrix narrowed between tags while a runner minute cost money; the author
+  // widened it the day that expired, and the check went red naming the page,
+  // which is what it is for. What it asserts now is the shape the page
+  // describes: the fallback names the same legs as the whole matrix, so a push
+  // and a release tag run the same three, and a leg quietly dropped from the
+  // default is still a red build.
   const fallback = /\|\|\s*'(\[[^\n]*\])'\s*\n\s*\)\s*\}\}/.exec(text);
-  if (fallback === null) throw new Error(`${CI_FILE}: no fallback matrix literal to read the push platform from.`);
-  const fallbackNames = (fallback[1].match(/"name":/g) ?? []).length;
-  if (fallbackNames !== 1 || !/"os":"ubuntu-latest"/.test(fallback[1])) {
-    throw new Error(`${CI_FILE}: the push matrix names ${fallbackNames} platform(s) and /project/ says a push runs on Linux alone.`);
+  if (fallback === null) throw new Error(`${CI_FILE}: no fallback matrix literal to read the push platforms from.`);
+  const pushPlatforms = (fallback[1].match(/"name":/g) ?? []).length;
+  if (pushPlatforms < 3 || !/"os":"ubuntu-latest"/.test(fallback[1])) {
+    throw new Error(`${CI_FILE}: the push matrix names ${pushPlatforms} platform(s) including Linux, and /project/ says a push runs on all three.`);
   }
-  // The tag branch of the matrix is the one literal that names every platform.
-  const tagArm = /github\.ref_type == 'tag'[^\n]*\n\s*&&\s*'(\[[^\n]*\])'/.exec(text);
-  if (tagArm === null) throw new Error(`${CI_FILE}: no tag-branch matrix literal to count the platforms from.`);
-  const tagPlatforms = (tagArm[1].match(/"name":/g) ?? []).length;
-  if (tagPlatforms < 2) throw new Error(`${CI_FILE}: the tag matrix names ${tagPlatforms} platform(s), and the site says three.`);
-  return { fixpointLinuxOnly, tagPlatforms };
+  return { fixpointLinuxOnly, pushPlatforms };
 }
 
 /** The chapters of the documentation: every fragment under docs/ but the index. */
@@ -381,10 +383,10 @@ const CLAIMS: Claim[] = [
     fact: zenLines, shape: (n) => new RegExp(`<h2 id="zen">${n} righe</h2>`, 'i') },
 
   // What the continuous integration does, from the workflow's own steps.
-  { page: 'site/src/html/project.html', what: 'the platforms a milestone tag runs on',
-    fact: () => ci().tagPlatforms, shape: (n) => new RegExp(`on ${n} platforms`, 'i') },
-  { page: 'site/src/html/it/project.html', what: 'the platforms a milestone tag runs on',
-    fact: () => ci().tagPlatforms, shape: (n) => new RegExp(`su ${n} piattaforme`, 'i') },
+  { page: 'site/src/html/project.html', what: 'the platforms a push runs on',
+    fact: () => ci().pushPlatforms, shape: (n) => new RegExp(`on all ${n} platforms`, 'i') },
+  { page: 'site/src/html/it/project.html', what: 'the platforms a push runs on',
+    fact: () => ci().pushPlatforms, shape: (n) => new RegExp(`su tutte e ${n} le piattaforme`, 'i') },
 
   // The chapters of the documentation.
   { page: 'site/src/html/docs/index.html', what: 'the number of chapters',
@@ -628,5 +630,5 @@ export function assertEveryClaimVisited(): number {
 export function claimsSummary(pages: number): string {
   const j = judges();
   const c = ci();
-  return `${j.seats} judges, ${j.vetoes} vetoes, ${topLevelWords().size} top-level words, ${verbs().length} verbs, ${zenLines()} Zen lines, ${chapters()} chapters, ${specCeiling()}-token ceiling, ${c.tagPlatforms} tag platforms, fixpoint ${c.fixpointLinuxOnly ? 'Linux-only' : 'every leg'}; ${CLAIMS.length} claims and ${NAME_EVERY_VERB.length} verb lists checked over ${pages} pages`;
+  return `${j.seats} judges, ${j.vetoes} vetoes, ${topLevelWords().size} top-level words, ${verbs().length} verbs, ${zenLines()} Zen lines, ${chapters()} chapters, ${specCeiling()}-token ceiling, ${c.pushPlatforms} push platforms, fixpoint ${c.fixpointLinuxOnly ? 'Linux-only' : 'every leg'}; ${CLAIMS.length} claims and ${NAME_EVERY_VERB.length} verb lists checked over ${pages} pages`;
 }

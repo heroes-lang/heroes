@@ -10,7 +10,7 @@
     Per correggere un programma, un modello ha bisogno di sapere che cosa non funziona e dove. Un messaggio preciso può evitargli di rileggere interi file. Per questo gli errori di Heroes indicano il punto coinvolto, le eventuali dichiarazioni in conflitto e, quando possibile, una correzione.
   </p>
 
-  <h2>Argomenti scambiati</h2>
+  <h3>Argomenti scambiati</h3>
   <p>
     Se due parametri hanno lo stesso tipo, il controllo dei tipi da solo non distingue un argomento dall&rsquo;altro. Heroes richiede quindi le etichette, cioè i nomi degli argomenti nella chiamata:
   </p>
@@ -31,7 +31,7 @@
     Le annotazioni <code>#~ needs_label</code> servono ai test per verificare la posizione della sottolineatura. I caratteri <code>^</code> indicano esattamente la porzione di codice coinvolta, così puoi individuare l&rsquo;argomento anche in una chiamata lunga.
   </p>
 
-  <h2>Correzioni automatiche e suggerimenti</h2>
+  <h3>Correzioni automatiche e suggerimenti</h3>
   <p>
     Una correzione contrassegnata da <code>certain</code> si basa su informazioni verificate dal compilatore, come il tipo dedotto o l&rsquo;unico nome simile disponibile. <code>heroes check --apply</code> applica queste correzioni. Può essere necessario correggere altri errori prima che il programma sia completo. Le correzioni contrassegnate da <code>guess</code> sono suggerimenti da valutare e non vengono applicate automaticamente dal comando.
   </p>
@@ -54,7 +54,7 @@ $ heroes run program.hero</code></pre>
     Alcuni errori nelle dichiarazioni di funzioni C vengono rilevati da <code>heroes build</code>. Questo comando avvia clang, il compilatore C, che confronta le dichiarazioni con l&rsquo;header della libreria, il file che ne descrive funzioni e tipi. Un nome di funzione C scritto male può quindi superare <code>heroes check</code> ed essere segnalato durante la compilazione. <a href="/it/docs/the-c-boundary/">I controlli sulle librerie C&nbsp;&rarr;</a>
   </p>
 
-  <h2>Parole chiave di altri linguaggi</h2>
+  <h3>Parole chiave di altri linguaggi</h3>
   <p>
     Un modello può usare per errore una parola chiave di un altro linguaggio. Heroes riconosce alcune di queste parole e indica la forma da usare:
   </p>
@@ -66,7 +66,7 @@ $ heroes run program.hero</code></pre>
     Qui ogni messaggio occupa una riga; negli esempi precedenti trovi la versione completa. Tre dei quattro errori hanno una correzione <code>certain</code> e <code>--apply</code> le applica. <code>let</code> resta invariato: la correzione richiede di scegliere una forma di dichiarazione, non soltanto di sostituire una parola.
   </p>
 
-  <h2>Completare un programma con l&rsquo;aiuto del compilatore</h2>
+  <h3>Completare un programma con l&rsquo;aiuto del compilatore</h3>
   <p>
     Puoi scrivere <code>???</code> dove manca un&rsquo;espressione. Il compilatore controlla il codice circostante e indica il tipo atteso, i nomi disponibili e le funzioni che restituiscono quel tipo. Se non ci sono altri errori, il controllo termina con codice <b>zero</b>. Finché restano espressioni incomplete, non viene prodotto un eseguibile:
   </p>
@@ -86,7 +86,7 @@ hole at examples/gallery/09-holes.hero:28:74
     Puoi quindi abbozzare il programma e completarlo usando le indicazioni del compilatore. Nell&rsquo;esempio, il primo <code>???</code> sostituisce un&rsquo;istruzione intera: il compilatore indica che cosa deve restituire la funzione. Il secondo è dentro un&rsquo;istruzione e richiede un tipo preciso.
   </p>
 
-  <h2 id="measured">Come si misura</h2>
+  <h3 id="measured">Come si misura</h3>
   <p>
     <code>heroes mutate</code> introduce un errore plausibile alla volta in programmi funzionanti e conta quanti errori rileva il compilatore. Ripete poi il controllo sugli stessi programmi con le regole specifiche di Heroes disattivate. La differenza tra i risultati misura l&rsquo;effetto di queste regole.
   </p>
