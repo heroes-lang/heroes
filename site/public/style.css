@@ -1311,7 +1311,13 @@ ol.tracks .from {
    reader has rather than inventing one. */
 ol.tracks li { border-left: 2px solid transparent; }
 ol.tracks li:target { border-left-color: var(--red); }
-ol.tracks li:target::before { color: var(--red); }
+/* Named twice, which is this stylesheet's own principle stated twice over: the
+   rule measures 5.05:1 in light and 5.31:1 in dark, so it is a LUMINANCE mark
+   that survives without hue discrimination, and the weight is the second
+   signal, which is not a colour at all. It shifts nothing, measured: the
+   counter is fixed-pitch, so target left, row top and sibling top are all
+   unchanged to the hundredth of a pixel. */
+ol.tracks li:target::before { color: var(--red); font-weight: 700; }
 
 ul.lineage li {
   margin: 0.85rem 0; padding-left: 1.5rem; position: relative;
