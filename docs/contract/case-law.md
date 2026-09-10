@@ -948,6 +948,21 @@ the C side, because its own allocations are counted by
 enters through an `extern` and nowhere else. The wide form would cost 44 programs
 a run that concerns 8 and catch nothing more.
 
+**Sharpened 2026-09-10, underneath rather than in place: this names the leg and
+the flag and not the command, and on that leg two commands disagree.** The
+invocation the gate uses is the suite's, `heroes run <case> --sanitize`
+(`tests/harness/suite_run.hero`), which compiles at `-O2`, and on 2026-09-10 it
+reported **29 bytes** from `hero_str_held` in CI on a case the session that
+wrote it had reported silent when built `--sanitize` by hand and run, a
+transcript no log corroborates. `heroes build` defaults to `-O0`, where the
+lease cell is still a live local of `main` at `exit`, so LeakSanitizer finds a
+pointer and calls the block reachable, which is a reading of the tool rather
+than a measurement of it. So a session discharging this rule literally can read
+a clean hand-built `--sanitize` run as the leg's verdict, which is CL-074. The
+two live copies of the sentence, `.claude/rules/platforms.md` and
+`.claude/rules/c-boundary.md`, are bound by the same line: the leg's verdict is
+the suite's own command.
+
 ## CL-056 — A background monitor is never asked about; the answer is always yes
 2026-09-04 · author instruction · § 3
 
@@ -1520,3 +1535,83 @@ session's commit an outward-facing act while a peer may push, and says so.
 minutes**, 13:47 to 13:55, and neither session knew the other was in it. The
 first this session learned of `56edfb96` was reading `git log` after its own
 commit succeeded.
+
+## CL-074 — And a claim about a gate is produced with the gate's own invocation, defaults included
+2026-09-10 · author instruction, after the CI refuted it · § Run it, or say it is unrun
+
+*"`docs/measurements/025` records today's lesson, and it is worth more than all
+the rest: the CI refuted a negative claim of yours that came from a single
+command"* (the author's words in English, § 11). The claim was a comment in
+`tests/golden/run/lease-open-through-exit.hero`, removed the same day, the
+morning's golden for panel 125 R5, *the exit path is named rather than closed*,
+where a program leases the literal `"twelve bytes"` to `strlen` and leaves
+through `exit(code: 0)`. In `7965174d` the comment was right, *"The Linux
+`--sanitize` leg is what sees the block that is still held here"*. In
+`bf625ca1` a dated correction was **appended underneath** it rather than
+replacing it, `tests/golden/` being on § 14's never-rewritten list, and it
+concluded **"So NOTHING accuses this program on any of the three platforms"**,
+on one command in the Linux container: `heroes build --sanitize <case> -o
+/tmp/lx` and then the binary, once more with `ASAN_OPTIONS=detect_leaks=1`. That
+commit is stamped **09:16:16Z**; the CI's `FAIL run/lease-open-through-exit` is
+stamped **09:48:57Z**, with `LeakSanitizer: detected memory leaks` and **29
+bytes** in one object from `hero_str_held` under it, refused by the
+`AddressSanitizer` check in `tests/harness/suite_run.hero`. Run `34461331137`,
+head `cf1645a7`, two commits after the false sentence because **no run exists on
+`bf625ca1` at all**; Windows and Darwin were green on that head, so the earlier
+sentence was right and the correction wrong on the one leg that holds the
+instrument.
+
+**The suite does not run the command that was probed, and the difference has a
+name the help text prints.** Its third configuration is `run <source>
+--sanitize`; `heroes help`'s `build` section says `-O0  compile at -O0 (the
+default here)` and its `run` section says `-O2  compile at -O2 (the default
+here)`, read 2026-09-10. So the probe was `-O0` plus
+ASan and the gate is `-O2` plus ASan, and the reading that fits the two answers,
+unrun as a measurement of LeakSanitizer, is that at `-O0` the lease cell is
+still a live local of `main` at `exit`, so LSan finds a pointer and calls the
+block reachable. `build --sanitize -O2` in that container is the invocation
+nobody listed and the one that would settle it (CL-057), and it is unrun.
+Nothing here could have caught any of it, measured **2026-09-10** on the source
+restored from `bf625ca1`: both commands print `12` and exit 0, and
+`ASAN_OPTIONS=detect_leaks=1` answers `detect_leaks is not supported on this
+platform` and aborts at **134** (panel 021).
+
+So the invocation is part of the measurement: a claim about what a gate will say
+is produced **with the gate's own invocation**, read out of the suite that runs
+it and on the leg that owns the instrument, defaults included, and a silence
+from any other invocation is a question. CL-017's *match the unit to the rule
+that will judge it* carries the invocation beside the unit. The hedge belongs on
+the sentence a reader quotes: this correction hedged the mechanism, *"that is a
+reading of the tool rather than a measurement of it"*, and stated the conclusion
+flat, and the flat one is what travelled. And **measurement beats opinion
+(§ 12) only when it answers the ruling's question**: the ratified sentence was
+about that leg's verdict, the probe about a hand-built binary at another
+optimisation level.
+
+**Why this is its own entry and not a line under CL-018 or CL-062**: the command
+ran, it finished, and it answered a question nobody had asked, so the remedies
+differ. CL-018's is to write a negative claim as a question naming what was
+searched for, which yields a hedge and ships the same golden; this one's is to
+run the suite's own command, which yields the answer. The breach bought **two
+corrections instead of one**, and the false one is what a later reader trusts,
+because its first sentence ends *"by running it"*. The case is gone, since it
+leaks by construction and a `tests/golden/run/` case may not leak, and nowhere
+else could host it: `examples/` runs a `--sanitize` configuration of its own and
+refuses the same banner. Where no directory can host a fact, the payment is the
+report from the leg that produces it.
+
+Unrun, and named as such: the container transcript in `docs/measurements/025`
+cannot be re-run from this Mac and the CI log corroborates only its first
+command, so the hand-built silence on that leg is one session's own report and
+nothing else. Two corrections that document owes, made here: it counts *"three
+C programs"* over an enumeration of two, and its closing sentence, *"The suite's
+own command was one line away in the file the claim was being written into"*, is
+false, since what stood in another directory was that suite's header, *"NOT a
+leak gate — ASan's leak detector does not exist on Darwin arm64"*, whose
+platform the false sentence dropped. It and `DESIGN-LOG.md`'s row for it also
+home the lesson at *"§ RUN IT's third shape"* while quoting the second shape's
+sentence, which sends a reader to CL-057 where CL-018 and this entry were meant.
+And nothing refuses the next member of this class locally: there is none today,
+no file under `examples/` or `tests/golden/run/` pairing `lease(` with `exit(`,
+and all three configurations pass one here (CL-055), so the refusal is the Linux
+leg's, in CI.
