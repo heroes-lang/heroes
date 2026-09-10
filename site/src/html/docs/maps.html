@@ -23,7 +23,7 @@ error[type_mismatch]: expected `i64`, found `i64?`
     |            ^^^^^^^^^^^^
   fix (guess): `.must()` — abort on the error case, giving `i64`</code></pre>
   <p>
-    <code>i64?</code> is the fallible type from <a href="/docs/failure-is-a-value/">chapter 4</a>: an integer or an error. If the key is missing, the error code is <code>missing_key</code>. You must handle that possibility before using the number.
+    <code>i64?</code> is the fallible type from <a href="/docs/failure-is-a-value/">chapter 5</a>: an integer or an error. If the key is missing, the error code is <code>missing_key</code>. You must handle that possibility before using the number.
   </p>
 
   <h3>Four ways to handle a lookup</h3>

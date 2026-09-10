@@ -149,7 +149,36 @@ export function page(html: string, pagePath: string): string {
   // thing this function checked and the prose around them was the last thing
   // anybody did, which is where four false claims in one day came from.
   checkClaims(html, pagePath);
-  return fillTracklist(fillMeasured(fillVersion(html, pagePath)), pagePath);
+  return fillOutbound(fillTracklist(fillMeasured(fillVersion(html, pagePath)), pagePath));
+}
+
+/**
+ * Every link that leaves the site opens in a new tab (author instruction
+ * 2026-09-10, asked of the tracklist first and then of the rule in general).
+ *
+ * Done here and not in the fragments for the reason everything on this site is
+ * done here: there are over a hundred outbound links across 46 hand-written
+ * pages, and an attribute a fragment has to remember is an attribute a fragment
+ * will forget. One rule, one place, and it reaches the generated rows too.
+ *
+ * `rel="noopener"` travels with it, because a page opened this way can
+ * otherwise reach back through `window.opener`.
+ *
+ * WHAT THIS COSTS, written down rather than left implied: a reader using a
+ * screen reader is not told that a new tab is about to open, and the site has
+ * no visually-hidden text convention to tell them with. The reason it is
+ * accepted is that the rule has no exceptions: everything that leaves behaves
+ * the same way, and every next step the site offers is internal and stays in
+ * the tab the reader is in.
+ *
+ * An absolute link back to this site is not outbound and keeps the tab.
+ */
+export function fillOutbound(html: string): string {
+  return html.replace(/<a\s+([^>]*href="https?:\/\/[^"]+"[^>]*)>/g, (whole, attrs: string) => {
+    if (/target\s*=/.test(attrs)) return whole;
+    if (/href="https?:\/\/(?:www\.)?heroes-lang\.org/.test(attrs)) return whole;
+    return `<a ${attrs} target="_blank" rel="noopener">`;
+  });
 }
 
 /**

@@ -96,7 +96,12 @@ type Row = {
 
 export const ROWS: Row[] = [
   { nod: 'speed of life', record: '<i>Low</i>', year: 1977, hear: 'https://www.youtube.com/watch?v=2oRgZjcfE4g' },
-  { nod: 'hunky dory', record: 'the album', recordIt: "l'album", year: 1971, hear: 'https://en.wikipedia.org/wiki/Hunky_Dory' },
+  // The one row whose right-hand column names no other record, because the
+  // record IS the row's title. `&rsquo;` and not a straight apostrophe: the
+  // Italian edition's typography rule reaches the HTML fragments and nothing
+  // reads this directory, so a straight quote walked back in here hours after
+  // the last four were removed from the edition.
+  { nod: 'hunky dory', record: 'the album itself', recordIt: 'l&rsquo;album stesso', year: 1971, hear: 'https://en.wikipedia.org/wiki/Hunky_Dory' },
   { nod: 'rebel rebel', record: '<i>Diamond Dogs</i>', year: 1974, hear: 'https://www.youtube.com/watch?v=DJxCsVcZL2I' },
   { nod: 'sound and vision', record: '<i>Low</i>', year: 1977, hear: 'https://www.youtube.com/watch?v=ZV_UsQPTBy4' },
   { nod: 'fashion', record: '<i>Scary Monsters</i>', year: 1980, hear: 'https://www.youtube.com/watch?v=F-z6u5hFgPk' },
@@ -122,6 +127,10 @@ export function nodCount(): number {
  * screen reader would read as "listen, listen, listen". In the Italian edition
  * the title is marked `lang="en"`, so an Italian reader's screen reader does
  * not sound out an English sentence with Italian phonetics.
+ *
+ * These open in a new tab, and so does every other link that leaves the site:
+ * the rule is one rule and `fillOutbound` in `figures.ts` applies it to all of
+ * them, so nothing here has to remember it.
  */
 export function tracklist(lang: 'en' | 'it'): string {
   const rows = ROWS.map((row) => {

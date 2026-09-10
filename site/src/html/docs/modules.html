@@ -94,7 +94,7 @@ error[module_binding_taken]: this file already calls `render/scale` by the name 
 
   <h3>Avoiding name conflicts</h3>
   <p>
-    <code>use geom/point</code> declares the name <code>point</code> in the file. A variable in the same file cannot use that name: it would hide the module, as explained in <a href="/docs/bindings-and-mutation/">chapter 6</a>:
+    <code>use geom/point</code> declares the name <code>point</code> in the file. A variable in the same file cannot use that name: it would hide the module, as explained in <a href="/docs/bindings-and-mutation/">chapter 7</a>:
   </p>
   <pre><code>$ heroes check shapes/main.hero
 error[shadowed_binding]: `point` is what this file calls the module `geom/point`, so a local may not take it — shadowing is an error here

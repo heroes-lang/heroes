@@ -136,6 +136,19 @@ to a click without JavaScript. That is the whole reason the section nods carry a
 LINK and not a player. Twelve outbound links, on one page, and a link issues no
 request until a reader follows it.
 
+**Every link that leaves the site opens in a new tab** (author instruction
+2026-09-10, asked of the tracklist first and then of the rule in general).
+`fillOutbound` in `src/lib/figures.ts` adds `target` and `rel="noopener"` to
+every outbound anchor on its way through `page()`, so no fragment has to
+remember an attribute, and the two links in the furniture, GitHub in the nav and
+the byline in the footer, carry it written out because a component and a partial
+do not pass through `page()`. Measured after: **524 outbound anchors carry it and
+none does not**, over both editions. What it costs is in the function's own
+comment: a reader using a screen reader is not told a new tab is coming, and
+this site has no visually-hidden text convention to tell them with. It is
+accepted because the rule then has no exceptions, and because every next step
+the site offers is internal and stays in the tab the reader is in.
+
 **No Tailwind either, and that is a deliberate difference from the author's other
 site**, which uses it. This site has its own hand-written 45 KB `style.css` and
 that stylesheet *is* the art direction; a utility framework beside it would be a
@@ -1071,7 +1084,11 @@ Three rules follow, and they bind every later edit:
   today, run by `page()` on every hand-written page, plus four checks that are
   not counts: every nod on a page links to its own row of the tracklist, in its
   own edition, and every row is spent by a nod, because the hand-kept ledger
-  this replaced said twenty against a markup carrying thirteen; both start
+  this replaced said twenty against a markup carrying thirteen; every linked
+  *chapter N* in prose names the number that chapter's own crumb claims, which
+  was the only class of number on this site with no instrument behind it and
+  which the languages seat found stale in five sentences, ten across the two
+  editions, left behind when Errors became chapter 2; both start
   pages must name every verb the table declares, each as
   `<code>verb</code>`, because a count survives a rename; every chapter's footer
   sentence "The N diagnostics are" is compared with the `heroes check` and
