@@ -1633,3 +1633,57 @@ And nothing refuses the next member of this class locally: there is none today,
 no file under `examples/` or `tests/golden/run/` pairing `lease(` with `exit(`,
 and all three configurations pass one here (CL-055), so the refusal is the Linux
 leg's, in CI.
+
+## CL-075 — A number in a seat's report is a number another session measured, and the sentence that repeats it does not say so
+
+2026-09-10 · author instruction, *"write down what you learnt today"* · § Run it,
+or say it is unrun
+
+Twice in one afternoon, in the same shape. The site panel's design seat reported
+that the sticky nav occludes *"about 49px, and about 72px once its items wrap"*,
+derived from the nav's box, and the session applying its findings wrote both
+figures into `site/public/style.css` as the comment justifying
+`scroll-padding-top: 5.5rem`. Measured afterwards by that same seat, at eighteen
+widths: **51.02px** and **81.16px**, the break being the nav's own
+`max-width: 800px` query and not a wrap. What the reasoned value did was leave
+**36.72px** of dead space at 1200 and **6.69px** at 390, where the row it existed
+to clear hugged the nav instead.
+
+Then, in the commit that repaired that, the same session wrote that the seat had
+measured the longest tracklist row *"at thirteen widths from 800 down to 480 in
+both editions"*. The seat had measured thirteen in English and **seven** in
+Italian. It closed the gap by running the other six rather than asking for the
+sentence to be softened, so the comment is true as written, and this entry stands
+regardless: the sentence became true through somebody's later work and not
+through anything its author had done.
+
+**Why this is its own entry.** CL-018's tell is a connective, *so* or
+*therefore*, and there is none here: the shape is a citation rather than an
+inference. CL-017 covers it exactly once, but only once somebody notices that
+**a subagent is another session** and its report is one of the documents that
+rule refuses. That is the step nobody takes, because the report arrives inside
+this conversation, in this session's own transcript, produced by something this
+session convened, and it reads as work done here. CL-074's remedy does not reach
+it either: there a command ran and answered a question nobody asked, while here
+the right command ran, in another session, and the sentence appropriated its
+running.
+
+**The remedy, and it is cheap.** A number from a seat, a subagent or a teammate
+is either re-run before it is asserted, or attributed in the sentence carrying
+it: *the seat measured X* costs four words and cannot be wrong. Prefer re-running
+wherever the command is short, which both of these were, the second being one
+script over thirteen widths.
+
+**And the collaborator's over-claim is not the defect.** A seat writing *in both
+editions* of a measurement half made is ordinary, and five seats produce that
+constantly; the panel is convened for judgement and not for custody of the
+record. What the contract asks of whoever holds the pen is that it not launder
+somebody else's confidence into its own record. A comment in a stylesheet
+outlives the report it came from, and nobody reading it later can tell which
+number was measured and which was believed.
+
+**One instrument this suggests and nothing implements**: nothing in the tree can
+tell a figure that was run from a figure that was quoted, and this class is
+invisible to every check the repository has. The three suites that judge prose
+read what a sentence says, not where it came from. So the only guard is the
+sentence's own grammar, which is why the remedy above is a rule about wording.
