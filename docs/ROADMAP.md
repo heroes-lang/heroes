@@ -35,9 +35,9 @@ with what each one measured in the git history and in `DESIGN-LOG.md`):
 |---|---|
 | **Current milestone** | **none open.** Next in the chain is **M-reflection-verdict**; before it, by author instruction 2026-09-09, the site is brought up to date (the 6K claim with its instrument, the new numbers, `f"…"` examples from `examples/gallery/12-interpolation.hero`), then the full net and the Linux and Windows legs run once, and the push is asked for |
 | **Last closed** | **M-interpolated-strings**, 2026-09-09, `m-interpolated-strings` ([043](journal/043-interpolated-strings.md)) — the form panel 121 ruled in that morning, landed the same evening; the third milestone and the third tag of the day, after `m-held-bytes` ([041](journal/041-held-bytes.md)) and `m-interpolation-verdict` ([042](journal/042-interpolation-verdict.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
-| Milestones closed | **44** of 63 · **44** milestone tags. M-cstr-lifetime closed with defect 024 open by its own design and carried none until the author asked for it (2026-09-09); its tag stands on the commit that ratified panel 125, the first where every list that milestone left open is clean, and the tag's own message says so |
+| Milestones closed | **44** of 67 · **44** milestone tags. **Four rows entered 2026-09-10** by author decision, from the chain's first reading against a written production-readiness criterion (§ What production-ready means): M-cleanup-verdict, M-arm-platform, M-deployable-binary and M-compatibility-promise. M-cstr-lifetime closed with defect 024 open by its own design and carried none until the author asked for it (2026-09-09); its tag stands on the commit that ratified panel 125, the first where every list that milestone left open is clean, and the tag's own message says so |
 | The compiler | **57,120** lines of Heroes in **197** modules · the seed **773,509** lines of C at runtime ABI **22**, regenerated at the close with the fixpoint verified by `cmp` · one token kind, one AST node and three helper modules for `f"…"`, and four decided ceilings moved by their measured lines |
-| The spec | **5373 real tokens** on `claude-opus-5` through `count_tokens`, read by `heroes measure --refresh` at the landing, digest `5a9b288604a587fa`; **4203** on the vendored ranks, which is what `SPEC_TOKENS` pins. **The ceiling is 6144** with its instrument named; **711** free net of the FFI floor. Today's two clauses cost **+103** (the lease) and **+138** (interpolation with R6's two sentences), each priced alone before it was written, and the lease clause's word for the forgotten release cost **+4** more when panel 125's ratification made it say what runs |
+| The spec | **5378 real tokens** on `claude-opus-5` through `count_tokens`, read by `heroes measure --refresh` at the landing, digest `527e1b762302f9ca`; **4210** on the vendored ranks, which is what `SPEC_TOKENS` pins. **The ceiling is 6144** with its instrument named; **766** free net of the FFI floor. **All four moved with `7965174d` on 2026-09-10** and this row carried 5373 / 4203 / 711 / `5a9b2886` until then; the live values are `REAL_TOKENS` and `SPEC_DIGEST` in `tests/harness/suite_spec.hero`, and `./heroes measure` refuses a verdict when the digest disagrees. Today's two clauses cost **+103** (the lease) and **+138** (interpolation with R6's two sentences), each priced alone before it was written, and the lease clause's word for the forgotten release cost **+4** more when panel 125's ratification made it say what runs |
 | Records | sittings **125** · journals **44** · examples **119** files, **545** `test` blocks · open defects **0** · mutation: `drop-question` **236 of 236 killed**, `--permissive` 193, so **43** are caught only by the thesis |
 | Waiting on the author | **0** decisions: `panel 125` ratified 2026-09-09, its conservative route (a runtime registry) recorded beside it and declined · **43** in `SCHEDULED.md` · **0** in `DEFECTS.md` · **353** in `LEARN.md` (never a gate) · an outstanding veto (`docs/panel/101` R3) · **o200k**, whose trigger is met and whose premise panel 123 changed |
 
@@ -97,13 +97,62 @@ heroes test selfhost/main.hero                 # the compiler's own tests
 
 ---
 
+## What production-ready means, and who owns each part
+
+**The yardstick the chain is judged by, written 2026-09-10 because it did not
+exist.** design.md defines v1 as *"the language is finished for v1 when it can
+compile itself"* (`:114`, reached 2026-08-18) and defines production readiness
+**nowhere**: a sweep of all 3,612 lines found no section on distribution,
+versioning, stability or a 1.0 promise, and no occurrence of semver, deprecation,
+backward compatibility, release cadence, LTS or an installer. The only `1.0` in
+the file is **Go's** (`:3202`). So every row of § The chain had been scheduled on
+its own reason and none had ever been measured against a standard.
+
+**The standard is not a mature language and not mission-critical**: the question
+is whether a stranger can put **production code that is not mission critical** in
+Heroes. **And it is a list, so it is a measurement** (CLAUDE.md § RUN IT): the
+ten rows come from what Go 1, Nim 1.0 and Rust 1.0 each shipped, read against
+what this tree already reaches for. **Six of the ten were already owned**, which
+is the finding.
+
+| | what a production user needs | who owns it | state on 2026-09-10 |
+|---|---|---|---|
+| 1 | a **written promise** about what keeps compiling | M-compatibility-promise | the paragraph was owned, **the instrument was not** |
+| 2 | **getting the compiler** | M-install-channels | owned |
+| 3 | **the machines it runs on** | M-arm-platform | three legs, and **arm64 Linux unowned** |
+| 4 | **shipping the binary you built** | M-deployable-binary | **owned by nobody** |
+| 5 | **depending on other people's code** | M-core-packages · M-package-manager | owned; pinning is that sitting's |
+| 6 | **the capabilities a real program needs** | M-core-packages' package table | owned in the large, silent in four places |
+| 7 | **diagnosing a failure in production** | M-panic-location · M-typed-inspection | owned |
+| 8 | **not falling over** | M-generated-programs · M-check-completeness | owned |
+| 9 | **editing it** | M-lsp-server · M-vscode-extension · M-doc-generator | owned, and **the colouring had drifted** |
+| 10 | **knowing the claim is true** | M-thesis-harness · both books | owned |
+
+**Row 6's four silences** are `docs/work/SCHEDULED.md` items at M-core-packages —
+text to a number, width and precision, a signal handler that cannot record that
+it fired — except the fourth, a release bound to a scope, which is a question
+about the language and became **M-cleanup-verdict**. **Row 9's drift** was the VS
+Code grammar four days behind `f"…"` while the site's highlighter kept up, with
+nothing judging either: the repair is an item at M-vscode-extension and the rule
+that prevents the next one is `.claude/rules/diagnostics-and-goldens.md`'s walk,
+widened the same day.
+
+**The thirteen candidates this reading refused, each with the rule that refused
+it, are in `docs/work/DONE.md`** with the five `DESIGN-LOG.md:539` had already
+refused on 2026-09-03 — because that entry's own stated reason is *so the
+candidate is not proposed again as new*.
+
+---
+
 *******************************************************************************
 
 ## The chain
 
-One table, one row per milestone, **closed first and scheduled after**: rows 1–37
-are done, in the order they closed, and rows 38–59 are what is next, in the order
-they will be taken. `warrant` is why a milestone exists: **v1** (the self-hosting
+One table, one row per milestone, **closed first and scheduled after**: rows 1–44
+are done, in the order they closed, and rows 45–67 are what is next, in the order
+they will be taken. **This sentence said 1–37 and 38–59 until 2026-09-10**, which
+is seven closes behind: it is the one number in this file that no instrument
+reads, so it is restated here and re-read at every close with § Where we are. `warrant` is why a milestone exists: **v1** (the self-hosting
 finish line), **closure list** (design.md §1.0 — the compiler needs it), **§1.1**
 (comprehension is the objective), or **scheduled, no warrant**.
 
@@ -158,23 +207,27 @@ and why one overtook another are under the table, in § Who scheduled what.
 | 44 | **M-interpolated-strings** | done 2026-09-09 | `m-interpolated-strings` | [043](journal/043-interpolated-strings.md) | `f"line {n}: {word}"`: one token kind, one AST node, three helper modules, four decided ceilings moved by their measured lines, the spec at +138 real with R6's two sentences, and `heroes mutate` reaching the holes · **§1.1**
 | 45 | **M-reflection-verdict** | scheduled | — | — | the ruling on reflection — at run time, and as compile-time derivation over a record's fields — and, since 2026-09-06, on a general annotation mechanism · a decision, not a feature |
 | 46 | **M-deferral-ledger** | scheduled | — | — | every Part 7 item with no milestone gets a dated verdict or a return condition |
-| 47 | **M-check-completeness** | scheduled | — | — | what `heroes check` accepts, `heroes build` compiles — through a generic too · scheduled, no warrant
-| 48 | **M-core-packages** | scheduled | — | — | small packages that compose, organised as Go's tree, in Heroes or over C |
-| 49 | **M-package-manager** | scheduled | — | — | `heroes add`/`heroes fetch`; bindings instead of a standard library |
-| 50 | **M-web-framework** | scheduled | — | — | composes the core packages, Go/Echo style: explicit routes, records, no magic |
-| 51 | **M-doc-generator** | scheduled | — | — | `heroes doc`, the one direction Part 6's literate-source row promises · scheduled, no warrant |
-| 52 | **M-panic-location** | scheduled | — | — | a panic names the `.hero` file, line and function · **§1.12** |
-| 53 | **M-typed-inspection** | scheduled | — | — | a stopped program shows Heroes values: the name the author typed, and `[T]`, `{K: V}`, `T?`, a variant and a record shown as themselves · scheduled, no warrant |
-| 54 | **M-generated-programs** | scheduled | — | — | programs nobody wrote: a generator that composes valid Heroes and knows the answer before the compiler is asked · **§1.12** |
-| 55 | **M-thesis-harness** | scheduled | — | — | Part 11's metrics 2 and 4 run for the first time, as a Heroes program · **§1.1** |
-| 56 | **M-lsp-server** | scheduled | — | — | `heroes lsp`, and the incremental frontend it needs |
-| 57 | **M-vscode-extension** | scheduled | — | — | the extension, complete |
-| 58 | **M-qbe-backend** | scheduled | — | — | Part 7 item 15 — the proof that the IR is not C in disguise |
-| 59 | **M-journey-book** | scheduled | — | — | the journey — how this language came to be |
-| 60 | **M-guide-book** | scheduled | — | — | the guide, as a book you would find in a shop · **§1.1** |
-| 61 | **M-install-channels** | scheduled | — | — | a Homebrew tap, winget, a Nix flake, a Docker image, all built from the seed and pinned to a `v*` release tag; the version scheme itself was decided ahead, 2026-09-07 |
-| 62 | **M-online-compiler** | scheduled | — | — | the compiler reached without installing anything: the site's visitor writes Heroes and gets its answer · scheduled, no warrant |
-| 63 | **M-publication-gate** | scheduled | — | — | the last gate before anything goes outward · CLAUDE.md §14 |
+| 47 | **M-cleanup-verdict** | scheduled | — | — | the ruling on a scope-bound release — `defer` or another form — for the two obligations `owned` and `lease` put on every path · a decision, not a feature |
+| 48 | **M-check-completeness** | scheduled | — | — | what `heroes check` accepts, `heroes build` compiles — through a generic too · scheduled, no warrant
+| 49 | **M-arm-platform** | scheduled | — | — | the fourth real machine: arm64 Linux, where a container runs and where `char` is unsigned · **§1.12** |
+| 50 | **M-core-packages** | scheduled | — | — | small packages that compose, organised as Go's tree, in Heroes or over C |
+| 51 | **M-package-manager** | scheduled | — | — | `heroes add`/`heroes fetch`; bindings instead of a standard library |
+| 52 | **M-web-framework** | scheduled | — | — | composes the core packages, Go/Echo style: explicit routes, records, no magic |
+| 53 | **M-doc-generator** | scheduled | — | — | `heroes doc`, the one direction Part 6's literate-source row promises · scheduled, no warrant |
+| 54 | **M-panic-location** | scheduled | — | — | a panic names the `.hero` file, line and function · **§1.12** |
+| 55 | **M-typed-inspection** | scheduled | — | — | a stopped program shows Heroes values: the name the author typed, and `[T]`, `{K: V}`, `T?`, a variant and a record shown as themselves · scheduled, no warrant |
+| 56 | **M-generated-programs** | scheduled | — | — | programs nobody wrote: a generator that composes valid Heroes and knows the answer before the compiler is asked · **§1.12** |
+| 57 | **M-thesis-harness** | scheduled | — | — | Part 11's metrics 2 and 4 run for the first time, as a Heroes program · **§1.1** |
+| 58 | **M-lsp-server** | scheduled | — | — | `heroes lsp`, and the incremental frontend it needs |
+| 59 | **M-vscode-extension** | scheduled | — | — | the extension, complete |
+| 60 | **M-qbe-backend** | scheduled | — | — | Part 7 item 15 — the proof that the IR is not C in disguise |
+| 61 | **M-journey-book** | scheduled | — | — | the journey — how this language came to be |
+| 62 | **M-guide-book** | scheduled | — | — | the guide, as a book you would find in a shop · **§1.1** |
+| 63 | **M-deployable-binary** | scheduled | — | — | what the machine that RUNS a Heroes program needs, on the three platforms, and which `-O` a shipped artifact carries |
+| 64 | **M-install-channels** | scheduled | — | — | a Homebrew tap, winget, a Nix flake, a Docker image, all built from the seed and pinned to a `v*` release tag; the version scheme itself was decided ahead, 2026-09-07 |
+| 65 | **M-online-compiler** | scheduled | — | — | the compiler reached without installing anything: the site's visitor writes Heroes and gets its answer · scheduled, no warrant |
+| 66 | **M-compatibility-promise** | scheduled | — | — | the paragraph `1.0.0` rests on, and the suite that makes a broken promise red · CLAUDE.md §14 |
+| 67 | **M-publication-gate** | scheduled | — | — | the last gate before anything goes outward · CLAUDE.md §14 |
 
 Three closed milestones have no tag of their own because they were parents or
 sub-steps: **M-checker-core**, **M-data-declarations** and **M-rich-diagnostics**
@@ -454,15 +507,50 @@ row number, because a reorder moves a number and never a name (CLAUDE.md §14).
   before writing it doing its job: rows 48 and 49 had not moved, one staleness this
   commit was going to repair had already been repaired by that session, and two of
   the numbers written above were re-run rather than carried.
+- **M-cleanup-verdict, M-arm-platform, M-deployable-binary and
+  M-compatibility-promise** — **four rows entered together on 2026-09-10 by
+  author decision**, out of the session that asked whether the chain was missing
+  steps for the language to be usable for **production code that is not mission
+  critical**. What produced them is § What production-ready means, and **six of
+  its ten rows turned out to be owned already**. All four were put with a
+  recommendation and all four accepted; each row's section carries its own
+  measurements. **Two positions were choices rather than consequences and both
+  are recorded**: M-arm-platform stands before
+  M-core-packages, the robust position, where the cheaper one was before
+  M-install-channels at the price of every package binding owing a
+  re-measurement (CL-040); and M-compatibility-promise stands before the gate
+  rather than inside it, because the gate is a checklist of outward acts and this
+  is a suite. **What entered no row is recorded too**, in `docs/work/DONE.md`,
+  because a candidate met by a rule must not come back as new.
+- **M-core-packages' step order was reversed at the top on 2026-09-10 by author
+  decision**, in the same session and from a different question: the author asked
+  for a step before M-web-framework delivering mini packages, JSON and a small
+  HTTP server in Go's shape, and **that step was already this one, already
+  there**. What the question exposed, and what it cost, is in that milestone's own
+  section; the author's question about how thick a wrapper over C should be became
+  its opening sitting's question (ix) rather than a decision taken here.
 
 ---
 
 ## The milestones, one by one
 
 One section per milestone that still has something to say, **in the order of the
-table above** — so the **eight closed** ones come first and the **nineteen** open or
-scheduled ones after (CLAUDE.md §14: the table carries the numbers, the
-sections carry the order, and neither repeats the other).
+table above** — so the **eighteen closed** ones come first and the **twenty-three**
+open or scheduled ones after (CLAUDE.md §14: the table carries the numbers, the
+sections carry the order, and neither repeats the other). **Both counts were
+re-counted 2026-09-10** and both were wrong: the sentence said eight and nineteen
+where the file holds 41 sections, 18 of closed milestones and 23 of scheduled
+ones. The instrument is `grep -c '^### M-'`, and the reason the first number rots
+is the next paragraph's own subject.
+
+**A SCHEDULED section has one shape, and the four rows of 2026-09-10 are written
+to it** (author instruction the same day, after this file grew 394 lines in one
+session): **what it delivers · what warrants it, with the instrument · why here ·
+what it does not deliver**, in that order, and nothing else. The median section
+is **36 lines** and the shape is what keeps it there. **Where an argument is
+carried in full by a `docs/work/SCHEDULED.md` item, this file states the fact and
+cites the item** rather than repeating it, which is the same rule CLAUDE.md
+applies to itself: one fact, one home.
 
 **Rows 1–21 have no section here**, and that is the rule rather than an omission:
 a closed milestone's record is its journal, indexed at `docs/journal/README.md`.
@@ -726,7 +814,7 @@ honour:
   defect; the historian's standing prediction on it (Zig #13970's shape) is
   scored the day a defect of that shape is filed.
 
-### M-corpus-depth — the rung between a program and the compiler
+### M-corpus-depth — the rung between a program and the compiler *(closed 2026-09-04)*
 
 **OPEN 2026-09-03**, scheduled and then moved ahead of M-isolated-threads the same
 day by author instruction (§ Who scheduled what), from a plan measured that day.
@@ -767,7 +855,7 @@ milestone; the record is journal 032 at close. Cost is projected at **+1:15** on
 the corpus leg and checked at close against step 0's number; every FFI program is
 measured on the Mac, the Linux image and the Windows box before its commit.
 
-### M-c-callbacks — a Heroes function reaches a C callback parameter
+### M-c-callbacks — a Heroes function reaches a C callback parameter *(closed 2026-09-05)*
 
 **CLOSED 2026-09-05**, the day it opened, tag `m-c-callbacks`, six steps. The
 milestone's own record is [033](journal/033-c-callbacks.md); what stays here is
@@ -809,7 +897,7 @@ entry of every function whose address the program takes, so the corruption is
 `runtime/`, and `cow.c`'s `if (a->refcount == 1)` is a test-and-mutate that an
 atomic would not fix in any case.
 
-### M-isolated-threads — the isolation, or nothing
+### M-isolated-threads — the isolation, or nothing *(closed 2026-09-06)*
 
 **OPEN 2026-09-03, re-scoped by `docs/panel/111` on 2026-09-05.** design.md Part
 7.13 — isolated per-thread heaps, copying at the boundaries, OS threads, **no
@@ -936,7 +1024,7 @@ the marked declaration's unit, and that unit includes only its own groups'
 headers, so a freer declared in another module cannot be called. Anything that
 later widens where an `extern` is reachable from touches this.
 
-### M-open-repository — the repository opens
+### M-open-repository — the repository opens *(closed 2026-09-08)*
 
 **Scheduled and placed at row 38 by author instruction 2026-09-08**, ahead of
 M-discard-refusal, which had no line of its own landed and went back to
@@ -981,7 +1069,7 @@ the 1.0.0 compatibility paragraph (only 0.x's one sentence is published here),
 the trademark question, the install channels, and any new release — the compiler
 does not move in this milestone, so `VERSION` does not either.
 
-### M-discard-refusal — `_ =` stops swallowing a failure
+### M-discard-refusal — `_ =` stops swallowing a failure *(closed 2026-09-08)*
 
 **Closed 2026-09-08**, tag `m-discard-refusal`, journal
 [038](journal/038-discard-refusal.md), sitting `docs/panel/118`. What the
@@ -1061,7 +1149,7 @@ row so that whoever takes it re-derives nothing: a generated name must come from
 functions of one type would collide; and `ziglang/zig#1717` accepted that exact
 proposal in 2020 and rejected it in 2023.
 
-### M-cstr-lifetime — a lent string may not outlive its lender
+### M-cstr-lifetime — a lent string may not outlive its lender *(closed 2026-09-09)*
 
 **Placed first and alone by author decision 2026-09-09**, ahead of both the
 budget instrument and the interpolation implementation, out of the three the
@@ -1097,7 +1185,7 @@ stay legal.
 hole makes the sound and the dangling spelling one brace apart, so the class has
 to be shut before a form lands that walks people into it.
 
-### M-interpolation-verdict — the ruling on string interpolation
+### M-interpolation-verdict — the ruling on string interpolation *(closed 2026-09-09)*
 
 **Scheduled by author instruction 2026-09-02**, and what it delivers is a
 **decision**, not a feature: design.md Part 7 item 7 — *"String interpolation —
@@ -1322,6 +1410,39 @@ M-closures-verdict — `alias` (`Handler = alias (function(Request) -> Response)
 silence Part 11's first-try measurement is told to expect) all change how a
 package is written.
 
+### M-cleanup-verdict — the ruling on a release bound to a scope
+
+**Scheduled 2026-09-10 by author decision**, from § What production-ready means.
+It delivers **a decision, not a feature**, in M-closures-verdict's shape: a form
+enters with its own milestone, or it lands as a **Part 6 row naming the program
+that would make it wrong**. Full five seats, because a form that enters has
+surface.
+
+**What warrants it is a silence, and the vocabulary searched is named**
+(2026-09-10): `defer`, `RAII`, `scope guard`, `scope-bound`, `destructor`,
+`finally` and `cleanup on`, over design.md, `spec/` and all 125 sittings, return
+**nothing about a construct**. The two hits are `design.md:1525`'s *"C++ RAII
+with references"*, a row about the ownership model, and the emitter's internal
+`h_T_drop`. So the refusal is uncitable today (CLAUDE.md §1), which is the
+finding that warranted M-reflection-verdict.
+
+**And the reason is four days old.** `owned <C function>` landed 2026-09-07 and
+`lease`/`end_lease` on 2026-09-09, both putting a release obligation on **every
+path**, while `?` makes an early return implicit and `spec:246` aborts when
+`main` returns on a lease nobody ended. There are no destructors by design
+(`selfhost/emit/types.hero:6`), which is where the sitting starts rather than
+something it discovers.
+
+**Why here.** With the other rulings and before M-core-packages, on the
+2026-09-03 reorder's argument: the packages are the largest body of Heroes that
+will be written against the spec after the compiler, and a package over C is
+exactly the code that acquires and must release.
+
+**What it does not deliver**: M-deferral-ledger's Part 7 items, and the reason is
+the point — a scope-bound release is on no list at all, so a row that inherited
+it would report a promise where there is none. The count it opens with is its
+`docs/work/SCHEDULED.md` item's.
+
 ### M-check-completeness — what `heroes check` accepts, `heroes build` compiles
 
 **Scheduled, no warrant**, and the row says so on purpose. Principle 0 holds this
@@ -1363,6 +1484,40 @@ measured, and the day it returns one this is §1.0 compiler-need at any price.
 body's line stays undecidable from the line plus its signature, and lifting that
 needs constraints on generics, which is the author's trade.
 
+### M-arm-platform — the fourth real machine
+
+**Scheduled 2026-09-10 by author decision**, from § What production-ready means
+row 3.
+
+**What it delivers.** arm64 Linux as a measured platform: the seed built from C
+alone, the compiler's own tests and the harness's own passing there, and a fourth
+CI matrix entry, so the leg is a judge and not a hunting instrument
+(`.claude/rules/platforms.md`). The three legs today are Linux x86-64, Darwin
+arm64 and Windows x86-64.
+
+**What warrants it.** The architecture most production containers run on has
+never compiled this compiler, and the prediction is registered here so it can be
+scored: plain `char` is **unsigned** on the ARM ABI and **signed** on x86-64,
+while `spec:228` declares a parameter and a field at *the header's own width and
+sign*. So either the leg finds a divergence in the corpus's 20 `extern` programs
+of 55, or the FFI's width rules are stronger than three legs could show.
+Structure padding and `va_list` are the next two shapes.
+
+**It is not the cross-compilation `DESIGN-LOG.md:539` refused.** That refusal's
+own ground — *"the three platforms are measured on real machines by rule"* —
+argues for a fourth real machine and against a `--target` flag. And it is cheap:
+the existing image runs x86-64 **under Rosetta** on an arm64 Mac, so the new one
+is the native instrument.
+
+**Why here.** Before M-core-packages, which declares bindings against roughly
+eighteen C headers: a leg arriving after them never saw them written. The cheaper
+position was before M-install-channels, at the price of every binding owing a
+re-measurement; the author took the robust one (CL-040).
+
+**What it does not deliver**: a target flag, a prebuilt binary, or a fourth
+platform in M-online-compiler's sense. § The names carries why the id is neither
+`M-fourth-platform` nor `M-arm-linux`.
+
 ### M-core-packages — small packages that compose, and what a web server needs
 
 **Scheduled, no warrant** (author instruction 2026-09-03; § Who scheduled what
@@ -1384,6 +1539,7 @@ not measured:
 | package | source | today |
 |---|---|---|
 | `strings`, `path`, `net/url`, `log`, `sort` (generic — the built-in refuses a type parameter), `rand` (deterministic) | Heroes alone | writable |
+| `strconv` — **joined 2026-09-10**: `to_i64` does not take a `str`, so six corpus programs build numbers digit by digit, and width and precision have no route either. The count and the return condition are its `docs/work/SCHEDULED.md` item's | Heroes alone | writable |
 | `encoding/json` | Heroes alone — `examples/json/`, 671 lines, already parses and renders | writable |
 | `html/template` | Heroes alone — `examples/template/main.hero`, 235 lines, plus escaping | writable |
 | `os` | `hero_os.h` and `getenv` — `selfhost/cli/process.hero:37-56` lifted out of the compiler | writable |
@@ -1464,6 +1620,42 @@ and the `tag` for a colliding symbol this milestone's own item asks about follow
 it without a fourth re-derivation; and what a general annotation syntax would buy
 against it, which is CLAUDE.md §9's bill paid once and no more than that.
 
+**Two questions joined the seven on 2026-09-10**, from the session that wrote
+§ What production-ready means, and both bite here because this milestone writes
+eighteen groups over real headers.
+
+**(viii) Is a group's header the authority for its own declarations, or is the
+module's header set?** `spec:224-227` reads per group. The compiler answers per
+**module**, and its own source is the witness: `selfhost/cli/process.hero:49-53`
+declares three `hero_os.h` functions inside `extern "stdlib.h"` and compiles,
+because a translation unit includes every group's header
+(`selfhost/emit/unit.hero:32`) and clang sees the union. **It is not a defect** —
+a wrong header alone is refused, and `selfhost/emit/ffi_declared.hero:100-137`
+has translated clang's three spellings of *undeclared* since 2026-08-25 — but it
+is a refusal the spec promises per group and the compiler makes per module, whose
+cost is that deleting an unrelated group breaks a binding at a distance. Either
+the spec narrows to what runs, or the check tightens and `process.hero` is the
+first thing it refuses.
+
+**(ix) How thick is the wrapper over a C group?** The author's question of
+2026-09-10, and **half of it is already answered**: a package over C is two
+modules by construction, since panel 033 R5 makes an `extern` uncallable across a
+module boundary. What is open is the thickness over eighteen packages — **thin**,
+one-to-one with C and the argument order showing through, against **thick**, an
+idiomatic API where the `extern` never appears and the one thing 1.0 can promise,
+a C library clang checks, stops being visible. **The precedent for thin is PHP,
+in two authoritative facts**: php.net's manual calls `mysqli` and `PDO_MySQL`
+*"lightweight wrappers on top of a C client library"*, and the language proposed
+to repair the result from inside at `wiki.php.net/rfc/consistent_function_names`.
+Its observable cost is one line — `strpos(haystack, needle)` against
+`in_array(needle, haystack)` — which is the shape §1.1 exists to delete. **What
+is commentary rather than authority**, and so goes to the historian as a
+hypothesis (CL-018), is that following each C library's conventions is what
+*caused* it. **And one asymmetry favours Heroes**: PHP mitigated this with named
+arguments in 8.0, in 2020, and `spec:113` has required them wherever two
+parameters share a type since before any package existed — so the argument-order
+half of that bill is paid and the naming half is not.
+
 **Step order** — one package or one gap per step, each step a corpus program on
 the three platforms or skipped by the missing-header rule: **0** three repairs
 the probes found, each a `fixedbugs` case — `xs @ xs.push(c.to_u8().must())`
@@ -1475,20 +1667,37 @@ chooses `.push_owned` for a bound value and not for an inline `.must()`),
 `ffi_unknown_name` for the macro-only `htons` on Darwin says the header declares
 no such name when it does · **1** `strings` and `path`, and the copies leave
 `examples/` — `split_lines` in 8 files, `is_space` in 8, `trimmed` in 7,
-`index_of` in 4, and `tests/harness/strings.hero` carrying a fourth `trimmed` ·
-**2** `encoding/json`, `net/url`, `html/template`, `log`, `sort`, `rand` · **3**
-`os` · **4** `io` and `bufio` (M-corpus-depth's `wc` over stdin is the witness if
-it has landed) · **5** `time` · **6** `math` · **7** the byte buffer, in the
-sitting's route (M-corpus-depth's `checksum/` is the witness) · **8** `crypto` ·
-**9** `database/sql` (M-corpus-depth's `ledger/`) · **10** `net`, in the sitting's
-shape (the loopback program, as an `echo` program under `examples/`) · **11** `net/http` client,
-against a `file://` URL · **12** `net/http` server, two requests on one
-connection · **13** — **moved to
+`index_of` in 4, and `tests/harness/strings.hero` carrying a fourth `trimmed`,
+**and `strconv`, which joined the table on 2026-09-10** · **2** `net`, in the
+sitting's shape (the loopback program, as an `echo` program under `examples/`) ·
+**3** `io` and `bufio` (M-corpus-depth's `wc` over stdin is the witness if it has
+landed) · **4** `encoding/json` · **5** `net/http` client, against a `file://`
+URL · **6** `net/http` server, two requests on one connection · **7**
+`database/sql` (M-corpus-depth's `ledger/`) · **8** `os` · **9** `time` · **10**
+`math` · **11** the byte buffer, in the sitting's route (M-corpus-depth's
+`checksum/` is the witness) · **12** `crypto` · **13** `net/url`,
+`html/template`, `log`, `sort`, `rand` · **14** — **moved to
 M-package-manager on 2026-09-03**, when the packages were placed ahead of the
 manager: `heroes fetch` under the root, the root-level driver, and the `heroes
 check` item panel 091 filed there. The packages live as directories under
 `examples/`, reached by `use` from a program in the same root — the rule for this
-milestone, not a stopgap until `fetch` exists.
+milestone, not a stopgap until `fetch` exists. **That last step is cited as
+step 13 by the record and by `docs/work/SCHEDULED.md`**, which is what it was
+until 2026-09-10; it is 14 here because the order below moved and the record is
+not rewritten.
+
+**The order above was reversed at the top on 2026-09-10 by author decision.**
+The author asked for a step before M-web-framework delivering mini packages,
+JSON, an HTTP client and a small HTTP server in Go's shape; **that step is this
+one and it already stood there**, so nothing was added — what the question
+exposed is that the web stack sat at the **end**, `net` at 10 and the server at
+12, so the first nine steps produced nothing anybody could watch answer a
+request. **It costs no dependency, measured rather than argued**: the 100-line
+loopback server of 2026-09-03 needed none of the byte buffer, `htons` or
+`sockaddr_in`. **One dependency was corrected while the order was written**:
+`io` and `bufio` sit at step 3, ahead of the server, because the table above
+says the server is Heroes alone over `net`, `io`, `strings` while that program
+read its request through `fdopen` and `fgets` directly.
 
 **Acceptance**: a small HTTP server built from the packages and nothing else, in
 `examples/`, in the corpus's three configurations, in the loopback shape — server
@@ -1952,6 +2161,36 @@ write Heroes; open it in the middle and you find the thing you were looking for.
   be author-written or they measure the assistant's priors, and this is the one
   milestone whose own work *is* the author writing programs.
 
+### M-deployable-binary — what the machine that RUNS a program needs
+
+**Scheduled 2026-09-10 by author decision**, from § What production-ready means
+row 4, which had no owner at all: M-install-channels answers *how do I get the
+compiler*, and nothing in this file answered *what does the machine running my
+binary need*.
+
+**What it delivers**, three measurements and one decision. `otool`/`ldd` on a
+built binary on **each** platform, written into `docs/environment/`. Whether a
+binary built against the CI image's glibc runs on an older server, and what it
+says when it does not. Whether a Linux binary can be **static**, which is the
+difference between a `scratch` image and a distro image — `design.md:708-710`
+already records that macOS has no static libc, so one flag cannot answer for
+three platforms. And the decision: **`heroes build` defaults to `-O0` while
+`run` defaults to `-O2`**, so the artifact somebody ships is the slow one unless
+they know to ask. A changed default, a `--release` alias or one sentence, and
+§10's stopping rule judges a flag here like any other — but not silence.
+
+**What warrants it is one measurement and one silence.** On this Mac a Heroes
+binary links `/usr/lib/libSystem.B.dylib` and nothing else, so it carries no
+sidecar; the same question on Linux and on Windows is **unrun**.
+
+**Why here.** Before M-install-channels: a channel that installs a compiler whose
+output nobody knows how to ship is half a channel. A row of its own and not that
+row's bullet, because they are two deliverables — the compiler, and the user's
+program — which is §14's own test.
+
+**What it does not deliver**: any outward act. **Soundness lane**, unless the
+`-O` decision takes a flag.
+
 ### M-install-channels — the way in, from a package manager
 
 **Scheduled, no warrant** (author instruction 2026-09-03, *"publishing on brew, for
@@ -2096,6 +2335,41 @@ which engine; whether a wasm build of `heroes` is a second binary under §10 or
 the same program for another target; and whether the allow-list is a property of
 the playground or a `heroes` flag, which is §10's stopping rule asked about a
 capability with no other caller.
+
+### M-compatibility-promise — the paragraph `1.0.0` rests on, and its instrument
+
+**Scheduled 2026-09-10 by author decision**, from § What production-ready means
+row 1. M-publication-gate owns the paragraph — *"Silence reads as a promise"* —
+and `README.md:117` already says the version stays below `1.0.0` until it is
+written; this row delivers the paragraph **and** the instrument, and discharges
+that bullet.
+
+**What warrants the instrument.** Go 1 published *Go 1 and the Future of Go
+Programs*, Nim 1.0 promised that code compiling under 1.0 compiles under any 1.x,
+and Rust 1.0 put *stability without stagnation* on a train where an unstable
+feature is an error on stable. **In all three the sentence has a mechanism**, and
+in a repository whose contract is that a claim is written down only after the
+command that settles it has run, a paragraph alone is the one unrun claim left.
+
+**What it delivers**, and both halves exist already: the corpus at a release tag
+recompiled by today's compiler, so a program that stops compiling is a **broken
+promise** rather than a discovery; and the trigger, since `git diff vA vB --
+spec/heroes-spec.md` already moves `Y` and its emptiness moves `Z`
+(`.claude/rules/records.md` § Release tags). No new verb is owed.
+
+**The hardest sentence is a consequence of §10.** A program cannot declare the
+language version it was written for — no fourth input class, and panel 056
+refused a per-project file — so the promise is **one-directional**: the compiler
+must not break old programs, and an old program cannot ask for an old compiler.
+**And the paragraph says the deployment model out loud**: crash and be restarted,
+because Part 6 refuses exceptions permanently and every abort `spec:166-169`
+lists is uncatchable. Defensible as a model, indefensible as a surprise.
+
+**Why here.** Immediately before the gate, which then publishes the `1.0.0` this
+row earns.
+
+**What it does not deliver**: the `1.0.0` tag itself, which is the author's act
+on a clean `main` and never a milestone's.
 
 ### M-publication-gate — the last gate
 
@@ -2300,6 +2574,10 @@ So a number met in the record resolves here, and only here.
 | `M-typed-inspection` | — | — | a stopped Heroes program shows Heroes values: `p p` under the name the author wrote, and `[T]`, `{K: V}`, `T?`, a variant and a record shown as themselves rather than as an opaque `HeroArrayHeader *`, a raw tagged union with a garbage `err` arm, and a hashed type name. **The id is a phrase the record already uses, and both times as the non-goal** (§14 prefers one the record uses over an invented one): `design.md:594` says *"No typed variable inspection in v1"* and this file's M-vscode-extension bullet said *"Typed inspection is not in v1"* until the row existed. **A new id and not a reopening of `M-selfhost-port`**, which closed 2026-08-17 and carried `-g` in as a defect so lldb could break on a `.hero` line at all: breaking, stepping and a backtrace at `.hero:line` work today, and what this delivers is what the frame SHOWS once the program has stopped. **It is also not a step of `M-vscode-extension`**, whose Debugging bullet rules that `lldb-dap` composes: an editor consumes formatters and never produces them, and the author debugs a compiler written in Heroes from a terminal with no editor open. **Deliberately not `M-debugger`**: one word where §14 asks for two, so it appropriates a topic, and it would claim the line-level half a closed milestone already delivered while leaving no name for the `heroes dap` this file already reserves. **Deliberately not `M-stopped-values`**: `print` and `assert` render values too, and that half is compile-time derivation over a record's fields, which is `M-reflection-verdict`'s question and not this row's. **And deliberately not `M-frame-values`**: it names the compiler's word for the place rather than the author's for the thing, and the deliverable is the value seen, not the frame. All three runners-up are in `tests/harness/suite_records.hero`'s `REFUSED`. Scheduled 2026-09-06 by author instruction with **no warrant** |
 
 | `M-open-repository` | — | — | the repository stops being private, and every sentence that promised it would open stops promising. **A new id rather than a step of `M-publication-gate`** (§14), for the reason `M-thesis-harness` and `M-install-channels` are: the gate is the outward act of a finished thing, and being readable is delivered with or without the thesis measured, the compatibility paragraph written or a channel installed. **Named for the act and not for the area**, which keeps `publication` free for the gate that still owes it |
+| `M-cleanup-verdict` | — | — | the ruling on a release bound to a scope. **Named for the deliverable, which is a verdict** (§14), on `M-closures-verdict`'s precedent: a milestone named for the ruling can close with a refusal, and one named for the form would claim what the sitting exists to decide. **Not a step of `M-deferral-ledger`**, which dates Part 7's items: this is on no list at all, so a row that inherited it would report a promise the record does not hold. Scheduled 2026-09-10 by author decision with **no warrant** |
+| `M-arm-platform` | — | — | arm64 Linux as a measured platform. **Not a step of `M-install-channels`** (§14): that row delivers the channels, this one the architecture they would otherwise ship for unmeasured, and the two are separable in both directions. **Deliberately not `M-fourth-platform`**, because `M-online-compiler` already calls a browser the fourth platform under panel 114, so the number would name two things; **and not `M-arm-linux`**, because what is delivered is a platform under `.claude/rules/platforms.md`'s own rules, three legs becoming four, rather than an operating-system port. Both runners-up are in `tests/harness/suite_records.hero`'s `REFUSED`. Scheduled 2026-09-10 by author decision · **§1.12** |
+| `M-deployable-binary` | — | — | what the machine that RUNS a Heroes program needs, and which `-O` a shipped artifact carries. **Not a step of `M-install-channels`** (§14): that row delivers *how a person gets the compiler* and this one *what a person needs to run what the compiler made*, which are two deliverables and two audiences. **Named for the artifact and not for the act**, so `deployment` and `release` stay free — this row publishes nothing. Scheduled 2026-09-10 by author decision with **no warrant** |
+| `M-compatibility-promise` | — | — | the paragraph `1.0.0` rests on, and the suite that makes a broken promise red. **Not a step of `M-publication-gate`** (§14), which owns that paragraph as one bullet of a checklist of outward acts: this is a suite, built and tested in private like everything else. **Named for the promise and not for the version**, since `1.0.0` is the author's act on a clean `main` and never a milestone's (`.claude/rules/records.md` § Release tags). Scheduled 2026-09-10 by author decision · CLAUDE.md §14 |
 
 **`M8` has no row, because it meant three different things.** It was an umbrella
 that predates the a/b/c/e/p split and no heading has carried it since. In the
