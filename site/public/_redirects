@@ -32,3 +32,12 @@
 # they answer rather than 404.
 /errors/       /docs/errors/             301
 /it/errors/    /it/docs/errors/          301
+
+# The sitemap under the name everything guesses.
+#
+# `@astrojs/sitemap` writes an index, `sitemap-index.xml`, plus one chunk per
+# 45,000 URLs, and `robots.txt` and every page's `<link rel="sitemap">` point at
+# the index by its real name. But `/sitemap.xml` is the name a person types and
+# the name a checking tool tries first, and measured against the live site it
+# answered 404. A 404 there reads as a site with no sitemap at all.
+/sitemap.xml   /sitemap-index.xml        301

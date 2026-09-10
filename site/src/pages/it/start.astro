@@ -3,6 +3,6 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import { page } from '../../lib/figures.ts';
 import content from '../../html/it/start.html?raw';
 ---
-<BaseLayout url="/it/start/" title={"Inizia: compila Heroes ed esegui un programma"} description={"I comandi per compilare Heroes con clang ed eseguire un esempio, trovare il runtime e verificare i requisiti. Il repository è aperto e il linguaggio è in beta."} current="start">
+<BaseLayout url="/it/start/" title={"Inizia: compila Heroes ed esegui un programma"} description={"I comandi per compilare Heroes con clang, eseguire un esempio e verificare i requisiti. Il repository è aperto e il linguaggio è in beta."} current="start">
 <Fragment set:html={page(content, 'site/src/html/it/start.html')} />
 </BaseLayout>

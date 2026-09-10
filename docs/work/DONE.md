@@ -3539,3 +3539,59 @@ Was | author instruction, 2026-08-14 | **A runtime function that joins two path 
     shape it exists to prevent. § Where we are's spec numbers were four tokens
     and one digest stale (5373 / 4203 / 711 / `5a9b2886` against 5378 / 4210 /
     766 / `527e1b76`), and § Where we are is the one place those counts live.
+
+- [x] **The sitemap carries `<lastmod>`, read from git, and refuses to guess.**
+    184 addresses dated over 15 distinct dates, `site/src/lib/lastmod.ts`, where
+    it was 0 of 184. A page's date is the last commit touching its OWN sources,
+    its prose fragment and its wrapper, never the shared layout, because a shell
+    edit would otherwise move all 184 together and be the build-time stamp under
+    another name. `fetch-depth: 0` on the deploy checkout, without which a
+    shallow clone answers one date for every path. **Two guards, both seen red
+    before they were trusted**: the history check at `astro:build:start`, where a
+    `--depth 1` clone exits 1 and writes no sitemap, and the audit over the built
+    sitemap, where identical dates exit 1 naming the count. The audit reads the
+    file that ships and not a list the config kept while building, which is what
+    the first version did and why it passed on the one run that mattered.
+- [x] **Every built page's head is checked for what a search result uses**,
+    `site/src/lib/seo.ts`: title, description and canonical present; description
+    at most 160 characters and title at most 60, which is where a result is cut
+    rather than where a sentence is long; canonical equal to the page's own
+    address; no two pages sharing a title or a description. 186 pages pass. Four
+    sabotages were run one at a time and each was seen red with its own message.
+- [x] **`/favicon.ico` answered 404 and the only icon was a `data:` URI**, which
+    is not an address, so the crawler that draws the icon beside a search result
+    could not fetch it. Three files under `site/public/`, and the bolt is now
+    drawn once in the tree instead of once inside the layout.
+- [x] **Eight pages of prose declared themselves front pages.** `og:type` sent
+    `WebPage` to `website`, against the comment three lines above it. `/why/`,
+    `/start/`, `/log/`, `/project/` and their Italian twins are `article` now,
+    and only the two landings stay `website`: 10 pages carried it, now 2.
+- [x] **Four descriptions and one title ran past the point where a result stops
+    showing them**, measured from source rather than from a build three hours
+    stale: 188, 164, 161 and 161 characters, and a 62-character title. All are
+    under the limits the build now enforces.
+- [x] **`/sitemap.xml` answered 404**, which reads as a site with no sitemap at
+    all, and now redirects to the generated index. The two share cards
+    `errors-en.png` and `errors-it.png` had been referenced by no page since the
+    errors page became chapter two of the guide, and are removed with the dead
+    `errors` entry in `SECTION_CARDS`.
+- [x] **`robots.txt` says yes to the model crawlers by name.** `Allow: /`
+    already permitted every one of them, so nothing changes behaviour; what
+    changes is that a language whose whole point is being read by a model stops
+    leaving its own position to be guessed. The tokens are each vendor's
+    documented ones, read from their own pages in this session.
+- [x] **The example pages stopped titling themselves with a repository path.**
+    `examples/json/ · Heroes examples` becomes `json · Heroes examples`, on 136
+    pages, so the word that tells two pages apart starts at character one
+    instead of character ten. Site panel, four seats, the question put with the
+    measurement and without a proposed answer; all four said the path does not
+    earn its place there, including the seat most likely to defend it, which
+    listed the five other places the page already names it. The `h1` keeps the
+    full path. The Italian tail became `esempi di Heroes`, which appears in one
+    place in the tree.
+- [x] **The net caught the session's own defect.** `records/citations` failed on
+    a comment in `site/src/lib/lastmod.ts` that named a fragment by the path it
+    has under `site/src/html/` rather than the one it has from the root, so the
+    citation resolved nowhere. Repointed to `site/src/html/docs/index.html`, and
+    it is the reason the full net runs after the last edit rather than after the
+    last interesting one.

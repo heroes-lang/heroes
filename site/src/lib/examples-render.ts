@@ -244,7 +244,27 @@ export function renderExamplePage(slug: string, lang: Lang): RenderedPage {
 
   return {
     url,
-    title: `${entry} · ${lang === 'it' ? 'esempi Heroes' : 'Heroes examples'}`,
+    // The NAME, not the path, and the path is two lines above in the `h1`.
+    //
+    // This was `entry`, so all 68 English titles opened with the same nine
+    // characters, `examples/`, and the 14 gallery ones with the same seventeen.
+    // A title is read in three places and the reader is scanning all three for
+    // what makes this page different from the last one: a browser tab, a
+    // bookmark, and the blue first line of a search result. In every one of
+    // them the distinguishing word started at character ten.
+    //
+    // The site panel was asked whether the repository path earns its place
+    // here, and four seats said no, including the one most likely to defend it:
+    // the path is already on the page five times, in the `h1`, the crumb, the
+    // run command, every `figcaption` and every `data-src`, and a search engine
+    // prints it separately from the `BreadcrumbList` this page also carries.
+    // What is lost is the shape marker, the trailing `/` for a directory of
+    // modules against `.hero` for a single file, which the `h1` keeps.
+    //
+    // `nameOf` is what the crumb and the index cards already call a program, so
+    // this adds no second name for the same thing, and its 68 outputs are
+    // distinct, which `src/lib/seo.ts` requires of every title on the site.
+    title: `${nameOf(slug)} · ${lang === 'it' ? 'esempi di Heroes' : 'Heroes examples'}`,
     description: description.tagline,
     html: `\n${parts.join('\n\n')}\n`,
   };

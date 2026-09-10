@@ -83,8 +83,17 @@ const alternates = lang === 'it'
   ? [['it', it], ['en', en], ['x-default', en]]
   : [['en', en], ['it', it], ['x-default', en]];
 
-const favicon =
-  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cpath fill='%23e5393e' d='M 14 0 L2 18 h8 L7 32 L22 12 h-9 z'/%3E%3C/svg%3E";
+// The icon is three FILES under `public/`, and it used to be a `data:` URI
+// holding the bolt inline. That was smaller and it was unreachable: a `data:`
+// URI is not an address, so a crawler cannot fetch it, and Google shows the
+// icon beside a result on a phone by fetching one. Measured before this
+// changed: `https://heroes-lang.org/favicon.ico` answered 404, which is the
+// address a client tries when the markup gives it nothing it can use.
+//
+// `favicon.svg` is the source the other two are rendered from, so the bolt is
+// drawn once in the tree rather than once here and once in a file that could
+// drift from it. `apple-touch-icon.png` carries the site's own near-black
+// ground because iOS drops transparency and rounds the corners itself.
 
 // -- What a machine that is not a browser gets ------------------------------
 //
@@ -117,8 +126,14 @@ const AUTHOR = 'Giuseppe Arici';
 //
 // The fallback is the home card rather than nothing, so a page in a section
 // nobody has drawn yet still shares as this site rather than as a bare link.
+//
+// `errors` was in this set and was unreachable. The errors page became chapter
+// two of the guide, so its address is `/docs/errors/`, and `section` reads the
+// FIRST path segment, which is `docs`. The two `errors-*.png` were rendered,
+// tracked, and asked for by no page at all. The chapter takes the docs card,
+// which is right, and the set now names only sections that exist.
 const SECTION_CARDS = new Set([
-  'home', 'why', 'start', 'docs', 'spec', 'examples', 'errors', 'log', 'project', 'about',
+  'home', 'why', 'start', 'docs', 'spec', 'examples', 'log', 'project', 'about',
 ]);
 const section = (() => {
   const path = lang === 'it' ? url.slice(3) : url;
@@ -230,7 +245,13 @@ const language = {
 // `og:type` follows the same decision. It was `website` on all 180 pages,
 // which tells a card renderer that a chapter and the front page are the same
 // kind of thing; `article` is what the eighty pages of prose actually are.
-const ogType = kind === 'WebSite' ? 'website' : (kind === 'WebPage' ? 'website' : 'article');
+//
+// The line under this comment used to send `WebPage` to `website` as well,
+// which left the comment describing something the code did not do: `/why/`,
+// `/start/`, `/log/` and `/project/`, four pages of prose per edition and eight
+// in all, went on declaring themselves front pages. Only the two landings are
+// the site rather than a piece of it, so only they are `website`.
+const ogType = kind === 'WebSite' ? 'website' : 'article';
 
 const structured = kind === 'WebSite' ? [page, breadcrumbs, language] : [page, breadcrumbs];
 ---
@@ -241,7 +262,9 @@ const structured = kind === 'WebSite' ? [page, breadcrumbs, language] : [page, b
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{title}</title>
 <meta name="description" content={description}>
-<link rel="icon" href={favicon}>
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="canonical" href={canonical}>
 {alternates.map(([code, href]) => (
 <link rel="alternate" hreflang={code} href={ORIGIN + href}>
