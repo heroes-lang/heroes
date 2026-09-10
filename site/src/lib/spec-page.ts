@@ -104,7 +104,10 @@ export function renderSpecPage(lang: Lang): SpecPage {
     `  <figure class="example spec" data-src="${SPEC}">\n<pre><code>${escape(source.replace(/\n$/, ''))}</code></pre>\n    <figcaption>${caption}</figcaption>\n  </figure>`,
     lang === 'en'
       ? `  <p class="next">\n    Next: <b><a href="/docs/">the same language explained one idea at a time</a></b>.\n    <a href="/examples/">Every program</a>.\n  </p>`
-      : `  <p class="next">\n    Poi: <b><a href="/it/docs/">lo stesso linguaggio spiegato un'idea alla volta</a></b>.\n    <a href="/it/examples/">Tutti i programmi</a>.\n  </p>`,
+      // `&rsquo;` and not a straight quote: the Italian edition's typography
+      // rule reaches the HTML fragments and nothing reads this directory, so a
+      // generated string is where the last one hid.
+      : `  <p class="next">\n    Poi: <b><a href="/it/docs/">lo stesso linguaggio spiegato un&rsquo;idea alla volta</a></b>.\n    <a href="/it/examples/">Tutti i programmi</a>.\n  </p>`,
     footer(lang),
   ].join('\n\n');
   // This page is assembled here and not by the fragment pipeline, so the claims

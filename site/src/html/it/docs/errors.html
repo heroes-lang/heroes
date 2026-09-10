@@ -63,7 +63,7 @@ $ heroes run program.hero</code></pre>
 <span class="msg">tests/golden/check/reserved-words.hero:4:1: <span class="k">error</span>[reserved_word]: `const` is not a word in this language — use `constant`: `constant MAX: i64`</span>
 <span class="msg">tests/golden/check/deleted-int.hero:23:8: <span class="k">error</span>[reserved_word]: `int` is not a word in this language — an integer says its width: `i64`, and also `i8` `i16` `i32` `u8` `u16` `u32` `u64`</span></code></pre>
   <p>
-    Qui ogni messaggio occupa una riga; negli esempi precedenti trovi la versione completa. Tre dei quattro errori hanno una correzione <code>certain</code> e <code>--apply</code> le applica. <code>let</code> resta invariato: la correzione richiede di scegliere una forma di dichiarazione, non soltanto di sostituire una parola.
+    Qui ogni messaggio occupa una riga, ed è quello che stampa <code>heroes check --brief</code>; negli esempi precedenti trovi la forma completa, quella del comando semplice. Tre dei quattro errori hanno una correzione <code>certain</code> e <code>--apply</code> le applica. <code>let</code> resta invariato: la correzione richiede di scegliere una forma di dichiarazione, non soltanto di sostituire una parola.
   </p>
 
   <h3>Completare un programma con l&rsquo;aiuto del compilatore</h3>
