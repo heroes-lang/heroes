@@ -7,6 +7,7 @@ import { assertEveryClaimVisited, claimsSummary } from './src/lib/claims.ts';
 import { assertNodsMirrored } from './src/lib/nods.ts';
 import { lastmodFor, assertHistoryAvailable, assertSitemapDated } from './src/lib/lastmod.ts';
 import { assertHeadsUsable } from './src/lib/seo.ts';
+import { assertScriptsHonest } from './src/lib/scripts.ts';
 
 const ORIGIN = 'https://heroes-lang.org';
 
@@ -170,6 +171,22 @@ function priority(pathname) {
   return path.startsWith('/docs/') ? 0.6 : 0.8;
 }
 
+// Every script the build wrote, read back out of the output and held to the
+// rule in site/README.md: declared by name, inline, and writing nothing to the
+// visitor's browser. The check reads `dist/` and not `src/`, because the rule
+// is about what a visitor receives and a source-side check would bless a script
+// that reached the output some other way.
+function scriptsAudit() {
+  return {
+    name: 'heroes:scripts',
+    hooks: {
+      'astro:build:done': ({ dir, logger }) => {
+        logger.info(assertScriptsHonest(dir.pathname));
+      },
+    },
+  };
+}
+
 export default defineConfig({
   site: ORIGIN,
 
@@ -190,6 +207,7 @@ export default defineConfig({
 
   integrations: [
     claimsAudit(),
+    scriptsAudit(),
     withoutFinderDroppings(),
     nestedNotFound(),
     sitemap({
