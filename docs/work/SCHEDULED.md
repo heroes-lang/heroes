@@ -47,7 +47,7 @@ file and the same panel and one action closes both; where two items merely share
 a *blocker* rather than a deliverable they stay two, with the dependency named.
 
 *******************************************************************************
-**OPEN: 52**
+**OPEN: 54**
 
 - [ ] **M-reflection-verdict** | panel 117's sixth option: give `assert` both sides for an aggregate by walking to the first DIFFERING LEAF and naming the field, instead of rendering the value | `docs/panel/117-both-sides-of-an-assert-when-a-side-is-an-aggregate.md` · `selfhost/emit/structural.hero` · `runtime/parts/array.c`
 
@@ -1885,6 +1885,37 @@ a *blocker* rather than a deliverable they stay two, with the dependency named.
     `design.md:718` calls the QBE backend *Part 7 item 14*, where item 14 is
     declaration visibility and QBE is item **15** (`design.md:2807`) — the same slip
     the ROADMAP's own cells carried until 2026-09-03.
+
+- [ ] **M-check-completeness** | three rules a blind reader guessed at, and one of the guesses compiles: `sort`'s direction, `xs[i] @ v`, and whether `main` may be fallible | `docs/panel/126-the-document-nobody-had-tidied.md` · `spec § 10 Strings, arrays, maps` · `spec § 11 Built-ins`
+
+    **Origin:** panel 126's ergonomist seat, 2026-09-11, out of three tasks
+    written twice each. **`sort`'s direction is the one that matters**: neither
+    version of the specification says ascending, both say only *walks them in
+    order*, and a tie-break written on the wrong assumption compiles and prints
+    a silently different answer. That is the single silent-error risk the seat
+    found in six programs, and it is one word of the document. **`xs[i] @ v` is
+    given nowhere** while `m[k] @ v` is given, so every sort the seat wrote
+    carried a map of taken keys instead of swapping; measure first whether the
+    compiler accepts it, because the seat could not. **Whether `main` may be
+    `-> ()?`** decides whether `?` is usable in the one function every program
+    has, and the document says a file holds `function main()` and nothing more.
+    Each is a spec sentence, so each is the panel's; this row is the home
+    because that milestone already asks what `heroes check` accepts.
+
+- [ ] **M-journey-book** | the journal index stops at 035 and eight journals stand outside it | `docs/journal/README.md` · `docs/journal/036-declared-freer.md` to `043-interpolated-strings.md`
+
+    **Origin:** found 2026-09-11 at M-anchored-spec's close, when this session
+    added its own row and counted: **45 journals, 36 rows.** The eight missing are
+    036 declared-freer, 037 open-repository, 038 discard-refusal, 039
+    closures-verdict, 040 cstr-lifetime, 041 held-bytes, 042
+    interpolation-verdict and 043 interpolated-strings, every one of them a file
+    that exists. Nothing enforces the index, which is why it drifted in silence
+    for nine closes: `records` is green with the gap, and the check that would
+    catch it does not exist. **The home is this milestone because the index is
+    what the book is written from**, by that file's own last paragraph, so a book
+    written against a table that skips 2026-09-03 to 2026-09-09 would skip the
+    milestones too. Whoever fills it appends rows and never rewrites one
+    (CLAUDE.md §14): the eight are read out of their own journals' opening lines.
 
 - [ ] **M-guide-book** | metric 2's held-out tasks, written by the author | `harness/tasks/README.md` · `docs/panel/011`
 

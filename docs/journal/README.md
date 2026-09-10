@@ -70,6 +70,15 @@ is `docs/ROADMAP.md` § The names, and the rule is CLAUDE.md §14.
 | 034 | [the door](034-isolated-threads.md) | M-isolated-threads — three of four corruption classes closed, and the fourth was never where the corruption came from | 2026-09-06 | `m-isolated-threads` |
 | 035 | [the floor](035-thread-stacks.md) | M-thread-stacks — the guard speaks on every thread, a worker's floor is the thread that ran `main`, and a sitting refused the number it was convened to choose | 2026-09-06 | `m-thread-stacks` |
 
+
+**Rows 036 to 043 are missing and the eight journals exist** (counted 2026-09-11:
+45 journals, 36 rows). Nothing enforces this table, so it drifted through nine
+closes in silence; filling it is an item at `M-journey-book` in
+`docs/work/SCHEDULED.md`, and the row below was appended rather than held back,
+because a table that is behind is better than one that is behind and quiet.
+
+| 044 | [the anchors](044-anchored-spec.md) | M-anchored-spec — the specification takes the shape of a Report: thirteen numbered sections, one home per rule, and the numbers as the citation anchors | 2026-09-11 | `m-anchored-spec` |
+
 `git tag --list --sort=creatordate` gives the same order from git itself, and
 `git checkout m5b` re-opens any milestone's code — which is what
 `M-journey-book` is written from.
