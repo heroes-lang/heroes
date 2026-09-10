@@ -100,7 +100,12 @@
      to, because the heading stack is condensed Latin text and carries no music
      symbol, and it would be a blank box where none of them carries it. Drawn,
      it inherits `background-color` and no screen reader announces it. */
-  --note: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cellipse cx='6' cy='24' rx='5.2' ry='4'/%3E%3Cellipse cx='18' cy='21' rx='5.2' ry='4'/%3E%3Cpath d='M 9.5 8h2.5v16H9.5z'/%3E%3Cpath d='M 20.5 5h2.5v16h-2.5z'/%3E%3Cpath d='M 9.5 8 L22.5 5 v3 l-13 3 z'/%3E%3C/svg%3E");
+  /* The `viewBox` is cropped to the ink, and that is the whole finding: at
+     `0 0 24 32` the drawing occupied y 5 to 28, so `mask: … / contain` scaled
+     to the empty 32 and drew a 6.0px glyph inside a 9.5px box, which survives
+     at 2x and is a smudge at 1x. Cropped, the same drawing measures 8.0px in
+     the same space, a third more glyph for one string. */
+  --note: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0.8 5 22.4 23'%3E%3Cellipse cx='6' cy='24' rx='5.2' ry='4'/%3E%3Cellipse cx='18' cy='21' rx='5.2' ry='4'/%3E%3Cpath d='M 9.5 8h2.5v16H9.5z'/%3E%3Cpath d='M 20.5 5h2.5v16h-2.5z'/%3E%3Cpath d='M 9.5 8 L22.5 5 v3 l-13 3 z'/%3E%3C/svg%3E");
 
   /* Printed-poster grain. One 160px tile, generated in the file, so it costs
      no request and no JavaScript. Kept under 4% — it should be felt, not
@@ -144,9 +149,19 @@ html, body { overflow-x: clip; }
    scrollport arrives UNDERNEATH it: the row a reader was sent to is the one
    row they cannot see. This was true of every anchor on the site before any
    of them was a nod, `/project/#panel` and `/project/#zen` included, and both
-   are linked from the page that now carries the tracklist. Measured from the
-   nav's own box: about 49px, and about 72px once its items wrap under 800px. */
-html { scroll-padding-top: 5.5rem; }
+   are linked from the page that carries the tracklist.
+   TWO VALUES, BECAUSE THE NAV HAS TWO HEIGHTS AND NOTHING BETWEEN THEM: the
+   design seat measured it at 18 widths and it is 51.02px from 1400 down to
+   801 and 81.16px at 800 and below, which is its own `max-width: 800px` query.
+   The first version of this rule was one value, 5.5rem, reasoned from the box
+   rather than measured against a scroll, and it left 36.72px of dead space at
+   1200 and 6.69px at 390, where the row hugged the nav. These two were
+   re-measured from a real fragment scroll and leave one line's leading in each
+   band, 16.72px and 18.69px. */
+html { scroll-padding-top: 4.25rem; }
+@media (max-width: 800px) {
+  html { scroll-padding-top: 6.25rem; }
+}
 
 body {
   margin: 0;
@@ -443,7 +458,11 @@ h2 .nod {
 .nod a:hover { text-decoration-line: underline; }
 .nod a::after {
   content: ''; display: inline-block;
-  width: 0.85em; height: 0.85em; margin-left: 0.3em;
+  /* Measured against the cropped `--note`: 8.0px of glyph, its top at cap top
+     and its bottom half a pixel under the baseline, with an optical gap of 4px
+     to the last letter. `em` and never `rem`, because one rule serves the
+     0.68rem caps nod and the 0.7rem monospace one. */
+  width: 0.73em; height: 0.75em; margin-left: 0.1em;
   vertical-align: -0.05em;
   background-color: currentColor;
   -webkit-mask: var(--note) no-repeat center / contain;
@@ -1234,15 +1253,22 @@ ul.seats p { margin: 0; font-size: 0.98rem; }
 
 /* The nods, set like the back of a record sleeve: numbered, the title on the
    left, the record it comes from ranged right, and the row's own rule crossing
-   the space between them as the leader. ONE column: thirteen rows of two lines
-   flowing into two balanced columns put a hairline at a different height either
-   side of the gutter on every row, which reads as a broken table rather than a
-   sleeve, and between about 620px and 780px the source line wraps, which is the
-   band no breakpoint was watching. The counter follows document order, and that
-   order is the walk through the site. Drawn for the book's chapters, which no
-   longer use it. */
+   the space between them as the leader. ONE column, because twelve rows of two
+   lines flowing into two balanced columns put a hairline at a different height
+   either side of the gutter on every row, which reads as a broken table rather
+   than a sleeve. The counter follows document order, and that order is the walk
+   through the site. Drawn for the book's chapters, which no longer use it.
+   THE WRAP BAND THIS COMMENT USED TO CLAIM DOES NOT EXIST. It said the source
+   line wraps between about 620px and 780px; the design seat measured the
+   longest row, `quicksand, avoided`, at thirteen widths from 800 down to 480 in
+   both editions and it stays on one line at every one, going to its own line
+   only at 390 and below, where `space-between` puts it at the start. The
+   sentence was reasoned and it outlived nothing, because there was nothing.
+   `max-width` puts the list on the prose's own measure: unconstrained it ran
+   784px against a paragraph's 608px, so the leader gaps reached 599px. */
 ol.tracks {
   list-style: none; padding: 0; margin: 1.8rem 0; counter-reset: tr;
+  max-width: 38rem;
 }
 ol.tracks li {
   counter-increment: tr;
@@ -1254,7 +1280,8 @@ ol.tracks li {
 }
 ol.tracks li::before {
   content: counter(tr, decimal-leading-zero);
-  position: absolute; left: 0; top: 0.62rem;
+  /* `0.3rem` and not `0`, so the reserved left border never crosses the `0`. */
+  position: absolute; left: 0.3rem; top: 0.62rem;
   font: 0.71rem/1.4 ui-monospace, 'SF Mono', Menlo, monospace;
   /* Mixed toward `--dim`, not toward transparent. At 0.71rem this is normal
      text and owes 4.5:1, and the transparent mix composited on `--bg` measures
@@ -1270,18 +1297,20 @@ ol.tracks .from {
   font: 0.73rem/1.5 ui-monospace, 'SF Mono', Menlo, monospace;
   color: var(--dim); text-align: right;
 }
-/* Arrival, named twice the way the current nav item is: the counter goes to
-   full strength and the row lifts off the page. Two signals because colour
-   alone is a signal a third of readers get less of, which is the reason
-   `nav.site a.here` already carries both.
-   Neither signal is a left edge, and that was measured rather than reasoned:
-   a `border-left` would shift the counter, which sits at `left: 0`, and the
-   `box-shadow: inset` that avoids the shift runs straight THROUGH the counter
-   instead, clipping the leading `0` of `04`. Rendered at 1200px in dark, which
-   is the only way that was ever going to be found.
-   `ol.tracks` has no hover rule, so unlike the chapter list a tint here means
-   arrival and nothing else. */
-ol.tracks li:target { background: color-mix(in srgb, var(--card) 70%, transparent); }
+/* Arrival. A red left edge, and the two objections to one are both answered by
+   RESERVING it on every row: a `border-left` added only at `:target` would
+   shift the counter, and the `box-shadow: inset` that avoids the shift runs
+   through the counter and clips the leading `0` of `04`. Transparent on every
+   row costs no layout and moves nothing when it takes colour.
+   The version this replaces was a `--card` tint plus the counter at full red,
+   and the design seat measured both signals from the pixels: 1.044:1 against a
+   neighbouring row in light, 1.051:1 in dark, and a 1.077:1 step on the
+   counter, where WCAG 1.4.11 asks 3:1 of a graphic that carries state. Two
+   signals that faint are not two signals. The red rule is the same mark the
+   callout box on this page already uses, so this spends a vocabulary the
+   reader has rather than inventing one. */
+ol.tracks li { border-left: 2px solid transparent; }
+ol.tracks li:target { border-left-color: var(--red); }
 ol.tracks li:target::before { color: var(--red); }
 
 ul.lineage li {
