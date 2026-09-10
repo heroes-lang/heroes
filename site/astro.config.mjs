@@ -4,6 +4,7 @@ import sitemap from '@astrojs/sitemap';
 import { readdirSync, statSync, unlinkSync, renameSync, rmdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { assertEveryClaimVisited, claimsSummary } from './src/lib/claims.ts';
+import { assertNodsMirrored } from './src/lib/nods.ts';
 
 const ORIGIN = 'https://heroes-lang.org';
 
@@ -103,6 +104,11 @@ function claimsAudit() {
       'astro:build:done': ({ logger }) => {
         const pages = assertEveryClaimVisited();
         logger.info(claimsSummary(pages));
+        // The two editions spend the same nods, and every row of the tracklist
+        // is spent by a nod. A fact about the whole tree rather than about one
+        // page, so it belongs here: a nod dropped, duplicated or translated in
+        // one edition is invisible to a page that renders correctly alone.
+        logger.info(`nods: ${assertNodsMirrored()} in each edition, mirrored`);
       },
     },
   };

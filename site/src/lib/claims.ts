@@ -40,6 +40,7 @@ import { appendFileSync, readFileSync, existsSync, unlinkSync, mkdirSync } from 
 import { dirname } from 'node:path';
 import { readText, filesIn, absolute } from './repo.ts';
 import { number } from './i18n.ts';
+import { checkNods, nodCount } from './nods.ts';
 
 const AGENTS_DIR = '.claude/agents';
 const DECL_FILE = 'selfhost/parse/decl.hero';
@@ -343,6 +344,15 @@ const CLAIMS: Claim[] = [
   { page: 'site/src/html/it/about/thanks.html', what: 'the number of judges',
     fact: () => judges().seats, shape: (n) => new RegExp(`${n} giudici valutano le proposte`, 'i') },
 
+  // The nods, and the key to them. The sentence claims the list is complete, so
+  // the count comes from the rows the build prints and `assertNodsMirrored`
+  // closes the other half by refusing a row no nod spends. The ledger that
+  // tracked these by hand said twenty against a markup carrying thirteen.
+  { page: 'site/src/html/about/thanks.html', what: 'the titles spent as section nods',
+    fact: nodCount, shape: (n) => new RegExp(`All ${n} are here`, 'i') },
+  { page: 'site/src/html/it/about/thanks.html', what: 'the titles spent as section nods',
+    fact: nodCount, shape: (n) => new RegExp(`Sono tutte e ${n} qui sotto`, 'i') },
+
   // The specification's ceiling, in the author's own word for it, `6K`
   // (2026-09-09), derived from the suite by `ceilingK` and said on the two
   // home pages, the two why pages and the two specification pages. The shape
@@ -473,6 +483,7 @@ export function checkClaims(html: string, pagePath: string): void {
     }
   }
   problems.push(...checkChapterDiagnostics(html, pagePath));
+  problems.push(...checkNods(html, pagePath));
   problems.push(...checkNoWrongTwin(html, pagePath));
   problems.push(...checkFixpointLeg(html, pagePath));
   problems.push(...checkRepositoryIsOpen(html, pagePath));

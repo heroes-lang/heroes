@@ -1,13 +1,13 @@
 
   <div class="page-head">
     <h1 class="page">Why Heroes</h1>
-    <span class="nod">· rebel rebel ·</span>
+    <span class="nod">· <a href="/about/thanks/#rebel-rebel">rebel rebel</a></span>
   </div>
   <p class="lede">
     Heroes starts with two constraints: the code must be easy for a model to read, and programs must be able to use C libraries.
   </p>
 
-  <h2>Recurring model mistakes <span class="nod">&middot; sound and vision &middot;</span></h2>
+  <h2>Recurring model mistakes <span class="nod">&middot; <a href="/about/thanks/#sound-and-vision">sound and vision</a></span></h2>
   <p>
     Models that generate code make recurring mistakes: they swap arguments of the same type, forget a case, use an undeclared name or borrow a keyword from another language. Heroes is designed to let the compiler catch these mistakes.
   </p>
@@ -113,7 +113,7 @@ graphics, audio, terminal  →  SDL, raylib, ncurses</code></pre>
     Why the <code>f</code>: a brace already had a job inside plain strings, and over two hundred of the compiler&rsquo;s own strings carried one, so a string that reads holes announces it at its first character and every other string is unchanged. Why any expression: listing the admitted forms cost more specification tokens than admitting them all, and the count decided. What a hole may hold, what <code>{{</code> writes, and what the compiler says to a hole with no text are in the chapter. <a href="/docs/strings/">Strings, holes included&nbsp;&rarr;</a> <a href="/examples/gallery/12-interpolation/">The whole example&nbsp;&rarr;</a>
   </p>
 
-  <h2>The language rules <span class="nod">&middot; fashion &middot;</span></h2>
+  <h2>The language rules <span class="nod">&middot; <a href="/about/thanks/#fashion">fashion</a></span></h2>
   <ul class="pillars">
     <li><b>A line is understood by looking at that line.</b> Its meaning is
     decided by the line and the function around it, never by something written
@@ -128,7 +128,7 @@ graphics, audio, terminal  →  SDL, raylib, ncurses</code></pre>
     <li><b>Small enough to fit in a prompt.</b> The specification stays below 6K tokens, counted the way the model itself counts, through Claude&rsquo;s token-counting API. The count is recorded with the model that made it, and a test on every commit, the project&rsquo;s word for a recorded change, holds the recorded count under the ceiling and refuses a text that moved without a new count. You can give the whole specification to a model. <a href="/spec/">Read it&nbsp;&rarr;</a></li>
   </ul>
 
-  <h2>Common questions <span class="nod">&middot; quicksand, avoided &middot;</span></h2>
+  <h2>Common questions <span class="nod">&middot; <a href="/about/thanks/#quicksand-avoided">quicksand, avoided</a></span></h2>
   <dl class="why">
     <dt>Why no null, and no exceptions?</dt>
     <dd>Heroes makes missing values and failed operations explicit. The type <code>i64?</code> means that the result can be a number or an error. The <code>?</code> operator propagates an error to the calling function, visibly on the line where you use it. <a href="/docs/failure-is-a-value/">How to handle errors&nbsp;&rarr;</a></dd>

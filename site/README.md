@@ -125,6 +125,17 @@ beacon at deploy time, and that beacon uses no cookie and no client-side state.
 § The visitor count carries what it counts, what it cannot see, and how to check
 that it is there. The domain (heroes-lang.org) is already owned by the author.
 
+**And the rule that has to survive is the sharper one** (2026-09-10): nothing
+the site serves writes to the visitor's browser. No cookie, no `localStorage`,
+no fingerprinting, which is why no consent text is added and no privacy page is
+written. *No script reaches the visitor* stopped being true when the beacon
+arrived, so the sentence above narrowed and this one did not, and it is the one
+that does the work: it is what refuses an embedded player, which writes state on
+its own origin the moment it loads, hidden or not, and which cannot be deferred
+to a click without JavaScript. That is the whole reason the section nods carry a
+LINK and not a player. Twelve outbound links, on one page, and a link issues no
+request until a reader follows it.
+
 **No Tailwind either, and that is a deliberate difference from the author's other
 site**, which uses it. This site has its own hand-written 45 KB `style.css` and
 that stylesheet *is* the art direction; a utility framework beside it would be a
@@ -644,6 +655,25 @@ Two things that are easy to get wrong and are therefore rules:
   substrate). If a nod needs explaining, cut it. Puns stay on this page.
   Nods live on the showcase and the docs landing; **chapter pages carry
   none** — a chapter is a book page, not a marquee.
+- **The titles are listed once, on the thanks page, and that is a key rather
+  than a gloss** (2026-09-10). *If a nod needs explaining, cut it* still holds,
+  and what it forbids is a gloss **where the nod stands**: twelve gold subtitles
+  said nothing at all to a reader who does not know Bowie, and
+  `site/CLAUDE.md` § The reader is never assumed to be an expert makes that a
+  defect rather than a mystique. The sharper limit, which the communication seat
+  proposed and which constrains this permanently: **a row may carry the SOURCE
+  of a title and never the reason for its placement.** The day a row says why a
+  nod fits its heading, the rule above fires and the row comes out. Every nod
+  links to its own row except the home page's, which stays inert because `Run
+  it` is the highest-intent heading on the site and the four commands a visitor
+  might paste sit directly under it: the marketing and devex seats reached that
+  independently, and the home footer carries the way in instead. **The chapter
+  rule stopped being true and is true again**: `site/src/html/docs/errors.html`
+  carried a nod inside its `h1.chapter`, in both editions, where no `.nod`
+  selector reaches it,
+  so it rendered as 2.5rem Georgia serif and not as a nod at all. Four seats
+  found it, three of them as their single most important change, and it is the
+  page the home sends a skeptic to for the thesis evidence.
 - Every claim on the page must match design.md's current state.
 - **No timeline or duration claims anywhere** (author decision 2026-08-17):
   not how long a milestone took, not how long the project has run. Dates in
@@ -679,17 +709,30 @@ Two things that are easy to get wrong and are therefore rules:
   examples rather than a claim: a question of the author's that moved a safety
   check from three wrong placements to the right one, and a sitting the author
   ordered against the assistant's advice whose five judges then refused it.
-- Nods spent so far: sound and vision · fashion · quicksand, avoided ·
-  changes · station to station · rebel rebel · always crashing in the same
-  car · a new career in a new town · oh! you pretty things · hunky dory ·
-  under pressure · five years · look back in anger · absolute beginners ·
-  moonage daydream · lady stardust · sons of the silent age · ashes to ashes ·
-  speed of life · repetition.
+- **The nods spent are the markup, and no longer this list** (2026-09-10). This
+  bullet held twenty titles while the markup held thirteen, and nothing could
+  tell, because nothing read either half. `src/lib/nods.ts` is the record now:
+  its rows carry only what the markup cannot know, the record and the year and
+  where to hear it; `assertNodsMirrored()` refuses a build where the two
+  editions stop spending the same titles, or where a row is spent by no nod at
+  all; and `/about/thanks/#tracklist` prints the list for a reader.
+  What this bullet keeps is the half no instrument can hold, the **bank**: a
+  title spent and since withdrawn, so that none is re-spent as if it were
+  fresh. Withdrawn so far: station to station · oh! you pretty things · under
+  pressure · look back in anger · absolute beginners · ashes to ashes ·
+  repetition · always crashing in the same car. Two of those, *under pressure*
+  and *ashes to ashes*, still appear inside the Zen quotation on
+  `project.html`, which is the binary's own text and not a nod.
 - **"Ashes to Ashes" is spent** (2026-08-19), on the section of `selfhost.html`
   (since 2026-09-06 the `#self-hosted` section of `project.html`)
   that reports the bootstrap's retirement — which is the event the bank was
   holding it for. M-bootstrap-archive closed the same day, so the section that
   used to be headed *What is left* now says both owed things are paid.
+  **Correction, 2026-09-10**: that section carries no nod today, and neither
+  does any other page, so the title is withdrawn rather than spent. It left
+  when three pages became one, and this bullet went on asserting it for four
+  days because nothing read the sentence and nothing read the markup. The
+  instrument that would have caught it is the one the bullet above now names.
 - Ideas bank, still unspent: a 1.0 → "Golden Years".
 
 ## The visual system — what the art direction pass fixed (2026-08-18)
@@ -956,6 +999,23 @@ Three rules follow, and they bind every later edit:
   is the trap named above, so there is no biography to point at, and the link on
   his name goes to `nim-lang.org`, the language's official site, verified live in
   the session that added it. It is the only link of this shape on the page.
+- **The tracklist's twelve links are under this section's rule too**
+  (2026-09-10). Every record, every year and every video was read from a source
+  in the session that wrote it and never from memory: the records and the years
+  from Wikipedia's own summaries, and every YouTube id through the oEmbed
+  endpoint, which answers 404 for a video that is gone and returns the real
+  title and channel for one that is live. **Official uploads only**, the
+  artist's channel or the distributor's own art track: a third party's upload is
+  somebody else's infringement and it disappears. No tracking parameter in a
+  URL, and no start offset. One title, `hunky dory`, names an album rather than
+  a song, so it has no recording to point at and its row goes to the record
+  instead: every full-album upload on the platform was a third party's.
+  **And nothing checks these twelve**, which is the honest half. A video id is
+  the least stable URL class on the site, the build is offline by decision
+  (`src/lib/claims.ts`: a page's correctness may not depend on a network call),
+  and a remaster resolving to the wrong take still plays, so nothing looks
+  broken. They are re-followed in the session that edits a row, the way a
+  designer's name is.
   Do not remove it as a mistake, and do not repoint it at the Wikipedia title,
   which is the archaeologist.
 - **A missing link is written as a failed search, never as an impossibility.**
@@ -1007,9 +1067,12 @@ Three rules follow, and they bind every later edit:
   panel and how many carry a veto from `.claude/agents/`, the words that can
   begin a top-level line from the parser, the verbs of the one command from the
   argv table, the lines of the Zen from the string `heroes this` prints, the
-  chapters from the directory. Twenty claims across fourteen fragments today,
-  run by `page()` on every hand-written page, plus three checks that are not
-  counts: both start pages must name every verb the table declares, each as
+  chapters from the directory. Thirty-two claims across eighteen fragments
+  today, run by `page()` on every hand-written page, plus four checks that are
+  not counts: every nod on a page links to its own row of the tracklist, in its
+  own edition, and every row is spent by a nod, because the hand-kept ledger
+  this replaced said twenty against a markup carrying thirteen; both start
+  pages must name every verb the table declares, each as
   `<code>verb</code>`, because a count survives a rename; every chapter's footer
   sentence "The N diagnostics are" is compared with the `heroes check` and
   `heroes build` transcripts on that page; and the words that can begin a line

@@ -1,13 +1,13 @@
 
   <div class="page-head">
     <h1 class="page">Perché Heroes</h1>
-    <span class="nod">· rebel rebel ·</span>
+    <span class="nod">· <a href="/it/about/thanks/#rebel-rebel">rebel rebel</a></span>
   </div>
   <p class="lede">
     Heroes nasce da due vincoli: il codice deve essere facile da leggere per un modello e deve poter usare le librerie C.
   </p>
 
-  <h2>Gli errori ricorrenti dei modelli <span class="nod">&middot; sound and vision &middot;</span></h2>
+  <h2>Gli errori ricorrenti dei modelli <span class="nod">&middot; <a href="/it/about/thanks/#sound-and-vision">sound and vision</a></span></h2>
   <p>
     I modelli che generano codice commettono errori ricorrenti: scambiano argomenti dello stesso tipo, dimenticano un caso, usano un nome non dichiarato o una parola chiave di un altro linguaggio. Heroes è progettato per far rilevare questi errori al compilatore.
   </p>
@@ -115,7 +115,7 @@ grafica, audio, terminale      →  SDL, raylib, ncurses</code></pre>
     Perché la <code>f</code>: dentro le stringhe normali la graffa era già in uso, e oltre duecento stringhe del compilatore stesso ne contengono una, quindi una stringa con dei buchi lo dice dal primo carattere e tutte le altre restano come prima. Perché qualsiasi espressione: elencare le forme ammesse costava più token di specifica che ammetterle tutte, e a decidere è stato il conteggio. Cosa può stare in un buco, cosa scrive <code>{{</code> e cosa dice il compilatore davanti a un buco senza testo stanno nel capitolo. <a href="/it/docs/strings/">Le stringhe, buchi compresi&nbsp;&rarr;</a> <a href="/it/examples/gallery/12-interpolation/">L&rsquo;esempio intero&nbsp;&rarr;</a>
   </p>
 
-  <h2>Le regole del linguaggio <span class="nod">&middot; fashion &middot;</span></h2>
+  <h2>Le regole del linguaggio <span class="nod">&middot; <a href="/it/about/thanks/#fashion">fashion</a></span></h2>
   <ul class="pillars">
     <li><b>Una riga si capisce guardando quella riga.</b> Il suo significato è
     deciso dalla riga e dalla funzione intorno, mai da qualcosa scritto tre file
@@ -131,7 +131,7 @@ grafica, audio, terminale      →  SDL, raylib, ncurses</code></pre>
     <li><b>Abbastanza piccolo da stare in un prompt.</b> La specifica resta sotto il limite di 6K token, contati come li conta il modello stesso, attraverso l&rsquo;API di conteggio dei token di Claude. Il conteggio è registrato insieme al modello che lo ha prodotto, e un test a ogni commit, cioè a ogni modifica registrata, tiene il conteggio registrato sotto il tetto e rifiuta un testo cambiato senza un nuovo conteggio. Puoi passarla intera a un modello. <a href="/it/spec/">Leggila&nbsp;&rarr;</a></li>
   </ul>
 
-  <h2>Domande frequenti <span class="nod">&middot; quicksand, avoided &middot;</span></h2>
+  <h2>Domande frequenti <span class="nod">&middot; <a href="/it/about/thanks/#quicksand-avoided">quicksand, avoided</a></span></h2>
   <dl class="why">
     <dt>Perché niente null e niente eccezioni?</dt>
     <dd>Heroes rende espliciti i casi in cui un valore manca o un&rsquo;operazione fallisce. Il tipo <code>i64?</code> indica che il risultato può essere un numero oppure un errore. L&rsquo;operatore <code>?</code> propaga l&rsquo;errore alla funzione chiamante, direttamente sulla riga in cui lo usi. <a href="/it/docs/failure-is-a-value/">Come gestire gli errori&nbsp;&rarr;</a></dd>

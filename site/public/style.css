@@ -95,6 +95,13 @@
      freezing one hex per palette. */
   --bolt: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cpath d='M 14 0 L2 18 h8 L7 32 L22 12 h-9 z'/%3E%3C/svg%3E");
 
+  /* The mark on a nod that is a link, drawn for the same reason the bolt is.
+     A note CHARACTER would arrive from whatever face each platform falls back
+     to, because the heading stack is condensed Latin text and carries no music
+     symbol, and it would be a blank box where none of them carries it. Drawn,
+     it inherits `background-color` and no screen reader announces it. */
+  --note: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cellipse cx='6' cy='24' rx='5.2' ry='4'/%3E%3Cellipse cx='18' cy='21' rx='5.2' ry='4'/%3E%3Cpath d='M 9.5 8h2.5v16H9.5z'/%3E%3Cpath d='M 20.5 5h2.5v16h-2.5z'/%3E%3Cpath d='M 9.5 8 L22.5 5 v3 l-13 3 z'/%3E%3C/svg%3E");
+
   /* Printed-poster grain. One 160px tile, generated in the file, so it costs
      no request and no JavaScript. Kept under 4% — it should be felt, not
      seen; a visible texture on a page of code is noise in both senses. */
@@ -132,6 +139,14 @@
    than `hidden` because `hidden` would make the body a scroll container and
    take the sticky nav down with it. */
 html, body { overflow-x: clip; }
+
+/* The nav is sticky at `top: 0`, so a fragment scrolled to the top of the
+   scrollport arrives UNDERNEATH it: the row a reader was sent to is the one
+   row they cannot see. This was true of every anchor on the site before any
+   of them was a nod, `/project/#panel` and `/project/#zen` included, and both
+   are linked from the page that now carries the tracklist. Measured from the
+   nav's own box: about 49px, and about 72px once its items wrap under 800px. */
+html { scroll-padding-top: 5.5rem; }
 
 body {
   margin: 0;
@@ -409,6 +424,30 @@ h2 .nod {
   margin-left: auto; font-size: 0.68rem; letter-spacing: 0.22em;
   color: color-mix(in srgb, var(--gold) 78%, var(--dim));
   font-weight: 400; white-space: nowrap;
+}
+
+/* A nod is a link now, and it goes to its own row in the tracklist, where the
+   record it comes from is named. The link keeps the nod's gold: a song title is
+   a quotation before it is a link, and `--link` here would spend the site's
+   navigation colour on an easter egg in twenty-two places. The separators stay
+   outside the anchor, so the clickable thing is the words and a reader dragging
+   to select the heading has somewhere to start. `text-decoration-line` and not
+   the shorthand, which resets the 1px thickness every other link on the site
+   sets. `padding-block` grows an 11px hit area to about 24px and changes no
+   line box. Every length in `em`, because one rule serves the 0.68rem caps nod
+   in a heading and the 0.7rem monospace nod under a page title. */
+.nod a {
+  color: inherit; text-decoration-line: none; text-underline-offset: 2px;
+  padding-block: 0.4rem;
+}
+.nod a:hover { text-decoration-line: underline; }
+.nod a::after {
+  content: ''; display: inline-block;
+  width: 0.85em; height: 0.85em; margin-left: 0.3em;
+  vertical-align: -0.05em;
+  background-color: currentColor;
+  -webkit-mask: var(--note) no-repeat center / contain;
+  mask: var(--note) no-repeat center / contain;
 }
 
 h3 {
@@ -1193,15 +1232,22 @@ ul.seats p { margin: 0; font-size: 0.98rem; }
   ul.seats li { grid-template-columns: 1fr; }
 }
 
-/* The book's chapters, set like the back of a record sleeve: numbered, two
-   columns, titles and nothing else. The counter follows document order, so it
-   keeps counting correctly down one column and up the next. */
+/* The nods, set like the back of a record sleeve: numbered, the title on the
+   left, the record it comes from ranged right, and the row's own rule crossing
+   the space between them as the leader. ONE column: thirteen rows of two lines
+   flowing into two balanced columns put a hairline at a different height either
+   side of the gutter on every row, which reads as a broken table rather than a
+   sleeve, and between about 620px and 780px the source line wraps, which is the
+   band no breakpoint was watching. The counter follows document order, and that
+   order is the walk through the site. Drawn for the book's chapters, which no
+   longer use it. */
 ol.tracks {
   list-style: none; padding: 0; margin: 1.8rem 0; counter-reset: tr;
-  columns: 2; column-gap: 2.6rem;
 }
 ol.tracks li {
-  counter-increment: tr; break-inside: avoid;
+  counter-increment: tr;
+  display: flex; flex-wrap: wrap; justify-content: space-between;
+  align-items: baseline; gap: 0.2rem 1.5rem;
   position: relative; padding: 0.45rem 0 0.45rem 2.3rem;
   border-bottom: 1px solid var(--line-soft);
   font-size: 1rem; line-height: 1.4;
@@ -1210,10 +1256,33 @@ ol.tracks li::before {
   content: counter(tr, decimal-leading-zero);
   position: absolute; left: 0; top: 0.62rem;
   font: 0.71rem/1.4 ui-monospace, 'SF Mono', Menlo, monospace;
-  color: color-mix(in srgb, var(--red) 75%, transparent);
+  /* Mixed toward `--dim`, not toward transparent. At 0.71rem this is normal
+     text and owes 4.5:1, and the transparent mix composited on `--bg` measures
+     3.59:1 in light and 3.44:1 in dark: under AA in both themes, and unnoticed
+     because nothing used this class. Toward `--dim` it measures 5.65:1 and
+     5.39:1, and it stops assuming what is behind the row. */
+  color: color-mix(in srgb, var(--red) 75%, var(--dim));
   letter-spacing: 0.06em;
 }
-@media (max-width: 620px) { ol.tracks { columns: 1; } }
+/* Where the record is named. Under 620px `space-between` leaves it at the start
+   of its own line, so this needs no breakpoint of its own. */
+ol.tracks .from {
+  font: 0.73rem/1.5 ui-monospace, 'SF Mono', Menlo, monospace;
+  color: var(--dim); text-align: right;
+}
+/* Arrival, named twice the way the current nav item is: the counter goes to
+   full strength and the row lifts off the page. Two signals because colour
+   alone is a signal a third of readers get less of, which is the reason
+   `nav.site a.here` already carries both.
+   Neither signal is a left edge, and that was measured rather than reasoned:
+   a `border-left` would shift the counter, which sits at `left: 0`, and the
+   `box-shadow: inset` that avoids the shift runs straight THROUGH the counter
+   instead, clipping the leading `0` of `04`. Rendered at 1200px in dark, which
+   is the only way that was ever going to be found.
+   `ol.tracks` has no hover rule, so unlike the chapter list a tint here means
+   arrival and nothing else. */
+ol.tracks li:target { background: color-mix(in srgb, var(--card) 70%, transparent); }
+ol.tracks li:target::before { color: var(--red); }
 
 ul.lineage li {
   margin: 0.85rem 0; padding-left: 1.5rem; position: relative;
