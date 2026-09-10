@@ -99,3 +99,28 @@ The list to walk, and each one is owed a test rather than a reading:
   all, because a `certain` fix built from the wrong half of a new form is
   machine-applied into a program that does not parse.
 - **`heroes measure`**, where the form has spec text.
+- **the two things that COLOUR a program**, added 2026-09-10 by author
+  instruction, and the only two entries on this list that live outside
+  `selfhost/`: `editors/vscode/syntaxes/heroes.tmLanguage.json` and
+  `site/src/lib/highlight.ts`. They are on it for the reason the formatter is —
+  each holds its own copy of what the language is, and one that has not learned
+  the new form does not error, it **mis-colours**, which a reader trusts.
+
+**And this clause was paid for before it was written.** Measured 2026-09-10, four
+days after `f"…"` landed: the site's highlighter knew the form, read a string
+with holes as `selfhost/lex_interp.hero` reads it, and cited that module by name;
+the TextMate grammar had **no `f"…"` rule at all**, admitted **four escapes where
+`spec:76` gives five** in a string — so a legal `\r` was painted
+`invalid.illegal`, a correct program shown as an error — and knew **none** of the
+six contextual marks `owned`, `tag`, `partial`, `link`, `package`, `as`. **The
+asymmetry is the lesson**: one of the two kept up because somebody remembered,
+and the list is what makes remembering unnecessary.
+
+**What each is owed is a test and not a reading**, like every other entry, and the
+seam already exists: `tests/harness/suite_spec.hero:49` reads
+`spec/reserved-words.md`, so a check that compares each highlighter's word list
+against `selfhost/keywords.hero`'s 21 keywords and `selfhost/inventory.hero`'s 39
+built-ins has somewhere to live. **Nothing judged either file until then**
+(`grep tmLanguage tests/harness/` was empty; `suite_records.hero` reads
+`editors/vscode/icons` for the SVG-path rule alone), which is exactly how the
+grammar rotted in silence.

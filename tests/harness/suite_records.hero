@@ -207,6 +207,8 @@ constant REFUSED: [str]
         "M-use-after-free"
         "M-borrowed-pointer"
         "M-pinned-bytes"
+        "M-fourth-platform"
+        "M-arm-linux"
     ]
 
 # Measured 2026-08-25: 40 rows in the ROADMAP's alias table (39 until
@@ -312,13 +314,20 @@ constant REFUSED: [str]
 # **62 -> 63 on 2026-09-06**, `M-typed-inspection`, scheduled by author
 # instruction: a stopped Heroes program shows Heroes values instead of the C
 # names underneath them. **It is the first id whose subject is a promise this
-# repository makes and does not test** — `design.md:616` and `docs/ROADMAP.md:452`
-# both say a golden runs lldb in batch mode, and that golden has been in
+# repository makes and does not test** — `docs/ROADMAP.md:500` says a golden runs
+# lldb in batch mode, and that golden has been in
 # `archive/bootstrap-rs/` since M-bootstrap-archive on 2026-08-19, where nothing
 # builds it. The id enters with its chain row in the same commit, so this number
 # is moved by hand, and `REFUSED` gains THREE names in the same move, which is one
 # more than the two previous inserts: the author was offered three candidates and
 # the two not taken are refused here beside the name that never reached them.
+# **The sentence above said `design.md:616` and `docs/ROADMAP.md:452` until
+# 2026-09-10**, and both were wrong: design.md never claimed the golden at all
+# (`grep -n "batch mode" design.md` is empty; its lldb sentences are `:614`,
+# `:635-636`, `:664` and `:2886`), and the ROADMAP's claim moved to `:500`. A
+# line-number citation is exactly what `records/citations` cannot judge — it reads
+# a PATH claim — so this pair sat here being blessed by the check beside it, which
+# is the shape the exemptions rule exists to catch one level up.
 #
 # **63 -> 64 on 2026-09-08**, `M-open-repository`, scheduled by author
 # instruction: the repository stops being private. **It is the first id inserted
@@ -361,8 +370,24 @@ constant REFUSED: [str]
 # named for a ruling so that it could close with a refusal, and an id may not
 # claim what the sitting existed to decide. Named for the deliverable, the
 # literal a reader writes, and not for the feature's area.
+#
+# **67 -> 71 on 2026-09-10**, and it is the first insert of FOUR at once:
+# `M-cleanup-verdict`, `M-arm-platform`, `M-deployable-binary` and
+# `M-compatibility-promise`, all by author decision out of the session that wrote
+# `docs/ROADMAP.md` § What production-ready means — the chain's first reading
+# against a criterion, where six of its ten rows turned out to be owned already.
+# **This number is moved by hand and not read off a red run**, because the four
+# rows and this constant land in one commit; the tripwire's other direction still
+# holds, so a fifth row added without touching this line goes red. `REFUSED` gains
+# **two** names, both runners-up to `M-arm-platform`: `M-fourth-platform`, refused
+# because `M-online-compiler`'s entry already calls a browser the fourth platform
+# under panel 114's ruling, so the number names two different things and an id may
+# not; and `M-arm-linux`, the narrower spelling, refused because the deliverable is
+# a platform measured by `.claude/rules/platforms.md`'s own rules — its three legs
+# become four — rather than an operating-system port, and `platform` is the word
+# every one of those rules already uses.
 constant ROWS: i64
-    67
+    71
 
 # **`WATCHED` stood here until 2026-09-07 and nothing had read it since
 # 2026-08-19.** It listed `design.md` and `CLAUDE.md` as *"the two documents whose
