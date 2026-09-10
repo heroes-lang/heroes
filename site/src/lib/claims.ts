@@ -47,6 +47,7 @@ const TABLE_FILE = 'selfhost/cli/table.hero';
 const DOCTOR_FILE = 'selfhost/cli/doctor.hero';
 const CHAPTERS_DIR = 'site/src/html/docs';
 const SPEC_SUITE = 'tests/harness/suite_spec.hero';
+const MUTATION_RECORD = 'docs/measurements/019-the-corpus-at-fifty-four-programs.md';
 
 /* -- The facts, each read from the one place the tree keeps it ------------- */
 
@@ -99,6 +100,27 @@ export function specReal(): { tokens: number; model: string } {
   const n = Number(tokens[1]);
   if (n >= specCeiling()) throw new Error(`${SPEC_SUITE}: the real count ${n} is not below the ceiling ${specCeiling()}, and the pages say it is.`);
   return { tokens: n, model: model[1] };
+}
+
+/**
+ * The corpus the mutation table on the errors page was taken over, read from
+ * the measurement that recorded that run.
+ *
+ * The table is a verbatim transcript, so its counts are a fact about a past run
+ * and cannot rot; what CAN rot is the page's sentence about how big the corpus
+ * was, and the devex seat measured the drift the other way round (2026-09-10):
+ * the table's counts were 36 mutants short of a corpus that had grown from 118
+ * files to 120, on a page inviting the reader to re-run the command. The page
+ * now says the run's own corpus, and this binds that sentence to the record, so
+ * regenerating the table without moving the sentence is a red build.
+ */
+function mutationCorpus(): number {
+  const text = readText(MUTATION_RECORD);
+  const found = /^corpus: (\d+) programs under examples$/m.exec(text);
+  if (found === null) {
+    throw new Error(`${MUTATION_RECORD}: no \`corpus: <n> programs under examples\` line, which is what the run prints and the errors page quotes.`);
+  }
+  return Number(found[1]);
 }
 
 /** The seats of the language panel, and how many of them carry a veto. */
@@ -367,6 +389,14 @@ const CLAIMS: Claim[] = [
     fact: chapters, shape: (n) => new RegExp(`These ${n} chapters`, 'i') },
   { page: 'site/src/html/it/docs/index.html', what: 'the number of chapters',
     fact: chapters, shape: (n) => new RegExp(`Questi ${n}\\s+capitoli`, 'i') },
+
+  // The corpus the mutation table was taken over. Bound to the measurement that
+  // recorded the run, not to today's `examples/`: the transcript is evidence
+  // about a past run and the sentence around it has to keep saying which run.
+  { page: 'site/src/html/docs/errors.html', what: 'the corpus the mutation table was taken over',
+    fact: mutationCorpus, shape: (n) => new RegExp(`complete run on the ${n} programs`, 'i') },
+  { page: 'site/src/html/it/docs/errors.html', what: 'the corpus the mutation table was taken over',
+    fact: mutationCorpus, shape: (n) => new RegExp(`completa sui ${n} programmi`, 'i') },
 ];
 
 /**

@@ -115,6 +115,24 @@ error[type_mismatch]: expected `u8`, found `str`
     <code>join</code> costruisce il risultato in una sola passata. Il ciclo di concatenazione crea invece una nuova stringa a ogni iterazione e ricopia anche il testo già accumulato. La differenza diventa rilevante con stringhe lunghe. <code>join</code> e <code>repeat</code> evitano queste copie ripetute.
   </p>
 
+  <h3>Testo con dei buchi dentro</h3>
+  <p>
+    Una stringa può portare dei valori. Una <code>f</code> prima della virgoletta d&rsquo;apertura trasforma <code>{n}</code> nel testo di <code>n</code>, scritto come lo scriverebbe <code>to_str</code>. In un buco può stare qualsiasi espressione, e il buco finisce alla graffa che lo chiude, così una chiamata o una ricerca al suo interno si legge come si leggerebbe ovunque. <code>{{</code> scrive una graffa aperta; fuori da un buco la graffa chiusa non è speciale, quindi <code>}</code> resta com&rsquo;è. Una stringa senza la <code>f</code> è esattamente quella di prima.
+  </p>
+  <figure class="example" data-src="examples/gallery/12-interpolation.hero" data-lines="17-18">
+<pre><code><span class="k">function</span> line(at: <span class="t">i64</span>, of: <span class="t">i64</span>, star: Star) -&gt; <span class="t">str</span>
+    <span class="k">return</span> <span class="s">f"{</span>at<span class="s">}/{</span>of<span class="s">} {</span>star.name<span class="s">} at magnitude {</span>star.magnitude<span class="s">}"</span></code></pre>
+    <figcaption>examples/gallery/12-interpolation.hero, righe 17&ndash;18</figcaption>
+  </figure>
+  <p>
+    In un buco può stare ciò che <code>to_str</code> sa rendere: un intero, un numero con la virgola, un <code>bool</code> o una <code>str</code>. Un record o un array non hanno un testo proprio, e un valore che potrebbe mancare va prima reso certo con <code>.must()</code>. Il compilatore rifiuta il buco e la sua nota dice cosa scrivere al suo posto. <a href="/it/examples/gallery/12-interpolation/">L&rsquo;esempio intero&nbsp;&rarr;</a>
+  </p>
+  <pre><code>$ heroes run examples/gallery/12-interpolation.hero
+1/2 Sirius at magnitude -1.46
+2/2 Vega at magnitude 0.03
+seen Sirius 2 times, {like this}
+nested: 2 stars</code></pre>
+
   <h3>Gli escape disponibili</h3>
   <p>
     Dentro una stringa: <code>\n</code>, <code>\t</code>, <code>\r</code>,
@@ -144,23 +162,6 @@ error[type_mismatch]: expected `u8`, found `str`
 the quick brown fox
 tqbf</code></pre>
 
-  <h3>Testo con dei buchi dentro</h3>
-  <p>
-    Una stringa può portare dei valori. Una <code>f</code> prima della virgoletta d&rsquo;apertura trasforma <code>{n}</code> nel testo di <code>n</code>, scritto come lo scriverebbe <code>to_str</code>. In un buco può stare qualsiasi espressione, e il buco finisce alla graffa che lo chiude, così una chiamata o una ricerca al suo interno si legge come si leggerebbe ovunque. <code>{{</code> scrive una graffa aperta; fuori da un buco la graffa chiusa non è speciale, quindi <code>}</code> resta com&rsquo;è. Una stringa senza la <code>f</code> è esattamente quella di prima.
-  </p>
-  <figure class="example" data-src="examples/gallery/12-interpolation.hero" data-lines="17-18">
-<pre><code><span class="k">function</span> line(at: <span class="t">i64</span>, of: <span class="t">i64</span>, star: Star) -&gt; <span class="t">str</span>
-    <span class="k">return</span> <span class="s">f"{</span>at<span class="s">}/{</span>of<span class="s">} {</span>star.name<span class="s">} at magnitude {</span>star.magnitude<span class="s">}"</span></code></pre>
-    <figcaption>examples/gallery/12-interpolation.hero, righe 17&ndash;18</figcaption>
-  </figure>
-  <p>
-    In un buco può stare ciò che <code>to_str</code> sa rendere: un intero, un numero con la virgola, un <code>bool</code> o una <code>str</code>. Un record o un array non hanno un testo proprio, e un valore che potrebbe mancare va prima reso certo con <code>.must()</code>. Il compilatore rifiuta il buco e la sua nota dice cosa scrivere al suo posto. <a href="/it/examples/gallery/12-interpolation/">L&rsquo;esempio intero&nbsp;&rarr;</a>
-  </p>
-  <pre><code>$ heroes run examples/gallery/12-interpolation.hero
-1/2 Sirius at magnitude -1.46
-2/2 Vega at magnitude 0.03
-seen Sirius 2 times, {like this}
-nested: 2 stars</code></pre>
 
   <p class="next">
     Poi: <b><a href="/it/docs/maps/">Le mappe</a></b>, dove cercare una chiave ti
@@ -179,7 +180,7 @@ nested: 2 stars</code></pre>
   <footer>
     <p>Ogni blocco di codice di questa pagina è una fetta di
     <code>examples/gallery/07-strings.hero</code> nel repository, tranne quelli
-    dell&rsquo;ultima sezione, che vengono da
+    sotto &ldquo;Testo con dei buchi dentro&rdquo;, che vengono da
     <code>examples/gallery/12-interpolation.hero</code>. Le due
     diagnostiche sono il primo file con un confronto e un separatore
     cambiati, controllato come <code>strings.hero</code>.</p>

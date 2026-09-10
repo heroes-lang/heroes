@@ -113,6 +113,24 @@ error[type_mismatch]: expected `u8`, found `str`
     <code>join</code> builds the result in one pass. The concatenation loop creates a new string on each iteration and copies the text already accumulated. The difference matters for long strings. <code>join</code> and <code>repeat</code> avoid these repeated copies.
   </p>
 
+  <h3>Text with holes in it</h3>
+  <p>
+    A string can carry values. An <code>f</code> before the opening quote turns <code>{n}</code> into the text of <code>n</code>, written the way <code>to_str</code> would write it. Any expression may stand in a hole, and the hole ends at the brace that closes it, so a call or a lookup inside it reads as it would anywhere. <code>{{</code> writes one opening brace; outside a hole a closing brace is not special, so <code>}</code> is written as it is. A string without the <code>f</code> is exactly what it was.
+  </p>
+  <figure class="example" data-src="examples/gallery/12-interpolation.hero" data-lines="17-18">
+<pre><code><span class="k">function</span> line(at: <span class="t">i64</span>, of: <span class="t">i64</span>, star: Star) -&gt; <span class="t">str</span>
+    <span class="k">return</span> <span class="s">f"{</span>at<span class="s">}/{</span>of<span class="s">} {</span>star.name<span class="s">} at magnitude {</span>star.magnitude<span class="s">}"</span></code></pre>
+    <figcaption>examples/gallery/12-interpolation.hero, lines 17&ndash;18</figcaption>
+  </figure>
+  <p>
+    A hole may hold what <code>to_str</code> can render: an integer, a float, <code>bool</code> or <code>str</code>. A record or an array has no text of its own, and a value that may be missing has to be made whole with <code>.must()</code> first. The compiler refuses the hole and its note says what to write instead. <a href="/examples/gallery/12-interpolation/">The whole example&nbsp;&rarr;</a>
+  </p>
+  <pre><code>$ heroes run examples/gallery/12-interpolation.hero
+1/2 Sirius at magnitude -1.46
+2/2 Vega at magnitude 0.03
+seen Sirius 2 times, {like this}
+nested: 2 stars</code></pre>
+
   <h3>Available escapes</h3>
   <p>
     In a string: <code>\n</code>, <code>\t</code>, <code>\r</code>,
@@ -142,23 +160,6 @@ error[type_mismatch]: expected `u8`, found `str`
 the quick brown fox
 tqbf</code></pre>
 
-  <h3>Text with holes in it</h3>
-  <p>
-    A string can carry values. An <code>f</code> before the opening quote turns <code>{n}</code> into the text of <code>n</code>, written the way <code>to_str</code> would write it. Any expression may stand in a hole, and the hole ends at the brace that closes it, so a call or a lookup inside it reads as it would anywhere. <code>{{</code> writes one opening brace; outside a hole a closing brace is not special, so <code>}</code> is written as it is. A string without the <code>f</code> is exactly what it was.
-  </p>
-  <figure class="example" data-src="examples/gallery/12-interpolation.hero" data-lines="17-18">
-<pre><code><span class="k">function</span> line(at: <span class="t">i64</span>, of: <span class="t">i64</span>, star: Star) -&gt; <span class="t">str</span>
-    <span class="k">return</span> <span class="s">f"{</span>at<span class="s">}/{</span>of<span class="s">} {</span>star.name<span class="s">} at magnitude {</span>star.magnitude<span class="s">}"</span></code></pre>
-    <figcaption>examples/gallery/12-interpolation.hero, lines 17&ndash;18</figcaption>
-  </figure>
-  <p>
-    A hole may hold what <code>to_str</code> can render: an integer, a float, <code>bool</code> or <code>str</code>. A record or an array has no text of its own, and a value that may be missing has to be made whole with <code>.must()</code> first. The compiler refuses the hole and its note says what to write instead. <a href="/examples/gallery/12-interpolation/">The whole example&nbsp;&rarr;</a>
-  </p>
-  <pre><code>$ heroes run examples/gallery/12-interpolation.hero
-1/2 Sirius at magnitude -1.46
-2/2 Vega at magnitude 0.03
-seen Sirius 2 times, {like this}
-nested: 2 stars</code></pre>
 
   <p class="next">
     Next: <b><a href="/docs/maps/">Maps</a></b>, where looking a key up hands you a
@@ -176,7 +177,7 @@ nested: 2 stars</code></pre>
   <footer>
     <p>Every code block on this page is a slice of
     <code>examples/gallery/07-strings.hero</code> in the repository, except the
-    last section&rsquo;s, which is a slice of
+    ones under &ldquo;Text with holes in it&rdquo;, which are slices of
     <code>examples/gallery/12-interpolation.hero</code>. The two
     diagnostics are the first file with one comparison and one separator changed,
     checked as <code>strings.hero</code>.</p>

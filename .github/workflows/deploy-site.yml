@@ -5,7 +5,10 @@ name: Deploy site
 # The site is an Astro project: `npm run build` turns `site/src/` into
 # `site/dist/`, and wrangler uploads that. `site/public/` still exists and is
 # still deployed, but it holds the assets alone now — the stylesheet, the
-# portrait, robots.txt, llms.txt — and Astro copies it into `dist/` on its way.
+# portrait, robots.txt — and Astro copies it into `dist/` on its way. `llms.txt`
+# was in that list until 2026-09-10 and is a generated route now
+# (`site/src/pages/llms.txt.ts`), because as a static asset it went on telling a
+# model the specification stays below 4096 tokens after the ceiling had moved.
 # The holding page left it when the site was published: it is dormant in
 # `site/parking/`, whose README says how to re-arm it.
 #

@@ -12,9 +12,10 @@
     Decades of programming-language history, <em>condensed into fewer than 6K tokens</em>.
   </p>
       <p class="tagline">A compiled language that reads like Python and has all
-      the power of C. No braces, no semicolons. No interpreter, no virtual
-      machine. No nulls, no exceptions. No garbage collector, no heavy runtime.
-      Many of the mistakes models make simply don&rsquo;t compile here. Mature
+      the power of C. Many of the mistakes models make simply don&rsquo;t compile
+      here. No braces, no semicolons. No interpreter, no virtual machine. No
+      null in your own types, no exceptions. No garbage collector, no heavy
+      runtime. Mature
       enough to compile its own compiler. Simple enough to fit in a prompt. What
       you write becomes a standalone executable.</p>
       <div class="cta">
@@ -109,7 +110,7 @@
     language, even if each program costs more tokens to write.
   </blockquote>
   <p>
-    One part of the thesis has been tested. <code>heroes mutate</code> introduces one realistic mistake at a time into working programs and counts how many the compiler catches. It repeats the test with the Heroes-specific checks disabled. The comparison shows which mistakes those checks catch.
+    One part of the thesis has been tested. <code>heroes mutate</code> introduces one realistic mistake at a time into working programs and counts how many the compiler catches. It repeats the run with the Heroes-specific checks switched off. The rules that require an argument&rsquo;s name and refuse a reused one carry the difference: with them off, those mistakes compile. The same table names the mistakes no check catches.
   </p>
   <p>
     The total number of tokens needed to produce a working program in Heroes and another language, including corrections, still needs to be compared. The tool for that comparison has been designed but has not been built yet. <a href="/docs/errors/#measured">The available results&nbsp;&rarr;</a>

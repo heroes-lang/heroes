@@ -12,12 +12,14 @@
     Decenni di storia dei linguaggi, <em>condensati in meno di 6K token</em>.
   </p>
       <p class="tagline">Un linguaggio compilato che si legge come Python e ha
-      tutta la potenza del C. Niente parentesi graffe, niente punti e virgola.
-      Nessun interprete, nessuna macchina virtuale. Niente null, niente
-      eccezioni. Nessun garbage collector, nessun runtime pesante. Molti degli
-      errori che fanno i modelli, qui, semplicemente non compilano. Abbastanza
-      maturo da compilare il proprio compilatore. Abbastanza semplice da stare
-      in un prompt. Quello che scrivi diventa un eseguibile standalone.</p>
+      tutta la potenza del C. Molti degli errori che fanno i modelli, qui,
+      semplicemente non compilano. Niente parentesi graffe, niente punti e
+      virgola. Nessun interprete, nessuna macchina virtuale. Niente null nei
+      tuoi tipi, niente eccezioni. Nessun garbage collector, nessun runtime
+      pesante.
+      Abbastanza maturo da compilare il proprio compilatore. Abbastanza semplice
+      da stare in un prompt. Quello che scrivi diventa un eseguibile
+      standalone.</p>
       <div class="cta">
         <a class="primary" href="/it/spec/">Leggi la specifica</a>
         <a class="ghost" href="/it/examples/">Guarda il codice</a>
@@ -112,7 +114,7 @@
     programma costa più token da scrivere.
   </blockquote>
   <p>
-    Una parte della tesi è già stata verificata. <code>heroes mutate</code> introduce un errore realistico alla volta in programmi funzionanti e conta quanti errori rileva il compilatore. Ripete poi la prova con i controlli specifici di Heroes disattivati. Il confronto mostra quali errori vengono rilevati grazie a quei controlli.
+    Una parte della tesi è già stata verificata. <code>heroes mutate</code> introduce un errore realistico alla volta in programmi funzionanti e conta quanti errori rileva il compilatore. Ripete poi la prova con i controlli specifici di Heroes disattivati. La differenza sta nelle regole che chiedono il nome di un argomento e vietano di riusare un nome già dichiarato: senza quelle, quegli errori compilano. La stessa tabella dice anche quali errori nessun controllo prende.levati grazie a quei controlli.
   </p>
   <p>
     Resta da confrontare il numero totale di token necessari per ottenere un programma funzionante in Heroes e in un altro linguaggio, comprese le correzioni. Lo strumento per questo confronto è stato progettato, ma deve ancora essere costruito. <a href="/it/docs/errors/#measured">I risultati disponibili&nbsp;&rarr;</a>
