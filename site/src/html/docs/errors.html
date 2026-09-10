@@ -90,8 +90,8 @@ hole at examples/gallery/09-holes.hero:28:74
     <code>heroes mutate</code> introduces one plausible mistake at a time into working programs and counts how many the compiler catches. It repeats the checks on the same programs with the Heroes-specific rules disabled. The difference measures the effect of these rules.
   </p>
   <p>
-    The table records a complete run on the 118 programs <code>examples/</code>
-    held then, using every kind of modification the tool supports. It includes
+    The table records a complete run on the 120 programs <code>examples/</code>
+    holds today, using every kind of modification the tool supports. It includes
     cases where the Heroes checks do not improve the result or fail to catch the
     mistake. Repeat it yourself with the command below: the corpus grows, so
     your counts will be higher and the percentages about the same.
@@ -99,18 +99,18 @@ hole at examples/gallery/09-holes.hero:28:74
   <pre class="table"><code>$ heroes mutate examples
 
 <span class="c">mistake injected                       mutants  caught  without the rules</span>
-two arguments swapped in a call           1907     80%                58%
-a positional argument needing a label     1331     66%                 0%
+two arguments swapped in a call           1910     80%                58%
+a positional argument needing a label     1335     66%                 0%
 a shadowed name                            945     95%                 0%
 a lazy catch-all on a variant              457    100%                47%
 a local that takes a module's name        1700    100%                96%
-a dropped ?                                236     95%                82%
-a forgotten @ on a declaration             758     99%                99%
+a dropped ?                                236    100%                82%
+a forgotten @ on a declaration             762     99%                99%
 a dropped variant case                     133    100%               100%
 a bitwise &amp; where &amp;&amp; was meant             227    100%               100%
-a name that was never declared             822    100%               100%
-a typo in a name                         10443    100%               100%
-mixed integer and float arithmetic        1492    100%               100%
+a name that was never declared             824    100%               100%
+a typo in a name                         10463    100%               100%
+mixed integer and float arithmetic        1495    100%               100%
 <span class="hi">a typo in an error code</span>                     59      0%                 0%
 <span class="hi">a typo in a digit</span>                           68      3%                 3%</code></pre>
   <p>

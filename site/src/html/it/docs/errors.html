@@ -91,8 +91,8 @@ hole at examples/gallery/09-holes.hero:28:74
     <code>heroes mutate</code> introduce un errore plausibile alla volta in programmi funzionanti e conta quanti errori rileva il compilatore. Ripete poi il controllo sugli stessi programmi con le regole specifiche di Heroes disattivate. La differenza tra i risultati misura l&rsquo;effetto di queste regole.
   </p>
   <p>
-    La tabella riporta un&rsquo;esecuzione completa sui 118 programmi che
-    <code>examples/</code> conteneva allora, con tutti i tipi di modifica
+    La tabella riporta un&rsquo;esecuzione completa sui 120 programmi che
+    <code>examples/</code> contiene oggi, con tutti i tipi di modifica
     previsti dallo strumento. Include anche i casi in cui i controlli di Heroes
     non migliorano il risultato o non rilevano l&rsquo;errore. Puoi ripeterla con
     il comando qui sotto: il corpus cresce, quindi i tuoi conteggi saranno più
@@ -100,21 +100,21 @@ hole at examples/gallery/09-holes.hero:28:74
   </p>
   <pre class="table"><code>$ heroes mutate examples
 
-<span class="c">errore iniettato                           mutanti  presi  senza le regole</span>
-due argomenti scambiati in una chiamata       1907    80%              58%
-argomento posizionale che vuole un nome       1331    66%               0%
-nome che ne nasconde un altro                  945    95%               0%
-catch-all pigro su un variant                  457   100%              47%
-locale che prende il nome di un modulo        1700   100%              96%
-? saltato                                      236    95%              82%
-@ dimenticata su una dichiarazione             758    99%              99%
-caso di variant saltato                        133   100%             100%
-un &amp; bitwise al posto di &amp;&amp;                  227   100%             100%
-nome mai dichiarato                            822   100%             100%
-errore di battitura in un nome               10443   100%             100%
-aritmetica mista fra interi e float           1492   100%             100%
-<span class="hi">errore di battitura in un codice d&rsquo;errore</span>       59     0%               0%
-<span class="hi">errore di battitura in una cifra</span>                68     3%               3%</code></pre>
+<span class="c">mistake injected                       mutants  caught  without the rules</span>
+two arguments swapped in a call           1910     80%                58%
+a positional argument needing a label     1335     66%                 0%
+a shadowed name                            945     95%                 0%
+a lazy catch-all on a variant              457    100%                47%
+a local that takes a module's name        1700    100%                96%
+a dropped ?                                236    100%                82%
+a forgotten @ on a declaration             762     99%                99%
+a dropped variant case                     133    100%               100%
+a bitwise &amp; where &amp;&amp; was meant             227    100%               100%
+a name that was never declared             824    100%               100%
+a typo in a name                         10463    100%               100%
+mixed integer and float arithmetic        1495    100%               100%
+<span class="hi">a typo in an error code</span>                     59      0%                 0%
+<span class="hi">a typo in a digit</span>                           68      3%                 3%</code></pre>
   <p>
     La percentuale considera soltanto i mutanti, cioè i programmi modificati, che mantengono una sintassi valida. Se la modifica rende il testo non valido, viene rilevata già durante l&rsquo;analisi della sintassi. Questi casi vengono esclusi per misurare separatamente l&rsquo;effetto dei controlli successivi.
   </p>

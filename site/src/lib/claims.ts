@@ -47,7 +47,7 @@ const TABLE_FILE = 'selfhost/cli/table.hero';
 const DOCTOR_FILE = 'selfhost/cli/doctor.hero';
 const CHAPTERS_DIR = 'site/src/html/docs';
 const SPEC_SUITE = 'tests/harness/suite_spec.hero';
-const MUTATION_RECORD = 'docs/measurements/019-the-corpus-at-fifty-four-programs.md';
+const MUTATION_RECORD = 'docs/measurements/024-the-corpus-at-one-hundred-and-twenty-files.md';
 
 /* -- The facts, each read from the one place the tree keeps it ------------- */
 
@@ -110,9 +110,11 @@ export function specReal(): { tokens: number; model: string } {
  * and cannot rot; what CAN rot is the page's sentence about how big the corpus
  * was, and the devex seat measured the drift the other way round (2026-09-10):
  * the table's counts were 36 mutants short of a corpus that had grown from 118
- * files to 120, on a page inviting the reader to re-run the command. The page
- * now says the run's own corpus, and this binds that sentence to the record, so
- * regenerating the table without moving the sentence is a red build.
+ * files to 120, and one row read 95% where the compiler had reached 100%, so
+ * the page was quoting the project as weaker than it is. The table is a fresh
+ * run now (`docs/measurements/024`) and the prose says the corpus it was taken
+ * over; this binds that sentence to the record, so regenerating the table
+ * without moving the sentence, or the other way round, is a red build.
  */
 function mutationCorpus(): number {
   const text = readText(MUTATION_RECORD);

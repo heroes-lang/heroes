@@ -1,0 +1,25 @@
+# Panel 125's ratification, its fourth point (author decision 2026-09-09), and
+# the prediction that paid for the spec's amended word. The gate that accuses a
+# program for a lease it never ended runs at the END OF `main`: a program that
+# leaves through `exit(code:)` never reaches it, so an outstanding lease is not
+# accused there and the process exits with the code it asked for.
+#
+# This case exists because nothing ran it. `abort-lease-never-ended.hero` is
+# the same program returning from `main`, where the panic fires; four run
+# goldens named `lease(` and none of them named `exit(`, so the sentence the
+# specification and the site both now state about this path rested on one
+# session's scratch run. The two cases are a pair and are read together.
+#
+# What this pins is the ABSENCE of the accusation, which is why the expected
+# output carries the lease's own bytes and nothing else: a future release that
+# registers the gate with `atexit` would make this case print a panic, and that
+# is a decision to take deliberately rather than a diff to absorb. The Linux
+# `--sanitize` leg is what sees the block that is still held here.
+
+extern "string.h"
+    function strlen(s: cstr) -> u64
+
+function main()
+    c: cstr @ "twelve bytes".lease()
+    print(strlen(s: c))
+    exit(code: 0)
