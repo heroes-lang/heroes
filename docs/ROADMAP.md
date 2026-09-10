@@ -2374,7 +2374,7 @@ and then whichever engine enforces it.
   named: one container per request off the image M-install-channels already
   builds, no network, a read-only tree, ceilings on wall clock, CPU, memory and
   output size, and the allow-list above. It also puts a service behind a site
-  that is static today (Astro on Cloudflare Pages, `site/public/CNAME`).
+  that is static today (Astro on Cloudflare Pages).
 
 **No language change is owed, whichever engine wins** (panel 114; panel 036 as
 corrected by 114's spec-warden, which found the record had been reading a

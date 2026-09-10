@@ -732,6 +732,21 @@ its tags. A session following the checklist to the letter published the site
 without asking. The checklist now tags locally and leaves the push to the next
 authorised one.
 
+**Corrected 2026-09-10: the artifact this entry names never did anything, and
+the real mechanism is wider.** `site/public/CNAME` was deleted that day on the
+author's instruction. It was a GitHub Pages file, and GitHub Pages was never in
+play here: this site ships to Cloudflare Pages by Direct Upload, which does not
+read a `CNAME`, and `DESIGN-LOG.md`'s 2026-08-30 entry had already measured that
+before the organisation transfer. Astro copied it into the output like any
+asset, so it was served publicly at `/CNAME` while governing nothing. **The
+sentence above is therefore false in its reason and right in its conclusion**,
+and what makes a push publish is `.github/workflows/deploy-site.yml`, which
+deploys on any push to `main` touching `site/`, `examples/`,
+`spec/heroes-spec.md`, `selfhost/keywords.hero` or the workflow itself. That is
+strictly wider than what this entry claimed: a push that touches only
+`examples/` publishes the site too, and a session reading the old sentence would
+have thought it safe. § Hard stops and the step skill now name the workflow.
+
 ## CL-043 — Nothing goes into the assistant's own memory
 2026-09-03, the second time it was given · author instruction · § Hard stops
 

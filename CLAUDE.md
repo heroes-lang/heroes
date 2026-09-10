@@ -37,12 +37,12 @@ ones (CL-041).
   here touched stays out and is reported. Other sessions share this checkout
   (CL-041).
 - **Pushing `main`, publishing the site, anything outward-facing: asked for,
-  every time.** The site is on this branch and `site/public/CNAME` names
-  `heroes-lang.org`, so a push can publish it. Say how many site commits would
+  every time.** A push touching `site/`, `examples/` or `spec/` publishes the
+  site: `.github/workflows/deploy-site.yml`. Say how many site commits would
   travel and wait for the yes **before committing**, because a peer session's
-  push publishes the branch (CL-042, CL-073). **The repository is
-  public since 2026-09-08** (M-open-repository), so every push is outward-facing
-  and a commit body is read by strangers.
+  push publishes the branch (CL-042, CL-073). **The repository is public since
+  2026-09-08** (M-open-repository), so every push is outward-facing and a commit
+  body is read by strangers.
 - **Destructive operations are asked for.**
 - **`UPDATE_GOLDEN=1` does not exist**, and in `tests/golden/check/` and
   `tests/golden/ir/` it is forbidden outright.
