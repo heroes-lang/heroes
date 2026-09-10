@@ -386,8 +386,15 @@ constant REFUSED: [str]
 # a platform measured by `.claude/rules/platforms.md`'s own rules — its three legs
 # become four — rather than an operating-system port, and `platform` is the word
 # every one of those rules already uses.
+#
+# **71 -> 72 on 2026-09-10**, `M-microcontroller-verdict`, later the same day and
+# from a different question: the author asked whether a Heroes program could run
+# on a microcontroller such as the ESP32, and the row is a verdict rather than a
+# target, on `M-cleanup-verdict`'s precedent, so that it can close with a
+# refusal. Moved by hand again, with the row, in one commit. `REFUSED` gains
+# nothing: no runner-up name was written into a living file.
 constant ROWS: i64
-    71
+    72
 
 # **`WATCHED` stood here until 2026-09-07 and nothing had read it since
 # 2026-08-19.** It listed `design.md` and `CLAUDE.md` as *"the two documents whose

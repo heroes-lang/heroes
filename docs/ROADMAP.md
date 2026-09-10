@@ -35,11 +35,11 @@ with what each one measured in the git history and in `DESIGN-LOG.md`):
 |---|---|
 | **Current milestone** | **none open.** Next in the chain is **M-reflection-verdict**; before it, by author instruction 2026-09-09, the site is brought up to date (the 6K claim with its instrument, the new numbers, `f"…"` examples from `examples/gallery/12-interpolation.hero`), then the full net and the Linux and Windows legs run once, and the push is asked for |
 | **Last closed** | **M-interpolated-strings**, 2026-09-09, `m-interpolated-strings` ([043](journal/043-interpolated-strings.md)) — the form panel 121 ruled in that morning, landed the same evening; the third milestone and the third tag of the day, after `m-held-bytes` ([041](journal/041-held-bytes.md)) and `m-interpolation-verdict` ([042](journal/042-interpolation-verdict.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
-| Milestones closed | **44** of 67 · **44** milestone tags. **Four rows entered 2026-09-10** by author decision, from the chain's first reading against a written production-readiness criterion (§ What production-ready means): M-cleanup-verdict, M-arm-platform, M-deployable-binary and M-compatibility-promise. M-cstr-lifetime closed with defect 024 open by its own design and carried none until the author asked for it (2026-09-09); its tag stands on the commit that ratified panel 125, the first where every list that milestone left open is clean, and the tag's own message says so |
+| Milestones closed | **44** of 68 · **44** milestone tags. **Five rows entered 2026-09-10** by author decision: four from the chain's first reading against a written production-readiness criterion (§ What production-ready means), M-cleanup-verdict, M-arm-platform, M-deployable-binary and M-compatibility-promise, and M-microcontroller-verdict later the same day, from the question whether a program could run on an ESP32, with its measurements in `docs/measurements/026-the-two-facts-a-32-bit-target-refuses.md`. M-cstr-lifetime closed with defect 024 open by its own design and carried none until the author asked for it (2026-09-09); its tag stands on the commit that ratified panel 125, the first where every list that milestone left open is clean, and the tag's own message says so |
 | The compiler | **57,120** lines of Heroes in **197** modules · the seed **773,509** lines of C at runtime ABI **22**, regenerated at the close with the fixpoint verified by `cmp` · one token kind, one AST node and three helper modules for `f"…"`, and four decided ceilings moved by their measured lines |
 | The spec | **5378 real tokens** on `claude-opus-5` through `count_tokens`, read by `heroes measure --refresh` at the landing, digest `527e1b762302f9ca`; **4210** on the vendored ranks, which is what `SPEC_TOKENS` pins. **The ceiling is 6144** with its instrument named; **766** free net of the FFI floor. **All four moved with `7965174d` on 2026-09-10** and this row carried 5373 / 4203 / 711 / `5a9b2886` until then; the live values are `REAL_TOKENS` and `SPEC_DIGEST` in `tests/harness/suite_spec.hero`, and `./heroes measure` refuses a verdict when the digest disagrees. Today's two clauses cost **+103** (the lease) and **+138** (interpolation with R6's two sentences), each priced alone before it was written, and the lease clause's word for the forgotten release cost **+4** more when panel 125's ratification made it say what runs |
 | Records | sittings **125** · journals **44** · examples **119** files, **545** `test` blocks · open defects **0** · mutation: `drop-question` **236 of 236 killed**, `--permissive` 193, so **43** are caught only by the thesis |
-| Waiting on the author | **0** decisions: `panel 125` ratified 2026-09-09, its conservative route (a runtime registry) recorded beside it and declined · **43** in `SCHEDULED.md` · **0** in `DEFECTS.md` · **353** in `LEARN.md` (never a gate) · an outstanding veto (`docs/panel/101` R3) · **o200k**, whose trigger is met and whose premise panel 123 changed |
+| Waiting on the author | **0** decisions: `panel 125` ratified 2026-09-09, its conservative route (a runtime registry) recorded beside it and declined · **52** in `SCHEDULED.md` (re-counted 2026-09-10 with `grep -c '^- \[ \]'`; this row said 43 against a measured 51 before the microcontroller row joined) · **0** in `DEFECTS.md` · **353** in `LEARN.md` (never a gate) · an outstanding veto (`docs/panel/101` R3) · **o200k**, whose trigger is met and whose premise panel 123 changed |
 
 **Re-measured 2026-09-09 at M-interpolated-strings' close, not carried**: the compiler's own suite is **618** and the net's own **126** (125 at the close; one test joined the same evening with `records/c`'s claim clause, which reads a program's `extern` beside a C file rather than widening the list of directories that own C). Every suite is green on the closing compiler, the seed regenerated: `check` 104, `annotations` 140, `fixes` 7, `run` 108, `ir` 23, `emit` 6, `unsupported` 12, `emission` 441, `corpus` 54, `warnings` 168, `determinism` 137, `lines` 108, `canonical` 1, `layout` 1, `order` 2, `spec` 11, `special` 10, `records` 15. **The full net ran on this Mac before the push, 1691 passed and 0 failed, and the Linux and Windows legs ran the same evening**: the seed builds on all three, the compiler's 618 tests pass on all three, the harness's own 126 pass on all three (on Linux only once `git` joined the image, which the journal's dated correction explains), the new goldens are clean under Linux's LeakSanitizer, and Windows refused a header width the other two accepted. Least room: `check/walk.hero` at **1708 of a decided 1708**, `grammar_expr.hero` **1041 of 1041**, `ir/flatten.hero` **1114 of 1114**, `ast.hero` **484 of 484** — four knots moved to their measured size this evening and standing on it; `check/builtins.hero` **371 of 374**. **Re-run 2026-09-09 after panel 125's ratification, which moved a spec sentence and so the record constants and the seed.** On this Mac the full net reads **1691 passed, 0 failed** again, on the regenerated seed, with `heroes measure` printing 5373 as the binding number and no staleness note. On the Linux image the regenerated seed builds from C alone and `measure`, `spec` 11, `records` 15 and the harness's own 126 all pass there. The Windows box, off when this was first written and started by the author minutes later, builds the regenerated seed with `seed/README.md`'s stack flag and answers the same 5373 with its 618 and 126 passing, so all three legs are on the ratified tree.
 
@@ -225,10 +225,11 @@ and why one overtook another are under the table, in § Who scheduled what.
 | 61 | **M-journey-book** | scheduled | — | — | the journey — how this language came to be |
 | 62 | **M-guide-book** | scheduled | — | — | the guide, as a book you would find in a shop · **§1.1** |
 | 63 | **M-deployable-binary** | scheduled | — | — | what the machine that RUNS a Heroes program needs, on the three platforms, and which `-O` a shipped artifact carries |
-| 64 | **M-install-channels** | scheduled | — | — | a Homebrew tap, winget, a Nix flake, a Docker image, all built from the seed and pinned to a `v*` release tag; the version scheme itself was decided ahead, 2026-09-07 |
-| 65 | **M-online-compiler** | scheduled | — | — | the compiler reached without installing anything: the site's visitor writes Heroes and gets its answer · scheduled, no warrant |
-| 66 | **M-compatibility-promise** | scheduled | — | — | the paragraph `1.0.0` rests on, and the suite that makes a broken promise red · CLAUDE.md §14 |
-| 67 | **M-publication-gate** | scheduled | — | — | the last gate before anything goes outward · CLAUDE.md §14 |
+| 64 | **M-microcontroller-verdict** | scheduled | — | — | the ruling on a Heroes program running on a microcontroller under an RTOS, RISC-V first; the two facts a 32-bit build refuses today are its brief · **§1.12**, Part 2 |
+| 65 | **M-install-channels** | scheduled | — | — | a Homebrew tap, winget, a Nix flake, a Docker image, all built from the seed and pinned to a `v*` release tag; the version scheme itself was decided ahead, 2026-09-07 |
+| 66 | **M-online-compiler** | scheduled | — | — | the compiler reached without installing anything: the site's visitor writes Heroes and gets its answer · scheduled, no warrant |
+| 67 | **M-compatibility-promise** | scheduled | — | — | the paragraph `1.0.0` rests on, and the suite that makes a broken promise red · CLAUDE.md §14 |
+| 68 | **M-publication-gate** | scheduled | — | — | the last gate before anything goes outward · CLAUDE.md §14 |
 
 Three closed milestones have no tag of their own because they were parents or
 sub-steps: **M-checker-core**, **M-data-declarations** and **M-rich-diagnostics**
@@ -530,6 +531,17 @@ row number, because a reorder moves a number and never a name (CLAUDE.md §14).
   there**. What the question exposed, and what it cost, is in that milestone's own
   section; the author's question about how thick a wrapper over C should be became
   its opening sitting's question (ix) rather than a decision taken here.
+- **M-microcontroller-verdict** — **entered 2026-09-10 by author decision**, out
+  of the session that asked whether supporting a microcontroller such as the
+  ESP32, or a program under an RTOS, would be worth a step, given a compiled
+  language with no garbage collector. Three recommendations were put and all
+  three accepted: a row now rather than a note, a verdict rather than a target,
+  and the RISC-V chips first. The record was silent on the question, measured,
+  so the row was written on what the compiler and the runtime answered on this
+  Mac: its section carries the findings and
+  `docs/measurements/026-the-two-facts-a-32-bit-target-refuses.md` the commands.
+  The conservative route, a note and no row, was on the table and declined
+  (CL-040). No board exists yet; the author is ordering one.
 
 ---
 
@@ -2192,6 +2204,88 @@ program — which is §14's own test.
 **What it does not deliver**: any outward act. **Soundness lane**, unless the
 `-O` decision takes a flag.
 
+### M-microcontroller-verdict — whether a program can run on a microcontroller, and what it would cost
+
+**Scheduled 2026-09-10 by author decision**, out of the session that asked
+whether supporting a microcontroller such as the ESP32, or a program under an
+RTOS, would be worth a step, since the language compiles without a garbage
+collector. The record was silent on the question, measured: zero hits for
+microcontroller, RTOS, bare metal, freestanding, newlib or ILP32 in design.md,
+`spec/`, `docs/` and the site in that sense. So the question was put to the
+compiler and the runtime first, and the row is written on what came back:
+`docs/measurements/026-the-two-facts-a-32-bit-target-refuses.md`.
+
+**What it delivers.** A ruling and not a target, on `M-cleanup-verdict`'s
+precedent: a milestone named for the verdict can close with a refusal, and one
+named for the device would claim what the sitting exists to decide. The sitting
+is the full lane, because a new class of machine touches the runtime's layout
+(§1.12), the tool surface (§10) and a refusal in the log. It is handed seven
+questions, each with its measurement beside it:
+
+1. **Whether `DESIGN-LOG.md:539`'s refusal reaches a machine the compiler cannot
+   run on.** Cross-compilation was *considered and not entered* on 2026-09-03
+   because *the three platforms are measured on real machines by rule*. A board
+   on the author's desk is a real machine and the program is measured there; but
+   the compiler is 5,666,664 bytes on this Mac, so it is the program and never
+   the compiler that crosses. The refusal's ground argues for the board and its
+   letter, *never a `--target` flag* (M-arm-platform), against it. The sitting
+   rules which.
+2. **The 64-bit lock-free reference count at 32 bits.** `runtime/heroes_runtime.h:122`
+   fails its `_Static_assert` under `--target=riscv32-unknown-elf` and under
+   `arm-none-eabi`: a string literal's block is `static const` and the counter
+   inside it must be read without a lock. On a microcontroller that block is the
+   flash, so the header's own argument is stronger there; a narrower counter
+   changes the layout `HERO_STR_STATIC` lays out, and the ABI stamp with it.
+3. **Who delivers `spec:167` on a task stack.** `runtime/parts/stack.c` has a
+   POSIX branch on `sigaltstack`, `mmap` and `dladdr` and a Windows branch on
+   `SetThreadStackGuarantee`; FreeRTOS has neither, and a task's stack is small.
+4. **The toolchain.** ESP-IDF ships GCC and Espressif ships a clang of its own;
+   `heroes build` spells `clang` (`selfhost/cli/clang_floor.hero`,
+   `selfhost/cli/compile.hero`), and `.claude/rules/generated-c.md` promises C11
+   that clang type-checks. Whether the emitted C compiles under GCC is unrun.
+5. **`main` against `app_main`.** The emitted `main(argc, argv)` calls
+   `hero_args_set` and `hero_runtime_check_leaks`, and a device has no `argv`.
+   Panel 114 R2's route, C beside the program, is the candidate.
+6. **`spec:228` at 32 bits.** `size_t` is `u32` there, so a program bound to the
+   device's SDK compiles for that chip alone, and M-core-packages' question (v)
+   multiplies by every function the SDK declares.
+7. **The instrument.** A board over serial, and Espressif's QEMU fork for a CI
+   leg, which Homebrew's QEMU 11.1.1 is not: its `xtensa` and `riscv32` machine
+   lists carry no `esp32`.
+
+**Decided ahead, by the author on 2026-09-10 on recommendation**: the RISC-V
+chips first (ESP32-C3, C6), because upstream clang and GCC carry RISC-V and Apple
+clang already type-checks for `riscv32-unknown-elf`, while Xtensa lives only in
+Espressif's fork; and ESP-IDF over FreeRTOS rather than bare metal, because
+design.md Part 2's *not a systems language* is met to the letter when the
+registers are Espressif's C, and every `str`, `[T]` and `{K: V}` needs `malloc`.
+
+**What warrants it, said carefully.** Not Principle 0: a platform is not a form,
+and the thesis effect on firmware is unrun, since metrics 2 and 4 have never run
+anywhere (M-thesis-harness). What fits is the founding constraint, §1.11: the
+device's SDK is C, and a language with no standard library has nothing to port.
+§ What production-ready means row 3 names *the machines it runs on*, and this row
+asks that table a question rather than joining it as an owner.
+
+**Before the sitting opens, one measuring session**: install ESP-IDF, and run the
+`--emit-c` output and the runtime through `riscv32-esp-elf-gcc -fsyntax-only`, so
+that the two *file not found* of 2026-09-10, `locale.h` and `math.h`, become
+answers about newlib rather than about a probe with no sysroot, and the 73
+C-library names the runtime asks for are checked against the library that would
+answer them.
+
+**Why here.** After M-deployable-binary, whose question, *what does the machine
+that RUNS a program need*, is this row's question with the answer *a C library
+the runtime was not written for*; and after M-arm-platform, which is the
+rehearsal for adding a platform under `.claude/rules/platforms.md`. Before
+M-install-channels, which would otherwise ship for a class of machine nobody has
+ruled on. The cheaper position, a note and no row, was declined by the author
+(CL-040).
+
+**What it does not deliver**: a `--target` flag, a fifth CI leg, a board, a
+standard library for the device (§1.11), a form in the language (panel 114 R1),
+or code. What it may become is the sitting's to say.
+
 ### M-install-channels — the way in, from a package manager
 
 **Scheduled, no warrant** (author instruction 2026-09-03, *"publishing on brew, for
@@ -2578,6 +2672,7 @@ So a number met in the record resolves here, and only here.
 | `M-cleanup-verdict` | — | — | the ruling on a release bound to a scope. **Named for the deliverable, which is a verdict** (§14), on `M-closures-verdict`'s precedent: a milestone named for the ruling can close with a refusal, and one named for the form would claim what the sitting exists to decide. **Not a step of `M-deferral-ledger`**, which dates Part 7's items: this is on no list at all, so a row that inherited it would report a promise the record does not hold. Scheduled 2026-09-10 by author decision with **no warrant** |
 | `M-arm-platform` | — | — | arm64 Linux as a measured platform. **Not a step of `M-install-channels`** (§14): that row delivers the channels, this one the architecture they would otherwise ship for unmeasured, and the two are separable in both directions. **Deliberately not `M-fourth-platform`**, because `M-online-compiler` already calls a browser the fourth platform under panel 114, so the number would name two things; **and not `M-arm-linux`**, because what is delivered is a platform under `.claude/rules/platforms.md`'s own rules, three legs becoming four, rather than an operating-system port. Both runners-up are in `tests/harness/suite_records.hero`'s `REFUSED`. Scheduled 2026-09-10 by author decision · **§1.12** |
 | `M-deployable-binary` | — | — | what the machine that RUNS a Heroes program needs, and which `-O` a shipped artifact carries. **Not a step of `M-install-channels`** (§14): that row delivers *how a person gets the compiler* and this one *what a person needs to run what the compiler made*, which are two deliverables and two audiences. **Named for the artifact and not for the act**, so `deployment` and `release` stay free — this row publishes nothing. Scheduled 2026-09-10 by author decision with **no warrant** |
+| `M-microcontroller-verdict` | — | — | the ruling on a Heroes program running on a microcontroller under an RTOS. **Named for the deliverable, which is a verdict** (§14), on `M-cleanup-verdict`'s precedent: a milestone named for the ruling can close with a refusal, and one named for the device or its area would claim what the sitting exists to decide. **Not a step of `M-arm-platform`**: that row adds a machine the compiler runs on, this one asks about a machine only the program can reach. Scheduled 2026-09-10 by author decision · `docs/measurements/026-the-two-facts-a-32-bit-target-refuses.md` |
 | `M-compatibility-promise` | — | — | the paragraph `1.0.0` rests on, and the suite that makes a broken promise red. **Not a step of `M-publication-gate`** (§14), which owns that paragraph as one bullet of a checklist of outward acts: this is a suite, built and tested in private like everything else. **Named for the promise and not for the version**, since `1.0.0` is the author's act on a clean `main` and never a milestone's (`.claude/rules/records.md` § Release tags). Scheduled 2026-09-10 by author decision · CLAUDE.md §14 |
 
 **`M8` has no row, because it meant three different things.** It was an umbrella
