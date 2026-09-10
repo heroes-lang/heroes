@@ -2015,7 +2015,7 @@ a *blocker* rather than a deliverable they stay two, with the dependency named.
     §10's stopping rule judges a flag here like any other. What it may not be is
     silence.
 
-- [ ] **M-microcontroller-verdict** | the ruling on a program running on a microcontroller under an RTOS, RISC-V first, and the two runtime facts a 32-bit build refuses today | `runtime/heroes_runtime.h:122` · `runtime/parts/stack.c` · `DESIGN-LOG.md:539` · `docs/measurements/026-the-two-facts-a-32-bit-target-refuses.md` · `.claude/rules/platforms.md`
+- [ ] **M-microcontroller-verdict** | the ruling on a program running on a microcontroller under an RTOS, RISC-V first, and the two runtime facts a 32-bit build refuses today | `runtime/heroes_runtime.h:122` · `runtime/parts/stack.c` · `runtime/parts/spawn.c:128` · `DESIGN-LOG.md:539` · `docs/measurements/026-the-two-facts-a-32-bit-target-refuses.md` · `docs/measurements/027-behind-the-first-refusal-two-files-and-one-symbol.md` · `.claude/rules/platforms.md`
 
     **Origin:** author question 2026-09-10, whether supporting a microcontroller
     such as the ESP32, or a program under an RTOS, would be worth a step, since
@@ -2055,11 +2055,28 @@ a *blocker* rather than a deliverable they stay two, with the dependency named.
     the letter when the registers are Espressif's C, and every `str`, `[T]` and
     `{K: V}` needs `malloc`.
 
-    **The first step is a measuring session and not the sitting**: install
-    ESP-IDF, run the `--emit-c` output and the runtime through
-    `riscv32-esp-elf-gcc -fsyntax-only`, and check the 73 names against newlib,
-    so that the sitting is handed answers. The seven questions it is handed are
-    in the ROADMAP's own section for this row.
+    **The measuring session ran the same evening, 2026-09-10, with ESP-IDF v6.1
+    installed through `eim`**
+    (`docs/measurements/027-behind-the-first-refusal-two-files-and-one-symbol.md`).
+    What it found: with the lock-free assertion neutralised in a scratch copy
+    and three headers newlib lacks (`dlfcn.h`, `sys/mman.h`, `ucontext.h`)
+    stubbed empty, **every remaining error is in `runtime/parts/stack.c`**, 27
+    of them, all the stack guard's POSIX surface, plus one line at
+    `runtime/parts/spawn.c:128` (`pthread_getattr_np`); nothing else in the
+    runtime's 6047 lines asks the device for something it does not have. The
+    emitted C of the smallest program compiles under GCC 15.2 with **0 errors**
+    and 6 `-Wunknown-pragmas` warnings for the emitter's clang-only diagnostic
+    block, and under Espressif's clang **21.1.3**, above the floor of 18, with 0
+    errors. Linked against newlib with `--gc-sections`, as ESP-IDF itself links,
+    the hello is undefined on **one symbol**, `__atomic_load_8`: the 64-bit
+    reference count, which ESP-IDF supplies through a single global spinlock in
+    a critical section (`components/esp_libc/src/stdatomic.c:20-22`), a lock
+    that is a global and not a write to the literal. The RISC-V object needs 83
+    outside symbols, 15 of them libgcc's soft-float and 64-bit helpers because
+    ESP32-C3 has neither an FPU nor 64-bit registers. **Still unrun**: anything
+    on a board or under Espressif's QEMU, which the non-interactive install
+    excluded. The seven questions the sitting is handed are in the ROADMAP's
+    own section for this row, with what 027 answered marked against each.
 
     **What it may not become by this row alone**: a `--target` flag
     (`DESIGN-LOG.md:539`), a standard library for the device (§1.11), a form in

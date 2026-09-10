@@ -2267,12 +2267,25 @@ device's SDK is C, and a language with no standard library has nothing to port.
 § What production-ready means row 3 names *the machines it runs on*, and this row
 asks that table a question rather than joining it as an owner.
 
-**Before the sitting opens, one measuring session**: install ESP-IDF, and run the
-`--emit-c` output and the runtime through `riscv32-esp-elf-gcc -fsyntax-only`, so
-that the two *file not found* of 2026-09-10, `locale.h` and `math.h`, become
-answers about newlib rather than about a probe with no sysroot, and the 73
-C-library names the runtime asks for are checked against the library that would
-answer them.
+**The measuring session ran the same evening**, 2026-09-10, on ESP-IDF v6.1
+installed through `eim`
+(`docs/measurements/027-behind-the-first-refusal-two-files-and-one-symbol.md`).
+Against each question above: **2** is confirmed at the type level and again at
+the link, where `__atomic_load_8` is the one undefined symbol of a gc-sectioned
+hello, and sharpened, since ESP-IDF's substitute is a single global spinlock in
+a critical section (`components/esp_libc/src/stdatomic.c:20-22` of the v6.1
+tree) and not a write to the literal, so what the refusal costs and what it
+protects are two sentences; **3** narrows to two files, `runtime/parts/stack.c`
+with 27 errors behind three headers newlib lacks (`dlfcn.h`, `sys/mman.h`,
+`ucontext.h`) and one line at `runtime/parts/spawn.c:128`, nothing else in 6047
+lines asking the device for what it does not have; **4** is answered both ways,
+GCC 15.2 compiles the emitted C with 0 errors and 6 `-Wunknown-pragmas` for the
+emitter's clang-only diagnostic block, and Espressif's clang 21.1.3, above the
+floor of 18, with 0 errors; **7** stays open, QEMU having been excluded by the
+non-interactive install. The RISC-V object needs 83 outside symbols, 15 of them
+libgcc's because ESP32-C3 has no FPU and no 64-bit registers, and the hello with
+its runtime and newlib is 42,351 bytes at `-O2`, read through a labelled probe
+stub. Nothing ran on a board.
 
 **Why here.** After M-deployable-binary, whose question, *what does the machine
 that RUNS a program need*, is this row's question with the answer *a C library
