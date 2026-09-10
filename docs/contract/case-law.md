@@ -1536,6 +1536,24 @@ minutes**, 13:47 to 13:55, and neither session knew the other was in it. The
 first this session learned of `56edfb96` was reading `git log` after its own
 commit succeeded.
 
+**Appended 2026-09-10, the same afternoon: the second case, and it runs the other
+way.** The rule above was amended on this entry at **14:21:50** (`0a2329df`), and
+that commit was pushed by THIS session minutes later. Between the sentence that
+asked for the push, which said *one commit, one file, zero site files*, and the
+`git push` that followed the author's yes, the parallel session committed twice:
+`ede35962` at **14:26:18**, its own CL-074, and `ed1a5475` at **14:28:00**, **29
+files under `site/`**.
+Both went out under this session's push. **So the first case had a peer publish
+this session's work and the second had this session publish a peer's**, and
+neither session was careless: each measured what would travel, said the number
+out loud, and was overtaken by the other between the measurement and the act.
+That symmetry is the argument the entry above could only assert — the failure is
+structural, and the number a session reports is true when it is written and can
+be false when it is used. **What it adds to the three routes**: whichever is
+taken, the count in the asking sentence has to be re-read at the moment of the
+push and not at the moment of the question, or the record says something untrue
+about itself (§12), which is the half CL-070 already paid for one verb down.
+
 ## CL-074 — And a claim about a gate is produced with the gate's own invocation, defaults included
 2026-09-10 · author instruction, after the CI refuted it · § Run it, or say it is unrun
 
