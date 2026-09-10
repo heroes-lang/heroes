@@ -15,7 +15,7 @@ hold the source, and each answers a different question:
 | `src/html/` | the pages themselves, one HTML fragment each: the inside of `<main>`, prose and code, and a `<footer>` holding only the closing paragraphs that belong to that page, if it has any |
 | `src/pages/` | one tiny `.astro` per page, carrying four facts and no content: its path, its title, its description, which nav entry is current |
 | `src/layouts/`, `src/components/` | the head, the nav and the footer's shared tail, written **once** |
-| `public/` | the assets, copied into `dist/` untouched: `style.css`, `images/`, `robots.txt`, `CNAME`, and the pre-launch parking page. `llms.txt` left this directory when it was found still saying 4096 after the ceiling moved: its prose is `src/llms.txt` and `src/pages/llms.txt.ts` fills its numbers from the suite at build time |
+| `public/` | the assets, copied into `dist/` untouched: `style.css`, `images/`, `robots.txt`, the three icon files, and the pre-launch parking page. A `CNAME` sat here until it was removed for naming a host that never read it: this site is Cloudflare Pages by Direct Upload, GitHub Pages was never in play, and the file was served publicly at `/CNAME` while doing nothing. `llms.txt` left this directory when it was found still saying 4096 after the ceiling moved: its prose is `src/llms.txt` and `src/pages/llms.txt.ts` fills its numbers from the suite at build time |
 
 Beside them, **`site/.claude/skills/site-panel/`** holds the five-seat review
 panel as a directory-scoped skill.
