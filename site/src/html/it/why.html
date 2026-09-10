@@ -122,14 +122,47 @@ grafica, audio, terminale      →  SDL, raylib, ncurses</code></pre>
     più in là. Niente ereditarietà, niente macro, niente eccezioni, niente
     conversioni automatiche, niente null: l&rsquo;assenza è un tipo,
     <code>i64?</code>. Il puntatore a zero del C conserva il suo nome,
-    <code>nullptr</code>, e un <code>ptr</code> è opaco: nessun codice Heroes
-    ci legge dentro.</li>
+    <code>nullptr</code>, e un <code>ptr</code>, il riferimento opaco che una
+    libreria C restituisce, non è leggibile da nessun codice Heroes.</li>
     <li><b>Un solo modo di scrivere qualunque cosa.</b> Un formattatore con
     una sola forma canonica, una parola sola per i cicli, e i nomi degli
     argomenti obbligatori dove i tipi non bastano a distinguerli.</li>
     <li><b>Messaggi d&rsquo;errore utilizzabili anche da una macchina.</b> Ogni messaggio indica il problema e la posizione nel codice. Se coinvolge una dichiarazione in un altro punto, indica anche quella. Le correzioni suggerite sono contrassegnate da <code>certain</code> se sono certe o da <code>guess</code> se richiedono una verifica. Con <code>???</code> puoi lasciare un&rsquo;espressione incompleta e chiedere al compilatore quale tipo si aspetta.</li>
     <li><b>Un programma non deve corrompere la memoria.</b> Il programma si ferma e segnala il punto dell&rsquo;errore in casi come questi: un intero supera il suo intervallo, una divisione intera ha divisore zero, un indice esce dai limiti di un array, una porzione di stringa taglia un carattere, la ricorsione è troppo profonda o <code>.must()</code> riceve un errore. Nelle scelte di progetto, evitare l&rsquo;accesso a memoria non verificata ha la precedenza sull&rsquo;eleganza e sulla brevità del codice.</li>
     <li><b>Abbastanza piccolo da stare in un prompt.</b> La specifica resta sotto il limite di 6K token, contati come li conta il modello stesso, attraverso l&rsquo;API di conteggio dei token di Claude. Il conteggio è registrato insieme al modello che lo ha prodotto, e un test a ogni commit, cioè a ogni modifica registrata, tiene il conteggio registrato sotto il tetto e rifiuta un testo cambiato senza un nuovo conteggio. Puoi passarla intera a un modello. <a href="/it/spec/">Leggila&nbsp;&rarr;</a></li>
+  </ul>
+
+  <h2>Cosa Heroes fa male</h2>
+  <p>
+    Quattro cose, e ognuna il compilatore te la dice da sé.
+  </p>
+  <ul class="pillars">
+    <li><b>Non c&rsquo;è una libreria standard.</b> Le funzioni predefinite
+    sono una riga della specifica: stampare, la lunghezza,
+    <code>push</code>, <code>slice</code>, l&rsquo;ordinamento, le conversioni
+    numeriche, e <code>map</code>, <code>filter</code>, <code>fold</code>,
+    <code>find</code>, <code>any</code>, <code>all</code> e
+    <code>range</code>, che sono scritte in Heroes a loro volta. Tutto il
+    resto è una libreria C che dichiari tu, e non ci sono un package manager
+    né un registry da cui prenderla.</li>
+    <li><b>Il lavoro in parallelo porta un numero solo.</b> Un thread prende
+    un <code>i64</code> e ne restituisce uno. Se metti una lista dentro il
+    tipo di una callback, il compilatore la rifiuta prima che il programma
+    parta, con <code>error[ffi_type]</code>, e la sua nota ti dice di passare
+    al C un puntatore e una lunghezza. Distribuire un array grande su più core
+    non è quello che questo linguaggio fa oggi.</li>
+    <li><b>Oltre il confine con il C non è controllato niente.</b> clang
+    verifica che le tue dichiarazioni combacino con l&rsquo;header della
+    libreria. Non verifica che il puntatore che la libreria restituisce sia
+    quello che volevi, né per quanto tempo quella libreria tiene quello che le
+    hai dato. Quell&rsquo;errore resta tuo.
+    <a href="/it/docs/the-c-boundary/">Cosa il confine controlla&nbsp;&rarr;</a></li>
+    <li><b>Alcuni errori nessun controllo li prende.</b> Un codice
+    d&rsquo;errore scritto male dentro una stringa resta una stringa valida, e
+    <code>10</code> dove volevi <code>100</code> resta un numero. La pagina
+    degli errori porta la misura, così la quota che il compilatore prende
+    davvero è un numero che puoi leggere e non una promessa.
+    <a href="/it/docs/errors/#measured">I risultati disponibili&nbsp;&rarr;</a></li>
   </ul>
 
   <h2>Domande frequenti <span class="nod">&middot; <a href="/it/about/thanks/#quicksand-avoided">quicksand, avoided</a></span></h2>

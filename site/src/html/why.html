@@ -119,14 +119,47 @@ graphics, audio, terminal  →  SDL, raylib, ncurses</code></pre>
     decided by the line and the function around it, never by something written
     three files away. No inheritance, no macros, no exceptions, no implicit
     conversions, no null: absence is a type, <code>i64?</code>. C&rsquo;s zero
-    pointer keeps its own name, <code>nullptr</code>, and a <code>ptr</code> is
-    opaque, so no Heroes code reads through one.</li>
+    pointer keeps its own name, <code>nullptr</code>, and a <code>ptr</code>,
+    the opaque handle a C library hands back, cannot be read through by any
+    Heroes code.</li>
     <li><b>One way to write anything.</b> A formatter with one canonical form,
     one word for loops, and argument names required where types cannot tell two
     arguments apart.</li>
     <li><b>Error messages that machines can use.</b> Each message identifies the problem and its location in the code. If a declaration elsewhere is involved, it points there too. Suggested fixes are marked <code>certain</code> when they are certain or <code>guess</code> when they need review. Use <code>???</code> to leave an expression unfinished and ask the compiler which type it expects.</li>
     <li><b>A program must not corrupt memory.</b> The program stops and reports the error location in cases such as: an integer exceeds its range, integer division has a zero divisor, an index is outside an array, a string slice splits a character, recursion goes too deep or <code>.must()</code> receives an error. In design decisions, preventing unchecked memory access takes priority over elegance and brevity.</li>
     <li><b>Small enough to fit in a prompt.</b> The specification stays below 6K tokens, counted the way the model itself counts, through Claude&rsquo;s token-counting API. The count is recorded with the model that made it, and a test on every commit, the project&rsquo;s word for a recorded change, holds the recorded count under the ceiling and refuses a text that moved without a new count. You can give the whole specification to a model. <a href="/spec/">Read it&nbsp;&rarr;</a></li>
+  </ul>
+
+  <h2>What Heroes is bad at</h2>
+  <p>
+    Four of them, and each one is something the compiler will tell you itself.
+  </p>
+  <ul class="pillars">
+    <li><b>There is no standard library.</b> The built-ins are one line of the
+    specification: printing, length, <code>push</code>, <code>slice</code>,
+    sorting, the numeric conversions, and <code>map</code>,
+    <code>filter</code>, <code>fold</code>, <code>find</code>,
+    <code>any</code>, <code>all</code> and <code>range</code>, which are
+    themselves written in Heroes. Everything else is a C library you declare
+    yourself, and there is no package manager and no registry to pull it
+    from.</li>
+    <li><b>Parallel work carries one number.</b> A thread takes an
+    <code>i64</code> and gives one back. Put a list inside a callback&rsquo;s
+    type and the compiler refuses it before anything runs, with
+    <code>error[ffi_type]</code>, and its note tells you to hand C a pointer
+    and a length instead. Spreading a large array across cores is not what
+    this language does today.</li>
+    <li><b>Past the C boundary nothing is checked.</b> clang checks that your
+    declarations match the library&rsquo;s header. It does not check that the
+    pointer a library hands back is the one you wanted, or how long that
+    library keeps the one you gave it. That mistake stays yours.
+    <a href="/docs/the-c-boundary/">What the boundary does check&nbsp;&rarr;</a></li>
+    <li><b>Some mistakes no check catches.</b> A typo in a string used as an
+    error code is still a valid string, and <code>10</code> where you meant
+    <code>100</code> is still a number. The errors page carries the
+    measurement, so the share the compiler does catch is a number you can read
+    rather than a promise. <a href="/docs/errors/#measured">The available
+    results&nbsp;&rarr;</a></li>
   </ul>
 
   <h2>Common questions <span class="nod">&middot; <a href="/about/thanks/#quicksand-avoided">quicksand, avoided</a></span></h2>
