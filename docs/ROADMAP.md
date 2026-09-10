@@ -108,9 +108,10 @@ backward compatibility, release cadence, LTS or an installer. The only `1.0` in
 the file is **Go's** (`:3202`). So every row of § The chain had been scheduled on
 its own reason and none had ever been measured against a standard.
 
-**The standard is not a mature language and not mission-critical**: the question
-is whether a stranger can put **production code that is not mission critical** in
-Heroes. **And it is a list, so it is a measurement** (CLAUDE.md § RUN IT): the
+**The standard is not a mature language**: the question is whether a stranger can
+put **production code that is not mission critical** in Heroes, which is a lower
+bar than either half of that phrase suggests on its own. **And it is a list, so
+it is a measurement** (CLAUDE.md § RUN IT): the
 ten rows come from what Go 1, Nim 1.0 and Rust 1.0 each shipped, read against
 what this tree already reaches for. **Six of the ten were already owned**, which
 is the finding.
