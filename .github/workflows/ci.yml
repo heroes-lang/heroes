@@ -36,12 +36,15 @@
 # charged. The day of the flip the gross is discounted in full, **macOS
 # included**. One day of data, so it is a measurement and not yet a law.
 #
-# **So the reason this matrix narrows to Linux between tags is gone, and
-# widening it is a decision the author has not taken yet**
-# (`docs/work/SCHEDULED.md`, at the gate). Until then it runs as it did, and
-# the measurements below stay exactly as they are, because they were true when
-# they were taken and a record that loses its inconvenient half is worth less
-# than none.
+# **So the reason this matrix narrowed to Linux between tags is gone, and the
+# author took the decision on 2026-09-10: it widens.** Every push to `main`
+# runs all three legs, once — the milestone tags that used to widen it start no
+# run at all now, because the commit they point at has already been judged on
+# every platform, and four tags pushed with a branch were starting five runs of
+# work that had been done once. The measurements below stay exactly as they
+# are, because they were true when they were taken and a record that loses its
+# inconvenient half is worth less than none; what they no longer decide is
+# which legs run.
 #
 # **Which machines run is a separate question from which machines exist**, and
 # the two answers differ because one leg is not paid for in the same currency
@@ -61,16 +64,19 @@ name: heroes
 on:
   push:
     branches: [main]
-    # Milestone tags (CLAUDE.md §14: the id lowercased, `m-<what-it-delivers>`)
-    # are what widens the matrix below to all three platforms. `git push
-    # --follow-tags` therefore starts two runs — the branch's Linux-only one and
-    # the tag's full one — because `concurrency` keys on `github.ref` and a
-    # branch is not its tag. That duplicate is one Linux job per milestone.
+    # **Milestone tags no longer start a run, by author decision 2026-09-10**,
+    # and the reason is the line below it: the matrix runs all three platforms
+    # on every push to `main` now, so a `m-*` tag's run was a second full run of
+    # a commit this workflow had already judged. `git push --follow-tags` used
+    # to start one run per tag plus the branch's, which is five runs for a
+    # session that closes four milestones; it starts one. A tag pushed on its
+    # own, later, still starts nothing, and that is the trade: the commit it
+    # points at was tested when it landed on `main`.
     # Release tags (CLAUDE.md §14, release tags: `vX.Y.Z`, a third namespace
-    # beside the milestones' and the site's `site-v*`) run the same full matrix,
-    # gain one assert per leg below, and are the only ref the `release` job at
-    # the end of this file accepts.
-    tags: ['m-*', 'v*']
+    # beside the milestones' and the site's `site-v*`) stay, because they gain
+    # one assert per leg below and are the only ref the `release` job at the end
+    # of this file accepts.
+    tags: ['v*']
     # The showcase site compiles nothing. `site/` holds HTML, a stylesheet and
     # an Astro build; no file under it is read by the compiler, by the golden
     # harness or by the net, and `heroes` has no site subcommand by §10's
@@ -166,8 +172,9 @@ jobs:
       #     architecture in a container on the author's Mac, so a Linux fact is
       #     measured before the commit rather than read here seven minutes
       #     after it. This leg stays the judge; that file is the hunt.
-      #   - **Darwin arm64 — tags and `workflow_dispatch`.** Not narrowed for
-      #     being less informative but for being *already read*: it is the
+      #   - **Darwin arm64 — every push since 2026-09-10, `workflow_dispatch`
+      #     to run it alone.** It was narrowed to tags, not for being less
+      #     informative but for being *already read*: it is the
       #     author's machine, so a local run of the net is this job, and it was
       #     the only leg billed at ten Linux minutes to the minute (past tense
       #     since 2026-09-08; the header's cost note says why, and that the
@@ -186,7 +193,7 @@ jobs:
       #     one nobody measures. What this still owes is a run: the image exists
       #     in that document, and that the label is accepted for this repository
       #     has not been executed.
-      #   - **Windows x86-64 — tags and `workflow_dispatch`, and it covers the
+      #   - **Windows x86-64 — every push since 2026-09-10, and it covers the
       #     whole net again as of 2026-08-24.** It was added the day the runtime
       #     could hold it (author instruction 2026-08-14, "I want Windows too")
       #     and it ran the cargo legs, because `runtime/parts/f64.c` compiles
@@ -218,9 +225,14 @@ jobs:
       #     exactly and Windows will not execute a file without the extension.
       #     A red leg naming something else is the finding, not a regression.
       #
-      # Nothing is untested by this: the third platform is read at the tag
-      # instead of at the commit, which is the trade CLAUDE.md §14's per-
-      # milestone tag already makes for every other record.
+      # Nothing is read at the tag any more, which is what the widening bought:
+      # a Windows or macOS divergence is found on the commit that causes it
+      # rather than at the next milestone, and the trade this paragraph used to
+      # describe — the third platform read at the tag instead of at the commit —
+      # is spent. What is still gated is the mutation score, at the bottom of
+      # this job: it costs 20 to 30 minutes a leg, produces a table identical on
+      # all three, and so runs on a release tag or on request and not on every
+      # push.
       matrix:
         include: >-
           ${{ fromJSON(
@@ -230,9 +242,7 @@ jobs:
           && '[{"name":"Darwin arm64","os":"macos-26","exe":""}]'
           || (github.event_name == 'workflow_dispatch' && inputs.only == 'linux')
           && '[{"name":"Linux x86-64","os":"ubuntu-latest","exe":""}]'
-          || (github.ref_type == 'tag' || github.event_name == 'workflow_dispatch')
-          && '[{"name":"Linux x86-64","os":"ubuntu-latest","exe":""},{"name":"Darwin arm64","os":"macos-26","exe":""},{"name":"Windows x86-64","os":"windows-latest","exe":".exe"}]'
-          || '[{"name":"Linux x86-64","os":"ubuntu-latest","exe":""}]'
+          || '[{"name":"Linux x86-64","os":"ubuntu-latest","exe":""},{"name":"Darwin arm64","os":"macos-26","exe":""},{"name":"Windows x86-64","os":"windows-latest","exe":".exe"}]'
           ) }}
 
     steps:
@@ -444,7 +454,6 @@ jobs:
       # separates "the compile-and-run cycle is broken on this platform" from
       # "one of 519 tests fails", and those need opposite repairs.
       - name: One program, compiled and run
-        if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
         run: |
           ./heroes-from-seed${{ matrix.exe }} run examples/gallery/00-first.hero
           echo "exit was $?"
@@ -475,7 +484,6 @@ jobs:
       # now demands exactly that — exit 1, the code named on stderr — and a
       # channel that eats the message is a red step instead of a shrug.
       - name: A diagnostic reaches the log
-        if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
         shell: bash
         run: |
           mkdir -p build
@@ -497,7 +505,6 @@ jobs:
       # `test` does after the frontend — compiling the test binary and running
       # it once per case.
       - name: The same module, checked
-        if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
         run: ./heroes-from-seed${{ matrix.exe }} check selfhost/lexer.hero
 
       # **Emitting, which check does not do.** `check` is green on this module
@@ -507,7 +514,6 @@ jobs:
       # where clang is invoked, and `--emit-c` prints the result rather than
       # compiling it. Green here narrows the defect to the C compile itself.
       - name: The same module, emitted
-        if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
         # No redirection: `> NUL` is cmd's black hole and PowerShell's ordinary
         # FILE, so the previous round may have been throwing away the very
         # output it was asking for. `-o` sends the C to a path and leaves both
@@ -547,7 +553,7 @@ jobs:
       # directory is on PATH. It ships inside clang's resource dir, so clang
       # itself says where it is; nothing is downloaded.
       - name: Put clang's sanitizer runtime on PATH
-        if: (github.ref_type == 'tag' || github.event_name == 'workflow_dispatch') && runner.os == 'Windows'
+        if: runner.os == 'Windows'
         shell: bash
         run: |
           D="$(clang -print-resource-dir)/lib/windows"
@@ -555,7 +561,6 @@ jobs:
           echo "$D" >> "$GITHUB_PATH"
 
       - name: One module's tests, before the whole compiler's
-        if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
         # `shell: bash` so the shell matches the steps that work. It ran under
         # PowerShell for three rounds, which left "does pwsh eat the streams?"
         # alive as an explanation for an empty log. It is removed as a variable
