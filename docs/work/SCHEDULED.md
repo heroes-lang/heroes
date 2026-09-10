@@ -24,7 +24,7 @@ with `**Origin:**` and its date. Nothing lives outside the two banners —
 Format: `- [ ] **M-<milestone>** | <what, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 43**
+**OPEN: 42**
 
 - [ ] **M-reflection-verdict** | panel 117's sixth option: give `assert` both sides for an aggregate by walking to the first DIFFERING LEAF and naming the field, instead of rendering the value | `docs/panel/117-both-sides-of-an-assert-when-a-side-is-an-aggregate.md` · `selfhost/emit/structural.hero` · `runtime/parts/array.c`
 
@@ -1420,42 +1420,6 @@ Format: `- [ ] **M-<milestone>** | <what, in one line> | <where to look>`
     **Where to look also:** `docs/ROADMAP.md` § M-publication-gate.
     **Why it matters:** a script that calls a Heroes program cannot tell whether
     it worked, which is the one thing an exit code is for.
-
-- [ ] **M-publication-gate** | what a public repository actually costs in Actions minutes, measured on the account rather than read in a document | `.github/workflows/ci.yml` header · `.github/workflows/deploy-site.yml`
-
-    **Origin:** M-open-repository, 2026-09-08.
-
-    Four comments explained the CI matrix by the price of a runner minute, and
-    the narrowing to Linux between tags rests on it. GitHub's billing
-    documentation says *"the use of standard GitHub-hosted runners is free: in
-    public repositories"* and says nothing on that page about the operating
-    system, so whether the reason has gone away for three legs, two or none is
-    **unmeasured**. The comments were moved to the past tense rather than
-    replaced with a reading.
-
-    **Measured 2026-09-08, and the answer is zero for all three legs.** The
-    endpoint the first attempt reached is retired (410); the current one is
-    `/organizations/<org>/settings/billing/usage` and it needs no extra scope.
-    Per day, either side of the flip:
-
-        07 Sep, private:  Linux 196 min $1.18 · macOS 50 min $3.10 · Windows 86 min $0.86  ->  $5.14
-        08 Sep, public:   Linux 110 min · macOS 37 min · Windows 50 min · gross $3.45  ->  $0.00
-
-    The day before, the monthly allowance was exhausted and every minute was
-    charged, macOS at ten times Linux. The day of the flip the gross is
-    discounted in full, **macOS included**, which is the operating-system half
-    the documentation did not answer. One day of data, so it is a measurement
-    and not yet a law.
-
-    **What is still owed is a decision and not a number**: the matrix narrows to
-    Linux between tags for a reason that has now expired, so either it widens to
-    every push or `ci.yml`'s header states the new reason it does not. Widening
-    would find a Windows or macOS break on the day it is made rather than at the
-    next tag. Filed at the gate because the question exists only because the
-    repository became public, and the gate owns the outward state.
-
-    **Why it matters:** every platform fact here is measured on a platform, and
-    a cost is a platform fact.
 
 - [ ] **M-publication-gate** | the trademark question, in the narrow form that applies: the Aladdin Sane bolt | `site/README.md` § Style guide · `docs/assets/`
 
