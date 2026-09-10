@@ -243,7 +243,7 @@ are never freed.
 `x: cstr @ s.lease()` is a COPY of the bytes that C may read for as long as the
 program says, and `end_lease(@x)` frees it and empties the cell. The name of a
 lease stands only as an argument of a call, nothing else writes its cell, and a
-lease nobody ends is counted when `main` returns.
+lease nobody ends aborts when `main` returns, saying how many.
 Where a library lives is the machine's answer, not the program's, so a group may
 name a **package** instead of a library: `extern "raylib.h" package "raylib"`
 asks the system where its headers and libraries are and what else it needs. A
