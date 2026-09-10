@@ -15,6 +15,18 @@
 # registers the gate with `atexit` would make this case print a panic, and that
 # is a decision to take deliberately rather than a diff to absorb. The Linux
 # `--sanitize` leg is what sees the block that is still held here.
+#
+# **Corrected 2026-09-10, an hour after the line above was written, by running
+# it.** The Linux leg does NOT see it: built `--sanitize` in the container
+# `docs/environment/linux/` describes, this program prints its twelve bytes and
+# exits 0 with no report, and it does the same with `ASAN_OPTIONS=detect_leaks=1`
+# passed explicitly, while `abort-lease-never-ended` beside it aborts at 134 in
+# the same build. So NOTHING accuses this program on any of the three platforms,
+# which makes the case sharper than the sentence it replaces claimed and is the
+# reason it is worth a golden. Why LeakSanitizer stays quiet is not established
+# here: the lease cell is a live local of `main` when `exit(code:)` is called,
+# and a pointer reachable from a live frame is not a leak by LSan's definition,
+# but that is a reading of the tool rather than a measurement of it.
 
 extern "string.h"
     function strlen(s: cstr) -> u64
