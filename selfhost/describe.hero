@@ -51,6 +51,7 @@ function describe(kind: token.TokenKind) -> str
         .eq          => "`=`"
         .at          => "`@`"
         .colon       => "`:`"
+        .colon_colon => "`::`"
         .comma       => "`,`"
         .dot         => "`.`"
         .question    => "`?`"

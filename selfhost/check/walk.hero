@@ -176,12 +176,32 @@ function synth(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
             # the resolver already decided.
             if r.uses[f.base] == .module
                 return state.record_expr(@c, at: id, ty: synth_name(@c, a, r, s, decls, id))
+
+            # `Room.name` where `Room` names a record and `name` is one of its
+            # fields: the operator is wrong and the repair is `::`, not a
+            # message about construction (panel 132's landing).
+
+            if access.names_a_record(r, decls, base: f.base) && access.record_has_field(s, r, decls, base: f.base, field: source.span_text(s, f.name))
+                state.push_diagnostic(
+                    @c,
+                    access.dot_where_colons_belong(holder: source.span_text(s, a.exprs[f.base].span), field: source.span_text(s, f.name), span: token.Span(start: a.exprs[f.base].span.end, end: f.name.start))
+                )
+                return state.record_expr(@c, at: id, ty: state.error_ty_of(c))
             base_ty = synth(@c, a, r, s, decls, f.base)
             return state.record_expr(
                 @c,
                 at: id,
                 ty: access.field_type(@c, a, s, r, decls, base: base_ty, field: f.name)
             )
+        # `Point::x` — the field's own NAME, as a `str`. The base is NOT
+        # synthesised: it names a record rather than holding a value, so
+        # asking for its type is the wrong question (panel 132).
+
+        .field_name f => return state.record_expr(
+            @c,
+            at: id,
+            ty: access.field_name_type(@c, s, r, decls, base: f.base, base_span: a.exprs[f.base].span, field: f.name)
+        )
         .index i =>
             base_ty = synth(@c, a, r, s, decls, i.base)
             index_ty = synth(@c, a, r, s, decls, i.index)
@@ -362,7 +382,7 @@ function check(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
     is_hole = match a.exprs[id].kind
         .hole                                                                          => true
         .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => false
-        .name | .unary | .binary | .field | .index | .call | .method                   => false
+        .name | .unary | .binary | .field | .field_name | .index | .call | .method     => false
         .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error    => false
 
     if is_hole
@@ -376,7 +396,7 @@ function check(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
     is_null = match a.exprs[id].kind
         .null_ptr                                                                   => true
         .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .hole  => false
-        .name | .unary | .binary | .field | .index | .call | .method                => false
+        .name | .unary | .binary | .field | .field_name | .index | .call | .method  => false
         .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => false
 
     if is_null
@@ -571,7 +591,7 @@ function check(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
             compare(@c, s, decls, expected: expected, got: got, span: span)
             return
         .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => fall_through()
-        .name | .unary | .binary | .field | .index | .hole                             => fall_through()
+        .name | .unary | .binary | .field | .field_name | .index | .hole               => fall_through()
         .try_expr | .error                                                             => fall_through()
 
     got = synth(@c, a, r, s, decls, id)
@@ -628,7 +648,7 @@ function record_through_neg(@c: state.Checker, a: ast.Ast, id: i64, ty: i64)
                 else
                     walking @ false
             .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => walking @ false
-            .name | .hole | .binary | .field | .index | .call | .method                    => walking @ false
+            .name | .hole | .binary | .field | .field_name | .index | .call | .method      => walking @ false
             .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error    => walking @ false
 
 function compare(@c: state.Checker, s: source.Source, decls: [ast.Decl], expected: i64, got: i64, span: token.Span)
@@ -837,7 +857,7 @@ function write_target(c: state.Checker, a: ast.Ast, place: i64, read: i64) -> i6
                     .case_ty | .failure | .generic | .error                   => return read
             return read
         .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => return read
-        .name | .hole | .unary | .binary | .field | .call | .method                    => return read
+        .name | .hole | .unary | .binary | .field | .field_name | .call | .method      => return read
         .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error    => return read
 
     return read
@@ -890,7 +910,7 @@ function expression_statement(@c: state.Checker, a: ast.Ast, r: resolved.Resolve
             want: want,
             span: span
         )
-        .name | .hole | .unary | .binary | .field | .index | .call | .method => return valued_expression(
+        .name | .hole | .unary | .binary | .field | .field_name | .index | .call | .method => return valued_expression(
             @c,
             a,
             r,
@@ -952,7 +972,7 @@ function returns_its_receiver(c: state.Checker, a: ast.Ast, s: source.Source, va
             is_name = match a.exprs[m.receiver].kind
                 .name                                                                          => true
                 .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => false
-                .hole | .unary | .binary | .field | .index | .call | .method                   => false
+                .hole | .unary | .binary | .field | .field_name | .index | .call | .method     => false
                 .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error    => false
 
             if !is_name
@@ -965,7 +985,7 @@ function returns_its_receiver(c: state.Checker, a: ast.Ast, s: source.Source, va
             code: "absent",
             msg: "not a method call"
         )
-        .name | .hole | .unary | .binary | .field | .index | .call => return fail(
+        .name | .hole | .unary | .binary | .field | .field_name | .index | .call => return fail(
             code: "absent",
             msg: "not a method call"
         )
@@ -1262,7 +1282,7 @@ function dispatch_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: s
     callee_is_name = match a.exprs[callee].kind
         .name                                                                          => true
         .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => false
-        .hole | .unary | .binary | .field | .index | .call | .method                   => false
+        .hole | .unary | .binary | .field | .field_name | .index | .call | .method     => false
         .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error    => false
 
     if callee_is_name
@@ -1931,7 +1951,7 @@ function fallible_constructor(@c: state.Checker, a: ast.Ast, r: resolved.Resolve
     callee_is_name = match a.exprs[callee].kind
         .name                                                                          => true
         .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => false
-        .hole | .unary | .binary | .field | .index | .call | .method                   => false
+        .hole | .unary | .binary | .field | .field_name | .index | .call | .method     => false
         .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error    => false
 
     if !callee_is_name

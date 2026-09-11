@@ -84,6 +84,7 @@ function inout_root(@r: state.Resolver, a: ast.Ast, s: source.Source, id: i64)
             match r.out.uses[id]
                 .local | .top | .builtin => write_root(@r, a, s, id)
                 .module | .unresolved    => return
+        .field_name => return
         .field f =>
             # `f(@geom.ORIGIN)`: a qualified constant is a top-level
             # declaration, and `place` says the same for the statement.
@@ -165,6 +166,7 @@ function place_path(r: state.Resolver, a: ast.Ast, s: source.Source, id: i64) ->
                     code: "not_a_local",
                     msg: "the root of this place is not a local"
                 )
+        .field_name => return fail(code: "not_a_place", msg: "a field's name is a value, not a place")
         .field f =>
             base = place_path(r, a, s, f.base)
 
@@ -205,10 +207,10 @@ function index_step(a: ast.Ast, s: source.Source, id: i64) -> str
 
             return UNDECIDED_STEP
 
-        .name | .field | .index | .float_lit | .str_lit | .interp | .char_lit => return UNDECIDED_STEP
-        .bool_lit | .null_ptr | .hole | .unary | .binary | .call              => return UNDECIDED_STEP
-        .method | .variant_case | .array | .map | .try_expr                   => return UNDECIDED_STEP
-        .if_expr | .match_expr | .error                                       => return UNDECIDED_STEP
+        .name | .field | .field_name | .index | .float_lit | .str_lit | .interp | .char_lit => return UNDECIDED_STEP
+        .bool_lit | .null_ptr | .hole | .unary | .binary | .call                            => return UNDECIDED_STEP
+        .method | .variant_case | .array | .map | .try_expr                                 => return UNDECIDED_STEP
+        .if_expr | .match_expr | .error                                                     => return UNDECIDED_STEP
 
 # Digits and nothing else, so the text IS the value. `_` between digits,
 # a base prefix and a sign all say no: this pass compares spellings and

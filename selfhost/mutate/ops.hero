@@ -33,6 +33,7 @@ function operators() -> [Operator]
         Operator(id: "mutate-undeclared", imitates: "a silent new variable in other languages")
         Operator(id: "typo-ident", imitates: "a one-character edit")
         Operator(id: "typo-code", imitates: "a one-character edit inside an error code")
+        Operator(id: "typo-key", imitates: "a one-character edit inside a string used as a map key")
         Operator(id: "wildcard-variant", imitates: "a lazy catch-all")
         Operator(id: "positional-named", imitates: "style transfer from Python")
         Operator(id: "mix-int-float", imitates: "an implicit-conversion prior")
@@ -91,6 +92,9 @@ function apply(id: str, name: str, text: str) -> [str]
     if id == "typo-code"
         return typo.typo_code(a, s)
 
+    if id == "typo-key"
+        return typo.typo_string_key(a, s)
+
     if id == "wildcard-variant"
         return edits.wildcard_variant(a, s)
 
@@ -122,12 +126,19 @@ test "the table is the list, and the count is read off it"
     # for the number to mean something — adding an operator moves the
     # DENOMINATOR of the thesis's own score, so the discontinuity is spent
     # once (`docs/measurements/014` is the thirteen-operator baseline).
-    assert operators().len() == 14
+    #
+    # 14 -> 15 on 2026-09-12: `typo-key`, adopted at panel 132 and converged on
+    # by two seats separately, because the net held fourteen operators and NOT
+    # ONE of them typoed a string literal — so `heroes mutate` was blind to the
+    # exact mistake M-reflection-verdict exists to kill. The denominator moves
+    # again, on the same terms as the last time.
+    assert operators().len() == 15
     assert known("swap-args")
     assert known("boolean-twin")
     assert known("local-takes-a-module")
+    assert known("typo-key")
     assert !known("swapargs")
-    assert ids().len() == 14
+    assert ids().len() == 15
     assert ids()[0] == "swap-args"
 
 test "a program that does not parse yields no mutants at all"

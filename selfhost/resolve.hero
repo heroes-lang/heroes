@@ -42,7 +42,7 @@ function resolve(a: ast.Ast, s: source.Source, decls: [ast.Decl], uses: [ast.Use
         is_hole = match expr.kind
             .hole                                                              => true
             .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit => false
-            .null_ptr | .name | .unary | .binary | .field                      => false
+            .null_ptr | .name | .unary | .binary | .field | .field_name        => false
             .index | .call | .method | .variant_case | .array                  => false
             .map | .try_expr | .if_expr | .match_expr | .error                 => false
 

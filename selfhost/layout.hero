@@ -39,19 +39,19 @@ constant CR: u8
 # postfix `?`, `)`, `]`, or `}`. `?` is the analogue of Go's `++`/`--`.
 function is_line_ender(kind: token.TokenKind) -> bool
     return match kind
-        .ident | .int_lit | .float_lit | .str_lit | .str_piece | .char_lit => true
-        .kw_true | .kw_false | .kw_nullptr                                 => true
-        .kw_return | .kw_break | .kw_continue                              => true
-        .hole | .question | .rparen | .rbracket | .rbrace                  => true
-        .kw_constant | .kw_function | .kw_record | .kw_variant             => false
-        .kw_match | .kw_if | .kw_else | .kw_for | .kw_while | .kw_in       => false
-        .kw_test | .kw_assert | .kw_extern | .kw_use | .kw_fail            => false
-        .eq | .at | .colon | .comma | .dot | .arrow | .fat_arrow | .pipe   => false
-        .lparen | .lbracket | .lbrace                                      => false
-        .plus | .minus | .star | .slash | .percent                         => false
-        .eq_eq | .bang_eq | .lt | .le | .gt | .ge                          => false
-        .and_and | .or_or | .bang | .amp | .caret | .tilde | .shl | .shr   => false
-        .comment | .terminator | .indent | .dedent | .eof | .error         => false
+        .ident | .int_lit | .float_lit | .str_lit | .str_piece | .char_lit              => true
+        .kw_true | .kw_false | .kw_nullptr                                              => true
+        .kw_return | .kw_break | .kw_continue                                           => true
+        .hole | .question | .rparen | .rbracket | .rbrace                               => true
+        .kw_constant | .kw_function | .kw_record | .kw_variant                          => false
+        .kw_match | .kw_if | .kw_else | .kw_for | .kw_while | .kw_in                    => false
+        .kw_test | .kw_assert | .kw_extern | .kw_use | .kw_fail                         => false
+        .eq | .at | .colon | .colon_colon | .comma | .dot | .arrow | .fat_arrow | .pipe => false
+        .lparen | .lbracket | .lbrace                                                   => false
+        .plus | .minus | .star | .slash | .percent                                      => false
+        .eq_eq | .bang_eq | .lt | .le | .gt | .ge                                       => false
+        .and_and | .or_or | .bang | .amp | .caret | .tilde | .shl | .shr                => false
+        .comment | .terminator | .indent | .dedent | .eof | .error                      => false
 
 ## The margin
 

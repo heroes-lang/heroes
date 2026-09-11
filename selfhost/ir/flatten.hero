@@ -178,6 +178,7 @@ function walk_place(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: sta
                         return emissions.orphan(@b, c, id)
                     return slot.must()
                 .top | .builtin | .module | .unresolved => return emissions.orphan(@b, c, id)
+        .field_name => return emissions.orphan(@b, c, id)
         .field f =>
             owner = c.expr_types[f.base]
             root = walk_place(@b, a, r, c, s, decls, id: f.base, steps: @steps)
@@ -499,7 +500,7 @@ function call(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Che
     match a.exprs[callee].kind
         .name                                                                          => is_name @ true
         .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => is_name @ is_name
-        .hole | .unary | .binary | .field | .index | .call | .method                   => is_name @ is_name
+        .hole | .unary | .binary | .field | .field_name | .index | .call | .method     => is_name @ is_name
         .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error    => is_name @ is_name
 
     if is_name
@@ -879,7 +880,15 @@ function assert_condition(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, 
             decls,
             id: asserted
         )
-        .name | .hole | .unary | .field | .index | .call | .method => return expr(@b, a, r, c, s, decls, id: asserted)
+        .name | .hole | .unary | .field | .field_name | .index | .call | .method => return expr(
+            @b,
+            a,
+            r,
+            c,
+            s,
+            decls,
+            id: asserted
+        )
         .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => return expr(
             @b,
             a,
@@ -1216,6 +1225,14 @@ function expr(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Che
             if found.is_err()
                 return build.emit(@b, op: .missing, ty: ty, span: span)
             return build.emit(@b, op: .field(base: base, at: found.must()), ty: ty, span: span)
+        # `Point::x` is the field's NAME, and THIS is the one function that
+        # erases it (design.md §1.7's own test for sugar): downstream there is
+        # a `str` literal and no field at all, so ownership, mono, the emitter
+        # and the runtime never learn the form exists.
+
+        .field_name f =>
+            at = build.intern(@b, source.span_text(s, f.name))
+            return build.emit(@b, op: .lit(value: .str_const(at: at)), ty: ty, span: span)
         .index ix =>
             owner = c.expr_types[ix.base]
             base = expr(@b, a, r, c, s, decls, id: ix.base)

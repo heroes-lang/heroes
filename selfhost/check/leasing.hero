@@ -127,7 +127,7 @@ function marked_in(a: ast.Ast, call: i64, value: i64) -> bool
                 if arg.value == value
                     return arg.mutable
         .name | .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit  => return false
-        .null_ptr | .hole | .unary | .binary | .field | .index                      => return false
+        .null_ptr | .hole | .unary | .binary | .field | .field_name | .index        => return false
         .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => return false
 
     return false
@@ -153,7 +153,7 @@ function is_name(a: ast.Ast, at: i64) -> bool
     return match a.exprs[at].kind
         .name                                                                                => true
         .call | .method | .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit => false
-        .null_ptr | .hole | .unary | .binary | .field | .index                               => false
+        .null_ptr | .hole | .unary | .binary | .field | .field_name | .index                 => false
         .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error          => false
 
 function arguments_of(a: ast.Ast, at: i64) -> [ast.Arg]
@@ -161,7 +161,7 @@ function arguments_of(a: ast.Ast, at: i64) -> [ast.Arg]
         .call cl                                                                    => return cl.args
         .method m                                                                   => return m.args
         .name | .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit  => return []
-        .null_ptr | .hole | .unary | .binary | .field | .index                      => return []
+        .null_ptr | .hole | .unary | .binary | .field | .field_name | .index        => return []
         .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => return []
 
     return []
@@ -191,7 +191,7 @@ function place_root(a: ast.Ast, at: i64) -> i64?
             code: "none",
             msg: "not a place"
         )
-        .null_ptr | .hole | .unary | .binary => return fail(code: "none", msg: "not a place")
+        .field_name | .null_ptr | .hole | .unary | .binary => return fail(code: "none", msg: "not a place")
         .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => return fail(
             code: "none",
             msg: "not a place"

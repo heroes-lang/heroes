@@ -1,0 +1,1 @@
+tests/golden/check/the-old-operator-on-a-record-name-has-one-repair.hero:16:16: error[dot_on_a_record_name]: `Room` names a record, so `Room.name` reads a field from a value that is not there — `Room::name` is the NAME of that field, and `Room(field: value, …)` builds one

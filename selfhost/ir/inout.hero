@@ -172,6 +172,11 @@ function element_value(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: 
             if found.is_err()
                 return build.emit(@b, op: .missing, ty: ty, span: span)
             return build.emit(@b, op: .field(base: base, at: found.must()), ty: ty, span: span)
+        # `Point::x` is a `str` and never a place, so it cannot be the path
+        # of an `@` argument: `is_place` refused it in the parser and the
+        # resolver said so again. Reaching here would be a compiler fault.
+
+        .field_name => return build.emit(@b, op: .missing, ty: ty, span: span)
         .index ix =>
             base = element_value(@b, a, r, c, s, decls, id: ix.base, indices: indices, at: @at)
 

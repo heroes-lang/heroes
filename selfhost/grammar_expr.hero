@@ -135,7 +135,7 @@ function binary_op(kind: token.TokenKind) -> Operator?
             code: "not_an_operator",
             msg: "a keyword is not an operator"
         )
-        .eq | .at | .colon | .comma | .dot | .question | .hole => fail(
+        .eq | .at | .colon | .colon_colon | .comma | .dot | .question | .hole => fail(
             code: "not_an_operator",
             msg: "punctuation is not an operator"
         )
@@ -161,7 +161,7 @@ function ends_the_expression(a: ast.Ast, id: i64) -> bool
     return match a.exprs[id].kind
         .if_expr | .match_expr                                                         => true
         .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => false
-        .name | .hole | .unary | .binary | .field | .index                             => false
+        .name | .hole | .unary | .binary | .field | .field_name | .index               => false
         .call | .method | .variant_case | .array | .map | .try_expr | .error           => false
 
 # Everything at `min_power` or tighter. All of Heroes' binary operators are
@@ -282,6 +282,8 @@ function postfix(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
 
             if cursor.current_kind(c) == .dot && base < 0
                 chaining @ false
+        else if k == .colon_colon
+            base @ after_colon_colon(@c, @a, text, base)
         else if k == .lparen
             start = a.exprs[base].span
             arguments = call_args(@c, @a, text)
@@ -332,6 +334,33 @@ function after_dot(@c: cursor.Cursor, @a: ast.Ast, text: str, base: i64) -> i64
     return ast.push_expr(
         @a.exprs,
         ast.Expr(kind: .field(base: base, name: name), span: token.Span(start: start.start, end: name.end))
+    )
+
+# `Point::x` — a record's own name on the left, a field's name on the right,
+# and the whole expression is that field's name as a `str` (panel 132). It is
+# NOT `after_dot`'s business: `.` reads a field FROM A VALUE and qualifies a
+# module, and giving it a third meaning would make the line legible only to a
+# reader who knows whether the base names a type or a value.
+#
+# No call may follow, because there is nothing to call: `Point::x(…)` is
+# caught by the postfix loop as a call on a `str`, and says so.
+function after_colon_colon(@c: cursor.Cursor, @a: ast.Ast, text: str, base: i64) -> i64
+    _ = cursor.bump(@c)
+
+    if !cursor.at(c, .ident)
+        if !cursor.at_reported_error(c)
+            cursor.error(
+                @c,
+                code: "expected_field_name_after_colons",
+                message: "expected a field name after `::`, found " + cursor.found(c, text) + " — `Point::x` is the name of `Point`'s field `x`",
+                span: cursor.current_span(c)
+            )
+        return base
+    name = cursor.bump(@c).span
+    start = a.exprs[base].span
+    return ast.push_expr(
+        @a.exprs,
+        ast.Expr(kind: .field_name(base: base, name: name), span: token.Span(start: start.start, end: name.end))
     )
 
 ## The atoms
@@ -907,8 +936,12 @@ function expression_or_mutation(@c: cursor.Cursor, @a: ast.Ast, text: str) -> as
 # alias test a comparison of roots rather than a dataflow analysis.
 function is_place(a: ast.Ast, at: i64) -> bool
     return match a.exprs[at].kind
-        .name                                                                                  => true
-        .field f                                                                               => is_place(a, f.base)
+        .name    => true
+        .field f => is_place(a, f.base)
+        # A field's NAME is a value, never a place: `Point::x @ 1` is refused here
+        # rather than by a message about records (panel 132).
+
+        .field_name                                                                            => false
         .index i                                                                               => is_place(a, i.base)
         .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr | .hole => false
         .unary | .binary | .call | .method | .variant_case                                     => false
@@ -1178,12 +1211,13 @@ function render(a: ast.Ast, at: i64, text: str) -> str
     node = a.exprs[at]
 
     return match node.kind
-        .binary b   => "(" + render(a, b.left, text) + " " + op_text(b.op) + " " + render(a, b.right, text) + ")"
-        .unary u    => "(" + unary_text(u.op) + render(a, u.operand, text) + ")"
-        .field f    => "(" + render(a, f.base, text) + "." + cursor.slice_of(text, f.name) + ")"
-        .index i    => "(" + render(a, i.base, text) + "[" + render(a, i.index, text) + "])"
-        .try_expr t => "(" + render(a, t.value, text) + "?)"
-        .call c     => "(call " + render(a, c.callee, text) + "/" + c.args.len().to_str() + ")"
+        .binary b     => "(" + render(a, b.left, text) + " " + op_text(b.op) + " " + render(a, b.right, text) + ")"
+        .unary u      => "(" + unary_text(u.op) + render(a, u.operand, text) + ")"
+        .field f      => "(" + render(a, f.base, text) + "." + cursor.slice_of(text, f.name) + ")"
+        .field_name f => "(" + render(a, f.base, text) + "::" + cursor.slice_of(text, f.name) + ")"
+        .index i      => "(" + render(a, i.base, text) + "[" + render(a, i.index, text) + "])"
+        .try_expr t   => "(" + render(a, t.value, text) + "?)"
+        .call c       => "(call " + render(a, c.callee, text) + "/" + c.args.len().to_str() + ")"
         .method m => "(" + render(a, m.receiver, text) + "." + cursor.slice_of(text, m.name) + "()/" + m.args.len().to_str() + ")"
         .variant_case v                                          => "." + cursor.slice_of(text, v.name)
         .array ar                                                => "[" + ar.elements.len().to_str() + "]"
@@ -1558,10 +1592,10 @@ test "the ring is closed: if is an expression with a block inside it"
                 .if_expr i =>
                     assert i.branches.len() == 1
                     assert !i.otherwise.is_err()
-                .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit => assert false
-                .null_ptr | .name | .hole | .unary | .binary | .field              => assert false
-                .index | .call | .method | .variant_case | .array                  => assert false
-                .map | .try_expr | .match_expr | .error                            => assert false
+                .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit  => assert false
+                .null_ptr | .name | .hole | .unary | .binary | .field | .field_name => assert false
+                .index | .call | .method | .variant_case | .array                   => assert false
+                .map | .try_expr | .match_expr | .error                             => assert false
         .declare | .mutate | .return_stmt | .break_stmt | .continue_stmt => assert false
         .assert_stmt | .while_stmt | .for_in | .expr_stmt | .error       => assert false
 

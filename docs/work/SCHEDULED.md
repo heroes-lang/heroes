@@ -47,47 +47,7 @@ file and the same panel and one action closes both; where two items merely share
 a *blocker* rather than a deliverable they stay two, with the dependency named.
 
 *******************************************************************************
-**OPEN: 54**
-
-- [ ] **M-reflection-verdict** | step 3, land shape E — a field's name becomes a name the checker resolves — with the three things its landing owes and the mutation operator that pays for it | `docs/panel/132-two-seats-invented-the-same-thing-and-two-others-invented-the-other.md` · `selfhost/check/access.hero` · `selfhost/check/walk.hero:337` · `selfhost/ir/flatten.hero` · `selfhost/mutate/ops.hero`
-
-    **Origin:** panel 132, 2026-09-11, which adopted E after **two seats invented
-    it independently** — the llm-ergonomist from the specification alone
-    (`Room::width`) and the compiler-engineer from the whole compiler
-    (`Point.width`) — and the second **built it**: it compiles itself and runs,
-    at **+59 code lines** across three files with **zero** in `selfhost/emit/`,
-    `runtime/`, the lexer, the parser, ownership and mono, 631 compiler tests and
-    109 `check` goldens green, `heroes fmt` and double emit byte-identical, and
-    `heroes check selfhost/main.hero` 14.41 s to **13.90 s** on a still machine.
-    The grammar already parses `Point.x` and today refuses it at
-    `selfhost/check/walk.hero:337`, so the slot is free, and `ir/flatten.hero`
-    erases it to an interned literal, which makes it **sugar and not core** by
-    design.md §1.7's own test.
-
-    **The three things the landing owes, named at the sitting rather than
-    discovered.** **(a) The surface is not settled**: `Point.width` reads as field
-    access on a value while `Point` is a type, and `Room::width` avoids that at
-    the cost of a second sigil; one is chosen with the diagnostic in front of the
-    author. **(b) `error[record_name_alone]` gets the golden it has never had** —
-    `grep -rln record_name_alone tests/` is empty today, a live diagnostic nothing
-    judges — because E lands in exactly that diagnostic's slot. **(c) The real
-    token count replaces the estimate**: ≈ **+46 real** from **+36 vendored**,
-    measured offline on the coordinator's wording, because
-    `heroes measure --refresh` refuses any file but the spec itself (panel 123 R5).
-
-    **And the mutation operator lands with it, because it is what PAYS for E under
-    design.md §1.6.** Two seats converged on it without knowing of each other:
-    `selfhost/mutate/ops.hero` holds **14** operators and **not one typos a string
-    literal**, so `heroes mutate` is blind to the exact mistake this milestone
-    exists to kill. On a marshaller written with bare strings the new operator
-    scores **0% killed**; on one written `Record.field`, **100%**, because the
-    mutation lands on an identifier the checker resolves. Zero spec tokens, and a
-    pre-registered falsifiable prediction naming an instrument that exists, which
-    is what §1.6 accepts as payment.
-
-    **What E does NOT close, and the sitting says so rather than implying
-    otherwise**: the rot. Add a field and the marshaller still compiles and
-    silently never mentions it. That is the item below.
+**OPEN: 53**
 
 - [ ] **M-reflection-verdict** | shape B-prime, the generated per-field walk with handlers as parameters, which is the only route to the ROT — scheduled with what it owes, and NOT adopted | `docs/panel/132-two-seats-invented-the-same-thing-and-two-others-invented-the-other.md` · `selfhost/emit/structural.hero` · `selfhost/ir/mono.hero`
 
