@@ -88,7 +88,7 @@ function tokenize(text: str) -> [Token]?
             out @ out.push(.rparen)
             advance(@l)
         else
-            return fail(ERR_UNKNOWN_CHAR, "at position " + l.pos.to_str())
+            return fail(code: ERR_UNKNOWN_CHAR, msg: "at position " + l.pos.to_str())
 
     return ok(out)
 

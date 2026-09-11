@@ -198,7 +198,7 @@ function spelled(r: Ranks, piece: str, from: i64, to: i64) -> str
 # The digits between two offsets, as a number.
 function number_in(text: str, from: i64, to: i64) -> i64?
     if from >= to
-        return fail("not_a_number", "no digits")
+        return fail(code: "not_a_number", msg: "no digits")
     value: i64 @ 0
     i: i64 @ from
 
@@ -206,7 +206,7 @@ function number_in(text: str, from: i64, to: i64) -> i64?
         b = text[i]
 
         if b < 48 || b > 57
-            return fail("not_a_number", "not a digit")
+            return fail(code: "not_a_number", msg: "not a digit")
         value @ value * 10 + (b.to_i64().must() - 48)
         i @ i + 1
 
@@ -214,7 +214,7 @@ function number_in(text: str, from: i64, to: i64) -> i64?
 
 function index_of(text: str, needle: str) -> i64?
     if needle.len() == 0 || needle.len() > text.len()
-        return fail("absent", "the needle is not there")
+        return fail(code: "absent", msg: "the needle is not there")
     limit = text.len() - needle.len()
     at: i64 @ 0
 
@@ -228,7 +228,7 @@ function index_of(text: str, needle: str) -> i64?
             return ok(at)
         at @ at + 1
 
-    return fail("absent", "the needle is not there")
+    return fail(code: "absent", msg: "the needle is not there")
 
 function index_of_byte(text: str, byte: u8, from: i64) -> i64?
     i: i64 @ from
@@ -238,7 +238,7 @@ function index_of_byte(text: str, byte: u8, from: i64) -> i64?
             return ok(i)
         i @ i + 1
 
-    return fail("absent", "the byte is not there")
+    return fail(code: "absent", msg: "the byte is not there")
 
 test "a byte range is spelled the way the tables spell it"
     r = empty()

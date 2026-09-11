@@ -39,7 +39,7 @@ function neighbours(lines: {str: [str]}, station: str) -> [str]
 # so it is a `T?` rather than an empty array.
 function route(lines: {str: [str]}, from: str, to: str) -> [str]?
     if lines[from].is_err() || lines[to].is_err()
-        return fail("no_such_station", "the network has no station by that name")
+        return fail(code: "no_such_station", msg: "the network has no station by that name")
 
     if from == to
         return ok([from])
@@ -63,7 +63,7 @@ function route(lines: {str: [str]}, from: str, to: str) -> [str]?
                 return ok(walked_back(came_from, from: from, to: to))
             frontier @ frontier.push(next)
 
-    return fail("unreachable", "no route from " + from + " to " + to)
+    return fail(code: "unreachable", msg: "no route from " + from + " to " + to)
 
 # The path, read backwards from the destination and then turned round. The
 # reversal is the reason `came_from` maps a station to the one BEFORE it and

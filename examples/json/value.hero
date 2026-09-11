@@ -163,7 +163,7 @@ function field(j: Json, key: str) -> Json?
     return match j
         .object o => o.fields[key]
         .nothing | .boolean _ | .number _ | .text _ | .array _ =>
-            fail(ERR_NOT_AN_OBJECT, "asked for `" + key + "` of a value that is not an object")
+            fail(code: ERR_NOT_AN_OBJECT, msg: "asked for `" + key + "` of a value that is not an object")
 
 test "rendering is canonical"
     assert render(.nothing) == "null"

@@ -283,7 +283,7 @@ function check_element(@found: [GateNote], c: state.Checked, s: source.Source, d
 # `ptr`" can look for the pointer; one told "not a valid key" cannot.
 function reaches_pointer(c: state.Checked, decls: [ast.Decl], ty: i64, depth: i64) -> str?
     if depth > 16
-        return fail("none", "past any nesting worth naming")
+        return fail(code: "none", msg: "past any nesting worth naming")
 
     match table.get(c.types, ty)
         .ptr        => return ok("`ptr`")
@@ -305,7 +305,7 @@ function reaches_pointer(c: state.Checked, decls: [ast.Decl], ty: i64, depth: i6
                     for one_case in v.cases
                         for field in one_case.fields
                             all_fields @ all_fields.push(field)
-                .constant_decl | .function_decl | .test_decl => return fail("none", "not a data declaration")
+                .constant_decl | .function_decl | .test_decl => return fail(code: "none", msg: "not a data declaration")
 
             for field in all_fields
                 written = state.written_type(c, field.ty)
@@ -317,11 +317,11 @@ function reaches_pointer(c: state.Checked, decls: [ast.Decl], ty: i64, depth: i6
                 if !found.is_err()
                     return found
 
-            return fail("none", "no pointer inside")
-        .int_ty | .float_ty | .bool | .str | .unit | .fixed    => return fail("none", "no pointer here")
-        .function_ty | .case_ty | .failure | .generic | .error => return fail("none", "no pointer here")
+            return fail(code: "none", msg: "no pointer inside")
+        .int_ty | .float_ty | .bool | .str | .unit | .fixed    => return fail(code: "none", msg: "no pointer here")
+        .function_ty | .case_ty | .failure | .generic | .error => return fail(code: "none", msg: "no pointer here")
 
-    return fail("none", "unreached")
+    return fail(code: "none", msg: "unreached")
 
 ## The op table (gate_ops.rs)
 

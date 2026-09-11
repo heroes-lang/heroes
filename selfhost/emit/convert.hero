@@ -196,7 +196,7 @@ function kind_named(short: str) -> widths.IntKind?
 
     if short == "u64"
         return ok(.u64)
-    return fail("none", "not a width name")
+    return fail(code: "none", msg: "not a width name")
 
 ## Tests
 

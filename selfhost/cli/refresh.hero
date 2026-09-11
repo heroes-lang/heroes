@@ -75,7 +75,7 @@ function asked(body: str, tag: str) -> str?
     said = SCRATCH + "/" + tag + "-curl.txt"
 
     if write_file(path: into, text: body).is_err()
-        return fail("no_scratch", "cannot write " + into)
+        return fail(code: "no_scratch", msg: "cannot write " + into)
     ran = process.run(
         program: "curl",
         words: ["curl", "--silent", "--show-error", "--variable", "%" + KEY_NAME, "--expand-header", "x-api-key: {{" + KEY_NAME + "}}", "--header", "anthropic-version: 2023-06-01", "--header", "content-type: application/json", "--data-binary", "@" + into, ENDPOINT],
@@ -85,17 +85,17 @@ function asked(body: str, tag: str) -> str?
 
     if !ran.started
         return fail(
-            "no_curl",
-            "cannot start `curl`, which is how this one flag reaches the network — every other command here is offline and stays that way (design.md Part 11 metric 1)"
+            code: "no_curl",
+            msg: "cannot start `curl`, which is how this one flag reaches the network — every other command here is offline and stays that way (design.md Part 11 metric 1)"
         )
 
     if ran.code != 0
         told = read_file(said).default("")
-        return fail("curl_failed", "`curl` exited " + ran.code.to_str() + ": " + told + version_note(told))
+        return fail(code: "curl_failed", msg: "`curl` exited " + ran.code.to_str() + ": " + told + version_note(told))
     answer = read_file(back)
 
     if answer.is_err()
-        return fail("no_answer", "`curl` exited 0 and wrote nothing to " + back)
+        return fail(code: "no_answer", msg: "`curl` exited 0 and wrote nothing to " + back)
     return ok(answer.must())
 
 # The sentence an old curl earns, and only an old curl: its own refusal names
@@ -120,13 +120,13 @@ function today() -> str?
 
     if !ran.started || ran.code != 0
         return fail(
-            "no_date",
-            "cannot run `date +%Y-%m-%d` here, and a count without its date is not a measurement (panel 123 R3). Where `date` is not a program — Windows outside a POSIX shell — refresh on a machine where it is, rather than writing a date this tool did not read"
+            code: "no_date",
+            msg: "cannot run `date +%Y-%m-%d` here, and a count without its date is not a measurement (panel 123 R3). Where `date` is not a program — Windows outside a POSIX shell — refresh on a machine where it is, rather than writing a date this tool did not read"
         )
     said = read_file(back)
 
     if said.is_err()
-        return fail("no_date", "`date` wrote nothing to " + back)
+        return fail(code: "no_date", msg: "`date` wrote nothing to " + back)
     return ok(first_line(said.must()))
 
 # Up to the first line break. `date` answers one line and a newline, and there
@@ -144,7 +144,7 @@ function counted(content: str, tag: str) -> i64?
     answer = asked(body: count_tokens.request(model: count_tokens.PINNED_MODEL, content: content), tag: tag)
 
     if answer.is_err()
-        return fail("not_asked", why_text(answer))
+        return fail(code: "not_asked", msg: why_text(answer))
     return count_tokens.input_tokens(answer.must())
 
 # What the request STRUCTURE costs, measured in the same invocation rather than
@@ -162,17 +162,17 @@ function probed() -> i64?
     one = counted(content: PROBE_ONE, tag: "probe-one")
 
     if one.is_err()
-        return fail("no_offset", why_count(one))
+        return fail(code: "no_offset", msg: why_count(one))
     five = counted(content: PROBE_FIVE, tag: "probe-five")
 
     if five.is_err()
-        return fail("no_offset", why_count(five))
+        return fail(code: "no_offset", msg: why_count(five))
     apart = five.must() - one.must()
 
     if apart != PROBE_SPREAD
         return fail(
-            "no_offset",
-            "the two probes answered " + one.must().to_str() + " and " + five.must().to_str() + ", " + apart.to_str() + " apart where `" + PROBE_FIVE + "` is " + PROBE_SPREAD.to_str() + " tokens above `" + PROBE_ONE + "`. So `" + PROBE_ONE + "` is not one token for " + count_tokens.PINNED_MODEL + " and the wrapper cannot be subtracted from the document's answer. Measure the structure by hand before this flag is trusted again"
+            code: "no_offset",
+            msg: "the two probes answered " + one.must().to_str() + " and " + five.must().to_str() + ", " + apart.to_str() + " apart where `" + PROBE_FIVE + "` is " + PROBE_SPREAD.to_str() + " tokens above `" + PROBE_ONE + "`. So `" + PROBE_ONE + "` is not one token for " + count_tokens.PINNED_MODEL + " and the wrapper cannot be subtracted from the document's answer. Measure the structure by hand before this flag is trusted again"
         )
     return ok(one.must() - 1)
 
@@ -180,24 +180,24 @@ function probed() -> i64?
 function refreshed(text: str) -> [str]?
     if process.env(name: KEY_NAME).len() == 0
         return fail(
-            "no_key",
-            "`" + KEY_NAME + "` is unset. `.env.example` § Anthropic carries the shape; the real `.env` is ignored by git and stays that way — the repository is public"
+            code: "no_key",
+            msg: "`" + KEY_NAME + "` is unset. `.env.example` § Anthropic carries the shape; the real `.env` is ignored by git and stays that way — the repository is public"
         )
 
     if process.mkdir_all(SCRATCH).is_err()
-        return fail("no_scratch", "cannot create " + SCRATCH)
+        return fail(code: "no_scratch", msg: "cannot create " + SCRATCH)
     when = today()
 
     if when.is_err()
-        return fail("no_date", why_text(when))
+        return fail(code: "no_date", msg: why_text(when))
     offset = probed()
 
     if offset.is_err()
-        return fail("no_offset", why_count(offset))
+        return fail(code: "no_offset", msg: why_count(offset))
     whole = counted(content: text, tag: "document")
 
     if whole.is_err()
-        return fail("not_asked", why_count(whole))
+        return fail(code: "not_asked", msg: why_count(whole))
     return ok(
         count_tokens.constants(tokens: whole.must() - offset.must(), model: count_tokens.PINNED_MODEL, taken: when.must(), of: text)
     )

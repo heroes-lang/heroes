@@ -127,7 +127,7 @@ function generic_position(r: state.Resolver, name: str) -> i64?
         if g.name == name
             return ok(g.position)
 
-    return fail("absent", "no generic of this name yet")
+    return fail(code: "absent", msg: "no generic of this name yet")
 
 ## Tests
 

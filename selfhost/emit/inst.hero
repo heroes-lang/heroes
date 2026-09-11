@@ -86,7 +86,7 @@ function emit(@w: writer.Writer, p: containers.Program, c: state.Checked, names:
         .array | .map | .fallible | .function_ty | .named         => storageless @ storageless
         .case_ty | .failure | .generic | .error                   => storageless @ storageless
 
-    target: str? @ fail("none", "no destination")
+    target: str? @ fail(code: "none", msg: "no destination")
 
     if has_dest && !storageless
         target @ ok(mangle.value(inst.dest.must()))
@@ -97,7 +97,7 @@ function emit(@w: writer.Writer, p: containers.Program, c: state.Checked, names:
                 # The width comes from the instruction's own type, which
                 # the checker recorded — the constant emitter cannot
                 # know it and must not guess.
-                kind: widths.IntKind? @ fail("none", "not an integer")
+                kind: widths.IntKind? @ fail(code: "none", msg: "not an integer")
 
                 match table.get(c.types, inst.ty)
                     .int_ty ik                                                 => kind @ ok(ik.kind)
@@ -461,7 +461,7 @@ test "the dispatcher: a discarded call keeps its effect, a unit store vanishes"
         s,
         parsed.decls,
         caller,
-        inst: ir.Inst(dest: fail("none", "void"), op: .call(callee: .heroes_fn(decl: 0), arguments: run0, variadic: false), ty: unit_id, span: span),
+        inst: ir.Inst(dest: fail(code: "none", msg: "void"), op: .call(callee: .heroes_fn(decl: 0), arguments: run0, variadic: false), ty: unit_id, span: span),
         live_values: live
     )
 

@@ -110,7 +110,46 @@ function index_of(name: str) -> i64?
             return ok(i)
         i @ i + 1
 
-    return fail("free", "no built-in has this name")
+    return fail(code: "free", msg: "no built-in has this name")
+
+## The two signatures whose labels are mandatory (§4.9)
+
+# §4.9's same-typed-argument rule needs a parameter NAME per position, and a
+# Tier-1 built-in has no declaration to read one from: `Builtin` above is a name
+# and a tier, and `check/builtins.hero` states the type rules as hand-written
+# code rather than as a signature table. So the built-ins whose signature has
+# two parameters of ONE type carry their parameter names here, beside the table
+# that already enumerates every name.
+#
+# **A premise about the world, written as a falsifiable claim**
+# (`.claude/rules/module-shape.md`): these two are the ONLY entries of `table()`
+# with two parameters of one type. `join`, `repeat` and `push` mix their types,
+# `print` is variadic, every conversion and every lease form takes one argument.
+# A built-in that grows a same-typed pair and no row here goes on being accepted
+# positionally in silence, and the instrument that can catch it is `spec § 11`'s
+# own signature table rather than anything in this file.
+record Labelled
+    name: str
+    # One name per argument position, the receiver's included and empty:
+    # `xs.slice(1, 3)`'s receiver IS its position (§4.11), so nothing is
+    # written for it, and `slice(xs, 1, 3)` names the same two.
+    params: [str]
+    # The type those positions share, as the diagnostic pronounces it.
+    shared: str
+
+function labelled() -> [Labelled]
+    return [
+        Labelled(name: "fail", params: ["code", "msg"], shared: "str")
+        Labelled(name: "slice", params: ["", "from", "to"], shared: "i64")
+    ]
+
+# The entry for a built-in, or absent when its arguments need no labels.
+function labelled_of(name: str) -> Labelled?
+    for entry in labelled()
+        if entry.name == name
+            return ok(entry)
+
+    return fail(code: "free", msg: "this built-in has no two parameters of one type")
 
 ## Tests
 
@@ -142,3 +181,21 @@ test "the tier says where the implementation lives"
     assert entries[index_of("print").must()].tier == .runtime
     assert entries[index_of("map").must()].tier == .heroes
     assert entries[index_of("fail").must()].tier == .runtime
+
+test "the two same-typed signatures carry their parameter names"
+    assert labelled_of("fail").must().params[0] == "code"
+    assert labelled_of("fail").must().params[1] == "msg"
+    assert labelled_of("fail").must().shared == "str"
+
+    # The receiver's position is empty, and the two bounds are named.
+    assert labelled_of("slice").must().params[0] == ""
+    assert labelled_of("slice").must().params[1] == "from"
+    assert labelled_of("slice").must().params[2] == "to"
+
+    # The claim above, asserted on the names it is about: a built-in that
+    # mixes its types is not here.
+    assert labelled_of("join").is_err()
+    assert labelled_of("repeat").is_err()
+    assert labelled_of("push").is_err()
+    assert labelled_of("print").is_err()
+    assert labelled_of("to_u8").is_err()

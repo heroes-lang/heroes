@@ -13,7 +13,7 @@ variant Value
         s: str
 
 function wanted<A>(what: str) -> A?
-    return fail("type", what)
+    return fail(code: "type", msg: what)
 
 function number_of(v: Value) -> i64?
     return match v

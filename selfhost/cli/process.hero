@@ -112,7 +112,7 @@ function exe_suffix() -> str
 # say which of those it is looking at.
 function mkdir_all(path: str) -> ()?
     if hero_fs_mkdir_all(path: path.cstr()) != RUN_OK
-        return fail("mkdir_failed", "could not create the directory " + path)
+        return fail(code: "mkdir_failed", msg: "could not create the directory " + path)
     return ok()
 
 function path_exists(path: str) -> bool
@@ -123,7 +123,7 @@ function is_directory(path: str) -> bool
 
 function remove_file(path: str) -> ()?
     if hero_fs_remove(path: path.cstr()) != RUN_OK
-        return fail("remove_failed", "could not remove " + path)
+        return fail(code: "remove_failed", msg: "could not remove " + path)
     return ok()
 
 # Replace `to` with `from`, atomically where the platform allows it.
@@ -132,7 +132,7 @@ function remove_file(path: str) -> ()?
 # it half-written or absent.
 function rename_over(from: str, to: str) -> ()?
     if hero_fs_rename(from: from.cstr(), to: to.cstr()) != RUN_OK
-        return fail("rename_failed", "could not move " + from + " to " + to)
+        return fail(code: "rename_failed", msg: "could not move " + from + " to " + to)
     return ok()
 
 # One environment variable, or "" where it is unset OR unreadable.
@@ -151,7 +151,7 @@ function files_under(dir: str) -> [str]?
     found = hero_dir_scan(root: dir.cstr(), want: 0, recursive: 1)
 
     if found < 0
-        return fail("cannot_walk", "cannot read " + dir)
+        return fail(code: "cannot_walk", msg: "cannot read " + dir)
     out: [str] @ []
     at: i64 @ 0
 

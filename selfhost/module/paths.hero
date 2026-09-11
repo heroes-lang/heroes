@@ -66,7 +66,7 @@ function uses_of(text: str) -> [str]
 # push the parts apart — so nothing here has to skip one.
 function path_at(tokens: [token.Token], text: str, at: i64) -> str?
     if at >= tokens.len() || tokens[at].kind != .ident
-        return fail("no_path", "a use line whose name is missing or not a name")
+        return fail(code: "no_path", msg: "a use line whose name is missing or not a name")
     start = tokens[at].span.start
     end: i64 @ tokens[at].span.end
     probe: i64 @ at + 1

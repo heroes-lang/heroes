@@ -74,8 +74,8 @@ function compared(@c: cursor.Cursor, @t: tree.Tree) -> i64?
 
     if !second.is_err()
         return fail(
-            ERR_PARSE,
-            "`" + token.shown(cursor.here(c)) + "` cannot follow a comparison — write it as two comparisons joined by `&&`"
+            code: ERR_PARSE,
+            msg: "`" + token.shown(cursor.here(c)) + "` cannot follow a comparison — write it as two comparisons joined by `&&`"
         )
 
     return ok(made)
@@ -153,7 +153,7 @@ function primary(@c: cursor.Cursor, @t: tree.Tree) -> i64?
         .finish                                          => not_a_value(said: "the end of the file")
 
 function not_a_value(said: str) -> i64?
-    return fail(ERR_PARSE, "expected a value, found " + said)
+    return fail(code: ERR_PARSE, msg: "expected a value, found " + said)
 
 # A name, and then the one place this grammar looks ahead: a `(` right after a
 # name makes it a call, and anything else leaves it a plain name.
@@ -213,4 +213,4 @@ function comparison_of(t: token.Token) -> tree.Op?
     if t == .bang_equal
         return ok(.unequal)
 
-    return fail("not_a_comparison", "`" + token.shown(t) + "` is not a comparison")
+    return fail(code: "not_a_comparison", msg: "`" + token.shown(t) + "` is not a comparison")

@@ -67,12 +67,12 @@ function read(text: str) -> Grid?
             rows @ rows.push(line)
 
     if rows.len() == 0
-        return fail(ERR_EMPTY_MAZE, "the file has no rows")
+        return fail(code: ERR_EMPTY_MAZE, msg: "the file has no rows")
     width = rows[0].len()
 
     for line in rows
         if line.len() != width
-            return fail(ERR_RAGGED_MAZE, "every row must be " + width.to_str() + " wide")
+            return fail(code: ERR_RAGGED_MAZE, msg: "every row must be " + width.to_str() + " wide")
 
     g = Grid(rows: rows, width: width, height: rows.len())
     _ = locate(g, START)?
@@ -110,11 +110,11 @@ function locate(g: Grid, mark: u8) -> i64?
 
             if at(g, index) == mark
                 if found >= 0
-                    return fail(ERR_REPEATED_MARK, "the maze has more than one `" + one_char(mark) + "`")
+                    return fail(code: ERR_REPEATED_MARK, msg: "the maze has more than one `" + one_char(mark) + "`")
                 found @ index
 
     if found < 0
-        return fail(ERR_MISSING_MARK, "the maze has no `" + one_char(mark) + "`")
+        return fail(code: ERR_MISSING_MARK, msg: "the maze has no `" + one_char(mark) + "`")
     return ok(found)
 
 # One byte as a `str`, for a message. There is no `chr`, so the two marks this

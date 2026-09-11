@@ -151,11 +151,11 @@ function spawned(scratch: str, program: str, words: [str], in_path: str) -> Run?
     out = read_file(out_path)
 
     if out.is_err()
-        return fail("cannot_run", "cannot read the captured stdout at " + out_path)
+        return fail(code: "cannot_run", msg: "cannot read the captured stdout at " + out_path)
     err = read_file(err_path)
 
     if err.is_err()
-        return fail("cannot_run", "cannot read the captured stderr at " + err_path)
+        return fail(code: "cannot_run", msg: "cannot read the captured stderr at " + err_path)
     return ok(Run(code: code, out: out.must(), err: err.must(), started: true))
 
 # The names `hero_dir_scan` just found, as a list — and the listing is
@@ -188,7 +188,7 @@ function list_entries(scratch: str, dir: str) -> [str]?
     found = hero_dir_scan(root: dir.cstr(), want: DIR_FILES, recursive: 0)
 
     if found < 0
-        return fail("cannot_walk", "cannot list " + dir)
+        return fail(code: "cannot_walk", msg: "cannot list " + dir)
     entries: [str] @ []
 
     for name in scanned(count: found)
@@ -202,7 +202,7 @@ function list_directories(scratch: str, dir: str) -> [str]?
     found = hero_dir_scan(root: dir.cstr(), want: DIR_DIRECTORIES, recursive: 0)
 
     if found < 0
-        return fail("cannot_walk", "cannot list the directories in " + dir)
+        return fail(code: "cannot_walk", msg: "cannot list the directories in " + dir)
     entries: [str] @ []
 
     for name in scanned(count: found)
@@ -239,14 +239,14 @@ function project_files(scratch: str) -> [str]?
 
     if !ran.started
         return fail(
-            "cannot_walk",
-            "git is not on this machine, and the record checks ask git what belongs to this project"
+            code: "cannot_walk",
+            msg: "git is not on this machine, and the record checks ask git what belongs to this project"
         )
 
     if ran.code != 0
         return fail(
-            "cannot_walk",
-            "`git ls-files` could not list this project's files — the record checks ask git what belongs here, and there is no sound fallback: a `find` reported a gitignored TLS key as a milestone identifier, which is why this function exists"
+            code: "cannot_walk",
+            msg: "`git ls-files` could not list this project's files — the record checks ask git what belongs here, and there is no sound fallback: a `find` reported a gitignored TLS key as a milestone identifier, which is why this function exists"
         )
     write_file(path: listing, text: ran.out)?
     entries: [str] @ []
@@ -281,7 +281,7 @@ function walk_into(dir: str, skip: [str]) -> [str]?
     files = hero_dir_scan(root: dir.cstr(), want: DIR_FILES, recursive: 0)
 
     if files < 0
-        return fail("cannot_walk", "cannot list " + dir)
+        return fail(code: "cannot_walk", msg: "cannot list " + dir)
     found: [str] @ []
 
     for name in scanned(count: files)
@@ -290,7 +290,7 @@ function walk_into(dir: str, skip: [str]) -> [str]?
     dirs = hero_dir_scan(root: dir.cstr(), want: DIR_DIRECTORIES, recursive: 0)
 
     if dirs < 0
-        return fail("cannot_walk", "cannot list the directories in " + dir)
+        return fail(code: "cannot_walk", msg: "cannot list the directories in " + dir)
 
     for name in scanned(count: dirs)
         if !skipped(name: name, skip: skip)
@@ -388,7 +388,7 @@ function found_under(dir: str, suffix: str, reference: str) -> [str]?
     count = hero_dir_scan(root: dir.cstr(), want: DIR_FILES, recursive: 1)
 
     if count < 0
-        return fail("cannot_walk", "cannot walk " + dir)
+        return fail(code: "cannot_walk", msg: "cannot walk " + dir)
     out: [str] @ []
 
     for name in scanned(count: count)
@@ -524,12 +524,12 @@ function is_directory(path: str) -> bool
 
 function mkdir_all(path: str) -> ()?
     if hero_fs_mkdir_all(path: path.cstr()) != 0
-        return fail("cannot_run", "cannot create the directory " + path)
+        return fail(code: "cannot_run", msg: "cannot create the directory " + path)
     return ok()
 
 function remove_tree(path: str) -> ()?
     if hero_dir_remove_tree(path: path.cstr()) != 0
-        return fail("cannot_run", "cannot remove " + path)
+        return fail(code: "cannot_run", msg: "cannot remove " + path)
     return ok()
 
 # This process's id — the one number no other process running now shares,

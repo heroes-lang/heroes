@@ -246,17 +246,32 @@ constant CEILING: i64
 # diagnostic needs the span, the parameter's because two parameters of one
 # signature can be owned by different functions and because the cell is
 # out-only.
+# **Five moved on 2026-09-11 for panel 127, defect 025, and every one of them
+# moved by a measured number rather than a chosen one.** The label rule reached
+# the two built-ins whose parameters share a type, so 1022 positional `fail(`
+# calls across the tree gained `code:` and `msg:`, and `heroes fmt` broke the
+# lines that passed its 120 columns: `check/walk.hero` 1708 -> **1746**, which
+# is the five call-site lines and the two helpers the certainty of a
+# `wrong_label` fix now asks for, plus the wraps; `ir/flatten.hero` 1114 ->
+# **1123**; `grammar_expr.hero` 1041 -> **1044**; `check/builtins.hero` 374 ->
+# **377**; `emit/ctype.hero` 365 -> **370**, which also lost a malformed code,
+# `"compiler bug"` becoming `compiler_bug`, found by the sitting's historian
+# predicting that one of the 1022 sites would be malformed. The compiler seat
+# predicted ten rows would move and the instrument says five: the wraps landed
+# in fewer files than the estimate, and the estimate is in `docs/panel/127-the-rule-that-did-not-reach-its-own-library.md`
+# beside this sentence so the gap is on the record rather than tidied away.
+#
 constant DECIDED: [str]
     [
-        "selfhost/check/walk.hero 1708"
+        "selfhost/check/walk.hero 1746"
         "selfhost/print/fmt.hero 1150"
-        "selfhost/ir/flatten.hero 1114"
-        "selfhost/grammar_expr.hero 1041"
+        "selfhost/ir/flatten.hero 1123"
+        "selfhost/grammar_expr.hero 1044"
         "selfhost/ir/print.hero 470"
         "selfhost/ast.hero 484"
-        "selfhost/check/builtins.hero 374"
+        "selfhost/check/builtins.hero 377"
         "selfhost/ir/mono.hero 380"
-        "selfhost/emit/ctype.hero 365"
+        "selfhost/emit/ctype.hero 370"
         "selfhost/emit/gate.hero 365"
         "selfhost/resolve/cycles.hero 331"
         "selfhost/resolve/state.hero 330"

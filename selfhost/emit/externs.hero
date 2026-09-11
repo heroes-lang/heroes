@@ -41,12 +41,12 @@ function extern_spans(decls: [ast.Decl], f: containers.Function) -> ExternSpans
         .function_decl fd => return ExternSpans(header: fd.value.header, library: fd.value.library)
         .constant_decl k  => return ExternSpans(header: k.header, library: k.library)
         .record_decl | .variant_decl | .test_decl =>
-            none_h: token.Span? = fail("none", "no header")
-            none_l: ast.Library? = fail("none", "no library")
+            none_h: token.Span? = fail(code: "none", msg: "no header")
+            none_l: ast.Library? = fail(code: "none", msg: "no library")
             return ExternSpans(header: none_h, library: none_l)
 
-    none_h2: token.Span? = fail("none", "no header")
-    none_l2: ast.Library? = fail("none", "no library")
+    none_h2: token.Span? = fail(code: "none", msg: "no header")
+    none_l2: ast.Library? = fail(code: "none", msg: "no library")
     return ExternSpans(header: none_h2, library: none_l2)
 
 # A constant whose value a header holds — as opposed to an extern
@@ -169,14 +169,14 @@ function library_span(library: ast.Library, want_package: bool) -> token.Span?
     match library
         .link l =>
             if want_package
-                return fail("none", "a link, not a package")
+                return fail(code: "none", msg: "a link, not a package")
             return ok(l.name)
         .package pk =>
             if !want_package
-                return fail("none", "a package, not a link")
+                return fail(code: "none", msg: "a package, not a link")
             return ok(pk.name)
 
-    return fail("none", "unreached")
+    return fail(code: "none", msg: "unreached")
 
 ## Tests
 

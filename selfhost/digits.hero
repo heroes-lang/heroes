@@ -57,7 +57,7 @@ function from_marker(marker: u8) -> Base?
 
     if marker == 'x'
         return ok(.hexadecimal)
-    return fail("no_base_marker", "not a base marker")
+    return fail(code: "no_base_marker", msg: "not a base marker")
 
 function radix(base: Base) -> u64
     return match base
@@ -155,7 +155,7 @@ function decode_u64(text: str) -> u64?
         d = digit_value(b)
 
         if value > (U64_MAX - d) / r
-            return fail(ERR_DOES_NOT_FIT, text)
+            return fail(code: ERR_DOES_NOT_FIT, msg: text)
         value @ value * r + d
 
     return ok(value)

@@ -172,7 +172,7 @@ function record_deps(record_path: str, depfile: str, skip: str, @memo: {str: str
     listing = read_file(depfile)
 
     if listing.is_err()
-        return fail("failed", "clang wrote no dependency listing at " + depfile)
+        return fail(code: "failed", msg: "clang wrote no dependency listing at " + depfile)
     rows: [str] @ []
 
     for path in paths_of(listing.must())

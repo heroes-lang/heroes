@@ -82,8 +82,8 @@ function statement(@c: cursor.Cursor, @t: tree.Tree) -> i64?
 
     if cursor.here(c) == .kw_end || cursor.here(c) == .kw_else
         return fail(
-            ERR_PARSE,
-            "`" + token.shown(cursor.here(c)) + "` closes a block that was never opened"
+            code: ERR_PARSE,
+            msg: "`" + token.shown(cursor.here(c)) + "` closes a block that was never opened"
         )
     value = expr.parsed(@c, @t)?
     line_end(@c)?
@@ -143,12 +143,12 @@ function parameters(@c: cursor.Cursor) -> [str]?
 
     if repeats(names)
         return fail(
-            ERR_PARSE,
-            "a parameter is named twice in `(" + each.joined(names, itself, ", ") + ")`"
+            code: ERR_PARSE,
+            msg: "a parameter is named twice in `(" + each.joined(names, itself, ", ") + ")`"
         )
 
     if !each.every(names, is_a_name)
-        return fail(ERR_PARSE, "a parameter may not be the empty name")
+        return fail(code: ERR_PARSE, msg: "a parameter may not be the empty name")
 
     return ok(names)
 
@@ -164,7 +164,7 @@ function block(@c: cursor.Cursor, @t: tree.Tree) -> [i64]?
         cursor.skipped_lines(@c)
 
     if cursor.done(c)
-        return fail(ERR_PARSE, "the file ends inside a block that no `end` closes")
+        return fail(code: ERR_PARSE, msg: "the file ends inside a block that no `end` closes")
 
     return ok(made)
 
@@ -182,8 +182,8 @@ function line_end(@c: cursor.Cursor) -> ()?
         return ok()
 
     return fail(
-        ERR_PARSE,
-        "a statement ends at the end of its line, and `" + token.shown(cursor.here(c)) + "` follows this one"
+        code: ERR_PARSE,
+        msg: "a statement ends at the end of its line, and `" + token.shown(cursor.here(c)) + "` follows this one"
     )
 
 # Whether any name in `names` appears twice. A plain loop and not a generic

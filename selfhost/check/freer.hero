@@ -50,7 +50,7 @@ function marked_as_freer(decls: [ast.Decl], s: source.Source, name: str) -> toke
                             return ok(param.owned.must())
             .constant_decl | .record_decl | .variant_decl | .test_decl => continue
 
-    return fail("absent", "nothing names this function as a freer")
+    return fail(code: "absent", msg: "nothing names this function as a freer")
 
 # What a marked call HANDS BACK, which is not what its signature declares.
 #
@@ -135,7 +135,7 @@ function refusal_for_mark(s: source.Source, decls: [ast.Decl], at: i64, mark: to
     name = source.span_text(s, mark)
     module = source.component_at(s, decls[at].span.start)
     heroes_function: bool @ false
-    arity: i64? @ fail("absent", "no extern declares it")
+    arity: i64? @ fail(code: "absent", msg: "no extern declares it")
 
     for one in decls
         match one.kind
@@ -177,7 +177,7 @@ function refusal_for_mark(s: source.Source, decls: [ast.Decl], at: i64, mark: to
         )
         return ok(d)
 
-    return fail("fine", "a one-parameter extern of this module")
+    return fail(code: "fine", msg: "a one-parameter extern of this module")
 
 # The diagnostic, when a call names one.
 function refusal(s: source.Source, name: str, mark: token.Span, span: token.Span) -> diag.Diagnostic

@@ -116,8 +116,8 @@ function condition_of(v: Value) -> bool?
 
 function not_a_condition(v: Value) -> bool?
     return fail(
-        ERR_TYPE,
-        "a condition must be `true` or `false`, and this one is " + kind_of(v) + " (`" + shown(v) + "`)"
+        code: ERR_TYPE,
+        msg: "a condition must be `true` or `false`, and this one is " + kind_of(v) + " (`" + shown(v) + "`)"
     )
 
 # The number in a value, or a refusal naming what stood there.
@@ -148,7 +148,7 @@ function text_of(v: Value) -> str?
 # `[]` and `nullptr` already followed. A call with no context, `x = wanted(...)`,
 # is refused at the call.
 function wanted<A>(what: str, v: Value) -> A?
-    return fail(ERR_TYPE, "expected " + what + ", found " + kind_of(v) + " (`" + shown(v) + "`)")
+    return fail(code: ERR_TYPE, msg: "expected " + what + ", found " + kind_of(v) + " (`" + shown(v) + "`)")
 
 test "every value prints, including the one that is nothing"
     assert shown(.number(v: 42)) == "42"

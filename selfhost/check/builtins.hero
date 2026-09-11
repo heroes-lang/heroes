@@ -41,21 +41,27 @@ use value_errors
 # own appendix uses six times.
 function expectation(c: state.Checker, name: str, first: i64, index: i64) -> i64?
     if index == 0
-        return fail("absent", "the first argument is synthesised")
+        return fail(code: "absent", msg: "the first argument is synthesised")
 
     if name == "push" && index == 1
         match table.get(c.out.types, first)
-            .array a                                                  => return ok(a.element)
-            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail("absent", "not an array")
-            .fixed | .map | .fallible | .function_ty | .named         => return fail("absent", "not an array")
-            .case_ty | .failure | .generic | .error                   => return fail("absent", "not an array")
+            .array a => return ok(a.element)
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail(
+                code: "absent",
+                msg: "not an array"
+            )
+            .fixed | .map | .fallible | .function_ty | .named => return fail(code: "absent", msg: "not an array")
+            .case_ty | .failure | .generic | .error           => return fail(code: "absent", msg: "not an array")
 
     if name == "default" && index == 1
         match table.get(c.out.types, first)
-            .fallible o                                               => return ok(o.payload)
-            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail("absent", "not fallible")
-            .fixed | .map | .array | .function_ty | .named            => return fail("absent", "not fallible")
-            .case_ty | .failure | .generic | .error                   => return fail("absent", "not fallible")
+            .fallible o => return ok(o.payload)
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail(
+                code: "absent",
+                msg: "not fallible"
+            )
+            .fixed | .map | .array | .function_ty | .named => return fail(code: "absent", msg: "not fallible")
+            .case_ty | .failure | .generic | .error        => return fail(code: "absent", msg: "not fallible")
 
     if name == "join" && index == 1
         return ok(table.str_ty(c.out.types))
@@ -67,7 +73,7 @@ function expectation(c: state.Checker, name: str, first: i64, index: i64) -> i64
 
     if name == "slice" && (index == 1 || index == 2)
         return ok(table.int_ty_id(c.out.types))
-    return fail("absent", "no expectation for this argument")
+    return fail(code: "absent", msg: "no expectation for this argument")
 
 ## The conversions — the family whose result type is a function of the name
 
@@ -124,19 +130,19 @@ function conversion_call(@c: state.Checker, s: source.Source, decls: [ast.Decl],
         return ok(
             arg_error(@c, s, decls, name: "to_str", allowed: "an integer, a float, `bool` or `str`", got: given[0], span: span)
         )
-    return fail("not_a_conversion", "this name is the list's, not the family's")
+    return fail(code: "not_a_conversion", msg: "this name is the list's, not the family's")
 
 # The width `to_<name>` converts to, when the suffix names one.
 function int_width_of(name: str) -> widths.IntKind?
     if name.len() <= 3 || name.slice(from: 0, to: 3) != "to_"
-        return fail("absent", "not a conversion name")
+        return fail(code: "absent", msg: "not a conversion name")
     suffix = name.slice(from: 3, to: name.len())
 
     for k in widths.int_kinds()
         if widths.int_name(k) == suffix
             return ok(k)
 
-    return fail("absent", "no width has this name")
+    return fail(code: "absent", msg: "no width has this name")
 
 ## The list
 
@@ -306,7 +312,7 @@ function builtin_call(@c: state.Checker, s: source.Source, decls: [ast.Decl], na
     # §4.6's three readers of a fallible value.
     if name == "must" || name == "default" || name == "is_err"
         return fallible_builtin(@c, s, decls, name: name, given: given, span: span)
-    return fail("untypeable", "the arity is wrong, or this name is not typed here")
+    return fail(code: "untypeable", msg: "the arity is wrong, or this name is not typed here")
 
 function is_int(c: state.Checker, ty: i64) -> bool
     return match table.get(c.out.types, ty)
@@ -379,7 +385,7 @@ function fallible_builtin(@c: state.Checker, s: source.Source, decls: [ast.Decl]
             .case_ty | .failure | .generic | .error => return ok(
                 arg_error(@c, s, decls, name: "is_err", allowed: "a fallible value", got: given[0], span: span)
             )
-    return fail("untypeable", "the arity is wrong")
+    return fail(code: "untypeable", msg: "the arity is wrong")
 
 # .must() or .default(v) on a value that cannot fail, with the repair
 # attached (panel 043's load-bearing condition, worth more now than when
@@ -410,7 +416,7 @@ function unwrapping_nothing(@c: state.Checker, s: source.Source, decls: [ast.Dec
 # The LAST occurrence of `needle` in `haystack`, byte offset.
 function rfind(haystack: str, needle: str) -> i64?
     if needle.len() == 0 || needle.len() > haystack.len()
-        return fail("absent", "nothing to find")
+        return fail(code: "absent", msg: "nothing to find")
     at: i64 @ haystack.len() - needle.len()
 
     while at >= 0
@@ -418,7 +424,7 @@ function rfind(haystack: str, needle: str) -> i64?
             return ok(at)
         at @ at - 1
 
-    return fail("absent", "the needle never occurs")
+    return fail(code: "absent", msg: "the needle never occurs")
 
 function arg_error(@c: state.Checker, s: source.Source, decls: [ast.Decl], name: str, allowed: str, got: i64, span: token.Span) -> i64
     shown = state.show(c, s, decls, got)

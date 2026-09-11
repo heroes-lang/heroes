@@ -89,7 +89,7 @@ function entry_point(p: containers.Program) -> i64?
             return ok(index)
         index @ index + 1
 
-    return fail("none", "no main in this program")
+    return fail(code: "none", msg: "no main in this program")
 
 # The functions the fused unit shows: the author's, plus exactly the
 # library functions the program reaches. The per-TU path (panel 093 R1)

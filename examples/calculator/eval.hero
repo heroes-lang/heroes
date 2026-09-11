@@ -22,7 +22,7 @@ constant ERR_UNKNOWN_NAME: str
 # The value bound to a name, with a decent message if absent.
 function lookup(env: {str: i64}, name: str) -> i64?
     if env[name].is_err()
-        return fail(ERR_UNKNOWN_NAME, "undefined variable: " + name)
+        return fail(code: ERR_UNKNOWN_NAME, msg: "undefined variable: " + name)
     return ok(env[name].must())
 
 function sum_of(children: [parse.Expr], env: {str: i64}) -> i64?
@@ -75,7 +75,7 @@ function calculate(text: str, env: {str: i64}) -> i64?
     tree = parse.expression(@p)?
 
     if !parse.parse_at_end(p)
-        return fail(ERR_TRAILING_TOKENS, "leftover input at the end")
+        return fail(code: ERR_TRAILING_TOKENS, msg: "leftover input at the end")
     return evaluate(tree, env)
 
 test "precedence and parens"

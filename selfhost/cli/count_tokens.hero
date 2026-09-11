@@ -121,7 +121,7 @@ function input_tokens(answer: str) -> i64?
     at = bpe.index_of(text: answer, needle: key)
 
     if at.is_err()
-        return fail("no_count", "the answer carries no `input_tokens`: " + answer)
+        return fail(code: "no_count", msg: "the answer carries no `input_tokens`: " + answer)
     from = at.must() + key.len()
     end: i64 @ from
     value: i64 @ 0
@@ -131,7 +131,7 @@ function input_tokens(answer: str) -> i64?
         end @ end + 1
 
     if end == from
-        return fail("no_count", "`input_tokens` is not followed by digits: " + answer)
+        return fail(code: "no_count", msg: "`input_tokens` is not followed by digits: " + answer)
     return ok(value)
 
 # The four lines a person pastes into `tests/harness/suite_spec.hero`.

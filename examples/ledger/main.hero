@@ -175,7 +175,7 @@ function queried_int(db: sqlite.Db, sql: str) -> i64?
     _ = sqlite.finalized(statement)
 
     if !found
-        return fail("no_row", sql + " answered no rows")
+        return fail(code: "no_row", msg: sql + " answered no rows")
     return ok(value)
 
 function queried_float(db: sqlite.Db, sql: str) -> f64?
@@ -198,7 +198,7 @@ function queried_float(db: sqlite.Db, sql: str) -> f64?
     _ = sqlite.finalized(statement)
 
     if !found
-        return fail("no_row", sql + " answered no rows")
+        return fail(code: "no_row", msg: sql + " answered no rows")
     return ok(value)
 
 # Whether two balance lists are the same, account for account. Written out

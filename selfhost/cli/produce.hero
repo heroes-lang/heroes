@@ -58,7 +58,7 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
 
     if floor.is_err()
         io.eprint(text: "error: " + failure_message(floor))
-        return fail("failed", "clang is below the floor")
+        return fail(code: "failed", msg: "clang is below the floor")
     art = compile.to_unit(s, options, version: version)
 
     # **A failure here used to be propagated without a word.** `_ = art?`
@@ -107,7 +107,7 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
 
     if dir.is_err()
         io.eprint(text: "error: cannot create the build directory")
-        return fail("failed", "no build directory")
+        return fail(code: "failed", msg: "no build directory")
     c_file = dir.must() + "/" + module + ".c"
 
     # Written only where it is compiled: the fused unit is the test
@@ -119,12 +119,12 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
 
         if written.is_err()
             io.eprint(text: "error: cannot write " + c_file)
-            return fail("failed", "cannot write the unit")
+            return fail(code: "failed", msg: "cannot write the unit")
     object = toolchain.runtime_object(t, level: options.level, sanitize: options.sanitize)
 
     if object.is_err()
         io.eprint(text: "internal error: the runtime did not compile")
-        return fail("failed", "no runtime object")
+        return fail(code: "failed", msg: "no runtime object")
     binary: str @ dir.must() + "/" + module + process.exe_suffix()
 
     if !options.output.is_err()
@@ -154,9 +154,9 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
         message = failure_text(package_flags)
 
         if blamed(message, art.must(), s, answered)
-            return fail("diagnostics", "the package could not answer")
+            return fail(code: "diagnostics", msg: "the package could not answer")
         io.eprint(text: message)
-        return fail("diagnostics", "the package could not answer")
+        return fail(code: "diagnostics", msg: "the package could not answer")
     names: [str] @ []
 
     for name in art.must().link
@@ -283,7 +283,7 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
         message = failure_message(linked)
 
         if blamed(message, art.must(), s, answered)
-            return fail("diagnostics", "the author's extern disagrees with the header")
+            return fail(code: "diagnostics", msg: "the author's extern disagrees with the header")
         io.eprint(text: "internal error: " + message)
 
         if is_tests
@@ -292,7 +292,7 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
             # this line, and pointing at the fused unit after a TU
             # failure would name a file clang never refused.
             io.eprint(text: "the generated C is at " + c_file)
-        return fail("failed", "clang refused the generated C")
+        return fail(code: "failed", msg: "clang refused the generated C")
     return ok(Produced(binary: binary, tests: art.must().tests, stopped: false))
 
 # The failure's message, out of a fallible that is known to be err.
@@ -335,4 +335,4 @@ function failure_message(failed: ()?) -> str
 function carry_failure(failed: str?) -> ()?
     match failed
         .ok    => return ok()
-        .err e => return fail(e.code, e.msg)
+        .err e => return fail(code: e.code, msg: e.msg)

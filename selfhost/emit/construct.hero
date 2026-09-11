@@ -61,7 +61,7 @@ function record_or_case(@w: writer.Writer, c: state.Checked, names: ctype.Names,
                     rendered @ rendered.push(inner.must())
             .inout_arg io => rendered @ rendered.push("&" + aggregate.place(c, s, decls, f, at: io.place))
 
-    literal: str? @ fail("none", "not an aggregate")
+    literal: str? @ fail(code: "none", msg: "not an aggregate")
 
     match shape
         .case_shape cs                                                   => literal @ aggregate.construct_case(

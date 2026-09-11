@@ -94,7 +94,7 @@ function first_at(entries: [entry.Entry], level: str) -> entry.Entry?
         if one.level == level
             return ok(one)
 
-    return fail(ERR_NONE_AT_LEVEL, "no line is " + level)
+    return fail(code: ERR_NONE_AT_LEVEL, msg: "no line is " + level)
 
 function how_many_at(entries: [entry.Entry], level: str) -> i64
     return tally(levels_of(entries))[level].default(0)

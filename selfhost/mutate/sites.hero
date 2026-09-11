@@ -132,7 +132,7 @@ function trim_end(text: str) -> str
 
 function index_of(text: str, needle: str) -> i64?
     if needle.len() == 0 || needle.len() > text.len()
-        return fail("absent", "the needle is not there")
+        return fail(code: "absent", msg: "the needle is not there")
     limit = text.len() - needle.len()
     at: i64 @ 0
 
@@ -146,4 +146,4 @@ function index_of(text: str, needle: str) -> i64?
             return ok(at)
         at @ at + 1
 
-    return fail("absent", "the needle is not there")
+    return fail(code: "absent", msg: "the needle is not there")

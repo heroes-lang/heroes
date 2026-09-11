@@ -420,11 +420,16 @@ test "a return block that skips one @ parameter is caught by identity"
     # Copies out s0 twice and s1 never: two writes for two parameters,
     # which is exactly what counting could not see.
     insts: [ir.Inst] = [
-        ir.Inst(dest: fail("none", "void"), op: .copy_out(param: 0), ty: 1, span: span)
-        ir.Inst(dest: fail("none", "void"), op: .copy_out(param: 0), ty: 1, span: span)
+        ir.Inst(dest: fail(code: "none", msg: "void"), op: .copy_out(param: 0), ty: 1, span: span)
+        ir.Inst(dest: fail(code: "none", msg: "void"), op: .copy_out(param: 0), ty: 1, span: span)
     ]
     preds: [i64] = []
-    blk = containers.Block(preds: preds, insts: insts, term: .return_term(value: fail("none", "no value")), note: "t")
+    blk = containers.Block(
+        preds: preds,
+        insts: insts,
+        term: .return_term(value: fail(code: "none", msg: "no value")),
+        note: "t"
+    )
     f = containers.Function(
         name: "sneaky",
         decl: 0,
@@ -464,10 +469,15 @@ test "an @ argument whose place still runs through an index is refused before th
     steps: [ir.PathStep] = [.index_step(value: 0)]
     arguments: [ir.Arg] = [.inout_arg(place: ir.Place(root: 0, path: ir.Run(start: 0, length: 1)))]
     insts: [ir.Inst] = [
-        ir.Inst(dest: fail("none", "void"), op: .call(callee: .builtin_fn(at: 0), arguments: ir.Run(start: 0, length: 1), variadic: false), ty: 1, span: span)
+        ir.Inst(dest: fail(code: "none", msg: "void"), op: .call(callee: .builtin_fn(at: 0), arguments: ir.Run(start: 0, length: 1), variadic: false), ty: 1, span: span)
     ]
     preds: [i64] = []
-    blk = containers.Block(preds: preds, insts: insts, term: .return_term(value: fail("none", "no value")), note: "t")
+    blk = containers.Block(
+        preds: preds,
+        insts: insts,
+        term: .return_term(value: fail(code: "none", msg: "no value")),
+        note: "t"
+    )
     f = containers.Function(
         name: "sneaky",
         decl: 0,

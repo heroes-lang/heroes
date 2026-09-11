@@ -62,7 +62,7 @@ use inventory
 # expression (§4.7). A function body wants nothing — it hands its value
 # back through return.
 function block(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], body: ast.Block, wants_value: bool) -> i64?
-    value: i64? @ fail("none", "no value yet")
+    value: i64? @ fail(code: "none", msg: "no value yet")
     index: i64 @ 0
 
     for id in body.stmts
@@ -84,20 +84,20 @@ function statement(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: stat
     match a.stmts[id].kind
         .bind bd =>
             bind_stmt(@b, a, r, c, s, decls, name: bd.name, value: bd.value, span: span)
-            return fail("none", "a bind produces nothing")
+            return fail(code: "none", msg: "a bind produces nothing")
         .declare dc =>
             bind_stmt(@b, a, r, c, s, decls, name: dc.name, value: dc.value, span: span)
-            return fail("none", "a declare produces nothing")
+            return fail(code: "none", msg: "a declare produces nothing")
         .mutate m =>
             target = place(@b, a, r, c, s, decls, id: m.place)
             produced = expr(@b, a, r, c, s, decls, id: m.value)
             ty = build.value_ty(b, produced)
             build.emit_void(@b, op: .store(place: target, value: produced), ty: ty, span: span)
-            return fail("none", "a mutation produces nothing")
+            return fail(code: "none", msg: "a mutation produces nothing")
         .return_stmt ret =>
             if ret.value.is_err()
                 emissions.copy_out(@b, c)
-                build.terminate(@b, .return_term(value: fail("none", "bare return")))
+                build.terminate(@b, .return_term(value: fail(code: "none", msg: "bare return")))
             else
                 produced = expr(@b, a, r, c, s, decls, id: ret.value.must())
 
@@ -107,33 +107,33 @@ function statement(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: stat
                 # out" means.
                 emissions.copy_out(@b, c)
                 build.terminate(@b, .return_term(value: ok(produced)))
-            return fail("none", "a return produces nothing")
+            return fail(code: "none", msg: "a return produces nothing")
         .break_stmt =>
             if b.loops.len() > 0
                 build.terminate(@b, .jump(to: b.loops[b.loops.len() - 1].break_to))
-            return fail("none", "a break produces nothing")
+            return fail(code: "none", msg: "a break produces nothing")
         .continue_stmt =>
             if b.loops.len() > 0
                 build.terminate(@b, .jump(to: b.loops[b.loops.len() - 1].continue_to))
-            return fail("none", "a continue produces nothing")
+            return fail(code: "none", msg: "a continue produces nothing")
         .assert_stmt asrt =>
             lower_assert(@b, a, r, c, s, decls, asserted: asrt.value, span: span)
-            return fail("none", "an assert produces nothing")
+            return fail(code: "none", msg: "an assert produces nothing")
         .while_stmt w =>
             while_loop(@b, a, r, c, s, decls, cond: w.cond, body: w.block)
-            return fail("none", "a loop produces nothing")
+            return fail(code: "none", msg: "a loop produces nothing")
         .for_in fi =>
             for_loop(@b, a, r, c, s, decls, name: fi.name, iterable: fi.iterable, body: fi.block)
-            return fail("none", "a loop produces nothing")
+            return fail(code: "none", msg: "a loop produces nothing")
         .expr_stmt e =>
             # A statement's type must be () (panel 003), with one
             # exception the checker allows and this pass honours: a
             # match or if in statement position. Both lower the same way
             # in either position — the value is simply not used.
             return ok(expr(@b, a, r, c, s, decls, id: e.value))
-        .error => return fail("none", "an error lowers to nothing")
+        .error => return fail(code: "none", msg: "an error lowers to nothing")
 
-    return fail("none", "unreached")
+    return fail(code: "none", msg: "unreached")
 
 # `x = 5` and `v: i64 @ 0` are both slots by here: §4.4's mutation rule
 # was enforced by the resolver, and the IR does not re-litigate it.
@@ -260,7 +260,7 @@ function for_loop(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state
     # body reads it by name. `for _ in xs` names nothing (§4.7), so it
     # gets no slot and the body never reads an element — the loop is
     # being run for its count.
-    element: i64? @ fail("none", "no loop variable")
+    element: i64? @ fail(code: "none", msg: "no loop variable")
     element_ty: i64 @ int_id
     local = build.local_at(b, name)
 
@@ -312,7 +312,7 @@ function for_loop(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state
 # the join slot is simply never loaded.
 function if_expr(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], branches: [ast.Branch], otherwise: ast.Block?, ty: i64, span: token.Span) -> i64
     wants_value = ty != build.unit_ty(b) && ty != table.error_ty(c.types)
-    result: i64? @ fail("none", "statement position")
+    result: i64? @ fail(code: "none", msg: "statement position")
 
     if wants_value
         result @ ok(build.synthetic(@b, prefix: "r", ty: ty))
@@ -510,7 +510,7 @@ function call(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Che
                 # the IR does, because the layout decision belongs to the
                 # descriptor pass.
                 if questions.is_record(decls, t.at)
-                    run = lower_args(@b, a, r, c, s, decls, given: given, callee: fail("none", "a record construction")).run
+                    run = lower_args(@b, a, r, c, s, decls, given: given, callee: fail(code: "none", msg: "a record construction")).run
                     return build.emit(
                         @b,
                         op: .construct(shape: .record_shape(decl: t.at), arguments: run),
@@ -533,9 +533,9 @@ function call(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Che
                 shape = questions.fallible_constructor(builtin_name)
 
                 if !shape.is_err()
-                    run = lower_args(@b, a, r, c, s, decls, given: given, callee: fail("none", "ok or fail")).run
+                    run = lower_args(@b, a, r, c, s, decls, given: given, callee: fail(code: "none", msg: "ok or fail")).run
                     return build.emit(@b, op: .construct(shape: shape.must(), arguments: run), ty: ty, span: span)
-                handed = lower_args(@b, a, r, c, s, decls, given: given, callee: fail("none", "a built-in"))
+                handed = lower_args(@b, a, r, c, s, decls, given: given, callee: fail(code: "none", msg: "a built-in"))
                 return emissions.emit_call(
                     @b,
                     target: .builtin_fn(at: bt.at),
@@ -550,7 +550,7 @@ function call(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Che
 
             .module | .local | .unresolved => is_name @ is_name
     target = expr(@b, a, r, c, s, decls, id: callee)
-    handed = lower_args(@b, a, r, c, s, decls, given: given, callee: fail("none", "a function value"))
+    handed = lower_args(@b, a, r, c, s, decls, given: given, callee: fail(code: "none", msg: "a function value"))
     return emissions.emit_call(@b, target: .indirect(value: target), given: handed, variadic: false, ty: ty, span: span)
 
 # `.num(v: 12)` — a case construction: the type is the VARIANT, the
@@ -562,7 +562,7 @@ function case_construct(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c:
 
             if found.is_err()
                 return build.emit(@b, op: .missing, ty: ty, span: span)
-            run = lower_args(@b, a, r, c, s, decls, given: given, callee: fail("none", "a case construction")).run
+            run = lower_args(@b, a, r, c, s, decls, given: given, callee: fail(code: "none", msg: "a case construction")).run
             return build.emit(
                 @b,
                 op: .construct(shape: .case_shape(decl: n.decl, at: found.must()), arguments: run),
@@ -726,7 +726,7 @@ function method(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.C
                 decls,
                 receiver: receiver,
                 given: given,
-                callee: fail("none", "a built-in")
+                callee: fail(code: "none", msg: "a built-in")
             )
             return emissions.emit_call(
                 @b,
@@ -773,7 +773,16 @@ function field_call(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: sta
         target @ build.emit(@b, op: .missing, ty: function_ty, span: span)
     else
         target @ build.emit(@b, op: .field(base: base, at: found.must()), ty: function_ty, span: span)
-    handed = lower_args(@b, a, r, c, s, decls, given: given, callee: fail("none", "a field holding a function value"))
+    handed = lower_args(
+        @b,
+        a,
+        r,
+        c,
+        s,
+        decls,
+        given: given,
+        callee: fail(code: "none", msg: "a field holding a function value")
+    )
     return emissions.emit_call(@b, target: .indirect(value: target), given: handed, variadic: false, ty: ty, span: span)
 
 ## assert — the source expression and both sides (§4.18, spec § 12 Tests and holes)
@@ -910,7 +919,7 @@ function lower_match(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: st
     subject = build.synthetic(@b, prefix: "s", ty: subject_ty)
     build.store_slot(@b, slot_id: subject, value: value, span: span)
     wants_value = ty != build.unit_ty(b) && ty != table.error_ty(c.types)
-    result: i64? @ fail("none", "statement position")
+    result: i64? @ fail(code: "none", msg: "statement position")
 
     if wants_value
         result @ ok(build.synthetic(@b, prefix: "r", ty: ty))
@@ -952,7 +961,7 @@ function tagged(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.C
 
     for arm in arms
         arm_block = build.block(@b, note: "match: arm")
-        bound: i64? @ fail("none", "binds nothing")
+        bound: i64? @ fail(code: "none", msg: "binds nothing")
 
         for pattern in arm.patterns
             match pattern.kind
@@ -993,7 +1002,7 @@ function tagged(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.C
         if edge < 0
             unclaimed @ true
 
-    orphan_block: i64? @ fail("none", "every case claimed")
+    orphan_block: i64? @ fail(code: "none", msg: "every case claimed")
 
     if unclaimed
         orphan_block @ ok(build.block(@b, note: "match: unclaimed"))
@@ -1098,10 +1107,10 @@ function arm_body(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state
 
             if wants_value
                 return produced
-            return fail("none", "statement position")
+            return fail(code: "none", msg: "statement position")
         .block bl => return block(@b, a, r, c, s, decls, body: bl.block, wants_value: wants_value)
 
-    return fail("none", "unreached")
+    return fail(code: "none", msg: "unreached")
 
 ## Expressions
 

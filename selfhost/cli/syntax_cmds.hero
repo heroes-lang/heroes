@@ -115,7 +115,7 @@ function refuse_output_the_formatter_broke(path: str, original: str, formatted: 
         # The root file alone does not parse, which `run_fmt` has already
         # ruled out for the whole compilation — so there is no tree to
         # compare against and the two checks above stand on their own.
-        return fail("clean", "the root file alone does not parse")
+        return fail(code: "clean", msg: "the root file alone does not parse")
     was = dump.dump_ast(before.tree, source.new_source(name: path, text: original), before.uses, before.decls)
     now = dump.dump_ast(reparsed.tree, after, reparsed.uses, reparsed.decls)
 
@@ -123,7 +123,7 @@ function refuse_output_the_formatter_broke(path: str, original: str, formatted: 
         return ok(
             "`fmt` changed the TREE of `" + path + "` — the output parses and is a fixpoint, and it is a DIFFERENT PROGRAM"
         )
-    return fail("clean", "the output parses, is a fixpoint, and holds the same tree")
+    return fail(code: "clean", msg: "the output parses, is a fixpoint, and holds the same tree")
 
 ## Tests
 
@@ -142,7 +142,7 @@ test "parse checks silently, dumps only a clean tree, and fmt round-trips"
     messy = "function main()\n    print(2 + (3 * 4))\n"
     assert !write_file(path: "build/selftest_fmt.hero", text: messy).is_err()
     fs = source.new_source(name: "build/selftest_fmt.hero", text: messy)
-    in_place: [argv.FlagHit] = [argv.FlagHit(spelling: "--in-place", value: fail("none", "no value"))]
+    in_place: [argv.FlagHit] = [argv.FlagHit(spelling: "--in-place", value: fail(code: "none", msg: "no value"))]
     finv = argv.Invocation(tag: .fmt_cmd, file: ok("build/selftest_fmt.hero"), program_args: [], flags: in_place)
     assert run_fmt(path: "build/selftest_fmt.hero", s: fs, inv: finv) == .ok_exit
     canon = read_file("build/selftest_fmt.hero").must()
@@ -214,7 +214,7 @@ test "the tree check fires on output that parses and is a fixpoint and means som
     # And the real command formats that record now instead of refusing it.
     assert !write_file(path: "build/selftest_fmt_tree.hero", text: remark).is_err()
     rs = source.new_source(name: "build/selftest_fmt_tree.hero", text: remark)
-    marks: [argv.FlagHit] = [argv.FlagHit(spelling: "--in-place", value: fail("none", "no value"))]
+    marks: [argv.FlagHit] = [argv.FlagHit(spelling: "--in-place", value: fail(code: "none", msg: "no value"))]
     rinv = argv.Invocation(tag: .fmt_cmd, file: ok("build/selftest_fmt_tree.hero"), program_args: [], flags: marks)
     assert run_fmt(path: "build/selftest_fmt_tree.hero", s: rs, inv: rinv) == .ok_exit
     assert read_file("build/selftest_fmt_tree.hero").must() == remark
@@ -248,7 +248,7 @@ test "the parse and fixpoint checks fire, and the input's own errors are not bla
     refused_input = "function f(c: str) -> str\n    return match c\n        \"a\" => \"b\"\n        _ => c\n    + \"x\"\n"
     assert !write_file(path: "build/selftest_fmt_guard.hero", text: refused_input).is_err()
     gs = source.new_source(name: "build/selftest_fmt_guard.hero", text: refused_input)
-    hits: [argv.FlagHit] = [argv.FlagHit(spelling: "--in-place", value: fail("none", "no value"))]
+    hits: [argv.FlagHit] = [argv.FlagHit(spelling: "--in-place", value: fail(code: "none", msg: "no value"))]
     ginv = argv.Invocation(tag: .fmt_cmd, file: ok("build/selftest_fmt_guard.hero"), program_args: [], flags: hits)
     assert run_fmt(path: "build/selftest_fmt_guard.hero", s: gs, inv: ginv) == .diagnostics_exit
 

@@ -72,7 +72,7 @@ function bool_of(text: str, line: i64) -> bool?
 
     if text == "false"
         return ok(false)
-    return fail(ERR_BOOL, "line " + line.to_str() + ": `" + text + "` is neither `true` nor `false`")
+    return fail(code: ERR_BOOL, msg: "line " + line.to_str() + ": `" + text + "` is neither `true` nor `false`")
 
 # An `i64`, refusing what `to_i64` refuses and saying which line it was on.
 # `to_i64` on a `str` does not exist in this language — a `str` has no
@@ -80,7 +80,7 @@ function bool_of(text: str, line: i64) -> bool?
 # also where a leading `+`, a stray space or an empty field is caught.
 function int_of(text: str, line: i64) -> i64?
     if text.len() == 0
-        return fail(ERR_NUMBER, "line " + line.to_str() + ": a number field is empty")
+        return fail(code: ERR_NUMBER, msg: "line " + line.to_str() + ": a number field is empty")
     negative = text[0] == '-'
     start: i64 @ 0
 
@@ -88,7 +88,7 @@ function int_of(text: str, line: i64) -> i64?
         start @ 1
 
         if text.len() == 1
-            return fail(ERR_NUMBER, "line " + line.to_str() + ": `-` is not a number")
+            return fail(code: ERR_NUMBER, msg: "line " + line.to_str() + ": `-` is not a number")
     total: i64 @ 0
     at: i64 @ start
 
@@ -96,7 +96,7 @@ function int_of(text: str, line: i64) -> i64?
         digit = text[at]
 
         if digit < '0' || digit > '9'
-            return fail(ERR_NUMBER, "line " + line.to_str() + ": `" + text + "` is not a whole number")
+            return fail(code: ERR_NUMBER, msg: "line " + line.to_str() + ": `" + text + "` is not a whole number")
         total @ total * 10 + to_i64(digit - '0').must()
         at @ at + 1
 
@@ -127,7 +127,7 @@ function float_of(text: str, line: i64) -> f64?
     halves = split(text: text, at: '.')
 
     if halves.len() > 2
-        return fail(ERR_NUMBER, "line " + line.to_str() + ": `" + text + "` has two points")
+        return fail(code: ERR_NUMBER, msg: "line " + line.to_str() + ": `" + text + "` has two points")
     negative = text.len() > 0 && text[0] == '-'
     whole_digits = digits_of(halves[0], line: line, negative: negative)?
     fraction_digits: str @ ""
@@ -136,13 +136,13 @@ function float_of(text: str, line: i64) -> f64?
         fraction_digits @ halves[1]
 
         if fraction_digits.len() == 0
-            return fail(ERR_NUMBER, "line " + line.to_str() + ": `" + text + "` ends at its point")
+            return fail(code: ERR_NUMBER, msg: "line " + line.to_str() + ": `" + text + "` ends at its point")
     all_digits = whole_digits + fraction_digits
 
     if all_digits.len() > MOST_DIGITS
         return fail(
-            ERR_NUMBER,
-            "line " + line.to_str() + ": `" + text + "` has " + all_digits.len().to_str() + " digits and an i64 holds " + MOST_DIGITS.to_str()
+            code: ERR_NUMBER,
+            msg: "line " + line.to_str() + ": `" + text + "` has " + all_digits.len().to_str() + " digits and an i64 holds " + MOST_DIGITS.to_str()
         )
     scaled: i64 @ 0
     at: i64 @ 0
@@ -151,7 +151,7 @@ function float_of(text: str, line: i64) -> f64?
         digit = all_digits[at]
 
         if digit < '0' || digit > '9'
-            return fail(ERR_NUMBER, "line " + line.to_str() + ": `" + text + "` is not a number")
+            return fail(code: ERR_NUMBER, msg: "line " + line.to_str() + ": `" + text + "` is not a number")
         scaled @ scaled * 10 + to_i64(digit - '0').must()
         at @ at + 1
 
@@ -173,11 +173,11 @@ function float_of(text: str, line: i64) -> f64?
 # would let through.
 function digits_of(text: str, line: i64, negative: bool) -> str?
     if text.len() == 0
-        return fail(ERR_NUMBER, "line " + line.to_str() + ": a number field is empty")
+        return fail(code: ERR_NUMBER, msg: "line " + line.to_str() + ": a number field is empty")
 
     if negative
         if text.len() == 1
-            return fail(ERR_NUMBER, "line " + line.to_str() + ": `-` is not a number")
+            return fail(code: ERR_NUMBER, msg: "line " + line.to_str() + ": `-` is not a number")
         return ok(text.slice(from: 1, to: text.len()))
     return ok(text)
 
@@ -188,10 +188,13 @@ function read(text: str) -> [row.Row]?
     all_lines = lines_of(text)
 
     if all_lines.len() == 0
-        return fail(ERR_EMPTY, "the table is empty: not even a header")
+        return fail(code: ERR_EMPTY, msg: "the table is empty: not even a header")
 
     if all_lines[0] != row.HEADER
-        return fail(ERR_HEADER, "the header reads `" + all_lines[0] + "` and this program writes `" + row.HEADER + "`")
+        return fail(
+            code: ERR_HEADER,
+            msg: "the header reads `" + all_lines[0] + "` and this program writes `" + row.HEADER + "`"
+        )
     out: [row.Row] @ []
     number: i64 @ 1
     wanted = columns()
@@ -202,8 +205,8 @@ function read(text: str) -> [row.Row]?
 
         if fields.len() != wanted
             return fail(
-                ERR_FIELDS,
-                "line " + number.to_str() + ": " + fields.len().to_str() + " fields where the header has " + wanted.to_str()
+                code: ERR_FIELDS,
+                msg: "line " + number.to_str() + ": " + fields.len().to_str() + " fields where the header has " + wanted.to_str()
             )
         out @ out.push(
             row.Row(id: int_of(fields[0], number)?, team: fields[1], name: fields[2], active: bool_of(fields[3], number)?, score: int_of(fields[4], number)?, rate: float_of(fields[5], number)?)

@@ -41,13 +41,13 @@ function collect(scratch: str, dir: str) -> [Case]?
             expectation = stem + ".expected"
 
             if present[expectation].is_err()
-                return fail("half_pair", "golden case " + entry + " is missing its .expected file")
+                return fail(code: "half_pair", msg: "golden case " + entry + " is missing its .expected file")
             cases @ cases.push(Case(source: entry, expected: expectation, name: strings.base_name(path: stem)))
         else if strings.ends_with(text: entry, suffix: ".expected")
             owner = strings.without_suffix(text: entry, suffix: ".expected") + ".hero"
 
             if present[owner].is_err()
-                return fail("orphan", "orphan expectation: " + entry + " has no .hero source")
+                return fail(code: "orphan", msg: "orphan expectation: " + entry + " has no .hero source")
 
     return ok(cases)
 

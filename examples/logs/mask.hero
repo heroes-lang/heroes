@@ -117,7 +117,10 @@ function read(text: str) -> i64?
 
     for name in split_on(text, ',')
         if bit_of(name) == 0
-            return fail(ERR_NO_SUCH_LEVEL, "`" + name + "` is not a level — try " + join(names_of(EVERY), ", "))
+            return fail(
+                code: ERR_NO_SUCH_LEVEL,
+                msg: "`" + name + "` is not a level — try " + join(names_of(EVERY), ", ")
+            )
         mask @ added(mask, name)
 
     return ok(mask)

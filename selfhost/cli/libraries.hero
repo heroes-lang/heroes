@@ -72,8 +72,8 @@ function filter_words(package: str, said: str) -> [str]?
         if word == "-framework" || word == "-F"
             if index + 1 >= parts.len()
                 return fail(
-                    "failed",
-                    "heroes-ffi-package `" + package + "` answered with `" + word + "` and nothing after it"
+                    code: "failed",
+                    msg: "heroes-ffi-package `" + package + "` answered with `" + word + "` and nothing after it"
                 )
             flags @ flags.push(word)
             flags @ flags.push(parts[index + 1])
@@ -98,8 +98,8 @@ function filter_words(package: str, said: str) -> [str]?
             index @ index + 1
             continue
         return fail(
-            "failed",
-            "heroes-ffi-package `" + package + "` answered with `" + word + "`, which this compiler does not pass on\n  only `-D`, `-U`, `-I`, `-L`, `-l`, `-F`, `-framework`, `-Wl,-framework,<name>` and `-Wl,-rpath,<dir>` are accepted: everything else is a flag a package file could use to run code during the build (Go's CVE-2018-6574)\n  name the library directly with `link` if you need it"
+            code: "failed",
+            msg: "heroes-ffi-package `" + package + "` answered with `" + word + "`, which this compiler does not pass on\n  only `-D`, `-U`, `-I`, `-L`, `-l`, `-F`, `-framework`, `-Wl,-framework,<name>` and `-Wl,-rpath,<dir>` are accepted: everything else is a flag a package file could use to run code during the build (Go's CVE-2018-6574)\n  name the library directly with `link` if you need it"
         )
 
     return ok(flags)
@@ -120,12 +120,12 @@ function tail_after(word: str, prefix: str) -> str?
     ps = prefix.chars()
 
     if ps.len() > ws.len()
-        return fail("none", "shorter than the prefix")
+        return fail(code: "none", msg: "shorter than the prefix")
     index: i64 @ 0
 
     for p in ps
         if ws[index] != p
-            return fail("none", "not this prefix")
+            return fail(code: "none", msg: "not this prefix")
         index @ index + 1
 
     return ok(ws.slice(from: ps.len(), to: ws.len()).join(""))
@@ -183,8 +183,8 @@ function resolve_packages(packages: [str], build_dir: str) -> [str]?
         # its own making — the property `sq()` was maintaining by hand.
         if !ran.started
             return fail(
-                "no_pkg_config",
-                "pkg-config is not on this machine, and `package \"" + package + "\"` asks it where the library is"
+                code: "no_pkg_config",
+                msg: "pkg-config is not on this machine, and `package \"" + package + "\"` asks it where the library is"
             )
 
         if ran.code != 0
@@ -194,8 +194,8 @@ function resolve_packages(packages: [str], build_dir: str) -> [str]?
             if !captured.is_err()
                 said @ toolchain.trimmed(captured.must())
             return fail(
-                "failed",
-                "heroes-ffi-package `" + package + "` is not installed on this machine\n  pkg-config said: " + said + "\n  install its development files, or name the library directly with `link`"
+                code: "failed",
+                msg: "heroes-ffi-package `" + package + "` is not installed on this machine\n  pkg-config said: " + said + "\n  install its development files, or name the library directly with `link`"
             )
         said: str @ ""
         answered = read_file(answer_path)

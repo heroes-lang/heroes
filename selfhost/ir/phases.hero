@@ -319,9 +319,14 @@ test "a type the checker never resolved is refused after mono, unless the progra
     # leaves behind (check/generics.hero's own test pins the number). An
     # instruction and a slot both carry it here, as the defect's `match`
     # arm did: `$own5: ??` and `$t10: ?? = call heroes wanted($t9)`.
-    insts: [ir.Inst] = [ir.Inst(dest: fail("none", "void"), op: .incref(value: 1), ty: 0, span: span)]
+    insts: [ir.Inst] = [ir.Inst(dest: fail(code: "none", msg: "void"), op: .incref(value: 1), ty: 0, span: span)]
     preds: [i64] = []
-    blk = containers.Block(preds: preds, insts: insts, term: .return_term(value: fail("none", "no value")), note: "t")
+    blk = containers.Block(
+        preds: preds,
+        insts: insts,
+        term: .return_term(value: fail(code: "none", msg: "no value")),
+        note: "t"
+    )
     slots: [containers.Slot] = [containers.Slot(name: "own5", ty: 0, kind: .local_slot)]
     f = containers.Function(
         name: "t",
@@ -367,9 +372,14 @@ test "a type the checker never resolved is refused after mono, unless the progra
 
 test "a refcount op before the ownership pass is named, after it is legal"
     span = token.Span(start: 0, end: 1)
-    insts: [ir.Inst] = [ir.Inst(dest: fail("none", "void"), op: .incref(value: 1), ty: 0, span: span)]
+    insts: [ir.Inst] = [ir.Inst(dest: fail(code: "none", msg: "void"), op: .incref(value: 1), ty: 0, span: span)]
     preds: [i64] = []
-    blk = containers.Block(preds: preds, insts: insts, term: .return_term(value: fail("none", "no value")), note: "t")
+    blk = containers.Block(
+        preds: preds,
+        insts: insts,
+        term: .return_term(value: fail(code: "none", msg: "no value")),
+        note: "t"
+    )
     p = phase_scaffold(.lowered, blk)
     text = "record R\n    n: i64\n"
     parsed = parse.parse(text)

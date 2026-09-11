@@ -98,7 +98,7 @@ test "both branch edges are written, and a switch carries C's default"
     w: writer.Writer @ writer.new_writer("t")
     emit(@w, f, c, term: .branch(cond: 1, then_to: 2, else_to: 4))
     emit(@w, f, c, term: .switch_term(tag: 1, cases: [3, 5]))
-    emit(@w, f, c, term: .return_term(value: fail("none", "bare")))
+    emit(@w, f, c, term: .return_term(value: fail(code: "none", msg: "bare")))
     got = writer.finish(w)
     assert got == "    if (t1) goto bb2; else goto bb4;\n    switch (t1) {\n        case 0: goto bb3;\n        case 1: goto bb5;\n        default: hero_unreachable();\n    }\n    return;\n"
 

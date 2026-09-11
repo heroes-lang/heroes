@@ -7,7 +7,7 @@
 # from the substituted type (panel 029 R4c's class) would leak or double-free
 # here and nowhere a plain `i64` could show it.
 function wanted<A>(what: str) -> A?
-    return fail("type", "expected " + what)
+    return fail(code: "type", msg: "expected " + what)
 
 function main()
     s: str? = wanted(what: "text")

@@ -93,12 +93,12 @@ function rest_of(given: [str], at: i64) -> str
 
 function number_of(word: str) -> i64?
     if word.len() == 0
-        return fail(ERR_NO_NUMBER, "`done` needs the number of a task")
+        return fail(code: ERR_NO_NUMBER, msg: "`done` needs the number of a task")
     v: i64 @ 0
 
     for i in range(from: 0, to: word.len())
         if word[i] < '0' || word[i] > '9'
-            return fail(ERR_NO_NUMBER, "`" + word + "` is not a number")
+            return fail(code: ERR_NO_NUMBER, msg: "`" + word + "` is not a number")
         v @ v * 10 + to_i64(word[i] - '0').must()
 
     return ok(v)

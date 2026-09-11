@@ -134,7 +134,7 @@ test "a note is a value like any other, when one is built"
     m: Note @ Note(text: "check this", line: 12)
     assert n == m
     held: Node @ .annotated(operand: 0, note: ok(n))
-    absent: Node @ .annotated(operand: 0, note: fail("none", "no note"))
+    absent: Node @ .annotated(operand: 0, note: fail(code: "none", msg: "no note"))
     assert held != absent
 
 test "a whole tree is one value, copied and not shared"

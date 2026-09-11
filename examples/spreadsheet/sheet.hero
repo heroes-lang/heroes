@@ -75,18 +75,18 @@ function split_lines(text: str) -> [str]
 # `A1` as a `Cell`, or an error naming what was wrong with it.
 function cell_of(name: str) -> Cell?
     if name.len() < 2 || !is_letter(name[0])
-        return fail(ERR_BAD_CELL_NAME, "`" + name + "` is not a cell: one letter then digits")
+        return fail(code: ERR_BAD_CELL_NAME, msg: "`" + name + "` is not a cell: one letter then digits")
     row: i64 @ 0
     i: i64 @ 1
 
     while i < name.len()
         if !is_digit(name[i])
-            return fail(ERR_BAD_CELL_NAME, "`" + name + "` is not a cell: one letter then digits")
+            return fail(code: ERR_BAD_CELL_NAME, msg: "`" + name + "` is not a cell: one letter then digits")
         row @ row * 10 + to_i64(name[i] - '0').must()
         i @ i + 1
 
     if row == 0
-        return fail(ERR_BAD_CELL_NAME, "`" + name + "` has no row: rows start at 1")
+        return fail(code: ERR_BAD_CELL_NAME, msg: "`" + name + "` has no row: rows start at 1")
     return ok(Cell(column: to_i64(name[0] - 'A').must(), row: row))
 
 # The name a `Cell` had. There is no `chr` in this language, so the letter comes
@@ -106,7 +106,7 @@ function expand(text: str) -> [str]?
     at = index_of(text, ':')
 
     if at < 0
-        return fail(ERR_BAD_RANGE, "`" + text + "` is not a range: two cells joined by `:`")
+        return fail(code: ERR_BAD_RANGE, msg: "`" + text + "` is not a range: two cells joined by `:`")
     from = cell_of(trimmed(text.slice(from: 0, to: at)))?
     to = cell_of(trimmed(text.slice(from: at + 1, to: text.len())))?
     out: [str] @ []
@@ -141,11 +141,11 @@ function read(text: str) -> Sheet?
         at = index_of(head, '=')
 
         if at < 0
-            return fail(ERR_NO_ASSIGNMENT, "`" + head + "` is not `NAME = formula`")
+            return fail(code: ERR_NO_ASSIGNMENT, msg: "`" + head + "` is not `NAME = formula`")
         name = trimmed(head.slice(from: 0, to: at))
 
         if !is_name(name)
-            return fail(ERR_BAD_CELL_NAME, "`" + name + "` is not a cell name")
+            return fail(code: ERR_BAD_CELL_NAME, msg: "`" + name + "` is not a cell name")
         cells[name] @ trimmed(head.slice(from: at + 1, to: head.len()))
 
     return ok(Sheet(cells: cells))

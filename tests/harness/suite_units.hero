@@ -167,8 +167,8 @@ function emitted(scratch: str, compiler: str, dir: str) -> Emission?
 
     if left.len() > 0
         return fail(
-            "cannot_run",
-            "the cached translation units survived the forget, so a second build would hit instead of emitting and this suite would compare a file with itself:\n    " + left.join("\n    ")
+            code: "cannot_run",
+            msg: "the cached translation units survived the forget, so a second build would hit instead of emitting and this suite would compare a file with itself:\n    " + left.join("\n    ")
         )
     built = shell.run_guarded(
         scratch: scratch,
@@ -177,8 +177,8 @@ function emitted(scratch: str, compiler: str, dir: str) -> Emission?
 
     if built.is_err() || built.must().code != 0
         return fail(
-            "cannot_run",
-            "the build did not run: " + built.default(shell.Run(code: -1, out: "", err: "cannot run", started: false)).err
+            code: "cannot_run",
+            msg: "the build did not run: " + built.default(shell.Run(code: -1, out: "", err: "cannot run", started: false)).err
         )
     paths = tu_sources(scratch)?
     texts: [str] @ []

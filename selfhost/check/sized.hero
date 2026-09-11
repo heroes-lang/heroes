@@ -103,8 +103,11 @@ function by_value_target(a: ast.Ast, r: resolved.Resolved, ty: i64) -> i64?
         # The only edge: a bare name that resolves to a record or variant.
         .named =>
             match r.type_uses[ty]
-                .top t                         => return ok(t.at)
-                .prim | .generic | .unresolved => return fail("leaf", "a primitive or parameter carries no edge")
+                .top t => return ok(t.at)
+                .prim | .generic | .unresolved => return fail(
+                    code: "leaf",
+                    msg: "a primitive or parameter carries no edge"
+                )
         # Transparent: a T? is a by-value struct, so it carries T inside
         # it — the row the proposal got wrong and two judges found
         # independently.
@@ -114,17 +117,17 @@ function by_value_target(a: ast.Ast, r: resolved.Resolved, ty: i64) -> i64?
         # neither lands its contents here — measured, three records
         # mutually recursive through arrays compile in the worst order.
 
-        .array_of | .map_of => return fail("leaf", "a pointer breaks the edge")
+        .array_of | .map_of => return fail(code: "leaf", msg: "a pointer breaks the edge")
         # A fixed array is sized, and its size is the element's times N —
         # the OPPOSITE of [T], so this descends rather than stopping.
 
         .fixed x => return by_value_target(a, r, x.element)
         # A function value is a C function pointer.
 
-        .function_type => return fail("leaf", "a function pointer breaks the edge")
-        .unit | .error => return fail("leaf", "no bytes here")
+        .function_type => return fail(code: "leaf", msg: "a function pointer breaks the edge")
+        .unit | .error => return fail(code: "leaf", msg: "no bytes here")
 
-    return fail("leaf", "unreached")
+    return fail(code: "leaf", msg: "unreached")
 
 # Iterative depth-first search: a post-order for the acyclic part, one
 # diagnostic per distinct cycle. Colours rather than a visited flag,

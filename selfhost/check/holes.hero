@@ -262,7 +262,7 @@ function owner_of(decls: [ast.Decl], at: i64) -> i64?
             return ok(index)
         index @ index + 1
 
-    return fail("none", "no declaration holds this offset")
+    return fail(code: "none", msg: "no declaration holds this offset")
 
 ## Tests
 

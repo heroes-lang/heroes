@@ -55,7 +55,7 @@ function keyword(text: str) -> token.TokenKind?
         "true"     => ok(.kw_true)
         "false"    => ok(.kw_false)
         "fail"     => ok(.kw_fail)
-        _          => fail(ERR_NOT_A_KEYWORD, text)
+        _          => fail(code: ERR_NOT_A_KEYWORD, msg: text)
 
 ## The foreign words
 
@@ -190,7 +190,7 @@ function declared_word(text: str) -> ForeignWord?
         "import" | "include" => ok(
             ForeignWord(message: "`import` and `include` are not words in this language — a module is named with `use`: `use geom`", repair: .swap(word: "use"))
         )
-        _ => fail(ERR_NOT_FOREIGN, text)
+        _ => fail(code: ERR_NOT_FOREIGN, msg: text)
 
 test "every keyword resolves and an identifier does not"
     assert keyword("function").must() == .kw_function

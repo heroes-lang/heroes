@@ -84,7 +84,7 @@ function lookup_local(r: Resolver, name: str) -> i64?
             return ok(r.scopes.entries[i].local)
         i @ i - 1
 
-    return fail("free", "no open scope binds this name")
+    return fail(code: "free", msg: "no open scope binds this name")
 
 # Whether the INNERMOST scope already binds this name. One caller: two
 # patterns of one arm may not bind the same payload name.
@@ -281,14 +281,14 @@ function declare(@r: Resolver, s: source.Source, decls: [ast.Decl], name: token.
     text = source.span_text(s, name)
 
     if text == "_"
-        return fail("wildcard", "`_` never binds")
+        return fail(code: "wildcard", msg: "`_` never binds")
     previous = lookup_local(r, text)
 
     if !previous.is_err()
         at = r.out.locals[previous.must()].name
         bound_at = source.elsewhere(s, here: name.start, there: at.start)
         push_diagnostic(@r, errors.shadowed(name: text, bound_at: bound_at, span: name))
-        return fail("refused", "shadowing is a compile error")
+        return fail(code: "refused", msg: "shadowing is a compile error")
 
     # **A `use` binds its name for the whole file, so a local may not take it
     # either** — the mirror of `use_shadows_a_declaration` and the same rule,
@@ -311,7 +311,7 @@ function declare(@r: Resolver, s: source.Source, decls: [ast.Decl], name: token.
     # in a file the author cannot open (§1.11).
     if !inventory.index_of(text).is_err()
         push_diagnostic(@r, errors.builtin_name_taken(text, span: name))
-        return fail("refused", "a built-in's name is taken everywhere")
+        return fail(code: "refused", msg: "a built-in's name is taken everywhere")
     top = top_visible(r, text)
 
     if !top.is_err()
@@ -325,7 +325,7 @@ function declare(@r: Resolver, s: source.Source, decls: [ast.Decl], name: token.
         if source.is_library(s, name.start) == source.is_library(s, declared_at)
             at = source.elsewhere(s, here: name.start, there: declared_at)
             push_diagnostic(@r, errors.shadows_top_level(name: text, declared_at: at, span: name))
-            return fail("refused", "the declaration is in scope everywhere")
+            return fail(code: "refused", msg: "the declaration is in scope everywhere")
     index = r.out.locals.len()
 
     # Through the array rather than through the field, for `new_resolver`'s
@@ -399,13 +399,13 @@ test "a sibling scope's binding is invisible, a parent's shadows"
         s,
         decls,
         span_at(start: 0, end: 1),
-        resolve_binding.bind_binding(ty: fail("absent", "inferred"), value: 0)
+        resolve_binding.bind_binding(ty: fail(code: "absent", msg: "inferred"), value: 0)
     )
     assert first.must() == 0
 
     # A sibling block: open, bind y, close — then a second block binds y again.
     open_scope(@r)
-    assert !declare(@r, s, decls, span_at(start: 2, end: 3), resolve_binding.bind_binding(ty: fail("absent", "inferred"), value: 0)).is_err()
+    assert !declare(@r, s, decls, span_at(start: 2, end: 3), resolve_binding.bind_binding(ty: fail(code: "absent", msg: "inferred"), value: 0)).is_err()
     close_scope(@r)
     open_scope(@r)
     again = declare(
@@ -413,7 +413,7 @@ test "a sibling scope's binding is invisible, a parent's shadows"
         s,
         decls,
         span_at(start: 2, end: 3),
-        resolve_binding.bind_binding(ty: fail("absent", "inferred"), value: 0)
+        resolve_binding.bind_binding(ty: fail(code: "absent", msg: "inferred"), value: 0)
     )
     assert !again.is_err()
 
@@ -423,7 +423,7 @@ test "a sibling scope's binding is invisible, a parent's shadows"
         s,
         decls,
         span_at(start: 4, end: 5),
-        resolve_binding.bind_binding(ty: fail("absent", "inferred"), value: 0)
+        resolve_binding.bind_binding(ty: fail(code: "absent", msg: "inferred"), value: 0)
     )
     assert inner_x.is_err()
     assert r.out.diagnostics.len() == 1
@@ -444,7 +444,7 @@ test "the wildcard never binds and a built-in is taken everywhere"
         s,
         decls,
         span_at(start: 8, end: 10),
-        resolve_binding.bind_binding(ty: fail("absent", "inferred"), value: 0)
+        resolve_binding.bind_binding(ty: fail(code: "absent", msg: "inferred"), value: 0)
     )
     assert taken.is_err()
     assert r.out.diagnostics.len() == 1
@@ -458,7 +458,7 @@ test "the unused sweep spares the hole's module, the @ write, the suggestion"
     decls: [ast.Decl] = []
     r: Resolver @ new_resolver(expr_count: 0, type_count: 0)
     open_scope(@r)
-    assert !declare(@r, s, decls, span_at(start: 0, end: 1), resolve_binding.bind_binding(ty: fail("absent", "inferred"), value: 0)).is_err()
+    assert !declare(@r, s, decls, span_at(start: 0, end: 1), resolve_binding.bind_binding(ty: fail(code: "absent", msg: "inferred"), value: 0)).is_err()
     assert !declare(@r, s, decls, span_at(start: 2, end: 3), resolve_binding.param_binding(ty: 0, mutable: true)).is_err()
     r.out.locals[1].writes @ 1
     report_unused(@r, s)
@@ -470,7 +470,7 @@ test "the unused sweep spares the hole's module, the @ write, the suggestion"
     # A hole in the module suspends the rule file-wide.
     quiet: Resolver @ new_resolver(expr_count: 0, type_count: 0)
     open_scope(@quiet)
-    assert !declare(@quiet, s, decls, span_at(start: 0, end: 1), resolve_binding.bind_binding(ty: fail("absent", "inferred"), value: 0)).is_err()
+    assert !declare(@quiet, s, decls, span_at(start: 0, end: 1), resolve_binding.bind_binding(ty: fail(code: "absent", msg: "inferred"), value: 0)).is_err()
     resolved.note_hole(@quiet.out, "t")
     report_unused(@quiet, s)
     assert quiet.out.diagnostics.len() == 0
@@ -478,7 +478,7 @@ test "the unused sweep spares the hole's module, the @ write, the suggestion"
     # A suggested name is already spoken for.
     offered: Resolver @ new_resolver(expr_count: 0, type_count: 0)
     open_scope(@offered)
-    assert !declare(@offered, s, decls, span_at(start: 0, end: 1), resolve_binding.bind_binding(ty: fail("absent", "inferred"), value: 0)).is_err()
+    assert !declare(@offered, s, decls, span_at(start: 0, end: 1), resolve_binding.bind_binding(ty: fail(code: "absent", msg: "inferred"), value: 0)).is_err()
     candidates: [str] = ["x"]
     offered.module @ "t"
     _ = near_names(@offered, "z", candidates)
@@ -488,7 +488,7 @@ test "the unused sweep spares the hole's module, the @ write, the suggestion"
 test "a read through record_use counts, and only a local's"
     r: Resolver @ new_resolver(expr_count: 2, type_count: 0)
     r.out.locals @ r.out.locals.push(
-        resolved.Local(name: span_at(start: 0, end: 1), kind: .bind, mutable: false, owner: 0, depth: 0, ty: fail("absent", "inferred"), value: fail("absent", "none"), reads: 0, writes: 0)
+        resolved.Local(name: span_at(start: 0, end: 1), kind: .bind, mutable: false, owner: 0, depth: 0, ty: fail(code: "absent", msg: "inferred"), value: fail(code: "absent", msg: "none"), reads: 0, writes: 0)
     )
     record_use(@r, at: 0, to: .local(at: 0))
     record_use(@r, at: 1, to: .builtin(at: 18))
@@ -513,11 +513,11 @@ test "what the library declares and what the file declares stay two programs"
         generics: generics,
         params: ps,
         result: 0,
-        body: fail("absent", "unused in this test"),
+        body: fail(code: "absent", msg: "unused in this test"),
         is_extern: false,
-        header: fail("absent", "none"),
-        library: fail("absent", "none"),
-        owned_result: fail("none", "nothing to free")
+        header: fail(code: "absent", msg: "none"),
+        library: fail(code: "absent", msg: "none"),
+        owned_result: fail(code: "none", msg: "nothing to free")
     )
     d @ d.push(
         ast.Decl(name: span_at(start: 9, end: 15), doc: doc, span: span_at(start: 0, end: 15), kind: .function_decl(value: f))
@@ -531,7 +531,7 @@ test "what the library declares and what the file declares stay two programs"
         s,
         d,
         span_at(start: 9, end: 15),
-        resolve_binding.bind_binding(ty: fail("absent", "inferred"), value: 0)
+        resolve_binding.bind_binding(ty: fail(code: "absent", msg: "inferred"), value: 0)
     )
     assert clash.is_err()
     assert r.out.diagnostics.len() == 1

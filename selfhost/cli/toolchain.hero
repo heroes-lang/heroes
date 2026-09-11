@@ -65,8 +65,8 @@ function locate_toolchain(hint: str, fingerprint: str) -> Toolchain?
             )
 
     return fail(
-        "failed",
-        "cannot find the Heroes runtime (heroes_runtime.h and runtime.c).\n  looked in: the given hint and ./runtime\n  set HEROES_RUNTIME=<dir> to say where it is"
+        code: "failed",
+        msg: "cannot find the Heroes runtime (heroes_runtime.h and runtime.c).\n  looked in: the given hint and ./runtime\n  set HEROES_RUNTIME=<dir> to say where it is"
     )
 
 # Run one clang line, stderr captured to a file and read back. clang's
@@ -99,15 +99,15 @@ function run_clang(line: [str], what: str, err_path: str) -> ()?
     # own bug — *"internal error: the runtime did not compile"*.
     if !ran.started
         return fail(
-            "clang",
-            "clang is not on this machine's PATH, so " + what + " could not run.\n  `heroes doctor` says what this machine has"
+            code: "clang",
+            msg: "clang is not on this machine's PATH, so " + what + " could not run.\n  `heroes doctor` says what this machine has"
         )
 
     if ran.code == 0
         if trimmed(noise).len() > 0
             io.eprint_raw(text: noise)
         return ok()
-    return fail("clang", what + " failed:\n" + noise)
+    return fail(code: "clang", msg: what + " failed:\n" + noise)
 
 # `\r\n` -> `\n`, byte-walked. A lone `\r` (classic Mac, or wire bytes in a
 # diagnostic clang quotes back) is left alone: the poison is the line-ending
@@ -167,7 +167,7 @@ function dir_for(t: Toolchain, source_name: str, text: str, level_key: str, sani
     made = process.mkdir_all(dir)
 
     if made.is_err()
-        return fail("failed", "cannot create " + dir)
+        return fail(code: "failed", msg: "cannot create " + dir)
     return ok(dir)
 
 # Compile the runtime once and cache it, keyed on its own contents,
@@ -192,7 +192,7 @@ function runtime_object(t: Toolchain, level: str, sanitize: bool) -> str?
     made = process.mkdir_all(t.build)
 
     if made.is_err()
-        return fail("failed", "cannot create " + t.build)
+        return fail(code: "failed", msg: "cannot create " + t.build)
     object = t.build + "/runtime-" + key + ".o"
     memo: {str: str} @ {}
 
@@ -222,10 +222,10 @@ function runtime_object(t: Toolchain, level: str, sanitize: bool) -> str?
     )
 
     if recorded.is_err()
-        return fail("failed", "cannot record what the runtime's translation unit read")
+        return fail(code: "failed", msg: "cannot record what the runtime's translation unit read")
 
     if process.rename_over(from: staged, to: object).is_err()
-        return fail("failed", "cannot publish " + object)
+        return fail(code: "failed", msg: "cannot publish " + object)
     return ok(object)
 
 function bool_text(value: bool) -> str
@@ -282,7 +282,7 @@ function link(t: Toolchain, c_file: str, object: str, binary: str, level: str, s
         compiled?
 
     if process.rename_over(from: staged_object, to: unit_object).is_err()
-        return fail("failed", "cannot publish " + unit_object)
+        return fail(code: "failed", msg: "cannot publish " + unit_object)
     link_line: [str] @ with_all(list: ["clang"], more: flags.flags())
     link_line @ link_line.push(level)
     link_line @ with_all(list: link_line, more: flags.sanitizers(sanitize: sanitize))
@@ -310,7 +310,7 @@ function link(t: Toolchain, c_file: str, object: str, binary: str, level: str, s
         linked?
 
     if process.rename_over(from: staged, to: binary).is_err()
-        return fail("failed", "cannot publish " + binary)
+        return fail(code: "failed", msg: "cannot publish " + binary)
     return ok()
 
 function starts_with(text: str, prefix: str) -> bool

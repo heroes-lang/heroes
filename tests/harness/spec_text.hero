@@ -109,7 +109,7 @@ function offered_builtins(text: str) -> [str]?
     opens = at_marker(cs: cs, needle: "Built-ins:")
 
     if opens.is_err()
-        return fail("no_list", "the spec has no `Built-ins:` sentence")
+        return fail(code: "no_list", msg: "the spec has no `Built-ins:` sentence")
     from = opens.must()
     tail = cs.slice(from: from, to: cs.len())
     sentence = tail.slice(from: 0, to: end_of_sentence(tail))
@@ -140,7 +140,7 @@ function at_marker(cs: [str], needle: str) -> i64?
     wanted = needle.chars()
 
     if wanted.len() == 0 || wanted.len() > cs.len()
-        return fail("absent", "the marker is not there")
+        return fail(code: "absent", msg: "the marker is not there")
     limit = cs.len() - wanted.len()
     at: i64 @ 0
 
@@ -149,7 +149,7 @@ function at_marker(cs: [str], needle: str) -> i64?
             return ok(at)
         at @ at + 1
 
-    return fail("absent", "the marker is not there")
+    return fail(code: "absent", msg: "the marker is not there")
 
 # How many characters this sentence runs to, counting only full stops OUTSIDE
 # a code span — `print(...)` and `slice(from:, to:)` carry dots of their own
@@ -248,7 +248,7 @@ function section_named(text: str, name: str) -> i64?
                 return ok(at)
         at @ at + line.len() + 1
 
-    return fail("absent", "no `## " + name + "` section, numbered or not")
+    return fail(code: "absent", msg: "no `## " + name + "` section, numbered or not")
 
 # `13. FFI` becomes `FFI`; `FFI` stays. A number is digits, a full stop and a
 # space, and nothing else is looked past, so `1.0 release` keeps its title.

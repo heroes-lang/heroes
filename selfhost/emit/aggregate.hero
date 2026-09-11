@@ -67,7 +67,7 @@ function field(c: state.Checked, s: source.Source, decls: [ast.Decl], owner: i64
         .failure | .generic | .error                              => decl @ decl
 
     if decl < 0
-        return fail("none", "not an aggregate")
+        return fail(code: "none", msg: "not an aggregate")
     fields: [ast.Field] @ []
     foreign: bool @ false
 
@@ -79,16 +79,16 @@ function field(c: state.Checked, s: source.Source, decls: [ast.Decl], owner: i64
                 foreign @ true
         .variant_decl v =>
             if case_at < 0 || case_at >= v.cases.len()
-                return fail("none", "not a case of this variant")
+                return fail(code: "none", msg: "not a case of this variant")
             fields @ v.cases[case_at].fields
-        .constant_decl | .function_decl | .test_decl => return fail("none", "not an aggregate declaration")
+        .constant_decl | .function_decl | .test_decl => return fail(code: "none", msg: "not an aggregate declaration")
 
     if index >= fields.len()
-        return fail("none", "past the fields")
+        return fail(code: "none", msg: "past the fields")
     written = state.written_type(c, fields[index].ty)
 
     if written.is_err()
-        return fail("none", "the field's type was never lowered")
+        return fail(code: "none", msg: "the field's type was never lowered")
     return ok(
         FieldRead(member: mangle.field_of(foreign: foreign, name: source.span_text(s, fields[index].name)), ty: written.must())
     )
@@ -103,13 +103,13 @@ function case_names(names: ctype.Names, s: source.Source, decls: [ast.Decl], dec
     match decls[decl].kind
         .variant_decl v =>
             if at >= v.cases.len()
-                return fail("none", "no such case")
+                return fail(code: "none", msg: "no such case")
             return ok(
                 CaseNames(holder: ctype.of(names, decl: decl), case_name: source.span_text(s, v.cases[at].name))
             )
-        .constant_decl | .function_decl | .record_decl | .test_decl => return fail("none", "not a variant")
+        .constant_decl | .function_decl | .record_decl | .test_decl => return fail(code: "none", msg: "not a variant")
 
-    return fail("none", "unreached")
+    return fail(code: "none", msg: "unreached")
 
 # A place as a C lvalue: the slot, then one .member per step. The path
 # is walked with the TYPE alongside it, because the member's spelling
@@ -150,16 +150,16 @@ function construct(names: ctype.Names, s: source.Source, decls: [ast.Decl], decl
             parts = designators(s, fields: rec.fields, arguments: arguments, foreign: !rec.header.is_err())
 
             if parts.is_err()
-                return fail("none", "fewer arguments than fields")
+                return fail(code: "none", msg: "fewer arguments than fields")
 
             # A record with no fields is error[empty_record], so this
             # cannot be empty — and (T){} is not C11 anyway.
             if parts.must().len() == 0
-                return fail("none", "an empty record cannot be built")
+                return fail(code: "none", msg: "an empty record cannot be built")
             return ok("(" + name + "){" + parts.must().join(", ") + "}")
-        .constant_decl | .function_decl | .variant_decl | .test_decl => return fail("none", "not a record")
+        .constant_decl | .function_decl | .variant_decl | .test_decl => return fail(code: "none", msg: "not a record")
 
-    return fail("none", "unreached")
+    return fail(code: "none", msg: "unreached")
 
 # t2 = (h_m_Token){.tag = h_m_Token_tag_word, .as.c_word = {.f_text = t1}};
 # The result is the WHOLE variant, not the case. A payload-free case
@@ -169,7 +169,7 @@ function construct_case(names: ctype.Names, s: source.Source, decls: [ast.Decl],
     both = case_names(names, s, decls, decl: decl, at: at)
 
     if both.is_err()
-        return fail("none", "not a case")
+        return fail(code: "none", msg: "not a case")
     tag_text = ".tag = " + mangle.tag_of(ty: both.must().holder, case_name: both.must().case_name)
 
     match decls[decl].kind
@@ -184,13 +184,13 @@ function construct_case(names: ctype.Names, s: source.Source, decls: [ast.Decl],
             parts = designators(s, fields: fields, arguments: arguments, foreign: false)
 
             if parts.is_err()
-                return fail("none", "fewer arguments than payload fields")
+                return fail(code: "none", msg: "fewer arguments than payload fields")
             return ok(
                 "(" + both.must().holder + "){" + tag_text + ", .as." + mangle.case_member(both.must().case_name) + " = {" + parts.must().join(", ") + "}}"
             )
-        .constant_decl | .function_decl | .record_decl | .test_decl => return fail("none", "not a variant")
+        .constant_decl | .function_decl | .record_decl | .test_decl => return fail(code: "none", msg: "not a variant")
 
-    return fail("none", "unreached")
+    return fail(code: "none", msg: "unreached")
 
 # .f_x = t1 per field, in declared order. Designated, never positional
 # — the redundancy is the point.
@@ -200,7 +200,7 @@ function designators(s: source.Source, fields: [ast.Field], arguments: [str], fo
 
     for one_field in fields
         if index >= arguments.len()
-            return fail("none", "fewer arguments than fields")
+            return fail(code: "none", msg: "fewer arguments than fields")
         parts @ parts.push(
             "." + mangle.field_of(foreign: foreign, name: source.span_text(s, one_field.name)) + " = " + arguments[index]
         )
@@ -223,11 +223,11 @@ function payload_member(c: state.Checked, names: ctype.Names, s: source.Source, 
         .failure | .generic | .error                                 => decl @ decl
 
     if decl < 0
-        return fail("none", "not a variant value")
+        return fail(code: "none", msg: "not a variant value")
     both = case_names(names, s, decls, decl: decl, at: at)
 
     if both.is_err()
-        return fail("none", "no such case")
+        return fail(code: "none", msg: "no such case")
     return ok(mangle.value(base) + ".as." + mangle.case_member(both.must().case_name))
 
 # t2 = t1.f_x;
@@ -235,7 +235,7 @@ function read_field(c: state.Checked, s: source.Source, decls: [ast.Decl], f: co
     found = field(c, s, decls, owner: containers.value_type(f, base), index: index)
 
     if found.is_err()
-        return fail("none", "not a field read")
+        return fail(code: "none", msg: "not a field read")
     return ok(mangle.value(base) + "." + found.must().member)
 
 # h_m_Point_eq(&t1, &t2) — one call, generated per type, walking fields.
@@ -243,7 +243,7 @@ function equality(c: state.Checked, names: ctype.Names, ty: i64, left: i64, righ
     found = ctype.satellite_name(names, c, ty: ty)
 
     if found.is_err()
-        return fail("none", "no generated eq")
+        return fail(code: "none", msg: "no generated eq")
     return ok(found.must() + "_eq(&" + mangle.value(left) + ", &" + mangle.value(right) + ")")
 
 # h_m_Holder_retain(&t1); — a VALUE, not a place, because that is what
@@ -262,7 +262,7 @@ function retain_named(c: state.Checked, names: ctype.Names, ty: i64, name: str, 
     found = ctype.satellite_name(names, c, ty: ty)
 
     if found.is_err()
-        return fail("none", "no generated retain")
+        return fail(code: "none", msg: "no generated retain")
     verb: str @ "release"
 
     if keep

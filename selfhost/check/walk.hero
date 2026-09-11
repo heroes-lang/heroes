@@ -53,6 +53,7 @@ use check/access
 use check/contextual
 use check/join
 use check/builtins
+use check/labels
 use check/generics as check_generics
 use check/discard
 use value_errors
@@ -84,7 +85,7 @@ record Outcome
     value: i64?
 
 function falls_with_nothing() -> Outcome
-    return Outcome(jumps: false, value: fail("none", "a statement produces no value"))
+    return Outcome(jumps: false, value: fail(code: "none", msg: "a statement produces no value"))
 
 ## ⇒ — synthesise
 
@@ -193,12 +194,12 @@ function synth(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
         .call cl => return state.record_expr(
             @c,
             at: id,
-            ty: dispatch_call(@c, a, r, s, decls, at: id, callee: cl.callee, given: cl.args, expected: fail("absent", "no expectation"))
+            ty: dispatch_call(@c, a, r, s, decls, at: id, callee: cl.callee, given: cl.args, expected: fail(code: "absent", msg: "no expectation"))
         )
         .method m => return state.record_expr(
             @c,
             at: id,
-            ty: method(@c, a, r, s, decls, at: id, receiver: m.receiver, called: m.name, given: m.args, expected: fail("absent", "no expectation"))
+            ty: method(@c, a, r, s, decls, at: id, receiver: m.receiver, called: m.name, given: m.args, expected: fail(code: "absent", msg: "no expectation"))
         )
         # Which variant a case belongs to comes from context (§4.5's ⇐
         # mode), so there is nothing to synthesise from.
@@ -659,7 +660,7 @@ function mismatch_shown(@c: state.Checker, s: source.Source, decls: [ast.Decl], 
 # wants it to be ().
 function block(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], body: ast.Block, want: Want) -> Outcome
     jumps: bool @ false
-    value: i64? @ fail("none", "no last value yet")
+    value: i64? @ fail(code: "none", msg: "no last value yet")
     last = body.stmts.len() - 1
     index: i64 @ 0
 
@@ -680,7 +681,7 @@ function block(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
     # A block that jumps produces no value, whatever its last line looked
     # like.
     if jumps
-        return Outcome(jumps: true, value: fail("jumps", "a block that jumps produces no value"))
+        return Outcome(jumps: true, value: fail(code: "jumps", msg: "a block that jumps produces no value"))
 
     # Asked for a value, falls through, and has none: its last line is a
     # statement. NOT the same as diverging — treating the two alike would
@@ -731,11 +732,11 @@ function statement(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
         .break_stmt =>
             if c.loops == 0
                 state.push_diagnostic(@c, flow_errors.jump_outside_loop("break", span))
-            return Outcome(jumps: true, value: fail("jumps", "a jump has no value"))
+            return Outcome(jumps: true, value: fail(code: "jumps", msg: "a jump has no value"))
         .continue_stmt =>
             if c.loops == 0
                 state.push_diagnostic(@c, flow_errors.jump_outside_loop("continue", span))
-            return Outcome(jumps: true, value: fail("jumps", "a jump has no value"))
+            return Outcome(jumps: true, value: fail(code: "jumps", msg: "a jump has no value"))
         .assert_stmt v =>
             wanted = table.bool_ty(c.out.types)
             got = synth(@c, a, r, s, decls, v.value)
@@ -808,7 +809,7 @@ function returns(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.
         if c.result != unit
             want = state.show(c, s, decls, c.result)
             state.push_diagnostic(@c, flow_errors.missing_value(want, span))
-    return Outcome(jumps: true, value: fail("jumps", "a return has no value here"))
+    return Outcome(jumps: true, value: fail(code: "jumps", msg: "a return has no value here"))
 
 # The type a mutation target ACCEPTS, which differs from the type it
 # reads in exactly one case: an index into a map.
@@ -858,7 +859,7 @@ function expression_statement(@c: state.Checker, a: ast.Ast, r: resolved.Resolve
 
                 # As a statement it has the type a statement must have.
                 _ = state.record_expr(@c, at: value, ty: table.unit_ty(c.out.types))
-                return Outcome(jumps: all_jump, value: fail("none", "a statement produces no value"))
+                return Outcome(jumps: all_jump, value: fail(code: "none", msg: "a statement produces no value"))
             return valued_expression(@c, a, r, s, decls, value: value, want: want, span: span)
         .match_expr m =>
             if want == .nothing
@@ -872,7 +873,7 @@ function expression_statement(@c: state.Checker, a: ast.Ast, r: resolved.Resolve
 
                 all_jump = branches.len() > 0 && !produced
                 _ = state.record_expr(@c, at: value, ty: table.unit_ty(c.out.types))
-                return Outcome(jumps: all_jump, value: fail("none", "a statement produces no value"))
+                return Outcome(jumps: all_jump, value: fail(code: "none", msg: "a statement produces no value"))
             return valued_expression(@c, a, r, s, decls, value: value, want: want, span: span)
         .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => return valued_expression(
             @c,
@@ -950,22 +951,25 @@ function returns_its_receiver(c: state.Checker, a: ast.Ast, s: source.Source, va
                 .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error    => false
 
             if !is_name
-                return fail("absent", "the receiver is not a bare name")
+                return fail(code: "absent", msg: "the receiver is not a bare name")
 
             if c.out.expr_types[m.receiver] != got
-                return fail("absent", "the result is not the receiver's own type")
+                return fail(code: "absent", msg: "the result is not the receiver's own type")
             return ok(source.span_text(s, a.exprs[m.receiver].span))
         .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => return fail(
-            "absent",
-            "not a method call"
+            code: "absent",
+            msg: "not a method call"
         )
-        .name | .hole | .unary | .binary | .field | .index | .call => return fail("absent", "not a method call")
+        .name | .hole | .unary | .binary | .field | .index | .call => return fail(
+            code: "absent",
+            msg: "not a method call"
+        )
         .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => return fail(
-            "absent",
-            "not a method call"
+            code: "absent",
+            msg: "not a method call"
         )
 
-    return fail("absent", "unreached")
+    return fail(code: "absent", msg: "unreached")
 
 ## Arms and patterns — the rule match exists for
 
@@ -990,14 +994,14 @@ function arms(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Sou
                 .literal l => literal_pattern(@c, a, r, s, decls, subject: subject, value: l.value, span: pattern.span)
                 .error     => continue
 
-        value: i64? @ fail("none", "nothing produced yet")
+        value: i64? @ fail(code: "none", msg: "nothing produced yet")
 
         match arm.body
             .one_stmt one =>
                 got = statement(@c, a, r, s, decls, id: one.at, want: want)
 
                 if got.jumps
-                    value @ fail("jumps", "a jumping arm has no value")
+                    value @ fail(code: "jumps", msg: "a jumping arm has no value")
                 else
                     value @ got.value
             .block bb =>
@@ -1215,7 +1219,7 @@ function dispatch_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: s
         decls,
         callee_ty: callee_ty,
         given: given,
-        receiver: fail("absent", "no receiver"),
+        receiver: fail(code: "absent", msg: "no receiver"),
         span: span
     )
 
@@ -1231,20 +1235,20 @@ function named_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sour
                     signature = signature_of(@c, a, r, decls, decl: t.at)
                     _ = state.record_expr(@c, at: callee, ty: signature)
                     return ok(
-                        user_call(@c, a, r, s, decls, decl: t.at, given: given, receiver: fail("absent", "no receiver"), span: span, expected: expected)
+                        user_call(@c, a, r, s, decls, decl: t.at, given: given, receiver: fail(code: "absent", msg: "no receiver"), span: span, expected: expected)
                     )
                 .record_decl => return ok(construct_record(@c, a, r, s, decls, decl: t.at, given: given, span: span))
                 .variant_decl =>
                     name = source.span_text(s, decls[t.at].name)
                     state.push_diagnostic(@c, contextless_errors.variant_not_callable(name, span))
                     return ok(state.error_ty_of(c))
-                .constant_decl | .test_decl => return fail("indirect", "a constant callee is a value")
+                .constant_decl | .test_decl => return fail(code: "indirect", msg: "a constant callee is a value")
         .builtin b => return ok(
-            builtin_dispatch(@c, a, r, s, decls, index: b.at, given: given, receiver: fail("absent", "no receiver"), span: span)
+            builtin_dispatch(@c, a, r, s, decls, index: b.at, given: given, receiver: fail(code: "absent", msg: "no receiver"), span: span)
         )
-        .unresolved | .local | .module => return fail("indirect", "the resolver did not name a declaration")
+        .unresolved | .local | .module => return fail(code: "indirect", msg: "the resolver did not name a declaration")
 
-    return fail("indirect", "unreached")
+    return fail(code: "indirect", msg: "unreached")
 
 function builtin_dispatch(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], index: i64, given: [ast.Arg], receiver: i64?, span: token.Span) -> i64
     name = inventory.table()[index].name
@@ -1272,7 +1276,15 @@ function builtin_dispatch(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s
         # second on they are CHECKED rather than synthesised — which is
         # what lets a .case or an ok(…) be written as a built-in's
         # argument.
-        expected: i64? @ fail("absent", "no first argument yet")
+        labels.check_label(
+            @c,
+            s,
+            name: name,
+            position: collected.len(),
+            written: arg.name,
+            value_span: a.exprs[arg.value].span
+        )
+        expected: i64? @ fail(code: "absent", msg: "no first argument yet")
 
         if collected.len() > 0
             expected @ builtins.expectation(c, name, first: collected[0], index: collected.len())
@@ -1311,7 +1323,7 @@ function indirect_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: s
             if given.len() + offset != params.len()
                 state.push_diagnostic(
                     @c,
-                    value_errors.arity(name: "this function", expected: params.len(), got: given.len() + offset, declared: fail("absent", "a function value has no line to cite"), span: span)
+                    value_errors.arity(name: "this function", expected: params.len(), got: given.len() + offset, declared: fail(code: "absent", msg: "a function value has no line to cite"), span: span)
                 )
                 return state.error_ty_of(c)
             index: i64 @ 0
@@ -1360,7 +1372,7 @@ function method(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.S
                         decls,
                         decl: t.at,
                         given: given,
-                        receiver: fail("absent", "no receiver"),
+                        receiver: fail(code: "absent", msg: "no receiver"),
                         span: span,
                         expected: expected
                     )
@@ -1381,7 +1393,7 @@ function method(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.S
             decls,
             callee_ty: field.must(),
             given: given,
-            receiver: fail("absent", "the field call takes no receiver"),
+            receiver: fail(code: "absent", msg: "the field call takes no receiver"),
             span: span
         )
 
@@ -1483,7 +1495,7 @@ function user_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
             g: i64 @ 0
 
             while g < generics
-                bindings @ bindings.push(fail("unbound", "not met yet"))
+                bindings @ bindings.push(fail(code: "unbound", msg: "not met yet"))
                 g @ g + 1
 
             params: [i64] @ []
@@ -1558,7 +1570,7 @@ function user_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
                         if source.span_text(s, arg.name.must()) != wanted
                             state.push_diagnostic(
                                 @c,
-                                data_errors.wrong_label(holder: name, written: source.span_text(s, arg.name.must()), expected: wanted, span: arg.name.must())
+                                data_errors.wrong_label(holder: name, written: source.span_text(s, arg.name.must()), expected: wanted, elsewhere: names_a_parameter(s, fd.value.params, source.span_text(s, arg.name.must())), span: arg.name.must())
                             )
                 else
 
@@ -1571,7 +1583,7 @@ function user_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
                         if source.span_text(s, arg.name.must()) != wanted
                             state.push_diagnostic(
                                 @c,
-                                data_errors.wrong_label(holder: name, written: source.span_text(s, arg.name.must()), expected: wanted, span: arg.name.must())
+                                data_errors.wrong_label(holder: name, written: source.span_text(s, arg.name.must()), expected: wanted, elsewhere: names_a_parameter(s, fd.value.params, source.span_text(s, arg.name.must())), span: arg.name.must())
                             )
 
                 # §4.8: the marker is repeated at the call site, and a
@@ -1677,6 +1689,27 @@ function bind_argument(@c: state.Checker, s: source.Source, decls: [ast.Decl], @
 record FieldSpec
     name: str
     ty: i64
+
+# **What the certainty of a `wrong_label` fix rests on**, and it is a fact about
+# the call in hand rather than a premise about the world: does the label the
+# author wrote name ANOTHER position of this callee? If it does, the call is an
+# argument swap wearing labels, and renaming one leaves both values where they
+# are (panel 127's compiler seat applied the old certain fix and measured the
+# program printing the other answer). `data_errors.wrong_label` turns that into
+# a `guess`; a label that names nothing is a typo and the rename is certain.
+function names_a_parameter(s: source.Source, params: [ast.Param], written: str) -> bool
+    for p in params
+        if source.span_text(s, p.name) == written
+            return true
+
+    return false
+
+function names_a_field(expected: [FieldSpec], written: str) -> bool
+    for f in expected
+        if f.name == written
+            return true
+
+    return false
 
 # Point(x: 3, y: 4) — §4.9 makes every field name mandatory, always,
 # which is why there is no positional form to get wrong.
@@ -1791,15 +1824,15 @@ function fallible_constructor(@c: state.Checker, a: ast.Ast, r: resolved.Resolve
         .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error    => false
 
     if !callee_is_name
-        return fail("not_mine", "the callee is not a bare name")
+        return fail(code: "not_mine", msg: "the callee is not a bare name")
     name: str @ ""
 
     match r.uses[callee]
         .builtin b                            => name @ inventory.table()[b.at].name
-        .unresolved | .local | .top | .module => return fail("not_mine", "the callee is not a built-in")
+        .unresolved | .local | .top | .module => return fail(code: "not_mine", msg: "the callee is not a built-in")
 
     if name != "ok" && name != "fail"
-        return fail("not_mine", "not one of the two constructors")
+        return fail(code: "not_mine", msg: "not one of the two constructors")
     inner: i64 @ -1
 
     match table.get(c.out.types, expected)
@@ -1829,7 +1862,7 @@ function fallible_constructor(@c: state.Checker, a: ast.Ast, r: resolved.Resolve
         if given.len() != wanted
             state.push_diagnostic(
                 @c,
-                value_errors.arity(name: "ok", expected: wanted, got: given.len(), declared: fail("absent", "a constructor has no line to cite"), span: span)
+                value_errors.arity(name: "ok", expected: wanted, got: given.len(), declared: fail(code: "absent", msg: "a constructor has no line to cite"), span: span)
             )
             return ok(state.error_ty_of(c))
 
@@ -1840,13 +1873,16 @@ function fallible_constructor(@c: state.Checker, a: ast.Ast, r: resolved.Resolve
     if given.len() != 2
         state.push_diagnostic(
             @c,
-            value_errors.arity(name: "fail", expected: 2, got: given.len(), declared: fail("absent", "a constructor has no line to cite"), span: span)
+            value_errors.arity(name: "fail", expected: 2, got: given.len(), declared: fail(code: "absent", msg: "a constructor has no line to cite"), span: span)
         )
         return ok(state.error_ty_of(c))
     str_id = table.str_ty(c.out.types)
+    at: i64 @ 0
 
     for arg in given
+        labels.check_label(@c, s, name: "fail", position: at, written: arg.name, value_span: a.exprs[arg.value].span)
         check(@c, a, r, s, decls, id: arg.value, expected: str_id)
+        at @ at + 1
 
     return ok(expected)
 
@@ -1883,7 +1919,7 @@ function check_named_fields(@c: state.Checker, a: ast.Ast, r: resolved.Resolved,
             if source.span_text(s, arg.name.must()) != spec.name
                 state.push_diagnostic(
                     @c,
-                    data_errors.wrong_label(holder: label, written: source.span_text(s, arg.name.must()), expected: spec.name, span: arg.name.must())
+                    data_errors.wrong_label(holder: label, written: source.span_text(s, arg.name.must()), expected: spec.name, elsewhere: names_a_field(expected, source.span_text(s, arg.name.must())), span: arg.name.must())
                 )
         lowered = lower.lower_ty(@c, a, r, spec.ty)
         check(@c, a, r, s, decls, id: arg.value, expected: lowered)
@@ -1908,40 +1944,46 @@ function field_of_function_type(@c: state.Checker, a: ast.Ast, r: resolved.Resol
         .failure | .generic | .error                              => holder @ -1
 
     if holder < 0
-        return fail("absent", "the receiver is not a record or a case")
+        return fail(code: "absent", msg: "the receiver is not a record or a case")
     found_ty: i64 @ -1
 
     match decls[holder].kind
         .record_decl rec =>
             if case_at >= 0
-                return fail("absent", "a case type on a record declaration")
+                return fail(code: "absent", msg: "a case type on a record declaration")
 
             for f in rec.fields
                 if source.span_text(s, f.name) == name
                     found_ty @ f.ty
         .variant_decl v =>
             if case_at < 0
-                return fail("absent", "a variant's own name has no fields")
+                return fail(code: "absent", msg: "a variant's own name has no fields")
 
             for f in v.cases[case_at].fields
                 if source.span_text(s, f.name) == name
                     found_ty @ f.ty
-        .constant_decl | .function_decl | .test_decl => return fail("absent", "not a data declaration")
+        .constant_decl | .function_decl | .test_decl => return fail(code: "absent", msg: "not a data declaration")
 
     if found_ty < 0
-        return fail("absent", "no field of that name")
+        return fail(code: "absent", msg: "no field of that name")
     lowered = lower.lower_ty(@c, a, r, found_ty)
 
     match table.get(c.out.types, lowered)
         .function_ty => return ok(lowered)
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail(
-            "absent",
-            "the field does not hold a function"
+            code: "absent",
+            msg: "the field does not hold a function"
         )
-        .array | .fixed | .map | .fallible | .named => return fail("absent", "the field does not hold a function")
-        .case_ty | .failure | .generic | .error     => return fail("absent", "the field does not hold a function")
+        .array | .fixed | .map | .fallible | .named => return fail(
+            code: "absent",
+            msg: "the field does not hold a function"
+        )
+        .case_ty | .failure | .generic | .error => return fail(
+            code: "absent",
+            msg: "the field does not hold a function"
+        )
 
-    return fail("absent", "unreached")
+    return fail(code: "absent", msg: "unreached")
 
 ## Tests
 
@@ -2067,7 +2109,7 @@ test "a type parameter only in the result takes the type the context asks for"
     # Panel 105: annotated binding, `return` under a declared result, a
     # `match` arm, an argument to a non-generic callee, and a UFCS receiver
     # all say what `A` is; none is a diagnostic.
-    text = "function wanted<A>(what: str) -> A?\n    return fail(\"type\", what)\n\nfunction take(v: i64?) -> bool\n    return v.is_err()\n\nfunction number_of(flag: bool) -> i64?\n    return match flag\n        true => ok(1)\n        false => wanted(what: \"a number\")\n\nfunction as_return() -> str?\n    return wanted(what: \"text\")\n\nfunction via_ufcs() -> bool?\n    return \"a truth\".wanted()\n\nfunction main()\n    x: f64? = wanted(what: \"a float\")\n    print(x.is_err())\n    print(take(wanted(what: \"an argument\")))\n    print(number_of(true).is_err())\n    print(as_return().is_err())\n    print(via_ufcs().is_err())\n"
+    text = "function wanted<A>(what: str) -> A?\n    return fail(code: \"type\", msg: what)\n\nfunction take(v: i64?) -> bool\n    return v.is_err()\n\nfunction number_of(flag: bool) -> i64?\n    return match flag\n        true => ok(1)\n        false => wanted(what: \"a number\")\n\nfunction as_return() -> str?\n    return wanted(what: \"text\")\n\nfunction via_ufcs() -> bool?\n    return \"a truth\".wanted()\n\nfunction main()\n    x: f64? = wanted(what: \"a float\")\n    print(x.is_err())\n    print(take(wanted(what: \"an argument\")))\n    print(number_of(true).is_err())\n    print(as_return().is_err())\n    print(via_ufcs().is_err())\n"
     c = checked_program(text)
     assert c.out.diagnostics.len() == 0
 
@@ -2076,7 +2118,7 @@ test "a call that says neither is refused at the call, and a disagreeing context
     # `wanted` for a type. One diagnostic, at the call, with a guess fix that
     # names the two ways to give it context and never a type argument.
     c = checked_program(
-        "function wanted<A>(what: str) -> A?\n    return fail(\"type\", what)\n\nfunction main()\n    print(wanted(what: \"a\").is_err())\n"
+        "function wanted<A>(what: str) -> A?\n    return fail(code: \"type\", msg: what)\n\nfunction main()\n    print(wanted(what: \"a\").is_err())\n"
     )
     assert c.out.diagnostics.len() == 1
     assert c.out.diagnostics[0].code == "cannot_infer"
@@ -2088,7 +2130,7 @@ test "a call that says neither is refused at the call, and a disagreeing context
     # engineer's condition 2: context binding fills and never reports, so
     # `compare`'s message is the only one.
     d = checked_program(
-        "function wanted<A>(what: str) -> A?\n    return fail(\"type\", what)\n\nfunction main()\n    n: i64 = wanted(what: \"a\")\n    print(n)\n"
+        "function wanted<A>(what: str) -> A?\n    return fail(code: \"type\", msg: what)\n\nfunction main()\n    n: i64 = wanted(what: \"a\")\n    print(n)\n"
     )
     assert d.out.diagnostics.len() == 1
     assert d.out.diagnostics[0].code == "type_mismatch"

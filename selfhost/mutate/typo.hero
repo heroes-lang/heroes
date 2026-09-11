@@ -73,19 +73,22 @@ function code_literal(a: ast.Ast, s: source.Source, e: ast.Expr) -> i64?
     return match e.kind
         .call c =>
             if !is_written(a: a, s: s, id: c.callee, name: "fail") || c.args.len() == 0
-                fail("no_code", "not a `fail` call")
+                fail(code: "no_code", msg: "not a `fail` call")
             else
                 ok(c.args[0].value)
         .binary b =>
             if is_equality(b.op)
                 code_side(a: a, s: s, left: b.left, right: b.right)
             else
-                fail("no_code", "not an equality")
-        .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit => fail("no_code", "a literal holds no code")
-        .null_ptr | .name | .hole | .error                                 => fail("no_code", "nothing to read here")
-        .unary | .field | .index                                           => fail("no_code", "nothing to read here")
-        .method | .variant_case                                            => fail("no_code", "nothing to read here")
-        .array | .map | .try_expr | .if_expr | .match_expr                 => fail("no_code", "nothing to read here")
+                fail(code: "no_code", msg: "not an equality")
+        .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit => fail(
+            code: "no_code",
+            msg: "a literal holds no code"
+        )
+        .null_ptr | .name | .hole | .error                 => fail(code: "no_code", msg: "nothing to read here")
+        .unary | .field | .index                           => fail(code: "no_code", msg: "nothing to read here")
+        .method | .variant_case                            => fail(code: "no_code", msg: "nothing to read here")
+        .array | .map | .try_expr | .if_expr | .match_expr => fail(code: "no_code", msg: "nothing to read here")
 
 function is_equality(op: ast.BinaryOp) -> bool
     return match op
@@ -108,7 +111,7 @@ function code_side(a: ast.Ast, s: source.Source, left: i64, right: i64) -> i64?
 
     if is_str(a.exprs[right]) && reads_code(a: a, s: s, id: left)
         return ok(right)
-    return fail("no_code", "neither side is a code comparison")
+    return fail(code: "no_code", msg: "neither side is a code comparison")
 
 function is_str(e: ast.Expr) -> bool
     return match e.kind
@@ -137,16 +140,16 @@ function code_text(s: source.Source, span: token.Span) -> str?
     written = source.span_text(s, span)
 
     if written.len() < 2 || written[0] != 34 || written[written.len() - 1] != 34
-        return fail("not_a_code", "not a quoted literal")
+        return fail(code: "not_a_code", msg: "not a quoted literal")
     inner = written.slice(from: 1, to: written.len() - 1)
 
     if inner.len() < 3
-        return fail("not_a_code", "too short for a slip")
+        return fail(code: "not_a_code", msg: "too short for a slip")
     i: i64 @ 0
 
     while i < inner.len()
         if inner[i] == 92
-            return fail("not_a_code", "an escape measures the lexer")
+            return fail(code: "not_a_code", msg: "an escape measures the lexer")
         i @ i + 1
 
     return ok(inner)
@@ -179,21 +182,24 @@ function constant_number(a: ast.Ast, decl: ast.Decl) -> i64?
         .constant_decl c =>
             match c.body
                 .ok body => single_int(a: a, body: body)
-                .err _   => fail("no_digit", "an extern constant has no body")
-        .function_decl | .record_decl | .variant_decl | .test_decl => fail("no_digit", "not a constant")
+                .err _   => fail(code: "no_digit", msg: "an extern constant has no body")
+        .function_decl | .record_decl | .variant_decl | .test_decl => fail(code: "no_digit", msg: "not a constant")
 
 function single_int(a: ast.Ast, body: ast.Block) -> i64?
     if body.stmts.len() != 1
-        return fail("no_digit", "more than one statement")
+        return fail(code: "no_digit", msg: "more than one statement")
 
     return match a.stmts[body.stmts[0]].kind
         .expr_stmt only =>
             if is_int_literal(a.exprs[only.value])
                 ok(only.value)
             else
-                fail("no_digit", "not an integer literal")
-        .bind | .declare | .mutate | .return_stmt | .break_stmt        => fail("no_digit", "not an expression")
-        .continue_stmt | .while_stmt | .for_in | .assert_stmt | .error => fail("no_digit", "not an expression")
+                fail(code: "no_digit", msg: "not an integer literal")
+        .bind | .declare | .mutate | .return_stmt | .break_stmt => fail(code: "no_digit", msg: "not an expression")
+        .continue_stmt | .while_stmt | .for_in | .assert_stmt | .error => fail(
+            code: "no_digit",
+            msg: "not an expression"
+        )
 
 function is_int_literal(e: ast.Expr) -> bool
     return match e.kind
@@ -235,11 +241,11 @@ function neighbouring_digit(text: str) -> str?
         at @ at - 1
 
     if at < prefix
-        return fail("no_digit", "nothing but a prefix and separators")
+        return fail(code: "no_digit", msg: "nothing but a prefix and separators")
     value = digit_value(ch: cs[at], radix: radix)
 
     if value.is_err()
-        return fail("no_digit", "the last character is not a digit of this base")
+        return fail(code: "no_digit", msg: "the last character is not a digit of this base")
     moved: i64 @ value.must() + 1
 
     if value.must() + 1 == radix
@@ -258,7 +264,7 @@ function neighbouring_digit(text: str) -> str?
 
 function digit_value(ch: str, radix: i64) -> i64?
     if ch.len() != 1
-        return fail("not_a_digit", "not one character")
+        return fail(code: "not_a_digit", msg: "not one character")
     b = ch[0].to_i64().must()
     value: i64 @ -1
 
@@ -270,7 +276,7 @@ function digit_value(ch: str, radix: i64) -> i64?
         value @ b - 97 + 10
 
     if value == -1 || value >= radix
-        return fail("not_a_digit", "not a digit of this base")
+        return fail(code: "not_a_digit", msg: "not a digit of this base")
     return ok(value)
 
 constant DIGITS: str

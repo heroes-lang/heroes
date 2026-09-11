@@ -43,7 +43,7 @@ function assertion(c: state.Checked, names: ctype.Names, s: source.Source, c_typ
     written = state.written_type(c, field.ty)
 
     if written.is_err()
-        return fail("none", "the checker already refused this field")
+        return fail(code: "none", msg: "the checker already refused this field")
     ty = written.must()
     member = mangle.field_of(foreign: true, name: source.span_text(s, field.name))
     place = "((" + c_type + " *)0)->" + member
@@ -101,7 +101,7 @@ function assertion(c: state.Checked, names: ctype.Names, s: source.Source, c_typ
         elem = c_spelling(c, names, ty: fixed_elem)
 
         if elem.is_err()
-            return fail("none", "an element with no C spelling")
+            return fail(code: "none", msg: "an element with no C spelling")
         flex_line = "_Static_assert(sizeof(" + c_type + ") - __builtin_offsetof(" + c_type + ", " + member + ") != 0, \"" + FLEX_ASSERTION + " " + hero_name + " " + member + "\");"
         elem_is_int: bool @ false
 
@@ -235,7 +235,7 @@ function assertion(c: state.Checked, names: ctype.Names, s: source.Source, c_typ
     found = c_spelling(c, names, ty: ty)
 
     if found.is_err()
-        return fail("none", "a type with no header layout")
+        return fail(code: "none", msg: "a type with no header layout")
     return ok(
         "_Static_assert(_Generic(&" + place + ", " + found.must() + " *: 1, default: 0) && sizeof(" + place + ") == sizeof(" + found.must() + "), \"" + FIELD_ASSERTION + " " + hero_name + " " + member + "\");"
     )
@@ -277,10 +277,13 @@ function c_spelling(c: state.Checked, names: ctype.Names, ty: i64) -> str?
         # checker refuses each as a group record's field. Reaching here
         # means the frontend let one through.
 
-        .str | .unit | .array | .fixed | .map                              => return fail("none", "no header layout")
-        .fallible | .function_ty | .case_ty | .failure | .generic | .error => return fail("none", "no header layout")
+        .str | .unit | .array | .fixed | .map => return fail(code: "none", msg: "no header layout")
+        .fallible | .function_ty | .case_ty | .failure | .generic | .error => return fail(
+            code: "none",
+            msg: "no header layout"
+        )
 
-    return fail("none", "unreached")
+    return fail(code: "none", msg: "unreached")
 
 ## Tests
 

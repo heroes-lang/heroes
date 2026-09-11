@@ -102,7 +102,7 @@ function read_value(@r: Reader) -> value.Json?
     skip_space(@r)
 
     if at_end(r)
-        return fail(ERR_UNEXPECTED_END, "the document ends where a value was expected")
+        return fail(code: ERR_UNEXPECTED_END, msg: "the document ends where a value was expected")
     c = here(r)
 
     if c == '{'
@@ -122,7 +122,7 @@ function read_value(@r: Reader) -> value.Json?
     else if has_word(r, "null")
         skip(@r, 4)
         return ok(.nothing)
-    return fail(ERR_UNEXPECTED_CHARACTER, "no value starts at " + r.pos.to_str())
+    return fail(code: ERR_UNEXPECTED_CHARACTER, msg: "no value starts at " + r.pos.to_str())
 
 # A string literal, from its opening quote to its closing one.
 #
@@ -138,7 +138,7 @@ function read_string(@r: Reader) -> str?
             advance(@r)
 
             if at_end(r)
-                return fail(ERR_UNTERMINATED_STRING, "the document ends inside an escape")
+                return fail(code: ERR_UNTERMINATED_STRING, msg: "the document ends inside an escape")
             parts @ parts.push(escape_at(r)?)
             advance(@r)
         else
@@ -146,7 +146,7 @@ function read_string(@r: Reader) -> str?
             advance(@r)
 
     if at_end(r)
-        return fail(ERR_UNTERMINATED_STRING, "the document ends inside a string")
+        return fail(code: ERR_UNTERMINATED_STRING, msg: "the document ends inside a string")
     advance(@r)
     return ok(join(parts, ""))
 
@@ -174,10 +174,13 @@ function escape_at(r: Reader) -> str?
         return ok("\t")
     else if c == 'r' || c == 'b' || c == 'f' || c == 'u'
         return fail(
-            ERR_UNSUPPORTED_ESCAPE,
-            "this reader does not decode `\\" + r.text.slice(from: r.pos, to: r.pos + 1) + "`, at " + r.pos.to_str()
+            code: ERR_UNSUPPORTED_ESCAPE,
+            msg: "this reader does not decode `\\" + r.text.slice(from: r.pos, to: r.pos + 1) + "`, at " + r.pos.to_str()
         )
-    return fail(ERR_BAD_ESCAPE, "no escape `\\" + r.text.slice(from: r.pos, to: r.pos + 1) + "` at " + r.pos.to_str())
+    return fail(
+        code: ERR_BAD_ESCAPE,
+        msg: "no escape `\\" + r.text.slice(from: r.pos, to: r.pos + 1) + "` at " + r.pos.to_str()
+    )
 
 # A number. JSON's numbers are doubles, so this builds an `f64` — digit by
 # digit, because the language deliberately offers no `to_f64` on a `str`:
@@ -197,7 +200,7 @@ function read_number(@r: Reader) -> f64?
         advance(@r)
 
     if digits == 0
-        return fail(ERR_BAD_NUMBER, "a number needs a digit at " + r.pos.to_str())
+        return fail(code: ERR_BAD_NUMBER, msg: "a number needs a digit at " + r.pos.to_str())
 
     if !at_end(r) && here(r) == '.'
         advance(@r)
@@ -211,7 +214,7 @@ function read_number(@r: Reader) -> f64?
             advance(@r)
 
         if after == 0
-            return fail(ERR_BAD_NUMBER, "a `.` needs a digit after it, at " + r.pos.to_str())
+            return fail(code: ERR_BAD_NUMBER, msg: "a `.` needs a digit after it, at " + r.pos.to_str())
 
     if !at_end(r) && (here(r) == 'e' || here(r) == 'E')
         advance(@r)
@@ -238,11 +241,11 @@ function read_exponent(@r: Reader) -> i64?
         digits @ digits + 1
 
         if exponent > 400
-            return fail(ERR_EXPONENT_OUT_OF_RANGE, "an exponent beyond an f64's range at " + r.pos.to_str())
+            return fail(code: ERR_EXPONENT_OUT_OF_RANGE, msg: "an exponent beyond an f64's range at " + r.pos.to_str())
         advance(@r)
 
     if digits == 0
-        return fail(ERR_BAD_NUMBER, "an exponent needs a digit at " + r.pos.to_str())
+        return fail(code: ERR_BAD_NUMBER, msg: "an exponent needs a digit at " + r.pos.to_str())
 
     if negative
         return ok(-exponent)
@@ -272,7 +275,7 @@ function read_array(@r: Reader) -> value.Json?
     skip_space(@r)
 
     if at_end(r)
-        return fail(ERR_UNCLOSED_ARRAY, "the document ends inside an array")
+        return fail(code: ERR_UNCLOSED_ARRAY, msg: "the document ends inside an array")
 
     if here(r) == ']'
         advance(@r)
@@ -284,7 +287,7 @@ function read_array(@r: Reader) -> value.Json?
         skip_space(@r)
 
         if at_end(r)
-            return fail(ERR_UNCLOSED_ARRAY, "the document ends inside an array")
+            return fail(code: ERR_UNCLOSED_ARRAY, msg: "the document ends inside an array")
 
         if here(r) == ','
             advance(@r)
@@ -292,7 +295,7 @@ function read_array(@r: Reader) -> value.Json?
             advance(@r)
             more @ false
         else
-            return fail(ERR_EXPECTED_SEPARATOR, "expected `,` or `]` at " + r.pos.to_str())
+            return fail(code: ERR_EXPECTED_SEPARATOR, msg: "expected `,` or `]` at " + r.pos.to_str())
 
     return ok(.array(items: items))
 
@@ -304,7 +307,7 @@ function read_object(@r: Reader) -> value.Json?
     skip_space(@r)
 
     if at_end(r)
-        return fail(ERR_UNCLOSED_OBJECT, "the document ends inside an object")
+        return fail(code: ERR_UNCLOSED_OBJECT, msg: "the document ends inside an object")
 
     if here(r) == '}'
         advance(@r)
@@ -315,18 +318,18 @@ function read_object(@r: Reader) -> value.Json?
         skip_space(@r)
 
         if at_end(r) || here(r) != '"'
-            return fail(ERR_EXPECTED_KEY, "an object's key is a string, at " + r.pos.to_str())
+            return fail(code: ERR_EXPECTED_KEY, msg: "an object's key is a string, at " + r.pos.to_str())
         key = read_string(@r)?
         skip_space(@r)
 
         if at_end(r) || here(r) != ':'
-            return fail(ERR_EXPECTED_COLON, "expected `:` after a key, at " + r.pos.to_str())
+            return fail(code: ERR_EXPECTED_COLON, msg: "expected `:` after a key, at " + r.pos.to_str())
         advance(@r)
         fields[key] @ read_value(@r)?
         skip_space(@r)
 
         if at_end(r)
-            return fail(ERR_UNCLOSED_OBJECT, "the document ends inside an object")
+            return fail(code: ERR_UNCLOSED_OBJECT, msg: "the document ends inside an object")
 
         if here(r) == ','
             advance(@r)
@@ -334,7 +337,7 @@ function read_object(@r: Reader) -> value.Json?
             advance(@r)
             more @ false
         else
-            return fail(ERR_EXPECTED_SEPARATOR, "expected `,` or `}` at " + r.pos.to_str())
+            return fail(code: ERR_EXPECTED_SEPARATOR, msg: "expected `,` or `}` at " + r.pos.to_str())
 
     return ok(.object(fields: fields))
 
@@ -348,7 +351,7 @@ function read(text: str) -> value.Json?
     skip_space(@r)
 
     if !at_end(r)
-        return fail(ERR_TRAILING_INPUT, "the document ends at " + r.pos.to_str() + " and the text does not")
+        return fail(code: ERR_TRAILING_INPUT, msg: "the document ends at " + r.pos.to_str() + " and the text does not")
     return ok(j)
 
 # The code a document fails with — or `no_error` for one that does not, which is

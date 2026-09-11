@@ -42,7 +42,7 @@ function call(@w: writer.Writer, p: containers.Program, f: containers.Function, 
             # a defect: "hero_unreachable" as a NAME emitted arguments
             # handed to a zero-argument _Noreturn, exit 2, the compiler
             # blaming itself (panel 084's class).
-            found: str? @ fail("none", "no instance")
+            found: str? @ fail(code: "none", msg: "no instance")
 
             for candidate in p.functions
                 if candidate.decl == h.decl && candidate.instance == instance
@@ -226,7 +226,7 @@ function print_call(@w: writer.Writer, f: containers.Function, c: state.Checked,
 # address of a local, never null — a guard that cannot fail is read as
 # protection that is there (author decision 2026-08-15).
 function guard_arguments(p: containers.Program, c: state.Checked, decls: [ast.Decl], decl: i64, arguments: [str]) -> [str]
-    callee: containers.Function? @ fail("none", "not lowered")
+    callee: containers.Function? @ fail(code: "none", msg: "not lowered")
 
     for candidate in p.functions
         if candidate.decl == decl

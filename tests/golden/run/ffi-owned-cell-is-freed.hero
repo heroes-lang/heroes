@@ -45,13 +45,13 @@ extern "ffi-owned-cell-is-freed.h"
     function hero_owned_silent(code: i32, @out: cstr owned free) -> i32
 
 function main()
-    first: str? @ fail("none", "nothing yet")
+    first: str? @ fail(code: "none", msg: "nothing yet")
     _ = hero_owned_describe(code: 0, out: @first)
     print(first.default("<nothing>"))
 
     # Twice, into a second cell: the copy is the program's own, so nothing
     # here is looking at memory the compiler has already released.
-    second: str? @ fail("none", "nothing yet")
+    second: str? @ fail(code: "none", msg: "nothing yet")
     _ = hero_owned_describe(code: 7, out: @second)
     print(second.default("<nothing>"))
 
@@ -60,7 +60,7 @@ function main()
 
     # The cell C never wrote. `.err` and not a crash, and the code says which
     # of the two failures it is.
-    quiet: str? @ fail("none", "nothing yet")
+    quiet: str? @ fail(code: "none", msg: "nothing yet")
     _ = hero_owned_silent(code: 3, out: @quiet)
 
     match quiet

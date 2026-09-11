@@ -164,7 +164,7 @@ function to_number(text: str) -> i64?
         body @ without_prefix(text: text, prefix: "-")
 
     if body.len() == 0
-        return fail("not_a_number", "`" + text + "` has no digits")
+        return fail(code: "not_a_number", msg: "`" + text + "` has no digits")
     value: i64 @ 0
     i: i64 @ 0
 
@@ -172,7 +172,7 @@ function to_number(text: str) -> i64?
         digit = body[i]
 
         if digit < 48 || digit > 57
-            return fail("not_a_number", "`" + text + "` is not a decimal integer")
+            return fail(code: "not_a_number", msg: "`" + text + "` is not a decimal integer")
         value @ value * 10 + (digit - 48).to_i64().must()
         i @ i + 1
 
@@ -183,7 +183,7 @@ function to_number(text: str) -> i64?
 # Where `needle` first occurs in `text`, or an error if it does not.
 function index_of(text: str, needle: str) -> i64?
     if needle.len() > text.len()
-        return fail("absent", "`" + needle + "` is not in the text")
+        return fail(code: "absent", msg: "`" + needle + "` is not in the text")
     start: i64 @ 0
 
     while start + needle.len() <= text.len()
@@ -201,7 +201,7 @@ function index_of(text: str, needle: str) -> i64?
             return ok(start)
         start @ start + 1
 
-    return fail("absent", "`" + needle + "` is not in the text")
+    return fail(code: "absent", msg: "`" + needle + "` is not in the text")
 
 # Split on a multi-byte separator, keeping empty pieces. `split_on`
 # takes one byte and this takes a string, because `#~` is two.

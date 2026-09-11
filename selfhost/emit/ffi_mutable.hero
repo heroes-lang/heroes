@@ -38,22 +38,22 @@ use ir/lower
 # supply.
 function writable_parameter(s: source.Source, decls: [ast.Decl], p: containers.Program, c: state.Checked, names: ctype.Names, line: str) -> diag.Diagnostic?
     if !ffi_lookup.has(text: line, needle: ffi_lookup.DISCARDS)
-        return fail("none", "not a qualifier line")
+        return fail(code: "none", msg: "not a qualifier line")
     at = ffi_site.location(s, line: line)
 
     if at.is_err()
-        return fail("none", "no usable location")
+        return fail(code: "none", msg: "no usable location")
 
     # 'const char *' to parameter of type 'char *' — the header's type
     # is the last quoted name, the same shape ffi_narrowed reads.
     c_type = ffi_site.last_quoted(at.must().rest)
 
     if c_type.is_err()
-        return fail("none", "no header type on the line")
+        return fail(code: "none", msg: "no header type on the line")
     found = ffi_site.extern_at_line(p, s, decls, file: at.must().file, at_line: at.must().line)
 
     if found.is_err()
-        return fail("none", "no extern is declared at that line")
+        return fail(code: "none", msg: "no extern is declared at that line")
     f = found.must().f
     name = found.must().name
 
@@ -68,7 +68,7 @@ function writable_parameter(s: source.Source, decls: [ast.Decl], p: containers.P
     )
 
     if parameters.is_err()
-        return fail("none", "a parameter with no C spelling")
+        return fail(code: "none", msg: "a parameter with no C spelling")
     arguments = extern_probe.probe_arguments(f, c)
     module = source.component_at(s, decls[f.decl].span.start)
     probe = extern_probe.probe_name(module: module, name: name)
@@ -98,7 +98,7 @@ function writable_parameter(s: source.Source, decls: [ast.Decl], p: containers.P
     for column in columns
         if column == at.must().col && index < f.params.len()
             if freer.owned_parameter(decls, at: f.decl, index: index)
-                return fail("none", "a marked `@cstr` owns what C writes there")
+                return fail(code: "none", msg: "a marked `@cstr` owns what C writes there")
             which @ "`" + f.slots[f.params[index]].name + "`"
             none: [str] = []
             declared @ render.render_ty(c.types, s, decls, f.slots[f.params[index]].ty, none)

@@ -1,0 +1,104 @@
+# §4.9's same-typed-argument rule where the callee is a BUILT-IN — the one
+# place the rule did not reach (defect 025, panel 127).
+#
+# A declared function's labels come from its declaration: `check/walk.hero`
+# reads `fd.value.params[position].name`, a span into the source the author
+# wrote, and compares the call site's label against the text at that position.
+# A Tier-1 built-in has no declaration and therefore no span, so the name has
+# to be a `str` the compiler carries: `inventory.labelled()`.
+#
+# Both halves of the rule live here, because they are one rule: a missing label
+# is `needs_label` and a label at the wrong position is `wrong_label`. The
+# second half is what kills the mutation the first half only discourages —
+# `heroes mutate --operator swap-args` moves the label WITH its value
+# (`selfhost/mutate/edits.hero:29`), so a swapped `fail(code:, msg:)` is a
+# legal-looking call whose labels are in the wrong order.
+
+use token
+use source
+use data_errors
+use resolved
+use inventory
+use check/state
+
+# One argument of a built-in call: refuse it if the rule names this position
+# and the call site does not, or names it wrongly. `position` counts the
+# receiver, because `xs.slice(1, 3)` and `slice(xs, 1, 3)` are the same call.
+function check_label(@c: state.Checker, s: source.Source, name: str, position: i64, written: token.Span?, value_span: token.Span)
+    entry = inventory.labelled_of(name)
+
+    if entry.is_err()
+        return
+    params = entry.must().params
+
+    if position >= params.len()
+        return
+
+    if params[position].len() == 0
+        return
+    wanted = params[position]
+
+    if written.is_err()
+        state.push_diagnostic(
+            @c,
+            data_errors.needs_label(name: name, expected: wanted, shared: entry.must().shared, span: value_span)
+        )
+        return
+    seen = source.span_text(s, written.must())
+
+    if seen != wanted
+        state.push_diagnostic(
+            @c,
+            data_errors.wrong_label(holder: name, written: seen, expected: wanted, elsewhere: names_a_position(params, seen), span: written.must())
+        )
+
+# Whether the label the author wrote names another position of this built-in,
+# which is what makes the fix a guess rather than a repair (`data_errors`).
+function names_a_position(params: [str], written: str) -> bool
+    for p in params
+        if p.len() > 0 && p == written
+            return true
+
+    return false
+
+## Tests
+
+test "a positional argument of fail is refused with the label to write"
+    r = resolved.new_resolved()
+    c: state.Checker @ state.new_checker(out_of: r, expr_count: 0)
+    s = source.new_source(name: "t.hero", text: "    return fail(\"empty_list\", \"there is no first element\")\n")
+    none: token.Span? @ fail(code: "absent", msg: "written positionally")
+    check_label(@c, s, name: "fail", position: 0, written: none, value_span: token.Span(start: 16, end: 28))
+    assert c.out.diagnostics.len() == 1
+    assert c.out.diagnostics[0].code == "needs_label"
+    assert c.out.diagnostics[0].message == "two of `fail`'s parameters are `str`, so every one of them is named at the call site — this one is `code`"
+    assert c.out.diagnostics[0].fixes.len() == 1
+    assert c.out.diagnostics[0].fixes[0].replacement == "code: "
+    assert c.out.diagnostics[0].fixes[0].certainty == .certain
+    assert c.out.diagnostics[0].fixes[0].span.start == 16
+    assert c.out.diagnostics[0].fixes[0].span.end == 16
+
+test "a label in the wrong position is the swap, and it is refused too"
+    r = resolved.new_resolved()
+    c: state.Checker @ state.new_checker(out_of: r, expr_count: 0)
+    s = source.new_source(name: "t.hero", text: "fail(msg: \"m\", code: \"c\")\n")
+    at: token.Span? @ ok(token.Span(start: 5, end: 8))
+    check_label(@c, s, name: "fail", position: 0, written: at, value_span: token.Span(start: 10, end: 13))
+    assert c.out.diagnostics.len() == 1
+    assert c.out.diagnostics[0].code == "wrong_label"
+    assert c.out.diagnostics[0].message == "`fail` has nothing called `msg` at this position — it is `code`"
+    assert c.out.diagnostics[0].fixes[0].replacement == "code"
+
+test "the receiver's position is exempt and the right label passes"
+    r = resolved.new_resolved()
+    c: state.Checker @ state.new_checker(out_of: r, expr_count: 0)
+    s = source.new_source(name: "t.hero", text: "xs.slice(from: 1, to: 3)\n")
+    none: token.Span? @ fail(code: "absent", msg: "the receiver is the dot")
+    check_label(@c, s, name: "slice", position: 0, written: none, value_span: token.Span(start: 0, end: 2))
+    right: token.Span? @ ok(token.Span(start: 9, end: 13))
+    check_label(@c, s, name: "slice", position: 1, written: right, value_span: token.Span(start: 15, end: 16))
+    assert c.out.diagnostics.len() == 0
+
+    # And a built-in with no same-typed pair says nothing at any position.
+    check_label(@c, s, name: "join", position: 1, written: none, value_span: token.Span(start: 0, end: 2))
+    assert c.out.diagnostics.len() == 0

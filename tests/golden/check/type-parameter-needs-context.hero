@@ -7,7 +7,7 @@
 # No message here ever suggests a type argument: the language has no such
 # syntax (§ Functions and calls).
 function wanted<A>(what: str) -> A?
-    return fail("type", what)
+    return fail(code: "type", msg: what)
 
 function main()
     x = wanted(what: "a")  #~ cannot_infer

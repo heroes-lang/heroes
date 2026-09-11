@@ -107,16 +107,16 @@ function numeric_out(c: state.Checked, slot: containers.Slot) -> str?
         .local_slot | .synthetic_slot => mutable @ mutable
 
     if !mutable
-        return fail("none", "not an @ parameter")
+        return fail(code: "none", msg: "not an @ parameter")
 
     match table.get(c.types, slot.ty)
         .int_ty ik                                                 => return ok(widths.int_c_type(ik.kind))
         .float_ty fk                                               => return ok(widths.float_c_type(fk.kind))
-        .bool | .str | .ptr | .cstr | .unit                        => return fail("none", "not numeric")
-        .array | .fixed | .map | .fallible | .function_ty | .named => return fail("none", "not numeric")
-        .case_ty | .failure | .generic | .error                    => return fail("none", "not numeric")
+        .bool | .str | .ptr | .cstr | .unit                        => return fail(code: "none", msg: "not numeric")
+        .array | .fixed | .map | .fallible | .function_ty | .named => return fail(code: "none", msg: "not numeric")
+        .case_ty | .failure | .generic | .error                    => return fail(code: "none", msg: "not numeric")
 
-    return fail("none", "unreached")
+    return fail(code: "none", msg: "unreached")
 
 ## The check itself
 
@@ -173,16 +173,16 @@ function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
             if !kept.is_err()
                 if kept.must() == "ok\n"
                     return ok()
-                return fail("clang", kept.must())
+                return fail(code: "clang", msg: kept.must())
 
     if process.mkdir_all(dir).is_err()
-        return fail("failed", "cannot create " + dir)
+        return fail(code: "failed", msg: "cannot create " + dir)
     dump_c = dir + "/dump.c"
     depfile = dir + "/dump.d"
     err_path = dir + "/dump-stderr.txt"
 
     if write_file(path: dump_c, text: header_types.dump_unit(headers, wanted)).is_err()
-        return fail("failed", "cannot write " + dump_c)
+        return fail(code: "failed", msg: "cannot write " + dump_c)
     line: [str] @ [
         "clang"
         "-std=gnu11"
@@ -224,7 +224,7 @@ function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
     check_err = dir + "/check-stderr.txt"
 
     if write_file(path: check_c, text: check_text).is_err()
-        return fail("failed", "cannot write " + check_c)
+        return fail(code: "failed", msg: "cannot write " + check_c)
     check_line: [str] @ ["clang", "-std=gnu11", "-fsyntax-only"]
     check_line @ with_search(
         line: check_line,
@@ -247,12 +247,12 @@ function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
     )
 
     if recorded.is_err()
-        return fail("failed", "cannot record what the pointee check read")
+        return fail(code: "failed", msg: "cannot record what the pointee check read")
 
     if checked.is_err()
         text = failure_text(checked)
         write_file(path: verdict, text: text)?
-        return fail("clang", text)
+        return fail(code: "clang", msg: text)
     write_file(path: verdict, text: "ok\n")?
     return ok()
 

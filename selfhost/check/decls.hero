@@ -262,6 +262,6 @@ test "a type parameter that appears nowhere in the signature is refused at its l
     assert c.out.diagnostics[0].message == "`A` of `unused` appears in no parameter and not in the result, so no call could ever say what it is — use it in the signature, or remove it"
     assert c.out.diagnostics[0].span.start == 16
     fine = checked_file(
-        "function wanted<A>(what: str) -> A?\n    return fail(\"type\", what)\n\nfunction main()\n    x: i64? = wanted(what: \"a\")\n    print(x.is_err())\n"
+        "function wanted<A>(what: str) -> A?\n    return fail(code: \"type\", msg: what)\n\nfunction main()\n    x: i64? = wanted(what: \"a\")\n    print(x.is_err())\n"
     )
     assert fine.out.diagnostics.len() == 0

@@ -18,7 +18,7 @@
 function half(n: i64) -> i64?
     if n % 2 == 0
         return ok(n / 2)
-    return fail("odd", "not divisible by two")
+    return fail(code: "odd", msg: "not divisible by two")
 
 function main()
     a = half(4).default(0)

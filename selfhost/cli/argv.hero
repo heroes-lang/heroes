@@ -47,7 +47,7 @@ function value_of(inv: Invocation, spelling: str) -> str?
         if f.spelling == spelling
             return f.value
 
-    return fail("none", "the flag was not given")
+    return fail(code: "none", msg: "the flag was not given")
 
 # Every value a repeatable flag was given, in the order written —
 # which is the order clang will search, so the order the author chose.
@@ -61,7 +61,7 @@ function values_of(inv: Invocation, spelling: str) -> [str]
     return out
 
 function bare(tag: cli_table.Tag) -> Invocation
-    none_file: str? = fail("none", "no file")
+    none_file: str? = fail(code: "none", msg: "no file")
     return Invocation(tag: tag, file: none_file, program_args: [], flags: [])
 
 function starts_with_dash(text: str) -> bool
@@ -93,15 +93,15 @@ function parse(given: [str], dir_probe: (function(str) -> bool)) -> Invocation?
         retired = cli_table.retired(word: word)
 
         if !retired.is_err()
-            return fail("bad_usage", "`" + word + "` is no longer a command — use `" + retired.must() + "`")
+            return fail(code: "bad_usage", msg: "`" + word + "` is no longer a command — use `" + retired.must() + "`")
         names: [str] @ []
 
         for c in table
             names @ names.push(c.name)
 
-        return fail("bad_usage", "unknown command `" + word + "` — the commands are " + names.join(", "))
+        return fail(code: "bad_usage", msg: "unknown command `" + word + "` — the commands are " + names.join(", "))
     command = table[found]
-    file: str? @ fail("none", "no file")
+    file: str? @ fail(code: "none", msg: "no file")
     flags: [FlagHit] @ []
     program_args: [str] @ []
     at: i64 @ 1
@@ -124,8 +124,8 @@ function parse(given: [str], dir_probe: (function(str) -> bool)) -> Invocation?
 
             if !take
                 return fail(
-                    "bad_usage",
-                    "`--` passes arguments to the program, and `" + command.name + "` does not run one — only `heroes run` does"
+                    code: "bad_usage",
+                    msg: "`--` passes arguments to the program, and `" + command.name + "` does not run one — only `heroes run` does"
                 )
             follow: i64 @ at + 1
 
@@ -149,18 +149,18 @@ function parse(given: [str], dir_probe: (function(str) -> bool)) -> Invocation?
 
                 if !retired_f.is_err()
                     return fail(
-                        "bad_usage",
-                        "`" + arg + "` is no longer a flag of `" + command.name + "` — use `" + retired_f.must() + "`"
+                        code: "bad_usage",
+                        msg: "`" + arg + "` is no longer a flag of `" + command.name + "` — use `" + retired_f.must() + "`"
                     )
-                return fail("bad_usage", unknown_flag(command: command, arg: arg))
+                return fail(code: "bad_usage", msg: unknown_flag(command: command, arg: arg))
             wanted = command.flags[known]
-            value: str? @ fail("none", "no value")
+            value: str? @ fail(code: "none", msg: "no value")
 
             if wanted.value
                 if at + 1 >= given.len() || starts_with_dash(given[at + 1])
                     return fail(
-                        "bad_usage",
-                        "`" + arg + "` needs a path: `heroes " + command.name + " <file.hero> " + arg + " <path>`"
+                        code: "bad_usage",
+                        msg: "`" + arg + "` needs a path: `heroes " + command.name + " <file.hero> " + arg + " <path>`"
                     )
                 value @ ok(given[at + 1])
                 at @ at + 1
@@ -175,8 +175,8 @@ function parse(given: [str], dir_probe: (function(str) -> bool)) -> Invocation?
             if wanted.directory && !value.is_err()
                 if !dir_probe(value.must())
                     return fail(
-                        "bad_usage",
-                        "`" + arg + " " + value.must() + "` names no directory on this machine — clang searches it in silence and builds against whatever header it finds elsewhere, so this is refused here rather than discovered as a wrong answer"
+                        code: "bad_usage",
+                        msg: "`" + arg + " " + value.must() + "` names no directory on this machine — clang searches it in silence and builds against whatever header it finds elsewhere, so this is refused here rather than discovered as a wrong answer"
                     )
 
             # A second -o is dropped in favour of the first — a second
@@ -195,10 +195,10 @@ function parse(given: [str], dir_probe: (function(str) -> bool)) -> Invocation?
             .file_operand | .optional_operand => no_operand @ no_operand
 
         if no_operand
-            return fail("bad_usage", "`" + command.name + "` takes no file")
+            return fail(code: "bad_usage", msg: "`" + command.name + "` takes no file")
 
         if !file.is_err()
-            return fail("bad_usage", "`" + command.name + "` takes one file, and two were given")
+            return fail(code: "bad_usage", msg: "`" + command.name + "` takes one file, and two were given")
         file @ ok(arg)
         at @ at + 1
 
@@ -209,7 +209,10 @@ function parse(given: [str], dir_probe: (function(str) -> bool)) -> Invocation?
         .no_operand | .optional_operand => needs_file @ needs_file
 
     if needs_file && file.is_err()
-        return fail("bad_usage", "`" + command.name + "` needs a file: `heroes " + command.name + " <file.hero>`")
+        return fail(
+            code: "bad_usage",
+            msg: "`" + command.name + "` needs a file: `heroes " + command.name + " <file.hero>`"
+        )
     return ok(Invocation(tag: command.tag, file: file, program_args: program_args, flags: flags))
 
 # The enumerating error the llm-ergonomist asked for: every wrong flag

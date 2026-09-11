@@ -140,7 +140,7 @@ function dumped(scratch: str, compiler: str, item: cases.Case, flag: str, into: 
     said = shell.run(scratch: scratch, program: compiler, words: line)?
 
     if said.code != 0
-        return fail("cannot_emit", said.err)
+        return fail(code: "cannot_emit", msg: said.err)
     return ok(said.out)
 
 # The stderr of the last command `shell.run` executed. It is read from the

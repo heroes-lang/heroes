@@ -63,13 +63,16 @@ function pointer(c: state.Checked, names: ctype.Names, ty: i64) -> str?
         # Every T? needs its own, because its payload is by value — and
         # so does the failure side, which the runtime ships.
 
-        .fallible => return ok("&" + ctype.option_of(names, ty: ty) + "_desc")
-        .failure => return ok("&hero_desc_failure")
-        .named n => return ok("&" + ctype.satellite(names, decl: n.decl) + "_desc")
+        .fallible   => return ok("&" + ctype.option_of(names, ty: ty) + "_desc")
+        .failure    => return ok("&hero_desc_failure")
+        .named n    => return ok("&" + ctype.satellite(names, decl: n.decl) + "_desc")
         .case_ty vc => return ok("&" + ctype.case_of(names, decl: vc.decl, at: vc.at) + "_desc")
-        .ptr | .cstr | .unit | .fixed | .generic | .error => return fail("none", "no descriptor for this type")
+        .ptr | .cstr | .unit | .fixed | .generic | .error => return fail(
+            code: "none",
+            msg: "no descriptor for this type"
+        )
 
-    return fail("none", "unreached")
+    return fail(code: "none", msg: "unreached")
 
 # The C expression that hashes one value at `place`. NOT
 # descriptor->hash for an aggregate, and the difference is real: a
@@ -91,13 +94,13 @@ function hash_call(c: state.Checked, names: ctype.Names, ty: i64, place: str) ->
         .array | .fixed | .map | .fallible | .function_ty => return through_pointer(c, names, ty: ty, place: place)
         .failure | .generic | .error                      => return through_pointer(c, names, ty: ty, place: place)
 
-    return fail("none", "unreached")
+    return fail(code: "none", msg: "unreached")
 
 function through_pointer(c: state.Checked, names: ctype.Names, ty: i64, place: str) -> str?
     desc = pointer(c, names, ty: ty)
 
     if desc.is_err()
-        return fail("none", "no descriptor for this type")
+        return fail(code: "none", msg: "no descriptor for this type")
     return ok("(" + desc.must() + ")->hash(" + place + ")")
 
 # One static const HeroDesc per element type the program actually uses.

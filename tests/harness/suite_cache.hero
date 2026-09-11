@@ -416,18 +416,18 @@ function objects_newer_than(scratch: str, marker: str, words: [str]) -> [str]?
     touched = shell.run(scratch: scratch, program: "touch", words: ["touch", marker])
 
     if touched.is_err() || touched.must().code != 0
-        return fail("cannot_run", "cannot write the marker at " + marker)
+        return fail(code: "cannot_run", msg: "cannot write the marker at " + marker)
     ran = shell.run_guarded(scratch: scratch, words: words)
 
     if ran.is_err() || ran.must().code != 0
         return fail(
-            "cannot_run",
-            "the build did not run: " + ran.default(shell.Run(code: -1, out: "", err: "cannot run", started: false)).err
+            code: "cannot_run",
+            msg: "the build did not run: " + ran.default(shell.Run(code: -1, out: "", err: "cannot run", started: false)).err
         )
     listed = shell.found_under(dir: "build", suffix: ".o", reference: marker)
 
     if listed.is_err()
-        return fail("cannot_run", "cannot list what moved under build/")
+        return fail(code: "cannot_run", msg: "cannot list what moved under build/")
     out: [str] @ []
 
     for row in listed.must()

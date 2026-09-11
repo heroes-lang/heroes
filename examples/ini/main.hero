@@ -58,18 +58,21 @@ function parse(text: str) -> Config?
         at = index_of_equals(trimmed)
 
         if at.is_err()
-            return fail("not_a_line", "line " + number.to_str() + " is neither a section, a comment, nor a key")
+            return fail(
+                code: "not_a_line",
+                msg: "line " + number.to_str() + " is neither a section, a comment, nor a key"
+            )
         key = without_spaces(trimmed.slice(from: 0, to: at.must()))
         value = without_spaces(trimmed.slice(from: at.must() + 1, to: trimmed.len()))
 
         if key.len() == 0
-            return fail("empty_key", "line " + number.to_str() + " has a value and no key")
+            return fail(code: "empty_key", msg: "line " + number.to_str() + " has a value and no key")
         inner: {str: str} @ sections[current].default(empty)
 
         if !inner[key].is_err()
             return fail(
-                "repeated_key",
-                "`" + key + "` is set twice in section `" + current + "`, and only the writer knows which was meant"
+                code: "repeated_key",
+                msg: "`" + key + "` is set twice in section `" + current + "`, and only the writer knows which was meant"
             )
         inner[key] @ value
         sections[current] @ inner
@@ -78,11 +81,11 @@ function parse(text: str) -> Config?
 
 function section_name(line: str) -> str?
     if !ends_with(text: line, suffix: "]")
-        return fail("unclosed_section", "a `[` with no `]`")
+        return fail(code: "unclosed_section", msg: "a `[` with no `]`")
     inner = without_spaces(line.slice(from: 1, to: line.len() - 1))
 
     if inner.len() == 0
-        return fail("empty_section", "`[]` names nothing")
+        return fail(code: "empty_section", msg: "`[]` names nothing")
 
     return ok(inner)
 
@@ -152,7 +155,7 @@ function index_of_equals(text: str) -> i64?
             return ok(i)
         i @ i + 1
 
-    return fail("no_equals", "no `=` on the line")
+    return fail(code: "no_equals", msg: "no `=` on the line")
 
 constant SAMPLE: str
     "verbose = true\n\n[server]\nhost = localhost\nport = 8080\n\n# a comment\n[client]\nretries = 3\n\n[server]\ntimeout = 30\n"

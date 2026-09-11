@@ -340,7 +340,7 @@ test "an instruction is flat: operands are ids, never expressions"
 
 test "a call's arguments are a run, and a void call has no destination"
     shout = Inst(
-        dest: fail("none", "print returns nothing"),
+        dest: fail(code: "none", msg: "print returns nothing"),
         op: .call(callee: .builtin_fn(at: 0), arguments: Run(start: 4, length: 2), variadic: true),
         ty: 0,
         span: token.Span(start: 9, end: 14)

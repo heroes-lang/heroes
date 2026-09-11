@@ -55,7 +55,7 @@ function primitive(name: str) -> Prim?
 
     if name == "cstr"
         return ok(.cstr_prim)
-    return fail("free", "no primitive has this name")
+    return fail(code: "free", msg: "no primitive has this name")
 
 # What a written type name refers to. Dense over the type arena, same
 # reasons as `Ref`.

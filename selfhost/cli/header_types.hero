@@ -130,12 +130,12 @@ function pointee_of(qual_type: str) -> str?
     star = last_star(qual_type)
 
     if star.is_err()
-        return fail("none", "not a pointer")
+        return fail(code: "none", msg: "not a pointer")
     before = trimmed(qual_type.slice(from: 0, to: star.must()))
     without = trimmed(strip_word(text: strip_word(text: before, word: "__restrict"), word: "restrict"))
 
     if without.len() == 0
-        return fail("none", "nothing pointed at")
+        return fail(code: "none", msg: "nothing pointed at")
     return ok(without)
 
 function last_star(text: str) -> i64?
@@ -146,7 +146,7 @@ function last_star(text: str) -> i64?
             return ok(index)
         index @ index - 1
 
-    return fail("none", "no star")
+    return fail(code: "none", msg: "no star")
 
 function strip_word(text: str, word: str) -> str
     if text.len() >= word.len() && text.slice(from: text.len() - word.len(), to: text.len()) == word
@@ -208,7 +208,7 @@ function types_of(json: str, wanted: [pointee_ask.Pointee]) -> {str: [str]}
 # dump is ASCII where it matters and the needles are ASCII entirely.
 function locate_text(text: str, needle: str, from: i64) -> i64?
     if needle.len() == 0 || from < 0
-        return fail("none", "nothing to find")
+        return fail(code: "none", msg: "nothing to find")
     index: i64 @ from
     first = needle[0]
 
@@ -217,7 +217,7 @@ function locate_text(text: str, needle: str, from: i64) -> i64?
             return ok(index)
         index @ index + 1
 
-    return fail("none", "not found")
+    return fail(code: "none", msg: "not found")
 
 function trimmed(text: str) -> str
     start: i64 @ 0

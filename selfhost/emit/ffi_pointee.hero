@@ -59,7 +59,7 @@ function parameter_spans(s: source.Source, decls: [ast.Decl], tree: ast.Ast, nam
                         return ok(ParamSpans(name: one.name, ty: tree.types[one.ty].span))
             .constant_decl | .record_decl | .variant_decl | .test_decl => continue
 
-    return fail("none", "no such parameter on an extern of that name")
+    return fail(code: "none", msg: "no such parameter on an extern of that name")
 
 # `heroes-ffi-pointee <name> <param> <declared C type> <header type…>`
 # failed: the header's parameter points at something of another width or
@@ -67,15 +67,15 @@ function parameter_spans(s: source.Source, decls: [ast.Decl], tree: ast.Ast, nam
 # words (`unsigned long`), so it is everything after the third.
 function pointee_width(s: source.Source, decls: [ast.Decl], tree: ast.Ast, line: str, word_bits: i64) -> diag.Diagnostic?
     if !ffi_lookup.has(text: line, needle: ffi_lookup.FAILED)
-        return fail("none", "not an assertion failure")
+        return fail(code: "none", msg: "not an assertion failure")
     rest = ffi_lookup.after(text: line, marker: MARKER)
 
     if rest.is_err()
-        return fail("none", "not a pointee assertion")
+        return fail(code: "none", msg: "not a pointee assertion")
     parts = ffi_lookup.words(text: rest.must())
 
     if parts.len() < 4
-        return fail("none", "the marker's tail is not ours")
+        return fail(code: "none", msg: "the marker's tail is not ours")
     name = parts[0]
     param = parts[1]
     tail: [str] @ []
@@ -89,7 +89,7 @@ function pointee_width(s: source.Source, decls: [ast.Decl], tree: ast.Ast, line:
     found = ffi_lookup.declaration(s, decls, name: name)
 
     if found.is_err()
-        return fail("none", "no group declares this name")
+        return fail(code: "none", msg: "no group declares this name")
     spans = parameter_spans(s, decls, tree, name: name, param: param)
     at: token.Span @ found.must().span
     written: str @ "a width the header does not have"
@@ -139,15 +139,15 @@ function trim_quote(text: str) -> str
 # a proper `static assertion failed` and carries the parameter's name.
 function pointee_void(s: source.Source, decls: [ast.Decl], tree: ast.Ast, line: str) -> diag.Diagnostic?
     if !ffi_lookup.has(text: line, needle: ffi_lookup.FAILED)
-        return fail("none", "not an assertion failure")
+        return fail(code: "none", msg: "not an assertion failure")
     rest = ffi_lookup.after(text: line, marker: VOID_MARKER)
 
     if rest.is_err()
-        return fail("none", "not a void-pointee assertion")
+        return fail(code: "none", msg: "not a void-pointee assertion")
     parts = ffi_lookup.words(text: rest.must())
 
     if parts.len() < 4
-        return fail("none", "the marker's tail is not ours")
+        return fail(code: "none", msg: "the marker's tail is not ours")
     tail: [str] @ []
     index: i64 @ 3
 
@@ -210,7 +210,7 @@ function unsized(s: source.Source, decls: [ast.Decl], tree: ast.Ast, name: str, 
     found = ffi_lookup.declaration(s, decls, name: name)
 
     if found.is_err()
-        return fail("none", "no group declares this name")
+        return fail(code: "none", msg: "no group declares this name")
     spans = parameter_spans(s, decls, tree, name: name, param: param)
     at: token.Span @ found.must().span
     written: str @ "at a width"
@@ -250,7 +250,7 @@ function at_marker_before(s: source.Source, name: token.Span) -> i64?
 
     if i >= 0 && source.span_text(s, token.Span(start: i, end: i + 1)) == "@"
         return ok(i)
-    return fail("none", "no @ before the name")
+    return fail(code: "none", msg: "no @ before the name")
 
 ## Tests
 

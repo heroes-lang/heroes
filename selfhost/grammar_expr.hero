@@ -116,35 +116,35 @@ function binary_op(kind: token.TokenKind) -> Operator?
         # of two, and each one a refusal rather than an invented `.add`.
 
         .ident | .int_lit | .float_lit | .str_lit | .str_piece | .char_lit => fail(
-            "not_an_operator",
-            "a value is not an operator"
+            code: "not_an_operator",
+            msg: "a value is not an operator"
         )
         .kw_constant | .kw_function | .kw_record | .kw_variant | .kw_match => fail(
-            "not_an_operator",
-            "a declaration keyword is not an operator"
+            code: "not_an_operator",
+            msg: "a declaration keyword is not an operator"
         )
         .kw_if | .kw_else | .kw_for | .kw_while | .kw_in => fail(
-            "not_an_operator",
-            "a control keyword is not an operator"
+            code: "not_an_operator",
+            msg: "a control keyword is not an operator"
         )
         .kw_break | .kw_continue | .kw_return | .kw_test | .kw_assert => fail(
-            "not_an_operator",
-            "a statement keyword is not an operator"
+            code: "not_an_operator",
+            msg: "a statement keyword is not an operator"
         )
         .kw_extern | .kw_nullptr | .kw_use | .kw_true | .kw_false | .kw_fail => fail(
-            "not_an_operator",
-            "a keyword is not an operator"
+            code: "not_an_operator",
+            msg: "a keyword is not an operator"
         )
         .eq | .at | .colon | .comma | .dot | .question | .hole => fail(
-            "not_an_operator",
-            "punctuation is not an operator"
+            code: "not_an_operator",
+            msg: "punctuation is not an operator"
         )
-        .arrow | .fat_arrow | .lparen | .rparen   => fail("not_an_operator", "punctuation is not an operator")
-        .lbracket | .rbracket | .lbrace | .rbrace => fail("not_an_operator", "a bracket is not an operator")
-        .bang | .tilde                            => fail("not_an_operator", "a prefix operator is not a binary one")
+        .arrow | .fat_arrow | .lparen | .rparen => fail(code: "not_an_operator", msg: "punctuation is not an operator")
+        .lbracket | .rbracket | .lbrace | .rbrace => fail(code: "not_an_operator", msg: "a bracket is not an operator")
+        .bang | .tilde => fail(code: "not_an_operator", msg: "a prefix operator is not a binary one")
         .comment | .terminator | .indent | .dedent | .eof | .error => fail(
-            "not_an_operator",
-            "layout is not an operator"
+            code: "not_an_operator",
+            msg: "layout is not an operator"
         )
 
 ## Entry point 1 — one expression
@@ -428,7 +428,7 @@ function atom_kind(k: token.TokenKind) -> ast.ExprKind?
 
     if k == .ident || k == .kw_fail
         return ok(.name)
-    return fail("not_an_atom", "no one-token expression starts here")
+    return fail(code: "not_an_atom", msg: "no one-token expression starts here")
 
 # `(e)` — grouping only. There is no tuple type, so a parenthesised expression
 # is exactly its contents; `()` as a VALUE does not exist either (§4.3: `()` is
@@ -578,7 +578,7 @@ function call_args(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Arg]
             trailing_comma(@c, cursor.previous_significant_span(c))
             reading @ false
         else
-            name: token.Span? @ fail("unnamed", "a bare argument")
+            name: token.Span? @ fail(code: "unnamed", msg: "a bare argument")
 
             if cursor.at(c, .ident) && cursor.peek(c, 1) == .colon
                 name @ ok(cursor.bump(@c).span)
@@ -686,7 +686,7 @@ function block(@c: cursor.Cursor, @a: ast.Ast, text: str, owner: str) -> ast.Blo
                 message: owner + " needs an indented body — one level deeper, exactly 4 spaces (found " + cursor.found(c, text) + ")",
                 span: cursor.current_span(c)
             )
-        return fail("missing_body", owner)
+        return fail(code: "missing_body", msg: owner)
     open = cursor.bump(@c).span
     stmts: [i64] @ []
     reading: bool @ true
@@ -796,7 +796,7 @@ function return_stmt(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
     _ = cursor.bump(@c)
 
     if cursor.at(c, .terminator) || cursor.at(c, .dedent) || cursor.at(c, .eof)
-        return .return_stmt(value: fail("bare", "no value"))
+        return .return_stmt(value: fail(code: "bare", msg: "no value"))
     return .return_stmt(value: ok(parse_expr(@c, @a, text)))
 
 # `while cond` — the condition loop (§4.7; panel 018 split it out of the old
@@ -860,7 +860,7 @@ function for_stmt(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
 function bind_stmt(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
     name = cursor.bump(@c).span
     _ = cursor.bump(@c)
-    return .bind(name: name, ty: fail("inferred", "no written type"), value: parse_expr(@c, @a, text))
+    return .bind(name: name, ty: fail(code: "inferred", msg: "no written type"), value: parse_expr(@c, @a, text))
 
 # `v: i64 @ 0` — a mutable cell, type mandatory. `xs: [i64] = []` — an
 # immutable binding that needs its annotation because an empty literal cannot
@@ -928,7 +928,7 @@ function if_expr(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     if first.is_err()
         return ast.push_expr(@a.exprs, ast.Expr(kind: .error, span: start))
     branches @ branches.push(ast.Branch(cond: cond, block: first.must()))
-    otherwise: ast.Block? @ fail("no_else", "the `if` has no `else`")
+    otherwise: ast.Block? @ fail(code: "no_else", msg: "the `if` has no `else`")
 
     # `else` closes the `if`'s block, so the cursor is back at this level.
     chaining: bool @ true
@@ -1021,7 +1021,7 @@ function arm(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.Arm?
     first = pattern(@c, @a, text)
 
     if first.is_err()
-        return fail("no_pattern", "the arm has no pattern")
+        return fail(code: "no_pattern", msg: "the arm has no pattern")
     patterns @ patterns.push(first.must())
     joining: bool @ true
 
@@ -1029,11 +1029,11 @@ function arm(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.Arm?
         more = pattern(@c, @a, text)
 
         if more.is_err()
-            return fail("no_pattern", "a joined pattern is missing")
+            return fail(code: "no_pattern", msg: "a joined pattern is missing")
         patterns @ patterns.push(more.must())
 
     if !cursor.expect(@c, text: text, kind: .fat_arrow, code: "expected_arm_arrow", what: "`=>` and the arm's value")
-        return fail("no_arrow", "the arm has no `=>`")
+        return fail(code: "no_arrow", msg: "the arm has no `=>`")
     cursor.skip_terminators(@c)
 
     # One statement, or a block — the same two shapes every other body has
@@ -1046,7 +1046,7 @@ function arm(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.Arm?
         inner = block(@c, @a, text: text, owner: "a `match` arm")
 
         if inner.is_err()
-            return fail("no_body", "the arm's block is missing")
+            return fail(code: "no_body", msg: "the arm's block is missing")
         body @ .block(block: inner.must())
     else
         at = statement(@c, @a, text)
@@ -1089,10 +1089,13 @@ record Declared
 
 function declared_name(a: ast.Ast, at: i64) -> Declared?
     return match a.stmts[at].kind
-        .bind b                                                    => ok(Declared(name: b.name, value: b.value))
-        .declare d                                                 => ok(Declared(name: d.name, value: d.value))
-        .mutate | .return_stmt | .break_stmt | .continue_stmt      => fail("not_a_declaration", "no name bound")
-        .assert_stmt | .while_stmt | .for_in | .expr_stmt | .error => fail("not_a_declaration", "no name bound")
+        .bind b                                               => ok(Declared(name: b.name, value: b.value))
+        .declare d                                            => ok(Declared(name: d.name, value: d.value))
+        .mutate | .return_stmt | .break_stmt | .continue_stmt => fail(code: "not_a_declaration", msg: "no name bound")
+        .assert_stmt | .while_stmt | .for_in | .expr_stmt | .error => fail(
+            code: "not_a_declaration",
+            msg: "no name bound"
+        )
 
 # `.num n`, `.num _`, `.plus`, `_`, or a literal.
 #
@@ -1114,12 +1117,12 @@ function pattern(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.Pattern?
                     message: "expected a case name after `.`, found " + cursor.found(c, text) + " — an arm is `.name => value`",
                     span: cursor.current_span(c)
                 )
-            return fail("no_case_name", "the pattern names no case")
+            return fail(code: "no_case_name", msg: "the pattern names no case")
         name = cursor.bump(@c).span
 
         # A name here binds the payload; `_` binds it and says it is unused,
         # which is what keeps §4.4's unused-binding rule honest.
-        binding: token.Span? @ fail("no_binding", "the payload is not bound")
+        binding: token.Span? @ fail(code: "no_binding", msg: "the payload is not bound")
 
         if cursor.at(c, .ident)
             binding @ ok(cursor.bump(@c).span)
@@ -1147,7 +1150,7 @@ function pattern(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.Pattern?
             message: "expected a pattern, found " + cursor.found(c, text) + " — `.case`, `.case name`, a literal, or `_` (on `i64`/`str` only)",
             span: cursor.current_span(c)
         )
-    return fail("no_pattern", "nothing here starts a pattern")
+    return fail(code: "no_pattern", msg: "nothing here starts a pattern")
 
 ## Tests — the precedence table, read back off real token streams
 

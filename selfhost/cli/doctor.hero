@@ -41,14 +41,14 @@ function capture(program: str, words: [str], build_dir: str) -> str?
     ran = process.run(program: program, words: words, out: out_path, err: process.discard())
 
     if !ran.started
-        return fail("none", "the program is not on this machine")
+        return fail(code: "none", msg: "the program is not on this machine")
 
     if ran.code != 0
-        return fail("none", "the command could not run")
+        return fail(code: "none", msg: "the command could not run")
     said = read_file(out_path)
 
     if said.is_err()
-        return fail("none", "nothing was said")
+        return fail(code: "none", msg: "nothing was said")
     return ok(first_line(said.must()))
 
 function first_line(text: str) -> str

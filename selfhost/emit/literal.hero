@@ -217,7 +217,7 @@ function hex_float(text: str) -> str
 ## Tests
 
 test "the macro matches the width, and the minimum is spelled by name"
-    none: widths.IntKind? = fail("none", "no width")
+    none: widths.IntKind? = fail(code: "none", msg: "no width")
     no_strings: [str] = []
     ziggy_strings: [str] = ["a", "b", "c", "ziggy"]
     plain = constant_text(

@@ -253,7 +253,7 @@ function parameter_list(names: ctype.Names, c: state.Checked, decls: [ast.Decl],
         c_type = c_type_of(names, c, ty: declared.ty)
 
         if c_type.is_err()
-            return fail("none", "a type the frontend should have stopped")
+            return fail(code: "none", msg: "a type the frontend should have stopped")
 
         # An @ parameter is a pointer parameter (§4.8, CLAUDE.md §7),
         # and the probe must declare it the same way the call site
@@ -309,10 +309,10 @@ function c_type_of(names: ctype.Names, c: state.Checked, ty: i64) -> str?
         .cstr                                               => return ok("const char *")
         .ptr                                                => return ok("void *")
         .function_ty                                        => return ok(ctype.func_of(names, ty: ty))
-        .unit | .array | .fixed | .map                      => return fail("none", "no C spelling")
-        .fallible | .case_ty | .failure | .generic | .error => return fail("none", "no C spelling")
+        .unit | .array | .fixed | .map                      => return fail(code: "none", msg: "no C spelling")
+        .fallible | .case_ty | .failure | .generic | .error => return fail(code: "none", msg: "no C spelling")
 
-    return fail("none", "unreached")
+    return fail(code: "none", msg: "unreached")
 
 test "a probe per extern with parameters, mutables as pointers, columns exact"
     text = "extern \"m.h\"\n    function narrow(x: i64) -> i64\n    function fill(@buf: i64, n: i64)\n    function version() -> i64\n\nfunction main()\n    print(narrow(x: 1))\n    v: i64 @ 0\n    fill(buf: @v, n: 1)\n    print(version())\n"
@@ -382,7 +382,7 @@ function find_text(line: str, needle: str) -> i64?
         return ok(0)
 
     if needle_cs.len() > cs.len()
-        return fail("none", "not found")
+        return fail(code: "none", msg: "not found")
     start: i64 @ 0
 
     while start <= cs.len() - needle_cs.len()
@@ -399,4 +399,4 @@ function find_text(line: str, needle: str) -> i64?
             return ok(start)
         start @ start + 1
 
-    return fail("none", "not found")
+    return fail(code: "none", msg: "not found")

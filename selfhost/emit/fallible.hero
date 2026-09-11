@@ -36,17 +36,17 @@ function construct_option(names: ctype.Names, result: i64, shape: ir.Shape, argu
             return ok("(" + name + "){.tag = INT64_C(0)}")
         .fail_shape =>
             if arguments.len() < 2
-                return fail("none", "a fail without both sides")
+                return fail(code: "none", msg: "a fail without both sides")
             return ok(
                 "(" + name + "){.tag = INT64_C(1), .as.err = {.code = " + arguments[0] + ", .msg = " + arguments[1] + "}}"
             )
         .err_shape =>
             if arguments.len() < 1
-                return fail("none", "an err without its failure")
+                return fail(code: "none", msg: "an err without its failure")
             return ok("(" + name + "){.tag = INT64_C(1), .as.err = " + arguments[0] + "}")
-        .record_shape | .case_shape | .array_shape | .map_shape => return fail("none", "not an option shape")
+        .record_shape | .case_shape | .array_shape | .map_shape => return fail(code: "none", msg: "not an option shape")
 
-    return fail("none", "unreached")
+    return fail(code: "none", msg: "unreached")
 
 # t16 = t15.tag; for a T?, the same member a variant uses.
 function option_tag(base: i64) -> str

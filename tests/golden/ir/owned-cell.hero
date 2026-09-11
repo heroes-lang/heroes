@@ -44,6 +44,6 @@ extern "err.h"
     function describe(code: i32, @message: cstr owned free) -> i32
 
 function reason(code: i32) -> str
-    message: str? @ fail("none", "nothing yet")
+    message: str? @ fail(code: "none", msg: "nothing yet")
     _ = describe(code: code, message: @message)
     return message.default("no reason given")

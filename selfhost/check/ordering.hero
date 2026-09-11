@@ -60,7 +60,7 @@ function why_unordered(c: state.Checker, s: source.Source, decls: [ast.Decl], ty
         .case_ty | .failure | .generic | .error                   => false
 
     if !is_named
-        return fail("absent", "the type's own name is the whole answer")
+        return fail(code: "absent", msg: "the type's own name is the whole answer")
     return within(c, s, decls, ty: ty, depth: 0)
 
 # The recursion, bounded exactly as the partial walk is bounded and for
@@ -70,7 +70,7 @@ function why_unordered(c: state.Checker, s: source.Source, decls: [ast.Decl], ty
 # is_ordered's and never this walk's.
 function within(c: state.Checker, s: source.Source, decls: [ast.Decl], ty: i64, depth: i64) -> str?
     if depth > 16
-        return fail("absent", "past any nesting worth naming")
+        return fail(code: "absent", msg: "past any nesting worth naming")
 
     match table.get(c.out.types, ty)
         # The three that are the answer wherever they are found: addresses
@@ -86,10 +86,10 @@ function within(c: state.Checker, s: source.Source, decls: [ast.Decl], ty: i64, 
         .fixed                                  => return ok("a fixed array")
         .fallible                               => return ok("a fallible value")
         .unit                                   => return ok("`()`")
-        .int_ty | .float_ty | .bool | .str      => return fail("absent", "ordered, nothing to explain")
-        .case_ty | .failure | .generic | .error => return fail("absent", "no note for this shape")
+        .int_ty | .float_ty | .bool | .str      => return fail(code: "absent", msg: "ordered, nothing to explain")
+        .case_ty | .failure | .generic | .error => return fail(code: "absent", msg: "no note for this shape")
 
-    return fail("absent", "unreached")
+    return fail(code: "absent", msg: "unreached")
 
 # The first member of this declaration with no order, as ONE dotted path
 # and ONE description — "`Line.inner.m` is a map". The path is threaded
@@ -98,7 +98,7 @@ function within(c: state.Checker, s: source.Source, decls: [ast.Decl], ty: i64, 
 # a map" on the first nested case tried — two subjects, no path.
 function dotted_path(c: state.Checker, s: source.Source, decls: [ast.Decl], prefix: str, decl: i64, depth: i64) -> str?
     if depth > 16
-        return fail("absent", "past any nesting worth naming")
+        return fail(code: "absent", msg: "past any nesting worth naming")
 
     match decls[decl].kind
         .record_decl rec => return first_unordered(c, s, decls, prefix: prefix, fields: rec.fields, depth: depth)
@@ -112,10 +112,10 @@ function dotted_path(c: state.Checker, s: source.Source, decls: [ast.Decl], pref
                 if !found.is_err()
                     return found
 
-            return fail("absent", "every payload is ordered")
-        .constant_decl | .function_decl | .test_decl => return fail("absent", "not a data declaration")
+            return fail(code: "absent", msg: "every payload is ordered")
+        .constant_decl | .function_decl | .test_decl => return fail(code: "absent", msg: "not a data declaration")
 
-    return fail("absent", "unreached")
+    return fail(code: "absent", msg: "unreached")
 
 function first_unordered(c: state.Checker, s: source.Source, decls: [ast.Decl], prefix: str, fields: [ast.Field], depth: i64) -> str?
     for field in fields
@@ -153,7 +153,7 @@ function first_unordered(c: state.Checker, s: source.Source, decls: [ast.Decl], 
             return ok("`" + here + "` is " + described.must())
         return ok("`" + here + "` is `" + state.show(c, s, decls, field_ty) + "`")
 
-    return fail("absent", "every field is ordered")
+    return fail(code: "absent", msg: "every field is ordered")
 
 ## Tests
 

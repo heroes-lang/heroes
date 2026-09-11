@@ -606,5 +606,5 @@ function built(scratch: str, compiler: str, source: str, binary: str) -> ()?
     )
 
     if made.is_err() || made.must().code != 0
-        return fail("cannot_run", "cannot build " + source)
+        return fail(code: "cannot_run", msg: "cannot build " + source)
     return ok()

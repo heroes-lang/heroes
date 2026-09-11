@@ -202,7 +202,7 @@ function used_module_named(r: Resolved, from: str, binding: str) -> str?
     named = r.module_uses[from]
 
     if named.is_err()
-        return fail("absent", binding)
+        return fail(code: "absent", msg: binding)
     return named.must()[binding]
 
 # What THIS FILE calls a module — the reverse of the lookup above, and what
@@ -216,7 +216,7 @@ function binding_in(r: Resolved, from: str, module: str) -> str?
     named = r.module_uses[from]
 
     if named.is_err()
-        return fail("absent", module)
+        return fail(code: "absent", msg: module)
     inner = named.must()
 
     # ORDER: none, as a fact rather than a shrug — a module has at most one
@@ -227,7 +227,7 @@ function binding_in(r: Resolved, from: str, module: str) -> str?
         if inner[key].must() == module
             return ok(key)
 
-    return fail("absent", module)
+    return fail(code: "absent", msg: module)
 
 # Every name one module declares, for the "did you mean" lists and for
 # `--dump-scopes`.
@@ -277,7 +277,7 @@ function module_declaring(r: Resolved, from: str, name: str) -> str?
 
     if other.len() > 0
         return ok(other[0])
-    return fail("no_module_declares_it", name)
+    return fail(code: "no_module_declares_it", msg: name)
 
 # Does the module that owns this offset contain a hole? The question every
 # §4.16 exemption asks.
@@ -378,7 +378,7 @@ test "a local carries its optional syntax by value"
         owner: 0,
         depth: 1,
         ty: ok(3),
-        value: fail("none", "no value"),
+        value: fail(code: "none", msg: "no value"),
         reads: 0,
         writes: 0
     )

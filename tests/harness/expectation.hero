@@ -56,7 +56,7 @@ function split(text: str) -> Expectation?
             code = strings.to_number(strings.trimmed(strings.without_prefix(text: last, prefix: "!exit: ")))
 
             if code.is_err()
-                return fail("bad_expectation", "`" + last + "` is not an exit code")
+                return fail(code: "bad_expectation", msg: "`" + last + "` is not an exit code")
             ending @ .exits(code: code.must())
             kept @ rows.slice(from: 0, to: rows.len() - 1)
     out: str @ kept.join("\n")
@@ -95,7 +95,7 @@ function unmet(e: Expectation, out: str, err: str, code: i64) -> str?
                     "must not exit 0: an abort that returns success is the silent wrong answer this case exists to catch"
                 )
 
-    return fail("met", "the run matched its expectation")
+    return fail(code: "met", msg: "the run matched its expectation")
 
 test "an expectation with no ending is stdout and exit 0"
     e = split("one\ntwo\n").must()

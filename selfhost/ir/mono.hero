@@ -79,7 +79,7 @@ function run(@p: containers.Program, @c: state.Checked, s: source.Source, decls:
 
     for f in p.functions
         if f.generics.len() == 0
-            no_parent: i64? = fail("root", "reached from a non-generic root")
+            no_parent: i64? = fail(code: "root", msg: "reached from a non-generic root")
             enqueue(calls_in(f, generic, c), parent: no_parent, queue: @queue, seen: @seen)
 
     instances: [containers.Function] @ []
@@ -149,7 +149,7 @@ function find_template(p: containers.Program, decl: i64) -> containers.Function?
         if f.decl == decl
             return ok(f)
 
-    return fail("absent", "no such declaration in the program")
+    return fail(code: "absent", msg: "no such declaration in the program")
 
 # Every generic call in this function, AS RECORDED — a call written
 # inside a generic body still mentions the template's own T.
@@ -343,7 +343,7 @@ function recursive(queue: [Pending], at: i64, c: state.Checked, s: source.Source
                 )
         walk @ ancestor.parent
 
-    return fail("fine", "no growing repeat on the chain")
+    return fail(code: "fine", msg: "no growing repeat on the chain")
 
 function show_list(c: state.Checked, s: source.Source, decls: [ast.Decl], list: [i64]) -> str
     rendered: [str] @ []

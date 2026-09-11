@@ -72,8 +72,8 @@ function through(w: World, here: str, direction: str) -> str?
     match room.exits[direction]
         .ok there => return ok(there)
         .err _ => return fail(
-            ERR_NO_WAY,
-            "there is no way " + direction + " — try " + join(sort(keys(room.exits)), ", ")
+            code: ERR_NO_WAY,
+            msg: "there is no way " + direction + " — try " + join(sort(keys(room.exits)), ", ")
         )
 
 test "every exit leads to a room that exists, and comes back"

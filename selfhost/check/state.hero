@@ -217,10 +217,10 @@ function record_expr(@c: Checker, at: i64, ty: i64) -> i64
 test "a local is typed by the position of its name, not by walk order"
     r: resolved.Resolved @ resolved.new_resolved()
     r.locals @ r.locals.push(
-        resolved.Local(name: token.Span(start: 10, end: 11), kind: .bind, mutable: false, owner: 0, depth: 0, ty: fail("absent", "inferred"), value: fail("absent", "none"), reads: 1, writes: 0)
+        resolved.Local(name: token.Span(start: 10, end: 11), kind: .bind, mutable: false, owner: 0, depth: 0, ty: fail(code: "absent", msg: "inferred"), value: fail(code: "absent", msg: "none"), reads: 1, writes: 0)
     )
     r.locals @ r.locals.push(
-        resolved.Local(name: token.Span(start: 30, end: 31), kind: .cell, mutable: true, owner: 0, depth: 0, ty: fail("absent", "x"), value: fail("absent", "x"), reads: 1, writes: 1)
+        resolved.Local(name: token.Span(start: 30, end: 31), kind: .cell, mutable: true, owner: 0, depth: 0, ty: fail(code: "absent", msg: "x"), value: fail(code: "absent", msg: "x"), reads: 1, writes: 1)
     )
     c: Checker @ new_checker(out_of: r, expr_count: 2)
     bind_local(@c, token.Span(start: 30, end: 31), table.str_ty(c.out.types))

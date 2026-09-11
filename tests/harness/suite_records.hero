@@ -400,8 +400,15 @@ constant REFUSED: [str]
 # because a verdict that adds a sentence to the spec should add it to the
 # ordered one. Moved by hand, with the row, in one commit. `REFUSED` gains
 # nothing: the runner-up names stayed in the session's plan, outside the tree.
+#
+# **73 -> 74 on 2026-09-11**, `M-labelled-builtins`, the same evening and out of
+# the milestone before it: panel 126's ergonomist found that `fail("a", "b")`
+# was accepted where a user function's two `str` parameters are refused, the
+# author asked for the repair in one word, and the row is the repair. Moved by
+# hand, with the row, in one commit. `REFUSED` gains nothing: the runner-up
+# names stayed in the session.
 constant ROWS: i64
-    73
+    74
 
 # **`WATCHED` stood here until 2026-09-07 and nothing had read it since
 # 2026-08-19.** It listed `design.md` and `CLAUDE.md` as *"the two documents whose
@@ -786,7 +793,7 @@ function open_items_at(scratch: str, tag: str, path: str) -> [str]?
     shown = shell.run(scratch: scratch, program: "git", words: ["git", "show", tag + ":" + path])?
 
     if shown.code != 0
-        return fail("no_such_file", path + " does not exist at " + tag)
+        return fail(code: "no_such_file", msg: path + " does not exist at " + tag)
     open_rows: [str] @ []
 
     for row in strings.lines(shown.out)
@@ -842,7 +849,7 @@ function carried_the_rule(scratch: str, tag: str) -> bool?
     shown = shell.run(scratch: scratch, program: "git", words: ["git", "show", tag + ":" + EXECUTOR])?
 
     if shown.code != 0
-        return fail("no_such_file", EXECUTOR + " does not exist at " + tag)
+        return fail(code: "no_such_file", msg: EXECUTOR + " does not exist at " + tag)
 
     return ok(strings.contains(text: shown.out, needle: RATIFICATION_MARKER))
 
@@ -1481,7 +1488,7 @@ function one_names(part: str, document: str, known: {str: bool}) -> bool
     return exists_or_prefixes(token: part, known: known)
 
 function last_slash(text: str) -> i64?
-    at: i64? @ fail("none", "no slash")
+    at: i64? @ fail(code: "none", msg: "no slash")
     i: i64 @ 0
 
     while i < text.len()
@@ -2148,7 +2155,7 @@ function sitting_number(path: str) -> i64?
     at = strings.index_of(text: rest, needle: "-")
 
     if at.is_err()
-        return fail("unnumbered", "no `-` after the number in " + path)
+        return fail(code: "unnumbered", msg: "no `-` after the number in " + path)
     return strings.to_number(text: rest.slice(from: 0, to: at.must()))
 
 # **A PENDING VERDICT IS FINE — A PENDING VERDICT NOBODY IS ASKING ABOUT IS NOT**,
@@ -2266,7 +2273,7 @@ function sitting_digits(path: str) -> str?
     at = strings.index_of(text: rest, needle: "-")
 
     if at.is_err()
-        return fail("unnumbered", "no `-` after the number in " + path)
+        return fail(code: "unnumbered", msg: "no `-` after the number in " + path)
     return ok(rest.slice(from: 0, to: at.must()))
 
 # A numbered sitting under `docs/panel/`. The digit is what is asked, and the
@@ -2487,27 +2494,27 @@ function homed(@r: report.Report)
 # was written for.
 function chain_row_name(row: str) -> str?
     if !strings.starts_with(text: row, prefix: "| ")
-        return fail("shape", "not a table row")
+        return fail(code: "shape", msg: "not a table row")
     rest = strings.without_prefix(text: row, prefix: "| ")
     bar = strings.index_of(text: rest, needle: " | ")
 
     if bar.is_err()
-        return fail("shape", "a row of one cell")
+        return fail(code: "shape", msg: "a row of one cell")
 
     if !all_digits(rest.slice(from: 0, to: bar.must()))
-        return fail("shape", "the first cell is not a row number")
+        return fail(code: "shape", msg: "the first cell is not a row number")
     after = strings.without_prefix(
         text: rest.slice(from: bar.must(), to: rest.len()),
         prefix: " | "
     )
 
     if !strings.starts_with(text: after, prefix: "**M-")
-        return fail("shape", "the second cell is not a milestone")
+        return fail(code: "shape", msg: "the second cell is not a milestone")
     name = strings.without_prefix(text: after, prefix: "**")
     end = strings.index_of(text: name, needle: "**")
 
     if end.is_err()
-        return fail("shape", "the name is not closed")
+        return fail(code: "shape", msg: "the name is not closed")
     return ok(name.slice(from: 0, to: end.must()))
 
 # `- [ ] **M-guide-book** | …` — the milestone an OPEN item is scheduled at.
@@ -2515,12 +2522,12 @@ function chain_row_name(row: str) -> str?
 # record is allowed to name a milestone that has since closed.
 function item_milestone(row: str) -> str?
     if !strings.starts_with(text: row, prefix: "- [ ] **M-")
-        return fail("shape", "the first field is not a milestone")
+        return fail(code: "shape", msg: "the first field is not a milestone")
     rest = strings.without_prefix(text: row, prefix: "- [ ] **")
     end = strings.index_of(text: rest, needle: "**")
 
     if end.is_err()
-        return fail("shape", "the name is not closed")
+        return fail(code: "shape", msg: "the name is not closed")
     return ok(rest.slice(from: 0, to: end.must()))
 
 function all_digits(text: str) -> bool
@@ -2701,7 +2708,7 @@ function count_stated(row: str) -> i64?
     end = strings.index_of(text: rest, needle: "**")
 
     if end.is_err()
-        return fail("shape", "the count is not closed")
+        return fail(code: "shape", msg: "the count is not closed")
     return strings.to_number(text: rest.slice(from: 0, to: end.must()))
 
 test "a live list in the shape its preamble states has nothing to complain about"
@@ -2891,7 +2898,7 @@ function numbered_in(text: str) -> str?
             return ok(text.slice(from: i, to: last))
         i @ i + 1
 
-    return fail("none", "no numbered milestone")
+    return fail(code: "none", msg: "no numbered milestone")
 
 # Every `M-<name>` in the text, with a trailing hyphen left to the prose.
 function names_used(text: str) -> [str]

@@ -51,7 +51,7 @@ function token_of(word: str) -> Token?
 # is the half a first draft forgets.
 function number_of(word: str) -> i64?
     if word.len() == 0
-        return fail("empty", "an empty word is not a number")
+        return fail(code: "empty", msg: "an empty word is not a number")
     negative: bool @ false
     total: i64 @ 0
     digits: i64 @ 0
@@ -68,7 +68,7 @@ function number_of(word: str) -> i64?
         digits @ digits + 1
 
     if digits == 0
-        return fail("not_a_number", "`" + word + "` has no digits in it")
+        return fail(code: "not_a_number", msg: "`" + word + "` has no digits in it")
 
     return if negative
         ok(0 - total)
@@ -84,7 +84,7 @@ function digit_of(ch: str) -> i64?
             return ok(i)
         i @ i + 1
 
-    return fail("not_a_digit", "`" + ch + "` is not a digit")
+    return fail(code: "not_a_digit", msg: "`" + ch + "` is not a digit")
 
 function split_words(text: str) -> [str]
     out: [str] @ []
@@ -111,17 +111,17 @@ function evaluate(text: str) -> i64?
             .number n => stack @ stack.push(n.value)
             .plus | .minus | .times | .divide =>
                 if stack.len() < 2
-                    return fail("too_few", "an operator with fewer than two numbers under it")
+                    return fail(code: "too_few", msg: "an operator with fewer than two numbers under it")
                 right = stack[stack.len() - 1]
                 left = stack[stack.len() - 2]
                 stack @ stack.slice(from: 0, to: stack.len() - 2)
                 stack @ stack.push(applied(one, left: left, right: right)?)
 
     if stack.len() == 0
-        return fail("empty", "nothing to evaluate")
+        return fail(code: "empty", msg: "nothing to evaluate")
 
     if stack.len() > 1
-        return fail("too_many", "numbers left over: an operator is missing")
+        return fail(code: "too_many", msg: "numbers left over: an operator is missing")
 
     return ok(stack[0])
 
@@ -135,10 +135,10 @@ function applied(op: Token, left: i64, right: i64) -> i64?
             # its input from anywhere must check first, or a typed zero ends
             # the process rather than producing a diagnostic.
             if right == 0
-                fail("divide_by_zero", "cannot divide by zero")
+                fail(code: "divide_by_zero", msg: "cannot divide by zero")
             else
                 ok(left / right)
-        .number _ => fail("not_an_operator", "a number is not an operator")
+        .number _ => fail(code: "not_an_operator", msg: "a number is not an operator")
 
 function main()
     for one in ["3 4 +", "3 4 + 2 *", "5 1 2 + 4 * + 3 -", "-7 3 /", "7 -3 /"]

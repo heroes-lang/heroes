@@ -34,12 +34,12 @@
 
 function risky(n: i64) -> i64?
     if n < 0
-        return fail("negative", "n is negative")
+        return fail(code: "negative", msg: "n is negative")
     return ok(n + 1)
 
 function unit_risky(n: i64) -> ()?
     if n < 0
-        return fail("negative", "n is negative")
+        return fail(code: "negative", msg: "n is negative")
     return ok()
 
 function main()

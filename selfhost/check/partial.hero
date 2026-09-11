@@ -48,7 +48,7 @@ function reaches(c: state.Checker, decls: [ast.Decl], ty: i64) -> i64?
 # fallback is absence, the safe direction here.
 function reaches_within(c: state.Checker, decls: [ast.Decl], ty: i64, depth: i64) -> i64?
     if depth > 16
-        return fail("absent", "past any header's nesting")
+        return fail(code: "absent", msg: "past any header's nesting")
 
     match table.get(c.out.types, ty)
         .named n =>
@@ -69,9 +69,12 @@ function reaches_within(c: state.Checker, decls: [ast.Decl], ty: i64, depth: i64
 
                             if !found.is_err()
                                 return found
-                .constant_decl | .function_decl | .test_decl => return fail("absent", "not a data declaration")
+                .constant_decl | .function_decl | .test_decl => return fail(
+                    code: "absent",
+                    msg: "not a data declaration"
+                )
 
-            return fail("absent", "no partial inside")
+            return fail(code: "absent", msg: "no partial inside")
         .array a    => return reaches_within(c, decls, ty: a.element, depth: depth + 1)
         .fallible o => return reaches_within(c, decls, ty: o.payload, depth: depth + 1)
         .map m =>
@@ -80,19 +83,22 @@ function reaches_within(c: state.Checker, decls: [ast.Decl], ty: i64, depth: i64
             if !in_key.is_err()
                 return in_key
             return reaches_within(c, decls, ty: m.value, depth: depth + 1)
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr => return fail("absent", "a scalar reaches nothing")
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr => return fail(
+            code: "absent",
+            msg: "a scalar reaches nothing"
+        )
         .unit | .fixed | .function_ty | .case_ty | .failure | .generic | .error => return fail(
-            "absent",
-            "this shape reaches nothing"
+            code: "absent",
+            msg: "this shape reaches nothing"
         )
 
-    return fail("absent", "unreached")
+    return fail(code: "absent", msg: "unreached")
 
 function through_field(c: state.Checker, decls: [ast.Decl], field_ty: i64, depth: i64) -> i64?
     written = state.written_type(c.out, field_ty)
 
     if written.is_err()
-        return fail("absent", "the field's type was never lowered")
+        return fail(code: "absent", msg: "the field's type was never lowered")
     return reaches_within(c, decls, ty: written.must(), depth: depth + 1)
 
 ## Tests

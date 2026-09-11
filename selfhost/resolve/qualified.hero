@@ -100,11 +100,11 @@ function qualified(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast
 # a qualified constant, and a write to one.
 function module_at(r: state.Resolver, a: ast.Ast, s: source.Source, id: i64) -> str?
     if !is_bare_name(a, id)
-        return fail("absent", "only a bare name can name a module")
+        return fail(code: "absent", msg: "only a bare name can name a module")
     name = source.span_text(s, a.exprs[id].span)
 
     if !state.lookup_local(r, name).is_err()
-        return fail("absent", "a local of this name is in scope, so the dot is UFCS")
+        return fail(code: "absent", msg: "a local of this name is in scope, so the dot is UFCS")
 
     # The name written at the call site is a BINDING, which for a path is
     # its last part — `use syntax/decl` then `decl.foo()`. What leaves here
@@ -131,11 +131,11 @@ function name_declared_elsewhere(@r: state.Resolver, text: str, span: token.Span
     found = resolved.module_declaring(r.out, from: r.module, name: text)
 
     if found.is_err()
-        return fail("absent", "no other module declares this name")
+        return fail(code: "absent", msg: "no other module declares this name")
     module = found.must()
 
     if module == r.module || module == source.LIBRARY_MODULE
-        return fail("absent", "its home is already visible from here")
+        return fail(code: "absent", msg: "its home is already visible from here")
 
     local = resolved.binding_in(r.out, from: r.module, module: module)
 
@@ -168,11 +168,11 @@ function a_function_decl(name_start: i64, name_end: i64) -> ast.Decl
         generics: gs,
         params: ps,
         result: 0,
-        body: fail("absent", "unused"),
+        body: fail(code: "absent", msg: "unused"),
         is_extern: false,
-        header: fail("absent", "none"),
-        library: fail("absent", "none"),
-        owned_result: fail("none", "nothing to free")
+        header: fail(code: "absent", msg: "none"),
+        library: fail(code: "absent", msg: "none"),
+        owned_result: fail(code: "none", msg: "nothing to free")
     )
     span = token.Span(start: name_start, end: name_end)
     return ast.Decl(name: span, doc: doc, span: span, kind: .function_decl(value: f))
@@ -185,11 +185,11 @@ function an_extern_decl(name_start: i64, name_end: i64) -> ast.Decl
         generics: gs,
         params: ps,
         result: 0,
-        body: fail("absent", "unused"),
+        body: fail(code: "absent", msg: "unused"),
         is_extern: true,
         header: ok(token.Span(start: 0, end: 4)),
-        library: fail("absent", "none"),
-        owned_result: fail("none", "nothing to free")
+        library: fail(code: "absent", msg: "none"),
+        owned_result: fail(code: "none", msg: "nothing to free")
     )
     span = token.Span(start: name_start, end: name_end)
     return ast.Decl(name: span, doc: doc, span: span, kind: .function_decl(value: f))
@@ -246,7 +246,7 @@ test "a local wearing the module's name turns the dot back into UFCS — in a pr
     r.module @ "t"
     resolved.declare_use(@r.out, from: "t", binding: "geom", module: "geom")
     state.open_scope(@r)
-    assert !state.declare(@r, s, decls, token.Span(start: 0, end: 4), resolve_binding.bind_binding(ty: fail("absent", "inferred"), value: 0)).is_err()
+    assert !state.declare(@r, s, decls, token.Span(start: 0, end: 4), resolve_binding.bind_binding(ty: fail(code: "absent", msg: "inferred"), value: 0)).is_err()
     handled = qualified(@r, a, s, decls, at: 0, receiver: receiver, called: token.Span(start: 5, end: 10))
     assert !handled
 

@@ -6,7 +6,7 @@ record Reader
 
 function first_of(xs: [i64]) -> i64?
     if xs.len() == 0
-        return fail("empty", "no first element")
+        return fail(code: "empty", msg: "no first element")
     return ok(xs[0])
 
 function step(@r: Reader, xs: [i64]) -> i64?

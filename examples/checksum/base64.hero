@@ -76,7 +76,7 @@ function value_of(written: str) -> i64?
             return ok(i)
         i @ i + 1
 
-    return fail(ERR_CHARACTER, "`" + written + "` is not one of base64's 64 characters")
+    return fail(code: ERR_CHARACTER, msg: "`" + written + "` is not one of base64's 64 characters")
 
 # `text`, encoded. The general one takes bytes; this is the spelling the RFC's
 # vectors are written in.
@@ -134,12 +134,15 @@ function padding_of(group: str) -> i64?
 
     if group.slice(from: 0, to: 1) == PAD || group.slice(from: 1, to: 2) == PAD
         return fail(
-            ERR_PADDING,
-            "`=` cannot stand in the first two places of a group, and `" + group + "` has one there"
+            code: ERR_PADDING,
+            msg: "`=` cannot stand in the first two places of a group, and `" + group + "` has one there"
         )
 
     if third == PAD && fourth != PAD
-        return fail(ERR_PADDING, "`" + group + "` pads its third character and not its fourth, which no encoder writes")
+        return fail(
+            code: ERR_PADDING,
+            msg: "`" + group + "` pads its third character and not its fourth, which no encoder writes"
+        )
 
     if third == PAD
         return ok(2)
@@ -154,8 +157,8 @@ function padding_of(group: str) -> i64?
 function decoded(text: str) -> [u8]?
     if text.len() % 4 != 0
         return fail(
-            ERR_LENGTH,
-            "a base64 text is a multiple of four characters long, and this one is " + text.len().to_str()
+            code: ERR_LENGTH,
+            msg: "a base64 text is a multiple of four characters long, and this one is " + text.len().to_str()
         )
     out: [u8] @ []
     i: i64 @ 0
@@ -165,7 +168,7 @@ function decoded(text: str) -> [u8]?
         pad = padding_of(group)?
 
         if pad > 0 && i + 4 < text.len()
-            return fail(ERR_PADDING, "`" + group + "` is padded and is not the last group")
+            return fail(code: ERR_PADDING, msg: "`" + group + "` is padded and is not the last group")
         v0 = value_of(group.slice(from: 0, to: 1))?
         v1 = value_of(group.slice(from: 1, to: 2))?
         v2: i64 @ 0

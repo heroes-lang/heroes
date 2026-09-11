@@ -30,10 +30,10 @@ function letters() -> [str]
 
 function to_roman(value: i64) -> str?
     if value < 1
-        return fail("out_of_range", "there is no Roman numeral below I")
+        return fail(code: "out_of_range", msg: "there is no Roman numeral below I")
 
     if value > LARGEST
-        return fail("out_of_range", "the Romans wrote nothing standard above MMMCMXCIX")
+        return fail(code: "out_of_range", msg: "the Romans wrote nothing standard above MMMCMXCIX")
     out: str @ ""
     left: i64 @ value
     at: i64 @ 0
@@ -61,13 +61,13 @@ function value_of_letter(letter: str) -> i64?
         "C" => ok(100)
         "D" => ok(500)
         "M" => ok(1000)
-        _   => fail("not_a_numeral", "`" + letter + "` is not a Roman letter")
+        _   => fail(code: "not_a_numeral", msg: "`" + letter + "` is not a Roman letter")
 
 # Reading is the harder direction, and the rule is one sentence: a letter
 # worth less than the one after it is SUBTRACTED. Everything else adds.
 function from_roman(text: str) -> i64?
     if text.len() == 0
-        return fail("empty", "there is no numeral in an empty string")
+        return fail(code: "empty", msg: "there is no numeral in an empty string")
     total: i64 @ 0
     previous: i64 @ 0
 
