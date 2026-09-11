@@ -444,7 +444,17 @@ test "the ceiling is per file, and a decided file keeps its own"
     #
     # The witness is now the entry nearest CEILING **by lookup rather than by
     # name**, which is what the sentence above always claimed it was.
-    assert ceiling_for("selfhost/check/walk.hero") == 1708
+    #
+    # **AND THIS LINE IS WHY THE NUMBER IS WRITTEN TWICE, paid for on
+    # 2026-09-11.** Panel 127 raised five DECIDED rows and this assert kept the
+    # old one, so the table said 1746 and the test said 1708. Every suite of the
+    # net was green and the CI went red on all three legs, because the net's own
+    # tests are the THIRD suite and the session had run the other two after its
+    # last edit. That is CL-054 exactly: run the suite you did not expect to
+    # move. The number stays in two places on purpose — one is the ceiling, the
+    # other is the proof that the lookup reads it — and the cost of forgetting
+    # the second is three red legs rather than a silent pass.
+    assert ceiling_for("selfhost/check/walk.hero") == 1746
     assert ceiling_for("selfhost/parse/use_line.hero") == 310
     assert ceiling_for("selfhost/anything-else.hero") == CEILING
 
