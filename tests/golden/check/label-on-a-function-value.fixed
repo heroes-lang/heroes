@@ -1,0 +1,22 @@
+# UNVERIFIED — pending debrief
+# A label at a call made through a function VALUE, which was accepted and
+# ignored until panel 128 measured it: `f(nonsense: "a", rubbish: "b")` printed
+# `a/b` at exit 0, so a label there was not a claim about anything. §4.9's rule
+# reads the parameter names of a DECLARATION, and `(function(str, str) -> str)`
+# has none at any of its sites, so the call is positional and a label is an
+# error. The fix is `certain`: the label goes, the value stays where it is, and
+# the program does what it already did — which is why `.fixed` exists beside
+# this file.
+#
+# **What this case does NOT close, said here because the annotation cannot say
+# it**: the two values may still be handed over the wrong way round. That is the
+# inversion, it is silent, and `spec § 3`'s row now states that the call is
+# positional so a reader is told. Panel 128 left it open with the measurement
+# that would settle the repair: `heroes mutate --operator swap-args` reads 50%
+# on this shape and would read 100% if a function type carried mandatory names.
+function report(code: str, msg: str) -> str
+    return code + "/" + msg
+
+function main()
+    f: (function(str, str) -> str) @ report
+    print(f("a", "b"))  #~ label_on_function_value label_on_function_value
