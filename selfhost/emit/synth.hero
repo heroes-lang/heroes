@@ -56,7 +56,7 @@ function content_key(c: state.Checked, s: source.Source, decls: [ast.Decl], ty: 
 # Every function type reachable from ty, including ty itself. Closed
 # under nesting, because [(function(A) -> B)] names the function type
 # without being one, and so does (function(A) -> B)?.
-function collect(c: state.Checked, ty: i64, @into: {i64: bool})
+function collect(c: state.Checked, decls: [ast.Decl], ty: i64, @into: {i64: bool}, @seen: {i64: bool})
     match table.get(c.types, ty)
         .function_ty fn_ty =>
             if !into[ty].is_err()
@@ -64,16 +64,50 @@ function collect(c: state.Checked, ty: i64, @into: {i64: bool})
             into[ty] @ true
 
             for p in table.params_of(c.types, fn_ty.params)
-                collect(c, ty: p, into: @into)
+                collect(c, decls, ty: p, into: @into, seen: @seen)
 
-            collect(c, ty: fn_ty.result, into: @into)
-        .array arr  => collect(c, ty: arr.element, into: @into)
-        .fallible o => collect(c, ty: o.payload, into: @into)
+            collect(c, decls, ty: fn_ty.result, into: @into, seen: @seen)
+        .array arr  => collect(c, decls, ty: arr.element, into: @into, seen: @seen)
+        .fallible o => collect(c, decls, ty: o.payload, into: @into, seen: @seen)
         .map m =>
-            collect(c, ty: m.key, into: @into)
-            collect(c, ty: m.value, into: @into)
+            collect(c, decls, ty: m.key, into: @into, seen: @seen)
+            collect(c, decls, ty: m.value, into: @into, seen: @seen)
+        # **A RECORD OR VARIANT IS WALKED, and this arm returned at once until
+        # 2026-09-12** (defect 028). A function type reachable only through a
+        # field — `record S` holding `f: (function(v: i64) -> i64)`, never
+        # called through — was therefore never named, and `ctype.func_of`'s
+        # assertion *every function type is named before anything can mention
+        # one* fired at emission: `heroes check` said the program was fine at
+        # exit 0 and `heroes build` died at exit 134 with no file, no line and
+        # no code.
+        #
+        # `seen` is a second set and not `into`, because `into` IS the list of
+        # function typedefs to emit and a named type in it would emit one for a
+        # record. It exists at all because a record may hold itself through
+        # `[T]` or `{K: V}` (spec § 3), so this walk has a cycle in it.
+
+        .named n =>
+            if !seen[ty].is_err()
+                return
+            seen[ty] @ true
+
+            match decls[n.decl].kind
+                .record_decl rec =>
+                    for field in rec.fields
+                        written = state.written_type(c, field.ty)
+
+                        if !written.is_err()
+                            collect(c, decls, ty: written.must(), into: @into, seen: @seen)
+                .variant_decl v =>
+                    for one_case in v.cases
+                        for field in one_case.fields
+                            written = state.written_type(c, field.ty)
+
+                            if !written.is_err()
+                                collect(c, decls, ty: written.must(), into: @into, seen: @seen)
+                .constant_decl | .function_decl | .test_decl => return
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return
-        .fixed | .named | .case_ty | .failure | .generic | .error => return
+        .fixed | .case_ty | .failure | .generic | .error          => return
 
 ## What one translation unit wants
 
