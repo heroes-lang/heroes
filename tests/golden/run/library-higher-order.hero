@@ -22,8 +22,8 @@ function odd(n: i64) -> bool
 function big(n: i64) -> bool
     return n > 100
 
-function add(a: i64, b: i64) -> i64
-    return a + b
+function add(acc: i64, item: i64) -> i64
+    return acc + item
 
 function label(n: i64) -> str
     return to_str(n)
@@ -32,11 +32,11 @@ function label(n: i64) -> str
 # commutative, so a swapped accumulator prints a different number; `glue` is not
 # associative in the reading that matters, so a right fold prints a different
 # string.
-function sub(acc: i64, x: i64) -> i64
-    return acc - x
+function sub(acc: i64, item: i64) -> i64
+    return acc - item
 
-function glue(acc: str, w: str) -> str
-    return acc + w
+function glue(acc: str, item: str) -> str
+    return acc + item
 
 function main()
     xs = [1, 2, 3, 4]

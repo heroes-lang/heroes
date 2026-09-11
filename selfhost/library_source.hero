@@ -1,5 +1,19 @@
 # The Heroes library's own text, EMBEDDED — never read from disk.
 #
+# **`fold`'s callback names its two parameters, since M-named-callbacks**, and
+# the comment above it INSIDE the text — which has warned since panel 029 that an
+# accumulator and an element of one type make either order type-check — stopped
+# being a warning and became a check: a function that reads the two the other way
+# round is refused at the call (`error[callback_name]`) instead of printing `cba`
+# for `abc` at exit 0.
+#
+# **This note is here and not three lines lower, and the reason is measured.**
+# The strings below ARE the library's source, so a comment among them shifts
+# every `#line "<heroes library>"` in every program's emitted C by as many lines
+# as it takes: five lines of prose moved six rows of
+# `tests/golden/emit/scalars.expected` and the same in all 441 emission traces,
+# for nothing a reader of a C file would want.
+#
 # Panel 028 R3 ruled this and `archive/bootstrap-rs/heroes/src/library/source.hero`
 # states the ruling in its own header: the library "is not on disk
 # beside the compiler: it is `include_str!`d into the binary, so there
@@ -81,7 +95,7 @@ constant LINES: [str]
         "# was SILENT: with an accumulator and an element of the same type — `sum`,"
         "# `concat`, `max`, every string builder — either order type-checks and the program"
         "# prints a different answer."
-        "function fold<A, B>(xs: [A], start: B, f: (function(B, A) -> B)) -> B"
+        "function fold<A, B>(xs: [A], start: B, f: (function(acc: B, item: A) -> B)) -> B"
         "    total: B @ start"
         "    for x in xs"
         "        total @ f(total, x)"

@@ -1,0 +1,29 @@
+# UNVERIFIED — pending debrief
+# A callback whose two parameters are read in the other order, which is the half
+# of defect 026 that M-labelled-types could not reach. `fold`'s callback type is
+# `(function(acc: B, item: A) -> B)`, two DISTINCT letters, so §4.9's criterion —
+# the declared type, never the monomorphised one — leaves it outside the
+# same-typed rule however a call instantiates it. When `A` and `B` both bind to
+# `str` the two parameters become one type, and until this case the program below
+# compiled, exited 0 and printed `cba` where its author meant `abc`.
+#
+# **This is a naming mandate, and the record says so rather than letting a green
+# suite imply a detector.** A function handed to a callback type that names its
+# parameters names them the same way: `add(a, b)` cannot be folded until it is
+# `add(acc, item)`. The cheaper reading — fire only where the callee reused the
+# type's OWN word for another position, which is panel 127's `elsewhere` test
+# applied to a value — was measured against the seven callbacks this repository
+# hands to `fold`, each transposed, and caught **2 of 7**: the five it missed
+# called their parameters `a` and `b`, `so_far` and `one`, `total` and `i`. The
+# author took agreement over it with both numbers in front of them, 2026-09-11,
+# and six programs were renamed once each.
+#
+# No fix is offered. The repair is to rename this parameter, or to swap the two,
+# or to swap the body, and which of those the author meant is not a fact about
+# this call.
+function append(item: str, acc: str) -> str
+    return acc + item
+
+function main()
+    xs: [str] = ["a", "b", "c"]
+    print(xs.fold("", append))  #~ callback_name

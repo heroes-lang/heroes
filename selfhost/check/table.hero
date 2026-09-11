@@ -287,10 +287,21 @@ function len_of(t: Types) -> i64
     return t.nodes.len()
 
 # Whether a value of type `got` may stand where `wanted` is expected. It is an
-# ID COMPARISON in every case but one, and the one is `_`: a parameter a
-# declaration called `_` says the body ignores that position and makes no claim
-# about it, so its name is empty and an empty name fits whatever the expected
-# type calls that position. Nothing else is relaxed — the parameter types, the
+# ID COMPARISON in every case but TWO, and both are the same idea said at two
+# scales: a name that is not there fits whatever the expected type calls that
+# position. One is a parameter a declaration called `_`, which says the body
+# ignores that position and makes no claim about it. The other is a type that
+# carries NO run of names at all, which is every declared function with no two
+# parameters of one type — and refusing THAT made a written type naming a
+# position nothing can confuse uninhabited by any function in the language
+# (panel 130's spec-warden, which built its own compiler and ran the program
+# rather than reading for it).
+#
+# **It is a widening, and the word is used on purpose**: panel 129's compiler
+# seat named widening as what this route was supposed to avoid, and two of them
+# are here. Both are blanks being filled rather than types being related, so the
+# answer is still an id comparison at the end — but a reader who is told
+# otherwise would be told something false. Nothing else is relaxed — the parameter types, the
 # result and every name that IS written still have to be equal — and the answer
 # stays an id comparison, because the blanks are filled in and the type is
 # interned again rather than a second notion of sameness entering the checker.
@@ -320,14 +331,21 @@ function fits(@t: Types, wanted: i64, got: i64) -> bool
         .function_ty g =>
             gl = labels_of(t, g.labels)
 
-            if gl.len() != wl.len()
+            # A run of the wrong LENGTH is a different shape and not a blank; a
+            # run of length ZERO is a type that names nothing anywhere, which is
+            # every declared function with no two parameters of one type
+            # (`check/walk.hero`'s `declared_labels`). Refusing that made every
+            # written type carrying a name at a position nothing can confuse
+            # UNINHABITED — panel 130's spec-warden, which built its own compiler
+            # and ran `(function(item: i64) -> i64)` rather than reading for it.
+            if gl.len() != wl.len() && gl.len() != 0
                 return false
             spelled @ params_of(t, g.params)
             result @ g.result
             i: i64 @ 0
 
-            while i < gl.len()
-                if gl[i].len() == 0
+            while i < wl.len()
+                if i >= gl.len() || gl[i].len() == 0
                     filled @ filled.push(wl[i])
                 else
                     filled @ filled.push(gl[i])

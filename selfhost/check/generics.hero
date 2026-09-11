@@ -91,6 +91,7 @@ function bind(@c: state.Checker, s: source.Source, decls: [ast.Decl], @bindings:
                     gs = table.params_of(c.out.types, actual.params)
 
                     if ws.len() == gs.len()
+                        said = c.out.diagnostics.len()
                         i: i64 @ 0
 
                         while i < ws.len()
@@ -98,6 +99,15 @@ function bind(@c: state.Checker, s: source.Source, decls: [ast.Decl], @bindings:
                             i @ i + 1
 
                         bind(@c, s, decls, @bindings, param: wanted.result, got: actual.result, span: span)
+
+                        # Only where the TYPES agreed. A callback whose parameter
+                        # types disagree has been reported by the walk above, and
+                        # a name on top of that is a second message for one
+                        # mistake (§4.5) — panel 130's compiler seat found it
+                        # stacking an eighth diagnostic onto three.
+                        if c.out.diagnostics.len() == said
+                            named(@c, wanted: wanted.labels, got: actual.labels, span: span)
+
                         return
                     mismatch_shape(@c, s, decls, param: param, got: got, span: span)
                 .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit =>
@@ -207,6 +217,56 @@ function mentions(c: state.Checker, ty: i64, at: i64) -> bool
         .named | .case_ty | .failure | .error                     => return false
 
     return false
+
+# The NAMES, position by position, and this is the only place a function type's
+# names are compared in the generic path — `bind` above walks a function type
+# structurally and never compares two whole interned ids, which is what made
+# generics free when the names first entered the type and what left this hole to
+# close by hand.
+#
+# **Why it matters and where it does not.** A callback's roles can be read the
+# other way round, and the compiler sees it only when the two parameters end up
+# the same type: with different types the swap changes the type and `bind` above
+# already refuses it — measured, `fold` at `B := str, A := i64` with the two
+# transposed is two `type_mismatch` today. When they collapse to one type the
+# swap is invisible, `fold` prints `cba` for `abc` at exit 0, and the names are
+# the only thing that can tell them apart.
+#
+# **THE NAMES MUST AGREE, and the author chose that over the narrow reading with
+# the measurement in front of them.** A first version fired only where the callee
+# reused the type's OWN word for another position — panel 127's `elsewhere` test,
+# applied to a value — and it was measured against the seven callbacks this
+# repository hands to `fold`, each transposed: it caught **2 of 7**. The five it
+# missed call their parameters `a` and `b`, `so_far` and `one`, `total` and `i`,
+# their authors' own vocabulary, and a rule that catches an inversion only when
+# the author happened to borrow the library's words gives the impression of
+# closing a class it does not close.
+#
+# So agreement it is, and the price is stated rather than hidden: a function
+# handed to `fold` names its two parameters what `fold` names them. That is
+# §4.9's existing bargain at a call site — *when two parameters share a type the
+# call names them* — moved to the one place a call site cannot reach, and it is a
+# naming mandate, not a detector. Six programs in this repository were renamed
+# once the day it landed (author instruction 2026-09-11, taken over this seat's
+# own recommendation of the cheaper reading).
+#
+# An EMPTY name matches anything, on either side. A function whose parameters
+# cannot be confused carries none (`check/walk.hero`'s `declared_labels`), and a
+# type that names nothing is asking for nothing.
+function named(@c: state.Checker, wanted: table.Params, got: table.Params, span: token.Span)
+    ws = table.labels_of(c.out.types, wanted)
+    gs = table.labels_of(c.out.types, got)
+
+    if ws.len() != gs.len()
+        return
+    i: i64 @ 0
+
+    while i < ws.len()
+        if gs[i].len() > 0 && ws[i].len() > 0 && gs[i] != ws[i]
+            state.push_diagnostic(@c, value_errors.callback_name(wanted: ws[i], written: gs[i], span: span))
+            return
+
+        i @ i + 1
 
 # Replace every generic with what the call bound it to.
 function substitute(@c: state.Checker, ty: i64, bindings: [i64?]) -> i64

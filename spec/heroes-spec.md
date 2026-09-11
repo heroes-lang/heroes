@@ -44,7 +44,7 @@ Heroes is a small compiled language. This document is the whole language.
 | `T?` | fallible: a `T`, or an error |
 | `()` | nothing: what a function with no `->` returns |
 | `ptr` `cstr` | an opaque pointer and a C string; `nullptr` is the null of both |
-| `(function(A) -> B)` | a function value, also `(function(A, B) -> C)` and `(function() -> C)`; the parentheses are mandatory |
+| `(function(A) -> B)` | a function value, of any arity; the parentheses are mandatory |
 
 - No implicit conversions, widths included: `1 + 2.0` is an error.
 - Every value behaves as an independent copy: after `b = a`, mutating `b`
@@ -168,9 +168,9 @@ Loops: `while cond` and `for x in xs`, over an array or a `range` (section 11);
   `Point(x: 3, y: 4)`, and a variant's case `.num(v: 7)` or `.plus`.
 - When two parameters in a signature share a type, named arguments are
   mandatory at the call site: `copy(from: a, to: b)`, and a function type names
-  the same two and no others, `(function(from: str, to: str) -> ())`. The names
-  are part of the type: the other order is another type, and a call through a
-  value names each in its own position.
+  the same two, `(function(from: str, to: str) -> ())`. The names are part of the
+  type: the other order is another type, and a call through a value names each in
+  its own position. A function that has such a pair names it as the type does.
 - `x.f(y)` is sugar for `f(x, y)` (UFCS). There are no methods, no
   inheritance, no overloading, no default values, no user variadics, no
   anonymous functions.
@@ -213,7 +213,7 @@ Built-ins: `print(...)` · `len` · `push` · `slice(from:, to:)` ·
 `chars` · `keys` · `join(xs, sep)` · `repeat(s, n)` · `sort` (a number, `str` or `bool`, never a type parameter) ·
 `to_f32` · `to_f64` · `to_str` · `to_i8` `to_i16` `to_i32` `to_i64` `to_u8` `to_u16`
 `to_u32` `to_u64` — and, written in Heroes: `map` · `filter`, keeping what
-the function accepts · `fold` (left, accumulator first) · `find` (the first it accepts, else `not_found`) ·
+the function accepts · `fold` (left, its function names them `acc` then `item`) · `find` (the first it accepts, else `not_found`) ·
 `any` · `all` · `range`.
 `slice` and `range(from: a, to: b) -> [i64]` exclude `to`.
 `print` writes its values with no

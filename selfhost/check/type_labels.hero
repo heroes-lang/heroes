@@ -70,22 +70,20 @@ function judge(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl
     while i < lowered.len()
         named = labels[i].end > labels[i].start
 
-        if table.shared_at(lowered, at: i)
+        # A name where nothing can be confused was refused between M-labelled-types
+        # and M-named-callbacks, on the ground that it claimed a check nobody was
+        # doing. It is allowed now, and the reason is `fold`: its callback is
+        # `(function(B, A) -> B)`, two distinct letters, so the type could not say
+        # which of the two is the accumulator and which the element — and a
+        # program that reads them the other way round compiles and prints the
+        # wrong answer. The name is what lets the type say it, and
+        # `check/generics.hero` is what checks it.
+        if table.shared_at(lowered, at: i) && !named && missing.is_err()
 
             # The FIRST unnamed one only: a type whose three parameters are all
             # `str` is one mistake with one repair, and saying it three times
             # would be three messages for one.
-            if !named && missing.is_err()
-                missing @ ok(i)
-        else if named
-
-            # Nothing can be confused with this position, so a name on it is a
-            # claim about a check that is not happening. One message per name,
-            # because each is its own removable text with its own `certain` fix.
-            state.push_diagnostic(
-                @c,
-                data_errors.named_parameter_in_function_type(written: source.span_text(s, labels[i]), span: token.Span(start: labels[i].start, end: a.types[params[i]].span.start))
-            )
+            missing @ ok(i)
         i @ i + 1
 
     if !missing.is_err()
@@ -143,12 +141,12 @@ test "a same-typed pair must be named, and naming it satisfies the rule"
     named = judged("function f(g: (function(code: str, msg: str) -> str))\n    _ = g\n")
     assert named.out.diagnostics.len() == 0
 
-test "a type no two positions can confuse refuses a name, once per name"
+test "a name where nothing can be confused is allowed, and buys the reader a word"
+    # Refused between M-labelled-types and M-named-callbacks. Allowed now,
+    # because `fold`'s callback has two DISTINCT letters and still has to say
+    # which of them is the accumulator.
     c = judged("function f(g: (function(from: str, count: i64) -> str))\n    _ = g\n")
-    assert c.out.diagnostics.len() == 2
-    assert c.out.diagnostics[0].code == "named_parameter_in_function_type"
-    assert c.out.diagnostics[0].fixes[0].certainty == .certain
-    assert c.out.diagnostics[0].fixes[0].replacement == ""
+    assert c.out.diagnostics.len() == 0
     plain = judged("function f(g: (function(str, i64) -> str))\n    _ = g\n")
     assert plain.out.diagnostics.len() == 0
 
@@ -163,16 +161,15 @@ test "two distinct type parameters are two types, and the walk says nothing"
     assert same.out.diagnostics[0].code == "needs_parameter_names"
 
 # Panel 129's three seats, each as the shape it found.
-test "only the confusable positions are named, and the others must not be"
+test "the confusable positions must be named, and the others may be"
     sparse = judged("function take(f: (function(ptr, n: u64, size: u64) -> ()), p: ptr)\n    f(p, n: 1, size: 2)\n")
     assert sparse.out.diagnostics.len() == 0
 
-    # The ergonomist read the document cold and could not tell whether a call
-    # through a value names every argument or only the ones §4.9 owes. It is the
-    # second, which is the rule a call to a declaration already follows.
+    # Naming the third as well is legal and changes nothing about the call: the
+    # label is owed where §4.9 owes it, which is where two positions share a
+    # type, and nowhere else.
     over = judged("function take(f: (function(p: ptr, n: u64, size: u64) -> ()), q: ptr)\n    f(p: q, n: 1, size: 2)\n")
-    assert over.out.diagnostics.len() == 1
-    assert over.out.diagnostics[0].code == "named_parameter_in_function_type"
+    assert over.out.diagnostics.len() == 0
 
 test "one name at two positions says nothing, and `_` at two positions says it twice"
     twice = judged("function relay(f: (function(a: str, a: str) -> str)) -> str\n    return f(a: \"x\", a: \"y\")\n")
