@@ -91,7 +91,7 @@ function unordered_element(element: str, reached: str?, generic: bool, span: tok
 
     if generic
         d.notes @ d.notes.push(
-            "`" + element + "` is a type parameter, so this line cannot know whether it has an order — take the comparison as a parameter instead, `less: (function(" + element + ", " + element + ") -> bool)`, and call it BY POSITION, `less(candidate, best)`: a function type names no parameters, so nothing checks the order of its two arguments for you"
+            "`" + element + "` is a type parameter, so this line cannot know whether it has an order — take the comparison as a parameter instead, `less: (function(candidate: " + element + ", best: " + element + ") -> bool)`, and name its arguments at the call, `less(candidate: x, best: best)`: two parameters of one type are named in the type, so the order of the two is checked for you"
         )
         return d
 
@@ -439,11 +439,13 @@ test "sort's refusal names the set, the member, or the route"
         span: span
     )
 
-    # **The note says BY POSITION since panel 128**, and names the two roles
-    # rather than calling them `a` and `b`: the shape it prescribes is one the
-    # label rule cannot check, and a reader who is handed it should be told so
-    # on the same line (`docs/panel/128`).
-    assert parameter.notes[0] == "`A` is a type parameter, so this line cannot know whether it has an order — take the comparison as a parameter instead, `less: (function(A, A) -> bool)`, and call it BY POSITION, `less(candidate, best)`: a function type names no parameters, so nothing checks the order of its two arguments for you"
+    # **The note said BY POSITION between panel 128 and defect 026's repair**,
+    # because the shape it prescribes was one the label rule could not check and
+    # a reader handed it deserved to be told so on the same line. The names are
+    # in the type now, so the same note prescribes a CHECKED shape and says
+    # which operand is the candidate — the gap the ergonomist seat measured at
+    # that sitting, where naming the peers bought a label and not a check.
+    assert parameter.notes[0] == "`A` is a type parameter, so this line cannot know whether it has an order — take the comparison as a parameter instead, `less: (function(candidate: A, best: A) -> bool)`, and name its arguments at the call, `less(candidate: x, best: best)`: two parameters of one type are named in the type, so the order of the two is checked for you"
 
 test "arity cites the declaration only when one exists"
     span = token.Span(start: 0, end: 2)

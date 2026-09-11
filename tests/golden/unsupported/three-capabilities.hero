@@ -70,7 +70,7 @@ function main()
     # A function value emits now, and stays here to prove the refusals are not
     # about it.
     f = add
-    print(f(1, 2))
+    print(f(a: 1, b: 2))
     print(len(map(ps, tag)))
     print(first(xs))
     us: [()] @ []      #~ unit_element

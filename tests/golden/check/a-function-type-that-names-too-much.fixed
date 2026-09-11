@@ -1,0 +1,20 @@
+# UNVERIFIED — pending debrief
+# The other half of defect 026's rule. A name in a function type is what a call
+# made through a value of it is checked against, so it is written exactly where
+# two parameters share a type. Here they do not: a `str` cannot reach the `i64`
+# position or the other way round, so the positions cannot be confused and the
+# names claim a check nobody is doing.
+#
+# This is the code a function type carrying a pointless name has earned since
+# before the defect — what moved is where it is decided. The parser used to
+# refuse the name on sight, which is a question about the SPELLING; only the
+# lowering knows that two written types are one type, so the question moved to
+# the checker with the rest of the rule.
+#
+# The fix stays `certain`: the positions cannot be confused, so dropping the
+# name changes nothing a program can observe.
+function relay(f: (function(str, i64) -> str)) -> str  #~ named_parameter_in_function_type named_parameter_in_function_type
+    return f("one", 2)
+
+function main()
+    print("the type is the whole mistake, and nothing below it cascades")

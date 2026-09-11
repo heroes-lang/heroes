@@ -1,0 +1,22 @@
+# UNVERIFIED — pending debrief
+# Defect 026's own witness, turned into a refusal. Before this, the program
+# below compiled, exited 0 and printed `b -> a`: a call made through a function
+# VALUE took its arguments by position, because a function type named no
+# parameters at any of its sites, and §4.9's rule reads a DECLARATION's names.
+#
+# `copy_text(from: "a", to: "b")` was refused twice for exactly this. Through a
+# value of its own type neither shape was, which is the asymmetry the repair
+# removes: the names live in the type now, so the value carries the same rule
+# the declaration does, and a relay assignment cannot launder a swap by renaming
+# the positions — the names are part of the type's identity.
+#
+# The fix is `certain` in this direction and only in it: a MISSING label is
+# repaired by writing the one the position owns, which leaves every value where
+# it is. A label naming another position is the twin case, and its fix is a
+# guess (panel 127).
+function copy_text(from: str, to: str) -> str
+    return from + " -> " + to
+
+function main()
+    move: (function(from: str, to: str) -> str) @ copy_text
+    print(move(from: "a", to: "b"))  #~ needs_label needs_label

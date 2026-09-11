@@ -25,9 +25,19 @@ function render_type(tree: ast.Ast, id: i64, s: source.Source) -> str
         .fallible f => return render_type(tree, f.inner, s) + "?"
         .function_type fn_ty =>
             parts: [str] @ []
+            at: i64 @ 0
 
             for param in fn_ty.params
-                parts @ parts.push(render_type(tree, param, s))
+                one = render_type(tree, param, s)
+
+                # The names are part of the type (defect 026), so the canonical
+                # form carries them: a formatter that dropped one would change
+                # the program's meaning, which §4.15 exists to forbid.
+                if at < fn_ty.labels.len() && fn_ty.labels[at].end > fn_ty.labels[at].start
+                    parts @ parts.push(source.span_text(s, fn_ty.labels[at]) + ": " + one)
+                else
+                    parts @ parts.push(one)
+                at @ at + 1
 
             return "(function(" + parts.join(", ") + ") -> " + render_type(tree, fn_ty.result, s) + ")"
         # A type the parser could not read. The diagnostic says why;

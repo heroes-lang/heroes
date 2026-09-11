@@ -46,6 +46,21 @@ function resolve_type(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [
                 resolve_type(@r, a, s, decls, param)
 
             resolve_type(@r, a, s, decls, f.result)
+            written: [str] @ []
+            any_name: bool @ false
+
+            for label in f.labels
+                one = source.span_text(s, label)
+
+                if one.len() > 0
+                    any_name @ true
+                written @ written.push(one)
+
+            # A type that named nothing carries NO run rather than a run of
+            # empty names, so its canonical key — and the C typedef name the
+            # emitter derives from it — is the one it always had.
+            if any_name
+                r.out.fn_labels[id] @ written
 
 function named(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl], id: i64)
     span = a.types[id].span

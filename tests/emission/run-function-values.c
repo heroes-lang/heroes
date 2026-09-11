@@ -45,7 +45,7 @@ HERO_STR_STATIC(hero_str_fa6dc01, "tick");
 HERO_STR_STATIC(hero_str_20, " ");
 
 #line 48 "functionvalues.c"
-typedef int64_t (*h_0fn_7b615d8f)(int64_t, int64_t);
+typedef int64_t (*h_0fn_2e6a42a3)(int64_t, int64_t);
 typedef void (*h_0fn_294870dd)(void);
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -93,12 +93,12 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 int64_t h_functionvalues_add(int64_t h0_a, int64_t h1_b);
 int64_t h_functionvalues_mul(int64_t h0_a, int64_t h1_b);
-int64_t h_functionvalues_apply(h_0fn_7b615d8f h0_f, int64_t h1_x, int64_t h2_y);
+int64_t h_functionvalues_apply(h_0fn_2e6a42a3 h0_f, int64_t h1_x, int64_t h2_y);
 void h_functionvalues_tick(void);
 void h_functionvalues_twice(h_0fn_294870dd h0_f);
 void h_functionvalues_main(void);
 
-#line 27 "tests/golden/run/function-values.hero"
+#line 35 "tests/golden/run/function-values.hero"
 int64_t h_functionvalues_add(int64_t h0_a, int64_t h1_b) {
 #line 104 "functionvalues.c"
     int64_t t1;
@@ -106,18 +106,18 @@ int64_t h_functionvalues_add(int64_t h0_a, int64_t h1_b) {
     int64_t t3;
     goto bb0;
 bb0:
-#line 28 "tests/golden/run/function-values.hero"
+#line 36 "tests/golden/run/function-values.hero"
     t1 = h0_a;
-#line 28 "tests/golden/run/function-values.hero"
+#line 36 "tests/golden/run/function-values.hero"
     t2 = h1_b;
-#line 28 "tests/golden/run/function-values.hero"
+#line 36 "tests/golden/run/function-values.hero"
     if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow();
-#line 28 "tests/golden/run/function-values.hero"
+#line 36 "tests/golden/run/function-values.hero"
     return t3;
 #line 118 "functionvalues.c"
 }
 
-#line 30 "tests/golden/run/function-values.hero"
+#line 38 "tests/golden/run/function-values.hero"
 int64_t h_functionvalues_mul(int64_t h0_a, int64_t h1_b) {
 #line 123 "functionvalues.c"
     int64_t t1;
@@ -125,279 +125,279 @@ int64_t h_functionvalues_mul(int64_t h0_a, int64_t h1_b) {
     int64_t t3;
     goto bb0;
 bb0:
-#line 31 "tests/golden/run/function-values.hero"
+#line 39 "tests/golden/run/function-values.hero"
     t1 = h0_a;
-#line 31 "tests/golden/run/function-values.hero"
+#line 39 "tests/golden/run/function-values.hero"
     t2 = h1_b;
-#line 31 "tests/golden/run/function-values.hero"
+#line 39 "tests/golden/run/function-values.hero"
     if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow();
-#line 31 "tests/golden/run/function-values.hero"
+#line 39 "tests/golden/run/function-values.hero"
     return t3;
 #line 137 "functionvalues.c"
 }
 
-#line 33 "tests/golden/run/function-values.hero"
-int64_t h_functionvalues_apply(h_0fn_7b615d8f h0_f, int64_t h1_x, int64_t h2_y) {
+#line 41 "tests/golden/run/function-values.hero"
+int64_t h_functionvalues_apply(h_0fn_2e6a42a3 h0_f, int64_t h1_x, int64_t h2_y) {
 #line 142 "functionvalues.c"
-    h_0fn_7b615d8f t1;
+    h_0fn_2e6a42a3 t1;
     int64_t t2;
     int64_t t3;
     int64_t t4;
     goto bb0;
 bb0:
-#line 34 "tests/golden/run/function-values.hero"
+#line 42 "tests/golden/run/function-values.hero"
     t1 = h0_f;
-#line 34 "tests/golden/run/function-values.hero"
+#line 42 "tests/golden/run/function-values.hero"
     t2 = h1_x;
-#line 34 "tests/golden/run/function-values.hero"
+#line 42 "tests/golden/run/function-values.hero"
     t3 = h2_y;
-#line 34 "tests/golden/run/function-values.hero"
+#line 42 "tests/golden/run/function-values.hero"
     t4 = t1(t2, t3);
-#line 34 "tests/golden/run/function-values.hero"
+#line 42 "tests/golden/run/function-values.hero"
     return t4;
 #line 159 "functionvalues.c"
 }
 
-#line 36 "tests/golden/run/function-values.hero"
+#line 44 "tests/golden/run/function-values.hero"
 void h_functionvalues_tick(void) {
 #line 164 "functionvalues.c"
     HeroStr t1 = {0};
     goto bb0;
 bb0:
-#line 37 "tests/golden/run/function-values.hero"
+#line 45 "tests/golden/run/function-values.hero"
     t1 = HERO_STR_LIT(hero_str_fa6dc01);
-#line 37 "tests/golden/run/function-values.hero"
+#line 45 "tests/golden/run/function-values.hero"
     hero_print_str(t1);
-#line 37 "tests/golden/run/function-values.hero"
+#line 45 "tests/golden/run/function-values.hero"
     hero_print_end();
-#line 37 "tests/golden/run/function-values.hero"
+#line 45 "tests/golden/run/function-values.hero"
     return;
 #line 176 "functionvalues.c"
 }
 
-#line 39 "tests/golden/run/function-values.hero"
+#line 47 "tests/golden/run/function-values.hero"
 void h_functionvalues_twice(h_0fn_294870dd h0_f) {
 #line 181 "functionvalues.c"
     h_0fn_294870dd t1;
     h_0fn_294870dd t2;
     goto bb0;
 bb0:
-#line 40 "tests/golden/run/function-values.hero"
+#line 48 "tests/golden/run/function-values.hero"
     t1 = h0_f;
-#line 40 "tests/golden/run/function-values.hero"
+#line 48 "tests/golden/run/function-values.hero"
     t1();
-#line 41 "tests/golden/run/function-values.hero"
+#line 49 "tests/golden/run/function-values.hero"
     t2 = h0_f;
-#line 41 "tests/golden/run/function-values.hero"
+#line 49 "tests/golden/run/function-values.hero"
     t2();
-#line 41 "tests/golden/run/function-values.hero"
+#line 49 "tests/golden/run/function-values.hero"
     return;
 #line 196 "functionvalues.c"
 }
 
-#line 43 "tests/golden/run/function-values.hero"
+#line 51 "tests/golden/run/function-values.hero"
 void h_functionvalues_main(void) {
 #line 201 "functionvalues.c"
-    h_0fn_7b615d8f h0_g;
+    h_0fn_2e6a42a3 h0_g;
     HeroArrayHeader * h1_ops = {0};
-    h_0fn_7b615d8f h2_h;
+    h_0fn_2e6a42a3 h2_h;
     HeroArrayHeader * h3_own3 = {0};
-    h_0fn_7b615d8f t1;
-    h_0fn_7b615d8f t2;
+    h_0fn_2e6a42a3 t1;
+    h_0fn_2e6a42a3 t2;
     int64_t t3;
     int64_t t4;
     int64_t t5;
     HeroStr t6 = {0};
-    h_0fn_7b615d8f t7;
+    h_0fn_2e6a42a3 t7;
     int64_t t8;
     int64_t t9;
     int64_t t10;
     HeroStr t11 = {0};
-    h_0fn_7b615d8f t12;
+    h_0fn_2e6a42a3 t12;
     int64_t t13;
     int64_t t14;
     int64_t t15;
     h_0fn_294870dd t16;
-    h_0fn_7b615d8f t17;
-    h_0fn_7b615d8f t18;
+    h_0fn_2e6a42a3 t17;
+    h_0fn_2e6a42a3 t18;
     HeroArrayHeader * t19 = {0};
     HeroArrayHeader * t20 = {0};
     int64_t t21;
-    h_0fn_7b615d8f t22;
+    h_0fn_2e6a42a3 t22;
     int64_t t23;
     int64_t t24;
     int64_t t25;
     HeroStr t26 = {0};
     HeroArrayHeader * t27 = {0};
     int64_t t28;
-    h_0fn_7b615d8f t29;
+    h_0fn_2e6a42a3 t29;
     int64_t t30;
     int64_t t31;
     int64_t t32;
     HeroStr t33 = {0};
     HeroArrayHeader * t34 = {0};
     int64_t t35;
-    h_0fn_7b615d8f t36;
-    h_0fn_7b615d8f t37;
-    h_0fn_7b615d8f t38;
+    h_0fn_2e6a42a3 t36;
+    h_0fn_2e6a42a3 t37;
+    h_0fn_2e6a42a3 t38;
     bool t39;
     HeroStr t40 = {0};
-    h_0fn_7b615d8f t41;
-    h_0fn_7b615d8f t42;
+    h_0fn_2e6a42a3 t41;
+    h_0fn_2e6a42a3 t42;
     bool t43;
     HeroArrayHeader * t44 = {0};
     HeroArrayHeader * t45 = {0};
     goto bb0;
 bb0:
-#line 44 "tests/golden/run/function-values.hero"
+#line 52 "tests/golden/run/function-values.hero"
     t1 = h_functionvalues_add;
-#line 44 "tests/golden/run/function-values.hero"
+#line 52 "tests/golden/run/function-values.hero"
     h0_g = t1;
-#line 45 "tests/golden/run/function-values.hero"
+#line 53 "tests/golden/run/function-values.hero"
     t2 = h0_g;
-#line 45 "tests/golden/run/function-values.hero"
+#line 53 "tests/golden/run/function-values.hero"
     t3 = INT64_C(2);
-#line 45 "tests/golden/run/function-values.hero"
+#line 53 "tests/golden/run/function-values.hero"
     t4 = INT64_C(3);
-#line 45 "tests/golden/run/function-values.hero"
+#line 53 "tests/golden/run/function-values.hero"
     t5 = t2(t3, t4);
-#line 45 "tests/golden/run/function-values.hero"
+#line 53 "tests/golden/run/function-values.hero"
     t6 = HERO_STR_LIT(hero_str_20);
-#line 45 "tests/golden/run/function-values.hero"
+#line 53 "tests/golden/run/function-values.hero"
     t7 = h_functionvalues_add;
-#line 45 "tests/golden/run/function-values.hero"
+#line 53 "tests/golden/run/function-values.hero"
     t8 = INT64_C(2);
-#line 45 "tests/golden/run/function-values.hero"
+#line 53 "tests/golden/run/function-values.hero"
     t9 = INT64_C(3);
-#line 45 "tests/golden/run/function-values.hero"
+#line 53 "tests/golden/run/function-values.hero"
     t10 = h_functionvalues_apply(t7, t8, t9);
-#line 45 "tests/golden/run/function-values.hero"
+#line 53 "tests/golden/run/function-values.hero"
     t11 = HERO_STR_LIT(hero_str_20);
-#line 45 "tests/golden/run/function-values.hero"
+#line 53 "tests/golden/run/function-values.hero"
     t12 = h_functionvalues_mul;
-#line 45 "tests/golden/run/function-values.hero"
+#line 53 "tests/golden/run/function-values.hero"
     t13 = INT64_C(2);
-#line 45 "tests/golden/run/function-values.hero"
+#line 53 "tests/golden/run/function-values.hero"
     t14 = INT64_C(3);
-#line 45 "tests/golden/run/function-values.hero"
+#line 53 "tests/golden/run/function-values.hero"
     t15 = h_functionvalues_apply(t12, t13, t14);
-#line 45 "tests/golden/run/function-values.hero"
+#line 53 "tests/golden/run/function-values.hero"
     hero_print_int(t5);
-#line 45 "tests/golden/run/function-values.hero"
+#line 53 "tests/golden/run/function-values.hero"
     hero_print_str(t6);
-#line 45 "tests/golden/run/function-values.hero"
+#line 53 "tests/golden/run/function-values.hero"
     hero_print_int(t10);
-#line 45 "tests/golden/run/function-values.hero"
+#line 53 "tests/golden/run/function-values.hero"
     hero_print_str(t11);
-#line 45 "tests/golden/run/function-values.hero"
+#line 53 "tests/golden/run/function-values.hero"
     hero_print_int(t15);
-#line 45 "tests/golden/run/function-values.hero"
+#line 53 "tests/golden/run/function-values.hero"
     hero_print_end();
-#line 47 "tests/golden/run/function-values.hero"
+#line 55 "tests/golden/run/function-values.hero"
     t16 = h_functionvalues_tick;
-#line 47 "tests/golden/run/function-values.hero"
+#line 55 "tests/golden/run/function-values.hero"
     h_functionvalues_twice(t16);
-#line 51 "tests/golden/run/function-values.hero"
+#line 59 "tests/golden/run/function-values.hero"
     t17 = h_functionvalues_add;
-#line 51 "tests/golden/run/function-values.hero"
+#line 59 "tests/golden/run/function-values.hero"
     t18 = h_functionvalues_mul;
-#line 51 "tests/golden/run/function-values.hero"
+#line 59 "tests/golden/run/function-values.hero"
     t19 = hero_array_new(&hero_desc_func, 2);
-#line 51 "tests/golden/run/function-values.hero"
+#line 59 "tests/golden/run/function-values.hero"
     { HeroArrayHeader *grown = hero_array_push(t19, &t17);
-#line 51 "tests/golden/run/function-values.hero"
+#line 59 "tests/golden/run/function-values.hero"
       hero_array_decref(t19); t19 = grown; }
-#line 51 "tests/golden/run/function-values.hero"
+#line 59 "tests/golden/run/function-values.hero"
     { HeroArrayHeader *grown = hero_array_push(t19, &t18);
-#line 51 "tests/golden/run/function-values.hero"
+#line 59 "tests/golden/run/function-values.hero"
       hero_array_decref(t19); t19 = grown; }
-#line 51 "tests/golden/run/function-values.hero"
+#line 59 "tests/golden/run/function-values.hero"
     t44 = h3_own3;
-#line 51 "tests/golden/run/function-values.hero"
+#line 59 "tests/golden/run/function-values.hero"
     h3_own3 = t19;
 #line 319 "functionvalues.c"
     hero_array_decref(t44);
-#line 51 "tests/golden/run/function-values.hero"
+#line 59 "tests/golden/run/function-values.hero"
     t45 = h1_ops;
 #line 323 "functionvalues.c"
     hero_array_incref(t19);
-#line 51 "tests/golden/run/function-values.hero"
+#line 59 "tests/golden/run/function-values.hero"
     h1_ops = t19;
 #line 327 "functionvalues.c"
     hero_array_decref(t45);
-#line 52 "tests/golden/run/function-values.hero"
+#line 60 "tests/golden/run/function-values.hero"
     t20 = h1_ops;
-#line 52 "tests/golden/run/function-values.hero"
+#line 60 "tests/golden/run/function-values.hero"
     t21 = INT64_C(0);
-#line 52 "tests/golden/run/function-values.hero"
-    t22 = *(h_0fn_7b615d8f const *)hero_array_at(t20, t21);
-#line 52 "tests/golden/run/function-values.hero"
+#line 60 "tests/golden/run/function-values.hero"
+    t22 = *(h_0fn_2e6a42a3 const *)hero_array_at(t20, t21);
+#line 60 "tests/golden/run/function-values.hero"
     t23 = INT64_C(4);
-#line 52 "tests/golden/run/function-values.hero"
+#line 60 "tests/golden/run/function-values.hero"
     t24 = INT64_C(5);
-#line 52 "tests/golden/run/function-values.hero"
+#line 60 "tests/golden/run/function-values.hero"
     t25 = t22(t23, t24);
-#line 52 "tests/golden/run/function-values.hero"
+#line 60 "tests/golden/run/function-values.hero"
     t26 = HERO_STR_LIT(hero_str_20);
-#line 52 "tests/golden/run/function-values.hero"
+#line 60 "tests/golden/run/function-values.hero"
     t27 = h1_ops;
-#line 52 "tests/golden/run/function-values.hero"
+#line 60 "tests/golden/run/function-values.hero"
     t28 = INT64_C(1);
-#line 52 "tests/golden/run/function-values.hero"
-    t29 = *(h_0fn_7b615d8f const *)hero_array_at(t27, t28);
-#line 52 "tests/golden/run/function-values.hero"
+#line 60 "tests/golden/run/function-values.hero"
+    t29 = *(h_0fn_2e6a42a3 const *)hero_array_at(t27, t28);
+#line 60 "tests/golden/run/function-values.hero"
     t30 = INT64_C(4);
-#line 52 "tests/golden/run/function-values.hero"
+#line 60 "tests/golden/run/function-values.hero"
     t31 = INT64_C(5);
-#line 52 "tests/golden/run/function-values.hero"
+#line 60 "tests/golden/run/function-values.hero"
     t32 = t29(t30, t31);
-#line 52 "tests/golden/run/function-values.hero"
+#line 60 "tests/golden/run/function-values.hero"
     t33 = HERO_STR_LIT(hero_str_20);
-#line 52 "tests/golden/run/function-values.hero"
+#line 60 "tests/golden/run/function-values.hero"
     t34 = h1_ops;
-#line 52 "tests/golden/run/function-values.hero"
+#line 60 "tests/golden/run/function-values.hero"
     t35 = hero_array_len(t34);
-#line 52 "tests/golden/run/function-values.hero"
+#line 60 "tests/golden/run/function-values.hero"
     hero_print_int(t25);
-#line 52 "tests/golden/run/function-values.hero"
+#line 60 "tests/golden/run/function-values.hero"
     hero_print_str(t26);
-#line 52 "tests/golden/run/function-values.hero"
+#line 60 "tests/golden/run/function-values.hero"
     hero_print_int(t32);
-#line 52 "tests/golden/run/function-values.hero"
+#line 60 "tests/golden/run/function-values.hero"
     hero_print_str(t33);
-#line 52 "tests/golden/run/function-values.hero"
+#line 60 "tests/golden/run/function-values.hero"
     hero_print_int(t35);
-#line 52 "tests/golden/run/function-values.hero"
+#line 60 "tests/golden/run/function-values.hero"
     hero_print_end();
-#line 55 "tests/golden/run/function-values.hero"
+#line 63 "tests/golden/run/function-values.hero"
     t36 = h_functionvalues_add;
-#line 55 "tests/golden/run/function-values.hero"
+#line 63 "tests/golden/run/function-values.hero"
     h2_h = t36;
-#line 56 "tests/golden/run/function-values.hero"
+#line 64 "tests/golden/run/function-values.hero"
     t37 = h0_g;
-#line 56 "tests/golden/run/function-values.hero"
+#line 64 "tests/golden/run/function-values.hero"
     t38 = h2_h;
-#line 56 "tests/golden/run/function-values.hero"
+#line 64 "tests/golden/run/function-values.hero"
     t39 = t37 == t38;
-#line 56 "tests/golden/run/function-values.hero"
+#line 64 "tests/golden/run/function-values.hero"
     t40 = HERO_STR_LIT(hero_str_20);
-#line 56 "tests/golden/run/function-values.hero"
+#line 64 "tests/golden/run/function-values.hero"
     t41 = h0_g;
-#line 56 "tests/golden/run/function-values.hero"
+#line 64 "tests/golden/run/function-values.hero"
     t42 = h_functionvalues_mul;
-#line 56 "tests/golden/run/function-values.hero"
+#line 64 "tests/golden/run/function-values.hero"
     t43 = t41 == t42;
-#line 56 "tests/golden/run/function-values.hero"
+#line 64 "tests/golden/run/function-values.hero"
     hero_print_bool(t39);
-#line 56 "tests/golden/run/function-values.hero"
+#line 64 "tests/golden/run/function-values.hero"
     hero_print_str(t40);
-#line 56 "tests/golden/run/function-values.hero"
+#line 64 "tests/golden/run/function-values.hero"
     hero_print_bool(t43);
-#line 56 "tests/golden/run/function-values.hero"
+#line 64 "tests/golden/run/function-values.hero"
     hero_print_end();
 #line 399 "functionvalues.c"
     hero_array_decref(h1_ops);
-#line 56 "tests/golden/run/function-values.hero"
+#line 64 "tests/golden/run/function-values.hero"
 #line 402 "functionvalues.c"
     hero_array_decref(h3_own3);
     return;

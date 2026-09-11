@@ -47,9 +47,17 @@ function render_ty(t: table.Types, s: source.Source, decls: [ast.Decl], id: i64,
         .fallible o => render_ty(t, s, decls, o.payload, generics) + "?"
         .function_ty f =>
             rendered: [str] @ []
+            names = table.labels_of(t, f.labels)
+            at: i64 @ 0
 
             for p in table.params_of(t, f.params)
-                rendered @ rendered.push(render_ty(t, s, decls, p, generics))
+                one = render_ty(t, s, decls, p, generics)
+
+                if at < names.len() && names[at].len() > 0
+                    rendered @ rendered.push(names[at] + ": " + one)
+                else
+                    rendered @ rendered.push(one)
+                at @ at + 1
 
             "(function(" + rendered.join(", ") + ") -> " + render_ty(t, s, decls, f.result, generics) + ")"
         .named n => source.span_text(s, decls[n.decl].name)
@@ -108,9 +116,15 @@ test "a function type keeps its mandatory parentheses"
     s = source.new_source(name: "t.hero", text: "record Point\n    x: i64\n")
     t: table.Types @ table.new_types()
     ps: [i64] = [table.int_ty_id(t), table.str_ty(t)]
-    f = table.intern_function(@t, ps, result: table.bool_ty(t))
     none: [str] = []
+    f = table.intern_function(@t, ps, none, result: table.bool_ty(t))
     assert render_ty(t, s, p.decls, f, none) == "(function(i64, str) -> bool)"
+
+    # The names are part of the type, so they are part of its one spelling.
+    pair: [i64] = [table.str_ty(t), table.str_ty(t)]
+    written: [str] = ["code", "msg"]
+    named = table.intern_function(@t, pair, written, result: table.str_ty(t))
+    assert render_ty(t, s, p.decls, named, none) == "(function(code: str, msg: str) -> str)"
 
 test "a case prints its variant's dot spelling, a generic its own name"
     text = "variant Token\n    num\n        v: i64\n    plus\n"

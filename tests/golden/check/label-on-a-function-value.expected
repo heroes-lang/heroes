@@ -1,2 +1,2 @@
-tests/golden/check/label-on-a-function-value.hero:22:13: error[label_on_function_value]: a function type names no parameters, so this call takes its arguments by position — `nonsense:` names nothing
-tests/golden/check/label-on-a-function-value.hero:22:28: error[label_on_function_value]: a function type names no parameters, so this call takes its arguments by position — `rubbish:` names nothing
+tests/golden/check/label-on-a-function-value.hero:20:13: error[label_on_function_value]: nothing can be confused with this position of the function type, so it has no name — `nonsense:` names nothing
+tests/golden/check/label-on-a-function-value.hero:20:28: error[label_on_function_value]: nothing can be confused with this position of the function type, so it has no name — `rubbish:` names nothing

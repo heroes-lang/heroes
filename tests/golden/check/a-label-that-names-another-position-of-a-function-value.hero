@@ -1,0 +1,19 @@
+# UNVERIFIED — pending debrief
+# The twin of the case beside this one, and the reason its fix is not `certain`.
+# The labels are written, so nothing is missing; they are written in the other
+# order, which is the inversion the rule exists to catch. Renaming a label
+# leaves the values where they are, so the repair the compiler can see —
+# `from:` where `to:` stands — produces a program that compiles and prints the
+# other answer. That is a `guess` (panel 127, ratified 2026-09-11), and the
+# deciding fact is a fact about this call rather than a premise about the world:
+# does the written label name ANOTHER position of this callee?
+#
+# Through a function value the question is asked of the TYPE's names, which is
+# what defect 026 gave it. Before the repair this program compiled at exit 0 and
+# printed `b -> a`.
+function copy_text(from: str, to: str) -> str
+    return from + " -> " + to
+
+function main()
+    move: (function(from: str, to: str) -> str) @ copy_text
+    print(move(to: "b", from: "a"))  #~ wrong_label wrong_label

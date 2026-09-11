@@ -1,0 +1,2 @@
+tests/golden/check/a-function-type-that-names-nothing.hero:17:19: error[needs_parameter_names]: two of `(function(str, str) -> str)`'s parameters are `str`, so this type names both of them — give each a name that says which is which
+tests/golden/check/a-function-type-that-names-nothing.hero:21:17: error[type_mismatch]: expected `(function(str, str) -> str)`, found `(function(code: str, msg: str) -> str)`
