@@ -29,7 +29,7 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 *******************************************************************************
 **OPEN: 1**
 
-- [ ] **026 — a function type names no parameters, so a call through one takes its arguments positionally** | two same-typed arguments can be swapped in silence through a function value and through a C callback, and an invented label is accepted and ignored | `spec § 9 Functions and calls` · `spec § 13 FFI` · `selfhost/check/walk.hero` · `docs/panel/127-the-rule-that-did-not-reach-its-own-library.md`
+- [ ] **026 — a function type names no parameters, so a call through one takes its arguments positionally** | two same-typed arguments can be swapped in silence through a function value and through a C callback. **NARROWED 2026-09-11 by panel 128**: the invented label is refused now, and the document says the call is positional; what remains open is the inversion itself, which the instrument prices at 50% unchanged | `spec § 9 Functions and calls` · `spec § 13 FFI` · `selfhost/check/walk.hero` · `docs/panel/127-the-rule-that-did-not-reach-its-own-library.md`
 
     **Origin:** panel 127's ffi seat, 2026-09-11, which named it as two holes;
     it is filed as one because the cause is one, and both witnesses were re-run
@@ -67,6 +67,29 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     at all, `error[builtin_as_value]`, measured. Not an ABI question either: the
     widths and signs of a callback's parameters ARE checked (`spec § 13`), only
     their order is not.
+
+    **WHAT PANEL 128 DID AND DID NOT CLOSE, 2026-09-11.** Closed: a label at
+    such a call is `error[label_on_function_value]` with a certain fix, so a
+    label that named nothing is no longer accepted and ignored; and `spec § 3`'s
+    function-type row now says the call is positional, a sentence that was
+    vetoed as false at the ballot and became true when the refusal landed.
+    **Still open, and this entry is now only about this**: the two values may be
+    handed over the wrong way round. `heroes mutate --operator swap-args` reads
+    **50%** on the shape, before and after, measured. At the C boundary the ffi
+    seat measured the same swap reaching memory three times, once at **exit 0**
+    with a heap-use-after-free under the sanitizer.
+
+    **And the sitting found where it actually ships**, which this entry did not
+    know when it was filed: inside `fold`. A program hands `fold` a function and
+    the library calls it positionally with no name in the chain; `fold` at
+    `A := B` with the callback's roles inverted prints `cba` instead of `abc`,
+    exit 0. `fold`'s type is `(function(B, A) -> B)`, two distinct letters, so
+    **no route the sitting considered reaches it** — not refusing same-typed
+    types, not mandatory names on a same-typed pair. Whoever repairs this owes
+    that shape an answer of its own.
+
+    **The repair is scheduled with the measurement that lifts its veto**, at
+    M-check-completeness in `docs/work/SCHEDULED.md`.
 
     **What is owed.** A ruling, because three routes exist and all three change
     the language: a function type may name its parameters, which makes the names

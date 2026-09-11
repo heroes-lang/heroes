@@ -81,6 +81,8 @@ because a table that is behind is better than one that is behind and quiet.
 
 | 045 | [the label](045-labelled-builtins.md) | M-labelled-builtins — the same-typed-argument rule reaches the two built-ins that escaped it, and the classic argument inversion falls from 367 survivors to 75 | 2026-09-11 | untagged |
 
+| 046 | [the positional call](046-positional-values.md) | M-positional-values — a call through a function value is positional, said and enforced, and the inversion it still admits measured at 50% and left open | 2026-09-11 | untagged |
+
 `git tag --list --sort=creatordate` gives the same order from git itself, and
 `git checkout m5b` re-opens any milestone's code — which is what
 `M-journey-book` is written from.
