@@ -236,6 +236,18 @@ no item is dropped. The English list gained 8px when the GitHub link stopped
 saying only `GitHub ↗` and started saying `GitHub · soon`, which is the visible
 half of a warning that used to live in a `title` nobody sees on a phone.
 
+**The row went to nine on 2026-09-11, and `Spec` is the one entry that did not
+displace another** (author instruction: *maybe it makes sense to put spec in the
+top menu, because it has become very important*). The rule below stands and this
+is its exception, taken on the measurement two paragraphs above rather than on an
+argument: a nine-item row was 517px in English and 540px in Italian, and both
+reached the sideways scroll only at 390px, so nine is a width this row has
+already carried. It sits after `Examples`, because the intent order runs run it,
+learn it, see it, take it, and the specification is what a visitor pastes into a
+prompt. The Italian label is `Specifica` and not `Spec`: § The reader is never
+assumed to be an expert outranks the twenty pixels, and `Grazie`'s precedent was
+about a word four characters longer than this one.
+
 **The row stays at seven, so a page enters it only by displacing one.** That
 rule is unchanged from when the row was nine (author instruction 2026-08-18);
 only the number moved. The exchange that proved it: `thanks.html` went in and
@@ -1228,6 +1240,8 @@ directory, and it is done in one place.
 |---|---|
 | `src/lib/repo.ts` | finds the repository root by walking up from the working directory to the directory holding `examples/README.md`, `spec/heroes-spec.md` and `CLAUDE.md` together, and reads bytes from there. The only module that reads outside `src/` |
 | `src/lib/tables.ts` | parses the keyword table out of `selfhost/keywords.hero` and the type words out of `spec/heroes-spec.md` § Types, with a floor and a shape assertion on each, so the site holds no copy of the language |
+| `src/lib/markdown.ts` | the specification page's colouring, and `assertVerbatim`: take the text back out of the HTML and compare it with what went in, so the one page whose argument is byte fidelity cannot ship a colouring that moved a byte. Four accents, the stylesheet's own: a heading takes the keyword red, a code span or fence the literal gold, a table's pipes and rules the dim, and `**bold**` is bold with its asterisks kept, because the page shows the source a reader pastes |
+| `src/lib/chain.ts` | the chain, read out of `docs/ROADMAP.md` § The chain, with four assertions because a parse that quietly reads nothing renders an empty table: sixty rows at least, forty closed at least, at most one `**OPEN**`, and no gap in the numbering. **The trailing `|` is optional and that is the hole it fell into first**: nine of the seventy rows do not carry one, markdown renders a row either way, and a reader that demanded it read nine milestones fewer in silence |
 | `src/lib/highlight.ts` | the tokenizer, a reading of `selfhost/scan.hero`, `number.hero` and `literals.hero`, plus `assertRoundTrip`: strip the spans, decode the three entities, and the source must come back byte for byte |
 | `src/lib/expectation.ts` | the JavaScript twin of `tests/harness/expectation.hero`. The harness's ending marker never reaches a reader: `!exit: 1` renders as an exit status |
 | `src/lib/fingerprint.ts` | sha256 per file, then sha256 of the manifest in `shasum`'s own line format, and the one command that reproduces it |

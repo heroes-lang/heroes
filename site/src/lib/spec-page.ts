@@ -28,6 +28,7 @@ import { readText, countLines, isFile } from './repo.ts';
 import { t, number, type Lang } from './i18n.ts';
 import { ceilingK, checkClaims } from './claims.ts';
 import { fillMeasured } from './figures.ts';
+import { colourMarkdown, assertVerbatim } from './markdown.ts';
 
 const SPEC = 'spec/heroes-spec.md';
 // The ceiling as the pages say it, `6K`, the author's word (2026-09-09); the exact
@@ -39,10 +40,6 @@ export interface SpecPage {
   title: string;
   description: string;
   html: string;
-}
-
-function escape(text: string): string {
-  return text.replace(/[&<>]/g, (ch) => (ch === '&' ? '&amp;' : ch === '<' ? '&lt;' : '&gt;'));
 }
 
 /**
@@ -162,10 +159,18 @@ export function renderSpecPage(lang: Lang): SpecPage {
       : { copy: 'Copia la specifica', copied: 'Copiata', selected: 'Selezionata: premi Ctrl+C o Cmd+C' };
   const button = `<button type="button" class="copy" hidden data-copied="${labels.copied}" data-selected="${labels.selected}">${labels.copy}</button>`;
 
+  // The document, coloured and then proved unchanged. The block is the file, and
+  // a reader copies it into a prompt, so the colouring adds `span` elements and
+  // moves no byte: `assertVerbatim` takes the text back out of the HTML and
+  // compares it with what went in, on every build.
+  const body = source.replace(/\n$/, '');
+  const coloured = colourMarkdown(body);
+  assertVerbatim(body, coloured, SPEC);
+
   const html = [
     readText(intro).trim(),
     facts,
-    `  <figure class="example spec" data-src="${SPEC}">\n<pre><code>${escape(source.replace(/\n$/, ''))}</code></pre>\n    ${button}\n    <figcaption>${caption}</figcaption>\n  </figure>`,
+    `  <figure class="example spec" data-src="${SPEC}">\n<pre><code>${coloured}</code></pre>\n    ${button}\n    <figcaption>${caption}</figcaption>\n  </figure>`,
     copyScript(),
     lang === 'en'
       ? `  <p class="next">\n    Next: <b><a href="/docs/">the same language explained one idea at a time</a></b>.\n    <a href="/examples/">Every program</a>.\n  </p>`

@@ -19,7 +19,7 @@
 <pre><code><span class="c"># Parses a decimal digit. Fails on anything else.</span>
 <span class="k">function</span> digit_of(c: <span class="t">u8</span>) -&gt; <span class="t">i64</span>?
     <span class="k">if</span> c &lt; <span class="s">'0'</span> || c &gt; <span class="s">'9'</span>
-        <span class="k">return</span> <span class="k">fail</span>(<span class="s">"not_a_digit"</span>, <span class="s">"expected 0-9"</span>)
+        <span class="k">return</span> <span class="k">fail</span>(code: <span class="s">"not_a_digit"</span>, msg: <span class="s">"expected 0-9"</span>)
     <span class="k">return</span> ok(to_i64(c - <span class="s">'0'</span>).must())</code></pre>
     <figcaption>examples/gallery/03-fallible.hero, righe 7&ndash;11</figcaption>
   </figure>
@@ -35,7 +35,7 @@
 <pre><code><span class="c"># Reads a whole non-negative number. Empty input is an error, not a zero.</span>
 <span class="k">function</span> number_of(text: <span class="t">str</span>) -&gt; <span class="t">i64</span>?
     <span class="k">if</span> text.len() == <span class="n">0</span>
-        <span class="k">return</span> <span class="k">fail</span>(<span class="s">"empty"</span>, <span class="s">"there is nothing to read"</span>)
+        <span class="k">return</span> <span class="k">fail</span>(code: <span class="s">"empty"</span>, msg: <span class="s">"there is nothing to read"</span>)
     total: <span class="t">i64</span> @ <span class="n">0</span>
 
     <span class="k">for</span> i <span class="k">in</span> range(from: <span class="n">0</span>, to: text.len())
@@ -76,7 +76,7 @@
         sum @ sum + number_of(p)?
 
     <span class="k">if</span> parts.len() == <span class="n">0</span>
-        <span class="k">return</span> <span class="k">fail</span>(<span class="s">"empty"</span>, <span class="s">"no parts to average"</span>)
+        <span class="k">return</span> <span class="k">fail</span>(code: <span class="s">"empty"</span>, msg: <span class="s">"no parts to average"</span>)
     <span class="k">return</span> ok(sum / parts.len())</code></pre>
     <figcaption>examples/gallery/03-fallible.hero, righe 26&ndash;34</figcaption>
   </figure>

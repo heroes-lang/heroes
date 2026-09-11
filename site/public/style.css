@@ -714,6 +714,13 @@ pre .k { color: var(--red); }                      /* keywords */
 pre .t { color: var(--blue); }                     /* built-in types */
 pre .s, pre .n { color: var(--gold); }             /* strings, chars, numbers */
 pre .h { color: var(--red); font-style: italic; }  /* ??? — a hole is a question */
+/* Markdown, on the one page that serves a markdown document verbatim: a heading
+   takes the keyword red, because a heading is to a document what a keyword is to
+   a program; a code span or fence takes the literal gold it already has inside a
+   Heroes block; a table's pipes and rules are dim furniture; and `**bold**` is
+   bold, keeping its asterisks, because the page shows the source a reader
+   pastes and not a rendering of it (`site/src/lib/markdown.ts`). */
+pre .b { font-weight: 700; color: var(--fg); }
 
 /* Real diagnostics have long message lines and short caret lines. Wrapping
    lets the message reflow into the column while the caret rows — which are
@@ -1435,30 +1442,36 @@ figure.example.spec pre {
      nothing at either end. Measured across the frame's own 784px at 1200px
      wide, from left edge to right: 25.2 / 22.6 / 22.1 / 23.9 / 23.9. */
   max-height: calc(30 * 0.76rem * 1.55 + 2.3rem);
-  overflow: auto; font-size: 0.76rem; line-height: 1.55;
+  overflow-y: auto; overflow-x: hidden; font-size: 0.76rem; line-height: 1.55;
   color: var(--fg);
+  /* **It wraps** (author instruction 2026-09-11): one axis of scrolling, not
+     two. Every other block on this site scrolls sideways on purpose, because a
+     Heroes program's indentation is its structure and a diagnostic's caret is
+     its column, so a reflowed line lies. This document is prose in markdown:
+     its long lines are sentences and its tables are pipes, both of which read
+     fine reflowed, and a reader who has to drag sideways through 289 lines to
+     see the right-hand half reads none of it. `break-word` rather than
+     `anywhere`, so the break lands between words wherever a word will fit. */
+  white-space: pre-wrap; overflow-wrap: break-word;
   /* Eight layers, not four. This rule REPLACES `pre`'s whole background set
      rather than adding to it, so writing only the vertical pair silently
      dropped the horizontal one and the frame said nothing about the axis it
      scrolls furthest on: measured at 390px, a flat 209 to 211 right up to the
      border while lines cut mid-word. Both axes now. */
+  /* Four layers, not eight. The horizontal pair shaded an axis that no longer
+     moves: with the block wrapping there is nothing to the left or the right of
+     the frame, and an edge shadow over a still axis says a thing that is not
+     true. The vertical pair stays, and it is the same technique the code blocks
+     use rotated. */
   background-image:
     linear-gradient(to bottom, var(--card) 40%, transparent),
     linear-gradient(to top,    var(--card) 40%, transparent),
-    linear-gradient(to right,  var(--card) 40%, transparent),
-    linear-gradient(to left,   var(--card) 40%, transparent),
     linear-gradient(to top,    color-mix(in srgb, var(--fg) 26%, transparent), transparent),
-    linear-gradient(to bottom, color-mix(in srgb, var(--fg) 26%, transparent), transparent),
-    linear-gradient(to left,   color-mix(in srgb, var(--fg) 26%, transparent), transparent),
-    linear-gradient(to right,  color-mix(in srgb, var(--fg) 26%, transparent), transparent);
-  background-position:
-    top center, bottom center, left center, right center,
-    bottom center, top center, right center, left center;
-  background-size:
-    100% 2.4rem, 100% 2.4rem, 3rem 100%, 3rem 100%,
-    100% 0.8rem, 100% 0.8rem, 1.1rem 100%, 1.1rem 100%;
+    linear-gradient(to bottom, color-mix(in srgb, var(--fg) 26%, transparent), transparent);
+  background-position: top center, bottom center, bottom center, top center;
+  background-size: 100% 2.4rem, 100% 2.4rem, 100% 0.8rem, 100% 0.8rem;
   background-repeat: no-repeat;
-  background-attachment: local, local, local, local, scroll, scroll, scroll, scroll;
+  background-attachment: local, local, scroll, scroll;
 }
 figure.example.spec { margin-bottom: 1.4rem; }
 
@@ -1580,6 +1593,9 @@ pre:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 @media (max-width: 620px) {
   pre { white-space: pre-wrap; }
   figure.example pre, .demo pre, pre.table { white-space: pre; }
+  /* The specification keeps wrapping at every width: it is the one block whose
+     lines are sentences (author instruction 2026-09-11). */
+  figure.example.spec pre { white-space: pre-wrap; }
   .hero { grid-template-columns: 1fr; gap: 2rem; padding: 2.4rem 0 2rem; }
   blockquote::before { display: none; }
 }
@@ -1594,3 +1610,42 @@ pre:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
   pre { background: #f4f4f4; border-color: #ccc; }
   a { color: #000; }
 }
+
+/* ------- the chain, on the project page -----------------------------------
+   One row per milestone, read out of `docs/ROADMAP.md` § The chain at build
+   time (`src/lib/chain.ts`), because a summary written by hand is a summary
+   that goes stale against the repository it summarises.
+
+   Two tables, and the split is the reason the section is readable at all:
+   twenty-four milestones that have not happened stand open, and the
+   forty-six that have are behind a `details` for the reader who wants them.
+   Sixty-nine rows in a row read as a wall. */
+table.chain {
+  width: 100%; border-collapse: collapse; margin: 1rem 0 0;
+  font-size: 0.82rem; line-height: 1.5;
+}
+table.chain th {
+  text-align: left; font-weight: 700; color: var(--dim);
+  font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.07em;
+  padding: 0 0.7rem 0.4rem 0; border-bottom: 1px solid var(--line);
+}
+table.chain td {
+  padding: 0.42rem 0.7rem 0.42rem 0; border-bottom: 1px solid var(--line-soft);
+  vertical-align: top;
+}
+/* The number column is the chain's order, so it is tabular and narrow. */
+table.chain td.n {
+  color: var(--dim); font-variant-numeric: tabular-nums; width: 2.2rem;
+}
+table.chain td.when { color: var(--dim); white-space: nowrap; }
+table.chain code { font-size: 0.94em; }
+/* The name column does not wrap mid-identifier: a milestone's id is one word
+   with hyphens, and a hyphen is where a browser would break it. */
+table.chain td code { overflow-wrap: normal; word-break: keep-all; }
+details.chain { margin: 1.6rem 0 0; }
+details.chain > summary {
+  cursor: pointer; color: var(--red); font-weight: 700;
+  font-size: 0.84rem; letter-spacing: 0.02em;
+}
+details.chain > summary:hover { text-decoration: underline; }
+details.chain[open] > summary { margin-bottom: 0.2rem; }
