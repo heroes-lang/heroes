@@ -29,49 +29,55 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 *******************************************************************************
 **OPEN: 1**
 
-- [ ] **025 — the label rule stops at the compiler's own built-ins** | `fail("a", "b")` and `xs.slice(1, 3)` compile, though both take two parameters of one type, while `range(1, 4)` and every function written in Heroes are refused | `spec § 9 Functions and calls` · `selfhost/check/builtins.hero` · `selfhost/library_source.hero`
+- [ ] **026 — a function type names no parameters, so a call through one takes its arguments positionally** | two same-typed arguments can be swapped in silence through a function value and through a C callback, and an invented label is accepted and ignored | `spec § 9 Functions and calls` · `spec § 13 FFI` · `selfhost/check/walk.hero` · `docs/panel/127-the-rule-that-did-not-reach-its-own-library.md`
 
-    **Origin:** panel 126's ergonomist seat, 2026-09-11, which called the shape
-    of a `fail` call *a coin flip the prose alone cannot settle* and wrote the
-    two sides of it in two programs. Measured after: **neither side is refused.**
+    **Origin:** panel 127's ffi seat, 2026-09-11, which named it as two holes;
+    it is filed as one because the cause is one, and both witnesses were re-run
+    in the landing session rather than taken from the seat's report.
 
-    **The reproducer**, run on the compiler built from the seed at `834d804f`:
+    **Witness one, a call through a function value.** `report(code: str, msg:
+    str)` is refused positionally at a direct call, as § 9 requires. Through a
+    value of its own type it is not:
 
-        function a() -> i64?
-            return fail("code_here", "message here")      # accepted
-        function b() -> i64?
-            return fail(code: "code_here", msg: "message here")   # accepted
-        function two_strings(one: str, other: str) -> str
-            return one + other
-        function main()
-            print(two_strings("x", "y"))                  # error[needs_label], twice
+        f: (function(str, str) -> str) @ report
+        print(f("msg_first", "code_second"))     # prints msg_first/code_second
+        print(f(nonsense: "a", rubbish: "b"))    # prints a/b
 
-    and `xs.slice(1, 3)` is accepted while `range(1, 4)` is refused
-    `error[needs_label]` on both arguments.
+    Both compile at exit 0. The second is the sharper half: a label that names
+    nothing is accepted and ignored, so the label is not even a claim.
 
-    **The seam is the implementation showing through the surface.** `slice` and
-    `fail` are the compiler's own built-ins and never pass the check that reads a
-    signature's parameter types; `range`, `map`, `filter`, `fold`, `find`, `any`
-    and `all` are written in Heroes (`spec § 11 Built-ins` says so in the
-    document's own words) and are checked like any other function. So the rule
-    holds for the seven a reader is told are written in Heroes and lapses for the
-    rest, and nothing in the language explains the difference.
+    **Witness two, a C callback's own parameter order.** With a header of one
+    line, `int64_t hero_cb_apply(int64_t (*f)(int64_t, int64_t), int64_t, int64_t)`,
+    and `function subtract(minuend: i64, subtrahend: i64)` passed as `f`, the
+    program prints **7**. Rename the two parameters to `(subtrahend, minuend)`
+    and leave the body alone and it prints **-7**, with no diagnostic: the names
+    are a promise and C hands the arguments by position.
 
-    **Why it is filed as a defect of the compiler and not of the document**
-    (CLAUDE.md §12): `spec § 9` states *when two parameters in a signature share
-    a type, named arguments are mandatory at the call site*, with no exception,
-    and the spec beats the compiler. Two repairs are available and both are the
-    panel's, because a diagnostic class is a panel path (CLAUDE.md §4): the check
-    reaches the built-in table, which makes `fail("a", "b")` an error in
-    programs that exist today, or the document names the exception, which spends
-    tokens on a seam rather than on a rule. **The document's own example was
-    written before this was measured and is legal either way**: `spec § 6`'s
-    `fail("empty", "no first element")` is what the compiler accepts today, and
-    if the first repair is taken that line moves with it.
+    **The cause, read at the line.** `selfhost/check/walk.hero:1541` gets the
+    label to expect from `fd.value.params[position].name`, a span into a
+    **declaration**. A function TYPE, `(function(A, B) -> C)`, has no parameter
+    names to read, by the language's own grammar (`spec § 2 Types`), so there is
+    nothing for the rule to compare against. Panel 127 closed the same shape for
+    the two built-ins by giving them names the compiler carries as literals; the
+    same trick has nowhere to live here, because the type is written at every
+    site and names nothing at any of them.
 
-    **What it is not.** Not a crash, not a wrong answer: every program named here
-    exits as the compiler says it will. It is the third shape this list admits, a
-    silence where a message is owed, and it was invisible until a blind reader
-    wrote both forms of the same call on purpose.
+    **What it is not.** Not the built-in hole panel 127 repaired, and the repair
+    cannot be escaped through this door: a built-in may not be taken as a value
+    at all, `error[builtin_as_value]`, measured. Not an ABI question either: the
+    widths and signs of a callback's parameters ARE checked (`spec § 13`), only
+    their order is not.
+
+    **What is owed.** A ruling, because three routes exist and all three change
+    the language: a function type may name its parameters, which makes the names
+    part of the type and every signature longer; a function type whose
+    parameters share a type is refused, which is the strictest and costs the
+    corpus its comparators; or the document says what the compiler does, which
+    is what panel 127 refused for the built-ins on CLAUDE.md §12. The
+    measurement that should open that sitting exists: `heroes mutate --operator
+    swap-args --survivors` reads **75** survivors now, and this class is what
+    remains in them.
+
+
 
 *******************************************************************************
