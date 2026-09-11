@@ -374,8 +374,34 @@ golden is owed with E rather than beside it.
 
 ## Author's verdict
 
-**Pending.** The resolution is `provisional — author ratification pending` and
-work proceeds on it. It is queued as **two** items in `docs/work/DECIDE.md`: the
-resolution itself, and separately the removal of panel 117's restoration clause,
-because that reverses a wording the author chose explicitly against a seat's
-recommendation on 2026-09-07 and a reversal must not ride inside a longer yes.
+It was queued as **two** items rather than one: the resolution, and separately the
+removal of panel 117's restoration clause, because that reverses a wording the
+author chose explicitly against a seat's recommendation on 2026-09-07 and a
+reversal must not ride inside a longer yes. Both were answered at once.
+
+**RATIFIED AS ADOPTED, 2026-09-11**, the author's word given the same evening the
+sitting closed: **`b`, yes, yes** — the second spelling, the resolution, and the
+removal of panel 117's restoration clause (the Italian original stands in this
+conversation's git history, CLAUDE.md §11).
+
+**The surface is settled and it is `Room::width`, against the shape that was
+already built.** The sitting left the choice open on purpose and put both
+diagnostics in front of the author; the compiler-engineer's prototype used
+`Point.width` and is green, and the author took the llm-ergonomist's spelling
+instead. **The reason is the one that seat gave and it is a locality argument**:
+`.` already qualifies a module (`geom.Point`) and already reads a field from a
+value (`p.width`), so a third meaning would make `Point.width` legible only to a
+reader who knows whether `Point` names a type or a value, which is not on that
+line. `::` means nothing else today. **The price is on the record**: the `.` form
+costs zero lexer and parser lines because the grammar already parses it, and `::`
+does not exist as a token, so it must be added — a compiler-size cost taken
+knowingly, and CLAUDE.md § Precedence puts compiler size below comprehension.
+
+**The removal of `until this language renders one` is ratified**, reversing the
+author's own wording choice of 2026-09-07 for the second time in this milestone
+and, again, on a separately queued item. The narrowing stays as a plain
+statement; the promise goes.
+
+**What is NOT ratified, because the sitting did not ask**: shape B-prime, which
+stays scheduled with the compiler side owed rather than simulated, and which is
+the only route to the rot that E leaves open.
