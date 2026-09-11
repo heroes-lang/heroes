@@ -1,8 +1,8 @@
 # 127 — the rule that did not reach its own library
 
 Convened and closed 2026-09-11 · M-labelled-builtins · **full lane, five seats**
-· status: **provisional — author ratification pending**
-(`docs/work/DECIDE.md`)
+· status: **ratified as adopted, 2026-09-11**
+(`docs/work/DONE.md`)
 
 Defect 025, filed the same evening out of panel 126's ergonomist seat, and the
 author asked for the repair in one word.
@@ -133,9 +133,18 @@ as a withdrawal of the locality guarantee from a class of calls.
 
 ## Author's verdict
 
-**Pending.** The queue item is `panel 127` in `docs/work/DECIDE.md`. What a
-ratification settles is whether the rule stays where it now reaches, since 1022
-call sites in the repository grew eleven characters each to pay for it.
+**Ratified as adopted, 2026-09-11** (the author's word, `ratifico i panel`). The
+rule stays where it now reaches: both halves of it on `fail` and `slice`, the
+names carried as literals at the `.runtime` tier, and `wrong_label`'s fix a
+`guess` where the written label names another position. The 1022 call sites that
+grew eleven characters each stay as they are.
+
+**What the ratification settles about the payment.** The two seats that objected
+are answered rather than overruled: the compiler seat's conditions were met
+inside the sitting, and the warden's arithmetic stands on the record beside the
+verdict. The measured result is what carries it: `heroes mutate --operator
+swap-args` went from 1441 of 1910 killed to 1733, survivors from 367 to 75, and
+the 159 swapped `fail(` calls to zero.
 
 ## What this sitting did not do
 

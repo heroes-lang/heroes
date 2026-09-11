@@ -1,8 +1,8 @@
 # 128 — the type that names nothing
 
 Convened and closed 2026-09-11 · M-positional-values · **full lane, five seats**
-· status: **provisional — author ratification pending**
-(`docs/work/DECIDE.md`)
+· status: **ratified as adopted, 2026-09-11**
+(`docs/work/DONE.md`)
 
 Defect 026, filed at M-labelled-builtins' close, and the author asked for the
 sitting in five words.
@@ -149,10 +149,19 @@ named: build it, show the two ceilings raised and `swap-args` at 100% under abou
 
 ## Author's verdict
 
-**Pending.** The queue item is `panel 128` in `docs/work/DECIDE.md`, and what a
-ratification settles is whether the sitting was right to land the small half and
-schedule the large one, or whether the conservative route should be built and
-measured now.
+**Ratified as adopted, 2026-09-11** (the author's word, `ratifico i panel`, given
+the same day the sitting closed). The small half stands: the label at a call
+through a function value is an error, the note says the call is positional and
+names the roles, and § 3's row says it. **The conservative route is not built
+now**; it stays scheduled at M-check-completeness with the measurement that lifts
+its own veto, and defect 026 stays open and narrowed to the inversion.
+
+**So the three vetoes stand as refusals rather than as prices**, which is what
+they were entered as, and the record keeps all three arguments unsmoothed: the
+warden's sentence was false until a program made it true, refusing the type would
+delete a program that works, and names inside the type are a rebuilding of eleven
+modules rather than a repair. The one number the ratification does not change:
+the inversion is still measured at 50%.
 
 ## What this sitting did not do
 
