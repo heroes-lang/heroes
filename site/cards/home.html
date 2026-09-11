@@ -1,0 +1,82 @@
+<!doctype html>
+<!--
+  The home page's share card, 1200x630, the file `og:image` and `twitter:image`
+  point at for `/` and `/it/` (site/README.md § What a machine that is not a
+  browser gets). It is drawn from the stylesheet's own tokens and its own h1
+  face, and it carries exactly two sentences: the kicker, which is the one
+  subtitle the language carries everywhere, and the README's own h3 line. No
+  number, by site/CLAUDE.md § A number on the page.
+
+  This file is the English card. The Italian card is a copy of it with the two
+  lines swapped at generation time, in a scratch directory, because
+  `records/english` reads every `.html` outside `src/html/it/` and would refuse
+  an Italian source here. The command is in site/README.md, beside the rule.
+
+  Fonts are the system's: Avenir Next Condensed for the name and Georgia for
+  the line, which is what the site itself asks for and never loads.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Heroes, a small compiled language</title>
+<style>
+  :root {
+    --bg: #0b0b10; --stage: #101017; --line: #262633;
+    --fg: #efece4; --dim: #9d998f;
+    --red: #ef4a52; --blue: #3f7bff; --gold: #e8b552;
+  }
+  html, body { margin: 0; padding: 0; width: 1200px; height: 630px; overflow: hidden; background: var(--bg); }
+  .plate {
+    position: absolute; left: 30px; top: 30px; width: 1140px; height: 570px;
+    box-sizing: border-box; border: 1.5px solid var(--line); border-radius: 16px;
+    background:
+      radial-gradient(560px 330px at 22% 18%, rgba(239, 74, 82, 0.10), transparent 70%),
+      radial-gradient(520px 320px at 82% 92%, rgba(63, 123, 255, 0.09), transparent 70%),
+      var(--stage);
+    overflow: hidden;
+  }
+  .kicker {
+    position: absolute; left: 82px; top: 80px; margin: 0;
+    font: 19px/1 ui-monospace, 'SF Mono', Menlo, monospace;
+    letter-spacing: 0.25em; text-transform: uppercase; color: var(--dim);
+  }
+  h1 {
+    position: absolute; left: 78px; top: 120px; margin: 0;
+    font-family: 'Avenir Next Condensed', 'HelveticaNeue-CondensedBold', 'Helvetica Neue', 'Roboto Condensed', 'Arial Narrow', sans-serif;
+    font-weight: 700; font-size: 140px; line-height: 1; letter-spacing: 0.01em;
+    text-transform: uppercase; color: var(--fg); white-space: nowrap;
+  }
+  h1 .q { color: var(--gold); font-size: 0.82em; vertical-align: 0.05em; }
+  .promise {
+    position: absolute; left: 82px; top: 300px; margin: 0; width: 820px;
+    font: 400 38px/1.28 Georgia, 'Times New Roman', serif; color: var(--fg);
+  }
+  .promise em { font-style: italic; }
+  .rule {
+    position: absolute; left: 82px; top: 428px; width: 300px; height: 4px; border-radius: 2px;
+    background: linear-gradient(90deg, var(--red), var(--blue));
+  }
+  .domain {
+    position: absolute; left: 82px; top: 458px; margin: 0;
+    font: 22px/1 ui-monospace, 'SF Mono', Menlo, monospace; letter-spacing: 0.04em; color: var(--dim);
+  }
+  .bolt {
+    position: absolute; right: 78px; top: 58px; width: 188px; height: 250px;
+    transform: rotate(8deg);
+  }
+</style>
+</head>
+<body>
+  <div class="plate">
+    <p class="kicker">A small compiled language</p>
+    <h1><span class="q">&ldquo;</span>Heroes<span class="q">&rdquo;</span></h1>
+    <p class="promise">A whole language in one prompt. It <em>compiles itself</em>.</p>
+    <div class="rule"></div>
+    <p class="domain">heroes-lang.org</p>
+    <!-- the Aladdin Sane bolt (1973), red, worn at a jaunty angle -->
+    <svg class="bolt" viewBox="0 0 48 64" aria-hidden="true">
+      <path fill="#ef4a52" d="M 30 2 L8 36 h14 L16 62 L44 24 h-16 z"/>
+    </svg>
+  </div>
+</body>
+</html>

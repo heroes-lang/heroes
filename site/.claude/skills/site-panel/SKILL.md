@@ -60,13 +60,17 @@ positioned to see.
   bootstrap retirement, no invented numbers, no duration claims.
 - Compiler output is verbatim; every code block is a slice of a real
   `examples/` file (`data-src`/`data-lines`), regenerated from the file.
-- The hero shows working code, never a diagnostic; says "a compiled
-  programming language" before the name; names LLMs plainly (author,
-  2026-08-18). A diagnostic may appear in the first value prop UNDER the hero,
-  and one does. **The kicker is "A simple programming language", the author's
-  word (decision 2026-09-09, asked by two seats), and "compiled" arrives in the
-  claim under the name**: a seat that asks to move it up is re-arguing a
-  decision, not finding a defect.
+- The hero shows working code, never a diagnostic; states the category before
+  the name; names LLMs plainly (author, 2026-08-18). A diagnostic may appear in
+  the first value prop UNDER the hero, and one does. **The kicker is "A small
+  compiled language", the one subtitle the language carries everywhere** (author
+  decision 2026-09-10, chosen among the five wordings that were in use: the
+  specification's own line, and the measured adjective, since the ceiling and
+  the line count are what "small" rests on). It replaced "A simple programming
+  language", the author's word of 2026-09-09, which two seats had asked for;
+  the reversal is the author's. The claim under the name no longer opens with
+  "A compiled language", so the word is said once. A seat that asks to change
+  either is re-arguing a decision, not finding a defect.
 - **The first half of the hero claim, "Decades of programming-language
   history", is the author's thesis sentence and not a measurable claim**
   (decision 2026-09-09, on the marketing seat's finding). The second half is
