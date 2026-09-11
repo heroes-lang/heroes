@@ -790,3 +790,43 @@ given. It is **M-named-callbacks**, chain row 49, with panel 129's compiler seat
 objection attached whole — that route introduces variance into a language that has
 none, and it does not close the class, it lets a careful author close it one
 function at a time.
+
+2026-09-11 · **M-named-callbacks, panel 130, on the route panel 129 recommended
+against and the author asked for anyway.** A function type may name any
+parameter; where two share a type it must; and **the names of a function handed
+to a callback type that names its parameters must agree with them**, checked in
+`check/generics.hero`'s `bind`, the one path that never compares whole interned
+ids. `fold`'s callback is `(function(acc: B, item: A) -> B)` now, and a program
+that read its two the other way round — printing `cba` where it meant `abc`, at
+exit 0, on every compiler this project had built — is `error[callback_name]`.
+**Transposing the seven callbacks this repository hands to `fold` is caught 7 of
+7.** The document is 5662 real, **−1**, digest `6e82771d0dbabc31`, ledger row 67,
+paid by § 3's two extra arities at −20 measured alone.
+
+2026-09-11 · **A rule was measured the way a metric is, and the number changed
+the milestone.** The first version fired only where the callee reused the type's
+OWN word for another position, which is panel 127's `elsewhere` test applied to a
+value. Panel 130's compiler seat measured it against the seven transposed
+callbacks: **2 of 7**, because five of them use their authors' vocabulary — `a`
+and `b`, `so_far` and `one`, `total` and `i`. The author was given both numbers
+and took agreement, which catches 7 of 7 at the price of a permanent naming
+mandate on `fold`'s callers and six programs renamed once each. **It is a mandate
+and not a detector**, and design.md, the diagnostic's module doc and the golden
+all say so rather than letting a green suite imply a class is closed.
+
+2026-09-11 · **Half of what panel 129 priced was unnecessary, and a measurement
+said so before a line was written.** That sitting costed the route at four parts
+and objected to two: a declared function naming its parameters always, and a
+widening relation to carry it. Both rest on the premise that a role inversion is
+invisible at any pair; it is not. With different types the swap changes the type
+and `bind` already refuses it, and when they collapse to one type they share a
+type, so the names already existed. What was missing was that `fold`'s own type
+could not SAY what it wanted.
+
+2026-09-11 · **Two silences the sitting names rather than closes.** A callback
+whose own two parameters are DIFFERENT types puts no names in its type, so the
+mandate does not bind it: `tally(item: str, acc: i64)` has its names fully
+inverted against `fold`'s and prints `123` at exit 0. And a user's own generic
+higher-order function whose callback type names nothing is unchecked. The
+spec-warden found the first against the built compiler and refused to write the
+unscoped sentence that would have denied it; design.md carries the narrowing.
