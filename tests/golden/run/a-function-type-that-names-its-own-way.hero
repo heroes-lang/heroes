@@ -1,0 +1,31 @@
+# UNVERIFIED — pending debrief
+# **This case pinned a REFUSAL until 2026-09-11, and the refusal is gone.** The
+# file is moved rather than deleted, and corrected here rather than rewritten,
+# because `tests/golden/` is append-only (`.claude/rules/records.md`): what it
+# said is below, under its own date, and what it says now is this paragraph.
+#
+# **What it pinned, at M-labelled-types.** A name in a function type was refused
+# at any position no other parameter could be confused with, on the ground that
+# it claimed a check nobody was doing. The `.expected` and `.fixed` twins that
+# went with it are in the history at the commit before this one.
+#
+# **Why it went, at M-named-callbacks, hours later.** `fold`'s callback is
+# `(function(B, A) -> B)`, two distinct letters, so under that refusal the type
+# could not say which of the two is the accumulator — and a program that read
+# them the other way round compiled and printed `cba` where it meant `abc`, at
+# exit 0. The name is what lets the type say it, so the name had to be allowed
+# where nothing can be confused. The case is a `run/` one now: what it pins is
+# that such a type COMPILES and runs.
+#
+# The annotation that stood on the next line, `#~ named_parameter_in_function_type`
+# twice, is in the history: it named a diagnostic the language no longer has, and
+# an annotation for a diagnostic that cannot fire makes the `annotations` suite
+# red rather than making a point.
+function relay(f: (function(from: str, count: i64) -> str)) -> str
+    return f("one", 2)
+
+function main()
+    print(relay(pair))
+
+function pair(code: str, at: i64) -> str
+    return code + "/" + at.to_str()

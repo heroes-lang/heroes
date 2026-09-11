@@ -1,0 +1,1 @@
+tests/golden/check/a-callback-whose-roles-are-inverted.hero:29:23: error[callback_name]: this function calls that parameter `item` and the type it is passed to calls it `acc` — two of this function's parameters are one type, so it names them the way the type does

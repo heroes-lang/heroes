@@ -53,11 +53,14 @@ function times_ten(n: i64) -> i64
 function shown(r: R) -> str
     return r.n.to_str()
 
-function add(a: i64, b: i64) -> i64
-    return a + b
+# `acc` and `item` because that is what `fold`'s type calls them, and since
+# M-named-callbacks a function handed to `fold` names its two the way `fold`
+# does — the naming mandate the author took over the cheaper reading.
+function add(acc: i64, item: i64) -> i64
+    return acc + item
 
-function glue(so_far: str, one: str) -> str
-    return so_far + one
+function glue(acc: str, item: str) -> str
+    return acc + item
 
 function main()
     xs: [R] = [R(n: 1), R(n: 2), R(n: 3)]

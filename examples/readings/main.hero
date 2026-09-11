@@ -54,8 +54,11 @@ function plausible(r: Reading) -> bool
 function tenths_of(r: Reading) -> i64
     return r.raw
 
-function add(total: i64, one: i64) -> i64
-    return total + one
+# `acc` and `item` are `fold`'s own words for these two, and a function handed
+# to `fold` names them that way since M-named-callbacks: two parameters of one
+# type at a position no call site can reach, so the type is where the names live.
+function add(acc: i64, item: i64) -> i64
+    return acc + item
 
 function label(r: Reading) -> str
     return r.day + " " + scale.tenths(r.raw)
@@ -91,12 +94,12 @@ function main()
     days = range(from: 0, to: all_week.len())
     print(days.fold(0, plus_if_answered))
 
-function plus_if_answered(total: i64, i: i64) -> i64
-    one = week()[i]
+function plus_if_answered(acc: i64, item: i64) -> i64
+    one = week()[item]
 
     if answered(one)
-        return total + one.raw
-    return total
+        return acc + one.raw
+    return acc
 
 test "the six agree with the answers computed by hand"
     good = week().filter(answered)

@@ -269,6 +269,18 @@ constant CEILING: i64
 # in fewer files than the estimate, and the estimate is in `docs/panel/127-the-rule-that-did-not-reach-its-own-library.md`
 # beside this sentence so the gap is on the record rather than tidied away.
 #
+# **Two more moved on 2026-09-11, hours later, for M-named-callbacks**, the route
+# the author chose over panel 129's own recommendation. `check/table.hero` 371 ->
+# **389**: `fits` gained its second blank-filling case, a type carrying NO run of
+# names at all, without which a written type naming a position nothing can
+# confuse was uninhabited by any function in the language — panel 130's
+# spec-warden built its own compiler and ran the program rather than reading for
+# it. `selfhost/value_errors.hero` **334**, a new row: one diagnostic,
+# `callback_name`, with the note and the paragraph that says why no fix is
+# offered. It is not split, and the reason is the one §11 gives for a knot — a
+# diagnostics module is one concern read one message at a time, and cutting it by
+# line count would put two messages of one family in two files.
+#
 # **Three moved on 2026-09-11 for defect 026's repair**, the conservative route
 # panel 128 priced and scheduled: a function type carries its parameter names,
 # mandatory where two of them share a type, and the names are part of the type's
@@ -303,7 +315,8 @@ constant DECIDED: [str]
         "selfhost/grammar_expr.hero 1044"
         "selfhost/ir/print.hero 470"
         "selfhost/ast.hero 491"
-        "selfhost/check/table.hero 371"
+        "selfhost/check/table.hero 389"
+        "selfhost/value_errors.hero 334"
         "selfhost/check/builtins.hero 377"
         "selfhost/ir/mono.hero 380"
         "selfhost/emit/ctype.hero 370"
@@ -525,4 +538,4 @@ test "the ceiling is per file, and a decided file keeps its own"
     # language refuses to split. Two rows out and one in is a net of minus one,
     # and the ceiling that was the highest in the lowering fell from 1511 to
     # 1110. The reason for each number is above DECIDED.
-    assert DECIDED.len() == 17
+    assert DECIDED.len() == 18

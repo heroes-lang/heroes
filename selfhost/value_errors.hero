@@ -306,6 +306,43 @@ function arity(name: str, expected: i64, got: i64, declared: DeclaredAt?, span: 
         d.notes @ d.notes.push("declared at " + declared.must().at + ": " + declared.must().signature)
     return d
 
+# A function handed where a callback type NAMES its parameters, under names of
+# its own. `fold`'s callback is `(function(acc: B, item: A) -> B)`, and a program
+# that declared `append(item: str, acc: str)` and handed it over compiled and
+# printed `cba` where it meant `abc`, at exit 0, until M-named-callbacks.
+#
+# **The message carries the SCOPE and not only the rule**, because panel 130's
+# ergonomist read the two side by side and found the message broader than the
+# document: `spec § 9` scopes the rule three times to two parameters sharing a
+# type, and a message that stated it for any named callback type would have asked
+# a reader to know every callback type their function will ever be handed to. It
+# says *two of this function's parameters are one type* for that reason.
+#
+# **This is a naming mandate and the message says so**, because the alternative
+# was measured and refused: firing only where the callee reused the type's own
+# word for another position caught **2 of 7** transposed callbacks in this
+# repository's corpus, the other five using their authors' vocabulary. The author
+# took agreement with that number in front of them (2026-09-11).
+#
+# **No fix is offered, and there are two reasons rather than one.** The repair is
+# not at this span: it is a parameter of ANOTHER declaration, possibly in another
+# module, and `heroes check --apply` reaches the root module only. And a rename
+# would leave the defect standing — the body goes on using the old meanings, so
+# the program compiles and computes exactly what it computed before — which is
+# panel 127's own test for a fix that is a `guess` rather than a `certain`.
+# The note says what to do instead, which is §4.17's bargain: everything needed
+# to fix the program without opening another file, even when the edit is in one.
+function callback_name(wanted: str, written: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "callback_name",
+        message: "this function calls that parameter `" + written + "` and the type it is passed to calls it `" + wanted + "` — two of this function's parameters are one type, so it names them the way the type does",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "rename this parameter `" + wanted + "`, or swap the two if they are in the other order — the two positions can end up one type, and then the names are the only thing that says which is which"
+    )
+    return d
+
 ## Tests
 
 test "the cstr stop carries its route, every other operand does not"
