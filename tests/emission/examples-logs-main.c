@@ -4347,121 +4347,121 @@ bb3:
     goto bb1;
 #line 118 "examples/logs/mask.hero"
 bb4:
-#line 123 "examples/logs/mask.hero"
+#line 126 "examples/logs/mask.hero"
     t35 = h1_mask;
-#line 123 "examples/logs/mask.hero"
+#line 126 "examples/logs/mask.hero"
     t36 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t35};
-#line 123 "examples/logs/mask.hero"
+#line 126 "examples/logs/mask.hero"
     t40 = h6_own6;
-#line 123 "examples/logs/mask.hero"
+#line 126 "examples/logs/mask.hero"
     h6_own6 = t36;
 #line 4359 "main.c"
     h_0opt_e201354_release(&t40);
-#line 123 "examples/logs/mask.hero"
+#line 126 "examples/logs/mask.hero"
 #line 4362 "main.c"
     h_0opt_e201354_retain(&t36);
-#line 123 "examples/logs/mask.hero"
+#line 126 "examples/logs/mask.hero"
 #line 4365 "main.c"
     hero_array_decref(h2_xs0);
-#line 123 "examples/logs/mask.hero"
+#line 126 "examples/logs/mask.hero"
 #line 4368 "main.c"
     hero_str_decref(h4_name);
-#line 123 "examples/logs/mask.hero"
+#line 126 "examples/logs/mask.hero"
 #line 4371 "main.c"
     hero_array_decref(h5_own5);
-#line 123 "examples/logs/mask.hero"
+#line 126 "examples/logs/mask.hero"
 #line 4374 "main.c"
     h_0opt_e201354_release(&h6_own6);
-#line 123 "examples/logs/mask.hero"
+#line 126 "examples/logs/mask.hero"
 #line 4377 "main.c"
     hero_str_decref(h7_own7);
-#line 123 "examples/logs/mask.hero"
+#line 126 "examples/logs/mask.hero"
 #line 4380 "main.c"
     hero_str_decref(h8_own8);
-#line 123 "examples/logs/mask.hero"
+#line 126 "examples/logs/mask.hero"
 #line 4383 "main.c"
     hero_str_decref(h9_own9);
-#line 123 "examples/logs/mask.hero"
+#line 126 "examples/logs/mask.hero"
 #line 4386 "main.c"
     hero_array_decref(h10_own10);
-#line 123 "examples/logs/mask.hero"
+#line 126 "examples/logs/mask.hero"
 #line 4389 "main.c"
     hero_str_decref(h11_own11);
-#line 123 "examples/logs/mask.hero"
+#line 126 "examples/logs/mask.hero"
 #line 4392 "main.c"
     hero_str_decref(h12_own12);
-#line 123 "examples/logs/mask.hero"
+#line 126 "examples/logs/mask.hero"
 #line 4395 "main.c"
     h_0opt_e201354_release(&h13_own13);
     return t36;
 bb5:
-#line 121 "examples/logs/mask.hero"
+#line 124 "examples/logs/mask.hero"
     t29 = h1_mask;
-#line 121 "examples/logs/mask.hero"
+#line 124 "examples/logs/mask.hero"
     t30 = h4_name;
-#line 121 "examples/logs/mask.hero"
+#line 124 "examples/logs/mask.hero"
     t31 = h_mask_added(t29, t30);
-#line 121 "examples/logs/mask.hero"
+#line 124 "examples/logs/mask.hero"
     h1_mask = t31;
-#line 121 "examples/logs/mask.hero"
+#line 124 "examples/logs/mask.hero"
     goto bb3;
-#line 121 "examples/logs/mask.hero"
+#line 124 "examples/logs/mask.hero"
 bb6:
-#line 120 "examples/logs/mask.hero"
+#line 121 "examples/logs/mask.hero"
     t17 = h_mask_ERR_NO_SUCH_LEVEL();
-#line 120 "examples/logs/mask.hero"
+#line 121 "examples/logs/mask.hero"
     t41 = h7_own7;
-#line 120 "examples/logs/mask.hero"
+#line 121 "examples/logs/mask.hero"
     h7_own7 = t17;
 #line 4417 "main.c"
     hero_str_decref(t41);
-#line 120 "examples/logs/mask.hero"
+#line 122 "examples/logs/mask.hero"
     t18 = HERO_STR_LIT(hero_str_60);
-#line 120 "examples/logs/mask.hero"
+#line 122 "examples/logs/mask.hero"
     t19 = h4_name;
-#line 120 "examples/logs/mask.hero"
+#line 122 "examples/logs/mask.hero"
     t20 = hero_str_concat(t18, t19);
-#line 120 "examples/logs/mask.hero"
+#line 122 "examples/logs/mask.hero"
     t42 = h8_own8;
-#line 120 "examples/logs/mask.hero"
+#line 122 "examples/logs/mask.hero"
     h8_own8 = t20;
 #line 4429 "main.c"
     hero_str_decref(t42);
-#line 120 "examples/logs/mask.hero"
+#line 122 "examples/logs/mask.hero"
     t21 = HERO_STR_LIT(hero_str_23ad5593);
-#line 120 "examples/logs/mask.hero"
+#line 122 "examples/logs/mask.hero"
     t22 = hero_str_concat(t20, t21);
-#line 120 "examples/logs/mask.hero"
+#line 122 "examples/logs/mask.hero"
     t43 = h9_own9;
-#line 120 "examples/logs/mask.hero"
+#line 122 "examples/logs/mask.hero"
     h9_own9 = t22;
 #line 4439 "main.c"
     hero_str_decref(t43);
-#line 120 "examples/logs/mask.hero"
+#line 122 "examples/logs/mask.hero"
     t23 = h_mask_EVERY();
-#line 120 "examples/logs/mask.hero"
+#line 122 "examples/logs/mask.hero"
     t24 = h_mask_names_of(t23);
-#line 120 "examples/logs/mask.hero"
+#line 122 "examples/logs/mask.hero"
     t44 = h10_own10;
-#line 120 "examples/logs/mask.hero"
+#line 122 "examples/logs/mask.hero"
     h10_own10 = t24;
 #line 4449 "main.c"
     hero_array_decref(t44);
-#line 120 "examples/logs/mask.hero"
+#line 122 "examples/logs/mask.hero"
     t25 = HERO_STR_LIT(hero_str_16a4);
-#line 120 "examples/logs/mask.hero"
+#line 122 "examples/logs/mask.hero"
     t26 = hero_str_join(t24, t25);
-#line 120 "examples/logs/mask.hero"
+#line 122 "examples/logs/mask.hero"
     t45 = h11_own11;
-#line 120 "examples/logs/mask.hero"
+#line 122 "examples/logs/mask.hero"
     h11_own11 = t26;
 #line 4459 "main.c"
     hero_str_decref(t45);
-#line 120 "examples/logs/mask.hero"
+#line 122 "examples/logs/mask.hero"
     t27 = hero_str_concat(t22, t26);
-#line 120 "examples/logs/mask.hero"
+#line 122 "examples/logs/mask.hero"
     t46 = h12_own12;
-#line 120 "examples/logs/mask.hero"
+#line 122 "examples/logs/mask.hero"
     h12_own12 = t27;
 #line 4467 "main.c"
     hero_str_decref(t46);
@@ -4520,7 +4520,7 @@ bb7:
     goto bb5;
 }
 
-#line 125 "examples/logs/mask.hero"
+#line 128 "examples/logs/mask.hero"
 HeroArrayHeader * h_mask_split_on(HeroStr h0_text, uint8_t h1_c) {
 #line 4526 "main.c"
     HeroArrayHeader * h2_out = {0};
@@ -4568,169 +4568,169 @@ HeroArrayHeader * h_mask_split_on(HeroStr h0_text, uint8_t h1_c) {
     HeroStr t38 = {0};
     goto bb0;
 bb0:
-#line 126 "examples/logs/mask.hero"
+#line 129 "examples/logs/mask.hero"
     t1 = hero_array_new(&hero_desc_str, 1);
-#line 126 "examples/logs/mask.hero"
+#line 129 "examples/logs/mask.hero"
     t35 = h7_own7;
-#line 126 "examples/logs/mask.hero"
+#line 129 "examples/logs/mask.hero"
     h7_own7 = t1;
 #line 4578 "main.c"
     hero_array_decref(t35);
-#line 126 "examples/logs/mask.hero"
+#line 129 "examples/logs/mask.hero"
     t36 = h2_out;
 #line 4582 "main.c"
     hero_array_incref(t1);
-#line 126 "examples/logs/mask.hero"
+#line 129 "examples/logs/mask.hero"
     h2_out = t1;
 #line 4586 "main.c"
     hero_array_decref(t36);
-#line 127 "examples/logs/mask.hero"
+#line 130 "examples/logs/mask.hero"
     t2 = INT64_C(0);
-#line 127 "examples/logs/mask.hero"
+#line 130 "examples/logs/mask.hero"
     h3_start = t2;
-#line 128 "examples/logs/mask.hero"
+#line 131 "examples/logs/mask.hero"
     t3 = INT64_C(0);
-#line 128 "examples/logs/mask.hero"
+#line 131 "examples/logs/mask.hero"
     h4_i = t3;
-#line 128 "examples/logs/mask.hero"
+#line 131 "examples/logs/mask.hero"
     goto bb1;
-#line 128 "examples/logs/mask.hero"
+#line 131 "examples/logs/mask.hero"
 bb1:
-#line 130 "examples/logs/mask.hero"
+#line 133 "examples/logs/mask.hero"
     t4 = h4_i;
-#line 130 "examples/logs/mask.hero"
+#line 133 "examples/logs/mask.hero"
     t5 = h0_text;
-#line 130 "examples/logs/mask.hero"
+#line 133 "examples/logs/mask.hero"
     t6 = hero_str_len(t5);
-#line 130 "examples/logs/mask.hero"
+#line 133 "examples/logs/mask.hero"
     t7 = t4 <= t6;
-#line 130 "examples/logs/mask.hero"
+#line 133 "examples/logs/mask.hero"
     if (t7) goto bb2; else goto bb3;
-#line 130 "examples/logs/mask.hero"
+#line 133 "examples/logs/mask.hero"
 bb2:
-#line 131 "examples/logs/mask.hero"
+#line 134 "examples/logs/mask.hero"
     t8 = h4_i;
-#line 131 "examples/logs/mask.hero"
+#line 134 "examples/logs/mask.hero"
     t9 = h0_text;
-#line 131 "examples/logs/mask.hero"
+#line 134 "examples/logs/mask.hero"
     t10 = hero_str_len(t9);
-#line 131 "examples/logs/mask.hero"
+#line 134 "examples/logs/mask.hero"
     t11 = t8 == t10;
-#line 131 "examples/logs/mask.hero"
+#line 134 "examples/logs/mask.hero"
     h5_b0 = t11;
-#line 131 "examples/logs/mask.hero"
+#line 134 "examples/logs/mask.hero"
     if (t11) goto bb6; else goto bb5;
-#line 131 "examples/logs/mask.hero"
+#line 134 "examples/logs/mask.hero"
 bb3:
-#line 139 "examples/logs/mask.hero"
+#line 142 "examples/logs/mask.hero"
     t34 = h2_out;
 #line 4628 "main.c"
     hero_array_incref(t34);
-#line 139 "examples/logs/mask.hero"
+#line 142 "examples/logs/mask.hero"
 #line 4631 "main.c"
     hero_array_decref(h2_out);
-#line 139 "examples/logs/mask.hero"
+#line 142 "examples/logs/mask.hero"
 #line 4634 "main.c"
     hero_str_decref(h6_piece);
-#line 139 "examples/logs/mask.hero"
+#line 142 "examples/logs/mask.hero"
 #line 4637 "main.c"
     hero_array_decref(h7_own7);
-#line 139 "examples/logs/mask.hero"
+#line 142 "examples/logs/mask.hero"
 #line 4640 "main.c"
     hero_str_decref(h8_own8);
     return t34;
 bb4:
-#line 137 "examples/logs/mask.hero"
+#line 140 "examples/logs/mask.hero"
     t31 = h4_i;
-#line 137 "examples/logs/mask.hero"
+#line 140 "examples/logs/mask.hero"
     t32 = INT64_C(1);
-#line 137 "examples/logs/mask.hero"
+#line 140 "examples/logs/mask.hero"
     if (__builtin_add_overflow(t31, t32, &t33)) hero_panic_overflow();
-#line 137 "examples/logs/mask.hero"
+#line 140 "examples/logs/mask.hero"
     h4_i = t33;
-#line 137 "examples/logs/mask.hero"
+#line 140 "examples/logs/mask.hero"
     goto bb1;
-#line 137 "examples/logs/mask.hero"
+#line 140 "examples/logs/mask.hero"
 bb5:
-#line 131 "examples/logs/mask.hero"
+#line 134 "examples/logs/mask.hero"
     t12 = h0_text;
-#line 131 "examples/logs/mask.hero"
+#line 134 "examples/logs/mask.hero"
     t13 = h4_i;
-#line 131 "examples/logs/mask.hero"
+#line 134 "examples/logs/mask.hero"
     t14 = hero_str_byte(t12, t13);
-#line 131 "examples/logs/mask.hero"
+#line 134 "examples/logs/mask.hero"
     t15 = h1_c;
-#line 131 "examples/logs/mask.hero"
+#line 134 "examples/logs/mask.hero"
     t16 = t14 == t15;
-#line 131 "examples/logs/mask.hero"
+#line 134 "examples/logs/mask.hero"
     h5_b0 = t16;
-#line 131 "examples/logs/mask.hero"
+#line 134 "examples/logs/mask.hero"
     goto bb6;
-#line 131 "examples/logs/mask.hero"
+#line 134 "examples/logs/mask.hero"
 bb6:
-#line 131 "examples/logs/mask.hero"
+#line 134 "examples/logs/mask.hero"
     t17 = h5_b0;
-#line 131 "examples/logs/mask.hero"
+#line 134 "examples/logs/mask.hero"
     if (t17) goto bb7; else goto bb8;
-#line 131 "examples/logs/mask.hero"
+#line 134 "examples/logs/mask.hero"
 bb7:
-#line 132 "examples/logs/mask.hero"
+#line 135 "examples/logs/mask.hero"
     t18 = h0_text;
-#line 132 "examples/logs/mask.hero"
+#line 135 "examples/logs/mask.hero"
     t19 = h3_start;
-#line 132 "examples/logs/mask.hero"
+#line 135 "examples/logs/mask.hero"
     t20 = h4_i;
-#line 132 "examples/logs/mask.hero"
+#line 135 "examples/logs/mask.hero"
     t21 = hero_str_slice(t18, t19, t20);
-#line 132 "examples/logs/mask.hero"
+#line 135 "examples/logs/mask.hero"
     t37 = h8_own8;
-#line 132 "examples/logs/mask.hero"
+#line 135 "examples/logs/mask.hero"
     h8_own8 = t21;
 #line 4690 "main.c"
     hero_str_decref(t37);
-#line 132 "examples/logs/mask.hero"
+#line 135 "examples/logs/mask.hero"
     t38 = h6_piece;
 #line 4694 "main.c"
     hero_str_incref(t21);
-#line 132 "examples/logs/mask.hero"
+#line 135 "examples/logs/mask.hero"
     h6_piece = t21;
 #line 4698 "main.c"
     hero_str_decref(t38);
-#line 134 "examples/logs/mask.hero"
+#line 137 "examples/logs/mask.hero"
     t22 = h6_piece;
-#line 134 "examples/logs/mask.hero"
+#line 137 "examples/logs/mask.hero"
     t23 = HERO_STR_LIT(hero_str_0);
-#line 134 "examples/logs/mask.hero"
+#line 137 "examples/logs/mask.hero"
     t24 = !hero_str_eq(t22, t23);
-#line 134 "examples/logs/mask.hero"
+#line 137 "examples/logs/mask.hero"
     if (t24) goto bb10; else goto bb11;
-#line 134 "examples/logs/mask.hero"
+#line 137 "examples/logs/mask.hero"
 bb8:
-#line 134 "examples/logs/mask.hero"
+#line 137 "examples/logs/mask.hero"
     goto bb4;
-#line 134 "examples/logs/mask.hero"
+#line 137 "examples/logs/mask.hero"
 bb9:
-#line 136 "examples/logs/mask.hero"
+#line 139 "examples/logs/mask.hero"
     t28 = h4_i;
-#line 136 "examples/logs/mask.hero"
+#line 139 "examples/logs/mask.hero"
     t29 = INT64_C(1);
-#line 136 "examples/logs/mask.hero"
+#line 139 "examples/logs/mask.hero"
     if (__builtin_add_overflow(t28, t29, &t30)) hero_panic_overflow();
-#line 136 "examples/logs/mask.hero"
+#line 139 "examples/logs/mask.hero"
     h3_start = t30;
-#line 136 "examples/logs/mask.hero"
+#line 139 "examples/logs/mask.hero"
     goto bb4;
-#line 136 "examples/logs/mask.hero"
+#line 139 "examples/logs/mask.hero"
 bb10:
-#line 135 "examples/logs/mask.hero"
+#line 138 "examples/logs/mask.hero"
     t26 = h6_piece;
-#line 135 "examples/logs/mask.hero"
+#line 138 "examples/logs/mask.hero"
     hero_array_push_owned(&h2_out, &t26);
-#line 135 "examples/logs/mask.hero"
+#line 138 "examples/logs/mask.hero"
     goto bb9;
-#line 135 "examples/logs/mask.hero"
+#line 138 "examples/logs/mask.hero"
 bb11:
-#line 135 "examples/logs/mask.hero"
+#line 138 "examples/logs/mask.hero"
     goto bb9;
 #line 4736 "main.c"
 }

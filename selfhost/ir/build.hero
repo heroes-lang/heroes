@@ -220,7 +220,7 @@ function emit(@b: Lowering, op: ir.OpKind, ty: i64, span: token.Span) -> i64
 # An instruction with no destination: a store, a copy-out, a call to a
 # function that returns nothing.
 function emit_void(@b: Lowering, op: ir.OpKind, ty: i64, span: token.Span)
-    push_inst(@b, ir.Inst(dest: fail("none", "no destination"), op: op, ty: ty, span: span))
+    push_inst(@b, ir.Inst(dest: fail(code: "none", msg: "no destination"), op: op, ty: ty, span: span))
 
 function push_inst(@b: Lowering, inst: ir.Inst)
     if is_terminated(b)
@@ -349,7 +349,7 @@ test "a block ends once, and nothing lands after the terminator"
     terminate(@b, .jump(to: exit_block))
 
     # Both of these must bounce off the ended block.
-    terminate(@b, .return_term(value: fail("none", "no value")))
+    terminate(@b, .return_term(value: fail(code: "none", msg: "no value")))
     _ = emit(@b, op: .lit(value: .bool_const(value: false)), ty: 0, span: token.Span(start: 0, end: 1))
 
     match b.building.blocks[0].term

@@ -53,7 +53,7 @@ function extern_named(decls: [ast.Decl], s: source.Source, name: str) -> i64?
 
         at @ at + 1
 
-    return fail("absent", "no extern is declared under that name")
+    return fail(code: "absent", msg: "no extern is declared under that name")
 
 # The library's `validated`, which is what copies the bytes out (§4.19,
 # `selfhost/library_source.hero`). **Asked for by name AND by origin**: a
@@ -71,7 +71,7 @@ function library_validated(decls: [ast.Decl], s: source.Source) -> i64?
 
         at @ at + 1
 
-    return fail("absent", "the library carries no `validated`")
+    return fail(code: "absent", msg: "the library carries no `validated`")
 
 # What the freer's one parameter is declared as, which is what the cast must
 # produce. Read from the declaration rather than assumed to be `ptr`: §4.19
@@ -81,12 +81,12 @@ function freer_parameter(c: state.Checked, decls: [ast.Decl], at: i64) -> i64?
     match decls[at].kind
         .function_decl fd =>
             if fd.value.params.len() != 1
-                return fail("absent", "a freer takes exactly one pointer")
+                return fail(code: "absent", msg: "a freer takes exactly one pointer")
 
             return state.written_type(c, fd.value.params[0].ty)
-        .constant_decl | .record_decl | .variant_decl | .test_decl => return fail("absent", "not a function")
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return fail(code: "absent", msg: "not a function")
 
-    return fail("absent", "unreached")
+    return fail(code: "absent", msg: "unreached")
 
 # The release itself: copy, guard, free, hand over.
 #
@@ -145,9 +145,9 @@ function release(@b: build.Lowering, c: state.Checked, raw: i64, freer_at: i64, 
 function mark_of(decls: [ast.Decl], at: i64) -> token.Span?
     match decls[at].kind
         .function_decl fd                                          => return fd.value.owned_result
-        .constant_decl | .record_decl | .variant_decl | .test_decl => return fail("absent", "not a function")
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return fail(code: "absent", msg: "not a function")
 
-    return fail("absent", "unreached")
+    return fail(code: "absent", msg: "unreached")
 
 # A call to a top-level name, and its release when that name is marked.
 #
@@ -295,18 +295,18 @@ function parameter_mark(decls: [ast.Decl], at: i64, index: i64) -> token.Span?
     match decls[at].kind
         .function_decl fd =>
             if index >= fd.value.params.len()
-                return fail("absent", "no parameter at that position")
+                return fail(code: "absent", msg: "no parameter at that position")
 
             return fd.value.params[index].owned
-        .constant_decl | .record_decl | .variant_decl | .test_decl => return fail("absent", "not a function")
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return fail(code: "absent", msg: "not a function")
 
-    return fail("absent", "unreached")
+    return fail(code: "absent", msg: "unreached")
 
 # What the signature says it returns, which for a marked one is not what the
 # program sees.
 function declared_result(c: state.Checked, decls: [ast.Decl], at: i64) -> i64?
     match decls[at].kind
         .function_decl fd                                          => return state.written_type(c, fd.value.result)
-        .constant_decl | .record_decl | .variant_decl | .test_decl => return fail("absent", "not a function")
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return fail(code: "absent", msg: "not a function")
 
-    return fail("absent", "unreached")
+    return fail(code: "absent", msg: "unreached")

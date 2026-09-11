@@ -69,7 +69,7 @@ function valid(d: Date) -> bool
 # every calendar uses and the one an index-from-zero habit gets wrong.
 function day_of_year(d: Date) -> i64?
     if !valid(d)
-        return fail("bad_date", "no such date")
+        return fail(code: "bad_date", msg: "no such date")
     total: i64 @ d.day
     month: i64 @ 1
 

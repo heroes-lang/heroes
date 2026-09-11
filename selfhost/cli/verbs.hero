@@ -106,7 +106,7 @@ function run_test(path: str, s: source.Source, inv: argv.Invocation, t: toolchai
 
     if level.is_err()
         return .failed_exit
-    none_out: str? = fail("none", "no -o")
+    none_out: str? = fail(code: "none", msg: "no -o")
     options = compile.Options(
         level: level.must(),
         dump_ir: false,

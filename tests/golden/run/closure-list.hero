@@ -33,7 +33,7 @@ function shift(@p: Point, by: i64)
 
 function halve(n: i64) -> i64?
     if n % 2 == 1
-        return fail("odd", "not even")
+        return fail(code: "odd", msg: "not even")
     return ok(n / 2)
 
 function chain(n: i64) -> i64?

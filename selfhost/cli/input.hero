@@ -25,7 +25,7 @@ function read_compilation(path: str, library: str) -> source.Source?
     root = read_file(path)
 
     if root.is_err()
-        return fail("unreadable", "cannot read `" + path + "`")
+        return fail(code: "unreadable", msg: "cannot read `" + path + "`")
     return ok(modules.load_text(path: path, root_text: root.must(), library: library))
 
 # THE ROOT FILE ALONE, for `fmt` and only for `fmt`.
@@ -48,7 +48,7 @@ function read_root_only(path: str) -> source.Source?
     root = read_file(path)
 
     if root.is_err()
-        return fail("unreadable", "cannot read `" + path + "`")
+        return fail(code: "unreadable", msg: "cannot read `" + path + "`")
     return ok(source.new_source(name: path, text: root.must()))
 
 ## Tests

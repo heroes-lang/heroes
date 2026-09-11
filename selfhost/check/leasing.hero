@@ -188,16 +188,16 @@ function place_root(a: ast.Ast, at: i64) -> i64?
         .field f => return place_root(a, at: f.base)
         .index i => return place_root(a, at: i.base)
         .call | .method | .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit => return fail(
-            "none",
-            "not a place"
+            code: "none",
+            msg: "not a place"
         )
-        .null_ptr | .hole | .unary | .binary => return fail("none", "not a place")
+        .null_ptr | .hole | .unary | .binary => return fail(code: "none", msg: "not a place")
         .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => return fail(
-            "none",
-            "not a place"
+            code: "none",
+            msg: "not a place"
         )
 
-    return fail("none", "not a place")
+    return fail(code: "none", msg: "not a place")
 
 function holds_a_lease(a: ast.Ast, r: resolved.Resolved) -> bool
     at: i64 @ 0

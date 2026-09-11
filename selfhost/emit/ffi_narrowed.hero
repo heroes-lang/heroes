@@ -141,7 +141,7 @@ function family(line: str) -> str?
 
     if ffi_lookup.has(text: line, needle: MISMATCHED)
         return ok(MISMATCHED)
-    return fail("none", "not a conversion line")
+    return fail(code: "none", msg: "not a conversion line")
 
 # A parameter declared wider than the header's, which C narrows in
 # silence. The declaration is found by LINE, and the offending
@@ -156,20 +156,20 @@ function parameter_width(s: source.Source, decls: [ast.Decl], p: containers.Prog
     # had. The two questions are different: this one asks whether the
     # types convert, that one whether C may WRITE through the pointer.
     if ffi_lookup.has(text: line, needle: ffi_lookup.DISCARDS)
-        return fail("none", "the mutable class owns this line")
+        return fail(code: "none", msg: "the mutable class owns this line")
     sorted = family(line)
 
     if sorted.is_err()
-        return fail("none", "not a conversion line")
+        return fail(code: "none", msg: "not a conversion line")
     kind = sorted.must()
     at = ffi_site.location(s, line: line)
 
     if at.is_err()
-        return fail("none", "no usable location")
+        return fail(code: "none", msg: "no usable location")
     c_type = ffi_site.last_quoted(at.must().rest)
 
     if c_type.is_err()
-        return fail("none", "no header type on the line")
+        return fail(code: "none", msg: "no header type on the line")
 
     # The diagnostic fires whether or not the type has a Heroes
     # spelling, and only the Fix consults the table (panel 071's
@@ -194,7 +194,7 @@ function parameter_width(s: source.Source, decls: [ast.Decl], p: containers.Prog
     found = ffi_site.extern_at_line(p, s, decls, file: at.must().file, at_line: at.must().line)
 
     if found.is_err()
-        return fail("none", "no extern is declared at that line")
+        return fail(code: "none", msg: "no extern is declared at that line")
     f = found.must().f
     name = found.must().name
 
@@ -209,7 +209,7 @@ function parameter_width(s: source.Source, decls: [ast.Decl], p: containers.Prog
     )
 
     if parameters.is_err()
-        return fail("none", "a parameter with no C spelling")
+        return fail(code: "none", msg: "a parameter with no C spelling")
     arguments = extern_probe.probe_arguments(f, c)
     module = source.component_at(s, decls[f.decl].span.start)
     probe = extern_probe.probe_name(module: module, name: name)

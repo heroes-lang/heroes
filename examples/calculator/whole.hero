@@ -158,7 +158,7 @@ function tokenize(text: str) -> [Token]?
             out @ out.push(.rparen)
             advance(@l)
         else
-            return fail(ERR_UNKNOWN_CHAR, "at position " + l.pos.to_str())
+            return fail(code: ERR_UNKNOWN_CHAR, msg: "at position " + l.pos.to_str())
 
     return ok(out)
 
@@ -211,7 +211,7 @@ function parse_advance(@p: Parse)
 # A number, a name, or a parenthesised expression.
 function factor(@p: Parse) -> Expr?
     if p.parse_at_end()
-        return fail(ERR_UNEXPECTED_END, "the expression ends too soon")
+        return fail(code: ERR_UNEXPECTED_END, msg: "the expression ends too soon")
 
     t = p.parse_here()
     parse_advance(@p)
@@ -220,17 +220,17 @@ function factor(@p: Parse) -> Expr?
         .num n                   => ok(.num(v: n.v))
         .name x                  => ok(.variable(name: x.s))
         .lparen                  => group(@p)
-        .plus | .times | .rparen => fail(ERR_EXPECTED_FACTOR, "found an operator")
+        .plus | .times | .rparen => fail(code: ERR_EXPECTED_FACTOR, msg: "found an operator")
 
 # An expression followed by its closing paren.
 function group(@p: Parse) -> Expr?
     inner = expression(@p)?
 
     if p.parse_at_end()
-        return fail(ERR_UNCLOSED_PAREN, "missing closing paren")
+        return fail(code: ERR_UNCLOSED_PAREN, msg: "missing closing paren")
 
     if p.parse_here() != .rparen
-        return fail(ERR_UNCLOSED_PAREN, "missing closing paren")
+        return fail(code: ERR_UNCLOSED_PAREN, msg: "missing closing paren")
     parse_advance(@p)
     return ok(inner)
 
@@ -265,7 +265,7 @@ function expression(@p: Parse) -> Expr?
 # The value bound to a name, with a decent message if absent.
 function lookup(env: {str: i64}, name: str) -> i64?
     if env[name].is_err()
-        return fail(ERR_UNKNOWN_NAME, "undefined variable: " + name)
+        return fail(code: ERR_UNKNOWN_NAME, msg: "undefined variable: " + name)
     return ok(env[name].must())
 
 function sum_of(children: [Expr], env: {str: i64}) -> i64?
@@ -318,7 +318,7 @@ function calculate(text: str, env: {str: i64}) -> i64?
     tree = expression(@p)?
 
     if !p.parse_at_end()
-        return fail(ERR_TRAILING_TOKENS, "leftover input at the end")
+        return fail(code: ERR_TRAILING_TOKENS, msg: "leftover input at the end")
     return evaluate(tree, env)
 
 test "precedence and parens"

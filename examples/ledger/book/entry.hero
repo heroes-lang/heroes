@@ -25,10 +25,10 @@ record Amount
 # silently become a different number.
 function amount(units: i64, cents: i64) -> Amount?
     if cents < 0 || cents > 99
-        return fail("bad_cents", "cents are 0 to 99, not " + cents.to_str())
+        return fail(code: "bad_cents", msg: "cents are 0 to 99, not " + cents.to_str())
 
     if units < 0
-        return fail("negative_units", "build a negative amount by negating a positive one")
+        return fail(code: "negative_units", msg: "build a negative amount by negating a positive one")
     return ok(Amount(cents: units * 100 + cents))
 
 function negated(a: Amount) -> Amount
@@ -151,7 +151,7 @@ function kind_of(name: str, all_accounts: [Account]) -> str?
         if a.name == name
             return ok(a.kind)
 
-    return fail("unknown_account", "no account is named " + name)
+    return fail(code: "unknown_account", msg: "no account is named " + name)
 
 test "an amount is cents, and the shapes that would lose money are refused"
     assert amount(units: 12, cents: 34).must().cents == 1234

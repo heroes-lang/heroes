@@ -58,7 +58,7 @@ function location(s: source.Source, line: str) -> Located?
     head = ffi_lookup.char_index_of(text: line, needle: ": ")
 
     if head.is_err()
-        return fail("none", "not a file:line:col report")
+        return fail(code: "none", msg: "not a file:line:col report")
     end = head.must()
     stops: [i64] @ []
     index: i64 @ 0
@@ -69,7 +69,7 @@ function location(s: source.Source, line: str) -> Located?
         index @ index + 1
 
     if stops.len() < 2
-        return fail("none", "not a file:line:col report")
+        return fail(code: "none", msg: "not a file:line:col report")
     at_col = stops[stops.len() - 1]
     at_row = stops[stops.len() - 2]
     file_name = slice_chars(cs, from: 0, to: at_row)
@@ -77,7 +77,7 @@ function location(s: source.Source, line: str) -> Located?
     col = ffi_lookup.number(slice_chars(cs, from: at_col + 1, to: end))
 
     if row.is_err() || col.is_err()
-        return fail("none", "the position is not numeric")
+        return fail(code: "none", msg: "the position is not numeric")
     at: i64 @ -1
     counter: i64 @ 0
 
@@ -87,7 +87,7 @@ function location(s: source.Source, line: str) -> Located?
         counter @ counter + 1
 
     if at == -1
-        return fail("none", "not one of this compilation's own files")
+        return fail(code: "none", msg: "not one of this compilation's own files")
     return ok(
         Located(file: at, line: row.must(), col: col.must(), rest: slice_chars(cs, from: end + 1, to: cs.len()))
     )
@@ -116,7 +116,7 @@ function extern_at_line(p: containers.Program, s: source.Source, decls: [ast.Dec
             continue
         return ok(ExternAt(f: f, name: source.span_text(s, decls[f.decl].name)))
 
-    return fail("none", "no extern is declared at that line")
+    return fail(code: "none", msg: "no extern is declared at that line")
 
 # The content between the LAST two quotes on the line — the header's
 # type, which is what the parameter should be declared as.
@@ -136,7 +136,7 @@ function last_quoted(text: str) -> str?
         index @ index - 1
 
     if close == -1 || open == -1
-        return fail("none", "no quoted type on the line")
+        return fail(code: "none", msg: "no quoted type on the line")
     return ok(slice_chars(cs, from: open + 1, to: close))
 
 ## Tests

@@ -234,7 +234,12 @@ test "the fixpoint: a unit payload silences its own feeding load"
         ir.Inst(dest: ok(2), op: .payload(base: 1, at: 0), ty: unit_id, span: span)
     ]
     preds: [i64] = []
-    blk = containers.Block(preds: preds, insts: insts, term: .return_term(value: fail("none", "bare")), note: "t")
+    blk = containers.Block(
+        preds: preds,
+        insts: insts,
+        term: .return_term(value: fail(code: "none", msg: "bare")),
+        note: "t"
+    )
     slots: [containers.Slot] = [containers.Slot(name: "r", ty: int_id, kind: .local_slot)]
     f = containers.Function(
         name: "t",

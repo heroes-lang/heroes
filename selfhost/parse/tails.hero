@@ -54,12 +54,12 @@ function is_from_c(l: Linkage) -> bool
 
 function linkage_header(l: Linkage) -> token.Span?
     return match l
-        .heroes   => fail("absent", "an ordinary declaration has no header")
+        .heroes   => fail(code: "absent", msg: "an ordinary declaration has no header")
         .from_c x => ok(x.header)
 
 function linkage_library(l: Linkage) -> ast.Library?
     return match l
-        .heroes   => fail("absent", "an ordinary declaration names no library")
+        .heroes   => fail(code: "absent", msg: "an ordinary declaration names no library")
         .from_c x => x.library
 
 # Rust's `here_or` falls back to the declaration's own keyword when the
@@ -95,7 +95,7 @@ function constant_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text:
 
     # An `extern` constant has no body, and an indented one under it is the
     # mistake `body_check` names. Everything else keeps the old shape.
-    body: ast.Block? @ fail("absent", "an extern constant's value is the header's")
+    body: ast.Block? @ fail(code: "absent", msg: "an extern constant's value is the header's")
 
     if is_from_c(linkage)
         body_check(@c, "constant")
@@ -135,7 +135,7 @@ function function_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text:
     # `-> cstr owned sqlite3_free`: the freer rides the RESULT and is read
     # right after its type, which is the only place it can be — a signature
     # with no arrow hands nothing back for anybody to free (§4.19, panel 109).
-    owned_result: token.Span? @ fail("none", "nothing to free")
+    owned_result: token.Span? @ fail(code: "none", msg: "nothing to free")
 
     if cursor.eat(@c, .arrow)
         result @ type.parse_type(@c, @a, text)
@@ -146,7 +146,7 @@ function function_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text:
             @a.types,
             ast.TypeNode(kind: .unit, span: token.Span(start: here.start, end: here.start))
         )
-    body: ast.Block? @ fail("absent", "an extern function's code comes from C")
+    body: ast.Block? @ fail(code: "absent", msg: "an extern function's code comes from C")
 
     if is_extern
         body_check(@c, "function")
@@ -209,7 +209,7 @@ function record_with_doc(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], tex
 # error on purpose: one order that parses is one order to learn.
 function tag_marker(@c: cursor.Cursor, text: str, in_group: bool) -> token.Span?
     if !in_group || !cursor.at(c, .ident) || cursor.slice_of(text, cursor.current_span(c)) != "tag"
-        return fail("absent", "no tag clause")
+        return fail(code: "absent", msg: "no tag clause")
     keyword = cursor.bump(@c).span
 
     if !cursor.at(c, .ident)
@@ -219,7 +219,7 @@ function tag_marker(@c: cursor.Cursor, text: str, in_group: bool) -> token.Span?
             message: "`tag` names the struct tag C uses for this type: `record FileStat tag stat`",
             span: here_or(c, keyword)
         )
-        return fail("absent", "the tag's name is missing")
+        return fail(code: "absent", msg: "the tag's name is missing")
     return ok(cursor.bump(@c).span)
 
 # `partial` after a group `record`'s name, if it is there.

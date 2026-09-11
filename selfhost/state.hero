@@ -55,7 +55,7 @@ function new_state() -> LexState
         holes: holes,
         tokens: tokens,
         diagnostics: diagnostics,
-        last_significant: fail(ERR_NO_SIGNIFICANT, "no significant token yet")
+        last_significant: fail(code: ERR_NO_SIGNIFICANT, msg: "no significant token yet")
     )
 
 ## Emitting

@@ -53,11 +53,11 @@ function build_array(c: state.Checked, names: ctype.Names, result: i64, argument
         .case_ty | .failure | .generic | .error                   => element @ element
 
     if element < 0
-        return fail("none", "not an array")
+        return fail(code: "none", msg: "not an array")
     desc = descriptors.pointer(c, names, ty: element)
 
     if desc.is_err()
-        return fail("none", "no descriptor for the element")
+        return fail(code: "none", msg: "no descriptor for the element")
     hint: i64 @ arguments.len()
 
     if hint < 1
@@ -124,11 +124,11 @@ function read_element(c: state.Checked, s: source.Source, decls: [ast.Decl], nam
         .case_ty | .failure | .generic | .error                   => element @ element
 
     if element < 0
-        return fail("none", "not an array")
+        return fail(code: "none", msg: "not an array")
     spelling = ctype.c_type(names, c: c, ty: element)
 
     if spelling.is_err()
-        return fail("none", "an element with no C type")
+        return fail(code: "none", msg: "an element with no C type")
     return ok(
         "*(" + spelling.must() + " const *)hero_array_at(" + mangle.value(base) + ", " + mangle.value(index) + ")"
     )
@@ -155,7 +155,7 @@ function write_element(c: state.Checked, names: ctype.Names, s: source.Source, d
                 found = aggregate.field(c, s, decls, owner: ty, index: fs.at)
 
                 if found.is_err()
-                    return fail("none", "not a field of this type")
+                    return fail(code: "none", msg: "not a field of this type")
                 lvalue @ lvalue + "." + found.must().member
                 ty @ found.must().ty
 
@@ -184,7 +184,7 @@ function write_element(c: state.Checked, names: ctype.Names, s: source.Source, d
                                 sat = ctype.satellite_name(names, c, ty: ty)
 
                                 if sat.is_err()
-                                    return fail("none", "a counted field with no release")
+                                    return fail(code: "none", msg: "a counted field with no release")
                                 release @ sat.must() + "_release(&(" + lvalue + "));"
                             .int_ty | .float_ty | .bool | .ptr | .cstr | .unit => release @ release
                             .fixed | .function_ty | .generic | .error          => release @ release
@@ -207,14 +207,14 @@ function write_element(c: state.Checked, names: ctype.Names, s: source.Source, d
 
                 if is_map
                     if !last
-                        return fail("none", "a map step must end the walk")
+                        return fail(code: "none", msg: "a map step must end the walk")
                     lines @ lines.push(
                         "hero_map_set(&(" + lvalue + "), &" + mangle.value(ix.value) + ", &" + mangle.value(value) + ");"
                     )
                     return ok(lines)
 
                 if element < 0
-                    return fail("none", "not a container step")
+                    return fail(code: "none", msg: "not a container step")
 
                 if last
                     lines @ lines.push(
@@ -225,13 +225,13 @@ function write_element(c: state.Checked, names: ctype.Names, s: source.Source, d
                 spelling = ctype.c_type(names, c: c, ty: element)
 
                 if spelling.is_err()
-                    return fail("none", "an element with no C type")
+                    return fail(code: "none", msg: "an element with no C type")
                 lvalue @ "(*(" + spelling.must() + " *)hero_array_at_mut(" + lvalue + ", " + mangle.value(ix.value) + "))"
                 ty @ element
 
         position @ position + 1
 
-    return fail("none", "not an element write")
+    return fail(code: "none", msg: "not an element write")
 
 # t5 = hero_map_new(&hero_desc_str, &hero_desc_int, 2); plus one put per
 # pair — the arguments alternate key, value, both in by address.
@@ -248,12 +248,12 @@ function build_map(c: state.Checked, names: ctype.Names, result: i64, arguments:
         .case_ty | .failure | .generic | .error                   => key @ key
 
     if key < 0
-        return fail("none", "not a map")
+        return fail(code: "none", msg: "not a map")
     key_desc = descriptors.pointer(c, names, ty: key)
     value_desc = descriptors.pointer(c, names, ty: value_ty)
 
     if key_desc.is_err() || value_desc.is_err()
-        return fail("none", "a side with no descriptor")
+        return fail(code: "none", msg: "a side with no descriptor")
     pairs = arguments.len() / 2
     lines: [str] @ [
         into + " = hero_map_new(" + key_desc.must() + ", " + value_desc.must() + ", " + pairs.to_str() + ");"
@@ -281,7 +281,7 @@ function map_get(c: state.Checked, names: ctype.Names, f: containers.Function, m
         .case_ty | .failure | .generic | .error                   => value_ty @ value_ty
 
     if value_ty < 0
-        return fail("none", "not a map")
+        return fail(code: "none", msg: "not a map")
     option = ctype.option_of(names, ty: result)
     lines: [str] @ ["{"]
     lines @ lines.push(
@@ -298,7 +298,7 @@ function map_get(c: state.Checked, names: ctype.Names, f: containers.Function, m
         desc = descriptors.pointer(c, names, ty: value_ty)
 
         if desc.is_err()
-            return fail("none", "a value with no descriptor")
+            return fail(code: "none", msg: "a value with no descriptor")
         lines @ lines.push("    (" + desc.must() + ")->copy(&" + into + ".as.ok, found);")
     lines @ lines.push("  }")
     lines @ lines.push("}")

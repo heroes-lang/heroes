@@ -18,7 +18,12 @@ record Binding
 
 # A parameter. Its type is always written (§4.4), and `@` makes it in-out.
 function param_binding(ty: i64, mutable: bool) -> Binding
-    return Binding(kind: .param, mutable: mutable, ty: ok(ty), value: fail("absent", "a parameter has no initialiser"))
+    return Binding(
+        kind: .param,
+        mutable: mutable,
+        ty: ok(ty),
+        value: fail(code: "absent", msg: "a parameter has no initialiser")
+    )
 
 # `x = e`, or `xs: [i64] = []` where the empty literal needs the annotation.
 function bind_binding(ty: i64?, value: i64) -> Binding
@@ -34,7 +39,7 @@ function loop_binding(iterable: i64) -> Binding
     return Binding(
         kind: .loop_var,
         mutable: false,
-        ty: fail("absent", "a loop variable's type comes from the iterable"),
+        ty: fail(code: "absent", msg: "a loop variable's type comes from the iterable"),
         value: ok(iterable)
     )
 
@@ -43,6 +48,6 @@ function payload_binding() -> Binding
     return Binding(
         kind: .payload,
         mutable: false,
-        ty: fail("absent", "a payload's type comes from its case"),
-        value: fail("absent", "a payload has no initialiser")
+        ty: fail(code: "absent", msg: "a payload's type comes from its case"),
+        value: fail(code: "absent", msg: "a payload has no initialiser")
     )

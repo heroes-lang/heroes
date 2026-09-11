@@ -39,7 +39,7 @@ function run(code: [i64], fuel: i64) -> [str]?
         left @ left - 1
 
         if m.pc < 0 || m.pc + program.WORDS > code.len()
-            return fail(ERR_RAN_OFF_THE_END, "the machine stepped past the last instruction")
+            return fail(code: ERR_RAN_OFF_THE_END, msg: "the machine stepped past the last instruction")
         opcode = code[m.pc]
         a = code[m.pc + 1]
         b = code[m.pc + 2]
@@ -48,7 +48,7 @@ function run(code: [i64], fuel: i64) -> [str]?
             return ok(m.output)
         _ = step(@m, opcode: opcode, a: a, b: b)?
 
-    return fail(ERR_OUT_OF_FUEL, "the program ran for " + fuel.to_str() + " steps without halting")
+    return fail(code: ERR_OUT_OF_FUEL, msg: "the program ran for " + fuel.to_str() + " steps without halting")
 
 # One instruction. The program counter moves here and nowhere else, so a jump is
 # the arm that does *not* fall through to the advance.
@@ -71,7 +71,7 @@ function step(@m: Machine, opcode: i64, a: i64, b: i64) -> i64?
             m.pc @ b
             return ok(opcode)
     else
-        return fail(ERR_BAD_OPCODE, "the code holds " + opcode.to_str() + ", which is not an instruction")
+        return fail(code: ERR_BAD_OPCODE, msg: "the code holds " + opcode.to_str() + ", which is not an instruction")
     m.pc @ m.pc + program.WORDS
     return ok(opcode)
 

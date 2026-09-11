@@ -24,7 +24,7 @@
 # converge, one of these two functions stops compiling and says so.
 
 function positional() -> i64?
-    return fail("negative", "the document's own spelling, at spec:146")
+    return fail(code: "negative", msg: "the document's own spelling, at spec:146")
 
 function labelled() -> i64?
     return fail(code: "negative", msg: "the spelling spec:106's rule implies")

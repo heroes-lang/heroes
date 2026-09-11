@@ -42,7 +42,7 @@ record Spelling
 # a constant to be tabled; it is a question about the target, and
 # word_bits carries the answer in.
 function spelling(c_type: str, word_bits: i64) -> Spelling?
-    no_caveat: str? = fail("none", "no caveat")
+    no_caveat: str? = fail(code: "none", msg: "no caveat")
 
     if c_type == "void *"
         return ok(Spelling(heroes: "ptr", caveat: no_caveat))
@@ -129,7 +129,7 @@ function spelling(c_type: str, word_bits: i64) -> Spelling?
     # A C type absent from this table means the class DECLINES — clang's
     # own verdict is still printed, and the compiler does not pretend
     # to know the repair. `long double` is the live example.
-    return fail("none", "no Heroes spelling for this C type")
+    return fail(code: "none", msg: "no Heroes spelling for this C type")
 
 # The spelling for a C type whose width is the machine's word, with
 # the note that says so. The width both ways round, so the sentence is

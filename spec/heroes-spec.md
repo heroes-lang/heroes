@@ -101,7 +101,7 @@ arrived fallible is still dropped.
 Shadowing is a compile error: a `use` binds its name for the whole file, so nothing else in the file may take it.
 
 ## 6. Failure: `T?`
-A `T?` is a `T` or an error: `ok(v)` or `fail(code, msg)`; `ok()` is the `()?`. Codes are stable
+A `T?` is a `T` or an error: `ok(v)` or `fail(code:, msg:)`; `ok()` is the `()?`. Codes are stable
 snake_case strings; read `e.code` and `e.msg`. No exceptions exist.
 An abort ends the program at once, saying why; no `T?` carries one.
 
@@ -116,7 +116,7 @@ An abort ends the program at once, saying why; no `T?` carries one.
 ```
 function head(xs: [str]) -> str?
     if xs.len() == 0
-        return fail("empty", "no first element")
+        return fail(code: "empty", msg: "no first element")
     return ok(xs[0])
 
 match head(names)
@@ -212,7 +212,7 @@ Built-ins: `print(...)` · `len` · `push` · `slice(from:, to:)` ·
 `to_u32` `to_u64` — and, written in Heroes: `map` · `filter`, keeping what
 the function accepts · `fold` (left, accumulator first) · `find` (the first it accepts, else `not_found`) ·
 `any` · `all` · `range`.
-`slice(from:, to:)` and `range(from: a, to: b) -> [i64]` exclude `to`.
+`slice` and `range(from: a, to: b) -> [i64]` exclude `to`.
 `print` writes its values with no
 separator and exactly one trailing newline, and takes the types this language
 renders as text: a number, `str` or `bool`. A float prints a point or

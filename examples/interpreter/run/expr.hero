@@ -69,7 +69,7 @@ function looked_up(f: value.Frame, word: str) -> Answer?
     held = f.vars[word]
 
     if held.is_err()
-        return fail(ERR_NAME, "`" + word + "` has no value — nothing has been let to that name")
+        return fail(code: ERR_NAME, msg: "`" + word + "` has no value — nothing has been let to that name")
 
     return ok(Answer(frame: f, got: held.must()))
 
@@ -78,7 +78,7 @@ function negated(nodes: tree.Tree, id: i64, f: value.Frame, call: (function(valu
     n = value.number_of(inner.got)?
 
     if n == MIN
-        return fail(ERR_MATH, "negating the smallest number has no answer that fits")
+        return fail(code: ERR_MATH, msg: "negating the smallest number has no answer that fits")
 
     return ok(Answer(frame: inner.frame, got: .number(v: 0 - n)))
 
@@ -151,7 +151,7 @@ function ordered(op: tree.Op, a: i64, b: i64) -> value.Value?
     if op == .greater_equal
         return ok(.truth(b: a >= b))
 
-    return fail(ERR_TYPE, "`" + tree.shown_op(op) + "` does not take two values here")
+    return fail(code: ERR_TYPE, msg: "`" + tree.shown_op(op) + "` does not take two values here")
 
 function is_text(v: value.Value) -> bool
     return match v
@@ -223,7 +223,7 @@ function size_of(n: i64) -> i64
 
 function over(a: i64, b: i64) -> i64?
     if b == 0
-        return fail(ERR_MATH, "dividing " + a.to_str() + " by zero has no answer")
+        return fail(code: ERR_MATH, msg: "dividing " + a.to_str() + " by zero has no answer")
 
     # The one division that overflows: the smallest number by -1. Heroes aborts
     # on it and the spec says so, so it is a refusal here.
@@ -234,7 +234,7 @@ function over(a: i64, b: i64) -> i64?
 
 function rest(a: i64, b: i64) -> i64?
     if b == 0
-        return fail(ERR_MATH, "the remainder of " + a.to_str() + " by zero has no answer")
+        return fail(code: ERR_MATH, msg: "the remainder of " + a.to_str() + " by zero has no answer")
 
     if a == MIN && b == 0 - 1
         return too_big(a: a, b: b, op: "%")
@@ -243,8 +243,8 @@ function rest(a: i64, b: i64) -> i64?
 
 function too_big(a: i64, b: i64, op: str) -> i64?
     return fail(
-        ERR_MATH,
-        a.to_str() + " " + op + " " + b.to_str() + " does not fit in a 64-bit number"
+        code: ERR_MATH,
+        msg: a.to_str() + " " + op + " " + b.to_str() + " does not fit in a 64-bit number"
     )
 
 # A call: the arguments first, left to right, then the door into

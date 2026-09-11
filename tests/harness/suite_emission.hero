@@ -330,7 +330,7 @@ function emitter(scratch: str, name: str, says: str) -> str?
     made = shell.run(scratch: scratch, program: "chmod", words: ["chmod", "+x", path])?
 
     if made.code != 0
-        return fail("cannot_run", "cannot make " + path + " executable")
+        return fail(code: "cannot_run", msg: "cannot make " + path + " executable")
     return ok(path)
 
 # A one-program store, ready to bless or to compare against.

@@ -42,8 +42,8 @@ function label_table(lines: [program.Line]) -> {str: i64}?
         if line.label != ""
             if !labels[line.label].is_err()
                 return fail(
-                    ERR_DUPLICATE_LABEL,
-                    "line " + line.number.to_str() + ": `" + line.label + "` is defined twice"
+                    code: ERR_DUPLICATE_LABEL,
+                    msg: "line " + line.number.to_str() + ": `" + line.label + "` is defined twice"
                 )
             labels[line.label] @ at
 
@@ -102,7 +102,10 @@ function encode(line: program.Line, labels: {str: i64}) -> [i64]?
     if m == "halt"
         _ = expect(line, 0)?
         return ok([program.OP_HALT, 0, 0])
-    return fail(ERR_UNKNOWN_INSTRUCTION, "line " + line.number.to_str() + ": there is no `" + m + "` instruction")
+    return fail(
+        code: ERR_UNKNOWN_INSTRUCTION,
+        msg: "line " + line.number.to_str() + ": there is no `" + m + "` instruction"
+    )
 
 function opcode_of(m: str) -> i64
     if m == "copy"
@@ -115,8 +118,8 @@ function opcode_of(m: str) -> i64
 function expect(line: program.Line, wanted: i64) -> i64?
     if line.operands.len() != wanted
         return fail(
-            ERR_BAD_OPERAND_COUNT,
-            "line " + line.number.to_str() + ": `" + line.mnemonic + "` takes " + wanted.to_str() + ", not " + line.operands.len().to_str()
+            code: ERR_BAD_OPERAND_COUNT,
+            msg: "line " + line.number.to_str() + ": `" + line.mnemonic + "` takes " + wanted.to_str() + ", not " + line.operands.len().to_str()
         )
     return ok(wanted)
 
@@ -125,7 +128,10 @@ function expect(line: program.Line, wanted: i64) -> i64?
 function target_of(name: str, labels: {str: i64}, number: i64) -> i64?
     match labels[name]
         .ok at => return ok(at * program.WORDS)
-        .err _ => return fail(ERR_UNKNOWN_LABEL, "line " + number.to_str() + ": there is no label `" + name + "`")
+        .err _ => return fail(
+            code: ERR_UNKNOWN_LABEL,
+            msg: "line " + number.to_str() + ": there is no label `" + name + "`"
+        )
 
 test "labels are instruction indices, and blank lines do not count"
     lines = program.read("start:\n\n  load r0, 1   ; one\nagain:\n  print r0\n  jmp again\n")

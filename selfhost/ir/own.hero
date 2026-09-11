@@ -113,17 +113,17 @@ function rewrite(f: containers.Function, c: state.Checked) -> containers.Functio
                     if survives
                         out @ out.push(inst)
                         out @ out.push(
-                            ir.Inst(dest: fail("none", "void"), op: .incref(value: inst.dest.must()), ty: inst.ty, span: inst.span)
+                            ir.Inst(dest: fail(code: "none", msg: "void"), op: .incref(value: inst.dest.must()), ty: inst.ty, span: inst.span)
                         )
                         slot = own_slot(@worked, ty: inst.ty)
                         place = ir.Place(root: slot, path: ir.Run(start: 0, length: 0))
                         old = fresh(next_value: @next_value, worked: @worked, ty: inst.ty)
                         out @ out.push(ir.Inst(dest: ok(old), op: .load(place: place), ty: inst.ty, span: inst.span))
                         out @ out.push(
-                            ir.Inst(dest: fail("none", "void"), op: .store(place: place, value: inst.dest.must()), ty: inst.ty, span: inst.span)
+                            ir.Inst(dest: fail(code: "none", msg: "void"), op: .store(place: place, value: inst.dest.must()), ty: inst.ty, span: inst.span)
                         )
                         out @ out.push(
-                            ir.Inst(dest: fail("none", "void"), op: .decref(value: old), ty: inst.ty, span: inst.span)
+                            ir.Inst(dest: fail(code: "none", msg: "void"), op: .decref(value: old), ty: inst.ty, span: inst.span)
                         )
                         handled @ true
                 # Rule 3: the old value dies when the slot is
@@ -143,18 +143,18 @@ function rewrite(f: containers.Function, c: state.Checked) -> containers.Functio
 
                         if indexed
                             out @ out.push(
-                                ir.Inst(dest: fail("none", "void"), op: .incref(value: st.value), ty: ty, span: inst.span)
+                                ir.Inst(dest: fail(code: "none", msg: "void"), op: .incref(value: st.value), ty: ty, span: inst.span)
                             )
                             out @ out.push(inst)
                         else
                             old = fresh(next_value: @next_value, worked: @worked, ty: ty)
                             out @ out.push(ir.Inst(dest: ok(old), op: .load(place: st.place), ty: ty, span: inst.span))
                             out @ out.push(
-                                ir.Inst(dest: fail("none", "void"), op: .incref(value: st.value), ty: ty, span: inst.span)
+                                ir.Inst(dest: fail(code: "none", msg: "void"), op: .incref(value: st.value), ty: ty, span: inst.span)
                             )
                             out @ out.push(inst)
                             out @ out.push(
-                                ir.Inst(dest: fail("none", "void"), op: .decref(value: old), ty: ty, span: inst.span)
+                                ir.Inst(dest: fail(code: "none", msg: "void"), op: .decref(value: old), ty: ty, span: inst.span)
                             )
                         handled @ true
                 # Rule 6: an aggregate constructor retains every counted
@@ -170,7 +170,7 @@ function rewrite(f: containers.Function, c: state.Checked) -> containers.Functio
 
                                     if layout.is_refcounted(c, arg_ty)
                                         out @ out.push(
-                                            ir.Inst(dest: fail("none", "void"), op: .incref(value: v.value), ty: arg_ty, span: inst.span)
+                                            ir.Inst(dest: fail(code: "none", msg: "void"), op: .incref(value: v.value), ty: arg_ty, span: inst.span)
                                         )
                                 .inout_arg => continue
                 .lit | .push_owned | .unary | .binary | .cast | .call                                   => handled @ handled
@@ -191,10 +191,10 @@ function rewrite(f: containers.Function, c: state.Checked) -> containers.Functio
                 old = fresh(next_value: @next_value, worked: @worked, ty: inst.ty)
                 out @ out.push(ir.Inst(dest: ok(old), op: .load(place: place), ty: inst.ty, span: inst.span))
                 out @ out.push(
-                    ir.Inst(dest: fail("none", "void"), op: .store(place: place, value: inst.dest.must()), ty: inst.ty, span: inst.span)
+                    ir.Inst(dest: fail(code: "none", msg: "void"), op: .store(place: place, value: inst.dest.must()), ty: inst.ty, span: inst.span)
                 )
                 out @ out.push(
-                    ir.Inst(dest: fail("none", "void"), op: .decref(value: old), ty: inst.ty, span: inst.span)
+                    ir.Inst(dest: fail(code: "none", msg: "void"), op: .decref(value: old), ty: inst.ty, span: inst.span)
                 )
 
         worked.blocks[index].insts @ out
@@ -228,7 +228,7 @@ function rewrite(f: containers.Function, c: state.Checked) -> containers.Functio
 
     while index < worked.blocks.len()
         returns: bool @ false
-        returned: i64? @ fail("none", "no value")
+        returned: i64? @ fail(code: "none", msg: "no value")
 
         match worked.blocks[index].term
             .return_term ret =>
@@ -251,7 +251,7 @@ function rewrite(f: containers.Function, c: state.Checked) -> containers.Functio
 
                 if layout.is_refcounted(c, ret_ty)
                     out @ out.push(
-                        ir.Inst(dest: fail("none", "void"), op: .incref(value: returned.must()), ty: ret_ty, span: span)
+                        ir.Inst(dest: fail(code: "none", msg: "void"), op: .incref(value: returned.must()), ty: ret_ty, span: span)
                     )
 
             # **One instruction per swept slot, since panel 106.** This was
@@ -269,7 +269,7 @@ function rewrite(f: containers.Function, c: state.Checked) -> containers.Functio
             for slot_id in sweep
                 ty = worked.slots[slot_id].ty
                 out @ out.push(
-                    ir.Inst(dest: fail("none", "void"), op: .decref_slot(slot: slot_id), ty: ty, span: span)
+                    ir.Inst(dest: fail(code: "none", msg: "void"), op: .decref_slot(slot: slot_id), ty: ty, span: span)
                 )
 
             worked.blocks[index].insts @ out

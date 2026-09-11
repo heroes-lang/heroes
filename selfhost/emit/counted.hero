@@ -104,10 +104,10 @@ function reference_line(c: state.Checked, names: ctype.Names, ty: i64, place: st
             "    " + ctype.case_of(names, decl: vc.decl, at: vc.at) + "_" + verb + "(&" + place + ");"
         )
         .fallible => return ok("    " + ctype.option_of(names, ty: ty) + "_" + verb + "(&" + place + ");")
-        .int_ty | .float_ty | .bool | .ptr | .cstr | .unit => return fail("none", "not a counted type")
-        .fixed | .function_ty | .generic | .error => return fail("none", "not a counted type")
+        .int_ty | .float_ty | .bool | .ptr | .cstr | .unit => return fail(code: "none", msg: "not a counted type")
+        .fixed | .function_ty | .generic | .error => return fail(code: "none", msg: "not a counted type")
 
-    return fail("none", "unreached")
+    return fail(code: "none", msg: "unreached")
 
 # retain/release for a record or a case payload: one call per counted
 # field.

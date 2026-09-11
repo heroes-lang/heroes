@@ -465,7 +465,7 @@ function name_of_field(c: state.Checked, s: source.Source, decls: [ast.Decl], ow
 # The type a field HOLDS, so a path can keep naming its steps past the
 # first one.
 function field_ty_of(c: state.Checked, decls: [ast.Decl], owner: i64, at: i64) -> i64
-    written_id: i64? @ fail("none", "no field")
+    written_id: i64? @ fail(code: "none", msg: "no field")
 
     match table.get(c.types, owner)
         .named n =>

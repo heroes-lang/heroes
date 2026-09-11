@@ -14,17 +14,17 @@ record Point
 function half(n: i64) -> i64?
     if n % 2 == 0
         return ok(n / 2)
-    return fail("odd", "not divisible by two")
+    return fail(code: "odd", msg: "not divisible by two")
 
 function name_of(n: i64) -> str?
     if n == 0
         return ok("zero")
-    return fail("unknown", "no name")
+    return fail(code: "unknown", msg: "no name")
 
 function origin(flag: bool) -> Point?
     if flag
         return ok(Point(x: 0, y: 0))
-    return fail("none", "no point")
+    return fail(code: "none", msg: "no point")
 
 function apply(f: (function(i64, i64) -> i64), x: i64, y: i64) -> i64
     return f(x, y)

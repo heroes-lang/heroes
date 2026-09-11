@@ -201,7 +201,7 @@ function generated(c: state.Checked, decls: [ast.Decl], reachable: {i64: bool}, 
 ## Tests
 
 test "the worklist reaches an element, a payload, and expands as it drains"
-    text = "record Point\n    x: i64\n\nrecord Holder\n    maybe: i64?\n\nfunction grab(pts: [Point], flag: bool) -> Point?\n    if flag && pts.len() > 0\n        return ok(pts[0])\n    return fail(\"empty\", \"none\")\n\nfunction main()\n    h = Holder(maybe: ok(3))\n    print(grab([Point(x: 1)], true).is_err() == h.maybe.is_err())\n"
+    text = "record Point\n    x: i64\n\nrecord Holder\n    maybe: i64?\n\nfunction grab(pts: [Point], flag: bool) -> Point?\n    if flag && pts.len() > 0\n        return ok(pts[0])\n    return fail(code: \"empty\", msg: \"none\")\n\nfunction main()\n    h = Holder(maybe: ok(3))\n    print(grab([Point(x: 1)], true).is_err() == h.maybe.is_err())\n"
     p = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(p.tree, s, p.decls, p.uses)

@@ -87,7 +87,7 @@ function declaration(s: source.Source, decls: [ast.Decl], name: str) -> Declared
                     )
             .variant_decl | .test_decl => continue
 
-    return fail("none", "no group declares this name")
+    return fail(code: "none", msg: "no group declares this name")
 
 # The span of the NAME alone, which is what a fix replaces — the
 # declaration's own span covers the whole signature.
@@ -96,7 +96,7 @@ function name_span(s: source.Source, decls: [ast.Decl], name: str) -> token.Span
         if source.span_text(s, decl.name) == name
             return ok(decl.name)
 
-    return fail("none", "no declaration has this name")
+    return fail(code: "none", msg: "no declaration has this name")
 
 # The span of the first declaration whose group names this header —
 # the extern line the author must look at. The same gate as
@@ -107,7 +107,7 @@ function name_span(s: source.Source, decls: [ast.Decl], name: str) -> token.Span
 # at exit 2 for a library that is simply not installed.
 function group_head(s: source.Source, decls: [ast.Decl], header: str) -> token.Span?
     for decl in decls
-        named: token.Span? @ fail("none", "no header")
+        named: token.Span? @ fail(code: "none", msg: "no header")
 
         match decl.kind
             .function_decl fd          => named @ fd.value.header
@@ -121,14 +121,14 @@ function group_head(s: source.Source, decls: [ast.Decl], header: str) -> token.S
         if emit_externs.unquoted(s, span: named.must()) == header
             return ok(decl.span)
 
-    return fail("none", "no group names this header")
+    return fail(code: "none", msg: "no group names this header")
 
 # The span of the first declaration whose group asked about this
 # package — the reason a stray line mentioning a package name cannot
 # become a diagnostic about a program that never asked for it.
 function package_span(s: source.Source, decls: [ast.Decl], name: str) -> token.Span?
     for decl in decls
-        library: ast.Library? @ fail("none", "no library")
+        library: ast.Library? @ fail(code: "none", msg: "no library")
 
         match decl.kind
             .function_decl fd          => library @ fd.value.library
@@ -145,7 +145,7 @@ function package_span(s: source.Source, decls: [ast.Decl], name: str) -> token.S
                     return ok(decl.span)
             .link => continue
 
-    return fail("none", "no group asked for this package")
+    return fail(code: "none", msg: "no group asked for this package")
 
 # One diagnostic per .hero line: clang reports a translation unit, and
 # one mistake in it can produce several lines that all mean the same
@@ -173,7 +173,7 @@ function char_index_of(text: str, needle: str) -> i64?
         return ok(0)
 
     if needle_cs.len() > cs.len()
-        return fail("none", "not found")
+        return fail(code: "none", msg: "not found")
     start: i64 @ 0
 
     while start <= cs.len() - needle_cs.len()
@@ -190,7 +190,7 @@ function char_index_of(text: str, needle: str) -> i64?
             return ok(start)
         start @ start + 1
 
-    return fail("none", "not found")
+    return fail(code: "none", msg: "not found")
 
 # Everything after the FIRST occurrence of marker. The Rust reads
 # split(marker).nth(1) — between the first and second occurrence — but
@@ -201,7 +201,7 @@ function after(text: str, marker: str) -> str?
     at = char_index_of(text: text, needle: marker)
 
     if at.is_err()
-        return fail("none", "marker not present")
+        return fail(code: "none", msg: "marker not present")
     cs = text.chars()
     tail: [str] @ []
     index: i64 @ at.must() + marker.chars().len()
@@ -281,10 +281,10 @@ function number(text: str) -> i64?
             index @ index + 1
 
         if !matched
-            return fail("none", "not a digit")
+            return fail(code: "none", msg: "not a digit")
 
     if !read
-        return fail("none", "empty")
+        return fail(code: "none", msg: "empty")
     return ok(value)
 
 # Rust's .trim(): spaces and tabs off both ends.

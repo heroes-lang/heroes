@@ -96,7 +96,7 @@ function refuse(@c: state.Checker, s: source.Source, decls: [ast.Decl], key: i64
 # costs a named abort rather than a wrong answer.
 function reaches_float(c: state.Checker, s: source.Source, decls: [ast.Decl], ty: i64, depth: i64) -> str?
     if depth > 16
-        return fail("absent", "past any nesting worth naming")
+        return fail(code: "absent", msg: "past any nesting worth naming")
 
     match table.get(c.out.types, ty)
         .float_ty => return ok("")
@@ -112,8 +112,11 @@ function reaches_float(c: state.Checker, s: source.Source, decls: [ast.Decl], ty
                         if !found.is_err()
                             return found
 
-                    return fail("absent", "no payload reaches a float")
-                .constant_decl | .function_decl | .test_decl => return fail("absent", "not a data declaration")
+                    return fail(code: "absent", msg: "no payload reaches a float")
+                .constant_decl | .function_decl | .test_decl => return fail(
+                    code: "absent",
+                    msg: "not a data declaration"
+                )
         .fixed x => return reaches_float(c, s, decls, ty: x.element, depth: depth + 1)
         # [T], {K: V} and T? are not key types today — each is refused
         # before this walk runs — but the arms are here rather than
@@ -128,10 +131,10 @@ function reaches_float(c: state.Checker, s: source.Source, decls: [ast.Decl], ty
             if !in_key.is_err()
                 return in_key
             return reaches_float(c, s, decls, ty: m.value, depth: depth + 1)
-        .int_ty | .bool | .str | .ptr | .cstr | .unit          => return fail("absent", "no float here")
-        .function_ty | .case_ty | .failure | .generic | .error => return fail("absent", "no float here")
+        .int_ty | .bool | .str | .ptr | .cstr | .unit          => return fail(code: "absent", msg: "no float here")
+        .function_ty | .case_ty | .failure | .generic | .error => return fail(code: "absent", msg: "no float here")
 
-    return fail("absent", "unreached")
+    return fail(code: "absent", msg: "unreached")
 
 # The first field or case payload that reaches a float, as a dotted path
 # threaded DOWNWARD. The DEEPEST owner wins, not the full path — Wrapper
@@ -155,7 +158,7 @@ function inside(c: state.Checker, s: source.Source, decls: [ast.Decl], owner: st
             return ok(owner + "." + source.span_text(s, field.name))
         return found
 
-    return fail("absent", "every field is exact")
+    return fail(code: "absent", msg: "every field is exact")
 
 ## Tests
 

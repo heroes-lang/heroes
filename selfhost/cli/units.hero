@@ -85,7 +85,7 @@ function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str
     made = process.mkdir_all(dir)
 
     if made.is_err()
-        return fail("failed", "cannot create " + dir)
+        return fail(code: "failed", msg: "cannot create " + dir)
     c_file = dir + "/" + module + ".c"
     object = dir + "/" + module + ".o"
     saved = dir + "/warnings.txt"
@@ -107,7 +107,7 @@ function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str
     written = write_file(path: c_file, text: tu_text)
 
     if written.is_err()
-        return fail("failed", "cannot write " + c_file)
+        return fail(code: "failed", msg: "cannot write " + c_file)
     err_path = t.build + "/clang-stderr.txt"
     staged = object + ".tmp"
 
@@ -140,7 +140,7 @@ function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str
         # path on screen — printing the path here unconditionally sent
         # `build/tu-…` into diagnostics the surface rows pin as
         # `err_lacks("build/")`, measured on the fixedbugs corpus.
-        return fail("clang", failure_note(compiled) + "\nthe generated C is at " + c_file)
+        return fail(code: "clang", msg: failure_note(compiled) + "\nthe generated C is at " + c_file)
     captured = read_file(err_path)
 
     if !captured.is_err() && captured.must().len() > 0
@@ -153,10 +153,10 @@ function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str
     recorded = deps.record_deps(record_path: deps.record_for(object), depfile: depfile, skip: dir + "/", @memo)
 
     if recorded.is_err()
-        return fail("failed", "cannot record what " + module + "'s translation unit read")
+        return fail(code: "failed", msg: "cannot record what " + module + "'s translation unit read")
 
     if process.rename_over(from: staged, to: object).is_err()
-        return fail("failed", "cannot publish " + object)
+        return fail(code: "failed", msg: "cannot publish " + object)
     return ok(object)
 
 function failure_note(failed: ()?) -> str
@@ -201,5 +201,5 @@ function link_objects(t: toolchain.Toolchain, objects: [str], binary: str, level
         linked?
 
     if process.rename_over(from: staged, to: binary).is_err()
-        return fail("failed", "cannot publish " + binary)
+        return fail(code: "failed", msg: "cannot publish " + binary)
     return ok()

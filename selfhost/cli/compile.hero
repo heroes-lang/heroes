@@ -65,7 +65,7 @@ function level_from(inv: argv.Invocation, default_level: str) -> str?
 
     if zero && two
         io.eprint(text: "error: `-O0` and `-O2` are one choice — ask for one level at a time")
-        return fail("failed", "two levels")
+        return fail(code: "failed", msg: "two levels")
 
     if zero
         return ok("-O0")
@@ -88,7 +88,7 @@ function search_key(headers_from: [str], library: [str]) -> str
 # exit 2 (panel 028 R5).
 function stage(diagnostics: [diag.Diagnostic], s: source.Source) -> cli_table.Exit?
     if diagnostics.len() == 0
-        return fail("none", "silence, carry on")
+        return fail(code: "none", msg: "silence, carry on")
 
     for d in diagnostics
         if source.is_library(s, d.span.start)
@@ -222,7 +222,7 @@ function to_unit(s: source.Source, options: Options, version: str) -> Artifact?
         if c.holes.len() == 1
             unit @ "hole"
         io.eprint(text: "no binary: " + c.holes.len().to_str() + " " + unit + " in " + files.join(", "))
-        return fail("diagnostics", "holes produce no binary")
+        return fail(code: "diagnostics", msg: "holes produce no binary")
 
     # The fused text is the ARTIFACT, and only three invocations want
     # it: `--emit-c`, which prints it; `heroes test`, whose binary is
@@ -258,7 +258,7 @@ function to_unit(s: source.Source, options: Options, version: str) -> Artifact?
 
             if written.is_err()
                 io.eprint(text: "error: cannot write " + options.output.must())
-                return fail("failed", "cannot write the artifact")
+                return fail(code: "failed", msg: "cannot write the artifact")
         return ok(halted(parsed.tree, parsed.decls, c: c, p: p))
 
     # A test build needs no main: the test blocks are the program.
@@ -302,8 +302,8 @@ function to_unit(s: source.Source, options: Options, version: str) -> Artifact?
 # stopping on Windows; the name costs one parameter.
 function leave(verdict: cli_table.Exit, stage_name: str) -> Artifact?
     if verdict == .failed_exit
-        return fail("failed", stage_name + " could not run")
-    return fail("diagnostics", stage_name + " reported")
+        return fail(code: "failed", msg: stage_name + " could not run")
+    return fail(code: "diagnostics", msg: stage_name + " reported")
 
 function broken(problems: [str], what: str) -> Artifact?
     io.eprint(text: "internal error: " + what)
@@ -311,7 +311,7 @@ function broken(problems: [str], what: str) -> Artifact?
     for problem in problems
         io.eprint(text: "  " + problem)
 
-    return fail("failed", "the verifier refused")
+    return fail(code: "failed", msg: "the verifier refused")
 
 ## Tests
 
@@ -321,7 +321,7 @@ test "the two stops, the hole refusal, and the missing main"
         level: "-O0",
         dump_ir: false,
         emit_c: true,
-        output: fail("none", "stdout"),
+        output: fail(code: "none", msg: "stdout"),
         sanitize: false,
         target: .program_build,
         headers_from: no_flags,
@@ -338,7 +338,7 @@ test "the two stops, the hole refusal, and the missing main"
         level: "-O0",
         dump_ir: false,
         emit_c: false,
-        output: fail("none", "no"),
+        output: fail(code: "none", msg: "no"),
         sanitize: false,
         target: .program_build,
         headers_from: no_flags,
@@ -363,7 +363,7 @@ test "the two stops, the hole refusal, and the missing main"
         level: "-O0",
         dump_ir: false,
         emit_c: false,
-        output: fail("none", "no"),
+        output: fail(code: "none", msg: "no"),
         sanitize: false,
         target: .tests_build,
         headers_from: no_flags,
@@ -380,8 +380,8 @@ test "the two stops, the hole refusal, and the missing main"
 
     # level_from: the double ask is refused.
     both: [argv.FlagHit] = [
-        argv.FlagHit(spelling: "-O0", value: fail("none", "n"))
-        argv.FlagHit(spelling: "-O2", value: fail("none", "n"))
+        argv.FlagHit(spelling: "-O0", value: fail(code: "none", msg: "n"))
+        argv.FlagHit(spelling: "-O2", value: fail(code: "none", msg: "n"))
     ]
     inv = argv.Invocation(tag: .build_cmd, file: ok("t.hero"), program_args: [], flags: both)
     assert level_from(inv, default_level: "-O0").is_err()

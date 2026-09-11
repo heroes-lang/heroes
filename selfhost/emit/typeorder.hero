@@ -170,7 +170,7 @@ function needs(c: state.Checked, names: ctype.Names, decls: [ast.Decl], item: i6
 ## Tests
 
 test "cross-kind containment lands each typedef after what it holds"
-    text = "record Box\n    v: i64?\n\nfunction grab(b: Box) -> Box?\n    if b.v.is_err()\n        return fail(\"empty\", \"no value\")\n    return ok(b)\n\nfunction main()\n    got = grab(b: Box(v: ok(3)))\n    if !got.is_err()\n        print(got.must().v.must())\n"
+    text = "record Box\n    v: i64?\n\nfunction grab(b: Box) -> Box?\n    if b.v.is_err()\n        return fail(code: \"empty\", msg: \"no value\")\n    return ok(b)\n\nfunction main()\n    got = grab(b: Box(v: ok(3)))\n    if !got.is_err()\n        print(got.must().v.must())\n"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)

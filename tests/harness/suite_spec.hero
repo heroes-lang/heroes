@@ -60,7 +60,7 @@ constant LEDGER: str
 # table's is — it is the tripwire that makes a SILENTLY DROPPED row fail, which
 # comparing the newest row alone would not.
 constant LEDGER_ROWS: i64
-    63
+    64
 
 # design.md §1.6's figure, pinned — the number `heroes measure` computes from the
 # spec, restated here because something re-derives and compares it on every run.
@@ -108,7 +108,7 @@ constant CEILING: i64
 # passes no secret to a fork's pull request, so such a check is structurally
 # red on every fork PR forever.
 constant REAL_TOKENS: i64
-    5598
+    5599
 
 constant REAL_MODEL: str
     "claude-opus-5"
@@ -120,7 +120,7 @@ constant REAL_TAKEN: str
 # rather than reassuring. `selfhost/cli/digest.hero` computes it and
 # `measure` refuses to give a verdict when it disagrees.
 constant SPEC_DIGEST: str
-    "319c66850e1586bb"
+    "17553bf94f6feb87"
 
 # The operating contract, weighed on the same scale as the language.
 #
@@ -398,7 +398,7 @@ function maximum_of(scratch: str, compiler: str, path: str) -> i64?
     said = shell.run(scratch: scratch, program: compiler, words: [compiler, "measure", path])?
 
     if said.code != 0 && said.code != 1
-        return fail("cannot_measure", "`measure` exited " + said.code.to_str() + ": " + said.err)
+        return fail(code: "cannot_measure", msg: "`measure` exited " + said.code.to_str() + ": " + said.err)
 
     for row in strings.lines(said.out)
         if strings.starts_with(text: row, prefix: "  maximum")
@@ -407,7 +407,7 @@ function maximum_of(scratch: str, compiler: str, path: str) -> i64?
             if words.len() >= 2
                 return strings.to_number(words[1])
 
-    return fail("cannot_measure", "`measure` printed no `maximum` row")
+    return fail(code: "cannot_measure", msg: "`measure` printed no `maximum` row")
 
 # THE TWO INSTRUMENTS AGREE ON WHAT IS SPENDABLE, which is defect 017's
 # repair (2026-09-08, found by panel 118's spec-warden about its own
@@ -911,14 +911,14 @@ function first_quoted(text: str, from: i64) -> str?
         opens @ opens + 1
 
     if opens >= text.len()
-        return fail("unquoted", "no quoted text here")
+        return fail(code: "unquoted", msg: "no quoted text here")
     closes: i64 @ opens + 1
 
     while closes < text.len() && text[closes] != 34
         closes @ closes + 1
 
     if closes >= text.len()
-        return fail("unquoted", "the quote is not closed")
+        return fail(code: "unquoted", msg: "the quote is not closed")
     return ok(text.slice(from: opens + 1, to: closes))
 
 # How far past `from` the first quoted run ends — the cursor step that keeps

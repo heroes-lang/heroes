@@ -80,7 +80,7 @@ function report(diagnostics: [diag.Diagnostic], s: source.Source, inv: argv.Invo
         kept @ kept.push(d)
 
     if kept.len() == 0
-        return fail("none", "nothing to report, carry on")
+        return fail(code: "none", msg: "nothing to report, carry on")
 
     if argv.has(inv, spelling: "--apply")
         # The repair is the artifact here, so the diagnostics stay
@@ -270,10 +270,10 @@ test "stages stop on the first noise, apply repairs, holes stay exit 0"
     # A thesis rule vanishes under --permissive and stays without it.
     unused = "function main()\n    n = 3\n    print(1)\n"
     us = source.new_source(name: "t.hero", text: unused)
-    brief: [argv.FlagHit] = [argv.FlagHit(spelling: "--brief", value: fail("none", "no value"))]
+    brief: [argv.FlagHit] = [argv.FlagHit(spelling: "--brief", value: fail(code: "none", msg: "no value"))]
     binv = argv.Invocation(tag: .check_cmd, file: ok("t.hero"), program_args: [], flags: brief)
     assert run(us, binv) == .diagnostics_exit
-    perm: [argv.FlagHit] = [argv.FlagHit(spelling: "--permissive", value: fail("none", "no value"))]
+    perm: [argv.FlagHit] = [argv.FlagHit(spelling: "--permissive", value: fail(code: "none", msg: "no value"))]
     pinv = argv.Invocation(tag: .check_cmd, file: ok("t.hero"), program_args: [], flags: perm)
     assert run(us, pinv) == .ok_exit
 

@@ -59,16 +59,16 @@ function counts(text: str) -> Counts?
     e = ffi_lookup.after(text: text, marker: "expected ")
 
     if e.is_err()
-        return fail("none", "no count")
+        return fail(code: "none", msg: "no count")
     words = ffi_lookup.words(text: e.must())
 
     if words.len() < 3
-        return fail("none", "no count")
+        return fail(code: "none", msg: "no count")
     expected = ffi_lookup.number(trim_comma(words[0]))
     have = ffi_lookup.number(words[2])
 
     if expected.is_err() || have.is_err()
-        return fail("none", "not numbers")
+        return fail(code: "none", msg: "not numbers")
     return ok(Counts(expected: expected.must(), have: have.must()))
 
 function trim_comma(text: str) -> str
@@ -83,20 +83,20 @@ function call_shape(s: source.Source, decls: [ast.Decl], p: containers.Program, 
     format = ffi_lookup.has(text: line, needle: NOT_A_LITERAL)
 
     if !arity && !format
-        return fail("none", "not a call-shape line")
+        return fail(code: "none", msg: "not a call-shape line")
     at = ffi_site.location(s, line: line)
 
     if at.is_err()
-        return fail("none", "no usable location")
+        return fail(code: "none", msg: "no usable location")
     found = ffi_site.extern_at_line(p, s, decls, file: at.must().file, at_line: at.must().line)
 
     if found.is_err()
-        return fail("none", "no extern is declared at that line")
+        return fail(code: "none", msg: "no extern is declared at that line")
     name = found.must().name
     declared = ffi_lookup.declaration(s, decls, name: name)
 
     if declared.is_err()
-        return fail("none", "no group declares this name")
+        return fail(code: "none", msg: "no group declares this name")
     header = declared.must().header
     span = declared.must().span
 

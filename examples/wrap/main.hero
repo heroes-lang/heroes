@@ -40,7 +40,7 @@ function words_of(text: str) -> [str]
 
 function wrapped(text: str, width: i64) -> [str]?
     if width < 1
-        return fail("bad_width", "a width below one leaves nowhere to put a word")
+        return fail(code: "bad_width", msg: "a width below one leaves nowhere to put a word")
     lines: [str] @ []
     current: str @ ""
 

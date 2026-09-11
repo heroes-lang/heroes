@@ -379,7 +379,7 @@ function walk(node: i64, edges: [Edge], state: [i64], stack: [i64], s: source.So
                 return Walked(state: st, ring: inner.ring, ring_span: inner.ring_span)
 
     st[node] @ 2
-    none: token.Span? = fail("none", "no ring from here")
+    none: token.Span? = fail(code: "none", msg: "no ring from here")
     return Walked(state: st, ring: "", ring_span: none)
 
 ## Tests

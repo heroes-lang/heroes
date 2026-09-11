@@ -111,7 +111,7 @@ function with_row(s: Summary, r: row.Row) -> Summary
 # column of real numbers.
 function mean_of(s: Summary) -> f64?
     if s.rows == 0
-        return fail("empty_group", "the mean of no rows is not a number")
+        return fail(code: "empty_group", msg: "the mean of no rows is not a number")
     return ok(s.rate_sum / to_f64(s.rows))
 
 # Whether a row satisfies a filter. Recursive through `both`, which is what

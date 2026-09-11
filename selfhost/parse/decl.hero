@@ -121,7 +121,7 @@ function head(@c: cursor.Cursor, text: str, example: str) -> Head?
                 span: cursor.current_span(c)
             )
         cursor.recover_to_next_decl(@c)
-        return fail("expected_name", "recovered to the next declaration")
+        return fail(code: "expected_name", msg: "recovered to the next declaration")
     return ok(Head(keyword: keyword, doc: doc, name: cursor.bump(@c).span))
 
 ## constant

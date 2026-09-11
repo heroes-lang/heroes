@@ -230,11 +230,11 @@ function locate(operator: str, file: str, original: str, mutant: str) -> Survivo
             )
         at @ at + 1
 
-    return fail("identical", "the mutant is the original")
+    return fail(code: "identical", msg: "the mutant is the original")
 
 function at_line(lines: [str], at: i64) -> str?
     if at >= lines.len()
-        return fail("absent", "the mutant has no such line")
+        return fail(code: "absent", msg: "the mutant has no such line")
     return ok(lines[at])
 
 function lines_of(text: str) -> [str]

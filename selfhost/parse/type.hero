@@ -296,10 +296,10 @@ function decode_length(written: str) -> i64?
             continue
 
         if b < '0' || b > '9'
-            return fail("not_a_length", written)
+            return fail(code: "not_a_length", msg: written)
 
         if value > (9223372036854775807 - to_i64(b - '0').must()) / 10
-            return fail("does_not_fit", written)
+            return fail(code: "does_not_fit", msg: written)
         value @ value * 10 + to_i64(b - '0').must()
         i @ i + 1
 

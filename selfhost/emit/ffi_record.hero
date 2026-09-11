@@ -39,16 +39,16 @@ function incomplete_record(s: source.Source, decls: [ast.Decl], line: str) -> di
     tail = ffi_lookup.after(text: line, marker: "missing field '")
 
     if tail.is_err()
-        return fail("none", "not a missing-field line")
+        return fail(code: "none", msg: "not a missing-field line")
     member = ffi_lookup.up_to_quote(tail.must())
     place = caret_of(line)
 
     if place.is_err()
-        return fail("none", "no position on the line")
+        return fail(code: "none", msg: "no position on the line")
     found = record_at_line(s, decls, path: place.must().path, row: place.must().row)
 
     if found.is_err()
-        return fail("none", "no group record sits on that line")
+        return fail(code: "none", msg: "no group record sits on that line")
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "ffi_incomplete_record",
         message: "`" + found.must().type_name + "` does not name `" + member + "`, and `" + found.must().header + "` says the struct has it — a group's `record` IS the header's struct, so a field left out is a field C fills with zero",
@@ -69,7 +69,7 @@ function caret_of(line: str) -> Caret?
     head = ffi_lookup.char_index_of(text: line, needle: ": error:")
 
     if head.is_err()
-        return fail("none", "not an error line")
+        return fail(code: "none", msg: "not an error line")
     cs = line.chars()
     last: i64 @ -1
     second: i64 @ -1
@@ -85,7 +85,7 @@ function caret_of(line: str) -> Caret?
         index @ index - 1
 
     if last == -1 || second == -1
-        return fail("none", "no row and column before the message")
+        return fail(code: "none", msg: "no row and column before the message")
     path: [str] @ []
     at: i64 @ 0
 
@@ -103,7 +103,7 @@ function caret_of(line: str) -> Caret?
     row = ffi_lookup.number(row_text.join(""))
 
     if row.is_err()
-        return fail("none", "the row is not a number")
+        return fail(code: "none", msg: "the row is not a number")
     return ok(Caret(path: path.join(""), row: row.must()))
 
 # The group record whose name sits on this .hero line — file and line
@@ -128,7 +128,7 @@ function record_at_line(s: source.Source, decls: [ast.Decl], path: str, row: i64
                 )
             .constant_decl | .function_decl | .variant_decl | .test_decl => continue
 
-    return fail("none", "no group record on that line")
+    return fail(code: "none", msg: "no group record on that line")
 
 # A group's record over a C UNION, at the two operations that would
 # answer wrongly: constructing one, and comparing or hashing one
@@ -136,15 +136,15 @@ function record_at_line(s: source.Source, decls: [ast.Decl], path: str, row: i64
 # and a record naming ONE member binds it soundly.
 function union_record(s: source.Source, decls: [ast.Decl], line: str) -> diag.Diagnostic?
     if !ffi_lookup.has(text: line, needle: ffi_lookup.FAILED)
-        return fail("none", "not an assertion failure")
+        return fail(code: "none", msg: "not an assertion failure")
     rest = ffi_lookup.after(text: line, marker: extern_union.UNION_ASSERTION)
 
     if rest.is_err()
-        return fail("none", "not a union assertion")
+        return fail(code: "none", msg: "not a union assertion")
     parts = ffi_lookup.words(text: rest.must())
 
     if parts.len() == 0
-        return fail("none", "the marker's tail is empty")
+        return fail(code: "none", msg: "the marker's tail is empty")
     type_name = parts[0]
     members: [str] @ []
     index: i64 @ 1
@@ -160,7 +160,7 @@ function union_record(s: source.Source, decls: [ast.Decl], line: str) -> diag.Di
     found = record_of(s, decls, type_name: type_name)
 
     if found.is_err()
-        return fail("none", "no group declares this record")
+        return fail(code: "none", msg: "no group declares this record")
 
     # The two cases read differently because they ARE different (panel
     # 077): with one declared member the record is buildable and
@@ -214,7 +214,7 @@ function record_of(s: source.Source, decls: [ast.Decl], type_name: str) -> Recor
                     return ok(RecordOf(header: emit_externs.unquoted(s, span: rec.header.must()), span: decl.name))
             .constant_decl | .function_decl | .variant_decl | .test_decl => continue
 
-    return fail("none", "no group record has this name")
+    return fail(code: "none", msg: "no group record has this name")
 
 ## Tests
 

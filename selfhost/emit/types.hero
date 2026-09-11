@@ -307,7 +307,7 @@ test "an all-bare variant has no union, and a group's record no definition"
 
 test "an option carries ok and err, a unit option only err, and (void) guards arity"
     got = ready(
-        "function pick(ready_flag: bool) -> i64?\n    if ready_flag\n        return ok(1)\n    return fail(\"e\", \"m\")\n\nfunction main()\n    print(pick(true).default(0))\n"
+        "function pick(ready_flag: bool) -> i64?\n    if ready_flag\n        return ok(1)\n    return fail(code: \"e\", msg: \"m\")\n\nfunction main()\n    print(pick(true).default(0))\n"
     )
     w: writer.Writer @ writer.new_writer("t")
     option(@w, got.c, got.names, name: "h_0opt_e201354", payload: table.int_ty_id(got.c.types))

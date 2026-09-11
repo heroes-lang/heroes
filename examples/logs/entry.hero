@@ -100,13 +100,13 @@ function read_line(text: str) -> Entry?
     parts = first_words(text, 3)
 
     if parts[0] == "" || parts[1] == "" || parts[2] == ""
-        return fail(ERR_SHORT_LINE, "a line is `stamp LEVEL source: message`")
+        return fail(code: ERR_SHORT_LINE, msg: "a line is `stamp LEVEL source: message`")
 
     if parts[2][parts[2].len() - 1] != ':'
-        return fail(ERR_NO_SOURCE, "the third word must end in `:`")
+        return fail(code: ERR_NO_SOURCE, msg: "the third word must end in `:`")
 
     if index_of(parts[0], 'T') < 0
-        return fail(ERR_NO_STAMP, "the first word must be a timestamp, `DATEThh:mm:ss`")
+        return fail(code: ERR_NO_STAMP, msg: "the first word must be a timestamp, `DATEThh:mm:ss`")
     source = parts[2].slice(from: 0, to: parts[2].len() - 1)
     return ok(Entry(stamp: parts[0], level: parts[1], source: source, message: parts[3]))
 

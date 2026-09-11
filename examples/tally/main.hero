@@ -70,7 +70,7 @@ function fed() -> str?
             going @ false
         else
             if c < 0 || c > 255
-                return fail("bad_byte", "getchar answered " + c.to_str() + ", which is not a byte")
+                return fail(code: "bad_byte", msg: "getchar answered " + c.to_str() + ", which is not a byte")
             bytes @ bytes.push(c)
 
     return text_of(bytes)
@@ -84,7 +84,7 @@ function text_of(bytes: [i64]) -> str?
 
     for b in bytes
         if b > 127
-            return fail("not_text", "byte " + b.to_str() + " is not ASCII, and this program reads text")
+            return fail(code: "not_text", msg: "byte " + b.to_str() + " is not ASCII, and this program reads text")
         out @ out + one_char(b)
 
     return ok(out)

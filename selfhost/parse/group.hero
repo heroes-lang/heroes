@@ -88,7 +88,7 @@ function group_header(@c: cursor.Cursor, text: str) -> token.Span?
             message @ "an `extern` names the header its signatures come from — `extern \"math.h\"`, then the signatures indented under it. Without the header there is no `#include`, and nothing checks the declaration (§4.19)"
         cursor.error(@c, code: "expected_extern_header", message: message, span: cursor.current_span(c))
     cursor.recover_to_next_decl(@c)
-    return fail("expected_extern_header", "recovered to the next declaration")
+    return fail(code: "expected_extern_header", msg: "recovered to the next declaration")
 
 # **A string in a group head may not name an absolute path** (panel 055).
 #
@@ -174,11 +174,11 @@ function library_name_span(l: ast.Library) -> token.Span
 
 function one_library(@c: cursor.Cursor, text: str) -> ast.Library?
     if !cursor.at(c, .ident)
-        return fail("absent", "no library clause")
+        return fail(code: "absent", msg: "no library clause")
     word = cursor.slice_of(text, cursor.current_span(c))
 
     if word != "link" && word != "package"
-        return fail("absent", "no library clause")
+        return fail(code: "absent", msg: "no library clause")
     is_package = word == "package"
     _ = cursor.bump(@c)
 
@@ -189,7 +189,7 @@ function one_library(@c: cursor.Cursor, text: str) -> ast.Library?
             if is_package
                 message @ "expected the package's name in quotes after `package`, found " + cursor.found(c, text) + " — `package \"raylib\"`, which is what the machine is asked about"
             cursor.error(@c, code: "expected_link_name", message: message, span: cursor.current_span(c))
-        return fail("absent", "the clause's string is missing")
+        return fail(code: "absent", msg: "the clause's string is missing")
     span = cursor.bump(@c).span
 
     if is_package

@@ -71,14 +71,27 @@ function missing_fields(holder: str, fields: [str], declared_at: str, span: toke
 # replacement is the bare name. Applying `y:` here produced `y:: 2`, which
 # the .fixed goldens caught the first time they ran: a certain fix is a
 # claim that the result compiles, and only running it proves the claim.
-function wrong_label(holder: str, written: str, expected: str, span: token.Span) -> diag.Diagnostic
+# **The certainty asks the value in hand: does the written label name ANOTHER
+# position of this callee?** If it does, the call is a swap — `copy_text(to: "b",
+# from: "a")` — and renaming the label leaves the two values where they are, so
+# the program compiles and does the other thing. That is a fix which leaves the
+# defect standing, and `.claude/rules/diagnostics-and-goldens.md` calls it a
+# `guess` however well it compiles. If the written label names nothing, as `z`
+# does in `Point(x: 1, z: 2)`, the position decides which field it is and the
+# rename is the repair: `certain`. Found by panel 127's compiler seat, which
+# applied the old fix and measured the program printing `b/a`.
+function wrong_label(holder: str, written: str, expected: str, elsewhere: bool, span: token.Span) -> diag.Diagnostic
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "wrong_label",
         message: "`" + holder + "` has nothing called `" + written + "` at this position — it is `" + expected + "`",
         span: span
     )
+    certainty: diag.Certainty @ .certain
+
+    if elsewhere
+        certainty @ .guess
     d.fixes @ d.fixes.push(
-        diag.Fix(title: "write `" + expected + ":`", replacement: expected, span: span, certainty: .certain)
+        diag.Fix(title: "write `" + expected + ":`", replacement: expected, span: span, certainty: certainty)
     )
     return d
 
@@ -200,10 +213,36 @@ test "needs_label carries its reason and a zero-width insertion"
     assert d.fixes[0].certainty == .certain
 
 test "wrong_label replaces the identifier alone, colon left in place"
-    d = wrong_label(holder: "Point", written: "z", expected: "y", span: token.Span(start: 10, end: 11))
+    d = wrong_label(
+        holder: "Point",
+        written: "z",
+        expected: "y",
+        elsewhere: false,
+        span: token.Span(start: 10, end: 11)
+    )
     assert d.fixes[0].replacement == "y"
     assert d.fixes[0].span.end == 11
     assert d.message == "`Point` has nothing called `z` at this position — it is `y`"
+
+    # `z` names no field of `Point`, so the position decides and the rename is
+    # the repair.
+    assert d.fixes[0].certainty == .certain
+
+test "a label that names another position is a swap, so its fix is a guess"
+    # `copy_text(to: "b", from: "a")`: renaming `to` to `from` compiles and
+    # leaves the two values exactly where they were, which is a fix that keeps
+    # the defect it names. Measured by panel 127's compiler seat on a running
+    # program, and `.claude/rules/diagnostics-and-goldens.md` is the rule.
+    swap = wrong_label(
+        holder: "copy_text",
+        written: "to",
+        expected: "from",
+        elsewhere: true,
+        span: token.Span(start: 10, end: 12)
+    )
+    assert swap.fixes.len() == 1
+    assert swap.fixes[0].replacement == "from"
+    assert swap.fixes[0].certainty == .guess
 
 test "the marker fix exists only in the direction that adds the @"
     wants = marker_mismatch(name: "advance", wants: true, span: token.Span(start: 5, end: 6))

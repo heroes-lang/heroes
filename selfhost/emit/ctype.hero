@@ -329,14 +329,20 @@ function generated(name: str) -> Aggregate
 # exists, which the gate has already refused.
 function satellite_name(names: Names, c: state.Checked, ty: i64) -> str?
     match table.get(c.types, ty)
-        .named n                                                  => return ok(satellite(names, decl: n.decl))
-        .case_ty vc                                               => return ok(case_of(names, decl: vc.decl, at: vc.at))
-        .fallible                                                 => return ok(option_of(names, ty: ty))
-        .failure                                                  => return ok("hero_failure")
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail("none", "no generated functions")
-        .array | .fixed | .map | .function_ty | .generic | .error => return fail("none", "no generated functions")
+        .named n    => return ok(satellite(names, decl: n.decl))
+        .case_ty vc => return ok(case_of(names, decl: vc.decl, at: vc.at))
+        .fallible   => return ok(option_of(names, ty: ty))
+        .failure    => return ok("hero_failure")
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail(
+            code: "none",
+            msg: "no generated functions"
+        )
+        .array | .fixed | .map | .function_ty | .generic | .error => return fail(
+            code: "none",
+            msg: "no generated functions"
+        )
 
-    return fail("none", "unreached")
+    return fail(code: "none", msg: "unreached")
 
 ## What a type IS in C
 
@@ -344,8 +350,8 @@ function satellite_name(names: Names, c: state.Checked, ty: i64) -> str?
 # fixed array, the unit rule's second instance.
 function c_type(names: Names, c: state.Checked, ty: i64) -> str?
     match table.get(c.types, ty)
-        .unit        => return fail("none", "a unit-typed temporary is never declared")
-        .fixed       => return fail("none", "C has no assignable array")
+        .unit        => return fail(code: "none", msg: "a unit-typed temporary is never declared")
+        .fixed       => return fail(code: "none", msg: "C has no assignable array")
         .int_ty ik   => return ok(widths.int_c_type(ik.kind))
         .float_ty fk => return ok(widths.float_c_type(fk.kind))
         .bool        => return ok("bool")
@@ -387,12 +393,12 @@ function c_type(names: Names, c: state.Checked, ty: i64) -> str?
         .generic => return ok(compiler_bug("a type parameter survived monomorphisation"))
         .error   => return ok(compiler_bug("a type the checker never resolved reached the emitter"))
 
-    return fail("none", "unreached")
+    return fail(code: "none", msg: "unreached")
 
 # `.must()` on a failure is the one worded stop this module can reach, and
 # it must happen HERE: `c_result` maps any returned failure to `void`.
 function compiler_bug(what: str) -> str
-    bug: str? = fail("compiler bug", what + " — ir/phases.hero should have refused this program first")
+    bug: str? = fail(code: "compiler_bug", msg: what + " — ir/phases.hero should have refused this program first")
     return bug.must()
 
 # The type a FUNCTION returns, in C. Unit is void — the one place the
@@ -431,7 +437,7 @@ test "a group's record keeps the header's spelling, satellites stay ours"
     assert !both.partial
 
 test "options and function typedefs carry the leading digit"
-    text = "function pick(ready: bool) -> i64?\n    if ready\n        return ok(1)\n    return fail(\"e\", \"m\")\n\nfunction apply_twice(f: (function(i64) -> i64), x: i64) -> i64\n    return f(f(x))\n\nfunction main()\n    print(pick(true).default(0))\n    print(apply_twice(double_it, 3))\n\nfunction double_it(n: i64) -> i64\n    return n * 2\n"
+    text = "function pick(ready: bool) -> i64?\n    if ready\n        return ok(1)\n    return fail(code: \"e\", msg: \"m\")\n\nfunction apply_twice(f: (function(i64) -> i64), x: i64) -> i64\n    return f(f(x))\n\nfunction main()\n    print(pick(true).default(0))\n    print(apply_twice(double_it, 3))\n\nfunction double_it(n: i64) -> i64\n    return n * 2\n"
     names = named_up(text)
     found_opt: bool @ false
 

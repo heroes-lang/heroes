@@ -55,7 +55,7 @@ function line_body(@l: state.LexState, text: str)
             lex_interp.line_ends(@l, at: l.pos)
             layout.maybe_terminator(@l)
             l.pos @ l.pos + 1
-            l.last_significant @ fail(state.ERR_NO_SIGNIFICANT, "line ended")
+            l.last_significant @ fail(code: state.ERR_NO_SIGNIFICANT, msg: "line ended")
             return
         else if b == '#'
             comment(@l, text)
@@ -293,7 +293,7 @@ function one_byte(b: u8) -> token.TokenKind?
 
     if b == '!'
         return ok(.bang)
-    return fail("not_punctuation", "not a token byte")
+    return fail(code: "not_punctuation", msg: "not a token byte")
 
 function finish(@l: state.LexState, kind: token.TokenKind, start: i64, width: i64)
     l.pos @ start + width

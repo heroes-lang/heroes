@@ -110,7 +110,7 @@ function lend_call(@c: state.Checker, s: source.Source, decls: [ast.Decl], name:
         return ok(
             refused_operand(@c, s, decls, name: name, allowed: "`@x` where `x: cstr @ s.lease()`", got: given[0], span: span)
         )
-    return fail("untypeable", "not a lend, a lease or a release")
+    return fail(code: "untypeable", msg: "not a lend, a lease or a release")
 
 function refused_operand(@c: state.Checker, s: source.Source, decls: [ast.Decl], name: str, allowed: str, got: i64, span: token.Span) -> i64
     shown = state.show(c, s, decls, got)

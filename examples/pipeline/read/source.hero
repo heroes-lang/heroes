@@ -29,7 +29,7 @@ function new_reader(text: str) -> Reader
 # drive loop in `main.hero` a `while` over a `T?` rather than over an index.
 function next_line(@r: Reader) -> str?
     if r.at >= r.lines.len()
-        return fail("at_end", "the reader is past its last line")
+        return fail(code: "at_end", msg: "the reader is past its last line")
     one = r.lines[r.at]
     r.at @ r.at + 1
     return ok(one)

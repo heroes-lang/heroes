@@ -251,7 +251,7 @@ test "a type parameter takes the first type it meets and holds it"
     a_param = table.intern(@c.out.types, .generic(at: 0))
     int_id = table.int_ty_id(c.out.types)
     str_id = table.str_ty(c.out.types)
-    bindings: [i64?] @ [fail("unbound", "A")]
+    bindings: [i64?] @ [fail(code: "unbound", msg: "A")]
     bind(@c, s, d, @bindings, param: a_param, got: int_id, span: token.Span(start: 0, end: 1))
     assert bindings[0].must() == int_id
 
@@ -280,7 +280,7 @@ test "binding descends the shapes: array, map, and a function type"
     fn_param = table.intern_function(@c.out.types, one, result: b_param)
     one_got: [i64] = [int_id]
     fn_got = table.intern_function(@c.out.types, one_got, result: str_id)
-    bindings: [i64?] @ [fail("unbound", "A"), fail("unbound", "B")]
+    bindings: [i64?] @ [fail(code: "unbound", msg: "A"), fail(code: "unbound", msg: "B")]
     bind(@c, s, d, @bindings, param: xs_param, got: xs_got, span: token.Span(start: 0, end: 1))
     bind(@c, s, d, @bindings, param: fn_param, got: fn_got, span: token.Span(start: 2, end: 3))
     assert c.out.diagnostics.len() == 0
@@ -303,7 +303,7 @@ test "the context fills only what the arguments left, and never reports"
     # wanted<A>(what: str) -> A? meeting an expected i64?: A := i64.
     result = table.intern(@c.out.types, .fallible(payload: a_param))
     asked = table.intern(@c.out.types, .fallible(payload: int_id))
-    bindings: [i64?] @ [fail("unbound", "A")]
+    bindings: [i64?] @ [fail(code: "unbound", msg: "A")]
     bind_missing(c, @bindings, param: result, got: asked)
     assert bindings[0].must() == int_id
 
@@ -316,7 +316,7 @@ test "the context fills only what the arguments left, and never reports"
 
     # A shape that does not fit fills nothing: pick<A, B>(x: A) -> B? met
     # by an expected plain i64 leaves B unbound, and says nothing.
-    two: [i64?] @ [ok(int_id), fail("unbound", "B")]
+    two: [i64?] @ [ok(int_id), fail(code: "unbound", msg: "B")]
     other = table.intern(@c.out.types, .fallible(payload: b_param))
     bind_missing(c, @two, param: other, got: int_id)
     assert two[1].is_err()
@@ -344,7 +344,7 @@ test "an unbound generic substitutes to the silent error id"
     r: resolved.Resolved @ resolved.new_resolved()
     c: state.Checker @ state.new_checker(out_of: r, expr_count: 0)
     a_param = table.intern(@c.out.types, .generic(at: 0))
-    bindings: [i64?] @ [fail("unbound", "A")]
+    bindings: [i64?] @ [fail(code: "unbound", msg: "A")]
     assert substitute(@c, a_param, bindings) == 0
 
     # With no bindings at all, substitution is the identity.

@@ -32,7 +32,7 @@ function major_of(first_line: str) -> i64?
     after = text_after(text: first_line, marker: "version ")
 
     if after.is_err()
-        return fail("none", "no `version` on the line")
+        return fail(code: "none", msg: "no `version` on the line")
     rest = after.must()
     value: i64 @ 0
     seen: i64 @ 0
@@ -48,7 +48,7 @@ function major_of(first_line: str) -> i64?
         index @ index + 1
 
     if seen == 0
-        return fail("none", "no number after `version`")
+        return fail(code: "none", msg: "no number after `version`")
     return ok(value)
 
 function text_after(text: str, marker: str) -> str?
@@ -59,7 +59,7 @@ function text_after(text: str, marker: str) -> str?
             return ok(text.slice(from: index + marker.len(), to: text.len()))
         index @ index + 1
 
-    return fail("none", "marker absent")
+    return fail(code: "none", msg: "marker absent")
 
 # What this machine's clang answers `--version` with — its first line — or
 # absent when clang is not on the PATH. Asked once per build in `produce`,
@@ -70,11 +70,11 @@ function version_line(build_dir: str) -> str?
     ran = process.run(program: "clang", words: ["clang", "--version"], out: out_path, err: process.discard())
 
     if !ran.started || ran.code != 0
-        return fail("none", "clang did not answer --version")
+        return fail(code: "none", msg: "clang did not answer --version")
     said = read_file(out_path)
 
     if said.is_err()
-        return fail("none", "nothing was said")
+        return fail(code: "none", msg: "nothing was said")
     first: str @ ""
 
     for ch in said.must().chars()
@@ -100,8 +100,8 @@ function check(build_dir: str) -> ()?
 
     if major.must() < FLOOR
         return fail(
-            "clang",
-            "clang " + FLOOR.to_str() + " or newer is required, and this machine's clang is `" + line.must() + "` — the flags this compiler passes and the way it reads a header's parameter types were measured on clang 18, 21 and 22; an older clang answers differently, and a guess would be silent. `heroes doctor` says what this machine has"
+            code: "clang",
+            msg: "clang " + FLOOR.to_str() + " or newer is required, and this machine's clang is `" + line.must() + "` — the flags this compiler passes and the way it reads a header's parameter types were measured on clang 18, 21 and 22; an older clang answers differently, and a guess would be silent. `heroes doctor` says what this machine has"
         )
     return ok()
 

@@ -80,7 +80,7 @@ function generics(@c: cursor.Cursor, text: str) -> [token.Span]
 # this module — so putting it there would close the ring Heroes refuses.
 function owned_marker(@c: cursor.Cursor, text: str, in_group: bool) -> token.Span?
     if !in_group || !cursor.at(c, .ident) || cursor.slice_of(text, cursor.current_span(c)) != "owned"
-        return fail("absent", "nothing here is owned")
+        return fail(code: "absent", msg: "nothing here is owned")
     keyword = cursor.bump(@c).span
 
     if !cursor.at(c, .ident)
@@ -90,7 +90,7 @@ function owned_marker(@c: cursor.Cursor, text: str, in_group: bool) -> token.Spa
             message: "`owned` names the C function that frees this string: `-> cstr owned sqlite3_free`",
             span: cursor.here_or(c, keyword)
         )
-        return fail("absent", "the freer's name is missing")
+        return fail(code: "absent", msg: "the freer's name is missing")
     return ok(cursor.bump(@c).span)
 
 # `(a: i64, @l: Lex)` — always parenthesised, `()` when empty. `in_group` is

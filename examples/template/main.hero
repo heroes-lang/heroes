@@ -45,11 +45,11 @@ function render(template: str, values: {str: str}) -> str?
                 inside @ false
 
                 if key.len() == 0
-                    return fail("empty_key", "`{}` names nothing")
+                    return fail(code: "empty_key", msg: "`{}` names nothing")
                 found = values[key]
 
                 if found.is_err()
-                    return fail("unknown_key", "the template wants `" + key + "` and it was not given")
+                    return fail(code: "unknown_key", msg: "the template wants `" + key + "` and it was not given")
                 out @ out + found.must()
             else
                 key @ key + ch
@@ -73,14 +73,14 @@ function render(template: str, values: {str: str}) -> str?
             continue
 
         if closing
-            return fail("stray_brace", "a `}` with no `{` before it")
+            return fail(code: "stray_brace", msg: "a `}` with no `{` before it")
         out @ out + ch
 
     if closing
-        return fail("stray_brace", "a `}` with no `{` before it")
+        return fail(code: "stray_brace", msg: "a `}` with no `{` before it")
 
     if inside || pending
-        return fail("unterminated", "a `{` that never closes")
+        return fail(code: "unterminated", msg: "a `{` that never closes")
 
     return ok(out)
 

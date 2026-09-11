@@ -41,7 +41,7 @@ function solve(g: grid.Grid) -> [i64]?
                 came[next] @ here
                 queue @ queue.push(next)
 
-    return fail(ERR_NO_PATH, "no way from the start to the goal")
+    return fail(code: ERR_NO_PATH, msg: "no way from the start to the goal")
 
 # The path, start first. It is built backwards from the goal and turned round
 # once, because following `came` is the only direction that map can be read in.

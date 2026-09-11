@@ -162,8 +162,8 @@ function place_path(r: state.Resolver, a: ast.Ast, s: source.Source, id: i64) ->
             match r.out.uses[id]
                 .local l => return ok(["#" + l.at.to_str()])
                 .top | .builtin | .module | .unresolved => return fail(
-                    "not_a_local",
-                    "the root of this place is not a local"
+                    code: "not_a_local",
+                    msg: "the root of this place is not a local"
                 )
         .field f =>
             base = place_path(r, a, s, f.base)
@@ -181,16 +181,16 @@ function place_path(r: state.Resolver, a: ast.Ast, s: source.Source, id: i64) ->
             return ok(base.must().push(index_step(a, s, i.index)))
 
         .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => return fail(
-            "not_a_place",
-            "the parser refuses this after `@`"
+            code: "not_a_place",
+            msg: "the parser refuses this after `@`"
         )
         .hole | .unary | .binary | .call | .method | .variant_case => return fail(
-            "not_a_place",
-            "the parser refuses this after `@`"
+            code: "not_a_place",
+            msg: "the parser refuses this after `@`"
         )
         .array | .map | .try_expr | .if_expr | .match_expr | .error => return fail(
-            "not_a_place",
-            "the parser refuses this after `@`"
+            code: "not_a_place",
+            msg: "the parser refuses this after `@`"
         )
 
 # One index, as a step. Only plain decimal digits name an element this
@@ -242,7 +242,7 @@ function overlaps(x: [str], y: [str]) -> bool
 # first: `shift(a: @n, b: @n)` says *this call's `a` argument*.
 function label_of(s: source.Source, arg: ast.Arg) -> str?
     if arg.name.is_err()
-        return fail("unlabelled", "this argument carries no label")
+        return fail(code: "unlabelled", msg: "this argument carries no label")
 
     return ok(source.span_text(s, arg.name.must()))
 
@@ -260,7 +260,7 @@ function refuse_aliased_places(@r: state.Resolver, a: ast.Ast, s: source.Source,
 
         if path.is_err()
             continue
-        clash: i64? @ fail("none", "no earlier `@` argument of this call overlaps this one")
+        clash: i64? @ fail(code: "none", msg: "no earlier `@` argument of this call overlaps this one")
         i: i64 @ 0
 
         while i < paths.len()

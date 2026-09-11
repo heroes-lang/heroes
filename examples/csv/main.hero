@@ -70,7 +70,7 @@ function parse(text: str) -> Table?
         started @ true
 
     if quoted && !pending_quote
-        return fail("unterminated_quote", "a quoted field never closes")
+        return fail(code: "unterminated_quote", msg: "a quoted field never closes")
 
     # A last row with no trailing newline is still a row; an empty tail is
     # not. `started` is what tells the two apart.
@@ -97,7 +97,7 @@ function rectangular(t: Table) -> bool
 
 function column(t: Table, at: i64) -> [str]?
     if at < 0 || at >= width(t)
-        return fail("no_such_column", "the table has no column at that index")
+        return fail(code: "no_such_column", msg: "the table has no column at that index")
     out: [str] @ []
 
     for one in t.rows

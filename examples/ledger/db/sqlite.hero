@@ -143,7 +143,10 @@ function cell_at(statement: ptr, column: i32) -> Cell?
         text = sqlite3_column_text(statement: statement, column: column).validated()
 
         if text.is_err()
-            return fail("not_text", "column " + to_i64(column).must().to_str() + " holds bytes that are not UTF-8")
+            return fail(
+                code: "not_text",
+                msg: "column " + to_i64(column).must().to_str() + " holds bytes that are not UTF-8"
+            )
         return ok(.text_cell(value: text.must()))
 
     if to_i64(kind).must() == SQLITE_NULL
@@ -216,7 +219,7 @@ function opened() -> Db?
         # actually asked about.
         reason = why(Db(handle: db))
         _ = sqlite3_close(db)
-        return fail("cannot_open", reason)
+        return fail(code: "cannot_open", msg: reason)
     return ok(Db(handle: db))
 
 function closed(db: Db) -> i64
@@ -243,10 +246,10 @@ function closed(db: Db) -> i64
 # belt and braces: the cell is null when SQLite chooses not to fill it, and a
 # refusal with an empty reason is the shape this program exists to refuse.
 function run(db: Db, sql: str) -> ()?
-    problem: str? @ fail("none", "sqlite has not answered yet")
+    problem: str? @ fail(code: "none", msg: "sqlite has not answered yet")
 
     if sqlite3_exec(db: db.handle, sql: sql.cstr(), callback: nullptr, context: nullptr, error: @problem) != SQLITE_OK
-        return fail("statement_refused", sql + ": " + problem.default(why(db)))
+        return fail(code: "statement_refused", msg: sql + ": " + problem.default(why(db)))
     return ok()
 
 # How many rows the last statement changed — SQLite's own counter, which is
@@ -261,7 +264,7 @@ function prepared(db: Db, sql: str) -> Statement?
     tail: ptr @ nullptr
 
     if sqlite3_prepare_v2(db: db.handle, sql: sql.cstr(), length: -1, statement: @statement, tail: @tail) != SQLITE_OK
-        return fail("cannot_prepare", sql + ": " + why(db))
+        return fail(code: "cannot_prepare", msg: sql + ": " + why(db))
     return ok(Statement(handle: statement))
 
 function finalized(statement: Statement) -> i64
@@ -271,7 +274,7 @@ function finalized(statement: Statement) -> i64
 # statement is worth having.
 function reset(statement: Statement) -> ()?
     if sqlite3_reset(statement.handle) != SQLITE_OK
-        return fail("cannot_reset", "sqlite would not reset the statement")
+        return fail(code: "cannot_reset", msg: "sqlite would not reset the statement")
     return ok()
 
 # One step. `.stepped_row` when a row is there, `.stepped_done` at the end,
@@ -289,7 +292,7 @@ function stepped(statement: Statement) -> Step?
 
     if code == SQLITE_DONE
         return ok(.stepped_done)
-    return fail("step_refused", "sqlite refused the step with code " + code.to_str())
+    return fail(code: "step_refused", msg: "sqlite refused the step with code " + code.to_str())
 
 # Binding, one function per type this program uses. The column index is
 # ONE-BASED in SQLite and this is the only place that knows it: every
@@ -297,12 +300,12 @@ function stepped(statement: Statement) -> Step?
 # what `at` means, which is cheaper than a translation nobody remembers.
 function bind_int(statement: Statement, at: i64, value: i64) -> ()?
     if sqlite3_bind_int64(statement: statement.handle, column: to_i32(at).must(), value: value) != SQLITE_OK
-        return fail("cannot_bind", "sqlite refused an integer at " + at.to_str())
+        return fail(code: "cannot_bind", msg: "sqlite refused an integer at " + at.to_str())
     return ok()
 
 function bind_float(statement: Statement, at: i64, value: f64) -> ()?
     if sqlite3_bind_double(statement: statement.handle, column: to_i32(at).must(), value: value) != SQLITE_OK
-        return fail("cannot_bind", "sqlite refused a float at " + at.to_str())
+        return fail(code: "cannot_bind", msg: "sqlite refused a float at " + at.to_str())
     return ok()
 
 # `SQLITE_TRANSIENT` asks SQLite to copy the bytes before it returns, so this
@@ -310,7 +313,7 @@ function bind_float(statement: Statement, at: i64, value: f64) -> ()?
 # moves the `step` cannot break it (panel 124, ratified 2026-09-09).
 function bind_text(statement: Statement, at: i64, text: str) -> ()?
     if sqlite3_bind_text(statement: statement.handle, column: to_i32(at).must(), text: text.cstr(), length: -1, destructor: SQLITE_TRANSIENT) != SQLITE_OK
-        return fail("cannot_bind", "sqlite refused text at " + at.to_str())
+        return fail(code: "cannot_bind", msg: "sqlite refused text at " + at.to_str())
     return ok()
 
 # How many columns the statement's result has — asked rather than assumed,
@@ -331,18 +334,18 @@ function cell(statement: Statement, column: i64) -> Cell?
 function integer_of(c: Cell) -> i64?
     return match c
         .integer_cell i => ok(i.value)
-        .float_cell     => fail("wrong_type", "the column holds a float where a whole number was asked for")
-        .text_cell      => fail("wrong_type", "the column holds text where a whole number was asked for")
-        .null_cell      => fail("wrong_type", "the column is null where a whole number was asked for")
-        .blob_cell      => fail("wrong_type", "the column holds a blob, which this program does not read")
+        .float_cell     => fail(code: "wrong_type", msg: "the column holds a float where a whole number was asked for")
+        .text_cell      => fail(code: "wrong_type", msg: "the column holds text where a whole number was asked for")
+        .null_cell      => fail(code: "wrong_type", msg: "the column is null where a whole number was asked for")
+        .blob_cell      => fail(code: "wrong_type", msg: "the column holds a blob, which this program does not read")
 
 function text_of(c: Cell) -> str?
     return match c
         .text_cell t    => ok(t.value)
         .integer_cell i => ok(i.value.to_str())
         .float_cell f   => ok(f.value.to_str())
-        .null_cell      => fail("wrong_type", "the column is null where text was asked for")
-        .blob_cell      => fail("wrong_type", "the column holds a blob, which this program does not read")
+        .null_cell      => fail(code: "wrong_type", msg: "the column is null where text was asked for")
+        .blob_cell      => fail(code: "wrong_type", msg: "the column holds a blob, which this program does not read")
 
 # The library's own message for the last thing that went wrong. Bound
 # because a program at this scale has to be able to say WHY a statement

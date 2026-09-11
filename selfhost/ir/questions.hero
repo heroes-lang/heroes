@@ -45,7 +45,7 @@ function fallible_constructor(name: str) -> ir.Shape?
 
     if name == "fail"
         return ok(.fail_shape)
-    return fail("absent", "not a fallible constructor")
+    return fail(code: "absent", msg: "not a fallible constructor")
 
 function is_fallible_operation(name: str) -> bool
     return name == "must" || name == "default" || name == "is_err"
@@ -83,10 +83,10 @@ function comparison_op(op: ast.BinaryOp) -> ir.BinaryOp?
         .le                                           => return ok(.le)
         .gt                                           => return ok(.gt)
         .ge                                           => return ok(.ge)
-        .add | .sub | .mul | .div | .rem | .and | .or => return fail("no", "not a comparison")
-        .bit_and | .bit_or | .bit_xor | .shl | .shr   => return fail("no", "not a comparison")
+        .add | .sub | .mul | .div | .rem | .and | .or => return fail(code: "no", msg: "not a comparison")
+        .bit_and | .bit_or | .bit_xor | .shl | .shr   => return fail(code: "no", msg: "not a comparison")
 
-    return fail("no", "unreached")
+    return fail(code: "no", msg: "unreached")
 
 # The two cases of a T?, in tag order (§4.6): a T? IS a built-in
 # variant, and nothing here needs to know it was built in.
@@ -107,13 +107,16 @@ function cases_of(c: state.Checked, s: source.Source, decls: [ast.Decl], subject
                         names @ names.push(source.span_text(s, one_case.name))
 
                     return ok(names)
-                .constant_decl | .function_decl | .record_decl | .test_decl => return fail("none", "not a variant")
+                .constant_decl | .function_decl | .record_decl | .test_decl => return fail(
+                    code: "none",
+                    msg: "not a variant"
+                )
         .fallible                                                 => return ok(FALLIBLE_CASES)
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail("none", "no cases")
-        .array | .fixed | .map | .function_ty | .case_ty          => return fail("none", "no cases")
-        .failure | .generic | .error                              => return fail("none", "no cases")
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail(code: "none", msg: "no cases")
+        .array | .fixed | .map | .function_ty | .case_ty          => return fail(code: "none", msg: "no cases")
+        .failure | .generic | .error                              => return fail(code: "none", msg: "no cases")
 
-    return fail("none", "unreached")
+    return fail(code: "none", msg: "unreached")
 
 function case_position(names: [str], s: source.Source, name: token.Span) -> i64?
     wanted = source.span_text(s, name)
@@ -124,20 +127,20 @@ function case_position(names: [str], s: source.Source, name: token.Span) -> i64?
             return ok(at)
         at @ at + 1
 
-    return fail("absent", "no such case")
+    return fail(code: "absent", msg: "no such case")
 
 # The payload name a single-pattern arm binds, if it binds one. A
 # |-joined arm cannot: two cases have two payload types, so there is
 # nothing one name could be (§4.7).
 function binding_of(arm: ast.Arm) -> token.Span?
     if arm.patterns.len() != 1
-        return fail("none", "joined patterns bind nothing")
+        return fail(code: "none", msg: "joined patterns bind nothing")
 
     match arm.patterns[0].kind
         .variant_case vc              => return vc.binding
-        .wildcard | .literal | .error => return fail("none", "not a case pattern")
+        .wildcard | .literal | .error => return fail(code: "none", msg: "not a case pattern")
 
-    return fail("none", "unreached")
+    return fail(code: "none", msg: "unreached")
 
 function is_constant(decls: [ast.Decl], decl: i64) -> bool
     return match decls[decl].kind

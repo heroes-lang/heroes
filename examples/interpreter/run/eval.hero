@@ -168,12 +168,12 @@ function called(r: value.Request) -> value.Frame?
     where = r.frame.fns[r.name]
 
     if where.is_err()
-        return fail(ERR_NAME, "no function is named `" + r.name + "`")
+        return fail(code: ERR_NAME, msg: "no function is named `" + r.name + "`")
 
     if r.frame.depth >= DEPTH
         return fail(
-            ERR_DEPTH,
-            "`" + r.name + "` is " + DEPTH.to_str() + " calls deep — a script that recurses without an end stops here rather than in the machine's stack"
+            code: ERR_DEPTH,
+            msg: "`" + r.name + "` is " + DEPTH.to_str() + " calls deep — a script that recurses without an end stops here rather than in the machine's stack"
         )
 
     return match r.nodes.stmts[where.must()]
@@ -182,15 +182,15 @@ function called(r: value.Request) -> value.Frame?
         .give _ | .stop _ | .evaluate _            => not_a_function(r: r)
 
 function not_a_function(r: value.Request) -> value.Frame?
-    return fail(ERR_NAME, "`" + r.name + "` names something that is not a function")
+    return fail(code: ERR_NAME, msg: "`" + r.name + "` names something that is not a function")
 
 # One call: bind the arguments, run the body on a frame that can see nothing
 # else, then put the caller's variables back and carry the result home.
 function entered(r: value.Request, params: [str], inside: [i64]) -> value.Frame?
     if params.len() != r.given.len()
         return fail(
-            ERR_ARITY,
-            "`" + r.name + "` takes " + params.len().to_str() + " and was given " + r.given.len().to_str() + ": (" + each.joined(r.given, value.shown, ", ") + ")"
+            code: ERR_ARITY,
+            msg: "`" + r.name + "` takes " + params.len().to_str() + " and was given " + r.given.len().to_str() + ": (" + each.joined(r.given, value.shown, ", ") + ")"
         )
     inner: value.Frame @ r.frame
     fresh_vars: {str: value.Value} @ {}

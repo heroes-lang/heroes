@@ -27,12 +27,12 @@ variant Shape
 function grab(f: bool) -> P?
     if f
         return ok(P(x: 1))
-    return fail("no", "none")
+    return fail(code: "no", msg: "none")
 
 function shape_of(f: bool) -> Shape?
     if f
         return ok(.box(w: 2))
-    return fail("no", "none")
+    return fail(code: "no", msg: "none")
 
 # The generic that panicked: `[A?]` interns a `Ty::Fallible` over a parameter,
 # which monomorphisation deletes the function for and leaves the type behind.

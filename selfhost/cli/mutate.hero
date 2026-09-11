@@ -82,7 +82,7 @@ function corpus(dir: str) -> [score.Program]?
     walked = process.files_under(dir: dir)
 
     if walked.is_err()
-        return fail("no_corpus", "cannot read " + dir)
+        return fail(code: "no_corpus", msg: "cannot read " + dir)
     paths: [str] @ []
 
     for path in walked.must()
@@ -95,7 +95,7 @@ function corpus(dir: str) -> [score.Program]?
         text = read_file(path)
 
         if text.is_err()
-            return fail("no_corpus", "cannot read " + path)
+            return fail(code: "no_corpus", msg: "cannot read " + path)
         out @ out.push(score.Program(name: path, checked_as: checked_name(dir: dir, path: path), text: text.must()))
 
     return ok(out)
@@ -169,7 +169,7 @@ function refuse_a_corpus_that_does_not_compile(sources: [score.Program], library
             refused @ refused.push(one.name)
 
     if refused.len() == 0
-        return fail("clean", "every program compiles")
+        return fail(code: "clean", msg: "every program compiles")
     message: str @ "this corpus does not compile, so its kill rate would be meaningless\n  " + refused.len().to_str() + " of " + sources.len().to_str() + " programs are already refused by `heroes check`:\n"
 
     for name in refused

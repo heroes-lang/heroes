@@ -347,8 +347,8 @@ record ExternSpans
     library: ast.Library?
 
 function extern_spans(decl: ast.Decl) -> ExternSpans
-    none_h: token.Span? = fail("none", "no header")
-    none_l: ast.Library? = fail("none", "no library")
+    none_h: token.Span? = fail(code: "none", msg: "no header")
+    none_l: ast.Library? = fail(code: "none", msg: "no library")
 
     match decl.kind
         .function_decl fd => return ExternSpans(header: fd.value.header, library: fd.value.library)
@@ -979,16 +979,16 @@ function binary_control_tail(tree: ast.Ast, id: i64) -> i64?
         .if_expr | .match_expr => return ok(id)
         .binary b              => return binary_control_tail(tree, id: b.right)
         .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => return fail(
-            "none",
-            "not a control form"
+            code: "none",
+            msg: "not a control form"
         )
-        .name | .hole | .unary | .field | .index => return fail("none", "not a control form")
+        .name | .hole | .unary | .field | .index => return fail(code: "none", msg: "not a control form")
         .call | .method | .variant_case | .array | .map | .try_expr | .error => return fail(
-            "none",
-            "not a control form"
+            code: "none",
+            msg: "not a control form"
         )
 
-    return fail("none", "not a control form")
+    return fail(code: "none", msg: "not a control form")
 
 # Everything to the LEFT of that control form, rendered as the head it
 # is printed under. Parenthesised exactly as render() would, so the
@@ -1065,7 +1065,7 @@ function arm_alignment(tree: ast.Ast, s: source.Source, arms: [ast.Arm], lefts: 
             .one_stmt => inline @ true
             .block    => inline @ false
 
-        width: i64? @ fail("none", "not inline")
+        width: i64? @ fail(code: "none", msg: "not inline")
 
         if inline
             width @ fits_on_one_line(tree, s, arm: arm, left: lefts[index].chars().len(), indent: indent)
@@ -1122,7 +1122,7 @@ function fits_on_one_line(tree: ast.Ast, s: source.Source, arm: ast.Arm, left: i
 
     match arm.body
         .one_stmt one => stmt_at @ one.at
-        .block        => return fail("none", "a block arm has no one-line form")
+        .block        => return fail(code: "none", msg: "a block arm has no one-line form")
 
     value: i64 @ -1
 
@@ -1150,12 +1150,12 @@ function fits_on_one_line(tree: ast.Ast, s: source.Source, arm: ast.Arm, left: i
         return ok(left + 4)
 
     if spans_lines(tree, s, value: value)
-        return fail("none", "the author spread this value")
+        return fail(code: "none", msg: "the author spread this value")
     measured = left + 4 + head + render(tree, s, id: value).chars().len()
 
     if indent + measured <= WIDTH
         return ok(measured)
-    return fail("none", "past the margin")
+    return fail(code: "none", msg: "past the margin")
 
 # True where the author wrote a value across more than one line. Such
 # a value keeps its shape even when it would fit on one — layout is
@@ -1206,10 +1206,10 @@ function literal_end_line(tree: ast.Ast, s: source.Source, id: i64) -> i64?
         .break_stmt | .continue_stmt | .while_stmt | .for_in | .error => value @ value
 
     if value == -1
-        return fail("none", "no value expression")
+        return fail(code: "none", msg: "no value expression")
 
     if !spans_lines(tree, s, value: value)
-        return fail("none", "ends where it started")
+        return fail(code: "none", msg: "ends where it started")
     last_at: i64 @ tree.exprs[value].span.end - 1
 
     if last_at < 0

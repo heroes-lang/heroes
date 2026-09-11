@@ -32,8 +32,8 @@ function main()
     print(a == b)
 
     # The same shape one level down: a record field nothing builds either.
-    h: Held @ Held(inner: fail("none", "n"))
-    g: Held @ Held(inner: fail("none", "n"))
+    h: Held @ Held(inner: fail(code: "none", msg: "n"))
+    g: Held @ Held(inner: fail(code: "none", msg: "n"))
     print(h == g)
 
     # And the constructed direction still works, which is what used to.

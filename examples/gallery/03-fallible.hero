@@ -7,13 +7,13 @@
 # Parses a decimal digit. Fails on anything else.
 function digit_of(c: u8) -> i64?
     if c < '0' || c > '9'
-        return fail("not_a_digit", "expected 0-9")
+        return fail(code: "not_a_digit", msg: "expected 0-9")
     return ok(to_i64(c - '0').must())
 
 # Reads a whole non-negative number. Empty input is an error, not a zero.
 function number_of(text: str) -> i64?
     if text.len() == 0
-        return fail("empty", "there is nothing to read")
+        return fail(code: "empty", msg: "there is nothing to read")
     total: i64 @ 0
 
     for i in range(from: 0, to: text.len())
@@ -30,7 +30,7 @@ function average_of(parts: [str]) -> i64?
         sum @ sum + number_of(p)?
 
     if parts.len() == 0
-        return fail("empty", "no parts to average")
+        return fail(code: "empty", msg: "no parts to average")
     return ok(sum / parts.len())
 
 # Four ways to read a fallible value, in the order you reach for them.

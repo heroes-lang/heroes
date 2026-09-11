@@ -126,7 +126,7 @@ function declaration(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: st
             _ = flatten.block(@b, a, r, c, s, decls, body: t.body, wants_value: false).is_err()
 
             if !build.is_terminated(b)
-                build.terminate(@b, .return_term(value: fail("none", "a test returns nothing")))
+                build.terminate(@b, .return_term(value: fail(code: "none", msg: "a test returns nothing")))
             build.end_fn(@b)
         .record_decl | .variant_decl => return
 
@@ -184,7 +184,7 @@ function close(@b: build.Lowering, c: state.Checked)
     if build.is_terminated(b)
         return
     emissions.copy_out(@b, c)
-    build.terminate(@b, .return_term(value: fail("none", "fell off the end")))
+    build.terminate(@b, .return_term(value: fail(code: "none", msg: "fell off the end")))
 
 ## Tests
 
@@ -335,7 +335,7 @@ test "a join every arm returned past is sealed unreachable"
 
 test "? branches on the tag, and the error edge is a real exit edge"
     got = lowered(
-        "function pick(ready: bool) -> i64?\n    if ready\n        return ok(3)\n    return fail(\"empty\", \"nothing here\")\n\nfunction outer(ready: bool) -> i64?\n    v = pick(ready)?\n    return ok(v + 1)\n"
+        "function pick(ready: bool) -> i64?\n    if ready\n        return ok(3)\n    return fail(code: \"empty\", msg: \"nothing here\")\n\nfunction outer(ready: bool) -> i64?\n    v = pick(ready)?\n    return ok(v + 1)\n"
     )
     f = got.program.functions[1]
     assert f.name == "outer"

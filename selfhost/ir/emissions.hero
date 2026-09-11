@@ -193,21 +193,24 @@ function fold_negative(@b: build.Lowering, a: ast.Ast, s: source.Source, op: ast
         .not | .bit_not => is_neg @ false
 
     if !is_neg
-        return fail("no", "not a negation")
+        return fail(code: "no", msg: "not a negation")
 
     match a.exprs[operand].kind
         .int_lit =>
             inner = contextual.literal_value(a, s, operand)
 
             if inner.is_err()
-                return fail("no", "not a plain literal")
+                return fail(code: "no", msg: "not a plain literal")
             lit = inner.must()
             return ok(
                 build.emit(@b, op: .lit(value: .int_const(value: contextual.LitValue(negative: true, magnitude: lit.magnitude))), ty: ty, span: span)
             )
-        .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => return fail("no", "not an int literal")
-        .name | .hole | .unary | .binary | .field | .index                  => return fail("no", "not an int literal")
-        .call | .method | .variant_case | .array | .map                     => return fail("no", "not an int literal")
-        .try_expr | .if_expr | .match_expr | .error                         => return fail("no", "not an int literal")
+        .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => return fail(
+            code: "no",
+            msg: "not an int literal"
+        )
+        .name | .hole | .unary | .binary | .field | .index => return fail(code: "no", msg: "not an int literal")
+        .call | .method | .variant_case | .array | .map    => return fail(code: "no", msg: "not an int literal")
+        .try_expr | .if_expr | .match_expr | .error        => return fail(code: "no", msg: "not an int literal")
 
-    return fail("no", "unreached")
+    return fail(code: "no", msg: "unreached")

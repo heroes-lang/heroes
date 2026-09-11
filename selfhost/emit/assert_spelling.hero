@@ -106,12 +106,15 @@ function return_check(c: state.Checked, ty: i64) -> str?
         # of silently getting no assertion.
 
         .array | .fixed | .map | .fallible | .function_ty => return fail(
-            "bug",
-            "this type does not cross the FFI boundary"
+            code: "bug",
+            msg: "this type does not cross the FFI boundary"
         )
-        .case_ty | .failure | .generic | .error => return fail("bug", "this type does not cross the FFI boundary")
+        .case_ty | .failure | .generic | .error => return fail(
+            code: "bug",
+            msg: "this type does not cross the FFI boundary"
+        )
 
-    return fail("bug", "unreached")
+    return fail(code: "bug", msg: "unreached")
 
 # The SECOND argument a return check takes, or "" for the eight that
 # take one (panel 063): a struct cannot name its type in the macro, so

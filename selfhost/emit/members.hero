@@ -174,7 +174,7 @@ function instance_index(p: containers.Program, decl: i64, instance: [i64]) -> i6
             return ok(index)
         index @ index + 1
 
-    return fail("none", "no such instance")
+    return fail(code: "none", msg: "no such instance")
 
 function same_list(a: [i64], b: [i64]) -> bool
     if a.len() != b.len()

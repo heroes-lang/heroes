@@ -66,13 +66,13 @@ function first_type(f: containers.Function, c: state.Checked, run: ir.Run) -> ta
     given = containers.args_of(f, run)
 
     if given.len() == 0
-        return fail("none", "no arguments")
+        return fail(code: "none", msg: "no arguments")
 
     match given[0]
         .value_arg v => return ok(table.get(c.types, containers.value_type(f, v.value)))
-        .inout_arg   => return fail("none", "an @ argument")
+        .inout_arg   => return fail(code: "none", msg: "an @ argument")
 
-    return fail("none", "unreached")
+    return fail(code: "none", msg: "unreached")
 
 # The C function this call becomes. Exhaustive over EMITTED minus
 # print, which is not a call at all but a sequence of one printer per
@@ -264,11 +264,11 @@ function to_str_entry(ty: table.Ty) -> str?
                 .f64 => return ok("hero_f64_to_str")
         .bool                                         => return ok("hero_bool_to_str")
         .str                                          => return ok("hero_str_identity")
-        .ptr | .cstr | .unit | .array | .fixed | .map => return fail("none", "no rendering")
-        .fallible | .function_ty | .named | .case_ty  => return fail("none", "no rendering")
-        .failure | .generic | .error                  => return fail("none", "no rendering")
+        .ptr | .cstr | .unit | .array | .fixed | .map => return fail(code: "none", msg: "no rendering")
+        .fallible | .function_ty | .named | .case_ty  => return fail(code: "none", msg: "no rendering")
+        .failure | .generic | .error                  => return fail(code: "none", msg: "no rendering")
 
-    return fail("none", "unreached")
+    return fail(code: "none", msg: "unreached")
 
 ## Tests
 

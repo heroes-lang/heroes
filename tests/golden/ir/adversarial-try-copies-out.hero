@@ -9,7 +9,7 @@ record Reader
 
 function parsed(s: str) -> i64?
     if s.len() == 0
-        return fail("empty", "nothing to parse")
+        return fail(code: "empty", msg: "nothing to parse")
     return ok(s.len())
 
 function advance_over(@r: Reader, s: str) -> i64?

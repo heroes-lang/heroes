@@ -32,12 +32,12 @@ function missing_tag(s: source.Source, decls: [ast.Decl], line: str) -> diag.Dia
     quoted = ffi_lookup.after(text: line, marker: "must use 'struct' tag to refer to type '")
 
     if quoted.is_err()
-        return fail("none", "not a tag line")
+        return fail(code: "none", msg: "not a tag line")
     name = ffi_lookup.up_to_quote(quoted.must())
     found = ffi_lookup.declaration(s, decls, name: name)
 
     if found.is_err()
-        return fail("none", "no group declares this name")
+        return fail(code: "none", msg: "no group declares this name")
     at: token.Span @ found.must().span
     named = ffi_lookup.name_span(s, decls, name: name)
 
@@ -69,12 +69,12 @@ function unknown_tag(s: source.Source, decls: [ast.Decl], line: str) -> diag.Dia
     quoted = ffi_lookup.after(text: line, marker: "incomplete definition of type 'struct ")
 
     if quoted.is_err()
-        return fail("none", "not an incomplete-tag line")
+        return fail(code: "none", msg: "not an incomplete-tag line")
     tag_name = ffi_lookup.up_to_quote(quoted.must())
     found = record_by_tag(s, decls, tag_name: tag_name)
 
     if found.is_err()
-        return fail("none", "no record names this tag")
+        return fail(code: "none", msg: "no record names this tag")
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "ffi_unknown_tag",
         message: "`" + found.must().header + "` declares no `struct " + tag_name + "` — clang read the header and the tag is not there",
@@ -104,7 +104,7 @@ function record_by_tag(s: source.Source, decls: [ast.Decl], tag_name: str) -> Ta
                 return ok(TaggedRecord(span: rec.tag.must(), header: emit_externs.unquoted(s, span: rec.header.must())))
             .constant_decl | .function_decl | .variant_decl | .test_decl => continue
 
-    return fail("none", "no record names this tag")
+    return fail(code: "none", msg: "no record names this tag")
 
 # clang's "use of 'utag' with tag type that does not match previous
 # declaration" — the tag names a UNION and the emitter spelled struct
@@ -116,16 +116,16 @@ function record_by_tag(s: source.Source, decls: [ast.Decl], tag_name: str) -> Ta
 # no tag to mismatch — that shape is emit_extern_union's.
 function tag_is_a_union(s: source.Source, decls: [ast.Decl], line: str) -> diag.Diagnostic?
     if !ffi_lookup.has(text: line, needle: "with tag type that does not match previous declaration")
-        return fail("none", "not a tag-mismatch line")
+        return fail(code: "none", msg: "not a tag-mismatch line")
     quoted = ffi_lookup.after(text: line, marker: "use of '")
 
     if quoted.is_err()
-        return fail("none", "no tag on the line")
+        return fail(code: "none", msg: "no tag on the line")
     tag_name = ffi_lookup.up_to_quote(quoted.must())
     found = record_by_tag(s, decls, tag_name: tag_name)
 
     if found.is_err()
-        return fail("none", "no record names this tag")
+        return fail(code: "none", msg: "no record names this tag")
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "ffi_tag_is_a_union",
         message: "`" + found.must().header + "` declares `" + tag_name + "` as a `union`, not a struct — C keeps the two in one namespace and will not let one stand for the other",

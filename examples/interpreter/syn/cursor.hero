@@ -71,15 +71,15 @@ function expected(@c: Cursor, want: token.Token) -> ()?
         return ok()
 
     return fail(
-        ERR_PARSE,
-        "expected `" + token.shown(want) + "`, found `" + token.shown(here(c)) + "`"
+        code: ERR_PARSE,
+        msg: "expected `" + token.shown(want) + "`, found `" + token.shown(here(c)) + "`"
     )
 
 # A name, or a refusal saying what stood there instead.
 function name_here(@c: Cursor) -> str?
     return match bump(@c)
-        .number n => fail(ERR_PARSE, "expected a name, found the number `" + n.value.to_str() + "`")
-        .text x => fail(ERR_PARSE, "expected a name, found the string `" + x.value + "`")
+        .number n => fail(code: ERR_PARSE, msg: "expected a name, found the number `" + n.value.to_str() + "`")
+        .text x => fail(code: ERR_PARSE, msg: "expected a name, found the string `" + x.value + "`")
         .name n => ok(n.value)
         .kw_let | .kw_print | .kw_if | .kw_else | .kw_while => keyword_taken(t: .kw_let, said: "a keyword")
         .kw_fn | .kw_return | .kw_exit | .kw_end => keyword_taken(t: .kw_fn, said: "a keyword")
@@ -88,8 +88,8 @@ function name_here(@c: Cursor) -> str?
         .equals | .less | .less_equal | .greater | .greater_equal => keyword_taken(t: .equals, said: "an operator")
         .equal_equal | .bang_equal | .bang | .ampersands | .bars => keyword_taken(t: .bang, said: "an operator")
         .lparen | .rparen | .comma => keyword_taken(t: .lparen, said: "punctuation")
-        .newline => fail(ERR_PARSE, "expected a name, found the end of the line")
-        .finish => fail(ERR_PARSE, "expected a name, found the end of the file")
+        .newline => fail(code: ERR_PARSE, msg: "expected a name, found the end of the line")
+        .finish => fail(code: ERR_PARSE, msg: "expected a name, found the end of the file")
 
 # The refusal `name_here`'s keyword and operator arms share. Grouping the arms
 # with `|` costs the exact token — the arms would each have to name it — so the
@@ -97,7 +97,7 @@ function name_here(@c: Cursor) -> str?
 # name* is the whole diagnosis.
 function keyword_taken(t: token.Token, said: str) -> str?
     _ = t
-    return fail(ERR_PARSE, "expected a name, found " + said)
+    return fail(code: ERR_PARSE, msg: "expected a name, found " + said)
 
 # Step past however many line ends stand here. A block may hold blank lines and
 # the parser should not have to know.

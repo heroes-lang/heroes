@@ -5,7 +5,7 @@
 # (`mono.substituted_calls`), a path that existed for argument-bound chains and
 # had no test for a context-bound one.
 function wanted<A>(what: str) -> A?
-    return fail("type", what)
+    return fail(code: "type", msg: what)
 
 function first_or<B>(xs: [B]) -> B?
     if xs.len() == 0

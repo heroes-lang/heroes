@@ -26,24 +26,24 @@ use checker
 # function RETURNS the wrong type, a constant IS one.
 function wrong_type(s: source.Source, decls: [ast.Decl], line: str) -> diag.Diagnostic?
     if !ffi_lookup.has(text: line, needle: ffi_lookup.FAILED)
-        return fail("none", "not an assertion failure")
+        return fail(code: "none", msg: "not an assertion failure")
     rest = ffi_lookup.after(text: line, marker: assert_spelling.ASSERTION)
 
     if rest.is_err()
-        return fail("none", "not a return assertion")
+        return fail(code: "none", msg: "not a return assertion")
 
     # `<name> <type>` — written by the emitter, so the split is on its
     # own format rather than on a guess about clang's.
     parts = ffi_lookup.words(text: rest.must())
 
     if parts.len() < 2
-        return fail("none", "the marker's tail is not ours")
+        return fail(code: "none", msg: "the marker's tail is not ours")
     name = parts[0]
     declared = parts[1]
     found = ffi_lookup.declaration(s, decls, name: name)
 
     if found.is_err()
-        return fail("none", "no group declares this name")
+        return fail(code: "none", msg: "no group declares this name")
 
     if found.must().is_constant
         d: diag.Diagnostic @ diag.new_diagnostic(
@@ -73,20 +73,20 @@ function wrong_type(s: source.Source, decls: [ast.Decl], line: str) -> diag.Diag
 # through the back door.
 function not_constant(s: source.Source, decls: [ast.Decl], line: str) -> diag.Diagnostic?
     if !ffi_lookup.has(text: line, needle: ffi_lookup.FAILED)
-        return fail("none", "not an assertion failure")
+        return fail(code: "none", msg: "not an assertion failure")
     rest = ffi_lookup.after(text: line, marker: assert_spelling.CONSTANCY)
 
     if rest.is_err()
-        return fail("none", "not a constancy assertion")
+        return fail(code: "none", msg: "not a constancy assertion")
     parts = ffi_lookup.words(text: rest.must())
 
     if parts.len() == 0
-        return fail("none", "the marker's tail is empty")
+        return fail(code: "none", msg: "the marker's tail is empty")
     name = trim_trailing(parts[0])
     found = ffi_lookup.declaration(s, decls, name: name)
 
     if found.is_err()
-        return fail("none", "no group declares this name")
+        return fail(code: "none", msg: "no group declares this name")
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "ffi_not_constant",
         message: "`" + found.must().header + "` has `" + name + "`, but not as a constant — clang cannot read its value while compiling",
@@ -138,7 +138,7 @@ function unknown_name(s: source.Source, decls: [ast.Decl], line: str, stderr: st
             caught @ true
 
     if !caught
-        return fail("none", "not an undeclared-name line")
+        return fail(code: "none", msg: "not an undeclared-name line")
     name = ffi_lookup.up_to_quote(quoted)
 
     # A tag-only struct is not an ABSENT one, and clang says both
@@ -150,11 +150,11 @@ function unknown_name(s: source.Source, decls: [ast.Decl], line: str, stderr: st
     # about the text in hand: if the tag line is present for THIS
     # name, ffi_missing_tag owns it.
     if ffi_lookup.has(text: stderr, needle: "must use 'struct' tag to refer to type '" + name + "'")
-        return fail("none", "the tag class owns this name")
+        return fail(code: "none", msg: "the tag class owns this name")
     found = ffi_lookup.declaration(s, decls, name: name)
 
     if found.is_err()
-        return fail("none", "no group declares this name")
+        return fail(code: "none", msg: "no group declares this name")
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "ffi_unknown_name",
         message: "`" + found.must().header + "` declares no `" + name + "` — clang read the header and could not find it",
@@ -194,7 +194,7 @@ function did_you_mean(stderr: str, name: str) -> str?
         if meant != name
             return ok(meant)
 
-    return fail("none", "clang offered no correction")
+    return fail(code: "none", msg: "clang offered no correction")
 
 # What clang's echo can leave stuck to a token: quotes and the
 # assertion's own closing punctuation.

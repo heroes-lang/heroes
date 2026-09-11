@@ -102,7 +102,7 @@ function owner(extent: [Extent], offset: i64) -> i64?
     hi: i64 @ extent.len() - 1
 
     if extent.len() == 0
-        return fail("outside", "no declarations at all")
+        return fail(code: "outside", msg: "no declarations at all")
 
     while lo < hi
         mid = (lo + hi + 1) / 2
@@ -114,7 +114,7 @@ function owner(extent: [Extent], offset: i64) -> i64?
 
     if extent[lo].start <= offset && offset < extent[lo].end
         return ok(extent[lo].decl)
-    return fail("outside", "between declarations")
+    return fail(code: "outside", msg: "between declarations")
 
 # Is this declaration a constant WITH a body — the thing that cannot recur?
 function is_valued_constant(decls: [ast.Decl], decl: i64) -> bool

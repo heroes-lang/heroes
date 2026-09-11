@@ -319,7 +319,12 @@ test "the cstr stop carries its route, every other operand does not"
 
 test "a discarded value splits on the receiver, and certainty follows"
     span = token.Span(start: 12, end: 20)
-    bare = discarded_value(got: "[i64]", receiver: fail("absent", "no receiver"), fallible: false, span: span)
+    bare = discarded_value(
+        got: "[i64]",
+        receiver: fail(code: "absent", msg: "no receiver"),
+        fallible: false,
+        span: span
+    )
     assert bare.fixes.len() == 1
     assert bare.fixes[0].certainty == .certain
     assert bare.fixes[0].span.start == 12 && bare.fixes[0].span.end == 12
@@ -334,7 +339,7 @@ test "a discarded value splits on the receiver, and certainty follows"
 # `heroes check --apply` writes a program the next pass rejects.
 test "a discarded FALLIBLE offers no `_ = ` at all, and says what answers an error instead"
     span = token.Span(start: 12, end: 20)
-    bare = discarded_value(got: "()?", receiver: fail("absent", "no receiver"), fallible: true, span: span)
+    bare = discarded_value(got: "()?", receiver: fail(code: "absent", msg: "no receiver"), fallible: true, span: span)
     assert bare.fixes.len() == 0
     assert bare.notes.len() == 1
     assert bare.message == "this line's value has type `()?` and nothing receives it, and `_ = …` will not do either: a `T?` may not be discarded"
@@ -414,7 +419,7 @@ test "sort's refusal names the set, the member, or the route"
     span = token.Span(start: 0, end: 4)
     bare = unordered_element(
         element: "Point",
-        reached: fail("absent", "the element itself"),
+        reached: fail(code: "absent", msg: "the element itself"),
         generic: false,
         span: span
     )
@@ -427,7 +432,12 @@ test "sort's refusal names the set, the member, or the route"
         span: span
     )
     assert inside.notes[0] == "its field `cells` holds `[Cell]`, which has no order the language can produce. Sort a key you can name instead — build `[i64]`, `[str]` or `[bool]` from the values and order that"
-    parameter = unordered_element(element: "A", reached: fail("absent", "unknown"), generic: true, span: span)
+    parameter = unordered_element(
+        element: "A",
+        reached: fail(code: "absent", msg: "unknown"),
+        generic: true,
+        span: span
+    )
     assert parameter.notes[0] == "`A` is a type parameter, so this line cannot know whether it has an order — take the comparison as a parameter instead, `less: (function(A, A) -> bool)`, and call `less(a, b)`"
 
 test "arity cites the declaration only when one exists"
@@ -441,7 +451,13 @@ test "arity cites the declaration only when one exists"
     )
     assert cited.notes.len() == 1
     assert cited.notes[0] == "declared at line 4: function dist2(a: Point, b: Point) -> i64"
-    builtin = arity(name: "len", expected: 1, got: 2, declared: fail("absent", "a built-in has no line"), span: span)
+    builtin = arity(
+        name: "len",
+        expected: 1,
+        got: 2,
+        declared: fail(code: "absent", msg: "a built-in has no line"),
+        span: span
+    )
     assert builtin.notes.len() == 0
     assert builtin.message == "`len` takes 1 argument(s), found 2"
 

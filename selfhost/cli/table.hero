@@ -141,7 +141,7 @@ function commands() -> [Command]
 # record of that one having completed.
 function retired(word: str) -> str?
     _ = word
-    return fail("none", "nothing is retired today")
+    return fail(code: "none", msg: "nothing is retired today")
 
 # --write shipped and panel 016 renamed it: "write" reads as the
 # NON-destructive meaning, which makes the plausible misreading the
@@ -160,7 +160,7 @@ function retired_flag(command: str, arg: str) -> str?
         return ok(
             "--emit-c` alone (the `#line` directives are the artifact; the emitter's own tests are what read C without them"
         )
-    return fail("none", "not a retired flag")
+    return fail(code: "none", msg: "not a retired flag")
 
 ## The exit contract
 

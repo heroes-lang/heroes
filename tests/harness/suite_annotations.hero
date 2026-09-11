@@ -486,22 +486,22 @@ function code_of(row: str) -> str?
     open = strings.index_of(text: row, needle: "[")
 
     if open.is_err()
-        return fail("none", "no bracket")
+        return fail(code: "none", msg: "no bracket")
     tail = row.slice(from: open.must(), to: row.len())
     close = strings.index_of(text: tail, needle: "]")
 
     if close.is_err()
-        return fail("none", "no closing bracket")
+        return fail(code: "none", msg: "no closing bracket")
     before = row.slice(from: 0, to: open.must())
     kind = last_word(before)
 
     if kind.len() == 0 || !all_lower(kind)
-        return fail("none", "the word before the bracket is not a kind")
+        return fail(code: "none", msg: "the word before the bracket is not a kind")
     code = row.slice(from: open.must() + 1, to: open.must() + close.must())
 
     # Digits belong: `indentation_not_multiple_of_4` is a code.
     if code.len() == 0 || !all_code(code)
-        return fail("none", "the bracket does not hold a code")
+        return fail(code: "none", msg: "the bracket does not hold a code")
     return ok(code)
 
 # The word before the bracket, cut at a space or a colon.

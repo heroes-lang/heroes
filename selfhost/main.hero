@@ -145,7 +145,7 @@ function main()
     _ = reading
     path = inv.file.default("")
     library = library_source.text()
-    read: source.Source? @ fail("unset", "no read yet")
+    read: source.Source? @ fail(code: "unset", msg: "no read yet")
 
     if root_only
         read @ input.read_root_only(path: path)

@@ -139,7 +139,7 @@ function literal_value(a: ast.Ast, s: source.Source, id: i64) -> LitValue?
             decoded = digits.decode_u64(digits.canonical_int(source.span_text(s, span)))
 
             if decoded.is_err()
-                return fail("no_value", "the literal does not fit a u64, and the lexer said so")
+                return fail(code: "no_value", msg: "the literal does not fit a u64, and the lexer said so")
             return ok(LitValue(negative: false, magnitude: decoded.must()))
         # §4.3: a character literal IS a number, and its value is one ASCII
         # character — so it fits every width and needs no special range.
@@ -148,11 +148,11 @@ function literal_value(a: ast.Ast, s: source.Source, id: i64) -> LitValue?
             text = escape.unescape(source.span_text(s, span))
 
             if text.len() == 0
-                return fail("no_value", "an empty character literal was already reported")
+                return fail(code: "no_value", msg: "an empty character literal was already reported")
             return ok(LitValue(negative: false, magnitude: text[0].to_u64().must()))
         .unary u =>
             if u.op != .neg
-                return fail("no_value", "not a literal")
+                return fail(code: "no_value", msg: "not a literal")
             inner = literal_value(a, s, u.operand)
 
             if inner.is_err()
@@ -160,13 +160,19 @@ function literal_value(a: ast.Ast, s: source.Source, id: i64) -> LitValue?
             flipped = inner.must()
             return ok(LitValue(negative: !flipped.negative, magnitude: flipped.magnitude))
         .float_lit | .str_lit | .interp | .bool_lit | .null_ptr | .name | .hole => return fail(
-            "no_value",
-            "not a number literal"
+            code: "no_value",
+            msg: "not a number literal"
         )
-        .binary | .field | .index | .call | .method | .variant_case => return fail("no_value", "not a literal")
-        .array | .map | .try_expr | .if_expr | .match_expr | .error => return fail("no_value", "not a literal")
+        .binary | .field | .index | .call | .method | .variant_case => return fail(
+            code: "no_value",
+            msg: "not a literal"
+        )
+        .array | .map | .try_expr | .if_expr | .match_expr | .error => return fail(
+            code: "no_value",
+            msg: "not a literal"
+        )
 
-    return fail("no_value", "unreached")
+    return fail(code: "no_value", msg: "unreached")
 
 ## Tests
 

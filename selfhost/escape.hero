@@ -88,7 +88,7 @@ function escape_text(after_backslash: str, ctx: Quoted) -> str?
 
     if after_backslash == "'" && ctx == .in_char
         return ok("'")
-    return fail(ERR_NOT_AN_ESCAPE, after_backslash)
+    return fail(code: ERR_NOT_AN_ESCAPE, msg: after_backslash)
 
 ## The decoder
 

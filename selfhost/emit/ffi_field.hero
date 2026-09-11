@@ -29,21 +29,21 @@ use checker
 # declaration.
 function field_type(s: source.Source, tree: ast.Ast, decls: [ast.Decl], line: str) -> diag.Diagnostic?
     if !ffi_lookup.has(text: line, needle: ffi_lookup.FAILED)
-        return fail("none", "not an assertion failure")
+        return fail(code: "none", msg: "not an assertion failure")
     rest = ffi_lookup.after(text: line, marker: extern_field.FIELD_ASSERTION)
 
     if rest.is_err()
-        return fail("none", "not a field assertion")
+        return fail(code: "none", msg: "not a field assertion")
     parts = ffi_lookup.words(text: rest.must())
 
     if parts.len() < 2
-        return fail("none", "the marker's tail is not ours")
+        return fail(code: "none", msg: "the marker's tail is not ours")
     type_name = parts[0]
     member = parts[1]
     found = record_field(s, tree, decls, type_name: type_name, member: member)
 
     if found.is_err()
-        return fail("none", "no group record has this field")
+        return fail(code: "none", msg: "no group record has this field")
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "ffi_field_type",
         message: "`" + type_name + "." + member + "` is not `" + found.must().declared + "` in `" + found.must().header + "` — clang read the header's struct and the field disagrees",
@@ -80,7 +80,7 @@ function record_field(s: source.Source, tree: ast.Ast, decls: [ast.Decl], type_n
                         )
             .constant_decl | .function_decl | .variant_decl | .test_decl => continue
 
-    return fail("none", "no group record has this field")
+    return fail(code: "none", msg: "no group record has this field")
 
 # clang's own "no member named 'red' in 'struct Color'": the header's
 # struct exists and the field does not. It matches clang's wording
@@ -93,25 +93,25 @@ function unknown_field(s: source.Source, decls: [ast.Decl], line: str) -> diag.D
     tail = ffi_lookup.after(text: line, marker: "no member named '")
 
     if tail.is_err()
-        return fail("none", "not a missing-member line")
+        return fail(code: "none", msg: "not a missing-member line")
     member = ffi_lookup.up_to_quote(tail.must())
     past = ffi_lookup.after(text: tail.must(), marker: "'")
 
     if past.is_err()
-        return fail("none", "no closing quote")
+        return fail(code: "none", msg: "no closing quote")
     struct_part = ffi_lookup.after(text: past.must(), marker: "struct ")
 
     if struct_part.is_err()
-        return fail("none", "no struct name on the line")
+        return fail(code: "none", msg: "no struct name on the line")
     type_name = ffi_lookup.trimmed(ffi_lookup.up_to_quote(struct_part.must()))
     group = record_group(s, decls, type_name: type_name)
 
     if group.is_err()
-        return fail("none", "no group declares this record")
+        return fail(code: "none", msg: "no group declares this record")
     field = field_span(s, decls, type_name: type_name, member: member)
 
     if field.is_err()
-        return fail("none", "the record never names this field")
+        return fail(code: "none", msg: "the record never names this field")
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "ffi_unknown_field",
         message: "`" + group.must() + "` declares no `" + member + "` in `" + type_name + "` — clang read the header's struct and it has no such field",
@@ -134,7 +134,7 @@ function record_group(s: source.Source, decls: [ast.Decl], type_name: str) -> st
                     return ok(emit_externs.unquoted(s, span: rec.header.must()))
             .constant_decl | .function_decl | .variant_decl | .test_decl => continue
 
-    return fail("none", "no group declares this record")
+    return fail(code: "none", msg: "no group declares this record")
 
 # Where the author wrote that field name, so the caret lands on the
 # token they must change rather than on the record's own line.
@@ -153,7 +153,7 @@ function field_span(s: source.Source, decls: [ast.Decl], type_name: str, member:
                         return ok(field.name)
             .constant_decl | .function_decl | .variant_decl | .test_decl => continue
 
-    return fail("none", "the record never names this field")
+    return fail(code: "none", msg: "the record never names this field")
 
 # A field the header gives NO SIZE: a flexible array member (panel
 # 079, discharging panel 071's condition). The old message was the
@@ -166,21 +166,21 @@ function field_span(s: source.Source, decls: [ast.Decl], type_name: str, member:
 # record partial, reach the bytes through the header's functions.
 function flexible_array_member(s: source.Source, tree: ast.Ast, decls: [ast.Decl], line: str) -> diag.Diagnostic?
     if !ffi_lookup.has(text: line, needle: ffi_lookup.FAILED)
-        return fail("none", "not an assertion failure")
+        return fail(code: "none", msg: "not an assertion failure")
     rest = ffi_lookup.after(text: line, marker: extern_field.FLEX_ASSERTION)
 
     if rest.is_err()
-        return fail("none", "not a flex assertion")
+        return fail(code: "none", msg: "not a flex assertion")
     parts = ffi_lookup.words(text: rest.must())
 
     if parts.len() < 2
-        return fail("none", "the marker's tail is not ours")
+        return fail(code: "none", msg: "the marker's tail is not ours")
     type_name = parts[0]
     member = parts[1]
     found = record_field(s, tree, decls, type_name: type_name, member: member)
 
     if found.is_err()
-        return fail("none", "no group record has this field")
+        return fail(code: "none", msg: "no group record has this field")
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "ffi_flexible_array_member",
         message: "`" + found.must().header + "` gives `" + type_name + "." + member + "` no size — it is written there with empty brackets, so it is not a field this record can name at any length",

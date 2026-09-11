@@ -107,7 +107,7 @@ function first_dot(name: str) -> i64?
             return ok(i)
         i @ i + 1
 
-    return fail("absent", "no dot in this name")
+    return fail(code: "absent", msg: "no dot in this name")
 
 function qualified_type(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl], id: i64, split_at: i64)
     span = a.types[id].span
@@ -212,7 +212,7 @@ function record_decl_named(name_start: i64, name_end: i64) -> ast.Decl
         name: span,
         doc: doc,
         span: span,
-        kind: .record_decl(fields: fields, header: fail("absent", "plain"), library: fail("absent", "plain"), partial: false, tag: fail("absent", "plain"))
+        kind: .record_decl(fields: fields, header: fail(code: "absent", msg: "plain"), library: fail(code: "absent", msg: "plain"), partial: false, tag: fail(code: "absent", msg: "plain"))
     )
 
 test "the three namespaces answer in order: primitive, generic, declaration"
@@ -261,11 +261,11 @@ test "a value in type position is named for what it is"
         generics: gs,
         params: ps,
         result: 0,
-        body: fail("absent", "unused"),
+        body: fail(code: "absent", msg: "unused"),
         is_extern: false,
-        header: fail("absent", "none"),
-        library: fail("absent", "none"),
-        owned_result: fail("none", "nothing to free")
+        header: fail(code: "absent", msg: "none"),
+        library: fail(code: "absent", msg: "none"),
+        owned_result: fail(code: "none", msg: "nothing to free")
     )
     fspan = token.Span(start: 12, end: 13)
     decls: [ast.Decl] @ [ast.Decl(name: fspan, doc: doc, span: fspan, kind: .function_decl(value: f))]

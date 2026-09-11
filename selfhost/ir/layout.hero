@@ -51,8 +51,11 @@ function field_type(decls: [ast.Decl], c: state.Checked, s: source.Source, owner
                         if source.span_text(s, field.name) == wanted
                             return state.written_type(c, field.ty)
 
-                    return fail("absent", "no such field")
-                .constant_decl | .function_decl | .variant_decl | .test_decl => return fail("absent", "not a record")
+                    return fail(code: "absent", msg: "no such field")
+                .constant_decl | .function_decl | .variant_decl | .test_decl => return fail(
+                    code: "absent",
+                    msg: "not a record"
+                )
         .case_ty vc =>
             match decls[vc.decl].kind
                 .variant_decl v =>
@@ -60,13 +63,16 @@ function field_type(decls: [ast.Decl], c: state.Checked, s: source.Source, owner
                         if source.span_text(s, field.name) == wanted
                             return state.written_type(c, field.ty)
 
-                    return fail("absent", "no such payload field")
-                .constant_decl | .function_decl | .record_decl | .test_decl => return fail("absent", "not a variant")
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail("absent", "no fields")
-        .array | .fixed | .map | .fallible | .function_ty         => return fail("absent", "no fields")
-        .failure | .generic | .error                              => return fail("absent", "no fields")
+                    return fail(code: "absent", msg: "no such payload field")
+                .constant_decl | .function_decl | .record_decl | .test_decl => return fail(
+                    code: "absent",
+                    msg: "not a variant"
+                )
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail(code: "absent", msg: "no fields")
+        .array | .fixed | .map | .fallible | .function_ty         => return fail(code: "absent", msg: "no fields")
+        .failure | .generic | .error                              => return fail(code: "absent", msg: "no fields")
 
-    return fail("absent", "unreached")
+    return fail(code: "absent", msg: "unreached")
 
 # The index of a field within the type that holds it, or absent if that
 # type holds no such field — which by here means the checker reported
@@ -84,7 +90,10 @@ function field_index(decls: [ast.Decl], c: state.Checked, s: source.Source, owne
                         names @ names.push(source.span_text(s, field.name))
 
                     return position(names, wanted)
-                .constant_decl | .function_decl | .variant_decl | .test_decl => return fail("absent", "not a record")
+                .constant_decl | .function_decl | .variant_decl | .test_decl => return fail(
+                    code: "absent",
+                    msg: "not a record"
+                )
         .case_ty vc =>
             match decls[vc.decl].kind
                 .variant_decl v =>
@@ -94,13 +103,16 @@ function field_index(decls: [ast.Decl], c: state.Checked, s: source.Source, owne
                         names @ names.push(source.span_text(s, field.name))
 
                     return position(names, wanted)
-                .constant_decl | .function_decl | .record_decl | .test_decl => return fail("absent", "not a variant")
+                .constant_decl | .function_decl | .record_decl | .test_decl => return fail(
+                    code: "absent",
+                    msg: "not a variant"
+                )
         .failure                                                  => return position(FAILURE_FIELDS, wanted)
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail("absent", "no fields")
-        .array | .fixed | .map | .fallible | .function_ty         => return fail("absent", "no fields")
-        .generic | .error                                         => return fail("absent", "no fields")
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail(code: "absent", msg: "no fields")
+        .array | .fixed | .map | .fallible | .function_ty         => return fail(code: "absent", msg: "no fields")
+        .generic | .error                                         => return fail(code: "absent", msg: "no fields")
 
-    return fail("absent", "unreached")
+    return fail(code: "absent", msg: "unreached")
 
 # The index of a variant's case by name: what a switch arm and a `.case`
 # construction both need.
@@ -115,9 +127,9 @@ function case_index(decls: [ast.Decl], s: source.Source, decl: i64, name: token.
                 names @ names.push(source.span_text(s, one_case.name))
 
             return position(names, wanted)
-        .constant_decl | .function_decl | .record_decl | .test_decl => return fail("absent", "not a variant")
+        .constant_decl | .function_decl | .record_decl | .test_decl => return fail(code: "absent", msg: "not a variant")
 
-    return fail("absent", "unreached")
+    return fail(code: "absent", msg: "unreached")
 
 function position(names: [str], wanted: str) -> i64?
     at: i64 @ 0
@@ -127,7 +139,7 @@ function position(names: [str], wanted: str) -> i64?
             return ok(at)
         at @ at + 1
 
-    return fail("absent", "no such name")
+    return fail(code: "absent", msg: "no such name")
 
 # Whether a value of this type carries a reference the compiler must
 # count (panels 021, 022). ONE HOME for this question: the ownership

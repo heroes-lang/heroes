@@ -80,11 +80,11 @@ function read(text: str) -> [Task]?
             continue
 
         if head.len() < 4 || head[0] != '[' || head[2] != ']' || head[3] != ' '
-            return fail(ERR_BAD_LINE, "line " + number.to_str() + ": a task is `[ ] text` or `[x] text`")
+            return fail(code: ERR_BAD_LINE, msg: "line " + number.to_str() + ": a task is `[ ] text` or `[x] text`")
         marker = head[1]
 
         if marker != ' ' && marker != 'x'
-            return fail(ERR_BAD_MARKER, "line " + number.to_str() + ": the marker is a space or an `x`")
+            return fail(code: ERR_BAD_MARKER, msg: "line " + number.to_str() + ": the marker is a space or an `x`")
         out @ out.push(Task(done: marker == 'x', text: trimmed(head.slice(from: 4, to: head.len()))))
 
     return ok(out)
@@ -108,7 +108,7 @@ function marker_of(task: Task) -> str
 
 function add(tasks: [Task], text: str) -> [Task]?
     if trimmed(text) == ""
-        return fail(ERR_EMPTY_TASK, "a task needs some text")
+        return fail(code: ERR_EMPTY_TASK, msg: "a task needs some text")
     return ok(tasks.push(Task(done: false, text: trimmed(text))))
 
 # `n` counts from 1, because the list a person reads is numbered from 1 and the
@@ -116,7 +116,10 @@ function add(tasks: [Task], text: str) -> [Task]?
 # remembering which end of the program is which.
 function complete(tasks: [Task], n: i64) -> [Task]?
     if n < 1 || n > tasks.len()
-        return fail(ERR_NO_SUCH_TASK, "there is no task " + n.to_str() + " — the list has " + tasks.len().to_str())
+        return fail(
+            code: ERR_NO_SUCH_TASK,
+            msg: "there is no task " + n.to_str() + " — the list has " + tasks.len().to_str()
+        )
     out: [Task] @ []
 
     for i in range(from: 0, to: tasks.len())
