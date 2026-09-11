@@ -226,16 +226,39 @@ export function tokenize(source: string): Token[] {
    */
   let previous: Token | null = null;
 
+  /**
+   * And the one before that, which only `::` needs: punctuation is pushed one
+   * character at a time, so the two colons are two tokens (panel 132).
+   */
+  let beforePrevious: Token | null = null;
+
   const push = (kind: TokenKind, text: string) => {
     const token = { kind, text };
     out.push(token);
     if (kind === 'c') return;
     if (kind === 'other' && text.trim().length === 0) return;
+    beforePrevious = previous;
     previous = token;
   };
 
   /** A word is a member when the token before it is exactly the dot. */
   const afterDot = () => previous !== null && previous.kind === 'other' && previous.text === '.';
+
+  /**
+   * ...and also when it follows `::`, the field-name operator (`Point::x`,
+   * panel 132). Punctuation is pushed one character at a time here, so the
+   * token before the word is the SECOND colon and the one before that is the
+   * first. Without this a field called `str` or `record` would be coloured as
+   * a type or a keyword — which is the mis-colouring a highlighter does
+   * instead of erroring.
+   */
+  const afterColons = () =>
+    previous !== null &&
+    previous.kind === 'other' &&
+    previous.text === ':' &&
+    beforePrevious !== null &&
+    beforePrevious.kind === 'other' &&
+    beforePrevious.text === ':';
 
   while (i < source.length) {
     const ch = source[i];
@@ -307,7 +330,8 @@ export function tokenize(source: string): Token[] {
       let end = i;
       while (end < source.length && (isAlnum(source[end]) || source[end] === '_')) end += 1;
       const word = source.slice(i, end);
-      const kind: TokenKind = afterDot() ? 'ident' : kw.has(word) ? 'k' : types.has(word) ? 't' : 'ident';
+      const kind: TokenKind =
+      afterDot() || afterColons() ? 'ident' : kw.has(word) ? 'k' : types.has(word) ? 't' : 'ident';
       push(kind, word);
       i = end;
       continue;

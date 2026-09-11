@@ -1,0 +1,16 @@
+# UNVERIFIED — pending debrief
+# `Shape::circle` — `::` takes a record's own name on its left, and a variant
+# has cases rather than fields. It is refused one phase earlier than the other
+# four ways of getting `::` wrong, by the rule that a variant names a type and
+# not a value, which is why it stands in its own file: a resolve error gates
+# the type check, so a file holding this case and the others would report this
+# one and leave the rest untested while the suite stayed green.
+#
+# The message that already existed is the right one and is pinned so it stays.
+
+variant Shape
+    circle
+    square
+
+function main()
+    print(Shape::circle)  #~ variant_in_value_position

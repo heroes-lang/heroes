@@ -1,0 +1,65 @@
+# UNVERIFIED — pending debrief
+# `Point::x` is the field's own NAME as a `str`, and this file is the four ways
+# a program reaches for it — one right and four wrong, each with its own
+# message, because they are four different mistakes.
+#
+# A fifth, `::` on a VARIANT, lives in its own file: it is refused one phase
+# earlier, and a resolve error gates the type check, so putting it here would
+# leave the other four untested while the suite stayed green.
+#
+# **Why the form exists, measured at panel 132.** A program that hands a field
+# name to something outside this language — JSON, CSV, a query — otherwise
+# types that name as a string nothing checks. A hand-written marshaller of
+# three record types types **18** such strings, and changing one of them from
+# `"width"` to `"witdh"` leaves `heroes build` at exit 0 with no diagnostic and
+# ships the wrong key. It was caught in that experiment only because the
+# program happened to read its own output back; one that only writes never
+# finds out.
+#
+# **Why `::` and not `.`.** A prototype that reused `.` was built first and was
+# green at +59 code lines, and the author chose against it: `.` already
+# qualifies a module (`geom.Point`) and already reads a field from a value
+# (`p.x`), so a third meaning would make the line legible only to a reader who
+# knows whether the base names a type or a value, which is not on that line.
+# `::` means nothing else.
+#
+# **The fourth case is the one this file exists for.** `Room.name`, with the
+# operator this language has had all along, used to be `record_name_alone`, a
+# message about how records are built — which is not the mistake somebody
+# reaching for a field's name has made. It now says which repair is which, and
+# carries a `certain` fix, because there is exactly one.
+
+record Room
+    name: str
+    width: i64
+
+# 1. RIGHT. The name comes from the field, so it cannot be misspelled.
+function key_of_width() -> str
+    return Room::width
+
+# 2. WRONG, and the one the form exists for: a field the record does not
+# declare. The message lists the fields it does have, so the repair needs no
+# other file.
+function slipped() -> str
+    return Room::witdh  #~ no_such_field
+
+# 3. WRONG: `::` on a value. `r` holds a room, it does not name one, and the
+# message says which operator reads which.
+function on_a_value(r: Room) -> str
+    return r::name  #~ not_a_record_name
+
+# 4. WRONG: the right idea with the old operator, and the field really is there.
+function old_operator() -> str
+    return Room.name  #~ dot_on_a_record_name
+
+# 5. WRONG, and still the message it always was, because here the author is not
+# reaching for a field name at all: no field is called `area`.
+function not_even_a_field() -> str
+    return Room.area  #~ record_name_alone
+
+function main()
+    print(key_of_width())
+    print(slipped())
+    print(on_a_value(Room(name: "hall", width: 3)))
+    print(old_operator())
+    print(not_even_a_field())

@@ -150,7 +150,7 @@ function bodies(@out: resolved.Resolved, a: ast.Ast, s: source.Source, decls: [a
             .try_expr                                                          => "a `?`"
             .hole                                                              => "a `???`"
             .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit => continue
-            .null_ptr | .name | .unary | .binary | .field                      => continue
+            .null_ptr | .name | .unary | .binary | .field | .field_name        => continue
             .index | .variant_case | .array | .map                             => continue
             .if_expr | .match_expr | .error                                    => continue
 

@@ -46,6 +46,61 @@ function typo_ident(a: ast.Ast, s: source.Source) -> [str]
 
     return out
 
+# The same slip inside a `str` literal used as a **map index**: `m["width"]`
+# becoming `m["witdh"]`.
+#
+# **This operator exists to measure a hole, the way `typo-code` does, and
+# panel 132 is why.** A program that hands a field name to something outside
+# this language writes that name as a string nothing checks, and one wrong
+# letter compiles at exit 0 and ships: a hand-written marshaller of three
+# record types types 18 such strings, and the sitting that found it caught the
+# slip only because that program happened to read its own output back. Until
+# this operator existed the net held fourteen and **not one of them typoed a
+# string literal**, so `heroes mutate` was blind exactly where the milestone
+# was looking.
+#
+# What it measures is a CHOICE rather than a defence: a program that writes
+# `m[Room::width]` offers this operator no site at all, and the slip it would
+# have made lands on an identifier the checker resolves, where `typo-ident`
+# already kills it.
+function typo_string_key(a: ast.Ast, s: source.Source) -> [str]
+    out: [str] @ []
+
+    for e in a.exprs
+        key = string_key(a: a, e: e)
+
+        if key.is_err()
+            continue
+        span = a.exprs[key.must()].span
+        text = code_text(s: s, span: span)
+
+        if text.is_err()
+            continue
+        out @ out.push(sites.edit(s: s, span: span, replacement: "\"" + sites.slipped(text.must()) + "\""))
+
+    return out
+
+# The index of `m["k"]`, and nothing else: an argument or a concatenation would
+# reach every message in the corpus and measure noise.
+function string_key(a: ast.Ast, e: ast.Expr) -> i64?
+    return match e.kind
+        .index ix =>
+            match a.exprs[ix.index].kind
+                .str_lit => ok(ix.index)
+                .int_lit | .float_lit | .interp | .char_lit | .bool_lit => fail(
+                    code: "no_key",
+                    msg: "not a string index"
+                )
+                .null_ptr | .name | .hole | .error                 => fail(code: "no_key", msg: "not a string index")
+                .unary | .binary | .field | .field_name | .index   => fail(code: "no_key", msg: "not a string index")
+                .call | .method | .variant_case                    => fail(code: "no_key", msg: "not a string index")
+                .array | .map | .try_expr | .if_expr | .match_expr => fail(code: "no_key", msg: "not a string index")
+        .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit => fail(code: "no_key", msg: "not an index")
+        .null_ptr | .name | .hole | .error                                 => fail(code: "no_key", msg: "not an index")
+        .unary | .binary | .field | .field_name                            => fail(code: "no_key", msg: "not an index")
+        .call | .method | .variant_case                                    => fail(code: "no_key", msg: "not an index")
+        .array | .map | .try_expr | .if_expr | .match_expr                 => fail(code: "no_key", msg: "not an index")
+
 # The same slip inside an error **code**: `fail("unknown_char", …)`, and the
 # `e.code == "unknown_char"` that reads it back.
 function typo_code(a: ast.Ast, s: source.Source) -> [str]
@@ -86,7 +141,7 @@ function code_literal(a: ast.Ast, s: source.Source, e: ast.Expr) -> i64?
             msg: "a literal holds no code"
         )
         .null_ptr | .name | .hole | .error                 => fail(code: "no_code", msg: "nothing to read here")
-        .unary | .field | .index                           => fail(code: "no_code", msg: "nothing to read here")
+        .unary | .field | .field_name | .index             => fail(code: "no_code", msg: "nothing to read here")
         .method | .variant_case                            => fail(code: "no_code", msg: "nothing to read here")
         .array | .map | .try_expr | .if_expr | .match_expr => fail(code: "no_code", msg: "nothing to read here")
 
@@ -118,7 +173,7 @@ function is_str(e: ast.Expr) -> bool
         .str_lit                                                => true
         .int_lit | .float_lit | .char_lit | .bool_lit | .interp => false
         .null_ptr | .name | .hole | .error                      => false
-        .unary | .binary | .field | .index                      => false
+        .unary | .binary | .field | .field_name | .index        => false
         .call | .method | .variant_case                         => false
         .array | .map | .try_expr | .if_expr | .match_expr      => false
 
@@ -126,6 +181,7 @@ function is_str(e: ast.Expr) -> bool
 function reads_code(a: ast.Ast, s: source.Source, id: i64) -> bool
     return match a.exprs[id].kind
         .field f                                                           => source.span_text(s, f.name) == "code"
+        .field_name                                                        => false
         .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit => false
         .null_ptr | .name | .hole | .error                                 => false
         .unary | .binary | .index                                          => false
@@ -206,7 +262,7 @@ function is_int_literal(e: ast.Expr) -> bool
         .int_lit                                                => true
         .float_lit | .str_lit | .interp | .char_lit | .bool_lit => false
         .null_ptr | .name | .hole | .error                      => false
-        .unary | .binary | .field | .index                      => false
+        .unary | .binary | .field | .field_name | .index        => false
         .call | .method | .variant_case                         => false
         .array | .map | .try_expr | .if_expr | .match_expr      => false
 

@@ -1,0 +1,55 @@
+# UNVERIFIED — pending debrief
+# The program panel 132 was convened over, written the way the sitting's
+# resolution allows: every key in the output comes from a field, so no key in
+# this file can be misspelled.
+#
+# The measurement that warranted it: the same three records written with bare
+# string keys type 18 of them, and one wrong letter compiles at exit 0 and
+# ships. Here the compiler refuses `Room::witdh` before the program runs.
+#
+# What the form deliberately does NOT do is write the output. Quoting,
+# escaping, the separators and the order are all still this program's, which is
+# the clause the sitting said was not optional: a mechanism that took the
+# format away would serve JSON and nothing else.
+
+record Point
+    x: i64
+    y: i64
+
+record Room
+    name: str
+    width: i64
+    at: Point
+
+function quoted(s: str) -> str
+    return "\"" + s + "\""
+
+function pair_str(key: str, value: str) -> str
+    return quoted(key) + ":" + quoted(value)
+
+function pair_num(key: str, value: i64) -> str
+    return quoted(key) + ":" + value.to_str()
+
+function point_json(p: Point) -> str
+    parts: [str] = [pair_num(key: Point::x, value: p.x), pair_num(key: Point::y, value: p.y)]
+    return "{" + join(parts, ",") + "}"
+
+function room_json(r: Room) -> str
+    parts: [str] = [
+        pair_str(key: Room::name, value: r.name)
+        pair_num(key: Room::width, value: r.width)
+        quoted(Room::at) + ":" + point_json(r.at)
+    ]
+    return "{" + join(sort(parts), ",") + "}"
+
+function main()
+    r = Room(name: "hall", width: 3, at: Point(x: 0, y: 1))
+    print(room_json(r))
+
+    # The names are values like any other: they sort, they concatenate, they
+    # go in a container. Nothing about them is special after the checker.
+    names: [str] = [Room::width, Room::name, Room::at]
+    print(join(sort(names), " "))
+
+    # And a name is exactly the text of the field, byte for byte.
+    print(Point::x == "x")

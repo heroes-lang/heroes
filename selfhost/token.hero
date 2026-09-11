@@ -60,6 +60,11 @@ variant TokenKind
     eq
     at
     colon
+    # `::`, the field-name operator: `Point::x` is the `str` `"x"`.
+    # Two bytes rather than a second meaning for `.`, which already
+    # qualifies a module and already reads a field from a value
+    # (panel 132, the author's choice against the built prototype).
+    colon_colon
     comma
     dot
     question
@@ -137,6 +142,7 @@ function kind_name(kind: TokenKind) -> str
         .eq          => "eq"
         .at          => "at"
         .colon       => "colon"
+        .colon_colon => "colon_colon"
         .comma       => "comma"
         .dot         => "dot"
         .question    => "question"

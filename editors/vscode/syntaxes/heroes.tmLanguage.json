@@ -85,7 +85,7 @@
     },
     "operator": {
       "patterns": [
-        { "match": "->|=>|==|!=|<=|>=|&&|\\|\\|", "name": "keyword.operator.hero" },
+        { "match": "->|=>|==|!=|<=|>=|&&|\\|\\||::", "name": "keyword.operator.hero" },
         { "match": "@", "name": "keyword.operator.mutable.hero" },
         { "match": "[-+*/%<>=!?|.]", "name": "keyword.operator.hero" }
       ]

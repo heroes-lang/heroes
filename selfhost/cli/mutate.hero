@@ -193,7 +193,8 @@ test "an unknown operator names the ones there are"
     # the second, and it is kept rather than deleted for the reason the help
     # text needs it: the message below quotes the count to the author, so a
     # table that grew without it would print a lie in a diagnostic.
-    assert ops.ids().len() == 14
+    # 14 -> 15 on 2026-09-12, `typo-key` (panel 132).
+    assert ops.ids().len() == 15
     assert !ops.known("swapargs")
 
 test "a module below a nested program's root is checked from the root, the nearest one no higher than the corpus"

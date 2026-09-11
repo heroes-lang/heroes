@@ -132,7 +132,7 @@ comparison   == != < <= > >=    (`< <= > >=`: a number only)
 boolean      && || !            (bool only; && and || short-circuit)
 bitwise      & | ^ ~ << >>      (i64 only; shift count 0..63 or it aborts)
 ```
-Precedence, strongest first: call and `.` → unary `-` `!` `~` → `* / %` → `+ -`
+Precedence, strongest first: call, `.` and `::` → unary `-` `!` `~` → `* / %` → `+ -`
 → `<<` `>>` → `&` → `^` → `|` → comparisons → `&&` → `||`.
 
 `==` is structural equality on any two values of one type, recursively; a map's
@@ -166,6 +166,9 @@ Loops: `while cond` and `for x in xs`, over an array or a `range` (section 11);
 ## 9. Functions and calls
 - Record construction is a call with field names, always mandatory:
   `Point(x: 3, y: 4)`, and a variant's case `.num(v: 7)` or `.plus`.
+- `Point::x` is the `str` `"x"`, the field's own name; a name the record does
+  not declare is a compile error. Write a field name to anything outside this
+  language with it.
 - When two parameters in a signature share a type, named arguments are
   mandatory at the call site: `copy(from: a, to: b)`, and a function type names
   the same two, `(function(from: str, to: str) -> ())`. The names are part of the
@@ -238,8 +241,7 @@ test "3-4-5 triangle"
 ```
 `test` blocks run only when asked for; ordinary builds ignore them. An
 `assert` failure shows the source expression, and both sides where `print`
-takes them; where a side is an aggregate it shows the expression alone, until
-this language renders one.
+takes them; where a side is an aggregate it shows the expression alone.
 
 `???` is a valid expression anywhere. It is not an error: the compiler
 reports what belongs there (the expected type, what is in scope). A program

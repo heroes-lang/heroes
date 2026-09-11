@@ -615,7 +615,7 @@ function value_block_shape(tree: ast.Ast, id: i64) -> i64
                 return NO_BLOCK
             return value_block_shape(tree, id: tail.must())
         .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => return NO_BLOCK
-        .name | .hole | .unary | .field | .index                                       => return NO_BLOCK
+        .name | .hole | .unary | .field | .field_name | .index                         => return NO_BLOCK
         .call | .method | .variant_case | .array | .map | .try_expr | .error           => return NO_BLOCK
 
     return NO_BLOCK
@@ -875,7 +875,14 @@ function valued(@f: Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span]
                     value: tail.must(),
                     indent: indent
                 )
-        .name | .hole | .unary | .field | .index => plain_valued(@f, tree, s, head: head, value: value, indent: indent)
+        .name | .hole | .unary | .field | .field_name | .index => plain_valued(
+            @f,
+            tree,
+            s,
+            head: head,
+            value: value,
+            indent: indent
+        )
         .call | .method | .variant_case | .array | .map | .try_expr | .error => plain_valued(
             @f,
             tree,
@@ -953,7 +960,7 @@ function broken(@f: Fmt, tree: ast.Ast, s: source.Source, head: str, value: i64,
         # A binary reaching here is control-free: valued() intercepts one
         # whose right edge is a control form before this path is taken.
 
-        .name | .hole | .unary | .binary | .field | .index => put_line(
+        .name | .hole | .unary | .binary | .field | .field_name | .index => put_line(
             @f,
             indent: indent,
             text: head + render(tree, s, id: value)
@@ -982,7 +989,7 @@ function binary_control_tail(tree: ast.Ast, id: i64) -> i64?
             code: "none",
             msg: "not a control form"
         )
-        .name | .hole | .unary | .field | .index => return fail(code: "none", msg: "not a control form")
+        .name | .hole | .unary | .field | .field_name | .index => return fail(code: "none", msg: "not a control form")
         .call | .method | .variant_case | .array | .map | .try_expr | .error => return fail(
             code: "none",
             msg: "not a control form"
@@ -1000,7 +1007,7 @@ function binary_prefix(tree: ast.Ast, s: source.Source, id: i64) -> str
             return wrapped(tree, s, id: b.left, needed: mine) + " " + bodies.binary_op(b.op) + " " + binary_prefix(tree, s, id: b.right)
         .if_expr | .match_expr                                                         => return ""
         .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => return ""
-        .name | .hole | .unary | .field | .index                                       => return ""
+        .name | .hole | .unary | .field | .field_name | .index                         => return ""
         .call | .method | .variant_case | .array | .map | .try_expr | .error           => return ""
 
     return ""
@@ -1174,7 +1181,7 @@ function spans_lines(tree: ast.Ast, s: source.Source, value: i64) -> bool
     match node.kind
         .if_expr | .match_expr                                                         => is_control @ true
         .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => is_control @ is_control
-        .name | .hole | .unary | .binary | .field | .index                             => is_control @ is_control
+        .name | .hole | .unary | .binary | .field | .field_name | .index               => is_control @ is_control
         .call | .method | .variant_case | .array | .map | .try_expr | .error           => is_control @ is_control
 
     if is_control
@@ -1249,7 +1256,7 @@ function power(tree: ast.Ast, id: i64) -> i64
 
         .if_expr | .match_expr                                                         => return 0
         .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => return POSTFIX_POWER
-        .name | .hole | .field | .index | .call | .method                              => return POSTFIX_POWER
+        .name | .hole | .field | .field_name | .index | .call | .method                => return POSTFIX_POWER
         .variant_case | .array | .map | .try_expr | .error                             => return POSTFIX_POWER
 
     return POSTFIX_POWER
@@ -1285,6 +1292,7 @@ function render(tree: ast.Ast, s: source.Source, id: i64) -> str
             # a - (b - c).
             return wrapped(tree, s, id: b.left, needed: mine) + " " + bodies.binary_op(b.op) + " " + wrapped(tree, s, id: b.right, needed: mine + 1)
         .field fl => return wrapped(tree, s, id: fl.base, needed: POSTFIX_POWER) + "." + source.span_text(s, fl.name)
+        .field_name fl => return wrapped(tree, s, id: fl.base, needed: POSTFIX_POWER) + "::" + source.span_text(s, fl.name)
         .index ix => return wrapped(tree, s, id: ix.base, needed: POSTFIX_POWER) + "[" + render(tree, s, id: ix.index) + "]"
         .call cl => return wrapped(tree, s, id: cl.callee, needed: POSTFIX_POWER) + "(" + args_line(tree, s, given: cl.args) + ")"
         .method m => return wrapped(tree, s, id: m.receiver, needed: POSTFIX_POWER) + "." + source.span_text(s, m.name) + "(" + args_line(tree, s, given: m.args) + ")"
@@ -1329,7 +1337,7 @@ function wrapped(tree: ast.Ast, s: source.Source, id: i64, needed: i64) -> str
     match tree.exprs[id].kind
         .if_expr | .match_expr                                                         => is_control @ true
         .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => is_control @ is_control
-        .name | .hole | .unary | .binary | .field | .index                             => is_control @ is_control
+        .name | .hole | .unary | .binary | .field | .field_name | .index               => is_control @ is_control
         .call | .method | .variant_case | .array | .map | .try_expr | .error           => is_control @ is_control
 
     if power(tree, id) < needed && !is_control

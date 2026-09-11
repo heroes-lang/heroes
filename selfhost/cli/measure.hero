@@ -77,16 +77,16 @@ constant CEILING: i64
 # rather than computed — because a headroom sentence against a stale count is
 # the exact sentence that cost this project 998 tokens.
 constant REAL_TOKENS: i64
-    5662
+    5716
 
 constant REAL_MODEL: str
     "claude-opus-5"
 
 constant REAL_TAKEN: str
-    "2026-09-11"
+    "2026-09-12"
 
 constant SPEC_DIGEST: str
-    "6e82771d0dbabc31"
+    "35968b435ed519d7"
 
 # THE SOFT LINE IS RETIRED, and it is the named removal that pays for the
 # raise above (panel 123 R7). It was 2000, set when the spec measured 2231 on

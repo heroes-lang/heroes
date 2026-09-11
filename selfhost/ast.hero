@@ -140,6 +140,14 @@ variant ExprKind
     field
         base: i64
         name: token.Span
+    # `Point::x` — the FIELD'S OWN NAME as a `str`, not its value. It exists
+    # so a program handing a field name to a foreign notation writes a name
+    # the checker resolves instead of a string nothing checks: `Point::witdh`
+    # does not compile (panel 132). Sugar: `ir/flatten.hero` erases it to a
+    # literal and nothing downstream sees a field.
+    field_name
+        base: i64
+        name: token.Span
     # `xs[i]`, `m[k]`. Out of bounds aborts; a map yields `V?` (§4.9).
     index
         base: i64
@@ -511,6 +519,7 @@ function depth(a: Ast, at: i64) -> i64
         .unary u => 1 + depth(a, u.operand)
         .binary b => 1 + max_of(a: depth(a, b.left), b: depth(a, b.right))
         .field f => 1 + depth(a, f.base)
+        .field_name f => 1 + depth(a, f.base)
         .index i => 1 + max_of(a: depth(a, i.base), b: depth(a, i.index))
         .try_expr t => 1 + depth(a, t.value)
         .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit => 1

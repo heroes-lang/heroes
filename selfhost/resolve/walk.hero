@@ -131,6 +131,11 @@ function expr(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl
             if qualified.qualified(@r, a, s, decls, at: id, receiver: f.base, called: f.name)
                 return
             expr(@r, a, s, decls, f.base)
+        # `Point::x` — the base is resolved so the checker can ask what it
+        # NAMES, and never treated as a qualified call: `::` is not a call
+        # and `geom.Point::x` reaches this with a `.field` base of its own.
+
+        .field_name f => expr(@r, a, s, decls, f.base)
         .index i =>
             expr(@r, a, s, decls, i.base)
             expr(@r, a, s, decls, i.index)
@@ -241,7 +246,7 @@ function place(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Dec
 
         .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit => expr(@r, a, s, decls, id)
         .null_ptr | .hole | .unary | .binary | .call                       => expr(@r, a, s, decls, id)
-        .method | .variant_case | .array | .map | .try_expr                => expr(@r, a, s, decls, id)
+        .field_name | .method | .variant_case | .array | .map | .try_expr  => expr(@r, a, s, decls, id)
         .if_expr | .match_expr | .error                                    => expr(@r, a, s, decls, id)
 
 ## Tests

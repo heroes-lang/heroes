@@ -199,6 +199,10 @@ function punct(@l: state.LexState, text: str)
         finish(@l, .shr, start: start, width: 2)
         return
 
+    if b0 == ':' && b1 == ':'
+        finish(@l, .colon_colon, start: start, width: 2)
+        return
+
     # One byte.
     one = one_byte(b0)
 

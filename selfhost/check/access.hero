@@ -11,6 +11,7 @@
 
 use token
 use ast
+use diag
 use source
 use resolved
 use parse
@@ -21,6 +22,115 @@ use check/lower
 use value_errors
 use data_errors
 use flow_errors
+
+# `Point::x` — the FIELD'S OWN NAME as a `str`, and never its value.
+#
+# It exists because a program handing a field name to a foreign notation —
+# JSON, CSV, a query — otherwise types that name as a string nothing checks,
+# and one wrong letter compiles, runs and ships (panel 132, measured: a
+# hand-written marshaller of three records types 18 such strings, and
+# `f["witdh"]` leaves the compiler silent at exit 0).
+#
+# Read from the RESOLVER, never from a table keyed by a span: the route
+# `.module` in base position already takes, and `check/state.hero`'s rule that
+# a span-keyed table belongs on the token side of the line.
+#
+# The spelling is `::` and not `.` by the author's choice at panel 132,
+# against a prototype that was already built and green: `.` already qualifies
+# a module and already reads a field from a value, so a third meaning would
+# make the line legible only to a reader who knows whether the base names a
+# type or a value, which is not on that line.
+function names_a_record(r: resolved.Resolved, decls: [ast.Decl], base: i64) -> bool
+    match r.uses[base]
+        .top t =>
+            match decls[t.at].kind
+                .record_decl                                                 => return true
+                .variant_decl | .constant_decl | .function_decl | .test_decl => return false
+        .module | .local | .builtin | .unresolved => return false
+
+    return false
+
+# The type of `Point::x`: `str` when `x` is a field of `Point`, and an error
+# otherwise. Two different mistakes get two different messages, because they
+# are two different mistakes: a base that names no record at all, and a
+# record that has no such field.
+function field_name_type(@c: state.Checker, s: source.Source, r: resolved.Resolved, decls: [ast.Decl], base: i64, base_span: token.Span, field: token.Span) -> i64
+    name = source.span_text(s, field)
+    at: i64 @ 0
+
+    match r.uses[base]
+        .top t => at @ t.at
+        .module | .local | .builtin | .unresolved =>
+            state.push_diagnostic(@c, not_a_record_name(what: source.span_text(s, base_span), span: base_span))
+            return state.error_ty_of(c)
+
+    match decls[at].kind
+        .record_decl rec =>
+            known: [str] @ []
+
+            for candidate in rec.fields
+                known @ known.push(source.span_text(s, candidate.name))
+
+            for candidate in known
+                if candidate == name
+                    return table.str_ty(c.out.types)
+
+            state.push_diagnostic(
+                @c,
+                data_errors.no_such_field(holder: source.span_text(s, decls[at].name), field: name, known: known, span: field)
+            )
+            return state.error_ty_of(c)
+        .variant_decl | .constant_decl | .function_decl | .test_decl =>
+            state.push_diagnostic(@c, not_a_record_name(what: source.span_text(s, base_span), span: base_span))
+            return state.error_ty_of(c)
+
+    return state.error_ty_of(c)
+
+# `Room.name` where `Room` NAMES a record and `name` IS one of its fields:
+# the author reached for the field's name and used the wrong operator. Before
+# `::` existed this could only be `record_name_alone`, a message about
+# construction, which is not the mistake that was made — so the repair is
+# named, and it is `certain` because there is exactly one (CLAUDE.md §8).
+function dot_where_colons_belong(holder: str, field: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "dot_on_a_record_name",
+        message: "`" + holder + "` names a record, so `" + holder + "." + field + "` reads a field from a value that is not there — `" + holder + "::" + field + "` is the NAME of that field, and `" + holder + "(field: value, …)` builds one",
+        span: span
+    )
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "write `::`", replacement: "::", span: span, certainty: .certain)
+    )
+    return d
+
+# Whether `field` is one of `base`'s fields, asked of the declaration rather
+# than of a type: the base names a record, so it has no type to ask.
+function record_has_field(s: source.Source, r: resolved.Resolved, decls: [ast.Decl], base: i64, field: str) -> bool
+    at: i64 @ 0
+
+    match r.uses[base]
+        .top t                                    => at @ t.at
+        .module | .local | .builtin | .unresolved => return false
+
+    match decls[at].kind
+        .record_decl rec =>
+            for candidate in rec.fields
+                if source.span_text(s, candidate.name) == field
+                    return true
+
+            return false
+        .variant_decl | .constant_decl | .function_decl | .test_decl => return false
+
+    return false
+
+# The left of `::` must be a record's name. It says what IS there rather than
+# only what is missing, because the two plausible slips — a value where a type
+# belongs, and a variant where a record belongs — read identically otherwise.
+function not_a_record_name(what: str, span: token.Span) -> diag.Diagnostic
+    return diag.new_diagnostic(
+        code: "not_a_record_name",
+        message: "`" + what + "` does not name a record, so `" + what + "::` has no field to name — `::` takes a record's own name on its left, and `x.field` reads a field from a value",
+        span: span
+    )
 
 # `p.x` — a field of a record, of a variant's case, or of the error
 # payload.

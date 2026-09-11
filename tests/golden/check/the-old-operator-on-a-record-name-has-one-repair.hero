@@ -1,0 +1,19 @@
+# UNVERIFIED — pending debrief
+# `Room.name` where `Room` NAMES a record and `name` IS one of its fields: the
+# author reached for the field's name and used the operator that reads a field
+# from a value. There is exactly one repair, so the fix is `certain` and this
+# file is the executable half of CLAUDE.md §8's promise for it — the `.fixed`
+# beside it is what `check --apply` produces, and it checks clean.
+#
+# Before `::` existed this could only be `record_name_alone`, a message about
+# how a record is constructed, which is not the mistake that was made.
+
+record Room
+    name: str
+    width: i64
+
+function key() -> str
+    return Room.name  #~ dot_on_a_record_name
+
+function main()
+    print(key())

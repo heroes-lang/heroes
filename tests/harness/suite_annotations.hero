@@ -408,29 +408,50 @@ function claimed_by(text: str) -> [str]
 
     for row in rows
         line @ line + 1
-        opener = strings.trimmed(row)
 
-        if strings.starts_with(text: opener, prefix: "#") && !strings.starts_with(text: opener, prefix: "#~")
-            continue
-        at = strings.index_of(text: row, needle: "#~")
+        for mark in marks_in(row: row, line: line)
+            found @ found.push(mark)
 
-        if at.is_err()
-            continue
+    return found
 
-        # One comment may carry both forms: `#~ empty_record #~v empty_variant`.
-        after = row.slice(from: at.must() + 2, to: row.len())
+# One row's marks, which is where the reader's whole rule lives — pulled out
+# of `claimed_by` on 2026-09-12 so a test can reach the rule rather than
+# imitate it, which is how the `v` defect below survived.
+function marks_in(row: str, line: i64) -> [str]
+    found: [str] @ []
+    opener = strings.trimmed(row)
 
-        for chunk in strings.split_text(text: after, separator: "#~")
-            body = strings.trimmed(chunk)
-            delta: i64 @ 0
-            codes: str @ body
+    if strings.starts_with(text: opener, prefix: "#") && !strings.starts_with(text: opener, prefix: "#~")
+        return found
+    at = strings.index_of(text: row, needle: "#~")
 
-            if strings.starts_with(text: body, prefix: "v")
-                delta @ 1
-                codes @ strings.without_prefix(text: body, prefix: "v")
+    if at.is_err()
+        return found
 
-            for code in strings.words(codes)
-                found @ found.push((line + delta).to_str() + ":" + code)
+    # One comment may carry both forms: `#~ empty_record #~v empty_variant`.
+    after = row.slice(from: at.must() + 2, to: row.len())
+
+    for chunk in strings.split_text(text: after, separator: "#~")
+        # **The `v` is tested BEFORE the trim, and that is the whole rule.**
+        # `#~v <code>` marks the next line and `#~ <code>` marks this one, so
+        # the marker is the character immediately after `#~` — trim first and
+        # `#~ variant_in_value_position` reads as `#~v` plus the code
+        # `ariant_in_value_position`, silently.
+        #
+        # Found 2026-09-12, at the first golden that ever annotated a code
+        # beginning with `v`. Two codes do, `variant_in_value_position` and
+        # `variant_not_callable`, and neither had ever been annotated, so the
+        # hole was real for as long as this reader has existed and nothing had
+        # walked into it.
+        delta: i64 @ 0
+        codes: str @ strings.trimmed(chunk)
+
+        if strings.starts_with(text: chunk, prefix: "v")
+            delta @ 1
+            codes @ strings.trimmed(strings.without_prefix(text: chunk, prefix: "v"))
+
+        for code in strings.words(codes)
+            found @ found.push((line + delta).to_str() + ":" + code)
 
     return found
 
@@ -602,3 +623,28 @@ test "a thesis rule with no witness is one failure, and the real list is found"
     red: report.Report @ report.empty()
     every_thesis_rule_has_a_witness(@red, witnessed: one_short)
     assert red.failed == 1
+
+test "a code beginning with `v` is this line's, not the next one's"
+    # The reader tested for `v` AFTER trimming until 2026-09-12, so
+    # `#~ variant_in_value_position` was read as `#~v` plus the code
+    # `ariant_in_value_position` — a whole class of codes that could not be
+    # annotated, silently, for as long as this file has existed. Two codes are
+    # in that class and neither had ever been annotated, which is why nothing
+    # found it until a golden needed one.
+    here = marks_in(row: "    print(Shape::circle)  #~ variant_in_value_position", line: 16)
+
+    assert here.len() == 1
+    assert here[0] == "16:variant_in_value_position"
+
+    # And the real next-line marker still marks the next line.
+    next_one = marks_in(row: "    #~v variant_not_callable", line: 16)
+
+    assert next_one.len() == 1
+    assert next_one[0] == "17:variant_not_callable"
+
+    # Both forms in one comment, which the reader has always allowed.
+    both = marks_in(row: "    x  #~ empty_record #~v variant_not_callable", line: 3)
+
+    assert both.len() == 2
+    assert both[0] == "3:empty_record"
+    assert both[1] == "4:variant_not_callable"

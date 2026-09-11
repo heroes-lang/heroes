@@ -1,0 +1,4 @@
+tests/golden/check/a-field-name-written-four-ways-and-three-are-wrong.hero:44:18: error[no_such_field]: `Room` has no field `witdh` — `Room` has `name`, `width`
+tests/golden/check/a-field-name-written-four-ways-and-three-are-wrong.hero:49:12: error[not_a_record_name]: `r` does not name a record, so `r::` has no field to name — `::` takes a record's own name on its left, and `x.field` reads a field from a value
+tests/golden/check/a-field-name-written-four-ways-and-three-are-wrong.hero:53:16: error[dot_on_a_record_name]: `Room` names a record, so `Room.name` reads a field from a value that is not there — `Room::name` is the NAME of that field, and `Room(field: value, …)` builds one
+tests/golden/check/a-field-name-written-four-ways-and-three-are-wrong.hero:58:12: error[record_name_alone]: `Room` names a record, and a record is built by calling it with every field: `Room(field: value, …)`

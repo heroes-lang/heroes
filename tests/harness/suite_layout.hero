@@ -98,6 +98,27 @@ constant CEILING: i64
 # refusals are its stated subject rather than an appendix, so the only cut
 # available would move the message away from the cursor that recovers from it.
 #
+# **Four moved on 2026-09-12, for a ratified surface form, and the number of
+# files is the story** (panel 132: `Point::x`, the field-name operator). The
+# form is one AST node, and a new node is a new arm in every exhaustive
+# `match` over `ExprKind` — **68 of them**, which the compiler listed one by
+# one and would not let a session forget. Four of the files holding those arms
+# were already over §11's 300, so four ceilings move: `ast.hero` 491 ->
+# **505** (measured 500), `check/walk.hero` 1842 -> **1870** (measured 1859,
+# and it carries the typing arm and the near-miss diagnostic as well as the
+# enumeration), `grammar_expr.hero` 1044 -> **1085** (measured 1075, the `::`
+# postfix and its own parser) and `ir/flatten.hero` 1123 -> **1150** (measured
+# 1139, where the form is ERASED to a literal, which is what makes it sugar).
+#
+# **The cost is the author's choice and the record says so rather than
+# rounding it.** A prototype spelled `Point.x` reused the existing field node
+# and cost +59 code lines in three files with no ceiling moved; the author
+# took `::` against it, because `.` already qualifies a module and already
+# reads a field from a value, and a third meaning would make the line legible
+# only to a reader who knows whether the base names a type or a value. `::`
+# has to be in the tree for the formatter to re-print it, so it is its own
+# node, and its own node is these four numbers.
+#
 # Each is raised with room rather than to the measured line, which is the
 # lesson `print_fmt.hero` paid for twice: a ceiling set at today's exact count
 # asks the same question again over six lines of comment. If panel 101 removes
@@ -309,12 +330,12 @@ constant CEILING: i64
 #
 constant DECIDED: [str]
     [
-        "selfhost/check/walk.hero 1842"
+        "selfhost/check/walk.hero 1870"
         "selfhost/print/fmt.hero 1150"
-        "selfhost/ir/flatten.hero 1123"
-        "selfhost/grammar_expr.hero 1044"
+        "selfhost/ir/flatten.hero 1150"
+        "selfhost/grammar_expr.hero 1085"
         "selfhost/ir/print.hero 470"
-        "selfhost/ast.hero 491"
+        "selfhost/ast.hero 505"
         "selfhost/check/table.hero 389"
         "selfhost/value_errors.hero 334"
         "selfhost/check/builtins.hero 377"
@@ -502,7 +523,9 @@ test "the ceiling is per file, and a decided file keeps its own"
     # move. The number stays in two places on purpose — one is the ceiling, the
     # other is the proof that the lookup reads it — and the cost of forgetting
     # the second is three red legs rather than a silent pass.
-    assert ceiling_for("selfhost/check/walk.hero") == 1842
+    # 1842 -> 1870 on 2026-09-12 (panel 132's field-name operator), and this
+    # line moved WITH the table for the reason the paragraph above gives.
+    assert ceiling_for("selfhost/check/walk.hero") == 1870
     assert ceiling_for("selfhost/parse/use_line.hero") == 310
     assert ceiling_for("selfhost/anything-else.hero") == CEILING
 

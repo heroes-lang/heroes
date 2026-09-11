@@ -76,7 +76,7 @@ function args_of(e: ast.Expr) -> [ast.Arg]
         .variant_case v                                                    => v.args
         .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit => none
         .null_ptr | .name | .hole | .error                                 => none
-        .unary | .binary | .field | .index                                 => none
+        .unary | .binary | .field | .field_name | .index                   => none
         .array | .map | .try_expr | .if_expr | .match_expr                 => none
 
 # An argument's full extent — its label, where it has one, through its value.
@@ -94,7 +94,7 @@ function arms_of(e: ast.Expr) -> [ast.Arm]
         .match_expr m                                                      => m.arms
         .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit => none
         .null_ptr | .name | .hole | .error                                 => none
-        .unary | .binary | .field | .index                                 => none
+        .unary | .binary | .field | .field_name | .index                   => none
         .call | .method | .variant_case                                    => none
         .array | .map | .try_expr | .if_expr                               => none
 
@@ -103,7 +103,7 @@ function is_name(e: ast.Expr) -> bool
         .name                                                              => true
         .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit => false
         .null_ptr | .hole | .error                                         => false
-        .unary | .binary | .field | .index                                 => false
+        .unary | .binary | .field | .field_name | .index                   => false
         .call | .method | .variant_case                                    => false
         .array | .map | .try_expr | .if_expr | .match_expr                 => false
 
@@ -117,7 +117,7 @@ function is_int(e: ast.Expr) -> bool
         .int_lit                                                => true
         .float_lit | .str_lit | .interp | .char_lit | .bool_lit => false
         .null_ptr | .name | .hole | .error                      => false
-        .unary | .binary | .field | .index                      => false
+        .unary | .binary | .field | .field_name | .index        => false
         .call | .method | .variant_case                         => false
         .array | .map | .try_expr | .if_expr | .match_expr      => false
 

@@ -45,7 +45,7 @@ function contextual(a: ast.Ast, id: i64) -> bool
 
         .null_ptr => true
         .int_lit | .char_lit | .float_lit | .unary => number_literal(a, id) || float_literal(a, id)
-        .str_lit | .interp | .bool_lit | .name | .binary | .field | .index => false
+        .str_lit | .interp | .bool_lit | .name | .binary | .field | .field_name | .index => false
         .call | .method | .try_expr | .if_expr | .match_expr | .error => false
 
 # Whether this expression IS a number literal, sign included. `-128` is
@@ -63,9 +63,9 @@ function number_literal(a: ast.Ast, id: i64) -> bool
                 number_literal(a, u.operand)
             else
                 false
-        .float_lit | .str_lit | .interp | .bool_lit | .null_ptr | .name | .hole => false
-        .binary | .field | .index | .call | .method | .variant_case             => false
-        .array | .map | .try_expr | .if_expr | .match_expr | .error             => false
+        .float_lit | .str_lit | .interp | .bool_lit | .null_ptr | .name | .hole   => false
+        .binary | .field | .field_name | .index | .call | .method | .variant_case => false
+        .array | .map | .try_expr | .if_expr | .match_expr | .error               => false
 
 # The same question for a FLOAT literal, which f32 made a real one (panel
 # 060). Separate from number_literal rather than folded in, and the
@@ -81,7 +81,7 @@ function float_literal(a: ast.Ast, id: i64) -> bool
             else
                 false
         .int_lit | .char_lit | .str_lit | .interp | .bool_lit | .null_ptr | .name   => false
-        .hole | .binary | .field | .index | .call | .method                         => false
+        .hole | .binary | .field | .field_name | .index | .call | .method           => false
         .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => false
 
 # Whether a contextual expression will actually take the type offered.
@@ -109,7 +109,7 @@ function adopts(c: state.Checker, a: ast.Ast, id: i64, offered: i64) -> bool
     is_null = match a.exprs[id].kind
         .null_ptr                                                                   => true
         .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .name  => false
-        .hole | .unary | .binary | .field | .index | .call | .method                => false
+        .hole | .unary | .binary | .field | .field_name | .index | .call | .method  => false
         .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => false
 
     if is_null
@@ -163,7 +163,7 @@ function literal_value(a: ast.Ast, s: source.Source, id: i64) -> LitValue?
             code: "no_value",
             msg: "not a number literal"
         )
-        .binary | .field | .index | .call | .method | .variant_case => return fail(
+        .binary | .field | .field_name | .index | .call | .method | .variant_case => return fail(
             code: "no_value",
             msg: "not a literal"
         )

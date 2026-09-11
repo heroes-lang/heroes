@@ -86,7 +86,7 @@ function write_stmt(tree: ast.Ast, s: source.Source, id: i64, indent: i64, head:
             match tree.exprs[e.value].kind
                 .if_expr | .match_expr                                                         => is_control @ true
                 .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => is_control @ is_control
-                .name | .hole | .unary | .binary | .field | .index                             => is_control @ is_control
+                .name | .hole | .unary | .binary | .field | .field_name | .index               => is_control @ is_control
                 .call | .method | .variant_case | .array | .map | .try_expr | .error           => is_control @ is_control
 
             if is_control
@@ -139,7 +139,7 @@ function write_valued(tree: ast.Ast, s: source.Source, head: str, value: i64, in
 
             return out
         .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => return pad(indent) + head + render_expr(tree, value, s) + "\n"
-        .name | .hole | .unary | .binary | .field | .index => return pad(indent) + head + render_expr(tree, value, s) + "\n"
+        .name | .hole | .unary | .binary | .field | .field_name | .index => return pad(indent) + head + render_expr(tree, value, s) + "\n"
         .call | .method | .variant_case | .array | .map | .try_expr | .error => return pad(indent) + head + render_expr(tree, value, s) + "\n"
 
     return pad(indent) + head + render_expr(tree, value, s) + "\n"
@@ -179,9 +179,10 @@ function render_expr(tree: ast.Ast, id: i64, s: source.Source) -> str
 
             return "(" + op + render_expr(tree, u.operand, s) + ")"
         .binary b => return "(" + render_expr(tree, b.left, s) + " " + binary_op(b.op) + " " + render_expr(tree, b.right, s) + ")"
-        .field f  => return render_expr(tree, f.base, s) + "." + source.span_text(s, f.name)
-        .index ix => return render_expr(tree, ix.base, s) + "[" + render_expr(tree, ix.index, s) + "]"
-        .call cl  => return render_expr(tree, cl.callee, s) + "(" + render_args(tree, s, given: cl.args) + ")"
+        .field f      => return render_expr(tree, f.base, s) + "." + source.span_text(s, f.name)
+        .field_name f => return render_expr(tree, f.base, s) + "::" + source.span_text(s, f.name)
+        .index ix     => return render_expr(tree, ix.base, s) + "[" + render_expr(tree, ix.index, s) + "]"
+        .call cl      => return render_expr(tree, cl.callee, s) + "(" + render_args(tree, s, given: cl.args) + ")"
         .method m => return render_expr(tree, m.receiver, s) + "." + source.span_text(s, m.name) + "(" + render_args(tree, s, given: m.args) + ")"
         .variant_case vc =>
             if vc.args.len() == 0

@@ -209,8 +209,11 @@ function fold_negative(@b: build.Lowering, a: ast.Ast, s: source.Source, op: ast
             code: "no",
             msg: "not an int literal"
         )
-        .name | .hole | .unary | .binary | .field | .index => return fail(code: "no", msg: "not an int literal")
-        .call | .method | .variant_case | .array | .map    => return fail(code: "no", msg: "not an int literal")
-        .try_expr | .if_expr | .match_expr | .error        => return fail(code: "no", msg: "not an int literal")
+        .name | .hole | .unary | .binary | .field | .field_name | .index => return fail(
+            code: "no",
+            msg: "not an int literal"
+        )
+        .call | .method | .variant_case | .array | .map => return fail(code: "no", msg: "not an int literal")
+        .try_expr | .if_expr | .match_expr | .error     => return fail(code: "no", msg: "not an int literal")
 
     return fail(code: "no", msg: "unreached")
