@@ -362,3 +362,35 @@ not something an evaluator can consult. So C1 and C2 and the measured pain are
 `2ac0403` after the merge: `typo-digit` **0 sites**, corpus 1252 mutants, 93% /
 78% — sites 5 → 0, the number `docs/measurements/005` asked to be reported rather
 than the rate.
+
+---
+
+## Corrected 2026-09-11, at panel 131: the C4 row files reflection under the wrong ground
+
+**The row's verdict is right and its citation is wrong.** C4 says reflection over
+types is refused by Part 6's **Ruby** row rather than its Macros row, and calls
+that *"the citation two living documents depend on"*. Panel 131 tested the Ruby
+row's stated ground — *"you cannot tell from the source what is callable … and it
+requires runtime dispatch, i.e. an interpreter"* — and **the second clause does
+not carry to reflection over types**: Go is statically compiled to native code and
+has `reflect`. That clause is true of `method_missing` and `instance_eval`, which
+dispatch by name, and it is not true of reading a type's fields.
+
+**The real cost, sourced from the language that shipped run-time reflection and
+then removed it**: Rust RFC 0379, *Remove Reflection*, 2014-10-13, whose three
+stated drawbacks are per-type metadata causing *"noticeable increases in compile
+time and binary size"*, formatting that was *"inherently not speedy"*, and
+recompilation complexity — and which says reflection became obsolete **because
+`deriving` was better**. TinyGo, a compiled Go, ships an incomplete `reflect`
+where `encoding/json` compiles and then panics at run time, and its documented
+advice is *"use code generation or manual serialization"*. Nim's own
+`std/typeinfo` says its run-time type information *"will evolve and may eventually
+be deprecated"*.
+
+**Run-time reflection therefore has its own Part 6 row since 2026-09-11**, with
+the measured ground — a value cannot reach its own descriptor, and every place the
+metadata could live breaks either the C layout or `_Static_assert`'s blindness to
+a struct field — and with its own falsifier. The C4 row's **column that matters**
+is unaffected: for four of seven capabilities the thing that refuses it is not
+Part 6, and reflection is now one of the three where it is, on a ground this tree
+can measure.

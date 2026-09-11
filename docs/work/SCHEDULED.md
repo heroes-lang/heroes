@@ -47,111 +47,49 @@ file and the same panel and one action closes both; where two items merely share
 a *blocker* rather than a deliverable they stay two, with the dependency named.
 
 *******************************************************************************
-**OPEN: 54**
+**OPEN: 53**
 
-- [ ] **M-reflection-verdict** | panel 117's sixth option: give `assert` both sides for an aggregate by walking to the first DIFFERING LEAF and naming the field, instead of rendering the value | `docs/panel/117-both-sides-of-an-assert-when-a-side-is-an-aggregate.md` · `selfhost/emit/structural.hero` · `runtime/parts/array.c`
+- [ ] **M-reflection-verdict** | step 2, the corrected sitting on compile-time derivation: can the compiler synthesise a per-type field walk a program aims at a FOREIGN NOTATION, rather than a rendering of Heroes' own construction call | `docs/panel/131-the-refusals-were-sound-and-their-reasons-were-not.md` · `examples/json/` · `selfhost/emit/structural.hero`
 
-    **Origin:** panel 117, 2026-09-07, the sitting's own finding rather than
-    any brief's. The historian read Zig's `std.testing.expectEqual` from source:
-    it never renders the aggregate, it switches on the type and recurses, and
-    prints two values only on the scalar arm. Its doc comment says the point out
-    loud, that it shows exactly how the two are not equal.
+    **Origin:** panel 131, 2026-09-11, which ruled two of its three questions
+    and deliberately did not rule this one, because **its own brief put the
+    question wrongly**. The drafts that sitting carried render `Point(x: 3, y: 4)`,
+    which is display; the precedent and the measured pressure are about a walk
+    aimed at a foreign notation, which is derivation. Three seats answered the
+    question and two answered the brief, and the split in the verdict table is
+    the evidence.
 
-    **Why this route and not the four the brief carried.** It answers every
-    objection the sitting raised by construction, not by compromise. No
-    iteration order is promised, so the map measurement that killed every
-    rendering option stops being an obstacle. The walk is `eq`'s, which panel
-    076 already gave a worklist and no bound for a reason that makes it sound,
-    so no new depth question opens. Nothing is rendered, so the third invariant
-    clause *equal values render equal* is never owed and
-    `selfhost/emit/structural.hero`'s seven remaining lines under §11's ceiling
-    are not spent. `HeroDesc` and `HERO_RUNTIME_ABI` are untouched, so the FFI
-    seat's veto is satisfied without argument. And it is not a second copy of
-    what the language is, so the historian's D precedent — an assert-only
-    renderer that broke at the link boundary and still has open defects seven
-    years on — does not bind.
+    **Nothing below is re-derived in that sitting; it is handed over measured.**
+    The Part 11 effect the thesis asks for: `encoding/json` written by hand for
+    three records is **120 lines**, and changing `f["width"]` to `f["witdh"]`
+    gives **exit 0, zero diagnostics, and the wrong key in the output** — caught
+    only because that program round-trips, so a program that only marshals never
+    finds out. The proof that a construction-call render is **not** the answer:
+    **0 of 56** hand-written renderers deleted by the warden's count, **0 of 31**
+    by the compiler seat's, because every one targets a foreign notation —
+    `shown(Date)` zero-pads, `shown(Amount)` converts cents,
+    `examples/json/value.hero:47` sorts keys and escapes strings. The floor any
+    mechanism must beat: **350-450 code lines across six modules and the
+    runtime**, with `structural.hero` at 293 of 300 and `ctype.hero` at 370
+    already over. The standing constraint: a derived walk over a `partial` record
+    must **abort**, joining `_eq` and `_hash`, because `struct passwd` is 72
+    bytes of which 12 are declared and two records differing in `pw_gid` render
+    identically while `memcmp` says they differ. The precedent: Rust `derive`
+    2017, Swift's compiler-synthesised `Codable` 2017, Zig `comptime`, Erlang's
+    `record_info` *"added during compilation"*, C++26 — **and none reversed**.
+    The costed warning: Haskell's `deriving Generic` is quadratic in constructor
+    count (GHC #5642), so any mechanism owes a curve measured at 8, 16, 32 and 64
+    fields. And what refusing costs: the ecosystem builds a code generator
+    **outside** the language, as ESA's ASN1SCC is for Ada and C in flight
+    software — an end-state CLAUDE.md §10 forbids by name.
 
-    **Three things owed BEFORE it lands, because it is unrun.** A compiled
-    prototype, since no seat was asked about it and the cost is an estimate. The
-    map case run against the two `==`-equal maps the sitting measured, to show
-    the walk reports a differing key without promising an order. And the depth
-    case run to the frame count panel 076 measured, to show `eq`'s worklist
-    carries it.
-
-    **And §9 owes a `fixedbugs` case per shape the day it lands**, because the
-    provoking case is a witness and not the class: an array, a map, a record, an
-    optional, a variant, and a nested one of each. `tests/harness/suite_special.hero`'s
-    aggregate row goes red that day by design, and unpinning it is part of the
-    landing.
-
-    **Re-verified 2026-09-10: STILL OPEN, and its own estimate is exact today.**
-    `tests/harness/suite_special.hero:260-269` still pins today's behaviour on
-    purpose and names panel 117 in the unpin instruction; `grep -rn differing
-    --include='*.hero' selfhost runtime` is empty, so no walk exists. And the
-    *"seven remaining lines under §11's ceiling"* re-measures to exactly that:
-    `selfhost/emit/structural.hero` is **293** code lines against a 300 ceiling, in
-    `suite_layout.hero`'s own unit and not `wc -l`.
-
-- [ ] **M-reflection-verdict** | the witnesses, re-measured at the opening, plus the author's annotation question | `examples/json/` · `design.md` Part 6 · `docs/panel/018`
-
-    **Origin:** author instruction 2026-09-03, the author's own example;
-    scheduled `DESIGN-LOG.md:539`. A third question is the author's own,
-    2026-09-06.
-
-    **Compile-time derivation over a record's fields is refused by nothing in
-    the record, and the corpus writes it by hand.** Measured 2026-09-03:
-    `examples/json/` is **671** lines (`main.hero` 64, `parse.hero` 416,
-    `value.hero` 191) rendering and parsing a `variant` by hand; `grep -rhoE
-    '^function (to_str|render|to_json|from_json|show|format)_?[a-z]*'
-    examples/` finds **20** hand-written renderers (`render` 5, `shown` 4, `show`
-    4, `rendered` 4, `to_str_of`, `show_levels`, `render_or` one each); the
-    emitter already generates `eq` and `hash` by walking fields (CLAUDE.md §7).
-    Run-time reflection is the Ruby row's (`design.md:2395`), and its refusal
-    owes a Part 6 row with a falsifier, since today it is citable only from a
-    reasoning note (`docs/panel/039-comptime-and-part-6.md` § Appended
-    2026-09-04, row C4) and a panel aside (`docs/panel/018:99`). The sitting
-    sits before M-core-packages step 2, `encoding/json`, whose Go original is
-    reflection-based.
-
-    **And a third question since 2026-09-06, the author's** (*"simply tags one
-    can put on some parts of the code, which the compiler can use — so system
-    tags, or other tags that could be defined by the user … I see some keywords
-    that look exactly like decorators, such as `owned fclose`"*): (iii) a
-    general annotation mechanism, user-defined tags on declarations, ruled on
-    with a Part 6 row and its falsifier. Its only refusal today is
-    `docs/panel/018-top-level-declaration-shape.md:97-100`, a
-    rejected-along-the-way bullet no DESIGN-LOG row names. The brief carries
-    panel 114 R7's closed-set clause and its Rust witness
-    (`docs/panel/114-the-question-was-not-which-platform.md:150-156`,
-    `:244-252`), `design.md:217`'s *"meaning lives elsewhere"*,
-    `design.md:1953`'s prefix-`@name` refusal, and the honest argument for it,
-    CLAUDE.md §9's bill paid once. Measured 2026-09-07: `decorator` appears
-    three times across design.md, `spec/`, `docs/panel/`, `DESIGN-LOG.md`,
-    `docs/work/`, `docs/ROADMAP.md` and CLAUDE.md, the prior's refusal in
-    `spec/reserved-words.md:30` and FastAPI twice, and in no sitting; spec
-    headroom **225**. The system marks the compiler already reads — six
-    contextual words in `selfhost/parse/` — are M-core-packages' question (vii),
-    and a Python decorator is M-closures-verdict's; both named, neither judged
-    here — and since 2026-09-08 that half is **answered**: closures are refused,
-    so a decorator in Python's sense is not buildable and this sitting's question
-    (iii) is about tags alone.
-
-    **Where to look also:** `design.md` Part 6 (`:2395`, `:2406-2428`), `:217`,
-    `:1953` · `docs/panel/039` § Appended 2026-09-04 (row C4) ·
-    `docs/work/DONE.md`, the 2026-09-04 entry for the packages session ·
-    `selfhost/parse/members.hero:81-94`.
-    **Why it matters:** a refusal that lives in a footnote is a question that
-    will be asked again — and on 2026-09-06 it was.
-
-    **Re-verified 2026-09-10: STILL OPEN, three counts STALE.** Hand-written
-    renderers are **31**, not 20 (`shown` 13, `show` 5, `render` 5, `rendered` 4,
-    four singletons). Spec headroom is **706**, not 225 — the ceiling moved to 6144
-    on 2026-09-09. And `decorator` now returns **10** hits over the same document
-    set, because the 2026-09-07 rows that RECORD the *"three times"* measurement now
-    count themselves, which is the shape a count over a record always takes.
-    `examples/json/` is still **671** lines exactly. Two pointers moved:
-    `design.md:2395` is `:2489` and `:1953` is `:1988`. And `encoding/json` is
-    M-core-packages **step 4** since the 2026-09-10 reorder, not step 2.
+    **One spec gap is carried into the sitting rather than left where it was
+    found.** The ergonomist, reading the document alone, could not determine what
+    `to_str` takes: § 11 says it cannot fail and never states its domain, while
+    § 2 defines every `f"{e}"` hole as *"writes that value as `to_str` does"*. So
+    from the specification it cannot be settled whether `f"{c.verbose}"` prints
+    `true`. On a record the wrong guess is a loud compile error; on a `bool` it
+    is **silently different text**. That gap is there under every verdict.
 
 - [ ] **M-deferral-ledger** | the list the ledger opens with | `design.md` Part 7, Part 8 warts 15–16, Part 9 · `docs/panel/008-escape-sequences.md`
 
