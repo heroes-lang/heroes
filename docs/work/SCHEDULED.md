@@ -47,7 +47,7 @@ file and the same panel and one action closes both; where two items merely share
 a *blocker* rather than a deliverable they stay two, with the dependency named.
 
 *******************************************************************************
-**OPEN: 54**
+**OPEN: 55**
 
 - [ ] **M-reflection-verdict** | panel 117's sixth option: give `assert` both sides for an aggregate by walking to the first DIFFERING LEAF and naming the field, instead of rendering the value | `docs/panel/117-both-sides-of-an-assert-when-a-side-is-an-aggregate.md` · `selfhost/emit/structural.hero` · `runtime/parts/array.c`
 
@@ -1885,6 +1885,33 @@ a *blocker* rather than a deliverable they stay two, with the dependency named.
     `design.md:718` calls the QBE backend *Part 7 item 14*, where item 14 is
     declaration visibility and QBE is item **15** (`design.md:2807`) — the same slip
     the ROADMAP's own cells carried until 2026-09-03.
+
+- [ ] **M-check-completeness** | build and measure the route panel 128 vetoed on cost: a function type carrying parameter names, mandatory where two share a type, part of the type's identity | `docs/panel/128-the-type-that-names-nothing.md` · `selfhost/check/table.hero:111-129` · `selfhost/parse/type.hero:191-233`
+
+    **Origin:** panel 128's compiler seat, 2026-09-11, which vetoed the route
+    and then named what would lift its own veto: **build it, show the two
+    ceilings raised and `heroes mutate --operator swap-args` at 100% under about
+    150 code lines, with the emission, descriptor and determinism suites green.**
+    That is a measurement rather than an argument, which is why it is scheduled
+    instead of argued again.
+
+    **What the sitting already settled for whoever builds it.** The names go IN
+    the type's identity, not beside it: the ffi seat's condition, because
+    otherwise a relay assignment launders the swap and `_Generic` proves C
+    cannot re-check it, so the checker is the whole defence. The historian's Ada
+    precedent is the other answer and is recorded in the sitting: names in the
+    type and outside its identity, which is what Go and TypeScript do and what
+    Swift kept after SE-0111 removed the identity-significant form. The two
+    seats disagree on the record and the sitting took robustness, which is
+    CLAUDE.md § Precedence rank 3.
+
+    **Three facts the builder needs.** Identity is the interned canonical string
+    `ty_key`, so names entering it make every assignment, `==`, map key and
+    typedef name-sensitive. `parse/type.hero:221` ships a `certain` fix that
+    DROPS a name from a function type, and it must be inverted with the rule.
+    And the route still does not reach `fold`, where the defect ships: two
+    distinct letters carry no mandatory names, so the generic higher-order
+    inversion needs its own answer.
 
 - [ ] **M-check-completeness** | three rules a blind reader guessed at, and one of the guesses compiles: `sort`'s direction, `xs[i] @ v`, and whether `main` may be fallible | `docs/panel/126-the-document-nobody-had-tidied.md` · `spec § 10 Strings, arrays, maps` · `spec § 11 Built-ins`
 
