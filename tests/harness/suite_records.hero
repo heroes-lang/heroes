@@ -409,6 +409,20 @@ constant REFUSED: [str]
 # hand, with the row, in one commit. `REFUSED` gains nothing: the runner-up
 # names stayed in the session.
 #
+# **76 -> 77 on 2026-09-11**, `M-named-callbacks`, scheduled rather than closed:
+# the author answered panel 129's second question by asking for the route that
+# closes the generic case, over the sitting's own recommendation. `REFUSED` gains
+# `M-generic-labels`, the runner-up, refused because the milestone delivers names
+# on callbacks and not a generics feature.
+#
+# **75 -> 76 on 2026-09-11**, `M-labelled-types`, the fourth of the night and
+# the one that closed what the third had narrowed: panel 129 judged the route
+# panel 128 had priced and scheduled, and three of its five seats sent the work
+# back before it landed. Moved by hand, with the row, in one commit. `REFUSED`
+# gains `M-named-parameters`, the runner-up, refused because a declaration's
+# parameters have been named since v0 and the id would have claimed a topic this
+# milestone does not deliver.
+#
 # **74 -> 75 on 2026-09-11**, `M-positional-values`, the third of the night and
 # the third out of the one before it: panel 128 sat on defect 026, vetoed three
 # routes and landed the one nobody had listed. Moved by hand, with the row, in
@@ -416,7 +430,7 @@ constant REFUSED: [str]
 # because this milestone delivers the absence of labels at such a call rather
 # than their presence.
 constant ROWS: i64
-    75
+    77
 
 # **`WATCHED` stood here until 2026-09-07 and nothing had read it since
 # 2026-08-19.** It listed `design.md` and `CLAUDE.md` as *"the two documents whose
