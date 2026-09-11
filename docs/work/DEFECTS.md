@@ -20,14 +20,14 @@ them already in the record.
 **Numbers are never reused, and 014 was issued twice** — `docs/work/DONE.md`
 carries a Windows-diagnostic defect and an FFI-boundary defect both numbered
 014, filed a day apart. A record is not rewritten (CLAUDE.md §14), so the
-collision stands there; the next number to issue is **028** (022 and 023 were issued on 2026-09-08, 022 was SPLIT on 2026-09-09 by panel 122 into 022 and 024, and all three closed the same day, 024 last, at M-held-bytes; **025** and **026** were issued and closed on 2026-09-11 at M-labelled-builtins and M-named-callbacks, and **027 was issued 2026-09-11** beside panel 131) — 017 to 021 were
+collision stands there; the next number to issue is **029** (022 and 023 were issued on 2026-09-08, 022 was SPLIT on 2026-09-09 by panel 122 into 022 and 024, and all three closed the same day, 024 last, at M-held-bytes; **025** and **026** were issued and closed on 2026-09-11 at M-labelled-builtins and M-named-callbacks, and **027** was issued 2026-09-11 beside panel 131 and **028** beside panel 132) — 017 to 021 were
 all issued on 2026-09-08 and all closed on 2026-09-08, and all five are in the
 record.
 
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 1**
+**OPEN: 2**
 
 - [ ] **027 — a header field of type `char *` makes a binding unbindable, and the refusal arrives as an internal error** | `cstr` emits as `const char *`, so a legal `extern` record naming a non-const `char *` field is refused by the compiler's own `-Werror`, with a message that accuses the compiler's internals and names no repair | `selfhost/emit/ctype.hero` · `selfhost/emit/extern_record.hero` · `selfhost/cli/flags.hero:42-51` · `spec § 13`
 
@@ -76,5 +76,51 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     and `struct group` have non-const `char *` fields; the corpus's 20 `extern`
     programs have not been swept for it. That sweep is owed with the repair, at
     the class rather than at this witness.
+
+- [ ] **028 — a record field of function type that is never called through aborts the compiler after the checker has passed the program** | `heroes check` says the program is fine at exit 0, then `heroes build` dies at exit 134 with `assert failed: !found.is_err()` and no file, no line and no diagnostic code | `selfhost/emit/` · `selfhost/ir/mono.hero` · `.claude/rules/c-boundary.md`
+
+    **Origin:** the ffi-pragmatist seat hit it on its first Shape B run at panel
+    132, 2026-09-11, and called it blocking for any record-of-handlers form.
+    Reproduced by the coordinator on the frozen tree the same day before filing,
+    against the **seed-built** compiler and not `selfhost/` — that scope is
+    stated because the seat asked for it.
+
+    **Reproducer**, run 2026-09-11:
+
+        record S
+            f: (function(v: i64) -> i64)
+
+        function twice(v: i64) -> i64
+            return v * 2
+
+        function main()
+            s = S(f: twice)
+            _ = s
+
+        $ ./heroes check main.hero     ; echo $?
+        0
+        $ ./heroes build main.hero -o out
+        assert failed: !found.is_err()
+        $ echo $?
+        134
+
+    **The control**, the same record with the field actually called through
+    (`print(s.f(3))`): exit 0, binary written. So it is the field that is never
+    called, and the checker passes it deliberately — a read is a use.
+
+    **Why it is worse than its size suggests.** It is the `internal error` class
+    `.claude/rules/c-boundary.md` names as the one that accuses the compiler and
+    repairs nothing, and here it does not even manage that much: there is no
+    message, no code and no span, only a failed internal assertion. CLAUDE.md § 8
+    asks a diagnostic to carry everything needed to fix the program without
+    opening another file. **And the two halves disagree**, which is its own
+    defect: `check` is the command a program is judged by and it says yes.
+
+    **The repair is owed at the class**, with a `tests/golden/` case per shape:
+    a function-typed field never called, one in a nested record, one in a record
+    inside an array, and one whose arity and parameter types differ — the seat
+    reports that the abort survives only at arity >= 2 with one shared parameter
+    type, which is why panel 131's *"a record can hold a function value"* probe
+    read as true and this stayed hidden.
 
 *******************************************************************************

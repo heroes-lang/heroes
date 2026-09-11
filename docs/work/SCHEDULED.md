@@ -47,49 +47,92 @@ file and the same panel and one action closes both; where two items merely share
 a *blocker* rather than a deliverable they stay two, with the dependency named.
 
 *******************************************************************************
-**OPEN: 53**
+**OPEN: 54**
 
-- [ ] **M-reflection-verdict** | step 2, the corrected sitting on compile-time derivation: can the compiler synthesise a per-type field walk a program aims at a FOREIGN NOTATION, rather than a rendering of Heroes' own construction call | `docs/panel/131-the-refusals-were-sound-and-their-reasons-were-not.md` · `examples/json/` · `selfhost/emit/structural.hero`
+- [ ] **M-reflection-verdict** | step 3, land shape E — a field's name becomes a name the checker resolves — with the three things its landing owes and the mutation operator that pays for it | `docs/panel/132-two-seats-invented-the-same-thing-and-two-others-invented-the-other.md` · `selfhost/check/access.hero` · `selfhost/check/walk.hero:337` · `selfhost/ir/flatten.hero` · `selfhost/mutate/ops.hero`
 
-    **Origin:** panel 131, 2026-09-11, which ruled two of its three questions
-    and deliberately did not rule this one, because **its own brief put the
-    question wrongly**. The drafts that sitting carried render `Point(x: 3, y: 4)`,
-    which is display; the precedent and the measured pressure are about a walk
-    aimed at a foreign notation, which is derivation. Three seats answered the
-    question and two answered the brief, and the split in the verdict table is
-    the evidence.
+    **Origin:** panel 132, 2026-09-11, which adopted E after **two seats invented
+    it independently** — the llm-ergonomist from the specification alone
+    (`Room::width`) and the compiler-engineer from the whole compiler
+    (`Point.width`) — and the second **built it**: it compiles itself and runs,
+    at **+59 code lines** across three files with **zero** in `selfhost/emit/`,
+    `runtime/`, the lexer, the parser, ownership and mono, 631 compiler tests and
+    109 `check` goldens green, `heroes fmt` and double emit byte-identical, and
+    `heroes check selfhost/main.hero` 14.41 s to **13.90 s** on a still machine.
+    The grammar already parses `Point.x` and today refuses it at
+    `selfhost/check/walk.hero:337`, so the slot is free, and `ir/flatten.hero`
+    erases it to an interned literal, which makes it **sugar and not core** by
+    design.md §1.7's own test.
 
-    **Nothing below is re-derived in that sitting; it is handed over measured.**
-    The Part 11 effect the thesis asks for: `encoding/json` written by hand for
-    three records is **120 lines**, and changing `f["width"]` to `f["witdh"]`
-    gives **exit 0, zero diagnostics, and the wrong key in the output** — caught
-    only because that program round-trips, so a program that only marshals never
-    finds out. The proof that a construction-call render is **not** the answer:
-    **0 of 56** hand-written renderers deleted by the warden's count, **0 of 31**
-    by the compiler seat's, because every one targets a foreign notation —
-    `shown(Date)` zero-pads, `shown(Amount)` converts cents,
-    `examples/json/value.hero:47` sorts keys and escapes strings. The floor any
-    mechanism must beat: **350-450 code lines across six modules and the
-    runtime**, with `structural.hero` at 293 of 300 and `ctype.hero` at 370
-    already over. The standing constraint: a derived walk over a `partial` record
-    must **abort**, joining `_eq` and `_hash`, because `struct passwd` is 72
-    bytes of which 12 are declared and two records differing in `pw_gid` render
-    identically while `memcmp` says they differ. The precedent: Rust `derive`
-    2017, Swift's compiler-synthesised `Codable` 2017, Zig `comptime`, Erlang's
-    `record_info` *"added during compilation"*, C++26 — **and none reversed**.
-    The costed warning: Haskell's `deriving Generic` is quadratic in constructor
-    count (GHC #5642), so any mechanism owes a curve measured at 8, 16, 32 and 64
-    fields. And what refusing costs: the ecosystem builds a code generator
-    **outside** the language, as ESA's ASN1SCC is for Ada and C in flight
-    software — an end-state CLAUDE.md §10 forbids by name.
+    **The three things the landing owes, named at the sitting rather than
+    discovered.** **(a) The surface is not settled**: `Point.width` reads as field
+    access on a value while `Point` is a type, and `Room::width` avoids that at
+    the cost of a second sigil; one is chosen with the diagnostic in front of the
+    author. **(b) `error[record_name_alone]` gets the golden it has never had** —
+    `grep -rln record_name_alone tests/` is empty today, a live diagnostic nothing
+    judges — because E lands in exactly that diagnostic's slot. **(c) The real
+    token count replaces the estimate**: ≈ **+46 real** from **+36 vendored**,
+    measured offline on the coordinator's wording, because
+    `heroes measure --refresh` refuses any file but the spec itself (panel 123 R5).
 
-    **One spec gap is carried into the sitting rather than left where it was
-    found.** The ergonomist, reading the document alone, could not determine what
-    `to_str` takes: § 11 says it cannot fail and never states its domain, while
-    § 2 defines every `f"{e}"` hole as *"writes that value as `to_str` does"*. So
-    from the specification it cannot be settled whether `f"{c.verbose}"` prints
-    `true`. On a record the wrong guess is a loud compile error; on a `bool` it
-    is **silently different text**. That gap is there under every verdict.
+    **And the mutation operator lands with it, because it is what PAYS for E under
+    design.md §1.6.** Two seats converged on it without knowing of each other:
+    `selfhost/mutate/ops.hero` holds **14** operators and **not one typos a string
+    literal**, so `heroes mutate` is blind to the exact mistake this milestone
+    exists to kill. On a marshaller written with bare strings the new operator
+    scores **0% killed**; on one written `Record.field`, **100%**, because the
+    mutation lands on an identifier the checker resolves. Zero spec tokens, and a
+    pre-registered falsifiable prediction naming an instrument that exists, which
+    is what §1.6 accepts as payment.
+
+    **What E does NOT close, and the sitting says so rather than implying
+    otherwise**: the rot. Add a field and the marshaller still compiles and
+    silently never mentions it. That is the item below.
+
+- [ ] **M-reflection-verdict** | shape B-prime, the generated per-field walk with handlers as parameters, which is the only route to the ROT — scheduled with what it owes, and NOT adopted | `docs/panel/132-two-seats-invented-the-same-thing-and-two-others-invented-the-other.md` · `selfhost/emit/structural.hero` · `selfhost/ir/mono.hero`
+
+    **Origin:** panel 132, 2026-09-11, where it was reached twice independently.
+    The ffi-pragmatist found that a record of handlers cannot work because **a
+    record cannot be generic**, so its accumulator is fixed at one type and every
+    byte must buffer in a Heroes string before reaching C — design.md §1.11's
+    level-3 glue inverted; it moved the handlers into parameters, freeing the
+    accumulator, and compiled one walk driving both a Heroes string and a live
+    `FILE *`, plus one builder consuming both a `Json` and a live SQLite row.
+    Independently the historian, reading Ada's `T'Write` (ISO 1995) and
+    `T'Put_Image` (ISO 2022), wrote that the precedent transfers *"only if the
+    per-scalar writers are passed as ordinary function arguments"*.
+
+    **Why it is scheduled and not adopted, and this is the distinction that cost
+    panel 117 four days ago.** What was compiled is a **hand-written simulation of
+    what the compiler would generate**, 78 lines of it, not the generation. The
+    boundary half is measured and sound — `HeroDesc` still **5** members, the
+    header's struct by value and unredeclared, `_Static_assert`s intact,
+    monomorphised `HERO_TU_LOCAL` so dead-code elimination survives, **nothing in
+    the value ever** — and the compiler side is unrun. Field-name literals go from
+    **18 to 0**, which is the whole buy and it is real.
+
+    **Three refusals its own proposing seat calls blocking, each compiled.** A
+    walk over a `partial` record builds at exit 0 reporting 12 bytes of a measured
+    `sizeof(struct stat) == 144`, and **consuming one is not merely an abort but
+    impossible**, there being no honest construction call. `sort(keys(m))` on
+    `{Point: i64}` is `error[unordered_element]`, and brute force found **four**
+    pairs of `==`-equal maps marshalling to different bytes. And the ergonomic
+    cost is a 13-argument call whose generated signature is a **577-character line
+    the formatter does not wrap**.
+
+    **Two predictions must be run before it lands**, both the historian's: that it
+    **fails on a record whose field is a list of records**, because the nested walk
+    must itself receive the writer set and the instantiation cannot be inferred at
+    the inner call site; and that derivation is **linear** in field count at 8, 64
+    and 512 fields, which scores that seat's own panel 131 warning — if the 512
+    case exceeds 8x the 64 case, the quadratic disease it sourced for Haskell's
+    `Generic` is in this shape too.
+
+    **And Ada's own documented mistake is the third thing owed**: GNAT says the
+    default derived format is *"deliberately not documented and subject to
+    change"* and tells users not to depend on field order. A Heroes walk feeding a
+    JSON package must fix field order in the document, or a golden will pin what
+    the compiler never promised.
 
 - [ ] **M-deferral-ledger** | the list the ledger opens with | `design.md` Part 7, Part 8 warts 15–16, Part 9 · `docs/panel/008-escape-sequences.md`
 
