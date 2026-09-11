@@ -1434,6 +1434,31 @@ the first and third is just as plausible. And it applies to *declared* types, no
 monomorphisation, otherwise a generic function's call convention would change depending on whether
 its type parameters collapse.
 
+**And the rule reaches a function TYPE, since defect 026** (panel 128 priced it and scheduled it,
+panel 129 judged it built). A call made through a function *value* has no declaration at the call
+site to read names from, so the names live in the type: a function type names the parameters that
+share a type with another, `(function(from: str, to: str) -> ())`, and names no others — the same
+positions §4.9 owes a label at, and no more. A call through such a value is named exactly as a call
+to a declaration is.
+
+**The names are part of the type's identity.** `(function(a: i64, b: i64) -> i64)` and
+`(function(b: i64, a: i64) -> i64)` are two types, and that is what stops a second annotation from
+laundering a swap by renaming the positions of the function it was given: a type that merely carried
+names would let the call site obey the annotation while the callee obeyed itself. Two consequences
+are stated rather than hidden. Two functions that agree on everything but the spelling of their
+same-typed parameters are two types, so they cannot share one array of function values — and a call
+through such an array would have no answer to which names it uses. And a parameter a declaration
+calls `_` contributes NO name, which is what `_` means at every other site in the language, so it
+fits whatever the expected type calls that position; ignoring an argument is what a C callback does
+for a living (panel 129's ffi seat, on zlib's `free_func`).
+
+The criterion above is unchanged, and that is what keeps `fold`'s `(function(B, A) -> B)` outside
+the rule: two letters are two types *in the signature*, however a call instantiates them. So a
+callback's ROLES can still be inverted at its definition — `fold` handed a function that reads its
+two parameters the other way round prints `cba` for `abc` at exit 0 — and design.md says so here
+rather than letting a green suite imply otherwise. That is the price of this criterion and not a
+defect against it; changing it is `docs/work/DECIDE.md`'s question.
+
 No default parameter values, no overloading, no user variadics. The one variadic-looking form is
 `print`, and it is **compiler-known, not a function value** (panel 006, decided 2026-08-03): a
 comma-separated list of `str`/`i64`/`f64`/`bool` values, each rendered by its canonical `to_str`,

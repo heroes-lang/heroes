@@ -3706,3 +3706,224 @@ Was | author instruction, 2026-08-14 | **A runtime function that joins two path 
 - [x] **panel 127**, ratified 2026-09-11 | **RATIFIED AS ADOPTED** (the author's word, `ratifico i panel`): both halves of the same-typed-argument rule reach `fail` and `slice`, their parameter names carried as literals at the `.runtime` tier, and `wrong_label`'s fix is a `guess` where the written label names another position. The 1022 call sites that grew eleven characters each stay as they are. What carries it is the measurement rather than an argument: `heroes mutate --operator swap-args` went from 1441 of 1910 killed to 1733, survivors 367 to 75, and the 159 swapped `fail(` calls to zero | `docs/panel/127-the-rule-that-did-not-reach-its-own-library.md` § Author's verdict | the two seats that objected are answered on the record rather than overruled: the compiler seat's conditions were met inside the sitting, and the warden's arithmetic about what pays for what stands beside the verdict
 
 - [x] **panel 128**, ratified 2026-09-11 | **RATIFIED AS ADOPTED** (the author's word, the same day the sitting closed): the small half stands — a label at a call through a function value is an error, the compiler's note says the call is positional and names the roles, and `spec § 3`'s row says it. **The conservative route is not built now** and stays scheduled at M-check-completeness with the measurement that would lift its own veto; defect 026 stays open, narrowed to the inversion, which the instrument prices at 50% before and after | `docs/panel/128-the-type-that-names-nothing.md` § Author's verdict · `docs/work/SCHEDULED.md` at M-check-completeness | three routes were vetoed by three different seats on three different soundness grounds, and the ratification leaves all three arguments on the record unsmoothed rather than resolving them by preference
+
+- [x] **026 — a function type names no parameters, so a call through one takes its arguments positionally** | two same-typed arguments can be swapped in silence through a function value and through a C callback. **NARROWED 2026-09-11 by panel 128**: the invented label is refused now, and the document says the call is positional; what remains open is the inversion itself, which the instrument prices at 50% unchanged | `spec § 9 Functions and calls` · `spec § 13 FFI` · `selfhost/check/walk.hero` · `docs/panel/127-the-rule-that-did-not-reach-its-own-library.md`
+
+    **Origin:** panel 127's ffi seat, 2026-09-11, which named it as two holes;
+    it is filed as one because the cause is one, and both witnesses were re-run
+    in the landing session rather than taken from the seat's report.
+
+    **Witness one, a call through a function value.** `report(code: str, msg:
+    str)` is refused positionally at a direct call, as § 9 requires. Through a
+    value of its own type it is not:
+
+        f: (function(str, str) -> str) @ report
+        print(f("msg_first", "code_second"))     # prints msg_first/code_second
+        print(f(nonsense: "a", rubbish: "b"))    # prints a/b
+
+    Both compile at exit 0. The second is the sharper half: a label that names
+    nothing is accepted and ignored, so the label is not even a claim.
+
+    **Witness two, a C callback's own parameter order.** With a header of one
+    line, `int64_t hero_cb_apply(int64_t (*f)(int64_t, int64_t), int64_t, int64_t)`,
+    and `function subtract(minuend: i64, subtrahend: i64)` passed as `f`, the
+    program prints **7**. Rename the two parameters to `(subtrahend, minuend)`
+    and leave the body alone and it prints **-7**, with no diagnostic: the names
+    are a promise and C hands the arguments by position.
+
+    **The cause, read at the line.** `selfhost/check/walk.hero:1541` gets the
+    label to expect from `fd.value.params[position].name`, a span into a
+    **declaration**. A function TYPE, `(function(A, B) -> C)`, has no parameter
+    names to read, by the language's own grammar (`spec § 2 Types`), so there is
+    nothing for the rule to compare against. Panel 127 closed the same shape for
+    the two built-ins by giving them names the compiler carries as literals; the
+    same trick has nowhere to live here, because the type is written at every
+    site and names nothing at any of them.
+
+    **What it is not.** Not the built-in hole panel 127 repaired, and the repair
+    cannot be escaped through this door: a built-in may not be taken as a value
+    at all, `error[builtin_as_value]`, measured. Not an ABI question either: the
+    widths and signs of a callback's parameters ARE checked (`spec § 13`), only
+    their order is not.
+
+    **WHAT PANEL 128 DID AND DID NOT CLOSE, 2026-09-11.** Closed: a label at
+    such a call is `error[label_on_function_value]` with a certain fix, so a
+    label that named nothing is no longer accepted and ignored; and `spec § 3`'s
+    function-type row now says the call is positional, a sentence that was
+    vetoed as false at the ballot and became true when the refusal landed.
+    **Still open, and this entry is now only about this**: the two values may be
+    handed over the wrong way round. `heroes mutate --operator swap-args` reads
+    **50%** on the shape, before and after, measured. At the C boundary the ffi
+    seat measured the same swap reaching memory three times, once at **exit 0**
+    with a heap-use-after-free under the sanitizer.
+
+    **And the sitting found where it actually ships**, which this entry did not
+    know when it was filed: inside `fold`. A program hands `fold` a function and
+    the library calls it positionally with no name in the chain; `fold` at
+    `A := B` with the callback's roles inverted prints `cba` instead of `abc`,
+    exit 0. `fold`'s type is `(function(B, A) -> B)`, two distinct letters, so
+    **no route the sitting considered reaches it** — not refusing same-typed
+    types, not mandatory names on a same-typed pair. Whoever repairs this owes
+    that shape an answer of its own.
+
+    **The repair is scheduled with the measurement that lifts its veto**, at
+    M-check-completeness in `docs/work/SCHEDULED.md`.
+
+    **What is owed.** A ruling, because three routes exist and all three change
+    the language: a function type may name its parameters, which makes the names
+    part of the type and every signature longer; a function type whose
+    parameters share a type is refused, which is the strictest and costs the
+    corpus its comparators; or the document says what the compiler does, which
+    is what panel 127 refused for the built-ins on CLAUDE.md §12. The
+    measurement that should open that sitting exists: `heroes mutate --operator
+    swap-args --survivors` reads **75** survivors now, and this class is what
+    remains in them.
+
+    **THE REPAIR, 2026-09-11, M-labelled-types, panel 129.** A function type
+    carries its parameter names, at the positions that share a type with another
+    and nowhere else, and the names are part of the type's identity. A declared
+    function used as a value carries its own names on the same condition, so an
+    annotation cannot rename the positions of the function it was given. A call
+    through such a value is checked exactly as a call to a declaration is.
+
+    **The witnesses, re-run.** `f: (function(str, str) -> str) @ report` is now
+    `needs_parameter_names` at the type; written `(function(code: str, msg: str)
+    -> str)` it takes `report` and refuses `report`'s twin with the names
+    transposed, `type_mismatch`, naming both types. `f(nonsense: "a")` stays
+    `label_on_function_value` where the type names nothing. The C callback with
+    its two same-typed parameters must now name them, and a Heroes function
+    handed to it must declare the same two.
+
+    **The number that closes it.** `heroes mutate --operator swap-args` over four
+    programs of calls through function values — a binding, a function-typed
+    parameter, an array of function values, a relay assignment — reads **1 of 6
+    killed before and 6 of 6 after**, 17% to 100%, on the seed compiler and on
+    the new one. Over `examples/` it reads **identical to the mutant**, 1733 of
+    1910, because that corpus holds no function type with two parameters of one
+    type, and the record says so rather than borrowing a headline.
+
+    **What is NOT closed, and it is not this defect.** A callback's ROLES can
+    still be inverted at its definition where the type's parameters are distinct
+    letters: `fold` handed a function that reads its two the other way round
+    prints `cba` for `abc` at exit 0. design.md §4.9 excludes monomorphised types
+    explicitly and gives its reason, and panel 129's compiler seat gave a second,
+    independent ground — it is a parameter-role inversion at a definition, not an
+    argument inversion at a call, so no rule of §4.9's shape reaches it. It is a
+    question about that criterion and it is in `docs/work/DECIDE.md`.
+
+    **And what nothing in the language can see**: the Heroes signature and the C
+    header read backwards together. Panel 129's ffi seat measured it at exit 0
+    with an ASan `bad-free`, and `clang -Xclang -ast-dump` keeps no `ParmVarDecl`
+    for a typedef at all, so no parameter name is readable out of a header.
+
+- [x] **M-labelled-types** | build and measure the route panel 128 vetoed on cost: a function type carrying parameter names, mandatory where two share a type, part of the type's identity | `docs/panel/128-the-type-that-names-nothing.md` · `selfhost/check/table.hero:111-129` · `selfhost/parse/type.hero:191-233`
+
+    **Origin:** panel 128's compiler seat, 2026-09-11, which vetoed the route
+    and then named what would lift its own veto: **build it, show the two
+    ceilings raised and `heroes mutate --operator swap-args` at 100% under about
+    150 code lines, with the emission, descriptor and determinism suites green.**
+    That is a measurement rather than an argument, which is why it is scheduled
+    instead of argued again.
+
+    **What the sitting already settled for whoever builds it.** The names go IN
+    the type's identity, not beside it: the ffi seat's condition, because
+    otherwise a relay assignment launders the swap and `_Generic` proves C
+    cannot re-check it, so the checker is the whole defence. The historian's Ada
+    precedent is the other answer and is recorded in the sitting: names in the
+    type and outside its identity, which is what Go and TypeScript do and what
+    Swift kept after SE-0111 removed the identity-significant form. The two
+    seats disagree on the record and the sitting took robustness, which is
+    CLAUDE.md § Precedence rank 3.
+
+    **Three facts the builder needs.** Identity is the interned canonical string
+    `ty_key`, so names entering it make every assignment, `==`, map key and
+    typedef name-sensitive. `parse/type.hero:221` ships a `certain` fix that
+    DROPS a name from a function type, and it must be inverted with the rule.
+    And the route still does not reach `fold`, where the defect ships: two
+    distinct letters carry no mandatory names, so the generic higher-order
+    inversion needs its own answer.
+
+    **CLOSED 2026-09-11 at M-labelled-types**, and the veto's own condition is
+    answered except in one number. `heroes mutate --operator swap-args` reads
+    **100%** on a corpus of calls through function values, against 17% before;
+    three ceilings rose rather than two, `check/walk.hero` 1751 to 1842,
+    `ast.hero` 484 to 491 and `check/table.hero` a new row at 371; and the
+    emission, descriptor and determinism suites are green, 441, 221 and 137.
+    **The line count is not met**: the condition said about 150 and the
+    repository's own instrument says **432** with comments counted, 240 without.
+    Panel 129 records that number rather than hiding it, and the compiler seat
+    that set the condition said its veto was never about the size but about the
+    number never having been shown to the author.
+
+    **The three facts it left the builder, each answered.** Identity is the
+    interned `ty_key` and the names entered it, with `label_key` returning the
+    empty string where a type names nothing so that a type nobody named keeps the
+    C typedef name it always had. `parse/type.hero`'s `certain` fix was inverted:
+    the parser keeps the names and judges none of them, and the refusal moved to
+    `check/type_labels.hero`, where it fires per position. And `fold` is still
+    not reached, which is now a question in `docs/work/DECIDE.md` rather than an
+    open defect.
+
+- [x] **panel 129** | ratify the names inside a function type: mandatory at the positions that share a type, refused elsewhere, part of the type's identity — and the 432 lines it cost | `docs/panel/129-the-names-inside-the-type.md` · `docs/measurements/010-spec-budget-ledger.md` row 66
+
+    **Origin:** panel 129, 2026-09-11, convened the day panel 128 closed because
+    the author said to attack defect 026. Three of five seats sent the work back
+    and what landed is not what they were handed, so the sitting is worth reading
+    before ratifying.
+
+    **What the author is being asked to weigh, in one number.** The rule costs
+    **432 lines** by the repository's own instrument, 240 with comments and cases
+    out, and the compiler seat's own condition was *about 150*. Its veto was
+    never about the size: it was about the build being broken, which is fixed,
+    and about that number never having been put to the author, which this item
+    does. The same seat says the trade is right, because panel 128 measured this
+    class reaching a heap-use-after-free at exit 0 and CLAUDE.md § Precedence
+    rank 3 puts robustness above compiler size by name.
+
+    **And what it bought, honestly split.** `heroes mutate --operator swap-args`
+    reads 17% to **100%** on four programs of calls through function values, and
+    **does not move at all** over `examples/`, which holds no instance of the
+    shape. The document is +39 real and the ledger row says **paid by nothing**.
+
+    **The conservative answer, recorded so it can be chosen**: keep panel 128's
+    small pair, revert this, and leave defect 026 open at 50%.
+
+    **RATIFIED AS ADOPTED, 2026-09-11**, the author's word `Ratifico com'è`, given
+    with the 432 lines and the unmoved headline metric both in front of them. The
+    conservative answer — keep panel 128's small pair and leave defect 026 open at
+    50% — was recorded beside the verdict and declined.
+
+- [x] **panel 129** | should §4.9's criterion still read the DECLARED type, now that a generic callback's roles can be inverted in silence? | `design.md:1432-1435` · `docs/panel/129-the-names-inside-the-type.md` · `selfhost/library_source.hero:84`
+
+    **Origin:** panel 128's compiler seat found the program, 2026-09-11, and
+    panel 129 classified it. `fold` handed a function that reads its two
+    parameters the other way round prints `cba` where the author meant `abc`, at
+    exit 0, on both compilers — re-run in the landing session.
+
+    **Why it is a question and not a defect.** design.md §4.9 says the criterion
+    is two parameters sharing a type *in the signature*, and *"it applies to
+    declared types, not to types after monomorphisation, otherwise a generic
+    function's call convention would change depending on whether its type
+    parameters collapse"*. `fold`'s callback is `(function(B, A) -> B)`, two
+    distinct letters, so it is outside the rule BY that ruling. The compiler seat
+    gave a second, independent ground: it is a parameter-role inversion at a
+    DEFINITION rather than an argument inversion at a call, so no rule of §4.9's
+    shape can reach it whatever the criterion says.
+
+    **The route that would close it, priced rather than recommended.** Allow
+    names on any function type, keep them mandatory on a same-typed pair, and let
+    an expected type carrying no names accept a value whose type does — then
+    `fold` could declare `(function(acc: B, item: A) -> B)`. The compiler seat
+    called it sound at run time and objected on shape: it turns 26 id comparisons
+    across 20 files into a relation and introduces variance into a language that
+    has none, and design.md has no ruling on variance. **It does not close the
+    class either** — it gives a careful author a way to close it one function at
+    a time.
+
+    **ANSWERED BY THE AUTHOR, 2026-09-11, and not with either of the two answers
+    the sitting recommended.** Asked whether the `fold` role inversion is a
+    question about §4.9's criterion, a defect, or work to do now, the author said
+    **build the route that closes it**. So it is not a decision any more, it is
+    work: `docs/work/SCHEDULED.md` carries it with the compiler seat's objection
+    attached, because that objection is what the author overrode and the record
+    keeps it whole.

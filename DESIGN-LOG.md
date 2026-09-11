@@ -749,3 +749,44 @@ Format: `date | decision | reason | design.md § | panel`
 2026-09-11 | **The ceiling was written in two places and only one moved, so every suite was green and the CI went red on all three legs** (found by the CI, 2026-09-11, minutes after the push that carried panel 127's repair). `tests/harness/suite_layout.hero` keeps the DECIDED table and, sixty lines below it, a test asserting what the lookup returns for the file nearest the ceiling: the table said **1746** and the assert said **1708**. **CL-054 is the rule and this is its witness**: the net was run after the edit and the net's own tests were not, and they are the third suite, the one that goes red when an instrument's pinned number stops matching what the instrument reads. The compiler seat of panel 127 had even named the line, `suite_layout.hero:432`, in the cost it priced. The repair is the number plus the reason beside it, because the number stays in two places on purpose: one is the ceiling and the other is the proof that the lookup reads it. | **three identical red legs are the right behaviour and the cheapest place to find this**, which is the whole argument for the matrix widening of 2026-09-10: the leg that would once have run only at a tag caught a stale pin within two minutes of the push, and the milestone it belongs to was untagged anyway | CLAUDE.md § Verification; `.claude/rules/verification.md` | 127 |
 2026-09-11 | **A call through a function value is positional, and now the language says it and refuses a label that claimed otherwise; the inversion it still admits is measured at 50% and left open on purpose** (**author instruction** 2026-09-11, *convoca il panel per risolvere il difetto 026*; panel 128, five seats, provisional pending ratification; M-positional-values). **Three of the four routes were vetoed, each by a different seat on soundness**: the document's positional sentence as balloted, because `f(nonsense: "a", rubbish: "b")` printed `a/b` at exit 0 and the sentence was therefore false (CLAUDE.md §12); refusing a function type whose parameters share a type, because it forecloses §4.19's ladder at three steps and deletes a comparator that compiles today; and names inside the type, because Part 5's test makes it core, eleven modules, two of them at their decided ceiling, and it inverts a shipped `certain` fix. What landed is the route nobody had listed, built by the vetoing seat itself in 25 diff lines: `error[label_on_function_value]`, a note that says why, and a certain fix that removes the label and leaves the value where it is. **With it the vetoed sentence became true**, so § 3's row now carries it at +25 real tokens, paid by nothing, and ledger row 65 says so rather than pretending. The compiler's own note stopped prescribing the hole in silence: it says to call the comparison BY POSITION and names the roles, `less(candidate, best)`. | **the sitting's deepest finding is that the defect does not ship where the defect said**: it ships inside `fold`, where a program's callback is called positionally with no name in the chain, printing `cba` for `abc` at exit 0, and `fold`'s two distinct letters mean no route considered reaches it. Five golden sites had implied coverage and the record now says they do not | §1.7, §4.9, §4.12, §4.19, Part 5; CLAUDE.md §4, §12, § Precedence | 126, 127, 128 |
 2026-09-11 | **The three sittings of the two nights are ratified as adopted, and what each conservative route would have been stays on the record beside its verdict** (**author decision** 2026-09-11, `ratifico i panel`, after `ratifica 126` earlier the same day). Panel 126: the specification keeps its thirteen numbered sections with Literals before Types, and the two worked examples stay on the author's decision rather than on a measurement, which the ledger's row 63 says in its own sentences. Panel 127: both halves of the same-typed-argument rule keep reaching `fail` and `slice`, and the 1022 call sites that grew eleven characters each stay as they are, carried by the instrument reading 1733 of 1910 killed where it read 1441. Panel 128: the small half stands and **the conservative route is not built now**, so defect 026 stays open and narrowed to the inversion, priced at 50% unchanged, with the route scheduled at M-check-completeness under the measurement that lifts its own veto. `docs/work/DECIDE.md` is empty. | **the three ratifications leave five objections and three vetoes standing on the record rather than resolved by preference**, which is the point of writing a sitting down: the warden's arithmetic about what pays for what, the ergonomist's finding that names on peers buy a label and not a check, the ffi seat's three measurements where the swap reaches memory, and the compiler seat's price of eleven modules are all still there to be read by whoever builds the scheduled route | §1.6, §4.9, §4.12; CLAUDE.md §4, §12, § Precedence | 126, 127, 128 |
+
+2026-09-11 · **M-labelled-types, panel 129, ratified as adopted the same day.** A
+function type carries the parameter names of the positions that share a type with
+another, and no others; the names are part of the type's identity; a declared
+function used as a value carries its own names on the same condition; a call
+through such a value is checked exactly as a call to a declaration is. Defect 026
+is closed. `heroes mutate --operator swap-args` reads 1 of 6 killed before and 6
+of 6 after on four programs of calls through function values, and **identical to
+the mutant** over `examples/`, which holds no instance of the shape — the record
+says the second number first. The document takes the spec-warden's wording rather
+than the one drafted, at **+39 real, digest `0d61cc71040884f6`, ledger row 66,
+paid by nothing**; the drafted pair cost +54 and one reading of it was false
+against a running program. The cost in the repository's own instrument is **432
+lines** against the compiler seat's condition of about 150, and that number went
+to the author before the ratification rather than into a footnote.
+
+2026-09-11 · **Three of panel 129's five seats sent the work back, and the record
+keeps what each found.** The tree did not compile itself when the sitting opened —
+a new function shadowed a local of its name and a failed build had been read as a
+passing one, so twenty minutes of measurement had been taken with a stale binary
+(CL-054, with the coordinator in the chair). The line count had been `grep`'s
+rather than `code_lines`'s, which `.claude/rules/module-shape.md` already tells
+every session to ask. A parameter a declaration calls `_` now contributes no name
+and fits whatever the expected type calls that position, because ignoring an
+argument is what a C callback does for a living. A name used at two positions of
+one type is `repeated_parameter_name`, because names that do not distinguish
+leave the two exactly as confusable as no names at all. And a name is written at
+the confusable positions and nowhere else, in the type and at the call alike,
+which is one rule where the document had left a reader three readings.
+
+2026-09-11 · **The author answered panel 129's second question with neither of the
+answers the sitting recommended.** The `fold` role inversion — a generic
+callback's two parameters read the other way round, printing `cba` for `abc` at
+exit 0 — was classified by the sitting as the price of design.md §4.9's criterion
+rather than a defect against it. Asked to rule, the author said to build the route
+that closes it: names on any function type, an expected type carrying none
+accepting a value whose type does, and the generic path comparing the names it is
+given. It is **M-named-callbacks**, chain row 49, with panel 129's compiler seat's
+objection attached whole — that route introduces variance into a language that has
+none, and it does not close the class, it lets a careful author close it one
+function at a time.
