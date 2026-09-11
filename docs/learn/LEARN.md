@@ -28,7 +28,7 @@ per item, `- [ ] **<origin>** | <the question>`, then the body indented four
 spaces. Nothing lives outside the two banners.
 
 *******************************************************************************
-**OPEN: 353**
+**OPEN: 356**
 
 - [ ] **M-interpolated-strings, walkthrough** | Read `selfhost/lex_interp.hero` and say, before opening `scan.hero`, how a `}` inside a map literal in a hole is told apart from the `}` that closes the hole, and where the number it is compared against comes from | `selfhost/lex_interp.hero` · `selfhost/state.hero` § Emitting | the skipping scan the sitting priced is free because bracket depth was already counted for the layout rule
 
@@ -1848,5 +1848,44 @@ spaces. Nothing lives outside the two banners.
 
     **Where to look:** docs/panel/119-the-warning-that-does-not-fit.md · docs/panel/120-the-signature-cannot-say-which-half-it-keeps.md · docs/measurements/020-four-sites-in-fifty-five-thousand-lines.md · tests/harness/suite_spec.hero:204
     **Why it matters:** each of the four is a place this milestone's own coordinator or a seat got it wrong first
+
+
+- [ ] **panel 131** | A Heroes program has a `record Room`. Its compiled binary either does or does not contain a piece of data describing that type. Which is it, and what decides?
+
+    **Where to look:** the emitted C for a small program, `HERO_TU_QUIET static
+    const HeroDesc` in it, and `runtime/heroes_runtime.h`'s `struct HeroDesc`.
+
+    **Why it matters:** this one fact is what refused run-time reflection on
+    2026-09-11, and the answer surprised the sitting. A descriptor is written per
+    **translation unit** and **only when the type is used as a container
+    element** — so a two-record program with no `[Room]` and no `{str: Room}`
+    emits **zero** user descriptors, and a `Room` sitting in a local variable has
+    no way at all to say what it is. The record had believed the opposite since
+    2026-09-06.
+
+- [ ] **panel 131** | `HeroDesc` has five function pointers. A sixth was added, the compiler was rebuilt with the project's own flags, and it compiled at exit 0 with zero warnings. Why is that the dangerous outcome rather than the good one?
+
+    **Where to look:** `runtime/heroes_runtime.h`, `seed/heroes.c`'s
+    `static const HeroDesc` initialisers, and C11 6.7.9p21.
+
+    **Why it matters:** the same experiment was run at panel 117 and again at
+    panel 131, and both times **125 descriptors silently filled the new member
+    with NULL** and the first program to read it died at address zero with no
+    type and no line. The guard that should have caught it,
+    `_Static_assert(HERO_RUNTIME_ABI == N)`, is blind to a struct field. This is
+    the shape of a whole class: a change that compiles clean because C fills the
+    gap for you.
+
+- [ ] **panel 131** | `assert a == b` on two deeply nested values answers correctly at depth 100,000 today. A prototype that says WHERE they differ died at depth 3,700. Both walk the same data. What is the difference?
+
+    **Where to look:** `HeroEqWork` at `runtime/parts/array.c:185-190`, and how
+    the outermost call drains it.
+
+    **Why it matters:** panel 117 adopted a repair on the sentence *"the walk is
+    `eq`'s walk"* and panel 131 found it false. `eq`'s worklist carries
+    `{a, b, elem, len}` and nothing else: no path, no parent, no index. An
+    explicit worklist has no stack depth to run out of; a walk that must report
+    *where* needs a C frame per level unless the path is carried in the list
+    too — and that is the difference between the two numbers.
 
 *******************************************************************************
