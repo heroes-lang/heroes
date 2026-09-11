@@ -1453,11 +1453,34 @@ fits whatever the expected type calls that position; ignoring an argument is wha
 for a living (panel 129's ffi seat, on zlib's `free_func`).
 
 The criterion above is unchanged, and that is what keeps `fold`'s `(function(B, A) -> B)` outside
-the rule: two letters are two types *in the signature*, however a call instantiates them. So a
-callback's ROLES can still be inverted at its definition — `fold` handed a function that reads its
-two parameters the other way round prints `cba` for `abc` at exit 0 — and design.md says so here
-rather than letting a green suite imply otherwise. That is the price of this criterion and not a
-defect against it; changing it is `docs/work/DECIDE.md`'s question.
+the same-typed rule: two letters are two types *in the signature*, however a call instantiates them.
+
+**AMENDED 2026-09-11, hours later, at M-named-callbacks, by author instruction.** *And names no
+others*, three paragraphs up, was true for those hours and is not any more. A name is allowed at any
+position now, because `fold`'s callback has two DISTINCT letters and still has to say which of them
+is the accumulator: under the old rule the type could not, and a program that read the two the other
+way round compiled and printed `cba` where it meant `abc`, at exit 0. What a name at such a position
+buys is checked in the generic path, which is where a call site cannot reach — **the names of the
+function handed over must AGREE with the type's names for those positions**, and a disagreement is
+`error[callback_name]`.
+
+**That is a naming mandate and not a detector, and it is written here as one.** A function WHOSE OWN
+TWO PARAMETERS SHARE A TYPE names them what the callback type names them. The scope is that clause
+and not a word less: a function whose two are different types puts no names in its type at all, by
+the paragraph three above this one, so `tally(item: str, acc: i64)` handed to
+`(function(acc: B, item: A) -> B)` has its names fully inverted against the type and runs at exit 0.
+Panel 130's spec-warden found that against this compiler after refusing to write the unscoped
+sentence, and it is written here rather than left for a reader to discover. The cheaper reading — fire only where the
+callee reused the type's own word for ANOTHER position, which is panel 127's `elsewhere` test
+applied to a value — was measured against the seven callbacks this repository hands to `fold`, each
+transposed: it caught **2 of 7**, because five of them use their authors' own vocabulary, `a` and
+`b`, `so_far` and `one`, `total` and `i`. Agreement catches **7 of 7** and cost six programs one
+rename each. The author took it over the sitting's own recommendation with both numbers in front of
+them.
+
+**What is still not reached, and it is named rather than implied**: a user's OWN generic
+higher-order function whose callback type names nothing is unchecked, exactly as `fold` was before
+it named its two. The library closes its own; the language does not close everybody's.
 
 No default parameter values, no overloading, no user variadics. The one variadic-looking form is
 `print`, and it is **compiler-known, not a function value** (panel 006, decided 2026-08-03): a
