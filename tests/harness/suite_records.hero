@@ -195,6 +195,7 @@ constant QUOTES_THE_OLD_SPELLING: [str]
 constant REFUSED: [str]
     [
         "M-language"
+        "M-function-labels"
         "M-foreign-ownership"
         "M-wasm-playground"
         "M-browser-compiler"
@@ -407,8 +408,15 @@ constant REFUSED: [str]
 # author asked for the repair in one word, and the row is the repair. Moved by
 # hand, with the row, in one commit. `REFUSED` gains nothing: the runner-up
 # names stayed in the session.
+#
+# **74 -> 75 on 2026-09-11**, `M-positional-values`, the third of the night and
+# the third out of the one before it: panel 128 sat on defect 026, vetoed three
+# routes and landed the one nobody had listed. Moved by hand, with the row, in
+# one commit. `REFUSED` gains `M-function-labels`, the runner-up, refused
+# because this milestone delivers the absence of labels at such a call rather
+# than their presence.
 constant ROWS: i64
-    74
+    75
 
 # **`WATCHED` stood here until 2026-09-07 and nothing had read it since
 # 2026-08-19.** It listed `design.md` and `CLAUDE.md` as *"the two documents whose

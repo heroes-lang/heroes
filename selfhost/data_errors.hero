@@ -95,6 +95,25 @@ function wrong_label(holder: str, written: str, expected: str, elsewhere: bool, 
     )
     return d
 
+# A label at a call made through a FUNCTION VALUE. `(function(str, str) -> str)`
+# names no parameters at any of its sites, so `f(nonsense: "a")` was accepted and
+# ignored until panel 128 — a label there was not even a claim. The fix is
+# `certain`: the label is removed, the value stays where it is, and the program
+# does what it already did.
+function label_on_function_value(written: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "label_on_function_value",
+        message: "a function type names no parameters, so this call takes its arguments by position — `" + written + ":` names nothing",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "§4.9's rule reads the parameter names of a DECLARATION; a value of type `(function(A, B) -> C)` has none, so its arguments are positional"
+    )
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "drop the label", replacement: "", span: span, certainty: .certain)
+    )
+    return d
+
 # §4.9's same-typed-argument rule. The message names the REASON — two
 # parameters share a type — because the rule looks arbitrary without it,
 # and a model that does not know why will drop the label again at the

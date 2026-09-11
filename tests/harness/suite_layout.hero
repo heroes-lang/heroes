@@ -246,6 +246,14 @@ constant CEILING: i64
 # diagnostic needs the span, the parameter's because two parameters of one
 # signature can be owned by different functions and because the cell is
 # out-only.
+# **One moved on 2026-09-11 for panel 128, and the seat that priced it predicted
+# the number before it built anything.** A label at a call through a function
+# value is refused now, six diff lines in `check/walk.hero`, and `heroes fmt`
+# broke the call across three: 1746 -> **1751**, which is the seat's own
+# prediction 2 scored on the instrument. Both places moved together this time,
+# the table and the assert below, because the day before they did not and the CI
+# went red on all three legs.
+#
 # **Five moved on 2026-09-11 for panel 127, defect 025, and every one of them
 # moved by a measured number rather than a chosen one.** The label rule reached
 # the two built-ins whose parameters share a type, so 1022 positional `fail(`
@@ -263,7 +271,7 @@ constant CEILING: i64
 #
 constant DECIDED: [str]
     [
-        "selfhost/check/walk.hero 1746"
+        "selfhost/check/walk.hero 1751"
         "selfhost/print/fmt.hero 1150"
         "selfhost/ir/flatten.hero 1123"
         "selfhost/grammar_expr.hero 1044"
@@ -454,7 +462,7 @@ test "the ceiling is per file, and a decided file keeps its own"
     # move. The number stays in two places on purpose — one is the ceiling, the
     # other is the proof that the lookup reads it — and the cost of forgetting
     # the second is three red legs rather than a silent pass.
-    assert ceiling_for("selfhost/check/walk.hero") == 1746
+    assert ceiling_for("selfhost/check/walk.hero") == 1751
     assert ceiling_for("selfhost/parse/use_line.hero") == 310
     assert ceiling_for("selfhost/anything-else.hero") == CEILING
 

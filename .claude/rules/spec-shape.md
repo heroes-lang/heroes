@@ -83,7 +83,7 @@ reported as `spec/<name>`; they are written here without that prefix because
 | every name the compiler reserves appears in a code span; no word the lexer refuses appears in one | the `named` and `rejected` checks |
 | the characters above ASCII are `·` `—` `…` `→` and no other | the `inventory` check |
 | the `test "3-4-5 triangle"` block, byte for byte | `tests/golden/run/spec-the-documents-own-example.hero`, a hand copy |
-| the heading `## 2. Types` and its table, first column backticked, at least ten rows | `site/src/lib/tables.ts`, which colours the site's type words from it |
+| the heading `## 3. Types` and its table, first column backticked, at least ten rows (this row said `## 2. Types` until 2026-09-11: the historian's swap of Literals and Types landed in the document and not in this sentence, and panel 128's warden found it. The instrument was never at risk, because `site/src/lib/tables.ts` matches the title with the number optional) | `site/src/lib/tables.ts`, which colours the site's type words from it |
 | the token count and its digest | the `budget`, `recorded` and `ledger` checks, and design.md §1.6's payment rule |
 
 ## How to cite the specification

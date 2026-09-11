@@ -91,7 +91,7 @@ function unordered_element(element: str, reached: str?, generic: bool, span: tok
 
     if generic
         d.notes @ d.notes.push(
-            "`" + element + "` is a type parameter, so this line cannot know whether it has an order — take the comparison as a parameter instead, `less: (function(" + element + ", " + element + ") -> bool)`, and call `less(a, b)`"
+            "`" + element + "` is a type parameter, so this line cannot know whether it has an order — take the comparison as a parameter instead, `less: (function(" + element + ", " + element + ") -> bool)`, and call it BY POSITION, `less(candidate, best)`: a function type names no parameters, so nothing checks the order of its two arguments for you"
         )
         return d
 
@@ -438,7 +438,12 @@ test "sort's refusal names the set, the member, or the route"
         generic: true,
         span: span
     )
-    assert parameter.notes[0] == "`A` is a type parameter, so this line cannot know whether it has an order — take the comparison as a parameter instead, `less: (function(A, A) -> bool)`, and call `less(a, b)`"
+
+    # **The note says BY POSITION since panel 128**, and names the two roles
+    # rather than calling them `a` and `b`: the shape it prescribes is one the
+    # label rule cannot check, and a reader who is handed it should be told so
+    # on the same line (`docs/panel/128`).
+    assert parameter.notes[0] == "`A` is a type parameter, so this line cannot know whether it has an order — take the comparison as a parameter instead, `less: (function(A, A) -> bool)`, and call it BY POSITION, `less(candidate, best)`: a function type names no parameters, so nothing checks the order of its two arguments for you"
 
 test "arity cites the declaration only when one exists"
     span = token.Span(start: 0, end: 2)

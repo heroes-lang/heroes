@@ -1329,6 +1329,12 @@ function indirect_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: s
             index: i64 @ 0
 
             for arg in given
+                if !arg.name.is_err()
+                    state.push_diagnostic(
+                        @c,
+                        data_errors.label_on_function_value(written: source.span_text(s, arg.name.must()), span: token.Span(start: arg.name.must().start, end: a.exprs[arg.value].span.start))
+                    )
+
                 check(@c, a, r, s, decls, id: arg.value, expected: params[index + offset])
                 index @ index + 1
 

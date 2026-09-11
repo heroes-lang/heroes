@@ -44,7 +44,7 @@ Heroes is a small compiled language. This document is the whole language.
 | `T?` | fallible: a `T`, or an error |
 | `()` | nothing: what a function with no `->` returns |
 | `ptr` `cstr` | an opaque pointer and a C string; `nullptr` is the null of both |
-| `(function(A) -> B)` | a function value, also `(function(A, B) -> C)` and `(function() -> C)`; the parentheses are mandatory |
+| `(function(A) -> B)` | a function value, also `(function(A, B) -> C)` and `(function() -> C)`; the parentheses are mandatory. A call through one is positional, since the type names no parameters, and a label there is an error |
 
 - No implicit conversions, widths included: `1 + 2.0` is an error.
 - Every value behaves as an independent copy: after `b = a`, mutating `b`
