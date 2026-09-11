@@ -437,16 +437,23 @@ no repair, where `spec § 13` promises a field that disagrees with the header is
 
 ## Author's verdict
 
-**Pending.** The resolution above is `provisional — author ratification pending`,
-and work proceeds on it (CLAUDE.md § 4). It is queued as **two** items in
-`docs/work/DECIDE.md`, not one, because the second asks the author to reverse
-something they ratified on 2026-09-07 and that should not ride inside a longer
-yes: the five-part resolution is the first item, and the withdrawal of panel 117's
-sixth option is the second.
+**Ratified as adopted, 2026-09-11**, the author's word given the same evening the
+sitting closed: **yes to the two refusals, yes to the withdrawal, and go** (the
+Italian original stands in this conversation's git history, CLAUDE.md §11).
 
-The recommendation put with each is on those items. In one line: ratify all five,
-and the part to read first is the fifth, because it is the only one that is a
-judgement rather than a measurement — the sitting declines to rule on compile-time
-derivation, having found that its own brief put the question wrongly, and the
-conservative alternative (rule it today and refuse it) is written out beside it so
-the author can take that instead and close the milestone in one step.
+**What the yes settles.** Run-time reflection and user-defined tags are refused,
+and both design.md Part 6 rows stand with the grounds this sitting measured rather
+than the ones the record was ready to write. The Ruby row's correction stands with
+them, and so does the correction appended to panel 039. Panel 117's sixth option
+is **withdrawn**, which reverses a ratification of 2026-09-07 — it was put as its
+own item for exactly that reason, and the author took it. `suite_special.hero`'s
+aggregate pin therefore stays, and the § 12 clause *until this language renders
+one* stays honest, because its condition is still being worked toward.
+
+**What the yes does NOT settle, and the author chose that too.** Compile-time
+derivation is not ruled. The conservative alternative was on the item in full —
+rule it today, refuse it on the 0-of-31 measurement, and close the milestone in
+one step — and *go* took the other branch: the question is re-briefed and re-sat.
+So the milestone stays open on one question, deliberately, and the row it will
+eventually write rests on evidence about derivation rather than evidence about
+display.

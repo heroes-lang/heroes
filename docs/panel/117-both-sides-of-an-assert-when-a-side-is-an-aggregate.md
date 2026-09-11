@@ -368,3 +368,11 @@ the day a mechanism lands and none does. The withdrawal of part 3 is
 `provisional — author ratification pending` in its own right, because this
 sitting's parts were ratified on 2026-09-07 and a reversal is put to the author
 separately rather than inside a longer yes.
+
+**The withdrawal of part 3 was RATIFIED 2026-09-11**, the author's word the same
+evening panel 131 sat, on an item put separately from that sitting's other five
+parts precisely because it asks for a reversal. So this sitting's parts 1, 2 and 4
+stand as ratified on 2026-09-07, and its part 3 is ratified as **withdrawn** on
+2026-09-11. `tests/harness/suite_special.hero`'s aggregate pin stays and stays
+correct, and the mechanism the defect is owed remains open, to be reached another
+way.
