@@ -66,6 +66,17 @@ const entries = [
   { key: 'start', slug: 'start', en: 'Start', it: 'Inizia' },
   { key: 'docs', slug: 'docs', en: 'Guide', it: 'Guida' },
   { key: 'examples', slug: 'examples', en: 'Examples', it: 'Esempi' },
+  // **The ninth, added 2026-09-11 by author instruction** — *maybe it makes
+  // sense to put spec in the top menu, because it has become very important* —
+  // and it is the one entry that breaks § Style guide's rule that a page enters
+  // this row only by displacing another. It displaces nothing, and the reason is
+  // measured rather than argued: the README's own figures are a NINE-item row at
+  // 517px in English and 540px in Italian, both reaching the sideways scroll
+  // only at 390px, so nine is a width this row has already carried. It sits
+  // after Examples because the intent order runs run it, learn it, see it, take
+  // it: the specification is what a visitor pastes into a prompt, and the file
+  // it points at is the one artifact the whole site is about.
+  { key: 'spec', slug: 'spec', en: 'Spec', it: 'Specifica' },
   { key: 'why', slug: 'why', en: 'Why', it: 'Perché' },
   { key: 'project', slug: 'project', en: 'Project', it: 'Progetto' },
   { key: 'log', slug: 'log', en: 'Log', it: 'Diario' },

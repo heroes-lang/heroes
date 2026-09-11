@@ -4,6 +4,6 @@ import { renderSpecPage } from '../lib/spec-page.ts';
 
 const page = renderSpecPage('en');
 ---
-<BaseLayout url={page.url} title={page.title} description={page.description} current="docs">
+<BaseLayout url={page.url} title={page.title} description={page.description} current="spec">
 <Fragment set:html={page.html} />
 </BaseLayout>

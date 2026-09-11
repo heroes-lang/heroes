@@ -29,6 +29,7 @@ import { plain } from './highlight.ts';
 import { tracklist } from './nods.ts';
 import { version } from './tables.ts';
 import { checkClaims, specReal } from './claims.ts';
+import { chainSection } from './chain.ts';
 
 /** One figure, as the check reads it. */
 interface Figure {
@@ -149,7 +150,7 @@ export function page(html: string, pagePath: string): string {
   // thing this function checked and the prose around them was the last thing
   // anybody did, which is where four false claims in one day came from.
   checkClaims(html, pagePath);
-  return fillOutbound(fillTracklist(fillMeasured(fillVersion(html, pagePath)), pagePath));
+  return fillOutbound(fillChain(fillTracklist(fillMeasured(fillVersion(html, pagePath)), pagePath), pagePath));
 }
 
 /**
@@ -190,6 +191,24 @@ export function fillOutbound(html: string): string {
  * thirteen, and nothing could tell. A row cannot go missing from a list the
  * build prints, and a nod whose data is missing is a red build.
  */
+/**
+ * `{{chain}}` in a fragment becomes the chain: one row per milestone, read out
+ * of `docs/ROADMAP.md` § The chain at build time (`chain.ts`).
+ *
+ * The project page said what the project believes and nothing about what is
+ * built and what is next, which is the question a visitor brings to a project
+ * page (author instruction 2026-09-11). The answer has lived in one table of the
+ * repository all along, so the page reads that table: `site/CLAUDE.md` § A
+ * number on the page is generated, or it is a threshold. Sixty-nine rows is too
+ * many to read, so the closed ones collapse behind a `details` and the open and
+ * scheduled ones stand.
+ */
+export function fillChain(html: string, pagePath: string): string {
+  if (!html.includes('{{chain}}')) return html;
+  const lang = pagePath.startsWith('site/src/html/it/') ? 'it' : 'en';
+  return html.replaceAll('{{chain}}', chainSection(lang));
+}
+
 export function fillTracklist(html: string, pagePath: string): string {
   if (!html.includes('{{tracklist}}')) return html;
   const lang = pagePath.startsWith('site/src/html/it/') ? 'it' : 'en';
