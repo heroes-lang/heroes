@@ -1,0 +1,2 @@
+tests/golden/check/arguments-through-a-function-value-need-their-labels.hero:22:16: error[needs_label]: two of `this function`'s parameters are `str`, so every one of them is named at the call site — this one is `from`
+tests/golden/check/arguments-through-a-function-value-need-their-labels.hero:22:21: error[needs_label]: two of `this function`'s parameters are `str`, so every one of them is named at the call site — this one is `to`

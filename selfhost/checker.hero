@@ -30,6 +30,7 @@ use check/state
 use check/sized
 use check/decls as check_decls
 use check/map_keys
+use check/type_labels
 use check/ffi_sweep
 use check/lending
 use check/leasing
@@ -53,6 +54,11 @@ function check(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.D
     # the lowering fills. Asking first is silent: it finds nothing and
     # passes.
     map_keys.check(@c, a, s, decls)
+
+    # §4.9 through a function VALUE (defect 026): the same table, the same
+    # reason it is asked after the declarations, and the same shape of rule —
+    # a hazard that lives in a TYPE, written once in an annotation.
+    type_labels.check(@c, a, s, decls)
 
     # Same reason, same table, and the same defect one milestone apart:
     # panel 062 wired its rule to one call site and three other positions

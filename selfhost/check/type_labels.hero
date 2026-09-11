@@ -1,0 +1,189 @@
+# The NAMES a function type writes for its parameters — mandatory where two of
+# them share a type, refused where none do (§4.9; defect 026; panel 128's
+# conservative route, scheduled at its own close).
+#
+# §4.9 spends tokens exactly where argument inversion happens: when two
+# parameters share a type the call site names them. The rule reads a
+# DECLARATION's parameter names, and a function type had none at any of its
+# sites — so `f: (function(str, str) -> str) @ report` was called positionally,
+# handed its two arguments over the wrong way round, and printed the swap at
+# exit 0. The names are the repair, and `check/table.hero` makes them part of
+# the type's IDENTITY, so a second annotation cannot launder a swap by renaming
+# the positions of the function it was given.
+#
+# **Why this is a walk and not a line in the lowering.** A written type is
+# lowered once per pass that asks for it and eight passes ask, so a diagnostic
+# there would be one mistake with eight messages. It is also why the walk reads
+# `written_types` instead of lowering anything itself: the answer is already in
+# the table, keyed by the node that wrote it.
+#
+# **What this walk cannot see**, stated rather than left implicit: a pair that
+# is only one type after a generic is bound. `(function(B, A) -> B)` is two
+# letters here, and `fold` calls what it is handed positionally, so an inversion
+# still ships through a generic callback. Defect 026 keeps that half and says
+# so, rather than letting a green suite imply the class is closed.
+
+use token
+use ast
+use source
+use parse
+use resolve
+use check/decls as check_decls
+use check/table
+use check/state
+use data_errors
+
+# Every function type the program writes, judged once.
+function check(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl])
+    node: i64 @ 0
+
+    while node < a.types.len()
+        match a.types[node].kind
+            .function_type f => judge(@c, a, s, decls, params: f.params, labels: f.labels, at: node)
+            .named | .unit | .array_of | .fixed | .map_of | .fallible | .error => node @ node
+
+        node @ node + 1
+
+# One written function type. A parameter the lowering never answered belongs to
+# a type that was already reported, and saying more would be a second message
+# for one mistake (§4.5).
+function judge(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl], params: [i64], labels: [token.Span], at: i64)
+    # The parser writes one label entry per parameter, so this holds by
+    # construction; it is checked rather than assumed because an index past the
+    # end of the run would abort a compile (§1.12), and a rule that can abort is
+    # worse than one that can be silent.
+    if labels.len() != params.len()
+        return
+    lowered: [i64] @ []
+
+    for p in params
+        written = state.written_type(c.out, p)
+
+        if written.is_err()
+            return
+
+        lowered @ lowered.push(written.must())
+
+    missing: i64? @ fail(code: "named", msg: "every confusable position carries a name")
+    i: i64 @ 0
+
+    while i < lowered.len()
+        named = labels[i].end > labels[i].start
+
+        if table.shared_at(lowered, at: i)
+
+            # The FIRST unnamed one only: a type whose three parameters are all
+            # `str` is one mistake with one repair, and saying it three times
+            # would be three messages for one.
+            if !named && missing.is_err()
+                missing @ ok(i)
+        else if named
+
+            # Nothing can be confused with this position, so a name on it is a
+            # claim about a check that is not happening. One message per name,
+            # because each is its own removable text with its own `certain` fix.
+            state.push_diagnostic(
+                @c,
+                data_errors.named_parameter_in_function_type(written: source.span_text(s, labels[i]), span: token.Span(start: labels[i].start, end: a.types[params[i]].span.start))
+            )
+        i @ i + 1
+
+    if !missing.is_err()
+        whole = state.written_type(c.out, at)
+
+        if whole.is_err()
+            return
+        state.push_diagnostic(
+            @c,
+            data_errors.needs_parameter_names(shared: state.show(c, s, decls, lowered[missing.must()]), shown: state.show(c, s, decls, whole.must()), span: a.types[at].span)
+        )
+        return
+    twice = repeated(s, labels)
+
+    if !twice.is_err()
+        state.push_diagnostic(@c, data_errors.repeated_parameter_name(written: twice.must(), span: a.types[at].span))
+
+# A name used at two positions of one type. Panel 129's compiler seat found it
+# by attacking the shapes beside the repair: `(function(a: str, a: str) -> str)`
+# was accepted, and the swap inside it was accepted with it — the names were
+# mandatory and not required to DISTINGUISH, which is the whole of what they are
+# for.
+function repeated(s: source.Source, labels: [token.Span]) -> str?
+    i: i64 @ 0
+
+    while i < labels.len()
+        one = source.span_text(s, labels[i])
+        j: i64 @ i + 1
+
+        while j < labels.len()
+            if one.len() > 0 && one == source.span_text(s, labels[j])
+                return ok(one)
+            j @ j + 1
+
+        i @ i + 1
+
+    return fail(code: "distinct", msg: "no name is used twice")
+
+## Tests
+
+function judged(text: str) -> state.Checker
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    c: state.Checker @ state.new_checker(out_of: out, expr_count: p.tree.exprs.len())
+    check_decls.file(@c, p.tree, out, s, p.decls)
+    check(@c, p.tree, s, p.decls)
+    return c
+
+test "a same-typed pair must be named, and naming it satisfies the rule"
+    bare = judged("function f(g: (function(str, str) -> str))\n    _ = g\n")
+    assert bare.out.diagnostics.len() == 1
+    assert bare.out.diagnostics[0].code == "needs_parameter_names"
+    assert bare.out.diagnostics[0].message == "two of `(function(str, str) -> str)`'s parameters are `str`, so this type names both of them — give each a name that says which is which"
+    named = judged("function f(g: (function(code: str, msg: str) -> str))\n    _ = g\n")
+    assert named.out.diagnostics.len() == 0
+
+test "a type no two positions can confuse refuses a name, once per name"
+    c = judged("function f(g: (function(from: str, count: i64) -> str))\n    _ = g\n")
+    assert c.out.diagnostics.len() == 2
+    assert c.out.diagnostics[0].code == "named_parameter_in_function_type"
+    assert c.out.diagnostics[0].fixes[0].certainty == .certain
+    assert c.out.diagnostics[0].fixes[0].replacement == ""
+    plain = judged("function f(g: (function(str, i64) -> str))\n    _ = g\n")
+    assert plain.out.diagnostics.len() == 0
+
+test "two distinct type parameters are two types, and the walk says nothing"
+    c = judged("function f<A, B>(g: (function(B, A) -> B))\n    _ = g\n")
+    assert c.out.diagnostics.len() == 0
+
+    # And two of ONE letter share a type, exactly as two `str` do: the pair the
+    # compiler's own `sort` note used to prescribe.
+    same = judged("function f<A>(less: (function(A, A) -> bool))\n    _ = less\n")
+    assert same.out.diagnostics.len() == 1
+    assert same.out.diagnostics[0].code == "needs_parameter_names"
+
+# Panel 129's three seats, each as the shape it found.
+test "only the confusable positions are named, and the others must not be"
+    sparse = judged("function take(f: (function(ptr, n: u64, size: u64) -> ()), p: ptr)\n    f(p, n: 1, size: 2)\n")
+    assert sparse.out.diagnostics.len() == 0
+
+    # The ergonomist read the document cold and could not tell whether a call
+    # through a value names every argument or only the ones §4.9 owes. It is the
+    # second, which is the rule a call to a declaration already follows.
+    over = judged("function take(f: (function(p: ptr, n: u64, size: u64) -> ()), q: ptr)\n    f(p: q, n: 1, size: 2)\n")
+    assert over.out.diagnostics.len() == 1
+    assert over.out.diagnostics[0].code == "named_parameter_in_function_type"
+
+test "one name at two positions says nothing, and `_` at two positions says it twice"
+    twice = judged("function relay(f: (function(a: str, a: str) -> str)) -> str\n    return f(a: \"x\", a: \"y\")\n")
+    assert twice.out.diagnostics[0].code == "repeated_parameter_name"
+
+    # The compiler seat found both by attacking the shapes beside the repair:
+    # the names were mandatory and not required to DISTINGUISH, so the swap
+    # inside such a type was accepted at exit 0.
+    wild = judged("function relay(f: (function(_: str, _: str) -> str)) -> str\n    return f(_: \"x\", _: \"y\")\n")
+    assert wild.out.diagnostics[0].code == "repeated_parameter_name"
+
+test "a type with no parameters and one with a single parameter are untouched"
+    c = judged("function f(g: (function() -> str), h: (function(i64) -> i64))\n    _ = g\n    _ = h\n")
+    assert c.out.diagnostics.len() == 0

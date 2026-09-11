@@ -26,8 +26,8 @@ function origin(flag: bool) -> Point?
         return ok(Point(x: 0, y: 0))
     return fail(code: "none", msg: "no point")
 
-function apply(f: (function(i64, i64) -> i64), x: i64, y: i64) -> i64
-    return f(x, y)
+function apply(f: (function(a: i64, b: i64) -> i64), x: i64, y: i64) -> i64
+    return f(a: x, b: y)
 
 function add(a: i64, b: i64) -> i64
     return a + b

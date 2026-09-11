@@ -1,0 +1,24 @@
+# UNVERIFIED — pending debrief
+# §4.9 names the arguments of a call when two parameters share a type, and the
+# rule reads a DECLARATION's names. A function type had none at any of its
+# sites, so a call made through a value of one was positional and handed its two
+# `str` over the wrong way round in silence (defect 026, panel 128).
+#
+# The repair is this refusal. A function type whose parameters can be confused
+# names them, the names are part of the type, and a call through it is checked
+# the way a call to a declaration is. No fix is offered on purpose: the reader
+# has to choose two names that say which is which, and a compiler that invented
+# `a` and `b` would hand back the shape the rule exists to refuse.
+#
+# The second diagnostic is not a cascade of the first, which is why it is pinned
+# here rather than suppressed: the names are part of the TYPE, so `pair` fits
+# this parameter only once the two agree on them. Naming the type `(from, to)`
+# would leave that line exactly as red.
+function relay(f: (function(str, str) -> str)) -> str  #~ needs_parameter_names
+    return f("one", "two")
+
+function main()
+    print(relay(pair))  #~ type_mismatch
+
+function pair(code: str, msg: str) -> str
+    return code + "/" + msg

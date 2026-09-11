@@ -69,6 +69,9 @@ variant Ty
         payload: i64
     function_ty
         params: Params
+        # The parameter names, empty where the type needs none. In the key
+        # below, so two orders of one name set are two types.
+        labels: Params
         result: i64
     # A `record` or `variant`: index into the declarations. Two records
     # with identical fields are DIFFERENT types — Heroes is nominal here,
@@ -104,29 +107,55 @@ record Types
     # written twice interns to one id rather than two runs of equal
     # content.
     runs: {str: i64}
+    # The parameter NAMES of a function type, since panel 128's scheduled route
+    # and defect 026: a call made through a function value took its arguments by
+    # position, so two of one type could be handed over the wrong way round in
+    # silence. The names live HERE rather than beside the type, because they are
+    # part of its identity — a value of `(function(a: i64, b: i64) -> i64)` may
+    # not stand where `(function(b: i64, a: i64) -> i64)` is expected, or a relay
+    # assignment would launder the swap the rule exists to catch (panel 128's
+    # ffi seat, which measured that C cannot re-check it: `_Generic` says the two
+    # orders are one C type).
+    #
+    # A function type with no same-typed pair carries an EMPTY run, so `(i64)`
+    # and `(i64, str)` are unchanged and their ids do not move.
+    labels: [str]
+    label_runs: {str: i64}
 
 # The canonical spelling of a structure — the map key Rust gets from
 # `Ord` on the enum. Injective by construction: every case has its own
 # prefix, every argument its own slot, and ids render in decimal.
 function ty_key(t: Ty) -> str
     return match t
-        .int_ty k      => "i:" + widths.int_name(k.kind)
-        .float_ty k    => "f:" + widths.float_name(k.kind)
-        .bool          => "b"
-        .str           => "s"
-        .ptr           => "p"
-        .cstr          => "c"
-        .unit          => "u"
-        .array a       => "a:" + a.element.to_str()
-        .fixed x       => "x:" + x.element.to_str() + ":" + x.length.to_str()
-        .map m         => "m:" + m.key.to_str() + ":" + m.value.to_str()
-        .fallible o    => "?:" + o.payload.to_str()
-        .function_ty f => "fn:" + f.params.start.to_str() + ":" + f.params.len.to_str() + ":" + f.result.to_str()
-        .named n       => "n:" + n.decl.to_str()
-        .case_ty vc    => "vc:" + vc.decl.to_str() + ":" + vc.at.to_str()
-        .failure       => "fail"
-        .generic g     => "g:" + g.at.to_str()
-        .error         => "err"
+        .int_ty k   => "i:" + widths.int_name(k.kind)
+        .float_ty k => "f:" + widths.float_name(k.kind)
+        .bool       => "b"
+        .str        => "s"
+        .ptr        => "p"
+        .cstr       => "c"
+        .unit       => "u"
+        .array a    => "a:" + a.element.to_str()
+        .fixed x    => "x:" + x.element.to_str() + ":" + x.length.to_str()
+        .map m      => "m:" + m.key.to_str() + ":" + m.value.to_str()
+        .fallible o => "?:" + o.payload.to_str()
+        .function_ty f => "fn:" + f.params.start.to_str() + ":" + f.params.len.to_str() + label_key(f.labels) + ":" + f.result.to_str()
+        .named n    => "n:" + n.decl.to_str()
+        .case_ty vc => "vc:" + vc.decl.to_str() + ":" + vc.at.to_str()
+        .failure    => "fail"
+        .generic g  => "g:" + g.at.to_str()
+        .error      => "err"
+
+# The names' share of the key above, and **empty where there are none**. That
+# is not a saving, it is the promise that a type nobody named is the type it
+# always was: the emitter derives a C typedef's name from this key, so a
+# suffix written unconditionally would have renamed every function typedef in
+# every program in the tree to say that no names had been added. `l` opens it,
+# so a named run can never spell an unnamed one.
+function label_key(labels: Params) -> str
+    if labels.len == 0
+        return ""
+
+    return ":l" + labels.start.to_str() + ":" + labels.len.to_str()
 
 # The scalars are interned first, in a fixed order, so their ids are
 # constants the whole pass can name without a lookup — and `error` is
@@ -137,7 +166,9 @@ function new_types() -> Types
     params: [i64] = []
     index: {str: i64} = {}
     runs: {str: i64} = {}
-    t: Types @ Types(nodes: nodes, params: params, index: index, runs: runs)
+    labels: [str] = []
+    label_runs: {str: i64} = {}
+    t: Types @ Types(nodes: nodes, params: params, index: index, runs: runs, labels: labels, label_runs: label_runs)
     prelude: [Ty] = [.error, .unit, .int_ty(kind: .i64), .float_ty(kind: .f64), .bool, .str, .ptr, .cstr, .failure]
 
     for ty in prelude
@@ -202,8 +233,11 @@ function intern(@t: Types, ty: Ty) -> i64
     t.index[key] @ id
     return id
 
-# Interns a function type, canonicalising its parameter run first.
-function intern_function(@t: Types, params: [i64], result: i64) -> i64
+# Interns a function type, canonicalising its parameter run and its NAME
+# run first. Both keys join on a comma and both are safe to: a parameter id
+# renders in decimal and a label is an identifier, so neither can contain
+# the separator.
+function intern_function(@t: Types, params: [i64], labels: [str], result: i64) -> i64
     rendered: [str] @ []
 
     for p in params
@@ -222,7 +256,23 @@ function intern_function(@t: Types, params: [i64], result: i64) -> i64
             t.params @ t.params.push(p)
 
         t.runs[key] @ start
-    return intern(@t, .function_ty(params: Params(start: start, len: params.len()), result: result))
+    joined_labels = labels.join(",")
+    label_start: i64 @ 0
+    seen = t.label_runs[joined_labels]
+
+    if !seen.is_err()
+        label_start @ seen.must()
+    else
+        label_start @ t.labels.len()
+
+        for name in labels
+            t.labels @ t.labels.push(name)
+
+        t.label_runs[joined_labels] @ label_start
+    return intern(
+        @t,
+        .function_ty(params: Params(start: start, len: params.len()), labels: Params(start: label_start, len: labels.len()), result: result)
+    )
 
 # Whether a structure is already interned, WITHOUT interning it. One
 # caller class: a rule that needs to compare against `[str]` and must not
@@ -235,6 +285,86 @@ function get(t: Types, id: i64) -> Ty
 
 function len_of(t: Types) -> i64
     return t.nodes.len()
+
+# Whether a value of type `got` may stand where `wanted` is expected. It is an
+# ID COMPARISON in every case but one, and the one is `_`: a parameter a
+# declaration called `_` says the body ignores that position and makes no claim
+# about it, so its name is empty and an empty name fits whatever the expected
+# type calls that position. Nothing else is relaxed — the parameter types, the
+# result and every name that IS written still have to be equal — and the answer
+# stays an id comparison, because the blanks are filled in and the type is
+# interned again rather than a second notion of sameness entering the checker.
+#
+# Panel 129's ffi seat is why this exists. `plain_free(_: ptr, address: ptr)`
+# and `pooled_free(opaque: ptr, address: ptr)` are two implementations of zlib's
+# one `free_func`, and refusing the first would have made the rule refuse what a
+# C callback does for a living.
+function fits(@t: Types, wanted: i64, got: i64) -> bool
+    if wanted == got
+        return true
+    wl: [str] @ []
+
+    match get(t, wanted)
+        .function_ty w                                            => wl @ labels_of(t, w.labels)
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return false
+        .array | .fixed | .map | .fallible | .named | .case_ty    => return false
+        .failure | .generic | .error                              => return false
+
+    if wl.len() == 0
+        return false
+    filled: [str] @ []
+    spelled: [i64] @ []
+    result: i64 @ 0
+
+    match get(t, got)
+        .function_ty g =>
+            gl = labels_of(t, g.labels)
+
+            if gl.len() != wl.len()
+                return false
+            spelled @ params_of(t, g.params)
+            result @ g.result
+            i: i64 @ 0
+
+            while i < gl.len()
+                if gl[i].len() == 0
+                    filled @ filled.push(wl[i])
+                else
+                    filled @ filled.push(gl[i])
+                i @ i + 1
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return false
+        .array | .fixed | .map | .fallible | .named | .case_ty    => return false
+        .failure | .generic | .error                              => return false
+
+    return intern_function(@t, spelled, filled, result: result) == wanted
+
+# Whether ONE position of a parameter run shares its type with another — the
+# single fact §4.9 rests on, since defect 026 for a function TYPE as well as for
+# a declaration. The rule that makes a name mandatory in the type
+# (`check/type_labels.hero`) and the rule that checks a call made through a
+# value of it (`check/walk.hero`) both ask it HERE, per position, so the two
+# cannot answer it differently — and asking per position is what lets a type
+# name the two `u64` of `qsort` and leave its `ptr` alone.
+function shared_at(params: [i64], at: i64) -> bool
+    i: i64 @ 0
+
+    while i < params.len()
+        if i != at && params[i] == params[at]
+            return true
+        i @ i + 1
+
+    return false
+
+# The parameter NAMES of a function type, empty where it carries none.
+function labels_of(t: Types, labels: Params) -> [str]
+    out: [str] @ []
+    i: i64 @ labels.start
+
+    while i < labels.start + labels.len
+        out @ out.push(t.labels[i])
+        i @ i + 1
+
+    return out
 
 function params_of(t: Types, params: Params) -> [i64]
     out: [i64] @ []
@@ -336,18 +466,43 @@ test "a function type canonicalises its parameter run"
     t: Types @ new_types()
     one: [i64] = [int_ty_id(t), str_ty(t)]
     two: [i64] = [int_ty_id(t), str_ty(t)]
-    f1 = intern_function(@t, one, result: bool_ty(t))
-    f2 = intern_function(@t, two, result: bool_ty(t))
+    none: [str] = []
+    f1 = intern_function(@t, one, none, result: bool_ty(t))
+    f2 = intern_function(@t, two, none, result: bool_ty(t))
     assert f1 == f2
 
     # Same parameters, different result: a different type, sharing the run.
-    f3 = intern_function(@t, one, result: unit_ty(t))
+    f3 = intern_function(@t, one, none, result: unit_ty(t))
     assert f1 != f3
 
     match get(t, f1)
         .function_ty f =>
             assert params_of(t, f.params).len() == 2
             assert params_of(t, f.params)[0] == int_ty_id(t)
+            assert labels_of(t, f.labels).len() == 0
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => assert false
+        .array | .fixed | .map | .fallible | .named | .case_ty    => assert false
+        .failure | .generic | .error                              => assert false
+
+# Defect 026: the names are IDENTITY, not decoration. Two orders of one
+# name set are two types, which is what stops a relay assignment from
+# laundering a swap the call-site rule exists to catch.
+test "the parameter names are part of a function type's identity"
+    t: Types @ new_types()
+    both: [i64] = [int_ty_id(t), int_ty_id(t)]
+    forward: [str] = ["from", "to"]
+    backward: [str] = ["to", "from"]
+    none: [str] = []
+    a = intern_function(@t, both, forward, result: unit_ty(t))
+    b = intern_function(@t, both, backward, result: unit_ty(t))
+    bare = intern_function(@t, both, none, result: unit_ty(t))
+    assert a != b
+    assert a != bare
+    assert a == intern_function(@t, both, forward, result: unit_ty(t))
+
+    match get(t, a)
+        .function_ty f =>
+            assert labels_of(t, f.labels) == forward
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => assert false
         .array | .fixed | .map | .fallible | .named | .case_ty    => assert false
         .failure | .generic | .error                              => assert false

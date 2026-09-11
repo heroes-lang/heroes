@@ -81,7 +81,7 @@ typedef struct h_0opt_de89a9a {
     } as;
 } h_0opt_de89a9a;
 
-typedef int64_t (*h_0fn_7b615d8f)(int64_t, int64_t);
+typedef int64_t (*h_0fn_2e6a42a3)(int64_t, int64_t);
 typedef void (*h_0fn_294870dd)(void);
 typedef struct h_0opt_a8ea2 {
     int64_t tag;
@@ -149,7 +149,7 @@ HERO_TU_QUIET static const HeroDesc h_orderoptionsandfntypedefs_Point_desc = {
 h_0opt_e201354 h_orderoptionsandfntypedefs_half(int64_t h0_n);
 h_0opt_f87774a h_orderoptionsandfntypedefs_name_of(int64_t h0_n);
 h_0opt_de89a9a h_orderoptionsandfntypedefs_origin(bool h0_flag);
-int64_t h_orderoptionsandfntypedefs_apply(h_0fn_7b615d8f h0_f, int64_t h1_x, int64_t h2_y);
+int64_t h_orderoptionsandfntypedefs_apply(h_0fn_2e6a42a3 h0_f, int64_t h1_x, int64_t h2_y);
 int64_t h_orderoptionsandfntypedefs_add(int64_t h0_a, int64_t h1_b);
 void h_orderoptionsandfntypedefs_twice(h_0fn_294870dd h0_f);
 void h_orderoptionsandfntypedefs_tick(void);
@@ -415,9 +415,9 @@ bb3:
 }
 
 #line 29 "tests/golden/emit/order-options-and-fn-typedefs.hero"
-int64_t h_orderoptionsandfntypedefs_apply(h_0fn_7b615d8f h0_f, int64_t h1_x, int64_t h2_y) {
+int64_t h_orderoptionsandfntypedefs_apply(h_0fn_2e6a42a3 h0_f, int64_t h1_x, int64_t h2_y) {
 #line 420 "orderoptionsandfntypedefs.c"
-    h_0fn_7b615d8f t1;
+    h_0fn_2e6a42a3 t1;
     int64_t t2;
     int64_t t3;
     int64_t t4;
@@ -542,7 +542,7 @@ void h_orderoptionsandfntypedefs_main(void) {
     int64_t t35;
     int64_t t36;
     bool t37;
-    h_0fn_7b615d8f t38;
+    h_0fn_2e6a42a3 t38;
     int64_t t39;
     int64_t t40;
     int64_t t41;

@@ -1,0 +1,2 @@
+tests/golden/check/a-function-type-that-names-too-much.hero:16:29: error[named_parameter_in_function_type]: no two parameters of this function type share a type, so `from:` names a position nothing can confuse
+tests/golden/check/a-function-type-that-names-too-much.hero:16:40: error[named_parameter_in_function_type]: no two parameters of this function type share a type, so `count:` names a position nothing can confuse

@@ -278,7 +278,7 @@ function apply(@c: state.Checked, ty: i64, bound: [i64]) -> i64
                 spelled @ spelled.push(apply(@c, ty: one, bound: bound))
 
             result = apply(@c, ty: fn_ty.result, bound: bound)
-            return table.intern_function(@c.types, spelled, result)
+            return table.intern_function(@c.types, spelled, table.labels_of(c.types, fn_ty.labels), result)
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return ty
         .fixed | .named | .case_ty | .failure | .error            => return ty
 

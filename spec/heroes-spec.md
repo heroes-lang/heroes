@@ -44,7 +44,7 @@ Heroes is a small compiled language. This document is the whole language.
 | `T?` | fallible: a `T`, or an error |
 | `()` | nothing: what a function with no `->` returns |
 | `ptr` `cstr` | an opaque pointer and a C string; `nullptr` is the null of both |
-| `(function(A) -> B)` | a function value, also `(function(A, B) -> C)` and `(function() -> C)`; the parentheses are mandatory. A call through one is positional, since the type names no parameters, and a label there is an error |
+| `(function(A) -> B)` | a function value, also `(function(A, B) -> C)` and `(function() -> C)`; the parentheses are mandatory |
 
 - No implicit conversions, widths included: `1 + 2.0` is an error.
 - Every value behaves as an independent copy: after `b = a`, mutating `b`
@@ -167,7 +167,10 @@ Loops: `while cond` and `for x in xs`, over an array or a `range` (section 11);
 - Record construction is a call with field names, always mandatory:
   `Point(x: 3, y: 4)`, and a variant's case `.num(v: 7)` or `.plus`.
 - When two parameters in a signature share a type, named arguments are
-  mandatory at the call site: `copy(from: a, to: b)`.
+  mandatory at the call site: `copy(from: a, to: b)`, and a function type names
+  the same two and no others, `(function(from: str, to: str) -> ())`. The names
+  are part of the type: the other order is another type, and a call through a
+  value names each in its own position.
 - `x.f(y)` is sugar for `f(x, y)` (UFCS). There are no methods, no
   inheritance, no overloading, no default values, no user variadics, no
   anonymous functions.

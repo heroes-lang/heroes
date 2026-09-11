@@ -42,7 +42,7 @@ _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK"
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 #line 45 "fixedbugsalibraryfunctionasavalue.c"
-typedef HeroArrayHeader * (*h_0fn_102fd4e2)(int64_t, int64_t);
+typedef HeroArrayHeader * (*h_0fn_60b7da88)(int64_t, int64_t);
 typedef int64_t (*h_0fn_48ac9712)(int64_t);
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -88,17 +88,17 @@ HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
-int64_t h_fixedbugsalibraryfunctionasavalue_call_it(h_0fn_102fd4e2 h0_f);
+int64_t h_fixedbugsalibraryfunctionasavalue_call_it(h_0fn_60b7da88 h0_f);
 int64_t h_fixedbugsalibraryfunctionasavalue_pick(h_0fn_48ac9712 h0_f, int64_t h1_n);
 void h_fixedbugsalibraryfunctionasavalue_main(void);
 int64_t h_fixedbugsalibraryfunctionasavalue_twice(int64_t h0_n);
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to);
 
 #line 16 "tests/golden/run/fixedbugs-a-library-function-as-a-value.hero"
-int64_t h_fixedbugsalibraryfunctionasavalue_call_it(h_0fn_102fd4e2 h0_f) {
+int64_t h_fixedbugsalibraryfunctionasavalue_call_it(h_0fn_60b7da88 h0_f) {
 #line 100 "fixedbugsalibraryfunctionasavalue.c"
     HeroArrayHeader * h1_own1 = {0};
-    h_0fn_102fd4e2 t1;
+    h_0fn_60b7da88 t1;
     int64_t t2;
     int64_t t3;
     HeroArrayHeader * t4 = {0};
@@ -149,7 +149,7 @@ bb0:
 #line 22 "tests/golden/run/fixedbugs-a-library-function-as-a-value.hero"
 void h_fixedbugsalibraryfunctionasavalue_main(void) {
 #line 152 "fixedbugsalibraryfunctionasavalue.c"
-    h_0fn_102fd4e2 t1;
+    h_0fn_60b7da88 t1;
     int64_t t2;
     h_0fn_48ac9712 t3;
     int64_t t4;

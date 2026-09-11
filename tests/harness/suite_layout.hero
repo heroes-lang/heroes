@@ -269,14 +269,41 @@ constant CEILING: i64
 # in fewer files than the estimate, and the estimate is in `docs/panel/127-the-rule-that-did-not-reach-its-own-library.md`
 # beside this sentence so the gap is on the record rather than tidied away.
 #
+# **Three moved on 2026-09-11 for defect 026's repair**, the conservative route
+# panel 128 priced and scheduled: a function type carries its parameter names,
+# mandatory where two of them share a type, and the names are part of the type's
+# identity. The compiler seat's prediction 2 was written before anything was
+# built — *the net names both `check/walk.hero` and `ast.hero`, two or more
+# ceilings rise, and walk exceeds 1780* — and the instrument says 1842, so it
+# HELD on all three counts and named one file it did not: `check/table.hero`.
+# The numbers below are the ones measured AFTER the sitting, because three of
+# the five seats sent the work back: the labels became per position, `_` stopped
+# being a name, and a name used twice became an error.
+#
+# `check/walk.hero` 1751 -> **1842**: the call made through a function value now
+# asks §4.9's two questions instead of refusing every label, a declared function
+# carries its parameter names into its value type at the positions that need
+# them, and the two helpers those need. `ast.hero` 484 -> **491**: one field on the function-type node, with the
+# comment saying why the parser records the names and judges only their count.
+# `check/table.hero` **371**, a new row rather than a raised one: the names live
+# in an arena beside the parameter run, keyed the same way, the file gained the
+# one relation the checker has — `fits`, which is an id comparison in every case
+# but a parameter a declaration called `_` — and it passes 300 for the first
+# time. It is not split, and the reason is the one
+# `.claude/rules/module-shape.md` already ratifies for a 400-line module — the
+# cut would run straight through the shared canonical key, which is the single
+# thing this file exists to own, and two modules that both had to agree on
+# `ty_key` would be one module wearing two names.
+#
 constant DECIDED: [str]
     [
-        "selfhost/check/walk.hero 1751"
+        "selfhost/check/walk.hero 1842"
         "selfhost/print/fmt.hero 1150"
         "selfhost/ir/flatten.hero 1123"
         "selfhost/grammar_expr.hero 1044"
         "selfhost/ir/print.hero 470"
-        "selfhost/ast.hero 484"
+        "selfhost/ast.hero 491"
+        "selfhost/check/table.hero 371"
         "selfhost/check/builtins.hero 377"
         "selfhost/ir/mono.hero 380"
         "selfhost/emit/ctype.hero 370"
@@ -462,7 +489,7 @@ test "the ceiling is per file, and a decided file keeps its own"
     # move. The number stays in two places on purpose — one is the ceiling, the
     # other is the proof that the lookup reads it — and the cost of forgetting
     # the second is three red legs rather than a silent pass.
-    assert ceiling_for("selfhost/check/walk.hero") == 1751
+    assert ceiling_for("selfhost/check/walk.hero") == 1842
     assert ceiling_for("selfhost/parse/use_line.hero") == 310
     assert ceiling_for("selfhost/anything-else.hero") == CEILING
 
@@ -498,4 +525,4 @@ test "the ceiling is per file, and a decided file keeps its own"
     # language refuses to split. Two rows out and one in is a net of minus one,
     # and the ceiling that was the highest in the lowering fell from 1511 to
     # 1110. The reason for each number is above DECIDED.
-    assert DECIDED.len() == 16
+    assert DECIDED.len() == 17

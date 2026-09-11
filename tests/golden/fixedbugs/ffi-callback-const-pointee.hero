@@ -26,9 +26,15 @@
 # letting clang blame the compiler at exit 2.
 
 extern "stdlib.h"
-    function qsort(base: ptr, n: u64, size: u64, compar: (function(ptr, ptr) -> i32))  #~ ffi_callback_type
+    function qsort(base: ptr, n: u64, size: u64, compar: (function(left: ptr, right: ptr) -> i32))  #~ ffi_callback_type
 
-function cmp(_: ptr, _: ptr) -> i32
+# The two pointers are named since defect 026: `compar`'s type has two `ptr`,
+# so it names them, and a function handed to it declares the same two names.
+# They are discarded rather than read, because what this case is about is the
+# const pointee and a comparator that compared would say nothing more about it.
+function cmp(left: ptr, right: ptr) -> i32
+    _ = left
+    _ = right
     return 0
 
 function main()

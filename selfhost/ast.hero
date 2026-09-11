@@ -315,6 +315,13 @@ variant TypeKind
     # `variant_case` was the first).
     function_type
         params: [i64]
+        # The parameter NAMES, ONE ENTRY PER PARAMETER, and an empty span
+        # where that position was written without a name (defect 026). A name
+        # is owed exactly where the position shares its type with another and
+        # refused where it does not, but that is the checker's rule: only the
+        # lowering knows that two written spellings are one type. The parser
+        # records what was written and judges none of it.
+        labels: [token.Span]
         result: i64
     # Recovery: the type could not be read. A diagnostic says why, and the tree
     # keeps its shape so the errors after this one are still found.

@@ -20,9 +20,9 @@
 # record keeps the port honest about what it has actually ported.
 
 use token
-use diag
 use ast
 use cursor
+use data_errors
 
 ## The entry point
 
@@ -165,7 +165,8 @@ function unit_or_function(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
         # report the mistake three times.
         cursor.recover_past_closer(@c, opener: .lparen, closer: .rparen)
         return ast.push_type(@a.types, ast.TypeNode(kind: .error, span: open))
-    params = function_params(@c, @a, text)
+    labels: [token.Span] @ []
+    params = function_params(@c, @a, text, @labels)
     _ = cursor.expect(
         @c,
         text: text,
@@ -184,14 +185,22 @@ function unit_or_function(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     )
     return ast.push_type(
         @a.types,
-        ast.TypeNode(kind: .function_type(params: params, result: result), span: token.Span(start: open.start, end: close.end))
+        ast.TypeNode(kind: .function_type(params: params, labels: labels, result: result), span: token.Span(start: open.start, end: close.end))
     )
 
-# The parameter TYPES of a function type: `(i64, i64)`, or `()` for a function
-# of no arguments. Names belong to a signature, not to a type — writing one is a
-# plausible mistake, so it gets its own diagnostic and a machine-applicable
-# repair.
-function function_params(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [i64]
+# The parameter types of a function type, and since defect 026 their NAMES:
+# `(i64, i64)`, `(from: str, to: str)`, `(ptr, n: u64, size: u64)`, or `()` for
+# a function of no arguments. A name is written exactly where the position
+# shares its type with another, so a call made through a value of the type is
+# named the way §4.9 names a declaration's — and at a position nothing can be
+# confused with, no name is written at all. WHICH positions those are is a
+# question about lowered types, so this file reads what was written and judges
+# none of it; `check/type_labels.hero` owns both halves of the rule.
+#
+# `x: i64` arrives as a TYPE followed by a colon, since a bare name is a legal
+# type — so the name is recognised by what follows it rather than by a
+# lookahead, and a name that is not a plain name is refused where it stands.
+function function_params(@c: cursor.Cursor, @a: ast.Ast, text: str, @labels: [token.Span]) -> [i64]
     params: [i64] @ []
 
     if !cursor.expect(@c, text: text, kind: .lparen, code: "expected_function_type_params", what: "`(` and the parameter types")
@@ -205,32 +214,36 @@ function function_params(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [i64]
         ty = parse_type(@c, @a, text)
 
         if cursor.at(c, .colon)
-            named_parameter(@c, @a, ty)
+            _ = cursor.bump(@c)
+            labels @ labels.push(named_parameter(@c, a, ty))
+            params @ params.push(parse_type(@c, @a, text))
         else
+
+            # One entry per position either way, so a reader of the node never
+            # has to ask which name belongs to which parameter.
+            labels @ labels.push(token.Span(start: 0, end: 0))
             params @ params.push(ty)
 
-            if !cursor.eat(@c, .comma)
-                reading @ false
+        if !cursor.eat(@c, .comma)
+            reading @ false
 
     if !cursor.expect(@c, text: text, kind: .rparen, code: "expected_function_type_params_close", what: "`)`, or `,` and another parameter type")
         cursor.recover_past_closer(@c, opener: .lparen, closer: .rparen)
     return params
 
-# `(function(x: i64) -> i64)` — the name that slipped in from the signature it
-# was copied from. The fix is `certain`: drop the name and the colon.
-function named_parameter(@c: cursor.Cursor, @a: ast.Ast, name: i64)
-    name_span = a.types[name].span
-    colon = cursor.bump(@c).span
-    whole = token.Span(start: name_span.start, end: colon.end)
-    d: diag.Diagnostic @ diag.new_diagnostic(
-        code: "named_parameter_in_function_type",
-        message: "a function type lists types, not names — write `(function(i64) -> i64)`",
-        span: whole
-    )
-    d.fixes @ d.fixes.push(
-        diag.Fix(title: "drop the parameter name", replacement: "", span: whole, certainty: .certain)
-    )
-    c.diagnostics @ c.diagnostics.push(d)
+# The name in `(function(x: i64) -> i64)`, which the loop above read as a type
+# because a bare name is one. Anything else there is not a name at all, and the
+# span is returned either way so the run keeps its positions.
+function named_parameter(@c: cursor.Cursor, a: ast.Ast, name: i64) -> token.Span
+    span = a.types[name].span
+
+    match a.types[name].kind
+        .named => return span
+        .unit | .array_of | .fixed | .map_of | .fallible | .function_type | .error =>
+            c.diagnostics @ c.diagnostics.push(data_errors.parameter_name_not_a_name(span))
+            return span
+
+    return span
 
 ## The length inside `i32[4]`, and every way it can be wrong
 
@@ -444,7 +457,10 @@ test "a function type states what it returns"
 
     assert c.diagnostics.len() == 0
 
-test "a name that slipped in from a signature gets a certain repair"
+# Defect 026 moved this rule. The parser KEEPS the name now — whether one is
+# owed is a question about the lowered types, which `check/type_labels.hero`
+# asks — and the parser judges only that it is a name and that the run is whole.
+test "a parameter name is kept, with its position, and nothing is reported"
     # (function(x: i64) -> i64)
     stream: [token.Token] = [
         tok(.lparen, start: 0, end: 1)
@@ -461,11 +477,51 @@ test "a name that slipped in from a signature gets a certain repair"
     ]
     c: cursor.Cursor @ cursor.new_cursor(stream)
     a: ast.Ast @ ast.new_ast()
-    _ = parse_type(@c, @a, "(function(x: i64) -> i64)")
-    assert c.diagnostics.len() == 1
-    assert c.diagnostics[0].code == "named_parameter_in_function_type"
-    assert c.diagnostics[0].fixes[0].certainty == .certain
-    assert c.diagnostics[0].fixes[0].replacement == ""
+    at = parse_type(@c, @a, "(function(x: i64) -> i64)")
+    assert c.diagnostics.len() == 0
+
+    match a.types[at].kind
+        .function_type f =>
+            assert f.params.len() == 1
+            assert f.labels.len() == 1
+            assert f.labels[0].start == 10
+            assert f.labels[0].end == 11
+        .named | .unit | .array_of | .fixed | .map_of | .fallible | .error => assert false
+
+test "a run may name some positions and not others, and the parser judges none of it"
+    # (function(a: i64, i64) -> i64) — legal since panel 129: a function type
+    # names the positions that can be confused and no others, so WHICH ones is a
+    # question about lowered types and `check/type_labels.hero` owns it.
+    stream: [token.Token] = [
+        tok(.lparen, start: 0, end: 1)
+        tok(.kw_function, start: 1, end: 9)
+        tok(.lparen, start: 9, end: 10)
+        tok(.ident, start: 10, end: 11)
+        tok(.colon, start: 11, end: 12)
+        tok(.ident, start: 13, end: 16)
+        tok(.comma, start: 16, end: 17)
+        tok(.ident, start: 18, end: 21)
+        tok(.rparen, start: 21, end: 22)
+        tok(.arrow, start: 23, end: 25)
+        tok(.ident, start: 26, end: 29)
+        tok(.rparen, start: 29, end: 30)
+        tok(.eof, start: 30, end: 30)
+    ]
+    c: cursor.Cursor @ cursor.new_cursor(stream)
+    a: ast.Ast @ ast.new_ast()
+    at = parse_type(@c, @a, "(function(a: i64, i64) -> i64)")
+    assert c.diagnostics.len() == 0
+
+    match a.types[at].kind
+        .function_type f =>
+
+            # One label entry per parameter either way, so a reader of the node
+            # never has to ask which name belongs to which position.
+            assert f.params.len() == 2
+            assert f.labels.len() == 2
+            assert f.labels[0].start == 10
+            assert f.labels[1].start == f.labels[1].end
+        .named | .unit | .array_of | .fixed | .map_of | .fallible | .error => assert false
 
 test "a type that cannot be read is a node, so the errors after it are found"
     stream: [token.Token] = [tok(.plus, start: 0, end: 1), tok(.eof, start: 1, end: 1)]

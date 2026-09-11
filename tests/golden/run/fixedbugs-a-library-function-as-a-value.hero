@@ -13,8 +13,8 @@
 # Root-dependent as well as wrong, which is the signature this sweep kept
 # finding: the answer depended on what some other module happened to contain.
 
-function call_it(f: (function(i64, i64) -> [i64])) -> i64
-    return f(0, 3).len()
+function call_it(f: (function(from: i64, to: i64) -> [i64])) -> i64
+    return f(from: 0, to: 3).len()
 
 function pick(f: (function(i64) -> i64), n: i64) -> i64
     return f(n)

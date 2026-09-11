@@ -329,7 +329,7 @@ function synth_name(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sour
             match decls[t.at].kind
                 # §4.13: a top-level function is a value, and its type is
                 # its signature.
-                .function_decl   => return signature_of(@c, a, r, decls, decl: t.at)
+                .function_decl   => return signature_of(@c, a, r, s, decls, decl: t.at)
                 .constant_decl k => return lower.lower_ty(@c, a, r, k.ty)
                 # A record name is a constructor, not a value on its own
                 # (§4.9): only meaningful as the callee of a call.
@@ -633,6 +633,11 @@ function record_through_neg(@c: state.Checker, a: ast.Ast, id: i64, ty: i64)
 
 function compare(@c: state.Checker, s: source.Source, decls: [ast.Decl], expected: i64, got: i64, span: token.Span)
     if expected == got || table.poisoned(c.out.types, expected) || table.poisoned(c.out.types, got)
+        return
+
+    # `table.fits` is an id comparison with one exception, a parameter the
+    # declaration called `_` (defect 026, panel 129's ffi seat).
+    if table.fits(@c.out.types, wanted: expected, got: got)
         return
     a_text = state.show(c, s, decls, expected)
     b_text = state.show(c, s, decls, got)
@@ -1151,6 +1156,59 @@ function exhaustive(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast
         .float_ty | .bool | .ptr | .cstr | .unit | .array => return
         .fixed | .map | .function_ty | .case_ty | .failure | .generic | .error => return
 
+# A declared function used as a VALUE carries its parameter names into its
+# type, and only where §4.9 needs them: two positions of one type. Anywhere
+# else the type stays bare, so `(function(i64, str) -> ())` is ONE type however
+# it was reached, and `check/type_labels.hero`'s two rules and this one agree
+# on which types have names.
+#
+# Defect 026 is why it is not decoration. Without it an annotation could rename
+# the positions of the function assigned to it — `f: (function(msg: str, code:
+# str) -> str) @ report` where `report` is `(code, msg)` — and the call site
+# would obey the annotation while the callee obeyed itself. With the names in
+# the type's identity (`check/table.hero`) that assignment is a mismatch.
+# Whether a label the call wrote names ANOTHER position of this type, which is
+# what decides the certainty of the `wrong_label` fix: renaming a label that
+# belongs elsewhere leaves the values where they are, so the repair is a guess
+# rather than a certainty (panel 127).
+function listed_name(names: [str], written: str) -> bool
+    for one in names
+        if one == written
+            return true
+
+    return false
+
+function declared_labels(s: source.Source, params: [ast.Param], lowered: [i64]) -> [str]
+    names: [str] @ []
+    none: [str] = []
+    any_shared: bool @ false
+    i: i64 @ 0
+
+    while i < lowered.len()
+        written = source.span_text(s, params[i].name)
+
+        if table.shared_at(lowered, at: i) && written != "_"
+            any_shared @ true
+            names @ names.push(written)
+        else
+
+            # Two reasons for an empty name, and they are the same reason. A
+            # position nothing can be confused with needs none, so two
+            # declarations differing only in what they call THAT parameter are
+            # one type. And a position the body called `_` makes no claim about
+            # itself — which is what `_` means at every other site in this
+            # language — so it fits whatever the expected type calls it
+            # (`table.fits`). Panel 129's ffi seat is why: zlib's `free_func`
+            # ignores `opaque` in most implementations and reads it in the ones
+            # that pool, and one header typedef takes both.
+            names @ names.push("")
+        i @ i + 1
+
+    if !any_shared
+        return none
+
+    return names
+
 function listed(xs: [i64], x: i64) -> bool
     for it in xs
         if it == x
@@ -1162,7 +1220,7 @@ function listed(xs: [i64], x: i64) -> bool
 
 # A declaration's type, from its written signature (§4.13: a top-level
 # function is a value).
-function signature_of(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, decls: [ast.Decl], decl: i64) -> i64
+function signature_of(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], decl: i64) -> i64
     match decls[decl].kind
         .function_decl fd =>
             lowered: [i64] @ []
@@ -1183,7 +1241,12 @@ function signature_of(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, decls
             # the `cstr` the header declares — by then the compiler has copied
             # it and freed the original (`selfhost/ir/owned_release.hero`).
             result = freer.handed_back(@c.out.types, fd.value, declared: declared_result)
-            return table.intern_function(@c.out.types, lowered, result: result)
+            return table.intern_function(
+                @c.out.types,
+                lowered,
+                declared_labels(s, fd.value.params, lowered),
+                result: result
+            )
         .constant_decl | .record_decl | .variant_decl | .test_decl => return state.error_ty_of(c)
 
     return state.error_ty_of(c)
@@ -1232,7 +1295,7 @@ function named_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sour
                     # The callee is a value in its own right (§4.13), so it
                     # gets its signature recorded even when called directly
                     # — the lowering reads expr_types, not the tree.
-                    signature = signature_of(@c, a, r, decls, decl: t.at)
+                    signature = signature_of(@c, a, r, s, decls, decl: t.at)
                     _ = state.record_expr(@c, at: callee, ty: signature)
                     return ok(
                         user_call(@c, a, r, s, decls, decl: t.at, given: given, receiver: fail(code: "absent", msg: "no receiver"), span: span, expected: expected)
@@ -1326,16 +1389,58 @@ function indirect_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: s
                     value_errors.arity(name: "this function", expected: params.len(), got: given.len() + offset, declared: fail(code: "absent", msg: "a function value has no line to cite"), span: span)
                 )
                 return state.error_ty_of(c)
+            names = table.labels_of(c.out.types, f.labels)
             index: i64 @ 0
 
             for arg in given
-                if !arg.name.is_err()
+                position = index + offset
+
+                # §4.9 through a VALUE (defect 026), and it is §4.9's rule
+                # rather than a second one. A position the type NAMED is a
+                # position that shares its type with another, because
+                # `check/type_labels.hero` refuses a name anywhere else; so
+                # the label is owed exactly where a name stands, and a label
+                # written anywhere else names nothing. Panel 129's ergonomist
+                # read the document cold and could not tell whether every
+                # argument was named or only the confusable ones — the two
+                # readings coincide on the text's one example — and this is
+                # the reading the compiler had better have.
+                wanted: str @ ""
+                carried: str @ ""
+
+                if position < names.len()
+                    carried @ names[position]
+
+                # The TYPES decide, not the presence of a name: a type carrying
+                # a name where nothing can be confused is already refused at its
+                # own site, and reading the name here would earn that one
+                # mistake a second message whose reason — *two of these are
+                # `str`* — is not even true.
+                if table.shared_at(params, at: position)
+                    wanted @ carried
+
+                if wanted.len() == 0
+
+                    # And a label that agrees with a name the type should not
+                    # carry is the same one mistake, so it is silent here too:
+                    # what is refused is a label at a position that HAS no name.
+                    if !arg.name.is_err() && carried.len() == 0
+                        state.push_diagnostic(
+                            @c,
+                            data_errors.label_on_function_value(written: source.span_text(s, arg.name.must()), span: token.Span(start: arg.name.must().start, end: a.exprs[arg.value].span.start))
+                        )
+                else if arg.name.is_err()
                     state.push_diagnostic(
                         @c,
-                        data_errors.label_on_function_value(written: source.span_text(s, arg.name.must()), span: token.Span(start: arg.name.must().start, end: a.exprs[arg.value].span.start))
+                        data_errors.needs_label(name: "this function", expected: wanted, shared: state.show(c, s, decls, params[position]), span: a.exprs[arg.value].span)
+                    )
+                else if source.span_text(s, arg.name.must()) != wanted
+                    state.push_diagnostic(
+                        @c,
+                        data_errors.wrong_label(holder: "this function", written: source.span_text(s, arg.name.must()), expected: wanted, elsewhere: listed_name(names, source.span_text(s, arg.name.must())), span: arg.name.must())
                     )
 
-                check(@c, a, r, s, decls, id: arg.value, expected: params[index + offset])
+                check(@c, a, r, s, decls, id: arg.value, expected: params[position])
                 index @ index + 1
 
             return f.result
@@ -1685,7 +1790,7 @@ function bind_argument(@c: state.Checker, s: source.Source, decls: [ast.Decl], @
         check_generics.bind(@c, s, decls, @bindings, param: param, got: got, span: span)
         return
 
-    if param != got && !table.poisoned(c.out.types, param) && !table.poisoned(c.out.types, got)
+    if param != got && !table.fits(@c.out.types, wanted: param, got: got) && !table.poisoned(c.out.types, param) && !table.poisoned(c.out.types, got)
         a_text = state.show(c, s, decls, param)
         b_text = state.show(c, s, decls, got)
         state.push_diagnostic(@c, value_errors.mismatch(expected: a_text, got: b_text, span: span))

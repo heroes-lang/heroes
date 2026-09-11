@@ -137,6 +137,13 @@ record Resolved
     # editing (panel 033 D1). Heroes has no set type, so it is an array — and
     # an array sorts, which a set of records would not.
     holes_in: [str]
+    # The parameter NAMES a function type wrote, by type-arena node, and absent
+    # where it wrote none (defect 026). Read here because this pass is the last
+    # one holding the source: `check/lower.hero`, which puts the names into the
+    # type's identity, has the tree and the table and no text, and threading a
+    # source through its thirty-seven call sites would buy a span lookup with a
+    # signature change.
+    fn_labels: {i64: [str]}
     diagnostics: [diag.Diagnostic]
 
 function new_resolved() -> Resolved
@@ -146,6 +153,7 @@ function new_resolved() -> Resolved
     top: {str: {str: i64}} = {}
     module_uses: {str: {str: str}} = {}
     holes_in: [str] = []
+    fn_labels: {i64: [str]} = {}
     diagnostics: [diag.Diagnostic] = []
     return Resolved(
         uses: uses,
@@ -154,6 +162,7 @@ function new_resolved() -> Resolved
         top: top,
         module_uses: module_uses,
         holes_in: holes_in,
+        fn_labels: fn_labels,
         diagnostics: diagnostics
     )
 

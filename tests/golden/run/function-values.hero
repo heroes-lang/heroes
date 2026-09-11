@@ -22,6 +22,14 @@
 # in the SIGNATURE, and two of `apply`'s three are `i64`. The function value is
 # not one of them and needs no label — which is the rule being narrow rather than
 # blanket.
+#
+# And the function TYPE names its two `i64` for the same reason since defect
+# 026: a call made through a value takes its arguments by the type's names, so
+# `f(a: x, b: y)` is checked the way a call to a declaration is. The names are
+# part of the type, which is what puts `add` and `mul` in one array: both
+# declare `(a, b)`, so both have that type. Two functions that agreed on
+# everything but the spelling of their parameters would be two types, and the
+# array would have no answer to which names its calls use.
 # Bulk regression case.
 
 function add(a: i64, b: i64) -> i64
@@ -30,8 +38,8 @@ function add(a: i64, b: i64) -> i64
 function mul(a: i64, b: i64) -> i64
     return a * b
 
-function apply(f: (function(i64, i64) -> i64), x: i64, y: i64) -> i64
-    return f(x, y)
+function apply(f: (function(a: i64, b: i64) -> i64), x: i64, y: i64) -> i64
+    return f(a: x, b: y)
 
 function tick()
     print("tick")
@@ -42,14 +50,14 @@ function twice(f: (function() -> ()))
 
 function main()
     g = add
-    print(g(2, 3), " ", apply(add, x: 2, y: 3), " ", apply(mul, x: 2, y: 3))
+    print(g(a: 2, b: 3), " ", apply(add, x: 2, y: 3), " ", apply(mul, x: 2, y: 3))
 
     twice(tick)
 
     # An array of them: the element descriptor is one shared by every function
     # type, the way `hero_desc_array` is one for every `[T]`.
-    ops: [(function(i64, i64) -> i64)] = [add, mul]
-    print(ops[0](4, 5), " ", ops[1](4, 5), " ", len(ops))
+    ops: [(function(a: i64, b: i64) -> i64)] = [add, mul]
+    print(ops[0](a: 4, b: 5), " ", ops[1](a: 4, b: 5), " ", len(ops))
 
     # Pointer identity, both ways.
     h = add

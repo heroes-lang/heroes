@@ -235,7 +235,7 @@ function substitute(@c: state.Checker, ty: i64, bindings: [i64?]) -> i64
                 rebuilt @ rebuilt.push(substitute(@c, p, bindings))
 
             result = substitute(@c, f.result, bindings)
-            return table.intern_function(@c.out.types, rebuilt, result: result)
+            return table.intern_function(@c.out.types, rebuilt, table.labels_of(c.out.types, f.labels), result: result)
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return ty
         .fixed | .named | .case_ty | .failure | .error            => return ty
 
@@ -277,9 +277,10 @@ test "binding descends the shapes: array, map, and a function type"
     xs_param = table.intern(@c.out.types, .array(element: a_param))
     xs_got = table.intern(@c.out.types, .array(element: int_id))
     one: [i64] = [a_param]
-    fn_param = table.intern_function(@c.out.types, one, result: b_param)
+    none: [str] = []
+    fn_param = table.intern_function(@c.out.types, one, none, result: b_param)
     one_got: [i64] = [int_id]
-    fn_got = table.intern_function(@c.out.types, one_got, result: str_id)
+    fn_got = table.intern_function(@c.out.types, one_got, none, result: str_id)
     bindings: [i64?] @ [fail(code: "unbound", msg: "A"), fail(code: "unbound", msg: "B")]
     bind(@c, s, d, @bindings, param: xs_param, got: xs_got, span: token.Span(start: 0, end: 1))
     bind(@c, s, d, @bindings, param: fn_param, got: fn_got, span: token.Span(start: 2, end: 3))

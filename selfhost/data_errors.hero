@@ -95,22 +95,86 @@ function wrong_label(holder: str, written: str, expected: str, elsewhere: bool, 
     )
     return d
 
-# A label at a call made through a FUNCTION VALUE. `(function(str, str) -> str)`
-# names no parameters at any of its sites, so `f(nonsense: "a")` was accepted and
-# ignored until panel 128 — a label there was not even a claim. The fix is
+# A label at a call made through a FUNCTION VALUE of a type that carries no
+# names. `f(nonsense: "a")` was accepted and ignored at every function type
+# until panel 128 — a label there was not even a claim. Since defect 026 a type
+# whose parameters CAN be confused carries names and its calls are checked
+# against them, so what is left here is the type where no two positions share a
+# type: it names none, and a label claims a check nobody is doing. The fix is
 # `certain`: the label is removed, the value stays where it is, and the program
 # does what it already did.
 function label_on_function_value(written: str, span: token.Span) -> diag.Diagnostic
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "label_on_function_value",
-        message: "a function type names no parameters, so this call takes its arguments by position — `" + written + ":` names nothing",
+        message: "nothing can be confused with this position of the function type, so it has no name — `" + written + ":` names nothing",
         span: span
     )
     d.notes @ d.notes.push(
-        "§4.9's rule reads the parameter names of a DECLARATION; a value of type `(function(A, B) -> C)` has none, so its arguments are positional"
+        "§4.9 names an argument where two parameters share a type; no other parameter of this type has this one's type, so this position carries no name for a label to be checked against"
     )
     d.fixes @ d.fixes.push(
         diag.Fix(title: "drop the label", replacement: "", span: span, certainty: .certain)
+    )
+    return d
+
+# The three refusals a function type's parameter NAMES can earn (defect 026).
+# §4.9 names the arguments of a call when two parameters share a type, and a
+# function type had no names at any of its sites, so the same swap went through
+# a value in silence. The names are written exactly where the rule needs them:
+# mandatory on a same-typed pair, refused where none, and never on half a run.
+
+# `(function(a: str, a: str) -> str)` — one name at two positions. The names are
+# mandatory here so that the two CANNOT be confused, and a name used twice is
+# the one spelling that leaves them exactly as confusable as no name at all:
+# panel 129's compiler seat found it by attacking the shape beside the repair,
+# and the swap inside such a type was accepted at exit 0.
+function repeated_parameter_name(written: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "repeated_parameter_name",
+        message: "this function type calls two of its parameters `" + written + "`, so a call through it still cannot say which is which",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "the names are what §4.9 checks a call against, so two positions of one type need two names a reader can tell apart"
+    )
+    return d
+
+# `(function([i64]: str) -> ())` — whatever stands before the colon, it is not
+# a name.
+function parameter_name_not_a_name(span: token.Span) -> diag.Diagnostic
+    return diag.new_diagnostic(
+        code: "parameter_name_not_a_name",
+        message: "a parameter name is a plain name, `from`, and this is a type",
+        span: span
+    )
+
+# The mandatory half. The message shows the repair in full rather than
+# describing it, because the reader has to invent two names and the shape is
+# what tells them where they go.
+function needs_parameter_names(shared: str, shown: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "needs_parameter_names",
+        message: "two of `" + shown + "`'s parameters are `" + shared + "`, so this type names both of them — give each a name that says which is which",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "§4.9 names the arguments of a call when two parameters share a type; a value of a function type is called through the type, so the names live in the type and a call through it is checked against them"
+    )
+    return d
+
+# The refused half, and the code a function type carrying a pointless name has
+# earned since before defect 026 — what changed is the reason, from *a function
+# type lists types* to *this one needs no names*. The fix stays `certain`: the
+# positions cannot be confused, so dropping the name changes nothing a program
+# can observe.
+function named_parameter_in_function_type(written: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "named_parameter_in_function_type",
+        message: "no two parameters of this function type share a type, so `" + written + ":` names a position nothing can confuse",
+        span: span
+    )
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "drop the parameter name", replacement: "", span: span, certainty: .certain)
     )
     return d
 

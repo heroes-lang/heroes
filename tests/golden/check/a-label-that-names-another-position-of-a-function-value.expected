@@ -1,0 +1,2 @@
+tests/golden/check/a-label-that-names-another-position-of-a-function-value.hero:19:16: error[wrong_label]: `this function` has nothing called `to` at this position — it is `from`
+tests/golden/check/a-label-that-names-another-position-of-a-function-value.hero:19:25: error[wrong_label]: `this function` has nothing called `from` at this position — it is `to`

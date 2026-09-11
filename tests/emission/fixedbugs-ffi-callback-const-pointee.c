@@ -44,7 +44,7 @@ _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK"
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 #line 47 "fficallbackconstpointee.c"
-typedef int32_t (*h_0fn_bb2c2b1)(void *, void *);
+typedef int32_t (*h_0fn_55eb947e)(void *, void *);
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -66,7 +66,7 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 29 "tests/golden/fixedbugs/ffi-callback-const-pointee.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_fficallbackconstpointee_qsort(void * a0, uint64_t a1, uint64_t a2, h_0fn_bb2c2b1 a3) { (void)(qsort)(a0, a1, a2, a3); }
+__attribute__((unused)) static void hero_ffi_probe_h_fficallbackconstpointee_qsort(void * a0, uint64_t a1, uint64_t a2, h_0fn_55eb947e a3) { (void)(qsort)(a0, a1, a2, a3); }
 #line 112 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
 #line 113 "<heroes library>"
@@ -91,45 +91,47 @@ HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
 HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
-int32_t h_fficallbackconstpointee_cmp(void * h0_, void * h1_);
+int32_t h_fficallbackconstpointee_cmp(void * h0_left, void * h1_right);
 void h_fficallbackconstpointee_main(void);
 
-#line 31 "tests/golden/fixedbugs/ffi-callback-const-pointee.hero"
-int32_t h_fficallbackconstpointee_cmp(void * h0_, void * h1_) {
+#line 35 "tests/golden/fixedbugs/ffi-callback-const-pointee.hero"
+int32_t h_fficallbackconstpointee_cmp(void * h0_left, void * h1_right) {
 #line 100 "fficallbackconstpointee.c"
     hero_thread_guard("fficallbackconstpointee.cmp");
-    int32_t t1;
+    int32_t t3;
     goto bb0;
 bb0:
-#line 32 "tests/golden/fixedbugs/ffi-callback-const-pointee.hero"
-    t1 = INT64_C(0);
-#line 32 "tests/golden/fixedbugs/ffi-callback-const-pointee.hero"
-    return t1;
-#line 109 "fficallbackconstpointee.c"
+#line 36 "tests/golden/fixedbugs/ffi-callback-const-pointee.hero"
+#line 37 "tests/golden/fixedbugs/ffi-callback-const-pointee.hero"
+#line 38 "tests/golden/fixedbugs/ffi-callback-const-pointee.hero"
+    t3 = INT64_C(0);
+#line 38 "tests/golden/fixedbugs/ffi-callback-const-pointee.hero"
+    return t3;
+#line 111 "fficallbackconstpointee.c"
 }
 
-#line 34 "tests/golden/fixedbugs/ffi-callback-const-pointee.hero"
+#line 40 "tests/golden/fixedbugs/ffi-callback-const-pointee.hero"
 void h_fficallbackconstpointee_main(void) {
-#line 114 "fficallbackconstpointee.c"
+#line 116 "fficallbackconstpointee.c"
     void * t1;
     uint64_t t2;
     uint64_t t3;
-    h_0fn_bb2c2b1 t4;
+    h_0fn_55eb947e t4;
     goto bb0;
 bb0:
-#line 35 "tests/golden/fixedbugs/ffi-callback-const-pointee.hero"
+#line 41 "tests/golden/fixedbugs/ffi-callback-const-pointee.hero"
     t1 = ((void *)0);
-#line 35 "tests/golden/fixedbugs/ffi-callback-const-pointee.hero"
+#line 41 "tests/golden/fixedbugs/ffi-callback-const-pointee.hero"
     t2 = UINT64_C(0);
-#line 35 "tests/golden/fixedbugs/ffi-callback-const-pointee.hero"
+#line 41 "tests/golden/fixedbugs/ffi-callback-const-pointee.hero"
     t3 = UINT64_C(0);
-#line 35 "tests/golden/fixedbugs/ffi-callback-const-pointee.hero"
+#line 41 "tests/golden/fixedbugs/ffi-callback-const-pointee.hero"
     t4 = h_fficallbackconstpointee_cmp;
-#line 35 "tests/golden/fixedbugs/ffi-callback-const-pointee.hero"
+#line 41 "tests/golden/fixedbugs/ffi-callback-const-pointee.hero"
     (void)qsort(t1, t2, t3, t4);
-#line 35 "tests/golden/fixedbugs/ffi-callback-const-pointee.hero"
+#line 41 "tests/golden/fixedbugs/ffi-callback-const-pointee.hero"
     return;
-#line 133 "fficallbackconstpointee.c"
+#line 135 "fficallbackconstpointee.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
