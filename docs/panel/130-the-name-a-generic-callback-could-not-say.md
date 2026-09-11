@@ -1,8 +1,8 @@
 # 130 — the name a generic callback could not say
 
 Convened and closed 2026-09-11 · M-named-callbacks · **full lane**
-· status: **provisional — author ratification pending**
-(`docs/work/DECIDE.md`)
+· status: **ratified as adopted, 2026-09-11**
+(`docs/work/DONE.md`)
 
 Panel 129 classified the `fold` role inversion as the price of design.md §4.9's
 criterion rather than a defect against it, and offered the author three ways to
@@ -123,19 +123,27 @@ it: the 2-of-7 reading, which costs nothing and renames nobody.
 
 ## Author's verdict
 
-**Pending**, and narrower than the sittings before it, because the author has
-already decided the substance. Asked at panel 129's ratification what to do with
-the `fold` case, they said build the route that closes it; asked mid-sitting
-whether to keep the cheaper 2-of-7 reading or take agreement at 7 of 7 with a
-naming mandate attached, they took agreement. **What is queued is the sitting's
-verdict on what that produced**, which is not the same question: two seats sent
-the work back after the decision, and what landed is not what they were handed.
+**Ratified as adopted, 2026-09-11** (the author's word, `ratifico il panel 130`,
+given the same evening the sitting closed and minutes after the push that carried
+it). The mandate stands: a function whose own two parameters share a type names
+them the way the callback type it is handed to names them.
 
-**What a yes settles**: the mandate, the document at −1 real, and the tag.
-**What it does not**: a callback whose own two parameters are different types,
-and a user's own generic higher-order function. Both are below.
+**The ratification is narrower than the sittings before it, and deliberately.**
+The author had already decided the substance twice — at panel 129's ratification,
+asking for the route this sitting judged, and mid-sitting, choosing agreement at
+7 of 7 over the cheaper reading at 2 of 7 with both numbers in front of them. What
+was queued was the sitting's verdict on what that produced, because two seats sent
+the work back after the decision and what landed is not what they were handed.
 
-## What this sitting did not close
+**So the three seats' findings are ratified with it**: the uninhabited annotation
+repaired, the diagnostic guarded so it stops stacking onto three others, the
+golden moved rather than deleted, the message carrying its scope, and design.md
+amended twice under its own date. **And what is NOT ratified is what the sitting
+says it did not close**, below: a callback whose own two parameters are different
+types, and a user's own generic higher-order function. Neither is a defect; both
+are named.
+
+## What this sitting did not close## What this sitting did not close
 
 **A callback whose own two parameters are different types.** Its declaration puts
 no names in its type, so the mandate does not bind it, and `tally(item: str, acc:
