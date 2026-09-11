@@ -79,6 +79,8 @@ because a table that is behind is better than one that is behind and quiet.
 
 | 044 | [the anchors](044-anchored-spec.md) | M-anchored-spec — the specification takes the shape of a Report: thirteen numbered sections, one home per rule, and the numbers as the citation anchors | 2026-09-11 | `m-anchored-spec` |
 
+| 045 | [the label](045-labelled-builtins.md) | M-labelled-builtins — the same-typed-argument rule reaches the two built-ins that escaped it, and the classic argument inversion falls from 367 survivors to 75 | 2026-09-11 | untagged |
+
 `git tag --list --sort=creatordate` gives the same order from git itself, and
 `git checkout m5b` re-opens any milestone's code — which is what
 `M-journey-book` is written from.
