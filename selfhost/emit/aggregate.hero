@@ -142,12 +142,19 @@ function place(c: state.Checked, s: source.Source, decls: [ast.Decl], f: contain
     return text
 
 # t3 = (h_m_Point){.f_x = t1, .f_y = t2};
-function construct(names: ctype.Names, s: source.Source, decls: [ast.Decl], decl: i64, arguments: [str]) -> str?
+function construct(c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], decl: i64, arguments: [str]) -> str?
     name = ctype.of(names, decl: decl)
 
     match decls[decl].kind
         .record_decl rec =>
-            parts = designators(s, fields: rec.fields, arguments: arguments, foreign: !rec.header.is_err())
+            parts = designators(
+                c,
+                s,
+                fields: rec.fields,
+                arguments: arguments,
+                foreign: !rec.header.is_err(),
+                holder: name
+            )
 
             if parts.is_err()
                 return fail(code: "none", msg: "fewer arguments than fields")
@@ -165,7 +172,7 @@ function construct(names: ctype.Names, s: source.Source, decls: [ast.Decl], decl
 # The result is the WHOLE variant, not the case. A payload-free case
 # writes the tag alone — C zeroes the rest of a compound literal, so
 # the union is never left holding stale bytes.
-function construct_case(names: ctype.Names, s: source.Source, decls: [ast.Decl], decl: i64, at: i64, arguments: [str]) -> str?
+function construct_case(c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], decl: i64, at: i64, arguments: [str]) -> str?
     both = case_names(names, s, decls, decl: decl, at: at)
 
     if both.is_err()
@@ -181,7 +188,7 @@ function construct_case(names: ctype.Names, s: source.Source, decls: [ast.Decl],
 
             # A variant is never a group member, so foreign is false for
             # every case payload — stated rather than assumed.
-            parts = designators(s, fields: fields, arguments: arguments, foreign: false)
+            parts = designators(c, s, fields: fields, arguments: arguments, foreign: false, holder: "")
 
             if parts.is_err()
                 return fail(code: "none", msg: "fewer arguments than payload fields")
@@ -194,19 +201,58 @@ function construct_case(names: ctype.Names, s: source.Source, decls: [ast.Decl],
 
 # .f_x = t1 per field, in declared order. Designated, never positional
 # — the redundancy is the point.
-function designators(s: source.Source, fields: [ast.Field], arguments: [str], foreign: bool) -> [str]?
+function designators(c: state.Checked, s: source.Source, fields: [ast.Field], arguments: [str], foreign: bool, holder: str) -> [str]?
     parts: [str] @ []
     index: i64 @ 0
 
     for one_field in fields
         if index >= arguments.len()
             return fail(code: "none", msg: "fewer arguments than fields")
+        member = mangle.field_of(foreign: foreign, name: source.span_text(s, one_field.name))
         parts @ parts.push(
-            "." + mangle.field_of(foreign: foreign, name: source.span_text(s, one_field.name)) + " = " + arguments[index]
+            "." + member + " = " + written_as(c, value: arguments[index], ty: one_field.ty, foreign: foreign, holder: holder, member: member)
         )
         index @ index + 1
 
     return ok(parts)
+
+# The value as the MEMBER takes it, which matters in exactly one place and is
+# defect 027's repair.
+#
+# `cstr` emits `const char *`, and a header's member is often plain `char *` —
+# `struct passwd`'s `pw_name`, `pw_dir` and `pw_shell`. **Panel 089 already
+# ruled that pairing legal and said why**: `const` restricts writes and the
+# language offers none through a `cstr`, so `extern_field.hero`'s per-field
+# `_Static_assert` accepts both spellings. The CONSTRUCTION did not follow, and
+# the compound literal was refused by this project's own
+# `-Werror=incompatible-pointer-types-discards-qualifiers` — so a binding the
+# compiler had deliberately widened to admit could be declared and not built,
+# and the refusal arrived as `internal error: compiling the generated C failed`
+# with no line and no repair.
+#
+# The cast is `__typeof__` of the member, the same form the assertion above it
+# already uses to ask about that member, so the value is written as exactly the
+# type the header gives and nothing is asserted about what that type is.
+# Foreign records only, and `cstr` fields only: everywhere else the literal's
+# own type checking is what catches a wrong argument, and it keeps it.
+function written_as(c: state.Checked, value: str, ty: i64, foreign: bool, holder: str, member: str) -> str
+    if !foreign
+        return value
+    written = state.written_type(c, ty)
+
+    if written.is_err()
+        return value
+    is_cstr: bool @ false
+
+    match table.get(c.types, written.must())
+        .cstr                                                      => is_cstr @ true
+        .int_ty | .float_ty | .bool | .str | .ptr | .unit          => is_cstr @ is_cstr
+        .array | .fixed | .map | .fallible | .function_ty | .named => is_cstr @ is_cstr
+        .case_ty | .failure | .generic | .error                    => is_cstr @ is_cstr
+
+    if !is_cstr
+        return value
+    return "(__typeof__(((" + holder + " *)0)->" + member + "))" + value
 
 # t3 = t2.tag; — what a switch reads.
 function tag(base: i64) -> str
@@ -290,7 +336,7 @@ test "designated construction, a walked place, and the failure's fixed pair"
     got = ready(
         "record Point\n    x: i64\n    y: i64\n\nrecord Line\n    start_at: Point\n\nfunction main()\n    l: Line @ Line(start_at: Point(x: 1, y: 2))\n    l.start_at.x @ 3\n    print(l.start_at.x)\n"
     )
-    built = construct(got.names, got.s, got.decls, decl: 0, arguments: ["t1", "t2"])
+    built = construct(got.c, got.names, got.s, got.decls, decl: 0, arguments: ["t1", "t2"])
     assert built.must() == "(h_t_Point){.f_x = t1, .f_y = t2}"
     line = table.lookup(got.c.types, .named(decl: 1)).must()
     slots: [containers.Slot] = [containers.Slot(name: "l", ty: line, kind: .local_slot)]
@@ -321,9 +367,9 @@ test "a case writes its tag alone when bare, and the payload member when not"
     got = ready(
         "variant Tok\n    word\n        text: str\n    plus\n\nfunction main()\n    t: Tok = .word(text: \"hi\")\n    _ = t\n"
     )
-    bare = construct_case(got.names, got.s, got.decls, decl: 0, at: 1, arguments: [])
+    bare = construct_case(got.c, got.names, got.s, got.decls, decl: 0, at: 1, arguments: [])
     assert bare.must() == "(h_t_Tok){.tag = h_t_Tok_tag_plus}"
-    carrying = construct_case(got.names, got.s, got.decls, decl: 0, at: 0, arguments: ["t1"])
+    carrying = construct_case(got.c, got.names, got.s, got.decls, decl: 0, at: 0, arguments: ["t1"])
     assert carrying.must() == "(h_t_Tok){.tag = h_t_Tok_tag_word, .as.c_word = {.f_text = t1}}"
     tok = table.lookup(got.c.types, .named(decl: 0)).must()
     f = containers.Function(

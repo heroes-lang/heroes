@@ -1,0 +1,73 @@
+# fixedbugs, M-reflection-verdict, 2026-09-12 (defect 028).
+#
+# SYMPTOM: `heroes check` said the program below was fine at exit 0, and
+# `heroes build` then died at **exit 134** with `assert failed:
+# !found.is_err()` — no file, no line, no diagnostic code. The
+# `internal error` class `.claude/rules/c-boundary.md` names as the one that
+# accuses the compiler and repairs nothing, and here it did not manage even
+# that much: only a failed internal assertion.
+#
+# CAUSE: `selfhost/emit/synth.hero::collect` returned at once for `.named` — a
+# record or a variant — so it never walked their fields. A function type
+# reachable ONLY through a field therefore reached no typedef, and
+# `ctype.func_of`'s assertion, whose comment states the premise in its own
+# words (*"every function type is named before anything can mention one"*),
+# found it false and aborted.
+#
+# **It survives only while nothing CALLS through the field.** Calling it puts
+# the type in a slot, the slot is walked, the typedef is emitted — which is
+# why the defect sat here unfound: every program that holds a callback in a
+# record also calls it, except the one panel 132's FFI seat wrote on its first
+# attempt at a record of handlers.
+#
+# FIX: `collect` walks a record's fields and a variant's case fields, guarded
+# by a second `seen` set — a second set and not the `into` one, because `into`
+# IS the list of function typedefs to emit and a named type in it would emit a
+# typedef for a record; and guarded at all because a record may hold itself
+# through `[T]` or `{K: V}` (spec § 3), so the walk has a cycle in it.
+#
+# **The four shapes below are the class, and the first is the witness.** A
+# repair is owed at the class and not at the case that provoked it.
+
+# 1. THE WITNESS: a function-typed field, never called through.
+record Direct
+    f: (function(v: i64) -> i64)
+
+# 2. NESTED: the record holding it is itself a field of another record, so the
+# walk has to recur rather than look one level down.
+record Outer
+    inner: Direct
+    label: str
+
+# 3. THROUGH A CONTAINER: reached only as the element of an array, which is the
+# arm that already recurred and had nowhere to recur TO.
+record Held
+    all: [Direct]
+
+# 4. A VARIANT'S CASE, which is a small record (§4.2) and was the other half of
+# the same silence.
+variant Either
+    one
+        f: (function(a: str) -> str)
+    none
+
+function twice(v: i64) -> i64
+    return v * 2
+
+function shout(a: str) -> str
+    return a + "!"
+
+function main()
+    direct = Direct(f: twice)
+    outer = Outer(inner: Direct(f: twice), label: "held")
+    held = Held(all: [Direct(f: twice)])
+    either: Either = .one(f: shout)
+
+    # Every one of these is READ and none is CALLED, which is the shape. A
+    # read is a use (spec § 5), so the checker is satisfied and the emitter
+    # used to be the one that found out.
+    _ = direct
+    _ = outer
+    _ = held
+    _ = either
+    print("built four shapes and called none of them")

@@ -215,13 +215,14 @@ function with_options(names: Names, c: state.Checked, s: source.Source, decls: [
 function with_functions(names: Names, c: state.Checked, s: source.Source, decls: [ast.Decl], p: containers.Program) -> Names
     out: Names @ names
     used: {i64: bool} @ {}
+    seen: {i64: bool} @ {}
 
     for f in p.functions
         for slot in f.slots
-            synth.collect(c, ty: slot.ty, into: @used)
+            synth.collect(c, decls, ty: slot.ty, into: @used, seen: @seen)
 
         for value in f.values
-            synth.collect(c, ty: value, into: @used)
+            synth.collect(c, decls, ty: value, into: @used, seen: @seen)
 
     # ORDER: none — the name is a function of the TYPE's rendering, not
     # of the walk position, since panel 093 R6; the map insertion order

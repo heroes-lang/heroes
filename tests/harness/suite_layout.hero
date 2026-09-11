@@ -98,6 +98,16 @@ constant CEILING: i64
 # refusals are its stated subject rather than an appendix, so the only cut
 # available would move the message away from the cursor that recovers from it.
 #
+# **A fifth moved the same day, for a DEFECT repair and not a feature**
+# (defect 028). `emit/ctype.hero` 370 -> **380**, measured 371: one line, the
+# `seen` map that `synth.collect` needs now that it walks a record's fields
+# rather than returning at `.named`. The guard exists because a record may hold
+# itself through `[T]` or `{K: V}` (spec § 3), so the walk has a cycle in it,
+# and it is a SECOND set rather than the existing one because `into` is the
+# list of function typedefs to emit and a named type in it would emit a typedef
+# for a record. Raised with room, as every entry here is, rather than to the
+# measured line.
+#
 # **Four moved on 2026-09-12, for a ratified surface form, and the number of
 # files is the story** (panel 132: `Point::x`, the field-name operator). The
 # form is one AST node, and a new node is a new arm in every exhaustive
@@ -340,7 +350,7 @@ constant DECIDED: [str]
         "selfhost/value_errors.hero 334"
         "selfhost/check/builtins.hero 377"
         "selfhost/ir/mono.hero 380"
-        "selfhost/emit/ctype.hero 370"
+        "selfhost/emit/ctype.hero 380"
         "selfhost/emit/gate.hero 365"
         "selfhost/resolve/cycles.hero 331"
         "selfhost/resolve/state.hero 330"

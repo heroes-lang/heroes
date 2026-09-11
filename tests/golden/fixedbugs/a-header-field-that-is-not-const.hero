@@ -1,0 +1,53 @@
+# fixedbugs, M-reflection-verdict, 2026-09-12 (defect 027).
+#
+# SYMPTOM: a binding the compiler had **deliberately widened to admit** could
+# be declared and not built. `heroes build` died with
+#
+#     internal error: compiling the generated C failed:
+#     main.hero:6:37: error: initializing 'char *' with an expression of type
+#     'const char *' discards qualifiers
+#     [-Werror,-Wincompatible-pointer-types-discards-qualifiers]
+#
+# at exit 2 — a message that accuses the compiler's own internals and names no
+# repair, for a program `spec § 13` says should either work or be refused by a
+# diagnostic about the header.
+#
+# CAUSE, and it is the part worth reading: **the rule was already settled and
+# the construction did not follow it.** `cstr` emits `const char *`, and a
+# header's member is often plain `char *` — `struct passwd`'s `pw_name`,
+# `pw_dir` and `pw_shell` are named in `selfhost/emit/extern_field.hero`'s own
+# comment, because panel 089 widened the per-field `_Static_assert` to accept
+# both spellings and wrote down why: *"const on the pointee restricts WRITES,
+# and the language offers none through a `cstr`"*. So the DECLARATION was
+# legal, the assertion passed, and then the compound literal
+# `(struct passwd){.pw_name = t2}` was refused by this project's own
+# `-Werror=incompatible-pointer-types-discards-qualifiers`.
+#
+# FIX: `selfhost/emit/aggregate.hero::written_as` casts a `cstr` value to
+# `__typeof__` of the member, for foreign records only and `cstr` fields only —
+# the same form the assertion above it already uses to ask about that member,
+# so the value is written as exactly the type the header gives and nothing new
+# is asserted about what that type is. Everywhere else the compound literal's
+# own type checking is what catches a wrong argument, and it keeps it.
+#
+# **WHAT GUARDS THIS, said plainly rather than implied.** No suite clangs a
+# `fixedbugs/` case: this directory gets `annotations`, `canonical` and
+# `emission`, and `--emit-c` never calls clang. So what this file guards is the
+# EMISSION — the cast is in the blessed C and a regression would move it — and
+# the proof that the program builds is a run recorded in the commit that
+# repaired it: `heroes build` at exit 0 on this Mac, against exit 2 before.
+# A case that looked like a compile guard and was not would be worse than none.
+
+extern "pwd.h"
+    record Passwd tag passwd partial
+        pw_name: cstr
+        pw_dir: cstr
+
+function main()
+    # All three shapes: a null field, a lent string, and a record with two
+    # non-const members rather than one, since the repair is per field.
+    empty = Passwd(pw_name: nullptr, pw_dir: nullptr)
+    print(empty.pw_name == nullptr)
+    here = "/tmp"
+    filled = Passwd(pw_name: nullptr, pw_dir: here.cstr())
+    print(filled.pw_dir == nullptr)

@@ -65,6 +65,7 @@ function record_or_case(@w: writer.Writer, c: state.Checked, names: ctype.Names,
 
     match shape
         .case_shape cs                                                   => literal @ aggregate.construct_case(
+            c,
             names,
             s,
             decls,
@@ -73,6 +74,7 @@ function record_or_case(@w: writer.Writer, c: state.Checked, names: ctype.Names,
             arguments: rendered
         )
         .record_shape rs                                                 => literal @ aggregate.construct(
+            c,
             names,
             s,
             decls,
