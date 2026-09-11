@@ -312,3 +312,59 @@ because the contradiction between two artifacts closed; the language still
 cannot render an aggregate, and an author debugging a failing aggregate test
 still reads one line. That is scheduled, and the schedule is now the author's
 decision rather than the sitting's proposal.
+
+---
+
+## Corrected 2026-09-11, at panel 131, on this sitting's own three owed measurements
+
+**Part 3 of the resolution above does not survive, and this sitting is the reason
+it was testable.** It adopted the sixth option and scheduled it *"with three
+things owed before it lands: a compiled prototype, the map case run against the
+two `==`-equal maps above, and the depth case run to the frame count panel 076
+measured"*, and it said of itself, in its own words, *"It is unrun. No seat
+compiled it, because no seat was asked about it."* All three were run at
+`docs/panel/131-the-refusals-were-sound-and-their-reasons-were-not.md`. **Two of
+the four claims in § Why it answers every objection are false.**
+
+**The sentence *"The map problem dissolves"* is false of the walk as well.** For a
+yes-or-no answer the walk is order-independent, and that much holds. But two
+`==`-equal left operands measured against one right operand report **two different
+leaves** — `m["a"]: 1 != 10` and `m["c"]: 3 != 30` — because the walk looks keys
+up in iteration order and stops at the first mismatch. The leaf named is a
+function of insertion history rather than of the value, which is this sitting's
+own refusal ground for map *rendering*, one level down inside the thing it adopted
+instead.
+
+**The sentence *"The recursion cliff dissolves. The walk is `eq`'s walk"* is false
+at the source.** `HeroEqWork` (`runtime/parts/array.c:185-190`) is
+`{a, b, elem, len}`: no path, no parent, no index base. A nested call returns
+`true` provisionally and the outermost drains LIFO, so the first `false` the drain
+finds is not the first differing leaf in any order a reader can predict. The walk
+cannot be `eq`'s walk without a fifth field and an order change in the one
+function panel 076 landed, and the prototype that does it with a C frame per level
+reports a leaf to depth 3600 with a path 28,813 characters long and then
+`panic: stack exhausted` at 3700, exit 134 — where the behaviour this sitting
+called *"strictly worse than the defect"* nowhere, today's thin
+`assert failed: a == b`, is correct at exit 0 at depth 100,000.
+
+**Two claims do hold and panel 131 keeps them**: no `HeroDesc` member is needed,
+because records and variants are reached statically; and the walk is not a second
+copy of what the language is. The cost estimate this sitting could not give is now
+measured: `selfhost/emit/differ.hero` is **160 code lines** as a floor and
+**350-450 across six modules and the runtime** as the real figure.
+
+**And the Zig precedent that produced the sixth option is overstated here.**
+`std.testing.expectEqual` does recurse through **struct fields** to a scalar leaf,
+which is what this sitting took from it; but on optionals it prints the whole
+payload, on slices it compares pointer and length rather than contents, and Zig
+ships a separate `expectEqualDeep` precisely because of that. *"It never renders
+the aggregate"* is false of Zig; *"it recurses through struct fields to a scalar
+leaf"* is true.
+
+**What is unchanged**: parts 1, 2 and 4 of the resolution, the spec sentence at
+§ 12 and its restoration clause, and `tests/harness/suite_special.hero`'s
+aggregate pin — which stays, and stays correct, because it was written to go red
+the day a mechanism lands and none does. The withdrawal of part 3 is
+`provisional — author ratification pending` in its own right, because this
+sitting's parts were ratified on 2026-09-07 and a reversal is put to the author
+separately rather than inside a longer yes.
