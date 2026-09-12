@@ -40,6 +40,7 @@ use cli/doctor
 use cli/help
 use cli/measure
 use cli/mutate
+use cli/grammar
 
 # The version, and the one place it lives (CLAUDE.md §14, release tags):
 # `heroes --version` prints it, `heroes build --emit-c` writes it as the
@@ -124,7 +125,8 @@ function main()
         .help_cmd =>
             print(help.help())
             exit(code: 0)
-        .this_cmd => exit(code: cli_table.exit_code(doctor.run_this()))
+        .this_cmd    => exit(code: cli_table.exit_code(doctor.run_this()))
+        .grammar_cmd => exit(code: cli_table.exit_code(grammar.run()))
         .doctor_cmd => exit(
             code: cli_table.exit_code(doctor.run_doctor(build_dir: "build", runtime_hint: runtime_hint()))
         )
@@ -179,6 +181,7 @@ function main()
             inv: inv
         )
         .doctor_cmd | .mutate_cmd | .measure_cmd | .this_cmd | .version_cmd | .help_cmd => verdict @ verdict
+        .grammar_cmd                                                                    => verdict @ verdict
 
     exit(code: cli_table.exit_code(verdict))
 
@@ -199,6 +202,7 @@ function compiling(path: str, s: source.Source, inv: argv.Invocation) -> cli_tab
         .test_cmd => return verbs.run_test(path: path, s: s, inv: inv, t: t, version: VERSION)
         .lex_cmd | .parse_cmd | .check_cmd | .fmt_cmd | .doctor_cmd => return .ok_exit
         .mutate_cmd | .measure_cmd | .this_cmd | .version_cmd | .help_cmd => return .ok_exit
+        .grammar_cmd => return .ok_exit
 
     return .ok_exit
 

@@ -43,6 +43,9 @@
 #   records       §14's identifiers, the alias table, stray C, the goldens
 #   surface       what a user types: exit codes, streams, flags, rendering
 #   special       the surface tests no table row can express
+#   grammar       what `heroes grammar` prints against what the
+#                 compiler's own source says: the keyword match and
+#                 the precedence table, read as text, in order
 #   layout        §11's per-file ceiling over selfhost/, tests excluded
 #   order         §4.9's `# ORDER:` mark on every map walk in selfhost/
 #   runtime       Part 7.13's two v1 invariants over runtime/: one
@@ -83,6 +86,7 @@ use suite_order
 use suite_records
 use suite_runtime
 use suite_spec
+use suite_grammar
 use suite_special
 use suite_surface
 use suite_units
@@ -323,6 +327,16 @@ function main()
             print("harness: the spec checks could not run")
             exit(2)
         print("  spec: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
+        total @ report.tally(one: total, two: got.must())
+        ran @ ran + 1
+
+    if only == "" || only == "grammar"
+        got = suite_grammar.run_all(scratch: scratch, compiler: compiler)
+
+        if got.is_err()
+            print("harness: the grammar checks could not run")
+            exit(2)
+        print("  grammar: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 

@@ -1,0 +1,287 @@
+# The grammar suite: what `heroes grammar` prints against what the compiler's
+# own source says (panel 133 R1).
+#
+# **WHY THIS READS SOURCE AND NOT A DOCUMENT.** Panel 133 refused a
+# hand-written grammar file and the four checks that would have guarded it: the
+# historian found every free-standing grammar in the survey archived, and the
+# engineer measured that the production check alone would have needed 82
+# hand-written exception rows to judge 74 productions. What is left is the half
+# that is already data, and the honest check on it compares two spellings of
+# THAT: the tables as the compiler compiles them, reached by running the
+# command, and the tables as they are WRITTEN, read out of the source as text.
+#
+# Heroes has no reflection, so `keywords.keywords()` and `grammar_expr.operators()`
+# are lists written beside the matches they enumerate. A unit test holds one
+# direction — every entry in the list is in the match. **This suite holds the
+# other**, which is the one a test inside the compiler cannot reach: a word or an
+# operator added to the MATCH and forgotten in the list. That direction is where
+# the silence would be, because the list is what the command prints.
+#
+# THE ORDER IS PART OF THE COMPARISON. Both sides are sequences, not sets, so an
+# entry moved between two arms is caught. A set comparison here would pass over
+# a precedence table whose rows had been shuffled, which is the only kind of
+# mistake this table can have that still parses.
+
+use report
+use shell
+use strings
+
+constant KEYWORD_SOURCE: str
+    "selfhost/keywords.hero"
+
+constant OPERATOR_SOURCE: str
+    "selfhost/grammar_expr.hero"
+
+# The floors. A extractor that reads the wrong shape returns nothing and every
+# comparison below it passes vacuously, which is the failure `suite_spec.hero`
+# names in its own words: a false pass is worse than a red.
+constant LEAST_KEYWORDS: i64
+    21
+
+constant LEAST_OPERATORS: i64
+    18
+
+function run_all(scratch: str, compiler: str) -> report.Report?
+    r: report.Report @ report.empty()
+    said = shell.run(scratch: scratch, program: compiler, words: [compiler, "grammar"])
+
+    if said.is_err()
+        report.keep_failure(@r, label: "grammar/runs", detail: "  cannot run `" + compiler + " grammar`")
+        return ok(r)
+
+    if said.must().code != 0
+        report.keep_failure(
+            @r,
+            label: "grammar/runs",
+            detail: "  `grammar` exited " + said.must().code.to_str() + " — it reads no file and takes no operand, so there is nothing for it to fail on (.claude/rules/cli-surface.md)"
+        )
+        return ok(r)
+
+    if said.must().err.len() != 0
+        report.keep_failure(
+            @r,
+            label: "grammar/runs",
+            detail: "  `grammar` wrote to stderr: the artifact goes to stdout and nothing else is owed"
+        )
+    else
+        report.keep_pass(@r)
+    out = said.must().out
+    keywords(@r, out: out)
+    powers(@r, out: out)
+    return ok(r)
+
+## The keywords
+
+# Every word the lexer reserves is printed, in the order the match declares it.
+function keywords(@r: report.Report, out: str)
+    written = quoted_before_arrow(path: KEYWORD_SOURCE, marker: "=> ok(.kw_")
+
+    if written.len() < LEAST_KEYWORDS
+        report.keep_failure(
+            @r,
+            label: "grammar/keywords",
+            detail: "  " + written.len().to_str() + " keywords read out of " + KEYWORD_SOURCE + " and there are at least " + LEAST_KEYWORDS.to_str() + " — the extractor is reading the wrong shape, and every comparison under it was about to pass vacuously"
+        )
+        return
+    printed = words_after(text: out, marker: "which a program may not use as a name:")
+
+    if printed != written
+        report.keep_failure(
+            @r,
+            label: "grammar/keywords",
+            detail: "  the match in " + KEYWORD_SOURCE + " declares\n    " + written.join(" ") + "\n  and `grammar` prints\n    " + printed.join(" ") + "\n  Both are sequences, so a word MOVED between two arms fails here too. The\n  repair is `keywords()` in that file, the list beside the match: it is what\n  the command prints, and Heroes has no reflection to derive it with."
+        )
+    else
+        report.keep_pass(@r)
+
+## The precedence table
+
+record Row
+    spelling: str
+    name: str
+    power: str
+
+# Each arm of `binary_op` carries all three facts, and the printed table carries
+# the same three.
+#
+# **WHAT THIS CHECK CANNOT SEE, said here rather than left to be discovered.**
+# Both sides come from the same match: the source read as text, and the command
+# that compiled it. So `.percent => .add` — panel 067's defect, the spelling and
+# the power kept and the operator changed — makes BOTH sides say `add`, and this
+# check passes. It is closed one level down, by the unit test in
+# `selfhost/cli/grammar.hero` that asserts `op_text` of `%`'s operator is `%`;
+# falsified 2026-09-12 by making exactly that edit, which turned that test red
+# and left this one green. **What this check does see** is the pair drifting:
+# `operators()` losing or gaining a row against the match, the order shuffled,
+# or `op_name` handing back the wrong name for an operator — which is the
+# printed column a reader would trust.
+function powers(@r: report.Report, out: str)
+    written = arms_of_binary_op()
+
+    if written.len() < LEAST_OPERATORS
+        report.keep_failure(
+            @r,
+            label: "grammar/powers",
+            detail: "  " + written.len().to_str() + " operators read out of " + OPERATOR_SOURCE + " and there are at least " + LEAST_OPERATORS.to_str() + " — the extractor is reading the wrong shape"
+        )
+        return
+    printed = printed_rows(out)
+
+    if printed.len() != written.len()
+        report.keep_failure(
+            @r,
+            label: "grammar/powers",
+            detail: "  `binary_op` has " + written.len().to_str() + " arms and `grammar` prints " + printed.len().to_str() + " rows — the list `operators()` and the match have drifted apart"
+        )
+        return
+    i: i64 @ 0
+
+    while i < written.len()
+        if printed[i].name != written[i].name || printed[i].power != written[i].power
+            report.keep_failure(
+                @r,
+                label: "grammar/powers",
+                detail: "  row " + i.to_str() + ": " + OPERATOR_SOURCE + " says operator `" + written[i].name + "` at power " + written[i].power + ", and `grammar` prints `" + printed[i].name + "` at power " + printed[i].power + ".\n  The operator column is the one panel 067 lost: `.percent => .add` kept the\n  spelling and the power and changed only this, with every test green."
+            )
+            return
+        i @ i + 1
+
+    report.keep_pass(@r)
+
+# `.or_or   => ok(Operator(op: .or, power: 1))` — the three facts, in the order
+# the file declares them.
+function arms_of_binary_op() -> [Row]
+    text = read_file(OPERATOR_SOURCE)
+    rows: [Row] @ []
+
+    if text.is_err()
+        return rows
+    inside: bool @ false
+
+    for line in strings.lines(text.must())
+        if strings.starts_with(text: line, prefix: "function binary_op(")
+            inside @ true
+            continue
+
+        if inside && strings.starts_with(text: line, prefix: "function ")
+            inside @ false
+
+        if !inside
+            continue
+        op = between(text: line, open: "op: .", close: ",")
+        power = between(text: line, open: "power: ", close: ")")
+
+        if op.len() > 0 && power.len() > 0
+            rows @ rows.push(Row(spelling: "", name: op, power: power))
+
+    return rows
+
+# The rows under the report's own header, each `  <power>  <spelling>  <name>`.
+function printed_rows(out: str) -> [Row]
+    rows: [Row] @ []
+    seen: bool @ false
+
+    for line in strings.lines(out)
+        if strings.contains(text: line, needle: "power  spelling  operator")
+            seen @ true
+            continue
+
+        if !seen
+            continue
+        parts = strings.words(line)
+
+        if parts.len() == 3
+            rows @ rows.push(Row(spelling: parts[1], name: parts[2], power: parts[0]))
+
+    return rows
+
+## Reading the two shapes
+
+# The quoted word on the left of an arrow, for an arm the marker identifies:
+# `"constant" => ok(.kw_constant)` gives `constant`.
+function quoted_before_arrow(path: str, marker: str) -> [str]
+    text = read_file(path)
+    found: [str] @ []
+
+    if text.is_err()
+        return found
+
+    for line in strings.lines(text.must())
+        if !strings.contains(text: line, needle: marker)
+            continue
+        word = between(text: line, open: "\"", close: "\"")
+
+        if word.len() > 0
+            found @ found.push(word)
+
+    return found
+
+# Every word on the lines after a marker, until a blank line. The keyword block
+# is printed several to a line, so the words are read and the layout is not.
+function words_after(text: str, marker: str) -> [str]
+    found: [str] @ []
+    seen: bool @ false
+
+    for line in strings.lines(text)
+        if strings.contains(text: line, needle: marker)
+            seen @ true
+            continue
+
+        if !seen
+            continue
+
+        if strings.trimmed(line).len() == 0
+            return found
+
+        for word in strings.words(line)
+            found @ found.push(word)
+
+    return found
+
+# What stands between the first `open` and the next `close` after it, or the
+# empty string when either is absent.
+function between(text: str, open: str, close: str) -> str
+    at = strings.index_of(text: text, needle: open)
+
+    if at.is_err()
+        return ""
+    rest = text.slice(from: at.must() + open.len(), to: text.len())
+    stop = strings.index_of(text: rest, needle: close)
+
+    if stop.is_err()
+        return ""
+    return rest.slice(from: 0, to: stop.must())
+
+## Tests
+
+test "the three facts are read out of an arm, in the file's order"
+    rows = arms_of_binary_op()
+    assert rows.len() == 18
+    assert rows[0].name == "or"
+    assert rows[0].power == "1"
+    assert rows[17].name == "rem"
+    assert rows[17].power == "9"
+
+test "the keywords are read off the match and not off the list"
+    written = quoted_before_arrow(path: KEYWORD_SOURCE, marker: "=> ok(.kw_")
+    assert written.len() == 21
+    assert written[0] == "constant"
+    assert written[20] == "fail"
+
+test "a field is cut between its two markers, and a missing one is empty"
+    assert between(text: "op: .rem, power: 9))", open: "op: .", close: ",") == "rem"
+    assert between(text: "power: 9))", open: "power: ", close: ")") == "9"
+    assert between(text: "nothing here", open: "op: .", close: ",") == ""
+    assert between(text: "op: .rem no comma", open: "op: .", close: ",") == ""
+
+test "the printed rows are read by their columns, and the header is not one"
+    out = "  power  spelling  operator\n      1  ||        or\n      9  %         rem\n"
+    rows = printed_rows(out)
+    assert rows.len() == 2
+    assert rows[0].power == "1"
+    assert rows[0].spelling == "||"
+    assert rows[1].name == "rem"
+
+test "the words after a marker stop at the blank line"
+    out = "head:\n  a b\n  c\n\nnot this\n"
+    assert words_after(text: out, marker: "head:") == ["a", "b", "c"]
