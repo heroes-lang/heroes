@@ -1,16 +1,32 @@
-# The reader's own count of the spec, pinned, and the flag that goes and asks
-# for a new one (design.md §1.6; panels 011, 123).
+# The reader's own count of the two JUDGED DOCUMENTS, pinned, and the flag that
+# goes and asks for a new one (design.md §1.6; panels 011, 123, 134).
 #
 # **Its own module since 2026-09-12, and the seam is a question rather than a
 # line count.** `cli/measure.hero` answers *what does this file measure on the
 # tables we carry* — offline, from the working directory, for any path. This one
-# answers *what did the tokeniser that actually reads the spec say, and when*: a
+# answers *what did the tokeniser that actually reads it say, and when*: a
 # different input (the network), a different cadence (by hand, never a check)
-# and a different subject (one document and no other). The two were one file
-# until `cli/measure.hero` passed §11's threshold, and the split had to be
-# argued rather than rounded to; the argument is this paragraph.
+# and a different subject. The two were one file until `cli/measure.hero` passed
+# §11's threshold, and the split had to be argued rather than rounded to; the
+# argument is this paragraph.
 #
-# **Which file is the spec stays with the tool that defaults to it.** This
+# **TWO DOCUMENTS SINCE 2026-09-12, and this paragraph used to say "one document
+# and no other".** Panel 134 measured `CLAUDE.md` at 7306 real against a stated
+# ceiling of 5500 and found it had been **1806 over for three days**, because the
+# contract alone was judged on the maximum over two VENDORED tables whose larger
+# is OpenAI's `cl100k_base` — while `heroes measure` printed `Headroom: 9`. That
+# is §1.6's own history one document across: the spec was 998 over a line it was
+# told it was 40 under. The subject of this module is therefore *the documents a
+# ceiling judges*, which is two.
+#
+# **They are two documents and not one list, because their ceilings do different
+# jobs** (author, ratifying panel 134). The spec's ceiling bears on the LANGUAGE:
+# every token is a feature paying rent, and squeezing is the point. The
+# contract's is HOUSEKEEPING — its repair is never to cut a rule but to move one
+# into `.claude/rules/`, where it loads only when its paths are touched, so what
+# it measures is the fixed cost paid on every turn. One instrument, two jobs.
+#
+# **Which file is which stays with the tool that defaults to one of them.** This
 # module is handed the path rather than holding it, because it decides nothing
 # about which document the tool measures and everything about what was
 # measured.
@@ -35,17 +51,44 @@ use cli/refresh
 use cli/count_tokens
 use cli/table as cli_table
 
-constant REAL_TOKENS: i64
+constant SPEC_REAL_TOKENS: i64
     7531
 
-constant REAL_MODEL: str
+constant SPEC_REAL_MODEL: str
     "claude-opus-5"
 
-constant REAL_TAKEN: str
+constant SPEC_REAL_TAKEN: str
     "2026-09-12"
 
 constant SPEC_DIGEST: str
     "0b96e29b3ca14666"
+
+# The contract's record. **It carries no digest, and the refusal is measured**
+# (panel 134, the compiler seat's veto). A digest withholds the verdict when the
+# file in hand is not the file the count was taken of, which costs the spec
+# nothing: an edit there already needs a panel and a ledger row. `CLAUDE.md` took
+# **34 commits in seven days** against the spec's 17, amended by author
+# instruction with no panel, so a digest here would withhold the verdict about
+# thirty-four times a week — each clearable only by a network refresh, and **not
+# clearable at all on a fork PR**, which is panel 123 R1's own refusal arriving
+# through the window.
+#
+# What replaces it is `CONTRACT_TOKENS`, the vendored count taken in the same
+# refresh. It is keyless, offline and fork-clean, it is the detector
+# `suite_spec.hero` already certifies as having *"always answered correctly"* at
+# the job of *did this document move and nobody say so*, and it is also the
+# previous level the delta gate subtracts from. One pin, three jobs.
+constant CONTRACT_REAL_TOKENS: i64
+    7402
+
+constant CONTRACT_REAL_MODEL: str
+    "claude-opus-5"
+
+constant CONTRACT_REAL_TAKEN: str
+    "2026-09-12"
+
+constant CONTRACT_TOKENS: i64
+    5556
 
 # `--refresh`: ask the reader's own tokeniser and print the record to paste.
 #
@@ -54,17 +97,19 @@ constant SPEC_DIGEST: str
 # it earns itself: a reader can redirect stdout into a file and get eight lines
 # that compile.
 #
-# AND IT REFUSES EVERY FILE BUT THE SPEC. The record belongs to one document. A
-# digest of another file is a digest nothing cross-checks, printed beside a
-# count nothing judges: a measurement in the shape of one, which is the class
-# this whole flag exists to close.
-function run_refresh(path: str, text: str, spec: str) -> cli_table.Exit
-    if path != spec
+# AND IT REFUSES EVERY FILE THAT NO CEILING JUDGES. The record belongs to the
+# judged documents. A digest of another file is a digest nothing cross-checks,
+# printed beside a count nothing judges: a measurement in the shape of one, which
+# is the class this whole flag exists to close. The refusal is the rule; what
+# changed on 2026-09-12 is that there are two judged documents rather than one,
+# and the refusal now names both so a reader learns which they are.
+function run_refresh(path: str, text: str, spec: str, contract: str, vendored: i64) -> cli_table.Exit
+    if path != spec && path != contract
         io.eprint(
-            text: "error: `--refresh` refreshes the record for `" + spec + "`, and `" + path + "` has none — no ceiling judges it and no check keeps it honest (panel 123 R5)"
+            text: "error: `--refresh` refreshes the record for `" + spec + "` and `" + contract + "`, and `" + path + "` has none — no ceiling judges it and no check keeps it honest (panel 123 R5)"
         )
         return .failed_exit
-    lines = refresh.refreshed(text)
+    lines = refresh.refreshed(text: text, spec: path == spec, vendored: vendored)
 
     if lines.is_err()
         io.eprint(text: "error: " + refresh.why_lines(lines))
@@ -74,12 +119,13 @@ function run_refresh(path: str, text: str, spec: str) -> cli_table.Exit
         print(row)
 
     io.eprint(
-        text: "note: paste these into `tests/harness/suite_spec.hero` AND `selfhost/measure/pinned.hero`, in ONE commit — the two copies are what the harness cross-checks against what this tool prints, and the digest is of `" + spec + "` exactly as it stands now"
+        text: "note: paste these into `tests/harness/suite_spec.hero` AND `selfhost/measure/pinned.hero`, in ONE commit — the two copies are what the harness cross-checks against what this tool prints. The names carry the document, so a paste cannot land in the other one's record"
     )
     return .ok_exit
 
-test "the model in the record is the model the refresh asks"
-    assert REAL_MODEL == count_tokens.PINNED_MODEL
+test "the model in each record is the model the refresh asks"
+    assert SPEC_REAL_MODEL == count_tokens.PINNED_MODEL
+    assert CONTRACT_REAL_MODEL == count_tokens.PINNED_MODEL
 
 # The digest was a placeholder for one build, and this is what stopped it
 # staying one. It is kept rather than deleted: a record whose digest is all
@@ -89,8 +135,14 @@ test "the record's digest is a real one and not the placeholder"
     assert SPEC_DIGEST != "0000000000000000"
     assert SPEC_DIGEST.len() == 16
 
-test "the refresh refuses every file but the spec, on the path and not on the key"
+test "the refresh refuses every file no ceiling judges, on the path and not on the key"
     # The half of `--refresh` a test can reach with no key in the environment:
     # the refusal happens on the PATH, before anything asks the network.
-    assert cli_table.exit_code(run_refresh(path: "design.md", text: "x", spec: "spec/heroes-spec.md")) == 2
-    assert cli_table.exit_code(run_refresh(path: "CLAUDE.md", text: "x", spec: "spec/heroes-spec.md")) == 2
+    #
+    # **`CLAUDE.md` was on this list until 2026-09-12 and has moved sides**, which
+    # is panel 134 in one line. It is not deleted from the case: a file that no
+    # ceiling judges is still refused, and `design.md` is the witness for that —
+    # §1.6 says in its own words that *"the spec has a budget; the compiler does
+    # not"*, so measuring it is a count and never a verdict.
+    assert cli_table.exit_code(run_refresh(path: "design.md", text: "x", spec: "spec/heroes-spec.md", contract: "CLAUDE.md", vendored: 0)) == 2
+    assert cli_table.exit_code(run_refresh(path: "docs/ROADMAP.md", text: "x", spec: "spec/heroes-spec.md", contract: "CLAUDE.md", vendored: 0)) == 2

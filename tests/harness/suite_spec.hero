@@ -129,6 +129,28 @@ constant REAL_MODEL: str
 constant REAL_TAKEN: str
     "2026-09-12"
 
+# The contract's own record, pinned here the way the spec's is, and cross-checked
+# against `selfhost/measure/pinned.hero` by `recorded` below. **It carries a
+# vendored count where the spec carries a digest**, and the reason is measured:
+# `CLAUDE.md` takes about 34 commits a week against the spec's 17, so a digest
+# would withhold the verdict about that often, clearable only by a network
+# refresh and not clearable at all on a fork PR (panel 134, the compiler seat's
+# veto). `CONTRACT_TOKENS` is keyless, offline, and does three jobs at once: the
+# staleness detector, the delta gate's previous level, and the movement detector
+# the contract never had.
+constant CONTRACT_REAL_TOKENS: i64
+    7402
+
+constant CONTRACT_TOKENS: i64
+    5556
+
+# The width of one commit's allowed growth, in VENDORED tokens, on both judged
+# documents. §1.6 queued this figure and panel 134 landed it; the reasoning and
+# what it does NOT buy are on `DELTA_GATE` in `selfhost/cli/measure.hero`, which
+# `recorded` holds this to.
+constant DELTA_GATE: i64
+    50
+
 # The spec this count is OF, content-addressed, so a stale number is loud
 # rather than reassuring. `selfhost/cli/digest.hero` computes it and
 # `measure` refuses to give a verdict when it disagrees.
@@ -138,17 +160,39 @@ constant SPEC_DIGEST: str
 # The operating contract, weighed on the same scale as the language.
 #
 # **Why it is here and not in `suite_records.hero`.** That suite gets no compiler
-# and this number comes from `heroes measure`, which is the same instrument, the
-# same tokeniser and the same *maximum over vendored rank sets* that decides the
-# spec's budget above. Two documents with ceilings belong on one scale.
+# and this number comes from `heroes measure`, which is the same INSTRUMENT that
+# decides the spec's budget above: `claude-opus-5` through
+# `POST /v1/messages/count_tokens`, pinned and refreshed by hand.
+#
+# **One instrument, two jobs — and the sentence here used to claim one job**
+# (author, ratifying panel 134). It read *"two documents with ceilings belong on
+# one scale"*, which compared quantities that are not comparable. `CEILING` above
+# bears on the LANGUAGE: every token is a feature paying rent, and squeezing is
+# the point. This one is HOUSEKEEPING, and when it is reached no rule is cut —
+# one MOVES, into `.claude/rules/` where it loads only when its paths are
+# touched, into the case law, or into a skill. So this number measures the fixed
+# cost every session pays on every turn, and nothing about the language.
 #
 # **What it is for, measured 2026-09-07.** `CLAUDE.md` was **1247 lines and 22689
 # tokens**, against 3871 for the whole language, having grown 118 -> 555 -> 1139
 # -> 1247 lines in 35 days over 90 commits: a paragraph per incident, each one a
-# correct rule in the shape of a diary. Claude Code's own documentation asks for
-# under 200 lines and warns that a longer file reduces adherence, so the cost is
-# not academic. It is 322 lines now, with the stories moved to
-# `docs/records/contract/case-law.md` and the tree-local rules to `.claude/rules/`.
+# correct rule in the shape of a diary. **It is 341 lines now** — this line said
+# 322 until 2026-09-12, which is the shape of defect this file exists to catch,
+# in this file — with the stories moved to `docs/records/contract/case-law.md` and
+# the tree-local rules to `.claude/rules/`.
+#
+# **WHAT THE COST OF A LONG CONTRACT IS, corrected 2026-09-12.** This comment
+# said *"Claude Code's own documentation asks for under 200 lines and warns that
+# a longer file reduces adherence"*. Panel 134's historian fetched that page and
+# **the figure is not on it**: *"under 200 lines"* is third-party blog content
+# this repository had been citing as a vendor rule. What the page does say,
+# verbatim, is that *"bloated CLAUDE.md files cause Claude to ignore your actual
+# instructions"* — a mechanism, not a threshold — and the measured evidence
+# nearby is of the adjacent effect rather than this one: reliability falling as
+# input grows (Chroma's context-rot study across eighteen models, Liu et al.'s
+# lost-in-the-middle). **There is no published size at which adherence falls.**
+# So the ceiling below is an informed CHOICE and says so, instead of implying a
+# threshold somebody measured.
 #
 # **A CEILING and not a pinned equality, which is the opposite of `SPEC_TOKENS`
 # above, deliberately.** The spec is budget-governed to the token, so any delta
@@ -158,17 +202,23 @@ constant SPEC_DIGEST: str
 # mode of a number with no argument behind it. What this holds is the disease
 # rather than the byte: unbounded regrowth.
 #
-# **The number is the measured one plus room to amend, said so rather than
-# rounded.** The target was the language's own 4096 and the honest result was
-# 5127: everything binding only part of the tree had already moved out, and what
-# remains binds every session. Crossing this ceiling is not a disaster, it is the
-# prompt to move a story into the case law and cite it, which is the whole
-# mechanism this file now guards.
+# **12288 = 7306 measured + 4982 of room** (author, 2026-09-12). It is set HIGH
+# on purpose, because reaching it should mean the tidying is genuinely due rather
+# than firing at every amendment and being raised on reflex. The room buys about
+# fifty days at the +97 real tokens a day the contract grew over the five days to
+# 2026-09-12, and about 1.7 times the current document; 16384 was refused as
+# letting the per-turn cost nearly double, 10240 as thirty days.
+#
+# **And the LEVEL is only half of it.** A ceiling that rings about twice a year
+# does no daily work, and panel 134's historian found no internally-owned,
+# raisable size budget that ever held its level — the one shape that held is a
+# ratchet, where the human is out of the raise. What watches the movement is
+# `DELTA_GATE` below.
 constant CONTRACT: str
     "CLAUDE.md"
 
 constant CONTRACT_CEILING: i64
-    5500
+    12288
 
 # The floor for file I/O, `args()` and `exit(code)` — panel 030 R3, which
 # refuted "they are plain externs" by compiling it. The floor belongs to the
@@ -295,7 +345,7 @@ function budget(@r: report.Report, scratch: str, compiler: str)
 # every verifier check for a test that makes it fail, and a check that can only
 # be exercised by making the real contract enormous has no such test.
 function contract(@r: report.Report, scratch: str, compiler: str, ceiling: i64)
-    measured = maximum_of(scratch: scratch, compiler: compiler, path: CONTRACT)
+    measured = real_of(scratch: scratch, compiler: compiler, path: CONTRACT)
 
     if measured.is_err()
         report.keep_failure(@r, label: "spec/contract", detail: "  cannot measure " + CONTRACT + " — " + why(measured))
@@ -303,7 +353,7 @@ function contract(@r: report.Report, scratch: str, compiler: str, ceiling: i64)
         report.keep_failure(
             @r,
             label: "spec/contract",
-            detail: "  " + CONTRACT + " measures " + measured.must().to_str() + " tokens against a ceiling of " + ceiling.to_str() + " — over by " + (measured.must() - ceiling).to_str() + ".\n  Every session loads all of it on every turn, the five panel seats included,\n  and a longer contract is one whose rules are followed less: that is what the\n  1247-line, 22689-token file of 2026-09-07 cost, against 3871 for the whole\n  language.\n  The repair is not a bigger number. Move the STORY of a rule into\n  docs/records/contract/case-law.md and leave the rule citing its entry, or move a rule\n  that binds one part of the tree into .claude/rules/, where it loads only when\n  that part is touched. Raising CONTRACT_CEILING is an author decision and goes\n  in the commit body with its reason."
+            detail: "  " + CONTRACT + " measures " + measured.must().to_str() + " tokens against a ceiling of " + ceiling.to_str() + " — over by " + (measured.must() - ceiling).to_str() + ".\n  Every session loads all of it on every turn, the five panel seats included,\n  and a longer contract is one whose rules are followed less: that is what the\n  1247-line, 22689-token file of 2026-09-07 cost, against 3871 for the whole\n  language.\n  The repair is not a bigger number, and it is not cutting a rule either. MOVE\n  one: into .claude/rules/, where it loads only when its paths are touched, or\n  into docs/records/contract/case-law.md as a story the rule then cites, or into a\n  skill. Raising CONTRACT_CEILING is an author decision and goes in the commit\n  body with its reason."
         )
     else
         report.keep_pass(@r)
@@ -421,6 +471,42 @@ function maximum_of(scratch: str, compiler: str, path: str) -> i64?
                 return strings.to_number(words[1])
 
     return fail(code: "cannot_measure", msg: "`measure` printed no `maximum` row")
+
+# The REAL row, and this function is the whole of panel 134's R5.
+#
+# **The defect it closes would have been silent and permanent.** `maximum_of`
+# above accepts exit 0 AND exit 1, and `measure` prints the `maximum` row before
+# it can withhold a verdict — so a `contract` check reading `maximum` goes on
+# comparing a VENDORED number to a ceiling that is now a `claude-opus-5` REAL
+# one, and passes forever on the scale this repair exists to abolish. The gap it
+# would have hidden is not small: 5491 against 7306, which is the 1806 the
+# contract was already over when nobody could see it.
+#
+# **It refuses exit 1 where `maximum_of` allows it**, and that is the second
+# half. Exit 1 from `measure` means the verdict was WITHHELD — a stale digest, or
+# a vendored drift past the window — and a withheld verdict has no real row to
+# read. Taking the number anyway would be reading a count of a document that is
+# no longer the one on disk.
+function real_of(scratch: str, compiler: str, path: str) -> i64?
+    said = shell.run(scratch: scratch, program: compiler, words: [compiler, "measure", path])?
+
+    if said.code != 0
+        return fail(
+            code: "cannot_measure",
+            msg: "`measure " + path + "` exited " + said.code.to_str() + ", so no verdict was given and there is no binding number to read: " + said.out + said.err
+        )
+
+    for row in strings.lines(said.out)
+        if strings.starts_with(text: row, prefix: "  real")
+            words = strings.words(row)
+
+            if words.len() >= 2
+                return strings.to_number(words[1])
+
+    return fail(
+        code: "cannot_measure",
+        msg: "`measure " + path + "` printed no `real` row — the ceiling is a `claude-opus-5` count and the vendored maximum is not it (panel 134)"
+    )
 
 # THE TWO INSTRUMENTS AGREE ON WHAT IS SPENDABLE, which is defect 017's
 # repair (2026-09-08, found by panel 118's spec-warden about its own
@@ -991,6 +1077,25 @@ function recorded(@r: report.Report, scratch: str, compiler: str)
             detail: "  `measure " + SPEC + "` prints no row calling the reader's count binding.\n  Until 2026-09-09 it called the VENDORED maximum that, and the vendored\n  maximum is OpenAI's tokeniser: the label is what a reader trusted, and it\n  cost 998 tokens (docs/measurements/023)."
         )
         return
+
+    # **The contract's record, held to the same standard since 2026-09-12.** It
+    # was not held to any: the contract had no real count at all, and `measure`
+    # printed no `real` row for it, which is how it sat 1806 tokens over a
+    # ceiling while reporting nine to spare (panel 134).
+    told = shell.run(scratch: scratch, program: compiler, words: [compiler, "measure", CONTRACT])
+
+    if told.is_err()
+        report.keep_failure(@r, label: "spec/real", detail: "  cannot run `measure " + CONTRACT + "`")
+        return
+    contract_row = CONTRACT_REAL_TOKENS.to_str() + "   " + REAL_MODEL + ", " + REAL_TAKEN
+
+    if !strings.contains(text: told.must().out, needle: contract_row)
+        report.keep_failure(
+            @r,
+            label: "spec/real",
+            detail: "  `measure " + CONTRACT + "` does not print \"" + contract_row + "\".\n  The contract's record lives in this file and in\n  `selfhost/measure/pinned.hero`, the way the spec's does, and whichever moved\n  the other moves with it. Take a new one with\n  `heroes measure " + CONTRACT + " --refresh` and paste what it prints."
+        )
+        return
     report.keep_pass(@r)
 
 test "the ledger's rows are read, and only the rows"
@@ -1126,9 +1231,12 @@ test "the record has to be printed by the tool, and still be called the binding 
     assert !shell.mkdir_all(scratch).is_err()
     row = "  real                 " + REAL_TOKENS.to_str() + "   " + REAL_MODEL + ", " + REAL_TAKEN
 
-    # The tool as it stands: the record, then the label.
+    # The tool as it stands: the record, then the label. **Both records since
+    # 2026-09-12** — the stub ignores its argument, so one script has to answer
+    # for the spec AND for the contract, and `recorded` now reads a row for each.
+    contract_row = "  real                 " + CONTRACT_REAL_TOKENS.to_str() + "   " + REAL_MODEL + ", " + REAL_TAKEN
     speaks = scratch + "/stub-real.sh"
-    assert !write_file(path: speaks, text: "#!/bin/sh\necho '" + row + " — the binding number'\n").is_err()
+    assert !write_file(path: speaks, text: "#!/bin/sh\necho '" + row + " — the binding number'\necho '" + contract_row + " — the binding number'\n").is_err()
     assert !shell.run(scratch: scratch, program: "chmod", words: ["chmod", "+x", speaks]).is_err()
     agrees: report.Report @ report.empty()
     recorded(@agrees, scratch: scratch, compiler: speaks)
@@ -1165,12 +1273,35 @@ test "the contract's ceiling fires, and a ceiling above it does not"
     scratch = "build/harness-selftest"
     assert !shell.mkdir_all(scratch).is_err()
     fat = scratch + "/stub-fat.sh"
-    assert !write_file(path: fat, text: "#!/bin/sh\necho 'CLAUDE.md'\necho '  maximum            9999   any prose at all, because the parser reads the row NAME'\n").is_err()
+    assert !write_file(path: fat, text: "#!/bin/sh\necho 'CLAUDE.md'\necho '  maximum            7000   a lower bound, not the reader s tokeniser'\necho '  real               9999   claude-opus-5, 2026-09-12 — the binding number'\n").is_err()
     assert !shell.run(scratch: scratch, program: "chmod", words: ["chmod", "+x", fat]).is_err()
 
     over: report.Report @ report.empty()
     contract(@over, scratch: scratch, compiler: fat, ceiling: 5500)
     assert over.failed == 1
+
+    # **AND THE REAL ROW IS THE ONE IT READS, which is panel 134's R5 and the
+    # defect that would have made this whole repair a no-op.** The stub above
+    # prints BOTH rows and they disagree on purpose: 7000 vendored against 9999
+    # real. A check reading `maximum` would compare 7000 to a ceiling of 9000 and
+    # pass, forever, on the vendored scale the move exists to abolish — and it
+    # would never be noticed, because the gap it hides is exactly the one the
+    # contract was already inside. 9999 is over, 7000 is not, so this one
+    # assertion separates the two readings.
+    reads_real: report.Report @ report.empty()
+    contract(@reads_real, scratch: scratch, compiler: fat, ceiling: 9000)
+    assert reads_real.failed == 1
+    assert strings.contains(text: reads_real.failures[0], needle: "9999")
+
+    # A tool that prints only the vendored row has WITHHELD its verdict, and the
+    # check must refuse rather than fall back to the number it can see.
+    vendored_only = scratch + "/stub-vendored.sh"
+    assert !write_file(path: vendored_only, text: "#!/bin/sh\necho 'CLAUDE.md'\necho '  maximum            7000   a lower bound, not the reader s tokeniser'\n").is_err()
+    assert !shell.run(scratch: scratch, program: "chmod", words: ["chmod", "+x", vendored_only]).is_err()
+    no_real: report.Report @ report.empty()
+    contract(@no_real, scratch: scratch, compiler: vendored_only, ceiling: 9000)
+    assert no_real.failed == 1
+    assert strings.contains(text: no_real.failures[0], needle: "no `real` row")
 
     # The message has to send the reader to the two places a rule can move to,
     # because "make the number bigger" is the wrong repair and the obvious one.

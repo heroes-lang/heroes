@@ -161,7 +161,56 @@ cannot be obeyed, which is the defect this milestone exists to remove.
 
 ## Author's verdict
 
-**Pending.** The item is `panel 134` in `docs/work/DECIDE.md`.
+**Ratified the same evening, 2026-09-12, with the number changed and the
+SITTING'S OWN FRAMING overturned — which is the more important half.**
+
+**The two ceilings are not the same kind of thing, and this sitting treated them
+as one.** The author's words, in English: the spec's ceiling bears hard on the
+language and that is wanted, because every token spent there is a feature paying
+rent; **CLAUDE.md's ceiling is housekeeping**. When the contract reaches its
+ceiling nothing about the language is at stake and no rule is cut — the rule
+MOVES, to `.claude/rules/` where it loads only when its paths are touched, or to
+the case law, or to a skill. So the contract's ceiling measures one thing only:
+**the fixed cost paid on every single turn, whatever the session is doing.** It
+is a reminder to tidy, not a forcing function.
+
+What that overturns is the sitting's most elegant argument, R2's *"Two documents
+with ceilings belong on one scale"*. It was comparing quantities that are not
+comparable. The instrument is shared; the ceiling's JOB is not, and a number
+transplanted from the spec carried the spec's job with it.
+
+**So `CONTRACT_CEILING` is 12288, not 8192**, and it is set high on purpose. What
+the author bought, measured: 4982 real tokens of room against 7306 today, about
+fifty days at the measured rate of ~97 real tokens a day, and room for the
+contract to reach about 1.7× its current size before it rings. 16384 was offered
+and refused as letting the document more than double, which would nearly double
+the fixed per-turn cost the ceiling exists to watch; 10240 was refused as about
+thirty days, which brings this same conversation back within the month.
+
+**And the number is said to be a choice rather than dressed as a measurement.**
+The historian searched for evidence of the size at which instruction adherence
+falls and found none — the *"under 200 lines"* this repository has been citing is
+third-party blog content, not Anthropic's page. What is sourced is qualitative
+(*"bloated CLAUDE.md files cause Claude to ignore your actual instructions"*) plus
+the adjacent measured effect (Chroma's Context Rot, Liu et al.). The comment on
+the constant must say exactly that, instead of implying a threshold somebody
+measured.
+
+**What survives the change, and one part gets MORE weight, not less.** R1, R4, R5
+and R6 are untouched. **R3, the delta gate, becomes the load-bearing half**: a
+ceiling that rings about twice a year does no daily work, so the gate is the only
+thing left watching the movement. Its message must be written for THIS document's
+repair, which is not *"cut a rule"* but *"move this into `.claude/rules/`, the
+case law, or a skill"* — the same +50, a different sentence.
+
+The conservative resolution recorded below (7679) was not taken, and neither was
+the sitting's own 8192.
+
+### The queued item, as it was put
+
+The item was `panel 134` in `docs/work/DECIDE.md`, and the default it named is
+what the ratification ends: `heroes measure CLAUDE.md` printing `Headroom: 9`
+against a ceiling on the wrong scale, while the contract sat 1806 tokens over it.
 
 **What the author has already settled**, before the sitting ran and recorded here
 rather than staged as an open question: the ceiling is **8192**, instructed

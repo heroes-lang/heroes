@@ -1,0 +1,125 @@
+# What the two OFFLINE tables say a document costs.
+#
+# **Its own module since 2026-09-12, and the seam is the same question
+# `measure/pinned.hero` was split on.** That one answers *what did the tokeniser
+# that actually reads this document say, and when* — the network, by hand, never
+# a check. This one answers *what do the tables we carry in the repository say* —
+# offline, keyless, on every run, for any path at all. `cli/measure.hero` keeps
+# the third question, which is neither: *what is the verdict, and how is it
+# printed*.
+#
+# **The split was forced by a measurement rather than chosen for tidiness**
+# (panel 134's compiler seat): `cli/measure.hero` stood 38 `code_lines` from
+# §11's 300 with no row in `suite_layout.hero`'s `DECIDED`, and the seat
+# predicted that carrying a second judged document would push it over — naming
+# this exact seam as what would pre-empt the prediction. It is taken here rather
+# than paid for with a nineteenth ratchet row.
+#
+# **Why these two tables and no third**: the reading is a LOWER BOUND on what a
+# reader pays, and its job is not the verdict. `cl100k_base` is OpenAI's, which
+# is the whole reason design.md §1.6 stopped judging the spec by it — but a
+# number that has always answered *did this document move and nobody say so*
+# correctly keeps answering it, and that is what this module is for.
+
+use measure/bpe
+use measure/pieces
+
+constant VENDOR: str
+    "vendor/tokenizers"
+
+record Instrument
+    file: str
+    name: str
+    json: bool
+
+record Reading
+    instrument: str
+    vocabulary: i64
+    tokens: i64
+
+function instruments() -> [Instrument]
+    return [
+        Instrument(file: "claude-legacy.json", name: "claude-legacy", json: true)
+        Instrument(file: "cl100k_base.tiktoken", name: "cl100k_base", json: false)
+    ]
+
+# Every instrument's reading of one text, or the first failure with the path
+# that caused it.
+function readings_of(text: str) -> [Reading]?
+    parts = pieces.pieces_of(text)
+    readings: [Reading] @ []
+
+    for one in instruments()
+        table_path = VENDOR + "/" + one.file
+        raw = read_file(table_path)
+
+        if raw.is_err()
+            return fail(
+                code: "no_table",
+                msg: "cannot read `" + table_path + "` — `measure` reads its vendored tables from the repository root, and the file it measures by default lives there too"
+            )
+        ranks: bpe.Ranks @ bpe.empty()
+
+        if one.json
+            ranks @ bpe.from_claude_json(raw.must())
+        else
+            ranks @ bpe.from_tiktoken(raw.must())
+
+        # **A table that parsed to nothing is a refusal and never a zero.** A
+        # count of nothing is a count that passes every ceiling, which is the
+        # shape §9 calls an invariant that cannot fail.
+        if bpe.size(ranks) == 0
+            return fail(code: "no_table", msg: "`" + table_path + "` parsed to an empty table")
+        total: i64 @ 0
+
+        for piece in parts
+            total @ total + bpe.count_piece(r: ranks, piece: piece)
+
+        readings @ readings.push(Reading(instrument: one.name, vocabulary: bpe.size(ranks), tokens: total))
+
+    return ok(readings)
+
+# The binding vendored figure: the maximum, because the verdict may not rest on
+# whichever table happens to be kinder.
+function highest(readings: [Reading]) -> i64
+    most: i64 @ 0
+
+    for one in readings
+        if one.tokens > most
+            most @ one.tokens
+
+    return most
+
+function why(got: [Reading]?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.msg
+
+test "the maximum is taken over every reading, and an empty list is zero"
+    two = [Reading(instrument: "a", vocabulary: 1, tokens: 40), Reading(instrument: "b", vocabulary: 2, tokens: 55)]
+    assert highest(two) == 55
+
+    # The order does not decide it, which is the mistake a `readings[0]` would
+    # make and a reader cannot see.
+    flipped = [Reading(instrument: "b", vocabulary: 2, tokens: 55), Reading(instrument: "a", vocabulary: 1, tokens: 40)]
+    assert highest(flipped) == 55
+    nothing: [Reading] = []
+    assert highest(nothing) == 0
+
+test "both tables are named, and the file each reads is the shape its parser wants"
+    assert instruments().len() == 2
+    assert instruments()[0].json
+    assert !instruments()[1].json
+
+test "a missing table is a failure carrying the path, never an empty reading"
+    # The real tables are in the repository, so what this reaches is the branch
+    # above them: `readings_of` on a text is fine, and the failure reader answers
+    # the empty string for a success. The absent-table branch is exercised by the
+    # harness, which runs the compiler from a scratch directory.
+    got = readings_of("function main()\n    print(1)\n")
+
+    if got.is_err()
+        assert why(got).len() > 0
+    else
+        assert got.must().len() == 2
+        assert why(got) == ""
