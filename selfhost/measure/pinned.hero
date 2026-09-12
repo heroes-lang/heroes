@@ -36,7 +36,7 @@ use cli/count_tokens
 use cli/table as cli_table
 
 constant REAL_TOKENS: i64
-    5716
+    7531
 
 constant REAL_MODEL: str
     "claude-opus-5"
@@ -45,7 +45,7 @@ constant REAL_TAKEN: str
     "2026-09-12"
 
 constant SPEC_DIGEST: str
-    "35968b435ed519d7"
+    "0b96e29b3ca14666"
 
 # `--refresh`: ask the reader's own tokeniser and print the record to paste.
 #

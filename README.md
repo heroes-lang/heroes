@@ -9,7 +9,7 @@
 <h3 align="center">A whole language in one prompt. It <em>compiles itself</em>.</h3>
 
 <p align="center">
-  the whole language in <b>fewer than 300 lines</b> &nbsp;&middot;&nbsp;
+  the whole language in <b>fewer than 400 lines</b> &nbsp;&middot;&nbsp;
   measured against a hard ceiling of <b>8192</b> spec tokens<br>
   <b>more than 50,000</b> lines of Heroes that compile themselves &nbsp;&middot;&nbsp;
   <b>0</b> bytes of difference at the fixpoint
