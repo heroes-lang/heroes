@@ -8,24 +8,25 @@ The status and the chain. Why the table looks the way it does is
 
 | | |
 |---|---|
-| **Current milestone** | **M-declared-thresholds**, opened 2026-09-12 on the trunk — every ceiling and floor says which way it may move, and something notices when it should have moved and did not. Three items open, two of them waiting on one panel sitting |
-| **Last closed** | **M-reflection-verdict**, 2026-09-12, `m-reflection-verdict` ([051](journal/051-reflection-verdict.md)) — three refusals whose reasons were false, and a field's name that the checker resolves · before it **M-stated-grammar** ([050](journal/050-stated-grammar.md)) and **M-rotated-records** ([049](journal/049-rotated-records.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
-| Milestones closed | **52** of 75 · **52** tags matching `m*`, the legacy `m0`-`m8` included |
-| The compiler | **59,155** lines of Heroes in **202** modules (`find selfhost -name '*.hero'`) · the seed **790,756** lines of C |
-| The spec | **5655** on the vendored ranks and **7531** on the reader's own, against a ceiling of 8192. M-reflection-verdict spent **+54** of it on the field-name operator and gave back panel 117's restoration clause |
-| Records | sittings **131** · journals **52** · milestone files **45** · entries: `docs/records/log/` **625**, `docs/records/done/` **493**, `docs/records/book/beats/` **117** · **open defects 0** |
-| Waiting on the author | **0** decisions. Panels 131, 132 and 133 were each answered the evening they sat |
+| **Current milestone** | **none open.** M-declared-thresholds closed on 2026-09-12; nothing is open on the trunk or in a lane |
+| **Last closed** | **M-declared-thresholds**, 2026-09-12, `m-declared-thresholds` ([052](journal/052-declared-thresholds.md)) — the contract was 1806 tokens over a ceiling that reported nine to spare, and eight floors had gone slack · before it **M-reflection-verdict** ([051](journal/051-reflection-verdict.md)) and **M-stated-grammar** ([050](journal/050-stated-grammar.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
+| Milestones closed | **53** of 76 · **53** tags matching `m*`, the legacy `m0`-`m8` included |
+| The compiler | **59,511** lines of Heroes in **204** modules (`find selfhost -name '*.hero'`) · the seed **790,756** lines of C |
+| The spec | **5655** on the vendored ranks and **7531** on the reader's own, against a ceiling of 8192 — unmoved by M-declared-thresholds, which spent none of it |
+| The contract | **7402** on the reader's own against a ceiling of **12288**, judged on `claude-opus-5` since 2026-09-12. It was judged on OpenAI's vendored table until then, and was **1806 over** while `measure` printed nine to spare |
+| Records | sittings **132** · journals **53** · milestone files **46** · entries: `docs/records/log/` **627**, `docs/records/done/` **494**, `docs/records/book/beats/` **118** · **open defects 0** |
+| Waiting on the author | **0** decisions. Panel 134 was answered the evening it sat, as 131, 132 and 133 were |
 
-**Re-measured 2026-09-12 at M-reflection-verdict's close, not carried.** `records`
-is **22** checks, the compiler's own tests **637**, the net's own **145**.
+**Re-measured 2026-09-12 at M-declared-thresholds' close, not carried.** `records`
+is **23** checks, the compiler's own tests **641**, the net's own **149**.
 
 ---
 
 ## The chain
 
-One table, one row per milestone, **closed first and scheduled after**: rows 1–50
-are done, in the order they closed, row 51 is **OPEN**, and rows 52–76 are what
-is next, in the order they will be taken. **This sentence said 1–37 and 38–59
+One table, one row per milestone, **closed first and scheduled after**: rows 1–51
+are done, in the order they closed, and rows 52–76 are what is next, in the order
+they will be taken. **This sentence said 1–37 and 38–59
 until 2026-09-10**, and 1–47 and 48–71 until 2026-09-12, each time some closes
 behind: it is the one number in this file that no instrument reads, so it is
 restated here and re-read at every close with § Where we are — and at every
@@ -88,7 +89,7 @@ and why one overtook another are in `docs/roadmap/scheduling.md`.
 | 48 | **M-labelled-types** | done 2026-09-11 | `m-labelled-types` | [047](journal/047-labelled-types.md) | defect 026 repaired: a function type names the parameters that can be confused, the names are part of its identity, and the classic inversion through a function value goes from 17% to 100% — at 432 lines against a condition of about 150, which is the sitting's own headline · **§1.2** |
 | 49 | **M-named-callbacks** | done 2026-09-11 | `m-named-callbacks` | [048](journal/048-named-callbacks.md) | the role inversion through a generic callback, closed at 7 of 7 against a cheaper reading's 2 of 7: `fold`'s type names its accumulator and its element, and a function handed to it names them the same way — a naming mandate the author chose over the sitting's own recommendation, with both numbers in front of them · **§1.2** |
 | 50 | **M-reflection-verdict** | done 2026-09-12 | `m-reflection-verdict` | [051](journal/051-reflection-verdict.md) | reflection refused at run time and as a general tag; a field's name becomes a name the checker resolves · **scheduled, no warrant** |
-| 51 | **M-declared-thresholds** | **OPEN** | — | — | every ceiling and floor says which way it may move, and something notices when it should have moved and did not · **§1.1** |
+| 51 | **M-declared-thresholds** | done 2026-09-12 | `m-declared-thresholds` | [052](journal/052-declared-thresholds.md) | every ceiling and floor says which way it may move, and something notices when it should have moved and did not · **§1.1** |
 | 52 | **M-deferral-ledger** | scheduled | — | — | every Part 7 item with no milestone gets a dated verdict or a return condition |
 | 53 | **M-cleanup-verdict** | scheduled | — | — | the ruling on a scope-bound release — `defer` or another form — for the two obligations `owned` and `lease` put on every path · a decision, not a feature |
 | 54 | **M-check-completeness** | scheduled | — | — | what `heroes check` accepts, `heroes build` compiles — through a generic too · scheduled, no warrant
