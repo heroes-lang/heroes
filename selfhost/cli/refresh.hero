@@ -176,8 +176,13 @@ function probed() -> i64?
         )
     return ok(one.must() - 1)
 
-# The whole refresh: the date, the offset, the document, the four lines.
-function refreshed(text: str) -> [str]?
+# The whole refresh: the date, the offset, the document, the eight lines.
+#
+# `spec` says WHICH judged document is being refreshed, and `vendored` is that
+# document's offline count, taken by the caller before the network was touched —
+# the contract records it in place of a digest, and why is on
+# `selfhost/measure/pinned.hero`'s `CONTRACT_TOKENS`.
+function refreshed(text: str, spec: bool, vendored: i64) -> [str]?
     if process.env(name: KEY_NAME).len() == 0
         return fail(
             code: "no_key",
@@ -199,7 +204,7 @@ function refreshed(text: str) -> [str]?
     if whole.is_err()
         return fail(code: "not_asked", msg: why_count(whole))
     return ok(
-        count_tokens.constants(tokens: whole.must() - offset.must(), model: count_tokens.PINNED_MODEL, taken: when.must(), of: text)
+        count_tokens.constants(tokens: whole.must() - offset.must(), model: count_tokens.PINNED_MODEL, taken: when.must(), of: text, spec: spec, vendored: vendored)
     )
 
 # The three failure readers. One per fallible type, which is the idiom here

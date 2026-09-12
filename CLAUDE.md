@@ -16,11 +16,14 @@ below as `CL-NNN`. Rules that bind one part of the tree live in
 was dropped when this file was cut from 1247 lines on 2026-09-07: that change
 and its measurements are CL-069.
 
-**This file's own cost is measured, not estimated.** `heroes measure CLAUDE.md`
-is the number, and `tests/harness/suite_spec.hero` pins one and reports it as
-the `contract` check, so a session that grows the contract past it finds out
-from a red check rather than from a tired reader. The ceiling is the measured
-size plus room to amend, never a round figure, and why is CL-069.
+**This file's own cost is measured on the READER's tokeniser**, not a vendored
+one: `heroes measure CLAUDE.md`'s `real` row, which
+`tests/harness/suite_spec.hero`'s `contract` check judges. Until panel 134 it
+judged the vendored maximum and this file sat 1806 tokens over while the tool
+reported nine to spare. The ceiling is the measured size plus room, never a round
+figure (CL-069). Crossing it is **housekeeping**: MOVE a rule into
+`.claude/rules/`, the case law or a skill, never cut one. A commit moving either
+judged document past `DELTA_GATE` says in its body what paid for it.
 
 ## Hard stops
 

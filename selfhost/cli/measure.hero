@@ -36,138 +36,44 @@ use cli/argv
 use cli/digest
 use measure/pinned
 use cli/table as cli_table
-use measure/bpe
-use measure/pieces
-
-# The file the ceiling is actually about.
-constant SPEC: str
-    "spec/heroes-spec.md"
-
-constant VENDOR: str
-    "vendor/tokenizers"
-
-# design.md §1.6, raised to 8192 by author decision (2026-09-12), to make room
-# inside the spec for the grammar's productions — panel 133 found that every
-# free-standing grammar in its survey has been archived, and that the one
-# arrangement still alive is Wirth's own, the productions beside the prose they
-# govern. The raise relaxes nothing: §1.6's payment rule is unconditional at
-# every level, so a block of productions owes what a sentence owes.
-#
-# It was 6144 by author decision (2026-09-09), and THAT is where THE NUMBER
-# STARTED CARRYING ITS INSTRUMENT, because the one before it did not. It was 4096
-# taken as the maximum over two VENDORED tokenisers, and the larger of those
-# is `cl100k_base`, which is OpenAI's: measured 2026-09-09 against
-# `POST /v1/messages/count_tokens`, the spec was 5094 real tokens on
-# `claude-opus-5` against a stated 4096, so the document had been 998 OVER a
-# ceiling it was told it was 40 under (`docs/measurements/023`). One pinned
-# model id binds and moves only by author decision (panel 123 R3); the spread
-# over other ids is published beside it and gates nothing, because Opus 4.7
-# counts the same content as Opus 5 and wraps it differently, so a maximum
-# over a SET is not a property of the document.
-constant CEILING: i64
-    8192
-
-# THE SOFT LINE IS RETIRED, and it is the named removal that pays for the
-# raise above (panel 123 R7). It was 2000, set when the spec measured 2231 on
-# the vendored instrument; on the real one the spec has been above it since
-# v0, so it was never once slack and its `else` branch was unreachable in
-# practice. §1.6 forbade rescaling it with the ceiling, which left it drifting
-# further from meaning anything at every raise. What replaces it is stricter:
-# the payment rule is now UNCONDITIONAL — every amendment owes a named removal
-# or a registered prediction naming an instrument that exists today (panel
-# 012, as amended by panel 046), at every level.
-
-# WHAT THE CEILING ALREADY OWES, and it is defect 017's repair (filed and
-# closed 2026-09-08, found by panel 118's spec-warden about its own
-# instrument). §1.6's 4096 is not all spendable: panel 030 R3 mortgages a
-# floor against it for file I/O, `args()` and `exit(code)` — the FFI's own
-# clause, which the spec must be able to state — and
-# `tests/harness/suite_spec.hero` goes red at `SPEC_TOKENS + FFI_FLOOR >=
-# CEILING`. Printing `CEILING - highest` therefore told a session it had 60
-# tokens it did not have, and a session that trusts the instrument it is
-# told to trust would find out from a red suite instead. The same number in
-# two places, one printed and one checked, and the harness asserts this
-# line says what it computes.
-constant FFI_FLOOR: i64
-    60
-
-# THE OPERATING CONTRACT IS WEIGHED ON THIS SCALE AND NOT AGAINST THIS
-# CEILING, which is defect 017's own class rather than its witness: the
-# spec's number was 60 too generous, and this file's was a BREACH that is
-# not one. `tests/harness/suite_spec.hero` holds `CLAUDE.md` to
-# `CONTRACT_CEILING`, deliberately a ceiling and not a pin, because the
-# contract is amended by author instruction and often by a sentence. A
-# tool that shouts BREACH at a file 111 tokens inside its own limit
-# invites the one repair that is always wrong here — cutting a rule to
-# make a number smaller.
-constant CONTRACT: str
-    "CLAUDE.md"
-
-constant CONTRACT_CEILING: i64
-    5500
-
-record Instrument
-    file: str
-    name: str
-    json: bool
-
-record Reading
-    instrument: str
-    vocabulary: i64
-    tokens: i64
-
-function instruments() -> [Instrument]
-    return [
-        Instrument(file: "claude-legacy.json", name: "claude-legacy", json: true)
-        Instrument(file: "cl100k_base.tiktoken", name: "cl100k_base", json: false)
-    ]
+use measure/vendored
+use measure/judged as budgets
 
 function run(inv: argv.Invocation) -> cli_table.Exit
-    path = inv.file.default(SPEC)
+    path = inv.file.default(budgets.SPEC)
     text = read_file(path)
 
     if text.is_err()
         io.eprint(text: "error: cannot read `" + path + "`")
         return .failed_exit
 
+    # **The vendored reading is taken BEFORE the refresh branch, since
+    # 2026-09-12, and the order is the feature.** `--refresh` records the
+    # contract's vendored count beside its real one (panel 134's replacement for
+    # a digest it refused), so the offline tables must already have been read
+    # when that branch is reached. It costs the spec's refresh two table reads it
+    # does not use, which is milliseconds against a network round trip.
+    readings = vendored.readings_of(text.must())
+
+    if readings.is_err()
+        io.eprint(text: "error: " + vendored.why(readings))
+        return .failed_exit
+
     if argv.has(inv, spelling: "--refresh")
-        return pinned.run_refresh(path: path, text: text.must(), spec: SPEC)
-    parts = pieces.pieces_of(text.must())
-    readings: [Reading] @ []
-
-    for one in instruments()
-        table_path = VENDOR + "/" + one.file
-        raw = read_file(table_path)
-
-        if raw.is_err()
-            io.eprint(
-                text: "error: cannot read `" + table_path + "` — `measure` reads its vendored tables from the repository root, and the file it measures by default lives there too"
-            )
-            return .failed_exit
-        ranks: bpe.Ranks @ bpe.empty()
-
-        if one.json
-            ranks @ bpe.from_claude_json(raw.must())
-        else
-            ranks @ bpe.from_tiktoken(raw.must())
-
-        if bpe.size(ranks) == 0
-            io.eprint(text: "error: `" + table_path + "` parsed to an empty table")
-            return .failed_exit
-        total: i64 @ 0
-
-        for piece in parts
-            total @ total + bpe.count_piece(r: ranks, piece: piece)
-
-        readings @ readings.push(Reading(instrument: one.name, vocabulary: bpe.size(ranks), tokens: total))
-
-    return reported(path: path, here: digest.digest(text.must()), readings: readings)
+        return pinned.run_refresh(
+            path: path,
+            text: text.must(),
+            spec: budgets.SPEC,
+            contract: budgets.CONTRACT,
+            vendored: vendored.highest(readings.must())
+        )
+    return reported(path: path, here: digest.digest(text.must()), readings: readings.must())
 
 # The report, byte for byte the bootstrap's: two readings, the binding
 # number, the spread, and the verdict against the ceiling. A breach is
 # exit 1 — the input has something wrong with it — while an unreadable file
 # is exit 2, the tool unable to run (panel 016's contract).
-function reported(path: str, here: str, readings: [Reading]) -> cli_table.Exit
+function reported(path: str, here: str, readings: [vendored.Reading]) -> cli_table.Exit
     print(path)
     highest: i64 @ 0
     lowest: i64 @ -1
@@ -197,7 +103,7 @@ function reported(path: str, here: str, readings: [Reading]) -> cli_table.Exit
         "  " + padded(text: "spread", width: 16) + " " + aligned(number: spread, width: 6) + "   between the two vendored tables (" + percent.to_str() + "%) — the gap between two REAL tokeniser generations was 967"
     )
 
-    if path == SPEC
+    if path == budgets.SPEC
         if here != pinned.SPEC_DIGEST
             print("")
             print("STALE: the recorded count is for " + pinned.SPEC_DIGEST + " and this file is " + here + ".")
@@ -206,7 +112,41 @@ function reported(path: str, here: str, readings: [Reading]) -> cli_table.Exit
             print("spent 998 tokens nobody had (docs/measurements/023).")
             return .diagnostics_exit
         print(
-            "  " + padded(text: "real", width: 16) + " " + aligned(number: pinned.REAL_TOKENS, width: 6) + "   " + pinned.REAL_MODEL + ", " + pinned.REAL_TAKEN + " — the binding number"
+            "  " + padded(text: "real", width: 16) + " " + aligned(number: pinned.SPEC_REAL_TOKENS, width: 6) + "   " + pinned.SPEC_REAL_MODEL + ", " + pinned.SPEC_REAL_TAKEN + " — the binding number"
+        )
+
+    # **The contract's staleness is answered by DRIFT and not by a digest**, and
+    # the difference is measured rather than stylistic (panel 134). A digest
+    # withholds the verdict whenever a byte changes, which costs the spec nothing
+    # — an edit there already needs a panel and a ledger row — but `CLAUDE.md`
+    # took 34 commits in seven days against the spec's 17, so a digest here would
+    # withhold the verdict about thirty-four times a week, each time clearable
+    # only by a network refresh and NOT clearable at all on a fork PR. The
+    # vendored count moves with the document, costs no key and no socket, and a
+    # drift past the gate's own width is exactly the condition under which the
+    # recorded real number stops being about this document.
+    if path == budgets.CONTRACT
+        drift = highest - pinned.CONTRACT_TOKENS
+
+        moved = if drift < 0
+            0 - drift
+        else
+            drift
+
+        if moved > budgets.DELTA_GATE
+            print("")
+            print("STALE: the recorded real count was taken when the vendored reading was")
+            print(
+                pinned.CONTRACT_TOKENS.to_str() + " and it is " + highest.to_str() + " now, " + moved.to_str() + " away against a window of " + budgets.DELTA_GATE.to_str() + "."
+            )
+            print("Run `heroes measure " + path + " --refresh` and paste what it prints,")
+            print("and say in the commit body what was added and what paid for it — a rule")
+            print("moved into .claude/rules/, into the case law, or into a skill.")
+            print("The ceiling watches the LEVEL and this watches the MOVEMENT: it bounds")
+            print("attribution rather than size, so every increase carries a name (panel 134).")
+            return .diagnostics_exit
+        print(
+            "  " + padded(text: "real", width: 16) + " " + aligned(number: pinned.CONTRACT_REAL_TOKENS, width: 6) + "   " + pinned.CONTRACT_REAL_MODEL + ", " + pinned.CONTRACT_REAL_TAKEN + " — the binding number"
         )
     print("")
 
@@ -224,54 +164,35 @@ function reported(path: str, here: str, readings: [Reading]) -> cli_table.Exit
     #
     # The sentence printed instead is the one `run_refresh` below already gives
     # for the same reason, and the two now agree.
-    if path != SPEC && path != CONTRACT
+    if path != budgets.SPEC && path != budgets.CONTRACT
         print("No ceiling judges `" + path + "` and no check keeps it honest")
         print("(panel 123 R5), so this is a count and not a verdict.")
-        print("The two documents that are judged are `" + SPEC + "` and `" + CONTRACT + "`.")
+        print("The two documents that are judged are `" + budgets.SPEC + "` and `" + budgets.CONTRACT + "`.")
         return .ok_exit
-    ceiling: i64 @ CEILING
-    judged: i64 @ highest
 
-    if path == SPEC
-        judged @ pinned.REAL_TOKENS
+    # **BOTH judged documents are judged on the READER's count, since
+    # 2026-09-12.** `weighed` opened at the vendored `highest` and only the spec
+    # overwrote it, so the contract was weighed on OpenAI's larger table against
+    # a ceiling nobody had set on that scale — 5491 against 5500 while the real
+    # number was 7306. There is no vendored branch left here on purpose: a
+    # fallback to `highest` is how the old answer would come back for whichever
+    # document somebody forgot.
+    ceiling: i64 @ budgets.CEILING
+    weighed: i64 @ pinned.SPEC_REAL_TOKENS
 
-    if path == CONTRACT
-        ceiling @ CONTRACT_CEILING
+    if path == budgets.CONTRACT
+        ceiling @ budgets.CONTRACT_CEILING
+        weighed @ pinned.CONTRACT_REAL_TOKENS
 
-    if judged > ceiling
-        print("BREACH: " + judged.to_str() + " over the " + ceiling.to_str() + "-token ceiling (design.md §1.6).")
+    if weighed > ceiling
+        print("BREACH: " + weighed.to_str() + " over the " + ceiling.to_str() + "-token ceiling (design.md §1.6).")
         print("An amendment must be net-negative, or the ceiling moves — with a")
         print("measurement, a panel, and a named alternative (panel 012).")
         return .diagnostics_exit
 
     print("An addition needs a named removal or a pre-registered falsifiable")
-    print("prediction (panel 012). " + room(path: path, highest: judged))
+    print("prediction (panel 012). " + budgets.room(path: path, highest: weighed))
     return .ok_exit
-
-# How much of the ceiling is left, and how much of THAT is spendable. Only
-# the spec carries a mortgage today, so only the spec is told about one:
-# saying it of every file would be a claim about a ceiling those files do
-# not share.
-function room(path: str, highest: i64) -> str
-    if path == CONTRACT
-        return "Headroom: " + (CONTRACT_CEILING - highest).to_str() + " against the contract's own " + CONTRACT_CEILING.to_str() + ", which is a ceiling and not a pin: the repair for crossing it is to move a story into docs/records/contract/case-law.md, never a bigger number."
-
-    # **There is no third branch since 2026-09-12**, and its absence is the
-    # repair rather than a tidy-up: `if path != SPEC` used to return a bare
-    # "Headroom: N." against the spec's own ceiling for any file at all, which
-    # is a number about a document nobody budgeted. `reported` now returns
-    # before calling this for such a path, so only the two judged documents
-    # reach here and a dead branch would be a place for the old answer to come
-    # back.
-    left = CEILING - highest
-
-    # THE SUM THE CHECK COMPARES, and not a subtraction of my own: the
-    # harness goes red at `pinned.REAL_TOKENS + FFI_FLOOR >= CEILING`, so a
-    # "usable room" figure computed here is off by one the moment that
-    # `>=` is read as `>`. It was, in the first version of this line,
-    # 2026-09-08. Stating both sides of the comparison leaves the reader
-    # no arithmetic to get wrong.
-    return "Headroom: " + left.to_str() + " against the " + CEILING.to_str() + " ceiling — but the FFI floor mortgages " + FFI_FLOOR.to_str() + " of it (panel 030 R3), so what is measured against the ceiling is " + (highest + FFI_FLOOR).to_str() + " and the check goes red at " + CEILING.to_str() + "."
 
 # Left-aligned in `width` columns, counted in characters.
 function padded(text: str, width: i64) -> str
@@ -297,9 +218,9 @@ function aligned(number: i64, width: i64) -> str
     return out + shown
 
 test "a reading is laid out in the bootstrap's own columns"
-    readings: [Reading] = [
-        Reading(instrument: "claude-legacy", vocabulary: 64995, tokens: 3440)
-        Reading(instrument: "cl100k_base", vocabulary: 100256, tokens: 3512)
+    readings: [vendored.Reading] = [
+        vendored.Reading(instrument: "claude-legacy", vocabulary: 64995, tokens: 3440)
+        vendored.Reading(instrument: "cl100k_base", vocabulary: 100256, tokens: 3512)
     ]
 
     # The verdict is printed, not returned as text — what this pins is the
@@ -321,12 +242,38 @@ test "the columns are the bootstrap's widths"
     assert aligned(number: 1234567, width: 6) == "1234567"
 
 test "a breach is exit 1, a clean measurement is exit 0, and an unjudged path is neither"
-    # The contract is the judged document a test can reach without the spec's
-    # digest gate, and its ceiling is its own.
-    over: [Reading] = [Reading(instrument: "one", vocabulary: 1, tokens: CONTRACT_CEILING + 1)]
-    assert cli_table.exit_code(reported(path: CONTRACT, here: "unused", readings: over)) == 1
-    under: [Reading] = [Reading(instrument: "one", vocabulary: 1, tokens: 10)]
-    assert cli_table.exit_code(reported(path: CONTRACT, here: "unused", readings: under)) == 0
+    # **The contract is judged on its RECORDED real count, not on the readings
+    # it is handed**, since 2026-09-12 — so a synthetic reading no longer moves
+    # the verdict, and the drift check decides whether a verdict is given at all.
+    # A reading at the pin is fresh, and the verdict is then the one the record
+    # earns: `CONTRACT_REAL_TOKENS` against `CONTRACT_CEILING`, which is clean
+    # today and is asserted as such rather than assumed.
+    fresh: [vendored.Reading] = [vendored.Reading(instrument: "one", vocabulary: 1, tokens: pinned.CONTRACT_TOKENS)]
+    assert pinned.CONTRACT_REAL_TOKENS < budgets.CONTRACT_CEILING
+    assert cli_table.exit_code(reported(path: budgets.CONTRACT, here: "unused", readings: fresh)) == 0
+
+    # **And a document that has MOVED gets no verdict, which is the digest's job
+    # done by the vendored count** (panel 134). One token inside the window is
+    # still a verdict; one past it withholds, exit 1, with the two numbers in the
+    # message. This is the case that proves the window is read, and it is written
+    # as a pair because a check that only ever sees one side of its own threshold
+    # is a check nobody has tested.
+    edge: [vendored.Reading] = [
+        vendored.Reading(instrument: "one", vocabulary: 1, tokens: pinned.CONTRACT_TOKENS + budgets.DELTA_GATE)
+    ]
+    assert cli_table.exit_code(reported(path: budgets.CONTRACT, here: "unused", readings: edge)) == 0
+    drifted: [vendored.Reading] = [
+        vendored.Reading(instrument: "one", vocabulary: 1, tokens: pinned.CONTRACT_TOKENS + budgets.DELTA_GATE + 1)
+    ]
+    assert cli_table.exit_code(reported(path: budgets.CONTRACT, here: "unused", readings: drifted)) == 1
+
+    # It drifts in BOTH directions: a contract that shrank past the window is as
+    # unmeasured as one that grew, and an unsigned subtraction would have missed
+    # exactly this half.
+    shrunk: [vendored.Reading] = [
+        vendored.Reading(instrument: "one", vocabulary: 1, tokens: pinned.CONTRACT_TOKENS - budgets.DELTA_GATE - 1)
+    ]
+    assert cli_table.exit_code(reported(path: budgets.CONTRACT, here: "unused", readings: shrunk)) == 1
 
     # **The repair of 2026-09-12, and this pair is the defect itself.** Both
     # lines above read `path: "x"` until that day, which is why nobody noticed
@@ -334,7 +281,7 @@ test "a breach is exit 1, a clean measurement is exit 0, and an unjudged path is
     # broken behaviour and passed. A path no ceiling covers is COUNTED and never
     # judged, however large — `design.md` measured 64490 and was told it had
     # breached §1.6, the section that says the compiler has no budget.
-    huge: [Reading] = [Reading(instrument: "one", vocabulary: 1, tokens: CEILING * 10)]
+    huge: [vendored.Reading] = [vendored.Reading(instrument: "one", vocabulary: 1, tokens: budgets.CEILING * 10)]
     assert cli_table.exit_code(reported(path: "design.md", here: "unused", readings: huge)) == 0
     assert cli_table.exit_code(reported(path: "x", here: "unused", readings: huge)) == 0
 
@@ -350,7 +297,7 @@ test "no operand measures the spec, and an unreadable file is the tool failing"
     # And a file that is not the spec is refused BEFORE the network, which is
     # the half of `--refresh` a test can reach without a key: `.env` is not
     # here, and the refusal above happens on the path rather than on the key.
-    other: str? = ok(CONTRACT)
+    other: str? = ok(budgets.CONTRACT)
     refused: [argv.FlagHit] = [argv.FlagHit(spelling: "--refresh", value: fail(code: "none", msg: "plain"))]
     asking = argv.Invocation(tag: .measure_cmd, file: other, program_args: [], flags: refused)
     assert cli_table.exit_code(run(asking)) == 2

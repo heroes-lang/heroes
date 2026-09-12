@@ -134,23 +134,41 @@ function input_tokens(answer: str) -> i64?
         return fail(code: "no_count", msg: "`input_tokens` is not followed by digits: " + answer)
     return ok(value)
 
-# The four lines a person pastes into `tests/harness/suite_spec.hero`.
+# The eight lines a person pastes into `tests/harness/suite_spec.hero`.
 #
 # THE MODEL ID AND THE DATE TRAVEL WITH THE NUMBER, which is the whole point
 # and is Go's `toolchain` line: it writes the name of the tool beside the
 # pinned data *"for reproducibility"*. A count without the model that produced
 # it is not a measurement, and design.md:3101 already asked for exactly this
 # under Part 11's provenance rule.
-function constants(tokens: i64, model: str, taken: str, of: str) -> [str]
+#
+# **The names carry the document, and that is the paste's only safety** (panel
+# 134). The artifact is text a reader redirects into a file or pastes by hand, so
+# the two records must be impossible to confuse: eight lines that say
+# `SPEC_REAL_TOKENS` cannot land in the contract's record unnoticed, while a
+# positional row spliced into a shared table could. The fourth line differs by
+# document rather than being made uniform — the spec is content-addressed, the
+# contract carries its vendored count instead, and why is on
+# `selfhost/measure/pinned.hero`'s `CONTRACT_TOKENS`.
+function constants(tokens: i64, model: str, taken: str, of: str, spec: bool, vendored: i64) -> [str]
+    prefix = if spec
+        "SPEC_"
+    else
+        "CONTRACT_"
+
+    last = if spec
+        ["constant SPEC_DIGEST: str", "    \"" + digest.digest(of) + "\""]
+    else
+        ["constant CONTRACT_TOKENS: i64", "    " + vendored.to_str()]
     return [
-        "constant REAL_TOKENS: i64"
+        "constant " + prefix + "REAL_TOKENS: i64"
         "    " + tokens.to_str()
-        "constant REAL_MODEL: str"
+        "constant " + prefix + "REAL_MODEL: str"
         "    \"" + model + "\""
-        "constant REAL_TAKEN: str"
+        "constant " + prefix + "REAL_TAKEN: str"
         "    \"" + taken + "\""
-        "constant SPEC_DIGEST: str"
-        "    \"" + digest.digest(of) + "\""
+        last[0]
+        last[1]
     ]
 
 ## Tests
@@ -179,9 +197,44 @@ test "the count is read out of the answer, and an absent one is a failure"
     assert input_tokens("{\"input_tokens\":\"nine\"}").is_err()
 
 test "the printed constants carry the model and the date beside the number"
-    lines = constants(tokens: 5128, model: "claude-opus-5", taken: "2026-09-09", of: "the spec")
+    lines = constants(
+        tokens: 5128,
+        model: "claude-opus-5",
+        taken: "2026-09-09",
+        of: "the spec",
+        spec: true,
+        vendored: 0
+    )
     assert lines.len() == 8
+    assert lines[0] == "constant SPEC_REAL_TOKENS: i64"
     assert lines[1] == "    5128"
     assert lines[3] == "    \"claude-opus-5\""
     assert lines[5] == "    \"2026-09-09\""
     assert lines[7] == "    \"" + digest.digest("the spec") + "\""
+
+# **The two records must be impossible to confuse**, which is why the names
+# carry the document rather than the position (panel 134). This asserts the
+# property the paste rests on: every name differs, and the fourth pair is a
+# different FACT — the spec is content-addressed, the contract records the
+# vendored count that a drift is measured against.
+test "the contract's record is named for the contract and ends in its vendored count"
+    lines = constants(
+        tokens: 7306,
+        model: "claude-opus-5",
+        taken: "2026-09-12",
+        of: "the contract",
+        spec: false,
+        vendored: 5491
+    )
+    assert lines.len() == 8
+    assert lines[0] == "constant CONTRACT_REAL_TOKENS: i64"
+    assert lines[1] == "    7306"
+    assert lines[2] == "constant CONTRACT_REAL_MODEL: str"
+    assert lines[4] == "constant CONTRACT_REAL_TAKEN: str"
+    assert lines[6] == "constant CONTRACT_TOKENS: i64"
+    assert lines[7] == "    5491"
+
+    # No digest anywhere in it, which is the refusal rather than an omission.
+    spec_lines = constants(tokens: 1, model: "m", taken: "d", of: "x", spec: true, vendored: 0)
+    assert spec_lines[6] == "constant SPEC_DIGEST: str"
+    assert lines[6] != spec_lines[6]

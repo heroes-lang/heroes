@@ -1,0 +1,174 @@
+# WHICH DOCUMENTS A CEILING JUDGES, what each is judged against, and what is
+# left of it.
+#
+# **Its own module since 2026-09-12, and the seam was named before it was cut.**
+# Panel 134's compiler seat predicted that carrying a second judged document
+# would push `cli/measure.hero` past §11's 300 — it stood 38 `code_lines` below
+# it with no row in `suite_layout.hero`'s `DECIDED` — and named the pre-emption:
+# split at a seam rather than pay a nineteenth ratchet row. **The prediction
+# scored TRUE**: the file reached 337 with the work done, and this is the second
+# of the two cuts that answer it.
+#
+# The three questions the command was answering at once are now three modules.
+# `measure/vendored.hero`: what do the offline tables say this text costs.
+# `measure/pinned.hero`: what did the reader's own tokeniser say, and when.
+# This one: which documents are judged at all, against what number, and how much
+# room is left. `cli/measure.hero` keeps what is genuinely the command — read the
+# file, print the report, choose the exit code.
+#
+# **Why a module and not a table**: the two documents' ceilings do different
+# jobs, so their numbers carry different reasoning and neither is a row in a
+# list. The spec's bears on the language and squeezing is the point; the
+# contract's is housekeeping, where the repair is to MOVE a rule and never to cut
+# one. A table would have made them look interchangeable, which is the mistake
+# panel 134 had to be corrected on.
+
+# The file the ceiling is actually about.
+constant SPEC: str
+    "spec/heroes-spec.md"
+
+# design.md §1.6, raised to 8192 by author decision (2026-09-12), to make room
+# inside the spec for the grammar's productions — panel 133 found that every
+# free-standing grammar in its survey has been archived, and that the one
+# arrangement still alive is Wirth's own, the productions beside the prose they
+# govern. The raise relaxes nothing: §1.6's payment rule is unconditional at
+# every level, so a block of productions owes what a sentence owes.
+#
+# It was 6144 by author decision (2026-09-09), and THAT is where THE NUMBER
+# STARTED CARRYING ITS INSTRUMENT, because the one before it did not. It was 4096
+# taken as the maximum over two VENDORED tokenisers, and the larger of those
+# is `cl100k_base`, which is OpenAI's: measured 2026-09-09 against
+# `POST /v1/messages/count_tokens`, the spec was 5094 real tokens on
+# `claude-opus-5` against a stated 4096, so the document had been 998 OVER a
+# ceiling it was told it was 40 under (`docs/measurements/023`). One pinned
+# model id binds and moves only by author decision (panel 123 R3); the spread
+# over other ids is published beside it and gates nothing, because Opus 4.7
+# counts the same content as Opus 5 and wraps it differently, so a maximum
+# over a SET is not a property of the document.
+constant CEILING: i64
+    8192
+
+# THE SOFT LINE IS RETIRED, and it is the named removal that pays for the
+# raise above (panel 123 R7). It was 2000, set when the spec measured 2231 on
+# the vendored instrument; on the real one the spec has been above it since
+# v0, so it was never once slack and its `else` branch was unreachable in
+# practice. §1.6 forbade rescaling it with the ceiling, which left it drifting
+# further from meaning anything at every raise. What replaces it is stricter:
+# the payment rule is now UNCONDITIONAL — every amendment owes a named removal
+# or a registered prediction naming an instrument that exists today (panel
+# 012, as amended by panel 046), at every level.
+
+# WHAT THE CEILING ALREADY OWES, and it is defect 017's repair (filed and
+# closed 2026-09-08, found by panel 118's spec-warden about its own
+# instrument). §1.6's 4096 is not all spendable: panel 030 R3 mortgages a
+# floor against it for file I/O, `args()` and `exit(code)` — the FFI's own
+# clause, which the spec must be able to state — and
+# `tests/harness/suite_spec.hero` goes red at `SPEC_TOKENS + FFI_FLOOR >=
+# CEILING`. Printing `CEILING - highest` therefore told a session it had 60
+# tokens it did not have, and a session that trusts the instrument it is
+# told to trust would find out from a red suite instead. The same number in
+# two places, one printed and one checked, and the harness asserts this
+# line says what it computes.
+constant FFI_FLOOR: i64
+    60
+
+# THE OPERATING CONTRACT IS JUDGED ON THE READER'S OWN COUNT SINCE 2026-09-12,
+# and the three days before that are why (panel 134). It was weighed on the
+# VENDORED maximum while the spec had moved to `claude-opus-5`'s real count on
+# 2026-09-09, so `heroes measure CLAUDE.md` answered `Headroom: 9` about a
+# document measuring **7306 real against a stated 5500** — 1806 over, with every
+# instrument in the tree reporting green. That is this file's own §1.6 story
+# happening one document across: the spec was 998 over a line it was told it was
+# 40 under, and `docs/measurements/023` had recorded the contract at 7190 real
+# three days earlier with nothing reading it.
+#
+# **THE TWO CEILINGS DO DIFFERENT JOBS, and the sitting had to be corrected on
+# it** (author, ratifying panel 134). `CEILING` above bears on the LANGUAGE:
+# every token is a feature paying rent, and squeezing is the point. This one is
+# HOUSEKEEPING. When the contract reaches it nothing about the language is at
+# stake and no rule is cut — the rule MOVES, into `.claude/rules/` where it loads
+# only when its paths are touched, or into `docs/records/contract/case-law.md`, or
+# into a skill. So what this number measures is the fixed cost every session pays
+# on every turn, whatever it is doing, and it is set HIGH on purpose: high enough
+# that reaching it means the tidying is genuinely due, rather than so tight that
+# it fires at every amendment and gets raised on reflex.
+#
+# **12288 = 7306 measured + 4982 of room**, written as the sum because a round
+# figure is what this repository's own contract forbids — and because the spec's
+# ceiling is 8192, and two constants carrying one number invite a later tidy-up
+# to make them one, after which a raise of the language's budget would move the
+# contract's in silence. What the room buys, measured: about fifty days at the
+# +97 real tokens a day the contract grew over the five days to 2026-09-12, and
+# about 1.7 times the current document. 16384 was offered and refused as letting
+# the per-turn cost nearly double; 10240 as thirty days, which returns this
+# conversation within the month.
+#
+# **And the number is a CHOICE, said so rather than dressed as a measurement.**
+# There is no published threshold at which a model's adherence to its
+# instructions falls: panel 134's historian fetched Anthropic's own page and the
+# *"under 200 lines"* this repository used to cite is not on it — that is
+# third-party blog content. What the page states is qualitative, *"bloated
+# CLAUDE.md files cause Claude to ignore your actual instructions"*, and the
+# measured evidence nearby is of the adjacent effect: reliability falling as
+# input grows (Chroma's context-rot study over eighteen models; Liu et al.'s
+# lost-in-the-middle). So the repair for crossing this line is to MOVE a rule,
+# never to cut one, and never a bigger number.
+constant CONTRACT: str
+    "CLAUDE.md"
+
+constant CONTRACT_CEILING: i64
+    12288
+
+# **THE GATE THAT DOES THE DAILY WORK, since 2026-09-12.** A ceiling that rings
+# about twice a year notices nothing in between, and panel 134's historian
+# searched for an internally-owned, raisable size budget that ever held its level
+# and found none: Angular's answer became a vendor page titled *How to Increase
+# Budget Size*, webpack ships its budget as a warning, the kernel disabled
+# `CONFIG_FRAME_WARN` rather than defend it, Chromium has no absolute limit at
+# all. The one shape that held is a ratchet, where the number moves one way and
+# the human is out of the raise.
+#
+# So the level is watched by `CONTRACT_CEILING` and the MOVEMENT is watched here:
+# a commit that adds more than this many VENDORED tokens to a judged document
+# owes a named removal or a registered prediction in its body. It is vendored
+# because a key-gated check is structurally red on every fork PR forever (panel
+# 123 R1), and one number serves both documents because §1.6 had already queued
+# exactly this figure (`docs/design/design.md:355`), so no second threshold is
+# born.
+#
+# **Measured before it was chosen**: +50 fires on 2 of the last 22 commits
+# touching `CLAUDE.md`, and those two carry +255 of the +364 the contract grew in
+# five days. +25 fires on three, +100 on one.
+#
+# **What it buys, said plainly rather than hoped for.** Chromium runs a 16 KiB
+# per-CL gate with a mandatory `Binary-Size:` footer and grows about 100 KB a
+# week regardless. A delta gate bounds ATTRIBUTION, not level: it makes every
+# increase carry a name and a written reason. The level is `CONTRACT_CEILING`'s
+# job and nothing else's.
+constant DELTA_GATE: i64
+    50
+
+# How much of the ceiling is left, and how much of THAT is spendable. Only
+# the spec carries a mortgage today, so only the spec is told about one:
+# saying it of every file would be a claim about a ceiling those files do
+# not share.
+function room(path: str, highest: i64) -> str
+    if path == CONTRACT
+        return "Headroom: " + (CONTRACT_CEILING - highest).to_str() + " against the contract's own " + CONTRACT_CEILING.to_str() + ", which is a ceiling and not a pin: the repair for crossing it is to MOVE a rule — into .claude/rules/ where it loads only when its paths are touched, into docs/records/contract/case-law.md, or into a skill — never to cut one and never a bigger number."
+
+    # **There is no third branch since 2026-09-12**, and its absence is the
+    # repair rather than a tidy-up: `if path != SPEC` used to return a bare
+    # "Headroom: N." against the spec's own ceiling for any file at all, which
+    # is a number about a document nobody budgeted. `reported` now returns
+    # before calling this for such a path, so only the two judged documents
+    # reach here and a dead branch would be a place for the old answer to come
+    # back.
+    left = CEILING - highest
+
+    # THE SUM THE CHECK COMPARES, and not a subtraction of my own: the
+    # harness goes red at `pinned.REAL_TOKENS + FFI_FLOOR >= CEILING`, so a
+    # "usable room" figure computed here is off by one the moment that
+    # `>=` is read as `>`. It was, in the first version of this line,
+    # 2026-09-08. Stating both sides of the comparison leaves the reader
+    # no arithmetic to get wrong.
+    return "Headroom: " + left.to_str() + " against the " + CEILING.to_str() + " ceiling — but the FFI floor mortgages " + FFI_FLOOR.to_str() + " of it (panel 030 R3), so what is measured against the ceiling is " + (highest + FFI_FLOOR).to_str() + " and the check goes red at " + CEILING.to_str() + "."

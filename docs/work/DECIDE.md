@@ -21,16 +21,6 @@ lives outside the two banners: `records/lists` is the executor of that.
 Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 1**
+**OPEN: 0**
 
-- [ ] **panel 134** | the contract measures 7306 real against a stated 5500, so it has been 1806 over for three days — ratify 8192 written as `7306 + 886`, the delta gate at +50 vendored on both documents, and the refusal of a digest for the contract | `docs/panel/134-the-contract-was-over-its-ceiling-for-three-days.md`
-
-    **Origin:** 2026-09-12, M-declared-thresholds. **The default the compiler
-    runs on while this is open**: `heroes measure CLAUDE.md` goes on printing
-    `Headroom: 9` against a ceiling on the wrong scale, and the `contract` check
-    goes on judging the vendored figure — so the contract can grow another 1800
-    tokens with every instrument in the tree reporting green. Conservative was
-    costed and recorded rather than adopted: `7306 + 373`, the same margin
-    2026-09-07 chose, which is **7679** and about four days of room at the
-    measured rate. The author has instructed 8192.
 *******************************************************************************
