@@ -17,8 +17,10 @@ with what each one measured in the git history and in `DESIGN-LOG.md`):
 
 - **The past never stands in front of the future.** A closed milestone's record
   goes to its own journal, indexed at `docs/records/journal/README.md`; § Where we are is
-  held under **15 lines** by `/step`'s checklist and by `suite_records.hero`'s
-  `where_we_are`. This file once carried 512 lines about the past before its
+  held under **32 lines** by `/step`'s checklist and by `suite_records.hero`'s
+  `where_we_are` (**15 until 2026-09-12**, when the section measured exactly 15
+  and the next line a close added would have gone red; the number lives on
+  `WHERE_CEILING` and so does the reason). This file once carried 512 lines about the past before its
   first line about the future, growing about 66 lines per close.
 - **§ The chain carries the ORDER and nothing else.** Every scheduling note,
   ratification and author decision that used to live inside a cell is a line

@@ -360,9 +360,17 @@ constant DECIDED: [str]
         "selfhost/parse/use_line.hero 310"
     ]
 
-# Measured 2026-08-18: 144 modules. The floor is the Rust's own idea —
+# The floor is the Rust's own idea —
 # `assert!(files.len() > 100, "the walk is not reaching the tree")` — and
 # it exists because a walk that finds nothing reports green.
+#
+# **Set at 140 against 144 modules on 2026-08-18. Re-measured 2026-09-12: 202
+# modules, so the slack is 62 rather than 4.** The number is left alone here
+# deliberately — what a floor owes as the tree grows is a question for the panel
+# and not for this line — but the measurement is written down, because the
+# paragraph below reasons from the old one. A floor's job is to catch a PARTIAL
+# walk, and a partial walk of a bigger tree returns a bigger number: what was a
+# net with four lines of give now has sixty-two.
 constant LEAST: i64
     140
 
@@ -378,6 +386,13 @@ function run_all(scratch: str) -> report.Report?
     # that floor is the Rust's own idea for exactly this reason. But a check
     # that survives a layout change by going red is a check somebody has to
     # repair under pressure; this one recurses instead.
+    #
+    # **That last argument is still true and it is no longer safe, 2026-09-12.**
+    # It compares 37 against a floor of 140, and both numbers are from a tree of
+    # 144 modules. The tree is 202 now: the same flattening today would leave
+    # the 37 that never moved, which is still under the floor, but the margin is
+    # luck rather than design — a partial walk returning 150 of 202 passes, and
+    # that is three quarters of the compiler going unmeasured in green.
     nothing: [str] = []
     files = shell.list_tree(scratch: scratch, dir: COMPILER, skip: nothing)?
     modules: [str] @ []
@@ -503,11 +518,29 @@ test "a comment inside a test block does not close it"
     assert code_lines(program) == 2
 
 test "the ceiling is per file, and a decided file keeps its own"
-    # The two witnesses are DECIDED's extremes, and they are chosen rather
-    # than picked: the top entry, and the entry nearest CEILING. The second
-    # is what makes this a test at all — 310 against a fallback of 300 is
-    # ten apart, so a lookup that quietly returned CEILING would still
-    # be caught. Both numbers track the table above and move with it.
+    # **THE WITNESSES WERE TWO INCISED NUMBERS UNTIL 2026-09-12, AND THEY ARE
+    # THE WHOLE TABLE NOW.** What this case has to catch is a lookup that
+    # quietly returns CEILING for a file that IS in the table. Two hand-picked
+    # rows caught that for two files and cost a hand-edit at every raise; the
+    # property below catches it for all eighteen and costs none, because it
+    # rests on something the table cannot stop being true of itself:
+    #
+    #   **every row of DECIDED is above CEILING, by construction.** A file at
+    #   or under §11's own 300 has no reason to be in the table — that is the
+    #   condition under which a row LEAVES it, and two rows left that way on
+    #   2026-09-06 at 174 and 217 (below). So `> CEILING` for every row is a
+    #   fact about the table's meaning rather than about today's files, and a
+    #   lookup falling through to the fallback fails it on the first row.
+    #
+    # It catches strictly more than the two numbers did. A row somebody
+    # mistypes into three words, or whose number stops parsing, now fails here
+    # as well — `ceiling_for` returns CEILING for such a row, silently, and no
+    # assert reached that before.
+    #
+    # What is NOT weakened: the paragraphs below stay, because they are what
+    # this case cost to learn, and `DECIDED.len()` stays incised at the bottom
+    # for the opposite reason — that number is not a duplicate of the table,
+    # it is the notice that a row arrived or left.
     #
     # **AND THEY DID NOT, FOR SIX COMMITS.** This assert read `resolve_state`
     # at 308 while the table said 315, so `heroes test tests/harness/main.hero`
@@ -524,19 +557,40 @@ test "the ceiling is per file, and a decided file keeps its own"
     # The witness is now the entry nearest CEILING **by lookup rather than by
     # name**, which is what the sentence above always claimed it was.
     #
-    # **AND THIS LINE IS WHY THE NUMBER IS WRITTEN TWICE, paid for on
+    # **AND THIS LINE IS WHY THE NUMBER WAS WRITTEN TWICE, paid for on
     # 2026-09-11.** Panel 127 raised five DECIDED rows and this assert kept the
     # old one, so the table said 1746 and the test said 1708. Every suite of the
     # net was green and the CI went red on all three legs, because the net's own
     # tests are the THIRD suite and the session had run the other two after its
     # last edit. That is CL-054 exactly: run the suite you did not expect to
-    # move. The number stays in two places on purpose — one is the ceiling, the
-    # other is the proof that the lookup reads it — and the cost of forgetting
-    # the second is three red legs rather than a silent pass.
-    # 1842 -> 1870 on 2026-09-12 (panel 132's field-name operator), and this
-    # line moved WITH the table for the reason the paragraph above gives.
-    assert ceiling_for("selfhost/check/walk.hero") == 1870
-    assert ceiling_for("selfhost/parse/use_line.hero") == 310
+    # move. The number stayed in two places on purpose — one the ceiling, the
+    # other the proof that the lookup reads it — and the cost of forgetting the
+    # second was three red legs rather than a silent pass. It was paid twice:
+    # 1842 -> 1870 on 2026-09-12 (panel 132's field-name operator) moved the
+    # table and this line with it.
+    #
+    # **The third time is what retired the duplication, 2026-09-12.** The
+    # defence above is sound about WHAT the second copy proves and says nothing
+    # about the form it has to take: the proof that the lookup reads the table
+    # can be read OUT of the table, and then no raise can forget it. Twice is
+    # the count that made the argument — a rule whose obedience costs a manual
+    # edit at every use is a rule that will be missed, and this one was, at the
+    # only two raises it has ever seen.
+    for entry in DECIDED
+        parts = strings.words(entry)
+
+        # The row is well formed, which nothing asserted before: a row of
+        # three words falls through `ceiling_for` to CEILING in silence.
+        assert parts.len() == 2
+        number = strings.to_number(parts[1])
+
+        assert !number.is_err()
+
+        # The property itself. A lookup that returns the fallback for a row
+        # that is IN the table fails here, on that row.
+        assert number.must() > CEILING
+        assert ceiling_for(parts[0]) == number.must()
+
     assert ceiling_for("selfhost/anything-else.hero") == CEILING
 
     # **16 since M-package-layout, and the direction is the point.** The table
