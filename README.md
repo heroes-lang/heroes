@@ -20,7 +20,7 @@
   <a href="spec/heroes-spec.md">The spec</a> &nbsp;&middot;&nbsp;
   <a href="design.md">The design</a> &nbsp;&middot;&nbsp;
   <a href="docs/ROADMAP.md">The chain</a> &nbsp;&middot;&nbsp;
-  <a href="docs/journal/README.md">The journals</a> &nbsp;&middot;&nbsp;
+  <a href="docs/records/journal/README.md">The journals</a> &nbsp;&middot;&nbsp;
   <a href="docs/panel/">The panels</a> &nbsp;&middot;&nbsp;
   <a href="examples/">The examples</a>
 </p>
@@ -143,7 +143,7 @@ working is a calculator, spread over four modules, with its own tests.
 | `read_file`/`write_file`, `args()`, `exit(code)` | |
 
 The chain from here is `docs/ROADMAP.md` § The chain. What is already built has
-one journal each, indexed at `docs/journal/README.md`.
+one journal each, indexed at `docs/records/journal/README.md`.
 
 ## Build and try it
 
@@ -204,7 +204,7 @@ included.
 | `docs/ROADMAP.md` | the milestone chain, in execution order |
 | `DESIGN-LOG.md` | every decision, dated, one line, with its reason |
 | `docs/panel/` | the design reviews: five judges with differentiated inputs, their vetoes, and what lifted them |
-| `docs/journal/` | one entry per milestone: what was built, what broke, and why |
+| `docs/records/journal/` | one entry per milestone: what was built, what broke, and why |
 
 Where two of them disagree: the spec beats the compiler (the compiler has the
 bug), and measurement beats opinion.

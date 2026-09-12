@@ -2,7 +2,7 @@
 
 **Origin**: prediction 000 — the predicted loop shape was the rotated form,
 the spike's is the naive one — and the author's question: *"why are `i = 0`
-and `total = 0` a single block?"* — 2026-08-03, `docs/journal/000-setup.md`
+and `total = 0` a single block?"* — 2026-08-03, `docs/records/journal/000-setup.md`
 §3, spike `tools/spike/02-loop.c`.
 
 ## The definition

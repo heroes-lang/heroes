@@ -172,7 +172,7 @@ behind the books.
     **Re-verified 2026-09-10: STILL OPEN, one number STALE, one UNSETTLED.**
     The compiler is **57,120** lines of Heroes, not 55,050 — which is what
     `docs/ROADMAP.md` says today, so the old figure survives only in
-    `docs/journal/036-declared-freer.md:156`, where a record keeps what it measured.
+    `docs/records/journal/036-declared-freer.md:156`, where a record keeps what it measured.
     The **139 locals** split into 111 named and 28 temporaries is an lldb
     `frame variable` figure and is **UNSETTLED** without running lldb; declaration-line
     proxies give 103 to 151 depending on the pattern, which is why the census is this

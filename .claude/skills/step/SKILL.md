@@ -133,7 +133,7 @@ for `<name>` is CLAUDE.md §14 — its only home.
 
 Milestone close — the checklist (this is its only copy):
 - goldens pass (ASan-clean where applicable); determinism diff empty (from M-scalars-run on);
-- journal `docs/journal/NNN-<slug>.md`, 3 sections: **goal** · **what
+- journal `docs/records/journal/NNN-<slug>.md`, 3 sections: **goal** · **what
   surprised** (impersonal — shapes and rules, never scores) · **what broke
   and why**;
 - one story beat, **a new file in `docs/book/beats/`** named
@@ -166,7 +166,7 @@ Milestone close — the checklist (this is its only copy):
   (`docs/contract/case-law.md` CL-044 is the neighbouring shape, and the rule is
   CLAUDE.md § 3);
 - append the closing block — the status paragraph and the milestone's chain entry —
-  to `docs/journal/NNN-<slug>.md` § *What landed, and what carried forward*, and
+  to `docs/records/journal/NNN-<slug>.md` § *What landed, and what carried forward*, and
   leave `docs/ROADMAP.md` § Where we are at **≤15 lines**. The ROADMAP says what is
   *next*; a closed milestone's record is its journal. (It reached 935 lines before
   this rule existed, growing ~66 per close, and the reader met 512 lines about the

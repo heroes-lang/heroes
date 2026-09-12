@@ -33,7 +33,7 @@ side of that trade in spec tokens and says what `print` becomes afterwards.
 
 **The whole repository says two things about interpolation and both are in
 design.md** — measured 2026-09-02 with `grep -rn -i interpolat` over `docs/panel/`,
-`docs/journal/` and `docs/measurements/`: **zero hits**. There is no ruling to read
+`docs/records/journal/` and `docs/measurements/`: **zero hits**. There is no ruling to read
 forward from (CLAUDE.md §1), which is why this is a milestone and not a footnote.
 
 **Corrected 2026-09-08 by step 1's own count,

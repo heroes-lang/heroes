@@ -11,7 +11,7 @@ needed (author instructions 2026-08-25, 2026-08-26, 2026-09-03 and 2026-09-07,
 with what each one measured in the git history and in `DESIGN-LOG.md`):
 
 - **The past never stands in front of the future.** A closed milestone's record
-  goes to its own journal, indexed at `docs/journal/README.md`; § Where we are is
+  goes to its own journal, indexed at `docs/records/journal/README.md`; § Where we are is
   held under **15 lines** by `/step`'s checklist and by `suite_records.hero`'s
   `where_we_are`. This file once carried 512 lines about the past before its
   first line about the future, growing about 66 lines per close.
@@ -642,7 +642,7 @@ once.
 Milestones were numbered until 2026-08-12 and are named now. The algorithm that
 assigns the next one is **CLAUDE.md §14** — its only home; this section is only
 the map, and it exists because **the record was not rewritten**. `docs/panel/`,
-`DESIGN-LOG.md`, `docs/journal/`, `docs/measurements/`, `docs/work/DONE.md`,
+`DESIGN-LOG.md`, `docs/records/journal/`, `docs/measurements/`, `docs/work/DONE.md`,
 `docs/book/beats.md`, `tests/golden/`, every commit subject and all twelve legacy
 tags keep the identifiers they were written with. Panel 030 R7, as amended, is
 the argument.
