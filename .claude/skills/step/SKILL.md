@@ -122,6 +122,12 @@ filing touched one line):
 Plumbing steps — CLI, harness, refactors, bulk cases — add nothing.
 
 ## 5. Close
+**A lane does not close a milestone.** One milestone, one file, one worktree is
+the shape since 2026-09-12 (`.claude/rules/records.md` § Working in lanes); a
+close re-measures the whole tree for § Where we are, and two lanes cannot both
+be right about it. Closing is an act on the trunk, and closes accumulate into a
+train.
+
 Every step ends with a commit: `M-<name> step <k>: <what>`. The naming algorithm
 for `<name>` is CLAUDE.md §14 — its only home.
 

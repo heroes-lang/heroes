@@ -97,6 +97,13 @@ are better than waiting idle:
   one: CL-041 and CL-070 are both about a shared index carrying away another
   session's work, and a worktree has no such index to share.
 
+That second route became a way of working on 2026-09-12, and its rules are
+`.claude/rules/records.md` § Working in lanes: one milestone, one file, one
+worktree. What made it possible is that the records stopped being monoliths —
+a lane now writes files nobody else is writing — and what still binds is this
+section's own line: parallel work is free on correctness and forbidden on
+duration.
+
 ## And the order that makes this worth doing
 
 CLAUDE.md § Verification already asks for it and CL-063 is its case: **the named
