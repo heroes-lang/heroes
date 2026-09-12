@@ -1,0 +1,1 @@
+2026-08-03 | docs/ROADMAP.md reintroduced (revision 2 had deleted it) as the in-repo goal chain, M0–M8c with acceptance criteria | autonomous sessions need "what is next" versioned; tags only say where you are | — | —

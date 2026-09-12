@@ -1,0 +1,1 @@
+2026-08-03 | End goal declared: a mini-book on how the language came to be; story beats collected per step in docs/book/beats.md | journal/DESIGN-LOG/panel are the sources; beats keep the human texture | Part 0 | —

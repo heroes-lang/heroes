@@ -48,7 +48,8 @@ order. **No directory index**, because an index is a second place where truth
 lives and the only tabulated one here drifted for nine closes in silence.
 
 Rotated so far: `docs/book/beats.md` → `docs/book/beats/` (2026-09-12, 114
-entries). `ROTATED` in `tests/harness/suite_records.hero` is the live list.
+entries) and `DESIGN-LOG.md` → `docs/log/` (2026-09-12, 620 entries).
+`ROTATED` in `tests/harness/suite_records.hero` is the live list.
 
 ## And the record says whose idea it was
 
@@ -134,5 +135,5 @@ modified, **writes no note of its own** (CL-053). What it settled is an entry in
 `docs/work/DONE.md`; what it left open is an item in `docs/work/DECIDE.md` or
 `docs/work/SCHEDULED.md`; a concept it explained is an entry in
 `docs/glossary/`; a question worth re-asking is a line in `docs/learn/LEARN.md`;
-a change to the language is a panel; a decision taken is a `DESIGN-LOG.md` line.
+a change to the language is a panel; a decision taken is a `docs/log/` entry.
 The path between them is the git history.
