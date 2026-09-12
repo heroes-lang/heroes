@@ -33,6 +33,9 @@ use keywords
 use grammar_expr
 use operators
 
+constant SPEC: str
+    "spec/heroes-spec.md"
+
 function run() -> cli_table.Exit
     io.print_artifact(text: report())
     return .ok_exit
@@ -40,7 +43,7 @@ function run() -> cli_table.Exit
 # One string, so a reader can redirect stdout into a file and get the whole
 # report — `heroes this`'s shape, and `.claude/rules/cli-surface.md`'s contract.
 function report() -> str
-    return "Heroes: the terminals and the precedence, read from the compiler's own tables.\n\n" + keyword_block() + "\n\n" + power_block() + "\n\n" + what_is_not_here() + "\n"
+    return "Heroes: the terminals and the precedence, read from the compiler's own tables.\n\n" + keyword_block() + "\n\n" + power_block() + "\n\n" + production_block() + "\n\n" + what_is_not_here() + "\n"
 
 # The reserved words, in the order `selfhost/keywords.hero` declares them, four
 # to a line. **The order is the source's and not alphabetical**, because the
@@ -87,11 +90,70 @@ function power_block() -> str
 
     return out
 
+# The productions, collected: panel 133 R2's other half. They are AUTHORED in
+# `spec/heroes-spec.md`, each beside the prose of the construct it governs,
+# which is Wirth's arrangement and the one the historian's survey found still
+# alive. What is refused is a second FILE holding them, because that is the
+# shape every instance of which has been archived — so the collected view is
+# printed and never written.
+#
+# **One extractor, and this is it.** `tests/harness/suite_grammar.hero` checks
+# the productions for internal consistency by reading what this prints, not by
+# reading the document a second time: a second reader of the spec's text is a
+# second thing that can disagree with it.
+function production_block() -> str
+    text = read_file(SPEC)
+
+    if text.is_err()
+        return "The productions are in `" + SPEC + "`, which is not readable from here.\nThis command reads it relative to the working directory, as `measure` reads its\ntables, so run it from the repository to see them collected."
+    out: str @ "Productions, collected from `" + SPEC + "`, where each is authored beside the\nprose that governs it. `=` defines and `.` ends, `|` alternates, `[ ]` is\noptional, `{ }` repeats zero or more times."
+    in_fence: bool @ false
+    line: str @ ""
+
+    # **CHARACTERS, never bytes**, and the language taught this rather than a
+    # comment: slicing a byte off `—` aborts with "string slice splits a
+    # character", which is what the first version of this loop did on the
+    # document's own em dash. `tests/harness/spec_text.hero` carries the same
+    # rule for the same reason.
+    cs = text.must().chars()
+    i: i64 @ 0
+
+    while i <= cs.len()
+        if i < cs.len() && cs[i] != "\n"
+            line @ line + cs[i]
+            i @ i + 1
+            continue
+
+        if opens_fence(line)
+            in_fence @ !in_fence
+        else if !in_fence && indented(line)
+            out @ out + "\n" + line
+        line @ ""
+        i @ i + 1
+
+    return out
+
+# Both tests are anchored at column zero, which is what keeps a production's own
+# text from ever being read as either: a fence opens with three backticks there,
+# and a block with four spaces and something after them.
+function opens_fence(line: str) -> bool
+    return line.len() >= 3 && line[0] == '`' && line[1] == '`' && line[2] == '`'
+
+# Four spaces and something after them, at any deeper indent: a production's
+# CONTINUATION line is indented past its own name, and the first version of this
+# demanded a non-space in the fifth column, which silently dropped every
+# alternative written on a second line — three of them, `Prefix`, `Inline` and
+# `Member`, printed truncated and looking complete.
+function indented(line: str) -> bool
+    if line.len() <= 4
+        return false
+    return line[0] == ' ' && line[1] == ' ' && line[2] == ' ' && line[3] == ' '
+
 # **What this command cannot print, said rather than left to be discovered.**
 # A reader who finds only two tables here should be told why, and the answer is
 # the sitting's: these two are data in the compiler and the rest is not.
 function what_is_not_here() -> str
-    return "Not here, because the compiler holds no table to print it from:\n  the productions, which are in `spec/heroes-spec.md` beside the prose that\n  governs each one; and the six contextual words — `as`, `link`, `package`,\n  `tag`, `partial`, `owned` — which are ordinary identifiers everywhere except\n  the one position each is read in."
+    return "Not here, because the compiler holds no table to print it from: the six\ncontextual words — `as`, `link`, `package`, `tag`, `partial`, `owned` — which\nare ordinary identifiers everywhere except the one position each is read in.\n\nAnd nothing above is checked against the parser. The keywords and the powers\nare read from the compiler's own tables, so they cannot drift from it; the\nproductions are checked for internal consistency only, which is `ebnflint`'s\nclass and Go's. No instrument compares a production to the function that reads\nit."
 
 function pad(text: str, width: i64) -> str
     out: str @ text
