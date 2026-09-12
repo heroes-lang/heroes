@@ -235,6 +235,7 @@ and why one overtook another are under the table, in § Who scheduled what.
 | 71 | **M-online-compiler** | scheduled | — | — | the compiler reached without installing anything: the site's visitor writes Heroes and gets its answer · scheduled, no warrant |
 | 72 | **M-compatibility-promise** | scheduled | — | — | the paragraph `1.0.0` rests on, and the suite that makes a broken promise red · CLAUDE.md §14 |
 | 73 | **M-publication-gate** | scheduled | — | — | the last gate before anything goes outward · CLAUDE.md §14 |
+| 74 | **M-rotated-records** | scheduled | — | — | the records become directories, one entry per file and one milestone per file, and the file that held each stays behind as a map so every citation still resolves · CLAUDE.md §14 |
 
 Three closed milestones have no tag of their own because they were parents or
 sub-steps: **M-checker-core**, **M-data-declarations** and **M-rich-diagnostics**
@@ -547,6 +548,23 @@ row number, because a reorder moves a number and never a name (CLAUDE.md §14).
   `docs/measurements/026-the-two-facts-a-32-bit-target-refuses.md` the commands.
   The conservative route, a note and no row, was on the table and declined
   (CL-040). No board exists yet; the author is ordering one.
+- **M-rotated-records** — **entered 2026-09-12 by author decision**, out of the
+  session that asked whether more than one step could be taken at a time, with
+  worktrees or otherwise. **The conflict was measured rather than assumed**: of
+  the 100 most recent commits, `DESIGN-LOG.md` is touched by **40**,
+  `docs/ROADMAP.md` by **31**, `docs/work/DONE.md` by **26** and
+  `docs/work/DECIDE.md` by **24** — so two sessions meet in the registers and
+  never in the compiler, and the answer is a shape rather than a git workflow.
+  The author asked for the historical entries to move as well as the new ones,
+  and what makes that safe was measured too: the 161 line-number citations into
+  the two large records resolve to **54 distinct lines**, and the 43 in
+  `DESIGN-LOG.md` every one of them open an entry — so a map with the same
+  geometry keeps all 161 true, and makes them checkable for the first time,
+  which CL-037 says no instrument can do today. **The row stands at the end of
+  the table and is taken out of chain order**, next after the milestone now
+  open: putting it in position would have moved twenty-three row numbers while a
+  parallel session was committing into this same checkout, and the fifth
+  renumbering (2026-09-08) is the reason that is worth avoiding.
 
 ---
 
