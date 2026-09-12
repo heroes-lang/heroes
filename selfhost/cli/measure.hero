@@ -47,8 +47,15 @@ constant SPEC: str
 constant VENDOR: str
     "vendor/tokenizers"
 
-# design.md §1.6, raised to 6144 by author decision (2026-09-09), and THE
-# NUMBER CARRIES ITS INSTRUMENT because the last one did not. It was 4096
+# design.md §1.6, raised to 8192 by author decision (2026-09-12), to make room
+# inside the spec for the grammar's productions — panel 133 found that every
+# free-standing grammar in its survey has been archived, and that the one
+# arrangement still alive is Wirth's own, the productions beside the prose they
+# govern. The raise relaxes nothing: §1.6's payment rule is unconditional at
+# every level, so a block of productions owes what a sentence owes.
+#
+# It was 6144 by author decision (2026-09-09), and THAT is where THE NUMBER
+# STARTED CARRYING ITS INSTRUMENT, because the one before it did not. It was 4096
 # taken as the maximum over two VENDORED tokenisers, and the larger of those
 # is `cl100k_base`, which is OpenAI's: measured 2026-09-09 against
 # `POST /v1/messages/count_tokens`, the spec was 5094 real tokens on
@@ -59,7 +66,7 @@ constant VENDOR: str
 # counts the same content as Opus 5 and wraps it differently, so a maximum
 # over a SET is not a property of the document.
 constant CEILING: i64
-    6144
+    8192
 
 # THE RECORD: the reader's own count, refreshed by hand and never by a check
 # (panel 123 R1 and R5). The gate may not touch the network — design.md Part

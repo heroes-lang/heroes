@@ -25,21 +25,35 @@ use strings
 # Every identifier written inside a code span — a backticked fragment or a
 # fenced block — in the order met, duplicates included.
 #
-# Two states, exactly as the Rust's `split("```")` and `split('`')` do
-# together: a fence flips whether we are inside a block, a lone backtick
-# flips whether we are inside a span.
+# THREE states since 2026-09-12, and the third is the grammar's. A fence flips
+# whether we are inside a block and a lone backtick flips whether we are inside
+# a span, exactly as the Rust's `split("```")` and `split('`')` did together.
+# The third is an INDENTED BLOCK outside a fence, which is where the spec's
+# production rules live: `.claude/rules/spec-shape.md` refuses a grammar in a
+# fence, because the `rejected` check reads every fence as Heroes source, and an
+# indented block was the way out — but invisible was the easy answer and not the
+# right one. A production names only Heroes' own terminals, so no refused word
+# can appear in one; reading them costs no false positive and buys the terminals
+# the same check every other code span gets (panel 133).
 function identifiers_in_code(text: str) -> [str]
     cs = text.chars()
     found: [str] @ []
     in_block: bool @ false
     in_span: bool @ false
+    in_indent: bool @ false
+    at_line_start: bool @ true
     word: [str] @ []
     i: i64 @ 0
 
     while i < cs.len()
+        if at_line_start && !in_block
+            in_indent @ opens_indented(cs: cs, at: i, was: in_indent)
+        at_line_start @ false
+
         if fence_at(cs: cs, at: i)
             in_block @ !in_block
             in_span @ false
+            in_indent @ false
             found @ flushed(found: found, word: word)
             word @ word.slice(from: 0, to: 0)
             i @ i + 3
@@ -53,7 +67,10 @@ function identifiers_in_code(text: str) -> [str]
             i @ i + 1
             continue
 
-        if (in_block || in_span) && is_word_char(cs[i])
+        if cs[i] == "\n"
+            at_line_start @ true
+
+        if (in_block || in_span || in_indent) && is_word_char(cs[i])
             word @ word.push(cs[i])
         else
             found @ flushed(found: found, word: word)
@@ -66,6 +83,28 @@ function flushed(found: [str], word: [str]) -> [str]
     if word.len() == 0
         return found
     return found.push(word.join(""))
+
+# Does the line starting at `at` open an indented block, four spaces deep and
+# outside a fence?
+#
+# **A BLANK line keeps whatever the block already was**, and that is the whole
+# subtlety: a production block breathes between its groups, so a blank line is a
+# gap inside one and never the end of it. A line with any other content at
+# column 0 ends it.
+function opens_indented(cs: [str], at: i64, was: bool) -> bool
+    if at < cs.len() && cs[at] == "\n"
+        return was
+
+    if at + 4 > cs.len()
+        return false
+    j: i64 @ at
+
+    while j < at + 4
+        if cs[j] != " "
+            return false
+        j @ j + 1
+
+    return true
 
 function fence_at(cs: [str], at: i64) -> bool
     if at + 3 > cs.len()
@@ -285,6 +324,36 @@ test "identifiers are read out of code spans and fences, never out of prose"
 
     # The em dash that killed the byte-slicing draft, in a code span.
     assert identifiers_in_code("`a — b`") == ["a", "b"]
+
+test "an indented block is code, and prose at column zero is not"
+    # The shape the spec's production rules take: four spaces, no fence.
+    block = "prose here\n\n    Bind = ident \"=\" Expression .\n\nmore prose\n"
+    assert identifiers_in_code(block) == ["Bind", "ident", "Expression"]
+
+    # The prose around it stays invisible, which is the whole point of the
+    # column-zero rule: `more prose` above contributed nothing.
+    assert identifiers_in_code("prose only\nstill prose\n").len() == 0
+
+    # A BLANK line does not close the block — a production block breathes
+    # between its groups, and this is the case that would have silently
+    # halved every grammar section.
+    breathing = "    One = a .\n\n    Two = b .\n"
+    assert identifiers_in_code(breathing) == ["One", "a", "Two", "b"]
+
+    # A line at column zero DOES close it, blank line or not.
+    closed = "    One = a .\nback at zero\n    Two = b .\n"
+    assert identifiers_in_code(closed) == ["One", "a", "Two", "b"]
+    ended = "    One = a .\nback at zero and it ends\n"
+    assert identifiers_in_code(ended) == ["One", "a"]
+
+    # Three spaces is not four, so it is prose.
+    assert identifiers_in_code("   Three = spaces .\n").len() == 0
+
+    # Indentation INSIDE a fence changes nothing: the fence already owns it,
+    # and this is what keeps the eight fences the spec already has reading
+    # exactly as they did.
+    inside = "```\nx = a\n    y = b\n```\n"
+    assert identifiers_in_code(inside) == ["x", "a", "y", "b"]
 
 test "a sentence ends at its own full stop, not inside a code span"
     assert end_of_sentence("one. two".chars()) == 3

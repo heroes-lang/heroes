@@ -84,8 +84,12 @@ constant SPEC_TOKENS: i64
 constant REGISTRY_TOKENS: i64
     916
 
-# The ceiling, 6144 by author decision 2026-09-09, and it carries its
-# instrument (panel 123 R3): `claude-opus-5` through
+# The ceiling, 8192 by author decision 2026-09-12, which made room inside the
+# spec for the grammar's productions (panel 133). It relaxes nothing: §1.6's
+# payment rule is unconditional at every level, with no threshold to be under.
+#
+# It was 6144 by author decision 2026-09-09, and that is where it started
+# carrying its instrument (panel 123 R3): `claude-opus-5` through
 # `POST /v1/messages/count_tokens`, where the spec measured 5094 on the day it
 # was set. Panel 024's 4096 was the maximum over two VENDORED tokenisers and
 # the larger of those is OpenAI's, so the document was 998 over a ceiling it
@@ -94,7 +98,7 @@ constant REGISTRY_TOKENS: i64
 # always answered correctly, and re-basing it would make the next ledger row
 # incomparable with the first thirty-eight.
 constant CEILING: i64
-    6144
+    8192
 
 # THE RECORD: the reader's own count, and the same four constants
 # `selfhost/cli/measure.hero` holds — for the reason `CEILING` is in two
