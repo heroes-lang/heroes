@@ -96,14 +96,50 @@ that day stay true at their date and read against the layout at commit
 
 ## What was refused, and by whom, so it is not proposed again as new
 
-An EBNF or grammar appendix (author decision 2026-08-12, `docs/work/DONE.md`;
+An EBNF **appendix** (author decision 2026-08-12, recorded in
+`docs/records/done/2026-08-13-0146-decided-2026-08-12-author-v2-restores-the-symmetry.md`;
 design.md Part 7 item 16: *an appendix is spec tokens spent on a grammar a
-reader would then have to reconcile with the prose*). Type signatures for the
+reader would then have to reconcile with the prose*). **That refusal is of an
+APPENDIX and nothing else, since 2026-09-12**: panel 133 found a third route
+neither it nor panel 035 had listed, and the productions are now **inline**, each
+in the section of the operation it governs, which is what Wirth's own reports do
+and the one arrangement the historian's survey found still alive. What stays
+refused is a grammar collected somewhere of its own — an appendix here, or a
+file beside this one — because that is the shape every instance of which has been
+archived. The collected view is printed by `heroes grammar` and never written.
+(This line cited `docs/work/DONE.md` until 2026-09-12, which has been a map since
+that morning's rotation and never held the decision.) Type signatures for the
 built-ins (panel 120: *the spec buys prose and not signatures*, because a
 signature cannot say which half `filter` keeps). A preamble about the budget
 (removed in v1 as a 96-token named removal). A closed list of aborts (panel
 087). A grammar or pseudo-code in a fence, because the `rejected` check reads
-every fence as Heroes.
+every fence as Heroes. **That last one still stands and is why the productions
+are INDENTED**: a four-space block outside a fence is where they live, and since
+2026-09-12 `identifiers_in_code` reads one, so a production's terminals are
+checked like every other code span rather than being invisible. Invisible was the
+cheaper answer and it bought nothing.
+
+## Where the productions are, and what judges them
+
+Every syntactic form is stated once, in Wirth's notation, in the section of the
+operation it governs, and the notation itself is named in the document's opening
+paragraph. Two facts a later session needs:
+
+- **NEWLINE ends a statement, and a statement whose last part is a block ends
+  with that block instead.** Stated once, in that paragraph, because without it
+  `return match s` is underivable and the document could not derive its own
+  examples — panel 133's llm-ergonomist found exactly that in the draft.
+- **Inside brackets a NEWLINE never ends a statement.** Also stated once, so
+  every bracketed production inherits it; the draft repaired the array literal
+  and left the multi-line `extern` signature underivable, which the
+  ffi-pragmatist found by compiling one.
+
+What judges them is `tests/harness/suite_grammar.hero`, and what it judges is
+worth stating exactly rather than generously. It reads the compiler's own
+`keyword` and `binary_op` arms as TEXT and compares them to what `heroes grammar`
+prints, in order. **It does not compare a production to the parser**: nothing
+does, and panel 133's engineer measured why — roughly 82 hand-written exception
+rows to judge 74 productions, where a name-only row is a mute button.
 
 ## How a change to the document is made
 

@@ -2882,6 +2882,22 @@ are *on* the closure list.
     variant, and Part 11's first-try measurement should expect exactly that failure and attribute it
     here rather than to the writer.
 
+    **Both halves of that paragraph are falsified, and the correction is written under it rather
+    than over it (2026-09-12, panel 133).** The stated cost stopped being true on **2026-09-11**:
+    `spec/heroes-spec.md` § 9 has read *"Record construction is a call with field names, always
+    mandatory: `Point(x: 3, y: 4)`, and a variant's case `.num(v: 7)` or `.plus`"* since commit
+    `d245239a`, panel 126's re-shaping, and nobody noticed this paragraph had gone stale. Panel
+    133's llm-ergonomist, given only the specification, wrote `.circle(r: 3)` correctly and cited
+    that clause before it was allowed to see anything else. And the reasoning is falsified twice
+    over: **the EBNF was refused as an appendix and has now landed inline**, which is a third route
+    neither this item nor panel 035 listed. The historian found it by reading the reports this
+    project claims descent from — Wirth shipped the grammar **twice** in both the Oberon and the
+    Pascal reports, inline beside the prose and again collected, so *"the prose plus a compiler
+    diagnostic beats a second description"* was a departure from him rather than an application of
+    him. **What stands**: the asymmetry itself, and the choice to restore symmetry in v2. What the
+    grammar buys instead is that the asymmetry is now *visible* — `CaseExpr` and `Case` are two
+    productions where one would do in ML, and a reader sees it without being told.
+
 ---
 
 ## Part 8 — Known warts

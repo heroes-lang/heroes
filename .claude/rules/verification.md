@@ -56,6 +56,7 @@ happened here first.
 | `tests/golden/surface-fixtures/**` | `annotations` `fixes` |
 | `examples/**` | `canonical` `corpus` `emission` `warnings` |
 | `spec/heroes-spec.md` | `spec` `special` |
+| `selfhost/keywords.hero`, `selfhost/operators.hero`, `selfhost/grammar_expr.hero`'s `binary_op` | **`grammar`**, plus everything `selfhost/**` already gets |
 | `docs/**`, `DESIGN-LOG.md`, `CLAUDE.md`, `.claude/**` | `records` |
 | `tests/harness/**` | **the net's own tests**, `heroes test tests/harness/main.hero` |
 

@@ -227,3 +227,25 @@ than the compiler's behaviour.
 What it does **not** settle: anything this file keys to a measurement that has not
 been taken. Those stay open on their own terms, listed in `docs/debrief/QUEUE.md`,
 and a blanket yes cannot make a number arrive.
+
+---
+
+**Corrected underneath, 2026-09-12, by panel 133's historian, who was sent to
+verify this citation and found it read backwards.** The quote is exact and the
+paper is real — Aycock, Stap, Wu, Monz and Sima'an, *"Can LLMs Really Learn to
+Translate a Low-Resource Language from One Grammar Book?"*, arXiv 2409.19151,
+ICLR 2025. What it measured, and what this sitting took it to mean, are not the
+same thing. **The finding about parallel examples is about TRANSLATION.** On
+grammaticality judgment and gloss prediction — the two tasks nearest to what
+Heroes asks a model to do — the paper's best arm was a **compact structured
+description PLUS parallel examples**, beating examples alone by up to 3% and
+reaching 46.1% morpheme accuracy, twenty-five points over the arm with no
+examples. Its own conclusion: *"LLMs can exploit grammar for relevant linguistic
+tasks — if provided in a useful form — but not for translation."*
+
+So the strongest published argument this repository held against spending
+anything on a formal grammar was, read properly, mild evidence for a compact one
+shipped alongside examples. It did not change 4096, which was decided on other
+grounds and has since moved twice. It changes what a later sitting may cite this
+one for: **not** *"a grammar buys nothing"*, only *"prose grammatical explanation
+buys nothing for translation"*.
