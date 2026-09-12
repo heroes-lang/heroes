@@ -257,7 +257,7 @@ letting one through.
 
 - [ ] **panel 018 impl** | `record Point` now ends in a token that can end a statement. What did that single fact let recovery DELETE, and what replaced the span arithmetic?
 
-    **Where to look:** syntax/recover.rs recover_to_next_decl · docs/glossary/002 § coda
+    **Where to look:** syntax/recover.rs recover_to_next_decl · docs/ref/glossary/002 § coda
     **Why it matters:** panel 007's patch died of the inversion — the lesson demonstrated on itself
 
 - [ ] **panel 018 impl** | `for i < 3` gets the `while` fix as a Guess; `for !done` gets it Certain. What distinguishes the two parse states, given the message is identical?

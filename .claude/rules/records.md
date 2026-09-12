@@ -166,6 +166,6 @@ A conversation whose work is questions, with no file of code, spec or design
 modified, **writes no note of its own** (CL-053). What it settled is an entry in
 `docs/done/`; what it left open is an item in `docs/work/DECIDE.md` or
 its milestone's file under `docs/milestones/`; a concept it explained is an entry in
-`docs/glossary/`; a question worth re-asking is a line in `docs/learn/LEARN.md`;
+`docs/ref/glossary/`; a question worth re-asking is a line in `docs/learn/LEARN.md`;
 a change to the language is a panel; a decision taken is a `docs/log/` entry.
 The path between them is the git history.

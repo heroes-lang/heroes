@@ -94,7 +94,7 @@ for it (`/learn`'s own rule), and listing it turns an offer into a debt.
 ### 5. Today's pill — one micro-lesson
 ONE concept (3–5 sentences max), tied to the current stage, with its analogy.
 End with a question the author can answer mentally to check they got it.
-If the concept has a `docs/glossary/` entry, link it; if the pill resolves
+If the concept has a `docs/ref/glossary/` entry, link it; if the pill resolves
 a fresh gap, distill it into a new glossary entry afterwards (a gap resolved
 is an artifact earned — see `/learn`).
 
