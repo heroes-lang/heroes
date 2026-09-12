@@ -738,6 +738,20 @@ function is_capital(ch: str) -> bool
 
 # The `## ` headings of the other documents whose sections code cites bare,
 # with a leading `N. ` stripped: CLAUDE.md's, the ROADMAP's, the site README's.
+# **THE `continue` HERE WAS A SILENCE, AND IT WAS REPLACED ON 2026-09-12.** The
+# three paths are written into this function, so a file it cannot open is always
+# a defect and never a legitimate case: either one of the three moved, or the
+# working tree is not where this suite thinks it is. Swallowing that left the
+# heading set short and the `anchors` check then reported as UNKNOWN the sections
+# of whichever document had gone missing — a red on innocent files, naming the
+# wrong thing, which is worse than the red it replaced. The empty name is what
+# `anchors` reports, and it stops the walk instead of shrinking it.
+# The sentinel `other_headings` returns in place of a heading set it could not
+# read. It is a string nobody's `§` can name, so `anchors` reports it as the
+# unknown anchor it is, with the path attached.
+constant MISSING_DOCUMENT: str
+    "a document this suite could not open: "
+
 function other_headings() -> [str]
     out: [str] @ []
 
@@ -745,7 +759,7 @@ function other_headings() -> [str]
         text = read_file(path)
 
         if text.is_err()
-            continue
+            return [MISSING_DOCUMENT + path]
 
         for line in strings.lines(text.must())
             if strings.starts_with(text: line, prefix: "## ")

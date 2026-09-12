@@ -38,6 +38,14 @@ use strings
 constant VERDICT_HEADING: str
     "\n## Author's verdict"
 
+# WHERE THE SITTINGS LIVE, in one place, for VERDICT_HEADING's reason: the check,
+# the arithmetic that strips this prefix and the message that explains the check
+# must not be able to disagree about it. The literal stood in three functions and
+# in a `.len()` call on a fourth line, which is four places one move could have
+# left disagreeing — and `verdicts` had no floor to notice (see its own comment).
+constant SITTINGS: str
+    "docs/panel/"
+
 # **`docs/work/DONE.md` joined this list on 2026-09-06**, and it was missing for
 # the ten days it has existed. CLAUDE.md §3 calls it *"the record — append-only,
 # never rewritten (§14), and read by grep rather than by eye"*, which is the
@@ -708,6 +716,7 @@ function run_all(scratch: str) -> report.Report?
     citations(@r, scratch: scratch, present: walked)
     english(@r, present: walked)
     exemptions(@r, present: walked)
+    rules(@r, present: walked)
     expectations(@r, scratch: scratch)
     boundary(@r)
     verdicts(@r, present: walked)
@@ -976,6 +985,47 @@ function exemptions(@r: report.Report, present: [str])
         if !selects_suffix(entry: entry, present: present)
             dead @ dead.push("    QUOTES_THE_OLD_SPELLING: " + entry)
 
+    # THE OTHER ELEVEN LISTS, none of which was covered until 2026-09-12. Three
+    # were checked and eleven were not, which is the same asymmetry this function
+    # exists to close one level down: a list nobody asks about goes on reading
+    # like a rule long after it stops selecting anything.
+    for entry in HOMES
+        if entry != "" && !selects_tree(entry: strings.without_suffix(text: entry, suffix: "/"), present: present)
+            dead @ dead.push("    HOMES: " + entry)
+
+    for entry in APPENDED
+        if !selects_exactly(entry: entry, present: present)
+            dead @ dead.push("    APPENDED: " + entry)
+
+    for entry in [DECISIONS, DEFECTS, LEARNING, RECORD_LIST, MILESTONES]
+        if !selects_tree(entry: entry, present: present)
+            dead @ dead.push("    a named list: " + entry)
+
+    for entry in DEFECT_NUMBERED
+        if !selects_tree(entry: entry, present: present)
+            dead @ dead.push("    DEFECT_NUMBERED: " + entry)
+
+    for entry in APPEND_ONLY
+        if !selects_exactly(entry: strings.words(entry)[0], present: present)
+            dead @ dead.push("    APPEND_ONLY: " + entry)
+
+    for entry in ROTATED
+        fields = strings.words(entry)
+
+        if fields.len() == 3
+            if !selects_exactly(entry: fields[0], present: present)
+                dead @ dead.push("    ROTATED, the map: " + fields[0])
+
+            if !selects_tree(entry: fields[2], present: present)
+                dead @ dead.push("    ROTATED, the tree: " + fields[2])
+
+    # AND THE INVERSE RULE, which is the only one of its kind here: a retired
+    # root must select NOTHING. A root that comes back is not retired, and the
+    # entry saying so would be a lie nobody reads twice.
+    for entry in RETIRED_ROOTS
+        if selects_tree(entry: entry, present: present)
+            dead @ dead.push("    RETIRED_ROOTS, and it is back: " + entry)
+
     if dead.len() > 0
         report.keep_failure(
             @r,
@@ -1002,6 +1052,106 @@ function selects_exactly(entry: str, present: [str]) -> bool
 function selects_suffix(entry: str, present: [str]) -> bool
     for path in present
         if strings.ends_with(text: path, suffix: entry)
+            return true
+
+    return false
+
+# EVERY `paths:` GLOB OF A TREE-LOCAL RULE REACHES SOMETHING.
+#
+# `.claude/rules/*.md` load on a path match and cost nothing in the sessions that
+# never go there (CLAUDE.md § Where the rest lives). That is the whole design,
+# and it has one failure mode nobody could see: **nothing verifies that a rule
+# still loads**. A directory moves, its glob stops matching, and the rule simply
+# never arrives — no error, no red, no session the wiser. It is `exemptions`
+# one level up, about the rules instead of the lists.
+#
+# The matcher is the prefix up to the first `*`, which is enough for every shape
+# these files use: `docs/**` asks for `docs`, `selfhost/emit/ffi*` asks for
+# `selfhost/emit/ffi` and is a partial FILE name, so the test is a plain prefix
+# and not a tree.
+function rules(@r: report.Report, present: [str])
+    listed = shell.run(
+        scratch: ".",
+        program: "git",
+        words: ["git", "ls-files", ".claude/rules"]
+    )
+
+    if listed.is_err()
+        report.keep_failure(@r, label: "records/rules", detail: "  cannot list `.claude/rules`")
+        return
+    dead: [str] @ []
+    globs: i64 @ 0
+
+    for rule in strings.lines(listed.must().out)
+        if !strings.ends_with(text: rule, suffix: ".md")
+            continue
+        text = read_file(strings.trimmed(rule))
+
+        if text.is_err()
+            dead @ dead.push("    cannot read " + rule)
+            continue
+        fences: i64 @ 0
+
+        for row in strings.lines(text.must())
+            if strings.trimmed(row) == "---"
+                fences @ fences + 1
+
+            if fences != 1
+                continue
+
+            if !strings.starts_with(text: strings.trimmed(row), prefix: "- ")
+                continue
+            glob = unquoted(strings.without_prefix(text: strings.trimmed(row), prefix: "- "))
+            globs @ globs + 1
+
+            if !selects_prefix(entry: prefix_of(glob), present: present)
+                dead @ dead.push("    " + rule + ": `" + glob + "` reaches nothing")
+
+    if globs == 0
+        report.keep_failure(
+            @r,
+            label: "records/rules",
+            detail: "  no `paths:` glob was read at all, so this check would pass however the\n  rules were pointed. Either `.claude/rules` moved, or the frontmatter stopped\n  being the shape this reader knows."
+        )
+        return
+
+    if dead.len() > 0
+        report.keep_failure(
+            @r,
+            label: "records/rules",
+            detail: "  a tree-local rule points at nothing, so it never loads:\n" + dead.join("\n") + "\n  A rule that cannot be reached still reads as a rule to whoever finds it, and\n  nothing else in this repository would have said so. Repoint the glob, or take\n  the line out because nothing needs the rule any more."
+        )
+    else
+        report.keep_pass(@r)
+
+# The part of a glob before its first `*`: `docs/**` gives `docs`, and
+# `selfhost/emit/ffi*` gives `selfhost/emit/ffi`.
+function prefix_of(glob: str) -> str
+    at = strings.index_of(text: glob, needle: "*")
+
+    if at.is_err()
+        return glob
+    cut = glob.slice(from: 0, to: at.must())
+
+    if strings.ends_with(text: cut, suffix: "/")
+        return cut.slice(from: 0, to: cut.len() - 1)
+
+    return cut
+
+function unquoted(text: str) -> str
+    out: str @ text
+
+    if strings.starts_with(text: out, prefix: "\"")
+        out @ out.slice(from: 1, to: out.len())
+
+    if strings.ends_with(text: out, suffix: "\"")
+        out @ out.slice(from: 0, to: out.len() - 1)
+
+    return out
+
+function selects_prefix(entry: str, present: [str]) -> bool
+    for path in present
+        if path == entry || strings.starts_with(text: path, prefix: entry)
             return true
 
     return false
@@ -2690,10 +2840,12 @@ function expectations(@r: report.Report, scratch: str)
 # exception breaks.
 function verdicts(@r: report.Report, present: [str])
     offenders: [str] @ []
+    seen: i64 @ 0
 
     for path in present
         if !is_sitting(path)
             continue
+        seen @ seen + 1
 
         if sitting_number(path).default(0) < VERDICT_FLOOR
             continue
@@ -2714,6 +2866,14 @@ function verdicts(@r: report.Report, present: [str])
             offenders @ offenders.push(
                 "    " + path + ": the verdict reads `Pending` and no open item in " + DECISIONS + " names it"
             )
+
+    if seen == 0
+        report.keep_failure(
+            @r,
+            label: "records/verdicts",
+            detail: "  `" + SITTINGS + "` holds no numbered sitting, so this check read zero files and\n  would pass whatever the panel had left unratified. Either that tree moved and\n  `is_sitting` did not follow it, or the prefix arithmetic stopped matching.\n  This floor is counted BEFORE the VERDICT_FLOOR filter on purpose: a broken\n  prefix takes every sitting at once, so zero is the shape it makes."
+        )
+        return
 
     if offenders.len() > 0
         report.keep_failure(
@@ -2744,7 +2904,7 @@ constant VERDICT_FLOOR: i64
 
 # The sitting's number, or an error where the name does not start with one.
 function sitting_number(path: str) -> i64?
-    rest = strings.without_prefix(text: path, prefix: "docs/panel/")
+    rest = strings.without_prefix(text: path, prefix: SITTINGS)
     at = strings.index_of(text: rest, needle: "-")
 
     if at.is_err()
@@ -2859,7 +3019,7 @@ function queued(path: str) -> bool
 # `sitting_number` because the two answer different questions: the floor needs an
 # integer to compare, and the queue needs the spelling the record uses.
 function sitting_digits(path: str) -> str?
-    rest = strings.without_prefix(text: path, prefix: "docs/panel/")
+    rest = strings.without_prefix(text: path, prefix: SITTINGS)
     at = strings.index_of(text: rest, needle: "-")
 
     if at.is_err()
@@ -2872,12 +3032,12 @@ function sitting_digits(path: str) -> str?
 # ratified. The rule stays after the file went, so the next unnumbered thing to
 # land here is not read as a sitting either.
 function is_sitting(path: str) -> bool
-    if !strings.starts_with(text: path, prefix: "docs/panel/")
+    if !strings.starts_with(text: path, prefix: SITTINGS)
         return false
 
     if !strings.ends_with(text: path, suffix: ".md")
         return false
-    rest = path.slice(from: "docs/panel/".len(), to: path.len())
+    rest = path.slice(from: SITTINGS.len(), to: path.len())
 
     if rest.len() == 0
         return false
@@ -4080,3 +4240,19 @@ test "a map row hands on the path it names, and a row that names none says so"
 # root. That is what happened here first. They are exercised where they belong,
 # by `run_all` over the real tree, and what a literal CAN drive — the name shape
 # and the row reader — is driven above.
+
+test "a paths glob is asked for the part before its star"
+    assert prefix_of("docs/**") == "docs"
+    assert prefix_of("selfhost/emit/ffi*") == "selfhost/emit/ffi"
+    assert prefix_of("CLAUDE.md") == "CLAUDE.md"
+
+    # A partial file name is a PREFIX and not a tree, which is why the matcher
+    # beside it is not `selects_tree`: `selfhost/emit/ffi` names no directory and
+    # reaches twelve files.
+    present = ["one/ffi_gate.hero", "one/other.hero"]
+    assert selects_prefix(entry: "one/ffi", present: present)
+    assert !selects_prefix(entry: "one/zzz", present: present)
+
+test "a quoted glob loses its quotes and an unquoted one is unchanged"
+    assert unquoted("\"docs/**\"") == "docs/**"
+    assert unquoted("docs/**") == "docs/**"
