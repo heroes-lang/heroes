@@ -713,6 +713,9 @@ function run_all(scratch: str) -> report.Report?
     homed(@r)
     lists(@r)
     tagged(@r, scratch: scratch)
+    appended(@r, scratch: scratch)
+    numbering(@r)
+    unmerged(@r, scratch: scratch)
     return ok(r)
 
 # A MILESTONE IS TAGGED ONLY OVER A CLEAN LIST (author instruction
@@ -998,6 +1001,306 @@ function selects_suffix(entry: str, present: [str]) -> bool
             return true
 
     return false
+
+# THE APPEND-ONLY RULE HAD NO EXECUTOR UNTIL THIS BLOCK, AND THAT IS MEASURED
+# RATHER THAN SUSPECTED.
+#
+# CLAUDE.md §14 says a record is never rewritten: a falsified sentence is
+# corrected underneath, with its date, never deleted. Four documents state it —
+# the contract, `.claude/rules/records.md`, this file's own RECORD comment, and
+# `docs/work/DONE.md`'s preamble — and until 2026-09-12 nothing performed it.
+# Commit `76799a18` removed one `- [x]` line from the record and every suite
+# stayed green. A rule stated everywhere and executed nowhere is CL-031's story,
+# told here about the rule those four documents exist to protect.
+#
+# THE WINDOW IS THE WORKING TREE, NOT THE LAST COMMIT, and the choice is
+# deliberate twice over. It speaks while the deletion is still yours to undo,
+# which is when a warning is worth anything; and `git diff HEAD` needs no
+# history, so it reads the same on this Mac and in a CI leg whose checkout is
+# `fetch-depth: 1` and has no `HEAD~1` to compare against. A check that could
+# only run where the history is deep would be a check that never ran in CI.
+#
+# The number is the record's FIRST LINE, not its banner's: two of the three
+# records have no banner at all. Above it is the preamble, which is prose
+# somebody may correct — `7c2198ff` rewrote eighteen lines of DONE's and was
+# right to. Below it is the record.
+constant APPEND_ONLY: [str]
+    [
+        "DESIGN-LOG.md 5"
+        "docs/work/DONE.md 34"
+        "docs/book/beats.md 6"
+    ]
+
+function appended(@r: report.Report, scratch: str)
+    offences: [str] @ []
+
+    for entry in APPEND_ONLY
+        fields = strings.words(entry)
+
+        if fields.len() != 2
+            offences @ offences.push("    " + entry + " is not `<path> <first record line>`")
+            continue
+        floor = strings.to_number(fields[1]).default(0)
+
+        if floor == 0
+            offences @ offences.push("    " + entry + " does not name a line number")
+            continue
+        diffed = shell.run(
+            scratch: scratch,
+            program: "git",
+            words: ["git", "diff", "HEAD", "--", fields[0]]
+        )
+
+        if diffed.is_err()
+            offences @ offences.push("    cannot ask git what the working tree changed in " + fields[0])
+            continue
+
+        for row in removed_below(text: diffed.must().out, floor: floor)
+            offences @ offences.push("    " + fields[0] + ": " + row)
+
+    if offences.len() > 0
+        report.keep_failure(
+            @r,
+            label: "records/appended",
+            detail: "  a line is being removed from a record:\n" + offences.join("\n") + "\n  A record is never rewritten (CLAUDE.md §14). Where the sentence has since\n  been falsified, the correction is ADDED UNDERNEATH with its date: a\n  measurement that was right when it was taken is history, and a record that\n  quietly loses its inconvenient half is worth less than none.\n  The preamble above the record's first line is not covered and may be edited."
+        )
+    else
+        report.keep_pass(@r)
+
+# The lines a working-tree diff removes at or below `floor`, read out of the
+# hunk headers rather than out of the file. A unified diff carries its own
+# numbering — `@@ -240,7 +240,9 @@` says the next old line is 240 — so where a
+# removal lands is readable without opening anything.
+#
+# Nothing before the first `@@` is counted: `--- a/x` and `+++ b/x` open with
+# the same bytes as a removal and an addition, and reading them as content is
+# how a diff parser reports the file header as a deleted line.
+function removed_below(text: str, floor: i64) -> [str]
+    out: [str] @ []
+    old: i64 @ 0
+    started: bool @ false
+
+    for row in strings.lines(text)
+        if strings.starts_with(text: row, prefix: "@@ -")
+            old @ hunk_start(row)
+            started @ true
+        else if started
+            if strings.starts_with(text: row, prefix: "-")
+                if old >= floor
+                    out @ out.push(strings.trimmed(row))
+                old @ old + 1
+            else if !strings.starts_with(text: row, prefix: "+")
+                old @ old + 1
+
+    return out
+
+# The old-file line a hunk opens at: 240, out of `@@ -240,7 +240,9 @@`. A
+# header this cannot read yields 0, which `removed_below` then compares against
+# a floor of at least 1 — so an unreadable header reports every removal in that
+# hunk rather than none. The loud direction (`.claude/rules/module-shape.md`).
+function hunk_start(row: str) -> i64
+    rest = strings.without_prefix(text: row, prefix: "@@ -")
+    end: i64 @ 0
+
+    while end < rest.len()
+        byte = rest[end]
+
+        if byte < '0' || byte > '9'
+            break
+        end @ end + 1
+
+    if end == 0
+        return 0
+
+    return strings.to_number(rest.slice(from: 0, to: end)).default(0)
+
+# NO DEFECT NUMBER IS ISSUED TWICE.
+#
+# The preamble of `docs/work/DEFECTS.md` says *the next number to issue is NNN*,
+# and that sentence is shared state: two sessions reading the same trunk both
+# read the same number, both take it, and the merge is CLEAN AND WRONG — two
+# defects carrying one identifier, forever, in a record nobody may rewrite. It
+# has already happened once without any parallel work at all, which is why the
+# preamble itself records that 014 was issued twice.
+#
+# So the rule stops being a sentence and becomes a reading: the next number is
+# one above the highest this check finds.
+constant DEFECT_NUMBERED: [str]
+    [
+        "docs/work/DEFECTS.md"
+        "docs/work/DONE.md"
+    ]
+
+# The one number this record carries twice, named and dated instead of letting
+# the rule be loosened to accommodate it. It is in the record and the record is
+# not rewritten, so the exception is exact and it retires itself the day the
+# record it names stops existing (the shape of `VERDICT_FLOOR`).
+constant ISSUED_TWICE: str
+    "014"
+
+function numbering(@r: report.Report)
+    rows: [str] @ []
+
+    for path in DEFECT_NUMBERED
+        text = read_file(path)
+
+        if text.is_err()
+            report.keep_failure(
+                @r,
+                label: "records/numbering",
+                detail: "  cannot read " + path + ", and this check cannot tell whether a number\n  is issued twice without reading every file that issues one."
+            )
+            return
+
+        for row in strings.lines(text.must())
+            rows @ rows.push(row)
+
+    issued = numbers_issued(rows)
+
+    if issued.len() == 0
+        report.keep_failure(
+            @r,
+            label: "records/numbering",
+            detail: "  this check read zero defect numbers, so it would pass whatever the\n  record held. Either the entry shape moved and this reader did not follow\n  it, or the files it walks are not the files that issue numbers."
+        )
+        return
+    twice = issued_twice(issued)
+
+    if twice.len() > 0
+        report.keep_failure(
+            @r,
+            label: "records/numbering",
+            detail: "  a defect number is issued twice:\n    " + twice.join("\n    ") + "\n  The next number to issue is one above the highest here, read rather than\n  remembered: a sentence in a preamble is shared state, and two sessions\n  reading the same trunk take the same number and merge cleanly."
+        )
+    else
+        report.keep_pass(@r)
+
+# Every defect number these rows issue, in the order they issue it, with the
+# one the record carries twice left out. Split from the check so the shape can
+# be driven by literals in a test, which is `list_offences`'s division and for
+# `list_offences`'s reason: a reader of the check sees what it decides, and a
+# reader of the test sees every shape it has decided about.
+function numbers_issued(rows: [str]) -> [str]
+    out: [str] @ []
+
+    for row in rows
+        number = defect_number(row)
+
+        if number != "" && number != ISSUED_TWICE
+            out @ out.push(number)
+
+    return out
+
+function issued_twice(numbers: [str]) -> [str]
+    seen: [str] @ []
+    twice: [str] @ []
+
+    for number in numbers
+        if is_among(number, seen: seen) && !is_among(number, seen: twice)
+            twice @ twice.push(number)
+        seen @ seen.push(number)
+
+    return twice
+
+# The `NNN` of `- [ ] **NNN — title**`, or the empty string where the line is
+# not a defect item. It asks the value in hand — this row's own bytes — and
+# never how many defects the project is supposed to have.
+function defect_number(row: str) -> str
+    marker: str @ ""
+
+    if strings.starts_with(text: row, prefix: "- [ ] **")
+        marker @ "- [ ] **"
+
+    if strings.starts_with(text: row, prefix: "- [x] **")
+        marker @ "- [x] **"
+
+    if marker == ""
+        return ""
+    rest = strings.without_prefix(text: row, prefix: marker)
+
+    if rest.len() < 4
+        return ""
+    i: i64 @ 0
+
+    while i < 3
+        byte = rest[i]
+
+        if byte < '0' || byte > '9'
+            return ""
+        i @ i + 1
+
+    number = rest.slice(from: 0, to: 3)
+
+    if !strings.starts_with(text: strings.without_prefix(text: rest, prefix: number), prefix: " — ")
+        return ""
+
+    return number
+
+function is_among(needle: str, seen: [str]) -> bool
+    for one in seen
+        if one == needle
+            return true
+
+    return false
+
+# NO TRACKED FILE CARRIES A MERGE CONFLICT MARKER.
+#
+# This is the way to fail that working in parallel introduces, and the one no
+# other check here can see: a resolution left half-finished enters a commit and
+# stays, and every reader in this file — the citation walk, the English walk,
+# the list reader — takes the marker for ordinary prose and carries on. It is
+# loud the moment somebody looks and invisible until then.
+#
+# GIT IS ASKED RATHER THAN THE FILES. `git grep` reads the index in one
+# process, over exactly the paths git tracks, which is the same oracle
+# `project_files` uses and a fraction of the cost of reading every file again.
+#
+# THE PATTERN IS BUILT AND NOT WRITTEN, and that is not a flourish: an
+# instrument that looked for a marker by spelling one out would report ITSELF
+# on its first run, and the lesson a reader would take from that is that this
+# check cannot be trusted.
+function unmerged(@r: report.Report, scratch: str)
+    opening = repeat("<", 7)
+    closing = repeat(">", 7)
+    found = shell.run(
+        scratch: scratch,
+        program: "git",
+        words: ["git", "grep", "-l", "-E", "^(" + opening + "|" + closing + ") "]
+    )
+
+    if found.is_err()
+        report.keep_failure(
+            @r,
+            label: "records/unmerged",
+            detail: "  cannot ask git whether a tracked file carries a conflict marker"
+        )
+        return
+    run = found.must()
+
+    if run.code == 1
+        # git grep exits 1 when it matched nothing, which is the ordinary state
+        # of this repository and the only quiet outcome here.
+        report.keep_pass(@r)
+        return
+
+    if run.code != 0
+        report.keep_failure(
+            @r,
+            label: "records/unmerged",
+            detail: "  git grep exited " + run.code.to_str() + ", so nothing was searched:\n    " + strings.trimmed(run.err)
+        )
+        return
+    files: [str] @ []
+
+    for row in strings.lines(run.out)
+        if strings.trimmed(row) != ""
+            files @ files.push("    " + strings.trimmed(row))
+
+    report.keep_failure(
+        @r,
+        label: "records/unmerged",
+        detail: "  a tracked file carries an unresolved merge conflict:\n" + files.join("\n") + "\n  Every other check here reads the marker as prose and passes. Resolve the\n  conflict in the file, then run this suite again."
+    )
 
 # No living file names a numbered milestone.
 #
@@ -3332,3 +3635,66 @@ test "the ROADMAP's § Where we are is counted to its own ceiling"
 # replaces it, and the parameter it needed is gone from `names_something` and
 # `one_names` with it: two oracles for one question, and the cheaper one was
 # wrong on every machine but the author's.
+
+test "a removal below the record's first line is caught and one above it is not"
+    # The shape `git diff HEAD` produces, file header included — those two rows
+    # open with the same bytes as a removal and an addition, and a reader that
+    # counts them reports the header as a deleted line.
+    diffed = "diff --git a/DESIGN-LOG.md b/DESIGN-LOG.md\nindex 1111111..2222222 100644\n--- a/DESIGN-LOG.md\n+++ b/DESIGN-LOG.md\n@@ -3,3 +3,3 @@\n \n-Format: the preamble, reworded\n+Format: the preamble, reworded better\n@@ -240,3 +240,2 @@\n 2026-08-11 | a decision | reason | § | 017\n-2026-08-12 | the decision somebody deleted | reason | § | 018\n 2026-08-13 | another | reason | § | 019\n"
+    caught = removed_below(text: diffed, floor: 5)
+    assert caught.len() == 1
+    assert strings.contains(text: caught[0], needle: "the decision somebody deleted")
+
+    # And the preamble is editable on purpose: `7c2198ff` rewrote eighteen
+    # lines of DONE's and was right to.
+    assert removed_below(text: diffed, floor: 5000).len() == 0
+
+test "a hunk header gives its old line, and one this cannot read gives zero"
+    assert hunk_start("@@ -240,7 +240,9 @@") == 240
+    assert hunk_start("@@ -1 +1 @@") == 1
+
+    # The loud direction: zero is below every floor, so a header this cannot
+    # read reports every removal in its hunk rather than none.
+    assert hunk_start("@@ nothing numeric here") == 0
+
+test "a defect item gives its number, and five shapes that are not one"
+    assert defect_number("- [ ] **027 — the title**") == "027"
+    assert defect_number("- [x] **014 — repaired the same day**") == "014"
+
+    # A milestone item and a sitting item: the other two lists write their own
+    # first field in the same position, and neither issues a defect number.
+    assert defect_number("- [ ] **M-core-packages** | work | here") == ""
+    assert defect_number("- [x] **panel 131** | ratified | there") == ""
+
+    # Indented, so it is a body line and not an item — every count in this
+    # project reads the `- [ ] ` line.
+    assert defect_number("    - [ ] **027 — indented**") == ""
+
+    # Two digits and four: the width is part of the shape, because the record
+    # writes it padded and a reader sorts on it.
+    assert defect_number("- [ ] **27 — two digits**") == ""
+    assert defect_number("- [ ] **0271 — four digits**") == ""
+
+test "a number issued twice is reported once, and the record's own exception is not"
+    rows = [
+        "- [ ] **027 — one**"
+        "- [x] **028 — two**"
+        "- [x] **027 — the same number again**"
+        "- [x] **027 — and a third time**"
+    ]
+    twice = issued_twice(numbers_issued(rows))
+    assert twice.len() == 1
+    assert twice[0] == "027"
+
+    # `014` is in the record twice and the record is not rewritten, so the
+    # exception is exact rather than a loosened rule.
+    doubled = ["- [x] **014 — first**", "- [x] **014 — second**"]
+    assert numbers_issued(doubled).len() == 0
+    assert issued_twice(numbers_issued(doubled)).len() == 0
+
+test "the defect numbers this repository has issued carry no duplicate"
+    # The real files, which is the point: this check exists because one number
+    # was issued twice already, with no parallel work involved at all.
+    r: report.Report @ report.empty()
+    numbering(@r)
+    assert r.failed == 0
