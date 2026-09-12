@@ -2,7 +2,7 @@
 
 Convened 2026-09-12. Trigger: `spec/**`, design.md Part 7 item 16, and the
 architecture of the verification net. Full lane, five seats.
-Status: **provisional — author ratification pending**.
+Status: **ratified as adopted, 2026-09-12** (§ Author's verdict).
 
 ## The proposal, verbatim
 
@@ -291,3 +291,36 @@ language and documenting one invites a model to write it. The engineer's
 condition on the production check's exception table was resolved by not building
 that check at all: `suite_grammar.hero` judges the terminals and the powers,
 which are data, and nothing judges a production against the parser.
+
+## Predictions scored at M-stated-grammar's close, 2026-09-12
+
+**2, the engineer's: FALSIFIED, and its own escape clause is what came true.**
+`wc -l tests/harness/suite_grammar.hero` reads **491** against the predicted
+"over 550", and the exception rows number **0** against "at least 70". The
+prediction carried its own reading of a low number — *"if it ships with under 40
+rows, it shipped because the reverse direction was dropped, not because the
+parser matched the grammar"* — and that is exactly what happened: the
+production-versus-parser check was not built at all. The seat was wrong about
+the number and right about what a wrong number would mean.
+
+**6, the ffi-pragmatist's: CONFIRMED, by enumeration and not by derivation.**
+Every declaration shape in `examples/ledger/db/sqlite.hero` (354 lines) appears
+in the productions: `constant` and `function` members, four `@` out-parameters,
+and `owned` on a result. Its multi-line signatures are derivable because the
+notation paragraph states once that a NEWLINE inside brackets never ends a
+statement — the repair this seat's own finding bought. **Stated rather than
+overclaimed**: nothing parses the EBNF, so this was scored by enumerating the
+file's forms against the productions by hand, not by deriving it.
+
+**1, the warden's: VOID.** It was conditional on the conservative resolution
+being taken, and the author took the adopted one.
+
+**5, the ffi-pragmatist's: VOID, and the void is the seat's win.** It predicted
+that `grammar/productions` would pass green over `[ Generics ]` in
+`ExternFunction` forever. That production was dropped on the seat's own evidence,
+so the prediction has no subject. A prediction whose subject is removed BECAUSE
+of it is not a miss.
+
+**3, 4 and 7 remain open.** The two ergonomist predictions need the Part 11
+experiment, whose item now lives in `docs/work/milestones/M-thesis-harness.md`;
+the historian's needs three more surface-changing milestones.
