@@ -72,6 +72,23 @@ package is written.
     M-interpolation-verdict, and `design.md:2660` now reads *"ENTERS, ruled
     2026-09-09"* with `m-interpolated-strings` a placed tag.
 
+    **Step 1, 2026-09-13: item 5 sat (panel 135,
+    `docs/panel/135-the-form-was-cheap-and-the-reasons-under-it-were-borrowed.md`)
+    — DEFERRED AGAIN with a return condition, its three false claims struck
+    beneath the original, and its spelling corrected to `alias Env = …`**; the
+    reasoning paragraph at the top of this file still writes `Handler = alias …`,
+    which was the item's own spelling until that day and is left as written. Line
+    numbers re-measured this session, before the amendment landed: 5 `alias`
+    **:2705**, 6 doctests **:2715**, 8 traits **:2728**, 9 variant constructors
+    **:2731**, 11 the `raw` module **:2761**, 14 visibility **:2846**, 16 symmetric
+    variants **:2869**; wart 15 **:2965**, wart 16 **:2968** — every one moved again
+    since 2026-09-10, and item 5's amendment moves every number after it once
+    more, which is why the list keys by item and not by line. Found beside the
+    sitting and filed: **defect 029**, a swapped opaque handle (`sqlite3_step(db)`)
+    that builds at zero diagnostics and exits 139 — the *distinct types* door item
+    5 keeps open, owed a sitting of its own and not this milestone's to land.
+    Eight of the ledger's nine remain; item 6, doctests, is next.
+
 - [ ] **M-deferral-ledger** | the ledger widens from Part 7 to Part 8's warts, and coverage gets the answer it already has | `design.md` Part 8 warts 5, 8, 11 · `docs/panel/034` · `selfhost/mutate/`
 
     **Origin:** author decision 2026-09-10, § What production-ready means.

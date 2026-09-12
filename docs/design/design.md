@@ -2712,6 +2712,84 @@ are *on* the closure list.
    `enumeration`/`variant`), and `type` is far too common an identifier to burn. Keeping `type` free
    also leaves the door open for v2 **distinct types** (`UserId` and `PostId` both ints but not
    interchangeable), which catch a real class of error but cost conversion syntax.
+
+   **DEFERRED AGAIN, dated 2026-09-13, with a return condition — and the paragraph above is
+   corrected underneath rather than over** (panel 135, M-deferral-ledger step 1, five seats, no
+   veto; `docs/panel/135-the-form-was-cheap-and-the-reasons-under-it-were-borrowed.md`).
+   Principle 0's burden is unmet on both branches: the compiler compiles itself with no alias,
+   and no Part 11 effect is measured or measurable today — metric 3 is blind to a transparent
+   alias by construction (same type, same kill rate) and metrics 2 and 4 have no instrument.
+   *"Neither, and it waits, regardless of elegance"* (§1.0). The token case was measured rather
+   than argued: the strongest one in the tree is `examples/interpreter/run/expr.hero`, where a
+   12-token function type is spelled six times and one alias saves **48 tokens, 1.4%** of the
+   file; in `selfhost/` the most repeated function type, `(function(A) -> B)` at 9, is generic
+   and cannot be aliased at all, and the most repeated spelling of any kind, `{i64: bool}` at
+   77, is six tokens long and at most 8 in one file. The compiler seat priced it without a
+   prototype (a change to `selfhost/` is testable only through the twenty-minute rebuild a
+   sitting forbids), so its figures are counted estimates by analogy: **~140–180 code lines** on
+   the one route it would accept — the alias erased where a written type becomes an id,
+   `selfhost/check/lower.hero`, because `selfhost/check/table.hero:5-9` interns every distinct
+   type once and two ids are equal or they are not — with a new iterative cycle walk of about
+   80 beside `selfhost/resolve/cycles.hero`, 130 `DeclKind` arms in 52 files and 31 `TypeRef`
+   arms in 15 files edited, and its owed half landing on `selfhost/print/fmt.hero` (room 3 of
+   1150), `selfhost/ast.hero` (room 5 of 505) and `selfhost/check/walk.hero` (room 11 of 1870).
+   It deletes nothing (§1.7), and it retires in silence the parser's refusal of `T??` that
+   `selfhost/check/table.hero:66-67` relies on, unless the checker re-earns it.
+
+   **Three of the paragraph's claims are false and are struck here, the number kept.** *"Go
+   shipped in 2012 and added transparent type aliases in 1.9, in 2017. Five years, nobody
+   died"*: the dates hold (go1 2012-03-28, go1.9 2017-08-24), but a general alias `=>` was
+   merged for Go 1.8 and **reverted on 2016-11-04**, and 1.9's warrant was gradual code repair
+   when moving a type between packages — not brevity, which is what this paragraph argues
+   from. *"The only purely additive thing in the language"*: additive for programs, not for
+   tools — Go's own design document lists ten tools the form touched, its checker printed the
+   expansion in errors for six years, and the 2024 repair (`types.Alias`) broke
+   controller-tools, mockery and govulncheck; a reserved word is not additive either, and
+   `alias` is not reserved today (`selfhost/keywords.hero`, no arm; zero identifier hits in
+   `selfhost/`, `examples/`, `tests/golden/`), so the milestone that lands it reserves the word
+   in the same commit as the spec text. *"Call it `alias`, not `type`"* is kept, but as a
+   deliberate departure and not a precedent: Pascal (ISO 7185 §6.4.1), Modula-2 (§6.3),
+   Oberon-2 (App. A, *"Ta is declared to equal Tb in a type declaration of the form
+   Ta = Tb"*), Go, Rust and Haskell all spell the synonym with the word that also declares new
+   types. And the spelling `Env = alias` above is corrected to **`alias Env = {str: i64}`**,
+   because spec § 4's first sentence, *every top-level line starts with its kind*, is a rule
+   the form obeys rather than a habit.
+
+   **What the sitting settled about the form, so the sitting that admits it need not
+   re-derive it.** Transparent, *one type everywhere* — the word reaches the constructor and
+   `::` too, so `alias P = Point` admits `P(x: 1, y: 2)` and `P::x`, or the spec beats the
+   compiler. **An error writes both forms**, `Env = {str: i64}`, and the one shipped,
+   default-on precedent is Swift's `'Stride' (aka 'Int')`; Go, Kotlin and TypeScript each paid
+   in their trackers for choosing one form. **An alias never names itself, even through
+   another**: `alias Tree = [Tree]` is a compile error and never a loop, and the seat that read
+   only the specification found the text as drafted *"could equally refuse or loop"*, which is
+   the one silence §1.12 cannot leave. A chain is legal and what an error writes after `=` has
+   no alias left in it. No generics — `"alias" ident "=" Type NEWLINE` carries none, and § 9
+   already says *on functions only*. Not a `Member` of an `extern` group: it carries no C name
+   for clang to check, and the FFI seat compiled that it changes nothing at the boundary (one
+   typedef for two externs today, the alias owing that C byte for byte if it resolves to its
+   target's type id and never reaches `content_key`). Two canonical spellings of one type then
+   exist, so §4.15's sentence and `selfhost/print/types.hero:4-6` change with it, and
+   `selfhost/print/fmt.hero` is split or its ceiling raised before the arm is written. **The
+   payable text costs +26 vendored net**: the sentence and the production merged at § 4 after
+   *every top-level line starts with its kind*, paid by removing the kinds sentence the
+   `Declaration` production already states (**−43**) and § 3's *No aliasing exists anywhere*
+   (**−6**), which is the one sentence a reader of `alias` will collide with; a draft's real
+   count is unrun until a landing commit runs `--refresh`.
+
+   **Return condition, falsifiable and naming instruments in this tree — any one of three.**
+   (a) `heroes measure` on a non-generic type spelling reads **12 or more tokens** and `grep -c`
+   finds it **10 or more times in one file** of `selfhost/` or `examples/`, today's maximum
+   being 6. (b) A commit in `selfhost/` whose diff changes one structural type spelling at
+   **8 or more sites** — Go's own warrant, scored by `git log -p`. (c) Part 7 item 10's sitting
+   at M-core-packages finds a header whose width vocabulary needs a name, which makes the form
+   compiler-need rather than convenience — and that sitting, not this one, decides item 10.
+   Registered as an observation that pays nothing under §1.6: when metric 2 first runs, a
+   specification with `alias` beats one without by fewer than 1 task in 20 on first-try
+   compile rate. **What the boundary actually asked for is the OTHER door this paragraph keeps
+   open**: the seat that compiled the C found `sqlite3_step(db)` for `sqlite3_step(statement)`
+   building at zero diagnostics and exiting 139, filed as defect 029, and a transparent alias
+   catches none of it.
 6. **Doctests** — v2, once the `test` mechanism is proven.
 7. **String interpolation** — **ENTERS**, ruled 2026-09-09 (`M-interpolation-verdict`; panel 121,
    ratified the same day; the spelling the author's): `f"line {n}: {word}"`, the brace active only
