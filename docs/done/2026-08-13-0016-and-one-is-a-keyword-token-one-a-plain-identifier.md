@@ -1,0 +1,1 @@
+- [x] The record | M1.1 | `for` and `print`: one is a keyword token, one a plain identifier. Which is which, and why does the parser care about the difference? | spec/reserved-words.md § keywords | keywords carry structure; identifiers are just names

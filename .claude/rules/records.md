@@ -15,7 +15,7 @@ What each rule cost to learn is in `docs/contract/case-law.md`, cited as
 
 ## A record is never rewritten
 
-`docs/panel/`, `docs/journal/`, `docs/measurements/`, `docs/work/DONE.md`,
+`docs/panel/`, `docs/journal/`, `docs/measurements/`, `docs/done/`,
 `docs/book/beats/`, `docs/contract/`, `tests/golden/`, `DESIGN-LOG.md`, every
 commit subject and the twelve legacy tags are append-only. Where a sentence in
 one has since been falsified, the correction is **added underneath**, with its
@@ -48,7 +48,8 @@ order. **No directory index**, because an index is a second place where truth
 lives and the only tabulated one here drifted for nine closes in silence.
 
 Rotated so far: `docs/book/beats.md` → `docs/book/beats/` (2026-09-12, 114
-entries) and `DESIGN-LOG.md` → `docs/log/` (2026-09-12, 620 entries).
+entries), `DESIGN-LOG.md` → `docs/log/` (620) and `docs/work/DONE.md` →
+`docs/done/` (491), all three on 2026-09-12.
 `ROTATED` in `tests/harness/suite_records.hero` is the live list.
 
 ## And the record says whose idea it was
@@ -132,7 +133,7 @@ permanently, so that name is never reused (CL-033).
 
 A conversation whose work is questions, with no file of code, spec or design
 modified, **writes no note of its own** (CL-053). What it settled is an entry in
-`docs/work/DONE.md`; what it left open is an item in `docs/work/DECIDE.md` or
+`docs/done/`; what it left open is an item in `docs/work/DECIDE.md` or
 `docs/work/SCHEDULED.md`; a concept it explained is an entry in
 `docs/glossary/`; a question worth re-asking is a line in `docs/learn/LEARN.md`;
 a change to the language is a panel; a decision taken is a `docs/log/` entry.

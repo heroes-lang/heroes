@@ -1,0 +1,1 @@
+- [x] The record | tooling | LANDED at M1 (early, commit fe33560): `heroes measure`, two vendored BPE tables, zero deps. Stale item ticked in the 2026-08-04 debrief | panel 011 | the rule 'measured-only' is unenforceable until this exists

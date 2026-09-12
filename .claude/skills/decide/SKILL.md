@@ -48,7 +48,7 @@ answer.** No retrieval, no walkthrough, no drill, no glossary. If the author ask
 5. **Apply immediately, in the same session.** Spec, design.md or CLAUDE.md
    amendment; a `docs/log/` entry; the item ticked **with the verdict written
    into it** and **cut from `docs/work/DECIDE.md`, pasted at the end of
-   `docs/work/DONE.md`**; one commit. A decision recorded and not applied is the
+   a new file in `docs/done/`**; one commit. A decision recorded and not applied is the
    same open question with more paperwork.
 
    **The move is not tidying, it is this step.** The rule was written in three
