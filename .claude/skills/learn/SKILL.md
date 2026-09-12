@@ -63,7 +63,7 @@ in the message itself.
 - **Wrong**: give the answer, then the walkthrough — before → after on a real
   example from this repository, and the commit that made it so.
 - **A genuinely new explanation** — one the author needed and the record does not
-  hold — is distilled into `docs/glossary/NNN-<concept>.md` (numbered in birth
+  hold — is distilled into `docs/ref/glossary/NNN-<concept>.md` (numbered in birth
   order, English, canonical analogies, origin cited, never deleted) and the
   glossary index is updated.
 - Tick the items in `LEARN.md` and leave them checked; the list is also the

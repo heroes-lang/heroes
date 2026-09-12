@@ -4,7 +4,7 @@
  * This spike carried the author's first uncued prediction: draw the
  * control-flow graph before reading the code, then compare. Done at M-day-zero;
  * the divergence and its lesson live in docs/journal/000-setup.md §3 and
- * docs/glossary/000-basic-block.md.
+ * docs/ref/glossary/000-basic-block.md.
  * ============================================================================
  *
  * Heroes source:
