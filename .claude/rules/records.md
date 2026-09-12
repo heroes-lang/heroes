@@ -1,7 +1,6 @@
 ---
 paths:
   - "docs/**"
-  - "DESIGN-LOG.md"
   - "CLAUDE.md"
   - ".claude/**"
   - "site/README.md"
@@ -16,7 +15,8 @@ What each rule cost to learn is in `docs/records/contract/case-law.md`, cited as
 ## A record is never rewritten
 
 `docs/panel/`, `docs/records/journal/`, `docs/measurements/`, `docs/records/done/`,
-`docs/records/book/beats/`, `docs/records/contract/`, `tests/golden/`, `DESIGN-LOG.md`, every
+`docs/records/book/beats/`, `docs/records/contract/`, `tests/golden/`,
+`docs/design/DESIGN-LOG.md`, every
 commit subject and the twelve legacy tags are append-only. Where a sentence in
 one has since been falsified, the correction is **added underneath**, with its
 date: a measurement that was right when it was taken is history, and a record
