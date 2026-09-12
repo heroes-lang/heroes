@@ -8,14 +8,14 @@ The status and the chain. Why the table looks the way it does is
 
 | | |
 |---|---|
-| **Current milestone** | **none open.** M-declared-thresholds closed on 2026-09-12; nothing is open on the trunk or in a lane |
+| **Current milestone** | **M-deferral-ledger**, opened 2026-09-13 at step 1 on the trunk: panel 135 sat on Part 7 item 5, `alias`, the first of the ledger's thirteen — deferred again, this time with a date and a return condition; eight of Part 7's nine remain, then Part 8's warts and coverage |
 | **Last closed** | **M-declared-thresholds**, 2026-09-12, `m-declared-thresholds` ([052](journal/052-declared-thresholds.md)) — the contract was 1806 tokens over a ceiling that reported nine to spare, and eight floors had gone slack · before it **M-reflection-verdict** ([051](journal/051-reflection-verdict.md)) and **M-stated-grammar** ([050](journal/050-stated-grammar.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
 | Milestones closed | **53** of 76 · **53** tags matching `m*`, the legacy `m0`-`m8` included |
 | The compiler | **59,511** lines of Heroes in **204** modules (`find selfhost -name '*.hero'`) · the seed **790,756** lines of C |
 | The spec | **5655** on the vendored ranks and **7531** on the reader's own, against a ceiling of 8192 — unmoved by M-declared-thresholds, which spent none of it |
 | The contract | **7402** on the reader's own against a ceiling of **12288**, judged on `claude-opus-5` since 2026-09-12. It was judged on OpenAI's vendored table until then, and was **1806 over** while `measure` printed nine to spare |
-| Records | sittings **132** · journals **53** · milestone files **46** · entries: `docs/records/log/` **627**, `docs/records/done/` **494**, `docs/records/book/beats/` **118** · **open defects 0** |
-| Waiting on the author | **0** decisions. Panel 134 was answered the evening it sat, as 131, 132 and 133 were |
+| Records | sittings **133** · journals **53** · milestone files **46** · entries: `docs/records/log/` **627**, `docs/records/done/` **494**, `docs/records/book/beats/` **118** · **open defects 1** (029, filed 2026-09-13 beside panel 135: a swapped opaque handle compiles clean and segfaults) |
+| Waiting on the author | **1** decision: panel 135's ratification, in `docs/work/DECIDE.md`. Panel 134 was answered the evening it sat, as 131, 132 and 133 were |
 
 **Re-measured 2026-09-12 at M-declared-thresholds' close, not carried.** `records`
 is **23** checks, the compiler's own tests **641**, the net's own **149**.
@@ -94,7 +94,7 @@ and why one overtook another are in `docs/roadmap/scheduling.md`.
 | 51 | **M-stated-grammar** | done 2026-09-12 | `m-stated-grammar` | [050](journal/050-stated-grammar.md) | every syntactic form stated once, in Wirth's notation, inside the specification beside the prose that governs it, and `heroes grammar` for the half the compiler can print from its own tables · **§1.1** |
 | 52 | **M-reflection-verdict** | done 2026-09-12 | `m-reflection-verdict` | [051](journal/051-reflection-verdict.md) | reflection refused at run time and as a general tag; a field's name becomes a name the checker resolves · **scheduled, no warrant** |
 | 53 | **M-declared-thresholds** | done 2026-09-12 | `m-declared-thresholds` | [052](journal/052-declared-thresholds.md) | every ceiling and floor says which way it may move, and something notices when it should have moved and did not · **§1.1** |
-| 54 | **M-deferral-ledger** | scheduled | — | — | every Part 7 item with no milestone gets a dated verdict or a return condition |
+| 54 | **M-deferral-ledger** | **OPEN** | — | — | every Part 7 item with no milestone gets a dated verdict or a return condition |
 | 55 | **M-cleanup-verdict** | scheduled | — | — | the ruling on a scope-bound release — `defer` or another form — for the two obligations `owned` and `lease` put on every path · a decision, not a feature |
 | 56 | **M-check-completeness** | scheduled | — | — | what `heroes check` accepts, `heroes build` compiles — through a generic too · scheduled, no warrant
 | 57 | **M-arm-platform** | scheduled | — | — | the fourth real machine: arm64 Linux, where a container runs and where `char` is unsigned · **§1.12** |
