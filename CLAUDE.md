@@ -339,6 +339,6 @@ these rules reach the sessions that need them and cost nothing in the others.
 | the site's copy and every outward-facing text | `site/CLAUDE.md` |
 
 The skills are the process: `/step` (its protocol and the milestone-close
-checklist), `/decide`, `/learn`, `/panel`, `/where`. The seats are
-`.claude/agents/`. **Section numbers `§ 1` to `§ 15` never change** (CL-069
+checklist), `/decide`, `/learn`, `/panel`, `/where`, and `/p` (how far this
+chat's own work is). The seats are `.claude/agents/`. **Section numbers `§ 1` to `§ 15` never change** (CL-069
 carries the count of citations that would break in silence).
