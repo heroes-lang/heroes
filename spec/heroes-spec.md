@@ -2,6 +2,15 @@
 
 Heroes is a small compiled language. This document is the whole language.
 
+A production is written in Wirth's notation: `=` defines and `.` ends, `|`
+separates alternatives, `[ ]` encloses what is optional, `{ }` what repeats zero
+or more times, `( )` groups. A quoted word stands for itself; `ident`,
+`integer`, `float`, `string`, `character` and `piece` are what the lexer builds,
+and `NEWLINE`, `INDENT` and `DEDENT` come from the indentation. NEWLINE ends a
+statement, and a statement whose last part is a block ends with that block
+instead. Inside `(` `[` `{` a NEWLINE never ends a statement: where it
+separates, a production writes it; elsewhere it may fall between any two tokens.
+
 ## 1. Files and layout
 - One file is one module; the file you compile holds `function main()`.
 - `use geom` binds `geom` to `geom.hero`'s declarations, written
@@ -17,6 +26,9 @@ Heroes is a small compiled language. This document is the whole language.
   compile error. No braces, no semicolons, no parentheses around conditions.
 - Syntax is ASCII-only; comments may contain any UTF-8, strings any but a raw
   carriage return.
+
+    File = { NEWLINE } { Use | Declaration } .
+    Use  = "use" ident { "/" ident } [ "as" ident ] NEWLINE .
 
 ## 2. Literals
 - A literal takes the type its context asks for — `b: u8 @ 255`, and `b + 1` is a
@@ -52,6 +64,12 @@ Heroes is a small compiled language. This document is the whole language.
 - A record or variant holds its fields **by value**, so it may contain itself only
   through `[T]` or `{K: V}`: `children: [Node]` is a tree, `child: Node` has no size.
 
+    Type     = Prefix { "[" integer "]" } [ "?" ] .
+    Prefix   = ident [ "." ident ] | "[" Type "]" | "{" Type ":" Type "}"
+             | "(" ")" | "(" "function" TypeArgs "->" Type ")" .
+    TypeArgs = "(" [ TypeArg { "," TypeArg } ] ")" .
+    TypeArg  = Type | ident ":" Type .
+
 ## 4. Top-level declarations
 Every top-level line starts with its kind. A `constant`'s name takes `: type`;
 a `function`'s parameter list attaches to its name; `record` and `variant`
@@ -81,6 +99,17 @@ Declaration order never matters; mutual recursion needs no forward
 declarations. There are no mutable globals. Constants use SCREAMING_CASE, and
 a written body computes over literals and other constants.
 
+    Declaration = "constant" ident ":" Type Block
+                | "function" ident [ Generics ] Params [ "->" Type ] Block
+                | "record" ident Fields
+                | "variant" ident INDENT { Case } DEDENT
+                | "test" string Block
+                | Extern .
+    Params      = "(" [ Param { "," Param } ] ")" .
+    Param       = [ "@" ] ident ":" Type .
+    Fields      = INDENT { ident ":" Type NEWLINE } DEDENT .
+    Case        = ident NEWLINE [ Fields ] .
+
 ## 5. Bindings
 ```
 x = 5              # immutable binding, type inferred
@@ -99,6 +128,16 @@ which a `()` line refuses: it stands alone. A `_` never drops a `T?`: not
 OUTERMOST type, so a `[T?]`, a record holding one, or a type parameter that
 arrived fallible is still dropped.
 Shadowing is a compile error: a `use` binds its name for the whole file, so nothing else in the file may take it.
+
+    Block     = INDENT { Statement } DEDENT .
+    Statement = ident "=" Expression NEWLINE
+              | ident ":" Type ( "@" | "=" ) Expression NEWLINE
+              | Place "@" Expression NEWLINE
+              | "return" [ Expression ] NEWLINE
+              | "break" NEWLINE | "continue" NEWLINE
+              | "assert" Expression NEWLINE
+              | While | For | Expression NEWLINE .
+    Place     = ident { "." ident | "[" Expression "]" } .
 
 ## 6. Failure: `T?`
 A `T?` is a `T` or an error: `ok(v)` or `fail(code:, msg:)`; `ok()` is the `()?`. Codes are stable
@@ -142,6 +181,28 @@ ordering one aborts, in `< <= > >=` and in `sort`.
 Overflow aborts at every width. Integer division by zero aborts. `/` and `%` truncate
 toward zero, so `-7 / 3` is `-2` and `-7 % 3` is `-1`.
 
+    Expression = Or .
+    Or         = And { "||" And } .
+    And        = Compare { "&&" Compare } .
+    Compare    = BitOr { ( "==" | "!=" | "<" | "<=" | ">" | ">=" ) BitOr } .
+    BitOr      = BitXor { "|" BitXor } .
+    BitXor     = BitAnd { "^" BitAnd } .
+    BitAnd     = Shift { "&" Shift } .
+    Shift      = Sum { ( "<<" | ">>" ) Sum } .
+    Sum        = Product { ( "+" | "-" ) Product } .
+    Product    = Unary { ( "*" | "/" | "%" ) Unary } .
+    Unary      = ( "-" | "!" | "~" ) Unary | Postfix .
+    Postfix    = Primary { "." ident [ Args ] | "::" ident | Args
+               | "[" Expression "]" | "?" } .
+    Primary    = integer | float | string | character | Interp | ident
+               | "true" | "false" | "nullptr" | "???" | "fail"
+               | "(" Expression ")" | "[" [ Expression { Sep Expression } ] "]"
+               | "{" [ Entry { Sep Entry } ] "}" | "." ident [ Args ]
+               | If | Match .
+    Entry      = Expression ":" Expression .
+    Sep        = "," | NEWLINE .
+    Interp     = piece { Expression piece } .
+
 ## 8. Control flow
 `match` is the only destructuring construct:
 ```
@@ -162,6 +223,15 @@ value = match e
 `if cond` / `else if` / `else` take only `bool` — there is no truthiness.
 Loops: `while cond` and `for x in xs`, over an array or a `range` (section 11);
 `break` and `continue` exist.
+
+    While   = "while" Expression Block .
+    For     = "for" ident "in" Expression Block .
+    If      = "if" Expression Block { "else" "if" Expression Block } [ "else" Block ] .
+    Match   = "match" Expression INDENT { Arm } DEDENT .
+    Arm     = Pattern { "|" Pattern } "=>" ( Inline | Block ) .
+    Inline  = ( Expression | "return" [ Expression ] | "break" | "continue"
+              | "assert" Expression ) NEWLINE .
+    Pattern = "." ident [ ident ] | "_" | [ "-" ] ( integer | string | character ) .
 
 ## 9. Functions and calls
 - Record construction is a call with field names, always mandatory:
@@ -188,6 +258,10 @@ Loops: `while cond` and `for x in xs`, over an array or a `range` (section 11);
   context asks for; a call that says neither is an error. `xs.map(double)` takes
   both from `double`'s signature.
 - Recursion too deep aborts.
+
+    Args     = "(" [ Arg { "," Arg } ] ")" .
+    Arg      = [ ident ":" ] [ "@" ] Expression .
+    Generics = "<" ident { "," ident } ">" .
 
 ## 10. Strings, arrays, maps
 `s[i]` yields a `u8`; iterate characters with
@@ -292,3 +366,11 @@ name a **package** instead of a library: `extern "raylib.h" package "raylib"`
 asks the system where its headers and libraries are and what else it needs. A
 package answering with anything this compiler does not pass on is refused,
 naming what it said.
+
+    Extern = "extern" string [ ( "link" | "package" ) string ] NEWLINE
+             INDENT { Member } DEDENT .
+    Member = "function" ident "(" [ CParam { "," CParam } ] ")"
+               [ "->" Type [ "owned" ident ] ] NEWLINE
+           | "constant" ident ":" Type NEWLINE
+           | "record" ident [ "tag" ident ] [ "partial" ] Fields .
+    CParam = [ "@" ] ident ":" Type [ "owned" ident ] .
