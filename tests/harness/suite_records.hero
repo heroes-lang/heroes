@@ -1070,22 +1070,17 @@ function selects_suffix(entry: str, present: [str]) -> bool
 # `selfhost/emit/ffi` and is a partial FILE name, so the test is a plain prefix
 # and not a tree.
 function rules(@r: report.Report, present: [str])
-    listed = shell.run(
-        scratch: ".",
-        program: "git",
-        words: ["git", "ls-files", ".claude/rules"]
-    )
-
-    if listed.is_err()
-        report.keep_failure(@r, label: "records/rules", detail: "  cannot list `.claude/rules`")
-        return
     dead: [str] @ []
     globs: i64 @ 0
 
-    for rule in strings.lines(listed.must().out)
-        if !strings.ends_with(text: rule, suffix: ".md")
+    # The walk is already in hand, so this asks nobody: a `shell.run` here would
+    # spend a process AND write `stdout`, `stderr` and a listing into whatever
+    # directory it was given, which is what the first draft did to the repository
+    # root.
+    for rule in present
+        if !strings.starts_with(text: rule, prefix: ".claude/rules/") || !strings.ends_with(text: rule, suffix: ".md")
             continue
-        text = read_file(strings.trimmed(rule))
+        text = read_file(rule)
 
         if text.is_err()
             dead @ dead.push("    cannot read " + rule)
