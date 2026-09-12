@@ -39,7 +39,7 @@ line, not a file, and `records/lists` goes red on a wrong resolution rather than
 letting one through.
 
 *******************************************************************************
-**OPEN: 360**
+**OPEN: 364**
 
 - [ ] **M-interpolated-strings, walkthrough** | Read `selfhost/lex_interp.hero` and say, before opening `scan.hero`, how a `}` inside a map literal in a hole is told apart from the `}` that closes the hole, and where the number it is compared against comes from | `selfhost/lex_interp.hero` · `selfhost/state.hero` § Emitting | the skipping scan the sitting priced is free because bracket depth was already counted for the layout rule
 
@@ -1919,5 +1919,21 @@ letting one through.
 
     **Origin:** M-rotated-records close, 2026-09-12. This is CL-069's shape one
     level down, and the same answer.
+
+- [ ] **M-stated-grammar, the premise** | `design.md` Part 7 item 16 said variant construction was unspecified, and `spec § 9` had stated it since the day before. No instrument reads a design.md sentence against the spec. Say what kind of instrument COULD, and why the repository has none — in one sentence about what a sentence in Part 7 is allowed to be about.
+
+    **Origin:** M-stated-grammar close, 2026-09-12, panel 133's llm-ergonomist.
+
+- [ ] **M-stated-grammar, the two spellings** | `grammar/powers` reads `binary_op`'s arms out of the source as text and compares them to what `heroes grammar` prints. Panel 067's defect was `.percent => .add`. Say whether that check catches it, and why — then say which check does.
+
+    **Origin:** M-stated-grammar close, 2026-09-12. Falsified both ways that day; the answer is in `tests/harness/suite_grammar.hero`'s comment on `powers`.
+
+- [ ] **M-stated-grammar, the ratio** | The productions cost +1134 on the vendored tables and +1815 on the reader's own, where the whole document sits at 1.26. Say why a grammar's ratio is higher than prose's, and what that means for anyone estimating a spec amendment from `heroes measure` alone.
+
+    **Origin:** M-stated-grammar close, 2026-09-12, the ledger's 69th row.
+
+- [ ] **M-stated-grammar, the extractor** | The command's production reader dropped every continuation line and the suite passed, because the suite had a reader of its own. Say what changed so that it could not happen again, and name the general rule that change is an instance of.
+
+    **Origin:** M-stated-grammar close, 2026-09-12.
 
 *******************************************************************************

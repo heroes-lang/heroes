@@ -33,16 +33,16 @@ with what each one measured in the git history and in `DESIGN-LOG.md`):
 
 | | |
 |---|---|
-| **Current milestone** | **M-stated-grammar** — **OPEN**, row 75: the productions enter the specification, and `heroes grammar` prints the half a compiler can derive. Beside it **M-reflection-verdict**, worked in another lane since 2026-09-11 with its row left `scheduled`, which § The chain has allowed since 2026-09-12 |
-| **Last closed** | **M-rotated-records**, 2026-09-12, `m-rotated-records` ([049](journal/049-rotated-records.md)) — the records became directories and the files they were stay as maps · before it **M-named-callbacks** ([048](journal/048-named-callbacks.md)) and **M-labelled-types** ([047](journal/047-labelled-types.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
-| Milestones closed | **50** of 75 · **49** milestone tags, the legacy `m0`-`m8` included |
-| The compiler | **58,665** lines of Heroes in **199** modules (`find selfhost -name '*.hero'`) · the seed **790,756** lines of C |
-| The spec | **4430** on the vendored ranks, unchanged by this milestone, which spent no spec token · the real count is `heroes measure --refresh`'s and was last taken 2026-09-11 |
-| Records | sittings **131** · journals **50** · milestone files **44** · entries: `docs/records/log/` **621**, `docs/records/done/` **491**, `docs/records/book/beats/` **115** · **open defects 0** |
-| Waiting on the author | **1** decision: panel 133's ratification. The ceiling question it queued was answered the same day, 8192 by author decision |
+| **Current milestone** | **none open on the trunk.** **M-reflection-verdict** is worked in another lane since 2026-09-11 with its row left `scheduled`, which § The chain has allowed since 2026-09-12 |
+| **Last closed** | **M-stated-grammar**, 2026-09-12, `m-stated-grammar` ([050](journal/050-stated-grammar.md)) — every form stated once, beside the prose that governs it · before it **M-rotated-records** ([049](journal/049-rotated-records.md)) and **M-named-callbacks** ([048](journal/048-named-callbacks.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
+| Milestones closed | **51** of 75 · **50** milestone tags, the legacy `m0`-`m8` included |
+| The compiler | **59,155** lines of Heroes in **202** modules (`find selfhost -name '*.hero'`) · the seed **790,756** lines of C |
+| The spec | **5655** on the vendored ranks and **7531** on the reader's own, against a ceiling of 8192 raised by author decision this day so the grammar's productions could go inside it |
+| Records | sittings **131** · journals **51** · milestone files **45** · entries: `docs/records/log/` **624**, `docs/records/done/` **493**, `docs/records/book/beats/` **116** · **open defects 0** |
+| Waiting on the author | **0** decisions. Panel 133's was answered the day it was filed: the ceiling rises to 8192 |
 
-**Re-measured 2026-09-12 at M-rotated-records' close, not carried.** `records` is
-**20** checks, the net's own tests **137**, and the suite reads 23 s against 17.7 s on 2026-09-06, over 1,227 files more.
+**Re-measured 2026-09-12 at M-stated-grammar's close, not carried.** `records`
+is **21** checks, the net's own tests **145**, and `grammar` is the twentieth suite.
 
 ---
 
@@ -237,7 +237,7 @@ and why one overtook another are under the table, in § Who scheduled what.
 | 72 | **M-compatibility-promise** | scheduled | — | — | the paragraph `1.0.0` rests on, and the suite that makes a broken promise red · CLAUDE.md §14 |
 | 73 | **M-publication-gate** | scheduled | — | — | the last gate before anything goes outward · CLAUDE.md §14 |
 | 74 | **M-rotated-records** | done 2026-09-12 | `m-rotated-records` | [049](journal/049-rotated-records.md) | the records become directories, one entry per file and one milestone per file, and the file that held each stays behind as a map so every citation still resolves · CLAUDE.md §14 |
-| 75 | **M-stated-grammar** | **OPEN** | — | — | every syntactic form stated once, in Wirth's notation, inside the specification beside the prose that governs it, and `heroes grammar` for the half the compiler can print from its own tables · **§1.1** |
+| 75 | **M-stated-grammar** | done 2026-09-12 | `m-stated-grammar` | [050](journal/050-stated-grammar.md) | every syntactic form stated once, in Wirth's notation, inside the specification beside the prose that governs it, and `heroes grammar` for the half the compiler can print from its own tables · **§1.1** |
 
 Three closed milestones have no tag of their own because they were parents or
 sub-steps: **M-checker-core**, **M-data-declarations** and **M-rich-diagnostics**

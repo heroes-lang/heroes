@@ -560,7 +560,7 @@ HERO_STR_STATIC(hero_str_647a5e1d, "An addition needs a named removal or a pre-r
 HERO_STR_STATIC(hero_str_22980fc9, "prediction (panel 012). ");
 HERO_STR_STATIC(hero_str_1decd800, "Headroom: ");
 HERO_STR_STATIC(hero_str_45293617, " against the contract's own ");
-HERO_STR_STATIC(hero_str_3b256855, ", which is a ceiling and not a pin: the repair for crossing it is to move a story into docs/contract/case-law.md, never a bigger number.");
+HERO_STR_STATIC(hero_str_4011a92c, ", which is a ceiling and not a pin: the repair for crossing it is to move a story into docs/records/contract/case-law.md, never a bigger number.");
 HERO_STR_STATIC(hero_str_452e9c7c, " against the ");
 HERO_STR_STATIC(hero_str_2c5ebfc7, " ceiling \342\200\224 but the FFI floor mortgages ");
 HERO_STR_STATIC(hero_str_54314e0d, " of it (panel 030 R3), so what is measured against the ceiling is ");
@@ -58638,7 +58638,7 @@ bb2:
 #line 58639 "main.c"
     hero_str_decref(t63);
 #line 259 "selfhost/cli/measure.hero"
-    t15 = HERO_STR_LIT(hero_str_3b256855);
+    t15 = HERO_STR_LIT(hero_str_4011a92c);
 #line 259 "selfhost/cli/measure.hero"
     t16 = hero_str_concat(t14, t15);
 #line 259 "selfhost/cli/measure.hero"
