@@ -75,42 +75,24 @@ bigger tree is a bigger number.
 Landed in this milestone's own steps: the site's ceiling derived rather than
 typed, `suite_layout`'s ceiling table proved from the table instead of two
 incised numbers, `WHERE_CEILING` 15 → 32 with its tautological assert removed,
-and two dead comments repaired.
+two dead comments repaired, the contract moved onto `claude-opus-5` at a ceiling
+of 12288 with a +50 delta gate, and every counting floor checked from both sides
+with eight re-based. **Closed 2026-09-12**, journal
+[052](../../records/journal/052-declared-thresholds.md).
+
+Carried forward: `suite_runtime`'s three floors, which are read in composite
+conditions over one sweep.
+
+## What is closed
+
+All three items this milestone opened were closed by it, on 2026-09-12, and the
+record is
+`docs/records/done/2026-09-12-2310-m-declared-thresholds-three-items-closed-by-their-own-milestone.md`.
+The contract moved to the reader's tokeniser at a ceiling of 12288; the delta
+gate landed in the same commit and fired on that commit's own edit; and the
+floors are checked from both sides, with eight re-based to today's count.
 
 *******************************************************************************
-**OPEN: 3**
+**OPEN: 0**
 
-- [ ] **M-declared-thresholds** | the contract is judged on the vendored tokenisers while §1.6 has ruled those are not the reader's — move CLAUDE.md to `claude-opus-5` through `count_tokens` and set the ceiling on that scale | `tests/harness/suite_spec.hero` `CONTRACT_CEILING`, `selfhost/measure/pinned.hero`, `selfhost/cli/measure.hero`
-
-    **Origin:** author instruction 2026-09-12, to consider taking CLAUDE.md to
-    8K as well. Changing the instrument without changing the number is a TIGHTENING,
-    not a neutral move: the spec's real/vendored ratio is 7531/5655, so the
-    contract's 5491 vendored is likely near 7300 real and 5500 would be a breach
-    the day it landed. 8192 is the instructed number; it is confirmed against the
-    measurement first, because a ceiling born violated is the error of 1500 and
-    4096 both. Two constants at one value, never one shared constant, or the next
-    spec raise moves the contract in silence. `run_refresh` today refuses every
-    file but the spec, with a test pinning that refusal — extending it to two
-    documents is the panel's question, not a quiet edit.
-- [ ] **M-declared-thresholds** | the raise takes away the contract's only alarm, so the delta gate design.md §1.6 keeps queued should land with it | `docs/design/design.md:355`, `tests/harness/suite_spec.hero`
-
-    **Origin:** 2026-09-12. The spec's ceiling has a forcing function behind it —
-    every addition owes a named removal or a registered prediction. The contract
-    has none: it is amended by author instruction and is deliberately a ceiling
-    and not a pin, so today its 9 tokens of room are what does the work of a
-    payment rule. At 8192 that alarm rings ~1700 tokens later. A delta gate is
-    level-independent, so it survives every future raise, and it watches the
-    movement instead of the level.
-- [ ] **M-declared-thresholds** | nothing notices a floor that has stopped catching; a ratchet is owed in the direction opposite `DECIDED`'s | `tests/harness/suite_layout.hero` `DECIDED`, and the floors listed above
-
-    **Origin:** 2026-09-12, from the census in this file. Raising the twenty
-    numbers today repairs them until the tree grows again — the shape `golden.rs`
-    already paid for, *"a floor at 60, which was a number from when there were
-    sixty"*. The open design question is the REGISTER: a table like `DECIDED`, or
-    discovery by reading the constants, or each floor declaring the function that
-    re-measures it beside itself. That choice decides whether the mechanism
-    survives or becomes another list nobody updates. `VERDICT_FLOOR`, `FFI_FLOOR`
-    and `clang_floor.hero`'s `FLOOR` are excluded and the reasons are in the plan:
-    they are an applicability threshold, a token reserve and a minimum version,
-    none of them a count.
 *******************************************************************************
