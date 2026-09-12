@@ -457,3 +457,23 @@ one step — and *go* took the other branch: the question is re-briefed and re-s
 So the milestone stays open on one question, deliberately, and the row it will
 eventually write rests on evidence about derivation rather than evidence about
 display.
+
+## Predictions scored, 2026-09-12, at M-reflection-verdict's close
+
+Measured at the close and not recalled. Where a prediction's subject was removed
+by this milestone's own ruling it is **VOID**, which is not a miss: panel 133's
+close set that precedent the same week, and a seat whose evidence removes the
+thing it predicted about has won rather than lost.
+
+| seat | prediction | verdict |
+|---|---|---|
+| compiler-engineer | a landed sixth-option walk adds ≥ 250 code lines to `selfhost/emit/` and moves `DECIDED.len()` off 18 | **VOID** — the walk was withdrawn on this seat's own three measurements, so its subject does not exist |
+| compiler-engineer | `struct HeroDesc` stays at **5** members and no emitted record gains a tag word | **CONFIRMED** — five members, counted in `runtime/heroes_runtime.h` today |
+| compiler-engineer | `selfhost/keywords.hero` is still **21** entries and the contextual set still **6** | **CONFIRMED** — 21 `=> ok(.kw_` arms, and all six words still matched by text in `selfhost/parse/` |
+| spec-warden | a landed derived-rendering sentence leaves `structural.hero` at 293 and takes a `DECIDED` row | **VOID** — no such sentence landed; the file is untouched by this milestone |
+| spec-warden | if derivation is refused, a second printer appears within one milestone rather than an existing one being reused | **CARRIES** to M-core-packages step 4 |
+| ffi-pragmatist | §4.19's SQLite ladder step 3 needs no shim under the `partial`-abort rule | **CONFIRMED**, scored at panel 132: `examples/sqlite/main.hero` declares 0 records and 0 `partial`, so the diff is zero |
+| ffi-pragmatist | no binding added to `examples/` names a tag outside the six | **CONFIRMED at this close** — no seventh annotation word in the corpus; the claim continues past it |
+| historian | (iii) flips to adopt if a language is found whose user-definable annotations are name-resolved, position-checked, and shipped in a compiler under ~10k lines with no macro system | **NOT FALSIFIED** — none found; the row stands with that as its written falsifier |
+| historian | (ii) flips to defer if derivation's compile-time cost is superlinear in field count | **CARRIES** to shape B-prime's owed prototype, rehomed to M-core-packages |
+| llm-ergonomist | two predictions about first-try rates under a derived-`print` spec | **LAPSED** — panel 132 asked a different question and never ran them. **Nothing goes back to `DECIDE.md`**: this sitting changed no spec text, so no ledger row spent them and no clause was bought with them |

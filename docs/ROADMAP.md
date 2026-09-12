@@ -8,16 +8,16 @@ The status and the chain. Why the table looks the way it does is
 
 | | |
 |---|---|
-| **Current milestone** | **none open on the trunk.** **M-reflection-verdict** is worked in another lane since 2026-09-11 with its row left `scheduled`, which § The chain has allowed since 2026-09-12 |
-| **Last closed** | **M-stated-grammar**, 2026-09-12, `m-stated-grammar` ([050](journal/050-stated-grammar.md)) — every form stated once, beside the prose that governs it · before it **M-rotated-records** ([049](journal/049-rotated-records.md)) and **M-named-callbacks** ([048](journal/048-named-callbacks.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
-| Milestones closed | **51** of 75 · **50** milestone tags, the legacy `m0`-`m8` included |
+| **Current milestone** | **none open.** The lane that held M-reflection-verdict closed it on 2026-09-12 and its row is `done`; nothing is open on the trunk or in a lane |
+| **Last closed** | **M-reflection-verdict**, 2026-09-12, `m-reflection-verdict` ([051](journal/051-reflection-verdict.md)) — three refusals whose reasons were false, and a field's name that the checker resolves · before it **M-stated-grammar** ([050](journal/050-stated-grammar.md)) and **M-rotated-records** ([049](journal/049-rotated-records.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
+| Milestones closed | **52** of 75 · **52** tags matching `m*`, the legacy `m0`-`m8` included |
 | The compiler | **59,155** lines of Heroes in **202** modules (`find selfhost -name '*.hero'`) · the seed **790,756** lines of C |
-| The spec | **5655** on the vendored ranks and **7531** on the reader's own, against a ceiling of 8192 raised by author decision this day so the grammar's productions could go inside it |
-| Records | sittings **131** · journals **51** · milestone files **45** · entries: `docs/records/log/` **624**, `docs/records/done/` **493**, `docs/records/book/beats/` **116** · **open defects 0** |
-| Waiting on the author | **0** decisions. Panel 133's was answered the day it was filed: the ceiling rises to 8192 |
+| The spec | **5655** on the vendored ranks and **7531** on the reader's own, against a ceiling of 8192. M-reflection-verdict spent **+54** of it on the field-name operator and gave back panel 117's restoration clause |
+| Records | sittings **131** · journals **52** · milestone files **45** · entries: `docs/records/log/` **625**, `docs/records/done/` **493**, `docs/records/book/beats/` **117** · **open defects 0** |
+| Waiting on the author | **0** decisions. Panels 131, 132 and 133 were each answered the evening they sat |
 
-**Re-measured 2026-09-12 at M-stated-grammar's close, not carried.** `records`
-is **21** checks, the net's own tests **145**, and `grammar` is the twentieth suite.
+**Re-measured 2026-09-12 at M-reflection-verdict's close, not carried.** `records`
+is **22** checks, the compiler's own tests **637**, the net's own **145**.
 
 ---
 
@@ -85,7 +85,7 @@ and why one overtook another are in `docs/roadmap/scheduling.md`.
 | 47 | **M-positional-values** | done 2026-09-11 | **untagged**, defect 026 | [046](journal/046-positional-values.md) | defect 026 narrowed: a label at a call through a function value is refused, the note stops prescribing the hole in silence, and `spec § 3` says the call is positional — a sentence vetoed as false at the ballot that the refusal made true · **§1.2** |
 | 48 | **M-labelled-types** | done 2026-09-11 | `m-labelled-types` | [047](journal/047-labelled-types.md) | defect 026 repaired: a function type names the parameters that can be confused, the names are part of its identity, and the classic inversion through a function value goes from 17% to 100% — at 432 lines against a condition of about 150, which is the sitting's own headline · **§1.2** |
 | 49 | **M-named-callbacks** | done 2026-09-11 | `m-named-callbacks` | [048](journal/048-named-callbacks.md) | the role inversion through a generic callback, closed at 7 of 7 against a cheaper reading's 2 of 7: `fold`'s type names its accumulator and its element, and a function handed to it names them the same way — a naming mandate the author chose over the sitting's own recommendation, with both numbers in front of them · **§1.2** |
-| 50 | **M-reflection-verdict** | scheduled | — | — | the ruling on reflection — at run time, and as compile-time derivation over a record's fields — and, since 2026-09-06, on a general annotation mechanism · a decision, not a feature |
+| 50 | **M-reflection-verdict** | done 2026-09-12 | `m-reflection-verdict` | [051](journal/051-reflection-verdict.md) | reflection refused at run time and as a general tag; a field's name becomes a name the checker resolves · **scheduled, no warrant** |
 | 51 | **M-deferral-ledger** | scheduled | — | — | every Part 7 item with no milestone gets a dated verdict or a return condition |
 | 52 | **M-cleanup-verdict** | scheduled | — | — | the ruling on a scope-bound release — `defer` or another form — for the two obligations `owned` and `lease` put on every path · a decision, not a feature |
 | 53 | **M-check-completeness** | scheduled | — | — | what `heroes check` accepts, `heroes build` compiles — through a generic too · scheduled, no warrant

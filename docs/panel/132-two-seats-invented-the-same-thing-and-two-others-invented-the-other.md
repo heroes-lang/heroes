@@ -405,3 +405,15 @@ statement; the promise goes.
 **What is NOT ratified, because the sitting did not ask**: shape B-prime, which
 stays scheduled with the compiler side owed rather than simulated, and which is
 the only route to the rot that E leaves open.
+
+## Predictions scored, 2026-09-12, at M-reflection-verdict's close
+
+| seat | prediction | verdict |
+|---|---|---|
+| compiler-engineer | if E lands: **zero** files under `selfhost/emit/` and `runtime/`, **≤ 70** code lines, `DECIDED.len()` stays **18** with exactly **two** numbers moved | **SPLIT, and the split is the finding.** Zero emit and zero runtime: **CONFIRMED**, and that half is what makes the form sugar by §1.7's own test. `DECIDED.len() == 18`: **CONFIRMED**. The size halves are **FALSIFIED** — the landing is **+388 / −95** across 28 files in `selfhost/`, and **four** ceilings moved, not two. **The prediction was written about the branch this seat had built, spelled `Point.x`, and the author chose `::`**: that spelling must be in the tree for the formatter to re-print it, so it is a node of its own rather than a reuse of the field node, and a new node is a new arm in 68 exhaustive matches. The subject changed under the prediction; the seat's estimate of its own route stands unrefuted |
+| compiler-engineer | with the new operator, a marshaller written with bare strings is caught **0%** and one written `Record.field` **100%** | **CONFIRMED, and scored early rather than at M-core-packages step 4.** Run at the landing on one program in two spellings: `typo-key` plants four slips on the bare-string version and the compiler kills **0 of 4**; `typo-ident` plants five on `m[Room::width]` and kills **5 of 5** |
+| llm-ergonomist | under a B-shaped spec, ≥ 30% of model pairs disagree on the array element's `name`, and a seeded enter/leave swap is caught 0% against 100% for a scalar swap | **VOID** — B was refused on four vetoes, so neither spec was ever written. The seat's reasoning is what refused it and is recorded above |
+| llm-ergonomist | E is overturned if models write a bare `"width"` rather than `Point::width` in more than half of first tries — it is opt-in, and if nobody opts in it bought nothing | **CARRIES** to M-core-packages step 4. **This is the honest risk of the adopted shape and it is not yet answered** |
+| spec-warden | `typo-key` scores ≈ 0% on `examples/` today and ≥ 80% once the corpus's keys stop being bare strings | **CARRIES** to M-core-packages step 4, with the operator now existing for it to be scored with |
+| ffi-pragmatist | three predictions about B-prime's landing, a JSON body in `examples/curl/`, and the non-existence of a program writing straight into a `FILE *` with the accumulator fixed | **CARRY** with shape B-prime, rehomed to M-core-packages |
+| historian | B-prime fails on a record whose field is a list of records; derivation is linear at 8/64/512 fields; a golden pins an output whose field order the spec never fixed | **CARRY** with B-prime's owed prototype. The second of the three scores this seat's own panel 131 warning and it asked for that |
