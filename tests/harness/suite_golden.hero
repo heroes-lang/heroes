@@ -31,6 +31,7 @@
 
 use cases
 use report
+use floors
 use shell
 use strings
 
@@ -43,14 +44,29 @@ record Shape
     on_stderr: bool
     want_code: i64
     least: i64
+
+    # **Whether this shape's floor is watched for DECAY as well as for a walk
+    # that found nothing.** The four real shapes set it; the cases below build
+    # Shapes over two-file trees with a floor of 1, and calling those outgrown
+    # would turn every case red. The flag is the seam between a floor that is a
+    # measurement of the tree and one that is a fixture.
+    watched: bool
     silent_stdout: bool
     library_skip: bool
 
-# The floors are the case counts measured on 2026-08-18 (check 65 · ir 20
-# · emit 6 · unsupported 11), so a case that stops running is a red
-# harness rather than a smaller green one. golden.rs floored only three of
-# the four, and at hand-written numbers (20, 3, 3); a floor at the real
-# count is the same rule with the slack taken out.
+# The floors are the case counts, so a case that stops running is a red harness
+# rather than a smaller green one. golden.rs floored only three of the four, and
+# at hand-written numbers (20, 3, 3); a floor at the real count is the same rule
+# with the slack taken out.
+#
+# **Measured 2026-08-18 at check 65 · ir 20 · emit 6 · unsupported 11, and
+# re-measured 2026-09-12 at 112 · 23 · 6 · 12.** The sentence above forbids slack
+# and `check` had accumulated 47 — in the one directory where `UPDATE_GOLDEN=1`
+# is forbidden OUTRIGHT by the contract's hard stops, so the most protected
+# corpus in the repository was the one whose floor had gone slackest. Nothing
+# could see it: a floor is a premise about the world, and the comment stating it
+# went on reading as true. `floors.check` is what sees it now, and these numbers
+# are re-based to today's count.
 function shape_check() -> Shape
     return Shape(
         name: "check",
@@ -59,7 +75,8 @@ function shape_check() -> Shape
         flag: "--brief",
         on_stderr: true,
         want_code: 1,
-        least: 65,
+        least: 112,
+        watched: true,
         silent_stdout: false,
         library_skip: false
     )
@@ -72,7 +89,8 @@ function shape_ir() -> Shape
         flag: "--dump-ir",
         on_stderr: false,
         want_code: 0,
-        least: 20,
+        least: 23,
+        watched: true,
         silent_stdout: false,
         library_skip: false
     )
@@ -86,6 +104,7 @@ function shape_emit() -> Shape
         on_stderr: false,
         want_code: 0,
         least: 6,
+        watched: true,
         silent_stdout: false,
         library_skip: false
     )
@@ -101,7 +120,8 @@ function shape_unsupported() -> Shape
         flag: "",
         on_stderr: true,
         want_code: 1,
-        least: 11,
+        least: 12,
+        watched: true,
         silent_stdout: true,
         library_skip: true
     )
@@ -110,7 +130,9 @@ function run_all(scratch: str, compiler: str, shape: Shape) -> report.Report?
     found = cases.collect(scratch: scratch, dir: shape.dir)?
     r: report.Report @ report.empty()
 
-    if found.len() < shape.least
+    if shape.watched
+        floors.check(@r, label: shape.name, found: found.len(), floor: shape.least, what: "cases in " + shape.dir)
+    else if found.len() < shape.least
         report.keep_failure(
             @r,
             label: shape.name,
@@ -237,6 +259,7 @@ test "a diagnostics suite passes on a match and fails on either half"
         on_stderr: true,
         want_code: 1,
         least: 1,
+        watched: false,
         silent_stdout: false,
         library_skip: false
     )
@@ -285,6 +308,7 @@ test "an artifact suite reads stdout, and a diagnostic on stderr does not save i
         on_stderr: false,
         want_code: 0,
         least: 1,
+        watched: false,
         silent_stdout: false,
         library_skip: false
     )
@@ -319,6 +343,7 @@ test "a refusal that writes an artifact fails, and so does a suite below its flo
         on_stderr: true,
         want_code: 1,
         least: 1,
+        watched: false,
         silent_stdout: true,
         library_skip: true
     )
@@ -342,6 +367,7 @@ test "a refusal that writes an artifact fails, and so does a suite below its flo
         on_stderr: true,
         want_code: 1,
         least: 2,
+        watched: false,
         silent_stdout: true,
         library_skip: true
     )
@@ -368,6 +394,7 @@ test "a machine missing the library skips, but a machine missing every library f
         on_stderr: true,
         want_code: 1,
         least: 1,
+        watched: false,
         silent_stdout: true,
         library_skip: true
     )

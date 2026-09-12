@@ -52,6 +52,7 @@
 # reads files. A `--check` flag would be surface bought for nothing.
 
 use report
+use floors
 use shell
 use strings
 
@@ -68,12 +69,17 @@ constant SOURCE_DIRS: [str]
         "tests/golden/fixedbugs"
     ]
 
-# Measured 2026-08-28: 371 files. The floor is `suite_layout`'s own idea
-# and it exists for the same reason — a walk that finds nothing reports
-# green, and a check that silently stops walking is worse than no check,
-# because it reports the property it has stopped testing.
+# The floor is `suite_layout`'s own idea and it exists for the same reason — a
+# walk that finds nothing reports green, and a check that silently stops walking
+# is worse than no check, because it reports the property it has stopped testing.
+#
+# **340 against 371 files on 2026-08-28, and 524 on 2026-09-12.** This floor is
+# the PROOF that a floor decays, and its own comment below records the defect it
+# was written for: the first draft used the flat listing and found 325 of 371,
+# which 340 caught. At 524 the same fault — a walk reaching 88% — finds 458 and
+# passes. Re-based to today's count by `floors.check`, which is what noticed.
 constant LEAST: i64
-    340
+    524
 
 function run_all(scratch: str, compiler: str) -> report.Report?
     r: report.Report @ report.empty()
@@ -116,12 +122,7 @@ function run_all(scratch: str, compiler: str) -> report.Report?
             if run.out != text.must()
                 crooked @ crooked.push("    " + path)
 
-    if seen < LEAST
-        report.keep_failure(
-            @r,
-            label: "canonical",
-            detail: "  the walk found " + seen.to_str() + " files and had " + LEAST.to_str() + " — it is not reaching the tree, so its green means nothing"
-        )
+    floors.check(@r, label: "canonical", found: seen, floor: LEAST, what: "files")
 
     if refused.len() > 0
         report.keep_failure(
@@ -150,8 +151,13 @@ test "the walk names the directories that were swept, and the floor is under the
 
     # 371 files were swept that day. The floor sits below it with room for
     # ordinary growth and shrinkage, and above any plausible partial walk.
-    assert LEAST < 371
-    assert LEAST > 300
+    # The bracket the floor sits in: under the count the walk really finds, and
+    # above any plausible partial walk. **371 until 2026-09-12**, when the tree
+    # reached 524 and `floors.check` reported the floor as outgrown — the numbers
+    # here move with it, because a bracket taken from an old tree brackets
+    # nothing.
+    assert LEAST <= 524
+    assert LEAST > 460
 
 test "the two exempt directories are named nowhere in the walk"
     # tests/golden/check and tests/golden/unsupported are the test's data
