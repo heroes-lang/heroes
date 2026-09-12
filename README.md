@@ -1,8 +1,8 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/banner-dark.svg">
-    <source media="(prefers-color-scheme: light)" srcset="docs/assets/banner-light.svg">
-    <img src="docs/assets/banner-light.svg" alt="Heroes, a small compiled language.">
+    <source media="(prefers-color-scheme: dark)" srcset="docs/ref/assets/banner-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="docs/ref/assets/banner-light.svg">
+    <img src="docs/ref/assets/banner-light.svg" alt="Heroes, a small compiled language.">
   </picture>
 </p>
 
@@ -66,9 +66,9 @@ that was already declared, so the typo has nowhere to land:
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/error-dark.svg">
-    <source media="(prefers-color-scheme: light)" srcset="docs/assets/error-light.svg">
-    <img src="docs/assets/error-light.svg" alt="error[unknown_name]: nothing named `totl` is in scope, did you mean `total`? The message names the file, line and column, quotes the line, underlines the four characters that are wrong, and ends with: fix (certain): rename to `total`.">
+    <source media="(prefers-color-scheme: dark)" srcset="docs/ref/assets/error-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="docs/ref/assets/error-light.svg">
+    <img src="docs/ref/assets/error-light.svg" alt="error[unknown_name]: nothing named `totl` is in scope, did you mean `total`? The message names the file, line and column, quotes the line, underlines the four characters that are wrong, and ends with: fix (certain): rename to `total`.">
   </picture>
 </p>
 
@@ -120,9 +120,9 @@ versions, and a patch version changes no sentence of the spec.**
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/fixpoint-dark.svg">
-    <source media="(prefers-color-scheme: light)" srcset="docs/assets/fixpoint-light.svg">
-    <img src="docs/assets/fixpoint-light.svg" alt="The fixpoint: clang compiles seed/heroes.c into the heroes binary in seconds; that binary compiles every module of selfhost/; the C it emits for its own source is identical to seed/heroes.c, byte for byte.">
+    <source media="(prefers-color-scheme: dark)" srcset="docs/ref/assets/fixpoint-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="docs/ref/assets/fixpoint-light.svg">
+    <img src="docs/ref/assets/fixpoint-light.svg" alt="The fixpoint: clang compiles seed/heroes.c into the heroes binary in seconds; that binary compiles every module of selfhost/; the C it emits for its own source is identical to seed/heroes.c, byte for byte.">
   </picture>
 </p>
 

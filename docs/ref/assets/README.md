@@ -1,4 +1,4 @@
-# docs/assets — the pictures on the front page, and the rules they follow
+# docs/ref/assets — the pictures on the front page, and the rules they follow
 
 Six files, three pictures, each one a hand-written SVG with a dark and a
 daylight twin. `README.md` selects between them with `<picture>` and
