@@ -38,7 +38,7 @@ it would report a promise where there is none. The count it opens with is its
 - [ ] **M-cleanup-verdict** | the sitting, and the count it is handed rather than guesses | `design.md` Part 6, Part 7 · `spec/heroes-spec.md:241-246` · `selfhost/emit/types.hero:6`
 
     **Origin:** author decision 2026-09-10, out of the session that wrote
-    `docs/ROADMAP.md` § What production-ready means. The row's own section carries
+    `docs/roadmap/production-ready.md`. The row's own section carries
     why it exists; this item is what the sitting needs in hand.
 
     **The silence is measured and the vocabulary is named**, so the sitting starts

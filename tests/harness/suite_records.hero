@@ -146,7 +146,7 @@ constant GENERATED: [str]
 constant QUOTES_THE_OLD_SPELLING: [str]
     [
         "docs/work/DONE.md"
-        "docs/ROADMAP.md"
+        "docs/roadmap/names.md"
         "CLAUDE.md"
         "tests/harness/suite_records.hero"
     ]
@@ -388,7 +388,7 @@ constant REFUSED: [str]
 # **67 -> 71 on 2026-09-10**, and it is the first insert of FOUR at once:
 # `M-cleanup-verdict`, `M-arm-platform`, `M-deployable-binary` and
 # `M-compatibility-promise`, all by author decision out of the session that wrote
-# `docs/ROADMAP.md` § What production-ready means — the chain's first reading
+# `docs/roadmap/production-ready.md` — the chain's first reading
 # against a criterion, where six of its ten rows turned out to be owned already.
 # **This number is moved by hand and not read off a red run**, because the four
 # rows and this constant land in one commit; the tripwire's other direction still
@@ -1727,7 +1727,7 @@ function positions(@r: report.Report, scratch: str, present: [str])
 # No living file names a numbered milestone.
 #
 # If this fires on a file you just wrote: the identifier is a name now —
-# the map is `docs/ROADMAP.md` § The names and the algorithm is CLAUDE.md
+# the map is `docs/roadmap/names.md` and the algorithm is CLAUDE.md
 # §14. If the file is a dated record, add it to RECORD and say why in the
 # commit.
 function numbered(@r: report.Report, living: [str])
@@ -3757,10 +3757,13 @@ function is_digit(byte: u8) -> bool
 function is_lower(byte: u8) -> bool
     return byte >= 97 && byte <= 122
 
-# The names the ROADMAP's alias table carries: every row opening with
-# "| `M-".
+# The names the alias table carries: every row opening with "| `M-".
+#
+# **It moved out of `docs/ROADMAP.md` on 2026-09-12** (author instruction: the
+# chain file is the chain and the status, nothing else), and this line followed
+# it in the same commit rather than going quiet a check later.
 function alias_table() -> [str]
-    text = read_file("docs/ROADMAP.md")
+    text = read_file("docs/roadmap/names.md")
 
     if text.is_err()
         none: [str] = []

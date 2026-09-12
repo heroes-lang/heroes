@@ -62,7 +62,7 @@ and nobody would check that one (CL-058).
 
 ## Milestone identifiers are names, not numbers
 
-The algorithm, and this is its only home (CL-003; `docs/ROADMAP.md` § The names
+The algorithm, and this is its only home (CL-003; `docs/roadmap/names.md`
 carries the map):
 
 - **two words**, `M-<what-it-delivers>`, hyphenated and lowercase after the
