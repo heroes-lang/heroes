@@ -29,7 +29,7 @@ grep -oE '"[a-z_]+"' tests/harness/main.hero | sort -u
 # what each suite file walks, from its own constants
 for f in tests/harness/suite_*.hero; do
   printf "%-14s " "$(basename $f .hero | sed 's/^suite_//')"
-  grep -ohE '"(tests/golden/[a-z-]+|examples|selfhost|spec/[a-z-]+\.md|docs/[a-z]+)"' "$f" \
+  grep -ohE '"(tests/golden/[a-z-]+|examples|selfhost|spec/[a-z-]+\.md|docs/[a-z/]+)"' "$f" \
     | sort -u | tr '\n' ' '; echo
 done
 ```
