@@ -3273,7 +3273,7 @@ function homed(@r: report.Report, present: [str])
 
 # The one milestone list, and the tree that holds it.
 constant MILESTONES: str
-    "docs/milestones"
+    "docs/work/milestones"
 
 function milestone_files(present: [str]) -> [str]
     out: [str] @ []

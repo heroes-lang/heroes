@@ -4,7 +4,7 @@
 now trees of one file per entry, and the files they were stay at their paths as
 maps of the same height. `DESIGN-LOG.md` → `docs/log/` (620), `docs/work/DONE.md`
 → `docs/done/` (491), `docs/book/beats.md` → `docs/book/beats/` (114), and
-§ The milestones, one by one → `docs/milestones/` (43), which absorbed
+§ The milestones, one by one → `docs/work/milestones/` (43), which absorbed
 the 53 items `docs/work/SCHEDULED.md` held until 2026-09-12, so that one milestone is one file is one
 lane.
 
