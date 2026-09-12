@@ -2,8 +2,9 @@
 
 Heroes is a small compiled language designed so that **every plausible LLM
 mistake is a compile error**. The compiler is written in Heroes under
-`selfhost/`, emits C11 compiled by clang, and compiles itself. `design.md` is
-the source of truth and is reached **by grep**, never from a remembered summary;
+`selfhost/`, emits C11 compiled by clang, and compiles itself.
+`docs/design/design.md` is the source of truth, reached **by grep** and never
+from memory;
 `spec/heroes-spec.md` is the language as a reader gets it; `docs/ROADMAP.md` is
 the chain; the skills are the process. One person is learning compilers here:
 comprehension is the objective, on the author's clock, never as a gate.

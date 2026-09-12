@@ -64,7 +64,7 @@ constant RECORD: [str]
         "docs/records/book"
         "tests/golden"
         "tests/emission"
-        "DESIGN-LOG.md"
+        "docs/design/DESIGN-LOG.md"
         "docs/records/log"
         "docs/work/DONE.md"
         "docs/records/done"
@@ -163,7 +163,8 @@ constant QUOTES_THE_OLD_SPELLING: [str]
 # thing, which is worse than not firing.
 
 # The names deliberately written without being milestones: a runner-up
-# § The names records as refused, so the reasoning survives the decision.
+# `docs/roadmap/names.md` records as refused, so the reasoning survives the
+# decision.
 #
 # **`M-foreign-ownership` joined it 2026-09-04**, and it joined by making this
 # check fire. Panel 109's `owned` mark took the id `M-declared-freer`, and both
@@ -725,6 +726,7 @@ function run_all(scratch: str) -> report.Report?
     citations(@r, scratch: scratch, present: walked)
     english(@r, present: walked)
     exemptions(@r, present: walked)
+    redirects(@r, present: walked)
     rules(@r, present: walked)
     expectations(@r, scratch: scratch)
     boundary(@r)
@@ -979,6 +981,49 @@ function is_generated(path: str) -> bool
 # The three lists match differently and the question is the same for all three:
 # does this line still reach a file git tracks? RECORD names trees, GENERATED
 # names one file exactly, QUOTES_THE_OLD_SPELLING matches a suffix.
+# Every row of `MOVED` still says something true: the old path is gone and the
+# new one is there. See the table's own comment for what it is for.
+function redirects(@r: report.Report, present: [str])
+    if MOVED.len() < LEAST_MOVED
+        report.keep_failure(
+            @r,
+            label: "records/redirects",
+            detail: "  MOVED has " + MOVED.len().to_str() + " rows and the floor is " + LEAST_MOVED.to_str() + " — a table that empties out is one nobody maintains, and an empty loop passes"
+        )
+        return
+    wrong: [str] @ []
+
+    for row in MOVED
+        at = strings.index_of(text: row, needle: " -> ")
+
+        if at.is_err()
+            wrong @ wrong.push("    no ` -> ` in: " + row)
+            continue
+        written = strings.trimmed(row.slice(from: 0, to: at.must()))
+        landed = strings.trimmed(row.slice(from: at.must() + 4, to: row.len()))
+
+        if !selects_exactly(entry: landed, present: present) && !selects_tree(entry: landed, present: present)
+            wrong @ wrong.push("    points at nothing: " + row)
+
+        # **Only a row whose left side is a whole PATH can claim the old one is
+        # gone.** Where it names a section — `docs/ROADMAP.md § The names` — the
+        # file it opens with is still there and still right, and asserting its
+        # absence would refuse the true rows. So this half runs on the plain
+        # paths and says so, rather than being written to fire on everything and
+        # quietly exempted later.
+        if strings.index_of(text: written, needle: " §").is_err()
+            if selects_exactly(entry: written, present: present) || selects_tree(entry: written, present: present)
+                wrong @ wrong.push("    still there, so it did not move: " + row)
+
+    if wrong.len() > 0
+        report.keep_failure(
+            @r,
+            label: "records/redirects",
+            detail: "  a redirect does not say something true:\n" + wrong.join("\n") + "\n  A record names the old path forever, so this table is the only thing that\n  keeps the citation followable. A row pointing at nothing is worse than no\n  row: it reads as an answer."
+        )
+    else
+        report.keep_pass(@r)
+
 function exemptions(@r: report.Report, present: [str])
     dead: [str] @ []
 
@@ -1513,7 +1558,7 @@ function unmerged(@r: report.Report, scratch: str)
 constant ROTATED: [str]
     [
         "docs/records/book/beats.md 140 docs/records/book/beats"
-        "DESIGN-LOG.md 1119 docs/records/log"
+        "docs/design/DESIGN-LOG.md 1119 docs/records/log"
         "docs/work/DONE.md 4071 docs/records/done"
     ]
 
@@ -2041,6 +2086,41 @@ test "a C file is claimed by an `extern` at column zero in a program beside it, 
 # to be one. Measured 2026-08-19, one commit after the check landed: 6 passed,
 # three dead citations unseen. These four are retirements the record already
 # documents, and this list grows only when something is retired.
+# **Where a moved file went, so a citation in a record can still be followed.**
+#
+# A record is never rewritten (`.claude/rules/records.md`), so a path named
+# inside one is named forever — and `records/citations` skips records by
+# construction, which means those citations are checked by NOTHING. Measured
+# 2026-09-12, before `design.md` moved: **1498** citations named it and **961**
+# were inside records, of which **272** carried a line number. Moving it without
+# this table would not have turned a check red; it would have gone quiet, which
+# is the failure this repository keeps finding in itself.
+#
+# What the table buys is exactly one thing, said narrowly: a reader who meets
+# `design.md:2869` in a record of 2026-08-12 can find the file it meant. It does
+# NOT promise line 2869 still says what it said — nothing could, and that is
+# what a citation's DATE is for (CL-037).
+#
+# `records/redirects` keeps it honest in both directions: the left side must be
+# gone from the tree, or the row is a redirect for a file that never moved, and
+# the right side must be present, or the row points at nothing.
+constant MOVED: [str]
+    [
+        "docs/work/learn -> docs/learn"
+        "design.md -> docs/design/design.md"
+        "DESIGN-LOG.md -> docs/design/DESIGN-LOG.md"
+        "docs/ROADMAP.md § The names -> docs/roadmap/names.md"
+        "docs/ROADMAP.md § Verify it yourself -> docs/roadmap/verify.md"
+        "docs/ROADMAP.md § What production-ready means -> docs/roadmap/production-ready.md"
+        "docs/ROADMAP.md § The milestones, one by one -> docs/roadmap/milestones.md"
+        "docs/ROADMAP.md § Decisions this file records -> docs/roadmap/decisions.md"
+    ]
+
+# The floor. A table that has emptied out is a table nobody is maintaining, and
+# an empty loop passes.
+constant LEAST_MOVED: i64
+    8
+
 constant RETIRED_ROOTS: [str]
     [
         "crates"
@@ -2207,8 +2287,39 @@ function names_something(token: str, document: str, known: {str: bool}) -> bool
 
     return true
 
+# Where `part` went, or the empty string. The left side of a `MOVED` row, up to
+# its first ` §` where it names a section.
+function moved_to(part: str) -> str
+    for row in MOVED
+        at = strings.index_of(text: row, needle: " -> ")
+
+        if at.is_err()
+            continue
+        written = strings.trimmed(row.slice(from: 0, to: at.must()))
+        mark = strings.index_of(text: written, needle: " §")
+        head: str @ written
+
+        if !mark.is_err()
+            head @ strings.trimmed(written.slice(from: 0, to: mark.must()))
+
+        if head == part
+            return strings.trimmed(row.slice(from: at.must() + 4, to: row.len()))
+
+    return ""
+
 function one_names(part: str, document: str, known: {str: bool}) -> bool
     if !known[part].is_err()
+        return true
+
+    # **A path that MOVED still names something**, and this is what lets a
+    # citation keep the short spelling a reader knows. Measured 2026-09-12
+    # before `design.md` moved into `docs/design/`: **1684** living citations
+    # name it and **1045** of those are `design.md §N`, a reference to a section
+    # rather than a path, spread over roughly two hundred module docs. Rewriting
+    # every one to `docs/design/design.md §N` would add twelve characters to each
+    # for nothing a reader gains, so the table answers instead and the citation
+    # stays as it was written.
+    if moved_to(part).len() > 0
         return true
 
     for home in HOMES
