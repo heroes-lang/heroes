@@ -48,7 +48,7 @@ order. **No directory index**, because an index is a second place where truth
 lives and the only tabulated one here drifted for nine closes in silence.
 
 Rotated so far: `docs/records/book/beats.md` → `docs/records/book/beats/` (2026-09-12, 114
-entries), `DESIGN-LOG.md` → `docs/log/` (620) and `docs/work/DONE.md` →
+entries), `DESIGN-LOG.md` → `docs/records/log/` (620) and `docs/work/DONE.md` →
 `docs/done/` (491), all three on 2026-09-12.
 `ROTATED` in `tests/harness/suite_records.hero` is the live list.
 
@@ -133,7 +133,7 @@ permanently, so that name is never reused (CL-033).
 
 A **lane** is one milestone, in one detached worktree, held by one session. The
 rotations above are what make it possible: a lane writes its own milestone file,
-its own entries under `docs/log/` and `docs/done/`, its own beat — every one of
+its own entries under `docs/records/log/` and `docs/done/`, its own beat — every one of
 them a file nobody else is writing.
 
 - **The worktree lives outside this tree**, `~/Temp/heroes-lane-<milestone>` or
@@ -167,5 +167,5 @@ modified, **writes no note of its own** (CL-053). What it settled is an entry in
 `docs/done/`; what it left open is an item in `docs/work/DECIDE.md` or
 its milestone's file under `docs/work/milestones/`; a concept it explained is an entry in
 `docs/ref/glossary/`; a question worth re-asking is a line in `docs/work/learn/LEARN.md`;
-a change to the language is a panel; a decision taken is a `docs/log/` entry.
+a change to the language is a panel; a decision taken is a `docs/records/log/` entry.
 The path between them is the git history.

@@ -62,7 +62,7 @@ every beat moved down by one) and took three attempts for `DONE.md`'s 33.
 thing**, which is the more useful half.
 
 - `records/rotated` reported `DESIGN-LOG.md` as naming a file git does not
-  track. The name was `docs/log/`, still `date | decision | reason | design.md`
+  track. The name was `docs/records/log/`, still `date | decision | reason | design.md`
   — the reader ran from the tree's name to the first `.md` and sewed the map's
   own preamble into a path. **A path has no space in it**; the name now ends at
   a space, a backtick or a tab, and the sewn line is a test case.
@@ -97,7 +97,7 @@ survive.
 
 ## What landed, and what carried forward
 
-**Landed**: `DESIGN-LOG.md` → `docs/log/` (620 entries), `docs/work/DONE.md` →
+**Landed**: `DESIGN-LOG.md` → `docs/records/log/` (620 entries), `docs/work/DONE.md` →
 `docs/done/` (491), `docs/records/book/beats.md` → `docs/records/book/beats/` (114), and
 § The milestones, one by one → `docs/milestones/` (43 files), which absorbed the
 53 items `docs/work/SCHEDULED.md` held until 2026-09-12. Each rotated file keeps

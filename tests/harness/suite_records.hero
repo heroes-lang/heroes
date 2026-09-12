@@ -65,7 +65,7 @@ constant RECORD: [str]
         "tests/golden"
         "tests/emission"
         "DESIGN-LOG.md"
-        "docs/log"
+        "docs/records/log"
         "docs/work/DONE.md"
         "docs/done"
         "docs/contract"
@@ -1504,7 +1504,7 @@ function unmerged(@r: report.Report, scratch: str)
 constant ROTATED: [str]
     [
         "docs/records/book/beats.md 140 docs/records/book/beats"
-        "DESIGN-LOG.md 1119 docs/log"
+        "DESIGN-LOG.md 1119 docs/records/log"
         "docs/work/DONE.md 4071 docs/done"
     ]
 
@@ -1567,7 +1567,7 @@ function rotated(@r: report.Report, present: [str])
 #
 # A PATH HAS NO SPACE IN IT, and that sentence is the whole function. The first
 # draft took everything from the tree's name to the first `.md`, and the map's
-# own preamble then read as a path: it names the tree, says `docs/log/`, and
+# own preamble then read as a path: it names the tree, says `docs/records/log/`, and
 # mentions `design.md` nine words later, so the two were sewn into one name that
 # git does not track and the check reported the preamble as a missing entry. It
 # was right to fire and wrong about what it had found. So the name ends where a
@@ -4225,8 +4225,8 @@ test "a map row hands on the path it names, and a row that names none says so"
     # one name git does not track — reporting the preamble as a missing entry.
     # It fired correctly and described the wrong thing, which is the worst way
     # for a check to be right.
-    sewn = "Every decision is one file in `docs/log/`, still `date | decision | reason | design.md § | panel`."
-    assert tree_path_in(row: sewn, tree: "docs/log") == ""
+    sewn = "Every decision is one file in `docs/records/log/`, still `date | decision | reason | design.md § | panel`."
+    assert tree_path_in(row: sewn, tree: "docs/records/log") == ""
 
 # `rotated` and `positions` are not driven from a `test` block, and the reason
 # is worth writing down rather than leaving as an omission: both need the walk,

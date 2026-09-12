@@ -127,5 +127,5 @@ is a full panel.
      harness next runs, score them and append the results — judges accrue
      track records.
 
-5. Write the `docs/log/` entry as its own file. Commit the panel file (and, separately, any
+5. Write the `docs/records/log/` entry as its own file. Commit the panel file (and, separately, any
    resulting `spec/` or `design.md` amendment, citing the sitting's own file).
