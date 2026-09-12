@@ -129,6 +129,37 @@ index, decide.
 name redirects, and creating a repository there would kill the redirects
 permanently, so that name is never reused (CL-033).
 
+## Working in lanes, since 2026-09-12
+
+A **lane** is one milestone, in one detached worktree, held by one session. The
+rotations above are what make it possible: a lane writes its own milestone file,
+its own entries under `docs/log/` and `docs/done/`, its own beat — every one of
+them a file nobody else is writing.
+
+- **The worktree lives outside this tree**, `~/Temp/heroes-lane-<milestone>` or
+  the like, and **never** under `.claude/worktrees/`. A nested checkout made a
+  tree-walking check report another tree's milestone names as this one's
+  (2026-08-12), and the mere existence of that directory hid a citation defect
+  for three red CI runs, on the one machine that could not see it (2026-09-07).
+  A worktree has its own index, which is why it is safer than a second session
+  here: CL-041 and CL-070 are both a shared index carrying away somebody's work.
+- **Merge, not rebase.** This repository cites commit hashes inside records —
+  `/step` § 3 asks for the fixing commit's hash — and a rebase rewrites them, so
+  it falsifies in silence a citation a lane wrote about itself.
+- **A lane does not close a milestone.** § Where we are is a measurement of the
+  whole tree at an instant, re-measured and never carried (CLAUDE.md §1), and
+  two lanes cannot both be right about it: one of the two sentences would be
+  false as it was written. Closing is an act on the trunk, by one session, and
+  closes accumulate into a train — four tags went onto one commit on 2026-09-11,
+  so the shape already exists.
+- **The clock is exclusive.** Parallel work is free on correctness and forbidden
+  on duration (CL-025, `.claude/rules/verification.md`).
+- **One `**OPEN**` row at a time, today.** `site/src/lib/chain.ts` throws when
+  § The chain carries more than one, so two lanes cannot both open their row
+  until that is decided — it is an outward-facing file. The question is filed in
+  `docs/work/DECIDE.md`. Until it is settled, a second lane works with its row
+  left `scheduled` and says so in its commits.
+
 ## Where a session's output goes
 
 A conversation whose work is questions, with no file of code, spec or design

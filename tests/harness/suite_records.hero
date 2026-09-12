@@ -432,7 +432,7 @@ constant REFUSED: [str]
 # because this milestone delivers the absence of labels at such a call rather
 # than their presence.
 constant ROWS: i64
-    77
+    78
 
 # **`WATCHED` stood here until 2026-09-07 and nothing had read it since
 # 2026-08-19.** It listed `design.md` and `CLAUDE.md` as *"the two documents whose
